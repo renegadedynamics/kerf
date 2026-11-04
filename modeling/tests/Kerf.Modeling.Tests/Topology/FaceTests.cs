@@ -299,7 +299,7 @@ public class FaceTests
     public void IsConvexConcave()
     {
         var box = new Box(20, 20, 5);
-        var openBox = Ops.Offset(box, amount: -2, openings: [box.Faces().OrderBy(Axis.Z)[^1]]);
+        var openBox = Ops.Offset(box, -2, new Ops.OffsetOptions { Openings = [box.Faces().OrderBy(Axis.Z)[^1]] });
         var filleted = Ops.Fillet(openBox.Edges(), 0.5);
 
         var outsideFillets = filleted.Faces().Where(f => f.IsCircularConvex).ToShapeList();

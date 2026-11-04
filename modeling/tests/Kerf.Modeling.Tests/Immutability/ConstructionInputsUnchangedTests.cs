@@ -42,7 +42,7 @@ public class ConstructionInputsUnchangedTests
     {
         Box part = Part();
         Face top = Top(part);
-        Shape result = Untouched(part, () => Ops.Extrude(top, 3, clean: false));
+        Shape result = Untouched(part, () => Ops.Extrude(top, 3, new Ops.ExtrudeOptions { Clean = false }));
         Assert.True(Holds(result, top));
         Assert.All(top.Edges(), e => Assert.True(Holds(result, e)));
         Shape solid = Untouched(part, () => Solid.Extrude(top, new Vector(0, 0, 3)));
@@ -64,7 +64,7 @@ public class ConstructionInputsUnchangedTests
         Box part = Part();
         Face top = Top(part);
         Edge path = Edge.MakeThreePointArc((5, 3, 4), (5, 8, 9), (5, 13, 4));
-        Untouched(part, () => Ops.Sweep(top, path, clean: false));
+        Untouched(part, () => Ops.Sweep(top, path, new Ops.SweepOptions { Clean = false }));
     }
 
     [Fact]

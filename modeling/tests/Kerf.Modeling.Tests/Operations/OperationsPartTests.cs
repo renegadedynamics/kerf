@@ -78,20 +78,20 @@ public class OperationsPartTests
     [Fact]
     public void ExtrudeWithFaceInput()
     {
-        var test = Extrude(new Rectangle(5, 5).Faces(), amount: 2.5, both: true);
+        var test = Extrude(new Rectangle(5, 5).Faces(), 2.5, new ExtrudeOptions { Both = true });
         Check.AlmostEqual(125, test.Volume, 5);
     }
 
     [Fact]
     public void ExtrudeBoth()
     {
-        Check.AlmostEqual(125, Extrude(new Rectangle(5, 5), amount: 2.5, both: true).Volume, 5);
+        Check.AlmostEqual(125, Extrude(new Rectangle(5, 5), 2.5, new ExtrudeOptions { Both = true }).Volume, 5);
     }
 
     [Fact]
     public void ExtrudeTapered()
     {
-        var test = Extrude(new Rectangle(2, 2), amount: 1, taper: 10);
+        var test = Extrude(new Rectangle(2, 2), 1, new ExtrudeOptions { Taper = 10 });
         Assert.True(test.Volume < 4);
         Assert.True(test.Volume > 0);
     }
@@ -101,7 +101,7 @@ public class OperationsPartTests
     {
         Shape box = new Box(10, 10, 10, align: (Align.Center, Align.Center, Align.Min));
         var target = box - Scale(box, by: (0.8, 0.8, 0.8));
-        var rib = Extrude(new Rectangle(1, 1), until: Until.Next, target: target);
+        var rib = Extrude(new Rectangle(1, 1), Until.Next, target);
         Check.AlmostEqual(10 * 10 * 10 - 8 * 8 * 8 + 1 * 1 * 8, (target + rib).Volume, 5);
     }
 
@@ -111,7 +111,7 @@ public class OperationsPartTests
         var target = new Box(10, 5, 5) - new Pos(2.5) * new Cylinder(0.5, 5);
         var pln = new Plane((7, 0, 7), zDir: (-1, 0, -1));
         var profile = (pln * new Circle(1)).SingleFace();
-        var extrusion = Extrude(profile, dir: pln.ZDir, until: Until.Next, target: target);
+        var extrusion = Extrude(profile, Until.Next, target, new ExtrudeOptions { Direction = pln.ZDir });
         Assert.True(extrusion.BoundingBox().Min.Z < 2.5);
     }
 
@@ -119,9 +119,9 @@ public class OperationsPartTests
     public void ExtrudeUntil3()
     {
         var sketch = Plane.XZ * (new Rectangle(8, 8, align: Align.Min) - new Pos(1, 1) * new Rectangle(7, 7, align: Align.Min));
-        var p = Extrude(sketch, amount: 2, both: true);
+        var p = Extrude(sketch, 2, new ExtrudeOptions { Both = true });
         var profile = new Plane((-2, 0, -2), (0, 1, 0), (1, 0, 1));
-        var rib = Extrude(profile * new Rectangle(4, 1), until: Until.Next, target: p);
+        var rib = Extrude(profile * new Rectangle(4, 1), Until.Next, p);
         Check.AlmostEqual(72.313, (p + rib).Volume, 2);
     }
 
@@ -132,14 +132,14 @@ public class OperationsPartTests
         // underside here. NEXT reaches the face the sketch lies in, which cuts nothing
         var section = new Rectangle(20, 10, align: (Align.Center, Align.Min))
                       - new Pos(0, 1) * new Circle(6, align: (Align.Center, Align.Min));
-        var body = Extrude(Plane.YZ.Offset(-10) * section, amount: 20);
+        var body = Extrude(Plane.YZ.Offset(-10) * section, 20);
         var cross = new RectangleRounded(10, 3, 1, rotation: 0) + new RectangleRounded(10, 3, 1, rotation: 90);
-        var rib = Extrude(cross, until: Until.Last, target: body);
+        var rib = Extrude(cross, Until.Last, body);
         Assert.True(rib.IsValid);
         Check.AlmostEqual(0, rib.BoundingBox().Min.Z, 6);
         Check.AlmostEqual(7 - Math.Sqrt(36 - 25), rib.BoundingBox().Max.Z, 4);
         Check.AlmostEqual(72.302, rib.Volume, 2);
-        var e = Assert.Throws<ArgumentException>(() => Extrude(cross, until: Until.Next, target: body));
+        var e = Assert.Throws<ArgumentException>(() => Extrude(cross, Until.Next, body));
         Assert.Contains("does not cut the extrusion", e.Message);
     }
 
@@ -147,14 +147,14 @@ public class OperationsPartTests
     public void ExtrudeUntilErrors()
     {
         Assert.Throws<ArgumentException>(() =>
-            Extrude(new Rectangle(1, 1), until: Until.Next, dir: (0, 0, 1), target: new Pos(0, 0, -10) * new Box(1, 1, 1)));
+            Extrude(new Rectangle(1, 1), Until.Next, new Pos(0, 0, -10) * new Box(1, 1, 1), new ExtrudeOptions { Direction = (0, 0, 1) }));
     }
 
     [Fact]
     public void ExtrudeFace()
     {
         var square = Plane.XZ * new Rectangle(10, 10, align: (Align.Center, Align.Min));
-        Check.AlmostEqual(10 * 10 * 10, Extrude(square, amount: 10).Volume, 5);
+        Check.AlmostEqual(10 * 10 * 10, Extrude(square, 10).Volume, 5);
     }
 
     [Fact]
@@ -162,7 +162,7 @@ public class OperationsPartTests
     {
         var cyl = new Cylinder(1, 2);
         var npf = cyl.Split(Plane.XZ).Faces().WhereNot(GeomType.Plane)[0];
-        var testSolid = Extrude(npf, amount: 3, dir: (0, 1, 0));
+        var testSolid = Extrude(npf, 3, new ExtrudeOptions { Direction = (0, 1, 0) });
         Check.AlmostEqual(2 * 2 * 3, testSolid.Volume, 5);
     }
 
@@ -170,29 +170,30 @@ public class OperationsPartTests
     public void NonPlanarFaceWithoutDir()
     {
         var side = new Cylinder(1, 2).Faces().Where(GeomType.Cylinder)[0];
-        var e = Assert.Throws<ArgumentException>(() => Extrude(side, amount: 0.5));
-        Assert.Contains("dir must be provided", e.Message);
+        var e = Assert.Throws<ArgumentException>(() => Extrude(side, 0.5));
+        Assert.Contains("A direction is needed", e.Message);
     }
 
     [Fact]
     public void NoAmountOrUntil()
     {
-        var e = Assert.Throws<ArgumentException>(() => Extrude(new Rectangle(1, 1).SingleFace()));
-        Assert.Contains("Either amount or until", e.Message);
+        // An extrusion takes an amount or an Until and a target by its overload (unit 10M2); nothing to extrude is refused
+        var e = Assert.Throws<ArgumentNullException>(() => Extrude((Shape)null!, 1));
+        Assert.Equal("toExtrude", e.ParamName);
     }
 
     [Fact]
     public void UntilWithoutTarget()
     {
-        var e = Assert.Throws<ArgumentException>(() => Extrude(new Rectangle(1, 1).SingleFace(), until: Until.Next));
-        Assert.Contains("A target object must be provided", e.Message);
+        var e = Assert.Throws<ArgumentNullException>(() => Extrude(new Rectangle(1, 1).SingleFace(), Until.Next, null!));
+        Assert.Equal("target", e.ParamName);
     }
 
     [Fact]
     public void UntilWithEmptyTarget()
     {
-        var e = Assert.Throws<ArgumentException>(() => Extrude(new Rectangle(1, 1), until: Until.Next, target: new Part()));
-        Assert.Contains("No target object provided", e.Message);
+        var e = Assert.Throws<ArgumentException>(() => Extrude(new Rectangle(1, 1), Until.Next, new Part()));
+        Assert.Contains("The target to extrude up to is empty", e.Message);
     }
 
     // ---- TestLoft ----
@@ -440,8 +441,8 @@ public class OperationsPartTests
     [Fact]
     public void SplitNoObjects()
     {
-        var e = Assert.Throws<ArgumentException>(() => Split((IEnumerable<Shape>)null!));
-        Assert.Contains("objects must be provided", e.Message);
+        var e = Assert.Throws<ArgumentNullException>(() => Split((IEnumerable<Shape>)null!));
+        Assert.Equal("objects", e.ParamName);
     }
 
     // ---- TestThicken ----
@@ -449,11 +450,11 @@ public class OperationsPartTests
     [Fact]
     public void ThickenFaces()
     {
-        var part = Thicken(new RectangleRounded(10, 10, 1), amount: 1);
+        var part = Thicken(new RectangleRounded(10, 10, 1), 1);
         Check.AlmostEqual(1, part.BoundingBox().Max.Z, 5);
 
         var nonPlanar = new Sphere(1).Faces()[0];
-        var outerSphere = Thicken(nonPlanar, amount: 0.1);
+        var outerSphere = Thicken(nonPlanar, 0.1);
         Check.AlmostEqual(4.0 / 3 * Math.PI * (Math.Pow(1.1, 3) - 1), outerSphere.Volume, 5);
     }
 
@@ -466,14 +467,14 @@ public class OperationsPartTests
         var part = Thicken(surface, 0.4);
         Check.AlmostEqual(2.241583787221904, part.Volume, 5);
 
-        part = Thicken(Sweep((wire ^ 0) * new RadiusArc((0, 0), (0, -1), 1), wire), 0.4, both: true);
+        part = Thicken(Sweep((wire ^ 0) * new RadiusArc((0, 0), (0, -1), 1), wire), 0.4, new ThickenOptions { Both = true });
         Check.AlmostEqual(4.711747154435256, part.Volume, 5);
     }
 
     [Fact]
     public void ThickenBoth()
     {
-        var part = Thicken(Face.MakeRect(2, 2), amount: 1, both: true);
+        var part = Thicken(Face.MakeRect(2, 2), 1, new ThickenOptions { Both = true });
         Check.AlmostEqual(8, part.Volume, 5);
         Check.AlmostEqual(2, part.BoundingBox().Size.Z, 5);
     }
@@ -481,14 +482,15 @@ public class OperationsPartTests
     [Fact]
     public void ThickenNoAmount()
     {
-        var e = Assert.Throws<ArgumentException>(() => Thicken(new Rectangle(1, 1).SingleFace()));
-        Assert.Contains("An amount must be provided", e.Message);
+        // The amount is required by the signature (unit 10M2); no faces to thicken is refused
+        var e = Assert.Throws<ArgumentNullException>(() => Thicken((IEnumerable<Face>)null!, 1));
+        Assert.Equal("toThicken", e.ParamName);
     }
 
     [Fact]
     public void ThickenNoFace()
     {
-        var e = Assert.Throws<ArgumentException>(() => Thicken((Shape)null!, amount: 1));
-        Assert.Contains("A face or sketch must be provided", e.Message);
+        var e = Assert.Throws<ArgumentNullException>(() => Thicken((Shape)null!, 1));
+        Assert.Equal("toThicken", e.ParamName);
     }
 }

@@ -458,7 +458,7 @@ public class EdgeTests
     {
         var path = new RegularPolygon(5, 5).SingleFace().OuterWire();
         var profile = path.LocationAt(0) * (new Circle(0.6) & new Rectangle(2, 1));
-        var target = Sweep(profile, path, transition: Transition.Right);
+        var target = Sweep(profile, path, new SweepOptions { Transition = Transition.Right });
         var insideEdges = target.Edges().Where(e => e.IsInterior).ToShapeList();
         Assert.Equal(5, insideEdges.Count);
         Assert.All(insideEdges, e => Assert.Equal(GeomType.Ellipse, e.GeomType));

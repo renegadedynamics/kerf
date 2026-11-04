@@ -46,7 +46,7 @@ public class FeatureInputsUnchangedTests
     {
         Part part = Fused();
         Untouched(part, () => Ops.Offset(part, 0.5));
-        Shape shell = Untouched(part, () => Ops.Offset(part, -0.5, openings: [part.Faces().OrderBy(Axis.Z).Last()]));
+        Shape shell = Untouched(part, () => Ops.Offset(part, -0.5, new Ops.OffsetOptions { Openings = [part.Faces().OrderBy(Axis.Z).Last()] }));
         // the bottom face, away from the opening, is the part's own
         Face bottom = part.Faces().OrderBy(Axis.Z)[0];
         Assert.Contains(shell.Faces(), f => f.Wrapped.IsSame(bottom.Wrapped));

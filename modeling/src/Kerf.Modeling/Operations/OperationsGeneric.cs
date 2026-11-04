@@ -29,7 +29,7 @@ public static partial class Operations
     {
         // Phase 5: in builder mode the objects default to the builder's object and the boxes are combined with mode
         if (objects is null)
-            throw new ArgumentException("objects must be provided");
+            throw new ArgumentNullException(nameof(objects));
         var objectList = objects.ToList();
 
         if (objectList.Count > 0 && objectList.All(o => o.IsEmpty))
@@ -292,7 +292,7 @@ public static partial class Operations
         // Phase 5: in builder mode the objects default to the builder's object and the result is combined with mode;
         // BuildSheet mirrors faces into its sheet
         if (objects is null)
-            throw new ArgumentException("objects must be provided");
+            throw new ArgumentNullException(nameof(objects));
         var objectList = objects.ToList();
         var plane = about ?? Plane.XZ;
         var mirrored = objectList.Select(o => o.Mirror(plane)).ToList();
@@ -323,24 +323,22 @@ public static partial class Operations
     /// <summary>
     /// The objects offset by <paramref name="amount"/>, outwards when positive: edges and wires (joined into one wire) are
     /// offset in their plane, faces have their outer wire offset out and their holes in, and solids are offset, with the
-    /// faces among <paramref name="openings"/> left open (a hollow box with no lid). <paramref name="kind"/> shapes the
+    /// faces among <see cref="OffsetOptions.Openings"/> left open (a hollow box with no lid). <see cref="OffsetOptions.Kind"/> shapes the
     /// corners.
     /// </summary>
     /// <param name="objects">Edges, wires, faces, solids or compounds of them.</param>
     /// <param name="amount">The offset distance: positive outwards, negative inwards.</param>
-    /// <param name="openings">Faces of the solids to leave open.</param>
-    /// <param name="kind">The transition at corners.</param>
-    /// <param name="side">For edges, which side to offset to.</param>
-    /// <param name="closed">For edges offset to one side, close the offset back to the edges.</param>
-    /// <param name="minEdgeLength">Remove edges of the offset wires shorter than this, which an offset can degenerate into.</param>
+    /// <param name="options">Faces left open, the corners, the side and closing of an edge's offset; null for the defaults.</param>
     /// <returns>A Part, Sketch or Curve when the objects are all 3D, 2D or 1D; otherwise a Compound.</returns>
-    /// <exception cref="ArgumentException">No objects are given, or one of them can't be offset.</exception>
-    public static Compound Offset(IEnumerable<Shape> objects, double amount = 0, IEnumerable<Face>? openings = null, Kind kind = Kind.Arc,
-                                  Side side = Side.Both, bool closed = true, double? minEdgeLength = null)
+    /// <exception cref="ArgumentNullException"><paramref name="objects"/> is null.</exception>
+    /// <exception cref="ArgumentException">One of the objects can't be offset.</exception>
+    public static Compound Offset(IEnumerable<Shape> objects, double amount, OffsetOptions? options = null)
     {
+        options ??= OffsetOptions.Default;
+        var (openings, kind, side, closed, minEdgeLength) = ((IEnumerable<Face>)options.Openings, options.Kind, options.Side, options.Closed, options.MinEdgeLength);
         // Phase 5: in builder mode the objects default to the builder's object, and the result replaces it by default
         if (objects is null)
-            throw new ArgumentException("objects must be provided");
+            throw new ArgumentNullException(nameof(objects));
         var objectList = objects.ToList();
 
         var edges = new List<Edge>();
@@ -433,10 +431,17 @@ public static partial class Operations
         return OfInputDimension(objectList, [.. newWires, .. newFaces, .. newSolids]);
     }
 
-    /// <inheritdoc cref="Offset(IEnumerable{Shape}, double, IEnumerable{Face}?, Kind, Side, bool, double?)"/>
-    public static Compound Offset(Shape obj, double amount = 0, IEnumerable<Face>? openings = null, Kind kind = Kind.Arc,
-                                  Side side = Side.Both, bool closed = true, double? minEdgeLength = null) =>
-        Offset([obj], amount, openings, kind, side, closed, minEdgeLength);
+    /// <inheritdoc cref="Offset(IEnumerable{Shape}, double, OffsetOptions?)"/>
+    public static Compound Offset(Shape obj, double amount, OffsetOptions? options = null) => Offset([obj], amount, options);
+
+    /// <summary>The part offset: its solids, with <see cref="OffsetOptions.Openings"/> left open.</summary>
+    public static Part Offset(Part obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).As<Part>();
+
+    /// <summary>The sketch offset: its faces' outer wires out and their holes in.</summary>
+    public static Sketch Offset(Sketch obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).As<Sketch>();
+
+    /// <summary>The curve offset in its plane.</summary>
+    public static Curve Offset(Curve obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).As<Curve>();
 
     /// <summary>A 2D offset as a wire: a single-edge offset comes back as its edge.</summary>
     private static Wire AsWire(Shape1D offset) => offset as Wire ?? new Wire((Edge)offset);
@@ -557,7 +562,7 @@ public static partial class Operations
     {
         // Phase 5: in builder mode the objects default to the builder's object, and the result replaces it by default
         if (objects is null)
-            throw new ArgumentException("objects must be provided");
+            throw new ArgumentNullException(nameof(objects));
         var objectList = objects.ToList();
         return (Compound)OfInputDimension(objectList, objectList.Select(scale)).Unwrap(fully: false);
     }
@@ -592,7 +597,7 @@ public static partial class Operations
         // Phase 5: in builder mode the objects default to the builder's object and the result replaces it by default;
         // BuildSheet splits faces of its sheet
         if (objects is null)
-            throw new ArgumentException("objects must be provided");
+            throw new ArgumentNullException(nameof(objects));
         var objectList = objects.ToList();
         var newObjects = new List<Shape>();
         foreach (var obj in objectList)
@@ -615,38 +620,29 @@ public static partial class Operations
     /// <summary>
     /// Sections swept along a path. Faces (and the faces of sketches and solids) sweep into solids, returned as a Part;
     /// edges and wires sweep into faces, returned in a Sketch that holds each section's faces as a shell. With
-    /// <paramref name="multisection"/> the faces' outer wires are the sections of one solid along the path.
+    /// <see cref="SweepOptions.Multisection"/> the faces' outer wires are the sections of one solid along the path.
     /// </summary>
     /// <param name="sections">The cross sections.</param>
     /// <param name="path">The path to follow: an edge, wire or curve.</param>
-    /// <param name="multisection">Sweep one solid through all the sections.</param>
-    /// <param name="isFrenet">Use the Frenet frame of the path.</param>
-    /// <param name="transition">How a section turns a corner of the path.</param>
-    /// <param name="normal">A fixed normal for the sections.</param>
-    /// <param name="binormal">An edge or wire guiding the rotation of the sections along the path.</param>
-    /// <param name="clean">Remove extraneous internal structure.</param>
+    /// <param name="options">One solid through all sections, the frame, corners, a normal or binormal, and the clean.</param>
     /// <returns>A Part for face sections, otherwise a Sketch.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="path"/> is null.</exception>
     /// <exception cref="ArgumentException">The path is empty, or there are no sections.</exception>
-    public static Compound Sweep(IEnumerable<Shape> sections, Shape path, bool multisection = false, bool isFrenet = false,
-                                 Transition transition = Transition.Transformed, Vector? normal = null, Shape1D? binormal = null,
-                                 bool clean = true)
+    public static Compound Sweep(IEnumerable<Shape> sections, Shape path, SweepOptions? options = null)
     {
         // Phase 5: in builder mode the path defaults to the pending edges and the sections to the pending faces, and the
         // result is combined with mode
-        if (path is null)
-            throw new ArgumentException("path must be provided");
+        ArgumentNullException.ThrowIfNull(path);
         if (path.IsEmpty)
-            throw new ArgumentException("Cannot sweep along an empty path");
+            throw new ArgumentException("Can't sweep along an empty path.", nameof(path));
         var pathWire = path as Wire ?? new Wire(path.Edges());
-        return SweepCore(sections, pathWire, multisection, isFrenet, transition, normal, binormal, clean);
+        return SweepCore(sections, pathWire, options ?? SweepOptions.Default);
     }
 
     /// <summary>Sections swept along a path of edges, which must join into a wire.</summary>
-    /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, bool, bool, Transition, Vector?, Shape1D?, bool)"/>
+    /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, SweepOptions?)"/>
     /// <exception cref="ArgumentException">The edges don't join into a wire, or there are no sections.</exception>
-    public static Compound Sweep(IEnumerable<Shape> sections, IEnumerable<Edge> path, bool multisection = false, bool isFrenet = false,
-                                 Transition transition = Transition.Transformed, Vector? normal = null, Shape1D? binormal = null,
-                                 bool clean = true)
+    public static Compound Sweep(IEnumerable<Shape> sections, IEnumerable<Edge> path, SweepOptions? options = null)
     {
         Wire pathWire;
         try
@@ -655,26 +651,35 @@ public static partial class Operations
         }
         catch (ArgumentException e)
         {
-            throw new ArgumentException("Unable to build path from edges", e);
+            throw new ArgumentException("The path's edges don't join into a wire.", nameof(path), e);
         }
-        return SweepCore(sections, pathWire, multisection, isFrenet, transition, normal, binormal, clean);
+        return SweepCore(sections, pathWire, options ?? SweepOptions.Default);
     }
 
-    /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, bool, bool, Transition, Vector?, Shape1D?, bool)"/>
-    public static Compound Sweep(Shape section, Shape path, bool multisection = false, bool isFrenet = false,
-                                 Transition transition = Transition.Transformed, Vector? normal = null, Shape1D? binormal = null,
-                                 bool clean = true) =>
-        Sweep([section], path, multisection, isFrenet, transition, normal, binormal, clean);
+    /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, SweepOptions?)"/>
+    public static Compound Sweep(Shape section, Shape path, SweepOptions? options = null) => Sweep([section], path, options);
 
-    /// <inheritdoc cref="Sweep(IEnumerable{Shape}, IEnumerable{Edge}, bool, bool, Transition, Vector?, Shape1D?, bool)"/>
-    public static Compound Sweep(Shape section, IEnumerable<Edge> path, bool multisection = false, bool isFrenet = false,
-                                 Transition transition = Transition.Transformed, Vector? normal = null, Shape1D? binormal = null,
-                                 bool clean = true) =>
-        Sweep([section], path, multisection, isFrenet, transition, normal, binormal, clean);
+    /// <inheritdoc cref="Sweep(IEnumerable{Shape}, IEnumerable{Edge}, SweepOptions?)"/>
+    public static Compound Sweep(Shape section, IEnumerable<Edge> path, SweepOptions? options = null) => Sweep([section], path, options);
 
-    private static Compound SweepCore(IEnumerable<Shape> sections, Wire pathWire, bool multisection, bool isFrenet,
-                                      Transition transition, Vector? normal, Shape1D? binormal, bool clean)
+    /// <summary>A face or sketch swept along a path into a Part.</summary>
+    /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, SweepOptions?)"/>
+    public static Part Sweep(Shape2D section, Shape path, SweepOptions? options = null) => Sweep([(Shape)section], path, options).As<Part>();
+
+    /// <inheritdoc cref="Sweep(Shape2D, Shape, SweepOptions?)"/>
+    public static Part Sweep(Sketch section, Shape path, SweepOptions? options = null) => Sweep([(Shape)section], path, options).As<Part>();
+
+    /// <summary>An edge, wire or curve swept along a path into a Sketch of faces.</summary>
+    /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, SweepOptions?)"/>
+    public static Sketch Sweep(Shape1D section, Shape path, SweepOptions? options = null) => Sweep([(Shape)section], path, options).As<Sketch>();
+
+    /// <inheritdoc cref="Sweep(Shape1D, Shape, SweepOptions?)"/>
+    public static Sketch Sweep(Curve section, Shape path, SweepOptions? options = null) => Sweep([(Shape)section], path, options).As<Sketch>();
+
+    private static Compound SweepCore(IEnumerable<Shape> sections, Wire pathWire, SweepOptions options)
     {
+        var (multisection, isFrenet, transition, normal, binormal, clean) =
+            (options.Multisection, options.IsFrenet, options.Transition, options.Normal, options.Binormal, options.Clean);
         var sectionList = sections?.Where(s => s is not null).ToList() ?? [];
         if (sectionList.Count > 0 && sectionList.All(s => s.IsEmpty))
             // Nothing swept along anything is nothing, one dimension up

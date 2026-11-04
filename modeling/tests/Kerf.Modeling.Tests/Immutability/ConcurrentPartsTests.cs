@@ -18,7 +18,7 @@ public class ConcurrentPartsTests
     private static readonly (string Name, Func<Shape> Build)[] Parts =
     [
         ("plate with hole", () => new Box(Length, Width, Thickness) - new Cylinder(22.0 / 2, Thickness)),
-        ("prismatic solid", () => Extrude(new Circle(Width) - new Rectangle(Length / 2, Width / 2), amount: 2 * Thickness)),
+        ("prismatic solid", () => Extrude(new Circle(Width) - new Rectangle(Length / 2, Width / 2), 2 * Thickness)),
         ("working point", () => Extrude(new Circle(90) - new Pos(45, 0.0) * new Rectangle(15, 15) - new Pos(0.0, 45) * new Circle(7.5), 15)),
         ("chamfer, fillet", () =>
         {

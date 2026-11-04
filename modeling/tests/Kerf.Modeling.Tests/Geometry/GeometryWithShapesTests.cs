@@ -181,7 +181,7 @@ public class PlaneWithShapesTests
         var cyl = new Cylinder(1, 2, align: Align.Min);
         var top = cyl.Faces().OrderBy(Axis.Z)[^1];
         var pln = new Plane(top).ShiftOrigin(Axis.Z);
-        var p = cyl - Ops.Extrude(pln * (new Pos(1, 1) * new Circle(0.5)), amount: -2);
+        var p = cyl - Ops.Extrude(pln * (new Pos(1, 1) * new Circle(0.5)), -2);
         Check.AlmostEqual(Math.PI * (1 - 0.5 * 0.5) * 2, p.Volume, 5);
     }
 
@@ -191,7 +191,7 @@ public class PlaneWithShapesTests
         var box = new Box(1, 1, 1, align: Align.Min);
         var front = box.Faces().OrderBy(Axis.X)[^1];
         var pln = new Plane(front).ShiftOrigin(front.Vertices().GroupBy(Axis.Z)[^1].OrderBy(Axis.Y)[^1]);
-        var p = box - Ops.Extrude(pln * (new Pos(-0.5, 0.5) * new Circle(0.5)), amount: -1);
+        var p = box - Ops.Extrude(pln * (new Pos(-0.5, 0.5) * new Circle(0.5)), -1);
         Check.AlmostEqual(1 - Math.PI * 0.5 * 0.5 * 1, p.Volume, 5);
     }
 
@@ -202,7 +202,7 @@ public class PlaneWithShapesTests
         var top = b.Faces().OrderBy(Axis.Z)[^1];
         var reference = top.Edges().Where(GeomType.Circle).GroupBy(Axis.X)[^1].OrderBy(Axis.Y)[0].ArcCenter;
         var pln = new Plane(top, xDir: (0, 1, 0)).ShiftOrigin(reference);
-        var p = b - Ops.Extrude(pln * (new Pos(0.5, 0.5) * new Rectangle(2, 2, align: Align.Min)), amount: -1);
+        var p = b - Ops.Extrude(pln * (new Pos(0.5, 0.5) * new Rectangle(2, 2, align: Align.Min)), -1);
         Check.AlmostEqual(b.Volume - 2 * 2 * 1, p.Volume, 5);
     }
 

@@ -43,7 +43,7 @@ public class OperationsSketchTests
     [Fact]
     public void OffsetSketchFace()
     {
-        var test = Offset(new Circle(10).Faces()[0], amount: 1);
+        var test = Offset(new Circle(10).Faces()[0], 1);
         Check.AlmostEqual(11, test.Edges()[0].Radius);
     }
 
