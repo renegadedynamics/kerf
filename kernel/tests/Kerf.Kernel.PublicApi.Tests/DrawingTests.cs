@@ -209,4 +209,14 @@ public class DrawingTests
         // A compound of nothing draws nothing
         Assert.Empty(Compound.Create([]).ProjectLines(Camera.Top).Value.Edges);
     }
+
+    [Fact]
+    public void The_same_shape_gives_the_same_drawing()
+    {
+        Solid cylinder = Fixtures.Cylinder();
+        string first = Svg.WriteToString(cylinder.ProjectLines(Camera.Isometric).Value);
+        string[] others = new string[4];
+        Parallel.For(0, others.Length, i => others[i] = Svg.WriteToString(cylinder.ProjectLines(Camera.Isometric).Value));
+        Assert.All(others, o => Assert.Equal(first, o));
+    }
 }

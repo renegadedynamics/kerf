@@ -96,7 +96,7 @@ public sealed record DrawnEdge(Curve2D Curve, LineKind Kind, bool IsVisible, Sha
 
 /// <summary>
 /// A line drawing: shapes projected by a <see cref="Camera"/>, as visible and hidden 2D edges (OCCT's hidden-line
-/// removal; docs/api/drawing.md). <c>Svg</c> writes one.
+/// removal; docs/api/drawing.md). <see cref="Svg"/> writes one.
 /// </summary>
 /// <remarks>The edges are in the engine's order: by kind (sharp, smooth, sewn, outline, isoline), visible before hidden,
 /// then by the shapes' faces and edges. The same shapes and options always give the same drawing.</remarks>
