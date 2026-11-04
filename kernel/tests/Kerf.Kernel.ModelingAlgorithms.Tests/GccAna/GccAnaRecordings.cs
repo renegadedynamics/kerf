@@ -351,6 +351,9 @@ internal static class GccAnaRecordings
     private static LawCase Tan3(GccLaws.Arg a, GccLaws.Arg b, GccLaws.Arg c, double t)
         => new([a, b, c], null, null, t, () => GccAna_Circ2d3TanLawsTests.View(GccAna_Circ2d3TanLawsTests.Solve(a, b, c, t)));
 
+    private static LawCase On2(GccLaws.Arg a, GccLaws.Arg b, GccLaws.Locus on, double t)
+        => new([a, b], on, null, t, () => GccAna_Circ2d2TanOnLawsTests.View(GccAna_Circ2d2TanOnLawsTests.Solve(a, b, on, t)));
+
     /// <summary>The case as the laws see it, or null for a solver they don't cover.</summary>
     public static LawCase? Laws(Case theCase)
     {
@@ -367,6 +370,18 @@ internal static class GccAnaRecordings
             case "3Tan.CPP": { var a = r.QC(); var b = r.Pnt(); var c = r.Pnt(); return Tan3(A(a), A(b), A(c), r.D()); }
             case "3Tan.LPP": { var a = r.QL(); var b = r.Pnt(); var c = r.Pnt(); return Tan3(A(a), A(b), A(c), r.D()); }
             case "3Tan.PPP": { var a = r.Pnt(); var b = r.Pnt(); var c = r.Pnt(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "2TanOn.CCl": { var a = r.QC(); var b = r.QC(); var c = r.Lin(); return On2(A(a), A(b), new GccLaws.OnLine(c), r.D()); }
+            case "2TanOn.CLl": { var a = r.QC(); var b = r.QL(); var c = r.Lin(); return On2(A(a), A(b), new GccLaws.OnLine(c), r.D()); }
+            case "2TanOn.LLl": { var a = r.QL(); var b = r.QL(); var c = r.Lin(); return On2(A(a), A(b), new GccLaws.OnLine(c), r.D()); }
+            case "2TanOn.CPl": { var a = r.QC(); var b = r.Pnt(); var c = r.Lin(); return On2(A(a), A(b), new GccLaws.OnLine(c), r.D()); }
+            case "2TanOn.LPl": { var a = r.QL(); var b = r.Pnt(); var c = r.Lin(); return On2(A(a), A(b), new GccLaws.OnLine(c), r.D()); }
+            case "2TanOn.PPl": { var a = r.Pnt(); var b = r.Pnt(); var c = r.Lin(); return On2(A(a), A(b), new GccLaws.OnLine(c), r.D()); }
+            case "2TanOn.CCc": { var a = r.QC(); var b = r.QC(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
+            case "2TanOn.CLc": { var a = r.QC(); var b = r.QL(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
+            case "2TanOn.CPc": { var a = r.QC(); var b = r.Pnt(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
+            case "2TanOn.LLc": { var a = r.QL(); var b = r.QL(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
+            case "2TanOn.LPc": { var a = r.QL(); var b = r.Pnt(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
+            case "2TanOn.PPc": { var a = r.Pnt(); var b = r.Pnt(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
         }
         return null;
     }

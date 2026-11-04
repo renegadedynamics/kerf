@@ -216,24 +216,6 @@ internal static class ConstrainedSolvers
         return maker.Edge();
     }
 
-    /// <summary>
-    /// Adds π to the circle parameters of a solution enclosed by a circular target, when at least one target isn't circular
-    /// (GccAna_Circ2d3Tan, used for all-circle inputs, already gets the enclosed direction right).
-    /// </summary>
-    private static double[] EnclosedCircParamOffset(IReadOnlyList<Tangent> tangents, Circle2D circ, double[] parameters)
-    {
-        var isCirc = tangents.Select(t => t.Edge is { } e && e.GeomType == GeomType.Circle).ToList();
-        if (isCirc.All(c => c))
-            return parameters;
-        var center = circ.Location;
-        var centerV = new Vector(center.X, center.Y, 0);
-        var result = parameters.ToArray();
-        for (int i = 0; i < parameters.Length && i < tangents.Count; i++)
-            if (tangents[i].Edge is { } e && isCirc[i] && (centerV - e.ArcCenter).Length < e.Radius)
-                result[i] = parameters[i] + Math.PI;
-        return result;
-    }
-
     // ---- Arcs ----
 
     internal static ShapeList<Edge> TwoTanRadArcs(List<Tangent> tangents, double radius, Sagitta sagitta)
@@ -335,8 +317,7 @@ internal static class ConstrainedSolvers
             gcc.Tangency2(i, out uc2, out ua2, out p);
             if (!Ok(1, ua2))
                 continue;
-            var u = EnclosedCircParamOffset(all, circ, [uc1, uc2]);
-            solutions.AddRange(BySagitta(TwoArcEdgesFromParams(circ, u[0], u[1]), sagitta));
+            solutions.AddRange(BySagitta(TwoArcEdgesFromParams(circ, uc1, uc2), sagitta));
         }
         return new ShapeList<Edge>(solutions.Select(e => new Edge(e)));
     }

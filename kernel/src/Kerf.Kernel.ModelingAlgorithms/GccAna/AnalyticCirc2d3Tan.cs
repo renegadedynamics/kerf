@@ -1028,24 +1028,9 @@ public sealed partial class AnalyticCirc2d3Tan
         _qualifier1[n] = q1;
         _qualifier2[n] = q2;
         _qualifier3[n] = q3;
-        _theSame1[n] = Touch(n, sol, a1, q1, tolerance, _pnttg1sol, _par1sol, _pararg1);
-        _theSame2[n] = Touch(n, sol, a2, q2, tolerance, _pnttg2sol, _par2sol, _pararg2);
-        _theSame3[n] = Touch(n, sol, a3, q3, tolerance, _pnttg3sol, _par3sol, _pararg3);
-    }
-
-    /// <summary>Writes the tangency data of solution n with an argument; 1 (and none) if the solution is the argument.</summary>
-    private static int Touch(int n, in Circle2D sol, in CircleContact a, Qualifier q, double tolerance,
-                             NCollection_Array1<Point2D> pnt, NCollection_Array1<double> parSol, NCollection_Array1<double> parArg)
-    {
-        if (a.IsSame(sol, tolerance))
-        {
-            return 1;
-        }
-        Point2D p = a.TouchPoint(sol, q);
-        pnt[n] = p;
-        parSol[n] = global::Kerf.Engine.Geometry.ElCLib.Parameter(sol, p);
-        parArg[n] = a.Parameter(p);
-        return 0;
+        _theSame1[n] = a1.Touch(n, sol, q1, tolerance, _pnttg1sol, _par1sol, _pararg1);
+        _theSame2[n] = a2.Touch(n, sol, q2, tolerance, _pnttg2sol, _par2sol, _pararg2);
+        _theSame3[n] = a3.Touch(n, sol, q3, tolerance, _pnttg3sol, _par3sol, _pararg3);
     }
 
     /// <summary>True if the construction succeeded.</summary>

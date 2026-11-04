@@ -113,8 +113,14 @@ public sealed partial class Geom2dGccOracleTests
     }
 
     /// <summary>The distances from a point to a curve where they are extremal.</summary>
+    /// <remarks>A trimmed curve's basis is used: the solvers solve on the whole line or circle (GccAna), and the laws don't judge
+    /// where on the curve a solution touches.</remarks>
     private static IEnumerable<double> Distances(Point2D theP, Curve2D theC)
     {
+        while (theC is TrimmedCurve2D t)
+        {
+            theC = t.BasisCurve;
+        }
         ProjectPointOnCurve2D aProj = new(theP, theC);
         return Enumerable.Range(1, aProj.NbPoints()).Select(aProj.Distance).ToList();
     }

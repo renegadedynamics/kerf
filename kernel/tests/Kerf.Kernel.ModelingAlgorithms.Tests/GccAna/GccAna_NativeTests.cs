@@ -51,6 +51,10 @@ public class GccAna_NativeTests(ITestOutputHelper theOutput)
         ["3Tan.CCC"] = "decision 17101", ["3Tan.CCL"] = "decision 17101", ["3Tan.CLL"] = "decision 17101",
         ["3Tan.LLL"] = "decision 17101", ["3Tan.CCP"] = "decision 17101", ["3Tan.CLP"] = "decision 17101",
         ["3Tan.LLP"] = "decision 17101",
+        ["2TanOn.CCl"] = "decision 17102", ["2TanOn.CLl"] = "decision 17102", ["2TanOn.LLl"] = "decision 17102",
+        ["2TanOn.CPl"] = "decision 17102", ["2TanOn.LPl"] = "decision 17102", ["2TanOn.PPl"] = "decision 17102",
+        ["2TanOn.CCc"] = "decision 17102", ["2TanOn.CLc"] = "decision 17102", ["2TanOn.CPc"] = "decision 17102",
+        ["2TanOn.LLc"] = "decision 17102", ["2TanOn.LPc"] = "decision 17102", ["2TanOn.PPc"] = "decision 17102",
     };
 
     /// <summary>The law tolerance for a case solved with the given tolerance.</summary>

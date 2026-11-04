@@ -712,6 +712,8 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                     return NCirc2d2TanOn(new N.Geom2dGcc_Circ2d2TanOn(NQ(n1, a1.Q), NQ(n2, a2.Q), anOn, tol, u1, u2, u3));
                 }),
                 Port = () => RunPort(() => PCirc2d2TanOn(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanOn(PQ(p1, a1.Q), PQ(p2, a2.Q), new CurveAdaptor2D(p3), tol, u1, u2, u3))),
+                Laws = new([L(a1, p1), L(a2, p2)], p3, null, tol),
+                Corrected = "GccAna_Circ2d2TanOn (decision 17102)",
             };
             if (!(a1.IsAnalytic && a2.IsAnalytic && a3.IsAnalytic))
             {
@@ -741,6 +743,8 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                     return NCirc2d2TanOn(new N.Geom2dGcc_Circ2d2TanOn(NQ(n1, a1.Q), new N.Geom2d_CartesianPoint(x, y), anOn, tol, u1, u3));
                 }),
                 Port = () => RunPort(() => PCirc2d2TanOn(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanOn(PQ(p1, a1.Q), new CartesianPoint2(x, y), new CurveAdaptor2D(p3), tol, u1, u3))),
+                Laws = new([L(a1, p1), L(x, y)], p3, null, tol),
+                Corrected = "GccAna_Circ2d2TanOn (decision 17102)",
             };
             if (a1.IsCircle && a3.IsLine)
             {
@@ -775,6 +779,8 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                     return NCirc2d2TanOn(new N.Geom2dGcc_Circ2d2TanOn(new N.Geom2d_CartesianPoint(x1, y1), new N.Geom2d_CartesianPoint(x2, y2), anOn, tol));
                 }),
                 Port = () => RunPort(() => PCirc2d2TanOn(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanOn(new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), new CurveAdaptor2D(p3), tol))),
+                Laws = new([L(x1, y1), L(x2, y2)], p3, null, tol),
+                Corrected = "GccAna_Circ2d2TanOn (decision 17102)",
             };
         });
 
