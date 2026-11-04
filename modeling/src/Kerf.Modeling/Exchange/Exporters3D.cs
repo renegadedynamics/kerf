@@ -4,12 +4,90 @@ using Kerf.Meshing;
 
 namespace Kerf.Modeling;
 
+/// <summary>How <see cref="Exporters3D.ExportStep(Shape, Stream, StepExportOptions?, CancellationToken)"/> writes STEP.</summary>
+public sealed record StepExportOptions
+{
+    /// <summary>The options by default: millimetres, with pcurves, at the average precision, stamped with the time of writing.</summary>
+    public static StepExportOptions Default { get; } = new();
+
+    /// <summary>The length unit written; a unit that isn't a length throws <see cref="ArgumentException"/> when used.</summary>
+    public Unit Unit { get; init; } = Unit.Millimeter;
+
+    /// <summary>Whether edges keep their curves on surfaces.</summary>
+    public bool WritePcurves { get; init; } = true;
+
+    /// <summary>The precision the file declares.</summary>
+    public PrecisionMode PrecisionMode { get; init; } = PrecisionMode.Average;
+
+    /// <summary>An ISO 8601 time stamp in place of the time of writing in the header, for repeatable output.</summary>
+    public string? Timestamp { get; init; }
+}
+
+/// <summary>How <see cref="Exporters3D.ExportStl(Shape, Stream, StlExportOptions?, CancellationToken)"/> meshes and writes STL.</summary>
+public sealed record StlExportOptions
+{
+    /// <summary>The options by default: binary, at a linear deflection of 0.001 and an angular one of 0.1.</summary>
+    public static StlExportOptions Default { get; } = new();
+
+    /// <summary>The mesh's linear deflection, relative to each edge's size, as build123d meshes.</summary>
+    public double Tolerance { get; init; } = 1e-3;
+
+    /// <summary>The mesh's angular deflection.</summary>
+    public double AngularTolerance { get; init; } = 0.1;
+
+    /// <summary>Whether to write ASCII rather than binary.</summary>
+    public bool Ascii { get; init; }
+}
+
+/// <summary>How <see cref="Exporters3D.ExportGltf(Shape, Stream, GltfExportOptions?, CancellationToken)"/> meshes and writes glTF.</summary>
+public sealed record GltfExportOptions
+{
+    /// <summary>The options by default: JSON, from millimetres, at a linear deflection of 0.001 and an angular one of 0.1.</summary>
+    public static GltfExportOptions Default { get; } = new();
+
+    /// <summary>The shape's length unit, turned into metres as glTF wants; a unit that isn't a length throws <see cref="ArgumentException"/> when used.</summary>
+    public Unit Unit { get; init; } = Unit.Millimeter;
+
+    /// <summary>Whether to write binary (<c>.glb</c>) rather than JSON (<c>.gltf</c>).</summary>
+    public bool Binary { get; init; }
+
+    /// <summary>The mesh's linear deflection, relative to each edge's size.</summary>
+    public double LinearDeflection { get; init; } = 0.001;
+
+    /// <summary>The mesh's angular deflection.</summary>
+    public double AngularDeflection { get; init; } = 0.1;
+}
+
+/// <summary>How <see cref="Exporters3D.Export3mf(Shape, Stream, ThreeMfExportOptions?, CancellationToken)"/> meshes and writes 3MF.</summary>
+public sealed record ThreeMfExportOptions
+{
+    /// <summary>The options by default: millimetres, at a linear deflection of 0.001 and an angular one of 0.1.</summary>
+    public static ThreeMfExportOptions Default { get; } = new();
+
+    /// <summary>The length unit written; a unit that isn't a length throws <see cref="ArgumentException"/> when used.</summary>
+    public Unit Unit { get; init; } = Unit.Millimeter;
+
+    /// <summary>The mesh's linear deflection, relative to each edge's size.</summary>
+    public double LinearDeflection { get; init; } = 0.001;
+
+    /// <summary>The mesh's angular deflection.</summary>
+    public double AngularDeflection { get; init; } = 0.1;
+}
+
 /// <summary>
 /// build123d's 3D exporters (<c>exporters3d.py</c>): BREP, STEP, STL and glTF, and 3MF (build123d's <c>Mesher</c>).
 /// Each writes a stream, with cancellation; the file forms write a file. None changes the shape it's given: the mesh
 /// formats mesh private copies, as <see cref="Shape.Tessellate"/> does.
 /// </summary>
 /// <remarks>
+/// <para>
+/// Each returns a <see cref="Result"/> (unit 10P2), as the importers do: an empty shape is
+/// <c>exchange.nothing-done</c>, a mesh that can't be made is the mesher's diagnostic, a writer's failure the exchange's
+/// (<c>exchange.write-failed</c>, <c>exchange.failed</c>), and a file or stream that can't be written
+/// <c>exchange.write-failed</c>. Misuse throws: a null argument, a unit that isn't a length
+/// (<see cref="ArgumentException"/>), a folder that doesn't exist (<see cref="DirectoryNotFoundException"/>, as a
+/// missing file is for the importers). Cancellation throws <see cref="OperationCanceledException"/>.
+/// </para>
 /// <para>
 /// STEP is written as build123d writes it: through an assembly document (OCCT.NET's STEPCAFControl over its XdeDoc
 /// tree), a product per part and assembly, named by its label and coloured by its colour. The FILE_NAME header carries
@@ -21,155 +99,174 @@ namespace Kerf.Modeling;
 /// </remarks>
 public static class Exporters3D
 {
-    /// <summary>Writes a shape as BREP (OCCT's text format, with any triangulations). True on success.</summary>
-    public static bool ExportBrep(Shape toExport, Stream stream)
+    private static readonly DiagnosticCode NothingDone = new("exchange.nothing-done");
+    private static readonly DiagnosticCode WriteFailed = new("exchange.write-failed");
+
+    /// <summary>Writes a shape as BREP (OCCT's text format, with any triangulations).</summary>
+    public static Result ExportBrep(Shape toExport, Stream stream)
     {
         ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(stream);
-        NothingToExport(toExport);
-        stream.Write(Extras.WriteBRep(toExport.TopoShape, withTriangles: true));
-        return true;
+        return Export(toExport, () =>
+        {
+            stream.Write(Extras.WriteBRep(toExport.TopoShape, withTriangles: true));
+            return Result.Success();
+        });
     }
 
     /// <summary>Writes a shape to a BREP file.</summary>
-    public static bool ExportBrep(Shape toExport, string filePath) => ToFile(filePath, s => ExportBrep(toExport, s));
+    public static Result ExportBrep(Shape toExport, string filePath) => ToFile(filePath, s => ExportBrep(toExport, s));
 
     /// <summary>
-    /// Writes a shape or assembly as STEP (AP214, as OCCT writes by default), in <paramref name="unit"/>, with or
-    /// without pcurves, at a precision mode; <paramref name="timestamp"/> (ISO 8601) replaces the time of writing in the
-    /// header, for repeatable output. As build123d's <c>export_step</c>: an assembly (a compound with
-    /// <see cref="Compound.AssemblyChildren"/>) is written as one, each child a component at its location, children of
-    /// one shape, label and colour written once; labels name the products and colours colour them.
+    /// Writes a shape or assembly as STEP (AP214, as OCCT writes by default). As build123d's <c>export_step</c>: an
+    /// assembly (a compound with <see cref="Compound.AssemblyChildren"/>) is written as one, each child a component at
+    /// its location, children of one shape, label and colour written once; labels name the products and colours colour
+    /// them.
     /// </summary>
-    /// <exception cref="InvalidOperationException">The shape is empty, or OCCT couldn't translate it.</exception>
-    public static bool ExportStep(Shape toExport, Stream stream, Unit unit = Unit.Millimeter, bool writePcurves = true,
-                                  PrecisionMode precisionMode = PrecisionMode.Average, string? timestamp = null,
-                                  CancellationToken cancellationToken = default)
+    public static Result ExportStep(Shape toExport, Stream stream, StepExportOptions? options = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(stream);
-        NothingToExport(toExport);
-        var options = new StepWriteOptions
+        options ??= StepExportOptions.Default;
+        var writeOptions = new StepWriteOptions
         {
-            Unit = ExchangeUnits.LengthUnit(unit, "unit"),
-            WritePcurves = writePcurves,
-            Precision = (StepPrecision)(int)precisionMode,
+            Unit = ExchangeUnits.LengthUnit(options.Unit, "unit"),
+            WritePcurves = options.WritePcurves,
+            Precision = (StepPrecision)(int)options.PrecisionMode,
         };
-        using var text = new MemoryStream();
-        if (!Step.Write(StepTree(toExport), text, options, cancellationToken: cancellationToken).IsSuccess)
-            throw new InvalidOperationException("Failed to write STEP file");
-        stream.Write(StepHeader.WithFileName(text.ToArray(), toExport.Label.Length > 0 ? toExport.Label : null, timestamp, "build123d"));
-        return true;
+        return Export(toExport, () =>
+        {
+            using var text = new MemoryStream();
+            var written = Step.Write(StepTree(toExport), text, writeOptions, cancellationToken: cancellationToken);
+            if (written.IsFailure)
+                return written;
+            stream.Write(StepHeader.WithFileName(text.ToArray(), toExport.Label.Length > 0 ? toExport.Label : null, options.Timestamp, "build123d"));
+            return written;
+        });
     }
 
     /// <summary>Writes a shape to a STEP file.</summary>
-    public static bool ExportStep(Shape toExport, string filePath, Unit unit = Unit.Millimeter, bool writePcurves = true,
-                                  PrecisionMode precisionMode = PrecisionMode.Average, string? timestamp = null,
-                                  CancellationToken cancellationToken = default)
-        => ToFile(filePath, s => ExportStep(toExport, s, unit, writePcurves, precisionMode, timestamp, cancellationToken));
+    public static Result ExportStep(Shape toExport, string filePath, StepExportOptions? options = null, CancellationToken cancellationToken = default)
+        => ToFile(filePath, s => ExportStep(toExport, s, options, cancellationToken));
 
-    /// <summary>
-    /// Writes a shape's mesh as STL, binary or ASCII. <paramref name="tolerance"/> and
-    /// <paramref name="angularTolerance"/> are the mesh's deflections (relative to each edge's size, as build123d
-    /// meshes).
-    /// </summary>
-    public static bool ExportStl(Shape toExport, Stream stream, double tolerance = 1e-3, double angularTolerance = 0.1,
-                                 bool asciiFormat = false, CancellationToken cancellationToken = default)
+    /// <summary>Writes a shape's mesh as STL, binary or ASCII.</summary>
+    public static Result ExportStl(Shape toExport, Stream stream, StlExportOptions? options = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(stream);
-        NothingToExport(toExport);
-        var mesh = Failures.Get(Mesher.Mesh(toExport.TopoShape, MeshOptions(tolerance, angularTolerance), cancellationToken: cancellationToken),
-                                () => "mesh");
-        return Stl.Write(mesh, stream, new StlWriteOptions { Ascii = asciiFormat }, cancellationToken).IsSuccess;
+        options ??= StlExportOptions.Default;
+        return Export(toExport, () =>
+        {
+            var mesh = Failures.Get(Mesher.Mesh(toExport.TopoShape, MeshOptions(options.Tolerance, options.AngularTolerance), cancellationToken: cancellationToken),
+                                    () => "mesh");
+            return Stl.Write(mesh, stream, new StlWriteOptions { Ascii = options.Ascii }, cancellationToken);
+        });
     }
 
     /// <summary>Writes a shape's mesh to an STL file, whose folder must exist.</summary>
-    public static bool ExportStl(Shape toExport, string filePath, double tolerance = 1e-3, double angularTolerance = 0.1,
-                                 bool asciiFormat = false, CancellationToken cancellationToken = default)
-        => ToFile(filePath, s => ExportStl(toExport, s, tolerance, angularTolerance, asciiFormat, cancellationToken));
+    public static Result ExportStl(Shape toExport, string filePath, StlExportOptions? options = null, CancellationToken cancellationToken = default)
+        => ToFile(filePath, s => ExportStl(toExport, s, options, cancellationToken));
 
     /// <summary>
     /// Writes a shape or assembly as glTF 2.0: binary (<c>.glb</c>), or JSON (<c>.gltf</c>) with its buffer embedded
-    /// as a <c>data:</c> URI, since one stream can't carry the <c>.bin</c> file beside it. Z-up turned Y-up, and
-    /// <paramref name="unit"/> into metres, as glTF wants; a material per colour; a node per assembly child, named by
-    /// its label.
+    /// as a <c>data:</c> URI, since one stream can't carry the <c>.bin</c> file beside it. Z-up turned Y-up, and the
+    /// unit into metres, as glTF wants; a material per colour; a node per assembly child, named by its label.
     /// </summary>
-    public static bool ExportGltf(Shape toExport, Stream stream, Unit unit = Unit.Millimeter, bool binary = false,
-                                  double linearDeflection = 0.001, double angularDeflection = 0.1,
-                                  CancellationToken cancellationToken = default)
+    public static Result ExportGltf(Shape toExport, Stream stream, GltfExportOptions? options = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(stream);
-        NothingToExport(toExport);
-        var options = GltfOptions(unit, binary, linearDeflection, angularDeflection);
-        return Gltf.Write(MeshTree(toExport), stream, options, cancellationToken).IsSuccess;
+        var writeOptions = GltfOptions(options ?? GltfExportOptions.Default);
+        return Export(toExport, () => Gltf.Write(MeshTree(toExport), stream, writeOptions, cancellationToken));
     }
 
     /// <summary>
     /// Writes a shape or assembly to a glTF 2.0 file: binary, or JSON with its buffer in a <c>.bin</c> file of the
     /// same name beside it, as build123d's.
     /// </summary>
-    public static bool ExportGltf(Shape toExport, string filePath, Unit unit = Unit.Millimeter, bool binary = false,
-                                  double linearDeflection = 0.001, double angularDeflection = 0.1,
-                                  CancellationToken cancellationToken = default)
+    public static Result ExportGltf(Shape toExport, string filePath, GltfExportOptions? options = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(filePath);
-        NothingToExport(toExport);
-        if (binary)
-            return ToFile(filePath, s => ExportGltf(toExport, s, unit, binary, linearDeflection, angularDeflection, cancellationToken));
-        var options = GltfOptions(unit, binary, linearDeflection, angularDeflection);
-        var tree = MeshTree(toExport);
+        options ??= GltfExportOptions.Default;
+        if (options.Binary)
+            return ToFile(filePath, s => ExportGltf(toExport, s, options, cancellationToken));
+        var writeOptions = GltfOptions(options);
         var binPath = Path.ChangeExtension(filePath, ".bin");
         using var bin = new MemoryStream();
-        var done = ToFile(filePath, s => Gltf.Write(tree, s, bin, Path.GetFileName(binPath), options, cancellationToken).IsSuccess);
-        if (done && bin.Length > 0)
+        var done = ToFile(filePath, s => Export(toExport, () => Gltf.Write(MeshTree(toExport), s, bin, Path.GetFileName(binPath), writeOptions, cancellationToken)));
+        if (done.IsFailure || bin.Length == 0)
+            return done;
+        try
+        {
             File.WriteAllBytes(binPath, bin.ToArray());
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return Result.Failure(Diagnostic.Error(WriteFailed, $"{binPath} couldn't be written: {e.Message}"));
+        }
         return done;
     }
 
     /// <summary>
     /// Writes a shape or assembly as 3MF (3MF Core: a mesh object per part, a components object per assembly, a base
-    /// material per colour), in <paramref name="unit"/>. build123d writes 3MF through its <c>Mesher</c> (lib3mf);
-    /// this is its <c>add_shape</c> and <c>write</c> in one, with <c>add_shape</c>'s deflections.
+    /// material per colour). build123d writes 3MF through its <c>Mesher</c> (lib3mf); this is its <c>add_shape</c> and
+    /// <c>write</c> in one, with <c>add_shape</c>'s deflections.
     /// </summary>
-    public static bool Export3mf(Shape toExport, Stream stream, Unit unit = Unit.Millimeter, double linearDeflection = 0.001,
-                                 double angularDeflection = 0.1, CancellationToken cancellationToken = default)
+    public static Result Export3mf(Shape toExport, Stream stream, ThreeMfExportOptions? options = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(stream);
-        NothingToExport(toExport);
-        var options = new ThreeMfWriteOptions { Unit = ExchangeUnits.LengthUnit(unit, "unit"), Mesh = MeshOptions(linearDeflection, angularDeflection) };
-        return ThreeMf.Write(MeshTree(toExport), stream, options, cancellationToken).IsSuccess;
+        options ??= ThreeMfExportOptions.Default;
+        var writeOptions = new ThreeMfWriteOptions { Unit = ExchangeUnits.LengthUnit(options.Unit, "unit"), Mesh = MeshOptions(options.LinearDeflection, options.AngularDeflection) };
+        return Export(toExport, () => ThreeMf.Write(MeshTree(toExport), stream, writeOptions, cancellationToken));
     }
 
     /// <summary>Writes a shape or assembly to a 3MF file.</summary>
-    public static bool Export3mf(Shape toExport, string filePath, Unit unit = Unit.Millimeter, double linearDeflection = 0.001,
-                                 double angularDeflection = 0.1, CancellationToken cancellationToken = default)
-        => ToFile(filePath, s => Export3mf(toExport, s, unit, linearDeflection, angularDeflection, cancellationToken));
+    public static Result Export3mf(Shape toExport, string filePath, ThreeMfExportOptions? options = null, CancellationToken cancellationToken = default)
+        => ToFile(filePath, s => Export3mf(toExport, s, options, cancellationToken));
 
-    private static void NothingToExport(Shape shape)
+    // An export's failures as its result: nothing to write, a failure carried up from the kernel, or a stream or
+    // file that can't be written
+    private static Result Export(Shape shape, Func<Result> write)
     {
         if (shape.IsEmpty)
-            throw new InvalidOperationException($"There is nothing to export: the {shape.GetType().Name} is empty");
+            return Result.Failure(Diagnostic.Error(NothingDone, $"There is nothing to export: the {shape.GetType().Name} is empty"));
+        Result<Result> done;
+        try
+        {
+            done = Failures.Try(write);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return Result.Failure(Diagnostic.Error(WriteFailed, $"The data couldn't be written: {e.Message}"));
+        }
+        return done.TryGetValue(out var result) ? result : Result.Failure(done.Diagnostics);
     }
 
     // The data is made in memory and written only if it's whole, so a failure leaves no partial file. The folder must
     // exist, as build123d's export_stl requires.
-    private static bool ToFile(string filePath, Func<Stream, bool> write)
+    private static Result ToFile(string filePath, Func<Stream, Result> write)
     {
         ArgumentNullException.ThrowIfNull(filePath);
         var folder = Path.GetDirectoryName(Path.GetFullPath(filePath));
         if (folder is not null && !Directory.Exists(folder))
             throw new DirectoryNotFoundException($"No such folder: {folder}");
         using var buffer = new MemoryStream();
-        if (!write(buffer))
-            return false;
-        using var file = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
-        buffer.Position = 0;
-        buffer.CopyTo(file);
-        return true;
+        var written = write(buffer);
+        if (written.IsFailure)
+            return written;
+        try
+        {
+            using var file = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
+            buffer.Position = 0;
+            buffer.CopyTo(file);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return Result.Failure(Diagnostic.Error(WriteFailed, $"{filePath} couldn't be written: {e.Message}"));
+        }
+        return written;
     }
 
     // The tree the mesh writers take (they mesh each part with the options' deflections, relative to each edge's size,
@@ -193,12 +290,12 @@ public static class Exporters3D
     private static global::Kerf.Meshing.MeshOptions MeshOptions(double linearDeflection, double angularDeflection) =>
         new() { LinearDeflection = linearDeflection, AngularDeflection = angularDeflection, Relative = true, Parallel = true };
 
-    private static GltfWriteOptions GltfOptions(Unit unit, bool binary, double linearDeflection, double angularDeflection) =>
+    private static GltfWriteOptions GltfOptions(GltfExportOptions options) =>
         new()
         {
-            Binary = binary,
-            Unit = ExchangeUnits.LengthUnit(unit, "unit"),
-            Mesh = MeshOptions(linearDeflection, angularDeflection),
+            Binary = options.Binary,
+            Unit = ExchangeUnits.LengthUnit(options.Unit, "unit"),
+            Mesh = MeshOptions(options.LinearDeflection, options.AngularDeflection),
             Generator = "build123d.NET",
         };
 

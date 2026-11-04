@@ -9,7 +9,7 @@ using Kerf.Modeling;
 
 /// <summary>
 /// STEP's names, colours and assemblies on the OCCT.NET backend (OCCT.NET's STEPCAFControl over its XdeDoc tree).
-/// What <see cref="Exporters3D.ExportStep(Shape, Stream, Unit, bool, PrecisionMode, string?, CancellationToken)"/>
+/// What <see cref="Exporters3D.ExportStep(Shape, Stream, StepExportOptions?, CancellationToken)"/>
 /// writes is compared with OCCT.NET's STEPCAFControl_Writer (compared with native XCAF by OCCT.NET's unit 8G2) over a
 /// document built with XCAF's calls, as build123d's <c>_create_xde</c> builds its XCAF document, but for one thing: a
 /// node without assembly children is a part even when its shape is a compound (build123d's Part is one), where
@@ -34,7 +34,7 @@ public class StepAssemblyTests
     private static byte[] Export(Shape shape)
     {
         var stream = new MemoryStream();
-        Assert.True(Exporters3D.ExportStep(shape, stream, timestamp: Timestamp));
+        Assert.True(Exporters3D.ExportStep(shape, stream, new StepExportOptions { Timestamp = Timestamp }).IsSuccess);
         return stream.ToArray();
     }
 
@@ -202,7 +202,7 @@ public class StepAssemblyTests
     public void AnAssemblyIsWrittenInOtherUnits()
     {
         var stream = new MemoryStream();
-        Exporters3D.ExportStep(Fixture(), stream, Unit.Inch);
+        Exporters3D.ExportStep(Fixture(), stream, new StepExportOptions { Unit = Unit.Inch });
         Assert.Contains("INCH", Encoding.Latin1.GetString(stream.ToArray()));
         stream.Position = 0;
         var read = Assert.IsType<Compound>(Importers.ImportStep(stream).Value);

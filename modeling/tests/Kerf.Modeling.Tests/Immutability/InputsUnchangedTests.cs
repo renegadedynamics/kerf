@@ -121,7 +121,7 @@ public class InputsUnchangedTests
         cases.AddRange(
         [
             C("export stl", [Fused], () => Exporters3D.ExportStl(Fused, new MemoryStream())),
-            C("export gltf", [Fused, MovedBox], () => Exporters3D.ExportGltf(Compound.Assembly([Fused, MovedBox.WithColor(new Color("red"))]), new MemoryStream(), binary: true)),
+            C("export gltf", [Fused, MovedBox], () => Exporters3D.ExportGltf(Compound.Assembly([Fused, MovedBox.WithColor(new Color("red"))]), new MemoryStream(), new GltfExportOptions { Binary = true })),
             C("export 3mf", [Fused, Sphere], () => Exporters3D.Export3mf(Compound.Assembly([Fused, Sphere]), new MemoryStream())),
         ]);
         return cases;
