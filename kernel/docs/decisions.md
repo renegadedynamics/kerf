@@ -16120,3 +16120,6 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        18e5bd66 against this unit, one after the other): the same volumes, faces and triangles for all
        11 examples; the median recalculation 915.5 and 1,008.2 ms before (run before and after this unit's run), 947.9 ms
        after, the first pass 2,983 and 2,927 ms before, 3,008 ms after: no difference beyond the machine's noise.
+1592. **The remaining exceptions stay for now (the owner, 4 November 2026: "Regarding the remaining exceptions, let's leave them
+       for now.").** The operators, the object constructors and the topological shapes' own methods keep throwing
+       `InvalidOperationException` as decision 1589 has them; this can be looked at again later.
