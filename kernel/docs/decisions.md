@@ -15864,3 +15864,21 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          is internal.
        No public API type and no other public engine type is a root cause any more: what the kernel's public API shows
        is public API. Every suite keeps its counts (no test added or removed by this item).
+17307. **`Tangents2D`, over Geom2dGcc after 10K4's fixes** (geometry.md; README section 11). In `Kerf.Geometry`
+       (ModelingAlgorithms): `Tangents2D.Lines(first, second)` (`Geom2dGcc_Lin2d2Tan`), `Circles(first, second,
+       radius)` (`Circ2d2TanRad`), `Circles(first, second, third)` (`Circ2d3Tan`) and `CirclesCentredAt(target,
+       centre)` (`Circ2dTanCen`), each a `Result` of every solution found, empty when there are none, a failure
+       (`geometry.tangents-failed`) when the solver isn't done or throws one of its exceptions-as-statuses. A target is
+       a `TangentTarget2D`: a `Curve2D` with a `Tangency` (the public enum of `GccEnt_Position`: `Unqualified`,
+       `Enclosing`, `Enclosed`, `Outside`; OCCT's `noqualifier` isn't offered) or a `Point2D` passed through, both
+       convertible implicitly. A solution is a `TangentCircle2D` or `TangentLine2D` with a `TangentContact2D` per
+       target, in the order given (OCCT's solvers take curves before points; the operation reorders and maps back):
+       the solution's tangency against it (`WhichQualifier`), the point of contact and its parameters on the solution
+       and the target (`TangencyN`), or `IsCoincident` where the solution is the target itself (`IsTheSameN`). Curves
+       other than lines and circles are solved iteratively from the middle of their range (0 on an unbounded one), as
+       Geom2dGcc's constructors without starting parameters can't. Misuse throws: a line qualified `Enclosing`
+       (OCCT's `BadQualifier`), a radius that isn't positive, two points for a tangent line, a point for a circle about
+       a centre. Not offered: `Circ2d2TanOn`, `Circ2dTanOnRad`, `Lin2dTanObl` and the explicit starting parameters,
+       which nothing asks for yet. 10K4's `GccLaws` is internal to ModelingAlgorithms.Tests, which the public tests
+       can't see; `Tangents2DTests` (7) checks the same laws through the public API: each contact on its target at its
+       parameter, the solution's tangent parallel to the target's there, and the order of contacts.

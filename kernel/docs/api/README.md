@@ -441,7 +441,9 @@ offered.
   (`HelixBRep_BuilderHelix`; `HelixOptions`), decision 17302.
 - **Done (10L5):** an extrusion's and a revolution's caps in their histories (OCCT's `FirstShape`/`LastShape`): the
   bottom one modified from the profile's sub-shape where the sweep rebuilt it, the top one generated (decision 17303).
-- `Tangents2D` (GccAna, Geom2dGcc: unit 10K4 was changing them).
+- **Done (10L5):** `Tangents2D` (`Lines`, `Circles` by two targets and a radius or by three targets,
+  `CirclesCentredAt`; `TangentTarget2D`, `Tangency`, `TangentCircle2D`, `TangentLine2D`, `TangentContact2D`), over
+  Geom2dGcc after 10K4's fixes (decision 17307).
 - **Done (10L5):** the engine types of these areas that something public showed are internal but for the modelling
   layer's (decision 17306, and section 12).
 - The engine types of these areas that something public still shows (decision 1530 lists why): the modelling
