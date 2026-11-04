@@ -118,7 +118,7 @@ public class IntroductoryExamplesTests
     private static Shape Ex6()
     {
         double a = 80, b = 60, c = 10;
-        var sk6 = new Locations(new Vector(b, 0), new Vector(0, b), new Vector(-b, 0), new Vector(0, -b)).Select(loc => (Shape?)(loc * new Circle(c)));
+        var sk6 = new Locations(new Vector(b, 0), new Vector(0, b), new Vector(-b, 0), new Vector(0, -b)).Select(loc => (Shape)(loc * new Circle(c)));
         return Extrude(new Circle(a) - sk6, c);
     }
 
@@ -126,7 +126,7 @@ public class IntroductoryExamplesTests
     private static Shape Ex7()
     {
         double a = 60, b = 80, c = 5;
-        var polygons = new Locations(new Vector(0, 3 * c), new Vector(0, -3 * c)).Select(loc => (Shape?)(loc * new RegularPolygon(2 * c, 6)));
+        var polygons = new Locations(new Vector(0, 3 * c), new Vector(0, -3 * c)).Select(loc => (Shape)(loc * new RegularPolygon(2 * c, 6)));
         return Extrude(new Rectangle(a, b) - polygons, amount: c);
     }
 
@@ -174,7 +174,7 @@ public class IntroductoryExamplesTests
         ex11 = Fillet(ex11.Edges().Except(last).OrderBy(Axis.Z).Last(), 2);
         var plane = new Plane(ex11.Faces().OrderBy(Axis.Z).Last());
         var polygons = new Sketch().Add(new GridLocations(Length / 2, Width / 2, 2, 2)
-            .Select(loc => (Shape?)(plane * loc * new RegularPolygon(5, 5))));
+            .Select(loc => (Shape)(plane * loc * new RegularPolygon(5, 5))));
         ex11 -= Extrude(polygons, -Thickness);
         return ex11;
     }
@@ -195,9 +195,9 @@ public class IntroductoryExamplesTests
         double a = 40, b = 4;
         Shape ex13 = new Cylinder(50, 10);
         var plane = new Plane(ex13.Faces().OrderBy(Axis.Z).Last());
-        ex13 -= (plane * new PolarLocations(a, 4)).Select(loc => (Shape?)(loc * new CounterSinkHole(b, 2 * b, depth: 10)));
+        ex13 -= (plane * new PolarLocations(a, 4)).Select(loc => (Shape)(loc * new CounterSinkHole(b, 2 * b, depth: 10)));
         ex13 -= (plane * new PolarLocations(a, 4, startAngle: 45, angularRange: 360))
-            .Select(loc => (Shape?)(loc * new CounterBoreHole(b, 2 * b, b, depth: 10)));
+            .Select(loc => (Shape)(loc * new CounterBoreHole(b, 2 * b, b, depth: 10)));
         return ex13;
     }
 
@@ -232,11 +232,11 @@ public class IntroductoryExamplesTests
     {
         Shape sk16 = new Rectangle(Length, Width);
         sk16 = Fillet(sk16.Vertices(), Length / 10);
-        var circles = new GridLocations(Length / 4, 0, 3, 1).Select(loc => (Shape?)(loc * new Circle(Length / 12)));
+        var circles = new GridLocations(Length / 4, 0, 3, 1).Select(loc => (Shape)(loc * new Circle(Length / 12)));
         sk16 = sk16 - circles - new Rectangle(Length, Width, align: (Align.Min, Align.Min));
         var single = Extrude(Plane.XZ * sk16, Length);
         Plane[] planes = [Plane.XY.Offset(Width), Plane.YX.Offset(Width), Plane.YZ.Offset(Width), Plane.YZ.Offset(-Width)];
-        return single + planes.Select(p => (Shape?)Mirror(single, p));
+        return single + planes.Select(p => (Shape)Mirror(single, p));
     }
 
     // 17. Mirroring from faces
@@ -299,7 +299,7 @@ public class IntroductoryExamplesTests
         Shape ex22 = new Box(Length, Width, Thickness);
         var plane = new Plane(ex22.Faces().GroupBy(Axis.Z)[0][0]) * new Rot(0, 50, 0);
         var holes = new Sketch().Add(new GridLocations(Length / 4, Width / 4, 2, 2)
-            .Select(loc => (Shape?)(new Location(plane) * loc * new Circle(Thickness / 4))));
+            .Select(loc => (Shape)(new Location(plane) * loc * new Circle(Thickness / 4))));
         ex22 -= Extrude(holes, -100, both: true);
         return ex22;
     }
@@ -397,8 +397,8 @@ public class IntroductoryExamplesTests
     {
         double a = 80.0, b = 5.0;
         Shape ex31 = new Rot(z: 30) * new RegularPolygon(3 * b, 6);
-        var cell = new RegularPolygon(b, 4) + new GridLocations(3 * b, 3 * b, 2, 2).Select(loc => (Shape?)(loc * new RegularPolygon(b, 3)));
-        ex31 += new PolarLocations(a / 2, 6).Select(loc => (Shape?)(loc * cell));
+        var cell = new RegularPolygon(b, 4) + new GridLocations(3 * b, 3 * b, 2, 2).Select(loc => (Shape)(loc * new RegularPolygon(b, 3)));
+        ex31 += new PolarLocations(a / 2, 6).Select(loc => (Shape)(loc * cell));
         return Extrude(ex31, 3);
     }
 
@@ -407,8 +407,8 @@ public class IntroductoryExamplesTests
     {
         double a = 80.0, b = 10.0, c = 1.0;
         Shape sk = new RegularPolygon(2 * b, 6, rotation: 30);
-        sk += new PolarLocations(a / 2, 6).Select(loc => (Shape?)(loc * new RegularPolygon(b, 4)));
-        return new Part().Add(sk.Faces().Select((face, idx) => (Shape?)Extrude(face, c + 3 * idx)));
+        sk += new PolarLocations(a / 2, 6).Select(loc => (Shape)(loc * new RegularPolygon(b, 4)));
+        return new Part().Add(sk.Faces().Select((face, idx) => (Shape)Extrude(face, c + 3 * idx)));
     }
 
     // 33. Python function and for-loop
@@ -416,7 +416,7 @@ public class IntroductoryExamplesTests
     {
         double a = 80.0, b = 5.0, c = 1.0;
         static Shape Square(double rad, Location loc) => loc * new RegularPolygon(rad, 4);
-        return new Part().Add(new PolarLocations(a / 2, 6).Select((loc, i) => (Shape?)Extrude(Square(b + 2 * i, loc), c + 2 * i)));
+        return new Part().Add(new PolarLocations(a / 2, 6).Select((loc, i) => (Shape)Extrude(Square(b + 2 * i, loc), c + 2 * i)));
     }
 
     // 35. Slots

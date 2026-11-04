@@ -683,7 +683,7 @@ public class CurveObjectTests
     {
         var l1 = new CenterArc((0, 0), 1, 0, 180);
         var l2 = new CenterArc((2, 0), 1, 0, -180);
-        var l = (Shape1D)(new Curve() + [l1, l2]);   // joined into a wire
+        var l = (new Curve() + [l1, l2]).SingleWire();   // joined into a wire
         Check.TupleAlmostEqual([2.0, -1.0, 0.0], Check.Of(l.PositionAt(0.25)), 6);
         Check.TupleAlmostEqual([-1.0, 0.0, 0.0], Check.Of(l % 0.25), 6);
         Check.TupleAlmostEqual(Check.Of(l.PositionAt(0.25)), Check.Of((l ^ 0.25).Position), 6);

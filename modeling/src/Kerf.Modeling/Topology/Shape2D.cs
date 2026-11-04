@@ -19,14 +19,14 @@ public abstract partial class Shape2D : Shape
     /// shape, so coplanar faces make a Face or Sketch.
     /// </summary>
     /// <exception cref="ArgumentException">The operands aren't all 2D, or the faces don't sew into one connected shell.</exception>
-    public override Shape Add(params IEnumerable<Shape?> other)
+    internal override Shape AddCore(IEnumerable<Shape?> other)
     {
         var summands = Operands(other);
         if (summands.Count == 0)
             return this;
         // Only sew when a shell is being built up
         if (this is not Shell && !summands.Any(s => s is Shell))
-            return base.Add(other);
+            return base.AddCore(other);
         if (summands.Any(s => s.Dim != 2))
             throw new ArgumentException("Only shapes with the same dimension can be added");
         var faces = Faces().Concat(summands.SelectMany(s => s.Faces())).ToList();

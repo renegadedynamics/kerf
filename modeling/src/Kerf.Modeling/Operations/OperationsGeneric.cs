@@ -544,14 +544,14 @@ public static partial class Operations
     /// location. Scaling unevenly may change the type of the geometry (a line or circle to a B-spline).
     /// </summary>
     /// <inheritdoc cref="Scale(IEnumerable{Shape}, double, Vector?)"/>
-    public static Compound Scale(IEnumerable<Shape> objects, (double X, double Y, double Z) by, Vector? about = null) =>
+    public static Compound Scale(IEnumerable<Shape> objects, Vector by, Vector? about = null) =>
         ScaleCore(objects, o => o.Scale(by, about));
 
     /// <inheritdoc cref="Scale(IEnumerable{Shape}, double, Vector?)"/>
     public static Compound Scale(Shape obj, double by = 1, Vector? about = null) => Scale([obj], by, about);
 
-    /// <inheritdoc cref="Scale(IEnumerable{Shape}, ValueTuple{double, double, double}, Vector?)"/>
-    public static Compound Scale(Shape obj, (double X, double Y, double Z) by, Vector? about = null) => Scale([obj], by, about);
+    /// <inheritdoc cref="Scale(IEnumerable{Shape}, Vector, Vector?)"/>
+    public static Compound Scale(Shape obj, Vector by, Vector? about = null) => Scale([obj], by, about);
 
     private static Compound ScaleCore(IEnumerable<Shape> objects, Func<Shape, Shape> scale)
     {

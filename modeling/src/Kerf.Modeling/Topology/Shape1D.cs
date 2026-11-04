@@ -547,7 +547,7 @@ public abstract partial class Shape1D : Shape
     /// This edge or wire joined with other edges and wires (build123d's <c>+</c>): connected pieces make a wire,
     /// others a fused curve; a single edge is returned as an Edge.
     /// </summary>
-    public override Shape Add(params IEnumerable<Shape?> other) => OneD.Add1D(this, other);
+    internal override Shape AddCore(IEnumerable<Shape?> other) => OneD.Add1D(this, other);
 
     internal override ShapeList<Shape>? IntersectCore(object other, double tolerance, bool includeTouched)
     {

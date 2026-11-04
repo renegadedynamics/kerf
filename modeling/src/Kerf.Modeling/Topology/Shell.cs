@@ -63,7 +63,7 @@ public partial class Shell : Shape2D
         Faces().OrderBy(f => f.DistanceTo(surfacePoint)).First().LocationAt(surfacePoint, xDir);
 
     /// <summary>This shell sewn with other 2D shapes (adding to a shell always sews, so the result is a Shell).</summary>
-    public static Shell operator +(Shell a, Shape? b) => (Shell)a.Add(b);
+    public static Shell operator +(Shell a, Shape? b) => (Shell)a.AddCore([b]);
 
     // ---- Factories ----
 

@@ -95,7 +95,7 @@ public sealed class Vertex : Shape
     public static Vertex operator -(Vertex a, Vector b) => new(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
 
     /// <summary>Vertices can't be intersected with <c>&amp;</c>.</summary>
-    public override Shape CommonWith(params IEnumerable<object> others) =>
+    internal override Shape CommonCore(IEnumerable<object> others) =>
         throw new NotSupportedException("Vertices can't be intersected");
 
     internal override Shape TransformShapeCore(Matrix matrix) => new Vertex(matrix.Multiply(ToVector()));

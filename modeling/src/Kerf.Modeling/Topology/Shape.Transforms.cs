@@ -257,8 +257,7 @@ public static class ShapeOperations
         /// A copy scaled by separate factors in X, Y and Z about <paramref name="about"/> (default the shape's position).
         /// Non-uniform scaling may turn the geometry into splines.
         /// </summary>
-        public T Scale((double X, double Y, double Z) factors, Vector? about = null) =>
-            (T)shape.ScaleCore(new Vector(factors.X, factors.Y, factors.Z), about);
+        public T Scale(Vector factors, Vector? about = null) => (T)shape.ScaleCore(factors, about);
 
         /// <summary>
         /// A copy with an affine transform applied to its geometry. Handles stretch and skew, at the cost of sometimes

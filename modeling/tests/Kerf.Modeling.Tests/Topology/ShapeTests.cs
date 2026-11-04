@@ -769,7 +769,8 @@ public class ShapeAlgebraEdgesTests
     {
         // Compound overrides Add, so exercise the Shape implementation with a shape that does not: a bare Solid
         var solid = Solid.MakeBox(1, 1, 1);
-        Assert.Same(solid, solid + (Shape?)null);
+        Assert.Same(solid, solid + Array.Empty<Shape>());
+        Assert.Throws<ArgumentNullException>(() => solid + (Shape)null!);
     }
 
     [Fact]

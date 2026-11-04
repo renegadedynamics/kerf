@@ -48,7 +48,7 @@ public class AxisWithShapesTests
     {
         var edge = Edge.FromAxis(Axis.X);
         Assert.IsType<Edge>(edge);
-        var common = edge.CommonWith(Edge.MakeLine((0, 0, 0), (1, 0, 0))).SingleEdge();
+        var common = (edge & Edge.MakeLine((0, 0, 0), (1, 0, 0))).SingleEdge();
         Check.AlmostEqual(1, common.Length, 5);
     }
 

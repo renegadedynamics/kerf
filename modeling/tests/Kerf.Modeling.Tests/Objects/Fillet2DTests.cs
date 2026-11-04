@@ -114,7 +114,7 @@ public class Fillet2DTests
     public void WireFilletCornerIsNotTangentContinuousOnRoundedCutTips()
     {
         Shape sketch = new RectangleRounded(20, 10, 2);
-        sketch -= sketch.Edges().Where(GeomType.Circle).Select(e => (Shape?)(new Location(e.ArcCenter) * new Circle(2)));
+        sketch -= sketch.Edges().Where(GeomType.Circle).Select(e => (Shape)(new Location(e.ArcCenter) * new Circle(2)));
         var wire = sketch.SingleWire();
         foreach (Vector point in new Vector[] { (-10, -3, 0), (-10, 3, 0), (-8, 5, 0) })
         {
@@ -152,7 +152,7 @@ public class Fillet2DTests
     {
         // Ellipse(x_radius=74 / 2, y_radius=54 / 2) with GridLocations(49, 32, 2, 2) of Circle(12 / 2) subtracted
         Location[] grid = [new Pos(-24.5, -16), new Pos(-24.5, 16), new Pos(24.5, -16), new Pos(24.5, 16)];
-        var sketch = new Ellipse(74 / 2.0, 54 / 2.0) - grid.Select(l => (Shape?)(l * new Circle(12 / 2.0)));
+        var sketch = new Ellipse(74 / 2.0, 54 / 2.0) - grid.Select(l => (Shape)(l * new Circle(12 / 2.0)));
         var vertex = sketch.Vertices().OrderByDistanceTo((30, 20))[0];
         var original = sketch.SingleFace();
         var filleted = original.Fillet2D(2.0, [vertex]);

@@ -439,7 +439,7 @@ public class AlgebraSelectTests
         Assert.Single(straight.Edges(Select.Last));
         Assert.Empty(straight.Vertices(Select.New));
         // three edges joined into an empty curve: everything was brought in
-        var chain = new Curve() + new Shape?[]
+        var chain = new Curve() + new Shape[]
         {
             Edge.MakeLine((0, 0), (1, 0)),
             Edge.MakeLine((1, 0), (1, 1)),

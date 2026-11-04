@@ -38,7 +38,7 @@ internal static class CompoundObjects
     public static Shape GridOfCircles()
     {
         Location[] grid = [new Pos(-5, -5), new Pos(-5, 5), new Pos(5, -5), new Pos(5, 5)];
-        return new Sketch() + grid.Select(l => (Shape?)(l * Circle(1)));
+        return new Sketch() + grid.Select(l => (Shape)(l * Circle(1)));
     }
 }
 
@@ -162,7 +162,8 @@ public class CompoundAlgebraTests
     public void AddNoneReturnsSelf()
     {
         var part = new Part(Solid.MakeBox(1, 1, 1).Wrapped);
-        Assert.Same(part, part + (Shape?)null);
+        Assert.Same(part, part + Array.Empty<Shape>());
+        Assert.Throws<ArgumentNullException>(() => part + (Shape)null!);
     }
 
     /// <summary>Compound holds the 1D branch; Curve inherits Mixin1D.__add__ instead.</summary>

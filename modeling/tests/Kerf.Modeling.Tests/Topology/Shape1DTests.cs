@@ -581,8 +581,9 @@ public class Shape1DTests
     public void Add()
     {
         var e = Edge.MakeLine((0, 0), (1, 0));
-        var ePlus = e + (Shape?)null;
-        Assert.True(e.IsSame(ePlus));
+        var ePlus = e + Array.Empty<Shape>();
+        Assert.True(e.IsSame(ePlus.Edges()[0]));
+        Assert.Throws<ArgumentNullException>(() => e + (Shape)null!);
     }
 
     [Fact]
