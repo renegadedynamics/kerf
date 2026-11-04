@@ -1,7 +1,6 @@
 // Ported from build123d tests/test_direct_api/test_axis.py. Cases that need topology (Edge, Vertex)
 // follow with the topology port.
 using Kerf.Geometry;
-using Occt;
 
 namespace Build123d.Tests.Geometry;
 

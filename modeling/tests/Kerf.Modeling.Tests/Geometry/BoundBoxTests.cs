@@ -1,6 +1,5 @@
 // Ported from build123d tests/test_direct_api/test_bound_box.py. Boxes of shapes follow with the
 // topology port; here boxes are built from their corners, as the Python predicate tests do.
-using Occt;
 
 namespace Build123d.Tests.Geometry;
 
@@ -11,9 +10,9 @@ public class BoundBoxTests
 {
     static BoundBox Box(Vector min, Vector max)
     {
-        var bnd = new global::Kerf.Engine.Geometry.Bounds.Box();
-        bnd = bnd.Updated(min.X, min.Y, min.Z, max.X, max.Y, max.Z);
-        return BoundBox.FromBndBox(bnd);
+        var box = new global::Kerf.Geometry.BoundingBox(new global::Kerf.Geometry.Point3D(min.X, min.Y, min.Z),
+                                                       new global::Kerf.Geometry.Point3D(max.X, max.Y, max.Z));
+        return BoundBox.FromBoundingBox(box);
     }
 
     [Fact]

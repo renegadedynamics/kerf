@@ -2,7 +2,6 @@
 // Vertex) or builders follow with those ports. Python's origin/x_dir/y_dir setters and move() change the
 // plane; the port's WithOrigin/WithXDir/WithYDir and Moved return new planes.
 using Kerf.Geometry;
-using Occt;
 
 namespace Build123d.Tests.Geometry;
 

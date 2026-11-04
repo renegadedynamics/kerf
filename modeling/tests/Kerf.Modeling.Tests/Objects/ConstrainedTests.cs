@@ -8,9 +8,7 @@
 //   (an unexpected keyword, one tangency, a ("three", 0) tangency): argument-type checks the overloads rule out.
 // - test_higher_level_constrained_arcs/lines, the BuildLine parts: builder mode (phase 5); the selectors are
 //   checked in algebra form instead.
-using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using Occt;
 
 namespace Build123d.Tests.Objects;
 
@@ -22,17 +20,15 @@ public class ConstrainedArcsTests
     /// <summary>Whether every edge has a 3D curve (Python's <c>BRep_Tool.Curve_s(e.wrapped, ...)</c> check).</summary>
     internal static bool Have3DCurves(IEnumerable<Edge> edges) => edges.All(e =>
     {
-        double f = 0, l = 0;
-        var curve = Tool.Curve(e.TopoEdge, out f, out l);
-        return curve is not null;
+        return e.TopoEdge.TryGetCurve(out _, out _);
     });
 
     [Fact]
     public void EdgeToQualified2D()
     {
         var e = new Line((0, 0), (1, 0)).Moved(new Location((1, 1, 1)));
-        var (_, _, first, last, _) = ConstrainedSolvers.EdgeToQualified2D(e.TopoEdge, Tangency.Unqualified);
-        Assert.True(first < last);
+        var arg = ConstrainedSolvers.EdgeToQualified2D(e.TopoEdge, Tangency.Unqualified);
+        Assert.True(arg.First < arg.Last);
     }
 
     [Fact]

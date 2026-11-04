@@ -1,7 +1,5 @@
-using Kerf.Engine.Foundation;
 using System.Collections.Concurrent;
 using System.Reflection;
-using Occt;
 using Ops = Kerf.Modeling.Operations;
 
 namespace Build123d.Tests.Immutability;
@@ -173,7 +171,7 @@ public class InputsUnchangedTests
         {
             c.Run();
         }
-        catch (Exception e) when (e is ArgumentException or InvalidOperationException or FailureException or Kerf.KerfException)
+        catch (Exception e) when (Failures.IsKernelFailure(e) || e is ArgumentException or InvalidOperationException or Kerf.KerfException)
         {
             // Failing is allowed; changing the inputs isn't
         }
@@ -250,7 +248,7 @@ public class InputsUnchangedTests
                 var value => value?.ToString() ?? "null",
             };
         }
-        catch (Exception e) when (e is ArgumentException or InvalidOperationException or FailureException or Kerf.KerfException)
+        catch (Exception e) when (Failures.IsKernelFailure(e) || e is ArgumentException or InvalidOperationException or Kerf.KerfException)
         {
             return e.GetType().Name + ": " + e.Message;
         }

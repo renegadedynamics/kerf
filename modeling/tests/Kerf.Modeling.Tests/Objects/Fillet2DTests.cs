@@ -10,7 +10,6 @@
 //   mocks.
 // - test_extrude_taper_draft_falls_back_to_loft, test_offset_2d: only the filleted profiles are checked here (the
 //   rest belongs to the Solid and Wire tests).
-using Occt;
 
 namespace Build123d.Tests.Objects;
 

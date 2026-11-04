@@ -1,4 +1,3 @@
-using Occt;
 using Ops = Kerf.Modeling.Operations;
 
 namespace Build123d.Tests.Errors;
@@ -16,16 +15,16 @@ public class MemoryPressureTests
     public void SmallShapesArentWorthTelling()
     {
         var line = Edge.MakeLine((0, 0, 0), (1, 0, 0)).Wrapped;
-        Assert.InRange(Extras.EstimateMemory(line), 1, 4095);
+        Assert.InRange(EngineShapes.EstimateMemory(line), 1, 4095);
     }
 
     [Fact]
     public void TheEstimateCountsSharedGeometryOnce()
     {
         var box = new Box(1, 1, 1);
-        var one = Extras.EstimateMemory(box.TopoShape);
-        var twice = Extras.EstimateMemory(new Compound([box, box]).TopoShape);
-        var apart = Extras.EstimateMemory(new Compound([box, new Box(1, 1, 1)]).TopoShape);
+        var one = EngineShapes.EstimateMemory(box.TopoShape);
+        var twice = EngineShapes.EstimateMemory(new Compound([box, box]).TopoShape);
+        var apart = EngineShapes.EstimateMemory(new Compound([box, new Box(1, 1, 1)]).TopoShape);
         Assert.InRange(twice - one, 0, 200);   // the compound itself
         Assert.True(apart > 2 * one - 200);
     }
@@ -33,10 +32,10 @@ public class MemoryPressureTests
     [Fact]
     public void TheEstimateGrowsWithDetail()
     {
-        var plain = Extras.EstimateMemory(new Box(10, 10, 10).TopoShape);
-        var filleted = Extras.EstimateMemory(Ops.Fillet(new Box(10, 10, 10).Edges(), 1).TopoShape);
+        var plain = EngineShapes.EstimateMemory(new Box(10, 10, 10).TopoShape);
+        var filleted = EngineShapes.EstimateMemory(Ops.Fillet(new Box(10, 10, 10).Edges(), 1).TopoShape);
         var sphere = new Sphere(10);
-        var meshed = Extras.EstimateMemory(sphere.MeshedCopy(0.001, 0.1, relative: false));
+        var meshed = EngineShapes.EstimateMemory(sphere.MeshedCopy(0.001, 0.1, relative: false));
         Assert.True(filleted > 3 * plain, $"{filleted} vs {plain}");
         Assert.True(meshed > 1_000_000, $"a fine mesh is {meshed} bytes");
     }

@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using Occt;
 using Ops = Kerf.Modeling.Operations;
 
 namespace Build123d.Tests.Exchange;

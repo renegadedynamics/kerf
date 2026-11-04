@@ -1,7 +1,3 @@
-using Kerf.Engine.Booleans.Api;
-using Kerf.Engine.Construction.Api;
-using Kerf.Engine.Foundation;
-using Occt;
 using Ops = Kerf.Modeling.Operations;
 
 namespace Build123d.Tests.Errors;
@@ -21,7 +17,7 @@ public class ErrorContextTests
     public void APrimitiveSaysWhatItWasMaking()
     {
         var e = Assert.Throws<Kerf.KerfException>(() => new Box(0, 1, 1));
-        Assert.Equal("Standard_DomainError", Assert.IsAssignableFrom<FailureException>(e.InnerException).OcctType);
+        Assert.True(Failures.IsKernelFailure(e.InnerException!));
         Assert.Equal("engine.domain-error", e.Error.Code.Value);
         Assert.StartsWith("box 0.0 × 1.0 × 1.0 failed: a value is outside what the operation accepts", e.Message);
     }
@@ -42,8 +38,8 @@ public class ErrorContextTests
         };
         var e = Assert.Throws<Kerf.KerfException>(make);
         Assert.StartsWith($"{feature} failed: ", e.Message);
-        var failure = Assert.IsAssignableFrom<FailureException>(e.InnerException);
-        Assert.Equal(Kerf.Engine.Foundation.FailureDiagnostics.CodeOf(failure.GetType()), e.Error.Code);
+        Assert.True(Failures.IsKernelFailure(e.InnerException!));
+        Assert.StartsWith("engine.", e.Error.Code.Value);
     }
 
     [Fact]
@@ -51,9 +47,11 @@ public class ErrorContextTests
     {
         // An operation inside another says both, outermost first, with the kernel's failure inside
         var e = Assert.Throws<Kerf.KerfException>(() => Failures.Doing(() => "extrude", () =>
-            Failures.Doing(() => "fuse of a Solid with a Solid", () => throw new NotDoneException("BOPAlgo_AlertBuilderFailed"))));
+            Failures.Doing(() => "fuse of a Solid with a Solid", () =>
+                throw new Kerf.KerfException(Kerf.Diagnostic.Error(new Kerf.DiagnosticCode("engine.not-done"),
+                                                                   "the algorithm couldn't complete: BOPAlgo_AlertBuilderFailed")))));
         Assert.Equal("extrude / fuse of a Solid with a Solid failed: the algorithm couldn't complete: BOPAlgo_AlertBuilderFailed", e.Message);
-        Assert.IsType<NotDoneException>(e.InnerException);
+        Assert.IsType<Kerf.KerfException>(e.InnerException);
         Assert.Equal("engine.not-done", e.Error.Code.Value);
     }
 
@@ -80,23 +78,19 @@ public class ErrorContextTests
         // build123d's own messages stand, with OCCT's failure inside
         var fillet = Assert.Throws<ArgumentException>(() => Ops.Fillet(new Box(1, 1, 1).Edges(), 5));
         Assert.Contains("Failed creating a fillet with radius of 5.0 on 12 of 12 edges", fillet.Message);
-        Assert.IsAssignableFrom<FailureException>(fillet.InnerException);
+        Assert.True(Failures.IsKernelFailure(fillet.InnerException!));
     }
 
     [Fact]
     public void AFailedBooleanNamesOcctsReasons()
     {
-        // OCCT reports why a boolean failed as alerts, where Shape() says only StdFail_NotDone: they become diagnostics
-        var fuse = new Fuse();
-        fuse.Build();
-        Assert.True(fuse.HasErrors);
-        Assert.Equal("BOPAlgo_AlertTooFewArguments", Extras.AlgoErrors(fuse));
-        var e = Failures.Boolean(fuse);
-        Assert.Equal("boolean.too-few-arguments", e.Error.Code.Value);
-        Assert.Equal("There are no enough arguments to perform the operation", e.Message);
-        Assert.Equal("BOPAlgo_AlertTooFewArguments", Assert.IsType<NotDoneException>(e.InnerException).Message);
-        var box = new MakeBox(1, 1, 1);
-        var common = new Common(box.Shape(), box.Shape());
-        Assert.Null(Extras.AlgoErrors(common));
+        // OCCT reports why a boolean failed as alerts, which the kernel's public Booleans turn into diagnostics (unit
+        // 10L1); the modelling layer reads them from the result. A Boolean without arguments is refused before OCCT
+        // (its BOPAlgo_AlertTooFewArguments can't arise), and a good one has no errors
+        Assert.Throws<ArgumentException>(() => TopoUtil.Boolean(BooleanKind.Fuse, [], []));
+        var box = new Box(1, 1, 1).Wrapped;
+        var common = TopoUtil.Boolean(BooleanKind.Common, [box], [box]);
+        Assert.True(common.IsSuccess);
+        Assert.DoesNotContain(common.Diagnostics, d => d.IsError);
     }
 }

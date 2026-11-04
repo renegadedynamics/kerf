@@ -50,9 +50,8 @@ public class StepAssemblyTests
 
     private static global::Kerf.Engine.Foundation.ColorWithAlpha Linear(Color color)
     {
-        var rgba = color.ToQuantityColorRgba();
-        var rgb = rgba.GetRGB();
-        return new global::Kerf.Engine.Foundation.ColorWithAlpha((float)rgb.Red(), (float)rgb.Green(), (float)rgb.Blue(), (float)rgba.Alpha());
+        var (r, g, b, a) = color.ToKerfColor().ToLinear();
+        return new global::Kerf.Engine.Foundation.ColorWithAlpha((float)r, (float)g, (float)b, (float)a);
     }
 
     /// <summary>

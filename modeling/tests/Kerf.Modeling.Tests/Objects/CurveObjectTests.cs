@@ -7,7 +7,6 @@
 //   and the NotImplementedError (bl.faces(), bl.solids()) parts of test_error_conditions.
 // - test_polyline_with_list: Polyline((0, 0), [(1, 0), (1, 1)], (0, 1)) mixes points and lists of points, which the
 //   C# overloads (points or one list) don't; test_polyline covers the same polyline.
-using Occt;
 
 namespace Build123d.Tests.Objects;
 

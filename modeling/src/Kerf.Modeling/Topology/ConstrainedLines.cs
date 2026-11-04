@@ -112,7 +112,7 @@ internal static class ConstrainedSolvers
     private static readonly PlaneSurface SurfXY = new(PlnXY);
 
     // A target as the solvers take it, with the 2D curve and range of an edge (null for a point)
-    private sealed record GccArg(TangentTarget2D Target, Curve2D? H2d, double First, double Last)
+    internal sealed record GccArg(TangentTarget2D Target, Curve2D? H2d, double First, double Last)
     {
         public bool IsEdge => H2d is not null;
     }
@@ -127,7 +127,7 @@ internal static class ConstrainedSolvers
     }
 
     // The edge's curve in Plane.XY's coordinates, bounded by the edge's range
-    private static GccArg EdgeToQualified2D(global::Kerf.Topology.Edge edge, Tangency tangency)
+    internal static GccArg EdgeToQualified2D(global::Kerf.Topology.Edge edge, Tangency tangency)
     {
         if (!edge.TryGetCurve(out var curve3d, out var range))
             throw new ArgumentException("Can't create a qualified curve from an edge without a 3D curve");

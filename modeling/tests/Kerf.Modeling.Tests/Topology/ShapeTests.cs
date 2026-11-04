@@ -15,7 +15,6 @@
 // - TestGlobalLocation: needs parent links and global_location, which the port's assemblies don't have.
 // - TestShapeCast.test_unregistered_type_is_reported, .test_registry_covers_every_wrapped_type and
 //   TestAsShape.test_registry_covers_the_geometry_types: Shape.Cast and AsShape are switches, not registries.
-using Occt;
 
 namespace Build123d.Tests.Topology;
 
@@ -628,7 +627,6 @@ public class ShapeTests
         Assert.Throws<InvalidOperationException>(() => empty.Distance(new Vertex(1, 1, 1)));
         Assert.Throws<InvalidOperationException>(() => empty.Distances(new Vertex(0, 0, 0), new Vertex(1, 1, 1)).ToList());
         Assert.Throws<InvalidOperationException>(() => box.Distances(empty, new Vertex(1, 1, 1)).ToList());
-        Assert.Throws<InvalidOperationException>(() => empty.Meshed(0.001));
         Assert.Throws<InvalidOperationException>(() => empty.Tessellate(0.001));
         Assert.Throws<InvalidOperationException>(() => empty.ToSplines());
         var emptyWire = new Wire();

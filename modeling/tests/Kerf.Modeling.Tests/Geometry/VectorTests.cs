@@ -1,9 +1,6 @@
 // Ported from build123d tests/test_direct_api/test_vector.py. Cases that need topology (Vertex, Solid)
 // follow with the topology port.
-using Kerf.Engine.Foundation;
-using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Occt;
 
 namespace Build123d.Tests.Geometry;
 
@@ -16,8 +13,8 @@ public class VectorTests
     public void Constructors()
     {
         var gpVec = new Vector3D(1, 2, 3);
-        var gpXyz = new Xyz(1, 2, 3);
-        Vector[] full = [new(1, 2, 3), (1, 2, 3), new(gpVec), new([1, 2, 3]), new(gpXyz)];
+        var gpPnt = new Point3D(1, 2, 3);
+        Vector[] full = [new(1, 2, 3), (1, 2, 3), new(gpVec), new([1, 2, 3]), new(gpPnt)];
         foreach (var v in full)
             Check.AlmostEqual((1, 2, 3), v, 4);
 
@@ -207,5 +204,5 @@ public class VectorTests
 
     [Fact]
     public void NormalizingZeroThrows() =>
-        Assert.Equal("Standard_ConstructionError", Assert.ThrowsAny<FailureException>(() => new Vector().Normalized()).OcctType);
+        Assert.Throws<InvalidOperationException>(() => new Vector().Normalized());
 }

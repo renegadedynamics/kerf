@@ -1,7 +1,6 @@
 // Ported from build123d tests/test_direct_api/test_matrix.py. Element-type validation is the compiler's
 // job in C#. Python's Matrix.rotate changes the matrix; the port's Rotated returns a new one.
 using Kerf.Geometry;
-using Occt;
 
 namespace Build123d.Tests.Geometry;
 

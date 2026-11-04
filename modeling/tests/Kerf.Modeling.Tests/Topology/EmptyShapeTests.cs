@@ -12,7 +12,6 @@
 // - TestEmptyShapeExport: the exporters aren't ported yet.
 // - test_a_kernel_empty_is_the_zero_of_any_class's Face(empty): the Face constructor takes a TopoDS_Face, and
 //   Shape.Cast is static, so Solid.cast's class-specific result is checked through the internal CastLike.
-using Occt;
 using Ops = Kerf.Modeling.Operations;
 
 namespace Build123d.Tests.Topology;

@@ -5,9 +5,6 @@
 // - TestFilletFailures.test_operation's builder half: BuildPart (phase 5).
 // - TestFilletFailures.test_diagnostic_readback_failure, test_group_failure_reasons,
 //   TestMixin3D.test_chamfer_invalid_shape_raises_error: mock the OCP builder or Shape.is_valid.
-using Kerf.Engine.Foundation;
-using Kerf.Engine.Topology;
-using Occt;
 
 using Ops = Kerf.Modeling.Operations;
 
@@ -37,7 +34,7 @@ public class FilletFailuresTests
         {
             var e = Assert.Throws<ArgumentException>(() => shape.Fillet(3, shape.Edges()));
             Assert.Equal(PlateMessage, e.Message);
-            Assert.IsAssignableFrom<FailureException>(e.InnerException);
+            Assert.True(Failures.IsKernelFailure(e.InnerException!));
         }
     }
 
@@ -95,7 +92,7 @@ public class FilletFailuresTests
         // Indices follow the iterable, including repeated and reversed selections
         var plate = Box(20, 20, 2);
         var edges = plate.Edges();
-        var reversedEdge = new Edge(ShapeCasts.Edge(edges[1].Wrapped.Reversed()));
+        var reversedEdge = new Edge(((global::Kerf.Topology.Edge)(edges[1].Wrapped.Reversed())));
         Assert.True(edges[1].IsSame(reversedEdge));
         Assert.False(edges[1].IsEqual(reversedEdge));
         var selection = new[] { edges[3], edges[0], reversedEdge, edges[1] }.Select(e => e);

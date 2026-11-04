@@ -1,9 +1,7 @@
 // Ported from build123d tests/test_direct_api/test_location.py and test_rotation.py. Cases that need
 // topology (Edge, Solid) or builders (GridLocations) follow with those ports; argument-type validation
 // is the compiler's job in C#.
-using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Occt;
 
 namespace Build123d.Tests.Geometry;
 
@@ -14,9 +12,7 @@ public class LocationTests
 {
     static Vector Translation(Location loc)
     {
-        var trsf = loc.ToGpTrsf();
-        var t = trsf.TranslationXyz();
-        return new Vector(t);
+        return new Vector(loc.ToGpTrsf().TranslationPart);
     }
 
     static double RotationAngle(Location loc)
@@ -85,10 +81,7 @@ public class LocationTests
             var xyz = xy.Multiplied(rotZ);
             var loc1 = new Location(xyz);
 
-            var q = new Quaternion3();
-            q = q.WithEulerAngles(EulerSequence.Intrinsic_XYZ, aboutX, aboutY, aboutZ);
-            var t = new Transform3D();
-            t = t.WithRotationPart(q);
+            var t = Transform3D.Rotation(EulerSequence.Intrinsic_XYZ, aboutX, aboutY, aboutZ);
             var loc2 = new Location(t);
 
             Check.AlmostEqual(loc1.Position, loc2.Position, 5);

@@ -5,7 +5,6 @@
 // - TestSolidThicken (both cases), TestSolidDraft.test_adddone_failure_raises_draftangleerror and
 //   test_build_failure_raises_draftangleerror: mock the OCP builders.
 using Kerf.Topology;
-using Occt;
 
 namespace Build123d.Tests.Topology;
 
