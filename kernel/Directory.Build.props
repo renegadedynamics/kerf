@@ -14,7 +14,7 @@
     <OcctSourceDir>$(RepoRoot).deps/occt-src/</OcctSourceDir>
     <!-- OCCT's test data (tools/get-occt-testdata.ps1), which the Draw corpus restores: CSF_TestDataPath in OCCT -->
     <OcctTestDataDir>$(RepoRoot).deps/occt-testdata/opencascade-dataset-7.9.0/</OcctTestDataDir>
-    <!-- build123d.NET, in the repository's modeling folder, which the Bento benchmark builds on this kernel -->
+    <!-- Kerf.Modeling, in the repository's modeling folder, which the Bento benchmark builds on this kernel -->
     <KerfModelingRoot Condition="'$(KerfModelingRoot)' == ''">$([System.IO.Path]::GetFullPath('$(RepoRoot)../modeling/'))</KerfModelingRoot>
   </PropertyGroup>
 
@@ -25,7 +25,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- LGPL 2.1 with the Open CASCADE exception, as OCCT itself; the SPDX expression isn't known to NuGet -->
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Copyright>Copyright (c) 2026 The OCCT.NET Contributors; based on Open CASCADE Technology, copyright (c) 1999-2026 OPEN CASCADE SAS</Copyright>
+    <Copyright>Copyright (c) 2026 The Kerf contributors; derived from Open CASCADE Technology 8.0.1, copyright (c) 1999-2026 OPEN CASCADE SAS</Copyright>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>

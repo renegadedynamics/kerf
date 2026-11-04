@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the build123d.NET packages. Versions follow [SemVer](https://semver.org); before
+All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET packages). Versions follow [SemVer](https://semver.org); before
 1.0 a minor version may break the API.
 
 ## 0.1.0 (unreleased)

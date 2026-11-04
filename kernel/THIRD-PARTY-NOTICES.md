@@ -1,6 +1,6 @@
 # Third-party notices
 
-OCCT.NET is licensed under the LGPL 2.1 with the Open CASCADE exception (see [LICENSE](LICENSE) and [NOTICE](NOTICE)).
+Kerf.Kernel is licensed under the LGPL 2.1 with the Open CASCADE exception (see [LICENSE](LICENSE) and [NOTICE](NOTICE)).
 It also contains ports of third-party code that OCCT itself includes under other licences. Each keeps its licence,
 and its notice is reproduced here and at the top of the files that port it.
 
@@ -9,7 +9,7 @@ and its notice is reproduced here and at the top of the files that port it.
 - **What:** DELABELLA, a Delaunay triangulation library, included in OCCT as
   `src/ModelingAlgorithms/TKMesh/BRepMesh/delabella.cpp` and `delabella.pxx` (used by
   `BRepMesh_DelabellaBaseMeshAlgo`).
-- **Ported in:** `src/OcctNet.ModelingAlgorithms/BRepMesh/delabella.cs`.
+- **Ported in:** `src/Kerf.Kernel.ModelingAlgorithms/BRepMesh/delabella.cs`.
 - **Licence:** MIT.
 
 ```
