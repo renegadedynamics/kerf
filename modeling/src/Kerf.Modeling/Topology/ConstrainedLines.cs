@@ -216,24 +216,6 @@ internal static class ConstrainedSolvers
         return maker.Edge();
     }
 
-    /// <summary>
-    /// Adds π to the circle parameters of a solution enclosed by a circular target, when at least one target isn't circular
-    /// (GccAna_Circ2d3Tan, used for all-circle inputs, already gets the enclosed direction right).
-    /// </summary>
-    private static double[] EnclosedCircParamOffset(IReadOnlyList<Tangent> tangents, Circle2D circ, double[] parameters)
-    {
-        var isCirc = tangents.Select(t => t.Edge is { } e && e.GeomType == GeomType.Circle).ToList();
-        if (isCirc.All(c => c))
-            return parameters;
-        var center = circ.Location;
-        var centerV = new Vector(center.X, center.Y, 0);
-        var result = parameters.ToArray();
-        for (int i = 0; i < parameters.Length && i < tangents.Count; i++)
-            if (tangents[i].Edge is { } e && isCirc[i] && (centerV - e.ArcCenter).Length < e.Radius)
-                result[i] = parameters[i] + Math.PI;
-        return result;
-    }
-
     // ---- Arcs ----
 
     internal static ShapeList<Edge> TwoTanRadArcs(List<Tangent> tangents, double radius, Sagitta sagitta)
@@ -335,8 +317,7 @@ internal static class ConstrainedSolvers
             gcc.Tangency2(i, out uc2, out ua2, out p);
             if (!Ok(1, ua2))
                 continue;
-            var u = EnclosedCircParamOffset(all, circ, [uc1, uc2]);
-            solutions.AddRange(BySagitta(TwoArcEdgesFromParams(circ, u[0], u[1]), sagitta));
+            solutions.AddRange(BySagitta(TwoArcEdgesFromParams(circ, uc1, uc2), sagitta));
         }
         return new ShapeList<Edge>(solutions.Select(e => new Edge(e)));
     }
@@ -377,8 +358,7 @@ internal static class ConstrainedSolvers
                 gcc.Tangency3(i, out uc3, out ua3, out p);
                 if (!Ok(2, ua3))
                     continue;
-                var u = EnclosedCircParamOffset(tangents, circ, [uc1, uc2, uc3]);
-                solutions.AddRange(BySagitta(TwoArcEdgesFromParams(circ, u[0], u[1]), sagitta));
+                solutions.AddRange(BySagitta(TwoArcEdgesFromParams(circ, uc1, uc2), sagitta));
             }
             return new ShapeList<Edge>(solutions.Select(e => new Edge(e)));
         }
@@ -478,19 +458,8 @@ internal static class ConstrainedSolvers
             var edges = new List<global::Kerf.Topology.Edge>();
             for (int i = 1; i <= gcc.SolutionCount; i++)
             {
-                var solution = gcc.ThisSolution(i);
-                var lin2d = new LineCurve2D(solution);
-                // The two tangency points: Tangency1/2 can index the same line differently, so intersect instead
-                var inter1 = new CurveCurveIntersection2D(lin2d, a1.H2d!);
-                var pt1 = inter1.Point(1);   // there is always one tangent intersection
-                Point2D pt2;
-                if (two.Point is { } pp)
-                    pt2 = new Point2D(pp.X, pp.Y);
-                else
-                {
-                    var inter2 = new CurveCurveIntersection2D(lin2d, a2!.H2d!);
-                    pt2 = inter2.Point(1);
-                }
+                gcc.Tangency1(i, out _, out _, out var pt1);
+                gcc.Tangency2(i, out _, out _, out var pt2);
                 {
                     var separation = pt1.DistanceTo(pt2);
                     if (double.IsNaN(separation) || separation < Constants.Tolerance)
@@ -515,18 +484,13 @@ internal static class ConstrainedSolvers
         var refLin = new Line2D(refAx);
         var gcc = new Lin2dTanObl(arg.Curve!.Value, refLin, Constants.Tolerance, angle);
         var edges = new List<global::Kerf.Topology.Edge>();
+        // Lines parallel to the reference never meet it: no edge
+        if (Math.Abs(dir2d.Crossed(refDir)) <= Constants.Tolerance)
+            return [];
         for (int i = 1; i <= gcc.SolutionCount; i++)
         {
-            var pTan = new Point2D();
-            double us = 0, ua = 0;
-            gcc.Tangency1(i, out us, out ua, out pTan);
-            var tanLine = new Line2D(pTan, dir2d);
-            // Intersection2 isn't reliable: intersect with the reference line instead
-            var inter = new AnalyticIntersection(tanLine, refLin);
-            if (!inter.IsDone || inter.PointCount == 0)
-                continue;
-            var ip = inter.Point(1);
-            var pIsect = ip.Value();
+            gcc.Tangency1(i, out _, out _, out var pTan);
+            gcc.Intersection2(i, out _, out _, out var pIsect);
             var separation = pTan.DistanceTo(pIsect);
             if (double.IsNaN(separation) || separation < Constants.Tolerance)
                 continue;

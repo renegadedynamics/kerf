@@ -15580,6 +15580,174 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        STEP reading isn't in that benchmark; the reader's path is unchanged but for the tree's conversion to
        `ModelNode`.
 
+## Phase 10: unit 10K4, OCCT's bugs: 2D constraints
+
+1540. **GccAna_Circ2d3Tan's solutions obey the laws** (occt-issues.md, unit 5K1's rows on GccAna_Circ2d3Tan; triage
+       batch K4). The solvers' per-case code combined candidate radii without resetting its flag, took an enclosing
+       circle's radius as |r - d|, tested the second argument's qualifier for the line, filtered three lines with
+       sides some branches never set, put tangency points on the far side of an enclosed solution, and measured two
+       computed qualifiers from the first circle's centre. Each constructor now finds its candidate centres as OCCT
+       does (the bisectors' intersections) and hands each candidate circle, of the radius one argument fixes, to
+       `CircleContact` (new, GccAna): it keeps a circle only when it touches every argument as its qualifier asks
+       within the tolerance, and fills the qualifiers it has and the points where it touches. The three-circle
+       constructor keeps OCCT's algebra; its computed qualifiers come from the system solved, and rSol has the 64 slots
+       its coordinates have. Found by the laws and fixed with the rest of the class, with no row of their own: the
+       circle-and-two-lines and two-lines-and-point constructors had the same flaws; two circles and a point were
+       left not done when IntAna2d reported two hyperbolas that don't meet as not done (42 of 1,500 random cases).
+       Row 975 (a touch row: IsTheSame not shifted when removing a duplicate) is fixed with it, the removal loop being
+       gone. Before, 1,500 random cases per constructor broke a law in 0 to 848 cases; after, none.
+1541. **GccAna_Circ2d2TanOn's solutions obey the laws.** Every constructor's CenterOn3 gave the first tangency point;
+       the general cases wrote up to four radii into two slots (Standard_OutOfRange in 346 of 1,500 random two-circle
+       cases), read slots never written, filtered with the bisector's index, tested a double as a boolean, took the
+       qualifier's radius on both branches of a bisector and retried the same boundary point. The constructors with a
+       circle or two lines find their centres where the locus meets the bisectors and at OCCT's boundary centres (the
+       foot of a point on a line locus; a circle locus's points on the line through its centre and a point), and keep
+       the circles, of the radii either argument allows, that touch both as asked (`CircleContact`). CenterOn3 gives
+       the centre; ThisSolution checks IsDone and the index (SolutionCount stays unchecked, 0 when not done, as GccAna's
+       other solvers). The two-lines-on-a-circle constructor no longer sends lines turning clockwise to its
+       "parallel" branch and now uses its tolerance. A circle of radius 0, as argument or locus, has parameter 0 at
+       its centre instead of throwing.
+1542. **GccAna_Circ2d2TanRad's solutions obey the laws.** Two circles: the centres of circles of radius R touching a
+       circle (c, r) are at R + r or |R - r| from c; the solutions are where those circles about the two centres meet
+       (and, where they only touch, on the line of centres), kept when they touch both circles as asked. OCCT's case
+       analysis returned one circle not tangent to the second for an enclosing and an unqualified circle, centred two
+       solutions on the first circle, and gave the enclosed boundary case a parameter on the wrong circle. Two lines:
+       the computed qualifiers compare the centre with the lines' normals, not their directions. A circle and a point:
+       a solution that is the circle has no tangency parameter (OCCT took the parameter of an unset point, and threw at
+       the origin); found by the pinned test, recorded with this decision.
+1543. **GccAna_Circ2dTanOnRad's six constructors are one solver.** The centres are where the locus meets the curves at
+       the radius from the argument (two parallels of a line, the circles of radii R + r and |R - r| about a circle's
+       centre, the circle of radius R about a point), and the locus's points nearest the argument's centre where those
+       only touch it; each is kept if it touches the argument as asked. OCCT gave CenterOn3 the tangency point, put the
+       tangency point diametrically opposite (or, for an enclosed circle of half the radius, at the argument's centre,
+       whose parameter threw), gave solution 2 solution 1's centre, left a point on the line not done, wrote a
+       qualifier at index 0, and threw on every generic line on a circle (a dot product truncated to 0).
+1544. **GccAna's line solvers and Geom2dGcc_Lin2dTanObl obey the laws.** Lin2d2Tan: the common tangents of two circles
+       solve n.(c2 - c1) = s2 r2 - s1 r1 for the line's normal n and the sides s; each is oriented from its tangency point
+       on the first circle to that on the second, so each pair of qualifiers (enclosing: the circle on the line's left)
+       picks one of the four tangents, as OCCT intended, and they come in OCCT's order. WhichQualifier gives each
+       circle's side (OCCT gave the second circle the first's qualifier and unqualified circles none, and gave some
+       second solutions the first's tangency point). Two identical circles have no solution (OCCT returned degenerate
+       lines). Lin2dTanObl: each solution's own intersection with the line (OCCT intersected the first twice), and for a
+       solution parallel to the line Intersection2 throws IsParallel (OCCT gave the origin's data). Lin2dTanPer: the
+       qualifiers are set, a point's is noqualifier, the nearest intersection with a circle is kept, and a line
+       perpendicular to a circle passes through its centre (OCCT always gave two lines tangent at the first circle's
+       points on the line of centres); noqualifier is a bad qualifier; ThisSolution throws OutOfRange (Standard_RangeError
+       before). Geom2dGcc_Lin2dTanObl copies a parallel solution without its intersection (rows 1070 and 1071: the
+       constructor threw IsParallel); the start-parameter constructor passes Param1 and TolAng the right way round, sets
+       its solution count (OCCT left it 0) and keeps the solution only if it is tangent, as the sampling constructor's
+       Add does.
+1545. **Geom2dGcc's Circ2d2TanOn and Circ2d2TanRad.** The dispatch copies the iterative solver's centre and sets
+       TheSame2 for a point (rows 1050 and 1051). FunctionTanCuCuOnCu has three unknowns for a point argument (the
+       parameter on the curve, the centre's and the radius), so the iterative solver's point constructors, which gave
+       its four-unknown form 3-vectors and threw (natively Standard_DimensionError), solve (row 1052). The iterative
+       solver's accessors return its parameters (row 1053; OCCT returned 0), the circle-curve-line constructor takes the
+       centre at the centre's parameter (1054), the parameters on the solution are the tangency points' (1055, a touch
+       row), and the point constructors' centre parameter is the centre's (1056, a leave row). The geometric solver's
+       two circles on a curve keep the radii that touch both circles as asked (1058; 1057's native memory dependence is
+       moot). Circ2d2TanRad no longer asks GccAna for the tangency of a solution that is an argument (1059).
+1546. **Geom2dGcc_Circ2d3TanIter.** IsTheSame3 was always true, so the third tangency of an iterative solution threw;
+       it is the solution's (false), and IsTheSame2 is false. Each argument's qualifier tests its own argument, a line's
+       side is measured from a point of the line, the curve and the point's circle are evaluated at their own
+       parameters (rows 1061 to 1064), and the parameters on the solution are its tangency points' (OCCT stored 0 or
+       distances). FunctionTanCuCuCu's empty Values (row 1047, leave) still stops the iteration at its start.
+1547. **Geom2dGcc_Circ2dTanOnRadGeo.** The curve to centre on is wrapped as an offset of 0 (OCCT's one-argument offset
+       adaptor had the range [0, 0], so no free-form argument ever found a centre on a free-form curve), an offset line
+       goes through the line's origin, the tangency parameter is taken after the tangency point is set, and CenterOn3
+       gives the centre (rows 1066 to 1069). With the curve found, its offset intersections also gave circles that miss
+       the argument or the curve, or are on the wrong side of a qualified circle (natively too, for circles): each
+       constructor keeps the solutions that obey the laws within ten times the tolerance.
+1548. **The laws replace the recordings for the 2D constraint solvers** (plan 3.2; triage section 4). `GccLaws`
+       (ModelingAlgorithms.Tests) checks a circle solver's results: every solution tangent to its arguments with the
+       qualifiers asked, on its locus at CenterOn3's parameter, of the radius asked, WhichQualifier the solution's,
+       the tangency points where the circles touch with their parameters, IsTheSame exactly for an argument circle, and
+       no exception; and a line solver's: tangent with the side asked, the direction law, the intersection with the
+       second curve (the nearest for a circle, IsParallel for a parallel line). Property tests run them on 1,500 random
+       cases per constructor (43 theory rows). GccAna's native replay compares the corrected constructors at the third
+       level: a differing case is an intended difference when the port obeys the laws and keeps every native solution
+       that does; three-lines' uninitialised-case skip is gone. The Geom2dGcc oracle does the same from its tokens, on
+       free-form curves too (a curve's tangent perpendicular to the radius; a trimmed curve's basis; a centre at
+       CenterOn3's parameter within the curve's range where the projection misses), for lines as well; the
+       attributions of the bugs fixed are removed, and the tape's second native runs (110 cases where the recording
+       ran native twice) are made from a list, whatever the port gives. Build123dConstructionOracleTests' constrained arcs and lines
+       (39 cases of build123d's tests) are judged by the same laws (22 intended differences). MakeFillet2d's random
+       profiles, whose arcs' fillets go through Geom2dGcc_Circ2d2TanRad on two circles, compare at the second level
+       where the BRep text differs in the last bits (counts, area and centroid; 7 of 400 cases).
+1549. **build123d.NET's workarounds go** (modeling/CHANGELOG.md). `ConstrainedLines.cs` no longer adds pi to the
+       circle parameters of a solution enclosed by a circle (it made up for GccAna's tangency points), takes the
+       tangent lines' points from Tangency1 and Tangency2 instead of intersecting, and the oriented lines' from
+       Intersection2, skipping a direction parallel to the reference up front. The check of TwoTanRadArcs' parameters
+       on free-form curves stays: it answers Geom2dGcc_Circ2d2TanRadGeo's tangency on transformed curves, which no row
+       covers. Two identical circles now raise "Unable to find common tangent line(s)" like other inputs without
+       tangents (they gave an empty list from OCCT's degenerate lines).
+1550. **The tests and the corpus.** ModelingAlgorithms.Tests 4,844 → 4,887 (9 skipped; the 43 law rows; its 2D
+       constraint tests 295 → 338), the oracle 383, the modelling layer 1,884, all pass;
+       the tests rewritten to the corrected behaviour are listed in the decisions above (in the test files: GccAna's
+       Circ2d3Tan, Circ2d2TanOn, Circ2d2TanRad, Circ2dTanOnRad, Lin2d2Tan, Lin2dTanObl and Lin2dTanPer tests, and
+       Geom2dGcc's Circ2d2TanOn, Circ2d3Tan, Circ2dTanOnRad and Lin2dTanObl tests; build123d.NET's
+       `InvalidTangentRaises`). The Geom2dGcc oracle passes with 615 intended differences across its six corrected
+       solvers. Draw-lite's 2D constraint group (cirtang, lintan: 15 runnable cases, 13 OK and 2 skipped for missing
+       data) has the same statuses before and after, as have the Draw-lite bisector and 5W construction command tests.
+1551. **Two corpus cases expected OCCT's duplicate solutions** (the merge gate's Draw-lite construction corpus,
+       geometry/circ2d3Tan). Both are `circ2d3Tan tan1 c1 c2 p1` with c1 the circle (0, 0) radius 10 and c2 (30, 0)
+       radius 20, all unqualified. CircleCirclePoint_13, p1 = (20, -10): a solution of radius R centred at C has |C - p1|
+       = R and |C| = R + 10 or |R - 10|, |C - (30, 0)| = R + 20 or |R - 20|; the only one is (20, 0) radius 10 (outside
+       c1, enclosed in c2, through p1), and OCCT's script expects it twice (tan1_1 and tan1_2, both of length 20 pi).
+       CircleCirclePoint_14, p1 = (30, -20) on c2: a circle through p1 tangent to c2 touches it at p1, so its centre is on
+       x = 30; the solutions are c2 itself and (30, 40) radius 60 (enclosing both circles, |C| = 50 = 60 - 10), and OCCT
+       expects the second twice (tan1_2 and tan1_3, both of length 120 pi). The port gives each solution once (the
+       duplicate check of decision 1540), each obeying the laws: intended differences in `DrawCorpus.IntendedDifferences`,
+       which accept the port's log (the one solution, or c2 and the circle of length 120 pi, and no further one), and a
+       property test of both configurations (`Corpus_two_circles_and_a_point_each_solution_once`). The corpus's other
+       Gcc grids (geometry/circ2d3Tan's 22 cases, lowalgos/2dgcc) and the 2D fillet corpus pass unchanged.
+## Phase 10: unit 10L4, images: hidden lines with SVG, and a mesh renderer with PNG
+
+1552. **One namespace, `Kerf.Drawing`, for drawings and pictures** (decision 1349, question 64), in ModelingAlgorithms
+       beside meshing, with `ModelNode.ToScene` in DataExchange: the line drawings and the pictures share `Camera`, and
+       Bento will make both. The operation is `DrawingOperations.ProjectLines` (a C# 14 extension member, as section 3
+       of the API README asks): `Project` is already geometry's and construction's. The SVG and PNG writers are `Svg`
+       and `Png`, as the exchange formats are named (`Step`, `Stl`). `Camera` is eye, target and up, as build123d's
+       `project_to_viewport(viewport_origin, viewport_up, look_at)`; its view frame and perspective are
+       HLRAlgo_Projector's (the target's plane keeps its scale), and the renderer uses the same arithmetic, so a drawing
+       and a picture from one camera line up.
+1553. **The drawing is read from HLRBRep's data structure, not from HLRBRep_HLRToShape's compounds.**
+       `ProjectLines` replays HLRToShape's selection (its five kinds, its `Used` and `HideCount` flags, the projector
+       scaled while it runs) but makes each visible or hidden part a public 2D curve (`HLRBRep::MakeEdge`'s cases: lines,
+       circles, ellipses, Bézier curves and B-splines; a polyline within a tolerance otherwise, where OCCT's builder takes
+       15 points) and keeps where it came from: the edge, or the face of an outline or isoline. The outliner splits edges
+       and rebuilds faces; its `NewSOldS` records map them back to the caller's sub-shapes. The polygonal algorithm runs
+       on the shapes meshed in the mesher's overlay (`IncrementalMesh.ReadMeshed`, decision 1535: the shape isn't
+       written), its segments joined into polylines by source, kind and visibility; it is orthographic only, as
+       HLRBRep_PolyHLRToShape drops the perspective (an `ArgumentException`). No engine code changed.
+1554. **OCCT's classification is kept as it is.** An edge on an outline is sharp (the front view of a cylinder draws its
+       seam, which lies on the silhouette, as a sharp line); a segment of the polygonal algorithm takes the first kind
+       of outline, sewn, smooth, sharp that HLRBRep_PolyHLRToShape's tests give it. Lengths and counts checked by hand
+       on a box (top, isometric, perspective, both algorithms), a cylinder (front, top, isometric), a sphere and two
+       shapes hiding each other.
+1555. **SVG.** One path per edge with its kind as its class, in two layers (hidden under visible); lines, arcs (two for
+       a whole circle; the sweep flag from the arc's sense, which looks the same on the page with Y flipped), ellipses'
+       arcs, and polynomial splines of degree 1 to 3 as Bézier segments (knot insertion to full multiplicity); other
+       curves a polyline within a tolerance in page units. Page in mm by default, full size without a page size, fitted
+       with one, centred. Invariant numbers rounded to three decimals, no negative zero, `
+`, UTF-8 without a BOM: a
+       drawing made by hand is checked byte for byte, also under a German culture.
+1556. **The renderer and PNG are deterministic by construction.** Rasterisation by edge functions at pixel centres in
+       double precision, depth as Z (orthographic) or 1/(d − Z) (perspective, affine on the screen), into a
+       supersampled buffer; bands of 16 rows binned then rasterised in parallel, each band owning its pixels and drawing
+       its triangles and then its edges in the scene's order, so the pixels are the serial ones; only `Math.Sqrt`
+       among library functions (no `Pow`: the sRGB values are used as they are). Feature edges: an edge is drawn when
+       the normals of the faces having a node at all of its points differ somewhere by more than the feature angle, or
+       when it is free; a seam (one face, two nodes at each point) and a tangent edge are not. PNG's deflate is Kerf's
+       own (fixed Huffman codes, greedy LZ77 on a hash chain): .NET's `ZLibStream` uses zlib-ng, whose output isn't
+       promised to be the same across machines and versions; it stays as `PngCompression.Smallest`. A 2 × 1 picture's
+       bytes are checked, verified once with Python's zlib.
+1557. **Tests and measurement.** `Kerf.Kernel.PublicApi.Tests` 119 → 154: drawing 12, SVG 6, rendering 11 (pixel
+       facts worked by hand, two golden pictures within 3 per channel, made again with `KERF_GOLDEN_DIR`), PNG 6, read
+       back by the tests' own decoder (CRCs, .NET's inflate, the filters). No other suite changed. Bento's examples
+       (`Kerf.Kernel.Bento.Benchmarks -- images 5`, a shared machine): drawing and SVG 2.4 to 22 ms (the bottle 86 ms,
+       176 edges), 0.4 to 14 MB; meshing, rendering at 800 × 600 supersampled 2 × 2 and PNG 38 to 93 ms (rendering 16
+       to 65 ms), 22 to 51 MB, of which 15 MB the supersampled buffers. No parallelism beyond the bands was needed.
+
 ## Phase 10: unit 10L5, the public API's leftovers
 
 17301. **A revolution no longer copies its profile, and decision 1526's cause was OCCT's, not a copy at entry.** The

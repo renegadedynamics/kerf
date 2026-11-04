@@ -9,8 +9,8 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
 /// GccAna_Circ2dTanOnRad on OCCT's documented configurations: solution counts, qualifiers, and on every solution the
-/// radius, the centre on the On-curve, the tangency and the tangency point. Where OCCT's own results are wrong
-/// (docs/occt-issues.md), the tests check what OCCT computes.
+/// radius, the centre on the On-curve, the tangency and the tangency point. Where OCCT's results were wrong
+/// (docs/occt-issues.md), the tests check the corrected ones (decision 1543).
 /// </summary>
 public class GccAna_Circ2dTanOnRadTests
 {
@@ -65,9 +65,9 @@ public class GccAna_Circ2dTanOnRadTests
         AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParArg, theArg), aPnt);
     }
 
-    // Unit circle at the origin, centres on the X axis, radius 0.4: outside at x = +-1.4, inside at x = +-0.6.
-    // OCCT: the tangency points are the points of the solutions opposite the true ones (the sign of dir1cen is
-    // swapped), so they are checked on the solution, at the diameter's other end.
+    // Unit circle at the origin, centres on the X axis, radius 0.4: outside at x = +-1.4, inside at x = +-0.6. OCCT put
+    // the tangency points at the solutions' far ends (the sign of dir1cen was swapped); they are where the circles touch
+    // (decision 1543).
     [Theory]
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, 4)]
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, 2)]
@@ -83,37 +83,42 @@ public class GccAna_Circ2dTanOnRadTests
         Assert.Equal(theNb, anAlgo.SolutionCount);
         for (int i = 1; i <= theNb; i++)
         {
-            Circle2D aSol = anAlgo.ThisSolution(i);
-            Assert.Equal(0.4, aSol.Radius);
+            Assert.Equal(0.4, anAlgo.ThisSolution(i).Radius);
             Assert.False(anAlgo.IsTheSame1(i));
             CheckCentreOnLine(anAlgo, i, anOn);
-            anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1);
-            Assert.Equal(CircQualifier(aC, aSol), aQ1);
-            anAlgo.Tangency1(i, out double aParSol, out _, out Point2D aPnt);
-            AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParSol, aSol), aPnt);
-            Point2D aTrue = new(aSol.Location.XY() - (aPnt.XY() - aSol.Location.XY()));
-            Assert.Equal(1.0, aTrue.DistanceTo(aC.Location), 1.0e-9);
+            CheckTangentCirc(anAlgo, i, aC);
         }
     }
 
-    // OCCT puts the tangency point at the centre of the argument (the sign is swapped), and ElCLib's parameter of a
-    // circle's centre normalises a null vector: native OCCT throws Standard_ConstructionError, as the port does
+    // Enclosed in the unit circle, radius 0.5, centres on the X axis: (+-0.5, 0), touching it at (+-1, 0). OCCT put the
+    // tangency point at the argument's centre and threw taking its parameter (decision 1543)
     [Fact]
-    public void CircleCentreOnLine_TangencyPointAtTheCentre_Throws()
+    public void CircleCentreOnLine_EnclosedHalfRadius()
     {
-        Assert.Throws<ConstructionErrorException>(
-            () => new AnalyticCirc2dTanOnRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(Circ(0, 0, 1)), Lin(0, 0, 1, 0), 0.5, Tol));
+        Circle2D aC = Circ(0, 0, 1);
+        Line2D anOn = Lin(0, 0, 1, 0);
+        AnalyticCirc2dTanOnRad anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(aC), anOn, 0.5, Tol);
+        Assert.Equal(2, anAlgo.SolutionCount);
+        for (int i = 1; i <= 2; i++)
+        {
+            CheckCentreOnLine(anAlgo, i, anOn);
+            CheckTangentCirc(anAlgo, i, aC);
+            anAlgo.Tangency1(i, out _, out _, out Point2D aPnt);
+            AssertNear(aPnt, new Point2D(2 * anAlgo.ThisSolution(i).Location.X, 0));
+        }
     }
 
-    // OCCT: CenterOn3 returns the tangency point, not the centre
+    // CenterOn3 gives the centre (OCCT gave the tangency point: decision 1543)
     [Fact]
-    public void CenterOn3_ReturnsTheTangencyPoint()
+    public void CenterOn3_ReturnsTheCentre()
     {
         AnalyticCirc2dTanOnRad anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Outside(Circ(0, 0, 1)), Lin(0, 0, 1, 0), 0.5, Tol);
         Assert.Equal(2, anAlgo.SolutionCount);
-        anAlgo.CenterOn3(1, out _, out Point2D aPnt);
-        anAlgo.Tangency1(1, out _, out _, out Point2D aTan);
-        Assert.Equal(aTan, aPnt);
+        for (int i = 1; i <= 2; i++)
+        {
+            anAlgo.CenterOn3(i, out _, out Point2D aPnt);
+            Assert.Equal(anAlgo.ThisSolution(i).Location, aPnt);
+        }
     }
 
     // The X axis, centres on the Y axis, radius 1: (0, 1) inside (left of +X), (0, -1) outside
@@ -146,15 +151,18 @@ public class GccAna_Circ2dTanOnRadTests
         }
     }
 
-    // OCCT: the second solution's centre parameter is that of the first (pntcen3 from cirsol(1))
+    // Each centre has its own parameter on the line (OCCT gave the second solution the first one's: decision 1543)
     [Fact]
-    public void LineCentreOnLine_SecondCentreParameterIsTheFirst()
+    public void LineCentreOnLine_EachCentreItsParameter()
     {
-        AnalyticCirc2dTanOnRad anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Lin(0, 0, 1, 0)), Lin(0, 0, 0, 1), 1.0, Tol);
+        Line2D anOn = Lin(0, 0, 0, 1);
+        AnalyticCirc2dTanOnRad anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Lin(0, 0, 1, 0)), anOn, 1.0, Tol);
         Assert.Equal(2, anAlgo.SolutionCount);
+        CheckCentreOnLine(anAlgo, 1, anOn);
+        CheckCentreOnLine(anAlgo, 2, anOn);
         anAlgo.CenterOn3(1, out double aPar1, out _);
         anAlgo.CenterOn3(2, out double aPar2, out _);
-        Assert.Equal(aPar1, aPar2);
+        Assert.Equal(2.0, Math.Abs(aPar1 - aPar2), 1.0e-9);
     }
 
     [Fact]
@@ -191,16 +199,21 @@ public class GccAna_Circ2dTanOnRadTests
         }
     }
 
-    // OCCT: with the point on the line, the two solutions are found but IsDone stays false
+    // The point on the line: two solutions (OCCT found them but left IsDone false: decision 1543)
     [Fact]
-    public void PointOnTheCentreLine_NotDone()
+    public void PointOnTheCentreLine()
     {
-        AnalyticCirc2dTanOnRad anAlgo = new(new Point2D(0, 3), Lin(0, 0, 0, 1), 1.0, Tol);
-        Assert.False(anAlgo.IsDone);
+        Line2D anOn = Lin(0, 0, 0, 1);
+        AnalyticCirc2dTanOnRad anAlgo = new(new Point2D(0, 3), anOn, 1.0, Tol);
+        Assert.True(anAlgo.IsDone);
         Assert.Equal(2, anAlgo.SolutionCount);
-        Assert.Throws<NotDoneException>(() => anAlgo.Tangency1(1, out _, out _, out _));
-        AssertNear(anAlgo.ThisSolution(1).Location, new Point2D(0, 4));
-        AssertNear(anAlgo.ThisSolution(2).Location, new Point2D(0, 2));
+        for (int i = 1; i <= 2; i++)
+        {
+            Assert.Equal(1.0, Math.Abs(anAlgo.ThisSolution(i).Location.Y - 3), 1.0e-9);
+            CheckCentreOnLine(anAlgo, i, anOn);
+            anAlgo.Tangency1(i, out _, out _, out Point2D aPnt);
+            AssertNear(aPnt, new Point2D(0, 3));
+        }
     }
 
     // Unit circle at the origin, centres on the circle at (3, 0) of radius 1, radius 1.5: outside the unit circle at
@@ -226,30 +239,46 @@ public class GccAna_Circ2dTanOnRadTests
         }
     }
 
-    // Unit circles at the origin and at (1, 0), radius just over 3 (within the tolerance): the circle centred at
-    // (2, 0) encloses the first. OCCT's "sign" branch writes the qualifier at index 0, outside its array: native OCCT's
-    // range check throws Standard_OutOfRange (tools/gccrec's hand-picked cases), and so does the port.
+    // Unit circles at the origin and at (1, 0), radius just over 3 (within the tolerance): the circle centred at (2, 0)
+    // encloses the first. OCCT wrote the qualifier at index 0 and threw Standard_OutOfRange (decision 1543).
     [Fact]
-    public void CircleCentreOnCircle_EnclosingAll_Throws()
+    public void CircleCentreOnCircle_EnclosingAll()
     {
         Circle2D aC = Circ(0, 0, 1);
         Circle2D anOn = Circ(1, 0, 1);
-        Assert.Throws<OutOfRangeException>(() => new AnalyticCirc2dTanOnRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC), anOn, 3.0 + 5.0e-10, Tol));
+        AnalyticCirc2dTanOnRad anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC), anOn, 3.0 + 5.0e-10, Tol);
+        Assert.Equal(1, anAlgo.SolutionCount);
+        AssertNear(anAlgo.ThisSolution(1).Location, new Point2D(2, 0));
+        anAlgo.WhichQualifier(1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1);
+        Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, aQ1);
+        CheckCentreOnCirc(anAlgo, 1, anOn);
     }
 
-    // The X axis, centres on the circle of radius 2 at the origin, radius 1. OCCT truncates a dot product into its side
-    // (0), so the tangency point is the solution's centre and ElCLib's parameter there normalises a null vector: native
-    // OCCT throws Standard_ConstructionError on every such case (tools/gccrec), as the port does
+    // The X axis, centres on the circle of radius 2 at the origin, radius 1: (+-sqrt(3), +-1). OCCT truncated a dot
+    // product into its side (0), put the tangency point at the centre and threw taking its parameter (decision 1543)
     [Theory]
-    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified)]
-    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed)]
-    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside)]
-    public void LineCentreOnCircle_Throws(object theQValue)
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, 4)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, 2)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, 2)]
+    public void LineCentreOnCircle(object theQValue, int theNb)
     {
         var theQ = (global::Kerf.Engine.Construction.Constraints.Qualifier)theQValue; // the theory's data as object: the engine type is internal
         Line2D aL = Lin(0, 0, 1, 0);
         Circle2D anOn = Circ(0, 0, 2);
-        Assert.Throws<ConstructionErrorException>(() => new AnalyticCirc2dTanOnRad(new global::Kerf.Engine.Construction.Constraints.QualifiedLin(aL, theQ), anOn, 1.0, Tol));
+        AnalyticCirc2dTanOnRad anAlgo = new(new global::Kerf.Engine.Construction.Constraints.QualifiedLin(aL, theQ), anOn, 1.0, Tol);
+        Assert.Equal(theNb, anAlgo.SolutionCount);
+        for (int i = 1; i <= theNb; i++)
+        {
+            Circle2D aSol = anAlgo.ThisSolution(i);
+            Assert.Equal(Math.Sqrt(3.0), Math.Abs(aSol.Location.X), 1.0e-9);
+            CheckCentreOnCirc(anAlgo, i, anOn);
+            anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1);
+            Assert.Equal(aSol.Location.Y > 0 ? global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed : global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, aQ1);
+            anAlgo.Tangency1(i, out double aParSol, out double aParArg, out Point2D aPnt);
+            AssertNear(aPnt, new Point2D(aSol.Location.X, 0));
+            AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParSol, aSol), aPnt);
+            AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParArg, aL), aPnt);
+        }
     }
 
 
@@ -270,10 +299,13 @@ public class GccAna_Circ2dTanOnRadTests
             Assert.Equal(2.5, aSol.Location.DistanceTo(aP), 1.0e-9);
             Assert.True(anOn.DistanceTo(aSol.Location) < 1.0e-9);
         }
-        // OCCT fills the tangency data of the first solution only
-        anAlgo.Tangency1(1, out double aParSol, out _, out Point2D aPnt);
-        AssertNear(aPnt, aP);
-        AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParSol, anAlgo.ThisSolution(1)), aP);
+        // each solution's tangency data (OCCT filled the first's only: decision 1543)
+        for (int i = 1; i <= 2; i++)
+        {
+            anAlgo.Tangency1(i, out double aParSol, out _, out Point2D aPnt);
+            AssertNear(aPnt, aP);
+            AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParSol, anAlgo.ThisSolution(i)), aP);
+        }
     }
 
     // The origin, centres on the circle at (3, 0) of radius 1, radius 2: the one centre at (2, 0)

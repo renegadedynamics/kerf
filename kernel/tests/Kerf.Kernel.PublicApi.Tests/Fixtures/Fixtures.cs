@@ -27,5 +27,15 @@ internal static class Fixtures
         return memory.ToArray();
     }
 
+    /// <summary>An embedded file of Fixtures (the golden pictures, unit 10L4).</summary>
+    public static byte[] Resource(string fileName)
+    {
+        using Stream stream = typeof(Fixtures).Assembly.GetManifestResourceStream($"Fixtures.{fileName}")
+                              ?? throw new InvalidOperationException($"No fixture {fileName}");
+        using var memory = new MemoryStream();
+        stream.CopyTo(memory);
+        return memory.ToArray();
+    }
+
     private static Shape Load(string name) => Brep.Read(new MemoryStream(Bytes(name))).Value;
 }

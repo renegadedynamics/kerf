@@ -47,18 +47,18 @@ public class GccAna_Lin2dTanOblTests
     }
 
     [Fact]
-    public void ThroughPoint_Parallel_IntersectionIsTheOrigin()
+    public void ThroughPoint_Parallel_NoIntersection()
     {
+        // parallel to the line: no intersection, and Intersection2 says so (OCCT gave the default point's data:
+        // decision 1544)
         Line2D aL = new(new Point2D(1, 0), DX);
         AnalyticLin2dTanObl anAlgo = new(new Point2D(0, 3), aL, 0.0);
         Assert.Equal(1, anAlgo.SolutionCount);
-        // OCCT: no intersection, so the intersection data are the default point's
-        anAlgo.Intersection2(1, out _, out _, out Point2D aP);
-        Assert.Equal(new Point2D(), aP);
+        Assert.Throws<global::Kerf.Engine.Construction.Constraints.IsParallelException>(() => anAlgo.Intersection2(1, out _, out _, out _));
     }
 
     [Fact]
-    public void TangentToCircle_Unqualified_Two_SecondIntersectionIsTheFirsts()
+    public void TangentToCircle_Unqualified_Two()
     {
         Line2D aL = new(new Point2D(0, -5), new Direction2D(1, 0.2));
         Circle2D aC = Circ(1, 2, 1.5);
@@ -78,12 +78,9 @@ public class GccAna_Lin2dTanOblTests
         anAlgo.WhichQualifier(2, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
         Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, aQ1);
         Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, aQ2);
+        // each solution's own intersection (OCCT intersected the first twice: decision 1544)
         CheckIntersection(anAlgo, 1, aL);
-        // OCCT: the second solution's intersection is computed with the first solution
-        anAlgo.Intersection2(1, out _, out _, out Point2D aP1);
-        anAlgo.Intersection2(2, out _, out _, out Point2D aP2);
-        Assert.Equal(aP1, aP2);
-        Assert.False(anAlgo.ThisSolution(2).DistanceTo(aP2) < Tol);
+        CheckIntersection(anAlgo, 2, aL);
     }
 
     [Fact]

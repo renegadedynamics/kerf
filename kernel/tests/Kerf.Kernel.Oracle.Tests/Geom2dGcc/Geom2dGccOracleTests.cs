@@ -33,7 +33,7 @@ namespace Kerf.Kernel.Oracle.Tests;
 /// uninitialised memory are attributed by kind; every other token must be identical.
 /// </para>
 /// </remarks>
-public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
+public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
 {
     private static readonly int CasesPerConstructor = Tape.Cases(500, 167);
 
@@ -526,6 +526,17 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
 
         /// <summary>Whether the attribution explains these differences (by default, any).</summary>
         public Func<List<string>, bool> Explained = _ => true;
+
+        /// <summary>
+        /// The laws of a solver Kerf corrected (unit 10K4), with the decision: a difference from native is intended when
+        /// the port obeys them and keeps native's solutions that do (Geom2dGccOracleTests.Laws.cs).
+        /// </summary>
+        public Laws? Laws;
+
+        /// <summary>The laws of a line solver Kerf corrected, as <see cref="Laws"/>.</summary>
+        public LineLaws? LineLaws;
+
+        public string? Corrected;
     }
 
     internal static Rec RunNative(Func<NSolver> theCtor)
@@ -649,13 +660,13 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Description = Describe(a1, a2) + $", r {r}",
                 Native = () => RunNative(() => NCirc2d2TanRad(new N.Geom2dGcc_Circ2d2TanRad(NQ(n1, a1.Q), NQ(n2, a2.Q), r, tol))),
                 Port = () => RunPort(() => PCirc2d2TanRad(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad(PQ(p1, a1.Q), PQ(p2, a2.Q), r, tol))),
+                Laws = new([L(a1, p1), L(a2, p2)], null, r, tol),
+                Corrected = "GccAna_Circ2d2TanRad and Geom2dGcc_Circ2d2TanRad (decisions 1542 and 1545)",
             };
             if (a1.IsCircle && a2.IsCircle)
             {
-                // GccAna_Circ2d2TanRad(circle, circle) leaves TheSame2(1) unset (decision 781): Results reads it
-                // through IsTheSame2 and then calls Tangency2, which throws StdFail_NotDone when it isn't 0.
+                // GccAna_Circ2d2TanRad(circle, circle) left TheSame2(1) unset natively (decision 781).
                 c.Masked = n => Starts(n, "same2.", "t2.");
-                c.Attribution = "GccAna_Circ2d2TanRad(circle, circle)'s unset TheSame2 (native throws from Results when it isn't 0)";
             }
             return c;
         });
@@ -670,6 +681,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Description = Describe(a1) + $", point ({x}, {y}), r {r}",
                 Native = () => RunNative(() => NCirc2d2TanRad(new N.Geom2dGcc_Circ2d2TanRad(NQ(n1, a1.Q), new N.Geom2d_CartesianPoint(x, y), r, tol))),
                 Port = () => RunPort(() => PCirc2d2TanRad(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad(PQ(p1, a1.Q), new CartesianPoint2(x, y), r, tol))),
+                Laws = new([L(a1, p1), L(x, y)], null, r, tol),
+                Corrected = "GccAna_Circ2d2TanRad and Geom2dGcc_Circ2d2TanRad (decisions 1542 and 1545)",
             };
         });
         yield return ("Circ2d2TanRad(point, point)", o =>
@@ -704,15 +717,13 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     return NCirc2d2TanOn(new N.Geom2dGcc_Circ2d2TanOn(NQ(n1, a1.Q), NQ(n2, a2.Q), anOn, tol, u1, u2, u3));
                 }),
                 Port = () => RunPort(() => PCirc2d2TanOn(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanOn(PQ(p1, a1.Q), PQ(p2, a2.Q), new CurveAdaptor2D(p3), tol, u1, u2, u3))),
+                Laws = new([L(a1, p1), L(a2, p2)], p3, null, tol),
+                Corrected = "GccAna_Circ2d2TanOn and Geom2dGcc_Circ2d2TanOn (decisions 1541 and 1545)",
             };
             if (!(a1.IsAnalytic && a2.IsAnalytic && a3.IsAnalytic))
             {
                 // The Iter branches never write parcen3 (CenterOn3's parameter).
                 c.Masked = n => n.StartsWith("c3.", StringComparison.Ordinal) && n.EndsWith(".pararg", StringComparison.Ordinal);
-            }
-            if (a1.IsCircle && a2.IsCircle && !a3.IsAnalytic && (a1.Q == global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified || a2.Q == global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified))
-            {
-                c.Attribution = "Circ2d2TanOnGeo(circle, circle, curve)'s unset Rbid(2)/RBid(2)";
             }
             return c;
         });
@@ -733,6 +744,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     return NCirc2d2TanOn(new N.Geom2dGcc_Circ2d2TanOn(NQ(n1, a1.Q), new N.Geom2d_CartesianPoint(x, y), anOn, tol, u1, u3));
                 }),
                 Port = () => RunPort(() => PCirc2d2TanOn(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanOn(PQ(p1, a1.Q), new CartesianPoint2(x, y), new CurveAdaptor2D(p3), tol, u1, u3))),
+                Laws = new([L(a1, p1), L(x, y)], p3, null, tol),
+                Corrected = "GccAna_Circ2d2TanOn and Geom2dGcc_Circ2d2TanOn (decisions 1541 and 1545)",
             };
             if (a1.IsCircle && a3.IsLine)
             {
@@ -741,13 +754,9 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
             }
             else if (!(a1.IsAnalytic && a3.IsAnalytic))
             {
+                // Circ2d2TanOnIter's point constructors gave math_FunctionSetRoot 3-vectors for a 4-variable function:
+                // native threw Standard_DimensionError; the port solves them (Kerf decision 1545), judged by the laws.
                 c.Masked = n => n.StartsWith("c3.", StringComparison.Ordinal) && n.EndsWith(".pararg", StringComparison.Ordinal);
-                // Circ2d2TanOnIter's point constructors give math_FunctionSetRoot 3-vectors for a 4-variable function.
-                // Native's math_FunctionSetRoot.cxx compiles its range checks out (No_Standard_OutOfRange): SetTolerance
-                // reads past the tolerances and Perform throws Standard_DimensionError. The port's math_Vector checks
-                // the read and throws Standard_OutOfRange.
-                c.Attribution = "Circ2d2TanOnIter's 3-vectors for 4 variables: native Standard_DimensionError, port Standard_OutOfRange";
-                c.Explained = d => d.Count == 1 && d[0] == "ctor: native throws Standard_DimensionError, port throws Standard_OutOfRange";
             }
             return c;
         });
@@ -767,6 +776,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     return NCirc2d2TanOn(new N.Geom2dGcc_Circ2d2TanOn(new N.Geom2d_CartesianPoint(x1, y1), new N.Geom2d_CartesianPoint(x2, y2), anOn, tol));
                 }),
                 Port = () => RunPort(() => PCirc2d2TanOn(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanOn(new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), new CurveAdaptor2D(p3), tol))),
+                Laws = new([L(x1, y1), L(x2, y2)], p3, null, tol),
+                Corrected = "GccAna_Circ2d2TanOn and Geom2dGcc_Circ2d2TanOn (decisions 1541 and 1545)",
             };
         });
 
@@ -784,14 +795,12 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Description = Describe(a1, a2, a3),
                 Native = () => RunNative(() => NCirc2d3Tan(new N.Geom2dGcc_Circ2d3Tan(NQ(n1, a1.Q), NQ(n2, a2.Q), NQ(n3, a3.Q), tol, u1, u2, u3))),
                 Port = () => RunPort(() => PCirc2d3Tan(new global::Kerf.Engine.Construction.Constraints.Circ2d3Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), PQ(p3, a3.Q), tol, u1, u2, u3))),
+                Laws = new([L(a1, p1), L(a2, p2), L(a3, p3)], null, null, tol),
+                Corrected = "GccAna_Circ2d3Tan (decision 1540)",
             };
             if (!(a1.IsAnalytic && a2.IsAnalytic && a3.IsAnalytic))
             {
                 c.Attribution = "FunctionTanCuCuCu's empty Values: math_FunctionSetRoot starts from its uninitialised F and DF";
-            }
-            else if (a1.IsLine && a2.IsLine && a3.IsLine)
-            {
-                c.Attribution = "GccAna_Circ2d3Tan(three lines)'s unset cote3(2) (decision 781)";
             }
             return c;
         });
@@ -808,6 +817,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Description = Describe(a1, a2) + $", point ({x}, {y})",
                 Native = () => RunNative(() => NCirc2d3Tan(new N.Geom2dGcc_Circ2d3Tan(NQ(n1, a1.Q), NQ(n2, a2.Q), new N.Geom2d_CartesianPoint(x, y), tol, u1, u2))),
                 Port = () => RunPort(() => PCirc2d3Tan(new global::Kerf.Engine.Construction.Constraints.Circ2d3Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), new CartesianPoint2(x, y), tol, u1, u2))),
+                Laws = new([L(a1, p1), L(a2, p2), L(x, y)], null, null, tol),
+                Corrected = "GccAna_Circ2d3Tan (decision 1540)",
             };
             if (!(a1.IsAnalytic && a2.IsAnalytic))
             {
@@ -828,6 +839,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Description = Describe(a1) + $", ({x1}, {y1}), ({x2}, {y2})",
                 Native = () => RunNative(() => NCirc2d3Tan(new N.Geom2dGcc_Circ2d3Tan(NQ(n1, a1.Q), new N.Geom2d_CartesianPoint(x1, y1), new N.Geom2d_CartesianPoint(x2, y2), tol, u1))),
                 Port = () => RunPort(() => PCirc2d3Tan(new global::Kerf.Engine.Construction.Constraints.Circ2d3Tan(PQ(p1, a1.Q), new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), tol, u1))),
+                Laws = new([L(a1, p1), L(x1, y1), L(x2, y2)], null, null, tol),
+                Corrected = "GccAna_Circ2d3Tan (decision 1540)",
             };
             if (!a1.IsAnalytic)
             {
@@ -890,6 +903,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     return NCirc2dTanOnRad(new N.Geom2dGcc_Circ2dTanOnRad(NQ(n1, a1.Q), anOn, r, tol));
                 }),
                 Port = () => RunPort(() => PCirc2dTanOnRad(new global::Kerf.Engine.Construction.Constraints.Circ2dTanOnRad(PQ(p1, a1.Q), new CurveAdaptor2D(p2), r, tol))),
+                Laws = new([L(a1, p1)], p2, r, tol),
+                Corrected = "GccAna_Circ2dTanOnRad and Geom2dGcc_Circ2dTanOnRadGeo (decisions 1543 and 1547)",
             };
         });
         yield return ("Circ2dTanOnRad(point, on)", o =>
@@ -907,6 +922,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     return NCirc2dTanOnRad(new N.Geom2dGcc_Circ2dTanOnRad(new N.Geom2d_CartesianPoint(x, y), anOn, r, tol));
                 }),
                 Port = () => RunPort(() => PCirc2dTanOnRad(new global::Kerf.Engine.Construction.Constraints.Circ2dTanOnRad(new CartesianPoint2(x, y), new CurveAdaptor2D(p2), r, tol))),
+                Laws = new([L(x, y)], p2, r, tol),
+                Corrected = "GccAna_Circ2dTanOnRad and Geom2dGcc_Circ2dTanOnRadGeo (decisions 1543 and 1547)",
             };
             if (a2.IsCircle)
             {
@@ -928,6 +945,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Description = Describe(a1, a2),
                 Native = () => RunNative(() => NLin2d2Tan(new N.Geom2dGcc_Lin2d2Tan(NQ(n1, a1.Q), NQ(n2, a2.Q), tol))),
                 Port = () => RunPort(() => PLin2d2Tan(new global::Kerf.Engine.Construction.Constraints.Lin2d2Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), tol))),
+                LineLaws = new([L(a1, p1), L(a2, p2)], null, 0, tol),
+                Corrected = "GccAna_Lin2d2Tan (decision 1544)",
             };
         });
         yield return ("Lin2d2Tan(curve, point)", o =>
@@ -945,6 +964,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     return NLin2d2Tan(new N.Geom2dGcc_Lin2d2Tan(NQ(n1, a1.Q), aP, tol));
                 }),
                 Port = () => RunPort(() => PLin2d2Tan(new global::Kerf.Engine.Construction.Constraints.Lin2d2Tan(PQ(p1, a1.Q), new Point2D(x, y), tol))),
+                LineLaws = new([L(a1, p1), L(x, y)], null, 0, tol),
+                Corrected = "GccAna_Lin2d2Tan (decision 1544)",
             };
         });
         yield return ("Lin2d2Tan(curve, curve, params)", o =>
@@ -959,6 +980,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Description = Describe(a1, a2) + $", from {u1}, {u2}",
                 Native = () => RunNative(() => NLin2d2Tan(new N.Geom2dGcc_Lin2d2Tan(NQ(n1, a1.Q), NQ(n2, a2.Q), tol, u1, u2))),
                 Port = () => RunPort(() => PLin2d2Tan(new global::Kerf.Engine.Construction.Constraints.Lin2d2Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), tol, u1, u2))),
+                LineLaws = new([L(a1, p1), L(a2, p2)], null, 0, tol),
+                Corrected = "GccAna_Lin2d2Tan (decision 1544)",
             };
         });
         yield return ("Lin2d2Tan(curve, point, param)", o =>
@@ -977,6 +1000,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     return NLin2d2Tan(new N.Geom2dGcc_Lin2d2Tan(NQ(n1, a1.Q), aP, tol, u1));
                 }),
                 Port = () => RunPort(() => PLin2d2Tan(new global::Kerf.Engine.Construction.Constraints.Lin2d2Tan(PQ(p1, a1.Q), new Point2D(x, y), tol, u1))),
+                LineLaws = new([L(a1, p1), L(x, y)], null, 0, tol),
+                Corrected = "GccAna_Lin2d2Tan (decision 1544)",
             };
         });
 
@@ -1010,6 +1035,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                         return PLin2dTanObl(aWithParam ? new global::Kerf.Engine.Construction.Constraints.Lin2dTanObl(PQ(p1, a1.Q), aL, tolang, u1, angle)
                                                        : new global::Kerf.Engine.Construction.Constraints.Lin2dTanObl(PQ(p1, a1.Q), aL, tolang, angle));
                     }),
+                    LineLaws = new([L(a1, p1)], new Line2D(new Point2D(x, y), new Direction2D(dx, dy)), angle, tolang),
+                    Corrected = "GccAna_Lin2dTanObl and Geom2dGcc_Lin2dTanObl (decision 1544)",
                 };
             });
         }
@@ -1044,12 +1071,33 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         return aDiff;
     }
 
+    /// <summary>
+    /// The cases (by constructor, the case's index) where the recording ran native twice: its port differed from
+    /// native under an attribution, and the test asked native again whether it repeats itself.
+    /// </summary>
+    private static readonly Dictionary<string, HashSet<int>> theNativeRanTwice = new()
+    {
+        ["Circ2d2TanOn(curve, point, on)"] =
+        [
+            1, 3, 4, 6, 7, 11, 12, 13, 14, 16, 17, 18, 25, 27, 29, 31, 32, 34, 35, 36, 37, 38, 40, 43, 46, 48,
+            52, 54, 55, 56, 57, 61, 63, 65, 66, 69, 70, 72, 73, 74, 75, 80, 82, 83, 84, 89, 92, 94, 96, 98, 99,
+            100, 103, 104, 106, 107, 110, 112, 113, 114, 116, 117, 121, 122, 124, 131, 132, 134, 136, 137, 138,
+            140, 141, 144, 145, 147, 150, 151, 154, 156, 160, 163, 164, 165, 166
+        ],
+        ["Circ2dTanCen(curve, centre)"] =
+        [
+            4, 9, 11, 14, 17, 28, 45, 48, 50, 53, 68, 73, 74, 82, 102, 121, 124, 138, 141, 146, 147, 149, 150,
+            157, 160
+        ],
+    };
+
     [Fact]
     public void Solvers_match_native_token_for_token()
     {
         var anO = new Oracle(output, 20261030);
         int aTotalCases = 0, aTotalIdentical = 0, aTotalTokens = 0, aTotalMasked = 0, aTotalWithSolutions = 0;
         var anAttributed = new Dictionary<string, (int Cases, int NativeRepeats)>();
+        var anIntended = new Dictionary<string, int>();
         var aFailures = new List<string>();
         foreach (var (aCtor, aMake) in Constructors())
         {
@@ -1071,6 +1119,10 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 List<string> aDiff = Differences(aN, aP, aCase.Masked, out int aCompared, out int aMaskedCount);
                 aTotalTokens += aCompared;
                 aTotalMasked += aMaskedCount;
+                // Native ran again on the same inputs where the recording's port differed from it under an
+                // attribution (to record whether native repeats itself): the tape has those runs, so they are made
+                // whatever the port gives now
+                Rec? aN2 = theNativeRanTwice.TryGetValue(aCtor, out HashSet<int>? aTwice) && aTwice.Contains(i) ? aCase.Native() : null;
                 if (aDiff.Count == 0)
                 {
                     anIdentical++;
@@ -1078,14 +1130,20 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 }
                 if (aCase.Attribution is not null && aCase.Explained(aDiff))
                 {
-                    // Native again on the same inputs: whether its result repeats is recorded, not required.
-                    Rec aN2 = aCase.Native();
-                    bool aRepeats = Differences(aN, aN2, aCase.Masked, out _, out _).Count == 0;
+                    bool aRepeats = aN2 is not null && Differences(aN, aN2, aCase.Masked, out _, out _).Count == 0;
                     anAttributed.TryGetValue(aCase.Attribution, out var aCount);
                     anAttributed[aCase.Attribution] = (aCount.Cases + 1, aCount.NativeRepeats + (aRepeats ? 1 : 0));
                     continue;
                 }
-                aFailures.Add($"{aCtor} #{i} [{aCase.Description}]: {string.Join("; ", aDiff.Take(6))}");
+                string aWhy = "";
+                if ((aCase.Laws is not null && IsIntendedDifference(aN, aP, aCase.Laws, out aWhy))
+                    || (aCase.LineLaws is not null && IsIntendedDifference(aN, aP, aCase.LineLaws, out aWhy)))
+                {
+                    anIntended.TryGetValue(aCase.Corrected!, out int aCount);
+                    anIntended[aCase.Corrected!] = aCount + 1;
+                    continue;
+                }
+                aFailures.Add($"{aCtor} #{i} [{aCase.Description}]: {aWhy} {string.Join("; ", aDiff.Take(6))}");
             }
             output.WriteLine(string.Create(CultureInfo.InvariantCulture,
                 $"{aCtor}: {anIdentical}/{aCases} cases identical, {aWithSolutions} with solutions, {aThrows} throwing on both sides or natively"));
@@ -1098,6 +1156,10 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         foreach (var (aWhy, aCount) in anAttributed)
         {
             output.WriteLine($"Attributed: {aCount.Cases} cases ({aCount.NativeRepeats} where native repeats itself): {aWhy}");
+        }
+        foreach (var (aWhy, aCount) in anIntended)
+        {
+            output.WriteLine($"Intended differences (plan 3.2's third level): {aCount} cases, {aWhy}");
         }
         foreach (string aF in aFailures.Take(40))
         {

@@ -238,39 +238,25 @@ public class GccAna_Circ2d3TanTests
     }
 
     [Fact]
-    public void TwoCirclesLine_Qualified_KeepsSolutionsNotTangentToTheSecondCircle()
+    public void TwoCirclesLine_Qualified_KeepsOnlySolutionsTangentToAllThree()
     {
-        // OCCT: the circle-circle-line constructor doesn't reject a centre whose radius fails the second circle's
-        // or the line's check (GccAna_Circ2d3Tan_1.cxx), so with qualified circles it also returns circles that
-        // touch only the first one. The solutions that do touch all three have the requested positions.
+        // OCCT also returned circles touching the first circle only (it didn't reject a centre whose radius failed
+        // the second circle's or the line's check); every solution now touches all three as asked (decision 1540)
         Circle2D aA = Circ(0.0, 3.0, 1.0);
         Circle2D aB = Circ(5.0, 2.0, 1.5);
         global::Kerf.Engine.Construction.Constraints.QualifiedCirc aQA = global::Kerf.Engine.Construction.Constraints.GccEnt.Outside(aA), aQB = global::Kerf.Engine.Construction.Constraints.GccEnt.Outside(aB);
         global::Kerf.Engine.Construction.Constraints.QualifiedLin aQL = global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(LX);
         AnalyticCirc2d3Tan aSolver = new(aQA, aQB, aQL, Tol);
-        Assert.True(aSolver.IsDone);
-        int aValid = 0, anInvalid = 0;
+        CheckSolutions(aSolver, Arg.Of(aQA), Arg.Of(aQB), Arg.Of(aQL));
+        Assert.True(aSolver.SolutionCount >= 1);
         for (int i = 1; i <= aSolver.SolutionCount; i++)
         {
             Circle2D aSol = aSolver.ThisSolution(i);
             Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, Classify(aSol, aA));
-            if (Classify(aSol, aB) == global::Kerf.Engine.Construction.Constraints.Qualifier.Outside && Math.Abs(LX.DistanceTo(aSol.Location) - aSol.Radius) <= Tol)
-            {
-                aValid++;
-                Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, Classify(aSol, LX));
-            }
-            else
-            {
-                anInvalid++;
-            }
+            Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, Classify(aSol, aB));
+            Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, Classify(aSol, LX));
         }
-        Assert.True(aValid >= 1);
-        Assert.True(anInvalid >= 1);
     }
-
-    //=========================================================================
-    // A circle and two lines
-    //=========================================================================
 
     [Fact]
     public void CircleTwoLines_Unqualified()
@@ -388,12 +374,10 @@ public class GccAna_Circ2d3TanTests
         Circle2D aC = Circ(0.0, 4.0, 1.0);
         Point2D aP = new(4.0, 2.0);
         AnalyticCirc2d3Tan aSolver = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(LX), aP, Tol);
-        // OCCT: the first tangency point is on the far side of the solution unless the solution is enclosed in
-        // the circle (GccAna_Circ2d3Tan_5.cxx), so it isn't checked here
-        CheckSolutions(aSolver, Arg.Of(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC)), Arg.Of(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(LX)), Arg.Of(aP), 1);
+        // OCCT put the first tangency point on the far side of the solution unless the solution was enclosed in the
+        // circle; it is where the two touch (decision 1540), which CheckSolutions checks
+        CheckSolutions(aSolver, Arg.Of(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC)), Arg.Of(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(LX)), Arg.Of(aP));
         Assert.Equal(4, aSolver.SolutionCount);
-        aSolver.Tangency1(1, out _, out _, out Point2D aPnt);
-        Assert.True(Math.Abs(aC.Location.DistanceTo(aPnt) - aC.Radius) > 1.0e-3);
     }
 
     [Fact]

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Collections.Immutable;
+using Kerf.Drawing;
 using Kerf.Meshing;
 using Kerf.Topology;
 
@@ -73,6 +74,58 @@ public sealed record ModelNode
         var shapes = new List<Shape>();
         Collect(this, new Placement(), shapes);
         return Compound.Create(shapes);
+    }
+
+    /// <summary>
+    /// The model as a scene for <see cref="Renderer"/>: each part meshed (a shape with <paramref name="meshOptions"/>,
+    /// or a deflection of a thousandth of its size) at its place, in its colour or its nearest ancestor's
+    /// (<paramref name="defaultColor"/>, light grey by default, where none has one).
+    /// </summary>
+    /// <returns>The scene, or the first part's meshing failure.</returns>
+    /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
+    public Result<Scene> ToScene(MeshOptions? meshOptions = null, Color? defaultColor = null, CancellationToken cancellationToken = default)
+    {
+        var items = new List<SceneItem>();
+        var warnings = new List<Diagnostic>();
+        Diagnostic? failure = Collect(this, new Placement(), defaultColor ?? SceneItem.DefaultColor, meshOptions, items, warnings, cancellationToken);
+        return failure is not null ? Result<Scene>.Failure(failure, [.. warnings]) : Result<Scene>.Success(new Scene(items), [.. warnings]);
+    }
+
+    private static Diagnostic? Collect(ModelNode node, Placement placement, Color color, MeshOptions? meshOptions, List<SceneItem> items,
+                                       List<Diagnostic> warnings, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        color = node.Color ?? color;
+        if (node.Shape is { } shape)
+        {
+            Shape placed = placement.IsIdentity ? shape : shape.Moved(placement.Transformation);
+            Result<ShapeMesh> mesh = Mesher.Mesh(placed, meshOptions ?? Renderer.DefaultMeshOptions(placed), null, cancellationToken);
+            warnings.AddRange(mesh.Diagnostics.Where(d => !d.IsError));
+            if (!mesh.TryGetValue(out ShapeMesh? value))
+            {
+                return mesh.Error;
+            }
+
+            items.Add(new SceneItem(value, color));
+            return null;
+        }
+
+        if (node.Mesh is { } part)
+        {
+            items.Add(new SceneItem(part, color) { Transform = placement.Transformation });
+            return null;
+        }
+
+        Placement inner = placement * node.Placement;
+        foreach (ModelNode child in node.Children)
+        {
+            if (Collect(child, inner, color, meshOptions, items, warnings, cancellationToken) is { } failure)
+            {
+                return failure;
+            }
+        }
+
+        return null;
     }
 
     private static void Collect(ModelNode node, Placement placement, List<Shape> shapes)

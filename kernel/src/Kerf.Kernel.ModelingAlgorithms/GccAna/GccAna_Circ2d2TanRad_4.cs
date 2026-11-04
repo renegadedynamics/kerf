@@ -65,10 +65,10 @@ internal sealed partial class AnalyticCirc2d2TanRad
         double   ly2loc = (l2.Location).Y;
         Point2D origin1 = new(lx1loc, ly1loc);
         Point2D origin2 = new(lx2loc, ly2loc);
-        // OCCT: normL1 and normL2 are the lines' directions, not their normals, so the qualifiers computed below for
-        // unqualified lines compare the side of the centre along the line, not across it
-        Direction2D normL1 = new(x1dir, y1dir);
-        Direction2D normL2 = new(x2dir, y2dir);
+        // The lines' normals, to which the qualifiers computed for unqualified lines compare the side of the centre (OCCT
+        // took the directions: Kerf decision 1542)
+        Direction2D normL1 = new(-y1dir, x1dir);
+        Direction2D normL2 = new(-y2dir, x2dir);
         if (radius < 0.0)
         {
             throw new NegativeValueException();
