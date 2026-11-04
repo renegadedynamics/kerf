@@ -73,8 +73,9 @@ public class GccAna_Circ2dTanOnRadTests
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, 2)]
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, 2)]
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, 0)]
-    public void CircleCentreOnLine(global::Kerf.Engine.Construction.Constraints.Qualifier theQ, int theNb)
+    public void CircleCentreOnLine(object theQValue, int theNb)
     {
+        var theQ = (global::Kerf.Engine.Construction.Constraints.Qualifier)theQValue; // the theory's data as object: the engine type is internal
         Circle2D aC = Circ(0, 0, 1);
         Line2D anOn = Lin(0, 0, 1, 0);
         AnalyticCirc2dTanOnRad anAlgo = new(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(aC, theQ), anOn, 0.4, Tol);
@@ -120,8 +121,9 @@ public class GccAna_Circ2dTanOnRadTests
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, 2)]
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, 1)]
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, 1)]
-    public void LineCentreOnLine(global::Kerf.Engine.Construction.Constraints.Qualifier theQ, int theNb)
+    public void LineCentreOnLine(object theQValue, int theNb)
     {
+        var theQ = (global::Kerf.Engine.Construction.Constraints.Qualifier)theQValue; // the theory's data as object: the engine type is internal
         Line2D aL = Lin(0, 0, 1, 0);
         Line2D anOn = Lin(0, 0, 0, 1);
         AnalyticCirc2dTanOnRad anAlgo = new(new global::Kerf.Engine.Construction.Constraints.QualifiedLin(aL, theQ), anOn, 1.0, Tol);
@@ -208,8 +210,9 @@ public class GccAna_Circ2dTanOnRadTests
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, 2)]
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, 0)]
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, 0)]
-    public void CircleCentreOnCircle(global::Kerf.Engine.Construction.Constraints.Qualifier theQ, int theNb)
+    public void CircleCentreOnCircle(object theQValue, int theNb)
     {
+        var theQ = (global::Kerf.Engine.Construction.Constraints.Qualifier)theQValue; // the theory's data as object: the engine type is internal
         Circle2D aC = Circ(0, 0, 1);
         Circle2D anOn = Circ(3, 0, 1);
         AnalyticCirc2dTanOnRad anAlgo = new(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(aC, theQ), anOn, 1.5, Tol);
@@ -241,8 +244,9 @@ public class GccAna_Circ2dTanOnRadTests
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified)]
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed)]
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside)]
-    public void LineCentreOnCircle_Throws(global::Kerf.Engine.Construction.Constraints.Qualifier theQ)
+    public void LineCentreOnCircle_Throws(object theQValue)
     {
+        var theQ = (global::Kerf.Engine.Construction.Constraints.Qualifier)theQValue; // the theory's data as object: the engine type is internal
         Line2D aL = Lin(0, 0, 1, 0);
         Circle2D anOn = Circ(0, 0, 2);
         Assert.Throws<ConstructionErrorException>(() => new AnalyticCirc2dTanOnRad(new global::Kerf.Engine.Construction.Constraints.QualifiedLin(aL, theQ), anOn, 1.0, Tol));

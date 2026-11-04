@@ -185,8 +185,10 @@ public class GccAna_Lin2d2TanTests
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, global::Kerf.Engine.Construction.Constraints.Qualifier.Outside)]
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing)]
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, global::Kerf.Engine.Construction.Constraints.Qualifier.Outside)]
-    public void TwoExternalCircles_Qualified_OneTangent(global::Kerf.Engine.Construction.Constraints.Qualifier theQ1, global::Kerf.Engine.Construction.Constraints.Qualifier theQ2)
+    public void TwoExternalCircles_Qualified_OneTangent(object theQ1Value, object theQ2Value)
     {
+        var theQ1 = (global::Kerf.Engine.Construction.Constraints.Qualifier)theQ1Value; // the theory's data as object: the engine type is internal
+        var theQ2 = (global::Kerf.Engine.Construction.Constraints.Qualifier)theQ2Value; // the theory's data as object: the engine type is internal
         Circle2D aC1 = Circ(0, 0, 1), aC2 = Circ(5, 1, 1.5);
         AnalyticLin2d2Tan anAlgo = new(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(aC1, theQ1), new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(aC2, theQ2), 1.0e-6);
         Assert.True(anAlgo.IsDone);

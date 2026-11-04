@@ -16,8 +16,9 @@ public class GccEntTests
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, "ENCLOSED")]
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, "OUTSIDE")]
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier, "NOQUALIFIER")]
-    public void PositionNames_RoundTrip(global::Kerf.Engine.Construction.Constraints.Qualifier thePosition, string theName)
+    public void PositionNames_RoundTrip(object thePositionValue, string theName)
     {
+        var thePosition = (global::Kerf.Engine.Construction.Constraints.Qualifier)thePositionValue; // the theory's data as object: the engine type is internal
         Assert.Equal(theName, global::Kerf.Engine.Construction.Constraints.GccEnt.PositionToString(thePosition));
         Assert.Equal(thePosition, global::Kerf.Engine.Construction.Constraints.GccEnt.PositionFromString(theName.ToLowerInvariant()));
         global::Kerf.Engine.Construction.Constraints.Qualifier aPos = global::Kerf.Engine.Construction.Constraints.Qualifier.Outside;

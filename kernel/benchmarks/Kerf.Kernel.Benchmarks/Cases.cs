@@ -89,7 +89,7 @@ public static class Cases
 
 
     /// <summary>What Bento's viewer does with the port: mesh (a copy of the frozen input) and extract.</summary>
-    public static global::Kerf.Engine.Meshing.MeshBuffers PortMeshAndExtract(in Shape theShape, double theDeflection, bool theParallel)
+    internal static global::Kerf.Engine.Meshing.MeshBuffers PortMeshAndExtract(in Shape theShape, double theDeflection, bool theParallel)
     {
         Shape aMeshed = new IncrementalMesh(theShape, theDeflection, false, Angle, theParallel).Shape();
         return global::Kerf.Engine.Meshing.MeshExtraction.Extract(aMeshed, theDeflection, Angle);

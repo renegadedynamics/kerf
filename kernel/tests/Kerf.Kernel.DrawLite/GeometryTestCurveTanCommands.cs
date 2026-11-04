@@ -19,7 +19,7 @@ namespace Kerf.Kernel.DrawLite;
 /// made by <c>qcircle</c> and <c>qline</c>. <see cref="DrawTrSurf.GetCurve2d"/> reads its curve, as OCCT's does through
 /// the base class.
 /// </summary>
-public sealed class DrawQualifiedCurve2d(Curve2D theCurve, global::Kerf.Engine.Construction.Constraints.Qualifier thePosition) : DrawDrawable
+internal sealed class DrawQualifiedCurve2d(Curve2D theCurve, global::Kerf.Engine.Construction.Constraints.Qualifier thePosition) : DrawDrawable
 {
     /// <summary>The curve (frozen).</summary>
     public Curve2D Curve { get; } = theCurve;

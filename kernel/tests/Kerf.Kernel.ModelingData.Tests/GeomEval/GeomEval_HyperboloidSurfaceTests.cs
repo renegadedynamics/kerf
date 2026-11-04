@@ -284,8 +284,9 @@ public class GeomEval_HyperboloidSurfaceTest
     [Theory]
     [InlineData(HyperboloidSurface.SheetMode.OneSheet)]
     [InlineData(HyperboloidSurface.SheetMode.TwoSheets)]
-    public void Derivatives_MatchFiniteDifferences(HyperboloidSurface.SheetMode theMode)
+    public void Derivatives_MatchFiniteDifferences(object theModeValue)
     {
+        var theMode = (HyperboloidSurface.SheetMode)theModeValue; // the theory's data as object: the engine type is internal
         CoordinateSystem anAx3 = new(new Point3D(1.0, -2.0, 0.5), new Direction3D(1.0, 1.0, 1.0), new Direction3D(1.0, -1.0, 0.0));
         HyperboloidSurface aSurf = new(anAx3, 2.0, 1.5, theMode);
         for (double aU = 0.1; aU < 2.0 * M_PI; aU += 0.7)

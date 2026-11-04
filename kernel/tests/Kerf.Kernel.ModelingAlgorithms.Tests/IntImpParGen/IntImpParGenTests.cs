@@ -79,7 +79,7 @@ public class IntImpParGenTests
     }
 
     /// <summary>The signed distance to the circle of the point at a parameter on the segment.</summary>
-    public sealed class TestImpParTool : FunctionWithDerivative,
+    internal sealed class TestImpParTool : FunctionWithDerivative,
                                          global::Kerf.Engine.Intersection.Implicit.IMyImpParTool<TestImpParTool, TestCircleTool, TestSegment>
     {
         private readonly TestCircleTool myImp;

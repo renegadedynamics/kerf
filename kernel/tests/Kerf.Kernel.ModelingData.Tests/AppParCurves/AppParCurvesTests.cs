@@ -313,8 +313,10 @@ public class AppParCurvesTests
     [InlineData(PassPoint, PassPoint)]
     [InlineData(TangencyPoint, PassPoint)]
     [InlineData(PassPoint, TangencyPoint)]
-    public void LeastSquare_ReproducesABezierCurve(global::Kerf.Engine.Approximation.Constraint theFirst, global::Kerf.Engine.Approximation.Constraint theLast)
+    public void LeastSquare_ReproducesABezierCurve(object theFirstValue, object theLastValue)
     {
+        var theFirst = (global::Kerf.Engine.Approximation.Constraint)theFirstValue; // the theory's data as object: the engine type is internal
+        var theLast = (global::Kerf.Engine.Approximation.Constraint)theLastValue; // the theory's data as object: the engine type is internal
         global::Kerf.Engine.Approximation.MultiCurve aRef = Cubic();
         double[] aParams = Params(12);
         AppParCurves_TestLine aLine = AppParCurves_TestLine.Sample(aRef, 1, 1, aParams);

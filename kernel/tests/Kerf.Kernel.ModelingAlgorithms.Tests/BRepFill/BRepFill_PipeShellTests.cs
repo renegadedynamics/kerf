@@ -84,8 +84,9 @@ public class BRepFill_PipeShellTests
     [InlineData(TransitionStyle.Modified)]
     [InlineData(TransitionStyle.Right)]
     [InlineData(TransitionStyle.Round)]
-    public void Frozen_inputs_are_unchanged_and_the_history_answers_for_them(TransitionStyle theTransition)
+    public void Frozen_inputs_are_unchanged_and_the_history_answers_for_them(object theTransitionValue)
     {
+        var theTransition = (TransitionStyle)theTransitionValue; // the theory's data as object: the engine type is internal
         // OCCT.NET: a closed spine whose wire isn't flagged closed (the pipe closes a new wire of the caller's edges)
         MakePolygon aSpinePolygon = new();
         aSpinePolygon.Add(new Point3D(0.0, 0.0, 0.0));

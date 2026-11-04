@@ -76,8 +76,9 @@ public class GccAna_Circ2dTanCenTests
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, 3.0, 1)]
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, 0.5, 0)]
     [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, 3.0, 1)]
-    public void Circle_Qualified(global::Kerf.Engine.Construction.Constraints.Qualifier theQ, double theX, int theNb)
+    public void Circle_Qualified(object theQValue, double theX, int theNb)
     {
+        var theQ = (global::Kerf.Engine.Construction.Constraints.Qualifier)theQValue; // the theory's data as object: the engine type is internal
         Circle2D aC = Circ(0, 0, 2);
         Point2D aP = new(theX, 0);
         AnalyticCirc2dTanCen anAlgo = new(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(aC, theQ), aP, 1.0e-9);

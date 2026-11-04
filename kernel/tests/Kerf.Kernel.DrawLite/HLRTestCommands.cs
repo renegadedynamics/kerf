@@ -468,7 +468,7 @@ internal static class HLRTestCommands
 }
 
 /// <summary>A projector (HLRTest_Projector): <c>hprj</c>'s value.</summary>
-public sealed class DrawHlrProjector(in AlgorithmProjector theProjector) : DrawDrawable
+internal sealed class DrawHlrProjector(in AlgorithmProjector theProjector) : DrawDrawable
 {
     /// <summary>The projector.</summary>
     public AlgorithmProjector Projector { get; } = theProjector;
@@ -520,7 +520,7 @@ public sealed class DrawHlrProjector(in AlgorithmProjector theProjector) : DrawD
 }
 
 /// <summary>An outliner (HLRTest_OutLiner): <c>houtl</c>'s value, a working object the HLR commands fill and load.</summary>
-public sealed class DrawHlrOutLiner(OutLiner theOutLiner) : DrawDrawable
+internal sealed class DrawHlrOutLiner(OutLiner theOutLiner) : DrawDrawable
 {
     /// <summary>The outliner.</summary>
     public OutLiner OutLiner { get; } = theOutLiner;

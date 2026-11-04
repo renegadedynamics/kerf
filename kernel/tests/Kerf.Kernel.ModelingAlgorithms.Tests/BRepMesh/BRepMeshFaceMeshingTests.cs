@@ -116,8 +116,9 @@ public class BRepMeshFaceMeshingTests
     [Theory]
     [InlineData(MeshAlgoType.MeshAlgoType_Watson)]
     [InlineData(MeshAlgoType.MeshAlgoType_Delabella)]
-    public void Every_face_is_meshed_close_to_its_surface(MeshAlgoType theAlgo)
+    public void Every_face_is_meshed_close_to_its_surface(object theAlgoValue)
     {
+        var theAlgo = (MeshAlgoType)theAlgoValue; // the theory's data as object: the engine type is internal
         foreach ((string aName, Shape aShape) in Shapes())
         {
             if (theAlgo == MeshAlgoType.MeshAlgoType_Delabella && aName == "extrusion")

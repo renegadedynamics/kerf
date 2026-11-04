@@ -142,8 +142,10 @@ public class AppCont_LeastSquareTests
     [InlineData(TangencyPoint, TangencyPoint)]
     [InlineData(PassPoint, TangencyPoint)]
     [InlineData(CurvaturePoint, CurvaturePoint)]
-    public void CircleArc_IsApproximatedWithinTolerance(Constraint theFirst, Constraint theLast)
+    public void CircleArc_IsApproximatedWithinTolerance(object theFirstValue, object theLastValue)
     {
+        var theFirst = (Constraint)theFirstValue; // the theory's data as object: the engine type is internal
+        var theLast = (Constraint)theLastValue; // the theory's data as object: the engine type is internal
         const double U0 = 0.2, U1 = 0.2 + M_PI / 2;
         CircleFunction aFunc = new(U0, U1, true);
         LeastSquare aLSQ = new(aFunc, U0, U1, theFirst, theLast, 6, 24);

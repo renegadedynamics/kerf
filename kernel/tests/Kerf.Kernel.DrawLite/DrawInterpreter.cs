@@ -139,7 +139,7 @@ public sealed partial class DrawInterpreter
     /// DRAWEXE session keeps them, and seen by no other interpreter (unit 10I). It starts as the context of the flow
     /// that made the interpreter.
     /// </summary>
-    public Kerf.Engine.Foundation.OperationContext Context { get; private set; } = Kerf.Engine.Foundation.OperationContext.Current;
+    internal Kerf.Engine.Foundation.OperationContext Context { get; private set; } = Kerf.Engine.Foundation.OperationContext.Current;
 
     public int ExitCode { get; private set; }
 
