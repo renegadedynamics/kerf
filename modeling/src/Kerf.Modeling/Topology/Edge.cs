@@ -1,12 +1,4 @@
-using Kerf.Engine.Construction.Api;
-using Kerf.Engine.Construction.Curves;
-using Kerf.Engine.Construction.Library;
-using Kerf.Engine.Geometry.Adaptors;
-using Kerf.Engine.Geometry.Api;
-using Kerf.Engine.Measurement;
-using Kerf.Engine.Topology;
-using Kerf.Engine.Topology.Adaptors;
-using Kerf.Engine.Topology.Brep;
+using Kerf.Construction;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -34,18 +26,14 @@ public partial class Edge : Shape1D
         return FromCurve(line);
     }
 
-    internal global::Kerf.Topology.Edge TopoEdge => ShapeCasts.Edge(TopoShape);
+    internal global::Kerf.Topology.Edge TopoEdge => (global::Kerf.Topology.Edge)TopoShape;
 
     internal override double Order => 1.0;
 
     internal override Shape MakeZero() => new Edge();
 
     /// <summary>An edge along the whole of a curve.</summary>
-    internal static Edge FromCurve(Curve3D curve)
-    {
-        var maker = new MakeEdge(curve);
-        return new Edge(maker.Edge());
-    }
+    internal static Edge FromCurve(Curve3D curve) => new(Failures.Get(global::Kerf.Topology.Edge.FromCurve(curve), () => "edge"));
 
     /// <summary>The centre of the circle or ellipse the edge lies on.</summary>
     /// <exception cref="InvalidOperationException">The edge is neither.</exception>
@@ -59,14 +47,14 @@ public partial class Edge : Shape1D
             {
                 case GeomType.Circle:
                 {
-                    var c = geom.Circle();
+                    geom.TryGetCircle(out var c);
                     var pos = c.Position;
                     var loc = pos.Location;
                     return new Vector(loc);
                 }
                 case GeomType.Ellipse:
                 {
-                    var c = geom.Ellipse();
+                    geom.TryGetEllipse(out var c);
                     var pos = c.Position;
                     var loc = pos.Location;
                     return new Vector(loc);
@@ -87,7 +75,7 @@ public partial class Edge : Shape1D
     {
         if (obj.IsEmpty)
             throw new ArgumentException("Can't extrude empty vertex");
-        return new Edge(ShapeCasts.Edge(TopoUtil.Extrude(obj.TopoShape, direction)));
+        return new Edge((global::Kerf.Topology.Edge)TopoUtil.Extrude(obj.TopoShape, direction));
     }
 
     /// <summary>
@@ -105,10 +93,7 @@ public partial class Edge : Shape1D
         var poles = PointArray(controlPoints);
         BezierCurve3D curve;
         if (weights is { Count: > 0 })
-        {
-            var w = DoubleArray(weights);
-            curve = new BezierCurve3D(poles, w);
-        }
+            curve = new BezierCurve3D(poles, [.. weights]);
         else
             curve = new BezierCurve3D(poles);
         return FromCurve(curve);
@@ -125,15 +110,11 @@ public partial class Edge : Shape1D
         var ax2 = plane.ToGpAx2();
         var circle = new Circle3D(ax2, radius);
         if (startAngle == endAngle)   // a full circle
-        {
-            var maker = new MakeEdge(circle);
-            return new Edge(maker.Edge());
-        }
+            return new Edge(Failures.Get(global::Kerf.Topology.Edge.Circle(circle), () => "circle"));
         bool ccw = angularDirection == AngularDirection.CounterClockwise;
         var (start, end) = ccw ? (startAngle, endAngle) : (endAngle, startAngle);
-        var arc = new MakeArcOfCircle(circle, start * Constants.DegToRad, end * Constants.DegToRad, ccw);
-        var geom = arc.Value();
-        return FromCurve(geom!);
+        var arc = Failures.Get(TrimmedCurve3D.Arc(circle, start * Constants.DegToRad, end * Constants.DegToRad, ccw), () => "arc of circle");
+        return FromCurve(arc);
     }
 
     /// <summary>An ellipse, or an arc of one, centred on the plane's origin (default XY).</summary>
@@ -161,10 +142,7 @@ public partial class Edge : Shape1D
         }
         {
             if (startAngle == endAngle)   // a full ellipse
-            {
-                var maker = new MakeEdge(ellipse);
-                return new Edge(maker.Edge());
-            }
+                return FromCurve(new EllipseCurve3D(ellipse));
             double a1 = startAngle * Constants.DegToRad - correction;
             double a2 = endAngle * Constants.DegToRad - correction;
             double alpha1, alpha2;
@@ -181,9 +159,8 @@ public partial class Edge : Shape1D
                     a2 -= 2 * Math.PI;
                 (sense, alpha1, alpha2) = (false, a2, a1);
             }
-            var arc = new MakeArcOfEllipse(ellipse, alpha1, alpha2, sense);
-            var geom = arc.Value();
-            return FromCurve(geom!);
+            var arc = Failures.Get(TrimmedCurve3D.Arc(ellipse, alpha1, alpha2, sense), () => "arc of ellipse");
+            return FromCurve(arc);
         }
     }
 
@@ -194,10 +171,9 @@ public partial class Edge : Shape1D
         plane ??= Plane.XY;
         var ax2 = plane.ToGpAx2();
         var parabola = new Parabola3D(ax2, focalLength);
-        var arc = new MakeArcOfParabola(parabola, startAngle * Constants.DegToRad, endAngle * Constants.DegToRad,
-                                                 angularDirection == AngularDirection.CounterClockwise);
-        var geom = arc.Value();
-        return FromCurve(geom!);
+        var arc = Failures.Get(TrimmedCurve3D.Arc(parabola, startAngle * Constants.DegToRad, endAngle * Constants.DegToRad,
+                                                  angularDirection == AngularDirection.CounterClockwise), () => "arc of parabola");
+        return FromCurve(arc);
     }
 
     /// <summary>A hyperbola, or an arc of one, centred on the plane's origin (default XY).</summary>
@@ -224,15 +200,11 @@ public partial class Edge : Shape1D
         }
         {
             if (startAngle == endAngle)
-            {
-                var maker = new MakeEdge(hyperbola);
-                return new Edge(maker.Edge());
-            }
-            var arc = new MakeArcOfHyperbola(hyperbola, startAngle * Constants.DegToRad - correction,
+                return FromCurve(new HyperbolaCurve3D(hyperbola));
+            var arc = Failures.Get(TrimmedCurve3D.Arc(hyperbola, startAngle * Constants.DegToRad - correction,
                                                       endAngle * Constants.DegToRad - correction,
-                                                      angularDirection == AngularDirection.CounterClockwise);
-            var geom = arc.Value();
-            return FromCurve(geom!);
+                                                      angularDirection == AngularDirection.CounterClockwise), () => "arc of hyperbola");
+            return FromCurve(arc);
         }
     }
 
@@ -257,9 +229,10 @@ public partial class Edge : Shape1D
         var line = new LineCurve2D(origin2d, dir2d);
         var curve = new TrimmedCurve2D(line, 0, lineLength, true, true);
         // Wrap the segment around the surface, then give the edge its 3D curve
-        var builder = new MakeEdge(curve, surface);
-        var edge = BrepLibrary.Curves3dBuilt(builder.Edge(), 1e-9, out _, Continuity.C1, 14, 2000);
-        return new Edge(ShapeCasts.Edge(edge));
+        var onSurface = Failures.Get(global::Kerf.Topology.Edge.FromCurve(curve, surface), () => "helix");
+        // Its 3D curve, as build123d builds it (whether or not that fully succeeds)
+        var edge = Failures.Get(onSurface.WithCurves3D(1e-9, Continuity.C1, 14, 2000), () => "helix").Shape;
+        return new Edge((global::Kerf.Topology.Edge)edge);
     }
 
     /// <summary>A line between two points.</summary>
@@ -267,10 +240,10 @@ public partial class Edge : Shape1D
     {
         var p1 = point1.ToGpPnt();
         var p2 = point2.ToGpPnt();
-        var maker = new MakeEdge(p1, p2);
-        if (!maker.IsDone)
-            throw new ArgumentException($"Can't make a line from {point1} to {point2}: {maker.Error()}");
-        return new Edge(maker.Edge());
+        var line = global::Kerf.Topology.Edge.Line(p1, p2);
+        if (!line.TryGetValue(out var edge))
+            throw new ArgumentException($"Can't make a line from {point1} to {point2}: {line.Error!.Message}");
+        return new Edge(edge);
     }
 
     /// <summary>
@@ -298,59 +271,39 @@ public partial class Edge : Shape1D
     public static Edge MakeSpline(IReadOnlyList<Vector> points, IReadOnlyList<Vector?>? tangents = null, bool periodic = false,
                                   IReadOnlyList<double>? parameters = null, bool scale = true, double tolerance = 1e-6)
     {
-        var pnts = new NCollection_HArray1<Point3D>(1, points.Count);
-        for (int i = 0; i < points.Count; i++)
+        var pnts = points.Select(p => p.ToGpPnt()).ToArray();
+        if (parameters is not null && parameters.Count != points.Count + (periodic ? 1 : 0))
+            throw new ArgumentException(
+                "There must be one parameter for each interpolation point (plus one if periodic), or none specified. "
+                + $"Parameter count: {parameters.Count}, point count: {points.Count}");
+        System.Collections.Immutable.ImmutableArray<Vector3D> tangentArray = [];
+        if (tangents is { Count: > 0 })
         {
-            var p = points[i].ToGpPnt();
-            pnts.SetValue(i + 1, p);
-        }
-        ApiInterpolate builder;
-        if (parameters is null)
-            builder = new ApiInterpolate(pnts, periodic, tolerance);
-        else
-        {
-            if (parameters.Count != points.Count + (periodic ? 1 : 0))
-                throw new ArgumentException(
-                    "There must be one parameter for each interpolation point (plus one if periodic), or none specified. "
-                    + $"Parameter count: {parameters.Count}, point count: {points.Count}");
-            var parameterArray = new NCollection_HArray1<double>(1, parameters.Count);
-            for (int i = 0; i < parameters.Count; i++)
-                parameterArray.SetValue(i + 1, parameters[i]);
-            builder = new ApiInterpolate(pnts, parameterArray, periodic, tolerance);
-        }
-        {
-            if (tangents is { Count: > 0 })
+            if (tangents.Count == 2 && points.Count != 2)
+                // The start and end tangents only
+                tangentArray = [(tangents[0] ?? new Vector(0, 0, 0)).ToGpVec(), (tangents[1] ?? new Vector(0, 0, 0)).ToGpVec()];
+            else
             {
-                if (tangents.Count == 2 && points.Count != 2)
-                {
-                    // The start and end tangents only
-                    var t0 = (tangents[0] ?? new Vector(0, 0, 0)).ToGpVec();
-                    var t1 = (tangents[1] ?? new Vector(0, 0, 0)).ToGpVec();
-                    builder.Load(t0, t1, scale);
-                }
-                else
-                {
-                    if (tangents.Count != points.Count)
-                        throw new ArgumentException(
-                            "There must be one tangent for each interpolation point, or just two end point tangents. "
-                            + $"Tangent count: {tangents.Count}, point count: {points.Count}");
-                    var tangentArray = new NCollection_Array1<Vector3D>(1, tangents.Count);
-                    var enabled = new NCollection_HArray1<bool>(1, tangents.Count);
-                    for (int i = 0; i < tangents.Count; i++)
-                    {
-                        enabled.SetValue(i + 1, tangents[i] is not null);
-                        var t = (tangents[i] ?? new Vector(0, 0, 0)).ToGpVec();
-                        tangentArray.SetValue(i + 1, t);
-                    }
-                    builder.Load(tangentArray, enabled, scale);
-                }
+                if (tangents.Count != points.Count)
+                    throw new ArgumentException(
+                        "There must be one tangent for each interpolation point, or just two end point tangents. "
+                        + $"Tangent count: {tangents.Count}, point count: {points.Count}");
+                // A missing tangent is a zero one, which the kernel leaves free
+                tangentArray = [.. tangents.Select(t => (t ?? new Vector(0, 0, 0)).ToGpVec())];
             }
-            builder.Perform();
-            if (!builder.IsDone)
-                throw new InvalidOperationException("B-spline interpolation failed");
-            var curve = builder.Curve();
-            return FromCurve(curve!);
         }
+        var options = new InterpolationOptions
+        {
+            Periodic = periodic,
+            Tangents = tangentArray,
+            ScaleTangents = scale,
+            Parameters = parameters is null ? [] : [.. parameters],
+            Tolerance = tolerance,
+        };
+        var interpolated = BSplineCurve3D.Interpolate(pnts, options);
+        if (!interpolated.TryGetValue(out var curve))
+            throw new InvalidOperationException("B-spline interpolation failed");
+        return FromCurve(curve);
     }
 
     /// <summary>
@@ -376,19 +329,9 @@ public partial class Edge : Shape1D
             }
         }
         var poles = PointArray(controlPoints.ToList());
-        var knotArray = DoubleArray(uniqueKnots);
-        var multArray = new NCollection_Array1<int>(1, multiplicities.Count);
-        for (int i = 0; i < multiplicities.Count; i++)
-            multArray.SetValue(i + 1, multiplicities[i]);
         var weightList = weights?.ToList() ?? [];
-        BSplineCurve3D curve;
-        if (weightList.Count > 0)
-        {
-            var w = DoubleArray(weightList);
-            curve = new BSplineCurve3D(poles, w, knotArray, multArray, degree, periodic);
-        }
-        else
-            curve = new BSplineCurve3D(poles, knotArray, multArray, degree, periodic);
+        var curve = new BSplineCurve3D(poles, [.. uniqueKnots], [.. multiplicities], degree, periodic,
+                                       weightList.ToArray());
         return FromCurve(curve);
     }
 
@@ -399,31 +342,15 @@ public partial class Edge : Shape1D
     public static Edge MakeSplineApprox(IReadOnlyList<Vector> points, double tolerance = 1e-3,
                                         (double, double, double)? smoothing = null, int minDeg = 1, int maxDeg = 6)
     {
-        var pnts = new NCollection_HArray1<Point3D>(1, points.Count);
-        for (int i = 0; i < points.Count; i++)
-        {
-            var p = points[i].ToGpPnt();
-            pnts.SetValue(i + 1, p);
-        }
-        // GeomAPI_PointsToBSpline takes the plain array the handle holds
-        var array = new NCollection_Array1<Point3D>(1, points.Count);
-        for (int i = 1; i <= points.Count; i++)
-        {
-            var p = pnts.Value(i);
-            array.SetValue(i, p);
-        }
-        PointsToBSpline builder;
-        if (smoothing is var (w1, w2, w3))
+        var array = points.Select(p => p.ToGpPnt()).ToArray();
+        var options = smoothing is var (w1, w2, w3)
             // The smoothing asks for C2, whose Jacobi basis needs a degree of at least 6 (OCCT 8)
-            builder = new PointsToBSpline(array, w1, w2, w3, Math.Max(maxDeg, 6), Continuity.C2, tolerance);
-        else
-            builder = new PointsToBSpline(array, minDeg, maxDeg, Continuity.C2, tolerance);
-        {
-            if (!builder.IsDone)
-                throw new InvalidOperationException("B-spline approximation failed");
-            var curve = builder.Curve();
-            return FromCurve(curve!);
-        }
+            ? new ApproximationOptions { Smoothing = (w1, w2, w3), MaxDegree = Math.Max(maxDeg, 6), Continuity = Continuity.C2, Tolerance = tolerance }
+            : new ApproximationOptions { MinDegree = minDeg, MaxDegree = maxDeg, Continuity = Continuity.C2, Tolerance = tolerance };
+        var approximated = BSplineCurve3D.Approximate(array, options);
+        if (!approximated.TryGetValue(out var curve))
+            throw new InvalidOperationException("B-spline approximation failed");
+        return FromCurve(curve);
     }
 
     /// <summary>A circular arc from <paramref name="start"/>, leaving in the direction of <paramref name="tangent"/>, to <paramref name="end"/>.</summary>
@@ -432,9 +359,7 @@ public partial class Edge : Shape1D
         var p1 = start.ToGpPnt();
         var t = tangent.ToGpVec();
         var p2 = end.ToGpPnt();
-        var arc = new MakeArcOfCircle(p1, t, p2);
-        var geom = arc.Value();
-        return FromCurve(geom!);
+        return FromCurve(Failures.Get(TrimmedCurve3D.ArcTangent(p1, t, p2), () => "tangent arc"));
     }
 
     /// <summary>A circular arc through three points.</summary>
@@ -443,44 +368,27 @@ public partial class Edge : Shape1D
         var p1 = point1.ToGpPnt();
         var p2 = point2.ToGpPnt();
         var p3 = point3.ToGpPnt();
-        var arc = new MakeArcOfCircle(p1, p2, p3);
-        var geom = arc.Value();
-        return FromCurve(geom!);
+        return FromCurve(Failures.Get(TrimmedCurve3D.ArcThrough(p1, p2, p3), () => "three-point arc"));
     }
 
-    internal static NCollection_Array1<Point3D> PointArray(IReadOnlyList<Vector> points)
-    {
-        var array = new NCollection_Array1<Point3D>(1, points.Count);
-        for (int i = 0; i < points.Count; i++)
-        {
-            var p = points[i].ToGpPnt();
-            array.SetValue(i + 1, p);
-        }
-        return array;
-    }
-
-    internal static NCollection_Array1<double> DoubleArray(IReadOnlyList<double> values)
-    {
-        var array = new NCollection_Array1<double>(1, values.Count);
-        for (int i = 0; i < values.Count; i++)
-            array.SetValue(i + 1, values[i]);
-        return array;
-    }
+    internal static Point3D[] PointArray(IReadOnlyList<Vector> points) => [.. points.Select(p => p.ToGpPnt())];
 
     // ---- Curve parameters ----
 
-    /// <inheritdoc/>
-    public override EdgeCurveAdaptor GeomAdaptor()
+    /// <summary>The kernel's curve of the edge (OCCT's <c>BRepAdaptor_Curve</c>), for evaluation and lengths.</summary>
+    public EdgeCurve GeomAdaptor()
     {
         if (IsEmpty)
             throw new InvalidOperationException("Can't find adaptor for empty edge");
-        return new EdgeCurveAdaptor(TopoEdge);
+        return TopoEdge.ToCurve();
     }
 
-    internal override (EdgeCurveAdaptor Curve, double Param, bool Forward) OcctParamAt(double position, PositionMode mode = PositionMode.Parameter)
+    internal override ShapeCurve Curve() => new(GeomAdaptor());
+
+    internal override (EdgeCurve Curve, double Param, bool Forward) OcctParamAt(double position, PositionMode mode = PositionMode.Parameter)
     {
         var curve = GeomAdaptor();
-        var length = AbscissaPoint.Length(curve);
+        var length = curve.Length;
         bool forward = IsForward;
         double value;
         if (mode == PositionMode.Parameter)
@@ -490,8 +398,7 @@ public partial class Edge : Shape1D
             var own = Length;
             value = (forward ? position : own - position) / own;
         }
-        var abscissa = new AbscissaPoint(curve, length * value, curve.FirstParameter());
-        return (curve, abscissa.Parameter(), forward);
+        return (curve, curve.ParameterAtLength(length * value, curve.Range.Min), forward);
     }
 
     /// <summary>
@@ -515,16 +422,15 @@ public partial class Edge : Shape1D
     {
         if (IsEmpty)
             throw new InvalidOperationException("Can't find param on empty edge");
-        double paramMin = 0, paramMax = 0;
-        Tool.Range(TopoEdge, out paramMin, out paramMax);
+        var (paramMin, paramMax) = TopoEdge.Range;
 
         // Method 1: the point is a vertex of the edge (on a closed edge, either end)
         var nearest = Vertices().MinBy(v => (v.ToVector() - point).Length);
         if (nearest is not null && !nearest.IsEmpty && (nearest.ToVector() - point).Length <= Constants.Tolerance)
         {
-            var param = Tool.Parameter(nearest.TopoVertex, TopoEdge);
-            var adaptor = new EdgeCurveAdaptor(TopoEdge);
-            var u = AbscissaPoint.Length(adaptor, paramMin, param) / AbscissaPoint.Length(adaptor);
+            var param = TopoEdge.ParameterOf(nearest.TopoVertex);
+            var adaptor = TopoEdge.ToCurve();
+            var u = adaptor.LengthBetween(paramMin, param) / adaptor.Length;
             // The length runs along the curve while PositionAt measures a reversed edge from its other end
             var normalized = IsForward ? u : 1 - u;
             return normalize ? normalized : param;
@@ -537,17 +443,17 @@ public partial class Edge : Shape1D
         // Method 2: project the point onto the curve. Some curves give a value outside the range.
         double projected;
         {
-            double first = 0, last = 0;
-            var curve = Tool.Curve(TopoEdge, out first, out last);
+            TopoEdge.TryGetCurve(out var curve, out _);
             var pnt = point.ToGpPnt();
-            var projector = new ProjectPointOnCurve(pnt, curve!);
-            projected = projector.LowerDistanceParameter();
+            if (curve is null || !curve.TryProjectNearest(pnt, out var nearestPoint))
+                throw new InvalidOperationException("The point can't be projected onto the edge's curve");
+            projected = nearestPoint.Parameter;
         }
         {
-            var adaptor = new EdgeCurveAdaptor(TopoEdge);
+            var adaptor = TopoEdge.ToCurve();
             if (adaptor.IsPeriodic)
-                projected = paramMin + PyMath.Mod(projected - paramMin, adaptor.Period());
-            var u = AbscissaPoint.Length(adaptor, paramMin, projected) / AbscissaPoint.Length(adaptor);
+                projected = paramMin + PyMath.Mod(projected - paramMin, adaptor.Period);
+            var u = adaptor.LengthBetween(paramMin, projected) / adaptor.Length;
             if (!IsForward)
                 u = 1 - u;
             if ((PositionAt(u) - point).Length < Constants.Tolerance)
@@ -586,14 +492,11 @@ public partial class Edge : Shape1D
             throw new InvalidOperationException("An empty edge can't be reversed");
         if (!reconstruct)
             return (Edge)Rewrapped(TopoShape.Reversed());
-        double first = 0, last = 0;
-        Tool.Range(TopoEdge, out first, out last);
-        var curve = Tool.Curve(TopoEdge, out first, out last)!;
-        var rFirst = curve.ReversedParameter(first);
-        var rLast = curve.ReversedParameter(last);
+        TopoEdge.TryGetCurve(out var curve, out var range);
+        var rFirst = curve!.ReversedParameter(range.Min);
+        var rLast = curve.ReversedParameter(range.Max);
         var reversedCurve = curve.Reversed();
-        var maker = new MakeEdge(reversedCurve, rLast, rFirst);
-        return (Edge)Rewrapped(maker.Edge());
+        return (Edge)Rewrapped(Failures.Get(global::Kerf.Topology.Edge.FromCurve(reversedCurve, new Interval(rLast, rFirst)), () => "reverse"));
     }
 
     /// <summary>A new edge of the section between two positions (normalised parameters or points on the edge).</summary>
@@ -606,10 +509,9 @@ public partial class Edge : Shape1D
         var (endCurve, paramEnd, _) = OcctParamAt(endU);
         Edge trimmed;
         {
-            double first = startCurve.FirstParameter(), last = startCurve.LastParameter();
-            var curve = Tool.Curve(TopoEdge, out first, out last);
-            var maker = new MakeEdge(curve!, Math.Min(paramStart, paramEnd), Math.Max(paramStart, paramEnd));
-            trimmed = new Edge(maker.Edge());
+            TopoEdge.TryGetCurve(out var curve, out _);
+            var range = new Interval(Math.Min(paramStart, paramEnd), Math.Max(paramStart, paramEnd));
+            trimmed = new Edge(Failures.Get(global::Kerf.Topology.Edge.FromCurve(curve!, range), () => "trim"));
         }
         // Reverse it if necessary
         bool sameStart = (trimmed.PositionAt(0) - startPoint).Length < Constants.Tolerance;
@@ -623,14 +525,10 @@ public partial class Edge : Shape1D
         if (IsEmpty)
             throw new InvalidOperationException("Can't trim empty edge");
         var startU = start.ToParam(this);
-        double first = 0, last = 0;
-        Tool.Range(TopoEdge, out first, out last);
-        var curve = Tool.Curve(TopoEdge, out first, out last)!;
-        var adaptor = new CurveAdaptor(curve);
+        TopoEdge.TryGetCurve(out var curve, out _);
         // Walk along the curve the way the edge is oriented
         var paramStart = ParamAt(startU);
-        var abscissa = new AbscissaPoint(adaptor, IsForward ? length : -length, paramStart);
-        var paramEnd = abscissa.Parameter();
+        var paramEnd = curve!.ParameterAtLength(IsForward ? length : -length, paramStart);
         var trimmedCurve = new TrimmedCurve3D(curve, Math.Min(paramStart, paramEnd), Math.Max(paramStart, paramEnd));
         var edge = FromCurve(trimmedCurve);
         return IsForward ? edge : edge.Reversed(reconstruct: true);
@@ -679,18 +577,14 @@ public partial class Edge : Shape1D
             _ => throw new ArgumentException($"Can't intersect with a {other.GetType().Name}"),
         };
         var plane = CommonPlane(otherEdge) ?? throw new ArgumentException("All objects must be on the same plane");
-        var planeFace = MakePlaneFace(plane);
-        var surface = Tool.Surface(planeFace);
-        var selfCurve = CurveOnPlane(this, surface!);
-        CurveCurveIntersection2D intersector = otherEdge is { IsEmpty: false }
-            ? new CurveCurveIntersection2D(selfCurve, CurveOnPlane(otherEdge, surface!), tolerance)
-            : new CurveCurveIntersection2D(selfCurve, tolerance);
+        var pln = plane.ToGpPln();
+        var selfCurve = CurveOnPlane(this, pln);
+        var intersected = otherEdge is { IsEmpty: false }
+            ? selfCurve.Intersect(CurveOnPlane(otherEdge, pln), tolerance)
+            : selfCurve.SelfIntersections(tolerance);
         var crosses = new List<Vector>();
-        for (int i = 1; i <= intersector.NbPoints(); i++)
-        {
-            var p = intersector.Point(i);
-            crosses.Add(plane.FromLocalCoords(new Vector(p.X, p.Y)));
-        }
+        foreach (var hit in Failures.Get(intersected, () => "intersect"))
+            crosses.Add(plane.FromLocalCoords(new Vector(hit.Point.X, hit.Point.Y)));
         // The crossings may lie beyond the ends of the edges
         var valid = new List<Vector>();
         foreach (var pnt in crosses)
@@ -711,13 +605,10 @@ public partial class Edge : Shape1D
         }
     }
 
-    private static Curve2D CurveOnPlane(Edge edge, Surface surface)
+    private static Curve2D CurveOnPlane(Edge edge, Plane3D plane)
     {
-        double first = 0, last = 0;
-        Tool.Range(edge.TopoEdge, out first, out last);
-        var plane = (surface as PlaneSurface)!;
-        var loc = new Placement();
-        return Tool.CurveOnPlane(edge.TopoEdge, plane, loc, out first, out last)!;
+        edge.TopoEdge.TryGetCurveOnPlane(plane, out var curve, out _);
+        return curve!;
     }
 
     /// <summary>The parameters (0 to 1) where the tangent of this planar edge is at <paramref name="angle"/> degrees.</summary>
@@ -776,73 +667,73 @@ public partial class Edge : Shape1D
                 return true;   // the ends define it
             case GeomType.Circle:
             {
-                var c1 = ga1.Circle();
-                var c2 = ga2.Circle();
+                ga1.TryGetCircle(out var c1);
+                ga2.TryGetCircle(out var c2);
                 return Math.Abs(c1.Radius - c2.Radius) < tolerance && V(c1.Location) == V(c2.Location)
                        && D(c1.Axis) == D(c2.Axis);
             }
             case GeomType.Ellipse:
             {
-                var e1 = ga1.Ellipse();
-                var e2 = ga2.Ellipse();
+                ga1.TryGetEllipse(out var e1);
+                ga2.TryGetEllipse(out var e2);
                 return Math.Abs(e1.MajorRadius - e2.MajorRadius) < tolerance
                        && Math.Abs(e1.MinorRadius - e2.MinorRadius) < tolerance
                        && V(e1.Location) == V(e2.Location) && D(e1.Axis) == D(e2.Axis);
             }
             case GeomType.Hyperbola:
             {
-                var h1 = ga1.Hyperbola();
-                var h2 = ga2.Hyperbola();
+                ga1.TryGetHyperbola(out var h1);
+                ga2.TryGetHyperbola(out var h2);
                 return Math.Abs(h1.MajorRadius - h2.MajorRadius) < tolerance
                        && Math.Abs(h1.MinorRadius - h2.MinorRadius) < tolerance
                        && V(h1.Location) == V(h2.Location) && D(h1.Axis) == D(h2.Axis);
             }
             case GeomType.Parabola:
             {
-                var p1 = ga1.Parabola();
-                var p2 = ga2.Parabola();
+                ga1.TryGetParabola(out var p1);
+                ga2.TryGetParabola(out var p2);
                 return Math.Abs(p1.Focal - p2.Focal) < tolerance && V(p1.Location) == V(p2.Location)
                        && D(p1.Axis) == D(p2.Axis);
             }
             case GeomType.Bezier:
             {
-                var b1 = ga1.Bezier()!;
-                var b2 = ga2.Bezier()!;
-                if (b1.Degree != b2.Degree || b1.PoleCount != b2.PoleCount)
+                ga1.TryGetBezier(out var b1);
+                ga2.TryGetBezier(out var b2);
+                if (b1!.Degree != b2!.Degree || b1.PoleCount != b2.PoleCount)
                     return false;
-                for (int i = 1; i <= b1.PoleCount; i++)
+                for (int i = 0; i < b1.PoleCount; i++)
                 {
-                    if (V(b1.Pole(i)) != V(b2.Pole(i)))
+                    if (V(b1.Poles[i]) != V(b2.Poles[i]))
                         return false;
-                    if (b1.IsRational && Math.Abs(b1.Weight(i) - b2.Weight(i)) >= tolerance)
+                    if (b1.IsRational && Math.Abs(b1.Weights[i] - b2.Weights[i]) >= tolerance)
                         return false;
                 }
                 return true;
             }
             case GeomType.BSpline:
             {
-                var s1 = ga1.BSpline()!;
-                var s2 = ga2.BSpline()!;
-                if (s1.Degree != s2.Degree || s1.IsPeriodic != s2.IsPeriodic
+                ga1.TryGetBSpline(out var s1);
+                ga2.TryGetBSpline(out var s2);
+                if (s1!.Degree != s2!.Degree || s1.IsPeriodic != s2.IsPeriodic
                     || s1.PoleCount != s2.PoleCount || s1.KnotCount != s2.KnotCount)
                     return false;
-                for (int i = 1; i <= s1.PoleCount; i++)
+                for (int i = 0; i < s1.PoleCount; i++)
                 {
-                    if (V(s1.Pole(i)) != V(s2.Pole(i)))
+                    if (V(s1.Poles[i]) != V(s2.Poles[i]))
                         return false;
-                    if (s1.IsRational && Math.Abs(s1.Weight(i) - s2.Weight(i)) >= tolerance)
+                    if (s1.IsRational && Math.Abs(s1.Weights[i] - s2.Weights[i]) >= tolerance)
                         return false;
                 }
-                for (int i = 1; i <= s1.KnotCount; i++)
-                    if (Math.Abs(s1.Knot(i) - s2.Knot(i)) >= tolerance || s1.Multiplicity(i) != s2.Multiplicity(i))
+                for (int i = 0; i < s1.KnotCount; i++)
+                    if (Math.Abs(s1.Knots[i] - s2.Knots[i]) >= tolerance || s1.Multiplicities[i] != s2.Multiplicities[i])
                         return false;
                 return true;
             }
             case GeomType.Offset:
             {
-                var o1 = ga1.OffsetCurve()!;
-                var o2 = ga2.OffsetCurve()!;
-                if (Math.Abs(o1.Offset - o2.Offset) >= tolerance)
+                ga1.TryGetOffsetCurve(out var o1);
+                ga2.TryGetOffsetCurve(out var o2);
+                if (Math.Abs(o1!.Offset - o2!.Offset) >= tolerance)
                     return false;
                 var d1 = o1.Direction;
                 var d2 = o2.Direction;

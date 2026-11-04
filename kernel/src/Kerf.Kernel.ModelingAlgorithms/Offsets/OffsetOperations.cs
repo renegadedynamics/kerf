@@ -107,6 +107,31 @@ public static class OffsetOperations
             }, Failure, progress, cancellationToken);
         }
 
+        /// <summary>
+        /// The shape made a thick solid: its faces offset by <paramref name="thickness"/> with <paramref name="openings"/>
+        /// (its own faces) left open (OCCT's <c>BRepOffsetAPI_MakeThickSolid</c>): <c>Hollow</c> for any shape, the result
+        /// whatever OCCT makes.
+        /// </summary>
+        /// <exception cref="ArgumentException">The shape is null, or an opening isn't one of its faces.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="thickness"/> is zero.</exception>
+        public Result<Built<Shape>> ThickSolid(IEnumerable<Face> openings, double thickness, OffsetOptions? options = null,
+                                               IProgress<double>? progress = null, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(openings);
+            options ??= OffsetOptions.Default;
+            Shape s = shape.AsShape();
+            MakerOutcome.NotNull(s, nameof(shape));
+            NonZero(thickness, nameof(thickness));
+            NCollection_List<Shape> faces = Openings(s, openings);
+            return EngineOperation.Run<Shape>(range =>
+            {
+                var thick = new MakeThickSolid();
+                thick.MakeThickSolidByJoin(s, faces, thickness, options.Tolerance, options.Mode, options.Intersection,
+                                           options.SelfIntersection, options.Join, options.RemoveInternalEdges, range);
+                return MakerOutcome.Done(thick, [s], () => StatusDiagnostics.ToDiagnostic(thick.MakeOffset().Error()));
+            }, Failure, progress, cancellationToken);
+        }
+
         /// <summary>A planar wire or face offset by <paramref name="distance"/> in its plane (outwards when positive).</summary>
         public Result<Built<Shape>> Offset2D(double distance, Offset2DOptions? options = null)
         {
@@ -125,6 +150,32 @@ public static class OffsetOperations
                 offset.Perform(distance);
                 return MakerOutcome.Done(offset, [s], () => Diagnostic.Error(new DiagnosticCode("offset.not-planar"),
                     "The offset in the plane couldn't be built: the shape may not be planar, or the distance too large."));
+            }, Failure);
+        }
+    }
+
+    extension(Wire wire)
+    {
+        /// <summary>
+        /// The wire offset by <paramref name="distance"/> in the plane of <paramref name="plane"/> (a planar face), which a
+        /// straight wire needs, having no plane of its own (OCCT's <c>BRepOffsetAPI_MakeOffset</c> on the face's spine, the
+        /// wire added).
+        /// </summary>
+        /// <exception cref="ArgumentException">The wire or the face is null.</exception>
+        public Result<Built<Shape>> Offset2D(double distance, Face plane, Offset2DOptions? options = null)
+        {
+            options ??= Offset2DOptions.Default;
+            Wire w = wire;
+            MakerOutcome.NotNull(w, nameof(wire));
+            MakerOutcome.NotNull(plane, nameof(plane));
+            return EngineOperation.Run<Shape>(range =>
+            {
+                var offset = new MakeWireOffset();
+                offset.Init(plane, options.Join, options.Open);
+                offset.AddWire(w);
+                offset.Perform(distance);
+                return MakerOutcome.Done(offset, [w], () => Diagnostic.Error(new DiagnosticCode("offset.not-planar"),
+                    "The offset in the plane couldn't be built: the distance may be too large."));
             }, Failure);
         }
     }
@@ -159,6 +210,23 @@ public static class OffsetOperations
                 return MakerOutcome.Done(thick, [s], () => StatusDiagnostics.ToDiagnostic(thick.MakeOffset().Error()));
             }, Failure, progress, cancellationToken);
         }
+    }
+
+    // The faces to leave open, which must be the shape's
+    private static NCollection_List<Shape> Openings(Shape shape, IEnumerable<Face> openings)
+    {
+        var faces = new NCollection_List<Shape>();
+        var own = shape.Faces();
+        foreach (Face face in openings)
+        {
+            MakerOutcome.NotNull(face, nameof(openings));
+            if (!own.Any(f => f.IsSame(face)))
+            {
+                throw new ArgumentException("An opening isn't one of the shape's faces.", nameof(openings));
+            }
+            faces.Append(face);
+        }
+        return faces;
     }
 
     private static void NonZero(double value, string name)

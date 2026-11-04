@@ -1,5 +1,3 @@
-using Kerf.Engine.Topology.Brep;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -33,7 +31,7 @@ public abstract partial class Shape
 
     /// <summary>All the non-degenerate edges in this shape, or those <paramref name="select"/> picks.</summary>
     public virtual ShapeList<Edge> Edges(Select select = Select.All) =>
-        SelectFrom(ShapeListOf<Edge>(ShapeType.Edge).FilterBy(e => Tool.Degenerated(e.TopoEdge), reverse: true), select);
+        SelectFrom(ShapeListOf<Edge>(ShapeType.Edge).FilterBy(e => e.TopoEdge.IsDegenerated, reverse: true), select);
 
     /// <summary>All the wires in this shape, or those <paramref name="select"/> picks.</summary>
     public virtual ShapeList<Wire> Wires(Select select = Select.All) => SelectFrom(ShapeListOf<Wire>(ShapeType.Wire), select);
@@ -91,7 +89,7 @@ public abstract partial class Shape
         // relocated since, map each sub-shape back there to look it up.
         var here = _wrapped.Placement;
         Func<Shape, global::Kerf.Topology.Shape> key;
-        if (_historyAt is not { } at || at.IsEqual(here))
+        if (_historyAt is not { } at || TopoUtil.IsSamePlacement(at, here))
             key = s => s.TopoShape;
         else
         {

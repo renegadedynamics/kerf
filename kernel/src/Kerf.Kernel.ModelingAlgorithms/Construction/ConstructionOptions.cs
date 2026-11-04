@@ -107,6 +107,10 @@ public sealed record SweepOptions
     /// <summary>The auxiliary spine, for <see cref="SweepFrame.Auxiliary"/>.</summary>
     public Wire? AuxiliarySpine { get; init; }
 
+    /// <summary>For <see cref="SweepFrame.Auxiliary"/>: the auxiliary spine's points matched to the spine's by the fraction
+    /// of their lengths (OCCT's <c>CurvilinearEquivalence</c>) rather than by the planes normal to the spine.</summary>
+    public bool CurvilinearEquivalence { get; init; }
+
     /// <summary>Translate each profile to touch the spine.</summary>
     public bool WithContact { get; init; }
 

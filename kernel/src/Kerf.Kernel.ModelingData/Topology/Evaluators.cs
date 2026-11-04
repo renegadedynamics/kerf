@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
@@ -80,6 +81,51 @@ public sealed class EdgeCurve
     /// <summary>The first derivative at <paramref name="u"/>: the tangent, not normalised.</summary>
     public Vector3D Tangent(double u) => _curve.EvalD1(u).D1;
 
+    /// <summary>The derivative of order <paramref name="n"/> (1 or more) at <paramref name="u"/>.</summary>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is less than 1.</exception>
+    public Vector3D DerivativeN(double u, int n)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(n, 1);
+        return _curve.EvalDN(u, n);
+    }
+
+    /// <summary>The length of the edge's curve over its range (OCCT's <c>GCPnts_AbscissaPoint::Length</c>).</summary>
+    public double Length => CurveMeasures.Length(_curve);
+
+    /// <summary>The length of the curve between two parameters: negative when <paramref name="u2"/> is before
+    /// <paramref name="u1"/>.</summary>
+    public double LengthBetween(double u1, double u2) => CurveMeasures.Length(_curve, u1, u2);
+
+    /// <summary>
+    /// The parameter <paramref name="length"/> along the curve from the parameter <paramref name="from"/> (backwards for a
+    /// negative length; OCCT's <c>GCPnts_AbscissaPoint</c>).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The point couldn't be found.</exception>
+    public double ParameterAtLength(double length, double from) => CurveMeasures.ParameterAtLength(_curve, length, from);
+
+    /// <summary>
+    /// Parameters along the curve, its ends included, such that the polygon through their points stays within
+    /// <paramref name="deflection"/> of the curve: OCCT's <c>GCPnts_UniformDeflection</c> for a curve continuous to the
+    /// second derivative, else its <c>GCPnts_QuasiUniformDeflection</c>. Empty if it couldn't be computed.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="deflection"/> isn't more than zero.</exception>
+    public ImmutableArray<double> Discretize(double deflection) => CurveMeasures.Discretize(_curve, deflection);
+
+    /// <summary>
+    /// How smoothly this edge meets <paramref name="other"/> where this one's parameter <paramref name="u"/> and the
+    /// other's <paramref name="otherU"/> meet, within the tolerances (OCCT's <c>BRepLProp::Continuity</c>): C0, G1, C1, G2 or C2.
+    /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="other"/> is null.</exception>
+    public Continuity ContinuityWith(EdgeCurve other, double u, double otherU, double linearTolerance = Tolerances.Confusion,
+                                     double angularTolerance = Tolerances.Angular)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        return Engine.Topology.Properties.BRepLProp.Continuity(_curve, other._curve, u, otherU, linearTolerance, angularTolerance);
+    }
+
+    /// <summary>The engine's adaptor, for the operations of other areas (the frames along a curve).</summary>
+    internal EdgeCurveAdaptor Adaptor => _curve;
+
     /// <summary>The line the edge lies on, if it is one.</summary>
     public bool TryGetLine(out Line3D line)
     {
@@ -133,6 +179,173 @@ public sealed class EdgeCurve
         curve = Kind == CurveKind.BezierCurve ? _curve.Bezier() : null;
         return curve is not null;
     }
+
+    /// <summary>The offset curve the edge lies on, in world coordinates, if it is one.</summary>
+    public bool TryGetOffsetCurve([NotNullWhen(true)] out OffsetCurve3D? curve)
+    {
+        curve = Kind == CurveKind.OffsetCurve ? _curve.OffsetCurve() : null;
+        return curve is not null;
+    }
+}
+
+/// <summary>
+/// A wire's curve in world coordinates, its edges joined end to end: made once (<see cref="Wire.ToCurve"/>), queried many
+/// times. OCCT's <c>BRepAdaptor_CompCurve</c>, whose parameter runs over each edge's range in turn.
+/// </summary>
+/// <remarks>
+/// An evaluator keeps caches, so it is not safe to use from several threads at once: make one per thread. Beyond its ends
+/// it evaluates its first or last edge.
+/// </remarks>
+public sealed class WireCurve
+{
+    private readonly WireCurveAdaptor _curve;
+
+    internal WireCurve(Wire wire)
+    {
+        Wire = wire;
+        _curve = new WireCurveAdaptor(wire);
+    }
+
+    /// <summary>The wire.</summary>
+    public Wire Wire { get; }
+
+    /// <summary>The parameter range: the edges' ranges laid end to end.</summary>
+    public Interval Range => new(_curve.FirstParameter(), _curve.LastParameter());
+
+    /// <summary>Whether the wire is closed.</summary>
+    public bool IsClosed => _curve.IsClosed;
+
+    /// <summary>The continuity: that of its first edge (OCCT's).</summary>
+    public Continuity Continuity => _curve.Continuity();
+
+    /// <summary>The point at <paramref name="u"/>.</summary>
+    public Point3D Evaluate(double u) => _curve.EvalD0(u);
+
+    /// <summary>The point and derivatives up to <paramref name="order"/> (0 to 3) at <paramref name="u"/>.</summary>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="order"/> is outside 0 to 3.</exception>
+    public CurveDerivatives Derivatives(double u, int order)
+    {
+        switch (order)
+        {
+            case 0:
+                return new CurveDerivatives(0, _curve.EvalD0(u));
+            case 1:
+            {
+                Curve3D.ResD1 r = _curve.EvalD1(u);
+                return new CurveDerivatives(1, r.Point, r.D1);
+            }
+            case 2:
+            {
+                Curve3D.ResD2 r = _curve.EvalD2(u);
+                return new CurveDerivatives(2, r.Point, r.D1, r.D2);
+            }
+            case 3:
+            {
+                Curve3D.ResD3 r = _curve.EvalD3(u);
+                return new CurveDerivatives(3, r.Point, r.D1, r.D2, r.D3);
+            }
+            default:
+                throw new ArgumentOutOfRangeException(nameof(order), order, "The order must be 0 to 3.");
+        }
+    }
+
+    /// <summary>The derivative of order <paramref name="n"/> (1 or more) at <paramref name="u"/>.</summary>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is less than 1.</exception>
+    public Vector3D DerivativeN(double u, int n)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(n, 1);
+        return _curve.EvalDN(u, n);
+    }
+
+    /// <summary>The length of the wire's curve (OCCT's <c>GCPnts_AbscissaPoint::Length</c>).</summary>
+    public double Length => CurveMeasures.Length(_curve);
+
+    /// <summary>The length of the curve between two parameters: negative when <paramref name="u2"/> is before
+    /// <paramref name="u1"/>.</summary>
+    public double LengthBetween(double u1, double u2) => CurveMeasures.Length(_curve, u1, u2);
+
+    /// <summary>The parameter <paramref name="length"/> along the curve from the parameter <paramref name="from"/>.</summary>
+    /// <exception cref="InvalidOperationException">The point couldn't be found.</exception>
+    public double ParameterAtLength(double length, double from) => CurveMeasures.ParameterAtLength(_curve, length, from);
+
+    /// <summary>
+    /// The points of the curve where its distance to <paramref name="point"/> is extreme (OCCT's <c>Extrema_ExtPC</c>), the
+    /// nearest first (of equally near ones, the first OCCT found): empty if there are none.
+    /// </summary>
+    public ImmutableArray<CurvePoint> Project(Point3D point)
+    {
+        var extrema = new Engine.Extrema.CurvePointExtrema(point, _curve);
+        if (!extrema.IsDone || extrema.ExtCount == 0)
+        {
+            return [];
+        }
+
+        var points = new List<CurvePoint>(extrema.ExtCount);
+        for (int i = 1; i <= extrema.ExtCount; i++)
+        {
+            var found = extrema.Point(i);
+            points.Add(new CurvePoint(found.Parameter(), found.Value(), Math.Sqrt(extrema.SquareDistance(i))));
+        }
+
+        return [.. points.OrderBy(static p => p.Distance)];
+    }
+
+    /// <summary>Parameters along the curve within <paramref name="deflection"/>, as <see cref="EdgeCurve.Discretize"/>.</summary>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="deflection"/> isn't more than zero.</exception>
+    public ImmutableArray<double> Discretize(double deflection) => CurveMeasures.Discretize(_curve, deflection);
+
+    /// <summary>The engine's adaptor, for the operations of other areas (the frames along a curve).</summary>
+    internal WireCurveAdaptor Adaptor => _curve;
+}
+
+/// <summary>Lengths along curves and their discretisation: OCCT's GCPnts, shared by the curve evaluators.</summary>
+internal static class CurveMeasures
+{
+    public static double Length(Engine.Geometry.Adaptors.CurveAdaptorBase curve) => Engine.Measurement.AbscissaPoint.Length(curve);
+
+    public static double Length(Engine.Geometry.Adaptors.CurveAdaptorBase curve, double u1, double u2) =>
+        Engine.Measurement.AbscissaPoint.Length(curve, u1, u2);
+
+    public static double ParameterAtLength(Engine.Geometry.Adaptors.CurveAdaptorBase curve, double length, double from)
+    {
+        var abscissa = new Engine.Measurement.AbscissaPoint(curve, length, from);
+        return abscissa.IsDone ? abscissa.Parameter() : throw new InvalidOperationException("The point at that length couldn't be found.");
+    }
+
+    public static ImmutableArray<double> Discretize(Engine.Geometry.Adaptors.CurveAdaptorBase curve, double deflection)
+    {
+        if (!(deflection > 0))
+        {
+            throw new ArgumentOutOfRangeException(nameof(deflection), deflection, "The deflection must be more than zero.");
+        }
+
+        double first = curve.FirstParameter(), last = curve.LastParameter();
+        // GCPnts_UniformDeflection gives the best results but needs C2 continuity
+        if (curve.Continuity() is Continuity.C2 or Continuity.C3 or Continuity.CN)
+        {
+            var uniform = new Engine.Measurement.UniformDeflection();
+            uniform.Initialize(curve, deflection, first, last);
+            return uniform.IsDone && uniform.PointCount > 0 ? [.. Enumerable.Range(1, uniform.PointCount).Select(uniform.Parameter)] : [];
+        }
+
+        var quasi = new Engine.Measurement.QuasiUniformDeflection();
+        quasi.Initialize(curve, deflection, first, last);
+        return quasi.IsDone && quasi.PointCount > 0 ? [.. Enumerable.Range(1, quasi.PointCount).Select(quasi.Parameter)] : [];
+    }
+}
+
+/// <summary>A surface's curvature at a point (<see cref="FaceSurface.TryGetCurvature"/>): its principal curvatures and the
+/// normal they are measured towards.</summary>
+/// <param name="Min">The smaller principal curvature: negative where the surface bends away from <paramref name="Normal"/>.</param>
+/// <param name="Max">The larger principal curvature.</param>
+/// <param name="Normal">The surface's normal there (the surface's, not the face's orientation).</param>
+public readonly record struct SurfaceCurvature(double Min, double Max, Direction3D Normal)
+{
+    /// <summary>The mean curvature: the principal curvatures' average.</summary>
+    public double Mean => (Min + Max) / 2;
+
+    /// <summary>The Gaussian curvature: the principal curvatures' product.</summary>
+    public double Gaussian => Min * Max;
 }
 
 /// <summary>
@@ -251,5 +464,38 @@ public sealed class FaceSurface
         bool found = Kind == SurfaceKind.Torus;
         torus = found ? _surface.Torus() : default;
         return found;
+    }
+
+    /// <summary>The partial derivative <paramref name="nu"/> times in u and <paramref name="nv"/> times in v (at least one
+    /// in all) at (<paramref name="u"/>, <paramref name="v"/>), ignoring the face's orientation.</summary>
+    /// <exception cref="ArgumentOutOfRangeException">An order is negative, or both are zero.</exception>
+    public Vector3D DerivativeN(double u, double v, int nu, int nv)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(nu);
+        ArgumentOutOfRangeException.ThrowIfNegative(nv);
+        if (nu + nv == 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(nu), "The orders can't both be zero.");
+        }
+
+        return _surface.EvalDN(u, v, nu, nv);
+    }
+
+    /// <summary>
+    /// The surface's curvature at (<paramref name="u"/>, <paramref name="v"/>), if it is defined there (OCCT's
+    /// <c>BRepLProp_SLProps</c>, to second order): false at a singular point, where the normal is undefined, within
+    /// <paramref name="tolerance"/>.
+    /// </summary>
+    public bool TryGetCurvature(double u, double v, double tolerance, out SurfaceCurvature curvature)
+    {
+        var props = new Engine.Topology.Properties.SLProps(_surface, u, v, 2, tolerance);
+        if (!props.IsCurvatureDefined())
+        {
+            curvature = default;
+            return false;
+        }
+
+        curvature = new SurfaceCurvature(props.MinCurvature(), props.MaxCurvature(), props.Normal());
+        return true;
     }
 }

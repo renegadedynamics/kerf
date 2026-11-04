@@ -1,6 +1,4 @@
-using Kerf.Engine.Foundation;
 using System.Globalization;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -31,8 +29,8 @@ public readonly struct Color : IEquatable<Color>
     /// <summary>A colour from sRGB components and alpha, each from 0 to 1. Missing components are 1.</summary>
     public Color(double red, double green = 1.0, double blue = 1.0, double alpha = 1.0)
     {
-        var rgb = new global::Kerf.Engine.Foundation.LinearColor(red, green, blue, ColorSpace.TOC_sRGB);
-        this = FromLinear(rgb.Red(), rgb.Green(), rgb.Blue(), (float)alpha);
+        var (r, g, b, _) = new Kerf.Color(red, green, blue).ToLinear();
+        this = FromLinear(r, g, b, (float)alpha);
     }
 
     /// <summary>
@@ -69,11 +67,11 @@ public readonly struct Color : IEquatable<Color>
         this = new Color(red / 255.0, green / 255.0, blue / 255.0, alpha == 1 ? 1.0 : alpha / 255.0);
     }
 
-    /// <summary>A colour from an OCCT Quantity_ColorRGBA.</summary>
-    public Color(ColorWithAlpha rgba)
+    /// <summary>A colour from the kernel's, its stored (linear) values kept.</summary>
+    public Color(Kerf.Color color)
     {
-        var rgb = rgba.GetRGB();
-        this = FromLinear(rgb.Red(), rgb.Green(), rgb.Blue(), rgba.Alpha());
+        var (r, g, b, a) = color.ToLinear();
+        this = FromLinear(r, g, b, (float)a);
     }
 
     Color(float r, float g, float b, float a, double sr, double sg, double sb)
@@ -84,10 +82,8 @@ public readonly struct Color : IEquatable<Color>
 
     static Color FromLinear(double r, double g, double b, float alpha)
     {
-        var rgb = new global::Kerf.Engine.Foundation.LinearColor(r, g, b, ColorSpace.TocRgb);
-        double sr = 0, sg = 0, sb = 0;
-        rgb.Values(out sr, out sg, out sb, ColorSpace.TOC_sRGB);
-        return new Color((float)r, (float)g, (float)b, alpha, sr, sg, sb);
+        var srgb = Kerf.Color.FromLinear(r, g, b);
+        return new Color((float)r, (float)g, (float)b, alpha, srgb.R, srgb.G, srgb.B);
     }
 
     static (double, double, double) RgbFromName(string name)
@@ -98,10 +94,10 @@ public readonly struct Color : IEquatable<Color>
             return (css.R / 255.0, css.G / 255.0, css.B / 255.0);
 
         // Fall back to OCCT's X11 names. build123d passes OCCT's linear components on as sRGB, so do the same.
-        var color = new global::Kerf.Engine.Foundation.LinearColor();
-        if (!global::Kerf.Engine.Foundation.LinearColor.ColorFromName(name, ref color))
+        if (!Kerf.Color.TryFromName(name, out var color))
             throw new ArgumentException($"'{name}' is not defined as a named color in CSS3 or OCCT/X11", nameof(name));
-        return (color.Red(), color.Green(), color.Blue());
+        var (r, g, b, _) = color.ToLinear();
+        return (r, g, b);
     }
 
     static (double, double, double) HexToRgb(string hex)
@@ -118,12 +114,8 @@ public readonly struct Color : IEquatable<Color>
     /// <summary>Deconstructs into sRGB components and alpha.</summary>
     public void Deconstruct(out double r, out double g, out double b, out double a) => (r, g, b, a) = (R, G, B, A);
 
-    /// <summary>A new OCCT Quantity_ColorRGBA for this colour.</summary>
-    public ColorWithAlpha ToQuantityColorRgba()
-    {
-        var rgb = new global::Kerf.Engine.Foundation.LinearColor(_r, _g, _b, ColorSpace.TocRgb);
-        return new ColorWithAlpha(rgb, _a);
-    }
+    /// <summary>This colour as the kernel's, with the same stored (linear) values.</summary>
+    public Kerf.Color ToKerfColor() => Kerf.Color.FromLinear(_r, _g, _b, _a);
 
     /// <summary>
     /// A palette of <paramref name="count"/> evenly spaced, visually distinct colours for categories, in the
@@ -222,14 +214,13 @@ public readonly struct Color : IEquatable<Color>
     /// </summary>
     public override string ToString()
     {
-        var rgb = new global::Kerf.Engine.Foundation.LinearColor(_r, _g, _b, ColorSpace.TocRgb);
-        double sr = 0, sg = 0, sb = 0;
-        rgb.Values(out sr, out sg, out sb, ColorSpace.TOC_sRGB);
+        var srgb = ToKerfColor();
+        double sr = srgb.R, sg = srgb.G, sb = srgb.B;
         var key = ((int)Math.Round(sr * 255), (int)Math.Round(sg * 255), (int)Math.Round(sb * 255));
         string tuple = $"({PyFormat.Repr(R)}, {PyFormat.Repr(G)}, {PyFormat.Repr(B)}, {PyFormat.Repr(A)})";
         if (CssColors.ByRgb.TryGetValue(key, out var css))
             return $"Color: {tuple} is '{css.ToUpperInvariant()}'";
-        var near = global::Kerf.Engine.Foundation.LinearColor.StringName(rgb.Name()) ?? "";
+        var near = srgb.NearestName();
         return $"Color: {tuple} near '{near.ToUpperInvariant()}'";
     }
 }

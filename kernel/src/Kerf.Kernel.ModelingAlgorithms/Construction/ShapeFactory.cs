@@ -86,6 +86,30 @@ public static class ShapeFactory
             });
         }
 
+        /// <summary>
+        /// The wire the edges make in whatever order they are given, each connected where it meets the others (OCCT's
+        /// <c>BRepBuilderAPI_MakeWire</c> given the list: edges meeting within their vertices' tolerances share a vertex).
+        /// <c>construction.disconnected-wire</c> or <c>construction.non-manifold-wire</c> if they don't make one wire.
+        /// </summary>
+        /// <exception cref="ArgumentException">An edge is null.</exception>
+        public static Result<Wire> Connect(IEnumerable<Edge> edges)
+        {
+            ArgumentNullException.ThrowIfNull(edges);
+            var list = new Occt.NCollection_List<Shape>();
+            foreach (Edge e in edges)
+            {
+                MakerOutcome.NotNull(e, nameof(edges));
+                list.Append(e);
+            }
+            return Guarded(() =>
+            {
+                var wire = new MakeWire();
+                wire.Add(list);
+                wire.Build();
+                return wire.IsDone ? wire.Wire() : Result<Wire>.Failure(StatusDiagnostics.ToDiagnostic(wire.Error()) ?? Failed("wire"));
+            });
+        }
+
         /// <summary>The polygon through <paramref name="points"/>, closed back to the first if <paramref name="closed"/>.</summary>
         /// <exception cref="ArgumentException">Fewer than two points.</exception>
         public static Result<Wire> Polygon(ReadOnlySpan<Point3D> points, bool closed = false)
@@ -128,8 +152,35 @@ public static class ShapeFactory
         }
     }
 
+    /// <summary>Some edges' 3D curves couldn't be computed from their curves on faces: <c>construction.curves-3d-incomplete</c>.</summary>
+    public static DiagnosticCode Curves3DIncomplete { get; } = new("construction.curves-3d-incomplete");
+
     extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
     {
+        /// <summary>
+        /// The shape with a 3D curve for each edge that has only curves on faces, approximated from them within
+        /// <paramref name="tolerance"/> (OCCT's <c>BRepLib::BuildCurves3d</c>). An edge whose curve couldn't be computed is
+        /// left without one, with a <c>construction.curves-3d-incomplete</c> warning. The shape isn't changed.
+        /// </summary>
+        /// <exception cref="ArgumentException">The shape is null.</exception>
+        public Result<Built<Shape>> WithCurves3D(double tolerance = 1e-5, Continuity continuity = Continuity.C1, int maxDegree = 14,
+                                                 int maxSegments = 0)
+        {
+            Shape self = shape.AsShape();
+            MakerOutcome.NotNull(self, nameof(shape));
+            bool done = true;
+            Result<Built<Shape>> result = EngineOperation.Run<Shape>(_ =>
+            {
+                Shape built = BrepLibrary.Curves3dBuilt(self, tolerance, out done, out Engine.Topology.History history, continuity,
+                                                        maxDegree, maxSegments);
+                return new EngineOutcome(true, () => built, history);
+            }, Diagnostic.Error(Primitives.Failed, "The edges' 3D curves couldn't be computed."));
+            return result.TryGetValue(out Built<Shape>? value) && !done
+                ? Result<Built<Shape>>.Success(value, [.. result.Diagnostics,
+                    Diagnostic.Warning(Curves3DIncomplete, "Some edges' 3D curves couldn't be computed from their curves on faces.")])
+                : result;
+        }
+
         /// <summary>Whether the shape's edges lie on one surface within <paramref name="tolerance"/> (negative: their own
         /// tolerances), and the surface if so (OCCT's <c>BRepLib_FindSurface</c>), placed as the shape is.</summary>
         public bool TryFindSurface(double tolerance, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out Surface? surface, bool onlyPlane = false)
@@ -168,8 +219,9 @@ public static class ShapeFactory
         }
 
         /// <summary>The face bounded by <paramref name="outer"/> with <paramref name="holes"/> cut from it. The holes must
-        /// lie inside the outer wire and run the opposite way round, as OCCT requires.</summary>
-        public static Result<Face> FromWires(Wire outer, IEnumerable<Wire> holes)
+        /// lie inside the outer wire and run the opposite way round, as OCCT requires. The face is on the surface the outer
+        /// wire lies on (a plane if it can be; only a plane if <paramref name="onlyPlane"/>).</summary>
+        public static Result<Face> FromWires(Wire outer, IEnumerable<Wire> holes, bool onlyPlane = false)
         {
             MakerOutcome.NotNull(outer, nameof(outer));
             ArgumentNullException.ThrowIfNull(holes);
@@ -180,7 +232,7 @@ public static class ShapeFactory
             }
             return BuildFace(() =>
             {
-                var face = new MakeFace(outer);
+                var face = new MakeFace(outer, onlyPlane);
                 if (face.IsDone)
                 {
                     foreach (Wire hole in inner)
@@ -193,16 +245,27 @@ public static class ShapeFactory
         }
 
         /// <summary>A face on <paramref name="surface"/>: its natural bounds, <paramref name="bounds"/> of its parameters, or
-        /// inside <paramref name="boundary"/>, a wire lying on it.</summary>
-        public static Result<Face> FromSurface(Surface surface, (Interval U, Interval V)? bounds = null, Wire? boundary = null)
+        /// inside <paramref name="boundary"/>, a wire lying on it, with <paramref name="holes"/> (wires lying on it too) cut
+        /// from it.</summary>
+        public static Result<Face> FromSurface(Surface surface, (Interval U, Interval V)? bounds = null, Wire? boundary = null,
+                                               IEnumerable<Wire>? holes = null)
         {
             ArgumentNullException.ThrowIfNull(surface);
             if (bounds is not null && boundary is not null)
             {
                 throw new ArgumentException("Give the bounds or a boundary, not both.", nameof(boundary));
             }
+            Wire[] inner = [.. holes ?? []];
+            if (inner.Length > 0 && boundary is null)
+            {
+                throw new ArgumentException("Holes need a boundary.", nameof(holes));
+            }
+            foreach (Wire hole in inner)
+            {
+                MakerOutcome.NotNull(hole, nameof(holes));
+            }
             return BuildFace(() => boundary is { } w
-                ? new MakeFace(surface, w)
+                ? WithHoles(new MakeFace(surface, w), inner)
                 : bounds is { } b
                     ? new MakeFace(surface, b.U.Min, b.U.Max, b.V.Min, b.V.Max, Tolerances.Confusion)
                     : new MakeFace(surface, Tolerances.Confusion));
@@ -213,6 +276,28 @@ public static class ShapeFactory
         {
             Plane3D p = plane;
             return BuildFace(() => boundary is { } w ? new MakeFace(p, w) : new MakeFace(p));
+        }
+    }
+
+    extension(Face face)
+    {
+        /// <summary>
+        /// The face with <paramref name="holes"/> (wires lying in it, each running opposite its outer wire) cut from it: a
+        /// copy of the face holding the holes as well (OCCT's <c>BRepBuilderAPI_MakeFace</c> of a face, then <c>Add</c>).
+        /// The face isn't changed.
+        /// </summary>
+        /// <exception cref="ArgumentException">The face or a hole is null.</exception>
+        public Result<Face> WithHoles(IEnumerable<Wire> holes)
+        {
+            ArgumentNullException.ThrowIfNull(holes);
+            Face f = face;
+            MakerOutcome.NotNull(f, nameof(face));
+            Wire[] inner = [.. holes];
+            foreach (Wire hole in inner)
+            {
+                MakerOutcome.NotNull(hole, nameof(holes));
+            }
+            return BuildFace(() => WithHoles(new MakeFace(f), inner));
         }
     }
 
@@ -282,6 +367,19 @@ public static class ShapeFactory
         MakeFace face = make();
         return face.IsDone ? face.Face() : Result<Face>.Failure(StatusDiagnostics.ToDiagnostic(face.Error()) ?? Failed("face"));
     });
+
+    // A face maker given its holes (BRepBuilderAPI_MakeFace::Add), if it was made
+    private static MakeFace WithHoles(MakeFace face, Wire[] holes)
+    {
+        if (face.IsDone)
+        {
+            foreach (Wire hole in holes)
+            {
+                face.Add(hole);
+            }
+        }
+        return face;
+    }
 
     private static Diagnostic Failed(string what) =>
         Diagnostic.Error(Primitives.Failed, $"The {what} couldn't be built.");

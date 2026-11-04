@@ -23,23 +23,26 @@ public static class ShapeTransforms
 
     extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
     {
-        /// <summary>The shape transformed by <paramref name="transform"/>.</summary>
-        public Result<Built<Shape>> Transformed(in Transform3D transform)
+        /// <summary>The shape transformed by <paramref name="transform"/>. With <paramref name="copyGeometry"/>, a rigid move
+        /// too makes new geometry (OCCT's <c>BRepBuilderAPI_Transform</c> with <c>Copy</c>), where without it only the
+        /// placement changes.</summary>
+        public Result<Built<Shape>> Transformed(in Transform3D transform, bool copyGeometry = false)
         {
             MakerOutcome.NotNull(shape.AsShape(), nameof(shape));
             Shape s = shape.AsShape();
             Transform3D t = transform;
-            return EngineOperation.Run<Shape>(range => MakerOutcome.Of(new Transform(s, t), range, [s]), Failure);
+            return EngineOperation.Run<Shape>(range => MakerOutcome.Of(new Transform(s, t, copyGeometry), range, [s]), Failure);
         }
 
         /// <summary>The shape transformed by a general (affine) transformation, such as a scale by axis; its geometry
-        /// is converted to B-splines where it must be.</summary>
-        public Result<Built<Shape>> Transformed(in GeneralTransform3D transform)
+        /// is converted to B-splines where it must be. With <paramref name="copyGeometry"/>, geometry the transformation
+        /// leaves as it is is copied too (OCCT's <c>BRepBuilderAPI_GTransform</c> with <c>Copy</c>).</summary>
+        public Result<Built<Shape>> Transformed(in GeneralTransform3D transform, bool copyGeometry = false)
         {
             MakerOutcome.NotNull(shape.AsShape(), nameof(shape));
             Shape s = shape.AsShape();
             GeneralTransform3D t = transform;
-            return EngineOperation.Run<Shape>(range => MakerOutcome.Of(new GTransform(s, t), range, [s]), Failure);
+            return EngineOperation.Run<Shape>(range => MakerOutcome.Of(new GTransform(s, t, copyGeometry), range, [s]), Failure);
         }
 
         /// <summary>The shape mirrored in the plane of <paramref name="plane"/> (its origin and its normal, the main
@@ -76,6 +79,24 @@ public static class ShapeProjections
         MakerOutcome.NotNull(target, nameof(target));
         MakerOutcome.Valid(direction, nameof(direction));
         return Wires(() => new Projection(wire, target, direction));
+    }
+
+    /// <summary><paramref name="edge"/> projected onto <paramref name="target"/> along <paramref name="direction"/>, as a
+    /// wire's is.</summary>
+    public static Result<ImmutableArray<Wire>> Project(Edge edge, Shape target, Direction3D direction)
+    {
+        MakerOutcome.NotNull(edge, nameof(edge));
+        MakerOutcome.NotNull(target, nameof(target));
+        MakerOutcome.Valid(direction, nameof(direction));
+        return Wires(() => new Projection(edge, target, direction));
+    }
+
+    /// <summary><paramref name="edge"/> projected onto <paramref name="target"/> from <paramref name="eye"/>, as a wire's is.</summary>
+    public static Result<ImmutableArray<Wire>> Project(Edge edge, Shape target, Point3D eye)
+    {
+        MakerOutcome.NotNull(edge, nameof(edge));
+        MakerOutcome.NotNull(target, nameof(target));
+        return Wires(() => new Projection(edge, target, eye));
     }
 
     /// <summary><paramref name="wire"/> projected onto <paramref name="target"/> from <paramref name="eye"/> (a conical

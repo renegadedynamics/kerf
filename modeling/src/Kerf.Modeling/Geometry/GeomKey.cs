@@ -1,6 +1,3 @@
-using Kerf.Engine.Geometry;
-using Occt;
-
 namespace Kerf.Modeling;
 
 /// <summary>
@@ -13,9 +10,9 @@ internal static class GeomKey
     public static double Round(double value) => Math.Round(value, Constants.KeyDigits) + 0.0;
 
     /// <summary>The rounded components of a quaternion, with the sign fixed so q and -q (the same rotation) agree.</summary>
-    public static (double, double, double, double) Quaternion(Quaternion3 q)
+    public static (double, double, double, double) Quaternion((double X, double Y, double Z, double W) q)
     {
-        double x = q.X(), y = q.Y(), z = q.Z(), w = q.W();
+        var (x, y, z, w) = q;
         foreach (var value in (ReadOnlySpan<double>)[x, y, z, w])
         {
             if (Math.Abs(value) > Constants.Tolerance)

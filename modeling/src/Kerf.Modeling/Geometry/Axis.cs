@@ -1,7 +1,4 @@
-using Kerf.Engine.Foundation;
-using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -35,7 +32,7 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
             var dir = direction.Normalized().ToGpDir();
             unit = new Vector(dir);
         }
-        catch (FailureException ex)
+        catch (Exception ex) when (Failures.IsKernelFailure(ex) || ex is InvalidOperationException)
         {
             throw new ArgumentException("Invalid Axis parameters", nameof(direction), ex);
         }
@@ -55,15 +52,10 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     /// <summary>The axis along an edge's curve where it starts (ignoring the edge's orientation), as build123d's <c>Axis(edge)</c>.</summary>
     public Axis(Edge edge)
     {
-        double first = 0, last = 0;
-        var curve = Tool.Curve(edge.TopoEdge, out first, out last)
-                          ?? throw new ArgumentException($"Invalid edge argument: {edge}");
-        double min = 0, max = 0;
-        Tool.Range(edge.TopoEdge, out min, out max);
-        var origin = new Point3D();
-        var tangent = new Vector3D();
-        curve.D1(min, out origin, out tangent);
-        this = new Axis(new Vector(origin), new Vector(tangent));
+        if (!edge.TopoEdge.TryGetCurve(out var curve, out _))
+            throw new ArgumentException($"Invalid edge argument: {edge}");
+        var start = curve.Derivatives(edge.TopoEdge.Range.Min, 1);
+        this = new Axis(new Vector(start.Point), new Vector(start.D1));
     }
 
     /// <summary>The Z axis of a location.</summary>
@@ -79,7 +71,7 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     public Axis WithPosition(Vector position) => new(position, Direction, true);
 
     /// <summary>This axis with a new direction (normalised), at the same position.</summary>
-    /// <exception cref="FailureException">The direction has zero length.</exception>
+    /// <exception cref="Exception">The direction has zero length (the kernel's construction error).</exception>
     public Axis WithDirection(Vector direction)
     {
         var d = direction.ToGpDir();

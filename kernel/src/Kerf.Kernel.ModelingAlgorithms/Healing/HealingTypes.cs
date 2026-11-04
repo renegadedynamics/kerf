@@ -69,6 +69,26 @@ public sealed record FixOptions
 
     /// <summary>Make the edges' curves agree with their curves on faces (SameParameter).</summary>
     public bool? FixSameParameter { get; init; }
+
+    /// <summary>
+    /// Whether <c>Fix</c> checks its result and warns (<c>healing.not-fixed</c>) if it is
+    /// still invalid: true by default. The check costs a validation of the result; a caller that doesn't read the warning
+    /// can leave it out.
+    /// </summary>
+    public bool CheckResult { get; init; } = true;
+}
+
+/// <summary>How <c>HealingOperations.FixWireframe</c> fixes a wireframe (OCCT's <c>ShapeFix_Wireframe</c>).</summary>
+public sealed record WireframeFixOptions
+{
+    /// <summary>OCCT's defaults: its own maximum tolerance, the gaps fixed before the small edges.</summary>
+    public static WireframeFixOptions Default { get; } = new();
+
+    /// <summary>The largest tolerance a fix may give an edge or vertex; null for OCCT's own.</summary>
+    public double? MaxTolerance { get; init; }
+
+    /// <summary>Fix the small edges before the gaps, rather than after.</summary>
+    public bool SmallEdgesFirst { get; init; }
 }
 
 /// <summary>How faces are sewn (OCCT's <c>BRepBuilderAPI_Sewing</c>).</summary>
@@ -118,6 +138,40 @@ public sealed record UnifyOptions
 
     /// <summary>The angular tolerance, in radians.</summary>
     public double AngularTolerance { get; init; } = Tolerances.Angular;
+}
+
+/// <summary>
+/// How <c>HealingOperations.ApproximateBSplines</c> approximates a shape's B-spline and Bezier geometry, and the extrusions,
+/// revolutions and offsets based on it (OCCT's <c>ShapeCustom::BSplineRestriction</c>; its defaults).
+/// </summary>
+public sealed record BSplineApproximationOptions
+{
+    /// <summary>OCCT's defaults.</summary>
+    public static BSplineApproximationOptions Default { get; } = new();
+
+    /// <summary>The 3D tolerance of the approximation.</summary>
+    public double Tolerance3D { get; init; } = 0.01;
+
+    /// <summary>The 2D tolerance of the approximation of curves on faces.</summary>
+    public double Tolerance2D { get; init; } = 1e-6;
+
+    /// <summary>The highest degree.</summary>
+    public int MaxDegree { get; init; } = 9;
+
+    /// <summary>The most spans.</summary>
+    public int MaxSegments { get; init; } = 10000;
+
+    /// <summary>The continuity of the 3D curves and surfaces.</summary>
+    public Continuity Continuity3D { get; init; } = Continuity.C1;
+
+    /// <summary>The continuity of the curves on faces.</summary>
+    public Continuity Continuity2D { get; init; } = Continuity.C2;
+
+    /// <summary>Keep the degree within <see cref="MaxDegree"/> first, rather than the spans within <see cref="MaxSegments"/>.</summary>
+    public bool PreferDegree { get; init; } = true;
+
+    /// <summary>Make rational geometry polynomial.</summary>
+    public bool Polynomial { get; init; }
 }
 
 /// <summary>Which surfaces <c>HealingOperations.ConvertToBSpline</c> converts (OCCT's <c>ShapeCustom::ConvertToBSpline</c>).</summary>

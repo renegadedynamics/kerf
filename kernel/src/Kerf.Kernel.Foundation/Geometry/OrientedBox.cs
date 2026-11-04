@@ -110,6 +110,13 @@ public readonly struct OrientedBox : IEquatable<OrientedBox>
     /// <summary>True if <paramref name="point"/> is inside the box or on its boundary.</summary>
     public bool Contains(Point3D point) => _isSet && !ToEngine().IsOut(point);
 
+    /// <summary>True if every corner of <paramref name="other"/> is inside this box or on its boundary (OCCT's
+    /// <c>Bnd_OBB::IsCompletelyInside</c>); false if either is empty.</summary>
+    public bool Contains(in OrientedBox other) => _isSet && other._isSet && ToEngine().IsCompletelyInside(other.ToEngine());
+
+    /// <summary>The length of the diagonal: twice the half-sizes' length (0 for an empty box).</summary>
+    public double Diagonal => Math.Sqrt(4.0 * (HalfSize.X * HalfSize.X + HalfSize.Y * HalfSize.Y + HalfSize.Z * HalfSize.Z));
+
     /// <summary>True if this box and <paramref name="other"/> share a point (touching counts).</summary>
     public bool Intersects(in OrientedBox other) => _isSet && other._isSet && !ToEngine().IsOut(other.ToEngine());
 

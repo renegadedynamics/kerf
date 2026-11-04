@@ -2,6 +2,7 @@
 
 using System.Collections.Immutable;
 using System.Text;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing;
 using Kerf.Engine.Healing.Analysis;
@@ -140,7 +141,7 @@ public static class HealingOperations
                 fixer.Perform(range);
                 return new EngineOutcome(true, () => fixer.Shape(), fixer.Context()?.History());
             }, Diagnostic.Error(FixFailed, "The shape couldn't be fixed."), progress, cancellationToken);
-            return result.TryGetValue(out Built<Shape>? built) && NotFixedWarning(built.Shape) is { } warning
+            return options.CheckResult && result.TryGetValue(out Built<Shape>? built) && NotFixedWarning(built.Shape) is { } warning
                 ? Result<Built<Shape>>.Success(built, [.. result.Diagnostics, warning])
                 : result;
         }
@@ -179,16 +180,38 @@ public static class HealingOperations
         /// </summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="tolerance"/> isn't more than zero.</exception>
-        public Result<Built<Shape>> FixWireframe(double tolerance)
+        public Result<Built<Shape>> FixWireframe(double tolerance) => shape.FixWireframe(tolerance, WireframeFixOptions.Default);
+
+        /// <summary>
+        /// The shape's wire gaps closed and its small edges merged or removed, within <paramref name="tolerance"/>, as
+        /// <paramref name="options"/> say (OCCT's <c>ShapeFix_Wireframe</c>).
+        /// </summary>
+        /// <exception cref="ArgumentException">The shape is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="tolerance"/> isn't more than zero.</exception>
+        public Result<Built<Shape>> FixWireframe(double tolerance, WireframeFixOptions? options)
         {
             Shape input = NotNull(shape.AsShape());
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(tolerance);
+            options ??= WireframeFixOptions.Default;
             return EngineOperation.Run<Shape>(_ =>
             {
                 var fixer = new WireframeFixer(input);
                 fixer.SetPrecision(tolerance);
-                fixer.FixWireGaps();
-                fixer.FixSmallEdges();
+                if (options.MaxTolerance is { } max)
+                {
+                    fixer.SetMaxTolerance(max);
+                }
+
+                if (options.SmallEdgesFirst)
+                {
+                    fixer.FixSmallEdges();
+                    fixer.FixWireGaps();
+                }
+                else
+                {
+                    fixer.FixWireGaps();
+                    fixer.FixSmallEdges();
+                }
                 return new EngineOutcome(true, () => fixer.Shape(), fixer.Context()?.History());
             }, Diagnostic.Error(FixFailed, "The shape's wireframe couldn't be fixed."));
         }
@@ -210,6 +233,40 @@ public static class HealingOperations
         }
 
         /// <summary>
+        /// The edges the shape's shells use twice the same way round, which a consistently oriented shell never does (OCCT's
+        /// <c>ShapeAnalysis_Shell::CheckOrientedShells</c>, its bad edges): empty for a shape whose shells are oriented
+        /// consistently. With <paramref name="checkInternalEdges"/>, internal edges are checked as the others are.
+        /// </summary>
+        /// <exception cref="ArgumentException">The shape is null.</exception>
+        public ImmutableArray<Edge> MisorientedEdges(bool checkInternalEdges = false)
+        {
+            Shape input = NotNull(shape.AsShape());
+            var analysis = new ShellAnalysis();
+            analysis.LoadShells(input);
+            analysis.CheckOrientedShells(input, true, checkInternalEdges);
+            return analysis.HasBadEdges ? [.. analysis.BadEdges().Edges()] : [];
+        }
+
+        /// <summary>
+        /// The shape with its B-spline and Bezier curves and surfaces, and the extrusions, revolutions and offsets based on
+        /// them, approximated within <paramref name="options"/>' degree and spans (OCCT's <c>ShapeCustom::BSplineRestriction</c>).
+        /// The shape isn't changed.
+        /// </summary>
+        /// <exception cref="ArgumentException">The shape is null.</exception>
+        public Result<Built<Shape>> ApproximateBSplines(BSplineApproximationOptions? options = null)
+        {
+            Shape input = NotNull(shape.AsShape());
+            options ??= BSplineApproximationOptions.Default;
+            return EngineOperation.Run<Shape>(_ =>
+            {
+                Shape approximated = Customize.BSplineRestriction(input, options.Tolerance3D, options.Tolerance2D, options.MaxDegree,
+                                                                  options.MaxSegments, options.Continuity3D, options.Continuity2D,
+                                                                  options.PreferDegree, options.Polynomial, new RestrictionParameters());
+                return new EngineOutcome(!approximated.IsNull, () => approximated);
+            }, Diagnostic.Error(ConversionFailed, "The shape's B-splines couldn't be approximated."));
+        }
+
+        /// <summary>
         /// The free boundaries of a shell or of faces: the wires of edges that only one face has, connected where they
         /// share a vertex, or (with a <paramref name="tolerance"/> more than zero) the boundaries sewing the faces
         /// within it would leave (OCCT's <c>ShapeAnalysis_FreeBounds</c>). Closed wires first, then open ones.
@@ -220,6 +277,28 @@ public static class HealingOperations
             Shape input = NotNull(shape.AsShape());
             FreeBounds bounds = tolerance > 0 ? new FreeBounds(input, tolerance) : new FreeBounds(input);
             return [.. bounds.GetClosedWires().Wires(), .. bounds.GetOpenWires().Wires()];
+        }
+    }
+
+    extension(Face face)
+    {
+        /// <summary>
+        /// The face fixed on its own (OCCT's <c>ShapeFix_Face</c>): its wires' orientation first, so the outer one bounds the
+        /// material and the holes run against it, then its other fixes (missing seams, wires' gaps and order, small
+        /// edges). The face isn't changed; the result shares what wasn't fixed.
+        /// </summary>
+        /// <exception cref="ArgumentException">The face is null.</exception>
+        public Result<Built<Shape>> FixFace()
+        {
+            Face input = face;
+            NotNull(input.AsShape());
+            return EngineOperation.Run<Shape>(range =>
+            {
+                var fixer = new FaceFixer(input);
+                fixer.FixOrientation();
+                fixer.Perform(range);
+                return new EngineOutcome(true, () => fixer.Result(), fixer.Context()?.History());
+            }, Diagnostic.Error(FixFailed, "The face couldn't be fixed."));
         }
     }
 
@@ -280,7 +359,7 @@ public static class HealingOperations
 
             sewing.Perform(range);
             Shape sewn = sewing.SewedShape();
-            return new EngineOutcome(!sewn.IsNull, () => sewn, SewingHistory(sewing, inputs));
+            return new EngineOutcome(!sewn.IsNull, () => sewn, sewn.IsNull ? null : SewingHistory(sewing, sewn, inputs));
         }, Diagnostic.Error(SewingFailed, "The shapes couldn't be sewn."), progress, cancellationToken);
     }
 
@@ -304,18 +383,40 @@ public static class HealingOperations
         return wires is null ? [] : [.. wires.Select(w => w.As<Wire>())];
     }
 
-    // Sewing's history as the modelling layer reads it: each input face modified into the face sewing made of it
-    private static History SewingHistory(Sewing sewing, List<Shape> inputs)
+    // Sewing's history: each input face it rebuilt modified into the face it made (Modified), each edge and vertex it merged
+    // into the one it kept (ModifiedSubShape), and a face it dropped as a duplicate, or a sub-shape the result doesn't
+    // hold, removed
+    private static History SewingHistory(Sewing sewing, Shape sewn, List<Shape> inputs)
     {
         var history = new History();
+        var present = new IndexedSet<Shape>(ShapeHasher.Instance);
         var seen = new HashSet<Shape>(ShapeComparer.Same);
+        foreach (ShapeType type in (ReadOnlySpan<ShapeType>)[ShapeType.Vertex, ShapeType.Edge, ShapeType.Face, ShapeType.Solid])
+        {
+            Exploration.MapShapes(sewn, type, present);
+        }
+
         foreach (Shape input in inputs)
         {
-            foreach (Face face in input.Faces())
+            foreach (ShapeType type in (ReadOnlySpan<ShapeType>)[ShapeType.Vertex, ShapeType.Edge, ShapeType.Face, ShapeType.Solid])
             {
-                if (seen.Add(face) && sewing.IsModified(face))
+                var subs = new IndexedSet<Shape>(ShapeHasher.Instance);
+                Exploration.MapShapes(input, type, subs);
+                foreach (Shape sub in subs)
                 {
-                    history.AddModified(face, sewing.Modified(face));
+                    if (!seen.Add(sub))
+                    {
+                        continue;
+                    }
+
+                    if (type == ShapeType.Face ? sewing.IsModified(sub) : sewing.IsModifiedSubShape(sub))
+                    {
+                        history.AddModified(sub, type == ShapeType.Face ? sewing.Modified(sub) : sewing.ModifiedSubShape(sub));
+                    }
+                    else if (!present.Contains(sub))
+                    {
+                        history.Remove(sub);
+                    }
                 }
             }
         }

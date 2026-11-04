@@ -1,18 +1,8 @@
-using Kerf.Engine.Booleans.Api;
-using Kerf.Engine.Classification;
-using Kerf.Engine.Collections;
-using Kerf.Engine.Construction.Api;
-using Kerf.Engine.Construction.Library;
-using Kerf.Engine.Healing.Checks;
-using Kerf.Engine.Healing.Fixes;
-using Kerf.Engine.Measurement;
-using Kerf.Engine.Topology;
-using Kerf.Engine.Topology.Adaptors;
-using Kerf.Engine.Topology.Brep;
-using Kerf.Engine.Topology.Tools;
+using Kerf.Construction;
 using Kerf.Geometry;
+using Kerf.Healing;
+using Kerf.Measurement;
 using Kerf.Topology;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -22,10 +12,9 @@ internal static partial class TopoUtil
     /// <summary>The point of a face at normalised (u, v), each from 0 to 1 across the face's own parameter range.</summary>
     internal static Vector FacePosition(global::Kerf.Topology.Face face, double u, double v)
     {
-        double uMin = 0, uMax = 0, vMin = 0, vMax = 0;
-        BrepTools.UVBounds(face, out uMin, out uMax, out vMin, out vMax);
-        var surface = Tool.Surface(face)!;
-        var p = surface.Value(uMin + u * (uMax - uMin), vMin + v * (vMax - vMin));
+        var (us, vs) = face.UVBounds;
+        face.TryGetSurface(out var surface);
+        var p = surface!.Evaluate(us.Min + u * (us.Max - us.Min), vs.Min + v * (vs.Max - vs.Min));
         return new Vector(p);
     }
 
@@ -35,32 +24,19 @@ internal static partial class TopoUtil
     /// </summary>
     internal static Vector FaceNormal(global::Kerf.Topology.Face face, double u = 0.5, double v = 0.5)
     {
-        double uMin = 0, uMax = 0, vMin = 0, vMax = 0;
-        BrepTools.UVBounds(face, out uMin, out uMax, out vMin, out vMax);
-        var point = new Point3D();
-        var normal = new Vector3D();
-        var props = new FaceIntegrand(face);
-        props.Normal(uMin + u * (uMax - uMin), vMin + v * (vMax - vMin), out point, out normal);
-        return new Vector(normal).Normalized();
+        var (us, vs) = face.UVBounds;
+        return FaceNormalVector(face, us.Min + u * (us.Max - us.Min), vs.Min + v * (vs.Max - vs.Min)).Normalized();
     }
 
     /// <summary>The centre of mass of a face's area.</summary>
-    internal static Vector FaceCenter(global::Kerf.Topology.Face face)
-    {
-        var props = new Properties();
-        MassPropertiesBuilder.SurfaceProperties(face, props);
-        var c = props.CentreOfMass();
-        return new Vector(c);
-    }
+    internal static Vector FaceCenter(global::Kerf.Topology.Face face) => new(face.MassProperties(Dimension.Area).CentreOfMass);
 
     /// <summary>Whether a point lies on a face, its boundary included, within a tolerance.</summary>
-    internal static bool PointOnFace(global::Kerf.Topology.Face face, Vector point, double tolerance = Constants.Tolerance)
-    {
-        var classifier = new SolidClassifier(face);
-        var p = point.ToGpPnt();
-        classifier.Perform(p, tolerance);
-        return classifier.IsOnAFace;
-    }
+    internal static bool PointOnFace(global::Kerf.Topology.Face face, Vector point, double tolerance = Constants.Tolerance) =>
+        face.IsOnFace(point.ToGpPnt(), tolerance);
+
+    /// <summary>BRepCheck_Analyzer's own defaults, serial: for the checks of single faces the modelling layer makes.</summary>
+    internal static readonly ValidationOptions SerialCheck = new() { Parallel = false };
 
     /// <summary>One shell from faces: a single face held in a shell of its own, or several sewn together.</summary>
     /// <exception cref="ArgumentException">No faces, or faces that don't sew into one shell.</exception>
@@ -70,9 +46,9 @@ internal static partial class TopoUtil
         if (list.Count == 0)
             throw new ArgumentException("a shell needs at least one face");
         if (list.Count == 1)
-            return Builder.MakeShell([list[0]]);
+            return global::Kerf.Topology.Shell.Create([list[0]]);
         var sewn = SewFaces(list.Select(f => (global::Kerf.Topology.Shape)f), tolerance);
-        return sewn.IsShell() ? ShapeCasts.Shell(sewn) : throw new ArgumentException("the faces do not sew into one connected shell");
+        return sewn.IsShell() ? (global::Kerf.Topology.Shell)sewn : throw new ArgumentException("the faces do not sew into one connected shell");
     }
 
     /// <summary>
@@ -83,25 +59,24 @@ internal static partial class TopoUtil
     internal static Vector MaterialSide(global::Kerf.Topology.Face face, global::Kerf.Topology.Edge edge)
     {
         global::Kerf.Topology.Edge? occurrence = null;
-        var explorer = new Explorer(face, global::Kerf.Topology.ShapeType.Edge);
-        for (; explorer.More(); explorer.Next())
+        foreach (var current in face.Explore<global::Kerf.Topology.Edge>())
         {
-            var current = explorer.Current();
             if (current.IsSame(edge))
             {
-                occurrence = ShapeCasts.Edge(current);
+                occurrence = current;
                 break;
             }
             if (occurrence is null && current.IsPartner(edge))
-                occurrence = ShapeCasts.Edge(current);
+                occurrence = current;
         }
         if (occurrence is not { } found)
             throw new ArgumentException("the edge is not an edge of the face");
-        var curve = new EdgeCurveAdaptor(found);
-        curve.D1((curve.FirstParameter() + curve.LastParameter()) / 2, out var point, out var tangent);
+        var curve = found.ToCurve();
+        var d = curve.Derivatives((curve.Range.Min + curve.Range.Max) / 2, 1);
+        var tangent = d.D1;
         if (found.Orientation == Orientation.Reversed)
             tangent = tangent.Reversed();
-        return FaceNormalAt(face, point).Cross(new Vector(tangent).Normalized());
+        return FaceNormalAt(face, d.Point).Cross(new Vector(tangent).Normalized());
     }
 
     /// <summary>
@@ -113,16 +88,9 @@ internal static partial class TopoUtil
         if (!(obj.IsVertex() || obj.IsEdge() || obj.IsWire() || obj.IsFace() || obj.IsShell()))
             throw new ArgumentException($"extrude not supported for {TypeName(obj)}");
         var vec = direction.ToGpVec();
-        var prism = new ApiMakePrism(obj, vec);
-        var extrusion = Downcast(prism.Shape());
+        var extrusion = Downcast(Failures.Get(obj.Extrude(vec), () => "extrude").Shape);
         if (extrusion.Type == global::Kerf.Topology.ShapeType.CompSolid)
-        {
-            var solids = new List<global::Kerf.Topology.Shape>();
-            var explorer = new Explorer(extrusion, global::Kerf.Topology.ShapeType.Solid);
-            for (; explorer.More(); explorer.Next())
-                solids.Add(Downcast(explorer.Current()));
-            extrusion = MakeCompound(solids);
-        }
+            extrusion = MakeCompound(Explore(extrusion, global::Kerf.Topology.ShapeType.Solid));
         return extrusion;
     }
 
@@ -146,16 +114,9 @@ internal static partial class TopoUtil
             if (!(list[0].TopoShape.IsVertex() && list[^1].TopoShape.IsVertex()))
                 throw new ArgumentException("The vertices must be at the beginning and end of the list");
         }
-        var loft = new ThruSections(filled, ruled);
-        foreach (var obj in list)
-        {
-            if (obj.TopoShape.IsVertex())
-                loft.AddVertex(ShapeCasts.Vertex(obj.TopoShape));
-            else if (obj.TopoShape.IsWire())
-                loft.AddWire(ShapeCasts.Wire(PrivateCopy(obj.TopoShape)));   // the loft writes pcurves into the sections' edges
-        }
-        loft.Build();
-        return loft.Shape();
+        // The loft no longer writes pcurves into the sections' edges (the kernel's unit 10H3), so they aren't copied
+        var sections = list.Where(o => o.TopoShape.IsVertex() || o.TopoShape.IsWire()).Select(o => o.TopoShape).ToList();
+        return Failures.Get(Sweeps.Loft(sections, new LoftOptions { MakeSolid = filled, Ruled = ruled }), () => "loft").Shape;
     }
 
     /// <summary>A planar face from an outer wire and holes.</summary>
@@ -163,34 +124,24 @@ internal static partial class TopoUtil
     internal static global::Kerf.Topology.Face MakeFaceFromWires(global::Kerf.Topology.Wire outerWire, IEnumerable<global::Kerf.Topology.Wire>? innerWires = null)
     {
         var inner = innerWires?.ToList() ?? [];
-        if (inner.Count > 0 && !Tool.IsClosed(outerWire))
+        if (inner.Count > 0 && !outerWire.CheckClosed())
             throw new ArgumentException("Cannot build face(s): outer wire is not closed");
         var verification = MakeCompound([outerWire, .. inner]);
-        var finder = new FindSurface(verification, -1, true);
-        if (!finder.Found())
+        if (!verification.TryFindSurface(-1, out _, onlyPlane: true))
             throw new ArgumentException("Cannot build face(s): wires not planar");
 
-        var fixOuter = new ShapeFixer(outerWire);
-        fixOuter.Perform();
-        var topoWire = ShapeCasts.Wire(fixOuter.Shape());
-        var builder = new MakeFace(topoWire, true);
+        var topoWire = (global::Kerf.Topology.Wire)Fix(outerWire);
+        var holes = new List<global::Kerf.Topology.Wire>();
         foreach (var innerWire in inner)
         {
-            if (!Tool.IsClosed(innerWire))
+            if (!innerWire.CheckClosed())
                 throw new ArgumentException("Cannot build face(s): inner wire is not closed");
-            var fixInner = new ShapeFixer(innerWire);
-            fixInner.Perform();
-            var fixedInner = ShapeCasts.Wire(fixInner.Shape());
-            builder.Add(fixedInner);
+            holes.Add((global::Kerf.Topology.Wire)Fix(innerWire));
         }
-        builder.Build();
-        if (!builder.IsDone)
-            throw new ArgumentException($"Cannot build face(s): {builder.Error()}");
-        var face = builder.Face();
-        var fixFace = new FaceFixer(face);
-        fixFace.FixOrientation();
-        fixFace.Perform();
-        return ShapeCasts.Face(fixFace.Result());
+        var made = global::Kerf.Topology.Face.FromWires(topoWire, holes, onlyPlane: true);
+        if (!made.TryGetValue(out var face))
+            throw new ArgumentException($"Cannot build face(s): {made.Error!.Code.Value}");
+        return (global::Kerf.Topology.Face)Failures.Get(face.FixFace(), () => "fix face").Shape;
     }
 
     /// <summary>
@@ -199,21 +150,15 @@ internal static partial class TopoUtil
     /// </summary>
     internal static global::Kerf.Topology.Face MakeFaceOnSurface(global::Kerf.Topology.Face surfaceFace, global::Kerf.Topology.Wire outerWire, IEnumerable<global::Kerf.Topology.Wire>? innerWires = null)
     {
-        var surface = Tool.Surface(surfaceFace);
-        var builder = new MakeFace(surface!, outerWire, true);
-        foreach (var innerWire in innerWires ?? [])
-            builder.Add(innerWire);
-        if (!builder.IsDone)
-            throw new ArgumentException($"Cannot build face(s): {builder.Error()}");
-        var built = builder.Face();
-        var fix = new ShapeFixer(built);
-        fix.Perform();
-        var fixedShape = fix.Shape();
+        surfaceFace.TryGetSurface(out var surface);
+        var made = global::Kerf.Topology.Face.FromSurface(surface!, boundary: outerWire, holes: innerWires ?? []);
+        if (!made.TryGetValue(out var built))
+            throw new ArgumentException($"Cannot build face(s): {made.Error!.Code.Value}");
+        var fixedShape = Fix(built);
         if (fixedShape.Type != global::Kerf.Topology.ShapeType.Face)
             throw new InvalidOperationException("Cannot build face(s): the wires do not bound one face");
-        var result = ShapeCasts.Face(fixedShape);
-        var check = new Analyzer(result);
-        if (!check.IsValid())
+        var result = (global::Kerf.Topology.Face)fixedShape;
+        if (!result.Validate(SerialCheck).IsValid)
             throw new InvalidOperationException("Cannot build face(s): the wires do not lie on the surface");
         return result;
     }
@@ -262,19 +207,17 @@ public static partial class TopologyUtils
     /// <summary>The edges of <paramref name="combined"/> that none of <paramref name="objects"/> had.</summary>
     public static ShapeList<Edge> NewEdges(IEnumerable<Shape> objects, Shape combined)
     {
-        var combinedEdges = TopoUtil.ListOf(combined.Edges().Where(e => !e.IsEmpty).Select(e => e.TopoShape));
-        var originalEdges = TopoUtil.ListOf(objects.SelectMany(o => o.Edges()).Where(e => !e.IsEmpty).Select(e => e.TopoShape));
-        var operation = new Cut();
-        operation.SetNonDestructive(true);   // leave the inputs' tolerances alone
-        operation.SetArguments(combinedEdges);
-        operation.SetTools(originalEdges);
-        operation.SetRunParallel(true);
-        operation.Build();
+        var combinedEdges = combined.Edges().Where(e => !e.IsEmpty).Select(e => e.TopoShape).ToList();
+        var originalEdges = objects.SelectMany(o => o.Edges()).Where(e => !e.IsEmpty).Select(e => e.TopoShape).ToList();
+        if (combinedEdges.Count == 0)
+            return [];
+        // Non-destructive, as all the modelling layer's Booleans: the inputs' tolerances are left alone
+        var result = originalEdges.Count == 0
+            ? TopoUtil.MakeCompound(combinedEdges)
+            : Failures.Get(TopoUtil.Boolean(BooleanKind.Cut, combinedEdges, originalEdges), () => "cut").Shape;
         var edges = new List<Edge>();
-        var result = operation.Shape();
-        var explorer = new Explorer(result, global::Kerf.Topology.ShapeType.Edge);
-        for (; explorer.More(); explorer.Next())
-            edges.Add((Edge)combined.CastLike(TopoUtil.Downcast(explorer.Current())).WithTopoPath([combined]));
+        foreach (var edge in TopoUtil.Explore(result, global::Kerf.Topology.ShapeType.Edge))
+            edges.Add((Edge)combined.CastLike(edge).WithTopoPath([combined]));
         return new ShapeList<Edge>(edges);
     }
 }
@@ -344,20 +287,18 @@ public static partial class TopologyUtils
 
         var neighbours = peerList.Distinct().ToDictionary(p => p, _ => new HashSet<Shape>());
         {
-            var map = new IndexedMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
+            var graph = ShapeGraph.Build(parent.TopoShape);
             if (connector is null)
             {
                 // Vertices are neighbours across an edge
-                Exploration.MapShapesAndAncestors(parent.TopoShape, global::Kerf.Topology.ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, map);
-                for (int i = 0; i < map.Count; i++)
+                foreach (var key in graph.All(global::Kerf.Topology.ShapeType.Vertex))
                 {
-                    if (!lookup.TryGetValue(Shape.Cast(map.KeyAt(i)), out var vertexPeer))
+                    if (!lookup.TryGetValue(Shape.Cast(key), out var vertexPeer))
                         continue;
-                    var edges = map.ValueAt(i);
-                    foreach (var e in edges)
+                    foreach (var e in graph.Ancestors(key, global::Kerf.Topology.ShapeType.Edge))
                     {
-                        var edge = ShapeCasts.Edge(e);
-                        foreach (var end in new[] { Exploration.FirstVertex(edge), Exploration.LastVertex(edge) })
+                        var edge = (global::Kerf.Topology.Edge)e;
+                        foreach (var end in new[] { edge.FirstVertex, edge.LastVertex })
                             if (lookup.TryGetValue(Shape.Cast(end), out var n) && n != vertexPeer)
                                 neighbours[vertexPeer].Add(n);
                     }
@@ -366,10 +307,9 @@ public static partial class TopologyUtils
             else
             {
                 // Peers are neighbours across a shared connector
-                Exploration.MapShapesAndAncestors(parent.TopoShape, connector.Value, TopoUtil.ToTopAbs(peerType), map);
-                for (int i = 0; i < map.Count; i++)
+                foreach (var key in graph.All(connector.Value))
                 {
-                    var list = map.ValueAt(i);
+                    var list = graph.Ancestors(key, TopoUtil.ToTopAbs(peerType));
                     var connected = list.Select(s => lookup.GetValueOrDefault(Shape.Cast(s))).OfType<Shape>().ToList();
                     foreach (var a in connected)
                         foreach (var b in connected)

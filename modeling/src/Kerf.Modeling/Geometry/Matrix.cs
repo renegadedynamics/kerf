@@ -1,7 +1,5 @@
-using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using System.Text;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -41,9 +39,10 @@ public sealed class Matrix
             var trsf = source.ToTransform();
             return new GeneralTransform3D(trsf);
         }
-        var linear = source.VectorialPart;
-        var translation = source.TranslationXyz();
-        return new GeneralTransform3D(linear, translation);
+        return GeneralTransform3D.Mat4([source[1, 1], source[1, 2], source[1, 3], source[1, 4],
+                                        source[2, 1], source[2, 2], source[2, 3], source[2, 4],
+                                        source[3, 1], source[3, 2], source[3, 3], source[3, 4],
+                                        0, 0, 0, 1]);
     }
 
     static GeneralTransform3D FromValues(double[,] values)
@@ -68,11 +67,10 @@ public sealed class Matrix
         }
 
         // A general affine transformation (non-uniform scale, shear, projection) is legitimately gp_Other
-        var gtrsf = new GeneralTransform3D();
-        for (int i = 0; i < 3; i++)
-            for (int j = 0; j < 4; j++)
-                gtrsf = gtrsf.WithValue(i + 1, j + 1, values[i, j]);
-        return gtrsf;
+        return GeneralTransform3D.Mat4([values[0, 0], values[0, 1], values[0, 2], values[0, 3],
+                                        values[1, 0], values[1, 1], values[1, 2], values[1, 3],
+                                        values[2, 0], values[2, 1], values[2, 2], values[2, 3],
+                                        0, 0, 0, 1]);
     }
 
     /// <summary>
@@ -108,7 +106,7 @@ public sealed class Matrix
             if (row is < 0 or > 3 || col is < 0 or > 3)
                 throw new IndexOutOfRangeException($"Out of bounds access into 4x4 matrix: ({row}, {col})");
             if (row < 3)
-                return GTrsf.Value(row + 1, col + 1);
+                return GTrsf[row + 1, col + 1];
             return col == 3 ? 1.0 : 0.0;
         }
     }
@@ -127,7 +125,7 @@ public sealed class Matrix
     }
 
     /// <summary>The inverse matrix.</summary>
-    /// <exception cref="FailureException">The matrix is singular.</exception>
+    /// <exception cref="Exception">The matrix is singular (the kernel's construction error).</exception>
     public Matrix Inverse() => new(GTrsf.Inverted(), owned: true);
 
     /// <summary>A vector transformed by this matrix.</summary>

@@ -1,9 +1,6 @@
-using Kerf.Engine.Booleans;
-using Kerf.Engine.Construction.Api;
-using Kerf.Engine.Topology;
-using Kerf.Engine.Topology.Brep;
+using Kerf.Construction;
+using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -47,16 +44,17 @@ public partial class Wire
         var identity = new Placement();
         var baseWire = globalized.TopoShape.Located(identity);
         record = record.Merge(ShapeHistory.FromRelocation(globalized.TopoShape, baseWire));
-        var transformer = new Transform(baseWire, trsf, true);
-        var transformed = ShapeCasts.Wire(transformer.Shape());
-        record = record.Merge(ShapeHistory.FromAlgorithm(transformer, [baseWire], transformed));
-        var located = ShapeCasts.Wire(transformed.Located(ownLocation));
+        var transformer = Failures.Get(baseWire.Transformed(trsf, copyGeometry: true), () => "transform");
+        var transformed = (global::Kerf.Topology.Wire)transformer.Shape;
+        record = record.Merge(ShapeHistory.FromAlgorithm(s => transformer.History.Modified(s), s => transformer.History.Generated(s),
+                                                         [baseWire], transformed));
+        var located = (global::Kerf.Topology.Wire)transformed.Located(ownLocation);
         record = record.Merge(ShapeHistory.FromRelocation(transformed, located));
 
         // The same direction as this wire
         var final = new Wire(located);
         if (IsForward != final.IsForward)
-            final = new Wire(ShapeCasts.Wire(located.Reversed()));
+            final = new Wire((global::Kerf.Topology.Wire)located.Reversed());
         return (Wire)final.MadeBy(record);
     }
 }
@@ -95,28 +93,22 @@ internal static class WireFillet
 
     private static bool EdgeContainsVertex(global::Kerf.Topology.Edge edge, global::Kerf.Topology.Vertex vertex)
     {
-        var v0 = Exploration.FirstVertex(edge);
-        var v1 = Exploration.LastVertex(edge);
-        var p = Tool.Pnt(vertex);
-        var p0 = Tool.Pnt(v0);
-        var p1 = Tool.Pnt(v1);
+        var p = vertex.Point;
+        var p0 = edge.FirstVertex.Point;
+        var p1 = edge.LastVertex.Point;
         return p0.DistanceTo(p) < Constants.Tolerance || p1.DistanceTo(p) < Constants.Tolerance;
     }
 
     private static List<global::Kerf.Topology.Edge> SplitEdgeAtVertex(Edge edge, Vertex splitVertex)
     {
-        var splitter = new Splitter();
-        splitter.SetNonDestructive(true);   // leave the inputs' tolerances alone
-        splitter.AddArgument(edge.TopoShape);
-        splitter.AddTool(splitVertex.TopoShape);
-        splitter.Perform();
-        var split = splitter.Shape();
-        var edges = new List<global::Kerf.Topology.Edge>();
-        var explorer = new Explorer(split, global::Kerf.Topology.ShapeType.Edge, global::Kerf.Topology.ShapeType.Shape);
-        for (; explorer.More(); explorer.Next())
-            edges.Add(ShapeCasts.Edge(explorer.Current()));
-        return edges;
+        // Non-destructive, as all the modelling layer's Booleans: the inputs' tolerances are left alone
+        var split = Failures.Get(TopoUtil.Boolean(BooleanKind.Split, [edge.TopoShape], [splitVertex.TopoShape]), () => "split").Shape;
+        return [.. split.Explore<global::Kerf.Topology.Edge>()];
     }
+
+    /// <summary>The vertex an edge starts at in its own sense, whatever its orientation (TopExp::FirstVertex without CumOri).</summary>
+    private static global::Kerf.Topology.Vertex NaturalFirstVertex(global::Kerf.Topology.Edge edge) =>
+        ((global::Kerf.Topology.Edge)edge.Oriented(Orientation.Forward)).FirstVertex;
 
     /// <summary>Whether the two edges at the corner are tangent-continuous there.</summary>
     internal static bool IsTangentContinuous(Corner corner)
@@ -134,7 +126,7 @@ internal static class WireFillet
         var reflected = new List<Vector>();
         foreach (var edge in corner.ConnectedEdges)
         {
-            var first = Exploration.FirstVertex(edge.TopoEdge);
+            var first = NaturalFirstVertex(edge.TopoEdge);
             var samplePoint = first.IsSame(corner.Vertex.TopoShape)
                 ? edge.PositionAt(sampleLength, PositionMode.Length)
                 : edge.PositionAt(edge.Length - sampleLength, PositionMode.Length);
@@ -157,13 +149,13 @@ internal static class WireFillet
             var other = connected.Vertices().First(v => v != corner.Vertex);
             var filletVertex = arc.Vertices().SortByDistance(connected)[0];
             var pnt = filletVertex.ToVector().ToGpPnt();
-            var maker = new MakeVertex(pnt);
-            var splitVertex = new Vertex(maker.Vertex());
-            // A copy is split, as build123d splits a deepcopy, so the pieces share nothing with the wire
-            var copier = new Copy(connected.TopoShape);
-            var pieces = SplitEdgeAtVertex(new Edge(ShapeCasts.Edge(copier.Shape())), splitVertex);
-            var otherV = ShapeCasts.Vertex(other.TopoShape);
-            var cornerV = ShapeCasts.Vertex(corner.Vertex.TopoShape);
+            var splitVertex = new Vertex(global::Kerf.Topology.Vertex.At(pnt));
+            // A copy is split, as build123d splits a deepcopy, so the pieces share nothing with the wire: the identity
+            // applied with its geometry copied (BRepBuilderAPI_Transform with copy) rebuilds the edge throughout
+            var copied = Failures.Get(connected.TopoShape.Transformed(Transform3D.Identity, copyGeometry: true), () => "copy").Shape;
+            var pieces = SplitEdgeAtVertex(new Edge((global::Kerf.Topology.Edge)copied), splitVertex);
+            var otherV = (global::Kerf.Topology.Vertex)other.TopoShape;
+            var cornerV = (global::Kerf.Topology.Vertex)corner.Vertex.TopoShape;
             trimmed.Add(pieces.Where(e => EdgeContainsVertex(e, otherV) && !EdgeContainsVertex(e, cornerV)).Select(e => (global::Kerf.Topology.Edge?)e).FirstOrDefault());
         }
         return new Solution(trimmed, arc.TopoEdge);
@@ -179,7 +171,7 @@ internal static class WireFillet
         var edges = corner.AllEdges.Select(e => (global::Kerf.Topology.Edge?)e.TopoEdge).ToList();
         // Which original edge each entry came from, for the record
         var sources = corner.AllEdges.Select(e => (global::Kerf.Topology.Shape?)e.TopoShape).ToList();
-        var history = new History();
+        var history = new List<ShapeHistoryEntry>();
 
         var toRemove = new HashSet<int>();
         for (int i = 0; i < solution.TrimmedEdges.Count; i++)
@@ -189,11 +181,11 @@ internal static class WireFillet
             if (solution.TrimmedEdges[i] is not { } trimmed)
             {
                 toRemove.Add(index);
-                history.Remove(original);
+                history.Add(new(original, ShapeHistoryKind.Removed, []));
                 continue;
             }
             // Flip any edge reversed by the trim
-            edges[index] = trimmed.Orientation != original.Orientation ? ShapeCasts.Edge(trimmed.Reversed()) : trimmed;
+            edges[index] = trimmed.Orientation != original.Orientation ? (global::Kerf.Topology.Edge)trimmed.Reversed() : trimmed;
         }
 
         // The insert index, in the original index space
@@ -212,35 +204,29 @@ internal static class WireFillet
 
         // MakeWire copies each edge so neighbours share vertices: record each as the finished wire places it
         var cornerVertex = corner.Vertex.TopoShape;
-        var builder = new MakeWire();
-        foreach (var edge in edges)
-            builder.Add(edge!.Value);
-        builder.Build();
+        // BRepBuilderAPI_MakeWire, the edges added one by one
+        var made = Failures.Get(global::Kerf.Topology.Wire.FromEdges(edges.Select(e => e!.Value)), () => "wire");
         // The edges as the finished wire holds them, in the order added: a later merge may have moved or enlarged an
         // earlier edge's vertex, which native OCCT does in place and OCCT.NET in a copy of the wire built so far
-        var placedEdges = new List<global::Kerf.Topology.Shape>();
-        var wireIt = new Iterator(builder.Wire());
-        for (; wireIt.More(); wireIt.Next())
-            placedEdges.Add(wireIt.Value());
+        var placedEdges = made.Children.ToList();
         for (int i = 0; i < edges.Count; i++)
         {
             var placed = placedEdges[i];
             if (sources[i] is not { } source)
             {
-                history.AddGenerated(cornerVertex, placed);
+                history.Add(new(cornerVertex, ShapeHistoryKind.Generated, [placed]));
                 foreach (var arcEnd in ShapeHistory.TrackedSubshapes([placed]))
                     if (arcEnd.Type == global::Kerf.Topology.ShapeType.Vertex)
-                        history.AddGenerated(cornerVertex, arcEnd);
+                        history.Add(new(cornerVertex, ShapeHistoryKind.Generated, [arcEnd]));
             }
             else
             {
                 if (!placed.IsSame(source))
-                    history.AddModified(source, placed);
+                    history.Add(new(source, ShapeHistoryKind.Modified, [placed]));
                 OneD.RecordMatchingVertices(history, source, placed);
             }
         }
-        history.Remove(cornerVertex);
-        builder.Build();
-        return (Wire)new Wire(builder.Wire()).MadeBy(ShapeHistory.FromHistory(history));
+        history.Add(new(cornerVertex, ShapeHistoryKind.Removed, []));
+        return (Wire)new Wire(made).MadeBy(ShapeHistory.FromHistory(global::Kerf.Topology.ShapeHistory.Create(history)));
     }
 }

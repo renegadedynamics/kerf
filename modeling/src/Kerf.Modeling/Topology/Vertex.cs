@@ -1,13 +1,7 @@
-using Kerf.Engine.Classification;
-using Kerf.Engine.Collections;
-using Kerf.Engine.Construction.Api;
-using Kerf.Engine.Topology;
-using Kerf.Engine.Topology.Adaptors;
-using Kerf.Engine.Topology.Brep;
-using Kerf.Engine.Topology.Tools;
+using Kerf.Construction;
+using Kerf.Measurement;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -31,11 +25,10 @@ public sealed class Vertex : Shape
     private static global::Kerf.Topology.Vertex Make(Vector point)
     {
         var pnt = point.ToGpPnt();
-        var maker = new MakeVertex(pnt);
-        return maker.Vertex();
+        return global::Kerf.Topology.Vertex.At(pnt);
     }
 
-    internal global::Kerf.Topology.Vertex TopoVertex => ShapeCasts.Vertex(TopoShape);
+    internal global::Kerf.Topology.Vertex TopoVertex => (global::Kerf.Topology.Vertex)TopoShape;
 
     internal override int? Dim => 0;
 
@@ -51,7 +44,7 @@ public sealed class Vertex : Shape
         get
         {
             NeedsGeometry("position");
-            return Tool.Pnt(TopoVertex);
+            return TopoVertex.Point;
         }
     }
 
@@ -167,7 +160,7 @@ public sealed class Vertex : Shape
     {
         for (int i = TopoPath.Count - 1; i >= 0; i--)
             if (!TopoPath[i].IsEmpty && TopoPath[i].TopoShape.Type == global::Kerf.Topology.ShapeType.Face)
-                return ShapeCasts.Face(TopoPath[i].TopoShape);
+                return (global::Kerf.Topology.Face)TopoPath[i].TopoShape;
         return null;
     }
 
@@ -178,13 +171,10 @@ public sealed class Vertex : Shape
         if (parent is null || parent.IsEmpty || parent.Solids().Count > 0 || parent.Shells().Count > 0)
             return null;
         var holding = new List<global::Kerf.Topology.Face>();
-        var faces = new Explorer(parent.TopoShape, global::Kerf.Topology.ShapeType.Face);
-        for (; faces.More(); faces.Next())
+        foreach (var face in parent.TopoShape.Explore<global::Kerf.Topology.Face>())
         {
-            var face = ShapeCasts.Face(faces.Current());
-            var vertices = new Explorer(face, global::Kerf.Topology.ShapeType.Vertex);
-            for (; vertices.More(); vertices.Next())
-                if (vertices.Current().IsSame(TopoShape))
+            foreach (var vertex in face.Explore<global::Kerf.Topology.Vertex>())
+                if (vertex.IsSame(TopoShape))
                 {
                     holding.Add(face);
                     break;
@@ -200,25 +190,22 @@ public sealed class Vertex : Shape
     /// <summary>Unit directions leading away from this vertex in the face's (u, v) parameters.</summary>
     private List<(double U, double V)> FaceTangents(global::Kerf.Topology.Face face)
     {
-        var here = Tool.Parameters(TopoVertex, face);
+        var here = TopoVertex.ParametersOn(face);
         var seen = new List<global::Kerf.Topology.Edge>();
         var directions = new List<(double, double)>();
-        var explorer = new Explorer(face, global::Kerf.Topology.ShapeType.Edge);
-        for (; explorer.More(); explorer.Next())
+        foreach (var edge in face.Explore<global::Kerf.Topology.Edge>())
         {
-            var edge = ShapeCasts.Edge(explorer.Current());
             if (seen.Any(e => edge.IsSame(e)))
                 continue;   // a seam edge is met once per side
             seen.Add(edge);
-            var curve = new EdgeCurve2DAdaptor(edge, face);
-            foreach (var (param, sign) in new[] { (curve.FirstParameter(), 1.0), (curve.LastParameter(), -1.0) })
+            if (!edge.TryGetCurveOnFace(face, out var curve, out var range))
+                continue;
+            foreach (var (param, sign) in new[] { (range.Min, 1.0), (range.Max, -1.0) })
             {
-                var end = curve.Value(param);
+                var end = curve.Evaluate(param);
                 if (Math.Pow(end.X - here.X, 2) + Math.Pow(end.Y - here.Y, 2) > Constants.Tolerance)
                     continue;
-                var point = new Point2D();
-                var tangent = new Vector2D();
-                curve.D1(param, out point, out tangent);
+                var tangent = curve.Derivatives(param, 1).D1;
                 var length = Math.Sqrt(tangent.X * tangent.X + tangent.Y * tangent.Y);
                 if (length > 0)
                     directions.Add((sign * tangent.X / length, sign * tangent.Y / length));
@@ -242,13 +229,11 @@ public sealed class Vertex : Shape
         var span = Math.Sqrt(bisector.U * bisector.U + bisector.V * bisector.V);
         if (span < Constants.Tolerance)
             return Convexity.Smooth;   // the boundary runs straight through
-        double uMin = 0, uMax = 0, vMin = 0, vMax = 0;
-        BrepTools.UVBounds(face, out uMin, out uMax, out vMin, out vMax);
-        var step = 1e-4 * Math.Sqrt(Math.Pow(uMax - uMin, 2) + Math.Pow(vMax - vMin, 2)) / span;
-        var here = Tool.Parameters(TopoVertex, face);
+        var (us, vs) = face.UVBounds;
+        var step = 1e-4 * Math.Sqrt(Math.Pow(us.Max - us.Min, 2) + Math.Pow(vs.Max - vs.Min, 2)) / span;
+        var here = TopoVertex.ParametersOn(face);
         var probe = new Point2D(here.X + bisector.U * step, here.Y + bisector.V * step);
-        var classifier = new FaceClassifier2D(face, Constants.Tolerance);
-        return classifier.Perform(probe) == Containment.In ? Convexity.Convex : Convexity.Concave;
+        return face.Classify(probe, Constants.Tolerance) == Containment.In ? Convexity.Convex : Convexity.Concave;
     }
 
     /// <summary>Classifies by the creases meeting at this vertex of a solid or shell.</summary>
@@ -258,12 +243,11 @@ public sealed class Vertex : Shape
         if (parent is null || parent.IsEmpty)
             throw new InvalidOperationException(
                 "this vertex was not selected from a shape, so there is nothing to classify it against - take it from a face or solid");
-        var map = new IndexedMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
-        Exploration.MapShapesAndAncestors(parent.TopoShape, global::Kerf.Topology.ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, map);
-        var own = TopoUtil.FindSame(TopoShape, map.Keys)
+        var graph = ShapeGraph.Build(parent.TopoShape);
+        var own = TopoUtil.FindSame(TopoShape, graph.All(global::Kerf.Topology.ShapeType.Vertex))
                   ?? throw new InvalidOperationException("this vertex is not part of its topo_parent");
         var kinds = new HashSet<Convexity>();
-        var edges = map.GetValue(own);
+        var edges = graph.Ancestors(own, global::Kerf.Topology.ShapeType.Edge);
         foreach (var topoEdge in edges)
             kinds.Add(((Edge)Cast(topoEdge).WithTopoPath(TopoPath)).Convexity);
         kinds.Remove(Convexity.Smooth);
@@ -280,15 +264,10 @@ public sealed class Vertex : Shape
 
     internal static Vertex CommonVertex(global::Kerf.Topology.Edge edge1, global::Kerf.Topology.Edge edge2)
     {
-        var first = new Explorer(edge1, global::Kerf.Topology.ShapeType.Vertex);
-        for (; first.More(); first.Next())
-        {
-            var vertex1 = first.Current();
-            var second = new Explorer(edge2, global::Kerf.Topology.ShapeType.Vertex);
-            for (; second.More(); second.Next())
-                if (vertex1.IsSame(second.Current()))
-                    return new Vertex(ShapeCasts.Vertex(vertex1));
-        }
+        foreach (var vertex1 in edge1.Explore<global::Kerf.Topology.Vertex>())
+            foreach (var vertex2 in edge2.Explore<global::Kerf.Topology.Vertex>())
+                if (vertex1.IsSame(vertex2))
+                    return new Vertex(vertex1);
         return new Vertex();
     }
 }

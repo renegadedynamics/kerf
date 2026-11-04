@@ -1,6 +1,4 @@
 using System.Collections.Immutable;
-using Kerf.Engine.Booleans.Api;
-using Kerf.Engine.Foundation;
 
 namespace Kerf.Modeling;
 
@@ -63,15 +61,20 @@ internal static class Failures
     /// Whether an exception is a failure of the kernel's (its own exceptions, or one this class made from them), as the
     /// modelling layer's best-effort paths catch.
     /// </summary>
-    internal static bool IsKernelFailure(Exception e) => e is FailureException or KerfException;
+    internal static bool IsKernelFailure(Exception e) => e is KerfException || Diagnostic.IsKernelFailure(e);
 
-    /// <summary>The exception for a failed Boolean, with its report's alerts as diagnostics.</summary>
-    internal static KerfException Boolean(Algo operation)
+    /// <summary>
+    /// A kernel operation's value, or, if it failed, a <see cref="KerfException"/> with its diagnostics that says what was
+    /// being done (<paramref name="what"/>, only formatted on failure). Its warnings aren't read.
+    /// </summary>
+    internal static T Get<T>(Result<T> result, Func<string> what) =>
+        result.TryGetValue(out var value) ? value : throw In(what(), new KerfException(result.Diagnostics));
+
+    /// <summary>A kernel operation that returns no value: done, or a <see cref="KerfException"/> as <see cref="Get{T}"/>.</summary>
+    internal static void Check(Result result, Func<string> what)
     {
-        var diagnostics = OperationDiagnostics.FromReport(operation.GetReport(),
-            Diagnostic.Error(OperationDiagnostics.BooleanFailed, "The Boolean operation failed"));
-        // The kernel's own exception inside, as a bare Shape() would have thrown it
-        return new KerfException(diagnostics, new NotDoneException(Extras.AlgoErrors(operation) ?? ""));
+        if (result.IsFailure)
+            throw In(what(), new KerfException(result.Diagnostics));
     }
 
     /// <summary>The exception for a kernel failure met while doing <paramref name="what"/>.</summary>
@@ -89,7 +92,7 @@ internal static class Failures
         }
         else
         {
-            cause = OperationDiagnostics.FromException(failure);
+            cause = [Diagnostic.FromException(failure)];
             kernel = failure;
         }
         var diagnostics = cause.Select(d => d.IsError ? d with { Message = $"{operation} failed: {d.Message}" } : d).ToImmutableArray();

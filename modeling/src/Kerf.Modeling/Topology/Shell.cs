@@ -1,10 +1,6 @@
-using Kerf.Engine.Booleans;
-using Kerf.Engine.Construction.Api;
-using Kerf.Engine.Healing;
-using Kerf.Engine.Healing.Fixes;
-using Kerf.Engine.Measurement;
-using Kerf.Engine.Topology;
-using Occt;
+using Kerf.Construction;
+using Kerf.Healing;
+using Kerf.Measurement;
 
 namespace Kerf.Modeling;
 
@@ -37,7 +33,7 @@ public partial class Shell : Shape2D
         return TopoUtil.MakeShell(faces.Select(f => f.TopoFace), tolerance);
     }
 
-    internal global::Kerf.Topology.Shell TopoShell => ShapeCasts.Shell(TopoShape);
+    internal global::Kerf.Topology.Shell TopoShell => (global::Kerf.Topology.Shell)TopoShape;
 
     internal override double Order => 2.5;
 
@@ -50,11 +46,8 @@ public partial class Shell : Shape2D
         {
             if (!IsManifold)
                 return 0.0;
-            var fix = new SolidFixer();
-            var solid = fix.SolidFromShell(TopoShell);
-            var props = new Properties();
-            MassProperties(solid, props);
-            return props.Mass();
+            var solid = Failures.Get(TopoShell.MakeSolid(), () => "solid from shell").Shape;
+            return MassPropertiesOf(solid)!.Mass;
         }
     }
 
@@ -62,10 +55,7 @@ public partial class Shell : Shape2D
     public override Vector Center()
     {
         NeedsGeometry("center");
-        var props = new Properties();
-        MassPropertiesBuilder.LinearProperties(TopoShape, props);
-        var c = props.CentreOfMass();
-        return new Vector(c);
+        return new Vector(TopoShape.MassProperties(Dimension.Length).CentreOfMass);
     }
 
     /// <summary>The location on the face of the shell nearest <paramref name="surfacePoint"/>.</summary>
@@ -78,20 +68,21 @@ public partial class Shell : Shape2D
     // ---- Factories ----
 
     /// <summary>A wire extruded into a shell.</summary>
-    public static Shell Extrude(Wire obj, Vector direction) => new(ShapeCasts.Shell(TopoUtil.Extrude(obj.TopoShape, direction)));
+    public static Shell Extrude(Wire obj, Vector direction) => new((global::Kerf.Topology.Shell)TopoUtil.Extrude(obj.TopoShape, direction));
 
     /// <summary>
     /// A loft through wires (open or closed), optionally starting or ending with a vertex; ruled (stepped) or smooth.
     /// </summary>
-    public static Shell MakeLoft(IEnumerable<Shape> objs, bool ruled = false) => new(ShapeCasts.Shell(TopoUtil.MakeLoft(objs, false, ruled)));
+    public static Shell MakeLoft(IEnumerable<Shape> objs, bool ruled = false) => new((global::Kerf.Topology.Shell)TopoUtil.MakeLoft(objs, false, ruled));
 
     /// <summary>A 1D profile revolved through <paramref name="angle"/> degrees about an axis.</summary>
     public static Shell Revolve(Shape profile, double angle, Axis axis)
     {
         var wire = new Wire(profile.Edges());
         var ax1 = axis.ToGpAx1();
-        var builder = new ApiMakeRevol(wire.TopoShape, ax1, angle * Constants.DegToRad, true);
-        return new Shell(ShapeCasts.Shell(builder.Shape()));
+        // On a copy of the profile, as build123d revolves (BRepPrimAPI_MakeRevol with copy)
+        var revolved = Failures.Get(wire.TopoShape.Revolve(ax1, angle * Constants.DegToRad, copyProfile: true), () => "revolve");
+        return new Shell((global::Kerf.Topology.Shell)revolved.Shape);
     }
 
     /// <summary>A 1D profile swept along a 1D path.</summary>
@@ -99,11 +90,10 @@ public partial class Shell : Shape2D
     {
         var profileWire = new Wire(profile.Edges());
         var pathWire = new Wire(new Wire(path.Edges()).OrderEdges());
-        var builder = new MakePipeShell(pathWire.TopoWire);
-        builder.Add(profileWire.TopoShape, false, false);
-        builder.SetTransitionMode(Face.TransitionMode(transition));
-        builder.Build();
-        var result = new Shell(ShapeCasts.Shell(builder.Shape()));
+        // BRepOffsetAPI_MakePipeShell's defaults (corrected Frenet), not closed into a solid
+        var options = new SweepOptions { MakeSolid = false, Transition = Face.TransitionMode(transition) };
+        var built = Failures.Get(Sweeps.Sweep(profileWire.TopoShape, pathWire.TopoWire, options), () => "sweep");
+        var result = new Shell((global::Kerf.Topology.Shell)built.Shape);
         return SkipClean.Clean ? result.Clean() : result;
     }
 
@@ -213,20 +203,19 @@ public partial class Shell : Shape2D
             if (face.GeomType == GeomType.Cylinder && face.Radius is not > 0)
                 throw new ArgumentException("a sheet's cylindrical faces need a positive radius");
         }
-        var sewing = new Sewing();
-        foreach (var face in faces)
-            sewing.Add(face.TopoShape);
-        sewing.Perform();
-        var sewn = TopoUtil.Downcast(sewing.SewedShape());
-        var shell = sewn.IsFace() ? new Shell(new Face(ShapeCasts.Face(sewn)))   // one face is a sheet of one face
-            : sewn.IsShell() ? new Shell(ShapeCasts.Shell(sewn))
+        // BRepBuilderAPI_Sewing's defaults; its history records the faces it rebuilt, the edges and vertices it merged, and
+        // the faces it dropped
+        var sewing = Failures.Get(HealingOperations.Sew(faces.Select(f => f.TopoShape)), () => "sew");
+        var sewn = TopoUtil.Downcast(sewing.Shape);
+        var shell = sewn.IsFace() ? new Shell(new Face((global::Kerf.Topology.Face)sewn))   // one face is a sheet of one face
+            : sewn.IsShell() ? new Shell((global::Kerf.Topology.Shell)sewn)
             : throw new ArgumentException("Sheet faces must sew into one connected shell");
         if (!shell.IsValid)
             throw new ArgumentException("Sheet faces produced an invalid shell");
         if (shell.Edges().Any(e => OneD.ConnectedFaces(e, shell).Count > 2))
             throw new ArgumentException("Sheet faces produced non-manifold topology");
         var record = records.Aggregate(new ShapeHistory(), (r, earlier) => r.Merge(earlier))
-            .Merge(ShapeHistory.FromSewing(sewing, faces.Select(f => f.TopoShape)));
+            .Merge(ShapeHistory.FromHistory(sewing.History, faces.Select(f => f.TopoShape)));
         return (Shell)shell.MadeBy(record);
     }
 }
@@ -250,17 +239,9 @@ public static class TwoD
     /// <summary>The pieces of an edge split at a vertex (<c>BOPAlgo_Splitter</c>).</summary>
     internal static List<global::Kerf.Topology.Edge> SplitEdgeAtVertex(Edge edge, Vertex splitVertex)
     {
-        var splitter = new Splitter();
-        splitter.SetNonDestructive(true);   // leave the inputs' tolerances alone
-        splitter.AddArgument(edge.TopoShape);
-        splitter.AddTool(splitVertex.TopoShape);
-        splitter.Perform();
-        var result = splitter.Shape();
-        var edges = new List<global::Kerf.Topology.Edge>();
-        var explorer = new Explorer(result, global::Kerf.Topology.ShapeType.Edge);
-        for (; explorer.More(); explorer.Next())
-            edges.Add(ShapeCasts.Edge(explorer.Current()));
-        return edges;
+        // Non-destructive, as all the modelling layer's Booleans: the inputs' tolerances are left alone
+        var result = Failures.Get(TopoUtil.Boolean(BooleanKind.Split, [edge.TopoShape], [splitVertex.TopoShape]), () => "split").Shape;
+        return [.. result.Explore<global::Kerf.Topology.Edge>()];
     }
 
     /// <summary>The two coplanar flats an edge lies between, if that is what it does.</summary>

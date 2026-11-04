@@ -38,6 +38,10 @@ public sealed record BooleanOptions
 
     /// <summary>For <see cref="BooleanOperations.Section"/>: approximate the section curves by B-splines.</summary>
     public bool ApproximateSection { get; init; }
+
+    /// <summary>Whether a section's edges get their curves on the faces of both inputs (OCCT's <c>ComputePCurveOn1</c> and
+    /// <c>ComputePCurveOn2</c>): true by default.</summary>
+    public bool SectionCurvesOnFaces { get; init; } = true;
 }
 
 /// <summary>
@@ -119,8 +123,8 @@ public static class BooleanOperations
         options ??= BooleanOptions.Default;
         var section = new SectionOperation();
         section.Approximation(options.ApproximateSection);
-        section.ComputePCurveOn1(true);
-        section.ComputePCurveOn2(true);
+        section.ComputePCurveOn1(options.SectionCurvesOnFaces);
+        section.ComputePCurveOn2(options.SectionCurvesOnFaces);
         return Run(section, arguments, tools, options with { Simplify = false }, progress, cancellationToken);
     }
 

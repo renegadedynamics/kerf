@@ -1,9 +1,8 @@
-using Kerf.Engine.Construction.Values;
-using Kerf.Engine.Intersection.CurveSurface;
-using Kerf.Engine.Topology;
+using Kerf.Geometry;
+using Kerf.Measurement;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -51,11 +50,8 @@ public abstract partial class Shape
             ? BoundBox.FromTopoDS(shape).Center().ToString(".6g")
             : new Location(shape.Placement).Position.ToString(".6g"));
         var children = new List<DisplayNode>();
-        var it = new Iterator();
-        it.Initialize(shape);
-        for (; it.More(); it.Next())
+        foreach (var child in shape.Children)
         {
-            var child = it.Value();
             // As build123d's _build_tree, a child carries its centre whatever the root shows
             if (Array.IndexOf(OrderedShapes, child.Type) <= Array.IndexOf(OrderedShapes, limit))
                 children.Add(BuildTree(child, limit, true, caption));
@@ -140,17 +136,13 @@ internal static class SurfaceIntersection
         if (shape.IsEmpty)
             return [];
         var ax1 = axis.ToGpAx1();
-        var makeLin = new MakeLin(ax1);
-        var line = makeLin.Value();
-        var inter = new CurveShapeIntersector();
-        inter.Init(shape.TopoShape, line, tolerance);
+        var line = new Line3D(ax1);
         var plane = new Plane(axis);
         var found = new List<(global::Kerf.Topology.Face Face, Vector Point, double Distance)>();
-        for (; inter.More(); inter.Next())
+        foreach (var hit in shape.TopoShape.Intersect(line, tolerance))
         {
-            var p = inter.Pnt();
-            var point = new Vector(p);
-            found.Add((inter.Face(), point, plane.ToLocalCoords(point).Z));
+            var point = new Vector(hit.Point);
+            found.Add((hit.Face, point, plane.ToLocalCoords(point).Z));
         }
         return [.. found.OrderBy(f => f.Distance).Select(f =>
         {

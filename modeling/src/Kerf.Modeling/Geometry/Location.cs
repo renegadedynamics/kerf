@@ -1,7 +1,5 @@
-using Kerf.Engine.Geometry;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -54,12 +52,9 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     /// (default <see cref="Intrinsic.XYZ"/>).
     /// </summary>
     public Location(Vector position, Vector orientation, RotationOrder ordering = default)
-        : this(Build(position, trsf =>
-        {
-            var q = new Quaternion3().WithEulerAngles(ordering.ToOcct(), orientation.X * Constants.DegToRad,
-                                                        orientation.Y * Constants.DegToRad, orientation.Z * Constants.DegToRad);
-            return trsf.WithRotation(q);
-        }), owned: true)
+        : this(Build(position, _ => Transform3D.Rotation(ordering.ToOcct(), orientation.X * Constants.DegToRad,
+                                                         orientation.Y * Constants.DegToRad, orientation.Z * Constants.DegToRad)),
+               owned: true)
     {
     }
 
@@ -103,9 +98,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     {
         get
         {
-            var trsf = Wrapped.Transformation;
-            var t = trsf.TranslationXyz();
-            return new Vector(t);
+            return new Vector(Wrapped.Transformation.TranslationPart);
         }
     }
 
@@ -114,10 +107,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     {
         get
         {
-            var trsf = Wrapped.Transformation;
-            var q = trsf.GetRotation();
-            double a = 0, b = 0, c = 0;
-            q.GetEulerAngles(EulerSequence.Intrinsic_XYZ, out a, out b, out c);
+            var (a, b, c) = Wrapped.Transformation.GetEulerAngles(EulerSequence.Intrinsic_XYZ);
             return new Vector(a * Constants.RadToDeg, b * Constants.RadToDeg, c * Constants.RadToDeg);
         }
     }
@@ -131,10 +121,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
         var trsfPosition = new Transform3D();
         var v = position.ToGpVec();
         trsfPosition = trsfPosition.WithTranslationPart(v);
-        var current = Wrapped.Transformation;
-        var rotation = current.GetRotation();
-        var trsfOrientation = new Transform3D();
-        trsfOrientation = trsfOrientation.WithRotation(rotation);
+        var trsfOrientation = Wrapped.Transformation.ToRotation();
         var combined = trsfPosition.Multiplied(trsfOrientation);
         return Own(new Placement(combined));
     }
@@ -142,15 +129,11 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     /// <summary>This location with a new orientation (intrinsic XYZ Euler angles in degrees) and the same position.</summary>
     public Location WithOrientation(Vector orientation)
     {
-        var current = Wrapped.Transformation;
-        var xyz = current.TranslationXyz();
         var trsfPosition = new Transform3D();
-        var v = new Vector3D(xyz.X(), xyz.Y(), xyz.Z());
+        var v = Wrapped.Transformation.TranslationPart;
         trsfPosition = trsfPosition.WithTranslationPart(v);
-        var q = new Quaternion3().WithEulerAngles(EulerSequence.Intrinsic_XYZ, orientation.X * Constants.DegToRad,
-                                                    orientation.Y * Constants.DegToRad, orientation.Z * Constants.DegToRad);
-        var trsfOrientation = new Transform3D();
-        trsfOrientation = trsfOrientation.WithRotation(q);
+        var trsfOrientation = Transform3D.Rotation(EulerSequence.Intrinsic_XYZ, orientation.X * Constants.DegToRad,
+                                                   orientation.Y * Constants.DegToRad, orientation.Z * Constants.DegToRad);
         var combined = trsfPosition.Multiplied(trsfOrientation);
         return Own(new Placement(combined));
     }
@@ -231,9 +214,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     {
         get
         {
-            var trsf = Wrapped.Transformation;
-            var q = trsf.GetRotation();
-            return (Position.Key, GeomKey.Quaternion(q));
+            return (Position.Key, GeomKey.Quaternion(Wrapped.Transformation.GetQuaternion()));
         }
     }
 

@@ -1,13 +1,9 @@
-using Kerf.Engine.Booleans;
-using Kerf.Engine.Booleans.Api;
-using Kerf.Engine.Construction.Api;
-using Kerf.Engine.Foundation;
-using Kerf.Engine.Healing.Upgrade;
-using Kerf.Engine.Measurement;
-using Kerf.Engine.Topology;
-using Kerf.Engine.Topology.Tools;
+using Kerf.Booleans;
+using Kerf.Construction;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Healing;
+using Kerf.Measurement;
+using Kerf.Topology;
 
 namespace Kerf.Modeling;
 
@@ -123,11 +119,7 @@ public abstract partial class Shape
     public static Shape operator &(Shape a, IEnumerable<Shape> b) => a.CommonWith(b);
 
     /// <summary>This shape with <paramref name="toCut"/> removed. The result may be of another class.</summary>
-    public Shape Cut(params IEnumerable<Shape> toCut)
-    {
-        var op = new Cut();
-        return BoolOp([this], toCut, op);
-    }
+    public Shape Cut(params IEnumerable<Shape> toCut) => BoolOp([this], toCut, BooleanKind.Cut);
 
     /// <summary>
     /// This shape fused with <paramref name="toFuse"/>. <paramref name="glue"/> speeds up shapes that only touch;
@@ -135,12 +127,12 @@ public abstract partial class Shape
     /// </summary>
     public Shape Fuse(IEnumerable<Shape> toFuse, bool glue = false, double? tolerance = null)
     {
-        var op = new Fuse();
-        if (glue)
-            op.SetGlue(global::Kerf.Booleans.GlueMode.Shift);
-        if (tolerance is { } tol && tol != 0)
-            op.SetFuzzyValue(tol);
-        return BoolOp([this], toFuse, op);
+        var options = new BooleanOptions
+        {
+            Glue = glue ? GlueMode.Shift : GlueMode.Off,
+            FuzzyValue = tolerance is { } tol && tol != 0 ? tol : 0,
+        };
+        return BoolOp([this], toFuse, BooleanKind.Fuse, options);
     }
 
     /// <inheritdoc cref="Fuse(IEnumerable{Shape}, bool, double?)"/>
@@ -159,7 +151,7 @@ public abstract partial class Shape
         };
     }
 
-    private protected Shape BoolOp(IEnumerable<Shape> args, IEnumerable<Shape> tools, BuilderAlgo operation)
+    private protected Shape BoolOp(IEnumerable<Shape> args, IEnumerable<Shape> tools, BooleanKind operation, BooleanOptions? options = null)
     {
         var argList = args.ToList();
         var toolList = tools.ToList();
@@ -178,19 +170,19 @@ public abstract partial class Shape
         global::Kerf.Topology.Shape? topoResult = null;
         switch (operation)
         {
-            case global::Kerf.Engine.Booleans.Api.Cut:
+            case BooleanKind.Cut:
                 if (arg.Count == 0)   // nothing less anything is still nothing
                     return ZeroOf([this, .. Operands(argList), .. Operands(toolList)]);
                 if (tool.Count == 0)
                     topoResult = arg.Count == 1 ? arg[0] : TopoUtil.MakeCompound(arg);
                 break;
-            case global::Kerf.Engine.Booleans.Api.Fuse:
+            case BooleanKind.Fuse:
                 if (tool.Count == 0)
                     topoResult = arg.Count == 1 ? arg[0] : TopoUtil.MakeCompound(arg);
                 else if (arg.Count == 0)
                     topoResult = tool.Count == 1 ? tool[0] : TopoUtil.MakeCompound(tool);
                 break;
-            case Common:
+            case BooleanKind.Common:
                 if (tool.Count == 0 || arg.Count == 0)
                     return ZeroOf([this, .. Operands(argList), .. Operands(toolList)]);
                 break;
@@ -201,41 +193,27 @@ public abstract partial class Shape
         var history = new ShapeHistory(arg, tool);
         if (topoResult is not { } result)
         {
-            var argShapes = TopoUtil.ListOf(arg);
-            var toolShapes = TopoUtil.ListOf(tool);
-            operation.SetArguments(argShapes);
-            TopoUtil.SetTools(operation, toolShapes);
-            operation.SetRunParallel(true);
             // Non-destructive: where an input needs a larger tolerance, OCCT copies it rather than changing it
-            operation.SetNonDestructive(true);
-            Failures.Doing(() => $"{TopoUtil.BooleanName(operation)} of {Names(argList)} with {Names(toolList)}", () =>
-            {
-                operation.Build();
-                TopoUtil.ThrowIfFailed(operation);
-            });
-            result = TopoUtil.Downcast(operation.Shape());
-            history = ShapeHistory.FromBoolean(operation, arg, tool);
+            var built = Failures.Get(TopoUtil.Boolean(operation, arg, tool, options),
+                                     () => $"{TopoUtil.BooleanName(operation)} of {Names(argList)} with {Names(toolList)}");
+            result = TopoUtil.Downcast(built.Shape);
+            history = ShapeHistory.FromHistory(built.History, arg, tool);
         }
 
         if (SkipClean.Clean)
         {
-            var upgrader = new UnifySameDomain(result, true, true, true);
-            upgrader.AllowInternalEdges(false);
-            try
+            if (result.Unify(CleanOptions).TryGetValue(out var unified))
             {
-                upgrader.Build();
-                result = TopoUtil.Downcast(upgrader.Shape());
-                history = history.Merge(ShapeHistory.FromUnify(upgrader));
+                result = TopoUtil.Downcast(unified.Shape);
+                history = history.Merge(ShapeHistory.FromHistory(unified.History));
             }
-            catch (FailureException)
-            {
+            else
                 Warnings.Warn("Boolean operation unable to clean");
-            }
         }
 
         // Remove an unnecessary compound around a single shape
         if (result.IsCompound())
-            result = TopoUtil.UnwrapCompound(ShapeCasts.Compound(result));
+            result = TopoUtil.UnwrapCompound((global::Kerf.Topology.Compound)result);
 
         if (result.IsCompound() && highest.Order != 4)
         {
@@ -248,7 +226,7 @@ public abstract partial class Shape
     }
 
     /// <summary>A boolean operation whose pieces are returned as a list, empty for nothing.</summary>
-    private protected ShapeList<Shape> BoolOpList(IEnumerable<Shape> args, IEnumerable<Shape> tools, BuilderAlgo operation)
+    private protected ShapeList<Shape> BoolOpList(IEnumerable<Shape> args, IEnumerable<Shape> tools, BooleanKind operation)
     {
         var result = BoolOp(args, tools, operation);
         if (result.IsEmpty)
@@ -312,23 +290,16 @@ public abstract partial class Shape
     {
         if (IsEmpty || other.IsEmpty)
             return ([], []);
-        var section = new SectionOperation(_wrapped, other._wrapped, false);
-        section.SetNonDestructive(true);   // leave the inputs' tolerances alone
-        section.SetRunParallel(true);
-        section.Approximation(true);
-        section.ComputePCurveOn1(true);
-        section.ComputePCurveOn2(true);
-        section.Build();
-        var result = section.Shape();
+        // Non-destructive, so the inputs' tolerances are left alone; approximated, with the edges' curves on the faces
+        var result = Failures.Get(TopoUtil.Boolean(BooleanKind.Section, [_wrapped], [other._wrapped], ApproximatedSection),
+                                  () => "section").Shape;
 
         var vertices = new List<Vertex>();
-        var explorer = new Explorer(result, global::Kerf.Topology.ShapeType.Vertex);
-        for (; explorer.More(); explorer.Next())
-            vertices.Add((Vertex)CastLike(TopoUtil.Downcast(explorer.Current())));
+        foreach (var vertex in TopoUtil.Explore(result, global::Kerf.Topology.ShapeType.Vertex))
+            vertices.Add((Vertex)CastLike(vertex));
         var edges = new List<Edge>();
-        explorer = new Explorer(result, global::Kerf.Topology.ShapeType.Edge);
-        for (; explorer.More(); explorer.Next())
-            edges.Add((Edge)CastLike(TopoUtil.Downcast(explorer.Current())));
+        foreach (var edge in TopoUtil.Explore(result, global::Kerf.Topology.ShapeType.Edge))
+            edges.Add((Edge)CastLike(edge));
         return (new ShapeList<Vertex>(vertices.Distinct()), new ShapeList<Edge>(edges));
     }
 
@@ -371,8 +342,7 @@ public abstract partial class Shape
             Shape s => s.Wrapped,
             _ => throw new ArgumentException($"Can't split with a {tool.GetType().Name}"),
         };
-        var splitter = new SplitterOperation();
-        var splitResult = TopoUtil.BoolOp([_wrapped], [trimTool], splitter);
+        var splitResult = TopoUtil.BoolOp([_wrapped], [trimTool], BooleanKind.Split);
         var pieces = TopoUtil.TopLevelShapes(splitResult);
 
         if (keep == Keep.All)
@@ -382,26 +352,19 @@ public abstract partial class Shape
         if (tool is not Plane)
         {
             // A reference point off the +ve side of the tool decides which side is up
-            global::Kerf.Topology.Face toolFace;
-            if (trimTool.IsShell())
-            {
-                var faces = new Explorer(trimTool, global::Kerf.Topology.ShapeType.Face);
-                toolFace = ShapeCasts.Face(faces.Current());
-            }
-            else
-                toolFace = ShapeCasts.Face(trimTool);
-            double uMin = 0, uMax = 0, vMin = 0, vMax = 0;
-            BrepTools.UVBounds(toolFace, out uMin, out uMax, out vMin, out vMax);
-            var surfacePnt = new Point3D();
-            var surfaceNormal = new Vector3D();
-            var props = new FaceIntegrand(toolFace);
-            props.Normal((uMin + uMax) / 2, (vMin + vMax) / 2, out surfacePnt, out surfaceNormal);
-            var refPoint = new Vector(surfacePnt) + new Vector(surfaceNormal).Normalized();
+            global::Kerf.Topology.Face toolFace = trimTool.IsShell()
+                ? trimTool.Explore<global::Kerf.Topology.Face>().First()
+                : (global::Kerf.Topology.Face)trimTool;
+            var (us, vs) = toolFace.UVBounds;
+            double u = (us.Min + us.Max) / 2, v = (vs.Min + vs.Max) / 2;
+            var surfacePnt = toolFace.ToSurface().Evaluate(u, v);
+            var surfaceNormal = TopoUtil.FaceNormalVector(toolFace, u, v);
+            var refPoint = new Vector(surfacePnt) + surfaceNormal.Normalized();
             var refPnt = refPoint.ToGpPnt();
             var halfSpace = trimTool.IsShell()
-                ? new MakeHalfSpace(ShapeCasts.Shell(trimTool), refPnt)
-                : new MakeHalfSpace(ShapeCasts.Face(trimTool), refPnt);
-            toolSolid = halfSpace.Solid();
+                ? Primitives.HalfSpace((global::Kerf.Topology.Shell)trimTool, refPnt)
+                : Primitives.HalfSpace((global::Kerf.Topology.Face)trimTool, refPnt);
+            toolSolid = Failures.Get(halfSpace, () => "half-space").Shape;
         }
 
         var tops = new List<Shape>();
@@ -414,19 +377,14 @@ public abstract partial class Shape
             {
                 // A piece lies wholly on one side of the plane and so does its centre of mass. Its geometric centre
                 // need not: that of a curved face is the middle of its surface, trimmed away or not.
-                var props = new Properties();
-                MassProperties(part, props);
-                isUp = plane.ToLocalCoords(new Vector(props.CentreOfMass())).Z >= 0;
+                isUp = plane.ToLocalCoords(new Vector(CentreOfMass(part))).Z >= 0;
             }
             else
             {
                 // Intersect the piece and the thickened tool
-                var common = new Common();
-                var isUpObj = TopoUtil.BoolOp([part], [toolSolid!.Value], common);
-                var props = new Properties();
-                MassPropertiesBuilder.LinearProperties(isUpObj, props);
+                var isUpObj = TopoUtil.BoolOp([part], [toolSolid!.Value], BooleanKind.Common);
                 // Mass is the total length for linear properties
-                isUp = props.Mass() >= Constants.Tolerance;
+                isUp = isUpObj.Length() >= Constants.Tolerance;
             }
             (isUp ? tops : bottoms).Add(subShape);
         }
@@ -444,7 +402,22 @@ public abstract partial class Shape
     internal static global::Kerf.Topology.Face MakePlaneFace(Plane plane)
     {
         var pln = plane.ToGpPln();
-        var maker = new MakeFace(pln);
-        return maker.Face();
+        return Failures.Get(global::Kerf.Topology.Face.FromPlane(pln), () => "plane face");
+    }
+
+    // OCCT's BRepAlgoAPI_Section as build123d sets it up for a section between two shapes
+    private static readonly BooleanOptions ApproximatedSection = new() { ApproximateSection = true, SectionCurvesOnFaces = true };
+
+    /// <summary>The clean after a Boolean: UnifySameDomain on edges and faces, B-splines concatenated, no internal edges.</summary>
+    internal static readonly UnifyOptions CleanOptions = new() { Edges = true, Faces = true, ConcatBSplines = true, AllowInternalEdges = false };
+
+    /// <summary>The centre of mass of a shape by its dimension: its length, area or volume.</summary>
+    internal static Point3D CentreOfMass(global::Kerf.Topology.Shape shape) =>
+        shape.MassProperties(TopoUtil.Dim(shape) switch
+        {
+            1 => Dimension.Length,
+            2 => Dimension.Area,
+            _ => Dimension.Volume,
+        }).CentreOfMass;
     }
 }

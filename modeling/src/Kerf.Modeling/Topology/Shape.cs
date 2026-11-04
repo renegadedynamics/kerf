@@ -1,6 +1,4 @@
-using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -220,7 +218,7 @@ public abstract partial class Shape : IEquatable<Shape>
         if (History is null)
             return null;
         var here = _wrapped.Placement;
-        if (_historyAt is not { } at || at.IsEqual(here))
+        if (_historyAt is not { } at || TopoUtil.IsSamePlacement(at, here))
             return History;
         var recorded = _wrapped.Located(at);
         return new ShapeHistory(History.Before, History.Brought)
@@ -233,12 +231,12 @@ public abstract partial class Shape : IEquatable<Shape>
     /// <summary>The wrapper of the right class for an OCCT shape.</summary>
     public static Shape Cast(global::Kerf.Topology.Shape obj) => TopoUtil.ShapeTypeOf(obj) switch
     {
-        global::Kerf.Topology.ShapeType.Vertex => new Vertex(ShapeCasts.Vertex(obj)),
-        global::Kerf.Topology.ShapeType.Edge => new Edge(ShapeCasts.Edge(obj)),
-        global::Kerf.Topology.ShapeType.Wire => new Wire(ShapeCasts.Wire(obj)),
-        global::Kerf.Topology.ShapeType.Face => new Face(ShapeCasts.Face(obj)),
-        global::Kerf.Topology.ShapeType.Shell => new Shell(ShapeCasts.Shell(obj)),
-        global::Kerf.Topology.ShapeType.Solid => new Solid(ShapeCasts.Solid(obj)),
+        global::Kerf.Topology.ShapeType.Vertex => new Vertex((global::Kerf.Topology.Vertex)obj),
+        global::Kerf.Topology.ShapeType.Edge => new Edge((global::Kerf.Topology.Edge)obj),
+        global::Kerf.Topology.ShapeType.Wire => new Wire((global::Kerf.Topology.Wire)obj),
+        global::Kerf.Topology.ShapeType.Face => new Face((global::Kerf.Topology.Face)obj),
+        global::Kerf.Topology.ShapeType.Shell => new Shell((global::Kerf.Topology.Shell)obj),
+        global::Kerf.Topology.ShapeType.Solid => new Solid((global::Kerf.Topology.Solid)obj),
         global::Kerf.Topology.ShapeType.Compound or global::Kerf.Topology.ShapeType.CompSolid => new Compound(obj),
         var t => throw new ArgumentException($"Unable to cast {t}"),
     };

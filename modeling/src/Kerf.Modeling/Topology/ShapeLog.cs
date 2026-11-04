@@ -1,11 +1,8 @@
-using Kerf.Engine.Topology;
-using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -62,7 +59,7 @@ internal static class ShapeLog
                 if (!Register(wrapped))
                     return;
                 var text = Extras.WriteBRep(wrapped);
-                var header = $"@@ {++s_seq} {shape.GetType().Name} {Kerf.Engine.Foundation.OcctTypeNames.Of(wrapped.Type)} {text.Length} {api} {inner} {ExactPoints(wrapped)}\n";
+                var header = $"@@ {++s_seq} {shape.GetType().Name} {"TopAbs_" + wrapped.Type.ToString().ToUpperInvariant()} {text.Length} {api} {inner} {ExactPoints(wrapped)}\n";
                 Directory.CreateDirectory(Folder!);
                 using var file = new FileStream(Path.Combine(Folder!, FileName(test) + ".brlog"), FileMode.Append, FileAccess.Write);
                 file.Write(Encoding.ASCII.GetBytes(header));
@@ -83,10 +80,9 @@ internal static class ShapeLog
     private static string ExactPoints(global::Kerf.Topology.Shape shape)
     {
         var hash = 14695981039346656037UL;
-        var explorer = new Explorer(shape, global::Kerf.Topology.ShapeType.Vertex);
-        for (; explorer.More(); explorer.Next())
+        foreach (var vertex in shape.Explore<global::Kerf.Topology.Vertex>())
         {
-            var point = Tool.Pnt(ShapeCasts.Vertex(explorer.Current()));
+            var point = vertex.Point;
             foreach (var c in (ReadOnlySpan<double>)[point.X, point.Y, point.Z])
                 hash = (hash ^ (ulong)BitConverter.DoubleToInt64Bits(c)) * 1099511628211UL;
         }
@@ -102,10 +98,8 @@ internal static class ShapeLog
         while (stack.Count > 0)
         {
             var current = stack.Pop();
-            var it = new Iterator(current, false, false);
-            for (; it.More(); it.Next())
+            foreach (var child in current.Children)
             {
-                var child = it.Value();
                 if (Add(child))
                     stack.Push(child);
             }

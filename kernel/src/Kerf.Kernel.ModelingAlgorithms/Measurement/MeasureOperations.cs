@@ -118,8 +118,52 @@ public static class MeasureOperations
                                      intersector.State()));
             }
 
-            hits.Sort((a, b) => a.LineParameter.CompareTo(b.LineParameter));
-            return hits.DrainToImmutable();
+            // Stable, so hits at one parameter keep the order OCCT found them in
+            return [.. hits.OrderBy(static h => h.LineParameter)];
+        }
+
+        /// <summary>
+        /// Whether <paramref name="point"/> lies on one of the shape's faces, its boundary included, within
+        /// <paramref name="tolerance"/> (OCCT's <c>BRepClass3d_SolidClassifier</c>, its <c>IsOnAFace</c>): for faces and shells
+        /// as well as solids.
+        /// </summary>
+        /// <exception cref="ArgumentException">The shape is null.</exception>
+        public bool IsOnFace(Point3D point, double tolerance = Tolerances.Confusion)
+        {
+            var classifier = new SolidClassifier(NotNull(shape.AsShape()));
+            classifier.Perform(point, tolerance);
+            return classifier.IsOnAFace;
+        }
+    }
+
+    extension(Face face)
+    {
+        /// <summary>
+        /// Whether the point of the face's surface at <paramref name="parameters"/> (u, v) is inside the face, outside it
+        /// or on its boundary within <paramref name="tolerance"/> in the parameters (OCCT's <c>IntTools_FClass2d</c>).
+        /// </summary>
+        /// <exception cref="ArgumentException">The face is null.</exception>
+        public Containment Classify(Point2D parameters, double tolerance = Tolerances.Confusion)
+        {
+            var classifier = new FaceClassifier2D(NotNull(face.AsShape()).As<Face>(), tolerance);
+            return classifier.Perform(parameters);
+        }
+
+        /// <summary>
+        /// The parameters (u, v) on the face's surface of the point of it nearest <paramref name="point"/>, and the distance
+        /// to it (OCCT's <c>ShapeAnalysis_Surface::ValueOfUV</c> and <c>Gap</c>, in the surface's own placement), within
+        /// <paramref name="tolerance"/>. On a periodic surface they may be off the face by a period.
+        /// </summary>
+        /// <exception cref="ArgumentException">The face is null, or has no surface.</exception>
+        public (Point2D Parameters, double Gap) ParametersOf(Point3D point, double tolerance = Tolerances.Confusion)
+        {
+            Face f = NotNull(face.AsShape()).As<Face>();
+            Surface surface = Engine.Topology.Brep.Tool.Surface(f, out Placement location)
+                              ?? throw new ArgumentException("The face has no surface.", nameof(face));
+            Point3D local = point.Transformed(location.Transformation.Inverted());
+            var analysis = new Engine.Healing.Analysis.SurfaceAnalysis(surface);
+            Point2D uv = analysis.ValueOfUV(local, tolerance);
+            return (uv, analysis.Gap());
         }
     }
 
@@ -130,9 +174,20 @@ public static class MeasureOperations
         /// <paramref name="tolerance"/> (OCCT's <c>BRepClass3d_SolidClassifier</c>).
         /// </summary>
         /// <exception cref="ArgumentException">The solid is null.</exception>
-        public Containment Classify(Point3D point, double tolerance = Tolerances.Confusion)
+        public Containment Classify(Point3D point, double tolerance = Tolerances.Confusion) => solid.ClassifyPoint(point, tolerance);
+    }
+
+    extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
+    {
+        /// <summary>
+        /// Whether <paramref name="point"/> is inside the shape, outside it, or on its boundary within
+        /// <paramref name="tolerance"/> (OCCT's <c>BRepClass3d_SolidClassifier</c>, which treats a compound's solids as one):
+        /// <c>Classify</c> for any shape.
+        /// </summary>
+        /// <exception cref="ArgumentException">The shape is null.</exception>
+        public Containment ClassifyPoint(Point3D point, double tolerance = Tolerances.Confusion)
         {
-            var classifier = new SolidClassifier(NotNull(solid.AsShape()));
+            var classifier = new SolidClassifier(NotNull(shape.AsShape()));
             classifier.Perform(point, tolerance);
             return classifier.State();
         }

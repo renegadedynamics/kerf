@@ -1,7 +1,6 @@
-using Kerf.Engine.Booleans.Api;
-using Kerf.Engine.Measurement;
-using Kerf.Engine.Topology;
-using Occt;
+using Kerf.Booleans;
+using Kerf.Measurement;
+using Kerf.Topology;
 
 namespace Kerf.Modeling;
 
@@ -58,7 +57,7 @@ public partial class Compound : Shape3D
         ElementsOfType<Solid>().Sum(s => s.Volume) + ElementsOfType<Shell>().Sum(s => s.Volume);
 
     /// <summary>A shell extruded into a compound of solids.</summary>
-    public static Compound Extrude(Shell obj, Vector direction) => new(ShapeCasts.Compound(TopoUtil.Extrude(obj.TopoShape, direction)));
+    public static Compound Extrude(Shell obj, Vector direction) => new((global::Kerf.Topology.Compound)TopoUtil.Extrude(obj.TopoShape, direction));
 
     // ---- Children ----
 
@@ -67,9 +66,8 @@ public partial class Compound : Shape3D
     {
         if (IsEmpty)
             yield break;
-        var it = new Iterator(TopoShape);
-        for (; it.More(); it.Next())
-            yield return CastLike(it.Value());
+        foreach (var child in TopoShape.Children)
+            yield return CastLike(child);
     }
 
     /// <summary>Iterates the shapes directly inside the compound.</summary>
@@ -106,11 +104,8 @@ public partial class Compound : Shape3D
         var results = new List<T>();
         foreach (var comp in Compounds())
         {
-            var it = new Iterator();
-            it.Initialize(comp.TopoShape);
-            for (; it.More(); it.Next())
+            foreach (var child in comp.TopoShape.Children)
             {
-                var child = it.Value();
                 if (child.Type == type)
                     results.Add((T)Cast(TopoUtil.Downcast(child)));
             }
@@ -230,10 +225,8 @@ public partial class Compound : Shape3D
         var summands = GetTopLevelShapes().Concat(brought).ToList();
         if (summands.Count <= 1)
             return MakeComposite(summands.Take(1), Dim);
-        var fuse = new Fuse();
-        fuse.SetFuzzyValue(Constants.Tolerance);
         summands[0] = CopyAttributesTo(summands[0]);
-        var result = BoolOp(summands.Take(1), summands.Skip(1), fuse);
+        var result = BoolOp(summands.Take(1), summands.Skip(1), BooleanKind.Fuse, new BooleanOptions { FuzzyValue = Constants.Tolerance });
         // The fuse ran this compound's first piece against the rest; for the record, all of this compound was there
         // before, and what was added was brought in
         if (result.History is not null)
@@ -271,23 +264,15 @@ public partial class Compound : Shape3D
                 throw new ArgumentException("Center of GEOMETRY is not supported for this object");
             case CenterOf.Mass:
             {
-                var props = new Properties();
-                switch (TopoUtil.UnwrappedShapeType(this))
+                var dimension = TopoUtil.UnwrappedShapeType(this) switch
                 {
-                    case global::Kerf.Topology.ShapeType.Vertex:
-                        throw new NotSupportedException("The centre of mass of a compound of vertices isn't defined");
-                    case global::Kerf.Topology.ShapeType.Edge or global::Kerf.Topology.ShapeType.Wire:
-                        MassPropertiesBuilder.LinearProperties(TopoShape, props);
-                        break;
-                    case global::Kerf.Topology.ShapeType.Face or global::Kerf.Topology.ShapeType.Shell:
-                        MassPropertiesBuilder.SurfaceProperties(TopoShape, props);
-                        break;
-                    default:
-                        MassPropertiesBuilder.VolumeProperties(TopoShape, props);
-                        break;
-                }
-                var c = props.CentreOfMass();
-                return new Vector(c);
+                    global::Kerf.Topology.ShapeType.Vertex =>
+                        throw new NotSupportedException("The centre of mass of a compound of vertices isn't defined"),
+                    global::Kerf.Topology.ShapeType.Edge or global::Kerf.Topology.ShapeType.Wire => Dimension.Length,
+                    global::Kerf.Topology.ShapeType.Face or global::Kerf.Topology.ShapeType.Shell => Dimension.Area,
+                    _ => Dimension.Volume,
+                };
+                return new Vector(TopoShape.MassProperties(dimension).CentreOfMass);
             }
             default:
                 return BoundingBox().Center();

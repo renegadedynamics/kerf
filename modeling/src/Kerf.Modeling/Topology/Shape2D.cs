@@ -1,10 +1,8 @@
-using Kerf.Engine.Booleans.Api;
-using Kerf.Engine.Features;
-using Kerf.Engine.Foundation;
-using Kerf.Engine.Measurement.Distance;
-using Kerf.Engine.Offsets;
+using Kerf.Features;
+using Kerf.Measurement;
+using Kerf.Offsets;
 using Kerf.Geometry;
-using Occt;
+
 
 namespace Kerf.Modeling;
 
@@ -98,7 +96,7 @@ public abstract partial class Shape2D : Shape
         }
 
         // Split each perimeter edge where it crosses a seam, so the pieces lie in one patch of the surface
-        var perimeterEdges = new NCollection_Sequence<global::Kerf.Topology.Shape>();
+        var perimeterEdges = new List<global::Kerf.Topology.Edge>();
         var seams = Faces().SelectMany(f => f.Seams).ToList();
         foreach (var edge in perimeter.Edges())
         {
@@ -116,18 +114,14 @@ public abstract partial class Shape2D : Shape
                         seamVertices.Add(vertex);
             }
             foreach (var piece in SplitEdgeAtVertices(edge, seamVertices))
-                perimeterEdges.Append(piece.TopoShape);
+                perimeterEdges.Add(piece.TopoEdge);
         }
 
-        var constructor = new SplitShape(TopoShape);
-        constructor.Add(perimeterEdges);
-        constructor.Build();
-        List<Shape> Sides(IEnumerable<global::Kerf.Topology.Shape> list) => [.. list.Where(s => !s.IsNull).Select(CastLike)];
+        var constructor = Failures.Get(FeatureOperations.SplitAlong(TopoShape, perimeterEdges), () => "split");
+        List<Shape> Sides(IEnumerable<global::Kerf.Topology.Face> list) => [.. list.Where(s => !s.IsNull).Select(s => CastLike(s))];
         Shape left, right;
-        var lefts = constructor.Left();
-        left = ProcessSides(Sides(lefts));
-        var rights = constructor.Right();
-        right = ProcessSides(Sides(rights));
+        left = ProcessSides(Sides(constructor.Left));
+        right = ProcessSides(Sides(constructor.Right));
 
         // Is the left or the right the inside?
         var perimeterLength = perimeter.Length;
@@ -179,13 +173,11 @@ public abstract partial class Shape2D : Shape
             {
                 // The common part (coplanar overlap) and the section (crossing curves)
                 ShapeList<Shape> commonFaces;
-                var common = new Common();
-                commonFaces = BoolOpList([this], [surface], common).Expand();
+                commonFaces = BoolOpList([this], [surface], BooleanKind.Common).Expand();
                 results.AddRange(commonFaces);
                 ShapeList<Shape> sectionEdges;
-                var section = new SectionOperation();
                 // The section's vertices are boundary contacts (touches), not intersections
-                sectionEdges = new ShapeList<Shape>(BoolOpList([this], [surface], section).OfType<Edge>()).Expand();
+                sectionEdges = new ShapeList<Shape>(BoolOpList([this], [surface], BooleanKind.Section).OfType<Edge>()).Expand();
                 if (commonFaces.Count == 0)
                     results.AddRange(sectionEdges);
                 else
@@ -203,8 +195,7 @@ public abstract partial class Shape2D : Shape
             }
             case Shape1D line:
             {
-                var section = new SectionOperation();
-                results.AddRange(BoolOpList([this], [line], section));
+                results.AddRange(BoolOpList([this], [line], BooleanKind.Section));
                 break;
             }
             case Vertex vertex:
@@ -305,13 +296,20 @@ public abstract partial class Shape2D : Shape
     {
         if (amount == 0)
             return this;
-        var builder = new MakeOffset();
-        builder.Initialize(TopoShape, amount, Constants.Tolerance, global::Kerf.Offsets.OffsetMode.Skin, true, false,
-                           JoinKind.Intersection, false, true);
-        builder.MakeOffsetShape();
-        var offset = builder.Shape();
-        if (offset.IsNull)
+        // BRepOffset_MakeOffset in skin mode, not thickening
+        var options = new OffsetOptions
+        {
+            Tolerance = Constants.Tolerance,
+            Mode = OffsetMode.Skin,
+            Intersection = true,
+            SelfIntersection = false,
+            Join = JoinKind.Intersection,
+            RemoveInternalEdges = true,
+        };
+        var offsetResult = TopoShape.Offset(amount, options);
+        if (!offsetResult.TryGetValue(out var built) || built.Shape.IsNull)
             throw new InvalidOperationException($"Unable to offset {GetType().Name} by {amount}");
+        var offset = built.Shape;
         var result = Cast(offset);
         // The builder always returns a shell; a face offsets to a single face
         if (this is Face && result.Faces().Count == 1)

@@ -1,7 +1,4 @@
-using Kerf.Engine.Foundation;
-using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -34,9 +31,6 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
         : this(values.Length > 0 ? values[0] : 0, values.Length > 1 ? values[1] : 0, values.Length > 2 ? values[2] : 0)
     {
     }
-
-    /// <summary>A vector from an OCCT gp_XYZ.</summary>
-    public Vector(Xyz xyz) : this(xyz.X(), xyz.Y(), xyz.Z()) { }
 
     /// <summary>A vector from an OCCT gp_Pnt.</summary>
     public Vector(Point3D pnt) : this(pnt.X, pnt.Y, pnt.Z) { }
@@ -101,12 +95,12 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
 #pragma warning restore CS1591
 
     /// <summary>The vector scaled to length 1.</summary>
-    /// <exception cref="FailureException">The vector has zero length.</exception>
+    /// <exception cref="InvalidOperationException">The vector has zero length.</exception>
     public Vector Normalized()
     {
         double d = Length;
         if (d <= GpResolution)   // as gp_Vec::Normalized checks
-            throw new ConstructionErrorException("gp_Vec::Normalized() - vector has zero norm");
+            throw new InvalidOperationException("A vector of zero length can't be normalised");
         return new Vector(X / d, Y / d, Z / d);
     }
 
@@ -169,14 +163,12 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     {
         // gp_GTrsf.Transforms applies the general transform directly; converting to a gp_Trsf first
         // would reject every matrix that isn't a similarity
-        var coords = ToGpXyz();
-        transform.GTrsf.Transforms(ref coords);
+        var coords = transform.GTrsf * ToGpPnt();
         if (!isDirection)
             return new Vector(coords);
 
         // A direction has no position: remove the translation by subtracting where the origin lands
-        var origin = new Xyz(0, 0, 0);
-        transform.GTrsf.Transforms(ref origin);
+        var origin = transform.GTrsf * Point3D.Origin;
         return (new Vector(coords) - new Vector(origin)).Normalized();
     }
 
@@ -208,14 +200,11 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     public Point3D ToGpPnt() => new(X, Y, Z);
 
     /// <summary>A new OCCT gp_Dir in this direction.</summary>
-    /// <exception cref="FailureException">The vector has zero length.</exception>
+    /// <exception cref="Exception">The vector has zero length (the kernel's construction error).</exception>
     public Direction3D ToGpDir() => new(X, Y, Z);
 
     /// <summary>A new OCCT gp_Vec with these components.</summary>
     public Vector3D ToGpVec() => new(X, Y, Z);
-
-    /// <summary>A new OCCT gp_XYZ with these components.</summary>
-    public Xyz ToGpXyz() => new(X, Y, Z);
 
     internal (double, double, double) Key => (GeomKey.Round(X), GeomKey.Round(Y), GeomKey.Round(Z));
 

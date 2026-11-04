@@ -60,6 +60,27 @@ public readonly struct Color : IEquatable<Color>
     /// <summary>The opacity: 1 is opaque.</summary>
     public double A { get; }
 
+    /// <summary>
+    /// The colour OCCT names <paramref name="name"/> (its table of X11 colours: <c>"BLUE1"</c>, <c>"STEELBLUE"</c>, case
+    /// ignored, OCCT's <c>Quantity_Color::ColorFromName</c>), opaque; false if OCCT has no colour of that name.
+    /// </summary>
+    public static bool TryFromName(string name, out Color color)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        var linear = new LinearColor();
+        if (!LinearColor.ColorFromName(name, ref linear))
+        {
+            color = default;
+            return false;
+        }
+
+        color = new Color(linear, 1);
+        return true;
+    }
+
+    /// <summary>The name of OCCT's named colour nearest this one (<c>"SIENNA4"</c>, OCCT's <c>Quantity_Color::Name</c>).</summary>
+    public string NearestName() => LinearColor.StringName(new LinearColor(_linearR, _linearG, _linearB, ColorSpace.TocRgb).Name());
+
     /// <summary>The colour in linear RGB, as STEP and glTF store it.</summary>
     public (double R, double G, double B, double A) ToLinear() => (_linearR, _linearG, _linearB, A);
 

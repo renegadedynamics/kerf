@@ -151,6 +151,13 @@ public static class Primitives
             MakerOutcome.NotNull(boundary, nameof(boundary));
             return Run(() => new MakeHalfSpace(boundary, inside), boundary);
         }
+
+        /// <summary>The half-space on <paramref name="inside"/>'s side of a shell (an infinite solid, for Booleans).</summary>
+        public static Result<Built<Solid>> HalfSpace(Shell boundary, Point3D inside)
+        {
+            MakerOutcome.NotNull(boundary, nameof(boundary));
+            return Run(() => new MakeHalfSpace(boundary, inside), boundary);
+        }
     }
 
     private static void Angle(double angle, string name)
