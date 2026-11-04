@@ -123,3 +123,7 @@ The first packages, for Bento's 3D-models extension.
   `Placement`…) and `Distance`/`Angle` became `DistanceTo`/`AngleTo`; the layer's call sites follow, rewritten by
   the same tool. The layer reaches the kernel's now-internal engine through `InternalsVisibleTo` until 10M. No
   behaviour changes.
+- Kerf's unit 10K4: the kernel's 2D constraint solvers are right, so the constrained arcs and lines use their
+  tangency points as given: no parameter offset for enclosed solutions, no re-intersection for tangent and oriented
+  lines. Constrained arcs tangent to three curves now work on free-form curves (the third tangency threw). Two
+  identical circles raise "Unable to find common tangent line(s)" (they gave no lines).

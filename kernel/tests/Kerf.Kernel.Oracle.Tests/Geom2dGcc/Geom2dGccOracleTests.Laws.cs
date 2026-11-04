@@ -20,14 +20,14 @@ namespace Kerf.Kernel.Oracle.Tests;
 /// </summary>
 public sealed partial class Geom2dGccOracleTests
 {
-    /// <summary>An argument as the laws see it: a curve (with its drawing, for the qualifier of a line or circle) or a point.</summary>
-    private sealed record LawArg(Curve2D? Curve, Point2D? Point, Qualifier Q, Arg? Spec);
+    /// <summary>An argument as the laws see it: a curve (a line's or circle's qualifier is judged) or a point.</summary>
+    internal sealed record LawArg(Curve2D? Curve, Point2D? Point, Qualifier Q);
 
-    private sealed record Laws(LawArg[] Args, Curve2D? On, double? Radius, double Tolerance);
+    internal sealed record Laws(LawArg[] Args, Curve2D? On, double? Radius, double Tolerance);
 
-    private static LawArg L(Arg theA, Curve2D theP) => new(theP, null, theA.Q, theA);
+    private static LawArg L(Arg theA, Curve2D theP) => new(theP, null, theA.Q);
 
-    private static LawArg L(double theX, double theY) => new(null, new Point2D(theX, theY), Qualifier.Unqualified, null);
+    private static LawArg L(double theX, double theY) => new(null, new Point2D(theX, theY), Qualifier.Unqualified);
 
     private static Dictionary<string, string> Tokens(Rec theR)
     {
@@ -72,9 +72,7 @@ public sealed partial class Geom2dGccOracleTests
     }
 
     /// <summary>The line or circle a drawn analytic argument is, or null.</summary>
-    private static object? Analytic(LawArg theA) => theA.Spec is { IsAnalytic: true } && theA.Curve is not null
-        ? theA.Curve is TrimmedCurve2D t ? Analytic(t.BasisCurve) : Analytic(theA.Curve)
-        : null;
+    private static object? Analytic(LawArg theA) => theA.Curve is null ? null : Analytic(theA.Curve);
 
     private static object? Analytic(Curve2D theC) => theC switch
     {
@@ -253,7 +251,7 @@ public sealed partial class Geom2dGccOracleTests
     private static double LawTolerance(double theTol) => Math.Max(1.0e-6, 10 * theTol);
 
     /// <summary>True if a differing case is an intended difference (see the class's remarks); otherwise why not.</summary>
-    private static bool IsIntendedDifference(Rec theNative, Rec thePort, Laws theLaws, out string theWhy)
+    internal static bool IsIntendedDifference(Rec theNative, Rec thePort, Laws theLaws, out string theWhy)
     {
         theWhy = "";
         List<string> aBroken = BrokenLaws(thePort, theLaws);
@@ -283,7 +281,7 @@ public sealed partial class Geom2dGccOracleTests
     /// The laws of a line solver: tangent to its arguments (Lin2d2Tan) or to one, at an angle to a line (Lin2dTanObl,
     /// whose second token is the intersection with that line).
     /// </summary>
-    private sealed record LineLaws(LawArg[] Args, Line2D? Oblique, double Angle, double Tolerance);
+    internal sealed record LineLaws(LawArg[] Args, Line2D? Oblique, double Angle, double Tolerance);
 
     private static Line2D Line(Dictionary<string, string> theT, string theName)
         => new(Pnt(theT, theName + ".loc"), new Direction2D(Num(theT, theName + ".d.x"), Num(theT, theName + ".d.y")));
@@ -371,7 +369,7 @@ public sealed partial class Geom2dGccOracleTests
             ? int.Parse(aNb, CultureInfo.InvariantCulture) : 0;
 
     /// <summary>True if a differing line case is an intended difference; otherwise why not.</summary>
-    private static bool IsIntendedDifference(Rec theNative, Rec thePort, LineLaws theLaws, out string theWhy)
+    internal static bool IsIntendedDifference(Rec theNative, Rec thePort, LineLaws theLaws, out string theWhy)
     {
         theWhy = "";
         double aTol = LawTolerance(theLaws.Tolerance);

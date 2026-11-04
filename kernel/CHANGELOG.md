@@ -1922,3 +1922,14 @@ Phase 10 (part): the public API, part 1: the shared types, geometry and topology
   types are internal; the kernel's assemblies, its tests, Draw-lite, the benchmarks and, until unit 10M, the modelling
   layer still reach them. `BRepOffset_Interval` is `OffsetInterval`.
 - `docs/api/kerf-10l1.map` holds the renames, for kerf-rename to apply to other code (Bento).
+
+Phase 10 (part): OCCT's bugs in the 2D constraint solvers (unit 10K4, batch K4).
+- GccAna's circle solvers (three tangents; two tangents centred on a line or circle; two tangents and a radius; a
+  tangent, a centre locus and a radius) return only circles tangent to their arguments with the qualifiers asked,
+  find the ones OCCT lost, report the qualifiers the solutions have, the points where they touch, and the centre as
+  CenterOn3; none throws where OCCT's range checks did.
+- GccAna's line solvers: tangents oriented from tangency to tangency, each pair of qualifiers picking one; each
+  solution's own intersection, IsParallel for a parallel one; lines perpendicular to a circle pass through its centre.
+- Geom2dGcc: a free-form curve and a point with a centre locus solve instead of throwing; the iterative solvers give
+  their parameters, centres and third tangency; a free-form curve centred on a free-form curve finds its circles; a
+  line at an angle parallel to the reference no longer throws.

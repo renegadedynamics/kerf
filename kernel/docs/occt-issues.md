@@ -2055,3 +2055,17 @@ Seen while porting XDEDRAW's commands onto Draw-lite's documents; the commands k
 |---|---|---|---|
 | `gp_Trsf::Power`, compound branch (gp_Trsf.cxx; and gp_Trsf2d's, beside its row above) | Squares `Tempscale` before scaling the square's translation with it | Powers of 2 or more of a scaled rotation (or any compound transformation with a scale other than 1) put the translation in the wrong place. Found by unit 10K3's tests of the 2D row | fixed (decision 1485) |
 | RWStepVisual_RWSurfaceStyleRendering::ReadStep | The same inverted `strcmp` tests as its subclass's row above | Rendering methods of SURFACE_STYLE_RENDERING read wrong, as SURFACE_STYLE_RENDERING_WITH_PROPERTIES's. Found by unit 10K3 beside that row | fixed (decision 1501) |
+
+## Phase 10: unit 10K4, found by the 2D constraint laws
+
+Bugs the laws of unit 10K4 (decision 17109) found in the classes of batch K4 beyond the rows above, fixed with their
+classes.
+
+| Where | What | Effect | Triage |
+|---|---|---|---|
+| `GccAna_Circ2d3Tan_2.cxx` (circle, two lines), `_6.cxx` (two lines, point) | The flag is not reset when a check fails; a centre on the wrong side of a qualified line is kept; enclosing takes \|r - d\| | Circles not tangent to all arguments, or on the wrong side | fixed (decision 17101) |
+| `GccAna_Circ2d3Tan_4.cxx` (two circles, point) | Not done when IntAna2d reports two hyperbolas that don't meet as not done | 42 of 1,500 random cases not done | fixed (decision 17101) |
+| `GccAna_Circ2d2TanRad_2.cxx` (circle, point) | Takes the tangency parameter of the unset point of a solution that is the circle | Standard_ConstructionError when the circle is at the origin | fixed (decision 17103) |
+| `Geom2dGcc_Lin2dTanObl.cxx` (curve, line, param, angle) | NbrSol is never set for the iterative solution, and its tangency isn't checked | No solution reported; with the parameters fixed, non-tangent lines | fixed (decision 17105) |
+| `Geom2dGcc_Circ2d3TanIter.cxx` | par1sol..par3sol are 0 or distances between tangency points | Wrong parameters on the solution (build123d.NET's arcs) | fixed (decision 17107) |
+| `Geom2dGcc_Circ2dTanOnRadGeo.cxx` | Offset-curve intersections give circles off the argument or the curve, and on the wrong side of a qualified circle | Wrong solutions (once row 1068 lets curves be found) | fixed (decision 17108) |
