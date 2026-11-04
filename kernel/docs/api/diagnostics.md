@@ -282,16 +282,29 @@ own. Those a program is likely to test for are static properties of the operatio
 
 ## The modelling layer
 
-Until unit 10M gives Kerf.Modeling results, an operation of it that fails in the kernel throws a `KerfException`
-carrying the kernel's diagnostics (from the bridges above), each error's message prefixed with what was being done,
-outermost first; the exception's inner exception is the kernel's own. Bento shows the message in the cell:
+An operation of Kerf.Modeling that fails in the kernel throws a `KerfException` carrying the kernel's diagnostics (from
+the bridges above), each error's message prefixed with what was being done, outermost first; the exception's inner
+exception is the kernel's own. Bento shows the message in the cell:
 
-- `box 0.0 × 1.0 × 1.0 failed: a value is outside what the operation accepts`
+- `box 0 × 1 × 1 failed: The value must be a positive number` (`kernel.invalid-argument`)
 - `fuse of a Box with a Cylinder failed: Some of the arguments are self-interfering shapes` (the inputs by class)
 - `extrude until / extrude failed: the geometry can't be constructed: BRepSweep_Translation::Constructor`
 
-The operations that say so: the primitives (box, cone, cylinder, sphere, torus, wedge), lofts, extrusions (plain, with
-rotation, tapered, until), revolutions, sweeps (single and multi-section), thickening, triangulation and every Boolean
-(cut, fuse, intersect, section, split). Fillets, chamfers and offsets keep build123d's own messages, which already
-name the operation and the edges. STEP import keeps its `ArgumentException`, its message ending with the exchange
-status's, and the diagnostic in a `KerfException` inside it.
+Since unit 10M2 (decision 1578) each such operation also has a `Try` form returning the `Result<T>` (`TryFillet`,
+`TryExtrude`, `part.TrySubtract`…), and the failures the layer detects itself have codes of their own
+(`ModelingDiagnostics`), the kernel's diagnostics that led to them following:
+
+| Code | Where |
+|---|---|
+| `modeling.fillet-failed` | A 3D fillet that fails or is invalid (the message names the edges and why); a 2D fillet's corner |
+| `modeling.chamfer-failed` | A chamfer that fails or is invalid |
+| `modeling.offset-failed` | A 2D offset, or a face's or shell's offset |
+| `modeling.loft-failed` | A loft that is invalid and can't be recovered |
+| `modeling.draft-failed` | A draft a face can't take (the face is the diagnostic's shape), or a drafted solid that fails |
+| `modeling.spline-failed` | A B-spline that can't be interpolated or approximated through the points |
+| `kernel.invalid-argument` | An argument the kernel refused, said in context (unit 10M1) |
+
+The operations that say what they were doing: the primitives (box, cone, cylinder, sphere, torus, wedge), lofts,
+extrusions (plain, with rotation, tapered, until), revolutions, sweeps (single and multi-section), thickening,
+triangulation and every Boolean (cut, fuse, intersect, section, split). STEP import keeps its `ArgumentException`, its
+message ending with the exchange status's, and the diagnostic in a `KerfException` inside it.

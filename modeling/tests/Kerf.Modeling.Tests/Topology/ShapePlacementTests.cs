@@ -16,8 +16,8 @@ using Kerf.Modeling;
 public class ShapePlacementTests
 {
     // Where every shape under test is built, and where it is sent
-    static readonly Location Placed = new((10, 20, 30), (0, 0, 90));
-    static readonly Location Elsewhere = new((-5, 1, 2), (90, 0, 0));
+    static readonly Location Placed = new(new Vector(10, 20, 30), new Vector(0, 0, 90));
+    static readonly Location Elsewhere = new(new Vector(-5, 1, 2), new Vector(90, 0, 0));
 
     static Compound MakeAssembly(Location location) =>
         Compound.Assembly([CompoundObjects.Box(1, 1, 1), new Pos(4, 0, 0) * CompoundObjects.Box(1, 1, 1)]).WithLocation(location);
@@ -28,10 +28,10 @@ public class ShapePlacementTests
     [
         ("vertex", loc => new Vertex(1, 2, 3).Moved(loc)),
         ("vertex of a moved wire", loc =>
-            Wire.MakePolygon(new Vector[] { (0, 0, 0), (1, 0, 0), (1, 1, 0) }, close: false).Moved(loc).Vertices()[1]),
-        ("edge", loc => Edge.MakeLine((0, 0, 0), (1, 0, 0)).Moved(loc)),
+            Wire.MakePolygon(new Vector[] { new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(1, 1, 0) }, close: false).Moved(loc).Vertices()[1]),
+        ("edge", loc => Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0)).Moved(loc)),
         ("edge of a moved face", loc => Face.MakeRect(2, 1).Moved(loc).Edges()[0]),
-        ("wire", loc => Wire.MakePolygon(new Vector[] { (0, 0, 0), (1, 0, 0), (1, 1, 0) }).Moved(loc)),
+        ("wire", loc => Wire.MakePolygon(new Vector[] { new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(1, 1, 0) }).Moved(loc)),
         ("face", loc => Face.MakeRect(2, 1).Moved(loc)),
         ("face with a hole", loc => Face.MakeRect(4, 4).MakeHoles([Wire.MakeCircle(1)]).Moved(loc)),
         ("shell", loc => Solid.MakeBox(1, 2, 3).Shells()[0].Moved(loc)),
@@ -41,7 +41,7 @@ public class ShapePlacementTests
         ("assembly", MakeAssembly),
         ("part", loc => loc * CompoundObjects.Box(1, 2, 3)),
         ("sketch", loc => loc * CompoundObjects.Rectangle(1, 2)),
-        ("curve", loc => loc * Edge.MakeLine((0, 0, 0), (1, 0, 0))),
+        ("curve", loc => loc * Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0))),
     ];
 
     static double R4(double value) => Math.Round(value, 4) + 0.0;   // + 0.0 turns -0 into 0
@@ -73,9 +73,9 @@ public class ShapePlacementTests
         var originalChildren = ChildrenOf(original);
         if (originalChildren.Count > 0)
             foreach (var (child, source) in ChildrenOf(shape).Zip(originalChildren))
-                Assert.True(child.Wrapped.IsPartner(source.Wrapped));
+                Assert.True(child.KernelShape.IsPartner(source.KernelShape));
         else
-            Assert.True(shape.Wrapped.IsPartner(original.Wrapped));
+            Assert.True(shape.KernelShape.IsPartner(original.KernelShape));
     }
 
     /// <summary>Every kind reports the location it was built at.</summary>
@@ -126,10 +126,10 @@ public class ShapePlacementTests
     public void RelocatedCopiesKeepTheirProvenance()
     {
         var cross = (CompoundObjects.Rectangle(8, 2) + CompoundObjects.Rectangle(2, 8)).SingleFace();
-        var solid = Solid.Extrude(cross, (0, 0, 2));   // extrude(cross, 2)
+        var solid = Solid.Extrude(cross, new Vector(0, 0, 2));   // extrude(cross, 2)
         foreach (var (name, relocated) in new[] { ("located", solid.Located(Elsewhere)), ("moved", solid.Moved(Elsewhere)) })
         {
-            var interior = relocated.Edges().FilterBy(e => e.IsInterior);
+            var interior = relocated.Edges().Where(e => e.IsInterior).ToShapeList();
             Assert.True(interior.Count == 4, name);
         }
     }
@@ -157,7 +157,7 @@ public class ShapePlacementTests
             Assert.True(relocated.AssemblyChildren.Count == 2, name);
             foreach (var (child, source) in relocated.AssemblyChildren.Zip(original.AssemblyChildren))
             {
-                Assert.True(child.Wrapped.IsPartner(source.Wrapped), name);
+                Assert.True(child.KernelShape.IsPartner(source.KernelShape), name);
                 Assert.True(child.Location == source.Location, name);
             }
             // the copy's compound was rebuilt from its children at its location

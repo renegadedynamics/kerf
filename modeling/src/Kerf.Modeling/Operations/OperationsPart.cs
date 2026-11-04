@@ -11,7 +11,7 @@ public static partial class Operations
     /// <exception cref="ArgumentException">
     /// A face isn't a plane, cylinder or cone, or the faces aren't all taken from the same single solid.
     /// </exception>
-    /// <exception cref="DraftAngleError">The draft can't be made.</exception>
+    /// <exception cref="KerfException">The draft can't be made (<see cref="ModelingDiagnostics.DraftFailed"/>).</exception>
     public static Part Draft(IEnumerable<Face> faces, Plane neutralPlane, double angle)
     {
         var faceList = faces.ToList();
@@ -31,16 +31,8 @@ public static partial class Operations
             throw new ArgumentException("Topological parent must be a single Solid");
 
         // Create the drafted solid
-        Solid newSolid;
-        try
-        {
-            newSolid = parentSolids[0].Draft(faceList, neutralPlane, angle);
-        }
-        catch (DraftAngleError err)
-        {
-            throw new DraftAngleError("Draft operation failed. Use `Face` and `ProblematicShape` for more information.",
-                                      err.Face, err.ProblematicShape, err);
-        }
+        // A face that can't be drafted is a KerfException whose first error holds the face
+        var newSolid = parentSolids[0].Draft(faceList, neutralPlane, angle);
 
         // Phase 5: in builder mode the drafted solid replaces the builder's part
         return (Part)new Part([newSolid]).MadeBy(ShapeHistory.Of([newSolid]));
@@ -52,49 +44,61 @@ public static partial class Operations
     // ---- extrude ----
 
     /// <summary>
-    /// The faces of a face or sketch extruded: by <paramref name="amount"/> (its sign giving the direction) or, with
-    /// <paramref name="until"/>, up to <paramref name="target"/>. Each face is extruded along its normal, or along
-    /// <paramref name="dir"/>, which non-planar faces need.
+    /// The faces of a face or sketch extruded by <paramref name="amount"/>, its sign giving the direction. Each face is
+    /// extruded along its normal, or along <see cref="ExtrudeOptions.Direction"/>, which non-planar faces need.
     /// </summary>
     /// <param name="toExtrude">The face or sketch to extrude.</param>
     /// <param name="amount">The distance to extrude; its sign controls the direction.</param>
-    /// <param name="dir">The direction to extrude in, instead of each face's normal.</param>
-    /// <param name="until">Extrude up to a face of <paramref name="target"/>, instead of by an amount.</param>
-    /// <param name="target">The object to extrude up to.</param>
-    /// <param name="both">Extrude in both directions.</param>
-    /// <param name="taper">
-    /// A taper angle in degrees: positive narrows the extrusion away from the face, negative widens it. The sides are
-    /// drafted where they are planes, cylinders or cones, which keeps sharp corners sharp, and lofted otherwise. Only
-    /// applied when extruding by an amount.
-    /// </param>
-    /// <param name="clean">Remove extraneous internal structure.</param>
-    /// <exception cref="ArgumentException">
-    /// A face is non-planar and <paramref name="dir"/> isn't given, neither an amount nor <paramref name="until"/> is given,
-    /// there is no target, or the extrusion doesn't reach the target.
-    /// </exception>
+    /// <param name="options">The direction, both ways, a taper and the clean; null for the defaults.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="toExtrude"/> is null.</exception>
+    /// <exception cref="ArgumentException">A face is non-planar and no direction is given.</exception>
     /// <exception cref="InvalidOperationException">The tapered solid can't be built, as when the taper collapses the face.</exception>
-    public static Part Extrude(Shape toExtrude, double? amount = null, Vector? dir = null, Until? until = null, Shape? target = null,
-                               bool both = false, double taper = 0, bool clean = true)
+    public static Part Extrude(Shape toExtrude, double amount, ExtrudeOptions? options = null)
     {
-        // Phase 5: in builder mode the faces default to the pending faces (on their pending planes), the target to the
-        // builder's part, and the result is combined with mode
-        if (toExtrude is null)
-            throw new ArgumentException("A face or sketch must be provided");
-        return ExtrudeCore(toExtrude.Faces(), amount, dir, until, target, both, taper, clean);
+        // Phase 5: in builder mode the faces default to the pending faces (on their pending planes), and the result is
+        // combined with mode
+        ArgumentNullException.ThrowIfNull(toExtrude);
+        return ExtrudeCore(toExtrude.Faces(), amount, null, null, options ?? ExtrudeOptions.Default);
     }
 
-    /// <inheritdoc cref="Extrude(Shape, double?, Vector?, Until?, Shape?, bool, double, bool)"/>
-    public static Part Extrude(IEnumerable<Face> toExtrude, double? amount = null, Vector? dir = null, Until? until = null,
-                               Shape? target = null, bool both = false, double taper = 0, bool clean = true)
+    /// <inheritdoc cref="Extrude(Shape, double, ExtrudeOptions?)"/>
+    public static Part Extrude(IEnumerable<Face> toExtrude, double amount, ExtrudeOptions? options = null)
     {
-        if (toExtrude is null)
-            throw new ArgumentException("A face or sketch must be provided");
-        return ExtrudeCore([.. toExtrude], amount, dir, until, target, both, taper, clean);
+        ArgumentNullException.ThrowIfNull(toExtrude);
+        return ExtrudeCore([.. toExtrude], amount, null, null, options ?? ExtrudeOptions.Default);
     }
 
-    private static Part ExtrudeCore(IReadOnlyList<Face> faces, double? amount, Vector? dir, Until? until, Shape? target, bool both,
-                                    double taper, bool clean)
+    /// <summary>
+    /// The faces of a face or sketch extruded up to a face of <paramref name="target"/>: the next or last one along each
+    /// face's normal (or <see cref="ExtrudeOptions.Direction"/>), or with <see cref="Until.Previous"/> and
+    /// <see cref="Until.First"/> the other way. <see cref="ExtrudeOptions.Taper"/> doesn't apply.
+    /// </summary>
+    /// <param name="toExtrude">The face or sketch to extrude.</param>
+    /// <param name="until">Which face of the target to extrude up to.</param>
+    /// <param name="target">The object to extrude up to.</param>
+    /// <param name="options">The direction, both ways and the clean; null for the defaults.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="toExtrude"/> or <paramref name="target"/> is null.</exception>
+    /// <exception cref="ArgumentException">
+    /// A face is non-planar and no direction is given, the target is empty, or the extrusion doesn't reach it.
+    /// </exception>
+    public static Part Extrude(Shape toExtrude, Until until, Shape target, ExtrudeOptions? options = null)
     {
+        ArgumentNullException.ThrowIfNull(toExtrude);
+        ArgumentNullException.ThrowIfNull(target);
+        return ExtrudeCore(toExtrude.Faces(), null, until, target, options ?? ExtrudeOptions.Default);
+    }
+
+    /// <inheritdoc cref="Extrude(Shape, Until, Shape, ExtrudeOptions?)"/>
+    public static Part Extrude(IEnumerable<Face> toExtrude, Until until, Shape target, ExtrudeOptions? options = null)
+    {
+        ArgumentNullException.ThrowIfNull(toExtrude);
+        ArgumentNullException.ThrowIfNull(target);
+        return ExtrudeCore([.. toExtrude], null, until, target, options ?? ExtrudeOptions.Default);
+    }
+
+    private static Part ExtrudeCore(IReadOnlyList<Face> faces, double? amount, Until? until, Shape? target, ExtrudeOptions options)
+    {
+        var (dir, both, taper, clean) = (options.Direction, options.Both, options.Taper, options.Clean);
         var facePlanes = new List<Plane>();
         foreach (var face in faces)
         {
@@ -112,7 +116,7 @@ public static partial class Operations
             // Override in the provided direction
             facePlanes = [.. faces.Select(f => new Plane(f.Center(), f.CenterLocation.XAxis.Direction, direction))];
         if (facePlanes.Count != faces.Count)
-            throw new ArgumentException("dir must be provided when extruding non-planar faces");
+            throw new ArgumentException("A direction is needed to extrude a non-planar face.", nameof(options));
 
         var newSolids = new List<Shape>();
         for (int i = 0; i < faces.Count; i++)
@@ -128,13 +132,9 @@ public static partial class Operations
                 }
                 else
                 {
-                    if (until is null)
-                        throw new ArgumentException("Either amount or until must be provided");
-                    if (target is null)
-                        throw new ArgumentException("A target object must be provided");
-                    if (target.IsEmpty)
-                        throw new ArgumentException("No target object provided");
-                    newSolids.Add(Solid.ExtrudeUntil(face, target, plane.ZDir * sign, until.Value));
+                    if (target!.IsEmpty)
+                        throw new ArgumentException("The target to extrude up to is empty.", nameof(target));
+                    newSolids.Add(Solid.ExtrudeUntil(face, target, plane.ZDir * sign, until!.Value));
                 }
             }
         }
@@ -308,7 +308,7 @@ public static partial class Operations
         var xDirPointAxis = new Axis(origin + x, projection);
         var found = screen.FindIntersectionPoints(xDirPointAxis);
         if (found.Count == 0)
-            throw new ArgumentException("x_dir perpendicular to projection_dir");
+            throw new ArgumentException("The X direction is perpendicular to the projection direction.");
 
         // Set the workplane's x direction
         return workplane.WithXDir(found[0].Point - workplaneOrigin);
@@ -333,7 +333,7 @@ public static partial class Operations
         // Make sure we account for users specifying angles larger than 360 degrees, and for OCCT not assuming that a
         // 0 degree revolve means a 360 degree revolve
         double sign = revolutionArc >= 0 ? 1 : -1;
-        var angle = PyMath.Mod(revolutionArc, sign * 360.0);
+        var angle = Numerics.FloorMod(revolutionArc, sign * 360.0);
         angle = angle == 0 ? sign * 360.0 : angle;
 
         if (profileList.All(s => s is null))
@@ -387,35 +387,28 @@ public static partial class Operations
 
     /// <summary>
     /// Solids made from the faces of a face, sketch or shell, which may be non-planar, by thickening them along their
-    /// normals by <paramref name="amount"/> (its sign giving the direction). <paramref name="normalOverride"/> says which
-    /// way is up, flipping the normals of faces that point the other way (within 90°), so that faces with different
-    /// normals all go the same way.
+    /// normals by <paramref name="amount"/> (its sign giving the direction). <see cref="ThickenOptions.NormalOverride"/>
+    /// says which way is up.
     /// </summary>
-    /// <exception cref="ArgumentException">No amount or nothing to thicken is given.</exception>
-    public static Part Thicken(Shape toThicken, double? amount = null, Vector? normalOverride = null, bool both = false, bool clean = true)
+    /// <exception cref="ArgumentNullException"><paramref name="toThicken"/> is null.</exception>
+    public static Part Thicken(Shape toThicken, double amount, ThickenOptions? options = null)
     {
         // Phase 5: in builder mode the faces default to the pending faces, and the result is combined with mode.
         // Phase 7: a sheet Shell with SheetMetalParameters (and BuildSheet's pending sheets) is thickened as sheet material
-        if (amount is null)
-            throw new ArgumentException("An amount must be provided");
-        if (toThicken is null)
-            throw new ArgumentException("A face or sketch must be provided");
-        return ThickenCore(toThicken.Faces(), amount.Value, normalOverride, both, clean);
+        ArgumentNullException.ThrowIfNull(toThicken);
+        return ThickenCore(toThicken.Faces(), amount, options ?? ThickenOptions.Default);
     }
 
-    /// <inheritdoc cref="Thicken(Shape, double?, Vector?, bool, bool)"/>
-    public static Part Thicken(IEnumerable<Face> toThicken, double? amount = null, Vector? normalOverride = null, bool both = false,
-                               bool clean = true)
+    /// <inheritdoc cref="Thicken(Shape, double, ThickenOptions?)"/>
+    public static Part Thicken(IEnumerable<Face> toThicken, double amount, ThickenOptions? options = null)
     {
-        if (amount is null)
-            throw new ArgumentException("An amount must be provided");
-        if (toThicken is null)
-            throw new ArgumentException("A face or sketch must be provided");
-        return ThickenCore([.. toThicken], amount.Value, normalOverride, both, clean);
+        ArgumentNullException.ThrowIfNull(toThicken);
+        return ThickenCore([.. toThicken], amount, options ?? ThickenOptions.Default);
     }
 
-    private static Part ThickenCore(IReadOnlyList<Face> faces, double amount, Vector? normalOverride, bool both, bool clean)
+    private static Part ThickenCore(IReadOnlyList<Face> faces, double amount, ThickenOptions options)
     {
+        var (normalOverride, both, clean) = (options.NormalOverride, options.Both, options.Clean);
         var newSolids = new List<Shape>();
         foreach (var face in faces)
         {

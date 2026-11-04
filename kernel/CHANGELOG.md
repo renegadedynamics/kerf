@@ -2011,3 +2011,9 @@ Phase 10 (part): the modelling layer on the public API (unit 10M1).
 - A mesh read from STL or glTF keeps the shape read, faces holding only triangles (`ShapeMesh.TriangulatedShape`).
 - The engine types public only for the modelling layer are internal, but for 17 the WebAssembly sample also shows: 44
   public engine types remain (by reflection, top-level), none for the modelling layer.
+
+Phase 10 (part): Kerf.Modeling's .NET API (unit 10M2). No kernel change.
+- The modelling layer's public API is redesigned for .NET (decisions 17501 to 17511): LINQ-friendly typed selections,
+  typed results for Part, Sketch and Curve, options records, `Try` forms returning `Result<T>` with modelling codes
+  beside the kernel's (`modeling.fillet-failed`…; api/diagnostics.md), no `Mode`, tuple conversions or Python operators,
+  Python's emulation rewritten as .NET with the same results. Bento's benchmark builds on the new API.

@@ -100,7 +100,7 @@ public class GridLocations : LocationList
     public Vector Max { get; }
 
     internal static Alignment Expand(Alignment? align) =>
-        align is { } a ? (a.Count == 1 ? (a[0]!.Value, a[0]!.Value) : a) : (Kerf.Modeling.Align.Center, Kerf.Modeling.Align.Center);
+        align is { } a ? (a.Count == 1 ? new Alignment(a[0]!.Value, a[0]!.Value) : a) : new Alignment(Kerf.Modeling.Align.Center, Kerf.Modeling.Align.Center);
 
     private static List<Location> Make(double xSpacing, double ySpacing, int xCount, int yCount, Alignment align, out Vector size, out Vector min)
     {

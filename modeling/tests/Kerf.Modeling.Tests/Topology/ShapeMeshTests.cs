@@ -29,7 +29,7 @@ public class ShapeMeshTests
     [Fact]
     public void TheOrderIsTheShapes()
     {
-        var part = Ops.Fillet(new Box(10, 10, 10).Edges().GroupBy(Axis.Z).Last, 2) - new Cylinder(2, 20);
+        var part = Ops.Fillet(new Box(10, 10, 10).Edges().GroupBy(Axis.Z).Last(), 2) - new Cylinder(2, 20);
         var mesh = part.Triangulate(0.01);
         var faces = part.Faces();
         Assert.Equal(faces.Count, mesh.Faces.Count);
@@ -57,7 +57,7 @@ public class ShapeMeshTests
     [Fact]
     public void NormalsAndWindingFaceOut()
     {
-        var part = new Box(10, 10, 10) - new Sphere(4).Moved(new Location((5.0, 5.0, 5.0)));
+        var part = new Box(10, 10, 10) - new Sphere(4).Moved(new Location(new Vector(5.0, 5.0, 5.0)));
         var center = new Vector(0, 0, 0);
         foreach (var face in part.Triangulate(0.05).Faces)
         {
@@ -81,8 +81,8 @@ public class ShapeMeshTests
     public void AReversedFaceIsFlipped()
     {
         var face = Face.MakeRect(4, 4);
-        Check.AlmostEqual((0, 0, 1), Node(face.Triangulate(0.1).Faces[0].Normals, 0), 6);
-        Check.AlmostEqual((0, 0, -1), Node((-face).Triangulate(0.1).Faces[0].Normals, 0), 6);
+        Check.AlmostEqual(new Vector(0, 0, 1), Node(face.Triangulate(0.1).Faces[0].Normals, 0), 6);
+        Check.AlmostEqual(new Vector(0, 0, -1), Node((-face).Triangulate(0.1).Faces[0].Normals, 0), 6);
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public class ShapeMeshTests
     [Fact]
     public void PositionsAreLocated()
     {
-        var box = new Box(2, 2, 2).Moved(new Location((10.0, 20.0, 30.0), (0.0, 0.0, 45.0)));
+        var box = new Box(2, 2, 2).Moved(new Location(new Vector(10.0, 20.0, 30.0), new Vector(0.0, 0.0, 45.0)));
         var mesh = box.Triangulate(0.1);
         var points = mesh.Faces.SelectMany(f => Enumerable.Range(0, f.NodeCount).Select(i => Node(f.Positions, i))).ToList();
         var bounds = box.BoundingBox();
@@ -153,7 +153,7 @@ public class ShapeMeshTests
     public void ShapesSharingGeometryTriangulateConcurrently()
     {
         var part = Ops.Fillet(new Box(10, 10, 10).Edges(), 1);
-        var copies = Enumerable.Range(0, 16).Select(i => part.Moved(new Location((i * 20.0, 0.0, 0.0)))).ToList();
+        var copies = Enumerable.Range(0, 16).Select(i => part.Moved(new Location(new Vector(i * 20.0, 0.0, 0.0)))).ToList();
         var expected = part.Triangulate(0.01).TriangleCount;
         var counts = new int[copies.Count];
         Parallel.For(0, copies.Count, i => counts[i] = copies[i].Triangulate(0.01).TriangleCount);
@@ -220,7 +220,7 @@ public class ShapeMeshTests
         var bolt = new Cylinder(1, 10).WithLabel("bolt").WithColor(new Color(0.5, 0.5, 0.5, 0.8));
         var plate = new Box(20, 20, 2).WithLabel("plate");
         var assembly = Compound.Assembly(
-            [plate, bolt.Moved(new Location((-5.0, 0.0, 0.0))), bolt.Moved(new Location((5.0, 0.0, 0.0)))], label: "joint");
+            [plate, bolt.Moved(new Location(new Vector(-5.0, 0.0, 0.0))), bolt.Moved(new Location(new Vector(5.0, 0.0, 0.0)))], label: "joint");
 
         var tree = assembly.TriangulateTree();
         Assert.Equal("joint", tree.Label);
@@ -230,8 +230,8 @@ public class ShapeMeshTests
         Assert.Equal(("bolt", 0.8), (first.Label, first.Color!.Value.A));
         Assert.Same(first.Mesh, second.Mesh);
         Assert.NotSame(tree.Children[0].Mesh, first.Mesh);
-        Check.AlmostEqual((-5, 0, 0), first.Location.Position, 6);
-        Check.AlmostEqual((5, 0, 0), second.Location.Position, 6);
+        Check.AlmostEqual(new Vector(-5, 0, 0), first.Location.Position, 6);
+        Check.AlmostEqual(new Vector(5, 0, 0), second.Location.Position, 6);
         // An instance's mesh is in its own coordinates
         var cylinder = first.Mesh!.Faces.Single(f => f.Type == GeomType.Cylinder);
         var nodes = Enumerable.Range(0, cylinder.NodeCount).Select(i => Node(cylinder.Positions, i)).ToList();
@@ -241,9 +241,9 @@ public class ShapeMeshTests
     [Fact]
     public void APartIsALeaf()
     {
-        var tree = new Box(1, 1, 1).Moved(new Location((1.0, 2.0, 3.0))).TriangulateTree();
+        var tree = new Box(1, 1, 1).Moved(new Location(new Vector(1.0, 2.0, 3.0))).TriangulateTree();
         Assert.Empty(tree.Children);
         Assert.Equal(6, tree.Mesh!.Faces.Count);
-        Check.AlmostEqual((1, 2, 3), tree.Location.Position, 6);
+        Check.AlmostEqual(new Vector(1, 2, 3), tree.Location.Position, 6);
     }
 }

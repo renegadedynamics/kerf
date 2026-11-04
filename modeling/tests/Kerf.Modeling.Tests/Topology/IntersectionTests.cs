@@ -17,9 +17,9 @@ using Kerf.Modeling;
 /// <summary>build123d's objects, made with the direct API.</summary>
 file static class B
 {
-    public static Solid Box(double l, double w, double h) => Solid.MakeBox(l, w, h, new Plane((-l / 2, -w / 2, -h / 2)));
+    public static Solid Box(double l, double w, double h) => Solid.MakeBox(l, w, h, new Plane(new Vector(-l / 2, -w / 2, -h / 2)));
     public static Solid BoxMin(double l, double w, double h) => Solid.MakeBox(l, w, h);
-    public static Solid Cylinder(double r, double h) => Solid.MakeCylinder(r, h, new Plane((0, 0, -h / 2)));
+    public static Solid Cylinder(double r, double h) => Solid.MakeCylinder(r, h, new Plane(new Vector(0, 0, -h / 2)));
     public static Solid Sphere(double r) => Solid.MakeSphere(r);
     public static Face Rectangle(double w, double h) => Face.MakeRect(w, h);
     public static Face Circle(double r) => new(Wire.MakeCircle(r));
@@ -156,18 +156,18 @@ public class IntersectionTests
 
     static readonly Axis Ax1 = Axis.X;
     static readonly Axis Ax2 = Axis.Y;
-    static readonly Axis Ax3 = new((0, 0, 5), (1, 0, 0));
+    static readonly Axis Ax3 = new(new Vector(0, 0, 5), new Vector(1, 0, 0));
     static readonly Plane Pl1 = Plane.YZ;
     static readonly Plane Pl2 = Plane.XY;
     static readonly Plane Pl3 = Plane.XY.Offset(5);
-    static readonly Plane Pl4 = new((0, 5, 0));
+    static readonly Plane Pl4 = new(new Vector(0, 5, 0));
     static readonly Plane Pl5 = Plane.YZ.Offset(1);
     static readonly Vector Vl1 = new(2, 0, 0);
     static readonly Vector Vl2 = new(2, 0, 5);
-    static readonly Location Lc1 = new((2, 0, 0));
-    static readonly Location Lc2 = new((2, 0, 5));
-    static readonly Location Lc3 = new((0, 0, 0), (0, 90, 90));
-    static readonly Location Lc4 = new((2, 0, 0), (0, 90, 90));
+    static readonly Location Lc1 = new(new Vector(2, 0, 0));
+    static readonly Location Lc2 = new(new Vector(2, 0, 5));
+    static readonly Location Lc3 = new(new Vector(0, 0, 0), new Vector(0, 90, 90));
+    static readonly Location Lc4 = new(new Vector(2, 0, 0), new Vector(0, 90, 90));
 
     static readonly Type[] V = [typeof(Vertex)];
     static readonly Type[] VV = [typeof(Vertex), typeof(Vertex)];
@@ -254,22 +254,22 @@ public class IntersectionTests
 
     // ---- 1D shapes ----
 
-    static readonly Edge Ed1 = B.Line((0, 0), (5, 0));
-    static readonly Edge Ed2 = B.Line((0, -1), (5, 1));
-    static readonly Edge Ed3 = B.Line((0, 0, 5), (5, 0, 5));
-    static readonly Edge Ed4 = B.CenterArc((3, 1), 2, 0, 360);
-    static readonly Edge Ed5 = B.CenterArc((3, 1), 5, 0, 360);
+    static readonly Edge Ed1 = B.Line(new Vector(0, 0), new Vector(5, 0));
+    static readonly Edge Ed2 = B.Line(new Vector(0, -1), new Vector(5, 1));
+    static readonly Edge Ed3 = B.Line(new Vector(0, 0, 5), new Vector(5, 0, 5));
+    static readonly Edge Ed4 = B.CenterArc(new Vector(3, 1), 2, 0, 360);
+    static readonly Edge Ed5 = B.CenterArc(new Vector(3, 1), 5, 0, 360);
 
-    static readonly Edge Ed6 = Edge.MakeLine((0, -1), (2, 1));
-    static readonly Edge Ed7 = Edge.MakeLine((0, 1), (2, -1));
-    static readonly Edge Ed8 = Edge.MakeLine((0, 0), (2, 0));
+    static readonly Edge Ed6 = Edge.MakeLine(new Vector(0, -1), new Vector(2, 1));
+    static readonly Edge Ed7 = Edge.MakeLine(new Vector(0, 1), new Vector(2, -1));
+    static readonly Edge Ed8 = Edge.MakeLine(new Vector(0, 0), new Vector(2, 0));
 
-    static readonly Wire Wi1 = B.WireOf(B.Line((0, 0), (1, 0)), B.RadiusArc((1, 0), (3, 1.5), 2));
-    static readonly Wire Wi2 = Assert.IsType<Wire>(Wi1 + B.Line((3, 1.5), (3, -1)));
-    static readonly Wire Wi3 = B.WireOf(B.Line((0, 0), (1, 0)), B.RadiusArc((1, 0), (3, 0), 2), B.Line((3, 0), (5, 0)));
-    static readonly Wire Wi4 = B.WireOf(B.Line((0, 1), (2, -1)), B.Line((2, -1), (3, -1)));
-    static readonly Wire Wi5 = Assert.IsType<Wire>(Wi4 + B.Line((3, -1), (4, 1)));
-    static readonly Wire Wi6 = B.WireOf(B.Line((0, 1, 1), (2, -1, 1)), B.Line((2, -1, 1), (4, 1, 1)));
+    static readonly Wire Wi1 = B.WireOf(B.Line(new Vector(0, 0), new Vector(1, 0)), B.RadiusArc(new Vector(1, 0), new Vector(3, 1.5), 2));
+    static readonly Wire Wi2 = Assert.IsType<Wire>(Wi1 + B.Line(new Vector(3, 1.5), new Vector(3, -1)));
+    static readonly Wire Wi3 = B.WireOf(B.Line(new Vector(0, 0), new Vector(1, 0)), B.RadiusArc(new Vector(1, 0), new Vector(3, 0), 2), B.Line(new Vector(3, 0), new Vector(5, 0)));
+    static readonly Wire Wi4 = B.WireOf(B.Line(new Vector(0, 1), new Vector(2, -1)), B.Line(new Vector(2, -1), new Vector(3, -1)));
+    static readonly Wire Wi5 = Assert.IsType<Wire>(Wi4 + B.Line(new Vector(3, -1), new Vector(4, 1)));
+    static readonly Wire Wi6 = B.WireOf(B.Line(new Vector(0, 1, 1), new Vector(2, -1, 1)), B.Line(new Vector(2, -1, 1), new Vector(4, 1, 1)));
 
     static readonly Case[] Shape1dMatrix =
     [
@@ -324,14 +324,14 @@ public class IntersectionTests
     static readonly Face Fc4 = new Rotation(z: 45) * B.Rectangle(5, 5);
     static readonly Face Fc5 = new Pos(2.5, 2.5, 2.5) * new Rotation(0, 90) * B.Rectangle(5, 5);
     static readonly Face Fc6 = new Pos(2.5, 2.5) * new Rotation(0, 90, 45, Extrinsic.XYZ) * B.Rectangle(5, 5);
-    static readonly Face Fc7 = (new Rotation(90) * B.Cylinder(2, 4)).Faces().FilterBy(GeomType.Cylinder)[0];
+    static readonly Face Fc7 = (new Rotation(90) * B.Cylinder(2, 4)).Faces().Where(GeomType.Cylinder)[0];
     static readonly Face Fc8 = new(Wire.MakePolygon(
-        [(-1.5, 1, 1), (-1.5, -1, 1), (3.5, -1, -1), (3.5, 1, -1), (-1.5, 1, 1)], close: false));   // make_face(Polyline(…))
+        [new Vector(-1.5, 1, 1), new Vector(-1.5, -1, 1), new Vector(3.5, -1, -1), new Vector(3.5, 1, -1), new Vector(-1.5, 1, 1)], close: false));   // make_face(Polyline(…))
     static readonly Face Fc9 = new Pos(-2) * Fc8.Mirror(Plane.XY);
 
     static readonly Face Fc11 = B.Rectangle(4, 4);
     // sweep(Rot(90) * CenterArc((0, 0), 2, 0, 180), Line((0, 2), (0, -2))): the faces of the swept shell, cleaned
-    static readonly Shell Fc22 = Shell.Sweep(new Rotation(90) * B.CenterArc((0, 0), 2, 0, 180), new Wire(B.Line((0, 2), (0, -2)))).Clean();
+    static readonly Shell Fc22 = Shell.Sweep(new Rotation(90) * B.CenterArc(new Vector(0, 0), 2, 0, 180), new Wire(B.Line(new Vector(0, 2), new Vector(0, -2)))).Clean();
     static readonly Shell Sh1 = new([new Pos(-4) * Fc11, .. Fc22.Faces()]);
     static readonly Shell Sh2 = new Pos(z: 1) * Sh1;
     static readonly Shell Sh3 = new([new Pos(-4) * Fc11, .. Fc22.Faces(), new Pos(2, 0, -2) * new Rotation(0, 90) * Fc11]);
@@ -420,7 +420,7 @@ public class IntersectionTests
     // Extended T-shaped solid for coplanar edge touches
     static readonly Part Sl9 = new([B.Box(2, 2, 2) + Sl5]);
 
-    static readonly Edge L1 = Sl3.Faces().SortBy(Axis.Z).Last.Edges()[0].Trim(0.3, 0.4);
+    static readonly Edge L1 = Sl3.Faces().OrderBy(Axis.Z).Last().Edges()[0].Trim(0.3, 0.4);
     static readonly Edge L2 = L1.Trim(2, 3);
     static readonly Wire Wi7 = new([L1, L2, B.RadiusArc(L1.PositionAt(1), L2.PositionAt(0), 1, shortSagitta: false)]);
 
@@ -512,7 +512,7 @@ public class IntersectionTests
     // ---- Compounds ----
 
     static readonly Compound Cp1 = new(B.Grid2(5, new Vertex(0, 0, 0)));
-    static readonly Compound Cp2 = new(B.Grid2(5, B.Line((0, -1), (0, 1))));
+    static readonly Compound Cp2 = new(B.Grid2(5, B.Line(new Vector(0, -1), new Vector(0, 1))));
     static readonly Compound Cp3 = new(B.Grid2(5, B.Rectangle(2, 2)));
     static readonly Compound Cp4 = new(B.Grid2(5, B.Box(2, 2, 2)));
     static readonly Compound Cp5 = new([Fc8, Fc9]);
@@ -591,11 +591,11 @@ public class IntersectionTests
     {
         // Intersection uses a compound child's pose after moving its parent
         var assembly = Compound.Assembly([Solid.MakeBox(1, 1, 1)]);
-        var movedAssembly = assembly.Moved(new Location((10, 0, 0)));
+        var movedAssembly = assembly.Moved(new Location(new Vector(10, 0, 0)));
         Assert.Equal(10, movedAssembly.BoundingBox().Min.X);
         Assert.Equal(0, movedAssembly.AssemblyChildren[0].BoundingBox().Min.X);
 
-        var probe = Solid.MakeBox(1, 1, 1).Moved(new Location((10, 0, 0)));
+        var probe = Solid.MakeBox(1, 1, 1).Moved(new Location(new Vector(10, 0, 0)));
         Assert.NotEmpty(movedAssembly.Intersect(probe));
         Assert.Empty(movedAssembly.Intersect(Solid.MakeBox(1, 1, 1)));
     }
@@ -635,12 +635,12 @@ public class IntersectionTests
 
     // ---- The FreeCAD issue example ----
 
-    static readonly Edge C1 = B.CenterArc((0, 0), 10, 0, 360);
-    static readonly Edge C2 = B.CenterArc((19, 0), 10, 0, 360);
-    static readonly Edge Skew = B.Line((-12, 0), (30, 10));
-    static readonly Edge Vert = B.Line((10, 0), (10, 20));
-    static readonly Edge Horz = B.Line((0, 10), (30, 10));
-    static readonly Edge E1 = B.EllipticalCenterArc((5, 0), 5, 10, 0, 360);
+    static readonly Edge C1 = B.CenterArc(new Vector(0, 0), 10, 0, 360);
+    static readonly Edge C2 = B.CenterArc(new Vector(19, 0), 10, 0, 360);
+    static readonly Edge Skew = B.Line(new Vector(-12, 0), new Vector(30, 10));
+    static readonly Edge Vert = B.Line(new Vector(10, 0), new Vector(10, 20));
+    static readonly Edge Horz = B.Line(new Vector(0, 10), new Vector(30, 10));
+    static readonly Edge E1 = B.EllipticalCenterArc(new Vector(5, 0), 5, 10, 0, 360);
 
     static readonly Case[] FreecadMatrix =
     [
@@ -672,10 +672,10 @@ public class IntersectionTests
 
     static readonly Shape T = new Sketch() + B.Grid2(5, B.Circle(2));
     static readonly Face Sc = B.Circle(10);
-    static readonly Edge Ln = B.Line((-20, 0), (20, 0));   // Line(-20, 20)
+    static readonly Edge Ln = B.Line(new Vector(-20, 0), new Vector(20, 0));   // Line(-20, 20)
     static readonly Face Fa = B.Rectangle(10, 10);
     static readonly Face Fb = Plane.XZ * Fa;
-    static readonly Edge Ie1 = Edge.MakeLine((-1, 0), (1, 0));
+    static readonly Edge Ie1 = Edge.MakeLine(new Vector(-1, 0), new Vector(1, 0));
     static readonly Wire Iw1 = Wire.MakeCircle(0.5);
     static readonly Face If1 = new(Wire.MakeCircle(0.5));
 
@@ -857,7 +857,7 @@ public class ShellTangentTouchCoverageTests
         // don't reach the contact point
         double x = 1.0, y = 1.0, z = Math.Sqrt(2);
         var normal = new Vector(x, y, z).Normalized();
-        var tangentPlane = new Plane((x, y, z), zDir: (normal.X, normal.Y, normal.Z));
+        var tangentPlane = new Plane(new Vector(x, y, z), zDir: new Vector(normal.X, normal.Y, normal.Z));
         return tangentPlane * B.Rectangle(0.1, 0.1);
     }
 
@@ -886,14 +886,14 @@ public class SolidEdgeTangentTouchTests
     [Fact]
     public void EdgeTangentToCylinder()
     {
-        var tangentEdge = Edge.MakeLine((1, -2, 1), (1, 2, 1));
+        var tangentEdge = Edge.MakeLine(new Vector(1, -2, 1), new Vector(1, 2, 1));
         Assert.NotEmpty(B.Cylinder(1, 2).Touch(tangentEdge).OfType<Vertex>());
     }
 
     [Fact]
     public void EdgeTangentToSphere()
     {
-        var tangentEdge = Edge.MakeLine((1, 0, -2), (1, 0, 2));
+        var tangentEdge = Edge.MakeLine(new Vector(1, 0, -2), new Vector(1, 0, 2));
         Assert.NotEmpty(B.Sphere(1).Touch(tangentEdge).OfType<Vertex>());
     }
 }
@@ -905,11 +905,11 @@ public class ConvertToShapesTests
     public void VectorIntersection() => Assert.IsType<Vertex>(Assert.Single(B.Box(2, 2, 2).Intersect(new Vector(0, 0, 0))));
 
     [Fact]
-    public void LocationIntersection() => Assert.IsType<Vertex>(Assert.Single(B.Box(2, 2, 2).Intersect(new Location((0, 0, 0)))));
+    public void LocationIntersection() => Assert.IsType<Vertex>(Assert.Single(B.Box(2, 2, 2).Intersect(new Location(new Vector(0, 0, 0)))));
 
     [Fact]
     public void LocationIntersectionWithRotation() =>
-        Assert.IsType<Vertex>(Assert.Single(B.Box(2, 2, 2).Intersect(new Location((0, 0, 0), (45, 45, 45)))));
+        Assert.IsType<Vertex>(Assert.Single(B.Box(2, 2, 2).Intersect(new Location(new Vector(0, 0, 0), new Vector(45, 45, 45)))));
 }
 
 public class EmptyCompoundIntersectTests

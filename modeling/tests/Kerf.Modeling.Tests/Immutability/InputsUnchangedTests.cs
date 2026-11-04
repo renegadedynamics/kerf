@@ -21,16 +21,16 @@ public class InputsUnchangedTests
 
     // Inputs, built once and shared by every case (moved copies share their TShape with the original)
     private static readonly Box Box = new(10, 10, 10);
-    private static readonly Box MovedBox = Box.Moved(new Location((3.0, 3.0, 3.0)));
+    private static readonly Box MovedBox = Box.Moved(new Location(new Vector(3.0, 3.0, 3.0)));
     private static readonly Cylinder Cylinder = new(3, 14);
     private static readonly Sphere Sphere = new(4);
     private static readonly Face Plate = Face.MakeRect(10, 6);
     private static readonly Circle Circle = new(2);
     private static readonly Wire RectWire = Wire.MakeRect(8, 4);
-    private static readonly Edge Spline = Edge.MakeSpline([(0.0, 0.0), (3.0, 2.0), (6.0, -1.0), (9.0, 1.0)]);
-    private static readonly Edge Path = Edge.MakeThreePointArc((0, 0, 0), (5, 0, 5), (10, 0, 0));
+    private static readonly Edge Spline = Edge.MakeSpline([new Vector(0.0, 0.0), new Vector(3.0, 2.0), new Vector(6.0, -1.0), new Vector(9.0, 1.0)]);
+    private static readonly Edge Path = Edge.MakeThreePointArc(new Vector(0, 0, 0), new Vector(5, 0, 5), new Vector(10, 0, 0));
     private static readonly Edge ArcEdge = Edge.MakeCircle(3);
-    private static readonly Edge LineEdge = Edge.MakeLine((-5, 1, 0), (5, 1, 0));
+    private static readonly Edge LineEdge = Edge.MakeLine(new Vector(-5, 1, 0), new Vector(5, 1, 0));
     private static readonly Part Fused = (Part)(Box + Cylinder);
     private static readonly SlotOverall Slot = new(10, 4);
 
@@ -57,32 +57,32 @@ public class InputsUnchangedTests
             C("intersect edge", [ArcEdge, LineEdge], () => ArcEdge.Intersect(LineEdge)),
             C("split plane", [Box], () => Box.Split(Plane.XY)),
             C("split both", [Sphere], () => Sphere.SplitBoth(Plane.XZ)),
-            C("split by face", [Box, Plate], () => Box.Split(Plate.Moved(new Location((0.0, 0.0, 0.0), (90.0, 0.0, 0.0))))),
+            C("split by face", [Box, Plate], () => Box.Split(Plate.Moved(new Location(new Vector(0.0, 0.0, 0.0), new Vector(90.0, 0.0, 0.0))))),
             C("touch", [Box, MovedBox], () => ((Solid)Box.Solids()[0]).Touch(MovedBox)),
             C("section", [Box], () => Ops.Section(Box)),
             // Features
             C("fillet", [Box], () => Ops.Fillet(Box.Edges(), 1)),
-            C("fillet top", [Fused], () => Ops.Fillet(Fused.Edges().GroupBy(Axis.Z).Last, 1)),
-            C("chamfer", [Box], () => Ops.Chamfer(Box.Edges().GroupBy(Axis.Z).Last, 1)),
+            C("fillet top", [Fused], () => Ops.Fillet(Fused.Edges().GroupBy(Axis.Z).Last(), 1)),
+            C("chamfer", [Box], () => Ops.Chamfer(Box.Edges().GroupBy(Axis.Z).Last(), 1)),
             C("offset", [Box], () => Ops.Offset(Box, 1)),
-            C("shell", [Box], () => Ops.Offset(Box, -1, openings: [Box.Faces().SortBy(Axis.Z).Last])),
-            C("hollow", [Box], () => ((Solid)Box.Solids()[0]).Hollow(Box.Faces().SortBy(Axis.Z)[^1..], 1)),
-            C("draft", [Box], () => Ops.Draft(Box.Faces().FilterBy(Axis.Z, reverse: true), Plane.XY.Offset(-5), 5)),
+            C("shell", [Box], () => Ops.Offset(Box, -1, new Ops.OffsetOptions { Openings = [Box.Faces().OrderBy(Axis.Z).Last()] })),
+            C("hollow", [Box], () => ((Solid)Box.Solids()[0]).Hollow(Box.Faces().OrderBy(Axis.Z)[^1..], 1)),
+            C("draft", [Box], () => Ops.Draft(Box.Faces().NotParallelTo(Axis.Z), Plane.XY.Offset(-5), 5)),
             C("mirror", [Box], () => Ops.Mirror(Box, Plane.YZ.Offset(5))),
             C("scale", [Box], () => Ops.Scale(Box, 2)),
-            C("scale xyz", [Sphere], () => Ops.Scale(Sphere, (1.0, 2.0, 3.0))),
+            C("scale xyz", [Sphere], () => Ops.Scale(Sphere, new Vector(1.0, 2.0, 3.0))),
             // Sketch to part
             C("extrude", [Plate], () => Ops.Extrude(Plate, 5)),
-            C("extrude taper", [Circle], () => Ops.Extrude(Circle, 5, taper: 10)),
-            C("extrude until", [Plate, Sphere], () => Ops.Extrude(Plate.Moved(new Location((0.0, 0.0, -10.0))), dir: (0, 0, 1), until: Until.Next, target: Sphere)),
-            C("revolve", [Plate], () => Ops.Revolve(Plate.Moved(new Location((10.0, 0.0, 0.0))), Axis.Y, 180)),
-            C("loft", [Circle, Plate], () => Ops.Loft([Circle, Plate.Moved(new Location((0.0, 0.0, 5.0)))])),
+            C("extrude taper", [Circle], () => Ops.Extrude(Circle, 5, new Ops.ExtrudeOptions { Taper = 10 })),
+            C("extrude until", [Plate, Sphere], () => Ops.Extrude(Plate.Moved(new Location(new Vector(0.0, 0.0, -10.0))), Until.Next, Sphere, new Ops.ExtrudeOptions { Direction = new Vector(0, 0, 1) })),
+            C("revolve", [Plate], () => Ops.Revolve(Plate.Moved(new Location(new Vector(10.0, 0.0, 0.0))), Axis.Y, 180)),
+            C("loft", [Circle, Plate], () => Ops.Loft([Circle, Plate.Moved(new Location(new Vector(0.0, 0.0, 5.0)))])),
             C("sweep", [Circle, Path], () => Ops.Sweep(Circle.Moved(new Location(Path.LocationAt(0))), Path)),
             C("thicken", [Plate], () => Ops.Thicken(Plate, 1)),
             C("make face", [RectWire], () => Ops.MakeFace(RectWire.Edges())),
             C("make hull", [ArcEdge, LineEdge], () => Ops.MakeHull([ArcEdge, LineEdge])),
             C("trace", [Spline], () => Ops.Trace([Spline], 0.5)),
-            C("full round", [Slot], () => Ops.FullRound(Slot.Edges().SortBy(Axis.X)[0])),
+            C("full round", [Slot], () => Ops.FullRound(Slot.Edges().OrderBy(Axis.X)[0])),
             // 2D
             C("face fillet 2d", [Plate], () => Plate.Fillet2D(1, Plate.Vertices())),
             C("face chamfer 2d", [Plate], () => Plate.Chamfer2D(1, 1, Plate.Vertices())),
@@ -90,11 +90,11 @@ public class InputsUnchangedTests
             C("wire offset 2d", [RectWire], () => RectWire.Offset2D(1)),
             C("constrained arcs", [ArcEdge, LineEdge], () => Edge.MakeConstrainedArcs(ArcEdge, LineEdge, 1.0)),
             C("constrained lines", [ArcEdge], () => Edge.MakeConstrainedLines(ArcEdge, new Vector(6, 6))),
-            C("fillet polyline", [], () => new FilletPolyline([(0.0, 0.0), (5.0, 0.0), (5.0, 5.0)], 1)),
+            C("fillet polyline", [], () => new FilletPolyline([new Vector(0.0, 0.0), new Vector(5.0, 0.0), new Vector(5.0, 5.0)], 1)),
             C("rounded rectangle", [], () => new RectangleRounded(6, 4, 1)),
             // Curves
             C("trim to other", [Spline, LineEdge], () => Spline.TrimToOther(LineEdge)),
-            C("project to shape", [ArcEdge, Box], () => ArcEdge.Moved(new Location((5.0, 5.0, 20.0))).ProjectToShape(Box, new Vector(0, 0, -1))),
+            C("project to shape", [ArcEdge, Box], () => ArcEdge.Moved(new Location(new Vector(5.0, 5.0, 20.0))).ProjectToShape(Box, new Vector(0, 0, -1))),
             C("find intersections", [Spline, LineEdge], () => Spline.FindIntersectionPoints(LineEdge)),
             // Measures, meshes and the rest
             C("bounding box", [Box], () => Box.BoundingBox()),
@@ -104,9 +104,9 @@ public class InputsUnchangedTests
             C("triangulate", [Fused], () => Fused.Triangulate(0.01)),
             C("triangulate free edge", [Spline], () => Spline.Triangulate(0.01)),
             C("triangulate tree", [Box, MovedBox], () => Compound.Assembly([Box, MovedBox]).TriangulateTree()),
-            C("selectors by name", [Fused], () => Fused.Faces().SortBy("Area").GroupBy("GeomType").Count + Fused.Edges().FilterBy("IsClosed").Count),
+            C("selectors by value", [Fused], () => Fused.Faces().OrderBy(ShapeKey.Area).GroupByValue(f => f.GeomType).Count + Fused.Edges().Count(e => e.IsClosed)),
             C("selector for a pick", [Fused], () => Selector.For(Fused, Fused.Faces()[0])),
-            C("distance", [Box, Sphere], () => Box.DistanceToWithClosestPoints(Sphere.Moved(new Location((20.0, 0.0, 0.0))))),
+            C("distance", [Box, Sphere], () => Box.DistanceToWithClosestPoints(Sphere.Moved(new Location(new Vector(20.0, 0.0, 0.0))))),
             C("surface intersections", [Sphere], () => Sphere.FindIntersectionPoints(Axis.X)),
             C("clean", [Fused], () => Fused.Clean()),
             C("fix", [Fused], () => Fused.Fix()),

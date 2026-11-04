@@ -178,8 +178,8 @@ public static class OneD
             var tangent = curve.Derivatives(param, 1).D1;
             var uv1 = pcurve1!.Evaluate(param);
             var uv2 = pcurve2!.Evaluate(param);
-            var normal1 = TopoUtil.FaceNormalVector(face1, uv1.X, uv1.Y).ToGpVec();
-            var normal2 = TopoUtil.FaceNormalVector(face2, uv2.X, uv2.Y).ToGpVec();
+            var normal1 = TopoUtil.FaceNormalVector(face1, uv1.X, uv1.Y).ToVector3D();
+            var normal2 = TopoUtil.FaceNormalVector(face2, uv2.X, uv2.Y).ToVector3D();
             if (Math.Min(tangent.Magnitude, Math.Min(normal1.Magnitude, normal2.Magnitude)) < 1e-12)
                 continue;
             tangent = tangent.Normalized();
@@ -384,7 +384,8 @@ public abstract partial class Shape1D
             ? topoWire.Offset2D(signedDistance, MakePlaneFace(new Plane(start, zDir: sn)), options)
             : topoWire.Offset2D(signedDistance, options);
         if (!offsetted.TryGetValue(out var built))
-            throw new InvalidOperationException($"2D offset failed with distance {distance}");
+            throw Failures.Expected(ModelingDiagnostics.OffsetFailed, $"The offset by {Formatting.Number(distance)} in the plane failed.",
+                                    offsetted.Diagnostics);
         var obj = TopoUtil.Downcast(built.Shape);
         if (obj.IsCompound())
             obj = TopoUtil.UnwrapCompound((global::Kerf.Topology.Compound)obj);
@@ -398,9 +399,8 @@ public abstract partial class Shape1D
         {
             // Remove the end arcs
             Vector[] endpoints = [line.PositionAt(0), line.PositionAt(1)];
-            var offsetEdges = offsetWire.Edges().FilterBy(
-                e => e.GeomType == GeomType.Circle && endpoints.Any(pt => (e.ArcCenter - pt).Length < Constants.Tolerance),
-                reverse: true);
+            var offsetEdges = offsetWire.Edges().Where(
+                e => !(e.GeomType == GeomType.Circle && endpoints.Any(pt => (e.ArcCenter - pt).Length < Constants.Tolerance))).ToShapeList();
             var wires = OneD.EdgesToWires(offsetEdges);
             if (normal is null)
             {

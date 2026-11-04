@@ -112,13 +112,13 @@ public sealed class Matrix
     }
 
     /// <summary>A new OCCT gp_GTrsf for this matrix.</summary>
-    public GeneralTransform3D ToGpGTrsf() => Copy(GTrsf);
+    public GeneralTransform3D ToGeneralTransform3D() => Copy(GTrsf);
 
     /// <summary>This matrix followed by a rotation about an axis by an angle in degrees.</summary>
     public Matrix Rotated(Axis axis, double angle)
     {
         var rotation = new Transform3D();
-        var ax1 = axis.ToGpAx1();
+        var ax1 = axis.ToAxis3D();
         rotation = rotation.WithRotation(ax1, angle * Constants.DegToRad);
         var g = new GeneralTransform3D(rotation);
         return new Matrix(GTrsf.Multiplied(g), owned: true);

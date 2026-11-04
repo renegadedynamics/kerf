@@ -42,20 +42,20 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     public Vector ZDir { get; }
 
 #pragma warning disable CS1591 // The standard planes are described in the remarks
-    public static Plane XY { get; } = new((0, 0, 0), (1, 0, 0), (0, 0, 1));
-    public static Plane YZ { get; } = new((0, 0, 0), (0, 1, 0), (1, 0, 0));
-    public static Plane ZX { get; } = new((0, 0, 0), (0, 0, 1), (0, 1, 0));
-    public static Plane XZ { get; } = new((0, 0, 0), (1, 0, 0), (0, -1, 0));
-    public static Plane YX { get; } = new((0, 0, 0), (0, 1, 0), (0, 0, -1));
-    public static Plane ZY { get; } = new((0, 0, 0), (0, 0, 1), (-1, 0, 0));
-    public static Plane Front { get; } = new((0, 0, 0), (1, 0, 0), (0, -1, 0));
-    public static Plane Back { get; } = new((0, 0, 0), (-1, 0, 0), (0, 1, 0));
-    public static Plane Left { get; } = new((0, 0, 0), (0, -1, 0), (-1, 0, 0));
-    public static Plane Right { get; } = new((0, 0, 0), (0, 1, 0), (1, 0, 0));
-    public static Plane Top { get; } = new((0, 0, 0), (1, 0, 0), (0, 0, 1));
-    public static Plane Bottom { get; } = new((0, 0, 0), (1, 0, 0), (0, 0, -1));
+    public static Plane XY { get; } = new(new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(0, 0, 1));
+    public static Plane YZ { get; } = new(new Vector(0, 0, 0), new Vector(0, 1, 0), new Vector(1, 0, 0));
+    public static Plane ZX { get; } = new(new Vector(0, 0, 0), new Vector(0, 0, 1), new Vector(0, 1, 0));
+    public static Plane XZ { get; } = new(new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(0, -1, 0));
+    public static Plane YX { get; } = new(new Vector(0, 0, 0), new Vector(0, 1, 0), new Vector(0, 0, -1));
+    public static Plane ZY { get; } = new(new Vector(0, 0, 0), new Vector(0, 0, 1), new Vector(-1, 0, 0));
+    public static Plane Front { get; } = new(new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(0, -1, 0));
+    public static Plane Back { get; } = new(new Vector(0, 0, 0), new Vector(-1, 0, 0), new Vector(0, 1, 0));
+    public static Plane Left { get; } = new(new Vector(0, 0, 0), new Vector(0, -1, 0), new Vector(-1, 0, 0));
+    public static Plane Right { get; } = new(new Vector(0, 0, 0), new Vector(0, 1, 0), new Vector(1, 0, 0));
+    public static Plane Top { get; } = new(new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(0, 0, 1));
+    public static Plane Bottom { get; } = new(new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(0, 0, -1));
     public static Plane Isometric { get; } = new(
-        (0, 0, 0), (1 / Math.Sqrt(2), 1 / Math.Sqrt(2), 0), (1 / Math.Sqrt(3), -1 / Math.Sqrt(3), 1 / Math.Sqrt(3)));
+        new Vector(0, 0, 0), new Vector(1 / Math.Sqrt(2), 1 / Math.Sqrt(2), 0), new Vector(1 / Math.Sqrt(3), -1 / Math.Sqrt(3), 1 / Math.Sqrt(3)));
 #pragma warning restore CS1591
 
     /// <summary>Wraps a gp_Pln this plane takes ownership of, making it right-handed if it isn't.</summary>
@@ -139,14 +139,14 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     public static Plane FromXAndYDirections(Vector origin, Vector xDir, Vector yDir)
     {
         if (xDir.Length == 0.0)
-            throw new ArgumentException("x_dir must be non null", nameof(xDir));
+            throw new ArgumentException("The X direction can't be null.", nameof(xDir));
         if (yDir.Length == 0.0)
-            throw new ArgumentException("y_dir must be non null", nameof(yDir));
+            throw new ArgumentException("The Y direction can't be null.", nameof(yDir));
         var x = xDir.Normalized();
         var yInput = yDir.Normalized();
         var zFromXy = x.Cross(yInput);
         if (zFromXy.Length == 0.0)
-            throw new ArgumentException("x_dir and y_dir must not be parallel", nameof(yDir));
+            throw new ArgumentException("The X and Y directions can't be parallel.", nameof(yDir));
         var z = zFromXy.Normalized();
         var y = z.Cross(x).Normalized();
         x = y.Cross(z).Normalized();
@@ -181,14 +181,14 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     static Plane3D Build(Vector origin, Vector? xDir, Vector zDir)
     {
         if (zDir.Length == 0.0)
-            throw new ArgumentException("z_dir must be non null", nameof(zDir));
+            throw new ArgumentException("The Z direction can't be null.", nameof(zDir));
         var z = zDir.Normalized();
         Vector x;
         if (xDir is null)
         {
             // OCCT picks an X direction perpendicular to the normal
-            var p = origin.ToGpPnt();
-            var n = z.ToGpDir();
+            var p = origin.ToPoint3D();
+            var n = z.ToDirection3D();
             var ax3 = new CoordinateSystem(p, n);
             var xd = ax3.XDirection;
             x = new Vector(xd).Normalized();
@@ -196,7 +196,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         else
         {
             if (xDir.Value.Length == 0.0)
-                throw new ArgumentException("x_dir must be non null", nameof(xDir));
+                throw new ArgumentException("The X direction can't be null.", nameof(xDir));
             x = xDir.Value.Normalized();
         }
         return Ax3Plane(origin, z, x);
@@ -204,9 +204,9 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
 
     static Plane3D Ax3Plane(Vector origin, Vector z, Vector x)
     {
-        var p = origin.ToGpPnt();
-        var n = z.ToGpDir();
-        var vx = x.ToGpDir();
+        var p = origin.ToPoint3D();
+        var n = z.ToDirection3D();
+        var vx = x.ToDirection3D();
         var ax3 = new CoordinateSystem(p, n, vx);
         return new Plane3D(ax3);
     }
@@ -244,13 +244,13 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     }
 
     /// <summary>The OCCT gp_Pln of this plane.</summary>
-    public Plane3D ToGpPln() => Pln;
+    public Plane3D ToPlane3D() => Pln;
 
     /// <summary>A new OCCT gp_Ax3 for this plane's coordinate system.</summary>
-    public CoordinateSystem ToGpAx3() => Pln.Position;
+    public CoordinateSystem ToCoordinateSystem() => Pln.Position;
 
     /// <summary>A new OCCT gp_Ax2 for this plane's coordinate system.</summary>
-    public Frame3D ToGpAx2()
+    public Frame3D ToFrame3D()
     {
         var ax3 = Pln.Position;
         return ax3.Frame;
@@ -268,8 +268,8 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     /// <summary>This plane with a new X direction, projected to be perpendicular to the normal.</summary>
     public Plane WithXDir(Vector xDir)
     {
-        var ax2 = ToGpAx2();
-        var d = xDir.ToGpDir();
+        var ax2 = ToFrame3D();
+        var d = xDir.ToDirection3D();
         ax2 = ax2.WithXDirection(d);
         var ax3 = new CoordinateSystem(ax2);
         return new Plane(new Plane3D(ax3), owned: true);
@@ -278,8 +278,8 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     /// <summary>This plane with a new Y direction, projected to be perpendicular to the normal.</summary>
     public Plane WithYDir(Vector yDir)
     {
-        var ax2 = ToGpAx2();
-        var d = yDir.ToGpDir();
+        var ax2 = ToFrame3D();
+        var d = yDir.ToDirection3D();
         ax2 = ax2.WithYDirection(d);
         var ax3 = new CoordinateSystem(ax2);
         return new Plane(new Plane3D(ax3), owned: true);
@@ -307,7 +307,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     }
 
     /// <summary>This plane with its origin moved by local (x, y) coordinates; the directions are unchanged.</summary>
-    public Plane ShiftOrigin((double X, double Y) local) => Create(FromLocalCoords(new Vector(local.X, local.Y)), XDir, ZDir);
+    public Plane ShiftOriginBy(double x, double y) => Create(FromLocalCoords(new Vector(x, y)), XDir, ZDir);
 
     /// <summary>This plane with its origin moved to where an axis crosses it; the directions are unchanged.</summary>
     /// <exception cref="ArgumentException">The axis doesn't cross the plane at a single point.</exception>
@@ -397,15 +397,15 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     /// <summary>True if the point lies in the plane, within the tolerance.</summary>
     public bool Contains(Vector point, double tolerance = Constants.Tolerance)
     {
-        var p = point.ToGpPnt();
+        var p = point.ToPoint3D();
         return Pln.Contains(p, tolerance);
     }
 
     /// <summary>True if the whole axis lies in the plane, within the tolerance (linear and angular).</summary>
     public bool Contains(Axis axis, double tolerance = Constants.Tolerance)
     {
-        var p = axis.Position.ToGpPnt();
-        var d = axis.Direction.ToGpDir();
+        var p = axis.Position.ToPoint3D();
+        var d = axis.Direction.ToDirection3D();
         var line = new Line3D(p, d);
         return Pln.Contains(line, tolerance, tolerance);
     }
@@ -441,13 +441,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
 
     public static bool operator ==(Plane? a, Plane? b) => a is null ? b is null : a.Equals(b);
     public static bool operator !=(Plane? a, Plane? b) => !(a == b);
-    public static IGeometry? operator &(Plane a, Plane b) => a.Intersect(b);
-    public static IGeometry? operator &(Plane a, Axis b) => a.Intersect(b);
-    public static IGeometry? operator &(Plane a, Location b) => a.Intersect(b);
-    public static Vector? operator &(Plane a, Vector b) => a.Intersect(b);
 
-    /// <summary>Where a shape meets this plane (the shape's <see cref="Shape.Intersect(object[])"/>).</summary>
-    public static ShapeList<Shape> operator &(Plane a, Shape b) => a.Intersect(b);
 
     /// <summary>Where a shape meets this plane (the shape's <see cref="Shape.Intersect(object[])"/>), empty if nowhere.</summary>
     public ShapeList<Shape> Intersect(Shape shape) => shape.Intersect(this);
@@ -458,7 +452,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     {
         if (Contains(axis))
             return axis;
-        var ax1 = axis.ToGpAx1();
+        var ax1 = axis.ToAxis3D();
         var line = new LineCurve3D(ax1);
         var ax3 = Pln.Position;
         var plane = new PlaneSurface(ax3);

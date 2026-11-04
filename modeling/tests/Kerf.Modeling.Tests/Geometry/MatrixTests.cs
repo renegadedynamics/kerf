@@ -27,7 +27,7 @@ public class MatrixTests
 
     static TransformForm Form(Matrix m)
     {
-        var g = m.ToGpGTrsf();
+        var g = m.ToGeneralTransform3D();
         return g.Form;
     }
 
@@ -69,14 +69,14 @@ public class MatrixTests
         AlmostEqual(rotateZ30, mz);
 
         var v = new Vector(1, 0, 0);
-        Check.AlmostEqual((r32, 0.5, 0), mz.Multiply(v), 7);
+        Check.AlmostEqual(new Vector(r32, 0.5, 0), mz.Multiply(v), 7);
 
         // The same rotation written as values multiplies a vector too
-        Check.AlmostEqual((r32, 0.5, 0), new Matrix(rotateZ30).Multiply(v), 7);
+        Check.AlmostEqual(new Vector(r32, 0.5, 0), new Matrix(rotateZ30).Multiply(v), 7);
 
         // A matrix built from values, rotated afterwards
         var listIdentity = new Matrix(new double[,] { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } }).Rotated(Axis.Z, 30);
-        Check.AlmostEqual((r32, 0.5, 0), listIdentity.Multiply(v), 7);
+        Check.AlmostEqual(new Vector(r32, 0.5, 0), listIdentity.Multiply(v), 7);
 
         AlmostEqual(new double[,]
         {
@@ -108,7 +108,7 @@ public class MatrixTests
         };
         var fromTrsf = new Matrix(rotX);
         AlmostEqual(rotXMatrix, fromTrsf);
-        var g = fromTrsf.ToGpGTrsf();
+        var g = fromTrsf.ToGeneralTransform3D();
         AlmostEqual(rotXMatrix, new Matrix(g));
     }
 
@@ -117,7 +117,7 @@ public class MatrixTests
     {
         var translation = new Matrix(new double[,] { { 1, 0, 0, 1 }, { 0, 1, 0, 2 }, { 0, 0, 1, 3 }, { 0, 0, 0, 1 } });
         Assert.NotEqual(TransformForm.Other, Form(translation));
-        Check.AlmostEqual((11, 22, 33), translation.Multiply(new Vector(10, 20, 30)), 7);
+        Check.AlmostEqual(new Vector(11, 22, 33), translation.Multiply(new Vector(10, 20, 30)), 7);
         Assert.Equal(1.0, translation[0, 0]);
         Assert.Equal(2.0, translation[1, 3]);
     }
@@ -128,10 +128,10 @@ public class MatrixTests
         double c = Math.Cos(Math.PI / 6), s = Math.Sin(Math.PI / 6);
         var rotationScaleMirror = new Matrix(new double[,] { { -2 * c, 2 * s, 0, 5 }, { 2 * s, 2 * c, 0, 0 }, { 0, 0, 2, 0 } });
         Assert.NotEqual(TransformForm.Other, Form(rotationScaleMirror));
-        Check.AlmostEqual((5 - 2 * c, 2 * s, 0), rotationScaleMirror.Multiply(new Vector(1, 0, 0)), 7);
+        Check.AlmostEqual(new Vector(5 - 2 * c, 2 * s, 0), rotationScaleMirror.Multiply(new Vector(1, 0, 0)), 7);
 
         // A similarity converts to a gp_Trsf, so it can place a shape
-        var g = rotationScaleMirror.ToGpGTrsf();
+        var g = rotationScaleMirror.ToGeneralTransform3D();
         var trsf = g.ToTransform();
     }
 
@@ -158,10 +158,10 @@ public class MatrixTests
     public void SvdOfRotationScaleAndMirror()
     {
         double c = Math.Cos(Math.PI / 6), s = Math.Sin(Math.PI / 6);
-        Check.AlmostEqual((1, 1, 1), Reconstruct(new Matrix(new double[,] { { c, -s, 0, 0 }, { s, c, 0, 0 }, { 0, 0, 1, 0 } })), 9);
-        Check.AlmostEqual((2, 2, 2), Reconstruct(new Matrix(new double[,] { { 2, 0, 0, 5 }, { 0, 2, 0, 0 }, { 0, 0, 2, 0 } })), 9);
-        Check.AlmostEqual((3, 2, 1), Reconstruct(new Matrix(new double[,] { { 3, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 2, 0 } })), 9);
-        Check.AlmostEqual((1, 1, -1), Reconstruct(new Matrix(new double[,] { { -1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } })), 9);
+        Check.AlmostEqual(new Vector(1, 1, 1), Reconstruct(new Matrix(new double[,] { { c, -s, 0, 0 }, { s, c, 0, 0 }, { 0, 0, 1, 0 } })), 9);
+        Check.AlmostEqual(new Vector(2, 2, 2), Reconstruct(new Matrix(new double[,] { { 2, 0, 0, 5 }, { 0, 2, 0, 0 }, { 0, 0, 2, 0 } })), 9);
+        Check.AlmostEqual(new Vector(3, 2, 1), Reconstruct(new Matrix(new double[,] { { 3, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 2, 0 } })), 9);
+        Check.AlmostEqual(new Vector(1, 1, -1), Reconstruct(new Matrix(new double[,] { { -1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } })), 9);
     }
 
     [Fact]
@@ -169,7 +169,7 @@ public class MatrixTests
     {
         // A map acting only in a plane sorts its zero scale last
         var (left, scales, _) = new Matrix(new double[,] { { 0.2, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 0, 0 } }).Svd();
-        Check.AlmostEqual((1, 0.2, 0), scales, 9);
+        Check.AlmostEqual(new Vector(1, 0.2, 0), scales, 9);
         Check.AlmostEqual(0, left[2, 0], 9);
         Check.AlmostEqual(0, left[2, 1], 9);
         Check.AlmostEqual(1, Math.Abs(left[2, 2]), 9);
@@ -188,7 +188,7 @@ public class MatrixTests
             _ => new double[,] { { 2, 0, 0, 1 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } },
         };
         var original = new Matrix(rows);
-        var g = original.ToGpGTrsf();
+        var g = original.ToGeneralTransform3D();
         var copied = new Matrix(g);
         for (int r = 0; r < 3; r++)
             for (int col = 0; col < 4; col++)
@@ -202,13 +202,13 @@ public class MatrixTests
     {
         var nonUniform = new Matrix(new double[,] { { 2, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } });
         Assert.Equal(TransformForm.Other, Form(nonUniform));
-        Check.AlmostEqual((2, 1, 1), nonUniform.Multiply(new Vector(1, 1, 1)), 7);
+        Check.AlmostEqual(new Vector(2, 1, 1), nonUniform.Multiply(new Vector(1, 1, 1)), 7);
 
         var shear = new Matrix(new double[,] { { 1, 0.5, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } });
-        Check.AlmostEqual((20, 20, 30), shear.Multiply(new Vector(10, 20, 30)), 7);
+        Check.AlmostEqual(new Vector(20, 20, 30), shear.Multiply(new Vector(10, 20, 30)), 7);
 
         var projection = new Matrix(new double[,] { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 0, 0 } });
-        Check.AlmostEqual((10, 20, 0), projection.Multiply(new Vector(10, 20, 30)), 7);
+        Check.AlmostEqual(new Vector(10, 20, 0), projection.Multiply(new Vector(10, 20, 30)), 7);
     }
 
     [Fact]

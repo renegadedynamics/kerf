@@ -61,7 +61,7 @@ public sealed class BoundBox
     /// as OCCT's <c>Bnd_Box(min, max)</c> keeps them); its extents are the box around both.
     /// </summary>
     internal static BoundBox FromCorners(Vector min, Vector max) =>
-        new(BoundingBox.Of([min.ToGpPnt(), max.ToGpPnt()]), min, max);
+        new(BoundingBox.Of([min.ToPoint3D(), max.ToPoint3D()]), min, max);
 
     BoundBox(BoundingBox extents, Vector min, Vector max)
     {
@@ -125,8 +125,8 @@ public sealed class BoundBox
     /// <summary>A box enlarged to include a point, with a gap of <paramref name="tolerance"/> (default <see cref="Constants.LooseTolerance"/>).</summary>
     public BoundBox Add(Vector point, double? tolerance = null) =>
         // As Bnd_Box: the gap asked for applies only to a box started from nothing; one added to keeps its own
-        IsEmpty ? new BoundBox(BoundingBox.Of(point.ToGpPnt()), Math.Abs(tolerance ?? Constants.LooseTolerance))
-                : new BoundBox(_extents.Including(point.ToGpPnt()), _gap);
+        IsEmpty ? new BoundBox(BoundingBox.Of(point.ToPoint3D()), Math.Abs(tolerance ?? Constants.LooseTolerance))
+                : new BoundBox(_extents.Including(point.ToPoint3D()), _gap);
 
     /// <summary>A box enclosing this and another, with a gap of <paramref name="tolerance"/> (default <see cref="Constants.LooseTolerance"/>).</summary>
     public BoundBox Add(BoundBox other, double? tolerance = null)

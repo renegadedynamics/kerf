@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Kerf.Topology;
 
 namespace Kerf.Modeling;
 
@@ -89,7 +90,7 @@ internal static class Failures
         return Diagnostic.Error(InvalidArgument, newline < 0 ? message : message[..newline].TrimEnd());
     }
 
-    private static readonly DiagnosticCode InvalidArgument = new("kernel.invalid-argument");
+    private static DiagnosticCode InvalidArgument => ModelingDiagnostics.KernelInvalidArgument;
 
     /// <summary>
     /// A kernel operation's value, or, if it failed, a <see cref="KerfException"/> with its diagnostics that says what was
@@ -103,6 +104,41 @@ internal static class Failures
     {
         if (result.IsFailure)
             throw In(what(), new KerfException(result.Diagnostics));
+    }
+
+    /// <summary>
+    /// The exception for a failure the modelling layer detects that a caller should expect (a fillet that can't be
+    /// built): an error with <paramref name="code"/> and <paramref name="message"/>, then the kernel's diagnostics that
+    /// led to it, if any.
+    /// </summary>
+    internal static KerfException Expected(DiagnosticCode code, string message, ImmutableArray<Diagnostic> kernel = default,
+                                           Exception? inner = null, params ReadOnlySpan<global::Kerf.Topology.Shape> shapes)
+    {
+        var error = Diagnostic.Error(code, message);
+        if (!shapes.IsEmpty)
+            error = error.WithShapes(shapes);
+        return new KerfException([error, .. kernel.IsDefault ? [] : kernel], inner);
+    }
+
+    /// <summary>
+    /// Runs an operation, giving its value, or its failure as a result: a <see cref="KerfException"/>'s diagnostics, or a
+    /// kernel failure that escaped as another exception. Misuse (the modelling layer's own argument checks) and
+    /// cancellation still throw.
+    /// </summary>
+    internal static Result<T> Try<T>(Func<T> operation)
+    {
+        try
+        {
+            return Result<T>.Success(operation());
+        }
+        catch (KerfException e)
+        {
+            return Result<T>.Failure(e.Diagnostics);
+        }
+        catch (Exception e) when (e is not OperationCanceledException && IsKernelFailure(e))
+        {
+            return Result<T>.Failure(In("operation", e).Diagnostics);
+        }
     }
 
     /// <summary>The exception for a kernel failure met while doing <paramref name="what"/>.</summary>

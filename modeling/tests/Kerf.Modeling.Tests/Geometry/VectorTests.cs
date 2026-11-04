@@ -14,17 +14,17 @@ public class VectorTests
     {
         var gpVec = new Vector3D(1, 2, 3);
         var gpPnt = new Point3D(1, 2, 3);
-        Vector[] full = [new(1, 2, 3), (1, 2, 3), new(gpVec), new([1, 2, 3]), new(gpPnt)];
+        Vector[] full = [new(1, 2, 3), new Vector(1, 2, 3), new(gpVec), new([1, 2, 3]), new(gpPnt)];
         foreach (var v in full)
-            Check.AlmostEqual((1, 2, 3), v, 4);
+            Check.AlmostEqual(new Vector(1, 2, 3), v, 4);
 
-        Vector[] twoD = [(1, 2), new([1, 2]), new(1, 2)];
+        Vector[] twoD = [new Vector(1, 2), new([1, 2]), new(1, 2)];
         foreach (var v in twoD)
-            Check.AlmostEqual((1, 2, 0), v, 4);
+            Check.AlmostEqual(new Vector(1, 2, 0), v, 4);
 
-        Check.AlmostEqual((0, 0, 0), new Vector(), 4);
-        Check.AlmostEqual((1, 2, 3), new Vector([1, 2, 3, 4]), 4);
-        Check.AlmostEqual((1, 0, 0), new Vector([1]), 4);
+        Check.AlmostEqual(new Vector(0, 0, 0), new Vector(), 4);
+        Check.AlmostEqual(new Vector(1, 2, 3), new Vector([1, 2, 3, 4]), 4);
+        Check.AlmostEqual(new Vector(1, 0, 0), new Vector([1]), 4);
     }
 
     [Fact]
@@ -33,9 +33,9 @@ public class VectorTests
         var x = new Vector(1, 0, 1).Rotate(Axis.X, 45);
         var y = new Vector(1, 2, 1).Rotate(Axis.Y, 45);
         var z = new Vector(-1, -1, 3).Rotate(Axis.Z, 45);
-        Check.AlmostEqual((1, -Math.Sqrt(2) / 2, Math.Sqrt(2) / 2), x, 7);
-        Check.AlmostEqual((Math.Sqrt(2), 2, 0), y, 7);
-        Check.AlmostEqual((0, -Math.Sqrt(2), 3), z, 7);
+        Check.AlmostEqual(new Vector(1, -Math.Sqrt(2) / 2, Math.Sqrt(2) / 2), x, 7);
+        Check.AlmostEqual(new Vector(Math.Sqrt(2), 2, 0), y, 7);
+        Check.AlmostEqual(new Vector(0, -Math.Sqrt(2), 3), z, 7);
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class VectorTests
     public void Dot() => Assert.Equal(2.0, new Vector(2, 2, 2).Dot(new Vector(1, -1, 1)));
 
     [Fact]
-    public void Add() => Check.AlmostEqual((1, 2, 3), new Vector(1, 2, 0) + new Vector(0, 0, 3), 3);
+    public void Add() => Check.AlmostEqual(new Vector(1, 2, 3), new Vector(1, 2, 0) + new Vector(0, 0, 3), 3);
 
     [Fact]
     public void Operators()
@@ -120,8 +120,8 @@ public class VectorTests
     public void Project()
     {
         const int places = 9;
-        var point = new Vector(10, 11, 12).ProjectToPlane(new Plane((5, 7, 9), (1, 0, 0), (1, 2, 3)));
-        Check.AlmostEqual((59.0 / 7, 55.0 / 7, 51.0 / 7), point, places);
+        var point = new Vector(10, 11, 12).ProjectToPlane(new Plane(new Vector(5, 7, 9), new Vector(1, 0, 0), new Vector(1, 2, 3)));
+        Check.AlmostEqual(new Vector(59.0 / 7, 55.0 / 7, 51.0 / 7), point, places);
 
         var vec = new Vector(10, 10, 10);
         var line = new Vector(3, 4, 5);
@@ -150,13 +150,13 @@ public class VectorTests
     }
 
     [Fact]
-    public void Reverse() => Check.AlmostEqual((-1, -2, -3), new Vector(1, 2, 3).Reverse(), 7);
+    public void Reverse() => Check.AlmostEqual(new Vector(-1, -2, -3), new Vector(1, 2, 3).Reverse(), 7);
 
     [Fact]
     public void Sum()
     {
         Vector[] vectors = [new(1, 2, 3), new(4, 5, 6), new(7, 8, 9)];
-        Check.AlmostEqual((12, 15, 18), vectors.Aggregate((a, b) => a + b), 5);
+        Check.AlmostEqual(new Vector(12, 15, 18), vectors.Aggregate((a, b) => a + b), 5);
     }
 
     [Fact]
@@ -179,7 +179,7 @@ public class VectorTests
 
         // Matrices that aren't similarities apply too
         var stretch = new Matrix(new double[,] { { 2, 0, 0, 1 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } });
-        Check.AlmostEqual((3, 2, 3), a.Transform(stretch), 7);
+        Check.AlmostEqual(new Vector(3, 2, 3), a.Transform(stretch), 7);
         Check.AlmostEqual(new Vector(2, 2, 3).Normalized(), a.Transform(stretch, isDirection: true), 7);
         Assert.Equal(new Vector(1, 2, 4), a.Transform(pxyO1.ReverseTransform));
         Assert.Equal(a.Normalized(), a.Transform(pxyO1.ReverseTransform, isDirection: true));
@@ -189,17 +189,17 @@ public class VectorTests
     public void Intersect()
     {
         var v1 = new Vector(1, 2, 3);
-        Check.AlmostEqual((1, 2, 3), (v1 & new Vector(1, 2, 3))!.Value, 5);
-        Assert.Null(v1 & new Vector(0, 0, 0));
+        Check.AlmostEqual(new Vector(1, 2, 3), (v1.Intersect(new Vector(1, 2, 3)))!.Value, 5);
+        Assert.Null(v1.Intersect(new Vector(0, 0, 0)));
 
-        Check.AlmostEqual((1, 2, 3), (v1 & new Location((1, 2, 3)))!.Value, 5);
-        Assert.Null(v1 & new Location());
+        Check.AlmostEqual(new Vector(1, 2, 3), (v1.Intersect(new Location(new Vector(1, 2, 3))))!.Value, 5);
+        Assert.Null(v1.Intersect(new Location()));
 
-        Check.AlmostEqual((1, 2, 3), (v1 & new Axis((1, 2, 3), (1, 0, 0)))!.Value, 5);
-        Assert.Null(v1 & Axis.X);
+        Check.AlmostEqual(new Vector(1, 2, 3), (v1.Intersect(new Axis(new Vector(1, 2, 3), new Vector(1, 0, 0))))!.Value, 5);
+        Assert.Null(v1.Intersect(Axis.X));
 
-        Check.AlmostEqual((1, 2, 3), (v1 & new Plane((1, 2, 3)))!.Value, 5);
-        Assert.Null(v1 & Plane.XY);
+        Check.AlmostEqual(new Vector(1, 2, 3), (v1.Intersect(new Plane(new Vector(1, 2, 3))))!.Value, 5);
+        Assert.Null(v1.Intersect(Plane.XY));
     }
 
     [Fact]

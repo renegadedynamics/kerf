@@ -1,12 +1,18 @@
 namespace Kerf.Modeling;
 
-/// <summary>Python's numeric behaviour, where the port must match it exactly.</summary>
-internal static class PyMath
+/// <summary>
+/// The numerics whose exact results build123d's own decide: a floored remainder, and the two minimizers it calls from
+/// SciPy. Each is written out here so the layer gives build123d's results to the last bit.
+/// </summary>
+internal static class Numerics
 {
-    /// <summary>Python's <c>%</c> on floats: the result takes the sign of the divisor.</summary>
-    internal static double Mod(double a, double b)
+    /// <summary>
+    /// The remainder of a floored division, which takes the sign of the divisor: <c>FloorMod(-90, 360)</c> is 270, where
+    /// C#'s <c>%</c> gives -90. It keeps Python's <c>%</c> on floats, which build123d normalises angles and parameters with.
+    /// </summary>
+    internal static double FloorMod(double a, double b)
     {
-        // As CPython computes it: fmod, then moved into the divisor's sign
+        // The truncated remainder, then moved into the divisor's sign (CPython's float_rem)
         var r = a % b;
         if (r != 0 && (r < 0) != (b < 0))
             r += b;
@@ -14,8 +20,9 @@ internal static class PyMath
     }
 
     /// <summary>
-    /// SciPy's bounded scalar minimisation (<c>minimize_scalar(method="bounded")</c>, Brent's method on an interval),
-    /// returning the minimising x and the function's value there.
+    /// The minimum of a function on an interval by Brent's method (golden sections with parabolic steps), returning the
+    /// minimising x and the function's value there. It keeps SciPy's <c>minimize_scalar(method="bounded")</c>, step for
+    /// step, which build123d calls to find a parameter on an edge.
     /// </summary>
     internal static (double X, double Fun) MinimizeBounded(Func<double, double> func, double x1, double x2,
                                                            double xatol = 1e-5, int maxiter = 500)
@@ -107,8 +114,9 @@ internal static class PyMath
     }
 
     /// <summary>
-    /// SciPy's Nelder-Mead minimisation of a function of one variable within bounds (<c>minimize(method="Nelder-Mead",
-    /// bounds=[(lower, upper)], tol=tol)</c>), returning the minimising x.
+    /// The minimum of a function of one variable within bounds by the Nelder–Mead simplex, returning the minimising x.
+    /// It keeps SciPy's <c>minimize(method="Nelder-Mead", bounds=[(lower, upper)], tol=tol)</c>, step for step, which
+    /// build123d calls to size a tangent arc.
     /// </summary>
     internal static double MinimizeNelderMead(Func<double, double> func, double x0, double lower, double upper, double tol)
     {

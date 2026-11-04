@@ -33,7 +33,7 @@ internal static partial class TopoUtil
 
     /// <summary>Whether a point lies on a face, its boundary included, within a tolerance.</summary>
     internal static bool PointOnFace(global::Kerf.Topology.Face face, Vector point, double tolerance = Constants.Tolerance) =>
-        face.IsOnFace(point.ToGpPnt(), tolerance);
+        face.IsOnFace(point.ToPoint3D(), tolerance);
 
     /// <summary>BRepCheck_Analyzer's own defaults, serial: for the checks of single faces the modelling layer makes.</summary>
     internal static readonly ValidationOptions SerialCheck = new() { Parallel = false };
@@ -87,7 +87,7 @@ internal static partial class TopoUtil
     {
         if (!(obj.IsVertex() || obj.IsEdge() || obj.IsWire() || obj.IsFace() || obj.IsShell()))
             throw new ArgumentException($"extrude not supported for {TypeName(obj)}");
-        var vec = direction.ToGpVec();
+        var vec = direction.ToVector3D();
         var extrusion = Downcast(Failures.Get(obj.Extrude(vec), () => "extrude").Shape);
         if (extrusion.Type == global::Kerf.Topology.ShapeType.CompSolid)
             extrusion = MakeCompound(Explore(extrusion, global::Kerf.Topology.ShapeType.Solid));
@@ -226,7 +226,7 @@ public static partial class TopologyUtils
 {
     /// <summary>
     /// A key function giving each shape's topological distance from <paramref name="other"/>, for
-    /// <see cref="ShapeList{T}.SortBy{TKey}(Func{T, TKey}, bool)"/> and <c>GroupBy</c>. Distances are measured over the
+    /// <c>OrderBy</c> and <c>GroupBy</c>. Distances are measured over the
     /// whole topology of the reference shapes' shared <see cref="Shape.TopoParent"/>: the references are 0, shapes
     /// connected to them 1, and so on; unreachable shapes are infinitely far.
     /// </summary>
@@ -255,10 +255,10 @@ public static partial class TopologyUtils
         };
         var parents = sources.Select(s => s.TopoParent).ToList();
         if (parents.Any(p => p is null))
-            throw new ArgumentException("Topological distance requires shapes with a topo_parent");
+            throw new ArgumentException("Topological distance needs shapes selected from a parent shape.");
         var parent = parents[0]!;
         if (parents.Skip(1).Any(p => !parent.IsSame(p!)))
-            throw new ArgumentException("Topological distance requires a shared topo_parent");
+            throw new ArgumentException("Topological distance needs shapes selected from the same parent shape.");
 
         IEnumerable<Shape> peers = peerType switch
         {
@@ -338,9 +338,9 @@ public static partial class TopologyUtils
             if (obj.ShapeType != peerType)
                 throw new ArgumentException("Topological distance requires shapes of the same type");
             if (obj.TopoParent is null)
-                throw new ArgumentException("Topological distance requires shapes with a topo_parent");
+                throw new ArgumentException("Topological distance needs shapes selected from a parent shape.");
             if (!parent.IsSame(obj.TopoParent))
-                throw new ArgumentException("Topological distance requires a shared topo_parent");
+                throw new ArgumentException("Topological distance needs shapes selected from the same parent shape.");
             return PeerOf(obj) is { } peer && distances.TryGetValue(peer, out var d) ? d : double.PositiveInfinity;
         };
     }

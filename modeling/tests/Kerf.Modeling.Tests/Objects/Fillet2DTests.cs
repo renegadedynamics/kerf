@@ -44,8 +44,8 @@ public class Fillet2DTests
         var squaroid = square.Fillet2D(0.1, square.Vertices());
         Check.AlmostEqual(4 * (1 - 2 * 0.1) + 2 * Math.PI * 0.1, squaroid.Length, 5);
 
-        var straightWire = new Wire([Edge.MakeLine((0, 0), (1, 0)), Edge.MakeLine((1, 0), (2, 0))]);
-        var straightVertex = straightWire.Vertices().SortByDistance((1, 0, 0))[0];
+        var straightWire = new Wire([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 0), new Vector(2, 0))]);
+        var straightVertex = straightWire.Vertices().OrderByDistanceTo(new Vector(1, 0, 0))[0];
         var unmodifiedWire = straightWire.Fillet2D(0.1, [straightVertex]);
         Check.AlmostEqual(straightWire.Length, unmodifiedWire.Length, 5);
         Assert.Equal(2, unmodifiedWire.Edges().Count);
@@ -56,7 +56,7 @@ public class Fillet2DTests
     [Fact]
     public void FilletNonPlanar()
     {
-        var wire = new Wire([Edge.MakeLine((0, 0, 0), (1, 0, 0)), Edge.MakeLine((1, 0, 0), (1, 1, 0)), Edge.MakeLine((1, 1, 0), (0, 0, 1))]);
+        var wire = new Wire([Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0)), Edge.MakeLine(new Vector(1, 0, 0), new Vector(1, 1, 0)), Edge.MakeLine(new Vector(1, 1, 0), new Vector(0, 0, 1))]);
         Assert.Throws<ArgumentException>(() => wire.Fillet2D(0.1, [wire.Vertices()[1]]));
     }
 
@@ -72,11 +72,11 @@ public class Fillet2DTests
     {
         var wireLoc = (Plane.XZ * new Pos(1, 2) * new Rectangle(2, 2)).SingleWire();
         var filletedLoc = wireLoc.Fillet2D(0.2, wireLoc.Vertices());
-        Assert.Equal(4, filletedLoc.Edges().FilterBy(GeomType.Circle).Count);
+        Assert.Equal(4, filletedLoc.Edges().Where(GeomType.Circle).Count);
 
         var wireFace = Face.MakeRect(2, 2, Plane.XZ).SingleWire();
         var filletedFace = wireFace.Fillet2D(0.2, wireFace.Vertices());
-        Assert.Equal(4, filletedFace.Edges().FilterBy(GeomType.Circle).Count);
+        Assert.Equal(4, filletedFace.Edges().Where(GeomType.Circle).Count);
     }
 
     [Fact]
@@ -105,8 +105,8 @@ public class Fillet2DTests
     [Fact]
     public void WireFilletCornerIsTangentContinuousStraightWire()
     {
-        var wire = new Wire([Edge.MakeLine((0, 0), (1, 0)), Edge.MakeLine((1, 0), (2, 0))]);
-        var corner = WireFillet.Analyze(wire, wire.Vertices().SortByDistance((1, 0, 0))[0]);
+        var wire = new Wire([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 0), new Vector(2, 0))]);
+        var corner = WireFillet.Analyze(wire, wire.Vertices().OrderByDistanceTo(new Vector(1, 0, 0))[0]);
         Assert.True(WireFillet.IsTangentContinuous(corner));
     }
 
@@ -114,11 +114,11 @@ public class Fillet2DTests
     public void WireFilletCornerIsNotTangentContinuousOnRoundedCutTips()
     {
         Shape sketch = new RectangleRounded(20, 10, 2);
-        sketch -= sketch.Edges().FilterBy(GeomType.Circle).Select(e => (Shape?)(new Location(e.ArcCenter) * new Circle(2)));
+        sketch -= sketch.Edges().Where(GeomType.Circle).Select(e => (Shape)(new Location(e.ArcCenter) * new Circle(2)));
         var wire = sketch.SingleWire();
-        foreach (Vector point in new Vector[] { (-10, -3, 0), (-10, 3, 0), (-8, 5, 0) })
+        foreach (Vector point in new Vector[] { new Vector(-10, -3, 0), new Vector(-10, 3, 0), new Vector(-8, 5, 0) })
         {
-            var corner = WireFillet.Analyze(wire, wire.Vertices().SortByDistance(point)[0]);
+            var corner = WireFillet.Analyze(wire, wire.Vertices().OrderByDistanceTo(point)[0]);
             Assert.False(WireFillet.IsTangentContinuous(corner));
         }
     }
@@ -129,22 +129,22 @@ public class Fillet2DTests
     public void Fillet2DMixedProfileCase()
     {
         var sketch = new Sketch() + new Rectangle(10, 20) + new Ellipse(20, 5);
-        var vertex = sketch.Vertices().GroupBy(Axis.X)[0].SortBy(Axis.Y)[0];
+        var vertex = sketch.Vertices().GroupBy(Axis.X)[0].OrderBy(Axis.Y)[0];
         var filleted = sketch.Faces()[0].Fillet2D(1.0, [vertex]);
         Assert.True(filleted.IsValid);
         Assert.True(filleted.Area > 0);
-        Assert.True(filleted.Edges().FilterBy(GeomType.Circle).Count >= 1);
+        Assert.True(filleted.Edges().Where(GeomType.Circle).Count >= 1);
     }
 
     [Fact]
     public void Fillet2DMixedProfileRegression()
     {
         var sketch = new Sketch() + new Rectangle(10, 20) + new Ellipse(20, 5);
-        var vertex = sketch.Vertices().GroupBy(Axis.X)[1].SortBy(Axis.Y)[1];
+        var vertex = sketch.Vertices().GroupBy(Axis.X)[1].OrderBy(Axis.Y)[1];
         var filleted = sketch.Faces()[0].Fillet2D(1.0, [vertex]);
         Assert.True(filleted.IsValid);
         Assert.True(filleted.Area > 0);
-        Assert.True(filleted.Edges().FilterBy(GeomType.Circle).Count >= 1);
+        Assert.True(filleted.Edges().Where(GeomType.Circle).Count >= 1);
     }
 
     [Fact]
@@ -152,8 +152,8 @@ public class Fillet2DTests
     {
         // Ellipse(x_radius=74 / 2, y_radius=54 / 2) with GridLocations(49, 32, 2, 2) of Circle(12 / 2) subtracted
         Location[] grid = [new Pos(-24.5, -16), new Pos(-24.5, 16), new Pos(24.5, -16), new Pos(24.5, 16)];
-        var sketch = new Ellipse(74 / 2.0, 54 / 2.0) - grid.Select(l => (Shape?)(l * new Circle(12 / 2.0)));
-        var vertex = sketch.Vertices().SortByDistance((30, 20))[0];
+        var sketch = new Ellipse(74 / 2.0, 54 / 2.0) - grid.Select(l => (Shape)(l * new Circle(12 / 2.0)));
+        var vertex = sketch.Vertices().OrderByDistanceTo(new Vector(30, 20))[0];
         var original = sketch.SingleFace();
         var filleted = original.Fillet2D(2.0, [vertex]);
         Assert.True(filleted.IsValid);
@@ -166,7 +166,7 @@ public class Fillet2DTests
     {
         var r = new Rectangle(6, 6) - new Pos(1, 1) * new Circle(2) - new Pos(3, 3) * new Rectangle(4, 4);
         var filleted = r.SingleFace().Fillet2D(0.2, r.Vertices());
-        Assert.Equal(6, filleted.Edges().FilterBy(GeomType.Circle).Count);
+        Assert.Equal(6, filleted.Edges().Where(GeomType.Circle).Count);
     }
 
     [Fact]
@@ -186,8 +186,7 @@ public class Fillet2DTests
         Assert.Equal(10, r.RectangleHeight);
         Assert.Equal(0, r.Rotation);
         Assert.Equal(1, r.Radius);
-        Assert.Equal((Alignment)(Align.Center, Align.Center), r.Align);
-        Assert.Equal(Mode.Add, r.Mode);
+        Assert.Equal(new Alignment(Align.Center, Align.Center), r.Align);
         Check.AlmostEqual(20 * 10 - 4 * 1 + Math.PI * 1, r.Area, 5);
         Assert.Equal(new Vector(0, 0, 1), r.Faces()[0].NormalAt());
 
@@ -209,15 +208,15 @@ public class Fillet2DTests
     [Fact]
     public void OffsetBaseWire()
     {
-        var baseWire = Wire.MakePolygon([(0, 0), (1, 0), (1, 1)], close: false);
-        var corner = baseWire.Vertices().GroupBy(Axis.Y)[0].SortBy(Axis.X)[^1];
+        var baseWire = Wire.MakePolygon([new Vector(0, 0), new Vector(1, 0), new Vector(1, 1)], close: false);
+        var corner = baseWire.Vertices().GroupBy(Axis.Y)[0].OrderBy(Axis.X)[^1];
         baseWire = baseWire.Fillet2D(0.4, [corner]);
         Assert.Equal(3, baseWire.Edges().Count);
-        Assert.Single(baseWire.Edges().FilterBy(GeomType.Circle));
+        Assert.Single(baseWire.Edges().Where(GeomType.Circle));
         var offsetWire = (Wire)baseWire.Offset2D(0.1, side: Side.Left);
         Assert.True(offsetWire.IsClosed);
-        Assert.Equal(6, offsetWire.Edges().FilterBy(GeomType.Line).Count);
-        Assert.Equal(2, offsetWire.Edges().FilterBy(GeomType.Circle).Count);
+        Assert.Equal(6, offsetWire.Edges().Where(GeomType.Line).Count);
+        Assert.Equal(2, offsetWire.Edges().Where(GeomType.Circle).Count);
     }
 
     [Fact]
@@ -225,10 +224,10 @@ public class Fillet2DTests
     {
         // A cross with rounded inner corners, as cut for a Phillips recess
         var cross = (new Rectangle(5.3, 5.3 / 6) + new Rectangle(5.3 / 6, 5.3)).SingleFace();
-        var inner = new ShapeList<Vertex>(cross.Vertices()).SortByDistance((0, 0, 0)).Take(4);
+        var inner = new ShapeList<Vertex>(cross.Vertices()).OrderByDistanceTo(new Vector(0, 0, 0)).Take(4);
         var recess = cross.Fillet2D(5.3 / 3, inner);
         Assert.True(recess.IsValid);
-        Assert.Equal(4, recess.Edges().FilterBy(GeomType.Circle).Count);
+        Assert.Equal(4, recess.Edges().Where(GeomType.Circle).Count);
     }
 
     // ---- test_fillet_2d_regressions.py ----
@@ -239,8 +238,8 @@ public class Fillet2DTests
     /// <summary>The two-arc profile of the regression tests, with the top edge made by <paramref name="top"/>.</summary>
     private static Face Profile(Func<JernArc, JernArc, Edge> top)
     {
-        var ln1 = new JernArc((0, 0), (1, 0), 20, 90);
-        var ln2 = new JernArc((0, 10), (1, 0), 10, 90);
+        var ln1 = new JernArc(new Vector(0, 0), new Vector(1, 0), 20, 90);
+        var ln2 = new JernArc(new Vector(0, 10), new Vector(1, 0), 10, 90);
         return MakeFace(ln1, ln2, top(ln1, ln2), new Line(ln1.PositionAt(0), ln2.PositionAt(0)));
     }
 
@@ -253,7 +252,7 @@ public class Fillet2DTests
         foreach (var allVerts in new[] { false, true })
         {
             var sk = LineProfile();
-            var vrts = allVerts ? sk.Vertices() : sk.Vertices().SortBy(Axis.Y).TakeLast(2);
+            var vrts = allVerts ? sk.Vertices() : sk.Vertices().OrderBy(Axis.Y).TakeLast(2);
             Assert.Equal(4, Fillet(sk, vrts, Radius).Edges().Count);
         }
     }
@@ -262,9 +261,9 @@ public class Fillet2DTests
     public void FilletLineAllEdgesConsumed()
     {
         // All the edges of the sketch consumed ("Face can only be created with closed wires")
-        var cr1 = new CenterArc((14.142135623730951, 14.999999999999996, 0.0), Radius, 0, 360);
-        var cn1 = new ConstrainedLines(cr1.SingleEdge(), (0, 20), selector: lines => [lines[1]]).SingleEdge();
-        var cut = new Plane(cn1.PositionAt(0), xDir: cn1 % 1) * new Rectangle(20, 20, align: (Align.Center, Align.Min));
+        var cr1 = new CenterArc(new Vector(14.142135623730951, 14.999999999999996, 0.0), Radius, 0, 360);
+        var cn1 = new ConstrainedLines(cr1.SingleEdge(), new Vector(0, 20), selector: lines => [lines[1]]).SingleEdge();
+        var cut = new Plane(cn1.PositionAt(0), xDir: cn1.TangentAt(1)) * new Rectangle(20, 20, align: new Alignment(Align.Center, Align.Min));
         var sk = LineProfile() - cut;
         Assert.Single(Fillet(sk, sk.Vertices(), Radius).Edges());
     }
@@ -274,15 +273,14 @@ public class Fillet2DTests
     {
         foreach (var allVerts in new[] { false, true })
         {
-            var ln1 = new JernArc((0, 0), (1, 0), 20, 90);
-            var ln2 = new JernArc((0, 10), (1, 0), 10, 90);
+            var ln1 = new JernArc(new Vector(0, 0), new Vector(1, 0), 20, 90);
+            var ln2 = new JernArc(new Vector(0, 10), new Vector(1, 0), 10, 90);
             var ln3 = new RadiusArc(ln1.PositionAt(1), ln2.PositionAt(1), EdgeRadius);
             var profile = MakeFace(ln1, ln2, ln3, new Line(ln1.PositionAt(0), ln2.PositionAt(0)));
-            var arc3tan = new ConstrainedArcs(ln1, ln2, ln3, sagitta: Sagitta.Both, selector: arcs => [arcs.SortBy(Axis.Y)[0]],
-                                              mode: Mode.Private);
+            var arc3tan = new ConstrainedArcs(ln1, ln2, ln3, sagitta: Sagitta.Both, selector: arcs => [arcs.OrderBy(Axis.Y)[0]]);
             var circle = new ConstrainedArcs(arc3tan.SingleEdge(), center: ln1.PositionAt(0));
             var sk = profile - MakeFace(circle);
-            var vrts = allVerts ? sk.Vertices() : sk.Vertices().SortBy(Axis.Y).TakeLast(2);
+            var vrts = allVerts ? sk.Vertices() : sk.Vertices().OrderBy(Axis.Y).TakeLast(2);
             Assert.Equal(allVerts ? 1 : 4, Fillet(sk, vrts, Radius).Edges().Count);
         }
     }
@@ -293,7 +291,7 @@ public class Fillet2DTests
         // A fillet consuming a whole spline between two circular arcs
         var sk = Profile((ln1, ln2) =>
         {
-            var cln3 = new RadiusArc(ln1.PositionAt(1), ln2.PositionAt(1), EdgeRadius, mode: Mode.Private);
+            var cln3 = new RadiusArc(ln1.PositionAt(1), ln2.PositionAt(1), EdgeRadius);
             return new Spline(cln3.PositionAt(0), cln3.PositionAt(0.5), cln3.PositionAt(1));
         });
         Assert.Equal(4, Fillet(sk, sk.Vertices(), Radius).Edges().Count);
@@ -304,7 +302,7 @@ public class Fillet2DTests
     {
         // An ellipse cutout once left a short dangling edge and an open wire
         var sk = LineProfile() - new Pos(15, 20) * new Ellipse(10, 5);
-        var vrts = sk.Vertices().SortBy(Axis.Y).TakeLast(2);
+        var vrts = sk.Vertices().OrderBy(Axis.Y).TakeLast(2);
         Assert.Equal(4, Fillet(sk, vrts, Radius).Edges().Count);
     }
 
@@ -327,15 +325,15 @@ public class Fillet2DTests
     public void FilletRecord()
     {
         // The filleted vertex is removed (its arc counts as new), the edges beside it are modified and the rest untouched
-        var w = Wire.MakePolygon([(0, 0), (3, 0), (4, 2), (1, 5), (-1, 2)], close: true);
+        var w = Wire.MakePolygon([new Vector(0, 0), new Vector(3, 0), new Vector(4, 2), new Vector(1, 5), new Vector(-1, 2)], close: true);
         Assert.Equal("100 001 100 100 100 100 100 100 100 100 new 011000010000", Record(w, w.Fillet2D(0.7, [w.Vertices()[1]])));
         Assert.Equal("001 001 001 001 001 100 100 100 100 100 new 11111111110101010101", Record(w, w.Fillet2D(0.7, w.Vertices())));
 
         // A whole edge consumed: it is removed
-        var ln1 = new JernArc((0, 0), (1, 0), 20, 90);
-        var ln2 = new JernArc((0, 10), (1, 0), 10, 90);
+        var ln1 = new JernArc(new Vector(0, 0), new Vector(1, 0), 20, 90);
+        var ln2 = new JernArc(new Vector(0, 10), new Vector(1, 0), 10, 90);
         var w2 = Wire.Combine([ln1, ln2, new Line(ln1.PositionAt(1), ln2.PositionAt(1)), new Line(ln1.PositionAt(0), ln2.PositionAt(0))])[0];
-        Assert.Equal("100 001 001 100 100 001 100 100 new 0111001100", Record(w2, w2.Fillet2D(5, w2.Vertices().SortBy(Axis.Y).TakeLast(2))));
+        Assert.Equal("100 001 001 100 100 001 100 100 new 0111001100", Record(w2, w2.Fillet2D(5, w2.Vertices().OrderBy(Axis.Y).TakeLast(2))));
 
         var face = Face.MakeRect(4, 3);
         Assert.Equal("001 001 001 001 100 100 100 100 new 1111111111111111", Record(face, face.Fillet2D(0.5, face.Vertices())));

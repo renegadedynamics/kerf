@@ -43,7 +43,7 @@ public abstract partial class Shape
     /// This shape fused with <paramref name="other"/> (build123d's <c>+</c>). Adding nothing returns this shape;
     /// only shapes of the same dimension can be added.
     /// </summary>
-    public virtual Shape Add(params IEnumerable<Shape?> other)
+    internal virtual Shape AddCore(IEnumerable<Shape?> other)
     {
         var summands = Operands(other);
         if (summands.Count == 0)
@@ -63,7 +63,7 @@ public abstract partial class Shape
     /// This shape with <paramref name="other"/> cut away (build123d's <c>-</c>). Only shapes of an equal or greater
     /// dimension can be subtracted.
     /// </summary>
-    public virtual Shape Subtract(params IEnumerable<Shape?> other)
+    internal virtual Shape SubtractCore(IEnumerable<Shape?> other)
     {
         var subtrahends = Operands(other);
         if (subtrahends.Count == 0)
@@ -85,7 +85,7 @@ public abstract partial class Shape
     /// What this shape has in common with <paramref name="others"/> (build123d's <c>&amp;</c>): one shape, a composite
     /// of several, or the zero of the operands' class if nothing.
     /// </summary>
-    public virtual Shape CommonWith(params IEnumerable<object> others)
+    internal virtual Shape CommonCore(IEnumerable<object> others)
     {
         var list = others.ToList();
         // The shapes that decide the class of an empty result, as for a cut
@@ -99,24 +99,6 @@ public abstract partial class Shape
         var result = found.Count == 1 ? found[0] : MakeComposite(found);
         return SkipClean.Clean ? result.CleanCore() : result;
     }
-
-    /// <summary>This shape fused with another (see <see cref="Add"/>).</summary>
-    public static Shape operator +(Shape a, Shape? b) => a.Add(b);
-
-    /// <summary>This shape fused with others (see <see cref="Add"/>).</summary>
-    public static Shape operator +(Shape a, IEnumerable<Shape?> b) => a.Add(b);
-
-    /// <summary>This shape with another cut away (see <see cref="Subtract"/>).</summary>
-    public static Shape operator -(Shape a, Shape? b) => a.Subtract(b);
-
-    /// <summary>This shape with others cut away (see <see cref="Subtract"/>).</summary>
-    public static Shape operator -(Shape a, IEnumerable<Shape?> b) => a.Subtract(b);
-
-    /// <summary>What this shape has in common with another (see <see cref="CommonWith"/>).</summary>
-    public static Shape operator &(Shape a, Shape b) => a.CommonWith(b);
-
-    /// <summary>What this shape has in common with others (see <see cref="CommonWith"/>).</summary>
-    public static Shape operator &(Shape a, IEnumerable<Shape> b) => a.CommonWith(b);
 
     /// <summary>This shape with <paramref name="toCut"/> removed. The result may be of another class.</summary>
     public Shape Cut(params IEnumerable<Shape> toCut) => BoolOp([this], toCut, BooleanKind.Cut);
@@ -339,7 +321,7 @@ public abstract partial class Shape
         var trimTool = tool switch
         {
             Plane p => MakePlaneFace(p),
-            Shape s => s.Wrapped,
+            Shape s => s.KernelShape,
             _ => throw new ArgumentException($"Can't split with a {tool.GetType().Name}"),
         };
         var splitResult = TopoUtil.BoolOp([_wrapped], [trimTool], BooleanKind.Split);
@@ -360,7 +342,7 @@ public abstract partial class Shape
             var surfacePnt = toolFace.ToSurface().Evaluate(u, v);
             var surfaceNormal = TopoUtil.FaceNormalVector(toolFace, u, v);
             var refPoint = new Vector(surfacePnt) + surfaceNormal.Normalized();
-            var refPnt = refPoint.ToGpPnt();
+            var refPnt = refPoint.ToPoint3D();
             var halfSpace = trimTool.IsShell()
                 ? Primitives.HalfSpace((global::Kerf.Topology.Shell)trimTool, refPnt)
                 : Primitives.HalfSpace((global::Kerf.Topology.Face)trimTool, refPnt);
@@ -401,7 +383,7 @@ public abstract partial class Shape
     /// <summary>A face on the plane, unbounded as far as OCCT's defaults go.</summary>
     internal static global::Kerf.Topology.Face MakePlaneFace(Plane plane)
     {
-        var pln = plane.ToGpPln();
+        var pln = plane.ToPlane3D();
         return Failures.Get(global::Kerf.Topology.Face.FromPlane(pln), () => "plane face");
     }
 

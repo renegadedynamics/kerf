@@ -15,25 +15,25 @@ using Kerf.Modeling;
 
 public class FilletFailuresTests
 {
-    const string Advice = ", try a smaller value or use max_fillet() to find the largest valid fillet radius";
+    const string Advice = " failed; try a smaller radius, or MaxFillet to find the largest that works.";
 
     const string PlateMessage =
-        "Failed creating a fillet with radius of 3 on 8 of 12 edges "
+        "The fillet with a radius of 3 on 8 of 12 edges "
         + "(no starting solution: [1] at (-10, 0, 1), [3] at (-10, 0, -1), "
         + "[5] at (10, 0, 1), [7] at (10, 0, -1), [8] at (0, -10, -1), "
         + "[9] at (0, -10, 1), [10] at (0, 10, -1), [11] at (0, 10, 1))" + Advice;
 
-    static Part Box(double l, double w, double h) => new([Solid.MakeBox(l, w, h, new Plane((-l / 2, -w / 2, -h / 2)))]);
+    static Part Box(double l, double w, double h) => new([Solid.MakeBox(l, w, h, new Plane(new Vector(-l / 2, -w / 2, -h / 2)))]);
 
     [Fact]
     public void Plate()
     {
         // Box, Solid and Part share the same diagnostic path
         var box = Box(20, 20, 2);
-        foreach (Shape3D shape in new Shape3D[] { box, box.SingleSolid(), new Part(box.Wrapped) })
+        foreach (Shape3D shape in new Shape3D[] { box, box.SingleSolid(), new Part(box.KernelShape) })
         {
-            var e = Assert.Throws<ArgumentException>(() => shape.Fillet(3, shape.Edges()));
-            Assert.Equal(PlateMessage, e.Message);
+            var e = Assert.Throws<Kerf.KerfException>(() => shape.Fillet(3, shape.Edges()));
+            Assert.Equal(PlateMessage, e.Error.Message);
             Assert.True(Failures.IsKernelFailure(e.InnerException!));
         }
     }
@@ -42,8 +42,8 @@ public class FilletFailuresTests
     public void Operation()
     {
         // The fillet operation reports the same edges as the method
-        var e = Assert.Throws<ArgumentException>(() => Ops.Fillet(Box(20, 20, 2).Edges(), radius: 3));
-        Assert.Equal(PlateMessage, e.Message);
+        var e = Assert.Throws<Kerf.KerfException>(() => Ops.Fillet(Box(20, 20, 2).Edges(), radius: 3));
+        Assert.Equal(PlateMessage, e.Error.Message);
     }
 
     [Fact]
@@ -54,9 +54,9 @@ public class FilletFailuresTests
         var topEdges = rounded.Edges().GroupBy(Axis.Z)[^1];
         (ShapeList<Edge> Selection, string Details)[] cases =
         [
-            (topEdges.FilterBy(GeomType.Line)[..1],
+            (topEdges.Where(GeomType.Line)[..1],
              "1 of 1 edges (no starting solution: [0] at (-10, 0, 2), 7 additional tangent edges)"),
-            (topEdges.FilterBy(GeomType.Circle)[..1],
+            (topEdges.Where(GeomType.Circle)[..1],
              "1 of 1 edges (no starting solution: [0] at (-9.12132, -4.12132, 2), 7 additional tangent edges)"),
             (topEdges[..7],
              "7 of 7 edges (no starting solution: [0] at (-10, 0, 2), [1] at (-9.12132, -4.12132, 2), [2] at (0, -5, 2), "
@@ -65,8 +65,8 @@ public class FilletFailuresTests
         ];
         foreach (var (selection, details) in cases)
         {
-            var e = Assert.Throws<ArgumentException>(() => rounded.Fillet(3, selection));
-            Assert.Equal("Failed creating a fillet with radius of 3 on " + details + Advice, e.Message);
+            var e = Assert.Throws<Kerf.KerfException>(() => rounded.Fillet(3, selection));
+            Assert.Equal("The fillet with a radius of 3 on " + details + Advice, e.Error.Message);
         }
     }
 
@@ -82,8 +82,8 @@ public class FilletFailuresTests
         var (shape, radius, edges, text) = notchedCase
             ? (notched, 0.5, notched.Edges().Where((_, i) => i % 2 == 0).ToList(), "0.5")
             : ((Shape3D)cube, 6.0, cube.Edges().ToList(), "6");
-        var e = Assert.Throws<ArgumentException>(() => shape.Fillet(radius, edges));
-        Assert.Equal($"Failed creating a fillet with radius of {text}" + Advice, e.Message);
+        var e = Assert.Throws<Kerf.KerfException>(() => shape.Fillet(radius, edges));
+        Assert.Equal($"The fillet with a radius of {text}" + Advice, e.Error.Message);
     }
 
     [Fact]
@@ -92,30 +92,30 @@ public class FilletFailuresTests
         // Indices follow the iterable, including repeated and reversed selections
         var plate = Box(20, 20, 2);
         var edges = plate.Edges();
-        var reversedEdge = new Edge(((global::Kerf.Topology.Edge)(edges[1].Wrapped.Reversed())));
+        var reversedEdge = new Edge(((global::Kerf.Topology.Edge)(edges[1].KernelShape.Reversed())));
         Assert.True(edges[1].IsSame(reversedEdge));
         Assert.False(edges[1].IsEqual(reversedEdge));
         var selection = new[] { edges[3], edges[0], reversedEdge, edges[1] }.Select(e => e);
-        var e = Assert.Throws<ArgumentException>(() => plate.Fillet(3, selection));
+        var e = Assert.Throws<Kerf.KerfException>(() => plate.Fillet(3, selection));
         Assert.Equal(
-            "Failed creating a fillet with radius of 3 on 3 of 4 edges "
+            "The fillet with a radius of 3 on 3 of 4 edges "
             + "(no starting solution: [0] at (-10, 0, -1), "
             + "[2] at (-10, 0, 1), [3] at (-10, 0, 1))" + Advice,
-            e.Message);
+            e.Error.Message);
     }
 }
 
 public class Shape3DTests
 {
-    static Part Box(double l, double w, double h) => new([Solid.MakeBox(l, w, h, new Plane((-l / 2, -w / 2, -h / 2)))]);
+    static Part Box(double l, double w, double h) => new([Solid.MakeBox(l, w, h, new Plane(new Vector(-l / 2, -w / 2, -h / 2)))]);
 
-    static Part Cylinder(double r, double h) => new([Solid.MakeCylinder(r, h, new Plane((0, 0, -h / 2)))]);
+    static Part Cylinder(double r, double h) => new([Solid.MakeCylinder(r, h, new Plane(new Vector(0, 0, -h / 2)))]);
 
     [Fact]
     public void Chamfer()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        var chamferBox = box.Chamfer(0.1, null, box.Edges().SortBy(Axis.Z)[^1..]);
+        var chamferBox = box.Chamfer(0.1, null, box.Edges().OrderBy(Axis.Z)[^1..]);
         Check.AlmostEqual(1 - 0.005, chamferBox.Volume, 5);
     }
 
@@ -123,7 +123,7 @@ public class Shape3DTests
     public void ChamferAsymLength()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        var chamferBox = box.Chamfer(0.1, 0.2, box.Edges().SortBy(Axis.Z)[^1..]);
+        var chamferBox = box.Chamfer(0.1, 0.2, box.Edges().OrderBy(Axis.Z)[^1..]);
         Check.AlmostEqual(1 - 0.01, chamferBox.Volume, 5);
     }
 
@@ -131,8 +131,8 @@ public class Shape3DTests
     public void ChamferAsymLengthWithFace()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        var face = box.Faces().SortBy(Axis.Z)[0];
-        var edge = new[] { face.Edges().SortBy(Axis.Y)[0] };
+        var face = box.Faces().OrderBy(Axis.Z)[0];
+        var edge = new[] { face.Edges().OrderBy(Axis.Y)[0] };
         var chamferBox = box.Chamfer(0.1, 0.2, edge, face: face);
         Check.AlmostEqual(1 - 0.01, chamferBox.Volume, 5);
     }
@@ -141,7 +141,7 @@ public class Shape3DTests
     public void ChamferObjectInstanceReturnsTopology()
     {
         var box = Box(1, 1, 1);
-        var chamferBox = box.Chamfer(0.1, null, box.Edges().SortBy(Axis.Z)[^1..]);
+        var chamferBox = box.Chamfer(0.1, null, box.Edges().OrderBy(Axis.Z)[^1..]);
         Assert.IsType<Solid>(chamferBox);
         Assert.True(chamferBox.IsValid);
     }
@@ -150,9 +150,9 @@ public class Shape3DTests
     public void FilletObjectInstanceReturnsTopology()
     {
         var box = Box(1, 1, 1);
-        var filletBox = box.Fillet(0.1, box.Edges().SortBy(Axis.Z)[^1..]);
+        var filletBox = box.Fillet(0.1, box.Edges().OrderBy(Axis.Z)[^1..]);
         var cylinder = Cylinder(1, 1);
-        var filletCylinder = cylinder.Fillet(0.1, cylinder.Edges().SortBy(Axis.Z)[0..1]);
+        var filletCylinder = cylinder.Fillet(0.1, cylinder.Edges().OrderBy(Axis.Z)[0..1]);
 
         Assert.IsType<Solid>(filletBox);
         Assert.True(filletBox.IsValid);
@@ -164,15 +164,15 @@ public class Shape3DTests
     public void MaxFilletObjectInstance()
     {
         var box = Box(1, 1, 1);
-        var maxRadius = box.MaxFillet(box.Edges().SortBy(Axis.Z)[^1..]);
+        var maxRadius = box.MaxFillet(box.Edges().OrderBy(Axis.Z)[^1..]);
         Assert.True(maxRadius > 0);
     }
 
     [Fact]
     public void Make3DResultCompound()
     {
-        var compound = new Compound([Solid.MakeBox(1, 1, 1), Solid.MakeBox(1, 1, 1).Translate((2, 0, 0))]);
-        var result = Shape3D.Make3DResult(compound.Wrapped);
+        var compound = new Compound([Solid.MakeBox(1, 1, 1), Solid.MakeBox(1, 1, 1).Translate(new Vector(2, 0, 0))]);
+        var result = Shape3D.Make3DResult(compound.KernelShape);
         Assert.IsType<Part>(result);
         Assert.Equal(2, result.Solids().Count);
         Assert.True(result.IsValid);
@@ -182,15 +182,15 @@ public class Shape3DTests
     public void ChamferTooHighLength()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        Assert.Throws<ArgumentException>(() => box.Chamfer(2, null, box.Edges().SortBy(Axis.Z)[^1..]));
+        Assert.Throws<Kerf.KerfException>(() => box.Chamfer(2, null, box.Edges().OrderBy(Axis.Z)[^1..]));
     }
 
     [Fact]
     public void ChamferEdgeNotPartOfFace()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        var edge = box.Edges().SortBy(Axis.Z)[^1..];
-        var face = box.Faces().SortBy(Axis.Z)[0];
+        var edge = box.Edges().OrderBy(Axis.Z)[^1..];
+        var face = box.Faces().OrderBy(Axis.Z)[0];
         Assert.Throws<ArgumentException>(() => box.Chamfer(0.1, null, edge, face: face));
     }
 
@@ -201,7 +201,7 @@ public class Shape3DTests
         Check.AlmostEqual(1 - Math.Pow(0.8, 3), shellBox.Volume, 5);
 
         var box = Solid.MakeBox(1, 1, 1);
-        shellBox = box.Hollow(box.Faces().FilterBy(Axis.Z), thickness: 0.1, kind: Kind.Intersection);
+        shellBox = box.Hollow(box.Faces().ParallelTo(Axis.Z), thickness: 0.1, kind: Kind.Intersection);
         Check.AlmostEqual(1 * Math.Pow(1.2, 2) - 1, shellBox.Volume, 5);
 
         shellBox = Solid.MakeBox(1, 1, 1).Hollow([], thickness: 0.1, kind: Kind.Intersection);
@@ -211,12 +211,12 @@ public class Shape3DTests
     }
 
     [Fact]
-    public void IsInside() => Assert.True(Solid.MakeBox(1, 1, 1).IsInside((0.5, 0.5, 0.5)));
+    public void IsInside() => Assert.True(Solid.MakeBox(1, 1, 1).IsInside(new Vector(0.5, 0.5, 0.5)));
 
     [Fact]
     public void DPrism()
     {
-        static Solid Block() => Solid.MakeBox(1, 1, 1, new Plane((-0.5, -0.5, 0)));
+        static Solid Block() => Solid.MakeBox(1, 1, 1, new Plane(new Vector(-0.5, -0.5, 0)));
 
         // Face
         var f = Face.MakeRect(0.5, 0.5);
@@ -230,7 +230,7 @@ public class Shape3DTests
         Check.AlmostEqual(1 - Math.Pow(0.5, 3), d.Volume, 5);
 
         // Face until
-        var limit = Face.MakeRect(1, 1, new Plane((0, 0, 0.5)));
+        var limit = Face.MakeRect(1, 1, new Plane(new Vector(0, 0, 0.5)));
         d = Block().DPrism(null, [f], upToFace: limit, thruAll: false, additive: false);
         Assert.True(d.IsValid);
         Check.AlmostEqual(1 - Math.Pow(0.5, 3), d.Volume, 5);
@@ -246,6 +246,6 @@ public class Shape3DTests
     public void Center()
     {
         Assert.Throws<ArgumentException>(() => Solid.MakeBox(1, 1, 1).Center(CenterOf.Geometry));
-        Check.AlmostEqual((0.5, 0.5, 0.5), Solid.MakeBox(1, 1, 1).Center(CenterOf.BoundingBox), 5);
+        Check.AlmostEqual(new Vector(0.5, 0.5, 0.5), Solid.MakeBox(1, 1, 1).Center(CenterOf.BoundingBox), 5);
     }
 }

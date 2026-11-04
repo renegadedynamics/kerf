@@ -1,0 +1,36 @@
+namespace Kerf.Modeling;
+
+/// <summary>
+/// The modelling layer's own diagnostic codes, for the failures a caller should expect that the layer itself detects
+/// (a fillet whose result is invalid, a draft a face can't take). The kernel's failures keep the kernel's codes
+/// (<c>boolean.self-interfering-shape</c>, <c>fillet.walking-failed</c>), with the operation said in the message.
+/// </summary>
+/// <remarks>
+/// A failed operation throws a <see cref="KerfException"/> carrying these diagnostics, which is what
+/// <c>Result&lt;T&gt;.Value</c> does; each operation's <c>Try</c> form (<see cref="Operations.TryFillet"/>,
+/// <see cref="Part.TrySubtract"/>…) returns the <see cref="Result{T}"/> instead. Misuse (a null argument, an index out
+/// of range) throws .NET's argument exceptions either way.
+/// </remarks>
+public static class ModelingDiagnostics
+{
+    /// <summary>A 3D or 2D fillet couldn't be built, or was invalid: <c>modeling.fillet-failed</c>.</summary>
+    public static DiagnosticCode FilletFailed { get; } = new("modeling.fillet-failed");
+
+    /// <summary>A chamfer couldn't be built, or was invalid: <c>modeling.chamfer-failed</c>.</summary>
+    public static DiagnosticCode ChamferFailed { get; } = new("modeling.chamfer-failed");
+
+    /// <summary>An offset couldn't be built: <c>modeling.offset-failed</c>.</summary>
+    public static DiagnosticCode OffsetFailed { get; } = new("modeling.offset-failed");
+
+    /// <summary>A loft was invalid and couldn't be recovered: <c>modeling.loft-failed</c>.</summary>
+    public static DiagnosticCode LoftFailed { get; } = new("modeling.loft-failed");
+
+    /// <summary>A draft couldn't be added to a face, or the drafted solid failed; the face is the diagnostic's shape: <c>modeling.draft-failed</c>.</summary>
+    public static DiagnosticCode DraftFailed { get; } = new("modeling.draft-failed");
+
+    /// <summary>A spline couldn't be interpolated or approximated through the points: <c>modeling.spline-failed</c>.</summary>
+    public static DiagnosticCode SplineFailed { get; } = new("modeling.spline-failed");
+
+    /// <summary>An argument the kernel refused, said in context: <c>kernel.invalid-argument</c> (unit 10M1).</summary>
+    public static DiagnosticCode KernelInvalidArgument { get; } = new("kernel.invalid-argument");
+}

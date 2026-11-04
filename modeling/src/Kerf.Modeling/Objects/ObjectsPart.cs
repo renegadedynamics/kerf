@@ -1,29 +1,20 @@
 
 namespace Kerf.Modeling;
 
-/// <summary>The combination mode of a builder object: how it joins the builder's shape (used in builder mode).</summary>
-public interface IBuilderObject
-{
-    /// <summary>How the object combines with the builder's shape.</summary>
-    Mode Mode { get; }
-}
-
 /// <summary>
 /// The base of the part objects (<see cref="Box"/>, <see cref="Cylinder"/>, …): a part made from a solid, aligned and then
 /// rotated.
 /// </summary>
-public abstract class BasePartObject : Part, IBuilderObject
+public abstract class BasePartObject : Part
 {
     /// <summary>A part object from a solid (or part), aligned by its bounding box and then rotated.</summary>
     /// <param name="part">The solid to make the object of.</param>
     /// <param name="rotation">Angles to rotate it about X, Y and Z.</param>
     /// <param name="align">How to align the solid's bounding box with the origin; null for no alignment.</param>
-    /// <param name="mode">How the object combines with a builder's part.</param>
-    protected BasePartObject(Shape part, Rotation? rotation = null, Alignment? align = null, Mode mode = Mode.Add)
+    protected BasePartObject(Shape part, Rotation? rotation = null, Alignment? align = null)
         : base(Prepare(part, rotation, align), part.Label)
     {
         Rotation = rotation ?? new Rotation();
-        Mode = mode;
     }
 
     private static global::Kerf.Topology.Shape Prepare(Shape part, Rotation? rotation, Alignment? align)
@@ -38,19 +29,16 @@ public abstract class BasePartObject : Part, IBuilderObject
     /// <summary>The rotation applied to the object.</summary>
     public Rotation Rotation { get; }
 
-    /// <inheritdoc/>
-    public Mode Mode { get; }
-
     /// <summary>A centred alignment on all three axes, the default of most part objects.</summary>
-    internal static readonly Alignment Centered = (Align.Center, Align.Center, Align.Center);
+    internal static readonly Alignment Centered = new Alignment(Align.Center, Align.Center, Align.Center);
 }
 
 /// <summary>A box of a length (along X), width (along Y) and height (along Z); centred by default.</summary>
 public class Box : BasePartObject
 {
     /// <summary>A box; <paramref name="align"/> defaults to centred.</summary>
-    public Box(double length, double width, double height, Rotation? rotation = null, Alignment? align = null, Mode mode = Mode.Add)
-        : base(Solid.MakeBox(length, width, height), rotation, align ?? Centered, mode)
+    public Box(double length, double width, double height, Rotation? rotation = null, Alignment? align = null)
+        : base(Solid.MakeBox(length, width, height), rotation, align ?? Centered)
     {
         (Length, Width, BoxHeight) = (length, width, height);
     }
@@ -70,8 +58,8 @@ public class Cone : BasePartObject
 {
     /// <summary>A cone; <paramref name="arcSize"/> is its angular size in degrees.</summary>
     public Cone(double bottomRadius, double topRadius, double height, double arcSize = 360, Rotation? rotation = null,
-                Alignment? align = null, Mode mode = Mode.Add)
-        : base(Solid.MakeCone(bottomRadius, topRadius, height, angle: arcSize), rotation, align ?? Centered, mode)
+                Alignment? align = null)
+        : base(Solid.MakeCone(bottomRadius, topRadius, height, angle: arcSize), rotation, align ?? Centered)
     {
         (BottomRadius, TopRadius, ConeHeight, ArcSize, Align) = (bottomRadius, topRadius, height, arcSize, align ?? Centered);
     }
@@ -96,9 +84,8 @@ public class Cone : BasePartObject
 public class Cylinder : BasePartObject
 {
     /// <summary>A cylinder; <paramref name="arcSize"/> is its angular size in degrees.</summary>
-    public Cylinder(double radius, double height, double arcSize = 360, Rotation? rotation = null, Alignment? align = null,
-                    Mode mode = Mode.Add)
-        : base(Solid.MakeCylinder(radius, height, angle: arcSize), rotation, align ?? Centered, mode)
+    public Cylinder(double radius, double height, double arcSize = 360, Rotation? rotation = null, Alignment? align = null)
+        : base(Solid.MakeCylinder(radius, height, angle: arcSize), rotation, align ?? Centered)
     {
         (Radius, CylinderHeight, ArcSize, Align) = (radius, height, arcSize, align ?? Centered);
     }
@@ -121,8 +108,8 @@ public class Sphere : BasePartObject
 {
     /// <summary>A sphere from latitude <paramref name="arcSize1"/> to <paramref name="arcSize2"/>, revolved through <paramref name="arcSize3"/> degrees.</summary>
     public Sphere(double radius, double arcSize1 = -90, double arcSize2 = 90, double arcSize3 = 360, Rotation? rotation = null,
-                  Alignment? align = null, Mode mode = Mode.Add)
-        : base(Solid.MakeSphere(radius, angle1: arcSize1, angle2: arcSize2, angle3: arcSize3), rotation, align ?? Centered, mode)
+                  Alignment? align = null)
+        : base(Solid.MakeSphere(radius, angle1: arcSize1, angle2: arcSize2, angle3: arcSize3), rotation, align ?? Centered)
     {
         (Radius, ArcSize1, ArcSize2, ArcSize3, Align) = (radius, arcSize1, arcSize2, arcSize3, align ?? Centered);
     }
@@ -148,9 +135,9 @@ public class Torus : BasePartObject
 {
     /// <summary>A torus whose minor arc runs from <paramref name="minorStartAngle"/> to <paramref name="minorEndAngle"/>, revolved through <paramref name="majorAngle"/> degrees.</summary>
     public Torus(double majorRadius, double minorRadius, double minorStartAngle = 0, double minorEndAngle = 360, double majorAngle = 360,
-                 Rotation? rotation = null, Alignment? align = null, Mode mode = Mode.Add)
+                 Rotation? rotation = null, Alignment? align = null)
         : base(Solid.MakeTorus(majorRadius, minorRadius, startAngle: minorStartAngle, endAngle: minorEndAngle, majorAngle: majorAngle),
-               rotation, align ?? Centered, mode)
+               rotation, align ?? Centered)
     {
         (MajorRadius, MinorRadius, MinorStartAngle, MinorEndAngle, MajorAngle, Align) =
             (majorRadius, minorRadius, minorStartAngle, minorEndAngle, majorAngle, align ?? Centered);
@@ -184,8 +171,8 @@ public class Wedge : BasePartObject
     /// <summary>A wedge; centred by default.</summary>
     /// <exception cref="ArgumentException">A size isn't positive.</exception>
     public Wedge(double xsize, double ysize, double zsize, double xmin, double zmin, double xmax, double zmax, Rotation? rotation = null,
-                 Alignment? align = null, Mode mode = Mode.Add)
-        : base(Make(xsize, ysize, zsize, xmin, zmin, xmax, zmax), rotation, align ?? Centered, mode)
+                 Alignment? align = null)
+        : base(Make(xsize, ysize, zsize, xmin, zmin, xmax, zmax), rotation, align ?? Centered)
     {
         (XSize, YSize, ZSize, XMin, ZMin, XMax, ZMax, Align) = (xsize, ysize, zsize, xmin, zmin, xmax, zmax, align ?? Centered);
     }
@@ -215,8 +202,8 @@ public class Wedge : BasePartObject
 public class ConvexPolyhedron : BasePartObject
 {
     /// <summary>The convex hull of the points.</summary>
-    public ConvexPolyhedron(IEnumerable<Vector> points, Rotation? rotation = null, Alignment? align = null, Mode mode = Mode.Add)
-        : base(Make(points), rotation, align ?? Kerf.Modeling.Align.None, mode)
+    public ConvexPolyhedron(IEnumerable<Vector> points, Rotation? rotation = null, Alignment? align = null)
+        : base(Make(points), rotation, align ?? Kerf.Modeling.Align.None)
     {
     }
 
@@ -231,7 +218,7 @@ public class ConvexPolyhedron : BasePartObject
 /// <summary>The base of the hole operations, which cut into a builder's part.</summary>
 public abstract class BaseHole : BasePartObject
 {
-    private protected BaseHole(Shape part, Alignment? align, Mode mode) : base(part, null, align, mode) { }
+    private protected BaseHole(Shape part, Alignment? align) : base(part, null, align) { }
 
     /// <summary>A depth that goes right through the builder's part; without a builder there is none.</summary>
     /// <exception cref="ArgumentException">There is no builder (algebra mode), so a depth must be given.</exception>
@@ -242,18 +229,18 @@ public abstract class BaseHole : BasePartObject
 public class CounterBoreHole : BaseHole
 {
     /// <summary>A counterbored hole, down from the origin; through the builder's part if <paramref name="depth"/> is null.</summary>
-    public CounterBoreHole(double radius, double counterBoreRadius, double counterBoreDepth, double? depth = null, Mode mode = Mode.Subtract)
-        : this(radius, counterBoreRadius, counterBoreDepth, depth ?? ThroughHoleDepth(), mode, true) { }
+    public CounterBoreHole(double radius, double counterBoreRadius, double counterBoreDepth, double? depth = null)
+        : this(radius, counterBoreRadius, counterBoreDepth, depth ?? ThroughHoleDepth(), true) { }
 
-    private CounterBoreHole(double radius, double counterBoreRadius, double counterBoreDepth, double depth, Mode mode, bool _)
-        : base(Make(radius, counterBoreRadius, counterBoreDepth, depth), null, mode)
+    private CounterBoreHole(double radius, double counterBoreRadius, double counterBoreDepth, double depth, bool _)
+        : base(Make(radius, counterBoreRadius, counterBoreDepth, depth), null)
     {
         (Radius, CounterBoreRadius, CounterBoreDepth, HoleDepth) = (radius, counterBoreRadius, counterBoreDepth, depth);
     }
 
     private static Shape Make(double radius, double counterBoreRadius, double counterBoreDepth, double depth) =>
-        Solid.MakeCylinder(radius, depth, new Plane((0, 0, 0), zDir: (0, 0, -1)))
-            .Fuse(Solid.MakeCylinder(counterBoreRadius, counterBoreDepth + depth, new Plane((0, 0, -counterBoreDepth))));
+        Solid.MakeCylinder(radius, depth, new Plane(new Vector(0, 0, 0), zDir: new Vector(0, 0, -1)))
+            .Fuse(Solid.MakeCylinder(counterBoreRadius, counterBoreDepth + depth, new Plane(new Vector(0, 0, -counterBoreDepth))));
 
 #pragma warning disable CS1591 // The constructor's parameters
     public double Radius { get; }
@@ -267,11 +254,11 @@ public class CounterBoreHole : BaseHole
 public class CounterSinkHole : BaseHole
 {
     /// <summary>A countersunk hole, down from the origin; through the builder's part if <paramref name="depth"/> is null.</summary>
-    public CounterSinkHole(double radius, double counterSinkRadius, double? depth = null, double counterSinkAngle = 82, Mode mode = Mode.Subtract)
-        : this(radius, counterSinkRadius, depth ?? ThroughHoleDepth(), counterSinkAngle, mode, true) { }
+    public CounterSinkHole(double radius, double counterSinkRadius, double? depth = null, double counterSinkAngle = 82)
+        : this(radius, counterSinkRadius, depth ?? ThroughHoleDepth(), counterSinkAngle, true) { }
 
-    private CounterSinkHole(double radius, double counterSinkRadius, double depth, double counterSinkAngle, Mode mode, bool _)
-        : base(Make(radius, counterSinkRadius, depth, counterSinkAngle), null, mode)
+    private CounterSinkHole(double radius, double counterSinkRadius, double depth, double counterSinkAngle, bool _)
+        : base(Make(radius, counterSinkRadius, depth, counterSinkAngle), null)
     {
         (Radius, CounterSinkRadius, HoleDepth, CounterSinkAngle) = (radius, counterSinkRadius, depth, counterSinkAngle);
     }
@@ -279,7 +266,7 @@ public class CounterSinkHole : BaseHole
     private static Shape Make(double radius, double counterSinkRadius, double depth, double angle)
     {
         var coneHeight = counterSinkRadius / Math.Tan(angle / 2.0 * Constants.DegToRad);
-        var down = new Plane((0, 0, 0), zDir: (0, 0, -1));
+        var down = new Plane(new Vector(0, 0, 0), zDir: new Vector(0, 0, -1));
         return Solid.MakeCylinder(radius, depth, down)
             .Fuse(Solid.MakeCone(counterSinkRadius, 0.0, coneHeight, down), Solid.MakeCylinder(counterSinkRadius, depth));
     }
@@ -299,12 +286,12 @@ public class Hole : BaseHole
     /// A hole down from the origin. With <paramref name="depth"/> null it goes right through the builder's part, starting
     /// above it.
     /// </summary>
-    public Hole(double radius, double? depth = null, Mode mode = Mode.Subtract)
-        : this(radius, 2 * (depth ?? ThroughHoleDepth()), depth is null, mode) { }
+    public Hole(double radius, double? depth = null)
+        : this(radius, 2 * (depth ?? ThroughHoleDepth()), depth is null) { }
 
-    private Hole(double radius, double holeDepth, bool through, Mode mode)
-        : base(Solid.MakeCylinder(radius, holeDepth, new Plane(through ? (0, 0, holeDepth / 2) : (0, 0, 0), zDir: (0, 0, -1))),
-               Centered, mode)
+    private Hole(double radius, double holeDepth, bool through)
+        : base(Solid.MakeCylinder(radius, holeDepth, new Plane(through ? new Vector(0, 0, holeDepth / 2) : new Vector(0, 0, 0), zDir: new Vector(0, 0, -1))),
+               Centered)
     {
         (Radius, HoleDepth) = (radius, holeDepth);
     }

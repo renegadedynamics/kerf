@@ -13,13 +13,13 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     public Vector Direction { get; }
 
     /// <summary>The X axis.</summary>
-    public static Axis X => new((0, 0, 0), (1, 0, 0));
+    public static Axis X => new(new Vector(0, 0, 0), new Vector(1, 0, 0));
 
     /// <summary>The Y axis.</summary>
-    public static Axis Y => new((0, 0, 0), (0, 1, 0));
+    public static Axis Y => new(new Vector(0, 0, 0), new Vector(0, 1, 0));
 
     /// <summary>The Z axis.</summary>
-    public static Axis Z => new((0, 0, 0), (0, 0, 1));
+    public static Axis Z => new(new Vector(0, 0, 0), new Vector(0, 0, 1));
 
     /// <summary>An axis through <paramref name="origin"/> along <paramref name="direction"/>.</summary>
     /// <exception cref="ArgumentException">The direction has zero length.</exception>
@@ -29,7 +29,7 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
         try
         {
             // As gp_Dir(*direction.normalized()): normalised, then normalised again by gp_Dir
-            var dir = direction.Normalized().ToGpDir();
+            var dir = direction.Normalized().ToDirection3D();
             unit = new Vector(dir);
         }
         catch (Exception ex) when (Failures.IsKernelFailure(ex) || ex is InvalidOperationException)
@@ -74,7 +74,7 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     /// <exception cref="Exception">The direction has zero length (the kernel's construction error).</exception>
     public Axis WithDirection(Vector direction)
     {
-        var d = direction.ToGpDir();
+        var d = direction.ToDirection3D();
         return new Axis(Position, new Vector(d), true);
     }
 
@@ -82,17 +82,17 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     public Location Location => new(new Plane(Position, zDir: Direction));
 
     /// <summary>A new OCCT gp_Ax1 for this axis.</summary>
-    public Axis3D ToGpAx1()
+    public Axis3D ToAxis3D()
     {
-        var p = Position.ToGpPnt();
-        var d = Direction.ToGpDir();
+        var p = Position.ToPoint3D();
+        var d = Direction.ToDirection3D();
         return new Axis3D(p, d);
     }
 
     /// <summary>This axis moved to a new location, which can change both position and direction.</summary>
     public Axis Located(Location location)
     {
-        var ax1 = ToGpAx1();
+        var ax1 = ToAxis3D();
         var trsf = location.Wrapped.Transformation;
         var moved = ax1.Transformed(trsf);
         return new Axis(moved);
@@ -106,32 +106,32 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     /// </summary>
     public bool IsCoaxial(Axis other, double angularTolerance = 1e-5, double linearTolerance = 1e-5)
     {
-        var a = ToGpAx1();
-        var b = other.ToGpAx1();
+        var a = ToAxis3D();
+        var b = other.ToAxis3D();
         return a.IsCoaxial(b, Rad(angularTolerance), linearTolerance);
     }
 
     /// <summary>True if the axes are at 90° to each other, within the tolerance in degrees.</summary>
     public bool IsNormal(Axis other, double angularTolerance = 1e-5)
     {
-        var a = ToGpAx1();
-        var b = other.ToGpAx1();
+        var a = ToAxis3D();
+        var b = other.ToAxis3D();
         return a.IsNormal(b, Rad(angularTolerance));
     }
 
     /// <summary>True if the axes are parallel and point opposite ways, within the tolerance in degrees.</summary>
     public bool IsOpposite(Axis other, double angularTolerance = 1e-5)
     {
-        var a = ToGpAx1();
-        var b = other.ToGpAx1();
+        var a = ToAxis3D();
+        var b = other.ToAxis3D();
         return a.IsOpposite(b, Rad(angularTolerance));
     }
 
     /// <summary>True if the axes are parallel, pointing the same or opposite ways, within the tolerance in degrees.</summary>
     public bool IsParallel(Axis other, double angularTolerance = 1e-5)
     {
-        var a = ToGpAx1();
-        var b = other.ToGpAx1();
+        var a = ToAxis3D();
+        var b = other.ToAxis3D();
         return a.IsParallel(b, Rad(angularTolerance));
     }
 
@@ -153,8 +153,8 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     /// <summary>The angle between the directions, in degrees (0 to 180).</summary>
     public double AngleBetween(Axis other)
     {
-        var a = ToGpAx1();
-        var b = other.ToGpAx1();
+        var a = ToAxis3D();
+        var b = other.ToAxis3D();
         return a.AngleTo(b) * Constants.RadToDeg;
     }
 
@@ -165,13 +165,7 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     public static Axis operator -(Axis a) => a.Reverse();
     public static bool operator ==(Axis a, Axis b) => a.Equals(b);
     public static bool operator !=(Axis a, Axis b) => !a.Equals(b);
-    public static IGeometry? operator &(Axis a, Axis b) => a.Intersect(b);
-    public static IGeometry? operator &(Axis a, Plane b) => a.Intersect(b);
-    public static IGeometry? operator &(Axis a, Location b) => a.Intersect(b);
-    public static Vector? operator &(Axis a, Vector b) => a.Intersect(b);
 
-    /// <summary>Where a shape meets this axis (the shape's <see cref="Shape.Intersect(object[])"/>).</summary>
-    public static ShapeList<Shape> operator &(Axis a, Shape b) => a.Intersect(b);
 
     /// <summary>Where a shape meets this axis (the shape's <see cref="Shape.Intersect(object[])"/>), empty if nowhere.</summary>
     public ShapeList<Shape> Intersect(Shape shape) => shape.Intersect(this);

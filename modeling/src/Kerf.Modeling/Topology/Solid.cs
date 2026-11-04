@@ -41,7 +41,7 @@ public partial class Solid : Shape3D
     public static Solid MakeBox(double length, double width, double height, Plane? plane = null) =>
         Failures.Doing(() => $"box {Formatting.Number(length)} × {Formatting.Number(width)} × {Formatting.Number(height)}", () =>
         {
-            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var ax2 = (plane ?? Plane.XY).ToFrame3D();
             return new Solid(Failures.Get(global::Kerf.Topology.Solid.Box(length, width, height, ax2), () => "box").Shape);
         });
 
@@ -49,7 +49,7 @@ public partial class Solid : Shape3D
     public static Solid MakeCone(double baseRadius, double topRadius, double height, Plane? plane = null, double angle = 360) =>
         Failures.Doing(() => $"cone of radii {Formatting.Number(baseRadius)} and {Formatting.Number(topRadius)}, height {Formatting.Number(height)}", () =>
         {
-            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var ax2 = (plane ?? Plane.XY).ToFrame3D();
             return new Solid(Failures.Get(global::Kerf.Topology.Solid.Cone(baseRadius, topRadius, height, ax2, angle * Constants.DegToRad),
                                           () => "cone").Shape);
         });
@@ -58,7 +58,7 @@ public partial class Solid : Shape3D
     public static Solid MakeCylinder(double radius, double height, Plane? plane = null, double angle = 360) =>
         Failures.Doing(() => $"cylinder of radius {Formatting.Number(radius)}, height {Formatting.Number(height)}", () =>
         {
-            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var ax2 = (plane ?? Plane.XY).ToFrame3D();
             return new Solid(Failures.Get(global::Kerf.Topology.Solid.Cylinder(radius, height, ax2, angle * Constants.DegToRad),
                                           () => "cylinder").Shape);
         });
@@ -67,7 +67,7 @@ public partial class Solid : Shape3D
     public static Solid MakeSphere(double radius, Plane? plane = null, double angle1 = -90, double angle2 = 90, double angle3 = 360) =>
         Failures.Doing(() => $"sphere of radius {Formatting.Number(radius)}", () =>
         {
-            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var ax2 = (plane ?? Plane.XY).ToFrame3D();
             var options = new SphereOptions
             {
                 MinLatitude = angle1 * Constants.DegToRad,
@@ -82,7 +82,7 @@ public partial class Solid : Shape3D
                                   double endAngle = 360, double majorAngle = 360) =>
         Failures.Doing(() => $"torus of radii {Formatting.Number(majorRadius)} and {Formatting.Number(minorRadius)}", () =>
         {
-            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var ax2 = (plane ?? Plane.XY).ToFrame3D();
             var options = new TorusOptions
             {
                 MinorStart = startAngle * Constants.DegToRad,
@@ -97,7 +97,7 @@ public partial class Solid : Shape3D
                                   Plane? plane = null) =>
         Failures.Doing(() => "wedge", () =>
         {
-            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var ax2 = (plane ?? Plane.XY).ToFrame3D();
             var options = new WedgeOptions { TopMin = (minX, minZ), TopMax = (maxX, maxZ) };
             return new Solid(Failures.Get(global::Kerf.Topology.Solid.Wedge(deltaX, deltaY, deltaZ, options, ax2), () => "wedge").Shape);
         });
@@ -175,7 +175,7 @@ public partial class Solid : Shape3D
         // The prism shares the profile's face, which the draft no longer edits (the kernel's unit 10H5): no copy is made
 
         // Extrude the profile; its sides are the faces generated from its edges
-        var directionVec = direction.ToGpVec();
+        var directionVec = direction.ToVector3D();
         var prismBuilt = Failures.Get(profile.TopoShape.Extrude(directionVec), () => "extrude");
         var prism = prismBuilt.Shape;
         var sideFaces = new List<(global::Kerf.Topology.Face Face, double Angle)>();
@@ -195,8 +195,8 @@ public partial class Solid : Shape3D
         if (alongNormal && sideFaces.All(s => new Face(s.Face).GeomType is GeomType.Plane or GeomType.Cylinder or GeomType.Cone))
         {
             // Draft the sides about the plane of the profile, which keeps its size
-            var center = profile.Center().ToGpPnt();
-            var pullDir = pull.ToGpDir();
+            var center = profile.Center().ToPoint3D();
+            var pullDir = pull.ToDirection3D();
             var neutral = new Plane3D(center, pullDir);
             // The draft can't build every taper a loft can: a failure falls back to the loft
             var drafted = prism.Draft(sideFaces.Select(s => (s.Face, s.Angle * Constants.DegToRad)), pullDir, neutral);
@@ -279,7 +279,7 @@ public partial class Solid : Shape3D
         var surfaces = new ShapeList<Shape2D>(TopoUtil.TopLevelShapes(sewn).Select(s =>
             s.IsFace() ? (Shape2D)new Face((global::Kerf.Topology.Face)s)
             : s.IsShell() ? new Shell((global::Kerf.Topology.Shell)s)
-            : throw new InvalidOperationException($"Invalid sewn shape {TopoUtil.TypeName(s)}"))).SortBy(s => s.DistanceTo(profile));
+            : throw new InvalidOperationException($"Invalid sewn shape {TopoUtil.TypeName(s)}"))).OrderBy(s => s.DistanceTo(profile)).ToShapeList();
         var limit = surfaces[until == Until.Next ? 0 : surfaces.Count - 1];
 
         // 4: split the extrusion by that surface
@@ -298,14 +298,14 @@ public partial class Solid : Shape3D
             if (piece.Faces().Any(f => Math.Abs(f.Area - profile.Area) <= Constants.Tolerance * Math.Max(1, profile.Area)
                                        && (f.Center() - center).Length <= Constants.Tolerance))
                 return (Solid)piece;
-        throw new InvalidOperationException("Extrusion is None");
+        throw new InvalidOperationException("The extrusion is empty.");
     }
 
     /// <summary>A cross section (a face, or a wire with optional holes) revolved through <paramref name="angle"/> degrees about an axis.</summary>
     public static Solid Revolve(Face section, double angle, Axis axis) =>
         Failures.Doing(() => "revolve", () =>
         {
-            var ax1 = axis.ToGpAx1();
+            var ax1 = axis.ToAxis3D();
             // On a copy of the profile, as build123d revolves (BRepPrimAPI_MakeRevol with copy)
             var revolved = Failures.Get(section.TopoShape.Revolve(ax1, angle * Constants.DegToRad, copyProfile: true), () => "revolve");
             return Result(new Solid((global::Kerf.Topology.Solid)revolved.Shape));
@@ -371,8 +371,8 @@ public partial class Solid : Shape3D
             case Vector v:
             {
                 var system = new Frame3D();
-                var start = path.StartPoint().ToGpPnt();
-                var dir = v.ToGpDir();
+                var start = path.StartPoint().ToPoint3D();
+                var dir = v.ToDirection3D();
                 system = system.WithLocation(start);
                 system = system.WithDirection(dir);
                 return new SweepOptions { Frame = SweepFrame.Fixed, FixedFrame = system, WithCorrection = true };
@@ -439,7 +439,9 @@ public partial class Solid : Shape3D
     }
 
     /// <summary>The solid with a draft of <paramref name="angle"/> degrees applied to planar, cylindrical or conical faces.</summary>
-    /// <exception cref="DraftAngleError">The draft can't be added to a face, or built.</exception>
+    /// <exception cref="KerfException">
+    /// The draft can't be added to a face (<see cref="ModelingDiagnostics.DraftFailed"/>, the face as its shape), or built.
+    /// </exception>
     public Solid Draft(IEnumerable<Face> faces, Plane neutralPlane, double angle)
     {
         var faceList = faces.ToList();
@@ -448,8 +450,8 @@ public partial class Solid : Shape3D
                 throw new ArgumentException(
                     $"Face {face} has unsupported geometry type {face.GeomType.ToString().ToUpperInvariant()}. "
                     + "Only PLANAR, CYLINDRICAL, and CONICAL faces are supported.");
-        var dir = neutralPlane.ZDir.ToGpDir();
-        var pln = neutralPlane.ToGpPln();
+        var dir = neutralPlane.ZDir.ToDirection3D();
+        var pln = neutralPlane.ToPlane3D();
         var drafted = TopoShape.Draft(faceList.Select(f => f.TopoFace), dir, angle * Constants.DegToRad, pln);
         if (!drafted.TryGetValue(out var built))
         {
@@ -457,8 +459,10 @@ public partial class Solid : Shape3D
             global::Kerf.Topology.Shape? problem = error.Shapes is [var shape, ..] ? shape : null;
             // A face that couldn't be drafted is the problematic shape itself; a build that failed has no face
             if (problem is { } p && p.IsFace() && faceList.FirstOrDefault(f => f.TopoShape.IsSame(p)) is { } face)
-                throw new DraftAngleError("Draft could not be added to a face.", face, p);
-            throw new DraftAngleError("Draft build failed on the given solid.", null, problem, new KerfException(drafted.Diagnostics));
+                throw Failures.Expected(ModelingDiagnostics.DraftFailed, $"The draft can't be added to the face at {face.Center().ToString("G6")}.",
+                                        drafted.Diagnostics, null, p);
+            throw Failures.Expected(ModelingDiagnostics.DraftFailed, "The drafted solid couldn't be built.", drafted.Diagnostics, null,
+                                    problem is { } q ? [q] : []);
         }
         var result = new Solid((global::Kerf.Topology.Solid)built.Shape);
         return (Solid)result.MadeBy(ShapeHistory.FromAlgorithm(s => built.History.Modified(s), s => built.History.Generated(s),
@@ -594,20 +598,3 @@ public partial class Solid : Shape3D
     }
 }
 
-/// <summary>The error <see cref="Solid.Draft"/> throws, with the face it failed on and OCCT's problematic shape.</summary>
-public sealed class DraftAngleError : InvalidOperationException
-{
-    /// <summary>Creates the error.</summary>
-    public DraftAngleError(string message, Face? face = null, global::Kerf.Topology.Shape? problematicShape = null, Exception? inner = null)
-        : base(message, inner)
-    {
-        Face = face;
-        ProblematicShape = problematicShape;
-    }
-
-    /// <summary>The face the draft couldn't be added to, if it was one.</summary>
-    public Face? Face { get; }
-
-    /// <summary>The shape OCCT reports as problematic.</summary>
-    public global::Kerf.Topology.Shape? ProblematicShape { get; }
-}

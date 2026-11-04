@@ -19,14 +19,14 @@ public abstract partial class Shape2D : Shape
     /// shape, so coplanar faces make a Face or Sketch.
     /// </summary>
     /// <exception cref="ArgumentException">The operands aren't all 2D, or the faces don't sew into one connected shell.</exception>
-    public override Shape Add(params IEnumerable<Shape?> other)
+    internal override Shape AddCore(IEnumerable<Shape?> other)
     {
         var summands = Operands(other);
         if (summands.Count == 0)
             return this;
         // Only sew when a shell is being built up
         if (this is not Shell && !summands.Any(s => s is Shell))
-            return base.Add(other);
+            return base.AddCore(other);
         if (summands.Any(s => s.Dim != 2))
             throw new ArgumentException("Only shapes with the same dimension can be added");
         var faces = Faces().Concat(summands.SelectMany(s => s.Faces())).ToList();
@@ -303,7 +303,8 @@ public abstract partial class Shape2D : Shape
         };
         var offsetResult = TopoShape.Offset(amount, options);
         if (!offsetResult.TryGetValue(out var built) || built.Shape.IsNull)
-            throw new InvalidOperationException($"Unable to offset {GetType().Name} by {amount}");
+            throw Failures.Expected(ModelingDiagnostics.OffsetFailed, $"The offset of the {GetType().Name} by {Formatting.Number(amount)} failed.",
+                                    offsetResult.IsFailure ? offsetResult.Diagnostics : default);
         var offset = built.Shape;
         var result = Cast(offset);
         // The builder always returns a shell; a face offsets to a single face

@@ -20,7 +20,7 @@ public static partial class Operations
     {
         // Phase 5: in builder mode the result is combined with mode (replacing the builder's sketch by default)
         if (edge is null)
-            throw new ArgumentException("A single Edge must be provided");
+            throw new ArgumentException("Give a single edge.");
         var parent = edge.TopoParent ?? throw new ArgumentException("edge must be extracted from shape");
 
         // Generate a set of evenly spaced points along the given edge and the edges connected to it and use them to
@@ -90,10 +90,10 @@ public static partial class Operations
         var newArc = Edge.MakeThreePointArc(connectedEdgesEndPoints[0], middleEdgeArcPoint, connectedEdgesEndPoints[1]);
 
         // Recover other edges
-        var otherEdges = parent.Edges() - OneD.ConnectedEdges(edge) - new ShapeList<Edge>([edge]);
+        var otherEdges = parent.Edges().Except(OneD.ConnectedEdges(edge)).Except([edge]);
 
         // Rebuild the face. Note that the longest wire must be the perimeter and others holes
-        var faceWires = Wire.Combine([.. trimmedConnectedEdges, newArc, .. otherEdges]).SortBy(SortBy.Length, reverse: true);
+        var faceWires = Wire.Combine([.. trimmedConnectedEdges, newArc, .. otherEdges]).OrderByDescending(ShapeKey.Length);
         var pendingFace = new Face(faceWires[0], faceWires.Skip(1));
 
         // Flip the face to match the original parent

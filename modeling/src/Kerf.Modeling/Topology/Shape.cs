@@ -17,10 +17,6 @@ namespace Kerf.Modeling;
 /// <see cref="IsEmpty"/>, has no sub-shapes, and adding it to another shape leaves that shape unchanged.
 /// </para>
 /// </remarks>
-// Properties and methods are found by name for selectors given plain values (ShapeProperty), trimmed or not
-[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
-    System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties
-    | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods)]
 public abstract partial class Shape : IEquatable<Shape>
 {
     // The OCCT shape. Never modified: copies are made with Located/Moved/Reversed instead
@@ -80,7 +76,7 @@ public abstract partial class Shape : IEquatable<Shape>
     /// The OCCT shape (a <c>TopoDS_Edge</c> for an edge, and so on): a new handle sharing this shape's geometry,
     /// which may be modified without affecting this shape.
     /// </summary>
-    public global::Kerf.Topology.Shape Wrapped => TopoUtil.Downcast(_wrapped);
+    public global::Kerf.Topology.Shape KernelShape => TopoUtil.Downcast(_wrapped);
 
     /// <summary>True for the zero of a shape class: a shape with nothing in it.</summary>
     public bool IsEmpty => _isEmpty ??= TopoUtil.IsEmptyCompound(_wrapped);

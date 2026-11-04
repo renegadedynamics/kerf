@@ -109,7 +109,7 @@ public partial class Wire : Shape1D
         var vectors = vertices.ToList();
         if ((vectors[0] - vectors[^1]).Length > Constants.Tolerance && close)
             vectors.Add(vectors[0]);
-        var points = vectors.Select(v => v.ToGpPnt()).ToArray();
+        var points = vectors.Select(v => v.ToPoint3D()).ToArray();
         return new Wire(Failures.Get(global::Kerf.Topology.Wire.Polygon(points), () => "polygon"));
     }
 
@@ -215,7 +215,7 @@ public partial class Wire : Shape1D
     public ShapeList<Edge> OrderEdges()
     {
         // Sorting by a reversed wire runs against the orientation of its edges
-        var sorted = Edges().SortBy(this, reverse: !IsForward);
+        var sorted = (IsForward ? Edges().OrderBy(this) : Edges().OrderByDescending(this));
         var ordered = new List<Edge> { sorted[0] };
         foreach (var edge in sorted.Skip(1))
             ordered.Add((ordered[^1].PositionAt(1) - edge.PositionAt(0)).Length < Constants.Tolerance ? edge : edge.Reversed());
@@ -239,7 +239,7 @@ public partial class Wire : Shape1D
     {
         var curve = GeomAdaptor();
         var target = PositionAt(position);
-        var pnt = target.ToGpPnt();
+        var pnt = target.ToPoint3D();
         // The extrema of the distance, nearest first
         var extrema = curve.Project(pnt);
         if (extrema.IsEmpty)
@@ -290,7 +290,7 @@ public partial class Wire : Shape1D
             var adaptor = closestEdge.ToCurve();
             var (paramMin, paramMax) = closestEdge.Range;
             if (adaptor.IsPeriodic)
-                closestParam = PyMath.Mod(closestParam - paramMin, adaptor.Period) + paramMin;
+                closestParam = Numerics.FloorMod(closestParam - paramMin, adaptor.Period) + paramMin;
             distanceAlongWire = closestEdge.Orientation == global::Kerf.Topology.Orientation.Forward
                 ? adaptor.LengthBetween(paramMin, closestParam)
                 : adaptor.LengthBetween(closestParam, paramMax);
@@ -453,7 +453,7 @@ public partial class Wire : Shape1D
         var startU = start.ToParam(this);
         var endU = end.ToParam(this);
         (startU, endU) = (Math.Min(startU, endU), Math.Max(startU, endU));
-        var ordered = Edges().SortBy(this);
+        var ordered = Edges().OrderBy(this);
         if (!IsForward)
             // The edges of a reversed wire run against its positions, so turn each around
             ordered = new ShapeList<Edge>(ordered.Select(e => e.Reversed()));
@@ -516,8 +516,8 @@ public partial class Wire : Shape1D
             throw new ArgumentException("Provide exactly one of direction or center");
 
         var projection = directionVector is { } dv
-            ? ShapeProjections.Project(TopoWire, targetObject.TopoShape, dv.ToGpDir())
-            : ShapeProjections.Project(TopoWire, targetObject.TopoShape, centerPoint.ToGpPnt());
+            ? ShapeProjections.Project(TopoWire, targetObject.TopoShape, dv.ToDirection3D())
+            : ShapeProjections.Project(TopoWire, targetObject.TopoShape, centerPoint.ToPoint3D());
         var output = new List<Wire>();
         {
             var orientation = TopoShape.Orientation;

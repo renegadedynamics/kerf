@@ -15,10 +15,10 @@ public class FeatureInputsUnchangedTests
     // A part made by another operation: a box with a boss fused on its top
     private static Part Fused() => (Part)(new Box(10, 6, 4) + new Box(2, 2, 6));
 
-    private static byte[] Text(Shape shape) => Extras.WriteBRep(shape.Wrapped);
+    private static byte[] Text(Shape shape) => Extras.WriteBRep(shape.KernelShape);
 
     private static int SharedFaces(Shape result, Shape part) =>
-        part.Faces().Count(f => result.Faces().Any(r => r.Wrapped.IsSame(f.Wrapped)));
+        part.Faces().Count(f => result.Faces().Any(r => r.KernelShape.IsSame(f.KernelShape)));
 
     private static Shape Untouched(Shape part, Func<Shape> operation)
     {
@@ -46,17 +46,17 @@ public class FeatureInputsUnchangedTests
     {
         Part part = Fused();
         Untouched(part, () => Ops.Offset(part, 0.5));
-        Shape shell = Untouched(part, () => Ops.Offset(part, -0.5, openings: [part.Faces().SortBy(Axis.Z).Last]));
+        Shape shell = Untouched(part, () => Ops.Offset(part, -0.5, new Ops.OffsetOptions { Openings = [part.Faces().OrderBy(Axis.Z).Last()] }));
         // the bottom face, away from the opening, is the part's own
-        Face bottom = part.Faces().SortBy(Axis.Z)[0];
-        Assert.Contains(shell.Faces(), f => f.Wrapped.IsSame(bottom.Wrapped));
+        Face bottom = part.Faces().OrderBy(Axis.Z)[0];
+        Assert.Contains(shell.Faces(), f => f.KernelShape.IsSame(bottom.KernelShape));
     }
 
     [Fact]
     public void ThickeningAFaceOfAPartLeavesThePartAlone()
     {
         Part part = Fused();
-        Face top = part.Faces().SortBy(Axis.Z)[0];
+        Face top = part.Faces().OrderBy(Axis.Z)[0];
         Untouched(part, () => Ops.Thicken(top, 1));
         Untouched(part, () => Ops.Thicken(top, -1));
     }
@@ -65,6 +65,6 @@ public class FeatureInputsUnchangedTests
     public void DraftingTheSidesOfAPartLeavesItAlone()
     {
         Box box = new(10, 6, 4);
-        Untouched(box, () => Ops.Draft(box.Faces().FilterBy(Axis.Z, reverse: true), Plane.XY.Offset(-2), 5));
+        Untouched(box, () => Ops.Draft(box.Faces().NotParallelTo(Axis.Z), Plane.XY.Offset(-2), 5));
     }
 }

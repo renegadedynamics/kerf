@@ -73,10 +73,10 @@ public abstract partial class Shape3D : Shape
         }
         var chamfered = TopoShape.Chamfer(specs);
         if (!chamfered.TryGetValue(out var built))
-            throw new ArgumentException("Failed creating a chamfer, try a smaller length value(s)", new KerfException(chamfered.Diagnostics));
+            throw Failures.Expected(ModelingDiagnostics.ChamferFailed, "The chamfer failed; try a smaller length.", chamfered.Diagnostics);
         var result = Make3DResult(built.Shape);
         if (!result.IsValid)
-            throw new ArgumentException("Failed creating a chamfer, try a smaller length value(s)");
+            throw Failures.Expected(ModelingDiagnostics.ChamferFailed, "The chamfer's result isn't valid; try a smaller length.");
         return result.MadeBy(ShapeHistory.FromAlgorithm(s => built.History.Modified(s), s => built.History.Generated(s), [TopoShape], result.TopoShape));
     }
 
@@ -113,7 +113,10 @@ public abstract partial class Shape3D : Shape
     }
 
     /// <summary>The edges of this shape filleted with a radius.</summary>
-    /// <exception cref="ArgumentException">The fillet can't be made; the message says which edges failed and why.</exception>
+    /// <exception cref="KerfException">
+    /// The fillet can't be made (<see cref="ModelingDiagnostics.FilletFailed"/>, then the kernel's diagnostics); the message
+    /// says which edges failed and why.
+    /// </exception>
     public Shape Fillet(double radius, IEnumerable<Edge> edgeList)
     {
         var edges = edgeList.Select(e => e.TopoEdge).ToList();
@@ -139,9 +142,9 @@ public abstract partial class Shape3D : Shape
             {
                 // Diagnostics mustn't mask the kernel's failure
             }
-            throw new ArgumentException(
-                $"Failed creating a fillet with radius of {Formatting.Number(radius)}{details}, try a smaller value or use "
-                + "max_fillet() to find the largest valid fillet radius", failure);
+            throw Failures.Expected(ModelingDiagnostics.FilletFailed,
+                $"The fillet with a radius of {Formatting.Number(radius)}{details} failed; try a smaller radius, or MaxFillet "
+                + "to find the largest that works.", filleted.IsFailure ? filleted.Diagnostics : default, failure);
         }
         return result!.MadeBy(ShapeHistory.FromAlgorithm(s => built!.History.Modified(s), s => built!.History.Generated(s),
                                                          [TopoShape], result!.TopoShape));
@@ -251,7 +254,7 @@ public abstract partial class Shape3D : Shape
     /// <summary>Whether a point is inside the solid (or on its surface) within a tolerance.</summary>
     public bool IsInside(Vector point, double tolerance = 1.0e-6)
     {
-        var p = point.ToGpPnt();
+        var p = point.ToPoint3D();
         return TopoShape.ClassifyPoint(p, tolerance) == Containment.In || TopoShape.IsOnFace(p, tolerance);
     }
 

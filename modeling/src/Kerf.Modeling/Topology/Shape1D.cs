@@ -82,7 +82,7 @@ public abstract partial class Shape1D : Shape
         {
             if (this is Wire)
                 // A wire: its comp curve reports OtherCurve, so ask its first edge
-                return Edges().First.Radius;
+                return Edges()[0].Radius;
             if (!((Edge)this).GeomAdaptor().TryGetCircle(out var circle))
                 throw new InvalidOperationException("Shape could not be reduced to a circle");
             return circle.Radius;
@@ -217,7 +217,7 @@ public abstract partial class Shape1D : Shape
     {
         plane ??= Plane.XY;
         var tangent = TangentAt(locationParam, mode);
-        return PyMath.Mod(plane.XDir.GetSignedAngle(tangent, plane.ZDir) + 360, 360.0);
+        return Numerics.FloorMod(plane.XDir.GetSignedAngle(tangent, plane.ZDir) + 360, 360.0);
     }
 
     /// <summary>The start point. A circle may start and end at the same point.</summary>
@@ -321,7 +321,7 @@ public abstract partial class Shape1D : Shape
         {
             try
             {
-                var xd = x.ToGpDir();
+                var xd = x.ToDirection3D();
                 var ax3 = new CoordinateSystem(pnt, zDir, xd);
                 trsf = trsf.WithTransformation(ax3, target);
             }
@@ -392,7 +392,7 @@ public abstract partial class Shape1D : Shape
                 int n = line.GeomType == GeomType.Line ? 2 : 8;
                 points.AddRange(Enumerable.Range(0, n).Select(i => line.PositionAt(i / (double)(n - 1))));
             }
-            points = PySet.Distinct(points);   // unique points, in the order of a Python set
+            points = PointOrder.Distinct(points);   // the distinct points, in build123d's order
             // The points making the largest triangle make the most accurate plane; on ties the last such found wins
             double bestArea = double.NegativeInfinity;
             (Vector, Vector, Vector) extremes = default;
@@ -481,10 +481,10 @@ public abstract partial class Shape1D : Shape
     public ShapeList<Edge> CurvatureComb(int count = 100, double? maxToothSize = null)
     {
         if (IsEmpty)
-            throw new InvalidOperationException("Can't create curvature_comb for empty curve");
+            throw new InvalidOperationException("An empty curve has no curvature comb.");
         var pln = CommonPlane();
         if (pln is null || !TopologyUtils.IsCloseB(Math.Abs(pln.ZDir.Z), 1.0, absTol: Constants.Tolerance))
-            throw new InvalidOperationException("curvature_comb only works for curves on Plane.XY");
+            throw new InvalidOperationException("A curvature comb needs a curve on Plane.XY.");
         // A closed curve's first and last tooth would be the same, so the last is left out
         bool endpoint = !IsClosed;
         var uValues = Enumerable.Range(0, count)
@@ -522,7 +522,7 @@ public abstract partial class Shape1D : Shape
     {
         if (IsEmpty || face.IsEmpty)
             throw new InvalidOperationException("Can't project an empty Edge or Wire onto empty Face");
-        var dir = direction.ToGpDir();
+        var dir = direction.ToDirection3D();
         var projected = TopoShape.IsEdge()
             ? ShapeProjections.Project((global::Kerf.Topology.Edge)TopoShape, face.TopoShape, dir)
             : ShapeProjections.Project((global::Kerf.Topology.Wire)TopoShape, face.TopoShape, dir);
@@ -547,7 +547,7 @@ public abstract partial class Shape1D : Shape
     /// This edge or wire joined with other edges and wires (build123d's <c>+</c>): connected pieces make a wire,
     /// others a fused curve; a single edge is returned as an Edge.
     /// </summary>
-    public override Shape Add(params IEnumerable<Shape?> other) => OneD.Add1D(this, other);
+    internal override Shape AddCore(IEnumerable<Shape?> other) => OneD.Add1D(this, other);
 
     internal override ShapeList<Shape>? IntersectCore(object other, double tolerance, bool includeTouched)
     {
@@ -596,11 +596,7 @@ public abstract partial class Shape1D : Shape
 
     // ---- Operators ----
 
-    /// <summary>The tangent at a parameter (build123d's <c>%</c>).</summary>
-    public static Vector operator %(Shape1D curve, double position) => curve.TangentAt(position);
 
-    /// <summary>The location at a parameter (build123d's <c>^</c>).</summary>
-    public static Location operator ^(Shape1D curve, double position) => curve.LocationAt(position);
 }
 
 /// <summary>The kernel's curve of an edge or a wire, for the code the two share (OCCT's adaptors, once).</summary>

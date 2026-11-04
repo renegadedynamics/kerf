@@ -170,20 +170,6 @@ public enum Kind
 #pragma warning restore CS1591
 }
 
-/// <summary>How a builder combines a new object with what it has built so far.</summary>
-public enum Mode
-{
-    /// <summary>Fuse the new object in.</summary>
-    Add,
-    /// <summary>Cut the new object away.</summary>
-    Subtract,
-    /// <summary>Keep only what the two share.</summary>
-    Intersect,
-    /// <summary>Replace everything built so far.</summary>
-    Replace,
-    /// <summary>Create the object without combining it.</summary>
-    Private,
-}
 
 /// <summary>Text font styles.</summary>
 public enum FontStyle
@@ -307,8 +293,8 @@ public enum Side
 #pragma warning restore CS1591
 }
 
-/// <summary>Sorting criteria.</summary>
-public enum SortBy
+/// <summary>A measure of a shape to sort, group or filter by: <c>edges.OrderBy(ShapeKey.Length)</c>.</summary>
+public enum ShapeKey
 {
 #pragma warning disable CS1591
     Length, Radius, Area, Volume, Distance,

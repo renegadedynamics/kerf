@@ -40,7 +40,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
         : this(Build(position, trsf =>
         {
             var origin = new Point3D(0, 0, 0);
-            var dir = direction.ToGpDir();
+            var dir = direction.ToDirection3D();
             var axis = new Axis3D(origin, dir);
             return trsf.WithRotation(axis, angle * Constants.DegToRad);
         }), owned: true)
@@ -70,16 +70,16 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     static Placement Build(Vector position, Func<Transform3D, Transform3D> rotate)
     {
         var trsf = rotate(new Transform3D());
-        var translation = position.ToGpVec();
+        var translation = position.ToVector3D();
         trsf = trsf.WithTranslationPart(translation);
         return new Placement(trsf);
     }
 
     static Placement FromPlane(Plane plane)
     {
-        var origin = plane.Origin.ToGpPnt();
-        var z = plane.ZDir.ToGpDir();
-        var x = plane.XDir.ToGpDir();
+        var origin = plane.Origin.ToPoint3D();
+        var z = plane.ZDir.ToDirection3D();
+        var x = plane.XDir.ToDirection3D();
         var cs = new CoordinateSystem(origin, z, x);
         var trsf = new Transform3D();
         trsf = trsf.WithTransformation(cs);
@@ -88,10 +88,10 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     }
 
     /// <summary>The OCCT location (the same identity).</summary>
-    public Placement ToTopLoc() => Wrapped;
+    public Placement ToPlacement() => Wrapped;
 
     /// <summary>A new OCCT gp_Trsf for this location's transformation.</summary>
-    public Transform3D ToGpTrsf() => Wrapped.Transformation;
+    public Transform3D ToTransform3D() => Wrapped.Transformation;
 
     /// <summary>The position (translation) part.</summary>
     public Vector Position
@@ -119,7 +119,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     public Location WithPosition(Vector position)
     {
         var trsfPosition = new Transform3D();
-        var v = position.ToGpVec();
+        var v = position.ToVector3D();
         trsfPosition = trsfPosition.WithTranslationPart(v);
         var trsfOrientation = Wrapped.Transformation.ToRotation();
         var combined = trsfPosition.Multiplied(trsfOrientation);
@@ -185,13 +185,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
 
     public static bool operator ==(Location? a, Location? b) => a is null ? b is null : a.Equals(b);
     public static bool operator !=(Location? a, Location? b) => !(a == b);
-    public static IGeometry? operator &(Location a, Location b) => a.Intersect(b);
-    public static IGeometry? operator &(Location a, Axis b) => a.Intersect(b);
-    public static IGeometry? operator &(Location a, Plane b) => a.Intersect(b);
-    public static Vector? operator &(Location a, Vector b) => a.Intersect(b);
 
-    /// <summary>Where a shape meets this location (the shape's <see cref="Shape.Intersect(object[])"/>).</summary>
-    public static ShapeList<Shape> operator &(Location a, Shape b) => a.Intersect(b);
 
     /// <summary>Where a shape meets this location (the shape's <see cref="Shape.Intersect(object[])"/>), empty if nowhere.</summary>
     public ShapeList<Shape> Intersect(Shape shape) => shape.Intersect(this);
@@ -254,15 +248,13 @@ public class Rotation : Location
     /// <summary>A copy of another rotation.</summary>
     public Rotation(Rotation rotation) : base(rotation) { }
 
-    /// <summary>A rotation by Euler angles (X, Y, Z) in degrees, as build123d's <c>RotationLike</c> tuples are.</summary>
-    public static implicit operator Rotation((double X, double Y, double Z) angles) => new(angles.X, angles.Y, angles.Z);
 
     static Placement AboutAxis(Axis axis, double angle)
     {
         var trsf = new Transform3D();
         if (angle != 0.0)
         {
-            var ax1 = axis.ToGpAx1();
+            var ax1 = axis.ToAxis3D();
             trsf = trsf.WithRotation(ax1, angle * Constants.DegToRad);
         }
         return new Placement(trsf);

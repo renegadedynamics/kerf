@@ -210,12 +210,12 @@ public partial class Compound : Shape3D
     /// This compound combined with others (build123d's <c>+</c>): connected 1D shapes join into a curve (or wire);
     /// otherwise the pieces are fused, within <see cref="Constants.Tolerance"/>, into a composite of this one's dimension.
     /// </summary>
-    public override Shape Add(params IEnumerable<Shape?> other)
+    internal override Shape AddCore(IEnumerable<Shape?> other)
     {
         if (Dim == 1)
         {
             var curve = IsEmpty ? new Curve() : new Curve(TopoShape);
-            var sum1d = curve.Add(other);
+            var sum1d = curve.AddCore(other);
             var result1d = sum1d is Edge ? new Curve([sum1d]).MadeBy(ShapeHistory.Of([sum1d])) : sum1d;
             return CopyAttributesTo(result1d);
         }
@@ -235,9 +235,9 @@ public partial class Compound : Shape3D
     }
 
     /// <summary>This compound with others cut away, always as a compound.</summary>
-    public override Shape Subtract(params IEnumerable<Shape?> other)
+    internal override Shape SubtractCore(IEnumerable<Shape?> other)
     {
-        var difference = base.Subtract(other);
+        var difference = base.SubtractCore(other);
         if (ReferenceEquals(difference, this))
             return this;
         if (difference is not Compound)
@@ -246,9 +246,9 @@ public partial class Compound : Shape3D
     }
 
     /// <summary>What this compound has in common with others, always as a compound.</summary>
-    public override Shape CommonWith(params IEnumerable<object> others)
+    internal override Shape CommonCore(IEnumerable<object> others)
     {
-        var intersection = base.CommonWith(others);
+        var intersection = base.CommonCore(others);
         if (intersection is not Compound)
             intersection = MakeComposite([intersection]);
         return CopyAttributesTo(intersection);
@@ -322,19 +322,21 @@ public partial class Curve : Compound
     internal override Shape MakeZero() => new Curve();
 
     /// <summary>The curve joined with other 1D shapes, as an edge or wire joins (build123d's <c>+</c>).</summary>
-    public override Shape Add(params IEnumerable<Shape?> other) => OneD.Add1D(this, other);
+    internal override Shape AddCore(IEnumerable<Shape?> other) => OneD.Add1D(this, other);
 
     /// <summary>The wires made from the curve's edges.</summary>
     public override ShapeList<Wire> Wires(Select select = Select.All) => Wire.Combine(Edges(select));
 
-    /// <summary>The point at a parameter along the curve, which must be continuous (build123d's <c>@</c>).</summary>
+    /// <summary>The point at a parameter along the curve, which must be continuous.</summary>
     public Vector PositionAt(double position) => new Wire(Edges()).PositionAt(position);
 
-    /// <summary>The tangent at a parameter along the curve, which must be continuous (build123d's <c>%</c>).</summary>
-    public static Vector operator %(Curve curve, double position) => new Wire(curve.Edges()).TangentAt(position);
+    /// <summary>The tangent at a parameter along the curve, which must be continuous.</summary>
+    public Vector TangentAt(double position) => new Wire(Edges()).TangentAt(position);
 
-    /// <summary>The location at a parameter along the curve, which must be continuous (build123d's <c>^</c>).</summary>
-    public static Location operator ^(Curve curve, double position) => new Wire(curve.Edges()).LocationAt(position);
+    /// <summary>The location at a parameter along the curve, which must be continuous.</summary>
+    public Location LocationAt(double position) => new Wire(Edges()).LocationAt(position);
+
+
 }
 
 /// <summary>A compound of 2D shapes: faces.</summary>

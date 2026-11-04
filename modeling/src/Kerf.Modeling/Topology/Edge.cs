@@ -19,8 +19,8 @@ public partial class Edge : Shape1D
     /// <summary>An infinite line along an axis.</summary>
     public static Edge FromAxis(Axis axis)
     {
-        var pnt = axis.Position.ToGpPnt();
-        var dir = axis.Direction.ToGpDir();
+        var pnt = axis.Position.ToPoint3D();
+        var dir = axis.Direction.ToDirection3D();
         var line = new LineCurve3D(pnt, dir);
         return FromCurve(line);
     }
@@ -84,11 +84,11 @@ public partial class Edge : Shape1D
     public static Edge MakeBezier(IReadOnlyList<Vector> controlPoints, IReadOnlyList<double>? weights = null)
     {
         if (controlPoints.Count < 2)
-            throw new ArgumentException("At least two control points must be provided (start, end)");
+            throw new ArgumentException("Give at least two control points, the start and the end.");
         if (controlPoints.Count > 25)
             throw new ArgumentException("The maximum number of control points is 25");
         if (weights is { Count: > 0 } && weights.Count != controlPoints.Count)
-            throw new ArgumentException("A weight must be provided for each control point");
+            throw new ArgumentException("Give a weight for each control point.");
         var poles = PointArray(controlPoints);
         BezierCurve3D curve;
         if (weights is { Count: > 0 })
@@ -106,7 +106,7 @@ public partial class Edge : Shape1D
                                   AngularDirection angularDirection = AngularDirection.CounterClockwise)
     {
         plane ??= Plane.XY;
-        var ax2 = plane.ToGpAx2();
+        var ax2 = plane.ToFrame3D();
         var circle = new Circle3D(ax2, radius);
         if (startAngle == endAngle)   // a full circle
             return new Edge(Failures.Get(global::Kerf.Topology.Edge.Circle(circle), () => "circle"));
@@ -121,10 +121,10 @@ public partial class Edge : Shape1D
                                    AngularDirection angularDirection = AngularDirection.CounterClockwise)
     {
         plane ??= Plane.XY;
-        var origin = plane.Origin.ToGpPnt();
-        var zDir = plane.ZDir.ToGpDir();
+        var origin = plane.Origin.ToPoint3D();
+        var zDir = plane.ZDir.ToDirection3D();
         var ax1 = new Axis3D(origin, zDir);
-        var ax2 = plane.ToGpAx2();
+        var ax2 = plane.ToFrame3D();
         double correction;
         Ellipse3D ellipse;
         if (yRadius > xRadius)
@@ -168,7 +168,7 @@ public partial class Edge : Shape1D
                                     AngularDirection angularDirection = AngularDirection.CounterClockwise)
     {
         plane ??= Plane.XY;
-        var ax2 = plane.ToGpAx2();
+        var ax2 = plane.ToFrame3D();
         var parabola = new Parabola3D(ax2, focalLength);
         var arc = Failures.Get(TrimmedCurve3D.Arc(parabola, startAngle * Constants.DegToRad, endAngle * Constants.DegToRad,
                                                   angularDirection == AngularDirection.CounterClockwise), () => "arc of parabola");
@@ -180,10 +180,10 @@ public partial class Edge : Shape1D
                                      AngularDirection angularDirection = AngularDirection.CounterClockwise)
     {
         plane ??= Plane.XY;
-        var origin = plane.Origin.ToGpPnt();
-        var zDir = plane.ZDir.ToGpDir();
+        var origin = plane.Origin.ToPoint3D();
+        var zDir = plane.ZDir.ToDirection3D();
         var ax1 = new Axis3D(origin, zDir);
-        var ax2 = plane.ToGpAx2();
+        var ax2 = plane.ToFrame3D();
         double correction;
         Hyperbola3D hyperbola;
         if (yRadius > xRadius)
@@ -213,8 +213,8 @@ public partial class Edge : Shape1D
     public static Edge MakeHelix(double pitch, double height, double radius, Vector? center = null, Vector? normal = null,
                                  double angle = 0.0, bool lefthand = false)
     {
-        var c = (center ?? new Vector(0, 0, 0)).ToGpPnt();
-        var n = (normal ?? new Vector(0, 0, 1)).ToGpDir();
+        var c = (center ?? new Vector(0, 0, 0)).ToPoint3D();
+        var n = (normal ?? new Vector(0, 0, 1)).ToDirection3D();
         var ax3 = new CoordinateSystem(c, n);
         // The surface the helix is wrapped around
         Surface surface = angle == 0.0
@@ -237,8 +237,8 @@ public partial class Edge : Shape1D
     /// <summary>A line between two points.</summary>
     public static Edge MakeLine(Vector point1, Vector point2)
     {
-        var p1 = point1.ToGpPnt();
-        var p2 = point2.ToGpPnt();
+        var p1 = point1.ToPoint3D();
+        var p2 = point2.ToPoint3D();
         var line = global::Kerf.Topology.Edge.Line(p1, p2);
         if (!line.TryGetValue(out var edge))
             throw new ArgumentException($"Can't make a line from {point1} to {point2}: {line.Error!.Message}");
@@ -270,7 +270,7 @@ public partial class Edge : Shape1D
     public static Edge MakeSpline(IReadOnlyList<Vector> points, IReadOnlyList<Vector?>? tangents = null, bool periodic = false,
                                   IReadOnlyList<double>? parameters = null, bool scale = true, double tolerance = 1e-6)
     {
-        var pnts = points.Select(p => p.ToGpPnt()).ToArray();
+        var pnts = points.Select(p => p.ToPoint3D()).ToArray();
         if (parameters is not null && parameters.Count != points.Count + (periodic ? 1 : 0))
             throw new ArgumentException(
                 "There must be one parameter for each interpolation point (plus one if periodic), or none specified. "
@@ -280,7 +280,7 @@ public partial class Edge : Shape1D
         {
             if (tangents.Count == 2 && points.Count != 2)
                 // The start and end tangents only
-                tangentArray = [(tangents[0] ?? new Vector(0, 0, 0)).ToGpVec(), (tangents[1] ?? new Vector(0, 0, 0)).ToGpVec()];
+                tangentArray = [(tangents[0] ?? new Vector(0, 0, 0)).ToVector3D(), (tangents[1] ?? new Vector(0, 0, 0)).ToVector3D()];
             else
             {
                 if (tangents.Count != points.Count)
@@ -288,7 +288,7 @@ public partial class Edge : Shape1D
                         "There must be one tangent for each interpolation point, or just two end point tangents. "
                         + $"Tangent count: {tangents.Count}, point count: {points.Count}");
                 // A missing tangent is a zero one, which the kernel leaves free
-                tangentArray = [.. tangents.Select(t => (t ?? new Vector(0, 0, 0)).ToGpVec())];
+                tangentArray = [.. tangents.Select(t => (t ?? new Vector(0, 0, 0)).ToVector3D())];
             }
         }
         var options = new InterpolationOptions
@@ -301,7 +301,7 @@ public partial class Edge : Shape1D
         };
         var interpolated = BSplineCurve3D.Interpolate(pnts, options);
         if (!interpolated.TryGetValue(out var curve))
-            throw new InvalidOperationException("B-spline interpolation failed");
+            throw Failures.Expected(ModelingDiagnostics.SplineFailed, "No B-spline passes through the points.", interpolated.Diagnostics);
         return FromCurve(curve);
     }
 
@@ -341,36 +341,36 @@ public partial class Edge : Shape1D
     public static Edge MakeSplineApprox(IReadOnlyList<Vector> points, double tolerance = 1e-3,
                                         (double, double, double)? smoothing = null, int minDeg = 1, int maxDeg = 6)
     {
-        var array = points.Select(p => p.ToGpPnt()).ToArray();
+        var array = points.Select(p => p.ToPoint3D()).ToArray();
         var options = smoothing is var (w1, w2, w3)
             // The smoothing asks for C2, whose Jacobi basis needs a degree of at least 6 (OCCT 8)
             ? new ApproximationOptions { Smoothing = (w1, w2, w3), MaxDegree = Math.Max(maxDeg, 6), Continuity = Continuity.C2, Tolerance = tolerance }
             : new ApproximationOptions { MinDegree = minDeg, MaxDegree = maxDeg, Continuity = Continuity.C2, Tolerance = tolerance };
         var approximated = BSplineCurve3D.Approximate(array, options);
         if (!approximated.TryGetValue(out var curve))
-            throw new InvalidOperationException("B-spline approximation failed");
+            throw Failures.Expected(ModelingDiagnostics.SplineFailed, "No B-spline approximates the points.", approximated.Diagnostics);
         return FromCurve(curve);
     }
 
     /// <summary>A circular arc from <paramref name="start"/>, leaving in the direction of <paramref name="tangent"/>, to <paramref name="end"/>.</summary>
     public static Edge MakeTangentArc(Vector start, Vector tangent, Vector end)
     {
-        var p1 = start.ToGpPnt();
-        var t = tangent.ToGpVec();
-        var p2 = end.ToGpPnt();
+        var p1 = start.ToPoint3D();
+        var t = tangent.ToVector3D();
+        var p2 = end.ToPoint3D();
         return FromCurve(Failures.Get(TrimmedCurve3D.ArcTangent(p1, t, p2), () => "tangent arc"));
     }
 
     /// <summary>A circular arc through three points.</summary>
     public static Edge MakeThreePointArc(Vector point1, Vector point2, Vector point3)
     {
-        var p1 = point1.ToGpPnt();
-        var p2 = point2.ToGpPnt();
-        var p3 = point3.ToGpPnt();
+        var p1 = point1.ToPoint3D();
+        var p2 = point2.ToPoint3D();
+        var p3 = point3.ToPoint3D();
         return FromCurve(Failures.Get(TrimmedCurve3D.ArcThrough(p1, p2, p3), () => "three-point arc"));
     }
 
-    internal static Point3D[] PointArray(IReadOnlyList<Vector> points) => [.. points.Select(p => p.ToGpPnt())];
+    internal static Point3D[] PointArray(IReadOnlyList<Vector> points) => [.. points.Select(p => p.ToPoint3D())];
 
     // ---- Curve parameters ----
 
@@ -443,7 +443,7 @@ public partial class Edge : Shape1D
         double projected;
         {
             TopoEdge.TryGetCurve(out var curve, out _);
-            var pnt = point.ToGpPnt();
+            var pnt = point.ToPoint3D();
             if (curve is null || !curve.TryProjectNearest(pnt, out var nearestPoint))
                 throw new InvalidOperationException("The point can't be projected onto the edge's curve");
             projected = nearestPoint.Parameter;
@@ -451,7 +451,7 @@ public partial class Edge : Shape1D
         {
             var adaptor = TopoEdge.ToCurve();
             if (adaptor.IsPeriodic)
-                projected = paramMin + PyMath.Mod(projected - paramMin, adaptor.Period);
+                projected = paramMin + Numerics.FloorMod(projected - paramMin, adaptor.Period);
             var u = adaptor.LengthBetween(paramMin, projected) / adaptor.Length;
             if (!IsForward)
                 u = 1 - u;
@@ -467,7 +467,7 @@ public partial class Edge : Shape1D
             double step = 1.0 / intervals;
             for (int i = 0; i < intervals; i++)
             {
-                var (x, fun) = PyMath.MinimizeBounded(u => (PositionAt(u) - point).Length, i * step, (i + 1) * step,
+                var (x, fun) = Numerics.MinimizeBounded(u => (PositionAt(u) - point).Length, i * step, (i + 1) * step,
                                                        Constants.Tolerance / 2);
                 if (fun < (PositionAt(x + Constants.Tolerance) - PositionAt(x - Constants.Tolerance)).Length)
                 {
@@ -540,7 +540,7 @@ public partial class Edge : Shape1D
         if (intersections.Count == 0)
             return new Edge();
         var trims = new ShapeList<Edge>(intersections.Vertices().Select(p => Trim(0, p.ToVector())));
-        return trims.SortBy(e => e.Length)[0];
+        return trims.OrderBy(e => e.Length).First();
     }
 
     /// <summary>An infinite line trimmed to 2 × <paramref name="halfLength"/> about its centre; any other edge unchanged.</summary>
@@ -576,7 +576,7 @@ public partial class Edge : Shape1D
             _ => throw new ArgumentException($"Can't intersect with a {other.GetType().Name}"),
         };
         var plane = CommonPlane(otherEdge) ?? throw new ArgumentException("All objects must be on the same plane");
-        var pln = plane.ToGpPln();
+        var pln = plane.ToPlane3D();
         var selfCurve = CurveOnPlane(this, pln);
         var intersected = otherEdge is { IsEmpty: false }
             ? selfCurve.Intersect(CurveOnPlane(otherEdge, pln), tolerance)
@@ -613,7 +613,7 @@ public partial class Edge : Shape1D
     /// <summary>The parameters (0 to 1) where the tangent of this planar edge is at <paramref name="angle"/> degrees.</summary>
     public IReadOnlyList<double> FindTangent(double angle)
     {
-        angle = PyMath.Mod(angle, 360);
+        angle = Numerics.FloorMod(angle, 360);
         if (GeomType == GeomType.Line)
             return TangentAngleAt(0) == angle ? [0] : [];
         // A curve of the tangent angle along the edge, intercepted by horizontal lines

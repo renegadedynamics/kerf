@@ -24,7 +24,7 @@ public partial class Wire
         foreach (var vertex in vertices)
         {
             var local = plane.ToLocalCoords(vertex);
-            var current = filleted.Vertices().SortByDistance(local)[0];
+            var current = filleted.Vertices().OrderByDistanceTo(local)[0];
             if ((current.ToVector() - local.ToVector()).Length > Constants.Tolerance)
                 throw new ArgumentException($"Could not find fillet vertex on wire: {vertex}");
             var beforeCorner = filleted;
@@ -40,7 +40,7 @@ public partial class Wire
         // Back to the original location rather than the plane's
         var ownLocation = TopoShape.Placement;
         var geometryAdjust = new Location(ownLocation).Inverse() * globalized.Location;
-        var trsf = geometryAdjust.ToTopLoc().Transformation;
+        var trsf = geometryAdjust.ToPlacement().Transformation;
         var identity = new Placement();
         var baseWire = globalized.TopoShape.Located(identity);
         record = record.Merge(ShapeHistory.FromRelocation(globalized.TopoShape, baseWire));
@@ -72,11 +72,12 @@ internal static class WireFillet
         if (IsTangentContinuous(corner))
             return wire;
         var solution = Solve(corner, radius)
-                       ?? throw new ArgumentException($"Fillet algorithm failed for {vertex} with radius {radius}");
+                       ?? throw Failures.Expected(ModelingDiagnostics.FilletFailed,
+                                                  $"The corner at {vertex} can't be filleted with a radius of {Formatting.Number(radius)}.");
         var result = Splice(corner, solution);
         if (!wire.IsClosed || result.IsClosed)
             return result;
-        throw new ArgumentException("Filleting failed to create a closed wire.");
+        throw Failures.Expected(ModelingDiagnostics.FilletFailed, "The filleted wire isn't closed.");
     }
 
     internal static Corner Analyze(Wire wire, Vertex vertex)
@@ -141,14 +142,14 @@ internal static class WireFillet
         var arcs = ConstrainedSolvers.TwoTanRadArcs([corner.ConnectedEdges[0], corner.ConnectedEdges[1]], radius, Sagitta.Both);
         if (arcs.Count == 0)
             return null;
-        var arc = arcs.SortByDistance(corner.Vertex)[0];
+        var arc = arcs.OrderByDistanceTo(corner.Vertex)[0];
 
         var trimmed = new List<global::Kerf.Topology.Edge?>();
         foreach (var connected in corner.ConnectedEdges)
         {
             var other = connected.Vertices().First(v => v != corner.Vertex);
-            var filletVertex = arc.Vertices().SortByDistance(connected)[0];
-            var pnt = filletVertex.ToVector().ToGpPnt();
+            var filletVertex = arc.Vertices().OrderByDistanceTo(connected)[0];
+            var pnt = filletVertex.ToVector().ToPoint3D();
             var splitVertex = new Vertex(global::Kerf.Topology.Vertex.At(pnt));
             // A copy is split, as build123d splits a deepcopy, so the pieces share nothing with the wire: the identity
             // applied with its geometry copied (BRepBuilderAPI_Transform with copy) rebuilds the edge throughout

@@ -34,8 +34,8 @@ public class ErrorContextTests
         {
             "extrude" => () => Solid.Extrude(Face.MakeRect(1, 1), new Vector(0, 0, 0)),
             "loft" => () => Solid.MakeLoft([Wire.MakeRect(1, 1), Wire.MakeRect(1, 1)]),
-            "revolve" => () => Solid.Revolve(Face.MakeRect(1, 1).Moved(new Location((5.0, 0.0, 0.0))), 0, Axis.Y),
-            _ => () => Solid.Sweep(Wire.MakeCircle(1), Edge.MakeLine((0, 0, 0), (0, 0, 1e-9))),
+            "revolve" => () => Solid.Revolve(Face.MakeRect(1, 1).Moved(new Location(new Vector(5.0, 0.0, 0.0))), 0, Axis.Y),
+            _ => () => Solid.Sweep(Wire.MakeCircle(1), Edge.MakeLine(new Vector(0, 0, 0), new Vector(0, 0, 1e-9))),
         };
         var e = Assert.Throws<Kerf.KerfException>(make);
         Assert.StartsWith($"{feature} failed: ", e.Message);
@@ -78,8 +78,10 @@ public class ErrorContextTests
     public void LibraryExceptionsKeepOcctsAsTheirCause()
     {
         // build123d's own messages stand, with OCCT's failure inside
-        var fillet = Assert.Throws<ArgumentException>(() => Ops.Fillet(new Box(1, 1, 1).Edges(), 5));
-        Assert.Contains("Failed creating a fillet with radius of 5 on 12 of 12 edges", fillet.Message);
+        var fillet = Assert.Throws<Kerf.KerfException>(() => Ops.Fillet(new Box(1, 1, 1).Edges(), 5));
+        Assert.Contains("The fillet with a radius of 5 on 12 of 12 edges", fillet.Message);
+        Assert.Equal(ModelingDiagnostics.FilletFailed, fillet.Error.Code);
+        Assert.Equal(fillet.Diagnostics.Select(d => d.Code), Ops.TryFillet(new Box(1, 1, 1).Edges(), 5).Diagnostics.Select(d => d.Code));
         Assert.True(Failures.IsKernelFailure(fillet.InnerException!));
     }
 
@@ -90,7 +92,7 @@ public class ErrorContextTests
         // 10L1); the modelling layer reads them from the result. A Boolean without arguments is refused before OCCT
         // (its BOPAlgo_AlertTooFewArguments can't arise), and a good one has no errors
         Assert.Throws<ArgumentException>(() => TopoUtil.Boolean(BooleanKind.Fuse, [], []));
-        var box = new Box(1, 1, 1).Wrapped;
+        var box = new Box(1, 1, 1).KernelShape;
         var common = TopoUtil.Boolean(BooleanKind.Common, [box], [box]);
         Assert.True(common.IsSuccess);
         Assert.DoesNotContain(common.Diagnostics, d => d.IsError);

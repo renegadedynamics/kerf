@@ -60,10 +60,10 @@ public partial class Shell : Shape2D
 
     /// <summary>The location on the face of the shell nearest <paramref name="surfacePoint"/>.</summary>
     public Location LocationAt(Vector surfacePoint, Vector? xDir = null) =>
-        Faces().SortBy(f => f.DistanceTo(surfacePoint))[0].LocationAt(surfacePoint, xDir);
+        Faces().OrderBy(f => f.DistanceTo(surfacePoint)).First().LocationAt(surfacePoint, xDir);
 
     /// <summary>This shell sewn with other 2D shapes (adding to a shell always sews, so the result is a Shell).</summary>
-    public static Shell operator +(Shell a, Shape? b) => (Shell)a.Add(b);
+    public static Shell operator +(Shell a, Shape? b) => (Shell)a.AddCore([b]);
 
     // ---- Factories ----
 
@@ -79,7 +79,7 @@ public partial class Shell : Shape2D
     public static Shell Revolve(Shape profile, double angle, Axis axis)
     {
         var wire = new Wire(profile.Edges());
-        var ax1 = axis.ToGpAx1();
+        var ax1 = axis.ToAxis3D();
         // On a copy of the profile, as build123d revolves (BRepPrimAPI_MakeRevol with copy)
         var revolved = Failures.Get(wire.TopoShape.Revolve(ax1, angle * Constants.DegToRad, copyProfile: true), () => "revolve");
         return new Shell((global::Kerf.Topology.Shell)revolved.Shape);
@@ -100,10 +100,10 @@ public partial class Shell : Shape2D
     // ---- Sheet metal ----
 
     /// <summary>The cylindrical faces: on a sheet metal shell, the bends.</summary>
-    public ShapeList<Face> Bends() => Faces().FilterBy(GeomType.Cylinder);
+    public ShapeList<Face> Bends() => Faces().Where(GeomType.Cylinder);
 
     /// <summary>The planar faces: on a sheet metal shell, the base, walls and whatever the bends join.</summary>
-    public ShapeList<Face> Flats() => Faces().FilterBy(GeomType.Plane);
+    public ShapeList<Face> Flats() => Faces().Where(GeomType.Plane);
 
     /// <summary>The straight edges between two flats that still lie in one plane: the lines the sheet can be folded on.</summary>
     public ShapeList<Edge> FoldLines() =>

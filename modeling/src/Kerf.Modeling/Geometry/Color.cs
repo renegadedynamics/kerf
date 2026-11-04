@@ -139,7 +139,7 @@ public readonly struct Color : IEquatable<Color>
     public static IReadOnlyList<Color> CategoricalSet(int count, double startingHue, IReadOnlyList<double> alphas)
     {
         if (alphas.Count != count)
-            throw new ArgumentException("Number of alpha values must match color_count", nameof(alphas));
+            throw new ArgumentException("The number of alpha values must match the colour count.", nameof(alphas));
 
         // numpy.linspace(start, start + 1, count, endpoint=False)
         double step = ((startingHue + 1.0) - startingHue) / count;

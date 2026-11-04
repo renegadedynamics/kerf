@@ -111,7 +111,7 @@ public abstract partial class Shape
             var projectionAxis = new Axis(pathPosition, shapeCenter - pathPosition);
             var (surfacePoint, surfaceNormal) = SurfaceIntersection.FindPoints(this, projectionAxis, Constants.Tolerance)[0];
             var normalPlane = new Plane(surfacePoint, pathTangent, surfaceNormal);
-            var placed = normalPlane.FromLocalCoords(face.Moved(new Location((-faceCenterX, 0, 0))));
+            var placed = normalPlane.FromLocalCoords(face.Moved(new Location(new Vector(-faceCenterX, 0, 0))));
             projected.Add((Face)placed.ProjectToShape(this, surfaceNormal * -1)[0]);
         }
         return new ShapeList<Face>(projected);
@@ -135,7 +135,7 @@ internal static class SurfaceIntersection
     {
         if (shape.IsEmpty)
             return [];
-        var ax1 = axis.ToGpAx1();
+        var ax1 = axis.ToAxis3D();
         var line = new Line3D(ax1);
         var plane = new Plane(axis);
         var found = new List<(global::Kerf.Topology.Face Face, Vector Point, double Distance)>();
@@ -146,7 +146,7 @@ internal static class SurfaceIntersection
         }
         return [.. found.OrderBy(f => f.Distance).Select(f =>
         {
-            var pnt = f.Point.ToGpPnt();
+            var pnt = f.Point.ToPoint3D();
             return (f.Point, TopoUtil.FaceNormalAt(f.Face, pnt));
         })];
     }

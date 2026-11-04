@@ -24,7 +24,7 @@ public sealed class Vertex : Shape
 
     private static global::Kerf.Topology.Vertex Make(Vector point)
     {
-        var pnt = point.ToGpPnt();
+        var pnt = point.ToPoint3D();
         return global::Kerf.Topology.Vertex.At(pnt);
     }
 
@@ -95,7 +95,7 @@ public sealed class Vertex : Shape
     public static Vertex operator -(Vertex a, Vector b) => new(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
 
     /// <summary>Vertices can't be intersected with <c>&amp;</c>.</summary>
-    public override Shape CommonWith(params IEnumerable<object> others) =>
+    internal override Shape CommonCore(IEnumerable<object> others) =>
         throw new NotSupportedException("Vertices can't be intersected");
 
     internal override Shape TransformShapeCore(Matrix matrix) => new Vertex(matrix.Multiply(ToVector()));
@@ -245,7 +245,7 @@ public sealed class Vertex : Shape
                 "this vertex was not selected from a shape, so there is nothing to classify it against - take it from a face or solid");
         var graph = ShapeGraph.Build(parent.TopoShape);
         var own = TopoUtil.FindSame(TopoShape, graph.All(global::Kerf.Topology.ShapeType.Vertex))
-                  ?? throw new InvalidOperationException("this vertex is not part of its topo_parent");
+                  ?? throw new InvalidOperationException("The vertex isn't part of the shape it was selected from.");
         var kinds = new HashSet<Convexity>();
         var edges = graph.Ancestors(own, global::Kerf.Topology.ShapeType.Edge);
         foreach (var topoEdge in edges)

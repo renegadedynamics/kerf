@@ -26,7 +26,7 @@ using Kerf.Modeling;
 file static class Objects
 {
     /// <summary>build123d's Box(l, w, h): centred on the origin.</summary>
-    public static Solid Box(double l, double w, double h) => Solid.MakeBox(l, w, h, new Plane((-l / 2, -w / 2, -h / 2)));
+    public static Solid Box(double l, double w, double h) => Solid.MakeBox(l, w, h, new Plane(new Vector(-l / 2, -w / 2, -h / 2)));
 }
 
 public class AxisWithShapesTests
@@ -34,13 +34,13 @@ public class AxisWithShapesTests
     [Fact]
     public void AxisInit()
     {
-        var axis = new Axis(Edge.MakeLine((1, 2, 3), (1, 2, 4)));
-        Check.AlmostEqual((1, 2, 3), axis.Position, 5);
-        Check.AlmostEqual((0, 0, 1), axis.Direction, 5);
+        var axis = new Axis(Edge.MakeLine(new Vector(1, 2, 3), new Vector(1, 2, 4)));
+        Check.AlmostEqual(new Vector(1, 2, 3), axis.Position, 5);
+        Check.AlmostEqual(new Vector(0, 0, 1), axis.Direction, 5);
 
-        axis = new Axis(edge: Edge.MakeLine((1, 2, 3), (1, 2, 4)));
-        Check.AlmostEqual((1, 2, 3), axis.Position, 5);
-        Check.AlmostEqual((0, 0, 1), axis.Direction, 5);
+        axis = new Axis(edge: Edge.MakeLine(new Vector(1, 2, 3), new Vector(1, 2, 4)));
+        Check.AlmostEqual(new Vector(1, 2, 3), axis.Position, 5);
+        Check.AlmostEqual(new Vector(0, 0, 1), axis.Direction, 5);
     }
 
     [Fact]
@@ -48,35 +48,35 @@ public class AxisWithShapesTests
     {
         var edge = Edge.FromAxis(Axis.X);
         Assert.IsType<Edge>(edge);
-        var common = edge.CommonWith(Edge.MakeLine((0, 0, 0), (1, 0, 0))).SingleEdge();
+        var common = (edge & Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0))).SingleEdge();
         Check.AlmostEqual(1, common.Length, 5);
     }
 
     [Fact]
     public void AxisIntersect()
     {
-        var common = Axis.X.Intersect(Edge.MakeLine((0, 0, 0), (1, 0, 0))).SingleEdge();
+        var common = Axis.X.Intersect(Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0))).SingleEdge();
         Check.AlmostEqual(1, common.Length, 5);
-        common = (Axis.X & Edge.MakeLine((0, 0, 0), (1, 0, 0))).SingleEdge();
+        common = (Axis.X.Intersect(Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0)))).SingleEdge();
         Check.AlmostEqual(1, common.Length, 5);
 
         var arc = Edge.MakeCircle(20, startAngle: 0, endAngle: 180);
-        var ax0 = new Axis((-20, 30, 0), (4, -3, 0));
-        var intersections = arc.Intersect(ax0).Vertices().SortBy(Axis.X);
+        var ax0 = new Axis(new Vector(-20, 30, 0), new Vector(4, -3, 0));
+        var intersections = arc.Intersect(ax0).Vertices().OrderBy(Axis.X);
         Check.TupleAlmostEqual([-5.6, 19.2, 0], Check.Of(intersections[0].ToVector()), 4);
         Check.TupleAlmostEqual([20, 0, 0], Check.Of(intersections[1].ToVector()), 4);
 
-        intersections = ax0.Intersect(arc).Vertices().SortBy(Axis.X);
+        intersections = ax0.Intersect(arc).Vertices().OrderBy(Axis.X);
         Check.TupleAlmostEqual([-5.6, 19.2, 0], Check.Of(intersections[0].ToVector()), 4);
         Check.TupleAlmostEqual([20, 0, 0], Check.Of(intersections[1].ToVector()), 4);
 
-        var l = Edge.MakeLine((0, 0, 1), (0, 0, 2)) ^ 1;
-        var i = Assert.IsType<Location>(Axis.Z & l);
+        var l = (Edge.MakeLine(new Vector(0, 0, 1), new Vector(0, 0, 2))).LocationAt(1);
+        var i = Assert.IsType<Location>(Axis.Z.Intersect(l));
         Check.AlmostEqual(l.Position, i.Position, 5);
         Check.AlmostEqual(l.Orientation, i.Orientation, 5);
 
-        Assert.Null(Axis.Z & Edge.MakeLine((0, 0, 1), (1, 0, 0)).LocationAt(1));
-        Assert.Null(Axis.Z & Edge.MakeLine((1, 0, 1), (1, 0, 2)).LocationAt(1));
+        Assert.Null(Axis.Z.Intersect(Edge.MakeLine(new Vector(0, 0, 1), new Vector(1, 0, 0)).LocationAt(1)));
+        Assert.Null(Axis.Z.Intersect(Edge.MakeLine(new Vector(1, 0, 1), new Vector(1, 0, 2)).LocationAt(1)));
     }
 }
 
@@ -88,28 +88,28 @@ public class PlaneWithShapesTests
     public void PlaneInit()
     {
         // From a face
-        var f = Face.MakeRect(1, 2).Located(new Location((1, 2, 3), (45, 0, 45)));
+        var f = Face.MakeRect(1, 2).Located(new Location(new Vector(1, 2, 3), new Vector(45, 0, 45)));
         var pFromFace = new Plane(f);
-        var pln = pFromFace.ToGpPln();
+        var pln = pFromFace.ToPlane3D();
         foreach (var p in new[] { pFromFace, new Plane(face: f), new Plane(pln) })
         {
-            Check.AlmostEqual((1, 2, 3), p.Origin, 6);
-            Check.AlmostEqual((R2, 0.5, 0.5), p.XDir, 6);
-            Check.AlmostEqual((-R2, 0.5, 0.5), p.YDir, 6);
-            Check.AlmostEqual((0, -R2, R2), p.ZDir, 6);
+            Check.AlmostEqual(new Vector(1, 2, 3), p.Origin, 6);
+            Check.AlmostEqual(new Vector(R2, 0.5, 0.5), p.XDir, 6);
+            Check.AlmostEqual(new Vector(-R2, 0.5, 0.5), p.YDir, 6);
+            Check.AlmostEqual(new Vector(0, -R2, R2), p.ZDir, 6);
             Check.AlmostEqual(f.Location.Position, p.Location.Position, 6);
             Check.AlmostEqual(f.Location.Orientation, p.Location.Orientation, 6);
         }
 
         // From a face with an x direction
         f = Face.MakeRect(1, 2);
-        Vector x = (1, 1), y = (-1, 1);
+        Vector x = new Vector(1, 1), y = new Vector(-1, 1);
         foreach (var p in new[] { new Plane(f, x), new Plane(f, xDir: x), new Plane(face: f, xDir: x) })
         {
-            Check.AlmostEqual((0, 0, 0), p.Origin, 6);
+            Check.AlmostEqual(new Vector(0, 0, 0), p.Origin, 6);
             Check.AlmostEqual(x.Normalized(), p.XDir, 6);
             Check.AlmostEqual(y.Normalized(), p.YDir, 6);
-            Check.AlmostEqual((0, 0, 1), p.ZDir, 6);
+            Check.AlmostEqual(new Vector(0, 0, 1), p.ZDir, 6);
         }
 
         // From planar faces of surface types other than Geom_Plane: this loft's trapezoid faces are B-spline surfaces
@@ -119,12 +119,12 @@ public class PlaneWithShapesTests
             (Axis.X.Direction, Axis.Z.Direction, -Axis.Y.Direction),   // trapezoid face, negative y
             (-Axis.X.Direction, Axis.Z.Direction, Axis.Y.Direction),   // trapezoid face, positive y
         ];
-        var faces = (loftedSolid.Faces() | Plane.XZ) > Axis.Y;
+        var faces = loftedSolid.Faces().ParallelTo(Plane.XZ).OrderBy(Axis.Y);
         Assert.Equal(2, faces.Count);
         for (int i = 0; i < faces.Count; i++)
         {
             var p = new Plane(faces[i]);
-            var face = faces[i].Wrapped;
+            var face = faces[i].KernelShape;
             var centre = global::Kerf.Measurement.MeasureOperations.MassProperties(face, global::Kerf.Measurement.Dimension.Area).CentreOfMass;
             Check.AlmostEqual(new Vector(centre), p.Origin, 6);
             Check.AlmostEqual(expected[i].X, p.XDir, 6);
@@ -137,14 +137,14 @@ public class PlaneWithShapesTests
     public void PlaneMulShape()
     {
         var p = Plane.XY.Offset(2);
-        Assert.Equal(Objects.Box(1, 2, 3).Translate((0, 0, 2)).BoundingBox().ToString(),
+        Assert.Equal(Objects.Box(1, 2, 3).Translate(new Vector(0, 0, 2)).BoundingBox().ToString(),
                      (p * Objects.Box(1, 2, 3)).BoundingBox().ToString());
     }
 
     [Fact]
     public void PlaneMethods()
     {
-        var p = new Plane((0, 0, 0), xDir: (1, 0, 0), zDir: (0, 1, 0));
+        var p = new Plane(new Vector(0, 0, 0), xDir: new Vector(1, 0, 0), zDir: new Vector(0, 1, 0));
         var localBox = p.ToLocalCoords(Solid.MakeBox(1, 1, 1));
         var vertices = localBox.Vertices();
         double[][] targets =
@@ -163,15 +163,15 @@ public class PlaneWithShapesTests
         var random = new Random();
         double x = random.NextDouble(), y = random.NextDouble(), z = random.NextDouble();
         var vertex = new Vertex(x, y, z);
-        Check.AlmostEqual((y, z, x), Plane.YZ.ToLocalCoords(new Vector(vertex)), 5);
-        Check.AlmostEqual((y, z, x), new Vector(Plane.YZ.ToLocalCoords(vertex)), 5);
+        Check.AlmostEqual(new Vector(y, z, x), Plane.YZ.ToLocalCoords(new Vector(vertex)), 5);
+        Check.AlmostEqual(new Vector(y, z, x), new Vector(Plane.YZ.ToLocalCoords(vertex)), 5);
     }
 
     [Fact]
     public void FromNonPlanarFace()
     {
         Assert.IsType<Plane>(new Plane(Face.MakeRect(1, 1)));
-        var cyl = Solid.MakeCylinder(1, 4).Faces().FilterBy(GeomType.Plane, reverse: true)[0];
+        var cyl = Solid.MakeCylinder(1, 4).Faces().WhereNot(GeomType.Plane)[0];
         Assert.Throws<ArgumentException>(() => new Plane(cyl));
     }
 
@@ -179,9 +179,9 @@ public class PlaneWithShapesTests
     public void ShiftOriginAxis()
     {
         var cyl = new Cylinder(1, 2, align: Align.Min);
-        var top = cyl.Faces().SortBy(Axis.Z)[^1];
+        var top = cyl.Faces().OrderBy(Axis.Z)[^1];
         var pln = new Plane(top).ShiftOrigin(Axis.Z);
-        var p = cyl - Ops.Extrude(pln * (new Pos(1, 1) * new Circle(0.5)), amount: -2);
+        var p = cyl - Ops.Extrude(pln * (new Pos(1, 1) * new Circle(0.5)), -2);
         Check.AlmostEqual(Math.PI * (1 - 0.5 * 0.5) * 2, p.Volume, 5);
     }
 
@@ -189,20 +189,20 @@ public class PlaneWithShapesTests
     public void ShiftOriginVertex()
     {
         var box = new Box(1, 1, 1, align: Align.Min);
-        var front = box.Faces().SortBy(Axis.X)[^1];
-        var pln = new Plane(front).ShiftOrigin(front.Vertices().GroupBy(Axis.Z)[^1].SortBy(Axis.Y)[^1]);
-        var p = box - Ops.Extrude(pln * (new Pos(-0.5, 0.5) * new Circle(0.5)), amount: -1);
+        var front = box.Faces().OrderBy(Axis.X)[^1];
+        var pln = new Plane(front).ShiftOrigin(front.Vertices().GroupBy(Axis.Z)[^1].OrderBy(Axis.Y)[^1]);
+        var p = box - Ops.Extrude(pln * (new Pos(-0.5, 0.5) * new Circle(0.5)), -1);
         Check.AlmostEqual(1 - Math.PI * 0.5 * 0.5 * 1, p.Volume, 5);
     }
 
     [Fact]
     public void ShiftOriginVector()
     {
-        var b = Ops.Fillet(new Box(4, 4, 2).Edges().FilterBy(Axis.Z), 0.5);
-        var top = b.Faces().SortBy(Axis.Z)[^1];
-        var reference = top.Edges().FilterBy(GeomType.Circle).GroupBy(Axis.X)[^1].SortBy(Axis.Y)[0].ArcCenter;
-        var pln = new Plane(top, xDir: (0, 1, 0)).ShiftOrigin(reference);
-        var p = b - Ops.Extrude(pln * (new Pos(0.5, 0.5) * new Rectangle(2, 2, align: Align.Min)), amount: -1);
+        var b = Ops.Fillet(new Box(4, 4, 2).Edges().ParallelTo(Axis.Z), 0.5);
+        var top = b.Faces().OrderBy(Axis.Z)[^1];
+        var reference = top.Edges().Where(GeomType.Circle).GroupBy(Axis.X)[^1].OrderBy(Axis.Y)[0].ArcCenter;
+        var pln = new Plane(top, xDir: new Vector(0, 1, 0)).ShiftOrigin(reference);
+        var p = b - Ops.Extrude(pln * (new Pos(0.5, 0.5) * new Rectangle(2, 2, align: Align.Min)), -1);
         Check.AlmostEqual(b.Volume - 2 * 2 * 1, p.Volume, 5);
     }
 
@@ -217,7 +217,7 @@ public class PlaneWithShapesTests
         Assert.Single(section.Faces());
         Check.AlmostEqual(2, section.SingleFace().Area);
 
-        section = Plane.XY & Solid.MakeBox(1, 2, 3, Plane.XY.Offset(-1.5));
+        section = Plane.XY.Intersect(Solid.MakeBox(1, 2, 3, Plane.XY.Offset(-1.5)));
         Assert.Empty(section.Solids());
         Assert.Single(section.Faces());
         Check.AlmostEqual(2, section.SingleFace().Area);
@@ -264,7 +264,7 @@ public class BoundBoxWithShapesTests
     public void EmptyBoxPredicates()
     {
         var empty = BoundBox.FromShape(new Solid());
-        var box = Box((0, 0, 0), (1, 1, 1));
+        var box = Box(new Vector(0, 0, 0), new Vector(1, 1, 1));
         Assert.False(empty.Covers(box));
         Assert.False(empty.CoveredBy(box));
         Assert.False(empty.Contains(box));
@@ -293,24 +293,24 @@ public class BoundBoxWithShapesTests
         var v0 = new Vertex(0, 0, 0);
         var bb2 = v0.BoundingBox().Add(v.BoundingBox());
         var bb3 = bb1.Add(bb2);
-        Check.AlmostEqual((2, 2, 2), bb3.Size, 7);
+        Check.AlmostEqual(new Vector(2, 2, 2), bb3.Size, 7);
         Check.AlmostEqual(8, bb3.Measure, 5);
 
-        bb3 = bb2.Add((3, 3, 3));
-        Check.AlmostEqual((3, 3, 3), bb3.Size, 7);
         bb3 = bb2.Add(new Vector(3, 3, 3));
-        Check.AlmostEqual((3, 3, 3), bb3.Size, 7);
+        Check.AlmostEqual(new Vector(3, 3, 3), bb3.Size, 7);
+        bb3 = bb2.Add(new Vector(3, 3, 3));
+        Check.AlmostEqual(new Vector(3, 3, 3), bb3.Size, 7);
 
         // 2D bounding boxes
         bb2 = new Vertex(0, 0, 0).BoundingBox().Add(new Vertex(3, 3, 0).BoundingBox());
         Check.AlmostEqual(9, bb2.Measure, 5);
 
         // A box from a shape: low accuracy, as the box is a little larger than the shape
-        var cylinder = Solid.MakeCylinder(1, 1).Wrapped;
+        var cylinder = Solid.MakeCylinder(1, 1).KernelShape;
         bb1 = BoundBox.FromTopoDS(cylinder, optimal: false);
-        Check.AlmostEqual((2, 2, 1), bb1.Size, 1);
+        Check.AlmostEqual(new Vector(2, 2, 1), bb1.Size, 1);
 
-        var small = Solid.MakeCylinder(0.5, 0.5).Translate((0, 0, 0.1)).Wrapped;
+        var small = Solid.MakeCylinder(0.5, 0.5).Translate(new Vector(0, 0, 0.1)).KernelShape;
         bb2 = BoundBox.FromTopoDS(small, optimal: false);
         Assert.True(bb2.Within(bb1));
     }
@@ -320,16 +320,16 @@ public class BoundBoxWithShapesTests
         Assert.Equal("bbox: 0 <= x <= 1, 0 <= y <= 1, 0 <= z <= 1", Solid.MakeBox(1, 1, 1).BoundingBox().ToString());
 
     [Fact]
-    public void CenterOfBoundbox() => Check.AlmostEqual((0.5, 0.5, 0.5), Solid.MakeBox(1, 1, 1).BoundingBox().Center(), 5);
+    public void CenterOfBoundbox() => Check.AlmostEqual(new Vector(0.5, 0.5, 0.5), Solid.MakeBox(1, 1, 1).BoundingBox().Center(), 5);
 
     [Fact]
     public void CleanBoundbox()
     {
         var s = Solid.MakeSphere(3);
-        Check.AlmostEqual((6, 6, 6), s.BoundingBox().Size, 5);
+        Check.AlmostEqual(new Vector(6, 6, 6), s.BoundingBox().Size, 5);
         // A mesh no longer changes the shape (the kernel meshes in an overlay): meshing leaves the box clean
         s.Triangulate(1e-3);
-        Check.AlmostEqual((6, 6, 6), s.BoundingBox().Size, 5);
+        Check.AlmostEqual(new Vector(6, 6, 6), s.BoundingBox().Size, 5);
     }
 }
 
@@ -466,9 +466,9 @@ public class OrientedBoundBoxWithShapesTests
         Assert.Equal(2, uniquePoints.Count);
 
         // Orientation
-        foreach (var end in new Vector[] { (1, 0, 0), (0, 1, 0), (0, 0, 1) })
+        foreach (var end in new Vector[] { new Vector(1, 0, 0), new Vector(0, 1, 0), new Vector(0, 0, 1) })
         {
-            corners = Edge.MakeLine((0, 0, 0), end).OrientedBoundingBox().Corners;
+            corners = Edge.MakeLine(new Vector(0, 0, 0), end).OrientedBoundingBox().Corners;
             Assert.Equal(2, corners.Count);
             Assert.Contains(end, corners);
         }
@@ -498,14 +498,14 @@ public class VectorWithShapesTests
     public void VectorConstructors()
     {
         var vertex = new Vertex(0, 0, 0).Moved(new Pos(0, 0, 10));
-        Check.AlmostEqual((0, 0, 10), new Vector(vertex), 4);
+        Check.AlmostEqual(new Vector(0, 0, 10), new Vector(vertex), 4);
     }
 
     [Fact]
     public void Intersect()
     {
         var v1 = new Vector(1, 2, 3);
-        Check.AlmostEqual((1, 2, 3), new Vector((v1 & Solid.MakeBox(2, 4, 5)).SingleVertex()), 5);
+        Check.AlmostEqual(new Vector(1, 2, 3), new Vector((v1.Intersect(Solid.MakeBox(2, 4, 5))).SingleVertex()), 5);
         Assert.Empty(v1.Intersect(Solid.MakeBox(0.5, 0.5, 0.5)));
         Assert.Empty(new Vertex(-10, -10, -10).Intersect(Solid.MakeBox(0.5, 0.5, 0.5)));
     }
@@ -516,50 +516,50 @@ public class LocationWithShapesTests
     [Fact]
     public void MultIterable()
     {
-        var locs = new Location((1, 2, 0)) * new GridLocations(4, 4, 2, 1);
-        Check.AlmostEqual((-1, 2, 0), locs[0].Position, 5);
-        Check.AlmostEqual((3, 2, 0), locs[1].Position, 5);
+        var locs = new Location(new Vector(1, 2, 0)) * new GridLocations(4, 4, 2, 1);
+        Check.AlmostEqual(new Vector(-1, 2, 0), locs[0].Position, 5);
+        Check.AlmostEqual(new Vector(3, 2, 0), locs[1].Position, 5);
     }
 
     [Fact]
     public void Intersection()
     {
-        var e = Edge.MakeLine((0, 0, 0), (1, 1, 1));
+        var e = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 1, 1));
         var l0 = e.LocationAt(0);
         var l1 = e.LocationAt(1);
-        Assert.Null(l0 & l1);
-        Assert.Equal(l1, l1 & l1);
+        Assert.Null(l0.Intersect(l1));
+        Assert.Equal(l1, l1.Intersect(l1));
 
-        Check.AlmostEqual((1, 1, 1), Assert.IsType<Vector>(l1 & new Vector(1, 1, 1)), 5);
-        Assert.Equal(l1, Assert.IsType<Location>(l1 & new Axis((0.5, 0.5, 0.5), (1, 1, 1))));
+        Check.AlmostEqual(new Vector(1, 1, 1), Assert.IsType<Vector>(l1.Intersect(new Vector(1, 1, 1))), 5);
+        Assert.Equal(l1, Assert.IsType<Location>(l1.Intersect(new Axis(new Vector(0.5, 0.5, 0.5), new Vector(1, 1, 1)))));
 
-        var p = Plane.XY.Rotated((45, 0, 0)).ShiftOrigin(new Vector(1, 0, 0));
-        var l = new Location((1, 0, 0), (1, 0, 0), 45);
-        var i = Assert.IsType<Location>(l & p);
-        Check.AlmostEqual((1, 0, 0), i.Position, 5);
+        var p = Plane.XY.Rotated(new Vector(45, 0, 0)).ShiftOrigin(new Vector(1, 0, 0));
+        var l = new Location(new Vector(1, 0, 0), new Vector(1, 0, 0), 45);
+        var i = Assert.IsType<Location>(l.Intersect(p));
+        Check.AlmostEqual(new Vector(1, 0, 0), i.Position, 5);
         Check.AlmostEqual(l.Orientation, i.Orientation, 5);
 
         var b = Solid.MakeBox(1, 1, 1);
-        l = new Location((0.5, 0.5, 0.5), (1, 0, 0), 45);
-        var vertex = Assert.IsType<Vertex>((l & b).SingleVertex());
-        Check.AlmostEqual((0.5, 0.5, 0.5), new Vector(vertex), 5);
+        l = new Location(new Vector(0.5, 0.5, 0.5), new Vector(1, 0, 0), 45);
+        var vertex = Assert.IsType<Vertex>((l.Intersect(b)).SingleVertex());
+        Check.AlmostEqual(new Vector(0.5, 0.5, 0.5), new Vector(vertex), 5);
 
-        var e1 = Edge.MakeLine((0, -1), (2, 1));
-        var e2 = Edge.MakeLine((0, 1), (2, -1));
-        var e3 = Edge.MakeLine((0, 0), (2, 0));
+        var e1 = Edge.MakeLine(new Vector(0, -1), new Vector(2, 1));
+        var e2 = Edge.MakeLine(new Vector(0, 1), new Vector(2, -1));
+        var e3 = Edge.MakeLine(new Vector(0, 0), new Vector(2, 0));
         var found = e1.Intersect(e2, e3);
-        Check.AlmostEqual((1, 0, 0), new Vector(Assert.IsType<Vertex>(found[0])), 5);
+        Check.AlmostEqual(new Vector(1, 0, 0), new Vector(Assert.IsType<Vertex>(found[0])), 5);
 
-        var e4 = Edge.MakeLine((1, -1), (1, 1));
-        var e5 = Edge.MakeLine((2, -1), (2, 1));
+        var e4 = Edge.MakeLine(new Vector(1, -1), new Vector(1, 1));
+        var e5 = Edge.MakeLine(new Vector(2, -1), new Vector(2, 1));
         Assert.Empty(e3.Intersect(e4, e5));
 
         Assert.Empty(b.Intersect(b.Moved(new Pos(10))));
 
         // Common vertices (endpoint-endpoint contacts are touches, not intersections)
-        e1 = Edge.MakeLine((0, 0), (1, 0));
-        e2 = Edge.MakeLine((1, 0), (1, 1));
-        e3 = Edge.MakeLine((1, 0), (2, 0));
+        e1 = Edge.MakeLine(new Vector(0, 0), new Vector(1, 0));
+        e2 = Edge.MakeLine(new Vector(1, 0), new Vector(1, 1));
+        e3 = Edge.MakeLine(new Vector(1, 0), new Vector(2, 0));
         found = e1.Intersect([e2], includeTouched: true);
         Assert.Single(found.Vertices());
         var v = found.SingleVertex();
@@ -570,7 +570,7 @@ public class LocationWithShapesTests
         Assert.Equal((1.0, 0.0, 0.0), (v.X, v.Y, v.Z));
 
         // With a plane
-        e1 = Edge.MakeLine((0, 0), (2, 0));
+        e1 = Edge.MakeLine(new Vector(0, 0), new Vector(2, 0));
         var p1 = Plane.YZ.Offset(1);
         found = e1.Intersect(p1);
         Assert.Single(found.Vertices());
