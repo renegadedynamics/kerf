@@ -10,7 +10,7 @@ namespace Kerf.Engine.Exchange.Documents;
 /// A shape's validation properties, as XCAF keeps them in <c>XCAFDoc_Volume</c>, <c>XCAFDoc_Area</c> and
 /// <c>XCAFDoc_Centroid</c>: the values a STEP file states for the shape, to check a reading against. Each is optional.
 /// </summary>
-public sealed record DocumentValidationProps
+internal sealed record DocumentValidationProps
 {
     /// <summary>No property.</summary>
     public static DocumentValidationProps None { get; } = new();

@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Classification.Hatching;
 
 /// <summary>Intersection type between the hatching and the element.</summary>
-public enum IntersectionType
+internal enum IntersectionType
 {
     True,
     Touch,

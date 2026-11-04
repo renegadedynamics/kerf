@@ -19,7 +19,7 @@ namespace Kerf.Engine.Classification.Hatching;
 /// A working object (decisions 21 and 666): a class, since the hatcher changes it in place, with OCCT's public API.
 /// The constructor keeps a shallow copy of the caller's adaptor, as OCCT copies it.
 /// </remarks>
-public sealed class Hatching2D
+internal sealed class Hatching2D
 {
     private readonly CurveAdaptor2D _curve;
     private bool _trimDone;

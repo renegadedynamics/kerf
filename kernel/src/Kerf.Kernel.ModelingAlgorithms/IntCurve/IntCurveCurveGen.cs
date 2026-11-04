@@ -21,7 +21,7 @@ namespace Kerf.Engine.Intersection.Curves;
 /// OCCT's generic file IntCurve_IntCurveCurveGen.gxx as a generic class (decision 321); its body names the
 /// generic classes it uses directly. OCCT's instantiation is <see cref="GInter"/>.
 /// </remarks>
-public class IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpParTool> : Intersection2D
+internal class IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpParTool> : Intersection2D
     where TheCurveTool : ICurveCurveTool<TheCurve>
     where TheProjPCur : IProjectOnPCurveTool<TheCurve>
     where TheMyImpParTool : FunctionWithDerivative,

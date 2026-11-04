@@ -30,7 +30,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// (decision 629).
 /// </para>
 /// </remarks>
-public sealed class SurfaceRangeLocalizeData
+internal sealed class SurfaceRangeLocalizeData
 {
     private int _nbSampleU;
     private int _nbSampleV;

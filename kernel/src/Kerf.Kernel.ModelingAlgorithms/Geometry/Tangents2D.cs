@@ -34,11 +34,12 @@ public enum Tangency
 /// </summary>
 public readonly record struct TangentTarget2D
 {
-    private TangentTarget2D(Curve2D? curve, Point2D point, Tangency tangency)
+    private TangentTarget2D(Curve2D? curve, Point2D point, Tangency tangency, Interval? range = null)
     {
         Curve = curve;
         Point = point;
         Tangency = tangency;
+        Range = range;
     }
 
     /// <summary>The curve touched, or null for a point.</summary>
@@ -49,6 +50,9 @@ public readonly record struct TangentTarget2D
 
     /// <summary>The position asked of the solution against the curve (<see cref="Tangency.Unqualified"/> for a point).</summary>
     public Tangency Tangency { get; }
+
+    /// <summary>The stretch of the curve that counts, or null for the whole curve (its own range).</summary>
+    public Interval? Range { get; }
 
     /// <summary>True for a point, false for a curve.</summary>
     public bool IsPoint => Curve is null;
@@ -64,6 +68,21 @@ public readonly record struct TangentTarget2D
         }
 
         return new TangentTarget2D(curve, default, tangency);
+    }
+
+    /// <summary>The stretch <paramref name="range"/> of the curve, touched in the given position: the solvers bound
+    /// their search by it (an edge's range on its curve), and an iterative one starts in its middle.</summary>
+    /// <exception cref="ArgumentNullException"><paramref name="curve"/> is null.</exception>
+    /// <exception cref="ArgumentException"><paramref name="range"/> is empty or not a number.</exception>
+    public static TangentTarget2D Tangent(Curve2D curve, Interval range, Tangency tangency = Tangency.Unqualified)
+    {
+        TangentTarget2D whole = Tangent(curve, tangency);
+        if (!(range.Min < range.Max))
+        {
+            throw new ArgumentException("The range must run from a lower parameter to a higher one.", nameof(range));
+        }
+
+        return new TangentTarget2D(whole.Curve, default, tangency, range);
     }
 
     /// <summary>The point, passed through.</summary>
@@ -219,6 +238,130 @@ public static class Tangents2D
         });
     }
 
+    /// <summary>The circles tangent to (or through) two targets with their centre on <paramref name="locus"/> (OCCT's
+    /// <c>Geom2dGcc_Circ2d2TanOn</c>).</summary>
+    /// <param name="first">The first target.</param>
+    /// <param name="second">The second target.</param>
+    /// <param name="locus">The curve the centres lie on.</param>
+    /// <param name="locusRange">The stretch of <paramref name="locus"/> that counts, or null for its own range.</param>
+    /// <param name="tolerance">The solver's tolerance.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="locus"/> is null.</exception>
+    /// <exception cref="ArgumentException">A line target qualified <see cref="Tangency.Enclosing"/>.</exception>
+    public static Result<ImmutableArray<TangentCircle2D>> CirclesCentredOn(TangentTarget2D first, TangentTarget2D second, Curve2D locus,
+                                                                          Interval? locusRange = null,
+                                                                          double tolerance = Tolerances.Confusion)
+    {
+        Check(first, nameof(first));
+        Check(second, nameof(second));
+        TangentTarget2D on = locusRange is { } range ? TangentTarget2D.Tangent(locus, range) : TangentTarget2D.Tangent(locus);
+        (TangentTarget2D[] o, int[] order) = CurvesFirst([first, second]);
+        return Solve(() =>
+        {
+            CurveAdaptor2D onCurve = Adaptor(on);
+            Circ2d2TanOn solver = (o[0].IsPoint, o[1].IsPoint) switch
+            {
+                (false, false) => new Circ2d2TanOn(Qualified(o[0]), Qualified(o[1]), onCurve, tolerance, Middle(o[0]), Middle(o[1]), Middle(on)),
+                (false, true) => new Circ2d2TanOn(Qualified(o[0]), Point(o[1]), onCurve, tolerance, Middle(o[0]), Middle(on)),
+                _ => new Circ2d2TanOn(Point(o[0]), Point(o[1]), onCurve, tolerance),
+            };
+            return Circles(solver.IsDone, solver.SolutionCount, solver.ThisSolution, order, i =>
+            {
+                solver.WhichQualifier(i, out Qualifier q1, out Qualifier q2);
+                return [q1, q2];
+            }, (i, k) => k == 0 ? Contact(solver.Tangency1, i, solver.IsTheSame1(i)) : Contact(solver.Tangency2, i, solver.IsTheSame2(i)),
+            o);
+        });
+    }
+
+    /// <summary>The circles of <paramref name="radius"/> tangent to (or through) a target with their centre on
+    /// <paramref name="locus"/> (OCCT's <c>Geom2dGcc_Circ2dTanOnRad</c>).</summary>
+    /// <param name="target">The target.</param>
+    /// <param name="locus">The curve the centres lie on.</param>
+    /// <param name="radius">The circles' radius.</param>
+    /// <param name="locusRange">The stretch of <paramref name="locus"/> that counts, or null for its own range.</param>
+    /// <param name="tolerance">The solver's tolerance.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="locus"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="radius"/> isn't positive.</exception>
+    /// <exception cref="ArgumentException">A line target qualified <see cref="Tangency.Enclosing"/>.</exception>
+    public static Result<ImmutableArray<TangentCircle2D>> CirclesCentredOn(TangentTarget2D target, Curve2D locus, double radius,
+                                                                          Interval? locusRange = null,
+                                                                          double tolerance = Tolerances.Confusion)
+    {
+        Check(target, nameof(target));
+        TangentTarget2D on = locusRange is { } range ? TangentTarget2D.Tangent(locus, range) : TangentTarget2D.Tangent(locus);
+        MakerOutcome.Positive(radius, nameof(radius));
+        TangentTarget2D[] ordered = [target];
+        return Solve(() =>
+        {
+            CurveAdaptor2D onCurve = Adaptor(on);
+            Circ2dTanOnRad solver = target.IsPoint
+                ? new Circ2dTanOnRad(Point(target), onCurve, radius, tolerance)
+                : new Circ2dTanOnRad(Qualified(target), onCurve, radius, tolerance);
+            return Circles(solver.IsDone, solver.SolutionCount, solver.ThisSolution, [0], i =>
+            {
+                solver.WhichQualifier(i, out Qualifier q1);
+                return [q1];
+            }, (i, _) => Contact(solver.Tangency1, i, solver.IsTheSame1(i)), ordered);
+        });
+    }
+
+    /// <summary>
+    /// The lines tangent to a curve at <paramref name="angle"/> (radians, anticlockwise) to <paramref name="reference"/>
+    /// (OCCT's <c>Geom2dGcc_Lin2dTanObl</c>). Each line's first contact is its tangency; its second is where it crosses
+    /// the reference, NaN throughout where it runs parallel to it.
+    /// </summary>
+    /// <param name="target">The curve touched.</param>
+    /// <param name="reference">The line the angle is measured from.</param>
+    /// <param name="angle">The angle, in radians.</param>
+    /// <param name="angularTolerance">The angular tolerance of the solver.</param>
+    /// <exception cref="ArgumentException"><paramref name="target"/> is a point, or a line qualified
+    /// <see cref="Tangency.Enclosing"/>.</exception>
+    public static Result<ImmutableArray<TangentLine2D>> LinesAtAngle(TangentTarget2D target, Line2D reference, double angle,
+                                                                    double angularTolerance = Tolerances.Angular)
+    {
+        Check(target, nameof(target));
+        if (target.IsPoint)
+        {
+            throw new ArgumentException("A line at an angle through a point is a single line, made directly; this needs a curve to touch.", nameof(target));
+        }
+
+        if (!double.IsFinite(angle))
+        {
+            throw new ArgumentOutOfRangeException(nameof(angle), angle, "The angle must be a finite number.");
+        }
+
+        return Solve(() =>
+        {
+            var solver = new Lin2dTanObl(Qualified(target), reference, angularTolerance, angle);
+            if (!solver.IsDone)
+            {
+                return Result<ImmutableArray<TangentLine2D>>.Failure(Diagnostic.Error(TangentsFailed, "The constrained lines couldn't be computed."));
+            }
+
+            var lines = ImmutableArray.CreateBuilder<TangentLine2D>(solver.SolutionCount);
+            for (int i = 1; i <= solver.SolutionCount; i++)
+            {
+                solver.WhichQualifier(i, out Qualifier qualifier);
+                solver.Tangency1(i, out double parSol, out double parArg, out Point2D point);
+                var tangency = new TangentContact2D(ToTangency(qualifier), point, parSol, parArg);
+                TangentContact2D crossing;
+                try
+                {
+                    solver.Intersection2(i, out double crossSol, out double crossArg, out Point2D crossPoint);
+                    crossing = new TangentContact2D(Tangency.Unqualified, crossPoint, crossSol, crossArg);
+                }
+                catch (IsParallelException)
+                {
+                    crossing = new TangentContact2D(Tangency.Unqualified, new Point2D(double.NaN, double.NaN), double.NaN, double.NaN);
+                }
+
+                lines.Add(new TangentLine2D(solver.ThisSolution(i), [tangency, crossing]));
+            }
+
+            return lines.MoveToImmutable();
+        });
+    }
+
     // ------------------------------------------------------------------------------------------------ the plumbing
 
     private delegate void TangencyReader(int index, out double parSol, out double parArg, out Point2D point);
@@ -243,8 +386,11 @@ public static class Tangents2D
         return ([.. order.Select(i => targets[i])], order);
     }
 
+    private static CurveAdaptor2D Adaptor(in TangentTarget2D target) =>
+        target.Range is { } range ? new CurveAdaptor2D(target.Curve!, range.Min, range.Max) : new CurveAdaptor2D(target.Curve!);
+
     private static QualifiedCurve Qualified(in TangentTarget2D target) =>
-        new(new CurveAdaptor2D(target.Curve!), target.Tangency switch
+        new(Adaptor(target), target.Tangency switch
         {
             Tangency.Enclosing => Qualifier.Enclosing,
             Tangency.Enclosed => Qualifier.Enclosed,
@@ -257,8 +403,8 @@ public static class Tangents2D
     // The starting parameter of an iterative solve: the middle of a bounded curve, 0 on an unbounded one
     private static double Middle(in TangentTarget2D target)
     {
-        double first = target.Curve!.FirstParameter, last = target.Curve.LastParameter;
-        return double.IsInfinity(first) || double.IsInfinity(last) ? 0 : (first + last) / 2;
+        (double first, double last) = target.Range is { } range ? (range.Min, range.Max) : (target.Curve!.FirstParameter, target.Curve.LastParameter);
+        return double.IsInfinity(first) || double.IsInfinity(last) ? 0 : (last - first) / 2 + first;   // as build123d computes it, to the last bit
     }
 
     private static Tangency ToTangency(Qualifier qualifier) => qualifier switch

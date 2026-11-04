@@ -15,7 +15,7 @@ using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans;
 
-public partial class PaveFiller
+internal partial class PaveFiller
 {
     /// <summary>The vertex/vertex interferences: the chains of coinciding vertices become same-domain vertices.</summary>
     protected virtual void PerformVV(ProgressRange range)

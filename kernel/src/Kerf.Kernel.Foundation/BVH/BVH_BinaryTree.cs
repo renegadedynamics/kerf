@@ -12,7 +12,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// <c>BVH_Tree&lt;T, N&gt;</c>. The quad tree is <see cref="QuadTree{T, TVec}"/>; OCCT's arity tag types are
 /// not needed.
 /// </summary>
-public class Tree<T, TVec> : TreeBase<T, TVec>
+internal class Tree<T, TVec> : TreeBase<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

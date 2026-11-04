@@ -35,7 +35,7 @@ public abstract partial class Shape2D : Shape
         {
             sum = new Shell(faces);
         }
-        catch (Exception e) when (e is ArgumentException or InvalidOperationException or FailureException or KerfException)
+        catch (Exception e) when (Failures.IsKernelFailure(e) || e is ArgumentException or InvalidOperationException or KerfException)
         {
             throw new ArgumentException(
                 "Unable to sew faces into a single connected Shell - faces must meet along shared edges, "
@@ -248,21 +248,16 @@ public abstract partial class Shape2D : Shape
         var results = new List<Shape>();
         var foundVertices = new List<Vertex>();
         // All contact points (vertex-vertex, vertex-edge, vertex-face), with high precision to avoid duplicates
-        var extrema = new DistanceShapeShape();
-        extrema.SetDeflection(tolerance * 1e-3);
-        extrema.LoadS1(TopoShape);
-        extrema.LoadS2(other.TopoShape);
-        extrema.Perform();
-        if (extrema.IsDone && extrema.Value() <= tolerance)
+        var distance = TopoShape.Distance(other.TopoShape, new DistanceOptions { Deflection = tolerance * 1e-3 });
+        if (distance.TryGetValue(out var extrema) && extrema.Value <= tolerance)
         {
             var selfEdges = Edges();
             var otherEdges = other.Edges();
             var selfVertices = Vertices();
             var otherVertices = other.Vertices();
-            for (int i = 1; i <= extrema.SolutionCount; i++)
+            foreach (var solution in extrema.Solutions)
             {
-                var p1 = extrema.PointOnShape1(i);
-                var p2 = extrema.PointOnShape2(i);
+                var (p1, p2) = (solution.OnA, solution.OnB);
                 if (p1.DistanceTo(p2) > tolerance)
                     continue;
                 var vertex = new Vertex(p1.X, p1.Y, p1.Z);

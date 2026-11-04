@@ -18,7 +18,7 @@ namespace Kerf.Engine.Foundation;
 /// level records the metrics of each alert added on it: started when the alert is added, stopped when the next one is
 /// added or the level closes.
 /// </remarks>
-public sealed class Level : IDisposable
+internal sealed class Level : IDisposable
 {
     private AlertExtended? _rootAlert; //!< root alert
     private AlertExtended? _lastAlert; //!< last added alert on the root alert

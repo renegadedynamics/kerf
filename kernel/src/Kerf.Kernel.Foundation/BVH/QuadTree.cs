@@ -11,7 +11,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// A quad BVH (QBVH) tree: OCCT's <c>BVH_Tree&lt;T, N, BVH_QuadTree&gt;</c>. An inner node's children are the
 /// consecutive nodes from its record's y, and its record's z is the number of children minus one.
 /// </summary>
-public class QuadTree<T, TVec> : TreeBase<T, TVec>
+internal class QuadTree<T, TVec> : TreeBase<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

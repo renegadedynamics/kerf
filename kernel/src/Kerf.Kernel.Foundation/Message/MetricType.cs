@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Foundation;
 
 /// <summary>The metrics a report can record on its alerts (<see cref="AttributeMeter"/>).</summary>
-public enum MetricType
+internal enum MetricType
 {
     MetricType_None,                 //!< no computation
     MetricType_ThreadCPUUserTime,    //!< OSD_Chronometer::GetThreadCPU user time

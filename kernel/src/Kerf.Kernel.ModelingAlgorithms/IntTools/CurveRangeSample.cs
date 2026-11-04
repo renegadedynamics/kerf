@@ -17,7 +17,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// <c>IsEqual</c> (index and depth); the hash replaces OCCT's <c>std::hash</c> specialisation, so maps keyed by
 /// samples need no comparer.
 /// </remarks>
-public partial struct CurveRangeSample : IEquatable<CurveRangeSample>
+internal partial struct CurveRangeSample : IEquatable<CurveRangeSample>
 {
     private int _depth;
     private int _index;

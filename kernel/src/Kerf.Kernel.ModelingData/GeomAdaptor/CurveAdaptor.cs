@@ -26,7 +26,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// the B-spline or Bezier curve returned by <see cref="BSpline"/> or <see cref="Bezier"/> are the shared, frozen
 /// geometry: the adaptor never changes it.</para>
 /// </remarks>
-public class CurveAdaptor : CurveAdaptorBase
+internal class CurveAdaptor : CurveAdaptorBase
 {
     private static readonly double PosTol = global::Kerf.Engine.Foundation.Precision.PConfusion() / 2;
 

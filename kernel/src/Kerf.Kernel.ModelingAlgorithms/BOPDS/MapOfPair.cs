@@ -26,7 +26,7 @@ namespace Kerf.Engine.Booleans.Data;
 /// <c>bopcheck</c>) depend on; with .NET's map their lists come out in another order.
 /// </para>
 /// </remarks>
-public sealed class MapOfPair : IEnumerable<Pair>
+internal sealed class MapOfPair : IEnumerable<Pair>
 {
     private sealed class Node(Pair theKey, Node? theNext)
     {

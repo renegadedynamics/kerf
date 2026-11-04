@@ -102,7 +102,7 @@ internal sealed class VertexFace : ParallelAlgo, BooleanParallel.IContextSolver<
     }
 }
 
-public partial class PaveFiller
+internal partial class PaveFiller
 {
     /// <summary>The vertex/face interferences.</summary>
     protected virtual void PerformVF(ProgressRange range)

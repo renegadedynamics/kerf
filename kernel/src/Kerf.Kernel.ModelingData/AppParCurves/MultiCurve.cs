@@ -20,7 +20,7 @@ namespace Kerf.Engine.Approximation;
 /// constructor (and the slicing copy of a MultiBSpCurve), sharing the poles. <see cref="Value(int)"/> returns the
 /// stored MultiPoint (OCCT returns a const reference; shared: don't modify).
 /// </remarks>
-public class MultiCurve
+internal class MultiCurve
 {
     protected NCollection_HArray1<MultiPoint>? _tabPoint;
 

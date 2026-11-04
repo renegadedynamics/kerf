@@ -9,7 +9,7 @@ using System.Numerics;
 namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>A non-generic base for <see cref="Object{T, TVec}"/> (just to have a named base class).</summary>
-public abstract class ObjectTransient : Transient
+internal abstract class ObjectTransient : Transient
 {
     protected bool _isDirty;                  //!< Marks internal object state as outdated
     protected Properties? _properties;    //!< Generic properties assigned to the object
@@ -34,7 +34,7 @@ public abstract class ObjectTransient : Transient
 }
 
 /// <summary>An abstract geometric object bounded by a BVH box.</summary>
-public abstract class Object<T, TVec> : ObjectTransient
+internal abstract class Object<T, TVec> : ObjectTransient
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

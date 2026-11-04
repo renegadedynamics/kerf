@@ -10,7 +10,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>A non-generic base for <see cref="TreeBase{T, TVec}"/> (just to have a named base class).</summary>
 /// <remarks>DumpJson and DumpNode are not ported.</remarks>
-public abstract class TreeBaseTransient : Transient
+internal abstract class TreeBaseTransient : Transient
 {
     protected TreeBaseTransient()
     {
@@ -26,7 +26,7 @@ public abstract class TreeBaseTransient : Transient
 /// a leaf, y and z are the first and last primitive; for an inner node of a binary tree, y and z are the children;
 /// w is the level. As in OCCT, the node accessors return references, so builders write through them.
 /// </remarks>
-public class TreeBase<T, TVec> : TreeBaseTransient
+internal class TreeBase<T, TVec> : TreeBaseTransient
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

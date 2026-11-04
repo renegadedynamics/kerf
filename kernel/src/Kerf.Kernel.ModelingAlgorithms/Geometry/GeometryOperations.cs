@@ -7,6 +7,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Geometry.Library;
+using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Meshing.Tools;
 using Occt;
 
@@ -228,6 +229,18 @@ public static partial class GeometryOperations
 
     extension(Curve3D curve)
     {
+        /// <summary>
+        /// True if the curve lies in a plane within <paramref name="tolerance"/> (0 for the confusion tolerance), OCCT's
+        /// <c>ShapeAnalysis_Curve::IsPlanar</c>: lines, conics, trimmed and offset curves of them, B-spline and Bezier
+        /// curves by their poles; false for any other curve. With <paramref name="normal"/>, the plane must be normal to it.
+        /// </summary>
+        public bool IsPlanar(Direction3D? normal = null, double tolerance = 0)
+        {
+            ArgumentNullException.ThrowIfNull(curve);
+            Engine.Geometry.Xyz n = normal is { } d ? d.XYZ() : default;
+            return CurveAnalysis.IsPlanar(curve, ref n, tolerance);
+        }
+
         /// <summary>The curve as a B-spline: exactly where OCCT can, else approximated within the options.</summary>
         public Result<BSplineCurve3D> ToBSpline(ConversionOptions? options = null)
         {
@@ -334,6 +347,29 @@ public static partial class GeometryOperations
         {
             ArgumentNullException.ThrowIfNull(curve);
             return Projections.To3d(curve, plane);
+        }
+
+        /// <summary>The points of the curve nearest to <paramref name="point"/> (the extrema of the distance, OCCT's
+        /// <c>Geom2dAPI_ProjectPointOnCurve</c>), nearest first; empty if there are none.</summary>
+        public ImmutableArray<CurvePoint2D> Project(Point2D point)
+        {
+            ArgumentNullException.ThrowIfNull(curve);
+            try
+            {
+                var projection = new ProjectPointOnCurve2D(point, curve);
+                var points = ImmutableArray.CreateBuilder<CurvePoint2D>(projection.NbPoints());
+                for (int i = 1; i <= projection.NbPoints(); i++)
+                {
+                    points.Add(new CurvePoint2D(projection.Parameter(i), projection.Point(i), projection.Distance(i)));
+                }
+
+                // Stable, so of equally near points the first OCCT found comes first, as its LowerDistance picks it
+                return [.. points.OrderBy(static p => p.Distance)];
+            }
+            catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+            {
+                return [];
+            }
         }
 
         /// <summary>The points where the two curves cross (and touch); where they overlap along a stretch, the

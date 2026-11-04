@@ -15,7 +15,7 @@ namespace Kerf.Engine.Booleans.Data;
 /// <c>std::hash&lt;BOPDS_Pair&gt;</c> does. The order (C++'s <c>operator&lt;</c>) is by the first index, then the
 /// second; <see cref="LessThan"/> gives it to <see cref="Sorting"/>.
 /// </remarks>
-public partial struct Pair : IEquatable<Pair>, IComparable<Pair>
+internal partial struct Pair : IEquatable<Pair>, IComparable<Pair>
 {
     private int _index1;
     private int _index2;

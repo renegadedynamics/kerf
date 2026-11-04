@@ -21,7 +21,7 @@ namespace Kerf.Engine.Approximation;
 /// is the C++ copy constructor, sharing the arrays. The setters stay public, as in OCCT: MultiPoints are the
 /// input data callers build (AppDef_MultiPointConstraint derives from this class).
 /// </remarks>
-public class MultiPoint
+internal class MultiPoint
 {
     protected NCollection_HArray1<Point3D>? _ttabPoint;
     protected NCollection_HArray1<Point2D>? _ttabPoint2d;

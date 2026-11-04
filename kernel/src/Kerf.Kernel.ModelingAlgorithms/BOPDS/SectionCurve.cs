@@ -18,7 +18,7 @@ namespace Kerf.Engine.Booleans.Data;
 /// 6151). OCCT's by-value copies are the copy constructor, which copies the lists (sharing the pave blocks, as the
 /// C++ copy shares the handles).
 /// </remarks>
-public class SectionCurve
+internal class SectionCurve
 {
     protected IntersectionCurve _curve = new();
     protected NCollection_List<PaveBlock> _paveBlocks = new();

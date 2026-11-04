@@ -15,7 +15,7 @@ namespace Kerf.Engine.Classification;
 /// A working object (decision 21): load a shape once, then classify any number of points. It only reads the shape.
 /// OCCT's statistics (LBRCOMPT) and its MARCHEPASSIUNESEULEFACE variants are compiled out, as in OCCT.
 /// </remarks>
-public class SolidClassifier : SClassifier
+internal class SolidClassifier : SClassifier
 {
     private bool _aSolidLoaded;
     private readonly SolidExplorer _explorer;

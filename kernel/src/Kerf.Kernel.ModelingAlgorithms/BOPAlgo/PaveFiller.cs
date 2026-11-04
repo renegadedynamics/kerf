@@ -45,7 +45,7 @@ namespace Kerf.Engine.Booleans;
 /// NCollection_Map&lt;BOPDS_PaveBlock&gt;&gt;</c>).
 /// </para>
 /// </remarks>
-public partial class PaveFiller : BooleanAlgorithm
+internal partial class PaveFiller : BooleanAlgorithm
 {
     // List of operations to be supported by the Progress Indicator
     private enum BOPAlgo_PIOperation

@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>A function of several variables whose gradient is available.</summary>
-public abstract class MultipleVarFunctionWithGradient : MultipleVarFunction
+internal abstract class MultipleVarFunctionWithGradient : MultipleVarFunction
 {
     /// <summary>Computes the gradient <paramref name="g"/> at <paramref name="x"/>; false if it could not be computed.</summary>
     public abstract bool Gradient(math_Vector x, math_Vector g);

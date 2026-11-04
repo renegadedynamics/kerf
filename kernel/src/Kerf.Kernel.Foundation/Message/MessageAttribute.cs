@@ -9,7 +9,7 @@ namespace Kerf.Engine.Foundation;
 
 /// <summary>The data of an extended alert (<see cref="AlertExtended"/>): its name, which keys its message.</summary>
 /// <remarks><c>DumpJson</c> is left out (translation rules, section 6).</remarks>
-public class MessageAttribute : Transient
+internal class MessageAttribute : Transient
 {
     private string _name; //!< alert name, if defined is used in GetMessageKey
 

@@ -19,7 +19,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 /// Geom2dInt_TheLocateExtPCOfTheProjPCurOfGInter and Geom2dInt_PCLocFOfTheLocateExtPCOfTheProjPCurOfGInter are
 /// Extrema_LocEPCOfLocateExtPC2d and Extrema_PCFOfEPCOfExtPC2d (decision 323).
 /// </remarks>
-public readonly struct TheProjPCurOfGInter : IProjectOnPCurveTool<Curve2DAdaptorBase>
+internal readonly struct TheProjPCurOfGInter : IProjectOnPCurveTool<Curve2DAdaptorBase>
 {
     /// <summary>
     /// The parameter of the point of <paramref name="c"/> nearest <paramref name="p"/>, searched between the two

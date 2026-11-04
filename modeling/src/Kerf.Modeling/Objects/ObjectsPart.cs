@@ -1,4 +1,3 @@
-using Occt;
 
 namespace Kerf.Modeling;
 

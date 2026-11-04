@@ -8,7 +8,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 
 /// <summary>The position of an intersection point on a curve: at its start (Head), inside, or at its end.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.IntRes2d_Position;</c>.</remarks>
-public enum Position2D
+internal enum Position2D
 {
     Head,
     Middle,

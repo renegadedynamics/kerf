@@ -12,7 +12,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// A struct, as OCCT's by-value class. OCCT derives <see cref="CurveRangeSample"/> from it; a C# struct
 /// can't derive, so the curve sample holds its own depth with the same accessors (decision 628).
 /// </remarks>
-public partial struct BaseRangeSample : IEquatable<BaseRangeSample>
+internal partial struct BaseRangeSample : IEquatable<BaseRangeSample>
 {
     private int _depth;
 

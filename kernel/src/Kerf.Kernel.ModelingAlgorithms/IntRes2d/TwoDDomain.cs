@@ -25,7 +25,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 /// <see cref="WithEquivalentParameters"/> are their twins. Infinite points and parameters are limited to
 /// ±<see cref="Precision.Infinite"/>, as in OCCT.
 /// </remarks>
-public partial struct TwoDDomain : IEquatable<TwoDDomain>
+internal partial struct TwoDDomain : IEquatable<TwoDDomain>
 {
     //-- hasfirst <--> status & 1
     //-- haslast  <--> status & 2

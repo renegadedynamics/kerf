@@ -20,7 +20,7 @@ namespace Kerf.Engine.Measurement;
 /// OCCT's "undefined" value, <c>new GProp_PrincipalProps()</c>, has moments, radii and centre RealLast() and the
 /// absolute axes.
 /// </remarks>
-public partial struct PrincipalProperties : IEquatable<PrincipalProperties>
+internal partial struct PrincipalProperties : IEquatable<PrincipalProperties>
 {
     private double _i1;
     private double _i2;

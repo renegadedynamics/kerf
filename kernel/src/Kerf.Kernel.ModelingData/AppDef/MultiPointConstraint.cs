@@ -19,7 +19,7 @@ namespace Kerf.Engine.Approximation;
 /// A class, as its base (decisions 141 and 201): a C++ copy shares the point, tangent and curvature arrays, and so
 /// does a C# reference. The setters stay public: callers build MultiLines from these.
 /// </remarks>
-public class MultiPointConstraint : MultiPoint
+internal class MultiPointConstraint : MultiPoint
 {
     private NCollection_HArray1<Vector3D>? _tabTang;
     private NCollection_HArray1<Vector3D>? _tabCurv;

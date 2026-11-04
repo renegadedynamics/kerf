@@ -16,7 +16,7 @@ using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans;
 
-public partial class PaveFiller
+internal partial class PaveFiller
 {
     /// <summary>
     /// Turns the non-destructive mode on if an argument is locked: if a write into it would be refused. Outside a

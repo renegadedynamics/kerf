@@ -1,9 +1,9 @@
+using Kerf.Topology;
 using Kerf.Construction;
 using Kerf.Fillets;
 using Kerf.Healing;
 using Kerf.Measurement;
 using Kerf.Geometry;
-using Occt;
 
 namespace Kerf.Modeling;
 

@@ -1,15 +1,13 @@
-using Kerf.Engine.Foundation;
 using Kerf.Exchange;
-using Occt;
 
 namespace Kerf.Modeling;
 
 /// <summary>
 /// build123d's importers (<c>importers.py</c>): shapes from BREP, STEP and STL data, and from glTF (not in build123d).
 /// Each reads a stream, with limits for hostile data and cancellation; the file forms open the file and read it as a
-/// stream. Bad data throws <see cref="ArgumentException"/> (build123d's ValueError) or, for BREP, OCCT's
-/// <see cref="FailureException"/> (<c>Storage_StreamFormatError</c>); data past a limit throws
-/// <see cref="InvalidDataException"/>.
+/// stream. Bad data throws <see cref="ArgumentException"/> (build123d's ValueError) or, for BREP, a
+/// <see cref="KerfException"/> (<c>exchange.malformed</c>), and for STL and glTF an <see cref="InvalidDataException"/>;
+/// data past a limit throws <see cref="InvalidDataException"/>.
 /// </summary>
 /// <remarks>STEP keeps its names, colours and assemblies (OCCT.NET's STEPCAFControl).</remarks>
 public static class Importers
@@ -71,13 +69,12 @@ public static class Importers
         var label = node.Name ?? "";
         Color? color = null;
         if (node.Color is { } c)
-        {
-            var (r, g, b, a) = c.ToLinear();
-            var rgb = new global::Kerf.Engine.Foundation.LinearColor(r, g, b, ColorSpace.TocRgb);
-            color = new Color(new ColorWithAlpha(rgb, (float)a));
-        }
+            color = new Color(c);
         if (node.Shape is { } shape)
             return Shape.Cast(shape).WithLabel(label).WithColor(color);
+        // A mesh read (glTF): the faces holding only its triangles, as they were read
+        if (node.Mesh is { } mesh)
+            return Shape.Cast(mesh.TriangulatedShape).WithLabel(label).WithColor(color);
         var children = node.Children.Select(FromModel).ToList();
         var assembly = Compound.Assembly(children, label, color);
         return node.Placement.IsIdentity ? assembly : assembly.Located(new Location(node.Placement));
@@ -92,8 +89,16 @@ public static class Importers
                                  CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(stream);
-        var scale = ExchangeUnits.Millimetres(modelUnit, "model_scale");
-        return new Face(Extras.ReadStl(stream, scale, (limits ?? ImportLimits.Default).ToExchange(), cancellationToken));
+        var options = new StlReadOptions
+        {
+            Limits = (limits ?? ImportLimits.Default).ToReadLimits(),
+            Unit = ExchangeUnits.LengthUnit(modelUnit, "model_scale"),
+        };
+        var read = Stl.Read(stream, options, cancellationToken);
+        if (read.Error is { } error)
+            throw new InvalidDataException(error.Message, new KerfException(error));
+        // The face holding the triangles read, with no surface
+        return new Face((global::Kerf.Topology.Face)read.Value.TriangulatedShape);
     }
 
     /// <summary>A face holding the triangles of an STL file.</summary>
@@ -114,9 +119,15 @@ public static class Importers
                                    CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(stream);
-        var metres = ExchangeUnits.Millimetres(modelUnit, "model_unit") / 1000.0;
-        var root = Extras.ReadGltf(stream, metres, (limits ?? ImportLimits.Default).ToExchange(), cancellationToken);
-        return FromNode(root);
+        var options = new GltfReadOptions
+        {
+            Limits = (limits ?? ImportLimits.Default).ToReadLimits(),
+            Unit = ExchangeUnits.LengthUnit(modelUnit, "model_unit"),
+        };
+        var read = Gltf.Read(stream, options, cancellationToken);
+        if (read.Error is { } error)
+            throw new InvalidDataException(error.Message, new KerfException(error));
+        return FromModel(read.Value);
     }
 
     /// <summary>The model of a glTF 2.0 file. External buffers aren't read.</summary>
@@ -127,22 +138,6 @@ public static class Importers
         return ImportGltf(file, modelUnit, limits, cancellationToken);
     }
 
-    private static Shape FromNode(ExchangeNode node)
-    {
-        var label = node.Name ?? "";
-        Color? color = null;
-        if (node.Color is { } c)
-        {
-            var rgb = new global::Kerf.Engine.Foundation.LinearColor(c.R, c.G, c.B, ColorSpace.TocRgb);
-            var rgba = new ColorWithAlpha(rgb, (float)c.A);
-            color = new Color(rgba);
-        }
-        if (node.Shape is { } shape)
-            return Shape.Cast(shape).WithLabel(label).WithColor(color);
-        var children = node.Children.Select(FromNode).ToList();
-        var assembly = Compound.Assembly(children, label, color);
-        return node.Location is { } location ? assembly.Located(new Location(location)) : assembly;
-    }
 
     internal static FileStream OpenRead(string fileName)
     {

@@ -25,7 +25,7 @@ namespace Kerf.Engine.Numerics;
 /// <item>Compound assignments (<c>+=</c>, <c>-=</c>, <c>*=</c>, <c>/=</c>) change the matrix in place, as in C++.</item>
 /// </list>
 /// </remarks>
-public class Matrix
+internal class Matrix
 {
     private DoubleTab _array;
 

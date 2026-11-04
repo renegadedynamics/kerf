@@ -24,7 +24,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// reset: <see cref="Perform"/> and <see cref="SetShrunkRange"/> add to it, so an object reused for another edge
 /// keeps the previous boxes (OCCT's callers make one object per edge).
 /// </remarks>
-public class EdgeShrunkRange
+internal class EdgeShrunkRange
 {
     protected Edge _edge = new();
     protected Vertex _v1 = new();

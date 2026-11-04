@@ -419,5 +419,4 @@ public abstract partial class Shape
             2 => Dimension.Area,
             _ => Dimension.Volume,
         }).CentreOfMass;
-    }
 }

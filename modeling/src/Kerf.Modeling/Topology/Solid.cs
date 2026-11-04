@@ -4,7 +4,6 @@ using Kerf.Healing;
 using Kerf.Measurement;
 using Kerf.Offsets;
 using Kerf.Geometry;
-using Occt;
 
 namespace Kerf.Modeling;
 

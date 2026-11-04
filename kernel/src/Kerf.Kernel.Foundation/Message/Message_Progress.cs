@@ -108,7 +108,7 @@ public struct ProgressRange
 /// Divides a range into steps: <c>for (Message_ProgressScope aPS(theRange, "name", n); aPS.More(); ) { op(aPS.Next()); }</c>.
 /// Dispose it (or call <see cref="Close"/>) where the C++ scope would be destroyed, so the remaining share is counted.
 /// </summary>
-public sealed class ProgressScope : IDisposable
+internal sealed class ProgressScope : IDisposable
 {
     private readonly ProgressIndicator? _indicator;
     private readonly double _portion;

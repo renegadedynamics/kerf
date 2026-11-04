@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Documents;
 /// the product is made (decision 1230); an assembly's shape is the compound of its components, made once when first
 /// asked for. Thread-safe.
 /// </remarks>
-public sealed class DocumentProduct
+internal sealed class DocumentProduct
 {
     private readonly Shape _shape;
     private StrongBox<Shape>? _assemblyShape; // published once, without a lock (unit 10I)

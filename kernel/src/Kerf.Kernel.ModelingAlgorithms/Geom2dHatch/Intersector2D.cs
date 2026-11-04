@@ -21,7 +21,7 @@ namespace Kerf.Engine.Classification.Hatching;
 /// A working object (decision 21) deriving from <see cref="GInter"/>, as in OCCT; it implements TopClass's
 /// intersector interface for <see cref="FClass2dOfClassifier2D"/> (decisions 288, 391 and 665).
 /// </remarks>
-public sealed class Intersector2D : GInter, IIntersector<CurveAdaptor2D>
+internal sealed class Intersector2D : GInter, IIntersector<CurveAdaptor2D>
 {
     private double _confusionTolerance;
     private double _tangencyTolerance;

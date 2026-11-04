@@ -126,6 +126,20 @@ public sealed class ShapeMesh
         TriangleCount = Triangles.Length / 3;
     }
 
+    // A mesh read from a file: the shape read, whose faces hold only triangles
+    private ShapeMesh(Shape meshOnly, MeshBuffers buffers, IReadOnlyList<Shape> faces, Engine.Meshing.Triangulation?[] triangulations,
+                      Placement[] placements)
+        : this(default, MeshOptions.Default, buffers, faces, [], triangulations, placements, hideFaces: true) =>
+        TriangulatedShape = meshOnly;
+
+    /// <summary>
+    /// For a mesh read from a file (STL, glTF), the shape read: faces holding only their triangles, with no surfaces or
+    /// edges (OCCT's mesh-only faces, which build123d's <c>import_stl</c> returns); a null shape for a shape's mesh. Its
+    /// faces aren't <see cref="FaceMesh.Face"/>, as the shape meshed is <see cref="Shape"/>: it is for modelling with
+    /// a mesh (placing, combining into compounds, writing), not for the operations that need surfaces.
+    /// </summary>
+    public Shape TriangulatedShape { get; }
+
     /// <summary>The shape meshed; a null shape for a mesh read from a file (STL, glTF).</summary>
     public Shape Shape { get; }
 
@@ -206,7 +220,7 @@ public sealed class ShapeMesh
         List<Shape> faces = MeshExtraction.Faces(meshOnly);
         MeshBuffers buffers = MeshExtraction.Extract(meshOnly, faces, [], MeshOptions.Default.LinearDeflection, MeshOptions.Default.AngularDeflection,
                                                      out Engine.Meshing.Triangulation?[] triangulations, out Placement[] placements);
-        return new ShapeMesh(default, MeshOptions.Default, buffers, faces, [], triangulations, placements, hideFaces: true);
+        return new ShapeMesh(meshOnly, buffers, faces, triangulations, placements);
     }
 }
 

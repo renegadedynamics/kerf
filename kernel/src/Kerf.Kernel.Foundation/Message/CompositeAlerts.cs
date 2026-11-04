@@ -13,7 +13,7 @@ namespace Kerf.Engine.Foundation;
 /// OCCT's <c>Standard_ASSERT_RETURN</c> checks are kept (they are compiled in release builds too): a null alert or a
 /// gravity out of range gives an empty list or false. <c>DumpJson</c> is left out.
 /// </remarks>
-public class CompositeAlerts : Transient
+internal class CompositeAlerts : Transient
 {
     // store messages in a lists sorted by gravity;
     // here we rely on knowledge that Message_Fail is the last element of the enum

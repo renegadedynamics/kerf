@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Approximation;
 
 /// <summary>Whether a line tool added points to a MultiLine when asked (an auxiliary flag of the computations).</summary>
-public enum Status
+internal enum Status
 {
     PointsAdded,
     NoPointsAdded,

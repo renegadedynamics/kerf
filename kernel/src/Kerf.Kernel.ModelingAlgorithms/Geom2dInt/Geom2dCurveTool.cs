@@ -15,7 +15,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 
 /// <summary>The tool over Adaptor2d_Curve2d that the 2D curve intersections use.</summary>
 /// <remarks>A struct without state, so it can be a type argument of IntCurve's generic classes (decision 322).</remarks>
-public readonly struct Geom2dCurveTool : ICurveCurveTool<Curve2DAdaptorBase>
+internal readonly struct Geom2dCurveTool : ICurveCurveTool<Curve2DAdaptorBase>
 {
     // OCCT's IS_C2_COMPOSITE is 0: the curves are split at their C1 discontinuities.
 

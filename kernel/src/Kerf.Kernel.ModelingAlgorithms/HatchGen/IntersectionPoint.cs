@@ -21,7 +21,7 @@ namespace Kerf.Engine.Classification.Hatching;
 /// classes with copy constructors, copied where OCCT copies them (decision 664). The setters are internal: the
 /// hatcher fills the points it builds, and callers only read them.
 /// </remarks>
-public abstract class IntersectionPoint
+internal abstract class IntersectionPoint
 {
     protected int _index;
     protected double _param;

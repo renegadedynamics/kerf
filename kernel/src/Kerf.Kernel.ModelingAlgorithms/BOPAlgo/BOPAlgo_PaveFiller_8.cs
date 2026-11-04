@@ -19,7 +19,7 @@ using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans;
 
-public partial class PaveFiller
+internal partial class PaveFiller
 {
     /// <summary>Treats the degenerated edges: splits them by the pave blocks passing through their vertex.</summary>
     protected void ProcessDE(ProgressRange range)

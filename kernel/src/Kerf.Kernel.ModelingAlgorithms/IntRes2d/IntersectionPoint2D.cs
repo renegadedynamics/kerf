@@ -19,7 +19,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 /// <see cref="Standard.RealLast"/> and two default (undecided) transitions; <c>default(IntRes2d_IntersectionPoint)</c>
 /// is all zeros. <c>SetValues</c> is an internal mutator; the constructor is its twin.
 /// </remarks>
-public partial struct IntersectionPoint2D : IEquatable<IntersectionPoint2D>
+internal partial struct IntersectionPoint2D : IEquatable<IntersectionPoint2D>
 {
     private Point2D _pt;
     private double _p1;

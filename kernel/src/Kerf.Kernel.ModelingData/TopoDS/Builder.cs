@@ -34,7 +34,7 @@ namespace Kerf.Engine.Topology;
 /// it), so ported code writes <c>TopoDS_Wire W = new(); B.MakeWire(ref W);</c>.
 /// </para>
 /// </remarks>
-public class Builder
+internal class Builder
 {
     public Builder()
     {

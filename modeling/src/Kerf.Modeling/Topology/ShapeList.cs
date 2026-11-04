@@ -1,10 +1,7 @@
-using Kerf.Engine.Foundation;
-using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using System.Collections;
 using System.Runtime.CompilerServices;
 using Schematiq.Collections;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -278,18 +275,15 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
         Axis shapeAxis;
         if (shape is Face face && face.IsPlanarSurface())
         {
-            double u0 = 0, u1 = 0, v0 = 0, v1 = 0;
-            BrepTools.UVBounds(face.TopoFace, out u0, out u1, out v0, out v1);
+            var (u0, _, v0, _) = face.UVBounds();
             shapeAxis = new Axis(shape.Center(), face.NormalAtParameters(u0, v0));
         }
         else if (shape is Edge edge && shape.GeomType == GeomType.Line)
         {
             var curve = edge.GeomAdaptor();
-            var pnt = new Point3D();
-            var d1 = new Vector3D();
-            curve.D1(curve.FirstParameter(), out pnt, out d1);
-            var dir = new Direction3D(d1);
-            shapeAxis = new Axis(new Vector(pnt), new Vector(dir));
+            var d = curve.Derivatives(curve.Range.Min, 1);
+            var dir = new Direction3D(d.D1);
+            shapeAxis = new Axis(new Vector(d.Point), new Vector(dir));
         }
         else
             return false;
@@ -302,8 +296,7 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
         {
             case Face face when face.IsPlanarSurface():
             {
-                double u0 = 0, u1 = 0, v0 = 0, v1 = 0;
-                BrepTools.UVBounds(face.TopoFace, out u0, out u1, out v0, out v1);
+                var (u0, _, v0, _) = face.UVBounds();
                 return planeAxis.IsParallel(new Axis(shape.Center(), face.NormalAtParameters(u0, v0)), tolerance);
             }
             case Wire wire:
@@ -311,7 +304,7 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
             case Edge edge:
             {
                 var local = edge.Location.Inverse() * plane;
-                var normal = local.ZDir.ToGpXyz();
+                var normal = new Direction3D(local.ZDir.X, local.ZDir.Y, local.ZDir.Z);
                 return Extras.EdgeCurve3DIsPlanar(edge.TopoEdge, normal, tolerance) ?? false;
             }
             default:
@@ -619,7 +612,7 @@ internal static class Measures
                 _ => null,
             };
         }
-        catch (Exception e) when (e is InvalidOperationException or ArgumentException or FailureException or KerfException or NotImplementedException)
+        catch (Exception e) when (Failures.IsKernelFailure(e) || e is InvalidOperationException or ArgumentException or KerfException or NotImplementedException)
         {
             return null;
         }

@@ -19,7 +19,7 @@ namespace Kerf.Engine.Foundation;
 /// <c>default</c> (black). <c>==</c> compares the components exactly; OCCT's <c>operator==</c>, which compares within
 /// <see cref="Epsilon"/>, is <see cref="IsEqual"/>.
 /// </remarks>
-public partial struct LinearColor : IEquatable<LinearColor>
+internal partial struct LinearColor : IEquatable<LinearColor>
 {
     private const float RGBHLS_H_UNDEFINED = -1.0f;
     private const double DEG_TO_RAD = Math.PI / 180.0;

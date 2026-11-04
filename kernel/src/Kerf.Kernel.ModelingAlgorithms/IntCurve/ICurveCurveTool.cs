@@ -12,7 +12,7 @@ namespace Kerf.Engine.Intersection.Curves;
 /// </summary>
 /// <remarks>Not an OCCT type (decision 322).</remarks>
 /// <typeparam name="TheCurve">The curve.</typeparam>
-public interface ICurveCurveTool<TheCurve> : IParTool<TheCurve>
+internal interface ICurveCurveTool<TheCurve> : IParTool<TheCurve>
 {
     static abstract CurveKind GetType(in TheCurve c);
 

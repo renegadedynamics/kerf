@@ -25,7 +25,7 @@ namespace Kerf.Engine.Foundation;
 /// by identity. <c>Standard_OStream</c> is a <see cref="TextWriter"/>; <c>DumpJson</c> is left out.
 /// </para>
 /// </remarks>
-public class Report : Transient
+internal class Report : Transient
 {
     protected readonly Lock _mutex = new();
     protected CompositeAlerts? _compositAlerts; //!< container of alerts

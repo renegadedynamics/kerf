@@ -23,7 +23,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 /// <c>SetPosition</c> mutators are internal; the constructors and <see cref="WithPosition"/> are their twins.
 /// OCCT's <c>operator&lt;&lt;</c> (French text) is left out; <see cref="ToString"/> replaces it.
 /// </remarks>
-public partial struct Transition : IEquatable<Transition>
+internal partial struct Transition : IEquatable<Transition>
 {
     private bool _tangent;
     private Position2D _posit;

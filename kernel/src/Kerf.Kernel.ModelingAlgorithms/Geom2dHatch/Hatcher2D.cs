@@ -32,7 +32,7 @@ namespace Kerf.Engine.Classification.Hatching;
 /// domains, which callers can't change. OCCT's <c>IsDone()</c> without an index is declared but never defined: left
 /// out.
 /// </remarks>
-public class Hatcher2D
+internal class Hatcher2D
 {
     private readonly Intersector2D _intersector;
     private double _confusion2d;

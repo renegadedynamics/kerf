@@ -1,3 +1,4 @@
+using Kerf.Construction;
 using Kerf.Geometry;
 using Kerf.Healing;
 using Kerf.Measurement;
@@ -362,7 +363,7 @@ public abstract partial class Shape
         // The kernel's mesher leaves the shape alone and hands the meshes back (unit 10L3)
         var options = new MeshOptions { LinearDeflection = tolerance, AngularDeflection = angularTolerance, Relative = true, Parallel = true };
         var mesh = Failures.Get(_wrapped.Mesh(options), () => "tessellate");
-        var meshes = new Dictionary<global::Kerf.Topology.Shape, FaceMesh>(ShapeComparer.Same);
+        var meshes = new Dictionary<global::Kerf.Topology.Shape, global::Kerf.Meshing.FaceMesh>(ShapeComparer.Same);
         foreach (var faceMesh in mesh.Faces)
             meshes.TryAdd(faceMesh.Face, faceMesh);
         var vertices = new List<Vector>();

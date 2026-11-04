@@ -29,7 +29,7 @@ namespace Kerf.Engine.Intersection.Walking;
 /// <see cref="SetUV"/> grow it, and the other edits make it unknown again.
 /// </para>
 /// </remarks>
-public class LineOn2S : Transient
+internal class LineOn2S : Transient
 {
     private readonly NCollection_Sequence<PntOn2S> _seq;
     private Box2d _buv1;

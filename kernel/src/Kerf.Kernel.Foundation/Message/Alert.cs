@@ -18,7 +18,7 @@ namespace Kerf.Engine.Foundation;
 /// <c>public sealed class Alert : Message_Alert { }</c>. A working object: alerts belong to the report of the
 /// algorithm that made them. <c>DumpJson</c> is left out (translation rules, section 6).
 /// </remarks>
-public class Alert : Transient
+internal class Alert : Transient
 {
     /// <summary>
     /// The key of the alert's message text (<see cref="MsgFile"/>): by default the name of the alert's class.

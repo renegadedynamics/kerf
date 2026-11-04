@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Extrema;
 
 /// <summary>The search algorithm of the point/surface extrema: gradient or sphere tree.</summary>
-public enum ExtAlgo
+internal enum ExtAlgo
 {
     ExtAlgo_Grad,
     ExtAlgo_Tree,

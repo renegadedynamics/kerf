@@ -31,7 +31,7 @@ namespace Kerf.Engine.Approximation;
 /// </remarks>
 /// <typeparam name="MultiLine">The MultiLine type.</typeparam>
 /// <typeparam name="ToolLine">The line tool reading <typeparamref name="MultiLine"/>.</typeparam>
-public class Function<MultiLine, ToolLine> : MultipleVarFunctionWithGradient
+internal class Function<MultiLine, ToolLine> : MultipleVarFunctionWithGradient
     where ToolLine : struct, ILineTool<MultiLine>
 {
     // OCCT's Done field is written but never read; it is left out

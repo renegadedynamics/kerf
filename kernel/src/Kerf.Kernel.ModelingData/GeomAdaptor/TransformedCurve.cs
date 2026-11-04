@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// a surface) and applies a gp_Trsf to every point and derivative it evaluates. The base class of
 /// BRepAdaptor_Curve.
 /// </summary>
-public class TransformedCurve : CurveAdaptorBase
+internal class TransformedCurve : CurveAdaptorBase
 {
     protected CurveAdaptor _curve;
 

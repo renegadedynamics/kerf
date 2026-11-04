@@ -27,7 +27,7 @@ namespace Kerf.Engine.Approximation;
 /// MultiPointConstraints, as a C# reference does. <see cref="SetValue"/> is public (decision 21): callers fill a
 /// MultiLine before approximating it.
 /// </remarks>
-public class MultiLine
+internal class MultiLine
 {
     protected NCollection_HArray1<MultiPointConstraint>? _tabMult;
 

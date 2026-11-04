@@ -12,7 +12,7 @@ using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans;
 
-public partial class PaveFiller
+internal partial class PaveFiller
 {
     /// <summary>
     /// Checks for the self-interferences acquired by the arguments during the operation: shared vertices, common

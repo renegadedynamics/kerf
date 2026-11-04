@@ -15,7 +15,7 @@ namespace Kerf.Engine.Approximation;
 /// constructor) is index -1 with no constraint, so ported code writes <c>new AppParCurves_ConstraintCouple()</c>;
 /// <c>default</c> has index 0.
 /// </remarks>
-public partial struct ConstraintCouple : IEquatable<ConstraintCouple>
+internal partial struct ConstraintCouple : IEquatable<ConstraintCouple>
 {
     private int _index;
     private Constraint _constraint;

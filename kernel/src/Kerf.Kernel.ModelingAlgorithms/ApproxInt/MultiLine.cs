@@ -16,7 +16,7 @@ namespace Kerf.Engine.Intersection.Approximation;
 /// </summary>
 /// <remarks>Not an OCCT type (decision 607's instance interfaces).</remarks>
 /// <typeparam name="TSelf">The line type.</typeparam>
-public interface IWLine<TSelf> where TSelf : class, IWLine<TSelf>
+internal interface IWLine<TSelf> where TSelf : class, IWLine<TSelf>
 {
     /// <summary>The number of points of the line.</summary>
     int NbPnts();
@@ -47,7 +47,7 @@ public interface IWLine<TSelf> where TSelf : class, IWLine<TSelf>
 /// </para>
 /// </remarks>
 /// <typeparam name="TheLine">The walking line.</typeparam>
-public class MultiLine<TheLine> where TheLine : class, IWLine<TheLine>
+internal class MultiLine<TheLine> where TheLine : class, IWLine<TheLine>
 {
     private readonly SvSurfaces? _ptrOnmySvSurfaces;
     private readonly TheLine? _line;

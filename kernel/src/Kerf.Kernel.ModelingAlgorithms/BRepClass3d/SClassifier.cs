@@ -25,7 +25,7 @@ namespace Kerf.Engine.Classification;
 
 /// <summary>Classifies a point in a solid explored by a <see cref="SolidExplorer"/>.</summary>
 /// <remarks>A working object (decision 21). It only reads the shape.</remarks>
-public class SClassifier
+internal class SClassifier
 {
     private Face _face = new();
 

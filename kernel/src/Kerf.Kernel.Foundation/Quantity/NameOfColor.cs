@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Foundation;
 
 /// <summary>The definition of the names of the colours (X11's, with OCCT's MATRABLUE and MATRAGRAY), in Quantity_Color's table order.</summary>
-public enum NameOfColor
+internal enum NameOfColor
 {
     NocBlack,
     NocMatrablue,

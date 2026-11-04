@@ -42,7 +42,7 @@ namespace Kerf.Engine.Booleans.Data;
 /// everything ordered by them, come out as native's (decision 784).
 /// </para>
 /// </remarks>
-public class DS
+internal class DS
 {
     //! Initial increment for myLines container (an allocation hint in OCCT).
     private const int THE_INITIAL_LINES_INCREMENT = 500;

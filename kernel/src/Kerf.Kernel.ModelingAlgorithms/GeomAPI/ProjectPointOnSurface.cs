@@ -23,7 +23,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// <c>Init</c>, as in OCCT. OCCT's implicit conversions to <c>int</c>, <c>gp_Pnt</c> and <c>double</c> are explicit
 /// conversions (decision 28).
 /// </remarks>
-public class ProjectPointOnSurface
+internal class ProjectPointOnSurface
 {
     private bool _isDone;
     private int _index;

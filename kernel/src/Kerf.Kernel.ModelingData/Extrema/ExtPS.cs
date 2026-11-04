@@ -21,7 +21,7 @@ namespace Kerf.Engine.Extrema;
 /// (Extrema_GenExtPS) otherwise. Solutions outside the parameter range (put in the period first) are dropped.
 /// </summary>
 /// <remarks>The surface adaptor is kept, as OCCT keeps a pointer: it must outlive the algorithm.</remarks>
-public class ExtPS
+internal class ExtPS
 {
     private SurfaceAdaptorBase? _s;
     private bool _done;

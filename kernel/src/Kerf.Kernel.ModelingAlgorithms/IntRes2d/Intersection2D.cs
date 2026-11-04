@@ -21,7 +21,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 /// copy constructor is kept (it copies the result sequences); its default assignment operator is
 /// <see cref="SetValues"/> or <see cref="Assign"/> in ported code.
 /// </remarks>
-public abstract class Intersection2D
+internal abstract class Intersection2D
 {
     protected NCollection_Sequence<IntersectionPoint2D> _lpnt = new();
     protected NCollection_Sequence<IntersectionSegment2D> _lseg = new();

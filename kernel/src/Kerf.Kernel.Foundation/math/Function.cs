@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>A function of a single variable.</summary>
-public abstract class Function
+internal abstract class Function
 {
     /// <summary>Computes the value <paramref name="f"/> of the function at <paramref name="x"/>; false if it could not be computed.</summary>
     public abstract bool Value(double x, out double f);

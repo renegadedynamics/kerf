@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Intersection.Tools;
 
 /// <summary>The 1D range [First, Last].</summary>
-public partial struct ParameterRange : IEquatable<ParameterRange>
+internal partial struct ParameterRange : IEquatable<ParameterRange>
 {
     private double _first;
     private double _last;

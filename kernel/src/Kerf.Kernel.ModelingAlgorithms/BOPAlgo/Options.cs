@@ -27,7 +27,7 @@ namespace Kerf.Engine.Booleans;
 /// The first construction loads BOPAlgo's message texts into <see cref="MsgFile"/>'s defaults, as OCCT does.
 /// </para>
 /// </remarks>
-public class Options
+internal class Options
 {
     // OCCT's process-wide parallel mode: a setting of the operation context (unit 10I)
     internal static readonly ContextKey<bool> ParallelModeSetting = new("BOPAlgo_Options.ParallelMode", false);

@@ -10,7 +10,7 @@ using System.Numerics;
 namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>Abstract properties of a geometric object.</summary>
-public abstract class Properties : Transient
+internal abstract class Properties : Transient
 {
 }
 

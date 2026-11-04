@@ -11,7 +11,7 @@ namespace Kerf.Engine.Exchange.Documents;
 /// found in the part's shape (with its location there) and its attributes (colours, name, layers).
 /// </summary>
 /// <remarks>Immutable; the sub-shape is frozen when made.</remarks>
-public sealed class SubShape
+internal sealed class SubShape
 {
     /// <summary>The sub-shape (frozen here, if it isn't yet) with its attributes.</summary>
     /// <exception cref="ArgumentException">The shape is null.</exception>

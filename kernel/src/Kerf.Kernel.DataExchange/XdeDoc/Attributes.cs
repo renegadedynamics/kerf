@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Documents;
 /// expressions make new sets.
 /// </summary>
 /// <remarks>Materials, GD&amp;T, views and user metadata are left for later (decision 1166); the record grows then.</remarks>
-public sealed record Attributes
+internal sealed record Attributes
 {
     /// <summary>No attribute: no name, no colour, visible, no layer.</summary>
     public static Attributes Empty { get; } = new();

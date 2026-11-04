@@ -33,7 +33,7 @@ namespace Kerf.Engine.Classification;
 /// <c>ref</c> (decision 57): the point, parameters and derivatives of the FindAPointInTheFace and PointInTheFace
 /// overloads, and the line and parameter of <see cref="Segment"/> and <see cref="OtherSegment"/>.
 /// </remarks>
-public class SolidExplorer
+internal class SolidExplorer
 {
     private Shape _shape = new();
     private bool _reject;

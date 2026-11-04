@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Booleans.Data;
 
 /// <summary>The range of indices [First, Last] of an argument and its sub-shapes in the data structure.</summary>
-public partial struct IndexRange : IEquatable<IndexRange>
+internal partial struct IndexRange : IEquatable<IndexRange>
 {
     private int _first;
     private int _last;

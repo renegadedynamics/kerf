@@ -19,7 +19,7 @@ namespace Kerf.Engine.Classification.Hatching;
 /// hatching it came from; copies of a domain share those points, which nothing changes. The setters are internal,
 /// with <c>With</c> twins. <c>default</c> is OCCT's default: an infinite domain.
 /// </remarks>
-public struct HatchingDomain
+internal struct HatchingDomain
 {
     private bool _hasFirstPoint;
     private PointOnHatching? _firstPoint;

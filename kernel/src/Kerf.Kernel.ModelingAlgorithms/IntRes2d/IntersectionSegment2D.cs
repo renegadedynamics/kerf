@@ -14,7 +14,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 /// <c>new IntRes2d_IntersectionSegment()</c> is OCCT's default (an infinite segment, not opposite, with default
 /// points); <c>default(IntRes2d_IntersectionSegment)</c> has zeroed points. The type has no mutators.
 /// </remarks>
-public partial struct IntersectionSegment2D : IEquatable<IntersectionSegment2D>
+internal partial struct IntersectionSegment2D : IEquatable<IntersectionSegment2D>
 {
     private bool _oppos;
     private bool _first;

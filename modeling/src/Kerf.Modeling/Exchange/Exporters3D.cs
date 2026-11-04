@@ -1,7 +1,6 @@
 using System.Text;
 using Kerf.Exchange;
 using Kerf.Meshing;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -206,9 +205,7 @@ public static class Exporters3D
     {
         if (color is not { } c)
             return null;
-        var rgba = c.ToQuantityColorRgba();
-        var rgb = rgba.GetRGB();
-        return global::Kerf.Color.FromLinear(rgb.Red(), rgb.Green(), rgb.Blue(), rgba.Alpha());
+        return c.ToKerfColor();
     }
 }
 

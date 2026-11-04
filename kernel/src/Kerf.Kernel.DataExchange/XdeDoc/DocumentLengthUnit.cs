@@ -10,7 +10,7 @@ namespace Kerf.Engine.Exchange.Documents;
 /// </summary>
 /// <param name="Name">The unit's name, such as "MM".</param>
 /// <param name="UnitValue">The unit's size in metres (0.001 for millimetres).</param>
-public sealed record DocumentLengthUnit(string Name, double UnitValue)
+internal sealed record DocumentLengthUnit(string Name, double UnitValue)
 {
     /// <summary>Millimetres, OCCT's default.</summary>
     public static DocumentLengthUnit Millimetre { get; } = new("MM", 0.001);

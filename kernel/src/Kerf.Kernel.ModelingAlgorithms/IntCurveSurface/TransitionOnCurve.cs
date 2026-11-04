@@ -10,7 +10,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// <remarks>
 /// An unscoped enum in C++; ported code imports it with <c>using static Occt.IntCurveSurface_TransitionOnCurve;</c>.
 /// </remarks>
-public enum TransitionOnCurve
+internal enum TransitionOnCurve
 {
     Tangent,
     In,
