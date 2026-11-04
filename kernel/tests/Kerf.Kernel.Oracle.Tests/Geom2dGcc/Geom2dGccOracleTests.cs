@@ -904,7 +904,7 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                 }),
                 Port = () => RunPort(() => PCirc2dTanOnRad(new global::Kerf.Engine.Construction.Constraints.Circ2dTanOnRad(PQ(p1, a1.Q), new CurveAdaptor2D(p2), r, tol))),
                 Laws = new([L(a1, p1)], p2, r, tol),
-                Corrected = "GccAna_Circ2dTanOnRad (decision 17104)",
+                Corrected = "GccAna_Circ2dTanOnRad and Geom2dGcc_Circ2dTanOnRadGeo (decisions 17104 and 17108)",
             };
         });
         yield return ("Circ2dTanOnRad(point, on)", o =>
@@ -923,7 +923,7 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                 }),
                 Port = () => RunPort(() => PCirc2dTanOnRad(new global::Kerf.Engine.Construction.Constraints.Circ2dTanOnRad(new CartesianPoint2(x, y), new CurveAdaptor2D(p2), r, tol))),
                 Laws = new([L(x, y)], p2, r, tol),
-                Corrected = "GccAna_Circ2dTanOnRad (decision 17104)",
+                Corrected = "GccAna_Circ2dTanOnRad and Geom2dGcc_Circ2dTanOnRadGeo (decisions 17104 and 17108)",
             };
             if (a2.IsCircle)
             {

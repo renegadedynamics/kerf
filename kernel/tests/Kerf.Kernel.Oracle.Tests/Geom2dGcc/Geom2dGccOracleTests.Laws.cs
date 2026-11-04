@@ -182,7 +182,13 @@ public sealed partial class Geom2dGccOracleTests
             }
             if (theLaws.On is not null)
             {
-                if (!Distances(C, theLaws.On).Any(d => d <= aTol))
+                // on the curve by its distance, or (where the projection misses, as at a B-spline's end) at CenterOn3's
+                // parameter within the curve's range
+                bool isOn = Distances(C, theLaws.On).Any(d => d <= aTol)
+                            || (aT.ContainsKey($"c3.{i}.pararg") && Num(aT, $"c3.{i}.pararg") is double u
+                                && u >= theLaws.On.FirstParameter - 1.0e-9 && u <= theLaws.On.LastParameter + 1.0e-9
+                                && theLaws.On.Value(u).DistanceTo(C) <= aTol);
+                if (!isOn)
                 {
                     aBroken.Add($"solution {i}: centre off the curve");
                 }
