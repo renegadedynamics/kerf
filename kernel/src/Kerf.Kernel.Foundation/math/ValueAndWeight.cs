@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>A value and its weight, ordered by value.</summary>
-public struct ValueAndWeight : IEquatable<ValueAndWeight>, IComparable<ValueAndWeight>
+internal struct ValueAndWeight : IEquatable<ValueAndWeight>, IComparable<ValueAndWeight>
 {
     private double _value;
     private double _weight;

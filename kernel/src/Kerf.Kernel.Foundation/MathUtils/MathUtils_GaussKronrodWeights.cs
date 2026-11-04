@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Numerics.Utilities;
 
 /// <summary>Access to Gauss-Kronrod quadrature weights.</summary>
-public static partial class MathUtils
+internal static partial class MathUtils
 {
     /// <summary>Get Gauss-Kronrod points and weights (theNbKronrod should be 2n+1).</summary>
     public static bool GetKronrodPointsAndWeights(int nbKronrod, math_Vector points, math_Vector weights)

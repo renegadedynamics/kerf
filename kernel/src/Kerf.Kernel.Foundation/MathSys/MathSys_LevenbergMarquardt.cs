@@ -7,7 +7,7 @@ using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
 namespace Kerf.Engine.Numerics.Systems;
 
-public static partial class MathSys
+internal static partial class MathSys
 {
     /// <summary>Configuration for the Levenberg-Marquardt algorithm: Config plus the damping parameters.</summary>
     public class LMConfig : global::Kerf.Engine.Numerics.Utilities.MathUtils.Config

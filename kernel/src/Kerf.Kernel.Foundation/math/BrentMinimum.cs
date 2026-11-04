@@ -11,7 +11,7 @@ using System.Globalization;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>Brent's method to find a minimum of a function of a single variable, without its derivative.</summary>
-public class BrentMinimum
+internal class BrentMinimum
 {
     private const double Cgold = 0.3819660; // 0.5*(3 - sqrt(5))
 

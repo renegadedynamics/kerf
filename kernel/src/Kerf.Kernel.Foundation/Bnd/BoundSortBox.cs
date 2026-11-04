@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Bounds;
 /// X, Y and Z axes of the grid, a compared box is tested only against the boxes sharing its voxels on all three
 /// axes, and boxes spanning a large part of the grid are kept apart and tested directly.
 /// </remarks>
-public class BoundSortBox
+internal class BoundSortBox
 {
     private Box _enclosingBox = new();                  // The bounding box that contains all the boxes to be sorted.
     private NCollection_HArray1<Box>? _boxes;            // The set of bounding boxes to be sorted.

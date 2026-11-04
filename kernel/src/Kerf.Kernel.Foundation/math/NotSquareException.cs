@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>Thrown when an operation needs a square matrix.</summary>
-public class NotSquareException : DimensionErrorException
+internal class NotSquareException : DimensionErrorException
 {
     public NotSquareException() { }
 

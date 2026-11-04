@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity PropertyDefinitionRepresentation
 /// </summary>
-public class PropertyDefinitionRepresentation : Transient
+internal class PropertyDefinitionRepresentation : Transient
 {
     private RepresentedDefinition _definition = new RepresentedDefinition();
     private StepRepresentation _usedRepresentation;

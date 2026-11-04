@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class StyledItem : RepresentationItem
+internal class StyledItem : RepresentationItem
 {
     private NCollection_HArray1<PresentationStyleAssignment> _styles;
     /// <summary>

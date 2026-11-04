@@ -13,7 +13,7 @@ using static Kerf.Geometry.SurfaceKind;
 namespace Kerf.Engine.HiddenLines;
 
 /// <summary>The static tool over the surface of a face (BRepAdaptor_Surface) that HLRBRep_Surface reads through.</summary>
-public static class BSurfaceTool
+internal static class BSurfaceTool
 {
     public static double FirstUParameter(FaceSurfaceAdaptor s) => s.FirstUParameter();
 

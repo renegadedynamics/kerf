@@ -16,7 +16,7 @@ namespace Kerf.Engine.Intersection.Surfaces;
 /// OCCT's instantiation of <see cref="BSplComputeLine{MultiLine, LineTool}"/> over ApproxInt_MultiLineTool and IntPatch_WLine.
 /// </summary>
 /// <remarks>A sealed subclass with OCCT's constructors (decisions 142 and 202); the members are the base class's.</remarks>
-public sealed class TheComputeLineOfWLApprox : BSplComputeLine<global::Kerf.Engine.Intersection.Approximation.MultiLine<WLine>, MultiLineTool<WLine>>
+internal sealed class TheComputeLineOfWLApprox : BSplComputeLine<global::Kerf.Engine.Intersection.Approximation.MultiLine<WLine>, MultiLineTool<WLine>>
 {
     /// <summary>
     /// Approximates <paramref name="line"/> until the tolerances are reached, from degree

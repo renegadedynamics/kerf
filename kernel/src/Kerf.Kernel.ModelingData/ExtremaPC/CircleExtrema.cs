@@ -16,7 +16,7 @@ namespace Kerf.Engine.Extrema.PointCurve;
 /// <remarks>When the point projects onto the centre, every point of the circle is at the same distance:
 /// Status.InfiniteSolutions with InfiniteSquareDistance = R² + h². The domain is fixed at construction; a full
 /// period means the whole circle.</remarks>
-public sealed class CircleExtrema : global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ICurveEvaluator
+internal sealed class CircleExtrema : global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ICurveEvaluator
 {
     private readonly Circle3D _circle;                      // Circle geometry
     private readonly global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D? _domain;          // Parameter domain (null for full circle)

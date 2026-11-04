@@ -13,7 +13,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// the constructor is its twin. OCCT's <c>Dump</c> is <see cref="ToString"/>. (IntCurveSurface_HInter never makes
 /// segments: its AppendSegment is empty.)
 /// </remarks>
-public partial struct IntersectionSegment : IEquatable<IntersectionSegment>
+internal partial struct IntersectionSegment : IEquatable<IntersectionSegment>
 {
     private CurveSurfaceIntersectionPoint _p1;
     private CurveSurfaceIntersectionPoint _p2;

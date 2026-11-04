@@ -28,7 +28,7 @@ namespace Kerf.Engine.Extrema;
 /// surface and <c>Perform</c> with the curve. Keeps a reference to the surface, as OCCT keeps the pointer: the
 /// caller's adaptor must outlive the algorithm. OCCT disallows copies.
 /// </remarks>
-public class ExtCS
+internal class ExtCS
 {
     private SurfaceAdaptorBase? _s;
     private bool _done;

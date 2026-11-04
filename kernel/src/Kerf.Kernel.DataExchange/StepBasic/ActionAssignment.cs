@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity ActionAssignment
 /// </summary>
-public class ActionAssignment : Transient
+internal class ActionAssignment : Transient
 {
     private StepAction _assignedAction;
 

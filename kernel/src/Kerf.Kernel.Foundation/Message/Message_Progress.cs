@@ -16,7 +16,7 @@ namespace Kerf.Engine.Foundation;
 /// OCCT's indicator is abstract, with a UserBreak and a Show to override; here both are the .NET types. Progress
 /// is reported as OCCT computes it, and never moves backwards. Thread-safe, as OCCT's is.
 /// </remarks>
-public sealed class ProgressIndicator
+internal sealed class ProgressIndicator
 {
     private readonly CancellationToken _token;
     private readonly IProgress<double>? _progress;

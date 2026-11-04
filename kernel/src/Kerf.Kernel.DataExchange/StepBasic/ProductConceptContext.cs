@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity ProductConceptContext
 /// </summary>
-public class ProductConceptContext : ApplicationContextElement
+internal class ProductConceptContext : ApplicationContextElement
 {
     private TCollection_HAsciiString _marketSegmentType;
 

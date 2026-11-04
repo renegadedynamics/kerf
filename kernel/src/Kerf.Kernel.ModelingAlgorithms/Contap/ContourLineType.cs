@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.HiddenLines.Contours;
 
 /// <summary>The type of a contour line: a line, a circle, a walking line or a restriction.</summary>
-public enum ContourLineType
+internal enum ContourLineType
 {
     Lin,
     Circle,

@@ -19,7 +19,7 @@ namespace Kerf.Engine.HiddenLines.Presentation;
 /// object (decision 21), as OCCT's: <see cref="PresentationToolTriangulatedShape.GetDeflection"/> stores the absolute
 /// deflection it computes into the drawer.
 /// </remarks>
-public class Drawer : Transient
+internal class Drawer : Transient
 {
     private Drawer? _link;
     private double _chordialDeviation;

@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Numerics.Utilities;
 
 /// <summary>Line search algorithms for optimization.</summary>
-public static partial class MathUtils
+internal static partial class MathUtils
 {
     /// <summary>Result of line search operation.</summary>
     public struct LineSearchResult

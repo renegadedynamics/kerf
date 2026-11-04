@@ -19,7 +19,7 @@ namespace Kerf.Engine.Foundation;
 /// in a browser. <see cref="Close"/> replaces the destructor: it flushes the writer, and closes it if the printer opened
 /// it.
 /// </remarks>
-public class PrinterOStream : Printer
+internal class PrinterOStream : Printer
 {
     private TextWriter? _stream;
     private bool _isFile;

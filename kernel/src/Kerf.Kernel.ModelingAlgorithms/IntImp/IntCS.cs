@@ -15,7 +15,7 @@ namespace Kerf.Engine.Intersection.Implicit;
 /// The static tool over a curve that the generic <c>IntImp_IntCS</c> uses (OCCT's TheCurveTool macro:
 /// IntCurveSurface_TheHCurveTool, HLRBRep_LineTool, IntPatch_HCurve2dTool).
 /// </summary>
-public interface IImplicitCurveTool<TheCurve>
+internal interface IImplicitCurveTool<TheCurve>
 {
     static abstract double FirstParameter(in TheCurve c);
 
@@ -28,7 +28,7 @@ public interface IImplicitCurveTool<TheCurve>
 /// The static tool over a parametric surface that the generic <c>IntImp_IntCS</c> uses (OCCT's ThePSurfaceTool
 /// macro: Adaptor3d_HSurfaceTool, HLRBRep_SurfaceTool).
 /// </summary>
-public interface IPSurfaceTool<ThePSurface>
+internal interface IPSurfaceTool<ThePSurface>
 {
     static abstract double FirstUParameter(in ThePSurface s);
 
@@ -47,7 +47,7 @@ public interface IPSurfaceTool<ThePSurface>
 /// What the generic <c>IntImp_IntCS</c> reads from its function besides its values (OCCT's TheFunction macro:
 /// IntCurveSurface_TheCSFunctionOfHInter, IntPatch_CSFunction, HLRBRep_TheCSFunctionOfInterCSurf).
 /// </summary>
-public interface ICSFunction<ThePSurface, TheCurve>
+internal interface ICSFunction<ThePSurface, TheCurve>
 {
     /// <summary>The intersection point of the last evaluation.</summary>
     Point3D Point();
@@ -70,7 +70,7 @@ public interface ICSFunction<ThePSurface, TheCurve>
 /// OCCT's constructors forwarded. OCCT copies the function into the object; the port keeps the caller's (a working
 /// object that the caller hands over).
 /// </remarks>
-public class IntCS<TheFunction, ThePSurface, ThePSurfaceTool, TheCurve, TheCurveTool>
+internal class IntCS<TheFunction, ThePSurface, ThePSurfaceTool, TheCurve, TheCurveTool>
     where TheFunction : FunctionSetWithDerivatives, ICSFunction<ThePSurface, TheCurve>
     where ThePSurfaceTool : IPSurfaceTool<ThePSurface>
     where TheCurveTool : IImplicitCurveTool<TheCurve>

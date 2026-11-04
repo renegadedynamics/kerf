@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepCartesianPoint : StepPoint
+internal class StepCartesianPoint : StepPoint
 {
     private int _nbCoord;
     private double[] _coords = new double[3];

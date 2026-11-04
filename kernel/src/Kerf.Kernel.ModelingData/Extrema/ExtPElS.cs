@@ -15,7 +15,7 @@ namespace Kerf.Engine.Extrema;
 /// cone, sphere or torus).
 /// </summary>
 /// <remarks>An algorithm object: construct it with the point and the surface, or empty and call <c>Perform</c>.</remarks>
-public class ExtPElS
+internal class ExtPElS
 {
     private static readonly double ExtPElS_MyEps = Epsilon(2.0 * M_PI);
 

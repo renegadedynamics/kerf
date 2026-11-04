@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// parameters and the operations of the shape processing its transfers do. ModeTrans : a simple way of transmitting a
 /// transfer mode from a user. To be interpreted for each norm.
 /// </summary>
-public class ActorOfFinderProcess : ActorOfProcessForFinder
+internal class ActorOfFinderProcess : ActorOfProcessForFinder
 {
     public ActorOfFinderProcess()
     {

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Extrema;
 /// The extremum of the distance between a curve and a surface near starting parameters T on the curve and (U, V)
 /// on the surface: a zero of the gradient of F(t, u, v) = distance(C(t), S(u, v)), found by math_FunctionSetRoot.
 /// </summary>
-public class GenLocateExtCS
+internal class GenLocateExtCS
 {
     private bool _done;
     private double _sqDist;

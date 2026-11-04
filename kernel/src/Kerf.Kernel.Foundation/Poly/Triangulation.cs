@@ -40,7 +40,7 @@ namespace Kerf.Engine.Meshing;
 /// methods keep their behaviour without it), <c>DumpJson</c>.
 /// </para>
 /// </remarks>
-public class Triangulation : Transient
+internal class Triangulation : Transient
 {
     // OCCT keeps the cached box behind an atomic pointer guarded by a shared mutex; here each box is published whole,
     // never changed once published, so readers and writers need no lock (unit 10I)

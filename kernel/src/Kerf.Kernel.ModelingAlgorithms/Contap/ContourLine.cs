@@ -24,7 +24,7 @@ namespace Kerf.Engine.HiddenLines.Contours;
 /// (decision 1077). <see cref="Vertex"/> returns a reference to the stored vertex, as OCCT's. As in OCCT, the default
 /// constructor leaves the type unset (<see cref="Lin"/> here).
 /// </remarks>
-public sealed class ContourLine
+internal sealed class ContourLine
 {
     private WalkingTypeTrans _trans;
     private LineOn2S? _curv;

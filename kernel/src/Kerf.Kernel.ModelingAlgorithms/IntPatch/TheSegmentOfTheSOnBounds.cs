@@ -18,7 +18,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// A C++ value class, so a struct (decision 609); <c>new()</c> and <c>default</c> are the same. The mutators are
 /// internal (reached by the boundary search through <see cref="ISegment{ThePathPoint}"/>).
 /// </remarks>
-public partial struct TheSegmentOfTheSOnBounds
+internal partial struct TheSegmentOfTheSOnBounds
     : ISegment<ThePathPointOfTheSOnBounds>, IEquatable<TheSegmentOfTheSOnBounds>
 {
     private Curve2DAdaptorBase? _arc;

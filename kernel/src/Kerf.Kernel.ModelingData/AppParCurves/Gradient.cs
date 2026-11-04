@@ -33,7 +33,7 @@ namespace Kerf.Engine.Approximation;
 /// </remarks>
 /// <typeparam name="MultiLine">The MultiLine type.</typeparam>
 /// <typeparam name="ToolLine">The line tool reading <typeparamref name="MultiLine"/>.</typeparam>
-public class Gradient<MultiLine, ToolLine>
+internal class Gradient<MultiLine, ToolLine>
     where ToolLine : struct, ILineTool<MultiLine>
 {
     private MultiCurve _scu;

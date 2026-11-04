@@ -21,7 +21,7 @@ namespace Kerf.Engine.Numerics.Polynomials;
 /// the Hermite part, the others the Jacobi part. In OCCT a plain class with a constant member, used by value; it is
 /// immutable, so the port makes it a sealed class, as PLib_JacobiPolynomial.
 /// </remarks>
-public sealed class HermitJacobi
+internal sealed class HermitJacobi
 {
     // W coefficients for C0 continuity (NivConstr = 0, DegreeH = 1)
     // W(t) = (1 - t^2)

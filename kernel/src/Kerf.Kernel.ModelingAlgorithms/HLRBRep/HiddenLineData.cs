@@ -46,7 +46,7 @@ namespace Kerf.Engine.HiddenLines;
 /// without the read.
 /// </para>
 /// </remarks>
-public class HiddenLineData : Transient
+internal class HiddenLineData : Transient
 {
     // OCCT's global counters (HLRBRep_Data.cxx) are left out: only OCCT_DEBUG traces read them, and nothing here did
     // (decision 1097; unit 10I)

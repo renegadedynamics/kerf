@@ -9,7 +9,7 @@ namespace Kerf.Engine.Foundation;
 
 /// <summary>An alert attribute holding the text of a stream.</summary>
 /// <remarks>OCCT's <c>Standard_SStream</c> is a <see cref="string"/>: the attribute keeps a copy of the stream's text.</remarks>
-public class AttributeStream : MessageAttribute
+internal class AttributeStream : MessageAttribute
 {
     private string _stream = ""; //!< container of values
 

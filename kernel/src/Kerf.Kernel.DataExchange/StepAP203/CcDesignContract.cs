@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Ap203;
 /// <summary>
 /// Representation of STEP entity CcDesignContract
 /// </summary>
-public class CcDesignContract : ContractAssignment
+internal class CcDesignContract : ContractAssignment
 {
     private NCollection_HArray1<ContractedItem> _items;
 

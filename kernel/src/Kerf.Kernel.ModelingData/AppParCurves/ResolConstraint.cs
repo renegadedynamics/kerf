@@ -28,7 +28,7 @@ namespace Kerf.Engine.Approximation;
 /// </remarks>
 /// <typeparam name="MultiLine">The MultiLine type.</typeparam>
 /// <typeparam name="ToolLine">The line tool reading <typeparamref name="MultiLine"/>.</typeparam>
-public class ResolConstraint<MultiLine, ToolLine>
+internal class ResolConstraint<MultiLine, ToolLine>
     where ToolLine : struct, ILineTool<MultiLine>
 {
     private bool _done;

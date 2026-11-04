@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Approximation.Advanced;
 
 /// <summary>Cuts an interval [a, b] at (a + b) / 2.</summary>
-public class DichoCutting : Cutting
+internal class DichoCutting : Cutting
 {
     public DichoCutting() { }
 

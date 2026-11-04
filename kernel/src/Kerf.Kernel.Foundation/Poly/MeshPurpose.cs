@@ -12,7 +12,7 @@ namespace Kerf.Engine.Meshing;
 /// up) are values of the enum too. Files that use it write <c>using static Occt.Poly_MeshPurpose;</c>.
 /// </summary>
 [Flags]
-public enum MeshPurpose : uint
+internal enum MeshPurpose : uint
 {
     // main flags
 

@@ -12,7 +12,7 @@ namespace Kerf.Engine.Approximation;
 /// OCCT's instantiation of Approx_ComputeCLine.gxx over AppCont_Function (used for 3D lines): approximates a
 /// continuous MultiLine by Bezier MultiCurves until the tolerances are reached.
 /// </summary>
-public sealed class FitAndDivide : ComputeCLine
+internal sealed class FitAndDivide : ComputeCLine
 {
     /// <summary>
     /// Approximates Line until the tolerances are reached, from degreemin to degreemax, cutting the range if

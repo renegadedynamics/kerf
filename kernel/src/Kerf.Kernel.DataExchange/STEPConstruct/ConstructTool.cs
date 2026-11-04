@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Step.Construct;
 /// </summary>
 /// <remarks>It is initialized by WorkSession and allows easy access to its fields and internal data such as Model,
 /// TransferReader and FinderProcess. A C++ value class, a C# class here (decision 1185).</remarks>
-public class ConstructTool
+internal class ConstructTool
 {
     /// <summary>Creates an empty tool</summary>
     public ConstructTool()

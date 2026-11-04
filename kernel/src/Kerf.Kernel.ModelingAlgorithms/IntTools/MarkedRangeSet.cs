@@ -12,7 +12,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// A class, a working object of the edge/face intersector (plan section 6), because it holds sequences. OCCT copies
 /// it only as a member of a working object; the copy constructor is written out for ported code.
 /// </remarks>
-public sealed class MarkedRangeSet
+internal sealed class MarkedRangeSet
 {
     private readonly NCollection_Sequence<double> _rangeSetStorer = new();
     private int _rangeNumber;

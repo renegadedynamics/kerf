@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Objects;
 
 /// <summary>The common behaviour of points in 3D space (<see cref="CartesianPoint"/>).</summary>
-public abstract class Point : Geometry3D
+internal abstract class Point : Geometry3D
 {
     /// <summary>The coordinates of the point.</summary>
     public abstract void Coord(out double x, out double y, out double z);

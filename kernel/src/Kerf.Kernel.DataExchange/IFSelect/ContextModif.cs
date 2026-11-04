@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// Modifiers concern models produced for file output). Furthermore, in return, ContextModif can record
 /// Checks, either one for all, or one for each Entity. It supports trace too.
 /// </summary>
-public class ContextModif
+internal class ContextModif
 {
 
     /// <summary>

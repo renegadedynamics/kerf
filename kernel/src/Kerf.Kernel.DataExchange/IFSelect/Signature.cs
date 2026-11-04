@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// be unique in the model, but gives a value for such or such important feature. Examples : Dynamic Type;
 /// Category; etc
 /// </summary>
-public abstract class Signature : SignType
+internal abstract class Signature : SignType
 {
 
     /// <summary>

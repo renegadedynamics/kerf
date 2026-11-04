@@ -18,7 +18,7 @@ namespace Kerf.Engine.Collections;
 /// <see cref="Dispose"/> does it: ported code writes <c>using var aFiller = new ...</c> where the C++ relies on the
 /// end of the scope.
 /// </remarks>
-public sealed class SpatialTreeFiller<TheObjType, TheBndType> : IDisposable
+internal sealed class SpatialTreeFiller<TheObjType, TheBndType> : IDisposable
     where TheBndType : struct, ISpatialTreeBox<TheBndType>
 {
     /// <summary>An object with its bounding volume.</summary>

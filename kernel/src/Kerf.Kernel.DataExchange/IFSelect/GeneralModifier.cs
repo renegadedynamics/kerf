@@ -27,7 +27,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// define their kind of action, which can be applied at a precise step of the production of a File : see
 /// Modifier, and in the package IFAdapt, EntityModifier and EntityCopier
 /// </summary>
-public abstract class GeneralModifier : Transient
+internal abstract class GeneralModifier : Transient
 {
 
     /// <summary>

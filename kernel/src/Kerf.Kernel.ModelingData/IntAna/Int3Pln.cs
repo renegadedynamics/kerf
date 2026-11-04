@@ -20,7 +20,7 @@ namespace Kerf.Engine.Intersection;
 /// parallel or identical, IsEmpty returns true.
 /// </summary>
 /// <remarks>An algorithm object: construct it with the planes, or empty and call <c>Perform</c>.</remarks>
-public class Int3Pln
+internal class Int3Pln
 {
     private bool _done;
     private bool _empt;

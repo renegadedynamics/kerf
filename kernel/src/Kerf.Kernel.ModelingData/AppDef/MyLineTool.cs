@@ -19,7 +19,7 @@ namespace Kerf.Engine.Approximation;
 /// <see cref="IApproxLineTool{MultiLine}"/>, so that it can be the <c>LineTool</c> type argument of the generic
 /// algorithms (decisions 142 and 202).
 /// </remarks>
-public readonly struct MyLineTool : IApproxLineTool<MultiLine>
+internal readonly struct MyLineTool : IApproxLineTool<MultiLine>
 {
     /// <summary>The first index of the MultiPoints of the MultiLine: 1.</summary>
     public static int FirstPoint(MultiLine ml) => 1;

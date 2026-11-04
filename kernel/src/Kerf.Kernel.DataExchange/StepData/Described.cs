@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// <summary>
 /// General frame to describe entities with Description (Simple or Complex).
 /// </summary>
-public abstract class Described : Transient
+internal abstract class Described : Transient
 {
     private readonly EDescr _thedescr;
 

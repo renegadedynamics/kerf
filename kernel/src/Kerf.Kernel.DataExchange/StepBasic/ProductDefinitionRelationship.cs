@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity ProductDefinitionRelationship
 /// </summary>
-public class ProductDefinitionRelationship : Transient
+internal class ProductDefinitionRelationship : Transient
 {
     private TCollection_HAsciiString _id;
     private TCollection_HAsciiString _name;

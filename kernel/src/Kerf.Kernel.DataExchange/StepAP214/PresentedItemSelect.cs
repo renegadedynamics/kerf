@@ -13,7 +13,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class PresentedItemSelect : SelectType
+internal class PresentedItemSelect : SelectType
 {
     /// <summary>
     /// Returns a PresentedItemSelect SelectType

@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// Signature in its method AddSign Methods can be redefined to, either - directly compute the value without
 /// a Signature - compute the value in the context of a Graph
 /// </summary>
-public class SignCounter : SignatureList
+internal class SignCounter : SignatureList
 {
 
     /// <summary>

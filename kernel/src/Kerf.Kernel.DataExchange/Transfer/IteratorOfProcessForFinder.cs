@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Framework.Transfer;
 
 /// <summary>An iterator on the results of a <see cref="ProcessForFinder"/>, with their starting objects if asked.</summary>
-public class IteratorOfProcessForFinder : TransferIterator
+internal class IteratorOfProcessForFinder : TransferIterator
 {
     /// <summary>
     /// Creates an empty Iterator. If <paramref name="withstarts"/> is True, each Binder to be iterated will be

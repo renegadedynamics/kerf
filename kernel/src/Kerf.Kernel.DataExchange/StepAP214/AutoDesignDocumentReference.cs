@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class AutoDesignDocumentReference : DocumentReference
+internal class AutoDesignDocumentReference : DocumentReference
 {
     private NCollection_HArray1<AutoDesignReferencingItem> _items;
 

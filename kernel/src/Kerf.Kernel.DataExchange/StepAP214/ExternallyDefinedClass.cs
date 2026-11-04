@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Ap214;
 /// <summary>
 /// Representation of STEP entity ExternallyDefinedClass
 /// </summary>
-public class ExternallyDefinedClass : Class
+internal class ExternallyDefinedClass : Class
 {
     private ExternallyDefinedItem _externallyDefinedItem;
 

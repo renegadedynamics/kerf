@@ -13,7 +13,7 @@ using static Kerf.Engine.Intersection.Walking.StatusDeflection;
 
 namespace Kerf.Engine.Intersection.Walking;
 
-public partial class PWalking
+internal partial class PWalking
 {
     /// <summary>
     /// Extends the line inside a tangent zone in the direction given by theChoixIso. True if the line was extended

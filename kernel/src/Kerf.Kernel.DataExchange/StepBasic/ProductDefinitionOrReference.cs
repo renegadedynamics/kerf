@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ProductDefinitionOrReference : SelectType
+internal class ProductDefinitionOrReference : SelectType
 {
     /// <summary>
     /// Returns a ProductDefinitionOrReference SelectType

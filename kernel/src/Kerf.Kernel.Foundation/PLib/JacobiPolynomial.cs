@@ -30,7 +30,7 @@ namespace Kerf.Engine.Numerics.Polynomials;
 /// sharing an instance is the same as copying it, and there is no invalid <c>default</c> value.
 /// </para>
 /// </remarks>
-public sealed partial class JacobiPolynomial
+internal sealed partial class JacobiPolynomial
 {
     // The possible values for NbGaussPoints
     private const int THE_NB_GAUSS_POINTS_8 = 8, THE_NB_GAUSS_POINTS_10 = 10, THE_NB_GAUSS_POINTS_15 = 15,

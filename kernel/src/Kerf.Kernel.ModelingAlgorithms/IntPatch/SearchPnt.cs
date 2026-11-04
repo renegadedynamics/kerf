@@ -10,7 +10,7 @@ namespace Kerf.Engine.Intersection.Patches;
 
 /// <summary>The interference of 2D polygons, under the name IntPatch_RstInt uses (OCCT's typedef of Intf_InterferencePolygon2d).</summary>
 /// <remarks>A C++ typedef of a class: a sealed subclass with the constructors forwarded, so that the name is kept.</remarks>
-public sealed class SearchPnt : InterferencePolygon2d
+internal sealed class SearchPnt : InterferencePolygon2d
 {
     public SearchPnt()
     {

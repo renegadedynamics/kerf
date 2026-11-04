@@ -24,7 +24,7 @@ namespace Kerf.Engine.Intersection.Implicit;
 /// <see cref="Int2S{ThePSurface, ThePSurfaceTool}"/> builds them. OCCT keeps pointers to the caller's surface
 /// handles; the port keeps the surfaces (adaptors, by reference, as the handles).
 /// </remarks>
-public class ZerParFunc<ThePSurface, ThePSurfaceTool> : FunctionSetWithDerivatives
+internal class ZerParFunc<ThePSurface, ThePSurfaceTool> : FunctionSetWithDerivatives
     where ThePSurfaceTool : IZerCSParPSurfaceTool<ThePSurface>
 {
     private readonly ThePSurface _surf1;

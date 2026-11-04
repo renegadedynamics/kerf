@@ -15,7 +15,7 @@ namespace Kerf.Engine.Intersection.Polygons;
 /// The static tool over a 3D polygon that the generic <c>Intf_InterferencePolygonPolyhedron</c> uses (OCCT's
 /// ToolPolygon3d macro: IntCurveSurface_ThePolygonToolOfHInter, HLRBRep_ThePolygonToolOfInterCSurf).
 /// </summary>
-public interface IToolPolygon3d<Polygon3d>
+internal interface IToolPolygon3d<Polygon3d>
 {
     static abstract Box Bounding(in Polygon3d polygon);
 
@@ -35,7 +35,7 @@ public interface IToolPolygon3d<Polygon3d>
 /// <c>Intf_InterferencePolygonPolyhedron</c> uses (OCCT's ToolPolyh macro: IntCurveSurface_ThePolyhedronToolOfHInter,
 /// HLRBRep_ThePolyhedronToolOfInterCSurf).
 /// </summary>
-public interface IToolPolyhedron<Polyhedron>
+internal interface IToolPolyhedron<Polyhedron>
 {
     static abstract Box Bounding(in Polyhedron polyh);
 
@@ -69,7 +69,7 @@ public interface IToolPolyhedron<Polyhedron>
 /// edge (its two vertices) or the triangle of the polyhedron. The <c>Intersect</c> variant OCCT compiles out
 /// (<c>#if 0</c>) is not ported.
 /// </remarks>
-public class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron, ToolPolyh> : PolygonInterference
+internal class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron, ToolPolyh> : PolygonInterference
     where ToolPolygon3d : IToolPolygon3d<Polygon3d>
     where ToolPolyh : IToolPolyhedron<Polyhedron>
 {

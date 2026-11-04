@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity ConfigurationDesign
 /// </summary>
-public class ConfigurationDesign : Transient
+internal class ConfigurationDesign : Transient
 {
     private ConfigurationItem _configuration;
     private ConfigurationDesignItem _design = new ConfigurationDesignItem();

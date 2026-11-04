@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class SurfaceStyleBoundary : Transient
+internal class SurfaceStyleBoundary : Transient
 {
     private CurveStyle _styleOfBoundary;
 

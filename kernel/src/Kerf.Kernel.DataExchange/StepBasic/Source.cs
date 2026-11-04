@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Basic;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepBasic_Source;</c>.</remarks>
-public enum Source
+internal enum Source
 {
     SMade,
     SBought,

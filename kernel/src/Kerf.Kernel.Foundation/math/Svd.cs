@@ -15,7 +15,7 @@ namespace Kerf.Engine.Numerics;
 /// The solution of N linear equations in M unknowns, without condition on N or M, by Singular Value Decomposition.
 /// Better than Gauss or GaussLeastSquare for singular or nearly singular matrices.
 /// </summary>
-public class Svd
+internal class Svd
 {
     private bool _done;
     private Matrix _u;

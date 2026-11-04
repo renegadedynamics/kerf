@@ -13,7 +13,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 
 /// <summary>The intersection between an implicit conic and a bounded 2D curve.</summary>
 /// <remarks>OCCT's instantiation of IntImpParGen_Intersector.gxx over Adaptor2d_Curve2d (decision 284).</remarks>
-public sealed class TheIntersectorOfTheIntConicCurveOfGInter
+internal sealed class TheIntersectorOfTheIntConicCurveOfGInter
     : Intersector<IConicTool, Curve2DAdaptorBase, Geom2dCurveTool,
                                TheProjPCurOfGInter,
                                MyImpParToolOfTheIntersectorOfTheIntConicCurveOfGInter>

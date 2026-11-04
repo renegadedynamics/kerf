@@ -19,7 +19,7 @@ namespace Kerf.Engine.Intersection.Approximation;
 /// A working object (decision 609), sharing the curves and the line it is given; it is the line of BRepApprox's
 /// instantiation of ApproxInt's generics (<see cref="IWLine{TSelf}"/>).
 /// </remarks>
-public class ApproxLine : Transient, IWLine<ApproxLine>
+internal class ApproxLine : Transient, IWLine<ApproxLine>
 {
     private readonly BSplineCurve3D? _curveXYZ;
     private readonly BSplineCurve2D? _curveUV1;

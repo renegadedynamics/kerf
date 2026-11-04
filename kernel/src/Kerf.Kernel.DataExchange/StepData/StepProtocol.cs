@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// The descriptions (late binding) are kept in maps; <see cref="ECDescr"/> iterates the map of descriptions, keyed by
 /// reference in OCCT, in insertion order here (decision 1194).
 /// </remarks>
-public class StepProtocol : Protocol
+internal class StepProtocol : Protocol
 {
     //  The base Protocol recognizes UnknownEntity
     private const string Thename = "(DEFAULT)";

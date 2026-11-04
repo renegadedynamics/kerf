@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity VersionedActionRequest
 /// </summary>
-public class VersionedActionRequest : Transient
+internal class VersionedActionRequest : Transient
 {
     private TCollection_HAsciiString _id;
     private TCollection_HAsciiString _version;

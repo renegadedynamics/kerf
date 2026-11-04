@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class CoordinatedUniversalTimeOffset : Transient
+internal class CoordinatedUniversalTimeOffset : Transient
 {
     private int _hourOffset;
     private int _minuteOffset;

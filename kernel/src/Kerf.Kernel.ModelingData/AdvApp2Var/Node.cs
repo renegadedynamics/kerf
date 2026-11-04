@@ -17,7 +17,7 @@ namespace Kerf.Engine.Approximation.Advanced;
 /// derivatives up to the continuity orders, and the errors of their approximation.
 /// </summary>
 /// <remarks>A working object of the approximation, with OCCT's public mutators (decision 194).</remarks>
-public class Node : Transient
+internal class Node : Transient
 {
     private readonly NCollection_Array2<Point3D> _truePoints;
     private readonly NCollection_Array2<double> _errors;

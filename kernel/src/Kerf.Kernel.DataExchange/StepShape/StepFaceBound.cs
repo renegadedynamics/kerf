@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepFaceBound : StepTopologicalRepresentationItem
+internal class StepFaceBound : StepTopologicalRepresentationItem
 {
     private StepLoop _bound;
     private bool _orientation;

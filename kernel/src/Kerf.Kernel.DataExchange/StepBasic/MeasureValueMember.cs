@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// positive_plane_angle_measure,positive_ratio_measure,
 /// area_measure,volume_measure, count_measure
 /// </summary>
-public class MeasureValueMember : SelectReal
+internal class MeasureValueMember : SelectReal
 {
     private int _thecase;
 

@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// service is provided, it can produce, according the norm, either a parcel of a file for an entity, or any
 /// other kind of information relevant for the norm,
 /// </summary>
-public abstract class WorkLibrary : Transient
+internal abstract class WorkLibrary : Transient
 {
 
     /// <summary>

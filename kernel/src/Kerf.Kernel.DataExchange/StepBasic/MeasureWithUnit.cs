@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class MeasureWithUnit : Transient
+internal class MeasureWithUnit : Transient
 {
     private MeasureValueMember _valueComponent;
     private Unit _unitComponent = new Unit();

@@ -25,7 +25,7 @@ namespace Kerf.Engine.Offsets.Bisectors;
 /// A working object of the medial axis (MAT2d_Tool2d keeps and re-trims its curve in place, as OCCT does): Value()
 /// and ChangeValue() return the trimmed curve itself, not frozen; its mutators are internal.
 /// </remarks>
-public sealed class Bisec
+internal sealed class Bisec
 {
     private TrimmedCurve2D _thebisector = null!;
 

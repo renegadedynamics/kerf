@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Ap214;
 /// <summary>
 /// Representation of STEP entity AppliedExternalIdentificationAssignment
 /// </summary>
-public class AppliedExternalIdentificationAssignment : ExternalIdentificationAssignment
+internal class AppliedExternalIdentificationAssignment : ExternalIdentificationAssignment
 {
     private NCollection_HArray1<ExternalIdentificationItem> _items;
 

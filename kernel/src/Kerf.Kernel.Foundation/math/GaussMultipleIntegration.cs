@@ -34,7 +34,7 @@ namespace Kerf.Engine.Numerics;
 /// The Gauss-Legendre integration of a function of several variables between the bounds Lower[a..b] and
 /// Upper[a..b]. Each order is limited to <see cref="NumericTables.GaussPointsMax"/> (61).
 /// </summary>
-public class GaussMultipleIntegration
+internal class GaussMultipleIntegration
 {
     private double _val;
     private bool _done;

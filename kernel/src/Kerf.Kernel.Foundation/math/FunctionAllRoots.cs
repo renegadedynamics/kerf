@@ -14,7 +14,7 @@ namespace Kerf.Engine.Numerics;
 /// Uses a sample of a function to find all the intervals on which it is null, then
 /// <see cref="FunctionRoots"/> to find the points where it is null outside them. The derivative is required.
 /// </summary>
-public class FunctionAllRoots
+internal class FunctionAllRoots
 {
     private bool _done;
     private readonly NCollection_Sequence<double> _pdeb = new();

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Ap203;
 /// <summary>
 /// Representation of STEP entity ChangeRequest
 /// </summary>
-public class ChangeRequest : ActionRequestAssignment
+internal class ChangeRequest : ActionRequestAssignment
 {
     private NCollection_HArray1<ChangeRequestItem> _items;
 

@@ -24,7 +24,7 @@ namespace Kerf.Engine.HiddenLines;
 /// a finite difference. Keeps a reference to the curve, as OCCT does. Where OCCT's <c>Value</c>, <c>Values</c> and
 /// <c>Derivative</c> return false without writing their results, the port sets them to 0 (decision 32).
 /// </remarks>
-public class PCLocFOfTheLocateExtPCOfTheProjPCurOfCInter : FunctionWithDerivative
+internal class PCLocFOfTheLocateExtPCOfTheProjPCurOfCInter : FunctionWithDerivative
 {
     private const double TolFactor = 1.0e-12;
     private const double MinTol = 1.0e-20;

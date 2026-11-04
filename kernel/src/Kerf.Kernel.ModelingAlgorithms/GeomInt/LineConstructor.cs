@@ -30,7 +30,7 @@ namespace Kerf.Engine.Intersection.Surfaces;
 /// line. OCCT's file-local GeomInt_Vertex is a private nested struct, sorted as MSVC's <c>std::sort</c> does
 /// (decision 621); the file-static functions are private static methods.
 /// </remarks>
-public class LineConstructor
+internal class LineConstructor
 {
     private static readonly double TwoPI = M_PI + M_PI;
 

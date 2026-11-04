@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Approximation.FiniteElements;
 
 /// <summary>A sparse matrix, with direct and iterative solvers.</summary>
-public abstract class SparseMatrix : Transient
+internal abstract class SparseMatrix : Transient
 {
     /// <summary>Sets every stored coefficient to <paramref name="value"/>.</summary>
     public abstract void Init(double value);

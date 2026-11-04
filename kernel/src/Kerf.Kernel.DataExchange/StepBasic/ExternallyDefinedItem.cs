@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity ExternallyDefinedItem
 /// </summary>
-public class ExternallyDefinedItem : Transient
+internal class ExternallyDefinedItem : Transient
 {
     private SourceItem _itemId = new SourceItem();
     private ExternalSource _source;

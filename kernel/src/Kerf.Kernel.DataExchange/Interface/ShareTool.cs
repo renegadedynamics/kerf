@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// (which are not regarded as Shared Entities, but are nevertheless Referenced), this can be useful for
 /// Reference Checking
 /// </summary>
-public class ShareTool
+internal class ShareTool
 {
 
     /// <summary>

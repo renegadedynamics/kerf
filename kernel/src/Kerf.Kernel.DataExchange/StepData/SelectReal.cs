@@ -11,7 +11,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// A SelectReal is a SelectMember specialised for a basic real type in a select which also accepts entities: this one
 /// has NO NAME. For a named select, see SelectNamed.
 /// </summary>
-public class SelectReal : SelectMember
+internal class SelectReal : SelectMember
 {
     //  Definitions : cf Field
     private const int KindReal = 5;

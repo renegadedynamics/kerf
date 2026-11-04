@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity GeometricTolerance
 /// </summary>
-public class GeometricTolerance : Transient
+internal class GeometricTolerance : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

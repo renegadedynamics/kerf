@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// a set of application objects. Hence, some information about starting entities can be gotten from the model : for
 /// Trace, CheckList, Integrity Status.
 /// </summary>
-public class TransientProcess : ProcessForTransient
+internal class TransientProcess : ProcessForTransient
 {
     /// <summary>Sets TransientProcess at initial state, with an initial size.</summary>
     public TransientProcess(int nb = 10000)

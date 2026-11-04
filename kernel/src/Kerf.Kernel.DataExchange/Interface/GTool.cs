@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// of a Model, and recorded in a GeneralLib Optimized : once an entity has been queried, the GeneralLib is
 /// not longer queried Shareable between several users : as a Handle
 /// </summary>
-public class GTool : Transient
+internal class GTool : Transient
 {
 
     /// <summary>

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Approximation;
 /// OCCT's instantiation of <see cref="BSplComputeLine{MultiLine, LineTool}"/> over AppDef_MyLineTool.
 /// </summary>
 /// <remarks>A sealed subclass with OCCT's constructors (decisions 142 and 202); the members are the base class's.</remarks>
-public sealed class BSplineCompute : BSplComputeLine<MultiLine, MyLineTool>
+internal sealed class BSplineCompute : BSplComputeLine<MultiLine, MyLineTool>
 {
     /// <summary>
     /// Approximates <paramref name="line"/> until the tolerances are reached, from degree

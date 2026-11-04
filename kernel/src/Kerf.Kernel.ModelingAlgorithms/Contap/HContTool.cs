@@ -24,7 +24,7 @@ namespace Kerf.Engine.HiddenLines.Contours;
 /// <see cref="NbSamplePoints"/> sets and <see cref="SamplePoint"/> reads in file-scope statics; they are read across
 /// calls, so they are <c>[ThreadStatic]</c> here (plan 2.3, decision 1075).
 /// </remarks>
-public readonly struct HContTool : ISobTool
+internal readonly struct HContTool : ISobTool
 {
     // OCCT: static double uinf, vinf, usup, vsup; (decision 1075)
     [ThreadStatic] private static double s_uinf;

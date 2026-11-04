@@ -19,7 +19,7 @@ namespace Kerf.Engine.Intersection.Curves;
 
 // The geometric intersections: line/line, line/circle, circle/circle and line/ellipse. OCCT's file-level
 // functions are private statics; its unused globals Affichage and AffichageGraph are left out.
-public sealed partial class IntConicConic
+internal sealed partial class IntConicConic
 {
     // modified by NIZHNY-MKK  Tue Feb 15 10:53:34 2000.BEGIN
     //  #define TOLERANCE_ANGULAIRE 0.00000001

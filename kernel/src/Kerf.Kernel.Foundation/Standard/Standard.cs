@@ -15,7 +15,7 @@ namespace Kerf.Engine.Foundation;
 /// as in C++. Min and Max follow <c>std::min</c>/<c>std::max</c>, not <see cref="Math.Min(double, double)"/>,
 /// so they treat NaN as OCCT does.
 /// </summary>
-public static class Standard
+internal static class Standard
 {
     // The Raise_if macros of OCCT. OCCT's release builds compile most of them out (No_Exception); the port
     // always checks, because a clear exception is worth more than garbage geometry.

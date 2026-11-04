@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity ProductDefinitionShape
 /// </summary>
-public class ProductDefinitionShape : PropertyDefinition
+internal class ProductDefinitionShape : PropertyDefinition
 {
     /// <summary>
     /// Empty constructor

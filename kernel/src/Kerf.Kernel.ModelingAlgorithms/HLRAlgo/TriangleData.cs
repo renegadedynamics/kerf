@@ -8,7 +8,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 
 /// <summary>A triangle of the polygonal hidden-line removal: its three nodes and its flags.</summary>
 /// <remarks>A plain C++ struct, ported with OCCT's public fields (plain data, changed in place in arrays).</remarks>
-public struct TriangleData : IEquatable<TriangleData>
+internal struct TriangleData : IEquatable<TriangleData>
 {
     public int Node1;
     public int Node2;

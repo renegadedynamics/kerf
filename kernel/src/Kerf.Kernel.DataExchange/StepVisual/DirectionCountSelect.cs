@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class DirectionCountSelect
+internal class DirectionCountSelect
 {
     private int _uDirectionCount;
     private int _vDirectionCount;

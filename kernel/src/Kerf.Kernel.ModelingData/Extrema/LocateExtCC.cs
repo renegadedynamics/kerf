@@ -14,7 +14,7 @@ namespace Kerf.Engine.Extrema;
 /// <see cref="LocEcc"/> with the curves' resolutions of Precision::Confusion() as tolerances.
 /// </summary>
 /// <remarks>Computed by its constructor.</remarks>
-public class LocateExtCC
+internal class LocateExtCC
 {
     private readonly bool _done;
     private readonly double _sqDist;

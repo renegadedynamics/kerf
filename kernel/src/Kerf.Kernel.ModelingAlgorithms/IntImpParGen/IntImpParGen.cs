@@ -17,7 +17,7 @@ namespace Kerf.Engine.Intersection.Implicit;
 /// (<see cref="Intersector{ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpParTool}"/>), also used
 /// by the package IntCurve.
 /// </summary>
-public static class IntImpParGen
+internal static class IntImpParGen
 {
     private const double TOLERANCE_ANGULAIRE = 0.00000001;
     private const double DERIVEE_PREMIERE_NULLE = 0.000000000001;

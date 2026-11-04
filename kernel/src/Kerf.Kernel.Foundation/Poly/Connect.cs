@@ -20,7 +20,7 @@ namespace Kerf.Engine.Meshing;
 /// </para>
 /// <para>An algorithm object, a class (OCCT's is used by value).</para>
 /// </remarks>
-public class Connect
+internal class Connect
 {
     // this structure records one of the edges starting from a node
     private sealed class Polyedge

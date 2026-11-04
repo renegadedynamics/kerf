@@ -6,7 +6,7 @@ using Occt;
 
 namespace Kerf.Engine.Numerics;
 
-public enum NumericStatus
+internal enum NumericStatus
 {
     OK,
     TooManyIterations,

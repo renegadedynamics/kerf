@@ -13,7 +13,7 @@ namespace Kerf.Engine.Intersection.Walking;
 /// OCCT's static class is a <c>readonly struct</c> with static members (decision 338). As in OCCT,
 /// <see cref="Direction2d"/> converts the point's 2D vector to a direction (it throws on a null vector).
 /// </remarks>
-public readonly struct InteriorPointTool
+internal readonly struct InteriorPointTool
 {
     /// <summary>The 3D point.</summary>
     public static Point3D Value3d(in InteriorPoint pStart) => pStart.Value();

@@ -21,7 +21,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// A working object (decision 609). OCCT declares <c>SetParamOnS1</c> and <c>SetParamOnS2</c> but never defines
 /// them: left out. <see cref="Dump(int, TextWriter)"/> is OCCT's <c>Dump</c> (to stdout).
 /// </remarks>
-public class RLine : PointLine
+internal class RLine : PointLine
 {
     private Curve2DAdaptorBase? _arcOnS1;
     private Curve2DAdaptorBase? _arcOnS2;

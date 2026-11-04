@@ -18,7 +18,7 @@ namespace Kerf.Engine.HiddenLines.Contours;
 /// arc tool of IntStart's generics: it implements
 /// <see cref="IImplicitCurveTool{TheCurve}"/> over <see cref="Curve2DAdaptorBase"/> (decision 344).
 /// </remarks>
-public readonly struct ContourHCurve2dTool : IImplicitCurveTool<Curve2DAdaptorBase>
+internal readonly struct ContourHCurve2dTool : IImplicitCurveTool<Curve2DAdaptorBase>
 {
     public static double FirstParameter(in Curve2DAdaptorBase c) => (c.FirstParameter());
 

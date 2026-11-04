@@ -15,7 +15,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 /// (orientation, outline, internal, double, isoline), and the block's encoded min-max box.
 /// </summary>
 /// <remarks>A working object (a transient), as OCCT's: its setters are public.</remarks>
-public class EdgesBlock : Transient
+internal class EdgesBlock : Transient
 {
     /// <summary>Eight integers, as OCCT's <c>int[8]</c>.</summary>
     [InlineArray(8)]

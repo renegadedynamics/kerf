@@ -8,7 +8,7 @@ using static Kerf.Engine.Numerics.Utilities.MathUtils;
 namespace Kerf.Engine.Numerics.Linear;
 
 /// <summary>Modern linear algebra: QR decomposition by Householder reflections.</summary>
-public static partial class MathLin
+internal static partial class MathLin
 {
     /// <summary>Result for QR decomposition using Householder reflections.</summary>
     public struct QRResult

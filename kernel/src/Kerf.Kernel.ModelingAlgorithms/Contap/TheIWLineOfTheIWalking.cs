@@ -10,6 +10,6 @@ using Occt;
 namespace Kerf.Engine.HiddenLines.Contours;
 
 /// <summary>A line of the contour walking, Contap_TheIWalking's (decision 686).</summary>
-public sealed class TheIWLineOfTheIWalking : TheIWLine
+internal sealed class TheIWLineOfTheIWalking : TheIWLine
 {
 }

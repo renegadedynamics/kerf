@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity GroupAssignment
 /// </summary>
-public class GroupAssignment : Transient
+internal class GroupAssignment : Transient
 {
     private Group _assignedGroup;
 

@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ProductDefinitionReferenceWithLocalRepresentation : ProductDefinition
+internal class ProductDefinitionReferenceWithLocalRepresentation : ProductDefinition
 {
     private ExternalSource _source;
 

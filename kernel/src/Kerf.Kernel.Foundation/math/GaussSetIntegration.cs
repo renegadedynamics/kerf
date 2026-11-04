@@ -14,7 +14,7 @@ namespace Kerf.Engine.Numerics;
 /// The Gauss-Legendre integration of a set of N functions of M variables between the bounds Lower[a..b] and
 /// Upper[a..b]. Only M = 1 is implemented.
 /// </summary>
-public class GaussSetIntegration
+internal class GaussSetIntegration
 {
     private math_Vector _val;
     private bool _done;

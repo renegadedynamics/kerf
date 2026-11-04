@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Ap203;
 /// <summary>
 /// Representation of STEP entity CcDesignDateAndTimeAssignment
 /// </summary>
-public class CcDesignDateAndTimeAssignment : DateAndTimeAssignment
+internal class CcDesignDateAndTimeAssignment : DateAndTimeAssignment
 {
     private NCollection_HArray1<DateTimeItem> _items;
 

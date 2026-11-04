@@ -27,7 +27,7 @@ namespace Kerf.Engine.Intersection.Polyhedra;
 /// whose storage never moves (see <see cref="PolyhedronArray{T}"/>).
 /// </para>
 /// </remarks>
-public partial struct PolyhedronTriangle : IEquatable<PolyhedronTriangle>
+internal partial struct PolyhedronTriangle : IEquatable<PolyhedronTriangle>
 {
     private const double SquareMyConfusionPrecision = 10.0e-24;
 

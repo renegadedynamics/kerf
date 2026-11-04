@@ -31,7 +31,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// 12401).
 /// </para>
 /// </remarks>
-public class ProcessForFinder : Transient
+internal class ProcessForFinder : Transient
 {
     /// <summary>
     /// Sets TransferProcess at initial state. Gives an Initial size (indicative) for the Map when known (default is

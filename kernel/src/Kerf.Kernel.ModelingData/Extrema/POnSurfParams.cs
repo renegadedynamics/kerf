@@ -20,7 +20,7 @@ namespace Kerf.Engine.Extrema;
 /// <c>default</c> is all zeros. The setters are internal, with the twins <see cref="WithSqrDistance"/>,
 /// <see cref="WithElementType"/>, <see cref="WithIndices"/> and the constructor.
 /// </remarks>
-public partial struct POnSurfParams : IEquatable<POnSurfParams>
+internal partial struct POnSurfParams : IEquatable<POnSurfParams>
 {
     private POnSurf _pOnSurf;
     private double _sqrDistance;

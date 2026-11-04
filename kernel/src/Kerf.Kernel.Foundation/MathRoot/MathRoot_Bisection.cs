@@ -6,7 +6,7 @@ using Occt;
 
 namespace Kerf.Engine.Numerics.Roots;
 
-public static partial class MathRoot
+internal static partial class MathRoot
 {
     /// <summary>Bisection method for root finding; f(theLower) and f(theUpper) must have opposite signs.</summary>
     public static global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult Bisection<Function>(Function func, double lower, double upper, global::Kerf.Engine.Numerics.Utilities.MathUtils.Config? config = null)

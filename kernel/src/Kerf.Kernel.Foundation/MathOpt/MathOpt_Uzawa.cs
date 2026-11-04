@@ -7,7 +7,7 @@ using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
 namespace Kerf.Engine.Numerics.Optimisation;
 
-public static partial class MathOpt
+internal static partial class MathOpt
 {
     /// <summary>Result for Uzawa constrained optimization.</summary>
     public struct UzawaResult

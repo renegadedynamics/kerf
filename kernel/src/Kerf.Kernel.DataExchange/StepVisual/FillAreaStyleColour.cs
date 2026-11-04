@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class FillAreaStyleColour : Transient
+internal class FillAreaStyleColour : Transient
 {
     private TCollection_HAsciiString _name;
     private Colour _fillColour;

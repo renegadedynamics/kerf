@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Numerics.Utilities;
 
 /// <summary>Parameter domain types for curves and surfaces.</summary>
-public static partial class MathUtils
+internal static partial class MathUtils
 {
     /// <summary>1D parameter domain [Min, Max] for curves.</summary>
     /// <remarks>A C++ aggregate with public data members, which it keeps; `default` is the empty domain [0, 0], as

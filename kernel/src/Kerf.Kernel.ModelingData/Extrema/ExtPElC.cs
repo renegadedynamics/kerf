@@ -19,7 +19,7 @@ namespace Kerf.Engine.Extrema;
 /// hyperbola or parabola).
 /// </summary>
 /// <remarks>An algorithm object: construct it with the point and the curve, or empty and call <c>Perform</c>.</remarks>
-public class ExtPElC
+internal class ExtPElC
 {
     private bool _done;
     private int _nbExt;

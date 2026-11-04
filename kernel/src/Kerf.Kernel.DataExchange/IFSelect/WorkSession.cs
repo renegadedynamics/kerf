@@ -22,7 +22,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// Dispatches, in addition to a ShareOut. To each of these variables, a unique Integer Identifier is
 /// attached. A Name can be attached too as desired.
 /// </summary>
-public class WorkSession : Transient
+internal class WorkSession : Transient
 {
     private const int Flag_Incorrect = 2;
     //  (Bit Map n0 2)

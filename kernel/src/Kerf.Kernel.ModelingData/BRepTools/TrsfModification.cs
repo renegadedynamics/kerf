@@ -24,7 +24,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// pcurves (reparametrised where the transformation changes the parametrisation) and, if <see cref="IsCopyMesh"/>,
 /// triangulations and polygons.
 /// </summary>
-public class TrsfModification : Modification
+internal class TrsfModification : Modification
 {
     private Transform3D _trsf;
     private bool _copyMesh;

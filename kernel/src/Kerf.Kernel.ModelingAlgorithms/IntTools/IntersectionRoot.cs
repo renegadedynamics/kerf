@@ -15,7 +15,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// states before and after it, and the interval [t1, t2] it was found in with the function's values f(t1), f(t2).
 /// </summary>
 /// <remarks>A struct, as OCCT's by-value class; the setters are internal (translation rules, section 3).</remarks>
-public partial struct IntersectionRoot : IEquatable<IntersectionRoot>
+internal partial struct IntersectionRoot : IEquatable<IntersectionRoot>
 {
     private double _root;
     private int _type;

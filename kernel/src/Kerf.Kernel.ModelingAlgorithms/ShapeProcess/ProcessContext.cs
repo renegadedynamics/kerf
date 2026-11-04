@@ -40,7 +40,7 @@ namespace Kerf.Engine.Healing.Process;
 /// </para>
 /// <para>A working object (decision 21).</para>
 /// </remarks>
-public class ProcessContext : Transient
+internal class ProcessContext : Transient
 {
     private Manager? _rc;
     private NCollection_Sequence<string>? _scope;

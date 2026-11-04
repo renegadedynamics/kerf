@@ -25,7 +25,7 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Engine.Offsets;
 
 /// <summary>The status of <see cref="MakeSimpleOffset"/>.</summary>
-public enum SimpleOffsetStatus
+internal enum SimpleOffsetStatus
 {
     OK,
     NullInputShape,

@@ -22,7 +22,7 @@ namespace Kerf.Engine.Foundation;
 /// The message says in plain words what kind of failure it was, then OCCT's own message if it has one.
 /// </para>
 /// </remarks>
-public static class FailureDiagnostics
+internal static class FailureDiagnostics
 {
     /// <summary>The code of a fault: an exception from the engine that isn't one of OCCT's.</summary>
     public static DiagnosticCode Fault { get; } = new("engine.fault");

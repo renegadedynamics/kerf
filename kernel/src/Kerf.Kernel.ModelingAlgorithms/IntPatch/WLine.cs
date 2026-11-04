@@ -25,7 +25,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// next vertex is added or removed). <see cref="Dump(int, TextWriter)"/> is OCCT's <c>Dump</c> (to stdout). It is
 /// the line of GeomInt's instantiations of ApproxInt's generics (<see cref="IWLine{TSelf}"/>).
 /// </remarks>
-public class WLine : PointLine, IWLine<WLine>
+internal class WLine : PointLine, IWLine<WLine>
 {
     /// <summary>The ways a WLine is created.</summary>
     public enum IntPatch_WLType

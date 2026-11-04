@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class PresentationView : PresentationRepresentation
+internal class PresentationView : PresentationRepresentation
 {
     /// <summary>
     /// Returns a PresentationView

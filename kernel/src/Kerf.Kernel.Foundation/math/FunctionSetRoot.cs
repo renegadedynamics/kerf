@@ -14,7 +14,7 @@ namespace Kerf.Engine.Numerics;
 /// minimization algorithm: a search in the Newton direction, then in the gradient direction if Newton fails. Can
 /// also be used to minimize functions. The Jacobian is required.
 /// </summary>
-public class FunctionSetRoot
+internal class FunctionSetRoot
 {
     // pmn 15/05/97 pas de Gauss avec des pivot trop petit. SVD fait mieux
     // l'affaire + limitation de la longeur du pas + qq comentaire issus d'EUCLID3

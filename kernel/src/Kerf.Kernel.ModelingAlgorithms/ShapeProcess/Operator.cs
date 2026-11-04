@@ -11,7 +11,7 @@ namespace Kerf.Engine.Healing.Process;
 /// <summary>
 /// The abstract operator that the performer (<see cref="ShapeProcess"/>) runs on a context.
 /// </summary>
-public abstract class Operator : Transient
+internal abstract class Operator : Transient
 {
     /// <summary>Performs the operation on the context; true if done.</summary>
     public abstract bool Perform(ProcessContext context, ProgressRange progress = default);

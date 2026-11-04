@@ -21,7 +21,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// <remarks>
 /// A working object, as OCCT's. Its quadrics are copies (structs) built in the constructor from the surfaces.
 /// </remarks>
-public class ALineToWLine
+internal class ALineToWLine
 {
     private readonly SurfaceAdaptorBase _s1;
     private readonly SurfaceAdaptorBase _s2;

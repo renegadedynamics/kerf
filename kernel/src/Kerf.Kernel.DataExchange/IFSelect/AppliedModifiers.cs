@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// amodifier, entcount); IsForAll () -&gt; can be called, if True, applies on the whole file for (i = 1; i
 /// &lt;= entcount; i ++) nument = ItemNum (i); -&gt; return an entity number
 /// </summary>
-public class AppliedModifiers : Transient
+internal class AppliedModifiers : Transient
 {
 
     /// <summary>

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity ActionRequestAssignment
 /// </summary>
-public class ActionRequestAssignment : Transient
+internal class ActionRequestAssignment : Transient
 {
     private VersionedActionRequest _assignedActionRequest;
 

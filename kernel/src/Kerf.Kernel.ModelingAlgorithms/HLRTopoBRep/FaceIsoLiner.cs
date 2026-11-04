@@ -26,7 +26,7 @@ namespace Kerf.Engine.HiddenLines.Topology;
 /// representations of an isoline's ends, which may be the face's own vertices): HLRTopoBRep_OutLiner runs it in a
 /// working overlay (unit 10H6). <c>OCCT_DEBUG</c> traces are left out.
 /// </remarks>
-public static class FaceIsoLiner
+internal static class FaceIsoLiner
 {
     private const double IntersectorConfusion = 1.0e-10;
     private const double IntersectorTangency = 1.0e-10;

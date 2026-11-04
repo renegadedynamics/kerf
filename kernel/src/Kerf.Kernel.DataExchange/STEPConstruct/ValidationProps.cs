@@ -28,7 +28,7 @@ namespace Kerf.Engine.Exchange.Step.Construct;
 /// are surface area, solid volume and centroid.
 /// </summary>
 /// <remarks>A C++ value class, a C# class here (decision 1185).</remarks>
-public class ValidationProps : ConstructTool
+internal class ValidationProps : ConstructTool
 {
     /// <summary>Creates an empty tool</summary>
     public ValidationProps()

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Ap203;
 /// <summary>
 /// Representation of STEP entity StartWork
 /// </summary>
-public class StartWork : ActionAssignment
+internal class StartWork : ActionAssignment
 {
     private NCollection_HArray1<WorkItem> _items;
 

@@ -14,7 +14,7 @@ using static Kerf.Engine.Exchange.Framework.FrameworkLengthUnit;
 namespace Kerf.Engine.Exchange.Step.Data;
 
 /// <summary>Gives access to: entities in a STEP Model, the header, and the labels of the entities (their idents in the file).</summary>
-public class StepModel : InterfaceModel
+internal class StepModel : InterfaceModel
 {
     // File header: list of entities
     private readonly EntityList _theheader = new();

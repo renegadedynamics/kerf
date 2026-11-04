@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Properties;
 /// adaptor's first and last parameters). A working object: its setters are
 /// public. The resolution is the linear tolerance used to decide that a vector is null.
 /// </remarks>
-public class SLProps3d
+internal class SLProps3d
 {
     private SurfaceAdaptorBase? _surf;
     private double _u;

@@ -15,7 +15,7 @@ using Occt;
 namespace Kerf.Engine.HiddenLines;
 
 /// <summary>Geometric tools between an edge's curve and a face's surface for the hidden-line algorithms.</summary>
-public static class EdgeFaceTool
+internal static class EdgeFaceTool
 {
     /// <summary>The normal curvature of the surface at (U, V) in the direction Tg (0 where the metric is degenerate).</summary>
     public static double CurvatureValue(HlrSurface f, double u, double v, in Direction3D tg)

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Numerics;
 /// <summary>
 /// The eigenvalues and eigenvectors of a real symmetric square matrix by the Jacobi method, the eigenvalues sorted.
 /// </summary>
-public class Jacobi
+internal class Jacobi
 {
     private bool _done;
     private Matrix _aa;

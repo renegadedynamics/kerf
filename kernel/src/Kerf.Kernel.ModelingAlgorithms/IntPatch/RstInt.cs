@@ -37,7 +37,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// (<see cref="PatchCSFunction"/>) are built afresh for each intersection, on the current arc: OCCT's pointer to
 /// the arc's handle variable is never read after the arc changes.
 /// </remarks>
-public static class RstInt
+internal static class RstInt
 {
     private const double Infinite = 1.0e15; // the same as was in Adaptor3d_TopolTool
 

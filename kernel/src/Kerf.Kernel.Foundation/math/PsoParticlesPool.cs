@@ -12,7 +12,7 @@ namespace Kerf.Engine.Numerics;
 /// A struct in OCCT, but only ever used through pointers into the pool, so a class here. Position, Velocity and
 /// BestPosition are views (lower bound 0) over the pool's shared storage, as OCCT's pointers are.
 /// </remarks>
-public class Particle
+internal class Particle
 {
     public NCollection_Array1<double> Position; // Data for pointers allocated within PSOParticlesPool instance.
     public NCollection_Array1<double> Velocity; // Not need to delete it manually.
@@ -36,7 +36,7 @@ public class Particle
 }
 
 /// <summary>The particle pool of the PSO algorithm (<see cref="Pso"/>). Particle indexes are 1..count.</summary>
-public class PsoParticlesPool
+internal class PsoParticlesPool
 {
     private NCollection_Array1<Particle> _particlesPool;
     private NCollection_Array1<double> _memory; // Stores particles vector data.

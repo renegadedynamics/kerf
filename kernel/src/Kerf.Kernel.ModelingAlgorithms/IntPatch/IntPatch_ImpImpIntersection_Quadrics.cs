@@ -17,7 +17,7 @@ namespace Kerf.Engine.Intersection.Patches;
 // The quadric pairs other than plane/quadric and cylinder/cylinder: cylinder/sphere, cylinder/cone, cone/cone,
 // cone/sphere, sphere/sphere and the tori (OCCT 7.x's IntPatch_ImpImpIntersection_5.gxx), and ProcessBounds, which
 // puts the end points of their analytic lines.
-public sealed partial class ImpImpIntersection
+internal sealed partial class ImpImpIntersection
 {
     //=======================================================================
     // function : ProcessBounds

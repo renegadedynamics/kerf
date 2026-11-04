@@ -15,7 +15,7 @@ namespace Kerf.Engine.Numerics;
 /// A combination of the Newton-Raphson and bisection methods to find a root of a function between two bounds.
 /// The derivative is required.
 /// </summary>
-public class BissecNewton
+internal class BissecNewton
 {
     protected NumericStatus _theStatus;
     protected double _xTol;

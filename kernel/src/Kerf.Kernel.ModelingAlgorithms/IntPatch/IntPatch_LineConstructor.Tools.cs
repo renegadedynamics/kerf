@@ -17,7 +17,7 @@ using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 namespace Kerf.Engine.Intersection.Patches;
 
 // The file-static functions of IntPatch_LineConstructor.cxx.
-public partial class PatchLineConstructor
+internal partial class PatchLineConstructor
 {
     private static void Recadre(SurfaceAdaptorBase myHS1, SurfaceAdaptorBase myHS2, ref double u1, ref double v1,
                                 ref double u2, ref double v2)

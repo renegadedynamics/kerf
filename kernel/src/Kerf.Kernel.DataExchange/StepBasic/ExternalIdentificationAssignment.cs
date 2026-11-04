@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity ExternalIdentificationAssignment
 /// </summary>
-public class ExternalIdentificationAssignment : IdentificationAssignment
+internal class ExternalIdentificationAssignment : IdentificationAssignment
 {
     private ExternalSource _source;
 

@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class PointStyle : Transient
+internal class PointStyle : Transient
 {
     private TCollection_HAsciiString _name;
     private MarkerSelect _marker = new MarkerSelect();

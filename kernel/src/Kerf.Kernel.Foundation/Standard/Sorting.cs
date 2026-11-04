@@ -23,7 +23,7 @@ namespace Kerf.Engine.Foundation.Std;
 /// <see cref="stable_sort{T, TPred}"/> is any stable sort: a stable sort's order is unique, so it is MSVC's.
 /// </para>
 /// </remarks>
-public static class Sorting
+internal static class Sorting
 {
     private const int IsortMax = 32;
 

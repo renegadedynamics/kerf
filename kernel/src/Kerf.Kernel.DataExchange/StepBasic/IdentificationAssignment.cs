@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity IdentificationAssignment
 /// </summary>
-public class IdentificationAssignment : Transient
+internal class IdentificationAssignment : Transient
 {
     private TCollection_HAsciiString _assignedId;
     private IdentificationRole _role;

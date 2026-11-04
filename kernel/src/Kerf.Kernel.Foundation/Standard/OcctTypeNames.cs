@@ -11,7 +11,7 @@ namespace Kerf.Engine.Foundation;
 /// compare type and enum names with native OCCT's recordings. Those keep OCCT's names, so renaming a class changes no
 /// output, no message and no recording.
 /// </summary>
-public static partial class OcctTypeNames
+internal static partial class OcctTypeNames
 {
     private static readonly FrozenDictionary<string, string> Names = Parse(Table);
 

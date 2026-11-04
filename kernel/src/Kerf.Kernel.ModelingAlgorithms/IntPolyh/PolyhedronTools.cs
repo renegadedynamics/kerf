@@ -13,7 +13,7 @@ using static Kerf.Geometry.SurfaceKind;
 namespace Kerf.Engine.Intersection.Polyhedra;
 
 /// <summary>Tools for the sampling of surfaces.</summary>
-public static class PolyhedronTools
+internal static class PolyhedronTools
 {
     /// <summary>Whether the surface can be enlarged in U and in V: B-spline and Bézier surfaces only, in a direction in
     /// which they are neither closed, periodic nor infinite.</summary>

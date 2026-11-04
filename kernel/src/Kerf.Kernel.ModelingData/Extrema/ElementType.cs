@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Extrema;
 
 /// <summary>The kind of grid element a point on surface lies on (node, U or V iso edge, face).</summary>
-public enum ElementType
+internal enum ElementType
 {
     Node,
     UIsoEdge,

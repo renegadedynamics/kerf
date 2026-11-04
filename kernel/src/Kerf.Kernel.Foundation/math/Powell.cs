@@ -12,7 +12,7 @@ using static Kerf.Engine.Numerics.NumericStatus;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>Powell's method to find a minimum of a function of several variables, without its gradient.</summary>
-public class Powell
+internal class Powell
 {
     protected math_Vector _theLocation;
     protected double _theMinimum;

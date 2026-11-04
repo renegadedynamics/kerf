@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// Each sub-class fills it according to its own algorithm This also allows to combine any graph result to
 /// others, all being given under one unique form
 /// </summary>
-public class GraphContent : EntityIterator
+internal class GraphContent : EntityIterator
 {
 
     /// <summary>

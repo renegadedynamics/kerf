@@ -53,7 +53,7 @@ namespace Kerf.Engine.Exchange.Step;
 /// which raises an exception the transient process records as a fail (occt-issues.md, 8F).</item>
 /// </list>
 /// </remarks>
-public class ActorRead : ActorOfTransientProcess, IActorRead
+internal class ActorRead : ActorOfTransientProcess, IActorRead
 {
     // Set to inform outer methods that current representation item is non-manifold (OCCT: a file-level global).
     private bool _nmDetected;

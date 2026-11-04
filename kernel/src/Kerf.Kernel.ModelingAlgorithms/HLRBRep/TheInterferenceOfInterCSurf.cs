@@ -16,7 +16,7 @@ namespace Kerf.Engine.HiddenLines;
 /// The interference between the polygon of a curve and the polyhedron of a surface, as HLRBRep_InterCSurf
 /// computes it (OCCT's instantiation of Intf_InterferencePolygonPolyhedron.gxx).
 /// </summary>
-public sealed class TheInterferenceOfInterCSurf
+internal sealed class TheInterferenceOfInterCSurf
     : InterferencePolygonPolyhedron<ThePolygonOfInterCSurf, ThePolygonToolOfInterCSurf,
                                          ThePolyhedronOfInterCSurf,
                                          ThePolyhedronToolOfInterCSurf>,

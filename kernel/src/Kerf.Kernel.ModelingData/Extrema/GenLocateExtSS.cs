@@ -15,7 +15,7 @@ namespace Kerf.Engine.Extrema;
 /// The extremum of the distance between two surfaces near starting parameters (U1, V1) on S1 and (U2, V2) on S2: a
 /// zero of the gradient of F = distance(S1(u1, v1), S2(u2, v2)), found by math_FunctionSetRoot.
 /// </summary>
-public class GenLocateExtSS
+internal class GenLocateExtSS
 {
     private bool _done;
     private double _sqDist;

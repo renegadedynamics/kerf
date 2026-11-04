@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Ap203;
 /// <summary>
 /// Representation of STEP entity StartRequest
 /// </summary>
-public class StartRequest : ActionRequestAssignment
+internal class StartRequest : ActionRequestAssignment
 {
     private NCollection_HArray1<StartRequestItem> _items;
 

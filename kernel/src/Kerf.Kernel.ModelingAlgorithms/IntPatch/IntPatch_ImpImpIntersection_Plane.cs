@@ -17,7 +17,7 @@ namespace Kerf.Engine.Intersection.Patches;
 //
 // OCCT's gp_Dir::DotCross takes directions, so the normals OCCT passes to it as vectors are normalised by C++'s
 // implicit conversion; the port writes the conversion (new gp_Dir(...)).
-public sealed partial class ImpImpIntersection
+internal sealed partial class ImpImpIntersection
 {
     // modified by NIZNHY-PKV Thu Sep 15 11:09:13 2011
 

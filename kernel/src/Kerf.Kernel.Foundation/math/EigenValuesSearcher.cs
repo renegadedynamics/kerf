@@ -11,7 +11,7 @@ namespace Kerf.Engine.Numerics;
 /// The eigenvalues and eigenvectors of a real symmetric tridiagonal matrix, by the QL algorithm with implicit
 /// shifts: A * V = V * D, with the eigenvectors as the columns of V.
 /// </summary>
-public class EigenValuesSearcher
+internal class EigenValuesSearcher
 {
     // Maximum number of QR iterations before convergence failure
     private const int MAX_ITERATIONS = 30;

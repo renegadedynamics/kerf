@@ -14,7 +14,7 @@ namespace Kerf.Engine.Numerics;
 /// quartics, Cardano's formula for cubics, and numerically stable formulas for quadratics and linear equations. The
 /// roots are polished by Newton-Raphson iterations.
 /// </summary>
-public class DirectPolynomialRoots
+internal class DirectPolynomialRoots
 {
     // Algorithm References:
     //   - ALGORITHMES NUMERIQUES ANALYSE ET MISE EN OEUVRE, tome 2

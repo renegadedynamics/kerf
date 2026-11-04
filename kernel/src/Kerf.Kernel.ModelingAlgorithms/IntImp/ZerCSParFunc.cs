@@ -13,7 +13,7 @@ namespace Kerf.Engine.Intersection.Implicit;
 /// The static tool over a 3D curve that the generic <c>IntImp_ZerCSParFunc</c> uses (OCCT's TheCurveTool macro:
 /// IntCurveSurface_TheHCurveTool, HLRBRep_LineTool).
 /// </summary>
-public interface IZerCSParCurveTool<TheCurve> : IImplicitCurveTool<TheCurve>
+internal interface IZerCSParCurveTool<TheCurve> : IImplicitCurveTool<TheCurve>
 {
     static abstract Point3D Value(in TheCurve c, double u);
 
@@ -24,7 +24,7 @@ public interface IZerCSParCurveTool<TheCurve> : IImplicitCurveTool<TheCurve>
 /// The static tool over a parametric surface that the generic <c>IntImp_ZerCSParFunc</c> uses (OCCT's
 /// ThePSurfaceTool macro: Adaptor3d_HSurfaceTool, HLRBRep_SurfaceTool).
 /// </summary>
-public interface IZerCSParPSurfaceTool<ThePSurface> : IPSurfaceTool<ThePSurface>
+internal interface IZerCSParPSurfaceTool<ThePSurface> : IPSurfaceTool<ThePSurface>
 {
     static abstract Point3D Value(in ThePSurface s, double u, double v);
 
@@ -40,7 +40,7 @@ public interface IZerCSParPSurfaceTool<ThePSurface> : IPSurfaceTool<ThePSurface>
 /// instantiations (IntCurveSurface_TheCSFunctionOfHInter, and HLRBRep's later) are sealed subclasses. The function
 /// keeps the curve and the surface it is given (adaptors: by reference, as OCCT's handles).
 /// </remarks>
-public class ZerCSParFunc<ThePSurface, ThePSurfaceTool, TheCurve, TheCurveTool>
+internal class ZerCSParFunc<ThePSurface, ThePSurfaceTool, TheCurve, TheCurveTool>
     : FunctionSetWithDerivatives, ICSFunction<ThePSurface, TheCurve>
     where ThePSurfaceTool : IZerCSParPSurfaceTool<ThePSurface>
     where TheCurveTool : IZerCSParCurveTool<TheCurve>

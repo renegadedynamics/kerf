@@ -14,7 +14,7 @@ namespace Kerf.Engine.Numerics.Systems;
 // over two ISurfaceD2Evaluator (MathSys_Newton3D.cs).
 
 /// <summary>Optimized 4D Newton-Raphson solver for systems of 4 equations in 4 unknowns.</summary>
-public static partial class MathSys
+internal static partial class MathSys
 {
     /// <summary>A 4x4 system with its Jacobian, for <see cref="Solve4D"/> (C++'s operator() contract).</summary>
     public interface INewton4DFunction

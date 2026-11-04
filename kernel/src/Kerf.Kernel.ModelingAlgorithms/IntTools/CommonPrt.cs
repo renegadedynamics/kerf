@@ -15,7 +15,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// A class, a working object of the edge intersectors (plan section 6), because it holds a sequence of ranges: OCCT's
 /// by-value copies are the copy constructor and <see cref="Assign"/>, which ported code writes out.
 /// </remarks>
-public sealed class CommonPrt
+internal sealed class CommonPrt
 {
     private Edge _edge1 = new();
     private Edge _edge2 = new();

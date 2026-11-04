@@ -20,7 +20,7 @@ namespace Kerf.Engine.Approximation;
 /// the tolerance. The computation is made by the constructor. The 3D curve and the pcurve must have the same
 /// parametric range.
 /// </summary>
-public sealed class SameParameter
+internal sealed class SameParameter
 {
     // Evaluates the pcurve through the 1D B-spline (degree 3) of the change of parameter.
     private sealed class Approx_SameParameter_Evaluator : EvaluatorFunction

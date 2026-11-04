@@ -6,7 +6,7 @@ using Occt;
 
 namespace Kerf.Engine.Numerics.Polynomials;
 
-public static partial class MathPoly
+internal static partial class MathPoly
 {
     /// <summary>
     /// Solve cubic equation a*x^3 + b*x^2 + c*x + d = 0 by Cardano's method with the trigonometric solution and

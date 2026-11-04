@@ -15,7 +15,7 @@ namespace Kerf.Engine.HiddenLines;
 /// The sample of a 2D curve nearest a point: OCCT's template Extrema_GCurveLocator instantiated over
 /// HLRBRep_Curve and HLRBRep_CurveTool.
 /// </summary>
-public static class TheCurveLocatorOfTheProjPCurOfCInter
+internal static class TheCurveLocatorOfTheProjPCurOfCInter
 {
     /// <summary>
     /// Among the points C(ui), i = 1 to <paramref name="nbU"/> - 1, evenly spaced from the first parameter of

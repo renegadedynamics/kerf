@@ -18,7 +18,7 @@ namespace Kerf.Engine.Intersection.Polyhedra;
 /// more with the points shifted along the normals (forward and reversed on each surface) and keeps their couples
 /// without duplicates. Serial: OCCT has no parallel loop here, and the result is the same every run (decision 593).
 /// </remarks>
-public sealed class PolyhedronIntersection
+internal sealed class PolyhedronIntersection
 {
     // Inputs
     private readonly SurfaceAdaptorBase _surf1; // First surface

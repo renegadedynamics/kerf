@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP SELECT type SourceItem
 /// </summary>
-public class SourceItem : SelectType
+internal class SourceItem : SelectType
 {
     /// <summary>
     /// Empty constructor

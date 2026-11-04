@@ -11,7 +11,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 
 /// <summary>The exact intersection point of two 2D curves near the crossing of two segments of their polygons.</summary>
 /// <remarks>OCCT's instantiation of IntCurve_ExactIntersectionPoint.gxx over Adaptor2d_Curve2d (decision 324).</remarks>
-public sealed class ExactIntersectionPointOfTheIntPCurvePCurveOfGInter
+internal sealed class ExactIntersectionPointOfTheIntPCurvePCurveOfGInter
     : ExactIntersectionPoint<Curve2DAdaptorBase, Geom2dCurveTool>
 {
     public ExactIntersectionPointOfTheIntPCurvePCurveOfGInter(Curve2DAdaptorBase c1, Curve2DAdaptorBase c2,

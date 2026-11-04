@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 
 /// <summary>The status of a binder's result: void (none), defined (recorded, not yet shared), used (shared: it can't change).</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.Transfer_StatusResult;</c>.</remarks>
-public enum StatusResult
+internal enum StatusResult
 {
     StatusVoid,
     StatusDefined,

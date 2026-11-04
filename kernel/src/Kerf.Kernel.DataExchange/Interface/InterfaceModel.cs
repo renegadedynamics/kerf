@@ -26,7 +26,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// name. It is possible to define a template from another one (get it, edit it then record it under another
 /// name). See also Graph, ShareTool, CheckTool for more
 /// </summary>
-public abstract class InterfaceModel : Transient
+internal abstract class InterfaceModel : Transient
 {
     // An Interface Model is a closed set of interface Entities: each one
     // is in a single model at a time; it has a number (Number) which allows to

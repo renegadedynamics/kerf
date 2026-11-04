@@ -13,7 +13,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 /// A C++ value class, so a struct (kept in arrays and changed in place). The nested structs are plain data with
 /// public fields; <see cref="Set"/> and the reference accessors are internal.
 /// </remarks>
-public partial struct PolyHidingData : IEquatable<PolyHidingData>
+internal partial struct PolyHidingData : IEquatable<PolyHidingData>
 {
     /// <summary>The triangle's index and min-max indices (plain data).</summary>
     public struct TriangleIndices : IEquatable<TriangleIndices>

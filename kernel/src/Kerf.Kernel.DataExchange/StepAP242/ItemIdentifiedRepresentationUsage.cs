@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap242;
 
-public class ItemIdentifiedRepresentationUsage : Transient
+internal class ItemIdentifiedRepresentationUsage : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

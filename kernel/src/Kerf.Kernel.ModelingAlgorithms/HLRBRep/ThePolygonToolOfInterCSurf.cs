@@ -17,7 +17,7 @@ namespace Kerf.Engine.HiddenLines;
 /// <see cref="IToolPolygon3d{Polygon3d}"/> (decision 202's approach). <c>Dump</c>, which prints to
 /// std::cout, is left out.
 /// </remarks>
-public readonly struct ThePolygonToolOfInterCSurf : IToolPolygon3d<ThePolygonOfInterCSurf>
+internal readonly struct ThePolygonToolOfInterCSurf : IToolPolygon3d<ThePolygonOfInterCSurf>
 {
     /// <summary>The bounding box of the polygon.</summary>
     public static Box Bounding(in ThePolygonOfInterCSurf polygon) => polygon.Bounding();

@@ -29,7 +29,7 @@ namespace Kerf.Engine.Intersection.Implicit;
 /// <see cref="SetImplicitSurface"/> and never changes it afterwards (decision 608).
 /// </para>
 /// </remarks>
-public class ZerImpFunc<ThePSurface, ThePSurfaceTool> : FunctionSetWithDerivatives
+internal class ZerImpFunc<ThePSurface, ThePSurfaceTool> : FunctionSetWithDerivatives
     where ThePSurfaceTool : IZerCSParPSurfaceTool<ThePSurface>
 {
     private const double EpsAng = 1.0e-8;

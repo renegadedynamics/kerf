@@ -29,7 +29,7 @@ namespace Kerf.Engine.HiddenLines;
 /// edges), so <see cref="Load"/> outlines it and reads the outlined shape in one working overlay (unit 10H6): the
 /// data structure holds the caller's own sub-shapes, as OCCT's, and the reads see the outlining's writes.
 /// </remarks>
-public static class ShapeToHlr
+internal static class ShapeToHlr
 {
     /// <summary>Outlines S for the projector P (nbIso isolines) and loads the result in a new data structure.</summary>
     public static HiddenLineData Load(OutLiner s, in AlgorithmProjector p,

@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// and Libraries. It also gives control of type definitions. By default, types are provided by CDL, but
 /// specific implementations, or topics like multi-typing, may involve another way
 /// </summary>
-public abstract class Protocol : Transient
+internal abstract class Protocol : Transient
 {
     // OCCT.NET: OCCT's Active, SetActive and ClearActive (one process-wide "active" protocol, set by
     // IFSelect_WorkSession and read by Interface_CopyTool and Transfer_TransferOutput) are left out: the port

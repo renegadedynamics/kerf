@@ -12,7 +12,7 @@ namespace Kerf.Engine.Extrema;
 /// <c>new Extrema_POnCurv2d()</c> and <c>default(Extrema_POnCurv2d)</c> are the same "indefinite" point (parameter 0,
 /// the origin). The constructor is the twin of the internal <c>SetValues</c>.
 /// </remarks>
-public partial struct POnCurv2d : IEquatable<POnCurv2d>
+internal partial struct POnCurv2d : IEquatable<POnCurv2d>
 {
     private double _u;
     private Point2D _p;

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Ap203;
 /// <summary>
 /// Representation of STEP entity CcDesignApproval
 /// </summary>
-public class CcDesignApproval : ApprovalAssignment
+internal class CcDesignApproval : ApprovalAssignment
 {
     private NCollection_HArray1<ApprovedItem> _items;
 

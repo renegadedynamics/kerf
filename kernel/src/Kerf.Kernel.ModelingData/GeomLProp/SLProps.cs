@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Properties;
 /// <see cref="SLProps3d"/>, with identical bodies but for the bounds). A working object: its setters are
 /// public. The resolution is the linear tolerance used to decide that a vector is null.
 /// </remarks>
-public class SLProps
+internal class SLProps
 {
     private Surface? _surf;
     private double _u;

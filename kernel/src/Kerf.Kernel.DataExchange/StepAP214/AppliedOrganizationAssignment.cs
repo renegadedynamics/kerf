@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class AppliedOrganizationAssignment : OrganizationAssignment
+internal class AppliedOrganizationAssignment : OrganizationAssignment
 {
     private NCollection_HArray1<OrganizationItem> _items;
 

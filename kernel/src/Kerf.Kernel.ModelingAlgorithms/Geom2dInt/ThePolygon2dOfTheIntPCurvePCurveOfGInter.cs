@@ -11,7 +11,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 
 /// <summary>A polygon sampling a 2D curve on a domain, for the 2D curve intersections.</summary>
 /// <remarks>OCCT's instantiation of IntCurve_Polygon2dGen.gxx over Adaptor2d_Curve2d (decision 324).</remarks>
-public sealed class ThePolygon2dOfTheIntPCurvePCurveOfGInter
+internal sealed class ThePolygon2dOfTheIntPCurvePCurveOfGInter
     : Polygon2dGen<Curve2DAdaptorBase, Geom2dCurveTool>
 {
     /// <summary>Samples NbPnt points (at least 3) of the curve on the bounded domain.</summary>

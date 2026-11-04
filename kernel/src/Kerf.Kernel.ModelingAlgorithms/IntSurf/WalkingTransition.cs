@@ -20,7 +20,7 @@ namespace Kerf.Engine.Intersection.Walking;
 /// transition (zero), so ported code writes <c>new()</c>. The <c>SetValue</c> overloads are internal mutators; the
 /// constructors are their twins.
 /// </remarks>
-public partial struct WalkingTransition : IEquatable<WalkingTransition>
+internal partial struct WalkingTransition : IEquatable<WalkingTransition>
 {
     private bool _tangent;
     private WalkingTypeTrans _typetra;

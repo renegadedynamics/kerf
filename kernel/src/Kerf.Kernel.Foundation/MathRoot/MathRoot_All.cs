@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Numerics.Roots;
 
 /// <summary>All roots of a function including null intervals.</summary>
-public static partial class MathRoot
+internal static partial class MathRoot
 {
     /// <summary>An interval where the function is null (within tolerance).</summary>
     public struct NullInterval

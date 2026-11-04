@@ -10,7 +10,7 @@ namespace Kerf.Engine.Foundation;
 /// The diagnostics of a failed engine operation, from whatever it left: the exception that escaped it (a Boolean's
 /// carries its report, whose alerts say more than the exception) or its report.
 /// </summary>
-public static class OperationDiagnostics
+internal static class OperationDiagnostics
 {
     /// <summary>The code of a failed Boolean whose report holds no error: <c>boolean.failed</c>.</summary>
     public static DiagnosticCode BooleanFailed { get; } = new("boolean.failed");

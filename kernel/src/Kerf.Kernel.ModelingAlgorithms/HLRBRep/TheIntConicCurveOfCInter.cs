@@ -12,7 +12,7 @@ namespace Kerf.Engine.HiddenLines;
 
 /// <summary>The intersection between a conic (seen as an implicit curve) and a bounded 2D curve.</summary>
 /// <remarks>OCCT's instantiation of IntCurve_IntConicCurveGen.gxx over HLRBRep_Curve (decision 321).</remarks>
-public sealed class TheIntConicCurveOfCInter
+internal sealed class TheIntConicCurveOfCInter
     : IntConicCurveGen<HiddenLineCurve, HiddenLineCurveTool, TheProjPCurOfCInter,
                                MyImpParToolOfTheIntersectorOfTheIntConicCurveOfCInter>
 {

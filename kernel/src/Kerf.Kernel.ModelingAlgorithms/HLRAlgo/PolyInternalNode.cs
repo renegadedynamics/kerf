@@ -12,7 +12,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 
 /// <summary>A node of the internal triangulation of the polygonal hidden-line removal (to update the outlines).</summary>
 /// <remarks>A working object (a transient), as OCCT's; the nested structs are plain data with public fields.</remarks>
-public class PolyInternalNode : Transient
+internal class PolyInternalNode : Transient
 {
     /// <summary>The node's first segment, flags and edges (plain data).</summary>
     public struct NodeIndices

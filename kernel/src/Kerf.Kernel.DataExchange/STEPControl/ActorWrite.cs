@@ -39,7 +39,7 @@ namespace Kerf.Engine.Exchange.Step;
 /// (<see cref="ContextTool.NauoId"/>), where OCCT uses a process-wide one. <see cref="ContextTool"/>
 /// (not in OCCT) gives access to the context, for instance to set AP203's default date and person.
 /// </remarks>
-public class ActorWrite : ActorOfFinderProcess
+internal class ActorWrite : ActorOfFinderProcess
 {
     //: k8 abv 6 Jan 99: unique names for PRODUCTs
     //: k9 abv 6 Jan 99: TR10: eliminating duplicated APPLICATION_CONTEXT entities

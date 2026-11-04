@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Objects;
 /// ported code calls <c>Add</c>, <c>Subtract</c>, <c>Multiply</c>, <c>Divide</c>. The binary operators return new
 /// vectors, as in OCCT.
 /// </remarks>
-public class VectorWithMagnitude2 : GeometryVector2D
+internal class VectorWithMagnitude2 : GeometryVector2D
 {
     /// <summary>A vector equal to V.</summary>
     public VectorWithMagnitude2(in Vector2D v) => _gpVec2d = v;

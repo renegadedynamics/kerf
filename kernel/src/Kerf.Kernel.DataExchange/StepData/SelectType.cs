@@ -30,7 +30,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// copying only when the select is set again afterwards; <see cref="SetFrom"/> is C++'s assignment.
 /// </para>
 /// </remarks>
-public abstract class SelectType
+internal abstract class SelectType
 {
     private Transient _thevalue;
 

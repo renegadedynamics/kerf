@@ -26,7 +26,7 @@ namespace Kerf.Engine.Foundation.Resources;
 /// OCCT's <c>TCollection_ExtendedString</c>.
 /// </para>
 /// </remarks>
-public static class Unicode
+internal static class Unicode
 {
     /// <summary>Converts a non-ASCII C string (one char per byte) of the given format to Unicode.</summary>
     public static string ConvertFormatToUnicode(FormatType format, string fromStr)

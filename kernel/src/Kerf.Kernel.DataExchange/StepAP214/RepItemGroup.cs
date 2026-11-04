@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Ap214;
 /// <summary>
 /// Representation of STEP entity RepItemGroup
 /// </summary>
-public class RepItemGroup : Group
+internal class RepItemGroup : Group
 {
     private RepresentationItem _representationItem;
 

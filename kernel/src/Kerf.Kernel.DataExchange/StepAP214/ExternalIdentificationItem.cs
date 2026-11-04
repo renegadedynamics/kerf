@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Ap214;
 /// <summary>
 /// Representation of STEP SELECT type ExternalIdentificationItem
 /// </summary>
-public class ExternalIdentificationItem : SelectType
+internal class ExternalIdentificationItem : SelectType
 {
     /// <summary>
     /// Empty constructor

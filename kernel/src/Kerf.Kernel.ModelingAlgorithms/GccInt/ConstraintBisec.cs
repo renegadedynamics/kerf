@@ -15,7 +15,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// or point, as ArcType() says, read through the accessor of that kind.
 /// </summary>
 /// <remarks>Immutable: each kind is set by its constructor only.</remarks>
-public abstract class ConstraintBisec : Transient
+internal abstract class ConstraintBisec : Transient
 {
     /// <summary>The kind of the bisecting curve.</summary>
     public abstract ConstraintCurveType ArcType();

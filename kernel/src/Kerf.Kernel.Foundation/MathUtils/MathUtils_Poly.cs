@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Numerics.Utilities;
 
 /// <summary>Polynomial evaluation and manipulation.</summary>
-public static partial class MathUtils
+internal static partial class MathUtils
 {
     /// <summary>Evaluate polynomial a0 + a1*x + ... (constant term first) using Horner's method.</summary>
     public static double EvalPoly(ReadOnlySpan<double> coeffs, int degree, double x)

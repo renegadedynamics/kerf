@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Objects;
 /// The common behaviour of vectors in the plane: unit vectors (<see cref="Direction2"/>) and vectors with a
 /// magnitude (<see cref="VectorWithMagnitude2"/>).
 /// </summary>
-public abstract class GeometryVector2D : Geometry2D
+internal abstract class GeometryVector2D : Geometry2D
 {
     private protected Vector2D _gpVec2d;
 

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// one already stored (parameters within 1e-8, same transition) is not appended. OCCT's <c>Dump</c> (to std::cout)
 /// is <see cref="ToString"/>.
 /// </remarks>
-public abstract class IntersectionCurveSurfaceIntersection
+internal abstract class IntersectionCurveSurfaceIntersection
 {
     protected bool _done;
     protected bool _isParallel; // Curve is "parallel" surface

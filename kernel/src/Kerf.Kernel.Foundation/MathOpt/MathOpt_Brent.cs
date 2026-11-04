@@ -8,7 +8,7 @@ using static Kerf.Engine.Numerics.Utilities.MathUtils;
 namespace Kerf.Engine.Numerics.Optimisation;
 
 /// <summary>Optimization algorithms for scalar and vector functions.</summary>
-public static partial class MathOpt
+internal static partial class MathOpt
 {
     /// <summary>
     /// Brent's method for 1D minimization on [theLower, theUpper]: golden section search with parabolic

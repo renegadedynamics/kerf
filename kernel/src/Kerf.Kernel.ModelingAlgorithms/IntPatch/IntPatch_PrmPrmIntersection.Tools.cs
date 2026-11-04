@@ -12,7 +12,7 @@ using static Kerf.Engine.Intersection.Polygons.PIType;
 
 namespace Kerf.Engine.Intersection.Patches;
 
-public partial class PrmPrmIntersection
+internal partial class PrmPrmIntersection
 {
     // Replaces, for each vertex of theWLline, its point by the nearest vertex of the other walking lines when that
     // vertex is near enough in both parameter spaces (within the walking's maximal steps), removing the neighbouring

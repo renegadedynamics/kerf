@@ -21,7 +21,7 @@ namespace Kerf.Engine.Intersection.Patches;
 //  c.) OffsetSurface.                                                     //
 //                                                                         //
 /////////////////////////////////////////////////////////////////////////////
-public partial class PatchIntersection
+internal partial class PatchIntersection
 {
     //===============================================================
     // function: FUN_GetMinMaxXYZPnt

@@ -16,7 +16,7 @@ namespace Kerf.Engine.Approximation.Advanced;
 /// <c>Dimension</c> values (decision 72). OCCT's <c>operator()</c> shortcut is left out: call
 /// <see cref="Evaluate"/>. As for math's functions, an implementation must assign <c>ErrorCode</c>, 0 on success.
 /// </remarks>
-public abstract class EvaluatorFunction
+internal abstract class EvaluatorFunction
 {
     /// <summary>
     /// Evaluates the function, or its derivative of order <paramref name="derivativeRequest"/> (0, 1 or 2), at

@@ -19,7 +19,7 @@ namespace Kerf.Engine.Approximation.Advanced;
 /// A working object of the approximation, with OCCT's public mutators (decision 194). The arrays it returns are
 /// its own (shared: don't modify).
 /// </remarks>
-public class Iso : Transient
+internal class Iso : Transient
 {
     private readonly IsoType _type;
     private double _constPar;

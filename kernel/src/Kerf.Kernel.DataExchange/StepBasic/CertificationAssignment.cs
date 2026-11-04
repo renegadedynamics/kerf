@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity CertificationAssignment
 /// </summary>
-public class CertificationAssignment : Transient
+internal class CertificationAssignment : Transient
 {
     private Certification _assignedCertification;
 

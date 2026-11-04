@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class SecurityClassificationAssignment : Transient
+internal class SecurityClassificationAssignment : Transient
 {
     private SecurityClassification _assignedSecurityClassification;
 

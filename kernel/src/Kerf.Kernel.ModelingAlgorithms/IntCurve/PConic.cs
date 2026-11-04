@@ -18,7 +18,7 @@ namespace Kerf.Engine.Intersection.Curves;
 /// A struct, copied as OCCT copies it. A working tool (decision 54), so it has no equality;
 /// <c>default(IntCurve_PConic)</c> is not a valid conic.
 /// </remarks>
-public struct PConic
+internal struct PConic
 {
     private Frame2D _axe;
     private double _prm1;

@@ -26,7 +26,7 @@ namespace Kerf.Engine.HiddenLines;
 /// <see cref="Show"/> switches to the segments without hiding. Each compound is built anew, published frozen, and is
 /// null when it would be empty.
 /// </remarks>
-public class PolyHlrToShape
+internal class PolyHlrToShape
 {
     private PolyAlgo? _algo;
     private readonly NCollection_List<BiPnt2D> _biPntVis = new();

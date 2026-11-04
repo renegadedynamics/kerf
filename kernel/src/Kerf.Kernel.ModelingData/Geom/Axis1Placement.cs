@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Objects;
 
 /// <summary>An axis in 3D space, an origin and a unit vector (a shareable <see cref="Axis3D"/>).</summary>
-public class Axis1Placement : AxisPlacement
+internal class Axis1Placement : AxisPlacement
 {
     /// <summary>An axis equal to A1.</summary>
     public Axis1Placement(in Axis3D a1) => _axis = a1;

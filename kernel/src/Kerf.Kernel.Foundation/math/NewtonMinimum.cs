@@ -14,7 +14,7 @@ namespace Kerf.Engine.Numerics;
 
 /// <summary>Newton's method to find a minimum of a function of several variables whose hessian is known.</summary>
 /// <remarks>OCCT declares <c>IsConvex()</c> but never defines it, so it is left out.</remarks>
-public class NewtonMinimum
+internal class NewtonMinimum
 {
     protected NumericStatus _theStatus;
     protected math_Vector _theLocation;

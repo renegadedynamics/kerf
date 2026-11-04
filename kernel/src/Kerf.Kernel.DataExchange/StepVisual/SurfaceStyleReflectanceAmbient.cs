@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity SurfaceStyleReflectanceAmbient
 /// </summary>
-public class SurfaceStyleReflectanceAmbient : Transient
+internal class SurfaceStyleReflectanceAmbient : Transient
 {
     private double _ambientReflectance;
 

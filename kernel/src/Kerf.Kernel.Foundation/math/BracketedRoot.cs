@@ -11,7 +11,7 @@ using System.Globalization;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>Brent's method to find a root of a function between two bounds, without its derivative.</summary>
-public class BracketedRoot
+internal class BracketedRoot
 {
     private bool _done;
     private double _theRoot;

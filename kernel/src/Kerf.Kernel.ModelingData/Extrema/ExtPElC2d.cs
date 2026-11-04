@@ -17,7 +17,7 @@ namespace Kerf.Engine.Extrema;
 /// ellipse, hyperbola or parabola).
 /// </summary>
 /// <remarks>An algorithm object: construct it with the point and the curve, or empty and call <c>Perform</c>.</remarks>
-public class ExtPElC2d
+internal class ExtPElC2d
 {
     private bool _done;
     private int _nbExt;

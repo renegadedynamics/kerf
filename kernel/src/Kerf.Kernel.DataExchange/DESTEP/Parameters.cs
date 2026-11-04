@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Step;
 /// highest possible STEP representation), ManifoldSolidBrep (a manifold_solid_brep or brep_with_voids entity),
 /// FacetedBrep, ShellBasedSurfaceModel, GeometricCurveSet...
 /// </summary>
-public enum ModelType
+internal enum ModelType
 {
     AsIs,
     ManifoldSolidBrep,
@@ -36,7 +36,7 @@ public enum ModelType
 /// for <see cref="StepModel.InternalParameters"/>; its use belongs to STEPControl, unit 8F). Its default is
 /// OCCT's: write <c>new DESTEP_Parameters()</c>, never <c>default</c>.
 /// </remarks>
-public struct Parameters
+internal struct Parameters
 {
     public enum ReadMode_BSplineContinuity
     {

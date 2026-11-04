@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// in the TransientProcess, while an Iterator gives a flat view of it. A ResultFromModel is intended to be attached to
 /// the transfer of one entity (typically root entity but it is not mandatory).
 /// </summary>
-public class ResultFromModel : Transient
+internal class ResultFromModel : Transient
 {
     /// <summary>Creates a ResultFromModel, empty.</summary>
     public ResultFromModel()

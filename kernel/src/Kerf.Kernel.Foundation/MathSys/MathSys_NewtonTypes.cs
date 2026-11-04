@@ -13,7 +13,7 @@ namespace Kerf.Engine.Numerics.Systems;
 // the template and its argument: NewtonResultN2, NewtonBoundsN3, ... Their std::array members are std_arrayN.
 
 /// <summary>Nonlinear systems: Newton, Levenberg-Marquardt and specialised small-dimension Newton solvers.</summary>
-public static partial class MathSys
+internal static partial class MathSys
 {
     /// <summary>Result of the 2-dimensional Newton solver (C++'s <c>NewtonResultN&lt;2&gt;</c>).</summary>
     /// <remarks>Its C++ default status is NotConverged, so ported code writes `new NewtonResultN2()`.</remarks>

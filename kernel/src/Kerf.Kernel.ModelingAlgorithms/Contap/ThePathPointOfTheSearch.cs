@@ -24,7 +24,7 @@ namespace Kerf.Engine.HiddenLines.Contours;
 /// mutators (reached by the boundary search through <see cref="IPathPoint{TSelf}"/>); the constructors are
 /// their twins. The arc and the vertex are compared by reference (OCCT's handles).
 /// </remarks>
-public partial struct ThePathPointOfTheSearch
+internal partial struct ThePathPointOfTheSearch
     : IPathPoint<ThePathPointOfTheSearch>, IEquatable<ThePathPointOfTheSearch>
 {
     private Point3D _point;

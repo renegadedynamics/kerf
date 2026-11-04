@@ -20,7 +20,7 @@ using static Kerf.Topology.Containment;
 namespace Kerf.Engine.Intersection.Tools;
 
 /// <summary>The statics of the intersection and classification package: roots, edge lengths, curve parameters.</summary>
-public static class IntTools
+internal static class IntTools
 {
     /// <summary>
     /// The radius of the curve between <paramref name="t1"/> and <paramref name="t3"/>: the circle's radius, or the

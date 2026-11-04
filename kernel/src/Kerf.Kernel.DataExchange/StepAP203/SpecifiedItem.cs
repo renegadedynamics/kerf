@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Ap203;
 /// <summary>
 /// Representation of STEP SELECT type SpecifiedItem
 /// </summary>
-public class SpecifiedItem : SelectType
+internal class SpecifiedItem : SelectType
 {
     /// <summary>
     /// Empty constructor

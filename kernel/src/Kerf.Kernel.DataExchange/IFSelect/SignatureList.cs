@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// signature, through SignOnly Mode. This can be useful for a specific counter (used in a Selection), while
 /// it remains better to use a Signature whenever possible
 /// </summary>
-public class SignatureList : Transient
+internal class SignatureList : Transient
 {
 
     /// <summary>

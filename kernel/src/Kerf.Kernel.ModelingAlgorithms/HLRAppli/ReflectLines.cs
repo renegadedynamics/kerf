@@ -23,7 +23,7 @@ namespace Kerf.Engine.HiddenLines;
 /// vertices, which OCCT's SameParameter then writes into: it runs in a working overlay (unit 10H6), and the compound
 /// holds new vertices where it changed them.
 /// </remarks>
-public class ReflectLines
+internal class ReflectLines
 {
     private AlgorithmProjector _projector = new();
     private HiddenLineAlgo? _hlrAlgo;

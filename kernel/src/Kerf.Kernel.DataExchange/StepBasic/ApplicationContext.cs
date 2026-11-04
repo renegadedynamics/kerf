@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ApplicationContext : Transient
+internal class ApplicationContext : Transient
 {
     private TCollection_HAsciiString _application;
 

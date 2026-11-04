@@ -38,7 +38,7 @@ namespace Kerf.Engine.Intersection;
 /// public <c>With</c> twins. <c>new IntAna_Curve()</c> is OCCT's empty curve (type GeomAbs_OtherSurface);
 /// <c>default</c> is all zeros, whose type is GeomAbs_Plane.
 /// </remarks>
-public partial struct Curve : IEquatable<Curve>
+internal partial struct Curve : IEquatable<Curve>
 {
     private double _z0Cte;
     private double _z0Sin;

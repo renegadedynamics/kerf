@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class CurveStyle : Transient
+internal class CurveStyle : Transient
 {
     private TCollection_HAsciiString _name;
     private CurveStyleFontSelect _curveFont = new CurveStyleFontSelect();

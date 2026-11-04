@@ -22,7 +22,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// A working object. It keeps the arc and the surface (adaptors, by reference) and a copy of the quadric (a struct, as
 /// OCCT's member). It implements <see cref="IArcFunction"/>, what IntStart_SearchOnBoundaries reads.
 /// </remarks>
-public class PatchArcFunction : FunctionWithDerivative, IArcFunction
+internal class PatchArcFunction : FunctionWithDerivative, IArcFunction
 {
     private Curve2DAdaptorBase? _arc;
     private SurfaceAdaptorBase? _surf;

@@ -15,7 +15,7 @@ namespace Kerf.Engine.HiddenLines;
 /// A struct without state, so it can be a type argument of the generic intersectors. Generated from
 /// Geom2dInt_TheProjPCurOfGInter by substituting the curve and its tool (decision 1091).
 /// </remarks>
-public readonly struct TheProjPCurOfCInter : IProjectOnPCurveTool<HiddenLineCurve>
+internal readonly struct TheProjPCurOfCInter : IProjectOnPCurveTool<HiddenLineCurve>
 {
     /// <summary>
     /// The parameter of the point of <paramref name="c"/> nearest <paramref name="p"/>, searched between the two

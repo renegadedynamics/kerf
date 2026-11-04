@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 
 /// <summary>The execution status of an individual transfer: initial (not yet done), run (in progress), done, error, loop.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.Transfer_StatusExec;</c>.</remarks>
-public enum StatusExec
+internal enum StatusExec
 {
     StatusInitial,
     StatusRun,

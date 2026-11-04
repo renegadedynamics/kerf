@@ -6,7 +6,7 @@ using Occt;
 
 namespace Kerf.Engine.Numerics.Roots;
 
-public static partial class MathRoot
+internal static partial class MathRoot
 {
     /// <summary>Newton-Raphson root finding from theGuess (quadratic convergence near a simple root).</summary>
     public static global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult Newton<Function>(Function func, double guess, global::Kerf.Engine.Numerics.Utilities.MathUtils.Config? config = null)

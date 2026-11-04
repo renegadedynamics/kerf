@@ -26,7 +26,7 @@ namespace Kerf.Engine.Intersection;
 /// global coordinate system.</summary>
 /// <remarks>A working object (decision 152): <c>SetQuadric</c> is public, as in OCCT. <c>SetQuadric</c> with a cone
 /// or a sphere appends to the special points without clearing them, as OCCT does.</remarks>
-public sealed class Quadric
+internal sealed class Quadric
 {
     private double _cxx;
     private double _cyy;

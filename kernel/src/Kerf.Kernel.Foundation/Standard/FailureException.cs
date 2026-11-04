@@ -13,7 +13,7 @@ namespace Kerf.Engine.Foundation;
 /// The root of OCCT's exceptions. OCCT's class hierarchy is kept, so code can catch a whole family
 /// (<see cref="DomainErrorException"/>) as in C++.
 /// </summary>
-public class FailureException : Exception
+internal class FailureException : Exception
 {
     public FailureException() { }
 
@@ -28,163 +28,163 @@ public class FailureException : Exception
     public string GetMessageString() => base.Message;
 }
 
-public class DomainErrorException : FailureException
+internal class DomainErrorException : FailureException
 {
     public DomainErrorException() { }
     public DomainErrorException(string? message) : base(message) { }
 }
 
-public class ConstructionErrorException : DomainErrorException
+internal class ConstructionErrorException : DomainErrorException
 {
     public ConstructionErrorException() { }
     public ConstructionErrorException(string? message) : base(message) { }
 }
 
-public class DimensionErrorException : DomainErrorException
+internal class DimensionErrorException : DomainErrorException
 {
     public DimensionErrorException() { }
     public DimensionErrorException(string? message) : base(message) { }
 }
 
-public class DimensionMismatchException : DimensionErrorException
+internal class DimensionMismatchException : DimensionErrorException
 {
     public DimensionMismatchException() { }
     public DimensionMismatchException(string? message) : base(message) { }
 }
 
-public class ImmutableObjectException : DomainErrorException
+internal class ImmutableObjectException : DomainErrorException
 {
     public ImmutableObjectException() { }
     public ImmutableObjectException(string? message) : base(message) { }
 }
 
-public class MultiplyDefinedException : DomainErrorException
+internal class MultiplyDefinedException : DomainErrorException
 {
     public MultiplyDefinedException() { }
     public MultiplyDefinedException(string? message) : base(message) { }
 }
 
-public class NoMoreObjectException : DomainErrorException
+internal class NoMoreObjectException : DomainErrorException
 {
     public NoMoreObjectException() { }
     public NoMoreObjectException(string? message) : base(message) { }
 }
 
-public class NoSuchObjectException : DomainErrorException
+internal class NoSuchObjectException : DomainErrorException
 {
     public NoSuchObjectException() { }
     public NoSuchObjectException(string? message) : base(message) { }
 }
 
-public class NullObjectException : DomainErrorException
+internal class NullObjectException : DomainErrorException
 {
     public NullObjectException() { }
     public NullObjectException(string? message) : base(message) { }
 }
 
-public class TypeMismatchException : DomainErrorException
+internal class TypeMismatchException : DomainErrorException
 {
     public TypeMismatchException() { }
     public TypeMismatchException(string? message) : base(message) { }
 }
 
-public class RangeErrorException : DomainErrorException
+internal class RangeErrorException : DomainErrorException
 {
     public RangeErrorException() { }
     public RangeErrorException(string? message) : base(message) { }
 }
 
-public class OutOfRangeException : RangeErrorException
+internal class OutOfRangeException : RangeErrorException
 {
     public OutOfRangeException() { }
     public OutOfRangeException(string? message) : base(message) { }
 }
 
-public class NegativeValueException : RangeErrorException
+internal class NegativeValueException : RangeErrorException
 {
     public NegativeValueException() { }
     public NegativeValueException(string? message) : base(message) { }
 }
 
-public class NullValueException : RangeErrorException
+internal class NullValueException : RangeErrorException
 {
     public NullValueException() { }
     public NullValueException(string? message) : base(message) { }
 }
 
-public class NumericErrorException : FailureException
+internal class NumericErrorException : FailureException
 {
     public NumericErrorException() { }
     public NumericErrorException(string? message) : base(message) { }
 }
 
-public class ZeroDivisorException : NumericErrorException
+internal class ZeroDivisorException : NumericErrorException
 {
     public ZeroDivisorException() { }
     public ZeroDivisorException(string? message) : base(message) { }
 }
 
-public class NumericOverflowException : NumericErrorException
+internal class NumericOverflowException : NumericErrorException
 {
     public NumericOverflowException() { }
     public NumericOverflowException(string? message) : base(message) { }
 }
 
-public class NumericUnderflowException : NumericErrorException
+internal class NumericUnderflowException : NumericErrorException
 {
     public NumericUnderflowException() { }
     public NumericUnderflowException(string? message) : base(message) { }
 }
 
-public class ProgramErrorException : FailureException
+internal class ProgramErrorException : FailureException
 {
     public ProgramErrorException() { }
     public ProgramErrorException(string? message) : base(message) { }
 }
 
-public class MethodNotImplementedException : ProgramErrorException
+internal class MethodNotImplementedException : ProgramErrorException
 {
     public MethodNotImplementedException() { }
     public MethodNotImplementedException(string? message) : base(message) { }
 }
 
-public class AbortiveTransactionException : FailureException
+internal class AbortiveTransactionException : FailureException
 {
     public AbortiveTransactionException() { }
     public AbortiveTransactionException(string? message) : base(message) { }
 }
 
-public class NotDoneException : FailureException
+internal class NotDoneException : FailureException
 {
     public NotDoneException() { }
     public NotDoneException(string? message) : base(message) { }
 }
 
-public class InfiniteSolutionsException : FailureException
+internal class InfiniteSolutionsException : FailureException
 {
     public InfiniteSolutionsException() { }
     public InfiniteSolutionsException(string? message) : base(message) { }
 }
 
-public class UndefinedException : FailureException
+internal class UndefinedException : FailureException
 {
     public UndefinedException() { }
     public UndefinedException(string? message) : base(message) { }
 }
 
-public class UndefinedDerivativeException : DomainErrorException
+internal class UndefinedDerivativeException : DomainErrorException
 {
     public UndefinedDerivativeException() { }
     public UndefinedDerivativeException(string? message) : base(message) { }
 }
 
-public class UndefinedValueException : DomainErrorException
+internal class UndefinedValueException : DomainErrorException
 {
     public UndefinedValueException() { }
     public UndefinedValueException(string? message) : base(message) { }
 }
 
-public class NullVectorException : DomainErrorException
+internal class NullVectorException : DomainErrorException
 {
     public NullVectorException() { }
     public NullVectorException(string? message) : base(message) { }

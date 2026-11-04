@@ -19,7 +19,7 @@ namespace Kerf.Engine.Collections;
 /// moved the same way (the content of a node is copied into a new child), so the same fix-ups are made. The tree can't
 /// be copied; the C++ move constructor and move assignment are the constructor taking a tree and <see cref="Move"/>.
 /// </remarks>
-public class IndexedSpatialTree<TheObjType, TheBndType> : SpatialTree<TheObjType, TheBndType>
+internal class IndexedSpatialTree<TheObjType, TheBndType> : SpatialTree<TheObjType, TheBndType>
     where TheObjType : notnull
     where TheBndType : struct, ISpatialTreeBox<TheBndType>
 {

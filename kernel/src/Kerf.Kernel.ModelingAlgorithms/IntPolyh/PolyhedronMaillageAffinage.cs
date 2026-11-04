@@ -24,7 +24,7 @@ namespace Kerf.Engine.Intersection.Polyhedra;
 /// time on the same object keeps the items the first pass left in the arrays beyond what it rewrites, as OCCT's does
 /// (the enlarged-zone retry of <see cref="PolyhedronIntersection"/> relies on it; see occt-issues.md, unit 5E).
 /// </remarks>
-public sealed partial class PolyhedronMaillageAffinage
+internal sealed partial class PolyhedronMaillageAffinage
 {
     private const double MyTolerance = 10.0e-7;
     private const double MyConfusionPrecision = 10.0e-12;

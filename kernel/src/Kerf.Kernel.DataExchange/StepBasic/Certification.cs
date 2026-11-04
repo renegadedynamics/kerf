@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity Certification
 /// </summary>
-public class Certification : Transient
+internal class Certification : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _purpose;

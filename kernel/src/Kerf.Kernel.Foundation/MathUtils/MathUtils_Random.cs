@@ -6,7 +6,7 @@ using Occt;
 
 namespace Kerf.Engine.Numerics.Utilities;
 
-public static partial class MathUtils
+internal static partial class MathUtils
 {
     /// <summary>Pseudo-random number generator based on xoshiro256**, seeded through SplitMix64.</summary>
     /// <remarks>A class, not a struct: its whole purpose is its changing state, which a struct would lose to

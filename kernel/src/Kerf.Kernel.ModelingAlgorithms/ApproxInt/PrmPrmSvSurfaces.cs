@@ -21,7 +21,7 @@ namespace Kerf.Engine.Intersection.Approximation;
 /// IntImp_Int2S and IntImp_ZerParFunc over the same surface and tool, so the body names them. TheLine is never used
 /// by the body and is dropped. OCCT's instantiations are sealed subclasses.
 /// </remarks>
-public class PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
+internal class PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
     where ThePSurfaceTool : IZerCSParPSurfaceTool<ThePSurface>
 {
     private const double Toltangency = 0.0000000001;

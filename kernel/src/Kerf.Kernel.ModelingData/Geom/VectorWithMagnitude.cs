@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Objects;
 
 /// <summary>A vector with a magnitude, possibly zero, in 3D space (a shareable <see cref="Vector3D"/>).</summary>
-public class VectorWithMagnitude : GeometryVector3D
+internal class VectorWithMagnitude : GeometryVector3D
 {
     /// <summary>A vector equal to V.</summary>
     public VectorWithMagnitude(in Vector3D v) => _gpVec = v;

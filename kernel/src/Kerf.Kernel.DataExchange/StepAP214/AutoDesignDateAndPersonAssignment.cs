@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class AutoDesignDateAndPersonAssignment : PersonAndOrganizationAssignment
+internal class AutoDesignDateAndPersonAssignment : PersonAndOrganizationAssignment
 {
     private NCollection_HArray1<AutoDesignDateAndPersonItem> _items;
 

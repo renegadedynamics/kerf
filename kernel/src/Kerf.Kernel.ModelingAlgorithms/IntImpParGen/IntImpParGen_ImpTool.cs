@@ -12,7 +12,7 @@ namespace Kerf.Engine.Intersection.Implicit;
 /// <see cref="Intersector{ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpParTool}"/> sees it
 /// (OCCT's template class IntImpParGen_ImpTool; implemented by IntCurve_IConicTool).
 /// </summary>
-public interface IImpTool
+internal interface IImpTool
 {
     Point2D Value(double u);
 

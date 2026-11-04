@@ -23,7 +23,7 @@ namespace Kerf.Engine.Extrema;
 /// The surfaces are kept by reference, as OCCT keeps them: they must outlive the algorithm. NbU and NbV must be at
 /// least 2.
 /// </remarks>
-public class GenExtSS
+internal class GenExtSS
 {
     // This class represents distance objective function for surface / surface.
     private sealed class Extrema_FuncDistSS : MultipleVarFunctionWithGradient

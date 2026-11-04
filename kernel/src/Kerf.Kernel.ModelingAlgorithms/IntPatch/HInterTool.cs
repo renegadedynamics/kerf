@@ -24,7 +24,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// <see cref="SamplePoint"/> reads). It implements <see cref="ISobTool"/>, as the boundary search's tool
 /// (IntPatch_TheSOnBounds). The "known points" queries say that no arc has been seen, as OCCT's do.
 /// </remarks>
-public struct HInterTool : ISobTool
+internal struct HInterTool : ISobTool
 {
     private double _uinf;
     private double _vinf;

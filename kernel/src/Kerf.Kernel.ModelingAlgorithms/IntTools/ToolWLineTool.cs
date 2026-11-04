@@ -22,7 +22,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// approximation doesn't use the surfaces), and the splitting of a line where it runs along the surfaces' periodic
 /// boundaries.
 /// </summary>
-public static class ToolWLineTool
+internal static class ToolWLineTool
 {
     /////////////////////// NotUseSurfacesForApprox /////////////////////////
 

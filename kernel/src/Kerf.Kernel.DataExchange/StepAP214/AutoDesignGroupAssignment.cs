@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class AutoDesignGroupAssignment : GroupAssignment
+internal class AutoDesignGroupAssignment : GroupAssignment
 {
     private NCollection_HArray1<AutoDesignGroupedItem> _items;
 

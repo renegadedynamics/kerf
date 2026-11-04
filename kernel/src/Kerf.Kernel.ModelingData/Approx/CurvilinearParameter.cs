@@ -22,7 +22,7 @@ namespace Kerf.Engine.Approximation;
 /// <see cref="Curve2d2"/>): the same objects at each call. The caller's adaptors are never changed; the internal
 /// <see cref="CurvlinFunc"/> replaces its own by trimmed ones as the approximation cuts the range.
 /// </remarks>
-public sealed class CurvilinearParameter
+internal sealed class CurvilinearParameter
 {
     private sealed class Approx_CurvilinearParameter_EvalCurv : EvaluatorFunction
     {

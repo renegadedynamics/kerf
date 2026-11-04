@@ -32,7 +32,7 @@ namespace Kerf.Engine.Approximation;
 /// </remarks>
 /// <typeparam name="MultiLine">The MultiLine type.</typeparam>
 /// <typeparam name="LineTool">The line tool reading <typeparamref name="MultiLine"/>.</typeparam>
-public class ComputeLine<MultiLine, LineTool>
+internal class ComputeLine<MultiLine, LineTool>
     where LineTool : struct, IApproxLineTool<MultiLine>
 {
     private readonly NCollection_Sequence<MultiCurve> _multiCurves = new();

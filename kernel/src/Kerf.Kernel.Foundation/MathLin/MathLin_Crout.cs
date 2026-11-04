@@ -8,7 +8,7 @@ using static Kerf.Engine.Numerics.Utilities.MathUtils;
 namespace Kerf.Engine.Numerics.Linear;
 
 /// <summary>Modern linear algebra: Crout LDL^T decomposition of symmetric matrices.</summary>
-public static partial class MathLin
+internal static partial class MathLin
 {
     /// <summary>Result for Crout LDL^T decomposition (symmetric matrices).</summary>
     public struct CroutResult

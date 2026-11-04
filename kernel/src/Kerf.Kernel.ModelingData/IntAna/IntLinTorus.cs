@@ -19,7 +19,7 @@ namespace Kerf.Engine.Intersection;
 
 /// <summary>Intersection between a line and a torus.</summary>
 /// <remarks>An algorithm object: construct it with the line and the torus, or empty and call <c>Perform</c>.</remarks>
-public class IntLinTorus
+internal class IntLinTorus
 {
     private bool _done;
     private int _nbpt;

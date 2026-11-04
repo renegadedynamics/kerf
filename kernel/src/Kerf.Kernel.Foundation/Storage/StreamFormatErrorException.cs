@@ -11,7 +11,7 @@ namespace Kerf.Engine.Foundation;
 /// they can't read safely: counts larger than the rest of the input could hold, words longer than OCCT's buffers,
 /// nesting beyond the caps, references to entries that don't exist, and input that ends where OCCT would loop.
 /// </summary>
-public class StreamFormatErrorException : FailureException
+internal class StreamFormatErrorException : FailureException
 {
     public StreamFormatErrorException() { }
     public StreamFormatErrorException(string? message) : base(message) { }

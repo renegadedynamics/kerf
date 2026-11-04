@@ -23,7 +23,7 @@ namespace Kerf.Engine.Exchange.Step.Construct;
 /// A C++ value class, a C# class here (decision 1185). OCCT.NET: it also holds the writer's counter of
 /// NEXT_ASSEMBLY_USAGE_OCCURRENCE identifiers (<see cref="NauoId"/>, decision 1266).
 /// </remarks>
-public class ContextTool
+internal class ContextTool
 {
     // :j4 16.03.99 gka S4134
     // abv 18.11.99 renamed from StepPDR_ContextTool

@@ -16,7 +16,7 @@ namespace Kerf.Engine.Extrema;
 /// </summary>
 /// <remarks>Unlike <see cref="CurveTool"/>, <see cref="IsPeriodic"/> is the curve's own periodicity, as in
 /// OCCT.</remarks>
-public static class Curve2dTool
+internal static class Curve2dTool
 {
     public static double FirstParameter(Curve2DAdaptorBase c) => c.FirstParameter();
 

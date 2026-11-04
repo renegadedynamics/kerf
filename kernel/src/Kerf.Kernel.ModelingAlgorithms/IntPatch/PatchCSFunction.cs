@@ -19,7 +19,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// <remarks>
 /// OCCT keeps pointers to the caller's handles; the port keeps the adaptors (by reference, as the handles).
 /// </remarks>
-public class PatchCSFunction : FunctionSetWithDerivatives, ICSFunction<SurfaceAdaptorBase, Curve2DAdaptorBase>
+internal class PatchCSFunction : FunctionSetWithDerivatives, ICSFunction<SurfaceAdaptorBase, Curve2DAdaptorBase>
 {
     private readonly Curve2DAdaptorBase _curve;
     private readonly SurfaceAdaptorBase _surface1;

@@ -31,7 +31,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// data of <see cref="BeanFaceIntersector"/>, which gives every run the result a fresh context would give
 /// (decision 753). The common parts are the algorithm's own <see cref="CommonPrt"/> objects.
 /// </remarks>
-public class EdgeFace
+internal class EdgeFace
 {
     protected Edge _edge = new();
     protected Face _face = new();

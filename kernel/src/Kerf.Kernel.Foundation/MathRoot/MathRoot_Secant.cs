@@ -6,7 +6,7 @@ using Occt;
 
 namespace Kerf.Engine.Numerics.Roots;
 
-public static partial class MathRoot
+internal static partial class MathRoot
 {
     /// <summary>Secant method from two initial points (no derivative needed).</summary>
     public static global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult Secant<Function>(Function func, double x0, double x1, global::Kerf.Engine.Numerics.Utilities.MathUtils.Config? config = null)

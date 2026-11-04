@@ -22,7 +22,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// <see cref="Curve"/> returns a copy. <see cref="Vertex"/>, <see cref="FirstPoint"/> and <see cref="LastPoint"/>
 /// return copies; <see cref="ChangeVertex"/> returns a reference to the stored vertex.
 /// </remarks>
-public class ALine : PatchLine
+internal class ALine : PatchLine
 {
     private const double Pconfusion = 0.00001;
 

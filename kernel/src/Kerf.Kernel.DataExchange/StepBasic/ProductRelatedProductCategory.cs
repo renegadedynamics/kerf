@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ProductRelatedProductCategory : ProductCategory
+internal class ProductRelatedProductCategory : ProductCategory
 {
     private NCollection_HArray1<Product> _products;
 

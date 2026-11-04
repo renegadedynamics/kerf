@@ -19,7 +19,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// Adaptor3d_HSurfaceTool use it too, and so do GeomInt's instantiations of ApproxInt's generics
 /// (<see cref="IApproxSurfaceTool{ThePSurface}"/>).
 /// </remarks>
-public readonly struct TheHSurfaceTool
+internal readonly struct TheHSurfaceTool
     : IIntersectionSurfaceTool<SurfaceAdaptorBase>, IApproxSurfaceTool<SurfaceAdaptorBase>
 {
     public static double FirstUParameter(in SurfaceAdaptorBase s) => HSurfaceTool.FirstUParameter(s);

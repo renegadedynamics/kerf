@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Foundation;
 
 /// <summary>The colours of console text, for <see cref="PrinterOStream"/>.</summary>
-public enum MessageConsoleColor
+internal enum MessageConsoleColor
 {
     /// <summary>The default (white) colour.</summary>
     ConsoleColor_Default,

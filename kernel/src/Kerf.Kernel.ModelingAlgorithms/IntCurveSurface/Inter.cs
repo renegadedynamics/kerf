@@ -21,7 +21,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// The static tool over a curve that the generic curve/surface intersection uses (OCCT's CurveTool template
 /// argument: IntCurveSurface_TheHCurveTool, HLRBRep_LineTool).
 /// </summary>
-public interface IIntersectionCurveTool<TheCurve> : IZerCSParCurveTool<TheCurve>
+internal interface IIntersectionCurveTool<TheCurve> : IZerCSParCurveTool<TheCurve>
 {
     static abstract CurveKind GetType(in TheCurve c);
 
@@ -55,7 +55,7 @@ public interface IIntersectionCurveTool<TheCurve> : IZerCSParCurveTool<TheCurve>
 /// The static tool over a surface that the generic curve/surface intersection uses (OCCT's SurfaceTool template
 /// argument: Adaptor3d_HSurfaceTool, through <see cref="TheHSurfaceTool"/>; HLRBRep_SurfaceTool).
 /// </summary>
-public interface IIntersectionSurfaceTool<TheSurface> : IZerCSParPSurfaceTool<TheSurface>
+internal interface IIntersectionSurfaceTool<TheSurface> : IZerCSParPSurfaceTool<TheSurface>
 {
     static abstract SurfaceKind GetType(in TheSurface s);
 
@@ -109,7 +109,7 @@ public interface IIntersectionSurfaceTool<TheSurface> : IZerCSParPSurfaceTool<Th
 }
 
 /// <summary>What the intersection reads from the polygon of a curve: its parameter range and parameters on the curve.</summary>
-public interface IPolygon
+internal interface IPolygon
 {
     double InfParameter();
 
@@ -120,7 +120,7 @@ public interface IPolygon
 }
 
 /// <summary>The polygon type of the generic intersection, with OCCT's constructors (IntCurveSurface_ThePolygonOfHInter).</summary>
-public interface IThePolygon<TSelf, TheCurve> : IPolygon
+internal interface IThePolygon<TSelf, TheCurve> : IPolygon
     where TSelf : IThePolygon<TSelf, TheCurve>
 {
     static abstract TSelf Create(in TheCurve curve, int nbPnt);
@@ -131,7 +131,7 @@ public interface IThePolygon<TSelf, TheCurve> : IPolygon
 }
 
 /// <summary>What the intersection reads from the polyhedron of a surface: its box, triangles, points and parameters.</summary>
-public interface IPolyhedron
+internal interface IPolyhedron
 {
     Box Bounding();
 
@@ -145,7 +145,7 @@ public interface IPolyhedron
 }
 
 /// <summary>The polyhedron type of the generic intersection, with OCCT's constructors (IntCurveSurface_ThePolyhedronOfHInter).</summary>
-public interface IThePolyhedron<TSelf, TheSurface> : IPolyhedron
+internal interface IThePolyhedron<TSelf, TheSurface> : IPolyhedron
     where TSelf : IThePolyhedron<TSelf, TheSurface>
 {
     static abstract TSelf Create(in TheSurface surface, int nbdU, int nbdV, double u1, double v1, double u2,
@@ -156,7 +156,7 @@ public interface IThePolyhedron<TSelf, TheSurface> : IPolyhedron
 }
 
 /// <summary>The interference type of the generic intersection, with OCCT's constructors (IntCurveSurface_TheInterferenceOfHInter).</summary>
-public interface ITheInterference<TSelf, ThePolygon, ThePolyhedron>
+internal interface ITheInterference<TSelf, ThePolygon, ThePolyhedron>
     where TSelf : ITheInterference<TSelf, ThePolygon, ThePolyhedron>
 {
     static abstract TSelf Create(ThePolygon polyg, ThePolyhedron polyh);
@@ -165,21 +165,21 @@ public interface ITheInterference<TSelf, ThePolygon, ThePolyhedron>
 }
 
 /// <summary>The curve/surface function of the generic intersection, with OCCT's constructor (IntCurveSurface_TheCSFunctionOfHInter).</summary>
-public interface ITheCSFunction<TSelf, TheSurface, TheCurve>
+internal interface ITheCSFunction<TSelf, TheSurface, TheCurve>
     where TSelf : ITheCSFunction<TSelf, TheSurface, TheCurve>
 {
     static abstract TSelf Create(in TheSurface s, in TheCurve c);
 }
 
 /// <summary>The exact intersection of the generic intersection, with OCCT's constructor (IntCurveSurface_TheExactHInter).</summary>
-public interface ITheExactInter<TSelf, TheCSFunction>
+internal interface ITheExactInter<TSelf, TheCSFunction>
     where TSelf : ITheExactInter<TSelf, TheCSFunction>
 {
     static abstract TSelf Create(TheCSFunction f, double tolTangency);
 }
 
 /// <summary>The exact curve/quadric intersection of the generic intersection (IntCurveSurface_TheQuadCurvExactHInter).</summary>
-public interface ITheQuadCurvExactInter<TSelf, TheSurface, TheCurve>
+internal interface ITheQuadCurvExactInter<TSelf, TheSurface, TheCurve>
     where TSelf : ITheQuadCurvExactInter<TSelf, TheSurface, TheCurve>
 {
     static abstract TSelf Create(in TheSurface s, in TheCurve c);
@@ -213,7 +213,7 @@ internal interface ITheQuadCurvFunc<TSelf, TheCurve>
 /// (IntCurveSurface_HInter, and HLRBRep_InterCSurf later) are sealed subclasses. OCCT's private DoSurface and
 /// DoNewBounds of IntCurveSurface_HInter, never called, are left out.
 /// </remarks>
-public class Inter<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool, ThePolygon, ThePolyhedron,
+internal class Inter<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool, ThePolygon, ThePolyhedron,
                                    TheInterference, TheCSFunction, TheExactInter, TheQuadCurvExactInter>
     : IntersectionCurveSurfaceIntersection
     where TheCurveTool : IIntersectionCurveTool<TheCurve>

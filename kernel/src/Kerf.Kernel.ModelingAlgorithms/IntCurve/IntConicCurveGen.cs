@@ -21,7 +21,7 @@ namespace Kerf.Engine.Intersection.Curves;
 /// over <see cref="IConicTool"/> directly; OCCT's instantiation is
 /// <see cref="TheIntConicCurveOfGInter"/>.
 /// </remarks>
-public class IntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur, TheMyImpParTool> : Intersection2D
+internal class IntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur, TheMyImpParTool> : Intersection2D
     where ThePCurveTool : ICurveCurveTool<ThePCurve>
     where TheProjPCur : IProjectOnPCurveTool<ThePCurve>
     where TheMyImpParTool : FunctionWithDerivative,

@@ -19,7 +19,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// OCCT's unused field <c>pnt</c> is left out. OCCT leaves the line type uninitialised until a line is set; the
 /// port's is IntPatch_Lin (and the queries fail on the missing line, as OCCT's would).
 /// </remarks>
-public class PolyLine : Polygo
+internal class PolyLine : Polygo
 {
     //-- lbr le 12 juin : Ajout des fleches sur les Lines
     //-- msv 13.03.2002 : compute deflection for WLine; Error() returns deflection

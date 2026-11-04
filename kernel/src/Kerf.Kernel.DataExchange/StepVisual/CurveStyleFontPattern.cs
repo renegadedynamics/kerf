@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class CurveStyleFontPattern : Transient
+internal class CurveStyleFontPattern : Transient
 {
     private double _visibleSegmentLength;
     private double _invisibleSegmentLength;

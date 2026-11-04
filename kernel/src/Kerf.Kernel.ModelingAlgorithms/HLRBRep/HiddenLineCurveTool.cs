@@ -22,7 +22,7 @@ namespace Kerf.Engine.HiddenLines;
 /// handles ("not implemented") and are left out with nothing calling them. OCCT's function-scope static
 /// <c>nbsOther</c>, never written, is a constant.
 /// </remarks>
-public readonly struct HiddenLineCurveTool : ICurveCurveTool<HiddenLineCurve>
+internal readonly struct HiddenLineCurveTool : ICurveCurveTool<HiddenLineCurve>
 {
     // OCCT's IS_C2_COMPOSITE is 0: the curves are split at their C1 discontinuities.
 

@@ -17,7 +17,7 @@ namespace Kerf.Engine.Measurement;
 /// the first, in an undigested order.
 /// </summary>
 /// <remarks>A working object, as OCCT's (an explorer): its iteration methods change it.</remarks>
-public sealed class Domain
+internal sealed class Domain
 {
     private readonly Explorer _explorer;
 

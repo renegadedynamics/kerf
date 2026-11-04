@@ -12,7 +12,7 @@ namespace Kerf.Engine.Collections;
 /// containers whose iteration or lookup order is part of OCCT's results (<see cref="NCollection_PackedMapOfInteger"/>,
 /// Poly_MergeNodesTool's node map) reproduce OCCT's buckets with them.
 /// </summary>
-public static class Primes
+internal static class Primes
 {
     private static readonly int[] THE_PRIME_VECTOR =
     [

@@ -7,7 +7,7 @@ using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
 namespace Kerf.Engine.Numerics.Optimisation;
 
-public static partial class MathOpt
+internal static partial class MathOpt
 {
     /// <summary>
     /// BFGS quasi-Newton minimization with Armijo backtracking (falling back to steepest descent when the line

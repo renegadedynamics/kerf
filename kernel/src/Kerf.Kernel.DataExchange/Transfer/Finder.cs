@@ -22,7 +22,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// stored code; equality stays by reference, and <see cref="FindHasher"/> compares finders with
 /// <see cref="Equates"/>, as OCCT's maps of finders do (decision 1200).
 /// </remarks>
-public abstract class Finder : Transient
+internal abstract class Finder : Transient
 {
     /// <summary>Returns the HashCode which has been stored by SetHashCode.</summary>
     public override int GetHashCode()

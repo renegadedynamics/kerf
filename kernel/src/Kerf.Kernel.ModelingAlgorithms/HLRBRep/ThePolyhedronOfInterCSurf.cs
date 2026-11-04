@@ -24,7 +24,7 @@ namespace Kerf.Engine.HiddenLines;
 /// public, as OCCT does, and lets the garbage collector do the rest. The setter <c>Point(thePnt, lig, col, U, V)</c>
 /// is empty in OCCT and kept so; <c>Dump</c> (empty) is left out.
 /// </remarks>
-public sealed class ThePolyhedronOfInterCSurf
+internal sealed class ThePolyhedronOfInterCSurf
     : IThePolyhedron<ThePolyhedronOfInterCSurf, HlrSurface>
 {
     private readonly int _nbdeltaU;

@@ -33,7 +33,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// returns. Ported code that goes on building on the result reads it through <see cref="InternalModifiedShape"/>.
 /// </para>
 /// </remarks>
-public sealed class Modifier
+internal sealed class Modifier
 {
     private struct NewCurveInfo
     {

@@ -17,7 +17,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 /// triangles' planes, and the hiding of a segment by them.
 /// </summary>
 /// <remarks>A working object (a transient), as OCCT's; the nested structs are plain data with public fields.</remarks>
-public class PolyData : Transient
+internal class PolyData : Transient
 {
     /// <summary>The face's index and its min-max indices (plain data).</summary>
     public struct FaceIndices

@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Framework;
 
 /// <summary>The state of an entity of a model: loaded with or without warnings or fails, checked, unloaded, unknown.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.Interface_DataState;</c>.</remarks>
-public enum DataState
+internal enum DataState
 {
     StateOK,
     LoadWarning,

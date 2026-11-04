@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Numerics.Roots;
 
 /// <summary>Algorithms for finding all roots of a function in a given range.</summary>
-public static partial class MathRoot
+internal static partial class MathRoot
 {
     /// <summary>
     /// Finds all real roots of a function within [theLower, theUpper]: uniform sampling to detect sign changes,

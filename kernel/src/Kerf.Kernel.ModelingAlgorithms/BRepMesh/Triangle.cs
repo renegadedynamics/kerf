@@ -17,7 +17,7 @@ namespace Kerf.Engine.Meshing;
 /// <c>operator==</c> (the same links in the same cyclic order, never a deleted triangle) is <see cref="IsEqual"/>,
 /// and maps in ported code take <see cref="Hasher"/>.
 /// </remarks>
-public partial struct Triangle : IEquatable<Triangle>
+internal partial struct Triangle : IEquatable<Triangle>
 {
     /// <summary>Three link indices (C++'s <c>int[3]</c>).</summary>
     [InlineArray(3)]

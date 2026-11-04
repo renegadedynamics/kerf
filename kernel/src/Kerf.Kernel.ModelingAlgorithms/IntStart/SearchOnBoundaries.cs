@@ -23,7 +23,7 @@ namespace Kerf.Engine.Intersection.Walking;
 /// Contap_ArcFunction): the function along the current arc, its samples, the points saved by
 /// <c>GetStateNumber</c>, and the quadric and the surface it is built on.
 /// </summary>
-public interface IArcFunction
+internal interface IArcFunction
 {
     /// <summary>Loads the arc to search.</summary>
     void Set(Curve2DAdaptorBase a);
@@ -49,7 +49,7 @@ public interface IArcFunction
 /// vertices' parameters and tolerances on the arcs, the arcs' bounds, and the points and segments already known on an
 /// arc.
 /// </summary>
-public interface ISobTool
+internal interface ISobTool
 {
     static abstract bool HasBeenSeen(Curve2DAdaptorBase c);
 
@@ -81,7 +81,7 @@ public interface ISobTool
 /// Contap_ThePathPointOfTheSearch): a struct, built and set as OCCT does.
 /// </summary>
 /// <typeparam name="TSelf">The implementing struct.</typeparam>
-public interface IPathPoint<TSelf>
+internal interface IPathPoint<TSelf>
     where TSelf : struct, IPathPoint<TSelf>
 {
     /// <summary>A point on a vertex of an arc.</summary>
@@ -109,7 +109,7 @@ public interface IPathPoint<TSelf>
 /// A solution segment of the boundary search (OCCT's IntStart_TheSegment macro: IntPatch_TheSegmentOfTheSOnBounds,
 /// Contap_TheSegmentOfTheSearch): a struct.
 /// </summary>
-public interface ISegment<ThePathPoint>
+internal interface ISegment<ThePathPoint>
 {
     /// <summary>Sets the arc (and forgets the limit points).</summary>
     void SetValue(Curve2DAdaptorBase a);
@@ -135,7 +135,7 @@ public interface ISegment<ThePathPoint>
 /// <c>std::sort</c> does with MSVC on up to 32 roots (an insertion sort), on any number (decision 610).
 /// </para>
 /// </remarks>
-public class SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, TheSegment>
+internal class SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, TheSegment>
     where TheSOBTool : ISobTool
     where TheFunction : FunctionWithDerivative, IArcFunction
     where ThePathPoint : struct, IPathPoint<ThePathPoint>

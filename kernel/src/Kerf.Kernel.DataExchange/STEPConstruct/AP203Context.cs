@@ -28,7 +28,7 @@ namespace Kerf.Engine.Exchange.Step.Construct;
 /// must be repeatable sets its own with <see cref="SetDefaultDateAndTime"/> and
 /// <see cref="SetDefaultPersonAndOrganization"/> (decision 1267).
 /// </remarks>
-public class AP203Context
+internal class AP203Context
 {
     /// <summary>Creates tool and fills constant fields</summary>
     public AP203Context()

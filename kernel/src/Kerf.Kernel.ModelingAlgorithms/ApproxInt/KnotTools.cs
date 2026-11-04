@@ -19,7 +19,7 @@ namespace Kerf.Engine.Intersection.Approximation;
 /// to use for a walking line.
 /// </summary>
 /// <remarks>OCCT's class of static functions. The APPROXINT_KNOTTOOLS_DEBUG prints are left out.</remarks>
-public static class KnotTools
+internal static class KnotTools
 {
     private const double ASinCoeff2 = 0.09549150281252627; // aSinCoeff^2 = (3. - std::sqrt(5.)) / 8.
     private const int AMaxPntCoeff = 15;

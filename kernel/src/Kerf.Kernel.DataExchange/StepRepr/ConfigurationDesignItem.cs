@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP SELECT type ConfigurationDesignItem
 /// </summary>
-public class ConfigurationDesignItem : SelectType
+internal class ConfigurationDesignItem : SelectType
 {
     /// <summary>
     /// Empty constructor

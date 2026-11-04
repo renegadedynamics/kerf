@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Classification.Hatching;
 
 /// <summary>Form of a trimmed line.</summary>
-public enum LineForm
+internal enum LineForm
 {
     Xline,
     Yline,

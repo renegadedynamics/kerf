@@ -17,7 +17,7 @@ namespace Kerf.Engine.Extrema.PointCurve;
 /// </summary>
 /// <remarks>The domain is fixed at construction. The grid parameters are ascending, as GeomGridEval requires.
 /// <c>Perform</c> returns the evaluator's own reusable result, which the next call overwrites.</remarks>
-public sealed class BSplineCurveExtrema : global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ICurveEvaluator
+internal sealed class BSplineCurveExtrema : global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ICurveEvaluator
 {
     private readonly BSplineCurve3D _curve;           // BSpline curve
     private readonly CurveAdaptor _adaptor;         // Curve adaptor

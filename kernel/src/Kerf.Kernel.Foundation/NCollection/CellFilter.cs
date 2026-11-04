@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Collections;
 
 /// <summary>Auxiliary enumeration serving as response from method Inspect.</summary>
-public enum CellFilterAction
+internal enum CellFilterAction
 {
     /// <summary>Target is needed and should be kept.</summary>
     CellFilter_Keep = 0,
@@ -22,7 +22,7 @@ public enum CellFilterAction
 /// What <see cref="CellFilter{TInspector, TTarget, TPoint}"/> requires of its inspector: OCCT's template
 /// parameter <c>Inspector</c>, with its <c>Target</c> and <c>Point</c> typedefs as the type parameters.
 /// </summary>
-public interface ICellFilterInspector<TTarget, TPoint>
+internal interface ICellFilterInspector<TTarget, TPoint>
 {
     /// <summary>The i-th coordinate of the point, i from 0 to Dimension-1.</summary>
     static abstract double Coord(int i, TPoint pnt);
@@ -47,7 +47,7 @@ public interface ICellFilterInspector<TTarget, TPoint>
 /// <c>Inspect</c> and removed with <c>Remove</c>. OCCT's allocator arguments are dropped. Within a cell, targets are
 /// visited newest first, as in OCCT.
 /// </remarks>
-public class CellFilter<TInspector, TTarget, TPoint>
+internal class CellFilter<TInspector, TTarget, TPoint>
     where TInspector : ICellFilterInspector<TTarget, TPoint>
 {
     /// <summary>A node of the list of targets of a cell.</summary>

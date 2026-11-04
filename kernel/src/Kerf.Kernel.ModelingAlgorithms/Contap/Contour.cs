@@ -34,7 +34,7 @@ namespace Kerf.Engine.HiddenLines.Contours;
 /// Contap_Contour.cxx are private static methods here. OCCT's messages to std::cout when the search of internal points
 /// fails are left out.
 /// </remarks>
-public sealed class Contour
+internal sealed class Contour
 {
     private const double Tolpetit = 1.0e-10; // for squared distance
 

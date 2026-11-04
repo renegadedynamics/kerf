@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity ShapeAspectRelationship
 /// </summary>
-public class ShapeAspectRelationship : Transient
+internal class ShapeAspectRelationship : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

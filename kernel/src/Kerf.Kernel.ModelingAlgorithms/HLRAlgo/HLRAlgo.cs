@@ -15,7 +15,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 /// HLRBRep_Algo works on the shape and gives exact results; HLRBRep_PolyAlgo works on a polyhedral simplification.
 /// The <c>double[16]</c> arrays are spans.
 /// </remarks>
-public static class HlrAlgo
+internal static class HlrAlgo
 {
     private static readonly double Cosu0 = Math.Cos(0.0 * M_PI / 14.0);
     private static readonly double Sinu0 = Math.Sin(0.0 * M_PI / 14.0);

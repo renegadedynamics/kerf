@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// hence the user can identify it either by its flag number or by a name which gives a flag n0 (flag n0 0
 /// has no name)
 /// </summary>
-public class BitMap
+internal class BitMap
 {
 
     /// <summary>

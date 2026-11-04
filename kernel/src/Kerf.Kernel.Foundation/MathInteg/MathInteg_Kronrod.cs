@@ -8,7 +8,7 @@ using static Kerf.Engine.Numerics.Utilities.MathUtils;
 namespace Kerf.Engine.Numerics.Integration;
 
 /// <summary>Gauss-Kronrod quadrature with embedded error estimation.</summary>
-public static partial class MathInteg
+internal static partial class MathInteg
 {
     /// <summary>Configuration for Gauss-Kronrod integration.</summary>
     public class KronrodConfig : IntegConfig

@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Bounds;
 
 /// <summary>Static methods on bounding boxes: conversion from Bnd boxes to BVH boxes.</summary>
-public static class Tools
+internal static class Tools
 {
     /// <summary>The BVH box of a 2D box (throws if the box is void, as <c>Get</c> does).</summary>
     public static Box<double, NCollection_Vec2<double>> Bnd2BVH(in Box2d box)

@@ -27,7 +27,7 @@ namespace Kerf.Engine.HiddenLines;
 /// (decision 1093). <see cref="Copy"/> is OCCT's implicit copy (the adaptor copied, the projector shared).
 /// OCCT's <see cref="D3"/> writes nothing and <see cref="DN"/> returns the null vector; both are kept.
 /// </remarks>
-public sealed class HiddenLineCurve
+internal sealed class HiddenLineCurve
 {
     private readonly EdgeCurveAdaptor _curve;
     private CurveKind _type;

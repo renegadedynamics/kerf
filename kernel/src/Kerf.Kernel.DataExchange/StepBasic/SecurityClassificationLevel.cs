@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class SecurityClassificationLevel : Transient
+internal class SecurityClassificationLevel : Transient
 {
     private TCollection_HAsciiString _name;
 

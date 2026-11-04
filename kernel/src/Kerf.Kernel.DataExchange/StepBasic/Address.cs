@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class Address : Transient
+internal class Address : Transient
 {
     private TCollection_HAsciiString _internalLocation;
     private TCollection_HAsciiString _streetNumber;

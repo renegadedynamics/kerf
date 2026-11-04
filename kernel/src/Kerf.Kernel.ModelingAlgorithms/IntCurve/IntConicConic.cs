@@ -19,7 +19,7 @@ namespace Kerf.Engine.Intersection.Curves;
 /// line/ellipse are solved geometrically (the second file, IntCurve_IntConicConic_1); the other pairs by
 /// <see cref="IntImpConicParConic"/> on a parametric domain bounded around the analytic solutions.
 /// </remarks>
-public sealed partial class IntConicConic : Intersection2D
+internal sealed partial class IntConicConic : Intersection2D
 {
     //=======================================================================
     // Perform() for

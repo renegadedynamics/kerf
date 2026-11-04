@@ -22,7 +22,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// (occt-issues.md, 5D). TangentZoneValue's debug print of the points it couldn't insert (Intf_SectionPoint's Dump,
 /// which prints only in a debug build) is left out.
 /// </remarks>
-public class InterferencePolyhedron : PolygonInterference
+internal class InterferencePolyhedron : PolygonInterference
 {
     private static readonly int[] Pourcent3 = [0, 1, 2, 0, 1, 2, 0, 1, 2];
 

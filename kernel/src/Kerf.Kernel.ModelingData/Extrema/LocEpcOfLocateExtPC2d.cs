@@ -22,7 +22,7 @@ namespace Kerf.Engine.Extrema;
 /// The 2D instantiation of OCCT's template Extrema_GenLocateExtPC (Extrema_LocEPCOfLocateExtPC2d). An algorithm object
 /// (decision 117). Keeps a reference to the curve, as OCCT does.
 /// </remarks>
-public class LocEpcOfLocateExtPC2d
+internal class LocEpcOfLocateExtPC2d
 {
     private bool _done;
     private double _mytolU;

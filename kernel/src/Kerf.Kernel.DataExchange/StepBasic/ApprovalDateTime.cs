@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Added from StepBasic Rev2 to Rev4
 /// </summary>
-public class ApprovalDateTime : Transient
+internal class ApprovalDateTime : Transient
 {
     private DateTimeSelect _dateTime = new DateTimeSelect();
     private Approval _datedApproval;

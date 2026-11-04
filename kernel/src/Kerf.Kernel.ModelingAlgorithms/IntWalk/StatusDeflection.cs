@@ -8,7 +8,7 @@ namespace Kerf.Engine.Intersection.Walking;
 
 /// <summary>The verdict of a walking step's deflection test (IntWalk_IWalking, IntWalk_PWalking).</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.IntWalk_StatusDeflection;</c>.</remarks>
-public enum StatusDeflection
+internal enum StatusDeflection
 {
     /// <summary>The step is too large: divide it.</summary>
     PasTropGrand,

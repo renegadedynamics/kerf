@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class DateAndTime : Transient
+internal class DateAndTime : Transient
 {
     private Date _dateComponent;
     private LocalTime _timeComponent;

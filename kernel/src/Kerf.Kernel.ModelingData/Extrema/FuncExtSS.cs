@@ -21,7 +21,7 @@ namespace Kerf.Engine.Extrema;
 /// <remarks>
 /// OCCT keeps pointers to the surfaces; the port keeps the adaptors, which must outlive the function.
 /// </remarks>
-public class FuncExtSS : FunctionSetWithDerivatives
+internal class FuncExtSS : FunctionSetWithDerivatives
 {
     private SurfaceAdaptorBase? _s1;
     private SurfaceAdaptorBase? _s2;

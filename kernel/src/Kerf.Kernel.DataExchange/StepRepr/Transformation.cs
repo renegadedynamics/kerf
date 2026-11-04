@@ -13,7 +13,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class Transformation : SelectType
+internal class Transformation : SelectType
 {
     /// <summary>
     /// Returns a Transformation SelectType

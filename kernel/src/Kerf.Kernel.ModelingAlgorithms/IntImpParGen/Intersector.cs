@@ -67,7 +67,7 @@ public interface IMyImpParTool<TSelf, ImpTool, ParCurve>
 /// its instantiations (IntCurve_IntImpConicParConic, Geom2dInt_TheIntersectorOfTheIntConicCurveOfGInter) are
 /// sealed subclasses in IntCurve and Geom2dInt, with OCCT's constructors forwarded.
 /// </remarks>
-public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpParTool>
+internal class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpParTool>
     : Intersection2D
     where ImpTool : IImpTool
     where ParTool : IParTool<ParCurve>

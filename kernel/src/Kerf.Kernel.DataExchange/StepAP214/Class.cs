@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Ap214;
 /// <summary>
 /// Representation of STEP entity Class
 /// </summary>
-public class Class : Group
+internal class Class : Group
 {
     /// <summary>
     /// Empty constructor

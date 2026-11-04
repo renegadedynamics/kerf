@@ -15,7 +15,7 @@ namespace Kerf.Engine.Approximation;
 /// A working object (decision 21). Ported in unit 2C, ahead of the rest of Approx, because Approx_ComputeLine's
 /// <c>SplineValue</c> uses it (decision 203). <see cref="Value"/> returns the object's own result (shared).
 /// </remarks>
-public class MCurvesToBSpCurve
+internal class MCurvesToBSpCurve
 {
     private MultiBSpCurve _spline = new();
     // OCCT's myDone is written but never read: left out (decision 143).

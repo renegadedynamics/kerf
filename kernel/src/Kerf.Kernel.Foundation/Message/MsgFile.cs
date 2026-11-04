@@ -34,7 +34,7 @@ namespace Kerf.Engine.Foundation;
 /// the port doesn't: a read never writes the table.
 /// </para>
 /// </remarks>
-public static class MsgFile
+internal static class MsgFile
 {
     // The defaults: the compiled-in texts, added once per set by AddDefaults
     private static ImmutableDictionary<string, string> s_defaults = ImmutableDictionary.Create<string, string>(StringComparer.Ordinal);

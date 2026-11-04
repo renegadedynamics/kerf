@@ -23,7 +23,7 @@ namespace Kerf.Engine.Exchange.Step.Construct;
 /// OCCT.NET: the constructors and <c>Init</c>s from XCAF's visualisation materials (<c>XCAFDoc_VisMaterial</c>,
 /// <c>XCAFDoc_VisMaterialCommon</c>) and <c>CreateXCAFMaterial</c> are left out with the materials (decision 1276).
 /// </remarks>
-public class RenderingProperties
+internal class RenderingProperties
 {
     /// <summary>Default constructor creating an empty rendering properties object</summary>
     public RenderingProperties()

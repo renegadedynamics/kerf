@@ -18,7 +18,7 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// An algorithm object computed by its constructor (decision 117); as in OCCT, each solution is built when it is
 /// asked for.
 /// </remarks>
-public sealed class Circ2dBisec
+internal sealed class Circ2dBisec
 {
     private bool _wellDone;
     private int _nbrSol;

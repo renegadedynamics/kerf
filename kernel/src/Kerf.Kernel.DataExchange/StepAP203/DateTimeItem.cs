@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Ap203;
 /// <summary>
 /// Representation of STEP SELECT type DateTimeItem
 /// </summary>
-public class DateTimeItem : SelectType
+internal class DateTimeItem : SelectType
 {
     /// <summary>
     /// Empty constructor

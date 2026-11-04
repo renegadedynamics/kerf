@@ -36,7 +36,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// parameters were declared, where OCCT's follow its map's hash order.
 /// </para>
 /// </remarks>
-public sealed class StaticSet
+internal sealed class StaticSet
 {
     // OCCT's MoniTool_TypedValue::Stats(): the statics by name, in declaration order (decision 1181)
     private readonly Dictionary<string, Static> _mystats = new();

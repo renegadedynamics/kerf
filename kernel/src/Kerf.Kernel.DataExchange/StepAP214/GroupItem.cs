@@ -17,7 +17,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class GroupItem : SelectType
+internal class GroupItem : SelectType
 {
     /// <summary>
     /// Returns a GroupItem SelectType

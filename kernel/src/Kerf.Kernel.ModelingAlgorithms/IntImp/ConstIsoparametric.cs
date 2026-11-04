@@ -8,7 +8,7 @@ namespace Kerf.Engine.Intersection.Implicit;
 
 /// <summary>Which isoparametric of which surface ("caro") a surface/surface marching step keeps constant.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.IntImp_ConstIsoparametric;</c>.</remarks>
-public enum ConstIsoparametric
+internal enum ConstIsoparametric
 {
     UIsoparametricOnCaro1,
     VIsoparametricOnCaro1,

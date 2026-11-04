@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Intersection;
 
 /// <summary>The position of an interval relative to another (see <see cref="IntersectionInterval.Position"/>).</summary>
-public enum Position
+internal enum Position
 {
     Before,
     JustBefore,

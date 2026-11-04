@@ -12,7 +12,7 @@ namespace Kerf.Engine.Intersection.Surfaces;
 /// <summary>A parameter on an intersection line with the orientations of the line on the two surfaces'
 /// restrictions there (GeomInt_LineConstructor).</summary>
 /// <remarks><c>new()</c> is OCCT's default (0, FORWARD, FORWARD), which is also <c>default</c>.</remarks>
-public partial struct ParameterAndOrientation : IEquatable<ParameterAndOrientation>
+internal partial struct ParameterAndOrientation : IEquatable<ParameterAndOrientation>
 {
     private double _prm;
     private Orientation _or1;

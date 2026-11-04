@@ -24,7 +24,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// A working object, as OCCT's: <see cref="Perform"/> fills it. The file-static functions of OCCT's .cxx are private
 /// statics (IntPatch_LineConstructor.Tools.cs).
 /// </remarks>
-public partial class PatchLineConstructor
+internal partial class PatchLineConstructor
 {
     private readonly NCollection_Sequence<PatchLine> _slin = new();
 

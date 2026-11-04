@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// An actor of a <see cref="ProcessForTransient"/>: it recognizes starting objects and transfers them. Actors
 /// form a list (<see cref="SetNext"/>); the "Last" ones (defaults) stay at its end.
 /// </summary>
-public class ActorOfProcessForTransient : Transient
+internal class ActorOfProcessForTransient : Transient
 {
     public ActorOfProcessForTransient()
     {

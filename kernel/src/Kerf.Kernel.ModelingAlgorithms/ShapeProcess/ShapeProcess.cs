@@ -30,7 +30,7 @@ namespace Kerf.Engine.Healing.Process;
 /// shape they work on, as OCCT's do.
 /// </para>
 /// </remarks>
-public static class ShapeProcess
+internal static class ShapeProcess
 {
     /// <summary>Describes all available operations.</summary>
     public enum Operation : byte

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Numerics;
 /// The Crout algorithm, to solve A*X = B where A is a symmetric matrix, or to invert A. Faster than Gauss. Only the
 /// lower triangle and the diagonal of A are used.
 /// </summary>
-public class Crout
+internal class Crout
 {
     private Matrix _invA;
     private bool _done;

@@ -28,7 +28,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// Plane (plane/quadric pairs), CyCy (cylinder/cylinder, with its walking lines) and Quadrics (the other pairs and
 /// the tori). <see cref="Point"/> returns a copy (OCCT's const reference).
 /// </remarks>
-public sealed partial class ImpImpIntersection
+internal sealed partial class ImpImpIntersection
 {
     /// <summary>The status of an intersection.</summary>
     public enum IntStatus

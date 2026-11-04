@@ -23,7 +23,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// "forgotten" entities; duplicated entities), exploitation (generation of derivated Models, each of them
 /// generating an output file)
 /// </summary>
-public class ShareOut : Transient
+internal class ShareOut : Transient
 {
 
     /// <summary>

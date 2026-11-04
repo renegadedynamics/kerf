@@ -13,7 +13,7 @@ namespace Kerf.Engine.Approximation;
 /// OCCT generates this class from AppParCurves' generic code with AppDef_MyLineTool; the port derives it from the
 /// generic class, which the generic algorithms use directly (decisions 142 and 202).
 /// </remarks>
-public sealed class ResConstraintOfTheGradient : ResolConstraint<MultiLine, MyLineTool>
+internal sealed class ResConstraintOfTheGradient : ResolConstraint<MultiLine, MyLineTool>
 {
     /// <summary>As the base constructor.</summary>
     public ResConstraintOfTheGradient(MultiLine ssp, MultiCurve sCurv, int firstPoint,

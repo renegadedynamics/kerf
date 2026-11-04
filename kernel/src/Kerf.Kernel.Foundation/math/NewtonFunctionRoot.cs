@@ -14,7 +14,7 @@ namespace Kerf.Engine.Numerics;
 /// Newton's method to find a root of a function of a single variable from an initial guess near it. The derivative
 /// is required.
 /// </summary>
-public class NewtonFunctionRoot
+internal class NewtonFunctionRoot
 {
     private bool _done;
     private double _x;

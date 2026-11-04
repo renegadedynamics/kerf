@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class FillStyleSelect : SelectType
+internal class FillStyleSelect : SelectType
 {
     /// <summary>
     /// Returns a FillStyleSelect SelectType

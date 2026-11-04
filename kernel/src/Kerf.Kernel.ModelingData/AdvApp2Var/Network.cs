@@ -15,7 +15,7 @@ namespace Kerf.Engine.Approximation.Advanced;
 /// A working object of the approximation, with OCCT's public mutators (decision 194). The constructor copies the
 /// sequences, as OCCT's does; the patches are shared.
 /// </remarks>
-public class Network
+internal class Network
 {
     private readonly NCollection_Sequence<Patch> _net;
     private readonly NCollection_Sequence<double> _uParameters;

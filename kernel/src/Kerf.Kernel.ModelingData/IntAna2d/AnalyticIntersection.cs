@@ -25,7 +25,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 /// ellipse, parabola or hyperbola with a conic given by its implicit equation.
 /// </summary>
 /// <remarks>An algorithm object: construct it with the curves, or construct it empty and call <c>Perform</c>.</remarks>
-public class AnalyticIntersection
+internal class AnalyticIntersection
 {
     private bool _done;
     private bool _para;

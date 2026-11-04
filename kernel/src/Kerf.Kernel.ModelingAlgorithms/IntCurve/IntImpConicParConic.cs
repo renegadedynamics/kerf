@@ -12,7 +12,7 @@ namespace Kerf.Engine.Intersection.Curves;
 
 /// <summary>The intersection between an implicit conic and a bounded parametric conic.</summary>
 /// <remarks>OCCT's instantiation of IntImpParGen_Intersector.gxx over the conic tools (decision 284).</remarks>
-public sealed class IntImpConicParConic
+internal sealed class IntImpConicParConic
     : Intersector<IConicTool, PConic, PConicTool,
                                ProjectOnPConicTool, MyImpParToolOfIntImpConicParConic>
 {

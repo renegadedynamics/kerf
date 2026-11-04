@@ -13,7 +13,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// The points and parts of the restrictions of a surface on a quadric, the start points of the implicit/parametric
 /// intersection (OCCT's instantiation of IntStart_SearchOnBoundaries.gxx, decision 607).
 /// </summary>
-public sealed class TheSOnBounds
+internal sealed class TheSOnBounds
     : SearchOnBoundaries<HInterTool, PatchArcFunction, ThePathPointOfTheSOnBounds,
                                   TheSegmentOfTheSOnBounds>
 {

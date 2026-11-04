@@ -20,7 +20,7 @@ namespace Kerf.Engine.Meshing;
 /// <c>AsSpan&lt;NCollection_Vec2&lt;float&gt;&gt;()</c> according to <see cref="IsDoublePrecision"/>. OCCT's
 /// <c>size_t</c> overloads of Value and SetValue are left out.
 /// </remarks>
-public class ArrayOfUVNodes : NCollection_AliasedArray
+internal class ArrayOfUVNodes : NCollection_AliasedArray
 {
     private static readonly int THE_DOUBLE_STRIDE = Unsafe.SizeOf<Point2D>();
     private static readonly int THE_FLOAT_STRIDE = Unsafe.SizeOf<NCollection_Vec2<float>>();

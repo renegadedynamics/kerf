@@ -11,7 +11,7 @@ namespace Kerf.Engine.Approximation.Interfaces;
 /// </summary>
 /// <remarks>Not an OCCT type (decisions 142 and 202).</remarks>
 /// <typeparam name="MultiLine">The MultiLine.</typeparam>
-public interface IApproxLineTool<MultiLine> : ILineTool<MultiLine>
+internal interface IApproxLineTool<MultiLine> : ILineTool<MultiLine>
 {
     /// <summary>Whether points were (or can be) added between the points <paramref name="i1"/> and <paramref name="i2"/>.</summary>
     static abstract Status WhatStatus(MultiLine ml, int i1, int i2);

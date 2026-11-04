@@ -14,7 +14,7 @@ namespace Kerf.Engine.Numerics;
 /// The Gauss LU decomposition (Crout algorithm) with partial pivoting of a square matrix, and what follows from it:
 /// the solution of linear equations, the inverse and the determinant.
 /// </summary>
-public class Gauss
+internal class Gauss
 {
     protected Matrix _lu;
     protected math_IntegerVector _index;

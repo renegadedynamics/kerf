@@ -11,7 +11,7 @@ namespace Kerf.Engine.Foundation.Std;
 
 /// <summary>C++'s <c>std::array&lt;T, 2&gt;</c>: two values held inline, indexed from 0.</summary>
 [InlineArray(2)]
-public struct Array2<T>
+internal struct Array2<T>
 {
     private T _element0;
 
@@ -29,7 +29,7 @@ public struct Array2<T>
 
 /// <summary>C++'s <c>std::array&lt;T, 3&gt;</c>: three values held inline, indexed from 0.</summary>
 [InlineArray(3)]
-public struct Array3<T>
+internal struct Array3<T>
 {
     private T _element0;
 
@@ -48,7 +48,7 @@ public struct Array3<T>
 
 /// <summary>C++'s <c>std::array&lt;T, 4&gt;</c>: four values held inline, indexed from 0.</summary>
 [InlineArray(4)]
-public struct Array4<T>
+internal struct Array4<T>
 {
     private T _element0;
 

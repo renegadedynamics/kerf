@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// reasons: a typed value, i.e. a value which has an alphanumeric expression, but with controls (an integer, a
 /// real, an enumerative text...).
 /// </summary>
-public class InterfaceTypedValue : TypedValue
+internal class InterfaceTypedValue : TypedValue
 {
     /// <summary>
     /// Creates a typed value, with a name. <paramref name="type"/> gives the type of the parameter, default is free

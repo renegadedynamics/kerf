@@ -18,7 +18,7 @@ namespace Kerf.Engine.Approximation;
 /// Implementations (GeomFill's sweep functions) are working objects: <see cref="SetInterval"/> and
 /// <see cref="SetTolerance"/> change them. The optional members throw Standard_NotImplemented, as in OCCT.
 /// </remarks>
-public abstract class SweepFunction : Transient
+internal abstract class SweepFunction : Transient
 {
     /// <summary>Computes the section for v = Param.</summary>
     public abstract bool D0(double param,

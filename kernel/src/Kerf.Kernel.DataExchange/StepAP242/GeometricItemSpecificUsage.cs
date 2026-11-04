@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Ap242;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class GeometricItemSpecificUsage : ItemIdentifiedRepresentationUsage
+internal class GeometricItemSpecificUsage : ItemIdentifiedRepresentationUsage
 {
     public GeometricItemSpecificUsage()
     {

@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.HiddenLines;
 
 /// <summary>Sorting and merging of the interferences of an edge, by their parameters.</summary>
-public static class EdgeIList
+internal static class EdgeIList
 {
     /// <summary>Adds the interference I to the list IL, sorted by parameter (after the equal ones).</summary>
     public static void AddInterference(NCollection_List<Interference> il, in Interference i,

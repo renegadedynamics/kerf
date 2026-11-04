@@ -24,7 +24,7 @@ namespace Kerf.Engine.Extrema;
 /// <see cref="Perform(CurveAdaptorBase, int, double)"/>) are kept by reference, as OCCT keeps them: they must outlive
 /// the algorithm. Infinite ranges are bounded at 1e10 (23 on hyperbolas and surfaces built on them).
 /// </remarks>
-public class GenExtCS
+internal class GenExtCS
 {
     private const double MaxParamVal = 1.0e+10;
     private const double ABorderDivisor = 1.0e+4;

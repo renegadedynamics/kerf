@@ -21,7 +21,7 @@ namespace Kerf.Engine.Intersection.Surfaces;
 /// A sealed subclass (decision 607); the members are the base class's. GeomInt_TheMultiLineToolOfWLApprox is
 /// <see cref="MultiLineTool{TheLine}"/> over IntPatch_WLine (a struct can't be derived).
 /// </remarks>
-public sealed class WLApprox
+internal sealed class WLApprox
     : Approx<SurfaceAdaptorBase, TheHSurfaceTool, WLine>
 {
     public WLApprox()

@@ -24,7 +24,7 @@ namespace Kerf.Engine.Extrema;
 /// <see cref="SquareDistances"/>, <see cref="PointsOnCurve"/> and <see cref="PointsOnSurf"/> return the stored
 /// sequences themselves, for the caller to change (OCCT's non-const references).
 /// </remarks>
-public class FuncExtCS : FunctionSetWithDerivatives
+internal class FuncExtCS : FunctionSetWithDerivatives
 {
     private CurveAdaptorBase? _c;
     private SurfaceAdaptorBase? _s;

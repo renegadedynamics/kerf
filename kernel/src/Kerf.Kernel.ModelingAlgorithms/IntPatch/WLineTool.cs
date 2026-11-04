@@ -24,7 +24,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// A static class. The lines given are edited in place, as in OCCT (decision 609). The file-static functions of OCCT's
 /// .cxx are private statics (IntPatch_WLineTool.Extend.cs holds ExtendTwoWLines and its helpers).
 /// </remarks>
-public static partial class WLineTool
+internal static partial class WLineTool
 {
     /// <summary>The largest angle (an empirical value, π/6) between two lines' end tangents for them to be joined
     /// or extended.</summary>

@@ -14,7 +14,7 @@ using static Kerf.Engine.Exchange.Framework.ParamType;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepTrimmingSelect : SelectType
+internal class StepTrimmingSelect : SelectType
 {
     /// <summary>
     /// Returns a TrimmingSelect SelectType

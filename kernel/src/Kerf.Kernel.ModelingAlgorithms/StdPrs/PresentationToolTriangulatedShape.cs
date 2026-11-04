@@ -32,7 +32,7 @@ namespace Kerf.Engine.HiddenLines.Presentation;
 /// deviation changes.
 /// </para>
 /// </remarks>
-public static class PresentationToolTriangulatedShape
+internal static class PresentationToolTriangulatedShape
 {
     /// <summary>True if every face of the shape has a triangulation.</summary>
     public static bool IsTriangulated(in Shape shape)

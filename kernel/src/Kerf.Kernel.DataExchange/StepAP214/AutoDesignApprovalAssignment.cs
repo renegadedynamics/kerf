@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class AutoDesignApprovalAssignment : ApprovalAssignment
+internal class AutoDesignApprovalAssignment : ApprovalAssignment
 {
     private NCollection_HArray1<AutoDesignGeneralOrgItem> _items;
 

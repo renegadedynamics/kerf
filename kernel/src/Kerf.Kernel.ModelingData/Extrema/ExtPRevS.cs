@@ -17,7 +17,7 @@ namespace Kerf.Engine.Extrema;
 /// line or a conic whose plane contains the axis, with Extrema_GenExtPS otherwise.
 /// </summary>
 /// <remarks>The surface adaptor is kept, as OCCT keeps its handle.</remarks>
-public class ExtPRevS : Transient
+internal class ExtPRevS : Transient
 {
     private RevolutionSurfaceAdaptor? _s;
     private double _myvinf;

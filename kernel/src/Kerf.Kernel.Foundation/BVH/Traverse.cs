@@ -33,7 +33,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// </para>
 /// </remarks>
 /// <typeparam name="TMetric">The type of the metric used to descend the tree in the best order.</typeparam>
-public abstract class BaseTraverse<TMetric>
+internal abstract class BaseTraverse<TMetric>
 {
     protected BaseTraverse()
     {
@@ -68,7 +68,7 @@ public abstract class BaseTraverse<TMetric>
 /// <typeparam name="TVec">The vector type (dimension).</typeparam>
 /// <typeparam name="TSet">The type of the set holding the tree, to reach the elements by index.</typeparam>
 /// <typeparam name="TMetric">The type of the metric.</typeparam>
-public abstract class Traverse<T, TVec, TSet, TMetric> : BaseTraverse<TMetric>
+internal abstract class Traverse<T, TVec, TSet, TMetric> : BaseTraverse<TMetric>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
     where TSet : class
@@ -258,7 +258,7 @@ public abstract class Traverse<T, TVec, TSet, TMetric> : BaseTraverse<TMetric>
 }
 
 /// <summary>A single-tree traversal without a set (OCCT's <c>BVHSetType = void</c>): use <c>Select(tree)</c>.</summary>
-public abstract class Traverse<T, TVec, TMetric> : Traverse<T, TVec, object, TMetric>
+internal abstract class Traverse<T, TVec, TMetric> : Traverse<T, TVec, object, TMetric>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
     where TMetric : new()
@@ -269,7 +269,7 @@ public abstract class Traverse<T, TVec, TMetric> : Traverse<T, TVec, object, TMe
 /// Parallel traversal of two binary trees, selecting pairs of elements; see <see cref="BaseTraverse{TMetric}"/>
 /// for the rules to define.
 /// </summary>
-public abstract class PairTraverse<T, TVec, TSet, TMetric> : BaseTraverse<TMetric>
+internal abstract class PairTraverse<T, TVec, TSet, TMetric> : BaseTraverse<TMetric>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
     where TSet : class
@@ -502,7 +502,7 @@ public abstract class PairTraverse<T, TVec, TSet, TMetric> : BaseTraverse<TMetri
 }
 
 /// <summary>A pair traversal without sets (OCCT's <c>BVHSetType = void</c>): use <c>Select(tree1, tree2)</c>.</summary>
-public abstract class PairTraverse<T, TVec, TMetric> : PairTraverse<T, TVec, object, TMetric>
+internal abstract class PairTraverse<T, TVec, TMetric> : PairTraverse<T, TVec, object, TMetric>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
     where TMetric : new()

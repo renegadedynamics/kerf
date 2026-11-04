@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class Effectivity : Transient
+internal class Effectivity : Transient
 {
     private TCollection_HAsciiString _theid;
 

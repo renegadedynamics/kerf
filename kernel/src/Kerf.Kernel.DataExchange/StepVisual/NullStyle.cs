@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Visual;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepVisual_NullStyle;</c>.</remarks>
-public enum NullStyle
+internal enum NullStyle
 {
     Null,
 }

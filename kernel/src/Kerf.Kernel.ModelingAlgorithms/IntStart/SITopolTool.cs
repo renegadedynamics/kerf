@@ -15,7 +15,7 @@ namespace Kerf.Engine.Intersection.Walking;
 /// A topological tool linked with the surface on which points are classified (OCCT's template class for the
 /// interior search; no OCCT class derives from it).
 /// </summary>
-public abstract class SITopolTool : Transient
+internal abstract class SITopolTool : Transient
 {
     /// <summary>The state of the parametric point <paramref name="p"/> in the domain, with tolerance <paramref name="tol"/>.</summary>
     public abstract Containment Classify(in Point2D p, double tol);

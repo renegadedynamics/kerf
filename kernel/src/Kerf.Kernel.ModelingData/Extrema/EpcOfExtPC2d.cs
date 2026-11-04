@@ -23,7 +23,7 @@ namespace Kerf.Engine.Extrema;
 /// Extrema_EPCOfELPCOfLocateExtPC2d (one type). An algorithm object (decision 117): initialize it, then
 /// <c>Perform</c>. Keeps a reference to the curve, as OCCT does.
 /// </remarks>
-public class EpcOfExtPC2d
+internal class EpcOfExtPC2d
 {
     private bool _done;
 #pragma warning disable CS0414 // OCCT sets myInit and never reads it

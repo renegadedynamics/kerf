@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Numerics.Utilities;
 
 /// <summary>Modern math solver utilities: constants and helper functions.</summary>
-public static partial class MathUtils
+internal static partial class MathUtils
 {
     /// <summary>Machine epsilon for double precision (C++'s <c>std::numeric_limits&lt;double&gt;::epsilon()</c>).</summary>
     public const double THE_EPSILON = 2.220446049250313e-16;

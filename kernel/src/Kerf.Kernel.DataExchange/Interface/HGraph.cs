@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// This class allows to store a redefinable Graph, via a Handle (useful for an Object which can work on
 /// several successive Models, with the same general conditions)
 /// </summary>
-public class HGraph : Transient
+internal class HGraph : Transient
 {
 
     /// <summary>

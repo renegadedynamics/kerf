@@ -13,7 +13,7 @@ namespace Kerf.Engine.Foundation;
 /// an error with a stable code and a plain message; a status that says the work was done is null. docs/api/diagnostics.md
 /// lists the codes.
 /// </summary>
-public static class StatusDiagnostics
+internal static class StatusDiagnostics
 {
     /// <summary>The error a wire builder's status reports, or null if it built the wire.</summary>
     public static Diagnostic? ToDiagnostic(WireError status) => status switch

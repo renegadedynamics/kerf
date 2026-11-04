@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// several kinds of Information, and allows to consider various criteria (criteria are cumulative).
 /// </summary>
 /// <remarks>A value class in C++ (decision 1185): a C++ copy is written <see cref="TransferIterator(TransferIterator)"/>.</remarks>
-public class TransferIterator
+internal class TransferIterator
 {
     /// <summary>Creates an empty Iterator.</summary>
     public TransferIterator()

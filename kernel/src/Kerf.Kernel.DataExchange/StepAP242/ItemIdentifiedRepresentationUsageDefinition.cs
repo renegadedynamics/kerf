@@ -17,7 +17,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap242;
 
-public class ItemIdentifiedRepresentationUsageDefinition : SelectType
+internal class ItemIdentifiedRepresentationUsageDefinition : SelectType
 {
     /// <summary>
     /// Returns a ItemIdentifiedRepresentationUsageDefinition select type

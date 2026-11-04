@@ -22,7 +22,7 @@ namespace Kerf.Engine.Offsets.Bisectors;
 /// the pieces are stored at their interval's index but read from 1 to their count, and the second bisector's last
 /// interval is tested against the first's interval count.
 /// </remarks>
-public sealed class Inter : Intersection2D
+internal sealed class Inter : Intersection2D
 {
     /// <summary>An empty intersection.</summary>
     public Inter()

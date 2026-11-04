@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// <summary>
 /// Result of a Check operation (especially from InterfaceModel)
 /// </summary>
-public class CheckIterator
+internal class CheckIterator
 {
     // OCCT's nulcheck(): one static empty check, returned for entities without a check. The port returns a new empty
     // check each time, so that a caller completing it can't change process-wide state (decision 1183).

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Framework.Monitoring;
 /// classes (general signatures ...) It can also be used to build a message in which an object is to be
 /// identified
 /// </summary>
-public abstract class SignText : Transient
+internal abstract class SignText : Transient
 {
 
     /// <summary>

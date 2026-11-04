@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Objects;
 /// right-handed coordinate system (<see cref="Axis2Placement"/>). Both have an origin (location) and a main
 /// direction, which together form the main axis.
 /// </summary>
-public abstract class AxisPlacement : Geometry3D
+internal abstract class AxisPlacement : Geometry3D
 {
     private protected Axis3D _axis = new Axis3D();
 

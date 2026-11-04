@@ -11,7 +11,7 @@ namespace Kerf.Engine.Numerics.Polynomials;
 // Pre-computed Jacobi polynomial coefficients, generated from OCCT's PLib_JacobiPolynomial_Coeffs.pxx with every
 // literal copied as written. OCCT's lookup table of pointers (PrecomputedCoefficients[3][31]) becomes a switch
 // returning spans over the constant arrays, which allocates nothing.
-public sealed partial class JacobiPolynomial
+internal sealed partial class JacobiPolynomial
 {
     // Coefficient cache structure using spans over variable-sized arrays
     private readonly ref struct JacobiCoefficientsCache

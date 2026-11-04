@@ -24,7 +24,7 @@ namespace Kerf.Engine.Extrema;
 /// <see cref="Points"/> then reads arrays that this computation didn't fill (null, or those of an earlier
 /// <c>Perform</c>).
 /// </remarks>
-public class ExtElCS
+internal class ExtElCS
 {
     private bool _done;
     private int _nbExt;

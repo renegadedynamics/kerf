@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity CharacterizedObject
 /// </summary>
-public class CharacterizedObject : Transient
+internal class CharacterizedObject : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

@@ -37,7 +37,7 @@ namespace Kerf.Engine.Intersection.Polyhedra;
 /// A working object of the intersection (decision 21): its readers are public, its mutators internal.
 /// </para>
 /// </remarks>
-public sealed class PolyhedronArray<T> where T : new()
+internal sealed class PolyhedronArray<T> where T : new()
 {
     // OCCT's NCollection_DynamicArray default block size
     private const int THE_BLOCK_SIZE = 256;
@@ -190,7 +190,7 @@ public sealed class PolyhedronArray<T> where T : new()
 
 /// <summary>A point of a surface with the surface's normal there (OCCT's struct of IntPolyh_ArrayOfPointNormal).</summary>
 /// <remarks>Both are zero by default, as C++ default-constructs <c>gp_Pnt</c> and <c>gp_Vec</c>.</remarks>
-public struct PolyhedronPointNormal : IEquatable<PolyhedronPointNormal>
+internal struct PolyhedronPointNormal : IEquatable<PolyhedronPointNormal>
 {
     public Point3D Point;
     public Vector3D Normal;

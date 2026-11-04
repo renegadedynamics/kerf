@@ -20,7 +20,7 @@ namespace Kerf.Engine.Intersection.Polyhedra;
 /// mutators internal.
 /// </para>
 /// </remarks>
-public sealed class PolyhedronSectionLine : IPolyhedronDump
+internal sealed class PolyhedronSectionLine : IPolyhedronDump
 {
     private readonly NCollection_Sequence<PolyhedronStartPoint> _seqOfSPoints = new();
 

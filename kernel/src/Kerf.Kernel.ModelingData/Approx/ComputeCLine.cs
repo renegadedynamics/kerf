@@ -15,7 +15,7 @@ namespace Kerf.Engine.Approximation;
 /// Approx_FitAndDivide2d, both over AppCont_Function (which needs no tool), so the body is written once here and the
 /// two instantiations are sealed subclasses. A working object (decision 21): the setters are public.
 /// </remarks>
-public abstract class ComputeCLine
+internal abstract class ComputeCLine
 {
     private const int Maxsegm = 1000;
 

@@ -12,7 +12,7 @@ namespace Kerf.Engine.Approximation;
 /// OCCT generates this class from AppParCurves' generic code with AppDef_MyLineTool; the port derives it from the
 /// generic class, which the generic algorithms use directly (decisions 142 and 202).
 /// </remarks>
-public sealed class ParLeastSquareOfMyGradientbisOfBSplineCompute : LeastSquare<MultiLine, MyLineTool>
+internal sealed class ParLeastSquareOfMyGradientbisOfBSplineCompute : LeastSquare<MultiLine, MyLineTool>
 {
     /// <summary>As the base constructor.</summary>
     public ParLeastSquareOfMyGradientbisOfBSplineCompute(MultiLine ssp, int firstPoint, int lastPoint,

@@ -15,7 +15,7 @@ namespace Kerf.Engine.HiddenLines;
 
 /// <summary>Hides the edges of a data structure by one of its faces.</summary>
 /// <remarks>A working object, as OCCT's.</remarks>
-public sealed class Hider
+internal sealed class Hider
 {
     private readonly HiddenLineData _ds;
 

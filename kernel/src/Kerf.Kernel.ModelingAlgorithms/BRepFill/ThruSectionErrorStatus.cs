@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Filling;
 
 /// <summary>Errors that can occur in the through-sections algorithm.</summary>
-public enum ThruSectionErrorStatus
+internal enum ThruSectionErrorStatus
 {
     /// <summary>The algorithm is done.</summary>
     ThruSectionErrorStatus_Done,

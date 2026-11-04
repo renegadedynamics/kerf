@@ -8,7 +8,7 @@ using static Kerf.Engine.Numerics.Utilities.MathUtils;
 namespace Kerf.Engine.Numerics.Linear;
 
 /// <summary>Modern linear algebra: LU decomposition, linear systems, determinant and inverse.</summary>
-public static partial class MathLin
+internal static partial class MathLin
 {
     /// <summary>Result for LU decomposition.</summary>
     public struct LUResult

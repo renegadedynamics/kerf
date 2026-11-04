@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Tools;
 /// a AttrList allows to record a list of attributes as Transients which can be edited, changed ... Each one
 /// is identified by a name
 /// </summary>
-public class AttributeList
+internal class AttributeList
 {
 
     /// <summary>

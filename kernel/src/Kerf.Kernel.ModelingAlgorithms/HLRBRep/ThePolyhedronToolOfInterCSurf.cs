@@ -17,7 +17,7 @@ namespace Kerf.Engine.HiddenLines;
 /// <see cref="IToolPolyhedron{Polyhedron}"/> (decision 202's approach). <c>Dump</c>, which prints to
 /// std::cout, is left out.
 /// </remarks>
-public readonly struct ThePolyhedronToolOfInterCSurf
+internal readonly struct ThePolyhedronToolOfInterCSurf
     : IToolPolyhedron<ThePolyhedronOfInterCSurf>
 {
     /// <summary>The box of the polyhedron.</summary>

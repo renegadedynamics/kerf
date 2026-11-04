@@ -17,7 +17,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 /// OCCT's class is used by value (in HLRBRep_EdgeData) but holds an Intrv_Intervals; the port makes it a class with
 /// OCCT's copy as the copy constructor, and ported code copies where C++ copies (decision 1077).
 /// </remarks>
-public sealed class EdgeStatus
+internal sealed class EdgeStatus
 {
     private double _start;
     private double _end;

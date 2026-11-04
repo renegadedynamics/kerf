@@ -17,7 +17,7 @@ namespace Kerf.Engine.Approximation.FiniteElements;
 /// <summary>
 /// The linear jerk criterion of Hermite-Jacobi elements: the integral of the squared third derivative.
 /// </summary>
-public class LinearJerk : ElementaryCriterion
+internal class LinearJerk : ElementaryCriterion
 {
     // OCCT keeps the integrals of the last constraint order in function-static variables, recomputed when the
     // order changes; they are cached here per order, published without a lock (the values are the same).

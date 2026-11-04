@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.HiddenLines;
 
 /// <summary>The kinds of the edges the hidden-line removal produces (HLRBRep_HLRToShape's compounds).</summary>
-public enum TypeOfResultingEdge
+internal enum TypeOfResultingEdge
 {
     Undefined,
 

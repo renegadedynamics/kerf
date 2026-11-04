@@ -24,7 +24,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// mutators (reached by the boundary search through <see cref="IPathPoint{TSelf}"/>); the constructors are
 /// their twins. The arc and the vertex are compared by reference (OCCT's handles).
 /// </remarks>
-public partial struct ThePathPointOfTheSOnBounds
+internal partial struct ThePathPointOfTheSOnBounds
     : IPathPoint<ThePathPointOfTheSOnBounds>, IEquatable<ThePathPointOfTheSOnBounds>
 {
     private Point3D _point;

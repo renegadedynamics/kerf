@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class DocumentRelationship : Transient
+internal class DocumentRelationship : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

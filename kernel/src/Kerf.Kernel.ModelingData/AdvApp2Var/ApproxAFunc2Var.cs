@@ -45,7 +45,7 @@ namespace Kerf.Engine.Approximation.Advanced;
 /// 1901).
 /// </para>
 /// </remarks>
-public class ApproxAFunc2Var
+internal class ApproxAFunc2Var
 {
     private readonly int[] _numSubSpaces = new int[3];
     private readonly NCollection_HArray1<double>? _my1DTolerances;

@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepFace : StepTopologicalRepresentationItem
+internal class StepFace : StepTopologicalRepresentationItem
 {
     private NCollection_HArray1<StepFaceBound> _bounds;
 

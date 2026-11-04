@@ -14,7 +14,7 @@ namespace Kerf.Engine.HiddenLines;
 /// the quadric's implicit function along the curve, and the intervals where the curve lies on the surface.
 /// </summary>
 /// <remarks>Not done (<see cref="IsDone"/> false) when the surface is not a quadric or a root search failed.</remarks>
-public sealed class TheQuadCurvExactInterCSurf
+internal sealed class TheQuadCurvExactInterCSurf
     : ITheQuadCurvExactInter<TheQuadCurvExactInterCSurf, HlrSurface, Line3D>
 {
     private readonly int _nbpnts;

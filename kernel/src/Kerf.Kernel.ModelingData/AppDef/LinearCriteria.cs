@@ -18,7 +18,7 @@ namespace Kerf.Engine.Approximation;
 /// points plus the tension, flexion and jerk of the curve (FEmTool_LinearTension, LinearFlexion, LinearJerk).
 /// </summary>
 /// <remarks>A working object (decisions 21 and 207); the MultiLine, parameters and curve it is given are shared.</remarks>
-public class LinearCriteria : SmoothCriterion
+internal class LinearCriteria : SmoothCriterion
 {
     private readonly MultiLine _ssp;
     private NCollection_HArray1<double>? _parameters;

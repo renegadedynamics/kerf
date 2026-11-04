@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>A set of N functions of M independent variables whose derivatives are available.</summary>
-public abstract class FunctionSetWithDerivatives : FunctionSet
+internal abstract class FunctionSetWithDerivatives : FunctionSet
 {
     /// <summary>Computes the derivatives <paramref name="d"/> (the Jacobian, N rows by M columns) at <paramref name="x"/>.</summary>
     public abstract bool Derivatives(math_Vector x, Matrix d);

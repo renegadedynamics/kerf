@@ -41,7 +41,7 @@ namespace Kerf.Engine.Exchange.Step.Ap214;
 /// Protocol for StepAP214 Entities
 /// It requires StepAP214 as a Resource
 /// </summary>
-public class Ap214Protocol : StepProtocol
+internal class Ap214Protocol : StepProtocol
 {
     private const string SchemaAP214CD = "AUTOMOTIVE_DESIGN_CC2 { 1 2 10303 214 -1 1 5 4 }";
     private const string SchemaAP214DIS = "AUTOMOTIVE_DESIGN { 1 2 10303 214 0 1 1 1 }";

@@ -21,7 +21,7 @@ namespace Kerf.Engine.Extrema;
 /// without a surface leave it unset until <see cref="LoadQuad"/>. Outside the parameter range <see cref="Value"/>
 /// returns false and writes 0 (decision 221).
 /// </remarks>
-public class GlobOptFuncCQuadric : MultipleVarFunction
+internal class GlobOptFuncCQuadric : MultipleVarFunction
 {
     private readonly CurveAdaptorBase _c;
     private SurfaceAdaptorBase? _s;

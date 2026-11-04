@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity SurfaceStyleRenderingWithProperties
 /// </summary>
-public class SurfaceStyleRenderingWithProperties : SurfaceStyleRendering
+internal class SurfaceStyleRenderingWithProperties : SurfaceStyleRendering
 {
     private NCollection_HArray1<RenderingPropertiesSelect> _properties;
 

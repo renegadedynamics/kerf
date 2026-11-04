@@ -12,7 +12,7 @@ namespace Kerf.Engine.Numerics.Utilities;
 // `const Config& theConfig = Config()` is a `Config? theConfig = null` parameter, defaulted in the body.
 
 /// <summary>Modern math solver configuration structures.</summary>
-public static partial class MathUtils
+internal static partial class MathUtils
 {
     /// <summary>Squared function tolerance for Newton iterations (matching math_FunctionSetRoot Eps).</summary>
     public const double THE_NEWTON_FTOL_SQ = 1.0e-32;

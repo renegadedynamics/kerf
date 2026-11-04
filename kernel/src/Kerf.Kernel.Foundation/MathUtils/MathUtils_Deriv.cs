@@ -9,7 +9,7 @@ namespace Kerf.Engine.Numerics.Utilities;
 // The derivative outputs are written only on success and left unchanged on failure, as in C++, so they are `ref`.
 
 /// <summary>Numerical differentiation utilities.</summary>
-public static partial class MathUtils
+internal static partial class MathUtils
 {
     /// <summary>Central difference derivative: f'(x) ~= (f(x+h) - f(x-h)) / (2h), O(h^2).</summary>
     public static bool CentralDifference<Function>(Function func, double x, ref double deriv, double step = 1.0e-8)

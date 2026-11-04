@@ -15,7 +15,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// A static class: nothing instantiates a generic over it (OCCT's Intf generics are instantiated over other
 /// polyhedra), so it needn't be a struct (decision 338).
 /// </remarks>
-public static class PolyhedronTool
+internal static class PolyhedronTool
 {
     /// <summary>The box of the polyhedron.</summary>
     public static Box Bounding(Polyhedron polyh) => polyh.Bounding();

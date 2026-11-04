@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class RepresentationMap : Transient
+internal class RepresentationMap : Transient
 {
     private RepresentationItem _mappingOrigin;
     private StepRepresentation _mappedRepresentation;

@@ -21,7 +21,7 @@ namespace Kerf.Engine.Numerics;
 /// (<see cref="SetLipConstState"/>); a single solution can be searched (<see cref="Perform"/>), which works well
 /// with a known minimal value (<see cref="SetFunctionalMinimalValue"/>).
 /// </remarks>
-public class GlobOptMin
+internal class GlobOptMin
 {
     // Class for duplicate fast search. For internal usage only.
     private sealed class NCollection_CellFilter_Inspector : ICellFilterInspector<math_Vector, math_Vector>

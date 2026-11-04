@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ApprovalStatus : Transient
+internal class ApprovalStatus : Transient
 {
     private TCollection_HAsciiString _name;
 

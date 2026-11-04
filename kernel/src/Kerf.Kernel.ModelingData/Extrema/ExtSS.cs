@@ -21,7 +21,7 @@ namespace Kerf.Engine.Extrema;
 /// <see cref="ExtCount"/> is 1 with the distance, and there are no points (<see cref="Points"/> throws, where OCCT's
 /// release build reads past its empty sequences).
 /// </remarks>
-public class ExtSS
+internal class ExtSS
 {
     private SurfaceAdaptorBase? _s2;
     private bool _done;

@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ProductDefinitionEffectivity : Effectivity
+internal class ProductDefinitionEffectivity : Effectivity
 {
     private ProductDefinitionRelationship _usage;
 

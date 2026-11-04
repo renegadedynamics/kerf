@@ -24,7 +24,7 @@ namespace Kerf.Engine.HiddenLines.Contours;
 /// quadric is OCCT's default one, never set. With <see cref="DraftPrs"/> OCCT computes nothing and leaves the
 /// value and derivative unset; the port returns 0 (decision 1076).
 /// </remarks>
-public class ArcFunction : FunctionWithDerivative, IArcFunction
+internal class ArcFunction : FunctionWithDerivative, IArcFunction
 {
     private Curve2DAdaptorBase? _arc;
     private SurfaceAdaptorBase? _surf;

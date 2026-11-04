@@ -18,7 +18,7 @@ namespace Kerf.Engine.Intersection.Polyhedra;
 /// exactly; OCCT's <c>operator==</c> (the same two indices in either order) is <see cref="IsEqual"/>, and maps in ported
 /// code take <see cref="Hasher"/>.
 /// </remarks>
-public partial struct PolyhedronCouple : IEquatable<PolyhedronCouple>
+internal partial struct PolyhedronCouple : IEquatable<PolyhedronCouple>
 {
     private int _index1;
     private int _index2;

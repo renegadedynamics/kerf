@@ -19,7 +19,7 @@ namespace Kerf.Engine.Intersection;
 /// results are points, with their parameters on the conic.
 /// </summary>
 /// <remarks>An algorithm object: construct it with the arguments, or empty and call <c>Perform</c>.</remarks>
-public class IntConicQuad
+internal class IntConicQuad
 {
     private static readonly double PIpPI = M_PI + M_PI;
 

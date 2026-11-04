@@ -14,7 +14,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 /// the parameter on it; in 3D, the states before and after.
 /// </summary>
 /// <remarks>A C++ value class, so a struct; <c>new()</c> and <c>default</c> are the same. The setters are internal.</remarks>
-public partial struct Coincidence : IEquatable<Coincidence>
+internal partial struct Coincidence : IEquatable<Coincidence>
 {
     private int _fe;
     private double _param;

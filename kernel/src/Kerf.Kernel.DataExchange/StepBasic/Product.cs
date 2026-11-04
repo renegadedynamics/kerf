@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class Product : Transient
+internal class Product : Transient
 {
     private TCollection_HAsciiString _id;
     private TCollection_HAsciiString _name;

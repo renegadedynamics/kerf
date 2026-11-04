@@ -28,7 +28,7 @@ namespace Kerf.Engine.Approximation;
 /// </remarks>
 /// <typeparam name="MultiLine">The MultiLine type.</typeparam>
 /// <typeparam name="LineTool">The line tool reading <typeparamref name="MultiLine"/>.</typeparam>
-public class BSplComputeLine<MultiLine, LineTool>
+internal class BSplComputeLine<MultiLine, LineTool>
     where LineTool : struct, IApproxLineTool<MultiLine>
 {
     private MultiBSpCurve _theMultiBSpCurve = new();

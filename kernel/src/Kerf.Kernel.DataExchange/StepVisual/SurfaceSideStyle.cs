@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class SurfaceSideStyle : Transient
+internal class SurfaceSideStyle : Transient
 {
     private TCollection_HAsciiString _name;
     private NCollection_HArray1<SurfaceStyleElementSelect> _styles;

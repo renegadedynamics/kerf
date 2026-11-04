@@ -25,7 +25,7 @@ namespace Kerf.Engine.Approximation.FiniteElements;
 /// OCCT keeps the handle).
 /// </para>
 /// </remarks>
-public class Assembly
+internal class Assembly
 {
     private readonly NCollection_Array2<int> _depTable;
     private readonly NCollection_HArray2<NCollection_HArray1<int>> _refTable;

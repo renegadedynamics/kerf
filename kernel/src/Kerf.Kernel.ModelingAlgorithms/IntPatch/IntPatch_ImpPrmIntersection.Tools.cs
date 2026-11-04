@@ -18,7 +18,7 @@ using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Intersection.Patches;
 
-public partial class ImpPrmIntersection
+internal partial class ImpPrmIntersection
 {
     private static SpecPntType IsSeamOrPole(SurfaceAdaptorBase qSurf, LineOn2S line,
                                                      bool isReversed, int refIndex, double tol3D,

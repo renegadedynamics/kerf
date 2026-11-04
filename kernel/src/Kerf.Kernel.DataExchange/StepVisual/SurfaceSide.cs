@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Visual;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepVisual_SurfaceSide;</c>.</remarks>
-public enum SurfaceSide
+internal enum SurfaceSide
 {
     SsNegative,
     SsPositive,

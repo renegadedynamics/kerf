@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>Thrown when a matrix is singular.</summary>
-public class SingularMatrixException : FailureException
+internal class SingularMatrixException : FailureException
 {
     public SingularMatrixException() { }
 

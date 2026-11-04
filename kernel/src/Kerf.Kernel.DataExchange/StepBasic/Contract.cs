@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity Contract
 /// </summary>
-public class Contract : Transient
+internal class Contract : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _purpose;

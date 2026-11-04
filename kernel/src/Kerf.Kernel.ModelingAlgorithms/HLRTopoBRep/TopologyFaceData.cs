@@ -14,7 +14,7 @@ namespace Kerf.Engine.HiddenLines.Topology;
 /// OCCT's value class, stored by value in HLRTopoBRep_Data's map and reached by reference; a class here, the map
 /// holding one instance per face.
 /// </remarks>
-public sealed class TopologyFaceData
+internal sealed class TopologyFaceData
 {
     private readonly NCollection_List<Shape> _intL = new();
     private readonly NCollection_List<Shape> _outL = new();

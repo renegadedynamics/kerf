@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepFacetedBrepShapeRepresentation : StepShapeRepresentation
+internal class StepFacetedBrepShapeRepresentation : StepShapeRepresentation
 {
     /// <summary>
     /// Returns a FacetedBrepShapeRepresentation

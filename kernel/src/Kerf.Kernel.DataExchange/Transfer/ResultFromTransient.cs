@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// TransientProcess. A ResultFromTransient records a couple (Transient,Binder for the result and checks) plus a list of
 /// "sub-results", which have been recorded in the TransientProcess, under scope attached to the starting transient.
 /// </summary>
-public class ResultFromTransient : Transient
+internal class ResultFromTransient : Transient
 {
     /// <summary>Creates a ResultFromTransient, empty.</summary>
     public ResultFromTransient()

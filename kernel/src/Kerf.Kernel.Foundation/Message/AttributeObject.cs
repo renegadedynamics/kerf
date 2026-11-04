@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Foundation;
 
 /// <summary>An alert attribute holding an object.</summary>
-public class AttributeObject : MessageAttribute
+internal class AttributeObject : MessageAttribute
 {
     private Transient? _object; //!< alert object
 

@@ -12,7 +12,7 @@ using static Kerf.Engine.Intersection.Walking.StatusDeflection;
 
 namespace Kerf.Engine.Intersection.Walking;
 
-public partial class PWalking
+internal partial class PWalking
 {
     /// <summary>
     /// Walks from ParDep (u1, v1, u2, v2); the box (u1min..v2max) of the expected line sets the initial steps.

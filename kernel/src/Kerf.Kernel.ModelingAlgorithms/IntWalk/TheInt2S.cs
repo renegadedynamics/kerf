@@ -20,7 +20,7 @@ namespace Kerf.Engine.Intersection.Walking;
 /// OCCT's IntWalk_TheFunctionOfTheInt2S (IntImp_ZerParFunc.gxx over the same surface and tool) needs no class:
 /// <see cref="Int2S{ThePSurface, ThePSurfaceTool}.Function"/> returns the generic function.
 /// </remarks>
-public sealed class TheInt2S : Int2S<SurfaceAdaptorBase, TheHSurfaceTool>
+internal sealed class TheInt2S : Int2S<SurfaceAdaptorBase, TheHSurfaceTool>
 {
     public TheInt2S(NCollection_Array1<double> param, SurfaceAdaptorBase s1, SurfaceAdaptorBase s2,
                             double tolTangency)

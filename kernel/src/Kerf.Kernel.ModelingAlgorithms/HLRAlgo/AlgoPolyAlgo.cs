@@ -19,7 +19,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 /// A working object (a transient), as OCCT's. <see cref="Hide"/> and <see cref="Show"/> return a reference to the
 /// current segment's points, as OCCT's.
 /// </remarks>
-public class AlgoPolyAlgo : Transient
+internal class AlgoPolyAlgo : Transient
 {
     private NCollection_Array1<PolyShellData?> _hShell = new();
     private PolyData.Triangle _triangle;

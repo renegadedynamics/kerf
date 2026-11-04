@@ -12,7 +12,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// OCCT's public data members are properties with internal setters. <c>default(BVH_Ray)</c> equals OCCT's
 /// default (all zero).
 /// </remarks>
-public partial struct Ray<T, TVec> : IEquatable<Ray<T, TVec>>
+internal partial struct Ray<T, TVec> : IEquatable<Ray<T, TVec>>
     where T : unmanaged, IFloatingPointIeee754<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

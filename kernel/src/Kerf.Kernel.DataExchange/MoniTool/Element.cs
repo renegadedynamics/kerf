@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework.Monitoring;
 /// that of the real Key, not of the Element which acts only as an intermediate. When a Map asks for the
 /// HashCode of a Element, this one returns the code it has determined at creation time
 /// </summary>
-public abstract class Element : Transient
+internal abstract class Element : Transient
 {
 
     /// <summary>

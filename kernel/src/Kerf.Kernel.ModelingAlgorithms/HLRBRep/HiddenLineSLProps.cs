@@ -23,7 +23,7 @@ namespace Kerf.Engine.HiddenLines;
 /// HLRBRep_SLPropsATool forwards the evaluators to the surface, but its <c>Bounds</c> are RealFirst and RealLast in
 /// both directions, not the surface's (its <c>Continuity</c> is never read). A working object: its setters are public.
 /// </remarks>
-public class HiddenLineSLProps
+internal class HiddenLineSLProps
 {
     private HlrSurface? _surf;
     private double _u;

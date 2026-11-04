@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class MappedItem : RepresentationItem
+internal class MappedItem : RepresentationItem
 {
     private RepresentationMap _mappingSource;
     private RepresentationItem _mappingTarget;

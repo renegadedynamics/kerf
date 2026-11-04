@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>A function of several variables whose gradient and hessian are available.</summary>
-public abstract class MultipleVarFunctionWithHessian : MultipleVarFunctionWithGradient
+internal abstract class MultipleVarFunctionWithHessian : MultipleVarFunctionWithGradient
 {
     /// <summary>Computes the value <paramref name="f"/>, the gradient <paramref name="g"/> and the hessian <paramref name="h"/> at <paramref name="x"/>.</summary>
     public abstract bool Values(math_Vector x, out double f, math_Vector g, Matrix h);

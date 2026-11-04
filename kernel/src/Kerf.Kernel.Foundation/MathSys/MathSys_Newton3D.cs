@@ -15,7 +15,7 @@ namespace Kerf.Engine.Numerics.Systems;
 // duck-typed in C++, are ICurveD2Evaluator and ISurfaceD2Evaluator; its lambda is a private struct functor.
 
 /// <summary>Optimized 3D Newton-Raphson solver for systems of 3 equations in 3 unknowns.</summary>
-public static partial class MathSys
+internal static partial class MathSys
 {
     /// <summary>A 3x3 system with its Jacobian, for <see cref="Solve3D"/> (C++'s operator() contract).</summary>
     public interface INewton3DFunction
