@@ -13,21 +13,26 @@ namespace Kerf.Engine.Foundation;
 /// </summary>
 public abstract class Transient
 {
+    // Nothing of it is public (question 55): the public geometry only needs it as a base
+    private protected Transient()
+    {
+    }
+
     /// <summary>The object's type, as OCCT's <c>DynamicType()</c>.</summary>
-    public Type DynamicType() => GetType();
+    internal Type DynamicType() => GetType();
 
     /// <summary>The name of the object's type, as OCCT's <c>DynamicType()->Name()</c>: its OCCT name (<see cref="OcctTypeNames"/>).</summary>
-    public string DynamicTypeName() => OcctTypeNames.Of(GetType());
+    internal string DynamicTypeName() => OcctTypeNames.Of(GetType());
 
     /// <summary>True if this object is of the type or derives from it, as OCCT's <c>IsKind</c>.</summary>
-    public bool IsKind(Type type) => type.IsInstanceOfType(this);
+    internal bool IsKind(Type type) => type.IsInstanceOfType(this);
 
-    public bool IsKind<T>() => this is T;
+    internal bool IsKind<T>() => this is T;
 
     /// <summary>True if this object is exactly of the type, as OCCT's <c>IsInstance</c>.</summary>
-    public bool IsInstance(Type type) => GetType() == type;
+    internal bool IsInstance(Type type) => GetType() == type;
 
-    public Transient This() => this;
+    internal Transient This() => this;
 
     // Freezing (OCCT.NET, not OCCT): objects that callers or topology share must not change underneath them.
     // Ported mutators of geometry and topology classes start with CheckMutable(); the port freezes an object
@@ -36,13 +41,13 @@ public abstract class Transient
     private volatile bool _isFrozen;
 
     /// <summary>True once the object can no longer change.</summary>
-    public bool IsFrozen => _isFrozen;
+    internal bool IsFrozen => _isFrozen;
 
     /// <summary>Makes the object unchangeable from now on. Idempotent and thread-safe.</summary>
     internal void Freeze() => _isFrozen = true;
 
     /// <summary>Throws <see cref="ImmutableObjectException"/> if the object is frozen: the first line of every mutator.</summary>
-    protected internal void CheckMutable()
+    internal void CheckMutable()
     {
         if (_isFrozen)
         {
