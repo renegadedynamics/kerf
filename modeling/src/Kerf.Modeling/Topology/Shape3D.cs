@@ -48,7 +48,11 @@ public abstract partial class Shape3D : Shape
     /// The edges of this shape chamfered by <paramref name="length"/> (and <paramref name="length2"/> on the other side, for an
     /// asymmetric chamfer), measured on <paramref name="face"/> if given (which the edges must belong to).
     /// </summary>
-    /// <exception cref="ArgumentException">An edge isn't on the face, or the chamfer can't be made.</exception>
+    /// <exception cref="ArgumentException">An edge isn't on the face.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// The chamfer can't be made: the shorthand's failure (unit 10M3); <see cref="Operations.Chamfer(IEnumerable{Edge},
+    /// double, double?, double?, Face?)"/> returns it as a result, with the code <see cref="ModelingDiagnostics.ChamferFailed"/>.
+    /// </exception>
     public Shape Chamfer(double length, double? length2, IEnumerable<Edge> edgeList, Face? face = null)
     {
         var edges = edgeList.ToList();
@@ -113,9 +117,10 @@ public abstract partial class Shape3D : Shape
     }
 
     /// <summary>The edges of this shape filleted with a radius.</summary>
-    /// <exception cref="KerfException">
-    /// The fillet can't be made (<see cref="ModelingDiagnostics.FilletFailed"/>, then the kernel's diagnostics); the message
-    /// says which edges failed and why.
+    /// <exception cref="InvalidOperationException">
+    /// The fillet can't be made: the shorthand's failure (unit 10M3), whose message says which edges failed and why.
+    /// <see cref="Operations.Fillet(IEnumerable{Edge}, double)"/> returns it as a result, with the code
+    /// <see cref="ModelingDiagnostics.FilletFailed"/> and the kernel's diagnostics.
     /// </exception>
     public Shape Fillet(double radius, IEnumerable<Edge> edgeList)
     {
@@ -130,7 +135,7 @@ public abstract partial class Shape3D : Shape
                 failure = new InvalidOperationException();
         }
         else
-            failure = new KerfException(filleted.Diagnostics);
+            failure = Failures.Failed(filleted.Diagnostics);
         if (failure is not null)
         {
             string details = "";
@@ -281,7 +286,7 @@ public abstract partial class Shape3D : Shape
         };
         var made = TopoShape.ThickSolid(faceList.Select(f => f.TopoFace), thickness, options);
         if (!made.TryGetValue(out var thick))
-            throw new InvalidOperationException("offset Error, an alternative kind may resolve this error", new KerfException(made.Diagnostics));
+            throw Failures.Expected(ModelingDiagnostics.OffsetFailed, "The offset failed; another kind of join may work.", made.Diagnostics);
         var solid = thick.Shape;
         if (solid.IsNull)
             throw new InvalidOperationException("offset Error, an alternative kind may resolve this error");

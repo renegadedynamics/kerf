@@ -14,7 +14,7 @@ public class PlainValueSelectorTests
 {
     // A plate with a hole, filleted around the top: planes, a cylinder, tori and circles of several radii
     private static readonly Shape Part =
-        Ops.Fillet((new Box(20, 10, 4) - new Cylinder(2, 10)).Edges().GroupBy(Axis.Z).Last().Where(GeomType.Line), 1);
+        Ops.Fillet((new Box(20, 10, 4) - new Cylinder(2, 10)).Edges().GroupBy(Axis.Z).Last().Where(GeomType.Line), 1).Value;
 
     [Theory]
     [InlineData(GeomType.Line)]

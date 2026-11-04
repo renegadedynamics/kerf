@@ -1,7 +1,7 @@
 // Ported from build123d tests/test_direct_api/test_mixin3_d.py (Mixin3D is Shape3D here).
 // Box and Cylinder (centred Parts in build123d) are Parts of solids made with the direct API. The radii in the fillet
-// messages read 3.0 and 6.0 where build123d's tests pass the ints 3 and 6; the kernel failure is the inner exception
-// (an Standard_Failure) where Python chains it as __cause__. Omitted:
+// messages read 3.0 and 6.0 where build123d's tests pass the ints 3 and 6; a failure is read as a result (Failures.Try,
+// as the operations return it) and the kernel's diagnostics follow the layer's, where Python chains OCCT's exception. Omitted:
 // - TestFilletFailures.test_operation's builder half: BuildPart (phase 5).
 // - TestFilletFailures.test_diagnostic_readback_failure, test_group_failure_reasons,
 //   TestMixin3D.test_chamfer_invalid_shape_raises_error: mock the OCP builder or Shape.is_valid.
@@ -32,9 +32,10 @@ public class FilletFailuresTests
         var box = Box(20, 20, 2);
         foreach (Shape3D shape in new Shape3D[] { box, box.SingleSolid(), new Part(box.KernelShape) })
         {
-            var e = Assert.Throws<Kerf.KerfException>(() => shape.Fillet(3, shape.Edges()));
-            Assert.Equal(PlateMessage, e.Error.Message);
-            Assert.True(Failures.IsKernelFailure(e.InnerException!));
+            var failed = Failures.Try(() => shape.Fillet(3, shape.Edges()));
+            Assert.Equal(PlateMessage, failed.Error!.Message);
+            Assert.Equal(ModelingDiagnostics.FilletFailed, failed.Error.Code);
+            Assert.True(Failures.IsKernelFailure(Assert.Throws<InvalidOperationException>(() => shape.Fillet(3, shape.Edges())).InnerException!));
         }
     }
 
@@ -42,15 +43,15 @@ public class FilletFailuresTests
     public void Operation()
     {
         // The fillet operation reports the same edges as the method
-        var e = Assert.Throws<Kerf.KerfException>(() => Ops.Fillet(Box(20, 20, 2).Edges(), radius: 3));
-        Assert.Equal(PlateMessage, e.Error.Message);
+        var failed = Ops.Fillet(Box(20, 20, 2).Edges(), radius: 3);
+        Assert.Equal(PlateMessage, failed.Error!.Message);
     }
 
     [Fact]
     public void TangentChain()
     {
         // Unselected tangent edges are counted, with a point on a curved selection
-        var rounded = Ops.Extrude(new RectangleRounded(20, 10, 3), 2);
+        var rounded = Ops.Extrude(new RectangleRounded(20, 10, 3), 2).Value;
         var topEdges = rounded.Edges().GroupBy(Axis.Z)[^1];
         (ShapeList<Edge> Selection, string Details)[] cases =
         [
@@ -65,8 +66,8 @@ public class FilletFailuresTests
         ];
         foreach (var (selection, details) in cases)
         {
-            var e = Assert.Throws<Kerf.KerfException>(() => rounded.Fillet(3, selection));
-            Assert.Equal("The fillet with a radius of 3 on " + details + Advice, e.Error.Message);
+            var failed = Failures.Try(() => rounded.Fillet(3, selection));
+            Assert.Equal("The fillet with a radius of 3 on " + details + Advice, failed.Error!.Message);
         }
     }
 
@@ -82,8 +83,8 @@ public class FilletFailuresTests
         var (shape, radius, edges, text) = notchedCase
             ? (notched, 0.5, notched.Edges().Where((_, i) => i % 2 == 0).ToList(), "0.5")
             : ((Shape3D)cube, 6.0, cube.Edges().ToList(), "6");
-        var e = Assert.Throws<Kerf.KerfException>(() => shape.Fillet(radius, edges));
-        Assert.Equal($"The fillet with a radius of {text}" + Advice, e.Error.Message);
+        var failed = Failures.Try(() => shape.Fillet(radius, edges));
+        Assert.Equal($"The fillet with a radius of {text}" + Advice, failed.Error!.Message);
     }
 
     [Fact]
@@ -96,12 +97,12 @@ public class FilletFailuresTests
         Assert.True(edges[1].IsSame(reversedEdge));
         Assert.False(edges[1].IsEqual(reversedEdge));
         var selection = new[] { edges[3], edges[0], reversedEdge, edges[1] }.Select(e => e);
-        var e = Assert.Throws<Kerf.KerfException>(() => plate.Fillet(3, selection));
+        var failed = Failures.Try(() => plate.Fillet(3, selection));
         Assert.Equal(
             "The fillet with a radius of 3 on 3 of 4 edges "
             + "(no starting solution: [0] at (-10, 0, -1), "
             + "[2] at (-10, 0, 1), [3] at (-10, 0, 1))" + Advice,
-            e.Error.Message);
+            failed.Error!.Message);
     }
 }
 
@@ -182,7 +183,7 @@ public class Shape3DTests
     public void ChamferTooHighLength()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        Assert.Throws<Kerf.KerfException>(() => box.Chamfer(2, null, box.Edges().OrderBy(Axis.Z)[^1..]));
+        Assert.Equal(ModelingDiagnostics.ChamferFailed, Failures.Try(() => box.Chamfer(2, null, box.Edges().OrderBy(Axis.Z)[^1..])).Error!.Code);
     }
 
     [Fact]

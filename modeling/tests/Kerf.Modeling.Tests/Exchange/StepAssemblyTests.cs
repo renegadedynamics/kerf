@@ -120,7 +120,7 @@ public class StepAssemblyTests
     [MemberData(nameof(Names))]
     public void ShapesAreWrittenAsStepCafControlWritesThem(string name)
     {
-        var shape = Importers.ImportBrep(Path.Combine(Folder, name + ".brep"));
+        var shape = Importers.ImportBrep(Path.Combine(Folder, name + ".brep")).Value;
         Assert.Equal(Masked(AsXcafWrites(shape)), Masked(Export(shape)));
     }
 
@@ -142,7 +142,7 @@ public class StepAssemblyTests
     public void AnAssemblyRoundTripsWithItsLabelsColoursAndPlaces()
     {
         var fixture = Fixture();
-        var read = Assert.IsType<Compound>(Importers.ImportStep(new MemoryStream(Export(fixture))));
+        var read = Assert.IsType<Compound>(Importers.ImportStep(new MemoryStream(Export(fixture))).Value);
         Assert.Equal("fixture", read.Label);
         Assert.Equal(["plate", "bolts"], read.AssemblyChildren.Select(c => c.Label));
         var plate = read.AssemblyChildren[0];
@@ -169,7 +169,7 @@ public class StepAssemblyTests
     [Fact]
     public void OneNamedShapeComesBackAsItself()
     {
-        var read = Importers.ImportStep(new MemoryStream(Export(new Box(1, 2, 3).WithLabel("brick").WithColor(new Color("red")))));
+        var read = Importers.ImportStep(new MemoryStream(Export(new Box(1, 2, 3).WithLabel("brick").WithColor(new Color("red"))))).Value;
         var solid = Assert.IsType<Solid>(read);
         Assert.Equal("brick", solid.Label);
         Assert.Equal(new Color("red"), solid.Color);
@@ -182,7 +182,7 @@ public class StepAssemblyTests
         // STEP's writer maps shapes to products, so the second name needs a shape of its own
         var ball = new Sphere(2);
         var pair = Compound.Assembly([ball.WithLabel("left"), ball.Moved(new Location(new Vector(5.0, 0.0, 0.0))).WithLabel("right").WithColor(new Color("blue"))]);
-        var read = Assert.IsType<Compound>(Importers.ImportStep(new MemoryStream(Export(pair))));
+        var read = Assert.IsType<Compound>(Importers.ImportStep(new MemoryStream(Export(pair))).Value);
         Assert.Equal(["left", "right"], read.AssemblyChildren.Select(c => c.Label));
         Assert.Null(read.AssemblyChildren[0].Color);
         Assert.Equal(new Color("blue"), read.AssemblyChildren[1].Color);
@@ -193,7 +193,7 @@ public class StepAssemblyTests
     public void ACurveIsColouredAsACurve()
     {
         var line = new Polyline(new Vector(0.0, 0.0), new Vector(10.0, 0.0), new Vector(10.0, 5.0)).WithLabel("path").WithColor(new Color("green"));
-        var read = Importers.ImportStep(new MemoryStream(Export(line)));
+        var read = Importers.ImportStep(new MemoryStream(Export(line))).Value;
         Assert.Equal("path", read.Label);
         Assert.Equal(new Color("green"), read.Color);
     }
@@ -205,7 +205,7 @@ public class StepAssemblyTests
         Exporters3D.ExportStep(Fixture(), stream, Unit.Inch);
         Assert.Contains("INCH", Encoding.Latin1.GetString(stream.ToArray()));
         stream.Position = 0;
-        var read = Assert.IsType<Compound>(Importers.ImportStep(stream));
+        var read = Assert.IsType<Compound>(Importers.ImportStep(stream).Value);
         Check.AlmostEqual(Fixture().Parts()[0].Placed.Volume * Math.Pow(25.4, 3), read.Parts()[0].Placed.Volume, 1);
     }
 
@@ -227,11 +227,12 @@ public class StepAssemblyTests
             Assert.Equal(global::Kerf.Engine.Exchange.Framework.Selection.ReturnStatus.RetDone, writer.Write(main));
             Assert.True(Directory.GetFiles(folder).Length > 1);
 
-            var read = Assert.IsType<Compound>(Importers.ImportStep(main));
+            var read = Assert.IsType<Compound>(Importers.ImportStep(main).Value);
             Assert.Equal(2, read.Parts().Count);
             using var stream = File.OpenRead(main);
-            var e = Assert.Throws<InvalidDataException>(() => Importers.ImportStep(stream));
-            Assert.Contains("other STEP file", e.Message);
+            var refused = Importers.ImportStep(stream);
+            Assert.Equal("exchange.external-references", refused.Error!.Code.Value);
+            Assert.Contains("other STEP file", refused.Error.Message);
         }
         finally
         {

@@ -1,6 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-// Tests of Result<T>, Result, Diagnostic, DiagnosticCode and KerfException (unit 10F; docs/api/README.md, section 2).
+// Tests of Result<T>, Result, Diagnostic and DiagnosticCode (units 10F and 10M3; docs/api/README.md, section 2).
 
 using System.Collections.Immutable;
 
@@ -113,7 +113,7 @@ public class ResultTests
         Assert.True(result.IsSuccess);
         Assert.False(result.IsFailure);
         Assert.Equal(42, result.Value);
-        Assert.Equal(42, result.GetValueOrThrow());
+        Assert.Equal(42, result.Match(x => x, error => -1));
         Assert.Equal(42, result.GetValueOrDefault(7));
         Assert.True(result.TryGetValue(out var value));
         Assert.Equal(42, value);
@@ -161,14 +161,13 @@ public class ResultTests
     }
 
     [Fact]
-    public void AFailedValueThrowsWithTheDiagnostics()
+    public void AFailedValueIsAProgrammersError()
     {
+        // Reading a failure's value is misuse, as reading a null Nullable's is: the message gives the first error
         var result = Result<int>.Failure(Bad, [Careful]);
-        var e = Assert.Throws<KerfException>(() => result.Value);
-        Assert.Equal("Bad input.", e.Message);
-        Assert.Equal<Diagnostic>([Careful, Bad], e.Diagnostics);
-        Assert.Same(Bad, e.Error);
-        Assert.Throws<KerfException>(() => result.GetValueOrThrow());
+        var e = Assert.Throws<InvalidOperationException>(() => result.Value);
+        Assert.Contains("input.invalid: Bad input.", e.Message);
+        Assert.Contains("Check IsSuccess", e.Message);
     }
 
     [Fact]
@@ -187,8 +186,8 @@ public class ResultTests
         var other = Diagnostic.Error(new DiagnosticCode("boolean.self-interfering-shape"), "Self-interfering.");
         var result = Result<int>.Failure([Careful, Bad, other]);
         Assert.Same(Bad, result.Error);
-        var e = Assert.Throws<KerfException>(() => result.Value);
-        Assert.Equal("Bad input. (and 1 more error)", e.Message);
+        var e = Assert.Throws<InvalidOperationException>(() => result.Value);
+        Assert.Contains("input.invalid: Bad input. (and 1 more error)", e.Message);
     }
 
     [Fact]
@@ -198,7 +197,7 @@ public class ResultTests
         Assert.False(result.IsSuccess);
         Assert.Equal(DiagnosticCode.DefaultResult, result.Error!.Code);
         Assert.Single(result.Diagnostics);
-        Assert.Throws<KerfException>(() => result.Value);
+        Assert.Contains("result.default", Assert.Throws<InvalidOperationException>(() => result.Value).Message);
     }
 
     [Fact]
@@ -270,14 +269,14 @@ public class ResultWithoutValueTests
         Assert.True(success.IsSuccess);
         Assert.Equal<Diagnostic>([Careful], success.Diagnostics);
         Assert.Null(success.Error);
-        success.ThrowIfFailed();
+        Assert.Equal("done", success.Match(() => "done", error => error.Message));
         Assert.Equal("Success", success.ToString());
 
         var failure = Result.Failure(Bad, [Careful]);
         Assert.True(failure.IsFailure);
         Assert.Same(Bad, failure.Error);
         Assert.Equal<Diagnostic>([Careful, Bad], failure.Diagnostics);
-        Assert.Equal("Bad input.", Assert.Throws<KerfException>(failure.ThrowIfFailed).Message);
+        Assert.Equal("Bad input.", failure.Match(() => "done", error => error.Message));
     }
 
     [Fact]
@@ -292,7 +291,7 @@ public class ResultWithoutValueTests
     public void ADefaultResultIsAFailure()
     {
         Assert.Equal(DiagnosticCode.DefaultResult, default(Result).Error!.Code);
-        Assert.Throws<KerfException>(default(Result).ThrowIfFailed);
+        Assert.Equal(DiagnosticCode.DefaultResult, default(Result).Match(() => default, error => error.Code));
     }
 
     [Fact]
@@ -313,24 +312,45 @@ public class ResultWithoutValueTests
     }
 }
 
-public class KerfExceptionTests
+public class ResultCombinatorTests
 {
+    private static readonly Diagnostic Bad = Diagnostic.Error(DiagnosticCode.InvalidInput, "Bad input.");
+    private static readonly Diagnostic Careful = Diagnostic.Warning(DiagnosticCode.NotConverged, "Careful.");
+
+    private static Result<double> Half(int x) => x % 2 == 0 ? x / 2.0 : Result<double>.Failure(Bad);
+
     [Fact]
-    public void ItCarriesTheDiagnosticsAndTheCause()
+    public void MatchGivesOneValueEitherWay()
     {
-        var cause = new InvalidOperationException("inner");
-        var error = Diagnostic.Error(DiagnosticCode.InvalidInput, "Bad input.");
-        var e = new KerfException(error, cause);
-        Assert.Equal("Bad input.", e.Message);
-        Assert.Same(cause, e.InnerException);
-        Assert.Same(error, e.Error);
-        Assert.Equal<Diagnostic>([error], e.Diagnostics);
+        Assert.Equal("4", Result<int>.Success(4).Match(x => x.ToString(), error => error.Message));
+        Assert.Equal("Bad input.", Result<int>.Failure(Bad, [Careful]).Match(x => x.ToString(), error => error.Message));
+        Assert.Throws<ArgumentNullException>(() => Result<int>.Success(4).Match(null!, error => ""));
+        Assert.Throws<ArgumentNullException>(() => Result<int>.Success(4).Match(x => "", null!));
     }
 
     [Fact]
-    public void ItNeedsAnError()
+    public void QuerySyntaxChainsAndStopsAtTheFirstFailure()
     {
-        Assert.Throws<ArgumentException>(() => new KerfException([Diagnostic.Warning(DiagnosticCode.NotConverged, "a")]));
-        Assert.Throws<ArgumentNullException>(() => new KerfException((Diagnostic)null!));
+        // Select and SelectMany are Map and Bind under LINQ's names, so a chain of operations reads as a query
+        var both = from a in Result<int>.Success(4, [Careful])
+                   from b in Half(a)
+                   select a + b;
+        Assert.Equal(6.0, both.Value);
+        Assert.Equal<Diagnostic>([Careful], both.Diagnostics);
+
+        bool selected = false;
+        double Selected(int a, double b)
+        {
+            selected = true;
+            return a + b;
+        }
+        var failed = from a in Result<int>.Success(3)
+                     from b in Half(a)
+                     select Selected(a, b);
+        Assert.False(selected);
+        Assert.Same(Bad, failed.Error);
+
+        var mapped = from a in Result<int>.Success(4) select a * 2;
+        Assert.Equal(8, mapped.Value);
     }
 }

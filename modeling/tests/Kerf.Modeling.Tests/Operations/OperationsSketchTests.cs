@@ -18,7 +18,7 @@ public class OperationsSketchTests
     public void FilletedFaceIsUpsideDown()
     {
         var f1 = new Face(Wire.MakePolygon([new Vector(1, 0), new Vector(1.5, 0.5), new Vector(1, 2), new Vector(3, 1), new Vector(2, 0), new Vector(1, 0)]));
-        var f = (Fillet(f1.Vertices()[2..4], 0.2) - new Pos(1.8, 1.2, 0) * new Rectangle(0.2, 0.4)
+        var f = (Fillet(f1.Vertices()[2..4], 0.2).Value - new Pos(1.8, 1.2, 0) * new Rectangle(0.2, 0.4)
                  - new Pos(2, 0.5, 0) * new Circle(0.2)).Faces()[0];
         Assert.True(f.NormalAt().Z < 0);   // Up-side-down, as the face it came from
     }
@@ -43,7 +43,7 @@ public class OperationsSketchTests
     [Fact]
     public void OffsetSketchFace()
     {
-        var test = Offset(new Circle(10).Faces()[0], 1);
+        var test = Offset(new Circle(10).Faces()[0], 1).Value;
         Check.AlmostEqual(11, test.Edges()[0].Radius);
     }
 

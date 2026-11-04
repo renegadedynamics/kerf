@@ -11,8 +11,11 @@ public static partial class Operations
     /// <exception cref="ArgumentException">
     /// A face isn't a plane, cylinder or cone, or the faces aren't all taken from the same single solid.
     /// </exception>
-    /// <exception cref="KerfException">The draft can't be made (<see cref="ModelingDiagnostics.DraftFailed"/>).</exception>
-    public static Part Draft(IEnumerable<Face> faces, Plane neutralPlane, double angle)
+    /// <returns>The drafted part, or the failure (<see cref="ModelingDiagnostics.DraftFailed"/>) if the draft can't be made.</returns>
+    public static Result<Part> Draft(IEnumerable<Face> faces, Plane neutralPlane, double angle) =>
+        Failures.Try(() => DraftOrThrow(faces, neutralPlane, angle));
+
+    internal static Part DraftOrThrow(IEnumerable<Face> faces, Plane neutralPlane, double angle)
     {
         var faceList = faces.ToList();
 
@@ -31,7 +34,7 @@ public static partial class Operations
             throw new ArgumentException("Topological parent must be a single Solid");
 
         // Create the drafted solid
-        // A face that can't be drafted is a KerfException whose first error holds the face
+        // A face that can't be drafted is a failure whose first error holds the face
         var newSolid = parentSolids[0].Draft(faceList, neutralPlane, angle);
 
         // Phase 5: in builder mode the drafted solid replaces the builder's part
@@ -39,7 +42,7 @@ public static partial class Operations
     }
 
     /// <inheritdoc cref="Draft(IEnumerable{Face}, Plane, double)"/>
-    public static Part Draft(Face face, Plane neutralPlane, double angle) => Draft([face], neutralPlane, angle);
+    public static Result<Part> Draft(Face face, Plane neutralPlane, double angle) => Draft([face], neutralPlane, angle);
 
     // ---- extrude ----
 
@@ -53,7 +56,10 @@ public static partial class Operations
     /// <exception cref="ArgumentNullException"><paramref name="toExtrude"/> is null.</exception>
     /// <exception cref="ArgumentException">A face is non-planar and no direction is given.</exception>
     /// <exception cref="InvalidOperationException">The tapered solid can't be built, as when the taper collapses the face.</exception>
-    public static Part Extrude(Shape toExtrude, double amount, ExtrudeOptions? options = null)
+    public static Result<Part> Extrude(Shape toExtrude, double amount, ExtrudeOptions? options = null) =>
+        Failures.Try(() => ExtrudeOrThrow(toExtrude, amount, options));
+
+    internal static Part ExtrudeOrThrow(Shape toExtrude, double amount, ExtrudeOptions? options)
     {
         // Phase 5: in builder mode the faces default to the pending faces (on their pending planes), and the result is
         // combined with mode
@@ -62,7 +68,10 @@ public static partial class Operations
     }
 
     /// <inheritdoc cref="Extrude(Shape, double, ExtrudeOptions?)"/>
-    public static Part Extrude(IEnumerable<Face> toExtrude, double amount, ExtrudeOptions? options = null)
+    public static Result<Part> Extrude(IEnumerable<Face> toExtrude, double amount, ExtrudeOptions? options = null) =>
+        Failures.Try(() => ExtrudeOrThrow(toExtrude, amount, options));
+
+    internal static Part ExtrudeOrThrow(IEnumerable<Face> toExtrude, double amount, ExtrudeOptions? options)
     {
         ArgumentNullException.ThrowIfNull(toExtrude);
         return ExtrudeCore([.. toExtrude], amount, null, null, options ?? ExtrudeOptions.Default);
@@ -81,7 +90,10 @@ public static partial class Operations
     /// <exception cref="ArgumentException">
     /// A face is non-planar and no direction is given, the target is empty, or the extrusion doesn't reach it.
     /// </exception>
-    public static Part Extrude(Shape toExtrude, Until until, Shape target, ExtrudeOptions? options = null)
+    public static Result<Part> Extrude(Shape toExtrude, Until until, Shape target, ExtrudeOptions? options = null) =>
+        Failures.Try(() => ExtrudeOrThrow(toExtrude, until, target, options));
+
+    internal static Part ExtrudeOrThrow(Shape toExtrude, Until until, Shape target, ExtrudeOptions? options)
     {
         ArgumentNullException.ThrowIfNull(toExtrude);
         ArgumentNullException.ThrowIfNull(target);
@@ -89,7 +101,10 @@ public static partial class Operations
     }
 
     /// <inheritdoc cref="Extrude(Shape, Until, Shape, ExtrudeOptions?)"/>
-    public static Part Extrude(IEnumerable<Face> toExtrude, Until until, Shape target, ExtrudeOptions? options = null)
+    public static Result<Part> Extrude(IEnumerable<Face> toExtrude, Until until, Shape target, ExtrudeOptions? options = null) =>
+        Failures.Try(() => ExtrudeOrThrow(toExtrude, until, target, options));
+
+    internal static Part ExtrudeOrThrow(IEnumerable<Face> toExtrude, Until until, Shape target, ExtrudeOptions? options)
     {
         ArgumentNullException.ThrowIfNull(toExtrude);
         ArgumentNullException.ThrowIfNull(target);
@@ -170,7 +185,10 @@ public static partial class Operations
     /// There are no sections, a vertex isn't first or last, or the sections have different numbers of holes.
     /// </exception>
     /// <exception cref="InvalidOperationException">The loft is invalid and can't be recovered.</exception>
-    public static Part Loft(IEnumerable<Shape> sections, bool ruled = false, bool clean = true)
+    public static Result<Part> Loft(IEnumerable<Shape> sections, bool ruled = false, bool clean = true) =>
+        Failures.Try(() => LoftOrThrow(sections, ruled, clean));
+
+    internal static Part LoftOrThrow(IEnumerable<Shape> sections, bool ruled, bool clean)
     {
         // Phase 5: in builder mode the sections default to the pending faces, and the result is combined with mode
         var sectionList = sections?.ToList() ?? [];
@@ -252,9 +270,10 @@ public static partial class Operations
                 if (!newSolid.IsValid)
                     throw new ArgumentException("Recovery failed");
             }
-            catch (Exception e)
+            catch (Exception e) when (e is not OperationCanceledException)
             {
-                throw new InvalidOperationException("Failed to create valid loft", e);
+                throw Failures.Expected(ModelingDiagnostics.LoftFailed, "The loft is invalid and couldn't be recovered.",
+                                        Failures.DiagnosticsOf(e), e);
             }
         }
 
@@ -325,7 +344,10 @@ public static partial class Operations
     /// Axis.Z). The axis is usually in the plane of the profile, but needn't be.
     /// </summary>
     /// <exception cref="ArgumentException">No profiles are given.</exception>
-    public static Part Revolve(IEnumerable<Shape> profiles, Axis? axis = null, double revolutionArc = 360.0, bool clean = true)
+    public static Result<Part> Revolve(IEnumerable<Shape> profiles, Axis? axis = null, double revolutionArc = 360.0, bool clean = true) =>
+        Failures.Try(() => RevolveOrThrow(profiles, axis, revolutionArc, clean));
+
+    internal static Part RevolveOrThrow(IEnumerable<Shape> profiles, Axis? axis, double revolutionArc, bool clean)
     {
         // Phase 5: in builder mode the profiles default to the pending faces, and the result is combined with mode
         var profileList = profiles?.ToList() ?? [];
@@ -349,7 +371,7 @@ public static partial class Operations
     }
 
     /// <inheritdoc cref="Revolve(IEnumerable{Shape}, Axis?, double, bool)"/>
-    public static Part Revolve(Shape profile, Axis? axis = null, double revolutionArc = 360.0, bool clean = true) =>
+    public static Result<Part> Revolve(Shape profile, Axis? axis = null, double revolutionArc = 360.0, bool clean = true) =>
         Revolve([profile], axis, revolutionArc, clean);
 
     // ---- section ----
@@ -391,7 +413,10 @@ public static partial class Operations
     /// says which way is up.
     /// </summary>
     /// <exception cref="ArgumentNullException"><paramref name="toThicken"/> is null.</exception>
-    public static Part Thicken(Shape toThicken, double amount, ThickenOptions? options = null)
+    public static Result<Part> Thicken(Shape toThicken, double amount, ThickenOptions? options = null) =>
+        Failures.Try(() => ThickenOrThrow(toThicken, amount, options));
+
+    internal static Part ThickenOrThrow(Shape toThicken, double amount, ThickenOptions? options)
     {
         // Phase 5: in builder mode the faces default to the pending faces, and the result is combined with mode.
         // Phase 7: a sheet Shell with SheetMetalParameters (and BuildSheet's pending sheets) is thickened as sheet material
@@ -400,7 +425,10 @@ public static partial class Operations
     }
 
     /// <inheritdoc cref="Thicken(Shape, double, ThickenOptions?)"/>
-    public static Part Thicken(IEnumerable<Face> toThicken, double amount, ThickenOptions? options = null)
+    public static Result<Part> Thicken(IEnumerable<Face> toThicken, double amount, ThickenOptions? options = null) =>
+        Failures.Try(() => ThickenOrThrow(toThicken, amount, options));
+
+    internal static Part ThickenOrThrow(IEnumerable<Face> toThicken, double amount, ThickenOptions? options)
     {
         ArgumentNullException.ThrowIfNull(toThicken);
         return ThickenCore([.. toThicken], amount, options ?? ThickenOptions.Default);

@@ -33,7 +33,7 @@ public class MemoryPressureTests
     public void TheEstimateGrowsWithDetail()
     {
         var plain = EngineShapes.EstimateMemory(new Box(10, 10, 10).TopoShape);
-        var filleted = EngineShapes.EstimateMemory(Ops.Fillet(new Box(10, 10, 10).Edges(), 1).TopoShape);
+        var filleted = EngineShapes.EstimateMemory(Ops.Fillet(new Box(10, 10, 10).Edges(), 1).Value.TopoShape);
         var sphere = new Sphere(10);
         var meshed = EngineShapes.EstimateMemory(sphere.MeshedCopy(0.001, 0.1, relative: false));
         Assert.True(filleted > 3 * plain, $"{filleted} vs {plain}");

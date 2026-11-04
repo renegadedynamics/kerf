@@ -16059,3 +16059,64 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        `TryFillet`, a sketch extruded and cut with a pocket on its top face) are compiled tests,
        `Examples/TutorialExamplesTests.cs`, checked against volumes worked out by hand, and shown in design.md, "The
        .NET API (unit 10M2)".
+## Phase 10: unit 10M3, expected failures are results
+
+1586. **The owner: "Let's get rid of that `KerfException`."** (4 November 2026.) Kerf has no exception type of its own:
+       a failure a caller should expect is a `Result<T>`, as plan 2.9 says ("errors through `Result<T>`"). This
+       overrides decision 1578 (10M2's plain forms throwing `KerfException`, with `Try` twins returning results) and
+       decision 1570's report of a kernel refusal as a `KerfException` (the refusal is now a failed result's
+       `kernel.invalid-argument`, in context as before).
+1587. **`Result<T>` without exceptions of its own.** `KerfException`, `Result<T>.GetValueOrThrow` and
+       `Result.ThrowIfFailed` went. `Value` on a failure is a programmer's error, as a null `Nullable<T>`'s is: it
+       throws `InvalidOperationException`, whose message gives the first error's code and message (and how many more
+       errors there are) and says to check `IsSuccess` or use `TryGetValue`, `Match` or the combinators. Added, each
+       small and tested (`ResultCombinatorTests`): `Match(success, failure)` on `Result<T>` and `Result` (the failure
+       function gets the first error), `Select` (`Map` under LINQ's name) and `SelectMany` (`Bind` then `Map`), so a
+       chain of operations reads as a query that stops at the first failure: `from rounded in Fillet(…) from cut in
+       rounded.Subtract(hole) select cut`. `Map`, `Bind`, `TryGetValue` and `GetValueOrDefault(fallback)` were there;
+       no `ValueOr` was added beside `GetValueOrDefault`, which says the same in the BCL's words. The kernel's own code
+       never caught `KerfException`, so nothing else in the kernel changed.
+1588. **The modelling layer's operations return results.** `Operations`' `Fillet`, `Chamfer`, `Extrude`, `Loft`,
+       `Revolve`, `Sweep`, `Offset`, `Thicken` and `Draft` (every overload, the typed ones mapping the compound to
+       their class), the algebra's `Add`, `Subtract` and `Common` on Part, Sketch and Curve, and `Importers`'
+       `ImportBrep`, `ImportStep`, `ImportStl` and `ImportGltf` return `Result<T>`; their `Try` twins went. The
+       diagnostics are the kernel's, in context ("box 0 × 1 × 1 failed: …"), or the layer's own
+       (`ModelingDiagnostics`) followed by the kernel's. Inside the layer a failure still travels as an exception, so
+       the 150 or so kernel calls deep in the topology code needn't each return a result: .NET's
+       `InvalidOperationException`, its diagnostics in `Exception.Data` (`Failures.Failed`), caught at the public
+       operation (`Failures.Try`) and returned as the result. It is never a type of Kerf's. Misuse (null, an argument
+       out of range, a section that isn't a face) still throws .NET's argument exceptions; cancellation throws
+       `OperationCanceledException`; a missing file `FileNotFoundException`; a unit that isn't a length
+       `ArgumentException`.
+1589. **Operators stay, as the shorthand; so do constructors and the topological methods.** An operator can't return
+       a `Result` and still chain (`plate - holes - slot`), and C# 14's extension operators on `Result<Part>` would
+       make every operand a result. So `+ - &` keep returning the value, documented as the shorthand for inputs known
+       to combine, and a failure throws `InvalidOperationException` with the Boolean's message (the kernel's failure
+       its inner exception). The objects' constructors (`new Box(0, 1, 1)`, `new Spline(…)`) can't return a result
+       either, and the topological shapes' own methods (`solid.Fillet(…)`, `Solid.Sweep(…)`, `Edge.MakeLine(…)`)
+       stay the layer's lower level with the same shorthand: `Operations` and
+       the algebra methods are the checked API, as plan 2.10's line between the layers puts it. The alternative,
+       results everywhere, would make a sketch of ten lines ten `.Value`s. No exception type was introduced.
+1590. **Failures the layer had left as plain exceptions inside the operations now have codes**, so that an operation
+       returning a result doesn't throw for an expected failure: a thickening that fails is `modeling.thicken-failed`
+       (new; it was `InvalidOperationException` "Error applying thicken to given surface"), a solid's offset that fails
+       `modeling.offset-failed` (was `InvalidOperationException` "offset Error, …"), a loft that can't be recovered
+       `modeling.loft-failed` (the code existed unused; was `InvalidOperationException` "Failed to create valid
+       loft"), each with a .NET sentence. The importers' failures are the exchange's diagnostics
+       (`exchange.failed`, `exchange.malformed`, `exchange.external-references`; `exchange.limit-exceeded` for BREP
+       past its byte limit), STEP's message as before ("Could not import STEP data: it isn't readable STEP data. …"),
+       where they were `ArgumentException` and `InvalidDataException`. A best-effort catch of
+       `InvalidOperationException` in `Edge.FindIntersectionPoints` now leaves a carried failure alone, as it left
+       `KerfException` alone. The exporters keep returning `true` and throwing on failure (10M2's "Left").
+1591. **Tests and results.** The tests that expected `KerfException`, or an exception from an operation that now
+       returns a result, assert on the failed result's codes instead, one for one: 8 of `Kerf.Kernel.Foundation.Tests`
+       (6 rewritten, `KerfExceptionTests`' 2 replaced by `ResultCombinatorTests`' 2) and 24 of `Kerf.Modeling.Tests`
+       (17 that caught `KerfException`, 7 that caught `ArgumentException`, `InvalidDataException` or
+       `InvalidOperationException` from an importer, an offset or a draft's diagnostic). Tests of the shorthands read
+       the failure through `Failures.Try`, as the operations do. About 250 other call sites in the tests take `.Value`
+       of an operation they expect to succeed. Counts: `Kerf.Kernel.Foundation.Tests` Results 62 of 62,
+       `Kerf.Modeling.Tests` 1,890 of 1,890, as before. Volumes, face counts, the STEP references and the
+       Python-reference tests are unchanged. Bento's benchmark (`Kerf.Kernel.Bento.Benchmarks 7 0`, kerf main
+       18e5bd66 against this unit, one after the other): the same volumes, faces and triangles for all
+       11 examples; the median recalculation 915.5 and 1,008.2 ms before (run before and after this unit's run), 947.9 ms
+       after, the first pass 2,983 and 2,927 ms before, 3,008 ms after: no difference beyond the machine's noise.

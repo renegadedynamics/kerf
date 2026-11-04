@@ -5,23 +5,26 @@ namespace Kerf.Modeling;
 /// <summary>
 /// build123d's importers (<c>importers.py</c>): shapes from BREP, STEP and STL data, and from glTF (not in build123d).
 /// Each reads a stream, with limits for hostile data and cancellation; the file forms open the file and read it as a
-/// stream. Bad data throws <see cref="ArgumentException"/> (build123d's ValueError) or, for BREP, a
-/// <see cref="KerfException"/> (<c>exchange.malformed</c>), and for STL and glTF an <see cref="InvalidDataException"/>;
-/// data past a limit throws <see cref="InvalidDataException"/>.
+/// stream. Data that can't be read is a failed <see cref="Result{T}"/> with the kernel's diagnostic (unit 10M3):
+/// <c>exchange.malformed</c> or <c>exchange.invalid-data</c> for data that isn't the format, <c>exchange.limit-exceeded</c>
+/// for data past a limit, <c>exchange.external-references</c> for STEP data that refers to other files. A missing file
+/// throws <see cref="FileNotFoundException"/>, and a unit that isn't a length <see cref="ArgumentException"/>.
 /// </summary>
 /// <remarks>STEP keeps its names, colours and assemblies (OCCT.NET's STEPCAFControl).</remarks>
 public static class Importers
 {
     /// <summary>A shape from BREP data (OCCT's text format).</summary>
-    public static Shape ImportBrep(Stream stream, ImportLimits? limits = null, CancellationToken cancellationToken = default)
+    public static Result<Shape> ImportBrep(Stream stream, ImportLimits? limits = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(stream);
-        var bytes = ReadAll(stream, (limits ?? ImportLimits.Default).MaxBytes, "The BREP data", cancellationToken);
-        return Shape.Cast(Extras.ReadBRep(bytes));
+        var maxBytes = (limits ?? ImportLimits.Default).MaxBytes;
+        if (ReadAll(stream, maxBytes, cancellationToken) is not { } bytes)
+            return Result<Shape>.Failure(Diagnostic.Error(LimitExceeded, $"The BREP data is larger than the limit of {maxBytes} bytes"));
+        return Extras.ReadBRep(bytes).Map(Shape.Cast);
     }
 
     /// <summary>A shape from a BREP file.</summary>
-    public static Shape ImportBrep(string fileName, ImportLimits? limits = null, CancellationToken cancellationToken = default)
+    public static Result<Shape> ImportBrep(string fileName, ImportLimits? limits = null, CancellationToken cancellationToken = default)
     {
         using var file = OpenRead(fileName);
         return ImportBrep(file, limits, cancellationToken);
@@ -34,7 +37,7 @@ public static class Importers
     /// compound of them. <paramref name="name"/> names the data in OCCT's messages. Data that refers to
     /// other STEP files is refused, as there is no folder to read them from.
     /// </summary>
-    public static Shape ImportStep(Stream stream, ImportLimits? limits = null, CancellationToken cancellationToken = default,
+    public static Result<Shape> ImportStep(Stream stream, ImportLimits? limits = null, CancellationToken cancellationToken = default,
                                    string name = "STEP data")
         => ImportStep(stream, limits, cancellationToken, name, externalFiles: false);
 
@@ -42,13 +45,13 @@ public static class Importers
     /// The model of a STEP file (see the stream form). Other STEP files it refers to are read from its folder, as OCCT
     /// reads them.
     /// </summary>
-    public static Shape ImportStep(string fileName, ImportLimits? limits = null, CancellationToken cancellationToken = default)
+    public static Result<Shape> ImportStep(string fileName, ImportLimits? limits = null, CancellationToken cancellationToken = default)
     {
         using var file = OpenRead(fileName);
         return ImportStep(file, limits, cancellationToken, Path.GetFullPath(fileName), externalFiles: true);
     }
 
-    private static Shape ImportStep(Stream stream, ImportLimits? limits, CancellationToken cancellationToken, string name, bool externalFiles)
+    private static Result<Shape> ImportStep(Stream stream, ImportLimits? limits, CancellationToken cancellationToken, string name, bool externalFiles)
     {
         ArgumentNullException.ThrowIfNull(stream);
         var options = new StepReadOptions { Limits = (limits ?? ImportLimits.Default).ToReadLimits(), ExternalReferences = externalFiles };
@@ -56,9 +59,10 @@ public static class Importers
                                  : Step.Read(stream, options, cancellationToken: cancellationToken);
         if (read.Error is { } error)
         {
+            // Data refused for its references says so; other data that can't be read says which and why
             if (error.Code.Value is "exchange.external-references")
-                throw new InvalidDataException(error.Message, new KerfException(error));
-            throw new ArgumentException($"Could not import {name}: it isn't readable STEP data. {error.Message}", new KerfException(error));
+                return Result<Shape>.Failure(read.Diagnostics);
+            return Result<Shape>.Failure(error with { Message = $"Could not import {name}: it isn't readable STEP data. {error.Message}" });
         }
         var root = read.Value;
         return root.Shape is null && root.Children.IsEmpty ? new Compound() : Shape.Result(FromModel(root));
@@ -85,7 +89,7 @@ public static class Importers
     /// build123d's. <paramref name="modelUnit"/> is the data's unit, scaled to millimetres (Blender writes metres).
     ///
     /// </summary>
-    public static Face ImportStl(Stream stream, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
+    public static Result<Face> ImportStl(Stream stream, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
                                  CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(stream);
@@ -94,15 +98,12 @@ public static class Importers
             Limits = (limits ?? ImportLimits.Default).ToReadLimits(),
             Unit = ExchangeUnits.LengthUnit(modelUnit, "model_scale"),
         };
-        var read = Stl.Read(stream, options, cancellationToken);
-        if (read.Error is { } error)
-            throw new InvalidDataException(error.Message, new KerfException(error));
         // The face holding the triangles read, with no surface
-        return new Face((global::Kerf.Topology.Face)read.Value.TriangulatedShape);
+        return Stl.Read(stream, options, cancellationToken).Map(mesh => new Face((global::Kerf.Topology.Face)mesh.TriangulatedShape));
     }
 
     /// <summary>A face holding the triangles of an STL file.</summary>
-    public static Face ImportStl(string fileName, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
+    public static Result<Face> ImportStl(string fileName, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
                                  CancellationToken cancellationToken = default)
     {
         using var file = OpenRead(fileName);
@@ -115,7 +116,7 @@ public static class Importers
     /// colour; a scene of several parts or a node hierarchy is an assembly (<see cref="Compound.AssemblyChildren"/>).
     /// Not in build123d.
     /// </summary>
-    public static Shape ImportGltf(Stream stream, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
+    public static Result<Shape> ImportGltf(Stream stream, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
                                    CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(stream);
@@ -124,14 +125,11 @@ public static class Importers
             Limits = (limits ?? ImportLimits.Default).ToReadLimits(),
             Unit = ExchangeUnits.LengthUnit(modelUnit, "model_unit"),
         };
-        var read = Gltf.Read(stream, options, cancellationToken);
-        if (read.Error is { } error)
-            throw new InvalidDataException(error.Message, new KerfException(error));
-        return FromModel(read.Value);
+        return Gltf.Read(stream, options, cancellationToken).Map(FromModel);
     }
 
     /// <summary>The model of a glTF 2.0 file. External buffers aren't read.</summary>
-    public static Shape ImportGltf(string fileName, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
+    public static Result<Shape> ImportGltf(string fileName, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
                                    CancellationToken cancellationToken = default)
     {
         using var file = OpenRead(fileName);
@@ -147,7 +145,10 @@ public static class Importers
         return new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
     }
 
-    private static byte[] ReadAll(Stream stream, long maxBytes, string name, CancellationToken cancellationToken)
+    private static readonly DiagnosticCode LimitExceeded = new("exchange.limit-exceeded");
+
+    // The stream's bytes, or null past the limit
+    private static byte[]? ReadAll(Stream stream, long maxBytes, CancellationToken cancellationToken)
     {
         using var memory = new MemoryStream();
         var buffer = new byte[81920];
@@ -158,7 +159,7 @@ public static class Importers
             cancellationToken.ThrowIfCancellationRequested();
             total += n;
             if (total > maxBytes)
-                throw new InvalidDataException($"{name} is larger than the limit of {maxBytes} bytes");
+                return null;
             memory.Write(buffer, 0, n);
         }
         return memory.ToArray();

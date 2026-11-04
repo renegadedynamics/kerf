@@ -315,7 +315,7 @@ internal static class Measures
                 _ => null,
             };
         }
-        catch (Exception e) when (Failures.IsKernelFailure(e) || e is InvalidOperationException or ArgumentException or KerfException or NotImplementedException)
+        catch (Exception e) when (Failures.IsKernelFailure(e) || e is InvalidOperationException or ArgumentException or NotImplementedException)
         {
             return null;
         }

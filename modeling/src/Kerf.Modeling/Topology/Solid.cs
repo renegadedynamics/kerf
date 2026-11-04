@@ -434,13 +434,15 @@ public partial class Solid : Shape3D
         };
         var thickened = surface.TopoShape.Thicken(adjusted, options);
         if (!thickened.TryGetValue(out var solid))
-            throw new InvalidOperationException("Error applying thicken to given surface", new KerfException(thickened.Diagnostics));
+            throw Failures.Expected(ModelingDiagnostics.ThickenFailed, "The surface can't be thickened.", thickened.Diagnostics);
         return Result(new Solid(solid.Shape));
     }
 
     /// <summary>The solid with a draft of <paramref name="angle"/> degrees applied to planar, cylindrical or conical faces.</summary>
-    /// <exception cref="KerfException">
-    /// The draft can't be added to a face (<see cref="ModelingDiagnostics.DraftFailed"/>, the face as its shape), or built.
+    /// <exception cref="InvalidOperationException">
+    /// The draft can't be added to a face, or built: the shorthand's failure (unit 10M3).
+    /// <see cref="Operations.Draft(IEnumerable{Face}, Plane, double)"/> returns it as a result, with the code
+    /// <see cref="ModelingDiagnostics.DraftFailed"/> and the face as the error's shape.
     /// </exception>
     public Solid Draft(IEnumerable<Face> faces, Plane neutralPlane, double angle)
     {

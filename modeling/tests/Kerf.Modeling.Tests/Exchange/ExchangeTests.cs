@@ -30,7 +30,7 @@ public partial class ExchangeTests
         var stream = new MemoryStream();
         Assert.True(Exporters3D.ExportBrep(block, stream));
         stream.Position = 0;
-        var read = Importers.ImportBrep(stream);
+        var read = Importers.ImportBrep(stream).Value;
         Assert.IsType<Compound>(read);   // a Part's shape is a compound
         Check.AlmostEqual(block.Volume, read.Volume, 9);
 
@@ -38,7 +38,7 @@ public partial class ExchangeTests
         try
         {
             Assert.True(Exporters3D.ExportBrep(block, path));
-            Check.AlmostEqual(block.Volume, Importers.ImportBrep(path).Volume, 9);
+            Check.AlmostEqual(block.Volume, Importers.ImportBrep(path).Value.Volume, 9);
         }
         finally
         {
@@ -72,7 +72,7 @@ public partial class ExchangeTests
         var stream = new MemoryStream();
         Assert.True(Exporters3D.ExportStep(block, stream));
         stream.Position = 0;
-        var read = Importers.ImportStep(stream);
+        var read = Importers.ImportStep(stream).Value;
         Assert.IsType<Solid>(read);
         Check.AlmostEqual(block.Volume, read.Volume, 6);
         Assert.Equal(block.Faces().Count, read.Faces().Count);
@@ -81,7 +81,7 @@ public partial class ExchangeTests
         try
         {
             Assert.True(Exporters3D.ExportStep(block, path));
-            Check.AlmostEqual(block.Volume, Importers.ImportStep(path).Volume, 6);
+            Check.AlmostEqual(block.Volume, Importers.ImportStep(path).Value.Volume, 6);
         }
         finally
         {
@@ -96,7 +96,7 @@ public partial class ExchangeTests
         var stream = new MemoryStream();
         Exporters3D.ExportStep(two, stream);
         stream.Position = 0;
-        var read = Importers.ImportStep(stream);
+        var read = Importers.ImportStep(stream).Value;
         Assert.IsType<Compound>(read);
         Assert.Equal(2, read.Solids().Count);
         Check.AlmostEqual(2.0, read.Solids().Sum(s => s.Volume), 9);
@@ -127,9 +127,10 @@ public partial class ExchangeTests
     [Fact]
     public void BrokenStepDataIsRefused()
     {
-        var e = Assert.Throws<ArgumentException>(() => Importers.ImportStep(new MemoryStream("ISO-10303-21;\nHEADER;\ngarbage"u8.ToArray())));
-        Assert.StartsWith("Could not import STEP data", e.Message);
-        Assert.Throws<ArgumentException>(() => Importers.ImportStep(new MemoryStream([])));
+        var read = Importers.ImportStep(new MemoryStream("ISO-10303-21;\nHEADER;\ngarbage"u8.ToArray()));
+        Assert.StartsWith("Could not import STEP data", read.Error!.Message);
+        Assert.Equal("exchange.failed", read.Error.Code.Value);
+        Assert.Equal("exchange.failed", Importers.ImportStep(new MemoryStream([])).Error!.Code.Value);
     }
 
     [Fact]
@@ -138,7 +139,7 @@ public partial class ExchangeTests
         var stream = new MemoryStream();
         Exporters3D.ExportStep(Block(), stream);
         stream.Position = 0;
-        Assert.ThrowsAny<Exception>(() => Importers.ImportStep(stream, new ImportLimits(MaxBytes: 1000)));
+        Assert.Equal("exchange.failed", Importers.ImportStep(stream, new ImportLimits(MaxBytes: 1000)).Error!.Code.Value);
     }
 
     [Fact]
@@ -148,7 +149,7 @@ public partial class ExchangeTests
         var stream = new MemoryStream();
         Exporters3D.ExportStep(Block(), stream);
         stream.Position = 0;
-        Assert.Throws<ArgumentException>(() => Importers.ImportStep(stream, new ImportLimits(MaxEntities: 50)));
+        Assert.Equal("exchange.failed", Importers.ImportStep(stream, new ImportLimits(MaxEntities: 50)).Error!.Code.Value);
     }
 
     [Fact]
@@ -162,7 +163,7 @@ public partial class ExchangeTests
         Assert.DoesNotContain("PCURVE", text);
         inches.Position = 0;
         // The shapes were in inches and are written as such: read back in millimetres, they are 25.4 times larger
-        Check.AlmostEqual(10 * 20 * 30 * Math.Pow(25.4, 3), Importers.ImportStep(inches).Volume, 3);
+        Check.AlmostEqual(10 * 20 * 30 * Math.Pow(25.4, 3), Importers.ImportStep(inches).Value.Volume, 3);
     }
 
     [Fact]
@@ -187,7 +188,7 @@ public partial class ExchangeTests
         var stream = new MemoryStream();
         Exporters3D.ExportStep(pair, stream);
         stream.Position = 0;
-        var read = Importers.ImportStep(stream);
+        var read = Importers.ImportStep(stream).Value;
         Check.AlmostEqual(pair.Volume, read.Volume, 6);
         Assert.Equal("pair", read.Label);
         Assert.Equal(["a", "b"], ((Compound)read).AssemblyChildren.Select(c => c.Label));
@@ -207,7 +208,7 @@ public partial class ExchangeTests
             else
                 Assert.Equal(84 + 12 * 50, stream.Length);
             stream.Position = 0;
-            var face = Importers.ImportStl(stream);
+            var face = Importers.ImportStl(stream).Value;
             var (vertices, triangles) = face.Tessellate(1);
             Assert.Equal(12, triangles.Count);
             Assert.Equal(8, vertices.Count);   // nodes merged
@@ -224,7 +225,7 @@ public partial class ExchangeTests
         var stream = new MemoryStream();
         Exporters3D.ExportStl(new Box(10, 20, 30), stream);
         stream.Position = 0;
-        var box = Importers.ImportStl(stream).BoundingBox();
+        var box = Importers.ImportStl(stream).Value.BoundingBox();
         Assert.False(box.IsEmpty);
         Check.AlmostEqual(20, box.Size.Y, 6);
         Check.AlmostEqual(-15, box.Min.Z, 6);
@@ -236,7 +237,7 @@ public partial class ExchangeTests
         var stream = new MemoryStream();
         Exporters3D.ExportStl(new Box(1, 2, 3), stream);
         stream.Position = 0;
-        var face = Importers.ImportStl(stream, Unit.Meter);
+        var face = Importers.ImportStl(stream, Unit.Meter).Value;
         var (min, max) = Extent(face);
         Check.AlmostEqual(3000, max.Z - min.Z, 3);
         Assert.Throws<ArgumentException>(() => Importers.ImportStl(new MemoryStream(), Unit.Gram));
@@ -248,8 +249,8 @@ public partial class ExchangeTests
         var stream = new MemoryStream();
         Exporters3D.ExportStl(new Sphere(5), stream);
         stream.Position = 0;
-        Assert.Throws<InvalidDataException>(() => Importers.ImportStl(stream, limits: new ImportLimits(MaxTriangles: 10)));
-        Assert.Throws<InvalidDataException>(() => Importers.ImportStl(new MemoryStream("solid x\nfacet garbage"u8.ToArray())));
+        Assert.Equal("exchange.malformed", Importers.ImportStl(stream, limits: new ImportLimits(MaxTriangles: 10)).Error!.Code.Value);
+        Assert.Equal("exchange.malformed", Importers.ImportStl(new MemoryStream("solid x\nfacet garbage"u8.ToArray())).Error!.Code.Value);
     }
 
     [Fact]
@@ -269,7 +270,7 @@ public partial class ExchangeTests
             else
                 Assert.Contains("data:application/octet-stream;base64,", Encoding.UTF8.GetString(stream.ToArray()));
             stream.Position = 0;
-            var read = Assert.IsType<Compound>(Importers.ImportGltf(stream));
+            var read = Assert.IsType<Compound>(Importers.ImportGltf(stream).Value);
             Assert.Equal("pair", read.Label);
             Assert.Equal(["box", "ball"], read.AssemblyChildren.Select(c => c.Label));
             Assert.Equal(new Color("red"), read.AssemblyChildren[0].Color);

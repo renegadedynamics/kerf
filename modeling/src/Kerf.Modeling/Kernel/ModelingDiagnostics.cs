@@ -6,10 +6,10 @@ namespace Kerf.Modeling;
 /// (<c>boolean.self-interfering-shape</c>, <c>fillet.walking-failed</c>), with the operation said in the message.
 /// </summary>
 /// <remarks>
-/// A failed operation throws a <see cref="KerfException"/> carrying these diagnostics, which is what
-/// <c>Result&lt;T&gt;.Value</c> does; each operation's <c>Try</c> form (<see cref="Operations.TryFillet"/>,
-/// <see cref="Part.TrySubtract"/>…) returns the <see cref="Result{T}"/> instead. Misuse (a null argument, an index out
-/// of range) throws .NET's argument exceptions either way.
+/// A failed operation (<see cref="Operations.Fillet(IEnumerable{Edge}, double)"/>, <see cref="Part.Subtract"/>,
+/// <see cref="Importers.ImportStep(Stream, ImportLimits?, CancellationToken, string)"/>…) returns a failed
+/// <see cref="Result{T}"/> carrying these diagnostics (unit 10M3). Misuse (a null argument, an index out of range)
+/// throws .NET's argument exceptions.
 /// </remarks>
 public static class ModelingDiagnostics
 {
@@ -21,6 +21,9 @@ public static class ModelingDiagnostics
 
     /// <summary>An offset couldn't be built: <c>modeling.offset-failed</c>.</summary>
     public static DiagnosticCode OffsetFailed { get; } = new("modeling.offset-failed");
+
+    /// <summary>A surface couldn't be thickened into a solid: <c>modeling.thicken-failed</c> (unit 10M3).</summary>
+    public static DiagnosticCode ThickenFailed { get; } = new("modeling.thicken-failed");
 
     /// <summary>A loft was invalid and couldn't be recovered: <c>modeling.loft-failed</c>.</summary>
     public static DiagnosticCode LoftFailed { get; } = new("modeling.loft-failed");

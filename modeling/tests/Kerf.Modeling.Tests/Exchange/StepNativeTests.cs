@@ -29,8 +29,8 @@ public partial class StepNativeTests
         yield return ("sphere", () => new Sphere(5));
         yield return ("torus", () => new Torus(10, 2));
         yield return ("cone", () => new Cone(5, 2, 8));
-        yield return ("fillet", () => Ops.Fillet(new Box(10, 10, 10).Edges(), 1));
-        yield return ("loft", () => Ops.Loft([new Circle(5), new Rectangle(6, 4).Moved(new Location(new Vector(0.0, 0.0, 10.0)))]));
+        yield return ("fillet", () => Ops.Fillet(new Box(10, 10, 10).Edges(), 1).Value);
+        yield return ("loft", () => Ops.Loft([new Circle(5), new Rectangle(6, 4).Moved(new Location(new Vector(0.0, 0.0, 10.0)))]).Value);
         yield return ("face", () => Face.MakeRect(10, 6));
         yield return ("wire", () => new Polyline(new Vector(0.0, 0.0), new Vector(10.0, 0.0), new Vector(10.0, 5.0), new Vector(3.0, 8.0)));
         yield return ("compound", () => new Compound([new Box(1, 1, 1), new Sphere(1).Moved(new Location(new Vector(4.0, 0.0, 0.0)))]));
@@ -68,7 +68,7 @@ public partial class StepNativeTests
         // differently (StepAssemblyTests compares it with OCCT.NET's STEPCAFControl_Writer)
         if (name == "compound")
             return;
-        var shape = Importers.ImportBrep(Path.Combine(Folder, name + ".brep"));
+        var shape = Importers.ImportBrep(Path.Combine(Folder, name + ".brep")).Value;
         Assert.Equal(Masked(File.ReadAllBytes(Path.Combine(Folder, name + ".step"))), Masked(Write(shape)));
     }
 
@@ -76,7 +76,7 @@ public partial class StepNativeTests
     [MemberData(nameof(Names))]
     public void ReadsAsNative(string name)
     {
-        var read = Importers.ImportStep(Path.Combine(Folder, name + ".step"));
+        var read = Importers.ImportStep(Path.Combine(Folder, name + ".step")).Value;
         var expected = File.ReadAllText(Path.Combine(Folder, name + ".read.brep"));
         Assert.Equal(expected, Encoding.ASCII.GetString(Extras.WriteBRep(read.KernelShape)));
     }

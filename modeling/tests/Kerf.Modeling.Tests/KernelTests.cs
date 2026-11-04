@@ -10,12 +10,12 @@ public class KernelTests
     public void FilletsAndChamfersRun()
     {
         // Phase 7 of OCCT.NET: 3D fillets and chamfers, offsets and drafts
-        var filleted = Kerf.Modeling.Operations.Fillet(new Box(10, 10, 10).Edges(), 1);
+        var filleted = Kerf.Modeling.Operations.Fillet(new Box(10, 10, 10).Edges(), 1).Value;
         Assert.True(filleted.IsValid);
         Assert.Equal(26, filleted.Faces().Count);
         // a box of 8 grown by 1: its faces, quarter cylinders along its edges and eighth spheres at its corners
         Check.AlmostEqual(512 + 384 + 24 * Math.PI + 4 * Math.PI / 3, filleted.Volume, 4);
-        var chamfered = Kerf.Modeling.Operations.Chamfer(new Box(10, 10, 10).Edges(), 1);
+        var chamfered = Kerf.Modeling.Operations.Chamfer(new Box(10, 10, 10).Edges(), 1).Value;
         Assert.True(chamfered.IsValid);
         Assert.Equal(26, chamfered.Faces().Count);
     }

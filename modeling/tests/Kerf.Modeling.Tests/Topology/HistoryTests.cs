@@ -361,7 +361,7 @@ public class AlgebraSelectTests
     [Fact]
     public void OperationsOtherThanBooleans()
     {
-        var rounded = Ops.Fillet(new Box(10, 10, 10).Edges().ParallelTo(Axis.Z), 1);
+        var rounded = Ops.Fillet(new Box(10, 10, 10).Edges().ParallelTo(Axis.Z), 1).Value;
         Assert.Equal(4, rounded.Faces(Select.Last).Count);
         Assert.Equal(16, rounded.Edges(Select.New).Count);
     }

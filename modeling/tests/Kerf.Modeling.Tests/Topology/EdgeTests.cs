@@ -458,7 +458,7 @@ public class EdgeTests
     {
         var path = new RegularPolygon(5, 5).SingleFace().OuterWire();
         var profile = path.LocationAt(0) * (new Circle(0.6) & new Rectangle(2, 1));
-        var target = Sweep(profile, path, new SweepOptions { Transition = Transition.Right });
+        var target = Sweep(profile, path, new SweepOptions { Transition = Transition.Right }).Value;
         var insideEdges = target.Edges().Where(e => e.IsInterior).ToShapeList();
         Assert.Equal(5, insideEdges.Count);
         Assert.All(insideEdges, e => Assert.Equal(GeomType.Ellipse, e.GeomType));
@@ -471,7 +471,7 @@ public class EdgeTests
     {
         // A moved copy of an extracted solid still names the unmoved container as its topo_parent; the faces have to
         // be found by TShape, not Location
-        var moved = new Pos(10) * Extrude(Cross(), 2).SingleSolid();
+        var moved = new Pos(10) * Extrude(Cross(), 2).Value.SingleSolid();
         var insideEdges = moved.Edges().Where(e => e.IsInterior).ToShapeList();
         Assert.Equal(4, insideEdges.Count);
         Assert.All(insideEdges, e => Assert.True(e.Center().X > 5));
@@ -483,7 +483,7 @@ public class EdgeTests
         var box = new Box(10, 10, 10);
         Assert.All(box.Edges(), e => Assert.Equal(Convexity.Convex, e.Convexity));
 
-        var cross = Extrude(Cross(), 2);
+        var cross = Extrude(Cross(), 2).Value;
         var concave = cross.Edges().Where(Convexity.Concave);
         Assert.Equal(4, concave.Count);
         Assert.All(concave, e => Assert.True(e.IsInterior));
@@ -496,7 +496,7 @@ public class EdgeTests
     public void ConvexitySmooth()
     {
         // a fillet meets the faces it blends into without a crease
-        var rounded = Fillet(new Box(10, 10, 10).Edges(), 2);
+        var rounded = Fillet(new Box(10, 10, 10).Edges(), 2).Value;
         Assert.All(rounded.Edges(), e => Assert.Equal(Convexity.Smooth, e.Convexity));
         Assert.DoesNotContain(rounded.Edges(), e => e.IsInterior);
         // a seam has the same face on both sides

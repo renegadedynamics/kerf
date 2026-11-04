@@ -7,8 +7,8 @@ using Kerf;
 using Kerf.Modeling;
 
 /// <summary>
-/// The .NET API (unit 10M2) on build123d's classic tutorials, as modeling/docs/design.md shows them: a plate with
-/// holes, a filleted box, and a sketch extruded and cut. Each result is checked against its volume worked out by hand.
+/// The .NET API (units 10M2 and 10M3) on build123d's classic tutorials, as modeling/docs/design.md shows them: a plate
+/// with holes, a filleted box, and a sketch extruded and cut as a chain of operations that return results. Each result is checked against its volume worked out by hand.
 /// </summary>
 public class TutorialExamplesTests
 {
@@ -30,31 +30,38 @@ public class TutorialExamplesTests
     public void AFilletedBox()
     {
         Part box = new Box(30, 20, 10);
-        Part rounded = Fillet(box.Edges().ParallelTo(Axis.Z), 3);
+        Result<Part> rounded = Fillet(box.Edges().ParallelTo(Axis.Z), 3);
+        Result<Part> tooLarge = Fillet(box.Edges(), 20);
+        string shown = tooLarge.Match(p => $"{p.Volume:F0} mm³", error => error.Message);
 
-        Check.AlmostEqual(10 * (30 * 20 - 4 * (3 * 3 - Math.PI * 3 * 3 / 4)), rounded.Volume, 5);
-        Assert.Equal(10, rounded.Faces().Count);
+        Assert.True(rounded.TryGetValue(out var part));
+        Check.AlmostEqual(10 * (30 * 20 - 4 * (3 * 3 - Math.PI * 3 * 3 / 4)), part.Volume, 5);
+        Assert.Equal(10, part.Faces().Count);
 
         // A radius larger than the box can take: a failure a caller can expect, as a result
-        Result<Part> tooLarge = TryFillet(box.Edges(), 20);
         Assert.True(tooLarge.IsFailure);
         Assert.Equal(ModelingDiagnostics.FilletFailed, tooLarge.Error!.Code);
-        // The plain form throws the same diagnostics
-        Assert.Equal(ModelingDiagnostics.FilletFailed, Assert.Throws<KerfException>(() => Fillet(box.Edges(), 20)).Error.Code);
+        Assert.StartsWith("The fillet with a radius of 20", shown);
+        // Reading a failure's value is a programmer's error
+        Assert.Contains("modeling.fillet-failed", Assert.Throws<InvalidOperationException>(() => tooLarge.Value).Message);
     }
 
     [Fact]
     public void ASketchExtrudedAndCut()
     {
         Sketch profile = new Circle(20) - new Rectangle(10, 10);
-        Part disc = Extrude(profile, 5);
-        var top = disc.Faces().Where(GeomType.Plane).OrderBy(Axis.Z).Last();
-        disc -= Extrude(new Plane(top) * (new Pos(12, 0) * new Circle(4)), -2);
+        Result<Part> pocketed =
+            from disc in Extrude(profile, 5)
+            let top = disc.Faces().Where(GeomType.Plane).OrderBy(Axis.Z).Last()
+            from pocket in Extrude(new Plane(top) * (new Pos(12, 0) * new Circle(4)), -2)
+            from cut in disc.Subtract(pocket)
+            select cut;
 
         Assert.IsType<Sketch>(profile);
-        Check.AlmostEqual((Math.PI * 20 * 20 - 10 * 10) * 5 - Math.PI * 4 * 4 * 2, disc.Volume, 5);
+        var pocketedDisc = pocketed.Value;
+        Check.AlmostEqual((Math.PI * 20 * 20 - 10 * 10) * 5 - Math.PI * 4 * 4 * 2, pocketedDisc.Volume, 5);
         // The pocket's floor is the one planar face between the top and the bottom
-        Assert.Equal(3, disc.Faces().ParallelTo(Axis.Z).GroupBy(Axis.Z).Count);
-        Check.AlmostEqual(3, disc.Faces().ParallelTo(Axis.Z).GroupBy(Axis.Z)[1].Single().Center().Z, 7);
+        Assert.Equal(3, pocketedDisc.Faces().ParallelTo(Axis.Z).GroupBy(Axis.Z).Count);
+        Check.AlmostEqual(3, pocketedDisc.Faces().ParallelTo(Axis.Z).GroupBy(Axis.Z)[1].Single().Center().Z, 7);
     }
 }

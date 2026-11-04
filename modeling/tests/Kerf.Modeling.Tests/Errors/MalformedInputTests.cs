@@ -7,7 +7,7 @@ namespace Build123d.Tests.Errors;
 using Kerf.Modeling;
 
 /// <summary>
-/// Broken data and degenerate geometry give exceptions, never a crash or a hang: a test host that survives these
+/// Broken data and degenerate geometry give failures or exceptions, never a crash or a hang: a test host that survives these
 /// tests is the assertion that matters.
 /// </summary>
 public class MalformedInputTests
@@ -17,10 +17,10 @@ public class MalformedInputTests
     [Fact]
     public void ValidBRepStillReads()
     {
-        var part = Ops.Fillet(new Box(4, 4, 4).Edges(), 1) - new Cylinder(1, 10);
+        var part = Ops.Fillet(new Box(4, 4, 4).Edges(), 1).Value - new Cylinder(1, 10);
         foreach (var withTriangles in new[] { false, true })
         {
-            var read = Shape.Cast(Extras.ReadBRep(Brep(part, withTriangles)));
+            var read = Shape.Cast(Extras.ReadBRep(Brep(part, withTriangles)).Value);
             Assert.Equal(part.Volume, read.Volume, 6);
             Assert.Equal(part.Faces().Count, read.Faces().Count);
         }
@@ -34,8 +34,8 @@ public class MalformedInputTests
         for (int length = 0; length < data.Length - 1; length += 13)
         {
             // Most often the end is found as such; cut in the right place, a record is malformed instead
-            var e = Assert.Throws<Kerf.KerfException>(() => Extras.ReadBRep(data.AsSpan(0, length)));
-            Assert.Equal("exchange.malformed", e.Error.Code.Value);
+            var read = Extras.ReadBRep(data.AsSpan(0, length));
+            Assert.Equal("exchange.malformed", read.Error!.Code.Value);
         }
     }
 
@@ -44,38 +44,35 @@ public class MalformedInputTests
     [InlineData("hello")]
     [InlineData("CASCADE Topology V3, (c) Open Cascade\nLocations 99999999\n")]
     public void NonBRepIsAnError(string text) =>
-        Assert.Equal("exchange.malformed", Assert.Throws<Kerf.KerfException>(() => Extras.ReadBRep(Encoding.ASCII.GetBytes(text))).Error.Code.Value);
+        Assert.Equal("exchange.malformed", Extras.ReadBRep(Encoding.ASCII.GetBytes(text)).Error!.Code.Value);
 
     [Fact]
     public void AnOverlongWordIsRefusedBeforeOcctReadsIt()
     {
         // OCCT reads words into fixed buffers without a limit
         var data = Encoding.ASCII.GetBytes("CASCADE Topology V3, (c) Open Cascade\nLocations " + new string('9', 100_000));
-        var e = Assert.Throws<Kerf.KerfException>(() => Extras.ReadBRep(data));
-        Assert.Contains("too long", e.Message);
-        Assert.Throws<Kerf.KerfException>(() => Extras.ReadBRep("Locations\01"u8));
+        var read = Extras.ReadBRep(data);
+        Assert.Contains("too long", read.Error!.Message);
+        Assert.Equal("exchange.malformed", Extras.ReadBRep("Locations\01"u8).Error!.Code.Value);
     }
 
     [Fact]
     public void MutatedBRepReadsOrFailsCleanly()
     {
-        var sources = new Shape[] { new Box(1, 2, 3), Ops.Fillet(new Box(4, 4, 4).Edges(), 1) - new Cylinder(1, 10), new Sphere(2) };
+        var sources = new Shape[] { new Box(1, 2, 3), Ops.Fillet(new Box(4, 4, 4).Edges(), 1).Value - new Cylinder(1, 10), new Sphere(2) };
         var texts = sources.SelectMany(s => new[] { Brep(s), Brep(s, withTriangles: true) })
                            .Select(Encoding.ASCII.GetString).ToList();
         int read = 0, refused = 0;
         for (int seed = 0; seed < 300; seed++)
         {
             var data = Mutate(texts[seed % texts.Count], new Random(seed));
-            Shape shape;
-            try
-            {
-                shape = Shape.Cast(Extras.ReadBRep(data));
-            }
-            catch (Kerf.KerfException)
+            var result = Extras.ReadBRep(data);
+            if (result.IsFailure)
             {
                 refused++;
                 continue;
             }
+            var shape = Shape.Cast(result.Value);
             read++;
             // A shape read from broken data may itself be broken: asking about it fails cleanly or not at all
             try

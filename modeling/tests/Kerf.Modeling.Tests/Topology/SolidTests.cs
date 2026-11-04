@@ -428,7 +428,8 @@ public class SolidDraftTests
         var shape = _box.KernelShape;
         var err = Failures.Expected(ModelingDiagnostics.DraftFailed, "msg", default, null, face.KernelShape, shape);
         Assert.Equal("msg", err.Message);
-        Assert.True(err.Error.Shapes[0].IsSame(face.KernelShape));
-        Assert.True(err.Error.Shapes[1].IsEqual(shape));
+        var error = Failures.DiagnosticsOf(err)[0];
+        Assert.True(error.Shapes[0].IsSame(face.KernelShape));
+        Assert.True(error.Shapes[1].IsEqual(shape));
     }
 }

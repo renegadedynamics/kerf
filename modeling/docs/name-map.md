@@ -131,8 +131,8 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `sweep(…, multisection=, is_frenet=, transition=, normal=, binormal=, clean=)` | `Sweep(sections, path, new SweepOptions { … })` |
 | `offset(…, openings=, kind=, side=, closed=, min_edge_length=)` | `Offset(obj, amount, new OffsetOptions { Openings = [..], Kind = …, … })` |
 | `thicken(…, normal_override=, both=, clean=)` | `Thicken(faces, amount, new ThickenOptions { … })` |
-| A failure (`ValueError`, `RuntimeError` from fillet, chamfer, offset, loft, draft) | `KerfException` with a code (`ModelingDiagnostics`), or the `Try` form's `Result<T>`: `TryFillet`, `TryExtrude`, … |
-| `DraftAngleError` | `KerfException`, code `modeling.draft-failed`, the face as the diagnostic's shape |
+| A failure (`ValueError`, `RuntimeError` from fillet, chamfer, offset, loft, draft) | A failed `Result<T>` with a code (`ModelingDiagnostics`) from the operation (`Fillet`, `Extrude`, …; unit 10M3) |
+| `DraftAngleError` | A failed `Result<Part>`, code `modeling.draft-failed`, the face as the diagnostic's shape |
 | A union return (`Part \| Sketch \| Curve \| Compound`) | Typed for a Part, Sketch or Curve given (`Mirror(part)` is a `Part`); `Compound` for a mix, a `Part`, `Sketch` or `Curve` at run time by Python's dimension rule |
 | `chamfer`/`fillet` of edges, of vertices | `Part`, and `Shape` (a `Sketch`, `Wire` or `Shell`) |
 | `project(points, workplane)` | `ProjectPoints(points, workplane)`, returning the points |
@@ -172,7 +172,8 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 - Run-time argument-type checks (for example `Rotation("text")` raising TypeError) have no
   counterpart, because the compiler rules those calls out.
 - Exceptions: a failure a caller should expect (a fillet, chamfer, offset, loft, draft or spline that can't be
-  built, a Boolean that fails) is a `KerfException` with diagnostic codes, or the `Try` form's `Result<T>`. Misuse
+  built, a Boolean that fails, a file that can't be read) is a failed `Result<T>` with diagnostic codes; the operators
+  and constructors, which can't return one, throw `InvalidOperationException` (unit 10M3). Misuse
   stays .NET's: `ValueError` becomes `ArgumentException` (`ArgumentNullException` for a missing input), except where
   the shape being operated on is empty, which throws `InvalidOperationException` (the object's state, not an argument,
   is at fault). `RuntimeError` becomes `InvalidOperationException`. The messages are .NET sentences (unit 10M2).

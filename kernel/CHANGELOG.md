@@ -2017,3 +2017,8 @@ Phase 10 (part): Kerf.Modeling's .NET API (unit 10M2). No kernel change.
   typed results for Part, Sketch and Curve, options records, `Try` forms returning `Result<T>` with modelling codes
   beside the kernel's (`modeling.fillet-failed`…; api/diagnostics.md), no `Mode`, tuple conversions or Python operators,
   Python's emulation rewritten as .NET with the same results. Bento's benchmark builds on the new API.
+Phase 10 (part): expected failures are results (unit 10M3).
+- `KerfException` is gone, with `Result<T>.GetValueOrThrow` and `Result.ThrowIfFailed`: Kerf has no exception type of
+  its own. Reading `Value` of a failed result is a programmer's error and throws `InvalidOperationException`, naming the
+  first error's code and message. `Match` gives one value either way, and `Select` and `SelectMany` let a chain of
+  operations read as a LINQ query that stops at the first failure.

@@ -9,7 +9,7 @@ using Kerf.Modeling;
 public class SelectorTests
 {
     private static readonly Shape Part =
-        Ops.Fillet((new Box(20, 10, 4) - new Cylinder(2, 10)).Edges().GroupBy(Axis.Z).Last().Where(GeomType.Line), 1);
+        Ops.Fillet((new Box(20, 10, 4) - new Cylinder(2, 10)).Edges().GroupBy(Axis.Z).Last().Where(GeomType.Line), 1).Value;
 
     [Fact]
     public void ASelectorIsTheSelectionItDescribes()
@@ -123,7 +123,7 @@ public class SelectorTests
         // Found on one model, applied to a bigger one, it picks the corresponding face
         var top = Part.Faces().Where(GeomType.Plane).GroupBy(Axis.Z).Last().Single();
         var selector = Selector.For(Part, top)[0];
-        var bigger = Ops.Fillet((new Box(30, 15, 6) - new Cylinder(3, 10)).Edges().GroupBy(Axis.Z).Last().Where(GeomType.Line), 1);
+        var bigger = Ops.Fillet((new Box(30, 15, 6) - new Cylinder(3, 10)).Edges().GroupBy(Axis.Z).Last().Where(GeomType.Line), 1).Value;
         var picked = Assert.Single(selector.Apply(bigger));
         Assert.Equal(3, picked.Center().Z, 6);
     }

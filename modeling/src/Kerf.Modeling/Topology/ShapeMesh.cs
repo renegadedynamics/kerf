@@ -76,7 +76,7 @@ public sealed class ShapeMesh
             Parallel = true,
             EdgeDeflection = tolerances.Relative ? MeshTolerances.For(shape).Linear : null,
         };
-        var mesh = global::Kerf.Meshing.Mesher.Mesh(shape.TopoShape, options).GetValueOrThrow();
+        var mesh = Failures.Get(global::Kerf.Meshing.Mesher.Mesh(shape.TopoShape, options), () => "mesh");
         var faceMeshes = mesh.Faces.Select(f => new FaceMesh(f.Positions, f.Normals, f.Triangles, GeomTypeOf(f.Kind))).ToArray();
         var edgeMeshes = mesh.Edges.Select(e => new EdgeMesh(e.Points, GeomTypeOf(e.Kind))).ToArray();
         return new ShapeMesh(faceMeshes, edgeMeshes, [.. shape.Vertices().Select(v => v.ToVector())], tolerances);

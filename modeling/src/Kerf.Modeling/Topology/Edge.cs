@@ -593,7 +593,7 @@ public partial class Edge : Shape1D
                 if (DistanceTo(pnt) <= Constants.Tolerance && (otherEdge is null || otherEdge.DistanceTo(pnt) <= Constants.Tolerance))
                     valid.Add(pnt);
             }
-            catch (InvalidOperationException) { }
+            catch (InvalidOperationException e) when (!Failures.IsFailure(e)) { }
         }
         return valid;
 
