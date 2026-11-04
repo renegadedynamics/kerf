@@ -265,6 +265,10 @@ public class PublicMemberTests
 
         var neighbour = box.Moved(new Location(new Vector(2, 0, 0)));
         Assert.NotEmpty(box.Touch(neighbour));
+        // a shape that isn't a compound
+        Face side = box.Faces()[0];
+        Assert.Equal(side.Center(), side.Center(CenterOf.Mass));
+        Assert.Empty(side.Touch(side.Moved(new Location(new Vector(100, 0, 0)))));
 
         Assert.Equal(new Vector(1, 2, 3), new Rectangle(1, 1).Faces()[0].WithCreatedOn(new Plane(new Vector(1, 2, 3))).CreatedOn!.Origin);
 

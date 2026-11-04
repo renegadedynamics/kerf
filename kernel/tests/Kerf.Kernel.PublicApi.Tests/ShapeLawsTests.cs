@@ -65,6 +65,7 @@ public class ShapeLawsTests
         Assert.Equal(Orientation.Reversed, reversed.Orientation);
         Assert.Equal(Orientation.Reversed, ((Shape)Call(shape, "Complemented")).Orientation);
         Assert.Equal(Orientation.Reversed, ((Shape)Call(shape, "Composed", Orientation.Reversed)).Orientation);
+        Assert.Equal(Orientation.Reversed, general.Composed(Orientation.Reversed).Orientation);
         Assert.Equal(Orientation.Internal, ((Shape)Call(shape, "Oriented", Orientation.Internal)).Orientation);
 
         // the same TShape: same, partner, not equal

@@ -476,6 +476,11 @@ public class GeometryValueLawsTests
         Assert.True(CoordinateSystem.World.IsCoplanar(new Axis3D(new Point3D(5, 5, 0), new Direction3D(1, 1, 0)), 1e-9, 1e-9));
         Assert.False(CoordinateSystem.World.IsCoplanar(new Axis3D(new Point3D(5, 5, 1), new Direction3D(1, 1, 0)), 1e-9, 1e-9));
 
+        // by a named axis
+        Assert.Equal(1, new CoordinateSystem(Direction3D.D.Y).Direction.Y, 12);
+        Assert.Equal(P, new CoordinateSystem(P, Direction3D.D.Y).Location);
+        Assert.Equal(P, new Frame3D(P, Direction3D.D.Z, Direction3D.D.X).Location);
+
         var frame2 = Frame2D.World;
         Assert.Equal(1, frame2.WithXAxis(new Axis2D(Point2D.Origin, new Direction2D(0, 1))).XDirection.Y, 9);
         Assert.Equal(1, frame2.WithYAxis(new Axis2D(Point2D.Origin, new Direction2D(1, 0))).YDirection.X, 9);
