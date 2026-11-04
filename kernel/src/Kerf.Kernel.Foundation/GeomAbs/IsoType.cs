@@ -8,7 +8,7 @@ namespace Kerf.Engine.Geometry;
 
 /// <summary>Whether a curve is a U isoparametric, a V isoparametric, or neither.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.GeomAbs_IsoType;</c>.</remarks>
-public enum IsoType
+internal enum IsoType
 {
     IsoU,
     IsoV,

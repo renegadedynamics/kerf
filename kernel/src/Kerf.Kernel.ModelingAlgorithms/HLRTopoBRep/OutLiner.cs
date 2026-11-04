@@ -39,7 +39,7 @@ namespace Kerf.Engine.HiddenLines.Topology;
 /// <see cref="InternalOutLinedShape"/> doesn't freeze.
 /// </para>
 /// </remarks>
-public class OutLiner : Transient
+internal class OutLiner : Transient
 {
     private Shape _originalShape = new();
     private Shape _outLinedShape = new();

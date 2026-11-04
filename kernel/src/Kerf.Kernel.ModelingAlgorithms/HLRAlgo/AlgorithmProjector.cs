@@ -23,7 +23,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 /// <see cref="Project(in Point3D, ref Point2D)"/> OCCT forgets to write the result for the first of them, so the
 /// point is <c>ref</c> and keeps the caller's value there (decision 1078).
 /// </remarks>
-public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
+internal partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
 {
     // formula for derivating a perspective, from Mathematica
     //        X'[t]      X[t] Z'[t]

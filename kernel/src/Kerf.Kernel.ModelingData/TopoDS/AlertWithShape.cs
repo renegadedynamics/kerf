@@ -22,7 +22,7 @@ namespace Kerf.Engine.Topology;
 /// <see cref="InternalGetShape"/>, which doesn't freeze. The setter is internal: alerts are made by the algorithms.
 /// </para>
 /// </remarks>
-public class AlertWithShape : Alert
+internal class AlertWithShape : Alert
 {
     private Shape _shape;
 

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Topology.Adaptors;
 
 /// <summary>A face's surface adaptor with its topological tool.</summary>
 /// <remarks>A working object (decision 21). OCCT's empty Destroy is left out.</remarks>
-public class AdaptorTool
+internal class AdaptorTool
 {
     private bool _myloaded;
     private BrepTopolTool _topolTool;

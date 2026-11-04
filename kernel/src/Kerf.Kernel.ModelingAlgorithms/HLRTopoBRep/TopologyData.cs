@@ -22,7 +22,7 @@ namespace Kerf.Engine.HiddenLines.Topology;
 /// order; the port's iterate in insertion order (decision 1094): the edges with inserted vertices are visited in the
 /// order their first vertex was inserted, which changes only the order the splits are built in.
 /// </remarks>
-public sealed class TopologyData
+internal sealed class TopologyData
 {
     private readonly Dictionary<Shape, Shape> _oldS = new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, NCollection_List<Shape>> _splE =

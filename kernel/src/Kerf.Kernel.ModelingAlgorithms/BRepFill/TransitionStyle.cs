@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Filling;
 
 /// <summary>How a sweep treats the discontinuities of its spine's tangent.</summary>
-public enum TransitionStyle
+internal enum TransitionStyle
 {
     /// <summary>The section is swept through the corner with a discontinuous trihedron.</summary>
     Modified,

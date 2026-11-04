@@ -21,7 +21,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// </list>
 /// An unscoped enum in C++; ported code imports it with <c>using static Occt.Convert_ParameterisationType;</c>.
 /// </remarks>
-public enum ParameterisationType
+internal enum ParameterisationType
 {
     TgtThetaOver2,
     TgtThetaOver2_1,

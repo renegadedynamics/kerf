@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Constraints;
 
 /// <summary>The kind of a bisecting curve: line, circle, ellipse, parabola, hyperbola or point.</summary>
-public enum ConstraintCurveType
+internal enum ConstraintCurveType
 {
     Lin,
     Cir,

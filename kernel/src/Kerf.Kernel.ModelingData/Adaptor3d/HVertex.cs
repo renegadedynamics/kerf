@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// A vertex of the parametric domain of a surface, as Adaptor3d_TopolTool sees it: a 2D point, an orientation
 /// and a tolerance. BRepTopAdaptor_HVertex redefines it for topological vertices.
 /// </summary>
-public class HVertex : Transient
+internal class HVertex : Transient
 {
     private Point2D _pnt;
     private double _tol;

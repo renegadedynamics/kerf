@@ -8,7 +8,7 @@ namespace Kerf.Engine.Approximation.Advanced;
 
 /// <summary>Whether a criterion of <see cref="ApproxAFunc2Var"/> is absolute or relative.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.AdvApp2Var_CriterionType;</c>.</remarks>
-public enum CriterionType
+internal enum CriterionType
 {
     Absolute,
     Relative,

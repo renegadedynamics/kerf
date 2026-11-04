@@ -10,7 +10,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// The three filling styles: Stretch (the flattest patches), Coons (rounded, less deep than Curved) and Curved
 /// (the most rounded patches).
 /// </summary>
-public enum FillingStyle
+internal enum FillingStyle
 {
     StretchStyle,
     CoonsStyle,
