@@ -2,7 +2,8 @@
 
 *Unit 10I, 3 November 2026 (phase10-plan.md, section 2.7). Counted at Kerf `main` 296531cd and after the unit with
 `tools/state-survey.py` (run `python -I tools/state-survey.py <repository> <out.tsv>` from `kernel/` to recount).
-Decisions 1385 to 1392.*
+Decisions 1385 to 1392. Unit 10P3, 4 November 2026, moved the BlendFunc and Contap scratch and the rest of what was cheap
+(decisions 18001 to 18004), and added [every field left, one by one](#every-field-left).*
 
 ## What this is
 
@@ -27,7 +28,11 @@ statics, 71 locks) counted more widely, `static readonly` constants included.
 | of them holding state that changes (caches, registries, ambient scopes) | 18 | 14 |
 | `lock` statements | 55, on 31 objects | 23, on 13 objects |
 
-By class (fields; a declaration of several variables counts once), before → after:
+After 10P3, by the same count, at Kerf `main` 17995a01 plus the unit: **9 mutable static fields** (from 14),
+**5 `[ThreadStatic]` fields** (from 19; 5 variables, from 39), 23 `lock` statements, none of them on process-wide state
+that an operation reads or writes other than the two registries filled at initialisation.
+
+By class, as unit 10I left them (fields; a declaration of several variables counts once), before → after:
 
 | Class | Mutable statics | `[ThreadStatic]` | `static readonly` holding state | Decision |
 |---|---|---|---|---|
@@ -112,12 +117,12 @@ The three tables the plan names (decision 1388):
 | ModelingAlgorithms/ShapeProcess/OperLibrary.cs | a flag and a lock | `Lazy<bool>` publishing the operators |
 | ModelingAlgorithms/ShapeAlgo/ShapeAlgo.cs | a flag, a container and a lock | `Lazy<AlgoContainer>` |
 | DataExchange/STEPControl/StepController.cs, STEPCAFControl/CafController.cs | a recorded controller under a lock | `Lazy<…>` |
+| Foundation/PLib/HermitJacobi.cs | three matrices made on first use (`LazyInitializer`) | `Lazy<Matrix>` (10P3) |
+| ModelingData/AdvApp2Var/MathBase.cs (`mmprcsn_`) | the precision block, written once in the static constructor by `mmwprcs_` | constants (10P3) |
 | ModelingAlgorithms/BRepMesh/DiscretAlgoFactory.cs, IncrementalMeshFactory.cs, XBRepMesh/Factory.cs | a list under a lock, filled by self-registering singletons | an array built in the static initialiser |
 | ModelingAlgorithms/ShapeBuild/ShapeBuildBuilder.cs | the XOY plane made on first use | `static readonly` |
 | DataExchange/XSControl/Controller.cs | the recorded controllers under a lock | an immutable dictionary replaced by compare-and-swap |
 | DataExchange/LibCtl/Library.cs (`s_theGlobal`), StepData/StepData.cs (`s_theheader`) | registries filled by the protocols' one-time initialisations, under a writer lock | unchanged: written only from `Lazy` initialisers |
-| Foundation/PLib/HermitJacobi.cs | three matrices made on first use (`LazyInitializer`, no lock) | unchanged |
-| ModelingData/AdvApp2Var/MathBase.cs (`mmprcsn_`) | the precision block, set in the static constructor | unchanged |
 | the protocols, Unicode tables, `TypedValue`'s library (12 `Lazy<T>`) | | unchanged |
 
 ## Caches
@@ -136,9 +141,9 @@ The three tables the plan names (decision 1388):
 
 | Where | Decision |
 |---|---|
-| ModelingAlgorithms/BlendFunc/ConstRad.cs, EvolRad.cs (`[ThreadStatic]`, 14 variables each) | **stay per thread.** OCCT's are `thread_local`, read across calls when an instance's guard skips a positioning (decision 1037). Per thread is the right scope: an operation's parallel bodies run on several threads, and a new instance always positions first, so nothing crosses from one operation to another |
-| ModelingAlgorithms/Contap/HContTool.cs (4) | stay per thread (decision 1075), as BlendFunc's |
-| ModelingAlgorithms/TopOpeBRepTool/SC.cs | stays per thread: OCCT's is `thread_local` |
+| ModelingAlgorithms/BlendFunc/ConstRad.cs, EvolRad.cs (14 variables each) | **per instance** (10P3). OCCT's are `thread_local`, read across calls when an instance's guard skips a positioning (decision 1037). A new instance always positions first, so the scratch belongs with the guards that decide when it is read, which are the instance's. Two instances interleaved on one thread no longer read each other's guide point; no recording or corpus case depended on that |
+| ModelingAlgorithms/Contap/HContTool.cs (4 bounds) | **gone** (10P3): `SamplePoint` works the bounds out from its surface, the one `NbSamplePoints` was just given by its only two callers |
+| ModelingAlgorithms/TopOpeBRepTool/SC.cs | **gone** (10P3): its one caller makes its own classifier, and it no longer holds on to a thread's last shapes |
 | ModelingData/GeomTools/GeomTools.cs (`s_nesting`) | stays: a reader's recursion depth, on its own thread |
 | ModelingAlgorithms/BRepAlgo/ShapeImage.cs (`s_noImage`), AsDes.cs (`s_empty`) | **per instance** (decision 1389). OCCT's static list of `Image` grows with every shape without images and is returned to the caller, and AsDes's shared "empty" list is writable through `ChangeDescendant`: per thread, what one operation appended reached the next operation on that thread |
 | ModelingAlgorithms/HLRBRep/HiddenLineData.cs (7 counters) | **removed**: written without synchronisation on every intersection, read by nothing (OCCT's `OCCT_DEBUG` traces) |
@@ -151,7 +156,6 @@ The three tables the plan names (decision 1388):
 | Where | Why |
 |---|---|
 | ModelingAlgorithms/IntWalk/IWalking.cs, PWalking.cs (`s_threadStepTrace`, `[ThreadStatic]`) | the walking's step trace for its recorded comparisons (decision 687); null in a library's use |
-| ModelingAlgorithms/HLRBRep/InternalAlgo.cs (`s_rty`, `[ThreadStatic]`) | the column of `Debug(true)`'s trace (decision 1130) |
 | ModelingAlgorithms/IntPatch/Polygo.cs (`s_dumpNum`) | numbers `Dump`'s output (Draw's), `Interlocked` |
 | Foundation/OSD/OsdParallel.cs (`ForceSerial`, `MaxDegree`) | `AsyncLocal` test scopes (decision 619): per flow already |
 | ModelingData/BRepTools/WorkingOverlay.cs (`s_openCount`, `s_current`, `t_current`) | 10H1's overlay: per operation already (`Interlocked` counter, `AsyncLocal`) |
@@ -167,7 +171,7 @@ Every lock left (decision 1391):
 | DataExchange/LibCtl/Library.cs | the global list of a library's modules | written only by the protocols' one-time initialisations; readers take none |
 | DataExchange/StepData/StepData.cs | the header protocol | written only by RWHeaderSection's one-time initialisation |
 | DataExchange/XSControl/ExchangeWorkSession.cs (2) | a controller's actors, while a session makes a model or transfers a shape | was one process-wide mutex (OCCT's); now the controller's: sessions on a shared recorded controller take turns, and every STEP reader and writer has its own (decision 1264), so none waits for another |
-| ModelingAlgorithms/BOPAlgo/BOPAlgo_PaveFiller_7.cs (`VerticesLock`) | a vertex's tolerance, raised by the filler's parallel p-curve makers (decision 789) | within one operation's parallel loop; static, so two Booleans updating at once wait briefly for each other. 10H2 (whose file it is) can make it the filler's |
+| ModelingAlgorithms/BOPAlgo/BOPAlgo_PaveFiller_7.cs (`_verticesLock`) | a vertex's tolerance, raised by the filler's parallel p-curve makers (decision 789) | the filler's own since 10P3; another operation writes to its own working copies |
 | ModelingAlgorithms/BRepExtrema/DistanceShapeShape.cs | the inner-solid search's result, from its parallel bodies | one operation's own, per call |
 | Foundation/BVH/BuildQueue.cs, QueueBuilder.cs (3) | the parallel BVH builder's queue | one builder's own |
 | Foundation/Message/Report.cs (6), Message_Progress.cs (3) | an algorithm's report and progress, written by its parallel bodies (OCCT's mutexes) | one operation's own objects |
@@ -177,7 +181,29 @@ Every lock left (decision 1391):
 | modeling/…/Topology/ShapeLog.cs | the shape log's file | test tooling, off by default |
 
 None guards process-wide state that an operation reads or writes, apart from the two registries filled at
-initialisation and `VerticesLock`. The `Lazy<T>`s lock only while they initialise.
+initialisation. The `Lazy<T>`s lock only while they initialise. Plan 2.7 asks for no locks but one-time initialisation's;
+the ones that stay guard one object against one operation's own parallel bodies, where the alternative is a data race,
+and only `ExchangeWorkSession`'s can make one session wait for another, on a controller they chose to share.
+
+## Every field left
+
+Every row `tools/state-survey.py` reports as mutable or `[ThreadStatic]` after 10P3, and why it isn't context or
+instance state (plan 2.7, the audit's question). None changes a result.
+
+| Field | Kind | What it is | Why it stays |
+|---|---|---|---|
+| Foundation/Message/MsgFile.cs `s_defaults` | one-time | the compiled-in message texts | an immutable table, swapped whole by compare-and-swap when an owner's `Lazy` adds its set; only ever gains the same texts |
+| ModelingAlgorithms/ShapeProcess/ShapeProcess.cs `s_defaultOperators` | one-time | Shape Healing's 18 operators | a frozen dictionary published once by `OperLibrary`'s `Lazy` |
+| DataExchange/LibCtl/Library.cs `s_theGlobal` | one-time | a library's module list | written only by the protocols' `Lazy` initialisers, under the writer lock; readers take none |
+| DataExchange/StepData/StepData.cs `s_theheader` | one-time | the header protocol | written only by RWHeaderSection's one-time initialisation |
+| DataExchange/XSControl/Controller.cs `s_listad` | one-time | the recorded controllers, by name | an immutable dictionary swapped by compare-and-swap; each controller records itself from its `Lazy` |
+| ModelingData/BRepTools/WorkingOverlay.cs `s_openCount` | per operation | how many overlays are open | `Interlocked`; zero is the accessors' fast path. Counts operations but no result reads it |
+| ModelingData/BRepTools/WorkingOverlay.cs `t_current` (`[ThreadStatic]`) | per operation | the flow's overlay, mirrored from its `AsyncLocal` | a field read on every TShape access, where the `AsyncLocal` would cost a lookup (decision 1359) |
+| ModelingData/GeomTools/GeomTools.cs `s_nesting` (`[ThreadStatic]`) | scratch | a reader's recursion depth, against hostile input | entered and left in a `using` on one thread; threading a depth through every reader's recursion would touch all the geometry readers for nothing |
+| ModelingData/AdvApp2Var/MathBase.cs `t_mmcmher` (`[ThreadStatic]`) | cache | `mmherm0_`'s Hermite coefficients, read by `mmherm1_` | f2c-translated static functions with no instance to hold it; per thread it is safe (decision 113), and each computation refills what it reads |
+| ModelingAlgorithms/IntWalk/IWalking.cs, PWalking.cs `s_threadStepTrace` (`[ThreadStatic]`, 2) | test hook | the walking's step trace for recorded comparisons (decision 687) | null in a library's use; a test sets it on its own thread |
+| ModelingAlgorithms/IntPatch/Polygo.cs `s_dumpNum` | debug | numbers the polygons `Dump` prints | `Interlocked`, read only by Draw's `Dump`; OCCT's printed text |
+| modeling/…/Topology/ShapeLog.cs `s_test`, `s_seq` | test tooling | the differential run's current test and sequence number | only with `BUILD123D_SHAPE_LOG`, under its lock; off in a library's use |
 
 ## Measurements
 
@@ -196,6 +222,8 @@ Decision 1392. Release, 24 logical processors, other units running beside (the m
 
 No cost found. The parallel rounds are dominated by workstation GC (23 to 25 s of pauses in each run), not by
 contention: performance.md's proposal 1 (server GC in parallel hosts) is what would speed them.
+
+10P3's moves were checked the same way (ConcurrencyTests, and Bento's parallel rounds), with no result differing.
 
 ## Draw-lite
 

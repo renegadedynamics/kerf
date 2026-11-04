@@ -25,7 +25,7 @@ and the forwarding layer to OCCT.NET went in unit 10B.
 [tests/Kerf.Modeling.Packaging.Tests](tests/Kerf.Modeling.Packaging.Tests) loads `Kerf.Modeling` and the kernel's
 assemblies from a folder of their own through a collectible `AssemblyLoadContext`, as Bento loads its extensions, makes
 and tessellates a box, checks no native library loads and the context unloads. It needs a build output
-(`B3D_OCCTNET_LIB`, Kerf.Modeling's `bin` folder), so it isn't part of the solution's `dotnet test`, and skips without
+(`KERF_MODELING_LIB`, Kerf.Modeling's `bin` folder), so it isn't part of the solution's `dotnet test`, and skips without
 it.
 
 ## Licence

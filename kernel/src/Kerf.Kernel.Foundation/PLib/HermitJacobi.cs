@@ -52,39 +52,22 @@ internal sealed class HermitJacobi
 
     // The Hermite matrices are computed once, on first use (C++ function-local statics; thread-safe here too).
     // They are shared: never modified after they are built.
-    private static Matrix? s_theHermiteMatrixC0;
-    private static Matrix? s_theHermiteMatrixC1;
-    private static Matrix? s_theHermiteMatrixC2;
+    private static readonly Lazy<Matrix> HermiteMatrixC0 = new(() => HermiteMatrix(2, 0));
+    private static readonly Lazy<Matrix> HermiteMatrixC1 = new(() => HermiteMatrix(4, 1));
+    private static readonly Lazy<Matrix> HermiteMatrixC2 = new(() => HermiteMatrix(6, 2));
 
-    private static Matrix GetHermiteMatrix_C0()
+    private static Matrix HermiteMatrix(int size, int order)
     {
-        return LazyInitializer.EnsureInitialized(ref s_theHermiteMatrixC0, static () =>
-        {
-            Matrix result = new(1, 2, 1, 2);
-            global::Kerf.Engine.Numerics.Polynomials.PLib.HermiteCoefficients(-1.0, 1.0, 0, 0, result);
-            return result;
-        });
+        Matrix result = new(1, size, 1, size);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.HermiteCoefficients(-1.0, 1.0, order, order, result);
+        return result;
     }
 
-    private static Matrix GetHermiteMatrix_C1()
-    {
-        return LazyInitializer.EnsureInitialized(ref s_theHermiteMatrixC1, static () =>
-        {
-            Matrix result = new(1, 4, 1, 4);
-            global::Kerf.Engine.Numerics.Polynomials.PLib.HermiteCoefficients(-1.0, 1.0, 1, 1, result);
-            return result;
-        });
-    }
+    private static Matrix GetHermiteMatrix_C0() => HermiteMatrixC0.Value;
 
-    private static Matrix GetHermiteMatrix_C2()
-    {
-        return LazyInitializer.EnsureInitialized(ref s_theHermiteMatrixC2, static () =>
-        {
-            Matrix result = new(1, 6, 1, 6);
-            global::Kerf.Engine.Numerics.Polynomials.PLib.HermiteCoefficients(-1.0, 1.0, 2, 2, result);
-            return result;
-        });
-    }
+    private static Matrix GetHermiteMatrix_C1() => HermiteMatrixC1.Value;
+
+    private static Matrix GetHermiteMatrix_C2() => HermiteMatrixC2.Value;
 
     private static Matrix GetHermiteMatrix(int nivConstr)
     {

@@ -6,26 +6,26 @@ using System.Runtime.Loader;
 namespace Kerf.Modeling.Packaging.Tests;
 
 /// <summary>
-/// A test that needs build123d.NET's build output: the folder of a project built against OCCT.NET (Build123d's own, or
-/// its tests'), given as B3D_OCCTNET_LIB. Skipped without it.
+/// A test that needs Kerf.Modeling's build output: the folder of a project that references it (Kerf.Modeling's own, or
+/// its tests'), given as KERF_MODELING_LIB. Skipped without it.
 /// </summary>
-public sealed class OcctNetFactAttribute : FactAttribute
+public sealed class ModelingBuildFactAttribute : FactAttribute
 {
-    public OcctNetFactAttribute()
+    public ModelingBuildFactAttribute()
     {
-        if (Environment.GetEnvironmentVariable("B3D_OCCTNET_LIB") is not { Length: > 0 })
-            Skip = "set B3D_OCCTNET_LIB to a build output of Kerf.Modeling";
+        if (Environment.GetEnvironmentVariable("KERF_MODELING_LIB") is not { Length: > 0 })
+            Skip = "set KERF_MODELING_LIB to a build output of Kerf.Modeling";
     }
 }
 
 /// <summary>
-/// build123d.NET as Bento's 3D-models extension would load it: Kerf.Modeling and OCCT.NET's assemblies alone in a folder,
+/// Kerf.Modeling as Bento's 3D-models extension would load it: Kerf.Modeling and the kernel's assemblies alone in a folder,
 /// loaded through a collectible <see cref="AssemblyLoadContext"/> with Schematiq.Collections shared from the host. No
 /// native library may load.
 /// </summary>
-public class OcctNetBackendTests
+public class ExtensionLoadTests
 {
-    private sealed class ExtensionContext(string lib) : AssemblyLoadContext("Kerf.Modeling extension (OCCT.NET)", isCollectible: true)
+    private sealed class ExtensionContext(string lib) : AssemblyLoadContext("Kerf.Modeling extension", isCollectible: true)
     {
         public List<string> NativeLoads { get; } = [];
 
@@ -40,16 +40,16 @@ public class OcctNetBackendTests
         protected override IntPtr LoadUnmanagedDll(string name)
         {
             NativeLoads.Add(name);
-            throw new DllNotFoundException($"{name}: build123d.NET loads no native library");
+            throw new DllNotFoundException($"{name}: Kerf.Modeling loads no native library");
         }
     }
 
-    [OcctNetFact]
+    [ModelingBuildFact]
     public void ABoxTriangulatesWithoutNativeLibraries()
     {
-        var lib = Path.Combine(Path.GetTempPath(), "b3d-occtnet-extension-" + Guid.NewGuid().ToString("N"));
+        var lib = Path.Combine(Path.GetTempPath(), "kerf-modeling-extension-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(lib);
-        var source = Environment.GetEnvironmentVariable("B3D_OCCTNET_LIB")!;
+        var source = Environment.GetEnvironmentVariable("KERF_MODELING_LIB")!;
         foreach (var name in new[] { "Kerf.Modeling", "Kerf.Kernel.Foundation", "Kerf.Kernel.ModelingData", "Kerf.Kernel.ModelingAlgorithms",
                                   "Kerf.Kernel.DataExchange" })
             File.Copy(Path.Combine(source, name + ".dll"), Path.Combine(lib, name + ".dll"));

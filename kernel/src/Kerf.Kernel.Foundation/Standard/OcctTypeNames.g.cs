@@ -280,7 +280,6 @@ Kerf.Engine.Booleans.Legacy.Tools.Legacy2D TopOpeBRepTool_2d
 Kerf.Engine.Booleans.Legacy.Tools.LegacyTool TopOpeBRepTool_TOOL
 Kerf.Engine.Booleans.Legacy.Tools.OutCurveType TopOpeBRepTool_OutCurveType
 Kerf.Engine.Booleans.Legacy.Tools.Project TopOpeBRepTool_PROJECT
-Kerf.Engine.Booleans.Legacy.Tools.SC TopOpeBRepTool_SC
 Kerf.Engine.Booleans.Legacy.Tools.ShapeClassifier TopOpeBRepTool_ShapeClassifier
 Kerf.Engine.Booleans.Legacy.Tools.ToolCurveTool TopOpeBRepTool_CurveTool
 Kerf.Engine.Booleans.Legacy.Tools.ToolGeomTool TopOpeBRepTool_GeomTool

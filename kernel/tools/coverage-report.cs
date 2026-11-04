@@ -4,6 +4,9 @@
 // folder under each kernel assembly) and per folder of the modeling layer, with the packages under the floor listed
 // (phase10-plan.md 3.2, question 49: 80% per engine package). A line counts as covered if any test run covered it.
 //
+// The reason for each package under the floor comes from docs/coverage-gaps.tsv (assembly, package, reason), kept by hand;
+// a package without one shows as "no reason recorded".
+//
 //   dotnet run tools/coverage-report.cs -- <results folder> <report.md> [floor percent, 80 by default]
 
 #:property PublishAot=false
@@ -20,6 +23,16 @@ if (args.Length < 2)
 string aResults = Path.GetFullPath(args[0]);
 string aReport = Path.GetFullPath(args[1]);
 double aFloor = args.Length > 2 ? double.Parse(args[2], CultureInfo.InvariantCulture) : 80;
+var aReasons = new Dictionary<(string Area, string Package), string>();
+string aReasonsFile = Path.Combine(Path.GetDirectoryName(aReport)!, "coverage-gaps.tsv");
+if (File.Exists(aReasonsFile))
+{
+    foreach (string aLine in File.ReadLines(aReasonsFile).Where(l => l.Length > 0 && l[0] != '#'))
+    {
+        string[] aParts = aLine.Split('\t');
+        aReasons[(aParts[0], aParts[1])] = aParts[2];
+    }
+}
 
 // (file, line) -> covered, for the source files of the kernel's and the modeling layer's assemblies
 var aLines = new Dictionary<string, Dictionary<int, bool>>(StringComparer.OrdinalIgnoreCase);
@@ -66,16 +79,18 @@ var aText = new StringBuilder();
 aText.Append("""
     # Line coverage
 
-    Unit 10A's measurement (phase10-plan.md 3.2; the floor of question 49: every public member tested, at least 80% line
-    coverage per engine package, lower where the Draw-lite corpus covers a package and the gap is listed). Written by
-    `tools/coverage.ps1` (`tools/coverage-report.cs`): line coverage of the kernel's and the modeling layer's assemblies
-    under the tests that don't need native OCCT, merged (a line is covered if any run covered it): the kernel's unit
-    tests, the Draw-lite tests as they run by default (the corpus classes on their samples, `OCCTNET_CORPUS_FULL` unset)
-    and the modeling layer's suite on OCCT.NET; the oracle tests only with `-WithOracle`. A package is the folder under
-    the assembly (OCCT's package for the kernel). Lines are the coverable lines Microsoft's code coverage counts.
+    The floor of question 49 (phase10-plan.md 3.2): every public member tested, at least 80% line coverage per engine
+    package, lower where the Draw-lite corpus covers a package and the gap is listed. Written by `tools/coverage.ps1`
+    (`tools/coverage-report.cs`): line coverage of the kernel's and the modeling layer's assemblies, merged (a line is
+    covered if any run covered it): the kernel's unit tests, the public API's tests, the Draw-lite tests as they run by
+    default (the corpus classes on their samples, `OCCTNET_CORPUS_FULL` unset), the modeling layer's suite, and the
+    oracle tests' replays with `-WithOracle`. A package is the folder under the assembly (OCCT's package for the kernel).
+    Lines are the coverable lines Microsoft's code coverage counts. The public members no test calls are in
+    [public-members.md](public-members.md).
 
 
     """);
+aText.Append(CultureInfo.InvariantCulture, $"Measured on {DateTime.Now:d MMMM yyyy}.\n");
 aText.Append("Test projects merged: ").Append(string.Join(", ", aRuns.Distinct().Order(StringComparer.Ordinal).Select(r => $"`{r}`"))).Append(".\n");
 aText.Append("\n## By assembly\n\n| Assembly | Packages | Lines | Covered | % | Packages under ").Append(aFloor.ToString(CultureInfo.InvariantCulture)).Append("% |\n|---|---:|---:|---:|---:|---:|\n");
 foreach (var aGroup in aPackages.GroupBy(p => p.Key.Area))
@@ -86,6 +101,16 @@ foreach (var aGroup in aPackages.GroupBy(p => p.Key.Area))
 }
 int aTotalL = aPackages.Values.Sum(v => v.Lines), aTotalC = aPackages.Values.Sum(v => v.Covered);
 aText.Append(CultureInfo.InvariantCulture, $"| **Total** | {aPackages.Count} | {aTotalL:N0} | {aTotalC:N0} | {Percent(aTotalC, aTotalL):F1} | {aPackages.Count(p => Percent(p.Value.Covered, p.Value.Lines) < aFloor)} |\n");
+
+aText.Append("\n## The gaps\n\nEvery package under the floor, with the reason (`docs/coverage-gaps.tsv`).\n\n");
+aText.Append("| Assembly | Package | Lines | Uncovered | % | Reason |\n|---|---|---:|---:|---:|---|\n");
+foreach (var p in aPackages.Where(p => Percent(p.Value.Covered, p.Value.Lines) < aFloor)
+                           .OrderBy(p => p.Key.Area, StringComparer.Ordinal).ThenByDescending(p => p.Value.Lines - p.Value.Covered))
+{
+    string aReason = aReasons.GetValueOrDefault(p.Key) ?? "no reason recorded";
+    aText.Append(CultureInfo.InvariantCulture,
+        $"| {p.Key.Area} | {p.Key.Package} | {p.Value.Lines:N0} | {p.Value.Lines - p.Value.Covered:N0} | {Percent(p.Value.Covered, p.Value.Lines):F1} | {aReason} |\n");
+}
 
 foreach (var aGroup in aPackages.GroupBy(p => p.Key.Area))
 {

@@ -25,30 +25,11 @@ internal delegate int MathBase_bfunx(int ninteg, double parame, global::Kerf.Eng
 /// </remarks>
 internal static class MathBase
 {
-    // Keep legacy behavior: numerical thresholds are configured once before first public use.
-    static MathBase()
-    {
-        const double THE_EPSILON_1 = 1.0e-9;
-        const double THE_EPSILON_2 = 1.0e-8;
-        const double THE_EPSILON_3 = 1.0e-9;
-        const double THE_EPSILON_4 = 1.0e-4;
-        const int THE_ITER_1 = 8;
-        const int THE_ITER_2 = 40;
-
-        double epsilon1 = THE_EPSILON_1;
-        double epsilon2 = THE_EPSILON_2;
-        double epsilon3 = THE_EPSILON_3;
-        double epsilon4 = THE_EPSILON_4;
-        int iter1 = THE_ITER_1;
-        int iter2 = THE_ITER_2;
-        mmwprcs_(epsilon1, epsilon2, epsilon3, epsilon4, iter1, iter2);
-    }
-
-    // The precision common block, written by mmwprcs_ (only when the type is initialised).
+    // The precision common block: OCCT's, written once before first public use.
     private static class mmprcsn_
     {
-        public static double eps1, eps2, eps3, eps4;
-        public static int niterm, niterr;
+        public const double eps1 = 1.0e-9, eps2 = 1.0e-8, eps3 = 1.0e-9, eps4 = 1.0e-4;
+        public const int niterm = 8, niterr = 40;
     }
 
     // The cache of mmherm0_'s Hermite coefficients, read by mmherm1_.
@@ -9217,103 +9198,6 @@ internal static class MathBase
             SysBase.mgsomsg_("MMVNCOL", 7L);
         }
         return 0;
-    }
-
-    //=================================================================================================
-
-    public static void mmwprcs_(double epsil1, double epsil2, double epsil3, double epsil4, int niter1, int niter2)
-    {
-
-        /* ***********************************************************************/
-
-        /*     FUNCTION : */
-        /*     ---------- */
-        /*     ACCESS IN WRITING FOR COMMON MPRCSN */
-
-        /*     KEYWORDS : */
-        /*     ----------- */
-        /*     WRITING */
-
-        /*     INPUT ARGUMENTS : */
-        /*     -------------------- */
-        /*     EPSIL1  : TOLERANCE OF 3D NULL DISTANCE */
-        /*     EPSIL2  : TOLERANCE OF PARAMETRIC NULL DISTANCE */
-        /*     EPSIL3  : TOLERANCE TO AVOID DIVISION BY 0.. */
-        /*     EPSIL4  : ANGULAR TOLERANCE */
-        /*     NITER1  : MAX NB OF ITERATIONS */
-        /*     NITER2  : NB OF RAPID ITERATIONS */
-
-        /*     OUTPUT ARGUMENTS : */
-        /*     --------------------- */
-        /*     NONE */
-
-        /*     COMMONS USED : */
-        /*     ------------------ */
-
-        /*     REFERENCES CALLED : */
-        /*     --------------------- */
-
-        /*     DESCRIPTION/NOTES/LIMITATIONS : */
-        /*     ----------------------------------- */
-
-        /* > */
-        /* ***********************************************************************/
-        /*                            DECLARATIONS                               */
-        /* ***********************************************************************/
-
-        /* ***********************************************************************/
-        /*                      INITIALIZATIONS                                  */
-        /* ***********************************************************************/
-
-        /* ***********************************************************************/
-        /*                      PROCESSING                                       */
-        /* ***********************************************************************/
-
-        /* ***********************************************************************/
-
-        /*     FUNCTION : */
-        /*     ---------- */
-        /*          GIVES TOLERANCES OF NULLITY IN STRIM */
-        /*          AND  LIMITS OF ITERATIVE PROCESSES */
-
-        /*          GENERAL CONTEXT, MODIFIABLE BY THE UTILISER */
-
-        /*     KEYWORDS : */
-        /*     ----------- */
-        /*          PARAMETER , TOLERANCE */
-
-        /*     DESCRIPTION/NOTES/LIMITATIONS : */
-        /*     ----------------------------------- */
-        /*       INITIALISATION   :  PROFILE , **VIA MPRFTX** AT INPUT IN STRIM*/
-        /*       LOADING OF DEFAULT VALUES OF THE PROFILE IN MPRFTX AT INPUT*/
-        /*       IN STRIM. THEY ARE PRESERVED IN THE LOCAL VARIABLES OF MPRFTX */
-
-        /*        RESET DEFAULT VALUES                   : MDFINT */
-        /*        MODIFICATION INTERACTIVE BY THE USER   : MDBINT */
-
-        /*        ACCESS FUNCTION  :  MMEPS1  ...  EPS1 */
-        /*                            MEPSPB  ...  EPS3,EPS4 */
-        /*                            MEPSLN  ...  EPS2, NITERM , NITERR */
-        /*                            MEPSNR  ...  EPS2 , NITERM */
-        /*                            MITERR  ...  NITERR */
-
-        /* > */
-        /* ***********************************************************************/
-
-        /*     NITERM : MAX NB OF ITERATIONS */
-        /*     NITERR : NB OF RAPID ITERATIONS */
-        /*     EPS1   : TOLERANCE OF 3D NULL DISTANCE */
-        /*     EPS2   : TOLERANCE OF ZERO PARAMETRIC DISTANCE */
-        /*     EPS3   : TOLERANCE TO AVOID DIVISION BY 0.. */
-        /*     EPS4   : TOLERANCE ANGULAR */
-
-        /* ***********************************************************************/
-        mmprcsn_.eps1   = epsil1;
-        mmprcsn_.eps2   = epsil2;
-        mmprcsn_.eps3   = epsil3;
-        mmprcsn_.eps4   = epsil4;
-        mmprcsn_.niterm = niter1;
-        mmprcsn_.niterr = niter2;
     }
 
     //=================================================================================================

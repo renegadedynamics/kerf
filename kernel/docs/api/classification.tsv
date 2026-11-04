@@ -3232,7 +3232,6 @@ ModelingAlgorithms	TopOpeBRepTool_CurveTool	class	TopOpeBRepTool	engine	Booleans
 ModelingAlgorithms	TopOpeBRepTool_GeomTool	struct	TopOpeBRepTool	engine	Booleans/Legacy/Tools	Kerf.Engine.Booleans.Legacy.Tools.GeomTool			
 ModelingAlgorithms	TopOpeBRepTool_OutCurveType	enum	TopOpeBRepTool	engine	Booleans/Legacy/Tools	Kerf.Engine.Booleans.Legacy.Tools.OutCurveType			
 ModelingAlgorithms	TopOpeBRepTool_PROJECT	static class	TopOpeBRepTool	engine	Booleans/Legacy/Tools	Kerf.Engine.Booleans.Legacy.Tools.Project			
-ModelingAlgorithms	TopOpeBRepTool_SC	static class	TopOpeBRepTool	engine	Booleans/Legacy/Tools	Kerf.Engine.Booleans.Legacy.Tools.SC			
 ModelingAlgorithms	TopOpeBRepTool_ShapeClassifier	class	TopOpeBRepTool	engine	Booleans/Legacy/Tools	Kerf.Engine.Booleans.Legacy.Tools.ShapeClassifier			
 ModelingAlgorithms	TopOpeBRepTool_ShapeExplorer	class	TopOpeBRepTool	engine	Booleans/Legacy/Tools	Kerf.Engine.Booleans.Legacy.Tools.ShapeExplorer			
 ModelingAlgorithms	TopOpeBRepTool_ShapeTool	static class	TopOpeBRepTool	engine	Booleans/Legacy/Tools	Kerf.Engine.Booleans.Legacy.Tools.ShapeTool			
