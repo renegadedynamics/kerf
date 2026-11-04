@@ -13,7 +13,7 @@ namespace Kerf.Engine.Approximation.Advanced;
 /// criterion's value on a patch in <see cref="Value"/> (storing it with <see cref="Patch.SetCritValue"/>)
 /// and test it in <see cref="IsSatisfied"/>.
 /// </remarks>
-public abstract class Criterion
+internal abstract class Criterion
 {
     protected double _maxValue;
     protected CriterionType _type;

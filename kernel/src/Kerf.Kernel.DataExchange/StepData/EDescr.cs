@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Data;
 
 /// <summary>This class is intended to describe the authorized form for an entity, either Simple or Plex.</summary>
-public abstract class EDescr : Transient
+internal abstract class EDescr : Transient
 {
     /// <summary>Tells if a ESDescr matches a step type: exact or super type.</summary>
     public abstract bool Matches(string steptype);

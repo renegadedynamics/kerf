@@ -32,7 +32,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// <see cref="CommonPrt"/> objects (a class, decision 620): callers copy one with
 /// <c>new IntTools_CommonPrt(x)</c> to keep it.
 /// </remarks>
-public class EdgeEdge
+internal class EdgeEdge
 {
     protected Edge _edge1 = new();
     protected Edge _edge2 = new();

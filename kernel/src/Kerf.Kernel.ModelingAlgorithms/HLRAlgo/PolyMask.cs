@@ -12,7 +12,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 /// the port makes its members integer constants; code that writes <c>using static Occt.HLRAlgo_PolyMask;</c> reads as
 /// the C++ does (decision 1079).
 /// </remarks>
-public static class PolyMask
+internal static class PolyMask
 {
     public const int HLRAlgo_PolyMask_EMskOutLin1 = 1;
     public const int HLRAlgo_PolyMask_EMskOutLin2 = 2;

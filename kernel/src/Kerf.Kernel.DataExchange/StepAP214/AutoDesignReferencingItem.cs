@@ -15,7 +15,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class AutoDesignReferencingItem : SelectType
+internal class AutoDesignReferencingItem : SelectType
 {
     /// <summary>
     /// Returns a AutoDesignReferencingItem SelectType

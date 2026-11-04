@@ -11,7 +11,7 @@ namespace Kerf.Engine.HiddenLines.Topology;
 
 /// <summary>A vertex inserted on an edge, with its parameter on the edge.</summary>
 /// <remarks>A C++ value class without mutators, so a readonly struct.</remarks>
-public readonly struct VData : IEquatable<VData>
+internal readonly struct VData : IEquatable<VData>
 {
     private readonly double _parameter;
     private readonly Shape _vertex;

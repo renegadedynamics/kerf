@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class DateRole : Transient
+internal class DateRole : Transient
 {
     private TCollection_HAsciiString _name;
 

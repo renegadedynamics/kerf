@@ -22,7 +22,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// becomes <c>theStatics.IVal("x")</c>. This class keeps the part of OCCT's class that is about one parameter.
 /// </para>
 /// </remarks>
-public class Static : InterfaceTypedValue
+internal class Static : InterfaceTypedValue
 {
     /// <summary>
     /// Creates a static, with a family and a name. <paramref name="family"/> can report to a name of resource or to a

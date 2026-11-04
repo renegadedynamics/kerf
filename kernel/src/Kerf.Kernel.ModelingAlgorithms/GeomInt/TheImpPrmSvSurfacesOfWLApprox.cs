@@ -16,7 +16,7 @@ namespace Kerf.Engine.Intersection.Surfaces;
 /// </summary>
 /// <remarks>A sealed subclass of the generic class with OCCT's constructors (decision 607); the generic algorithms use
 /// the generic class directly.</remarks>
-public sealed class TheImpPrmSvSurfacesOfWLApprox
+internal sealed class TheImpPrmSvSurfacesOfWLApprox
     : ImpPrmSvSurfaces<SurfaceAdaptorBase, TheHSurfaceTool>
 {
     public TheImpPrmSvSurfacesOfWLApprox(SurfaceAdaptorBase pSurf, in SurfaceQuadric iSurf)

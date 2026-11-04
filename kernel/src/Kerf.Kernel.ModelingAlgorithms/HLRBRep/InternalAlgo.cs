@@ -23,7 +23,7 @@ namespace Kerf.Engine.HiddenLines;
 /// algorithm never writes into the caller's shapes. <see cref="Debug(bool)"/> turns on OCCT's traces, written to
 /// standard output.
 /// </remarks>
-public class InternalAlgo : Transient
+internal class InternalAlgo : Transient
 {
     private HiddenLineData? _ds;
     private AlgorithmProjector _proj = new();

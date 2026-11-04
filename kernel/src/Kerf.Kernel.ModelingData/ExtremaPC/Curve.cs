@@ -23,7 +23,7 @@ namespace Kerf.Engine.Extrema.PointCurve;
 /// results forward. <c>Perform</c> returns the evaluator's reusable result (or a shared "not done" result when
 /// uninitialised), which the next call overwrites.
 /// </remarks>
-public sealed class Curve
+internal sealed class Curve
 {
     // Static result for uninitialized evaluator case
     private static readonly global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result THE_NOT_DONE_RESULT = new();

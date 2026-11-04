@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity ConfigurationEffectivity
 /// </summary>
-public class ConfigurationEffectivity : ProductDefinitionEffectivity
+internal class ConfigurationEffectivity : ProductDefinitionEffectivity
 {
     private ConfigurationDesign _configuration;
 

@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Data;
 
 /// <summary>A Simple Entity is defined by a type (which can heve super types) and a list of parameters.</summary>
-public class Simple : Described
+internal class Simple : Described
 {
     private readonly FieldListN _thefields;
 

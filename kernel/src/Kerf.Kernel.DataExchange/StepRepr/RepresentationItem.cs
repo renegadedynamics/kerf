@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class RepresentationItem : Transient
+internal class RepresentationItem : Transient
 {
     private TCollection_HAsciiString _name;
 

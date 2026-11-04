@@ -15,7 +15,7 @@ namespace Kerf.Engine.Intersection.Patches;
 // The restriction lines (OCCT 7.x's IntPatch_ImpImpIntersection_0.gxx, continued): the segments of the boundaries
 // that lie on the other surface become RLines (ProcessSegments), and the RLines take the multiple points of the
 // other lines, or are removed where they duplicate a GLine (ProcessRLine).
-public sealed partial class ImpImpIntersection
+internal sealed partial class ImpImpIntersection
 {
     // The vertex count, a vertex and the replacement of a vertex of an ALine, RLine or GLine.
     private static int NbVertexOfARG(PatchLine line, PatchLineType type) =>

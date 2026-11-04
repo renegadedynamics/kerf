@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity ProductConcept
 /// </summary>
-public class ProductConcept : Transient
+internal class ProductConcept : Transient
 {
     private TCollection_HAsciiString _id;
     private TCollection_HAsciiString _name;

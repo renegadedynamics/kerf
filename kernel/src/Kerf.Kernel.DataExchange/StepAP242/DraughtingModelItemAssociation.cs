@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Ap242;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class DraughtingModelItemAssociation : ItemIdentifiedRepresentationUsage
+internal class DraughtingModelItemAssociation : ItemIdentifiedRepresentationUsage
 {
     public DraughtingModelItemAssociation()
     {

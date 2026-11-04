@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class OrganizationalAddress : Address
+internal class OrganizationalAddress : Address
 {
     private NCollection_HArray1<Organization> _organizations;
     private TCollection_HAsciiString _description;

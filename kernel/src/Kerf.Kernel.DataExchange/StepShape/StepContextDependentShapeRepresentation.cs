@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepContextDependentShapeRepresentation : Transient
+internal class StepContextDependentShapeRepresentation : Transient
 {
     private ShapeRepresentationRelationship _repRel;
     private ProductDefinitionShape _proRel;

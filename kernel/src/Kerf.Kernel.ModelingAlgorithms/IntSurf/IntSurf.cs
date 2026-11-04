@@ -12,7 +12,7 @@ using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 namespace Kerf.Engine.Intersection.Walking;
 
 /// <summary>Resources for the packages of surface/surface intersections.</summary>
-public static class IntSurf
+internal static class IntSurf
 {
     /// <summary>
     /// The transitions at the intersection point of two lines: <paramref name="tgFirst"/> and

@@ -28,7 +28,7 @@ namespace Kerf.Engine.Extrema;
 /// the curves, then <c>Perform</c>. Keeps references to the curves, as OCCT does. As in OCCT, <c>Perform</c> does not
 /// clear the solutions of a previous <c>Perform</c> (occt-issues.md).
 /// </remarks>
-public class Ecc
+internal class Ecc
 {
     private bool _isFindSingleSolution;
     private bool _parallel;

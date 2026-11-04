@@ -59,9 +59,9 @@ public class DiagnosticShapesTests
 }
 
 /// <summary>Alerts as the algorithms define them, for the tests.</summary>
-public sealed class TestAlertNothingToDo : Alert;
+internal sealed class TestAlertNothingToDo : Alert;
 
-public sealed class TestAlertBadShape(in Shape shape) : AlertWithShape(shape);
+internal sealed class TestAlertBadShape(in Shape shape) : AlertWithShape(shape);
 
 public class AlertDiagnosticsTests
 {

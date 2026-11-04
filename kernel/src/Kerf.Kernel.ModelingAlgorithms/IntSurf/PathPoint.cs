@@ -25,7 +25,7 @@ namespace Kerf.Engine.Intersection.Walking;
 /// so ported code writes <c>new()</c>. The mutators are internal (translation rules, section 3); the constructor is
 /// <see cref="SetValue"/>'s twin.
 /// </remarks>
-public partial struct PathPoint : IEquatable<PathPoint>
+internal partial struct PathPoint : IEquatable<PathPoint>
 {
     private Point3D _pt;
     private bool _ispass;

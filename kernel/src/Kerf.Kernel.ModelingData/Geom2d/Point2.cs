@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Objects;
 
 /// <summary>The common behaviour of points in the plane (<see cref="CartesianPoint2"/>).</summary>
-public abstract class Point2 : Geometry2D
+internal abstract class Point2 : Geometry2D
 {
     /// <summary>The coordinates of the point.</summary>
     public abstract void Coord(out double x, out double y);

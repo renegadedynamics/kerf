@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Framework.Graph;
 /// not, the first one has priority A SubPartsIterator can work in two steps : first, load entities which
 /// have to be processed then, analyse to set those entities into sub-parts
 /// </summary>
-public class SubPartsIterator
+internal class SubPartsIterator
 {
 
     /// <summary>

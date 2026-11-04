@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Features;
 
 /// <summary>Describes the error of a feature construction.</summary>
-public enum StatusError
+internal enum StatusError
 {
     OK,
     BadDirect,

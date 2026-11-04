@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// (integers, reals, strings) The original form can be more suitable for some operations such as counting
 /// messages
 /// </summary>
-public class FrameworkCheck : Transient
+internal class FrameworkCheck : Transient
 {
 
     /// <summary>

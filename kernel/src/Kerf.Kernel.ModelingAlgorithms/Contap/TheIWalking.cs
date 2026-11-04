@@ -13,7 +13,7 @@ namespace Kerf.Engine.HiddenLines.Contours;
 /// The walking of the contours: the lines on a surface adaptor where the contour function
 /// vanishes (OCCT's instantiation of IntWalk_IWalking.gxx, decision 607).
 /// </summary>
-public sealed class TheIWalking : IWalking<SurfFunction, TheIWLineOfTheIWalking>
+internal sealed class TheIWalking : IWalking<SurfFunction, TheIWLineOfTheIWalking>
 {
     public TheIWalking(double epsilon, double deflection, double step, bool toFillHoles = false)
         : base(epsilon, deflection, step, toFillHoles)

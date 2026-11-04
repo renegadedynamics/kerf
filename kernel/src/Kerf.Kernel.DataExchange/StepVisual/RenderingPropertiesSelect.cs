@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP SELECT type RenderingPropertiesSelect
 /// </summary>
-public class RenderingPropertiesSelect : SelectType
+internal class RenderingPropertiesSelect : SelectType
 {
     /// <summary>
     /// Empty constructor

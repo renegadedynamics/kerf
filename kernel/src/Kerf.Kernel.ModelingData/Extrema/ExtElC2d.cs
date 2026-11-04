@@ -15,7 +15,7 @@ namespace Kerf.Engine.Extrema;
 /// elementary curve.
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (OCCT gives it no Perform).</remarks>
-public class ExtElC2d
+internal class ExtElC2d
 {
     [System.Runtime.CompilerServices.InlineArray(MaxExtrema)]
     private struct SquareDistances

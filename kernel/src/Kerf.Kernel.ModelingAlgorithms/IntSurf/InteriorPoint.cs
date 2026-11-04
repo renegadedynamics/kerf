@@ -20,7 +20,7 @@ namespace Kerf.Engine.Intersection.Walking;
 /// A C++ value class, so a struct; <c>new()</c> and <c>default</c> are the same. <see cref="SetValue"/> is an internal
 /// mutator; the constructor is its twin.
 /// </remarks>
-public partial struct InteriorPoint : IEquatable<InteriorPoint>
+internal partial struct InteriorPoint : IEquatable<InteriorPoint>
 {
     private Point3D _point;
     private double _paramu;

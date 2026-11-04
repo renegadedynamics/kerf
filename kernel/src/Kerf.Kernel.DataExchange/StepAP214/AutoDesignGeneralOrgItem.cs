@@ -14,7 +14,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class AutoDesignGeneralOrgItem : SelectType
+internal class AutoDesignGeneralOrgItem : SelectType
 {
     /// <summary>
     /// Returns a AutoDesignGeneralOrgItem SelectType

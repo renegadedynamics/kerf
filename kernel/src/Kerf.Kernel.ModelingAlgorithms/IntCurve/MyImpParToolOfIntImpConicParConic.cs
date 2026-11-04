@@ -19,7 +19,7 @@ namespace Kerf.Engine.Intersection.Curves;
 /// OCCT keeps a pointer to the parametric conic; the port keeps a copy of it (a struct the intersection never
 /// changes).
 /// </remarks>
-public sealed class MyImpParToolOfIntImpConicParConic
+internal sealed class MyImpParToolOfIntImpConicParConic
     : FunctionWithDerivative,
       IMyImpParTool<MyImpParToolOfIntImpConicParConic, IConicTool, PConic>
 {

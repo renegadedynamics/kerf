@@ -44,6 +44,12 @@ public abstract class FaceModel : TessellatedShapeModel, IStatusOwnerModel
     /// <summary>The face of the model.</summary>
     public Face GetFace() => ShapeCasts.Face(GetShape());
 
+    /// <summary>
+    /// Kerf: the triangulation the face's mesher made, in the face's definition, until the post-processor finishes it
+    /// (its deflection and parameters) and attaches it, frozen (unit 10L5). OCCT attaches it when it is made.
+    /// </summary>
+    internal Triangulation? MadeTriangulation { get; set; }
+
     /// <summary>Whether the face's discrete model is valid.</summary>
     public bool IsValid
     {

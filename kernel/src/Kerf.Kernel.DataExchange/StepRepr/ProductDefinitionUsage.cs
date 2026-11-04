@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity ProductDefinitionUsage
 /// </summary>
-public class ProductDefinitionUsage : ProductDefinitionRelationship
+internal class ProductDefinitionUsage : ProductDefinitionRelationship
 {
     /// <summary>
     /// Empty constructor

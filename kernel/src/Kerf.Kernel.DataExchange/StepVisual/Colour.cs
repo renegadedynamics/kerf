@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class Colour : Transient
+internal class Colour : Transient
 {
     /// <summary>
     /// Returns a Colour

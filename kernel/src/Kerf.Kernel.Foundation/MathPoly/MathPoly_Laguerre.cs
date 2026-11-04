@@ -12,7 +12,7 @@ namespace Kerf.Engine.Numerics.Polynomials;
 // pointers are spans. The 20-element std::arrays of GeneralPolyResult are the inline array MathPoly.RootArray<T>.
 
 /// <summary>Polynomial root finding algorithms using Laguerre's method.</summary>
-public static partial class MathPoly
+internal static partial class MathPoly
 {
     /// <summary>Maximum polynomial degree supported by Laguerre solver.</summary>
     public const int THE_MAX_POLY_DEGREE = 20;

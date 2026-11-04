@@ -8,7 +8,7 @@ namespace Kerf.Engine.Intersection.Walking;
 
 /// <summary>The situation of a touch transition: inside, outside, unknown.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.IntSurf_Situation;</c>.</remarks>
-public enum WalkingSituation
+internal enum WalkingSituation
 {
     Inside,
     Outside,

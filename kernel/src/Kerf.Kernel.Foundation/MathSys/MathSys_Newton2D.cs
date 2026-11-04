@@ -14,7 +14,7 @@ namespace Kerf.Engine.Numerics.Systems;
 // code with the call inlined, as the C++ template does.
 
 /// <summary>Optimized 2D Newton-Raphson solvers with strict convergence criteria.</summary>
-public static partial class MathSys
+internal static partial class MathSys
 {
     /// <summary>A general 2x2 system with its Jacobian, for <see cref="Solve2D"/> (C++'s operator() contract).</summary>
     public interface INewton2DFunction

@@ -26,7 +26,7 @@ namespace Kerf.Engine.HiddenLines;
 /// implicit copy. OCCT declares <c>UIntervalContinuity</c> and <c>VIntervalContinuity</c> without defining them; they
 /// are left out.
 /// </remarks>
-public sealed class HlrSurface
+internal sealed class HlrSurface
 {
     private readonly FaceSurfaceAdaptor _surf;
     private SurfaceKind _type;

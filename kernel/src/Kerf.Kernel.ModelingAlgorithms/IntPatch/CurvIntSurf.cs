@@ -14,7 +14,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// The exact intersection of a curve on a surface (an arc of restriction) with another surface from a starting point
 /// (OCCT's instantiation of IntImp_IntCS.gxx over <see cref="PatchCSFunction"/>, decision 344).
 /// </summary>
-public sealed class CurvIntSurf
+internal sealed class CurvIntSurf
     : IntCS<PatchCSFunction, SurfaceAdaptorBase, TheHSurfaceTool, Curve2DAdaptorBase,
                    PatchHCurve2dTool>
 {

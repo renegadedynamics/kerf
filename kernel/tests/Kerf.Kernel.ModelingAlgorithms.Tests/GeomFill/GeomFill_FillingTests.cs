@@ -259,8 +259,9 @@ public class GeomFill_FillingTests
     [InlineData(FillingStyle.StretchStyle)]
     [InlineData(FillingStyle.CoonsStyle)]
     [InlineData(FillingStyle.CurvedStyle)]
-    public void BSplineCurves_fill_four_curves_in_any_order_and_direction(FillingStyle theStyle)
+    public void BSplineCurves_fill_four_curves_in_any_order_and_direction(object theStyleValue)
     {
+        var theStyle = (FillingStyle)theStyleValue; // the theory's data as object: the engine type is internal
         BSplineCurve3D[] C = Contour();
         foreach (BSplineCurve3D c in C)
         {
@@ -351,8 +352,9 @@ public class GeomFill_FillingTests
     [InlineData(FillingStyle.StretchStyle)]
     [InlineData(FillingStyle.CoonsStyle)]
     [InlineData(FillingStyle.CurvedStyle)]
-    public void BezierCurves_fill_two_three_and_four_curves(FillingStyle theStyle)
+    public void BezierCurves_fill_two_three_and_four_curves(object theStyleValue)
     {
+        var theStyle = (FillingStyle)theStyleValue; // the theory's data as object: the engine type is internal
         BezierCurve3D C1 = BZ(new Point3D(0, 0, 0), new Point3D(1, 0, 1), new Point3D(2, 0, 0));
         BezierCurve3D C2 = BZ(new Point3D(2, 0, 0), new Point3D(2, 1, -1), new Point3D(2, 2, 1), new Point3D(2, 3, 0));
         BezierCurve3D C3 = BZ(new Point3D(0, 3, 0), new Point3D(2, 3, 0)); // left to right

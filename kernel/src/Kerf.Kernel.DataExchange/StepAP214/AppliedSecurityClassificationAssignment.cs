@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class AppliedSecurityClassificationAssignment : SecurityClassificationAssignment
+internal class AppliedSecurityClassificationAssignment : SecurityClassificationAssignment
 {
     private NCollection_HArray1<SecurityClassificationItem> _items;
 

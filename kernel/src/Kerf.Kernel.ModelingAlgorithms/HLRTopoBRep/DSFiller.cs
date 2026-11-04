@@ -31,7 +31,7 @@ namespace Kerf.Engine.HiddenLines.Topology;
 /// one a frozen shape throws TopoDS_LockedShape. The contours are built as OCCT does
 /// (decision 1084). The commented-out vertex map and interpolation of short walking lines are left out.
 /// </remarks>
-public static class DSFiller
+internal static class DSFiller
 {
     /// <summary>Outlines each face of S with FO into DS (nbIso isolines per direction), then splits the edges.</summary>
     public static void Insert(in Shape s, Contour fo, TopologyData ds,

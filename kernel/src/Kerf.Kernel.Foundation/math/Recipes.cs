@@ -14,7 +14,7 @@ namespace Kerf.Engine.Numerics;
 /// Ported code imports them with <c>using static Occt.math_Recipes;</c> and calls them unqualified, as in C++.
 /// </summary>
 /// <remarks>The matrices and vectors are indexed from 1, as OCCT requires.</remarks>
-public static class Recipes
+internal static class Recipes
 {
     public const int MathStatusUserAborted = -1;
     public const int MathStatusOK = 0;

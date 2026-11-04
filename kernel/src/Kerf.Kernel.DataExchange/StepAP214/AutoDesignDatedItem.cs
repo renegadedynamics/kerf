@@ -13,7 +13,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class AutoDesignDatedItem : SelectType
+internal class AutoDesignDatedItem : SelectType
 {
     /// <summary>
     /// Returns a AutoDesignDatedItem SelectType

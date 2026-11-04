@@ -209,7 +209,7 @@ internal static class BRepTestHistoryCommands
 }
 
 /// <summary>A history (BRepTest_DrawableHistory), as <c>savehistory</c> stores it.</summary>
-public sealed class DrawHistory(History theHistory) : DrawDrawable
+internal sealed class DrawHistory(History theHistory) : DrawDrawable
 {
     /// <summary>The history.</summary>
     public History History { get; } = theHistory;

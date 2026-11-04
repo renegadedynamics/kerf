@@ -23,7 +23,7 @@ namespace Kerf.Engine.Intersection.Polygons;
 /// <see cref="SegmentCount"/>, <see cref="BeginParam"/> and <see cref="EndParam"/>. The output boxes are
 /// <c>ref</c> parameters (OCCT's <c>Bnd_Box2d&amp;</c>/<c>Bnd_Box&amp;</c>); they are reset first.
 /// </remarks>
-public class PolygonTool
+internal class PolygonTool
 {
     private int _nbSeg;
     private readonly double[] _beginOnCurve = new double[6];

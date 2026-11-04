@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class AutoDesignNominalDateAssignment : DateAssignment
+internal class AutoDesignNominalDateAssignment : DateAssignment
 {
     private NCollection_HArray1<AutoDesignDatedItem> _items;
 

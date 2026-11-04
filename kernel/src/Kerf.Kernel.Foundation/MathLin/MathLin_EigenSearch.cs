@@ -8,7 +8,7 @@ using static Kerf.Engine.Numerics.Utilities.MathUtils;
 namespace Kerf.Engine.Numerics.Linear;
 
 /// <summary>Modern linear algebra: eigenvalue decomposition of symmetric tridiagonal matrices.</summary>
-public static partial class MathLin
+internal static partial class MathLin
 {
     /// <summary>Result for eigenvalue decomposition of tridiagonal matrix.</summary>
     /// <remarks>Its C++ default status is NotConverged, so ported code writes `new EigenResult()`.</remarks>

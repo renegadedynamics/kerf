@@ -13,7 +13,7 @@ namespace Kerf.Engine.Intersection.Approximation;
 /// OCCT generates this class from AppParCurves' generic code with ApproxInt_MultiLineTool over BRepApprox_ApproxLine; the port derives it from the
 /// generic class, which the generic algorithms use directly (decisions 142 and 202).
 /// </remarks>
-public sealed class ParLeastSquareOfMyGradientbisOfTheComputeLineOfApprox : LeastSquare<global::Kerf.Engine.Intersection.Approximation.MultiLine<ApproxLine>, MultiLineTool<ApproxLine>>
+internal sealed class ParLeastSquareOfMyGradientbisOfTheComputeLineOfApprox : LeastSquare<global::Kerf.Engine.Intersection.Approximation.MultiLine<ApproxLine>, MultiLineTool<ApproxLine>>
 {
     /// <summary>As the base constructor.</summary>
     public ParLeastSquareOfMyGradientbisOfTheComputeLineOfApprox(global::Kerf.Engine.Intersection.Approximation.MultiLine<ApproxLine> ssp, int firstPoint, int lastPoint,

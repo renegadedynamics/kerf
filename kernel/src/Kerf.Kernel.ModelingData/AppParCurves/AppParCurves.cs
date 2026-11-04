@@ -13,7 +13,7 @@ namespace Kerf.Engine.Approximation;
 /// approximate a MultiLine described by a line tool (<see cref="ILineTool{MultiLine}"/>) with a
 /// MultiCurve.
 /// </summary>
-public static class AppParCurves
+internal static class AppParCurves
 {
     /// <summary>
     /// Fills <paramref name="a"/>(i, j) with the Bernstein polynomial j of degree NbPoles - 1 at U(i).

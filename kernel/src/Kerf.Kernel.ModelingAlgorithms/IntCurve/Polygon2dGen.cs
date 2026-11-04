@@ -23,7 +23,7 @@ namespace Kerf.Engine.Intersection.Curves;
 /// instantiation Geom2dInt_ThePolygon2dOfTheIntPCurvePCurveOfGInter is a sealed subclass. OCCT's <c>Dump</c>, which
 /// prints only when a static debug flag is set, is left out.
 /// </remarks>
-public class Polygon2dGen<TheCurve, TheCurveTool> : Polygon2d
+internal class Polygon2dGen<TheCurve, TheCurveTool> : Polygon2d
     where TheCurveTool : ICurveCurveTool<TheCurve>
 {
     private const double MAJORATION_DEFLECTION = 1.5;

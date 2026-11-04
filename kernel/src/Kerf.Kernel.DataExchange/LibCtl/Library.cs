@@ -33,7 +33,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// </remarks>
 /// <typeparam name="TModule">The module class (OCCT's <c>TheModule</c>).</typeparam>
 /// <typeparam name="TProtocol">The protocol class (OCCT's <c>TheProtocol</c>).</typeparam>
-public class Library<TModule, TProtocol>
+internal class Library<TModule, TProtocol>
     where TModule : Transient
     where TProtocol : Protocol
 {

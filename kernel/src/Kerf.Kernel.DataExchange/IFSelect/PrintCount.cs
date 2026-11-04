@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 
 /// <summary>The manner in which a check list or a signature list is printed: messages per entity, counts per message, short lists, lists, entities, a summary, general information, mapping, result counts.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.IFSelect_PrintCount;</c>.</remarks>
-public enum PrintCount
+internal enum PrintCount
 {
     ItemsByEntity,
     CountByItem,

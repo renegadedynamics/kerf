@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity SurfaceStyleRendering
 /// </summary>
-public class SurfaceStyleRendering : Transient
+internal class SurfaceStyleRendering : Transient
 {
     private ShadingSurfaceMethod _renderingMethod;
     private Colour _surfaceColour;

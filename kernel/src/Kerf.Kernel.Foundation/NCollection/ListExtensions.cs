@@ -3,7 +3,7 @@
 namespace Kerf.Engine.Collections;
 
 /// <summary>What OCCT's growable arrays had and <see cref="List{T}"/> lacks.</summary>
-public static class ListExtensions
+internal static class ListExtensions
 {
     /// <summary>
     /// Sets the element at the index, first growing the list with default elements if the index is beyond its end

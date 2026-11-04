@@ -28,7 +28,7 @@ namespace Kerf.Engine.Foundation;
 /// later extraction fails, until <see cref="Clear(TextReader)"/>.
 /// </para>
 /// </remarks>
-public static class StreamUtilities
+internal static class StreamUtilities
 {
     // ---------------------------------------------------------------------------------------------------------
     // Output

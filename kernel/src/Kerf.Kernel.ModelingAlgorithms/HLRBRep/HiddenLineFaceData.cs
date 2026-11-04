@@ -21,7 +21,7 @@ namespace Kerf.Engine.HiddenLines;
 /// is <see cref="Assign"/>: the wires block is a handle the copies share (so <c>HLRBRep_Data::Write</c>'s renumbering
 /// of a copy's edges renumbers the source's too, as in OCCT) and the surface is copied. A working object.
 /// </remarks>
-public sealed class HiddenLineFaceData
+internal sealed class HiddenLineFaceData
 {
     private const int EMaskOrient = 15;
     private const int FMaskSelected = 16;

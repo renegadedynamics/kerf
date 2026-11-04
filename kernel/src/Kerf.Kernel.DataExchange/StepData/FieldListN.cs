@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Data;
 
 /// <summary>Describes a list of fields, in a general way. This class is for a list of definite length.</summary>
-public class FieldListN : FieldList
+internal class FieldListN : FieldList
 {
     private readonly NCollection_Array1<Field> _thefields;
 

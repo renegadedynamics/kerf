@@ -23,7 +23,7 @@ namespace Kerf.Engine.Extrema;
 /// Extrema_ELPCOfLocateExtPC2d (one type). An algorithm object (decision 117): construct it with the point and the
 /// curve, or <c>Initialize</c> and <c>Perform</c>. Keeps a reference to the curve, as OCCT does.
 /// </remarks>
-public class ExtPC2d
+internal class ExtPC2d
 {
     private Curve2DAdaptorBase? _c;
     private Point2D _pf = new();

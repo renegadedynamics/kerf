@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class LocalTime : Transient
+internal class LocalTime : Transient
 {
     private int _hourComponent;
     private int _minuteComponent;

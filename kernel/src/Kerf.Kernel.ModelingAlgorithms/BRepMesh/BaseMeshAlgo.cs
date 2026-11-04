@@ -277,7 +277,7 @@ internal abstract class BaseMeshAlgo : MeshAlgo
 
         CollectNodes(triangulation);
 
-        ShapeTool.AddInFace(_dFace!.GetFace(), triangulation);
+        ShapeTool.AddInFace(_dFace!, triangulation);
     }
 
     // Collects triangles to output data.

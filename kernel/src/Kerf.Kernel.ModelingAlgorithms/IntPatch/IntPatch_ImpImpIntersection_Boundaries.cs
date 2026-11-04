@@ -17,7 +17,7 @@ namespace Kerf.Engine.Intersection.Patches;
 // put on the intersection lines (PutPointsOnLine, MultiplePoint, PointOnSecondDom, FindLine, SingleLine), the
 // restriction segments that lie on the other surface (ProcessSegments) and the restriction lines that duplicate
 // another line (ProcessRLine).
-public sealed partial class ImpImpIntersection
+internal sealed partial class ImpImpIntersection
 {
     //-- le calcul de dist est completement faux ds la routine ci dessous a revoir (lbr le 18 nov 97)
     private static bool IntersectionWithAnArc(ref Point3D pSurf,

@@ -31,7 +31,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// restriction lines). <see cref="Lines"/> hands out the curves frozen; the Boolean operations read
 /// <see cref="InternalLines"/>.
 /// </remarks>
-public partial class FaceFace
+internal partial class FaceFace
 {
     protected bool _isDone;
     protected PatchIntersection _intersector;

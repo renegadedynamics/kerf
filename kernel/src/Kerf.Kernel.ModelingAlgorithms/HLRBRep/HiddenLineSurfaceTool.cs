@@ -20,7 +20,7 @@ namespace Kerf.Engine.HiddenLines;
 /// the intervals, the resolutions), as OCCT's. OCCT's ratios in the bounded <c>NbSamplesU</c> and <c>NbSamplesV</c>
 /// divide by <c>first - last</c>, so they are negative and the counts above 10 end at 5; reproduced.
 /// </remarks>
-public readonly struct HiddenLineSurfaceTool : IIntersectionSurfaceTool<HlrSurface>
+internal readonly struct HiddenLineSurfaceTool : IIntersectionSurfaceTool<HlrSurface>
 {
     public static double FirstUParameter(in HlrSurface surf) =>
         surf.FirstUParameter();

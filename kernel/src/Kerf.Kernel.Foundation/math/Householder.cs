@@ -14,7 +14,7 @@ namespace Kerf.Engine.Numerics;
 /// The least square solution of n linear equations in m unknowns (n &gt;= m), A.X = B, by the Householder method.
 /// More stable than GaussLeastSquare but slower; use it for singular or nearly singular matrices.
 /// </summary>
-public class Householder
+internal class Householder
 {
     private Matrix _sol;
     private Matrix _q;

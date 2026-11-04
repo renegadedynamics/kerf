@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class CurveStyleFont : Transient
+internal class CurveStyleFont : Transient
 {
     private TCollection_HAsciiString _name;
     private NCollection_HArray1<CurveStyleFontPattern> _patternList;

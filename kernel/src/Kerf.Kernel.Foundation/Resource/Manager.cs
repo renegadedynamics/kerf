@@ -11,7 +11,7 @@ using System.Text;
 namespace Kerf.Engine.Foundation.Resources;
 
 /// <summary>Raised by <see cref="Manager.Value"/> for a resource that isn't defined.</summary>
-public class NoSuchResourceException : NoSuchObjectException
+internal class NoSuchResourceException : NoSuchObjectException
 {
     public NoSuchResourceException() { }
 
@@ -42,7 +42,7 @@ public class NoSuchResourceException : NoSuchObjectException
 /// </para>
 /// <para>A working object (decision 21): its resources change in place.</para>
 /// </remarks>
-public class Manager : Transient
+internal class Manager : Transient
 {
     private readonly string _name;
     private readonly Dictionary<string, string> _refMap;

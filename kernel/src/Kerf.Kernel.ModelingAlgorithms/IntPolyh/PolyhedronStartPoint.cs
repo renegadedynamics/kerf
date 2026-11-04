@@ -17,7 +17,7 @@ namespace Kerf.Engine.Intersection.Polyhedra;
 /// OCCT's default start point has lambdas -1, angle -2, triangles -1, edges -2 and chain list -1;
 /// <c>default(IntPolyh_StartPoint)</c> is all zeros, so ported code writes <c>new IntPolyh_StartPoint()</c>.
 /// </remarks>
-public partial struct PolyhedronStartPoint : IEquatable<PolyhedronStartPoint>, IPolyhedronDump
+internal partial struct PolyhedronStartPoint : IEquatable<PolyhedronStartPoint>, IPolyhedronDump
 {
     private const double MyConfusionPrecision = 10.0e-12;
 

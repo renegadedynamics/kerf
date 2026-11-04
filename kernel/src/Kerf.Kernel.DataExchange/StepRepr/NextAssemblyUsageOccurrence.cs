@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity NextAssemblyUsageOccurrence
 /// </summary>
-public class NextAssemblyUsageOccurrence : AssemblyComponentUsage
+internal class NextAssemblyUsageOccurrence : AssemblyComponentUsage
 {
     /// <summary>
     /// Empty constructor

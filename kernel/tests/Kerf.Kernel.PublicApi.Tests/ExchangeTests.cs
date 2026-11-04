@@ -42,6 +42,25 @@ public class ExchangeTests
     }
 
     [Fact]
+    public void STEP_is_written_in_the_schema_asked_and_read_with_or_without_healing()
+    {
+        foreach ((StepSchema schema, string protocol) in new[] { (StepSchema.Ap214, "AUTOMOTIVE_DESIGN"), (StepSchema.Ap203, "CONFIG_CONTROL_DESIGN"),
+                                                               (StepSchema.Ap242, "AP242_MANAGED_MODEL_BASED_3D_ENGINEERING") })
+        {
+            var stream = new MemoryStream();
+            Assert.True(Step.Write(Fixtures.Box(), stream, new StepWriteOptions { Schema = schema }).IsSuccess);
+            Assert.Contains(protocol, Encoding.ASCII.GetString(stream.ToArray()));
+            foreach (bool heal in new[] { true, false })
+            {
+                stream.Position = 0;
+                Result<ModelNode> read = Step.Read(stream, new StepReadOptions { Heal = heal });
+                Assert.True(read.IsSuccess, read.Error?.Message);
+                Assert.Equal(6000, read.Value.Shape!.Value.Volume(), 1e-6);
+            }
+        }
+    }
+
+    [Fact]
     public void STEP_keeps_names_colours_and_the_assembly()
     {
         var orange = new Color(1, 0.5, 0);

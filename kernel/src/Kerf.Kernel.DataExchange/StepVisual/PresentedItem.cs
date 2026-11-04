@@ -11,6 +11,6 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class PresentedItem : Transient
+internal class PresentedItem : Transient
 {
 }

@@ -12,6 +12,27 @@ namespace Kerf.Kernel.PublicApi.Tests;
 public class MeshingTests
 {
     [Fact]
+    public void Triangles_come_as_records_per_face_and_for_the_whole_mesh()
+    {
+        ShapeMesh mesh = Fixtures.Box().Mesh().Value;
+        Triangle[] all = mesh.GetTriangles();
+        Assert.Equal(mesh.TriangleCount, all.Length);
+        ReadOnlySpan<int> buffer = mesh.Triangles.Span;
+        foreach (FaceMesh face in mesh.Faces)
+        {
+            Triangle[] own = face.GetTriangles();
+            Assert.Equal(face.TriangleCount, own.Length);
+            for (int i = 0; i < own.Length; i++)
+            {
+                int t = face.FirstTriangle + i;
+                Assert.Equal(new Triangle(buffer[3 * t], buffer[3 * t + 1], buffer[3 * t + 2]), own[i]);
+                Assert.Equal(own[i] with { A = own[i].A + face.FirstNode, B = own[i].B + face.FirstNode, C = own[i].C + face.FirstNode }, all[t]);
+            }
+        }
+        Assert.All(all, t => Assert.InRange(Math.Max(t.A, Math.Max(t.B, t.C)), 0, mesh.NodeCount - 1));
+    }
+
+    [Fact]
     public void A_box_meshes_into_two_triangles_a_face()
     {
         Solid box = Fixtures.Box();

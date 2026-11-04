@@ -12,7 +12,7 @@ namespace Kerf.Engine.Intersection.Polyhedra;
 /// OCCT's default edge has every index -1; <c>default(IntPolyh_Edge)</c> has zeros, so ported code writes
 /// <c>new IntPolyh_Edge()</c>.
 /// </remarks>
-public partial struct PolyhedronEdge : IEquatable<PolyhedronEdge>
+internal partial struct PolyhedronEdge : IEquatable<PolyhedronEdge>
 {
     private int _point1;
     private int _point2;

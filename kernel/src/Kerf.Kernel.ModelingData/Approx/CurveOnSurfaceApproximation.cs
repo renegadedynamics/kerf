@@ -21,7 +21,7 @@ namespace Kerf.Engine.Approximation;
 /// curve, or both, by AdvApprox. Isolines of a GeomAdaptor_Surface are taken from the surface when only the 3D curve
 /// is asked for.
 /// </summary>
-public class CurveOnSurfaceApproximation
+internal class CurveOnSurfaceApproximation
 {
     private sealed class Approx_CurveOnSurface_Eval : EvaluatorFunction
     {

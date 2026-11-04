@@ -25,7 +25,7 @@ namespace Kerf.Engine.HiddenLines;
 /// <see cref="HiddenLineCurve.D3"/> writes nothing, as OCCT's: the third derivative keeps its previous value. A working
 /// object: its setters are public.
 /// </remarks>
-public class HiddenLineCLProps
+internal class HiddenLineCLProps
 {
     private HiddenLineCurve? _curve;
     private double _u;

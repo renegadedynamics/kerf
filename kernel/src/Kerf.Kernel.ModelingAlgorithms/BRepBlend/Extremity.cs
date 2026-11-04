@@ -25,7 +25,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// share one. <c>new BRepBlend_Extremity()</c> is OCCT's default extremity; <c>default</c> is the same.
 /// The mutators are internal, with public <c>With*</c> twins.
 /// </remarks>
-public partial struct Extremity : IEquatable<Extremity>
+internal partial struct Extremity : IEquatable<Extremity>
 {
     private HVertex? _vtx;
     private NCollection_Sequence<PointOnRst>? _seqpt;

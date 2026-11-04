@@ -19,7 +19,7 @@ namespace Kerf.Engine.Approximation.FiniteElements;
 /// which callers fill or change in place as in OCCT (shared: changing it changes the curve). The evaluators cache
 /// the canonical coefficients of each element, so they are not thread-safe.
 /// </remarks>
-public class Curve : Transient
+internal class Curve : Transient
 {
     private readonly int _nbElements;
     private readonly int _dimension;

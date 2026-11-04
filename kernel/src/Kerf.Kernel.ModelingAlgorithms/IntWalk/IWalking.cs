@@ -17,7 +17,7 @@ namespace Kerf.Engine.Intersection.Walking;
 
 /// <summary>What IntWalk_IWalking reads from its function, beyond math_FunctionSetWithDerivatives (decision 607).</summary>
 /// <typeparam name="TSelf">The function's class.</typeparam>
-public interface IWFunction<TSelf> : ISurfFunction<SurfaceAdaptorBase>
+internal interface IWFunction<TSelf> : ISurfFunction<SurfaceAdaptorBase>
     where TSelf : IWFunction<TSelf>
 {
     /// <summary>The parametric surface.</summary>
@@ -38,7 +38,7 @@ public interface IWFunction<TSelf> : ISurfFunction<SurfaceAdaptorBase>
 /// OCCT's instantiations and are named in the body: the path and interior points (IntSurf_PathPoint,
 /// IntSurf_InteriorPoint and their tools), the surface (Adaptor3d_Surface and Adaptor3d_HSurfaceTool).
 /// </remarks>
-public class IWalking<TheIWFunction, TheIWLine>
+internal class IWalking<TheIWFunction, TheIWLine>
     where TheIWFunction : FunctionSetWithDerivatives, IWFunction<TheIWFunction>
     where TheIWLine : global::Kerf.Engine.Intersection.Walking.TheIWLine, new()
 {

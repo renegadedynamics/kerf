@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.HiddenLines.Contours;
 
 /// <summary>The kind of contour: silhouette for a direction or an eye, or draft for a direction or an eye.</summary>
-public enum ContourTFunction
+internal enum ContourTFunction
 {
     ContourStd,
     ContourPrs,

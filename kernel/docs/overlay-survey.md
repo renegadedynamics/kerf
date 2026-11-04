@@ -286,3 +286,10 @@ TShapes only for what changed.
 - **The rule protecting published shapes** (decision 1447) is one check: `IsReadOnly`, which BRep_Builder's refusals and the port's
   write checks ask, and which the TShapes' setters apply through `TryWritable` and `CheckMutable`. A write outside an
   overlay into a frozen shape still throws, as it always did.
+- **The revolution's copy (unit 10L5, decision 1558).** 10L2's public `Revolve` passed `copy: true` because, without,
+  a published profile's history came back empty, and decision 1526 took that for a copy at entry the survey had
+  missed. It wasn't one: `ApiMakeRevol` sweeps the caller's profile in an overlay (10H3), its tables keyed by the
+  caller's sub-shapes. The empty history is OCCT's: `BRepPrimAPI_MakeRevol::Generated` answers only for a sub-shape
+  the result itself uses, and a whole turn without copy drops the profile's edges at right angles to the axis. The
+  public operation runs without copy and asks the engine for those edges' faces directly; the engine's history stays
+  OCCT's. No other maker had a copy left: copy at entry is still at none.

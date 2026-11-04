@@ -12,7 +12,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// <summary>The first derivatives (DU, DV) of a surface at a point, as the G1 constraints of a plate take them.</summary>
 /// <remarks>A value type (rules, section 3). The fields are internal, as OCCT makes them visible to its friends
 /// Plate_GtoCConstraint and Plate_FreeGtoCConstraint (which transform a copy in place).</remarks>
-public struct D1 : IEquatable<D1>
+internal struct D1 : IEquatable<D1>
 {
     internal Xyz _du;
     internal Xyz _dv;

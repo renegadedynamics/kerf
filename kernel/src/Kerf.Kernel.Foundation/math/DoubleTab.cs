@@ -11,7 +11,7 @@ namespace Kerf.Engine.Numerics;
 /// A class: C++ copies are <c>new(other)</c>, C++ assignment is <see cref="Assign"/>. OCCT keeps tables of up to
 /// 64 values in an inline buffer; here the storage is always a .NET array.
 /// </remarks>
-public class DoubleTab
+internal class DoubleTab
 {
     private NCollection_Array2<double> _array;
 

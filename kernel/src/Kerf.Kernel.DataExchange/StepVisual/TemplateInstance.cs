@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class TemplateInstance : MappedItem
+internal class TemplateInstance : MappedItem
 {
     /// <summary>
     /// Returns a TemplateInstance

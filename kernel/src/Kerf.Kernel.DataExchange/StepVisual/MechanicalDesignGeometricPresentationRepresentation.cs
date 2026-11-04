@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class MechanicalDesignGeometricPresentationRepresentation : PresentationRepresentation
+internal class MechanicalDesignGeometricPresentationRepresentation : PresentationRepresentation
 {
     /// <summary>
     /// Returns a MechanicalDesignGeometricPresentationRepresentation

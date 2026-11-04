@@ -14,7 +14,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Tolerances;
 
-public class GeometricToleranceTarget : SelectType
+internal class GeometricToleranceTarget : SelectType
 {
     /// <summary>
     /// Returns a GeometricToleranceTarget select type

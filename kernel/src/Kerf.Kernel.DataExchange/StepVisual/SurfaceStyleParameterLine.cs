@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class SurfaceStyleParameterLine : Transient
+internal class SurfaceStyleParameterLine : Transient
 {
     private CurveStyle _styleOfParameterLines;
     private NCollection_HArray1<DirectionCountSelect> _directionCounts;

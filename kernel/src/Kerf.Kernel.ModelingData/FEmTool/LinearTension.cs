@@ -17,7 +17,7 @@ namespace Kerf.Engine.Approximation.FiniteElements;
 /// <summary>
 /// The linear tension criterion of Hermite-Jacobi elements: the integral of the squared first derivative.
 /// </summary>
-public class LinearTension : ElementaryCriterion
+internal class LinearTension : ElementaryCriterion
 {
     // OCCT keeps the integrals of the last constraint order in function-static variables, recomputed when the
     // order changes; they are cached here per order, published without a lock (the values are the same).

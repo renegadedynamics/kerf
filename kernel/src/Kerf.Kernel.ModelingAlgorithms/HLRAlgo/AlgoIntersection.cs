@@ -19,7 +19,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 /// the orientation and the state unset; here they are the enums' first values). The setters (OCCT's overloads of the
 /// getters' names) are internal.
 /// </remarks>
-public partial struct AlgoIntersection : IEquatable<AlgoIntersection>
+internal partial struct AlgoIntersection : IEquatable<AlgoIntersection>
 {
     private Orientation _orien;
     private int _segIndex;

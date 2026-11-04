@@ -15,7 +15,7 @@ namespace Kerf.Engine.Approximation;
 /// Approximates a 2D curve given by an adaptor on [First, Last] with a B-spline curve (AdvApprox, its U and V as two
 /// 1D subspaces with their own tolerances). The approximation is made by the constructor.
 /// </summary>
-public sealed class Curve2d
+internal sealed class Curve2d
 {
     private sealed class Approx_Curve2d_Eval : EvaluatorFunction
     {

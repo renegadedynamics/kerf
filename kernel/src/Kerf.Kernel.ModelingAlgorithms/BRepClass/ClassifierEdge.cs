@@ -19,7 +19,7 @@ namespace Kerf.Engine.Classification;
 /// A value, as in OCCT (the classifiers copy it). <c>new()</c> is OCCT's default (an infinite maximum tolerance);
 /// <c>default</c> has a zero one. The setters are internal, with <c>With</c> twins.
 /// </remarks>
-public partial struct ClassifierEdge
+internal partial struct ClassifierEdge
 {
     private Edge _edge;
     private Face _face;

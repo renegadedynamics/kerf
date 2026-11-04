@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Framework;
 
 /// <summary>The type of a parameter read from a file (an integer, a real, an entity identifier, a text...).</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.Interface_ParamType;</c>.</remarks>
-public enum ParamType
+internal enum ParamType
 {
     ParamMisc,
     ParamInteger,

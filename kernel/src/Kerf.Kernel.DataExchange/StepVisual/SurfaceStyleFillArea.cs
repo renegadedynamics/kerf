@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class SurfaceStyleFillArea : Transient
+internal class SurfaceStyleFillArea : Transient
 {
     private FillAreaStyle _fillArea;
 

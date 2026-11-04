@@ -24,7 +24,7 @@ namespace Kerf.Engine.Approximation;
 /// own arrays (OCCT's const references; shared: don't modify); <see cref="Surface"/> and <see cref="Curve2d"/> copy
 /// into the caller's arrays.
 /// </remarks>
-public sealed class SweepApproximation
+internal sealed class SweepApproximation
 {
     private sealed class Approx_SweepApproximation_Eval : EvaluatorFunction
     {

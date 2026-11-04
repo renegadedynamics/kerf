@@ -22,7 +22,7 @@ namespace Kerf.Engine.HiddenLines;
 /// OCCT's template Extrema_GenLocateExtPC instantiated over HLRBRep_Curve (decision 1091). An algorithm object
 /// (decision 117). Keeps a reference to the curve, as OCCT does.
 /// </remarks>
-public class TheLocateExtPCOfTheProjPCurOfCInter
+internal class TheLocateExtPCOfTheProjPCurOfCInter
 {
     private bool _done;
     private double _mytolU;

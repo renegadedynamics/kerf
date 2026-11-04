@@ -35,7 +35,7 @@ namespace Kerf.Engine.Intersection.Walking;
 /// a walk can be compared step by step with a native recording. It changes nothing in the computation.
 /// </para>
 /// </remarks>
-public partial class PWalking
+internal partial class PWalking
 {
     private bool _done;
     private LineOn2S _line = new();

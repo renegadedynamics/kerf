@@ -13,7 +13,7 @@ using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 
 namespace Kerf.Engine.Intersection.Patches;
 
-public partial class PrmPrmIntersection
+internal partial class PrmPrmIntersection
 {
     //=================================================================================================
 

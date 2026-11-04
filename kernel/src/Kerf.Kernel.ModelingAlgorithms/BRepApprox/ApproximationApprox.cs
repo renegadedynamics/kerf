@@ -21,7 +21,7 @@ namespace Kerf.Engine.Intersection.Approximation;
 /// BRepApprox_TheMultiLineToolOfApprox is <see cref="MultiLineTool{TheLine}"/> over BRepApprox_ApproxLine
 /// (a struct can't be derived).
 /// </remarks>
-public sealed class ApproximationApprox
+internal sealed class ApproximationApprox
     : Approx<FaceSurfaceAdaptor, ApproximationSurfaceTool, ApproxLine>
 {
     public ApproximationApprox()

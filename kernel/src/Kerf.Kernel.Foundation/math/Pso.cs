@@ -17,7 +17,7 @@ namespace Kerf.Engine.Numerics;
 /// surroundings of an optimum, not a strict optimum: run a local optimization from its output. The random number
 /// generator has a fixed seed, so results are reproducible.
 /// </remarks>
-public class Pso
+internal class Pso
 {
     private const double ABorderDivisor = 1.0e+4;
 

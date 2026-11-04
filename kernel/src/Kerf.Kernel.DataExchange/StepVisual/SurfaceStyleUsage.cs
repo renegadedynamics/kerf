@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class SurfaceStyleUsage : Transient
+internal class SurfaceStyleUsage : Transient
 {
     private SurfaceSide _side;
     private SurfaceSideStyle _style;

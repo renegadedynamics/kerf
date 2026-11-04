@@ -23,7 +23,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// edit them in place, so their mutators are public, and they are never frozen. Maps and sequences hold them by
 /// reference, as OCCT's handles.
 /// </remarks>
-public class PatchLine : Transient
+internal class PatchLine : Transient
 {
     /// <summary>The kind of the line, set by the derived classes' constructors.</summary>
     protected PatchLineType _typ;

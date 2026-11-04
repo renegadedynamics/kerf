@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Ap203;
 /// <summary>
 /// Representation of STEP entity CcDesignSpecificationReference
 /// </summary>
-public class CcDesignSpecificationReference : DocumentReference
+internal class CcDesignSpecificationReference : DocumentReference
 {
     private NCollection_HArray1<SpecifiedItem> _items;
 

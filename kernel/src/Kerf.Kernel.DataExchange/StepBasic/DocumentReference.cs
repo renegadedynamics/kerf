@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class DocumentReference : Transient
+internal class DocumentReference : Transient
 {
     private Document _assignedDocument;
     private TCollection_HAsciiString _source;

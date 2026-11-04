@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// <summary>
 /// Defines an Iterator on Entities. Allows considering of various criteria
 /// </summary>
-public class EntityIterator
+internal class EntityIterator
 {
 
     /// <summary>

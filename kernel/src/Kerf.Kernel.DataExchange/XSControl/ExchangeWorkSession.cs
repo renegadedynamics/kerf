@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// transfers may work with a Context List : its items are given by the user, according to the transfer to be
 /// i.e. it is interpreted by the Actors Each item is accessed by a Name
 /// </summary>
-public class ExchangeWorkSession : WorkSession
+internal class ExchangeWorkSession : WorkSession
 {
     // OCCT's process-wide mutex (GetGlobalMutex) around SelectNorm, NewModel and TransferWriteShape is the
     // controller's (Controller.SessionLock, unit 10I): a recorded controller and its actors are shared by the sessions

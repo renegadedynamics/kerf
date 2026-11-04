@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity Group
 /// </summary>
-public class Group : Transient
+internal class Group : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Intersection.Approximation;
 /// <see cref="ComputeLine{MultiLine, LineTool}"/> over ApproxInt_MultiLineTool and BRepApprox_ApproxLine.
 /// </summary>
 /// <remarks>A sealed subclass with OCCT's constructors (decisions 142 and 202); the members are the base class's.</remarks>
-public sealed class TheComputeLineBezierOfApprox : ComputeLine<global::Kerf.Engine.Intersection.Approximation.MultiLine<ApproxLine>, MultiLineTool<ApproxLine>>
+internal sealed class TheComputeLineBezierOfApprox : ComputeLine<global::Kerf.Engine.Intersection.Approximation.MultiLine<ApproxLine>, MultiLineTool<ApproxLine>>
 {
     /// <summary>
     /// Approximates <paramref name="line"/> until the tolerances are reached, from degree

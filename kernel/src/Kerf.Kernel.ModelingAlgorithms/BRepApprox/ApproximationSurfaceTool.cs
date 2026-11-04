@@ -17,7 +17,7 @@ namespace Kerf.Engine.Intersection.Approximation;
 /// <see cref="IApproxSurfaceTool{ThePSurface}"/>, so that it can be the ThePSurfaceTool type argument of
 /// ApproxInt's and IntImp's generics (decision 607).
 /// </remarks>
-public readonly struct ApproximationSurfaceTool : IApproxSurfaceTool<FaceSurfaceAdaptor>
+internal readonly struct ApproximationSurfaceTool : IApproxSurfaceTool<FaceSurfaceAdaptor>
 {
     public static double FirstUParameter(in FaceSurfaceAdaptor surf) => surf.FirstUParameter();
 

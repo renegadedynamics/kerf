@@ -19,7 +19,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 /// nested <see cref="IndicesT"/> and <see cref="PointsT"/> are plain C++ structs with public fields, ported as such;
 /// <see cref="Indices"/> and <see cref="Points"/> return references to them, and the flag setters are internal.
 /// </remarks>
-public partial struct AlgoBiPoint : IEquatable<AlgoBiPoint>
+internal partial struct AlgoBiPoint : IEquatable<AlgoBiPoint>
 {
     /// <summary>The indices of a segment (plain data).</summary>
     public struct IndicesT : IEquatable<IndicesT>

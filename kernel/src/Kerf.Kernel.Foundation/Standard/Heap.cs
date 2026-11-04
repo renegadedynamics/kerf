@@ -17,7 +17,7 @@ namespace Kerf.Engine.Foundation.Std;
 /// <c>_Pred(left, right)</c> exactly where MSVC calls it. Decision 491; the order is checked against orders recorded
 /// from MSVC-compiled programs (tests).
 /// </remarks>
-public static class Heap
+internal static class Heap
 {
     /// <summary>A strict weak ordering, C++'s <c>Compare</c> (<c>_Pred(a, b)</c> is "a is less than b").</summary>
     public interface ILess<in T>

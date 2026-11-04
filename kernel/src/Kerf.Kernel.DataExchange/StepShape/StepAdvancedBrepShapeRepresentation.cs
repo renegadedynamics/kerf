@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepAdvancedBrepShapeRepresentation : StepShapeRepresentation
+internal class StepAdvancedBrepShapeRepresentation : StepShapeRepresentation
 {
     /// <summary>
     /// Returns a AdvancedBrepShapeRepresentation

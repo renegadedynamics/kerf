@@ -13,7 +13,7 @@ namespace Kerf.Engine.Approximation.FiniteElements;
 /// A symmetric sparse matrix stored by profile (skyline), for 1D finite element methods. Row i stores the
 /// coefficients from column <c>FirstIndexes(i)</c> to the diagonal. It is solved by Cholesky factorisation.
 /// </summary>
-public class FemProfileMatrix : SparseMatrix
+internal class FemProfileMatrix : SparseMatrix
 {
     // profile(1, i): the number of stored coefficients left of the diagonal in row i;
     // profile(2, i): the address of the diagonal coefficient of row i in ProfileMatrix

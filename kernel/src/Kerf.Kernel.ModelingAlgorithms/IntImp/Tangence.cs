@@ -13,7 +13,7 @@ namespace Kerf.Engine.Intersection.Implicit;
 /// OCCT's free functions <c>ChoixRef</c> and <c>IntImp_ComputeTangence</c> (the second is
 /// <see cref="ComputeTangence"/> here: C# can't name a member as its class).
 /// </summary>
-public static class Tangence
+internal static class Tangence
 {
     private static readonly ConstIsoparametric[] StaticChoixRef =
     [

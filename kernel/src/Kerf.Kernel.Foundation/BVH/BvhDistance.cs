@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// <typeparam name="TVec">The vector type (dimension).</typeparam>
 /// <typeparam name="TObject">The type of the object the distance is computed to.</typeparam>
 /// <typeparam name="TSet">The type of the set the tree is built on.</typeparam>
-public abstract class BvhDistance<T, TVec, TObject, TSet> : Traverse<T, TVec, TSet, T>
+internal abstract class BvhDistance<T, TVec, TObject, TSet> : Traverse<T, TVec, TSet, T>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
     where TSet : class

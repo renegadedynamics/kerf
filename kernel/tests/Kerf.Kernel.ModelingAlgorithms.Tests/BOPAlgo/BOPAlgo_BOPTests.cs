@@ -74,9 +74,9 @@ public static class BOPAlgo_BOPTests
     {
         protected double myTolerance = DefaultTolerance();
         protected double myFuzzyValue = DefaultFuzzyValue();
-        protected PaveFiller? myPaveFiller;
+        private protected PaveFiller? myPaveFiller;
 
-        protected Shape PerformDirectBOP(in Shape theShape1, in Shape theShape2, Operation theOp)
+        private protected Shape PerformDirectBOP(in Shape theShape1, in Shape theShape2, Operation theOp)
         {
             Bop aBOP = new();
 
@@ -93,7 +93,7 @@ public static class BOPAlgo_BOPTests
             return aBOP.Shape();
         }
 
-        protected Shape PerformTwoStepBOP(in Shape theShape1, in Shape theShape2, Operation theOp)
+        private protected Shape PerformTwoStepBOP(in Shape theShape1, in Shape theShape2, Operation theOp)
         {
             PreparePaveFiller(theShape1, theShape2);
             return PerformBOPWithPaveFiller(theOp);
@@ -116,7 +116,7 @@ public static class BOPAlgo_BOPTests
             Assert.False(myPaveFiller.HasErrors, "PaveFiller preparation failed");
         }
 
-        protected Shape PerformBOPWithPaveFiller(Operation theOp)
+        private protected Shape PerformBOPWithPaveFiller(Operation theOp)
         {
             Assert.NotNull(myPaveFiller); // PaveFiller must be prepared first
 

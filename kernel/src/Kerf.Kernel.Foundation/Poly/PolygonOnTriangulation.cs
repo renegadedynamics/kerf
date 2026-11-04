@@ -15,7 +15,7 @@ namespace Kerf.Engine.Meshing;
 /// node, and a deflection.
 /// </summary>
 /// <remarks>A mutable container, as in OCCT. <c>DumpJson</c> is left out.</remarks>
-public class PolygonOnTriangulation : Transient
+internal class PolygonOnTriangulation : Transient
 {
     private double _deflection;
     private readonly NCollection_Array1<int> _nodes;

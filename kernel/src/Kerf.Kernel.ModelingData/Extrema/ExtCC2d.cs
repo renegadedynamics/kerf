@@ -20,7 +20,7 @@ namespace Kerf.Engine.Extrema;
 /// An algorithm object (decision 117): the second curve is set by <c>Initialize</c>, the first by <c>Perform</c>.
 /// Keeps a reference to the second curve, as OCCT does. OCCT's <c>std::shared_ptr</c> locals are plain references.
 /// </remarks>
-public class ExtCC2d
+internal class ExtCC2d
 {
     private bool _isFindSingleSolution; // Default value is false.
     private bool _done;

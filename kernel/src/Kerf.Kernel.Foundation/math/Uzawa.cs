@@ -15,7 +15,7 @@ namespace Kerf.Engine.Numerics;
 /// conditions on the number of equations, which can be equalities or inequalities (&lt;). With only equalities the
 /// resolution is direct (by the Crout algorithm).
 /// </summary>
-public class Uzawa
+internal class Uzawa
 {
     private math_Vector _resul;
     private math_Vector _erruza;

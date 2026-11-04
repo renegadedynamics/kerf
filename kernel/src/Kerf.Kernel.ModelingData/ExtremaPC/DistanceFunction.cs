@@ -13,7 +13,7 @@ namespace Kerf.Engine.Extrema.PointCurve;
 /// F'(u) = C'(u) . C'(u) + (C(u) - P) . C''(u). Its roots are the extrema of the squared distance.
 /// </summary>
 /// <remarks>A struct functor (decision 51) holding the caller's adaptor, as OCCT holds a pointer to it.</remarks>
-public readonly struct DistanceFunction : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction, global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
+internal readonly struct DistanceFunction : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction, global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
 {
     private readonly CurveAdaptorBase _curve; // Curve adaptor (not owned)
     private readonly Point3D _p;              // Query point

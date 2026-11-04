@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class PhysicallyModeledProductDefinition : ProductDefinition
+internal class PhysicallyModeledProductDefinition : ProductDefinition
 {
     public PhysicallyModeledProductDefinition()
     {

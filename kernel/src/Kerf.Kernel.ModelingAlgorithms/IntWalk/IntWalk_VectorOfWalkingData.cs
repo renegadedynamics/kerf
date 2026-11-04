@@ -13,7 +13,7 @@ namespace Kerf.Engine.Intersection.Walking;
 /// <c>NCollection_LinearVector&lt;IntWalk_WalkingData&gt;</c> and <c>IntWalk_VectorOfInteger</c>
 /// <c>NCollection_LinearVector&lt;int&gt;</c>, both indexed from 0 (IWalking puts a dummy item at 0).
 /// </remarks>
-public struct WalkingData
+internal struct WalkingData
 {
     public double ustart;
     public double vstart;

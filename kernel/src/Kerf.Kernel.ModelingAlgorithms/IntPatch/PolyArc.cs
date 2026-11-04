@@ -17,7 +17,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// The polygon of an arc of restriction (a 2D curve) between two parameters, resampled on the part that lies near the
 /// other polygon's box, with its deflection; it can be shifted by an offset (a period).
 /// </summary>
-public class PolyArc : Polygo
+internal class PolyArc : Polygo
 {
     private readonly NCollection_Array1<Point2D> _brise;
     private readonly NCollection_Array1<double> _param;

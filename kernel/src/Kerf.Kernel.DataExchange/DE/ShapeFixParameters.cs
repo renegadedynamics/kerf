@@ -22,7 +22,7 @@ namespace Kerf.Engine.Exchange;
 /// actors take it.
 /// </para>
 /// </remarks>
-public record struct ShapeFixParameters
+internal record struct ShapeFixParameters
 {
     /// <summary>Enum, classifying a type of value for parameters.</summary>
     public enum FixMode

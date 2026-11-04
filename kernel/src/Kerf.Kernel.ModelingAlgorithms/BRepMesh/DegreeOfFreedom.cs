@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Meshing;
 
 /// <summary>The movability of a mesh entity (vertex, link or triangle) of the Delaunay structure.</summary>
-public enum DegreeOfFreedom
+internal enum DegreeOfFreedom
 {
     Free,
     InVolume,

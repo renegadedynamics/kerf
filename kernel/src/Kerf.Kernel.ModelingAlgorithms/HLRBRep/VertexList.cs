@@ -18,7 +18,7 @@ namespace Kerf.Engine.HiddenLines;
 /// A working object, as OCCT's. It copies the tool and the iterator it is given, as OCCT does, so the caller's are
 /// not moved.
 /// </remarks>
-public sealed class VertexList
+internal sealed class VertexList
 {
     private readonly NCollection_List<Interference>.Iterator _iterator;
     private readonly EdgeInterferenceTool _tool;

@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Framework.Monitoring;
 
 /// <summary>The type of a typed value (an integer, a real, an enumeration, a text, an object...).</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.MoniTool_ValueType;</c>.</remarks>
-public enum MonitorValueType
+internal enum MonitorValueType
 {
     ValueMisc,
     ValueInteger,

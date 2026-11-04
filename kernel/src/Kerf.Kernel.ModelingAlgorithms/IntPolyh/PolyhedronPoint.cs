@@ -16,7 +16,7 @@ namespace Kerf.Engine.Intersection.Polyhedra;
 /// OCCT's default point is all zeros with <c>PartOfCommon() == 1</c>; <c>default(IntPolyh_Point)</c> has 0 there, so
 /// ported code writes <c>new IntPolyh_Point()</c>.
 /// </remarks>
-public partial struct PolyhedronPoint : IEquatable<PolyhedronPoint>, IPolyhedronDump
+internal partial struct PolyhedronPoint : IEquatable<PolyhedronPoint>, IPolyhedronDump
 {
     private double _x;
     private double _y;

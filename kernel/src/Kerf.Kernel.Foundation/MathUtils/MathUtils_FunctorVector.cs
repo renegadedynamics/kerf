@@ -10,7 +10,7 @@ namespace Kerf.Engine.Numerics.Utilities;
 // MathUtils_FunctorScalar.cs). Vectors and matrices are passed as references and filled in place.
 
 /// <summary>Non-virtual functor classes for vector (N-D) functions.</summary>
-public static partial class MathUtils
+internal static partial class MathUtils
 {
     /// <summary>A function of N variables: C++'s "type with <c>Value(const math_Vector&amp;, double&amp;)</c> method".</summary>
     public interface IVectorFunction

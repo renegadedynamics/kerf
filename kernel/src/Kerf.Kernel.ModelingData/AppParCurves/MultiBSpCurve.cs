@@ -19,7 +19,7 @@ namespace Kerf.Engine.Approximation;
 /// poles, knots and multiplicities, and copies the degree. <see cref="Knots"/> and <see cref="Multiplicities"/>
 /// return copies (decision 88), so a result can't be changed through them.
 /// </remarks>
-public class MultiBSpCurve : MultiCurve
+internal class MultiBSpCurve : MultiCurve
 {
     private NCollection_HArray1<double>? _myknots;
     private NCollection_HArray1<int>? _mymults;

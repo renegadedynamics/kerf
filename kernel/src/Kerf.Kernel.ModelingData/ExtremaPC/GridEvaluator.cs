@@ -18,7 +18,7 @@ namespace Kerf.Engine.Extrema.PointCurve;
 /// (sign changes of F(u), near-zero F, 3-point distance extrema); refine each candidate by Newton's method. The
 /// temporary collections are fields reused through <c>Clear()</c>, as OCCT's mutable members.
 /// </remarks>
-public sealed class GridEvaluator
+internal sealed class GridEvaluator
 {
     /// <summary>Cached grid point with pre-computed data.</summary>
     public struct GridPoint

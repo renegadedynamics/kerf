@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Numerics.Utilities;
 
 /// <summary>Convergence testing utilities.</summary>
-public static partial class MathUtils
+internal static partial class MathUtils
 {
     /// <summary>Check convergence based on relative change in X.</summary>
     public static bool IsXConverged(double xOld, double xNew, double tolerance)

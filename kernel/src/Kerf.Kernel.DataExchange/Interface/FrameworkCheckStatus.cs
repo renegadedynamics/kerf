@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Framework;
 
 /// <summary>A status of checks, or a criterion to select them: OK, warning, fail, any, message (warning or fail), no fail.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.Interface_CheckStatus;</c>.</remarks>
-public enum FrameworkCheckStatus
+internal enum FrameworkCheckStatus
 {
     CheckOK,
     CheckWarning,

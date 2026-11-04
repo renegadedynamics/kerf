@@ -20,7 +20,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// tangent transition (OCCT's default). <c>SetValues</c> is an internal mutator; the constructor is its twin.
 /// OCCT's <c>Dump</c> (to std::cout) is <see cref="ToString"/>.
 /// </remarks>
-public partial struct CurveSurfaceIntersectionPoint : IEquatable<CurveSurfaceIntersectionPoint>
+internal partial struct CurveSurfaceIntersectionPoint : IEquatable<CurveSurfaceIntersectionPoint>
 {
     private Point3D _p;
     private double _uSurf;

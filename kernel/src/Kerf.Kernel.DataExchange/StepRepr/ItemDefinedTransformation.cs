@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Added from StepRepr Rev2 to Rev4
 /// </summary>
-public class ItemDefinedTransformation : Transient
+internal class ItemDefinedTransformation : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

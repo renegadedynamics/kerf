@@ -8,7 +8,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 
 /// <summary>A segment of the internal triangulation of the polygonal hidden-line removal (to update the outlines).</summary>
 /// <remarks>A plain C++ struct, ported with OCCT's public fields (plain data, changed in place in arrays).</remarks>
-public struct PolyInternalSegment : IEquatable<PolyInternalSegment>
+internal struct PolyInternalSegment : IEquatable<PolyInternalSegment>
 {
     public int LstSg1;
     public int LstSg2;

@@ -15,7 +15,7 @@ namespace Kerf.Kernel.DrawLite;
 /// A Draw-lite document (DDocStd_DrawDocument): an <see cref="ExchangeDocument"/> under a Draw variable, in place of an
 /// OCAF document with XCAF's tools (decision 1166, plan 2.6). Its labels are XCAF's; it has no undo and no storage.
 /// </summary>
-public sealed class DrawDocument(ExchangeDocument theDocument) : DrawDrawable
+internal sealed class DrawDocument(ExchangeDocument theDocument) : DrawDrawable
 {
     /// <summary>The document.</summary>
     public ExchangeDocument Document { get; } = theDocument;

@@ -9,7 +9,7 @@ namespace Kerf.Engine.Exchange.Documents;
 /// A label of an <see cref="ExchangeDocument"/>, in place of OCAF's <c>TDF_Label</c> in code ported from XCAF's users:
 /// a handle on a shape, component, sub-shape or layer of the document. The default value is the null label.
 /// </summary>
-public readonly struct Label : IEquatable<Label>
+internal readonly struct Label : IEquatable<Label>
 {
     private readonly ExchangeDocument? _document;
     private readonly int _index;

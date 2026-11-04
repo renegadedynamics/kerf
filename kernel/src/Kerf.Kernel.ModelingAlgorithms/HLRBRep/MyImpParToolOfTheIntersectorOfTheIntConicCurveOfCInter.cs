@@ -16,7 +16,7 @@ namespace Kerf.Engine.HiddenLines;
 /// The signed distance between an implicit conic and the point at a parameter on a 2D curve, with its derivative.
 /// </summary>
 /// <remarks>Keeps a reference to the curve, as OCCT keeps a pointer.</remarks>
-public sealed class MyImpParToolOfTheIntersectorOfTheIntConicCurveOfCInter
+internal sealed class MyImpParToolOfTheIntersectorOfTheIntConicCurveOfCInter
     : FunctionWithDerivative,
       IMyImpParTool<MyImpParToolOfTheIntersectorOfTheIntConicCurveOfCInter,
                                  IConicTool, HiddenLineCurve>

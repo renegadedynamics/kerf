@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Intersection;
 
 /// <summary>The kind of result of an analytic intersection of two quadrics (IntAna_QuadQuadGeo).</summary>
-public enum ResultType
+internal enum ResultType
 {
     Point,
     Line,

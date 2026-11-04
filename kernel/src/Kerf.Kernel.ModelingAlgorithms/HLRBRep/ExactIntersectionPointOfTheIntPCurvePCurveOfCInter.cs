@@ -11,7 +11,7 @@ namespace Kerf.Engine.HiddenLines;
 
 /// <summary>The exact intersection point of two 2D curves near the crossing of two segments of their polygons.</summary>
 /// <remarks>OCCT's instantiation of IntCurve_ExactIntersectionPoint.gxx over HLRBRep_Curve (decision 324).</remarks>
-public sealed class ExactIntersectionPointOfTheIntPCurvePCurveOfCInter
+internal sealed class ExactIntersectionPointOfTheIntPCurvePCurveOfCInter
     : ExactIntersectionPoint<HiddenLineCurve, HiddenLineCurveTool>
 {
     public ExactIntersectionPointOfTheIntPCurvePCurveOfCInter(HiddenLineCurve c1, HiddenLineCurve c2,

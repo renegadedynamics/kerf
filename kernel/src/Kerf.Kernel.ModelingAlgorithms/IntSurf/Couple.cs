@@ -9,7 +9,7 @@ namespace Kerf.Engine.Intersection.Walking;
 
 /// <summary>A couple of integers.</summary>
 /// <remarks><c>new()</c> and <c>default</c> are both (0, 0), as OCCT's default.</remarks>
-public readonly partial struct Couple : IEquatable<Couple>
+internal readonly partial struct Couple : IEquatable<Couple>
 {
     private readonly int _firstInteger;
     private readonly int _secondInteger;

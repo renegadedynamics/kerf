@@ -199,8 +199,9 @@ public class GccAna_BisecTests
     [InlineData(1.0, 0.5, ConstraintCurveType.Ell, 1)] // inside: an ellipse
     [InlineData(2.0, 0.0, ConstraintCurveType.Lin, 1)] // on the circle: a line
     [InlineData(0.0, 0.0, ConstraintCurveType.Cir, 1)] // the centre: a circle
-    public void CircPnt2dBisec(double theX, double theY, ConstraintCurveType theType, int theNb)
+    public void CircPnt2dBisec(double theX, double theY, object theTypeValue, int theNb)
     {
+        var theType = (ConstraintCurveType)theTypeValue; // the theory's data as object: the engine type is internal
         Circle2D aC = Circ(0, 0, 2);
         Point2D aP = new(theX, theY);
         CircPnt2dBisec anAlgo = new(aC, aP);
@@ -238,8 +239,9 @@ public class GccAna_BisecTests
     [InlineData(4.0, 3.0, 1.0, 3, new[] { ConstraintCurveType.Lin, ConstraintCurveType.Hpr, ConstraintCurveType.Hpr })] // externally tangent
     [InlineData(6.0, 3.0, 1.0, 4, new[] { ConstraintCurveType.Hpr, ConstraintCurveType.Hpr, ConstraintCurveType.Hpr, ConstraintCurveType.Hpr })] // apart
     [InlineData(6.0, 2.0, 2.0, 3, new[] { ConstraintCurveType.Lin, ConstraintCurveType.Hpr, ConstraintCurveType.Hpr })] // apart, same radius
-    public void Circ2dBisec(double theDist, double theR1, double theR2, int theNb, ConstraintCurveType[] theTypes)
+    public void Circ2dBisec(double theDist, double theR1, double theR2, int theNb, object theTypesValue)
     {
+        var theTypes = (ConstraintCurveType[])theTypesValue; // the theory's data as object: the engine type is internal
         Circle2D aC1 = Circ(0, 0, theR1);
         Circle2D aC2 = Circ(theDist, 0, theR2);
         Circ2dBisec anAlgo = new(aC1, aC2);

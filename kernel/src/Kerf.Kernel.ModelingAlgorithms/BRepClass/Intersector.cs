@@ -29,7 +29,7 @@ namespace Kerf.Engine.Classification;
 /// A working object (decision 21): an <see cref="Intersection2D"/> whose results are those of the last
 /// <see cref="Perform(in Line2D, double, double, in ClassifierEdge)"/>.
 /// </remarks>
-public class Intersector : IntConicCurveOfGInter, IIntersector<ClassifierEdge>
+internal class Intersector : IntConicCurveOfGInter, IIntersector<ClassifierEdge>
 {
     /// <summary>An empty intersector.</summary>
     public Intersector()

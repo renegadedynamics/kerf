@@ -169,8 +169,9 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     [InlineData(C1, C2, 1e-7, NoneIso)]
     [InlineData(C2, C0, 1e-5, IsoV)]
     public void SinCos_IsWithinTolerance(Continuity theUCont, Continuity theVCont, double theTol,
-                                         IsoType theIso)
+                                         object theIsoValue)
     {
+        var theIso = (IsoType)theIsoValue; // the theory's data as object: the engine type is internal
         double u1 = 2 * Math.PI, v1 = 2 * Math.PI;
         ApproxAFunc2Var anApprox =
             Approximate(SinCos, 0, u1, 0, v1, theTol, theUCont, theVCont, theIso: theIso);
@@ -266,9 +267,11 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     [InlineData(Absolute, Incremental)]
     [InlineData(Relative, Regular)]
     [InlineData(Relative, Incremental)]
-    public void Criterion_DrivesTheCutting(CriterionType theType,
-                                                  CriterionRepartition theRepartition)
+    public void Criterion_DrivesTheCutting(object theTypeValue,
+                                                  object theRepartitionValue)
     {
+        var theType = (CriterionType)theTypeValue; // the theory's data as object: the engine type is internal
+        var theRepartition = (CriterionRepartition)theRepartitionValue; // the theory's data as object: the engine type is internal
         const double aCrit = 1e-6;
         MaxErrorCriterion aCriterion = new(aCrit, theType, theRepartition);
         Assert.Equal(aCrit, aCriterion.MaxValue());

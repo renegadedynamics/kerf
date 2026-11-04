@@ -25,7 +25,7 @@ namespace Kerf.Engine.Exchange.Step.Construct;
 /// (<see cref="MakeRelationship(ref int)"/>, decision 1266). OCCT's form without a counter is left out (unit 10I): it
 /// made an output depend on what the process wrote before.
 /// </remarks>
-public class ConstructAssembly
+internal class ConstructAssembly
 {
     //: k8 abv 06.01.99: TR10: writing unique names for NAUOs
     // :j4 16.03.99 gka S4134

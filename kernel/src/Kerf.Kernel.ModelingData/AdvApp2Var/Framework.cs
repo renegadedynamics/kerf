@@ -17,7 +17,7 @@ namespace Kerf.Engine.Approximation.Advanced;
 /// A working object of the approximation, with OCCT's public mutators (decision 194). The constructor copies the
 /// sequences and their strips, as OCCT's does; the nodes and isos are shared.
 /// </remarks>
-public class Framework
+internal class Framework
 {
     private readonly NCollection_Sequence<Node> _nodeConstraints;
     private readonly NCollection_Sequence<NCollection_Sequence<Iso>> _uConstraints;

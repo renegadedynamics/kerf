@@ -13,7 +13,7 @@ namespace Kerf.Engine.Extrema.PointCurve;
 /// </summary>
 /// <remarks>The domain is fixed at construction; without one (or with an infinite one) the parabola is
 /// unbounded.</remarks>
-public sealed class ParabolaExtrema : global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ICurveEvaluator
+internal sealed class ParabolaExtrema : global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ICurveEvaluator
 {
     private readonly Parabola3D _parabola;                   // Parabola geometry
     private readonly global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D? _domain;          // Parameter domain (null for infinite)

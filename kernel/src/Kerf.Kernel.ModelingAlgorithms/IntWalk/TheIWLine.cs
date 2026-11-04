@@ -22,7 +22,7 @@ namespace Kerf.Engine.Intersection.Walking;
 /// public, as OCCT's, and <see cref="Line"/> is the line itself, not a copy. <see cref="Value"/>,
 /// <see cref="FirstPoint"/> and <see cref="LastPoint"/> return copies (OCCT's <c>const&amp;</c>).
 /// </remarks>
-public class TheIWLine : Transient
+internal class TheIWLine : Transient
 {
     private readonly LineOn2S _line;
     private readonly NCollection_Sequence<Couple> _couple = new();

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Extrema.PointCurve;
 /// </summary>
 /// <remarks>When the point projects onto the centre of a circular ellipse (A = B): Status.InfiniteSolutions. The
 /// domain is fixed at construction; a full period means the whole ellipse.</remarks>
-public sealed class EllipseExtrema : global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ICurveEvaluator
+internal sealed class EllipseExtrema : global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ICurveEvaluator
 {
     private readonly Ellipse3D _ellipse;                    // Ellipse geometry
     private readonly global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D? _domain;          // Parameter domain (null for full ellipse)

@@ -12,7 +12,7 @@ using static Kerf.Engine.Exchange.Framework.Transfer.StatusExec;
 namespace Kerf.Engine.Exchange.Framework.Transfer;
 
 /// <summary>Adds specific features to the generic definition : PrintTrace is adapted.</summary>
-public class FinderProcess : ProcessForFinder
+internal class FinderProcess : ProcessForFinder
 {
     /// <summary>Sets FinderProcess at initial state, with an initial size.</summary>
     public FinderProcess(int nb = 10000)

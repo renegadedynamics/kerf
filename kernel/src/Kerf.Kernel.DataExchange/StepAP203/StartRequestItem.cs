@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Ap203;
 /// <summary>
 /// Representation of STEP SELECT type StartRequestItem
 /// </summary>
-public class StartRequestItem : SelectType
+internal class StartRequestItem : SelectType
 {
     /// <summary>
     /// Empty constructor

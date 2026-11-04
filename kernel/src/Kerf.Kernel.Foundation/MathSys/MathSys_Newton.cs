@@ -12,7 +12,7 @@ namespace Kerf.Engine.Numerics.Systems;
 // classic abstract classes, so a class can derive from math_FunctionSetWithDerivatives and also implement
 // MathSys.IFunctionSetWithDerivatives with the same overrides (as the comparison tests do).
 
-public static partial class MathSys
+internal static partial class MathSys
 {
     /// <summary>A system of NbEquations() functions of NbVariables() variables (math_FunctionSet's members).</summary>
     public interface IFunctionSet : global::Kerf.Engine.Numerics.Utilities.MathUtils.ISystemFunction

@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ProductContext : ApplicationContextElement
+internal class ProductContext : ApplicationContextElement
 {
     private TCollection_HAsciiString _disciplineType;
 

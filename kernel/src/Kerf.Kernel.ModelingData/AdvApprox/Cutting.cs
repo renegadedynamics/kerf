@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Approximation.Advanced;
 
 /// <summary>Chooses where an approximation cuts an interval.</summary>
-public abstract class Cutting
+internal abstract class Cutting
 {
     /// <summary>
     /// The cutting value for the interval [<paramref name="a"/>, <paramref name="b"/>] in

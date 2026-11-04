@@ -147,3 +147,23 @@ public sealed record LoftOptions
     /// <summary>Smooth the approximation (OCCT's <c>SetSmoothing</c>).</summary>
     public bool Smoothing { get; init; }
 }
+
+/// <summary>How <see cref="Sweeps.Helix(in Frame3D, double, double, double, HelixOptions?)"/> builds a helix (OCCT's
+/// <c>HelixBRep_BuilderHelix</c>; its defaults).</summary>
+public sealed record HelixOptions
+{
+    /// <summary>The defaults: a cylindrical helix.</summary>
+    public static HelixOptions Default { get; } = new();
+
+    /// <summary>The radius at the top, for a conical helix; null for the start radius (a cylindrical one).</summary>
+    public double? EndRadius { get; init; }
+
+    /// <summary>The 3D tolerance of the approximation.</summary>
+    public double Tolerance { get; init; } = 0.0001;
+
+    /// <summary>The highest degree of the approximating B-splines.</summary>
+    public int MaxDegree { get; init; } = 8;
+
+    /// <summary>The continuity of the approximation, and between its edges.</summary>
+    public Continuity Continuity { get; init; } = Continuity.C1;
+}

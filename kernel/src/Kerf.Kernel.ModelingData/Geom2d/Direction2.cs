@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Objects;
 
 /// <summary>A unit vector in the plane (a shareable <see cref="Direction2D"/>); never null.</summary>
-public class Direction2 : GeometryVector2D
+internal class Direction2 : GeometryVector2D
 {
     /// <summary>The unit vector of (X, Y).</summary>
     /// <exception cref="ConstructionErrorException">sqrt(X*X + Y*Y) is at most <c>gp::Resolution()</c>.</exception>

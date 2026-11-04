@@ -9,7 +9,7 @@ namespace Kerf.Engine.Foundation;
 /// <see cref="ReturnStatus"/> that isn't <see cref="ReturnStatus.RetDone"/> is an error with a stable code.
 /// docs/api/diagnostics.md lists the codes.
 /// </summary>
-public static class ExchangeDiagnostics
+internal static class ExchangeDiagnostics
 {
     /// <summary>The error a reader's or writer's status reports, or null if it did its work.</summary>
     public static Diagnostic? ToDiagnostic(ReturnStatus status) => status switch

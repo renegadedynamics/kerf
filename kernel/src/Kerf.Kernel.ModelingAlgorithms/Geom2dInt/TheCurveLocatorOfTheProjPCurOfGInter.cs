@@ -16,7 +16,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 /// The sample of a 2D curve nearest a point: OCCT's template Extrema_GCurveLocator instantiated over
 /// Adaptor2d_Curve2d and Geom2dInt_Geom2dCurveTool.
 /// </summary>
-public static class TheCurveLocatorOfTheProjPCurOfGInter
+internal static class TheCurveLocatorOfTheProjPCurOfGInter
 {
     /// <summary>
     /// Among the points C(ui), i = 1 to <paramref name="nbU"/> - 1, evenly spaced from the first parameter of

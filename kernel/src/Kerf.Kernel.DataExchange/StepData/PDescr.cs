@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// This class is intended to describe the authorized form for a parameter, as a type or a value for a field. A
 /// PDescr firstly describes a type, which can be SELECT, i.e. have several members.
 /// </summary>
-public class PDescr : Transient
+internal class PDescr : Transient
 {
     private const int KindInteger = 1;
     private const int KindBoolean = 2;

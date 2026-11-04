@@ -21,7 +21,7 @@ namespace Kerf.Engine.Approximation;
 /// Only the curves built here are modified; the curve passed in is only read. The 3D and 2D overloads of the
 /// helpers are duplicated, as in OCCT.
 /// </remarks>
-public static class Hermit
+internal static class Hermit
 {
     /// <summary>Calculates the Hermite coefficients of degree 3 from BS and stores them in TAB (4 coefficients).</summary>
     private static void HermiteCoeff(BSplineCurve3D bs, NCollection_Array1<double> tab)

@@ -34,7 +34,7 @@ namespace Kerf.Engine.Construction.Laws;
 /// copy those bounds, occt-issues.md).
 /// </para>
 /// </remarks>
-public sealed class BSpline : Transient
+internal sealed class BSpline : Transient
 {
     private bool _rational;
     private bool _periodic;

@@ -36,7 +36,7 @@ namespace Kerf.Engine.Numerics;
 /// The Gauss-Legendre integration of a function of a single variable between the bounds Lower and Upper. The order
 /// is limited to <see cref="NumericTables.GaussPointsMax"/> (61).
 /// </summary>
-public class GaussSingleIntegration
+internal class GaussSingleIntegration
 {
     private double _val;
     private bool _done;

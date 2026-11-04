@@ -11,7 +11,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// a point on a U or V seam, ...
 /// </summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.IntPatch_SpecPntType;</c>.</remarks>
-public enum SpecPntType
+internal enum SpecPntType
 {
     SPntNone,
     SPntSeamU,

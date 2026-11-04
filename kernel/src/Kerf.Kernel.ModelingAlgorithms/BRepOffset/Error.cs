@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Offsets;
 
 /// <summary>The error statuses of the 3D offset.</summary>
-public enum Error
+internal enum Error
 {
     NoError,
     UnknownError,

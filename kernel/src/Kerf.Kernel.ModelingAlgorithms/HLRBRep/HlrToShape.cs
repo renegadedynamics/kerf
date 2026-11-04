@@ -31,7 +31,7 @@ namespace Kerf.Engine.HiddenLines;
 /// caller's shape in a working overlay (unit 10H6).
 /// </para>
 /// </remarks>
-public class HlrToShape
+internal class HlrToShape
 {
     private readonly HiddenLineAlgo _algo;
 

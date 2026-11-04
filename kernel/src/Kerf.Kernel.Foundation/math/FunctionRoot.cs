@@ -14,7 +14,7 @@ namespace Kerf.Engine.Numerics;
 /// A root of a function of a single variable near an initial guess, by a minimization algorithm
 /// (<see cref="FunctionSetRoot"/>). The derivative is required.
 /// </summary>
-public class FunctionRoot
+internal class FunctionRoot
 {
     private bool _done;
     private double _theRoot;

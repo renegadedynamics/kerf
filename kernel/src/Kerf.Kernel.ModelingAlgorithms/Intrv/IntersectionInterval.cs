@@ -35,7 +35,7 @@ namespace Kerf.Engine.Intersection;
 /// [0, 0] with null tolerances, so ported code writes <c>new()</c>. The mutators are internal. The tolerances are
 /// <c>float</c> as OCCT's (<c>Standard_ShortReal</c>), and the arithmetic keeps OCCT's float/double promotions.
 /// </remarks>
-public partial struct IntersectionInterval : IEquatable<IntersectionInterval>
+internal partial struct IntersectionInterval : IEquatable<IntersectionInterval>
 {
     private double _start;
     private double _end;

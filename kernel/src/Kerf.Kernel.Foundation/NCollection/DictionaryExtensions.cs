@@ -17,7 +17,7 @@ namespace Kerf.Engine.Collections;
 /// is next changed.</item>
 /// </list>
 /// </summary>
-public static class DictionaryExtensions
+internal static class DictionaryExtensions
 {
     /// <summary>The key's value (OCCT's <c>Find</c>); throws <see cref="NoSuchObjectException"/> if the key isn't there.</summary>
     public static TValue GetValue<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key) where TKey : notnull

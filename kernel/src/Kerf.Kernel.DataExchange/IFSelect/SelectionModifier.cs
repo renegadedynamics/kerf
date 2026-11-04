@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// afterwards) Remark : if no Selection is set as criterium, the Modifier is set to work and should consider
 /// all the content of the Model produced.
 /// </summary>
-public abstract class SelectionModifier : GeneralModifier
+internal abstract class SelectionModifier : GeneralModifier
 {
 
     /// <summary>

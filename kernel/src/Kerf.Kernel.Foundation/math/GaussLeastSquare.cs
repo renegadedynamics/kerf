@@ -15,7 +15,7 @@ namespace Kerf.Engine.Numerics;
 /// The least square solution of n linear equations in m unknowns (n &gt;= m) by Gauss LU decomposition of
 /// A.Transposed() * A. More subject to numerical instability than <see cref="Svd"/>.
 /// </summary>
-public class GaussLeastSquare
+internal class GaussLeastSquare
 {
     protected bool _singular;
     protected Matrix _lu;

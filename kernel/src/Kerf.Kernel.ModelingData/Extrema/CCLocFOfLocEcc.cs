@@ -23,7 +23,7 @@ namespace Kerf.Engine.Extrema;
 /// <c>void*</c>; the port keeps references. Where the first derivative of a B-spline, Bezier, offset or other curve
 /// vanishes, it is replaced by the first non-zero higher derivative or by finite differences.
 /// </remarks>
-public class CCLocFOfLocEcc : FunctionSetWithDerivatives
+internal class CCLocFOfLocEcc : FunctionSetWithDerivatives
 {
     private const double THE_MIN_TOL = 1.0e-20;
     private const double THE_TOL_FACTOR = 1.0e-12;

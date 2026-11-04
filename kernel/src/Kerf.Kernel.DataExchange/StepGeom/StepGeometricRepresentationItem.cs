@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepGeometricRepresentationItem : RepresentationItem
+internal class StepGeometricRepresentationItem : RepresentationItem
 {
     /// <summary>
     /// Returns a GeometricRepresentationItem

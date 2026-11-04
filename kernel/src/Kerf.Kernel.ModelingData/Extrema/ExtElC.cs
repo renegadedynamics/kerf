@@ -20,7 +20,7 @@ namespace Kerf.Engine.Extrema;
 /// or two circles.
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (OCCT gives it no Perform).</remarks>
-public class ExtElC
+internal class ExtElC
 {
     [System.Runtime.CompilerServices.InlineArray(MaxExtrema)]
     private struct SquareDistances

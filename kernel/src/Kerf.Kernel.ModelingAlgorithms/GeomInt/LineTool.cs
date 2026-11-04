@@ -22,7 +22,7 @@ namespace Kerf.Engine.Intersection.Surfaces;
 /// OCCT's file-local ProjectPointOnSurf is a private nested class; its static functions are private static methods.
 /// The NCollection_IncAllocator arguments are dropped, and the vector of index lists is a .NET array of lists.
 /// </remarks>
-public static class LineTool
+internal static class LineTool
 {
     private sealed class ProjectPointOnSurf
     {

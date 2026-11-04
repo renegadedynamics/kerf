@@ -19,7 +19,7 @@ namespace Kerf.Engine.Extrema;
 /// The curve and the surface are kept by reference and must outlive the function, as in OCCT. Outside the parameter
 /// ranges the functions return false and write 0 to their <c>out</c> value (decision 221).
 /// </remarks>
-public class GlobOptFuncCS : MultipleVarFunctionWithHessian
+internal class GlobOptFuncCS : MultipleVarFunctionWithHessian
 {
     private readonly CurveAdaptorBase _c;
     private readonly SurfaceAdaptorBase _s;

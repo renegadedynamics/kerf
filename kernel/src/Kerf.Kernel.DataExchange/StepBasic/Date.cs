@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class Date : Transient
+internal class Date : Transient
 {
     private int _yearComponent;
 

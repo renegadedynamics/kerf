@@ -21,7 +21,7 @@ namespace Kerf.Engine.Intersection.Polygons;
 /// zones of two long coincident polygons was quadratic). The order of the points is OCCT's.
 /// </para>
 /// </remarks>
-public sealed class TangentZone
+internal sealed class TangentZone
 {
     private readonly Points _result;
     private double _paramOnFirstMin;

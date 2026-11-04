@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// correspond basically to the management of an indexed map. But they can be provided by various classes
 /// which can control a Transfer. Each Starting Entity have at most one Result (Mapping one-one)
 /// </summary>
-public abstract class CopyControl : Transient
+internal abstract class CopyControl : Transient
 {
 
     /// <summary>

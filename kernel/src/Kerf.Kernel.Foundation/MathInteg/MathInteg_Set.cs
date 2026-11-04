@@ -8,7 +8,7 @@ using static Kerf.Engine.Numerics.Utilities.MathUtils;
 namespace Kerf.Engine.Numerics.Integration;
 
 /// <summary>Integration of vector-valued functions.</summary>
-public static partial class MathInteg
+internal static partial class MathInteg
 {
     /// <summary>
     /// A vector-valued function F: R -> R^N for GaussSet: C++'s "type with <c>int NbEquations()</c> and

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity PropertyDefinition
 /// </summary>
-public class PropertyDefinition : Transient
+internal class PropertyDefinition : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

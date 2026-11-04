@@ -16,7 +16,7 @@ namespace Kerf.Engine.Numerics.Utilities;
 // MakeScalar is written `(double x, out double y) => { ... }` (or `(x, out y) => ...`).
 
 /// <summary>Non-virtual functor classes for scalar (1D) functions.</summary>
-public static partial class MathUtils
+internal static partial class MathUtils
 {
     /// <summary>A scalar function: C++'s "type with <c>Value(double theX, double&amp; theF)</c> method".</summary>
     public interface IScalarFunction

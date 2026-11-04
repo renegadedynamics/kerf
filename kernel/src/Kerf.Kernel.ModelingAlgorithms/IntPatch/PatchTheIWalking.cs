@@ -13,7 +13,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// The walking of the implicit/parametric intersection: the lines on a surface adaptor where a quadric's function
 /// vanishes (OCCT's instantiation of IntWalk_IWalking.gxx, decision 607).
 /// </summary>
-public sealed class PatchTheIWalking : IWalking<TheSurfFunction, PatchTheIWLineOfTheIWalking>
+internal sealed class PatchTheIWalking : IWalking<TheSurfFunction, PatchTheIWLineOfTheIWalking>
 {
     public PatchTheIWalking(double epsilon, double deflection, double step, bool toFillHoles = false)
         : base(epsilon, deflection, step, toFillHoles)

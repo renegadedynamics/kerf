@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ProductDefinitionContext : ApplicationContextElement
+internal class ProductDefinitionContext : ApplicationContextElement
 {
     private TCollection_HAsciiString _lifeCycleStage;
 

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Extrema.PointCurve;
 /// </summary>
 /// <remarks>Lines always have exactly one extremum (minimum) if within bounds. <c>Perform</c> returns the
 /// evaluator's own reusable result, which the next call overwrites.</remarks>
-public sealed class LineExtrema : global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ICurveEvaluator
+internal sealed class LineExtrema : global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ICurveEvaluator
 {
     private readonly Line3D _line;                         // Line geometry
     private readonly global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D? _domain;          // Parameter domain (null for unbounded)

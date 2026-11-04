@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Data;
 
 /// <summary>This class is intended to describe the authorized form for a Simple (not Plex) Entity, as a list of fields.</summary>
-public class ESDescr : EDescr
+internal class ESDescr : EDescr
 {
     private readonly string _thenom;
     private NCollection_HArray1<Transient> _thedescr;

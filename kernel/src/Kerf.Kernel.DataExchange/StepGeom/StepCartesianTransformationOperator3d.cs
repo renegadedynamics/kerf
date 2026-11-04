@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepCartesianTransformationOperator3d : StepCartesianTransformationOperator
+internal class StepCartesianTransformationOperator3d : StepCartesianTransformationOperator
 {
     private StepDirection _axis3;
     private bool _hasAxis3;

@@ -22,7 +22,7 @@ namespace Kerf.Engine.Intersection.Curves;
 /// instantiation Geom2dInt_TheIntPCurvePCurveOfGInter is a sealed subclass. The file-static functions
 /// <c>GetIntersection</c> and <c>HeadOrEndPoint</c> are private static methods.
 /// </remarks>
-public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2D
+internal class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2D
     where TheCurveTool : ICurveCurveTool<TheCurve>
     where TheProjPCur : IProjectOnPCurveTool<TheCurve>
 {

@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepSurface : StepGeometricRepresentationItem
+internal class StepSurface : StepGeometricRepresentationItem
 {
     /// <summary>
     /// Returns a Surface

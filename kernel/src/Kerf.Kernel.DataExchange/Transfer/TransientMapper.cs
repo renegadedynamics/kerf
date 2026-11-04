@@ -12,7 +12,7 @@ using System.Runtime.CompilerServices;
 namespace Kerf.Engine.Exchange.Framework.Transfer;
 
 /// <summary>A Finder for a Transient object: two mappers are the same if they map the same object.</summary>
-public class TransientMapper : Finder
+internal class TransientMapper : Finder
 {
     /// <summary>
     /// Creates a Mapper with a Value. This Value can then not be changed. It is used by the Hasher to compute the

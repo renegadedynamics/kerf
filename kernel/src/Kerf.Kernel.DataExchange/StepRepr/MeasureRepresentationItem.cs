@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// which is used for storing validation properties
 /// (e.g. area) for shapes
 /// </summary>
-public class MeasureRepresentationItem : RepresentationItem
+internal class MeasureRepresentationItem : RepresentationItem
 {
     private MeasureWithUnit _measure;
 

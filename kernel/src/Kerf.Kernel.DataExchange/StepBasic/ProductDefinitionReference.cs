@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity Product_Definition_Reference
 /// </summary>
-public class ProductDefinitionReference : Transient
+internal class ProductDefinitionReference : Transient
 {
     private ExternalSource _source;
     private TCollection_HAsciiString _productId;

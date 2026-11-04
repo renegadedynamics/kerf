@@ -22,7 +22,7 @@ namespace Kerf.Engine.Numerics.Polynomials;
 /// <see cref="Span{T}"/> where it writes (docs/decisions.md). A caller passing <c>A(A.Lower())</c> in C++ passes
 /// <c>A.AsSpan()</c>.
 /// </remarks>
-public static class PLib
+internal static class PLib
 {
     /// <summary>No weights: the argument for non-rational functions (null).</summary>
     public static NCollection_Array1<double>? NoWeights() => null;

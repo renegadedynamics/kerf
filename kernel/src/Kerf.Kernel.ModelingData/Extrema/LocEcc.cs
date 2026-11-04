@@ -17,7 +17,7 @@ namespace Kerf.Engine.Extrema;
 /// </summary>
 /// <remarks>The 3D instantiation of OCCT's template Extrema_GenLocateExtCC (Extrema_LocECC), computed by its
 /// constructor.</remarks>
-public class LocEcc
+internal class LocEcc
 {
     private readonly bool _done;
     private readonly double _sqDist;

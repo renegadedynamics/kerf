@@ -5,7 +5,7 @@
 
 namespace Kerf.Engine.Foundation;
 
-public static partial class OcctTypeNames
+internal static partial class OcctTypeNames
 {
     private const string Table = """
 Kerf.Booleans.GlueMode BOPAlgo_GlueEnum

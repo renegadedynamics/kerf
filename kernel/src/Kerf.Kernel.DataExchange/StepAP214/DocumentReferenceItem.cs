@@ -15,7 +15,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class DocumentReferenceItem : SelectType
+internal class DocumentReferenceItem : SelectType
 {
     /// <summary>
     /// Returns a DocumentReferenceItem SelectType

@@ -8,7 +8,7 @@ using static Kerf.Engine.Numerics.Utilities.MathUtils;
 namespace Kerf.Engine.Numerics.Linear;
 
 /// <summary>Modern linear algebra: singular value decomposition and what it gives.</summary>
-public static partial class MathLin
+internal static partial class MathLin
 {
     /// <summary>Result for SVD decomposition.</summary>
     public struct SVDResult

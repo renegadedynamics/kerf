@@ -19,7 +19,7 @@ namespace Kerf.Engine.Intersection.Walking;
 /// Contap_SurfFunction), besides its values: the surface it is loaded on, its tolerance, and at a root the point and
 /// the tangents of the intersection line.
 /// </summary>
-public interface ISurfFunction<ThePSurface>
+internal interface ISurfFunction<ThePSurface>
 {
     /// <summary>Loads the parametric surface.</summary>
     void Set(ThePSurface ps);
@@ -53,7 +53,7 @@ public interface ISurfFunction<ThePSurface>
 /// (IntPatch_TheSearchInside, Contap_TheSearchInside) and is named directly; TheSITool is not used by the body and is
 /// not a parameter. OCCT's instantiations are sealed subclasses.
 /// </remarks>
-public class SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
+internal class SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
     where ThePSurfaceTool : IZerCSParPSurfaceTool<ThePSurface>
     where TheFunction : FunctionSetWithDerivatives, ISurfFunction<ThePSurface>
 {

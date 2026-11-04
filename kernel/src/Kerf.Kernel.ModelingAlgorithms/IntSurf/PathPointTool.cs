@@ -13,7 +13,7 @@ namespace Kerf.Engine.Intersection.Walking;
 /// OCCT's static class is a <c>readonly struct</c> with static members (decision 338), so that it can be a type
 /// argument if IntWalk's generic needs one.
 /// </remarks>
-public readonly struct PathPointTool
+internal readonly struct PathPointTool
 {
     /// <summary>The 3D point.</summary>
     public static Point3D Value3d(in PathPoint pStart) => pStart.Value();

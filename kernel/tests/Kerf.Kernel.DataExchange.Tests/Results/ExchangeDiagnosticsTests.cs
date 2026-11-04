@@ -14,8 +14,9 @@ public class ExchangeDiagnosticsTests
     [InlineData(ReturnStatus.RetError, "exchange.invalid-data", "The data isn't correct.")]
     [InlineData(ReturnStatus.RetFail, "exchange.failed", "Reading or writing failed.")]
     [InlineData(ReturnStatus.RetStop, "exchange.stopped", "Reading or writing was stopped.")]
-    public void FailingStatusesAreErrors(ReturnStatus status, string code, string message)
+    public void FailingStatusesAreErrors(object statusValue, string code, string message)
     {
+        var status = (ReturnStatus)statusValue; // the theory's data as object: the engine type is internal
         var diagnostic = ExchangeDiagnostics.ToDiagnostic(status)!;
         Assert.True(diagnostic.IsError);
         Assert.Equal(code, diagnostic.Code.Value);

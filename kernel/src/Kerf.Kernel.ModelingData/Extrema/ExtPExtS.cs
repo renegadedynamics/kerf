@@ -18,7 +18,7 @@ namespace Kerf.Engine.Extrema;
 /// is a conic or a line not in a plane parallel to the extrusion, with Extrema_GenExtPS otherwise.
 /// </summary>
 /// <remarks>The surface adaptor is kept, as OCCT keeps its handle.</remarks>
-public class ExtPExtS : Transient
+internal class ExtPExtS : Transient
 {
     private double _myuinf;
     private double _myusup;

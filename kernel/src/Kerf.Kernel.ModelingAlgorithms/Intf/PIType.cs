@@ -8,7 +8,7 @@ namespace Kerf.Engine.Intersection.Polygons;
 
 /// <summary>The type of an intersection point on a polygon or polyhedron: external, on a face, an edge or a vertex.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.Intf_PIType;</c>.</remarks>
-public enum PIType
+internal enum PIType
 {
     External,
     Face,

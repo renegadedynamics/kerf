@@ -21,7 +21,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// <see cref="Vertex"/>, <see cref="FirstPoint"/> and <see cref="LastPoint"/> return copies (OCCT's const
 /// references). OCCT's <c>Replace</c> appends the point (its index is ignored).
 /// </remarks>
-public class GLine : PatchLine
+internal class GLine : PatchLine
 {
     private Frame3D _pos;
     private double _par1;

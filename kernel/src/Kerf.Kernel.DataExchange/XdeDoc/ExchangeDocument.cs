@@ -43,7 +43,7 @@ namespace Kerf.Engine.Exchange.Documents;
 /// accepted and ignored. Not thread-safe; a tree made from it is.
 /// </para>
 /// </remarks>
-public sealed class ExchangeDocument
+internal sealed class ExchangeDocument
 {
     private const int MainIndex = 0;
     private const int ShapesIndex = 1;

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Intersection.Approximation;
 /// </summary>
 /// <remarks>A sealed subclass of the generic class with OCCT's constructors (decision 607); the generic algorithms use
 /// the generic class directly.</remarks>
-public sealed class TheInt2SOfThePrmPrmSvSurfacesOfApprox
+internal sealed class TheInt2SOfThePrmPrmSvSurfacesOfApprox
     : Int2S<FaceSurfaceAdaptor, ApproximationSurfaceTool>
 {
     public TheInt2SOfThePrmPrmSvSurfacesOfApprox(NCollection_Array1<double> param, FaceSurfaceAdaptor s1, FaceSurfaceAdaptor s2, double tolTangency)

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Foundation;
 /// its owner, and the assemblies above Foundation declare their own). Keys compare by identity.
 /// </remarks>
 /// <typeparam name="T">The type of the setting's value: an immutable value, or an object no one changes once set.</typeparam>
-public sealed class ContextKey<T>
+internal sealed class ContextKey<T>
 {
     /// <summary>A setting named <paramref name="name"/> (for messages and debugging), with its default value.</summary>
     public ContextKey(string name, T defaultValue)
@@ -62,7 +62,7 @@ public sealed class ContextKey<T>
 /// static for speed (decision 1359).
 /// </para>
 /// </remarks>
-public sealed class OperationContext
+internal sealed class OperationContext
 {
     private static readonly AsyncLocal<OperationContext?> CurrentContext = new();
 

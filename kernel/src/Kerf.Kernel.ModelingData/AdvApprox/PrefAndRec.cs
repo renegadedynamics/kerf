@@ -16,7 +16,7 @@ namespace Kerf.Engine.Approximation.Advanced;
 /// ](r * a + b) / (r + 1), (a + r * b) / (r + 1)[ where r is the weight; otherwise the recommended point nearest
 /// to (a + b) / 2 if one is closer to the middle than the ends are; otherwise (a + b) / 2.
 /// </remarks>
-public class PrefAndRec : Cutting
+internal class PrefAndRec : Cutting
 {
     private readonly NCollection_Array1<double> _recCutting;
     private readonly NCollection_Array1<double> _prefCutting;

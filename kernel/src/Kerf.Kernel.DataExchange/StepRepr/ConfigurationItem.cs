@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity ConfigurationItem
 /// </summary>
-public class ConfigurationItem : Transient
+internal class ConfigurationItem : Transient
 {
     private TCollection_HAsciiString _id;
     private TCollection_HAsciiString _name;

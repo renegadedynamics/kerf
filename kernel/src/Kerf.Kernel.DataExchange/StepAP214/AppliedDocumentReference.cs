@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class AppliedDocumentReference : DocumentReference
+internal class AppliedDocumentReference : DocumentReference
 {
     private NCollection_HArray1<DocumentReferenceItem> _items;
 

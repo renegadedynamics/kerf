@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.Data;
 
 /// <summary>The error status of a spine's computation, which the fillet builders report for faulty contours.</summary>
-public enum ErrorStatus
+internal enum ErrorStatus
 {
     Ok,
     Error,

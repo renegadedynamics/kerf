@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Data;
 
 /// <summary>Describes a list of fields, in a general way. This basic class is for a null size list. Subclasses are for 1, N (fixed) or Dynamic sizes.</summary>
-public class FieldList
+internal class FieldList
 {
     /// <summary>Creates a FieldList of 0 Field.</summary>
     public FieldList()

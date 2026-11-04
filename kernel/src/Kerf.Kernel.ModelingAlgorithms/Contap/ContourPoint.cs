@@ -26,7 +26,7 @@ namespace Kerf.Engine.HiddenLines.Contours;
 /// (<c>new()</c> has OCCT's undecided ones), so ported code writes <c>new()</c>. The mutators are internal. The arcs
 /// and vertices are adaptors, held and compared by reference, as OCCT's handles.
 /// </remarks>
-public partial struct ContourPoint : IEquatable<ContourPoint>
+internal partial struct ContourPoint : IEquatable<ContourPoint>
 {
     private Point3D _pt;
     private double _uparam;

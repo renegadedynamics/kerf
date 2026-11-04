@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class SuppliedPartRelationship : ProductDefinitionRelationship
+internal class SuppliedPartRelationship : ProductDefinitionRelationship
 {
     public SuppliedPartRelationship()
     {

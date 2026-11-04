@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Basic;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepBasic_AheadOrBehind;</c>.</remarks>
-public enum AheadOrBehind
+internal enum AheadOrBehind
 {
     AobAhead,
     AobExact,

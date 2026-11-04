@@ -15,7 +15,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class DateItem : ApprovalItem
+internal class DateItem : ApprovalItem
 {
     /// <summary>
     /// Returns a DateItem SelectType

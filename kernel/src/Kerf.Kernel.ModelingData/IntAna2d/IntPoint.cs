@@ -22,7 +22,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 /// <c>default(IntAna2d_IntPoint)</c> is all zeros. OCCT's virtual <c>SetValue</c> methods are internal mutators
 /// (no class derives from IntAna2d_IntPoint); the constructors are their non-mutating twins.
 /// </remarks>
-public partial struct IntPoint : IEquatable<IntPoint>
+internal partial struct IntPoint : IEquatable<IntPoint>
 {
     private double _myu1;
     private double _myu2;

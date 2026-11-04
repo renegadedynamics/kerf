@@ -18,7 +18,7 @@ namespace Kerf.Engine.Intersection.Patches;
 
 // The cylinder/cylinder intersection (OCCT 7.x's IntPatch_ImpImpIntersection_4.gxx): the analytical cases and the
 // walking along U1 of the non-analytical one.
-public sealed partial class ImpImpIntersection
+internal sealed partial class ImpImpIntersection
 {
     // If std::abs(a) <= aNulValue then it is considered that a = 0.
     private const double ANulValue = 1.0e-11;

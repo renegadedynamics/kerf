@@ -16,7 +16,7 @@ namespace Kerf.Engine.Extrema.PointCurve;
 /// </summary>
 /// <remarks>Keeps the caller's adaptor, as OCCT keeps a pointer to it (decision 220). The domain is fixed at
 /// construction.</remarks>
-public sealed class OffsetCurveExtrema : global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ICurveEvaluator
+internal sealed class OffsetCurveExtrema : global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ICurveEvaluator
 {
     private readonly CurveAdaptorBase _curve;             // Curve adaptor (not owned)
     private readonly global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D _domain;         // Parameter domain (fixed)

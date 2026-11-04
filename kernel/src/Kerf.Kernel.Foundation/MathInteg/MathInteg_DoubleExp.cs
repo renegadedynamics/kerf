@@ -8,7 +8,7 @@ using static Kerf.Engine.Numerics.Utilities.MathUtils;
 namespace Kerf.Engine.Numerics.Integration;
 
 /// <summary>Double exponential (tanh-sinh, exp-sinh, sinh-sinh) quadrature.</summary>
-public static partial class MathInteg
+internal static partial class MathInteg
 {
     /// <summary>Configuration for double exponential integration.</summary>
     public class DoubleExpConfig : IntegConfig

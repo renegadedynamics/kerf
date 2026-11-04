@@ -15,7 +15,7 @@ namespace Kerf.Engine.Intersection.Surfaces;
 /// OCCT generates this class from AppParCurves' generic code with ApproxInt_MultiLineTool over IntPatch_WLine; the port derives it from the
 /// generic class, which the generic algorithms use directly (decisions 142 and 202).
 /// </remarks>
-public sealed class MyGradientbisOfTheComputeLineOfWLApprox : Gradient<global::Kerf.Engine.Intersection.Approximation.MultiLine<WLine>, MultiLineTool<WLine>>
+internal sealed class MyGradientbisOfTheComputeLineOfWLApprox : Gradient<global::Kerf.Engine.Intersection.Approximation.MultiLine<WLine>, MultiLineTool<WLine>>
 {
     /// <summary>As the base constructor.</summary>
     public MyGradientbisOfTheComputeLineOfWLApprox(global::Kerf.Engine.Intersection.Approximation.MultiLine<WLine> ssp, int firstPoint, int lastPoint,

@@ -12,7 +12,7 @@ using static Kerf.Engine.Intersection.Walking.StatusDeflection;
 
 namespace Kerf.Engine.Intersection.Walking;
 
-public partial class PWalking
+internal partial class PWalking
 {
     // OCC431(apo): modified ->
     private static readonly double CosRef2D = Math.Cos(M_PI / 9.0);

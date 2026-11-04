@@ -8,7 +8,7 @@ namespace Kerf.Engine.Intersection.Patches;
 
 /// <summary>The kind of an intersection line: a conic, analytic, walking or a restriction.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.IntPatch_IType;</c>.</remarks>
-public enum PatchLineType
+internal enum PatchLineType
 {
     Lin,
     Circle,

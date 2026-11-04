@@ -23,7 +23,7 @@ namespace Kerf.Engine.HiddenLines;
 /// pointer. OCCT's copy assignment (<c>*ed = *e1</c> in <c>HLRBRep_Data::Write</c>) is <see cref="Assign"/>: a deep
 /// copy of the status and a copy of the curve. A working object: its setters are public, as OCCT's.
 /// </remarks>
-public sealed class HiddenLineEdgeData
+internal sealed class HiddenLineEdgeData
 {
     private const int EMaskSelected = 1;
     private const int EMaskUsed = 2;

@@ -24,7 +24,7 @@ using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Intersection.Surfaces;
 
-public partial class IntSS
+internal partial class IntSS
 {
     /// <summary>std::sort's operator&lt; on doubles (TrimILineOnSurfBoundaries).</summary>
     private readonly struct DoubleLess : Heap.ILess<double>

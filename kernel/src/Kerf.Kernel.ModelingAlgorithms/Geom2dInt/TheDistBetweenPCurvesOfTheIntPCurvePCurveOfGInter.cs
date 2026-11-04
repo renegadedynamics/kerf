@@ -11,7 +11,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 
 /// <summary>The vector C1(u) - C2(v) between the points of two 2D curves, with its Jacobian.</summary>
 /// <remarks>OCCT's instantiation of IntCurve_DistBetweenPCurvesGen.gxx over Adaptor2d_Curve2d (decision 324).</remarks>
-public sealed class TheDistBetweenPCurvesOfTheIntPCurvePCurveOfGInter
+internal sealed class TheDistBetweenPCurvesOfTheIntPCurvePCurveOfGInter
     : DistBetweenPCurvesGen<Curve2DAdaptorBase, Geom2dCurveTool>
 {
     public TheDistBetweenPCurvesOfTheIntPCurvePCurveOfGInter(Curve2DAdaptorBase curve1,

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// A working object (decision 21): its mutators are public, as in OCCT. The words are <c>int</c>s and the shifts are
 /// C++'s (<c>1 &lt;&lt; 31</c> is <see cref="int.MinValue"/>, <c>&gt;&gt;</c> is arithmetic), so the bits are OCCT's.
 /// </remarks>
-public sealed class PrmPrmIntersectionT3Bits
+internal sealed class PrmPrmIntersectionT3Bits
 {
     private readonly int[] _p;
     private readonly int _isize;

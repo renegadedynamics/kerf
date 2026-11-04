@@ -10,7 +10,7 @@ namespace Kerf.Engine.HiddenLines.Presentation;
 /// Defines if the maximal chordial deflection used when drawing an object is absolute or relative to the size of the
 /// object.
 /// </summary>
-public enum TypeOfDeflection
+internal enum TypeOfDeflection
 {
     TodRelative,
     TodAbsolute,

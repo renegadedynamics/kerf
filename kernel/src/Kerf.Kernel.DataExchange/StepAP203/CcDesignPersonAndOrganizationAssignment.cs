@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Ap203;
 /// <summary>
 /// Representation of STEP entity CcDesignPersonAndOrganizationAssignment
 /// </summary>
-public class CcDesignPersonAndOrganizationAssignment : PersonAndOrganizationAssignment
+internal class CcDesignPersonAndOrganizationAssignment : PersonAndOrganizationAssignment
 {
     private NCollection_HArray1<PersonOrganizationItem> _items;
 

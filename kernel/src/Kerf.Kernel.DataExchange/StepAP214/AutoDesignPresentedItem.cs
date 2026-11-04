@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class AutoDesignPresentedItem : PresentedItem
+internal class AutoDesignPresentedItem : PresentedItem
 {
     private NCollection_HArray1<AutoDesignPresentedItemSelect> _items;
 

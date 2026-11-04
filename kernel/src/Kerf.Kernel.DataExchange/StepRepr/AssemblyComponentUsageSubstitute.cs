@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class AssemblyComponentUsageSubstitute : Transient
+internal class AssemblyComponentUsageSubstitute : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _def;

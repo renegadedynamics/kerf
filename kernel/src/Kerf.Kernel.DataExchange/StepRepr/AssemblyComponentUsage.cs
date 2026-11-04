@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity AssemblyComponentUsage
 /// </summary>
-public class AssemblyComponentUsage : ProductDefinitionUsage
+internal class AssemblyComponentUsage : ProductDefinitionUsage
 {
     private TCollection_HAsciiString _referenceDesignator;
     private bool _defReferenceDesignator;

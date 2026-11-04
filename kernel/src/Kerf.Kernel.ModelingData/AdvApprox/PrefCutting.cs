@@ -11,7 +11,7 @@ namespace Kerf.Engine.Approximation.Advanced;
 /// Cuts an interval [a, b] at the preferential point nearest to (a + b) / 2, or at (a + b) / 2 when no
 /// preferential point is closer to the middle than the ends are.
 /// </summary>
-public class PrefCutting : Cutting
+internal class PrefCutting : Cutting
 {
     private readonly NCollection_Array1<double> _pntOfCutting;
 

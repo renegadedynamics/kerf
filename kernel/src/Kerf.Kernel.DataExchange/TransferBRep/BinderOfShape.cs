@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// The result is the shape as the transfer made it: readers publish (freeze) the shapes they return, not the binders
 /// (decision 1205).
 /// </remarks>
-public class BinderOfShape : Binder
+internal class BinderOfShape : Binder
 {
     /// <summary>Normal standard constructor, creates an empty BinderOfShape.</summary>
     public BinderOfShape()

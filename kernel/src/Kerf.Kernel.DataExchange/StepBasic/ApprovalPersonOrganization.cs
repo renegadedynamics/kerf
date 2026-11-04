@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ApprovalPersonOrganization : Transient
+internal class ApprovalPersonOrganization : Transient
 {
     private PersonOrganizationSelect _personOrganization = new PersonOrganizationSelect();
     private Approval _authorizedApproval;

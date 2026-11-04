@@ -22,7 +22,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// it is "Used", it cannot. A Binder can also bring a list of next results. A binder is a working object of the
 /// transfer process (decision 21): its setters are public, as OCCT's.
 /// </remarks>
-public abstract class Binder : Transient
+internal abstract class Binder : Transient
 {
     /// <summary>Sets fields at initial values.</summary>
     protected Binder()

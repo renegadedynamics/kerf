@@ -1979,3 +1979,15 @@ Phase 10 (part): images, line drawings in SVG and shaded pictures in PNG (unit 1
   flat or smooth shading, colours per part or face, feature edges, supersampling, transparent backgrounds. `Png.Encode`
   writes the picture with Kerf's own deflate, so the bytes are the same on every machine. A part at 800 × 600 takes
   under 100 ms, meshing included.
+Phase 10 (part): the public API's leftovers (unit 10L5).
+- `Kerf.Geometry.Tangents2D`: lines and circles tangent to 2D curves and through points (`Lines`, `Circles`,
+  `CirclesCentredAt`), with each solution's points of contact; `Tangency` is a public enum.
+- `Kerf.Construction`: `Surfaces.Fill` (an n-sided filling through boundary edges and points) and `Sweeps.Helix`.
+  `Revolve` no longer copies its profile: its result shares the profile, as `Extrude`'s does, and its history answers
+  for every edge. Both sweeps' histories now hold their caps: the top one generated, the bottom one modified where
+  the sweep rebuilt the profile.
+- `Kerf.Exchange`: `StepReadOptions.Heal` and `StepWriteOptions.Schema` (AP214, AP203, AP242). `Kerf.Meshing.Triangle`,
+  with `GetTriangles()` on a mesh and its faces. `Fix` warns `healing.not-fixed` when its result is still invalid.
+- The mesher finishes each triangulation before attaching it, so meshes are frozen as soon as they are attached; the
+  results are unchanged.
+- 1,161 more engine types are internal: 184 remain public, all but 26 shown by the modelling layer's public API.

@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap242;
 
-public class IdAttribute : Transient
+internal class IdAttribute : Transient
 {
     private TCollection_HAsciiString _attributeValue;
     private IdAttributeSelect _identifiedItem = new IdAttributeSelect();

@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class NamedUnit : Transient
+internal class NamedUnit : Transient
 {
     private DimensionalExponents _dimensions;
 

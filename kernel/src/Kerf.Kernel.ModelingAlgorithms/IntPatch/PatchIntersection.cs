@@ -32,7 +32,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// <see cref="Line"/> returns the line itself, <see cref="Point"/> a copy. The file-static functions of OCCT's
 /// .cxx are private static methods (IntPatch_Intersection.Tools.cs).
 /// </remarks>
-public partial class PatchIntersection
+internal partial class PatchIntersection
 {
     private bool _done;
     private bool _empt;

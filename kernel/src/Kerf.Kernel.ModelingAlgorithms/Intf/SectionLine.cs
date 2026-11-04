@@ -15,7 +15,7 @@ namespace Kerf.Engine.Intersection.Polygons;
 /// are internal, so a line returned by <see cref="PolygonInterference.LineValue"/> (the stored one) can't be changed
 /// by callers. OCCT's operator== is <see cref="IsEqual"/>; <c>Dump</c> (to std::cout) is left out.
 /// </remarks>
-public sealed class SectionLine
+internal sealed class SectionLine
 {
     private readonly NCollection_Sequence<SectionPoint> _points;
     private bool _closed;

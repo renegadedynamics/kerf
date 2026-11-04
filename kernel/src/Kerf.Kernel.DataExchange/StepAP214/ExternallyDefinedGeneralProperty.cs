@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Ap214;
 /// <summary>
 /// Representation of STEP entity ExternallyDefinedGeneralProperty
 /// </summary>
-public class ExternallyDefinedGeneralProperty : GeneralProperty
+internal class ExternallyDefinedGeneralProperty : GeneralProperty
 {
     private ExternallyDefinedItem _externallyDefinedItem;
 

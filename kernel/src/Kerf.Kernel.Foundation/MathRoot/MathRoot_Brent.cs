@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Numerics.Roots;
 
 /// <summary>Modern scalar root finding algorithms.</summary>
-public static partial class MathRoot
+internal static partial class MathRoot
 {
     /// <summary>
     /// Brent's method for root finding: bisection, secant and inverse quadratic interpolation. f(theLower) and

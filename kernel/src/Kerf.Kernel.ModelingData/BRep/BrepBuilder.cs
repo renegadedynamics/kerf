@@ -531,20 +531,6 @@ internal sealed class BrepBuilder : Builder
     /// triangulations becomes just this one; otherwise it becomes active, replacing the active one if not in the list.
     /// </summary>
     internal void UpdateFace(in Face face, Triangulation? triangulation, bool toReset = true)
-        => UpdateFaceCore(face, triangulation, toReset, true);
-
-    /// <summary>
-    /// <see cref="UpdateFace(in Face, Triangulation?, bool)"/> without freezing the triangulation: the
-    /// mesher's attach (BRepMesh_ShapeTool only, decision 488), so that its post-processor can set the triangulation's
-    /// deflection and parameters, as OCCT's. The triangulation freezes with the face's graph when the result is
-    /// published. (Until unit 10H6 named <c>UpdateFaceUnfrozen</c>; it concerns the mesh's freezing, not the face's:
-    /// a frozen face takes it in a working overlay, as every update.)
-    /// </summary>
-    internal void UpdateFaceMesh(in Face face, Triangulation? triangulation, bool toReset = true)
-        => UpdateFaceCore(face, triangulation, toReset, false);
-
-    private static void UpdateFaceCore(in Face face, Triangulation? triangulation, bool toReset,
-                                   bool toFreeze)
     {
         BrepTFace tFace = (BrepTFace)face.TShape()!;
         if (WorkingOverlay.IsLocked(tFace))
@@ -552,7 +538,7 @@ internal sealed class BrepBuilder : Builder
             throw new LockedShapeException("BRep_Builder::UpdateFace");
         }
 
-        tFace.Triangulation(triangulation, toReset, toFreeze);
+        tFace.Triangulation(triangulation, toReset, true);
         face.TShape()!.Modified(true);
     }
 
@@ -770,12 +756,6 @@ internal sealed class BrepBuilder : Builder
     /// <summary>Sets the edge's 3D polygon (frozen here; removes it if null) with a location.</summary>
     internal void UpdateEdge(in Edge e, Polygon3D? p, in Placement l) => UpdateEdgeCore(e, p, l, true);
 
-    /// <summary>
-    /// <see cref="UpdateEdge(in Edge, Polygon3D?, in Placement)"/> without freezing the polygon: the
-    /// mesher's attach (BRepMesh_ShapeTool only, decision 488; see <see cref="UpdateFaceMesh"/>).
-    /// </summary>
-    internal void UpdateEdgeMesh(in Edge e, Polygon3D? p, in Placement l) => UpdateEdgeCore(e, p, l, false);
-
     private static void UpdateEdgeCore(in Edge e, Polygon3D? p, in Placement L, bool toFreeze)
     {
         BrepTEdge te = (BrepTEdge)e.TShape()!;
@@ -821,14 +801,6 @@ internal sealed class BrepBuilder : Builder
     /// <summary>Sets the edge's polygon on the triangulation (both frozen here; removes it if null) with a location.</summary>
     internal void UpdateEdge(in Edge e, PolygonOnTriangulation? p, Triangulation? t, in Placement l)
         => UpdateEdgeCore(e, p, t, l, true);
-
-    /// <summary>
-    /// <see cref="UpdateEdge(in Edge, PolygonOnTriangulation?, Triangulation?, in Placement)"/>
-    /// without freezing the polygon and the triangulation: the mesher's attach (BRepMesh_ShapeTool only, decision 488).
-    /// </summary>
-    internal void UpdateEdgeMesh(in Edge e, PolygonOnTriangulation? p, Triangulation? t,
-                                     in Placement l)
-        => UpdateEdgeCore(e, p, t, l, false);
 
     private static void UpdateEdgeCore(in Edge e, PolygonOnTriangulation? p, Triangulation? t,
                                    in Placement L, bool toFreeze)
@@ -887,17 +859,6 @@ internal sealed class BrepBuilder : Builder
                              Triangulation? t,
                              in Placement l)
         => UpdateEdgeCore(e, p1, p2, t, l, true);
-
-    /// <summary>
-    /// The seam form of <see cref="UpdateEdgeMesh(in Edge, PolygonOnTriangulation?, Triangulation?, in Placement)"/>
-    /// (decision 488).
-    /// </summary>
-    internal void UpdateEdgeMesh(in Edge e,
-                                     PolygonOnTriangulation? p1,
-                                     PolygonOnTriangulation? p2,
-                                     Triangulation? t,
-                                     in Placement l)
-        => UpdateEdgeCore(e, p1, p2, t, l, false);
 
     private static void UpdateEdgeCore(in Edge e,
                                    PolygonOnTriangulation? p1,

@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class RepresentationContext : Transient
+internal class RepresentationContext : Transient
 {
     private TCollection_HAsciiString _contextIdentifier;
     private TCollection_HAsciiString _contextType;

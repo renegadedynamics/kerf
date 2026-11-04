@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class ShapeAspect : Transient
+internal class ShapeAspect : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

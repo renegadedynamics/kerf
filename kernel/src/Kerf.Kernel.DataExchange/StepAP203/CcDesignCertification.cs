@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Ap203;
 /// <summary>
 /// Representation of STEP entity CcDesignCertification
 /// </summary>
-public class CcDesignCertification : CertificationAssignment
+internal class CcDesignCertification : CertificationAssignment
 {
     private NCollection_HArray1<CertifiedItem> _items;
 

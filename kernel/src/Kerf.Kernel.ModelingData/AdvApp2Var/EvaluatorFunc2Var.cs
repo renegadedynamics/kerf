@@ -12,7 +12,7 @@ namespace Kerf.Engine.Approximation.Advanced;
 /// by value and the arrays spans (decision 193, as decision 145 for AdvApprox_EvaluatorFunction).
 /// <c>operator()</c> is left out. Implementations must always assign the error code.
 /// </remarks>
-public abstract class EvaluatorFunc2Var
+internal abstract class EvaluatorFunc2Var
 {
     /// <summary>
     /// Evaluates the function, or its derivative of order (<paramref name="uOrder"/>, <paramref name="vOrder"/>),

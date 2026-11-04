@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class SizeSelect : SelectType
+internal class SizeSelect : SelectType
 {
     /// <summary>
     /// Returns a SizeSelect SelectType

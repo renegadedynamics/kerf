@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity MakeFromUsageOption
 /// </summary>
-public class MakeFromUsageOption : ProductDefinitionUsage
+internal class MakeFromUsageOption : ProductDefinitionUsage
 {
     private int _ranking;
     private TCollection_HAsciiString _rankingRationale;

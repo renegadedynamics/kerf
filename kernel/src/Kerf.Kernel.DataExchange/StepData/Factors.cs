@@ -12,7 +12,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// A C++ value class copied by value, a struct here (translation rules, section 3): mutators internal, with public
 /// twins. Its default is OCCT's (all factors 1): write <c>new StepData_Factors()</c>, never <c>default</c>.
 /// </remarks>
-public struct Factors
+internal struct Factors
 {
     private double _lengthFactor;
     private double _planeAngleFactor;

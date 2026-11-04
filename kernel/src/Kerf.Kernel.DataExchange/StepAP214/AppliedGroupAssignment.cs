@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Ap214;
 /// <summary>
 /// Representation of STEP entity AppliedGroupAssignment
 /// </summary>
-public class AppliedGroupAssignment : GroupAssignment
+internal class AppliedGroupAssignment : GroupAssignment
 {
     private NCollection_HArray1<GroupItem> _items;
 

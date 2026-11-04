@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// input can be, either an Interface Model (the very source), or another-other Selection(s) or any other
 /// output. All list computations start from an input Graph (from IFGraph)
 /// </summary>
-public abstract class AbstractSelection : Transient
+internal abstract class AbstractSelection : Transient
 {
 
     /// <summary>

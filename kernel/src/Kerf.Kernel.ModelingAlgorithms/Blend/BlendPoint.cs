@@ -22,7 +22,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// it; <c>default</c> is not (its tangency flag is false). OCCT leaves the fields a constructor doesn't set
 /// uninitialised; here they are zero.
 /// </remarks>
-public partial struct BlendPoint : IEquatable<BlendPoint>
+internal partial struct BlendPoint : IEquatable<BlendPoint>
 {
     private Point3D _pt1;
     private Point3D _pt2;

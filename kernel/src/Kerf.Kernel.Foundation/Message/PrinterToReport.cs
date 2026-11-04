@@ -18,7 +18,7 @@ namespace Kerf.Engine.Foundation;
 /// section 6), so no stream holds its keys: that branch is kept but never taken. As OCCT's printer has no default
 /// report, <see cref="Report"/> makes the process-wide one when the printer has none.
 /// </remarks>
-public class PrinterToReport : Printer
+internal class PrinterToReport : Printer
 {
     private string _name = "";
     private Report? _report; //!< the report for sending alerts

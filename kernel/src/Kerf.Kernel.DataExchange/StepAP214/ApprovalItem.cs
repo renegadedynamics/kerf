@@ -16,7 +16,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class ApprovalItem : SelectType
+internal class ApprovalItem : SelectType
 {
     /// <summary>
     /// Returns a ApprovalItem SelectType

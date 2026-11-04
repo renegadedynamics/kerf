@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class PersonOrganizationSelect : SelectType
+internal class PersonOrganizationSelect : SelectType
 {
     /// <summary>
     /// Returns a PersonOrganizationSelect SelectType

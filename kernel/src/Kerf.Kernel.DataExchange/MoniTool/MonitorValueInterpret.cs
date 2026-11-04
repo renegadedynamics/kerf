@@ -11,7 +11,7 @@ namespace Kerf.Engine.Exchange.Framework.Monitoring;
 /// A function interpreting the value of a typed value: <paramref name="native"/> true gives the native value, false the
 /// coded one; the value itself means no specific interpretation, null means senseless.
 /// </summary>
-public delegate TCollection_HAsciiString? MonitorValueInterpret(TypedValue typval, TCollection_HAsciiString val, bool native);
+internal delegate TCollection_HAsciiString? MonitorValueInterpret(TypedValue typval, TCollection_HAsciiString val, bool native);
 
 /// <summary>A function telling whether a value satisfies a specific criterion of a typed value.</summary>
-public delegate bool MonitorValueSatisfies(TCollection_HAsciiString val);
+internal delegate bool MonitorValueSatisfies(TCollection_HAsciiString val);

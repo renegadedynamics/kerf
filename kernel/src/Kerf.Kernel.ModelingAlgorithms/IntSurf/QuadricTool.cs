@@ -11,7 +11,7 @@ using static Kerf.Geometry.SurfaceKind;
 namespace Kerf.Engine.Intersection.Walking;
 
 /// <summary>The services of an <see cref="SurfaceQuadric"/> that the intersection algorithms (IntWalk) call.</summary>
-public static class QuadricTool
+internal static class QuadricTool
 {
     /// <summary>The value of the implicit function of <paramref name="quad"/> at the point (X, Y, Z).</summary>
     public static double Value(in SurfaceQuadric quad, double x, double y, double z) => quad.Distance(new Point3D(x, y, z));

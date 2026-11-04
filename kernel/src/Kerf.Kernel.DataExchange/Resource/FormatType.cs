@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Foundation.Resources;
 
 /// <summary>List of non ASCII format types.</summary>
-public enum FormatType
+internal enum FormatType
 {
     /// <summary>SJIS (Shift Japanese Industrial Standards) encoding.</summary>
     FormatType_SJIS,

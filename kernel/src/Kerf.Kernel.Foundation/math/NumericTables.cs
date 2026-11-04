@@ -9,7 +9,7 @@ namespace Kerf.Engine.Numerics;
 
 /// <summary>Gauss and Gauss-Kronrod quadrature points and weights.</summary>
 /// <remarks>The Kronrod members and table are in math_Kronrod.cs, as OCCT keeps them in math_Kronrod.cxx.</remarks>
-public static partial class NumericTables
+internal static partial class NumericTables
 {
     /// <summary>The largest number of Gauss points stored in the table.</summary>
     public static int GaussPointsMax()

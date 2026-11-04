@@ -10,7 +10,7 @@ using static Kerf.Engine.Exchange.Framework.FrameworkLengthUnit;
 namespace Kerf.Engine.Exchange.Framework;
 
 /// <summary>The Enumeration describes possible values for length units.</summary>
-public enum FrameworkLengthUnit
+internal enum FrameworkLengthUnit
 {
     LengthUnit_Undefined = 0,  // 1.
     LengthUnit_Inch = 1,       // 25.4

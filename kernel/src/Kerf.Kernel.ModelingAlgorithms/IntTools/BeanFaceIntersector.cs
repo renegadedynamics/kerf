@@ -42,7 +42,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// Face)"/> makes its own curve adaptor. OCCT's member <c>myProjector</c>, never used, is left out.
 /// </para>
 /// </remarks>
-public class BeanFaceIntersector
+internal class BeanFaceIntersector
 {
     private EdgeCurveAdaptor _curve = new();
     private FaceSurfaceAdaptor _surface = new();

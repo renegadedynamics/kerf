@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Added from StepBasic Rev2 to Rev4
 /// </summary>
-public class DerivedUnitElement : Transient
+internal class DerivedUnitElement : Transient
 {
     private NamedUnit _unit;
     private double _exponent;

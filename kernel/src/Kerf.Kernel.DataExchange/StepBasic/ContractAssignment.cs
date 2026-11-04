@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity ContractAssignment
 /// </summary>
-public class ContractAssignment : Transient
+internal class ContractAssignment : Transient
 {
     private Contract _assignedContract;
 

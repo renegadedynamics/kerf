@@ -18,7 +18,7 @@ namespace Kerf.Engine.HiddenLines;
 /// <c>IntCurveSurface_Inter</c>, which holds OCCT's Perform overloads and protected methods (decision 337). A
 /// working object: <c>Perform</c> can be called again. The surface is kept only during <c>Perform</c>. Generated from IntCurveSurface_HInter by substituting the curve, the surface and their tools (decision 1091).
 /// </remarks>
-public sealed class InterCSurf
+internal sealed class InterCSurf
     : Inter<Line3D, HiddenLineLineTool, HlrSurface,
                             HiddenLineSurfaceTool, ThePolygonOfInterCSurf,
                             ThePolyhedronOfInterCSurf, TheInterferenceOfInterCSurf,

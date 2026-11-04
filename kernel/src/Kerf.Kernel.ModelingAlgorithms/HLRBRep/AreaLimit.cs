@@ -15,7 +15,7 @@ namespace Kerf.Engine.HiddenLines;
 /// whether it is a boundary or an interference, the states of the area and of the edge before and after it.
 /// </summary>
 /// <remarks>A working object (a transient), as OCCT's: its setters are public.</remarks>
-public class AreaLimit : Transient
+internal class AreaLimit : Transient
 {
     private readonly AlgoIntersection _vertex;
     private readonly bool _boundary;

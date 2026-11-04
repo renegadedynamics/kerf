@@ -20,7 +20,7 @@ namespace Kerf.Engine.Approximation;
 /// As in OCCT, <see cref="IsDone"/> is true only when a constrained system was solved: it stays false when both ends
 /// are free (the poles are still computed) or when the constraints fix every pole (occt-issues.md).
 /// </remarks>
-public class LeastSquare
+internal class LeastSquare
 {
     // OCCT's struct PeriodicityInfo, declared in AppCont_LeastSquare.hxx and used only here.
     private struct PeriodicityInfo

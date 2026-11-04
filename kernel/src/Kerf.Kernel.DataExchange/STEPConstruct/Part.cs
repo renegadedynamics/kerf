@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Step.Construct;
 /// current schema. Also allows to investigate and modify this data.
 /// </summary>
 /// <remarks>A C++ value class, a C# class here (decision 1185).</remarks>
-public class Part
+internal class Part
 {
     //: k8 abv 6 Jan 99: unique names for PRODUCT_DEFINITION_FORMATIONs
     //: k9 abv 6 Jan 99: TR10: eliminating duplicated APPLICATION_CONTEXT entities

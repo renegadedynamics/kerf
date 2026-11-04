@@ -28,7 +28,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// (translation rules, section 3): only ported code builds vertices. The arcs and vertices are adaptors, held and
 /// compared by reference, as OCCT's handles. <see cref="Dump(TextWriter)"/> is OCCT's <c>Dump</c> (to stdout).
 /// </remarks>
-public partial struct PatchPoint : IEquatable<PatchPoint>
+internal partial struct PatchPoint : IEquatable<PatchPoint>
 {
     private PntOn2S _pt;
     private double _para;

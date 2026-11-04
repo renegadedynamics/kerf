@@ -16,7 +16,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// and of the arc at the point.
 /// </summary>
 /// <remarks>A C++ value class, so a struct. <c>SetArc</c> is an internal mutator with a public <c>WithArc</c> twin.</remarks>
-public partial struct PointOnRst : IEquatable<PointOnRst>
+internal partial struct PointOnRst : IEquatable<PointOnRst>
 {
     private Curve2DAdaptorBase? _arc;
     private WalkingTransition _traline;

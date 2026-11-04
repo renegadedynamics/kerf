@@ -15,7 +15,7 @@ namespace Kerf.Engine.Numerics;
 /// The Fletcher-Reeves-Polak-Ribiere conjugate gradient method to find a minimum of a function of several
 /// variables whose gradient is known.
 /// </summary>
-public class Frpr
+internal class Frpr
 {
     protected math_Vector _theLocation;
     protected math_Vector _theGradient;

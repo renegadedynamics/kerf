@@ -81,6 +81,13 @@ public static class Step
         parameters.WriteUnit = unit;
         parameters.WriteSurfaceCurMode = options.WritePcurves;
         parameters.WritePrecisionMode = (Parameters.WriteMode_PrecisionMode)(int)options.Precision;
+        parameters.WriteSchema = options.Schema switch
+        {
+            StepSchema.Ap203 => Parameters.WriteMode_StepSchema.WriteMode_StepSchema_AP203,
+            StepSchema.Ap242 => Parameters.WriteMode_StepSchema.WriteMode_StepSchema_AP242DIS,
+            StepSchema.Ap214 => Parameters.WriteMode_StepSchema.WriteMode_StepSchema_AP214IS,
+            _ => throw new ArgumentOutOfRangeException(nameof(options), options.Schema, "An unknown STEP schema."),
+        };
         bool done;
         try
         {
@@ -139,6 +146,12 @@ public static class Step
                     return Result<ModelNode>.Failure(Diagnostic.Error(ExchangeTree.ExternalReferences,
                         $"The STEP data refers to {references.ExternRefCount} other STEP file(s), which aren't read from a stream."));
                 }
+            }
+
+            if (!options.Heal)
+            {
+                // No shape processing after translation: OCCT's flags set, and empty
+                reader.Reader().SetShapeProcessFlags(new global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags());
             }
 
             var document = new ExchangeDocument();

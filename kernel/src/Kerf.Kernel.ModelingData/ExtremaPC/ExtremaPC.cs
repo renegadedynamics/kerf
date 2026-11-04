@@ -16,7 +16,7 @@ namespace Kerf.Engine.Extrema.PointCurve;
 /// <remarks>
 /// OCCT's alias <c>ExtremaPC::Domain1D</c> is <see cref="MathUtils.Domain1D"/>: C# can't export a type alias.
 /// </remarks>
-public static partial class ExtremaPC
+internal static partial class ExtremaPC
 {
     //==============================================================================================
     // Precision constants

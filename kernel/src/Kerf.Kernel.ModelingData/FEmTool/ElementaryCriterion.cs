@@ -15,7 +15,7 @@ namespace Kerf.Engine.Approximation.FiniteElements;
 /// A working object (decision 21): <see cref="Set(NCollection_HArray2{double})"/> keeps the coefficient array it is
 /// given, as OCCT keeps the handle, and the criterion reads it when evaluated.
 /// </remarks>
-public abstract class ElementaryCriterion : Transient
+internal abstract class ElementaryCriterion : Transient
 {
     protected NCollection_HArray2<double>? _coeff;
     protected double _first;

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Added from StepBasic Rev2 to Rev4
 /// </summary>
-public class DerivedUnit : Transient
+internal class DerivedUnit : Transient
 {
     private NCollection_HArray1<DerivedUnitElement> _elements;
 

@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepManifoldSurfaceShapeRepresentation : StepShapeRepresentation
+internal class StepManifoldSurfaceShapeRepresentation : StepShapeRepresentation
 {
     /// <summary>
     /// Returns a ManifoldSurfaceShapeRepresentation

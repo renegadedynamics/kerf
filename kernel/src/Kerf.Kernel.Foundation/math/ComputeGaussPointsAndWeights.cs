@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>Computes the points and weights of the Gauss-Legendre quadrature of a given order, points in increasing order.</summary>
-public class ComputeGaussPointsAndWeights
+internal class ComputeGaussPointsAndWeights
 {
     private NCollection_HArray1<double>? _points;
     private NCollection_HArray1<double>? _weights;

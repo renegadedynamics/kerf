@@ -17,7 +17,7 @@ namespace Kerf.Engine.Intersection.Polygons;
 /// the stored lines and zones, as OCCT's const references; their mutators are internal. OCCT's <c>Dump</c> (to
 /// std::cout) is left out.
 /// </remarks>
-public abstract class PolygonInterference
+internal abstract class PolygonInterference
 {
     protected readonly NCollection_Sequence<SectionPoint> _sPoins = new();
     protected readonly NCollection_Sequence<SectionLine> _sLines = new();

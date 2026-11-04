@@ -31,7 +31,7 @@ namespace Kerf.Engine.Approximation;
 /// </remarks>
 /// <typeparam name="MultiLine">The MultiLine type.</typeparam>
 /// <typeparam name="ToolLine">The line tool reading <typeparamref name="MultiLine"/>.</typeparam>
-public class BSpGradient<MultiLine, ToolLine>
+internal class BSpGradient<MultiLine, ToolLine>
     where ToolLine : struct, ILineTool<MultiLine>
 {
     private MultiBSpCurve _scu = new();

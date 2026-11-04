@@ -24,7 +24,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// attached to each class) and Copy from GeneralLib (itself using dedicated tools). It can be redefined for
 /// specific actions.
 /// </summary>
-public class CopyTool
+internal class CopyTool
 {
 
     /// <summary>

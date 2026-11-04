@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>A default sample of a function defined between two bounds A and B: N equally spaced parameters.</summary>
-public class FunctionSample
+internal class FunctionSample
 {
     private double _a;
     private double _b;

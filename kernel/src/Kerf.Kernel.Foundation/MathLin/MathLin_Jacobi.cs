@@ -12,7 +12,7 @@ namespace Kerf.Engine.Numerics.Linear;
 // it is written MathUtils.EigenResult.
 
 /// <summary>Modern linear algebra: eigenvalues of symmetric matrices by the Jacobi method.</summary>
-public static partial class MathLin
+internal static partial class MathLin
 {
     /// <summary>
     /// Eigenvalues and eigenvectors (as columns) of a symmetric matrix by Jacobi rotations (math_Recipes' Jacobi),

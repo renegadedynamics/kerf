@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity SurfaceStyleTransparent
 /// </summary>
-public class SurfaceStyleTransparent : Transient
+internal class SurfaceStyleTransparent : Transient
 {
     private double _transparency;
 

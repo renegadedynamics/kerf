@@ -14,7 +14,7 @@ namespace Kerf.Engine.HiddenLines.Contours;
 /// The interior start points of the contours on a surface adaptor (OCCT's instantiation of
 /// IntStart_SearchInside.gxx, decision 607).
 /// </summary>
-public sealed class TheSearchInside
+internal sealed class TheSearchInside
     : SearchInside<SurfaceAdaptorBase, TheHSurfaceTool, SurfFunction>
 {
     public TheSearchInside()

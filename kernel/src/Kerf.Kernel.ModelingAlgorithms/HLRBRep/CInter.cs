@@ -17,7 +17,7 @@ namespace Kerf.Engine.HiddenLines;
 /// HLRBRep_CurvePtr, a void pointer to the curve; decisions 321, 1091). The curves are kept by reference during the
 /// computation only; the results are values. Generated from Geom2dInt_GInter by substituting the curve and its tool.
 /// </remarks>
-public sealed class CInter
+internal sealed class CInter
     : IntCurveCurveGen<HiddenLineCurve, HiddenLineCurveTool, TheProjPCurOfCInter,
                                 MyImpParToolOfTheIntersectorOfTheIntConicCurveOfCInter>
 {

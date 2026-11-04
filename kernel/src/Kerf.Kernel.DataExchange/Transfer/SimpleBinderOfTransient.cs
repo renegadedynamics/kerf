@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// An adapted instantiation of SimpleBinder for Transient Result, i.e. ResultType can be computed from the Result
 /// itself, instead of being static.
 /// </summary>
-public class SimpleBinderOfTransient : Binder
+internal class SimpleBinderOfTransient : Binder
 {
     /// <summary>Creates an empty SimpleBinderOfTransient.</summary>
     public SimpleBinderOfTransient()

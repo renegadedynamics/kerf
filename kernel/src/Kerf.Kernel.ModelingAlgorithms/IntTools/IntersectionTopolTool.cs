@@ -16,7 +16,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// own sample points (a regular grid sized by the surface type, strictly inside the parametric range).
 /// </summary>
 /// <remarks>A working object (decision 21): the sample grid is computed on first use and kept.</remarks>
-public class IntersectionTopolTool : TopolTool
+internal class IntersectionTopolTool : TopolTool
 {
     private int _nbSmplU;
     private int _nbSmplV;

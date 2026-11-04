@@ -434,9 +434,18 @@ Where the implementation departs from the area reviews: no `RevolveOptions` or `
 takes no tolerance and reports a stretch lying in the surface as a warning; a 2D chamfer by distance and angle isn't
 offered.
 
-**Left** (for 10L3 or later):
-- `Tangents2D` (GccAna, Geom2dGcc: unit 10K4 was changing them), `Surfaces.Fill` (`BRepOffsetAPI_MakeFilling`),
-  `Sweeps.Helix`, and an extrusion's or revolution's caps in its history (OCCT's `FirstShape`/`LastShape`).
+**Left** (for 10L3 or later; unit 10L5 marks what it did):
+- **Done (10L5):** `Revolve` runs without copy, sharing the profile; its history answers for the edges a whole turn
+  leaves out, which OCCT's calls deleted (decision 1558, replacing 1526).
+- **Done (10L5):** `Surfaces.Fill` (`BRepOffsetAPI_MakeFilling`; `FillBoundary`, `FillOptions`) and `Sweeps.Helix`
+  (`HelixBRep_BuilderHelix`; `HelixOptions`), decision 1559.
+- **Done (10L5):** an extrusion's and a revolution's caps in their histories (OCCT's `FirstShape`/`LastShape`): the
+  bottom one modified from the profile's sub-shape where the sweep rebuilt it, the top one generated (decision 1560).
+- **Done (10L5):** `Tangents2D` (`Lines`, `Circles` by two targets and a radius or by three targets,
+  `CirclesCentredAt`; `TangentTarget2D`, `Tangency`, `TangentCircle2D`, `TangentLine2D`, `TangentContact2D`), over
+  Geom2dGcc after 10K4's fixes (decision 1564).
+- **Done (10L5):** the engine types of these areas that something public showed are internal but for the modelling
+  layer's (decision 1563, and section 12).
 - The engine types of these areas that something public still shows (decision 1530 lists why): the modelling
   layer's public API (10M), and the public engine types of the areas 10L3 makes internal.
 
@@ -474,12 +483,16 @@ Where the implementation departs from measurement.md, healing.md, meshing.md and
   STEP's header names stay the modelling layer's business.
 
 **Became internal:** see decision 1538 (the engine of these areas, but for the types the modelling layer's public
-API or another area's public engine types still show).
+API or another area's public engine types still show). **10L5** (decision 1563) took the engine's public types from
+1,345 to 184 across the four assemblies: 158 are shown by the modelling layer's public API (10M's), 25 by the
+WebAssembly sample, and `Transient` by NCollection (10J's); none by a test, Draw-lite or the kernel's public API.
 
 **Left:**
-- `BrepBuilder.UpdateFaceMesh`/`UpdateEdgeMesh` stay (decision 1535): the mesher's post-processor still sets each
-  triangulation's deflection after attaching it, and the engine's own meshing (Draw-lite, HLR, the mesh writers'
-  meshing) still stores meshes on faces.
+- **Done (10L5):** `BrepBuilder.UpdateFaceMesh`/`UpdateEdgeMesh` are gone (decision 1561): the post-processor
+  finishes each triangulation (deflection, parameters) before attaching it, frozen. The engine's own meshing
+  (Draw-lite, HLR, the mesh writers' meshing) still stores meshes on faces, frozen.
+- **Done (10L5):** `StepReadOptions.Heal`, `StepWriteOptions.Schema` (`StepSchema`), the `Triangle` record
+  (`FaceMesh.GetTriangles()`, `ShapeMesh.GetTriangles()`) and `Fix`'s `healing.not-fixed` warning (decision 1562).
 - The modelling layer's STL and glTF readers (they give faces holding triangles) and BREP import stay on its glue
   until 10M.
 - Images (the hidden-line API, SVG, the PNG renderer) are a later unit's, on `ShapeMesh`.

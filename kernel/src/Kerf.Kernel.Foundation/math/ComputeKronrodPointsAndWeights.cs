@@ -13,7 +13,7 @@ namespace Kerf.Engine.Numerics;
 /// Computes the 2*Number + 1 points and weights of the Gauss-Kronrod quadrature extending the Number-point Gauss
 /// rule, points in increasing order.
 /// </summary>
-public class ComputeKronrodPointsAndWeights
+internal class ComputeKronrodPointsAndWeights
 {
     private NCollection_HArray1<double>? _points;
     private NCollection_HArray1<double>? _weights;

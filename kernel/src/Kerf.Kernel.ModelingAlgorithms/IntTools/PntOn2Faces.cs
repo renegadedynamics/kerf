@@ -9,7 +9,7 @@ namespace Kerf.Engine.Intersection.Tools;
 
 /// <summary>Two points on faces and a validity flag.</summary>
 /// <remarks>A struct, as OCCT's by-value class; the setters are internal.</remarks>
-public partial struct PntOn2Faces : IEquatable<PntOn2Faces>
+internal partial struct PntOn2Faces : IEquatable<PntOn2Faces>
 {
     private bool _isValid;
     private PntOnFace _pnt1;

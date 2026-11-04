@@ -13,7 +13,7 @@ namespace Kerf.Engine.HiddenLines.Contours;
 /// The points and parts of the restrictions of a surface where the contour function vanishes, the start points of
 /// the contour walking (OCCT's instantiation of IntStart_SearchOnBoundaries.gxx, decision 607).
 /// </summary>
-public sealed class TheSearch
+internal sealed class TheSearch
     : SearchOnBoundaries<HContTool, ArcFunction, ThePathPointOfTheSearch,
                                   TheSegmentOfTheSearch>
 {

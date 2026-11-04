@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// Cascade/Imagine It works with a Controller (which itself can work with an Actor to Write) and a
 /// FinderProcess. It records results and checks
 /// </summary>
-public class TransferWriter : Transient
+internal class TransferWriter : Transient
 {
 
     /// <summary>

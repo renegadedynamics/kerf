@@ -22,7 +22,7 @@ namespace Kerf.Engine.HiddenLines;
 /// checks (an empty vertex list, no interferences) are compiled out; the port leaves them out too, so the hider sees
 /// what native sees.
 /// </remarks>
-public sealed class EdgeBuilder
+internal sealed class EdgeBuilder
 {
     private Containment _toBuild;
     private AreaLimit? _limits;

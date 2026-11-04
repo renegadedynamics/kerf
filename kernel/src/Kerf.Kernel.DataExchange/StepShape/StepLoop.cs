@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepLoop : StepTopologicalRepresentationItem
+internal class StepLoop : StepTopologicalRepresentationItem
 {
     /// <summary>
     /// Returns a Loop

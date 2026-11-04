@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// HAsciiString, it then suffices to get its Handle. For an Integer, an IntParam can designate (by its name)
 /// a Static : each time its value is required or set, the Static is acknowledged
 /// </summary>
-public class IntParam : Transient
+internal class IntParam : Transient
 {
 
     /// <summary>

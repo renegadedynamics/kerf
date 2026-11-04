@@ -27,7 +27,7 @@ namespace Kerf.Engine.Foundation;
 /// ported; <see cref="AttributeMeter"/> reads .NET's counters instead).
 /// </para>
 /// </remarks>
-public static class Message
+internal static class Message
 {
     // The messenger with no printer that stands for OCCT's default one wherever no other is set (shared, as OCCT's)
     private static readonly Messenger EmptyMessenger = Messenger.Empty();

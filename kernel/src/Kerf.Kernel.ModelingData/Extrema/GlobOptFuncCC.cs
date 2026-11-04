@@ -148,7 +148,7 @@ internal static class GlobOptFuncCC
 /// outside the curves' ranges.
 /// </summary>
 /// <remarks>Keeps references to the curves, as OCCT does.</remarks>
-public class GlobOptFuncCcc0 : MultipleVarFunction
+internal class GlobOptFuncCcc0 : MultipleVarFunction
 {
     private readonly CurveAdaptorBase? _c13d, _c23d;
     private readonly Curve2DAdaptorBase? _c12d, _c22d;
@@ -189,7 +189,7 @@ public class GlobOptFuncCcc0 : MultipleVarFunction
 
 /// <summary>The distance between two curves with its gradient (see <see cref="GlobOptFuncCcc0"/>); the gradient
 /// is the one of the square distance.</summary>
-public class GlobOptFuncCcc1 : MultipleVarFunctionWithGradient
+internal class GlobOptFuncCcc1 : MultipleVarFunctionWithGradient
 {
     private readonly CurveAdaptorBase? _c13d, _c23d;
     private readonly Curve2DAdaptorBase? _c12d, _c22d;
@@ -244,7 +244,7 @@ public class GlobOptFuncCcc1 : MultipleVarFunctionWithGradient
 
 /// <summary>The distance between two curves with its gradient and hessian (see <see cref="GlobOptFuncCcc0"/>);
 /// the gradient and the hessian are those of the square distance.</summary>
-public class GlobOptFuncCcc2 : MultipleVarFunctionWithHessian
+internal class GlobOptFuncCcc2 : MultipleVarFunctionWithHessian
 {
     private readonly CurveAdaptorBase? _c13d, _c23d;
     private readonly Curve2DAdaptorBase? _c12d, _c22d;

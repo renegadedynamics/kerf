@@ -24,7 +24,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// true), except <see cref="NewParameter"/>'s, which are <c>ref</c>: OCCT's implementations leave them unchanged for a
 /// null vertex, and BRepTools_TrsfModification relies on that.
 /// </remarks>
-public abstract class Modification : Transient
+internal abstract class Modification : Transient
 {
     /// <summary>
     /// True if the face has a new surface: then S is the surface, L its location, Tol the face's tolerance, RevWires

@@ -14,7 +14,7 @@ namespace Kerf.Engine.HiddenLines;
 /// The function S(u, v) - C(w) whose zeros are the intersections of a line and an HLRBRep surface, as
 /// HLRBRep_InterCSurf refines them (OCCT's instantiation of IntImp_ZerCSParFunc.gxx).
 /// </summary>
-public sealed class TheCSFunctionOfInterCSurf
+internal sealed class TheCSFunctionOfInterCSurf
     : ZerCSParFunc<HlrSurface, HiddenLineSurfaceTool, Line3D,
                           HiddenLineLineTool>,
       ITheCSFunction<TheCSFunctionOfInterCSurf, HlrSurface, Line3D>

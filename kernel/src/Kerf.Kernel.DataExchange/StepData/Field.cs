@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// <see cref="CopyFrom"/>. The value is kept as <c>object</c>, since the port's <c>NCollection_HArray1</c> and
 /// <c>HArray2</c> (which a field holds for its lists) are not <see cref="Transient"/> (decision 17).
 /// </remarks>
-public sealed class Field
+internal sealed class Field
 {
     //  The kind encodes the data type, access mode (direct or via Select),
     //  and arity (simple, list, square array)

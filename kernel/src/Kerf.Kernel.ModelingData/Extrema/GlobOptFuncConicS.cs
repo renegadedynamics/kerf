@@ -21,7 +21,7 @@ namespace Kerf.Engine.Extrema;
 /// without a curve leave it unset until <see cref="LoadConic"/> (OCCT leaves the pointer and the curve type
 /// uninitialised). Outside the parameter range <see cref="Value"/> returns false and writes 0 (decision 221).
 /// </remarks>
-public class GlobOptFuncConicS : MultipleVarFunction
+internal class GlobOptFuncConicS : MultipleVarFunction
 {
     private CurveAdaptorBase? _c;
     private readonly SurfaceAdaptorBase _s;

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// The points of a surface adaptor on a quadric, for the walking and the interior search of the implicit/parametric
 /// intersection (OCCT's instantiation of IntImp_ZerImpFunc.gxx over Adaptor3d_Surface, decision 607).
 /// </summary>
-public sealed class TheSurfFunction
+internal sealed class TheSurfFunction
     : ZerImpFunc<SurfaceAdaptorBase, TheHSurfaceTool>, IWFunction<TheSurfFunction>
 {
     public TheSurfFunction()

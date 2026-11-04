@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class ExternallyDefinedRepresentation : StepRepresentation
+internal class ExternallyDefinedRepresentation : StepRepresentation
 {
     public ExternallyDefinedRepresentation()
     {

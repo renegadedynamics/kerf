@@ -21,7 +21,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// and reorders its own index map when the tree is built. Indices of the set are 0-based;
 /// <see cref="OriginalIndex"/> gives the polyhedron's 1-based triangle index.
 /// </remarks>
-public class PolyhedronBvh : PrimitiveSet<double, BVH_Vec3d>
+internal class PolyhedronBvh : PrimitiveSet<double, BVH_Vec3d>
 {
     private Polyhedron? _poly;                            //!< Reference to the wrapped polyhedron
     private readonly List<int> _indexMap = new(); //!< Maps current indices to original 1-based indices

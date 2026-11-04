@@ -17,7 +17,7 @@ namespace Kerf.Engine.HiddenLines.Presentation;
 /// OCCT.NET ports only the deflection functions of Prs3d (unit 4L2): the rest builds graphic primitives, and the port
 /// has no viewer.
 /// </remarks>
-public static class Prs3d
+internal static class Prs3d
 {
     /// <summary>
     /// The absolute deflection for the relative deflection <paramref name="deviationCoefficient"/> (from

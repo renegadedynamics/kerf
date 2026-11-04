@@ -12,7 +12,7 @@ using static Kerf.Geometry.SurfaceKind;
 namespace Kerf.Engine.Intersection.Patches;
 
 // ExtendTwoWLines and its helpers.
-public static partial class WLineTool
+internal static partial class WLineTool
 {
     // Bit-mask is used for information about the operation made in ExtendTwoWLines(...).
     private const uint IntPatchWT_EnAll = 0x00;

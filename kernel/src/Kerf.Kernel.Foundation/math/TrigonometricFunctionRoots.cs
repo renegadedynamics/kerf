@@ -13,7 +13,7 @@ namespace Kerf.Engine.Numerics;
 /// The solutions of the equation a*cos(x)*cos(x) + 2*b*cos(x)*sin(x) + c*cos(x) + d*sin(x) + e = 0, of degree 4, 3
 /// or 2, within given bounds.
 /// </summary>
-public class TrigonometricFunctionRoots
+internal class TrigonometricFunctionRoots
 {
     // lpa, le 03/09/91
     // Implementation de la classe resolvant les equations en cosinus-sinus.

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Numerics;
 /// OCCT compiles only its "new code" (MATH_FUNCTIONROOTS_NEWCODE); the disabled old algorithm
 /// (MATH_FUNCTIONROOTS_OLDCODE) and the debug check (MATH_FUNCTIONROOTS_CHECK) are not ported.
 /// </remarks>
-public class FunctionRoots
+internal class FunctionRoots
 {
     private const int Itmax = 100;
     private const double Eps = 1e-14;

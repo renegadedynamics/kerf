@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>The Gauss-Kronrod method of computing an integral, with adaptive subdivision.</summary>
-public class KronrodSingleIntegration
+internal class KronrodSingleIntegration
 {
     private bool _isDone;
     private double _value;

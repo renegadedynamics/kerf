@@ -16,7 +16,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// A 2D polygon of points for the interference of a line with the restrictions (IntPatch_RstInt): its segments join
 /// consecutive points, and its deflection is its error.
 /// </summary>
-public abstract class Polygo : Polygon2d
+internal abstract class Polygo : Polygon2d
 {
     // OCCT's Dump numbers its polygons with a function-static counter.
     private static int s_dumpNum;

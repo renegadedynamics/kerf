@@ -25,7 +25,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// call (method Recorded) It does not manage the produced data, but the Actors make the link between the
 /// norm and the application
 /// </summary>
-public abstract class Controller : Transient
+internal abstract class Controller : Transient
 {
     // OCCT's dictionary of the recorded controllers (a file static "listad"): process-wide, filled once by the
     // norms' initialisations (Record, AutoRecord) before the sessions select them (decision 1222); replaced whole

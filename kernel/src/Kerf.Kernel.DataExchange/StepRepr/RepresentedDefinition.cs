@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP SELECT type RepresentedDefinition
 /// </summary>
-public class RepresentedDefinition : SelectType
+internal class RepresentedDefinition : SelectType
 {
     /// <summary>
     /// Empty constructor

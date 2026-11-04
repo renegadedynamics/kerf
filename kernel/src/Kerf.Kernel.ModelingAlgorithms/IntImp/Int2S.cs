@@ -30,7 +30,7 @@ namespace Kerf.Engine.Intersection.Implicit;
 /// <see cref="ChangePoint"/> returns a reference to the point (OCCT's non-const reference).
 /// </para>
 /// </remarks>
-public class Int2S<ThePSurface, ThePSurfaceTool>
+internal class Int2S<ThePSurface, ThePSurfaceTool>
     where ThePSurfaceTool : IZerCSParPSurfaceTool<ThePSurface>
 {
     private bool _done;

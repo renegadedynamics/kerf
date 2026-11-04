@@ -13,7 +13,7 @@ namespace Kerf.Engine.HiddenLines;
 
 /// <summary>A polygon sampling a 2D curve on a domain, for the 2D curve intersections.</summary>
 /// <remarks>OCCT's instantiation of IntCurve_Polygon2dGen.gxx over HLRBRep_Curve (decision 324).</remarks>
-public sealed class ThePolygon2dOfTheIntPCurvePCurveOfCInter
+internal sealed class ThePolygon2dOfTheIntPCurvePCurveOfCInter
     : Polygon2dGen<HiddenLineCurve, HiddenLineCurveTool>
 {
     /// <summary>Samples NbPnt points (at least 3) of the curve on the bounded domain.</summary>

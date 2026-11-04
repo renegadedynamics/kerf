@@ -26,7 +26,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// (<c>UMinSingularity</c>, ...) and their <c>Has...</c> getters but never defines them: they are left out. The setter
 /// <c>Point(thePnt, lig, col, U, V)</c> and <c>Dump</c> are empty in OCCT and kept so.
 /// </remarks>
-public sealed class Polyhedron : IPolyhedron
+internal sealed class Polyhedron : IPolyhedron
 {
     private const double LONGUEUR_MINI_EDGE_TRIANGLE = 1e-14;
     private const double DEFLECTION_COEFF = 1.1;

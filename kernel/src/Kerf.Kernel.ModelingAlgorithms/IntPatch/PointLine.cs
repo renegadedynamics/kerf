@@ -19,7 +19,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// A working object (decision 609). <see cref="Point"/> and <see cref="Vertex"/> return copies (OCCT's const
 /// references); <see cref="ChangeVertex"/> returns a reference to the stored vertex, to change it in place.
 /// </remarks>
-public abstract class PointLine : PatchLine
+internal abstract class PointLine : PatchLine
 {
     /// <summary>A line whose transitions are in or out.</summary>
     protected PointLine(bool tang, WalkingTypeTrans trans1, WalkingTypeTrans trans2)

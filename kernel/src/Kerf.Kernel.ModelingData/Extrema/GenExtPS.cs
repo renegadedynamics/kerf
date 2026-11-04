@@ -32,7 +32,7 @@ namespace Kerf.Engine.Extrema;
 /// once and reused for the next points, until <see cref="Initialize(SurfaceAdaptorBase, int, int, double, double)"/>
 /// or a change of algorithm.
 /// </remarks>
-public class GenExtPS
+internal class GenExtPS
 {
     // The selectors of the sphere tree (Extrema_GenExtPS.cxx). OCCT keeps references to the sphere array and to the
     // caller's solution; the port keeps the array and the solution itself, which Sphere() returns.

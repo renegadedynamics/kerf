@@ -21,7 +21,7 @@ namespace Kerf.Engine.Extrema;
 /// <remarks>
 /// OCCT keeps a pointer to the surface; the port keeps the adaptor, which must outlive the function.
 /// </remarks>
-public class FuncPSNorm : FunctionSetWithDerivatives
+internal class FuncPSNorm : FunctionSetWithDerivatives
 {
     private Point3D _p = new();
     private SurfaceAdaptorBase? _s;

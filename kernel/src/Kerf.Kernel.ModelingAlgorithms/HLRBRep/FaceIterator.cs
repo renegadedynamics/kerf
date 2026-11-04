@@ -12,7 +12,7 @@ namespace Kerf.Engine.HiddenLines;
 
 /// <summary>Iterates on the edges of the wires of a face's hidden-line data.</summary>
 /// <remarks>A working object, as OCCT's.</remarks>
-public sealed class FaceIterator
+internal sealed class FaceIterator
 {
     private int _iWire;
     private int _nbWires;

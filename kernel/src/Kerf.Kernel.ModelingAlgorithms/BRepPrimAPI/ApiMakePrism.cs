@@ -91,13 +91,13 @@ internal class ApiMakePrism : MakeSweep
     public Shape FirstShape(in Shape shape) => Published(InternalFirstShape(shape));
 
     /// <summary><see cref="FirstShape(in Shape)"/> without freezing.</summary>
-    internal Shape InternalFirstShape(in Shape shape) => FromSwept(_prism.FirstShape(shape));
+    internal override Shape InternalFirstShape(in Shape shape) => FromSwept(_prism.FirstShape(shape));
 
     /// <summary>The shape at the top of the prism generated with <paramref name="shape"/>, a sub-shape of the base (frozen).</summary>
     public Shape LastShape(in Shape shape) => Published(InternalLastShape(shape));
 
     /// <summary><see cref="LastShape(in Shape)"/> without freezing.</summary>
-    internal Shape InternalLastShape(in Shape shape) => FromSwept(_prism.LastShape(shape));
+    internal override Shape InternalLastShape(in Shape shape) => FromSwept(_prism.LastShape(shape));
 
     /// <summary>True if the shape <paramref name="s"/> has been deleted.</summary>
     public override bool IsDeleted(in Shape s)

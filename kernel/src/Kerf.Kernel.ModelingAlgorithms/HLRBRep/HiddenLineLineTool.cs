@@ -17,7 +17,7 @@ namespace Kerf.Engine.HiddenLines;
 /// infinite: its parameters run from RealFirst to RealLast. OCCT's deprecated <c>SamplePars</c> with an output
 /// argument is left out.
 /// </remarks>
-public readonly struct HiddenLineLineTool : IIntersectionCurveTool<Line3D>
+internal readonly struct HiddenLineLineTool : IIntersectionCurveTool<Line3D>
 {
     public static double FirstParameter(in Line3D c) => RealFirst();
 

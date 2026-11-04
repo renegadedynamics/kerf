@@ -15,7 +15,7 @@ namespace Kerf.Engine.Extrema;
 /// The curve tool of the 3D curve extrema (Extrema_ExtPC, Extrema_LocateExtPC, Extrema_ECC, ...): static functions
 /// forwarding to <see cref="CurveAdaptorBase"/>, plus <see cref="DeflCurvIntervals"/>.
 /// </summary>
-public static class CurveTool
+internal static class CurveTool
 {
     public static double FirstParameter(CurveAdaptorBase c) => c.FirstParameter();
 

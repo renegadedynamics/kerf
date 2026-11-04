@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity DocumentFile
 /// </summary>
-public class DocumentFile : Document
+internal class DocumentFile : Document
 {
     private CharacterizedObject _characterizedObject;
 

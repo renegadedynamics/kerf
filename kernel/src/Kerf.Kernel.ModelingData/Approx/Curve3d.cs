@@ -17,7 +17,7 @@ namespace Kerf.Engine.Approximation;
 /// Approximates a 3D curve given by an adaptor with a B-spline curve (AdvApprox) within a tolerance, a continuity,
 /// a maximum number of segments and a maximum degree. The approximation is made by the constructor.
 /// </summary>
-public sealed class Curve3d
+internal sealed class Curve3d
 {
     private sealed class Approx_Curve3d_Eval : EvaluatorFunction
     {

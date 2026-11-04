@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Numerics.Utilities;
 
 /// <summary>Root and minimum bracketing algorithms.</summary>
-public static partial class MathUtils
+internal static partial class MathUtils
 {
     /// <summary>Result of root bracketing operation.</summary>
     public struct BracketResult

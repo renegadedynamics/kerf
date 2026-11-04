@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Numerics.Roots;
 
 /// <summary>Trigonometric equation solver.</summary>
-public static partial class MathRoot
+internal static partial class MathRoot
 {
     /// <summary>Result for trigonometric equation solver.</summary>
     /// <remarks>Its C++ default status is NotConverged, so ported code writes `new TrigResult()`.</remarks>

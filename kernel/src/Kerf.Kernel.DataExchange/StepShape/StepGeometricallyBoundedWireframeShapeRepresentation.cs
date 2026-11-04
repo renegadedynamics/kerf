@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepGeometricallyBoundedWireframeShapeRepresentation : StepShapeRepresentation
+internal class StepGeometricallyBoundedWireframeShapeRepresentation : StepShapeRepresentation
 {
     /// <summary>
     /// Returns a GeometricallyBoundedWireframeShapeRepresentation

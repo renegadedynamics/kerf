@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
 /// <summary>The StepAP214 package: its protocol.</summary>
-public static class StepAP214
+internal static class StepAP214
 {
     // OCCT's StaticHandle and InitHandleVoid: one protocol per process, created on first use
     private static readonly Lazy<Ap214Protocol> Proto = new(() => new Ap214Protocol());

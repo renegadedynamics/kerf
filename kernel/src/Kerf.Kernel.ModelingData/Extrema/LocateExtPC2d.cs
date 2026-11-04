@@ -22,7 +22,7 @@ namespace Kerf.Engine.Extrema;
 /// The 2D instantiation of OCCT's template Extrema_GLocateExtPC (Extrema_LocateExtPC2d). An algorithm object (decision
 /// 117). Keeps a reference to the curve, as OCCT does.
 /// </remarks>
-public class LocateExtPC2d
+internal class LocateExtPC2d
 {
     private POnCurv2d _mypp = new();
     private Curve2DAdaptorBase? _c;

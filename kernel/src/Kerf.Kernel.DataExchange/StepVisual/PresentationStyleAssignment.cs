@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class PresentationStyleAssignment : Transient
+internal class PresentationStyleAssignment : Transient
 {
     private NCollection_HArray1<PresentationStyleSelect> _styles;
 

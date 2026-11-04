@@ -20,7 +20,7 @@ namespace Kerf.Engine.Approximation;
 /// reads the assembly data back. The arrays and the curve it is given or returns are shared, as OCCT's handles are
 /// (decision 207).
 /// </remarks>
-public abstract class SmoothCriterion : Transient
+internal abstract class SmoothCriterion : Transient
 {
     /// <summary>Sets the parameters of the points (kept, shared).</summary>
     public abstract void SetParameters(NCollection_HArray1<double> parameters);

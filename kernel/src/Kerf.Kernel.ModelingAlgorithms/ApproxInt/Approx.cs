@@ -24,7 +24,7 @@ namespace Kerf.Engine.Intersection.Approximation;
 /// <see cref="TheHSurfaceTool"/>, over BRepAdaptor_Surface by <see cref="ApproximationSurfaceTool"/>.
 /// </remarks>
 /// <typeparam name="ThePSurface">The surface.</typeparam>
-public interface IApproxSurfaceTool<ThePSurface> : IZerCSParPSurfaceTool<ThePSurface>
+internal interface IApproxSurfaceTool<ThePSurface> : IZerCSParPSurfaceTool<ThePSurface>
 {
     static abstract SurfaceKind GetType(in ThePSurface s);
 
@@ -65,7 +65,7 @@ public interface IApproxSurfaceTool<ThePSurface> : IZerCSParPSurfaceTool<ThePSur
 /// shared: don't modify). OCCT declares a <c>Perform()</c> without arguments that it never defines: left out.
 /// </para>
 /// </remarks>
-public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
+internal class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
     where ThePSurfaceTool : IApproxSurfaceTool<ThePSurface>
     where TheWLine : class, IWLine<TheWLine>
 {

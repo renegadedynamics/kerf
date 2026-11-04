@@ -17,7 +17,7 @@ namespace Kerf.Engine.Intersection;
 /// OCCT's class is used by value but holds an NCollection_Sequence; the port makes it a class with OCCT's copy as the
 /// copy constructor, and ported code copies where C++ copies (decision 1077).
 /// </remarks>
-public sealed class Intervals
+internal sealed class Intervals
 {
     private readonly NCollection_Sequence<IntersectionInterval> _inter;
 

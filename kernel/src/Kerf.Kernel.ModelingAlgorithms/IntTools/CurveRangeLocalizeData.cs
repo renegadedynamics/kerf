@@ -18,7 +18,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// 18): <see cref="ListRangeOut"/> lists the out ranges in the order they were added, where OCCT lists them in its
 /// hash order (decision 629).
 /// </remarks>
-public sealed class CurveRangeLocalizeData
+internal sealed class CurveRangeLocalizeData
 {
     private readonly int _nbSampleC;
     private readonly double _minRangeC;

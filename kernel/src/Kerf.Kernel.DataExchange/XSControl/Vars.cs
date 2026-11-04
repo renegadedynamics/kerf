@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// instance DRAW or an application engine This class provides a common form for this. It also provides a
 /// default implementation (locally recorded variables in a dictionary), but which is aimed to be redefined
 /// </summary>
-public class Vars : Transient
+internal class Vars : Transient
 {
 
     public Vars()

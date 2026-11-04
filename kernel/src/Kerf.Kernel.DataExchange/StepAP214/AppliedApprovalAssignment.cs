@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class AppliedApprovalAssignment : ApprovalAssignment
+internal class AppliedApprovalAssignment : ApprovalAssignment
 {
     private NCollection_HArray1<ApprovalItem> _items;
 

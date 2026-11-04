@@ -13,7 +13,7 @@ namespace Kerf.Engine.Numerics.Utilities;
 // std::optional<double> is double?, std::optional<math_Vector> a nullable reference, size_t is int.
 
 /// <summary>Modern math solver types and result structures.</summary>
-public static partial class MathUtils
+internal static partial class MathUtils
 {
     /// <summary>Computation status for all math solvers.</summary>
     public enum Status

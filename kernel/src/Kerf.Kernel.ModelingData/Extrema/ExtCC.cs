@@ -27,7 +27,7 @@ namespace Kerf.Engine.Extrema;
 /// <c>SetRange</c>, <c>SetTolerance</c>) and <c>Perform</c>. Keeps references to the curves, as OCCT does. OCCT
 /// disallows copies.
 /// </remarks>
-public class ExtCC
+internal class ExtCC
 {
     private bool _isFindSingleSolution; // Default value is false.
     private readonly Ecc _ecc;

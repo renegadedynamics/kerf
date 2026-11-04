@@ -31,7 +31,7 @@ namespace Kerf.Engine.Intersection.Surfaces;
 /// The curve building (OCCT's GeomInt_IntSS_1.cxx) is in GeomInt_IntSS.MakeCurve.cs.
 /// </para>
 /// </remarks>
-public partial class IntSS
+internal partial class IntSS
 {
     private readonly PatchIntersection _intersector = new();
     private readonly LineConstructor _lConstruct = new();

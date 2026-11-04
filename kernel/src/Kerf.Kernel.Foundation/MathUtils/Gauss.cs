@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Numerics.Utilities;
 
 /// <summary>Gauss-Legendre quadrature points and weights.</summary>
-public static partial class MathUtils
+internal static partial class MathUtils
 {
     /// <summary>
     /// Get ordered Gauss-Legendre points and weights for given order (>= 1), in ascending order on [-1, 1]. The

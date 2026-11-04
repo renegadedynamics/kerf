@@ -24,7 +24,7 @@ public sealed class DrawFairCurve : DrawDrawable
     }
 
     /// <summary>The batten (a FairCurve_MinimalVariation for minvarcurve).</summary>
-    public Batten Batten { get; }
+    internal Batten Batten { get; }
 
     /// <summary>The curve of the latest computation (frozen).</summary>
     public BSplineCurve2D Curve { get; private set; }

@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>A fast random number generator (the algorithm proposed by Ian C. Bullard).</summary>
-public class BullardGenerator
+internal class BullardGenerator
 {
     private uint _stateHi;
     private uint _stateLo;

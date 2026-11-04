@@ -2,10 +2,14 @@
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Filling;
+using Kerf.Engine.Construction.Helix;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing.Tools;
+using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 
 namespace Kerf.Construction;
 
@@ -38,7 +42,7 @@ public static class Sweeps
                 throw new ArgumentException("The extrusion's direction is zero.", nameof(direction));
             }
             Shape p = profile.AsShape();
-            return EngineOperation.Run<Shape>(range => MakerOutcome.Of(new ApiMakePrism(p, direction, false, options.Canonize), range, [p]),
+            return EngineOperation.Run<Shape>(range => SweepOutcome(new ApiMakePrism(p, direction, false, options.Canonize), range, p),
                                               Failure, progress, cancellationToken);
         }
 
@@ -54,11 +58,77 @@ public static class Sweeps
             }
             Shape p = profile.AsShape();
             Axis3D a = axis;
-            // Copying the profile's sub-shapes, as the modelling layer does: without, the revolution's history of a
-            // published profile is empty (decision 1526)
-            return EngineOperation.Run<Shape>(range => MakerOutcome.Of(new ApiMakeRevol(p, a, angle, true), range, [p]),
+            // Without copy, as the other sweeps: the result shares the profile's sub-shapes (decision 1558)
+            return EngineOperation.Run<Shape>(range => SweepOutcome(new ApiMakeRevol(p, a, angle), range, p),
                                               Failure, progress, cancellationToken);
         }
+    }
+
+    /// <summary>A helix couldn't be built: <c>construction.helix-failed</c>.</summary>
+    public static DiagnosticCode HelixFailed { get; } = new("construction.helix-failed");
+
+    /// <summary>A helix's approximation is coarser than asked (a warning): <c>construction.helix-tolerance</c>.</summary>
+    public static DiagnosticCode HelixTolerance { get; } = new("construction.helix-tolerance");
+
+    /// <summary>A helix on the world Z axis, starting at (<paramref name="radius"/>, 0, 0).</summary>
+    /// <inheritdoc cref="Helix(in Frame3D, double, double, double, HelixOptions?)"/>
+    public static Result<Wire> Helix(double radius, double pitch, double height, HelixOptions? options = null) =>
+        Helix(Frame3D.World, radius, pitch, height, options);
+
+    /// <summary>
+    /// A helix about <paramref name="frame"/>'s axis, starting on its X direction at <paramref name="radius"/> from the
+    /// axis and rising by <paramref name="pitch"/> a turn to <paramref name="height"/>, counterclockwise about the axis
+    /// (OCCT's <c>HelixBRep_BuilderHelix</c>): a wire of B-spline edges approximating it. With
+    /// <see cref="HelixOptions.EndRadius"/>, the radius changes linearly with the height (a conical helix).
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">A radius, pitch or height that isn't positive (an end radius may
+    /// be zero).</exception>
+    /// <exception cref="ArgumentException">A default frame.</exception>
+    public static Result<Wire> Helix(in Frame3D frame, double radius, double pitch, double height, HelixOptions? options = null)
+    {
+        options ??= HelixOptions.Default;
+        MakerOutcome.Positive(radius, nameof(radius));
+        MakerOutcome.Positive(pitch, nameof(pitch));
+        MakerOutcome.Positive(height, nameof(height));
+        MakerOutcome.Valid(frame, nameof(frame));
+        double endRadius = options.EndRadius ?? radius;
+        if (!(endRadius >= 0) || double.IsInfinity(endRadius))
+        {
+            throw new ArgumentOutOfRangeException(nameof(options), endRadius, "The end radius must be zero or more.");
+        }
+        MakerOutcome.Positive(options.Tolerance, nameof(options));
+        var builder = new BuilderHelix();
+        var heights = new NCollection_Array1<double>(1, 1) { [1] = height };
+        var pitches = new NCollection_Array1<double>(1, 1) { [1] = pitch };
+        var isPitches = new NCollection_Array1<bool>(1, 1) { [1] = true };
+        builder.SetParameters(new CoordinateSystem(frame), 2 * radius, 2 * endRadius, heights, pitches, isPitches);
+        builder.SetApproxParameters(options.Tolerance, options.MaxDegree, options.Continuity);
+        try
+        {
+            builder.Perform();
+        }
+        catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+        {
+            return Result<Wire>.Failure(FailureDiagnostics.ToDiagnostic(e));
+        }
+        if (builder.ErrorStatus() != 0)
+        {
+            return Result<Wire>.Failure(Diagnostic.Error(HelixFailed, builder.ErrorStatus() switch
+            {
+                2 => "The helix couldn't be approximated.",
+                3 => "An edge of the helix couldn't be made.",
+                10 => "The helix starts too close to its axis.",
+                11 => "The helix's pitch is below the tolerance.",
+                12 => "The helix's height is below the tolerance.",
+                13 => "The helix's taper is too steep.",
+                int status => $"The helix couldn't be built (status {status}).",
+            }));
+        }
+        var wire = (Wire)builder.Shape();
+        return builder.WarningStatus() != 0
+            ? Result<Wire>.Success(wire, [Diagnostic.Warning(HelixTolerance,
+                $"The helix is approximated to {builder.ToleranceReached():G3}, not {options.Tolerance:G3}.")])
+            : wire;
     }
 
     /// <summary>The profile (a wire or a vertex) swept along <paramref name="spine"/>.</summary>
@@ -180,4 +250,63 @@ public static class Sweeps
             throw new ArgumentException($"The sweep frame {options.Frame} needs its value in the options.", nameof(options)),
         _ => throw new ArgumentOutOfRangeException(nameof(options), options.Frame, "An unknown sweep frame."),
     };
+
+    // An extrusion or revolution built, with its history of the profile's sub-shapes and their caps
+    private static EngineOutcome SweepOutcome(MakeSweep sweep, ProgressRange range, Shape profile)
+    {
+        sweep.Build(range);
+        if (!sweep.IsDone)
+        {
+            return new EngineOutcome(false, static () => default);
+        }
+        Shape result = sweep.Shape();
+        return new EngineOutcome(true, () => result, MakerOutcome.HistoryOf(new SweepHistory(sweep, result), [profile]));
+    }
+
+    /// <summary>
+    /// An extrusion's or revolution's history (decisions 1558 and 1560): OCCT's, plus the caps. A sub-shape of the
+    /// profile is modified into its first shape (OCCT's <c>FirstShape(S)</c>, the bottom cap of a face, the bottom edge
+    /// of an edge) where the sweep rebuilt it, and generates its last shape (the top cap) beside what it swept; only
+    /// shapes the result holds, so a whole turn, whose last shapes are its first, adds nothing generated. A revolution
+    /// also answers for the edges a whole turn leaves out, which OCCT's history calls deleted.
+    /// </summary>
+    private sealed class SweepHistory : History.IAlgorithm
+    {
+        private readonly MakeSweep _sweep;
+        private readonly HashSet<Shape> _inResult = new(ShapeHasher.Instance);
+
+        public SweepHistory(MakeSweep sweep, Shape result)
+        {
+            _sweep = sweep;
+            Exploration.MapShapes(result, _inResult);
+        }
+
+        public bool IsDeleted(in Shape s) => _sweep.IsDeleted(s);
+
+        public IEnumerable<Shape> Modified(in Shape s)
+        {
+            List<Shape> modified = [.. _sweep.Modified(s)];
+            Shape first = _sweep.CapsOf(s).First;
+            if (Holds(first) && !first.IsSame(s) && !modified.Any(m => m.IsSame(first)))
+            {
+                modified.Add(first);
+            }
+            return modified;
+        }
+
+        public IEnumerable<Shape> Generated(in Shape s)
+        {
+            List<Shape> generated = [.. _sweep is ApiMakeRevol revol && revol.IsDeleted(s)
+                                        ? revol.GeneratedEvenIfUnused(s)
+                                        : _sweep.Generated(s)];
+            (Shape first, Shape last) = _sweep.CapsOf(s);
+            if (Holds(last) && !last.IsSame(s) && !last.IsSame(first) && !generated.Any(g => g.IsSame(last)))
+            {
+                generated.Add(last);
+            }
+            return generated;
+        }
+
+        private bool Holds(in Shape shape) => !shape.IsNull && _inResult.Contains(shape);
+    }
 }

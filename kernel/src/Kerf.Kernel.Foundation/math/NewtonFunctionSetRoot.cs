@@ -15,7 +15,7 @@ namespace Kerf.Engine.Numerics;
 /// The root of a set of N functions of N variables, from an initial guess, by the Newton-Raphson algorithm. The
 /// Jacobian is required.
 /// </summary>
-public class NewtonFunctionSetRoot
+internal class NewtonFunctionSetRoot
 {
     protected math_Vector _tolX;
     protected double _tolF;

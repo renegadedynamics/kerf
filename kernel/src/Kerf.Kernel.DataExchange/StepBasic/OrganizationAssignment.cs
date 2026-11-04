@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class OrganizationAssignment : Transient
+internal class OrganizationAssignment : Transient
 {
     private Organization _assignedOrganization;
     private OrganizationRole _role;

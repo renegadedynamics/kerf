@@ -22,7 +22,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 /// the port passes the arrays by <c>ref</c>, compared by reference as OCCT compares the pointers. OCCT's pointers to
 /// elements are <c>ref</c> locals. <see cref="Dump"/> writes OCCT's trace to a writer (stdout by default).
 /// </remarks>
-public class PolyInternalData : Transient
+internal class PolyInternalData : Transient
 {
     private int _nbTData;
     private int _nbPISeg;

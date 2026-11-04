@@ -10,6 +10,6 @@ using Occt;
 namespace Kerf.Engine.Intersection.Patches;
 
 /// <summary>A line of the implicit/parametric walking, IntPatch_TheIWalking's (decision 686).</summary>
-public sealed class PatchTheIWLineOfTheIWalking : TheIWLine
+internal sealed class PatchTheIWLineOfTheIWalking : TheIWLine
 {
 }

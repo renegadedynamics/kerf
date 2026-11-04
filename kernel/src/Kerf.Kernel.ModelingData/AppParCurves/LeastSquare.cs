@@ -39,7 +39,7 @@ namespace Kerf.Engine.Approximation;
 /// </remarks>
 /// <typeparam name="MultiLine">The MultiLine type.</typeparam>
 /// <typeparam name="ToolLine">The line tool reading <typeparamref name="MultiLine"/>.</typeparam>
-public class LeastSquare<MultiLine, ToolLine>
+internal class LeastSquare<MultiLine, ToolLine>
     where ToolLine : struct, ILineTool<MultiLine>
 {
     private Constraint _firstConstraint;

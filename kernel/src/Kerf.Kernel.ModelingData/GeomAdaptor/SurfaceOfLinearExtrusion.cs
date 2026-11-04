@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// planes and cylinders.
 /// </summary>
 /// <remarks>Evaluation is the base adaptor's (Geom_ExtrusionUtils over the curve adaptor).</remarks>
-public class SurfaceOfLinearExtrusion : SurfaceAdaptor
+internal class SurfaceOfLinearExtrusion : SurfaceAdaptor
 {
     private CurveAdaptorBase? _basisCurve; // extruded curve
     private Direction3D _direction; // direction of extrusion

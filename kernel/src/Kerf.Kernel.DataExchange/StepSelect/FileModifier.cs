@@ -35,7 +35,7 @@ internal abstract class FileModifier : GeneralModifier
 }
 
 /// <summary>A Model Modifier of STEP: it works on a StepData_StepModel.</summary>
-public abstract class ModelModifier : SelectionModifier
+internal abstract class ModelModifier : SelectionModifier
 {
     /// <summary>
     /// The inherited Perform does the required cast (and refuses to go further if cast has failed) then calls the

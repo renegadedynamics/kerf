@@ -20,7 +20,7 @@ namespace Kerf.Engine.Topology.Properties;
 /// BRepLProp_SurfaceTool's). OCCT keeps the adaptor by value, so the constructors and
 /// <see cref="SetSurface(FaceSurfaceAdaptor)"/> keep a shallow copy of it.
 /// </remarks>
-public class SLProps : SLProps3d
+internal class SLProps : SLProps3d
 {
     /// <summary>
     /// The properties of the surface S at (U, V), computing derivatives up to order N (0 to 2), with the linear

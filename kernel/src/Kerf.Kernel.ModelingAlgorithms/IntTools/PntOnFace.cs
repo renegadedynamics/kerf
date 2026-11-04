@@ -16,7 +16,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// A struct, as OCCT's by-value class; the setters are internal. OCCT declares <c>IsValid()</c> without defining it
 /// (only <see cref="Valid"/> exists), so it is left out.
 /// </remarks>
-public partial struct PntOnFace : IEquatable<PntOnFace>
+internal partial struct PntOnFace : IEquatable<PntOnFace>
 {
     private bool _isValid;
     private Point3D _pnt;

@@ -14,7 +14,7 @@ namespace Kerf.Engine.HiddenLines.Contours;
 /// The point, the (non-normalized) normal and its derivatives of a surface adaptor, in closed form on the elementary
 /// surfaces and from the derivatives otherwise: what the contour functions evaluate.
 /// </summary>
-public static class SurfProps
+internal static class SurfProps
 {
     /// <summary>Computes the point <paramref name="p"/> and the normal <paramref name="norm"/> of <paramref name="s"/> at (U, V).</summary>
     public static void Normale(SurfaceAdaptorBase s, double u, double v, out Point3D p, out Vector3D norm)

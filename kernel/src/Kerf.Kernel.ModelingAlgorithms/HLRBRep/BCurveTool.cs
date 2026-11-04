@@ -12,7 +12,7 @@ using static Kerf.Geometry.CurveKind;
 namespace Kerf.Engine.HiddenLines;
 
 /// <summary>The static tool over the 3D curve of an edge (BRepAdaptor_Curve) that HLRBRep_Curve reads through.</summary>
-public static class BCurveTool
+internal static class BCurveTool
 {
     public static double FirstParameter(EdgeCurveAdaptor c) => (c.FirstParameter());
 

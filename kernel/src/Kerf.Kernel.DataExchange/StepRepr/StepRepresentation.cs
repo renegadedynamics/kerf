@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class StepRepresentation : Transient
+internal class StepRepresentation : Transient
 {
     private TCollection_HAsciiString _name;
     private NCollection_HArray1<RepresentationItem> _items;

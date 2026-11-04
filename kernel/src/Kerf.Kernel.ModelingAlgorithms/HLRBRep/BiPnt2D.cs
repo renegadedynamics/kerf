@@ -12,7 +12,7 @@ namespace Kerf.Engine.HiddenLines;
 
 /// <summary>A 2D segment of a polygonal hidden-line result, with the shape it comes from and its kind (smooth, sewn, outline, internal).</summary>
 /// <remarks>A C++ value class, so a struct. The setters are internal, with <c>With</c> twins.</remarks>
-public partial struct BiPnt2D : IEquatable<BiPnt2D>
+internal partial struct BiPnt2D : IEquatable<BiPnt2D>
 {
     private Point2D _p1;
     private Point2D _p2;

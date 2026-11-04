@@ -12,7 +12,7 @@ namespace Kerf.Engine.Numerics.Roots;
 // function by value: a class functor is shared, a struct functor is copied (see MathUtils_FunctorScalar.cs).
 
 /// <summary>Internal utilities for FindAllRoots / FindAllRootsWithDerivative.</summary>
-public static partial class MathRoot
+internal static partial class MathRoot
 {
     // ============================================================================
     //  Result and configuration types

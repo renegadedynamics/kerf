@@ -19,7 +19,7 @@ using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Intersection.Tools;
 
-public partial class FaceFace
+internal partial class FaceFace
 {
     /// <summary>
     /// Makes the curves of the intersection line of index Index and appends them to the result: trimmed lines,

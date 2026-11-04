@@ -12,7 +12,7 @@ using static Kerf.Engine.Intersection.Polygons.PIType;
 namespace Kerf.Engine.Intersection.Polygons;
 
 /// <summary>The interference between two polygons, or the self-intersection of a polygon, in two dimensions.</summary>
-public class InterferencePolygon2d : PolygonInterference
+internal class InterferencePolygon2d : PolygonInterference
 {
     // Angular precision (sinus) below that value two right segments
     // are considered as having a potential zone of tangency.

@@ -11,7 +11,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// <summary>The second derivatives (DUU, DUV, DVV) of a surface at a point, as the G2 constraints of a plate take them.</summary>
 /// <remarks>A value type (rules, section 3). OCCT has no accessors: only its friends Plate_GtoCConstraint and
 /// Plate_FreeGtoCConstraint read the fields, which are internal here.</remarks>
-public struct D2 : IEquatable<D2>
+internal struct D2 : IEquatable<D2>
 {
     internal Xyz _duu;
     internal Xyz _duv;

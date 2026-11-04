@@ -12,7 +12,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// <summary>
 /// Defines an Iterator on a list of Selections
 /// </summary>
-public class SelectionIterator
+internal class SelectionIterator
 {
 
     /// <summary>

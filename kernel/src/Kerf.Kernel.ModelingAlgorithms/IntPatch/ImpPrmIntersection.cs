@@ -29,7 +29,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// before the functions are given it and never changed afterwards, so their copies of it (decision 608) see what
 /// OCCT's pointers see.
 /// </remarks>
-public partial class ImpPrmIntersection
+internal partial class ImpPrmIntersection
 {
     private bool _done;
     private bool _empt;

@@ -19,7 +19,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// A working object (decision 21): the walkers fill it and the fillet builder reads it; its mutators are internal.
 /// It is the line of <see cref="AppSurf"/>'s approximation (<see cref="ILine{ThePoint}"/>).
 /// </remarks>
-public class Line : Transient, ILine<BlendPoint>
+internal class Line : Transient, ILine<BlendPoint>
 {
     private readonly NCollection_Sequence<BlendPoint> _seqpt = new();
     private WalkingTypeTrans _tras1;

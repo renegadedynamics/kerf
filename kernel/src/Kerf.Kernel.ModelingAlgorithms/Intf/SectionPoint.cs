@@ -21,7 +21,7 @@ namespace Kerf.Engine.Intersection.Polygons;
 /// <c>GetHashCode</c> compare every field exactly (decision 282). <see cref="Merge"/> is an internal mutator.
 /// OCCT's <c>Dump</c> prints only in a debug build and is left out.
 /// </remarks>
-public partial struct SectionPoint : IEquatable<SectionPoint>
+internal partial struct SectionPoint : IEquatable<SectionPoint>
 {
     private Point3D _pnt;
     private PIType _dimenObje;

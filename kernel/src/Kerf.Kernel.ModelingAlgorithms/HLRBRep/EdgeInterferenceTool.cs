@@ -21,7 +21,7 @@ namespace Kerf.Engine.HiddenLines;
 /// <see cref="EdgeInterferenceTool(EdgeInterferenceTool)"/> (the data shared, the vertices and the
 /// current index copied). A working object.
 /// </remarks>
-public sealed class EdgeInterferenceTool
+internal sealed class EdgeInterferenceTool
 {
     private readonly HiddenLineData _ds;
     private readonly AlgoIntersection[] _inter = new AlgoIntersection[2];

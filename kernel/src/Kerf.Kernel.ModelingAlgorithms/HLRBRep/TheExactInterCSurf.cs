@@ -14,7 +14,7 @@ namespace Kerf.Engine.HiddenLines;
 /// The exact intersection of a line and an HLRBRep surface from a starting point, as HLRBRep_InterCSurf refines
 /// the points of the interference (OCCT's instantiation of IntImp_IntCS.gxx).
 /// </summary>
-public sealed class TheExactInterCSurf
+internal sealed class TheExactInterCSurf
     : IntCS<TheCSFunctionOfInterCSurf, HlrSurface, HiddenLineSurfaceTool,
                    Line3D, HiddenLineLineTool>,
       ITheExactInter<TheExactInterCSurf, TheCSFunctionOfInterCSurf>

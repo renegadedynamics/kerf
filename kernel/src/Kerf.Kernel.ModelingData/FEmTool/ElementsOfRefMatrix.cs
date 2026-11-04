@@ -17,7 +17,7 @@ namespace Kerf.Engine.Approximation.FiniteElements;
 /// (tension, flexion, jerk): <c>Pi(u)' * Pj(u)'</c>, <c>Pi(u)'' * Pj(u)''</c> or <c>Pi(u)''' * Pj(u)'''</c> for
 /// every i &lt;= j, where Pi is the i-th function of the Hermite-Jacobi base.
 /// </summary>
-public class ElementsOfRefMatrix : FunctionSet
+internal class ElementsOfRefMatrix : FunctionSet
 {
     private readonly HermitJacobi _base;
     private readonly int _derOrder;

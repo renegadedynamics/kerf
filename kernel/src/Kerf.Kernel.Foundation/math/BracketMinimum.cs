@@ -18,7 +18,7 @@ namespace Kerf.Engine.Numerics;
 /// By default the parameter is not limited; <see cref="SetLimits"/> defines the allowed range. If no minimum is found
 /// within the limits, <see cref="IsDone"/> is false. The caller must give A and B within the limits.
 /// </remarks>
-public class BracketMinimum
+internal class BracketMinimum
 {
     private const double Gold = 1.618034;
     private const double Glimit = 100.0;

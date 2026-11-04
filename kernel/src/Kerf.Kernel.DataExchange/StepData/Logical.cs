@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Data;
 
 /// <summary>A standard definition for STEP (which knows Boolean too).</summary>
-public enum Logical
+internal enum Logical
 {
     LFalse,
     LTrue,

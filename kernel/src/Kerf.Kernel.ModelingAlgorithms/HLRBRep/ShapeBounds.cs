@@ -19,7 +19,7 @@ namespace Kerf.Engine.HiddenLines;
 /// OCCT's value class (held by value in HLRBRep_InternalAlgo's sequence); a class here, with OCCT's implicit copy as
 /// <see cref="ShapeBounds(ShapeBounds)"/> (the handles shared). A working object.
 /// </remarks>
-public sealed class ShapeBounds
+internal sealed class ShapeBounds
 {
     private OutLiner? _shape;
     private Transient? _shapeData;

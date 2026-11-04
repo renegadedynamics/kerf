@@ -14,7 +14,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 /// A 2D conic given by its implicit equation <c>A.X**2 + B.Y**2 + 2.C.X*Y + 2.D.X + 2.E.Y + F = 0</c>.
 /// </summary>
 /// <remarks><c>default(IntAna2d_Conic)</c> has all coefficients zero.</remarks>
-public partial struct Conic : IEquatable<Conic>
+internal partial struct Conic : IEquatable<Conic>
 {
     private double _a;
     private double _b;

@@ -8,7 +8,7 @@ using static Kerf.Engine.Numerics.Utilities.MathUtils;
 namespace Kerf.Engine.Numerics.Linear;
 
 /// <summary>Modern linear algebra: linear least squares (plain, weighted, regularized).</summary>
-public static partial class MathLin
+internal static partial class MathLin
 {
     /// <summary>Method for solving least squares problems.</summary>
     public enum LeastSquaresMethod

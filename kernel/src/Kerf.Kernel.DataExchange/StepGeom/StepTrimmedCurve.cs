@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepTrimmedCurve : StepBoundedCurve
+internal class StepTrimmedCurve : StepBoundedCurve
 {
     private StepCurve _basisCurve;
     private NCollection_HArray1<StepTrimmingSelect> _trim1;

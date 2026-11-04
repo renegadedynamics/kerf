@@ -16,7 +16,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap242;
 
-public class IdAttributeSelect : SelectType
+internal class IdAttributeSelect : SelectType
 {
     /// <summary>
     /// Returns a IdAttributeSelect select type

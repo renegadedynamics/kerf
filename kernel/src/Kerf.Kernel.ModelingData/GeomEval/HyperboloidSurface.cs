@@ -25,7 +25,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// u in [0, 2*Pi] (periodic, closed), v in (-inf, +inf). Reversal, transformation and iso curves are not
 /// supported (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class HyperboloidSurface : ElementarySurface
+internal sealed class HyperboloidSurface : ElementarySurface
 {
     /// <summary>Sheet mode selector.</summary>
     public enum SheetMode

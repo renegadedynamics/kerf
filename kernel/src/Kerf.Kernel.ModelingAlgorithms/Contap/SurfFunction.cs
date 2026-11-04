@@ -25,7 +25,7 @@ namespace Kerf.Engine.HiddenLines.Contours;
 /// <see cref="ISurfFunction{ThePSurface}"/>. With <see cref="DraftPrs"/> OCCT computes nothing and
 /// leaves the outputs as they were, as the port does.
 /// </remarks>
-public sealed class SurfFunction : FunctionSetWithDerivatives, IWFunction<SurfFunction>
+internal sealed class SurfFunction : FunctionSetWithDerivatives, IWFunction<SurfFunction>
 {
     private SurfaceAdaptorBase? _surf;
     private double _mean;

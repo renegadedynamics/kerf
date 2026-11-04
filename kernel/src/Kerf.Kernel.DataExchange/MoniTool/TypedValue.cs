@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Framework.Monitoring;
 /// occ::handle&lt;HAsciiString&gt; can be shared by other data structures, hence gives a direct on line
 /// access to its value.
 /// </summary>
-public class TypedValue : Transient
+internal class TypedValue : Transient
 {
     // The library of typed values (OCCT's static thelibtv): the standard types, built once (decision 1181). OCCT's
     // AddLib, which adds to it, and the static dictionary of "static" values (OCCT's astats, Stats(), StaticValue)

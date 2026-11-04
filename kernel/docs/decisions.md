@@ -15747,3 +15747,138 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        (`Kerf.Kernel.Bento.Benchmarks -- images 5`, a shared machine): drawing and SVG 2.4 to 22 ms (the bottle 86 ms,
        176 edges), 0.4 to 14 MB; meshing, rendering at 800 × 600 supersampled 2 × 2 and PNG 38 to 93 ms (rendering 16
        to 65 ms), 22 to 51 MB, of which 15 MB the supersampled buffers. No parallelism beyond the bands was needed.
+
+## Phase 10: unit 10L5, the public API's leftovers
+
+1558. **A revolution no longer copies its profile, and decision 1526's cause was OCCT's, not a copy at entry.** The
+       engine's `ApiMakeRevol` has swept the caller's profile itself in a working overlay since 10H3: nothing copies it
+       at entry, and its history is keyed by the caller's sub-shapes. What emptied the public history without copy is
+       OCCT's own `BRepPrimAPI_MakeRevol::Generated`, which answers only for a generating sub-shape that is itself used
+       in the result (`BRepSweep_Revol::IsUsed`). A whole turn without copy leaves out the profile's edges at right
+       angles to the axis, which bound no face (their swept faces are planar rings), so OCCT says they generated
+       nothing and were deleted; native OCCT does the same (`BRepPrimAPI_MakeRevol`'s oracle replays, whole turns
+       without copy, and 10H3's `ConstructionInputsUnchangedTests` say so). With copy, the copy's edges are built at the
+       first position and count as used. 10L2's test revolved a whole turn and asked for the bottom edge's face.
+       The public `Revolve` now runs without copy, as `Extrude` does, so its result shares the profile's sub-shapes,
+       and its history asks the engine's new `ApiMakeRevol.GeneratedEvenIfUnused` for a sub-shape OCCT calls deleted:
+       the same code without the `IsUsed` gate. The edge stays removed (it isn't in the result) and generates its face.
+       The engine's own `Generated`, Draw-lite's and the oracle's, stays OCCT's. No other public operation passes a
+       copy flag (`ApiMakePrism`'s is false; `NurbsConvert`'s, `GTransform`'s and `Transform`'s copy geometry, as
+       OCCT's options, and nothing public sets them). The modelling layer's three revolutions keep `copy: true`, as
+       Python build123d passes it, until 10M moves them onto `Sweeps.Revolve`. New test:
+       `A_revolution_shares_the_profile_and_answers_for_every_edge` (a quarter and a whole turn).
+1559. **`Surfaces.Fill` and `Sweeps.Helix`** (construction.md). `Surfaces.Fill(boundaries, FillOptions)` is OCCT's
+       `BRepOffsetAPI_MakeFilling` on `EngineOperation.Run`: a `Result<Built<Face>>` whose history is the filling's
+       (each boundary edge and vertex generates the face's own). `FillBoundary(Edge, Continuity)` with `Support` (the
+       face a G1 or G2 edge lies on) and `IsBoundary` (false: a curve inside the face, OCCT's free constraint edge);
+       `FillOptions` holds OCCT's defaults, the points the face passes through and an initial surface. Misuse throws:
+       no bounding edge, a null edge, a continuity other than C0, G1 and G2. OCCT's free face constraints (a face
+       bounding a gap) and point constraints on faces aren't offered: nothing asks for them. `Sweeps.Helix(frame, radius,
+       pitch, height, HelixOptions)` is `HelixBRep_BuilderHelix`'s pure helix, conical with `EndRadius`; it returns a
+       `Result<Wire>`, as the other shapes from geometry (`Wire.Polygon`) do, with OCCT's error statuses as
+       `construction.helix-failed` and its warning (the approximation coarser than asked) as
+       `construction.helix-tolerance`. Radii rather than OCCT's diameters, as the primitives. Composite helices (several
+       parts) aren't offered; the modelling layer still builds its helix from geometry. Tests: two in
+       `ConstructionTests`.
+1560. **An extrusion's and a revolution's caps are in their histories** (construction.md: "`Built.History` entries for
+       the caps"). For each vertex, edge and face of the profile, the public history adds OCCT's `FirstShape(S)` and
+       `LastShape(S)` in the history's own terms: the first shape is what stands for S at the bottom, so it is a
+       **modification** of S where the sweep rebuilt S (the working overlay gave its edges the side faces' pcurves) and
+       nothing where the result holds S itself; the last shape is **generated**, after what OCCT's history already says
+       S generated. So a face profile's `Generated` is the solid then the top cap, its `Modified` the bottom cap. Only
+       shapes the result holds are added, so a whole turn, which ends on its first shapes, adds no cap. `MakeSweep` gains
+       `InternalFirstShape(S)`/`InternalLastShape(S)` as virtuals (the prism's and revolution's overrides) and `CapsOf`,
+       which asks them as a history query in a dropped overlay, as `Generated` does; the engine's own history is
+       unchanged. One test's expectation changed, with this reason: `An_extrusion_carries_its_history` asked for a single
+       shape generated by a bottom edge, and now gets the side face then the top edge. New test:
+       `An_extrusions_and_a_revolutions_caps_are_in_their_histories`.
+1561. **The mesher finishes a triangulation before attaching it, and `BrepBuilder.UpdateFaceMesh`/`UpdateEdgeMesh`
+       are gone** (decision 1535's leftover; decision 488's unfrozen attach retired). OCCT's face mesher
+       (`BRepMesh_BaseMeshAlgo`) attaches each triangulation as it makes it; the post-processor then commits the edges'
+       polygons on it and estimates its deflection (`BRepLib::UpdateDeflection`, which reads the attached
+       triangulation and its degenerated edges' polygons), setting the deflection and the parameters in place: hence
+       the attach that left meshes unfrozen until publication. Now the face mesher leaves its triangulation with the
+       face's model (`FaceModel.MadeTriangulation`, through `ShapeTool.AddInFace(FaceModel, …)`), and the
+       post-processor estimates each deflection first (`BrepLibrary.EstimateDeflection`, `UpdateDeflection`'s loop
+       split out, unchanged), taking the degenerated edges' nodes from the model, the nodes of the polygons it will
+       commit (each edge's first pcurve on the face), sets the parameters, attaches the triangulation with the ordinary
+       `UpdateFace` (frozen), and only then commits the polygons with the ordinary `UpdateEdge` (frozen). The numbers
+       are the same, computed in a different order: every mesh count, Bento's triangles and the copy-out test are
+       unchanged. The deflections are estimated in parallel as before; the attaches are serial. `ShapeTool`'s own
+       attaches (`AddInFace(Face, …)`, `UpdateEdge`, `NullifyFace`/`NullifyEdge`) use the ordinary freezing updates,
+       so a mesh is frozen once attached, as design 4.1 has it for all geometry, whether or not the shape is published.
+       Tests whose expectations changed, with this reason: `BRepMeshShellTests`' stub mesher hands its fan to the
+       stub post-processor, which sets the deflection then attaches (as the real ones now do);
+       `Meshing_an_unfrozen_shape_writes_it_in_place` finds the meshes frozen before publication, and
+       `ShapeTool_attaches_frozen_and_moves_nodes_by_the_face_location` (was `…attaches_unfrozen…`) finds the
+       triangulation and polygons frozen at the attach; `ModelAlgo_lets_writes_into_frozen_shapes_through` gives its
+       context the stub post-processor, where the write now happens; `BRepMeshModelKit`'s fan mesher hands its
+       triangulation to the post-processor.
+       **Measured** (Bento's benchmark, `7 0`, Release, a shared machine), before (this branch at item 4) and after:
+       the same volumes, faces and triangles in every example; allocation per example within 0.3 MB either way (the
+       bottle 91.7 and 92.0 MB, extrude until 139.2 and 139.3); median recalculation 1,110 ms before, 966 ms after:
+       noise. Suites: ModelingAlgorithms 4,845 (9 skipped), DataExchange 286 (1 skipped), Draw-lite's classes 687,
+       Oracle 383, the modelling layer 1,884, all passing.
+1562. **10L3's other leftovers.**
+       - **STEP options** (exchange.md): `StepReadOptions.Heal` (default true) leaves OCCT's shape processing after
+         translation on, or, false, sets the reader's processing flags to the empty set, so the shapes come as the file
+         describes them. `StepWriteOptions.Schema` (`StepSchema.Ap214`, the default and OCCT's; `Ap203`; `Ap242`, OCCT's
+         `AP242DIS`) sets `write.step.schema`. The schema is a write option: the reader recognises a file's own.
+       - **`Kerf.Meshing.Triangle`** (meshing.md asks for it): a record struct of three node indices, from 0, with
+         `FaceMesh.GetTriangles()` (indices into the face's own nodes, as `Triangles`) and `ShapeMesh.GetTriangles()`
+         (indices into the whole node buffer, the faces' `FirstNode` added), made on each call; the int buffers stay
+         what the mesh holds. 10L3 left it out because the engine has a `Triangle`: it is `Kerf.Engine.Meshing.Triangle`,
+         another namespace, and nothing in the solution became ambiguous.
+       - **`healing.not-fixed`** (healing.md): `Fix` checks its result with `Validate`'s default check (BRepCheck,
+         geometry included) and, if it is still invalid, adds a warning naming the sub-shapes with a fault, on their
+         own or in a context. It costs a check of the result per fix; the modelling layer's fixes don't go through it
+         until 10M.
+       Tests: three in `Kerf.Kernel.PublicApi.Tests` (the schemas and healing switch, the triangles, the warning).
+1563. **The engine's public types: 1,345 to 184** (all four assemblies, `Kerf.Engine.*`, top-level, counted by
+       declaration as 10L2 and 10L3 counted). Found as they were: a script (`p10l5-internalise.py`, 10L3's with each
+       round's errors kept) made every public engine type internal, then built Kerf.slnx and both benchmarks round by
+       round, making public again the types each accessibility error named (86 rounds: a first pass of 39, a second of 47); a second script
+       followed each type back through the public types that showed it to where it is first shown. The first pass left
+       235 public; 147 of them were shown only by tests and Draw-lite, which were changed (below), and the second pass
+       left 184 (the counts by declaration: Foundation 53, ModelingData 39, ModelingAlgorithms 108, DataExchange 11;
+       partial types count once per file). **By cause:**
+       - **The modelling layer's public API (158, 10M's):** its `ShapeHistory.FromBoolean(BuilderAlgo…)`, `Color(ColorWithAlpha)`,
+         `Vector(Xyz)`, `BoundBox.FromBndBox(Box)`, `OrientedBoundBox.FromBndObb(Obb)`, the edges' and wires'
+         `GeomAdaptor()` and its sewing and unifying, and everything those show in turn: the Booleans' pave filler and
+         data structure (21), intersection (32), geometry's adaptors, boxes and trees (26), messages and colours (16),
+         classification (14), exchange's document tree (10), approximation (9), topology's adaptors, `History`,
+         `ReShape`, `TShape`, `Builder` (7), extrema (6), numerics (5), collections (4), and `MakeShape`/`Command`,
+         `ToolParameters`/`MeshAlgoType`, `Properties`, `Sewing`/`UnifySameDomain`.
+       - **The WebAssembly sample (25, other):** `kernel/samples/Kerf.Kernel.WasmDemo`, which measures the engine's
+         mesher and extraction directly and has no `InternalsVisibleTo`: `IncrementalMesh`, `MeshExtraction`,
+         `MeshBuffers`, `BrepTools`, `Bounds`, `Box2d`, `FormatVersion`, and the mesher's model and context types
+         (`ToolContext`, `ModelAlgo`, `FaceModel`…). Moving it onto `Mesher`/`Brep` would change what it measures; left.
+       - **`Transient` (1):** the base of NCollection's classes in `Occt`, public until 10J removes them.
+       - **Tests and Draw-lite (none left).** Where a test or Draw-lite helper was the only cause, the helper changed:
+         26 theories took engine enums as parameters (`Qualifier`, `ConstraintCurveType`, `FillingStyle`…), which a
+         public test method can't once the enum is internal; they take `object` and cast on entry, their data
+         unchanged. `BOPAlgo_TestBase`'s members are `private protected`; `TestImpParTool`, `TestAlertNothingToDo` and
+         `TestAlertBadShape` are internal; Draw-lite's `DrawHistory`, `DrawDocument`, `DrawQualifiedCurve2d`,
+         `DrawHlrProjector`, `DrawHlrOutLiner`, `DrawFairCurve.Batten` and `DrawInterpreter.Context` are internal, and
+         Draw-lite gives `InternalsVisibleTo` to its tests, which read them; the benchmark's `Cases.PortMeshAndExtract`
+         is internal.
+       No public API type and no other public engine type is a root cause any more: what the kernel's public API shows
+       is public API. Every suite keeps its counts (no test added or removed by this item).
+1564. **`Tangents2D`, over Geom2dGcc after 10K4's fixes** (geometry.md; README section 11). In `Kerf.Geometry`
+       (ModelingAlgorithms): `Tangents2D.Lines(first, second)` (`Geom2dGcc_Lin2d2Tan`), `Circles(first, second,
+       radius)` (`Circ2d2TanRad`), `Circles(first, second, third)` (`Circ2d3Tan`) and `CirclesCentredAt(target,
+       centre)` (`Circ2dTanCen`), each a `Result` of every solution found, empty when there are none, a failure
+       (`geometry.tangents-failed`) when the solver isn't done or throws one of its exceptions-as-statuses. A target is
+       a `TangentTarget2D`: a `Curve2D` with a `Tangency` (the public enum of `GccEnt_Position`: `Unqualified`,
+       `Enclosing`, `Enclosed`, `Outside`; OCCT's `noqualifier` isn't offered) or a `Point2D` passed through, both
+       convertible implicitly. A solution is a `TangentCircle2D` or `TangentLine2D` with a `TangentContact2D` per
+       target, in the order given (OCCT's solvers take curves before points; the operation reorders and maps back):
+       the solution's tangency against it (`WhichQualifier`), the point of contact and its parameters on the solution
+       and the target (`TangencyN`), or `IsCoincident` where the solution is the target itself (`IsTheSameN`). Curves
+       other than lines and circles are solved iteratively from the middle of their range (0 on an unbounded one), as
+       Geom2dGcc's constructors without starting parameters can't. Misuse throws: a line qualified `Enclosing`
+       (OCCT's `BadQualifier`), a radius that isn't positive, two points for a tangent line, a point for a circle about
+       a centre. Not offered: `Circ2d2TanOn`, `Circ2dTanOnRad`, `Lin2dTanObl` and the explicit starting parameters,
+       which nothing asks for yet. 10K4's `GccLaws` is internal to ModelingAlgorithms.Tests, which the public tests
+       can't see; `Tangents2DTests` (7) checks the same laws through the public API: each contact on its target at its
+       parameter, the solution's tangent parallel to the target's there, and the order of contacts.

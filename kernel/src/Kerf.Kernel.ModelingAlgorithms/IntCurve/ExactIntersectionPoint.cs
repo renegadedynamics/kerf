@@ -16,7 +16,7 @@ namespace Kerf.Engine.Intersection.Curves;
 /// OCCT's generic file IntCurve_ExactIntersectionPoint.gxx, ported once as a generic class (decision 324). An
 /// algorithm object (decision 117) keeping the curves, as OCCT keeps pointers to them.
 /// </remarks>
-public class ExactIntersectionPoint<TheCurve, TheCurveTool>
+internal class ExactIntersectionPoint<TheCurve, TheCurveTool>
     where TheCurveTool : ICurveCurveTool<TheCurve>
 {
     // OCCT sets done and never reads it.

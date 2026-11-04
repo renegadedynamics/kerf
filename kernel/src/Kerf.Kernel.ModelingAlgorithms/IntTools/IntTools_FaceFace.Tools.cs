@@ -25,7 +25,7 @@ namespace Kerf.Engine.Intersection.Tools;
 
 // OCCT's file also defines a global MakeBSpline(WL, ideb, ifin) that nothing calls (MakeCurve calls
 // GeomInt_IntSS::MakeBSpline); it isn't ported.
-public partial class FaceFace
+internal partial class FaceFace
 {
     private static void Parameters(SurfaceAdaptor hs1, SurfaceAdaptor hs2, in Point3D ptref,
                                    out double u1, out double v1, out double u2, out double v2)

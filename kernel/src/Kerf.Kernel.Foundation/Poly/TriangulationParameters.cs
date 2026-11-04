@@ -13,7 +13,7 @@ namespace Kerf.Engine.Meshing;
 /// The parameters a triangulation was generated with: linear deflection, angular deflection and minimum size, each
 /// -1 if undefined. Immutable.
 /// </summary>
-public class TriangulationParameters : Transient
+internal class TriangulationParameters : Transient
 {
     private readonly double _deflection;
     private readonly double _angle;

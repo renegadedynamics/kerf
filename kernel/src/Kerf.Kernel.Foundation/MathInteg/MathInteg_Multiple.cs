@@ -8,7 +8,7 @@ using static Kerf.Engine.Numerics.Utilities.MathUtils;
 namespace Kerf.Engine.Numerics.Integration;
 
 /// <summary>Multi-dimensional Gauss-Legendre integration.</summary>
-public static partial class MathInteg
+internal static partial class MathInteg
 {
     /// <summary>Configuration for multi-dimensional Gauss integration.</summary>
     public class MultipleConfig

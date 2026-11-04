@@ -18,7 +18,7 @@ namespace Kerf.Engine.HiddenLines.Contours;
 /// A C++ value class, so a struct (decision 609); <c>new()</c> and <c>default</c> are the same. The mutators are
 /// internal (reached by the boundary search through <see cref="ISegment{ThePathPoint}"/>).
 /// </remarks>
-public partial struct TheSegmentOfTheSearch
+internal partial struct TheSegmentOfTheSearch
     : ISegment<ThePathPointOfTheSearch>, IEquatable<TheSegmentOfTheSearch>
 {
     private Curve2DAdaptorBase? _arc;

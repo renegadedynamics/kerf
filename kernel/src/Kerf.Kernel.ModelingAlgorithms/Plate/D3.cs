@@ -12,7 +12,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// take them.</summary>
 /// <remarks>A value type (rules, section 3). OCCT has no accessors: only its friends Plate_GtoCConstraint and
 /// Plate_FreeGtoCConstraint read the fields, which are internal here.</remarks>
-public struct D3 : IEquatable<D3>
+internal struct D3 : IEquatable<D3>
 {
     internal Xyz _duuu;
     internal Xyz _duuv;

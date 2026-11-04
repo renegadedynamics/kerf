@@ -23,7 +23,7 @@ namespace Kerf.Engine.Intersection.Approximation;
 /// never used and is dropped. The function keeps the parametric surface (by reference) and a copy of the quadric
 /// (decision 608): ApproxInt_Approx builds the quadric before this object and never changes it.
 /// </remarks>
-public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
+internal class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
     where ThePSurfaceTool : IApproxSurfaceTool<ThePSurface>
 {
     private Point2D _myParOnS1;

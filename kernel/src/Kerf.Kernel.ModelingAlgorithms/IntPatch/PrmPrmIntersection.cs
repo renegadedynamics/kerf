@@ -28,7 +28,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// <c>Perform</c>. OCCT's <c>Perform</c> with the ListOfPnts appends to the caller's list the points it adds on
 /// closed surfaces, as the port does. The intersection is serial and the same every run.
 /// </remarks>
-public partial class PrmPrmIntersection
+internal partial class PrmPrmIntersection
 {
     private const int DECAL = 7;
     private const int DECAL2 = 14;

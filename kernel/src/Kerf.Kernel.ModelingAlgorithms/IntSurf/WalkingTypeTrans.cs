@@ -8,7 +8,7 @@ namespace Kerf.Engine.Intersection.Walking;
 
 /// <summary>The type of a transition: in, out, touch, undecided.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.IntSurf_TypeTrans;</c>.</remarks>
-public enum WalkingTypeTrans
+internal enum WalkingTypeTrans
 {
     In,
     Out,

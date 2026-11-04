@@ -20,7 +20,7 @@ namespace Kerf.Engine.Intersection.Approximation;
 /// BRepApprox_ApproxLine: a struct can't be derived, and no caller names them.
 /// </remarks>
 /// <typeparam name="TheLine">The walking line.</typeparam>
-public readonly struct MultiLineTool<TheLine> : IApproxLineTool<global::Kerf.Engine.Intersection.Approximation.MultiLine<TheLine>>
+internal readonly struct MultiLineTool<TheLine> : IApproxLineTool<global::Kerf.Engine.Intersection.Approximation.MultiLine<TheLine>>
     where TheLine : class, IWLine<TheLine>
 {
     public static int NbP2d(global::Kerf.Engine.Intersection.Approximation.MultiLine<TheLine> ml) => (ml.P2dCount);

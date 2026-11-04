@@ -331,13 +331,24 @@ internal class ApiMakeRevol : MakeSweep
     internal override Shape InternalLastShape() => FromSwept(_revol.LastShape());
 
     /// <summary>The list of shapes generated from the shape <paramref name="s"/>.</summary>
-    internal override NCollection_List<Shape> InternalGenerated(in Shape s)
+    internal override NCollection_List<Shape> InternalGenerated(in Shape s) => GeneratedFrom(s, usedOnly: true);
+
+    /// <summary>
+    /// Kerf: <see cref="InternalGenerated"/> without OCCT's test that <paramref name="s"/> itself is used in the result
+    /// (decision 1558). A whole turn without copy leaves out of its result the profile's edges at right angles to the
+    /// axis (and the vertices only they hold), since they bound no face; OCCT's <c>Generated</c> then says they generated
+    /// nothing, though each swept a face of the result. Read only by the public <c>Sweeps.Revolve</c>; the engine's
+    /// history stays OCCT's. Frozen, as <see cref="MakeShape.Generated"/>.
+    /// </summary>
+    internal ISchematiqList<Shape> GeneratedEvenIfUnused(in Shape s) => PublishedList(GeneratedFrom(s, usedOnly: false));
+
+    private NCollection_List<Shape> GeneratedFrom(in Shape s, bool usedOnly)
     {
         _generated.Clear();
         using WorkingOverlay query = BeginQuery(); // Kerf: may build on demand
         Shape ss = s;
 
-        if (!_revol.IsUsed(ss))
+        if (usedOnly && !_revol.IsUsed(ss))
         {
             return _generated;
         }
@@ -404,13 +415,13 @@ internal class ApiMakeRevol : MakeSweep
     public Shape FirstShape(in Shape shape) => Published(InternalFirstShape(shape));
 
     /// <summary><see cref="FirstShape(in Shape)"/> without freezing.</summary>
-    internal Shape InternalFirstShape(in Shape shape) => FromSwept(_revol.FirstShape(shape));
+    internal override Shape InternalFirstShape(in Shape shape) => FromSwept(_revol.FirstShape(shape));
 
     /// <summary>The shape at the end of the revolution generated with <paramref name="shape"/>, a sub-shape of the generating shape (frozen).</summary>
     public Shape LastShape(in Shape shape) => Published(InternalLastShape(shape));
 
     /// <summary><see cref="LastShape(in Shape)"/> without freezing.</summary>
-    internal Shape InternalLastShape(in Shape shape) => FromSwept(_revol.LastShape(shape));
+    internal override Shape InternalLastShape(in Shape shape) => FromSwept(_revol.LastShape(shape));
 
     /// <summary>True if the result has degenerated edges.</summary>
     public bool HasDegenerated => !_degenerated.IsEmpty();

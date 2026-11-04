@@ -10,7 +10,7 @@ namespace Kerf.Engine.Foundation.Std;
 /// shuffle, which shapes the tree), so the port's trees are OCCT's.
 /// </summary>
 /// <remarks>A class: its only purpose is its changing state (as <c>MathUtils.RandomGenerator</c>, decision 58).</remarks>
-public sealed class Mt19937
+internal sealed class Mt19937
 {
     private const int N = 624;
     private const int M = 397;

@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class DateAndTimeAssignment : Transient
+internal class DateAndTimeAssignment : Transient
 {
     private DateAndTime _assignedDateAndTime;
     private DateTimeRole _role;

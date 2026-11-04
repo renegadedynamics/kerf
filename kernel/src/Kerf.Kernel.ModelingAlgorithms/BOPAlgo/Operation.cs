@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Booleans;
 
 /// <summary>The type of a Boolean operation.</summary>
-public enum Operation
+internal enum Operation
 {
     Common,
     Fuse,

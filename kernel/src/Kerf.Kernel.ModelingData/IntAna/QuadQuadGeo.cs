@@ -28,7 +28,7 @@ namespace Kerf.Engine.Intersection;
 /// analytic algorithm, <c>IntAna_IntQuadQuad</c>, must compute it).
 /// </summary>
 /// <remarks>An algorithm object: construct it with the quadrics, or empty and call <c>Perform</c>.</remarks>
-public class QuadQuadGeo
+internal class QuadQuadGeo
 {
     private bool _done;
     private int _nbint;

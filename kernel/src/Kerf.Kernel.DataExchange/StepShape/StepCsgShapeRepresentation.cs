@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepCsgShapeRepresentation : StepShapeRepresentation
+internal class StepCsgShapeRepresentation : StepShapeRepresentation
 {
     /// <summary>
     /// Returns a CsgShapeRepresentation

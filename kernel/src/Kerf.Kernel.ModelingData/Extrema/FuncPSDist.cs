@@ -20,7 +20,7 @@ namespace Kerf.Engine.Extrema;
 /// function, as in OCCT) and a copy of the point. Outside the surface's parameter range the functions return false and
 /// write 0 to their <c>out</c> value (decision 221).
 /// </remarks>
-public class FuncPSDist : MultipleVarFunctionWithGradient
+internal class FuncPSDist : MultipleVarFunctionWithGradient
 {
     private readonly SurfaceAdaptorBase _surf;
     private readonly Point3D _p;

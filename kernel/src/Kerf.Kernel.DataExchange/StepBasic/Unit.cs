@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Implements a select type unit (NamedUnit or DerivedUnit)
 /// </summary>
-public class Unit : SelectType
+internal class Unit : SelectType
 {
     /// <summary>
     /// Creates empty object

@@ -20,7 +20,7 @@ namespace Kerf.Engine.Intersection.Walking;
 /// GeomAbs_OtherSurface); <c>default</c> is all zeros (type GeomAbs_Plane with a zero equation). The <c>SetValue</c>
 /// methods are internal mutators; the constructors are their twins.
 /// </remarks>
-public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
+internal partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
 {
     private CoordinateSystem _ax3;
     private Line3D _lin;

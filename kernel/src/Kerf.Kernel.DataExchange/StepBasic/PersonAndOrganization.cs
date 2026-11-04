@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class PersonAndOrganization : Transient
+internal class PersonAndOrganization : Transient
 {
     private Person _person;
     private Organization _organization;

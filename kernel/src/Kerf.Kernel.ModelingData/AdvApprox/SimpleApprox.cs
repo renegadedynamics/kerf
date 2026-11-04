@@ -21,7 +21,7 @@ namespace Kerf.Engine.Approximation.Advanced;
 /// A working object of <see cref="ApproxAFunction"/> (decision 21): <see cref="Perform"/> may be called
 /// again on other intervals. The array accessors return the arrays it works in (shared: don't modify).
 /// </remarks>
-public class SimpleApprox
+internal class SimpleApprox
 {
     private readonly int _totalNumSS;
     private readonly int _totalDimension;

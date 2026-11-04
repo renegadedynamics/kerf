@@ -24,7 +24,7 @@ namespace Kerf.Engine.Construction.Fairing;
 /// records the reached ("old") ones, which the getters return. <see cref="Curve"/> returns a new, frozen curve each
 /// time. OCCT's <c>operator&lt;&lt;</c> is <see cref="ToString"/>.
 /// </remarks>
-public class Batten
+internal class Batten
 {
     protected AnalysisCode _code;
     protected Point2D _oldP1;

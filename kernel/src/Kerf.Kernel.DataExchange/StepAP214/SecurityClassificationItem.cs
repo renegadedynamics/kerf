@@ -15,7 +15,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class SecurityClassificationItem : ApprovalItem
+internal class SecurityClassificationItem : ApprovalItem
 {
     /// <summary>
     /// Returns a SecurityClassificationItem SelectType

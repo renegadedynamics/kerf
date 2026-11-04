@@ -21,7 +21,7 @@ namespace Kerf.Engine.Approximation;
 /// remember the last parameter found (OCCT casts const away to write it). The adaptors are kept as OCCT keeps the
 /// handles; <see cref="Trim"/> replaces them by trimmed adaptors and never changes the caller's.
 /// </remarks>
-public sealed class CurvlinFunc : Transient
+internal sealed class CurvlinFunc : Transient
 {
     private CurveAdaptorBase? _c3D;
     private Curve2DAdaptorBase? _c2D1;

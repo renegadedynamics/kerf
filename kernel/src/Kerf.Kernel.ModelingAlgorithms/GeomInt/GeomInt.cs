@@ -12,7 +12,7 @@ namespace Kerf.Engine.Intersection.Surfaces;
 /// The package has one function. Unit 6B ports it, ahead of unit 5G's classes, because IntTools_FClass2d and
 /// BOPTools_AlgoTools2D call it (decision 715).
 /// </remarks>
-public static partial class GeomInt
+internal static partial class GeomInt
 {
     /// <summary>
     /// Adjusts the periodic parameter <paramref name="par"/> to the range [<paramref name="parMin"/>,

@@ -17,7 +17,7 @@ namespace Kerf.Engine.HiddenLines.Contours;
 /// draft) lines through the apex of a cone; for a view direction, a draft angle, or an eye.
 /// </summary>
 /// <remarks>A working object, as OCCT's: <c>Perform</c> sets the result, the queries read it.</remarks>
-public sealed class ContAna
+internal sealed class ContAna
 {
     private const double Tolpetit = 1.0e-8;
 

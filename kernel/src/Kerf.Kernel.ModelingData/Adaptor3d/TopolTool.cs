@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// All methods may be redefined by a derived class (BRepTopAdaptor_TopolTool).
 /// </summary>
 /// <remarks>A working object (decision 101): <c>Initialize</c> and the iterators are public, as in OCCT.</remarks>
-public class TopolTool : Transient
+internal class TopolTool : Transient
 {
     private static double myInfinite => global::Kerf.Engine.Foundation.Precision.Infinite();
 

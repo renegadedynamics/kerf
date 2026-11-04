@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Intersection.Polygons;
 
 /// <summary>The polygon information needed to compute interferences (<see cref="InterferencePolygon2d"/>).</summary>
-public abstract class Polygon2d
+internal abstract class Polygon2d
 {
     protected Box2d _box = new();
 

@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Numerics.Polynomials;
 
 /// <summary>Polynomial root finding algorithms.</summary>
-public static partial class MathPoly
+internal static partial class MathPoly
 {
     /// <summary>Solve linear equation a*x + b = 0, handling the degenerate case a = 0.</summary>
     public static global::Kerf.Engine.Numerics.Utilities.MathUtils.PolyResult Linear(double a, double b)

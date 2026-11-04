@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// The actor of a <see cref="TransientProcess"/> (the original class was renamed; compatibility only), with
 /// the parameters and the operations of the shape processing its transfers do.
 /// </summary>
-public class ActorOfTransientProcess : ActorOfProcessForTransient
+internal class ActorOfTransientProcess : ActorOfProcessForTransient
 {
     public ActorOfTransientProcess()
     {

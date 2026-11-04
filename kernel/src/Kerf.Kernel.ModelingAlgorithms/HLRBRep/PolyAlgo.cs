@@ -43,7 +43,7 @@ namespace Kerf.Engine.HiddenLines;
 /// (<see cref="Hide"/>, <see cref="Show"/>) are the caller's own edges and faces.
 /// </para>
 /// </remarks>
-public class PolyAlgo : Transient
+internal class PolyAlgo : Transient
 {
     // Node flags of the internal triangulation (OCCT's file-scope enum)
     private const int NMsk_Vert = 1;

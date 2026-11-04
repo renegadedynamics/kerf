@@ -6,7 +6,7 @@ using System.Globalization;
 namespace Kerf.Engine.Intersection.Polyhedra;
 
 /// <summary>An IntPolyh item whose OCCT <c>Dump()</c> takes no index (what <c>IntPolyh_Array::Dump</c> calls).</summary>
-public interface IPolyhedronDump
+internal interface IPolyhedronDump
 {
     /// <summary>Writes the item as OCCT's <c>Dump()</c> prints it to standard output.</summary>
     void Dump(TextWriter stream);

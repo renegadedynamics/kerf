@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity DimensionalSize
 /// </summary>
-public class StepDimensionalSize : Transient
+internal class StepDimensionalSize : Transient
 {
     private ShapeAspect _appliesTo;
     private TCollection_HAsciiString _name;

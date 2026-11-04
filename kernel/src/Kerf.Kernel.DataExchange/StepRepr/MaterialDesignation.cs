@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class MaterialDesignation : Transient
+internal class MaterialDesignation : Transient
 {
     private TCollection_HAsciiString _name;
     private CharacterizedDefinition _ofDefinition = new CharacterizedDefinition();

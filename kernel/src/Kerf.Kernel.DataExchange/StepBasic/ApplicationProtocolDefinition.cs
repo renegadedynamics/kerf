@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ApplicationProtocolDefinition : Transient
+internal class ApplicationProtocolDefinition : Transient
 {
     private TCollection_HAsciiString _status;
     private TCollection_HAsciiString _applicationInterpretedModelSchemaName;

@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class PreDefinedItem : Transient
+internal class PreDefinedItem : Transient
 {
     private TCollection_HAsciiString _name;
 

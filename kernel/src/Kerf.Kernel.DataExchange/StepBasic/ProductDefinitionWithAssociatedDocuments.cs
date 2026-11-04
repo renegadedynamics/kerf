@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ProductDefinitionWithAssociatedDocuments : ProductDefinition
+internal class ProductDefinitionWithAssociatedDocuments : ProductDefinition
 {
     private NCollection_HArray1<Document> _docIds;
 

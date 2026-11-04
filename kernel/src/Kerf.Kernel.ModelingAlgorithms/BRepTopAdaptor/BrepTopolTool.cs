@@ -27,7 +27,7 @@ namespace Kerf.Engine.Topology.Adaptors;
 /// <see cref="FaceSurfaceAdaptor"/>, the curves <see cref="EdgeCurve2DAdaptor"/>s. The 2D classifier is built at
 /// the first classification, with that call's tolerance, and kept (OCCT's <c>void*</c>).
 /// </remarks>
-public class BrepTopolTool : TopolTool
+internal class BrepTopolTool : TopolTool
 {
     private readonly Explorer _vIterator = new();
     private Face _face = new();

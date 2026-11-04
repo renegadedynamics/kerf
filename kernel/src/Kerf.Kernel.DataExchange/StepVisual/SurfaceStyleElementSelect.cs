@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class SurfaceStyleElementSelect : SelectType
+internal class SurfaceStyleElementSelect : SelectType
 {
     /// <summary>
     /// Returns a SurfaceStyleElementSelect SelectType

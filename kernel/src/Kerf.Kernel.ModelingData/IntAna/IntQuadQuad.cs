@@ -20,7 +20,7 @@ namespace Kerf.Engine.Intersection;
 /// </summary>
 /// <remarks>An algorithm object (decision 117): construct it with the surfaces, or empty and call <c>Perform</c>.
 /// OCCT's debug function <c>DumpCurve</c> is left out.</remarks>
-public class IntQuadQuad
+internal class IntQuadQuad
 {
     protected bool _done;
     protected bool _identical;

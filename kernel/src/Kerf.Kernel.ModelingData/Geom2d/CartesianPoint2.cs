@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Objects;
 
 /// <summary>A point in the plane defined by its Cartesian coordinates (a shareable <see cref="Point2D"/>).</summary>
-public class CartesianPoint2 : Point2
+internal class CartesianPoint2 : Point2
 {
     private Point2D _gpPnt2d;
 

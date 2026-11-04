@@ -9,7 +9,7 @@ namespace Kerf.Engine.Construction.Fairing;
 /// <summary>
 /// The outcome of a fair curve computation (<see cref="Batten.Compute(out AnalysisCode, int, double)"/>).
 /// </summary>
-public enum AnalysisCode
+internal enum AnalysisCode
 {
     /// <summary>The computation completed.</summary>
     OK,

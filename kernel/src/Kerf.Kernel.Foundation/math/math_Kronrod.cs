@@ -6,7 +6,7 @@ using Occt;
 
 namespace Kerf.Engine.Numerics;
 
-public static partial class NumericTables
+internal static partial class NumericTables
 {
     /// <summary>The largest number of Kronrod points stored in the table; more are computed.</summary>
     public static int KronrodPointsMax()

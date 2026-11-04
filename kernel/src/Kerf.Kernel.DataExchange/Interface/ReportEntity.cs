@@ -23,7 +23,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// Entity, but can use the class UndefinedContent to brings parameters : it is enough for most of
 /// information and avoids to redefine them, only the specific part remains to be defined for each norm.
 /// </summary>
-public class ReportEntity : Transient
+internal class ReportEntity : Transient
 {
 
     /// <summary>

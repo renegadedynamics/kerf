@@ -14,7 +14,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// The interior start points of the implicit/parametric intersection on a surface adaptor (OCCT's instantiation of
 /// IntStart_SearchInside.gxx, decision 607).
 /// </summary>
-public sealed class PatchTheSearchInside
+internal sealed class PatchTheSearchInside
     : SearchInside<SurfaceAdaptorBase, TheHSurfaceTool, TheSurfFunction>
 {
     public PatchTheSearchInside()

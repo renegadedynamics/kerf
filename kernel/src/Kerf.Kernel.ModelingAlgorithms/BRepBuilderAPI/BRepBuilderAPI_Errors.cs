@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Api;
 
 /// <summary>The construction status of <see cref="MakeEdge"/> and <see cref="MakeEdge2d"/>.</summary>
-public enum EdgeError
+internal enum EdgeError
 {
     /// <summary>The edge is built.</summary>
     EdgeDone,
@@ -37,7 +37,7 @@ public enum EdgeError
 }
 
 /// <summary>The construction status of <see cref="MakeFace"/>.</summary>
-public enum FaceError
+internal enum FaceError
 {
     /// <summary>The face is built.</summary>
     FaceDone,
@@ -56,7 +56,7 @@ public enum FaceError
 }
 
 /// <summary>The construction status of <see cref="MakeShell"/>.</summary>
-public enum ShellError
+internal enum ShellError
 {
     /// <summary>The shell is built.</summary>
     ShellDone,
@@ -72,7 +72,7 @@ public enum ShellError
 }
 
 /// <summary>The construction status of <see cref="MakeWire"/>.</summary>
-public enum WireError
+internal enum WireError
 {
     /// <summary>The wire is built.</summary>
     WireDone,
@@ -88,7 +88,7 @@ public enum WireError
 }
 
 /// <summary>The status of the pipe algorithms (BRepOffsetAPI's).</summary>
-public enum PipeError
+internal enum PipeError
 {
     PipeDone,
     PipeNotDone,

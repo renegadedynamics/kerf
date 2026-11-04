@@ -16,7 +16,7 @@ namespace Kerf.Engine.Extrema.PointCurve;
 /// </summary>
 /// <remarks>The domain is fixed at construction. <c>Perform</c> returns the evaluator's own reusable result,
 /// which the next call overwrites.</remarks>
-public sealed class BezierCurveExtrema : global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ICurveEvaluator
+internal sealed class BezierCurveExtrema : global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ICurveEvaluator
 {
     private readonly BezierCurve3D _curve;            // Bezier curve
     private readonly CurveAdaptor _adaptor;         // Curve adaptor

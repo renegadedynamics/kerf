@@ -21,7 +21,7 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Engine.Intersection.Tools;
 
 /// <summary>The auxiliary statics of the intersection tools.</summary>
-public static partial class IntersectionTools
+internal static partial class IntersectionTools
 {
     /// <summary>0 if the distance between the vertices is less than the sum of their tolerances, -1 otherwise.</summary>
     public static int ComputeVV(in Vertex aV1, in Vertex aV2)

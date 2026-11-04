@@ -36,7 +36,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// </para>
 /// <para>The results handed out are frozen; ported callers that keep building use the <c>Internal</c> forms.</para>
 /// </remarks>
-public static class Fill
+internal static class Fill
 {
     private static void MakeWire(NCollection_Array1<Shape> edges, int rangdeb, bool forward, ref Wire newwire)
     {

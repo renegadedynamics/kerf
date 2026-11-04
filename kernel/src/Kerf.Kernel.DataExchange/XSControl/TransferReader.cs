@@ -31,7 +31,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// Hence, final results (which intermediates and checks) are recorded as ResultFromModel and can be queried
 /// individually. Some more direct access are given for results which are Transient or Shapes
 /// </summary>
-public class TransferReader : Transient
+internal class TransferReader : Transient
 {
     //  ****    UTILITAIRE DE STATISTIQUES GENERALES
 

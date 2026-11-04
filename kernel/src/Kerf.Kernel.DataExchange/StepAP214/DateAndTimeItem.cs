@@ -15,7 +15,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class DateAndTimeItem : ApprovalItem
+internal class DateAndTimeItem : ApprovalItem
 {
     /// <summary>
     /// Returns a DateAndTimeItem SelectType

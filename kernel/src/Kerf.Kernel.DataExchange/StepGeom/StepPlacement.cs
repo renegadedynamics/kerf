@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepPlacement : StepGeometricRepresentationItem
+internal class StepPlacement : StepGeometricRepresentationItem
 {
     private StepCartesianPoint _location;
 

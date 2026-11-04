@@ -17,7 +17,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// A working object (decision 21): <see cref="Pairs"/> returns its own array. The pairs are not sorted (OCCT doesn't
 /// sort them), so their order is the traversal's, which IntPatch_InterferencePolyhedron's section lines depend on.
 /// </remarks>
-public class BvhTraversal : PairTraverse<double, BVH_Vec3d, double>
+internal class BvhTraversal : PairTraverse<double, BVH_Vec3d, double>
 {
     /// <summary>A pair of triangle indices (both 1-based, the polyhedra's own indices).</summary>
     public readonly record struct TrianglePair(int First = 0, int Second = 0);

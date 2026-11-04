@@ -9,7 +9,7 @@ namespace Kerf.Engine.Numerics.Polynomials;
 // Tables of PLib_JacobiPolynomial, generated from OCCT's PLib_JacobiPolynomial_Data.pxx with every literal copied
 // as written. Properties returning a ReadOnlySpan over a constant array are stored in the assembly's data section:
 // reading them allocates nothing.
-public sealed partial class JacobiPolynomial
+internal sealed partial class JacobiPolynomial
 {
     // Table de la matrice de passage de canonique a Legendre.
     private static ReadOnlySpan<double> TransMatrix_C0 => [ // C++ [2][496], flattened row by row

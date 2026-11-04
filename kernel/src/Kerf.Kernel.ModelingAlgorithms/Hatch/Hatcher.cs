@@ -22,7 +22,7 @@ namespace Kerf.Engine.Classification.Hatching;
 /// In the oriented mode the orientation of the trimming curves is considered (hatchings are kept on their left, and
 /// may be infinite); in the unoriented mode the hatchings are always finite. A working object (decision 21).
 /// </remarks>
-public sealed class Hatcher
+internal sealed class Hatcher
 {
     private double _toler;
     private readonly NCollection_Sequence<HatchingLine> _lines = new();

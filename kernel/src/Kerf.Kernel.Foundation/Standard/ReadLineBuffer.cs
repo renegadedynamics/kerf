@@ -21,7 +21,7 @@ namespace Kerf.Engine.Foundation;
 /// The buffer reads ahead: after a line, the stream's position is past it, at the end of the last block read.
 /// </para>
 /// </remarks>
-public class ReadLineBuffer
+internal class ReadLineBuffer
 {
     private byte[] _readBuffer;          // Temp read buffer
     private byte[] _readBufferLastStr;   // Part of last string of myReadBuffer

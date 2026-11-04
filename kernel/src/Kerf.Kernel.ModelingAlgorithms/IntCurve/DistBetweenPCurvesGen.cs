@@ -16,7 +16,7 @@ namespace Kerf.Engine.Intersection.Curves;
 /// OCCT's generic file IntCurve_DistBetweenPCurvesGen.gxx, ported once as a generic class (decision 324). Keeps the
 /// curves as OCCT keeps pointers to them.
 /// </remarks>
-public class DistBetweenPCurvesGen<TheCurve, TheCurveTool> : FunctionSetWithDerivatives
+internal class DistBetweenPCurvesGen<TheCurve, TheCurveTool> : FunctionSetWithDerivatives
     where TheCurveTool : ICurveCurveTool<TheCurve>
 {
     private readonly TheCurve _thecurve1;

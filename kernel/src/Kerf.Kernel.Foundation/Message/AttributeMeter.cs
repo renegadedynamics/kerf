@@ -27,7 +27,7 @@ namespace Kerf.Engine.Foundation;
 /// Draw-lite and tests set up; an algorithm's own report never computes them.
 /// </para>
 /// </remarks>
-public class AttributeMeter : MessageAttribute
+internal class AttributeMeter : MessageAttribute
 {
     private readonly IndexedMap<MetricType, (double first, double second)> _metrics = new(); //!< computed metrics
 

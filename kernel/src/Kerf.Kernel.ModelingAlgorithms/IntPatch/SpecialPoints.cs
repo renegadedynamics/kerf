@@ -25,7 +25,7 @@ namespace Kerf.Engine.Intersection.Patches;
 /// <c>AdjustPointAndVertex</c>'s optional vertex pointer is an overload taking the vertex by <c>ref</c>. The
 /// protected members (ProcessSphere, ProcessCone, GetTangentToIntLineForCone) are internal.
 /// </remarks>
-public static class SpecialPoints
+internal static class SpecialPoints
 {
     /// <summary>The function whose zero is an intersection point lying on a seam (isoline) of the quadric.</summary>
     private sealed class FuncPreciseSeam : FunctionSetWithDerivatives

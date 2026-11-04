@@ -16,7 +16,7 @@ namespace Kerf.Engine.HiddenLines;
 /// The implicit function of a quadric along a curve adaptor, F(w) = Q(C(w)), with its derivative, whose roots are
 /// the intersections of the curve and the quadric.
 /// </summary>
-public sealed class TheQuadCurvFuncOfTheQuadCurvExactInterCSurf
+internal sealed class TheQuadCurvFuncOfTheQuadCurvExactInterCSurf
     : FunctionWithDerivative,
       ITheQuadCurvFunc<TheQuadCurvFuncOfTheQuadCurvExactInterCSurf, Line3D>
 {

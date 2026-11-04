@@ -11,7 +11,7 @@ namespace Kerf.Engine.Numerics.Integration;
 // MathInteg::Status) by `using namespace MathUtils`; C# can't re-export them, so callers write MathUtils.IntegResult.
 
 /// <summary>Numerical integration (quadrature): Gauss-Legendre, Gauss-Kronrod and double exponential rules.</summary>
-public static partial class MathInteg
+internal static partial class MathInteg
 {
     /// <summary>Fixed-order Gauss-Legendre integration of theFunc over [theLower, theUpper] (theNbPoints &gt;= 1).</summary>
     public static IntegResult Gauss<Function>(Function func, double lower, double upper, int nbPoints = 15)

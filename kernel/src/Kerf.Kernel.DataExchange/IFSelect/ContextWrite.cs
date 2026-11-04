@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// AppliedModifiers (if it is not defined, no modification is allowed on writing) Furthermore, in return,
 /// ContextModif can record Checks, either one for all, or one for each Entity. It supports trace too.
 /// </summary>
-public class ContextWrite
+internal class ContextWrite
 {
 
     /// <summary>

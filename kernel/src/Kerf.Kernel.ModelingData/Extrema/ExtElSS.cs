@@ -15,7 +15,7 @@ namespace Kerf.Engine.Extrema;
 /// <see cref="MethodNotImplementedException"/>.
 /// </summary>
 /// <remarks>An algorithm object: construct it with the surfaces, or empty and call <c>Perform</c>.</remarks>
-public class ExtElSS
+internal class ExtElSS
 {
     private bool _done;
     private bool _isPar;

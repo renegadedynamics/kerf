@@ -13,7 +13,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 /// The intersection of two bounded 2D curves, or the self-intersection of one, through their polygons.
 /// </summary>
 /// <remarks>OCCT's instantiation of IntCurve_IntPolyPolyGen.gxx over Adaptor2d_Curve2d (decision 324).</remarks>
-public sealed class TheIntPCurvePCurveOfGInter
+internal sealed class TheIntPCurvePCurveOfGInter
     : IntPolyPolyGen<Curve2DAdaptorBase, Geom2dCurveTool, TheProjPCurOfGInter>
 {
     public TheIntPCurvePCurveOfGInter()

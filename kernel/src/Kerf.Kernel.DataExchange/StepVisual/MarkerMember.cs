@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// Defines MarkerType as unique member of MarkerSelect
 /// Works with an EnumTool
 /// </summary>
-public class MarkerMember : SelectInt
+internal class MarkerMember : SelectInt
 {
     private static readonly EnumTool Tool = new EnumTool(".DOT.", ".X.", ".PLUS.", ".ASTERISK.", ".RING.", ".SQUARE.", ".TRIANGLE.");
 

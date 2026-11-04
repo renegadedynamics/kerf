@@ -10,7 +10,7 @@ namespace Kerf.Engine.Numerics;
 /// The function a*cos(x)*cos(x) + 2*b*cos(x)*sin(x) + c*cos(x) + d*sin(x) + e of the trigonometric equation solved by
 /// math_TrigonometricFunctionRoots.
 /// </summary>
-public class TrigonometricEquationFunction : FunctionWithDerivative
+internal class TrigonometricEquationFunction : FunctionWithDerivative
 {
     private double _aa;
     private double _bb;

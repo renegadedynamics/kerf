@@ -13,7 +13,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 /// box.
 /// </summary>
 /// <remarks>A working object (a transient), as OCCT's. OCCT stores the blocks as transients and casts; the port types them.</remarks>
-public class WiresBlock : Transient
+internal class WiresBlock : Transient
 {
     private readonly NCollection_Array1<EdgesBlock?> _wires;
     private EdgesBlock.MinMaxIndices _minMax;

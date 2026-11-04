@@ -17,7 +17,7 @@ namespace Kerf.Engine.Meshing;
 /// Three <c>int</c>s and nothing else, so an array of triangles reads as an array of 3 × n indices
 /// (<see cref="Triangulation.TriangleIndices"/>). The default triangle has all three indices 0, as OCCT's.
 /// </remarks>
-public partial struct Triangle1 : IEquatable<Triangle1>
+internal partial struct Triangle1 : IEquatable<Triangle1>
 {
     private NCollection_Buffer3<int> _nodes;
 

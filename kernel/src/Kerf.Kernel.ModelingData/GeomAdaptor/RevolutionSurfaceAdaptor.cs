@@ -17,7 +17,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// parameter. <see cref="GetType"/> recognises planes, cylinders, cones, spheres and tori.
 /// </summary>
 /// <remarks>Evaluation is the base adaptor's (Geom_RevolutionUtils over the curve adaptor).</remarks>
-public class RevolutionSurfaceAdaptor : SurfaceAdaptor
+internal class RevolutionSurfaceAdaptor : SurfaceAdaptor
 {
     private CurveAdaptorBase? _basisCurve; // revolved curve
     private Axis3D _axis; // axis of revolution

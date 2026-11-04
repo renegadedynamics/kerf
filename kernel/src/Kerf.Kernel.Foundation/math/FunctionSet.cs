@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>A set of N functions of M independent variables.</summary>
-public abstract class FunctionSet
+internal abstract class FunctionSet
 {
     /// <summary>The number of variables.</summary>
     public abstract int NbVariables();

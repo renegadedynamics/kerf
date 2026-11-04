@@ -12,7 +12,7 @@ namespace Kerf.Engine.Intersection.Curves;
 
 /// <summary>The evaluation of an <see cref="PConic"/> (IntImpParGen's ParTool for conics).</summary>
 /// <remarks>A struct without state, so it can be a type argument of the generic intersectors.</remarks>
-public readonly struct PConicTool : IParTool<PConic>
+internal readonly struct PConicTool : IParTool<PConic>
 {
     public static Point2D Value(in PConic pConic, double x)
     {

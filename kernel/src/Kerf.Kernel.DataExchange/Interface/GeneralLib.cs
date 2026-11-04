@@ -11,7 +11,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// The library of Interface_GeneralModules: the general services (shared and implied entities, copies, names) of the entities of a protocol, as <see cref="Library{TModule, TProtocol}"/>
 /// instantiated with <see cref="GeneralModule"/> and <see cref="Protocol"/>.
 /// </summary>
-public class GeneralLib : Library<GeneralModule, Protocol>
+internal class GeneralLib : Library<GeneralModule, Protocol>
 {
     /// <summary>
     /// Creates a library which complies with a protocol: it gets the modules from the global set which are bound to

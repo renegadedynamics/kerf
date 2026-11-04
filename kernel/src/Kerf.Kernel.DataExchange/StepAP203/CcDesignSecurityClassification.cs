@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Ap203;
 /// <summary>
 /// Representation of STEP entity CcDesignSecurityClassification
 /// </summary>
-public class CcDesignSecurityClassification : SecurityClassificationAssignment
+internal class CcDesignSecurityClassification : SecurityClassificationAssignment
 {
     private NCollection_HArray1<ClassifiedItem> _items;
 

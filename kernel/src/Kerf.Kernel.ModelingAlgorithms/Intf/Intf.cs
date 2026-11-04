@@ -14,7 +14,7 @@ namespace Kerf.Engine.Intersection.Polygons;
 /// Interference computation between polygons, lines and polyhedra with only triangular facets (polygonal
 /// representations of curves and triangulated representations of surfaces): the package's statics.
 /// </summary>
-public static class Intf
+internal static class Intf
 {
     /// <summary>The plane equation of the triangle <paramref name="p1"/> <paramref name="p2"/> <paramref name="p3"/>.</summary>
     public static void PlaneEquation(in Point3D p1,

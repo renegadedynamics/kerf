@@ -15,7 +15,7 @@ namespace Kerf.Engine.Numerics;
 /// The Broyden-Fletcher-Goldfarb-Shanno variant of the Davidson-Fletcher-Powell method to find a minimum of a
 /// function of several variables whose gradient is known. Optionally bounded (<see cref="SetBoundary"/>).
 /// </summary>
-public class Bfgs
+internal class Bfgs
 {
     protected NumericStatus _theStatus;
     protected math_Vector _theLocation;

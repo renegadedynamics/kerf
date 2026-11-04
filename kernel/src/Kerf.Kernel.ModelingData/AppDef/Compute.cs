@@ -13,7 +13,7 @@ namespace Kerf.Engine.Approximation;
 /// <see cref="ComputeLine{MultiLine, LineTool}"/> over AppDef_MyLineTool.
 /// </summary>
 /// <remarks>A sealed subclass with OCCT's constructors (decisions 142 and 202); the members are the base class's.</remarks>
-public sealed class Compute : ComputeLine<MultiLine, MyLineTool>
+internal sealed class Compute : ComputeLine<MultiLine, MyLineTool>
 {
     /// <summary>
     /// Approximates <paramref name="line"/> until the tolerances are reached, from degree

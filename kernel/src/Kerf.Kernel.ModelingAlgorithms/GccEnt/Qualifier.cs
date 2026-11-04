@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Constraints;
 
 /// <summary>The qualifier of an argument of a constraint: the relative position of the solution and the argument.</summary>
-public enum Qualifier
+internal enum Qualifier
 {
     Unqualified,
     Enclosing,

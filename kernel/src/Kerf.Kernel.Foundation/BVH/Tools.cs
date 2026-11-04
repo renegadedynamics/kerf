@@ -8,7 +8,7 @@ using System.Numerics;
 namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>Static methods on points, triangles, rays and bounding boxes.</summary>
-public static class Tools<T, TVec>
+internal static class Tools<T, TVec>
     where T : unmanaged, IFloatingPointIeee754<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

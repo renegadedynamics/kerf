@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// Defines NullStyle as unique member of PresentationStyleSelect
 /// Works with an EnumTool
 /// </summary>
-public class NullStyleMember : SelectInt
+internal class NullStyleMember : SelectInt
 {
     private static readonly EnumTool Tool = new EnumTool(".NULL.");
 

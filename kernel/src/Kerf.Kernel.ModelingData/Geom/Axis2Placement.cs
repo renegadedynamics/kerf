@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Objects;
 /// orthogonal unit vectors, X, Y and the main direction (Z = X ^ Y). Changing the main direction recomputes X
 /// and Y; changing X or Y keeps the main direction.
 /// </summary>
-public class Axis2Placement : AxisPlacement
+internal class Axis2Placement : AxisPlacement
 {
     private Direction3D _vxdir = new Direction3D();
     private Direction3D _vydir = new Direction3D();

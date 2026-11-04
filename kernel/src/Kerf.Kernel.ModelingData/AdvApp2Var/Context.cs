@@ -16,7 +16,7 @@ namespace Kerf.Engine.Approximation.Advanced;
 /// OCCT copies it by value; it has no mutators, so the port shares it. The arrays it returns are its own (shared:
 /// don't modify); they are null for a default-constructed context, as OCCT's handles are.
 /// </remarks>
-public class Context
+internal class Context
 {
     private readonly int _fav;
     private readonly int _ordU;

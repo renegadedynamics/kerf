@@ -29,7 +29,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// concern specific Entities, see also in package IFAdapt : a sub-class of ModelCopier allows to work with
 /// EntityModifier, in addition to Modifier itself which still applies to a whole copied Model.
 /// </summary>
-public class ModelCopier : Transient
+internal class ModelCopier : Transient
 {
 
     /// <summary>

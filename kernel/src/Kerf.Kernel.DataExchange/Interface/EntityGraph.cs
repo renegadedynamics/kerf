@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// service Shareds) : this new list can be empty; it can be changed or reset (i.e. to come back to standard
 /// answer)
 /// </summary>
-public class EntityGraph
+internal class EntityGraph
 {
     private static void AddTypedSharings(Transient ent,
                                          Type type,

@@ -23,7 +23,7 @@ namespace Kerf.Engine.Foundation;
 /// stream itself is not closed.
 /// </para>
 /// </remarks>
-public sealed class InputStream
+internal sealed class InputStream
 {
     private readonly Stream _stream;
     private readonly long _origin;

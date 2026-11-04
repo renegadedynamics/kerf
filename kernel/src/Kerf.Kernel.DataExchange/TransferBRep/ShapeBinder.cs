@@ -13,7 +13,7 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Engine.Exchange.Framework.Transfer;
 
 /// <summary>A ShapeBinder is a BinderOfShape with some additional services to cast the Result under various kinds of Shapes.</summary>
-public class ShapeBinder : BinderOfShape
+internal class ShapeBinder : BinderOfShape
 {
     /// <summary>Creates an empty ShapeBinder.</summary>
     public ShapeBinder()

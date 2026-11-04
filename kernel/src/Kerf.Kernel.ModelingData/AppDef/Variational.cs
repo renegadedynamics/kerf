@@ -39,7 +39,7 @@ namespace Kerf.Engine.Approximation;
 /// returns its handles (decision 207). <c>Dump</c> is left out (rules, section 6).
 /// </para>
 /// </remarks>
-public class Variational
+internal class Variational
 {
     private readonly MultiLine _ssp;
     private readonly int _nbP3d;

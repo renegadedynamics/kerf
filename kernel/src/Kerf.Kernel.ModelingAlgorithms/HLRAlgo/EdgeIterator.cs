@@ -10,7 +10,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 
 /// <summary>An iterator on the visible or the hidden parts of an edge's status.</summary>
 /// <remarks>A working object, as OCCT's; it keeps the statuses (OCCT's pointers) by reference.</remarks>
-public sealed class EdgeIterator
+internal sealed class EdgeIterator
 {
     private int _nbVis;
     private int _nbHid;

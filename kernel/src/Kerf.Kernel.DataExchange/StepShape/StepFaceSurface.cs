@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepFaceSurface : StepFace
+internal class StepFaceSurface : StepFace
 {
     private StepSurface _faceGeometry;
     private bool _sameSense;

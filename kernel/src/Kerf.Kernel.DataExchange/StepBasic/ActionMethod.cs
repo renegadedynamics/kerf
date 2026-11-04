@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity ActionMethod
 /// </summary>
-public class ActionMethod : Transient
+internal class ActionMethod : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

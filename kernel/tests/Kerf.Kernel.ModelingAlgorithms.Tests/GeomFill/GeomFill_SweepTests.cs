@@ -362,8 +362,9 @@ public class GeomFill_SweepTests
     [InlineData(Polynomial, 1.0)]
     [InlineData(TgtThetaOver2, 1.0)]
     [InlineData(TgtThetaOver2, 4.5)] // GetCircle's angles are in ]-pi/2, 3pi/2]
-    public void GetCircle_gives_the_arc_and_its_derivatives(ParameterisationType theConv, double theAngle)
+    public void GetCircle_gives_the_arc_and_its_derivatives(object theConvValue, double theAngle)
     {
+        var theConv = (ParameterisationType)theConvValue; // the theory's data as object: the engine type is internal
         ParameterisationType aConv = theConv;
         global::Kerf.Engine.Construction.Surfaces.GeomFill.GetShape(theAngle, out int aNbP, out int aNbK, out int aDeg, ref aConv);
         NCollection_Array1<double> aK = new(1, aNbK);

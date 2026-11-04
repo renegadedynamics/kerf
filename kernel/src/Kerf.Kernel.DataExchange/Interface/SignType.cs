@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// Provides the basic service to get a type name, according to a norm It can be used for other classes
 /// (general signatures ...)
 /// </summary>
-public abstract class SignType : SignText
+internal abstract class SignType : SignText
 {
 
     /// <summary>

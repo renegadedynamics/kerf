@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Objects;
 
 /// <summary>An axis in the plane, an origin and a unit vector (a shareable <see cref="Axis2D"/>).</summary>
-public class AxisPlacement2 : Geometry2D
+internal class AxisPlacement2 : Geometry2D
 {
     private Axis2D _axis;
 

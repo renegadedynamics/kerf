@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity ExternallyDefinedCurveFont
 /// </summary>
-public class ExternallyDefinedCurveFont : ExternallyDefinedItem
+internal class ExternallyDefinedCurveFont : ExternallyDefinedItem
 {
     /// <summary>
     /// Empty constructor

@@ -19,7 +19,7 @@ namespace Kerf.Engine.Approximation.Advanced;
 /// A working object of the approximation, with OCCT's public mutators (decision 194). The arrays it returns are
 /// its own (shared: don't modify); they are null until the patch is approximated.
 /// </remarks>
-public class Patch : Transient
+internal class Patch : Transient
 {
     private double _u0;
     private double _u1;

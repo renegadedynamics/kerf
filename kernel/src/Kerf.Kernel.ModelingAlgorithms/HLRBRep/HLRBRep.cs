@@ -25,7 +25,7 @@ namespace Kerf.Engine.HiddenLines;
 /// shares the curve and, at its ends, the vertices of the edge HLRBRep_Curve was loaded with: a caller's edge, or one
 /// the outliner split from it.
 /// </remarks>
-public static class HlrbRep
+internal static class HlrbRep
 {
     /// <summary>The part of the projected curve ec between the 3D parameters U1 and U2, as a 2D edge.</summary>
     public static Edge MakeEdge(HiddenLineCurve ec, double u1, double u2)

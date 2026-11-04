@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// (e.g. firstly bind an Entity to a Module then calls Module), each recognized Entity Type corresponds to a
 /// Case Number, determined by the Protocol each class of GeneralModule belongs to.
 /// </summary>
-public abstract class GeneralModule : Transient
+internal abstract class GeneralModule : Transient
 {
 
     /// <summary>

@@ -11,7 +11,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// A SelectInt is a SelectMember specialised for a basic integer type in a select which also accepts entities: this
 /// one has NO NAME. For a named select, see SelectNamed.
 /// </summary>
-public class SelectInt : SelectMember
+internal class SelectInt : SelectMember
 {
     private int _thekind;
     private int _theval;

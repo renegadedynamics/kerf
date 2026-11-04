@@ -29,7 +29,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// instantiation (decision 1199).
 /// </para>
 /// </remarks>
-public class ProcessForTransient : Transient
+internal class ProcessForTransient : Transient
 {
     /// <summary>
     /// Sets TransferProcess at initial state. Gives an Initial size (indicative) for the Map when known (default is

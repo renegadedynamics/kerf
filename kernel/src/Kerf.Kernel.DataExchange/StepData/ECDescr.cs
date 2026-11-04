@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Data;
 
 /// <summary>Describes a Complex Entity (Plex) as a list of Simple ones.</summary>
-public class ECDescr : EDescr
+internal class ECDescr : EDescr
 {
     private readonly NCollection_Sequence<Transient> _thelist = new();
 

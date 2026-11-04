@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity DraughtingModel
 /// </summary>
-public class DraughtingModel : StepRepresentation
+internal class DraughtingModel : StepRepresentation
 {
     /// <summary>
     /// Empty constructor

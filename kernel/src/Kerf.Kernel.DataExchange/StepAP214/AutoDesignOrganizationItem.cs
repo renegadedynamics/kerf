@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
-public class AutoDesignOrganizationItem : AutoDesignGeneralOrgItem
+internal class AutoDesignOrganizationItem : AutoDesignGeneralOrgItem
 {
     public AutoDesignOrganizationItem()
     {

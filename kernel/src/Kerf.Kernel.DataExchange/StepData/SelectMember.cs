@@ -23,7 +23,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// more to describe a select with several names. This class itself could be deferred: at least one of its virtual
 /// methods must be redefined to be usable.
 /// </remarks>
-public class SelectMember : Transient
+internal class SelectMember : Transient
 {
     //  Definitions taken from Field:
     private const int KindInteger = 1;

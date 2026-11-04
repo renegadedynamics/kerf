@@ -19,7 +19,7 @@ namespace Kerf.Engine.HiddenLines;
 /// A working object (decision 21): <c>SetDeflectionOverEstimation</c> and <c>Closed(bool)</c> are public, as in
 /// OCCT. At least five points are taken. OCCT's empty <c>Dump</c> is left out.
 /// </remarks>
-public sealed class ThePolygonOfInterCSurf
+internal sealed class ThePolygonOfInterCSurf
     : IThePolygon<ThePolygonOfInterCSurf, Line3D>
 {
     private Box _theBnd = new();

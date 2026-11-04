@@ -18,7 +18,7 @@ namespace Kerf.Engine.HiddenLines;
 /// A working object (a transient), as OCCT's. The caller's shapes are not written into: the outliners write in
 /// working overlays (unit 10H6).
 /// </remarks>
-public class HiddenLineAlgo : InternalAlgo
+internal class HiddenLineAlgo : InternalAlgo
 {
     public HiddenLineAlgo()
     {

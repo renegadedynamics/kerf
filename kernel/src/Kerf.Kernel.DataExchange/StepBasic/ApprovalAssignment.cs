@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ApprovalAssignment : Transient
+internal class ApprovalAssignment : Transient
 {
     private Approval _assignedApproval;
 

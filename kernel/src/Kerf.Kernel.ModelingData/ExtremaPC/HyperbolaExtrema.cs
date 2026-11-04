@@ -13,7 +13,7 @@ namespace Kerf.Engine.Extrema.PointCurve;
 /// </summary>
 /// <remarks>The domain is fixed at construction; without one (or with an infinite one) the hyperbola branch is
 /// unbounded.</remarks>
-public sealed class HyperbolaExtrema : global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ICurveEvaluator
+internal sealed class HyperbolaExtrema : global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ICurveEvaluator
 {
     private readonly Hyperbola3D _hyperbola;                   // Hyperbola geometry
     private readonly global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D? _domain;          // Parameter domain (null for infinite)

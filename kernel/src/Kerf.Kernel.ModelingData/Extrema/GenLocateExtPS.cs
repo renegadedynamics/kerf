@@ -17,7 +17,7 @@ namespace Kerf.Engine.Extrema;
 /// projection criteria (math_FunctionSetRoot, then Newton) or the distance criteria (math_BFGS, then math_FRPR).
 /// </summary>
 /// <remarks>The surface adaptor is kept, as OCCT keeps a reference: it must outlive the algorithm.</remarks>
-public class GenLocateExtPS
+internal class GenLocateExtPS
 {
     // Input.
     private readonly SurfaceAdaptorBase _surf;

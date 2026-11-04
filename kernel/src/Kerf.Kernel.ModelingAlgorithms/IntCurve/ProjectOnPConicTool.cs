@@ -14,7 +14,7 @@ namespace Kerf.Engine.Intersection.Curves;
 /// The parameter of a point on an <see cref="PConic"/> (IntImpParGen's ProjectOnPCurveTool for conics).
 /// </summary>
 /// <remarks>A struct without state, so it can be a type argument of the generic intersectors.</remarks>
-public readonly struct ProjectOnPConicTool : IProjectOnPCurveTool<PConic>
+internal readonly struct ProjectOnPConicTool : IProjectOnPCurveTool<PConic>
 {
     /// <summary>
     /// The parameter of the point of the conic corresponding to <paramref name="p"/>, clamped to the interval

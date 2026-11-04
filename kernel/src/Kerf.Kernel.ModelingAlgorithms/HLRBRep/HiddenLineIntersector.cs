@@ -21,7 +21,7 @@ namespace Kerf.Engine.HiddenLines;
 /// pointers. The polyhedron of a non-quadric surface is built at the first line intersected and kept until the next
 /// <see cref="Load"/>. OCCT's <c>PERF</c> counters (a compile-time option, off) are left out.
 /// </remarks>
-public sealed class HiddenLineIntersector
+internal sealed class HiddenLineIntersector
 {
     private IntersectionPoint2D _singlePoint;
     private int _typePerform;

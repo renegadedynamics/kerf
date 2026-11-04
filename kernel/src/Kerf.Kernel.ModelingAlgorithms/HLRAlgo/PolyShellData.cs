@@ -12,7 +12,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 
 /// <summary>The face data of a shell for the polygonal hidden-line removal, its hiding faces and its segments.</summary>
 /// <remarks>A working object (a transient), as OCCT's.</remarks>
-public class PolyShellData : Transient
+internal class PolyShellData : Transient
 {
     /// <summary>The shell's min-max indices (plain data).</summary>
     public struct ShellIndices

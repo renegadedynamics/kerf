@@ -32,7 +32,7 @@ namespace Kerf.Engine.Exchange.Step.Construct;
 /// methods which deal with particular implementation of colors (as described in RP)
 /// </summary>
 /// <remarks>A C++ value class, a C# class here (decision 1185).</remarks>
-public class Styles : ConstructTool
+internal class Styles : ConstructTool
 {
     //=======================================================================
     // function : ProcessAsSurfaceStyleRendering

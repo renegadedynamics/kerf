@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class DateTimeSelect : SelectType
+internal class DateTimeSelect : SelectType
 {
     /// <summary>
     /// Returns a DateTimeSelect SelectType

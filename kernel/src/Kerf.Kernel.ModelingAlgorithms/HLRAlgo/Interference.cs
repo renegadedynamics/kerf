@@ -18,7 +18,7 @@ namespace Kerf.Engine.HiddenLines.Algorithm;
 /// the orientations unset). The setters (OCCT's overloads of the getters' names) and the <c>Change</c> accessors
 /// (references to the stored parts) are internal.
 /// </remarks>
-public partial struct Interference : IEquatable<Interference>
+internal partial struct Interference : IEquatable<Interference>
 {
     private AlgoIntersection _intersection;
     private Coincidence _boundary;

@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 
 /// <summary>Qualifies an execution status: void (nothing done), done (execution was correct), error (data were not correct), fail (execution failed), stop (stop is required).</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.IFSelect_ReturnStatus;</c>.</remarks>
-public enum ReturnStatus
+internal enum ReturnStatus
 {
     RetVoid,
     RetDone,

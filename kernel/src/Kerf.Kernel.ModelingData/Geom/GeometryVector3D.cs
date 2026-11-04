@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Objects;
 /// The common behaviour of vectors in 3D space: unit vectors (<see cref="Direction"/>) and vectors with a
 /// magnitude (<see cref="VectorWithMagnitude"/>).
 /// </summary>
-public abstract class GeometryVector3D : Geometry3D
+internal abstract class GeometryVector3D : Geometry3D
 {
     private protected Vector3D _gpVec;
 

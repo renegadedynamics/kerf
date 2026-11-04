@@ -13,7 +13,7 @@ namespace Kerf.Engine.HiddenLines;
 /// The intersection of two bounded 2D curves, or the self-intersection of one, through their polygons.
 /// </summary>
 /// <remarks>OCCT's instantiation of IntCurve_IntPolyPolyGen.gxx over HLRBRep_Curve (decision 324).</remarks>
-public sealed class TheIntPCurvePCurveOfCInter
+internal sealed class TheIntPCurvePCurveOfCInter
     : IntPolyPolyGen<HiddenLineCurve, HiddenLineCurveTool, TheProjPCurOfCInter>
 {
     public TheIntPCurvePCurveOfCInter()

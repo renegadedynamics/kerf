@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Foundation;
 
 /// <summary>The tolerances OCCT's algorithms share: lengths, angles and parameters.</summary>
-public static class Precision
+internal static class Precision
 {
     /// <summary>The tolerance for comparing angles, in radians.</summary>
     public static double Angular() => 1.0e-12;

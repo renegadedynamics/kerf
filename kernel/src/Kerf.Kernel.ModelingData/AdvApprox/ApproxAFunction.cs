@@ -31,7 +31,7 @@ namespace Kerf.Engine.Approximation.Advanced;
 /// changed through them; they return null where OCCT returns a null handle.
 /// </para>
 /// </remarks>
-public class ApproxAFunction
+internal class ApproxAFunction
 {
     private readonly int[] _numSubSpaces = new int[3];
     private readonly NCollection_HArray1<double>? _my1DTolerances;

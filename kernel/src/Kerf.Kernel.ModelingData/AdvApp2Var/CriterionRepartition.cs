@@ -10,7 +10,7 @@ namespace Kerf.Engine.Approximation.Advanced;
 /// <remarks>
 /// An unscoped enum in C++; ported code imports it with <c>using static Occt.AdvApp2Var_CriterionRepartition;</c>.
 /// </remarks>
-public enum CriterionRepartition
+internal enum CriterionRepartition
 {
     Regular,
     Incremental,
