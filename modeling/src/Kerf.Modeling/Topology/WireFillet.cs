@@ -40,7 +40,7 @@ public partial class Wire
         // Back to the original location rather than the plane's
         var ownLocation = TopoShape.Placement;
         var geometryAdjust = new Location(ownLocation).Inverse() * globalized.Location;
-        var trsf = geometryAdjust.ToTopLoc().Transformation;
+        var trsf = geometryAdjust.ToPlacement().Transformation;
         var identity = new Placement();
         var baseWire = globalized.TopoShape.Located(identity);
         record = record.Merge(ShapeHistory.FromRelocation(globalized.TopoShape, baseWire));
@@ -149,7 +149,7 @@ internal static class WireFillet
         {
             var other = connected.Vertices().First(v => v != corner.Vertex);
             var filletVertex = arc.Vertices().OrderByDistanceTo(connected)[0];
-            var pnt = filletVertex.ToVector().ToGpPnt();
+            var pnt = filletVertex.ToVector().ToPoint3D();
             var splitVertex = new Vertex(global::Kerf.Topology.Vertex.At(pnt));
             // A copy is split, as build123d splits a deepcopy, so the pieces share nothing with the wire: the identity
             // applied with its geometry copied (BRepBuilderAPI_Transform with copy) rebuilds the edge throughout

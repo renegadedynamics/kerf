@@ -55,7 +55,7 @@ public class EmptyShapeDefinitionTests
             var zero = make();
             Assert.IsType(cls, zero);
             Assert.True(zero.IsEmpty);
-            Assert.Equal(global::Kerf.Topology.ShapeType.Compound, zero.Wrapped.Type);
+            Assert.Equal(global::Kerf.Topology.ShapeType.Compound, zero.KernelShape.Type);
             Assert.Equal(dim, zero.Dim);
         }
     }
@@ -88,7 +88,7 @@ public class EmptyShapeDefinitionTests
     [Fact]
     public void AKernelEmptyIsTheZeroOfAnyClass()
     {
-        var empty = (Solid.MakeBox(1, 1, 1) - Solid.MakeBox(1, 1, 1)).Wrapped;
+        var empty = (Solid.MakeBox(1, 1, 1) - Solid.MakeBox(1, 1, 1)).KernelShape;
         Assert.True(new Solid().CastLike(empty).IsEmpty);
         Assert.IsType<Solid>(new Solid().CastLike(empty));
         Assert.True(new Face().CastLike(empty).IsEmpty);

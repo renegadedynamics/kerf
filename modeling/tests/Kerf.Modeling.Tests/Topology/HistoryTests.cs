@@ -33,21 +33,21 @@ public class ShapeHistoryTests
         var fused = _box.Fuse(cylinder);
         var history = fused.History;
         Assert.IsType<ShapeHistory>(history);
-        Assert.Single(history.Modified(_top.Wrapped));
+        Assert.Single(history.Modified(_top.KernelShape));
         foreach (var side in _box.Faces().NotParallelTo(Axis.Z))
         {
-            Assert.Empty(history.Modified(side.Wrapped));
-            Assert.False(history.IsRemoved(side.Wrapped));
+            Assert.Empty(history.Modified(side.KernelShape));
+            Assert.False(history.IsRemoved(side.KernelShape));
         }
         var bottomCap = cylinder.Faces().OrderBy(Axis.Z)[0];
-        Assert.True(history.IsRemoved(bottomCap.Wrapped));
-        Assert.Empty(history.Generated(_top.Wrapped));
+        Assert.True(history.IsRemoved(bottomCap.KernelShape));
+        Assert.Empty(history.Generated(_top.KernelShape));
 
         // A cylinder through the box: the circles where it pierces the top and bottom are generated from those faces
         var through = _box.Fuse(Solid.MakeCylinder(2, 20, new Plane(new Vector(5, 5, -5))));
         history = through.History!;
-        Assert.NotEmpty(history.Generated(_top.Wrapped));
-        Assert.Single(history.Modified(_top.Wrapped));
+        Assert.NotEmpty(history.Generated(_top.KernelShape));
+        Assert.Single(history.Modified(_top.KernelShape));
     }
 
     /// <summary>After a fuse and a clean the original face still maps to one face.</summary>
@@ -58,7 +58,7 @@ public class ShapeHistoryTests
         var fused = _box.Fuse(slab);   // coplanar sides are unified by the clean
         var history = fused.History!;
         var side = _box.Faces().OrderBy(Axis.X)[0];
-        var merged = history.Modified(side.Wrapped);
+        var merged = history.Modified(side.KernelShape);
         Assert.Single(merged);
         Check.AlmostEqual(150, new Face(((global::Kerf.Topology.Face)(merged[0]))).Area, 5);
     }
@@ -68,22 +68,22 @@ public class ShapeHistoryTests
     {
         var cylinder = Solid.MakeCylinder(2, 20, new Plane(new Vector(5, 5, -5)));
         var fused = _box.Fuse(cylinder);
-        var trace = fused.History!.TraceOf([_box.Wrapped]);
+        var trace = fused.History!.TraceOf([_box.KernelShape]);
         int untouched = 0, modified = 0, generated = 0, other = 0;
         foreach (var face in fused.Faces())
         {
-            if (trace.IsUntouched(face.Wrapped))
+            if (trace.IsUntouched(face.KernelShape))
                 untouched++;
-            else if (trace.IsModified(face.Wrapped))
+            else if (trace.IsModified(face.KernelShape))
                 modified++;
-            else if (trace.IsGenerated(face.Wrapped))
+            else if (trace.IsGenerated(face.KernelShape))
                 generated++;
             else
                 other++;
         }
         // four box sides untouched, top and bottom rebuilt, and the cylinder's faces are not the box's at all
         Assert.Equal((4, 2, 0, 4), (untouched, modified, generated, other));
-        var circles = fused.Edges().Where(e => trace.IsGenerated(e.Wrapped)).ToList();
+        var circles = fused.Edges().Where(e => trace.IsGenerated(e.KernelShape)).ToList();
         Assert.True(circles.Count >= 2);
         Assert.All(circles, e => Assert.Equal(GeomType.Circle, e.GeomType));
     }
@@ -92,16 +92,16 @@ public class ShapeHistoryTests
     public void AlgorithmHistoryFromAFillet()
     {
         var rounded = _box.Fillet(1, _box.Edges().ParallelTo(Axis.Z));
-        var trace = rounded.History!.TraceOf([_box.Wrapped]);
+        var trace = rounded.History!.TraceOf([_box.KernelShape]);
         var faces = rounded.Faces();
-        Assert.Equal(6, faces.Count(f => trace.IsModified(f.Wrapped)));
-        Assert.Equal(4, faces.Count(f => trace.IsGenerated(f.Wrapped)));
-        Assert.Equal(10, faces.Count(f => trace.IsDescendant(f.Wrapped)));
+        Assert.Equal(6, faces.Count(f => trace.IsModified(f.KernelShape)));
+        Assert.Equal(4, faces.Count(f => trace.IsGenerated(f.KernelShape)));
+        Assert.Equal(10, faces.Count(f => trace.IsDescendant(f.KernelShape)));
         // the filleted edges are gone and the fillet faces came from them
         foreach (var edge in _box.Edges().ParallelTo(Axis.Z))
         {
-            Assert.True(rounded.History.IsRemoved(edge.Wrapped));
-            Assert.Single(rounded.History.Generated(edge.Wrapped));
+            Assert.True(rounded.History.IsRemoved(edge.KernelShape));
+            Assert.Single(rounded.History.Generated(edge.KernelShape));
         }
     }
 
@@ -111,14 +111,14 @@ public class ShapeHistoryTests
     {
         var square = Face.MakeRect(4, 4);
         var vec = new Vector3D(0, 0, 5);
-        var prism = global::Kerf.Construction.Sweeps.Extrude(square.Wrapped, vec).Value;
-        var history = ShapeHistory.FromAlgorithm(s => prism.History.Modified(s), s => prism.History.Generated(s), [square.Wrapped], prism.Shape);
+        var prism = global::Kerf.Construction.Sweeps.Extrude(square.KernelShape, vec).Value;
+        var history = ShapeHistory.FromAlgorithm(s => prism.History.Modified(s), s => prism.History.Generated(s), [square.KernelShape], prism.Shape);
         // The kernel's extrusion history also generates each sub-shape's copy in the top cap (decision 1558)
         foreach (var edge in square.Edges())
-            Assert.Single(history.Generated(edge.Wrapped), g => g.Type == global::Kerf.Topology.ShapeType.Face);
+            Assert.Single(history.Generated(edge.KernelShape), g => g.Type == global::Kerf.Topology.ShapeType.Face);
         foreach (var vertex in square.Vertices())
-            Assert.Single(history.Generated(vertex.Wrapped), g => g.Type == global::Kerf.Topology.ShapeType.Edge);
-        Assert.False(history.IsRemoved(square.Wrapped));
+            Assert.Single(history.Generated(vertex.KernelShape), g => g.Type == global::Kerf.Topology.ShapeType.Edge);
+        Assert.False(history.IsRemoved(square.KernelShape));
     }
 
     /// <summary>Sewing rebuilds both faces and merges the shared edge.</summary>
@@ -127,15 +127,15 @@ public class ShapeHistoryTests
     {
         var left = Face.MakeRect(4, 4);
         var right = Face.MakeRect(4, 4, new Plane(new Vector(4, 0, 0)));
-        var sewn = global::Kerf.Healing.HealingOperations.Sew([left.Wrapped, right.Wrapped], new global::Kerf.Healing.SewOptions { Tolerance = 1e-6 }).Value;
-        var history = ShapeHistory.FromHistory(sewn.History, [left.Wrapped, right.Wrapped]);
+        var sewn = global::Kerf.Healing.HealingOperations.Sew([left.KernelShape, right.KernelShape], new global::Kerf.Healing.SewOptions { Tolerance = 1e-6 }).Value;
+        var history = ShapeHistory.FromHistory(sewn.History, [left.KernelShape, right.KernelShape]);
         foreach (var face in new[] { left, right })
-            Assert.Single(history.Modified(face.Wrapped));
+            Assert.Single(history.Modified(face.KernelShape));
         // the two coincident edges were merged into one edge of the shell
         var leftEdge = left.Edges().OrderBy(Axis.X)[^1];
         var rightEdge = right.Edges().OrderBy(Axis.X)[0];
-        var mergedLeft = history.Modified(leftEdge.Wrapped);
-        var mergedRight = history.Modified(rightEdge.Wrapped);
+        var mergedLeft = history.Modified(leftEdge.KernelShape);
+        var mergedRight = history.Modified(rightEdge.KernelShape);
         Assert.Single(mergedLeft);
         Assert.True(mergedLeft[0].IsSame(mergedRight[0]));
     }
@@ -144,17 +144,17 @@ public class ShapeHistoryTests
     public void RelocationHistory()
     {
         var moved = _box.Moved(new Plane(new Vector(1, 2, 3)).Location);
-        var history = ShapeHistory.FromRelocation(_box.Wrapped, moved.Wrapped);
+        var history = ShapeHistory.FromRelocation(_box.KernelShape, moved.KernelShape);
         foreach (var face in _box.Faces())
         {
-            var placed = history.Modified(face.Wrapped);
+            var placed = history.Modified(face.KernelShape);
             Assert.Single(placed);
-            Assert.True(placed[0].IsPartner(face.Wrapped));
-            Assert.False(placed[0].IsSame(face.Wrapped));
+            Assert.True(placed[0].IsPartner(face.KernelShape));
+            Assert.False(placed[0].IsSame(face.KernelShape));
         }
         // nothing moved, nothing recorded
-        var unmoved = ShapeHistory.FromRelocation(_box.Wrapped, _box.Wrapped);
-        foreach (var sub in ShapeHistory.TrackedSubshapes([_box.Wrapped]))
+        var unmoved = ShapeHistory.FromRelocation(_box.KernelShape, _box.KernelShape);
+        foreach (var sub in ShapeHistory.TrackedSubshapes([_box.KernelShape]))
             Assert.Empty(unmoved.Modified(sub));
     }
 
@@ -168,12 +168,12 @@ public class ShapeHistoryTests
         foreach (var (before, motion) in startingShapes.Zip(motions))
         {
             var after = before.Moved(motion);
-            var history = ShapeHistory.FromRelocation(before.Wrapped, after.Wrapped);
-            foreach (var subshape in ShapeHistory.TrackedSubshapes([before.Wrapped]))
+            var history = ShapeHistory.FromRelocation(before.KernelShape, after.KernelShape);
+            foreach (var subshape in ShapeHistory.TrackedSubshapes([before.KernelShape]))
             {
                 var mapped = history.Modified(subshape);
                 Assert.Single(mapped);
-                Assert.True(mapped[0].IsSame(subshape.Moved(motion.ToTopLoc())));
+                Assert.True(mapped[0].IsSame(subshape.Moved(motion.ToPlacement())));
             }
         }
 
@@ -181,12 +181,12 @@ public class ShapeHistoryTests
         Assert.IsType<ShapeHistory>(movedOccurrences.History);
         var motion2 = new Pos(1, 2, 3) * new Rotation(19, 13, -7);
         var relocated = movedOccurrences.Moved(motion2);
-        var history2 = ShapeHistory.FromRelocation(movedOccurrences.Wrapped, relocated.Wrapped);
-        foreach (var subshape in ShapeHistory.TrackedSubshapes([movedOccurrences.Wrapped]))
+        var history2 = ShapeHistory.FromRelocation(movedOccurrences.KernelShape, relocated.KernelShape);
+        foreach (var subshape in ShapeHistory.TrackedSubshapes([movedOccurrences.KernelShape]))
         {
             var mapped = history2.Modified(subshape);
             Assert.Single(mapped);
-            Assert.True(mapped[0].IsSame(subshape.Moved(motion2.ToTopLoc())));
+            Assert.True(mapped[0].IsSame(subshape.Moved(motion2.ToPlacement())));
         }
     }
 
@@ -228,7 +228,7 @@ public class ShapeHistoryTests
         var expected = Answers(original);
         var actual = Answers(placed, s =>
         {
-            var transform = global::Kerf.Construction.ShapeTransforms.Transformed(s.Wrapped, inverse, copyGeometry: true).Value;
+            var transform = global::Kerf.Construction.ShapeTransforms.Transformed(s.KernelShape, inverse, copyGeometry: true).Value;
             return Shape.Cast(transform.Shape);
         });
         foreach (var key in expected.Keys)
@@ -253,7 +253,7 @@ public class ShapeHistoryTests
         var originalAnswers = Answers(recorded);
 
         var location = new Pos(12, -8, 5) * new Rotation(13, 0, 29);
-        var inverseLocation = location.ToGpTrsf().Inverted();
+        var inverseLocation = location.ToTransform3D().Inverted();
         var operations = new List<(string Name, Shape Placed, Transform3D Inverse)>
         {
             ("positioning operator", location * recorded, inverseLocation),
@@ -265,18 +265,18 @@ public class ShapeHistoryTests
         var starting = recorded.Located(initialLocation);
         var absoluteLocation = new Pos(-9, 6, 13) * new Rotation(-23, 7, 41);
         operations.Add(("absolute location from placed source", starting.Located(absoluteLocation),
-                        absoluteLocation.ToGpTrsf().Inverted()));
+                        absoluteLocation.ToTransform3D().Inverted()));
 
         var firstLocation = new Pos(9, 2, -6) * new Rotation(5, 37, 19);
         var secondLocation = new Pos(-7, 12, 3) * new Rotation(-31, 13, 2);
         var repeated = recorded.Located(firstLocation).Located(secondLocation);
-        operations.Add(("repeated absolute location", repeated, secondLocation.ToGpTrsf().Inverted()));
+        operations.Add(("repeated absolute location", repeated, secondLocation.ToTransform3D().Inverted()));
 
-        operations.Add(("rotated copy", recorded.Rotate(Axis.Z, 31, transform: true), new Rotation(0, 0, -31).ToGpTrsf()));
+        operations.Add(("rotated copy", recorded.Rotate(Axis.Z, 31, transform: true), new Rotation(0, 0, -31).ToTransform3D()));
 
         var mirrorTransform = new Transform3D();
-        var origin = Plane.YZ.Origin.ToGpPnt();
-        var normal = Plane.YZ.ZDir.ToGpDir();
+        var origin = Plane.YZ.Origin.ToPoint3D();
+        var normal = Plane.YZ.ZDir.ToDirection3D();
         var ax2 = new Frame3D(origin, normal);
         mirrorTransform = mirrorTransform.WithMirror(ax2);
         operations.Add(("mirror copy", recorded.Mirror(Plane.YZ), mirrorTransform));
@@ -341,15 +341,15 @@ public class ShapeHistoryTests
     {
         var history = new ShapeHistory();
         var wire = _top.OuterWire();
-        Assert.Empty(history.Modified(wire.Wrapped));
-        Assert.Empty(history.Generated(wire.Wrapped));
-        Assert.False(history.IsRemoved(wire.Wrapped));
+        Assert.Empty(history.Modified(wire.KernelShape));
+        Assert.Empty(history.Generated(wire.KernelShape));
+        Assert.False(history.IsRemoved(wire.KernelShape));
     }
 
     [Fact]
     public void Helpers()
     {
-        var subs = ShapeHistory.TrackedSubshapes([_box.Wrapped, new global::Kerf.Topology.Shape()]);
+        var subs = ShapeHistory.TrackedSubshapes([_box.KernelShape, new global::Kerf.Topology.Shape()]);
         Assert.Equal(8 + 12 + 6 + 1, subs.Length);
 
     }

@@ -27,7 +27,7 @@ public class MatrixTests
 
     static TransformForm Form(Matrix m)
     {
-        var g = m.ToGpGTrsf();
+        var g = m.ToGeneralTransform3D();
         return g.Form;
     }
 
@@ -108,7 +108,7 @@ public class MatrixTests
         };
         var fromTrsf = new Matrix(rotX);
         AlmostEqual(rotXMatrix, fromTrsf);
-        var g = fromTrsf.ToGpGTrsf();
+        var g = fromTrsf.ToGeneralTransform3D();
         AlmostEqual(rotXMatrix, new Matrix(g));
     }
 
@@ -131,7 +131,7 @@ public class MatrixTests
         Check.AlmostEqual(new Vector(5 - 2 * c, 2 * s, 0), rotationScaleMirror.Multiply(new Vector(1, 0, 0)), 7);
 
         // A similarity converts to a gp_Trsf, so it can place a shape
-        var g = rotationScaleMirror.ToGpGTrsf();
+        var g = rotationScaleMirror.ToGeneralTransform3D();
         var trsf = g.ToTransform();
     }
 
@@ -188,7 +188,7 @@ public class MatrixTests
             _ => new double[,] { { 2, 0, 0, 1 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } },
         };
         var original = new Matrix(rows);
-        var g = original.ToGpGTrsf();
+        var g = original.ToGeneralTransform3D();
         var copied = new Matrix(g);
         for (int r = 0; r < 3; r++)
             for (int col = 0; col < 4; col++)

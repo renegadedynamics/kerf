@@ -101,8 +101,8 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     /// <summary>The unsigned angle to another vector, in degrees.</summary>
     public double GetAngle(Vector v)
     {
-        var a = ToGpVec();
-        var b = v.ToGpVec();
+        var a = ToVector3D();
+        var b = v.ToVector3D();
         return a.AngleTo(b) * Constants.RadToDeg;
     }
 
@@ -112,9 +112,9 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     /// </summary>
     public double GetSignedAngle(Vector v, Vector? normal = null)
     {
-        var a = ToGpVec();
-        var b = v.ToGpVec();
-        var n = (normal ?? new Vector(0, 0, -1)).ToGpVec();
+        var a = ToVector3D();
+        var b = v.ToVector3D();
+        var n = (normal ?? new Vector(0, 0, -1)).ToVector3D();
         return a.AngleWithRef(b, n) * Constants.RadToDeg;
     }
 
@@ -128,7 +128,7 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     /// <summary>The unsigned distance to a plane.</summary>
     public double DistanceToPlane(Plane plane)
     {
-        var p = ToGpPnt();
+        var p = ToPoint3D();
         return plane.Pln.DistanceTo(p);
     }
 
@@ -151,7 +151,7 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     {
         // gp_GTrsf.Transforms applies the general transform directly; converting to a gp_Trsf first
         // would reject every matrix that isn't a similarity
-        var coords = transform.GTrsf * ToGpPnt();
+        var coords = transform.GTrsf * ToPoint3D();
         if (!isDirection)
             return new Vector(coords);
 
@@ -163,8 +163,8 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     /// <summary>This vector rotated about an axis by an angle in degrees.</summary>
     public Vector Rotate(Axis axis, double angle)
     {
-        var v = ToGpVec();
-        var ax = axis.ToGpAx1();
+        var v = ToVector3D();
+        var ax = axis.ToAxis3D();
         var rotated = v.Rotated(ax, angle * Constants.DegToRad);
         return new Vector(rotated);
     }
@@ -185,14 +185,14 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     public Vector? Intersect(Location location) => location.Intersect(this);
 
     /// <summary>A new OCCT gp_Pnt at this point.</summary>
-    public Point3D ToGpPnt() => new(X, Y, Z);
+    public Point3D ToPoint3D() => new(X, Y, Z);
 
     /// <summary>A new OCCT gp_Dir in this direction.</summary>
     /// <exception cref="Exception">The vector has zero length (the kernel's construction error).</exception>
-    public Direction3D ToGpDir() => new(X, Y, Z);
+    public Direction3D ToDirection3D() => new(X, Y, Z);
 
     /// <summary>A new OCCT gp_Vec with these components.</summary>
-    public Vector3D ToGpVec() => new(X, Y, Z);
+    public Vector3D ToVector3D() => new(X, Y, Z);
 
     internal (double, double, double) Key => (GeomKey.Round(X), GeomKey.Round(Y), GeomKey.Round(Z));
 

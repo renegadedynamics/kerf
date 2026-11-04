@@ -185,7 +185,7 @@ public class WireTests
     public void ParamAtPointNativeParameterOnMultiedgeAndReversedWires()
     {
         var wire = new Wire([Edge.MakeLine(new Vector(0, 0, 0), new Vector(10, 0, 0)), Edge.MakeLine(new Vector(10, 0, 0), new Vector(10, 10, 0))], sequenced: true);
-        var reversedWire = new Wire(((global::Kerf.Topology.Wire)wire.Wrapped.Reversed()));
+        var reversedWire = new Wire(((global::Kerf.Topology.Wire)wire.KernelShape.Reversed()));
 
         foreach (var candidate in new[] { wire, reversedWire })
             foreach (var position in new[] { 0.25, 0.5, 0.6 })
@@ -231,7 +231,7 @@ public class WireTests
                 Edge.MakeCircle(5, new Plane(new Vector(10, 5, 0)), startAngle: 270, endAngle: 360),
             ],
             sequenced: true);
-        var reversedWire = new Wire(((global::Kerf.Topology.Wire)wire.Wrapped.Reversed()));
+        var reversedWire = new Wire(((global::Kerf.Topology.Wire)wire.KernelShape.Reversed()));
         Assert.False(reversedWire.IsForward);
         foreach (var position in new[] { 0.0, 0.25, 0.6, 1.0 })
             foreach (var mode in new[] { PositionMode.Parameter, PositionMode.Length })
@@ -301,7 +301,7 @@ public class WireTests
     /// <summary>Wires the kernel marks as reversed, as those of a mirrored sketch are.</summary>
     private static Dictionary<string, Wire> ReversedWires()
     {
-        static Wire Flipped(Wire wire) => new(((global::Kerf.Topology.Wire)wire.Wrapped.Reversed()));
+        static Wire Flipped(Wire wire) => new(((global::Kerf.Topology.Wire)wire.KernelShape.Reversed()));
 
         var mixed = new Wire(
             [
@@ -457,11 +457,11 @@ public class WireTests
         var w3 = new Wire([e0, e1]);
         Assert.True(w3.IsValid);
         Check.AlmostEqual(2, w3.Length, 5);
-        var w4 = new Wire(((global::Kerf.Topology.Wire)w0.Wrapped));
+        var w4 = new Wire(((global::Kerf.Topology.Wire)w0.KernelShape));
         Assert.True(w4.IsValid);
-        var w5 = new Wire(wire: ((global::Kerf.Topology.Wire)w0.Wrapped));
+        var w5 = new Wire(wire: ((global::Kerf.Topology.Wire)w0.KernelShape));
         Assert.True(w5.IsValid);
-        var w6 = new Wire(wire: ((global::Kerf.Topology.Wire)w0.Wrapped), label: "w6", color: new Color("red"));
+        var w6 = new Wire(wire: ((global::Kerf.Topology.Wire)w0.KernelShape), label: "w6", color: new Color("red"));
         Assert.True(w6.IsValid);
         Assert.Equal("w6", w6.Label);
         Assert.NotNull(w6.Color);

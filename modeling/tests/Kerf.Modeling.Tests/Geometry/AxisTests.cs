@@ -185,7 +185,7 @@ public class AxisTests
         Check.AlmostEqual(new Vector(1, 2, 3), axis.Position);
         axis = axis.WithPosition(axis.Position + new Vector(1, 2, 3));
         Check.AlmostEqual(new Vector(2, 4, 6), axis.Position);
-        var ax1 = axis.ToGpAx1();
+        var ax1 = axis.ToAxis3D();
         Check.AlmostEqual(new Vector(2, 4, 6), new Axis(ax1).Position);
         Check.AlmostEqual(new Vector(0, 0, 0), Axis.X.Position);   // the original is unchanged
     }
@@ -198,7 +198,7 @@ public class AxisTests
         axis = axis.WithDirection(axis.Direction + new Vector(5, 3, 1));
         var expected = (new Vector(1, 2, 3).Normalized() + new Vector(5, 3, 1)).Normalized();
         Check.AlmostEqual(expected, axis.Direction);
-        var ax1 = axis.ToGpAx1();
+        var ax1 = axis.ToAxis3D();
         Check.AlmostEqual(expected, new Axis(ax1).Direction);
     }
 }

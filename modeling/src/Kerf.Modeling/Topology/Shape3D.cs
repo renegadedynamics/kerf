@@ -254,7 +254,7 @@ public abstract partial class Shape3D : Shape
     /// <summary>Whether a point is inside the solid (or on its surface) within a tolerance.</summary>
     public bool IsInside(Vector point, double tolerance = 1.0e-6)
     {
-        var p = point.ToGpPnt();
+        var p = point.ToPoint3D();
         return TopoShape.ClassifyPoint(p, tolerance) == Containment.In || TopoShape.IsOnFace(p, tolerance);
     }
 

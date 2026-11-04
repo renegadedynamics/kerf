@@ -76,7 +76,7 @@ public abstract partial class Shape : IEquatable<Shape>
     /// The OCCT shape (a <c>TopoDS_Edge</c> for an edge, and so on): a new handle sharing this shape's geometry,
     /// which may be modified without affecting this shape.
     /// </summary>
-    public global::Kerf.Topology.Shape Wrapped => TopoUtil.Downcast(_wrapped);
+    public global::Kerf.Topology.Shape KernelShape => TopoUtil.Downcast(_wrapped);
 
     /// <summary>True for the zero of a shape class: a shape with nothing in it.</summary>
     public bool IsEmpty => _isEmpty ??= TopoUtil.IsEmptyCompound(_wrapped);

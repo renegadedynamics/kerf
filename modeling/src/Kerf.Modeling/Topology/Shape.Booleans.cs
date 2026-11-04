@@ -321,7 +321,7 @@ public abstract partial class Shape
         var trimTool = tool switch
         {
             Plane p => MakePlaneFace(p),
-            Shape s => s.Wrapped,
+            Shape s => s.KernelShape,
             _ => throw new ArgumentException($"Can't split with a {tool.GetType().Name}"),
         };
         var splitResult = TopoUtil.BoolOp([_wrapped], [trimTool], BooleanKind.Split);
@@ -342,7 +342,7 @@ public abstract partial class Shape
             var surfacePnt = toolFace.ToSurface().Evaluate(u, v);
             var surfaceNormal = TopoUtil.FaceNormalVector(toolFace, u, v);
             var refPoint = new Vector(surfacePnt) + surfaceNormal.Normalized();
-            var refPnt = refPoint.ToGpPnt();
+            var refPnt = refPoint.ToPoint3D();
             var halfSpace = trimTool.IsShell()
                 ? Primitives.HalfSpace((global::Kerf.Topology.Shell)trimTool, refPnt)
                 : Primitives.HalfSpace((global::Kerf.Topology.Face)trimTool, refPnt);
@@ -383,7 +383,7 @@ public abstract partial class Shape
     /// <summary>A face on the plane, unbounded as far as OCCT's defaults go.</summary>
     internal static global::Kerf.Topology.Face MakePlaneFace(Plane plane)
     {
-        var pln = plane.ToGpPln();
+        var pln = plane.ToPlane3D();
         return Failures.Get(global::Kerf.Topology.Face.FromPlane(pln), () => "plane face");
     }
 

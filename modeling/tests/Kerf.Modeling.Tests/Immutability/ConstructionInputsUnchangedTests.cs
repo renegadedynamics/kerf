@@ -18,14 +18,14 @@ public class ConstructionInputsUnchangedTests
 
     private static Face Side(Shape part) => part.Faces().OrderBy(Axis.X).Last();
 
-    private static byte[] Text(Shape shape) => Extras.WriteBRep(shape.Wrapped);
+    private static byte[] Text(Shape shape) => Extras.WriteBRep(shape.KernelShape);
 
     private static bool Holds(Shape result, Shape sub) =>
         sub switch
         {
-            Face => result.Faces().Any(f => f.Wrapped.IsSame(sub.Wrapped)),
-            Vertex => result.Vertices().Any(v => v.Wrapped.IsSame(sub.Wrapped)),
-            _ => result.Edges().Any(e => e.Wrapped.IsSame(sub.Wrapped)),
+            Face => result.Faces().Any(f => f.KernelShape.IsSame(sub.KernelShape)),
+            Vertex => result.Vertices().Any(v => v.KernelShape.IsSame(sub.KernelShape)),
+            _ => result.Edges().Any(e => e.KernelShape.IsSame(sub.KernelShape)),
         };
 
     private static Shape Untouched(Shape part, Func<Shape> construction)

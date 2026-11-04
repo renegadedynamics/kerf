@@ -94,7 +94,7 @@ if (args.Length > 0 && args[0] == "images")
     Console.WriteLine("example                   svg ms  svg MB  edges   svg KB  png ms  png MB  render ms  png KB");
     foreach ((string name, Func<Shape> build) in examples)
     {
-        global::Kerf.Topology.Shape part = build().Wrapped;
+        global::Kerf.Topology.Shape part = build().KernelShape;
         var svgTimes = new double[imagePasses];
         var pngTimes = new double[imagePasses];
         var renderTimes = new double[imagePasses];

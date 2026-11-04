@@ -24,7 +24,7 @@ public sealed class Vertex : Shape
 
     private static global::Kerf.Topology.Vertex Make(Vector point)
     {
-        var pnt = point.ToGpPnt();
+        var pnt = point.ToPoint3D();
         return global::Kerf.Topology.Vertex.At(pnt);
     }
 

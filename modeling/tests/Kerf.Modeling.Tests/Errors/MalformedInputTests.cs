@@ -12,7 +12,7 @@ using Kerf.Modeling;
 /// </summary>
 public class MalformedInputTests
 {
-    private static byte[] Brep(Shape shape, bool withTriangles = false) => Extras.WriteBRep(shape.Wrapped, withTriangles);
+    private static byte[] Brep(Shape shape, bool withTriangles = false) => Extras.WriteBRep(shape.KernelShape, withTriangles);
 
     [Fact]
     public void ValidBRepStillReads()

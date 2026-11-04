@@ -1,21 +1,21 @@
 namespace Kerf.Modeling;
 
 /// <summary>The base of the curve objects that make several edges (<see cref="ConstrainedArcs"/>, <see cref="ConstrainedLines"/>).</summary>
-public abstract class BaseCurveObject : Curve, IBuilderObject
+public abstract class BaseCurveObject : Curve
 {
     /// <summary>A curve object of the given curve.</summary>
     protected BaseCurveObject(Curve curve) : base(curve.TopoShape) { }
 }
 
 /// <summary>The base of the curve objects that make a wire (<see cref="Polyline"/>, <see cref="FilletPolyline"/>, …).</summary>
-public abstract class BaseLineObject : Wire, IBuilderObject
+public abstract class BaseLineObject : Wire
 {
     /// <summary>A line object of the given wire.</summary>
     protected BaseLineObject(Wire curve) : base(curve.TopoWire) { }
 }
 
 /// <summary>The base of the curve objects that make one edge (<see cref="Line"/>, <see cref="CenterArc"/>, …).</summary>
-public abstract class BaseEdgeObject : Edge, IBuilderObject
+public abstract class BaseEdgeObject : Edge
 {
     /// <summary>An edge object of the given edge.</summary>
     protected BaseEdgeObject(Edge curve) : base(curve.TopoEdge) { }

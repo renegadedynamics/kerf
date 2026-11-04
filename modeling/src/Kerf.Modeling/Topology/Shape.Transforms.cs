@@ -79,8 +79,8 @@ public abstract partial class Shape
         if (IsEmpty)
             return this;
         var trsf = new Transform3D();
-        var origin = mirrorPlane.Origin.ToGpPnt();
-        var normal = mirrorPlane.ZDir.ToGpDir();
+        var origin = mirrorPlane.Origin.ToPoint3D();
+        var normal = mirrorPlane.ZDir.ToDirection3D();
         var ax2 = new Frame3D(origin, normal);
         trsf = trsf.WithMirror(ax2);
         return ApplyTransform(trsf);
@@ -91,7 +91,7 @@ public abstract partial class Shape
         if (IsEmpty)
             return this;
         var trsf = new Transform3D();
-        var ax1 = axis.ToGpAx1();
+        var ax1 = axis.ToAxis3D();
         trsf = trsf.WithRotation(ax1, angle * Constants.DegToRad);
         return transform ? ApplyTransform(trsf) : MovedCore(new Location(trsf));
     }
@@ -101,7 +101,7 @@ public abstract partial class Shape
         if (IsEmpty)
             return this;
         var trsf = new Transform3D();
-        var vec = vector.ToGpVec();
+        var vec = vector.ToVector3D();
         trsf = trsf.WithTranslation(vec);
         return transform ? ApplyTransform(trsf) : MovedCore(new Location(trsf));
     }
@@ -112,7 +112,7 @@ public abstract partial class Shape
             return this;
         var point = about ?? Location.Position;
         var trsf = new Transform3D();
-        var pnt = point.ToGpPnt();
+        var pnt = point.ToPoint3D();
         trsf = trsf.WithScale(pnt, factor);
         return ApplyTransform(trsf);
     }
@@ -176,7 +176,7 @@ public abstract partial class Shape
         var ry = About(0, 1, 0, radians.Y);
         var rz = About(0, 0, 1, radians.Z);
         var to = new Transform3D();
-        var vec = offset.ToGpVec();
+        var vec = offset.ToVector3D();
         to = to.WithTranslation(vec);
         var a = to.Multiplied(rx);
         var b = a.Multiplied(ry);

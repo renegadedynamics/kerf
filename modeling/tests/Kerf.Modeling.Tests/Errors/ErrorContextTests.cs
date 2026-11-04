@@ -92,7 +92,7 @@ public class ErrorContextTests
         // 10L1); the modelling layer reads them from the result. A Boolean without arguments is refused before OCCT
         // (its BOPAlgo_AlertTooFewArguments can't arise), and a good one has no errors
         Assert.Throws<ArgumentException>(() => TopoUtil.Boolean(BooleanKind.Fuse, [], []));
-        var box = new Box(1, 1, 1).Wrapped;
+        var box = new Box(1, 1, 1).KernelShape;
         var common = TopoUtil.Boolean(BooleanKind.Common, [box], [box]);
         Assert.True(common.IsSuccess);
         Assert.DoesNotContain(common.Diagnostics, d => d.IsError);

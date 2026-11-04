@@ -321,7 +321,7 @@ public abstract partial class Shape1D : Shape
         {
             try
             {
-                var xd = x.ToGpDir();
+                var xd = x.ToDirection3D();
                 var ax3 = new CoordinateSystem(pnt, zDir, xd);
                 trsf = trsf.WithTransformation(ax3, target);
             }
@@ -522,7 +522,7 @@ public abstract partial class Shape1D : Shape
     {
         if (IsEmpty || face.IsEmpty)
             throw new InvalidOperationException("Can't project an empty Edge or Wire onto empty Face");
-        var dir = direction.ToGpDir();
+        var dir = direction.ToDirection3D();
         var projected = TopoShape.IsEdge()
             ? ShapeProjections.Project((global::Kerf.Topology.Edge)TopoShape, face.TopoShape, dir)
             : ShapeProjections.Project((global::Kerf.Topology.Wire)TopoShape, face.TopoShape, dir);

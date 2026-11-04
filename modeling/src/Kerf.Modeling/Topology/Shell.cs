@@ -79,7 +79,7 @@ public partial class Shell : Shape2D
     public static Shell Revolve(Shape profile, double angle, Axis axis)
     {
         var wire = new Wire(profile.Edges());
-        var ax1 = axis.ToGpAx1();
+        var ax1 = axis.ToAxis3D();
         // On a copy of the profile, as build123d revolves (BRepPrimAPI_MakeRevol with copy)
         var revolved = Failures.Get(wire.TopoShape.Revolve(ax1, angle * Constants.DegToRad, copyProfile: true), () => "revolve");
         return new Shell((global::Kerf.Topology.Shell)revolved.Shape);

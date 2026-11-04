@@ -78,7 +78,7 @@ public partial class StepNativeTests
     {
         var read = Importers.ImportStep(Path.Combine(Folder, name + ".step"));
         var expected = File.ReadAllText(Path.Combine(Folder, name + ".read.brep"));
-        Assert.Equal(expected, Encoding.ASCII.GetString(Extras.WriteBRep(read.Wrapped)));
+        Assert.Equal(expected, Encoding.ASCII.GetString(Extras.WriteBRep(read.KernelShape)));
     }
 
 }

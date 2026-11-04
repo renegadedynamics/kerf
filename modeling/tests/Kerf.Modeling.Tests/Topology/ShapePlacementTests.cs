@@ -73,9 +73,9 @@ public class ShapePlacementTests
         var originalChildren = ChildrenOf(original);
         if (originalChildren.Count > 0)
             foreach (var (child, source) in ChildrenOf(shape).Zip(originalChildren))
-                Assert.True(child.Wrapped.IsPartner(source.Wrapped));
+                Assert.True(child.KernelShape.IsPartner(source.KernelShape));
         else
-            Assert.True(shape.Wrapped.IsPartner(original.Wrapped));
+            Assert.True(shape.KernelShape.IsPartner(original.KernelShape));
     }
 
     /// <summary>Every kind reports the location it was built at.</summary>
@@ -157,7 +157,7 @@ public class ShapePlacementTests
             Assert.True(relocated.AssemblyChildren.Count == 2, name);
             foreach (var (child, source) in relocated.AssemblyChildren.Zip(original.AssemblyChildren))
             {
-                Assert.True(child.Wrapped.IsPartner(source.Wrapped), name);
+                Assert.True(child.KernelShape.IsPartner(source.KernelShape), name);
                 Assert.True(child.Location == source.Location, name);
             }
             // the copy's compound was rebuilt from its children at its location

@@ -258,7 +258,7 @@ public partial class Face : Shape2D
                         continue;
                     // Curvatures signed toward the outward normal: negative bends away
                     var propsNormal = props.Normal;
-                    var normalDir = normal.ToGpDir();
+                    var normalDir = normal.ToDirection3D();
                     var sign = propsNormal.Dot(normalDir) > 0 ? 1.0 : -1.0;
                     var a = sign * props.Min;
                     var b = sign * props.Max;
@@ -437,7 +437,7 @@ public partial class Face : Shape2D
             throw new ArgumentException("The maximum number of control points is 25");
         if (weights is { Count: > 0 } && (points.Count != weights.Count || points[0].Count != weights[0].Count))
             throw new ArgumentException("Give a weight for each control point.");
-        var poles = Grid(points, p => p.ToGpPnt());
+        var poles = Grid(points, p => p.ToPoint3D());
         BezierSurface bezier = weights is { Count: > 0 } ? new BezierSurface(poles, Grid(weights, w => w)) : new BezierSurface(poles);
         return new Face(Failures.Get(global::Kerf.Topology.Face.FromSurface(bezier), () => "Bezier face"));
     }
@@ -457,7 +457,7 @@ public partial class Face : Shape2D
     public static Face MakeRect(double width, double height, Plane? plane = null)
     {
         plane ??= Plane.XY;
-        var pln = plane.ToGpPln();
+        var pln = plane.ToPlane3D();
         var bounds = (new Interval(-width * 0.5, width * 0.5), new Interval(-height * 0.5, height * 0.5));
         return new Face(Failures.Get(global::Kerf.Topology.Face.FromSurface(new PlaneSurface(pln), bounds), () => "rectangle"));
     }
@@ -476,7 +476,7 @@ public partial class Face : Shape2D
         var face = BuildFilling(boundaries, FillOptions.Default, "Error building non-planar face with provided exterior");
         var points = surfacePoints?.ToList();
         if (points is { Count: > 0 })
-            face = BuildFilling(boundaries, FillOptions.Default with { Points = [.. points.Select(p => p.ToGpPnt())] },
+            face = BuildFilling(boundaries, FillOptions.Default with { Points = [.. points.Select(p => p.ToPoint3D())] },
                                 "Error building non-planar face with provided surface_points");
         if (interiorWires is not null)
         {
@@ -528,7 +528,7 @@ public partial class Face : Shape2D
     public static Face MakeSurfaceFromArrayOfPoints(IReadOnlyList<IReadOnlyList<Vector>> points, double tolerance = 1e-2,
                                                     (double, double, double)? smoothing = null, int minDeg = 1, int maxDeg = 3)
     {
-        var array = Grid(points, p => p.ToGpPnt());
+        var array = Grid(points, p => p.ToPoint3D());
         var options = smoothing is var (w1, w2, w3)
             // The smoothing asks for C2, whose Jacobi basis needs a degree of at least 6 (OCCT 8)
             ? new ApproximationOptions { Smoothing = (w1, w2, w3), MaxDegree = Math.Max(maxDeg, 6), Continuity = Continuity.C2, Tolerance = tolerance }
@@ -564,7 +564,7 @@ public partial class Face : Shape2D
             boundaries.Add(new FillBoundary(edge.TopoEdge, Continuity(continuity)) { Support = face.TopoFace });
         foreach (var edge in edgeConstraints ?? [])
             boundaries.Add(new FillBoundary(edge.TopoEdge, global::Kerf.Geometry.Continuity.C0));
-        var options = FillOptions.Default with { Points = [.. (pointConstraints ?? []).Select(p => p.ToGpPnt())] };
+        var options = FillOptions.Default with { Points = [.. (pointConstraints ?? []).Select(p => p.ToPoint3D())] };
         var result = BuildFilling(boundaries, options, "Error building non-planar face with provided constraints").Fix();
         if (!result.IsValid || result.IsEmpty)
             throw new InvalidOperationException("Non planar face is invalid");
@@ -574,7 +574,7 @@ public partial class Face : Shape2D
     /// <summary>An edge revolved through <paramref name="angle"/> degrees about an axis.</summary>
     public static Face Revolve(Edge profile, double angle, Axis axis)
     {
-        var ax1 = axis.ToGpAx1();
+        var ax1 = axis.ToAxis3D();
         // On a copy of the profile, as build123d revolves (BRepPrimAPI_MakeRevol with copy)
         var revolved = Failures.Get(profile.TopoShape.Revolve(ax1, angle * Constants.DegToRad, copyProfile: true), () => "revolve");
         return new Face((global::Kerf.Topology.Face)revolved.Shape);
@@ -683,7 +683,7 @@ public partial class Face : Shape2D
     /// <summary>The surface parameters of the point of the surface nearest <paramref name="point"/> (GeomAPI_ProjectPointOnSurf).</summary>
     private (double U, double V) NearestParameters(Vector point)
     {
-        if (!GeomAdaptor().TryProjectNearest(point.ToGpPnt(), out var nearest))
+        if (!GeomAdaptor().TryProjectNearest(point.ToPoint3D(), out var nearest))
             throw new InvalidOperationException("The point can't be projected onto the face's surface");
         return (nearest.U, nearest.V);
     }
@@ -724,7 +724,7 @@ public partial class Face : Shape2D
         if (IsEmpty)
             throw new InvalidOperationException("Can't find param on empty face");
         var surface = GeomAdaptor();
-        var pnt = point.ToGpPnt();
+        var pnt = point.ToPoint3D();
         var (uv, separation) = TopoFace.ParametersOf(pnt, Constants.Tolerance);
         if (separation > Constants.Tolerance)
             throw new ArgumentException($"point ({point}) is {separation} from the face's surface");

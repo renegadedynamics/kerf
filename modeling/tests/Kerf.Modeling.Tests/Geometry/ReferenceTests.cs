@@ -97,8 +97,8 @@ public class ReferenceTests
     {
         foreach (var c in Cases("plane_from_mirror"))
         {
-            var p = V(c.GetProperty("point")).ToGpPnt();
-            var d = V(c.GetProperty("dir")).ToGpDir();
+            var p = V(c.GetProperty("point")).ToPoint3D();
+            var d = V(c.GetProperty("dir")).ToDirection3D();
             var ax2 = new Kerf.Geometry.Frame3D(p, d);
             var trsf = new Kerf.Geometry.Transform3D();
             trsf = trsf.WithMirror(ax2);

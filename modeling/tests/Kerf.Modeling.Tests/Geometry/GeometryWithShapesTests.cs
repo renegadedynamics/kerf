@@ -90,7 +90,7 @@ public class PlaneWithShapesTests
         // From a face
         var f = Face.MakeRect(1, 2).Located(new Location(new Vector(1, 2, 3), new Vector(45, 0, 45)));
         var pFromFace = new Plane(f);
-        var pln = pFromFace.ToGpPln();
+        var pln = pFromFace.ToPlane3D();
         foreach (var p in new[] { pFromFace, new Plane(face: f), new Plane(pln) })
         {
             Check.AlmostEqual(new Vector(1, 2, 3), p.Origin, 6);
@@ -124,7 +124,7 @@ public class PlaneWithShapesTests
         for (int i = 0; i < faces.Count; i++)
         {
             var p = new Plane(faces[i]);
-            var face = faces[i].Wrapped;
+            var face = faces[i].KernelShape;
             var centre = global::Kerf.Measurement.MeasureOperations.MassProperties(face, global::Kerf.Measurement.Dimension.Area).CentreOfMass;
             Check.AlmostEqual(new Vector(centre), p.Origin, 6);
             Check.AlmostEqual(expected[i].X, p.XDir, 6);
@@ -306,11 +306,11 @@ public class BoundBoxWithShapesTests
         Check.AlmostEqual(9, bb2.Measure, 5);
 
         // A box from a shape: low accuracy, as the box is a little larger than the shape
-        var cylinder = Solid.MakeCylinder(1, 1).Wrapped;
+        var cylinder = Solid.MakeCylinder(1, 1).KernelShape;
         bb1 = BoundBox.FromTopoDS(cylinder, optimal: false);
         Check.AlmostEqual(new Vector(2, 2, 1), bb1.Size, 1);
 
-        var small = Solid.MakeCylinder(0.5, 0.5).Translate(new Vector(0, 0, 0.1)).Wrapped;
+        var small = Solid.MakeCylinder(0.5, 0.5).Translate(new Vector(0, 0, 0.1)).KernelShape;
         bb2 = BoundBox.FromTopoDS(small, optimal: false);
         Assert.True(bb2.Within(bb1));
     }

@@ -667,12 +667,12 @@ public class ShapeTests
         var root2O2 = Math.Sqrt(2) / 2;
         Check.AlmostEqual(new Vector(1 - root2O2, -root2O2, 0), rotatedLine.PositionAt(0));
         Check.AlmostEqual(new Vector(1, 0, 0), rotatedLine.PositionAt(1));
-        Assert.True(line.Wrapped.IsPartner(rotatedLine.Wrapped));
+        Assert.True(line.KernelShape.IsPartner(rotatedLine.KernelShape));
 
         rotatedLine = line.Rotate(new Axis(new Vector(1, 0, 0), new Vector(0, 0, 1)), 45, transform: true);
         Check.AlmostEqual(new Vector(1 - root2O2, -root2O2, 0), rotatedLine.PositionAt(0));
         Check.AlmostEqual(new Vector(1, 0, 0), rotatedLine.PositionAt(1));
-        Assert.False(line.Wrapped.IsPartner(rotatedLine.Wrapped));
+        Assert.False(line.KernelShape.IsPartner(rotatedLine.KernelShape));
 
         var rotatedEmpty = new Edge().Rotate(new Axis(new Vector(1, 0, 0), new Vector(0, 0, 1)), 45);
         Assert.True(rotatedEmpty.IsEmpty);
@@ -685,12 +685,12 @@ public class ShapeTests
         var translatedLine = line.Translate(new Vector(0, 1, 0));
         Check.AlmostEqual(new Vector(0, 1, 0), translatedLine.PositionAt(0));
         Check.AlmostEqual(new Vector(1, 1, 0), translatedLine.PositionAt(1));
-        Assert.True(line.Wrapped.IsPartner(translatedLine.Wrapped));
+        Assert.True(line.KernelShape.IsPartner(translatedLine.KernelShape));
 
         translatedLine = line.Translate(new Vector(0, 1, 0), transform: true);
         Check.AlmostEqual(new Vector(0, 1, 0), translatedLine.PositionAt(0));
         Check.AlmostEqual(new Vector(1, 1, 0), translatedLine.PositionAt(1));
-        Assert.False(line.Wrapped.IsPartner(translatedLine.Wrapped));
+        Assert.False(line.KernelShape.IsPartner(translatedLine.KernelShape));
 
         var translatedEmpty = new Edge().Translate(new Vector(0, 1, 0));
         Assert.True(translatedEmpty.IsEmpty);
@@ -715,14 +715,14 @@ public class ShapeCastTests
             (typeof(Compound), new Compound([_box])),
         ];
         foreach (var (expected, shape) in samples)
-            Assert.IsType(expected, Shape.Cast(shape.Wrapped));
+            Assert.IsType(expected, Shape.Cast(shape.KernelShape));
     }
 
     [Fact]
     public void CastIsTheSameFromAnyClass()
     {
         // Cast is static on Shape, so it is the same through every class
-        var solid = _box.Solids()[0].Wrapped;
+        var solid = _box.Solids()[0].KernelShape;
         Assert.IsType<Solid>(Vertex.Cast(solid));
         Assert.IsType<Solid>(Edge.Cast(solid));
         Assert.IsType<Solid>(Face.Cast(solid));

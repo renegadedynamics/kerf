@@ -15,10 +15,10 @@ public class FeatureInputsUnchangedTests
     // A part made by another operation: a box with a boss fused on its top
     private static Part Fused() => (Part)(new Box(10, 6, 4) + new Box(2, 2, 6));
 
-    private static byte[] Text(Shape shape) => Extras.WriteBRep(shape.Wrapped);
+    private static byte[] Text(Shape shape) => Extras.WriteBRep(shape.KernelShape);
 
     private static int SharedFaces(Shape result, Shape part) =>
-        part.Faces().Count(f => result.Faces().Any(r => r.Wrapped.IsSame(f.Wrapped)));
+        part.Faces().Count(f => result.Faces().Any(r => r.KernelShape.IsSame(f.KernelShape)));
 
     private static Shape Untouched(Shape part, Func<Shape> operation)
     {
@@ -49,7 +49,7 @@ public class FeatureInputsUnchangedTests
         Shape shell = Untouched(part, () => Ops.Offset(part, -0.5, new Ops.OffsetOptions { Openings = [part.Faces().OrderBy(Axis.Z).Last()] }));
         // the bottom face, away from the opening, is the part's own
         Face bottom = part.Faces().OrderBy(Axis.Z)[0];
-        Assert.Contains(shell.Faces(), f => f.Wrapped.IsSame(bottom.Wrapped));
+        Assert.Contains(shell.Faces(), f => f.KernelShape.IsSame(bottom.KernelShape));
     }
 
     [Fact]

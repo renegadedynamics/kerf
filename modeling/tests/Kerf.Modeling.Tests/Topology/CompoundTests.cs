@@ -161,7 +161,7 @@ public class CompoundAlgebraTests
     [Fact]
     public void AddNoneReturnsSelf()
     {
-        var part = new Part(Solid.MakeBox(1, 1, 1).Wrapped);
+        var part = new Part(Solid.MakeBox(1, 1, 1).KernelShape);
         Assert.Same(part, part + Array.Empty<Shape>());
         Assert.Throws<ArgumentNullException>(() => part + (Shape)null!);
     }
@@ -212,7 +212,7 @@ public class CompoundAccessorsTests
     [Fact]
     public void NoCompoundsWhenNotWrappingOne()
     {
-        var part = new Part(Solid.MakeBox(1, 1, 1).Wrapped);
+        var part = new Part(Solid.MakeBox(1, 1, 1).KernelShape);
         Assert.Empty(part.Compounds());
         var error = Assert.Throws<InvalidOperationException>(() => part.SingleCompound());
         Assert.Contains("found 0", error.Message);

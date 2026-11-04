@@ -81,7 +81,7 @@ public sealed class OrientedBoundBox
     public bool IsCompletelyInside(OrientedBoundBox other) => Wrapped.Contains(other.Wrapped);
 
     /// <summary>True if the point is neither inside the box nor on its surface.</summary>
-    public bool IsOutside(Vector point) => !Wrapped.Contains(point.ToGpPnt());
+    public bool IsOutside(Vector point) => !Wrapped.Contains(point.ToPoint3D());
 
     /// <inheritdoc/>
     public override string ToString() => $"OrientedBoundBox(center={Center().ToString("G13")}, size={Size.ToString("G13")}, plane={Plane.ToString("G13")})";

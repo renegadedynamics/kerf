@@ -135,7 +135,7 @@ internal static class SurfaceIntersection
     {
         if (shape.IsEmpty)
             return [];
-        var ax1 = axis.ToGpAx1();
+        var ax1 = axis.ToAxis3D();
         var line = new Line3D(ax1);
         var plane = new Plane(axis);
         var found = new List<(global::Kerf.Topology.Face Face, Vector Point, double Distance)>();
@@ -146,7 +146,7 @@ internal static class SurfaceIntersection
         }
         return [.. found.OrderBy(f => f.Distance).Select(f =>
         {
-            var pnt = f.Point.ToGpPnt();
+            var pnt = f.Point.ToPoint3D();
             return (f.Point, TopoUtil.FaceNormalAt(f.Face, pnt));
         })];
     }

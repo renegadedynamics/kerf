@@ -516,7 +516,7 @@ public class EdgeTests
         var rim = Edge.MakeSpline([.. Enumerable.Range(0, 11).Select(i => -10 + 2 * i).Select(x =>
             new Vector(x, 5 * Math.Cos(Math.PI / 2 * x / 10), 5 * Math.Sin(Math.PI / 2 * x / 10)))]);
         var wall = Face.MakeSurfaceFromCurves(along, rim);
-        var shell = new Shell((global::Kerf.Topology.Shell)TopoUtil.SewFaces([plate.Wrapped, wall.Wrapped], 1e-6));
+        var shell = new Shell((global::Kerf.Topology.Shell)TopoUtil.SewFaces([plate.KernelShape, wall.KernelShape], 1e-6));
         var shared = shell.Edges().Where(e => e.GeomType == GeomType.Line && Math.Abs(e.Center().Y) < 1e-6).ToList();
         Assert.Single(shared);
         Assert.Equal(Convexity.Saddle, shared[0].Convexity);

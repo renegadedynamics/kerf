@@ -33,7 +33,7 @@ internal static partial class TopoUtil
 
     /// <summary>Whether a point lies on a face, its boundary included, within a tolerance.</summary>
     internal static bool PointOnFace(global::Kerf.Topology.Face face, Vector point, double tolerance = Constants.Tolerance) =>
-        face.IsOnFace(point.ToGpPnt(), tolerance);
+        face.IsOnFace(point.ToPoint3D(), tolerance);
 
     /// <summary>BRepCheck_Analyzer's own defaults, serial: for the checks of single faces the modelling layer makes.</summary>
     internal static readonly ValidationOptions SerialCheck = new() { Parallel = false };
@@ -87,7 +87,7 @@ internal static partial class TopoUtil
     {
         if (!(obj.IsVertex() || obj.IsEdge() || obj.IsWire() || obj.IsFace() || obj.IsShell()))
             throw new ArgumentException($"extrude not supported for {TypeName(obj)}");
-        var vec = direction.ToGpVec();
+        var vec = direction.ToVector3D();
         var extrusion = Downcast(Failures.Get(obj.Extrude(vec), () => "extrude").Shape);
         if (extrusion.Type == global::Kerf.Topology.ShapeType.CompSolid)
             extrusion = MakeCompound(Explore(extrusion, global::Kerf.Topology.ShapeType.Solid));

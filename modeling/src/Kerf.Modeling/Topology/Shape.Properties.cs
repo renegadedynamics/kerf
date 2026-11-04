@@ -179,7 +179,7 @@ public abstract partial class Shape
     public double RadiusOfGyration(Axis axis)
     {
         NeedsGeometry("radius of gyration");
-        var ax1 = axis.ToGpAx1();
+        var ax1 = axis.ToAxis3D();
         return _wrapped.MassProperties(Dimension.Volume).RadiusOfGyration(ax1);
     }
 
@@ -315,7 +315,7 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             throw new InvalidOperationException("Cannot calculate distance to or from an empty shape");
-        var pnt = point.ToGpPnt();
+        var pnt = point.ToPoint3D();
         return DistanceToTopo(global::Kerf.Topology.Vertex.At(pnt));
     }
 
@@ -344,9 +344,9 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             return [];
-        var ax1 = axis.ToGpAx1();
+        var ax1 = axis.ToAxis3D();
         var line = new Line3D(ax1);
-        var origin = axis.Position.ToGpPnt();
+        var origin = axis.Position.ToPoint3D();
         var found = new List<(global::Kerf.Topology.Face Face, double Distance)>();
         foreach (var hit in _wrapped.Intersect(line, tolerance))
             found.Add((hit.Face, Math.Abs(origin.SquareDistanceTo(hit.Point))));

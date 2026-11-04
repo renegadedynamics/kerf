@@ -40,7 +40,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
         : this(Build(position, trsf =>
         {
             var origin = new Point3D(0, 0, 0);
-            var dir = direction.ToGpDir();
+            var dir = direction.ToDirection3D();
             var axis = new Axis3D(origin, dir);
             return trsf.WithRotation(axis, angle * Constants.DegToRad);
         }), owned: true)
@@ -70,16 +70,16 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     static Placement Build(Vector position, Func<Transform3D, Transform3D> rotate)
     {
         var trsf = rotate(new Transform3D());
-        var translation = position.ToGpVec();
+        var translation = position.ToVector3D();
         trsf = trsf.WithTranslationPart(translation);
         return new Placement(trsf);
     }
 
     static Placement FromPlane(Plane plane)
     {
-        var origin = plane.Origin.ToGpPnt();
-        var z = plane.ZDir.ToGpDir();
-        var x = plane.XDir.ToGpDir();
+        var origin = plane.Origin.ToPoint3D();
+        var z = plane.ZDir.ToDirection3D();
+        var x = plane.XDir.ToDirection3D();
         var cs = new CoordinateSystem(origin, z, x);
         var trsf = new Transform3D();
         trsf = trsf.WithTransformation(cs);
@@ -88,10 +88,10 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     }
 
     /// <summary>The OCCT location (the same identity).</summary>
-    public Placement ToTopLoc() => Wrapped;
+    public Placement ToPlacement() => Wrapped;
 
     /// <summary>A new OCCT gp_Trsf for this location's transformation.</summary>
-    public Transform3D ToGpTrsf() => Wrapped.Transformation;
+    public Transform3D ToTransform3D() => Wrapped.Transformation;
 
     /// <summary>The position (translation) part.</summary>
     public Vector Position
@@ -119,7 +119,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     public Location WithPosition(Vector position)
     {
         var trsfPosition = new Transform3D();
-        var v = position.ToGpVec();
+        var v = position.ToVector3D();
         trsfPosition = trsfPosition.WithTranslationPart(v);
         var trsfOrientation = Wrapped.Transformation.ToRotation();
         var combined = trsfPosition.Multiplied(trsfOrientation);
@@ -254,7 +254,7 @@ public class Rotation : Location
         var trsf = new Transform3D();
         if (angle != 0.0)
         {
-            var ax1 = axis.ToGpAx1();
+            var ax1 = axis.ToAxis3D();
             trsf = trsf.WithRotation(ax1, angle * Constants.DegToRad);
         }
         return new Placement(trsf);

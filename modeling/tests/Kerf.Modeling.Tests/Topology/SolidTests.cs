@@ -357,7 +357,7 @@ public class OffsetOrientationTests
     {
         var cone = Solid.MakeCone(22.5, 33.75, 40);
         var cup = (Shape3D)cone.Offset3D(cone.Faces().OrderBy(Axis.Z)[^1..], 3, kind: Kind.Intersection);
-        Assert.Equal(Orientation.Forward, cup.Wrapped.Orientation);
+        Assert.Equal(Orientation.Forward, cup.KernelShape.Orientation);
         Assert.True(cup.Volume > 0);
         var rim = cup.Edges().Where(GeomType.Circle).OrderBy(Axis.Z)[0];
         var rounded = cup.Fillet(1, [rim]);
@@ -376,7 +376,7 @@ public class OffsetOrientationTests
         var box = Solid.MakeBox(30, 20, 10);
         var top = box.Faces().OrderBy(Axis.Z)[^1..];
         var shelled = (Shape3D)box.Offset3D(top, amount, kind: kind);
-        Assert.Equal(Orientation.Forward, shelled.Wrapped.Orientation);
+        Assert.Equal(Orientation.Forward, shelled.KernelShape.Orientation);
         Assert.True(shelled.Volume > 0);
         // The sharp edges around the opening fillet on every variant
         var rim = shelled.Edges().Where(GeomType.Line).GroupBy(Axis.Z)[^1];
@@ -425,10 +425,10 @@ public class SolidDraftTests
     {
         // A failed draft's error (build123d's DraftAngleError until unit 10M2) holds the problematic shape
         var face = _sides[0];
-        var shape = _box.Wrapped;
-        var err = Failures.Expected(ModelingDiagnostics.DraftFailed, "msg", default, null, face.Wrapped, shape);
+        var shape = _box.KernelShape;
+        var err = Failures.Expected(ModelingDiagnostics.DraftFailed, "msg", default, null, face.KernelShape, shape);
         Assert.Equal("msg", err.Message);
-        Assert.True(err.Error.Shapes[0].IsSame(face.Wrapped));
+        Assert.True(err.Error.Shapes[0].IsSame(face.KernelShape));
         Assert.True(err.Error.Shapes[1].IsEqual(shape));
     }
 }

@@ -4,7 +4,7 @@ namespace Kerf.Modeling;
 /// The base of the sketch objects (<see cref="Rectangle"/>, <see cref="Circle"/>, …): a sketch of faces, aligned in X
 /// and Y by their bounding box and then rotated about Z.
 /// </summary>
-public abstract class BaseSketchObject : Sketch, IBuilderObject
+public abstract class BaseSketchObject : Sketch
 {
     /// <summary>A sketch object from a face or compound of faces.</summary>
     /// <param name="obj">The faces.</param>

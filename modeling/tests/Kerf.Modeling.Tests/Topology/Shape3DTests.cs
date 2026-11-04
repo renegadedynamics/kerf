@@ -30,7 +30,7 @@ public class FilletFailuresTests
     {
         // Box, Solid and Part share the same diagnostic path
         var box = Box(20, 20, 2);
-        foreach (Shape3D shape in new Shape3D[] { box, box.SingleSolid(), new Part(box.Wrapped) })
+        foreach (Shape3D shape in new Shape3D[] { box, box.SingleSolid(), new Part(box.KernelShape) })
         {
             var e = Assert.Throws<Kerf.KerfException>(() => shape.Fillet(3, shape.Edges()));
             Assert.Equal(PlateMessage, e.Error.Message);
@@ -92,7 +92,7 @@ public class FilletFailuresTests
         // Indices follow the iterable, including repeated and reversed selections
         var plate = Box(20, 20, 2);
         var edges = plate.Edges();
-        var reversedEdge = new Edge(((global::Kerf.Topology.Edge)(edges[1].Wrapped.Reversed())));
+        var reversedEdge = new Edge(((global::Kerf.Topology.Edge)(edges[1].KernelShape.Reversed())));
         Assert.True(edges[1].IsSame(reversedEdge));
         Assert.False(edges[1].IsEqual(reversedEdge));
         var selection = new[] { edges[3], edges[0], reversedEdge, edges[1] }.Select(e => e);
@@ -172,7 +172,7 @@ public class Shape3DTests
     public void Make3DResultCompound()
     {
         var compound = new Compound([Solid.MakeBox(1, 1, 1), Solid.MakeBox(1, 1, 1).Translate(new Vector(2, 0, 0))]);
-        var result = Shape3D.Make3DResult(compound.Wrapped);
+        var result = Shape3D.Make3DResult(compound.KernelShape);
         Assert.IsType<Part>(result);
         Assert.Equal(2, result.Solids().Count);
         Assert.True(result.IsValid);

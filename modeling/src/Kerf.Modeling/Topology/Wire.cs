@@ -109,7 +109,7 @@ public partial class Wire : Shape1D
         var vectors = vertices.ToList();
         if ((vectors[0] - vectors[^1]).Length > Constants.Tolerance && close)
             vectors.Add(vectors[0]);
-        var points = vectors.Select(v => v.ToGpPnt()).ToArray();
+        var points = vectors.Select(v => v.ToPoint3D()).ToArray();
         return new Wire(Failures.Get(global::Kerf.Topology.Wire.Polygon(points), () => "polygon"));
     }
 
@@ -239,7 +239,7 @@ public partial class Wire : Shape1D
     {
         var curve = GeomAdaptor();
         var target = PositionAt(position);
-        var pnt = target.ToGpPnt();
+        var pnt = target.ToPoint3D();
         // The extrema of the distance, nearest first
         var extrema = curve.Project(pnt);
         if (extrema.IsEmpty)
@@ -516,8 +516,8 @@ public partial class Wire : Shape1D
             throw new ArgumentException("Provide exactly one of direction or center");
 
         var projection = directionVector is { } dv
-            ? ShapeProjections.Project(TopoWire, targetObject.TopoShape, dv.ToGpDir())
-            : ShapeProjections.Project(TopoWire, targetObject.TopoShape, centerPoint.ToGpPnt());
+            ? ShapeProjections.Project(TopoWire, targetObject.TopoShape, dv.ToDirection3D())
+            : ShapeProjections.Project(TopoWire, targetObject.TopoShape, centerPoint.ToPoint3D());
         var output = new List<Wire>();
         {
             var orientation = TopoShape.Orientation;

@@ -26,7 +26,7 @@ internal static class GeomEqualObjects
     /// <summary>An edge on an OCCT B-spline built from its poles, knots and multiplicities (and weights).</summary>
     public static Edge BSpline(Vector[] poles, double[] knots, int[] mults, int degree, double[]? weights = null)
     {
-        Point3D[] poleArray = [.. poles.Select(p => p.ToGpPnt())];
+        Point3D[] poleArray = [.. poles.Select(p => p.ToPoint3D())];
         var curve = weights is null
             ? new BSplineCurve3D(poleArray, knots, mults, degree, false)
             : new BSplineCurve3D(poleArray, knots, mults, degree, false, weights);
@@ -398,9 +398,9 @@ public class EdgeGeomEqualOffsetTests
         double first, last;
         var adaptor = spline.GeomAdaptor();
         (first, last) = (adaptor.Range.Min, adaptor.Range.Max);
-        var topoEdge = ((global::Kerf.Topology.Edge)spline.Wrapped);
+        var topoEdge = ((global::Kerf.Topology.Edge)spline.KernelShape);
         Assert.True(topoEdge.TryGetCurve(out var basis, out _));
-        var dir = (direction ?? new Vector(0, 0, 1)).ToGpDir();
+        var dir = (direction ?? new Vector(0, 0, 1)).ToDirection3D();
         var curve = new OffsetCurve3D(basis, distance, dir);
         var edge = new Edge(global::Kerf.Construction.ShapeFactory.FromCurve(curve, new(first, last)).Value);
         Assert.Equal(GeomType.Offset, edge.GeomType);

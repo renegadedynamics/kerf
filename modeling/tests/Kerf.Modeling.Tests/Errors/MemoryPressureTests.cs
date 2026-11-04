@@ -14,7 +14,7 @@ public class MemoryPressureTests
     [Fact]
     public void SmallShapesArentWorthTelling()
     {
-        var line = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0)).Wrapped;
+        var line = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0)).KernelShape;
         Assert.InRange(EngineShapes.EstimateMemory(line), 1, 4095);
     }
 

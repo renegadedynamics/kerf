@@ -12,12 +12,12 @@ public class LocationTests
 {
     static Vector Translation(Location loc)
     {
-        return new Vector(loc.ToGpTrsf().TranslationPart);
+        return new Vector(loc.ToTransform3D().TranslationPart);
     }
 
     static double RotationAngle(Location loc)
     {
-        var trsf = loc.ToGpTrsf();
+        var trsf = loc.ToTransform3D();
         var q = trsf.GetRotation();
         return q.GetRotationAngle() * 180 / Math.PI;
     }
@@ -91,7 +91,7 @@ public class LocationTests
         static Transform3D Rotate(Point3D origin, Vector dir, double angle)
         {
             var trsf = new Transform3D();
-            var d = dir.ToGpDir();
+            var d = dir.ToDirection3D();
             var ax = new Axis3D(origin, d);
             trsf = trsf.WithRotation(ax, angle);
             return trsf;
@@ -255,9 +255,9 @@ public class LocationTests
     {
         // OCCT compares locations by identity: copies of one Location share it, separate equal ones don't
         var loc = new Location(new Vector(1, 2, 3));
-        var a = loc.ToTopLoc();
-        var b = new Location(loc).ToTopLoc();
-        var c = new Location(new Vector(1, 2, 3)).ToTopLoc();
+        var a = loc.ToPlacement();
+        var b = new Location(loc).ToPlacement();
+        var c = new Location(new Vector(1, 2, 3)).ToPlacement();
         Assert.True(a.IsEqual(b));
         Assert.False(a.IsEqual(c));
     }

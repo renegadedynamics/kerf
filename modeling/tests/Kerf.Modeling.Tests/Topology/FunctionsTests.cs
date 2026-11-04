@@ -61,18 +61,18 @@ public class FunctionsTests
         var c2 = new Compound([b1, c1]);
         var c3 = new Compound([c2]);
         var c4 = new Compound([c3]);
-        Assert.Equal(1, c4.Wrapped.ChildCount);
-        var c5 = new Compound(TopoUtil.UnwrapCompound(((global::Kerf.Topology.Compound)c4.Wrapped), false));
-        Assert.Equal(2, c5.Wrapped.ChildCount);
+        Assert.Equal(1, c4.KernelShape.ChildCount);
+        var c5 = new Compound(TopoUtil.UnwrapCompound(((global::Kerf.Topology.Compound)c4.KernelShape), false));
+        Assert.Equal(2, c5.KernelShape.ChildCount);
 
         // unwrap fully
         var c0 = new Compound([b1]);
         c1 = new Compound([c0]);
-        var result = Shape.Cast(TopoUtil.UnwrapCompound(((global::Kerf.Topology.Compound)c1.Wrapped), true));
+        var result = Shape.Cast(TopoUtil.UnwrapCompound(((global::Kerf.Topology.Compound)c1.KernelShape), true));
         Assert.IsAssignableFrom<Solid>(result);
 
         // unwrap not fully
-        result = Shape.Cast(TopoUtil.UnwrapCompound(((global::Kerf.Topology.Compound)c1.Wrapped), false));
+        result = Shape.Cast(TopoUtil.UnwrapCompound(((global::Kerf.Topology.Compound)c1.KernelShape), false));
         Assert.IsAssignableFrom<Compound>(result);
     }
 }

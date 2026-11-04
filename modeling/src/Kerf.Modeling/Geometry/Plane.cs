@@ -187,8 +187,8 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         if (xDir is null)
         {
             // OCCT picks an X direction perpendicular to the normal
-            var p = origin.ToGpPnt();
-            var n = z.ToGpDir();
+            var p = origin.ToPoint3D();
+            var n = z.ToDirection3D();
             var ax3 = new CoordinateSystem(p, n);
             var xd = ax3.XDirection;
             x = new Vector(xd).Normalized();
@@ -204,9 +204,9 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
 
     static Plane3D Ax3Plane(Vector origin, Vector z, Vector x)
     {
-        var p = origin.ToGpPnt();
-        var n = z.ToGpDir();
-        var vx = x.ToGpDir();
+        var p = origin.ToPoint3D();
+        var n = z.ToDirection3D();
+        var vx = x.ToDirection3D();
         var ax3 = new CoordinateSystem(p, n, vx);
         return new Plane3D(ax3);
     }
@@ -244,13 +244,13 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     }
 
     /// <summary>The OCCT gp_Pln of this plane.</summary>
-    public Plane3D ToGpPln() => Pln;
+    public Plane3D ToPlane3D() => Pln;
 
     /// <summary>A new OCCT gp_Ax3 for this plane's coordinate system.</summary>
-    public CoordinateSystem ToGpAx3() => Pln.Position;
+    public CoordinateSystem ToCoordinateSystem() => Pln.Position;
 
     /// <summary>A new OCCT gp_Ax2 for this plane's coordinate system.</summary>
-    public Frame3D ToGpAx2()
+    public Frame3D ToFrame3D()
     {
         var ax3 = Pln.Position;
         return ax3.Frame;
@@ -268,8 +268,8 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     /// <summary>This plane with a new X direction, projected to be perpendicular to the normal.</summary>
     public Plane WithXDir(Vector xDir)
     {
-        var ax2 = ToGpAx2();
-        var d = xDir.ToGpDir();
+        var ax2 = ToFrame3D();
+        var d = xDir.ToDirection3D();
         ax2 = ax2.WithXDirection(d);
         var ax3 = new CoordinateSystem(ax2);
         return new Plane(new Plane3D(ax3), owned: true);
@@ -278,8 +278,8 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     /// <summary>This plane with a new Y direction, projected to be perpendicular to the normal.</summary>
     public Plane WithYDir(Vector yDir)
     {
-        var ax2 = ToGpAx2();
-        var d = yDir.ToGpDir();
+        var ax2 = ToFrame3D();
+        var d = yDir.ToDirection3D();
         ax2 = ax2.WithYDirection(d);
         var ax3 = new CoordinateSystem(ax2);
         return new Plane(new Plane3D(ax3), owned: true);
@@ -397,15 +397,15 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     /// <summary>True if the point lies in the plane, within the tolerance.</summary>
     public bool Contains(Vector point, double tolerance = Constants.Tolerance)
     {
-        var p = point.ToGpPnt();
+        var p = point.ToPoint3D();
         return Pln.Contains(p, tolerance);
     }
 
     /// <summary>True if the whole axis lies in the plane, within the tolerance (linear and angular).</summary>
     public bool Contains(Axis axis, double tolerance = Constants.Tolerance)
     {
-        var p = axis.Position.ToGpPnt();
-        var d = axis.Direction.ToGpDir();
+        var p = axis.Position.ToPoint3D();
+        var d = axis.Direction.ToDirection3D();
         var line = new Line3D(p, d);
         return Pln.Contains(line, tolerance, tolerance);
     }
@@ -452,7 +452,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     {
         if (Contains(axis))
             return axis;
-        var ax1 = axis.ToGpAx1();
+        var ax1 = axis.ToAxis3D();
         var line = new LineCurve3D(ax1);
         var ax3 = Pln.Position;
         var plane = new PlaneSurface(ax3);

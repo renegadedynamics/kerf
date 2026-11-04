@@ -1,16 +1,11 @@
 
 namespace Kerf.Modeling;
 
-/// <summary>The combination mode of a builder object: how it joins the builder's shape (used in builder mode).</summary>
-public interface IBuilderObject
-{
-}
-
 /// <summary>
 /// The base of the part objects (<see cref="Box"/>, <see cref="Cylinder"/>, …): a part made from a solid, aligned and then
 /// rotated.
 /// </summary>
-public abstract class BasePartObject : Part, IBuilderObject
+public abstract class BasePartObject : Part
 {
     /// <summary>A part object from a solid (or part), aligned by its bounding box and then rotated.</summary>
     /// <param name="part">The solid to make the object of.</param>

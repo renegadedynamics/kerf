@@ -41,7 +41,7 @@ public partial class Solid : Shape3D
     public static Solid MakeBox(double length, double width, double height, Plane? plane = null) =>
         Failures.Doing(() => $"box {Formatting.Number(length)} × {Formatting.Number(width)} × {Formatting.Number(height)}", () =>
         {
-            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var ax2 = (plane ?? Plane.XY).ToFrame3D();
             return new Solid(Failures.Get(global::Kerf.Topology.Solid.Box(length, width, height, ax2), () => "box").Shape);
         });
 
@@ -49,7 +49,7 @@ public partial class Solid : Shape3D
     public static Solid MakeCone(double baseRadius, double topRadius, double height, Plane? plane = null, double angle = 360) =>
         Failures.Doing(() => $"cone of radii {Formatting.Number(baseRadius)} and {Formatting.Number(topRadius)}, height {Formatting.Number(height)}", () =>
         {
-            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var ax2 = (plane ?? Plane.XY).ToFrame3D();
             return new Solid(Failures.Get(global::Kerf.Topology.Solid.Cone(baseRadius, topRadius, height, ax2, angle * Constants.DegToRad),
                                           () => "cone").Shape);
         });
@@ -58,7 +58,7 @@ public partial class Solid : Shape3D
     public static Solid MakeCylinder(double radius, double height, Plane? plane = null, double angle = 360) =>
         Failures.Doing(() => $"cylinder of radius {Formatting.Number(radius)}, height {Formatting.Number(height)}", () =>
         {
-            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var ax2 = (plane ?? Plane.XY).ToFrame3D();
             return new Solid(Failures.Get(global::Kerf.Topology.Solid.Cylinder(radius, height, ax2, angle * Constants.DegToRad),
                                           () => "cylinder").Shape);
         });
@@ -67,7 +67,7 @@ public partial class Solid : Shape3D
     public static Solid MakeSphere(double radius, Plane? plane = null, double angle1 = -90, double angle2 = 90, double angle3 = 360) =>
         Failures.Doing(() => $"sphere of radius {Formatting.Number(radius)}", () =>
         {
-            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var ax2 = (plane ?? Plane.XY).ToFrame3D();
             var options = new SphereOptions
             {
                 MinLatitude = angle1 * Constants.DegToRad,
@@ -82,7 +82,7 @@ public partial class Solid : Shape3D
                                   double endAngle = 360, double majorAngle = 360) =>
         Failures.Doing(() => $"torus of radii {Formatting.Number(majorRadius)} and {Formatting.Number(minorRadius)}", () =>
         {
-            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var ax2 = (plane ?? Plane.XY).ToFrame3D();
             var options = new TorusOptions
             {
                 MinorStart = startAngle * Constants.DegToRad,
@@ -97,7 +97,7 @@ public partial class Solid : Shape3D
                                   Plane? plane = null) =>
         Failures.Doing(() => "wedge", () =>
         {
-            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var ax2 = (plane ?? Plane.XY).ToFrame3D();
             var options = new WedgeOptions { TopMin = (minX, minZ), TopMax = (maxX, maxZ) };
             return new Solid(Failures.Get(global::Kerf.Topology.Solid.Wedge(deltaX, deltaY, deltaZ, options, ax2), () => "wedge").Shape);
         });
@@ -175,7 +175,7 @@ public partial class Solid : Shape3D
         // The prism shares the profile's face, which the draft no longer edits (the kernel's unit 10H5): no copy is made
 
         // Extrude the profile; its sides are the faces generated from its edges
-        var directionVec = direction.ToGpVec();
+        var directionVec = direction.ToVector3D();
         var prismBuilt = Failures.Get(profile.TopoShape.Extrude(directionVec), () => "extrude");
         var prism = prismBuilt.Shape;
         var sideFaces = new List<(global::Kerf.Topology.Face Face, double Angle)>();
@@ -195,8 +195,8 @@ public partial class Solid : Shape3D
         if (alongNormal && sideFaces.All(s => new Face(s.Face).GeomType is GeomType.Plane or GeomType.Cylinder or GeomType.Cone))
         {
             // Draft the sides about the plane of the profile, which keeps its size
-            var center = profile.Center().ToGpPnt();
-            var pullDir = pull.ToGpDir();
+            var center = profile.Center().ToPoint3D();
+            var pullDir = pull.ToDirection3D();
             var neutral = new Plane3D(center, pullDir);
             // The draft can't build every taper a loft can: a failure falls back to the loft
             var drafted = prism.Draft(sideFaces.Select(s => (s.Face, s.Angle * Constants.DegToRad)), pullDir, neutral);
@@ -305,7 +305,7 @@ public partial class Solid : Shape3D
     public static Solid Revolve(Face section, double angle, Axis axis) =>
         Failures.Doing(() => "revolve", () =>
         {
-            var ax1 = axis.ToGpAx1();
+            var ax1 = axis.ToAxis3D();
             // On a copy of the profile, as build123d revolves (BRepPrimAPI_MakeRevol with copy)
             var revolved = Failures.Get(section.TopoShape.Revolve(ax1, angle * Constants.DegToRad, copyProfile: true), () => "revolve");
             return Result(new Solid((global::Kerf.Topology.Solid)revolved.Shape));
@@ -371,8 +371,8 @@ public partial class Solid : Shape3D
             case Vector v:
             {
                 var system = new Frame3D();
-                var start = path.StartPoint().ToGpPnt();
-                var dir = v.ToGpDir();
+                var start = path.StartPoint().ToPoint3D();
+                var dir = v.ToDirection3D();
                 system = system.WithLocation(start);
                 system = system.WithDirection(dir);
                 return new SweepOptions { Frame = SweepFrame.Fixed, FixedFrame = system, WithCorrection = true };
@@ -450,8 +450,8 @@ public partial class Solid : Shape3D
                 throw new ArgumentException(
                     $"Face {face} has unsupported geometry type {face.GeomType.ToString().ToUpperInvariant()}. "
                     + "Only PLANAR, CYLINDRICAL, and CONICAL faces are supported.");
-        var dir = neutralPlane.ZDir.ToGpDir();
-        var pln = neutralPlane.ToGpPln();
+        var dir = neutralPlane.ZDir.ToDirection3D();
+        var pln = neutralPlane.ToPlane3D();
         var drafted = TopoShape.Draft(faceList.Select(f => f.TopoFace), dir, angle * Constants.DegToRad, pln);
         if (!drafted.TryGetValue(out var built))
         {

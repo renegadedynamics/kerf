@@ -1151,7 +1151,7 @@ public class FacePropertiesTests
     {
         // A cone that arrived as a trimmed surface is still a cone
         var lateral = Obj.Cone(5, 0, 5).Faces().Where(GeomType.Cone)[0];
-        Assert.True(((global::Kerf.Topology.Face)lateral.Wrapped).TryGetSurface(out var surface));
+        Assert.True(((global::Kerf.Topology.Face)lateral.KernelShape).TryGetSurface(out var surface));
         var trimmed = new TrimmedSurface(surface, 0.0, 1.0, 0.0, 2.0);
         var face = new Face(SurfaceFaces.Of(trimmed));
         Assert.Equal(GeomType.Cone, face.GeomType);

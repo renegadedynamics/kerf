@@ -41,7 +41,7 @@ public class StepAssemblyTests
     // The shape as OCCT.NET holds it, from the same BRep text (shared sub-shapes stay shared)
     private static global::Kerf.Topology.Shape Occt(Shape shape)
     {
-        var text = Encoding.ASCII.GetString(Extras.WriteBRep(shape.Wrapped));
+        var text = Encoding.ASCII.GetString(Extras.WriteBRep(shape.KernelShape));
         var reader = new StringReader(text);
         global::Kerf.Engine.Foundation.StreamUtilities.SetInputLength(reader, text.Length);
         global::Kerf.Engine.Topology.Tools.BrepTools.Read(out var read, reader);
@@ -162,7 +162,7 @@ public class StepAssemblyTests
             Check.AlmostEqual(a.Y, b.Y, 6);
             Check.AlmostEqual(a.Z, b.Z, 6);
         }
-        Assert.True(bolts.AssemblyChildren[0].Wrapped.IsPartner(bolts.AssemblyChildren[1].Wrapped));
+        Assert.True(bolts.AssemblyChildren[0].KernelShape.IsPartner(bolts.AssemblyChildren[1].KernelShape));
         Assert.True(read.IsValid);
     }
 

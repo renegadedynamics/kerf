@@ -118,13 +118,13 @@ public class PlaneTests
     public void LeftHandedPlanesAreMadeRightHanded()
     {
         var mirrorAxes = new Frame3D();
-        var xy = Plane.XY.ToGpPln();
+        var xy = Plane.XY.ToPlane3D();
         var mirrored = xy.Mirrored(mirrorAxes);
         var position = mirrored.Position;
         Assert.False(position.IsDirect);
 
         var p = new Plane(mirrored);
-        var pln = p.ToGpPln();
+        var pln = p.ToPlane3D();
         var fixedPosition = pln.Position;
         Assert.True(fixedPosition.IsDirect);
     }

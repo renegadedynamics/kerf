@@ -178,8 +178,8 @@ public static class OneD
             var tangent = curve.Derivatives(param, 1).D1;
             var uv1 = pcurve1!.Evaluate(param);
             var uv2 = pcurve2!.Evaluate(param);
-            var normal1 = TopoUtil.FaceNormalVector(face1, uv1.X, uv1.Y).ToGpVec();
-            var normal2 = TopoUtil.FaceNormalVector(face2, uv2.X, uv2.Y).ToGpVec();
+            var normal1 = TopoUtil.FaceNormalVector(face1, uv1.X, uv1.Y).ToVector3D();
+            var normal2 = TopoUtil.FaceNormalVector(face2, uv2.X, uv2.Y).ToVector3D();
             if (Math.Min(tangent.Magnitude, Math.Min(normal1.Magnitude, normal2.Magnitude)) < 1e-12)
                 continue;
             tangent = tangent.Normalized();
