@@ -15498,7 +15498,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 1531. **Tests and measurement.** `Kerf.Kernel.PublicApi.Tests` reaches ModelingAlgorithms now and has 43 new tests
        (84 in all), using only the public API: for each area success, a failure with its diagnostic, cancellation and
        history; its no-engine-types test covers the five new namespaces and ModelingAlgorithms. Every other suite keeps
-       its count: no test was added, removed or changed by hand; the renames of 16901 and 16902 rewrote the call sites
+       its count: no test was added, removed or changed by hand; the renames of decisions 1523 and 1524 rewrote the call sites
        in 48 test files (Draw-lite's among them) and 5 of the modelling layer's source files, by tool, one for one; the
        internalisation changed none. Counts: PublicApi 84, Foundation 2,305, ModelingData 3,149, ModelingAlgorithms
        4,844 (9 skipped), DataExchange 282 (1 skipped), Draw-lite 687, Oracle 383, the modelling layer 1,884; all pass.
