@@ -8,18 +8,64 @@ namespace Kerf.Kernel.PublicApi.Tests;
 
 /// <summary>
 /// The public surface shows no engine (docs/api/README.md, section 1.1; decision 1519): no public or protected member of
-/// a public type in <c>Kerf</c>, <c>Kerf.Geometry</c> or <c>Kerf.Topology</c> names a type of <c>Kerf.Engine.*</c> or
-/// <c>Occt</c>, except the transient base (question 55).
+/// a public type outside <c>Kerf.Engine.*</c> and <c>Occt</c> names a type of those namespaces, except the transient base
+/// (question 55); and nothing is public in those namespaces but what <see cref="PublicEngineTypes"/> lists, with its reason.
 /// </summary>
 public class PublicSurfaceTests
 {
+    /// <summary>The public namespaces, so that a new one is added here on purpose. The checks read every public type.</summary>
     private static readonly string[] PublicNamespaces =
-        ["Kerf", "Kerf.Geometry", "Kerf.Topology", "Kerf.Construction", "Kerf.Booleans", "Kerf.Fillets", "Kerf.Offsets", "Kerf.Features"];
+    [
+        "Kerf", "Kerf.Booleans", "Kerf.Construction", "Kerf.Drawing", "Kerf.Exchange", "Kerf.Features", "Kerf.Fillets",
+        "Kerf.Geometry", "Kerf.Healing", "Kerf.Measurement", "Kerf.Meshing", "Kerf.Offsets", "Kerf.Topology",
+    ];
 
-    private static IEnumerable<Type> PublicTypes()
-        => new[] { typeof(Point3D).Assembly, typeof(Shape).Assembly, typeof(GeometryOperations).Assembly }
-            .SelectMany(a => a.GetExportedTypes())
-            .Where(t => PublicNamespaces.Contains(t.Namespace));
+    /// <summary>The engine's types left public, each with the reason it can't be internal.</summary>
+    private static readonly Dictionary<string, string> PublicEngineTypes = new()
+    {
+        ["Kerf.Engine.Foundation.Transient"] =
+            "The base of the public Geometry3D and Geometry2D: C# needs a public class's base to be public. It has no public "
+            + "or protected members and only the kernel can derive from it (question 55).",
+    };
+
+    private static IEnumerable<Type> ExportedTypes()
+        => new[] { typeof(Point3D).Assembly, typeof(Shape).Assembly, typeof(GeometryOperations).Assembly, typeof(Kerf.Exchange.Step).Assembly }
+            .Distinct()
+            .SelectMany(a => a.GetExportedTypes());
+
+    private static bool IsEngineNamespace(string? ns)
+        => ns is not null && (ns == "Occt" || ns.StartsWith("Occt.", StringComparison.Ordinal) || ns.StartsWith("Kerf.Engine", StringComparison.Ordinal));
+
+    private static IEnumerable<Type> PublicTypes() => ExportedTypes().Where(t => !IsEngineNamespace(t.Namespace));
+
+    [Fact]
+    public void The_public_namespaces_are_the_ones_listed()
+        => Assert.Equal(PublicNamespaces.Order(StringComparer.Ordinal), PublicTypes().Select(t => t.Namespace!).Distinct().Order(StringComparer.Ordinal));
+
+    [Fact]
+    public void Nothing_is_public_in_the_engine_but_what_is_listed()
+        => Assert.Equal(PublicEngineTypes.Keys.Order(StringComparer.Ordinal),
+                        ExportedTypes().Where(t => IsEngineNamespace(t.Namespace)).Select(t => t.FullName!).Order(StringComparer.Ordinal));
+
+    [Fact]
+    public void The_transient_base_shows_no_members()
+    {
+        Type transient = typeof(Geometry3D).BaseType!;
+        Assert.Equal("Kerf.Engine.Foundation.Transient", transient.FullName);
+        const BindingFlags all = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
+        Assert.Empty(transient.GetMembers(all).Where(IsVisible).Select(m => m.Name));
+    }
+
+    private static bool IsVisible(MemberInfo member) => member switch
+    {
+        MethodBase m => m.IsPublic || m.IsFamily || m.IsFamilyOrAssembly,
+        FieldInfo f => f.IsPublic || f.IsFamily || f.IsFamilyOrAssembly,
+        PropertyInfo p => (p.GetMethod is { } g && (g.IsPublic || g.IsFamily || g.IsFamilyOrAssembly))
+                          || (p.SetMethod is { } s && (s.IsPublic || s.IsFamily || s.IsFamilyOrAssembly)),
+        EventInfo e => e.AddMethod is { } add && (add.IsPublic || add.IsFamily || add.IsFamilyOrAssembly),
+        Type t => t.IsNestedPublic || t.IsNestedFamily || t.IsNestedFamORAssem,
+        _ => false,
+    };
 
     private static bool IsEngine(Type type)
     {
@@ -28,14 +74,17 @@ public class PublicSurfaceTests
             return IsEngine(type.GetElementType()!);
         }
 
+        if (type.IsGenericParameter)
+        {
+            return false;
+        }
+
         if (type.IsGenericType && type.GetGenericArguments().Any(IsEngine))
         {
             return true;
         }
 
-        string? ns = type.Namespace;
-        return ns is not null && (ns == "Occt" || ns.StartsWith("Occt.", StringComparison.Ordinal) || ns.StartsWith("Kerf.Engine", StringComparison.Ordinal))
-               && type.Name != "Transient";
+        return IsEngineNamespace(type.Namespace) && type.Name != "Transient";
     }
 
     [Fact]
@@ -50,18 +99,14 @@ public class PublicSurfaceTests
                 found.Add($"{type}: base {baseType}");
             }
 
+            foreach (Type implemented in type.GetInterfaces().Where(IsEngine))
+            {
+                found.Add($"{type}: interface {implemented}");
+            }
+
             foreach (MemberInfo member in type.GetMembers(all))
             {
-                bool visible = member switch
-                {
-                    MethodBase m => m.IsPublic || m.IsFamily || m.IsFamilyOrAssembly,
-                    FieldInfo f => f.IsPublic || f.IsFamily || f.IsFamilyOrAssembly,
-                    PropertyInfo p => (p.GetMethod is { } g && (g.IsPublic || g.IsFamily || g.IsFamilyOrAssembly))
-                                      || (p.SetMethod is { } s && (s.IsPublic || s.IsFamily || s.IsFamilyOrAssembly)),
-                    Type t => t.IsNestedPublic || t.IsNestedFamily || t.IsNestedFamORAssem,
-                    _ => false,
-                };
-                if (!visible)
+                if (!IsVisible(member))
                 {
                     continue;
                 }
@@ -72,6 +117,7 @@ public class PublicSurfaceTests
                     ConstructorInfo c => c.GetParameters().Select(p => p.ParameterType),
                     FieldInfo f => [f.FieldType],
                     PropertyInfo p => [p.PropertyType, .. p.GetIndexParameters().Select(i => i.ParameterType)],
+                    EventInfo e => [e.EventHandlerType!],
                     _ => [],
                 };
                 foreach (Type t in named.Where(IsEngine))
