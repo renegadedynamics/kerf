@@ -7,7 +7,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Engine.Booleans.CheckStatus;
 using static Kerf.Engine.Booleans.Operation;
 
@@ -141,7 +140,7 @@ internal class Check : Options
     public bool IsValid => _faultyShapes.IsEmpty();
 
     /// <summary>The faults found (their shapes frozen as they are read).</summary>
-    public ISchematiqList<CheckResult> Result() => PackedList.Own([.. _faultyShapes]);
+    public IReadOnlyList<CheckResult> Result() => ImmutableArrays.Own([.. _faultyShapes]);
 
     /// <summary>OCCT's <c>Result()</c>: the algorithm's own list, for ported code.</summary>
     internal NCollection_List<CheckResult> InternalResult() => _faultyShapes;

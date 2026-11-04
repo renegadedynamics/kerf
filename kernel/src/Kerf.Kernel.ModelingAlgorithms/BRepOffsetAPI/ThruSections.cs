@@ -18,7 +18,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Engine.Construction.Filling.ThruSectionErrorStatus;
 using static Kerf.Geometry.Continuity;
@@ -1802,7 +1801,7 @@ internal class ThruSections : MakeShape
     }
 
     /// <summary>The sections as given (a point section as its wire of one degenerated edge), frozen.</summary>
-    public ISchematiqList<Shape> Wires() => PublishedList(_inputWires);
+    public IReadOnlyList<Shape> Wires() => PublishedList(_inputWires);
 
     /// <summary>The status of the last <see cref="Build"/>.</summary>
     public ThruSectionErrorStatus GetStatus() => _status;

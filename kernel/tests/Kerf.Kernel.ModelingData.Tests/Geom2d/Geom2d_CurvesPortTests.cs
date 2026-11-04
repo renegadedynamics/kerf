@@ -10,7 +10,7 @@ namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
 /// OCCT.NET's own tests of the Geom2d curves: freezing and the non-mutating twins, the shared basis curves of
-/// trimmed and offset curves (decision 132), the PackedList accessors (decision 131), reproductions of OCCT
+/// trimmed and offset curves (decision 132), the read-only list accessors (decision 131), reproductions of OCCT
 /// issues the port keeps (occt-issues.md), and finite-difference checks of the Bezier and B-spline derivatives.
 /// </summary>
 public class Geom2d_CurvesPortTest

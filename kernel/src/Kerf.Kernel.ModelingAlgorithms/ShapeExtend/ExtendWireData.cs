@@ -641,7 +641,7 @@ internal class ExtendWireData : Transient
 
     /// <summary>The non-manifold edges, as a new read-only list.</summary>
     /// <remarks>OCCT returns its own sequence; ported code reads it through <see cref="InternalNonmanifoldEdges"/>.</remarks>
-    public Schematiq.Collections.ISchematiqList<Shape> NonmanifoldEdges()
+    public IReadOnlyList<Shape> NonmanifoldEdges()
     {
         var array = new Shape[_nonmanifoldEdges.Length()];
         for (int i = 1; i <= array.Length; i++)
@@ -649,7 +649,7 @@ internal class ExtendWireData : Transient
             array[i - 1] = _nonmanifoldEdges.Value(i);
         }
 
-        return PackedList.Own(array);
+        return ImmutableArrays.Own(array);
     }
 
     /// <summary>The wire data's own sequence of non-manifold edges, as OCCT's NonmanifoldEdges returns it.</summary>

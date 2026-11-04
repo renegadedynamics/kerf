@@ -17,7 +17,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Topology.Orientation;
 
@@ -482,7 +481,7 @@ internal class SurfaceFilling
         {
             for (int guard = 0; guard < 100; guard++)
             {
-                ISchematiqList<Shape> modified = history.Modified(s);
+                IReadOnlyList<Shape> modified = history.Modified(s);
                 if (modified.Count == 0 || modified[0].IsSame(s))
                 {
                     break;
@@ -794,13 +793,13 @@ internal class SurfaceFilling
     /// The new edge or vertex made from the boundary edge or vertex <paramref name="s"/> (a list of one shape, or
     /// empty; frozen, with the face).
     /// </summary>
-    public ISchematiqList<Shape> Generated(in Shape s)
+    public IReadOnlyList<Shape> Generated(in Shape s)
     {
         NCollection_List<Shape> list = InternalGenerated(s);
         _face.TShape()?.FreezeGraph();
         if (list.IsEmpty())
         {
-            return PackedList<Shape>.Empty;
+            return Array.Empty<Shape>();
         }
         Shape[] shapes = new Shape[list.Extent()];
         int i = 0;
@@ -810,7 +809,7 @@ internal class SurfaceFilling
             shapes[i].TShape()?.FreezeGraph();
             i++;
         }
-        return PackedList.Own(shapes);
+        return ImmutableArrays.Own(shapes);
     }
 
     /// <summary><see cref="Generated"/>: the filling's own list, unfrozen (OCCT's reference), for ported code.</summary>

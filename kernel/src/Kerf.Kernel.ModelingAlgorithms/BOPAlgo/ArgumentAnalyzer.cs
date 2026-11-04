@@ -16,7 +16,6 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Engine.Booleans.CheckStatus;
 using static Kerf.Engine.Booleans.Operation;
 using static Kerf.Topology.Orientation;
@@ -267,7 +266,7 @@ internal class ArgumentAnalyzer : BooleanAlgorithm
     public bool HasFaulty => !_result.IsEmpty();
 
     /// <summary>The faults found (their shapes frozen as they are read).</summary>
-    public ISchematiqList<CheckResult> GetCheckResult() => PackedList.Own([.. _result]);
+    public IReadOnlyList<CheckResult> GetCheckResult() => ImmutableArrays.Own([.. _result]);
 
     /// <summary>OCCT's <c>GetCheckResult</c>: the analyzer's own list, for ported code.</summary>
     internal NCollection_List<CheckResult> InternalGetCheckResult() => _result;

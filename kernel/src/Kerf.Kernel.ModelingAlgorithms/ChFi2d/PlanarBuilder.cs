@@ -16,7 +16,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Engine.Fillets.Planar.ConstructionError;
 using static Kerf.Engine.Construction.Constraints.Qualifier;
 using static Kerf.Topology.Orientation;
@@ -1338,7 +1337,7 @@ internal sealed partial class PlanarBuilder
     }
 
     /// <summary>The fillets built (frozen with the face that holds them).</summary>
-    public ISchematiqList<Shape> FilletEdges() => PublishedEdges(_fillets);
+    public IReadOnlyList<Shape> FilletEdges() => PublishedEdges(_fillets);
 
     /// <summary>The builder's own sequence behind <see cref="FilletEdges"/>, unfrozen.</summary>
     internal NCollection_Sequence<Shape> InternalFilletEdges() => _fillets;
@@ -1352,7 +1351,7 @@ internal sealed partial class PlanarBuilder
     }
 
     /// <summary>The chamfers built (frozen with the face that holds them).</summary>
-    public ISchematiqList<Shape> ChamferEdges() => PublishedEdges(_chamfers);
+    public IReadOnlyList<Shape> ChamferEdges() => PublishedEdges(_chamfers);
 
     /// <summary>The builder's own sequence behind <see cref="ChamferEdges"/>, unfrozen.</summary>
     internal NCollection_Sequence<Shape> InternalChamferEdges() => _chamfers;
@@ -1406,12 +1405,12 @@ internal sealed partial class PlanarBuilder
         return edge;
     }
 
-    private ISchematiqList<Shape> PublishedEdges(NCollection_Sequence<Shape> edges)
+    private IReadOnlyList<Shape> PublishedEdges(NCollection_Sequence<Shape> edges)
     {
         FreezeResult();
         if (edges.IsEmpty())
         {
-            return PackedList<Shape>.Empty;
+            return Array.Empty<Shape>();
         }
         var anEdges = new Shape[edges.Length()];
         for (int i = 1; i <= edges.Length(); i++)
@@ -1419,6 +1418,6 @@ internal sealed partial class PlanarBuilder
             anEdges[i - 1] = edges.Value(i);
             anEdges[i - 1].TShape()?.FreezeGraph();
         }
-        return PackedList.Own(anEdges);
+        return ImmutableArrays.Own(anEdges);
     }
 }

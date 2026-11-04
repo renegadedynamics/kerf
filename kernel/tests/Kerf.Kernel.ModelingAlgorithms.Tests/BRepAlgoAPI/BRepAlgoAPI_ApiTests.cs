@@ -11,7 +11,6 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Schematiq.Collections;
 using Kerf.Kernel.ModelingData.Tests;
 using static Kerf.Topology.ShapeType;
 
@@ -102,7 +101,7 @@ public class BRepAlgoAPI_ApiTests
         for (Explorer anExp = new(a, ShapeType.Face); anExp.More(); anExp.Next())
         {
             Shape aF = anExp.Current();
-            ISchematiqList<Shape> aLM = aFuse.Modified(aF);
+            IReadOnlyList<Shape> aLM = aFuse.Modified(aF);
             if (aLM.Count > 0)
             {
                 ++aModified;
@@ -129,7 +128,7 @@ public class BRepAlgoAPI_ApiTests
         int aBefore = aCut.InternalSectionEdges().Extent();
         Assert.True(aBefore > 0);
         aCut.SimplifyResult();
-        ISchematiqList<Shape> aSE = aCut.SectionEdges();
+        IReadOnlyList<Shape> aSE = aCut.SectionEdges();
         Assert.Equal(aBefore, aSE.Count);
         IndexedSet<Shape> anEdges = new(ShapeHasher.Instance);
         Exploration.MapShapes(aCut.Shape(), ShapeType.Edge, anEdges);

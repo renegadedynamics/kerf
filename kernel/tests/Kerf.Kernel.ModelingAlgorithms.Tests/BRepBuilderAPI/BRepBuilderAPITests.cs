@@ -11,7 +11,6 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Schematiq.Collections;
 using Kerf.Kernel.ModelingData.Tests;
 using static Kerf.Engine.Construction.Api.EdgeError;
 using static Kerf.Engine.Construction.Api.FaceError;
@@ -175,7 +174,7 @@ public class BRepBuilderAPITests
         Wire aW = aMW.Wire();
         s1.AssertUnchanged(e1);
         s2.AssertUnchanged(e2);
-        ISchematiqList<Shape> aModified = aMW.Modified(e1);
+        IReadOnlyList<Shape> aModified = aMW.Modified(e1);
         Shape aCopy = Assert.Single(aModified);
         Assert.True(aCopy.TShape()!.IsFrozen);
         Assert.True(new Explorer(aW, ShapeType.Edge).Current().IsSame(aCopy));

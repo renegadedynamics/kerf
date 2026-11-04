@@ -488,7 +488,7 @@ public class Geom2dConvertTests
     {
         LineCurve2D aLine = new(new Point2D(0, 0), new Direction2D(1, 1));
         ApproxArcsSegments2D aLineApprox = new(new CurveAdaptor2D(aLine, 0.0, 5.0), 1e-3, 0.01);
-        Schematiq.Collections.ISchematiqList<Curve2D> aResult = aLineApprox.GetResult();
+        IReadOnlyList<Curve2D> aResult = aLineApprox.GetResult();
         Assert.Single(aResult);
         Assert.True(aResult[0].IsFrozen);
         Assert.True(aResult[0].Value(aResult[0].LastParameter).DistanceTo(aLine.Value(5.0)) < 1e-9);
@@ -510,7 +510,7 @@ public class Geom2dConvertTests
         BSplineCurve2D aC = Cubic();
         const double aTol = 1e-2;
         ApproxArcsSegments2D anApprox = new(new CurveAdaptor2D(aC), aTol, 0.1);
-        Schematiq.Collections.ISchematiqList<Curve2D> aResult = anApprox.GetResult();
+        IReadOnlyList<Curve2D> aResult = anApprox.GetResult();
         Assert.True(aResult.Count > 1);
         Assert.True(aResult[0].Value(aResult[0].FirstParameter).DistanceTo(aC.StartPoint) < 1e-7);
         Curve2D aLastCurve = aResult[aResult.Count - 1];

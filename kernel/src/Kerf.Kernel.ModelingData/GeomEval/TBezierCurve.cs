@@ -254,10 +254,10 @@ internal sealed class TBezierCurve : BoundedCurve3D
     }
 
     /// <summary>The poles (a copy, indexed from 0).</summary>
-    public PackedList<Point3D> Poles() => _poles.ToPackedList();
+    public IReadOnlyList<Point3D> Poles() => _poles.ToImmutableArray();
 
     /// <summary>The weights (a copy, indexed from 0), empty if the curve is non-rational.</summary>
-    public PackedList<double> Weights() => _weights.ToPackedList();
+    public IReadOnlyList<double> Weights() => _weights.ToImmutableArray();
 
     /// <summary>The frequency parameter alpha.</summary>
     public double Alpha() => _alpha;

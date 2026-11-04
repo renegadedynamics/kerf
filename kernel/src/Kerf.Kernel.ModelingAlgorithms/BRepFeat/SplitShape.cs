@@ -10,7 +10,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Features;
@@ -103,7 +102,7 @@ internal sealed class SplitShape : MakeShape
     }
 
     /// <summary>Returns the faces which are the left of the projected wires (frozen).</summary>
-    public ISchematiqList<Shape> DirectLeft()
+    public IReadOnlyList<Shape> DirectLeft()
     {
         BeforePublishingLists();
         return PublishedList(_sShape.InternalDirectLeft());
@@ -114,7 +113,7 @@ internal sealed class SplitShape : MakeShape
     /// to this set, and so on (frozen).
     /// </summary>
     /// <exception cref="NotDoneException">The splitting isn't done.</exception>
-    public ISchematiqList<Shape> Left()
+    public IReadOnlyList<Shape> Left()
     {
         BeforePublishingLists();
         return PublishedList(_sShape.InternalLeft());
@@ -124,7 +123,7 @@ internal sealed class SplitShape : MakeShape
     internal NCollection_List<Shape> InternalLeft() => _sShape.InternalLeft();
 
     /// <summary>Returns the faces of the "right" part on the shape (frozen).</summary>
-    public ISchematiqList<Shape> Right()
+    public IReadOnlyList<Shape> Right()
     {
         BeforePublishingLists();
         return PublishedList(InternalRight());

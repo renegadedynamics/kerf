@@ -6,7 +6,6 @@
 using Kerf.Engine.Booleans.Api;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 
 namespace Kerf.Engine.Booleans;
 
@@ -62,10 +61,10 @@ internal sealed class CheckResult
     public Shape GetShape2() => Published(_shape2);
 
     /// <summary>The faulty shapes of the object (frozen).</summary>
-    public ISchematiqList<Shape> GetFaultyShapes1() => Published(_faulty1);
+    public IReadOnlyList<Shape> GetFaultyShapes1() => Published(_faulty1);
 
     /// <summary>The faulty shapes of the tool (frozen).</summary>
-    public ISchematiqList<Shape> GetFaultyShapes2() => Published(_faulty2);
+    public IReadOnlyList<Shape> GetFaultyShapes2() => Published(_faulty2);
 
     /// <summary>OCCT's <c>GetShape1</c>, without freezing.</summary>
     internal Shape InternalGetShape1() => _shape1;
@@ -115,7 +114,7 @@ internal sealed class CheckResult
         return shape;
     }
 
-    private static ISchematiqList<Shape> Published(NCollection_List<Shape> shapes)
+    private static IReadOnlyList<Shape> Published(NCollection_List<Shape> shapes)
     {
         Shape[] aShapes = new Shape[shapes.Extent()];
         int i = 0;
@@ -123,6 +122,6 @@ internal sealed class CheckResult
         {
             aShapes[i++] = Published(s);
         }
-        return PackedList.Own(aShapes);
+        return ImmutableArrays.Own(aShapes);
     }
 }

@@ -17,7 +17,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using System.Runtime.InteropServices;
 using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Geometry.CurveKind;
@@ -99,7 +98,7 @@ internal static class BRepAlgo
                 maxTol = tol;
             }
             ApproxArcsSegments2D algo = new(curve, tol, angleTol);
-            ISchematiqList<Curve2D> resultApprox = algo.GetResult();
+            IReadOnlyList<Curve2D> resultApprox = algo.GetResult();
 
             // Form the array of approximated elementary curves
             if (edge.Orientation == Reversed)

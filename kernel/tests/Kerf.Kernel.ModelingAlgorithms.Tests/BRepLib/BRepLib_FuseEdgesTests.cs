@@ -10,7 +10,6 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Schematiq.Collections;
 using Kerf.Kernel.ModelingData.Tests;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
@@ -55,7 +54,7 @@ public class BRepLib_FuseEdgesTests
         var aFuse = new FuseEdges(aF);
         Assert.Equal(2, aFuse.NbVertices());
 
-        IReadOnlyDictionary<int, ISchematiqList<Shape>> anEdges = aFuse.Edges();
+        IReadOnlyDictionary<int, IReadOnlyList<Shape>> anEdges = aFuse.Edges();
         Assert.Equal(2, anEdges.Count);
         Assert.All(anEdges.Values, aList => Assert.Equal(2, aList.Count));
         Assert.All(anEdges.Values, aList => Assert.All(aList, anE => Assert.True(anE.TShape()!.IsFrozen)));

@@ -5,7 +5,6 @@
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 
 namespace Kerf.Engine.Booleans;
 
@@ -39,23 +38,23 @@ internal abstract class BuilderShape : BooleanAlgorithm
     internal Shape InternalShape() => _shape;
 
     /// <summary>The shapes modified from <paramref name="s"/>.</summary>
-    public ISchematiqList<Shape> Modified(in Shape s)
+    public IReadOnlyList<Shape> Modified(in Shape s)
     {
         if (_fillHistory && _history is not null)
         {
             return _history.Modified(s);
         }
-        return PackedList<Shape>.Empty;
+        return Array.Empty<Shape>();
     }
 
     /// <summary>The shapes generated from <paramref name="s"/>.</summary>
-    public ISchematiqList<Shape> Generated(in Shape s)
+    public IReadOnlyList<Shape> Generated(in Shape s)
     {
         if (_fillHistory && _history is not null)
         {
             return _history.Generated(s);
         }
-        return PackedList<Shape>.Empty;
+        return Array.Empty<Shape>();
     }
 
     /// <summary>True if <paramref name="s"/> has been deleted: neither it nor a split of it is in the result.</summary>

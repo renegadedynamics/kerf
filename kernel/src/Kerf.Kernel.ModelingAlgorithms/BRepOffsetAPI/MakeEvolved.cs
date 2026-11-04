@@ -10,7 +10,6 @@ using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Geometry.JoinKind;
 using static Kerf.Topology.ShapeType;
 
@@ -141,11 +140,11 @@ internal class MakeEvolved : MakeShape
     /// The shapes generated from a sub-shape <paramref name="spineShape"/> of the spine and a sub-shape
     /// <paramref name="profShape"/> of the profile (frozen, with the result).
     /// </summary>
-    public ISchematiqList<Shape> GeneratedShapes(in Shape spineShape, in Shape profShape)
+    public IReadOnlyList<Shape> GeneratedShapes(in Shape spineShape, in Shape profShape)
     {
         if (!_evolved.IsDone)
         {
-            return PackedList<Shape>.Empty;
+            return Array.Empty<Shape>();
         }
 
         return _evolved.GeneratedShapes(spineShape, profShape);

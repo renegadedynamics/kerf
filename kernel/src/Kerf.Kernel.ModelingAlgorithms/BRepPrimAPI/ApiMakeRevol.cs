@@ -15,7 +15,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
@@ -340,7 +339,7 @@ internal class ApiMakeRevol : MakeSweep
     /// nothing, though each swept a face of the result. Read only by the public <c>Sweeps.Revolve</c>; the engine's
     /// history stays OCCT's. Frozen, as <see cref="MakeShape.Generated"/>.
     /// </summary>
-    internal ISchematiqList<Shape> GeneratedEvenIfUnused(in Shape s) => PublishedList(GeneratedFrom(s, usedOnly: false));
+    internal IReadOnlyList<Shape> GeneratedEvenIfUnused(in Shape s) => PublishedList(GeneratedFrom(s, usedOnly: false));
 
     private NCollection_List<Shape> GeneratedFrom(in Shape s, bool usedOnly)
     {
@@ -389,7 +388,7 @@ internal class ApiMakeRevol : MakeSweep
                     return _generated;
                 }
                 //
-                ISchematiqList<Shape> modified = _hist.Modified(gs);
+                IReadOnlyList<Shape> modified = _hist.Modified(gs);
                 if (modified.Count == 0)
                 {
                     _generated.Append(FromSwept(gs));
@@ -427,7 +426,7 @@ internal class ApiMakeRevol : MakeSweep
     public bool HasDegenerated => !_degenerated.IsEmpty();
 
     /// <summary>The degenerated edges of the result (frozen).</summary>
-    public ISchematiqList<Shape> Degenerated()
+    public IReadOnlyList<Shape> Degenerated()
     {
         // Kerf: a degenerated edge of the generating shape, as it stands in the result
         var degenerated = new NCollection_List<Shape>();

@@ -14,7 +14,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Engine.Construction.Filling.ThruSectionErrorStatus;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Topology.Orientation;
@@ -1199,7 +1198,7 @@ internal sealed class Generator
     /// The faces created from the edge <paramref name="sSection"/> of a section, frozen (empty if none). As natively,
     /// each face is keyed by the edge that follows the one it was built on (see docs/occt-issues.md).
     /// </summary>
-    public ISchematiqList<Shape> GeneratedShapes(in Shape sSection) => Published(InternalGeneratedShapes(sSection));
+    public IReadOnlyList<Shape> GeneratedShapes(in Shape sSection) => Published(InternalGeneratedShapes(sSection));
 
     private static readonly NCollection_List<Shape> Empty = new();
 
@@ -1217,27 +1216,27 @@ internal sealed class Generator
     }
 
     /// <summary>All the shapes created, keyed by the sections' edges (frozen), in the order they were built.</summary>
-    public ISchematiqList<KeyValuePair<Shape, ISchematiqList<Shape>>> Generated()
+    public IReadOnlyList<KeyValuePair<Shape, IReadOnlyList<Shape>>> Generated()
     {
-        var pairs = new KeyValuePair<Shape, ISchematiqList<Shape>>[_map.Count];
+        var pairs = new KeyValuePair<Shape, IReadOnlyList<Shape>>[_map.Count];
         int i = 0;
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> it in _map)
         {
             Shape key = it.Key;
             key.TShape()?.FreezeGraph();
-            pairs[i++] = new KeyValuePair<Shape, ISchematiqList<Shape>>(key, Published(it.Value));
+            pairs[i++] = new KeyValuePair<Shape, IReadOnlyList<Shape>>(key, Published(it.Value));
         }
-        return PackedList.Own(pairs);
+        return ImmutableArrays.Own(pairs);
     }
 
     /// <summary>The algorithm's own map behind <see cref="Generated"/>.</summary>
     internal Dictionary<Shape, NCollection_List<Shape>> InternalGenerated() => _map;
 
-    private static ISchematiqList<Shape> Published(NCollection_List<Shape> list)
+    private static IReadOnlyList<Shape> Published(NCollection_List<Shape> list)
     {
         if (list.IsEmpty())
         {
-            return PackedList<Shape>.Empty;
+            return Array.Empty<Shape>();
         }
         var shapes = new Shape[list.Extent()];
         int i = 0;
@@ -1247,7 +1246,7 @@ internal sealed class Generator
             shapes[i].TShape()?.FreezeGraph();
             i++;
         }
-        return PackedList.Own(shapes);
+        return ImmutableArrays.Own(shapes);
     }
 
     //=================================================================================================

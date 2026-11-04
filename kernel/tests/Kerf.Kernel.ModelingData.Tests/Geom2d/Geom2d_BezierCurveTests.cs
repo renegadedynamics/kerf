@@ -267,7 +267,7 @@ public class Geom2d_BezierCurve_Test
     [Fact]
     public void PolesAccess()
     {
-        // OCCT returns a reference to its array; the port returns a PackedList (indexed from 0)
+        // OCCT returns a reference to its array; the port returns a read-only list (indexed from 0)
         IReadOnlyList<Point2D> aPoles = myOriginalCurve.Poles;
         Assert.Equal(4, aPoles.Count);
         Assert.True(aPoles[0].IsEqual(new Point2D(0, 0), 1e-10));

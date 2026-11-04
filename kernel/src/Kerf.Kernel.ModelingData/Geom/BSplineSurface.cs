@@ -26,7 +26,7 @@ namespace Kerf.Geometry;
 /// <para>
 /// Arrays: <see cref="UKnots"/>, <see cref="VKnots"/>, <see cref="UMultiplicities"/>,
 /// <see cref="VMultiplicities"/>, <see cref="UKnotSequence"/> and <see cref="VKnotSequence"/> return
-/// immutable <see cref="PackedList{T}"/>s (index 0 is OCCT's index 1); <see cref="Poles"/>,
+/// immutable <see cref="IReadOnlyList{T}"/>s (index 0 is OCCT's index 1); <see cref="Poles"/>,
 /// <see cref="WeightsOrNull()"/> and <see cref="Weights"/> return new copies of the two-dimensional arrays (OCCT
 /// returns references to the surface's arrays). Code inside OCCT.NET uses the internal <c>Internal*</c>
 /// accessors, which return the stored arrays (shared: don't modify).
@@ -1938,7 +1938,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The U knots (without repetition).</summary>
-    public IReadOnlyList<double> UKnots => _uKnots.ToPackedList();
+    public IReadOnlyList<double> UKnots => _uKnots.ToImmutableArray();
 
     /// <summary>Copies the V knots into Kv (deprecated in OCCT: use <see cref="VKnots"/>).</summary>
     internal void CopyVKnotsTo(NCollection_Array1<double> kv)
@@ -1948,7 +1948,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The V knots (without repetition).</summary>
-    public IReadOnlyList<double> VKnots => _vKnots.ToPackedList();
+    public IReadOnlyList<double> VKnots => _vKnots.ToImmutableArray();
 
     /// <summary>Copies the U flat knots into Ku (deprecated in OCCT: use <see cref="UKnotSequence"/>).</summary>
     internal void CopyUKnotSequenceTo(NCollection_Array1<double> ku)
@@ -1958,7 +1958,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The U knots repeated by their multiplicities (the flat knots).</summary>
-    public IReadOnlyList<double> UKnotSequence => _uFlatKnots.ToPackedList();
+    public IReadOnlyList<double> UKnotSequence => _uFlatKnots.ToImmutableArray();
 
     /// <summary>Copies the V flat knots into Kv (deprecated in OCCT: use <see cref="VKnotSequence"/>).</summary>
     internal void CopyVKnotSequenceTo(NCollection_Array1<double> kv)
@@ -1968,7 +1968,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The V knots repeated by their multiplicities (the flat knots).</summary>
-    public IReadOnlyList<double> VKnotSequence => _vFlatKnots.ToPackedList();
+    public IReadOnlyList<double> VKnotSequence => _vFlatKnots.ToImmutableArray();
 
     /// <summary>The multiplicity of the U knot UIndex.</summary>
     internal int UMultiplicity(int uIndex)
@@ -1985,7 +1985,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The multiplicities of the U knots.</summary>
-    public IReadOnlyList<int> UMultiplicities => _uMults.ToPackedList();
+    public IReadOnlyList<int> UMultiplicities => _uMults.ToImmutableArray();
 
     /// <summary>The V iso-curve (a B-spline curve in U) at V.</summary>
     public sealed override Curve3D VIso(double v)
@@ -2051,7 +2051,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The multiplicities of the V knots.</summary>
-    public IReadOnlyList<int> VMultiplicities => _vMults.ToPackedList();
+    public IReadOnlyList<int> VMultiplicities => _vMults.ToImmutableArray();
 
     /// <summary>The weight of the pole (UIndex, VIndex): 1 for a non-rational surface.</summary>
     internal double Weight(int uIndex, int vIndex)

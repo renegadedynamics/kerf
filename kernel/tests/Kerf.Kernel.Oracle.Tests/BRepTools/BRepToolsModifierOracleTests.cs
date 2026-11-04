@@ -9,7 +9,6 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Schematiq.Collections;
 using Xunit.Abstractions;
 using static Kerf.Topology.ShapeType;
 
@@ -187,7 +186,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
                 }
 
                 N.TopoDS_Shape[] aNModified = aNCopy.Modified(aS.N).ToArray();
-                ISchematiqList<Shape> aModified = aHistory.Modified(aS.P);
+                IReadOnlyList<Shape> aModified = aHistory.Modified(aS.P);
                 anOracle.Same(aNModified.Length, aModified.Count, "history Modified count");
                 anOracle.Same(false, aHistory.IsRemoved(aS.P), "history IsRemoved");
                 CompareImage(anOracle, aResult, aNModified[0], aModified[0], "history Modified");
@@ -275,7 +274,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
 
     // The lists as multisets of (index of the twin, orientation): the merge's order follows hash maps on both sides.
     private static void CompareSet(Oracle theOracle, List<Twin<N.TopoDS_Shape, Shape>> theShapes, N.TopoDS_Shape[] theN,
-                                   ISchematiqList<Shape> theP, string theWhat)
+                                   IReadOnlyList<Shape> theP, string theWhat)
     {
         theOracle.Same(theN.Length, theP.Count, theWhat + " count");
         var aNKeys = theN.Select(n => (theShapes.FindIndex(s => s.N.IsSame(n)), (int)n.Orientation())).OrderBy(k => k).ToList();

@@ -12,7 +12,6 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Schematiq.Collections;
 
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
@@ -92,7 +91,7 @@ public class BRepFill_OffsetWireTests
         // every edge of the square generates one parallel edge of the result
         for (Explorer anExp = new(aFace, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            ISchematiqList<Shape> aGenerated = anOW.GeneratedShapes(anExp.Current());
+            IReadOnlyList<Shape> aGenerated = anOW.GeneratedShapes(anExp.Current());
             Assert.Single(aGenerated);
             Assert.Equal(ShapeType.Edge, aGenerated[0].Type);
             Assert.True(aGenerated[0].TShape()!.IsFrozen);
@@ -212,7 +211,7 @@ public class BRepFill_OffsetWireTests
         Exploration.MapShapes(aResult, ShapeType.Edge, aResultEdges);
         for (Explorer anExp = new(aFace, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            ISchematiqList<Shape> aGenerated = anOffset.Generated(anExp.Current());
+            IReadOnlyList<Shape> aGenerated = anOffset.Generated(anExp.Current());
             Assert.Single(aGenerated);
             Assert.True(aResultEdges.Contains(aGenerated[0]));
         }

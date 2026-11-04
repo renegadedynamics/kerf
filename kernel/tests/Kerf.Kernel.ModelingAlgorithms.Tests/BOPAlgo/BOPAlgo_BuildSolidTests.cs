@@ -8,7 +8,6 @@ using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Schematiq.Collections;
 
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 

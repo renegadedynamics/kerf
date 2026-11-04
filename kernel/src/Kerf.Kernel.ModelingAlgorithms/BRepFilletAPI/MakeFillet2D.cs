@@ -10,7 +10,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Engine.Fillets.Planar.ConstructionError;
 
 namespace Kerf.Engine.Fillets.Api;
@@ -134,7 +133,7 @@ internal class MakeFillet2D : MakeShape
     }
 
     /// <summary>The fillets on the face (frozen).</summary>
-    public ISchematiqList<Shape> FilletEdges()
+    public IReadOnlyList<Shape> FilletEdges()
     {
         return _makeChFi2d.FilletEdges();
     }
@@ -149,7 +148,7 @@ internal class MakeFillet2D : MakeShape
     }
 
     /// <summary>The chamfers on the face (frozen).</summary>
-    public ISchematiqList<Shape> ChamferEdges()
+    public IReadOnlyList<Shape> ChamferEdges()
     {
         return _makeChFi2d.ChamferEdges();
     }
@@ -188,7 +187,7 @@ internal class MakeFillet2D : MakeShape
     }
 
     /// <summary>The edges created for the curve <paramref name="i"/>: the fillets first, then the chamfers (frozen).</summary>
-    public ISchematiqList<Shape> NewEdges(int i)
+    public IReadOnlyList<Shape> NewEdges(int i)
     {
         _generated.Clear();
         if (i <= FilletCount)

@@ -32,7 +32,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Engine.Offsets.Error;
 using static Kerf.Offsets.OffsetMode;
 using static Kerf.Engine.Offsets.OffsetStatus;
@@ -4902,26 +4901,26 @@ internal sealed partial class MakeOffset
     /// The shapes generated from the caller's sub-shape <paramref name="s"/> that are in the result (frozen, with the
     /// result).
     /// </summary>
-    public ISchematiqList<Shape> Generated(in Shape s) => PublishList(InternalGenerated(s));
+    public IReadOnlyList<Shape> Generated(in Shape s) => PublishList(InternalGenerated(s));
 
     /// <summary>
     /// The shapes modified from the caller's sub-shape <paramref name="shape"/>: the images of a closing face (frozen,
     /// with the result).
     /// </summary>
-    public ISchematiqList<Shape> Modified(in Shape shape) => PublishList(InternalModified(shape));
+    public IReadOnlyList<Shape> Modified(in Shape shape) => PublishList(InternalModified(shape));
 
-    private ISchematiqList<Shape> PublishList(NCollection_List<Shape> list)
+    private IReadOnlyList<Shape> PublishList(NCollection_List<Shape> list)
     {
         if (list.IsEmpty())
         {
-            return PackedList<Shape>.Empty;
+            return Array.Empty<Shape>();
         }
         _offsetShape.TShape()?.FreezeGraph();
         foreach (Shape s in list)
         {
             s.TShape()?.FreezeGraph();
         }
-        return PackedList.Own([.. list]);
+        return ImmutableArrays.Own([.. list]);
     }
 
     /// <summary>

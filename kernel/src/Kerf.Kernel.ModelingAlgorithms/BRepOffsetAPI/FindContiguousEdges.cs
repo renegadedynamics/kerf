@@ -6,7 +6,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 
 namespace Kerf.Engine.Healing;
 
@@ -78,7 +77,7 @@ internal sealed class FindContiguousEdges
 
     /// <summary>The edges of the shapes added that make the contiguous edge of index <paramref name="index"/>.</summary>
     /// <exception cref="OutOfRangeException">The index is out of range.</exception>
-    public ISchematiqList<Shape> ContigousEdgeCouple(int index)
+    public IReadOnlyList<Shape> ContigousEdgeCouple(int index)
     {
         Standard_OutOfRange_Raise_if(index < 0 || index > ContigousEdgeCount,
                                      "BRepOffsetAPI_FindContigousEdges::ContigousEdgeCouple");

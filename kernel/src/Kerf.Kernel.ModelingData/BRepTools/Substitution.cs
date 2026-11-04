@@ -8,7 +8,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -164,14 +163,14 @@ internal sealed class Substitution
 
     /// <summary>The shapes substituted for <paramref name="s"/>, frozen.</summary>
     /// <exception cref="NoSuchObjectException">The shape hasn't been replaced.</exception>
-    public ISchematiqList<Shape> Copy(in Shape s)
+    public IReadOnlyList<Shape> Copy(in Shape s)
     {
         NCollection_List<Shape> list = InternalCopy(s);
         foreach (Shape aS in list)
         {
             aS.TShape()?.FreezeGraph();
         }
-        return PackedList.Own([.. list]);
+        return ImmutableArrays.Own([.. list]);
     }
 
     /// <summary>The shapes substituted for <paramref name="s"/> (the map's own list), without freezing (ported code).</summary>

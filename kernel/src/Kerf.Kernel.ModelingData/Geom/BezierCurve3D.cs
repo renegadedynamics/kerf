@@ -618,7 +618,7 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
     }
 
     /// <summary>The poles (a copy; index 0 is pole 1).</summary>
-    public IReadOnlyList<Point3D> Poles => _poles.ToPackedList();
+    public IReadOnlyList<Point3D> Poles => _poles.ToImmutableArray();
 
     /// <summary>The weight of the pole Index (1 for a non-rational curve).</summary>
     /// <exception cref="OutOfRangeException">Index is not in [1, NbPoles].</exception>
@@ -661,10 +661,10 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
     }
 
     /// <summary>The weights (a copy), or null for a non-rational curve (OCCT returns a null pointer).</summary>
-    internal IReadOnlyList<double>? WeightsOrNull() => _rational ? _weights.ToPackedList() : null;
+    internal IReadOnlyList<double>? WeightsOrNull() => _rational ? _weights.ToImmutableArray() : null;
 
     /// <summary>The weights, always NbPoles of them (1s for a non-rational curve); a copy.</summary>
-    public IReadOnlyList<double> Weights => _weights.ToPackedList();
+    public IReadOnlyList<double> Weights => _weights.ToImmutableArray();
 
     /// <summary>Applies T to the poles.</summary>
     protected internal sealed override void Transform(in Transform3D t)
@@ -797,13 +797,13 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
     internal NCollection_Array1<double> InternalWeightsArray() => _weights;
 
     /// <summary>The Bezier knots {0, 1} (a copy).</summary>
-    public IReadOnlyList<double> Knots => THE_KNOTS.ToPackedList();
+    public IReadOnlyList<double> Knots => THE_KNOTS.ToImmutableArray();
 
     /// <summary>The Bezier multiplicities {Degree + 1, Degree + 1} (a copy).</summary>
-    public IReadOnlyList<int> Multiplicities => InternalMultiplicities().ToPackedList();
+    public IReadOnlyList<int> Multiplicities => InternalMultiplicities().ToImmutableArray();
 
     /// <summary>The Bezier flat knots (a copy).</summary>
-    public IReadOnlyList<double> KnotSequence => InternalKnotSequence().ToPackedList();
+    public IReadOnlyList<double> KnotSequence => InternalKnotSequence().ToImmutableArray();
 
     // Non-mutating twins (OCCT.NET)
 

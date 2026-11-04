@@ -7,7 +7,6 @@ using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Topology;
@@ -237,33 +236,33 @@ public class History : Transient
     }
 
     /// <summary>The shapes generated from the shape (empty for an unsupported type).</summary>
-    public ISchematiqList<Shape> Generated(in Shape initial)
+    public IReadOnlyList<Shape> Generated(in Shape initial)
     {
         // Apply the limitations.
         if (!(initial.IsNull || IsSupportedType(initial)))
         {
-            return PackedList<Shape>.Empty; // Standard_ASSERT_RETURN: myMsgUnsupportedType
+            return Array.Empty<Shape>(); // Standard_ASSERT_RETURN: myMsgUnsupportedType
         }
 
         //
         return _shapeToGenerated.TryGetValue(initial, out NCollection_List<Shape>? generations)
-                 ? PackedList.Own([.. generations])
-                 : PackedList<Shape>.Empty;
+                 ? ImmutableArrays.Own([.. generations])
+                 : Array.Empty<Shape>();
     }
 
     /// <summary>The shapes modified from the shape (empty for an unsupported type).</summary>
-    public ISchematiqList<Shape> Modified(in Shape initial)
+    public IReadOnlyList<Shape> Modified(in Shape initial)
     {
         // Apply the limitations.
         if (!IsSupportedType(initial))
         {
-            return PackedList<Shape>.Empty; // Standard_ASSERT_RETURN: myMsgUnsupportedType
+            return Array.Empty<Shape>(); // Standard_ASSERT_RETURN: myMsgUnsupportedType
         }
 
         //
         return _shapeToModified.TryGetValue(initial, out NCollection_List<Shape>? modifications)
-                 ? PackedList.Own([.. modifications])
-                 : PackedList<Shape>.Empty;
+                 ? ImmutableArrays.Own([.. modifications])
+                 : Array.Empty<Shape>();
     }
 
     /// <summary>True if the shape is removed (false for an unsupported type).</summary>

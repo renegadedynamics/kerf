@@ -9,7 +9,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Text;
-using Schematiq.Collections;
 using Xunit.Abstractions;
 using static Kerf.Topology.ShapeType;
 using static Kerf.Engine.Exchange.Brep.FormatVersion;
@@ -234,7 +233,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                 {
                     N.BRepLib.ReverseSortFaces(aN, aNList);
                 }
-                ISchematiqList<Shape> aPList = aReverse == 0 ? BrepLibrary.SortFaces(aP) : BrepLibrary.ReverseSortFaces(aP);
+                IReadOnlyList<Shape> aPList = aReverse == 0 ? BrepLibrary.SortFaces(aP) : BrepLibrary.ReverseSortFaces(aP);
                 N.TopoDS_Shape[] aNArray = aNList.ToArray();
                 Assert.Equal(aNArray.Length, aPList.Count);
                 for (int k = 0; k < aNArray.Length; k++)

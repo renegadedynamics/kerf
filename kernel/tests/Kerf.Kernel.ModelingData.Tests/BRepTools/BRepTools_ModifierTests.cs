@@ -9,7 +9,6 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Schematiq.Collections;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -105,7 +104,7 @@ public class BRepTools_ModifierTests
         Assert.False(aHistory.IsRemoved(aWire));
 
         // the returned lists are copies
-        ISchematiqList<Shape> aList = aHistory.Modified(aFaces[0]);
+        IReadOnlyList<Shape> aList = aHistory.Modified(aFaces[0]);
         aHistory.AddModified(aFaces[0], aFaces[1]);
         Assert.Single(aList);
 

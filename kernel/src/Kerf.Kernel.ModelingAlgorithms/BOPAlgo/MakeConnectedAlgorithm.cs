@@ -10,7 +10,6 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Booleans.GlueMode;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
@@ -183,14 +182,14 @@ internal class MakeConnectedAlgorithm : Options
     public MakePeriodicAlgorithm PeriodicityTool() => _periodicityMaker;
 
     /// <summary>The materials (input shapes) on the positive side of the element (frozen).</summary>
-    public ISchematiqList<Shape> MaterialsOnPositiveSide(in Shape s)
+    public IReadOnlyList<Shape> MaterialsOnPositiveSide(in Shape s)
     {
         FreezeResults();
         return Published(InternalMaterialsOnPositiveSide(s));
     }
 
     /// <summary>The materials (input shapes) on the negative side of the element (frozen).</summary>
-    public ISchematiqList<Shape> MaterialsOnNegativeSide(in Shape s)
+    public IReadOnlyList<Shape> MaterialsOnNegativeSide(in Shape s)
     {
         FreezeResults();
         return Published(InternalMaterialsOnNegativeSide(s));
@@ -234,14 +233,14 @@ internal class MakeConnectedAlgorithm : Options
     internal History? InternalHistory() => _history;
 
     /// <summary>The shapes modified from the input shape (frozen).</summary>
-    public ISchematiqList<Shape> GetModified(in Shape s)
+    public IReadOnlyList<Shape> GetModified(in Shape s)
     {
         FreezeResults();
-        return _history is null ? PackedList<Shape>.Empty : _history.Modified(s);
+        return _history is null ? Array.Empty<Shape>() : _history.Modified(s);
     }
 
     /// <summary>The input shapes the shape of the result comes from (frozen).</summary>
-    public ISchematiqList<Shape> GetOrigins(in Shape s)
+    public IReadOnlyList<Shape> GetOrigins(in Shape s)
     {
         FreezeResults();
         return Published(InternalGetOrigins(s));
@@ -278,8 +277,8 @@ internal class MakeConnectedAlgorithm : Options
         _periodicityMaker.InternalRepeatedShape().TShape()?.FreezeGraph();
     }
 
-    private static ISchematiqList<Shape> Published(NCollection_List<Shape> list)
-        => list.IsEmpty() ? PackedList<Shape>.Empty : new PackedList<Shape>([.. list]);
+    private static IReadOnlyList<Shape> Published(NCollection_List<Shape> list)
+        => list.IsEmpty() ? Array.Empty<Shape>() : ImmutableArrays.Own<Shape>([.. list]);
 
     /// <summary>Clears the contents of the algorithm from previous runs.</summary>
     public override void Clear()
@@ -414,7 +413,7 @@ internal class MakeConnectedAlgorithm : Options
             // Get Modified & Generated shapes
             for (int j = 0; j < 2; ++j)
             {
-                ISchematiqList<Shape> lh = j == 0 ? _history!.Modified(s) : _history!.Generated(s);
+                IReadOnlyList<Shape> lh = j == 0 ? _history!.Modified(s) : _history!.Generated(s);
                 foreach (Shape hs in lh)
                 {
                     if (!_origins.TryGetValue(hs, out NCollection_List<Shape>? pLOr))

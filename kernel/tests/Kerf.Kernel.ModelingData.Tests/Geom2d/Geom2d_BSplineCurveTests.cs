@@ -309,7 +309,7 @@ public class Geom2d_BSplineCurve_Test
     {
         Assert.Equal(0.0, myOriginalCurve.Knot(1));
         Assert.Equal(1.0, myOriginalCurve.Knot(2));
-        // OCCT returns references to its arrays; the port returns PackedLists (indexed from 0)
+        // OCCT returns references to its arrays; the port returns read-only lists (indexed from 0)
         IReadOnlyList<double> aKnots = myOriginalCurve.Knots;
         Assert.Equal(2, aKnots.Count);
         IReadOnlyList<int> aMults = myOriginalCurve.Multiplicities;

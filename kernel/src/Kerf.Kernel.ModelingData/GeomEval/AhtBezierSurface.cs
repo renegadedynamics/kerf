@@ -604,13 +604,13 @@ internal sealed class AhtBezierSurface : BoundedSurface
     /// <summary>
     /// The poles grid, row by row: the pole of (0-based) U index i and V index j is at <c>i * NbPolesV() + j</c>.
     /// </summary>
-    public PackedList<Point3D> Poles() => PackedList.Create<Point3D>(_poles.AsSpan());
+    public IReadOnlyList<Point3D> Poles() => ImmutableArrays.Copy<Point3D>(_poles.AsSpan());
 
     /// <summary>
     /// The weights grid, laid out as <see cref="Poles"/>. For a non-rational surface, OCCT's single unset weight
     /// (0 here).
     /// </summary>
-    public PackedList<double> Weights() => PackedList.Create<double>(_weights.AsSpan());
+    public IReadOnlyList<double> Weights() => ImmutableArrays.Copy<double>(_weights.AsSpan());
 
     /// <summary>The algebraic polynomial degree in U.</summary>
     public int AlgDegreeU() => _algDegreeU;

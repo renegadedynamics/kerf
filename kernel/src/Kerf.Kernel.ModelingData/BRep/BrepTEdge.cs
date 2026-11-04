@@ -7,7 +7,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Tools;
 using Occt;
-using Schematiq.Collections;
 
 namespace Kerf.Engine.Topology.Brep;
 
@@ -152,7 +151,7 @@ internal class BrepTEdge : TEdge
     }
 
     /// <summary>The curve representations, as a new read-only list (OCCT.NET addition).</summary>
-    public ISchematiqList<CurveRepresentation> CurveRepresentations() => PackedList.Own([.. View()._curves]);
+    public IReadOnlyList<CurveRepresentation> CurveRepresentations() => ImmutableArrays.Own([.. View()._curves]);
 
     /// <summary>
     /// A new edge with the same tolerance, flags and curve representations (copied, sharing the geometry), without

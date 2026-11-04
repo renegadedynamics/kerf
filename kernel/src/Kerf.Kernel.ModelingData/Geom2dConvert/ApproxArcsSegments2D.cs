@@ -9,7 +9,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Geometry.CurveKind;
 
 namespace Kerf.Engine.Geometry.Conversion;
@@ -110,7 +109,7 @@ internal sealed class ApproxArcsSegments2D
     /// The curves of the approximation (lines and arcs of circle, as trimmed curves), in order along the curve; a
     /// new list each call, holding the same curves, frozen.
     /// </summary>
-    public ISchematiqList<Curve2D> GetResult()
+    public IReadOnlyList<Curve2D> GetResult()
     {
         var curves = new Curve2D[_seqCurves.Length()];
         for (int i = 1; i <= _seqCurves.Length(); i++)
@@ -120,7 +119,7 @@ internal sealed class ApproxArcsSegments2D
             curves[i - 1] = curve;
         }
 
-        return PackedList.Own(curves);
+        return ImmutableArrays.Own(curves);
     }
 
     // Create arc of circle by three points (knowing that myCurve is circle).

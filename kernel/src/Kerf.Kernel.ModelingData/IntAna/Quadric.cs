@@ -273,7 +273,7 @@ internal sealed class Quadric
     }
 
     /// <summary>The special points (singularities): a cone's apex, a sphere's poles. A copy.</summary>
-    public PackedList<Point3D> SpecialPoints() => PackedList.Create<Point3D>([.. _specialPoints]);
+    public IReadOnlyList<Point3D> SpecialPoints() => ImmutableArrays.Copy<Point3D>([.. _specialPoints]);
 
     /// <summary>The stored list of special points (OCCT's <c>SpecialPoints()</c>). Don't modify.</summary>
     internal NCollection_List<Point3D> InternalSpecialPoints() => _specialPoints;

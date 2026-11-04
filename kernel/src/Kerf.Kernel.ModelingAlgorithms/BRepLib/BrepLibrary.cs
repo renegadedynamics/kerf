@@ -24,7 +24,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
@@ -2969,7 +2968,7 @@ internal static partial class BrepLibrary
     }
 
     /// <summary>The faces of <paramref name="sh"/> sorted as <see cref="SortFaces(in Shape, NCollection_List{Shape})"/> does.</summary>
-    public static ISchematiqList<Shape> SortFaces(in Shape sh)
+    public static IReadOnlyList<Shape> SortFaces(in Shape sh)
     {
         var lf = new NCollection_List<Shape>();
         SortFaces(sh, lf);
@@ -3030,14 +3029,14 @@ internal static partial class BrepLibrary
     }
 
     /// <summary>The faces of <paramref name="sh"/> sorted as <see cref="ReverseSortFaces(in Shape, NCollection_List{Shape})"/> does.</summary>
-    public static ISchematiqList<Shape> ReverseSortFaces(in Shape sh)
+    public static IReadOnlyList<Shape> ReverseSortFaces(in Shape sh)
     {
         var lf = new NCollection_List<Shape>();
         ReverseSortFaces(sh, lf);
         return ToList(lf);
     }
 
-    private static ISchematiqList<Shape> ToList(NCollection_List<Shape> list)
+    private static IReadOnlyList<Shape> ToList(NCollection_List<Shape> list)
     {
         var array = new Shape[list.Extent()];
         int i = 0;
@@ -3045,7 +3044,7 @@ internal static partial class BrepLibrary
         {
             array[i++] = it.Value();
         }
-        return PackedList.Own(array);
+        return ImmutableArrays.Own(array);
     }
 
     /// <summary>

@@ -7,7 +7,6 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Schematiq.Collections;
 using Xunit.Abstractions;
 using static Kerf.Topology.ShapeType;
 
@@ -56,13 +55,13 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
     // Modified(S) of every input sub-shape: the number of images and each one's place in the result.
     private static void CompareModified(Oracle theOracle, Twin<N.TopoDS_Shape, Shape> theInput, N.TopoDS_Shape theNResult,
                                         in Shape theResult, Func<N.TopoDS_Shape, N.TopoDS_Shape[]> theNModified,
-                                        Func<Shape, ISchematiqList<Shape>> theModified)
+                                        Func<Shape, IReadOnlyList<Shape>> theModified)
     {
         Twin<N.TopoDS_Shape, Shape> aTwin = new(theNResult, theResult);
         foreach (Twin<N.TopoDS_Shape, Shape> aS in BRepToolsModifierOracleTests.AllSubShapes(theInput))
         {
             N.TopoDS_Shape[] aN = theNModified(aS.N);
-            ISchematiqList<Shape> aP = theModified(aS.P);
+            IReadOnlyList<Shape> aP = theModified(aS.P);
             theOracle.Same(aN.Length, aP.Count, "Modified count");
             for (int i = 0; i < Math.Min(aN.Length, aP.Count); i++)
             {

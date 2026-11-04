@@ -8,7 +8,6 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Schematiq.Collections;
 using Kerf.Kernel.ModelingData.Tests;
 
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
@@ -90,7 +89,7 @@ public class BRepFill_EvolvedTests
         // each spine edge generates one wall from the profile's edge
         Explorer aSpineEdges = new(aSpine, ShapeType.Edge);
         Explorer aProfileEdges = new(aProfile, ShapeType.Edge);
-        ISchematiqList<Shape> aGenerated = aMaker.GeneratedShapes(aSpineEdges.Current(), aProfileEdges.Current());
+        IReadOnlyList<Shape> aGenerated = aMaker.GeneratedShapes(aSpineEdges.Current(), aProfileEdges.Current());
         Assert.Single(aGenerated);
         Assert.Equal(ShapeType.Face, aGenerated[0].Type);
         Assert.True(aGenerated[0].TShape()!.IsFrozen);

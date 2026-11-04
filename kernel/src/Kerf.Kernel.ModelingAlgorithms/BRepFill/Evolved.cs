@@ -23,7 +23,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.JoinKind;
 using static Kerf.Engine.Offsets.MedialAxis.MedialSide;
@@ -1588,13 +1587,13 @@ internal sealed class Evolved
     /// The shapes generated from a sub-shape <paramref name="spineShape"/> of the spine and a sub-shape
     /// <paramref name="profShape"/> of the profile (frozen, with the result).
     /// </summary>
-    public ISchematiqList<Shape> GeneratedShapes(in Shape spineShape, in Shape profShape)
+    public IReadOnlyList<Shape> GeneratedShapes(in Shape spineShape, in Shape profShape)
     {
         FreezeResult();
         NCollection_List<Shape> list = InternalGeneratedShapes(spineShape, profShape);
         if (list.IsEmpty())
         {
-            return PackedList<Shape>.Empty;
+            return Array.Empty<Shape>();
         }
         var shapes = new Shape[list.Extent()];
         int i = 0;
@@ -1604,7 +1603,7 @@ internal sealed class Evolved
             shapes[i].TShape()?.FreezeGraph();
             i++;
         }
-        return PackedList.Own(shapes);
+        return ImmutableArrays.Own(shapes);
     }
 
     /// <summary>OCCT's <c>GeneratedShapes</c>: the algorithm's own list (shared: don't modify), not frozen.</summary>

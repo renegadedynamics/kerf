@@ -16,7 +16,6 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Topology.Orientation;
@@ -497,7 +496,7 @@ internal sealed class NormalProjection
 
     /// <summary>The shapes of the result generated from the edge <paramref name="s"/>, frozen.</summary>
     /// <exception cref="NoSuchObjectException">S wasn't projected.</exception>
-    public ISchematiqList<Shape> Generated(in Shape s)
+    public IReadOnlyList<Shape> Generated(in Shape s)
     {
         NCollection_List<Shape> list = InternalGenerated(s);
         var shapes = new Shape[list.Extent()];
@@ -508,7 +507,7 @@ internal sealed class NormalProjection
             shapes[i].TShape()?.FreezeGraph();
             i++;
         }
-        return new PackedList<Shape>(shapes);
+        return ImmutableArrays.Own<Shape>(shapes);
     }
 
     /// <summary><see cref="Generated"/> without freezing, for ported code.</summary>
