@@ -17,9 +17,10 @@ public class ErrorContextTests
     public void APrimitiveSaysWhatItWasMaking()
     {
         var e = Assert.Throws<Kerf.KerfException>(() => new Box(0, 1, 1));
+        // The kernel's public API refuses the size before OCCT would (unit 10M1): the refusal is said in context
         Assert.True(Failures.IsKernelFailure(e.InnerException!));
-        Assert.Equal("engine.domain-error", e.Error.Code.Value);
-        Assert.StartsWith("box 0.0 × 1.0 × 1.0 failed: a value is outside what the operation accepts", e.Message);
+        Assert.Equal("kernel.invalid-argument", e.Error.Code.Value);
+        Assert.StartsWith("box 0.0 × 1.0 × 1.0 failed: The value must be a positive number", e.Message);
     }
 
     [Theory]
@@ -39,7 +40,8 @@ public class ErrorContextTests
         var e = Assert.Throws<Kerf.KerfException>(make);
         Assert.StartsWith($"{feature} failed: ", e.Message);
         Assert.True(Failures.IsKernelFailure(e.InnerException!));
-        Assert.StartsWith("engine.", e.Error.Code.Value);
+        // The kernel's code: an engine failure's, a refused argument's or the operation's own (construction.sweep-failed)
+        Assert.Matches(@"^[a-z0-9-]+\.[a-z0-9-]+$", e.Error.Code.Value);
     }
 
     [Fact]

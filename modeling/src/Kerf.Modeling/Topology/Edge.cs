@@ -228,7 +228,7 @@ public partial class Edge : Shape1D
         var line = new LineCurve2D(origin2d, dir2d);
         var curve = new TrimmedCurve2D(line, 0, lineLength, true, true);
         // Wrap the segment around the surface, then give the edge its 3D curve
-        var onSurface = Failures.Get(global::Kerf.Topology.Edge.FromCurve(curve, surface), () => "helix");
+        var onSurface = Failures.Get(global::Kerf.Topology.Edge.FromCurve(curve, surface, computeCurve3D: false), () => "helix");
         // Its 3D curve, as build123d builds it (whether or not that fully succeeds)
         var edge = Failures.Get(onSurface.WithCurves3D(1e-9, Continuity.C1, 14, 2000), () => "helix").Shape;
         return new Edge((global::Kerf.Topology.Edge)edge);

@@ -39,12 +39,14 @@ public static class ShapeFactory
         }
 
         /// <summary>An edge on <paramref name="surface"/> along the 2D curve <paramref name="curve"/> of its parameters,
-        /// with its 3D curve computed.</summary>
-        public static Result<Edge> FromCurve(Curve2D curve, Surface surface, Interval? range = null)
+        /// with its 3D curve computed (OCCT's defaults), or, with <paramref name="computeCurve3D"/> false, without one, for
+        /// <c>WithCurves3D</c> to compute with other settings.</summary>
+        public static Result<Edge> FromCurve(Curve2D curve, Surface surface, Interval? range = null, bool computeCurve3D = true)
         {
             ArgumentNullException.ThrowIfNull(curve);
             ArgumentNullException.ThrowIfNull(surface);
-            return BuildEdge(() => range is { } r ? new MakeEdge(curve, surface, r.Min, r.Max) : new MakeEdge(curve, surface), buildCurve: true);
+            return BuildEdge(() => range is { } r ? new MakeEdge(curve, surface, r.Min, r.Max) : new MakeEdge(curve, surface),
+                             buildCurve: computeCurve3D);
         }
 
         /// <summary>The closed edge of a whole circle.</summary>
@@ -297,7 +299,17 @@ public static class ShapeFactory
             {
                 MakerOutcome.NotNull(hole, nameof(holes));
             }
-            return BuildFace(() => WithHoles(new MakeFace(f), inner));
+            // BRepBuilderAPI_MakeFace of a face copies it without being done; each wire added makes it done
+            return Guarded<Face>(() =>
+            {
+                var maker = new MakeFace(f);
+                foreach (Wire hole in inner)
+                {
+                    maker.Add(hole);
+                }
+
+                return maker.Face();
+            });
         }
     }
 

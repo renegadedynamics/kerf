@@ -496,6 +496,9 @@ public partial class Face : Shape2D
 
     private static Face BuildFilling(IReadOnlyList<FillBoundary> boundaries, FillOptions options, string error)
     {
+        // OCCT's filling of no boundary isn't done; the kernel's refuses the argument
+        if (boundaries.Count == 0)
+            throw new InvalidOperationException(error);
         var filled = Surfaces.Fill(boundaries, options);
         if (!filled.TryGetValue(out var face))
             throw new InvalidOperationException(error, new KerfException(filled.Diagnostics));

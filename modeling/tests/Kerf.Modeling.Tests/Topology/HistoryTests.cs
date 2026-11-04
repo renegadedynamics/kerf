@@ -113,10 +113,11 @@ public class ShapeHistoryTests
         var vec = new Vector3D(0, 0, 5);
         var prism = global::Kerf.Construction.Sweeps.Extrude(square.Wrapped, vec).Value;
         var history = ShapeHistory.FromAlgorithm(s => prism.History.Modified(s), s => prism.History.Generated(s), [square.Wrapped], prism.Shape);
+        // The kernel's extrusion history also generates each sub-shape's copy in the top cap (decision 1558)
         foreach (var edge in square.Edges())
-            Assert.Single(history.Generated(edge.Wrapped));
+            Assert.Single(history.Generated(edge.Wrapped), g => g.Type == global::Kerf.Topology.ShapeType.Face);
         foreach (var vertex in square.Vertices())
-            Assert.Single(history.Generated(vertex.Wrapped));
+            Assert.Single(history.Generated(vertex.Wrapped), g => g.Type == global::Kerf.Topology.ShapeType.Edge);
         Assert.False(history.IsRemoved(square.Wrapped));
     }
 

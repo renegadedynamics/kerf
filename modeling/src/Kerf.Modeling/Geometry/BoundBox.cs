@@ -56,8 +56,23 @@ public sealed class BoundBox
     /// <summary>A bounding box from the kernel's.</summary>
     public static BoundBox FromBoundingBox(BoundingBox box) => new(box, 0.0);
 
+    /// <summary>
+    /// A box with the given corners as they are, even where a minimum is above its maximum (a box's corners transformed,
+    /// as OCCT's <c>Bnd_Box(min, max)</c> keeps them); its extents are the box around both.
+    /// </summary>
+    internal static BoundBox FromCorners(Vector min, Vector max) =>
+        new(BoundingBox.Of([min.ToGpPnt(), max.ToGpPnt()]), min, max);
+
+    BoundBox(BoundingBox extents, Vector min, Vector max)
+    {
+        _extents = extents;
+        Min = min;
+        Max = max;
+        Size = max - min;
+    }
+
     /// <summary>The box as the kernel's bounding box.</summary>
-    public BoundingBox ToBoundingBox() => IsEmpty ? BoundingBox.Empty : new BoundingBox(Min.ToGpPnt(), Max.ToGpPnt());
+    public BoundingBox ToBoundingBox() => IsEmpty ? BoundingBox.Empty : _gap == 0 ? _extents : _extents.Enlarged(_gap);
 
     /// <summary>
     /// The bounding box of a shape: tight when <paramref name="optimal"/>, else OCCT's quicker, looser one. Any mesh on the

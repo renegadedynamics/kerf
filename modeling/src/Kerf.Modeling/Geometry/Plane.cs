@@ -381,9 +381,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     static BoundBox TransformBox(BoundBox box, Matrix transform)
     {
         // The two corners are transformed as they are; the box isn't re-fitted around the result
-        var min = box.Min.Transform(transform).ToGpPnt();
-        var max = box.Max.Transform(transform).ToGpPnt();
-        return BoundBox.FromBoundingBox(new BoundingBox(min, max));
+        return BoundBox.FromCorners(box.Min.Transform(transform), box.Max.Transform(transform));
     }
 
     /// <summary>The location taking this plane to another.</summary>
