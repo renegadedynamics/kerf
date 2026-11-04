@@ -95,9 +95,9 @@ public class GccAna_Lin2d2TanTests
             AssertNear(aT2, aP);
             AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aPs2, aSol), aP);
             Assert.Equal(0.0, aPa2);
-            // OCCT returns the qualifier given, not a computed one
+            // the side the circle is on (OCCT returned the unqualified given: decision 17105)
             anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
-            Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, aQ1);
+            Assert.Equal(Side(aSol, aC.Location) > 0.0 ? global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing : global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, aQ1);
             Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier, aQ2);
         }
         Assert.False(anAlgo.ThisSolution(1).Direction.IsParallel(anAlgo.ThisSolution(2).Direction, 1.0e-6));
@@ -195,10 +195,10 @@ public class GccAna_Lin2d2TanTests
         Line2D aSol = anAlgo.ThisSolution(1);
         Assert.Equal(theQ1 == global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, Side(aSol, aC1.Location) > 0.0);
         Assert.Equal(theQ2 == global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, Side(aSol, aC2.Location) > 0.0);
-        // OCCT: the second qualifier is the first argument's
+        // each circle's own qualifier (OCCT gave the second the first's: decision 17105)
         anAlgo.WhichQualifier(1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
         Assert.Equal(theQ1, aQ1);
-        Assert.Equal(theQ1, aQ2);
+        Assert.Equal(theQ2, aQ2);
     }
 
     [Fact]
@@ -230,25 +230,22 @@ public class GccAna_Lin2d2TanTests
     }
 
     [Fact]
-    public void Mixed_EnclosingUnqualified_TwoTangents_SecondTangencyPointIsTheFirsts()
+    public void Mixed_EnclosingUnqualified_TwoTangents()
     {
+        // each solution its own tangency points (OCCT gave the second solution the first's first tangency point:
+        // decision 17105)
         Circle2D aC1 = Circ(0, 0, 1), aC2 = Circ(5, 1, 1.5);
         AnalyticLin2d2Tan anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosing(aC1), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC2), 1.0e-6);
         Assert.Equal(2, anAlgo.SolutionCount);
+        CheckTwoCircles(anAlgo, aC1, aC2);
         for (int i = 1; i <= 2; i++)
         {
             Line2D aSol = anAlgo.ThisSolution(i);
-            Assert.Equal(aC1.Radius, aSol.DistanceTo(aC1.Location), Tol);
-            Assert.Equal(aC2.Radius, aSol.DistanceTo(aC2.Location), Tol);
             Assert.True(Side(aSol, aC1.Location) > 0.0);
-            anAlgo.Tangency2(i, out double aPs2, out double aPa2, out Point2D aT2);
-            CheckTangentToCircle(aSol, aC2, aPs2, aPa2, aT2);
+            anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
+            Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, aQ1);
+            Assert.Equal(Side(aSol, aC2.Location) > 0.0 ? global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing : global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, aQ2);
         }
-        // OCCT: the second solution's first tangency point is the first solution's
-        anAlgo.Tangency1(1, out _, out _, out Point2D aT11);
-        anAlgo.Tangency1(2, out _, out _, out Point2D aT21);
-        Assert.Equal(aT11, aT21);
-        Assert.False(anAlgo.ThisSolution(2).DistanceTo(aT21) < Tol);
     }
 
     [Fact]

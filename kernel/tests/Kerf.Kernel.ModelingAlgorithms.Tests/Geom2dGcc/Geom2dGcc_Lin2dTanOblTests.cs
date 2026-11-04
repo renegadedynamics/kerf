@@ -64,13 +64,22 @@ public class Geom2dGcc_Lin2dTanOblTests
     }
 
     [Fact]
-    public void Ellipse_ParallelToTheLine_ThrowsIsParallel()
+    public void Ellipse_ParallelToTheLine()
     {
-        // OCCT: with an angle of 0 (or pi) the iterative solver's Intersection2 throws, and Add calls it on the first
-        // solution found, so the constructor throws
+        // With an angle of 0 the solutions are the ellipse's tangents parallel to the line, y = +-1, which have no
+        // intersection with it: Intersection2 says so (OCCT let it escape from the constructor: decision 17105)
         CurveAdaptor2D anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
         Line2D            aLine = new(new Point2D(0, -4), DX);
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.IsParallelException>(() => new global::Kerf.Engine.Construction.Constraints.Lin2dTanObl(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), aLine, 1e-6, 0.0));
+        global::Kerf.Engine.Construction.Constraints.Lin2dTanObl aLin = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), aLine, 1e-6, 0.0);
+        Assert.True(aLin.IsDone);
+        Assert.Equal(2, aLin.SolutionCount);
+        for (int i = 1; i <= 2; i++)
+        {
+            Line2D aSol = aLin.ThisSolution(i);
+            Assert.Equal(1.0, Math.Abs(aSol.Location.Y), 1e-6);
+            Assert.True(Math.Abs(aSol.Direction.Y) < 1e-9);
+            Assert.Throws<global::Kerf.Engine.Construction.Constraints.IsParallelException>(() => aLin.Intersection2(i, out _, out _, out _));
+        }
     }
 
     [Fact]

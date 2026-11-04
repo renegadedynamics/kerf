@@ -533,6 +533,9 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
         /// </summary>
         public Laws? Laws;
 
+        /// <summary>The laws of a line solver Kerf corrected, as <see cref="Laws"/>.</summary>
+        public LineLaws? LineLaws;
+
         public string? Corrected;
     }
 
@@ -950,6 +953,8 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                 Description = Describe(a1, a2),
                 Native = () => RunNative(() => NLin2d2Tan(new N.Geom2dGcc_Lin2d2Tan(NQ(n1, a1.Q), NQ(n2, a2.Q), tol))),
                 Port = () => RunPort(() => PLin2d2Tan(new global::Kerf.Engine.Construction.Constraints.Lin2d2Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), tol))),
+                LineLaws = new([L(a1, p1), L(a2, p2)], null, 0, tol),
+                Corrected = "GccAna_Lin2d2Tan (decision 17105)",
             };
         });
         yield return ("Lin2d2Tan(curve, point)", o =>
@@ -967,6 +972,8 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                     return NLin2d2Tan(new N.Geom2dGcc_Lin2d2Tan(NQ(n1, a1.Q), aP, tol));
                 }),
                 Port = () => RunPort(() => PLin2d2Tan(new global::Kerf.Engine.Construction.Constraints.Lin2d2Tan(PQ(p1, a1.Q), new Point2D(x, y), tol))),
+                LineLaws = new([L(a1, p1), L(x, y)], null, 0, tol),
+                Corrected = "GccAna_Lin2d2Tan (decision 17105)",
             };
         });
         yield return ("Lin2d2Tan(curve, curve, params)", o =>
@@ -981,6 +988,8 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                 Description = Describe(a1, a2) + $", from {u1}, {u2}",
                 Native = () => RunNative(() => NLin2d2Tan(new N.Geom2dGcc_Lin2d2Tan(NQ(n1, a1.Q), NQ(n2, a2.Q), tol, u1, u2))),
                 Port = () => RunPort(() => PLin2d2Tan(new global::Kerf.Engine.Construction.Constraints.Lin2d2Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), tol, u1, u2))),
+                LineLaws = new([L(a1, p1), L(a2, p2)], null, 0, tol),
+                Corrected = "GccAna_Lin2d2Tan (decision 17105)",
             };
         });
         yield return ("Lin2d2Tan(curve, point, param)", o =>
@@ -999,6 +1008,8 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                     return NLin2d2Tan(new N.Geom2dGcc_Lin2d2Tan(NQ(n1, a1.Q), aP, tol, u1));
                 }),
                 Port = () => RunPort(() => PLin2d2Tan(new global::Kerf.Engine.Construction.Constraints.Lin2d2Tan(PQ(p1, a1.Q), new Point2D(x, y), tol, u1))),
+                LineLaws = new([L(a1, p1), L(x, y)], null, 0, tol),
+                Corrected = "GccAna_Lin2d2Tan (decision 17105)",
             };
         });
 
@@ -1032,6 +1043,8 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                         return PLin2dTanObl(aWithParam ? new global::Kerf.Engine.Construction.Constraints.Lin2dTanObl(PQ(p1, a1.Q), aL, tolang, u1, angle)
                                                        : new global::Kerf.Engine.Construction.Constraints.Lin2dTanObl(PQ(p1, a1.Q), aL, tolang, angle));
                     }),
+                    LineLaws = new([L(a1, p1)], new Line2D(new Point2D(x, y), new Direction2D(dx, dy)), angle, tolang),
+                    Corrected = "GccAna_Lin2dTanObl and Geom2dGcc_Lin2dTanObl (decision 17105)",
                 };
             });
         }
@@ -1131,7 +1144,8 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                     continue;
                 }
                 string aWhy = "";
-                if (aCase.Laws is not null && IsIntendedDifference(aN, aP, aCase.Laws, out aWhy))
+                if ((aCase.Laws is not null && IsIntendedDifference(aN, aP, aCase.Laws, out aWhy))
+                    || (aCase.LineLaws is not null && IsIntendedDifference(aN, aP, aCase.LineLaws, out aWhy)))
                 {
                     anIntended.TryGetValue(aCase.Corrected!, out int aCount);
                     anIntended[aCase.Corrected!] = aCount + 1;

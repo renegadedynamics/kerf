@@ -458,19 +458,8 @@ internal static class ConstrainedSolvers
             var edges = new List<global::Kerf.Topology.Edge>();
             for (int i = 1; i <= gcc.SolutionCount; i++)
             {
-                var solution = gcc.ThisSolution(i);
-                var lin2d = new LineCurve2D(solution);
-                // The two tangency points: Tangency1/2 can index the same line differently, so intersect instead
-                var inter1 = new CurveCurveIntersection2D(lin2d, a1.H2d!);
-                var pt1 = inter1.Point(1);   // there is always one tangent intersection
-                Point2D pt2;
-                if (two.Point is { } pp)
-                    pt2 = new Point2D(pp.X, pp.Y);
-                else
-                {
-                    var inter2 = new CurveCurveIntersection2D(lin2d, a2!.H2d!);
-                    pt2 = inter2.Point(1);
-                }
+                gcc.Tangency1(i, out _, out _, out var pt1);
+                gcc.Tangency2(i, out _, out _, out var pt2);
                 {
                     var separation = pt1.DistanceTo(pt2);
                     if (double.IsNaN(separation) || separation < Constants.Tolerance)
@@ -495,18 +484,13 @@ internal static class ConstrainedSolvers
         var refLin = new Line2D(refAx);
         var gcc = new Lin2dTanObl(arg.Curve!.Value, refLin, Constants.Tolerance, angle);
         var edges = new List<global::Kerf.Topology.Edge>();
+        // Lines parallel to the reference never meet it: no edge
+        if (Math.Abs(dir2d.Crossed(refDir)) <= Constants.Tolerance)
+            return [];
         for (int i = 1; i <= gcc.SolutionCount; i++)
         {
-            var pTan = new Point2D();
-            double us = 0, ua = 0;
-            gcc.Tangency1(i, out us, out ua, out pTan);
-            var tanLine = new Line2D(pTan, dir2d);
-            // Intersection2 isn't reliable: intersect with the reference line instead
-            var inter = new AnalyticIntersection(tanLine, refLin);
-            if (!inter.IsDone || inter.PointCount == 0)
-                continue;
-            var ip = inter.Point(1);
-            var pIsect = ip.Value();
+            gcc.Tangency1(i, out _, out _, out var pTan);
+            gcc.Intersection2(i, out _, out _, out var pIsect);
             var separation = pTan.DistanceTo(pIsect);
             if (double.IsNaN(separation) || separation < Constants.Tolerance)
                 continue;

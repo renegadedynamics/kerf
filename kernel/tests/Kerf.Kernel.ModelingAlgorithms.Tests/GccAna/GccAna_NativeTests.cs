@@ -57,6 +57,9 @@ public class GccAna_NativeTests(ITestOutputHelper theOutput)
         ["2TanOn.LLc"] = "decision 17102", ["2TanOn.LPc"] = "decision 17102", ["2TanOn.PPc"] = "decision 17102",
         ["TanOnRad.Cl"] = "decision 17104", ["TanOnRad.Ll"] = "decision 17104", ["TanOnRad.Pl"] = "decision 17104",
         ["TanOnRad.Cc"] = "decision 17104", ["TanOnRad.Lc"] = "decision 17104", ["TanOnRad.Pc"] = "decision 17104",
+        ["Lin2d2Tan.CC"] = "decision 17105", ["Lin2d2Tan.CP"] = "decision 17105", ["TanObl.P"] = "decision 17105",
+        ["TanObl.C"] = "decision 17105", ["TanPer.Pc"] = "decision 17105", ["TanPer.Cl"] = "decision 17105",
+        ["TanPer.Cc"] = "decision 17105", ["TanPer.Pl"] = "decision 17105",
         ["2TanRad.CC"] = "decision 17103", ["2TanRad.LL"] = "decision 17103", ["2TanRad.CP"] = "decision 17103",
     };
 
@@ -67,6 +70,10 @@ public class GccAna_NativeTests(ITestOutputHelper theOutput)
     internal static bool IsIntendedDifference(GccAnaRecordings.Case theCase, out string theWhy)
     {
         theWhy = "";
+        if (GccAnaRecordings.LineLaws(theCase) is GccAnaRecordings.LineLawCase aLineLaw)
+        {
+            return IsIntendedLineDifference(theCase, aLineLaw, out theWhy);
+        }
         if (GccAnaRecordings.Laws(theCase) is not GccAnaRecordings.LawCase aLaw)
         {
             theWhy = "no laws for " + theCase.Ctor;
@@ -79,14 +86,55 @@ public class GccAna_NativeTests(ITestOutputHelper theOutput)
             theWhy = "the port breaks a law: " + aBroken[0];
             return false;
         }
-        GccLaws.Circles S = aLaw.Solve();
-        List<Circle2D> aPort = Enumerable.Range(1, S.Count()).Select(S.Solution).ToList();
+        List<Circle2D> aPort = [];
+        try
+        {
+            GccLaws.Circles S = aLaw.Solve();
+            aPort = Enumerable.Range(1, S.Count()).Select(S.Solution).ToList();
+        }
+        catch (BadQualifierException)
+        {
+            // a qualifier no argument may have, which the laws accept
+        }
         foreach (Circle2D aNative in GccAnaRecordings.NativeCircles(theCase))
         {
             if (GccLaws.IsSolution(aNative, aLaw.Args, aLaw.Locus, aLaw.Radius, aTol)
                 && !aPort.Any(p => p.Location.DistanceTo(aNative.Location) <= aTol && Math.Abs(p.Radius - aNative.Radius) <= aTol))
             {
                 theWhy = FormattableString.Invariant($"native's solution ({aNative.Location.X}, {aNative.Location.Y}) r {aNative.Radius} is lost");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /// <summary>As <see cref="IsIntendedDifference"/> for a line solver: lines compare as lines, whatever their sense.</summary>
+    private static bool IsIntendedLineDifference(GccAnaRecordings.Case theCase, GccAnaRecordings.LineLawCase theLaw, out string theWhy)
+    {
+        theWhy = "";
+        double aTol = LawTolerance(theLaw.Tolerance);
+        List<string> aBroken = GccLaws.CheckLines(theLaw.Solve, theLaw.Args, theLaw.Direction, theLaw.Second, aTol);
+        if (aBroken.Count > 0)
+        {
+            theWhy = "the port breaks a law: " + aBroken[0];
+            return false;
+        }
+        List<Line2D> aPort = [];
+        try
+        {
+            GccLaws.Lines S = theLaw.Solve();
+            aPort = Enumerable.Range(1, S.Count()).Select(S.Solution).ToList();
+        }
+        catch (BadQualifierException)
+        {
+            // a qualifier no argument may have, which the laws accept
+        }
+        foreach (Line2D aNative in GccAnaRecordings.NativeLines(theCase))
+        {
+            bool isSolution = theLaw.Args.All(a => GccLaws.Touches(aNative, a, aTol)) && theLaw.Direction?.Invoke(aNative) is null;
+            if (isSolution && !aPort.Any(p => Math.Abs(p.Direction.XY() ^ aNative.Direction.XY()) <= aTol && p.DistanceTo(aNative.Location) <= aTol))
+            {
+                theWhy = FormattableString.Invariant($"native's solution through ({aNative.Location.X}, {aNative.Location.Y}) is lost");
                 return false;
             }
         }

@@ -269,4 +269,137 @@ public sealed partial class Geom2dGccOracleTests
         }
         return true;
     }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // Lines
+
+    /// <summary>
+    /// The laws of a line solver: tangent to its arguments (Lin2d2Tan) or to one, at an angle to a line (Lin2dTanObl,
+    /// whose second token is the intersection with that line).
+    /// </summary>
+    private sealed record LineLaws(LawArg[] Args, Line2D? Oblique, double Angle, double Tolerance);
+
+    private static Line2D Line(Dictionary<string, string> theT, string theName)
+        => new(Pnt(theT, theName + ".loc"), new Direction2D(Num(theT, theName + ".d.x"), Num(theT, theName + ".d.y")));
+
+    private static double Side(in Line2D theL, in Point2D theP) => theL.Direction.XY() ^ (theP.XY() - theL.Location.XY());
+
+    /// <summary>The laws solution i of a record breaks, judged from its own tokens (native's solutions are judged so too).</summary>
+    private static List<string> LineSolutionLaws(Dictionary<string, string> theT, int i, LineLaws theLaws, double theTol)
+    {
+        List<string> aBroken = [];
+        if (theT.TryGetValue($"s.{i}", out string? aThrow))
+        {
+            aBroken.Add($"solution {i} {aThrow}");
+            return aBroken;
+        }
+        Line2D aSol = Line(theT, $"s.{i}");
+        if (theLaws.Oblique is Line2D aRef)
+        {
+            Xy aWanted = new(Math.Cos(theLaws.Angle) * aRef.Direction.X - Math.Sin(theLaws.Angle) * aRef.Direction.Y,
+                             Math.Sin(theLaws.Angle) * aRef.Direction.X + Math.Cos(theLaws.Angle) * aRef.Direction.Y);
+            if (Math.Abs(aSol.Direction.XY() ^ aWanted) > theTol)
+            {
+                aBroken.Add($"solution {i}: not at the angle");
+            }
+            bool isParallel = Math.Abs(aSol.Direction.XY() ^ aRef.Direction.XY()) <= 1.0e-12;
+            if (theT.TryGetValue($"t2.{i}", out string? aIThrow))
+            {
+                if (!isParallel || !aIThrow.Contains("IsParallel", StringComparison.Ordinal))
+                {
+                    aBroken.Add($"solution {i}: Intersection2 {aIThrow}");
+                }
+            }
+            else
+            {
+                Point2D aI = Pnt(theT, $"t2.{i}.pnt");
+                if (Math.Abs(Side(aSol, aI)) > theTol || Math.Abs(Side(aRef, aI)) > theTol
+                    || ElCLib.Value(Num(theT, $"t2.{i}.parsol"), aSol).DistanceTo(aI) > theTol
+                    || ElCLib.Value(Num(theT, $"t2.{i}.pararg"), aRef).DistanceTo(aI) > theTol)
+                {
+                    aBroken.Add($"solution {i}: intersection with the line");
+                }
+            }
+        }
+        for (int k = 1; k <= theLaws.Args.Length; k++)
+        {
+            LawArg anA = theLaws.Args[k - 1];
+            if (theT.TryGetValue($"t{k}.{i}", out string? aTThrow))
+            {
+                aBroken.Add($"solution {i}: Tangency{k} {aTThrow}");
+                continue;
+            }
+            Point2D P = Pnt(theT, $"t{k}.{i}.pnt");
+            if (Math.Abs(Side(aSol, P)) > theTol || ElCLib.Value(Num(theT, $"t{k}.{i}.parsol"), aSol).DistanceTo(P) > theTol)
+            {
+                aBroken.Add($"solution {i}: tangency point {k} off the solution or its parameter");
+            }
+            if (anA.Point is Point2D aPoint)
+            {
+                if (P.DistanceTo(aPoint) > theTol)
+                {
+                    aBroken.Add($"solution {i}: doesn't pass through point {k}");
+                }
+                continue;
+            }
+            anA.Curve!.D1(Num(theT, $"t{k}.{i}.pararg"), out Point2D aOn, out Vector2D aTangent);
+            if (aOn.DistanceTo(P) > theTol)
+            {
+                aBroken.Add($"solution {i}: tangency point {k} off the argument or its parameter");
+            }
+            else if (aTangent.Magnitude > 0 && Math.Abs(aTangent.Normalized().XY() ^ aSol.Direction.XY()) > theTol)
+            {
+                aBroken.Add($"solution {i}: not tangent to argument {k}");
+            }
+            if (anA.Q != Qualifier.Unqualified && Analytic(anA) is Circle2D c && c.Radius > theTol
+                && (Side(aSol, c.Location) >= 0 ? Qualifier.Enclosing : Qualifier.Outside) != anA.Q)
+            {
+                aBroken.Add($"solution {i}: qualifier {anA.Q} of argument {k}");
+            }
+        }
+        return aBroken;
+    }
+
+    private static int Count(Dictionary<string, string> theT)
+        => theT.TryGetValue("done", out string? aDone) && aDone == "1" && theT.TryGetValue("nb", out string? aNb)
+            ? int.Parse(aNb, CultureInfo.InvariantCulture) : 0;
+
+    /// <summary>True if a differing line case is an intended difference; otherwise why not.</summary>
+    private static bool IsIntendedDifference(Rec theNative, Rec thePort, LineLaws theLaws, out string theWhy)
+    {
+        theWhy = "";
+        double aTol = LawTolerance(theLaws.Tolerance);
+        Dictionary<string, string> aP = Tokens(thePort);
+        if (aP.TryGetValue("ctor", out string? aThrow))
+        {
+            theWhy = "the constructor " + aThrow;
+            return false;
+        }
+        List<Line2D> aPort = [];
+        for (int i = 1; i <= Count(aP); i++)
+        {
+            List<string> aBroken = LineSolutionLaws(aP, i, theLaws, aTol);
+            if (aBroken.Count > 0)
+            {
+                theWhy = "the port breaks a law: " + aBroken[0];
+                return false;
+            }
+            aPort.Add(Line(aP, $"s.{i}"));
+        }
+        Dictionary<string, string> aN = Tokens(theNative);
+        for (int i = 1; i <= Count(aN); i++)
+        {
+            if (LineSolutionLaws(aN, i, theLaws, aTol).Count > 0)
+            {
+                continue;
+            }
+            Line2D aNative = Line(aN, $"s.{i}");
+            if (!aPort.Any(p => Math.Abs(p.Direction.XY() ^ aNative.Direction.XY()) <= aTol && p.DistanceTo(aNative.Location) <= aTol))
+            {
+                theWhy = FormattableString.Invariant($"native's solution through ({aNative.Location.X}, {aNative.Location.Y}) is lost");
+                return false;
+            }
+        }
+        return true;
+    }
 }

@@ -65,6 +65,176 @@ internal static class GccLaws
         public required Func<int, Line2D> Solution { get; init; }
         public Func<int, Qualifier[]>? Qualifiers { get; init; }
         public required Func<int, int, (double ParSol, double ParArg, Point2D P)> Tangency { get; init; }
+        /// <summary>The intersection with the second curve (a line or circle the solution is oblique or perpendicular to).</summary>
+        public Func<int, (double ParSol, double ParArg, Point2D P)>? Intersection { get; init; }
+    }
+
+    /// <summary>The side of a line a circle argument is on, as a qualifier: enclosing on the left, outside on the right.</summary>
+    public static Qualifier SideOf(in Line2D theSol, in Circle2D theC) => SignedDistance(theSol, theC.Location) >= 0.0 ? Qualifier.Enclosing : Qualifier.Outside;
+
+    /// <summary>True if a line touches an argument (a circle, as its qualifier asks, or a point it passes through).</summary>
+    public static bool Touches(in Line2D theSol, Arg theArg, double theTol) => theArg switch
+    {
+        CircArg c => Math.Abs(Math.Abs(SignedDistance(theSol, c.C.Location)) - c.C.Radius) <= theTol
+                     && (c.Q == Qualifier.Unqualified || c.Q == SideOf(theSol, c.C) || c.C.Radius <= theTol),
+        PntArg p => Math.Abs(SignedDistance(theSol, p.P)) <= theTol,
+        _ => false,
+    };
+
+    /// <summary>
+    /// The laws the line solver's results break: each solution touches its arguments (circles with the qualifier asked,
+    /// WhichQualifier the side the circle is on; points on it), the tangency points where it touches with their
+    /// parameters, the direction law, and the intersection with the second curve: on both, at their parameters, and for
+    /// a circle the intersection nearest the first tangency point. <paramref name="theSecond"/> is null when the solver
+    /// has no second curve; <paramref name="isParallel"/> says when a solution has no intersection with it (its
+    /// Intersection2 must then throw).
+    /// </summary>
+    public static List<string> CheckLines(Func<Lines> theSolver, IReadOnlyList<Arg> theArgs, Func<Line2D, string?>? theDirectionLaw,
+                                          object? theSecond, double theTol)
+    {
+        List<string> aBroken = [];
+        Lines S;
+        int aNb;
+        try
+        {
+            S = theSolver();
+            if (!S.IsDone())
+            {
+                aBroken.Add("not done");
+                return aBroken;
+            }
+            aNb = S.Count();
+        }
+        catch (BadQualifierException) when (theArgs.Any(a => a.Q == Qualifier.Noqualifier))
+        {
+            // a qualifier no argument may have (OCCT didn't check it everywhere)
+            return aBroken;
+        }
+        catch (Exception e)
+        {
+            aBroken.Add("throws " + e.GetType().Name);
+            return aBroken;
+        }
+        for (int i = 1; i <= aNb; i++)
+        {
+            try
+            {
+                CheckLine(S, i, theArgs, theDirectionLaw, theSecond, theTol, aBroken);
+            }
+            catch (Exception e)
+            {
+                aBroken.Add($"solution {i}: throws {e.GetType().Name}");
+            }
+        }
+        return aBroken;
+    }
+
+    private static void CheckLine(Lines S, int i, IReadOnlyList<Arg> theArgs, Func<Line2D, string?>? theDirectionLaw, object? theSecond,
+                                  double theTol, List<string> theBroken)
+    {
+        Line2D aSol = S.Solution(i);
+        string aWhat = FormattableString.Invariant($"solution {i} ({aSol.Location.X:R}, {aSol.Location.Y:R}) d ({aSol.Direction.X:R}, {aSol.Direction.Y:R})");
+        if (theDirectionLaw?.Invoke(aSol) is string aLaw)
+        {
+            theBroken.Add($"{aWhat}: {aLaw}");
+        }
+        Qualifier[]? aQuals = S.Qualifiers?.Invoke(i);
+        Point2D? aFirst = null;
+        for (int k = 0; k < theArgs.Count; k++)
+        {
+            Arg anArg = theArgs[k];
+            if (anArg is CircArg c0 && Math.Abs(Math.Abs(SignedDistance(aSol, c0.C.Location)) - c0.C.Radius) > theTol
+                || anArg is PntArg p0 && Math.Abs(SignedDistance(aSol, p0.P)) > theTol)
+            {
+                theBroken.Add($"{aWhat}: not tangent to argument {k + 1}");
+                continue;
+            }
+            if (anArg is CircArg c1)
+            {
+                Qualifier aSide = SideOf(aSol, c1.C);
+                if (c1.Q != Qualifier.Unqualified && c1.Q != aSide && c1.C.Radius > theTol)
+                {
+                    theBroken.Add($"{aWhat}: qualifier {c1.Q} of argument {k + 1} not honoured ({aSide})");
+                }
+                if (aQuals is not null && aQuals[k] != aSide && c1.C.Radius > theTol)
+                {
+                    theBroken.Add($"{aWhat}: WhichQualifier {aQuals[k]} for argument {k + 1}, not {aSide}");
+                }
+            }
+            (double aParSol, double aParArg, Point2D aP) = S.Tangency(i, k + 1);
+            Point2D anExpected = anArg is CircArg c2
+                ? new Point2D(c2.C.Location.XY() - SignedDistance(aSol, c2.C.Location) * new Xy(-aSol.Direction.Y, aSol.Direction.X))
+                : ((PntArg)anArg).P;
+            aFirst ??= anExpected;
+            if (!Near(aP, anExpected, theTol))
+            {
+                theBroken.Add($"{aWhat}: tangency point {k + 1} not where it touches");
+            }
+            if (!Near(ElCLib.Value(aParSol, aSol), aP, theTol))
+            {
+                theBroken.Add($"{aWhat}: tangency {k + 1}'s parameter on the solution");
+            }
+            if (anArg is CircArg c3 && c3.C.Radius > theTol && !Near(ElCLib.Value(aParArg, c3.C), aP, theTol))
+            {
+                theBroken.Add($"{aWhat}: tangency {k + 1}'s parameter on the argument");
+            }
+        }
+        if (theSecond is null || S.Intersection is null)
+        {
+            return;
+        }
+        bool isParallel = theSecond is Line2D sl && Math.Abs(sl.Direction.XY() ^ aSol.Direction.XY()) <= 1.0e-12;
+        (double ParSol, double ParArg, Point2D P) anI;
+        try
+        {
+            anI = S.Intersection(i);
+        }
+        catch (Exception e) when (e.GetType().Name == "IsParallelException")
+        {
+            if (!isParallel)
+            {
+                theBroken.Add($"{aWhat}: Intersection2 says parallel");
+            }
+            return;
+        }
+        if (isParallel)
+        {
+            theBroken.Add($"{aWhat}: Intersection2 of a parallel solution");
+            return;
+        }
+        if (Math.Abs(SignedDistance(aSol, anI.P)) > theTol || !Near(ElCLib.Value(anI.ParSol, aSol), anI.P, theTol))
+        {
+            theBroken.Add($"{aWhat}: intersection point off the solution or its parameter");
+        }
+        switch (theSecond)
+        {
+            case Line2D l:
+                if (Math.Abs(SignedDistance(l, anI.P)) > theTol || !Near(ElCLib.Value(anI.ParArg, l), anI.P, theTol))
+                {
+                    theBroken.Add($"{aWhat}: intersection point off the second line or its parameter");
+                }
+                break;
+            case Circle2D c:
+                {
+                    if (Math.Abs(anI.P.DistanceTo(c.Location) - c.Radius) > theTol || !Near(ElCLib.Value(anI.ParArg, c), anI.P, theTol))
+                    {
+                        theBroken.Add($"{aWhat}: intersection point off the second circle or its parameter");
+                    }
+                    // the nearer of the two intersections to the first tangency point
+                    double s = SignedDistance(aSol, c.Location);
+                    Point2D aFoot = new(c.Location.XY() - s * new Xy(-aSol.Direction.Y, aSol.Direction.X));
+                    double h = Math.Sqrt(Math.Max(0.0, c.Radius * c.Radius - s * s));
+                    Point2D aA = new(aFoot.XY() + h * aSol.Direction.XY());
+                    Point2D aB = new(aFoot.XY() - h * aSol.Direction.XY());
+                    Point2D T = aFirst ?? aSol.Location;
+                    double aNear = Math.Min(T.DistanceTo(aA), T.DistanceTo(aB));
+                    if (T.DistanceTo(anI.P) > aNear + theTol)
+                    {
+                        theBroken.Add($"{aWhat}: intersection not the nearest");
+                    }
+                    break;
+                }
+        }
     }
 
     /// <summary>The qualifiers a circle has with respect to an argument it touches (several when it is the argument).</summary>
@@ -182,6 +352,11 @@ internal static class GccLaws
                 return aBroken;
             }
             aNb = S.Count();
+        }
+        catch (BadQualifierException) when (theArgs.Any(a => a.Q == Qualifier.Noqualifier))
+        {
+            // a qualifier no argument may have (OCCT didn't check it everywhere)
+            return aBroken;
         }
         catch (Exception e)
         {

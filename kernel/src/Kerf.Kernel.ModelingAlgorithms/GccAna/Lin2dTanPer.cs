@@ -17,9 +17,8 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// solution is its tangency point with the first argument.
 /// </summary>
 /// <remarks>
-/// An algorithm object computed by its constructor (decision 117). As in OCCT, the qualifier of a point argument, and
-/// of a circle in the circle/line case, is never set: WhichQualifier returns GccEnt_unqualified there (uninitialised
-/// memory in OCCT).
+/// An algorithm object computed by its constructor (decision 117). WhichQualifier gives the side a circle is on, and
+/// GccEnt_noqualifier for a point (OCCT set neither: Kerf decision 17105).
 /// </remarks>
 public sealed class Lin2dTanPer
 {
@@ -62,6 +61,7 @@ public sealed class Lin2dTanPer
                                               theLin.Direction.X));
         //                                      ========================
         _pnttg1sol[1] = thePnt;
+        _qualifier1[1] = Qualifier.Noqualifier;
         AnalyticIntersection intp = new(_linsol[1], theLin);
         if (intp.IsDone)
         {
@@ -96,18 +96,20 @@ public sealed class Lin2dTanPer
                                  new Direction2D(theCircle.Location.XY() - thePnt.XY()));
         //                      ================================================
         _pnttg1sol[1] = thePnt;
+        _qualifier1[1] = Qualifier.Noqualifier;
         AnalyticIntersection intp = new(_linsol[1], theCircle);
         if (intp.IsDone)
         {
             if (!intp.IsEmpty)
             {
+                // the nearest intersection (OCCT never lowered maxdist and kept the last: Kerf decision 17105)
                 double maxdist = RealLast();
                 for (int i = 1; i <= intp.PointCount; i++)
                 {
-                    // OCCT: maxdist is never lowered, so this keeps the last intersection point, not the nearest
                     if (intp.Point(i).Value().DistanceTo(thePnt) < maxdist)
                     {
                         _pntint2sol[1] = intp.Point(i).Value();
+                        maxdist = intp.Point(i).Value().DistanceTo(thePnt);
                     }
                 }
             }
@@ -138,7 +140,6 @@ public sealed class Lin2dTanPer
         _nbrSol = 0;
         Circle2D c1 = qualified1.Qualified();
 
-        // OCCT: qualifier1 is never set by this constructor
         if (qualified1.IsEnclosed)
         {
             // ============================
@@ -173,6 +174,8 @@ public sealed class Lin2dTanPer
                                                        theLin.Direction.X));
             //                                    ========================
             _pnttg1sol[_nbrSol] = new Point2D((c1.Location.XY()).Added(signe * xy));
+            // the circle is on the solution's left for signe = 1 (OCCT never set the qualifier: Kerf decision 17105)
+            _qualifier1[_nbrSol] = signe > 0 ? Qualifier.Enclosing : Qualifier.Outside;
             AnalyticIntersection intp = new(_linsol[_nbrSol], theLin);
             if (intp.IsDone)
             {
@@ -201,77 +204,57 @@ public sealed class Lin2dTanPer
     //=========================================================================
 
     /// <summary>
-    /// Lines tangent to the qualified circle, at its points on the line of centres, so perpendicular to that line
-    /// (as OCCT computes them: they don't pass through the centre of TheCircle).
+    /// The lines tangent to the qualified circle and perpendicular to TheCircle, so through its centre.
     /// </summary>
-    /// <exception cref="BadQualifierException">The circle is qualified enclosed.</exception>
+    /// <exception cref="BadQualifierException">The circle is qualified enclosed, or GccEnt_noqualifier.</exception>
     public Lin2dTanPer(in QualifiedCirc qualified1, in Circle2D theCircle) : this(2)
     {
         _wellDone = false;
         _nbrSol = 0;
-        int signe = 0;
-        Circle2D c1 = qualified1.Qualified();
-
-        if (qualified1.IsEnclosed)
+        if (!(qualified1.IsEnclosing || qualified1.IsOutside || qualified1.IsUnqualified))
         {
-            // ============================
             throw new BadQualifierException();
         }
-        else if (qualified1.IsEnclosing)
+        // A line perpendicular to a circle passes through its centre: the tangents to C1 from TheCircle's centre, each
+        // oriented from its tangency point to that centre and kept on the side the qualifier asks, with its nearest
+        // intersection with TheCircle (OCCT always gave two lines tangent at C1's points on the line of centres,
+        // which miss TheCircle's centre, and kept the last intersection: Kerf decision 17105)
+        Circle2D c1 = qualified1.Qualified();
+        Point2D o = theCircle.Location;
+        double dist = o.DistanceTo(c1.Location);
+        double r1 = c1.Radius;
+        _wellDone = true;
+        if (dist < r1 || dist <= 0.0)
         {
-            // ==================================
-            signe = -1;
-            _qualifier1[1] = Qualifier.Enclosing;
+            return;
         }
-        else if (qualified1.IsOutside)
+        double h = Math.Sqrt(Math.Max(0.0, dist * dist - r1 * r1));
+        Xy u = (o.XY() - c1.Location.XY()) / dist;
+        Xy w = new(-u.Y(), u.X());
+        int nb = h > 0.0 ? 2 : 1;
+        for (int j = 0; j < nb; j++)
         {
-            // ================================
-            signe = 1;
-            _qualifier1[1] = Qualifier.Outside;
-        }
-        else if (qualified1.IsUnqualified)
-        {
-            // ====================================
-            signe = -1;
-            _qualifier1[1] = Qualifier.Enclosing;
-            _qualifier1[2] = Qualifier.Outside;
-        }
-        // OCCT: always two solutions, whatever the qualifier (qualifier1(2) is then unset), and the lines are
-        // perpendicular to the line of centres instead of passing through TheCircle's centre
-        for (int j = 1; j <= 2; j++)
-        {
-            _nbrSol++;
-            signe = -signe;
-            Direction2D d1 = new(theCircle.Location.XY() - c1.Location.XY());
-            _linsol[_nbrSol] = new Line2D(new Point2D((c1.Location.XY())
-                                                       //   ===================================================
-                                                       + signe * (d1.XY() * c1.Radius)),
-                                          new Direction2D(-d1.Y, d1.X));
-            //                     ======================================================
-            _pnttg1sol[_nbrSol] = new Point2D((c1.Location.XY()) + signe * (d1.XY() * c1.Radius));
-            AnalyticIntersection intp = new(_linsol[_nbrSol], theCircle);
-            if (intp.IsDone)
+            double sign = j == 0 ? 1.0 : -1.0;
+            // the tangency point: at r1 from C1's centre, making a right angle with the centre O
+            Point2D p1 = new(c1.Location.XY() + (r1 * r1 / dist) * u + (sign * r1 * h / dist) * w);
+            Line2D sol = p1.DistanceTo(o) > 0.0 ? new Line2D(p1, new Direction2D(o.XY() - p1.XY())) : new Line2D(p1, new Direction2D(w));
+            Qualifier side = (sol.Direction.XY() ^ (c1.Location.XY() - p1.XY())) >= 0.0 ? Qualifier.Enclosing : Qualifier.Outside;
+            if (!qualified1.IsUnqualified && qualified1.Qualifier() != side)
             {
-                if (!intp.IsEmpty)
-                {
-                    double maxdist = RealLast();
-                    for (int i = 1; i <= intp.PointCount; i++)
-                    {
-                        // OCCT: maxdist is never lowered, so this keeps the last intersection point
-                        if (intp.Point(i).Value().DistanceTo(_pnttg1sol[_nbrSol]) < maxdist)
-                        {
-                            _pntint2sol[_nbrSol] = intp.Point(i).Value();
-                        }
-                    }
-                }
+                continue;
             }
-            _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_linsol[_nbrSol], _pnttg1sol[_nbrSol]);
-            _par2sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_linsol[_nbrSol], _pntint2sol[_nbrSol]);
-            // a circle of radius 0 puts the tangency point at its centre, and a line missing TheCircle leaves the
-            // intersection at the origin, which may be TheCircle's centre
-            _pararg1[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[_nbrSol]);
-            _pararg2[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(theCircle, _pntint2sol[_nbrSol]);
-            _wellDone = true;
+            int n = ++_nbrSol;
+            _linsol[n] = sol;
+            _qualifier1[n] = side;
+            _pnttg1sol[n] = p1;
+            // TheCircle's points on the line are its centre +- its radius along it: the nearer to the tangency point
+            Point2D i1 = new(o.XY() + theCircle.Radius * sol.Direction.XY());
+            Point2D i2 = new(o.XY() - theCircle.Radius * sol.Direction.XY());
+            _pntint2sol[n] = i1.DistanceTo(p1) <= i2.DistanceTo(p1) ? i1 : i2;
+            _par1sol[n] = global::Kerf.Engine.Geometry.ElCLib.Parameter(sol, p1);
+            _par2sol[n] = global::Kerf.Engine.Geometry.ElCLib.Parameter(sol, _pntint2sol[n]);
+            _pararg1[n] = p1.DistanceTo(c1.Location) <= Constants.Resolution() ? 0.0 : global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, p1);
+            _pararg2[n] = theCircle.Radius <= Constants.Resolution() ? 0.0 : global::Kerf.Engine.Geometry.ElCLib.Parameter(theCircle, _pntint2sol[n]);
         }
     }
 
@@ -298,8 +281,8 @@ public sealed class Lin2dTanPer
     }
 
     /// <summary>
-    /// The qualifier of the first argument for the solution number Index (see the remarks for the cases OCCT leaves
-    /// unset).
+    /// The qualifier of the first argument for the solution number Index: the side a circle is on, GccEnt_noqualifier for
+    /// a point.
     /// </summary>
     public void WhichQualifier(int index, out Qualifier qualif1)
     {
@@ -318,7 +301,7 @@ public sealed class Lin2dTanPer
     }
 
     /// <summary>The solution number Index.</summary>
-    /// <exception cref="RangeErrorException">Index is out of range (OCCT throws this base class here).</exception>
+    /// <exception cref="OutOfRangeException">Index is out of range (OCCT threw its base class, Standard_RangeError: Kerf decision 17105).</exception>
     public Line2D ThisSolution(int index)
     {
         if (!_wellDone)
@@ -327,7 +310,7 @@ public sealed class Lin2dTanPer
         }
         if (index <= 0 || index > _nbrSol)
         {
-            throw new RangeErrorException();
+            throw new OutOfRangeException();
         }
         return _linsol[index];
     }

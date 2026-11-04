@@ -29,9 +29,11 @@ public sealed class AnalyticLin2dTanObl
     private readonly NCollection_Array1<double> _par2sol;
     private readonly NCollection_Array1<double> _pararg1;
     private readonly NCollection_Array1<double> _pararg2;
+    private readonly bool[] _parallel;
 
     private AnalyticLin2dTanObl(int size)
     {
+        _parallel = new bool[size + 1];
         _linsol = new NCollection_Array1<Line2D>(1, size);
         _qualifier1 = new NCollection_Array1<Qualifier>(1, size);
         _pnttg1sol = new NCollection_Array1<Point2D>(1, size);
@@ -64,30 +66,32 @@ public sealed class AnalyticLin2dTanObl
         //                               =======================================
         _qualifier1[1] = Qualifier.Noqualifier;
         _pnttg1sol[1] = thePoint;
-        AnalyticIntersection intp = new(_linsol[1], theLine);
-        if (intp.IsDone)
+        _par1sol[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_linsol[1], _pnttg1sol[1]);
+        _pararg1[1] = 0.0;
+        _nbrSol = 1;
+        _wellDone = Intersect(1, theLine);
+    }
+
+    /// <summary>
+    /// The intersection of solution n with TheLine; a solution parallel to it has none, and Intersection2 throws
+    /// IsParallel for it (OCCT gave it the data of the default point, the origin: Kerf decision 17105). False if
+    /// IntAna2d fails.
+    /// </summary>
+    private bool Intersect(int n, in Line2D theLine)
+    {
+        AnalyticIntersection intp = new(_linsol[n], theLine);
+        if (!intp.IsDone)
         {
-            if (!intp.IsEmpty)
-            {
-                for (int i = 1; i <= intp.PointCount; i++)
-                {
-                    _pntint2sol[1] = intp.Point(i).Value();
-                }
-            }
-            // OCCT: when the solution is parallel to TheLine there is no intersection, and the intersection data is
-            // that of the default point (the origin)
-            _par1sol[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_linsol[1], _pnttg1sol[1]);
-            _par2sol[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_linsol[1], _pntint2sol[1]);
-            _pararg1[1] = 0.0;
-            _pararg2[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLine, _pntint2sol[1]);
-            _nbrSol = 1;
-            _wellDone = true;
+            return false;
         }
-        else
+        _parallel[n] = intp.IsEmpty || intp.PointCount == 0;
+        if (!_parallel[n])
         {
-            _wellDone = false;
-            _nbrSol = 0;
+            _pntint2sol[n] = intp.Point(1).Value();
+            _par2sol[n] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_linsol[n], _pntint2sol[n]);
+            _pararg2[n] = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLine, _pntint2sol[n]);
         }
+        return true;
     }
 
     //=========================================================================
@@ -130,19 +134,8 @@ public sealed class AnalyticLin2dTanObl
                 _linsol[1] = new Line2D(_pnttg1sol[1], new Direction2D(xy));
                 //     ===============================================
                 _qualifier1[1] = qualified1.Qualifier();
-                AnalyticIntersection intp = new(_linsol[1], theLine);
                 _nbrSol = 1;
                 _wellDone = true;
-                if (intp.IsDone)
-                {
-                    if (!intp.IsEmpty)
-                    {
-                        for (int i = 1; i <= intp.PointCount; i++)
-                        {
-                            _pntint2sol[1] = intp.Point(i).Value();
-                        }
-                    }
-                }
             }
             else if (qualified1.IsOutside)
             {
@@ -153,19 +146,8 @@ public sealed class AnalyticLin2dTanObl
                 _linsol[1] = new Line2D(_pnttg1sol[1], new Direction2D(xy));
                 //     ===============================================
                 _qualifier1[1] = qualified1.Qualifier();
-                AnalyticIntersection intp = new(_linsol[1], theLine);
                 _wellDone = true;
                 _nbrSol = 1;
-                if (intp.IsDone)
-                {
-                    if (!intp.IsEmpty)
-                    {
-                        for (int i = 1; i <= intp.PointCount; i++)
-                        {
-                            _pntint2sol[1] = intp.Point(i).Value();
-                        }
-                    }
-                }
             }
             else if (qualified1.IsUnqualified)
             {
@@ -176,38 +158,14 @@ public sealed class AnalyticLin2dTanObl
                 _linsol[1] = new Line2D(_pnttg1sol[1], new Direction2D(xy));
                 //     ===============================================
                 _qualifier1[1] = Qualifier.Enclosing;
-                AnalyticIntersection intp = new(_linsol[1], theLine);
                 _wellDone = true;
                 _nbrSol = 1;
-                if (intp.IsDone)
-                {
-                    if (!intp.IsEmpty)
-                    {
-                        for (int i = 1; i <= intp.PointCount; i++)
-                        {
-                            _pntint2sol[1] = intp.Point(i).Value();
-                        }
-                    }
-                }
                 _pnttg1sol[2] = new Point2D(c1.Location.XY() + r1 * new Xy(-xy.Y(), xy.X()));
                 _linsol[2] = new Line2D(_pnttg1sol[2], new Direction2D(xy));
                 //     ===============================================
                 _qualifier1[2] = Qualifier.Outside;
-                // OCCT: intersects the first solution again, not linsol(2), so the second solution's intersection
-                // point is the first's
-                intp = new AnalyticIntersection(_linsol[1], theLine);
                 _nbrSol++;
                 _wellDone = true;
-                if (intp.IsDone)
-                {
-                    if (!intp.IsEmpty)
-                    {
-                        for (int i = 1; i <= intp.PointCount; i++)
-                        {
-                            _pntint2sol[2] = intp.Point(i).Value();
-                        }
-                    }
-                }
             }
 
             for (int index = 1; index <= _nbrSol; index++)
@@ -215,8 +173,8 @@ public sealed class AnalyticLin2dTanObl
                 _par1sol[index] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_linsol[index], _pnttg1sol[index]);
                 // a circle of radius 0 puts the tangency point at its centre
                 _pararg1[index] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[index]);
-                _par2sol[index] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_linsol[index], _pntint2sol[index]);
-                _pararg2[index] = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLine, _pntint2sol[index]);
+                // each solution's own intersection (OCCT intersected the first solution twice: Kerf decision 17105)
+                Intersect(index, theLine);
             }
         }
     }
@@ -297,6 +255,7 @@ public sealed class AnalyticLin2dTanObl
     }
 
     /// <summary>The intersection of the solution number Index with the line, and its parameters on both.</summary>
+    /// <exception cref="IsParallelException">The solution is parallel to the line (Kerf decision 17105).</exception>
     public void Intersection2(int index, out double parSol, out double parArg, out Point2D pntSol)
     {
         if (!_wellDone)
@@ -306,6 +265,10 @@ public sealed class AnalyticLin2dTanObl
         else if (index <= 0 || index > _nbrSol)
         {
             throw new OutOfRangeException();
+        }
+        else if (_parallel[index])
+        {
+            throw new IsParallelException();
         }
         else
         {

@@ -16,9 +16,8 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// points. A circle may be qualified enclosing, outside or unqualified (not enclosed).
 /// </summary>
 /// <remarks>
-/// An algorithm object computed by its constructor (decision 117). As in OCCT, WhichQualifier returns the qualifiers
-/// given (GccEnt_unqualified for an unqualified circle, not a computed one), and the second circle's qualifier is
-/// mostly the first's.
+/// An algorithm object computed by its constructor (decision 117). WhichQualifier gives the side each circle is on
+/// (Kerf decision 17105).
 /// </remarks>
 public sealed class AnalyticLin2d2Tan
 {
@@ -94,81 +93,80 @@ public sealed class AnalyticLin2d2Tan
         double tol = Math.Abs(tolerance);
         _wellDone = false;
         _nbrSol = 0;
-        if (!(qualified1.IsEnclosed || qualified1.IsEnclosing || qualified1.IsOutside
-              || qualified1.IsUnqualified))
+        if (!(qualified1.IsEnclosing || qualified1.IsOutside || qualified1.IsUnqualified))
         {
             throw new BadQualifierException();
         }
+        // The tangents from the point, each oriented from its tangency point to the point, kept on the side the
+        // qualifier asks, with the side as the computed qualifier (OCCT gave an unqualified circle no computed
+        // qualifier: Kerf decision 17105)
         Circle2D c1 = qualified1.Qualified();
-        double r1 = c1.Radius;
+        _wellDone = true;
+        Span<Line2D> lines = stackalloc Line2D[2];
+        Span<Point2D> touches = stackalloc Point2D[2];
+        int nb = Tangents(c1, 1.0, new Circle2D(new Axis2D(thePoint, new Direction2D(Direction2D.D.X)), 0.0), 1.0, tol, lines, touches, touches);
+        for (int i = 0; i < nb; i++)
+        {
+            Point2D p1 = touches[i];
+            Line2D sol = p1.DistanceTo(thePoint) > tol ? new Line2D(p1, new Direction2D(thePoint.XY() - p1.XY())) : lines[i];
+            Qualifier side = Side(sol, c1);
+            if (!qualified1.IsUnqualified && qualified1.Qualifier() != side)
+            {
+                continue;
+            }
+            int n = ++_nbrSol;
+            _linsol[n] = sol;
+            _qualifier1[n] = side;
+            _qualifier2[n] = Qualifier.Noqualifier;
+            _pnttg1sol[n] = p1;
+            _pnttg2sol[n] = thePoint;
+            _par1sol[n] = global::Kerf.Engine.Geometry.ElCLib.Parameter(sol, p1);
+            _par2sol[n] = global::Kerf.Engine.Geometry.ElCLib.Parameter(sol, thePoint);
+            _pararg1[n] = ParameterOn(c1, p1);
+            _pararg2[n] = 0.0;
+        }
+    }
 
-        if (qualified1.IsEnclosed)
-        {
-            throw new BadQualifierException();
-        }
-        // ============================
-        else if (tol < r1 - thePoint.DistanceTo(c1.Location))
-        {
-            _wellDone = true;
-        }
-        else if (Math.Abs(thePoint.DistanceTo(c1.Location) - r1) <= tol)
-        {
-            Direction2D dir = new(new Vector2D(c1.Location, thePoint));
-            _linsol[1] = new Line2D(thePoint, new Direction2D(-dir.Y, dir.X));
-            //   =====================================================================
-            _qualifier1[1] = qualified1.Qualifier();
-            _qualifier2[1] = Qualifier.Noqualifier;
-            _wellDone = true;
-            _nbrSol = 1;
-            _pnttg1sol[1] = thePoint;
-            _pnttg2sol[1] = thePoint;
-        }
-        else
-        {
-            double signe = 1;
-            double dist = thePoint.DistanceTo(c1.Location);
-            double d = dist - Math.Sqrt(dist * dist - r1 * r1);
-            if (qualified1.IsEnclosing)
-            {
-                //   =============================
-                signe = 1;
-                _nbrSol = 1;
-            }
-            else if (qualified1.IsOutside)
-            {
-                signe = -1;
-                _nbrSol = 1;
-            }
-            else if (qualified1.IsUnqualified)
-            {
-                //   ====================================
-                signe = 1;
-                _nbrSol = 2;
-            }
-            for (int i = 1; i <= _nbrSol; i++)
-            {
-                Point2D p1 = c1.Location.Rotated(thePoint, Math.Asin(signe * r1 / dist));
-                Direction2D d1 = new(new Vector2D(p1, thePoint));
-                p1 = new Point2D(p1.XY() + d * d1.XY());
-                _linsol[i] = new Line2D(p1, new Direction2D(new Vector2D(p1, thePoint)));
-                //     ========================================================
-                _qualifier1[i] = qualified1.Qualifier();
-                _qualifier2[i] = Qualifier.Noqualifier;
-                _pnttg1sol[i] = p1;
-                _pnttg2sol[i] = thePoint;
-                signe = -signe;
-            }
-            _wellDone = true;
-        }
+    /// <summary>The side of a line a circle is on, as GccEnt names it: enclosing on its left, outside on its right.</summary>
+    private static Qualifier Side(in Line2D sol, in Circle2D c)
+        => (sol.Direction.XY() ^ (c.Location.XY() - sol.Location.XY())) >= 0.0 ? Qualifier.Enclosing : Qualifier.Outside;
 
-        for (int i = 1; i <= _nbrSol; i++)
+    /// <summary>The parameter of a point on a circle (0 at the centre of a circle of radius 0).</summary>
+    private static double ParameterOn(in Circle2D c, in Point2D p)
+        => p.DistanceTo(c.Location) <= Constants.Resolution() ? 0.0 : global::Kerf.Engine.Geometry.ElCLib.Parameter(c, p);
+
+    /// <summary>
+    /// The oriented lines with circle 1 on the side s1 (+1 left, -1 right) and circle 2 on the side s2 at their radii:
+    /// with n the line's left normal, n.(c2 - c1) = s2 r2 - s1 r1, solved for n's angle (one line where the two
+    /// solutions meet within the tolerance). Writes the lines and their tangency points; returns how many.
+    /// </summary>
+    private static int Tangents(in Circle2D c1, double s1, in Circle2D c2, double s2, double tol,
+                                Span<Line2D> lines, Span<Point2D> touch1, Span<Point2D> touch2)
+    {
+        Xy v = c2.Location.XY() - c1.Location.XY();
+        double dist = v.Modulus();
+        if (dist <= tol)
         {
-            _par1sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_linsol[i], _pnttg1sol[i]);
-            _par2sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_linsol[i], _pnttg2sol[i]);
-            // a circle of radius 0 puts the tangency point at its centre
-            _pararg1[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[i]);
-            _pararg2[i] = 0.0;
+            return 0;
         }
+        double k = s2 * c2.Radius - s1 * c1.Radius;
+        if (Math.Abs(k) > dist + tol)
+        {
+            return 0;
+        }
+        double phi = Math.Atan2(v.Y(), v.X());
+        double alpha = Math.Acos(Math.Clamp(k / dist, -1.0, 1.0));
+        int nb = dist - Math.Abs(k) <= tol ? 1 : 2;
+        for (int i = 0; i < nb; i++)
+        {
+            double theta = i == 0 ? phi + alpha : phi - alpha;
+            Xy n = new(Math.Cos(theta), Math.Sin(theta));
+            Point2D p1 = new(c1.Location.XY() - (s1 * c1.Radius) * n);
+            touch2[i] = new Point2D(c2.Location.XY() - (s2 * c2.Radius) * n);
+            touch1[i] = p1;
+            lines[i] = new Line2D(p1, new Direction2D(n.Y(), -n.X()));
+        }
+        return nb;
     }
 
     //=========================================================================
@@ -197,336 +195,93 @@ public sealed class AnalyticLin2d2Tan
         double tol = Math.Abs(tolerance);
         _wellDone = false;
         _nbrSol = 0;
-        if (!(qualified1.IsEnclosed || qualified1.IsEnclosing || qualified1.IsOutside
-              || qualified1.IsUnqualified)
-            || !(qualified2.IsEnclosed || qualified2.IsEnclosing || qualified2.IsOutside
-                 || qualified2.IsUnqualified))
+        if (!(qualified1.IsEnclosing || qualified1.IsOutside || qualified1.IsUnqualified)
+            || !(qualified2.IsEnclosing || qualified2.IsOutside || qualified2.IsUnqualified))
         {
             throw new BadQualifierException();
         }
+        // The common tangents, each oriented from its tangency point on C1 to that on C2, kept when the circles are on
+        // the sides their qualifiers ask (so each pair of qualifiers picks one of the four tangents), with the sides as
+        // the computed qualifiers (OCCT gave the second circle the first's qualifier, unqualified circles none, and
+        // solution 2 of some branches solution 1's tangency point: Kerf decision 17105)
         Circle2D c1 = qualified1.Qualified();
         Circle2D c2 = qualified2.Qualified();
-
-        if (qualified1.IsEnclosed || qualified2.IsEnclosed)
+        _wellDone = true;
+        // the outer tangents (both circles on one side) and the inner ones, taken in OCCT's order: an outer one, the
+        // inner one on its other side, the other outer one, the other inner one
+        Span<Line2D> lines = stackalloc Line2D[4];
+        Span<Point2D> touch1 = stackalloc Point2D[4];
+        Span<Point2D> touch2 = stackalloc Point2D[4];
+        int nbOuter = Tangents(c1, 1.0, c2, 1.0, tol, lines[..2], touch1[..2], touch2[..2]);
+        int nbInner = Tangents(c1, 1.0, c2, -1.0, tol, lines[2..], touch1[2..], touch2[2..]);
+        Span<int> order = stackalloc int[4];
+        int nbOrder = 0;
+        for (int i = 0; i < 2; i++)
         {
-            // =======================================================
-            throw new BadQualifierException();
-        }
-        else
-        {
-            double r1 = c1.Radius;
-            double r2 = c2.Radius;
-            Direction2D d1 = new();
-            int signe = 1;
-            double dist = c1.Location.DistanceTo(c2.Location);
-            if (tol < Max(r1, r2) - dist - Min(r1, r2))
+            if (i < nbOuter)
             {
-                _wellDone = true;
+                order[nbOrder++] = i;
             }
-            else if (!qualified1.IsUnqualified || !qualified2.IsUnqualified)
+            if (nbInner == 2 || (nbInner == 1 && i == 0))
             {
-                //   ====================================================================
-                if (qualified1.IsEnclosing && qualified2.IsEnclosing)
+                order[nbOrder++] = 2 + (nbInner == 2 ? 1 - i : 0);
+            }
+        }
+        Span<Line2D> candidates = stackalloc Line2D[2];
+        foreach (int i in order[..nbOrder])
+        {
+            {
+                Point2D p1 = touch1[i];
+                Point2D p2 = touch2[i];
+                int nc = 1;
+                if (p1.DistanceTo(p2) > tol)
                 {
-                    //     =========================================================
-                    if (Math.Abs(dist + Min(r1, r2) - Max(r1, r2)) <= tol && dist >= tol)
-                    {
-                        if (r1 < r2)
-                        {
-                            d1 = new Direction2D(new Vector2D(c2.Location, c1.Location));
-                        }
-                        else
-                        {
-                            d1 = new Direction2D(new Vector2D(c1.Location, c2.Location));
-                        }
-                        Point2D p1 = new(c1.Location.XY() + r1 * d1.XY());
-                        _linsol[1] = new Line2D(p1, new Direction2D(-d1.Y, d1.X));
-                        //         =================================================
-                        _qualifier1[1] = qualified1.Qualifier();
-                        _qualifier2[1] = qualified2.Qualifier();
-                        _pnttg1sol[1] = p1;
-                        _pnttg2sol[1] = p1;
-                        _wellDone = true;
-                        _nbrSol = 1;
-                    }
-                    else
-                    {
-                        Point2D p1 = c2.Location.Rotated(c1.Location, Math.Asin((r1 - r2) / dist));
-                        d1 = new Direction2D(new Vector2D(c1.Location, p1));
-                        p1 = new Point2D((c1.Location.XY() + new Xy(r1 * d1.Y, -r1 * d1.X)));
-                        _linsol[1] = new Line2D(p1, d1);
-                        //         ===========================
-                        _qualifier1[1] = qualified1.Qualifier();
-                        _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
-                        _pnttg1sol[1] = p1;
-                        _pnttg2sol[1] = new Point2D(c2.Location.XY() + new Xy(r2 * d1.Y, -r2 * d1.X));
-                        _wellDone = true;
-                        _nbrSol = 1;
-                    }
-                }
-                else if ((qualified1.IsEnclosing && qualified2.IsOutside) ||
-                         //     ================================================================
-                         (qualified2.IsEnclosing && qualified1.IsOutside))
-                {
-                    //              =====================================================
-                    if (qualified1.IsEnclosing && qualified2.IsOutside)
-                    {
-                        signe = 1;
-                    }
-                    else
-                    {
-                        signe = -1;
-                    }
-                    if (r1 + r2 - dist > tol)
-                    {
-                        _wellDone = true;
-                    }
-                    else if (Math.Abs(dist - r1 - r2) < tol && dist > tol)
-                    {
-                        d1 = new Direction2D(new Vector2D(c1.Location, c2.Location));
-                        Point2D p1 = new(c1.Location.XY() + r1 * d1.XY());
-                        _linsol[1] = new Line2D(p1, new Direction2D(-d1.Y, d1.X));
-                        //          =================================================
-                        _qualifier1[1] = qualified1.Qualifier();
-                        _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
-                        _pnttg1sol[1] = p1;
-                        _pnttg2sol[1] = p1;
-                        _wellDone = true;
-                        _nbrSol = 1;
-                    }
-                    else
-                    {
-                        Point2D p1 = c2.Location.Rotated(c1.Location, Math.Asin(signe * (r1 + r2) / dist));
-                        d1 = new Direction2D(new Vector2D(c1.Location, p1));
-                        p1 = new Point2D(c1.Location.XY() + signe * (new Xy(r1 * d1.Y, -r1 * d1.X)));
-                        _linsol[1] = new Line2D(p1, d1);
-                        //         ===========================
-                        _qualifier1[1] = qualified1.Qualifier();
-                        _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
-                        _pnttg1sol[1] = p1;
-                        _pnttg2sol[1] = new Point2D(c2.Location.XY() + signe * (new Xy(-r2 * d1.Y, r2 * d1.X)));
-                        _wellDone = true;
-                        _nbrSol = 1;
-                    }
-                }
-                else if (qualified1.IsOutside && qualified2.IsOutside)
-                {
-                    //     =========================================================
-                    if (Math.Abs(dist + Min(r1, r2) - Max(r1, r2)) < tol && dist > tol)
-                    {
-                        if (r1 < r2)
-                        {
-                            d1 = new Direction2D(new Vector2D(c2.Location, c1.Location));
-                        }
-                        else
-                        {
-                            d1 = new Direction2D(new Vector2D(c1.Location, c2.Location));
-                        }
-                        _linsol[1] = new Line2D(new Point2D(c1.Location.XY() + r1 * d1.XY()),
-                                                 //         =============================================================
-                                                 new Direction2D(d1.Y, -d1.X));
-                        //                              =========================
-                        _qualifier1[1] = qualified1.Qualifier();
-                        _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
-                        _pnttg1sol[1] = new Point2D(c1.Location.XY() + r1 * d1.XY());
-                        _pnttg2sol[1] = _pnttg1sol[1];
-                        _wellDone = true;
-                        _nbrSol = 1;
-                    }
-                    else
-                    {
-                        Point2D p1 = c2.Location.Rotated(c1.Location, Math.Asin((r2 - r1) / dist));
-                        d1 = new Direction2D(new Vector2D(c1.Location, p1));
-                        p1 = new Point2D(c1.Location.XY() + new Xy(-r1 * d1.Y, r1 * d1.X));
-                        _linsol[1] = new Line2D(p1, d1);
-                        //         ===========================
-                        _qualifier1[1] = qualified1.Qualifier();
-                        _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
-                        _pnttg1sol[1] = p1;
-                        _pnttg2sol[1] = new Point2D(c2.Location.XY() + (new Xy(-r2 * d1.Y, r2 * d1.X)));
-                        _wellDone = true;
-                        _nbrSol = 1;
-                    }
+                    candidates[0] = new Line2D(p1, new Direction2D(p2.XY() - p1.XY()));
                 }
                 else
                 {
-                    if ((qualified1.IsUnqualified && qualified2.IsEnclosing) ||
-                        //       ===============================================================
-                        (qualified2.IsUnqualified && qualified1.IsEnclosing))
-                    {
-                        //           =========================================================
-                        if (qualified2.IsUnqualified)
-                        {
-                            signe = 1;
-                        }
-                        else
-                        {
-                            signe = -1;
-                        }
-                        if (Math.Abs(dist + Min(r1, r2) - Max(r1, r2)) < tol && dist > tol)
-                        {
-                            if (r1 < r2)
-                            {
-                                d1 = new Direction2D(new Vector2D(c2.Location, c1.Location));
-                            }
-                            else
-                            {
-                                d1 = new Direction2D(new Vector2D(c1.Location, c2.Location));
-                            }
-                            _linsol[1] = new Line2D(new Point2D(c1.Location.XY() + r1 * d1.XY()),
-                                                     //           =============================================================
-                                                     new Direction2D(-d1.Y, d1.X));
-                            //                                =========================
-                            _qualifier1[1] = qualified1.Qualifier();
-                            _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
-                            _pnttg1sol[1] = new Point2D(c1.Location.XY() + r1 * d1.XY());
-                            _pnttg2sol[1] = _pnttg1sol[1];
-                            _wellDone = true;
-                            _nbrSol = 1;
-                        }
-                        else
-                        {
-                            Point2D p1 = c2.Location.Rotated(c1.Location, Math.Asin((r1 - r2) / dist));
-                            d1 = new Direction2D(new Vector2D(c1.Location, p1));
-                            p1 = new Point2D(c1.Location.XY() + new Xy(r1 * d1.Y, -r1 * d1.X));
-                            _linsol[1] = new Line2D(p1, d1);
-                            //           ===========================
-                            _qualifier1[1] = qualified1.Qualifier();
-                            _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
-                            _pnttg1sol[1] = p1;
-                            _pnttg2sol[1] =
-                                new Point2D(c2.Location.XY() + signe * (new Xy(r2 * d1.Y, -r2 * d1.X)));
-                            _wellDone = true;
-                            _nbrSol = 1;
-                            if (Min(r1, r2) + Max(r1, r2) < dist)
-                            {
-                                Point2D p2 =
-                                    c2.Location.Rotated(c1.Location, Math.Asin(signe * (r1 + r2) / dist));
-                                Direction2D d2 = new(new Vector2D(c1.Location, p2));
-                                p2 = new Point2D(c1.Location.XY() + signe * (new Xy(r1 * d2.Y, -r1 * d2.X)));
-                                _linsol[2] = new Line2D(p2, d2);
-                                //             ===========================
-                                // OCCT: writes the first solution's qualifiers (the second's stay unset) and gives the
-                                // second solution the first's tangency point P1
-                                _qualifier1[1] = qualified1.Qualifier();
-                                _qualifier2[1] = qualified1.Qualifier();
-                                _pnttg1sol[2] = p1;
-                                _pnttg2sol[2] = new Point2D(c2.Location.XY() + (new Xy(-r2 * d2.Y, r2 * d2.X)));
-                                _nbrSol = 2;
-                            }
-                        }
-                    }
-                    else if ((qualified1.IsUnqualified && qualified2.IsOutside) ||
-                             //       ==================================================================
-                             (qualified2.IsUnqualified && qualified1.IsOutside))
-                    {
-                        //           =======================================================
-                        if (qualified2.IsUnqualified)
-                        {
-                            signe = 1;
-                        }
-                        else
-                        {
-                            signe = -1;
-                        }
-                        if (Math.Abs(dist + Min(r1, r2) - Max(r1, r2)) <= tol && dist >= tol)
-                        {
-                            if (r1 < r2)
-                            {
-                                d1 = new Direction2D(new Vector2D(c2.Location, c1.Location));
-                            }
-                            else
-                            {
-                                d1 = new Direction2D(new Vector2D(c1.Location, c2.Location));
-                            }
-                            _linsol[1] = new Line2D(new Point2D(c1.Location.XY() + r1 * d1.XY()),
-                                                     //           =============================================================
-                                                     new Direction2D(d1.Y, -d1.X));
-                            //                                =========================
-                            _qualifier1[1] = qualified1.Qualifier();
-                            _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
-                            _pnttg1sol[1] = new Point2D(c1.Location.XY() + r1 * d1.XY());
-                            _pnttg2sol[1] = _pnttg1sol[1];
-                            _wellDone = true;
-                            _nbrSol = 1;
-                        }
-                        else
-                        {
-                            Point2D p1 = c2.Location.Rotated(c1.Location, Math.Asin(signe * (r2 - r1) / dist));
-                            d1 = new Direction2D(new Vector2D(c1.Location, p1));
-                            p1 = new Point2D(c1.Location.XY() + new Xy(-r1 * d1.Y, r1 * d1.X));
-                            _linsol[1] = new Line2D(p1, d1);
-                            //           ===========================
-                            _qualifier1[1] = qualified1.Qualifier();
-                            _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
-                            _pnttg1sol[1] = p1;
-                            _pnttg2sol[1] =
-                                new Point2D(c2.Location.XY() + signe * (new Xy(-r2 * d1.Y, r2 * d1.X)));
-                            _wellDone = true;
-                            _nbrSol = 1;
-                            if (Min(r1, r2) + Max(r1, r2) < dist)
-                            {
-                                Point2D p2 =
-                                    c2.Location.Rotated(c1.Location, Math.Asin(signe * (-r2 - r1) / dist));
-                                Direction2D d2 = new(new Vector2D(c1.Location, p2));
-                                p2 = new Point2D(c1.Location.XY() + signe * (new Xy(-r1 * d2.Y, r1 * d2.X)));
-                                _linsol[2] = new Line2D(p2, d2);
-                                //             ===========================
-                                // OCCT: writes the first solution's qualifiers (the second's stay unset)
-                                _qualifier1[1] = qualified1.Qualifier();
-                                _qualifier2[1] = qualified1.Qualifier();
-                                _pnttg1sol[2] = p2;
-                                _pnttg2sol[2] =
-                                    new Point2D(c2.Location.XY() + signe * (new Xy(r2 * d2.Y, -r2 * d2.X)));
-                                _nbrSol = 2;
-                            }
-                        }
-                    }
+                    // the circles touch there: either sense
+                    candidates[0] = lines[i];
+                    candidates[1] = lines[i].Reversed();
+                    nc = 2;
                 }
-            }
-            else
-            {
-                for (int i = 1; i <= 2; i++)
+                for (int j = 0; j < nc && _nbrSol < _linsol.Upper(); j++)
                 {
-                    signe = -signe;
-                    _nbrSol++;
-                    Point2D p1 = c2.Location.Rotated(c1.Location, Math.Asin(signe * (r2 - r1) / dist));
-                    d1 = new Direction2D(new Vector2D(c1.Location, p1));
-                    p1 = new Point2D(c1.Location.XY() + signe * new Xy(-r1 * d1.Y, r1 * d1.X));
-                    _linsol[_nbrSol] = new Line2D(p1, d1);
-                    //       ===========================
-                    _qualifier1[_nbrSol] = qualified1.Qualifier();
-                    _qualifier2[_nbrSol] = qualified1.Qualifier();
-                    _pnttg1sol[_nbrSol] = p1;
-                    _pnttg2sol[_nbrSol] =
-                        new Point2D(c2.Location.XY() + signe * (new Xy(-r2 * d1.Y, r2 * d1.X)));
-                    _wellDone = true;
-                    if (Min(r1, r2) + Max(r1, r2) < dist)
+                    Line2D sol = candidates[j];
+                    Qualifier side1 = Side(sol, c1);
+                    Qualifier side2 = Side(sol, c2);
+                    if ((!qualified1.IsUnqualified && side1 != qualified1.Qualifier() && c1.Radius > tol)
+                        || (!qualified2.IsUnqualified && side2 != qualified2.Qualifier() && c2.Radius > tol)
+                        || IsSolution(sol, tol))
                     {
-                        Point2D p2 = c2.Location.Rotated(c1.Location, Math.Asin(signe * (r2 + r1) / dist));
-                        Direction2D d2 = new(new Vector2D(c1.Location, p2));
-                        p2 = new Point2D(c1.Location.XY() + signe * (new Xy(r1 * d2.Y, -r1 * d2.X)));
-                        _nbrSol++;
-                        _linsol[_nbrSol] = new Line2D(p2, d2);
-                        //         ================================
-                        _qualifier1[_nbrSol] = qualified1.Qualifier();
-                        _qualifier2[_nbrSol] = qualified1.Qualifier();
-                        _pnttg1sol[_nbrSol] = p2;
-                        _pnttg2sol[_nbrSol] =
-                            new Point2D(c2.Location.XY() + signe * (new Xy(-r2 * d2.Y, r2 * d2.X)));
+                        continue;
                     }
+                    int n = ++_nbrSol;
+                    _linsol[n] = sol;
+                    _qualifier1[n] = c1.Radius > tol || qualified1.IsUnqualified ? side1 : qualified1.Qualifier();
+                    _qualifier2[n] = c2.Radius > tol || qualified2.IsUnqualified ? side2 : qualified2.Qualifier();
+                    _pnttg1sol[n] = p1;
+                    _pnttg2sol[n] = p2;
+                    _par1sol[n] = global::Kerf.Engine.Geometry.ElCLib.Parameter(sol, p1);
+                    _par2sol[n] = global::Kerf.Engine.Geometry.ElCLib.Parameter(sol, p2);
+                    _pararg1[n] = ParameterOn(c1, p1);
+                    _pararg2[n] = ParameterOn(c2, p2);
                 }
             }
         }
+    }
 
+    /// <summary>True if a line is a solution already (whatever its sense).</summary>
+    private bool IsSolution(in Line2D sol, double tol)
+    {
         for (int i = 1; i <= _nbrSol; i++)
         {
-            _par1sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_linsol[i], _pnttg1sol[i]);
-            _par2sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_linsol[i], _pnttg2sol[i]);
-            // circles of radius 0 put the tangency points at their centres
-            _pararg1[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[i]);
-            _pararg2[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c2, _pnttg2sol[i]);
+            if (Math.Abs(_linsol[i].Direction.XY() ^ sol.Direction.XY()) <= tol && _linsol[i].DistanceTo(sol.Location) <= tol)
+            {
+                return true;
+            }
         }
+        return false;
     }
 
     /// <summary>True if the construction succeeded.</summary>

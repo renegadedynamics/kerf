@@ -404,6 +404,41 @@ internal static class GccAnaRecordings
         return null;
     }
 
+    /// <summary>A case of a line solver: its arguments, direction law and second curve, and the port's solver.</summary>
+    public sealed record LineLawCase(GccLaws.Arg[] Args, Func<Line2D, string?>? Direction, object? Second, double Tolerance, Func<GccLaws.Lines> Solve);
+
+    /// <summary>A line solver's case as the laws see it, or null for another solver.</summary>
+    public static LineLawCase? LineLaws(Case theCase)
+    {
+        Reader r = new(theCase.Inputs);
+        const double t0 = 1.0e-7;
+        switch (theCase.Ctor)
+        {
+            case "Lin2d2Tan.PP": { var a = A(r.Pnt()); var b = A(r.Pnt()); double t = r.D(); return new([a, b], null, null, t, () => GccAna_LinesLawsTests.View(new AnalyticLin2d2Tan(a.P, b.P, t))); }
+            case "Lin2d2Tan.CP": { var q = r.QC(); var b = A(r.Pnt()); double t = r.D(); return new([A(q), b], null, null, t, () => GccAna_LinesLawsTests.View(new AnalyticLin2d2Tan(q, b.P, t))); }
+            case "Lin2d2Tan.CC": { var q = r.QC(); var q2 = r.QC(); double t = r.D(); return new([A(q), A(q2)], null, null, t, () => GccAna_LinesLawsTests.View(new AnalyticLin2d2Tan(q, q2, t))); }
+            case "TanObl.P": { var a = A(r.Pnt()); var l = r.Lin(); double g = r.D(); return new([a], GccAna_LinesLawsTests.Oblique(l, g), l, t0, () => GccAna_LinesLawsTests.View(new AnalyticLin2dTanObl(a.P, l, g))); }
+            case "TanObl.C": { var q = r.QC(); var l = r.Lin(); double g = r.D(); return new([A(q)], GccAna_LinesLawsTests.Oblique(l, g), l, t0, () => GccAna_LinesLawsTests.View(new AnalyticLin2dTanObl(q, l, g))); }
+            case "TanPer.Pl": { var a = A(r.Pnt()); var l = r.Lin(); return new([a], GccAna_LinesLawsTests.Perpendicular(l, 1.0e-6), l, t0, () => GccAna_LinesLawsTests.View(new Lin2dTanPer(a.P, l))); }
+            case "TanPer.Pc": { var a = A(r.Pnt()); var c = r.Circ(); return new([a], GccAna_LinesLawsTests.Perpendicular(c, 1.0e-6), c, t0, () => GccAna_LinesLawsTests.View(new Lin2dTanPer(a.P, c))); }
+            case "TanPer.Cl": { var q = r.QC(); var l = r.Lin(); return new([A(q)], GccAna_LinesLawsTests.Perpendicular(l, 1.0e-6), l, t0, () => GccAna_LinesLawsTests.View(new Lin2dTanPer(q, l))); }
+            case "TanPer.Cc": { var q = r.QC(); var c = r.Circ(); return new([A(q)], GccAna_LinesLawsTests.Perpendicular(c, 1.0e-6), c, t0, () => GccAna_LinesLawsTests.View(new Lin2dTanPer(q, c))); }
+        }
+        return null;
+    }
+
+    /// <summary>The lines of native's solutions, read from its sol tokens.</summary>
+    public static List<Line2D> NativeLines(Case theCase)
+    {
+        List<Line2D> aLines = [];
+        foreach (string aTok in theCase.Native.Where(t => t.StartsWith("sol:", StringComparison.Ordinal) && !t.StartsWith("sol:!", StringComparison.Ordinal)))
+        {
+            double[] v = aTok[4..].Split(',').Select(h => BitConverter.Int64BitsToDouble(long.Parse(h, NumberStyles.HexNumber, CultureInfo.InvariantCulture))).ToArray();
+            aLines.Add(new Line2D(new Point2D(v[0], v[1]), new Direction2D(v[2], v[3])));
+        }
+        return aLines;
+    }
+
     /// <summary>The circles of native's solutions, read from its sol tokens.</summary>
     public static List<Circle2D> NativeCircles(Case theCase)
     {
