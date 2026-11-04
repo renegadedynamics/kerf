@@ -165,3 +165,7 @@ The first packages, for Bento's 3D-models extension.
   same message on failure. A failed thickening, solid offset or unrecoverable loft is a failure with a code
   (`modeling.thicken-failed`, new; `offset-failed`; `loft-failed`), and data an importer can't read the exchange's
   diagnostic, where they were exceptions. Results are unchanged. `docs/10m3-bento.md` lists what changed for Bento.
+
+Phase 10 (part): no Schematiq.Collections (unit 10P1).
+- `ShapeList<T>` holds an `ImmutableArray<T>`, and the package no longer depends on Schematiq.Collections. No public signature
+  changed, and results are the same; `Add` and `AddRange` now copy the list. `docs/10p-bento.md` lists what changed for Bento.

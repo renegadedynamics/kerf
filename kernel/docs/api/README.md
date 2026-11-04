@@ -497,7 +497,7 @@ Where the implementation departs from measurement.md, healing.md, meshing.md and
 **Became internal:** see decision 1538 (the engine of these areas, but for the types the modelling layer's public
 API or another area's public engine types still show). **10L5** (decision 1563) took the engine's public types from
 1,345 to 184 across the four assemblies: 158 are shown by the modelling layer's public API (10M's), 25 by the
-WebAssembly sample, and `Transient` by NCollection (10J's); none by a test, Draw-lite or the kernel's public API.
+WebAssembly sample, and `Transient` by NCollection (10J's); none by a test, Draw-lite or the kernel's public API. **10P1** made them all internal but `Transient`, the base of the public geometry; `PublicSurfaceTests` hold it there.
 
 **Left:**
 - **Done (10L5):** `BrepBuilder.UpdateFaceMesh`/`UpdateEdgeMesh` are gone (decision 1561): the post-processor
@@ -549,7 +549,7 @@ check the layer against the engine itself (4 files).
 `ClassifyPoint` (measurement.md); `Chamfer2D` by corner, `Draft` by face, `SplitAlong`, `ThickSolid`, `Offset2D` in a
 face; `ShapeMesh.TriangulatedShape` for a mesh read (meshing.md, revising question 59 for meshes read).
 
-**Left:** the WebAssembly sample still shows 43 engine types and `Transient` (10L5's); the modelling layer's
+**Left:** the modelling layer's
 Python-emulating helpers that decide results (`PySet`, `PyComparer`, `PyMath`), its operators and messages, for 10M2
 (modeling/docs/design.md, "Left by unit 10M1").
 

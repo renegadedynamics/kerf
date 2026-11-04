@@ -16123,3 +16123,64 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 1592. **The remaining exceptions stay for now (the owner, 4 November 2026: "Regarding the remaining exceptions, let's leave them
        for now.").** The operators, the object constructors and the topological shapes' own methods keep throwing
        `InvalidOperationException` as decision 1589 has them; this can be looked at again later.
+
+## Phase 10: unit 10P1, no Schematiq.Collections; the engine and `Occt` internal; `Transient` without members
+
+17801. **Standard .NET read-only types in both layers (question 50).** The package reference is gone from
+       `Kerf.Kernel.Foundation`, `Kerf.Modeling` and the packaging tests, with the notices and docs that named it.
+       In the kernel, `ISchematiqList<T>` and `PackedList<T>` (74 files) became `IReadOnlyList<T>`, as the public
+       curves' `Poles` and `Knots` already were, over an `ImmutableArray<T>`. An internal `ImmutableArrays` has `Own` (no
+       copy, for an array just filled) and `Copy`; `NCollection_Array1.ToPackedList` is `ToImmutableArray`; the empty
+       results are `Array.Empty<T>()`, which allocates nothing. `PackedList<T>` went rather than going internal: nothing
+       read it as a span. The kernel never appended to these lists: each is filled once and published, so nothing could
+       go quadratic. `PackedListTests`' 5 tests are `ImmutableArraysTests`' 5, one for one.
+17802. **`ShapeList<T>` over `ImmutableArray<T>`, and the measurements behind it.** No public signature changed
+       (`modeling/docs/10p-bento.md`): the owner lifted that constraint on 4 November 2026, but the next unit replaces the
+       layer's shape classes, so the type wasn't reworked. Indexing is an array read rather than a tree walk.
+       `Add` and `AddRange` now copy; the only `Add` in a loop was `ShapeGroups`' constructor, which went quadratic in a
+       group's size and now builds each group once. `ImmutableList<T>` and a builder weren't needed: nothing else
+       appends. **Bento's benchmark** (`7 0`, the base 17995a01's build and this unit's in turn, three of each, with other
+       units' suites running): the same volumes, faces and triangles for all 11 examples, and 91 to 97 MB allocated by
+       the bottle on both; the median recalculation 1,887, 1,642 and 1,576 ms before, 1,538, 1,945 and 1,552 ms after, the
+       first pass 3,924, 4,288 and 4,271 ms before, 4,228, 4,636 and 3,823 ms after: no difference beyond the machine's
+       noise. On a quieter machine, for the collections commit alone: 992 and 1,027 ms before, 961 and 1,012 ms after.
+       **The Booleans** (`booleans`, 407 simple cases, serial then parallel, one run each in turn): 2,667 and 2,292 ms
+       before, 2,305 and 1,738 ms after.
+17803. **Every public type of `Occt` and `Kerf.Engine.*` is internal but `Transient`.** The brief asked for the 26 of
+       `Occt`, by 10L5's method (decision 1563). The same script over both namespaces (`p10p1-internalise.py`) made
+       72 declarations internal, and built Kerf.slnx and both benchmarks: the first round named only `Transient`, and the
+       second was clean. The types decision 1563 put down to the modelling layer had been free since 10M1 moved that layer
+       to the public API, and the WebAssembly sample's since 17806. **What can't be internal:** `Transient` alone, because
+       `Geometry3D` and `Geometry2D` derive from it (17804). The collections themselves aren't converted
+       (`collections-plan.md`).
+17804. **`Transient` has no public members (question 55).** `DynamicType`, `DynamicTypeName`, `IsKind`, `IsInstance`,
+       `This`, `IsFrozen` and `CheckMutable` are internal, and its constructor is `private protected`, so only the kernel can
+       derive from it. **The base stays on the public geometry:** it isn't cheap to remove. About 700 declarations name
+       `Transient`, among them STEP's transfer maps and binders, which hold geometry through it, and the mutators' freezing
+       is on it. Re-basing is question 55's rejected alternative, and it would change nothing a caller can use.
+17805. **`PublicSurfaceTests`** read every exported type of the four kernel assemblies, rather than the types of 8
+       listed namespaces, so all 13 public namespaces are covered and a new one can't be missed. They now check interfaces and
+       events too. Three new tests: the public namespaces are the 13 listed; nothing is public in `Occt` or
+       `Kerf.Engine.*` but the explicit list with its reasons (`Transient`), which also fails on an entry that has gone
+       internal; and `Transient` shows no public or protected member. Taking `Transient` off the list and its exemption
+       out made the list test and the signature test fail, as they should. `Kerf.Kernel.PublicApi.Tests` goes from 192 to 195.
+17806. **`InternalsVisibleTo` (question 54).** `Kerf.Kernel.Bento.Benchmarks` went: it is on the public API. **Two stay beyond
+       question 54, neither of which ships:** `Kerf.Kernel.Benchmarks`, because it times the engine's own algorithms
+       below the public API (9 of its files), and `Build123d.Tests`, because three of its files check the layer against
+       the engine (the STEP writer's document for the byte references, the BRep reader, a memory estimate
+       and the mesh buffers), which the public API doesn't show. **The WebAssembly sample is on the public API alone**
+       (`Brep.Read`, `BoundingBox`, `Mesh`), and refers to `Kerf.Kernel.DataExchange` as well for `Brep`. It lacks one
+       thing: a way to drop the meshes a file carries, so a face holding one fine enough keeps it, where the sample cleaned
+       them. **Its results, against the base on 5 files** (three carrying meshes): the same nodes, triangles and normals
+       everywhere, and the same hashes on 4. On `shading_105.brep` the deflection differs in its last digits
+       (0.08333454009309166, now 0.08333454009309169), because the public box's corners already include the gap and so
+       round differently, and that face's hash differs. `ExtractMs` stays in its JSON at 0, as the public API reads the
+       buffers out as it meshes.
+17807. **Tests.** Kerf.slnx builds with warnings as errors; its one warning, CS0649 in `kernel/tools/stepgen`, is in a
+       folder this unit doesn't touch. Foundation 2,305, ModelingData 3,149, ModelingAlgorithms 4,890 (9 skipped),
+       DataExchange 286 (1 skipped), Oracle 383, the modelling layer 1,890 and PublicApi 195: all pass. **Draw-lite 687:
+       686 pass, and `DrawCheapGapsCorpusTests` failed on a timing check:** `bug24157_8`'s `bbuild -t` took 17.38 s against
+       OCCT's limit of 15 s, with the other units' suites running (72% of 24 processors). Run again by itself at 92%, the same class failed on the same check for `bug24157_5`, `_8` and `_10` (up to 30.7 s). An
+       earlier decision in phase 10 records this check failing under load on `main` too, and the Booleans above show no
+       slowing, but this unit didn't time these cases against the base, and **the class hasn't passed on this branch**: a run
+       on a quiet machine is still needed.

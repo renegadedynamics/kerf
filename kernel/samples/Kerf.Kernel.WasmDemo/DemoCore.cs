@@ -15,7 +15,9 @@ namespace Kerf.Kernel.WasmDemo;
 /// <summary>What one run gives: the timings, the counts, the buffers and a hash of each face's and edge's buffers.</summary>
 public sealed class DemoResult
 {
-    public double ReadMs, MeshMs, ExtractMs, Deflection;
+    public double ReadMs, MeshMs, Deflection;
+    /// <summary>Always 0: the public API reads the buffers out as it meshes, within <see cref="MeshMs"/>. Kept for the page and the comparison.</summary>
+    public double ExtractMs;
     public int Faces, Edges, Nodes, Triangles;
     public ShapeMesh Mesh = null!;
     public ulong[] FaceHashes = [], NormalHashes = [], EdgeHashes = [];
