@@ -481,9 +481,9 @@ Where the implementation departs from measurement.md, healing.md, meshing.md and
 API or another area's public engine types still show).
 
 **Left:**
-- `BrepBuilder.UpdateFaceMesh`/`UpdateEdgeMesh` stay (decision 1535): the mesher's post-processor still sets each
-  triangulation's deflection after attaching it, and the engine's own meshing (Draw-lite, HLR, the mesh writers'
-  meshing) still stores meshes on faces.
+- **Done (10L5):** `BrepBuilder.UpdateFaceMesh`/`UpdateEdgeMesh` are gone (decision 17304): the post-processor
+  finishes each triangulation (deflection, parameters) before attaching it, frozen. The engine's own meshing
+  (Draw-lite, HLR, the mesh writers' meshing) still stores meshes on faces, frozen.
 - The modelling layer's STL and glTF readers (they give faces holding triangles) and BREP import stay on its glue
   until 10M.
 - Images (the hidden-line API, SVG, the PNG renderer) are a later unit's, on `ShapeMesh`.

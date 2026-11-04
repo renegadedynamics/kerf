@@ -18,19 +18,25 @@ using static Kerf.Engine.Meshing.Model.StatusModel;
 namespace Kerf.Engine.Meshing;
 
 /// <summary>
-/// Post-processes the discrete model: stores the edges' polygons on the faces' triangulations (and the free edges' 3D
-/// polygons) into the shape, then each new triangulation's deflection and the parameters it was made with.
+/// Post-processes the discrete model: finishes each new triangulation (its deflection and the parameters it was made
+/// with) and attaches it to its face, then stores the edges' polygons on the faces' triangulations (and the free edges'
+/// 3D polygons) into the shape.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Writes into the shape being meshed, as OCCT does, through <see cref="ShapeTool"/>'s non-freezing attach
-/// (decision 488); the polygons and triangulations freeze with the result when it is published. Faces that failed or
-/// whose triangulation was reused (frozen, from the input) are skipped, so a reused triangulation is never written.
+/// Kerf (unit 10L5): OCCT's face mesher attaches each triangulation, this commits the edges' polygons, then estimates
+/// each triangulation's deflection from it and its degenerated edges' polygons and sets it in place. Here the face
+/// mesher leaves its triangulation with the face's model (<see cref="FaceModel.MadeTriangulation"/>), and this
+/// estimates the deflection first, taking the degenerated edges' nodes from the model (the nodes of the polygons it
+/// commits), so that a triangulation is finished before it is attached and is attached frozen, as all geometry is: the
+/// same numbers, in a different order. Writes into the shape being meshed, as OCCT does, through
+/// <see cref="ShapeTool"/>. Faces that failed or whose triangulation was reused (frozen, from the input) are skipped,
+/// so a reused triangulation is never written.
 /// </para>
 /// <para>
-/// The edge loop is serial, as OCCT forces it ("data races on edges sharing the same TShape"). The face loop runs in
-/// parallel when the parameters ask for it: each body updates only its face's triangulation, and shares one
-/// immutable <see cref="TriangulationParameters"/>, as OCCT does.
+/// The edge loop is serial, as OCCT forces it ("data races on edges sharing the same TShape"). The deflections are
+/// estimated in parallel when the parameters ask for it: each body reads only its face's triangulation, and they share
+/// one immutable <see cref="TriangulationParameters"/>, as OCCT does. The triangulations are attached serially.
 /// </para>
 /// </remarks>
 internal class ModelPostProcessor : ModelAlgo
@@ -51,18 +57,26 @@ internal class ModelPostProcessor : ModelAlgo
             return false;
         }
 
+        // Kerf: each triangulation finished, then attached, before the polygons on it (see the remarks)
+        OsdParallel.For(0,
+                         model.FacesNb(),
+                         new DeflectionEstimator(model, parameters).Process,
+                         !parameters.InParallel);
+        for (int faceIndex = 0; faceIndex < model.FacesNb(); ++faceIndex)
+        {
+            FaceModel dFace = model.GetFace(faceIndex);
+            if (dFace.MadeTriangulation is { } made)
+            {
+                dFace.MadeTriangulation = null;
+                ShapeTool.AttachToFace(dFace.GetFace(), made);
+            }
+        }
+
         // TODO: Force single threaded solution due to data races on edges sharing the same TShape
         OsdParallel.For(0,
                          model.EdgesNb(),
                          new PolygonCommitter(model).Process,
                          true /*!theParameters.InParallel*/);
-
-        // Estimate deflection here due to BRepLib::EstimateDeflection requires
-        // existence of both Poly_Triangulation and Poly_PolygonOnTriangulation.
-        OsdParallel.For(0,
-                         model.FacesNb(),
-                         new DeflectionEstimator(model, parameters).Process,
-                         !parameters.InParallel);
         return true;
     }
 
@@ -197,6 +211,7 @@ internal class ModelPostProcessor : ModelAlgo
     {
         private readonly ModelModel _model;
         private readonly TriangulationParameters _params;
+        private readonly Dictionary<FaceModel, HashSet<int>> _degeneratedNodes;
 
         public DeflectionEstimator(ModelModel model, in ToolParameters theParams)
         {
@@ -204,6 +219,7 @@ internal class ModelPostProcessor : ModelAlgo
             _params = new TriangulationParameters(theParams.Deflection,
                                                         theParams.Angle,
                                                         theParams.MinSize);
+            _degeneratedNodes = DegeneratedNodes(model);
         }
 
         // Main functor.
@@ -215,14 +231,61 @@ internal class ModelPostProcessor : ModelAlgo
                 return;
             }
 
-            BrepLibrary.UpdateDeflection(dFace.GetFace());
-
-            Triangulation? triangulation = Tool.Triangulation(dFace.GetFace(), out Placement _);
-
-            if (triangulation is not null)
+            // Kerf: the triangulation the face's mesher made, not yet attached (BRepLib::UpdateDeflection of the face,
+            // on it)
+            Triangulation? triangulation = dFace.MadeTriangulation;
+            if (triangulation is null)
             {
-                triangulation.Parameters(_params);
+                return;
             }
+
+            Face face = dFace.GetFace();
+            if (Tool.Surface(face) is not null && triangulation.HasUVNodes)
+            {
+                triangulation.Deflection(BrepLibrary.EstimateDeflection(face, triangulation, face.Placement,
+                    _degeneratedNodes.GetValueOrDefault(dFace) ?? []));
+            }
+
+            triangulation.Parameters(_params);
+        }
+
+        // Kerf: the nodes of each face's degenerated edges, as the polygons PolygonCommitter commits hold them (the
+        // first pcurve on the face), which BRepLib::UpdateDeflection reads off the attached polygons
+        private static Dictionary<FaceModel, HashSet<int>> DegeneratedNodes(ModelModel model)
+        {
+            var nodes = new Dictionary<FaceModel, HashSet<int>>(ReferenceEqualityComparer.Instance);
+            for (int edgeIndex = 0; edgeIndex < model.EdgesNb(); ++edgeIndex)
+            {
+                EdgeModel dEdge = model.GetEdge(edgeIndex);
+                if (dEdge.IsFree || dEdge.GetCurve().ParametersNb() == 0 || !Tool.Degenerated(dEdge.GetEdge()))
+                {
+                    continue;
+                }
+
+                var seen = new HashSet<FaceModel>(ReferenceEqualityComparer.Instance);
+                for (int pCurveIt = 0; pCurveIt < dEdge.PCurvesNb(); ++pCurveIt)
+                {
+                    PCurveModel pCurve = dEdge.GetPCurve(pCurveIt);
+                    FaceModel dFace = pCurve.GetFace();
+                    if (!seen.Add(dFace))
+                    {
+                        continue;
+                    }
+
+                    if (!nodes.TryGetValue(dFace, out HashSet<int>? faceNodes))
+                    {
+                        faceNodes = [];
+                        nodes.Add(dFace, faceNodes);
+                    }
+
+                    for (int i = 0; i < pCurve.ParametersNb(); ++i)
+                    {
+                        faceNodes.Add(pCurve.GetIndex(i));
+                    }
+                }
+            }
+
+            return nodes;
         }
     }
 }

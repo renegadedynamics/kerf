@@ -145,7 +145,7 @@ internal static class BRepMeshModelKit
                 {
                     aTri.SetTriangle(k, new Triangle1(1, k + 1, k + 2));
                 }
-                ShapeTool.AddInFace(aDFace.GetFace(), aTri);
+                ShapeTool.AddInFace(aDFace, aTri);
                 Meshed++;
             }
             return true;

@@ -2796,7 +2796,6 @@ internal static partial class BrepLibrary
     internal static void UpdateDeflection(in Shape shape)
     {
         var writable = new WritableTriangulations(); // OCCT.NET: frozen
-        Span<int> node = stackalloc int[3];
         var expFace = new Explorer(shape, ShapeType.Face);
         for (; expFace.More(); expFace.Next())
         {
@@ -2841,60 +2840,74 @@ internal static partial class BrepLibrary
                 }
             }
 
-            var tool = new EvalDeflection(face);
-            var links = new HashSet<Link>();
-            double sqDeflection = 0.0;
-            Transform3D trsf = loc.Transformation;
-            var p3d = new Point3D[3];
-            var p2d = new Point2D[3];
-            for (int triIt = 1; triIt <= pt.TriangleCount; ++triIt)
-            {
-                Triangle1 triangle = pt.Triangle(triIt);
-
-                triangle.Get(out node[0], out node[1], out node[2]);
-                if (degNodes.Contains(node[0]) || degNodes.Contains(node[1]) || degNodes.Contains(node[2]))
-                {
-                    continue;
-                }
-
-                p3d[0] = pt.Node(node[0]).Transformed(trsf);
-                p3d[1] = pt.Node(node[1]).Transformed(trsf);
-                p3d[2] = pt.Node(node[2]).Transformed(trsf);
-
-                p2d[0] = pt.UVNode(node[0]);
-                p2d[1] = pt.UVNode(node[1]);
-                p2d[2] = pt.UVNode(node[2]);
-
-                // Check midpoint of triangle.
-                var mid3d_t = new Point3D((p3d[0].XYZ() + p3d[1].XYZ() + p3d[2].XYZ()) / 3.0);
-                var mid2d_t = new Point2D((p2d[0].XY() + p2d[1].XY() + p2d[2].XY()) / 3.0);
-
-                sqDeflection = Max(sqDeflection, tool.Eval(mid2d_t, mid3d_t));
-
-                for (int i = 0; i < 3; ++i)
-                {
-                    int j = (i + 1) % 3;
-                    var link = new Link(node[i], node[j]);
-                    if (!links.Add(link))
-                    {
-                        // Do not estimate boundary links due to high distortions at the edge.
-                        Point3D p3d1 = p3d[i];
-                        Point3D p3d2 = p3d[j];
-
-                        Point2D p2d1 = p2d[i];
-                        Point2D p2d2 = p2d[j];
-
-                        var mid3d_l = new Point3D((p3d1.XYZ() + p3d2.XYZ()) / 2.0);
-                        var mid2d_l = new Point2D((p2d1.XY() + p2d2.XY()) / 2.0);
-
-                        sqDeflection = Max(sqDeflection, tool.Eval(mid2d_l, mid3d_l));
-                    }
-                }
-            }
-
-            writable.Write(attached).Deflection(Math.Sqrt(sqDeflection));
+            writable.Write(attached).Deflection(EstimateDeflection(face, pt, loc, degNodes));
         }
         writable.Attach(shape);
+    }
+
+    /// <summary>
+    /// The deviation of <paramref name="triangulation"/> (with UV nodes) from <paramref name="face"/>'s surface, as
+    /// <see cref="UpdateDeflection"/> measures it: triangle and inner link midpoints, leaving out the triangles on
+    /// <paramref name="degeneratedNodes"/> (the nodes of the face's degenerated edges). Kerf: split out of
+    /// <c>UpdateDeflection</c> for the mesher, which measures a triangulation before attaching it (unit 10L5).
+    /// </summary>
+    internal static double EstimateDeflection(in Face face, Triangulation triangulation, in Placement loc,
+                                              HashSet<int> degeneratedNodes)
+    {
+        Triangulation pt = triangulation;
+        HashSet<int> degNodes = degeneratedNodes;
+        Span<int> node = stackalloc int[3];
+        var tool = new EvalDeflection(face);
+        var links = new HashSet<Link>();
+        double sqDeflection = 0.0;
+        Transform3D trsf = loc.Transformation;
+        var p3d = new Point3D[3];
+        var p2d = new Point2D[3];
+        for (int triIt = 1; triIt <= pt.TriangleCount; ++triIt)
+        {
+            Triangle1 triangle = pt.Triangle(triIt);
+
+            triangle.Get(out node[0], out node[1], out node[2]);
+            if (degNodes.Contains(node[0]) || degNodes.Contains(node[1]) || degNodes.Contains(node[2]))
+            {
+                continue;
+            }
+
+            p3d[0] = pt.Node(node[0]).Transformed(trsf);
+            p3d[1] = pt.Node(node[1]).Transformed(trsf);
+            p3d[2] = pt.Node(node[2]).Transformed(trsf);
+
+            p2d[0] = pt.UVNode(node[0]);
+            p2d[1] = pt.UVNode(node[1]);
+            p2d[2] = pt.UVNode(node[2]);
+
+            // Check midpoint of triangle.
+            var mid3d_t = new Point3D((p3d[0].XYZ() + p3d[1].XYZ() + p3d[2].XYZ()) / 3.0);
+            var mid2d_t = new Point2D((p2d[0].XY() + p2d[1].XY() + p2d[2].XY()) / 3.0);
+
+            sqDeflection = Max(sqDeflection, tool.Eval(mid2d_t, mid3d_t));
+
+            for (int i = 0; i < 3; ++i)
+            {
+                int j = (i + 1) % 3;
+                var link = new Link(node[i], node[j]);
+                if (!links.Add(link))
+                {
+                    // Do not estimate boundary links due to high distortions at the edge.
+                    Point3D p3d1 = p3d[i];
+                    Point3D p3d2 = p3d[j];
+
+                    Point2D p2d1 = p2d[i];
+                    Point2D p2d2 = p2d[j];
+
+                    var mid3d_l = new Point3D((p3d1.XYZ() + p3d2.XYZ()) / 2.0);
+                    var mid2d_l = new Point2D((p2d1.XY() + p2d2.XY()) / 2.0);
+
+                    sqDeflection = Max(sqDeflection, tool.Eval(mid2d_l, mid3d_l));
+                }
+            }
+        }
+        return Math.Sqrt(sqDeflection);
     }
 
     /// <summary>

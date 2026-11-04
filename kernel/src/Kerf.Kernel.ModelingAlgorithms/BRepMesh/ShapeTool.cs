@@ -25,11 +25,12 @@ namespace Kerf.Engine.Meshing;
 /// OCCT's class is a <c>Standard_Transient</c> with only statics; the port's is a static class.
 /// </para>
 /// <para>
-/// <b>Writing into shapes.</b> Only this class attaches meshes. <see cref="AddInFace"/>, <see cref="NullifyFace"/>,
-/// <see cref="NullifyEdge(in Edge, Triangulation?, in Placement)"/> and the <c>UpdateEdge</c>
-/// overloads write into the face or edge they are given, as OCCT's do, through BRep_Builder's mesh forms
-/// (<c>UpdateFaceMesh</c>, <c>UpdateEdgeMesh</c>; decision 488): the mesher's triangulations and polygons stay
-/// unfrozen, so its post-processor can set each triangulation's deflection and parameters in place, and they freeze with the result when it is published (<c>FreezeGraph</c>). The mesher
+/// <b>Writing into shapes.</b> Only this class attaches meshes. <see cref="AddInFace(in Face, Triangulation)"/>,
+/// <see cref="NullifyFace"/>, <see cref="NullifyEdge(in Edge, Triangulation?, in Placement)"/> and the
+/// <c>UpdateEdge</c> overloads write into the face or edge they are given, as OCCT's do, through BRep_Builder's
+/// ordinary updates, which freeze the triangulations and polygons they attach (design 4.1). The mesher's
+/// triangulations are finished before they are attached (<see cref="AddInFace(FaceModel, Triangulation)"/>; unit 10L5
+/// retired decision 488's unfrozen attach). The mesher
 /// writes into an unfrozen shape in place, and into a frozen one in a working overlay (unit 10H6, decision 489);
 /// outside one, a frozen face or edge throws <see cref="LockedShapeException"/>.
 /// </para>
@@ -145,11 +146,37 @@ internal static class ShapeTool
     /// Stores the triangulation into the face, after moving its nodes by the inverse of the face's location.
     /// </summary>
     /// <remarks>
-    /// Writes the nodes of <paramref name="triangulation"/> (unfrozen: the mesher's own) and attaches it to the face
-    /// unfrozen (it freezes with the face's graph, decision 488). OCCT passes the handle by reference without changing
-    /// it; so does the port.
+    /// Writes the nodes of <paramref name="triangulation"/> (unfrozen: the caller's own) and attaches it frozen, as all
+    /// geometry is attached (design 4.1). The mesher itself doesn't attach here: it hands its triangulations to the
+    /// post-processor (<see cref="AddInFace(FaceModel, Triangulation)"/>), which attaches each once finished (unit
+    /// 10L5). OCCT passes the handle by reference without changing it; so does the port.
     /// </remarks>
     public static void AddInFace(in Face face, Triangulation triangulation)
+    {
+        ToFaceDefinition(face, triangulation);
+        AttachToFace(face, triangulation);
+    }
+
+    /// <summary>
+    /// Kerf: the mesher's <see cref="AddInFace(in Face, Triangulation)"/>. Moves the nodes into the face's definition
+    /// and leaves the triangulation with the face's model, for the post-processor to finish (its deflection and the
+    /// parameters it was made with) and attach (unit 10L5): OCCT attaches it here and finishes it attached.
+    /// </summary>
+    public static void AddInFace(FaceModel face, Triangulation triangulation)
+    {
+        ToFaceDefinition(face.GetFace(), triangulation);
+        face.MadeTriangulation = triangulation;
+    }
+
+    /// <summary>Kerf: attaches a finished triangulation, already in the face's definition, to the face (frozen).</summary>
+    public static void AttachToFace(in Face face, Triangulation triangulation)
+    {
+        BrepBuilder builder = new();
+        builder.UpdateFace(face, triangulation);
+    }
+
+    // The nodes moved by the inverse of the face's location
+    private static void ToFaceDefinition(in Face face, Triangulation triangulation)
     {
         Placement loc = face.Placement;
         if (!loc.IsIdentity)
@@ -163,16 +190,13 @@ internal static class ShapeTool
                 triangulation.SetNode(nodeIter, node);
             }
         }
-
-        BrepBuilder builder = new();
-        builder.UpdateFaceMesh(face, triangulation);
     }
 
     /// <summary>Removes the face's triangulation.</summary>
     public static void NullifyFace(in Face face)
     {
         BrepBuilder builder = new();
-        builder.UpdateFaceMesh(face, null);
+        builder.UpdateFace(face, (Triangulation?)null);
     }
 
     /// <summary>Removes the edge's polygon on the triangulation of the face with the given location.</summary>
@@ -185,7 +209,7 @@ internal static class ShapeTool
     public static void NullifyEdge(in Edge edge, in Placement location)
     {
         BrepBuilder builder = new();
-        builder.UpdateEdgeMesh(edge, (Polygon3D?)null, location);
+        builder.UpdateEdge(edge, (Polygon3D?)null, location);
     }
 
     /// <summary>Stores the polygon on the triangulation of the face with the given location into the edge.</summary>
@@ -195,7 +219,7 @@ internal static class ShapeTool
                                   in Placement location)
     {
         BrepBuilder builder = new();
-        builder.UpdateEdgeMesh(edge, polygon, triangulation, location);
+        builder.UpdateEdge(edge, polygon, triangulation, location);
     }
 
     /// <summary>
@@ -209,14 +233,14 @@ internal static class ShapeTool
                                   in Placement location)
     {
         BrepBuilder builder = new();
-        builder.UpdateEdgeMesh(edge, polygon1, polygon2, triangulation, location);
+        builder.UpdateEdge(edge, polygon1, polygon2, triangulation, location);
     }
 
     /// <summary>Stores the 3D polygon into the edge.</summary>
     public static void UpdateEdge(in Edge edge, Polygon3D? polygon)
     {
         BrepBuilder builder = new();
-        builder.UpdateEdgeMesh(edge, polygon, new Placement());
+        builder.UpdateEdge(edge, polygon, new Placement());
     }
 
     /// <summary>The point moved by the location.</summary>

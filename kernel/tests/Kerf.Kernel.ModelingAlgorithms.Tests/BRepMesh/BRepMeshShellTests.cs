@@ -21,8 +21,8 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// The mesher's writing into shapes (decisions 488, 489): BRepMesh_ShapeTool's non-freezing attach, freezing on
-/// publication, and the copy for write of BRepMesh_IncrementalMesh, run with a stub mesher (unit 4D brings the real
+/// The mesher's writing into shapes (decisions 489 and 17304): BRepMesh_ShapeTool's attach, frozen (decision 488's
+/// unfrozen attach until publication retired by unit 10L5), and the copy for write of BRepMesh_IncrementalMesh, run with a stub mesher (unit 4D brings the real
 /// one). Also IMeshTools_MeshBuilder's statuses and IMeshTools_ShapeExplorer's order.
 /// </summary>
 public class BRepMeshShellTests
@@ -87,8 +87,8 @@ public class BRepMeshShellTests
     }
 
     /// <summary>
-    /// Meshes each planar face without a triangulation (or each one, if asked) with a fan of its outer wire's vertices
-    /// through BRepMesh_ShapeTool, with the polygons of its edges on it.
+    /// Meshes each planar face without a triangulation (or each one, if asked) with a fan of its outer wire's vertices,
+    /// handed to the post-processor through BRepMesh_ShapeTool, as the mesher's algorithms do (unit 10L5).
     /// </summary>
     private sealed class StubFaceDiscret(bool theToReplace = false) : ModelAlgo
     {
@@ -97,18 +97,21 @@ public class BRepMeshShellTests
         {
             for (int i = 0; i < theModel!.FacesNb(); i++)
             {
-                Face aFace = theModel.GetFace(i).GetFace();
-                if (!theToReplace && Tool.Triangulation(aFace, out _) is not null)
+                FaceModel aDFace = theModel.GetFace(i);
+                if (!theToReplace && Tool.Triangulation(aDFace.GetFace(), out _) is not null)
                 {
                     continue;
                 }
-                FanMesh(aFace);
+                ShapeTool.AddInFace(aDFace, FanTriangulation(aDFace.GetFace(), out _));
             }
             return true;
         }
     }
 
-    /// <summary>Writes each face's deflection into its triangulation, in place, as ModelPostProcessor does.</summary>
+    /// <summary>
+    /// Finishes each new triangulation with the face's deflection, then attaches it with the polygons of its edges, as
+    /// ModelPostProcessor does (unit 10L5: finished, then attached frozen).
+    /// </summary>
     private sealed class StubPostProcessor : ModelAlgo
     {
         protected override bool PerformInternal(ModelModel? theModel, in ToolParameters theParameters,
@@ -116,10 +119,12 @@ public class BRepMeshShellTests
         {
             for (int i = 0; i < theModel!.FacesNb(); i++)
             {
-                Triangulation? aTri = Tool.Triangulation(theModel.GetFace(i).GetFace(), out _);
-                if (aTri is not null && !aTri.IsFrozen)
+                FaceModel aDFace = theModel.GetFace(i);
+                if (aDFace.MadeTriangulation is { } aTri)
                 {
+                    aDFace.MadeTriangulation = null;
                     aTri.Deflection(theParameters.Deflection);
+                    AttachFan(aDFace.GetFace(), aTri);
                 }
             }
             return true;
@@ -137,11 +142,31 @@ public class BRepMeshShellTests
     }
 
     /// <summary>A fan triangulation of the planar face's outer wire, attached with its edges' polygons by BRepMesh_ShapeTool.</summary>
-    private static void FanMesh(in Face theFace)
+    private static void FanMesh(in Face theFace) => AttachFan(theFace, FanTriangulation(theFace, out _));
+
+    /// <summary>The fan triangulation's nodes in the face's definition, and its edges' polygons on it, attached.</summary>
+    private static void AttachFan(in Face theFace, Triangulation theTri)
+    {
+        FanTriangulation(theFace, out List<Vertex> aVertices);
+        Face aFwd = ShapeCasts.Face(theFace.Oriented(Forward));
+        ShapeTool.AttachToFace(theFace, theTri);
+        for (var anExp = new Explorer(aFwd, ShapeType.Edge); anExp.More(); anExp.Next())
+        {
+            Edge anE = ShapeCasts.Edge(anExp.Current());
+            Exploration.Vertices(anE, out Vertex aV1, out Vertex aV2);
+            var aNodes = new NCollection_Array1<int>(1, 2);
+            aNodes[1] = aVertices.FindIndex(v => v.IsSame(aV1)) + 1;
+            aNodes[2] = aVertices.FindIndex(v => v.IsSame(aV2)) + 1;
+            ShapeTool.UpdateEdge(anE, new PolygonOnTriangulation(aNodes), theTri, theFace.Placement);
+        }
+    }
+
+    /// <summary>A fan triangulation of the planar face's outer wire, its nodes in the face's definition.</summary>
+    private static Triangulation FanTriangulation(in Face theFace, out List<Vertex> aVertices)
     {
         Face aFwd = ShapeCasts.Face(theFace.Oriented(Forward));
         Plane3D aPln = ((PlaneSurface)Tool.Surface(aFwd)!).Plane;
-        var aVertices = new List<Vertex>();
+        aVertices = [];
         for (var anExp = new Explorer(aFwd, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Exploration.Vertices(ShapeCasts.Edge(anExp.Current()), out Vertex aFirst, out _, true);
@@ -161,17 +186,13 @@ public class BRepMeshShellTests
         {
             aTri.SetTriangle(i, new Triangle1(1, i + 1, i + 2));
         }
-        ShapeTool.AddInFace(theFace, aTri);
-
-        for (var anExp = new Explorer(aFwd, ShapeType.Edge); anExp.More(); anExp.Next())
+        // the nodes in the face's definition, as ShapeTool.AddInFace stores them
+        Transform3D anInverse = theFace.Placement.Transformation.Inverted();
+        for (int i = 1; i <= n; i++)
         {
-            Edge anE = ShapeCasts.Edge(anExp.Current());
-            Exploration.Vertices(anE, out Vertex aV1, out Vertex aV2);
-            var aNodes = new NCollection_Array1<int>(1, 2);
-            aNodes[1] = aVertices.FindIndex(v => v.IsSame(aV1)) + 1;
-            aNodes[2] = aVertices.FindIndex(v => v.IsSame(aV2)) + 1;
-            ShapeTool.UpdateEdge(anE, new PolygonOnTriangulation(aNodes), aTri, theFace.Placement);
+            aTri.SetNode(i, aTri.Node(i).Transformed(anInverse));
         }
+        return aTri;
     }
 
     private static List<Face> Faces(in Shape theShape) => BRepGPropTestShapes.Faces(theShape);
@@ -294,11 +315,12 @@ public class BRepMeshShellTests
         Assert.True(aMesh.Shape().IsEqual(aBox));
         Assert.Empty(aMesh.History().Modified(Faces(aBox)[0]));
 
-        // Attached unfrozen (decision 488): the shape isn't published.
+        // Attached finished and frozen, though the shape isn't published (decision 17304; decision 488 attached them
+        // unfrozen until publication).
         foreach (Face aF in Faces(aBox))
         {
             Triangulation aTri = Triangulation(aF)!;
-            Assert.False(aTri.IsFrozen);
+            Assert.True(aTri.IsFrozen);
             Assert.Equal(0.25, aTri.Deflection());
         }
 
@@ -455,6 +477,7 @@ public class BRepMeshShellTests
         aContext.SetModelBuilder(new StubModelBuilder());
         aContext.SetEdgeDiscret(new StubAlgo(true));
         aContext.SetFaceDiscret(new StubFaceDiscret());
+        aContext.SetPostProcessor(new StubPostProcessor()); // the post-processor attaches (decision 17304)
         aContext.SetShape(aBox);
         var aBuilder = new MeshBuilder(aContext);
         Assert.ThrowsAny<DomainErrorException>(() => aBuilder.Perform(new ProgressRange()));
@@ -585,7 +608,7 @@ public class BRepMeshShellTests
     }
 
     [Fact]
-    public void ShapeTool_attaches_unfrozen_and_moves_nodes_by_the_face_location()
+    public void ShapeTool_attaches_frozen_and_moves_nodes_by_the_face_location()
     {
         Solid aBox = TestShapes.Box(1, 1, 1); // unfrozen: ported code meshing in place
         var aTrsf = new Transform3D();
@@ -605,10 +628,11 @@ public class BRepMeshShellTests
         Assert.Same(aTri, aStored);
         Assert.True(aLoc.IsIdentity);
         Assert.True(aStored.Node(2).IsEqual(new Point3D(1, 0, 0), 1e-15));
-        Assert.False(aStored.IsFrozen);
-        aStored.Deflection(0.5); // writable until published
+        // frozen once attached (decision 17304; decision 488 left it writable until published)
+        Assert.True(aStored.IsFrozen);
+        Assert.ThrowsAny<DomainErrorException>(() => aStored.Deflection(0.5));
 
-        // Polygons: on the triangulation, a seam's pair, a 3D polygon; all unfrozen; removed by Nullify.
+        // Polygons: on the triangulation, a seam's pair, a 3D polygon; all frozen; removed by Nullify.
         Edge anEdge = ShapeCasts.Edge(new Explorer(aFace, ShapeType.Edge).Current());
         var aNodes = new NCollection_Array1<int>(1, 2);
         aNodes[1] = 1;
@@ -616,12 +640,12 @@ public class BRepMeshShellTests
         var aPoly = new PolygonOnTriangulation(aNodes);
         ShapeTool.UpdateEdge(anEdge, aPoly, aTri, new Placement());
         Assert.Same(aPoly, Tool.PolygonOnTriangulation(anEdge, aTri, new Placement()));
-        Assert.False(aPoly.IsFrozen);
+        Assert.True(aPoly.IsFrozen);
 
         var aPoly2 = new PolygonOnTriangulation(aNodes);
         Edge anOther = ShapeCasts.Edge(new Explorer(Faces(aBox)[1], ShapeType.Edge).Current());
         ShapeTool.UpdateEdge(anOther, aPoly, aPoly2, aTri, new Placement());
-        Assert.False(aPoly2.IsFrozen);
+        Assert.True(aPoly2.IsFrozen);
 
         var aP3dNodes = new NCollection_Array1<Point3D>(1, 2);
         aP3dNodes[1] = new Point3D(0, 0, 0);
@@ -629,14 +653,10 @@ public class BRepMeshShellTests
         var aP3d = new Polygon3D(aP3dNodes);
         ShapeTool.UpdateEdge(anEdge, aP3d);
         Assert.Same(aP3d, Tool.Polygon3D(anEdge, out _));
-        Assert.False(aP3d.IsFrozen);
-
-        // Publication freezes all of them.
-        aBox.TShape()!.FreezeGraph();
-        Assert.True(aTri.IsFrozen);
-        Assert.True(aPoly.IsFrozen);
-        Assert.True(aPoly2.IsFrozen);
         Assert.True(aP3d.IsFrozen);
+
+        // Publication freezes the shape.
+        aBox.TShape()!.FreezeGraph();
         Assert.ThrowsAny<DomainErrorException>(() => ShapeTool.NullifyFace(aFace));
         Assert.ThrowsAny<DomainErrorException>(() => ShapeTool.NullifyEdge(anEdge, new Placement()));
     }
