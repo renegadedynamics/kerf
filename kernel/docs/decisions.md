@@ -15621,7 +15621,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        own (fixed Huffman codes, greedy LZ77 on a hash chain): .NET's `ZLibStream` uses zlib-ng, whose output isn't
        promised to be the same across machines and versions; it stays as `PngCompression.Smallest`. A 2 × 1 picture's
        bytes are checked, verified once with Python's zlib.
-17206. **Tests and measurement.** `Kerf.Kernel.PublicApi.Tests` 118 → 154: drawing 12, SVG 7, rendering 11 (pixel
+17206. **Tests and measurement.** `Kerf.Kernel.PublicApi.Tests` 119 → 154: drawing 12, SVG 6, rendering 11 (pixel
        facts worked by hand, two golden pictures within 3 per channel, made again with `KERF_GOLDEN_DIR`), PNG 6, read
        back by the tests' own decoder (CRCs, .NET's inflate, the filters). No other suite changed. Bento's examples
        (`Kerf.Kernel.Bento.Benchmarks -- images 5`, a shared machine): drawing and SVG 2.4 to 22 ms (the bottle 86 ms,
