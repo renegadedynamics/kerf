@@ -165,3 +165,7 @@ The first packages, for Bento's 3D-models extension.
   same message on failure. A failed thickening, solid offset or unrecoverable loft is a failure with a code
   (`modeling.thicken-failed`, new; `offset-failed`; `loft-failed`), and data an importer can't read the exchange's
   diagnostic, where they were exceptions. Results are unchanged. `docs/10m3-bento.md` lists what changed for Bento.
+- Kerf's unit 10P2: the exporters return `Result` with the exchange's diagnostics, where they returned `bool` and threw,
+  and take options records (`StepExportOptions`, `StlExportOptions`, `GltfExportOptions`, `ThreeMfExportOptions`). The
+  kernel's values refuse misuse with .NET's exceptions, which the layer reports as before. KERF0003 now covers the layer,
+  and finds nothing. Results are unchanged. `docs/10p2-bento.md` lists what changed for Bento.

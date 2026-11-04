@@ -2022,3 +2022,9 @@ Phase 10 (part): expected failures are results (unit 10M3).
   its own. Reading `Value` of a failed result is a programmer's error and throws `InvalidOperationException`, naming the
   first error's code and message. `Match` gives one value either way, and `Select` and `SelectMany` let a chain of
   operations read as a LINQ query that stops at the first failure.
+
+- Kerf's unit 10P2: no exception of the engine reaches a public caller. The public values, geometry and shapes refuse
+  misuse with `ArgumentException`, `ArgumentOutOfRangeException`, `InvalidOperationException` or `NotSupportedException`,
+  with messages free of OCCT's names; the engine still reads each as the failure it was, so results, codes and recordings
+  are unchanged. `LockedShapeException` and `FrozenShapeException` went. A trimmed curve or surface given a NaN
+  parameter is refused, where it overflowed the stack and killed the process. KERF0003 covers `Kerf.Modeling`.

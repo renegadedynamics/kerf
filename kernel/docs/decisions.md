@@ -16123,3 +16123,59 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 1592. **The remaining exceptions stay for now (the owner, 4 November 2026: "Regarding the remaining exceptions, let's leave them
        for now.").** The operators, the object constructors and the topological shapes' own methods keep throwing
        `InvalidOperationException` as decision 1589 has them; this can be looked at again later.
+
+## Phase 10: unit 10P2, the public failure surface
+
+17901. **Traced first.** An IL walk of the kernel's assemblies (each public member's calls, virtual ones to public types,
+       leaving out what a `catch` of a failure or `EngineOperation.Run` encloses): 1,187 of 4,156 public members could reach
+       about 1,180 throws, far more than the audit's count, nearly all through a few guards. Too coarse to fix by site, so
+       the proof is `FailureSurfaceTests`: an IL check that no public type's own code throws an engine failure, and a run
+       of every public member on sample objects with awkward arguments (zero, negative, NaN, infinity, past any index,
+       null, default). It found five escapes, fixed: `Segmented` on the two B-spline curves, `Transform2D.Values` and
+       `WithValues`, `EdgeCurve.ContinuityWith`. `Transform3D.WithValues` was guarded the same way. It is a strong check
+       and not a proof for every input: one awkward argument at a time, on the sample objects it has, leaving out members
+       that take spans, which reflection can't call.
+17902. **A refusal is .NET's exception holding the engine's failure.** The engine calls the same public values and catches
+       their failures as statuses: a degenerate normal caught and the next case tried, 235 such catches. Throwing a plain
+       `ArgumentException` would change which of those fire, and so results; two entry points for each value would mean
+       rewriting thousands of engine call sites. So `Refusal` (Foundation, internal) throws `ArgumentException`,
+       `ArgumentOutOfRangeException`, `InvalidOperationException` or `NotSupportedException` with the failure as its inner
+       exception, and every engine catch takes either form (`Refusal.IsFailure`, `Refusal.Of`, `Refusal.Unwrapped`).
+       Diagnostics, codes, printed type names and Draw-lite's messages read the failure inside, so they are as before. A
+       caller can name what it catches; the inner exception's type is internal and needn't be named. No new public
+       exception type. Engine internals keep their exceptions.
+17903. **Which exception.** Over the 460 guards in the public namespaces' types: construction, dimension, domain,
+       null and negative values are `ArgumentException`; `OutOfRange` and `RangeError` are `ArgumentOutOfRangeException`;
+       any of those in a member with no parameters, and `NoSuchObject`, `NullObject`, `NullVector`, `ProgramError` and the
+       undefined derivatives and values, are `InvalidOperationException`; `MethodNotImplemented` is
+       `NotSupportedException`. The message is the failure's description and OCCT's text without the OCCT member at its
+       start ("The geometry can't be constructed: input vector has zero norm."). Parameter names aren't given: the guards
+       don't know them, and adding them site by site wasn't worth it.
+17904. **No measurable cost.** The guard's test stays inline and its throw is in a helper that doesn't inline. 50 million
+       calls each, best of five, main against this unit, two runs each on a loaded machine: `new Direction3D` 2.27 and
+       2.45 ns against 2.33 and 2.25; `Vector3D.Normalized` 2.25 and 2.26 against 2.28 and 2.25; `Direction3D.Crossed` 2.20
+       and 2.23 against 2.20 and 2.20; `new Circle3D` 2.20 and 2.29 against 2.28 and 2.20. No difference beyond noise. The
+       loop's own overhead is in those figures, so this shows the guards don't matter, not what they cost alone.
+17905. **A NaN stack overflow, found by the test.** `TrimmedCurve3D`, `TrimmedCurve2D` and `TrimmedSurface` with a NaN
+       parameter: neither `u1 < u2` nor its opposite held, so `SetTrim` called `Reverse`, which called `SetTrim`, until the
+       process died, which no catch can stop. The port's `SetTrim` follows OCCT's. A NaN is now refused. No result changes:
+       such a call never returned.
+17906. **Exporters.** `Exporters3D` returns `Result`, with `StepExportOptions`, `StlExportOptions`, `GltfExportOptions` and
+       `ThreeMfExportOptions` for what were optional parameters (top level in `Kerf.Modeling`, as `ImportLimits` is; the
+       kernel's are `…WriteOptions`, so the names don't collide). An empty shape is `exchange.nothing-done`, a file or stream
+       that can't be written `exchange.write-failed`. A missing folder still throws `DirectoryNotFoundException`, matching
+       the importers' `FileNotFoundException` (decision 1588). No other public member of the layer reads or writes files.
+       The bytes written are unchanged. modeling/docs/10p2-bento.md lists it.
+17907. **`LockedShapeException` and `FrozenShapeException` went (plan 2.4).** Nothing public could receive either as itself:
+       under `EngineOperation.Run` they became diagnostics, and `ShapeTraversal` turned them into `ArgumentException`.
+       The guards stay, since decisions 1445 and 1447 keep them as the protection of published shapes. Locked is now
+       `ImmutableObjectException`, which every filter already treated alike, and Frozen `DomainErrorException`, its base
+       class, which every filter caught alike. So what each catch takes is unchanged; only the name differs. OCCT's test
+       scripts don't name either. Draw-lite prints `Standard_DomainError` for an add to a shape that isn't free
+       (`DrawShapeCommandsTests`, one expected message).
+17908. **KERF0003 on `Kerf.Modeling`; question 53 left.** The analyser's exclusion went and the layer references the analysers.
+       KERF0003 finds nothing; KERF0001 reported five `GetHashCode` calls on tuples, which it now passes, as a tuple has no
+       method that changes it. `Primitives`, `Sweeps`, `ShapeFactory` and `Mesher` keep their names: README section 3 named
+       `Primitives`, `Sweeps` and `Mesher` in the draft the owner agreed (decision 1349), and section 11 and decisions 1527
+       and 1528 give `ShapeFactory` and its neighbours. Their factories read as `Solid.Box(…)` and `Edge.Line(…)` through
+       extension members, so the class is rarely typed, and one `ConstructionOperations` would hold unrelated things.

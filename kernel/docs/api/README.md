@@ -579,3 +579,16 @@ carry their own history. modeling/docs/design.md, "The .NET API (unit 10M2)", ha
   topological shapes' own methods (`solid.Fillet(…)`, `Solid.Sweep(…)`) can't or don't return results: they are the
   shorthand for inputs known to work, and a failure there throws `InvalidOperationException` with the same message.
   modeling/docs/10m3-bento.md lists what changed for Bento.
+
+## 17. Implemented: unit 10P2, the public failure surface
+
+*Unit 10P2, 4 November 2026: decisions 17901 to 17908 (placeholders).*
+
+- **Misuse is .NET's exception.** A public value, geometry or shape throws `ArgumentException`,
+  `ArgumentOutOfRangeException`, `InvalidOperationException` or `NotSupportedException` (`Refusal`, internal, in
+  Foundation). The exception holds the engine's failure as its inner exception, because the engine calls the same
+  members and catches a refusal as a status; `Refusal.IsFailure` and `Refusal.Of` read either form.
+- **Proved by** `FailureSurfaceTests`: no public type's own code throws a failure of the engine, and every public member,
+  called on sample objects with awkward arguments, throws only what a caller can name.
+- **Operations** keep `EngineOperation.Run`, whose failures are diagnostics. `Primitives`, `Sweeps`, `ShapeFactory`,
+  `ShapeTransforms`, `ShapeProjections`, `Surfaces` and `Mesher` keep their names (question 53; section 3 and section 11).

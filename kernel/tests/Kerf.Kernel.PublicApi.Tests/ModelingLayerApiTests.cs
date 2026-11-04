@@ -50,9 +50,9 @@ public class ModelingLayerApiTests
     }
 
     [Fact]
-    public void An_engine_exception_is_a_kernel_failure_with_a_diagnostic()
+    public void A_refusal_is_dotnets_exception_and_a_kernel_failure_with_a_diagnostic()
     {
-        Exception e = Record.Exception(() => new Direction3D(0, 0, 0))!;
+        Exception e = Assert.Throws<ArgumentException>(() => new Direction3D(0, 0, 0));
         Assert.True(Diagnostic.IsKernelFailure(e));
         Diagnostic diagnostic = Diagnostic.FromException(e);
         Assert.True(diagnostic.IsError);

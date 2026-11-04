@@ -256,6 +256,10 @@ build123d's `importers.py` and `exporters3d.py` are `Importers` and `Exporters3D
   `Result<T>` (unit 10M3): data past a limit, or that isn't the format, is a failure with the exchange's diagnostic
   (`exchange.failed`, `exchange.malformed`, `exchange.limit-exceeded`, `exchange.external-references`). A missing file
   still throws `FileNotFoundException`.
+- **Exports return results too** (unit 10P2), with an options record each (`StepExportOptions`, `StlExportOptions`,
+  `GltfExportOptions`, `ThreeMfExportOptions`): an empty shape is `exchange.nothing-done`, a file or stream that can't
+  be written `exchange.write-failed`, and a writer's or the mesher's failure its own diagnostics. A folder that doesn't
+  exist still throws `DirectoryNotFoundException`.
 - **Cancellation.** Every function takes a `CancellationToken`. It becomes a `Message_ProgressIndicator`, which OCCT's
   readers and writers poll as they run.
 - **Through the kernel's `Kerf.Exchange`** (units 10L3 and 10M1): `Brep`, `Step`, `Stl`, `Gltf`, `ThreeMf` over its

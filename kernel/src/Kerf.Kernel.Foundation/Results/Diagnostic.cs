@@ -102,14 +102,14 @@ public sealed record Diagnostic
     /// The error for an exception the kernel threw: its kind of failure, in words, and its message, with the code the
     /// operations report it under (<c>engine.construction-error</c>, say), as a failed result carries it.
     /// </summary>
-    /// <remarks>The operations turn the engine's failures into results; the values and evaluators still throw them on
-    /// misuse (a direction of zero length), and a caller that catches one can report it the same way.</remarks>
+    /// <remarks>The operations turn the engine's failures into results; the values and evaluators refuse misuse (a
+    /// direction of zero length) with .NET's exceptions, and a caller that catches one can report it the same way.</remarks>
     /// <exception cref="ArgumentNullException"><paramref name="exception"/> is null.</exception>
     public static Diagnostic FromException(Exception exception) => Kerf.Engine.Foundation.FailureDiagnostics.ToDiagnostic(exception);
 
     /// <summary>
-    /// Whether an exception is one of the kernel's own failures (OCCT's exceptions, which the values and evaluators still
-    /// throw on misuse), as opposed to .NET's.
+    /// Whether an exception is a refusal of the kernel's: the .NET exception a value or evaluator throws on misuse, as
+    /// opposed to one that didn't come from the kernel's checks.
     /// </summary>
     public static bool IsKernelFailure(Exception exception) => Kerf.Engine.Foundation.Refusal.IsFailure(exception);
 

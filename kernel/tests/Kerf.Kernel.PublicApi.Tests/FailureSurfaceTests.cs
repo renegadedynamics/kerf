@@ -43,6 +43,7 @@ public class FailureSurfaceTests
         Assert.Throws<ArgumentException>(() => new Circle3D(Frame3D.World, -1));
         Assert.Throws<InvalidOperationException>(() => new Vector3D(0, 0, 0).Normalized());
         Assert.Throws<InvalidOperationException>(() => default(Shape).Type);
+        Assert.Throws<ArgumentException>(() => new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), double.NaN, 1));
     }
 
     /// <summary>Every guard in a public type's own code goes through Refusal: its failure never leaves as itself.</summary>

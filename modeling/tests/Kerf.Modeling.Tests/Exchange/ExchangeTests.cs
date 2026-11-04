@@ -56,6 +56,13 @@ public partial class ExchangeTests
     }
 
     [Fact]
+    public void AFileThatCantBeWrittenIsAFailedResult()
+    {
+        var folder = Path.GetTempPath();   // a folder can't be opened as a file
+        Assert.Equal("exchange.write-failed", Exporters3D.ExportStep(Block(), folder.TrimEnd(Path.DirectorySeparatorChar)).Error!.Code.Value);
+    }
+
+    [Fact]
     public void MissingFilesAndFoldersSaySo()
     {
         var missing = Path.Combine(Path.GetTempPath(), $"b3d-{Guid.NewGuid():N}");
