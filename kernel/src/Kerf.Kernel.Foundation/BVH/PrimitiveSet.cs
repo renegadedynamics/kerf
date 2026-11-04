@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// so implementations should be efficient.
 /// </summary>
 /// <remarks>OCCT's typedef <c>BVH_PrimitiveSet3d</c> is <c>BVH_PrimitiveSet&lt;double, NCollection_Vec3&lt;double&gt;&gt;</c>.</remarks>
-public abstract class PrimitiveSet<T, TVec> : global::Kerf.Engine.Geometry.Bvh.Object<T, TVec>, global::Kerf.Engine.Geometry.Bvh.ISet<T, TVec>
+internal abstract class PrimitiveSet<T, TVec> : global::Kerf.Engine.Geometry.Bvh.Object<T, TVec>, global::Kerf.Engine.Geometry.Bvh.ISet<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

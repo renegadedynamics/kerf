@@ -1,5 +1,5 @@
-using Kerf.Engine.Measurement;
-using Occt;
+using Kerf.Geometry;
+using Kerf.Measurement;
 
 namespace Kerf.Modeling;
 
@@ -24,8 +24,9 @@ namespace Kerf.Modeling;
 /// </remarks>
 public sealed class BoundBox
 {
-    /// <summary>The OCCT box, or null for an empty box. Never modified.</summary>
-    internal global::Kerf.Engine.Geometry.Bounds.Box? Wrapped { get; }
+    // The box as OCCT's Bnd_Box holds it: its extents, and a gap around them that its corners include
+    private readonly BoundingBox _extents;
+    private readonly double _gap;
 
     /// <summary>The minimum corner; the origin for an empty box.</summary>
     public Vector Min { get; }
@@ -37,25 +38,41 @@ public sealed class BoundBox
     public Vector Size { get; }
 
     /// <summary>The bounding box of nothing.</summary>
-    public static BoundBox Empty { get; } = Own(new global::Kerf.Engine.Geometry.Bounds.Box());
+    public static BoundBox Empty { get; } = new(BoundingBox.Empty, 0.0);
 
-    BoundBox(global::Kerf.Engine.Geometry.Bounds.Box box)
+    BoundBox(BoundingBox extents, double gap)
     {
-        if (box.IsVoid)
+        if (extents.IsEmpty)
         {
             return;   // all corners at the origin
         }
-        Wrapped = box;
-        Min = new Vector(box.GetXMin(), box.GetYMin(), box.GetZMin());
-        Max = new Vector(box.GetXMax(), box.GetYMax(), box.GetZMax());
+        _extents = extents;
+        _gap = gap;
+        Min = new Vector(extents.Min.X - gap, extents.Min.Y - gap, extents.Min.Z - gap);
+        Max = new Vector(extents.Max.X + gap, extents.Max.Y + gap, extents.Max.Z + gap);
         Size = Max - Min;
     }
 
-    /// <summary>Wraps a Bnd_Box.</summary>
-    internal static BoundBox Own(global::Kerf.Engine.Geometry.Bounds.Box box) => new(box);
+    /// <summary>A bounding box from the kernel's.</summary>
+    public static BoundBox FromBoundingBox(BoundingBox box) => new(box, 0.0);
 
-    /// <summary>A bounding box from an OCCT Bnd_Box.</summary>
-    public static BoundBox FromBndBox(global::Kerf.Engine.Geometry.Bounds.Box box) => new(box);
+    /// <summary>
+    /// A box with the given corners as they are, even where a minimum is above its maximum (a box's corners transformed,
+    /// as OCCT's <c>Bnd_Box(min, max)</c> keeps them); its extents are the box around both.
+    /// </summary>
+    internal static BoundBox FromCorners(Vector min, Vector max) =>
+        new(BoundingBox.Of([min.ToGpPnt(), max.ToGpPnt()]), min, max);
+
+    BoundBox(BoundingBox extents, Vector min, Vector max)
+    {
+        _extents = extents;
+        Min = min;
+        Max = max;
+        Size = max - min;
+    }
+
+    /// <summary>The box as the kernel's bounding box.</summary>
+    public BoundingBox ToBoundingBox() => IsEmpty ? BoundingBox.Empty : _gap == 0 ? _extents : _extents.Enlarged(_gap);
 
     /// <summary>
     /// The bounding box of a shape: tight when <paramref name="optimal"/>, else OCCT's quicker, looser one. Any mesh on the
@@ -69,20 +86,16 @@ public sealed class BoundBox
     public static BoundBox FromTopoDS(global::Kerf.Topology.Shape shape, double? tolerance = null, bool optimal = true)
     {
         _ = tolerance;   // accepted, as build123d accepts it, but unused
-        var box = new global::Kerf.Engine.Geometry.Bounds.Box();
         // Ignoring a mesh gives the box build123d gets by removing it first, without changing the shape
-        if (optimal)
-            Bounds.AddOptimal(shape, ref box, false);
-        else
-            Bounds.Add(shape, ref box, false);
+        var box = shape.BoundingBox(optimal);
         // A shape with faces holding only triangles (STL, glTF) has no geometry to bound but its mesh: use it then
-        if (box.IsVoid)
-            Bounds.Add(shape, ref box, true);
-        return new BoundBox(box);
+        if (box.IsEmpty)
+            box = shape.BoundingBox(optimal: false, useTriangulation: true);
+        return new BoundBox(box, 0.0);
     }
 
     /// <summary>True for the bounding box of nothing, which has zero size and contains, covers, touches and intersects nothing.</summary>
-    public bool IsEmpty => Wrapped is null;
+    public bool IsEmpty => _extents.IsEmpty;
 
     /// <summary>
     /// The Lebesgue measure: the product of the extents larger than the tolerance, so the length of a line,
@@ -101,35 +114,29 @@ public sealed class BoundBox
     }
 
     /// <summary>The length of the body diagonal: the object's maximum size.</summary>
-    public double Diagonal => Wrapped is { } box ? Math.Sqrt(box.SquareExtent()) : 0.0;
+    public double Diagonal => IsEmpty ? 0.0 : Math.Sqrt(Square(_extents.Size.X + _gap + _gap) + Square(_extents.Size.Y + _gap + _gap)
+                                                        + Square(_extents.Size.Z + _gap + _gap));
+
+    static double Square(double x) => x * x;
 
     /// <summary>The centre.</summary>
     public Vector Center() => (Min + Max) / 2;
 
     /// <summary>A box enlarged to include a point, with a gap of <paramref name="tolerance"/> (default <see cref="Constants.LooseTolerance"/>).</summary>
-    public BoundBox Add(Vector point, double? tolerance = null)
-    {
-        var box = Start(tolerance);
-        box = box.Updated(point.X, point.Y, point.Z);
-        return new BoundBox(box);
-    }
+    public BoundBox Add(Vector point, double? tolerance = null) =>
+        // As Bnd_Box: the gap asked for applies only to a box started from nothing; one added to keeps its own
+        IsEmpty ? new BoundBox(BoundingBox.Of(point.ToGpPnt()), Math.Abs(tolerance ?? Constants.LooseTolerance))
+                : new BoundBox(_extents.Including(point.ToGpPnt()), _gap);
 
     /// <summary>A box enclosing this and another, with a gap of <paramref name="tolerance"/> (default <see cref="Constants.LooseTolerance"/>).</summary>
     public BoundBox Add(BoundBox other, double? tolerance = null)
     {
-        var box = Start(tolerance);
-        if (other.Wrapped is { } otherBox)
-            box = box.Added(otherBox);
-        return new BoundBox(box);
-    }
-
-    global::Kerf.Engine.Geometry.Bounds.Box Start(double? tolerance)
-    {
-        var box = new global::Kerf.Engine.Geometry.Bounds.Box();
-        box = box.WithGap(tolerance ?? Constants.LooseTolerance);
-        if (Wrapped is { } own)
-            box = box.Added(own);
-        return box;
+        _ = tolerance;   // as Bnd_Box: a box added to, or started from another, keeps the gaps the boxes have
+        if (other.IsEmpty)
+            return IsEmpty ? Empty : this;
+        if (IsEmpty)
+            return other;
+        return new BoundBox(_extents.Union(other._extents), Math.Max(_gap, other._gap));
     }
 
     /// <summary>
@@ -202,7 +209,21 @@ public sealed class BoundBox
 
     /// <summary>True if the distance between the boxes is within the tolerance.</summary>
     public bool Intersects(BoundBox other, double tolerance = Constants.Tolerance) =>
-        Wrapped is { } box && other.Wrapped is { } otherBox && box.Distance(otherBox) <= tolerance;
+        !IsEmpty && !other.IsEmpty && Distance(other) <= tolerance;
+
+    // Bnd_Box::Distance: the distance between the boxes' corners, axis by axis
+    double Distance(BoundBox other)
+    {
+        double sum = 0;
+        for (int i = 0; i < 3; i++)
+        {
+            double min1 = Min[i], max1 = Max[i], min2 = other.Min[i], max2 = other.Max[i];
+            if ((min1 <= min2 && min2 <= max1) || (min2 <= min1 && min1 <= max2))
+                continue;
+            sum += Math.Min(Square(min1 - max2), Square(max1 - min2));
+        }
+        return Math.Sqrt(sum);
+    }
 
     /// <summary>True if the boxes don't intersect.</summary>
     public bool Disjoint(BoundBox other, double tolerance = Constants.Tolerance) => !Intersects(other, tolerance);
@@ -221,7 +242,7 @@ public sealed class BoundBox
     /// <summary>"bbox: 0.0 &lt;= x &lt;= 1.0, 0.0 &lt;= y &lt;= 1.0, 0.0 &lt;= z &lt;= 1.0".</summary>
     public override string ToString()
     {
-        string r(double v) => PyFormat.Repr(v);
+        string r(double v) => Formatting.Number(v);
         return $"bbox: {r(Min.X)} <= x <= {r(Max.X)}, {r(Min.Y)} <= y <= {r(Max.Y)}, {r(Min.Z)} <= z <= {r(Max.Z)}";
     }
 }

@@ -17,7 +17,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 /// The signed distance between an implicit conic and the point at a parameter on a 2D curve, with its derivative.
 /// </summary>
 /// <remarks>Keeps a reference to the curve, as OCCT keeps a pointer.</remarks>
-public sealed class MyImpParToolOfTheIntersectorOfTheIntConicCurveOfGInter
+internal sealed class MyImpParToolOfTheIntersectorOfTheIntConicCurveOfGInter
     : FunctionWithDerivative,
       IMyImpParTool<MyImpParToolOfTheIntersectorOfTheIntConicCurveOfGInter,
                                  IConicTool, Curve2DAdaptorBase>

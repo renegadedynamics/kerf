@@ -24,6 +24,19 @@ public static class ShapeTraversal
         /// <summary>The distinct vertices (<see cref="Shape.IsSame"/>), in the order they are first explored.</summary>
         public ImmutableArray<Vertex> Vertices() => Unique<Vertex>(shape.AsShape());
 
+        /// <summary>
+        /// Whether the shape is closed, checked from its sub-shapes (OCCT's <c>BRep_Tool::IsClosed</c>): a shell with no free
+        /// edge, a wire with no free vertex, an edge whose two vertices are the same; for other shapes, <c>IsClosed</c>. Where
+        /// <c>IsClosed</c> is the flag the shape's builder set, this looks. Internal and external sub-shapes are ignored.
+        /// </summary>
+        /// <exception cref="ArgumentException">The shape is null.</exception>
+        public bool CheckClosed()
+        {
+            Shape self = shape.AsShape();
+            NotNull(self);
+            return Kerf.Engine.Topology.Brep.Tool.IsClosed(self);
+        }
+
         /// <summary>The distinct edges (<see cref="Shape.IsSame"/>), in the order they are first explored.</summary>
         public ImmutableArray<Edge> Edges() => Unique<Edge>(shape.AsShape());
 

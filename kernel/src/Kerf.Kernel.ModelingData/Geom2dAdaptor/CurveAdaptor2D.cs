@@ -23,7 +23,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// Bezier coefficients are cached for evaluation, so evaluating one adaptor from several threads at once is not
 /// safe. The adaptor keeps a reference to the curve it adapts, as OCCT does; it doesn't copy it.
 /// </remarks>
-public class CurveAdaptor2D : Curve2DAdaptorBase
+internal class CurveAdaptor2D : Curve2DAdaptorBase
 {
     // OCCT's std::variant<std::monostate, gp_Lin2d, gp_Circ2d, gp_Elips2d, gp_Hypr2d, gp_Parab2d, OffsetData,
     // BezierData, BSplineData> is an object: null (monostate), a boxed gp value, or one of the classes below.

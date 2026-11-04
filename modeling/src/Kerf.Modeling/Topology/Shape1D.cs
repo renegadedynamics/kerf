@@ -1,16 +1,7 @@
-using Kerf.Engine.Booleans.Api;
-using Kerf.Engine.Construction.Api;
-using Kerf.Engine.Construction.Library;
-using Kerf.Engine.Construction.Surfaces;
-using Kerf.Engine.Foundation;
-using Kerf.Engine.Geometry.Adaptors;
-using Kerf.Engine.Measurement;
-using Kerf.Engine.Measurement.Distance;
-using Kerf.Engine.Topology;
-using Kerf.Engine.Topology.Adaptors;
-using Kerf.Engine.Topology.Brep;
+using Kerf.Construction;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Measurement;
+using Kerf.Topology;
 
 namespace Kerf.Modeling;
 
@@ -59,7 +50,7 @@ public abstract partial class Shape1D : Shape
         {
             if (IsEmpty)
                 throw new InvalidOperationException("Can't determine if empty Edge or Wire is closed");
-            return Tool.IsClosed(TopoShape);
+            return TopoShape.CheckClosed();
         }
     }
 
@@ -79,9 +70,7 @@ public abstract partial class Shape1D : Shape
     {
         get
         {
-            var props = new Properties();
-            MassPropertiesBuilder.LinearProperties(TopoShape, props);
-            return props.Mass();
+            return TopoShape.Length();
         }
     }
 
@@ -91,13 +80,11 @@ public abstract partial class Shape1D : Shape
     {
         get
         {
-            var geom = GeomAdaptor();
-            if (geom is WireCurveAdaptor)
+            if (this is Wire)
                 // A wire: its comp curve reports OtherCurve, so ask its first edge
                 return Edges().First.Radius;
-            if (geom.GetType() != CurveKind.Circle)
+            if (!((Edge)this).GeomAdaptor().TryGetCircle(out var circle))
                 throw new InvalidOperationException("Shape could not be reduced to a circle");
-            var circle = geom.Circle();
             return circle.Radius;
         }
     }
@@ -117,14 +104,14 @@ public abstract partial class Shape1D : Shape
             var faces = OneD.ConnectedFaces(this);
             if (faces.Count == 1)
             {
-                if (OneD.IsSeamOf(ShapeCasts.Edge(TopoShape), faces[0]))
+                if (OneD.IsSeamOf((global::Kerf.Topology.Edge)TopoShape, faces[0]))
                     return Convexity.Smooth;
                 throw new InvalidOperationException(
                     "this edge lies on one face only, so there is no crease to classify - convexity needs an edge shared by two faces");
             }
             if (faces.Count != 2)
                 throw new InvalidOperationException($"{faces.Count} faces meet at this edge - convexity needs exactly two");
-            return OneD.DihedralConvexity(ShapeCasts.Edge(TopoShape), faces[0], faces[1]);
+            return OneD.DihedralConvexity((global::Kerf.Topology.Edge)TopoShape, faces[0], faces[1]);
         }
     }
 
@@ -133,13 +120,13 @@ public abstract partial class Shape1D : Shape
 
     // ---- Curve evaluation ----
 
-    /// <summary>The OCCT adaptor for the curve: a <c>BRepAdaptor_Curve</c> for an edge, a <c>BRepAdaptor_CompCurve</c> for a wire.</summary>
-    public abstract CurveAdaptorBase GeomAdaptor();
+    /// <summary>The kernel's curve: an edge's <see cref="EdgeCurve"/>, or a wire's <see cref="WireCurve"/>.</summary>
+    internal abstract ShapeCurve Curve();
 
     /// <summary>
-    /// The edge (as an adaptor) and the OCCT curve parameter at a position, and whether that edge runs forward.
+    /// The edge (as its curve) and the OCCT curve parameter at a position, and whether that edge runs forward.
     /// </summary>
-    internal abstract (EdgeCurveAdaptor Curve, double Param, bool Forward) OcctParamAt(double position, PositionMode mode = PositionMode.Parameter);
+    internal abstract (EdgeCurve Curve, double Param, bool Forward) OcctParamAt(double position, PositionMode mode = PositionMode.Parameter);
 
     /// <summary>The OCCT curve parameter at a normalised arc-length position (0 at the start, 1 at the end).</summary>
     public abstract double ParamAt(double position);
@@ -158,7 +145,7 @@ public abstract partial class Shape1D : Shape
     public Vector PositionAt(double position, PositionMode mode = PositionMode.Parameter)
     {
         var (curve, param, _) = OcctParamAt(position, mode);
-        var p = curve.Value(param);
+        var p = curve.Evaluate(param);
         return new Vector(p);
     }
 
@@ -170,40 +157,24 @@ public abstract partial class Shape1D : Shape
     public IReadOnlyList<Vector> Positions(double deflection)
     {
         var (curve, parameters) = DeflectionParameters(deflection);
-        return [.. parameters.Select(p => { var pnt = curve.Value(p); return new Vector(pnt); })];
+        return [.. parameters.Select(p => { var pnt = curve.Evaluate(p); return new Vector(pnt); })];
     }
 
     /// <summary>The curve and the parameters along it that keep a polygon through them within <paramref name="deflection"/>.</summary>
-    private (CurveAdaptorBase, List<double>) DeflectionParameters(double deflection)
+    private (ShapeCurve, IReadOnlyList<double>) DeflectionParameters(double deflection)
     {
-        var curve = GeomAdaptor();
-        var parameters = new List<double>();
-        // GCPnts_UniformDeflection gives the best results but needs C2 continuity
-        if (curve.Continuity() is Continuity.C2 or Continuity.C3 or Continuity.CN)
-        {
-            var discretizer = new UniformDeflection();
-            discretizer.Initialize(curve, deflection, curve.FirstParameter(), curve.LastParameter());
-            if (!discretizer.IsDone || discretizer.PointCount == 0)
-                throw new InvalidOperationException("Deflection calculation failed");
-            for (int i = 1; i <= discretizer.PointCount; i++)
-                parameters.Add(discretizer.Parameter(i));
-        }
-        else
-        {
-            var discretizer = new QuasiUniformDeflection();
-            discretizer.Initialize(curve, deflection, curve.FirstParameter(), curve.LastParameter());
-            if (!discretizer.IsDone || discretizer.PointCount == 0)
-                throw new InvalidOperationException("Deflection calculation failed");
-            for (int i = 1; i <= discretizer.PointCount; i++)
-                parameters.Add(discretizer.Parameter(i));
-        }
+        var curve = Curve();
+        // GCPnts_UniformDeflection where the curve is C2, else GCPnts_QuasiUniformDeflection (the kernel's Discretize)
+        var parameters = curve.Discretize(deflection);
+        if (parameters.IsEmpty)
+            throw new InvalidOperationException("Deflection calculation failed");
         return (curve, parameters);
     }
 
     /// <summary>The derivative of the curve of the given <paramref name="order"/> at a position or point.</summary>
     public Vector DerivativeAt(CurvePosition position, int order = 2, PositionMode mode = PositionMode.Parameter)
     {
-        EdgeCurveAdaptor curve;
+        EdgeCurve curve;
         double param;
         bool closestForward;
         Shape1D closest = this;
@@ -218,7 +189,7 @@ public abstract partial class Shape1D : Shape
             (curve, param, closestForward) = closest.OcctParamAt(u);
         }
         {
-            var d = curve.DN(param, order);
+            var d = curve.DerivativeN(param, order);
             if (d.Magnitude == 0)
                 return new Vector(0, 0, 0);
             var derivative = new Vector(d);
@@ -252,16 +223,16 @@ public abstract partial class Shape1D : Shape
     /// <summary>The start point. A circle may start and end at the same point.</summary>
     public Vector StartPoint()
     {
-        var curve = GeomAdaptor();
-        var p = curve.Value(IsForward ? curve.FirstParameter() : curve.LastParameter());
+        var curve = Curve();
+        var p = curve.Evaluate(IsForward ? curve.Range.Min : curve.Range.Max);
         return new Vector(p);
     }
 
     /// <summary>The end point. A circle may start and end at the same point.</summary>
     public Vector EndPoint()
     {
-        var curve = GeomAdaptor();
-        var p = curve.Value(IsForward ? curve.LastParameter() : curve.FirstParameter());
+        var curve = Curve();
+        var p = curve.Evaluate(IsForward ? curve.Range.Max : curve.Range.Min);
         return new Vector(p);
     }
 
@@ -277,12 +248,7 @@ public abstract partial class Shape1D : Shape
             case CenterOf.Geometry:
                 return PositionAt(0.5);
             case CenterOf.Mass:
-            {
-                var props = new Properties();
-                MassPropertiesBuilder.LinearProperties(TopoShape, props);
-                var c = props.CentreOfMass();
-                return new Vector(c);
-            }
+                return new Vector(TopoShape.MassProperties(Dimension.Length).CentreOfMass);
             default:
                 return BoundingBox().Center();
         }
@@ -301,7 +267,7 @@ public abstract partial class Shape1D : Shape
     public Location LocationAt(double distance, PositionMode mode = PositionMode.Parameter,
                                FrameMethod frameMethod = FrameMethod.Frenet, Vector? xDir = null)
     {
-        CurveAdaptorBase curve;
+        ShapeCurve curve;
         double param;
         // ParamAt and OcctParamAt measure a reversed shape from its other end
         if (this is Wire)
@@ -309,26 +275,22 @@ public abstract partial class Shape1D : Shape
             if (frameMethod == FrameMethod.Corrected)
             {
                 // A comp-curve parameter
-                curve = GeomAdaptor();
+                curve = Curve();
                 param = ParamAt(mode == PositionMode.Parameter ? distance : distance / Length);
             }
             else
             {
                 // An edge-curve parameter
                 var (c, p, _) = OcctParamAt(mode == PositionMode.Parameter ? distance * Length : distance, PositionMode.Length);
-                (curve, param) = (c, p);
+                (curve, param) = (new ShapeCurve(c), p);
             }
         }
         else
         {
             param = ParamAt(mode == PositionMode.Parameter ? distance : distance / Length);
-            curve = GeomAdaptor();
+            curve = Curve();
         }
-        {
-            var law = MakeLaw(frameMethod);
-            law.SetCurve(curve);
-            return FrameLocation(curve, param, law, xDir);
-        }
+        return FrameLocation(curve.Frames([param], Law(frameMethod))[0], xDir);
     }
 
     /// <summary>The local coordinate systems at several positions along the curve.</summary>
@@ -343,27 +305,17 @@ public abstract partial class Shape1D : Shape
     public IReadOnlyList<Location> Locations(double deflection, FrameMethod frameMethod = FrameMethod.Frenet, Vector? xDir = null)
     {
         var (curve, parameters) = DeflectionParameters(deflection);
-        {
-            var law = MakeLaw(frameMethod);
-            law.SetCurve(curve);
-            return [.. parameters.Select(p => FrameLocation(curve, p, law, xDir))];
-        }
+        return [.. curve.Frames([.. parameters], Law(frameMethod)).Select(f => FrameLocation(f, xDir))];
     }
 
-    private static TrihedronLaw MakeLaw(FrameMethod method) =>
-        method == FrameMethod.Frenet ? new Frenet() : new CorrectedFrenet();
+    private static FrameLaw Law(FrameMethod method) => method == FrameMethod.Frenet ? FrameLaw.Frenet : FrameLaw.CorrectedFrenet;
 
-    /// <summary>The Location at a curve parameter, framed by a trihedron law on that curve.</summary>
-    private Location FrameLocation(CurveAdaptorBase curve, double param, TrihedronLaw law, Vector? xDir)
+    /// <summary>The Location of a frame on the curve: at its point, its Z along the tangent.</summary>
+    private Location FrameLocation(CurveFrame frame, Vector? xDir)
     {
-        var tangent = new Vector3D();
-        var normal = new Vector3D();
-        var binormal = new Vector3D();
-        law.D0(param, ref tangent, ref normal, ref binormal);
-        var pnt = curve.Value(param);
+        var (pnt, tangent, normal, _) = frame;
         var trsf = new Transform3D();
-        var tangentXyz = tangent.XYZ();
-        var zDir = new Direction3D(tangentXyz);
+        var zDir = new Direction3D(tangent);
         var target = new CoordinateSystem();
         if (xDir is { } x)
         {
@@ -373,7 +325,7 @@ public abstract partial class Shape1D : Shape
                 var ax3 = new CoordinateSystem(pnt, zDir, xd);
                 trsf = trsf.WithTransformation(ax3, target);
             }
-            catch (FailureException e) when (e.OcctType == "Standard_ConstructionError")
+            catch (Exception e) when (Diagnostic.IsKernelFailure(e) && Diagnostic.FromException(e).Code.Value == "engine.construction-error")
             {
                 throw new ArgumentException(
                     $"Unable to create location with given x_dir {x}. x_dir must be perpendicular to shape's tangent {new Vector(tangent)}.", e);
@@ -381,8 +333,7 @@ public abstract partial class Shape1D : Shape
         }
         else
         {
-            var normalXyz = normal.XYZ();
-            var nd = new Direction3D(normalXyz);
+            var nd = new Direction3D(normal);
             var ax3 = new CoordinateSystem(pnt, zDir, nd);
             trsf = trsf.WithTransformation(ax3, target);
         }
@@ -484,27 +435,25 @@ public abstract partial class Shape1D : Shape
     {
         if (IsEmpty)
             throw new InvalidOperationException("Can't find normal of empty edge/wire");
-        var curve = GeomAdaptor();
         switch (GeomType)
         {
             case GeomType.Circle:
             {
-                var circ = curve.Circle();
+                ((Edge)this).GeomAdaptor().TryGetCircle(out var circ);
                 var axis = circ.Axis;
                 var dir = axis.Direction;
                 return new Vector(dir);
             }
             case GeomType.Ellipse:
             {
-                var ell = curve.Ellipse();
+                ((Edge)this).GeomAdaptor().TryGetEllipse(out var ell);
                 var axis = ell.Axis;
                 var dir = axis.Direction;
                 return new Vector(dir);
             }
             default:
             {
-                var finder = new FindSurface(TopoShape, -1, true);
-                var surface = finder.Surface();
+                TopoShape.TryFindSurface(-1, out var surface, onlyPlane: true);
                 var plane = (surface as PlaneSurface) ?? throw new InvalidOperationException("Normal not defined");
                 var pln = plane.Plane;
                 var axis = pln.Axis;
@@ -574,20 +523,18 @@ public abstract partial class Shape1D : Shape
         if (IsEmpty || face.IsEmpty)
             throw new InvalidOperationException("Can't project an empty Edge or Wire onto empty Face");
         var dir = direction.ToGpDir();
-        var projection = new Projection(TopoShape, face.TopoShape, dir);
-        var shapes = projection.Shape();
-        var pieces = TopoUtil.TopLevelShapes(shapes);
+        var projected = TopoShape.IsEdge()
+            ? ShapeProjections.Project((global::Kerf.Topology.Edge)TopoShape, face.TopoShape, dir)
+            : ShapeProjections.Project((global::Kerf.Topology.Wire)TopoShape, face.TopoShape, dir);
+        // A projection that meets nothing is no pieces
+        var pieces = projected.TryGetValue(out var wires) ? wires.Select(w => w.AsShape()).ToList() : [];
         if (!closest)
             return new ShapeList<Shape1D>(pieces.Select(p => (Shape1D)Cast(p)));
-        var calc = new DistanceShapeShape();
-        calc.LoadS1(TopoShape);
         Shape1D? best = null;
         double minDist = double.PositiveInfinity;
         foreach (var piece in pieces)
         {
-            calc.LoadS2(piece);
-            calc.Perform();
-            var d = calc.Value();
+            var d = Failures.Get(TopoShape.Distance(piece), () => "distance").Value;
             if (d < minDist)
                 (minDist, best) = (d, (Shape1D)Cast(piece));
         }
@@ -624,17 +571,14 @@ public abstract partial class Shape1D : Shape
             {
                 // 1D + plane: a section with the plane's face
                 var face = Face.FromTopoFace(MakePlaneFace(plane));
-                var op = new SectionOperation();
-                results.AddRange(BoolOpList([this], [face], op).Expand());
+                results.AddRange(BoolOpList([this], [face], BooleanKind.Section).Expand());
                 break;
             }
             case Shape1D line:
             {
                 // 1D + 1D: the common part (collinear overlap) and the section (crossings)
-                var common = new Common();
-                results.AddRange(BoolOpList([this], [line], common).Expand());
-                var section = new SectionOperation();
-                results.AddRange(BoolOpList([this], [line], section).OfType<Vertex>().Where(v => !v.IsEmpty));
+                results.AddRange(BoolOpList([this], [line], BooleanKind.Common).Expand());
+                results.AddRange(BoolOpList([this], [line], BooleanKind.Section).OfType<Vertex>().Where(v => !v.IsEmpty));
                 break;
             }
             case Vertex vertex:
@@ -657,4 +601,36 @@ public abstract partial class Shape1D : Shape
 
     /// <summary>The location at a parameter (build123d's <c>^</c>).</summary>
     public static Location operator ^(Shape1D curve, double position) => curve.LocationAt(position);
+}
+
+/// <summary>The kernel's curve of an edge or a wire, for the code the two share (OCCT's adaptors, once).</summary>
+internal sealed class ShapeCurve
+{
+    private readonly EdgeCurve? _edge;
+    private readonly WireCurve? _wire;
+
+    internal ShapeCurve(EdgeCurve edge) => _edge = edge;
+
+    internal ShapeCurve(WireCurve wire) => _wire = wire;
+
+    public Interval Range => _edge?.Range ?? _wire!.Range;
+
+    public Continuity Continuity => _edge?.Continuity ?? _wire!.Continuity;
+
+    public Point3D Evaluate(double u) => _edge?.Evaluate(u) ?? _wire!.Evaluate(u);
+
+    public Vector3D DerivativeN(double u, int n) => _edge?.DerivativeN(u, n) ?? _wire!.DerivativeN(u, n);
+
+    public double Length => _edge?.Length ?? _wire!.Length;
+
+    public double LengthBetween(double u1, double u2) => _edge?.LengthBetween(u1, u2) ?? _wire!.LengthBetween(u1, u2);
+
+    public double ParameterAtLength(double length, double from) =>
+        _edge?.ParameterAtLength(length, from) ?? _wire!.ParameterAtLength(length, from);
+
+    public System.Collections.Immutable.ImmutableArray<double> Discretize(double deflection) =>
+        _edge?.Discretize(deflection) ?? _wire!.Discretize(deflection);
+
+    public System.Collections.Immutable.ImmutableArray<CurveFrame> Frames(ReadOnlySpan<double> parameters, FrameLaw law) =>
+        _edge is not null ? _edge.Frames(parameters, law) : _wire!.Frames(parameters, law);
 }

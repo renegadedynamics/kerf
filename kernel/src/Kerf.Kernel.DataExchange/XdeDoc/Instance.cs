@@ -12,7 +12,7 @@ namespace Kerf.Engine.Exchange.Documents;
 /// the product's for this placement only.
 /// </summary>
 /// <remarks>Immutable; shares its product.</remarks>
-public sealed class Instance
+internal sealed class Instance
 {
     /// <summary>The product placed at the location, with the instance's own attributes.</summary>
     public Instance(DocumentProduct product, in Placement location, Attributes? attributes = null)

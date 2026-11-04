@@ -1,9 +1,6 @@
 // Ported from build123d tests/test_direct_api/test_vector.py. Cases that need topology (Vertex, Solid)
 // follow with the topology port.
-using Kerf.Engine.Foundation;
-using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Occt;
 
 namespace Build123d.Tests.Geometry;
 
@@ -16,8 +13,8 @@ public class VectorTests
     public void Constructors()
     {
         var gpVec = new Vector3D(1, 2, 3);
-        var gpXyz = new Xyz(1, 2, 3);
-        Vector[] full = [new(1, 2, 3), (1, 2, 3), new(gpVec), new([1, 2, 3]), new(gpXyz)];
+        var gpPnt = new Point3D(1, 2, 3);
+        Vector[] full = [new(1, 2, 3), (1, 2, 3), new(gpVec), new([1, 2, 3]), new(gpPnt)];
         foreach (var v in full)
             Check.AlmostEqual((1, 2, 3), v, 4);
 
@@ -137,9 +134,9 @@ public class VectorTests
     [Fact]
     public void Formatting()
     {
-        Assert.Equal("(1.000, 2.000, 3.000)", new Vector(1, 2, 3).ToString(".3f"));
-        Assert.Equal("(1, 2, 3)", new Vector(1, 2, 3).ToString(".3g"));
-        Assert.Equal("(1.0, 2.0, 3.0)", new Vector(1, 2, 3).ToString(".3t"));
+        Assert.Equal("(1.000, 2.000, 3.000)", new Vector(1, 2, 3).ToString("F3"));
+        Assert.Equal("(1, 2, 3)", new Vector(1, 2, 3).ToString("G3"));
+        Assert.Equal("(1, 2, 3)", new Vector(1, 2, 3).ToString(null));
         Assert.Equal("Vector: (X=1, Y=2, Z=3)", new Vector(1, 2, 3).ToString());
         Assert.Equal("Vector: (X=10, Y=-23.65, Z=0)",
                      new Vector(9.99999999999999, -23.649999999999995, -7.37188088351e-15).ToString());
@@ -207,5 +204,5 @@ public class VectorTests
 
     [Fact]
     public void NormalizingZeroThrows() =>
-        Assert.Equal("Standard_ConstructionError", Assert.ThrowsAny<FailureException>(() => new Vector().Normalized()).OcctType);
+        Assert.Throws<InvalidOperationException>(() => new Vector().Normalized());
 }

@@ -24,7 +24,7 @@ internal sealed class ShrunkRange : EdgeShrunkRange, BooleanParallel.IContextSol
     void BooleanParallel.IContextSolver<IntersectionContext>.SetContext(IntersectionContext context) => SetContext(context);
 }
 
-public partial class PaveFiller
+internal partial class PaveFiller
 {
     protected void FillShrunkData(ShapeType aType1, ShapeType aType2)
     {

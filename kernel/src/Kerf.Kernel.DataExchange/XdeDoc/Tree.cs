@@ -33,7 +33,7 @@ namespace Kerf.Engine.Exchange.Documents;
 /// reader (<see cref="TreeReader"/>) work on trees.
 /// </para>
 /// </remarks>
-public sealed class Tree
+internal sealed class Tree
 {
     /// <summary>A tree with no root.</summary>
     public static Tree Empty { get; } = new([]);

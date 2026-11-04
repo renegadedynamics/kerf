@@ -19,7 +19,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// A struct, as OCCT's by-value class: a copy shares the curves (handles), as in C++. The setters are internal
 /// (translation rules, section 3).
 /// </remarks>
-public partial struct IntersectionCurve
+internal partial struct IntersectionCurve
 {
     private Curve3D? _my3dCurve;
     private Curve2D? _my2dCurve1;

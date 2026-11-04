@@ -12,7 +12,7 @@ namespace Kerf.Engine.Collections;
 /// A map that numbers its keys from 0 in the order added (OCCT's <c>NCollection_IndexedDataMap</c>, which numbers them
 /// from 1). Removing an entry moves the last one into its place, as OCCT does, so the others keep their indices.
 /// </summary>
-public sealed class IndexedMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>> where TKey : notnull
+internal sealed class IndexedMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>> where TKey : notnull
 {
     private readonly IndexedSet<TKey> _keys;
     private readonly List<TValue> _values;

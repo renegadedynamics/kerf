@@ -150,7 +150,13 @@ public static class FilletOperations
                         fillet.Add(spec.Radius, spec.Edge);
                     }
                 }
-                return MakerOutcome.Of(fillet, range, [solid], () => Faulty(fillet, specs.Length));
+                EngineOutcome outcome = MakerOutcome.Of(fillet, range, [solid]);
+                if (outcome.IsDone)
+                {
+                    return outcome;
+                }
+                ImmutableArray<Diagnostic> faulty = Faulty(fillet, specs.Length);
+                return outcome with { Failure = faulty[0], MoreFailures = faulty[1..] };
             }, Failure, progress, cancellationToken);
         }
 
@@ -252,6 +258,30 @@ public static class FilletOperations
                 return maker.AddChamfer(e1, e2, distance, second);
             });
         }
+
+        /// <summary>
+        /// The planar face with the corners between each pair of its edges chamfered: <paramref name="distance"/> along the
+        /// first edge of the pair and <paramref name="distance2"/> (by default the same) along the second.
+        /// </summary>
+        /// <exception cref="ArgumentException">The face is null, or a pair's edges don't meet at a vertex.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A distance isn't more than zero.</exception>
+        public Result<Built<Face>> Chamfer2D(IEnumerable<(Edge First, Edge Second)> corners, double distance, double? distance2 = null)
+        {
+            ArgumentNullException.ThrowIfNull(corners);
+            MakerOutcome.Positive(distance, nameof(distance));
+            double second = distance2 ?? distance;
+            MakerOutcome.Positive(second, nameof(distance2));
+            MakerOutcome.NotNull(face, nameof(face));
+            (Edge, Edge)[] pairs = [.. corners];
+            Vertex[] vertices = [.. pairs.Select(static p => CommonVertex(p.Item1, p.Item2))];
+            Face f = face;
+            int next = 0;
+            return Planar(f, vertices, (maker, v) =>
+            {
+                (Edge e1, Edge e2) = pairs[next++];
+                return maker.AddChamfer(e1, e2, distance, second);
+            });
+        }
     }
 
     private static Result<Built<Face>> Planar(Face face, Vertex[] corners, Func<MakeFillet2D, Vertex, Edge> add) =>
@@ -314,25 +344,37 @@ public static class FilletOperations
     }
 
     // The faulty contours' errors, each with its edges; or the operation's own error
-    private static Diagnostic? Faulty(MakeFillet fillet, int edgeCount)
+    // The errors of a failed fillet: the first faulty contour's status with all the faulty contours' edges, then one per
+    // faulty contour with its own status and edges
+    private static ImmutableArray<Diagnostic> Faulty(MakeFillet fillet, int edgeCount)
     {
-        if (fillet.FaultyContourCount == 0)
-        {
-            return Diagnostic.Error(Failed, $"The fillet couldn't be built on {edgeCount} edge(s).");
-        }
         var edges = new List<Shape>();
+        var contours = new List<Diagnostic>();
         Diagnostic? first = null;
         for (int i = 1; i <= fillet.FaultyContourCount; i++)
         {
             int contour = fillet.FaultyContour(i);
-            first ??= StatusDiagnostics.ToDiagnostic(fillet.StripeStatus(contour));
+            // A faulty stripe past the contours can lack a spine, which OCCT dereferences unchecked
+            if (contour < 1 || contour > fillet.ContourCount)
+            {
+                continue;
+            }
+
+            Diagnostic status = StatusDiagnostics.ToDiagnostic(fillet.StripeStatus(contour)) ?? Diagnostic.Error(Failed, "The fillet couldn't be built.");
+            first ??= status;
+            var own = new List<Shape>();
             for (int j = 1; j <= fillet.NbEdges(contour); j++)
             {
-                edges.Add(fillet.Edge(contour, j));
+                own.Add(fillet.Edge(contour, j));
             }
+            edges.AddRange(own);
+            contours.Add((status with { Message = $"{status.Message} Contour {contour} failed on {own.Count} edge(s)." }).WithShapes(own));
         }
-        Diagnostic error = first ?? Diagnostic.Error(Failed, "The fillet couldn't be built.");
-        return (error with { Message = $"{error.Message} It failed on {edges.Count} edge(s)." }).WithShapes(edges);
+        if (first is null)
+        {
+            return [Diagnostic.Error(Failed, $"The fillet couldn't be built on {edgeCount} edge(s).")];
+        }
+        return [(first with { Message = $"{first.Message} It failed on {edges.Count} edge(s)." }).WithShapes(edges), .. contours];
     }
 
     // The edges, which must be the shape's
@@ -376,6 +418,21 @@ public static class FilletOperations
     }
 
     // The face's two edges at a corner
+    private static Vertex CommonVertex(Edge first, Edge second)
+    {
+        MakerOutcome.NotNull(first, "corners");
+        MakerOutcome.NotNull(second, "corners");
+        foreach (Vertex v in first.Vertices())
+        {
+            if (second.Vertices().Any(w => w.IsSame(v)))
+            {
+                return v;
+            }
+        }
+
+        throw new ArgumentException("A corner's edges don't meet at a vertex.", "corners");
+    }
+
     private static (Edge, Edge) EdgesAt(Face face, Vertex vertex)
     {
         Edge[] at = [.. face.Edges().Where(e => e.Vertices().Any(v => v.IsSame(vertex)))];

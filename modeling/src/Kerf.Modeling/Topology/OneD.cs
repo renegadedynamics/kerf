@@ -1,17 +1,8 @@
-using Kerf.Engine.Collections;
-using Kerf.Engine.Construction.Api;
-using Kerf.Engine.Foundation;
-using Kerf.Engine.Geometry.Conversion;
-using Kerf.Engine.Healing.Analysis;
-using Kerf.Engine.Measurement;
-using Kerf.Engine.Offsets;
-using Kerf.Engine.Offsets.Api;
-using Kerf.Engine.Topology;
-using Kerf.Engine.Topology.Adaptors;
-using Kerf.Engine.Topology.Brep;
+using Kerf.Construction;
+using Kerf.Healing;
+using Kerf.Offsets;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -21,14 +12,8 @@ public static class OneD
     /// <summary>The wires made by connecting edges end to end within <paramref name="tolerance"/>.</summary>
     public static ShapeList<Wire> EdgesToWires(IEnumerable<Edge> edges, double tolerance = 1e-6)
     {
-        var edgesIn = new NCollection_HSequence<global::Kerf.Topology.Shape>();
-        foreach (var edge in edges)
-            if (!edge.IsEmpty)
-                edgesIn.Append(edge.TopoShape);
-        var wiresOut = FreeBounds.ConnectEdgesToWires(edgesIn, tolerance, false);
-        if (wiresOut is null)
-            return [];
-        return new ShapeList<Wire>(wiresOut.Select(w => new Wire(ShapeCasts.Wire(w))));
+        var wiresOut = HealingOperations.ConnectEdges(edges.Where(e => !e.IsEmpty).Select(e => e.TopoEdge), tolerance, shared: false);
+        return new ShapeList<Wire>(wiresOut.Select(w => new Wire(w)));
     }
 
     internal static Shape Add1D(Shape self, IEnumerable<Shape?> other)
@@ -54,7 +39,7 @@ public static class OneD
                 {
                     sum = JoinedWire(summandEdges, [], brought);
                 }
-                catch (Exception e) when (e is ArgumentException or InvalidOperationException or FailureException or KerfException)
+                catch (Exception e) when (e is ArgumentException or InvalidOperationException || Failures.IsKernelFailure(e))
                 {
                     sum = summands[0].Fuse(summands.Skip(1));
                     if (sum.History is not null)
@@ -68,7 +53,7 @@ public static class OneD
             {
                 sum = JoinedWire([.. self.Edges(), .. summandEdges], [self.TopoShape], brought);
             }
-            catch (Exception e) when (e is ArgumentException or InvalidOperationException or FailureException or KerfException)
+            catch (Exception e) when (e is ArgumentException or InvalidOperationException || Failures.IsKernelFailure(e))
             {
                 sum = self.Fuse(summands);
             }
@@ -82,10 +67,8 @@ public static class OneD
     /// <summary>A face offset by <paramref name="amount"/> (<c>BRepOffset_MakeOffset</c>).</summary>
     public static global::Kerf.Topology.Shape OffsetTopodsFace(global::Kerf.Topology.Face face, double amount)
     {
-        var offsetter = new MakeOffset();
-        offsetter.Initialize(face, amount, Constants.Tolerance);
-        offsetter.MakeOffsetShape();
-        return offsetter.Shape();
+        // BRepOffset_MakeOffset's defaults: skin, arcs, no intersections
+        return Failures.Get(face.Offset(amount, new OffsetOptions { Tolerance = Constants.Tolerance }), () => "offset").Shape;
     }
 
     /// <summary>
@@ -103,22 +86,20 @@ public static class OneD
         var parentEdge = TopoUtil.FindSame(edge.TopoShape, topoEdges);
         if (parentEdge is null)
             return [];
-        var given = ShapeCasts.Edge(parentEdge.Value);
+        var given = (global::Kerf.Topology.Edge)parentEdge.Value;
         var relocation = TopoUtil.RelocationBetween(given, edge.TopoShape);
         var connected = new List<global::Kerf.Topology.Shape>();
         foreach (var other in topoEdges)
         {
             if (given.IsSame(other))
                 continue;
-            var otherEdge = ShapeCasts.Edge(other);
+            var otherEdge = (global::Kerf.Topology.Edge)other;
             var common = Vertex.CommonVertex(given, otherEdge);
             if (common.IsEmpty)
                 continue;
-            var u1 = Tool.Parameter(common.TopoVertex, given);
-            var u2 = Tool.Parameter(common.TopoVertex, otherEdge);
-            var curve1 = new EdgeCurveAdaptor(given);
-            var curve2 = new EdgeCurveAdaptor(otherEdge);
-            var actual = global::Kerf.Engine.Topology.Properties.BRepLProp.Continuity(curve1, curve2, u1, u2, Constants.Tolerance, Constants.Tolerance);
+            var u1 = given.ParameterOf(common.TopoVertex);
+            var u2 = otherEdge.ParameterOf(common.TopoVertex);
+            var actual = given.ToCurve().ContinuityWith(otherEdge.ToCurve(), u1, u2, Constants.Tolerance, Constants.Tolerance);
             var level = actual switch
             {
                 Continuity.C0 => ContinuityLevel.C0,
@@ -129,8 +110,8 @@ public static class OneD
                 connected.Add(other);
         }
         return relocation.IsIdentity
-            ? new ShapeList<Edge>(connected.Select(e => new Edge(ShapeCasts.Edge(e))))
-            : new ShapeList<Edge>(connected.Select(e => new Edge(ShapeCasts.Edge(e.Moved(relocation)))));
+            ? new ShapeList<Edge>(connected.Select(e => new Edge((global::Kerf.Topology.Edge)e)))
+            : new ShapeList<Edge>(connected.Select(e => new Edge((global::Kerf.Topology.Edge)e.Moved(relocation))));
     }
 
     /// <summary>
@@ -146,27 +127,23 @@ public static class OneD
         parent ??= edge.TopoParent;
         if (parent is null || parent.IsEmpty)
             throw new InvalidOperationException("edge has no valid parent");
-        var map = new IndexedMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
-        Exploration.MapShapesAndAncestors(parent.TopoShape, global::Kerf.Topology.ShapeType.Edge, global::Kerf.Topology.ShapeType.Face, map);
-        // The map keys on TShape and Location, so a moved edge isn't found by Contains
-        var parentEdge = TopoUtil.FindSame(edge.TopoShape, map.Keys);
+        var graph = ShapeGraph.Build(parent.TopoShape);
+        // The graph keys on TShape and Location, so a moved edge isn't found by Contains
+        var parentEdge = TopoUtil.FindSame(edge.TopoShape, graph.All(global::Kerf.Topology.ShapeType.Edge));
         if (parentEdge is null)
             return [];
         var relocation = TopoUtil.RelocationBetween(parentEdge.Value, edge.TopoShape);
-        var unique = new IndexedSet<global::Kerf.Topology.Shape>(ShapeHasher.Instance);
-        var faces = map.GetValue(parentEdge.Value);
-        foreach (var face in faces)
-            unique.Add(face);
-        return [.. unique.Select(f => ShapeCasts.Face(f.Moved(relocation)))];
+        // Each face once, in the order exploration first meets it
+        var faces = graph.Ancestors(parentEdge.Value, global::Kerf.Topology.ShapeType.Face);
+        return [.. faces.Select(f => (global::Kerf.Topology.Face)f.Moved(relocation))];
     }
 
     /// <summary>Whether the face meets itself along the edge, as a cylinder does at its seam.</summary>
     internal static bool IsSeamOf(global::Kerf.Topology.Edge edge, global::Kerf.Topology.Face face)
     {
         int count = 0;
-        var explorer = new Explorer(face, global::Kerf.Topology.ShapeType.Edge);
-        for (; explorer.More(); explorer.Next())
-            if (explorer.Current().IsSame(edge))
+        foreach (var current in face.Explore<global::Kerf.Topology.Edge>())
+            if (current.IsSame(edge))
                 count++;
         return count > 1;
     }
@@ -174,10 +151,9 @@ public static class OneD
     /// <summary>The edge with the orientation it has in the face's boundary.</summary>
     private static global::Kerf.Topology.Edge AsBoundedBy(global::Kerf.Topology.Face face, global::Kerf.Topology.Edge edge)
     {
-        var explorer = new Explorer(face, global::Kerf.Topology.ShapeType.Edge);
-        for (; explorer.More(); explorer.Next())
-            if (explorer.Current().IsSame(edge))
-                return ShapeCasts.Edge(explorer.Current());
+        foreach (var current in face.Explore<global::Kerf.Topology.Edge>())
+            if (current.IsSame(edge))
+                return current;
         throw new ArgumentException("edge is not on the face");
     }
 
@@ -190,27 +166,20 @@ public static class OneD
     internal static Convexity DihedralConvexity(global::Kerf.Topology.Edge edge, global::Kerf.Topology.Face face1, global::Kerf.Topology.Face face2,
                                                 int samples = 7, double sinTolerance = 1e-4)
     {
-        var curve = new EdgeCurveAdaptor(edge);
-        double first = curve.FirstParameter(), last = curve.LastParameter();
-        double f1 = first, l1 = last, f2 = first, l2 = last;
-        var pcurve1 = Tool.CurveOnSurface(edge, face1, out f1, out l1)!;
-        var pcurve2 = Tool.CurveOnSurface(edge, face2, out f2, out l2)!;
+        var curve = edge.ToCurve();
+        double first = curve.Range.Min, last = curve.Range.Max;
+        edge.TryGetCurveOnFace(face1, out var pcurve1, out _);
+        edge.TryGetCurveOnFace(face2, out var pcurve2, out _);
         bool reversedInFace2 = AsBoundedBy(face2, edge).Orientation == Orientation.Reversed;
-        var props1 = new FaceIntegrand(face1);
-        var props2 = new FaceIntegrand(face2);
         var kinds = new HashSet<Convexity>();
         for (int i = 0; i < samples; i++)
         {
             var param = first + (last - first) * (i + 0.5) / samples;
-            var point = new Point3D();
-            var tangent = new Vector3D();
-            curve.D1(param, out point, out tangent);
-            var uv1 = pcurve1.Value(param);
-            var uv2 = pcurve2.Value(param);
-            var normal1 = new Vector3D();
-            var normal2 = new Vector3D();
-            props1.Normal(uv1.X, uv1.Y, out point, out normal1);
-            props2.Normal(uv2.X, uv2.Y, out point, out normal2);
+            var tangent = curve.Derivatives(param, 1).D1;
+            var uv1 = pcurve1!.Evaluate(param);
+            var uv2 = pcurve2!.Evaluate(param);
+            var normal1 = TopoUtil.FaceNormalVector(face1, uv1.X, uv1.Y).ToGpVec();
+            var normal2 = TopoUtil.FaceNormalVector(face2, uv2.X, uv2.Y).ToGpVec();
             if (Math.Min(tangent.Magnitude, Math.Min(normal1.Magnitude, normal2.Magnitude)) < 1e-12)
                 continue;
             tangent = tangent.Normalized();
@@ -246,7 +215,7 @@ public static class OneD
     internal static Wire JoinedWire(IReadOnlyList<Edge> edges, IEnumerable<global::Kerf.Topology.Shape> before, IEnumerable<global::Kerf.Topology.Shape> brought)
     {
         var wire = new Wire(edges);
-        var history = new History();
+        var history = new List<ShapeHistoryEntry>();
         var placed = wire.Edges();
         var midpoints = placed.Select(e => e.PositionAt(0.5)).ToList();
         foreach (var source in edges)
@@ -258,31 +227,29 @@ public static class OneD
                 continue;   // MakeWire keeps every edge it is given
             var match = placed[distances.IndexOf(min)];
             if (!match.TopoShape.IsSame(source.TopoShape))
-                history.AddModified(source.TopoShape, match.TopoShape);
+                history.Add(new(source.TopoShape, ShapeHistoryKind.Modified, [match.TopoShape]));
             RecordMatchingVertices(history, source.TopoShape, match.TopoShape);
         }
-        return (Wire)wire.MadeBy(ShapeHistory.FromHistory(history, before, brought));
+        return (Wire)wire.MadeBy(ShapeHistory.FromHistory(global::Kerf.Topology.ShapeHistory.Create(history), before, brought));
     }
 
     /// <summary>Records the vertices of a rebuilt edge as modified from those at the same points.</summary>
-    internal static void RecordMatchingVertices(History history, global::Kerf.Topology.Shape source, global::Kerf.Topology.Shape placed)
+    internal static void RecordMatchingVertices(List<ShapeHistoryEntry> history, global::Kerf.Topology.Shape source, global::Kerf.Topology.Shape placed)
     {
         var placedVertices = ShapeHistory.TrackedSubshapes([placed]).Where(v => v.Type == global::Kerf.Topology.ShapeType.Vertex).ToList();
         foreach (var old in ShapeHistory.TrackedSubshapes([source]))
         {
             if (old.Type != global::Kerf.Topology.ShapeType.Vertex)
                 continue;
-            var oldVertex = ShapeCasts.Vertex(old);
-            var oldPoint = Tool.Pnt(oldVertex);
+            var oldPoint = ((global::Kerf.Topology.Vertex)old).Point;
             foreach (var @new in placedVertices)
             {
                 if (@new.IsSame(old))
                     break;
-                var newVertex = ShapeCasts.Vertex(@new);
-                var newPoint = Tool.Pnt(newVertex);
+                var newPoint = ((global::Kerf.Topology.Vertex)@new).Point;
                 if (newPoint.DistanceTo(oldPoint) < Constants.Tolerance)
                 {
-                    history.AddModified(old, @new);
+                    history.Add(new(old, ShapeHistoryKind.Modified, [@new]));
                     break;
                 }
             }
@@ -308,18 +275,23 @@ public static class OneD
             }
             var adaptor = edge.GeomAdaptor();
             // Fit only the part of the offset curve the edge uses, as it lies before the edge's location
-            var curveLocation = new Placement();
-            double f = 0, l = 0;
-            var curve = Tool.Curve(edge.TopoEdge, out curveLocation, out f, out l);
-            var trimmed = new TrimmedCurve3D(curve!, adaptor.FirstParameter(), adaptor.LastParameter());
-            var approximation = new ApproxCurve(trimmed, Constants.Tolerance / 10, Continuity.C2, 100, 9);
-            if (!approximation.HasResult)
+            edge.TopoEdge.TryGetLocalCurve(out var curve, out _, out _);
+            var trimmed = new TrimmedCurve3D(curve!, adaptor.Range.Min, adaptor.Range.Max);
+            // GeomConvert_ApproxCurve within a tenth of the tolerance
+            var options = new ConversionOptions
+            {
+                Tolerance = Constants.Tolerance / 10,
+                Continuity = Continuity.C2,
+                MaxSegments = 100,
+                MaxDegree = 9,
+                ForceApproximation = true,
+            };
+            if (!trimmed.ToBSpline(options).TryGetValue(out var spline))
                 throw new InvalidOperationException("2D offset curve could not be converted to a spline");
-            var spline = approximation.Curve();
-            var maker = new MakeEdge(spline!);
+            var made = Failures.Get(global::Kerf.Topology.Edge.FromCurve(spline), () => "edge");
             // The curve is stored without the placement or direction of its edge
-            var placed = maker.Edge().Located(edge.TopoShape.Placement);
-            fitted.Add(new Edge(ShapeCasts.Edge(placed.Oriented(edge.TopoShape.Orientation))));
+            var placed = made.Located(edge.TopoShape.Placement);
+            fitted.Add(new Edge((global::Kerf.Topology.Edge)placed.Oriented(edge.TopoShape.Orientation)));
         }
         // The edges came from the wire with its direction applied, so the new wire winds the same way
         return new Wire(fitted);
@@ -406,25 +378,19 @@ public abstract partial class Shape1D
         global::Kerf.Topology.Wire topoWire = lineEdges.Count == 1
             ? new Wire([lineEdges[0].Trim(0.0, 0.5), lineEdges[0].Trim(0.5, 1.0)]).TopoWire
             : line.TopoWire;
-        var builder = new MakeWireOffset();
-        if (isStraight && normal is { } sn)
-        {
-            // A straight line has no plane of its own to offset within
-            var spine = MakePlaneFace(new Plane(start, zDir: sn));
-            builder.Init(spine, join);
-        }
-        else
-            builder.Init(join);
-        builder.AddWire(topoWire);
-        builder.Perform(signedDistance);
-        if (!builder.IsDone)
+        var options = new Offset2DOptions { Join = join };
+        // A straight line has no plane of its own to offset within
+        var offsetted = isStraight && normal is { } sn
+            ? topoWire.Offset2D(signedDistance, MakePlaneFace(new Plane(start, zDir: sn)), options)
+            : topoWire.Offset2D(signedDistance, options);
+        if (!offsetted.TryGetValue(out var built))
             throw new InvalidOperationException($"2D offset failed with distance {distance}");
-        var obj = TopoUtil.Downcast(builder.Shape());
+        var obj = TopoUtil.Downcast(built.Shape);
         if (obj.IsCompound())
-            obj = TopoUtil.UnwrapCompound(ShapeCasts.Compound(obj));
+            obj = TopoUtil.UnwrapCompound((global::Kerf.Topology.Compound)obj);
         if (!obj.IsWire())
             throw new InvalidOperationException("Unexpected result type");   // likely several wires
-        var offsetWire = new Wire(ShapeCasts.Wire(obj));
+        var offsetWire = new Wire((global::Kerf.Topology.Wire)obj);
         if (asBSpline)
             offsetWire = OneD.OffsetCurvesToBSplines(offsetWire);
 

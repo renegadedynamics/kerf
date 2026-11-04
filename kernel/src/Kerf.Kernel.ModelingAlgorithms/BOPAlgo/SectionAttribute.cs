@@ -12,7 +12,7 @@ namespace Kerf.Engine.Booleans;
 /// (<c>Approximation(bool)</c>), are internal (translation rules, section 3); the public twins are the
 /// <c>With</c> forms. The parameterless constructor sets every flag (OCCT's default); <c>default</c> clears them.
 /// </remarks>
-public partial struct SectionAttribute : IEquatable<SectionAttribute>
+internal partial struct SectionAttribute : IEquatable<SectionAttribute>
 {
     private bool _approximation;
     private bool _pCurve1;

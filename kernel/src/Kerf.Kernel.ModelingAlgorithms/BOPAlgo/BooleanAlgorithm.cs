@@ -11,7 +11,7 @@ using static Kerf.Engine.Foundation.Gravity;
 namespace Kerf.Engine.Booleans;
 
 /// <summary>The root of the Boolean component's algorithms.</summary>
-public abstract class BooleanAlgorithm : Options
+internal abstract class BooleanAlgorithm : Options
 {
     protected BooleanAlgorithm()
     {
@@ -111,7 +111,7 @@ internal abstract class ParallelAlgo : BooleanAlgorithm, BooleanParallel.ISolver
 }
 
 /// <summary>The relative contribution of each step of an operation to the whole progress.</summary>
-public sealed class PISteps
+internal sealed class PISteps
 {
     private readonly NCollection_Array1<double> _steps;
 

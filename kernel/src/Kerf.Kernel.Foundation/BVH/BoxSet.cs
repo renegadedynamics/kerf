@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// <typeparam name="T">The element type of the boxes.</typeparam>
 /// <typeparam name="TVec">The vector type (dimension).</typeparam>
 /// <typeparam name="TData">The type of the elements (OCCT's default is <c>int</c>).</typeparam>
-public class BoxSet<T, TVec, TData> : PrimitiveSet<T, TVec>
+internal class BoxSet<T, TVec, TData> : PrimitiveSet<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {
@@ -80,7 +80,7 @@ public class BoxSet<T, TVec, TData> : PrimitiveSet<T, TVec>
 }
 
 /// <summary>A box set of integer elements (OCCT's default <c>DataType = int</c>).</summary>
-public class BoxSet<T, TVec> : BoxSet<T, TVec, int>
+internal class BoxSet<T, TVec> : BoxSet<T, TVec, int>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

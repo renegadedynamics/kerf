@@ -1,9 +1,6 @@
-using Kerf.Engine.Construction.Api;
-using Kerf.Engine.Foundation;
-using Kerf.Engine.Healing.Custom;
-using Kerf.Engine.Healing.Upgrade;
+using Kerf.Construction;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Healing;
 
 namespace Kerf.Modeling;
 
@@ -32,14 +29,14 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             return this;
-        var builder = new Transform(_wrapped, transformation, true);
-        var transformed = builder.Shape();
+        var built = Failures.Get(_wrapped.Transformed(transformation, copyGeometry: true), () => "transform");
+        var transformed = built.Shape;
         var copy = Rewrapped(transformed);
         if (History is not null)
         {
             var history = new ShapeHistory(History.Before, History.Brought)
                 .Merge(History)
-                .Merge(ShapeHistory.FromAlgorithm(builder, [_wrapped], transformed));
+                .Merge(ShapeHistory.FromAlgorithm(s => built.History.Modified(s), s => built.History.Generated(s), [_wrapped], transformed));
             copy = copy.MadeBy(history);
         }
         return copy;
@@ -51,29 +48,22 @@ public abstract partial class Shape
         if (IsEmpty)
             return this;
         var trsf = matrix.GTrsf.ToTransform();
-        var builder = new Transform(_wrapped, trsf);
-        return Rewrapped(builder.Shape());
+        return Rewrapped(Failures.Get(_wrapped.Transformed(trsf), () => "transform").Shape);
     }
 
     internal Shape CleanCore()
     {
         if (IsEmpty)
             return this;
-        var upgrader = new UnifySameDomain(_wrapped, true, true, true);
-        upgrader.AllowInternalEdges(false);
         // Cleaning is best effort: on failure the uncleaned shape is still usable
-        try
-        {
-            upgrader.Build();
-            var record = HistoryHere();
-            var unified = ShapeHistory.FromUnify(upgrader);
-            return Placed(TopoUtil.Downcast(upgrader.Shape())).MadeBy(record is null ? unified : record.Merge(unified));
-        }
-        catch (FailureException)
+        if (!_wrapped.Unify(CleanOptions).TryGetValue(out var built))
         {
             Warnings.Warn($"Unable to clean {this}");
             return this;
         }
+        var record = HistoryHere();
+        var unified = ShapeHistory.FromHistory(built.History);
+        return Placed(TopoUtil.Downcast(built.Shape)).MadeBy(record is null ? unified : record.Merge(unified));
     }
 
     internal Shape FixCore()
@@ -150,16 +140,14 @@ public abstract partial class Shape
         if (matrix.GTrsf.Form == TransformForm.Other)
         {
             // A general affine transform (stretch, shear): only GTransform can apply it, converting geometry to splines
-            var builder = new GTransform(_wrapped, matrix.GTrsf, true);
-            result = builder.Shape();
+            result = Failures.Get(_wrapped.Transformed(matrix.GTrsf, copyGeometry: true), () => "transform").Shape;
         }
         else
         {
             // A similarity: Transform applies it exactly and keeps the geometry types; GTransform would drop its
             // scale factor, which a gp_GTrsf of any recognised form keeps apart from its matrix
             var trsf = matrix.GTrsf.ToTransform();
-            var builder = new Transform(_wrapped, trsf, true);
-            result = builder.Shape();
+            result = Failures.Get(_wrapped.Transformed(trsf, copyGeometry: true), () => "transform").Shape;
         }
         return Rewrapped(result);
     }
@@ -169,8 +157,7 @@ public abstract partial class Shape
         if (IsEmpty)
             return this;
         var trsf = matrix.GTrsf.ToTransform();
-        var builder = new Transform(_wrapped, trsf);
-        return Rewrapped(builder.Shape());
+        return Rewrapped(Failures.Get(_wrapped.Transformed(trsf), () => "transform").Shape);
     }
 
     internal Shape TransformedCore(Vector rotate, Vector offset)
@@ -201,11 +188,18 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             throw new InvalidOperationException("Cannot approximate an empty shape");
-        var parameters = new RestrictionParameters();
-        var result = Customize.BSplineRestriction(_wrapped, tolerance, tolerance, degree, 1,
-                                                    Continuity.C0, Continuity.C0,
-                                                    true, !nurbs, parameters);
-        return CastLike(result);
+        var options = new BSplineApproximationOptions
+        {
+            Tolerance3D = tolerance,
+            Tolerance2D = tolerance,
+            MaxDegree = degree,
+            MaxSegments = 1,
+            Continuity3D = Continuity.C0,
+            Continuity2D = Continuity.C0,
+            PreferDegree = true,
+            Polynomial = !nurbs,
+        };
+        return CastLike(Failures.Get(_wrapped.ApproximateBSplines(options), () => "approximate as splines").Shape);
     }
 
     internal Shape WithLocationCore(Location location)
@@ -240,11 +234,6 @@ public static class ShapeOperations
         /// <summary>The shape fixed by <c>ShapeFix_Shape</c> if it isn't valid, else this shape.</summary>
         public T Fix() => (T)shape.FixCore();
 
-        /// <summary>
-        /// A copy carrying a triangulation within <paramref name="tolerance"/> (and <paramref name="angularTolerance"/>
-        /// radians), for exporters that write meshes; build123d's <c>mesh</c> meshes the shape in place.
-        /// </summary>
-        public T Meshed(double tolerance, double angularTolerance = 0.1) => (T)shape.Rewrapped(shape.MeshedCopy(tolerance, angularTolerance));
 
         /// <summary>A copy mirrored about <paramref name="mirrorPlane"/> (default <see cref="Plane.XY"/>), without the original.</summary>
         public T Mirror(Plane? mirrorPlane = null) => (T)shape.MirrorCore(mirrorPlane);

@@ -171,7 +171,7 @@ internal sealed class FaceFaceJob : FaceFace, BooleanParallel.ISolver
     }
 }
 
-public partial class PaveFiller
+internal partial class PaveFiller
 {
     private static bool IsPlaneFF(Surface surface)
     {

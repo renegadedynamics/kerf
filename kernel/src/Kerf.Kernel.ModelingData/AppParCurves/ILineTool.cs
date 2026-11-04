@@ -25,7 +25,7 @@ namespace Kerf.Engine.Approximation;
 /// </remarks>
 /// <typeparam name="MultiLine">The MultiLine: a set of points, each made of NbP3d 3d points and NbP2d 2d points.
 /// A class is expected (it is passed by value to every member).</typeparam>
-public interface ILineTool<MultiLine>
+internal interface ILineTool<MultiLine>
 {
     /// <summary>The index of the first point of the line.</summary>
     static abstract int FirstPoint(MultiLine ml);

@@ -16,8 +16,6 @@
 // (test_location test_intersection's e1.intersect("line") is kept as the ArgumentException the port's object
 // overload throws.)
 // - test_rotation.py and test_matrix.py: no cases use topology.
-using Kerf.Engine.Measurement;
-using Occt;
 using Ops = Kerf.Modeling.Operations;
 
 namespace Build123d.Tests.Geometry;
@@ -126,10 +124,8 @@ public class PlaneWithShapesTests
         for (int i = 0; i < faces.Count; i++)
         {
             var p = new Plane(faces[i]);
-            var props = new Properties();
             var face = faces[i].Wrapped;
-            MassPropertiesBuilder.SurfaceProperties(face, props);
-            var centre = props.CentreOfMass();
+            var centre = global::Kerf.Measurement.MeasureOperations.MassProperties(face, global::Kerf.Measurement.Dimension.Area).CentreOfMass;
             Check.AlmostEqual(new Vector(centre), p.Origin, 6);
             Check.AlmostEqual(expected[i].X, p.XDir, 6);
             Check.AlmostEqual(expected[i].Y, p.YDir, 6);
@@ -232,9 +228,9 @@ public class BoundBoxWithShapesTests
 {
     static BoundBox Box(Vector min, Vector max)
     {
-        var bnd = new global::Kerf.Engine.Geometry.Bounds.Box();
-        bnd = bnd.Updated(min.X, min.Y, min.Z, max.X, max.Y, max.Z);
-        return BoundBox.FromBndBox(bnd);
+        var box = new global::Kerf.Geometry.BoundingBox(new global::Kerf.Geometry.Point3D(min.X, min.Y, min.Z),
+                                                       new global::Kerf.Geometry.Point3D(max.X, max.Y, max.Z));
+        return BoundBox.FromBoundingBox(box);
     }
 
     [Fact]
@@ -321,7 +317,7 @@ public class BoundBoxWithShapesTests
 
     [Fact]
     public void BoundingBoxRepr() =>
-        Assert.Equal("bbox: 0.0 <= x <= 1.0, 0.0 <= y <= 1.0, 0.0 <= z <= 1.0", Solid.MakeBox(1, 1, 1).BoundingBox().ToString());
+        Assert.Equal("bbox: 0 <= x <= 1, 0 <= y <= 1, 0 <= z <= 1", Solid.MakeBox(1, 1, 1).BoundingBox().ToString());
 
     [Fact]
     public void CenterOfBoundbox() => Check.AlmostEqual((0.5, 0.5, 0.5), Solid.MakeBox(1, 1, 1).BoundingBox().Center(), 5);
@@ -331,8 +327,9 @@ public class BoundBoxWithShapesTests
     {
         var s = Solid.MakeSphere(3);
         Check.AlmostEqual((6, 6, 6), s.BoundingBox().Size, 5);
-        var meshed = s.Meshed(1e-3);
-        Check.AlmostEqual((6, 6, 6), meshed.BoundingBox().Size, 5);
+        // A mesh no longer changes the shape (the kernel meshes in an overlay): meshing leaves the box clean
+        s.Triangulate(1e-3);
+        Check.AlmostEqual((6, 6, 6), s.BoundingBox().Size, 5);
     }
 }
 
@@ -387,7 +384,7 @@ public class OrientedBoundBoxWithShapesTests
     public void InitFromBndObb()
     {
         var obb1 = Solid.MakeBox(1, 1, 1).OrientedBoundingBox();
-        var obb2 = OrientedBoundBox.FromBndObb(obb1.Wrapped);
+        var obb2 = OrientedBoundBox.FromOrientedBox(obb1.Wrapped);
         Check.AlmostEqual(obb1.Diagonal, obb2.Diagonal, 6);
         Check.TupleAlmostEqual(Check.Of(obb1.Size), Check.Of(obb2.Size), 6);
         Check.TupleAlmostEqual(Check.Of(obb1.Center()), Check.Of(obb2.Center()), 6);
@@ -408,13 +405,13 @@ public class OrientedBoundBoxWithShapesTests
     public void Repr()
     {
         var rep = Solid.MakeBox(1, 1, 1).OrientedBoundingBox().ToString();
-        Assert.Contains("OrientedBoundBox(center=Vector(", rep);
-        Assert.Contains("size=Vector(", rep);
-        Assert.Contains("plane=Plane(", rep);
+        Assert.Contains("OrientedBoundBox(center=(", rep);
+        Assert.Contains("size=(", rep);
+        Assert.Contains("plane=((", rep);
 
         const string n = @"([-\d\.]+)";
-        var pattern = $@"OrientedBoundBox\(center=Vector\({n}, {n}, {n}\), size=Vector\({n}, {n}, {n}\), "
-                      + $@"plane=Plane\(\({n}, {n}, {n}\), \({n}, {n}, {n}\), \({n}, {n}, {n}\)\)\)";
+        var pattern = $@"OrientedBoundBox\(center=\({n}, {n}, {n}\), size=\({n}, {n}, {n}\), "
+                      + $@"plane=\(\({n}, {n}, {n}\), \({n}, {n}, {n}\), \({n}, {n}, {n}\)\)\)";
         var m = System.Text.RegularExpressions.Regex.Match(rep, "^" + pattern);
         Assert.True(m.Success, "The ToString() didn't match the expected format.");
         double G(int i) => double.Parse(m.Groups[i].Value, System.Globalization.CultureInfo.InvariantCulture);

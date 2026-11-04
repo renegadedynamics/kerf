@@ -4,9 +4,6 @@
 // - TestEdge.test_make_spline_failure, test_make_spline_approx_failure: patch OCCT classes with mocks.
 // - TestEdgeParamAt.test_param_at_point_fallback_returns_native_parameter_in_both_modes,
 //   test_param_at_point_search_fallback, test_param_at_point_not_found: patch OCCT classes with mocks.
-using Kerf.Engine.Healing;
-using Kerf.Engine.Topology;
-using Occt;
 using static Kerf.Modeling.Operations;
 
 namespace Build123d.Tests.Topology;
@@ -519,11 +516,7 @@ public class EdgeTests
         var rim = Edge.MakeSpline([.. Enumerable.Range(0, 11).Select(i => -10 + 2 * i).Select(x =>
             new Vector(x, 5 * Math.Cos(Math.PI / 2 * x / 10), 5 * Math.Sin(Math.PI / 2 * x / 10)))]);
         var wall = Face.MakeSurfaceFromCurves(along, rim);
-        var sewing = new Sewing(1e-6);
-        sewing.Add(plate.Wrapped);
-        sewing.Add(wall.Wrapped);
-        sewing.Perform();
-        var shell = new Shell(ShapeCasts.Shell(sewing.SewedShape()));
+        var shell = new Shell((global::Kerf.Topology.Shell)TopoUtil.SewFaces([plate.Wrapped, wall.Wrapped], 1e-6));
         var shared = shell.Edges().Where(e => e.GeomType == GeomType.Line && Math.Abs(e.Center().Y) < 1e-6).ToList();
         Assert.Single(shared);
         Assert.Equal(Convexity.Saddle, shared[0].Convexity);
@@ -601,7 +594,7 @@ public class EdgeParamAtTests
     static Vector Evaluate(Edge edge, double param)
     {
         var adaptor = edge.GeomAdaptor();
-        var p = adaptor.Value(param);
+        var p = adaptor.Evaluate(param);
         return new Vector(p);
     }
 
@@ -754,7 +747,7 @@ public class EdgeParamAtTests
         // Naive "parameter space" quarter, as if the parameter were the normalized length
         double first, last;
         var adaptor = edge.GeomAdaptor();
-        (first, last) = (adaptor.FirstParameter(), adaptor.LastParameter());
+        (first, last) = (adaptor.Range.Min, adaptor.Range.Max);
         var uNaive = first + 0.25 * (last - first);
         var ptNaive = Evaluate(edge, uNaive);
 

@@ -7,11 +7,7 @@
 // - ShapeHistory.deep_copy_drops_the_record: copy.deepcopy has no counterpart.
 // - ShapeHistory.merge_returns_self_and_tolerates_none: records are immutable, so merging an empty record returns a
 //   new record rather than self; only the None case returns the same record.
-using Kerf.Engine.Construction.Api;
-using Kerf.Engine.Healing;
-using Kerf.Engine.Topology;
 using Kerf.Geometry;
-using Occt;
 using Ops = Kerf.Modeling.Operations;
 
 namespace Build123d.Tests.Topology;
@@ -64,7 +60,7 @@ public class ShapeHistoryTests
         var side = _box.Faces().SortBy(Axis.X)[0];
         var merged = history.Modified(side.Wrapped);
         Assert.Single(merged);
-        Check.AlmostEqual(150, new Face(ShapeCasts.Face(merged[0])).Area, 5);
+        Check.AlmostEqual(150, new Face(((global::Kerf.Topology.Face)(merged[0]))).Area, 5);
     }
 
     [Fact]
@@ -115,13 +111,13 @@ public class ShapeHistoryTests
     {
         var square = Face.MakeRect(4, 4);
         var vec = new Vector3D(0, 0, 5);
-        var prism = new ApiMakePrism(square.Wrapped, vec);
-        prism.Build();
-        var history = ShapeHistory.FromAlgorithm(prism, [square.Wrapped], prism.Shape());
+        var prism = global::Kerf.Construction.Sweeps.Extrude(square.Wrapped, vec).Value;
+        var history = ShapeHistory.FromAlgorithm(s => prism.History.Modified(s), s => prism.History.Generated(s), [square.Wrapped], prism.Shape);
+        // The kernel's extrusion history also generates each sub-shape's copy in the top cap (decision 1558)
         foreach (var edge in square.Edges())
-            Assert.Single(history.Generated(edge.Wrapped));
+            Assert.Single(history.Generated(edge.Wrapped), g => g.Type == global::Kerf.Topology.ShapeType.Face);
         foreach (var vertex in square.Vertices())
-            Assert.Single(history.Generated(vertex.Wrapped));
+            Assert.Single(history.Generated(vertex.Wrapped), g => g.Type == global::Kerf.Topology.ShapeType.Edge);
         Assert.False(history.IsRemoved(square.Wrapped));
     }
 
@@ -131,11 +127,8 @@ public class ShapeHistoryTests
     {
         var left = Face.MakeRect(4, 4);
         var right = Face.MakeRect(4, 4, new Plane((4, 0, 0)));
-        var sewing = new Sewing(1e-6);
-        sewing.Add(left.Wrapped);
-        sewing.Add(right.Wrapped);
-        sewing.Perform();
-        var history = ShapeHistory.FromSewing(sewing, [left.Wrapped, right.Wrapped]);
+        var sewn = global::Kerf.Healing.HealingOperations.Sew([left.Wrapped, right.Wrapped], new global::Kerf.Healing.SewOptions { Tolerance = 1e-6 }).Value;
+        var history = ShapeHistory.FromHistory(sewn.History, [left.Wrapped, right.Wrapped]);
         foreach (var face in new[] { left, right })
             Assert.Single(history.Modified(face.Wrapped));
         // the two coincident edges were merged into one edge of the shell
@@ -235,8 +228,8 @@ public class ShapeHistoryTests
         var expected = Answers(original);
         var actual = Answers(placed, s =>
         {
-            var transform = new Transform(s.Wrapped, inverse, true);
-            return Shape.Cast(transform.Shape());
+            var transform = global::Kerf.Construction.ShapeTransforms.Transformed(s.Wrapped, inverse, copyGeometry: true).Value;
+            return Shape.Cast(transform.Shape);
         });
         foreach (var key in expected.Keys)
             Assert.True(expected[key].SequenceEqual(actual[key]), $"{key}: expected [{string.Join("; ", expected[key])}] but got [{string.Join("; ", actual[key])}]");
@@ -358,11 +351,7 @@ public class ShapeHistoryTests
     {
         var subs = ShapeHistory.TrackedSubshapes([_box.Wrapped, new global::Kerf.Topology.Shape()]);
         Assert.Equal(8 + 12 + 6 + 1, subs.Length);
-        var kernelList = new NCollection_List<global::Kerf.Topology.Shape>();
-        foreach (var face in _box.Faces())
-            kernelList.Append(face.Wrapped);
-        Assert.Equal(6, TopoUtil.Items(kernelList).Length);
-        Assert.Equal(6, kernelList.Extent());   // the source is not consumed
+
     }
 }
 

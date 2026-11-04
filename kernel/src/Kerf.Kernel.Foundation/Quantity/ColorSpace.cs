@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Foundation;
 
 /// <summary>The colour spaces a <see cref="LinearColor"/> is given or read in.</summary>
-public enum ColorSpace
+internal enum ColorSpace
 {
     /// <summary>Normalized linear RGB (red, green, blue) values within range [0..1] for each component.</summary>
     TocRgb,

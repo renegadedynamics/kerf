@@ -1,5 +1,4 @@
 using Kerf.Geometry;
-using Occt;
 
 namespace Kerf.Modeling;
 

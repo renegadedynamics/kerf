@@ -1,18 +1,10 @@
-using Kerf.Engine.Booleans.Api;
-using Kerf.Engine.Classification;
-using Kerf.Engine.Collections;
-using Kerf.Engine.Construction.Api;
-using Kerf.Engine.Features;
-using Kerf.Engine.Fillets.Api;
-using Kerf.Engine.Fillets.Data;
-using Kerf.Engine.Foundation;
-using Kerf.Engine.Measurement;
-using Kerf.Engine.Offsets;
-using Kerf.Engine.Offsets.Api;
-using Kerf.Engine.Topology;
+using Kerf.Construction;
+using Kerf.Features;
+using Kerf.Fillets;
+using Kerf.Measurement;
+using Kerf.Offsets;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -28,10 +20,10 @@ public abstract partial class Shape3D : Shape
     {
         var result = TopoUtil.Downcast(shape);
         if (result.IsCompound())
-            result = TopoUtil.Downcast(TopoUtil.UnwrapCompound(ShapeCasts.Compound(result)));
+            result = TopoUtil.Downcast(TopoUtil.UnwrapCompound((global::Kerf.Topology.Compound)result));
         if (result.IsCompound())
-            return MakeComposite(TopoUtil.TopLevelShapes(result).Select(s => new Solid(ShapeCasts.Solid(s))), 3);
-        return new Solid(ShapeCasts.Solid(result));
+            return MakeComposite(TopoUtil.TopLevelShapes(result).Select(s => new Solid((global::Kerf.Topology.Solid)s)), 3);
+        return new Solid((global::Kerf.Topology.Solid)result);
     }
 
     /// <summary>The centre of mass (by default) or of the bounding box; the geometric centre isn't supported.</summary>
@@ -46,12 +38,7 @@ public abstract partial class Shape3D : Shape
             case CenterOf.Geometry:
                 throw new ArgumentException("Center of GEOMETRY is not supported for this object");
             case CenterOf.Mass:
-            {
-                var props = new Properties();
-                MassProperties(TopoShape, props);
-                var c = props.CentreOfMass();
-                return new Vector(c);
-            }
+                return new Vector(MassPropertiesOf(TopoShape)!.CentreOfMass);
             default:
                 return BoundingBox().Center();
         }
@@ -71,34 +58,26 @@ public abstract partial class Shape3D : Shape
             if (edges.Any(e => !faceEdges.Contains(e)))
                 throw new ArgumentException("Some edges are not part of the face");
         }
-        var map = new IndexedMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
-        Exploration.MapShapesAndAncestors(TopoShape, global::Kerf.Topology.ShapeType.Edge, global::Kerf.Topology.ShapeType.Face, map);
-        var builder = new MakeChamfer(TopoShape);
+        var graph = ShapeGraph.Build(TopoShape);
         var distance2 = length2 is { } l2 && l2 != 0 ? l2 : length;
+        var specs = new List<ChamferSpec>();
         foreach (var edge in edges)
         {
             global::Kerf.Topology.Face topoFace;
             if (face is not null)
                 topoFace = face.TopoFace;
             else
-            {
-                var ancestors = map.GetValue(edge.TopoShape);
-                topoFace = ShapeCasts.Face(ancestors.First());
-            }
-            builder.Add(length, distance2, edge.TopoEdge, topoFace);
+                topoFace = (global::Kerf.Topology.Face)graph.Ancestors(edge.TopoShape, global::Kerf.Topology.ShapeType.Face).First();
+            // BRepFilletAPI_MakeChamfer's Add of two distances on the face
+            specs.Add(new ChamferSpec(edge.TopoEdge, length, distance2, ReferenceFace: topoFace));
         }
-        Shape result;
-        try
-        {
-            result = Make3DResult(builder.Shape());
-            if (!result.IsValid)
-                throw new ArgumentException("Failed creating a chamfer, try a smaller length value(s)");
-        }
-        catch (FailureException e)
-        {
-            throw new ArgumentException("Failed creating a chamfer, try a smaller length value(s)", e);
-        }
-        return result.MadeBy(ShapeHistory.FromAlgorithm(builder, [TopoShape], result.TopoShape));
+        var chamfered = TopoShape.Chamfer(specs);
+        if (!chamfered.TryGetValue(out var built))
+            throw new ArgumentException("Failed creating a chamfer, try a smaller length value(s)", new KerfException(chamfered.Diagnostics));
+        var result = Make3DResult(built.Shape);
+        if (!result.IsValid)
+            throw new ArgumentException("Failed creating a chamfer, try a smaller length value(s)");
+        return result.MadeBy(ShapeHistory.FromAlgorithm(s => built.History.Modified(s), s => built.History.Generated(s), [TopoShape], result.TopoShape));
     }
 
     /// <summary>
@@ -118,18 +97,18 @@ public abstract partial class Shape3D : Shape
     {
         var shape = TopoShape;
         var noBasis = new global::Kerf.Topology.Face();
-        foreach (var face in faces)
+        // BRepFeat_MakeDPrism, its sketch face not modified
+        var options = new ExtrudeUntilOptions
         {
-            var feature = new MakeDraftPrism(shape, face.TopoFace, basis?.TopoFace ?? noBasis,
-                                                        taper * Constants.DegToRad, additive ? 1 : 0, false);
-            if (upToFace is not null)
-                feature.Perform(upToFace.TopoShape);
-            else if (thruAll || depth is null)
-                feature.PerformThruAll();
-            else
-                feature.Perform(depth.Value);
-            shape = feature.Shape();
-        }
+            Until = upToFace is not null ? ExtrudeLimit.Face : thruAll || depth is null ? ExtrudeLimit.ThroughAll : ExtrudeLimit.Height,
+            Face = upToFace?.TopoFace,
+            Height = upToFace is null && !(thruAll || depth is null) ? depth!.Value : 0,
+            Fuse = additive,
+            ModifySketchFace = false,
+        };
+        foreach (var face in faces)
+            shape = Failures.Get(shape.ExtrudeUntil(face.TopoFace, basis?.TopoFace ?? noBasis, taper * Constants.DegToRad, options),
+                                 () => "draft prism").Shape;
         return CastLike(shape);
     }
 
@@ -138,50 +117,51 @@ public abstract partial class Shape3D : Shape
     public Shape Fillet(double radius, IEnumerable<Edge> edgeList)
     {
         var edges = edgeList.Select(e => e.TopoEdge).ToList();
-        var builder = new MakeFillet(TopoShape);
-        foreach (var edge in edges)
-            builder.Add(radius, edge);
-        Shape result;
-        try
+        var filleted = TopoShape.Fillet(edges, radius);
+        Shape? result = null;
+        Exception? failure = null;
+        if (filleted.TryGetValue(out var built))
         {
-            result = Make3DResult(builder.Shape());
+            result = Make3DResult(built.Shape);
             if (!result.IsValid)
-                throw new InvalidOperationException();
+                failure = new InvalidOperationException();
         }
-        catch (Exception e) when (e is FailureException or KerfException or InvalidOperationException)
+        else
+            failure = new KerfException(filleted.Diagnostics);
+        if (failure is not null)
         {
             string details = "";
             try
             {
-                details = FilletFailureDetails(builder, edges);
+                details = filleted.IsFailure ? FilletFailureDetails(filleted.Diagnostics, edges) : "";
             }
             catch (Exception)
             {
                 // Diagnostics mustn't mask the kernel's failure
             }
             throw new ArgumentException(
-                $"Failed creating a fillet with radius of {PyFormat.Repr(radius)}{details}, try a smaller value or use "
-                + "max_fillet() to find the largest valid fillet radius", e);
+                $"Failed creating a fillet with radius of {Formatting.Number(radius)}{details}, try a smaller value or use "
+                + "max_fillet() to find the largest valid fillet radius", failure);
         }
-        return result.MadeBy(ShapeHistory.FromAlgorithm(builder, [TopoShape], result.TopoShape));
+        return result!.MadeBy(ShapeHistory.FromAlgorithm(s => built!.History.Modified(s), s => built!.History.Generated(s),
+                                                         [TopoShape], result!.TopoShape));
     }
 
-    /// <summary>The faulty contours of a failed fillet, in terms of the caller's selected edges.</summary>
-    private static string FilletFailureDetails(MakeFillet builder, List<global::Kerf.Topology.Edge> edges)
+    /// <summary>
+    /// The faulty contours of a failed fillet, in terms of the caller's selected edges: the kernel reports each faulty contour
+    /// after its first error, with the contour's status as its code and the contour's edges.
+    /// </summary>
+    private static string FilletFailureDetails(System.Collections.Immutable.ImmutableArray<Diagnostic> diagnostics, List<global::Kerf.Topology.Edge> edges)
     {
         var faulty = new Dictionary<string, HashSet<Edge>>();
         var order = new List<string>();
-        for (int i = 1; i <= builder.FaultyContourCount; i++)
+        foreach (var contour in diagnostics.Where(d => d.IsError).Skip(1))
         {
-            var contour = builder.FaultyContour(i);
-            // A faulty stripe past NbContours() can lack a spine, which OCCT dereferences unchecked
-            if (contour < 1 || contour > builder.ContourCount)
-                continue;
-            var reason = builder.StripeStatus(contour) switch
+            var reason = contour.Code.Value switch
             {
-                ErrorStatus.WalkingFailure => "walking failure",
-                ErrorStatus.StartsolFailure => "no starting solution",
-                ErrorStatus.TwistedSurface => "twisted surface",
+                "fillet.walking-failed" => "walking failure",
+                "fillet.no-starting-solution" => "no starting solution",
+                "fillet.twisted-surface" => "twisted surface",
                 _ => "error",
             };
             if (!faulty.TryGetValue(reason, out var set))
@@ -189,8 +169,8 @@ public abstract partial class Shape3D : Shape
                 faulty[reason] = set = [];
                 order.Add(reason);
             }
-            for (int j = 1; j <= builder.NbEdges(contour); j++)
-                set.Add(new Edge(builder.Edge(contour, j)));
+            foreach (var edge in contour.Shapes)
+                set.Add(new Edge((global::Kerf.Topology.Edge)edge));
         }
         if (faulty.Count == 0)
             return "";
@@ -205,7 +185,7 @@ public abstract partial class Shape3D : Shape
                 if (set.Contains(selected[i]))
                 {
                     rejected.Add(i);
-                    entries.Add($"[{i}] at {selected[i].Center().ToString(".6g")}");
+                    entries.Add($"[{i}] at {selected[i].Center().ToString("G6")}");
                 }
             var tangentCount = set.Count(e => !selected.Contains(e));
             if (tangentCount > 0)
@@ -229,20 +209,10 @@ public abstract partial class Shape3D : Shape
         {
             var windowMid = (windowMin + windowMax) / 2;
             if (iteration == maxIterations)
-                throw new InvalidOperationException($"Failed to find the max value within {PyFormat.Repr(tolerance)} in {maxIterations}");
-            var builder = new MakeFillet(TopoShape);
-            foreach (var edge in edges)
-                builder.Add(windowMid, edge);
+                throw new InvalidOperationException($"Failed to find the max value within {Formatting.Number(tolerance)} in {maxIterations}");
             // Do these numbers work? If not, try the smaller window
-            try
-            {
-                if (!Make3DResult(builder.Shape()).IsValid)
-                    return Search(windowMin, windowMid, iteration + 1);
-            }
-            catch (FailureException)
-            {
+            if (!TopoShape.Fillet(edges, windowMid).TryGetValue(out var built) || !Make3DResult(built.Shape).IsValid)
                 return Search(windowMin, windowMid, iteration + 1);
-            }
             // They work: close enough, or try the larger window
             return windowMid - windowMin <= tolerance ? windowMid : Search(windowMid, windowMax, iteration + 1);
         }
@@ -261,31 +231,28 @@ public abstract partial class Shape3D : Shape
         if (kind == Kind.Tangent)
             throw new ArgumentException("Kind.TANGENT not supported");
         var join = kind == Kind.Arc ? JoinKind.Arc : JoinKind.Intersection;
-        var openings = TopoUtil.ListOf(faceList.Select(f => f.TopoShape));
-        var builder = new MakeThickSolid();
-        builder.MakeThickSolidByJoin(TopoShape, openings, thickness, tolerance, global::Kerf.Offsets.OffsetMode.Skin, true, false, join);
-        builder.Build();
-        var shellShape = builder.Shape();
+        // BRepOffsetAPI_MakeThickSolid by join, in skin mode, with intersections
+        var options = new OffsetOptions { Tolerance = tolerance, Mode = OffsetMode.Skin, Intersection = true, SelfIntersection = false, Join = join };
+        var made = TopoShape.ThickSolid(faceList.Select(f => f.TopoFace), thickness, options);
         // OCCT can report success and still hand back a null shape
-        if (shellShape.IsNull)
+        if (!made.TryGetValue(out var thick) || thick.Shape.IsNull)
             throw new InvalidOperationException("hollow Error, an alternative kind may resolve this error");
+        var shellShape = thick.Shape;
         if (faceList.Count > 0)
             return CastLike(shellShape);
         // With no faces removed, make a watertight solid of the two shells
         var shell1 = CastLike(shellShape).Shells()[0].TopoShell;
         var shell2 = Shells()[0].TopoShell;
         // The first can be the outer or inner shell depending on the thickness's sign
-        var solid = thickness > 0 ? new MakeSolid(shell1, shell2) : new MakeSolid(shell2, shell1);
-        return CastLike(solid.Shape()).Fix();
+        var solid = Failures.Get(global::Kerf.Topology.Solid.FromShells(thickness > 0 ? [shell1, shell2] : [shell2, shell1]), () => "solid");
+        return CastLike(solid).Fix();
     }
 
     /// <summary>Whether a point is inside the solid (or on its surface) within a tolerance.</summary>
     public bool IsInside(Vector point, double tolerance = 1.0e-6)
     {
-        var classifier = new SolidClassifier(TopoShape);
         var p = point.ToGpPnt();
-        classifier.Perform(p, tolerance);
-        return classifier.State() == Containment.In || classifier.IsOnAFace;
+        return TopoShape.ClassifyPoint(p, tolerance) == Containment.In || TopoShape.IsOnFace(p, tolerance);
     }
 
     /// <summary>
@@ -299,23 +266,24 @@ public abstract partial class Shape3D : Shape
         if (kind == Kind.Tangent)
             throw new ArgumentException("Kind.TANGENT not supported");
         var join = kind == Kind.Arc ? JoinKind.Arc : JoinKind.Intersection;
-        var faces = TopoUtil.ListOf(faceList.Select(f => f.TopoShape));
-        var builder = new MakeThickSolid();
-        builder.MakeThickSolidByJoin(TopoShape, faces, thickness, tolerance, global::Kerf.Offsets.OffsetMode.Skin, true, false, join, true);
-        builder.Build();
-        global::Kerf.Topology.Shape solid;
-        try
+        // BRepOffsetAPI_MakeThickSolid by join, in skin mode, with intersections, internal edges removed
+        var options = new OffsetOptions
         {
-            solid = builder.Shape();
-        }
-        catch (FailureException e)
-        {
-            throw new InvalidOperationException("offset Error, an alternative kind may resolve this error", e);
-        }
+            Tolerance = tolerance,
+            Mode = OffsetMode.Skin,
+            Intersection = true,
+            SelfIntersection = false,
+            Join = join,
+            RemoveInternalEdges = true,
+        };
+        var made = TopoShape.ThickSolid(faceList.Select(f => f.TopoFace), thickness, options);
+        if (!made.TryGetValue(out var thick))
+            throw new InvalidOperationException("offset Error, an alternative kind may resolve this error", new KerfException(made.Diagnostics));
+        var solid = thick.Shape;
         if (solid.IsNull)
             throw new InvalidOperationException("offset Error, an alternative kind may resolve this error");
         if (solid.Type == global::Kerf.Topology.ShapeType.Solid)
-            solid = ThreeD.ForwardSolid(ShapeCasts.Solid(solid));
+            solid = ThreeD.ForwardSolid((global::Kerf.Topology.Solid)solid);
         var result = CastLike(solid);
         // The solid can be inverted: if so, reverse it
         return result.Volume < 0 ? result.Rewrapped(result.TopoShape.Reversed()) : result;
@@ -335,8 +303,7 @@ public abstract partial class Shape3D : Shape
         {
             case Solid or Face or Shell or Edge or Wire:
             {
-                var common = new Common();
-                results.AddRange(BoolOpList([this], [shape], common).Expand());
+                results.AddRange(BoolOpList([this], [shape], BooleanKind.Common).Expand());
                 break;
             }
             case Vertex vertex:
@@ -381,19 +348,13 @@ internal static class ThreeD
     internal static global::Kerf.Topology.Shape ForwardSolid(global::Kerf.Topology.Solid solid)
     {
         var flags = new List<Orientation> { solid.Orientation };
-        var shells = new Iterator(solid, true, true);
-        for (; shells.More(); shells.Next())
-            flags.Add(shells.Value().Orientation);
+        foreach (var shell in solid.Children)
+            flags.Add(shell.Orientation);
         if (flags.All(f => f == Orientation.Forward))
             return solid;
-        var forwardShells = new List<global::Kerf.Topology.Shape>();
-        for (shells = new Iterator(solid, true, true); shells.More(); shells.Next())   // orientations composed
-        {
-            var faces = new List<global::Kerf.Topology.Shape>();
-            for (var it = new Iterator(shells.Value(), true, true); it.More(); it.Next())
-                faces.Add(it.Value());
-            forwardShells.Add(Builder.MakeShell(faces));
-        }
-        return Builder.MakeSolid(forwardShells);
+        var forwardShells = new List<global::Kerf.Topology.Shell>();
+        foreach (var shell in solid.Children)   // orientations composed
+            forwardShells.Add(global::Kerf.Topology.Shell.Create(shell.Children.Select(f => (global::Kerf.Topology.Face)f)));
+        return global::Kerf.Topology.Solid.Create(forwardShells);
     }
 }

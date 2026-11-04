@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>A function of a single variable whose first derivative is available.</summary>
-public abstract class FunctionWithDerivative : Function
+internal abstract class FunctionWithDerivative : Function
 {
     /// <summary>Computes the derivative <paramref name="d"/> at <paramref name="x"/>; false if it could not be computed.</summary>
     public abstract bool Derivative(double x, out double d);

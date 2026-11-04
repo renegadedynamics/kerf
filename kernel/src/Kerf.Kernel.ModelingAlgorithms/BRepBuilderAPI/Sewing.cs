@@ -45,7 +45,7 @@ namespace Kerf.Engine.Healing;
 /// handed out. The context (<see cref="GetContext"/>) records the caller's sub-shapes, as OCCT's records its inputs'.
 /// Inside another operation's overlay, sewing runs in place in that one.</para>
 /// </remarks>
-public class Sewing : Transient
+internal class Sewing : Transient
 {
     protected double _tolerance;
     protected bool _sewing;

@@ -1,5 +1,4 @@
-using Kerf.Engine.Geometry.Bounds;
-using Occt;
+using Kerf.Geometry;
 
 namespace Kerf.Modeling;
 
@@ -9,19 +8,16 @@ namespace Kerf.Modeling;
 /// <remarks>The axes are arbitrary and may differ between platforms and OCCT versions.</remarks>
 public sealed class OrientedBoundBox
 {
-    /// <summary>The OCCT box. Never modified.</summary>
-    internal Obb Wrapped { get; }
+    /// <summary>The kernel's box.</summary>
+    internal OrientedBox Wrapped { get; }
 
-    OrientedBoundBox(Obb obb) => Wrapped = obb;
+    OrientedBoundBox(OrientedBox box) => Wrapped = box;
 
-    /// <summary>Wraps a Bnd_OBB this box takes ownership of.</summary>
-    internal static OrientedBoundBox Own(Obb obb) => new(obb);
-
-    /// <summary>An oriented bounding box from an OCCT Bnd_OBB.</summary>
-    public static OrientedBoundBox FromBndObb(Obb obb) => new(obb);
+    /// <summary>An oriented bounding box from the kernel's.</summary>
+    public static OrientedBoundBox FromOrientedBox(OrientedBox box) => new(box);
 
     /// <summary>True for the box of nothing, which has no size or axes.</summary>
-    public bool IsEmpty => Wrapped.IsVoid;
+    public bool IsEmpty => Wrapped.IsEmpty;
 
     /// <summary>
     /// The distinct corners. A degenerate box (of a line or a planar face) has only two or four, and a
@@ -56,7 +52,7 @@ public sealed class OrientedBoundBox
     }
 
     /// <summary>The length of the body diagonal: the object's maximum size.</summary>
-    public double Diagonal => Math.Sqrt(Wrapped.SquareExtent());
+    public double Diagonal => Wrapped.Diagonal;
 
     /// <summary>The location of the box's centre, with its axes.</summary>
     public Location Location => new(Plane);
@@ -67,30 +63,26 @@ public sealed class OrientedBoundBox
     /// <summary>The full extents along the box's axes.</summary>
     public Vector Size => IsEmpty
         ? new Vector(0, 0, 0)
-        : new Vector(Wrapped.XHSize(), Wrapped.YHSize(), Wrapped.ZHSize()) * 2.0;
+        : new Vector(Wrapped.HalfSize) * 2.0;
 
     /// <summary>The primary (X) direction, a unit vector.</summary>
-    public Vector XDirection { get { var d = Wrapped.XDirection(); return new Vector(d); } }
+    public Vector XDirection => IsEmpty ? new Vector(1, 0, 0) : new Vector(Wrapped.XAxis);
 
     /// <summary>The secondary (Y) direction, a unit vector.</summary>
-    public Vector YDirection { get { var d = Wrapped.YDirection(); return new Vector(d); } }
+    public Vector YDirection => IsEmpty ? new Vector(0, 1, 0) : new Vector(Wrapped.YAxis);
 
     /// <summary>The tertiary (Z) direction, a unit vector.</summary>
-    public Vector ZDirection { get { var d = Wrapped.ZDirection(); return new Vector(d); } }
+    public Vector ZDirection => IsEmpty ? new Vector(0, 0, 1) : new Vector(Wrapped.ZAxis);
 
     /// <summary>The centre point.</summary>
-    public Vector Center() { var c = Wrapped.Center(); return new Vector(c); }
+    public Vector Center() => IsEmpty ? new Vector(0, 0, 0) : new Vector(Wrapped.Centre);
 
     /// <summary>True if <paramref name="other"/> lies entirely within this box, by OCCT's criteria.</summary>
-    public bool IsCompletelyInside(OrientedBoundBox other) => Wrapped.IsCompletelyInside(other.Wrapped);
+    public bool IsCompletelyInside(OrientedBoundBox other) => Wrapped.Contains(other.Wrapped);
 
     /// <summary>True if the point is neither inside the box nor on its surface.</summary>
-    public bool IsOutside(Vector point)
-    {
-        var p = point.ToGpPnt();
-        return Wrapped.IsOut(p);
-    }
+    public bool IsOutside(Vector point) => !Wrapped.Contains(point.ToGpPnt());
 
     /// <inheritdoc/>
-    public override string ToString() => $"OrientedBoundBox(center={Center().Repr()}, size={Size.Repr()}, plane={Plane.Repr()})";
+    public override string ToString() => $"OrientedBoundBox(center={Center().ToString("G13")}, size={Size.ToString("G13")}, plane={Plane.ToString("G13")})";
 }

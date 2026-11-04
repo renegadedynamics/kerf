@@ -10,7 +10,7 @@ using System.Numerics;
 namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>A non-generic base for <see cref="Builder{T, TVec}"/> (just to have a named base class).</summary>
-public abstract class BuilderTransient : Transient
+internal abstract class BuilderTransient : Transient
 {
     protected int _maxTreeDepth; //!< Maximum depth of constructed BVH
     protected int _leafNodeSize; //!< Maximum number of objects per leaf
@@ -39,7 +39,7 @@ public abstract class BuilderTransient : Transient
 
 /// <summary>Builds a BVH tree from the bounding boxes (AABBs) of abstract objects.</summary>
 /// <remarks>OCCT's typedef <c>BVH_Builder3d</c> is <c>BVH_Builder&lt;double, NCollection_Vec3&lt;double&gt;&gt;</c>.</remarks>
-public abstract class Builder<T, TVec> : BuilderTransient
+internal abstract class Builder<T, TVec> : BuilderTransient
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

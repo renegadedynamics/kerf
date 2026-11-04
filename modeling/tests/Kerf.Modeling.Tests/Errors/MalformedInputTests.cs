@@ -1,6 +1,4 @@
-using Kerf.Engine.Foundation;
 using System.Text;
-using Occt;
 using Ops = Kerf.Modeling.Operations;
 
 namespace Build123d.Tests.Errors;
@@ -22,7 +20,7 @@ public class MalformedInputTests
         var part = Ops.Fillet(new Box(4, 4, 4).Edges(), 1) - new Cylinder(1, 10);
         foreach (var withTriangles in new[] { false, true })
         {
-            var read = Shape.Cast(Extras.ReadBRep(Brep(part.Meshed(0.1), withTriangles)));
+            var read = Shape.Cast(Extras.ReadBRep(Brep(part, withTriangles)));
             Assert.Equal(part.Volume, read.Volume, 6);
             Assert.Equal(part.Faces().Count, read.Faces().Count);
         }
@@ -36,8 +34,8 @@ public class MalformedInputTests
         for (int length = 0; length < data.Length - 1; length += 13)
         {
             // Most often the end is found as such; cut in the right place, a record is malformed instead
-            var e = Assert.ThrowsAny<FailureException>(() => Extras.ReadBRep(data.AsSpan(0, length)));
-            Assert.Equal("Storage_StreamFormatError", e.OcctType);
+            var e = Assert.Throws<Kerf.KerfException>(() => Extras.ReadBRep(data.AsSpan(0, length)));
+            Assert.Equal("exchange.malformed", e.Error.Code.Value);
         }
     }
 
@@ -46,23 +44,23 @@ public class MalformedInputTests
     [InlineData("hello")]
     [InlineData("CASCADE Topology V3, (c) Open Cascade\nLocations 99999999\n")]
     public void NonBRepIsAnError(string text) =>
-        Assert.Equal("Storage_StreamFormatError", Assert.ThrowsAny<FailureException>(() => Extras.ReadBRep(Encoding.ASCII.GetBytes(text))).OcctType);
+        Assert.Equal("exchange.malformed", Assert.Throws<Kerf.KerfException>(() => Extras.ReadBRep(Encoding.ASCII.GetBytes(text))).Error.Code.Value);
 
     [Fact]
     public void AnOverlongWordIsRefusedBeforeOcctReadsIt()
     {
         // OCCT reads words into fixed buffers without a limit
         var data = Encoding.ASCII.GetBytes("CASCADE Topology V3, (c) Open Cascade\nLocations " + new string('9', 100_000));
-        var e = Assert.ThrowsAny<FailureException>(() => Extras.ReadBRep(data));
+        var e = Assert.Throws<Kerf.KerfException>(() => Extras.ReadBRep(data));
         Assert.Contains("too long", e.Message);
-        Assert.ThrowsAny<FailureException>(() => Extras.ReadBRep("Locations\01"u8));
+        Assert.Throws<Kerf.KerfException>(() => Extras.ReadBRep("Locations\01"u8));
     }
 
     [Fact]
     public void MutatedBRepReadsOrFailsCleanly()
     {
         var sources = new Shape[] { new Box(1, 2, 3), Ops.Fillet(new Box(4, 4, 4).Edges(), 1) - new Cylinder(1, 10), new Sphere(2) };
-        var texts = sources.SelectMany(s => new[] { Brep(s), Brep(s.Meshed(0.1), withTriangles: true) })
+        var texts = sources.SelectMany(s => new[] { Brep(s), Brep(s, withTriangles: true) })
                            .Select(Encoding.ASCII.GetString).ToList();
         int read = 0, refused = 0;
         for (int seed = 0; seed < 300; seed++)
@@ -73,7 +71,7 @@ public class MalformedInputTests
             {
                 shape = Shape.Cast(Extras.ReadBRep(data));
             }
-            catch (FailureException)
+            catch (Kerf.KerfException)
             {
                 refused++;
                 continue;
@@ -87,7 +85,7 @@ public class MalformedInputTests
                 _ = shape.Volume;
                 _ = shape.Faces().Sum(f => f.Area);
             }
-            catch (Exception e) when (e is FailureException or Kerf.KerfException or ArgumentException or InvalidOperationException)
+            catch (Exception e) when (Failures.IsKernelFailure(e) || e is ArgumentException or InvalidOperationException)
             {
             }
         }
@@ -146,7 +144,7 @@ public class MalformedInputTests
         {
             _ = Degenerate[name]();
         }
-        catch (Exception e) when (e is FailureException or Kerf.KerfException or ArgumentException or InvalidOperationException)
+        catch (Exception e) when (Failures.IsKernelFailure(e) || e is ArgumentException or InvalidOperationException)
         {
             Assert.False(string.IsNullOrWhiteSpace(e.Message), $"{name}: an exception without a message");
         }

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// <see cref="Object{T, TVec}"/>, as in OCCT's multiple inheritance. OCCT's default <c>Box()</c> of the whole set
 /// is <see cref="Set.Box{T, TVec}(ISet{T, TVec})"/>, which implementations call.
 /// </remarks>
-public interface ISet<T, TVec>
+internal interface ISet<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

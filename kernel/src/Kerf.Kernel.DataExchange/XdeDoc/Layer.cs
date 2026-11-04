@@ -8,4 +8,4 @@ namespace Kerf.Engine.Exchange.Documents;
 /// <summary>A layer of a tree, as XCAF's layer labels: a name, and whether the layer's shapes are shown.</summary>
 /// <param name="Name">The layer's name, which shapes' <see cref="Attributes.Layers"/> refer to.</param>
 /// <param name="IsVisible">False if the layer is hidden.</param>
-public sealed record Layer(string Name, bool IsVisible = true);
+internal sealed record Layer(string Name, bool IsVisible = true);

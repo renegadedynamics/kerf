@@ -9,7 +9,7 @@ namespace Kerf.Engine.Exchange.Documents;
 /// The kinds of colour a shape carries, as XCAF's <c>XCAFDoc_ColorType</c> (same names and values): a generic colour
 /// (for both surfaces and curves), a surface colour and a curve colour.
 /// </summary>
-public enum ColorType
+internal enum ColorType
 {
     /// <summary>The generic colour: the surfaces' and the curves' where they have none of their own.</summary>
     ColorGen = 0,

@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Extrema;
 
 /// <summary>Which extrema to search for: minima, maxima or both.</summary>
-public enum ExtFlag
+internal enum ExtFlag
 {
     ExtFlag_MIN,
     ExtFlag_MAX,

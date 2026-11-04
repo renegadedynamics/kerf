@@ -18,7 +18,7 @@ namespace Kerf.Engine.Intersection.Curves;
 /// A struct, copied as OCCT copies it. A working tool (as the result structs of decision 54), so it has no
 /// equality. <c>default(IntCurve_IConicTool)</c> has a zero transformation; use the constructors.
 /// </remarks>
-public struct IConicTool : IImpTool
+internal struct IConicTool : IImpTool
 {
     // OCCT's macros naming the parameters by conic: Elips_a/b/c, Hypr_a/b, Line_a/b/c, Circle_r/x0/y0,
     // Parab_f/2p are prm1, prm2, prm3.

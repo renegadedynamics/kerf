@@ -104,7 +104,7 @@ internal sealed class VertexEdge : ParallelAlgo, BooleanParallel.IContextSolver<
     }
 }
 
-public partial class PaveFiller
+internal partial class PaveFiller
 {
     /// <summary>The vertex/edge interferences.</summary>
     protected virtual void PerformVE(ProgressRange range)

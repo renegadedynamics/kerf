@@ -17,7 +17,7 @@ namespace Kerf.Engine.Approximation;
 /// the 3d points (or vectors) in one array, the 2d ones in the other. The arrays are allocated by the caller with at
 /// least one element each, even when there are no points of that dimension.
 /// </remarks>
-public abstract class Function
+internal abstract class Function
 {
     /// <summary>The number of 3d points returned by Value and D1.</summary>
     protected int _nbPnt;

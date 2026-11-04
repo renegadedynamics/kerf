@@ -24,7 +24,7 @@ using static Kerf.Topology.Orientation;
 
 namespace Kerf.Engine.Healing.Upgrade;
 
-public partial class UnifySameDomain
+internal partial class UnifySameDomain
 {
     /// <summary>A chain of edges that can be merged, and the edge they are merged into (null if not merged).</summary>
     protected sealed class SubSequenceOfEdges

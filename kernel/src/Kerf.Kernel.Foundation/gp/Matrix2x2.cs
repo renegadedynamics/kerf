@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry;
 /// <summary>A 2x2 matrix. Rows and columns are numbered from 1, as in OCCT.</summary>
 /// <remarks>OCCT's <c>double myMat[2][2]</c> is four fields here; <c>myMat[i][j]</c> is <c>m{i}{j}</c>.</remarks>
 [StructLayout(LayoutKind.Sequential)]
-public struct Matrix2x2 : IEquatable<Matrix2x2>
+internal struct Matrix2x2 : IEquatable<Matrix2x2>
 {
     internal double _m00, _m01;
     internal double _m10, _m11;

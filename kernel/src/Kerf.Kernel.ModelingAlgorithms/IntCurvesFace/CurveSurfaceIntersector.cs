@@ -33,7 +33,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// <see cref="Perform(in Line3D, double, double)"/>. On surfaces other than the elementary ones it keeps a polyhedron
 /// of the surface, and the sorted boxes of its triangles, for all the curves. It only reads the face.
 /// </remarks>
-public class CurveSurfaceIntersector : Transient
+internal class CurveSurfaceIntersector : Transient
 {
     private readonly BrepTopolTool _topolTool;
     private readonly FaceSurfaceAdaptor _hsurface;

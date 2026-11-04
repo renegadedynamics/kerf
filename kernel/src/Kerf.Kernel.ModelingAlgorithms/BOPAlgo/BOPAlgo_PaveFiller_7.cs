@@ -253,7 +253,7 @@ internal sealed class BPC : BooleanParallel.ISolver
     }
 }
 
-public partial class PaveFiller
+internal partial class PaveFiller
 {
     /// <summary>Makes the split edges of the pave blocks (one per common block).</summary>
     protected void MakeSplitEdges(ProgressRange range)

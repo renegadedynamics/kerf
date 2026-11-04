@@ -36,7 +36,7 @@ namespace Kerf.Engine.Classification;
 /// OCCT's DEBUG_PCLASS_POLYGON block (DrawTrSurf) is left out.
 /// </para>
 /// </remarks>
-public sealed class FaceClassifier2D
+internal sealed class FaceClassifier2D
 {
     private readonly NCollection_Sequence<Class2d> _tabClass = new();
     private readonly NCollection_Sequence<int> _tabOrien = new();

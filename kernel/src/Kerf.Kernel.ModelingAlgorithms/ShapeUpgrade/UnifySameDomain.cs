@@ -55,7 +55,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// place (a pcurve added) is modified into what stands for it now, where OCCT's history has no entry.
 /// </para>
 /// </remarks>
-public partial class UnifySameDomain : Transient
+internal partial class UnifySameDomain : Transient
 {
     private Shape                  _initShape;
     private double                        _linTol;

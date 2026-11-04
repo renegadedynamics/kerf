@@ -1,14 +1,9 @@
-using Kerf.Engine.Booleans.Api;
-using Kerf.Engine.Construction.Api;
-using Kerf.Engine.Features.Api;
-using Kerf.Engine.Foundation;
-using Kerf.Engine.Healing.Fixes;
-using Kerf.Engine.Measurement;
-using Kerf.Engine.Measurement.Distance;
-using Kerf.Engine.Offsets;
-using Kerf.Engine.Topology;
+using Kerf.Construction;
+using Kerf.Features;
+using Kerf.Healing;
+using Kerf.Measurement;
+using Kerf.Offsets;
 using Kerf.Geometry;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -28,11 +23,10 @@ public partial class Solid : Shape3D
 
     private static global::Kerf.Topology.Solid MakeSolid(Shell shell)
     {
-        var fix = new SolidFixer();
-        return fix.SolidFromShell(shell.TopoShell);
+        return Failures.Get(shell.TopoShell.MakeSolid(), () => "solid from shell").Shape;
     }
 
-    internal global::Kerf.Topology.Solid TopoSolid => ShapeCasts.Solid(TopoShape);
+    internal global::Kerf.Topology.Solid TopoSolid => (global::Kerf.Topology.Solid)TopoShape;
 
     internal override double Order => 3.0;
 
@@ -45,50 +39,57 @@ public partial class Solid : Shape3D
 
     /// <summary>A box from the plane's origin (default XY), extending along each of its positive axes.</summary>
     public static Solid MakeBox(double length, double width, double height, Plane? plane = null) =>
-        Failures.Doing(() => $"box {PyFormat.Repr(length)} × {PyFormat.Repr(width)} × {PyFormat.Repr(height)}", () =>
+        Failures.Doing(() => $"box {Formatting.Number(length)} × {Formatting.Number(width)} × {Formatting.Number(height)}", () =>
         {
             var ax2 = (plane ?? Plane.XY).ToGpAx2();
-            var maker = new MakeBox(ax2, length, width, height);
-            return new Solid(ShapeCasts.Solid(maker.Shape()));
+            return new Solid(Failures.Get(global::Kerf.Topology.Solid.Box(length, width, height, ax2), () => "box").Shape);
         });
 
     /// <summary>A full or partial cone from the plane's origin (default XY).</summary>
     public static Solid MakeCone(double baseRadius, double topRadius, double height, Plane? plane = null, double angle = 360) =>
-        Failures.Doing(() => $"cone of radii {PyFormat.Repr(baseRadius)} and {PyFormat.Repr(topRadius)}, height {PyFormat.Repr(height)}", () =>
+        Failures.Doing(() => $"cone of radii {Formatting.Number(baseRadius)} and {Formatting.Number(topRadius)}, height {Formatting.Number(height)}", () =>
         {
             var ax2 = (plane ?? Plane.XY).ToGpAx2();
-            var maker = new ApiMakeCone(ax2, baseRadius, topRadius, height, angle * Constants.DegToRad);
-            return new Solid(ShapeCasts.Solid(maker.Shape()));
+            return new Solid(Failures.Get(global::Kerf.Topology.Solid.Cone(baseRadius, topRadius, height, ax2, angle * Constants.DegToRad),
+                                          () => "cone").Shape);
         });
 
     /// <summary>A full or partial cylinder with its base centred on the plane's origin (default XY).</summary>
     public static Solid MakeCylinder(double radius, double height, Plane? plane = null, double angle = 360) =>
-        Failures.Doing(() => $"cylinder of radius {PyFormat.Repr(radius)}, height {PyFormat.Repr(height)}", () =>
+        Failures.Doing(() => $"cylinder of radius {Formatting.Number(radius)}, height {Formatting.Number(height)}", () =>
         {
             var ax2 = (plane ?? Plane.XY).ToGpAx2();
-            var maker = new ApiMakeCylinder(ax2, radius, height, angle * Constants.DegToRad);
-            return new Solid(ShapeCasts.Solid(maker.Shape()));
+            return new Solid(Failures.Get(global::Kerf.Topology.Solid.Cylinder(radius, height, ax2, angle * Constants.DegToRad),
+                                          () => "cylinder").Shape);
         });
 
     /// <summary>A full or partial sphere centred on the plane's origin (default XY).</summary>
     public static Solid MakeSphere(double radius, Plane? plane = null, double angle1 = -90, double angle2 = 90, double angle3 = 360) =>
-        Failures.Doing(() => $"sphere of radius {PyFormat.Repr(radius)}", () =>
+        Failures.Doing(() => $"sphere of radius {Formatting.Number(radius)}", () =>
         {
             var ax2 = (plane ?? Plane.XY).ToGpAx2();
-            var maker = new MakeSphere(ax2, radius, angle1 * Constants.DegToRad, angle2 * Constants.DegToRad,
-                                       angle3 * Constants.DegToRad);
-            return new Solid(ShapeCasts.Solid(maker.Shape()));
+            var options = new SphereOptions
+            {
+                MinLatitude = angle1 * Constants.DegToRad,
+                MaxLatitude = angle2 * Constants.DegToRad,
+                Angle = angle3 * Constants.DegToRad,
+            };
+            return new Solid(Failures.Get(global::Kerf.Topology.Solid.Sphere(radius, ax2, options), () => "sphere").Shape);
         });
 
     /// <summary>A full or partial torus centred on the plane's origin (default XY).</summary>
     public static Solid MakeTorus(double majorRadius, double minorRadius, Plane? plane = null, double startAngle = 0,
                                   double endAngle = 360, double majorAngle = 360) =>
-        Failures.Doing(() => $"torus of radii {PyFormat.Repr(majorRadius)} and {PyFormat.Repr(minorRadius)}", () =>
+        Failures.Doing(() => $"torus of radii {Formatting.Number(majorRadius)} and {Formatting.Number(minorRadius)}", () =>
         {
             var ax2 = (plane ?? Plane.XY).ToGpAx2();
-            var maker = new MakeTorus(ax2, majorRadius, minorRadius, startAngle * Constants.DegToRad,
-                                      endAngle * Constants.DegToRad, majorAngle * Constants.DegToRad);
-            return new Solid(ShapeCasts.Solid(maker.Shape()));
+            var options = new TorusOptions
+            {
+                MinorStart = startAngle * Constants.DegToRad,
+                MinorEnd = endAngle * Constants.DegToRad,
+                Angle = majorAngle * Constants.DegToRad,
+            };
+            return new Solid(Failures.Get(global::Kerf.Topology.Solid.Torus(majorRadius, minorRadius, ax2, options), () => "torus").Shape);
         });
 
     /// <summary>A wedge on the plane (default XY).</summary>
@@ -97,13 +98,13 @@ public partial class Solid : Shape3D
         Failures.Doing(() => "wedge", () =>
         {
             var ax2 = (plane ?? Plane.XY).ToGpAx2();
-            var maker = new MakeWedge(ax2, deltaX, deltaY, deltaZ, minX, minZ, maxX, maxZ);
-            return new Solid(maker.Solid());
+            var options = new WedgeOptions { TopMin = (minX, minZ), TopMax = (maxX, maxZ) };
+            return new Solid(Failures.Get(global::Kerf.Topology.Solid.Wedge(deltaX, deltaY, deltaZ, options, ax2), () => "wedge").Shape);
         });
 
     /// <summary>A loft through wires, optionally starting or ending with a vertex; ruled (stepped) or smooth.</summary>
     public static Solid MakeLoft(IEnumerable<Shape> objs, bool ruled = false) =>
-        Failures.Doing(() => "loft", () => Result(new Solid(ShapeCasts.Solid(TopoUtil.MakeLoft(objs, true, ruled)))));
+        Failures.Doing(() => "loft", () => Result(new Solid((global::Kerf.Topology.Solid)TopoUtil.MakeLoft(objs, true, ruled))));
 
     /// <summary>A box the size of a bounding box, where it is.</summary>
     public static Solid FromBoundingBox(BoundBox box) => MakeBox(box.Size.X, box.Size.Y, box.Size.Z).Located(new Location(box.Min));
@@ -119,7 +120,7 @@ public partial class Solid : Shape3D
 
     /// <summary>A face extruded into a solid.</summary>
     public static Solid Extrude(Face obj, Vector direction) =>
-        Failures.Doing(() => "extrude", () => Result(new Solid(ShapeCasts.Solid(TopoUtil.Extrude(obj.TopoShape, direction)))));
+        Failures.Doing(() => "extrude", () => Result(new Solid((global::Kerf.Topology.Solid)TopoUtil.Extrude(obj.TopoShape, direction))));
 
     /// <summary>
     /// A "twisted prism": a section (a face, or a wire with optional holes) extruded along <paramref name="normal"/> while
@@ -138,12 +139,9 @@ public partial class Solid : Shape3D
     {
         static global::Kerf.Topology.Shape ExtrudeAuxSpine(global::Kerf.Topology.Wire wire, global::Kerf.Topology.Wire spine, global::Kerf.Topology.Wire auxSpine)
         {
-            var builder = new MakePipeShell(spine);
-            builder.SetMode(auxSpine, false);   // an auxiliary spine
-            builder.Add(wire);
-            builder.Build();
-            builder.MakeSolid();
-            return builder.Shape();
+            // BRepOffsetAPI_MakePipeShell with an auxiliary spine, closed into a solid
+            var options = new SweepOptions { Frame = SweepFrame.Auxiliary, AuxiliarySpine = auxSpine, MakeSolid = true };
+            return Failures.Get(Sweeps.Sweep(wire, spine, options), () => "sweep").Shape;
         }
         // A straight spine and an auxiliary helical one that turns the section
         var straightSpine = Wire.Combine([Edge.MakeLine(center, center + normal)])[0].TopoWire;
@@ -152,17 +150,11 @@ public partial class Solid : Shape3D
         var outer = ExtrudeAuxSpine(section.TopoWire, straightSpine, auxSpine);
         var inner = (innerWires ?? []).Select(w => ExtrudeAuxSpine(w.TopoWire, straightSpine, auxSpine)).ToList();
         var innerComp = TopoUtil.MakeCompound(inner);
-        var cut = new Cut(outer, innerComp);
-        var difference = cut.Shape();
+        var difference = Failures.Get(TopoUtil.Boolean(BooleanKind.Cut, [outer], [innerComp]), () => "cut").Shape;
         // The result may be wrapped in a compound
-        try
-        {
-            return Result(new Solid(ShapeCasts.Solid(difference)));
-        }
-        catch (FailureException e) when (e.OcctType == "Standard_TypeMismatch")
-        {
-            return Result(new Solid(ShapeCasts.Solid(TopoUtil.UnwrapCompound(ShapeCasts.Compound(difference)))));
-        }
+        return difference.IsCompound()
+            ? Result(new Solid((global::Kerf.Topology.Solid)TopoUtil.UnwrapCompound((global::Kerf.Topology.Compound)difference)))
+            : Result(new Solid((global::Kerf.Topology.Solid)difference));
     }
 
     /// <summary>
@@ -180,26 +172,22 @@ public partial class Solid : Shape3D
         var profileWires = new List<Wire> { profile.OuterWire() };
         profileWires.AddRange(profile.InnerWires());
 
-        // The prism shares the profile's face, which the draft would edit: the profile is a copy
-        var original = profile;
-        var copier = new Copy(original.TopoShape, false, false);
-        profile = new Face(ShapeCasts.Face(copier.Shape()));
-        var copyHistory = ShapeHistory.FromAlgorithm(copier, [original.TopoShape], profile.TopoShape);
-        profileWires = [profile.OuterWire(), .. profile.InnerWires()];
+        // The prism shares the profile's face, which the draft no longer edits (the kernel's unit 10H5): no copy is made
 
         // Extrude the profile; its sides are the faces generated from its edges
         var directionVec = direction.ToGpVec();
-        var prismBuilder = new ApiMakePrism(profile.TopoShape, directionVec);
-        var prism = prismBuilder.Shape();
+        var prismBuilt = Failures.Get(profile.TopoShape.Extrude(directionVec), () => "extrude");
+        var prism = prismBuilt.Shape;
         var sideFaces = new List<(global::Kerf.Topology.Face Face, double Angle)>();
         for (int i = 0; i < profileWires.Count; i++)
         {
             var angle = i > 0 && !flipInner ? -taper : taper;
             foreach (var edge in profileWires[i].Edges())
             {
-                var generated = prismBuilder.Generated(edge.TopoShape);
-                foreach (var side in generated)
-                    sideFaces.Add((ShapeCasts.Face(side), angle));
+                // The faces an edge generates: its side (the history goes on to its copy in the top cap)
+                foreach (var side in prismBuilt.History.Generated(edge.TopoShape))
+                    if (side.IsFace())
+                        sideFaces.Add(((global::Kerf.Topology.Face)side, angle));
             }
         }
         bool alongNormal = Math.Abs(pull.Dot(profile.NormalAt())) > 1 - Constants.Tolerance;
@@ -210,36 +198,21 @@ public partial class Solid : Shape3D
             var center = profile.Center().ToGpPnt();
             var pullDir = pull.ToGpDir();
             var neutral = new Plane3D(center, pullDir);
-            var draft = new DraftAngle(prism);
-            try
+            // The draft can't build every taper a loft can: a failure falls back to the loft
+            var drafted = prism.Draft(sideFaces.Select(s => (s.Face, s.Angle * Constants.DegToRad)), pullDir, neutral);
+            Built<global::Kerf.Topology.Shape>? draft = null;
+            if (drafted.TryGetValue(out var built) && built.Shape.IsSolid())
             {
-                bool ok = true;
-                foreach (var (side, angle) in sideFaces)
-                {
-                    draft.Add(side, pullDir, angle * Constants.DegToRad, neutral, true);
-                    if (!draft.AddDone())
-                    {
-                        ok = false;
-                        break;
-                    }
-                }
-                if (ok)
-                {
-                    draft.Build();
-                    if (draft.IsDone)
-                        result = new Solid(ShapeCasts.Solid(draft.Shape()));
-                }
-            }
-            catch (FailureException)
-            {
-                // The draft can't build every taper a loft can
+                draft = built;
+                result = new Solid((global::Kerf.Topology.Solid)built.Shape);
             }
             // The draft can build sides that run into each other, as when a hole widens through a wall
             if (result is not null && !result.IsValid)
                 result = null;
             if (result is not null)
-                result = (Solid)result.MadeBy(copyHistory.Merge(ShapeHistory.FromAlgorithm(prismBuilder, [profile.TopoShape], prism))
-                    .Merge(ShapeHistory.FromAlgorithm(draft, [prism], result.TopoShape)));
+                result = (Solid)result.MadeBy(
+                    ShapeHistory.FromAlgorithm(s => prismBuilt.History.Modified(s), s => prismBuilt.History.Generated(s), [profile.TopoShape], prism)
+                    .Merge(ShapeHistory.FromAlgorithm(s => draft!.History.Modified(s), s => draft!.History.Generated(s), [prism], result.TopoShape)));
         }
         if (result is null)
         {
@@ -262,7 +235,7 @@ public partial class Solid : Shape3D
             catch (Exception e) when (e is InvalidOperationException || Failures.IsKernelFailure(e))
             {
                 throw new InvalidOperationException(
-                    $"Tapered extrusion of {PyFormat.Repr(taper)} degrees over {PyFormat.Repr(direction.Length)} could not be built. "
+                    $"Tapered extrusion of {Formatting.Number(taper)} degrees over {Formatting.Number(direction.Length)} could not be built. "
                     + "The taper may collapse the profile - reduce the taper or the extrusion distance", e);
             }
             result = solids.Count > 1 ? (Solid)solids[0].Cut(solids.Skip(1)) : solids[0];
@@ -291,34 +264,21 @@ public partial class Solid : Shape3D
         var extrusion = Extrude(profile, direction * maxDimension);
 
         // 2: the target's faces the extrusion modified
-        var intersectOp = new Common();
-        {
-            var arguments = TopoUtil.ListOf([target.TopoShape]);
-            var tools = TopoUtil.ListOf([extrusion.TopoShape]);
-            intersectOp.SetArguments(arguments);
-            intersectOp.SetTools(tools);
-        }
-        intersectOp.SetNonDestructive(true);   // leave the target's tolerances alone
-        intersectOp.Build();
-        var intersection = intersectOp.Shape();
-        var faceExp = new Explorer(intersection, global::Kerf.Topology.ShapeType.Face);
-        if (!faceExp.More())
+        // Non-destructive, so the target's tolerances are left alone
+        var intersectOp = Failures.Get(TopoUtil.Boolean(BooleanKind.Common, [target.TopoShape], [extrusion.TopoShape]), () => "intersect");
+        var intersection = intersectOp.Shape;
+        if (!intersection.Explore<global::Kerf.Topology.Face>().Any())
             throw new ArgumentException("No intersection: extrusion does not contact target");
-        var history = intersectOp.History()!;
+        var history = intersectOp.History;
         var modifiedTargetFaces = new List<global::Kerf.Topology.Shape>();
-        var faceExplorer = new Explorer(target.TopoShape, global::Kerf.Topology.ShapeType.Face);
-        for (; faceExplorer.More(); faceExplorer.Next())
-        {
-            var targetFace = ShapeCasts.Face(faceExplorer.Current());
-            var modified = history.Modified(targetFace);
-            modifiedTargetFaces.AddRange(modified.Select(m => (global::Kerf.Topology.Shape)ShapeCasts.Face(m)));
-        }
+        foreach (var targetFace in target.TopoShape.Explore<global::Kerf.Topology.Face>())
+            modifiedTargetFaces.AddRange(history.Modified(targetFace).Select(m => (global::Kerf.Topology.Shape)(global::Kerf.Topology.Face)m));
 
         // 3: sewn into one shell per surface passed through, sorted by distance from the profile
         var sewn = TopoUtil.SewFaces(modifiedTargetFaces);
         var surfaces = new ShapeList<Shape2D>(TopoUtil.TopLevelShapes(sewn).Select(s =>
-            s.IsFace() ? (Shape2D)new Face(ShapeCasts.Face(s))
-            : s.IsShell() ? new Shell(ShapeCasts.Shell(s))
+            s.IsFace() ? (Shape2D)new Face((global::Kerf.Topology.Face)s)
+            : s.IsShell() ? new Shell((global::Kerf.Topology.Shell)s)
             : throw new InvalidOperationException($"Invalid sewn shape {TopoUtil.TypeName(s)}"))).SortBy(s => s.DistanceTo(profile));
         var limit = surfaces[until == Until.Next ? 0 : surfaces.Count - 1];
 
@@ -346,8 +306,9 @@ public partial class Solid : Shape3D
         Failures.Doing(() => "revolve", () =>
         {
             var ax1 = axis.ToGpAx1();
-            var builder = new ApiMakeRevol(section.TopoShape, ax1, angle * Constants.DegToRad, true);
-            return Result(new Solid(ShapeCasts.Solid(builder.Shape())));
+            // On a copy of the profile, as build123d revolves (BRepPrimAPI_MakeRevol with copy)
+            var revolved = Failures.Get(section.TopoShape.Revolve(ax1, angle * Constants.DegToRad, copyProfile: true), () => "revolve");
+            return Result(new Solid((global::Kerf.Topology.Solid)revolved.Shape));
         });
 
     /// <inheritdoc cref="Revolve(Face, double, Axis)"/>
@@ -384,18 +345,8 @@ public partial class Solid : Shape3D
         var pathWire = path as Wire ?? new Wire((Edge)path);
         foreach (var wire in innerWires.Prepend(outerWire))
         {
-            var builder = new MakePipeShell(pathWire.TopoWire);
-            bool rotate = false;
-            if (mode is not null)
-                rotate = SetSweepMode(builder, path, mode);
-            else
-                builder.SetMode(isFrenet);
-            builder.SetTransitionMode(Face.TransitionMode(transition));
-            builder.Add(wire.TopoShape, false, rotate);
-            builder.Build();
-            if (makeSolid)
-                builder.MakeSolid();
-            shapes.Add(Cast(builder.Shape()));
+            var options = SweepMode(path, mode, isFrenet) with { Transition = Face.TransitionMode(transition), MakeSolid = makeSolid };
+            shapes.Add(Cast(Failures.Get(Sweeps.Sweep(wire.TopoShape, pathWire.TopoWire, options), () => "sweep").Shape));
         }
         var outer = shapes[0];
         if (shapes.Count > 1)
@@ -407,10 +358,16 @@ public partial class Solid : Shape3D
         return Result(outer);
     }
 
-    private static bool SetSweepMode(MakePipeShell builder, Shape1D path, object binormal)
+    /// <summary>
+    /// The sweep's frame: fixed (a binormal vector, the profiles turned to the path), along an auxiliary spine (a wire or
+    /// edge, by curvilinear equivalence), or Frenet or corrected Frenet.
+    /// </summary>
+    private static SweepOptions SweepMode(Shape1D path, object? binormal, bool isFrenet)
     {
         switch (binormal)
         {
+            case null:
+                return new SweepOptions { Frame = isFrenet ? SweepFrame.Frenet : SweepFrame.CorrectedFrenet };
             case Vector v:
             {
                 var system = new Frame3D();
@@ -418,15 +375,12 @@ public partial class Solid : Shape3D
                 var dir = v.ToGpDir();
                 system = system.WithLocation(start);
                 system = system.WithDirection(dir);
-                builder.SetMode(system);
-                return true;
+                return new SweepOptions { Frame = SweepFrame.Fixed, FixedFrame = system, WithCorrection = true };
             }
             case Wire w:
-                builder.SetMode(w.TopoWire, true);
-                return false;
+                return new SweepOptions { Frame = SweepFrame.Auxiliary, AuxiliarySpine = w.TopoWire, CurvilinearEquivalence = true };
             case Edge e:
-                builder.SetMode(new Wire(e).TopoWire, true);
-                return false;
+                return new SweepOptions { Frame = SweepFrame.Auxiliary, AuxiliarySpine = new Wire(e).TopoWire, CurvilinearEquivalence = true };
             default:
                 throw new ArgumentException($"A sweep mode is a Vector, Wire or Edge, not a {binormal.GetType().Name}");
         }
@@ -443,18 +397,9 @@ public partial class Solid : Shape3D
     private static Solid SweepMultiCore(IEnumerable<Wire> profiles, Shape1D path, bool makeSolid, bool isFrenet, object? binormal)
     {
         var pathWire = path as Wire ?? new Wire((Edge)path);
-        var builder = new MakePipeShell(pathWire.TopoWire);
-        bool rotate = false;
-        if (binormal is not null)
-            rotate = SetSweepMode(builder, path, binormal);
-        else
-            builder.SetMode(isFrenet);
-        foreach (var profile in profiles)
-            builder.Add(profile.TopoShape, false, rotate);
-        builder.Build();
-        if (makeSolid)
-            builder.MakeSolid();
-        var swept = Result(new Solid(ShapeCasts.Solid(builder.Shape())));
+        var options = SweepMode(path, binormal, isFrenet) with { MakeSolid = makeSolid };
+        var built = Failures.Get(Sweeps.Sweep([.. profiles.Select(p => p.TopoShape)], pathWire.TopoWire, options), () => "sweep");
+        var swept = Result(new Solid((global::Kerf.Topology.Solid)built.Shape));
         if (makeSolid && !swept.IsValid)
             Warnings.Warn("sweep_multi created an invalid solid. The profiles may be too large for the curvature of the path "
                           + "or cross each other along it.");
@@ -478,22 +423,19 @@ public partial class Solid : Shape3D
             if (normal.Dot(up.Normalized()) < 0)
                 adjusted = -depth;
         }
-        var builder = new MakeOffset();
-        builder.Initialize(surface.TopoShape, adjusted, 1.0e-5, global::Kerf.Offsets.OffsetMode.Skin, true, false,
-                           JoinKind.Intersection, true, true);
-        builder.MakeOffsetShape();
-        global::Kerf.Topology.Shape thickened;
-        try
+        var options = new OffsetOptions
         {
-            thickened = builder.Shape();
-        }
-        catch (FailureException e) when (e.OcctType == "StdFail_NotDone")
-        {
-            throw new InvalidOperationException("Error applying thicken to given surface", e);
-        }
-        if (thickened.IsNull)
-            throw new InvalidOperationException("Error applying thicken to given surface");
-        return Result(new Solid(ShapeCasts.Solid(thickened)));
+            Tolerance = 1.0e-5,
+            Mode = OffsetMode.Skin,
+            Intersection = true,
+            SelfIntersection = false,
+            Join = JoinKind.Intersection,
+            RemoveInternalEdges = true,
+        };
+        var thickened = surface.TopoShape.Thicken(adjusted, options);
+        if (!thickened.TryGetValue(out var solid))
+            throw new InvalidOperationException("Error applying thicken to given surface", new KerfException(thickened.Diagnostics));
+        return Result(new Solid(solid.Shape));
     }
 
     /// <summary>The solid with a draft of <paramref name="angle"/> degrees applied to planar, cylindrical or conical faces.</summary>
@@ -506,26 +448,21 @@ public partial class Solid : Shape3D
                 throw new ArgumentException(
                     $"Face {face} has unsupported geometry type {face.GeomType.ToString().ToUpperInvariant()}. "
                     + "Only PLANAR, CYLINDRICAL, and CONICAL faces are supported.");
-        var builder = new DraftAngle(TopoShape);
         var dir = neutralPlane.ZDir.ToGpDir();
         var pln = neutralPlane.ToGpPln();
-        foreach (var face in faceList)
+        var drafted = TopoShape.Draft(faceList.Select(f => f.TopoFace), dir, angle * Constants.DegToRad, pln);
+        if (!drafted.TryGetValue(out var built))
         {
-            builder.Add(face.TopoFace, dir, angle * Constants.DegToRad, pln, true);
-            if (!builder.AddDone())
-                throw new DraftAngleError("Draft could not be added to a face.", face, builder.ProblematicShape());
+            var error = drafted.Error!;
+            global::Kerf.Topology.Shape? problem = error.Shapes is [var shape, ..] ? shape : null;
+            // A face that couldn't be drafted is the problematic shape itself; a build that failed has no face
+            if (problem is { } p && p.IsFace() && faceList.FirstOrDefault(f => f.TopoShape.IsSame(p)) is { } face)
+                throw new DraftAngleError("Draft could not be added to a face.", face, p);
+            throw new DraftAngleError("Draft build failed on the given solid.", null, problem, new KerfException(drafted.Diagnostics));
         }
-        Solid result;
-        try
-        {
-            builder.Build();
-            result = new Solid(ShapeCasts.Solid(builder.Shape()));
-        }
-        catch (FailureException e) when (e.OcctType == "StdFail_NotDone")
-        {
-            throw new DraftAngleError("Draft build failed on the given solid.", null, builder.ProblematicShape(), e);
-        }
-        return (Solid)result.MadeBy(ShapeHistory.FromAlgorithm(builder, [TopoShape], result.TopoShape));
+        var result = new Solid((global::Kerf.Topology.Solid)built.Shape);
+        return (Solid)result.MadeBy(ShapeHistory.FromAlgorithm(s => built.History.Modified(s), s => built.History.Generated(s),
+                                                               [TopoShape], result.TopoShape));
     }
 
     // ---- Contacts ----
@@ -542,20 +479,13 @@ public partial class Solid : Shape3D
         bool VertexOnFace(Vertex v, Face f) => v.DistanceTo(f) <= tolerance;
         bool VertexOnFaces(Vertex v, IEnumerable<Face> faces) => faces.Any(f => VertexOnFace(v, f));
         // Distance can't tell an edge on a face from one crossing it, so ask for the common part
-        bool OnFaces(Shape s, IEnumerable<Face> faces) => faces.Any(f =>
-        {
-            var common = new Common();
-            return BoolOpList([s], [f], common).Count > 0;
-        });
+        bool OnFaces(Shape s, IEnumerable<Face> faces) => faces.Any(f => BoolOpList([s], [f], BooleanKind.Common).Count > 0);
         bool EdgeOnFaces(Edge e, IEnumerable<Face> faces) => OnFaces(e, faces);
         (Vector, Vector) PointNormal(Face face, double u, double v)
         {
             var (u0, u1, v0, v1) = face.UVBounds();
-            var pnt = new Point3D();
-            var norm = new Vector3D();
-            var props = new FaceIntegrand(face.TopoFace);
-            props.Normal(u0 + u * (u1 - u0), v0 + v * (v1 - v0), out pnt, out norm);
-            return (new Vector(pnt), new Vector(norm));
+            double pu = u0 + u * (u1 - u0), pv = v0 + v * (v1 - v0);
+            return (new Vector(face.TopoFace.ToSurface().Evaluate(pu, pv)), TopoUtil.FaceNormalVector(face.TopoFace, pu, pv));
         }
         // Faces are equal geometrically, not as the same OCCT object: compare a grid of positions and normals
         bool FacesEqual(Face f1, Face f2, int gridSize = 4)
@@ -635,13 +565,13 @@ public partial class Solid : Shape3D
                 {
                     if (!sfBox.Intersects(otherBox, tolerance))
                         continue;
-                    var extrema = new DistanceShapeShape(sf.TopoShape, other.TopoShape);
-                    if (!extrema.IsDone || extrema.Value() > tolerance)
+                    var distance = sf.TopoShape.Distance(other.TopoShape);
+                    if (!distance.TryGetValue(out var extrema) || extrema.Value > tolerance)
                         continue;
-                    for (int i = 1; i <= extrema.SolutionCount; i++)
+                    foreach (var solution in extrema.Solutions)
                     {
-                        var p1 = extrema.PointOnShape1(i);
-                        var p2 = extrema.PointOnShape2(i);
+                        var p1 = solution.OnA;
+                        var p2 = solution.OnB;
                         if (p1.DistanceTo(p2) > tolerance)
                             continue;
                         var vertex = new Vertex(p1.X, p1.Y, p1.Z);

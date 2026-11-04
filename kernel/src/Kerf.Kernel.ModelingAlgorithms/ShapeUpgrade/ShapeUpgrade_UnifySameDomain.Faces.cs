@@ -26,7 +26,7 @@ using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Healing.Upgrade;
 
-public partial class UnifySameDomain
+internal partial class UnifySameDomain
 {
     private static bool IsOnSingularity(NCollection_List<Shape> edgeList)
     {

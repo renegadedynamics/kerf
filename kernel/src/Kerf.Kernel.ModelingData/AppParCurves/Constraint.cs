@@ -8,7 +8,7 @@ namespace Kerf.Engine.Approximation;
 
 /// <summary>The constraint on a point of a MultiLine.</summary>
 /// <remarks>The algorithms compare constraints by order (<c>Cons &gt;= AppParCurves_TangencyPoint</c>).</remarks>
-public enum Constraint
+internal enum Constraint
 {
     /// <summary>The point has no constraint.</summary>
     NoConstraint,

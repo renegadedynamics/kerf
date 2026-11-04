@@ -16,7 +16,7 @@ namespace Kerf.Engine.Intersection.Implicit;
 /// The static tool over a parametric curve that the generic intersector uses (OCCT's ParTool macro:
 /// IntCurve_PConicTool, Geom2dInt_Geom2dCurveTool).
 /// </summary>
-public interface IParTool<ParCurve>
+internal interface IParTool<ParCurve>
 {
     static abstract double EpsX(in ParCurve c);
 
@@ -31,7 +31,7 @@ public interface IParTool<ParCurve>
 /// The static projection of a point on a parametric curve that the generic intersector uses (OCCT's
 /// ProjectOnPCurveTool macro: IntCurve_ProjectOnPConicTool, Geom2dInt_TheProjPCurOfGInter).
 /// </summary>
-public interface IProjectOnPCurveTool<ParCurve>
+internal interface IProjectOnPCurveTool<ParCurve>
 {
     /// <summary>The parameter of the point of <paramref name="c"/> nearest to <paramref name="pnt"/>.</summary>
     static abstract double FindParameter(in ParCurve c, in Point2D pnt, double tol);
@@ -50,7 +50,7 @@ public interface IProjectOnPCurveTool<ParCurve>
 /// math_FunctionWithDerivative constructed from the two curves: IntCurve_MyImpParToolOfIntImpConicParConic,
 /// Geom2dInt_MyImpParToolOfTheIntersectorOfTheIntConicCurveOfGInter).
 /// </summary>
-public interface IMyImpParTool<TSelf, ImpTool, ParCurve>
+internal interface IMyImpParTool<TSelf, ImpTool, ParCurve>
     where TSelf : FunctionWithDerivative, IMyImpParTool<TSelf, ImpTool, ParCurve>
 {
     /// <summary>OCCT's constructor <c>MyImpParTool(const ImpTool&amp; IT, const ParCurve&amp; PC)</c>.</summary>

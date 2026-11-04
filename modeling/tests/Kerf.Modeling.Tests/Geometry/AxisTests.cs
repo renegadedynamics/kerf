@@ -1,7 +1,6 @@
 // Ported from build123d tests/test_direct_api/test_axis.py. Cases that need topology (Edge, Vertex)
 // follow with the topology port.
 using Kerf.Geometry;
-using Occt;
 
 namespace Build123d.Tests.Geometry;
 
@@ -42,9 +41,9 @@ public class AxisTests
     [Fact]
     public void Formatting()
     {
-        Assert.Equal("((1.00, 2.00, 3.00), (0.46, 0.57, 0.68))", new Axis((1, 2, 3), (4, 5, 6)).ToString(".2f"));
-        Assert.Equal("((1, 2, 3), (0.46, 0.57, 0.68))", new Axis((1, 2, 3), (4, 5, 6)).ToString(".2g"));
-        Assert.Contains("((1.0, 2.0, 3.0), ", new Axis((1, 2, 3), (4, 5, 6)).ToString(".2t"));
+        Assert.Equal("((1.00, 2.00, 3.00), (0.46, 0.57, 0.68))", new Axis((1, 2, 3), (4, 5, 6)).ToString("F2"));
+        Assert.Equal("((1, 2, 3), (0.46, 0.57, 0.68))", new Axis((1, 2, 3), (4, 5, 6)).ToString("G2"));
+        Assert.Contains("((1, 2, 3), ", new Axis((1, 2, 3), (4, 5, 6)).ToString(null));
         Assert.Equal("Axis: (position=(0, 0, 0), direction=(0, 1, 0))", Axis.Y.ToString());
     }
 

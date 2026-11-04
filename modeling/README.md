@@ -5,8 +5,8 @@ Kerf's kernel. Work in progress: see [docs/design.md](docs/design.md) for the de
 
 ## Building and testing
 
-`Kerf.Modeling` (namespace `Kerf.Modeling`) runs on Kerf.Kernel, managed C# with no native libraries, and calls its
-types directly. It builds against the kernel's projects in the repository's `kernel` folder (`KerfKernelRoot`), so a
+`Kerf.Modeling` (namespace `Kerf.Modeling`) runs on Kerf.Kernel, managed C# with no native libraries, through the
+kernel's public API alone (unit 10M1). It builds against the kernel's projects in the repository's `kernel` folder (`KerfKernelRoot`), so a
 fresh clone needs only the .NET 10 SDK:
 
 ```powershell
@@ -14,7 +14,7 @@ dotnet test
 ```
 
 Its own shape classes (`Shape`, `Edge`, `Face`…) still sit beside the kernel's (`Kerf.Topology.Shape`, `Edge`, `Face`…),
-which it names in full where both are meant; unit 10M merges them onto the kernel's (decision 1349). The native backend
+which it names in full where both are meant; unit 10M2 decides how they merge onto the kernel's (decision 1349). The native backend
 and the forwarding layer to OCCT.NET went in unit 10B.
 
 ## Packages

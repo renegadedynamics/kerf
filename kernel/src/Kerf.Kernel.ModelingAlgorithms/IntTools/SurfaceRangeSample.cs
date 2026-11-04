@@ -13,7 +13,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// A struct, as OCCT's by-value class (its copy constructor and <c>Assign</c> are a plain copy). Equality is OCCT's
 /// <c>IsEqual</c>; the hash replaces OCCT's <c>std::hash</c> specialisation.
 /// </remarks>
-public partial struct SurfaceRangeSample : IEquatable<SurfaceRangeSample>
+internal partial struct SurfaceRangeSample : IEquatable<SurfaceRangeSample>
 {
     private CurveRangeSample _rangeU;
     private CurveRangeSample _rangeV;

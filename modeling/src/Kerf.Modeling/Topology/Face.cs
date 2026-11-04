@@ -1,21 +1,8 @@
-using Kerf.Engine.Booleans.Api;
-using Kerf.Engine.Collections;
-using Kerf.Engine.Construction.Api;
-using Kerf.Engine.Construction.Filling;
-using Kerf.Engine.Fillets.Api;
-using Kerf.Engine.Geometry.Adaptors;
-using Kerf.Engine.Geometry.Api;
-using Kerf.Engine.Geometry.Library;
-using Kerf.Engine.Healing.Analysis;
-using Kerf.Engine.Measurement;
-using Kerf.Engine.Topology;
-using Kerf.Engine.Topology.Adaptors;
-using Kerf.Engine.Topology.Brep;
-using Kerf.Engine.Topology.Properties;
-using Kerf.Engine.Topology.Tools;
+using Kerf.Construction;
+using Kerf.Fillets;
+using Kerf.Measurement;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -43,7 +30,7 @@ public partial class Face : Shape2D
     private static global::Kerf.Topology.Face MakeFromWires(Wire outerWire, IEnumerable<Wire>? innerWires, Face? surface)
     {
         var inner = innerWires?.Select(w => w.TopoWire).ToList() ?? [];
-        if (!Tool.IsClosed(outerWire.TopoShape) || inner.Any(w => !Tool.IsClosed(w)))
+        if (!outerWire.TopoShape.CheckClosed() || inner.Any(w => !w.CheckClosed()))
             throw new ArgumentException("Face can only be created with closed wires");
         if (surface is null)
             return TopoUtil.MakeFaceFromWires(outerWire.TopoWire, inner);
@@ -57,7 +44,7 @@ public partial class Face : Shape2D
     /// <summary>A face on the plane, as large as OCCT's defaults allow (an infinite plane).</summary>
     public static Face FromPlane(Plane plane) => new(MakePlaneFace(plane));
 
-    internal global::Kerf.Topology.Face TopoFace => ShapeCasts.Face(TopoShape);
+    internal global::Kerf.Topology.Face TopoFace => (global::Kerf.Topology.Face)TopoShape;
 
     internal override double Order => 2.0;
 
@@ -108,45 +95,26 @@ public partial class Face : Shape2D
                     break;
                 surface = basis;
             }
+            switch (surface)
             {
-                var adaptor = new SurfaceAdaptor(surface);
-                switch (adaptor.GetType())
+                case ConicalSurface cone:
+                    return new Axis(cone.Cone.Axis);
+                case CylindricalSurface cylinder:
+                    return new Axis(cylinder.Cylinder.Axis);
+                case SphericalSurface sphere:
                 {
-                    case SurfaceKind.Cone:
-                    {
-                        var cone = adaptor.Cone();
-                        var ax = cone.Axis;
-                        return new Axis(ax);
-                    }
-                    case SurfaceKind.Cylinder:
-                    {
-                        var cylinder = adaptor.Cylinder();
-                        var ax = cylinder.Axis;
-                        return new Axis(ax);
-                    }
-                    case SurfaceKind.Sphere:
-                    {
-                        var sphere = adaptor.Sphere();
-                        var ax3 = sphere.Position;
-                        var loc = ax3.Location;
-                        var dir = ax3.Direction;
-                        var ax1 = new Axis3D(loc, dir);
-                        return new Axis(ax1);
-                    }
-                    case SurfaceKind.Torus:
-                    {
-                        var torus = adaptor.Torus();
-                        var ax = torus.Axis;
-                        return new Axis(ax);
-                    }
-                    case SurfaceKind.SurfaceOfRevolution:
-                    {
-                        var ax = adaptor.AxeOfRevolution();
-                        return new Axis(ax);
-                    }
-                    default:
-                        return null;
+                    var ax3 = sphere.Sphere.Position;
+                    var loc = ax3.Location;
+                    var dir = ax3.Direction;
+                    var ax1 = new Axis3D(loc, dir);
+                    return new Axis(ax1);
                 }
+                case ToroidalSurface torus:
+                    return new Axis(torus.Torus.Axis);
+                case RevolutionSurface revolution:
+                    return new Axis(revolution.Axis);
+                default:
+                    return null;
             }
         }
     }
@@ -274,8 +242,7 @@ public partial class Face : Shape2D
         {
             if (IsEmpty)
                 throw new InvalidOperationException("an empty face has no convexity");
-            var surface = new FaceSurfaceAdaptor(TopoFace);
-            var outward = new FaceIntegrand(TopoFace);
+            var surface = TopoFace.ToSurface();
             var (uMin, uMax, vMin, vMax) = UVBounds();
             double[] fractions = [0.15, 0.5, 0.85];
             var kinds = new HashSet<Convexity>();
@@ -284,20 +251,17 @@ public partial class Face : Shape2D
                 {
                     var u = uMin + (uMax - uMin) * uf;
                     var v = vMin + (vMax - vMin) * vf;
-                    var props = new SLProps(surface, u, v, 2, Constants.Tolerance);
-                    if (!props.IsCurvatureDefined())
+                    if (!surface.TryGetCurvature(u, v, Constants.Tolerance, out var props))
                         continue;
-                    var point = new Point3D();
-                    var normal = new Vector3D();
-                    outward.Normal(u, v, out point, out normal);
-                    if (normal.Magnitude < 1e-12)
+                    var normal = TopoUtil.FaceNormalVector(TopoFace, u, v);
+                    if (normal.Length < 1e-12)
                         continue;
                     // Curvatures signed toward the outward normal: negative bends away
-                    var propsNormal = props.Normal();
-                    var normalDir = new Direction3D(normal);
+                    var propsNormal = props.Normal;
+                    var normalDir = normal.ToGpDir();
                     var sign = propsNormal.Dot(normalDir) > 0 ? 1.0 : -1.0;
-                    var a = sign * props.MinCurvature();
-                    var b = sign * props.MaxCurvature();
+                    var a = sign * props.Min;
+                    var b = sign * props.Max;
                     var (low, high) = (Math.Min(a, b), Math.Max(a, b));
                     bool away = low < -Constants.Tolerance;
                     bool into = high > Constants.Tolerance;
@@ -326,9 +290,8 @@ public partial class Face : Shape2D
     /// <summary>Whether the face's surface is planar (by <c>GeomLib_IsPlanarSurface</c>), whatever its geometry type.</summary>
     internal bool IsPlanarSurface()
     {
-        var surface = Tool.Surface(TopoFace);
-        var searcher = new IsPlanarSurface(surface!, Constants.Tolerance);
-        return searcher.IsPlanar;
+        TopoFace.TryGetSurface(out var surface);
+        return surface!.TryGetPlane(Constants.Tolerance, out _);
     }
 
     /// <summary>The plane the face lies in if it is planar, even though its geometry type may not be Plane; else null.</summary>
@@ -338,11 +301,9 @@ public partial class Face : Shape2D
         {
             if (IsEmpty)
                 return null;
-            var surface = Tool.Surface(TopoFace);
-            var searcher = new IsPlanarSurface(surface!, Constants.Tolerance);
-            if (!searcher.IsPlanar)
+            TopoFace.TryGetSurface(out var surface);
+            if (!surface!.TryGetPlane(Constants.Tolerance, out var pln))
                 return null;
-            var pln = searcher.Plan();
             var position = pln.Position;
             if (!position.IsDirect)
             {
@@ -405,8 +366,7 @@ public partial class Face : Shape2D
         {
             if (GeomType != GeomType.Torus)
                 return null;
-            var adaptor = new FaceSurfaceAdaptor(TopoFace);
-            var torus = adaptor.Torus();
+            TopoFace.ToSurface().TryGetTorus(out var torus);
             return (torus.MajorRadius, torus.MinorRadius);
         }
     }
@@ -418,17 +378,17 @@ public partial class Face : Shape2D
         {
             if (IsEmpty)
                 return null;
-            var adaptor = new FaceSurfaceAdaptor(TopoFace);
+            var adaptor = TopoFace.ToSurface();
             switch (GeomType)
             {
                 case GeomType.Cylinder:
                 {
-                    var c = adaptor.Cylinder();
+                    adaptor.TryGetCylinder(out var c);
                     return c.Radius;
                 }
                 case GeomType.Sphere:
                 {
-                    var s = adaptor.Sphere();
+                    adaptor.TryGetSphere(out var s);
                     return s.Radius;
                 }
                 default:
@@ -442,8 +402,7 @@ public partial class Face : Shape2D
     {
         get
         {
-            var analysis = new EdgeAnalysis();
-            return Edges().FilterBy(e => analysis.IsSeam(e.TopoEdge, TopoFace));
+            return Edges().FilterBy(e => e.TopoEdge.IsSeam(TopoFace));
         }
     }
 
@@ -454,8 +413,7 @@ public partial class Face : Shape2D
         {
             if (GeomType != GeomType.Cone)
                 return null;
-            var adaptor = new FaceSurfaceAdaptor(TopoFace);
-            var cone = adaptor.Cone();
+            TopoFace.ToSurface().TryGetCone(out var cone);
             return cone.SemiAngle * Constants.RadToDeg;
         }
     }
@@ -467,7 +425,7 @@ public partial class Face : Shape2D
     {
         if (obj.IsEmpty)
             throw new ArgumentException("Can't extrude empty object");
-        return new Face(ShapeCasts.Face(TopoUtil.Extrude(obj.TopoShape, direction)));
+        return new Face((global::Kerf.Topology.Face)TopoUtil.Extrude(obj.TopoShape, direction));
     }
 
     /// <summary>A Bézier surface from a 2D array of control points (up to 25 each way), rational with weights.</summary>
@@ -479,26 +437,20 @@ public partial class Face : Shape2D
             throw new ArgumentException("The maximum number of control points is 25");
         if (weights is { Count: > 0 } && (points.Count != weights.Count || points[0].Count != weights[0].Count))
             throw new ArgumentException("A weight must be provided for each control point");
-        var poles = new NCollection_Array2<Point3D>(1, points.Count, 1, points[0].Count);
-        for (int i = 0; i < points.Count; i++)
-            for (int j = 0; j < points[i].Count; j++)
-            {
-                var p = points[i][j].ToGpPnt();
-                poles.SetValue(i + 1, j + 1, p);
-            }
-        BezierSurface bezier;
-        if (weights is { Count: > 0 })
-        {
-            var w = new NCollection_Array2<double>(1, weights.Count, 1, weights[0].Count);
-            for (int i = 0; i < weights.Count; i++)
-                for (int j = 0; j < weights[i].Count; j++)
-                    w.SetValue(i + 1, j + 1, weights[i][j]);
-            bezier = new BezierSurface(poles, w);
-        }
-        else
-            bezier = new BezierSurface(poles);
-        var maker = new MakeFace(bezier, global::Kerf.Engine.Foundation.Precision.Confusion());
-        return new Face(maker.Face());
+        var poles = Grid(points, p => p.ToGpPnt());
+        BezierSurface bezier = weights is { Count: > 0 } ? new BezierSurface(poles, Grid(weights, w => w)) : new BezierSurface(poles);
+        return new Face(Failures.Get(global::Kerf.Topology.Face.FromSurface(bezier), () => "Bezier face"));
+    }
+
+    // Rows of values as a grid, each row as long as the first
+    private static Grid<TOut> Grid<TIn, TOut>(IReadOnlyList<IReadOnlyList<TIn>> rows, Func<TIn, TOut> convert)
+    {
+        int columns = rows[0].Count;
+        var values = new TOut[rows.Count * columns];
+        for (int i = 0; i < rows.Count; i++)
+            for (int j = 0; j < rows[i].Count; j++)
+                values[i * columns + j] = convert(rows[i][j]);
+        return new Grid<TOut>(values, rows.Count, columns);
     }
 
     /// <summary>A rectangle centred on the plane's origin (default XY).</summary>
@@ -506,8 +458,8 @@ public partial class Face : Shape2D
     {
         plane ??= Plane.XY;
         var pln = plane.ToGpPln();
-        var maker = new MakeFace(pln, -width * 0.5, width * 0.5, -height * 0.5, height * 0.5);
-        return new Face(maker.Face());
+        var bounds = (new Interval(-width * 0.5, width * 0.5), new Interval(-height * 0.5, height * 0.5));
+        return new Face(Failures.Get(global::Kerf.Topology.Face.FromSurface(new PlaneSurface(pln), bounds), () => "rectangle"));
     }
 
     /// <summary>
@@ -519,20 +471,13 @@ public partial class Face : Shape2D
         var edges = exterior.ToList();
         if (edges.Any(e => e.IsEmpty))
             throw new ArgumentException("exterior contains empty edges");
-        var surface = new MakeFilling(3, 15, 2, false, 0.00001, 0.0001, 0.01, 0.1, 8, 9);
-        foreach (var edge in edges)
-            surface.Add(edge.TopoEdge, Continuity.C0);
-        var face = BuildFilling(surface, "Error building non-planar face with provided exterior");
+        // BRepOffsetAPI_MakeFilling(3, 15, 2, false, 1e-5, 1e-4, 0.01, 0.1, 8, 9): OCCT's defaults
+        var boundaries = edges.Select(edge => new FillBoundary(edge.TopoEdge, Continuity.C0)).ToList();
+        var face = BuildFilling(boundaries, FillOptions.Default, "Error building non-planar face with provided exterior");
         var points = surfacePoints?.ToList();
         if (points is { Count: > 0 })
-        {
-            foreach (var p in points)
-            {
-                var pnt = p.ToGpPnt();
-                surface.Add(pnt);
-            }
-            face = BuildFilling(surface, "Error building non-planar face with provided surface_points");
-        }
+            face = BuildFilling(boundaries, FillOptions.Default with { Points = [.. points.Select(p => p.ToGpPnt())] },
+                                "Error building non-planar face with provided surface_points");
         if (interiorWires is not null)
         {
             var wires = interiorWires.ToList();
@@ -549,36 +494,31 @@ public partial class Face : Shape2D
     public static Face MakeSurface(Wire exterior, IEnumerable<Vector>? surfacePoints = null, IEnumerable<Wire>? interiorWires = null) =>
         MakeSurface(exterior.Edges(), surfacePoints, interiorWires);
 
-    private static Face BuildFilling(MakeFilling surface, string error)
+    private static Face BuildFilling(IReadOnlyList<FillBoundary> boundaries, FillOptions options, string error)
     {
-        try
-        {
-            surface.Build();
-            return new Face(ShapeCasts.Face(surface.Shape()));
-        }
-        catch (global::Kerf.Engine.Foundation.FailureException e)
-        {
-            throw new InvalidOperationException(error, e);
-        }
+        // OCCT's filling of no boundary isn't done; the kernel's refuses the argument
+        if (boundaries.Count == 0)
+            throw new InvalidOperationException(error);
+        var filled = Surfaces.Fill(boundaries, options);
+        if (!filled.TryGetValue(out var face))
+            throw new InvalidOperationException(error, new KerfException(filled.Diagnostics));
+        return new Face(face.Shape);
     }
 
     private static Face AddSurfaceHoles(Face surfaceFace, IEnumerable<Wire> interiorWires)
     {
-        var maker = new MakeFace(surfaceFace.TopoFace);
+        var holes = new List<global::Kerf.Topology.Wire>();
         foreach (var wire in interiorWires)
         {
             if (wire.IsEmpty)
                 throw new ArgumentException("interior_wires contain an empty wire");
-            maker.Add(wire.TopoWire);
+            holes.Add(wire.TopoWire);
         }
-        try
-        {
-            return new Face(maker.Face());
-        }
-        catch (global::Kerf.Engine.Foundation.FailureException e) when (e.OcctType == "StdFail_NotDone")
-        {
-            throw new InvalidOperationException("Error adding interior hole in non-planar face with provided interior_wires", e);
-        }
+        var made = surfaceFace.TopoFace.WithHoles(holes);
+        if (!made.TryGetValue(out var face))
+            throw new InvalidOperationException("Error adding interior hole in non-planar face with provided interior_wires",
+                                                new KerfException(made.Diagnostics));
+        return new Face(face);
     }
 
     /// <summary>
@@ -588,33 +528,23 @@ public partial class Face : Shape2D
     public static Face MakeSurfaceFromArrayOfPoints(IReadOnlyList<IReadOnlyList<Vector>> points, double tolerance = 1e-2,
                                                     (double, double, double)? smoothing = null, int minDeg = 1, int maxDeg = 3)
     {
-        var array = new NCollection_Array2<Point3D>(1, points.Count, 1, points[0].Count);
-        for (int i = 0; i < points.Count; i++)
-            for (int j = 0; j < points[i].Count; j++)
-            {
-                var p = points[i][j].ToGpPnt();
-                array.SetValue(i + 1, j + 1, p);
-            }
-        PointsToBSplineSurface builder;
-        if (smoothing is var (w1, w2, w3))
+        var array = Grid(points, p => p.ToGpPnt());
+        var options = smoothing is var (w1, w2, w3)
             // The smoothing asks for C2, whose Jacobi basis needs a degree of at least 6 (OCCT 8)
-            builder = new PointsToBSplineSurface(array, w1, w2, w3, Math.Max(maxDeg, 6), Continuity.C2, tolerance);
-        else
-            builder = new PointsToBSplineSurface(array, minDeg, maxDeg, Continuity.C2, tolerance);
-        {
-            if (!builder.IsDone)
-                throw new InvalidOperationException("B-spline approximation failed");
-            var surface = builder.Surface();
-            var maker = new MakeFace(surface, global::Kerf.Engine.Foundation.Precision.Confusion());
-            return new Face(maker.Face());
-        }
+            ? new ApproximationOptions { Smoothing = (w1, w2, w3), MaxDegree = Math.Max(maxDeg, 6), Continuity = Continuity.C2, Tolerance = tolerance }
+            : new ApproximationOptions { MinDegree = minDeg, MaxDegree = maxDeg, Continuity = Continuity.C2, Tolerance = tolerance };
+        if (!BSplineSurface.Approximate(array, options).TryGetValue(out var surface))
+            throw new InvalidOperationException("B-spline approximation failed");
+        return new Face(Failures.Get(global::Kerf.Topology.Face.FromSurface(surface), () => "B-spline face"));
     }
 
     /// <summary>A ruled surface between two edges.</summary>
-    public static Face MakeSurfaceFromCurves(Edge edge1, Edge edge2) => (Face)new Face().CastLike(Fill.Face(edge1.TopoEdge, edge2.TopoEdge));
+    public static Face MakeSurfaceFromCurves(Edge edge1, Edge edge2) =>
+        (Face)new Face().CastLike(Failures.Get(Sweeps.Ruled(edge1.TopoEdge, edge2.TopoEdge), () => "ruled surface").Shape);
 
     /// <summary>A ruled surface between two wires with the same number of edges: a face, or a shell of several.</summary>
-    public static Shape MakeSurfaceFromCurves(Wire wire1, Wire wire2) => new Face().CastLike(Fill.Shell(wire1.TopoWire, wire2.TopoWire));
+    public static Shape MakeSurfaceFromCurves(Wire wire1, Wire wire2) =>
+        new Face().CastLike(Failures.Get(Sweeps.Ruled(wire1.TopoWire, wire2.TopoWire), () => "ruled surface").Shape);
 
     /// <summary>
     /// A possibly non-planar patch bounded by edges, each optionally tangent (or curvature) continuous with a support face,
@@ -629,17 +559,13 @@ public partial class Face : Shape2D
             ContinuityLevel.C1 => global::Kerf.Geometry.Continuity.G1,
             _ => global::Kerf.Geometry.Continuity.G2,
         };
-        var patch = new MakeFilling();
+        var boundaries = new List<FillBoundary>();
         foreach (var (edge, face, continuity) in edgeFaceConstraints ?? [])
-            patch.Add(edge.TopoEdge, face.TopoFace, Continuity(continuity));
+            boundaries.Add(new FillBoundary(edge.TopoEdge, Continuity(continuity)) { Support = face.TopoFace });
         foreach (var edge in edgeConstraints ?? [])
-            patch.Add(edge.TopoEdge, global::Kerf.Geometry.Continuity.C0);
-        foreach (var p in pointConstraints ?? [])
-        {
-            var pnt = p.ToGpPnt();
-            patch.Add(pnt);
-        }
-        var result = BuildFilling(patch, "Error building non-planar face with provided constraints").Fix();
+            boundaries.Add(new FillBoundary(edge.TopoEdge, global::Kerf.Geometry.Continuity.C0));
+        var options = FillOptions.Default with { Points = [.. (pointConstraints ?? []).Select(p => p.ToGpPnt())] };
+        var result = BuildFilling(boundaries, options, "Error building non-planar face with provided constraints").Fix();
         if (!result.IsValid || result.IsEmpty)
             throw new InvalidOperationException("Non planar face is invalid");
         return result;
@@ -649,8 +575,9 @@ public partial class Face : Shape2D
     public static Face Revolve(Edge profile, double angle, Axis axis)
     {
         var ax1 = axis.ToGpAx1();
-        var builder = new ApiMakeRevol(profile.TopoShape, ax1, angle * Constants.DegToRad, true);
-        return new Face(ShapeCasts.Face(builder.Shape()));
+        // On a copy of the profile, as build123d revolves (BRepPrimAPI_MakeRevol with copy)
+        var revolved = Failures.Get(profile.TopoShape.Revolve(ax1, angle * Constants.DegToRad, copyProfile: true), () => "revolve");
+        return new Face((global::Kerf.Topology.Face)revolved.Shape);
     }
 
     /// <summary>The faces sewn together, as groups of contiguous faces.</summary>
@@ -662,9 +589,9 @@ public partial class Face : Shape2D
         {
             groups.Add(top.Type switch
             {
-                global::Kerf.Topology.ShapeType.Face => [new Face(ShapeCasts.Face(top))],
-                global::Kerf.Topology.ShapeType.Shell => new Shell(ShapeCasts.Shell(top)).Faces(),
-                global::Kerf.Topology.ShapeType.Solid => new ShapeList<Face>(TopoUtil.Entities(top, global::Kerf.Topology.ShapeType.Face).Select(f => new Face(ShapeCasts.Face(f)))),
+                global::Kerf.Topology.ShapeType.Face => [new Face((global::Kerf.Topology.Face)top)],
+                global::Kerf.Topology.ShapeType.Shell => new Shell((global::Kerf.Topology.Shell)top).Faces(),
+                global::Kerf.Topology.ShapeType.Solid => new ShapeList<Face>(TopoUtil.Entities(top, global::Kerf.Topology.ShapeType.Face).Select(f => new Face((global::Kerf.Topology.Face)f))),
                 _ => throw new InvalidOperationException($"SewedShape returned a {TopoUtil.TypeName(top)} which was unexpected"),
             });
         }
@@ -681,13 +608,13 @@ public partial class Face : Shape2D
             throw new ArgumentException("Use Shell.sweep for multi Edge objects");
         var profileWire = new Wire([profile.SingleEdge()]);
         var pathWire = new Wire([path.SingleEdge()]);
-        var builder = new MakePipeShell(pathWire.TopoWire);
-        builder.Add(profileWire.TopoShape, false, false);
-        builder.SetTransitionMode(TransitionMode(transition));
-        builder.Build();
+        // BRepOffsetAPI_MakePipeShell's defaults (corrected Frenet), not closed into a solid
+        var options = new SweepOptions { MakeSolid = false, Transition = TransitionMode(transition) };
+        var built = Failures.Get(Sweeps.Sweep(profileWire.TopoShape, pathWire.TopoWire, options), () => "sweep");
         // The pipe builds a shell holding the one face
-        var swept = TopoUtil.Downcast(builder.Shape());
-        var result = swept.IsFace() ? new Face(ShapeCasts.Face(swept)) : new Face(ShapeCasts.Face(TopoUtil.Entities(swept, global::Kerf.Topology.ShapeType.Face).Single()));
+        var swept = TopoUtil.Downcast(built.Shape);
+        var result = swept.IsFace() ? new Face((global::Kerf.Topology.Face)swept)
+                                    : new Face((global::Kerf.Topology.Face)TopoUtil.Entities(swept, global::Kerf.Topology.ShapeType.Face).Single());
         return SkipClean.Clean ? result.Clean() : result;
     }
 
@@ -704,15 +631,15 @@ public partial class Face : Shape2D
     public Surface GeomAdaptor()
     {
         NeedsGeometry("surface");
-        return Tool.Surface(TopoFace)!;
+        TopoFace.TryGetSurface(out var surface);
+        return surface!;
     }
 
     internal (double UMin, double UMax, double VMin, double VMax) UVBounds()
     {
         NeedsGeometry("surface");
-        double uMin = 0, uMax = 0, vMin = 0, vMax = 0;
-        BrepTools.UVBounds(TopoFace, out uMin, out uMax, out vMin, out vMax);
-        return (uMin, uMax, vMin, vMax);
+        var (u, v) = TopoFace.UVBounds;
+        return (u.Min, u.Max, v.Min, v.Max);
     }
 
     /// <summary>
@@ -749,23 +676,20 @@ public partial class Face : Shape2D
         NeedsGeometry("normal");
         if (surfacePoint is null)
             return NormalAt(0.5, 0.5);
-        var surface = GeomAdaptor();
-        var pnt = surfacePoint.Value.ToGpPnt();
-        var projector = new ProjectPointOnSurface(pnt, surface);
-        double u = 0, v = 0;
-        projector.LowerDistanceParameters(out u, out v);
+        var (u, v) = NearestParameters(surfacePoint.Value);
         return NormalAtParameters(u, v);
     }
 
-    /// <summary>The unit normal at surface parameters (u, v), with the face's orientation.</summary>
-    internal Vector NormalAtParameters(double u, double v)
+    /// <summary>The surface parameters of the point of the surface nearest <paramref name="point"/> (GeomAPI_ProjectPointOnSurf).</summary>
+    private (double U, double V) NearestParameters(Vector point)
     {
-        var pnt = new Point3D();
-        var normal = new Vector3D();
-        var props = new FaceIntegrand(TopoFace);
-        props.Normal(u, v, out pnt, out normal);
-        return new Vector(normal).Normalized();
+        if (!GeomAdaptor().TryProjectNearest(point.ToGpPnt(), out var nearest))
+            throw new InvalidOperationException("The point can't be projected onto the face's surface");
+        return (nearest.U, nearest.V);
     }
+
+    /// <summary>The unit normal at surface parameters (u, v), with the face's orientation.</summary>
+    internal Vector NormalAtParameters(double u, double v) => TopoUtil.FaceNormalVector(TopoFace, u, v).Normalized();
 
     /// <summary>
     /// A partial derivative of the surface, <paramref name="uOrder"/> times in u and <paramref name="vOrder"/> times in v.
@@ -786,8 +710,7 @@ public partial class Face : Shape2D
             v = vMin + v * (vMax - vMin);
             scale = Math.Pow(uMax - uMin, uOrder) * Math.Pow(vMax - vMin, vOrder);
         }
-        var adaptor = new FaceSurfaceAdaptor(TopoFace);
-        var d = adaptor.DN(u, v, uOrder, vOrder);
+        var d = TopoFace.ToSurface().DerivativeN(u, v, uOrder, vOrder);
         return new Vector(d) * scale;
     }
 
@@ -800,15 +723,9 @@ public partial class Face : Shape2D
     {
         if (IsEmpty)
             throw new InvalidOperationException("Can't find param on empty face");
-        var location = new Placement();
-        var surface = Tool.Surface(TopoFace, out location)!;
-        var trsf = location.Transformation;
-        var inverse = trsf.Inverted();
+        var surface = GeomAdaptor();
         var pnt = point.ToGpPnt();
-        var local = pnt.Transformed(inverse);
-        var analysis = new SurfaceAnalysis(surface);
-        var uv = analysis.ValueOfUV(local, Constants.Tolerance);
-        var separation = analysis.Gap();
+        var (uv, separation) = TopoFace.ParametersOf(pnt, Constants.Tolerance);
         if (separation > Constants.Tolerance)
             throw new ArgumentException($"point ({point}) is {separation} from the face's surface");
         double u = uv.X, v = uv.Y;
@@ -848,21 +765,14 @@ public partial class Face : Shape2D
         NeedsGeometry("location");
         if (surfacePoint is null)
             return LocationAt(0.5, 0.5, xDir);
-        var surface = GeomAdaptor();
-        var pnt = surfacePoint.Value.ToGpPnt();
-        var projector = new ProjectPointOnSurface(pnt, surface);
-        double u = 0, v = 0;
-        projector.LowerDistanceParameters(out u, out v);
+        var (u, v) = NearestParameters(surfacePoint.Value);
         return LocationAtParameters(u, v, xDir);
     }
 
     private Location LocationAtParameters(double u, double v, Vector? xDir)
     {
-        var surface = GeomAdaptor();
-        var pnt = new Point3D();
-        var du = new Vector3D();
-        var dv = new Vector3D();
-        surface.D1(u, v, out pnt, out du, out dv);
+        var d = GeomAdaptor().Derivatives(u, v, 1);
+        var (pnt, du, dv) = (d.Point, d.DU, d.DV);
         var origin = new Vector(pnt);
         var zDir = new Vector(du).Cross(new Vector(dv)).Normalized();
         // The surface normal ignores the face's orientation, so flip it to match the face's own (see NormalAt)
@@ -878,7 +788,7 @@ public partial class Face : Shape2D
     public Wire OuterWire()
     {
         NeedsGeometry("outer wire");
-        return (Wire)new Wire(BrepTools.OuterWire(TopoFace)).ExtractedFrom(this);
+        return (Wire)new Wire(TopoFace.OuterWire).ExtractedFrom(this);
     }
 
     /// <summary>The hole wires.</summary>
@@ -894,11 +804,9 @@ public partial class Face : Shape2D
     public bool IsCoplanar(Plane plane)
     {
         var (u0, _, v0, _) = UVBounds();
-        var pnt = new Point3D();
-        var normal = new Vector3D();
-        var props = new FaceIntegrand(TopoFace);
-        props.Normal(u0, v0, out pnt, out normal);
-        return plane.Contains(new Vector(pnt)) && 1 - Math.Abs(plane.ZDir.Dot(new Vector(normal))) < Constants.Tolerance;
+        var pnt = TopoFace.ToSurface().Evaluate(u0, v0);
+        var normal = TopoUtil.FaceNormalVector(TopoFace, u0, v0);
+        return plane.Contains(new Vector(pnt)) && 1 - Math.Abs(plane.ZDir.Dot(normal)) < Constants.Tolerance;
     }
 
     /// <summary>Whether a point lies on the face within a tolerance, its boundary included.</summary>
@@ -910,19 +818,11 @@ public partial class Face : Shape2D
     /// </summary>
     public Face MakeHoles(IEnumerable<Wire> interiorWires)
     {
-        var maker = new MakeFace(TopoFace);
-        foreach (var wire in interiorWires)
-            maker.Add(wire.TopoWire);
-        Face face;
-        try
-        {
-            face = new Face(maker.Face());
-        }
-        catch (global::Kerf.Engine.Foundation.FailureException e) when (e.OcctType == "StdFail_NotDone")
-        {
-            throw new InvalidOperationException("Error adding interior hole in non-planar face with provided interior_wires", e);
-        }
-        return face.Fix();
+        var made = TopoFace.WithHoles(interiorWires.Select(w => w.TopoWire));
+        if (!made.TryGetValue(out var holed))
+            throw new InvalidOperationException("Error adding interior hole in non-planar face with provided interior_wires",
+                                                new KerfException(made.Diagnostics));
+        return new Face(holed).Fix();
     }
 
     /// <summary>This face with its holes filled in.</summary>
@@ -933,10 +833,9 @@ public partial class Face : Shape2D
         var inner = InnerWires();
         if (inner.Count == 0)
             return this;
-        var reshaper = new ReShape();
-        foreach (var hole in inner)
-            reshaper.Remove(hole.TopoShape);
-        return (Face)Rewrapped(ShapeCasts.Face(reshaper.Apply(TopoShape)));
+        // The face rebuilt without its holes (as BRepTools_ReShape removing them does)
+        var kept = TopoShape.Children.Where(child => !inner.Any(hole => hole.TopoShape.IsSame(child)));
+        return (Face)Rewrapped((global::Kerf.Topology.Face)TopoShape.WithChildren(kept));
     }
 
     /// <summary>
@@ -950,24 +849,22 @@ public partial class Face : Shape2D
         var list = vertices.Where(v => !v.IsEmpty).ToList();
         if (list.Count == 0)
             return this;
-        var builder = new MakeFillet2D(TopoFace);
-        var map = new IndexedMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
-        Exploration.MapShapesAndAncestors(TopoFace, global::Kerf.Topology.ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, map);
+        var graph = ShapeGraph.Build(TopoFace);
+        var corners = new List<(global::Kerf.Topology.Edge, global::Kerf.Topology.Edge)>();
         foreach (var v in list)
         {
-            var edges = map.GetValue(v.TopoShape);
-            var (edge1, edge2) = Wire.OrderChamferEdges(edge, (new Edge(ShapeCasts.Edge(edges.First())), new Edge(ShapeCasts.Edge(edges.Last()))));
+            var edges = graph.Ancestors(v.TopoShape, global::Kerf.Topology.ShapeType.Edge);
+            var (edge1, edge2) = Wire.OrderChamferEdges(edge, (new Edge((global::Kerf.Topology.Edge)edges.First()),
+                                                               new Edge((global::Kerf.Topology.Edge)edges.Last())));
             if (!edge1.IsEmpty && !edge2.IsEmpty)
-                builder.AddChamfer(edge1.TopoEdge, edge2.TopoEdge, distance, distance2);
+                corners.Add((edge1.TopoEdge, edge2.TopoEdge));
         }
-        builder.Build();
-        var face = new Face(ShapeCasts.Face(builder.Shape())).Fix();
+        var built = Failures.Get(TopoFace.Chamfer2D(corners, distance, distance2), () => "2D chamfer");
+        var face = new Face(built.Shape).Fix();
         if (NormalAt() != face.NormalAt())
             face = (Face)(-face);
-        // The builder answers Modified only for an edge it trimmed and throws for anything else (OCCT's DescendantEdge)
-        IEnumerable<global::Kerf.Topology.Shape> Modified(global::Kerf.Topology.Shape s) =>
-            s.IsEdge() && builder.IsModified(ShapeCasts.Edge(s)) ? builder.Modified(s) : [];
-        var record = ShapeHistory.FromAlgorithm(Modified, s => builder.Generated(s), [TopoShape], face.TopoShape);
+        // The edges the chamfers trimmed are modified (OCCT's DescendantEdge); the builder answers nothing as generated
+        var record = ShapeHistory.FromAlgorithm(s => built.History.Modified(s), _ => [], [TopoShape], face.TopoShape);
         return (Face)face.MadeBy(record.AddModified(TopoShape, face.TopoShape));
     }
 
@@ -1017,17 +914,15 @@ public partial class Face : Shape2D
         var intersected = new List<Shape2D>();
         if (targetObject is Face face)
         {
-            var common = new Common();
-            var shape = TopoUtil.BoolOp([extruded], [face.TopoShape], common);
+            var shape = TopoUtil.BoolOp([extruded], [face.TopoShape], BooleanKind.Common);
             if (!shape.IsNull)
-                intersected.AddRange(TopoUtil.TopLevelShapes(shape).Select(f => new Face(ShapeCasts.Face(f))));
+                intersected.AddRange(TopoUtil.TopLevelShapes(shape).Select(f => new Face((global::Kerf.Topology.Face)f)));
         }
         else
             foreach (var shell in targetObject.Shells())
             {
-                var common = new Common();
-                var shape = TopoUtil.BoolOp([extruded], [shell.TopoShape], common);
-                intersected.AddRange(TopoUtil.TopLevelShapes(shape).Select(s => new Shell(ShapeCasts.Shell(s))));
+                var shape = TopoUtil.BoolOp([extruded], [shell.TopoShape], BooleanKind.Common);
+                intersected.AddRange(TopoUtil.TopLevelShapes(shape).Select(s => new Shell((global::Kerf.Topology.Shell)s)));
             }
         var sorted = new ShapeList<Shape2D>(intersected).SortBy(new Axis(Center(), direction));
         return new ShapeList<Shape2D>(sorted.Select(s => s.Faces().Count == 1 ? (Shape2D)s.SingleFace() : s));

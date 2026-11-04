@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Numerics;
 
 /// <summary>A function of several variables.</summary>
-public abstract class MultipleVarFunction
+internal abstract class MultipleVarFunction
 {
     /// <summary>The number of variables of the function.</summary>
     public abstract int VariableCount { get; }

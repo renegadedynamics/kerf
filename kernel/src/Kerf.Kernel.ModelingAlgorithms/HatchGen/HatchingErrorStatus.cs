@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Classification.Hatching;
 
 /// <summary>Error status of a hatching.</summary>
-public enum HatchingErrorStatus
+internal enum HatchingErrorStatus
 {
     NoProblem,
     TrimFailure,

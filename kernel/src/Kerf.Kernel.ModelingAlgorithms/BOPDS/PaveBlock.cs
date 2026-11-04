@@ -21,7 +21,7 @@ namespace Kerf.Engine.Booleans.Data;
 /// insertion order (decision 580). The sort of the paves in <see cref="Update"/> keeps MSVC's order of paves with
 /// equal parameters (<see cref="Sorting"/>).
 /// </remarks>
-public class PaveBlock : Transient
+internal class PaveBlock : Transient
 {
     protected int _edge;
     protected int _originalEdge;

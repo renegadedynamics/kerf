@@ -106,7 +106,7 @@ internal sealed class EdgeEdgeJob : EdgeEdge, BooleanParallel.ISolver
     }
 }
 
-public partial class PaveFiller
+internal partial class PaveFiller
 {
     /// <summary>The edge/edge interferences: new vertices and common blocks.</summary>
     protected virtual void PerformEE(ProgressRange range)

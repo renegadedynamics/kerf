@@ -18,7 +18,7 @@ namespace Kerf.Engine.Classification.Hatching;
 /// element, which share the (never changed) point objects. The mutators (<see cref="AddPoint"/>,
 /// <see cref="RemPoint"/>, <see cref="ClrPoints"/> and the inherited setters) are internal.
 /// </remarks>
-public sealed class PointOnHatching : IntersectionPoint
+internal sealed class PointOnHatching : IntersectionPoint
 {
     private readonly NCollection_Sequence<PointOnElement> _points;
 

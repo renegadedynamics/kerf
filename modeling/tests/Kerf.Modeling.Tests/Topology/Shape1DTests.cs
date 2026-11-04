@@ -91,8 +91,8 @@ public class Shape1DTests
 
         // The ends match the curve's
         var curve = e.GeomAdaptor();
-        var first = curve.Value(curve.FirstParameter());
-        var last = curve.Value(curve.LastParameter());
+        var first = curve.Evaluate(curve.Range.Min);
+        var last = curve.Evaluate(curve.Range.Max);
         Check.AlmostEqual(new Vector(first), pts[0], 7);
         Check.AlmostEqual(new Vector(last), pts[^1], 7);
     }

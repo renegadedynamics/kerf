@@ -20,7 +20,7 @@ namespace Kerf.Engine.Booleans.Data;
 /// structure's vector and changed in place through <c>ChangeShapeInfo</c>. OCCT's by-value copies are the copy
 /// constructor, which copies the list of sub-shapes.
 /// </remarks>
-public class ShapeInfo
+internal class ShapeInfo
 {
     protected Shape _shape = new();
     protected ShapeType _type;

@@ -2,11 +2,7 @@
 // Omitted:
 // - TestGeomEqualTypeMismatch.test_edge_vs_non_edge, test_wire_vs_non_wire: GeomEqual is typed (Edge with Edge, Wire
 //   with Wire), so comparing an edge with a wire doesn't compile.
-using Kerf.Engine.Construction.Api;
-using Kerf.Engine.Topology;
-using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using Occt;
 using Ops = Kerf.Modeling.Operations;
 
 namespace Build123d.Tests.Topology;
@@ -30,30 +26,11 @@ internal static class GeomEqualObjects
     /// <summary>An edge on an OCCT B-spline built from its poles, knots and multiplicities (and weights).</summary>
     public static Edge BSpline(Vector[] poles, double[] knots, int[] mults, int degree, double[]? weights = null)
     {
-        var poleArray = new NCollection_Array1<Point3D>(1, poles.Length);
-        for (int i = 0; i < poles.Length; i++)
-        {
-            var p = poles[i].ToGpPnt();
-            poleArray.SetValue(i + 1, p);
-        }
-        var knotArray = new NCollection_Array1<double>(1, knots.Length);
-        for (int i = 0; i < knots.Length; i++)
-            knotArray.SetValue(i + 1, knots[i]);
-        var multArray = new NCollection_Array1<int>(1, mults.Length);
-        for (int i = 0; i < mults.Length; i++)
-            multArray.SetValue(i + 1, mults[i]);
-        BSplineCurve3D curve;
-        if (weights is null)
-            curve = new BSplineCurve3D(poleArray, knotArray, multArray, degree, false);
-        else
-        {
-            var weightArray = new NCollection_Array1<double>(1, weights.Length);
-            for (int i = 0; i < weights.Length; i++)
-                weightArray.SetValue(i + 1, weights[i]);
-            curve = new BSplineCurve3D(poleArray, weightArray, knotArray, multArray, degree, false);
-        }
-        var maker = new MakeEdge(curve);
-        return new Edge(maker.Edge());
+        Point3D[] poleArray = [.. poles.Select(p => p.ToGpPnt())];
+        var curve = weights is null
+            ? new BSplineCurve3D(poleArray, knots, mults, degree, false)
+            : new BSplineCurve3D(poleArray, knots, mults, degree, false, weights);
+        return new Edge(global::Kerf.Construction.ShapeFactory.FromCurve(curve).Value);
     }
 }
 
@@ -420,14 +397,12 @@ public class EdgeGeomEqualOffsetTests
         var spline = GeomEqualObjects.Spline((0, 0), (1, 1), (2, 0), (3, 1));
         double first, last;
         var adaptor = spline.GeomAdaptor();
-        (first, last) = (adaptor.FirstParameter(), adaptor.LastParameter());
-        var topoEdge = ShapeCasts.Edge(spline.Wrapped);
-        double f = 0, l = 0;
-        var basis = Tool.Curve(topoEdge, out f, out l);
+        (first, last) = (adaptor.Range.Min, adaptor.Range.Max);
+        var topoEdge = ((global::Kerf.Topology.Edge)spline.Wrapped);
+        Assert.True(topoEdge.TryGetCurve(out var basis, out _));
         var dir = (direction ?? new Vector(0, 0, 1)).ToGpDir();
-        var curve = new OffsetCurve3D(basis!, distance, dir);
-        var maker = new MakeEdge(curve, first, last);
-        var edge = new Edge(maker.Edge());
+        var curve = new OffsetCurve3D(basis, distance, dir);
+        var edge = new Edge(global::Kerf.Construction.ShapeFactory.FromCurve(curve, new(first, last)).Value);
         Assert.Equal(GeomType.Offset, edge.GeomType);
         return edge;
     }

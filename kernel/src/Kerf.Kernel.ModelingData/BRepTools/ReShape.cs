@@ -31,7 +31,7 @@ namespace Kerf.Engine.Topology;
 /// overrides.
 /// </para>
 /// </remarks>
-public class ReShape : Transient
+internal class ReShape : Transient
 {
     /// <summary>The kinds of the replacements.</summary>
     protected enum TReplacementKind

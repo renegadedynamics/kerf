@@ -18,7 +18,7 @@ namespace Kerf.Engine.Booleans.Data;
 /// <see cref="NCollection_IntMap"/>s, which iterate in the order of OCCT's hash buckets as native's do (decision 784).
 /// As in OCCT, <see cref="Clear"/> leaves the Sc maps.
 /// </remarks>
-public class FaceInfo
+internal class FaceInfo
 {
     protected int _index;
     protected IndexedSet<PaveBlock> _paveBlocksIn = new();

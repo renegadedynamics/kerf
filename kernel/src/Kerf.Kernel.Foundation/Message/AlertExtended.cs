@@ -12,7 +12,7 @@ namespace Kerf.Engine.Foundation;
 /// An alert with an attribute (its name and other data) and, optionally, child alerts
 /// (<see cref="CompositeAlerts"/>): the alerts of a report's levels (<see cref="Level"/>).
 /// </summary>
-public class AlertExtended : Alert
+internal class AlertExtended : Alert
 {
     protected CompositeAlerts? _compositAlerts; //!< class provided hierarchical structure of alerts
     protected MessageAttribute? _attribute;           //!< container of the alert attributes

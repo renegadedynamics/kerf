@@ -11,7 +11,7 @@ namespace Kerf.Engine.Booleans.Data;
 /// A struct, as OCCT's by-value class: it holds the two pave blocks by reference (handles in C++), so a copy shares
 /// them as the C++ copy does. OCCT's deprecated <c>PaveBlocks(PB1, PB2)</c> is left out.
 /// </remarks>
-public partial struct CoupleOfPaveBlocks
+internal partial struct CoupleOfPaveBlocks
 {
     private int _indexInterf;
     private int _index;

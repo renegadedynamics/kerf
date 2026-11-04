@@ -49,6 +49,15 @@ public static class Sweeps
         /// <summary>The profile revolved about <paramref name="axis"/> by <paramref name="angle"/> (radians, at most 2π).</summary>
         public Result<Built<Shape>> Revolve(in Axis3D axis, double angle = 2 * Math.PI,
                                             IProgress<double>? progress = null, CancellationToken cancellationToken = default)
+            => profile.Revolve(axis, angle, copyProfile: false, progress, cancellationToken);
+
+        /// <summary>
+        /// The profile revolved, as <c>Revolve</c>, but with <paramref name="copyProfile"/> on a copy of the profile (OCCT's
+        /// <c>BRepPrimAPI_MakeRevol</c> with <c>Copy</c>, as build123d revolves): the result shares none of the profile's
+        /// sub-shapes, and the history is the copy's.
+        /// </summary>
+        public Result<Built<Shape>> Revolve(in Axis3D axis, double angle, bool copyProfile,
+                                            IProgress<double>? progress = null, CancellationToken cancellationToken = default)
         {
             MakerOutcome.NotNull(profile.AsShape(), nameof(profile));
             MakerOutcome.Valid(axis, nameof(axis));
@@ -58,8 +67,8 @@ public static class Sweeps
             }
             Shape p = profile.AsShape();
             Axis3D a = axis;
-            // Without copy, as the other sweeps: the result shares the profile's sub-shapes (decision 1558)
-            return EngineOperation.Run<Shape>(range => SweepOutcome(new ApiMakeRevol(p, a, angle), range, p),
+            // Without copy, as the other sweeps, unless asked: the result shares the profile's sub-shapes (decision 1558)
+            return EngineOperation.Run<Shape>(range => SweepOutcome(new ApiMakeRevol(p, a, angle, copyProfile), range, p),
                                               Failure, progress, cancellationToken);
         }
     }
@@ -245,7 +254,8 @@ public static class Sweeps
         SweepFrame.Discrete => static pipe => pipe.SetDiscreteMode(),
         SweepFrame.Fixed when options.FixedFrame is { } fixedFrame => pipe => pipe.SetMode(fixedFrame),
         SweepFrame.Binormal when options.Binormal is { } binormal => pipe => pipe.SetMode(binormal),
-        SweepFrame.Auxiliary when options.AuxiliarySpine is { IsNull: false } auxiliary => pipe => pipe.SetMode(auxiliary, false),
+        SweepFrame.Auxiliary when options.AuxiliarySpine is { IsNull: false } auxiliary =>
+            pipe => pipe.SetMode(auxiliary, options.CurvilinearEquivalence),
         SweepFrame.Fixed or SweepFrame.Binormal or SweepFrame.Auxiliary =>
             throw new ArgumentException($"The sweep frame {options.Frame} needs its value in the options.", nameof(options)),
         _ => throw new ArgumentOutOfRangeException(nameof(options), options.Frame, "An unknown sweep frame."),

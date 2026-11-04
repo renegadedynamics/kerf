@@ -32,7 +32,7 @@ namespace Kerf.Engine.Booleans.Data;
 /// <c>Precision::Confusion()</c> is written as the constant 1e-7.
 /// </para>
 /// </remarks>
-public class DataIterator
+internal class DataIterator
 {
     //! Precision::Confusion(), OCCT's default fuzzy value
     private const double DefaultFuzzyValue = 1.0e-7;

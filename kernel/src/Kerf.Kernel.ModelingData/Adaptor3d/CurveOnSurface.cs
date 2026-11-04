@@ -24,7 +24,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// <see cref="Load(Curve2DAdaptorBase)"/> are public, and the intervals are cached, so evaluating one adaptor from
 /// several threads at once is not safe. The adaptor keeps references to the adaptors it is given, as OCCT does.
 /// </remarks>
-public class CurveOnSurface : CurveAdaptorBase
+internal class CurveOnSurface : CurveAdaptorBase
 {
     private SurfaceAdaptorBase? _surface;
     private Curve2DAdaptorBase? _curve;

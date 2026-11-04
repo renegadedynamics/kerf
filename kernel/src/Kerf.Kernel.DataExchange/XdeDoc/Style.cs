@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Documents;
 /// <param name="SurfaceColor">The surfaces' colour, or null for the viewer's default.</param>
 /// <param name="CurveColor">The curves' colour, or null for the viewer's default.</param>
 /// <param name="IsVisible">False if the shape is hidden.</param>
-public readonly record struct Style(ColorWithAlpha? SurfaceColor, ColorWithAlpha? CurveColor, bool IsVisible = true)
+internal readonly record struct Style(ColorWithAlpha? SurfaceColor, ColorWithAlpha? CurveColor, bool IsVisible = true)
 {
     /// <summary>No colour, visible.</summary>
     public static Style Default => new(null, null, true);

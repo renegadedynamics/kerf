@@ -8,7 +8,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 
 /// <summary>For a TOUCH transition: whether the curve stays inside or outside the other one, or Unknown.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.IntRes2d_Situation;</c>.</remarks>
-public enum Situation
+internal enum Situation
 {
     Inside,
     Outside,

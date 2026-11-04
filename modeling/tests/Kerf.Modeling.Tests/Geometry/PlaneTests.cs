@@ -2,7 +2,6 @@
 // Vertex) or builders follow with those ports. Python's origin/x_dir/y_dir setters and move() change the
 // plane; the port's WithOrigin/WithXDir/WithYDir and Moved return new planes.
 using Kerf.Geometry;
-using Occt;
 
 namespace Build123d.Tests.Geometry;
 
@@ -215,10 +214,10 @@ public class PlaneTests
     {
         // The directions given aren't orthogonal, so x_dir doesn't show as given
         Assert.Equal("((1.00, 2.00, 3.00), (-0.76, -0.06, 0.64), (0.50, 0.57, 0.65))",
-                     new Plane((1, 2, 3), (4, 5, 6), (7, 8, 9)).ToString(".2f"));
-        Assert.Equal("((1, 2, 3), (-0.76, -0.06, 0.64), (0.5, 0.57, 0.65))",
-                     new Plane((1, 2, 3), (4, 5, 6), (7, 8, 9)).ToString(".2g"));
-        Assert.Contains("((1.0, 2.0, 3.0), ", new Plane((1, 2, 3), (4, 5, 6), (7, 8, 9)).ToString(".2t"));
+                     new Plane((1, 2, 3), (4, 5, 6), (7, 8, 9)).ToString("F2"));
+        Assert.Equal("((1, 2, 3), (-0.76, -0.059, 0.64), (0.5, 0.57, 0.65))",
+                     new Plane((1, 2, 3), (4, 5, 6), (7, 8, 9)).ToString("G2"));
+        Assert.Contains("((1, 2, 3), ", new Plane((1, 2, 3), (4, 5, 6), (7, 8, 9)).ToString(null));
         Assert.Equal("Plane: (origin=(0, 0, 0), x_dir=(1, 0, 0), z_dir=(0, 0, 1))", Plane.XY.ToString());
     }
 

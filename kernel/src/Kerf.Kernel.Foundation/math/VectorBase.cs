@@ -28,7 +28,7 @@ namespace Kerf.Engine.Numerics;
 /// </list>
 /// OCCT keeps vectors of up to 32 elements in an inline buffer; here the storage is always a .NET array.
 /// </remarks>
-public class VectorBase<TheItemType>
+internal class VectorBase<TheItemType>
     where TheItemType : struct, INumber<TheItemType>
 {
     private NCollection_Array1<TheItemType> _array;

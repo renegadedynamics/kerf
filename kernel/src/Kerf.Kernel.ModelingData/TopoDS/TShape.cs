@@ -26,7 +26,7 @@ namespace Kerf.Engine.Topology;
 /// geometry never change again, and it is <see cref="Locked()"/>: OCCT's own guards then refuse to modify it.
 /// </para>
 /// </remarks>
-public abstract class TShape : Transient
+internal abstract class TShape : Transient
 {
     /// <summary>
     /// Bit layout of the compact state: bits 0-3 store the TopAbs_ShapeEnum value, bits 4-11 the flags, bits 12-15

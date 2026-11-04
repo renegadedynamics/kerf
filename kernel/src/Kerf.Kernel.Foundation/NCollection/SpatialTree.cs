@@ -15,7 +15,7 @@ namespace Kerf.Engine.Collections;
 /// explicitly. Called through the interface on a boxed copy it changes only that copy; the tree calls it on its own
 /// nodes' values through the constraint, which changes them in place as C++ does.
 /// </remarks>
-public interface ISpatialTreeBox<TheBndType> where TheBndType : struct, ISpatialTreeBox<TheBndType>
+internal interface ISpatialTreeBox<TheBndType> where TheBndType : struct, ISpatialTreeBox<TheBndType>
 {
     /// <summary>Enlarges this bounding volume to contain <paramref name="other"/>.</summary>
     void Add(in TheBndType other);
@@ -38,7 +38,7 @@ public interface ISpatialTreeBox<TheBndType> where TheBndType : struct, ISpatial
 /// and move assignment are the constructor taking a tree and <see cref="Move"/>, which take the other tree's nodes and
 /// leave it empty.
 /// </remarks>
-public class SpatialTree<TheObjType, TheBndType> where TheBndType : struct, ISpatialTreeBox<TheBndType>
+internal class SpatialTree<TheObjType, TheBndType> where TheBndType : struct, ISpatialTreeBox<TheBndType>
 {
     /// <summary>The minimal interface of a selector.</summary>
     public abstract class Selector

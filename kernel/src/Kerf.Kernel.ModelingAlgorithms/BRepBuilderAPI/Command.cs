@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Api;
 
 /// <summary>Root class for all commands in BRepBuilderAPI: manages the done flag.</summary>
-public abstract class Command
+internal abstract class Command
 {
     private bool _done;
 

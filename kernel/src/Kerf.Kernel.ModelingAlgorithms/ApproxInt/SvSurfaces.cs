@@ -18,7 +18,7 @@ namespace Kerf.Engine.Intersection.Approximation;
 /// refined by the intersection's solver before the values are computed; otherwise they are taken as an exact
 /// intersection point. A working object (decision 21): its implementations cache their last two results.
 /// </remarks>
-public abstract class SvSurfaces
+internal abstract class SvSurfaces
 {
     private bool _useSolver;
 

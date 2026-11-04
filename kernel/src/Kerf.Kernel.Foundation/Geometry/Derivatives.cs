@@ -47,6 +47,12 @@ public readonly record struct SurfaceDerivatives(int Order, Point3D Point, Vecto
 /// <param name="Distance">The distance from the point projected; zero where there was none.</param>
 public readonly record struct CurvePoint(double Parameter, Point3D Point, double Distance = 0);
 
+/// <summary>A point on a 2D curve: its parameter, the point, and its distance from what was projected.</summary>
+/// <param name="Parameter">The curve's parameter.</param>
+/// <param name="Point">The point on the curve.</param>
+/// <param name="Distance">The distance from the point projected; zero where there was none.</param>
+public readonly record struct CurvePoint2D(double Parameter, Point2D Point, double Distance = 0);
+
 /// <summary>A point on a surface: its parameters, the point, and its distance from what was projected.</summary>
 /// <param name="U">The surface's U parameter.</param>
 /// <param name="V">The surface's V parameter.</param>

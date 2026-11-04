@@ -15,7 +15,7 @@ namespace Kerf.Engine.Extrema;
 /// <see cref="Precision.Infinite"/>; <c>default(Extrema_POnSurf)</c> is all zeros. The constructor is the twin of the
 /// internal <c>SetParameters</c>.
 /// </remarks>
-public partial struct POnSurf : IEquatable<POnSurf>
+internal partial struct POnSurf : IEquatable<POnSurf>
 {
     private double _u;
     private double _v;

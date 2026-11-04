@@ -16,7 +16,7 @@ namespace Kerf.Engine.Booleans.Data;
 /// A working object, compared by reference (plan section 6). The first pave block is the one with the smallest
 /// original edge index (<see cref="AddPaveBlock"/>), unless <see cref="SetRealPaveBlock"/> chose another.
 /// </remarks>
-public class CommonBlock : Transient
+internal class CommonBlock : Transient
 {
     protected NCollection_List<PaveBlock> _paveBlocks = new(); //!< Pave blocks of the common block
     protected NCollection_List<int> _faces = new();                   //!< Faces on which the pave blocks are lying

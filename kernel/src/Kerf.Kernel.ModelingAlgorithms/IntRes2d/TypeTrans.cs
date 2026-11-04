@@ -8,7 +8,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 
 /// <summary>The type of a transition at an intersection point: In, Out, Touch, or Undecided (the curves are superposed).</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.IntRes2d_TypeTrans;</c>.</remarks>
-public enum TypeTrans
+internal enum TypeTrans
 {
     In,
     Out,

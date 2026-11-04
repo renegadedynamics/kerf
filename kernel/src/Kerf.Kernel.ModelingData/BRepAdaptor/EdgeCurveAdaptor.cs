@@ -22,7 +22,7 @@ namespace Kerf.Engine.Topology.Adaptors;
 /// Most methods come from <see cref="TransformedCurve"/>, which applies the location. A working object
 /// (decision 214).
 /// </remarks>
-public class EdgeCurveAdaptor : TransformedCurve
+internal class EdgeCurveAdaptor : TransformedCurve
 {
     private Edge _edge = new();
 

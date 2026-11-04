@@ -15,7 +15,7 @@ namespace Kerf.Engine.Intersection.TwoD;
 /// kept by reference during the computation only; the results are values. Not sealed: Geom2dHatch_Intersector derives
 /// from it, as in OCCT (decision 665).
 /// </remarks>
-public class GInter
+internal class GInter
     : IntCurveCurveGen<Curve2DAdaptorBase, Geom2dCurveTool, TheProjPCurOfGInter,
                                 MyImpParToolOfTheIntersectorOfTheIntConicCurveOfGInter>
 {

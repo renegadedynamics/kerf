@@ -20,7 +20,7 @@ namespace Kerf.Engine.Construction.Api;
 /// <para>The algorithm is a <see cref="History.IAlgorithm"/>, so its history can be collected with
 /// <c>new BRepTools_History(arguments, algorithm)</c> or merged with <see cref="History.Merge(NCollection_List{Shape}, History.IAlgorithm)"/>.</para>
 /// </remarks>
-public abstract class MakeShape : Command, History.IAlgorithm
+internal abstract class MakeShape : Command, History.IAlgorithm
 {
     protected Shape _shape = new();
     protected NCollection_List<Shape> _generated = new();

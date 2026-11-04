@@ -23,7 +23,7 @@ namespace Kerf.Engine.Booleans.Api;
 /// override of <c>Shape()</c>, which doesn't check <c>IsDone</c>, is <see cref="InternalShape"/>.
 /// </para>
 /// </remarks>
-public abstract class Algo : MakeShape
+internal abstract class Algo : MakeShape
 {
     /// <summary>OCCT's protected base class BOPAlgo_Options, held.</summary>
     private protected readonly Options _options = new();

@@ -16,7 +16,7 @@ namespace Kerf.Engine.Foundation;
 /// never <c>default</c>. <c>==</c> compares the components exactly; OCCT's tolerant <c>operator==</c> is
 /// <see cref="IsEqual"/>.
 /// </remarks>
-public partial struct ColorWithAlpha : IEquatable<ColorWithAlpha>
+internal partial struct ColorWithAlpha : IEquatable<ColorWithAlpha>
 {
     private LinearColor _rgb;
     private float _alpha;

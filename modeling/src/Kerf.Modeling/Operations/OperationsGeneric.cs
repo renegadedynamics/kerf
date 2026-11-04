@@ -1,5 +1,3 @@
-using Kerf.Engine.Foundation;
-using Occt;
 
 namespace Kerf.Modeling;
 
@@ -389,7 +387,7 @@ public static partial class Operations
                     var offsetWire = AsWire(innerWire.Offset2D(-amount, kind));
                     innerWires.Add(minEdgeLength is { } innerMin ? offsetWire.FixDegenerateEdges(innerMin) : offsetWire);
                 }
-                catch (Exception e) when (e is InvalidOperationException or FailureException or KerfException)
+                catch (Exception e) when (Failures.IsKernelFailure(e) || e is InvalidOperationException or KerfException)
                 {
                     // The hole closed up
                 }

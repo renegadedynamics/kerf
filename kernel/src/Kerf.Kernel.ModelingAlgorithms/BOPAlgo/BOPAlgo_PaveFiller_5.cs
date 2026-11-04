@@ -125,7 +125,7 @@ internal sealed class EdgeFaceJob : EdgeFace, BooleanParallel.IContextSolver<Int
     }
 }
 
-public partial class PaveFiller
+internal partial class PaveFiller
 {
     /// <summary>The edge/face interferences.</summary>
     protected virtual void PerformEF(ProgressRange range)

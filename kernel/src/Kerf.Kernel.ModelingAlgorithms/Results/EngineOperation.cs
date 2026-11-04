@@ -14,8 +14,9 @@ namespace Kerf.Engine.Foundation;
 /// <param name="Report">The algorithm's report, or null for an algorithm without one.</param>
 /// <param name="Failure">Why an algorithm that isn't done failed, when the operation knows (its status enum, unit 10L2),
 /// in place of the report's alerts and the operation's own error.</param>
+/// <param name="MoreFailures">Further errors with <paramref name="Failure"/>, as a fillet's other faulty contours.</param>
 internal readonly record struct EngineOutcome(bool IsDone, Func<Shape> Shape, History? History = null, Report? Report = null,
-                                              Diagnostic? Failure = null);
+                                              Diagnostic? Failure = null, ImmutableArray<Diagnostic> MoreFailures = default);
 
 /// <summary>
 /// The one way a public operation runs an engine algorithm (decision 1369; docs/api/README.md, section 3): the progress
@@ -58,7 +59,9 @@ internal static class EngineOperation
         {
             if (outcome.Failure is { } known)
             {
-                return Result<Built<TShape>>.Failure(known);
+                return outcome.MoreFailures.IsDefaultOrEmpty
+                    ? Result<Built<TShape>>.Failure(known)
+                    : Result<Built<TShape>>.Failure([known, .. outcome.MoreFailures]);
             }
 
             return Result<Built<TShape>>.Failure(outcome.Report is { } report ? OperationDiagnostics.FromReport(report, failure) : [failure]);

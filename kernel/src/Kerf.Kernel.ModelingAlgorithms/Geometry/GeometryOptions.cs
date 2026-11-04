@@ -14,13 +14,15 @@ public sealed record InterpolationOptions
     /// <summary>A closed, periodic curve through the points (the last point mustn't repeat the first).</summary>
     public bool Periodic { get; init; }
 
-    /// <summary>The tangents: none (empty), one at each end (two), or one at every point.</summary>
+    /// <summary>The tangents: none (empty), one at each end (two), or one at every point, where a zero one leaves its point's
+    /// tangent free.</summary>
     public ImmutableArray<Vector3D> Tangents { get; init; } = [];
 
     /// <summary>Whether the tangents are scaled to the curve's parametrisation (true, OCCT's default) or kept as given.</summary>
     public bool ScaleTangents { get; init; } = true;
 
-    /// <summary>The parameters of the points, increasing (empty: chord length).</summary>
+    /// <summary>The parameters of the points, increasing (empty: chord length); for a periodic curve, one more, for the
+    /// point closing it.</summary>
     public ImmutableArray<double> Parameters { get; init; } = [];
 
     /// <summary>Points closer than this count as one, which is a failure.</summary>
@@ -48,6 +50,12 @@ public sealed record ApproximationOptions
 
     /// <summary>How the points are given parameters.</summary>
     public ParametrizationType Parametrization { get; init; } = ParametrizationType.ChordLength;
+
+    /// <summary>
+    /// The weights of a smoothing criterion instead of a plain fit (OCCT's variational approximation, which
+    /// ignores <see cref="MinDegree"/> and <see cref="Parametrization"/>): of its length, curvature and torsion. Null for none.
+    /// </summary>
+    public (double Length, double Curvature, double Torsion)? Smoothing { get; init; }
 }
 
 /// <summary>How <see cref="GeometryOperations.ToBSpline(Curve3D, ConversionOptions?)"/> converts a curve: exactly where
@@ -68,6 +76,9 @@ public sealed record ConversionOptions
 
     /// <summary>The most segments of an approximation.</summary>
     public int MaxSegments { get; init; } = 100;
+
+    /// <summary>Approximate the curve within these limits even where OCCT could convert it exactly.</summary>
+    public bool ForceApproximation { get; init; }
 }
 
 /// <summary>A point where a curve crosses a surface.</summary>

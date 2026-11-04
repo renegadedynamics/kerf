@@ -71,6 +71,17 @@ public readonly partial struct Transform3D
         return (alpha, beta, gamma);
     }
 
+    /// <summary>The rotation part as a unit quaternion (OCCT's <c>gp_Quaternion</c> of the matrix).</summary>
+    public (double X, double Y, double Z, double W) GetQuaternion()
+    {
+        Kerf.Engine.Geometry.Quaternion3 q = GetRotation();
+        return (q.X(), q.Y(), q.Z(), q.W());
+    }
+
+    /// <summary>The rotation part alone, about the origin: this transformation's quaternion as a rotation, without
+    /// its translation or scale.</summary>
+    public Transform3D ToRotation() => Rotation(GetRotation());
+
     /// <summary>The transformation as a single-precision 4×4 matrix, for viewers (row vectors, as System.Numerics).</summary>
     public Matrix4x4 ToMatrix4x4()
     {
@@ -115,6 +126,10 @@ public readonly partial struct GeneralTransform3D
 {
     /// <summary>The translation part: where the transformation takes the origin.</summary>
     public Vector3D TranslationPart => new(TranslationXyz());
+
+    /// <summary>The point transformed: the matrix, then the translation, applied to its coordinates (OCCT's
+    /// <c>gp_GTrsf::Transforms</c>), so any affine transformation applies, not only a similarity.</summary>
+    public static Point3D operator *(in GeneralTransform3D transform, in Point3D point) => new(transform.Transformed(point.XYZ()));
 }
 
 public readonly partial struct GeneralTransform2D

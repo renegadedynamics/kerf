@@ -31,7 +31,9 @@ public class KernelTests
     [Fact]
     public void OcctFailuresAreOcctNetsExceptions()
     {
-        var e = Assert.ThrowsAny<Kerf.Engine.Foundation.FailureException>(() => new Kerf.Geometry.Direction3D(0, 0, 0));
-        Assert.Equal("Standard_ConstructionError", e.OcctType);
+        // Through the kernel's public API: the exception is the engine's, its diagnostic Standard_ConstructionError's
+        var e = Record.Exception(() => new Kerf.Geometry.Direction3D(0, 0, 0));
+        Assert.True(Kerf.Diagnostic.IsKernelFailure(e!));
+        Assert.Equal("engine.construction-error", Kerf.Diagnostic.FromException(e!).Code.Value);
     }
 }

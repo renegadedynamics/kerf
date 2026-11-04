@@ -46,6 +46,10 @@ public partial struct Wire
 
         return edges.ToImmutable();
     }
+
+    /// <summary>The wire's curve, its edges joined end to end, for evaluation and lengths.</summary>
+    /// <exception cref="InvalidOperationException">The wire is null.</exception>
+    public readonly WireCurve ToCurve() => new(ShapeChecks.NotNull(this));
 }
 
 public partial struct Shell
@@ -82,6 +86,11 @@ public partial struct Vertex
     /// <summary>The vertex's tolerance: the radius of the ball its edges' ends lie in.</summary>
     /// <exception cref="InvalidOperationException">The vertex is null.</exception>
     public readonly double Tolerance => Tool.Tolerance(ShapeChecks.NotNull(this));
+
+    /// <summary>The vertex's (u, v) on <paramref name="face"/>: from the curve on the face of an edge of the face that
+    /// holds it, or else by projecting it onto the surface (OCCT's <c>BRep_Tool::Parameters</c>).</summary>
+    /// <exception cref="InvalidOperationException">The vertex or the face is null.</exception>
+    public readonly Point2D ParametersOn(Face face) => Tool.Parameters(ShapeChecks.NotNull(this), ShapeChecks.NotNull(face));
 }
 
 public partial struct Edge
@@ -113,6 +122,18 @@ public partial struct Edge
     /// <exception cref="InvalidOperationException">The edge is null.</exception>
     public readonly Vertex LastVertex => Exploration.LastVertex(ShapeChecks.NotNull(this), true);
 
+    /// <summary>
+    /// The edge's 3D curve in its own coordinates, unplaced, its range on it, and the placement that puts it in place (OCCT's
+    /// <c>BRep_Tool::Curve</c> with the location): <see cref="TryGetCurve"/> transforms the curve by it.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The edge is null.</exception>
+    public readonly bool TryGetLocalCurve([NotNullWhen(true)] out Curve3D? curve, out Interval range, out Placement placement)
+    {
+        curve = Tool.Curve(ShapeChecks.NotNull(this), out placement, out double first, out double last);
+        range = new Interval(first, last);
+        return curve is not null;
+    }
+
     /// <summary>The edge's 3D curve, placed, and its range on it; false if the edge has none (a degenerate edge).</summary>
     /// <exception cref="InvalidOperationException">The edge is null.</exception>
     public readonly bool TryGetCurve([NotNullWhen(true)] out Curve3D? curve, out Interval range)
@@ -135,6 +156,19 @@ public partial struct Edge
     /// <summary>True if the edge is a seam of <paramref name="face"/>: it bounds the face twice (a cylinder's seam).</summary>
     /// <exception cref="InvalidOperationException">The edge or the face is null.</exception>
     public readonly bool IsSeam(Face face) => Tool.IsClosed(ShapeChecks.NotNull(this), ShapeChecks.NotNull(face));
+
+    /// <summary>
+    /// The edge's curve in the parameters of <paramref name="plane"/>: its curve on a face of that plane if it has one, or
+    /// else its 3D curve projected onto the plane (OCCT's <c>BRep_Tool::CurveOnPlane</c>), with its range. False if it
+    /// has neither.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The edge is null.</exception>
+    public readonly bool TryGetCurveOnPlane(in Plane3D plane, [NotNullWhen(true)] out Curve2D? curve, out Interval range)
+    {
+        curve = Tool.CurveOnPlane(ShapeChecks.NotNull(this), new PlaneSurface(plane), new Placement(), out double first, out double last);
+        range = new Interval(first, last);
+        return curve is not null;
+    }
 
     /// <summary>The parameter of <paramref name="vertex"/> on the edge's curve.</summary>
     /// <exception cref="InvalidOperationException">The edge or the vertex is null.</exception>

@@ -21,7 +21,7 @@ namespace Kerf.Engine.Booleans.Data;
 /// </para>
 /// <para>The default pave has the index -1 and the parameter 99, as OCCT's.</para>
 /// </remarks>
-public partial struct Pave : IEquatable<Pave>
+internal partial struct Pave : IEquatable<Pave>
 {
     private int _index;
     private double _parameter;

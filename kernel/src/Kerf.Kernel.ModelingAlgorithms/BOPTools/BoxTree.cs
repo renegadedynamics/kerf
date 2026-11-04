@@ -9,7 +9,7 @@ using System.Numerics;
 namespace Kerf.Engine.Booleans.Tools;
 
 /// <summary>A box set built with the linear builder by default (OCCT's <c>BOPTools_BoxSet</c>).</summary>
-public class BooleanBoxSet<T, TVec, TData> : BoxSet<T, TVec, TData>
+internal class BooleanBoxSet<T, TVec, TData> : BoxSet<T, TVec, TData>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {
@@ -21,7 +21,7 @@ public class BooleanBoxSet<T, TVec, TData> : BoxSet<T, TVec, TData>
 }
 
 /// <summary>The 3D box tree of the Boolean component (OCCT's typedef <c>BOPTools_BoxSet&lt;double, 3, int&gt;</c>).</summary>
-public sealed class BoxTree : BooleanBoxSet<double, NCollection_Vec3<double>, int>
+internal sealed class BoxTree : BooleanBoxSet<double, NCollection_Vec3<double>, int>
 {
     public BoxTree(Builder<double, NCollection_Vec3<double>>? builder = null)
         : base(builder)

@@ -8,7 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Kerf.Engine.Geometry;
 
 /// <summary>A pair of reals: the coordinates of a 2D point, vector or direction, without their meaning.</summary>
-public struct Xy : IEquatable<Xy>
+internal struct Xy : IEquatable<Xy>
 {
     private double _x;
     private double _y;

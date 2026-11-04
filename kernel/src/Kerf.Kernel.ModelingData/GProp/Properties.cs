@@ -23,7 +23,7 @@ namespace Kerf.Engine.Measurement;
 /// A working object (an accumulator): <see cref="Add"/> and the setters of the derived classes are public, as in
 /// OCCT. A C++ copy (<c>GProp_GProps a = b;</c>) is <c>new GProp_GProps(b)</c>.
 /// </remarks>
-public class Properties
+internal class Properties
 {
     /// <summary>Centre of mass, relative to <see cref="_loc"/> (absolute coordinates in the elementary classes).</summary>
     protected Point3D _g;

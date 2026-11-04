@@ -25,7 +25,7 @@ namespace Kerf.Engine.Topology.Adaptors;
 /// C0 and C1 continuity are not assumed between edges. The curve is never periodic, even for a single periodic
 /// edge. The wire must be valid: a chain of connected edges. A working object (decision 214).
 /// </remarks>
-public class WireCurveAdaptor : CurveAdaptorBase
+internal class WireCurveAdaptor : CurveAdaptorBase
 {
     private Wire _wire = new();
     private double _tFirst;

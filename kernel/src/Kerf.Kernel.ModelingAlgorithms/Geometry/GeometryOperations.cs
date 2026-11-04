@@ -7,6 +7,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Geometry.Library;
+using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Meshing.Tools;
 using Occt;
 
@@ -18,7 +19,7 @@ namespace Kerf.Geometry;
 /// <c>GeometryOperations.Project(curve, point)</c> all work. A failure a caller should expect is a failed result;
 /// misuse (a null, too few points) throws.
 /// </summary>
-public static class GeometryOperations
+public static partial class GeometryOperations
 {
     /// <summary>A curve couldn't be constructed from its data (OCCT's <c>gce_ErrorType</c>): <c>geometry.construction-failed</c>.</summary>
     public static DiagnosticCode ConstructionFailed { get; } = new("geometry.construction-failed");
@@ -105,9 +106,10 @@ public static class GeometryOperations
             {
                 throw new ArgumentException("Give no tangents, one at each end, or one at every point.", nameof(options));
             }
-            if (!parameters.IsEmpty && parameters.Length != points.Length)
+            if (!parameters.IsEmpty && parameters.Length != points.Length + (options.Periodic ? 1 : 0))
             {
-                throw new ArgumentException("Give one parameter for every point, or none.", nameof(options));
+                throw new ArgumentException("Give one parameter for every point (and one more, for the closing point, if periodic), or none.",
+                                            nameof(options));
             }
 
             var poles = new NCollection_HArray1<Point3D>(GeometryArrays.Of(points));
@@ -128,7 +130,12 @@ public static class GeometryOperations
 
                 if (tangents.Length == count)
                 {
+                    // A zero tangent leaves its point's tangent free
                     var flags = new NCollection_HArray1<bool>(1, count, true);
+                    for (int i = 0; i < count; i++)
+                    {
+                        flags.SetValue(i + 1, tangents[i].SquareMagnitude > 0);
+                    }
                     interpolate.Load(GeometryArrays.Of(tangents.AsSpan()), flags, options.ScaleTangents);
                 }
                 else if (tangents.Length == 2)
@@ -156,7 +163,9 @@ public static class GeometryOperations
             NCollection_Array1<Point3D> array = GeometryArrays.Of(points);
             return Guarded(ApproximationFailed, () =>
             {
-                var fit = new PointsToBSpline(array, options.Parametrization, options.MinDegree, options.MaxDegree, options.Continuity, options.Tolerance);
+                var fit = options.Smoothing is var (length, curvature, torsion)
+                    ? new PointsToBSpline(array, length, curvature, torsion, options.MaxDegree, options.Continuity, options.Tolerance)
+                    : new PointsToBSpline(array, options.Parametrization, options.MinDegree, options.MaxDegree, options.Continuity, options.Tolerance);
                 return fit.IsDone
                     ? fit.Curve()
                     : Result<BSplineCurve3D>.Failure(Diagnostic.Error(ApproximationFailed, $"No B-spline of degree {options.MinDegree} to {options.MaxDegree} fits the points within {options.Tolerance}."));
@@ -206,7 +215,9 @@ public static class GeometryOperations
             NCollection_Array2<Point3D> array = GeometryArrays.Of(points);
             return Guarded(ApproximationFailed, () =>
             {
-                var fit = new PointsToBSplineSurface(array, options.Parametrization, options.MinDegree, options.MaxDegree, options.Continuity, options.Tolerance);
+                var fit = options.Smoothing is var (length, curvature, torsion)
+                    ? new PointsToBSplineSurface(array, length, curvature, torsion, options.MaxDegree, options.Continuity, options.Tolerance)
+                    : new PointsToBSplineSurface(array, options.Parametrization, options.MinDegree, options.MaxDegree, options.Continuity, options.Tolerance);
                 return fit.IsDone
                     ? fit.Surface()
                     : Result<BSplineSurface>.Failure(Diagnostic.Error(ApproximationFailed, $"No B-spline surface of degree {options.MinDegree} to {options.MaxDegree} fits the points within {options.Tolerance}."));
@@ -218,6 +229,18 @@ public static class GeometryOperations
 
     extension(Curve3D curve)
     {
+        /// <summary>
+        /// True if the curve lies in a plane within <paramref name="tolerance"/> (0 for the confusion tolerance), OCCT's
+        /// <c>ShapeAnalysis_Curve::IsPlanar</c>: lines, conics, trimmed and offset curves of them, B-spline and Bezier
+        /// curves by their poles; false for any other curve. With <paramref name="normal"/>, the plane must be normal to it.
+        /// </summary>
+        public bool IsPlanar(Direction3D? normal = null, double tolerance = 0)
+        {
+            ArgumentNullException.ThrowIfNull(curve);
+            Engine.Geometry.Xyz n = normal is { } d ? d.XYZ() : default;
+            return CurveAnalysis.IsPlanar(curve, ref n, tolerance);
+        }
+
         /// <summary>The curve as a B-spline: exactly where OCCT can, else approximated within the options.</summary>
         public Result<BSplineCurve3D> ToBSpline(ConversionOptions? options = null)
         {
@@ -226,13 +249,16 @@ public static class GeometryOperations
             Curve3D source = curve;
             return Guarded(ConversionFailed, () =>
             {
-                try
+                if (!options.ForceApproximation)
                 {
-                    return GeomConvert.CurveToBSplineCurve(source);
-                }
-                catch (FailureException)
-                {
-                    // Not convertible exactly (an offset curve, an untrimmed line): approximate
+                    try
+                    {
+                        return GeomConvert.CurveToBSplineCurve(source);
+                    }
+                    catch (FailureException)
+                    {
+                        // Not convertible exactly (an offset curve, an untrimmed line): approximate
+                    }
                 }
                 if (source.Range.IsInfinite)
                 {
@@ -269,8 +295,8 @@ public static class GeometryOperations
                 {
                     points.Add(new CurvePoint(projection.Parameter(i), projection.Point(i), projection.Distance(i)));
                 }
-                points.Sort(static (a, b) => a.Distance.CompareTo(b.Distance));
-                return points.MoveToImmutable();
+                // Stable, so of equally near points the first OCCT found comes first, as its LowerDistance picks it
+                return [.. points.OrderBy(static p => p.Distance)];
             }
             catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
             {
@@ -323,6 +349,29 @@ public static class GeometryOperations
             return Projections.To3d(curve, plane);
         }
 
+        /// <summary>The points of the curve nearest to <paramref name="point"/> (the extrema of the distance, OCCT's
+        /// <c>Geom2dAPI_ProjectPointOnCurve</c>), nearest first; empty if there are none.</summary>
+        public ImmutableArray<CurvePoint2D> Project(Point2D point)
+        {
+            ArgumentNullException.ThrowIfNull(curve);
+            try
+            {
+                var projection = new ProjectPointOnCurve2D(point, curve);
+                var points = ImmutableArray.CreateBuilder<CurvePoint2D>(projection.NbPoints());
+                for (int i = 1; i <= projection.NbPoints(); i++)
+                {
+                    points.Add(new CurvePoint2D(projection.Parameter(i), projection.Point(i), projection.Distance(i)));
+                }
+
+                // Stable, so of equally near points the first OCCT found comes first, as its LowerDistance picks it
+                return [.. points.OrderBy(static p => p.Distance)];
+            }
+            catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+            {
+                return [];
+            }
+        }
+
         /// <summary>The points where the two curves cross (and touch); where they overlap along a stretch, the
         /// result carries a warning.</summary>
         public Result<ImmutableArray<CurveCurveHit2D>> Intersect(Curve2D other, double tolerance = 1e-6)
@@ -341,6 +390,30 @@ public static class GeometryOperations
                 }
                 ImmutableArray<Diagnostic> warnings = intersection.NbSegments() > 0
                     ? [Diagnostic.Warning(new DiagnosticCode("geometry.curves-overlap"), $"The curves overlap along {intersection.NbSegments()} stretch(es), which aren't points.")]
+                    : [];
+                return Result<ImmutableArray<CurveCurveHit2D>>.Success(hits.MoveToImmutable(), warnings);
+            });
+        }
+
+        /// <summary>
+        /// Where the curve crosses itself, within <paramref name="tolerance"/> (OCCT's <c>Geom2dAPI_InterCurveCurve</c> on one
+        /// curve): each crossing's point and its two parameters. A stretch where it runs along itself is a warning.
+        /// </summary>
+        public Result<ImmutableArray<CurveCurveHit2D>> SelfIntersections(double tolerance = 1e-6)
+        {
+            ArgumentNullException.ThrowIfNull(curve);
+            Curve2D source = curve;
+            return Guarded(IntersectionFailed, () =>
+            {
+                var intersection = new CurveCurveIntersection2D(source, tolerance);
+                var hits = ImmutableArray.CreateBuilder<CurveCurveHit2D>(intersection.NbPoints());
+                for (int i = 1; i <= intersection.NbPoints(); i++)
+                {
+                    var hit = intersection.Intersector().Point(i);
+                    hits.Add(new CurveCurveHit2D(hit.Value(), hit.ParamOnFirst(), hit.ParamOnSecond()));
+                }
+                ImmutableArray<Diagnostic> warnings = intersection.NbSegments() > 0
+                    ? [Diagnostic.Warning(new DiagnosticCode("geometry.curves-overlap"), $"The curve runs along itself over {intersection.NbSegments()} stretch(es), which aren't points.")]
                     : [];
                 return Result<ImmutableArray<CurveCurveHit2D>>.Success(hits.MoveToImmutable(), warnings);
             });
@@ -365,8 +438,8 @@ public static class GeometryOperations
                     projection.Parameters(i, out double u, out double v);
                     points.Add(new SurfacePoint(u, v, projection.Point(i), projection.Distance(i)));
                 }
-                points.Sort(static (a, b) => a.Distance.CompareTo(b.Distance));
-                return points.MoveToImmutable();
+                // Stable, so of equally near points the first OCCT found comes first, as its LowerDistance picks it
+                return [.. points.OrderBy(static p => p.Distance)];
             }
             catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
             {

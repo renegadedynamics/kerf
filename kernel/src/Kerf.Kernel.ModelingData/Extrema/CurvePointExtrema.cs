@@ -23,7 +23,7 @@ namespace Kerf.Engine.Extrema;
 /// Extrema_ELPCOfLocateExtPC (one type). An algorithm object (decision 117): construct it with the point and the
 /// curve, or <c>Initialize</c> and <c>Perform</c>. Keeps a reference to the curve, as OCCT does.
 /// </remarks>
-public class CurvePointExtrema
+internal class CurvePointExtrema
 {
     private CurveAdaptorBase? _c;
     private Point3D _pf = new();

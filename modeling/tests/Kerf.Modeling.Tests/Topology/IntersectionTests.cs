@@ -7,8 +7,6 @@
 // - test_compound_intersection_keeps_joints_connected_to_the_assembly, _leaves_shared_joints_alone,
 //   test_compound_elements_reach_only_consistent_trees: joints are not yet ported.
 // - TestShapeListExpand.test_expand_with_vector, and the Vector in test_expand_mixed: a ShapeList holds only shapes.
-using Kerf.Engine.Topology;
-using Occt;
 using Xunit.Sdk;
 
 namespace Build123d.Tests.Topology;
@@ -918,7 +916,7 @@ public class EmptyCompoundIntersectTests
 {
     static Compound EmptyCompound()
     {
-        return new Compound(Builder.MakeCompound());
+        return new Compound(global::Kerf.Topology.Compound.Create([]));
     }
 
     [Fact]

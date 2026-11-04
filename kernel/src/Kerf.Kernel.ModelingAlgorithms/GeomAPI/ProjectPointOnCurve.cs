@@ -21,7 +21,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// (<see cref="NbPoints"/>), <c>gp_Pnt</c> (<see cref="NearestPoint"/>) and <c>double</c>
 /// (<see cref="LowerDistance"/>) are explicit conversions (decision 28).
 /// </remarks>
-public class ProjectPointOnCurve
+internal class ProjectPointOnCurve
 {
     private bool _isDone;
     private int _index;

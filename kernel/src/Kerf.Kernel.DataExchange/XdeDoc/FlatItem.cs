@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Documents;
 /// <param name="Path">The instances from the root (first) to the part's own (last).</param>
 /// <param name="Location">The part's location in the world: the path's locations composed.</param>
 /// <param name="Style">The style: the path's attributes merged, each instance's after its product's.</param>
-public sealed record FlatItem(DocumentProduct Product,
+internal sealed record FlatItem(DocumentProduct Product,
                                      ImmutableArray<Instance> Path,
                                      Placement Location,
                                      Style Style)

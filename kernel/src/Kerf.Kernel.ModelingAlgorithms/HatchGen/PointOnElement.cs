@@ -17,7 +17,7 @@ namespace Kerf.Engine.Classification.Hatching;
 
 /// <summary>An intersection point on an element of a hatcher, with the type of the intersection there.</summary>
 /// <remarks>A value class of OCCT, copied where OCCT copies it (decision 664); its setters are internal.</remarks>
-public sealed class PointOnElement : IntersectionPoint
+internal sealed class PointOnElement : IntersectionPoint
 {
     private IntersectionType _type;
 

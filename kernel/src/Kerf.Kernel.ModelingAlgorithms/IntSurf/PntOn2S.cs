@@ -21,7 +21,7 @@ namespace Kerf.Engine.Intersection.Walking;
 /// section 3); <see cref="WithValue(in Point3D, double, double, double, double)"/> is the functional twin of the one
 /// that sets everything.
 /// </remarks>
-public partial struct PntOn2S : IEquatable<PntOn2S>
+internal partial struct PntOn2S : IEquatable<PntOn2S>
 {
     private Point3D _pt;
     private double _u1;

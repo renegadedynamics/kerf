@@ -1,10 +1,6 @@
-using Kerf.Engine.Foundation;
-using Kerf.Engine.Geometry.Api;
-using Kerf.Engine.Measurement;
-using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using System.Diagnostics;
-using Occt;
+using Kerf.Measurement;
 
 namespace Kerf.Modeling;
 
@@ -84,7 +80,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     /// <paramref name="xDir"/>. Without an X direction, OCCT chooses one perpendicular to the normal.
     /// </summary>
     /// <exception cref="ArgumentException">A direction has zero length.</exception>
-    /// <exception cref="FailureException">The X direction is parallel to the normal.</exception>
+    /// <exception cref="Exception">The X direction is parallel to the normal (the kernel's construction error).</exception>
     public Plane(Vector origin, Vector? xDir = null, Vector? zDir = null)
         : this(Build(origin, xDir is { } x ? NormalizedArg(x) : null, zDir is { } z ? NormalizedArg(z) : new Vector(0, 0, 1)), owned: true)
     {
@@ -105,19 +101,12 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         if (face.IsPlanar is null)
             throw new ArgumentException("Planes can only be created from planar faces");
         var topoFace = face.TopoFace;
-        var surface = Tool.Surface(topoFace)!;
-        Vector origin;
-        {
-            var props = new Properties();
-            MassPropertiesBuilder.SurfaceProperties(topoFace, props);
-            var c = props.CentreOfMass();
-            origin = new Vector(c);
-        }
+        topoFace.TryGetSurface(out var surface);
+        var origin = new Vector(topoFace.MassProperties(Dimension.Area).CentreOfMass);
         Vector faceXDir;
         if (surface is BoundedSurface bounded)
         {
-            bounded.D1(0.5, 0.5, out _, out var du, out _);
-            faceXDir = new Vector(du);
+            faceXDir = new Vector(bounded.Derivatives(0.5, 0.5, 1).DU);
         }
         else
         {
@@ -132,16 +121,11 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     }
 
     /// <summary>The normal of a face where it is nearest the global origin (build123d's <c>get_topods_face_normal</c>).</summary>
-    static Vector FaceNormal(global::Kerf.Topology.Face face, Surface surface)
+    static Vector FaceNormal(global::Kerf.Topology.Face face, Surface? surface)
     {
-        var pnt = new Point3D();
-        var normal = new Vector3D();
-        var projector = new ProjectPointOnSurface(pnt, surface);
-        double u = 0, v = 0;
-        projector.LowerDistanceParameters(out u, out v);
-        var props = new FaceIntegrand(face);
-        props.Normal(u, v, out pnt, out normal);
-        return new Vector(normal);
+        if (surface is null || !surface.TryProjectNearest(Point3D.Origin, out var nearest))
+            throw new InvalidOperationException("The face's surface has no point nearest the origin");
+        return TopoUtil.FaceNormalVector(face, nearest.U, nearest.V);
     }
 
     /// <summary>A plane through the axis position, normal to the axis, with an optional X direction.</summary>
@@ -188,7 +172,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         {
             return v.Normalized();
         }
-        catch (FailureException ex)
+        catch (InvalidOperationException ex)
         {
             throw new ArgumentException("Expected gp_Pln, Face, Location, Axis, VectorLike, or three points", ex);
         }
@@ -397,9 +381,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     static BoundBox TransformBox(BoundBox box, Matrix transform)
     {
         // The two corners are transformed as they are; the box isn't re-fitted around the result
-        var min = box.Min.Transform(transform).ToGpPnt();
-        var max = box.Max.Transform(transform).ToGpPnt();
-        return BoundBox.Own(new global::Kerf.Engine.Geometry.Bounds.Box(min, max));
+        return BoundBox.FromCorners(box.Min.Transform(transform), box.Max.Transform(transform));
     }
 
     /// <summary>The location taking this plane to another.</summary>
@@ -480,12 +462,8 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         var line = new LineCurve3D(ax1);
         var ax3 = Pln.Position;
         var plane = new PlaneSurface(ax3);
-        var intersection = new CurveSurfaceIntersection(line, plane);
-        if (intersection.IsDone && intersection.PointCount == 1)
-        {
-            var p = intersection.Point(1);
-            return new Vector(p);
-        }
+        if (line.Intersect(plane) is { IsSuccess: true, Value: [var hit] })
+            return new Vector(hit.Point);
         return null;
     }
 
@@ -496,10 +474,8 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
             return this;
         var s1 = new PlaneSurface(Pln);
         var s2 = new PlaneSurface(plane.Pln);
-        var intersector = new SurfaceSurfaceIntersection(s1, s2, Constants.Tolerance);
-        if (intersector.IsDone && intersector.LineCount > 0)
+        if (s1.Intersect(s2, Constants.Tolerance) is { IsSuccess: true, Value: [var curve, ..] })
         {
-            var curve = intersector.Line(1);
             var line = (curve as LineCurve3D) ?? throw new InvalidOperationException("plane intersection isn't a line");
             var position = line.Position;
             return new Axis(position);
@@ -536,10 +512,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
 
     /// <summary>"Plane: (origin=(0, 0, 0), x_dir=(1, 0, 0), z_dir=(0, 0, 1))".</summary>
     public override string ToString() =>
-        $"Plane: (origin={Origin.ToString(".6g")}, x_dir={XDir.ToString(".6g")}, z_dir={ZDir.ToString(".6g")})";
-
-    /// <summary>Python's repr: "Plane((0, 0, 0), (1, 0, 0), (0, 0, 1))", components to six significant figures.</summary>
-    public string Repr() => "Plane" + ToString(".6g");
+        $"Plane: (origin={Origin.ToString("G6")}, x_dir={XDir.ToString("G6")}, z_dir={ZDir.ToString("G6")})";
 
     /// <summary>"(origin, x_dir, z_dir)" with components formatted as <see cref="Vector.ToString(string?, IFormatProvider?)"/>.</summary>
     public string ToString(string? format, IFormatProvider? formatProvider = null) =>

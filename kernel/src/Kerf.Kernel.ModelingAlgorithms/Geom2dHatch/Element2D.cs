@@ -18,7 +18,7 @@ namespace Kerf.Engine.Classification.Hatching;
 /// <see cref="WithOrientation"/> as the twin. OCCT's default constructor leaves the orientation uninitialised; the
 /// port's is FORWARD, and <c>default</c> has no curve. Equality compares the adaptors by reference.
 /// </remarks>
-public struct Element2D : IEquatable<Element2D>
+internal struct Element2D : IEquatable<Element2D>
 {
     private readonly CurveAdaptor2D _curve;
     private Orientation _orientation;

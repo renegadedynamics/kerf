@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Collections.Immutable;
 using Kerf.Engine.Features;
 using Kerf.Engine.Features.Api;
 using Kerf.Engine.Features.Draft;
@@ -39,6 +40,10 @@ public sealed record ExtrudeUntilOptions
 
     /// <summary>Add the extrusion to the shape (a boss), or take it away (a pocket).</summary>
     public bool Fuse { get; init; } = true;
+
+    /// <summary>Whether the sketch face is rebuilt with the feature where the profile meets it (OCCT's <c>Modify</c>): true
+    /// by default.</summary>
+    public bool ModifySketchFace { get; init; } = true;
 }
 
 /// <summary>
@@ -46,6 +51,13 @@ public sealed record ExtrudeUntilOptions
 /// <c>BRepFeat</c>), as static methods and extension members. A failure is the engine's status as a diagnostic
 /// (<c>draft.face-failed</c> with the face, <c>feature.no-intersect-u</c>…).
 /// </summary>
+/// <summary>A shape's faces split along edges (<see cref="FeatureOperations.SplitAlong"/>).</summary>
+/// <param name="Shape">The shape, its faces split.</param>
+/// <param name="History">How its faces became the pieces.</param>
+/// <param name="Left">The faces on the left of the splitting edges.</param>
+/// <param name="Right">The faces on their right.</param>
+public sealed record SplitFacesResult(Shape Shape, ShapeHistory History, ImmutableArray<Face> Left, ImmutableArray<Face> Right);
+
 public static class FeatureOperations
 {
     /// <summary>A face can't be drafted: <c>draft.face-failed</c>, with the face.</summary>
@@ -63,15 +75,27 @@ public static class FeatureOperations
         public Result<Built<Shape>> Draft(IEnumerable<Face> faces, Direction3D pull, double angle, in Plane3D neutralPlane)
         {
             ArgumentNullException.ThrowIfNull(faces);
+            return shape.Draft(faces.Select(f => (f, angle)), pull, neutralPlane);
+        }
+
+        /// <summary>
+        /// The shape with each face drafted by its own angle (radians) from <paramref name="pull"/>, about the line where it
+        /// meets <paramref name="neutralPlane"/> (OCCT's <c>BRepOffsetAPI_DraftAngle</c>, a face at a time).
+        /// </summary>
+        /// <exception cref="ArgumentException">The shape is null, or a face isn't one of its faces.</exception>
+        public Result<Built<Shape>> Draft(IEnumerable<(Face Face, double Angle)> faces, Direction3D pull, in Plane3D neutralPlane)
+        {
+            ArgumentNullException.ThrowIfNull(faces);
             Shape s = shape.AsShape();
             MakerOutcome.NotNull(s, nameof(shape));
             MakerOutcome.Valid(pull, nameof(pull));
-            Face[] drafted = Own(s, faces, nameof(faces));
+            (Face Face, double Angle)[] list = [.. faces];
+            Own(s, list.Select(p => p.Face), nameof(faces));
             Plane3D plane = neutralPlane;
             return EngineOperation.Run<Shape>(range =>
             {
                 var draft = new DraftAngle(s);
-                foreach (Face face in drafted)
+                foreach ((Face face, double angle) in list)
                 {
                     draft.Add(face, pull, angle, plane);
                     if (!draft.AddDone())
@@ -87,15 +111,18 @@ public static class FeatureOperations
         }
 
         /// <summary>The shape with <paramref name="profile"/>, a face on <paramref name="sketchFace"/> (a face of the
-        /// shape), extruded with a taper of <paramref name="taper"/> (radians) and added or taken away.</summary>
+        /// shape, or a null face for none), extruded with a taper of <paramref name="taper"/> (radians) and added or taken away.</summary>
         public Result<Built<Shape>> ExtrudeUntil(Face profile, Face sketchFace, double taper, ExtrudeUntilOptions options)
         {
             ArgumentNullException.ThrowIfNull(options);
             Shape s = shape.AsShape();
             MakerOutcome.NotNull(s, nameof(shape));
             MakerOutcome.NotNull(profile, nameof(profile));
-            MakerOutcome.NotNull(sketchFace, nameof(sketchFace));
-            Own(s, [sketchFace], nameof(sketchFace));
+            // A null sketch face is none: the profile stands on no face of the shape
+            if (!sketchFace.IsNull)
+            {
+                Own(s, [sketchFace], nameof(sketchFace));
+            }
             Face? until = null;
             switch (options.Until)
             {
@@ -112,7 +139,7 @@ public static class FeatureOperations
             }
             return EngineOperation.Run<Shape>(_ =>
             {
-                var prism = new MakeDraftPrism(s, profile, sketchFace, taper, options.Fuse ? 1 : 0, true);
+                var prism = new MakeDraftPrism(s, profile, sketchFace, taper, options.Fuse ? 1 : 0, options.ModifySketchFace);
                 switch (options.Until)
                 {
                     case ExtrudeLimit.Height:
@@ -169,6 +196,37 @@ public static class FeatureOperations
                 return MakerOutcome.Of(split, range, [s]);
             }, Failure);
         }
+    }
+
+    /// <summary>
+    /// The shape's faces split along <paramref name="edges"/>, each put on the faces it lies on (OCCT's
+    /// <c>BRepFeat_SplitShape</c> given them all), with the faces on each side of the splitting edges.
+    /// </summary>
+    /// <exception cref="ArgumentException">The shape or an edge is null.</exception>
+    public static Result<SplitFacesResult> SplitAlong(Shape shape, IEnumerable<Edge> edges)
+    {
+        ArgumentNullException.ThrowIfNull(edges);
+        MakerOutcome.NotNull(shape, nameof(shape));
+        var sequence = new Occt.NCollection_Sequence<Shape>();
+        foreach (Edge edge in edges)
+        {
+            MakerOutcome.NotNull(edge, nameof(edges));
+            sequence.Append(edge);
+        }
+        ImmutableArray<Face> left = [], right = [];
+        Result<Built<Shape>> result = EngineOperation.Run<Shape>(range =>
+        {
+            var split = new SplitShape(shape);
+            split.Add(sequence);
+            EngineOutcome outcome = MakerOutcome.Of(split, range, [shape]);
+            if (outcome.IsDone)
+            {
+                left = [.. split.Left().Where(static s => !s.IsNull).Select(static s => s.As<Face>())];
+                right = [.. split.Right().Where(static s => !s.IsNull).Select(static s => s.As<Face>())];
+            }
+            return outcome;
+        }, Failure);
+        return result.Map(built => new SplitFacesResult(built.Shape, built.History, left, right));
     }
 
     private static Face[] Own(Shape shape, IEnumerable<Face> faces, string name)

@@ -49,7 +49,7 @@ namespace Kerf.Engine.Intersection.Tools;
 /// reference equality (OCCT's handle hasher). The allocator goes (translation rules, section 9).
 /// </para>
 /// </remarks>
-public class IntersectionContext : Transient
+internal class IntersectionContext : Transient
 {
     private readonly Dictionary<Shape, FaceClassifier2D> _fClass2dMap = new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, ProjectPointOnSurface> _projPSMap = new(ShapeHasher.Instance);

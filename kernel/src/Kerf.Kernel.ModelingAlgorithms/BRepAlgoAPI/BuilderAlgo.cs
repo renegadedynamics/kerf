@@ -33,7 +33,7 @@ namespace Kerf.Engine.Booleans.Api;
 /// <see cref="BRepAlgoApi"/>.
 /// </para>
 /// </remarks>
-public class BuilderAlgo : Algo
+internal class BuilderAlgo : Algo
 {
     // Inputs
     protected NCollection_List<Shape> _arguments = new(); //!< Arguments of the operation
