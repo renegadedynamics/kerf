@@ -4,7 +4,7 @@ namespace Kerf.Drawing;
 
 /// <summary>
 /// A picture: 8-bit red, green, blue and alpha per pixel (sRGB, alpha not premultiplied), row by row from the top left,
-/// as <see cref="Renderer"/> makes it and <c>Png</c> writes it.
+/// as <see cref="Renderer"/> makes it and <see cref="Png"/> writes it.
 /// </summary>
 public sealed class RgbaImage
 {
