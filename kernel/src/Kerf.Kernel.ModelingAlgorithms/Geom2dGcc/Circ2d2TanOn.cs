@@ -20,8 +20,8 @@ namespace Kerf.Engine.Construction.Constraints;
 /// <remarks>
 /// An algorithm object computed by its constructor (decision 117). Lines, circles and points are solved by GccAna_Circ2d2TanOn
 /// (OnCurve a line or circle) or Geom2dGcc_Circ2d2TanOnGeo (OnCurve free-form); other arguments by
-/// Geom2dGcc_Circ2d2TanOnIter, which gives at most one solution near the given parameters (and, as in OCCT, no centre
-/// parameter: CenterOn3 then returns 0 and the origin).
+/// Geom2dGcc_Circ2d2TanOnIter, which gives at most one solution near the given parameters, its centre copied (OCCT left
+/// CenterOn3 0 and the origin: Kerf decision 1545).
 /// </remarks>
 internal sealed class Circ2d2TanOn
 {
@@ -387,7 +387,7 @@ internal sealed class Circ2d2TanOn
                         // OCCT: no WhichQualifier here (the case below overwrites everything anyway)
                         circ.Tangency1(out _par1sol[1], out _pararg1[1], out _pnttg1sol[1]);
                         circ.Tangency2(out _par2sol[1], out _pararg2[1], out _pnttg2sol[1]);
-                        // OCCT: CenterOn3 is not copied: parcen3(1) stays unset (uninitialised natively, 0 here), pntcen(1) the origin
+                        circ.CenterOn3(out _parcen3[1], out _pntcen[1]);
                     }
                 }
                 else
@@ -419,7 +419,7 @@ internal sealed class Circ2d2TanOn
                         circ.WhichQualifier(out _qualifier1[1], out _qualifier2[1]);
                         circ.Tangency1(out _par1sol[1], out _pararg1[1], out _pnttg1sol[1]);
                         circ.Tangency2(out _par2sol[1], out _pararg2[1], out _pnttg2sol[1]);
-                        // OCCT: CenterOn3 is not copied: parcen3(1) stays unset (uninitialised natively, 0 here), pntcen(1) the origin
+                        circ.CenterOn3(out _parcen3[1], out _pntcen[1]);
                     }
                 }
             }
@@ -450,7 +450,7 @@ internal sealed class Circ2d2TanOn
                 circCu.WhichQualifier(out _qualifier1[1], out _qualifier2[1]);
                 circCu.Tangency1(out _par1sol[1], out _pararg1[1], out _pnttg1sol[1]);
                 circCu.Tangency2(out _par2sol[1], out _pararg2[1], out _pnttg2sol[1]);
-                // OCCT: CenterOn3 is not copied: parcen3(1) stays unset (uninitialised natively, 0 here), pntcen(1) the origin
+                circCu.CenterOn3(out _parcen3[1], out _pntcen[1]);
             }
         }
     }
@@ -634,11 +634,11 @@ internal sealed class Circ2d2TanOn
                         {
                             _theSame1[1] = 0;
                         }
-                        // OCCT: TheSame2(1) is not set (uninitialised natively, 0 here); Tangency2 tests it
+                        _theSame2[1] = 0;
                         circ.WhichQualifier(out _qualifier1[1], out _qualifier2[1]);
                         circ.Tangency1(out _par1sol[1], out _pararg1[1], out _pnttg1sol[1]);
                         circ.Tangency2(out _par2sol[1], out _pararg2[1], out _pnttg2sol[1]);
-                        // OCCT: CenterOn3 is not copied: parcen3(1) stays unset (uninitialised natively, 0 here), pntcen(1) the origin
+                        circ.CenterOn3(out _parcen3[1], out _pntcen[1]);
                     }
                 }
                 else
@@ -663,11 +663,11 @@ internal sealed class Circ2d2TanOn
                         {
                             _theSame1[1] = 0;
                         }
-                        // OCCT: TheSame2(1) is not set (uninitialised natively, 0 here); Tangency2 tests it
+                        _theSame2[1] = 0;
                         circ.WhichQualifier(out _qualifier1[1], out _qualifier2[1]);
                         circ.Tangency1(out _par1sol[1], out _pararg1[1], out _pnttg1sol[1]);
                         circ.Tangency2(out _par2sol[1], out _pararg2[1], out _pnttg2sol[1]);
-                        // OCCT: CenterOn3 is not copied: parcen3(1) stays unset (uninitialised natively, 0 here), pntcen(1) the origin
+                        circ.CenterOn3(out _parcen3[1], out _pntcen[1]);
                     }
                 }
             }
@@ -698,7 +698,7 @@ internal sealed class Circ2d2TanOn
                     circ.WhichQualifier(out _qualifier1[1], out _qualifier2[1]);
                     circ.Tangency1(out _par1sol[1], out _pararg1[1], out _pnttg1sol[1]);
                     circ.Tangency2(out _par2sol[1], out _pararg2[1], out _pnttg2sol[1]);
-                    // OCCT: CenterOn3 is not copied: parcen3(1) stays unset (uninitialised natively, 0 here), pntcen(1) the origin
+                    circ.CenterOn3(out _parcen3[1], out _pntcen[1]);
                 }
             }
         }

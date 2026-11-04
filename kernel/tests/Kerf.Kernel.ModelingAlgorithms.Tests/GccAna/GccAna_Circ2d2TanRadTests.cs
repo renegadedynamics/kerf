@@ -257,28 +257,16 @@ public class GccAna_Circ2d2TanRadTests
         }
     }
 
-    // OCCT: with one circle enclosing and the other unqualified, a test meant for the boundary case ("> 0.0" for
-    // "<= Tol") always holds, and the one circle returned, centred at center1 + (Radius - R1) dir1, encloses the first
-    // circle but isn't tangent to the second (the true answer here is the 2 circles enclosing C1, outside C2).
+    // With one circle enclosing and the other unqualified, OCCT's boundary test ("> 0.0" for "<= Tol") always held and it
+    // returned one circle not tangent to the second; the true answer is the 2 circles enclosing the first circle and
+    // outside the other (decision 1542)
     [Theory]
-    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, 1.5)]
-    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, 2.5)]
-    public void TwoCircles_EnclosingUnqualified(global::Kerf.Engine.Construction.Constraints.Qualifier theQ1, global::Kerf.Engine.Construction.Constraints.Qualifier theQ2, double theX)
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing)]
+    public void TwoCircles_EnclosingUnqualified(global::Kerf.Engine.Construction.Constraints.Qualifier theQ1, global::Kerf.Engine.Construction.Constraints.Qualifier theQ2)
     {
         Circle2D aC1 = Circ(0, 0, 1), aC2 = Circ(4, 0, 1);
         AnalyticCirc2d2TanRad anAlgo = new(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(aC1, theQ1), new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(aC2, theQ2), 2.5, Tol);
-        Assert.True(anAlgo.IsDone);
-        Assert.Equal(1, anAlgo.SolutionCount);
-        AssertNear(anAlgo.ThisSolution(1).Location, new Point2D(theX, 0));
-    }
-
-    // OCCT: with one circle outside and the other unqualified, the second pair of offset circles is centred on the
-    // same point (C(1) for C(2)), so the 2 circles enclosing the unqualified circle are missed
-    [Fact]
-    public void TwoCircles_UnqualifiedOutside()
-    {
-        Circle2D aC1 = Circ(0, 0, 1), aC2 = Circ(4, 0, 1);
-        AnalyticCirc2d2TanRad anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC1), global::Kerf.Engine.Construction.Constraints.GccEnt.Outside(aC2), 2.5, Tol);
         Assert.True(anAlgo.IsDone);
         Assert.Equal(2, anAlgo.SolutionCount);
         for (int i = 1; i <= 2; i++)
@@ -286,9 +274,30 @@ public class GccAna_Circ2d2TanRadTests
             CheckTangency1(anAlgo, i, aC1);
             CheckTangency2(anAlgo, i, aC2);
             anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
-            Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, aQ1);
+            Assert.Equal(theQ1 == global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing ? theQ1 : global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, aQ1);
+            Assert.Equal(theQ2 == global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing ? theQ2 : global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, aQ2);
+        }
+    }
+
+    // With one circle outside and the other unqualified, OCCT centred the second pair of offset circles on the same
+    // point and missed the 2 circles enclosing the unqualified circle: 4 solutions (decision 1542)
+    [Fact]
+    public void TwoCircles_UnqualifiedOutside()
+    {
+        Circle2D aC1 = Circ(0, 0, 1), aC2 = Circ(4, 0, 1);
+        AnalyticCirc2d2TanRad anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC1), global::Kerf.Engine.Construction.Constraints.GccEnt.Outside(aC2), 2.5, Tol);
+        Assert.True(anAlgo.IsDone);
+        Assert.Equal(4, anAlgo.SolutionCount);
+        int aNbEnclosing = 0;
+        for (int i = 1; i <= 4; i++)
+        {
+            CheckTangency1(anAlgo, i, aC1);
+            CheckTangency2(anAlgo, i, aC2);
+            anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
+            aNbEnclosing += aQ1 == global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing ? 1 : 0;
             Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, aQ2);
         }
+        Assert.Equal(2, aNbEnclosing);
     }
 
     // Two circles of radius 2 whose centres are 1 apart: solutions of radius 0.5 inside both, or inside one and
@@ -421,12 +430,16 @@ public class GccAna_Circ2d2TanRadTests
         }
     }
 
-    // As above with the circle centred at the origin: the unset tangency point (0, 0) is the solution's centre, and
-    // ElCLib's parameter there normalises a null vector. Native OCCT throws Standard_ConstructionError, as the port does
+    // As above with the circle centred at the origin: OCCT took the parameter of the solution's unset tangency point
+    // (0, 0), its centre, and threw Standard_ConstructionError; the solution that is the argument has no tangency point
+    // (decision 1542)
     [Fact]
-    public void CircleAtTheOriginAndPointOnIt_Throws()
+    public void CircleAtTheOriginAndPointOnIt_SolutionIsTheArgument()
     {
-        Assert.Throws<ConstructionErrorException>(
-            () => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Circ(0, 0, 1)), new Point2D(1, 0), 1.0, Tol));
+        AnalyticCirc2d2TanRad anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Circ(0, 0, 1)), new Point2D(1, 0), 1.0, Tol);
+        Assert.True(anAlgo.IsDone);
+        Assert.True(anAlgo.SolutionCount >= 1);
+        Assert.True(anAlgo.IsTheSame1(1));
+        Assert.Throws<NotDoneException>(() => anAlgo.Tangency1(1, out _, out _, out _));
     }
 }

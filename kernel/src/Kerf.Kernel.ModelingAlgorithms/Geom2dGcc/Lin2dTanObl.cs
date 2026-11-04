@@ -23,7 +23,9 @@ namespace Kerf.Engine.Construction.Constraints;
 internal sealed class Lin2dTanObl
 {
     private readonly bool _wellDone;
-    // OCCT's Paral2 (always false, read only by the undefined IsParallel2) is left out.
+    // The solutions parallel to the line, which have no intersection with it (OCCT's Paral2 was always false and read
+    // only by the undefined IsParallel2)
+    private readonly bool[] _parallel = new bool[3];
     private readonly int _nbrSol;
     private readonly NCollection_Array1<Line2D> _linsol;
     private readonly NCollection_Array1<Qualifier> _qualifier1;
@@ -37,7 +39,6 @@ internal sealed class Lin2dTanObl
     /// <summary>
     /// Lines tangent to the qualified curve at an angle Angle (radians) to TheLin; TolAng is the angular tolerance.
     /// </summary>
-    /// <exception cref="IsParallelException">The angle is 0 or pi (within TolAng) and the curve isn't a circle.</exception>
     public Lin2dTanObl(in QualifiedCurve qualified1, in Line2D theLine, double tolAng, double angle)
     {
         _linsol     = new(1, 2);
@@ -73,7 +74,7 @@ internal sealed class Lin2dTanObl
                 {
                     _linsol[i] = lin.ThisSolution(i);
                     lin.Tangency1(i, out _par1sol[i], out _pararg1[i], out _pnttg1sol[i]);
-                    lin.Intersection2(i, out _par2sol[i], out _pararg2[i], out _pntint2sol[i]);
+                    CopyIntersection(lin, i);
                     lin.WhichQualifier(i, out _qualifier1[i]);
                 }
             }
@@ -147,7 +148,7 @@ internal sealed class Lin2dTanObl
                 {
                     _linsol[i] = lin.ThisSolution(i);
                     lin.Tangency1(i, out _par1sol[i], out _pararg1[i], out _pnttg1sol[i]);
-                    lin.Intersection2(i, out _par2sol[i], out _pararg2[i], out _pntint2sol[i]);
+                    CopyIntersection(lin, i);
                     lin.WhichQualifier(i, out _qualifier1[i]);
                 }
             }
@@ -155,15 +156,29 @@ internal sealed class Lin2dTanObl
         else
         {
             QCurve qc1 = new(C1, qualified1.Qualifier());
-            // OCCT: passes TolAng as the start parameter and Param1 as the angular tolerance (the Iter constructor
-            // takes Param1 before TolAng)
-            Lin2dTanOblIter lin = new(qc1, theLine, tolAng, param1, angle);
+            // Param1 is the start parameter and TolAng the angular tolerance (OCCT swapped them: Kerf decision 1544)
+            Lin2dTanOblIter lin = new(qc1, theLine, param1, tolAng, angle);
             _wellDone                      = lin.IsDone;
             if (_wellDone)
             {
                 _linsol[1] = lin.ThisSolution();
                 lin.Tangency1(out _par1sol[1], out _pararg1[1], out _pnttg1sol[1]);
-                lin.Intersection2(out _par2sol[1], out _pararg2[1], out _pntint2sol[1]);
+                // kept if it is tangent to the curve, as the sampling constructor's Add checks
+                ConstraintCurveTool.D1(C1, _pararg1[1], out _, out Vector2D vTan);
+                if (vTan.Magnitude <= 0.0 || Math.Abs(_linsol[1].Direction.Crossed(new Direction2D(vTan))) > tolAng)
+                {
+                    _wellDone = false;
+                    return;
+                }
+                _nbrSol = 1;
+                try
+                {
+                    lin.Intersection2(out _par2sol[1], out _pararg2[1], out _pntint2sol[1]);
+                }
+                catch (IsParallelException)
+                {
+                    _parallel[1] = true;
+                }
                 lin.WhichQualifier(out _qualifier1[1]);
             }
         }
@@ -235,6 +250,7 @@ internal sealed class Lin2dTanObl
     }
 
     /// <summary>The intersection point between the solution of index Index and the line, and its parameters.</summary>
+    /// <exception cref="IsParallelException">The solution is parallel to the line.</exception>
     public void Intersection2(int index, out double parSol, out double parArg, out Point2D pntSol)
     {
         if (!_wellDone)
@@ -244,6 +260,10 @@ internal sealed class Lin2dTanObl
         else if (index <= 0 || index > _nbrSol)
         {
             throw new OutOfRangeException();
+        }
+        else if (_parallel[index])
+        {
+            throw new IsParallelException();
         }
         else
         {
@@ -255,18 +275,42 @@ internal sealed class Lin2dTanObl
 
     // IsParallel2 is declared in OCCT V8_0_1's header but never defined: left out.
 
+    /// <summary>Copies GccAna's intersection of solution i, or marks the solution parallel to the line.</summary>
+    private void CopyIntersection(AnalyticLin2dTanObl lin, int i)
+    {
+        try
+        {
+            lin.Intersection2(i, out _par2sol[i], out _pararg2[i], out _pntint2sol[i]);
+        }
+        catch (IsParallelException)
+        {
+            _parallel[i] = true;
+        }
+    }
+
     private bool Add(int index, Lin2dTanOblIter lin, double tol, CurveAdaptor2D c1)
     {
         int      i;
         Line2D aLin = lin.ThisSolution();
 
         lin.Tangency1(out double par1sol, out double par1arg, out Point2D pnt1Sol);
-        // Throws Geom2dGcc_IsParallel when the angle is 0 or pi
-        lin.Intersection2(out double par2sol, out double par2arg, out Point2D pnt2Sol);
+        // A solution parallel to the line (the angle 0 or pi) has no intersection (OCCT let the Iter's IsParallel
+        // escape the constructor: Kerf decision 1544)
+        double par2sol = 0, par2arg = 0;
+        Point2D pnt2Sol = new();
+        bool isParallel = false;
+        try
+        {
+            lin.Intersection2(out par2sol, out par2arg, out pnt2Sol);
+        }
+        catch (IsParallelException)
+        {
+            isParallel = true;
+        }
 
         for (i = 1; i < index; i++)
         {
-            if (Math.Abs(par1arg - _pararg1[i]) <= tol && Math.Abs(par2arg - _pararg2[i]) <= tol)
+            if (Math.Abs(par1arg - _pararg1[i]) <= tol && (isParallel || Math.Abs(par2arg - _pararg2[i]) <= tol))
             {
                 return false;
             }
@@ -288,6 +332,7 @@ internal sealed class Lin2dTanObl
         _par2sol[index]    = par2sol;
         _pararg2[index]    = par2arg;
         _pntint2sol[index] = pnt2Sol;
+        _parallel[index]   = isParallel;
 
         lin.WhichQualifier(out _qualifier1[index]);
 

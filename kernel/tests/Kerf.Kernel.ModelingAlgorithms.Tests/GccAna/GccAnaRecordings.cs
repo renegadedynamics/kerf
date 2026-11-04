@@ -336,6 +336,121 @@ internal static class GccAnaRecordings
     private static void DumpBisec(Writer w, bool theDone, Func<int> theNb, Func<int, ConstraintBisec?> theSol)
         => w.Solutions(theDone, theNb, i => w.Tok("bis", () => Bisec(theSol(i))));
 
+    //=============================================================================================
+    // The laws' side (Kerf unit 10K4): a case of a circle solver as GccLaws checks it, and native's solutions.
+
+    /// <summary>A case of a circle solver: its arguments, locus and radius, and the port's solver.</summary>
+    public sealed record LawCase(GccLaws.Arg[] Args, GccLaws.Locus? Locus, double? Radius, double Tolerance, Func<GccLaws.Circles> Solve);
+
+    private static GccLaws.CircArg A(in QualifiedCirc theQ) => new(theQ.Qualified(), theQ.Qualifier());
+
+    private static GccLaws.LinArg A(in QualifiedLin theQ) => new(theQ.Qualified(), theQ.Qualifier());
+
+    private static GccLaws.PntArg A(in Point2D theP) => new(theP);
+
+    private static LawCase Tan3(GccLaws.Arg a, GccLaws.Arg b, GccLaws.Arg c, double t)
+        => new([a, b, c], null, null, t, () => GccAna_Circ2d3TanLawsTests.View(GccAna_Circ2d3TanLawsTests.Solve(a, b, c, t)));
+
+    private static LawCase On2(GccLaws.Arg a, GccLaws.Arg b, GccLaws.Locus on, double t)
+        => new([a, b], on, null, t, () => GccAna_Circ2d2TanOnLawsTests.View(GccAna_Circ2d2TanOnLawsTests.Solve(a, b, on, t)));
+
+    private static LawCase Rad2(GccLaws.Arg a, GccLaws.Arg b, double R, double t)
+        => new([a, b], null, R, t, () => GccAna_Circ2d2TanRadLawsTests.View(GccAna_Circ2d2TanRadLawsTests.Solve(a, b, R, t)));
+
+    private static LawCase OnRad(GccLaws.Arg a, GccLaws.Locus on, double R, double t)
+        => new([a], on, R, t, () => GccAna_Circ2dTanOnRadLawsTests.View(GccAna_Circ2dTanOnRadLawsTests.Solve(a, on, R, t)));
+
+    /// <summary>The case as the laws see it, or null for a solver they don't cover.</summary>
+    public static LawCase? Laws(Case theCase)
+    {
+        Reader r = new(theCase.Inputs);
+        switch (theCase.Ctor)
+        {
+            case "3Tan.CCC": { var a = r.QC(); var b = r.QC(); var c = r.QC(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.CCL": { var a = r.QC(); var b = r.QC(); var c = r.QL(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.CLL": { var a = r.QC(); var b = r.QL(); var c = r.QL(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.LLL": { var a = r.QL(); var b = r.QL(); var c = r.QL(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.CCP": { var a = r.QC(); var b = r.QC(); var c = r.Pnt(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.CLP": { var a = r.QC(); var b = r.QL(); var c = r.Pnt(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.LLP": { var a = r.QL(); var b = r.QL(); var c = r.Pnt(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.CPP": { var a = r.QC(); var b = r.Pnt(); var c = r.Pnt(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.LPP": { var a = r.QL(); var b = r.Pnt(); var c = r.Pnt(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.PPP": { var a = r.Pnt(); var b = r.Pnt(); var c = r.Pnt(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "2TanOn.CCl": { var a = r.QC(); var b = r.QC(); var c = r.Lin(); return On2(A(a), A(b), new GccLaws.OnLine(c), r.D()); }
+            case "2TanOn.CLl": { var a = r.QC(); var b = r.QL(); var c = r.Lin(); return On2(A(a), A(b), new GccLaws.OnLine(c), r.D()); }
+            case "2TanOn.LLl": { var a = r.QL(); var b = r.QL(); var c = r.Lin(); return On2(A(a), A(b), new GccLaws.OnLine(c), r.D()); }
+            case "2TanOn.CPl": { var a = r.QC(); var b = r.Pnt(); var c = r.Lin(); return On2(A(a), A(b), new GccLaws.OnLine(c), r.D()); }
+            case "2TanOn.LPl": { var a = r.QL(); var b = r.Pnt(); var c = r.Lin(); return On2(A(a), A(b), new GccLaws.OnLine(c), r.D()); }
+            case "2TanOn.PPl": { var a = r.Pnt(); var b = r.Pnt(); var c = r.Lin(); return On2(A(a), A(b), new GccLaws.OnLine(c), r.D()); }
+            case "2TanOn.CCc": { var a = r.QC(); var b = r.QC(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
+            case "2TanOn.CLc": { var a = r.QC(); var b = r.QL(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
+            case "2TanOn.CPc": { var a = r.QC(); var b = r.Pnt(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
+            case "2TanOn.LLc": { var a = r.QL(); var b = r.QL(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
+            case "2TanOn.LPc": { var a = r.QL(); var b = r.Pnt(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
+            case "2TanRad.CC": { var a = r.QC(); var b = r.QC(); double R = r.D(); return Rad2(A(a), A(b), R, r.D()); }
+            case "2TanRad.CL": { var a = r.QC(); var b = r.QL(); double R = r.D(); return Rad2(A(a), A(b), R, r.D()); }
+            case "2TanRad.CP": { var a = r.QC(); var b = r.Pnt(); double R = r.D(); return Rad2(A(a), A(b), R, r.D()); }
+            case "2TanRad.LP": { var a = r.QL(); var b = r.Pnt(); double R = r.D(); return Rad2(A(a), A(b), R, r.D()); }
+            case "2TanRad.LL": { var a = r.QL(); var b = r.QL(); double R = r.D(); return Rad2(A(a), A(b), R, r.D()); }
+            case "2TanRad.PP": { var a = r.Pnt(); var b = r.Pnt(); double R = r.D(); return Rad2(A(a), A(b), R, r.D()); }
+            case "TanOnRad.Cl": { var a = r.QC(); var c = r.Lin(); double R = r.D(); return OnRad(A(a), new GccLaws.OnLine(c), R, r.D()); }
+            case "TanOnRad.Ll": { var a = r.QL(); var c = r.Lin(); double R = r.D(); return OnRad(A(a), new GccLaws.OnLine(c), R, r.D()); }
+            case "TanOnRad.Pl": { var a = r.Pnt(); var c = r.Lin(); double R = r.D(); return OnRad(A(a), new GccLaws.OnLine(c), R, r.D()); }
+            case "TanOnRad.Cc": { var a = r.QC(); var c = r.Circ(); double R = r.D(); return OnRad(A(a), new GccLaws.OnCircle(c), R, r.D()); }
+            case "TanOnRad.Lc": { var a = r.QL(); var c = r.Circ(); double R = r.D(); return OnRad(A(a), new GccLaws.OnCircle(c), R, r.D()); }
+            case "TanOnRad.Pc": { var a = r.Pnt(); var c = r.Circ(); double R = r.D(); return OnRad(A(a), new GccLaws.OnCircle(c), R, r.D()); }
+            case "2TanOn.PPc": { var a = r.Pnt(); var b = r.Pnt(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
+        }
+        return null;
+    }
+
+    /// <summary>A case of a line solver: its arguments, direction law and second curve, and the port's solver.</summary>
+    public sealed record LineLawCase(GccLaws.Arg[] Args, Func<Line2D, string?>? Direction, object? Second, double Tolerance, Func<GccLaws.Lines> Solve);
+
+    /// <summary>A line solver's case as the laws see it, or null for another solver.</summary>
+    public static LineLawCase? LineLaws(Case theCase)
+    {
+        Reader r = new(theCase.Inputs);
+        const double t0 = 1.0e-7;
+        switch (theCase.Ctor)
+        {
+            case "Lin2d2Tan.PP": { var a = A(r.Pnt()); var b = A(r.Pnt()); double t = r.D(); return new([a, b], null, null, t, () => GccAna_LinesLawsTests.View(new AnalyticLin2d2Tan(a.P, b.P, t))); }
+            case "Lin2d2Tan.CP": { var q = r.QC(); var b = A(r.Pnt()); double t = r.D(); return new([A(q), b], null, null, t, () => GccAna_LinesLawsTests.View(new AnalyticLin2d2Tan(q, b.P, t))); }
+            case "Lin2d2Tan.CC": { var q = r.QC(); var q2 = r.QC(); double t = r.D(); return new([A(q), A(q2)], null, null, t, () => GccAna_LinesLawsTests.View(new AnalyticLin2d2Tan(q, q2, t))); }
+            case "TanObl.P": { var a = A(r.Pnt()); var l = r.Lin(); double g = r.D(); return new([a], GccAna_LinesLawsTests.Oblique(l, g), l, t0, () => GccAna_LinesLawsTests.View(new AnalyticLin2dTanObl(a.P, l, g))); }
+            case "TanObl.C": { var q = r.QC(); var l = r.Lin(); double g = r.D(); return new([A(q)], GccAna_LinesLawsTests.Oblique(l, g), l, t0, () => GccAna_LinesLawsTests.View(new AnalyticLin2dTanObl(q, l, g))); }
+            case "TanPer.Pl": { var a = A(r.Pnt()); var l = r.Lin(); return new([a], GccAna_LinesLawsTests.Perpendicular(l, 1.0e-6), l, t0, () => GccAna_LinesLawsTests.View(new Lin2dTanPer(a.P, l))); }
+            case "TanPer.Pc": { var a = A(r.Pnt()); var c = r.Circ(); return new([a], GccAna_LinesLawsTests.Perpendicular(c, 1.0e-6), c, t0, () => GccAna_LinesLawsTests.View(new Lin2dTanPer(a.P, c))); }
+            case "TanPer.Cl": { var q = r.QC(); var l = r.Lin(); return new([A(q)], GccAna_LinesLawsTests.Perpendicular(l, 1.0e-6), l, t0, () => GccAna_LinesLawsTests.View(new Lin2dTanPer(q, l))); }
+            case "TanPer.Cc": { var q = r.QC(); var c = r.Circ(); return new([A(q)], GccAna_LinesLawsTests.Perpendicular(c, 1.0e-6), c, t0, () => GccAna_LinesLawsTests.View(new Lin2dTanPer(q, c))); }
+        }
+        return null;
+    }
+
+    /// <summary>The lines of native's solutions, read from its sol tokens.</summary>
+    public static List<Line2D> NativeLines(Case theCase)
+    {
+        List<Line2D> aLines = [];
+        foreach (string aTok in theCase.Native.Where(t => t.StartsWith("sol:", StringComparison.Ordinal) && !t.StartsWith("sol:!", StringComparison.Ordinal)))
+        {
+            double[] v = aTok[4..].Split(',').Select(h => BitConverter.Int64BitsToDouble(long.Parse(h, NumberStyles.HexNumber, CultureInfo.InvariantCulture))).ToArray();
+            aLines.Add(new Line2D(new Point2D(v[0], v[1]), new Direction2D(v[2], v[3])));
+        }
+        return aLines;
+    }
+
+    /// <summary>The circles of native's solutions, read from its sol tokens.</summary>
+    public static List<Circle2D> NativeCircles(Case theCase)
+    {
+        List<Circle2D> aCircles = [];
+        foreach (string aTok in theCase.Native.Where(t => t.StartsWith("sol:", StringComparison.Ordinal) && !t.StartsWith("sol:!", StringComparison.Ordinal)))
+        {
+            double[] v = aTok[4..].Split(',').Select(h => BitConverter.Int64BitsToDouble(long.Parse(h, NumberStyles.HexNumber, CultureInfo.InvariantCulture))).ToArray();
+            aCircles.Add(new Circle2D(new Frame2D(new Point2D(v[0], v[1]), new Direction2D(v[2], v[3]), new Direction2D(v[4], v[5])), v[6]));
+        }
+        return aCircles;
+    }
+
     /// <summary>Runs the case on the port and writes its results as gccrec does.</summary>
     public static string[] Run(Case theCase)
     {

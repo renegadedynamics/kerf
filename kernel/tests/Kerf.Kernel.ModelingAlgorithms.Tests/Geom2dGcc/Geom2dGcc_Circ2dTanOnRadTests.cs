@@ -70,17 +70,30 @@ public class Geom2dGcc_Circ2dTanOnRadTests
     }
 
     [Fact]
-    public void EllipseOnLine_FindsNothing()
+    public void EllipseOnLine_FindsTheCircles()
     {
-        // OCCT: for a free-form argument, Geo's constructor wraps the curve to centre on in an Adaptor2d_OffsetCurve
-        // made without an offset, whose parameter range is [0, 0], so it intersects the argument's offsets with a
-        // single point of that curve: done, but no solution here.
-        CurveAdaptor2D      anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
+        // The circles of radius 0.2 tangent to the ellipse x^2/9 + y^2 = 1, centred on a line through its centre: where
+        // the line meets the ellipse's offsets at 0.2, inside and out (OCCT wrapped the curve to centre on in an
+        // offset adaptor of range [0, 0] and found none: decision 1547)
+        EllipseCurve2D      anEllipse = new(new Axis2D(new Point2D(0, 0), DX), 3, 1);
+        CurveAdaptor2D      anEll = new(anEllipse);
         Line2D                 lon   = new(new Point2D(0, 0), new Direction2D(1, 0.3));
         global::Kerf.Engine.Construction.Constraints.Circ2dTanOnRad aCirc = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), new CurveAdaptor2D(new LineCurve2D(lon)),
                                              0.2, 1e-9);
         Assert.True(aCirc.IsDone);
-        Assert.Equal(0, aCirc.SolutionCount);
+        Assert.Equal(4, aCirc.SolutionCount);
+        for (int i = 1; i <= 4; i++)
+        {
+            Circle2D aSol = aCirc.ThisSolution(i);
+            Assert.Equal(0.2, aSol.Radius, 1e-12);
+            Assert.True(lon.DistanceTo(aSol.Location) < 1e-6);
+            aCirc.Tangency1(i, out double aParSol, out double aParArg, out Point2D aT);
+            Assert.True(anEllipse.Value(aParArg).DistanceTo(aT) < 1e-6);
+            Assert.Equal(0.2, aT.DistanceTo(aSol.Location), 1e-6);
+            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aParSol, aSol).DistanceTo(aT) < 1e-6);
+            aCirc.CenterOn3(i, out _, out Point2D aCen);
+            Assert.True(aCen.DistanceTo(aSol.Location) < 1e-9);
+        }
     }
 
     [Fact]

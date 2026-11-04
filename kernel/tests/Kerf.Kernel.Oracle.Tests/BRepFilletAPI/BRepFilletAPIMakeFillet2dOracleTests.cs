@@ -401,6 +401,12 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
                 isHoleKept = true;
                 myHoleKept++;
             }
+            else if (BRepOffsetAPIMakeThickSolidOracleTests.Geometric(aNP, aPRes, aCanon) is null)
+            {
+                // Plan 3.2's second level (Kerf decision 1542): GccAna_Circ2d2TanRad's two-circle fillets are computed
+                // directly now, the same circles to the last bits; the results agree in counts, area and centroid
+                myGeometric++;
+            }
             else
             {
                 myDifferences.Add($"{theWhat}: {aDiff}; canonically {aCanon}");
@@ -467,6 +473,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
     }
 
     private int myHoleKept;
+    private int myGeometric;
 
     private static double Area(in Shape theShape)
     {
@@ -493,7 +500,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
     {
         output.WriteLine($"{myCases} cases, {myOps} operations ({myOpsDone} done natively); {myNotDone} not done on both sides; "
                          + $"results: {myIdentical} identical BRep text ({myFreeMasked} with the Free column masked), "
-                         + $"{myCanonical} canonically identical, {myHoleKept} with a hole kept as its own wire (intended differences); "
+                         + $"{myCanonical} canonically identical, {myGeometric} geometrically equal, {myHoleKept} with a hole kept as its own wire (intended differences); "
                          + $"histories identical: {myHistory}; differences: {myDifferences.Count}");
         foreach (string aDiff in myDifferences.Take(30))
         {

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Constraints.Analytic;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.TwoD;
@@ -23,7 +24,7 @@ internal sealed class Circ2dTanOnRadGeo
     private const int ANbSolMAX = 8;
 
     private readonly bool _wellDone;
-    private readonly int _nbrSol;
+    private int _nbrSol;
     private readonly NCollection_Array1<Circle2D> _cirsol = new(1, ANbSolMAX);
     private readonly NCollection_Array1<Qualifier> _qualifier1 = new(1, ANbSolMAX);
     private readonly NCollection_Array1<int> _theSame1 = new(1, ANbSolMAX);
@@ -32,6 +33,60 @@ internal sealed class Circ2dTanOnRadGeo
     private readonly NCollection_Array1<double> _par1sol = new(1, ANbSolMAX);
     private readonly NCollection_Array1<double> _pararg1 = new(1, ANbSolMAX);
     private readonly NCollection_Array1<double> _parcen3 = new(1, ANbSolMAX);
+
+    /// <summary>
+    /// Keeps the solutions that obey the laws within ten times the tolerance (at least 1e-6): the tangency point on
+    /// the solution and on the argument (for a curve, its tangent perpendicular to the radius; for a line or circle, its
+    /// qualifier honoured), the centre on the curve at its parameter (Kerf decision 1547: OCCT's intersections of offset
+    /// curves also gave circles that miss the argument or the curve, and some on the wrong side of a qualified circle).
+    /// </summary>
+    private void KeepLawful(CurveAdaptor2D? curve, Line2D? line, Circle2D? circle, Point2D? point, Qualifier qualifier,
+                            Func<double, Point2D> onValue, double radius, double tolerance)
+    {
+        double tol = Math.Max(1.0e-6, 10.0 * Math.Abs(tolerance));
+        int kept = 0;
+        for (int i = 1; i <= _nbrSol; i++)
+        {
+            Circle2D sol = _cirsol[i];
+            Point2D c = sol.Location;
+            Point2D p = _pnttg1sol[i];
+            bool ok = Math.Abs(p.DistanceTo(c) - radius) <= tol
+                      && global::Kerf.Engine.Geometry.ElCLib.Value(_par1sol[i], sol).DistanceTo(p) <= tol
+                      && onValue(_parcen3[i]).DistanceTo(c) <= tol;
+            if (ok && curve is not null)
+            {
+                ConstraintCurveTool.D1(curve, _pararg1[i], out Point2D on, out Vector2D tan);
+                ok = on.DistanceTo(p) <= tol && (tan.Magnitude <= 0.0 || Math.Abs(tan.Normalized().Dot(new Vector2D(c, p))) <= tol);
+            }
+            else if (ok && line is Line2D l)
+            {
+                ok = l.DistanceTo(p) <= tol && new CircleContact(new QualifiedLin(l, qualifier)).Touches(sol, tol, out _);
+            }
+            else if (ok && circle is Circle2D ci)
+            {
+                ok = Math.Abs(ci.Location.DistanceTo(p) - ci.Radius) <= tol
+                     && new CircleContact(new QualifiedCirc(ci, qualifier)).Touches(sol, tol, out _);
+            }
+            else if (ok && point is Point2D pt)
+            {
+                ok = pt.DistanceTo(p) <= tol;
+            }
+            if (!ok)
+            {
+                continue;
+            }
+            kept++;
+            _cirsol[kept] = _cirsol[i];
+            _qualifier1[kept] = _qualifier1[i];
+            _theSame1[kept] = _theSame1[i];
+            _pnttg1sol[kept] = _pnttg1sol[i];
+            _pntcen3[kept] = _pntcen3[i];
+            _par1sol[kept] = _par1sol[i];
+            _pararg1[kept] = _pararg1[i];
+            _parcen3[kept] = _parcen3[i];
+        }
+        _nbrSol = kept;
+    }
 
     //=========================================================================
     //  Cercle tangent  :  a un cercle Qualified1 (C1).                       +
@@ -130,10 +185,9 @@ internal sealed class Circ2dTanOnRadGeo
                             _theSame1[_nbrSol]   = 0;
                             _pararg1[_nbrSol]    = intp.Point(i).ParamOnSecond();
                             _parcen3[_nbrSol]    = intp.Point(i).ParamOnFirst();
-                            // OCCT: reads pnttg1sol(NbrSol) before it is set (the origin, as the array is
-                            // default-constructed)
-                            _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                             _pnttg1sol[_nbrSol] = ConstraintCurveTool.Value(cu1, _pararg1[_nbrSol]);
+                            // after the tangency point is set (OCCT read it before: Kerf decision 1547)
+                            _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                             _pntcen3[_nbrSol]   = center;
                         }
                     }
@@ -141,6 +195,8 @@ internal sealed class Circ2dTanOnRadGeo
                 }
             }
         }
+        Line2D onL = onLine;
+        KeepLawful(qualified1.Qualified(), null, null, null, Qualifier.Unqualified, u => global::Kerf.Engine.Geometry.ElCLib.Value(u, onL), radius, tolerance);
     }
 
     /// <summary>Circles of radius Radius tangent to the qualified curve, centred on the circle OnCirc.</summary>
@@ -230,9 +286,9 @@ internal sealed class Circ2dTanOnRadGeo
                             _theSame1[_nbrSol]   = 0;
                             _pararg1[_nbrSol]    = intp.Point(i).ParamOnSecond();
                             _parcen3[_nbrSol]    = intp.Point(i).ParamOnFirst();
-                            // OCCT: reads pnttg1sol(NbrSol) before it is set
-                            _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                             _pnttg1sol[_nbrSol] = ConstraintCurveTool.Value(cu1, _pararg1[_nbrSol]);
+                            // after the tangency point is set (OCCT read it before: Kerf decision 1547)
+                            _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                             _pntcen3[_nbrSol]   = center;
                         }
                     }
@@ -240,6 +296,8 @@ internal sealed class Circ2dTanOnRadGeo
                 }
             }
         }
+        Circle2D onC = onCirc;
+        KeepLawful(qualified1.Qualified(), null, null, null, Qualifier.Unqualified, u => global::Kerf.Engine.Geometry.ElCLib.Value(u, onC), radius, tolerance);
     }
 
     /// <summary>Circles of radius Radius tangent to the qualified circle, centred on the curve OnCurv.</summary>
@@ -346,9 +404,9 @@ internal sealed class Circ2dTanOnRadGeo
                             _theSame1[_nbrSol] = 0;
                             _pararg1[_nbrSol]  = intp.Point(i).ParamOnFirst();
                             _parcen3[_nbrSol]  = intp.Point(i).ParamOnSecond();
-                            // OCCT: reads pnttg1sol(NbrSol) before it is set
-                            _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                             _pnttg1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Value(_pararg1[_nbrSol], c1);
+                            // after the tangency point is set (OCCT read it before: Kerf decision 1547)
+                            _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                             _pntcen3[_nbrSol]   = center;
                         }
                     }
@@ -356,6 +414,7 @@ internal sealed class Circ2dTanOnRadGeo
                 }
             }
         }
+        KeepLawful(null, null, qualified1.Qualified(), null, qualified1.Qualifier(), u => ConstraintCurveTool.Value(onCurv, u), radius, tolerance);
     }
 
     /// <summary>Circles of radius Radius tangent to the qualified line, centred on the curve OnCurv.</summary>
@@ -415,9 +474,9 @@ internal sealed class Circ2dTanOnRadGeo
             TheIntConicCurveOfGInter intp = new();
             for (int jcote1 = 1; jcote1 <= nbrcote1; jcote1++)
             {
-                // OCCT: offsets the line's direction, not its origin, so the line is in the wrong place unless the
-                // qualified line passes through dir1 (and pararg1 below is a parameter on that line, not on L1)
-                Point2D        point = new(dir1.XY() + cote1[jcote1] * norm1.XY());
+                // the line offset from its origin (OCCT offset its direction: Kerf decision 1547); a parameter on it
+                // is the foot's on L1
+                Point2D        point = new(origin1.XY() + cote1[jcote1] * norm1.XY());
                 Line2D        line  = new(point, dir1); // ligne avec deport.
                 TwoDDomain d1    = new();
                 firstparam            = Max(ConstraintCurveTool.FirstParameter(onCurv), thefirst);
@@ -455,9 +514,9 @@ internal sealed class Circ2dTanOnRadGeo
                             _theSame1[_nbrSol] = 0;
                             _pararg1[_nbrSol]  = intp.Point(i).ParamOnFirst();
                             _parcen3[_nbrSol]  = intp.Point(i).ParamOnSecond();
-                            // OCCT: reads pnttg1sol(NbrSol) before it is set
-                            _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                             _pnttg1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Value(_pararg1[_nbrSol], l1);
+                            // after the tangency point is set (OCCT read it before: Kerf decision 1547)
+                            _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                             _pntcen3[_nbrSol]   = center;
                         }
                     }
@@ -465,6 +524,7 @@ internal sealed class Circ2dTanOnRadGeo
                 }
             }
         }
+        KeepLawful(null, qualified1.Qualified(), null, null, qualified1.Qualifier(), u => ConstraintCurveTool.Value(onCurv, u), radius, tolerance);
     }
 
     /// <summary>Circles of radius Radius tangent to the qualified curve, centred on the curve OnCurv.</summary>
@@ -534,9 +594,9 @@ internal sealed class Circ2dTanOnRadGeo
                                          lastparam,
                                          tol);
                 CurveAdaptor2D   hOnCurv = (CurveAdaptor2D)onCurv.ShallowCopy();
-                // OCCT: the one-argument constructor leaves the range [0, 0], so C2 is the single point at parameter 0
-                // and the intersection finds no centre (IsDone, no solution).
-                OffsetCurveAdaptor2D c2      = new(hOnCurv);
+                // the curve itself, an offset of 0 (OCCT's one-argument constructor left the range [0, 0], a single
+                // point: Kerf decision 1547)
+                OffsetCurveAdaptor2D c2      = new(hOnCurv, 0.0);
                 firstparam                    = Max(c2.FirstParameter(), thefirst);
                 lastparam                     = Min(c2.LastParameter(), thelast);
                 TwoDDomain d2 = new(c2.Value(firstparam),
@@ -560,9 +620,9 @@ internal sealed class Circ2dTanOnRadGeo
                             _theSame1[_nbrSol]   = 0;
                             _pararg1[_nbrSol]    = intp.Point(i).ParamOnFirst();
                             _parcen3[_nbrSol]    = intp.Point(i).ParamOnSecond();
-                            // OCCT: reads pnttg1sol(NbrSol) before it is set
-                            _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                             _pnttg1sol[_nbrSol] = ConstraintCurveTool.Value(cu1, _pararg1[_nbrSol]);
+                            // after the tangency point is set (OCCT read it before: Kerf decision 1547)
+                            _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                             _pntcen3[_nbrSol]   = center;
                         }
                     }
@@ -570,6 +630,7 @@ internal sealed class Circ2dTanOnRadGeo
                 }
             }
         }
+        KeepLawful(qualified1.Qualified(), null, null, null, Qualifier.Unqualified, u => ConstraintCurveTool.Value(onCurv, u), radius, tolerance);
     }
 
     /// <summary>Circles of radius Radius through Point1, centred on the curve OnCurv.</summary>
@@ -627,15 +688,16 @@ internal sealed class Circ2dTanOnRadGeo
                         _theSame1[_nbrSol]   = 0;
                         _pararg1[_nbrSol]    = intp.Point(i).ParamOnFirst();
                         _parcen3[_nbrSol]    = intp.Point(i).ParamOnSecond();
-                        // OCCT: reads pnttg1sol(NbrSol) before it is set
-                        _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                         _pnttg1sol[_nbrSol] = point1;
+                        // after the tangency point is set (OCCT read it before: Kerf decision 1547)
+                        _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                         _pntcen3[_nbrSol]   = center;
                     }
                     _wellDone = true;
                 }
             }
         }
+        KeepLawful(null, null, null, point1, Qualifier.Unqualified, u => ConstraintCurveTool.Value(onCurv, u), radius, tolerance);
     }
 
     //=========================================================================
@@ -719,7 +781,7 @@ internal sealed class Circ2dTanOnRadGeo
         else
         {
             parArg = _parcen3[index];
-            pntSol = _pnttg1sol[index]; // OCCT: returns the tangency point, not the centre (pntcen3)
+            pntSol = _pntcen3[index]; // OCCT returned the tangency point (Kerf decision 1547)
         }
     }
 

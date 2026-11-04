@@ -53,7 +53,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
 
     private sealed class Tally
     {
-        public int Cases, Identical, FreeMasked, SameError, Canonical, Attributed;
+        public int Cases, Identical, FreeMasked, SameError, Canonical, Attributed, Intended;
         public readonly List<string> Failures = [];
         public readonly Dictionary<string, int> Attributions = [];
     }
@@ -230,20 +230,33 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
 
     /// <summary>One solver case: the records of both sides, token for token.</summary>
     private void CompareSolver(string theName, string theOperands, Func<List<N.TopoDS_Shape>, G.Rec> theNative,
-                               Func<List<Shape>, G.Rec> thePort, Func<string, bool>? theMasked = null)
+                               Func<List<Shape>, G.Rec> thePort, Func<List<Shape>, object>? theLaws = null,
+                               Func<string, bool>? theMasked = null)
     {
         Tally aTally = TallyOf("Geom2dGcc");
         aTally.Cases++;
         G.Rec aN = theNative(NativeOperands(theOperands));
         G.Rec aP = thePort(PortOperands(theOperands));
         List<string> aDiff = G.Differences(aN, aP, theMasked ?? (_ => false), out _, out _);
+        string aWhy = "";
         if (aDiff.Count == 0)
         {
             aTally.Identical++;
         }
+        else if (theLaws?.Invoke(PortOperands(theOperands)) switch
+                 {
+                     G.Laws l => G.IsIntendedDifference(aN, aP, l, out aWhy),
+                     G.LineLaws l => G.IsIntendedDifference(aN, aP, l, out aWhy),
+                     _ => false,
+                 })
+        {
+            // Plan 3.2's third level (Kerf unit 10K4, decisions 1540 to 1547): the corrected solvers' results obey the
+            // laws of the 2D constraints and keep native's solutions that do
+            aTally.Intended++;
+        }
         else
         {
-            aTally.Failures.Add($"{theName}: {string.Join("; ", aDiff.Take(6))}");
+            aTally.Failures.Add($"{theName}: {aWhy} {string.Join("; ", aDiff.Take(6))}");
         }
     }
 
@@ -253,7 +266,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         foreach ((string anAlgo, Tally t) in myTallies)
         {
             output.WriteLine($"{anAlgo}: {t.Cases} cases: {t.Identical} byte-identical, {t.FreeMasked} Free-masked, {t.SameError} the same error, "
-                             + $"{t.Canonical} canonical (native varies), {t.Attributed} attributed, {t.Failures.Count} failing");
+                             + $"{t.Canonical} canonical (native varies), {t.Attributed} attributed, {t.Intended} intended differences (laws), {t.Failures.Count} failing");
             foreach ((string aWhy, int aCount) in t.Attributions)
             {
                 output.WriteLine($"  attributed ({aCount}): {aWhy}");
@@ -885,6 +898,12 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
 
     private const double Tol = 1e-6; // build123d.NET's Constants.Tolerance
 
+    /// <summary>The laws' view of the port's targets.</summary>
+    private static G.LawArg[] LawArgs(List<PArg> theArgs, TargetData[] theTargets, int theCount)
+        => theArgs.Take(theCount).Select((a, i) => a.Q is not null
+                                                       ? new G.LawArg(a.Adaptor!.Curve(), null, (Qualifier)theTargets[i].Tangency)
+                                                       : new G.LawArg(null, a.P!.Pnt2d(), Qualifier.Unqualified)).ToArray();
+
     private static double Guess(double theFirst, double theLast) => (theLast - theFirst) / 2 + theFirst;
 
     /// <summary>MakeConstrainedArcs(t1, t2, radius): Geom2dGcc_Circ2d2TanRad.</summary>
@@ -910,7 +929,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
                 (true, false) => new Circ2d2TanRad(a[0].Q!.Value, a[1].P!, theRadius, Tol),
                 _ => new Circ2d2TanRad(a[0].P!, a[1].P!, theRadius, Tol),
             }));
-        });
+        }, o => new G.Laws(LawArgs(PArgs(aTs, o), aTs, 2), null, theRadius, Tol));
     }
 
     /// <summary>MakeConstrainedArcsCenteredOn(t1, t2, on): Geom2dGcc_Circ2d2TanOn, guessed at the middle of each edge.</summary>
@@ -939,6 +958,10 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
                 2 => new Circ2d2TanOn(a[0].Q!.Value, a[1].P!, anOn, Tol, g[0], g[1]),
                 _ => new Circ2d2TanOn(a[0].P!, a[1].P!, anOn, Tol),
             }));
+        }, o =>
+        {
+            var a = PArgs(aTs, o);
+            return new G.Laws(LawArgs(a, aTs, 2), a[2].Adaptor!.Curve(), null, Tol);
         });
     }
 
@@ -956,7 +979,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
             var a = PArgs(aTs, o);
             return G.RunPort(() => G.PCirc2d3Tan(new Circ2d3Tan(a[0].Q!.Value, a[1].Q!.Value, a[2].Q!.Value, Tol, Guess(a[0].First, a[0].Last),
                                                                            Guess(a[1].First, a[1].Last), Guess(a[2].First, a[2].Last))));
-        });
+        }, o => new G.Laws(LawArgs(PArgs(aTs, o), aTs, 3), null, null, Tol));
     }
 
     /// <summary>MakeConstrainedArcs(edge, center): Geom2dGcc_Circ2dTanCen.</summary>
@@ -992,6 +1015,10 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
             return G.RunPort(() => G.PCirc2dTanOnRad(a[0].Q is not null
                 ? new Circ2dTanOnRad(a[0].Q!.Value, a[1].Adaptor!, theRadius, Tol)
                 : new Circ2dTanOnRad(a[0].P!, a[1].Adaptor!, theRadius, Tol)));
+        }, o =>
+        {
+            var a = PArgs(aTs, o);
+            return new G.Laws(LawArgs(a, aTs, 1), a[1].Adaptor!.Curve(), theRadius, Tol);
         });
     }
 
@@ -1011,7 +1038,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
             return G.RunPort(() => G.PLin2d2Tan(a[1].Q is not null
                 ? new Lin2d2Tan(a[0].Q!.Value, a[1].Q!.Value, Tol)
                 : new Lin2d2Tan(a[0].Q!.Value, new Point2D(aTs[1].X, aTs[1].Y), Tol)));
-        });
+        }, o => new G.LineLaws(LawArgs(PArgs(aTs, o), aTs, 2), null, 0, Tol));
     }
 
     /// <summary>MakeConstrainedLines(t, reference, angle): Geom2dGcc_Lin2dTanObl from the reference axis's line on XY.</summary>
@@ -1029,7 +1056,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
             var a = PArgs(aTs, o);
             var aLin = new Line2D(new Axis2D(new Point2D(p.X, p.Y), new Direction2D(d.X, d.Y)));
             return G.RunPort(() => G.PLin2dTanObl(new Lin2dTanObl(a[0].Q!.Value, aLin, Tol, theAngle)));
-        });
+        }, o => new G.LineLaws(LawArgs(PArgs(aTs, o), aTs, 1), new Line2D(new Axis2D(new Point2D(p.X, p.Y), new Direction2D(d.X, d.Y))), theAngle, Tol));
     }
 
     [Fact]

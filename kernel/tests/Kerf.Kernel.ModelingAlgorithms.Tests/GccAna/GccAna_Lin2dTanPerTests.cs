@@ -49,7 +49,7 @@ public class GccAna_Lin2dTanPerTests
     }
 
     [Fact]
-    public void PointCircle_ThroughTheCentre_LastIntersection()
+    public void PointCircle_ThroughTheCentre_NearestIntersection()
     {
         Circle2D aC = Circ(3, 0, 1);
         Point2D aP = new(0, 0);
@@ -61,9 +61,8 @@ public class GccAna_Lin2dTanPerTests
         Assert.Equal(aC.Radius, aI.DistanceTo(aC.Location), Tol);
         Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).DistanceTo(aI) < Tol);
         Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aC).DistanceTo(aI) < Tol);
-        // OCCT keeps the last intersection point IntAna2d returns, whatever its distance
-        AnalyticIntersection anInt = new(aSol, aC);
-        Assert.Equal(anInt.Point(anInt.PointCount).Value(), aI);
+        // the nearer intersection (OCCT kept the last IntAna2d returned: decision 1544)
+        Assert.True(aI.DistanceTo(new Point2D(2, 0)) < Tol);
     }
 
     [Fact]
@@ -79,9 +78,11 @@ public class GccAna_Lin2dTanPerTests
             CheckTangency(anAlgo, i, aC);
             anAlgo.Intersection2(i, out _, out _, out Point2D aI);
             Assert.True(aL.DistanceTo(aI) < Tol && anAlgo.ThisSolution(i).DistanceTo(aI) < Tol);
-            // OCCT: this constructor never sets the qualifier
+            // the side the circle is on (OCCT never set it: decision 1544)
             anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ);
-            Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, aQ);
+            Line2D aSol = anAlgo.ThisSolution(i);
+            double aSide = aSol.Direction.XY() ^ (aC.Location.XY() - aSol.Location.XY());
+            Assert.Equal(aSide > 0.0 ? global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing : global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, aQ);
         }
     }
 
@@ -101,29 +102,35 @@ public class GccAna_Lin2dTanPerTests
     }
 
     [Fact]
-    public void CircleCircle_AlwaysTwo_PerpendicularToTheLineOfCentres()
+    public void CircleCircle_ThroughTheCentre()
     {
+        // A line perpendicular to a circle passes through its centre: the tangents to C1 from C2's centre, one with C1
+        // on its left and one on its right (OCCT gave two lines perpendicular to the line of centres, whatever the
+        // qualifier, missing C2's centre: decision 1544)
         Circle2D aC1 = Circ(0, 0, 1);
         Circle2D aC2 = Circ(4, 3, 6);
-        foreach (global::Kerf.Engine.Construction.Constraints.QualifiedCirc aQ in new[] { global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC1), global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosing(aC1), global::Kerf.Engine.Construction.Constraints.GccEnt.Outside(aC1) })
+        foreach ((global::Kerf.Engine.Construction.Constraints.QualifiedCirc aQ, int aNb) in new[] { (global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC1), 2), (global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosing(aC1), 1), (global::Kerf.Engine.Construction.Constraints.GccEnt.Outside(aC1), 1) })
         {
             Lin2dTanPer anAlgo = new(aQ, aC2);
-            // OCCT: two solutions whatever the qualifier
-            Assert.Equal(2, anAlgo.SolutionCount);
-            Direction2D aD = new(new Vector2D(aC1.Location, aC2.Location));
-            for (int i = 1; i <= 2; i++)
+            Assert.Equal(aNb, anAlgo.SolutionCount);
+            for (int i = 1; i <= aNb; i++)
             {
                 Line2D aSol = anAlgo.ThisSolution(i);
-                Assert.Equal(0.0, aSol.Direction.Dot(aD), 1.0e-12);
+                Assert.True(aSol.DistanceTo(aC2.Location) < Tol);
                 CheckTangency(anAlgo, i, aC1);
                 anAlgo.Intersection2(i, out double aPs, out double aPa, out Point2D aI);
                 Assert.Equal(aC2.Radius, aI.DistanceTo(aC2.Location), Tol);
                 Assert.True(aSol.DistanceTo(aI) < Tol);
                 Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aC2).DistanceTo(aI) < Tol);
                 Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).DistanceTo(aI) < Tol);
+                anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1);
+                double aSide = aSol.Direction.XY() ^ (aC1.Location.XY() - aSol.Location.XY());
+                Assert.Equal(aSide > 0.0 ? global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing : global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, aQ1);
+                if (!aQ.IsUnqualified)
+                {
+                    Assert.Equal(aQ.Qualifier(), aQ1);
+                }
             }
-            anAlgo.WhichQualifier(1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1);
-            Assert.Equal(aQ.IsOutside ? global::Kerf.Engine.Construction.Constraints.Qualifier.Outside : global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, aQ1);
         }
     }
 

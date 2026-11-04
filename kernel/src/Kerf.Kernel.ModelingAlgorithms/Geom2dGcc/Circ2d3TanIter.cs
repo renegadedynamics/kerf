@@ -31,14 +31,13 @@ internal sealed class Circ2d3TanIter
     private Qualifier _qualifier2;
     private Qualifier _qualifier3;
     private bool _theSame1;
-    // OCCT's TheSame2 is written but never read (IsTheSame2 reads TheSame3): left out.
+    // OCCT's TheSame2 is only ever false, as IsTheSame2's answer is: left out.
     private bool _theSame3;
     private Point2D _pnttg1sol = new();
     private Point2D _pnttg2sol = new();
     private Point2D _pnttg3sol = new();
-    private double _par1sol;
-    private double _par2sol;
-    private double _par3sol;
+    // The parameters of the tangency points on the solution are computed when asked (OCCT stored 0, or distances
+    // between the points: Kerf decision 1546).
     private double _pararg1;
     private double _pararg2;
     private double _pararg3;
@@ -48,9 +47,6 @@ internal sealed class Circ2d3TanIter
     {
         _theSame1 = false;
         _theSame3 = false;
-        _par1sol  = 0.0;
-        _par2sol  = 0.0;
-        _par3sol  = 0.0;
         _pararg1  = 0.0;
         _pararg2  = 0.0;
         _pararg3  = 0.0;
@@ -161,14 +157,11 @@ internal sealed class Circ2d3TanIter
                                 _qualifier2 = qualified2.Qualifier();
                                 _qualifier3 = qualified3.Qualifier();
                                 _pararg1    = ufirst[1];
-                                _par1sol    = 0.0;
                                 _pnttg1sol  = point1;
                                 _pararg2    = ufirst[2];
                                 _pnttg2sol  = point2;
-                                _par2sol    = _pnttg2sol.DistanceTo(_pnttg1sol);
                                 _pnttg3sol  = point3;
                                 _pararg3    = ufirst[3];
-                                _par3sol    = _pnttg3sol.DistanceTo(_pnttg1sol);
                                 _wellDone   = true;
                             }
                         }
@@ -182,9 +175,6 @@ internal sealed class Circ2d3TanIter
     {
         _theSame1 = false;
         _theSame3 = false;
-        _par1sol  = 0.0;
-        _par2sol  = 0.0;
-        _par3sol  = 0.0;
         _pararg1  = 0.0;
         _pararg2  = 0.0;
         _pararg3  = 0.0;
@@ -300,14 +290,11 @@ internal sealed class Circ2d3TanIter
                                 _qualifier2 = qualified2.Qualifier();
                                 _qualifier3 = qualified3.Qualifier();
                                 _pararg1    = ufirst[1];
-                                _par1sol    = 0.0;
                                 _pnttg1sol  = point1;
                                 _pararg2    = ufirst[2];
                                 _pnttg2sol  = point2;
-                                _par2sol    = 0.0;
                                 _pararg3    = ufirst[3];
                                 _pnttg3sol  = point3;
-                                _par3sol    = 0.0;
                                 _wellDone   = true;
                             }
                         }
@@ -321,9 +308,6 @@ internal sealed class Circ2d3TanIter
     {
         _theSame1 = false;
         _theSame3 = false;
-        _par1sol  = 0.0;
-        _par2sol  = 0.0;
-        _par3sol  = 0.0;
         _pararg1  = 0.0;
         _pararg2  = 0.0;
         _pararg3  = 0.0;
@@ -427,10 +411,11 @@ internal sealed class Circ2d3TanIter
                             || (qualified1.IsOutside && dist >= rsol)
                             || (qualified1.IsEnclosed && rsol <= r1 && dist <= rsol))
                     {
-                        dist = centre2.DistanceTo(centre); // OCCT: the second circle is tested with Qualified1, not Qualified2
-                        if (qualified1.IsUnqualified || (qualified1.IsEnclosing && rsol >= r2 && dist <= rsol)
-                                || (qualified1.IsOutside && dist >= rsol)
-                                || (qualified1.IsEnclosed && rsol <= r2 && dist <= rsol))
+                        // the second circle with its own qualifier (OCCT tested Qualified1 again: Kerf decision 1546)
+                        dist = centre2.DistanceTo(centre);
+                        if (qualified2.IsUnqualified || (qualified2.IsEnclosing && rsol >= r2 && dist <= rsol)
+                                || (qualified2.IsOutside && dist >= rsol)
+                                || (qualified2.IsEnclosed && rsol <= r2 && dist <= rsol))
                         {
                             Vector2D vec = new(point3, centre);
                             double   angle1 = vec.AngleTo(tan3);
@@ -442,14 +427,11 @@ internal sealed class Circ2d3TanIter
                                 _qualifier2 = qualified2.Qualifier();
                                 _qualifier3 = qualified3.Qualifier();
                                 _pararg1    = ufirst[1];
-                                _par1sol    = 0.0;
                                 _pnttg1sol  = point1;
                                 _pararg2    = ufirst[2];
                                 _pnttg2sol  = point2;
-                                _par2sol    = 0.0;
                                 _pararg3    = ufirst[3];
                                 _pnttg3sol  = point3;
-                                _par3sol    = 0.0;
                                 _wellDone   = true;
                             }
                         }
@@ -463,9 +445,6 @@ internal sealed class Circ2d3TanIter
     {
         _theSame1 = false;
         _theSame3 = false;
-        _par1sol  = 0.0;
-        _par2sol  = 0.0;
-        _par3sol  = 0.0;
         _pararg1  = 0.0;
         _pararg2  = 0.0;
         _pararg3  = 0.0;
@@ -583,14 +562,11 @@ internal sealed class Circ2d3TanIter
                                 _qualifier2 = qualified2.Qualifier();
                                 _qualifier3 = qualified3.Qualifier();
                                 _pararg1    = ufirst[1];
-                                _par1sol    = 0.0;
                                 _pnttg1sol  = point1;
                                 _pararg2    = ufirst[2];
                                 _pnttg2sol  = point2;
-                                _par2sol    = 0.0;
                                 _pararg3    = ufirst[3];
                                 _pnttg3sol  = point3;
-                                _par3sol    = 0.0;
                                 _wellDone   = true;
                             }
                         }
@@ -604,9 +580,6 @@ internal sealed class Circ2d3TanIter
     {
         _theSame1 = false;
         _theSame3 = false;
-        _par1sol  = 0.0;
-        _par2sol  = 0.0;
-        _par3sol  = 0.0;
         _pararg1  = 0.0;
         _pararg2  = 0.0;
         _pararg3  = 0.0;
@@ -661,7 +634,8 @@ internal sealed class Circ2d3TanIter
             {
                 _cirsol = circ.ThisSolution(1);
                 Point2D centre = _cirsol.Location;
-                double   pscal = centre.XY().Dot(new Xy(-l1.Direction.Y, l1.Direction.X)); // OCCT: the side of L1 from the origin, not from a point of L1 (the next test likewise for L2)
+                // the side of L1 from a point of it (OCCT measured from the origin: Kerf decision 1546)
+                double   pscal = (centre.XY() - l1.Location.XY()).Dot(new Xy(-l1.Direction.Y, l1.Direction.X));
                 if (qualified1.IsUnqualified || (qualified1.IsOutside && pscal <= 0.0)
                         || (qualified1.IsEnclosed && pscal >= 0.0))
                 {
@@ -716,14 +690,11 @@ internal sealed class Circ2d3TanIter
                                 _qualifier2 = qualified2.Qualifier();
                                 _qualifier3 = qualified3.Qualifier();
                                 _pararg1    = ufirst[1];
-                                _par1sol    = 0.0;
                                 _pnttg1sol  = point1;
                                 _pararg2    = ufirst[2];
                                 _pnttg2sol  = point2;
-                                _par2sol    = 0.0;
                                 _pararg3    = ufirst[3];
                                 _pnttg3sol  = point3;
-                                _par3sol    = 0.0;
                                 _wellDone   = true;
                             }
                         }
@@ -737,9 +708,6 @@ internal sealed class Circ2d3TanIter
     {
         _theSame1 = false;
         _theSame3 = false;
-        _par1sol  = 0.0;
-        _par2sol  = 0.0;
-        _par3sol  = 0.0;
         _pararg1  = 0.0;
         _pararg2  = 0.0;
         _pararg3  = 0.0;
@@ -834,23 +802,21 @@ internal sealed class Circ2d3TanIter
                     if (qualified1.IsUnqualified || (qualified1.IsEnclosing && angle1 <= 0.0)
                             || (qualified1.IsOutside && angle1 >= 0) || (qualified1.IsEnclosed && angle1 <= 0.0))
                     {
-                        angle1 = vec2.AngleTo(tan2); // OCCT: the second test below checks Qualified1 again, not Qualified2
-                        if (qualified1.IsUnqualified || (qualified1.IsEnclosing && angle1 <= 0.0)
-                                || (qualified1.IsOutside && angle1 >= 0)
-                                || (qualified1.IsEnclosed && angle1 <= 0.0))
+                        // the second curve with its own qualifier (OCCT tested Qualified1 again: Kerf decision 1546)
+                        angle1 = vec2.AngleTo(tan2);
+                        if (qualified2.IsUnqualified || (qualified2.IsEnclosing && angle1 <= 0.0)
+                                || (qualified2.IsOutside && angle1 >= 0)
+                                || (qualified2.IsEnclosed && angle1 <= 0.0))
                         {
                             _qualifier1 = qualified1.Qualifier();
                             _qualifier2 = qualified2.Qualifier();
                             _qualifier3 = Qualifier.Noqualifier;
                             _pararg1    = ufirst[2];
-                            _par1sol    = 0.0;
                             _pnttg1sol  = point1;
                             _pararg2    = ufirst[3];
                             _pnttg2sol  = point2;
-                            _par2sol    = 0.0;
                             _pararg3    = 0.0;
                             _pnttg3sol  = point3;
-                            _par3sol    = 0.0;
                             _wellDone   = true;
                         }
                     }
@@ -863,9 +829,6 @@ internal sealed class Circ2d3TanIter
     {
         _theSame1 = false;
         _theSame3 = false;
-        _par1sol  = 0.0;
-        _par2sol  = 0.0;
-        _par3sol  = 0.0;
         _pararg1  = 0.0;
         _pararg2  = 0.0;
         _pararg3  = 0.0;
@@ -962,14 +925,11 @@ internal sealed class Circ2d3TanIter
                         _qualifier2 = Qualifier.Noqualifier;
                         _qualifier3 = Qualifier.Noqualifier;
                         _pararg1    = ufirst[3];
-                        _par1sol    = 0.0;
                         _pnttg1sol  = point3;
                         _pararg2    = 0.0;
                         _pnttg2sol  = point2;
-                        _par2sol    = 0.0;
                         _pararg3    = 0.0;
                         _pnttg3sol  = Point3;
-                        _par3sol    = 0.0;
                         _wellDone   = true;
                     }
                 }
@@ -981,9 +941,6 @@ internal sealed class Circ2d3TanIter
     {
         _theSame1 = false;
         _theSame3 = false;
-        _par1sol  = 0.0;
-        _par2sol  = 0.0;
-        _par3sol  = 0.0;
         _pararg1  = 0.0;
         _pararg2  = 0.0;
         _pararg3  = 0.0;
@@ -1029,13 +986,15 @@ internal sealed class Circ2d3TanIter
             Point2D point1 = new(centre1.XY() + ufirst[2] * l1.Direction.XY());
             Point2D point2 = new();
             Vector2D tan2 = new();
-            ConstraintCurveTool.D1(cu2, ufirst[2], out point2, out tan2); // OCCT: Cu2's parameter is Ufirst(3); Ufirst(2) is the one on L1
+            // Cu2's parameter is Ufirst(3) (OCCT took Ufirst(2), the one on L1: Kerf decision 1546)
+            ConstraintCurveTool.D1(cu2, ufirst[3], out point2, out tan2);
             AnalyticCirc2d3Tan circ = new(point1, point2, point3, Tol);
             if (circ.IsDone)
             {
                 _cirsol = circ.ThisSolution(1);
                 Point2D centre = _cirsol.Location;
-                double   pscal = centre.XY().Dot(new Xy(-l1.Direction.Y, l1.Direction.X)); // OCCT: the side of L1 from the origin, not from a point of L1
+                // the side of L1 from a point of it (OCCT measured from the origin: Kerf decision 1546)
+                double   pscal = (centre.XY() - l1.Location.XY()).Dot(new Xy(-l1.Direction.Y, l1.Direction.X));
                 Vector2D tan1 = new(l1.Direction.XY());
                 Vector2D tan3 = new(-Math.Sin(ufirst[1]), Math.Cos(ufirst[1]));
                 double   normetan1 = tan1.Magnitude;
@@ -1087,14 +1046,11 @@ internal sealed class Circ2d3TanIter
                             _qualifier2 = qualified2.Qualifier();
                             _qualifier3 = Qualifier.Noqualifier;
                             _pararg1    = ufirst[2];
-                            _par1sol    = 0.0;
                             _pnttg1sol  = point1;
                             _pararg2    = ufirst[3];
                             _pnttg2sol  = point2;
-                            _par2sol    = 0.0;
                             _pararg3    = 0.0;
                             _pnttg3sol  = point3;
-                            _par3sol    = 0.0;
                             _wellDone   = true;
                         }
                     }
@@ -1107,9 +1063,6 @@ internal sealed class Circ2d3TanIter
     {
         _theSame1 = false;
         _theSame3 = false;
-        _par1sol  = 0.0;
-        _par2sol  = 0.0;
-        _par3sol  = 0.0;
         _pararg1  = 0.0;
         _pararg2  = 0.0;
         _pararg3  = 0.0;
@@ -1211,7 +1164,8 @@ internal sealed class Circ2d3TanIter
                             || (qualified1.IsOutside && dist >= rsol)
                             || (qualified1.IsEnclosed && rsol <= r1 && dist <= rsol))
                     {
-                        double pscal = centre.XY().Dot(new Xy(-l2.Direction.Y, l2.Direction.X)); // OCCT: the side of L2 from the origin, not from a point of L2
+                        // the side of L2 from a point of it (OCCT measured from the origin: Kerf decision 1546)
+                        double pscal = (centre.XY() - l2.Location.XY()).Dot(new Xy(-l2.Direction.Y, l2.Direction.X));
                         if (qualified2.IsUnqualified || (qualified2.IsOutside && pscal <= 0.0)
                                 || (qualified2.IsEnclosed && pscal >= 0.0))
                         {
@@ -1224,14 +1178,11 @@ internal sealed class Circ2d3TanIter
                                 _qualifier2 = qualified2.Qualifier();
                                 _qualifier3 = qualified3.Qualifier();
                                 _pararg1    = ufirst[1];
-                                _par1sol    = 0.0;
                                 _pnttg1sol  = point1;
                                 _pararg2    = ufirst[2];
                                 _pnttg2sol  = point2;
-                                _par2sol    = 0.0;
                                 _pararg3    = ufirst[3];
                                 _pnttg3sol  = point3;
-                                _par3sol    = 0.0;
                                 _wellDone   = true;
                             }
                         }
@@ -1245,9 +1196,6 @@ internal sealed class Circ2d3TanIter
     {
         _theSame1 = false;
         _theSame3 = false;
-        _par1sol  = 0.0;
-        _par2sol  = 0.0;
-        _par3sol  = 0.0;
         _pararg1  = 0.0;
         _pararg2  = 0.0;
         _pararg3  = 0.0;
@@ -1296,14 +1244,15 @@ internal sealed class Circ2d3TanIter
             Point2D point2 = new();
             //     gp_Vec2d Tan2,Nor2;
             Vector2D tan2 = new();
-            ConstraintCurveTool.D1(cu2, ufirst[2], out point2, out tan2); // OCCT: Cu2's parameter is Ufirst(3); Ufirst(2) is the one on the point's circle
+            // Cu2's parameter is Ufirst(3) (OCCT took Ufirst(2), the one on the point's circle: Kerf decision 1546)
+            ConstraintCurveTool.D1(cu2, ufirst[3], out point2, out tan2);
             AnalyticCirc2d3Tan circ = new(point1, point2, point3, Tol);
             if (circ.IsDone)
             {
                 _cirsol = circ.ThisSolution(1);
                 Point2D centre = _cirsol.Location;
                 Vector2D tan1 = new(-Math.Sin(ufirst[1]), Math.Cos(ufirst[1]));
-                Vector2D tan3 = new(-Math.Sin(ufirst[3]), Math.Cos(ufirst[3])); // OCCT: the point's circle parameter is Ufirst(2) (likewise above)
+                Vector2D tan3 = new(-Math.Sin(ufirst[2]), Math.Cos(ufirst[2]));
                 double   normetan2 = tan2.Magnitude;
                 Vector2D vec1 = new(point1, centre);
                 Vector2D vec2 = new(point2, centre);
@@ -1354,14 +1303,11 @@ internal sealed class Circ2d3TanIter
                             _qualifier2 = qualified2.Qualifier();
                             _qualifier3 = Qualifier.Noqualifier;
                             _pararg1    = ufirst[1];
-                            _par1sol    = 0.0;
                             _pnttg1sol  = point1;
                             _pararg2    = ufirst[2];
                             _pnttg2sol  = point2;
-                            _par2sol    = 0.0;
                             _pararg3    = 0.0;
                             _pnttg3sol  = point3;
-                            _par3sol    = 0.0;
                             _wellDone   = true;
                         }
                     }
@@ -1413,7 +1359,7 @@ internal sealed class Circ2d3TanIter
         {
             if (!_theSame1)
             {
-                parSol = _par1sol;
+                parSol = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol, _pnttg1sol); // OCCT stored 0 (Kerf decision 1546)
                 parArg = _pararg1;
                 pntSol = _pnttg1sol;
             }
@@ -1434,7 +1380,7 @@ internal sealed class Circ2d3TanIter
         }
         else
         {
-            parSol = _par2sol;
+            parSol = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol, _pnttg2sol); // OCCT stored 0 (Kerf decision 1546)
             parArg = _pararg2;
             pntSol = _pnttg2sol;
         }
@@ -1450,7 +1396,7 @@ internal sealed class Circ2d3TanIter
         }
         else
         {
-            parSol = _par3sol;
+            parSol = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol, _pnttg3sol); // OCCT stored 0 (Kerf decision 1546)
             parArg = _pararg3;
             pntSol = _pnttg3sol;
         }
@@ -1473,7 +1419,7 @@ internal sealed class Circ2d3TanIter
         return true;
     }
 
-    /// <summary>True if the solution is the second argument (OCCT answers for the third).</summary>
+    /// <summary>True if the solution is the second argument.</summary>
     /// <exception cref="NotDoneException">The construction failed.</exception>
     public bool IsTheSame2()
     {
@@ -1482,17 +1428,13 @@ internal sealed class Circ2d3TanIter
             throw new NotDoneException();
         }
 
-        if (!_theSame3) // OCCT: tests TheSame3 (always false, so no effect)
-        {
-            return false;
-        }
-
-        return true;
+        // OCCT tested TheSame3; the iterative solution is never an argument (Kerf decision 1546)
+        return false;
     }
 
     /// <summary>
-    /// True if the solution is the third argument. OCCT answers true whenever the construction is done, so
-    /// Geom2dGcc_Circ2d3Tan's Tangency3 throws for every iterative solution.
+    /// True if the solution is the third argument (OCCT answered true whenever the construction was done, so
+    /// Geom2dGcc_Circ2d3Tan's Tangency3 threw for every iterative solution: Kerf decision 1546).
     /// </summary>
     /// <exception cref="NotDoneException">The construction failed.</exception>
     public bool IsTheSame3
@@ -1504,7 +1446,7 @@ internal sealed class Circ2d3TanIter
                 throw new NotDoneException();
             }
 
-            return true; // OCCT: always true (occt-issues.md)
+            return _theSame3;
         }
     }
 }

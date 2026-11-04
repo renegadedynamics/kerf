@@ -320,6 +320,17 @@ public sealed class DrawCorpus(string theTestsDirectory)
             ["bugs/modalg_7/bug31361"] = ("GeomFill_Pipe between two sections builds (decision 1436)",
                                           theLog => theLog.Contains("Accuracy of approximation = ", StringComparison.Ordinal)
                                                     && !theLog.Contains("Tcl Exception", StringComparison.Ordinal)),
+            // OCCT's script expects tan1_2, a second copy of the one solution (20, 0) radius 10: GccAna_Circ2d3Tan now
+            // drops duplicate solutions (occt-issues.md, unit 5K1's GccAna_Circ2d3Tan rows; Kerf decision 1551)
+            ["geometry/circ2d3Tan/CircleCirclePoint_13"] = ("GccAna_Circ2d3Tan gives each solution once (decision 1551)",
+                                                            theLog => theLog.Contains("The length tan1_1 is 62.83185307179", StringComparison.Ordinal)
+                                                                      && !theLog.Contains("circle: tan1_2", StringComparison.Ordinal)),
+            // OCCT's script expects tan1_3, a second copy of tan1_2 (30, 40) radius 60, besides tan1_1, the second argument
+            // itself (decision 1551)
+            ["geometry/circ2d3Tan/CircleCirclePoint_14"] = ("GccAna_Circ2d3Tan gives each solution once (decision 1551)",
+                                                            theLog => theLog.Contains("is equal to the second argument", StringComparison.Ordinal)
+                                                                      && theLog.Contains("The length tan1_2 is 376.991118543385", StringComparison.Ordinal)
+                                                                      && !theLog.Contains("circle: tan1_3", StringComparison.Ordinal)),
         };
 
     /// <summary>

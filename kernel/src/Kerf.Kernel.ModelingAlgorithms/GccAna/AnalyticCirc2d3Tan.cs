@@ -185,8 +185,8 @@ internal sealed partial class AnalyticCirc2d3Tan
         int i, j, k, l;
         NCollection_Array1<double> xSol = new(1, 64);
         NCollection_Array1<double> ySol = new(1, 64);
-        // OCCT: rSol has 16 slots where xSol/ySol have 64; more than 16 triplets would overrun it (OCCT's range check and the port throw)
-        NCollection_Array1<double> rSol = new(1, 16);
+        // As many slots as xSol and ySol (OCCT gave rSol 16: more than 16 triplets threw; Kerf decision 1540)
+        NCollection_Array1<double> rSol = new(1, 64);
         NCollection_Array1<int> firstSol = new(1, 9);
         NCollection_Array1<double> xSol1 = new(1, 32);
         NCollection_Array1<double> ySol1 = new(1, 32);
@@ -918,61 +918,18 @@ internal sealed partial class AnalyticCirc2d3Tan
                 _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), rSol[j]);
 
                 //   ==========================================================
-                double distcc1 = center.DistanceTo(center1);
-                if (!qualified1.IsUnqualified)
-                {
-                    _qualifier1[_nbrSol] = qualified1.Qualifier();
-                }
-                else if (Math.Abs(distcc1 + rSol[j] - r1) <= tol)
-                {
-                    _qualifier1[_nbrSol] = Qualifier.Enclosed;
-                }
-                else if (Math.Abs(distcc1 - r1 - rSol[j]) <= tol)
-                {
-                    _qualifier1[_nbrSol] = Qualifier.Outside;
-                }
-                else
-                {
-                    _qualifier1[_nbrSol] = Qualifier.Enclosing;
-                }
-
-                // OCCT: measured from center1, not from the circle this qualifier is for
-                double distcc2 = center.DistanceTo(center1);
-                if (!qualified2.IsUnqualified)
-                {
-                    _qualifier2[_nbrSol] = qualified2.Qualifier();
-                }
-                else if (Math.Abs(distcc2 + rSol[j] - r2) <= tol)
-                {
-                    _qualifier2[_nbrSol] = Qualifier.Enclosed;
-                }
-                else if (Math.Abs(distcc2 - r2 - rSol[j]) <= tol)
-                {
-                    _qualifier2[_nbrSol] = Qualifier.Outside;
-                }
-                else
-                {
-                    _qualifier2[_nbrSol] = Qualifier.Enclosing;
-                }
-
-                // OCCT: measured from center1, not from the circle this qualifier is for
-                double distcc3 = center.DistanceTo(center1);
-                if (!qualified3.IsUnqualified)
-                {
-                    _qualifier3[_nbrSol] = qualified3.Qualifier();
-                }
-                else if (Math.Abs(distcc3 + rSol[j] - r3) <= tol)
-                {
-                    _qualifier3[_nbrSol] = Qualifier.Enclosed;
-                }
-                else if (Math.Abs(distcc3 - r3 - rSol[j]) <= tol)
-                {
-                    _qualifier3[_nbrSol] = Qualifier.Outside;
-                }
-                else
-                {
-                    _qualifier3[_nbrSol] = Qualifier.Enclosing;
-                }
+                // The system solved says which circles the solution touches from outside (R + Ri), and the
+                // radii which of the others it encloses (OCCT compared distances, two of them measured from
+                // center1: Kerf decision 1540)
+                bool out1 = i == 2 || i == 5 || i == 6 || i == 8;
+                bool out2 = i == 3 || i == 5 || i == 7 || i == 8;
+                bool out3 = i == 4 || i == 6 || i == 7 || i == 8;
+                _qualifier1[_nbrSol] = !qualified1.IsUnqualified ? qualified1.Qualifier()
+                                       : out1 ? Qualifier.Outside : rSol[j] > r1 ? Qualifier.Enclosing : Qualifier.Enclosed;
+                _qualifier2[_nbrSol] = !qualified2.IsUnqualified ? qualified2.Qualifier()
+                                       : out2 ? Qualifier.Outside : rSol[j] > r2 ? Qualifier.Enclosing : Qualifier.Enclosed;
+                _qualifier3[_nbrSol] = !qualified3.IsUnqualified ? qualified3.Qualifier()
+                                       : out3 ? Qualifier.Outside : rSol[j] > r3 ? Qualifier.Enclosing : Qualifier.Enclosed;
 
                 //   ==========================================================
 
@@ -1041,6 +998,39 @@ internal sealed partial class AnalyticCirc2d3Tan
             }
         }
         _wellDone = true;
+    }
+
+    /// <summary>
+    /// Adds a candidate circle if it touches the three arguments as their qualifiers ask, within the tolerance, and
+    /// isn't a solution already: with the qualifiers it has, and the tangency points where it touches (Kerf decision
+    /// 17101).
+    /// </summary>
+    private void AddSolution(in Circle2D sol, in CircleContact a1, in CircleContact a2, in CircleContact a3, double tolerance)
+    {
+        if (!a1.Touches(sol, tolerance, out Qualifier q1) || !a2.Touches(sol, tolerance, out Qualifier q2)
+            || !a3.Touches(sol, tolerance, out Qualifier q3))
+        {
+            return;
+        }
+        for (int i = 1; i <= _nbrSol; i++)
+        {
+            if (_cirsol[i].Location.DistanceTo(sol.Location) <= tolerance && Math.Abs(_cirsol[i].Radius - sol.Radius) <= tolerance)
+            {
+                return;
+            }
+        }
+        if (_nbrSol == _cirsol.Upper())
+        {
+            return;
+        }
+        int n = ++_nbrSol;
+        _cirsol[n] = sol;
+        _qualifier1[n] = q1;
+        _qualifier2[n] = q2;
+        _qualifier3[n] = q3;
+        _theSame1[n] = a1.Touch(n, sol, q1, tolerance, _pnttg1sol, _par1sol, _pararg1);
+        _theSame2[n] = a2.Touch(n, sol, q2, tolerance, _pnttg2sol, _par2sol, _pararg2);
+        _theSame3[n] = a3.Touch(n, sol, q3, tolerance, _pnttg3sol, _par3sol, _pararg3);
     }
 
     /// <summary>True if the construction succeeded.</summary>

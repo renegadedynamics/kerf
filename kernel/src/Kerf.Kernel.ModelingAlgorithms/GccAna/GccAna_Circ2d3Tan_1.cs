@@ -58,17 +58,9 @@ internal sealed partial class AnalyticCirc2d3Tan
         Circle2D c1 = qualified1.Qualified();
         Circle2D c2 = qualified2.Qualified();
         Line2D l3 = qualified3.Qualified();
-        double r1 = c1.Radius;
-        double r2 = c2.Radius;
-        Point2D center1 = c1.Location;
-        Point2D center2 = c2.Location;
-        _ = center2;
-
-        Point2D origin3 = l3.Location;
-        Direction2D dir3 = l3.Direction;
-        Direction2D normL3 = new(-dir3.Y, dir3.X);
-
-        NCollection_Array1<double> radius = new(1, 2);
+        CircleContact a1 = new(qualified1);
+        CircleContact a2 = new(qualified2);
+        CircleContact a3 = new(qualified3);
         CircLin2dBisec bis1 = new(c1, l3);
         CircLin2dBisec bis2 = new(c2, l3);
         if (bis1.IsDone && bis2.IsDone)
@@ -112,7 +104,6 @@ internal sealed partial class AnalyticCirc2d3Tan
                         {
                             for (int j = 1; j <= intp.PointCount; j++)
                             {
-                                double rradius = 0;
                                 Point2D center = intp.Point(j).Value();
 
                                 // pop : if the coordinates are too great, no creation
@@ -121,8 +112,6 @@ internal sealed partial class AnalyticCirc2d3Tan
                                     break;
                                 }
 
-                                double dist1 = center.DistanceTo(c1.Location);
-                                double dist2 = center.DistanceTo(c2.Location);
                                 double dist3 = l3.DistanceTo(center);
 
                                 // pop : if the coordinates are too great, no creation
@@ -131,262 +120,13 @@ internal sealed partial class AnalyticCirc2d3Tan
                                     break;
                                 }
 
-                                int nbsol1 = 0;
-                                int nbsol2 = 0;
-                                int nbsol3 = 0;
-                                bool ok = false;
-                                if (qualified1.IsEnclosed)
+                                // A circle tangent to the line has the distance to it as its radius; AddSolution
+                                // keeps it if it also touches both circles as asked (OCCT combined radii from the
+                                // circles without resetting its flag, never checked the line's distance, and tested
+                                // Qualified2 for the line: Kerf decision 1540)
+                                if (dist3 > tol)
                                 {
-                                    if (dist1 - r1 < tolerance)
-                                    {
-                                        radius[1] = Math.Abs(r1 - dist1);
-                                        nbsol1 = 1;
-                                        ok = true;
-                                    }
-                                }
-                                else if (qualified1.IsOutside)
-                                {
-                                    if (r1 - dist1 < tolerance)
-                                    {
-                                        radius[1] = Math.Abs(r1 - dist1);
-                                        nbsol1 = 1;
-                                        ok = true;
-                                    }
-                                }
-                                else if (qualified1.IsEnclosing)
-                                {
-                                    ok = true;
-                                    nbsol1 = 1;
-                                    radius[1] = Math.Abs(r1 - dist1);
-                                }
-                                else if (qualified1.IsUnqualified)
-                                {
-                                    ok = true;
-                                    nbsol1 = 2;
-                                    radius[1] = Math.Abs(r1 - dist1);
-                                    radius[2] = r1 + dist1;
-                                }
-                                if (qualified2.IsEnclosed && ok)
-                                {
-                                    if (dist2 - r2 < tolerance)
-                                    {
-                                        for (int ii = 1; ii <= nbsol1; ii++)
-                                        {
-                                            if (Math.Abs(radius[ii] - Math.Abs(r2 - dist2)) < tol)
-                                            {
-                                                radius[1] = Math.Abs(r2 - dist2);
-                                                ok = true;
-                                                nbsol2 = 1;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (qualified2.IsOutside && ok)
-                                {
-                                    if (r2 - dist2 < tolerance)
-                                    {
-                                        for (int ii = 1; ii <= nbsol1; ii++)
-                                        {
-                                            if (Math.Abs(radius[ii] - Math.Abs(r2 - dist2)) < tol)
-                                            {
-                                                radius[1] = Math.Abs(r2 - dist2);
-                                                ok = true;
-                                                nbsol2 = 1;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (qualified2.IsEnclosing && ok)
-                                {
-                                    for (int ii = 1; ii <= nbsol1; ii++)
-                                    {
-                                        if (Math.Abs(radius[ii] - r2 - dist2) < tol)
-                                        {
-                                            radius[1] = r2 + dist2;
-                                            ok = true;
-                                            nbsol2 = 1;
-                                        }
-                                    }
-                                }
-                                else if (qualified2.IsUnqualified && ok)
-                                {
-                                    for (int ii = 1; ii <= nbsol1; ii++)
-                                    {
-                                        if (Math.Abs(radius[ii] - Math.Abs(r2 - dist2)) < tol)
-                                        {
-                                            rradius = Math.Abs(r2 - dist2);
-                                            ok = true;
-                                            nbsol2++;
-                                        }
-                                        else if (Math.Abs(radius[ii] - r2 - dist2) < tol)
-                                        {
-                                            rradius = r2 + dist2;
-                                            ok = true;
-                                            nbsol2++;
-                                        }
-                                    }
-                                    if (nbsol2 == 1)
-                                    {
-                                        radius[1] = rradius;
-                                    }
-                                    else if (nbsol2 == 2)
-                                    {
-                                        radius[1] = Math.Abs(r2 - dist2);
-                                        radius[2] = r2 + dist2;
-                                    }
-                                }
-                                if (qualified3.IsEnclosed && ok)
-                                {
-                                    if ((((l3.Location.X - center.X) * (-l3.Direction.Y))
-                                         + ((l3.Location.Y - center.Y) * (l3.Direction.X)))
-                                        <= 0)
-                                    {
-                                        ok = true;
-                                        nbsol3 = 1;
-                                    }
-                                }
-                                // OCCT: Qualified2 where the line's Qualified3 is meant
-                                else if (qualified2.IsOutside && ok)
-                                {
-                                    if ((((l3.Location.X - center.X) * (-l3.Direction.Y))
-                                         + ((l3.Location.Y - center.Y) * (l3.Direction.X)))
-                                        >= 0)
-                                    {
-                                        ok = true;
-                                        nbsol3 = 1;
-                                    }
-                                }
-                                // OCCT: Qualified2 where the line's Qualified3 is meant
-                                else if (qualified2.IsUnqualified && ok)
-                                {
-                                    ok = true;
-                                    nbsol3 = 1;
-                                }
-                                // OCCT: ok is not reset when the second circle's or the line's check fails, and the distance to the line is never compared with the radius: solutions not tangent to all three arguments are kept
-                                if (ok)
-                                {
-                                    for (int ind3 = 1; ind3 <= nbsol3; ind3++)
-                                    {
-                                        _nbrSol++;
-                                        _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius[ind3]);
-                                        //                ==========================================================
-                                        double distcc1 = center.DistanceTo(center1);
-                                        if (!qualified1.IsUnqualified)
-                                        {
-                                            _qualifier1[_nbrSol] = qualified1.Qualifier();
-                                        }
-                                        else if (Math.Abs(distcc1 + radius[ind3] - r1) < tol)
-                                        {
-                                            _qualifier1[_nbrSol] = Qualifier.Enclosed;
-                                        }
-                                        else if (Math.Abs(distcc1 - r1 - radius[ind3]) < tol)
-                                        {
-                                            _qualifier1[_nbrSol] = Qualifier.Outside;
-                                        }
-                                        else
-                                        {
-                                            _qualifier1[_nbrSol] = Qualifier.Enclosing;
-                                        }
-                                        // OCCT: measured from center1, not center2
-                                        double distcc2 = center.DistanceTo(center1);
-                                        if (!qualified2.IsUnqualified)
-                                        {
-                                            _qualifier2[_nbrSol] = qualified2.Qualifier();
-                                        }
-                                        else if (Math.Abs(distcc2 + radius[ind3] - r2) < tol)
-                                        {
-                                            _qualifier2[_nbrSol] = Qualifier.Enclosed;
-                                        }
-                                        else if (Math.Abs(distcc2 - r2 - radius[ind3]) < tol)
-                                        {
-                                            _qualifier2[_nbrSol] = Qualifier.Outside;
-                                        }
-                                        else
-                                        {
-                                            _qualifier2[_nbrSol] = Qualifier.Enclosing;
-                                        }
-                                        Direction2D dc3 = new(origin3.XY() - center.XY());
-                                        if (!qualified3.IsUnqualified)
-                                        {
-                                            _qualifier3[_nbrSol] = qualified3.Qualifier();
-                                        }
-                                        else if (dc3.Dot(normL3) > 0.0)
-                                        {
-                                            _qualifier3[_nbrSol] = Qualifier.Outside;
-                                        }
-                                        else
-                                        {
-                                            _qualifier3[_nbrSol] = Qualifier.Enclosed;
-                                        }
-                                        if (center.DistanceTo(c1.Location) <= tolerance
-                                            && Math.Abs(radius[ind3] - r1) <= tolerance)
-                                        {
-                                            _theSame1[_nbrSol] = 1;
-                                        }
-                                        else
-                                        {
-                                            _theSame1[_nbrSol] = 0;
-                                            Direction2D dc1 = new(c1.Location.XY() - center.XY());
-                                            _pnttg1sol[_nbrSol] = new Point2D(center.XY() + radius[ind3] * dc1.XY());
-                                            // POP for protection if cirsol[NbrSol].Location == pnttg1sol[NbrSol]
-                                            if (_cirsol[_nbrSol].Location.IsEqual(_pnttg1sol[_nbrSol],
-                                                                                  global::Kerf.Engine.Foundation.Precision.Confusion()))
-                                            {
-                                                _par1sol[_nbrSol] = 1;
-                                            }
-                                            else
-                                            {
-                                                _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
-                                            }
-                                            // POP for protection if C1.Location == pnttg1sol[NbrSol]
-                                            if (c1.Location.IsEqual(_pnttg1sol[_nbrSol], global::Kerf.Engine.Foundation.Precision.Confusion()))
-                                            {
-                                                _pararg1[_nbrSol] = 1;
-                                            }
-                                            else
-                                            {
-                                                _pararg1[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[_nbrSol]);
-                                            }
-                                        }
-                                        if (center.DistanceTo(c2.Location) <= tolerance
-                                            && Math.Abs(radius[ind3] - r2) <= tolerance)
-                                        {
-                                            _theSame2[_nbrSol] = 1;
-                                        }
-                                        else
-                                        {
-                                            _theSame2[_nbrSol] = 0;
-                                            Direction2D dc2 = new(c2.Location.XY() - center.XY());
-                                            _pnttg2sol[_nbrSol] = new Point2D(center.XY() + radius[ind3] * dc2.XY());
-                                            // POP for protection if cirsol[NbrSol].Location == pnttg1sol[NbrSol]
-                                            if (_cirsol[_nbrSol].Location.IsEqual(_pnttg1sol[_nbrSol],
-                                                                                  global::Kerf.Engine.Foundation.Precision.Confusion()))
-                                            {
-                                                // OCCT: tests pnttg1sol and writes par1sol in the second tangency's block
-                                                _par1sol[_nbrSol] = 1;
-                                            }
-                                            else
-                                            {
-                                                _par2sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
-                                            }
-                                            // POP for protection if C2.Location == pnttg2sol[NbrSol]
-                                            if (c2.Location.IsEqual(_pnttg2sol[_nbrSol], global::Kerf.Engine.Foundation.Precision.Confusion()))
-                                            {
-                                                _pararg2[_nbrSol] = 1;
-                                            }
-                                            else
-                                            {
-                                                _pararg2[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c2, _pnttg2sol[_nbrSol]);
-                                            }
-                                        }
-                                        _theSame3[_nbrSol] = 0;
-                                        Direction2D dc = new(l3.Location.XY() - center.XY());
-                                        double sign = dc.Dot(new Direction2D(-l3.Direction.Y, l3.Direction.X));
-                                        dc = new Direction2D(sign * new Xy(-l3.Direction.Y, l3.Direction.X));
-                                        _pnttg3sol[_nbrSol] = new Point2D(center.XY() + radius[ind3] * dc.XY());
-                                        _par3sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg3sol[_nbrSol]);
-                                        _pararg3[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(l3, _pnttg3sol[_nbrSol]);
-                                    }
+                                    AddSolution(new Circle2D(new Axis2D(center, dirx), dist3), a1, a2, a3, tol);
                                 }
                             }
                         }

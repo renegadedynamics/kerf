@@ -135,23 +135,36 @@ public class Geom2dGcc_Circ2d2TanOnTests
         Assert.Equal(6.5, aSol.Location.X, 1.0e-6);
         Assert.Equal(0, aSol.Location.Y, 1.0e-6);
         Assert.Equal(2.5, aSol.Radius, 1.0e-6);
-        // OCCT's Iter returns 0 for the parameters, and the dispatch doesn't copy the centre's.
+        // the Iter's parameters and the centre, copied (OCCT returned 0 and left the centre the origin: decision 1545)
         aGcc.Tangency1(1, out double aParSol, out double aParArg, out Point2D t1);
-        Assert.Equal((0.0, 0.0), (aParSol, aParArg));
         Assert.True(t1.DistanceTo(new Point2D(4, 0)) < 1.0e-6);
+        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aParSol, aSol).DistanceTo(t1) < 1.0e-6);
+        Assert.True(anEllipse.Value(aParArg).DistanceTo(t1) < 1.0e-6);
         aGcc.CenterOn3(1, out double aParCen, out Point2D aCen);
-        Assert.Equal(0.0, aParCen);
-        Assert.Equal(new Point2D(), aCen);
+        Assert.True(aCen.DistanceTo(aSol.Location) < 1.0e-9);
+        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aParCen, Lin(0, 0, 1, 0)).DistanceTo(aSol.Location) < 1.0e-6);
     }
 
     [Fact]
-    public void A_free_form_curve_and_a_point_throw_as_OCCT()
+    public void A_free_form_curve_and_a_point_on_a_line()
     {
-        // OCCT gives math_FunctionSetRoot 3-vectors for the 4-variable function: Standard_OutOfRange, natively too.
+        // The circle through (10, 0) tangent to the ellipse x^2/16 + y^2/4 = 1, centred on the x axis: (7, 0), radius 3.
+        // OCCT gave math_FunctionSetRoot 3-vectors for a 4-variable function and threw (decision 1545).
         var anEllipse = new EllipseCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 4, 2);
-        Assert.ThrowsAny<OutOfRangeException>(
-            () => new Circ2d2TanOn(Qualified(anEllipse, Qualifier.Unqualified), new CartesianPoint2(new Point2D(10, 0)),
-                                             new CurveAdaptor2D(new LineCurve2D(Lin(0, 0, 1, 0))), 1.0e-7, 0, 6));
+        var aGcc = new Circ2d2TanOn(Qualified(anEllipse, Qualifier.Unqualified), new CartesianPoint2(new Point2D(10, 0)),
+                                    new CurveAdaptor2D(new LineCurve2D(Lin(0, 0, 1, 0))), 1.0e-7, 0, 6);
+        Assert.True(aGcc.IsDone);
+        Assert.Equal(1, aGcc.SolutionCount);
+        Circle2D aSol = aGcc.ThisSolution(1);
+        Assert.Equal(7.0, aSol.Location.X, 1.0e-6);
+        Assert.Equal(0.0, aSol.Location.Y, 1.0e-6);
+        Assert.Equal(3.0, aSol.Radius, 1.0e-6);
+        aGcc.Tangency1(1, out double aParSol, out double aParArg, out Point2D t1);
+        Assert.True(t1.DistanceTo(new Point2D(4, 0)) < 1.0e-6);
+        Assert.True(anEllipse.Value(aParArg).DistanceTo(t1) < 1.0e-6);
+        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aParSol, aSol).DistanceTo(t1) < 1.0e-6);
+        aGcc.Tangency2(1, out _, out _, out Point2D t2);
+        Assert.True(t2.DistanceTo(new Point2D(10, 0)) < 1.0e-9);
     }
 
     [Fact]

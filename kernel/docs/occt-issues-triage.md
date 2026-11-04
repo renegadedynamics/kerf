@@ -141,6 +141,14 @@ tangent to its arguments, centred where asked) replacing the oracle's recordings
 Pinned by: the Geom2dGcc and GccAna unit tests (`*_ThrowAsOCCT`, "pinned by a test" in the rows) and
 Geom2dGccOracleTests' recordings, which already mask fields native leaves unset.
 
+**Done** (Kerf unit 10K4, decisions 1540 to 1550): all 45 rows fixed, class by class, with laws (GccLaws) in place
+of the recordings; rows 975 (touch), 1051 and 1056 (leave) and 1055 (touch) fixed with their classes. Left: rows 1047
+(FunctionTanCuCuCu's empty Values, leave), 1048, 1049 and 1060 (touch), 1065 (Circ2dTanCenGeo's Index, touch), 1057
+(leave). Found by the laws and fixed beyond the rows: Circ2d3Tan's circle-and-two-lines and two-lines-and-point
+constructors, its two-circles-and-point "not done", Circ2d2TanRad's circle-and-point parameter, Lin2dTanObl's start
+parameter constructor's solution count, Circ2d3TanIter's parameters on the solution, Circ2dTanOnRadGeo's solutions
+off their argument (decisions 1540 to 1547; occt-issues.md, unit 10K4's table).
+
 ### K5. Properties and approximation errors
 
 | Line | Bug | What a user sees | Site | Size | Pinned by |

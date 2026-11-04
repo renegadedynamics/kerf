@@ -83,6 +83,8 @@ public class GccAna_Circ2d2TanOnTests
 
             theAlgo.CenterOn3(i, out double aParOn, out Point2D aPntOn);
             Point2D aCenter = aSol.Location;
+            // CenterOn3 gives the centre (OCCT gave the first tangency point: decision 1541)
+            Assert.True(aPntOn.DistanceTo(aCenter) < 1.0e-9, "CenterOn3 point");
             switch (theOn)
             {
                 case Line2D l:
@@ -101,8 +103,6 @@ public class GccAna_Circ2d2TanOnTests
                 if (theCheckPnt1)
                 {
                     AssertTangencyPoint(theArg1, aSol, aParSol, aParArg, aPnt, theCheckParArg1);
-                    // OCCT: CenterOn3 returns the first tangency point, not the centre
-                    Assert.Equal(aPnt, aPntOn);
                 }
             }
             else
@@ -260,14 +260,14 @@ public class GccAna_Circ2d2TanOnTests
         // unqualified: every solution passes through the point
         AnalyticCirc2d2TanOn u = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(c1), p, on, Tol);
         Assert.True(u.SolutionCount >= 2);
-        // OCCT: the parameter of the first tangency point on C1 is stored at the bisector's index
-        CheckAll(u, c1, p, on, theCheckParArg1: false);
+        // OCCT stored the parameter of the first tangency point on C1 at the bisector's index (decision 1541)
+        CheckAll(u, c1, p, on);
         foreach (global::Kerf.Engine.Construction.Constraints.QualifiedCirc q in new[] { global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(c1), global::Kerf.Engine.Construction.Constraints.GccEnt.Outside(c1), global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosing(c1) })
         {
             AnalyticCirc2d2TanOn a = new(q, p, on, Tol);
             Assert.True(a.SolutionCount >= 1, q.ToString());
-            // OCCT: a qualified circle takes the centres on both branches of the bisector, so only some of the
-            // solutions pass through the point
+            // OCCT took the radius from the qualifier on both branches of the bisector, so only some of the solutions
+            // passed through the point; all do now (decision 1541)
             int aNbThrough = 0;
             for (int i = 1; i <= a.SolutionCount; i++)
             {
@@ -276,7 +276,7 @@ public class GccAna_Circ2d2TanOnTests
                 Assert.True(Math.Abs(on.DistanceTo(s.Location)) < 1.0e-6);
                 aNbThrough += Math.Abs(s.Location.DistanceTo(p) - s.Radius) < 1.0e-6 ? 1 : 0;
             }
-            Assert.True(aNbThrough >= 1, q.ToString());
+            Assert.Equal(a.SolutionCount, aNbThrough);
             for (int i = 1; i <= a.SolutionCount; i++)
             {
                 a.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier q1, out global::Kerf.Engine.Construction.Constraints.Qualifier q2);
@@ -409,22 +409,22 @@ public class GccAna_Circ2d2TanOnTests
     }
 
     [Fact]
-    public void TwoLines_OnCircle_ClockwiseTakesTheParallelBranch()
+    public void TwoLines_OnCircle_ClockwiseFindsBothBisectors()
     {
-        // OCCT: D1.Angle(D2) <= Resolution is meant for parallel lines but is signed: lines turning clockwise get the
-        // parallel case's treatment, the centres on the first (inside) bisector only
+        // OCCT's signed angle test sent lines turning clockwise to its parallel branch, the centres on the first
+        // bisector only (2 solutions); both bisectors give centres now (decision 1541)
         Line2D l1 = Lin(0, 0, 0, 1);
         Line2D l2 = Lin(0, 0, 1, 0);
         Circle2D on = Circ(0, 0, 3);
         AnalyticCirc2d2TanOn a = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(l1), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(l2), on, Tol);
         Assert.True(a.IsDone);
-        Assert.Equal(2, a.SolutionCount);
-        for (int i = 1; i <= 2; i++)
+        Assert.Equal(4, a.SolutionCount);
+        for (int i = 1; i <= 4; i++)
         {
             Circle2D s = a.ThisSolution(i);
-            Assert.Equal(s.Location.X, s.Location.Y, 1.0e-9); // on the bisector y = x
-            CheckAll(a, l1, l2, on);
+            Assert.Equal(Math.Abs(s.Location.X), Math.Abs(s.Location.Y), 1.0e-9); // on a bisector y = x or y = -x
         }
+        CheckAll(a, l1, l2, on);
     }
 
     [Fact]
@@ -460,7 +460,6 @@ public class GccAna_Circ2d2TanOnTests
             Assert.Equal(-2.0 + Math.Sqrt(33.0), s.Location.Y, 1.0e-9);
             a.CenterOn3(i, out double aPar, out _);
             Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPar, on).DistanceTo(s.Location) < 1.0e-6);
-            // OCCT: the tangency point on the line is placed with the boundary case's distance, not the radius
             a.Tangency2(i, out double aParSol2, out _, out Point2D aPnt2);
             Assert.True(aPnt2.DistanceTo(p) < Tol);
             Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aParSol2, s).DistanceTo(p) < Tol);
@@ -469,11 +468,21 @@ public class GccAna_Circ2d2TanOnTests
     }
 
     [Fact]
-    public void LinePoint_OnCircle_PointAtCentre_Throws()
+    public void LinePoint_OnCircle_PointAtCentre()
     {
-        // the direction from the point to OnCirc's centre is null: gp_Dir2d throws (decision 9)
-        Assert.Throws<ConstructionErrorException>(
-            () => new AnalyticCirc2d2TanOn(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Lin(0, 0, 1, 0)), new Point2D(0, 2), Circ(0, 2, 5), Tol));
+        // OCCT's boundary case took the direction from the point to OnCirc's centre, null here, and threw; every
+        // centre on OnCirc is 5 from the point, and the two at height 5 touch the line (decision 1541)
+        Line2D l1 = Lin(0, 0, 1, 0);
+        Point2D p = new(0, 2);
+        Circle2D on = Circ(0, 2, 5);
+        AnalyticCirc2d2TanOn a = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(l1), p, on, Tol);
+        Assert.Equal(2, a.SolutionCount);
+        for (int i = 1; i <= 2; i++)
+        {
+            Assert.Equal(5.0, a.ThisSolution(i).Radius, 1.0e-9);
+            Assert.Equal(4.0, Math.Abs(a.ThisSolution(i).Location.X), 1.0e-9);
+        }
+        CheckAll(a, l1, p, on);
     }
 
     [Fact]
@@ -482,9 +491,9 @@ public class GccAna_Circ2d2TanOnTests
         Circle2D c1 = Circ(0, 0, 1);
         Point2D p = new(4, 0);
         Circle2D on = Circ(2, 0, 2.5);
-        // OCCT: each centre on the bisector gets both radii (|R1 - d| and R1 + d) when C1 is unqualified, and the
-        // qualifier's radius when it is qualified, whichever branch the centre is on: every solution is tangent to
-        // C1 with its centre on OnCirc, but only some pass through the point
+        // OCCT gave each centre on the bisector both radii (|R1 - d| and R1 + d) when C1 was unqualified, and the
+        // qualifier's radius when it was qualified, whichever branch the centre was on, so only some solutions passed
+        // through the point; all do now (decision 1541)
         foreach (global::Kerf.Engine.Construction.Constraints.QualifiedCirc q in new[] { global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(c1), global::Kerf.Engine.Construction.Constraints.GccEnt.Outside(c1), global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosing(c1) })
         {
             AnalyticCirc2d2TanOn a = new(q, p, on, Tol);
@@ -505,7 +514,7 @@ public class GccAna_Circ2d2TanOnTests
                     Assert.Equal(s.Radius + 1.0, s.Location.DistanceTo(c1.Location), 1.0e-6);
                 }
             }
-            Assert.True(aNbThrough >= 1, q.ToString());
+            Assert.Equal(a.SolutionCount, aNbThrough);
         }
     }
 
@@ -571,8 +580,8 @@ public class GccAna_Circ2d2TanOnTests
         Assert.Throws<OutOfRangeException>(() => a.CenterOn3(2, out _, out _));
         Assert.Throws<OutOfRangeException>(() => a.IsTheSame1(2));
         Assert.Throws<OutOfRangeException>(() => a.IsTheSame2(0));
-        // OCCT checks nothing in ThisSolution: past the arrays the port throws
-        Assert.Throws<OutOfRangeException>(() => a.ThisSolution(3));
+        // OCCT checked nothing in ThisSolution (decision 1541)
+        Assert.Throws<OutOfRangeException>(() => a.ThisSolution(2));
     }
 
     [Fact]

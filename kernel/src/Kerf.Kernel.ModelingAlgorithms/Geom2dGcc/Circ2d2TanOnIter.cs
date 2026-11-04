@@ -340,10 +340,10 @@ internal sealed class Circ2d2TanOnIter
                     _pararg1    = ufirst[1];
                     _par1sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol, _pnttg1sol);
                     _pnttg2sol  = point2;
-                    _pararg2    = ufirst[2]; // OCCT: the line parameter of the centre, not a parameter on the point
+                    _pararg2    = 0.0;
                     _par2sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol, _pnttg2sol);
                     _pntcen     = point3new;
-                    _parcen3    = ufirst[3]; // OCCT: Ufirst(3) is the radius here, not the centre's parameter
+                    _parcen3    = ufirst[2];
                     _wellDone   = true;
                 }
             }
@@ -409,7 +409,7 @@ internal sealed class Circ2d2TanOnIter
             global::Kerf.Engine.Geometry.ElCLib.D2(ufirst[1], c1, out point1, out tan1, out nor2);
             ConstraintCurveTool.D1(cu2, ufirst[2], out point2, out tan2);
             onLine.Direction.XY(); // (OCCT_DEBUG makes a vector of it)
-            point3       = global::Kerf.Engine.Geometry.ElCLib.Value(ufirst[1], onLine); // OCCT: Ufirst(1) is the parameter on C1, not the centre's on OnLine (Ufirst(3))
+            point3       = global::Kerf.Engine.Geometry.ElCLib.Value(ufirst[3], onLine);
             double dist1 = point3.DistanceTo(point1);
             double dist2 = point3.DistanceTo(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
@@ -753,11 +753,11 @@ internal sealed class Circ2d2TanOnIter
                         _qualifier1 = qualified1.Qualifier();
                         _qualifier2 = qualified2.Qualifier();
                         _pararg1    = ufirst[1];
-                        _par1sol    = 0.0; // OCCT: 0, not the parameter of the tangency point on the solution
                         _pnttg1sol  = point1;
+                        _par1sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol, _pnttg1sol);
                         _pararg2    = ufirst[2];
                         _pnttg2sol  = point2;
-                        _par2sol    = _pnttg2sol.DistanceTo(_pnttg1sol); // OCCT: the distance between the tangency points, not a parameter on the solution
+                        _par2sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol, _pnttg2sol);
                         _pntcen     = point3;
                         _parcen3    = ufirst[3];
                         _wellDone   = true;
@@ -845,7 +845,7 @@ internal sealed class Circ2d2TanOnIter
                     _pararg2    = 0.0;
                     _par2sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol, _pnttg2sol);
                     _pntcen     = point3new;
-                    _parcen3    = ufirst[3]; // OCCT: Ufirst(3) is the radius here, not the centre's parameter
+                    _parcen3    = ufirst[2];
                     _wellDone   = true;
                 }
             }
@@ -946,11 +946,11 @@ internal sealed class Circ2d2TanOnIter
                         _qualifier1 = qualified1.Qualifier();
                         _qualifier2 = qualified2.Qualifier();
                         _pararg1    = ufirst[1];
-                        _par1sol    = 0.0; // OCCT: 0, not the parameter of the tangency point on the solution
                         _pnttg1sol  = point1;
+                        _par1sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol, _pnttg1sol);
                         _pararg2    = ufirst[2];
                         _pnttg2sol  = point2;
-                        _par2sol    = _pnttg2sol.DistanceTo(_pnttg1sol); // OCCT: the distance between the tangency points, not a parameter on the solution
+                        _par2sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol, _pnttg2sol);
                         _pntcen     = point3;
                         _parcen3    = ufirst[3];
                         _wellDone   = true;
@@ -1239,7 +1239,7 @@ internal sealed class Circ2d2TanOnIter
                     _pararg2    = 0.0;
                     _par2sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol, _pnttg2sol);
                     _pntcen     = point3;
-                    _parcen3    = ufirst[3]; // OCCT: Ufirst(3) is the radius here, not the centre's parameter
+                    _parcen3    = ufirst[2];
                     _wellDone   = true;
                 }
             }
@@ -1276,7 +1276,7 @@ internal sealed class Circ2d2TanOnIter
         }
     }
 
-    /// <summary>The tangency point on the first argument (the parameters are always 0, as in OCCT).</summary>
+    /// <summary>The tangency point on the first argument (OCCT returned 0 for the parameters: Kerf decision 1545).</summary>
     /// <exception cref="NotDoneException">The construction failed, or the solution is the first argument.</exception>
     public void Tangency1(out double parSol, out double parArg, out Point2D pntSol)
     {
@@ -1286,10 +1286,10 @@ internal sealed class Circ2d2TanOnIter
         }
         else
         {
-            if (!_theSame1) // OCCT: TheSame1 == 0
+            if (!_theSame1)
             {
-                parSol = 0; // OCCT: returns 0, not par1sol
-                parArg = 0; // OCCT: returns 0, not pararg1
+                parSol = _par1sol;
+                parArg = _pararg1;
                 pntSol = _pnttg1sol;
             }
             else
@@ -1299,7 +1299,7 @@ internal sealed class Circ2d2TanOnIter
         }
     }
 
-    /// <summary>The tangency point on the second argument (the parameters are always 0, as in OCCT).</summary>
+    /// <summary>The tangency point on the second argument (OCCT returned 0 for the parameters: Kerf decision 1545).</summary>
     /// <exception cref="NotDoneException">The construction failed.</exception>
     public void Tangency2(out double parSol, out double parArg, out Point2D pntSol)
     {
@@ -1309,13 +1309,13 @@ internal sealed class Circ2d2TanOnIter
         }
         else
         {
-            parSol = 0; // OCCT: returns 0, not par2sol
-            parArg = 0; // OCCT: returns 0, not pararg2
+            parSol = _par2sol;
+            parArg = _pararg2;
             pntSol = _pnttg2sol;
         }
     }
 
-    /// <summary>The centre of the solution (its parameter is always 0, as in OCCT).</summary>
+    /// <summary>The centre of the solution (OCCT returned 0 for its parameter: Kerf decision 1545).</summary>
     /// <exception cref="NotDoneException">The construction failed.</exception>
     public void CenterOn3(out double parArg, out Point2D pntSol)
     {
@@ -1325,7 +1325,7 @@ internal sealed class Circ2d2TanOnIter
         }
         else
         {
-            parArg = 0; // OCCT: returns 0, not parcen3
+            parArg = _parcen3;
             pntSol = _pntcen;
         }
     }
