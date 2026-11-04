@@ -657,13 +657,13 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                 Description = Describe(a1, a2) + $", r {r}",
                 Native = () => RunNative(() => NCirc2d2TanRad(new N.Geom2dGcc_Circ2d2TanRad(NQ(n1, a1.Q), NQ(n2, a2.Q), r, tol))),
                 Port = () => RunPort(() => PCirc2d2TanRad(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad(PQ(p1, a1.Q), PQ(p2, a2.Q), r, tol))),
+                Laws = new([L(a1, p1), L(a2, p2)], null, r, tol),
+                Corrected = "GccAna_Circ2d2TanRad (decision 17103)",
             };
             if (a1.IsCircle && a2.IsCircle)
             {
-                // GccAna_Circ2d2TanRad(circle, circle) leaves TheSame2(1) unset (decision 781): Results reads it
-                // through IsTheSame2 and then calls Tangency2, which throws StdFail_NotDone when it isn't 0.
+                // GccAna_Circ2d2TanRad(circle, circle) left TheSame2(1) unset natively (decision 781).
                 c.Masked = n => Starts(n, "same2.", "t2.");
-                c.Attribution = "GccAna_Circ2d2TanRad(circle, circle)'s unset TheSame2 (native throws from Results when it isn't 0)";
             }
             return c;
         });
@@ -678,6 +678,8 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                 Description = Describe(a1) + $", point ({x}, {y}), r {r}",
                 Native = () => RunNative(() => NCirc2d2TanRad(new N.Geom2dGcc_Circ2d2TanRad(NQ(n1, a1.Q), new N.Geom2d_CartesianPoint(x, y), r, tol))),
                 Port = () => RunPort(() => PCirc2d2TanRad(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad(PQ(p1, a1.Q), new CartesianPoint2(x, y), r, tol))),
+                Laws = new([L(a1, p1), L(x, y)], null, r, tol),
+                Corrected = "GccAna_Circ2d2TanRad (decision 17103)",
             };
         });
         yield return ("Circ2d2TanRad(point, point)", o =>

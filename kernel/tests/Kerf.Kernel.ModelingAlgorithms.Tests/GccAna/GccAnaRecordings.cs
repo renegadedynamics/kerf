@@ -354,6 +354,9 @@ internal static class GccAnaRecordings
     private static LawCase On2(GccLaws.Arg a, GccLaws.Arg b, GccLaws.Locus on, double t)
         => new([a, b], on, null, t, () => GccAna_Circ2d2TanOnLawsTests.View(GccAna_Circ2d2TanOnLawsTests.Solve(a, b, on, t)));
 
+    private static LawCase Rad2(GccLaws.Arg a, GccLaws.Arg b, double R, double t)
+        => new([a, b], null, R, t, () => GccAna_Circ2d2TanRadLawsTests.View(GccAna_Circ2d2TanRadLawsTests.Solve(a, b, R, t)));
+
     /// <summary>The case as the laws see it, or null for a solver they don't cover.</summary>
     public static LawCase? Laws(Case theCase)
     {
@@ -381,6 +384,12 @@ internal static class GccAnaRecordings
             case "2TanOn.CPc": { var a = r.QC(); var b = r.Pnt(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
             case "2TanOn.LLc": { var a = r.QL(); var b = r.QL(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
             case "2TanOn.LPc": { var a = r.QL(); var b = r.Pnt(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
+            case "2TanRad.CC": { var a = r.QC(); var b = r.QC(); double R = r.D(); return Rad2(A(a), A(b), R, r.D()); }
+            case "2TanRad.CL": { var a = r.QC(); var b = r.QL(); double R = r.D(); return Rad2(A(a), A(b), R, r.D()); }
+            case "2TanRad.CP": { var a = r.QC(); var b = r.Pnt(); double R = r.D(); return Rad2(A(a), A(b), R, r.D()); }
+            case "2TanRad.LP": { var a = r.QL(); var b = r.Pnt(); double R = r.D(); return Rad2(A(a), A(b), R, r.D()); }
+            case "2TanRad.LL": { var a = r.QL(); var b = r.QL(); double R = r.D(); return Rad2(A(a), A(b), R, r.D()); }
+            case "2TanRad.PP": { var a = r.Pnt(); var b = r.Pnt(); double R = r.D(); return Rad2(A(a), A(b), R, r.D()); }
             case "2TanOn.PPc": { var a = r.Pnt(); var b = r.Pnt(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
         }
         return null;

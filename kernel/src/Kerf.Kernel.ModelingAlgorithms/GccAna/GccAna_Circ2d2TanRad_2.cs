@@ -265,9 +265,11 @@ public sealed partial class AnalyticCirc2d2TanRad
         }
         for (i = 1; i <= _nbrSol; i++)
         {
-            _par1sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[i], _pnttg1sol[i]);
+            // A solution that is C1 has no tangency point with it (OCCT still took the parameter of the unset point,
+            // which threw when the solution was centred at the origin: Kerf decision 17103)
             if (_theSame1[i] == 0)
             {
+                _par1sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[i], _pnttg1sol[i]);
                 _pararg1[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[i]);
             }
             _par2sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[i], _pnttg2sol[i]);

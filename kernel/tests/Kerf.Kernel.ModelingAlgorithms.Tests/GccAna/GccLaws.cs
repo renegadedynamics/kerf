@@ -247,7 +247,9 @@ internal static class GccLaws
             {
                 theBroken.Add($"{aWhat}: qualifier {anArg.Q} of argument {k + 1} not honoured ({string.Join('/', aFits)})");
             }
-            if (aQuals is not null && anArg is not PntArg && !aFits.Contains(aQuals[k]))
+            // (a solution that is the argument circle may report it unqualified: it is both enclosed and enclosing)
+            if (aQuals is not null && anArg is not PntArg && !aFits.Contains(aQuals[k])
+                && !(IsArgument(aSol, anArg, theTol) && aQuals[k] == Qualifier.Unqualified))
             {
                 theBroken.Add($"{aWhat}: WhichQualifier {aQuals[k]} for argument {k + 1}, not {string.Join('/', aFits)}");
             }
