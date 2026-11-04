@@ -17,7 +17,7 @@ namespace Kerf.Engine.Meshing.Model;
 /// mesher's loops may evaluate from several threads (phase4-plan 2.2: porters give each thread a shallow copy where
 /// needed, as decision 431).
 /// </remarks>
-public abstract class FaceModel : TessellatedShapeModel, IStatusOwnerModel
+internal abstract class FaceModel : TessellatedShapeModel, IStatusOwnerModel
 {
     private readonly FaceSurfaceAdaptor _surface;
     private int _status; // IMeshData_StatusOwner

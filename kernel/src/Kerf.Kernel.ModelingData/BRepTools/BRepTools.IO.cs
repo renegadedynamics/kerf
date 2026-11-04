@@ -13,7 +13,7 @@ using System.Text;
 namespace Kerf.Engine.Topology.Tools;
 
 // BRepTools' Dump, Write and Read: OCCT's text format of shapes (BRepTools_ShapeSet)
-public static partial class BrepTools
+internal static partial class BrepTools
 {
     /// <summary>Dumps the topological structure and the geometry of the shape in a readable form.</summary>
     public static void Dump(in Shape sh, TextWriter s)

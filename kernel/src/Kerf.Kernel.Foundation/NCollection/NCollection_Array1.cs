@@ -24,7 +24,7 @@ namespace Occt;
 /// </list>
 /// An array made over another array's storage (OCCT's "buffer" constructors) shares it, as in OCCT.
 /// </remarks>
-public class NCollection_Array1<T> : Transient, IEnumerable<T>, INCollection_ArrayRead<T>
+internal class NCollection_Array1<T> : Transient, IEnumerable<T>, INCollection_ArrayRead<T>
 {
     private T[] _data;
     private int _offset;
@@ -300,7 +300,7 @@ public class NCollection_Array1<T> : Transient, IEnumerable<T>, INCollection_Arr
 /// OCCT's handle-able array (<c>occ::handle&lt;NCollection_HArray1&lt;T&gt;&gt;</c>). Arrays are classes here
 /// already, so this only adds OCCT's accessors.
 /// </summary>
-public class NCollection_HArray1<T> : NCollection_Array1<T>
+internal class NCollection_HArray1<T> : NCollection_Array1<T>
 {
     public NCollection_HArray1() { }
 

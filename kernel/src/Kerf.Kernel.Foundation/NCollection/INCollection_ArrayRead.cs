@@ -9,7 +9,7 @@ namespace Occt;
 /// need it as a constraint (<c>BRepMesh_EdgeParameterProvider&lt;ParametersCollection&gt;</c> is instantiated over
 /// <see cref="NCollection_HArray1{T}"/> and over <c>IMeshData_ParametersListArrayAdaptor</c>).
 /// </summary>
-public interface INCollection_ArrayRead<out T>
+internal interface INCollection_ArrayRead<out T>
 {
     /// <summary>The lower bound.</summary>
     int Lower();

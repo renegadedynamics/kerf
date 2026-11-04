@@ -34,7 +34,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// ...), are in BRepTools.Twins.cs (docs/phase3-design.md, section 4.6).
 /// </para>
 /// </remarks>
-public static partial class BrepTools
+internal static partial class BrepTools
 {
     /// <summary>The UV bounds of the face (zeros if it has none).</summary>
     public static void UVBounds(in Face f, out double uMin, out double uMax, out double vMin, out double vMax)

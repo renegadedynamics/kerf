@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Bounds;
 /// OCCT's default constructor makes a void box (half-sizes -1, axes zero), and so does <c>new Bnd_OBB()</c>;
 /// <c>default(Bnd_OBB)</c> has zero half-sizes and is not void. DumpJson is not ported (ToString replaces it).
 /// </remarks>
-public partial struct Obb : IEquatable<Obb>
+internal partial struct Obb : IEquatable<Obb>
 {
     /// <summary>The half-size dimensions, for deconstruction: <c>var (aHX, aHY, aHZ) = anOBB.GetHalfSizes();</c></summary>
     public readonly record struct HalfSizes(double X, double Y, double Z);

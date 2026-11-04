@@ -24,7 +24,7 @@ namespace Occt;
 /// exchange formats write. Indices are 1-based, as OCCT's. Only the members data exchange uses are ported.
 /// </para>
 /// </remarks>
-public sealed class TCollection_HAsciiString : Transient
+internal sealed class TCollection_HAsciiString : Transient
 {
     private readonly StringBuilder _string;
 

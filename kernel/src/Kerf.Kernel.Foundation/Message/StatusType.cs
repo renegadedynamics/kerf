@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Foundation;
 
 /// <summary>The types of execution status of <see cref="ExecStatus"/>.</summary>
-public enum StatusType
+internal enum StatusType
 {
     Done = 0x00000100,
     Warn = 0x00000200,

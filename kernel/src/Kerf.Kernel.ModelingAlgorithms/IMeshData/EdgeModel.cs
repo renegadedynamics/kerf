@@ -15,7 +15,7 @@ namespace Kerf.Engine.Meshing.Model;
 /// The discrete model of an edge: its 3D curve and its pcurves, one per discrete face (two on a seam), with the
 /// edge's flags as the mesher sees them.
 /// </summary>
-public abstract class EdgeModel : TessellatedShapeModel, IStatusOwnerModel
+internal abstract class EdgeModel : TessellatedShapeModel, IStatusOwnerModel
 {
     private bool _sameParam;
     private bool _sameRange;

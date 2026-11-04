@@ -20,7 +20,7 @@ namespace Kerf.Engine.Foundation;
 /// the object's type name and, in place of OCCT's pointer, its <see cref="RuntimeHelpers.GetHashCode(object)"/> in
 /// hexadecimal.
 /// </remarks>
-public abstract class Printer : Transient
+internal abstract class Printer : Transient
 {
     protected Gravity _traceLevel;
 

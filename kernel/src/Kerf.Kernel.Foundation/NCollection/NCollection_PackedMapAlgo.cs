@@ -6,7 +6,7 @@ namespace Occt;
 
 /// <summary>Boolean operations on packed maps of integers.</summary>
 /// <remarks>Only <see cref="Unite"/>, which Message_Algorithm uses, is ported so far.</remarks>
-public static class NCollection_PackedMapAlgo
+internal static class NCollection_PackedMapAlgo
 {
     /// <summary>
     /// Adds the values of <paramref name="otherMap"/> to <paramref name="map"/> (boolean OR). True if

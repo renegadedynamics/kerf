@@ -14,7 +14,7 @@ namespace Occt;
 /// port copies it into a new map with the same comparer and clears the result. <c>Assign</c> is clearing and adding the
 /// other map's keys in its order.
 /// </remarks>
-public static class NCollection_MapAlgo
+internal static class NCollection_MapAlgo
 {
     /// <summary>
     /// Makes <paramref name="map"/> the union of the two maps (boolean OR). <paramref name="map"/> may be one of

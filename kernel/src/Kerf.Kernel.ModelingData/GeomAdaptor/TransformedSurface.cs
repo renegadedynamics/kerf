@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// answer from an adaptor of the transformed surface, built on first use and kept until the surface or the
 /// transformation changes.
 /// </remarks>
-public class TransformedSurface : SurfaceAdaptorBase
+internal class TransformedSurface : SurfaceAdaptorBase
 {
     protected SurfaceAdaptor _surf;
     protected Transform3D _trsf;

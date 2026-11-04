@@ -14,7 +14,7 @@ namespace Occt;
 /// porting notes apply as for <see cref="NCollection_Array1{T}"/>: it is a class (copy with <c>new(other)</c> or
 /// <c>Assign</c>), and elements are default-constructed.
 /// </summary>
-public class NCollection_Array2<T> : Transient
+internal class NCollection_Array2<T> : Transient
 {
     private T[] _data;
     private int _offset;
@@ -243,7 +243,7 @@ public class NCollection_Array2<T> : Transient
 }
 
 /// <summary>OCCT's handle-able 2D array (<c>occ::handle&lt;NCollection_HArray2&lt;T&gt;&gt;</c>).</summary>
-public class NCollection_HArray2<T> : NCollection_Array2<T>
+internal class NCollection_HArray2<T> : NCollection_Array2<T>
 {
     public NCollection_HArray2() { }
 

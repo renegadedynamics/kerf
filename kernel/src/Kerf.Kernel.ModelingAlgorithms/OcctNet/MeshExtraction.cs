@@ -36,7 +36,7 @@ namespace Kerf.Engine.Meshing;
 /// does.
 /// </para>
 /// </remarks>
-public static class MeshExtraction
+internal static class MeshExtraction
 {
     /// <summary>
     /// The buffers of <paramref name="faces"/> and <paramref name="edges"/>, sub-shapes of the meshed
@@ -300,7 +300,7 @@ public static class MeshExtraction
 /// face out) end to end, then every edge's polyline. The offsets have one entry per face or edge and a final total.
 /// </summary>
 /// <remarks>The arrays are the extraction's own; nothing else holds them.</remarks>
-public sealed class MeshBuffers
+internal sealed class MeshBuffers
 {
     internal MeshBuffers(float[] positions, float[] normals, int[] triangles, long[] faceNodes, long[] faceTriangles,
                          int[] faceTypes, float[] points, long[] edgePoints, int[] edgeTypes)

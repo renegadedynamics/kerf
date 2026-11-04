@@ -17,7 +17,7 @@ namespace Occt;
 /// against the size, where OCCT checks only in <c>Value</c>/<c>ChangeValue</c>. Left out: the move operations,
 /// <c>EmplaceAppend</c> (use <see cref="Append"/>), <c>MaxSize</c> and the C++ iterators (use <see cref="AsSpan"/>).
 /// </remarks>
-public class NCollection_LinearVector<T>
+internal class NCollection_LinearVector<T>
 {
     private T[] _data = [];
     private int _size;

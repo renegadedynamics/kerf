@@ -11,7 +11,7 @@ namespace Kerf.Engine.Exchange.Brep;
 /// An unscoped enum in C++; ported code imports it with <c>using static Occt.TopTools_FormatVersion;</c>. OCCT's
 /// anonymous enum of bounds is <see cref="FormatVersionBounds"/>.
 /// </remarks>
-public enum FormatVersion
+internal enum FormatVersion
 {
     /// <summary>Doesn't write the UV points of curves on surfaces; reading calls Check(). The default version.</summary>
     FormatVersion_VERSION_1 = 1,

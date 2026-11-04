@@ -14,7 +14,7 @@ namespace Kerf.Engine.Meshing.Model;
 /// The pcurve of an edge on a discrete face: points in the face's parametric space with their parameters and their
 /// indices in the face's mesh, indexed from zero.
 /// </summary>
-public abstract class PCurveModel : ParametersListModel
+internal abstract class PCurveModel : ParametersListModel
 {
     private readonly FaceModel _dFace;
     private readonly Orientation _orientation;

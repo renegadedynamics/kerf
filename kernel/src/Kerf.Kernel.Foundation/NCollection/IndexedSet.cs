@@ -13,7 +13,7 @@ namespace Kerf.Engine.Collections;
 /// A set that numbers its items from 0 in the order added (OCCT's <c>NCollection_IndexedMap</c>, which numbers them
 /// from 1). Removing an item moves the last one into its place, as OCCT does, so the others keep their indices.
 /// </summary>
-public sealed class IndexedSet<T> : IReadOnlyList<T> where T : notnull
+internal sealed class IndexedSet<T> : IReadOnlyList<T> where T : notnull
 {
     private readonly Dictionary<T, int> _indices;
     private readonly List<T> _items;

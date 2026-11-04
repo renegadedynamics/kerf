@@ -12,7 +12,7 @@ namespace Kerf.Engine.Meshing.Tools;
 /// <summary>
 /// The context of the mesher: the discrete model and the tools that build and process it, with the meshing parameters.
 /// </summary>
-public class ToolContext : ShapeModel
+internal class ToolContext : ShapeModel
 {
     private ModelBuilder? _modelBuilder;
     private ModelModel? _model;

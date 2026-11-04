@@ -19,7 +19,7 @@ namespace Kerf.Engine.Foundation;
 /// <c>WithoutAll*</c>) and <c>|</c> and <c>&amp;</c> stand for OCCT's <c>|=</c> and <c>&amp;=</c>. The default value is
 /// the empty status, as OCCT's default constructor.
 /// </remarks>
-public partial struct ExecStatus : IEquatable<ExecStatus>
+internal partial struct ExecStatus : IEquatable<ExecStatus>
 {
     // Mask to separate bits indicating status type and index within the type (OCCT's enum StatusMask)
     private const int MType = 0x0000ff00;

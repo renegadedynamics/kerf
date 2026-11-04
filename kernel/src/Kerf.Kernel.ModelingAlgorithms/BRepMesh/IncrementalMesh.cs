@@ -45,7 +45,7 @@ namespace Kerf.Engine.Meshing;
 /// each loop body writes only its own edge or face, so the result is the serial one bit for bit, every run.
 /// </para>
 /// </remarks>
-public class IncrementalMesh : DiscretRoot
+internal class IncrementalMesh : DiscretRoot
 {
     // Default flag to control parallelization for BRepMesh_IncrementalMesh tool returned for Mesh Factory
     // (process-wide in OCCT; a setting of the operation context, with an internal setter: decisions 415, 492, unit 10I).

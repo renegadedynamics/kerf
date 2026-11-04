@@ -33,7 +33,7 @@ namespace Kerf.Engine.Foundation;
 /// the algorithm's own, as OCCT returns its handles.
 /// </para>
 /// </remarks>
-public class Algorithm : Transient
+internal class Algorithm : Transient
 {
     protected ExecStatus _status;
     protected Messenger _messenger;

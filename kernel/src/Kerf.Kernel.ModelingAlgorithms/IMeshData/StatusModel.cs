@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Meshing.Model;
 
 /// <summary>The statuses of the discrete model: flags, combined in a status mask.</summary>
-public enum StatusModel
+internal enum StatusModel
 {
     /// <summary>Mesh generation is successful.</summary>
     NoError = 0x0,

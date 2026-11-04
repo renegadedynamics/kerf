@@ -20,7 +20,7 @@ namespace Occt;
 /// </remarks>
 /// <typeparam name="T">The element type.</typeparam>
 /// <typeparam name="TSelf">The vector type itself.</typeparam>
-public interface INCollection_Vec<T, TSelf> : IEquatable<TSelf>
+internal interface INCollection_Vec<T, TSelf> : IEquatable<TSelf>
     where T : unmanaged, INumber<T>
     where TSelf : unmanaged, INCollection_Vec<T, TSelf>
 {

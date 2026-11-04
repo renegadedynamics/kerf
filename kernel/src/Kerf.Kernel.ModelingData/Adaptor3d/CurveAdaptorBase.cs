@@ -21,7 +21,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// <see cref="DN"/> and <see cref="Value"/> call them. B-spline coefficients are cached for evaluation, so
 /// evaluating one adaptor from several threads at once is not safe.
 /// </remarks>
-public class CurveAdaptorBase : Transient
+internal class CurveAdaptorBase : Transient
 {
     /// <summary>A shallow copy of the adaptor.</summary>
     public virtual CurveAdaptorBase ShallowCopy() => throw new MethodNotImplementedException("Adaptor3d_Curve::ShallowCopy");

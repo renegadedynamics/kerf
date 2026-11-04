@@ -10,7 +10,7 @@ namespace Occt;
 
 /// <summary>A 3-component vector of numbers (float, double or int): an XYZ point or an RGB colour.</summary>
 /// <remarks>The default value is the zero vector, as OCCT's default constructor.</remarks>
-public partial struct NCollection_Vec3<T> : INCollection_Vec<T, NCollection_Vec3<T>>
+internal partial struct NCollection_Vec3<T> : INCollection_Vec<T, NCollection_Vec3<T>>
     where T : unmanaged, INumber<T>
 {
     private NCollection_Buffer3<T> _v;

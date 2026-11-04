@@ -22,7 +22,7 @@ namespace Kerf.Engine.Foundation;
 /// placeholder's flags, width and precision, as <c>Sprintf</c>), and the ExtendedString form, which inserts the text
 /// as it is, is <see cref="ArgExtended"/>. The <c>operator&lt;&lt;</c> forms are the <c>Arg</c> methods.
 /// </remarks>
-public sealed class Msg
+internal sealed class Msg
 {
     // OCCT's FormatType
     private const int Msg_IntegerType = 0;

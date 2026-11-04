@@ -28,7 +28,7 @@ namespace Kerf.Engine.Topology;
 /// order depends on addresses: compare them as sets.
 /// </para>
 /// </remarks>
-public class History : Transient
+internal class History : Transient
 {
     /// <summary>
     /// The standard history methods of an algorithm (IsDeleted, Modified and Generated), for building a history from

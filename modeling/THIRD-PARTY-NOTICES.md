@@ -23,8 +23,3 @@ dependency under its own licence. The full licence texts are in [licenses/](lice
 Until unit 10B the package could also be built on native OCCT and FreeType, whose libraries it then shipped. That
 backend is gone, and so is FreeType's licence from this package; the 0.1.0 previews that shipped FreeType carry it.
 
-## Schematiq.Collections
-
-- **What:** the immutable collections under `ShapeList`. It is a NuGet dependency and isn't shipped
-  in these packages.
-- **Licence:** MIT.

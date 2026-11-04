@@ -28,7 +28,7 @@ namespace Kerf.Engine.Foundation;
 /// <see cref="StringBuilder"/>.
 /// </para>
 /// </remarks>
-public class Messenger : Transient
+internal class Messenger : Transient
 {
     /// <summary>
     /// A message built piece by piece (OCCT's stream buffer, used as <c>Messenger->SendFail() &lt;&lt; "a" &lt;&lt; 1;</c>),

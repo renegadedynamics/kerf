@@ -12,7 +12,7 @@ using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Topology.Tools;
 
-public static partial class BrepTools
+internal static partial class BrepTools
 {
     /// <summary>
     /// A structural copy of the shape for ported code that must write into it: new TShapes and representations
