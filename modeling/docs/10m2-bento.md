@@ -1,7 +1,6 @@
 # Unit 10M2: what Bento sees change
 
-Unit 10M2 redesigned `Kerf.Modeling`'s public API for .NET (kernel decisions 1575 to 1585, placeholders until the
-merge renumbers them; design.md, "The .NET API (unit 10M2)"). This is every public member renamed, removed or retyped,
+Unit 10M2 redesigned `Kerf.Modeling`'s public API for .NET (kernel decisions 1575 to 1585; design.md, "The .NET API (unit 10M2)"). This is every public member renamed, removed or retyped,
 for unit 10N to work from. Found by comparing the public API of `Kerf.Modeling.dll` at kerf main c24cb02e with this
 unit's, by reflection: 249 members went or changed, 346 came or changed. Results are unchanged: the same calls, written
 the new way, give the same shapes.
