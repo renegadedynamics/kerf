@@ -25,6 +25,9 @@ public static class HealingOperations
     /// <summary>A fix that failed: <c>healing.fix-failed</c>.</summary>
     public static DiagnosticCode FixFailed { get; } = new("healing.fix-failed");
 
+    /// <summary>A fixed shape still invalid (a warning, with the sub-shapes left invalid): <c>healing.not-fixed</c>.</summary>
+    public static DiagnosticCode NotFixed { get; } = new("healing.not-fixed");
+
     /// <summary>Sewing that failed: <c>healing.sewing-failed</c>.</summary>
     public static DiagnosticCode SewingFailed { get; } = new("healing.sewing-failed");
 
@@ -36,6 +39,38 @@ public static class HealingOperations
 
     /// <summary>A conversion to B-splines that failed: <c>healing.conversion-failed</c>.</summary>
     public static DiagnosticCode ConversionFailed { get; } = new("healing.conversion-failed");
+
+    // healing.not-fixed: the sub-shapes BRepCheck still finds invalid in a fixed shape, or null if it is valid
+    private static Diagnostic? NotFixedWarning(Shape result)
+    {
+        var analyzer = new Analyzer(result);
+        if (analyzer.IsValid())
+        {
+            return null;
+        }
+
+        var invalid = new List<Shape>();
+        foreach ((Shape sub, ResultCheck? check) in analyzer.Results())
+        {
+            if (check is null)
+            {
+                continue;
+            }
+
+            bool bad = check.Status().Any(static s => s != StatusCheck.NoError);
+            for (check.InitContextIterator(); !bad && check.MoreShapeInContext(); check.NextShapeInContext())
+            {
+                bad = check.StatusOnShape().Any(static s => s != StatusCheck.NoError);
+            }
+
+            if (bad)
+            {
+                invalid.Add(sub);
+            }
+        }
+
+        return Diagnostic.Warning(NotFixed, $"The shape is still invalid after fixing ({invalid.Count} sub-shape(s)).").WithShapes(invalid);
+    }
 
     extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
     {
@@ -69,7 +104,9 @@ public static class HealingOperations
 
         /// <summary>
         /// The shape fixed (OCCT's <c>ShapeFix_Shape</c>): wires, faces, shells and solids, tolerances and
-        /// SameParameter, as the options allow. A shape that needs nothing comes back as it is.
+        /// SameParameter, as the options allow. A shape that needs nothing comes back as it is. A result still invalid
+        /// (by <see cref="Validate"/>'s default check) carries the warning <c>healing.not-fixed</c>, naming the sub-shapes
+        /// left invalid.
         /// </summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
         /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
@@ -77,7 +114,7 @@ public static class HealingOperations
         {
             Shape input = NotNull(shape.AsShape());
             options ??= FixOptions.Default;
-            return EngineOperation.Run<Shape>(range =>
+            Result<Built<Shape>> result = EngineOperation.Run<Shape>(range =>
             {
                 var fixer = new ShapeFixer(input);
                 if (options.Precision != FixOptions.Default.Precision)
@@ -103,6 +140,9 @@ public static class HealingOperations
                 fixer.Perform(range);
                 return new EngineOutcome(true, () => fixer.Shape(), fixer.Context()?.History());
             }, Diagnostic.Error(FixFailed, "The shape couldn't be fixed."), progress, cancellationToken);
+            return result.TryGetValue(out Built<Shape>? built) && NotFixedWarning(built.Shape) is { } warning
+                ? Result<Built<Shape>>.Success(built, [.. result.Diagnostics, warning])
+                : result;
         }
 
         /// <summary>

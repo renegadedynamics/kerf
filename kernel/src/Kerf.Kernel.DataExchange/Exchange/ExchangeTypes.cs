@@ -164,6 +164,12 @@ public sealed record StepReadOptions
     /// <summary>The limits.</summary>
     public ReadLimits Limits { get; init; } = ReadLimits.Default;
 
+    /// <summary>
+    /// Heal the shapes read (OCCT's shape processing after translation, <c>ShapeFix_Shape</c> with STEP's parameters);
+    /// false gives the shapes as the file describes them, which may be invalid.
+    /// </summary>
+    public bool Heal { get; init; } = true;
+
     /// <summary>Name the nodes by their products (else their instances), as build123d names STEP's components.</summary>
     public bool ProductNames { get; init; } = true;
 
@@ -204,6 +210,22 @@ public sealed record StepWriteOptions
 
     /// <summary>The precision recorded.</summary>
     public StepPrecision Precision { get; init; } = StepPrecision.Average;
+
+    /// <summary>The application protocol written (OCCT's <c>write.step.schema</c>).</summary>
+    public StepSchema Schema { get; init; } = StepSchema.Ap214;
+}
+
+/// <summary>The STEP application protocols written.</summary>
+public enum StepSchema
+{
+    /// <summary>AP214 (automotive design, the international standard): OCCT's default, colours and layers.</summary>
+    Ap214,
+
+    /// <summary>AP203 (configuration-controlled design): shapes only, no colours.</summary>
+    Ap203,
+
+    /// <summary>AP242 (managed model-based 3D engineering).</summary>
+    Ap242,
 }
 
 /// <summary>How STL is read.</summary>

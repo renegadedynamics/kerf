@@ -484,6 +484,8 @@ API or another area's public engine types still show).
 - **Done (10L5):** `BrepBuilder.UpdateFaceMesh`/`UpdateEdgeMesh` are gone (decision 17304): the post-processor
   finishes each triangulation (deflection, parameters) before attaching it, frozen. The engine's own meshing
   (Draw-lite, HLR, the mesh writers' meshing) still stores meshes on faces, frozen.
+- **Done (10L5):** `StepReadOptions.Heal`, `StepWriteOptions.Schema` (`StepSchema`), the `Triangle` record
+  (`FaceMesh.GetTriangles()`, `ShapeMesh.GetTriangles()`) and `Fix`'s `healing.not-fixed` warning (decision 17305).
 - The modelling layer's STL and glTF readers (they give faces holding triangles) and BREP import stay on its glue
   until 10M.
 - Images (the hidden-line API, SVG, the PNG renderer) are a later unit's, on `ShapeMesh`.

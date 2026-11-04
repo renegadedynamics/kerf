@@ -15651,3 +15651,18 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        bottle 91.7 and 92.0 MB, extrude until 139.2 and 139.3); median recalculation 1,110 ms before, 966 ms after:
        noise. Suites: ModelingAlgorithms 4,845 (9 skipped), DataExchange 286 (1 skipped), Draw-lite's classes 687,
        Oracle 383, the modelling layer 1,884, all passing.
+17305. **10L3's other leftovers.**
+       - **STEP options** (exchange.md): `StepReadOptions.Heal` (default true) leaves OCCT's shape processing after
+         translation on, or, false, sets the reader's processing flags to the empty set, so the shapes come as the file
+         describes them. `StepWriteOptions.Schema` (`StepSchema.Ap214`, the default and OCCT's; `Ap203`; `Ap242`, OCCT's
+         `AP242DIS`) sets `write.step.schema`. The schema is a write option: the reader recognises a file's own.
+       - **`Kerf.Meshing.Triangle`** (meshing.md asks for it): a record struct of three node indices, from 0, with
+         `FaceMesh.GetTriangles()` (indices into the face's own nodes, as `Triangles`) and `ShapeMesh.GetTriangles()`
+         (indices into the whole node buffer, the faces' `FirstNode` added), made on each call; the int buffers stay
+         what the mesh holds. 10L3 left it out because the engine has a `Triangle`: it is `Kerf.Engine.Meshing.Triangle`,
+         another namespace, and nothing in the solution became ambiguous.
+       - **`healing.not-fixed`** (healing.md): `Fix` checks its result with `Validate`'s default check (BRepCheck,
+         geometry included) and, if it is still invalid, adds a warning naming the sub-shapes with a fault, on their
+         own or in a context. It costs a check of the result per fix; the modelling layer's fixes don't go through it
+         until 10M.
+       Tests: three in `Kerf.Kernel.PublicApi.Tests` (the schemas and healing switch, the triangles, the warning).

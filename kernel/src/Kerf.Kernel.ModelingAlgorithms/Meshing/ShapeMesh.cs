@@ -158,6 +158,21 @@ public sealed class ShapeMesh
     public int TriangleCount { get; }
 
     /// <summary>
+    /// Every face's triangles, each indexing the whole <see cref="Positions"/> buffer (its face's
+    /// <see cref="FaceMesh.FirstNode"/> added): for a renderer that draws the mesh in one call. Made on each call.
+    /// </summary>
+    public Triangle[] GetTriangles()
+    {
+        var triangles = new Triangle[TriangleCount];
+        foreach (FaceMesh face in _faces)
+        {
+            face.CopyTriangles(triangles.AsSpan(face.FirstTriangle, face.TriangleCount), face.FirstNode);
+        }
+
+        return triangles;
+    }
+
+    /// <summary>
     /// The mesh as the engine's writers read one: a compound of faces holding only the triangulations, each at its
     /// placement and orientation (an engine shape, never handed out: decision 1349, question 59).
     /// </summary>
@@ -242,6 +257,24 @@ public readonly struct FaceMesh
     /// <summary>The face's triangles: three indices each into its own nodes, from 0.</summary>
     public ReadOnlyMemory<int> Triangles => _mesh is null ? default : _mesh.Triangles.Slice(3 * FirstTriangle, 3 * TriangleCount);
 
+    /// <summary>The face's triangles, indexing its own nodes (from 0), as <see cref="Triangles"/> holds them. Made on
+    /// each call.</summary>
+    public Triangle[] GetTriangles()
+    {
+        var triangles = new Triangle[TriangleCount];
+        CopyTriangles(triangles, 0);
+        return triangles;
+    }
+
+    internal void CopyTriangles(Span<Triangle> triangles, int offset)
+    {
+        ReadOnlySpan<int> indices = Triangles.Span;
+        for (int i = 0; i < triangles.Length; i++)
+        {
+            triangles[i] = new Triangle(indices[3 * i] + offset, indices[3 * i + 1] + offset, indices[3 * i + 2] + offset);
+        }
+    }
+
     /// <summary>The largest distance between the face's mesh and its surface, as the mesher estimated it.</summary>
     public double Deflection => EngineTriangulation?.Deflection() ?? 0;
 
@@ -310,3 +343,10 @@ public readonly struct EdgePolyline
     /// <summary>The number of points.</summary>
     public int PointCount => Points.Length / 3;
 }
+
+/// <summary>A triangle of a <see cref="ShapeMesh"/>: three node indices from 0, wound counter-clockwise seen from outside
+/// (meshing.md).</summary>
+/// <param name="A">The first node.</param>
+/// <param name="B">The second node.</param>
+/// <param name="C">The third node.</param>
+public readonly record struct Triangle(int A, int B, int C);

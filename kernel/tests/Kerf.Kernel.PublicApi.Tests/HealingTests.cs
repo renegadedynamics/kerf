@@ -42,6 +42,18 @@ public class HealingTests
     }
 
     [Fact]
+    public void A_shape_left_invalid_by_fixing_carries_a_warning()
+    {
+        Shell open = Shell.Create(Fixtures.Box().Faces().Take(5));
+        Result<Built<Shape>> fixedSolid = Solid.Create([open]).Fix(new FixOptions { FixSolids = false, FixShells = false });
+        Assert.True(fixedSolid.IsSuccess);
+        Diagnostic warning = Assert.Single(fixedSolid.Diagnostics, d => d.Code == HealingOperations.NotFixed);
+        Assert.False(warning.IsError);
+        Assert.NotEmpty(warning.Shapes);
+        Assert.DoesNotContain(Fixtures.Box().Fix().Diagnostics, d => d.Code == HealingOperations.NotFixed);
+    }
+
+    [Fact]
     public void Unifying_merges_the_faces_on_one_plane()
     {
         Shape fused = Fixtures.TwoBoxesFused();
