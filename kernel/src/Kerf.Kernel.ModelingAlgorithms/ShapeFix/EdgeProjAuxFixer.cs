@@ -31,7 +31,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// puts a reversed copy in its place in the edge's representations when the edge isn't frozen (decision 1263), so
 /// the parameters it computes are read on the curve they were computed for.
 /// </remarks>
-public class EdgeProjAuxFixer : Transient
+internal class EdgeProjAuxFixer : Transient
 {
     protected Face _face;
     protected Edge _edge;

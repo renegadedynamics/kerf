@@ -23,7 +23,7 @@ namespace Kerf.Engine.Meshing;
 /// (<c>where RangeSplitter : BRepMesh_DefaultRangeSplitter, new()</c>), so the methods the splitters redefine are
 /// virtual, as in OCCT; <see cref="Scale"/> and <see cref="Point"/> aren't, in OCCT either.
 /// </remarks>
-public class DefaultRangeSplitter
+internal class DefaultRangeSplitter
 {
     protected FaceModel? _dFace;
     protected (double first, double second) _rangeU;

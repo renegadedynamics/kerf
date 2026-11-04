@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP entity Curve3dElementDescriptor
 /// </summary>
-public class Curve3dElementDescriptor : ElementDescriptor
+internal class Curve3dElementDescriptor : ElementDescriptor
 {
     private NCollection_HArray1<NCollection_HSequence<CurveElementPurposeMember>> _purpose;
 

@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// Result is given as a TransferIterator (see TransferProcess). Also, it is possible to pilot directly the
 /// TransientProcess.
 /// </summary>
-public class TransferOutput
+internal class TransferOutput
 {
     /// <summary>
     /// Creates a TransferOutput ready to use, with a TransientProcess (created here, sized by the model, with the

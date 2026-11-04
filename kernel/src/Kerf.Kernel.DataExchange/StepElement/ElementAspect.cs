@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP SELECT type ElementAspect
 /// </summary>
-public class ElementAspect : SelectType
+internal class ElementAspect : SelectType
 {
     /// <summary>
     /// Empty constructor

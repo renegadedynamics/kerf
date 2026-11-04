@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class StepValueQualifier : SelectType
+internal class StepValueQualifier : SelectType
 {
     public StepValueQualifier()
     {

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Meshing.Data;
 /// OCCT's <c>std::deque</c>s on an incremental allocator are lists (the allocator argument goes). An index out of
 /// range throws <see cref="ArgumentOutOfRangeException"/> where OCCT's release build reads out of bounds.
 /// </remarks>
-public class CurveData : CurveModel
+internal class CurveData : CurveModel
 {
     private readonly List<Point3D> _points = [];
     private readonly List<double> _parameters = [];

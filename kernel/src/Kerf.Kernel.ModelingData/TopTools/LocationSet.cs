@@ -25,7 +25,7 @@ namespace Kerf.Engine.Exchange.Brep;
 /// values. <see cref="Read"/> rejects input it can't read safely with <see cref="StreamFormatErrorException"/>
 /// (docs/phase3-design.md, section 7).
 /// </remarks>
-public class LocationSet
+internal class LocationSet
 {
     /// <summary>
     /// The most items a location read from a stream may have (factors, each power of a complex location counted):

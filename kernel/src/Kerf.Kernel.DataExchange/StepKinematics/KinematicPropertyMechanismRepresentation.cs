@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity KinematicPropertyMechanismRepresentation
 /// </summary>
-public class KinematicPropertyMechanismRepresentation : KinematicPropertyDefinitionRepresentation
+internal class KinematicPropertyMechanismRepresentation : KinematicPropertyDefinitionRepresentation
 {
     private KinematicLinkRepresentation _base;
 

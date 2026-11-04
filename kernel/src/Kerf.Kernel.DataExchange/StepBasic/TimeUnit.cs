@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class TimeUnit : NamedUnit
+internal class TimeUnit : NamedUnit
 {
     /// <summary>
     /// Returns a TimeUnit

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// the "splitting into squares" mode, into parts close to squares in 2D (or into fixed numbers of U and V parts).
 /// </summary>
 /// <remarks>A working object (decision 21). OCCT's modifiable reference <see cref="NbParts"/> returns <c>ref</c>.</remarks>
-public class SplitSurfaceArea : SplitSurface
+internal class SplitSurfaceArea : SplitSurface
 {
     private int _nbParts;
     private int _unbSplit;

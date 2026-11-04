@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP entity Volume3dElementDescriptor
 /// </summary>
-public class Volume3dElementDescriptor : ElementDescriptor
+internal class Volume3dElementDescriptor : ElementDescriptor
 {
     private NCollection_HArray1<VolumeElementPurposeMember> _purpose;
     private Volume3dElementShape _shape;

@@ -30,7 +30,7 @@ namespace Kerf.Engine.Measurement;
 /// A working object, as OCCT's: the Load methods change the current arc. OCCT copies it by value into
 /// BRepGProp_TFunction and BRepGProp_UFunction; the port's copy is the internal copy constructor.
 /// </remarks>
-public sealed class FaceIntegrand
+internal sealed class FaceIntegrand
 {
     private static readonly double Epsilon1 = Epsilon(1.0);
 

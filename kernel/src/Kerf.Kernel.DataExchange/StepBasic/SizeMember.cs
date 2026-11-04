@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// For immediate members of SizeSelect, i.e. :
 /// ParameterValue (a Real)
 /// </summary>
-public class SizeMember : SelectReal
+internal class SizeMember : SelectReal
 {
     public SizeMember()
     {

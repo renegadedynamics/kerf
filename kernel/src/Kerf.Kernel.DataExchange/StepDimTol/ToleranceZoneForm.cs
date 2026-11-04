@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class ToleranceZoneForm : Transient
+internal class ToleranceZoneForm : Transient
 {
     private TCollection_HAsciiString _name;
 

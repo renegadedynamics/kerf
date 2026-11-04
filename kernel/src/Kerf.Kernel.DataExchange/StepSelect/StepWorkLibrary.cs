@@ -23,7 +23,7 @@ namespace Kerf.Engine.Exchange.Step.Selections;
 /// it has one (<see cref="ContextWrite.OStream"/>, decision 1225), else the file. Like OCCT 8's, the library
 /// reads into the model it is given (decision 1227): STEPControl_Reader makes it.
 /// </remarks>
-public class StepWorkLibrary : WorkLibrary
+internal class StepWorkLibrary : WorkLibrary
 {
     /// <summary>
     /// Creates a STEP WorkLibrary &lt;copymode&gt; precises whether Copy is implemented or not

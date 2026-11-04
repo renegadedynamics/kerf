@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepBSplineCurveWithKnotsAndRationalBSplineCurve : StepBSplineCurve
+internal class StepBSplineCurveWithKnotsAndRationalBSplineCurve : StepBSplineCurve
 {
     private StepBSplineCurveWithKnots _bSplineCurveWithKnots;
     private StepRationalBSplineCurve _rationalBSplineCurve;

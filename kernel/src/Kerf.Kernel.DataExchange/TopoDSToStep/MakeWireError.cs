@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Step.Export;
 
 /// <summary>The error status of TopoDSToStep_MakeWire.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.TopoDSToStep_MakeWireError;</c>.</remarks>
-public enum MakeWireError
+internal enum MakeWireError
 {
     WireDone,
     NonManifoldWire,

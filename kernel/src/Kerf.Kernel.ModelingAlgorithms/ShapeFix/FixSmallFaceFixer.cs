@@ -43,7 +43,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// copy and write into them: they are internal here.
 /// </para>
 /// </remarks>
-public class FixSmallFaceFixer : RootFixer
+internal class FixSmallFaceFixer : RootFixer
 {
     // OCCT declares its own private myShape, hiding ShapeFix_Root's (which the messages are attached to).
     private new Shape _shape;

@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepSurfaceModel : SelectType
+internal class StepSurfaceModel : SelectType
 {
     /// <summary>
     /// Returns a SurfaceModel SelectType

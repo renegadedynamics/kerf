@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Tolerances;
 
-public class GeoTolAndGeoTolWthDatRefAndGeoTolWthMod : GeometricTolerance
+internal class GeoTolAndGeoTolWthDatRefAndGeoTolWthMod : GeometricTolerance
 {
     private GeometricToleranceWithDatumReference _geometricToleranceWithDatumReference;
     private GeometricToleranceWithModifiers _geometricToleranceWithModifiers;

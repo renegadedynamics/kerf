@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity AngularSize
 /// </summary>
-public class StepAngularSize : StepDimensionalSize
+internal class StepAngularSize : StepDimensionalSize
 {
     private StepAngleRelator _angleSelection;
 

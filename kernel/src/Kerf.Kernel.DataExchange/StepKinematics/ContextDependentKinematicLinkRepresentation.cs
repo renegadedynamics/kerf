@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity ContextDependentKinematicLinkRepresentation
 /// </summary>
-public class ContextDependentKinematicLinkRepresentation : Transient
+internal class ContextDependentKinematicLinkRepresentation : Transient
 {
     private KinematicLinkRepresentationAssociation _representationRelation;
     private ProductDefinitionRelationshipKinematics _representedProductRelation;

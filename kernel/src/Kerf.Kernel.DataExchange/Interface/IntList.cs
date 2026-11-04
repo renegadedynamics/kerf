@@ -23,7 +23,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// Remark that if an IntList is created from another one, it can be read, but if it is created without
 /// copying, it may not be edited
 /// </summary>
-public class IntList
+internal class IntList
 {
 
     /// <summary>

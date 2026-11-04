@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity ActionRequestSolution
 /// </summary>
-public class ActionRequestSolution : Transient
+internal class ActionRequestSolution : Transient
 {
     private ActionMethod _method;
     private VersionedActionRequest _request;

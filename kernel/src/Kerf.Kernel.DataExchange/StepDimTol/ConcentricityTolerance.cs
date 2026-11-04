@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity ConcentricityTolerance
 /// </summary>
-public class ConcentricityTolerance : GeometricToleranceWithDatumReference
+internal class ConcentricityTolerance : GeometricToleranceWithDatumReference
 {
     /// <summary>
     /// Empty constructor

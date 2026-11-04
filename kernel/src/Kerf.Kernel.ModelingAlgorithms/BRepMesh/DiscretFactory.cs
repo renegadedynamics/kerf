@@ -18,7 +18,7 @@ namespace Kerf.Engine.Meshing;
 /// internal setter, as decision 415's: only Draw-lite's <c>mpsetdefaultname</c> changes it, for the rest of its flow
 /// of execution (decision 492). The factory itself holds nothing.
 /// </remarks>
-public sealed class DiscretFactory
+internal sealed class DiscretFactory
 {
     private static readonly DiscretFactory THE_GLOBAL_FACTORY = new();
 

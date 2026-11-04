@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// WriterModule for StepWriter, through the Protocol. Each module has a protocol. StepData uses it in its
 /// "Reader" and "Writer" tools.
 /// </summary>
-public abstract class ReadWriteModule : ReaderModule
+internal abstract class ReadWriteModule : ReaderModule
 {
     /// <summary>
     /// Translate the Type of record num in data to a positive Case Number, or 0 if failed. Works with a

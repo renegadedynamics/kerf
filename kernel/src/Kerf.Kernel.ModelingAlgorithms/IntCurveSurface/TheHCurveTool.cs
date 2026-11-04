@@ -20,7 +20,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// interfaces of the generic algorithms (<see cref="IIntersectionCurveTool{TheCurve}"/>; decision 202's
 /// approach). The deprecated <c>SamplePars</c> overload with an output handle is left out.
 /// </remarks>
-public readonly struct TheHCurveTool : IIntersectionCurveTool<CurveAdaptorBase>
+internal readonly struct TheHCurveTool : IIntersectionCurveTool<CurveAdaptorBase>
 {
     private const int MinPnts = 5;
 

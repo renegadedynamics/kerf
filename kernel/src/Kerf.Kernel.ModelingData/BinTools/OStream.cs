@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 /// starts at the stream's position (0 for a stream that can't seek: references are relative, so the bytes are the
 /// same).
 /// </remarks>
-public sealed class OStream
+internal sealed class OStream
 {
     private readonly Stream _stream;
 

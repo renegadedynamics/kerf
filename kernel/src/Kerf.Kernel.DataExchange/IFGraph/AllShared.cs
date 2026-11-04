@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework.Graph;
 /// this class determines all Entities shared by some specific ones, at any level (those which will be lead
 /// in a Transfer for instance)
 /// </summary>
-public class AllShared : GraphContent
+internal class AllShared : GraphContent
 {
 
     /// <summary>

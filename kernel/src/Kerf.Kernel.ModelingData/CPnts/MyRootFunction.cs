@@ -13,7 +13,7 @@ namespace Kerf.Engine.Measurement.Points;
 /// The function solved by Newton's method to find X with Integral(X0, X, F) = L (the length of a curve and its
 /// derivative).
 /// </summary>
-public sealed class MyRootFunction : FunctionWithDerivative
+internal sealed class MyRootFunction : FunctionWithDerivative
 {
     private readonly MyGaussFunction _function = new();
     private double _x0;

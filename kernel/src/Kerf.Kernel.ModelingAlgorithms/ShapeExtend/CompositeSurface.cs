@@ -31,7 +31,7 @@ namespace Kerf.Engine.Healing.Extend;
 /// arrays are copies, and <c>Transform</c> copies a frozen patch before transforming it.
 /// </para>
 /// </remarks>
-public class CompositeSurface : Surface
+internal class CompositeSurface : Surface
 {
     private NCollection_HArray2<Surface>? _patches;
     private NCollection_HArray1<double>? _uJointValues;

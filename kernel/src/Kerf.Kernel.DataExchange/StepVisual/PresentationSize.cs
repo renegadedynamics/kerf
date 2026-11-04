@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class PresentationSize : Transient
+internal class PresentationSize : Transient
 {
     private PresentationSizeAssignmentSelect _unit = new PresentationSizeAssignmentSelect();
     private PlanarBox _size;

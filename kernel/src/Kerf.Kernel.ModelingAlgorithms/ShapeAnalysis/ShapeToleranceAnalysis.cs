@@ -16,7 +16,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// criteria. Only reads the shapes.
 /// </summary>
 /// <remarks>A working object (decision 21): it cumulates tolerances over the shapes added.</remarks>
-public sealed class ShapeToleranceAnalysis
+internal sealed class ShapeToleranceAnalysis
 {
     private readonly double[] _tols = new double[3];
     private int _nbTol;

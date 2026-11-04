@@ -25,7 +25,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// A working object (decision 21). It only reads the edge; it re-initializes the split tools it was given (the wire
 /// divider's own, as in OCCT).
 /// </remarks>
-public class FixSmallBezierCurves : FixSmallCurves
+internal class FixSmallBezierCurves : FixSmallCurves
 {
     /// <summary>Empty constructor.</summary>
     public FixSmallBezierCurves()

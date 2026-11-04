@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity ArbitraryVolume3dElementCoordinateSystem
 /// </summary>
-public class ArbitraryVolume3dElementCoordinateSystem : FeaRepresentationItem
+internal class ArbitraryVolume3dElementCoordinateSystem : FeaRepresentationItem
 {
     private FeaAxis2Placement3d _coordinateSystem;
 

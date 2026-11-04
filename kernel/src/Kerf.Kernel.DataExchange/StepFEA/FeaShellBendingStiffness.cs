@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity FeaShellBendingStiffness
 /// </summary>
-public class FeaShellBendingStiffness : FeaMaterialPropertyRepresentationItem
+internal class FeaShellBendingStiffness : FeaMaterialPropertyRepresentationItem
 {
     private SymmetricTensor42d _feaConstants = new SymmetricTensor42d();
 

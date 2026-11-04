@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity TessellatedShapeRepresentationWithAccuracyParameters
 /// </summary>
-public class TessellatedShapeRepresentationWithAccuracyParameters : TessellatedShapeRepresentation
+internal class TessellatedShapeRepresentationWithAccuracyParameters : TessellatedShapeRepresentation
 {
     private NCollection_HArray1<double> _tessellationAccuracyParameters;
 

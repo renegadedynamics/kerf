@@ -16,7 +16,7 @@ using static Kerf.Engine.Exchange.Step.Export.FacetedError;
 namespace Kerf.Engine.Exchange.Step.Export;
 
 /// <summary>Checks whether a shape can be written as a faceted brep: planar faces with linear pcurves.</summary>
-public static class FacetedTool
+internal static class FacetedTool
 {
     public static FacetedError CheckTopoDSShape(in Shape aShape)
     {

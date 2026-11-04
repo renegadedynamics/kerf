@@ -33,7 +33,7 @@ namespace Kerf.Engine.Exchange.Step.Parser;
 /// Reentrant: each read has its own scanner, parser and data. It reads the stream in blocks.
 /// </para>
 /// </remarks>
-public sealed class Scanner
+internal sealed class Scanner
 {
     // The start conditions (%x Com End Text)
     private const int Initial = 0;

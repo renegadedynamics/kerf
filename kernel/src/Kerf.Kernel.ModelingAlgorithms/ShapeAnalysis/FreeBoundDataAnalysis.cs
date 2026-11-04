@@ -18,7 +18,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// (narrow V-like sub-contours) with their maximum widths. Unset properties are -1.
 /// </summary>
 /// <remarks>A working object with OCCT's setters (decision 21). The notches are keyed by <see cref="ShapeHasher"/>.</remarks>
-public class FreeBoundDataAnalysis : Transient
+internal class FreeBoundDataAnalysis : Transient
 {
     private Wire _bound = new();
     private double _area;

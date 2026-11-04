@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class LengthMeasureWithUnit : MeasureWithUnit
+internal class LengthMeasureWithUnit : MeasureWithUnit
 {
     /// <summary>
     /// Returns a LengthMeasureWithUnit

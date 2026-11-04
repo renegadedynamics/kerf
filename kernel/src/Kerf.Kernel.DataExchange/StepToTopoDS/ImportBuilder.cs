@@ -45,7 +45,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 /// at the end of the transfer (decision 1247).
 /// </para>
 /// </remarks>
-public sealed class ImportBuilder : ImportRoot
+internal sealed class ImportBuilder : ImportRoot
 {
     private BuilderError _error;
     private Shape _result = new Shape();

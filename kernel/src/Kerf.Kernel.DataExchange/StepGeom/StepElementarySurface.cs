@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepElementarySurface : StepSurface
+internal class StepElementarySurface : StepSurface
 {
     private StepAxis2Placement3d _position;
 

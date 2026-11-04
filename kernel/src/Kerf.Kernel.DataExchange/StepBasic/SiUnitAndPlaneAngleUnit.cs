@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class SiUnitAndPlaneAngleUnit : SiUnit
+internal class SiUnitAndPlaneAngleUnit : SiUnit
 {
     private PlaneAngleUnit _planeAngleUnit;
 

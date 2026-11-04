@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity ModifiedGeometricTolerance
 /// </summary>
-public class ModifiedGeometricTolerance : GeometricTolerance
+internal class ModifiedGeometricTolerance : GeometricTolerance
 {
     private LimitCondition _modifier;
 

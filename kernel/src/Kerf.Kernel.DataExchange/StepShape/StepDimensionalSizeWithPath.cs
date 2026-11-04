@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity DimensionalSizeWithPath
 /// </summary>
-public class StepDimensionalSizeWithPath : StepDimensionalSize
+internal class StepDimensionalSizeWithPath : StepDimensionalSize
 {
     private ShapeAspect _path;
 

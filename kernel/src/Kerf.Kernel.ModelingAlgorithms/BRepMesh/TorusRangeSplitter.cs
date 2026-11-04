@@ -14,7 +14,7 @@ using Occt;
 namespace Kerf.Engine.Meshing;
 
 /// <summary>Extends the UV parameter range splitter to generate the internal nodes of a toroidal surface.</summary>
-public class TorusRangeSplitter : UVParamRangeSplitter
+internal class TorusRangeSplitter : UVParamRangeSplitter
 {
     /// <summary>A splitter.</summary>
     public TorusRangeSplitter()

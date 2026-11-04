@@ -14,7 +14,7 @@ namespace Kerf.Engine.Healing.Extend;
 /// A curve made of several segments, parametrised on [0, 1]: each global parameter is mapped to a segment and a
 /// local parameter on it, and derivatives are scaled by the segment's factor.
 /// </summary>
-public abstract class ComplexCurve : Curve3D
+internal abstract class ComplexCurve : Curve3D
 {
     protected bool _closed;
 

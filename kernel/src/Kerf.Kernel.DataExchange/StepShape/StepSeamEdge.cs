@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity SeamEdge
 /// </summary>
-public class StepSeamEdge : StepOrientedEdge
+internal class StepSeamEdge : StepOrientedEdge
 {
     private StepPcurve _pcurveReference;
 

@@ -58,7 +58,7 @@ namespace Kerf.Engine.Exchange.Step.Caf;
 /// across them (<see cref="SetExternFileLimits"/>), and a cycle of references stops.
 /// </para>
 /// </remarks>
-public class CafReader
+internal class CafReader
 {
     /// <summary>Creates a reader with an empty STEP model and sets ColorMode, LayerMode, NameMode and PropsMode to true.</summary>
     public CafReader()

@@ -9,7 +9,7 @@ namespace Kerf.Engine.Exchange.Stl;
 /// number of bytes read and the number of facets. Reading past a limit stops with an error message, and the readers
 /// return no result. <see cref="None"/>, the default, accepts anything.
 /// </summary>
-public sealed record StlReadLimits
+internal sealed record StlReadLimits
 {
     /// <summary>No limits.</summary>
     public static StlReadLimits None { get; } = new();

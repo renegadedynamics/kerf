@@ -22,7 +22,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// The shapes these services get from binders are the transfer's own: the readers publish what they return (decision
 /// 12407). <c>BRepCheck</c> (declared by OCCT, its body commented out) is left out.
 /// </remarks>
-public static class TransferBRep
+internal static class TransferBRep
 {
     private static void ShapeAppend(Binder? binder, NCollection_HSequence<Shape> shapes)
     {

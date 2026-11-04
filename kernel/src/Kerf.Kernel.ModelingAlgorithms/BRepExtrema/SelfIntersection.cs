@@ -18,7 +18,7 @@ namespace Kerf.Engine.Measurement.Distance;
 /// overlaps), so this is a fast approximate test giving the faces that may overlap.
 /// </summary>
 /// <remarks>A working object (decision 21). It only reads the shape's triangulations.</remarks>
-public class SelfIntersection : ElementFilter
+internal class SelfIntersection : ElementFilter
 {
     private double _tolerance;
     private bool _isInit;

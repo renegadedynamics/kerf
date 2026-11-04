@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class BooleanRepresentationItem : RepresentationItem
+internal class BooleanRepresentationItem : RepresentationItem
 {
     private bool _value;
 

@@ -18,7 +18,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// surfaces through their basis; the grid is then cut at the splitting values.
 /// </summary>
 /// <remarks>A working object (decision 21).</remarks>
-public class ConvertSurfaceToBezierBasis : SplitSurface
+internal class ConvertSurfaceToBezierBasis : SplitSurface
 {
     private CompositeSurface? _segments;
     private bool _planeMode;

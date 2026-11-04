@@ -53,7 +53,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// place, and freezes the result.
 /// </para>
 /// </remarks>
-public class ComposeShellFixer : RootFixer
+internal class ComposeShellFixer : RootFixer
 {
     /// <summary>The orientation of the face given.</summary>
     protected Orientation _orient;

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Meshing;
 /// first node at the end) and a deflection.
 /// </summary>
 /// <remarks>A mutable container, as in OCCT. <c>DumpJson</c> is left out.</remarks>
-public class Polygon2D : Transient
+internal class Polygon2D : Transient
 {
     private double _deflection;
     private readonly NCollection_Array1<Point2D> _nodes;

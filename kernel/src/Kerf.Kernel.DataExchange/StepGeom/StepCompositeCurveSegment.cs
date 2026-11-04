@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepCompositeCurveSegment : Transient
+internal class StepCompositeCurveSegment : Transient
 {
     private StepTransitionCode _transition;
     private bool _sameSense;

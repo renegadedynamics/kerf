@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class WeekOfYearAndDayDate : Date
+internal class WeekOfYearAndDayDate : Date
 {
     private int _weekComponent;
     private int _dayComponent;

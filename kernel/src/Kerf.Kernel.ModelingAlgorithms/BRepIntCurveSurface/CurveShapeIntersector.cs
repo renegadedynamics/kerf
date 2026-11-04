@@ -26,7 +26,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// A working object (decision 21). To intersect several curves with one shape, <see cref="Load"/> it once and
 /// <see cref="Init(CurveAdaptor)"/> each curve; the faces' boxes are computed once. It only reads the shape.
 /// </remarks>
-public class CurveShapeIntersector
+internal class CurveShapeIntersector
 {
     private double _tolerance;
     private CurveAdaptor? _curve;

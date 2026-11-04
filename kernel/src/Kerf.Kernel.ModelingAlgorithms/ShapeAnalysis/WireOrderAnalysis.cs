@@ -19,7 +19,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// A working object (decision 21). <see cref="Status"/> after <see cref="Perform"/>: 0 the order is unchanged, 1 some
 /// edges were reordered, -1 some were reversed, 3 the edges were only shifted (in either direction).
 /// </remarks>
-public sealed class WireOrderAnalysis
+internal sealed class WireOrderAnalysis
 {
     private enum ModeType
     {

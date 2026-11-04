@@ -11,7 +11,7 @@ namespace Kerf.Engine.Healing.Extend;
 /// <see cref="OK"/> (no flag), <see cref="Done"/> (any DONE flag) and
 /// <see cref="Fail"/> (any FAIL flag). A status can hold several flags at once.
 /// </summary>
-public enum ExtendStatus
+internal enum ExtendStatus
 {
     /// <summary>Nothing done, everything OK.</summary>
     OK,

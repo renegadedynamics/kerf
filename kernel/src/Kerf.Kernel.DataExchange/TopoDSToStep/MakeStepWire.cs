@@ -29,7 +29,7 @@ namespace Kerf.Engine.Exchange.Step.Export;
 /// Maps a TopoDS_Wire (with its relative orientation in the face) to a STEP loop: a poly_loop in a faceted context,
 /// otherwise an edge_loop (or a vertex_loop for a wire made of seam edges only).
 /// </summary>
-public sealed class MakeStepWire : ExportRoot
+internal sealed class MakeStepWire : ExportRoot
 {
     private StepTopologicalRepresentationItem _result;
     private MakeWireError _error;

@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepVector : StepGeometricRepresentationItem
+internal class StepVector : StepGeometricRepresentationItem
 {
     private StepDirection _orientation;
     private double _magnitude;

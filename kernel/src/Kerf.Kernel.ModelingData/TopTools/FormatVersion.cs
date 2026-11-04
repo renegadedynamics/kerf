@@ -27,7 +27,7 @@ public enum FormatVersion
 }
 
 /// <summary>The lowest and highest supported <see cref="FormatVersion"/> (OCCT's anonymous enum).</summary>
-public static class FormatVersionBounds
+internal static class FormatVersionBounds
 {
     public const FormatVersion TopTools_FormatVersion_LOWER = FormatVersion.FormatVersion_VERSION_1;
 

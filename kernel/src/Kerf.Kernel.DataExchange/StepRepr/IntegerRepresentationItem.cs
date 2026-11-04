@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class IntegerRepresentationItem : RepresentationItem
+internal class IntegerRepresentationItem : RepresentationItem
 {
     private int _value;
 

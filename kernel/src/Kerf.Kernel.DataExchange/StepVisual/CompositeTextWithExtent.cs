@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class CompositeTextWithExtent : CompositeText
+internal class CompositeTextWithExtent : CompositeText
 {
     private PlanarExtent _extent;
 

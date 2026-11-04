@@ -20,7 +20,7 @@ namespace Kerf.Engine.Measurement.Distance;
 
 /// <summary>The extrema of the distance between a vertex and a face (points inside the face or on its boundary).</summary>
 /// <remarks>A working object (decision 21): initialize with a face, then perform with any number of vertices.</remarks>
-public sealed class ExtPF
+internal sealed class ExtPF
 {
     private readonly ExtPS _extPS = new();
     private readonly NCollection_Sequence<double> _sqDist = new();

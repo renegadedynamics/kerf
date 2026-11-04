@@ -22,7 +22,7 @@ namespace Kerf.Engine.Classification;
 /// stops at the first one).
 /// </summary>
 /// <remarks>A working object (decision 21) over the explorer's map of edges and vertices.</remarks>
-public sealed class BndBoxTreeSelectorPoint : SpatialTree<int, Box>.Selector
+internal sealed class BndBoxTreeSelectorPoint : SpatialTree<int, Box>.Selector
 {
     private readonly IndexedSet<Shape> _mapOfShape; // shapes (vertices + edges)
     private Point3D _p = new();
@@ -95,7 +95,7 @@ public sealed class BndBoxTreeSelectorPoint : SpatialTree<int, Box>.Selector
 /// tolerance of, with the parameters of the nearest points.
 /// </summary>
 /// <remarks>A working object (decision 21) over the explorer's map of edges and vertices.</remarks>
-public sealed class BndBoxTreeSelectorLine : SpatialTree<int, Box>.Selector
+internal sealed class BndBoxTreeSelectorLine : SpatialTree<int, Box>.Selector
 {
     /// <summary>An edge met by the line: the parameters on the edge and on the line.</summary>
     public readonly record struct EdgeParam(Edge E, double myParam, double LParam);

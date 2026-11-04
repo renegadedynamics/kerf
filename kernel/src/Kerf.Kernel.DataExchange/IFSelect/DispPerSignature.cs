@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// A DispPerSignature sorts input Entities according to a Signature : it works with a SignCounter to do
 /// this.
 /// </summary>
-public class DispPerSignature : Dispatch
+internal class DispPerSignature : Dispatch
 {
 
     /// <summary>

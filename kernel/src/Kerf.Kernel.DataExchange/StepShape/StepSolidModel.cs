@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepSolidModel : StepGeometricRepresentationItem
+internal class StepSolidModel : StepGeometricRepresentationItem
 {
     /// <summary>
     /// Returns a SolidModel

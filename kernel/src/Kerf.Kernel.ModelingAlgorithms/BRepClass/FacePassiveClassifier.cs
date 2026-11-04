@@ -18,7 +18,7 @@ namespace Kerf.Engine.Classification;
 /// intersections with them (the same body as <see cref="FClass2dOfFClassifier"/>).
 /// </summary>
 /// <remarks>A working object (decision 21). The body is TopClass_Classifier2d's (decision 285).</remarks>
-public class FacePassiveClassifier : IFClass2d<ClassifierEdge>
+internal class FacePassiveClassifier : IFClass2d<ClassifierEdge>
 {
     private bool _isSet;
     private bool _firstCompare;

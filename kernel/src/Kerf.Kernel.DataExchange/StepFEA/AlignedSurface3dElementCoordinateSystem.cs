@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity AlignedSurface3dElementCoordinateSystem
 /// </summary>
-public class AlignedSurface3dElementCoordinateSystem : FeaRepresentationItem
+internal class AlignedSurface3dElementCoordinateSystem : FeaRepresentationItem
 {
     private FeaAxis2Placement3d _coordinateSystem;
 

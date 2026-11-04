@@ -19,7 +19,7 @@ namespace Kerf.Engine.Healing.Checks;
 /// The checks of a vertex: in the context of an edge or a face, that the points its representations give are within
 /// its tolerance of its point.
 /// </summary>
-public class VertexCheck : ResultCheck
+internal class VertexCheck : ResultCheck
 {
     /// <summary>Checks the vertex on its own (<see cref="Minimum"/>).</summary>
     public VertexCheck(in Vertex v)

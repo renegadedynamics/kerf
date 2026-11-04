@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity CurveElementEndRelease
 /// </summary>
-public class CurveElementEndRelease : Transient
+internal class CurveElementEndRelease : Transient
 {
     private CurveElementEndCoordinateSystem _coordinateSystem = new CurveElementEndCoordinateSystem();
     private NCollection_HArray1<CurveElementEndReleasePacket> _releases;

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity TessellatedPointSet
 /// </summary>
-public class TessellatedPointSet : TessellatedItem
+internal class TessellatedPointSet : TessellatedItem
 {
     private CoordinatesList _coordinates;
     private NCollection_HArray1<int> _pointList;

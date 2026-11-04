@@ -35,7 +35,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// are handles, so the copy shares them); here the analyser is shared.
 /// </para>
 /// </remarks>
-public sealed class WireVertexFixer
+internal sealed class WireVertexFixer
 {
     private WireVertexAnalysis _analyzer;
 

@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Tolerances;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepDimTol_LimitCondition;</c>.</remarks>
-public enum LimitCondition
+internal enum LimitCondition
 {
     MaximumMaterialCondition,
     LeastMaterialCondition,

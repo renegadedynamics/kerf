@@ -13,7 +13,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class CameraModelD3MultiClippingUnionSelect : SelectType
+internal class CameraModelD3MultiClippingUnionSelect : SelectType
 {
     /// <summary>
     /// Returns a CameraModelD3MultiClippingUnionSelect select type

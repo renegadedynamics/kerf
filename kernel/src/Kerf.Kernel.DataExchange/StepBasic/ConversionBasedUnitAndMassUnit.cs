@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ConversionBasedUnitAndMassUnit : ConversionBasedUnit
+internal class ConversionBasedUnitAndMassUnit : ConversionBasedUnit
 {
     private MassUnit _massUnit;
 

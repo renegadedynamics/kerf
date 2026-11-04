@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepBoxedHalfSpace : StepHalfSpaceSolid
+internal class StepBoxedHalfSpace : StepHalfSpaceSolid
 {
     private StepBoxDomain _enclosure;
 

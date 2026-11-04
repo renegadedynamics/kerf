@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class MechanicalDesignGeometricPresentationArea : PresentationArea
+internal class MechanicalDesignGeometricPresentationArea : PresentationArea
 {
     /// <summary>
     /// Returns a MechanicalDesignGeometricPresentationArea

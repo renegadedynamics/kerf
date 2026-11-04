@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepRightAngularWedge : StepGeometricRepresentationItem
+internal class StepRightAngularWedge : StepGeometricRepresentationItem
 {
     private StepAxis2Placement3d _position;
     private double _x;

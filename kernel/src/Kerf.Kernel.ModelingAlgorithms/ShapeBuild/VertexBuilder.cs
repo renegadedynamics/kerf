@@ -12,7 +12,7 @@ namespace Kerf.Engine.Healing.Build;
 
 /// <summary>Builds vertices: the combination of two vertices into one covering both.</summary>
 /// <remarks>The vertices returned are frozen; ported code that goes on writing into them uses the Internal forms.</remarks>
-public sealed class VertexBuilder
+internal sealed class VertexBuilder
 {
     /// <summary>
     /// A new vertex whose tolerance sphere covers those of <paramref name="v1"/> and <paramref name="v2"/>, its

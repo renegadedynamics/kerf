@@ -17,7 +17,7 @@ namespace Kerf.Engine.Meshing;
 
 /// <summary>The mesher's computations of the deflections of shapes and of their discrete models.</summary>
 /// <remarks>OCCT's class is a <c>Standard_Transient</c> with only statics; the port's is a static class.</remarks>
-public static class Deflection
+internal static class Deflection
 {
     /// <summary>
     /// The absolute deflection of the shape for the relative deflection, from its bounding box and

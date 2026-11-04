@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// Defines SimpleDatumReferenceModifier as unique member of DatumReferenceModifier
 /// Works with an EnumTool
 /// </summary>
-public class SimpleDatumReferenceModifierMember : SelectInt
+internal class SimpleDatumReferenceModifierMember : SelectInt
 {
     private static readonly EnumTool Tool = new EnumTool(".ANY_CROSS_SECTION.", ".ANY_LONGITUDINAL_SECTION.", ".BASIC.", ".CONTACTING_FEATURE.", ".DEGREE_OF_FREEDOM_CONSTRAINT_U.", ".DEGREE_OF_FREEDOM_CONSTRAINT_V.", ".DEGREE_OF_FREEDOM_CONSTRAINT_W.", ".DEGREE_OF_FREEDOM_CONSTRAINT_X.", ".DEGREE_OF_FREEDOM_CONSTRAINT_Y.", ".DEGREE_OF_FREEDOM_CONSTRAINT_Z.", ".DISTANCE_VARIABLE.", ".FREE_STATE.", ".LEAST_MATERIAL_REQUIREMENT.", ".LINE.", ".MAJOR_DIAMETER.", ".MAXIMUM_MATERIAL_REQUIREMENT.", ".MINOR_DIAMETER.", ".ORIENTATION.", ".PITCH_DIAMETER.", ".PLANE.", ".POINT.", ".TRANSLATION.");
 

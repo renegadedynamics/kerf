@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// being an Integer A SelectSignature may also be created from a SignCounter, which then just gives its
 /// LastValue as SignatureValue
 /// </summary>
-public class SelectSignature : SelectExtract
+internal class SelectSignature : SelectExtract
 {
     //  theexact : -1  YES   0  NO single value  > 0 NO number of values
     //  signmode: 1 take if contained, 2 refuse if contained

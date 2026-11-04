@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity GeometricNode
 /// </summary>
-public class GeometricNode : NodeRepresentation
+internal class GeometricNode : NodeRepresentation
 {
     /// <summary>
     /// Empty constructor

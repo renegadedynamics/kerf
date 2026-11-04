@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class ColourSpecification : Colour
+internal class ColourSpecification : Colour
 {
     private TCollection_HAsciiString _name;
 

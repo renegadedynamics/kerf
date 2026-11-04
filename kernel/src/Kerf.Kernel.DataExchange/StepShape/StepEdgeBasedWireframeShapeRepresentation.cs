@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity EdgeBasedWireframeShapeRepresentation
 /// </summary>
-public class StepEdgeBasedWireframeShapeRepresentation : StepShapeRepresentation
+internal class StepEdgeBasedWireframeShapeRepresentation : StepShapeRepresentation
 {
     /// <summary>
     /// Empty constructor

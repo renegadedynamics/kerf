@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// A SelectModelRoots gets all the Root Entities of an InterfaceModel. Remember that a "Root Entity" is
 /// defined as having no Sharing Entity (if there is a Loop between Entities, none of them can be a "Root").
 /// </summary>
-public class SelectModelRoots : SelectBase
+internal class SelectModelRoots : SelectBase
 {
 
     /// <summary>

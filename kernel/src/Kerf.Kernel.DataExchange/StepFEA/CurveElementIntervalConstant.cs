@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity CurveElementIntervalConstant
 /// </summary>
-public class CurveElementIntervalConstant : CurveElementInterval
+internal class CurveElementIntervalConstant : CurveElementInterval
 {
     private CurveElementSectionDefinition _section;
 

@@ -14,7 +14,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of an array of points from gp to a STEP polyline.</summary>
-public sealed class MakePolyline : GeometryRoot
+internal sealed class MakePolyline : GeometryRoot
 {
     private StepPolyline _polyline;
 

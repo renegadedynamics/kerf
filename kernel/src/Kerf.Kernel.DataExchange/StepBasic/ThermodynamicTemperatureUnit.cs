@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity ThermodynamicTemperatureUnit
 /// </summary>
-public class ThermodynamicTemperatureUnit : NamedUnit
+internal class ThermodynamicTemperatureUnit : NamedUnit
 {
     /// <summary>
     /// Empty constructor

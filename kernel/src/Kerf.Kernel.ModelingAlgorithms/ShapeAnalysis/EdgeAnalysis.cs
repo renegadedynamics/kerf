@@ -26,7 +26,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// <see cref="Status"/>.
 /// </summary>
 /// <remarks>A working object (decision 21): the checks change its status.</remarks>
-public sealed class EdgeAnalysis
+internal sealed class EdgeAnalysis
 {
     private int _status;
 

@@ -14,7 +14,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepShapeDimensionRepresentationItem : SelectType
+internal class StepShapeDimensionRepresentationItem : SelectType
 {
     /// <summary>
     /// Returns a ShapeDimensionRepresentationItem select type

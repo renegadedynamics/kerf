@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity CurveElementEndOffset
 /// </summary>
-public class CurveElementEndOffset : Transient
+internal class CurveElementEndOffset : Transient
 {
     private CurveElementEndCoordinateSystem _coordinateSystem = new CurveElementEndCoordinateSystem();
     private NCollection_HArray1<double> _offsetVector;

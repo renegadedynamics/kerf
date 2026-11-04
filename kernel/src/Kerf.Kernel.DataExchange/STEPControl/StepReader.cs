@@ -54,7 +54,7 @@ namespace Kerf.Engine.Exchange.Step;
 /// <item>the shapes the reader publishes (<c>Shape</c>, <c>OneShape</c>) are frozen (decision 1224).</item>
 /// </list>
 /// </remarks>
-public class StepReader : FrameworkReader
+internal class StepReader : FrameworkReader
 {
     /// <summary>Creates a reader object with an empty STEP model.</summary>
     public StepReader()

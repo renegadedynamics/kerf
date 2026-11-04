@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// QUALIFIED_REPRESENTATION_ITEM REPRESENTATION_ITEM,
 /// LENGTH_MEASURE_WITH_UNIT/PLANE_ANGLE_MEASURE_WITH_UNIT).
 /// </summary>
-public class ReprItemAndMeasureWithUnitAndQri : ReprItemAndMeasureWithUnit
+internal class ReprItemAndMeasureWithUnitAndQri : ReprItemAndMeasureWithUnit
 {
     private StepQualifiedRepresentationItem _qualifiedRepresentationItem;
 

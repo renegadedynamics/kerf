@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity RoleAssociation
 /// </summary>
-public class RoleAssociation : Transient
+internal class RoleAssociation : Transient
 {
     private ObjectRole _role;
     private RoleSelect _itemWithRole = new RoleSelect();

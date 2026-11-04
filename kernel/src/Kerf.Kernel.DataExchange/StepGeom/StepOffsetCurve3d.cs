@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepOffsetCurve3d : StepCurve
+internal class StepOffsetCurve3d : StepCurve
 {
     private StepCurve _basisCurve;
     private double _distance;

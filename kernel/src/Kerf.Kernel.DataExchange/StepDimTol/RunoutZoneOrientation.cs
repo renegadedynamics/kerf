@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class RunoutZoneOrientation : Transient
+internal class RunoutZoneOrientation : Transient
 {
     private PlaneAngleMeasureWithUnit _angle;
 

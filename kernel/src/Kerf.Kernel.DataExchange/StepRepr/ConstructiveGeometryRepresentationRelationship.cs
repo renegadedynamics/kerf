@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class ConstructiveGeometryRepresentationRelationship : RepresentationRelationship
+internal class ConstructiveGeometryRepresentationRelationship : RepresentationRelationship
 {
     public ConstructiveGeometryRepresentationRelationship()
     {

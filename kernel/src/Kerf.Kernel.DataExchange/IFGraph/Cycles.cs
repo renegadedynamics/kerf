@@ -12,7 +12,7 @@ namespace Kerf.Engine.Exchange.Framework.Graph;
 /// <summary>
 /// determines strong components in a graph which are Cycles
 /// </summary>
-public class Cycles : SubPartsIterator
+internal class Cycles : SubPartsIterator
 {
 
     /// <summary>

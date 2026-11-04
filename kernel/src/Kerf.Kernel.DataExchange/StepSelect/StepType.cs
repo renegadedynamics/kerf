@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Step.Selections;
 /// known (simply it is known as Complex, it can be recognised, but the list is produced at Write time only),
 /// StepType produces : "(..COMPLEX TYPE..)"
 /// </summary>
-public class StepType : Signature
+internal class StepType : Signature
 {
     /// <summary>
     /// Creates a Signature for Step Type. Protocol is undefined here, hence no Signature may yet be produced. The

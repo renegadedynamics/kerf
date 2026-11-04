@@ -22,7 +22,7 @@ namespace Kerf.Engine.Measurement;
 /// The volume is always computed; the centre of mass if <c>theCGFlag</c> or <c>theIFlag</c>, the inertia if
 /// <c>theIFlag</c>. Each Perform returns the absolute error reached, or -1 on failure.
 /// </remarks>
-public class VinertGK : Properties
+internal class VinertGK : Properties
 {
     private double _errorReached;
     private double _absolutError;

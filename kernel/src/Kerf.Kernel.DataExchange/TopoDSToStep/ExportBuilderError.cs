@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Step.Export;
 
 /// <summary>The error status of TopoDSToStep_Builder.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.TopoDSToStep_BuilderError;</c>.</remarks>
-public enum ExportBuilderError
+internal enum ExportBuilderError
 {
     BuilderDone,
     NoFaceMapped,

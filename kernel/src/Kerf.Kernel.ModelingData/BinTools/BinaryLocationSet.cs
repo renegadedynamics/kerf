@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 /// A set of locations, indexed from 1, written and read in OCCT's binary format (the "Locations" section of a binary
 /// BRep). A location of several items is stored after its datums, as the indices and powers of its items.
 /// </summary>
-public class BinaryLocationSet
+internal class BinaryLocationSet
 {
     private readonly IndexedSet<Placement> _map = new(PlacementIdentityComparer.Instance);
 

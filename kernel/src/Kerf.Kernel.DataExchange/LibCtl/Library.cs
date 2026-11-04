@@ -210,7 +210,7 @@ public class Library<TModule, TProtocol>
 /// A node of the global list of a <see cref="Library{TModule, TProtocol}"/>: a module bound with a protocol,
 /// and the next node (OCCT's <c>Interface_GlobalNodeOfGeneralLib</c> and the other instantiations).
 /// </summary>
-public sealed class GlobalNode<TModule, TProtocol> : Transient
+internal sealed class GlobalNode<TModule, TProtocol> : Transient
     where TModule : Transient
     where TProtocol : Protocol
 {
@@ -270,7 +270,7 @@ public sealed class GlobalNode<TModule, TProtocol> : Transient
 /// A node of a library's own list: designates a global node (OCCT's <c>Interface_NodeOfGeneralLib</c> and the other
 /// instantiations).
 /// </summary>
-public sealed class Node<TModule, TProtocol> : Transient
+internal sealed class Node<TModule, TProtocol> : Transient
     where TModule : Transient
     where TProtocol : Protocol
 {

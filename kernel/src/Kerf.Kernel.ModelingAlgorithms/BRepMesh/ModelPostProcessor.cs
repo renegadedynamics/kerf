@@ -33,7 +33,7 @@ namespace Kerf.Engine.Meshing;
 /// immutable <see cref="TriangulationParameters"/>, as OCCT does.
 /// </para>
 /// </remarks>
-public class ModelPostProcessor : ModelAlgo
+internal class ModelPostProcessor : ModelAlgo
 {
     /// <summary>A post-processor.</summary>
     public ModelPostProcessor()

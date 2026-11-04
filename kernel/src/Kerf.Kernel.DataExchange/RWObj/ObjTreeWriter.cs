@@ -15,7 +15,7 @@ using System.Text;
 namespace Kerf.Engine.Exchange.Obj;
 
 /// <summary>The options of <see cref="ObjTreeWriter"/>.</summary>
-public sealed record ObjWriterOptions
+internal sealed record ObjWriterOptions
 {
     /// <summary>The defaults.</summary>
     public static ObjWriterOptions Default { get; } = new();
@@ -46,7 +46,7 @@ public sealed record ObjWriterOptions
 /// after faces with one take a white material, <c>default</c>. Streams first; the
 /// file form writes the MTL beside the OBJ. Numbers in the invariant culture, LF line ends. The tree isn't changed.
 /// </remarks>
-public sealed class ObjTreeWriter
+internal sealed class ObjTreeWriter
 {
     /// <summary>A writer with the options (the defaults if null).</summary>
     public ObjTreeWriter(ObjWriterOptions? options = null) => Options = options ?? ObjWriterOptions.Default;

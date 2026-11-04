@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity SphericalPairWithPinAndRange
 /// </summary>
-public class SphericalPairWithPinAndRange : SphericalPairWithPin
+internal class SphericalPairWithPinAndRange : SphericalPairWithPin
 {
     private double _lowerLimitYaw;
     /// <summary>

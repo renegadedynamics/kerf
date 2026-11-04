@@ -13,7 +13,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// The function S(u, v) - C(w) whose zeros are the intersections of a curve and a surface adaptor, as
 /// IntCurveSurface_HInter refines them (OCCT's instantiation of IntImp_ZerCSParFunc.gxx).
 /// </summary>
-public sealed class TheCSFunctionOfHInter
+internal sealed class TheCSFunctionOfHInter
     : ZerCSParFunc<SurfaceAdaptorBase, TheHSurfaceTool, CurveAdaptorBase,
                           TheHCurveTool>,
       ITheCSFunction<TheCSFunctionOfHInter, SurfaceAdaptorBase, CurveAdaptorBase>

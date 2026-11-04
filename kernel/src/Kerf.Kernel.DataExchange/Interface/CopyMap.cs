@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// read from a unique Starting Model, and each transferred Entity is bound to one and only one Result, which
 /// cannot be changed later.
 /// </summary>
-public class CopyMap : CopyControl
+internal class CopyMap : CopyControl
 {
 
     /// <summary>

@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Step.Construct;
 /// product and assembly structure, unit contexts, associated information. The creation of these structures is made
 /// according to currently active schema (AP203 or AP214 CD2 or DIS). This is taken from parameter write.step.schema
 /// </summary>
-public static class StepConstruct
+internal static class StepConstruct
 {
     /// <summary>
     /// Returns STEP entity of the (sub)type of RepresentationItem which is a result of the transfer of a Shape, or

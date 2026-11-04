@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// class added to Schema AP214 around April 1996
 /// </summary>
-public class DesignContext : ProductDefinitionContext
+internal class DesignContext : ProductDefinitionContext
 {
     public DesignContext()
     {

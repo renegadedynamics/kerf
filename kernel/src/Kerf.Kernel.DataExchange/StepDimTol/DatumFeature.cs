@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity DatumFeature
 /// </summary>
-public class DatumFeature : ShapeAspect
+internal class DatumFeature : ShapeAspect
 {
     /// <summary>
     /// Empty constructor

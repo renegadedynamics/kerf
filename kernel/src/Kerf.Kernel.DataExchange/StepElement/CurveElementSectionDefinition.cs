@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP entity CurveElementSectionDefinition
 /// </summary>
-public class CurveElementSectionDefinition : Transient
+internal class CurveElementSectionDefinition : Transient
 {
     private TCollection_HAsciiString _description;
     private double _sectionAngle;

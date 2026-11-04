@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 
 /// <summary>The error status of StepToTopoDS_TranslateVertex.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepToTopoDS_TranslateVertexError;</c>.</remarks>
-public enum TranslateVertexError
+internal enum TranslateVertexError
 {
     TranslateVertexDone,
     TranslateVertexOther,

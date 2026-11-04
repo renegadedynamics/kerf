@@ -15,7 +15,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// The interference between the polygon of a curve and the polyhedron of a surface, as IntCurveSurface_HInter
 /// computes it (OCCT's instantiation of Intf_InterferencePolygonPolyhedron.gxx).
 /// </summary>
-public sealed class TheInterferenceOfHInter
+internal sealed class TheInterferenceOfHInter
     : InterferencePolygonPolyhedron<ThePolygonOfHInter, ThePolygonToolOfHInter,
                                          ThePolyhedronOfHInter,
                                          ThePolyhedronToolOfHInter>,

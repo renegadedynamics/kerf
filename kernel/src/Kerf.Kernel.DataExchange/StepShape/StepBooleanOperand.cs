@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepBooleanOperand
+internal class StepBooleanOperand
 {
     private StepSolidModel _solidModel;
     private StepHalfSpaceSolid _halfSpaceSolid;

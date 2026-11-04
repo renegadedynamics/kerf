@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// not changed (for instance, system name, processor version ...) I.E. it gives a way of editing or at least
 /// displaying parameters as global
 /// </summary>
-public class ParamEditor : Editor
+internal class ParamEditor : Editor
 {
 
     /// <summary>

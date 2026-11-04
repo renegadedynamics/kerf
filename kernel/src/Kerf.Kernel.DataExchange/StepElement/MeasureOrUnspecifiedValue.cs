@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP SELECT type MeasureOrUnspecifiedValue
 /// </summary>
-public class MeasureOrUnspecifiedValue : SelectType
+internal class MeasureOrUnspecifiedValue : SelectType
 {
     private const string ACDM = "CONTEXT_DEPENDENT_MEASURE";
     private const string AnUV = "UNSPECIFIED_VALUE";

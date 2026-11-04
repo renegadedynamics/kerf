@@ -35,7 +35,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// outputs a read may leave unchanged (on an error) are <c>ref</c>, as OCCT's references (decision 1193).
 /// </para>
 /// </remarks>
-public class StepReaderData : FileReaderData
+internal class StepReaderData : FileReaderData
 {
     // The Header consists of entities analogous in principle to those
     // of the Data, except that they are without identifier, and can neither

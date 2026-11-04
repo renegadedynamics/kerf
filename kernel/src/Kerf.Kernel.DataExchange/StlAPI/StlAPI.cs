@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Stl.Api;
 
 /// <summary>Short-cuts to <see cref="ApiWriter"/> and <see cref="StlApiReader"/>.</summary>
-public static class StlApi
+internal static class StlApi
 {
     /// <summary>Writes the shape's triangulations to an STL file, ASCII (the default) or binary.</summary>
     public static bool Write(in Shape shape, string file, bool asciiMode = true)

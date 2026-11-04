@@ -47,7 +47,7 @@ namespace Kerf.Engine.Meshing.Delaunay;
 
 /// <summary>A vertex of Delabella's output: the input point's index and its coordinates.</summary>
 /// <remarks>A working object of the triangulator, valid until its next <c>Triangulate</c> or <c>Destroy</c>.</remarks>
-public class DelaunayVertex
+internal class DelaunayVertex
 {
     /// <summary>Index of the original point.</summary>
     public int i;
@@ -61,7 +61,7 @@ public class DelaunayVertex
 
 /// <summary>A triangle of Delabella's output.</summary>
 /// <remarks>A working object of the triangulator, valid until its next <c>Triangulate</c> or <c>Destroy</c>.</remarks>
-public class DelaunayTriangle
+internal class DelaunayTriangle
 {
     /// <summary>The 3 vertices spanning this triangle.</summary>
     public readonly DelaunayVertex?[] v = new DelaunayVertex?[3];
@@ -74,7 +74,7 @@ public class DelaunayTriangle
 }
 
 /// <summary>Delabella, the Delaunay triangulator OCCT's <c>BRepMesh_DelabellaBaseMeshAlgo</c> uses.</summary>
-public abstract class IDelaBella
+internal abstract class IDelaBella
 {
     /// <summary>A new triangulator.</summary>
     public static global::Kerf.Engine.Meshing.Delaunay.IDelaBella Create()

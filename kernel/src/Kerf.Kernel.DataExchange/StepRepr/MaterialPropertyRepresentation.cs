@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity MaterialPropertyRepresentation
 /// </summary>
-public class MaterialPropertyRepresentation : PropertyDefinitionRepresentation
+internal class MaterialPropertyRepresentation : PropertyDefinitionRepresentation
 {
     private DataEnvironment _dependentEnvironment;
 

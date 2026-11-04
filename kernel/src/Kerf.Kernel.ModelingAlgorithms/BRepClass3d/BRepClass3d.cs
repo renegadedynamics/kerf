@@ -14,7 +14,7 @@ using static Kerf.Topology.Containment;
 namespace Kerf.Engine.Classification;
 
 /// <summary>The outer shell of a solid.</summary>
-public static class BRepClass3d
+internal static class BRepClass3d
 {
     /// <summary>
     /// The outer shell of <paramref name="aSolid"/>: its only shell without a check, otherwise the first shell (not

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Framework.Graph;
 /// <summary>
 /// determines strong components in a graph which are Roots
 /// </summary>
-public class SCRoots : StrongComponants
+internal class SCRoots : StrongComponants
 {
 
     /// <summary>

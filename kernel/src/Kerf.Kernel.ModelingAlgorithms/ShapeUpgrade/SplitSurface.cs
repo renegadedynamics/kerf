@@ -22,7 +22,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// A working object (decision 21). The surface given is not copied (OCCT's isn't); the patches are segments or
 /// trimmed copies of it, or the surface itself when nothing is cut.
 /// </remarks>
-public class SplitSurface : Transient
+internal class SplitSurface : Transient
 {
     /// <summary>The U splitting values, the first and last included.</summary>
     protected NCollection_HSequence<double>? _uSplitValues;

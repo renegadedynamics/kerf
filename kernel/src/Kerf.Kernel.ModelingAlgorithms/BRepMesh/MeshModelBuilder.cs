@@ -19,7 +19,7 @@ namespace Kerf.Engine.Meshing;
 /// Statuses: <see cref="Done1"/>, the model is built; <see cref="Fail1"/>, an empty shape (a void
 /// bounding box); <see cref="Fail2"/>, the model wasn't built for an unexpected reason.
 /// </remarks>
-public class MeshModelBuilder : ModelBuilder
+internal class MeshModelBuilder : ModelBuilder
 {
     /// <summary>A model builder.</summary>
     public MeshModelBuilder()

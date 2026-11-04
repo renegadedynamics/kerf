@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Step.Export;
 /// the faceted context, the lowest 3D tolerance met and the pcurve mode.
 /// </summary>
 /// <remarks>A working object (OCCT's value class, decision 1185). Its map iterates in the order of binding.</remarks>
-public sealed class ExportTool
+internal sealed class ExportTool
 {
     private Dictionary<Shape, Transient> _dataMap = new(ShapeHasher.Instance);
     private bool _facetedContext;

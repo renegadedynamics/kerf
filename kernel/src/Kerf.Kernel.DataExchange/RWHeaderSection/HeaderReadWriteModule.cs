@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Header;
 
 /// <summary>General module to read and write HeaderSection entities.</summary>
-public class HeaderReadWriteModule : ReadWriteModule
+internal class HeaderReadWriteModule : ReadWriteModule
 {
     // -- General Declarations (Recognize, StepType) ---
 

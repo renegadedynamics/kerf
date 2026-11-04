@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity DocumentRepresentationType
 /// </summary>
-public class DocumentRepresentationType : Transient
+internal class DocumentRepresentationType : Transient
 {
     private TCollection_HAsciiString _name;
     private Document _representedDocument;

@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Brep;
 /// that <see cref="Read"/> creates are frozen: the set shares them with whoever asks for them. A curve that can't be
 /// read (its constructor throws) is stored as null, as in OCCT, which stores one null entry however many fail.
 /// </remarks>
-public class CurveSet
+internal class CurveSet
 {
     private const int Line = 1;
     private const int Circle = 2;

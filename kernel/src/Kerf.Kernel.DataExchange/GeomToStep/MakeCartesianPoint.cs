@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 /// <summary>
 /// The mapping of points (CartesianPoint from Geom and Geom2d, Pnt and Pnt2d from gp) to a STEP cartesian_point.
 /// </summary>
-public sealed class MakeCartesianPoint : GeometryRoot
+internal sealed class MakeCartesianPoint : GeometryRoot
 {
     private StepCartesianPoint _cartesianPoint;
 

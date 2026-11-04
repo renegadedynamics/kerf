@@ -21,7 +21,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// removed knots from it; the port does that on a copy of a frozen surface, which then becomes the tool's surface
 /// (decision 998).
 /// </remarks>
-public class SplitSurfaceContinuity : SplitSurface
+internal class SplitSurfaceContinuity : SplitSurface
 {
     private Continuity _criterion;
     private double _tolerance;

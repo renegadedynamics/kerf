@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// Handle : this allows FileReaderTool to define more easily the specific methods, and improves memory
 /// management.
 /// </summary>
-public abstract class FileReaderData : Transient
+internal abstract class FileReaderData : Transient
 {
     //  Stores Data from a File (Preserved in Literal form)
     //  Each standard can use it as a base (literal parameter lists,

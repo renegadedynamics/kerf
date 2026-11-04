@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity ParametricCurve3dElementCoordinateDirection
 /// </summary>
-public class ParametricCurve3dElementCoordinateDirection : FeaRepresentationItem
+internal class ParametricCurve3dElementCoordinateDirection : FeaRepresentationItem
 {
     private StepDirection _orientation;
 

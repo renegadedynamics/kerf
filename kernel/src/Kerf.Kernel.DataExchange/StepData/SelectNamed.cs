@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// This select member can be of any kind, and be named. But it takes more memory than some specialised ones. This
 /// class allows one name for the instance.
 /// </summary>
-public class SelectNamed : SelectMember
+internal class SelectNamed : SelectMember
 {
     private string _thename;
     private readonly Field _theval = new();

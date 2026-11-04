@@ -18,7 +18,7 @@ namespace Kerf.Engine.Healing.Custom;
 /// rectangular-trimmed or offset, to Geom_SurfaceOfRevolution, keeping the parametrisation (pcurves on spheres are
 /// shifted by 2π in V).
 /// </summary>
-public class ConvertToRevolution : CustomModification
+internal class ConvertToRevolution : CustomModification
 {
     /// <summary>An empty modification.</summary>
     public ConvertToRevolution()

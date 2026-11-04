@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// very little count. It is designed for a light management. Remark that a new Item may not be Null, because
 /// this is the criterium used for "End of List"
 /// </summary>
-public class EntityCluster : Transient
+internal class EntityCluster : Transient
 {
 
     /// <summary>

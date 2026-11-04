@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepCompositeCurveOnSurface : StepCompositeCurve
+internal class StepCompositeCurveOnSurface : StepCompositeCurve
 {
     /// <summary>
     /// Returns a CompositeCurveOnSurface

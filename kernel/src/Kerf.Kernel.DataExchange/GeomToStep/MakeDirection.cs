@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of directions (Direction from Geom and Geom2d, Dir and Dir2d from gp) to a STEP direction.</summary>
-public sealed class MakeDirection : GeometryRoot
+internal sealed class MakeDirection : GeometryRoot
 {
     private StepDirection _direction;
 

@@ -15,7 +15,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of Ellipse from Geom and Geom2d (and Elips from gp) to a STEP ellipse.</summary>
-public sealed class GeometryMakeEllipse : GeometryRoot
+internal sealed class GeometryMakeEllipse : GeometryRoot
 {
     private StepEllipse _ellipse;
 

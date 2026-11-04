@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// EntityList gives access to a list of Entity Clusters, which are chained (in one sense : Single List)
 /// Remark : a new Item may not be Null, because this is the criterium used for "End of List"
 /// </summary>
-public class EntityList
+internal class EntityList
 {
 
     /// <summary>

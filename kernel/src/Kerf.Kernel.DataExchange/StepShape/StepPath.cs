@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepPath : StepTopologicalRepresentationItem
+internal class StepPath : StepTopologicalRepresentationItem
 {
     private NCollection_HArray1<StepOrientedEdge> _edgeList;
 

@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Framework.Selection;
 
-public class SignAncestor : SelectionSignType
+internal class SignAncestor : SelectionSignType
 {
 
     public SignAncestor(bool nopk = false) : base(nopk)

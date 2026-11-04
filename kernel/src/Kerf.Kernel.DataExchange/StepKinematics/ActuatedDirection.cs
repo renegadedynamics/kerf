@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Kinematics;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepKinematics_ActuatedDirection;</c>.</remarks>
-public enum ActuatedDirection
+internal enum ActuatedDirection
 {
     AdBidirectional,
     AdPositiveOnly,

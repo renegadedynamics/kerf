@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// transfer conditions. This selection considers, either the current Actor (brought by the TransferReader,
 /// updated as required), or a precise one.
 /// </summary>
-public class SelectForTransfer : SelectExtract
+internal class SelectForTransfer : SelectExtract
 {
 
     /// <summary>

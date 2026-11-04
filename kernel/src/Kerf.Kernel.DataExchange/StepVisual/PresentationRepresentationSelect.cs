@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class PresentationRepresentationSelect : SelectType
+internal class PresentationRepresentationSelect : SelectType
 {
     /// <summary>
     /// Returns a PresentationRepresentationSelect SelectType

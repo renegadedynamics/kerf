@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Step.Export;
 /// MakeShellBasedSurfaceModel, MakeGeometricCurveSet; each calls the Builder, and the Tool holds their common data.
 /// </summary>
 /// <remarks>The writers never change the shapes they are given (frozen input is fine).</remarks>
-public static class TopoDSToStep
+internal static class TopoDSToStep
 {
     public static TCollection_HAsciiString? DecodeBuilderError(ExportBuilderError e)
     {

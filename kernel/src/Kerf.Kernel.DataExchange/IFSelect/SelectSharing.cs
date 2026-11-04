@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// A SelectSharing selects Entities which directly Share (Level One) the Entities of the Input list Remark :
 /// if an Entity of the Input List directly shares another one, it is of course present in the Result List
 /// </summary>
-public class SelectSharing : SelectDeduct
+internal class SelectSharing : SelectDeduct
 {
 
     /// <summary>

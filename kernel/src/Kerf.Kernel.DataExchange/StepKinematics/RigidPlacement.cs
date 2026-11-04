@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP SELECT type RigidPlacement
 /// </summary>
-public class RigidPlacement : SelectType
+internal class RigidPlacement : SelectType
 {
     /// <summary>
     /// Empty constructor

@@ -10,7 +10,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// The version texts data exchange writes into files (OCCT's macros <c>XSTEP_PROCESSOR_VERSION</c>...), with OCCT's
 /// <c>OCC_VERSION_STRING</c> of the ported version, "8.0".
 /// </summary>
-public static class InterfaceVersion
+internal static class InterfaceVersion
 {
     /// <summary>OCCT's <c>OCC_VERSION_STRING</c> (major.minor) for V8_0_1.</summary>
     public const string OCC_VERSION_STRING = "8.0";

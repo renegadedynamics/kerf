@@ -32,7 +32,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// given (ranges, vertex tolerances, the edges of a <see cref="ExtendWireData"/>), so they are internal: ported
 /// callers (ShapeFix_Wire, ShapeFix_Face) run them on shapes they own (their copies, decision 583).
 /// </remarks>
-public sealed class IntersectionToolFixer
+internal sealed class IntersectionToolFixer
 {
     private readonly ReShapeBuilder? _context;
     private readonly double              _preci;

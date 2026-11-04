@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// A DispPerOne gathers all the input Entities into as many Packets as there Root Entities from the Final
 /// Selection, that is, one Packet per Entity
 /// </summary>
-public class DispPerOne : Dispatch
+internal class DispPerOne : Dispatch
 {
 
     /// <summary>

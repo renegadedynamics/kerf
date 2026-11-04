@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity TotalRunoutTolerance
 /// </summary>
-public class TotalRunoutTolerance : GeometricToleranceWithDatumReference
+internal class TotalRunoutTolerance : GeometricToleranceWithDatumReference
 {
     /// <summary>
     /// Empty constructor

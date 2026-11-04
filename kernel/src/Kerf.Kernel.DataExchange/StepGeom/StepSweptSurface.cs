@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepSweptSurface : StepSurface
+internal class StepSweptSurface : StepSurface
 {
     private StepCurve _sweptCurve;
 

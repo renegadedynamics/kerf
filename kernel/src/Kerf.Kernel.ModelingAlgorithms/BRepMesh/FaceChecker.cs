@@ -23,7 +23,7 @@ namespace Kerf.Engine.Meshing;
 /// The wires are checked in parallel when the parameters ask for it and the face has several. Each loop body writes
 /// only its wire's slot; the pcurves are only read.
 /// </remarks>
-public class FaceChecker : Transient
+internal class FaceChecker : Transient
 {
     /// <summary>A segment of a discrete pcurve, with its edge.</summary>
     /// <remarks>

@@ -10,7 +10,7 @@ namespace Kerf.Engine.Exchange.Gltf;
 /// limit the reading stops with an error and gives no tree. <see cref="None"/> accepts anything;
 /// <see cref="Default"/> is generous for real models.
 /// </summary>
-public sealed record GltfReadLimits
+internal sealed record GltfReadLimits
 {
     /// <summary>No limits (but the JSON nesting, which System.Text.Json always bounds).</summary>
     public static GltfReadLimits None { get; } = new()
@@ -45,7 +45,7 @@ public sealed record GltfReadLimits
 }
 
 /// <summary>The options of <see cref="TreeReader"/>.</summary>
-public sealed record ReadOptions
+internal sealed record ReadOptions
 {
     /// <summary>The defaults.</summary>
     public static ReadOptions Default { get; } = new();

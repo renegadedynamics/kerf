@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Visual;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepVisual_CentralOrParallel;</c>.</remarks>
-public enum CentralOrParallel
+internal enum CentralOrParallel
 {
     CopCentral,
     CopParallel,

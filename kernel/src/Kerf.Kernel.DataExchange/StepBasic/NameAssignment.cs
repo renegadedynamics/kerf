@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity NameAssignment
 /// </summary>
-public class NameAssignment : Transient
+internal class NameAssignment : Transient
 {
     private TCollection_HAsciiString _assignedName;
 

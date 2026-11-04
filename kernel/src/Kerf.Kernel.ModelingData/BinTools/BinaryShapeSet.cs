@@ -32,7 +32,7 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 /// <see cref="BinTools.Read(out Shape, Stream, ProgressRange)"/> buffers a stream that isn't.
 /// </para>
 /// </remarks>
-public class BinaryShapeSet : ShapeSetBase
+internal class BinaryShapeSet : ShapeSetBase
 {
     // index and its shape (started from 1)
     private readonly IndexedSet<Shape> _shapes = new(ShapeHasher.Instance);

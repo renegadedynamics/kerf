@@ -12,7 +12,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// <summary>
 /// SelectBase works directly from an InterfaceModel : it is the first base for other Selections.
 /// </summary>
-public abstract class SelectBase : AbstractSelection
+internal abstract class SelectBase : AbstractSelection
 {
 
     /// <summary>

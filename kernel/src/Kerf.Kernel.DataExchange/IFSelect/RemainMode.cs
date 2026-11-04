@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 
 /// <summary>How the remaining entities (not sent by a split) are handled: forget, compute, display, undo.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.IFSelect_RemainMode;</c>.</remarks>
-public enum RemainMode
+internal enum RemainMode
 {
     RemainForget,
     RemainCompute,

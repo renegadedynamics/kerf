@@ -19,7 +19,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// A working object (decision 21): <c>SetDeflectionOverEstimation</c> and <c>Closed(bool)</c> are public, as in
 /// OCCT. At least five points are taken. OCCT's empty <c>Dump</c> is left out.
 /// </remarks>
-public sealed class ThePolygonOfHInter
+internal sealed class ThePolygonOfHInter
     : IThePolygon<ThePolygonOfHInter, CurveAdaptorBase>
 {
     private Box _theBnd = new();

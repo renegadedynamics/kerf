@@ -12,7 +12,7 @@ namespace Kerf.Engine.Meshing.Data;
 
 /// <summary>The default discrete edge.</summary>
 /// <remarks>The pcurves of a face are found by the discrete face's reference (OCCT: its address).</remarks>
-public class EdgeData : EdgeModel
+internal class EdgeData : EdgeModel
 {
     private readonly List<PCurveModel> _pCurves;
     private readonly Dictionary<FaceModel, NCollection_List<int>> _pCurvesMap;

@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export;
 
 /// <summary>The common services of the TopoDSToStep classes that report errors: the state and the tolerance.</summary>
-public class ExportRoot
+internal class ExportRoot
 {
     protected double _toler;
     protected bool _done;

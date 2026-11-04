@@ -21,7 +21,7 @@ namespace Kerf.Engine.Meshing;
 /// <remarks>
 /// Only reads the triangulation and the polygon, which may be frozen (an input's mesh being reused).
 /// </remarks>
-public class EdgeTessellationExtractor : CurveTessellator
+internal class EdgeTessellationExtractor : CurveTessellator
 {
     private readonly EdgeParameterProvider<NCollection_HArray1<double>> _provider = new();
     private readonly Triangulation _triangulation;

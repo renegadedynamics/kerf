@@ -36,7 +36,7 @@ namespace Kerf.Engine.Healing.Checks;
 /// integer division by zero).
 /// </para>
 /// </remarks>
-public class Analyzer
+internal class Analyzer
 {
     private Shape _shape;
 

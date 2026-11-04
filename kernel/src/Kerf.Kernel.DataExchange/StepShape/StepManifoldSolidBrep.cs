@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepManifoldSolidBrep : StepSolidModel
+internal class StepManifoldSolidBrep : StepSolidModel
 {
     private StepConnectedFaceSet _outer;
 

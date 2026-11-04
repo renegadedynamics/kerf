@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// <summary>
 /// Signature to give the Label from the Model
 /// </summary>
-public class SignLabel : SignText
+internal class SignLabel : SignText
 {
 
     public SignLabel()

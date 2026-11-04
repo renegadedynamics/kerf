@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity CommonDatum
 /// </summary>
-public class CommonDatum : CompositeShapeAspect
+internal class CommonDatum : CompositeShapeAspect
 {
     private Datum _datum;
 

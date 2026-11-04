@@ -12,7 +12,7 @@ namespace Kerf.Engine.Meshing;
 /// The base of the face algorithms building the triangulation with a custom triangulation algorithm (the base
 /// triangulation), whose constraints BRepMesh_Delaun then restores.
 /// </summary>
-public abstract class CustomBaseMeshAlgo : ConstrainedBaseMeshAlgo
+internal abstract class CustomBaseMeshAlgo : ConstrainedBaseMeshAlgo
 {
     /// <summary>An algorithm.</summary>
     protected CustomBaseMeshAlgo()

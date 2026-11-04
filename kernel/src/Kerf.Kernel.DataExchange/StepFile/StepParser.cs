@@ -59,7 +59,7 @@ namespace Kerf.Engine.Exchange.Step.Parser;
 /// The parser adds the limits of <see cref="ParserReadLimits"/> and cancellation, which OCCT's hasn't.
 /// </para>
 /// </remarks>
-public sealed class StepParser
+internal sealed class StepParser
 {
     /// <summary>The token kinds the scanner returns (bison's token::...; the characters are themselves).</summary>
     public static class token

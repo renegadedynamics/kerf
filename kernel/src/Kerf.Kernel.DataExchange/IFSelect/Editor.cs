@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// header) Each Value is controlled by a TypedValue, with a number (it is an Integer) and a name under two
 /// forms (complete and short) and an edit mode
 /// </summary>
-public abstract class Editor : Transient
+internal abstract class Editor : Transient
 {
 
     /// <summary>

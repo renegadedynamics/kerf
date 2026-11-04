@@ -17,7 +17,7 @@ namespace Kerf.Engine.Measurement;
 /// The global properties of a bounded curve in 3D space (the curve of an edge), by Gauss integration over each interval
 /// of continuity. The curve must be at least C1.
 /// </summary>
-public class Cinert : Properties
+internal class Cinert : Properties
 {
     /// <summary>An empty system.</summary>
     public Cinert()

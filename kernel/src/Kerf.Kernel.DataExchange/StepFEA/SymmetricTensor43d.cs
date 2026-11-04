@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP SELECT type SymmetricTensor43d
 /// </summary>
-public class SymmetricTensor43d : SelectType
+internal class SymmetricTensor43d : SelectType
 {
     /// <summary>
     /// Empty constructor

@@ -19,7 +19,7 @@ using static Kerf.Engine.Exchange.Step.Geometry.StepKnotType;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of BSplineCurve from Geom and Geom2d to a STEP b_spline_curve_with_knots.</summary>
-public sealed class MakeBSplineCurveWithKnots : GeometryRoot
+internal sealed class MakeBSplineCurveWithKnots : GeometryRoot
 {
     private StepBSplineCurveWithKnots _bSplineCurveWithKnots;
 

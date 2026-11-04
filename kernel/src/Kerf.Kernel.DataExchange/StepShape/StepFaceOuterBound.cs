@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepFaceOuterBound : StepFaceBound
+internal class StepFaceOuterBound : StepFaceBound
 {
     /// <summary>
     /// Returns a FaceOuterBound

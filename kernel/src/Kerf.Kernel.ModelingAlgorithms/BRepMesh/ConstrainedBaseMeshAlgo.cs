@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Meshing;
 
 /// <summary>The base of the face algorithms building the triangulation by a Delaunay approach.</summary>
-public abstract class ConstrainedBaseMeshAlgo : BaseMeshAlgo
+internal abstract class ConstrainedBaseMeshAlgo : BaseMeshAlgo
 {
     /// <summary>An algorithm.</summary>
     protected ConstrainedBaseMeshAlgo()

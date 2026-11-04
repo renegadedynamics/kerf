@@ -23,7 +23,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 /// <see cref="Value"/> freezes the result (decision 1247); the translators use <c>InternalValue</c>, the working
 /// shape.
 /// </remarks>
-public sealed class TranslateVertex : ImportRoot
+internal sealed class TranslateVertex : ImportRoot
 {
     private TranslateVertexError _error;
     private Shape _result = new Shape();

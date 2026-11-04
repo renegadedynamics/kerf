@@ -31,7 +31,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 
 /// <summary>Translates the edge_loop of a face bound into a wire on the face, with the edges' pcurves.</summary>
 /// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 1247).</remarks>
-public sealed class TranslateEdgeLoop : ImportRoot
+internal sealed class TranslateEdgeLoop : ImportRoot
 {
     private TranslateEdgeLoopError _error;
     private Shape _result = new Shape();

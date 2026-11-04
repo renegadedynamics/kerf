@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity TessellatedStructuredItem
 /// </summary>
-public class TessellatedStructuredItem : TessellatedItem
+internal class TessellatedStructuredItem : TessellatedItem
 {
     /// <summary>
     /// default constructor

@@ -25,7 +25,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// result) - Fail on run : no result yet recorded, no message, but an exception occurred while recording the
 /// result (this should not appear and indicates a programming error)
 /// </summary>
-public class SignTransferStatus : Signature
+internal class SignTransferStatus : Signature
 {
     // OCCT's file static themes() (a process-wide buffer for the returned text) is a local string in Value.
 

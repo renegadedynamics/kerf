@@ -12,7 +12,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// <summary>
 /// A SelectModelEntities gets all the Entities of an InterfaceModel.
 /// </summary>
-public class SelectModelEntities : SelectBase
+internal class SelectModelEntities : SelectBase
 {
 
     /// <summary>

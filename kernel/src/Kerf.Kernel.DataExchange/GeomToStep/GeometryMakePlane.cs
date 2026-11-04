@@ -14,7 +14,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of Plane from Geom (and Pln from gp) to a STEP plane.</summary>
-public sealed class GeometryMakePlane : GeometryRoot
+internal sealed class GeometryMakePlane : GeometryRoot
 {
     private StepPlane _plane;
 

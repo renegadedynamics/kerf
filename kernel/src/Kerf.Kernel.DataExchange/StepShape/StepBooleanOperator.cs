@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepShape_BooleanOperator;</c>.</remarks>
-public enum StepBooleanOperator
+internal enum StepBooleanOperator
 {
     BoDifference,
     BoIntersection,

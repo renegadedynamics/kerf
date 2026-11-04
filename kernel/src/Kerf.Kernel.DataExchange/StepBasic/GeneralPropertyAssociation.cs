@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity GeneralPropertyAssociation
 /// </summary>
-public class GeneralPropertyAssociation : Transient
+internal class GeneralPropertyAssociation : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

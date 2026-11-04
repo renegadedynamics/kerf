@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity RackAndPinionPairValue
 /// </summary>
-public class RackAndPinionPairValue : PairValue
+internal class RackAndPinionPairValue : PairValue
 {
     private double _actualDisplacement;
 

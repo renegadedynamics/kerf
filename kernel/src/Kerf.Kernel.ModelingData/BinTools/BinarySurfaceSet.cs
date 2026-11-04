@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 /// As in OCCT, the set can hold the null surface once (<see cref="Add"/> adds it). The surfaces that <see cref="Read(Stream, ProgressRange)"/>
 /// creates are frozen.
 /// </remarks>
-public class BinarySurfaceSet
+internal class BinarySurfaceSet
 {
     private const byte Plane = 1;
     private const byte Cylinder = 2;

@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 
 /// <summary>Whether information is printed on failures only or on failures and warnings.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.IFSelect_PrintFail;</c>.</remarks>
-public enum PrintFail
+internal enum PrintFail
 {
     FailOnly,
     FailAndWarn,

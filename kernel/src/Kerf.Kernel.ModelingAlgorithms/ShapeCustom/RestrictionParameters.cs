@@ -19,7 +19,7 @@ namespace Kerf.Engine.Healing.Custom;
 /// surfaces and the elementary surfaces not converted. As in OCCT, <see cref="ConvertCylindricalSurf"/> and
 /// <see cref="ConvertToroidalSurf"/> return each other's field; each always the same one, so nothing shows it.
 /// </remarks>
-public class RestrictionParameters : Transient
+internal class RestrictionParameters : Transient
 {
     private int _gMaxDegree;
     private int _gMaxSeg;

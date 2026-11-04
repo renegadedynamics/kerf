@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class TextStyleForDefinedFont : Transient
+internal class TextStyleForDefinedFont : Transient
 {
     private Colour _textColour;
 

@@ -19,7 +19,7 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Engine.Exchange.Step.Export;
 
 /// <summary>Makes a shell_based_surface_model from a face, a shell or a solid.</summary>
-public sealed class MakeShellBasedSurfaceModel : ExportRoot
+internal sealed class MakeShellBasedSurfaceModel : ExportRoot
 {
     private StepShellBasedSurfaceModel _shellBasedSurfaceModel;
     private TessellatedItem _tessellatedItem;

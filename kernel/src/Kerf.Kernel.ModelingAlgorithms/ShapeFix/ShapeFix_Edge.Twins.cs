@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Healing.Fixes;
 
-public partial class EdgeFixer
+internal partial class EdgeFixer
 {
     // The twin of an in-place fix (Kerf unit 10H1, the working overlay's pilot): the fix runs on the caller's edge in a
     // working overlay, which takes its writes into frozen TShapes; the result holds new TShapes for what the fix changed

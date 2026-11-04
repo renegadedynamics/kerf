@@ -35,7 +35,7 @@ namespace Kerf.Engine.Exchange.Stl;
 /// OCCT parses numbers with the C library's <c>strtod</c> in the C locale; the port with <see cref="StreamUtilities.Strtod(ReadOnlySpan{char}, out int)"/>.
 /// </para>
 /// </remarks>
-public abstract class Reader : Transient
+internal abstract class Reader : Transient
 {
     private const int THE_STL_HEADER_SIZE = 84;
     private const int THE_STL_SIZEOF_FACET = 50;

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Meshing;
 /// One of unit 4D's range splitters, ported with unit 4C because <see cref="ModelPreProcessor"/>'s seam
 /// amplifier takes its steps.
 /// </remarks>
-public class ConeRangeSplitter : DefaultRangeSplitter
+internal class ConeRangeSplitter : DefaultRangeSplitter
 {
     /// <summary>A splitter.</summary>
     public ConeRangeSplitter()

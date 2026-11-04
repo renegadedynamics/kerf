@@ -23,7 +23,7 @@ namespace Kerf.Engine.Measurement;
 /// A working object (decision 21): <c>Initialize</c> recomputes and <c>AddPoint</c> adds points, as in OCCT. The
 /// templates over the curve type are ported per instantiation (decision 187).
 /// </remarks>
-public sealed class TangentialDeflection
+internal sealed class TangentialDeflection
 {
     private const double Us3 = 0.3333333333333333333333333333;
 

@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework.Monitoring;
 /// the class to be keyed MapTransientHasher from TColStd is the associated Hasher DataInfo from MoniTool is
 /// an additional class which helps to provide information on the value (template : see DataInfo)
 /// </summary>
-public class TransientElem : Element
+internal class TransientElem : Element
 {
 
     /// <summary>

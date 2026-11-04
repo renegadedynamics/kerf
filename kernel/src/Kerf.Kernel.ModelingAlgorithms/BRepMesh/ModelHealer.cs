@@ -40,7 +40,7 @@ namespace Kerf.Engine.Meshing;
 /// address order; each body is independent of the others, so the order doesn't change the result.
 /// </para>
 /// </remarks>
-public class ModelHealer : ModelAlgo
+internal class ModelHealer : ModelAlgo
 {
     private ModelModel? _model;
     private ToolParameters _parameters = new();

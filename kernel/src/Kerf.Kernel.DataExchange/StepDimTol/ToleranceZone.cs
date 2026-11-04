@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity ToleranceZone
 /// </summary>
-public class ToleranceZone : ShapeAspect
+internal class ToleranceZone : ShapeAspect
 {
     private NCollection_HArray1<ToleranceZoneTarget> _definingTolerance;
     private ToleranceZoneForm _form;

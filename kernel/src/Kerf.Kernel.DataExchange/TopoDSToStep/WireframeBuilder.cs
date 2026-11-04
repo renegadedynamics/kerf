@@ -23,7 +23,7 @@ using static Kerf.Engine.Exchange.Step.Export.ExportBuilderError;
 namespace Kerf.Engine.Exchange.Step.Export;
 
 /// <summary>Builds the trimmed curves of the edges of a shape (an edge, wire, face, shell, solid or compound).</summary>
-public sealed class WireframeBuilder : ExportRoot
+internal sealed class WireframeBuilder : ExportRoot
 {
     private const int Nbpt = 23;
 

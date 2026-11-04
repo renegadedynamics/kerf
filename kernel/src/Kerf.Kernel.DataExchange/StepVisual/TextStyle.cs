@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class TextStyle : Transient
+internal class TextStyle : Transient
 {
     private TCollection_HAsciiString _name;
     private TextStyleForDefinedFont _characterAppearance;

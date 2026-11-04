@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Brep;
 /// and curves that can't be read are one null entry. Unlike the 3D set, and as in OCCT, <see cref="Add"/> and
 /// <see cref="Index"/> accept null (the null entry).
 /// </remarks>
-public class Curve2dSet
+internal class Curve2dSet
 {
     private const int Line = 1;
     private const int Circle = 2;

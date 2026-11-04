@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity DimensionalCharacteristicRepresentation
 /// </summary>
-public class StepDimensionalCharacteristicRepresentation : Transient
+internal class StepDimensionalCharacteristicRepresentation : Transient
 {
     private StepDimensionalCharacteristic _dimension = new StepDimensionalCharacteristic();
     private StepShapeDimensionRepresentation _representation;

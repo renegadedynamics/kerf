@@ -32,7 +32,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// ClearShapes which allows you to handle a new batch - TransferRoots which restarts the list of shapes from
 /// scratch.
 /// </summary>
-public class FrameworkReader
+internal class FrameworkReader
 {
 
     /// <summary>

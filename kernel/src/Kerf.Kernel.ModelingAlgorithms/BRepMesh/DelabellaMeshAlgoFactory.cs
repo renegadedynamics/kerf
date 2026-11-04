@@ -18,7 +18,7 @@ namespace Kerf.Engine.Meshing;
 /// <c>BRepMesh_CustomDelaunayBaseMeshAlgo&lt;BRepMesh_DelabellaBaseMeshAlgo&gt;</c> are the <c>...OfDelabella</c>
 /// generics; its <c>Default...</c> types are the Watson ones.
 /// </remarks>
-public class DelabellaMeshAlgoFactory : MeshAlgoFactory
+internal class DelabellaMeshAlgoFactory : MeshAlgoFactory
 {
     /// <summary>A factory.</summary>
     public DelabellaMeshAlgoFactory()

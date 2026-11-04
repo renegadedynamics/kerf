@@ -12,7 +12,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// <summary>
 /// A SelectShared selects Entities which are directly Shared by the Entities of the Input list
 /// </summary>
-public class SelectShared : SelectDeduct
+internal class SelectShared : SelectDeduct
 {
 
     /// <summary>

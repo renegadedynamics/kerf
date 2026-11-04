@@ -21,7 +21,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// <see cref="WithTolerance"/>, which run them in a working overlay (Kerf unit 10H1): the caller's frozen shape isn't
 /// written, the result shares its unchanged sub-shapes and is frozen.
 /// </remarks>
-public sealed class ShapeToleranceFixer
+internal sealed class ShapeToleranceFixer
 {
     /// <summary>Empty constructor.</summary>
     public ShapeToleranceFixer()

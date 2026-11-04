@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity TessellatedShapeRepresentation
 /// </summary>
-public class TessellatedShapeRepresentation : StepShapeRepresentation
+internal class TessellatedShapeRepresentation : StepShapeRepresentation
 {
     /// <summary>
     /// default constructor

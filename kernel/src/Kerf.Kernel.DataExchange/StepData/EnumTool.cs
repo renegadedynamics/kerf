@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// A C++ value class, a C# class here (decision 1185). OCCT's constructor takes up to 40 texts as arguments with
 /// defaults; the port takes them as a <c>params</c> array (the same calls).
 /// </remarks>
-public sealed class EnumTool
+internal sealed class EnumTool
 {
     private readonly NCollection_Sequence<string> _thetexts = new();
     private readonly int _theinit;

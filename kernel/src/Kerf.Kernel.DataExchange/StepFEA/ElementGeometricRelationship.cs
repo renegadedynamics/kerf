@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity ElementGeometricRelationship
 /// </summary>
-public class ElementGeometricRelationship : Transient
+internal class ElementGeometricRelationship : Transient
 {
     private ElementOrElementGroup _elementRef = new ElementOrElementGroup();
     private AnalysisItemWithinRepresentation _item;

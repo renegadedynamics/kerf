@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Healing.Build;
 
-public sealed partial class BuildEdgeBuilder
+internal sealed partial class BuildEdgeBuilder
 {
     // The twin of an in-place method (Kerf unit 10H4): the operation on the caller's edge in a working overlay, which
     // takes its writes; the result holds new TShapes for what changed and the edge's own for the rest (the edge itself

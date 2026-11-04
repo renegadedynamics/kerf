@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// defined with a compound Schema is processed as any other one, once built the equivalent compound Protocol, a
 /// FileProtocol.
 /// </summary>
-public class FileProtocol : StepProtocol
+internal class FileProtocol : StepProtocol
 {
     private const string Thename = ""; // Empty schema name for file protocols
 

@@ -38,7 +38,7 @@ namespace Kerf.Engine.Healing.Process;
 /// (decision 1022), and read the tools' unfrozen results (decisions 973, 999); the context freezes at its own
 /// publication points.
 /// </remarks>
-public static class OperLibrary
+internal static class OperLibrary
 {
     private static readonly Lazy<bool> Registered = new(RegisterAll);
 

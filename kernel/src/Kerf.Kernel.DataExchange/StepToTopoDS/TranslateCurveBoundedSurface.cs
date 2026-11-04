@@ -24,7 +24,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 /// Needs <see cref="ShapeAlgo.Init"/>. <see cref="Value"/> freezes the result; the translators use
 /// <c>InternalValue</c> (decision 1247).
 /// </remarks>
-public sealed class TranslateCurveBoundedSurface : ImportRoot
+internal sealed class TranslateCurveBoundedSurface : ImportRoot
 {
     private Face _face = new Face();
 

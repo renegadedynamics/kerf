@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity TessellatedEdge
 /// </summary>
-public class TessellatedEdge : TessellatedStructuredItem
+internal class TessellatedEdge : TessellatedStructuredItem
 {
     private CoordinatesList _coordinates;
     private EdgeOrCurve _geometricLink = new EdgeOrCurve();

@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepCompositeCurve : StepBoundedCurve
+internal class StepCompositeCurve : StepBoundedCurve
 {
     private NCollection_HArray1<StepCompositeCurveSegment> _segments;
     private Logical _selfIntersect;

@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Healing.Extend;
 
 /// <summary>The kind of global parametrisation of a composite surface.</summary>
-public enum Parametrisation
+internal enum Parametrisation
 {
     /// <summary>Each patch of the first row and column adds its range: U(i+1) = U(i) + URange(i, 1), and so on.</summary>
     Natural,

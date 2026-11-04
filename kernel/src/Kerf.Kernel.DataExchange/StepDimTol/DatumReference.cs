@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity DatumReference
 /// </summary>
-public class DatumReference : Transient
+internal class DatumReference : Transient
 {
     private int _precedence;
     private Datum _referencedDatum;

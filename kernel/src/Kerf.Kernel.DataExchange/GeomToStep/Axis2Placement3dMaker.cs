@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.FromGeometry;
 /// <summary>
 /// The mapping of Axis2Placement from Geom (and Ax2, Ax3 and Trsf from gp) to a STEP axis2_placement_3d.
 /// </summary>
-public sealed class Axis2Placement3dMaker : GeometryRoot
+internal sealed class Axis2Placement3dMaker : GeometryRoot
 {
     private StepAxis2Placement3d _axis2Placement3d;
 

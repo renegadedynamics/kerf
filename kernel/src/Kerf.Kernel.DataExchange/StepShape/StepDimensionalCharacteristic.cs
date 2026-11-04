@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP SELECT type DimensionalCharacteristic
 /// </summary>
-public class StepDimensionalCharacteristic : SelectType
+internal class StepDimensionalCharacteristic : SelectType
 {
     /// <summary>
     /// Empty constructor

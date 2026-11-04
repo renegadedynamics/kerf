@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class TextStyleWithBoxCharacteristics : TextStyle
+internal class TextStyleWithBoxCharacteristics : TextStyle
 {
     private NCollection_HArray1<BoxCharacteristicSelect> _characteristics;
 

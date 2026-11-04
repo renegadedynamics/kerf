@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Import;
 
 /// <summary>Algorithmic services specific to the mapping of STEP to OCCT topology.</summary>
-public static class GeometricTool
+internal static class GeometricTool
 {
     /// <summary>
     /// The index of the first pcurve of the surface curve, after <paramref name="last"/>, lying on the surface (0 if

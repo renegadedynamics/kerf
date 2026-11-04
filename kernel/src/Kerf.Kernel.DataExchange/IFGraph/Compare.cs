@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Framework.Graph;
 /// (intersection-overlapping) part specific to first sub-part or to the second one Results are kept in a
 /// Graph, several question can be set Basic Iteration gives Cumulation (union)
 /// </summary>
-public class Compare : GraphContent
+internal class Compare : GraphContent
 {
 
     /// <summary>

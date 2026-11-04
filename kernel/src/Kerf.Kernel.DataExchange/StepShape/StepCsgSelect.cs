@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepCsgSelect
+internal class StepCsgSelect
 {
     private StepBooleanResult _booleanResult;
     private StepCsgPrimitive _csgPrimitive = new StepCsgPrimitive();

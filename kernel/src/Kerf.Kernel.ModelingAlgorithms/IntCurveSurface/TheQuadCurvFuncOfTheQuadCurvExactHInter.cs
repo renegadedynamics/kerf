@@ -16,7 +16,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// The implicit function of a quadric along a curve adaptor, F(w) = Q(C(w)), with its derivative, whose roots are
 /// the intersections of the curve and the quadric.
 /// </summary>
-public sealed class TheQuadCurvFuncOfTheQuadCurvExactHInter
+internal sealed class TheQuadCurvFuncOfTheQuadCurvExactHInter
     : FunctionWithDerivative,
       ITheQuadCurvFunc<TheQuadCurvFuncOfTheQuadCurvExactHInter, CurveAdaptorBase>
 {

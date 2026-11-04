@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class StepLengthUnit : NamedUnit
+internal class StepLengthUnit : NamedUnit
 {
     /// <summary>
     /// Returns a LengthUnit

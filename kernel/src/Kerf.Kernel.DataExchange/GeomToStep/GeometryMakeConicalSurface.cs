@@ -15,7 +15,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of ConicalSurface from Geom to a STEP conical_surface.</summary>
-public sealed class GeometryMakeConicalSurface : GeometryRoot
+internal sealed class GeometryMakeConicalSurface : GeometryRoot
 {
     private StepConicalSurface _conicalSurface;
 

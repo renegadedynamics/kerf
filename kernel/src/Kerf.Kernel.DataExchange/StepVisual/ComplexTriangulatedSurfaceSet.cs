@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity ComplexTriangulatedSurfaceSet
 /// </summary>
-public class ComplexTriangulatedSurfaceSet : TessellatedSurfaceSet
+internal class ComplexTriangulatedSurfaceSet : TessellatedSurfaceSet
 {
     private NCollection_HArray1<int> _pnindex;
     private NCollection_HArray1<Transient> _triangleStrips;

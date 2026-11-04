@@ -33,7 +33,7 @@ namespace Kerf.Engine.Healing.Build;
 /// ReplacePCurve, ReassignPCurve, RemoveCurve3d, BuildCurve3d) are internal: they throw on a frozen edge. Their public
 /// functional twins (ShapeBuild_Edge.Twins.cs) return the changed edge and leave theirs unchanged.</para>
 /// </remarks>
-public sealed partial class BuildEdgeBuilder
+internal sealed partial class BuildEdgeBuilder
 {
     /// <summary>
     /// A copy of the edge (new TShape, the same representations) with the vertices <paramref name="v1"/> (first) and

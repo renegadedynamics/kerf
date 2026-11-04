@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// <c>SetMode</c>, <c>PrintTrace</c>), which nothing in STEP, Transfer, XSControl or IFSelect uses: that part is left
 /// out with its process-wide state (decision 1183). The static utilities, which they use, are ported.
 /// </remarks>
-public static class FrameworkMsg
+internal static class FrameworkMsg
 {
     private const string BlankText =
         "                                                                            ";

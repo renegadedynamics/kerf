@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// message, the entities attached (count and list). Because many messages can be repeated if they are due to
 /// systematic errors
 /// </summary>
-public class CheckCounter : SignatureList
+internal class CheckCounter : SignatureList
 {
 
     /// <summary>

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity ObjectRole
 /// </summary>
-public class ObjectRole : Transient
+internal class ObjectRole : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity UniversalPairValue
 /// </summary>
-public class UniversalPairValue : PairValue
+internal class UniversalPairValue : PairValue
 {
     private double _firstRotationAngle;
     private double _secondRotationAngle;

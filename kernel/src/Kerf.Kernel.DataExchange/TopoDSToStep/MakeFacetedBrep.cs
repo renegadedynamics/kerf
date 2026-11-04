@@ -17,7 +17,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export;
 
 /// <summary>Makes a faceted_brep from a closed shell or from a solid's closed outer shell.</summary>
-public sealed class MakeFacetedBrep : ExportRoot
+internal sealed class MakeFacetedBrep : ExportRoot
 {
     private StepFacetedBrep _facetedBrep;
     private TessellatedItem _tessellatedItem;

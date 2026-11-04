@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// GeneralModule has formerly recognized the Type read from FileReaderData as a positive Case Number, then
 /// the ReaderModule reads it according to this Case Number
 /// </summary>
-public abstract class ReaderModule : Transient
+internal abstract class ReaderModule : Transient
 {
 
     /// <summary>

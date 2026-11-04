@@ -37,7 +37,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// <see cref="Wire"/> freezes what it returns; ported callers read <see cref="InternalWire"/>.
 /// </para>
 /// </remarks>
-public class WireDivide : UpgradeTool
+internal class WireDivide : UpgradeTool
 {
     /// <summary>The supporting face (null for free wires and edges).</summary>
     protected Face _face;

@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// to Pick Items (default case) or Reverse to Remove Item Basic features (the unique Input) are inherited
 /// from SelectDeduct
 /// </summary>
-public abstract class SelectExtract : SelectDeduct
+internal abstract class SelectExtract : SelectDeduct
 {
 
     /// <summary>

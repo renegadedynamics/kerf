@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP SELECT type CurveElementPurpose
 /// </summary>
-public class CurveElementPurpose : SelectType
+internal class CurveElementPurpose : SelectType
 {
     /// <summary>
     /// Empty constructor

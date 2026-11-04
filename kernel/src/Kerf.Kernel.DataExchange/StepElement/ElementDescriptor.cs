@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP entity ElementDescriptor
 /// </summary>
-public class ElementDescriptor : Transient
+internal class ElementDescriptor : Transient
 {
     private ElementOrder _topologyOrder;
     private TCollection_HAsciiString _description;

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity EdgeBasedWireframeModel
 /// </summary>
-public class StepEdgeBasedWireframeModel : StepGeometricRepresentationItem
+internal class StepEdgeBasedWireframeModel : StepGeometricRepresentationItem
 {
     private NCollection_HArray1<StepConnectedEdgeSet> _ebwmBoundary;
 

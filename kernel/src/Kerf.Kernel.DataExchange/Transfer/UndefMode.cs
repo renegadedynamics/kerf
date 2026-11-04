@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 
 /// <summary>How undefined entities are handled (no longer used by OCCT's transfer).</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.Transfer_UndefMode;</c>.</remarks>
-public enum UndefMode
+internal enum UndefMode
 {
     UndefIgnore,
     UndefFailure,

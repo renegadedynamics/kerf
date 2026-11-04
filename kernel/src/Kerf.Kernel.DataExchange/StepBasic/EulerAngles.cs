@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity EulerAngles
 /// </summary>
-public class EulerAngles : Transient
+internal class EulerAngles : Transient
 {
     private NCollection_HArray1<double> _angles;
 

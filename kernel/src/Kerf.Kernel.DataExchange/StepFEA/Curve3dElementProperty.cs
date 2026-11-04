@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity Curve3dElementProperty
 /// </summary>
-public class Curve3dElementProperty : Transient
+internal class Curve3dElementProperty : Transient
 {
     private TCollection_HAsciiString _propertyId;
     private TCollection_HAsciiString _description;

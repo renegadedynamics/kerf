@@ -18,7 +18,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Selections;
 
 /// <summary>A File Modifier of STEP: it acts on the StepWriter, once the model is produced.</summary>
-public abstract class FileModifier : GeneralModifier
+internal abstract class FileModifier : GeneralModifier
 {
     /// <summary>
     /// Perform the action specific to each class of File Modifier &lt;ctx&gt; is the ContextWrite, which brings : the

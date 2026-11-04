@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity ScrewPairValue
 /// </summary>
-public class ScrewPairValue : PairValue
+internal class ScrewPairValue : PairValue
 {
     private double _actualRotation;
 

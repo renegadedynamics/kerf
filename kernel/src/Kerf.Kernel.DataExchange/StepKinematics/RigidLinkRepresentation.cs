@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity RigidLinkRepresentation
 /// </summary>
-public class RigidLinkRepresentation : KinematicLinkRepresentation
+internal class RigidLinkRepresentation : KinematicLinkRepresentation
 {
     /// <summary>
     /// default constructor

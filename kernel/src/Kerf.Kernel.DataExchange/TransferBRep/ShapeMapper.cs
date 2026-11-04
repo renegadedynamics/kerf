@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// A Finder for a Shape: two mappers are the same if their shapes are the same (TopTools_ShapeMapHasher: the same
 /// TShape at the same location, whatever the orientation).
 /// </summary>
-public class ShapeMapper : Finder
+internal class ShapeMapper : Finder
 {
     /// <summary>
     /// Creates a Mapper with a Value. This Value can then not be changed. It is used by the Hasher to compute the

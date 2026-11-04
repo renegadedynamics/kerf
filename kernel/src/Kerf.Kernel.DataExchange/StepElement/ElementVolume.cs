@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Elements;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepElement_ElementVolume;</c>.</remarks>
-public enum ElementVolume
+internal enum ElementVolume
 {
     Volume,
 }

@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class AnnotationText : MappedItem
+internal class AnnotationText : MappedItem
 {
     /// <summary>
     /// Returns a AnnotationText

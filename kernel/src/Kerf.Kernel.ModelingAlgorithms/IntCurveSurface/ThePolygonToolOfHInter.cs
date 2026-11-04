@@ -17,7 +17,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// <see cref="IToolPolygon3d{Polygon3d}"/> (decision 202's approach). <c>Dump</c>, which prints to
 /// std::cout, is left out.
 /// </remarks>
-public readonly struct ThePolygonToolOfHInter : IToolPolygon3d<ThePolygonOfHInter>
+internal readonly struct ThePolygonToolOfHInter : IToolPolygon3d<ThePolygonOfHInter>
 {
     /// <summary>The bounding box of the polygon.</summary>
     public static Box Bounding(in ThePolygonOfHInter polygon) => polygon.Bounding();

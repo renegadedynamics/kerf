@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepRationalBSplineCurve : StepBSplineCurve
+internal class StepRationalBSplineCurve : StepBSplineCurve
 {
     private NCollection_HArray1<double> _weightsData;
 

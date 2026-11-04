@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity CylindricityTolerance
 /// </summary>
-public class CylindricityTolerance : GeometricTolerance
+internal class CylindricityTolerance : GeometricTolerance
 {
     /// <summary>
     /// Empty constructor

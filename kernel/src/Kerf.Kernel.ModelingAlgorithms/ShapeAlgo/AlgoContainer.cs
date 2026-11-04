@@ -35,7 +35,7 @@ namespace Kerf.Engine.Healing;
 /// (shapes, wires) are frozen; geometry given is never changed (see
 /// <see cref="ShapeUpgrade.C0BSplineToSequenceOfC1BSplineCurve(BSplineCurve3D?, ref NCollection_HSequence{BoundedCurve3D}?)"/>).
 /// </remarks>
-public class AlgoContainer : Transient
+internal class AlgoContainer : Transient
 {
     private ToolContainer? _tc;
 

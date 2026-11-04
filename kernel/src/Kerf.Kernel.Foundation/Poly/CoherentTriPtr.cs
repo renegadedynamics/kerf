@@ -12,7 +12,7 @@ namespace Kerf.Engine.Meshing;
 /// the triangles around a <see cref="CoherentNode"/>.
 /// </summary>
 /// <remarks>OCCT's allocator arguments are dropped; removing a node unlinks it and leaves it to the garbage collector.</remarks>
-public class CoherentTriPtr
+internal class CoherentTriPtr
 {
     /// <summary>
     /// Iterates a list from any of its members, forward, until it comes back to that member.

@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class ColourRgb : ColourSpecification
+internal class ColourRgb : ColourSpecification
 {
     private double _red;
     private double _green;

@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 /// A working object (OCCT's value class, decision 1185), holding the reader's shapes as they are being built. The
 /// maps are keyed by reference (representation items) and by name, and never iterated.
 /// </remarks>
-public sealed class NMTool
+internal sealed class NMTool
 {
     private Dictionary<RepresentationItem, Shape> _riMap = new();
     private Dictionary<string, Shape> _riNamesMap = new();

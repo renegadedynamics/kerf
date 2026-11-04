@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepAdvancedFace : StepFaceSurface
+internal class StepAdvancedFace : StepFaceSurface
 {
     /// <summary>
     /// Returns a AdvancedFace

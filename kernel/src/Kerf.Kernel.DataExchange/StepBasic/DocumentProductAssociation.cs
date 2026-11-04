@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity DocumentProductAssociation
 /// </summary>
-public class DocumentProductAssociation : Transient
+internal class DocumentProductAssociation : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

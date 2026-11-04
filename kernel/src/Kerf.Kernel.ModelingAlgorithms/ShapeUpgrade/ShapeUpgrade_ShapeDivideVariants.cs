@@ -24,7 +24,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// longer than the maximal angle in U (<see cref="SplitSurfaceAngle"/>); the edges aren't divided.
 /// </summary>
 /// <remarks>A working object (decision 21); see <see cref="ShapeDivide"/>.</remarks>
-public class ShapeDivideAngle : ShapeDivide
+internal class ShapeDivideAngle : ShapeDivide
 {
     /// <summary>Creates the tool with the maximal angle.</summary>
     public ShapeDivideAngle(double maxAngle)
@@ -74,7 +74,7 @@ public class ShapeDivideAngle : ShapeDivide
 /// A working object (decision 21); see <see cref="ShapeDivide"/>. OCCT's modifiable references
 /// (<see cref="MaxArea"/>, <see cref="NbParts"/>) return <c>ref</c>.
 /// </remarks>
-public class ShapeDivideArea : ShapeDivide
+internal class ShapeDivideArea : ShapeDivide
 {
     private double _maxArea;
     private int _nbParts;
@@ -149,7 +149,7 @@ public class ShapeDivideArea : ShapeDivide
 /// (<see cref="ClosedFaceDivide"/>); the edges aren't divided.
 /// </summary>
 /// <remarks>A working object (decision 21); see <see cref="ShapeDivide"/>.</remarks>
-public class ShapeDivideClosed : ShapeDivide
+internal class ShapeDivideClosed : ShapeDivide
 {
     /// <summary>Initializes the tool with the shape and one cut.</summary>
     public ShapeDivideClosed(in Shape s) : base(s)
@@ -172,7 +172,7 @@ public class ShapeDivideClosed : ShapeDivide
 /// split.
 /// </summary>
 /// <remarks>A working object (decision 21); see <see cref="ShapeDivide"/>.</remarks>
-public class ShapeDivideClosedEdges : ShapeDivide
+internal class ShapeDivideClosedEdges : ShapeDivide
 {
     /// <summary>Initializes the tool with the shape and one cut.</summary>
     public ShapeDivideClosedEdges(in Shape s) : base(s)
@@ -198,7 +198,7 @@ public class ShapeDivideClosedEdges : ShapeDivide
 /// curves, the pcurves and the surfaces), removing knots within the tolerances where possible.
 /// </summary>
 /// <remarks>A working object (decision 21); see <see cref="ShapeDivide"/>.</remarks>
-public class ShapeDivideContinuity : ShapeDivide
+internal class ShapeDivideContinuity : ShapeDivide
 {
     private Continuity _curve3dCriterion;
     private Continuity _curve2dCriterion;

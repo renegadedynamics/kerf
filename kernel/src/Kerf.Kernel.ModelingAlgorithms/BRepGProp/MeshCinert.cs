@@ -22,7 +22,7 @@ namespace Kerf.Engine.Measurement;
 /// The global properties of a polyline given by its points: for an edge with no exact geometry (no 3D curve or pcurve)
 /// but with a polygon.
 /// </summary>
-public class MeshCinert : Properties
+internal class MeshCinert : Properties
 {
     /// <summary>An empty system.</summary>
     public MeshCinert()

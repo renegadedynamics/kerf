@@ -18,7 +18,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// made, a message registrator, the basic precision and the minimal and maximal tolerances allowed.
 /// </summary>
 /// <remarks>A working object (decision 21). The context is the caller's working object, shared by reference.</remarks>
-public class RootFixer : Transient
+internal class RootFixer : Transient
 {
     /// <summary>The shape the messages are attached to by default.</summary>
     protected Shape _shape;

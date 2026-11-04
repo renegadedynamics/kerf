@@ -16,7 +16,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// <see cref="Init(Curve3D, double, double)"/>, so it is never modified.
 /// </summary>
 /// <remarks>A working object (decision 21). The resulting curves are the tool's own, unfrozen.</remarks>
-public class SplitCurve3d : SplitCurve
+internal class SplitCurve3d : SplitCurve
 {
     /// <summary>The tool's copy of the curve.</summary>
     protected Curve3D? _curve;

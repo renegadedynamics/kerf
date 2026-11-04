@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of Ax2 and Ax22d from gp to a STEP axis2_placement_2d.</summary>
-public sealed class MakeAxis2Placement2d : GeometryRoot
+internal sealed class MakeAxis2Placement2d : GeometryRoot
 {
     private StepAxis2Placement2d _axis2Placement2d;
 

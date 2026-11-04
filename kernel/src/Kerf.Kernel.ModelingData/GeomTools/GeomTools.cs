@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Brep;
 /// <c>OS.precision(n)</c>); the sets' <c>Write</c> methods use 17. OCCT's debugger helper <c>GeomTools_Dump(void*)</c>
 /// (GeomTools_Debug.cxx) is not ported.
 /// </remarks>
-public static class GeomTools
+internal static class GeomTools
 {
     // OCCT's global handler: a setting of the operation context (unit 10I), by default one that raises on any type
     internal static readonly ContextKey<UndefinedTypeHandler> HandlerSetting = new("GeomTools.UndefinedTypeHandler", new());

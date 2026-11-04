@@ -40,7 +40,7 @@ namespace Kerf.Engine.Exchange.Gltf;
 /// folder only. The tree's shapes are frozen. Cancellation through the progress range.
 /// </para>
 /// </remarks>
-public sealed class TreeReader
+internal sealed class TreeReader
 {
     private const int Float = 5126;
     private const int UNSIGNED_BYTE = 5121;

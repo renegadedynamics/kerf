@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepConicalSurface : StepElementarySurface
+internal class StepConicalSurface : StepElementarySurface
 {
     private double _radius;
     private double _semiAngle;

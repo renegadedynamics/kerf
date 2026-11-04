@@ -16,7 +16,7 @@ namespace Kerf.Engine.Classification.Hatching;
 /// A value type (decision 663). Its fields are internal, as OCCT's friends Hatch_Line and Hatch_Hatcher read them;
 /// nothing writes them after construction. <c>default</c> equals OCCT's default constructor.
 /// </remarks>
-public readonly struct Parameter : IEquatable<Parameter>
+internal readonly struct Parameter : IEquatable<Parameter>
 {
     internal readonly double _par1;
     internal readonly bool _start;

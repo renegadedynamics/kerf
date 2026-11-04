@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepHalfSpaceSolid : StepGeometricRepresentationItem
+internal class StepHalfSpaceSolid : StepGeometricRepresentationItem
 {
     private StepSurface _baseSurface;
     private bool _agreementFlag;

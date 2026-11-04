@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP entity CurveElementSectionDerivedDefinitions
 /// </summary>
-public class CurveElementSectionDerivedDefinitions : CurveElementSectionDefinition
+internal class CurveElementSectionDerivedDefinitions : CurveElementSectionDefinition
 {
     private double _crossSectionalArea;
     private NCollection_HArray1<MeasureOrUnspecifiedValue> _shearArea;

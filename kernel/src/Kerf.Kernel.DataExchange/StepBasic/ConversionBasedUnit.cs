@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ConversionBasedUnit : NamedUnit
+internal class ConversionBasedUnit : NamedUnit
 {
     private TCollection_HAsciiString _name;
     private Transient _conversionFactor;

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of member for STEP SELECT type SurfaceElementPurpose
 /// </summary>
-public class SurfaceElementPurposeMember : SelectNamed
+internal class SurfaceElementPurposeMember : SelectNamed
 {
     private const string Esep = "ENUMERATED_SURFACE_ELEMENT_PURPOSE";
     private const string Adep = "APPLICATION_DEFINED_ELEMENT_PURPOSE";

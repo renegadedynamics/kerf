@@ -31,7 +31,7 @@ namespace Kerf.Engine.Exchange.Gltf;
 /// </para>
 /// <para>Streams first; the file path forms write next to each other. The tree isn't changed. Output is deterministic.</para>
 /// </remarks>
-public sealed class GltfTreeWriter
+internal sealed class GltfTreeWriter
 {
     private const int ARRAY_BUFFER = 34962;
     private const int ELEMENT_ARRAY_BUFFER = 34963;

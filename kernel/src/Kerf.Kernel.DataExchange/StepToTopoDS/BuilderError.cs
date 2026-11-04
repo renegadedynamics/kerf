@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 
 /// <summary>The error status of StepToTopoDS_Builder.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepToTopoDS_BuilderError;</c>.</remarks>
-public enum BuilderError
+internal enum BuilderError
 {
     BuilderDone,
     BuilderOther,

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity FaceBasedSurfaceModel
 /// </summary>
-public class StepFaceBasedSurfaceModel : StepGeometricRepresentationItem
+internal class StepFaceBasedSurfaceModel : StepGeometricRepresentationItem
 {
     private NCollection_HArray1<StepConnectedFaceSet> _fbsmFaces;
 

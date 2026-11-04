@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity RevolutePairWithRange
 /// </summary>
-public class RevolutePairWithRange : RevolutePair
+internal class RevolutePairWithRange : RevolutePair
 {
     private double _lowerLimitActualRotation;
     /// <summary>

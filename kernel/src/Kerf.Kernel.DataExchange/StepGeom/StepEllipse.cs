@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepEllipse : StepConic
+internal class StepEllipse : StepConic
 {
     private double _semiAxis1;
     private double _semiAxis2;

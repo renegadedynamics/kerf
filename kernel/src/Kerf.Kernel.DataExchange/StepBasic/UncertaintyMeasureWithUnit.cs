@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class UncertaintyMeasureWithUnit : MeasureWithUnit
+internal class UncertaintyMeasureWithUnit : MeasureWithUnit
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

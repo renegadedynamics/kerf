@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// DefaultGeneral defines a GeneralModule which processes Unknown Entity from StepData only.
 /// </summary>
 /// <remarks>Nothing in OCCT creates one: undefined entities have no general module unless an application makes it.</remarks>
-public class DefaultGeneral : StepGeneralModule
+internal class DefaultGeneral : StepGeneralModule
 {
     //  StepData DefaultGeneral recognizes ONLY ONE TYPE: UndefinedEntity
 

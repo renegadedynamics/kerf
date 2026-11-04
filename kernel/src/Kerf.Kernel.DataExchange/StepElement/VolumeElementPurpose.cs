@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP SELECT type VolumeElementPurpose
 /// </summary>
-public class VolumeElementPurpose : SelectType
+internal class VolumeElementPurpose : SelectType
 {
     /// <summary>
     /// Empty constructor

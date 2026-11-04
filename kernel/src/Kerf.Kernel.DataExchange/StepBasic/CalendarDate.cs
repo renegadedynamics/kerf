@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class CalendarDate : Date
+internal class CalendarDate : Date
 {
     private int _dayComponent;
     private int _monthComponent;

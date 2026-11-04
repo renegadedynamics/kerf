@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity MaterialProperty
 /// </summary>
-public class MaterialProperty : PropertyDefinition
+internal class MaterialProperty : PropertyDefinition
 {
     /// <summary>
     /// Empty constructor

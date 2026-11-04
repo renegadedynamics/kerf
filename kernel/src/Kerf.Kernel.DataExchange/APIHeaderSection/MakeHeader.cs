@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Header;
 
 /// <summary>This class allows to consult and prepare/edit data stored in a Step Model Header.</summary>
 /// <remarks>A C++ value class, a C# class here (decision 1185).</remarks>
-public class MakeHeader
+internal class MakeHeader
 {
     // #58 rln 28.12.98 STEP header fields (NOTE: more parameterization is necessary)
     // This is a generic header for any STEP scheme

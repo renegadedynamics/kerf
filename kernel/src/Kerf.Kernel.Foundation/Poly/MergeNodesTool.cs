@@ -21,7 +21,7 @@ namespace Kerf.Engine.Meshing;
 /// The node map is OCCT's hash map, ported with its buckets, hashes and resizing, so that when several merged nodes
 /// could match a new one the same one is chosen as in OCCT. Positions are compared in single precision, as in OCCT.
 /// </remarks>
-public class MergeNodesTool : Transient
+internal class MergeNodesTool : Transient
 {
     /// <summary>
     /// Merges the nodes of a triangulation and returns the new one, or null if there is nothing to merge

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// The protocol and the header protocol are process-wide (decision 1182's rule): <see cref="Protocol"/> is created
 /// once; the header protocol is registered once by RWHeaderSection's initialisation, under a lock, before parallel use.
 /// </remarks>
-public static class StepData
+internal static class StepData
 {
     private static readonly Lazy<StepProtocol> Proto = new(() => new StepProtocol());
     private static volatile StepProtocol? s_theheader;

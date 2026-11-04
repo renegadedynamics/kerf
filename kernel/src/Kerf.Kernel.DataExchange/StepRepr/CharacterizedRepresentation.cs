@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class CharacterizedRepresentation : StepRepresentation
+internal class CharacterizedRepresentation : StepRepresentation
 {
     private TCollection_HAsciiString _description;
 

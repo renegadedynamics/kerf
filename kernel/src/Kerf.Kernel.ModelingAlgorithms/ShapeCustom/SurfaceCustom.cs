@@ -18,7 +18,7 @@ namespace Kerf.Engine.Healing.Custom;
 /// fits within a tolerance, or a closed B-spline surface to its periodic form.
 /// </summary>
 /// <remarks>A working object (decision 21).</remarks>
-public sealed class SurfaceCustom
+internal sealed class SurfaceCustom
 {
     private Surface? _surf;
     private double _gap;

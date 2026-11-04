@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity LineProfileTolerance
 /// </summary>
-public class LineProfileTolerance : GeometricTolerance
+internal class LineProfileTolerance : GeometricTolerance
 {
     /// <summary>
     /// Empty constructor

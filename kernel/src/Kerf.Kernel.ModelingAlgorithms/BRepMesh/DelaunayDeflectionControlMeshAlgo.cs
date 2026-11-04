@@ -20,7 +20,7 @@ namespace Kerf.Engine.Meshing;
 /// (phase4-plan section 6). OCCT's deviation functors are private structs, and its template <c>usePoint</c> a generic
 /// method over them.
 /// </remarks>
-public class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeInsertionMeshAlgo<RangeSplitter>
+internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeInsertionMeshAlgo<RangeSplitter>
     where RangeSplitter : DefaultRangeSplitter, new()
 {
     private double _maxSqDeflection;

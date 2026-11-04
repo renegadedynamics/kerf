@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP SELECT type ProductOrFormationOrDefinition
 /// </summary>
-public class ProductOrFormationOrDefinition : SelectType
+internal class ProductOrFormationOrDefinition : SelectType
 {
     /// <summary>
     /// Empty constructor

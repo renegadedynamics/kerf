@@ -24,7 +24,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// edges (ShapeFix_Shell, on its own copy) uses <see cref="InternalBadEdges"/> and <see cref="InternalFreeEdges"/>.
 /// The maps are indexed, so the edges come in the order OCCT finds them.
 /// </remarks>
-public sealed class ShellAnalysis
+internal sealed class ShellAnalysis
 {
     private readonly IndexedSet<Shape> _shells = new(ShapeHasher.Instance);
     private readonly IndexedSet<Shape> _bad = new(ShapeHasher.Instance);

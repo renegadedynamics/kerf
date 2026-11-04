@@ -15,7 +15,7 @@ namespace Kerf.Engine.Meshing.Data;
 /// objects. <see cref="AddFace"/> and <see cref="AddEdge"/> aren't thread-safe, as in OCCT: the mesher adds them
 /// before its parallel loops.
 /// </remarks>
-public class ModelData : ModelModel
+internal class ModelData : ModelModel
 {
     private double _maxSize;
     private readonly List<FaceModel> _dFaces;

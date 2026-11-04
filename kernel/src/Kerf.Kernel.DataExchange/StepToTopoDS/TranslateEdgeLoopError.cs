@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 
 /// <summary>The error status of StepToTopoDS_TranslateEdgeLoop.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepToTopoDS_TranslateEdgeLoopError;</c>.</remarks>
-public enum TranslateEdgeLoopError
+internal enum TranslateEdgeLoopError
 {
     TranslateEdgeLoopDone,
     TranslateEdgeLoopOther,

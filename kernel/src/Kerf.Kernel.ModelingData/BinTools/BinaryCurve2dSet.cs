@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 /// As in OCCT, the set can hold the null curve once (<see cref="Add"/> adds it). The curves that <see cref="Read(Stream, ProgressRange)"/>
 /// creates are frozen. OCCT declares a <c>Dump</c> it doesn't define; it isn't ported.
 /// </remarks>
-public class BinaryCurve2dSet
+internal class BinaryCurve2dSet
 {
     private const byte Line = 1;
     private const byte Circle = 2;

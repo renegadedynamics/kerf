@@ -15,7 +15,7 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Engine.Meshing.Tools;
 
 /// <summary>Explores a shape for the parts to mesh: its faces and its free edges.</summary>
-public class ShapeExplorer : ShapeModel
+internal class ShapeExplorer : ShapeModel
 {
     /// <summary>An explorer of the shape.</summary>
     public ShapeExplorer(in Shape shape) : base(shape)

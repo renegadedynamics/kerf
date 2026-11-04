@@ -24,7 +24,7 @@ namespace Kerf.Engine.Measurement;
 /// face is infinite) are a flag read by the private methods of the same names. The coefficient arrays are spans
 /// (empty for OCCT's null pointer).
 /// </remarks>
-public sealed class MeasurementGauss
+internal sealed class MeasurementGauss
 {
     /// <summary>The moments of inertia accumulated by the integration.</summary>
     private struct Inertia

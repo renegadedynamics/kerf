@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Framework.Graph;
 /// <summary>
 /// this class gives content of the CONNECTED COMPONENT(S) which include specific Entity(ies)
 /// </summary>
-public class AllConnected : GraphContent
+internal class AllConnected : GraphContent
 {
 
     /// <summary>

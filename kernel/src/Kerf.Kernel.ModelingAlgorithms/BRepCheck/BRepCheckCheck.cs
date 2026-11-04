@@ -14,7 +14,7 @@ using static Kerf.Geometry.SurfaceKind;
 namespace Kerf.Engine.Healing.Checks;
 
 /// <summary>Tools for the shape checks: status lists, their printing, and the numeric precision of curves and surfaces.</summary>
-public static class BRepCheckCheck
+internal static class BRepCheckCheck
 {
     /// <summary>
     /// Adds <paramref name="stat"/> to the list unless it is there already; a real error replaces

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of member for STEP SELECT type MeasureOrUnspecifiedValue
 /// </summary>
-public class MeasureOrUnspecifiedValueMember : SelectNamed
+internal class MeasureOrUnspecifiedValueMember : SelectNamed
 {
     private const string AContextDependedMeasure = "CONTEXT_DEPENDENT_MEASURE";
     private const string AnUnspecifiedValue = "UNSPECIFIED_VALUE";

@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepIntersectionCurve : StepSurfaceCurve
+internal class StepIntersectionCurve : StepSurfaceCurve
 {
     /// <summary>
     /// Returns a IntersectionCurve

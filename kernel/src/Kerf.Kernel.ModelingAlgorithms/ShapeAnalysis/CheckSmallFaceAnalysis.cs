@@ -27,7 +27,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// new frozen compound holding the caller's items and the new ones; ported code uses
 /// <see cref="InternalCheckSplittingVertices"/>, which adds to the caller's (unfrozen) compound in place, as OCCT does.
 /// </remarks>
-public sealed class CheckSmallFaceAnalysis
+internal sealed class CheckSmallFaceAnalysis
 {
     private int _status;
     private int _statusSpot;

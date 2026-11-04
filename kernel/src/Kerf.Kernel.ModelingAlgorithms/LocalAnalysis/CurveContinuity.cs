@@ -22,7 +22,7 @@ namespace Kerf.Engine.Measurement;
 /// and <see cref="StatusError"/> throw <see cref="NotDoneException"/> when the analysis failed. <see cref="StatusError"/>
 /// of a successful analysis is uninitialised in OCCT; here it is <c>LocalAnalysis_NullFirstDerivative</c>.
 /// </remarks>
-public class CurveContinuity
+internal class CurveContinuity
 {
     private double _contC0;
     private double _contC1;

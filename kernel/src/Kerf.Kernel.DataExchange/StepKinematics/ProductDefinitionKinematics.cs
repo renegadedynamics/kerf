@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity ProductDefinitionKinematics
 /// </summary>
-public class ProductDefinitionKinematics : PropertyDefinition
+internal class ProductDefinitionKinematics : PropertyDefinition
 {
     /// <summary>
     /// default constructor

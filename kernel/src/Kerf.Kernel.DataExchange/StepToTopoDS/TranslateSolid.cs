@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 
 /// <summary>Translates a tessellated_solid into a TopoDS_Solid of faces carrying triangulations.</summary>
 /// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 1247).</remarks>
-public sealed class TranslateSolid : ImportRoot
+internal sealed class TranslateSolid : ImportRoot
 {
     private TranslateSolidError _error;
     private Shape _result = new Shape();

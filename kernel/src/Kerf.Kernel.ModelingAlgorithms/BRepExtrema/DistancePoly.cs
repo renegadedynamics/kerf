@@ -14,7 +14,7 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Engine.Measurement.Distance;
 
 /// <summary>The minimum distance between the triangulation nodes of the faces of two shapes.</summary>
-public static class DistancePoly
+internal static class DistancePoly
 {
     /// <summary>
     /// The nearest pair of triangulation nodes of the faces of <paramref name="s1"/> and <paramref name="s2"/>; false

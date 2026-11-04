@@ -17,7 +17,7 @@ namespace Kerf.Engine.Meshing;
 /// A class, as triangles refer to each other and lists of them are kept per node (OCCT stores pointers; the port
 /// compares references where OCCT compares addresses).
 /// </remarks>
-public class CoherentTriangle
+internal class CoherentTriangle
 {
     internal int _nConnections;
     internal NCollection_Buffer3<int> _nodes;

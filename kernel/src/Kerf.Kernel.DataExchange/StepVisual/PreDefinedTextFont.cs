@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class PreDefinedTextFont : PreDefinedItem
+internal class PreDefinedTextFont : PreDefinedItem
 {
     /// <summary>
     /// Returns a PreDefinedTextFont

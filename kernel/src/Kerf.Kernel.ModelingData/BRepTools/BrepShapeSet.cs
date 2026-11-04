@@ -34,7 +34,7 @@ namespace Kerf.Engine.Exchange.Brep;
 /// attaches; the set freezes the shapes once they are all read (<see cref="ShapeSet"/>).
 /// </para>
 /// </remarks>
-public class BrepShapeSet : ShapeSet
+internal class BrepShapeSet : ShapeSet
 {
     private readonly BrepBuilder _builder;
     private readonly SurfaceSet _surfaces = new();

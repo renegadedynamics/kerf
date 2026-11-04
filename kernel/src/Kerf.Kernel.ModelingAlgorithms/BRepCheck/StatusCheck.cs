@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Healing.Checks;
 
 /// <summary>The statuses of a shape check (BRepCheck_Analyzer and the BRepCheck_Result classes).</summary>
-public enum StatusCheck
+internal enum StatusCheck
 {
     NoError,
     InvalidPointOnCurve,

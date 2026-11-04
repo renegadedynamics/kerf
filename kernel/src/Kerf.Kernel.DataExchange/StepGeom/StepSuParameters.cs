@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Geometry;
 /// <summary>
 /// Representation of STEP entity SuParameters
 /// </summary>
-public class StepSuParameters : StepGeometricRepresentationItem
+internal class StepSuParameters : StepGeometricRepresentationItem
 {
     private double _a;
     private double _alpha;

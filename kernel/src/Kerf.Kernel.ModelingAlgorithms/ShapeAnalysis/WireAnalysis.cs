@@ -37,7 +37,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// <c>Status...</c> methods; the advanced ones (taking an edge number) share one status, queried by
 /// <see cref="LastCheckStatus"/>. The checks only read the wire, its face and their geometry.
 /// </remarks>
-public class WireAnalysis : Transient
+internal class WireAnalysis : Transient
 {
     protected ExtendWireData?  _wire;
     protected Face            _face;

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity DatumReferenceCompartment
 /// </summary>
-public class DatumReferenceCompartment : GeneralDatumReference
+internal class DatumReferenceCompartment : GeneralDatumReference
 {
     /// <summary>
     /// Empty constructor

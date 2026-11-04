@@ -49,7 +49,7 @@ namespace Kerf.Engine.Exchange.Step.Caf;
 /// (decision 1264); the header's FILE_NAME is made as STEPControl_Writer makes it (decision 1267).
 /// </para>
 /// </remarks>
-public class CafWriter
+internal class CafWriter
 {
     // XCAFPrs_Style as MakeSTEPStyles uses it: the colours and the visibility (OCCT.NET, decision 1279: no materials)
     private sealed class Style

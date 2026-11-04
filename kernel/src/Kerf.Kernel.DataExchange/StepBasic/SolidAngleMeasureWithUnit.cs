@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class SolidAngleMeasureWithUnit : MeasureWithUnit
+internal class SolidAngleMeasureWithUnit : MeasureWithUnit
 {
     /// <summary>
     /// Returns a SolidAngleMeasureWithUnit

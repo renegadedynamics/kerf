@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity FeaModel
 /// </summary>
-public class FeaModel : StepRepresentation
+internal class FeaModel : StepRepresentation
 {
     private TCollection_HAsciiString _creatingSoftware;
     private NCollection_HArray1<string> _intendedAnalysisCode;

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity UniversalPair
 /// </summary>
-public class UniversalPair : LowOrderKinematicPair
+internal class UniversalPair : LowOrderKinematicPair
 {
     private double _inputSkewAngle;
     /// <summary>

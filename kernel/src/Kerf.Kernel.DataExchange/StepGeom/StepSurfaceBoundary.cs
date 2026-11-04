@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Geometry;
 /// <summary>
 /// Representation of STEP SELECT type SurfaceBoundary
 /// </summary>
-public class StepSurfaceBoundary : SelectType
+internal class StepSurfaceBoundary : SelectType
 {
     /// <summary>
     /// Empty constructor

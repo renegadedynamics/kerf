@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP entity CurveElementEndReleasePacket
 /// </summary>
-public class CurveElementEndReleasePacket : Transient
+internal class CurveElementEndReleasePacket : Transient
 {
     private CurveElementFreedom _releaseFreedom = new CurveElementFreedom();
     private double _releaseStiffness;

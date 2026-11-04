@@ -396,3 +396,47 @@ Where the implementation departs from sections 4 to 6 and geometry.md/topology.m
 - **The rest of the engine internal:** the 79 geometry and topology engine types still shown by other areas' public
   engine types or by the modelling layer's API (decision 1520), and the other areas' engine types, as each area's public
   API replaces them. The modelling layer reaches the engine through `InternalsVisibleTo` until 10M.
+
+## 11. Implemented: unit 10L3, measurement, healing, meshing and exchange
+
+*Unit 10L3, 4 November 2026: decisions 17001 to 17008. Its own section, beside 10L2's additions to section 10.*
+
+**Public now**, each area's operations on the README's pattern (static classes with C# 14 extension members, options
+records with `Default`, `Result`s for expected failures, `ArgumentException` for a null shape):
+- **`Kerf.Measurement`** (ModelingAlgorithms): `MeasureOperations` (`Volume`, `Area`, `Length`, `MassProperties`,
+  `BoundingBox`, `OrientedBox`, `Distance`, `Intersect`, and `Classify` on solids), `MassOptions`, `MassProperties`,
+  `Dimension`, `DistanceOptions`, `DistanceResult`, `DistanceSolution`, `SupportKind`, `LineHit`; and
+  `Kerf.Geometry.OrientedBox` (Foundation).
+- **`Kerf.Healing`**: `HealingOperations` (`Validate`, `Fix`, `Sew`, `Unify`, `MakeSolid`, `FixWireframe`,
+  `ConvertToBSpline`, `ConnectEdges`, `FreeBoundaries`), `ValidationOptions`, `ValidationReport`, `ShapeProblem`,
+  `FixOptions`, `SewOptions`, `UnifyOptions`, `BSplineConversionOptions`.
+- **`Kerf.Meshing`**: `Mesher.Mesh` → `ShapeMesh` (`Positions`, `Normals`, `Triangles`, `EdgePoints`, `Faces`,
+  `Edges`), `FaceMesh` (per-face ranges, `Kind`, `GetNodes()` in double precision, `GetSurfaceParameters()`),
+  `EdgePolyline`, `MeshOptions`. The mesher meshes in its own working overlay and reads the meshes out before dropping
+  it unfinished (decision 1444's route): the shape is never written and no meshed copy is assembled.
+- **`Kerf.Exchange`** (DataExchange, BREP included): `Step`, `Stl`, `Gltf`, `ThreeMf`, `Obj`, `Brep`, `ModelNode`,
+  `ReadLimits`, `LengthUnit`, `StepPrecision` and the options records; and the root `Kerf.Color` (Foundation), sRGB.
+
+Where the implementation departs from measurement.md, healing.md, meshing.md and exchange.md (decisions 17002 to 17006):
+- `Length` counts an edge once per face it bounds, as OCCT; `MassOptions.SkipShared` counts it once.
+- `FixOptions`' modes are `bool?` (null: OCCT decides, its -1), and its tolerances default to OCCT's (all 1e-7).
+- `ConnectEdges` and `FreeBoundaries` return wires, not results: they can't fail.
+- `ShapeMesh.Triangles` index each face's own nodes (one buffer, no copy); `FaceMesh.FirstNode` offsets them. No
+  `Triangle` record (the engine has the name; the buffers are int triples). Double nodes are computed on demand.
+- **Faces hold no meshes in the public API** (question 59): no `Face.FromMesh` or `Face.TryGetMesh`. A mesh read from
+  a file (`Stl.Read`, `Gltf.Read`) is a `ShapeMesh` whose `Shape` is null; `ModelNode.Mesh` holds a mesh part.
+- `ModelNode.Placement` is a `Placement`, not a `Transform3D` (the writers share locations by identity); a part's
+  shape carries its own placement, as STEP's reader places it.
+- `Obj.Write`, not `Obj.Read` (the engine has only OBJ's writer). No `StepReadOptions.Heal` or STEP schema option yet;
+  STEP's header names stay the modelling layer's business.
+
+**Became internal:** see decision 17007 (the engine of these areas, but for the types the modelling layer's public
+API or another area's public engine types still show).
+
+**Left:**
+- `BrepBuilder.UpdateFaceMesh`/`UpdateEdgeMesh` stay (decision 17004): the mesher's post-processor still sets each
+  triangulation's deflection after attaching it, and the engine's own meshing (Draw-lite, HLR, the mesh writers'
+  meshing) still stores meshes on faces.
+- The modelling layer's STL and glTF readers (they give faces holding triangles) and BREP import stay on its glue
+  until 10M.
+- Images (the hidden-line API, SVG, the PNG renderer) are a later unit's, on `ShapeMesh`.

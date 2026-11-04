@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity ExternallyDefinedTextFont
 /// </summary>
-public class ExternallyDefinedTextFont : ExternallyDefinedItem
+internal class ExternallyDefinedTextFont : ExternallyDefinedItem
 {
     /// <summary>
     /// Empty constructor

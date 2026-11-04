@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class RatioMeasureWithUnit : MeasureWithUnit
+internal class RatioMeasureWithUnit : MeasureWithUnit
 {
     /// <summary>
     /// Returns a RatioMeasureWithUnit

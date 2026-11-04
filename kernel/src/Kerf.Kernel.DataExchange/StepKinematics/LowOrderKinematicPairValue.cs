@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity LowOrderKinematicPairValue
 /// </summary>
-public class LowOrderKinematicPairValue : PairValue
+internal class LowOrderKinematicPairValue : PairValue
 {
     private double _actualTranslationX;
     private double _actualTranslationY;

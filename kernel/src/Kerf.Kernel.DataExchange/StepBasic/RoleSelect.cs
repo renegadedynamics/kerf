@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP SELECT type RoleSelect
 /// </summary>
-public class RoleSelect : SelectType
+internal class RoleSelect : SelectType
 {
     /// <summary>
     /// Empty constructor

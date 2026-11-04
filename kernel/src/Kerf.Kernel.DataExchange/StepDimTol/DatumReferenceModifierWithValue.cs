@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity DatumReferenceModifierWithValue
 /// </summary>
-public class DatumReferenceModifierWithValue : Transient
+internal class DatumReferenceModifierWithValue : Transient
 {
     private DatumReferenceModifierType _modifierType;
     private LengthMeasureWithUnit _modifierValue;

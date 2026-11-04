@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// default GraphCounter works with an Applied Selection (a SelectDeduct), the value is the count of selected
 /// entities from each input entities)
 /// </summary>
-public class GraphCounter : SignCounter
+internal class GraphCounter : SignCounter
 {
 
     /// <summary>

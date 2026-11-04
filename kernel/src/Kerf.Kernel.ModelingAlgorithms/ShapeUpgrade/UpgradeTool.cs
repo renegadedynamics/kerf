@@ -15,7 +15,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// basic precision and the minimal and maximal tolerances allowed.
 /// </summary>
 /// <remarks>A working object (decision 21). The context is the caller's working object, shared by reference.</remarks>
-public class UpgradeTool : Transient
+internal class UpgradeTool : Transient
 {
     private ReShapeBuilder? _context;
     private double _precision;

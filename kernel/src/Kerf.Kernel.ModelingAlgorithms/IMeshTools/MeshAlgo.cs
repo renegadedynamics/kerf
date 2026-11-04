@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Meshing.Tools;
 
 /// <summary>An algorithm making the mesh of a discrete face.</summary>
-public abstract class MeshAlgo : Transient
+internal abstract class MeshAlgo : Transient
 {
     /// <summary>An algorithm.</summary>
     protected MeshAlgo()

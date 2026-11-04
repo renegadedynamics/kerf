@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ConversionBasedUnitAndLengthUnit : ConversionBasedUnit
+internal class ConversionBasedUnitAndLengthUnit : ConversionBasedUnit
 {
     private StepLengthUnit _lengthUnit;
 

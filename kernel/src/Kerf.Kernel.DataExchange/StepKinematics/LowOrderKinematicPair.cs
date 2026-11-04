@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity LowOrderKinematicPair
 /// </summary>
-public class LowOrderKinematicPair : KinematicPair
+internal class LowOrderKinematicPair : KinematicPair
 {
     private bool _tx;
     private bool _ty;
