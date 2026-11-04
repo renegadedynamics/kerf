@@ -18,6 +18,7 @@ implementation) build. It follows phase10-plan.md 2.1, 2.2, 2.5 and 2.6 and [des
 | [measurement.md](measurement.md) | `Kerf.Measurement`: mass properties, bounds, distance, classification |
 | [meshing.md](meshing.md) | `Kerf.Meshing` |
 | [exchange.md](exchange.md) | `Kerf.Exchange`: STEP, STL, glTF, 3MF, OBJ, BREP |
+| [drawing.md](drawing.md) | `Kerf.Drawing`: hidden-line drawings and SVG, the mesh renderer and PNG (unit 10L4) |
 | [diagnostics.md](diagnostics.md) | The diagnostic codes, and the bridges from OCCT's exceptions, alerts and statuses (unit 10F) |
 | [classification.tsv](classification.tsv) | Every public type today: public API, engine or removed, with its new name |
 | [classification-rules.txt](classification-rules.txt) | The rules that table comes from: by package, with exceptions by type |
@@ -482,3 +483,25 @@ API or another area's public engine types still show).
 - The modelling layer's STL and glTF readers (they give faces holding triangles) and BREP import stay on its glue
   until 10M.
 - Images (the hidden-line API, SVG, the PNG renderer) are a later unit's, on `ShapeMesh`.
+
+## 13. Implemented: unit 10L4, images
+
+*Unit 10L4, 4 November 2026: decisions 1552 to 1557 (placeholders). Decision 1349, question 64. Unit 10L5 runs
+alongside and may add its own section.*
+
+**Public now,** in `Kerf.Drawing` ([drawing.md](drawing.md)), ModelingAlgorithms: `Camera` and `Projection`;
+`DrawingOperations.ProjectLines` (exact HLRBRep_Algo or polygonal HLRBRep_PolyAlgo) → `LineDrawing` of `DrawnEdge`s
+(`LineKind`, visible or hidden, public 2D curves, the source edge or face), `DrawingOptions`, `HiddenLineMethod`;
+`Svg` with `SvgOptions`, `LineStyle`, `SvgUnit`; `Renderer` (`Render` of a `Scene`, and `mesh.Render`, `part.Render`)
+with `Scene`, `SceneItem`, `RenderOptions`, `Shading`, `EdgeDisplay`, `DirectionalLight`; `RgbaImage`; `Png` with
+`PngOptions` and `PngCompression`. In DataExchange, `ModelNode.ToScene`.
+
+Where it departs from the plan and question 64: one namespace for drawings and pictures (they share the camera); the
+polygonal algorithm is orthographic only; PNG's deflate is Kerf's own unless asked otherwise, for bytes that are the
+same on every machine (decision 1556). No engine type changed, and none became internal: HLR's engine stays as it was
+(Draw-lite and its tests use it).
+
+**Left:**
+- Drawing sheets (several views on a page), dimensions, title blocks, section views.
+- Feature edges for meshes without shapes; transparent faces.
+- Bento's functions (10N), and the modelling layer's own `ExportSVG`-like API (10M), on this one.

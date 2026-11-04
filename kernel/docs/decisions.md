@@ -15700,3 +15700,50 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        which accept the port's log (the one solution, or c2 and the circle of length 120 pi, and no further one), and a
        property test of both configurations (`Corpus_two_circles_and_a_point_each_solution_once`). The corpus's other
        Gcc grids (geometry/circ2d3Tan's 22 cases, lowalgos/2dgcc) and the 2D fillet corpus pass unchanged.
+## Phase 10: unit 10L4, images: hidden lines with SVG, and a mesh renderer with PNG
+
+1552. **One namespace, `Kerf.Drawing`, for drawings and pictures** (decision 1349, question 64), in ModelingAlgorithms
+       beside meshing, with `ModelNode.ToScene` in DataExchange: the line drawings and the pictures share `Camera`, and
+       Bento will make both. The operation is `DrawingOperations.ProjectLines` (a C# 14 extension member, as section 3
+       of the API README asks): `Project` is already geometry's and construction's. The SVG and PNG writers are `Svg`
+       and `Png`, as the exchange formats are named (`Step`, `Stl`). `Camera` is eye, target and up, as build123d's
+       `project_to_viewport(viewport_origin, viewport_up, look_at)`; its view frame and perspective are
+       HLRAlgo_Projector's (the target's plane keeps its scale), and the renderer uses the same arithmetic, so a drawing
+       and a picture from one camera line up.
+1553. **The drawing is read from HLRBRep's data structure, not from HLRBRep_HLRToShape's compounds.**
+       `ProjectLines` replays HLRToShape's selection (its five kinds, its `Used` and `HideCount` flags, the projector
+       scaled while it runs) but makes each visible or hidden part a public 2D curve (`HLRBRep::MakeEdge`'s cases: lines,
+       circles, ellipses, Bézier curves and B-splines; a polyline within a tolerance otherwise, where OCCT's builder takes
+       15 points) and keeps where it came from: the edge, or the face of an outline or isoline. The outliner splits edges
+       and rebuilds faces; its `NewSOldS` records map them back to the caller's sub-shapes. The polygonal algorithm runs
+       on the shapes meshed in the mesher's overlay (`IncrementalMesh.ReadMeshed`, decision 1535: the shape isn't
+       written), its segments joined into polylines by source, kind and visibility; it is orthographic only, as
+       HLRBRep_PolyHLRToShape drops the perspective (an `ArgumentException`). No engine code changed.
+1554. **OCCT's classification is kept as it is.** An edge on an outline is sharp (the front view of a cylinder draws its
+       seam, which lies on the silhouette, as a sharp line); a segment of the polygonal algorithm takes the first kind
+       of outline, sewn, smooth, sharp that HLRBRep_PolyHLRToShape's tests give it. Lengths and counts checked by hand
+       on a box (top, isometric, perspective, both algorithms), a cylinder (front, top, isometric), a sphere and two
+       shapes hiding each other.
+1555. **SVG.** One path per edge with its kind as its class, in two layers (hidden under visible); lines, arcs (two for
+       a whole circle; the sweep flag from the arc's sense, which looks the same on the page with Y flipped), ellipses'
+       arcs, and polynomial splines of degree 1 to 3 as Bézier segments (knot insertion to full multiplicity); other
+       curves a polyline within a tolerance in page units. Page in mm by default, full size without a page size, fitted
+       with one, centred. Invariant numbers rounded to three decimals, no negative zero, `
+`, UTF-8 without a BOM: a
+       drawing made by hand is checked byte for byte, also under a German culture.
+1556. **The renderer and PNG are deterministic by construction.** Rasterisation by edge functions at pixel centres in
+       double precision, depth as Z (orthographic) or 1/(d − Z) (perspective, affine on the screen), into a
+       supersampled buffer; bands of 16 rows binned then rasterised in parallel, each band owning its pixels and drawing
+       its triangles and then its edges in the scene's order, so the pixels are the serial ones; only `Math.Sqrt`
+       among library functions (no `Pow`: the sRGB values are used as they are). Feature edges: an edge is drawn when
+       the normals of the faces having a node at all of its points differ somewhere by more than the feature angle, or
+       when it is free; a seam (one face, two nodes at each point) and a tangent edge are not. PNG's deflate is Kerf's
+       own (fixed Huffman codes, greedy LZ77 on a hash chain): .NET's `ZLibStream` uses zlib-ng, whose output isn't
+       promised to be the same across machines and versions; it stays as `PngCompression.Smallest`. A 2 × 1 picture's
+       bytes are checked, verified once with Python's zlib.
+1557. **Tests and measurement.** `Kerf.Kernel.PublicApi.Tests` 119 → 154: drawing 12, SVG 6, rendering 11 (pixel
+       facts worked by hand, two golden pictures within 3 per channel, made again with `KERF_GOLDEN_DIR`), PNG 6, read
+       back by the tests' own decoder (CRCs, .NET's inflate, the filters). No other suite changed. Bento's examples
+       (`Kerf.Kernel.Bento.Benchmarks -- images 5`, a shared machine): drawing and SVG 2.4 to 22 ms (the bottle 86 ms,
+       176 edges), 0.4 to 14 MB; meshing, rendering at 800 × 600 supersampled 2 × 2 and PNG 38 to 93 ms (rendering 16
+       to 65 ms), 22 to 51 MB, of which 15 MB the supersampled buffers. No parallelism beyond the bands was needed.

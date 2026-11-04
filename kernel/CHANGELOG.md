@@ -1969,3 +1969,13 @@ Phase 10 (part): OCCT's bugs in the 2D constraint solvers (unit 10K4, batch K4).
 - Geom2dGcc: a free-form curve and a point with a centre locus solve instead of throwing; the iterative solvers give
   their parameters, centres and third tangency; a free-form curve centred on a free-form curve finds its circles; a
   line at an angle parallel to the reference no longer throws.
+Phase 10 (part): images, line drawings in SVG and shaded pictures in PNG (unit 10L4).
+- `Kerf.Drawing`: `part.ProjectLines(camera)` removes hidden lines (OCCT's exact algorithm, or its polygonal one on a
+  mesh) and gives a `LineDrawing`: 2D curves (lines, arcs, ellipses, splines, polylines), visible or hidden, sharp,
+  smooth, sewn, outline or isoline, each with the edge or face it comes from. `Camera` is orthographic or perspective.
+- `Svg.Write` writes a drawing: visible and hidden layers, true arcs and Bézier curves, page size, margins, scale or fit,
+  stroke styles; the same drawing gives the same bytes.
+- `Renderer.Render` (and `part.Render`, `mesh.Render`, `ModelNode.ToScene`) draws meshes in managed code: depth buffer,
+  flat or smooth shading, colours per part or face, feature edges, supersampling, transparent backgrounds. `Png.Encode`
+  writes the picture with Kerf's own deflate, so the bytes are the same on every machine. A part at 800 × 600 takes
+  under 100 ms, meshing included.

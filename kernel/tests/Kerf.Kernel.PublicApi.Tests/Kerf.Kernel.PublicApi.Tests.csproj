@@ -16,6 +16,8 @@
   <ItemGroup>
     <!-- Unit 10L3's shapes, read with the public BREP reader -->
     <EmbeddedResource Include="Fixtures\*.brep" LogicalName="Fixtures.%(Filename).brep" />
+    <!-- Unit 10L4's golden pictures -->
+    <EmbeddedResource Include="Fixtures\*.png" LogicalName="Fixtures.%(Filename).png" />
   </ItemGroup>
 
   <ItemGroup>
