@@ -70,8 +70,9 @@ public readonly record struct TangentTarget2D
         return new TangentTarget2D(curve, default, tangency);
     }
 
-    /// <summary>The stretch <paramref name="range"/> of the curve, touched in the given position: the solvers bound
-    /// their search by it (an edge's range on its curve), and an iterative one starts in its middle.</summary>
+    /// <summary>The stretch <paramref name="range"/> of the curve (an edge's range on its curve), touched in the given
+    /// position: an iterative solve (a curve other than a line or a circle) is bounded by it and starts in its middle.
+    /// Lines and circles are solved whole, so a caller that wants the stretch checks the contacts' parameters.</summary>
     /// <exception cref="ArgumentNullException"><paramref name="curve"/> is null.</exception>
     /// <exception cref="ArgumentException"><paramref name="range"/> is empty or not a number.</exception>
     public static TangentTarget2D Tangent(Curve2D curve, Interval range, Tangency tangency = Tangency.Unqualified)
@@ -243,7 +244,8 @@ public static class Tangents2D
     /// <param name="first">The first target.</param>
     /// <param name="second">The second target.</param>
     /// <param name="locus">The curve the centres lie on.</param>
-    /// <param name="locusRange">The stretch of <paramref name="locus"/> that counts, or null for its own range.</param>
+    /// <param name="locusRange">The stretch of <paramref name="locus"/> an iterative solve searches, or null for its own
+    /// range (as <see cref="TangentTarget2D.Tangent(Curve2D, Interval, Tangency)"/>: a line or circle is solved whole).</param>
     /// <param name="tolerance">The solver's tolerance.</param>
     /// <exception cref="ArgumentNullException"><paramref name="locus"/> is null.</exception>
     /// <exception cref="ArgumentException">A line target qualified <see cref="Tangency.Enclosing"/>.</exception>
@@ -278,7 +280,8 @@ public static class Tangents2D
     /// <param name="target">The target.</param>
     /// <param name="locus">The curve the centres lie on.</param>
     /// <param name="radius">The circles' radius.</param>
-    /// <param name="locusRange">The stretch of <paramref name="locus"/> that counts, or null for its own range.</param>
+    /// <param name="locusRange">The stretch of <paramref name="locus"/> an iterative solve searches, or null for its own
+    /// range (a line or circle is solved whole).</param>
     /// <param name="tolerance">The solver's tolerance.</param>
     /// <exception cref="ArgumentNullException"><paramref name="locus"/> is null.</exception>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="radius"/> isn't positive.</exception>

@@ -11,7 +11,7 @@ OpenCascade (OCCT).
 | Platforms | Windows, Linux and macOS (x64 and arm64) from the start |
 | Naming | Idiomatic .NET (PascalCase, `Try*`, properties instead of getters). A Python → .NET name map is kept in `docs/name-map.md`. |
 | OCCT | OCCT.NET, the managed port of OCCT 8.0.1 (LGPL 2.1 with OCCT's exception), the repository's `kernel` folder |
-| Kernel calls | `Build123d` calls OCCT.NET's types directly, under OCCT's names (unit 10B). The native backend (a C ABI shim over native OCCT, with generated `SafeHandle` wrappers) and the generated forwarding layer that gave OCCT.NET its API went in unit 10B. See "The kernel" |
+| Kernel calls | `Kerf.Modeling` calls the kernel's public API alone (unit 10M1; it called OCCT.NET's engine types directly from unit 10B). The native backend (a C ABI shim over native OCCT, with generated `SafeHandle` wrappers) and the generated forwarding layer that gave OCCT.NET its API went in unit 10B. See "The kernel" |
 
 ## Principles
 
@@ -142,11 +142,12 @@ change every shape sharing it, and race between threads. So:
   - build123d's own messages (fillet, chamfer, offset) stand, with OCCT's exception inside.
 - **No native faults, no memory pressure.** OCCT.NET is managed code: an access violation can't happen inside it, and
   the GC counts its memory. The native backend's fault translation and its `GC.AddMemoryPressure` on results went with
-  it. `Extras.EstimateMemory` (the shim's estimate of a shape's memory) remains, for diagnostics.
+  it. The shim's estimate of a shape's memory, which nothing called, moved to the tests' `EngineShapes` in unit 10M1.
 - **Untrusted BRep.** OCCT's reader trusts its input. At the end of truncated data it loops for ever,
   reusing the last word it read, and it reads words into fixed buffers with no length limit. So
-  `ReadBRep` first refuses NULs and words of 200 characters or more, then reads with stream exceptions
-  on, and reports any failure as `Storage_StreamFormatError`.
+  `ReadBRep` first refuses NULs and words of 200 characters or more, then reads through the kernel's `Brep.Read`, and
+  reports any failure as a `KerfException` (`exchange.malformed`; unit 10M1, where it was OCCT's
+  `Storage_StreamFormatError`).
   - A fuzz test mutates BRep data and checks that reading, validating and measuring the result fail
     cleanly or not at all.
   - Meshing or fusing a shape read from corrupted data can still run for a very long time, which is
@@ -205,12 +206,18 @@ with no native code, and calls its types directly (unit 10B).
   of a triangulation) build a shape that stays open until `TopoDS_TShape.FreezeGraph`, made public for this in unit
   10B, as they were reached before with `UnsafeAccessor`; `Build123d` mostly uses the builders' frozen forms
   (`TopoDS_Builder.MakeCompound`, `MakeShell`, `MakeSolid`).
-- **Meshing** (`BRepMesh_IncrementalMesh`) meshes a copy of a frozen shape and hands it back from `Shape()`; so do
-  OCCT.NET's functional twins of OCCT's in-place forms (`BRepLib.Curves3dBuilt` for `BuildCurves3d`).
-- **The modelling layer's own glue** (`src/Build123d/Kernel`, internal): BRep text as bytes, with the checks the native
-  reader needed; the memory estimate; an algorithm's alerts; STEP through STEPCAFControl over OCCT.NET's assembly tree
-  (`XdeDoc_Tree`), the mesh formats, and the exchange limits (see "Import and export"). Unit 10L designs their public
-  form in the kernel.
+- **Meshing** is the kernel's `Mesher`, which meshes in a working overlay and never writes a shape (decision 1349,
+  question 59); a shape no longer carries a mesh, so `Meshed` went in 10M1. A mesh read (STL, glTF) keeps the shape read,
+  faces holding only triangles (`ShapeMesh.TriangulatedShape`), which `ImportStl` returns as build123d's does.
+- **The kernel's public API alone** (unit 10M1). `src/Kerf.Modeling` uses no engine type (`Kerf.Engine.*`, `Occt`): it
+  calls the kernel's public operations (`Kerf.Construction`, `Kerf.Booleans`, `Kerf.Healing`, `Kerf.Measurement`,
+  `Kerf.Exchange`, `Kerf.Meshing`, `Kerf.Geometry`…), and the kernel gives it no `InternalsVisibleTo`. Where an
+  operation's public form differed from the engine call build123d makes, the kernel gained an option rather than the
+  layer a difference (a section's pcurves, Booleans unsimplified, a transform's or revolution's copy, an edge on a
+  surface without its 3D curve, the order of a wireframe fix). The layer's own glue (`Kernel/Extras.cs`, internal) is
+  BRep text as bytes with the reader's checks, and an edge's own curve's planarity. The modelling tests keep
+  `InternalsVisibleTo` only to check the layer against the engine itself (`StepAssemblyTests` against
+  STEPCAFControl's document, `ShapeMeshTests` timing the mesh copy, `MemoryPressureTests` through `EngineShapes`).
 - **Semantics kept.** `InputsUnchangedTests` passes, the concurrent cases included; tessellation matches what native
   OCCT gave float for float; the differential run against native OCCT's recorded log (OCCT.NET's unit 10A) shows no
   open difference.
@@ -238,18 +245,17 @@ build123d's `importers.py` and `exporters3d.py` are `Importers` and `Exporters3D
   only when whole, so a failure leaves no partial file.
 - **Hostile input.** `ImportLimits` (bytes, STEP records, nesting depth, triangles, glTF nodes; generous defaults)
   is passed to the readers, which stop with an error rather than allocate past it. Data past a limit throws
-  `InvalidDataException`; data that isn't the format throws `ArgumentException` (build123d's ValueError), or for
-  BREP OCCT.NET's `Storage_StreamFormatError`.
+  `InvalidDataException`; data that isn't the format throws `ArgumentException` (build123d's ValueError), for BREP a
+  `KerfException` (`exchange.malformed`), and for STL and glTF an `InvalidDataException`.
 - **Cancellation.** Every function takes a `CancellationToken`. It becomes a `Message_ProgressIndicator`, which OCCT's
   readers and writers poll as they run.
-- **Through the modelling layer's glue** (`src/Build123d/Kernel`): `Extras` (`WriteStl`, `ReadStl`, `WriteGltf`,
-  `Write3mf`, `ReadGltf`, `ReadStep`, `WriteStep`) over `ExchangeNode`, an assembly tree (name, colour, shape or
-  children and location). The mesh formats are OCCT.NET's: `RWStl` and `StlAPI_Writer` (ported), and
-  `RWGltf_TreeWriter`, `RW3mf_TreeWriter` and `RWGltf_TreeReader` (written fresh over its assembly tree,
-  `XdeDoc_Tree`). The native backend had neither them nor XCAF, which were OCCT.NET's only until it went (unit 10B).
+- **Through the kernel's `Kerf.Exchange`** (units 10L3 and 10M1): `Brep`, `Step`, `Stl`, `Gltf`, `ThreeMf` over its
+  `ModelNode` tree (name, colour, shape or mesh or children, placement). The mesh formats are the engine's: `RWStl` and
+  `StlAPI_Writer` (ported), and `RWGltf_TreeWriter`, `RW3mf_TreeWriter` and `RWGltf_TreeReader` (written fresh over its
+  assembly tree). The native backend had neither them nor XCAF, which were OCCT.NET's only until it went (unit 10B).
 - **STEP's names, colours and assemblies.** build123d writes and reads STEP through XCAF (`STEPCAFControl`);
   `Build123d` does the same through OCCT.NET's STEPCAFControl over its assembly document (`XdeDoc_Document`, frozen
-  into an `XdeDoc_Tree`), reached through `Extras.ReadStep` and `WriteStep` on `ExchangeNode`s.
+  into an `XdeDoc_Tree`), reached through `Kerf.Exchange.Step` on `ModelNode`s.
   - `ExportStep` writes a compound with `AssemblyChildren` as an assembly, each child a component at its location, a
     product per part and assembly named by its label and coloured by its colour (a surface colour, or a curve colour
     for a shape without faces). Children of one shape, label and colour share a product, placed once per child, as
@@ -289,6 +295,25 @@ build123d's `importers.py` and `exporters3d.py` are `Importers` and `Exporters3D
   refused from a stream.
 - **Faces holding only triangles** (from STL and glTF) have no surface: `BoundingBox()`, which otherwise ignores
   triangulations, bounds their triangles; `Tessellate` and `Triangulate` give them.
+
+#### Left by unit 10M1
+
+Unit 10M1 moved the layer onto the kernel's public API (items 1 and 2 of its brief), retired the emulation of Python's
+`repr` and format specs (`PyFormat`: numbers are .NET's invariant text, formats .NET's), and moved the readers onto
+`Kerf.Exchange`. Left, for 10M2 or later:
+
+- **`PySet`, `PyComparer` and `PyMath` stay.** Each decides a result, not only its text: `PySet.Distinct` orders the
+  points `Shape1D` fits a plane to as a CPython set iterates them, and the plane taken on a tie depends on that order;
+  `PyComparer` sorts and groups mixed keys (numbers, tuples, strings, null) as Python compares them; `PyMath` is
+  CPython's float modulo and scipy's bounded Brent and Nelder–Mead minimizers, which build123d calls. Replacing them
+  with `HashSet`, `Comparer<T>.Default` and a kernel minimizer would change results the Python-reference tests pin.
+  They want a decision on whether the Python reference or .NET's own behaviour defines those results.
+- **Python's operators and messages.** The operators (`|`, `&`, `^`, `<<`, `>>`, `@`, `%` on shapes, lists and
+  vectors) and build123d's messages are the API's shape, which 10M2 redesigns; 10M1 changed only the numbers in the
+  messages (".0" no longer printed: "radius of 5", not "radius of 5.0").
+- **Helpers that duplicate kernel operations.** `TopoUtil`'s wrappers (`BoolOp`, `Boolean`, `SewFaces`, `Explore`,
+  `Unique`) remain as the layer's adapters onto the kernel's operations, keeping the layer's defaults (unsimplified
+  Booleans, the removal semantics of its histories); 10M2's API shape decides whether they go.
 
 ### 3. Behavioural parity is tested, not assumed
 

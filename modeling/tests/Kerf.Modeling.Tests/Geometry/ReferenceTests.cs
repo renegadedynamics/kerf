@@ -162,7 +162,8 @@ public class ReferenceTests
             var input = Doubles(c.GetProperty("in"));
             var color = new Color(input[0], input[1], input[2], input[3]);
             Assert.Equal(Doubles(c.GetProperty("out")), Check.Of(color));
-            Assert.Equal(c.GetProperty("str").GetString(), color.ToString());
+            // Python's repr printed whole numbers as "1.0"; .NET's invariant text is "1" (unit 10M1)
+            Assert.Equal(System.Text.RegularExpressions.Regex.Replace(c.GetProperty("str").GetString()!, @"(?<=\d)\.0(?=\D)", ""), color.ToString());
         }
     }
 
@@ -173,7 +174,8 @@ public class ReferenceTests
         {
             var color = new Color(c.GetProperty("name").GetString()!);
             Assert.Equal(Doubles(c.GetProperty("out")), Check.Of(color));
-            Assert.Equal(c.GetProperty("str").GetString(), color.ToString());
+            // Python's repr printed whole numbers as "1.0"; .NET's invariant text is "1" (unit 10M1)
+            Assert.Equal(System.Text.RegularExpressions.Regex.Replace(c.GetProperty("str").GetString()!, @"(?<=\d)\.0(?=\D)", ""), color.ToString());
         }
     }
 

@@ -317,7 +317,7 @@ public class BoundBoxWithShapesTests
 
     [Fact]
     public void BoundingBoxRepr() =>
-        Assert.Equal("bbox: 0.0 <= x <= 1.0, 0.0 <= y <= 1.0, 0.0 <= z <= 1.0", Solid.MakeBox(1, 1, 1).BoundingBox().ToString());
+        Assert.Equal("bbox: 0 <= x <= 1, 0 <= y <= 1, 0 <= z <= 1", Solid.MakeBox(1, 1, 1).BoundingBox().ToString());
 
     [Fact]
     public void CenterOfBoundbox() => Check.AlmostEqual((0.5, 0.5, 0.5), Solid.MakeBox(1, 1, 1).BoundingBox().Center(), 5);
@@ -405,13 +405,13 @@ public class OrientedBoundBoxWithShapesTests
     public void Repr()
     {
         var rep = Solid.MakeBox(1, 1, 1).OrientedBoundingBox().ToString();
-        Assert.Contains("OrientedBoundBox(center=Vector(", rep);
-        Assert.Contains("size=Vector(", rep);
-        Assert.Contains("plane=Plane(", rep);
+        Assert.Contains("OrientedBoundBox(center=(", rep);
+        Assert.Contains("size=(", rep);
+        Assert.Contains("plane=((", rep);
 
         const string n = @"([-\d\.]+)";
-        var pattern = $@"OrientedBoundBox\(center=Vector\({n}, {n}, {n}\), size=Vector\({n}, {n}, {n}\), "
-                      + $@"plane=Plane\(\({n}, {n}, {n}\), \({n}, {n}, {n}\), \({n}, {n}, {n}\)\)\)";
+        var pattern = $@"OrientedBoundBox\(center=\({n}, {n}, {n}\), size=\({n}, {n}, {n}\), "
+                      + $@"plane=\(\({n}, {n}, {n}\), \({n}, {n}, {n}\), \({n}, {n}, {n}\)\)\)";
         var m = System.Text.RegularExpressions.Regex.Match(rep, "^" + pattern);
         Assert.True(m.Success, "The ToString() didn't match the expected format.");
         double G(int i) => double.Parse(m.Groups[i].Value, System.Globalization.CultureInfo.InvariantCulture);

@@ -39,7 +39,7 @@ public partial class Solid : Shape3D
 
     /// <summary>A box from the plane's origin (default XY), extending along each of its positive axes.</summary>
     public static Solid MakeBox(double length, double width, double height, Plane? plane = null) =>
-        Failures.Doing(() => $"box {PyFormat.Repr(length)} × {PyFormat.Repr(width)} × {PyFormat.Repr(height)}", () =>
+        Failures.Doing(() => $"box {Formatting.Number(length)} × {Formatting.Number(width)} × {Formatting.Number(height)}", () =>
         {
             var ax2 = (plane ?? Plane.XY).ToGpAx2();
             return new Solid(Failures.Get(global::Kerf.Topology.Solid.Box(length, width, height, ax2), () => "box").Shape);
@@ -47,7 +47,7 @@ public partial class Solid : Shape3D
 
     /// <summary>A full or partial cone from the plane's origin (default XY).</summary>
     public static Solid MakeCone(double baseRadius, double topRadius, double height, Plane? plane = null, double angle = 360) =>
-        Failures.Doing(() => $"cone of radii {PyFormat.Repr(baseRadius)} and {PyFormat.Repr(topRadius)}, height {PyFormat.Repr(height)}", () =>
+        Failures.Doing(() => $"cone of radii {Formatting.Number(baseRadius)} and {Formatting.Number(topRadius)}, height {Formatting.Number(height)}", () =>
         {
             var ax2 = (plane ?? Plane.XY).ToGpAx2();
             return new Solid(Failures.Get(global::Kerf.Topology.Solid.Cone(baseRadius, topRadius, height, ax2, angle * Constants.DegToRad),
@@ -56,7 +56,7 @@ public partial class Solid : Shape3D
 
     /// <summary>A full or partial cylinder with its base centred on the plane's origin (default XY).</summary>
     public static Solid MakeCylinder(double radius, double height, Plane? plane = null, double angle = 360) =>
-        Failures.Doing(() => $"cylinder of radius {PyFormat.Repr(radius)}, height {PyFormat.Repr(height)}", () =>
+        Failures.Doing(() => $"cylinder of radius {Formatting.Number(radius)}, height {Formatting.Number(height)}", () =>
         {
             var ax2 = (plane ?? Plane.XY).ToGpAx2();
             return new Solid(Failures.Get(global::Kerf.Topology.Solid.Cylinder(radius, height, ax2, angle * Constants.DegToRad),
@@ -65,7 +65,7 @@ public partial class Solid : Shape3D
 
     /// <summary>A full or partial sphere centred on the plane's origin (default XY).</summary>
     public static Solid MakeSphere(double radius, Plane? plane = null, double angle1 = -90, double angle2 = 90, double angle3 = 360) =>
-        Failures.Doing(() => $"sphere of radius {PyFormat.Repr(radius)}", () =>
+        Failures.Doing(() => $"sphere of radius {Formatting.Number(radius)}", () =>
         {
             var ax2 = (plane ?? Plane.XY).ToGpAx2();
             var options = new SphereOptions
@@ -80,7 +80,7 @@ public partial class Solid : Shape3D
     /// <summary>A full or partial torus centred on the plane's origin (default XY).</summary>
     public static Solid MakeTorus(double majorRadius, double minorRadius, Plane? plane = null, double startAngle = 0,
                                   double endAngle = 360, double majorAngle = 360) =>
-        Failures.Doing(() => $"torus of radii {PyFormat.Repr(majorRadius)} and {PyFormat.Repr(minorRadius)}", () =>
+        Failures.Doing(() => $"torus of radii {Formatting.Number(majorRadius)} and {Formatting.Number(minorRadius)}", () =>
         {
             var ax2 = (plane ?? Plane.XY).ToGpAx2();
             var options = new TorusOptions
@@ -235,7 +235,7 @@ public partial class Solid : Shape3D
             catch (Exception e) when (e is InvalidOperationException || Failures.IsKernelFailure(e))
             {
                 throw new InvalidOperationException(
-                    $"Tapered extrusion of {PyFormat.Repr(taper)} degrees over {PyFormat.Repr(direction.Length)} could not be built. "
+                    $"Tapered extrusion of {Formatting.Number(taper)} degrees over {Formatting.Number(direction.Length)} could not be built. "
                     + "The taper may collapse the profile - reduce the taper or the extrusion distance", e);
             }
             result = solids.Count > 1 ? (Solid)solids[0].Cut(solids.Skip(1)) : solids[0];

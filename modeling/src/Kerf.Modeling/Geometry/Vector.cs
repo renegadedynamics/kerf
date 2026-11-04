@@ -220,17 +220,14 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     /// <summary>"Vector: (X=1, Y=2, Z=3)", with components to six significant figures.</summary>
     public override string ToString()
     {
-        string c(double v) => PyFormat.Component(v, ".6g");
+        string c(double v) => Formatting.Component(v, "G6");
         return $"Vector: (X={c(X)}, Y={c(Y)}, Z={c(Z)})";
     }
 
-    /// <summary>Python's repr: "Vector(1, 2.5, 3)", with components to 13 significant figures.</summary>
-    public string Repr() => "Vector" + ToString(".13g");
-
     /// <summary>
-    /// "(x, y, z)" with each component formatted by <paramref name="format"/>. Python-style "f" and "g"
-    /// specs (".3f", "g") print values within tolerance of zero as zero; others are .NET formats.
+    /// "(x, y, z)" with each component in <paramref name="format"/>, a .NET numeric format ("G6" when null): values
+    /// within tolerance of zero print as zero.
     /// </summary>
     public string ToString(string? format, IFormatProvider? formatProvider = null) =>
-        $"({PyFormat.Component(X, format)}, {PyFormat.Component(Y, format)}, {PyFormat.Component(Z, format)})";
+        $"({Formatting.Component(X, format)}, {Formatting.Component(Y, format)}, {Formatting.Component(Z, format)})";
 }

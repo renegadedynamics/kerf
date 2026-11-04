@@ -140,7 +140,7 @@ public abstract partial class Shape3D : Shape
                 // Diagnostics mustn't mask the kernel's failure
             }
             throw new ArgumentException(
-                $"Failed creating a fillet with radius of {PyFormat.Repr(radius)}{details}, try a smaller value or use "
+                $"Failed creating a fillet with radius of {Formatting.Number(radius)}{details}, try a smaller value or use "
                 + "max_fillet() to find the largest valid fillet radius", failure);
         }
         return result!.MadeBy(ShapeHistory.FromAlgorithm(s => built!.History.Modified(s), s => built!.History.Generated(s),
@@ -185,7 +185,7 @@ public abstract partial class Shape3D : Shape
                 if (set.Contains(selected[i]))
                 {
                     rejected.Add(i);
-                    entries.Add($"[{i}] at {selected[i].Center().ToString(".6g")}");
+                    entries.Add($"[{i}] at {selected[i].Center().ToString("G6")}");
                 }
             var tangentCount = set.Count(e => !selected.Contains(e));
             if (tangentCount > 0)
@@ -209,7 +209,7 @@ public abstract partial class Shape3D : Shape
         {
             var windowMid = (windowMin + windowMax) / 2;
             if (iteration == maxIterations)
-                throw new InvalidOperationException($"Failed to find the max value within {PyFormat.Repr(tolerance)} in {maxIterations}");
+                throw new InvalidOperationException($"Failed to find the max value within {Formatting.Number(tolerance)} in {maxIterations}");
             // Do these numbers work? If not, try the smaller window
             if (!TopoShape.Fillet(edges, windowMid).TryGetValue(out var built) || !Make3DResult(built.Shape).IsValid)
                 return Search(windowMin, windowMid, iteration + 1);

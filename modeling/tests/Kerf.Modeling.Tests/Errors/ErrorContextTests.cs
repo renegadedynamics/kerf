@@ -20,7 +20,7 @@ public class ErrorContextTests
         // The kernel's public API refuses the size before OCCT would (unit 10M1): the refusal is said in context
         Assert.True(Failures.IsKernelFailure(e.InnerException!));
         Assert.Equal("kernel.invalid-argument", e.Error.Code.Value);
-        Assert.StartsWith("box 0.0 × 1.0 × 1.0 failed: The value must be a positive number", e.Message);
+        Assert.StartsWith("box 0 × 1 × 1 failed: The value must be a positive number", e.Message);
     }
 
     [Theory]
@@ -79,7 +79,7 @@ public class ErrorContextTests
     {
         // build123d's own messages stand, with OCCT's failure inside
         var fillet = Assert.Throws<ArgumentException>(() => Ops.Fillet(new Box(1, 1, 1).Edges(), 5));
-        Assert.Contains("Failed creating a fillet with radius of 5.0 on 12 of 12 edges", fillet.Message);
+        Assert.Contains("Failed creating a fillet with radius of 5 on 12 of 12 edges", fillet.Message);
         Assert.True(Failures.IsKernelFailure(fillet.InnerException!));
     }
 

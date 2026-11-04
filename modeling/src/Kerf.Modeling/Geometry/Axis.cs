@@ -236,7 +236,7 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
 
     /// <summary>"Axis: (position=(0, 0, 0), direction=(1, 0, 0))".</summary>
     public override string ToString() =>
-        $"Axis: (position={Position.ToString(".6g")}, direction={Direction.ToString(".6g")})";
+        $"Axis: (position={Position.ToString("G6")}, direction={Direction.ToString("G6")})";
 
     /// <summary>"(position, direction)" with components formatted as <see cref="Vector.ToString(string?, IFormatProvider?)"/>.</summary>
     public string ToString(string? format, IFormatProvider? formatProvider = null) =>

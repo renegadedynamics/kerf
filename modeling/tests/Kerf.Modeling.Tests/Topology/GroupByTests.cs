@@ -40,8 +40,8 @@ public class GroupByTests
     [Fact]
     public void Repr() =>
         Assert.Equal(
-            "[[Vertex(0.0, 0.0, 0.0), Vertex(0.0, 1.0, 0.0), Vertex(1.0, 0.0, 0.0), Vertex(1.0, 1.0, 0.0)], "
-            + "[Vertex(0.0, 0.0, 1.0), Vertex(0.0, 1.0, 1.0), Vertex(1.0, 0.0, 1.0), Vertex(1.0, 1.0, 1.0)]]",
+            "[[Vertex(0, 0, 0), Vertex(0, 1, 0), Vertex(1, 0, 0), Vertex(1, 1, 0)], "
+            + "[Vertex(0, 0, 1), Vertex(0, 1, 1), Vertex(1, 0, 1), Vertex(1, 1, 1)]]",
             _v.ToString());
 
     [Fact]

@@ -512,10 +512,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
 
     /// <summary>"Plane: (origin=(0, 0, 0), x_dir=(1, 0, 0), z_dir=(0, 0, 1))".</summary>
     public override string ToString() =>
-        $"Plane: (origin={Origin.ToString(".6g")}, x_dir={XDir.ToString(".6g")}, z_dir={ZDir.ToString(".6g")})";
-
-    /// <summary>Python's repr: "Plane((0, 0, 0), (1, 0, 0), (0, 0, 1))", components to six significant figures.</summary>
-    public string Repr() => "Plane" + ToString(".6g");
+        $"Plane: (origin={Origin.ToString("G6")}, x_dir={XDir.ToString("G6")}, z_dir={ZDir.ToString("G6")})";
 
     /// <summary>"(origin, x_dir, z_dir)" with components formatted as <see cref="Vector.ToString(string?, IFormatProvider?)"/>.</summary>
     public string ToString(string? format, IFormatProvider? formatProvider = null) =>

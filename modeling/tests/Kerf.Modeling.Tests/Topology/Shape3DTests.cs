@@ -18,7 +18,7 @@ public class FilletFailuresTests
     const string Advice = ", try a smaller value or use max_fillet() to find the largest valid fillet radius";
 
     const string PlateMessage =
-        "Failed creating a fillet with radius of 3.0 on 8 of 12 edges "
+        "Failed creating a fillet with radius of 3 on 8 of 12 edges "
         + "(no starting solution: [1] at (-10, 0, 1), [3] at (-10, 0, -1), "
         + "[5] at (10, 0, 1), [7] at (10, 0, -1), [8] at (0, -10, -1), "
         + "[9] at (0, -10, 1), [10] at (0, 10, -1), [11] at (0, 10, 1))" + Advice;
@@ -66,7 +66,7 @@ public class FilletFailuresTests
         foreach (var (selection, details) in cases)
         {
             var e = Assert.Throws<ArgumentException>(() => rounded.Fillet(3, selection));
-            Assert.Equal("Failed creating a fillet with radius of 3.0 on " + details + Advice, e.Message);
+            Assert.Equal("Failed creating a fillet with radius of 3 on " + details + Advice, e.Message);
         }
     }
 
@@ -81,7 +81,7 @@ public class FilletFailuresTests
         var notched = (Shape3D)(Box(20, 20, 12) - new Pos(7, 7, 4) * Box(12, 12, 12));
         var (shape, radius, edges, text) = notchedCase
             ? (notched, 0.5, notched.Edges().Where((_, i) => i % 2 == 0).ToList(), "0.5")
-            : ((Shape3D)cube, 6.0, cube.Edges().ToList(), "6.0");
+            : ((Shape3D)cube, 6.0, cube.Edges().ToList(), "6");
         var e = Assert.Throws<ArgumentException>(() => shape.Fillet(radius, edges));
         Assert.Equal($"Failed creating a fillet with radius of {text}" + Advice, e.Message);
     }
@@ -98,7 +98,7 @@ public class FilletFailuresTests
         var selection = new[] { edges[3], edges[0], reversedEdge, edges[1] }.Select(e => e);
         var e = Assert.Throws<ArgumentException>(() => plate.Fillet(3, selection));
         Assert.Equal(
-            "Failed creating a fillet with radius of 3.0 on 3 of 4 edges "
+            "Failed creating a fillet with radius of 3 on 3 of 4 edges "
             + "(no starting solution: [0] at (-10, 0, -1), "
             + "[2] at (-10, 0, 1), [3] at (-10, 0, 1))" + Advice,
             e.Message);

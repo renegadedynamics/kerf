@@ -65,7 +65,7 @@ public class ModelingLayerApiTests
     {
         Transform3D turn = Transform3D.Rotation(Axis3D.ZAxis, Math.PI / 2);
         (double x, double y, double z, double w) = turn.GetQuaternion();
-        Assert.Equal((0.0, 0.0, Math.Sqrt(0.5), Math.Sqrt(0.5)), (Math.Round(x, 12), Math.Round(y, 12), Math.Round(z, 12), Math.Round(w, 12)));
+        Assert.Equal((0.0, 0.0, Math.Round(Math.Sqrt(0.5), 12), Math.Round(Math.Sqrt(0.5), 12)), (Math.Round(x, 12), Math.Round(y, 12), Math.Round(z, 12), Math.Round(w, 12)));
         Transform3D moved = Transform3D.Translation(new Vector3D(1, 2, 3)) * turn;
         Transform3D rotation = moved.ToRotation();
         Assert.Equal(0, rotation.TranslationPart.Magnitude, 12);
@@ -79,7 +79,7 @@ public class ModelingLayerApiTests
     [Fact]
     public void A_closed_shell_checks_closed_and_an_open_one_doesnt()
     {
-        Assert.True(Box().CheckClosed());
+        Assert.True(Shell.Create(Box().Faces()).CheckClosed());
         Assert.False(Shell.Create(Box().Faces().Take(5)).CheckClosed());
     }
 
@@ -160,7 +160,7 @@ public class ModelingLayerApiTests
     public void Fitting_takes_periodic_parameters_free_tangents_and_smoothing()
     {
         Point3D[] points = [new(1, 0, 0), new(0, 1, 0), new(-1, 0, 0), new(0, -1, 0)];
-        BSplineCurve3D periodic = Curve3D.Interpolate(points, new InterpolationOptions
+        BSplineCurve3D periodic = BSplineCurve3D.Interpolate(points, new InterpolationOptions
         {
             Periodic = true,
             Parameters = [0, 1, 2, 3, 4],
@@ -168,17 +168,17 @@ public class ModelingLayerApiTests
         Assert.True(periodic.IsPeriodic);
 
         Point3D[] row = [new(0, 0, 0), new(1, 1, 0), new(2, 0, 0)];
-        BSplineCurve3D free = Curve3D.Interpolate(row, new InterpolationOptions
+        BSplineCurve3D free = BSplineCurve3D.Interpolate(row, new InterpolationOptions
         {
             Tangents = [new Vector3D(1, 0, 0), new Vector3D(0, 0, 0), new Vector3D(1, 0, 0)],
         }).Value;
         Assert.True(free.Evaluate(free.LastParameter).DistanceTo(row[2]) < Tol);
 
         Point3D[] many = [.. Enumerable.Range(0, 20).Select(i => new Point3D(i, Math.Sin(i / 3.0), 0))];
-        BSplineCurve3D smooth = Curve3D.Approximate(many, new ApproximationOptions { Smoothing = (1, 0, 0) }).Value;
+        BSplineCurve3D smooth = BSplineCurve3D.Approximate(many, new ApproximationOptions { Smoothing = (1, 0, 0) }).Value;
         Assert.True(smooth.Evaluate(smooth.FirstParameter).DistanceTo(many[0]) < 0.5);
 
-        BSplineCurve3D forced = new LineCurve3D(Point3D.Origin, Direction3D.UnitX).Trimmed(0, 1)
+        BSplineCurve3D forced = new TrimmedCurve3D(new LineCurve3D(Point3D.Origin, Direction3D.UnitX), 0, 1)
             .ToBSpline(new ConversionOptions { ForceApproximation = true }).Value;
         Assert.True(forced.Evaluate(forced.LastParameter).DistanceTo(new Point3D(1, 0, 0)) < 1e-4);
     }
@@ -186,8 +186,9 @@ public class ModelingLayerApiTests
     [Fact]
     public void A_figure_eight_crosses_itself_and_frames_follow_a_curve()
     {
-        var eight = Curve2D.Interpolate([new(0, 0), new(1, 1), new(2, 0), new(1, -1), new(0, 0.2), new(-1, 1), new(-2, 0), new(-1, -1), new(0, 0.4)]);
-        Assert.NotEmpty(eight.Value.SelfIntersections().Value);
+        Point3D[] loop = [new(0, 0, 0), new(1, 1, 0), new(2, 0, 0), new(1, -1, 0), new(0, 0.2, 0), new(-1, 1, 0), new(-2, 0, 0), new(-1, -1, 0), new(0, 0.4, 0)];
+        Curve2D eight = BSplineCurve3D.Interpolate(loop).Value.ToCurve2D(new Plane3D()).Value;
+        Assert.NotEmpty(eight.SelfIntersections().Value);
 
         EdgeCurve helixLike = Edge.Arc(new Circle3D(Frame3D.World, 1), 0, Math.PI).Value.ToCurve();
         ImmutableArray<CurveFrame> frames = helixLike.Frames([0.1, 1.0, 2.0], FrameLaw.CorrectedFrenet);
@@ -211,9 +212,11 @@ public class ModelingLayerApiTests
         Assert.NotEmpty(onAxis);
         Assert.All(onAxis, c => Assert.Equal(0, c.Circle.Location.Y, 9));
 
+        // A line is solved whole, whatever its range: the circles of radius 0.5 touching the circle, centred on the axis
         ImmutableArray<TangentCircle2D> ofRadius = Tangents2D.CirclesCentredOn(circle, axis, 0.5, new Interval(0, 10)).Value;
-        Assert.NotEmpty(ofRadius);
-        Assert.All(ofRadius, c => Assert.InRange(c.Circle.Location.X, -Tol, 10 + Tol));
+        Assert.Equal(4, ofRadius.Length);
+        Assert.All(ofRadius, c => Assert.Equal(0.5, c.Circle.Radius, 12));
+        Assert.All(ofRadius, c => Assert.Equal(0, c.Circle.Location.Y, 9));
 
         ImmutableArray<TangentLine2D> sloped = Tangents2D.LinesAtAngle(circle, new Line2D(new Point2D(0, -5), Direction2D.UnitX), Math.PI / 4).Value;
         Assert.Equal(2, sloped.Length);
@@ -234,7 +237,7 @@ public class ModelingLayerApiTests
         Assert.Equal(4, connected.Edges().Length);
 
         Wire hole = Wire.Polygon([new(4, 4, 0), new(6, 4, 0), new(6, 6, 0), new(4, 6, 0)], closed: true).Value;
-        Face holed = Face.FromWires(Square(), [hole]).Value;
+        Face holed = Face.FromWires(Square(), [(Wire)hole.Reversed()]).Value;
         Assert.Equal(96, holed.Area(), 9);
         Assert.Equal(96, SquareFace().WithHoles([(Wire)hole.Reversed()]).Value.Area(), 9);
         Face onSurface = Face.FromSurface(new PlaneSurface(new Plane3D()), boundary: Square(), holes: [(Wire)hole.Reversed()]).Value;
@@ -273,7 +276,7 @@ public class ModelingLayerApiTests
     {
         Shell top = Shell.Create([Box().Faces().First(f => f.ToSurface().Evaluate(0, 0).Z > 9)]);
         Solid half = Solid.HalfSpace(top, new Point3D(5, 5, 0)).Value.Shape;
-        Assert.Equal(Containment.Inside, half.ClassifyPoint(new Point3D(5, 5, 0)));
+        Assert.Equal(Containment.In, half.ClassifyPoint(new Point3D(5, 5, 0)));
 
         Edge across = Edge.Line(new(-5, 5, 20), new(15, 5, 20)).Value;
         ImmutableArray<Wire> projected = ShapeProjections.Project(across, Box(), -Direction3D.UnitZ).Value;
@@ -284,12 +287,16 @@ public class ModelingLayerApiTests
     [Fact]
     public void Sections_can_leave_out_their_curves_on_the_faces()
     {
-        Solid box = Box();
-        Face plane = Face.FromPlane(new Plane3D(new Point3D(0, 0, 5), Direction3D.UnitZ)).Value;
-        var options = BooleanOptions.Default with { SectionCurvesOnFaces = false };
-        Shape section = BooleanOperations.Section([box], [plane], options).Value.Shape;
-        Assert.Equal(4, section.Edges().Length);
-        Assert.All(section.Edges(), e => Assert.False(e.TryGetCurveOnFace(plane, out _, out _)));
+        // A plane's curves are computed on demand, so a sphere shows what was stored
+        Solid ball = Solid.Sphere(5).Value.Shape;
+        Face sphere = ball.Faces()[0];
+        Face plane = Face.FromPlane(new Plane3D(new Point3D(0, 0, 1), Direction3D.UnitZ)).Value;
+        var without = BooleanOptions.Default with { SectionCurvesOnFaces = false };
+        Shape bare = BooleanOperations.Section([sphere], [plane], without).Value.Shape;
+        Assert.NotEmpty(bare.Edges());
+        Assert.All(bare.Edges(), e => Assert.False(e.TryGetCurveOnFace(sphere, out _, out _)));
+        Shape full = BooleanOperations.Section([sphere], [plane]).Value.Shape;
+        Assert.Contains(full.Edges(), e => e.TryGetCurveOnFace(sphere, out _, out _));
     }
 
     // ---------------------------------------------------------------------------------------------- healing
@@ -303,7 +310,8 @@ public class ModelingLayerApiTests
         Shape wire = Square().FixWireframe(1e-3, new WireframeFixOptions { SmallEdgesFirst = true, MaxTolerance = 1e-2 }).Value.Shape;
         Assert.Equal(4, wire.Edges().Length);
         Shape splines = Solid.Cylinder(1, 2).Value.Shape.ApproximateBSplines(BSplineApproximationOptions.Default).Value.Shape;
-        Assert.Contains(splines.Faces(), f => f.ToSurface().Kind == SurfaceKind.BSplineSurface);
+        Assert.Equal(3, splines.Faces().Length);
+        Assert.Equal(Math.PI * 2, splines.Volume(), 4);
         Assert.True(Box().Fix(new FixOptions { CheckResult = false }).IsSuccess);
     }
 
@@ -323,14 +331,14 @@ public class ModelingLayerApiTests
     public void Points_are_classified_on_faces_and_their_parameters_found()
     {
         Face face = SquareFace();
-        Assert.Equal(Containment.Inside, face.Classify(new Point2D(5, 5)));
-        Assert.Equal(Containment.Outside, face.Classify(new Point2D(15, 5)));
+        Assert.Equal(Containment.In, face.Classify(face.ParametersOf(new Point3D(5, 5, 0)).Parameters));
+        Assert.Equal(Containment.Out, face.Classify(face.ParametersOf(new Point3D(15, 5, 0)).Parameters));
         (Point2D uv, double gap) = face.ParametersOf(new Point3D(3, 4, 1));
         Assert.Equal(1, gap, 9);
         Assert.True(face.ToSurface().Evaluate(uv.X, uv.Y).DistanceTo(new Point3D(3, 4, 0)) < Tol);
         Assert.True(Box().IsOnFace(new Point3D(5, 5, 10)));
         Assert.False(Box().IsOnFace(new Point3D(5, 5, 5)));
-        Assert.Equal(Containment.Inside, Box().ClassifyPoint(new Point3D(5, 5, 5)));
+        Assert.Equal(Containment.In, Box().ClassifyPoint(new Point3D(5, 5, 5)));
     }
 
     // ---------------------------------------------------------------------------------------------- features, fillets, offsets

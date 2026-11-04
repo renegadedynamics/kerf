@@ -84,5 +84,5 @@ public sealed class OrientedBoundBox
     public bool IsOutside(Vector point) => !Wrapped.Contains(point.ToGpPnt());
 
     /// <inheritdoc/>
-    public override string ToString() => $"OrientedBoundBox(center={Center().Repr()}, size={Size.Repr()}, plane={Plane.Repr()})";
+    public override string ToString() => $"OrientedBoundBox(center={Center().ToString("G13")}, size={Size.ToString("G13")}, plane={Plane.ToString("G13")})";
 }

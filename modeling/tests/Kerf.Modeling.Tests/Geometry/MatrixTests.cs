@@ -50,7 +50,7 @@ public class MatrixTests
         Assert.Throws<IndexOutOfRangeException>(() => m[0, 4]);
         Assert.Throws<IndexOutOfRangeException>(() => m[4, 0]);
 
-        Assert.Equal("Matrix([[1.0, 0.0, 0.0, 1.0],\n        [0.0, 1.0, 0.0, 2.0],\n        [0.0, 0.0, 1.0, 3.0],\n        [0.0, 0.0, 0.0, 1.0]])",
+        Assert.Equal("Matrix([[1, 0, 0, 1],\n        [0, 1, 0, 2],\n        [0, 0, 1, 3],\n        [0, 0, 0, 1]])",
                      new Matrix(vals4x4).ToString());
     }
 

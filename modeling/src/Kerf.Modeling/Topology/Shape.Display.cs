@@ -40,15 +40,15 @@ public abstract partial class Shape
 
     private static DisplayNode AssemblyTree(Shape node, bool showCenter) => new(
         node.Label, node.GetType().Name.PadRight(9), RuntimeHelpers.GetHashCode(node),
-        showCenter ? "Center" + node.Center().ToString(".6g") : node.Location.Repr(),
+        showCenter ? "Center" + node.Center().ToString("G6") : $"Location({node.Location.Position.ToString("G6")}, {node.Location.Orientation.ToString("G6")})",
         node is Compound c ? [.. c.AssemblyChildren.Select(ch => AssemblyTree(ch, showCenter))] : []);
 
     private static DisplayNode BuildTree(global::Kerf.Topology.Shape shape, global::Kerf.Topology.ShapeType limit, bool showCenter, string caption)
     {
         var label = TopoUtil.FromTopAbs(shape.Type).ToString();
         var position = caption + (showCenter
-            ? BoundBox.FromTopoDS(shape).Center().ToString(".6g")
-            : new Location(shape.Placement).Position.ToString(".6g"));
+            ? BoundBox.FromTopoDS(shape).Center().ToString("G6")
+            : new Location(shape.Placement).Position.ToString("G6"));
         var children = new List<DisplayNode>();
         foreach (var child in shape.Children)
         {

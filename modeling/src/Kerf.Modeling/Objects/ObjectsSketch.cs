@@ -248,7 +248,7 @@ public class SlotCenterPoint : BaseSketchObject
         var halfLine = point - center;
         if (halfLine.Length <= 0)
             throw new ArgumentException(
-                $"Distance between center and point must be greater than 0 Got: distance = {PyFormat.Repr(halfLine.Length)} (computed)");
+                $"Distance between center and point must be greater than 0 Got: distance = {Formatting.Number(halfLine.Length)} (computed)");
         var wires = Wire.Combine([Edge.MakeLine(point, center), Edge.MakeLine(center, center - halfLine)]);
         return new Face((Wire)wires[0].Offset2D(height / 2));
     }
@@ -277,7 +277,7 @@ public class SlotCenterToCenter : BaseSketchObject
     private static Face Make(double separation, double height, Mode mode)
     {
         if (separation < 0)
-            throw new ArgumentException($"Requires center_separation > 0. Got: center_separation={PyFormat.Repr(separation)}");
+            throw new ArgumentException($"Requires center_separation > 0. Got: center_separation={Formatting.Number(separation)}");
         if (separation > 0)
             return new Face((Wire)new Wire([Edge.MakeLine(new Vector(-separation / 2, 0, 0), new Vector(0, 0, 0)),
                                             Edge.MakeLine(new Vector(0, 0, 0), new Vector(separation / 2, 0, 0))]).Offset2D(height / 2));
@@ -305,7 +305,7 @@ public class SlotOverall : BaseSketchObject
     private static Face Make(double width, double height, Mode mode)
     {
         if (width < height)
-            throw new ArgumentException($"Slot requires that width > height. Got: width={PyFormat.Repr(width)}, height={PyFormat.Repr(height)}");
+            throw new ArgumentException($"Slot requires that width > height. Got: width={Formatting.Number(width)}, height={Formatting.Number(height)}");
         if (width > height)
             return new Face((Wire)new Wire([Edge.MakeLine(new Vector(-width / 2 + height / 2, 0, 0), new Vector(0, 0, 0)),
                                             Edge.MakeLine(new Vector(0, 0, 0), new Vector(width / 2 - height / 2, 0, 0))]).Offset2D(height / 2));

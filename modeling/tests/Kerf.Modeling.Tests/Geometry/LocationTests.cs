@@ -144,9 +144,9 @@ public class LocationTests
     [Fact]
     public void Formatting()
     {
-        Assert.Equal("((1.00, 2.00, 3.00), (4.00, 5.00, 6.00))", new Location((1, 2, 3), (4, 5, 6)).ToString(".2f"));
-        Assert.Equal("((1, 2, 3), (4, 5, 6))", new Location((1, 2, 3), (4, 5, 6)).ToString(".2g"));
-        Assert.Contains("((1.0, 2.0, 3.0), ", new Location((1, 2, 3), (4, 5, 6)).ToString(".2t"));
+        Assert.Equal("((1.00, 2.00, 3.00), (4.00, 5.00, 6.00))", new Location((1, 2, 3), (4, 5, 6)).ToString("F2"));
+        Assert.Equal("((1, 2, 3), (4, 5, 6))", new Location((1, 2, 3), (4, 5, 6)).ToString("G2"));
+        Assert.Contains("((1, 2, 3), ", new Location((1, 2, 3), (4, 5, 6)).ToString(null));
         Assert.Equal("Location: (position=(0, 0, 0), orientation=(0, 0, 0))", new Location().ToString());
         Assert.Equal("Location: (position=(1, 2, 3), orientation=(33, 45, 67))",
                      new Location((1, 2, 3), (33, 45, 67)).ToString());

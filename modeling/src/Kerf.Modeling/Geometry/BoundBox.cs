@@ -242,7 +242,7 @@ public sealed class BoundBox
     /// <summary>"bbox: 0.0 &lt;= x &lt;= 1.0, 0.0 &lt;= y &lt;= 1.0, 0.0 &lt;= z &lt;= 1.0".</summary>
     public override string ToString()
     {
-        string r(double v) => PyFormat.Repr(v);
+        string r(double v) => Formatting.Number(v);
         return $"bbox: {r(Min.X)} <= x <= {r(Max.X)}, {r(Min.Y)} <= y <= {r(Max.Y)}, {r(Min.Z)} <= z <= {r(Max.Z)}";
     }
 }

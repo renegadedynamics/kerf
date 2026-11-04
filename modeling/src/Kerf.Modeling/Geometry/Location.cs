@@ -227,12 +227,9 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     /// <inheritdoc/>
     public override int GetHashCode() => Key.GetHashCode();
 
-    /// <summary>Python's repr: "Location((1, 2, 3), (10, 20, 30))", components to six significant figures.</summary>
-    public string Repr() => $"{GetType().Name}({Position.ToString(".6g")}, {Orientation.ToString(".6g")})";
-
     /// <summary>"Location: (position=(1, 2, 3), orientation=(10, 20, 30))".</summary>
     public override string ToString() =>
-        $"Location: (position={Position.ToString(".6g")}, orientation={Orientation.ToString(".6g")})";
+        $"Location: (position={Position.ToString("G6")}, orientation={Orientation.ToString("G6")})";
 
     /// <summary>"(position, orientation)" with components formatted as <see cref="Vector.ToString(string?, IFormatProvider?)"/>.</summary>
     public string ToString(string? format, IFormatProvider? formatProvider = null) =>

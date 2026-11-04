@@ -126,11 +126,11 @@ public class ColorTests
 
     [Fact]
     public void ToStringNamesExactMatches() =>
-        Assert.Equal("Color: (1.0, 0.0, 0.0, 1.0) is 'RED'", new Color(1, 0, 0).ToString());
+        Assert.Equal("Color: (1, 0, 0, 1) is 'RED'", new Color(1, 0, 0).ToString());
 
     [Fact]
     public void ToStringNamesTheNearestOcctColor() =>
-        Assert.Equal("Color: (1.0, 0.5, 0.0, 1.0) near 'DARKORANGE1'", new Color(1, 0.5, 0).ToString());
+        Assert.Equal("Color: (1, 0.5, 0, 1) near 'DARKORANGE1'", new Color(1, 0.5, 0).ToString());
 
     [Fact]
     public void BlackByCodeIsBlack()

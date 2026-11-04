@@ -101,7 +101,7 @@ public sealed class Vertex : Shape
     internal override Shape TransformShapeCore(Matrix matrix) => new Vertex(matrix.Multiply(ToVector()));
 
     /// <inheritdoc/>
-    public override string ToString() => IsEmpty ? "Vertex()" : $"Vertex({PyFormat.Repr(X)}, {PyFormat.Repr(Y)}, {PyFormat.Repr(Z)})";
+    public override string ToString() => IsEmpty ? "Vertex()" : $"Vertex({Formatting.Number(X)}, {Formatting.Number(Y)}, {Formatting.Number(Z)})";
 
     internal override ShapeList<Shape>? IntersectCore(object other, double tolerance, bool includeTouched)
     {

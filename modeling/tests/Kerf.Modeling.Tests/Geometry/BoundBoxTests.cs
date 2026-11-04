@@ -130,7 +130,7 @@ public class BoundBoxTests
 
     [Fact]
     public void Formatting() =>
-        Assert.Equal("bbox: 0.0 <= x <= 1.0, 0.0 <= y <= 1.0, 0.0 <= z <= 1.0", Box((0, 0, 0), (1, 1, 1)).ToString());
+        Assert.Equal("bbox: 0 <= x <= 1, 0 <= y <= 1, 0 <= z <= 1", Box((0, 0, 0), (1, 1, 1)).ToString());
 
     [Fact]
     public void CenterAndAlignment()

@@ -328,7 +328,7 @@ public sealed class Matrix
             {
                 if (col > 0)
                     sb.Append(", ");
-                sb.Append(PyFormat.Repr(this[row, col]));
+                sb.Append(Formatting.Number(this[row, col]));
             }
             sb.Append(']');
         }

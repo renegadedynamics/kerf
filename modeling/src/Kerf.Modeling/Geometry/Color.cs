@@ -217,7 +217,7 @@ public readonly struct Color : IEquatable<Color>
         var srgb = ToKerfColor();
         double sr = srgb.R, sg = srgb.G, sb = srgb.B;
         var key = ((int)Math.Round(sr * 255), (int)Math.Round(sg * 255), (int)Math.Round(sb * 255));
-        string tuple = $"({PyFormat.Repr(R)}, {PyFormat.Repr(G)}, {PyFormat.Repr(B)}, {PyFormat.Repr(A)})";
+        string tuple = $"({Formatting.Number(R)}, {Formatting.Number(G)}, {Formatting.Number(B)}, {Formatting.Number(A)})";
         if (CssColors.ByRgb.TryGetValue(key, out var css))
             return $"Color: {tuple} is '{css.ToUpperInvariant()}'";
         var near = srgb.NearestName();
