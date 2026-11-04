@@ -12,9 +12,16 @@ namespace Kerf;
 /// <see cref="OperationCanceledException"/>.
 /// </summary>
 /// <remarks>
+/// <para>
 /// <c>default(Result&lt;T&gt;)</c> is a failure whose error has the code <see cref="DiagnosticCode.DefaultResult"/>.
-/// For callers who prefer exceptions, <see cref="Value"/> and <see cref="GetValueOrThrow"/> throw a
-/// <see cref="KerfException"/> carrying the diagnostics.
+/// </para>
+/// <para>
+/// A failure is read, not caught: check <see cref="IsSuccess"/>, or use <see cref="TryGetValue"/>, <see cref="Match{TOut}"/>,
+/// <see cref="GetValueOrDefault"/> or the combinators (<see cref="Map{TOut}"/>, <see cref="Bind{TOut}"/>, and
+/// <see cref="Select{TOut}"/> and <see cref="SelectMany{TNext, TOut}"/> for LINQ's query syntax), which carry a failure
+/// through untouched. Reading <see cref="Value"/> of a failure is a programmer's error, as reading a null
+/// <see cref="Nullable{T}"/>'s is: it throws <see cref="InvalidOperationException"/> (decision 17701).
+/// </para>
 /// </remarks>
 public readonly struct Result<T>
 {
@@ -34,9 +41,14 @@ public readonly struct Result<T>
     /// <summary>Whether the operation failed.</summary>
     public bool IsFailure => !IsSuccess;
 
-    /// <summary>The value.</summary>
-    /// <exception cref="KerfException">The operation failed; the exception carries the diagnostics.</exception>
-    public T Value => IsSuccess ? _value : throw new KerfException(Diagnostics);
+    /// <summary>
+    /// The value of a success. Check <see cref="IsSuccess"/> first, or use <see cref="TryGetValue"/>,
+    /// <see cref="Match{TOut}"/> or the combinators: a failure has no value.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// The operation failed (a programmer's error); the message gives the first error's code and message.
+    /// </exception>
+    public T Value => IsSuccess ? _value : throw Diagnostic.NoValue(Diagnostics);
 
     /// <summary>The warnings, and on failure the error (or errors).</summary>
     public ImmutableArray<Diagnostic> Diagnostics => _diagnostics.IsDefault ? [Diagnostic.DefaultResult] : _diagnostics;
@@ -50,10 +62,6 @@ public readonly struct Result<T>
         value = _value;
         return IsSuccess;
     }
-
-    /// <summary>The value; the same as <see cref="Value"/>, for readers who want the throw spelt out.</summary>
-    /// <exception cref="KerfException">The operation failed; the exception carries the diagnostics.</exception>
-    public T GetValueOrThrow() => Value;
 
     /// <summary>The value, or <paramref name="fallback"/> if the operation failed.</summary>
     public T GetValueOrDefault(T fallback) => IsSuccess ? _value : fallback;
@@ -76,6 +84,31 @@ public readonly struct Result<T>
             return Result<TOut>.Carry(Diagnostics);
         var then = next(_value);
         return _diagnostics.IsEmpty ? then : then.After(_diagnostics);
+    }
+
+    /// <summary>
+    /// <paramref name="success"/> of the value, or <paramref name="failure"/> of the first error: one value either way,
+    /// as a cell shows a shape or an error.
+    /// </summary>
+    public TOut Match<TOut>(Func<T, TOut> success, Func<Diagnostic, TOut> failure)
+    {
+        ArgumentNullException.ThrowIfNull(success);
+        ArgumentNullException.ThrowIfNull(failure);
+        return IsSuccess ? success(_value) : failure(Error!);
+    }
+
+    /// <summary><see cref="Map{TOut}"/> under LINQ's name, for query syntax (<c>from part in … select …</c>).</summary>
+    public Result<TOut> Select<TOut>(Func<T, TOut> selector) => Map(selector);
+
+    /// <summary>
+    /// <see cref="Bind{TOut}"/> then <see cref="Map{TOut}"/>, for query syntax with several <c>from</c> clauses:
+    /// <c>from box in Fillet(…) from part in box.Subtract(hole) select part</c>. The first failure stops the query.
+    /// </summary>
+    public Result<TOut> SelectMany<TNext, TOut>(Func<T, Result<TNext>> next, Func<T, TNext, TOut> selector)
+    {
+        ArgumentNullException.ThrowIfNull(next);
+        ArgumentNullException.ThrowIfNull(selector);
+        return Bind(value => next(value).Map(nextValue => selector(value, nextValue)));
     }
 
     /// <summary>A success, with any warnings.</summary>
@@ -138,12 +171,12 @@ public readonly struct Result
     /// <summary>The first error, or null on success.</summary>
     public Diagnostic? Error => IsSuccess ? null : Diagnostic.FirstError(Diagnostics);
 
-    /// <summary>Throws if the operation failed.</summary>
-    /// <exception cref="KerfException">The operation failed; the exception carries the diagnostics.</exception>
-    public void ThrowIfFailed()
+    /// <summary><paramref name="success"/>, or <paramref name="failure"/> of the first error.</summary>
+    public TOut Match<TOut>(Func<TOut> success, Func<Diagnostic, TOut> failure)
     {
-        if (!IsSuccess)
-            throw new KerfException(Diagnostics);
+        ArgumentNullException.ThrowIfNull(success);
+        ArgumentNullException.ThrowIfNull(failure);
+        return IsSuccess ? success() : failure(Error!);
     }
 
     /// <summary>The value <paramref name="next"/> gives after a success, keeping the warnings; a failure stays one.</summary>
@@ -185,43 +218,4 @@ public readonly struct Result
 
     /// <summary>Success or the error, for debugging.</summary>
     public override string ToString() => IsSuccess ? "Success" : $"Failure: {Error}";
-}
-
-/// <summary>
-/// The exception for callers who take a failed <see cref="Result{T}"/>'s value: it carries the result's diagnostics,
-/// and its message is the first error's (saying how many more there are).
-/// </summary>
-public sealed class KerfException : Exception
-{
-    /// <summary>The exception for a failure's diagnostics (at least one of them an error).</summary>
-    public KerfException(ImmutableArray<Diagnostic> diagnostics, Exception? innerException = null)
-        : base(Compose(diagnostics = Diagnostic.Check(diagnostics, success: false)), innerException)
-    {
-        Diagnostics = diagnostics;
-    }
-
-    /// <summary>The exception for one error.</summary>
-    public KerfException(Diagnostic error, Exception? innerException = null)
-        : this([error ?? throw new ArgumentNullException(nameof(error))], innerException)
-    {
-    }
-
-    /// <summary>The warnings and the error (or errors).</summary>
-    public ImmutableArray<Diagnostic> Diagnostics { get; }
-
-    /// <summary>The first error.</summary>
-    public Diagnostic Error => Diagnostic.FirstError(Diagnostics)!;
-
-    // The first error's message, and how many more there are
-    private static string Compose(ImmutableArray<Diagnostic> diagnostics)
-    {
-        var errors = diagnostics.Count(d => d.IsError);
-        var first = Diagnostic.FirstError(diagnostics)!.Message;
-        return errors switch
-        {
-            1 => first,
-            2 => $"{first} (and 1 more error)",
-            _ => $"{first} (and {errors - 1} more errors)",
-        };
-    }
 }

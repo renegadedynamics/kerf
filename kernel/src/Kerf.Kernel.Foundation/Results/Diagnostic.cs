@@ -132,6 +132,24 @@ public sealed record Diagnostic
         return null;
     }
 
+    /// <summary>
+    /// The exception for reading a failed result's value, a programmer's error: its message is the first error's code
+    /// and message, saying how many more errors there are.
+    /// </summary>
+    internal static InvalidOperationException NoValue(ImmutableArray<Diagnostic> diagnostics)
+    {
+        var first = FirstError(diagnostics)!;
+        var errors = diagnostics.Count(d => d.IsError);
+        var more = errors switch
+        {
+            1 => "",
+            2 => " (and 1 more error)",
+            _ => $" (and {errors - 1} more errors)",
+        };
+        return new InvalidOperationException(
+            $"The result is a failure, with no value: {first.Code}: {first.Message}{more}. Check IsSuccess, or use TryGetValue, Match or the combinators.");
+    }
+
     /// <summary>Checks that every diagnostic is a warning (for a success) or that there is an error (for a failure).</summary>
     internal static ImmutableArray<Diagnostic> Check(ImmutableArray<Diagnostic> diagnostics, bool success,
         [CallerArgumentExpression(nameof(diagnostics))] string? name = null)
