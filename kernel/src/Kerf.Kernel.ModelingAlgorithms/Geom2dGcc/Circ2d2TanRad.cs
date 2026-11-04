@@ -414,10 +414,16 @@ public sealed class Circ2d2TanRad
             {
                 _theSame2[j] = 0;
             }
-            // OCCT: asks for both tangencies even when the solution is an argument (TheSame), where GccAna's
-            // accessors throw StdFail_NotDone: the constructor then throws.
-            circ.Tangency1(j, out _par1sol[j], out _pararg1[j], out _pnttg1sol[j]);
-            circ.Tangency2(j, out _par2sol[j], out _pararg2[j], out _pnttg2sol[j]);
+            // a solution that is an argument has no tangency point with it (OCCT asked GccAna for it, which threw
+            // StdFail_NotDone out of the constructor: Kerf decision 17106)
+            if (_theSame1[j] == 0)
+            {
+                circ.Tangency1(j, out _par1sol[j], out _pararg1[j], out _pnttg1sol[j]);
+            }
+            if (_theSame2[j] == 0)
+            {
+                circ.Tangency2(j, out _par2sol[j], out _pararg2[j], out _pnttg2sol[j]);
+            }
         }
     }
 

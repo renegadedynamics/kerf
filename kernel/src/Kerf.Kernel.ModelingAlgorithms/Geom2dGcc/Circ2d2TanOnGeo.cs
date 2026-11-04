@@ -50,6 +50,38 @@ public sealed class Circ2d2TanOnGeo
     private readonly NCollection_Array1<double> _pararg2 = new(1, ANbSolMAX);
     private readonly NCollection_Array1<double> _parcen3 = new(1, ANbSolMAX);
 
+    /// <summary>
+    /// Adds a candidate circle if it touches both arguments as their qualifiers ask and isn't a solution already, with
+    /// the qualifiers it has, its tangency points and its centre's parameter on the curve (Kerf decision 17106).
+    /// </summary>
+    private void AddSolution(in Circle2D sol, in CircleContact a1, in CircleContact a2, double parcen, double tolerance)
+    {
+        if (!a1.Touches(sol, tolerance, out Qualifier q1) || !a2.Touches(sol, tolerance, out Qualifier q2))
+        {
+            return;
+        }
+        for (int i = 1; i <= _nbrSol; i++)
+        {
+            if (_cirsol[i].Location.DistanceTo(sol.Location) <= tolerance && Math.Abs(_cirsol[i].Radius - sol.Radius) <= tolerance)
+            {
+                return;
+            }
+        }
+        if (_nbrSol == ANbSolMAX)
+        {
+            return;
+        }
+        int n = ++_nbrSol;
+        _cirsol[n] = sol;
+        _qualifier1[n] = q1;
+        _qualifier2[n] = q2;
+        _theSame1[n] = a1.Touch(n, sol, q1, tolerance, _pnttg1sol, _par1sol, _pararg1);
+        _theSame2[n] = a2.Touch(n, sol, q2, tolerance, _pnttg2sol, _par2sol, _pararg2);
+        _pntcen[n] = sol.Location;
+        _parcen3[n] = parcen;
+        _wellDone = true;
+    }
+
     /// <summary>Circles tangent to two qualified circles, centred on a curve.</summary>
     public Circ2d2TanOnGeo(in QualifiedCirc qualified1, in QualifiedCirc qualified2, CurveAdaptor2D onCurv, double tolerance)
     {
@@ -60,9 +92,6 @@ public sealed class Circ2d2TanOnGeo
         double lastparam;
         double tol = Math.Abs(tolerance);
         _nbrSol     = 0;
-        NCollection_Array1<double> rbid = new(1, 2); // OCCT: Rbid(2) and RBid(2) are read (nbsol 2) where unset: uninitialised natively, 0 in the port
-        NCollection_Array1<double> rBid = new(1, 2);
-        NCollection_Array1<double> radius = new(1, 2);
         if (!(qualified1.IsEnclosed || qualified1.IsEnclosing || qualified1.IsOutside
                     || qualified1.IsUnqualified)
                 || !(qualified2.IsEnclosed || qualified2.IsEnclosing || qualified2.IsOutside
@@ -77,6 +106,9 @@ public sealed class Circ2d2TanOnGeo
         Direction2D           dirx = new(Direction2D.D.X);
         Point2D           center1 = c1.Location;
         Point2D           center2 = c2.Location;
+        CircleContact a1 = new(qualified1);
+        CircleContact a2 = new(qualified2);
+        Span<double> radii = stackalloc double[4];
         Circ2dBisec bis = new(c1, c2);
         if (bis.IsDone)
         {
@@ -157,142 +189,17 @@ public sealed class Circ2d2TanOnGeo
                         for (int j = 1; j <= intp.PointCount; j++)
                         {
                             Point2D center = intp.Point(j).Value();
-                            double   dist1 = center.DistanceTo(c1.Location);
-                            double   dist2 = center.DistanceTo(c2.Location);
-                            int      nbsol = 0;
-                            int      nnsol = 0;
-                            r1             = c1.Radius;
-                            r2             = c2.Radius;
-                            if (qualified1.IsEnclosed)
+                            // kept with the radii that touch both circles as asked, through GccAna's CircleContact (OCCT
+                            // wrote up to four radii into two slots, read slots it never set, and placed the tangency
+                            // points on the wrong side of an enclosed solution: Kerf decision 17106)
+                            int nbr = a1.Radii(center, radii);
+                            nbr += a2.Radii(center, radii[nbr..]);
+                            for (int k = 0; k < nbr; k++)
                             {
-                                if (dist1 - r1 < tol)
+                                if (radii[k] > tol)
                                 {
-                                    nbsol   = 1;
-                                    rbid[1] = Math.Abs(r1 - dist1);
+                                    AddSolution(new Circle2D(new Axis2D(center, dirx), radii[k]), a1, a2, intp.Point(j).ParamOnSecond(), tol);
                                 }
-                            }
-                            else if (qualified1.IsOutside)
-                            {
-                                if (r1 - dist1 < tol)
-                                {
-                                    nbsol   = 1;
-                                    rbid[1] = Math.Abs(dist1 - r1);
-                                }
-                            }
-                            else if (qualified1.IsEnclosing)
-                            {
-                                nbsol   = 1;
-                                rbid[1] = dist1 + r1;
-                            }
-                            else if (qualified1.IsUnqualified)
-                            {
-                                nbsol   = 2;
-                                rbid[1] = dist1 + r1;
-                                rbid[1] = Math.Abs(dist1 - r1); // OCCT: overwrites Rbid(1); Rbid(2) is never set
-                            }
-                            if (qualified2.IsEnclosed && nbsol != 0)
-                            {
-                                if (dist2 - r2 < tol)
-                                {
-                                    rBid[1] = Math.Abs(r2 - dist2);
-                                }
-                            }
-                            else if (qualified2.IsOutside && nbsol != 0)
-                            {
-                                if (r2 - dist2 < tol)
-                                {
-                                    rBid[1] = Math.Abs(r2 - dist2);
-                                }
-                            }
-                            else if (qualified2.IsEnclosing && nbsol != 0)
-                            {
-                                rBid[1] = dist2 + r2;
-                            }
-                            else if (qualified2.IsUnqualified && nbsol != 0)
-                            {
-                                rBid[1] = dist2 + r2;
-                                rBid[2] = Math.Abs(r2 - dist2); // OCCT: set only here; read whenever nbsol is 2
-                            }
-                            for (int isol = 1; isol <= nbsol; isol++)
-                            {
-                                for (int jsol = 1; jsol <= nbsol; jsol++)
-                                {
-                                    if (Math.Abs(rbid[isol] - rBid[jsol]) <= tol)
-                                    {
-                                        nnsol++;
-                                        radius[nnsol] = (rBid[jsol] + rbid[isol]) / 2.0; // OCCT: up to 4 radii into an array of 2 (Standard_OutOfRange, natively too)
-                                    }
-                                }
-                            }
-                            if (nnsol > 0)
-                            {
-                                for (int k = 1; k <= nnsol && _nbrSol < ANbSolMAX; k++)
-                                {
-                                    _nbrSol++;
-                                    _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius[k]);
-                                    //              ==========================================================
-                                    double distcc1 = center.DistanceTo(center1);
-                                    double distcc2 = center.DistanceTo(center2);
-                                    if (!qualified1.IsUnqualified)
-                                    {
-                                        _qualifier1[_nbrSol] = qualified1.Qualifier();
-                                    }
-                                    else if (Math.Abs(distcc1 + radius[i] - r1) < tol) // OCCT: Radius(i) with the bisector's index i, not k (out of range for i > 2)
-                                    {
-                                        _qualifier1[_nbrSol] = Qualifier.Enclosed;
-                                    }
-                                    else if (Math.Abs(distcc1 - r1 - radius[i]) < tol)
-                                    {
-                                        _qualifier1[_nbrSol] = Qualifier.Outside;
-                                    }
-                                    else
-                                    {
-                                        _qualifier1[_nbrSol] = Qualifier.Enclosing;
-                                    }
-                                    if (!qualified2.IsUnqualified)
-                                    {
-                                        _qualifier2[_nbrSol] = qualified2.Qualifier();
-                                    }
-                                    else if (Math.Abs(distcc2 + radius[i] - r2) < tol) // OCCT: Radius(i), as above
-                                    {
-                                        _qualifier2[_nbrSol] = Qualifier.Enclosed;
-                                    }
-                                    else if (Math.Abs(distcc2 - r2 - radius[i]) < tol)
-                                    {
-                                        _qualifier2[_nbrSol] = Qualifier.Outside;
-                                    }
-                                    else
-                                    {
-                                        _qualifier2[_nbrSol] = Qualifier.Enclosing;
-                                    }
-                                    if (dist1 <= tol && Math.Abs(radius[k] - c1.Radius) <= tol)
-                                    {
-                                        _theSame1[_nbrSol] = 1;
-                                    }
-                                    else
-                                    {
-                                        _theSame1[_nbrSol] = 0;
-                                        Direction2D dc1 = new(c1.Location.XY() - center.XY());
-                                        _pnttg1sol[_nbrSol] = new Point2D(center.XY() + radius[k] * dc1.XY());
-                                        _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
-                                        _pararg1[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[_nbrSol]);
-                                    }
-                                    if (dist2 <= tol && Math.Abs(radius[k] - c2.Radius) <= tol)
-                                    {
-                                        _theSame2[_nbrSol] = 1;
-                                    }
-                                    else
-                                    {
-                                        _theSame2[_nbrSol] = 0;
-                                        Direction2D dc2 = new(c2.Location.XY() - center.XY());
-                                        _pnttg2sol[_nbrSol] = new Point2D(center.XY() + radius[k] * dc2.XY());
-                                        _par2sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
-                                        _pararg2[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(c2, _pnttg2sol[_nbrSol]);
-                                    }
-                                    _pntcen[_nbrSol]  = center;
-                                    _parcen3[_nbrSol] = intp.Point(j).ParamOnSecond();
-                                }
-                                _wellDone = true;
                             }
                         }
                     }

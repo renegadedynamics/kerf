@@ -255,18 +255,65 @@ public sealed class FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         _theType = Type2.CuPtOnCi;
     }
 
+    /// <summary>
+    /// True for a point argument: the unknowns are the parameter on the curve, the centre's parameter and the radius,
+    /// and the equations the two distances and the tangency with the curve (OCCT kept four unknowns, whose fourth
+    /// equation divides by the point's null tangent, and its Iter gave it 3-vectors: Kerf decision 17106).
+    /// </summary>
+    private bool IsPoint => _theType is Type2.CuPtOnCu or Type2.CuPtOnCi or Type2.CuPtOnLi;
+
     public override int NbVariables()
     {
-        return 4;
+        return IsPoint ? 3 : 4;
     }
 
     public override int NbEquations()
     {
-        return 4;
+        return IsPoint ? 3 : 4;
+    }
+
+    /// <summary>The point case's equations and derivatives, x = (u1, uOn, R).</summary>
+    private void PointValues(math_Vector x, math_Vector? fval, Matrix? deriv)
+    {
+        math_Vector y = new(1, 4);
+        y[1] = x[1];
+        y[3] = x[2];
+        y[4] = x[3];
+        InitDerivative(y, out Point2D point1, out Point2D point2, out Point2D point3, out Vector2D tan1, out _,
+                       out Vector2D tan3, out Vector2D d21, out _, out _);
+        Vector2D p2P3 = new(point2, point3);
+        Vector2D p3P1 = new(point3, point1);
+        double nnor1 = tan1.Magnitude;
+        double r = x[3];
+        double fr2 = _firstRad * _firstRad;
+        if (fval is not null)
+        {
+            fval[1] = (p3P1.Dot(p3P1) - r * r) / fr2;
+            fval[2] = (p2P3.Dot(p2P3) - r * r) / fr2;
+            fval[3] = p3P1.Dot(tan1) / (nnor1 * _firstRad);
+        }
+        if (deriv is not null)
+        {
+            deriv[1, 1] = 2.0 * tan1.Dot(p3P1) / fr2;
+            deriv[1, 2] = -2.0 * tan3.Dot(p3P1) / fr2;
+            deriv[1, 3] = -2.0 * r / fr2;
+            deriv[2, 1] = 0.0;
+            deriv[2, 2] = 2.0 * tan3.Dot(p2P3) / fr2;
+            deriv[2, 3] = -2.0 * r / fr2;
+            deriv[3, 1] = (p3P1.Dot(d21) + tan1.Dot(tan1)) / (_firstRad * nnor1)
+                          - (p3P1.Dot(tan1) * d21.Dot(tan1)) / (_firstRad * nnor1 * nnor1 * nnor1);
+            deriv[3, 2] = -(tan3.Dot(tan1)) / (_firstRad * nnor1);
+            deriv[3, 3] = 0.0;
+        }
     }
 
     public override bool Value(math_Vector x, math_Vector fval)
     {
+        if (IsPoint)
+        {
+            PointValues(x, fval, null);
+            return true;
+        }
         InitDerivative(x, out Point2D point1, out Point2D point2, out Point2D point3, out Vector2D tan1, out Vector2D tan2,
                        out Vector2D tan3, out Vector2D d21, out Vector2D d22, out Vector2D d23);
         // pipj (normes) et PiPj (non Normes).
@@ -292,6 +339,11 @@ public sealed class FunctionTanCuCuOnCu : FunctionSetWithDerivatives
 
     public override bool Derivatives(math_Vector x, Matrix deriv)
     {
+        if (IsPoint)
+        {
+            PointValues(x, null, deriv);
+            return true;
+        }
         InitDerivative(x, out Point2D point1, out Point2D point2, out Point2D point3, out Vector2D tan1, out Vector2D tan2,
                        out Vector2D tan3, out Vector2D d21, out Vector2D d22, out Vector2D d23);
         // pipj (normes) et PiPj (non Normes).
@@ -334,6 +386,11 @@ public sealed class FunctionTanCuCuOnCu : FunctionSetWithDerivatives
 
     public override bool Values(math_Vector x, math_Vector fval, Matrix deriv)
     {
+        if (IsPoint)
+        {
+            PointValues(x, fval, deriv);
+            return true;
+        }
         InitDerivative(x, out Point2D point1, out Point2D point2, out Point2D point3, out Vector2D tan1, out Vector2D tan2,
                        out Vector2D tan3, out Vector2D d21, out Vector2D d22, out Vector2D d23);
         // pipj (normes) et PiPj (non Normes).

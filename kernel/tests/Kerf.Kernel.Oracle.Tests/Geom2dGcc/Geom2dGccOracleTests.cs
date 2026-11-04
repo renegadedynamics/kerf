@@ -661,7 +661,7 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                 Native = () => RunNative(() => NCirc2d2TanRad(new N.Geom2dGcc_Circ2d2TanRad(NQ(n1, a1.Q), NQ(n2, a2.Q), r, tol))),
                 Port = () => RunPort(() => PCirc2d2TanRad(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad(PQ(p1, a1.Q), PQ(p2, a2.Q), r, tol))),
                 Laws = new([L(a1, p1), L(a2, p2)], null, r, tol),
-                Corrected = "GccAna_Circ2d2TanRad (decision 17103)",
+                Corrected = "GccAna_Circ2d2TanRad and Geom2dGcc_Circ2d2TanRad (decisions 17103 and 17106)",
             };
             if (a1.IsCircle && a2.IsCircle)
             {
@@ -682,7 +682,7 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                 Native = () => RunNative(() => NCirc2d2TanRad(new N.Geom2dGcc_Circ2d2TanRad(NQ(n1, a1.Q), new N.Geom2d_CartesianPoint(x, y), r, tol))),
                 Port = () => RunPort(() => PCirc2d2TanRad(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad(PQ(p1, a1.Q), new CartesianPoint2(x, y), r, tol))),
                 Laws = new([L(a1, p1), L(x, y)], null, r, tol),
-                Corrected = "GccAna_Circ2d2TanRad (decision 17103)",
+                Corrected = "GccAna_Circ2d2TanRad and Geom2dGcc_Circ2d2TanRad (decisions 17103 and 17106)",
             };
         });
         yield return ("Circ2d2TanRad(point, point)", o =>
@@ -718,16 +718,12 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                 }),
                 Port = () => RunPort(() => PCirc2d2TanOn(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanOn(PQ(p1, a1.Q), PQ(p2, a2.Q), new CurveAdaptor2D(p3), tol, u1, u2, u3))),
                 Laws = new([L(a1, p1), L(a2, p2)], p3, null, tol),
-                Corrected = "GccAna_Circ2d2TanOn (decision 17102)",
+                Corrected = "GccAna_Circ2d2TanOn and Geom2dGcc_Circ2d2TanOn (decisions 17102 and 17106)",
             };
             if (!(a1.IsAnalytic && a2.IsAnalytic && a3.IsAnalytic))
             {
                 // The Iter branches never write parcen3 (CenterOn3's parameter).
                 c.Masked = n => n.StartsWith("c3.", StringComparison.Ordinal) && n.EndsWith(".pararg", StringComparison.Ordinal);
-            }
-            if (a1.IsCircle && a2.IsCircle && !a3.IsAnalytic && (a1.Q == global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified || a2.Q == global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified))
-            {
-                c.Attribution = "Circ2d2TanOnGeo(circle, circle, curve)'s unset Rbid(2)/RBid(2)";
             }
             return c;
         });
@@ -749,7 +745,7 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                 }),
                 Port = () => RunPort(() => PCirc2d2TanOn(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanOn(PQ(p1, a1.Q), new CartesianPoint2(x, y), new CurveAdaptor2D(p3), tol, u1, u3))),
                 Laws = new([L(a1, p1), L(x, y)], p3, null, tol),
-                Corrected = "GccAna_Circ2d2TanOn (decision 17102)",
+                Corrected = "GccAna_Circ2d2TanOn and Geom2dGcc_Circ2d2TanOn (decisions 17102 and 17106)",
             };
             if (a1.IsCircle && a3.IsLine)
             {
@@ -758,13 +754,9 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
             }
             else if (!(a1.IsAnalytic && a3.IsAnalytic))
             {
+                // Circ2d2TanOnIter's point constructors gave math_FunctionSetRoot 3-vectors for a 4-variable function:
+                // native threw Standard_DimensionError; the port solves them (Kerf decision 17106), judged by the laws.
                 c.Masked = n => n.StartsWith("c3.", StringComparison.Ordinal) && n.EndsWith(".pararg", StringComparison.Ordinal);
-                // Circ2d2TanOnIter's point constructors give math_FunctionSetRoot 3-vectors for a 4-variable function.
-                // Native's math_FunctionSetRoot.cxx compiles its range checks out (No_Standard_OutOfRange): SetTolerance
-                // reads past the tolerances and Perform throws Standard_DimensionError. The port's math_Vector checks
-                // the read and throws Standard_OutOfRange.
-                c.Attribution = "Circ2d2TanOnIter's 3-vectors for 4 variables: native Standard_DimensionError, port Standard_OutOfRange";
-                c.Explained = d => d.Count == 1 && d[0] == "ctor: native throws Standard_DimensionError, port throws Standard_OutOfRange";
             }
             return c;
         });
@@ -785,7 +777,7 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                 }),
                 Port = () => RunPort(() => PCirc2d2TanOn(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanOn(new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), new CurveAdaptor2D(p3), tol))),
                 Laws = new([L(x1, y1), L(x2, y2)], p3, null, tol),
-                Corrected = "GccAna_Circ2d2TanOn (decision 17102)",
+                Corrected = "GccAna_Circ2d2TanOn and Geom2dGcc_Circ2d2TanOn (decisions 17102 and 17106)",
             };
         });
 
