@@ -112,6 +112,25 @@ public class ConstructionTests
     }
 
     [Fact]
+    public void A_revolution_shares_the_profile_and_answers_for_every_edge()
+    {
+        Face face = Face.FromWire(Wire.Polygon([new(5, 0, 0), new(6, 0, 0), new(6, 0, 1), new(5, 0, 1)], closed: true).Value).Value;
+        foreach (double angle in new[] { Math.PI / 2, 2 * Math.PI })
+        {
+            Built<Shape> revolved = face.Revolve(Axis3D.ZAxis, angle).Value;
+            // no copy of the profile: its vertices are the result's own
+            Assert.All(face.Vertices(), v => Assert.Contains(revolved.Shape.Vertices(), r => r.IsSame(v)));
+            // every edge swept a face of the result, even those a whole turn leaves out (decision 17301)
+            foreach (Edge edge in face.Edges())
+            {
+                Shape swept = Assert.Single(revolved.History.Generated(edge));
+                Assert.Equal(ShapeType.Face, swept.Type);
+                Assert.Contains(revolved.Shape.Faces(), f => f.IsSame(swept));
+            }
+        }
+    }
+
+    [Fact]
     public void A_sweep_follows_its_spine()
     {
         Wire profile = Wire.FromEdges([Edge.Circle(new Circle3D(Frame3D.World, 1)).Value]).Value;

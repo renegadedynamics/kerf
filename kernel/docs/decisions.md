@@ -15579,3 +15579,23 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        bottle 93.4 to 92.6: the mesher no longer copies the shape); median recalculation 1,532 ms before, 1,418 after.
        STEP reading isn't in that benchmark; the reader's path is unchanged but for the tree's conversion to
        `ModelNode`.
+
+## Phase 10: unit 10L5, the public API's leftovers
+
+17301. **A revolution no longer copies its profile, and decision 1526's cause was OCCT's, not a copy at entry.** The
+       engine's `ApiMakeRevol` has swept the caller's profile itself in a working overlay since 10H3: nothing copies it
+       at entry, and its history is keyed by the caller's sub-shapes. What emptied the public history without copy is
+       OCCT's own `BRepPrimAPI_MakeRevol::Generated`, which answers only for a generating sub-shape that is itself used
+       in the result (`BRepSweep_Revol::IsUsed`). A whole turn without copy leaves out the profile's edges at right
+       angles to the axis, which bound no face (their swept faces are planar rings), so OCCT says they generated
+       nothing and were deleted; native OCCT does the same (`BRepPrimAPI_MakeRevol`'s oracle replays, whole turns
+       without copy, and 10H3's `ConstructionInputsUnchangedTests` say so). With copy, the copy's edges are built at the
+       first position and count as used. 10L2's test revolved a whole turn and asked for the bottom edge's face.
+       The public `Revolve` now runs without copy, as `Extrude` does, so its result shares the profile's sub-shapes,
+       and its history asks the engine's new `ApiMakeRevol.GeneratedEvenIfUnused` for a sub-shape OCCT calls deleted:
+       the same code without the `IsUsed` gate. The edge stays removed (it isn't in the result) and generates its face.
+       The engine's own `Generated`, Draw-lite's and the oracle's, stays OCCT's. No other public operation passes a
+       copy flag (`ApiMakePrism`'s is false; `NurbsConvert`'s, `GTransform`'s and `Transform`'s copy geometry, as
+       OCCT's options, and nothing public sets them). The modelling layer's three revolutions keep `copy: true`, as
+       Python build123d passes it, until 10M moves them onto `Sweeps.Revolve`. New test:
+       `A_revolution_shares_the_profile_and_answers_for_every_edge` (a quarter and a whole turn).

@@ -3,6 +3,7 @@
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -54,10 +55,18 @@ public static class Sweeps
             }
             Shape p = profile.AsShape();
             Axis3D a = axis;
-            // Copying the profile's sub-shapes, as the modelling layer does: without, the revolution's history of a
-            // published profile is empty (decision 1526)
-            return EngineOperation.Run<Shape>(range => MakerOutcome.Of(new ApiMakeRevol(p, a, angle, true), range, [p]),
-                                              Failure, progress, cancellationToken);
+            // Without copy, as the other sweeps: the result shares the profile's sub-shapes. A whole turn's history
+            // answers for the profile's edges it leaves out too (decision 17301)
+            return EngineOperation.Run<Shape>(range =>
+            {
+                var revol = new ApiMakeRevol(p, a, angle);
+                revol.Build(range);
+                if (!revol.IsDone)
+                {
+                    return new EngineOutcome(false, static () => default);
+                }
+                return new EngineOutcome(true, revol.Shape, MakerOutcome.HistoryOf(new RevolutionHistory(revol), [p]));
+            }, Failure, progress, cancellationToken);
         }
     }
 
@@ -180,4 +189,15 @@ public static class Sweeps
             throw new ArgumentException($"The sweep frame {options.Frame} needs its value in the options.", nameof(options)),
         _ => throw new ArgumentOutOfRangeException(nameof(options), options.Frame, "An unknown sweep frame."),
     };
+
+    /// <summary>A revolution's history, with what OCCT's leaves out: the faces a whole turn sweeps from edges it doesn't
+    /// keep (decision 17301).</summary>
+    private sealed class RevolutionHistory(ApiMakeRevol revol) : History.IAlgorithm
+    {
+        public bool IsDeleted(in Shape s) => revol.IsDeleted(s);
+
+        public IEnumerable<Shape> Modified(in Shape s) => revol.Modified(s);
+
+        public IEnumerable<Shape> Generated(in Shape s) => revol.IsDeleted(s) ? revol.GeneratedEvenIfUnused(s) : revol.Generated(s);
+    }
 }
