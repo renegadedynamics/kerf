@@ -92,7 +92,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
             Records.Add(($"{theHead} {aNb}", theText.Length > 0 && theText[^1] != '\n' ? theText + "\n" : theText));
         }
 
-        public void Throw(Exception theException) => Line("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theException.GetType()));
+        public void Throw(Exception theException) => Line("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(theException).GetType()));
     }
 
     private static string Text(Action<StringWriter> theWrite)

@@ -643,7 +643,7 @@ internal static class BinTools
     // OCCT's message of a caught exception, "EXCEPTION in ...\n" followed by the exception
     internal static FailureException Rethrow(string theWhere, Exception exception)
     {
-        return new FailureException("EXCEPTION in " + theWhere + "\n" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(exception.GetType()) + ": "
+        return new FailureException("EXCEPTION in " + theWhere + "\n" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(exception).GetType()) + ": "
                                     + exception.Message + "\n", exception);
     }
 }

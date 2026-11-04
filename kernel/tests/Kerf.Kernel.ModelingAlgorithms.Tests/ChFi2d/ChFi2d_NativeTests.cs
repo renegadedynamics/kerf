@@ -157,7 +157,7 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
 
     private static string Hex(in Point3D theP) => Hex(theP.X) + "," + Hex(theP.Y) + "," + Hex(theP.Z);
 
-    private static string ExcName(Exception theE) => "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theE.GetType());
+    private static string ExcName(Exception theE) => "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(theE).GetType());
 
     private static string Desc(in Edge theE)
     {

@@ -120,7 +120,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
         return theShape.TShape()!.IsFrozen ? aFix.Shape() : aFix.InternalShape();
     }
 
-    private static string? ErrorOf(Exception theException) => theException switch
+    private static string? ErrorOf(Exception theException) => Refusal.Unwrapped(theException) switch
     {
         N.OcctException e => e.Message.IndexOf(':') is int c and > 0 ? e.Message[..c] : e.Message,
         FailureException f => global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType()),

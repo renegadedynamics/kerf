@@ -152,7 +152,7 @@ internal static class KPartRecorder
             OS.Write(s);
         }
 
-        internal void Exception(Exception e) => L("exception class " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
+        internal void Exception(Exception e) => L("exception class " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()));
     }
 
     private static Edge EdgeOf(in Shape S, int k)

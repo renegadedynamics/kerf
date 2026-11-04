@@ -297,7 +297,7 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
         MedialAxisExplorer anExplo = new(aFace);
         BisectingLocus aLocus = new();
         Exception anE = Assert.ThrowsAny<Exception>(() => aLocus.Compute(anExplo));
-        theOutput.WriteLine(global::Kerf.Engine.Foundation.OcctTypeNames.Of(anE.GetType()) + ": " + anE.Message);
+        theOutput.WriteLine(global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anE).GetType()) + ": " + anE.Message);
         theOutput.WriteLine(anE.StackTrace);
         Assert.IsNotAssignableFrom<FailureException>(anE);
     }

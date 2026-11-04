@@ -74,7 +74,7 @@ internal sealed class StepRoundTrip
                 {
                     new StepWriter(aModel).SendEntity(i, aLib);
                 }
-                catch (OutOfRangeException)
+                catch (Exception caught) when (Refusal.Of(caught) is OutOfRangeException)
                 {
                     theNotWritten.Add(aModel.IdentLabel(anEnt));
                     continue;

@@ -81,7 +81,7 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
         return ($"{theHead} {aNb}", theText.Length > 0 && theText[^1] != '\n' ? theText + "\n" : theText);
     }
 
-    private static (string, string) Throw(Exception theE) => ("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theE.GetType()), "");
+    private static (string, string) Throw(Exception theE) => ("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(theE).GetType()), "");
 
     // The port's records for the native header theHead on theShape (one, or two for ANA: the types and EXPLODE)
     private static List<(string Head, string Body)> Port(string theHead, in Shape theShape)

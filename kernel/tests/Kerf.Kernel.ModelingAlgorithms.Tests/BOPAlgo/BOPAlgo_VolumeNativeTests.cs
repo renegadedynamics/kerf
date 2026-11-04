@@ -411,7 +411,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
             }
             catch (Exception anE) when (Refusal.IsFailure(anE))
             {
-                anOut = "throws " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anE.GetType()) + "\n";
+                anOut = "throws " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anE).GetType()) + "\n";
             }
             anOutputs.Add(anOut);
         }

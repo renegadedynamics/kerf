@@ -112,7 +112,7 @@ internal static class BisectorRecordings
 
     private static string Hex(Vector2D theV) => Hex(theV.X) + "," + Hex(theV.Y);
 
-    private static string ExcName(Exception theE) => Refusal.IsFailure(theE) ? "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theE.GetType()) : "!SEH";
+    private static string ExcName(Exception theE) => Refusal.IsFailure(theE) ? "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(theE).GetType()) : "!SEH";
 
     private static void Tok(List<string> theOut, string theName, Func<string> theF)
     {

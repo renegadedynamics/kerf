@@ -338,7 +338,7 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
             {
                 Throw(theName, anE.IsFault ? "fault" : anE.OcctType);
             }
-            catch (Exception anE) when (anE is global::Kerf.Engine.Foundation.FailureException or NullReferenceException or IndexOutOfRangeException)
+            catch (Exception anE) when (Refusal.IsFailure(anE) || anE is NullReferenceException or IndexOutOfRangeException)
             {
                 Throw(theName, anE switch
                 {

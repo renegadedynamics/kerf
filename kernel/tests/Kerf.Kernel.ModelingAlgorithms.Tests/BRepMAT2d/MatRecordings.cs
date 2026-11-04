@@ -61,7 +61,7 @@ internal static class MatRecordings
 
     private static string Hex(Point2D theP) => Hex(theP.X) + "," + Hex(theP.Y);
 
-    private static string ExcName(Exception theE) => Refusal.IsFailure(theE) ? "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theE.GetType()) : "!SEH";
+    private static string ExcName(Exception theE) => Refusal.IsFailure(theE) ? "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(theE).GetType()) : "!SEH";
 
     private static string Fail(Action theF)
     {

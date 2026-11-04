@@ -960,6 +960,7 @@ internal class ProcessForTransient : Transient
     // access violation, with Windows' text for a read at address 0 (decision 977)
     internal static string What(Exception exception)
     {
+        exception = Refusal.Unwrapped(exception);
         if (exception is NullReferenceException)
         {
             return "ACCESS VIOLATION at address 0x0000000000000000 during 'READ' operation";
