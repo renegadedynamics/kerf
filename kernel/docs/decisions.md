@@ -15666,3 +15666,33 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          own or in a context. It costs a check of the result per fix; the modelling layer's fixes don't go through it
          until 10M.
        Tests: three in `Kerf.Kernel.PublicApi.Tests` (the schemas and healing switch, the triangles, the warning).
+17306. **The engine's public types: 1,345 to 184** (all four assemblies, `Kerf.Engine.*`, top-level, counted by
+       declaration as 10L2 and 10L3 counted). Found as they were: a script (`p10l5-internalise.py`, 10L3's with each
+       round's errors kept) made every public engine type internal, then built Kerf.slnx and both benchmarks round by
+       round, making public again the types each accessibility error named (86 rounds: a first pass of 39, a second of 47); a second script
+       followed each type back through the public types that showed it to where it is first shown. The first pass left
+       235 public; 147 of them were shown only by tests and Draw-lite, which were changed (below), and the second pass
+       left 184 (the counts by declaration: Foundation 53, ModelingData 39, ModelingAlgorithms 108, DataExchange 11;
+       partial types count once per file). **By cause:**
+       - **The modelling layer's public API (158, 10M's):** its `ShapeHistory.FromBoolean(BuilderAlgo…)`, `Color(ColorWithAlpha)`,
+         `Vector(Xyz)`, `BoundBox.FromBndBox(Box)`, `OrientedBoundBox.FromBndObb(Obb)`, the edges' and wires'
+         `GeomAdaptor()` and its sewing and unifying, and everything those show in turn: the Booleans' pave filler and
+         data structure (21), intersection (32), geometry's adaptors, boxes and trees (26), messages and colours (16),
+         classification (14), exchange's document tree (10), approximation (9), topology's adaptors, `History`,
+         `ReShape`, `TShape`, `Builder` (7), extrema (6), numerics (5), collections (4), and `MakeShape`/`Command`,
+         `ToolParameters`/`MeshAlgoType`, `Properties`, `Sewing`/`UnifySameDomain`.
+       - **The WebAssembly sample (25, other):** `kernel/samples/Kerf.Kernel.WasmDemo`, which measures the engine's
+         mesher and extraction directly and has no `InternalsVisibleTo`: `IncrementalMesh`, `MeshExtraction`,
+         `MeshBuffers`, `BrepTools`, `Bounds`, `Box2d`, `FormatVersion`, and the mesher's model and context types
+         (`ToolContext`, `ModelAlgo`, `FaceModel`…). Moving it onto `Mesher`/`Brep` would change what it measures; left.
+       - **`Transient` (1):** the base of NCollection's classes in `Occt`, public until 10J removes them.
+       - **Tests and Draw-lite (none left).** Where a test or Draw-lite helper was the only cause, the helper changed:
+         26 theories took engine enums as parameters (`Qualifier`, `ConstraintCurveType`, `FillingStyle`…), which a
+         public test method can't once the enum is internal; they take `object` and cast on entry, their data
+         unchanged. `BOPAlgo_TestBase`'s members are `private protected`; `TestImpParTool`, `TestAlertNothingToDo` and
+         `TestAlertBadShape` are internal; Draw-lite's `DrawHistory`, `DrawDocument`, `DrawQualifiedCurve2d`,
+         `DrawHlrProjector`, `DrawHlrOutLiner`, `DrawFairCurve.Batten` and `DrawInterpreter.Context` are internal, and
+         Draw-lite gives `InternalsVisibleTo` to its tests, which read them; the benchmark's `Cases.PortMeshAndExtract`
+         is internal.
+       No public API type and no other public engine type is a root cause any more: what the kernel's public API shows
+       is public API. Every suite keeps its counts (no test added or removed by this item).
