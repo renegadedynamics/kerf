@@ -18,6 +18,9 @@
   Run only the test projects whose names contain one of these (all by default); the report merges what's in Results.
 .PARAMETER WithOracle
   Run the oracle tests too (they replay native OCCT's recorded side, decision 1336).
+.PARAMETER FullCorpus
+  Also run the Draw-lite corpus whole (OCCTNET_CORPUS_FULL=1, about 25 minutes uninstrumented), kept apart in
+  <Results>-corpus: the report's gaps then show how far the corpus covers each package.
 .PARAMETER BuildArgs
   Extra build properties, e.g. OcctSourceDir and OcctTestDataDir where kernel/.deps lacks them.
 #>
@@ -27,6 +30,7 @@ param(
   [string] $PublicMembers = (Join-Path $PSScriptRoot '..\docs\public-members.md'),
   [string[]] $Only = @(),
   [switch] $WithOracle,
+  [switch] $FullCorpus,
   [string[]] $BuildArgs = @()
 )
 $ErrorActionPreference = 'Stop'
@@ -57,5 +61,13 @@ foreach ($project in $projects) {
   if ($LASTEXITCODE) { Write-Warning "$name had failures: its coverage is still counted" }
 }
 
-dotnet run (Join-Path $kernel 'tools/coverage-report.cs') -- $Results $Report
+$corpus = "$Results-corpus"
+if ($FullCorpus) {
+  Remove-Item -Recurse -Force $corpus -ErrorAction SilentlyContinue
+  $env:OCCTNET_CORPUS_FULL = '1'
+  dotnet test (Join-Path $root 'kernel/tests/Kerf.Kernel.DrawLite.Tests') -c Release @BuildArgs --filter 'FullyQualifiedName~DrawCorpusTests' --collect 'Code Coverage;Format=cobertura' --results-directory $corpus
+  Remove-Item Env:OCCTNET_CORPUS_FULL
+  if ($LASTEXITCODE) { Write-Warning "the whole corpus had failures: its coverage is still counted" }
+}
+dotnet run (Join-Path $kernel 'tools/coverage-report.cs') -- $Results $Report 80 $corpus
 dotnet run (Join-Path $kernel 'tools/public-members.cs') -- $Results (Join-Path $root 'modeling/tests/Kerf.Modeling.Tests/bin/Release/net10.0') $PublicMembers

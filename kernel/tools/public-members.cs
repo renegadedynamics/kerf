@@ -8,8 +8,9 @@
 //   dotnet run tools/public-members.cs -- <results folder> <assemblies folder> <report.md>
 //
 // The assemblies folder is a test project's output that holds all five (Kerf.Modeling.Tests' does). Not measured, and
-// counted apart: abstract members and interfaces' (no body; their implementations are measured), fields, and what the
-// compiler wrote where coverage has no line for it (an auto-property's accessors, a record's members).
+// counted apart: abstract members and interfaces' (no body; their implementations are measured), fields, what the
+// compiler wrote where coverage has no line for it (an auto-property's accessors, a record's members), and a positional
+// record's init accessors.
 
 #:property PublishAot=false
 
@@ -87,7 +88,7 @@ foreach (string name in assemblies)
     Assembly assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(Path.Combine(folder, name + ".dll"));
     foreach (Type type in assembly.GetExportedTypes())
     {
-        if (!IsPublicApi(type) || type.IsEnum || typeof(Delegate).IsAssignableFrom(type))
+        if (!IsPublicApi(type) || type.IsEnum || typeof(Delegate).IsAssignableFrom(type) || type.FullName!.Contains('<'))
         {
             continue;
         }
@@ -103,6 +104,13 @@ foreach (string name in assemblies)
                 continue;
             }
             bool isGenerated = member.IsDefined(typeof(CompilerGeneratedAttribute), false);
+            // a positional record's init accessor, which the compiler wrote and the constructor stands for
+            if (isGenerated && member.Name.StartsWith("set_", StringComparison.Ordinal)
+                && type.GetConstructors().Any(c => c.GetParameters().Any(p => p.Name == member.Name[4..])))
+            {
+                generated++;
+                continue;
+            }
             bool? ran = Ran(member, methods, className, coverage);
             if (ran is null && (isGenerated || member.IsConstructor && member.GetParameters().Length == 0 || IsRecordMember(type, member)))
             {
@@ -155,8 +163,8 @@ static bool IsPublicApi(Type type)
 }
 
 static bool IsRecordMember(Type type, MethodBase member) =>
-    type.GetMethod("<Clone>$") is not null
-    && member.Name is "ToString" or "GetHashCode" or "Equals" or "op_Equality" or "op_Inequality" or "PrintMembers" or "Deconstruct" or "get_EqualityContract" or "<Clone>$";
+    (type.GetMethod("<Clone>$") is not null || type.GetMethod("PrintMembers", BindingFlags.NonPublic | BindingFlags.Instance) is not null)
+    && member.Name is ".ctor" or "ToString" or "GetHashCode" or "Equals" or "op_Equality" or "op_Inequality" or "PrintMembers" or "Deconstruct" or "get_EqualityContract" or "<Clone>$";
 
 // null: no entry for it in the coverage data. An iterator's or async method's body is in its state machine's class.
 static bool? Ran(MethodBase member, Dictionary<string, Dictionary<string, bool>>? methods, string className,

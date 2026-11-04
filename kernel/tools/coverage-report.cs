@@ -7,7 +7,10 @@
 // The reason for each package under the floor comes from docs/coverage-gaps.tsv (assembly, package, reason), kept by hand;
 // a package without one shows as "no reason recorded".
 //
-//   dotnet run tools/coverage-report.cs -- <results folder> <report.md> [floor percent, 80 by default]
+// With a corpus results folder (coverage.ps1 -FullCorpus: the Draw-lite corpus run whole), the gaps show what that run
+// alone, and all the runs together, cover: the evidence for "the corpus covers it".
+//
+//   dotnet run tools/coverage-report.cs -- <results folder> <report.md> [floor percent, 80 by default] [corpus results folder]
 
 #:property PublishAot=false
 
@@ -38,32 +41,18 @@ if (File.Exists(aReasonsFile))
 var aLines = new Dictionary<string, Dictionary<int, bool>>(StringComparer.OrdinalIgnoreCase);
 string[] aFiles = Directory.GetFiles(aResults, "*.cobertura.xml", SearchOption.AllDirectories);
 var aRuns = new List<string>();
+var aCorpusLines = new Dictionary<string, Dictionary<int, bool>>(StringComparer.OrdinalIgnoreCase);
+if (args.Length > 3 && Directory.Exists(args[3]))
+{
+    foreach (string aFile in Directory.GetFiles(Path.GetFullPath(args[3]), "*.cobertura.xml", SearchOption.AllDirectories))
+    {
+        Read(aFile, aCorpusLines);
+    }
+}
 foreach (string aFile in aFiles)
 {
     aRuns.Add(Path.GetRelativePath(aResults, aFile).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)[0]);
-    using var aReader = XmlReader.Create(aFile, new XmlReaderSettings { DtdProcessing = DtdProcessing.Ignore });
-    string? aClassFile = null;
-    while (aReader.Read())
-    {
-        if (aReader.NodeType != XmlNodeType.Element)
-        {
-            continue;
-        }
-        if (aReader.Name == "class")
-        {
-            aClassFile = Normalise(aReader.GetAttribute("filename"));
-        }
-        else if (aReader.Name == "line" && aClassFile is not null && Area(aClassFile) is not null)
-        {
-            int aNumber = int.Parse(aReader.GetAttribute("number")!, CultureInfo.InvariantCulture);
-            bool isHit = long.Parse(aReader.GetAttribute("hits") ?? "0", CultureInfo.InvariantCulture) > 0;
-            if (!aLines.TryGetValue(aClassFile, out var aFileLines))
-            {
-                aLines[aClassFile] = aFileLines = [];
-            }
-            aFileLines[aNumber] = aFileLines.GetValueOrDefault(aNumber) || isHit;
-        }
-    }
+    Read(aFile, aLines);
 }
 
 // per area (assembly) and package (folder)
@@ -102,14 +91,23 @@ foreach (var aGroup in aPackages.GroupBy(p => p.Key.Area))
 int aTotalL = aPackages.Values.Sum(v => v.Lines), aTotalC = aPackages.Values.Sum(v => v.Covered);
 aText.Append(CultureInfo.InvariantCulture, $"| **Total** | {aPackages.Count} | {aTotalL:N0} | {aTotalC:N0} | {Percent(aTotalC, aTotalL):F1} | {aPackages.Count(p => Percent(p.Value.Covered, p.Value.Lines) < aFloor)} |\n");
 
-aText.Append("\n## The gaps\n\nEvery package under the floor, with the reason (`docs/coverage-gaps.tsv`).\n\n");
-aText.Append("| Assembly | Package | Lines | Uncovered | % | Reason |\n|---|---|---:|---:|---:|---|\n");
+// each package's covered lines with the whole corpus added, and the corpus's own share
+var aWithCorpus = new Dictionary<(string Area, string Package), int>();
+foreach ((string aFile, var aFileLines) in aLines)
+{
+    var aKey = Area(aFile)!.Value;
+    aCorpusLines.TryGetValue(aFile, out var aCorpusFile);
+    aWithCorpus[aKey] = aWithCorpus.GetValueOrDefault(aKey)
+        + aFileLines.Count(l => l.Value || (aCorpusFile is not null && aCorpusFile.GetValueOrDefault(l.Key)));
+}
+aText.Append("\n## The gaps\n\nEvery package under the floor, with the reason (`docs/coverage-gaps.tsv`). \"With corpus\" adds the whole Draw-lite corpus (`-FullCorpus`) to the runs above.\n\n");
+aText.Append("| Assembly | Package | Lines | Uncovered | % | With corpus % | Reason |\n|---|---|---:|---:|---:|---:|---|\n");
 foreach (var p in aPackages.Where(p => Percent(p.Value.Covered, p.Value.Lines) < aFloor)
                            .OrderBy(p => p.Key.Area, StringComparer.Ordinal).ThenByDescending(p => p.Value.Lines - p.Value.Covered))
 {
     string aReason = aReasons.GetValueOrDefault(p.Key) ?? "no reason recorded";
     aText.Append(CultureInfo.InvariantCulture,
-        $"| {p.Key.Area} | {p.Key.Package} | {p.Value.Lines:N0} | {p.Value.Lines - p.Value.Covered:N0} | {Percent(p.Value.Covered, p.Value.Lines):F1} | {aReason} |\n");
+        $"| {p.Key.Area} | {p.Key.Package} | {p.Value.Lines:N0} | {p.Value.Lines - p.Value.Covered:N0} | {Percent(p.Value.Covered, p.Value.Lines):F1} | {(aCorpusLines.Count > 0 ? Percent(aWithCorpus[p.Key], p.Value.Lines).ToString("F1", CultureInfo.InvariantCulture) : "not run")} | {aReason} |\n");
 }
 
 foreach (var aGroup in aPackages.GroupBy(p => p.Key.Area))
@@ -129,6 +127,33 @@ Directory.CreateDirectory(Path.GetDirectoryName(aReport)!);
 File.WriteAllText(aReport, aText.ToString().Replace("\r\n", "\n"));
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{aFiles.Length} runs, {aLines.Count} files, {aTotalC:N0} of {aTotalL:N0} lines ({Percent(aTotalC, aTotalL):F1}%) -> {aReport}"));
 return 0;
+
+static void Read(string theFile, Dictionary<string, Dictionary<int, bool>> theLines)
+{
+    using var aReader = XmlReader.Create(theFile, new XmlReaderSettings { DtdProcessing = DtdProcessing.Ignore });
+    string? aClassFile = null;
+    while (aReader.Read())
+    {
+        if (aReader.NodeType != XmlNodeType.Element)
+        {
+            continue;
+        }
+        if (aReader.Name == "class")
+        {
+            aClassFile = Normalise(aReader.GetAttribute("filename"));
+        }
+        else if (aReader.Name == "line" && aClassFile is not null && Area(aClassFile) is not null)
+        {
+            int aNumber = int.Parse(aReader.GetAttribute("number")!, CultureInfo.InvariantCulture);
+            bool isHit = long.Parse(aReader.GetAttribute("hits") ?? "0", CultureInfo.InvariantCulture) > 0;
+            if (!theLines.TryGetValue(aClassFile, out var aFileLines))
+            {
+                theLines[aClassFile] = aFileLines = [];
+            }
+            aFileLines[aNumber] = aFileLines.GetValueOrDefault(aNumber) || isHit;
+        }
+    }
+}
 
 static double Percent(int theCovered, int theLines) => theLines == 0 ? 100 : 100.0 * theCovered / theLines;
 
