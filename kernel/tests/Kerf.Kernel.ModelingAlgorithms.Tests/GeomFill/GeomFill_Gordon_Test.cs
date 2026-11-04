@@ -487,7 +487,7 @@ public class GeomFill_Gordon_Test
         Assert.Equal(Gordon.ResultStatus.NotStarted, aGordon.Report().Status);
         Assert.Equal(Gordon.BuildStage.NotStarted, aGordon.Report().FailedStage);
         Assert.False(aGordon.Report().IsApproximate);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aGordon.Surface());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aGordon.Surface());
     }
 
     [Fact]
@@ -512,7 +512,7 @@ public class GeomFill_Gordon_Test
         Assert.Equal(0.0, aGordon.Report().MaxProfileDeviation, 1.0e-12);
         Assert.Equal(0.0, aGordon.Report().MaxGuideDeviation, 1.0e-12);
         Assert.Equal(0.0, aGordon.Report().MaxApproximationDeviation, 1.0e-12);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aGordon.Surface());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aGordon.Surface());
 
         aGordon.Perform();
         Assert.False(aGordon.IsDone);
@@ -539,7 +539,7 @@ public class GeomFill_Gordon_Test
         Assert.False(aGordon.Report().IsApproximate);
         Assert.Equal(0.0, aGordon.Report().MaxContactGap, 1.0e-12);
         Assert.Equal(0.0, aGordon.Report().MaxReparametrizationDeviation, 1.0e-12);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aGordon.Surface());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aGordon.Surface());
     }
 
     private static NCollection_Array1<Curve3D> BumpProfiles() =>
@@ -1272,7 +1272,7 @@ public class GeomFill_Gordon_Test
         aNetwork.Perform();
         Assert.False(aNetwork.IsDone);
         Assert.Equal(NetworkSurface.ResultStatus.InvalidInput, aNetwork.Status());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aNetwork.Surface());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aNetwork.Surface());
     }
 
     [Fact]

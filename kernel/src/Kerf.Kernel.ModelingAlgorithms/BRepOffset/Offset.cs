@@ -38,7 +38,7 @@ namespace Kerf.Engine.Offsets;
 /// edges and vertices are new, but for those taken from <c>Created</c>, the images of its edges and vertices in the
 /// offsets of other faces. As in OCCT, the offset writes pcurves on the new face and ranges into those
 /// <c>Created</c> edges, in place: they are the 3D offset's own working edges and must be unfrozen (a frozen one throws
-/// <see cref="LockedShapeException"/> at the first write).
+/// <see cref="ImmutableObjectException"/> at the first write).
 /// </para>
 /// <para>
 /// The pipe along an edge and the sphere at a vertex write pcurves, ranges and flags into the edges they are given

@@ -318,24 +318,24 @@ public class FreezingTests
         Assert.False(anEdge.TShape()!.LockedFlag()); // files carry the stored bit
 
         var aBuilder = new BrepBuilder();
-        EngineAssert.Throws<LockedShapeException>(() => aBuilder.UpdateEdge(anEdge, 0.1));
-        EngineAssert.Throws<LockedShapeException>(() => aBuilder.UpdateEdge(anEdge, new LineCurve3D(Constants.OX()), 0.1));
-        EngineAssert.Throws<LockedShapeException>(() => aBuilder.UpdateEdge(anEdge, new LineCurve2D(Constants.OX2d()), aFace, 0.1));
-        EngineAssert.Throws<LockedShapeException>(() => aBuilder.Range(anEdge, 0, 1));
-        EngineAssert.Throws<LockedShapeException>(() => aBuilder.SameParameter(anEdge, false));
-        EngineAssert.Throws<LockedShapeException>(() => aBuilder.Degenerated(anEdge, true));
-        EngineAssert.Throws<LockedShapeException>(() => aBuilder.Continuity(anEdge, aFace, aFace, Continuity.C1));
-        EngineAssert.Throws<LockedShapeException>(() => aBuilder.UpdateVertex(aVertex, new Point3D(), 0.1));
-        EngineAssert.Throws<LockedShapeException>(() => aBuilder.UpdateVertex(aVertex, 0.1));
-        EngineAssert.Throws<LockedShapeException>(() => aBuilder.UpdateVertex(aVertex, 0.0, anEdge, 0.1));
-        EngineAssert.Throws<LockedShapeException>(() => aBuilder.UpdateFace(aFace, 0.1));
-        EngineAssert.Throws<LockedShapeException>(() => aBuilder.NaturalRestriction(aFace, true));
-        EngineAssert.Throws<LockedShapeException>(() => aBuilder.UpdateFace(aFace, (Triangulation?)null));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateEdge(anEdge, 0.1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateEdge(anEdge, new LineCurve3D(Constants.OX()), 0.1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateEdge(anEdge, new LineCurve2D(Constants.OX2d()), aFace, 0.1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.Range(anEdge, 0, 1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.SameParameter(anEdge, false));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.Degenerated(anEdge, true));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.Continuity(anEdge, aFace, aFace, Continuity.C1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateVertex(aVertex, new Point3D(), 0.1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateVertex(aVertex, 0.1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateVertex(aVertex, 0.0, anEdge, 0.1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateFace(aFace, 0.1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.NaturalRestriction(aFace, true));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateFace(aFace, (Triangulation?)null));
         // the Make methods refuse to replace a variable holding a locked shape, as in OCCT
         Edge aVariable = anEdge;
-        EngineAssert.Throws<LockedShapeException>(() => aBuilder.MakeEdge(ref aVariable));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.MakeEdge(ref aVariable));
         Face aFaceVariable = aFace;
-        EngineAssert.Throws<LockedShapeException>(() => aBuilder.MakeFace(ref aFaceVariable, new PlaneSurface(new CoordinateSystem(Constants.XOY())), 1e-7));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.MakeFace(ref aFaceVariable, new PlaneSurface(new CoordinateSystem(Constants.XOY())), 1e-7));
     }
 
     [Fact]
@@ -384,7 +384,7 @@ public class FreezingTests
         Assert.Equal(1, aBox.ChildCount);
         // a shape inside it isn't free: OCCT's own check throws first
         Face aFace = FirstFace(aBox);
-        EngineAssert.Throws<FrozenShapeException>(() => aBuilder.Remove(aFace, new Iterator(aFace).Value()));
+        EngineAssert.Throws<DomainErrorException>(() => aBuilder.Remove(aFace, new Iterator(aFace).Value()));
     }
 
     [Fact]
@@ -466,6 +466,6 @@ public class FreezingTests
         Exploration.Vertices(FirstEdge(aBox), out Vertex aV1, out Vertex aV2);
         var aLine = new LineCurve3D(Tool.Pnt(aV1), new Direction3D(new Vector3D(Tool.Pnt(aV1), Tool.Pnt(aV2))));
         Edge aNewEdge = TestShapes.Edge(aLine, 0, 1, aV1, aV2);
-        EngineAssert.Throws<LockedShapeException>(() => aBuilder.UpdateVertex(aV1, 0.5, aNewEdge, 1e-7));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateVertex(aV1, 0.5, aNewEdge, 1e-7));
     }
 }

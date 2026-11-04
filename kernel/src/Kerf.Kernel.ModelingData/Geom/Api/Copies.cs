@@ -294,7 +294,7 @@ internal static class CopyChecks
         {
             return copy();
         }
-        catch (ConstructionErrorException e)
+        catch (Exception e) when (Refusal.Of(e) is global::Kerf.Engine.Foundation.ConstructionErrorException)
         {
             throw new ArgumentException("The knot must lie strictly between its neighbours, with a multiplicity no more than the degree.", e);
         }

@@ -197,7 +197,7 @@ public class BRepFilletAPI_MakeChamferTests
                     break;
                 }
             }
-            catch (ConstructionErrorException)
+            catch (Exception caught) when (Refusal.Of(caught) is global::Kerf.Engine.Foundation.ConstructionErrorException)
             {
                 break;
             }

@@ -131,6 +131,6 @@ public class gp_Dir2dTests
     [Fact]
     public void ZeroMagnitudeThrows()
     {
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Direction2D(0.0, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Direction2D(0.0, 0.0));
     }
 }

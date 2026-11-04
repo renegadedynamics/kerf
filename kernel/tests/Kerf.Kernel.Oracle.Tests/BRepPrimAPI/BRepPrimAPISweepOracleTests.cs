@@ -613,7 +613,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
     /// face): the history of the seam, which sweeps nothing, and of the vertices, whose edges the sweep builds on
     /// demand after the result is published. The port used to give the copy for write of such a face back its
     /// unchanged sub-shapes in place, so the sweep no longer found the seam in its face, built a face from it on
-    /// demand and wrote into the published result (TopoDS_LockedShape); without copy it said the seam was deleted.
+    /// demand and wrote into the published result (ImmutableObjectException); without copy it said the seam was deleted.
     /// </summary>
     [Fact]
     public void Sweeps_of_faces_with_a_seam_have_native_OCCTs_histories()

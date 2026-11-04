@@ -346,7 +346,7 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
                 }
                 else
                 {
-                    Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aP.Plan());
+                    EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aP.Plan());
                 }
             }
         }

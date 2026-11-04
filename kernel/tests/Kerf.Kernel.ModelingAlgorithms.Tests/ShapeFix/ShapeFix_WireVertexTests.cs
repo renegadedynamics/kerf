@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Healing.Extend;
@@ -135,7 +136,7 @@ public class ShapeFix_WireVertexTests
     {
         // OCCT: FixSame compares the last vertex of an edge (REVERSED) with the first of the next (FORWARD) with ==,
         // which compares orientations, so a shared vertex is added again; and it adds it without making the edge Free
-        // (Fix does), so on the edges of a wire TopoDS_Builder::Add throws TopoDS_FrozenShape.
+        // (Fix does), so on the edges of a wire TopoDS_Builder::Add throws DomainErrorException.
         Wire aSquare = new MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0),
                                                              new Point3D(1, 1, 0), new Point3D(0, 1, 0), true).Wire();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aSquare);
@@ -143,7 +144,7 @@ public class ShapeFix_WireVertexTests
         sfwv.Init(aSquare, 1.0e-3);
         Assert.Equal(1, sfwv.Analyzer().Status(1));
 
-        EngineAssert.Throws<FrozenShapeException>(() => sfwv.FixSame());
+        EngineAssert.Throws<DomainErrorException>(() => sfwv.FixSame());
         aSnap.AssertUnchanged(aSquare);
     }
 

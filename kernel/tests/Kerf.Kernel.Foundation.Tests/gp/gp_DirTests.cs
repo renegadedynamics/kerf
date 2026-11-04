@@ -174,7 +174,7 @@ public class gp_DirTest
     [Fact]
     public void ZeroMagnitudeInput_ThrowsException()
     {
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Direction3D(0.0, 0.0, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Direction3D(0.0, 0.0, 0.0));
     }
 
     // OCC22558: Mirror of gp_Dir(1,1,1) through gp_Ax2 at origin with main dir (1,0,0) gives

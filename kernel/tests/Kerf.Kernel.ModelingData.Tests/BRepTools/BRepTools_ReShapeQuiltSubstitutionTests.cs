@@ -249,7 +249,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         // a recorded frozen replacement can't be changed in place: OCCT's guard for locked shapes
         var aFrozenCase = new ReShape();
         aFrozenCase.Replace(aV, TestShapes.Frozen(TestShapes.Vertex(new Point3D(0, 0, 0))));
-        EngineAssert.Throws<LockedShapeException>(() => aFrozenCase.CopyVertex(aV, 0.5));
+        EngineAssert.Throws<ImmutableObjectException>(() => aFrozenCase.CopyVertex(aV, 0.5));
     }
 
     [Fact]
@@ -347,7 +347,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         aQuilt.Add(aF1);
         aQuilt.Bind(anE2, anE1);
         // OCCT gives the frozen first edge a pcurve on the second face in place
-        EngineAssert.Throws<LockedShapeException>(() => aQuilt.Add(aF2));
+        EngineAssert.Throws<ImmutableObjectException>(() => aQuilt.Add(aF2));
     }
 
     [Fact]

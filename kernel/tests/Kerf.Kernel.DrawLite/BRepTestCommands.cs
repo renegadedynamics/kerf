@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Measurement;
@@ -164,7 +165,7 @@ internal static class BRepTestCommands
                 {
                     theDI.SetShape(a[i], aName is "move" or "reset" ? S.Located(L, isException) : S.Moved(L, isException));
                 }
-                catch (global::Kerf.Engine.Foundation.DomainErrorException)
+                catch (Exception caught) when (Refusal.Of(caught) is global::Kerf.Engine.Foundation.DomainErrorException)
                 {
                     theDI.Output.WriteLine($"Operation is not done: {aName} is not a valid transformation - scale = {DrawFormat.AsciiString(T.ScaleFactor)}");
                     return 0;

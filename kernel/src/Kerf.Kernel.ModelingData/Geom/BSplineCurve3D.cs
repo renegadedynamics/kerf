@@ -2161,7 +2161,14 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     public BSplineCurve3D Segmented(double u1, double u2, double tolerance = Precision_PConfusion)
     {
         BSplineCurve3D copy = CopyBSpline();
-        copy.Segment(u1, u2, tolerance);
+        try
+        {
+            copy.Segment(u1, u2, tolerance);
+        }
+        catch (FailureException failure)
+        {
+            throw Refusal.Argument(failure);
+        }
         return copy;
     }
 

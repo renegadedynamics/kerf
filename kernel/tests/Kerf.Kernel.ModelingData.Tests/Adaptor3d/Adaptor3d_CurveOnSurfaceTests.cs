@@ -141,8 +141,8 @@ public class Adaptor3d_CurveOnSurfaceTests
         Assert.Equal(4.0, aCOS.LastParameter());
         Assert.False(aCOS.IsPeriodic);
         CheckEval(aCOS, aPlane, aLine, Params(-3.0, 4.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCOS.Circle());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCOS.DN(0.5, 4));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCOS.Circle());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCOS.DN(0.5, 4));
     }
 
     [Fact]
@@ -257,8 +257,8 @@ public class Adaptor3d_CurveOnSurfaceTests
         Assert.True(aCOS.IsRational == false);
         Assert.Equal(3, aCOS.Degree());
         Assert.Equal(5, aCOS.PoleCount);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCOS.KnotCount);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCOS.BSpline());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCOS.KnotCount);
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCOS.BSpline());
     }
 
     public static TheoryData<double, double, double, double> BSplineIsoLines() => new()
@@ -404,7 +404,7 @@ public class Adaptor3d_CurveOnSurfaceTests
         }
         Assert.True(aKnot);
         Assert.Equal(2, aCrossings);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ProgramErrorException>(() => aCOS.Intervals(new NCollection_Array1<double>(1, 2), C2));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ProgramErrorException>(() => aCOS.Intervals(new NCollection_Array1<double>(1, 2), C2));
 
         // Cached per continuity
         Assert.Equal(1, aCOS.NbIntervals(C1));
@@ -483,7 +483,7 @@ public class Adaptor3d_CurveOnSurfaceTests
 
         var aCOSCyl = new CurveOnSurface(new CurveAdaptor2D(aBz),
                                                    new TestSurfaceAdaptor(new CylindricalSurface(SomeAxes(), 1.0)));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCOSCyl.Bezier());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCOSCyl.Bezier());
     }
 
     [Fact]

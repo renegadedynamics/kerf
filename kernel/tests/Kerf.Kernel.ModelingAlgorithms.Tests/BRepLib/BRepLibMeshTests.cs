@@ -102,7 +102,7 @@ public class BRepLibMeshTests
     {
         Solid aBox = MeshedBox(0.3);
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aBox);
-        EngineAssert.Throws<LockedShapeException>(() => BrepLibrary.UpdateDeflection(aBox));
+        EngineAssert.Throws<ImmutableObjectException>(() => BrepLibrary.UpdateDeflection(aBox));
 
         Shape aCopy = BrepTools.CopyForWrite(aBox, out History aH);
         BrepLibrary.UpdateDeflection(aCopy);

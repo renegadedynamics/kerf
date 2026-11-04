@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Intersection.Tools;
@@ -166,7 +167,7 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
                 aFF.PrepareLines3D(aV.Prepare == 2);
             }
         }
-        catch (global::Kerf.Engine.Foundation.FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return aRec.Append("out throws\n").ToString();
         }

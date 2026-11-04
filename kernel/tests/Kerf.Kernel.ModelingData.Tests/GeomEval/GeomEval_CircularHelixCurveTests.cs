@@ -25,8 +25,8 @@ public class GeomEval_CircularHelixCurveTest
     public void Construction_InvalidRadius_Throws()
     {
         Frame3D anAx2 = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new CircularHelixCurve(anAx2, 0.0, 10.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new CircularHelixCurve(anAx2, -1.0, 10.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new CircularHelixCurve(anAx2, 0.0, 10.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new CircularHelixCurve(anAx2, -1.0, 10.0));
     }
 
     [Fact]
@@ -186,8 +186,8 @@ public class GeomEval_CircularHelixCurveTest
         CircularHelixCurve aCurve = new(anAx2, 5.0, 10.0);
         Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(1.0, 2.0, 3.0));
 
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));
     }
 
     [Fact]
@@ -208,8 +208,8 @@ public class GeomEval_CircularHelixCurveTest
     {
         Frame3D anAx2 = new();
         CircularHelixCurve aCurve = new(anAx2, 5.0, 10.0);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Reverse());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.ReversedParameter(3.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Reverse());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.ReversedParameter(3.0));
     }
 
     [Fact]

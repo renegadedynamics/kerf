@@ -539,6 +539,6 @@ public class BOPTools_AlgoTools3DTests
         Shape aCyl = BOPToolsTestShapes.Cylinder();
         Face aCF = BOPToolsTestShapes.Faces(aCyl).First(f => Tool.Surface(f) is CylindricalSurface);
         Edge aSeam = BOPToolsTestShapes.Edges(aCF).First(e => Tool.IsClosed(e, aCF));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => AlgoTools3D.DoSplitSEAMOnFace(aSeam, aCF));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => AlgoTools3D.DoSplitSEAMOnFace(aSeam, aCF));
     }
 }

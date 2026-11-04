@@ -95,6 +95,8 @@ public sealed class TrimmedCurve2D : BoundedCurve2D
     internal void SetTrim(double u1, double u2, bool sense = true, bool adjustPeriodic = true)
     {
         CheckMutable();
+        // A NaN compares false either way, and Reverse would come back here for ever
+        Refusal.ArgumentIf(double.IsNaN(u1) || double.IsNaN(u2), FailureKind.ConstructionError, "The trimming parameters aren't numbers");
         bool sameSense = true;
         if (u1 == u2)
         {

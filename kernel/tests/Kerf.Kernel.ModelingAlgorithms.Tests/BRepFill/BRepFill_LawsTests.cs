@@ -402,7 +402,7 @@ public class BRepFill_LawsTests
         Assert.True(W.IsClosed);
         Explorer anExp = new(W, ShapeType.Edge);
         Assert.True(Tool.Degenerated(ShapeCasts.Edge(anExp.Current())));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => new FillingSection(new MakeFace(new Plane3D(), 0, 1, 0, 1).Face(),
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => new FillingSection(new MakeFace(new Plane3D(), 0, 1, 0, 1).Face(),
                                                                       aV, false, false));
     }
 

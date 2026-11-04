@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Booleans.Legacy.Data;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Fillets.Blend;
@@ -43,7 +44,7 @@ public class ChFi3dBuilder0Tests
         P.SetPoint(Tool.Pnt(aFrozen));
         P.SetTolerance(1.0e-3);
         DsDataStructure DS = new();
-        Assert.Throws<global::Kerf.Engine.Topology.LockedShapeException>(() => ChFi3d_IndexPointInDS(P, DS));
+        EngineAssert.Throws<ImmutableObjectException>(() => ChFi3d_IndexPointInDS(P, DS));
         Assert.Equal(aTol, Tool.Tolerance(aFrozen));
 
         Shape aCopy = TestCopies.ExactCopyForWrite(aBox, out global::Kerf.Engine.Topology.History _);

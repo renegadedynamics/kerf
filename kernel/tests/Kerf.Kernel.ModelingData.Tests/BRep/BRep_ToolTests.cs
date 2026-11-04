@@ -252,7 +252,7 @@ public class BRep_ToolTests
         // a vertex not on the edge has no parameter
         Vertex aFar = TestShapes.Vertex(new Point3D(100, 100, 100));
         Assert.False(Tool.Parameter(aFar, anEdge, out _));
-        Assert.Throws<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => Tool.Parameter(aFar, anEdge));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => Tool.Parameter(aFar, anEdge));
     }
 
     [Fact]

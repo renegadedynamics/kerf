@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Topology;
@@ -110,7 +111,7 @@ public class BRepLibRegularityTests
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aBox);
         // OCCT swallows the exception of a locked edge; the port lets a frozen one through
-        EngineAssert.Throws<LockedShapeException>(() => BrepLibrary.EncodeRegularity(aBox));
+        EngineAssert.Throws<ImmutableObjectException>(() => BrepLibrary.EncodeRegularity(aBox));
         aBefore.AssertUnchanged(aBox);
     }
 
@@ -280,7 +281,7 @@ public class BRepLibRegularityTests
         Point2D aP = aC2D!.Value(5.0); // the line is parametrised by length
         Assert.Equal(4.0, aP.X, 1e-12);
         Assert.Equal(6.0, aP.Y, 1e-12);
-        EngineAssert.Throws<LockedShapeException>(() => BrepLibrary.BuildPCurveForEdgeOnPlane(anE, aF));
+        EngineAssert.Throws<ImmutableObjectException>(() => BrepLibrary.BuildPCurveForEdgeOnPlane(anE, aF));
 
         Shape aCopy = BrepTools.CopyForWrite(aC, out History aH);
         Face aFc = ShapeCasts.Face(aH.Modified(aF)[0]);

@@ -47,7 +47,7 @@ public class IntPatch_PolygonTests
 
         // A full circle is closed; infinite bounds or one sample are refused.
         Assert.True(new PolyArc(aCircle, 12, 0.0, 2 * Math.PI, Box(-1, -1, 1, 1)).Closed());
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new PolyArc(aCircle, 1, 0.0, 1.0, Box(-1, -1, 1, 1)));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new PolyArc(aCircle, 1, 0.0, 1.0, Box(-1, -1, 1, 1)));
     }
 
     [Fact]

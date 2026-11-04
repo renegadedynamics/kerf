@@ -316,8 +316,8 @@ public class BRepExtremaTests
     {
         var anEmpty = new DistanceShapeShape();
         Assert.False(anEmpty.Perform());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => anEmpty.Value());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => anEmpty.SupportOnShape1(1));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => anEmpty.Value());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => anEmpty.SupportOnShape1(1));
 
         var aD = new DistanceShapeShape(V(0, 0, 0), V(1, 0, 0));
         var aText = new StringWriter();

@@ -382,7 +382,14 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         shape = CompoundTrsf;
 
         matrix = m;
-        matrix = Orthogonalized(matrix);
+        try
+        {
+            matrix = Orthogonalized(matrix);
+        }
+        catch (FailureException failure)
+        {
+            throw Refusal.Argument(failure);
+        }
 
         loc = col3;
         return new Transform2D(scale, shape, matrix, loc);

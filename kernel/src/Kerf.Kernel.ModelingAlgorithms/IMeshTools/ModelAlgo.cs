@@ -39,11 +39,11 @@ public abstract class ModelAlgo : Transient
     /// The exceptions OCCT's <c>catch (Standard_Failure const&amp;)</c> handles under <c>OCC_CATCH_SIGNALS</c> in the
     /// mesher (as BRepCheck_Analyzer's): Standard_Failure, and the .NET forms of the access violations and integer
     /// divisions by zero that OCC_CATCH_SIGNALS turns into failures. A write into a frozen object
-    /// (<see cref="ImmutableObjectException"/>, <see cref="LockedShapeException"/>) is let through, so a write into a
+    /// (<see cref="ImmutableObjectException"/>, <see cref="ImmutableObjectException"/>) is let through, so a write into a
     /// shared input can't pass silently (decision 423's rule).
     /// </summary>
     internal static bool IsCaughtFailure(Exception exception)
-        => exception is not (ImmutableObjectException or LockedShapeException)
+        => exception is not ImmutableObjectException
            && (Refusal.IsFailure(exception) || exception is NullReferenceException
                or InvalidCastException
                or IndexOutOfRangeException

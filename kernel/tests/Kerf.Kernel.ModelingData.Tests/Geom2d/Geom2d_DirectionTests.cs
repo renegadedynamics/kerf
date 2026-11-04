@@ -31,7 +31,7 @@ public class Geom2d_DirectionTest
     public void ConstructFromZero_Throws()
     {
         // The port always checks (No_Exception is never defined)
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Direction2(0.0, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Direction2(0.0, 0.0));
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class Geom2d_DirectionTest
     {
         // The port always checks (No_Exception is never defined)
         Direction2 aDir = new Direction2(1.0, 0.0);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aDir.SetCoord(0.0, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aDir.SetCoord(0.0, 0.0));
     }
 
     [Fact]

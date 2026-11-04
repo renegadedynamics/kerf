@@ -256,7 +256,7 @@ public class Geom2dHatch_HatcherTests
         aHatcher.KeepSegments(true); // clears the domains, keeps the points
         Assert.True(aHatcher.KeepSegments());
         Assert.False(aHatcher.IsDone(aIH));
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aHatcher.NbDomains(aIH));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aHatcher.NbDomains(aIH));
         Assert.True(aHatcher.TrimDone(aIH));
         Assert.Equal(2, aHatcher.NbPoints(aIH));
 
@@ -274,7 +274,7 @@ public class Geom2dHatch_HatcherTests
         Assert.Equal(0, aHatcher.NbPoints(aIH));
 
         aHatcher.Clear();
-        Assert.Throws<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aHatcher.NbPoints(aIH));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aHatcher.NbPoints(aIH));
     }
 
     [Fact]

@@ -609,8 +609,8 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         aParams.SetValue(2, 1.0);
         Assert.True(anEval.EvaluateGrid(aParams).IsEmpty());
         Assert.True(anEval.EvaluateGridD1(aParams).IsEmpty());
-        Assert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anEval.EvaluateGridDN(aParams, 1));
-        Assert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anEval.EvaluateGridDN(aParams, 3));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anEval.EvaluateGridDN(aParams, 1));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anEval.EvaluateGridDN(aParams, 3));
     }
 
     // GeomGridEval_Parabola takes YDir from the gp_Ax2, which always gives the frame's own Y direction: unlike

@@ -490,7 +490,7 @@ internal sealed class OffsetWire
             }
         }
         catch (Exception exception) when ((Refusal.IsFailure(exception) || exception is NullReferenceException)
-                                            && exception is not (ImmutableObjectException or LockedShapeException))
+                                            && exception is not ImmutableObjectException)
         {
             // OCC_CATCH_SIGNALS turns OCCT's access violations (a null bisector, occt-issues.md) into failures caught
             // here: the port's NullReferenceException (decision 917)

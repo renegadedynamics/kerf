@@ -458,7 +458,7 @@ internal class MakeWireOffset : MakeShape
             }
         }
         catch (Exception exception) when ((Refusal.IsFailure(exception) || exception is NullReferenceException)
-                                            && exception is not (ImmutableObjectException or LockedShapeException))
+                                            && exception is not ImmutableObjectException)
         {
             // OCCT catches Standard_Failure; with the signals Draw and build123d.NET set, an access violation (the
             // medial axis's null bisector, occt-issues.md) arrives as one: the port's NullReferenceException

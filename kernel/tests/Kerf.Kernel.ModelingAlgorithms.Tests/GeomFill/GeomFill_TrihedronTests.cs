@@ -269,7 +269,7 @@ public class GeomFill_TrihedronTests
     [Fact]
     public void Fixed_ParallelVectors_Throw()
     {
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Fixed(new Vector3D(1, 0, 0), new Vector3D(2, 0.001, 0)));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Fixed(new Vector3D(1, 0, 0), new Vector3D(2, 0.001, 0)));
     }
 
     [Fact]
@@ -504,7 +504,7 @@ public class GeomFill_TrihedronTests
         AssertNear((aD1 * 0.5).Crossed(aD3), aV, 1.0e-12, "derivative");
         Assert.Equal(CurveKind.OtherCurve, aF.GetType());
         Assert.Equal(anAd.NbIntervals(Continuity.C2), aF.NbIntervals(Continuity.C0));
-        Assert.Throws<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aF.DN(0.7, 4));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aF.DN(0.7, 4));
         Assert.IsType<SnglrFunc>(aF.ShallowCopy());
     }
 

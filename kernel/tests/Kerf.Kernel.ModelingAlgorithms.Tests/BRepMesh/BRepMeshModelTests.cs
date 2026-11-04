@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry.Bounds;
@@ -406,9 +407,9 @@ public class BRepMeshModelTests
         // A finer deflection: every triangulation and polygon is outdated.
         ToolContext aContext = Context(aShape, Params(0.01));
         Assert.True(aContext.BuildModel() && aContext.DiscretizeEdges() && aContext.HealModel());
-        // The reader's shapes are frozen and locked: the first removal throws (TopoDS_LockedShape), never writes.
-        Exception anError = Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => aContext.PreProcessModel());
-        Assert.True(anError is global::Kerf.Engine.Foundation.ImmutableObjectException or LockedShapeException, global::Kerf.Engine.Foundation.OcctTypeNames.Of(anError.GetType()));
+        // The reader's shapes are frozen and locked: the first removal throws (ImmutableObjectException), never writes.
+        Exception anError = EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => aContext.PreProcessModel());
+        Assert.True(anError is global::Kerf.Engine.Foundation.ImmutableObjectException or ImmutableObjectException, global::Kerf.Engine.Foundation.OcctTypeNames.Of(anError.GetType()));
         aSnapshot.AssertUnchanged(aShape);
 
         Shape aCopy = TestCopies.ExactCopyForWrite(aShape, out _);

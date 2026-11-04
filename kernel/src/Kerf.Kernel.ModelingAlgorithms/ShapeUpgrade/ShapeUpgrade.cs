@@ -190,9 +190,9 @@ internal static class ShapeUpgrade
     /// <summary>
     /// OCCT.NET: what ShapeUpgrade's <c>OCC_CATCH_SIGNALS</c> blocks catch: a Standard_Failure, or a
     /// NullReferenceException where OCCT dereferences a null handle (an access violation natively, decision 977);
-    /// never a write into a frozen object (Standard_ImmutableObject, TopoDS_LockedShape: decision 423).
+    /// never a write into a frozen object (Standard_ImmutableObject, ImmutableObjectException: decision 423).
     /// </summary>
     internal static bool IsCaughtFailure(Exception exception)
-        => exception is not (ImmutableObjectException or LockedShapeException)
+        => exception is not ImmutableObjectException
            && (Refusal.IsFailure(exception) || exception is NullReferenceException);
 }

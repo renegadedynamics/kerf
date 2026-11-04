@@ -91,7 +91,7 @@ internal static class Customize
     /// <remarks>
     /// The modifier keeps its maps from one call to the next, as OCCT's: a modifier reused for a shape that shares
     /// sub-shapes with an earlier call's result would add pcurves to that result's edges, which are frozen, and throws
-    /// <see cref="LockedShapeException"/> (decision 973). Use a new modifier for each call.
+    /// <see cref="ImmutableObjectException"/> (decision 973). Use a new modifier for each call.
     /// </remarks>
     public static Shape ApplyModifier(in Shape s,
                                              Modification m,

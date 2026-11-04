@@ -168,7 +168,7 @@ public class Geom_PlaneTests
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), V2);
         Assert.False(aPlane.IsUClosed || aPlane.IsVClosed || aPlane.IsUPeriodic || aPlane.IsVPeriodic);
         Assert.Equal(Continuity.CN, aPlane.Continuity);
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new PlaneSurface(0, 0, 0, 1));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new PlaneSurface(0, 0, 0, 1));
     }
 
     [Fact]
@@ -176,9 +176,9 @@ public class Geom_PlaneTests
     {
         PlaneSurface aPlane = new(new CoordinateSystem(Constants.XOY()));
         aPlane.Freeze();
-        Assert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aPlane.SetPln(new Plane3D(new CoordinateSystem(Constants.YOZ()))));
-        Assert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aPlane.Translate(new Vector3D(1, 0, 0)));
-        Assert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aPlane.UReverse());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aPlane.SetPln(new Plane3D(new CoordinateSystem(Constants.YOZ()))));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aPlane.Translate(new Vector3D(1, 0, 0)));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aPlane.UReverse());
         PlaneSurface aOther = aPlane.WithPln(new Plane3D(new CoordinateSystem(Constants.YOZ())));
         Assert.False(aOther.IsFrozen);
         Assert.Equal(Constants.YOZ().Direction, aOther.Axis.Direction);

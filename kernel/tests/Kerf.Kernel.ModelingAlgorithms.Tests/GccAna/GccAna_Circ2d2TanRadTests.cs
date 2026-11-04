@@ -191,11 +191,11 @@ public class GccAna_Circ2d2TanRadTests
     {
         Line2D aL = Lin(0, 0, 1, 0);
         global::Kerf.Engine.Construction.Constraints.QualifiedLin aBad = new(aL, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing);
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanRad(aBad, global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL), 1.0, Tol));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanRad(aBad, new Point2D(0, 1), 1.0, Tol));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Circ(0, 0, 1)), aBad, 1.0, Tol));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanRad(aBad, global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL), 1.0, Tol));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanRad(aBad, new Point2D(0, 1), 1.0, Tol));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Circ(0, 0, 1)), aBad, 1.0, Tol));
         global::Kerf.Engine.Construction.Constraints.QualifiedCirc aNoQual = new(Circ(0, 0, 1), global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier);
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanRad(aNoQual, global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Circ(4, 0, 1)), 1.0, Tol));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanRad(aNoQual, global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Circ(4, 0, 1)), 1.0, Tol));
     }
 
     [Fact]

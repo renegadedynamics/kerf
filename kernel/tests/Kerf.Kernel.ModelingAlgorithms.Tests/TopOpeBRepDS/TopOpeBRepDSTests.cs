@@ -93,7 +93,7 @@ public class TopOpeBRepDSTests
         T.IndexAfter(4);
         Assert.Equal(3, T.IndexBefore());
         Assert.Equal(4, T.IndexAfter());
-        Assert.Throws<global::Kerf.Engine.Foundation.FailureException>(() => T.Index());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.FailureException>(() => T.Index());
         // the complement keeps the indices
         Assert.Equal(4, T.Complement().IndexAfter());
     }
@@ -260,12 +260,12 @@ public class TopOpeBRepDSTests
     public void DataStructure_Points()
     {
         DsDataStructure DS = new();
-        Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => DS.Point(1));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => DS.Point(1));
         Assert.Equal(1, DS.AddPoint(new DsPoint(new Point3D(1, 2, 3), 0.1)));
         Assert.Equal(2, DS.AddPointSS(new DsPoint(new Point3D(1, 2, 3.05), 0.01), theBox, theBox));
         Assert.True(DS.Point(1).IsEqual(DS.Point(2))); // within the larger tolerance
         Assert.False(DS.Point(2).IsEqual(new DsPoint(new Point3D(1, 2, 3.2), 0.01)));
-        Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => DS.Point(3));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => DS.Point(3));
 
         DS.ChangePoint(1).Tolerance(0.5);
         Assert.Equal(0.5, DS.Point(1).Tolerance());
@@ -285,7 +285,7 @@ public class TopOpeBRepDSTests
         DsPoint PV = new(V);
         Assert.True(PV.Point().IsEqual(Tool.Pnt(global::Kerf.Engine.Topology.ShapeCasts.Vertex(V)), 0.0));
         Assert.Equal(Tool.Tolerance(global::Kerf.Engine.Topology.ShapeCasts.Vertex(V)), PV.Tolerance());
-        Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => new DsPoint(theBox));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => new DsPoint(theBox));
     }
 
     [Fact]
@@ -444,7 +444,7 @@ public class TopOpeBRepDSTests
         DsPointIterator pit = new(L);
         Assert.True(pit.IsPoint);
         Assert.Equal(Reversed, pit.Orientation(In));
-        Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => pit.SameOriented());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => pit.SameOriented());
         pit.Next();
         Assert.True(pit.IsVertex);
         Assert.True(pit.SameOriented());
@@ -509,8 +509,8 @@ public class TopOpeBRepDSTests
         Assert.Equal(1, DS.ShapeInterferences(E1).Extent());
         Assert.True(HDS.EdgePoints(E1).More());
 
-        Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => HDS.StoreInterference(CPI, theBox));
-        Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => HDS.StoreInterference(CPI, 3));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => HDS.StoreInterference(CPI, theBox));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => HDS.StoreInterference(CPI, 3));
 
         Assert.Equal(1, HDS.FaceCurves(F1).Current());
         Assert.Equal(iC, HDS.FaceCurves(iF).Current());

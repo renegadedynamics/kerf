@@ -29,11 +29,11 @@ public class ChFiDSTests
         Assert.False(P.IsOnArc);
         Assert.False(P.HasVector);
         Assert.Equal(0.0, P.Tolerance());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.Vertex());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.Arc());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.ParameterOnArc());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.TransitionOnArc());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.Vector());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.Vertex());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.Arc());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.ParameterOnArc());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.TransitionOnArc());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.Vector());
 
         Edge E = new MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
         Vertex V = Exploration.FirstVertex(E);
@@ -111,7 +111,7 @@ public class ChFiDSTests
         SurfData D = new();
         Assert.Equal(Forward, D.Orientation());
         Assert.False(D.IsOnCurve1);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => D.IndexOfC1());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => D.IndexOfC1());
         D.ChangeIndexOfS1(1);
         D.ChangeIndexOfS2(2);
         D.ChangeSurf(7);
@@ -243,12 +243,12 @@ public class ChFiDSTests
         Sp.SetDist(2.0);
         Sp.GetDist(out double d);
         Assert.Equal(2.0, d);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => Sp.Dists(out _, out _));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => Sp.Dists(out _, out _));
         Sp.SetDists(1.0, 3.0);
         Sp.Dists(out double d1, out double d2);
         Assert.Equal((1.0, 3.0), (d1, d2));
         Assert.Equal(ChamfMethod.TwoDist, Sp.IsChamfer);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => Sp.GetDist(out _));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => Sp.GetDist(out _));
         Sp.SetDistAngle(1.5, 0.5);
         Sp.GetDistAngle(out double dd, out double a);
         Assert.Equal((1.5, 0.5), (dd, a));
@@ -287,10 +287,10 @@ public class ChFiDSTests
         Sp.Load();
         Assert.True(Sp.IsClosed);
         Assert.Equal(10.0 * Math.PI, Sp.LastParameter(), 1.0e-9);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => Sp.Period());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => Sp.Period());
         Sp.SetFirstStatus(State.Closed);
         Assert.Equal(Sp.LastParameter(), Sp.Period());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => Sp.SetFirstTgt(0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => Sp.SetFirstTgt(0.0));
         Assert.Null(Sp.ElSpine(1.0));
 
         ElSpine anEls = new();
@@ -321,11 +321,11 @@ public class ChFiDSTests
 
         Sp.SetRadius(3.0, Sp.Edges(3));
         Assert.False(Sp.IsConstant());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => Sp.Radius());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => Sp.Radius());
         Assert.True(Sp.IsConstant(3));
         Assert.Equal(3.0, Sp.Radius(3));
         Assert.False(Sp.IsConstant(2));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => Sp.Radius(2));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => Sp.Radius(2));
         Assert.Equal(3.0, Sp.MaxRadFromSeqAndLaws());
 
         Sp.UnSetRadius(Sp.Edges(3));
@@ -336,6 +336,6 @@ public class ChFiDSTests
         Assert.Equal(5.0, Sp.MaxRadFromSeqAndLaws());
         Sp.UnSetRadius(V);
         Assert.Equal(2.0, Sp.MaxRadFromSeqAndLaws());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => Sp.ChangeLaw(Sp.Edges(1)));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => Sp.ChangeLaw(Sp.Edges(1)));
     }
 }

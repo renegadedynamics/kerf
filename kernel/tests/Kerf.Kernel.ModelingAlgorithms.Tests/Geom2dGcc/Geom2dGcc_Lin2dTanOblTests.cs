@@ -78,7 +78,7 @@ public class Geom2dGcc_Lin2dTanOblTests
             Line2D aSol = aLin.ThisSolution(i);
             Assert.Equal(1.0, Math.Abs(aSol.Location.Y), 1e-6);
             Assert.True(Math.Abs(aSol.Direction.Y) < 1e-9);
-            Assert.Throws<global::Kerf.Engine.Construction.Constraints.IsParallelException>(() => aLin.Intersection2(i, out _, out _, out _));
+            EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.IsParallelException>(() => aLin.Intersection2(i, out _, out _, out _));
         }
     }
 
@@ -92,7 +92,7 @@ public class Geom2dGcc_Lin2dTanOblTests
         EngineAssert.Throws<OutOfRangeException>(() => aLin.Tangency1(0, out _, out _, out _));
         EngineAssert.Throws<OutOfRangeException>(() => aLin.Intersection2(3, out _, out _, out _));
         EngineAssert.Throws<OutOfRangeException>(() => aLin.WhichQualifier(3, out _));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new global::Kerf.Engine.Construction.Constraints.Lin2dTanObl(new global::Kerf.Engine.Construction.Constraints.QualifiedCurve(anEll, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), aLine, 1e-6, M_PI / 4));
     }
 }

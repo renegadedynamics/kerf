@@ -237,7 +237,7 @@ public class BRepTools_ModifierTests
         // OCCT's mutable input updates the input's vertices in place: on a frozen edge that throws, as on a locked one
         var aMutable = new Modifier(true);
         aMutable.Init(anEdge);
-        EngineAssert.Throws<LockedShapeException>(() => aMutable.Perform(new NurbsConvertModification()));
+        EngineAssert.Throws<ImmutableObjectException>(() => aMutable.Perform(new NurbsConvertModification()));
         aSnapshot.AssertUnchanged(anEdge);
     }
 

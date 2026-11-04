@@ -346,7 +346,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
         {
             // Both sides reject a deflection below the confusion tolerance (a tiny shape at a relative fraction).
             Assert.ThrowsAny<N.OcctException>(() => NativeMesh(theF1, aDeflection, theSetting));
-            Assert.Throws<global::Kerf.Engine.Foundation.NumericErrorException>(() => new IncrementalMesh(aPortF1, aDeflection, theSetting.Relative, theSetting.Angle, theSetting.Parallel));
+            EngineAssert.Throws<global::Kerf.Engine.Foundation.NumericErrorException>(() => new IncrementalMesh(aPortF1, aDeflection, theSetting.Relative, theSetting.Angle, theSetting.Parallel));
             theTally.BothRejected++;
             return;
         }

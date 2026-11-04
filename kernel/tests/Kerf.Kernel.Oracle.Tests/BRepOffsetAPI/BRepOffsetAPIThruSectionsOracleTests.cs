@@ -352,7 +352,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
         catch (Exception f) when (Refusal.IsFailure(f))
         {
             aPError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(f).GetType());
-            if (f is ImmutableObjectException or LockedShapeException)
+            if (f is ImmutableObjectException)
             {
                 aPError += " " + string.Join(" / ", (f.StackTrace ?? "").Split('\n').Take(4).Select(l => l.Trim()));
             }

@@ -501,7 +501,7 @@ internal class LibraryMakeEdge : LibraryMakeShape
         _vertex2 = v2;
 
         // OCCT.NET: OCCT remakes the edge in myShape (TopoDS::Edge(myShape)); the port makes it in a new variable,
-        // so that Init after a public (freezing) read of the edge doesn't throw TopoDS_LockedShape. The result is
+        // so that Init after a public (freezing) read of the edge doesn't throw ImmutableObjectException. The result is
         // the same: MakeEdge gives a new TShape with the identity location, FORWARD.
         Edge e = new();
         b.MakeEdge(ref e, c, preci);

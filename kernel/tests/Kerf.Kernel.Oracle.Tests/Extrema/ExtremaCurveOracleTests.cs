@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Api;
@@ -37,7 +38,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
         {
             thePort();
         }
-        catch (global::Kerf.Engine.Foundation.FailureException anE)
+        catch (Exception anE) when (Refusal.IsFailure(anE))
         {
             aPortError = anE;
         }

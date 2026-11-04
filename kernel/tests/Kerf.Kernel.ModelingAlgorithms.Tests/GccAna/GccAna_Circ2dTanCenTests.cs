@@ -167,7 +167,7 @@ public class GccAna_Circ2dTanCenTests
     [Fact]
     public void Errors()
     {
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new AnalyticCirc2dTanCen(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(Circ(0, 0, 1), global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), new Point2D(3, 0), 1.0e-9));
         AnalyticCirc2dTanCen anAlgo = new(new Point2D(4, 5), new Point2D(1, 1));
         EngineAssert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(2));

@@ -133,7 +133,7 @@ public class Geom2dGcc_Circ2dTanOnRadTests
         CurveAdaptor2D anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
         CurveAdaptor2D aLine = new(new LineCurve2D(new Point2D(0, -2), new Direction2D(1, 0.3)));
         EngineAssert.Throws<NegativeValueException>(() => new global::Kerf.Engine.Construction.Constraints.Circ2dTanOnRad(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), aLine, -1, 1e-9));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new global::Kerf.Engine.Construction.Constraints.Circ2dTanOnRad(new global::Kerf.Engine.Construction.Constraints.QualifiedCurve(anEll, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), aLine, 1, 1e-9));
 
         global::Kerf.Engine.Construction.Constraints.Circ2dTanOnRad aCirc = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), aLine, 0.5, 1e-9);

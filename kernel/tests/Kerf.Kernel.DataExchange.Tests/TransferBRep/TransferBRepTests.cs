@@ -41,7 +41,7 @@ public class TransferBRepTests
         Assert.True(aBinder.Face().IsSame(myFaces[0]));
         EngineAssert.Throws<TypeMismatchException>(() => aBinder.Edge());
         aBinder.SetAlreadyUsed();
-        Assert.Throws<global::Kerf.Engine.Exchange.Framework.Transfer.TransferFailureException>(() => aBinder.SetResult(myBox));
+        EngineAssert.Throws<global::Kerf.Engine.Exchange.Framework.Transfer.TransferFailureException>(() => aBinder.SetResult(myBox));
 
         var aSolid = new global::Kerf.Engine.Exchange.Framework.Transfer.ShapeBinder(myBox);
         Assert.True(aSolid.HasResult);

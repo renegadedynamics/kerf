@@ -147,7 +147,7 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
             }
             return new("done", aLines);
         }
-        catch (global::Kerf.Engine.Foundation.FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return new("throws", []);
         }

@@ -142,7 +142,7 @@ public class ShapeUpgradeNativeTests(ITestOutputHelper output)
             Trace("  " + theTool);
             return theRun();
         }
-        catch (Exception e) when ((Refusal.IsFailure(e) || e is NullReferenceException) && e is not (ImmutableObjectException or LockedShapeException))
+        catch (Exception e) when ((Refusal.IsFailure(e) || e is NullReferenceException) && e is not ImmutableObjectException)
         {
             // an access violation natively (decision 977)
             return $"{theTool} THROW {(e is NullReferenceException ? "OSD_Exception_ACCESS_VIOLATION" : global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()))}";

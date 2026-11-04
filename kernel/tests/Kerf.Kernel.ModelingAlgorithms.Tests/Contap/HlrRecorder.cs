@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.HiddenLines.Algorithm;
@@ -675,7 +676,7 @@ internal sealed class HlrRecorder
                 Contour C = new(aSurface, aDomain, aDirs[i]);
                 Contour(C);
             }
-            catch (global::Kerf.Engine.Foundation.FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 Line("exception");
             }
@@ -689,7 +690,7 @@ internal sealed class HlrRecorder
                 C.Perform(aSurface, aDomain);
                 Contour(C);
             }
-            catch (global::Kerf.Engine.Foundation.FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 Line("exception");
             }
@@ -701,7 +702,7 @@ internal sealed class HlrRecorder
             C.Perform(aSurface, aDomain, aDirs[0], 0.15);
             Contour(C);
         }
-        catch (global::Kerf.Engine.Foundation.FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Line("exception");
         }

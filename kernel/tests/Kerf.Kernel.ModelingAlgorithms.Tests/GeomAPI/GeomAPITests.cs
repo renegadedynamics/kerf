@@ -52,7 +52,7 @@ public class GeomAPITests
         Assert.True(((Point3D)aProj).IsEqual(new Point3D(5, 0, 0), Tol));
         double aMax = Math.Max(aProj.Distance(1), aProj.Distance(2));
         Assert.Equal(Math.Sqrt(15 * 15 + 9.0), aMax, Tol);
-        Assert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => aProj.Point(3));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => aProj.Point(3));
     }
 
     [Fact]
@@ -68,11 +68,11 @@ public class GeomAPITests
         // The point projects outside [5, 6]: no extremum inside the range
         ProjectPointOnCurve aRanged = new(new Point3D(1, 2, 3), aLine, 5.0, 6.0);
         Assert.Equal(0, aRanged.NbPoints());
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aRanged.LowerDistance());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aRanged.LowerDistance());
 
         // Init on a range, then several points
         ProjectPointOnCurve aReused = new();
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aReused.NearestPoint());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aReused.NearestPoint());
         aReused.Init(aLine, -10.0, 10.0);
         Assert.Equal(0, aReused.NbPoints());
         aReused.Perform(new Point3D(0, 1, 4));
@@ -293,11 +293,11 @@ public class GeomAPITests
 
         // Coincident points, unordered parameters, a periodic interpolation without the closing parameter
         NCollection_HArray1<Point3D> aSame = new(1, 2);
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new ApiInterpolate(aSame, false, global::Kerf.Engine.Foundation.Precision.Confusion()));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new ApiInterpolate(aSame, false, global::Kerf.Engine.Foundation.Precision.Confusion()));
         aParams.SetValue(3, 1.5);
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new ApiInterpolate(aPnts, aParams, false, 1.0e-7));
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new ApiInterpolate(aPnts, aParams, true, 1.0e-7));
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => new ApiInterpolate(aPnts, false, 1.0e-7).Curve());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new ApiInterpolate(aPnts, aParams, false, 1.0e-7));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new ApiInterpolate(aPnts, aParams, true, 1.0e-7));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => new ApiInterpolate(aPnts, false, 1.0e-7).Curve());
     }
 
     [Fact]
@@ -333,7 +333,7 @@ public class GeomAPITests
         anApprox.Init(aPoints, 1.0, 0.0, 0.0);
         Assert.True(anApprox.IsDone);
 
-        Assert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anApprox.Init(aPoints, new NCollection_Array1<double>(1, 3)));
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => new PointsToBSpline().Curve());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anApprox.Init(aPoints, new NCollection_Array1<double>(1, 3)));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => new PointsToBSpline().Curve());
     }
 }

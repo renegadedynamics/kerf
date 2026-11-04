@@ -109,7 +109,7 @@ public class Extrema_ElementaryTest
         var aCirc = new Circle3D(new Frame3D(), 3);
         var anExt = new ExtPElC(new Point3D(0, 0, 5), aCirc, 1e-7, 0, 2 * Math.PI);
         Assert.False(anExt.IsDone);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anExt.ExtCount);
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anExt.ExtCount);
     }
 
     [Fact]
@@ -283,6 +283,6 @@ public class Extrema_ElementaryTest
         Assert.True(aCrossing.IsDone);
         Assert.Equal(0, aCrossing.ExtCount);
 
-        Assert.Throws<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => new ExtElSS(new Sphere(), new Sphere()));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => new ExtElSS(new Sphere(), new Sphere()));
     }
 }

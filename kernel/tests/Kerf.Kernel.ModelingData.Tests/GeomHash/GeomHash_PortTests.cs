@@ -366,6 +366,6 @@ public class GeomHash_PortTests
         var aNonPeriodic = new BSplineCurve3D(aPoles3, aKnots, aMults, 2, false);
         var aHasher = new CurveHasher();
         Assert.True(aHasher.Equals(aNonPeriodic, aPeriodic));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => aHasher.Equals(aPeriodic, aNonPeriodic));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => aHasher.Equals(aPeriodic, aNonPeriodic));
     }
 }

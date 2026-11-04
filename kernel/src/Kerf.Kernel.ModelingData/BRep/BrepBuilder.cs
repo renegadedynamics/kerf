@@ -23,7 +23,7 @@ namespace Kerf.Engine.Topology.Brep;
 /// <para>
 /// Internal to OCCT.NET but for the face of a triangulation, which the modelling layer makes when it reads a mesh (Kerf
 /// unit 10B; engine, internal, in unit 10L). Every update throws
-/// <see cref="LockedShapeException"/> on a locked shape, and in the port every frozen shape is locked, unless a working
+/// <see cref="ImmutableObjectException"/> on a locked shape, and in the port every frozen shape is locked, unless a working
 /// overlay is open (<see cref="WorkingOverlay"/>, Kerf unit 10H1): then the update of a frozen shape goes into the
 /// overlay's working copy of it, and the frozen shape doesn't change. A frozen child can be added to an unfrozen parent. Every curve, surface, triangulation or polygon the builder stores is frozen.
 /// </para>
@@ -454,7 +454,7 @@ internal sealed class BrepBuilder : Builder
         // copy did (unit 10H5)
         if (!f.IsNull && WorkingOverlay.IsLocked(f.TShape()!))
         {
-            throw new LockedShapeException("BRep_Builder::MakeFace");
+            throw new ImmutableObjectException("BRep_Builder::MakeFace");
         }
 
         tf.Surface(s);
@@ -470,7 +470,7 @@ internal sealed class BrepBuilder : Builder
         // copy did (unit 10H5)
         if (!face.IsNull && WorkingOverlay.IsLocked(face.TShape()!))
         {
-            throw new LockedShapeException("BRep_Builder::MakeFace");
+            throw new ImmutableObjectException("BRep_Builder::MakeFace");
         }
 
         tFace.Triangulation(triangulation);
@@ -487,7 +487,7 @@ internal sealed class BrepBuilder : Builder
         // copy did (unit 10H5)
         if (!face.IsNull && WorkingOverlay.IsLocked(face.TShape()!))
         {
-            throw new LockedShapeException("BRep_Builder::MakeFace");
+            throw new ImmutableObjectException("BRep_Builder::MakeFace");
         }
 
         tFace.Triangulations(triangulations, activeTriangulation);
@@ -502,7 +502,7 @@ internal sealed class BrepBuilder : Builder
         // copy did (unit 10H5)
         if (!f.IsNull && WorkingOverlay.IsLocked(f.TShape()!))
         {
-            throw new LockedShapeException("BRep_Builder::MakeFace");
+            throw new ImmutableObjectException("BRep_Builder::MakeFace");
         }
 
         tf.Surface(s);
@@ -517,7 +517,7 @@ internal sealed class BrepBuilder : Builder
         BrepTFace tf = (BrepTFace)f.TShape()!;
         if (WorkingOverlay.IsLocked(tf))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateFace");
+            throw new ImmutableObjectException("BRep_Builder::UpdateFace");
         }
 
         tf.Surface(s);
@@ -535,7 +535,7 @@ internal sealed class BrepBuilder : Builder
         BrepTFace tFace = (BrepTFace)face.TShape()!;
         if (WorkingOverlay.IsLocked(tFace))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateFace");
+            throw new ImmutableObjectException("BRep_Builder::UpdateFace");
         }
 
         tFace.Triangulation(triangulation, toReset, true);
@@ -548,7 +548,7 @@ internal sealed class BrepBuilder : Builder
         BrepTFace tf = (BrepTFace)f.TShape()!;
         if (WorkingOverlay.IsLocked(tf))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateFace");
+            throw new ImmutableObjectException("BRep_Builder::UpdateFace");
         }
 
         tf.Tolerance(tol);
@@ -561,7 +561,7 @@ internal sealed class BrepBuilder : Builder
         BrepTFace tf = (BrepTFace)f.TShape()!;
         if (WorkingOverlay.IsLocked(tf))
         {
-            throw new LockedShapeException("BRep_Builder::NaturalRestriction");
+            throw new ImmutableObjectException("BRep_Builder::NaturalRestriction");
         }
 
         tf.NaturalRestriction(n);
@@ -576,7 +576,7 @@ internal sealed class BrepBuilder : Builder
         // copy did (unit 10H5)
         if (!e.IsNull && WorkingOverlay.IsLocked(e.TShape()!))
         {
-            throw new LockedShapeException("BRep_Builder::MakeEdge");
+            throw new ImmutableObjectException("BRep_Builder::MakeEdge");
         }
 
         MakeShape(ref ShapeCasts.AsShapeRef(ref e), te);
@@ -627,7 +627,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateEdge");
+            throw new ImmutableObjectException("BRep_Builder::UpdateEdge");
         }
 
         Placement l = L.Predivided(e.Placement);
@@ -661,7 +661,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateEdge");
+            throw new ImmutableObjectException("BRep_Builder::UpdateEdge");
         }
 
         Placement l = L.Predivided(e.Placement);
@@ -687,7 +687,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateEdge");
+            throw new ImmutableObjectException("BRep_Builder::UpdateEdge");
         }
 
         Placement l = L.Predivided(e.Placement);
@@ -712,7 +712,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateEdge");
+            throw new ImmutableObjectException("BRep_Builder::UpdateEdge");
         }
 
         Placement l = L.Predivided(e.Placement);
@@ -739,7 +739,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateEdge");
+            throw new ImmutableObjectException("BRep_Builder::UpdateEdge");
         }
 
         Placement l = L.Predivided(e.Placement);
@@ -761,7 +761,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateEdge");
+            throw new ImmutableObjectException("BRep_Builder::UpdateEdge");
         }
 
         NCollection_List<CurveRepresentation> lcr = te.ChangeCurves();
@@ -808,7 +808,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateEdge");
+            throw new ImmutableObjectException("BRep_Builder::UpdateEdge");
         }
 
         Placement l = L.Predivided(e.Placement);
@@ -870,7 +870,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateEdge");
+            throw new ImmutableObjectException("BRep_Builder::UpdateEdge");
         }
 
         Placement l = L.Predivided(e.Placement);
@@ -918,7 +918,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateEdge");
+            throw new ImmutableObjectException("BRep_Builder::UpdateEdge");
         }
 
         Placement l = L.Predivided(e.Placement);
@@ -963,7 +963,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateEdge");
+            throw new ImmutableObjectException("BRep_Builder::UpdateEdge");
         }
 
         Placement l = L.Predivided(e.Placement);
@@ -1002,7 +1002,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateEdge");
+            throw new ImmutableObjectException("BRep_Builder::UpdateEdge");
         }
 
         te.UpdateTolerance(tol);
@@ -1028,7 +1028,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::Continuity");
+            throw new ImmutableObjectException("BRep_Builder::Continuity");
         }
 
         Placement l1 = L1.Predivided(e.Placement);
@@ -1045,7 +1045,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::SameParameter");
+            throw new ImmutableObjectException("BRep_Builder::SameParameter");
         }
 
         te.SameParameter(s);
@@ -1058,7 +1058,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::SameRange");
+            throw new ImmutableObjectException("BRep_Builder::SameRange");
         }
 
         te.SameRange(s);
@@ -1071,7 +1071,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::Degenerated");
+            throw new ImmutableObjectException("BRep_Builder::Degenerated");
         }
 
         te.Degenerated(d);
@@ -1091,7 +1091,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::Range");
+            throw new ImmutableObjectException("BRep_Builder::Range");
         }
 
         NCollection_List<CurveRepresentation> lcr = te.ChangeCurves();
@@ -1118,7 +1118,7 @@ internal sealed class BrepBuilder : Builder
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         if (WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::Range");
+            throw new ImmutableObjectException("BRep_Builder::Range");
         }
 
         Placement l = L.Predivided(e.Placement);
@@ -1211,7 +1211,7 @@ internal sealed class BrepBuilder : Builder
         BrepTVertex tv = (BrepTVertex)v.TShape()!;
         if (WorkingOverlay.IsLocked(tv))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateVertex");
+            throw new ImmutableObjectException("BRep_Builder::UpdateVertex");
         }
 
         tv.Pnt(p.Transformed(v.Placement.Inverted().Transformation));
@@ -1233,7 +1233,7 @@ internal sealed class BrepBuilder : Builder
 
         if (WorkingOverlay.IsLocked(tv) || WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateVertex");
+            throw new ImmutableObjectException("BRep_Builder::UpdateVertex");
         }
 
         Placement l = e.Placement.Predivided(v.Placement);
@@ -1351,7 +1351,7 @@ internal sealed class BrepBuilder : Builder
 
         if (WorkingOverlay.IsLocked(tv) || WorkingOverlay.IsLocked(te))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateVertex");
+            throw new ImmutableObjectException("BRep_Builder::UpdateVertex");
         }
 
         // Search the vertex in the edge
@@ -1435,7 +1435,7 @@ internal sealed class BrepBuilder : Builder
 
         if (WorkingOverlay.IsLocked(tv))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateVertex");
+            throw new ImmutableObjectException("BRep_Builder::UpdateVertex");
         }
 
         Surface? s = Tool.Surface(f, out Placement l);
@@ -1454,7 +1454,7 @@ internal sealed class BrepBuilder : Builder
 
         if (WorkingOverlay.IsLocked(tv))
         {
-            throw new LockedShapeException("BRep_Builder::UpdateVertex");
+            throw new ImmutableObjectException("BRep_Builder::UpdateVertex");
         }
 
         tv.UpdateTolerance(tol);

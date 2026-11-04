@@ -50,7 +50,7 @@ public class GeomFill_AppSurfTests
         {
             aP.AddCurve(aC);
         }
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aP.Degree());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aP.Degree());
         aP.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
 
         Assert.Equal(3, aP.Degree());
@@ -73,9 +73,9 @@ public class GeomFill_AppSurfTests
         }
 
         // the arrays must have the profile's lengths
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aP.Poles(1, new NCollection_Array1<Point3D>(1, 2)));
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aP.Poles(5, new NCollection_Array1<Point3D>(1, aP.NbPoles())));
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aP.KnotsAndMults(new NCollection_Array1<double>(1, 2), aM));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aP.Poles(1, new NCollection_Array1<Point3D>(1, 2)));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aP.Poles(5, new NCollection_Array1<Point3D>(1, aP.NbPoles())));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aP.KnotsAndMults(new NCollection_Array1<double>(1, 2), aM));
     }
 
     [Fact]
@@ -229,7 +229,7 @@ public class GeomFill_AppSurfTests
         {
             aZero.SetValue(i, 10.0 * i);
         }
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.RangeErrorException>(() => aSec.SetParam(aZero));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.RangeErrorException>(() => aSec.SetParam(aZero));
     }
 
     [Fact]
@@ -286,7 +286,7 @@ public class GeomFill_AppSurfTests
         Assert.Equal((3, aSec.NbPoles(), aSec.NbKnots()), (ud, nup, nuk));
         Assert.Equal((anApp.VDegree(), anApp.SurfVKnots().Length(), anApp.SurfPoles().RowLength()), (vd, nvk, nvp));
         Assert.Equal(0, anApp.Curves2dCount);
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anApp.Curves2dDegree());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anApp.Curves2dDegree());
 
         BSplineSurface aS = Surface(anApp);
         double[] aV = [0.0, 2.0, 4.0, 7.0];
@@ -328,10 +328,10 @@ public class GeomFill_AppSurfTests
     {
         SurfaceAppSurf anApp = new();
         Assert.False(anApp.IsDone);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anApp.UDegree());
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anApp.SurfPoles());
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anApp.TolReached(out _, out _));
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anApp.SetCriteriumWeight(1, -1, 1));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anApp.UDegree());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anApp.SurfPoles());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anApp.TolReached(out _, out _));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anApp.SetCriteriumWeight(1, -1, 1));
         anApp.SetCriteriumWeight(0.1, 0.2, 0.7);
         anApp.CriteriumWeight(out double w1, out double w2, out double w3);
         Assert.Equal((0.1, 0.2, 0.7), (w1, w2, w3));

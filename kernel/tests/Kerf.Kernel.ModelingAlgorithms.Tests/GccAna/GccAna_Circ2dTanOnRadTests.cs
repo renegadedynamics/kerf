@@ -330,11 +330,11 @@ public class GccAna_Circ2dTanOnRadTests
         EngineAssert.Throws<NegativeValueException>(() => new AnalyticCirc2dTanOnRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL), aC, -1.0, Tol));
         EngineAssert.Throws<NegativeValueException>(() => new AnalyticCirc2dTanOnRad(new Point2D(1, 0), Circ(3, 0, 1), -1.0, Tol));
         global::Kerf.Engine.Construction.Constraints.QualifiedLin aBad = new(aL, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing);
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2dTanOnRad(aBad, Lin(0, 0, 0, 1), 1.0, Tol));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2dTanOnRad(aBad, aC, 1.0, Tol));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2dTanOnRad(aBad, Lin(0, 0, 0, 1), 1.0, Tol));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2dTanOnRad(aBad, aC, 1.0, Tol));
         global::Kerf.Engine.Construction.Constraints.QualifiedCirc aNoQual = new(aC, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier);
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2dTanOnRad(aNoQual, aL, 1.0, Tol));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2dTanOnRad(aNoQual, Circ(3, 0, 1), 1.0, Tol));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2dTanOnRad(aNoQual, aL, 1.0, Tol));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2dTanOnRad(aNoQual, Circ(3, 0, 1), 1.0, Tol));
 
         AnalyticCirc2dTanOnRad anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC), aL, 0.4, Tol);
         EngineAssert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(0));

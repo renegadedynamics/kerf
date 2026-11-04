@@ -2474,7 +2474,7 @@ internal static partial class BrepLibrary
                 }
             }
         }
-        catch (Exception exception) when (Refusal.IsFailure(exception) && (exception is not LockedShapeException)) // OCCT.NET: frozen
+        catch (Exception exception) when (Refusal.IsFailure(exception) && (exception is not ImmutableObjectException)) // OCCT.NET: frozen
         {
         }
     }
@@ -2525,9 +2525,9 @@ internal static partial class BrepLibrary
                 Continuity cont = ContinuityOfFaces(e, f1, f2, tolAng);
                 b.Continuity(e, f1, f2, cont);
             }
-            // OCCT.NET: frozen. OCCT swallows the TopoDS_LockedShape of a locked edge; a frozen one is a write into a
+            // OCCT.NET: frozen. OCCT swallows the ImmutableObjectException of a locked edge; a frozen one is a write into a
             // shape the caller holds, which must not pass silently.
-            catch (FailureException) when (!e.TShape()!.IsFrozen)
+            catch (Exception caught) when (Refusal.IsFailure(caught) && (!e.TShape()!.IsFrozen))
             {
             }
         }

@@ -287,7 +287,7 @@ public class ShapeConstructTests
         aSnap.AssertUnchanged(anE);
         Assert.True(aResult.IsSame(anE)); // a plane: nothing written, the input itself
         // in place on the frozen edge, on a face where it must write: the frozen edge refuses
-        EngineAssert.ThrowsAny<LockedShapeException>(() => global::Kerf.Engine.Healing.Construct.ShapeConstruct.JoinPCurves(anEdges, MakeCylFace(), anE));
+        EngineAssert.ThrowsAny<ImmutableObjectException>(() => global::Kerf.Engine.Healing.Construct.ShapeConstruct.JoinPCurves(anEdges, MakeCylFace(), anE));
     }
 
     // a cylindrical face (unfrozen) with no edges, for a write that must reach the frozen edge

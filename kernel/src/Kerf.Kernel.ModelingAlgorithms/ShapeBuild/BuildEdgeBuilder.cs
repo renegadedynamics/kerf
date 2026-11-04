@@ -738,7 +738,7 @@ internal sealed partial class BuildEdgeBuilder
                 return true;
             }
         }
-        catch (FailureException) when (!WorkingOverlay.IsReadOnly(edge.TShape()!))
+        catch (Exception caught) when (Refusal.IsFailure(caught) && (!WorkingOverlay.IsReadOnly(edge.TShape()!)))
         {
         }
 

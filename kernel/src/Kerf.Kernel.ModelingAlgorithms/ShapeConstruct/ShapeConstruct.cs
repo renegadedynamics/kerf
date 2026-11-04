@@ -380,7 +380,7 @@ internal static partial class ShapeConstruct
             // the documentation. No caller in OCCT reads it.
             return (i <= edges.Length());
         }
-        catch (FailureException) when (!edge.IsNull && !WorkingOverlay.IsReadOnly(edge.TShape()!))
+        catch (Exception caught) when (Refusal.IsFailure(caught) && (!edge.IsNull && !WorkingOverlay.IsReadOnly(edge.TShape()!)))
         {
             // OCCT.NET: a frozen edge's exception goes through (decision 423's pattern)
         }

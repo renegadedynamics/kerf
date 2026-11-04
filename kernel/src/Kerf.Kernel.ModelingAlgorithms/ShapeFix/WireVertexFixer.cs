@@ -156,7 +156,7 @@ internal sealed class WireVertexFixer
             }
             // Et remettre ce vtx en commun
             // OCCT: unlike Fix, the edges' old vertices aren't removed (the edges end up with both) and the edges aren't
-            // made Free first, so on the edges of a wire (not free) B.Add throws TopoDS_FrozenShape
+            // made Free first, so on the edges of a wire (not free) B.Add throws DomainErrorException
             v1.Orient(e2.Orientation);
             b.Add(e2, v1);
             v1.Orient(e1.Orientation);

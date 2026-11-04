@@ -217,12 +217,12 @@ public class Extrema_CurvePortTests
     {
         CurvePointExtrema anExt = new();
         Assert.False(anExt.IsDone);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anExt.ExtCount);
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anExt.ExtCount);
         TestGeomAdaptor_Curve aC = new(new CircleCurve3D(Constants.XOY(), 2.0));
         anExt.Initialize(aC, 0.0, 2.0 * Math.PI);
         anExt.Perform(new Point3D(3, 0, 0));
-        Assert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anExt.Point(0));
-        Assert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anExt.SquareDistance(anExt.ExtCount + 1));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anExt.Point(0));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anExt.SquareDistance(anExt.ExtCount + 1));
     }
 
     [Fact]
@@ -410,7 +410,7 @@ public class Extrema_CurvePortTests
         Axis2D anAx = new(new Point2D(1, 2), new Direction2D(1, 0));
         CurveAdaptor2D aC = new(new CircleCurve2D(anAx, 1.0));
         CurveAdaptor2D anE = new(new EllipseCurve2D(anAx, 3.0, 3.0));
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => new ExtCC2d(aC, anE));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => new ExtCC2d(aC, anE));
     }
 
     [Fact]

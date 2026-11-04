@@ -93,10 +93,10 @@ public class IntPatch_IntersectionTests
     {
         var anInt = new PatchIntersection();
         Assert.False(anInt.IsDone);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.IsEmpty);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.LineCount);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.PntCount);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.TangentFaces());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.IsEmpty);
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.LineCount);
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.PntCount);
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.TangentFaces());
     }
 
     [Fact]
@@ -135,7 +135,7 @@ public class IntPatch_IntersectionTests
         Assert.True(anInt.IsDone);
         Assert.True(anInt.IsEmpty);
         Assert.Equal(0, anInt.LineCount);
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anInt.OppositeFaces());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anInt.OppositeFaces());
     }
 
     [Fact]

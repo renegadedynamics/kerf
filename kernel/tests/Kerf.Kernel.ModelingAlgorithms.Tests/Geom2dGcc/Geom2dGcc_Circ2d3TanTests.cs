@@ -355,6 +355,6 @@ public class Geom2dGcc_Circ2d3TanTests
                                            StraightBSpline(), 1.0e-9, 0.5, 2.5, 0.6);
         Assert.False(aSolver.IsDone);
         Assert.Equal(1, aSolver.SolutionCount);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aSolver.ThisSolution(1));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aSolver.ThisSolution(1));
     }
 }

@@ -1,6 +1,7 @@
 // Port of: src/ModelingData/TKBRep/GTests/TopoDS_Builder_Test.cxx
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
@@ -458,13 +459,13 @@ public class TopoDS_BuilderTests
         aBuilder.MakeCompound(ref anOuter);
         aBuilder.Add(anOuter, anInner);
         Assert.False(anInner.Free());
-        EngineAssert.Throws<FrozenShapeException>(() => aBuilder.Add(anInner, MakeVertex(new Point3D())));
-        EngineAssert.Throws<FrozenShapeException>(() => aBuilder.Remove(anInner, MakeVertex(new Point3D())));
+        EngineAssert.Throws<DomainErrorException>(() => aBuilder.Add(anInner, MakeVertex(new Point3D())));
+        EngineAssert.Throws<DomainErrorException>(() => aBuilder.Remove(anInner, MakeVertex(new Point3D())));
 
         // self-insertion: the component is made non-free first, so the shape isn't free any more
         Compound aSelf = new();
         aBuilder.MakeCompound(ref aSelf);
-        EngineAssert.Throws<FrozenShapeException>(() => aBuilder.Add(aSelf, aSelf));
+        EngineAssert.Throws<DomainErrorException>(() => aBuilder.Add(aSelf, aSelf));
     }
 
     [Fact]

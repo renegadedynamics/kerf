@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -408,7 +409,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
             {
                 anOut = Run(aS, aCall, theParallel);
             }
-            catch (global::Kerf.Engine.Foundation.FailureException anE)
+            catch (Exception anE) when (Refusal.IsFailure(anE))
             {
                 anOut = "throws " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anE.GetType()) + "\n";
             }

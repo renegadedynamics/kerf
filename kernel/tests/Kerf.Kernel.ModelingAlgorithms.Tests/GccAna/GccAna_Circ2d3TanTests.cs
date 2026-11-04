@@ -343,7 +343,7 @@ public class GccAna_Circ2d3TanTests
     [Fact]
     public void ThreeLines_EnclosingQualifier_Throws()
     {
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new AnalyticCirc2d3Tan(new global::Kerf.Engine.Construction.Constraints.QualifiedLin(T1, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(T2),
                                         global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(T3), Tol));
     }
@@ -470,10 +470,10 @@ public class GccAna_Circ2d3TanTests
     [Fact]
     public void Constructor_NoQualifier_Throws()
     {
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new AnalyticCirc2d3Tan(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(C1, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(C2),
                                         global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(C3), Tol));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new AnalyticCirc2d3Tan(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(C1), new global::Kerf.Engine.Construction.Constraints.QualifiedLin(LX, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier),
                                         new Point2D(1.0, 1.0), Tol));
     }

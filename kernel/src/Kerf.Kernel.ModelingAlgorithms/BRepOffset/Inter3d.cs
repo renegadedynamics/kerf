@@ -36,7 +36,7 @@ namespace Kerf.Engine.Offsets;
 /// As in OCCT, <see cref="ContextIntByInt"/> and <see cref="ContextIntByArc"/> write into the vertices of the context
 /// faces' free edges (<c>BRep_Builder.UpdateVertex</c> on the extended edge) and the new compounds it builds; those
 /// are the offset's own working shapes (BRepOffset_MakeOffset works on its own copy of the caller's shape) and must be
-/// unfrozen: a frozen one throws <see cref="LockedShapeException"/> at the first write. The offsets of
+/// unfrozen: a frozen one throws <see cref="ImmutableObjectException"/> at the first write. The offsets of
 /// <c>MapSF</c> are only read.
 /// </remarks>
 internal sealed class Inter3d

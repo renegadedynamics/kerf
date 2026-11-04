@@ -2214,9 +2214,16 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     /// <summary>A copy limited to [U1, U2] (see Segment).</summary>
     public BSplineCurve2D Segmented(double u1, double u2, double tolerance = Precision_PConfusion)
     {
-        BSplineCurve2D copy = new BSplineCurve2D(this);
-        copy.Segment(u1, u2, tolerance);
-        return copy;
+        try
+        {
+            BSplineCurve2D copy = new BSplineCurve2D(this);
+            copy.Segment(u1, u2, tolerance);
+            return copy;
+        }
+        catch (FailureException failure)
+        {
+            throw Refusal.Argument(failure);
+        }
     }
 
     /// <summary>A copy with the knot of index Index changed to K.</summary>

@@ -190,7 +190,7 @@ public class BOPTools_AlgoTools2DTests
 
         // a frozen edge is written into: it throws (plan 2.3)
         Edge aFrozen = ShapeCasts.Edge(new MakeEdge(aCircle, 0.5, 2.0).Shape());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => AlgoTools2D.BuildPCurveForEdgeOnFace(aFrozen, aF));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => AlgoTools2D.BuildPCurveForEdgeOnFace(aFrozen, aF));
     }
 
     [Fact]

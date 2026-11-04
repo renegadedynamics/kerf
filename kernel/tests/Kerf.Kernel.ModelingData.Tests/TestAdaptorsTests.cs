@@ -154,15 +154,15 @@ public class TestAdaptorsTests
         {
             Assert.True(anAdaptor.Value(u).DistanceTo(aBezier.Value(u)) < 1e-14);
         }
-        Assert.Throws<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anAdaptor.BSpline());
-        Assert.Throws<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anAdaptor.Circle());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anAdaptor.BSpline());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anAdaptor.Circle());
     }
 
     [Fact]
     public void Load_checks_its_bounds()
     {
         var aLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new TestGeomAdaptor_Curve(aLine, 2.0, 1.0));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new TestGeomAdaptor_Curve(aLine, 2.0, 1.0));
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Parametric(1e-3), new TestGeomAdaptor_Curve(new ParabolaCurve3D(new Frame3D(), 1.0)).Resolution(1e-3));
     }
 }

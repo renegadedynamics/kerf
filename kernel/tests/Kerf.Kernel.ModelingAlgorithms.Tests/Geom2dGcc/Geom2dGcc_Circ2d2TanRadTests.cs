@@ -199,7 +199,7 @@ public class Geom2dGcc_Circ2d2TanRadTests
                                                                                new CartesianPoint2(1, 0), -1, 1e-9));
         CurveAdaptor2D aLine = new(new LineCurve2D(new Point2D(0, 0), DX));
         CurveAdaptor2D anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 3), DX), 4, 2));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Enclosing(aLine), global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), 1, 1e-7));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Enclosing(aLine), global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), 1, 1e-7));
 
         // Points too far apart for the radius: done, no solution.
         global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad aFar = new(new CartesianPoint2(0, 0), new CartesianPoint2(10, 0), 1, 1e-9);

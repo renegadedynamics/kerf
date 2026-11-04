@@ -183,6 +183,8 @@ public sealed class TrimmedSurface : BoundedSurface
                          bool uSense,
                          bool vSense)
     {
+        // A NaN compares false either way, and UReverse or VReverse would come back here for ever
+        Refusal.ArgumentIf(uTrim && (double.IsNaN(u1) || double.IsNaN(u2)) || vTrim && (double.IsNaN(v1) || double.IsNaN(v2)), FailureKind.ConstructionError, "The trimming parameters aren't numbers");
         bool usameSense = true;
         bool vsameSense = true;
         double udeb, ufin, vdeb, vfin;

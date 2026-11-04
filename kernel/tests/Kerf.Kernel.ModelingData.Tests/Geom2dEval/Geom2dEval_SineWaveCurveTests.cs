@@ -26,8 +26,8 @@ public class Geom2dEval_SineWaveCurveTest
     public void Construction_InvalidParams_Throws()
     {
         Axis2D anAx2d = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new SineWaveCurve2D(anAx2d, 0.0, 1.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new SineWaveCurve2D(anAx2d, 1.0, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new SineWaveCurve2D(anAx2d, 0.0, 1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new SineWaveCurve2D(anAx2d, 1.0, 0.0));
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class Geom2dEval_SineWaveCurveTest
         Axis2D anAx2d = new();
         SineWaveCurve2D aCurve = new(anAx2d, 2.0, 3.0, 0.0);
         Assert.False(aCurve.IsPeriodic);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCurve.Period);
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCurve.Period);
     }
 
     [Fact]
@@ -63,8 +63,8 @@ public class Geom2dEval_SineWaveCurveTest
     {
         Axis2D anAx2d = new();
         SineWaveCurve2D aCurve = new(anAx2d, 2.0, 3.0, 0.0);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Reverse());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.ReversedParameter(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Reverse());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.ReversedParameter(0.5));
     }
 
     [Fact]
@@ -73,8 +73,8 @@ public class Geom2dEval_SineWaveCurveTest
         Axis2D anAx2d = new();
         SineWaveCurve2D aCurve = new(anAx2d, 2.0, 3.0, 0.0);
         Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(1.0, 2.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));
     }
 
     [Fact]

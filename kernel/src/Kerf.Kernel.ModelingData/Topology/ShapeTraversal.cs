@@ -188,7 +188,7 @@ public static class ShapeTraversal
                 builder.Add(result, child);
             }
         }
-        catch (Exception e) when (Refusal.IsFailure(e) && (e is IncompatibleShapesException or FrozenShapeException))
+        catch (Exception e) when (Refusal.IsFailure(e) && (e is DomainErrorException))
         {
             throw new ArgumentException($"A child can't be a sub-shape of a {shape.Type}: {Refusal.Unwrapped(e).Message}", nameof(children), e);
         }

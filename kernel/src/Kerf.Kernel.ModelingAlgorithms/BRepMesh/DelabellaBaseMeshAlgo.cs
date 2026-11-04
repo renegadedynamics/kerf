@@ -137,7 +137,7 @@ internal class DelabellaBaseMeshAlgo : CustomBaseMeshAlgo
 
             throw new FailureException(Refusal.Unwrapped(theException).Message);
         }
-        catch (Exception exception) when (exception is not (ImmutableObjectException or LockedShapeException))
+        catch (Exception exception) when (exception is not ImmutableObjectException)
         {
             if (triangulator is not null)
             {

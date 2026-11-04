@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Healing.Analysis;
@@ -832,7 +833,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         {
             aBSplineCurve = new BSplineCurve3D(aPoles, aKnots, aMults, aDegree);
         }
-        catch (global::Kerf.Engine.Foundation.FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             // OCCT's GTEST_SKIP: "Could not construct B-spline with high multiplicities"
             return;
@@ -882,7 +883,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         {
             aBSplineSurface = new BSplineSurface(aSurfPoles, aUKnots, aVKnots, aUMults, aVMults, 7, 1);
         }
-        catch (global::Kerf.Engine.Foundation.FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             // Fall back to a simple plane if surface construction fails
             PlaneSurface aPlane = new(new Point3D(70, 0, 30), new Direction3D(0, 1, 0));

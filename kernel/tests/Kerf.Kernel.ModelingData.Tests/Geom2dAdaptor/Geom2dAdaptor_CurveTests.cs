@@ -94,7 +94,7 @@ public class Geom2dAdaptor_Curve_Test
     public void Load_FirstGreaterThanLastBeyondConfusion_ThrowsException()
     {
         global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D anAdaptor = new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => anAdaptor.Load(myLine, 10.0, 5.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => anAdaptor.Load(myLine, 10.0, 5.0));
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public class Geom2dAdaptor_Curve_Test
         double aParam2 = 5.0 - global::Kerf.Engine.Foundation.Precision.Confusion() * 2.0;
 
         global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D anAdaptor = new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => anAdaptor.Load(myLine, aParam1, aParam2));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => anAdaptor.Load(myLine, aParam1, aParam2));
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class Geom2dAdaptor_Curve_Test
     [Fact]
     public void Constructor_InvalidParameters_ThrowsException()
     {
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D(myCircle, 10.0, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D(myCircle, 10.0, 0.0));
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public class Geom2dAdaptor_Curve_Test
         Curve2D aNullCurve = null!;
         global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D anAdaptor = new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D();
 
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => anAdaptor.Load(aNullCurve, 0.0, 10.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => anAdaptor.Load(aNullCurve, 0.0, 10.0));
     }
 
     [Fact]
@@ -165,7 +165,7 @@ public class Geom2dAdaptor_Curve_Test
         double aParam2 = 5.0 - global::Kerf.Engine.Foundation.Precision.Confusion() - 1e-10;
 
         global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D anAdaptor = new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => anAdaptor.Load(myLine, aParam1, aParam2));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => anAdaptor.Load(myLine, aParam1, aParam2));
     }
 
     [Fact]
@@ -295,9 +295,9 @@ public class Geom2dAdaptor_Curve_Test
 
         global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D aCirc = new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D(myCircle);
         Assert.Equal(3.0, aCirc.Circle().Radius);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCirc.Line());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCirc.Degree());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCirc.KnotCount);
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCirc.Line());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCirc.Degree());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCirc.KnotCount);
         Assert.Equal(CN, aCirc.Continuity());
         Assert.Equal(1, aCirc.NbIntervals(C2));
         Assert.Equal(2 * Math.Asin(0.1 / 6.0), aCirc.Resolution(0.1));
@@ -333,7 +333,7 @@ public class Geom2dAdaptor_Curve_Test
         NCollection_Array1<double> TO = new(1, 3);
         anOff.Intervals(TO, C1);
         Assert.Equal(new[] { 0.0, 1.0, 2.0 }, new[] { TO[1], TO[2], TO[3] });
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => anOff.NbIntervals(G1));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => anOff.NbIntervals(G1));
     }
 
     [Fact]
@@ -373,6 +373,6 @@ public class Geom2dAdaptor_Curve_Test
         // Offset curves need a Geom2dAdaptor_Curve.
         Curve2D anOff = MakeCurve("offset");
         Assert.Same(anOff, global::Kerf.Engine.Geometry.Adaptors.Geom2dAdaptor.MakeCurve(new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D(anOff)));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => global::Kerf.Engine.Geometry.Adaptors.Geom2dAdaptor.MakeCurve(new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D()));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => global::Kerf.Engine.Geometry.Adaptors.Geom2dAdaptor.MakeCurve(new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D()));
     }
 }

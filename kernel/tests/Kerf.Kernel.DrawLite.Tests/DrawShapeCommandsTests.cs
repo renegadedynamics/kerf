@@ -273,7 +273,7 @@ public class DrawShapeCommandsTests
 
         // a sub-shape isn't free: OCCT's builder refuses it
         i.Eval("explode f e");
-        Assert.Equal("An exception was caught TopoDS_FrozenShape: TopoDS_Builder::Add", Error(i, "add f f_1"));
+        Assert.Equal("An exception was caught DomainErrorException: TopoDS_Builder::Add", Error(i, "add f f_1"));
 
         Assert.Equal("", i.Eval("emptycopy e c"));
         Assert.Equal(0, i.GetShape("e").ChildCount);

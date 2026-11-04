@@ -562,12 +562,12 @@ public class GccAna_Circ2d2TanOnTests
     {
         Line2D l = Lin(0, 0, 1, 0);
         global::Kerf.Engine.Construction.Constraints.QualifiedLin aBad = new(l, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing);
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanOn(aBad, global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(l), Lin(0, 1, 0, 1), Tol));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanOn(aBad, new Point2D(0, 1), Lin(0, 1, 0, 1), Tol));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanOn(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Circ(0, 2, 1)), aBad,
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanOn(aBad, global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(l), Lin(0, 1, 0, 1), Tol));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanOn(aBad, new Point2D(0, 1), Lin(0, 1, 0, 1), Tol));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanOn(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Circ(0, 2, 1)), aBad,
                                                                           Circ(0, 0, 3), Tol));
         global::Kerf.Engine.Construction.Constraints.QualifiedCirc aBadC = new(Circ(0, 2, 1), global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier);
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanOn(aBadC, new Point2D(0, 1), Circ(0, 0, 3), Tol));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanOn(aBadC, new Point2D(0, 1), Circ(0, 0, 3), Tol));
     }
 
     [Fact]

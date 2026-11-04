@@ -383,7 +383,7 @@ public class math_BFGSTest
         if (!anOptimizer.IsDone)
         {
             // OCCT's release build compiles out the NotDone check of NbIterations(); the port always checks.
-            Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => anOptimizer.IterationCount);
+            EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => anOptimizer.IterationCount);
         }
         else
         {

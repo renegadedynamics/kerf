@@ -211,8 +211,8 @@ public class Extrema_SurfacePSTests
         SurfaceAdaptor aBump = new(MakeBump());
         GenExtPS anExt = new();
         Assert.False(anExt.IsDone);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anExt.ExtCount);
-        Assert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anExt.Initialize(aBump, 1, 10, 1e-9, 1e-9));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anExt.ExtCount);
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anExt.Initialize(aBump, 1, 10, 1e-9, 1e-9));
     }
 
     [Fact]
@@ -321,7 +321,7 @@ public class Extrema_SurfacePSTests
         Assert.Equal(0.0, d11 + d12 + d21 + d22);
         Assert.Equal(new Point3D(), p11);
         Assert.False(anExt.IsDone);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anExt.ExtCount);
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anExt.ExtCount);
     }
 
     [Fact]
@@ -330,7 +330,7 @@ public class Extrema_SurfacePSTests
         SurfaceAdaptor aBump = new(MakeBump());
         Point3D aP = new(4.1, 3.9, 6.0);
         GenLocateExtPS aLocate = new(aBump, 1e-9, 1e-9);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aLocate.SquareDistance());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aLocate.SquareDistance());
 
         aLocate.Perform(aP, 2.0, 2.0);
         Assert.True(aLocate.IsDone);
@@ -394,7 +394,7 @@ public class Extrema_SurfacePSTests
         Assert.Equal(1, aNorm.ExtCount);
         aNorm.SetPoint(aP);
         Assert.Equal(0, aNorm.ExtCount);
-        Assert.Throws<global::Kerf.Engine.Foundation.TypeMismatchException>(() => new FuncPSNorm().Value(X, F));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.TypeMismatchException>(() => new FuncPSNorm().Value(X, F));
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Build;
@@ -145,7 +146,7 @@ public class ShapeCustomTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFirst);
         // the second face shares an edge with the first: the modifier would add a pcurve to the first result's edge
         Shape aNeighbour = aFaces.Skip(1).First(f => SubShapes(f, ShapeType.Edge).Any(e => SubShapes(aFaces[0], ShapeType.Edge).Any(e0 => e0.IsSame(e))));
-        EngineAssert.Throws<LockedShapeException>(() => Customize.ApplyModifier(aNeighbour, aDM, aContext, aMD));
+        EngineAssert.Throws<ImmutableObjectException>(() => Customize.ApplyModifier(aNeighbour, aDM, aContext, aMD));
         aSnap.AssertUnchanged(aFirst);
     }
 

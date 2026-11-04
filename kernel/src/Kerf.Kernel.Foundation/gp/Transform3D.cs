@@ -485,7 +485,14 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
 
         m = m.Divided(s);
 
-        return new Transform3D(s, CompoundTrsf, Orthogonalized(m), col4);
+        try
+        {
+            return new Transform3D(s, CompoundTrsf, Orthogonalized(m), col4);
+        }
+        catch (FailureException failure)
+        {
+            throw Refusal.Argument(failure);
+        }
     }
 
     /// <summary>The matrix made orthogonal again (OCCT's <c>Orthogonalize</c>, which changed the transformation in place).</summary>

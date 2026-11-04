@@ -2,6 +2,7 @@
 
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 
@@ -120,7 +121,14 @@ public sealed class EdgeCurve
                                      double angularTolerance = Tolerances.Angular)
     {
         ArgumentNullException.ThrowIfNull(other);
-        return Engine.Topology.Properties.BRepLProp.Continuity(_curve, other._curve, u, otherU, linearTolerance, angularTolerance);
+        try
+        {
+            return Engine.Topology.Properties.BRepLProp.Continuity(_curve, other._curve, u, otherU, linearTolerance, angularTolerance);
+        }
+        catch (FailureException failure)
+        {
+            throw Refusal.Argument(failure);
+        }
     }
 
     /// <summary>The engine's adaptor, for the operations of other areas (the frames along a curve).</summary>

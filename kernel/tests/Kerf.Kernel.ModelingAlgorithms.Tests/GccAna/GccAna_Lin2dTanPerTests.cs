@@ -137,9 +137,9 @@ public class GccAna_Lin2dTanPerTests
     [Fact]
     public void BadQualifiers_Throw()
     {
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new Lin2dTanPer(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(Circ(0, 0, 1)), new Line2D(new Point2D(0, 0), DX)));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new Lin2dTanPer(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(Circ(0, 0, 1)), Circ(4, 0, 1)));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new Lin2dTanPer(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(Circ(0, 0, 1)), Circ(4, 0, 1)));
     }
 
     [Fact]

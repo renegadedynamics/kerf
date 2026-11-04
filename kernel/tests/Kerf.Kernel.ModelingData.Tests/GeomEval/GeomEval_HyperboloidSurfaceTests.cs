@@ -39,11 +39,11 @@ public class GeomEval_HyperboloidSurfaceTest
     public void Construction_InvalidRadii_Throws()
     {
         CoordinateSystem anAx3 = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HyperboloidSurface(anAx3, 0.0, 1.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HyperboloidSurface(anAx3, 1.0, 0.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HyperboloidSurface(anAx3, -1.0, 1.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HyperboloidSurface(anAx3, 1.0, -1.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HyperboloidSurface(anAx3, -2.0, -3.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HyperboloidSurface(anAx3, 0.0, 1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HyperboloidSurface(anAx3, 1.0, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HyperboloidSurface(anAx3, -1.0, 1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HyperboloidSurface(anAx3, 1.0, -1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HyperboloidSurface(anAx3, -2.0, -3.0));
     }
 
     [Fact]
@@ -51,8 +51,8 @@ public class GeomEval_HyperboloidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         HyperboloidSurface aSurf = new(anAx3, 2.0, 3.0);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aSurf.SetR1(0.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aSurf.SetR2(0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aSurf.SetR1(0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aSurf.SetR2(0.0));
     }
 
     // One sheet at u=0, v=0: cosh(0)=1, sinh(0)=0 -> P = (R1, 0, 0)
@@ -135,8 +135,8 @@ public class GeomEval_HyperboloidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         HyperboloidSurface aSurf = new(anAx3, 2.0, 3.0);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UIso(0.5));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VIso(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UIso(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VIso(0.5));
     }
 
     [Fact]
@@ -144,10 +144,10 @@ public class GeomEval_HyperboloidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         HyperboloidSurface aSurf = new(anAx3, 2.0, 3.0);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReverse());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReverse());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReversedParameter(0.5));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReversedParameter(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReverse());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReverse());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReversedParameter(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReversedParameter(0.5));
     }
 
     // Test implicit equation at evaluated points for one-sheet
@@ -198,8 +198,8 @@ public class GeomEval_HyperboloidSurfaceTest
         HyperboloidSurface aSurf = new(anAx3, 2.0, 3.0);
         Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(1.0, 2.0, 3.0));
 
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transform(aTrsf));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transformed(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transform(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transformed(aTrsf));
     }
 
     // Test Copy produces independent identical object
@@ -312,7 +312,7 @@ public class GeomEval_HyperboloidSurfaceTest
         Assert.Equal(HyperboloidSurface.SheetMode.TwoSheets, aCopy.Mode());
 
         aSurf.Freeze();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aSurf.SetMode(HyperboloidSurface.SheetMode.TwoSheets));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aSurf.SetR2(1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aSurf.SetMode(HyperboloidSurface.SheetMode.TwoSheets));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aSurf.SetR2(1.0));
     }
 }

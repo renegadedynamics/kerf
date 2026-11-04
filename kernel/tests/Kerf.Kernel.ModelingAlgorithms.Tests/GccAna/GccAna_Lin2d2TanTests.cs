@@ -152,10 +152,10 @@ public class GccAna_Lin2d2TanTests
     public void BadQualifiers_Throw()
     {
         Circle2D aC = Circ(0, 0, 1);
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticLin2d2Tan(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(aC), new Point2D(3, 0), 1.0e-6));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticLin2d2Tan(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(aC), new Point2D(3, 0), 1.0e-6));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new AnalyticLin2d2Tan(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(aC, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), new Point2D(3, 0), 1.0e-6));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new AnalyticLin2d2Tan(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC), global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(Circ(5, 0, 1)), 1.0e-6));
     }
 

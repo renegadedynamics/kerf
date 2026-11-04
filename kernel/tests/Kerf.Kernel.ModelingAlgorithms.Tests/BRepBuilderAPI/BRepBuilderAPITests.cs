@@ -76,7 +76,7 @@ public class BRepBuilderAPITests
         var aSame = new MakeEdge(new Point3D(1, 1, 1), new Point3D(1, 1, 1));
         Assert.False(aSame.IsDone);
         Assert.Equal(EdgeError.LineThroughIdenticPoints, aSame.Error());
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aSame.Shape());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aSame.Shape());
 
         var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1);
         var aOff = new MakeEdge(aCirc, new Point3D(0, 0, 0), new Point3D(1, 0, 0));
@@ -378,7 +378,7 @@ public class BRepBuilderAPITests
         anArgs.Append(aBox);
         var aHistory = new History(anArgs, aDeep);
         Assert.True(aHistory.Modified(aF)[0].IsSame(aFd));
-        Assert.Throws<global::Kerf.Engine.Foundation.NullObjectException>(() => new Copy(new Shape()));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NullObjectException>(() => new Copy(new Shape()));
     }
 
     [Fact]

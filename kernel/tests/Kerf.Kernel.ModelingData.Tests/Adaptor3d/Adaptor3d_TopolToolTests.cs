@@ -133,14 +133,14 @@ public class Adaptor3d_TopolToolTests
                 nv++;
             }
             Assert.Equal(2, nv);
-            Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => T.Vertex());
+            EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => T.Vertex());
             n++;
         }
         Assert.Equal(4, n);
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => T.Value());
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => T.Tol3d(new HVertex()));
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => T.Pnt(new HVertex()));
-        Assert.Throws<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => T.Initialize());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => T.Value());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => T.Tol3d(new HVertex()));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => T.Pnt(new HVertex()));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => T.Initialize());
     }
 
     [Fact]

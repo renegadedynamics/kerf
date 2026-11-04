@@ -31,9 +31,9 @@ public class GeomEval_EllipsoidSurfaceTest
     public void Construction_InvalidAxes_Throws()
     {
         CoordinateSystem anAx3 = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new EllipsoidSurface(anAx3, 0.0, 1.0, 1.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new EllipsoidSurface(anAx3, 1.0, -1.0, 1.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new EllipsoidSurface(anAx3, 1.0, 1.0, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new EllipsoidSurface(anAx3, 0.0, 1.0, 1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new EllipsoidSurface(anAx3, 1.0, -1.0, 1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new EllipsoidSurface(anAx3, 1.0, 1.0, 0.0));
     }
 
     // Test EvalD0 at u=0, v=0: P = (A, 0, 0)
@@ -118,8 +118,8 @@ public class GeomEval_EllipsoidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UIso(0.5));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VIso(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UIso(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VIso(0.5));
     }
 
     [Fact]
@@ -127,10 +127,10 @@ public class GeomEval_EllipsoidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReverse());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReverse());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReversedParameter(0.5));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReversedParameter(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReverse());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReverse());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReversedParameter(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReversedParameter(0.5));
     }
 
     // Test implicit equation at evaluated points
@@ -164,8 +164,8 @@ public class GeomEval_EllipsoidSurfaceTest
         EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
         Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(1.0, 2.0, 3.0));
 
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transform(aTrsf));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transformed(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transform(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transformed(aTrsf));
     }
 
     // Test Copy produces independent identical object
@@ -388,11 +388,11 @@ public class GeomEval_EllipsoidSurfaceTest
         Assert.Equal(4.0, aCopy.SemiAxisA());
         Assert.Equal(5.0, aCopy.SemiAxisB());
         Assert.Equal(6.0, aCopy.SemiAxisC());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aSurf.WithSemiAxisC(0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aSurf.WithSemiAxisC(0.0));
 
         aSurf.Freeze();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aSurf.SetSemiAxisA(1.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aSurf.UReverse());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aSurf.SetSemiAxisA(1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aSurf.UReverse());
         Assert.Equal(1.5, aSurf.WithSemiAxisA(1.5).SemiAxisA());
     }
 }

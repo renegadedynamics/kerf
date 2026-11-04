@@ -63,15 +63,15 @@ public class GeomEval_TBezierCurveTest
         NCollection_Array1<Point3D> aPoles2 = new(1, 2);
         aPoles2.SetValue(1, new Point3D(0.0, 0.0, 0.0));
         aPoles2.SetValue(2, new Point3D(1.0, 0.0, 0.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new TBezierCurve(aPoles2, 1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new TBezierCurve(aPoles2, 1.0));
 
         // Invalid alpha
         NCollection_Array1<Point3D> aPoles3 = new(1, 3);
         aPoles3.SetValue(1, new Point3D(0.0, 0.0, 0.0));
         aPoles3.SetValue(2, new Point3D(1.0, 0.0, 0.0));
         aPoles3.SetValue(3, new Point3D(2.0, 0.0, 0.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new TBezierCurve(aPoles3, 0.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new TBezierCurve(aPoles3, -1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new TBezierCurve(aPoles3, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new TBezierCurve(aPoles3, -1.0));
     }
 
     [Fact]
@@ -122,8 +122,8 @@ public class GeomEval_TBezierCurveTest
     public void Reverse_NotImplemented()
     {
         TBezierCurve aCurve = createSimpleCurve();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Reverse());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.ReversedParameter(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Reverse());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.ReversedParameter(0.5));
     }
 
     [Fact]
@@ -148,8 +148,8 @@ public class GeomEval_TBezierCurveTest
         TBezierCurve aCurve = createSimpleCurve();
         Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(1.0, 2.0, 3.0));
 
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));
     }
 
     [Fact]

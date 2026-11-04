@@ -54,7 +54,7 @@ public class GccAna_Lin2dTanOblTests
         Line2D aL = new(new Point2D(1, 0), DX);
         AnalyticLin2dTanObl anAlgo = new(new Point2D(0, 3), aL, 0.0);
         Assert.Equal(1, anAlgo.SolutionCount);
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.IsParallelException>(() => anAlgo.Intersection2(1, out _, out _, out _));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.IsParallelException>(() => anAlgo.Intersection2(1, out _, out _, out _));
     }
 
     [Fact]
@@ -103,8 +103,8 @@ public class GccAna_Lin2dTanOblTests
     public void BadQualifiers_Throw()
     {
         Line2D aL = new(new Point2D(0, 0), DX);
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticLin2dTanObl(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(Circ(0, 3, 1)), aL, 0.5));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticLin2dTanObl(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(Circ(0, 3, 1)), aL, 0.5));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new AnalyticLin2dTanObl(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(Circ(0, 3, 1), global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), aL, 0.5));
     }
 
