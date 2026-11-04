@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using Occt;
@@ -59,270 +61,132 @@ public sealed partial class AnalyticCirc2dTanOnRad
     /// <summary>Circles of radius Radius tangent to a qualified circle, centred on a line.</summary>
     /// <exception cref="NegativeValueException">Radius is negative.</exception>
     public AnalyticCirc2dTanOnRad(in QualifiedCirc qualified1, in Line2D onLine, double radius, double tolerance)
+        : this(8)
     {
-        _cirsol = new(1, 4);
-        _qualifier1 = new(1, 4);
-        _theSame1 = new(1, 4);
-        _pnttg1sol = new(1, 4);
-        _pntcen3 = new(1, 4);
-        _par1sol = new(1, 4);
-        _pararg1 = new(1, 4);
-        _parcen3 = new(1, 4);
-
-
-        _theSame1.Init(0);
-        Direction2D dirx = new(Direction2D.D.X);
-        double   tol = Math.Abs(tolerance);
-        _wellDone     = false;
-        _nbrSol       = 0;
-        if (!(qualified1.IsEnclosed || qualified1.IsEnclosing || qualified1.IsOutside
-                    || qualified1.IsUnqualified))
+        if (!(qualified1.IsEnclosed || qualified1.IsEnclosing || qualified1.IsOutside || qualified1.IsUnqualified))
         {
             throw new BadQualifierException();
         }
-        NCollection_Array1<double> coef = new(1, 2);
-        Circle2D                  c1 = qualified1.Qualified();
-
         if (radius < 0.0)
         {
             throw new NegativeValueException();
         }
+        Solve(new CircleContact(qualified1), qualified1.Qualified(), null, null, onLine, null, radius, Math.Abs(tolerance));
+    }
+
+    // The result arrays.
+    private AnalyticCirc2dTanOnRad(int size)
+    {
+        _cirsol = new(1, size);
+        _qualifier1 = new(1, size);
+        _theSame1 = new(1, size);
+        _pnttg1sol = new(1, size);
+        _pntcen3 = new(1, size);
+        _par1sol = new(1, size);
+        _pararg1 = new(1, size);
+        _parcen3 = new(1, size);
+    }
+
+    /// <summary>
+    /// The circles of radius Radius centred on the line or circle that touch the argument as asked (Kerf decision 17104):
+    /// their centres are where the locus meets the curves at Radius from the argument (two parallels of a line, the
+    /// circles of radii Radius + r and |Radius - r| about a circle's centre, the circle of radius Radius about a point),
+    /// and, where those only touch the locus, the locus's points nearest the argument's centre. OCCT's per-case code
+    /// misplaced tangency points and centres, and threw on every generic line and circle.
+    /// </summary>
+    private void Solve(in CircleContact a, Circle2D? circle, Line2D? line, Point2D? point, Line2D? onLine, Circle2D? onCirc,
+                       double radius, double tol)
+    {
+        _wellDone = true;
+        _nbrSol = 0;
+        if (radius <= tol)
+        {
+            return;
+        }
+        Direction2D dirx = new(Direction2D.D.X);
+        if (line is Line2D l)
+        {
+            Xy n = new(-l.Direction.Y, l.Direction.X);
+            foreach (double sign in (ReadOnlySpan<double>)[1.0, -1.0])
+            {
+                Line2D parallel = new(new Point2D(l.Location.XY() + (sign * radius) * n), l.Direction);
+                AnalyticIntersection intp = onLine is Line2D ol ? new(ol, parallel) : new(parallel, onCirc!.Value);
+                AddCenters(intp, a, onLine, onCirc, radius, tol);
+            }
+            return;
+        }
+        Point2D center = circle is Circle2D c ? c.Location : point!.Value;
+        ReadOnlySpan<double> offsets = circle is Circle2D cc ? [radius + cc.Radius, Math.Abs(radius - cc.Radius)] : [radius];
+        foreach (double d in offsets)
+        {
+            if (d <= tol)
+            {
+                // the argument's centre itself
+                AddCenter(center, a, onLine, onCirc, radius, tol);
+                continue;
+            }
+            Circle2D offset = new(new Axis2D(center, dirx), d);
+            AnalyticIntersection intp = onLine is Line2D ol ? new(ol, offset) : new(offset, onCirc!.Value);
+            AddCenters(intp, a, onLine, onCirc, radius, tol);
+        }
+        // where the offset circles only touch the locus
+        if (onLine is Line2D foot)
+        {
+            AddCenter(global::Kerf.Engine.Geometry.ElCLib.Value(global::Kerf.Engine.Geometry.ElCLib.Parameter(foot, center), foot),
+                      a, onLine, onCirc, radius, tol);
+        }
         else
         {
-            int      nbsol = 0;
-            int      signe = 0;
-            Point2D center = new();
-            double   xc;
-            double   yc;
-            double   r1    = c1.Radius;
-            double   dist  = onLine.DistanceTo(c1.Location);
-            double   xdir  = (onLine.Direction).X;
-            double   ydir  = (onLine.Direction).Y;
-            double   lxloc = (onLine.Location).X;
-            double   lyloc = (onLine.Location).Y;
-            Point2D center1 = c1.Location;
-            double   x1 = center1.X;
-            double   y1 = center1.Y;
-            if (qualified1.IsEnclosed)
+            Circle2D on = onCirc!.Value;
+            Xy u = center.XY() - on.Location.XY();
+            double m = u.Modulus();
+            if (m > tol)
             {
-                //   ============================
-                if (tol < radius - r1 + dist)
-                {
-                    _wellDone = true;
-                }
-                else
-                {
-                    if (Math.Abs(radius - r1 + dist) < tol)
-                    {
-                        _wellDone = true;
-                        _nbrSol   = 1;
-                        if (-ydir * (x1 - lxloc) + xdir * (y1 - lyloc) < 0.0)
-                        {
-                            center = new Point2D(x1 - ydir * dist, y1 + xdir * dist);
-                        }
-                        else
-                        {
-                            center = new Point2D(x1 + ydir * dist, y1 - xdir * dist);
-                        }
-                        signe = 1;
-                    }
-                    else
-                    {
-                        coef[1] = (r1 - radius) * (r1 - radius);
-                        nbsol   = 1;
-                    }
-                }
-            }
-            else if (qualified1.IsEnclosing)
-            {
-                //   ==================================
-                if (r1 + dist - radius > tol)
-                {
-                    _wellDone = true;
-                }
-                else
-                {
-                    if (r1 + dist - radius > 0.0)
-                    {
-                        _wellDone = true;
-                        _nbrSol   = 1;
-                        if (-ydir * (x1 - lxloc) + xdir * (y1 - lyloc) < 0.0)
-                        {
-                            center = new Point2D(x1 - ydir * dist, y1 + xdir * dist);
-                        }
-                        else
-                        {
-                            center = new Point2D(x1 + ydir * dist, y1 - xdir * dist);
-                        }
-                        signe = -1;
-                    }
-                    else
-                    {
-                        coef[1] = (radius - r1) * (radius - r1);
-                        nbsol   = 1;
-                    }
-                }
-            }
-            else
-            {
-                //   ====
-                if (dist - r1 - radius > tol)
-                {
-                    _wellDone = false;
-                }
-                else
-                {
-                    if (Math.Abs(dist - r1 - radius) < tol)
-                    {
-                        _wellDone = true;
-                        _nbrSol   = 1;
-                        if (-ydir * (x1 - lxloc) + xdir * (y1 - lyloc) < 0.0)
-                        {
-                            center = new Point2D(x1 - ydir * dist, y1 + xdir * dist);
-                        }
-                        else
-                        {
-                            center = new Point2D(x1 + ydir * dist, y1 - xdir * dist);
-                        }
-                        signe = -1;
-                    }
-                    else
-                    {
-                        if (qualified1.IsOutside)
-                        {
-                            //         ===========================
-                            coef[1] = (radius + r1) * (radius + r1);
-                            nbsol   = 1;
-                        }
-                        else
-                        {
-                            //         ====
-                            coef[1] = (radius - r1) * (radius - r1);
-                            coef[2] = (radius + r1) * (radius + r1);
-                            nbsol   = 2;
-                        }
-                    }
-                }
-            }
-            if (signe != 0)
-            {
-                _cirsol[1] = new Circle2D(new Axis2D(center, dirx), radius);
-                //     ==================================================
-                double distcc1 = center.DistanceTo(center1);
-                if (!qualified1.IsUnqualified)
-                {
-                    _qualifier1[1] = qualified1.Qualifier();
-                }
-                else if (Math.Abs(distcc1 + radius - r1) < tol)
-                {
-                    _qualifier1[1] = Qualifier.Enclosed;
-                }
-                else if (Math.Abs(distcc1 - r1 - radius) < tol)
-                {
-                    _qualifier1[1] = Qualifier.Outside;
-                }
-                else
-                {
-                    _qualifier1[1] = Qualifier.Enclosing;
-                }
-                if (Math.Abs(radius - r1) <= tol)
-                {
-                    _theSame1[1] = 1;
-                }
-                else
-                {
-                    Direction2D dir1cen = new(center.X - x1, center.Y - y1);
-                    _pnttg1sol[1] = new Point2D(center.XY() + signe * radius * dir1cen.XY());
-                    _par1sol[1]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[1], _pnttg1sol[1]);
-                    _pararg1[1]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[1]);
-                }
-                _pntcen3[1] = _cirsol[_nbrSol].Location;
-                _parcen3[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(onLine, _pntcen3[1]);
-            }
-            else if (nbsol > 0)
-            {
-                for (int j = 1; j <= nbsol; j++)
-                {
-                    double a, b, c;
-                    onLine.Coefficients(out a, out b, out c);
-                    double d = a;
-                    double x0, y0;
-                    if (Math.Abs(d) <= tol)
-                    {
-                        a  = b;
-                        b  = d;
-                        x0 = y1;
-                        y0 = x1;
-                    }
-                    else
-                    {
-                        x0 = x1;
-                        y0 = y1;
-                    }
-                    DirectPolynomialRoots sol = new((b * b + a * a) / (a * a),
-                                        2.0 * (b * c / (a * a) + (b / a) * x0 - y0),
-                                        x0 * x0 + y0 * y0 + c * c / (a * a) - coef[j] + 2.0 * c * x0 / a);
-                    if (sol.IsDone)
-                    {
-                        for (int i = 1; i <= sol.SolutionCount; i++)
-                        {
-
-                            if (Math.Abs(d) > tol)
-                            {
-                                yc = sol.Value(i);
-                                xc = -(b / a) * yc - c / a;
-                            }
-                            else
-                            {
-                                xc = sol.Value(i);
-                                yc = -(b / a) * xc - c / a;
-                            }
-                            center = new Point2D(xc, yc);
-                            if (onLine.DistanceTo(center) > tol)
-                            {
-                                continue;
-                            }
-                            _nbrSol++;
-                            _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius);
-                            //           =======================================================
-                            double distcc1 = center.DistanceTo(center1);
-                            if (!qualified1.IsUnqualified)
-                            {
-                                _qualifier1[_nbrSol] = qualified1.Qualifier();
-                            }
-                            else if (Math.Abs(distcc1 + radius - r1) < tol)
-                            {
-                                _qualifier1[_nbrSol] = Qualifier.Enclosed;
-                            }
-                            else if (Math.Abs(distcc1 - r1 - radius) < tol)
-                            {
-                                _qualifier1[_nbrSol] = Qualifier.Outside;
-                            }
-                            else
-                            {
-                                _qualifier1[_nbrSol] = Qualifier.Enclosing;
-                            }
-                            Direction2D dir1cen = new(center.X - x1, center.Y - y1);
-                            // OCCT: the signs are swapped: dir1cen points from C1 to the centre, so these are the points
-                            // of the solution opposite its tangency point
-                            if ((radius > r1) || (center.DistanceTo(center1) > r1))
-                            {
-                                _pnttg1sol[_nbrSol] = new Point2D(center.XY() + radius * dir1cen.XY());
-                            }
-                            else
-                            {
-                                _pnttg1sol[_nbrSol] = new Point2D(center.XY() - radius * dir1cen.XY());
-                            }
-                            _pntcen3[_nbrSol] = _cirsol[_nbrSol].Location;
-                            _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
-                            _pararg1[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[_nbrSol]);
-                            _parcen3[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(onLine, _pntcen3[_nbrSol]);
-                        }
-                        _wellDone = true;
-                    }
-                }
+                AddCenter(new Point2D(on.Location.XY() + (on.Radius / m) * u), a, onLine, onCirc, radius, tol);
+                AddCenter(new Point2D(on.Location.XY() - (on.Radius / m) * u), a, onLine, onCirc, radius, tol);
             }
         }
+    }
+
+    private void AddCenters(AnalyticIntersection intp, in CircleContact a, Line2D? onLine, Circle2D? onCirc, double radius, double tol)
+    {
+        if (intp.IsDone && !intp.IsEmpty)
+        {
+            for (int j = 1; j <= intp.PointCount; j++)
+            {
+                AddCenter(intp.Point(j).Value(), a, onLine, onCirc, radius, tol);
+            }
+        }
+    }
+
+    /// <summary>Adds the circle of radius Radius centred at a point if it is on the locus, touches the argument as asked and is new.</summary>
+    private void AddCenter(in Point2D center, in CircleContact a, Line2D? onLine, Circle2D? onCirc, double radius, double tol)
+    {
+        double off = onLine is Line2D l ? l.DistanceTo(center) : Math.Abs(center.DistanceTo(onCirc!.Value.Location) - onCirc.Value.Radius);
+        Circle2D sol = new(new Axis2D(center, new Direction2D(Direction2D.D.X)), radius);
+        if (off > tol || !a.Touches(sol, tol, out Qualifier q))
+        {
+            return;
+        }
+        for (int i = 1; i <= _nbrSol; i++)
+        {
+            if (_cirsol[i].Location.DistanceTo(center) <= tol)
+            {
+                return;
+            }
+        }
+        if (_nbrSol == _cirsol.Upper())
+        {
+            return;
+        }
+        int k = ++_nbrSol;
+        _cirsol[k] = sol;
+        _qualifier1[k] = q;
+        _theSame1[k] = a.Touch(k, sol, q, tol, _pnttg1sol, _par1sol, _pararg1);
+        _pntcen3[k] = center;
+        _parcen3[k] = onLine is Line2D ol ? global::Kerf.Engine.Geometry.ElCLib.Parameter(ol, center)
+                      : center.DistanceTo(onCirc!.Value.Location) <= Constants.Resolution() ? 0.0
+                      : global::Kerf.Engine.Geometry.ElCLib.Parameter(onCirc!.Value, center);
     }
 
     /// <summary>True if the construction succeeded (even with no solution).</summary>
@@ -403,7 +267,7 @@ public sealed partial class AnalyticCirc2dTanOnRad
         else
         {
             parArg = _parcen3[index];
-            pntSol = _pnttg1sol[index]; // OCCT: the tangency point, not the centre pntcen3
+            pntSol = _pntcen3[index];
         }
     }
 

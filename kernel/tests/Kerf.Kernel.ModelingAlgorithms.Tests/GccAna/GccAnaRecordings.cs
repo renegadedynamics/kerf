@@ -357,6 +357,9 @@ internal static class GccAnaRecordings
     private static LawCase Rad2(GccLaws.Arg a, GccLaws.Arg b, double R, double t)
         => new([a, b], null, R, t, () => GccAna_Circ2d2TanRadLawsTests.View(GccAna_Circ2d2TanRadLawsTests.Solve(a, b, R, t)));
 
+    private static LawCase OnRad(GccLaws.Arg a, GccLaws.Locus on, double R, double t)
+        => new([a], on, R, t, () => GccAna_Circ2dTanOnRadLawsTests.View(GccAna_Circ2dTanOnRadLawsTests.Solve(a, on, R, t)));
+
     /// <summary>The case as the laws see it, or null for a solver they don't cover.</summary>
     public static LawCase? Laws(Case theCase)
     {
@@ -390,6 +393,12 @@ internal static class GccAnaRecordings
             case "2TanRad.LP": { var a = r.QL(); var b = r.Pnt(); double R = r.D(); return Rad2(A(a), A(b), R, r.D()); }
             case "2TanRad.LL": { var a = r.QL(); var b = r.QL(); double R = r.D(); return Rad2(A(a), A(b), R, r.D()); }
             case "2TanRad.PP": { var a = r.Pnt(); var b = r.Pnt(); double R = r.D(); return Rad2(A(a), A(b), R, r.D()); }
+            case "TanOnRad.Cl": { var a = r.QC(); var c = r.Lin(); double R = r.D(); return OnRad(A(a), new GccLaws.OnLine(c), R, r.D()); }
+            case "TanOnRad.Ll": { var a = r.QL(); var c = r.Lin(); double R = r.D(); return OnRad(A(a), new GccLaws.OnLine(c), R, r.D()); }
+            case "TanOnRad.Pl": { var a = r.Pnt(); var c = r.Lin(); double R = r.D(); return OnRad(A(a), new GccLaws.OnLine(c), R, r.D()); }
+            case "TanOnRad.Cc": { var a = r.QC(); var c = r.Circ(); double R = r.D(); return OnRad(A(a), new GccLaws.OnCircle(c), R, r.D()); }
+            case "TanOnRad.Lc": { var a = r.QL(); var c = r.Circ(); double R = r.D(); return OnRad(A(a), new GccLaws.OnCircle(c), R, r.D()); }
+            case "TanOnRad.Pc": { var a = r.Pnt(); var c = r.Circ(); double R = r.D(); return OnRad(A(a), new GccLaws.OnCircle(c), R, r.D()); }
             case "2TanOn.PPc": { var a = r.Pnt(); var b = r.Pnt(); var c = r.Circ(); return On2(A(a), A(b), new GccLaws.OnCircle(c), r.D()); }
         }
         return null;

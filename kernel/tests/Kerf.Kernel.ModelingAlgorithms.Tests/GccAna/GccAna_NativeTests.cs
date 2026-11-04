@@ -55,6 +55,8 @@ public class GccAna_NativeTests(ITestOutputHelper theOutput)
         ["2TanOn.CPl"] = "decision 17102", ["2TanOn.LPl"] = "decision 17102", ["2TanOn.PPl"] = "decision 17102",
         ["2TanOn.CCc"] = "decision 17102", ["2TanOn.CLc"] = "decision 17102", ["2TanOn.CPc"] = "decision 17102",
         ["2TanOn.LLc"] = "decision 17102", ["2TanOn.LPc"] = "decision 17102", ["2TanOn.PPc"] = "decision 17102",
+        ["TanOnRad.Cl"] = "decision 17104", ["TanOnRad.Ll"] = "decision 17104", ["TanOnRad.Pl"] = "decision 17104",
+        ["TanOnRad.Cc"] = "decision 17104", ["TanOnRad.Lc"] = "decision 17104", ["TanOnRad.Pc"] = "decision 17104",
         ["2TanRad.CC"] = "decision 17103", ["2TanRad.LL"] = "decision 17103", ["2TanRad.CP"] = "decision 17103",
     };
 
