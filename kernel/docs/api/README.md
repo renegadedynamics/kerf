@@ -436,8 +436,10 @@ offered.
 **Left** (for 10L3 or later; unit 10L5 marks what it did):
 - **Done (10L5):** `Revolve` runs without copy, sharing the profile; its history answers for the edges a whole turn
   leaves out, which OCCT's calls deleted (decision 17301, replacing 1526).
-- `Tangents2D` (GccAna, Geom2dGcc: unit 10K4 was changing them), `Surfaces.Fill` (`BRepOffsetAPI_MakeFilling`),
-  `Sweeps.Helix`, and an extrusion's or revolution's caps in its history (OCCT's `FirstShape`/`LastShape`).
+- **Done (10L5):** `Surfaces.Fill` (`BRepOffsetAPI_MakeFilling`; `FillBoundary`, `FillOptions`) and `Sweeps.Helix`
+  (`HelixBRep_BuilderHelix`; `HelixOptions`), decision 17302.
+- `Tangents2D` (GccAna, Geom2dGcc: unit 10K4 was changing them), and an extrusion's or revolution's caps in its history
+  (OCCT's `FirstShape`/`LastShape`).
 - The engine types of these areas that something public still shows (decision 1530 lists why): the modelling
   layer's public API (10M), and the public engine types of the areas 10L3 makes internal.
 

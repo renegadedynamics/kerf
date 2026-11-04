@@ -131,6 +131,54 @@ public class ConstructionTests
     }
 
     [Fact]
+    public void A_filling_spans_its_boundary_and_passes_through_its_points()
+    {
+        Wire square = Square(10);
+        FillBoundary[] boundary = [.. square.Edges().Select(e => new FillBoundary(e))];
+        Built<Face> flat = Surfaces.Fill(boundary).Value;
+        Assert.Equal(4, flat.Shape.Edges().Length);
+        Assert.Equal(0, flat.Shape.Vertices().Max(v => Math.Abs(v.Point.Z)), 6);
+        Assert.Single(flat.History.Generated(square.Edges()[0]));
+
+        Built<Face> domed = Surfaces.Fill(boundary, new FillOptions { Points = [new Point3D(5, 5, 2)] }).Value;
+        Assert.True(domed.Shape.TryFindSurface(-1, out Surface? surface));
+        Assert.NotNull(surface);
+        Assert.Equal(2, MaxZOfSurface(surface!), 1);
+
+        Assert.Throws<ArgumentException>(() => Surfaces.Fill([]));
+        Assert.Throws<ArgumentException>(() => Surfaces.Fill([new FillBoundary(square.Edges()[0], Continuity.C2)]));
+    }
+
+    private static double MaxZOfSurface(Surface surface)
+    {
+        double max = double.MinValue;
+        for (int i = 0; i <= 10; i++)
+        {
+            for (int j = 0; j <= 10; j++)
+            {
+                (Interval u, Interval v) = surface.Bounds;
+                max = Math.Max(max, surface.Evaluate(u.Min + (u.Max - u.Min) * i / 10, v.Min + (v.Max - v.Min) * j / 10).Z);
+            }
+        }
+        return max;
+    }
+
+    [Fact]
+    public void A_helix_rises_by_its_pitch()
+    {
+        Wire helix = Sweeps.Helix(5, 2, 10).Value;
+        Point3D[] ends = [.. helix.Vertices().Select(v => v.Point)];
+        Assert.Contains(ends, p => p.DistanceTo(new Point3D(5, 0, 0)) < 1e-6);
+        Assert.Contains(ends, p => p.DistanceTo(new Point3D(5, 0, 10)) < 1e-6);
+
+        Wire cone = Sweeps.Helix(new Frame3D(new Point3D(0, 0, 1), Direction3D.UnitZ), 5, 2, 10, new HelixOptions { EndRadius = 2 }).Value;
+        Assert.Contains(cone.Vertices(), v => v.Point.DistanceTo(new Point3D(2, 0, 11)) < 1e-6);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => Sweeps.Helix(5, 0, 10));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Sweeps.Helix(5, 2, 10, new HelixOptions { EndRadius = -1 }));
+    }
+
+    [Fact]
     public void A_sweep_follows_its_spine()
     {
         Wire profile = Wire.FromEdges([Edge.Circle(new Circle3D(Frame3D.World, 1)).Value]).Value;

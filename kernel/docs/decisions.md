@@ -15599,3 +15599,16 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        OCCT's options, and nothing public sets them). The modelling layer's three revolutions keep `copy: true`, as
        Python build123d passes it, until 10M moves them onto `Sweeps.Revolve`. New test:
        `A_revolution_shares_the_profile_and_answers_for_every_edge` (a quarter and a whole turn).
+17302. **`Surfaces.Fill` and `Sweeps.Helix`** (construction.md). `Surfaces.Fill(boundaries, FillOptions)` is OCCT's
+       `BRepOffsetAPI_MakeFilling` on `EngineOperation.Run`: a `Result<Built<Face>>` whose history is the filling's
+       (each boundary edge and vertex generates the face's own). `FillBoundary(Edge, Continuity)` with `Support` (the
+       face a G1 or G2 edge lies on) and `IsBoundary` (false: a curve inside the face, OCCT's free constraint edge);
+       `FillOptions` holds OCCT's defaults, the points the face passes through and an initial surface. Misuse throws:
+       no bounding edge, a null edge, a continuity other than C0, G1 and G2. OCCT's free face constraints (a face
+       bounding a gap) and point constraints on faces aren't offered: nothing asks for them. `Sweeps.Helix(frame, radius,
+       pitch, height, HelixOptions)` is `HelixBRep_BuilderHelix`'s pure helix, conical with `EndRadius`; it returns a
+       `Result<Wire>`, as the other shapes from geometry (`Wire.Polygon`) do, with OCCT's error statuses as
+       `construction.helix-failed` and its warning (the approximation coarser than asked) as
+       `construction.helix-tolerance`. Radii rather than OCCT's diameters, as the primitives. Composite helices (several
+       parts) aren't offered; the modelling layer still builds its helix from geometry. Tests: two in
+       `ConstructionTests`.

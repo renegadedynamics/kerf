@@ -2,11 +2,14 @@
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Filling;
+using Kerf.Engine.Construction.Helix;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 
 namespace Kerf.Construction;
 
@@ -68,6 +71,73 @@ public static class Sweeps
                 return new EngineOutcome(true, revol.Shape, MakerOutcome.HistoryOf(new RevolutionHistory(revol), [p]));
             }, Failure, progress, cancellationToken);
         }
+    }
+
+    /// <summary>A helix couldn't be built: <c>construction.helix-failed</c>.</summary>
+    public static DiagnosticCode HelixFailed { get; } = new("construction.helix-failed");
+
+    /// <summary>A helix's approximation is coarser than asked (a warning): <c>construction.helix-tolerance</c>.</summary>
+    public static DiagnosticCode HelixTolerance { get; } = new("construction.helix-tolerance");
+
+    /// <summary>A helix on the world Z axis, starting at (<paramref name="radius"/>, 0, 0).</summary>
+    /// <inheritdoc cref="Helix(in Frame3D, double, double, double, HelixOptions?)"/>
+    public static Result<Wire> Helix(double radius, double pitch, double height, HelixOptions? options = null) =>
+        Helix(Frame3D.World, radius, pitch, height, options);
+
+    /// <summary>
+    /// A helix about <paramref name="frame"/>'s axis, starting on its X direction at <paramref name="radius"/> from the
+    /// axis and rising by <paramref name="pitch"/> a turn to <paramref name="height"/>, counterclockwise about the axis
+    /// (OCCT's <c>HelixBRep_BuilderHelix</c>): a wire of B-spline edges approximating it. With
+    /// <see cref="HelixOptions.EndRadius"/>, the radius changes linearly with the height (a conical helix).
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">A radius, pitch or height that isn't positive (an end radius may
+    /// be zero).</exception>
+    /// <exception cref="ArgumentException">A default frame.</exception>
+    public static Result<Wire> Helix(in Frame3D frame, double radius, double pitch, double height, HelixOptions? options = null)
+    {
+        options ??= HelixOptions.Default;
+        MakerOutcome.Positive(radius, nameof(radius));
+        MakerOutcome.Positive(pitch, nameof(pitch));
+        MakerOutcome.Positive(height, nameof(height));
+        MakerOutcome.Valid(frame, nameof(frame));
+        double endRadius = options.EndRadius ?? radius;
+        if (!(endRadius >= 0) || double.IsInfinity(endRadius))
+        {
+            throw new ArgumentOutOfRangeException(nameof(options), endRadius, "The end radius must be zero or more.");
+        }
+        MakerOutcome.Positive(options.Tolerance, nameof(options));
+        var builder = new BuilderHelix();
+        var heights = new NCollection_Array1<double>(1, 1) { [1] = height };
+        var pitches = new NCollection_Array1<double>(1, 1) { [1] = pitch };
+        var isPitches = new NCollection_Array1<bool>(1, 1) { [1] = true };
+        builder.SetParameters(new CoordinateSystem(frame), 2 * radius, 2 * endRadius, heights, pitches, isPitches);
+        builder.SetApproxParameters(options.Tolerance, options.MaxDegree, options.Continuity);
+        try
+        {
+            builder.Perform();
+        }
+        catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+        {
+            return Result<Wire>.Failure(FailureDiagnostics.ToDiagnostic(e));
+        }
+        if (builder.ErrorStatus() != 0)
+        {
+            return Result<Wire>.Failure(Diagnostic.Error(HelixFailed, builder.ErrorStatus() switch
+            {
+                2 => "The helix couldn't be approximated.",
+                3 => "An edge of the helix couldn't be made.",
+                10 => "The helix starts too close to its axis.",
+                11 => "The helix's pitch is below the tolerance.",
+                12 => "The helix's height is below the tolerance.",
+                13 => "The helix's taper is too steep.",
+                int status => $"The helix couldn't be built (status {status}).",
+            }));
+        }
+        var wire = (Wire)builder.Shape();
+        return builder.WarningStatus() != 0
+            ? Result<Wire>.Success(wire, [Diagnostic.Warning(HelixTolerance,
+                $"The helix is approximated to {builder.ToleranceReached():G3}, not {options.Tolerance:G3}.")])
+            : wire;
     }
 
     /// <summary>The profile (a wire or a vertex) swept along <paramref name="spine"/>.</summary>
