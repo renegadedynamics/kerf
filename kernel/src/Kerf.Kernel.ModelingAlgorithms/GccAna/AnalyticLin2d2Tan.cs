@@ -20,7 +20,7 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// given (GccEnt_unqualified for an unqualified circle, not a computed one), and the second circle's qualifier is
 /// mostly the first's.
 /// </remarks>
-public sealed class AnalyticLin2d2Tan
+internal sealed class AnalyticLin2d2Tan
 {
     private bool _wellDone;
     private int _nbrSol;

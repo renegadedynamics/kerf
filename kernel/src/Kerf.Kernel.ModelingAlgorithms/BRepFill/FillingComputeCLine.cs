@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// BRepFill_MultiLine is an AppCont_Function, so this is a third sealed subclass of the generic body, as
 /// Approx_FitAndDivide and Approx_FitAndDivide2d; <see cref="ComputeCLine.Perform"/> takes the line.
 /// </remarks>
-public sealed class FillingComputeCLine : ComputeCLine
+internal sealed class FillingComputeCLine : ComputeCLine
 {
     /// <summary>
     /// Approximates Line until the tolerances are reached, from degreemin to degreemax, cutting the range if

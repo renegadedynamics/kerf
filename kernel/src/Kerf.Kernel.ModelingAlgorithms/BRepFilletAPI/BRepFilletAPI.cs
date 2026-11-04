@@ -24,7 +24,7 @@ namespace Kerf.Engine.Fillets.Api;
 /// (the faulty contours and their statuses) are the maker's to read.
 /// </para>
 /// </remarks>
-public static class BRepFilletApi
+internal static class BRepFilletApi
 {
     /// <summary>The fillet of radius <paramref name="radius"/> on the edges <paramref name="edges"/> of <paramref name="shape"/>.</summary>
     /// <exception cref="NotDoneException">The fillet could not be built.</exception>

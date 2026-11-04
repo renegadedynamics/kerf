@@ -10,7 +10,7 @@ using static Kerf.Engine.Construction.Constraints.ConstraintCurveType;
 
 namespace Kerf.Engine.Construction.Constraints.Analytic;
 
-public sealed partial class AnalyticCirc2d2TanOn
+internal sealed partial class AnalyticCirc2d2TanOn
 {
     /// <summary>The circles tangent to a circle and through a point with their centre on a circle.</summary>
     public AnalyticCirc2d2TanOn(in QualifiedCirc qualified1,

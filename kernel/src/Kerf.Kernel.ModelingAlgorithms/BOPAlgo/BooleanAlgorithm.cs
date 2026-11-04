@@ -94,7 +94,7 @@ public abstract class BooleanAlgorithm : Options
 /// OCCT makes the range-taking <c>Perform</c> private and empty; C# can't narrow an override, so it is sealed and does
 /// nothing. The class is a <see cref="BooleanParallel"/> solver.
 /// </remarks>
-public abstract class ParallelAlgo : BooleanAlgorithm, BooleanParallel.ISolver
+internal abstract class ParallelAlgo : BooleanAlgorithm, BooleanParallel.ISolver
 {
     protected ProgressRange _progressRange;
 

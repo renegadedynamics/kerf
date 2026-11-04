@@ -24,7 +24,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// reparametrises a copy and keeps the copy in its own sequence, so the law behaves as OCCT's and the caller's curve
 /// is untouched (decisions.md). <see cref="BSplineSurface"/> hands out the law's surface frozen.
 /// </remarks>
-public class SurfaceNSections : SurfaceSectionLaw
+internal class SurfaceNSections : SurfaceSectionLaw
 {
     private double _uFirst;
     private double _uLast;

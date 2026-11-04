@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Booleans.Legacy.Build;
 
 /// <summary>Classifies loops against each other, to build areas.</summary>
-public abstract class LoopClassifier
+internal abstract class LoopClassifier
 {
     /// <summary>The state of the loop <paramref name="l1"/> compared with the loop <paramref name="l2"/>.</summary>
     public abstract Containment Compare(BuildLoop l1, BuildLoop l2);

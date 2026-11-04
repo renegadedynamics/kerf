@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Constraints.Analytic;
 
 /// <summary>A solution was asked of a construction that has none (the bisector of two coincident points).</summary>
-public class NoSolutionException : FailureException
+internal class NoSolutionException : FailureException
 {
     public NoSolutionException() { }
 

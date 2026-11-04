@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Objects;
 /// classes: build one with a constructor, a static factory or a <c>With</c> method. OCCT's in-place
 /// <c>operator*=</c> is left out.
 /// </remarks>
-public class Transformation2 : Transient
+internal class Transformation2 : Transient
 {
     private Transform2D _gpTrsf2d;
 

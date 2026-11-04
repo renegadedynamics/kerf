@@ -18,7 +18,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// cross product.
 /// </summary>
 /// <remarks>The curve must be an <see cref="CurveOnSurface"/> (OCCT casts it unchecked; the port checks).</remarks>
-public class Darboux : TrihedronLaw
+internal class Darboux : TrihedronLaw
 {
     /// <summary>Computes (F/|F|)'.</summary>
     private static Vector3D FDeriv(in Vector3D f, in Vector3D df)

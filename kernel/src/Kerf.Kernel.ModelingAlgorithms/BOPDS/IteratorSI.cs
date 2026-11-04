@@ -16,7 +16,7 @@ namespace Kerf.Engine.Booleans.Data;
 /// Finds the pairs of BRep sub-shapes whose bounding boxes interfere within each argument too (self-interference,
 /// for the checker), and iterates them by interference type.
 /// </summary>
-public class IteratorSI : DataIterator
+internal class IteratorSI : DataIterator
 {
     /// <summary>
     /// Keeps only the interference types up to the level: 0 V/V; 1 and V/E; 2 and E/E; 3 and V/F; 4 and E/F; any

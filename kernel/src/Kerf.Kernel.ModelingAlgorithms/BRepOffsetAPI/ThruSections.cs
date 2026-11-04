@@ -48,7 +48,7 @@ namespace Kerf.Engine.Construction.Api;
 /// frozen when returned.
 /// </para>
 /// </remarks>
-public class ThruSections : MakeShape
+internal class ThruSections : MakeShape
 {
     private readonly NCollection_List<Shape> _inputWires = new(); //!< List of input wires
     private NCollection_Sequence<Shape> _wires = new();           //!< Working wires

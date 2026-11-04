@@ -11,7 +11,7 @@ using static Kerf.Engine.Construction.Values.ErrorType;
 namespace Kerf.Engine.Construction.Curves;
 
 /// <summary>Constructions of an arc of hyperbola as a Geom_TrimmedCurve.</summary>
-public sealed class MakeArcOfHyperbola : Root
+internal sealed class MakeArcOfHyperbola : Root
 {
     private TrimmedCurve3D? _theArc;
 

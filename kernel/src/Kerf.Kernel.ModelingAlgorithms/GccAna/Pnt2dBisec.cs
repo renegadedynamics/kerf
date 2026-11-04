@@ -15,7 +15,7 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// if the points coincide.
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (decision 117).</remarks>
-public sealed class Pnt2dBisec
+internal sealed class Pnt2dBisec
 {
     private bool _wellDone;
     private bool _hasSol;

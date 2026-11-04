@@ -18,7 +18,7 @@ namespace Kerf.Engine.Construction.Fairing;
 /// and sagging by a physical ratio, with optional curvature constraints at the ends.
 /// </summary>
 /// <remarks>A working object, as <see cref="Batten"/> (decision 859).</remarks>
-public class MinimalVariation : Batten
+internal class MinimalVariation : Batten
 {
     private double _oldCurvature1;
     private double _oldCurvature2;

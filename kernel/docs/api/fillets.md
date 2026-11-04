@@ -1,6 +1,6 @@
 # API review: fillets and chamfers
 
-*Unit 10D, draft. Namespace `Kerf.Fillets`, in ModelingAlgorithms. Engine: `Kerf.Engine.Fillets` (ChFi3d, ChFiDS,
+*Unit 10D, draft; unit 10L2 implemented it (README.md, section 11, has what differs and what is left). Namespace `Kerf.Fillets`, in ModelingAlgorithms. Engine: `Kerf.Engine.Fillets` (ChFi3d, ChFiDS,
 ChFiKPart, BRepBlend, Blend, BlendFunc, FilletSurf) and `Kerf.Engine.Fillets.Planar` (ChFi2d).*
 
 ## Main types

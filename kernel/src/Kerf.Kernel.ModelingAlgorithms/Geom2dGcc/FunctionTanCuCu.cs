@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// curve): the line through the two points is tangent to the first curve, and the two tangents are parallel.
 /// </summary>
 /// <remarks>OCCT copies the adaptors; the port shares the solver's, which nothing writes (decision 797).</remarks>
-public sealed class FunctionTanCuCu : FunctionSetWithDerivatives
+internal sealed class FunctionTanCuCu : FunctionSetWithDerivatives
 {
     private readonly CurveAdaptor2D _theCurve1 = new();
     private readonly CurveAdaptor2D _theCurve2 = new();

@@ -13,7 +13,7 @@ using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans;
 
-public partial class BooleanBuilder
+internal partial class BooleanBuilder
 {
     /// <summary>
     /// The shapes generated from <paramref name="s"/> and kept in the result: an edge generates the vertices of its

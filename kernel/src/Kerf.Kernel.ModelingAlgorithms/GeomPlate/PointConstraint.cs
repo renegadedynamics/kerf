@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// A working object (decision 21), as OCCT's: its setters are public, and GeomPlate_BuildPlateSurface sets the
 /// order and the 2D point it finds. It keeps the caller's surface, read only.
 /// </remarks>
-public class PointConstraint : Transient
+internal class PointConstraint : Transient
 {
     protected int _order;
     private readonly SLProps _lProp;

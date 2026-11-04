@@ -15,7 +15,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// A trihedron whose normal makes a constant draft angle with a fixed direction (the binormal given), used by
 /// the draft sweeps (GeomFill_LocationDraft).
 /// </summary>
-public class DraftTrihedron : TrihedronLaw
+internal class DraftTrihedron : TrihedronLaw
 {
     private Vector3D _b;
     private double _angle;

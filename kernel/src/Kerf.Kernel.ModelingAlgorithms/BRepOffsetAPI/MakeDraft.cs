@@ -19,7 +19,7 @@ namespace Kerf.Engine.Features.Api;
 /// free boundary along a direction at an angle, up to a length, a surface or a shape, sewn to the face or shell.
 /// </summary>
 /// <remarks>A maker (decision 414): the input is only read; <see cref="MakeShape.Shape"/> freezes.</remarks>
-public sealed class MakeDraft : MakeShape
+internal sealed class MakeDraft : MakeShape
 {
     private readonly global::Kerf.Engine.Construction.Filling.Draft _draft;
 

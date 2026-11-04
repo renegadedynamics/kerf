@@ -19,7 +19,7 @@ namespace Kerf.Engine.Features.Local;
 /// A working object (decision 21). The wires are new; their edges are the given ones. <see cref="Result"/> freezes what
 /// it hands out; ported callers read <see cref="InternalResult"/>.
 /// </remarks>
-public sealed class BuildWires
+internal sealed class BuildWires
 {
     private bool _done;
     private readonly NCollection_List<Shape> _res = new();

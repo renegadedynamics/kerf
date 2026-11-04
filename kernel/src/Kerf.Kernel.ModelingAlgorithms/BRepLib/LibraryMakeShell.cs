@@ -23,7 +23,7 @@ namespace Kerf.Engine.Construction.Library;
 /// regularities encoded.
 /// </summary>
 /// <remarks><see cref="Shell"/> freezes the shell (design 4.2); ported code reads <see cref="InternalShell"/>.</remarks>
-public class LibraryMakeShell : LibraryMakeShape
+internal class LibraryMakeShell : LibraryMakeShape
 {
     private LibraryShellError _error;
 

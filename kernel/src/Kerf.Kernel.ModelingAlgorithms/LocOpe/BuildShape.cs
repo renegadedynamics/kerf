@@ -23,7 +23,7 @@ namespace Kerf.Engine.Features.Local;
 /// A working object (decision 21). It builds new shells and solids around the faces it is given and never writes into
 /// them. <see cref="Shape"/> freezes what it hands out; ported callers read <see cref="InternalShape"/>.
 /// </remarks>
-public sealed class BuildShape
+internal sealed class BuildShape
 {
     private Shape _res = new();
 

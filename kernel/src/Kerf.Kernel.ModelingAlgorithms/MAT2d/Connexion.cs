@@ -14,7 +14,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// parameters on the lines.</summary>
 /// <remarks>A working object of MAT2d_MiniPath and MAT2d_Circuit (decision 21): the setters are internal. Dump (to
 /// std::cout) is left out.</remarks>
-public sealed class Connexion : Transient
+internal sealed class Connexion : Transient
 {
     private int _lineA;
     private int _lineB;

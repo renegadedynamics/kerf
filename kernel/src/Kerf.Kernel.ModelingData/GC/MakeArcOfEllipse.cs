@@ -11,7 +11,7 @@ using static Kerf.Engine.Construction.Values.ErrorType;
 namespace Kerf.Engine.Construction.Curves;
 
 /// <summary>Constructions of an arc of ellipse as a Geom_TrimmedCurve.</summary>
-public sealed class MakeArcOfEllipse : Root
+internal sealed class MakeArcOfEllipse : Root
 {
     private TrimmedCurve3D? _theArc;
 

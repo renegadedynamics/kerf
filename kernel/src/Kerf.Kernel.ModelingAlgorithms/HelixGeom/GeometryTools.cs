@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Helix.Geometry;
 /// The outputs are <c>ref</c>: OCCT leaves them unchanged when the approximation fails. The curves returned are new
 /// and unfrozen (decision 244).
 /// </remarks>
-public static class GeometryTools
+internal static class GeometryTools
 {
     private sealed class HelixGeom_Tools_Eval : EvaluatorFunction
     {

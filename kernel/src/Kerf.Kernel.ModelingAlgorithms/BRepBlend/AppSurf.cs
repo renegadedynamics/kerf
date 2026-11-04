@@ -12,7 +12,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// AppBlend_AppSurf over <see cref="AppFunction"/> and <see cref="Line"/>.
 /// </summary>
 /// <remarks>A sealed subclass with OCCT's constructors (decisions 607, 845 and 1041); the members are the base class's.</remarks>
-public sealed class AppSurf : AppSurf<AppFunction, Line, BlendPoint>
+internal sealed class AppSurf : AppSurf<AppFunction, Line, BlendPoint>
 {
     public AppSurf()
     {

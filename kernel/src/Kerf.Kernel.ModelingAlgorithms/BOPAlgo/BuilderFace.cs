@@ -31,7 +31,7 @@ namespace Kerf.Engine.Booleans;
 /// The new faces are built on the face's surface, location and tolerance. The given face is kept forward; its own
 /// orientation is <see cref="Orientation"/>.
 /// </remarks>
-public class BuilderFace : BuilderArea
+internal class BuilderFace : BuilderArea
 {
     protected Face _face = new();
     protected Orientation _orientation;

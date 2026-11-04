@@ -43,7 +43,7 @@ namespace Kerf.Engine.Offsets;
 /// own copy of the caller's shape: they must be unfrozen; a frozen one throws at the first write. The vertices and the
 /// edge (<see cref="ExtentEdge"/>) it makes are not frozen.
 /// </remarks>
-public static class Inter2d
+internal static class Inter2d
 {
     //=================================================================================================
 

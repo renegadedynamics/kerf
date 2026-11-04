@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Library;
 
 /// <summary>Makes a vertex at a point, with the default precision (<see cref="BrepLibrary.Precision()"/>).</summary>
-public class LibraryMakeVertex : LibraryMakeShape
+internal class LibraryMakeVertex : LibraryMakeShape
 {
     public LibraryMakeVertex(in Point3D p)
     {

@@ -28,7 +28,7 @@ namespace Kerf.Engine.Booleans.Api;
 /// <see cref="BooleanFailureException"/> with OCCT's <see cref="AlertUserBreak"/>.
 /// </para>
 /// </remarks>
-public static class BRepAlgoApi
+internal static class BRepAlgoApi
 {
     /// <summary>The union of the arguments and the tools.</summary>
     public static Shape Fuse(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools,
@@ -154,7 +154,7 @@ public static class BRepAlgoApi
 }
 
 /// <summary>A Boolean operation of <see cref="BRepAlgoApi"/> failed; <see cref="Report"/> holds its errors and warnings.</summary>
-public sealed class BooleanFailureException : NotDoneException
+internal sealed class BooleanFailureException : NotDoneException
 {
     private readonly Report _report;
 

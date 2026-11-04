@@ -20,7 +20,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 /// A C++ value class, so a struct. <c>default</c> is not OCCT's default: <c>new()</c> is (UNKNOWN, UNKNOWN, FACE,
 /// FACE, indices 0).
 /// </remarks>
-public partial struct DsTransition : IEquatable<DsTransition>
+internal partial struct DsTransition : IEquatable<DsTransition>
 {
     private Containment _stateBefore;
     private Containment _stateAfter;

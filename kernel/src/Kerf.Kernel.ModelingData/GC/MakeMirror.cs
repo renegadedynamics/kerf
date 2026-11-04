@@ -11,7 +11,7 @@ namespace Kerf.Engine.Construction.Curves;
 
 /// <summary>The symmetry with respect to a point, an axis or a plane, as a Geom_Transformation.</summary>
 /// <remarks>Not a GC_Root: the construction can't fail, as in OCCT.</remarks>
-public sealed class MakeMirror
+internal sealed class MakeMirror
 {
     private readonly GeometryTransformation _theMirror;
 

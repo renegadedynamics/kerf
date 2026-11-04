@@ -10,7 +10,7 @@ using static Kerf.Engine.Construction.Constraints.ConstraintCurveType;
 namespace Kerf.Engine.Construction.Constraints;
 
 /// <summary>A bisecting curve whose geometry is a 2D circle.</summary>
-public sealed class BCirc : ConstraintBisec
+internal sealed class BCirc : ConstraintBisec
 {
     private readonly Circle2D _cir;
 

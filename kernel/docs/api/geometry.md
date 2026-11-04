@@ -1,6 +1,6 @@
 # API review: geometry
 
-*Unit 10D, draft; unit 10L1 implemented the values, curves and surfaces (README.md, section 10, has what differs and
+*Unit 10D, draft; unit 10L1 implemented the values, curves and surfaces, and 10L2 the operations (README.md, sections 10 and 11, have what differs and
 what is left). Namespace `Kerf.Geometry`. Values in Foundation, curves and surfaces in ModelingData; the fitting,
 projection and intersection members are extension members declared in ModelingAlgorithms, in the same namespace.*
 

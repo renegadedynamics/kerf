@@ -11,7 +11,7 @@ namespace Kerf.Engine.Construction.Plate;
 
 /// <summary>A constraint that the plate's deformation is the same translation at every given 2D point.</summary>
 /// <remarks>A class: OCCT's copies share the linear constraint's arrays (see <see cref="LinearXyzConstraint"/>).</remarks>
-public class GlobalTranslationConstraint
+internal class GlobalTranslationConstraint
 {
     private readonly LinearXyzConstraint _lxyzc;
 

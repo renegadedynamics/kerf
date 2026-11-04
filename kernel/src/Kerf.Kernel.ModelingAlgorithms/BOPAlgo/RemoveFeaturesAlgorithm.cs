@@ -40,7 +40,7 @@ namespace Kerf.Engine.Booleans;
 /// unit 6G).
 /// </para>
 /// </remarks>
-public class RemoveFeaturesAlgorithm : BuilderShape
+internal class RemoveFeaturesAlgorithm : BuilderShape
 {
     // Inputs
     protected Shape _inputShape = new();                     //!< Input shape

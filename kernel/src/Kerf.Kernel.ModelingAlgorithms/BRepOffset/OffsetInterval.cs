@@ -15,7 +15,7 @@ namespace Kerf.Engine.Offsets;
 /// A value type (OCCT's class is used by value). OCCT's default constructor leaves the fields uninitialised;
 /// <c>default</c> here is (0, 0, <see cref="TypeOfConcavity.Concave"/>).
 /// </remarks>
-public partial struct OffsetInterval : IEquatable<OffsetInterval>
+internal partial struct OffsetInterval : IEquatable<OffsetInterval>
 {
     private double _f;
     private double _l;

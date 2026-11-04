@@ -31,7 +31,7 @@ using static Kerf.Topology.Containment;
 using static Kerf.Engine.Booleans.Legacy.Data.DsKind;
 
 namespace Kerf.Engine.Fillets;
-public partial class FilBuilder
+internal partial class FilBuilder
 {
 
 

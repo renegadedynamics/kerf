@@ -28,7 +28,7 @@ namespace Kerf.Engine.Offsets.Api;
 /// and 1419), and the result holds the caller's faces where the algorithm left them unchanged.
 /// </para>
 /// </remarks>
-public class MakeThickSolid : MakeOffsetShape
+internal class MakeThickSolid : MakeOffsetShape
 {
     //=================================================================================================
 

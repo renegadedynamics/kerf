@@ -21,7 +21,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// OCCT copies the adaptors; the port shares the solver's, which nothing writes (decision 797). OCCT declares three
 /// more constructors (a curve and points) without defining them; they are left out.
 /// </remarks>
-public sealed class FunctionTanCuCuCu : FunctionSetWithDerivatives
+internal sealed class FunctionTanCuCuCu : FunctionSetWithDerivatives
 {
     private readonly CurveAdaptor2D _curv1 = new();
     private readonly CurveAdaptor2D _curv2 = new();

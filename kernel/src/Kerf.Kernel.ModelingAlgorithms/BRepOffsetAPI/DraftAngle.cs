@@ -41,7 +41,7 @@ namespace Kerf.Engine.Features.Api;
 /// caller's own sub-shapes for the rest (decision 1044).
 /// </para>
 /// </remarks>
-public class DraftAngle : ModifyShape
+internal class DraftAngle : ModifyShape
 {
     private readonly Dictionary<Shape, Shape> _vtxToReplace = new(ShapeHasher.Instance);
     private readonly ReShape _subs = new();

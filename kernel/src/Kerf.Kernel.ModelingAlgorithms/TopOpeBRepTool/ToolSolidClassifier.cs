@@ -21,7 +21,7 @@ namespace Kerf.Engine.Booleans.Legacy.Tools;
 /// </summary>
 /// <remarks>A working object. OCCT stores raw pointers to the classifiers and deletes them in its destructor; the port
 /// stores references.</remarks>
-public sealed class ToolSolidClassifier
+internal sealed class ToolSolidClassifier
 {
     private SolidClassifier? _pClassifier;
     private readonly IndexedMap<Shape, SolidClassifier> _shapeClassifierMap =

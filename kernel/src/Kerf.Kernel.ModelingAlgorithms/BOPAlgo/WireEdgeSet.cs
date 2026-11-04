@@ -10,7 +10,7 @@ namespace Kerf.Engine.Booleans;
 
 /// <summary>The edges given to BOPAlgo_WireSplitter (the start elements) and the wires it makes (the shapes).</summary>
 /// <remarks>A working object: OCCT passes it by pointer to the wire splitter, which fills it.</remarks>
-public sealed class WireEdgeSet
+internal sealed class WireEdgeSet
 {
     private Face _face;
     private readonly NCollection_List<Shape> _startShapes = new();

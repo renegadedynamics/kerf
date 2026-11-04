@@ -13,7 +13,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// Qualified lines and circles: the arguments of the constraint solvers, each with the relative position of the
 /// solutions and the argument.
 /// </summary>
-public static class GccEnt
+internal static class GccEnt
 {
     private static readonly string[] GccEnt_Table_PrintPosition =
         ["UNQUALIFIED", "ENCLOSING", "ENCLOSED", "OUTSIDE", "NOQUALIFIER"];

@@ -37,7 +37,7 @@ namespace Kerf.Engine.Booleans;
 /// (decision 766), so the arguments are never written.
 /// </para>
 /// </remarks>
-public class CellsBuilder : BooleanBuilder
+internal class CellsBuilder : BooleanBuilder
 {
     protected Shape _allParts = new(); //!< All split parts of the arguments
     protected IndexedMap<Shape, NCollection_List<Shape>> _index = new(ShapeHasher.Instance); //!< Connection map from all splits parts to the argument shapes from which they were created

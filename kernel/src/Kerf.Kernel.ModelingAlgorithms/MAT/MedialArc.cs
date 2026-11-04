@@ -13,7 +13,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// its neighbours on each side at each node.</summary>
 /// <remarks>OCCT keeps the neighbouring arcs as raw pointers; the port keeps references. The setters are internal.
 /// </remarks>
-public sealed class MedialArc : Transient
+internal sealed class MedialArc : Transient
 {
     private int _arcIndex;
     private int _geomIndex;

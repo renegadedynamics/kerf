@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Api;
 /// rotated around the Z axis by angle (2π by default). The result has a lateral face of revolution, planar faces at
 /// the ends of the meridian when they aren't on the axis, and for a portion two planar faces at u = 0 and u = angle.
 /// </summary>
-public class MakeRevolution : MakeOneAxis
+internal class MakeRevolution : MakeOneAxis
 {
     private readonly Revolution _revolution;
 

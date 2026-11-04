@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// on a line or a circle.
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (decision 117). Up to 4 solutions.</remarks>
-public sealed partial class AnalyticCirc2dTanOnRad
+internal sealed partial class AnalyticCirc2dTanOnRad
 {
     private bool _wellDone;
     private int _nbrSol;

@@ -1922,3 +1922,24 @@ Phase 10 (part): the public API, part 1: the shared types, geometry and topology
   types are internal; the kernel's assemblies, its tests, Draw-lite, the benchmarks and, until unit 10M, the modelling
   layer still reach them. `BRepOffset_Interval` is `OffsetInterval`.
 - `docs/api/kerf-10l1.map` holds the renames, for kerf-rename to apply to other code (Bento).
+
+Phase 10 (part): the public API, part 2: geometry's operations, construction, Booleans, fillets, offsets and features
+(unit 10L2).
+- `Kerf.Geometry.GeometryOperations`: arcs and segments (`TrimmedCurve3D.ArcThrough`, `Arc`, `Segment`), fitting
+  (`BSplineCurve3D.Interpolate`, `Approximate`, `Join`; `BSplineSurface.Approximate`), conversion (`ToBSpline`,
+  `ToCurve2D`, `ToCurve3D`), projection (`Project`, `TryProjectNearest`), intersection (`Intersect`) and
+  `surface.TryGetPlane`, each returning a `Result` where it can fail. The splines' `WithPole`, `WithWeight` and
+  `WithKnot` are indexed from 0.
+- `Kerf.Construction`: `Solid.Box`, `Cylinder`, `Cone`, `Sphere`, `Torus`, `Wedge`, `HalfSpace`; `shape.Extrude`,
+  `Revolve`, `Sweeps.Sweep`, `Loft`, `Ruled`; `Edge.Line`, `Wire.FromEdges`, `Wire.Polygon`, `Face.FromWire` and the
+  other shapes from geometry; `Transformed`, `Mirrored`, `Scaled`; `ShapeProjections.Project`.
+- `Kerf.Booleans`: `a.Fuse(b)`, `Cut`, `Common`, `Section`, and `BooleanOperations.FuseAll`, `Split`, `Partition`, with
+  `BooleanOptions`; never changing their inputs, simplified by default.
+- `Kerf.Fillets`: `Fillet`, `Chamfer`, `Fillet2D`, `Chamfer2D`; a failure names the edges that failed.
+- `Kerf.Offsets` and `Kerf.Features`: `Offset`, `Thicken`, `Offset2D`, `solid.Hollow`; `Draft`, `ExtrudeUntil`,
+  `SplitFaces`.
+- Every operation returns its shape with its history (`Built<T>`), the engine's statuses and alerts as diagnostics, and
+  throws `OperationCanceledException` when cancelled.
+- `GlueMode` (members `Off`, `Shift`, `Full`), `FilletShape`, `OffsetMode`, `TransitionMode` and `ParametrizationType`
+  moved into the public namespaces; 686 more engine types (construction, Booleans, fillets, offsets, features) are
+  internal. `docs/api/kerf-10l2.map` holds the renames.

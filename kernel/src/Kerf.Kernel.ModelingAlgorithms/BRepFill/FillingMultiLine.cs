@@ -26,7 +26,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// and a 2D curve on each of two faces (BRepFill_TrimSurfaceTool's intersection of two faces of an evolved shape).
 /// </summary>
 /// <remarks>A working object of BRepFill_TrimSurfaceTool (decision 21).</remarks>
-public sealed class FillingMultiLine : Function
+internal sealed class FillingMultiLine : Function
 {
     private readonly Face _face1 = new();
     private readonly Face _face2 = new();

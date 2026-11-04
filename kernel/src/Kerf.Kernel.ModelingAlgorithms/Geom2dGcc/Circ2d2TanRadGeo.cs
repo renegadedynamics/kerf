@@ -18,7 +18,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// (Adaptor2d_OffsetCurve and Geom2dInt).
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (decision 117), up to 16 solutions.</remarks>
-public sealed class Circ2d2TanRadGeo
+internal sealed class Circ2d2TanRadGeo
 {
     private const int ANbSolMAX = 16;
 

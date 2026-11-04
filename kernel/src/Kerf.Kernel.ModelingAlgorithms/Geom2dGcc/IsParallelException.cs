@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Constraints;
 
 /// <summary>Thrown when the arguments of a construction are parallel and the solution is undefined.</summary>
-public class IsParallelException : DomainErrorException
+internal class IsParallelException : DomainErrorException
 {
     public IsParallelException() { }
 

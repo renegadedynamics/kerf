@@ -25,7 +25,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// place, as OCCT does: their basis curves are read with <c>ChangeBasisCurve</c>, which doesn't freeze them. The
 /// maps are keyed by integers and only looked up. Dump throws Standard_NotImplemented, as OCCT's release build.
 /// </remarks>
-public sealed class Tool2d
+internal sealed class Tool2d
 {
     // OCCT's static double, never changed.
     private const double MAT2d_TOLCONF = 1.0e-7;

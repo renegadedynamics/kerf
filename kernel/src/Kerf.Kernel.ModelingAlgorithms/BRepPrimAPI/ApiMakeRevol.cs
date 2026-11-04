@@ -33,7 +33,7 @@ namespace Kerf.Engine.Construction.Api;
 /// <para>If an edge of the shape crosses the axis, the result is null (<see cref="MakeShape.Shape"/>
 /// returns a null shape, as OCCT does).</para>
 /// </remarks>
-public class ApiMakeRevol : MakeSweep
+internal class ApiMakeRevol : MakeSweep
 {
     private readonly Revol _revol;
     private readonly NCollection_List<Shape> _degenerated = new();

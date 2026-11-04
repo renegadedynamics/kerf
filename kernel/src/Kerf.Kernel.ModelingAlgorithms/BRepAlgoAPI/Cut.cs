@@ -11,7 +11,7 @@ using static Kerf.Engine.Booleans.Operation;
 namespace Kerf.Engine.Booleans.Api;
 
 /// <summary>The objects minus the tools.</summary>
-public class Cut : BooleanOperation
+internal class Cut : BooleanOperation
 {
     /// <summary>An empty operation: set the arguments and tools, then <see cref="BooleanOperation.Build"/>.</summary>
     public Cut()

@@ -42,7 +42,7 @@ namespace Kerf.Engine.Booleans;
 /// groups are the same, but the order of a shape's twins in their list may differ from native's (occt-issues.md).
 /// </para>
 /// </remarks>
-public class MakePeriodicAlgorithm : Options
+internal class MakePeriodicAlgorithm : Options
 {
     /// <summary>Three flags (OCCT's <c>bool[3]</c>), a value.</summary>
     [InlineArray(3)]

@@ -31,7 +31,7 @@ namespace Kerf.Engine.Offsets.Api;
 /// for the caller's sub-shapes. As in OCCT, a run reported done may give a null shape.
 /// </para>
 /// </remarks>
-public class MakeOffsetShape : MakeShape
+internal class MakeOffsetShape : MakeShape
 {
     protected enum OffsetAlgo_Type
     {

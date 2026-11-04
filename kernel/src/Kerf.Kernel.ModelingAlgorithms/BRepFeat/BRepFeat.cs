@@ -32,7 +32,7 @@ namespace Kerf.Engine.Features;
 /// A form feature adds matter (a fusion) or removes it (a cut), for a length, up to a limiting face, from a limiting face
 /// at a height, or above and below a plane. BRepFeat_trace.cxx holds only <c>OCCT_DEBUG</c> trace switches: left out.
 /// </remarks>
-public static class BRepFeat
+internal static class BRepFeat
 {
     private const int Nechantbaryc = 11;
 

@@ -97,7 +97,7 @@ public enum PipeError
 }
 
 /// <summary>The state of a face after a shape construction (BRepBuilderAPI_MakeShape's descendants).</summary>
-public enum ShapeModification
+internal enum ShapeModification
 {
     Preserved,
     Deleted,

@@ -43,7 +43,7 @@ namespace Kerf.Engine.Fillets;
 /// unit 7N2 so that the builder can be compared with native OCCT end to end; the API wrappers are unit 7N3's.
 /// OCCT_DEBUG blocks (traces) are left out.
 /// </remarks>
-public partial class FilBuilder : FilletBuilderBase
+internal partial class FilBuilder : FilletBuilderBase
 {
     private SectionShape _shape;
 

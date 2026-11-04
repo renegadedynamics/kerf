@@ -22,7 +22,7 @@ namespace Kerf.Engine.Features.Local;
 /// sorted in increasing parameter along each element.
 /// </summary>
 /// <remarks>A working object (decision 21): it only reads the shape; the points' faces are the shape's own.</remarks>
-public sealed class CSIntersector
+internal sealed class CSIntersector
 {
     private bool _done;
     private Shape _shape = new();

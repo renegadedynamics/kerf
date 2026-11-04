@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// The function F(w) = V . (C(w) - P): the signed distance (times |V|) from the plane through P normal to V to the
 /// point of the curve C of parameter w. Its root is where the curve crosses the plane.
 /// </summary>
-public class PlanFunc : FunctionWithDerivative
+internal class PlanFunc : FunctionWithDerivative
 {
     private Xyz _pnt;
     private Xyz _vec;

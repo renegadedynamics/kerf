@@ -18,7 +18,7 @@ namespace Kerf.Engine.Offsets.Bisectors;
 /// A value type (translation rules, section 3): the setters are internal; <c>default</c> is OCCT's default (zeros,
 /// not infinite).
 /// </remarks>
-public partial struct PointOnBis : IEquatable<PointOnBis>
+internal partial struct PointOnBis : IEquatable<PointOnBis>
 {
     private double _param1;
     private double _param2;

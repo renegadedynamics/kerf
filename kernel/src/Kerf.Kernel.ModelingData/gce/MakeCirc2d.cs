@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Values;
 /// Constructions of a gp_Circ2d: from an axis and a radius, concentric to a circle through a point or at a signed
 /// offset, through three points, from a center and a radius, or from a center and a point.
 /// </summary>
-public sealed class MakeCirc2d : Root
+internal sealed class MakeCirc2d : Root
 {
     private Circle2D _theCirc2d = new();
 

@@ -37,7 +37,7 @@ namespace Kerf.Engine.Features;
 /// <para>The basis shape and the contour are read, never written (LocOpe_RevolutionForm sweeps a copy of a frozen
 /// profile, decision 1014; the gluing and the same-parameter pass, BRepFeat_RibSlot's).</para>
 /// </remarks>
-public sealed class MakeRevolutionForm : RibSlot
+internal sealed class MakeRevolutionForm : RibSlot
 {
     private Axis3D _axe = new();
     private double _height1;

@@ -33,7 +33,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// functions' caches depend on (decisions 1037 and 1043). OCCT's <c>OCCT_DEBUG</c> drawing of the sections
 /// (<c>Drawsect</c>) and its traces are left out.
 /// </remarks>
-public class Walking
+internal class Walking
 {
     private const double CosRef3D_File = 0.88; // OCCT's file-static CosRef3D (InternalPerform)
 

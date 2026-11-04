@@ -34,7 +34,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// (QCurve, point, line/circle/curve) give math_FunctionSetRoot 3-vectors for a 4-variable function: native OCCT and
 /// the port throw Standard_OutOfRange there.
 /// </remarks>
-public sealed class Circ2d2TanOnIter
+internal sealed class Circ2d2TanOnIter
 {
     private bool _wellDone;
     private Circle2D _cirsol = new();

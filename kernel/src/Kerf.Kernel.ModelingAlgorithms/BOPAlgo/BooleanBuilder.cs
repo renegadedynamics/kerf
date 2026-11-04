@@ -37,7 +37,7 @@ namespace Kerf.Engine.Booleans;
 /// (<c>myEntryPoint == 1</c>); the port lets it go.
 /// </para>
 /// </remarks>
-public partial class BooleanBuilder : BuilderShape
+internal partial class BooleanBuilder : BuilderShape
 {
     protected NCollection_List<Shape> _arguments = new();                                                     //!< Arguments of the operation
     protected HashSet<Shape> _mapFence = new(ShapeHasher.Instance);                         //!< Fence map providing the uniqueness of the shapes in the list of arguments

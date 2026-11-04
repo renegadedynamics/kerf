@@ -13,7 +13,7 @@ namespace Kerf.Engine.Fillets.Data;
 /// the fillet builders set.
 /// </summary>
 /// <remarks>A C++ value class, so a struct; <c>new()</c> and <c>default</c> are the same (all zero).</remarks>
-public partial struct Regul : IEquatable<Regul>
+internal partial struct Regul : IEquatable<Regul>
 {
     private int _icurv;
     private int _is1;

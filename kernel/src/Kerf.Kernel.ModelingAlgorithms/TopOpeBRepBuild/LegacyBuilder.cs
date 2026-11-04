@@ -31,7 +31,7 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 /// </para>
 /// <para>A working object; it keeps a copy of its build tool, as in OCCT.</para>
 /// </remarks>
-public class LegacyBuilder
+internal class LegacyBuilder
 {
     protected readonly DsBuildTool _buildTool;
 

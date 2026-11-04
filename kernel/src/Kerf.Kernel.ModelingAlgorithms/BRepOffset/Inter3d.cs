@@ -39,7 +39,7 @@ namespace Kerf.Engine.Offsets;
 /// unfrozen: a frozen one throws <see cref="LockedShapeException"/> at the first write. The offsets of
 /// <c>MapSF</c> are only read.
 /// </remarks>
-public sealed class Inter3d
+internal sealed class Inter3d
 {
     private readonly AsDes _asDes;
     private readonly IndexedSet<Shape> _touched = new(ShapeHasher.Instance);

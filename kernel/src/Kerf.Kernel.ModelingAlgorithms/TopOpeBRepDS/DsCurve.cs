@@ -19,7 +19,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 /// which also sets the caller's <see cref="DSIndex"/>, as OCCT does) and gives it for writing by <c>ref</c>
 /// (<see cref="DsDataStructure.ChangeCurve"/>).
 /// </remarks>
-public partial struct DsCurve : IEquatable<DsCurve>
+internal partial struct DsCurve : IEquatable<DsCurve>
 {
     private Curve3D? _curve;
     private double _first;

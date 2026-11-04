@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// plate surface has at given UV points.
 /// </summary>
 /// <remarks>The criterion keeps copies of the caller's sequences, as OCCT's.</remarks>
-public class PlateG1Criterion : Criterion
+internal class PlateG1Criterion : Criterion
 {
     private readonly NCollection_Sequence<Xy> _data;
     private readonly NCollection_Sequence<Xyz> _xyz;

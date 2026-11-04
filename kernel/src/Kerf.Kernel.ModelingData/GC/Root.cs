@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Curves;
 /// A construction is computed by its constructor. Its <c>Value()</c> returns the constructed geometry, frozen
 /// (it is the same object at each call, and may be shared by everything the caller builds from it).
 /// </remarks>
-public class Root
+internal class Root
 {
     protected ErrorType _theError;
 

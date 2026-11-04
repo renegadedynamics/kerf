@@ -11,7 +11,7 @@ namespace Kerf.Engine.Construction.Filling;
 
 /// <summary>A face and the order of continuity a filling must have with it (a "free constraint").</summary>
 /// <remarks>A value type (rules, section 3); its fields are internal, as OCCT's friend BRepFill_Filling reads them.</remarks>
-public readonly struct FaceAndOrder : IEquatable<FaceAndOrder>
+internal readonly struct FaceAndOrder : IEquatable<FaceAndOrder>
 {
     internal readonly Face _face;
     internal readonly Continuity _order;

@@ -31,7 +31,7 @@ namespace Kerf.Engine.Construction.Library;
 /// computed on a copy (<see cref="ToolTriangulatedShape.NormalsComputed"/>), where OCCT writes them into the
 /// face's triangulation. The random points come from <c>std::mt19937</c> seeded with 0 for each face, as in OCCT.
 /// </remarks>
-public abstract class PointCloudShape
+internal abstract class PointCloudShape
 {
     protected Shape _shape;
     protected double _dist;

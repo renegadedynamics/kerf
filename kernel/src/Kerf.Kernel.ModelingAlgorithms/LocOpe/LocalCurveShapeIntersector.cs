@@ -20,7 +20,7 @@ namespace Kerf.Engine.Features.Local;
 /// along the axis or the circle. The transitions take the faces' orientations into account.
 /// </summary>
 /// <remarks>A working object (decision 21): it only reads the shape; the points' faces are the shape's own.</remarks>
-public sealed class LocalCurveShapeIntersector
+internal sealed class LocalCurveShapeIntersector
 {
     private bool _done;
     private readonly NCollection_Sequence<PntFace> _points = new();

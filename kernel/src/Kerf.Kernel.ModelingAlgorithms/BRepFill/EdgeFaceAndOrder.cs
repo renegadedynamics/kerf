@@ -13,7 +13,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// An edge, its support face (or a null face) and the order of continuity a filling must have along it.
 /// </summary>
 /// <remarks>A value type (rules, section 3); its fields are internal, as OCCT's friend BRepFill_Filling reads them.</remarks>
-public readonly struct EdgeFaceAndOrder : IEquatable<EdgeFaceAndOrder>
+internal readonly struct EdgeFaceAndOrder : IEquatable<EdgeFaceAndOrder>
 {
     internal readonly Edge _edge;
     internal readonly Face _face;

@@ -6,7 +6,7 @@ using Occt;
 
 namespace Kerf.Engine.Fillets;
 
-public partial class ChBuilder
+internal partial class ChBuilder
 {
     //=================================================================================================
 

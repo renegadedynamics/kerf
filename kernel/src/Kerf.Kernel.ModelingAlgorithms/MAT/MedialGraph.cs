@@ -17,7 +17,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// The maps are keyed by integers and only looked up (ChangeBasicElts iterates one to set each element's index from
 /// its key, which doesn't depend on the order).
 /// </remarks>
-public sealed class MedialGraph : Transient
+internal sealed class MedialGraph : Transient
 {
     private Dictionary<int, MedialArc> _arcs = new();
     private Dictionary<int, MedialBasicElt> _basicElts = new();

@@ -22,7 +22,7 @@ namespace Kerf.Engine.Fillets.Surfaces;
 /// (the fillet builder works on a copy) and the support faces are the caller's. The surfaces and curves handed out are
 /// the computation's own and frozen: they are published (decision 1138).
 /// </remarks>
-public class SurfaceBuilder
+internal class SurfaceBuilder
 {
     private readonly InternalBuilder _intBuild;
     private StatusDone _myisdone;

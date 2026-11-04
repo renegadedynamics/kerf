@@ -23,7 +23,7 @@ namespace Kerf.Engine.Booleans.Api;
 /// so frozen shapes are checked as they are. <see cref="Result"/> publishes the faults, whose shapes are frozen as
 /// they are read (<see cref="CheckResult"/>); ported code reads <see cref="InternalResult"/>.
 /// </remarks>
-public class Check : Options
+internal class Check : Options
 {
     // Inputs
     protected Shape _s1 = new();             //!< The first shape

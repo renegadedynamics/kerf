@@ -13,7 +13,7 @@ namespace Kerf.Engine.Construction.Laws;
 /// A working object (decision 21): the <c>Set</c> methods are public and change the law. The X coordinates must
 /// increase; for a periodic law the last value (and derivative) is taken to be the first.
 /// </remarks>
-public class Interpol : BSpFunc
+internal class Interpol : BSpFunc
 {
     /// <summary>An empty law, defined later by Set.</summary>
     public Interpol()

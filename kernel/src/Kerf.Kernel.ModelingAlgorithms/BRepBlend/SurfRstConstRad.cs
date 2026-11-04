@@ -20,7 +20,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// guide: the variables are (U, V) on the surface and the parameter on the restriction.
 /// </summary>
 /// <remarks>A working object (decision 21): it caches its last solution, which the walkers read.</remarks>
-public class SurfRstConstRad : SurfRstFunction
+internal class SurfRstConstRad : SurfRstFunction
 {
     private const double Eps = 1.0e-15;
 

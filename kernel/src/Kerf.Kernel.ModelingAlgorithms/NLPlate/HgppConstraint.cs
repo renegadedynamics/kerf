@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// moves the UV point of a sliding constraint (<c>SetUV</c>). The base's targets are zero and its setters, but
 /// <c>SetActiveOrder</c> and <c>SetUV</c>, do nothing, as in OCCT.
 /// </remarks>
-public abstract class HgppConstraint : Transient
+internal abstract class HgppConstraint : Transient
 {
     private static readonly Xyz XyZnull = new(0.0, 0.0, 0.0);
     private static readonly D1 D1null = new(XyZnull, XyZnull);

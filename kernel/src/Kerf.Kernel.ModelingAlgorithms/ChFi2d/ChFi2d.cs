@@ -12,7 +12,7 @@ using static Kerf.Engine.Fillets.Planar.ConstructionError;
 namespace Kerf.Engine.Fillets.Planar;
 
 /// <summary>Utilities of the 2D fillet and chamfer algorithms.</summary>
-public static class ChFi2d
+internal static class ChFi2d
 {
     /// <summary>
     /// True if the edges <paramref name="e1"/> and <paramref name="e2"/> share a vertex, returned in

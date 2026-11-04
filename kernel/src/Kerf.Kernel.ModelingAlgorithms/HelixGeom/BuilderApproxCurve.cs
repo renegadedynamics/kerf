@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Helix.Geometry;
 /// A working object (decision 21). <see cref="Curves"/> is a publication point: it freezes the curves it returns
 /// (decision 993); ported code that goes on working on them reads <see cref="InternalCurves"/>.
 /// </remarks>
-public abstract class BuilderApproxCurve
+internal abstract class BuilderApproxCurve
 {
     protected int _errorStatus;
     protected int _warningStatus;

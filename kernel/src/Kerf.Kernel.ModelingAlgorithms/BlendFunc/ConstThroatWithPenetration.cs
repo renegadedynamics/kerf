@@ -18,7 +18,7 @@ namespace Kerf.Engine.Fillets.BlendFunctions;
 /// virtually offset into the solid, the apex lies on its intersection with the second surface, the right angle is at
 /// the top of the chamfer, and the leg from the apex to the top (the throat) is constant.
 /// </summary>
-public class ConstThroatWithPenetration : ConstThroat
+internal class ConstThroatWithPenetration : ConstThroat
 {
     public ConstThroatWithPenetration(SurfaceAdaptorBase s1, SurfaceAdaptorBase s2, CurveAdaptorBase c)
         : base(s1, s2, c)

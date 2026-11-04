@@ -15432,3 +15432,72 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        Booleans' simple grid (407 cases): 6.91 MB a Boolean either way; serial 2,996 and 4,159 ms on the base, 2,375 and
        3,277 after; parallel 2,648 and 7,486 before, 1,762 and 3,014 after: noise. The public wrappers sit outside the
        engine's loops; the property conversions compile to the same calls.
+
+## Phase 10: unit 10L2, the public API, part 2: geometry's operations, construction, Booleans, fillets, offsets and features
+
+16901. **Engine enums that are exactly the public API's move into it** rather than gaining a public twin and a
+       conversion (docs/api/kerf-10l2.map, blocks 1 and 2, by kerf-rename): `GlueMode` to `Kerf.Booleans` (its members
+       `GlueOff`, `GlueShift`, `GlueFull` now `Off`, `Shift`, `Full`), `FilletShape` to `Kerf.Fillets`, `OffsetMode` to
+       `Kerf.Offsets`, `TransitionMode` to `Kerf.Construction` (moved first into a file of its own, as the tool moves
+       whole files) and `ParametrizationType` to `Kerf.Geometry`. The engine's fillet option structs
+       (`BRepFilletAPI_FilletOptions`, `…ChamferOptions`) are `MakeFilletOptions` and `MakeChamferOptions`, leaving the
+       names to the public records (design-rules 1). kerf.map's entries and `OcctTypeNames` (regenerated) follow, so the
+       OCCT names printed and recorded are unchanged. Edits: 298 in 56 files, and 120 in 32; the Booleans benchmark's
+       two `GlueMode` uses by hand.
+16902. **The splines' copies are indexed from 0** (geometry.md): `WithPole`, `WithWeight` and `WithKnot` on
+       `BSplineCurve3D`/`2D`, `WithPole` and `WithWeight` on the Béziers and both surfaces, checking their indices and
+       weights (`ArgumentOutOfRangeException`) and turning OCCT's knot-order error into an `ArgumentException`. OCCT's
+       1-based copies keep their code as `WithPoleOneBased`, `WithWeightOneBased` and `WithKnotOneBased` (internal; map
+       block 3, 22 members, 46 edits). kerf-rename's member ids include the return type (`~Kerf.Geometry.BSplineCurve3D`):
+       without it the tool plans the rename and edits nothing, silently.
+16903. **Shared plumbing, additive (for 10L3):** `EngineOutcome` gains an optional last member `Failure`, the diagnostic of
+       an algorithm that isn't done when the operation knows it (its status enum's), which `EngineOperation.Run` returns
+       in place of the report's alerts and the fallback. New, internal, in `Results/MakerOutcome.cs`: `MakerOutcome.Of`
+       and `Done` (a `MakeShape` built and read, its history taken only once done), `HistoryOf` (OCCT's
+       `BRepTools_History` of an algorithm's `Modified`/`Generated`/`IsDeleted` for its inputs), `Made` and the misuse
+       checks (`NotNull`, `Positive`, `Valid` for a default frame, axis or direction). Nothing existing changed.
+16904. **A revolution copies its profile** (`ApiMakeRevol(…, copy: true)`, as the modelling layer does): without, the
+       revolution of a published profile has an empty history (`Generated` of every edge empty), because the engine
+       revolves its own copy of a frozen input and its history is keyed by the copy. An OCCT.NET defect of the
+       copy-at-entry era, not OCCT's; the public operation avoids it, and the engine's default stays.
+16905. **Geometry's operations are one class,** `GeometryOperations` (README section 3: one `<Area>Operations` class
+       per area), of C# 14 extension members: static ones on `TrimmedCurve3D` (`ArcThrough`, `ArcTangent`, `Arc` of the
+       four conics, `Segment`), `BSplineCurve3D` (`Interpolate`, `Approximate`, `Join`) and `BSplineSurface`
+       (`Approximate`), instance ones on `Curve3D` (`ToBSpline`, `ToCurve2D`, `Project`, `TryProjectNearest`,
+       `Intersect(Surface)`), `Curve2D` (`ToCurve3D`, `Intersect`) and `Surface` (`Project`, `TryProjectNearest`,
+       `Intersect`, `TryGetPlane`). Expected failures are results with `geometry.*` codes (docs/api/diagnostics.md);
+       projections return their points nearest first, empty when there are none. `ToBSpline` converts exactly where OCCT
+       can and approximates otherwise. Departures: `ApproximationOptions` serves curves and surfaces; the
+       curve–surface intersection takes no tolerance (OCCT's has none) and reports a stretch in the surface as a
+       warning, as the 2D one does an overlap. `Tangents2D` is left: unit 10K4 was changing GccAna and Geom2dGcc.
+16906. **Construction, Booleans, fillets, offsets and features** follow their reviews on `EngineOperation.Run`, each
+       taking inputs, an options record, then progress and cancellation where the operation can be long (sweeps,
+       lofts, Booleans, 3D fillets and offsets); misuse throws (null or foreign sub-shapes, sizes that aren't positive,
+       a default frame). Operations on shapes are generic extension members
+       (`extension<TShape>(TShape s) where TShape : struct, IShape<TShape>`), as 10L1's traversal is, so `face.Extrude(v)`
+       and `box.Fuse(cylinder)` work without casts; an extension on `Shape` alone doesn't apply to a `Face`. Departures,
+       each listed in README section 11: overloads without a frame use `Frame3D.World`; no `RevolveOptions`,
+       `DraftOptions` or `SplitOptions`; `ShapeProjections` (the engine's `GeomAPI` is `Projections`); `ExtrudeLimit`
+       (`Until` is the modelling layer's); `ChamferMode`; Booleans always non-destructive, `Simplify` on by default, an
+       empty result a `boolean.empty-result` warning; a sweep closes into a solid only when its profiles are closed.
+16907. **A 2D fillet's history is built by hand:** OCCT's `BRepFilletAPI_MakeFillet2d::Modified` takes only edges (it
+       casts), so the generic history of the face's sub-shapes throws on its vertices. Each corner generates its new edge
+       and is removed; each edge cut back is modified into its descendant. A 3D fillet's failure carries the faulty
+       contours' edges (`diagnostic.Shapes`) and the first stripe's status as its code; a 2D one, the corner and
+       `ChFi2d_ConstructionError` in kebab case (`fillet.computation-error`).
+16908. **686 engine types of these areas are internal** (Construction 319, Booleans 172, Fillets 97, Offsets 50,
+       Features 46, Geometry 2), found as 10L1 did: every top-level public type of `Kerf.Engine.Construction`,
+       `.Booleans`, `.Fillets`, `.Offsets`, `.Features`, `.Geometry` and `.Topology` made internal, then, over 19 rounds of
+       builds of Kerf.Slnx, the types each inconsistent-accessibility error named made public again (131). Those stay
+       public because a public type of another area shows them (healing's, meshing's, exchange's and measurement's
+       engine types, 10L3's to make internal: `Xyz`, `Box`, `OrientedBox`, the adaptors, `History`, `ReShape`,
+       `Modifier`…), because the modelling layer's public API does (`MakeShape`, `BuilderAlgo`, `Command`, `Algo`,
+       `Options`; 10M), or because `StatusDiagnostics` (public, in `Kerf.Engine.Foundation`) takes their status enums
+       (`WireError`, `PipeError`, `ErrorStatus`, `StatusError`…). No test changed: the tests, Draw-lite, the benchmarks
+       and the modelling layer reach the engine through `InternalsVisibleTo`.
+16909. **Tests and measurement.** `Kerf.Kernel.PublicApi.Tests` reaches ModelingAlgorithms now and has 43 new tests
+       (84 in all), using only the public API: for each area success, a failure with its diagnostic, cancellation and
+       history; its no-engine-types test covers the five new namespaces and ModelingAlgorithms. Every other suite keeps
+       its count: no test was added, removed or changed by hand; the renames of 16901 and 16902 rewrote the call sites
+       in 48 test files (Draw-lite's among them) and 5 of the modelling layer's source files, by tool, one for one; the
+       internalisation changed none.

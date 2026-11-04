@@ -30,7 +30,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// <c>Check*</c> diagnostics write to a TextWriter (the console by default), as OCCT writes to std::cout.
 /// </para>
 /// </remarks>
-public class ConstrainedFilling
+internal class ConstrainedFilling
 {
     private readonly int _degmax;
     private readonly int _segmax;

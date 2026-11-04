@@ -15,7 +15,7 @@ using static Kerf.Engine.Booleans.Legacy.Data.DsKind;
 namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>The legacy data structure's package functions: the names of states, kinds and configurations, and kind/shape conversions.</summary>
-public static class DsTopOpeBRepDS
+internal static class DsTopOpeBRepDS
 {
     /// <summary>The two-letter name of a state (IN, OU, ON, UN).</summary>
     public static string SPrint(Containment S)

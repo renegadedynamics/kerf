@@ -30,7 +30,7 @@ namespace Kerf.Engine.Features.Local;
 /// end the working shapes themselves.
 /// </para>
 /// </remarks>
-public sealed class Spliter
+internal sealed class Spliter
 {
     private Shape _shape = new();
     private bool _done;

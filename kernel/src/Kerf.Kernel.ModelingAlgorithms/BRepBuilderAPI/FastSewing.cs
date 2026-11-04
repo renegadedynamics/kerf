@@ -29,7 +29,7 @@ namespace Kerf.Engine.Construction.Api;
 /// <para>A working object (decision 21). It only reads its inputs: the faces it builds are empty copies of the
 /// caller's, sharing their surfaces. <see cref="GetResult"/> hands out the result frozen.</para>
 /// </remarks>
-public class FastSewing : Transient
+internal class FastSewing : Transient
 {
     /// <summary>Result statuses (bits of <see cref="GetStatuses"/>).</summary>
     public enum FS_Statuses : uint

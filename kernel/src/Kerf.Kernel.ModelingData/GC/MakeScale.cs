@@ -11,7 +11,7 @@ namespace Kerf.Engine.Construction.Curves;
 
 /// <summary>A scaling about a point, as a Geom_Transformation.</summary>
 /// <remarks>Not a GC_Root: the construction can't fail, as in OCCT.</remarks>
-public sealed class MakeScale
+internal sealed class MakeScale
 {
     private readonly GeometryTransformation _theScale;
 

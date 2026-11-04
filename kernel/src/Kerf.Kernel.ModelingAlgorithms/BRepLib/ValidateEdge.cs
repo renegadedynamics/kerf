@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Library;
 /// points (the default) or exactly through <see cref="CheckCurveOnSurface"/> (for SameParameter edges).
 /// </summary>
 /// <remarks>A working object; it keeps the caller's adaptors.</remarks>
-public class ValidateEdge
+internal class ValidateEdge
 {
     private readonly CurveAdaptorBase _referenceCurve;
     private readonly CurveOnSurface _otherCurve;

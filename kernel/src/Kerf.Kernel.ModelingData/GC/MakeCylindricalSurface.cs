@@ -15,7 +15,7 @@ namespace Kerf.Engine.Construction.Curves;
 /// Constructions of a Geom_CylindricalSurface: from a gp_Cylinder, an axis (system) and a radius, a circle, three
 /// points, or coaxial to a cylinder at a distance or through a point.
 /// </summary>
-public sealed class MakeCylindricalSurface : Root
+internal sealed class MakeCylindricalSurface : Root
 {
     private CylindricalSurface? _theCylinder;
 

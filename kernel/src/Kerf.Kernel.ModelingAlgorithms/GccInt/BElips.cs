@@ -10,7 +10,7 @@ using static Kerf.Engine.Construction.Constraints.ConstraintCurveType;
 namespace Kerf.Engine.Construction.Constraints;
 
 /// <summary>A bisecting curve whose geometry is a 2D ellipse.</summary>
-public sealed class BElips : ConstraintBisec
+internal sealed class BElips : ConstraintBisec
 {
     private readonly Ellipse2D _eli;
 

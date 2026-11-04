@@ -10,7 +10,7 @@ using static Kerf.Engine.Construction.Constraints.Qualifier;
 
 namespace Kerf.Engine.Construction.Constraints.Analytic;
 
-public sealed partial class AnalyticCirc2dTanOnRad
+internal sealed partial class AnalyticCirc2dTanOnRad
 {
     //=========================================================================
     //    typedef of handled objects :                                      +

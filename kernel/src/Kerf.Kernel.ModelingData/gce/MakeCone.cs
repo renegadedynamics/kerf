@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Values;
 /// point or at a signed offset, from four points, from an axis and two points, or from two axis points and two
 /// section radii.
 /// </summary>
-public sealed class MakeCone : Root
+internal sealed class MakeCone : Root
 {
     private Cone _theCone = new();
 

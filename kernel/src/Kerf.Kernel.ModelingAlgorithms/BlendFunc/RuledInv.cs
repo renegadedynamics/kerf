@@ -15,7 +15,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.BlendFunctions;
 
 /// <summary>The ruled blend function with one end on a surface's boundary.</summary>
-public class RuledInv : FuncInv
+internal class RuledInv : FuncInv
 {
     private readonly SurfaceAdaptorBase _surf1;
     private readonly SurfaceAdaptorBase _surf2;

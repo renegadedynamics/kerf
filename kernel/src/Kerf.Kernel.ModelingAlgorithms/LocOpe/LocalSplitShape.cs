@@ -40,7 +40,7 @@ namespace Kerf.Engine.Features.Local;
 /// change (they are not frozen).
 /// </para>
 /// </remarks>
-public sealed class LocalSplitShape
+internal sealed class LocalSplitShape
 {
     private bool _done;
     private Shape _shape = new();

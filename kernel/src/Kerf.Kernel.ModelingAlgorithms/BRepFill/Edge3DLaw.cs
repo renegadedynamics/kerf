@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Filling;
 
 /// <summary>A location law on a wire: a copy of the given law on each non-degenerated edge's 3D curve.</summary>
 /// <remarks>The caller's law is only copied (<c>Copy()</c>), never changed; each edge's law is the wire law's own.</remarks>
-public class Edge3DLaw : LocationLaw
+internal class Edge3DLaw : LocationLaw
 {
     /// <summary>The law on <paramref name="path"/> with copies of <paramref name="law"/>.</summary>
     public Edge3DLaw(in Wire path, SurfaceLocationLaw law)

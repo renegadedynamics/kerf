@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Values;
 
 /// <summary>A rotation in 3D space, as a gp_Trsf.</summary>
-public sealed class MakeRotation
+internal sealed class MakeRotation
 {
     private Transform3D _theRotation = new();
 

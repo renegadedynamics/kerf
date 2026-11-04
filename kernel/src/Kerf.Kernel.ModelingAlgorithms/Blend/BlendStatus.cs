@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.Blend;
 
 /// <summary>The status of a step of a blend walking.</summary>
-public enum BlendStatus
+internal enum BlendStatus
 {
     StepTooLarge,
     StepTooSmall,

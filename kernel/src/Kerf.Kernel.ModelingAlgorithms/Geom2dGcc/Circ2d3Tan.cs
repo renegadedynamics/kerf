@@ -23,7 +23,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// when the construction fails (IsDone then false), and, as in OCCT, IsTheSame3(1) is true for the iterative solution
 /// (Geom2dGcc_Circ2d3TanIter.IsTheSame3), so Tangency3 throws StdFail_NotDone there.
 /// </remarks>
-public sealed class Circ2d3Tan
+internal sealed class Circ2d3Tan
 {
     private readonly NCollection_Array1<Circle2D> _cirsol;
     private double _nbrSol;

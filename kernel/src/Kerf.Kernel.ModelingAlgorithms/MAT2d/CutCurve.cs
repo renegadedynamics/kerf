@@ -15,7 +15,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// </summary>
 /// <remarks>OCCT declares <c>Perform(C, aSide)</c> and <c>PerformInf(C)</c> but never defines them; they are left
 /// out.</remarks>
-public sealed class CutCurve
+internal sealed class CutCurve
 {
     private readonly NCollection_Sequence<Curve2D> _curves = new();
 

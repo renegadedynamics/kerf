@@ -30,7 +30,7 @@ namespace Kerf.Engine.Features.Local;
 /// 1014). The shapes it hands out are frozen; ported
 /// callers (BRepFeat_MakeDPrism) read the <c>Internal</c> forms.
 /// </remarks>
-public sealed class DPrism
+internal sealed class DPrism
 {
     private const int Nechant = 7; // voir BRepFeat.cxx
 

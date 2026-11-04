@@ -18,7 +18,7 @@ namespace Kerf.Engine.Booleans.Legacy;
 /// the fields unset). The setters (OCCT's overloads of the getters' names) and the <c>Change</c> accessors are
 /// internal.
 /// </remarks>
-public partial struct TestInterference : IEquatable<TestInterference>
+internal partial struct TestInterference : IEquatable<TestInterference>
 {
     private double _intersection;
     private int _boundary;

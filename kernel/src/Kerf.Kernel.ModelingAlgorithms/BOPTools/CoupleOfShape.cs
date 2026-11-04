@@ -12,7 +12,7 @@ namespace Kerf.Engine.Booleans.Tools;
 /// A value: a struct with internal setters and <c>With</c> twins (translation rules, section 3). Equality compares the
 /// two shapes with <see cref="Shape"/>'s equality (same TShape, location and orientation).
 /// </remarks>
-public partial struct CoupleOfShape : IEquatable<CoupleOfShape>
+internal partial struct CoupleOfShape : IEquatable<CoupleOfShape>
 {
     private Shape _shape1;
     private Shape _shape2;

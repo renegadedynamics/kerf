@@ -16,7 +16,7 @@ namespace Kerf.Engine.Fillets.BlendFunctions;
 /// <summary>
 /// The function of a symmetric chamfer of constant throat: the height of the isosceles triangle in the section.
 /// </summary>
-public class ConstThroat : GenChamfer
+internal class ConstThroat : GenChamfer
 {
     protected Point3D _pts1;
     protected Point3D _pts2;

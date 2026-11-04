@@ -37,7 +37,7 @@ namespace Kerf.Engine.Offsets.Api;
 /// <see cref="MakeShape.Generated"/> hand out frozen shapes; <see cref="ConvertFace"/> returns a frozen
 /// face. The algorithm never writes into the caller's face or wires.</para>
 /// </remarks>
-public class MakeWireOffset : MakeShape
+internal class MakeWireOffset : MakeShape
 {
     private bool _isInitialized;
     private bool _lastIsLeft;

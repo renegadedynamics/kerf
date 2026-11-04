@@ -35,7 +35,7 @@ using static Kerf.Topology.Containment;
 using static Kerf.Engine.Booleans.Legacy.Data.DsKind;
 
 namespace Kerf.Engine.Fillets;
-public partial class FilletBuilderBase
+internal partial class FilletBuilderBase
 {
 
 

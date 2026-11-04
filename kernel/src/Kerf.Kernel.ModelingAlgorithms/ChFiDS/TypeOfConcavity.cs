@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.Data;
 
 /// <summary>The type of connection of two faces along an edge (<see cref="ChFi3d.DefineConnectType"/>).</summary>
-public enum TypeOfConcavity
+internal enum TypeOfConcavity
 {
     Concave,
     Convex,

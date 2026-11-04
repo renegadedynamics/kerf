@@ -10,7 +10,7 @@ namespace Kerf.Engine.Construction.Laws;
 
 /// <summary>A linear evolution law.</summary>
 /// <remarks>A working object (decision 21): <see cref="Set"/> is public and changes the law.</remarks>
-public class Linear : LawsFunction
+internal class Linear : LawsFunction
 {
     private double _valdeb;
     private double _valfin;

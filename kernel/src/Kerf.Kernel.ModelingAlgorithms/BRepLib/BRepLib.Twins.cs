@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Construction.Library;
 
-public static partial class BrepLibrary
+internal static partial class BrepLibrary
 {
     // The twin of an in-place static: the operation on the input itself in a working overlay (unit 10H3), so the
     // result shares every sub-shape it left unchanged, frozen. The history records the input's sub-shapes that the

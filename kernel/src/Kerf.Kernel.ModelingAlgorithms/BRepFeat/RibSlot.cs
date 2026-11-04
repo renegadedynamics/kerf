@@ -47,7 +47,7 @@ namespace Kerf.Engine.Features;
 /// <para>The basis shape and the contour are never written: the gluing (LocOpe_Gluer, decision 1013) and the
 /// same-parameter pass OCCT runs on the glued result (decision 1052) write in a working overlay (unit 10H5).</para>
 /// </remarks>
-public abstract class RibSlot : MakeShape
+internal abstract class RibSlot : MakeShape
 {
     protected Point3D _firstPnt = new();
     protected Point3D _lastPnt = new();

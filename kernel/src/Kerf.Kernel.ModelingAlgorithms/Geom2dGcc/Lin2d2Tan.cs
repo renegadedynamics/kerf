@@ -18,7 +18,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// on each curve or from given ones.
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (decision 117). Up to 4 solutions (2 with a point).</remarks>
-public sealed class Lin2d2Tan
+internal sealed class Lin2d2Tan
 {
     private readonly bool _wellDone;
     private readonly int _nbrSol;

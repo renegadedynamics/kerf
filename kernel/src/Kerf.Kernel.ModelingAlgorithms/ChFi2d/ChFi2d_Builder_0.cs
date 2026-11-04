@@ -26,7 +26,7 @@ using static Kerf.Topology.Orientation;
 
 namespace Kerf.Engine.Fillets.Planar;
 
-public sealed partial class PlanarBuilder
+internal sealed partial class PlanarBuilder
 {
     //=================================================================================================
 

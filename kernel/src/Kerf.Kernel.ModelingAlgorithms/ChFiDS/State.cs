@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.Data;
 
 /// <summary>The state of an extremity of a spine.</summary>
-public enum State
+internal enum State
 {
     OnSame,
     OnDiff,

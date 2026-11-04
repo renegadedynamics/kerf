@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Filling;
 
 /// <summary>The location law of a draft along a wire (a <see cref="LocationDraft"/> per edge).</summary>
-public sealed class DraftLaw : Edge3DLaw
+internal sealed class DraftLaw : Edge3DLaw
 {
     //=======================================================================
     // function : ToG0

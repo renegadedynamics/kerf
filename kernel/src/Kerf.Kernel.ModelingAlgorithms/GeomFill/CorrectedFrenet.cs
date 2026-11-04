@@ -23,7 +23,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// A working object (decision 21), as <see cref="TrihedronLaw"/>. <see cref="SetCurve"/> computes the angle
 /// law (a <see cref="Composite"/> of one law per C0 interval of the Frenet law).
 /// </remarks>
-public class CorrectedFrenet : TrihedronLaw
+internal class CorrectedFrenet : TrihedronLaw
 {
     private readonly Frenet _frenet;
     private LawsFunction? _evolAroundT;

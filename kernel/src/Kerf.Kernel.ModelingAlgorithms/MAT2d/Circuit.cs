@@ -24,7 +24,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// are copies. The map of references (keyed by MAT2d_BiInt) is iterated once, to sort each entry independently: its
 /// order doesn't matter. The OCCT_DEBUG drawing is left out.
 /// </remarks>
-public sealed class Circuit : Transient
+internal sealed class Circuit : Transient
 {
     private double _direction;
     private NCollection_Sequence<Geometry2D> _geomElements = new();

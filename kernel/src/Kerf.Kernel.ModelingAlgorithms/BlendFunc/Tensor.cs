@@ -13,7 +13,7 @@ namespace Kerf.Engine.Fillets.BlendFunctions;
 /// <remarks>
 /// OCCT holds it by value inside the functions and never copies it; here it is a working class (decision 21).
 /// </remarks>
-public sealed class Tensor
+internal sealed class Tensor
 {
     private readonly NCollection_Array1<double> _tab;
     private readonly int _nbrow;

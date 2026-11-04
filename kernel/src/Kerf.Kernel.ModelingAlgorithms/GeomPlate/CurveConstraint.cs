@@ -24,7 +24,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// A working object (decision 21), as OCCT's: its setters are public, and GeomPlate_BuildPlateSurface sets the
 /// projected curve, the 2D curve and the order. It keeps the caller's adaptors and laws, read only.
 /// </remarks>
-public class CurveConstraint : Transient
+internal class CurveConstraint : Transient
 {
     protected CurveOnSurface? _frontiere;
     protected int _nbPoints;

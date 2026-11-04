@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Objects;
 /// freezable: build one with a constructor, a static factory (<see cref="Rotation"/>, <see cref="Translation(in Vector3D)"/>,
 /// ...) or a <c>With</c> method.
 /// </remarks>
-public class GeometryTransformation : Transient
+internal class GeometryTransformation : Transient
 {
     private Transform3D _gpTrsf;
 

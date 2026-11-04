@@ -19,7 +19,7 @@ namespace Kerf.Engine.Fillets.Planar;
 
 /// <summary>Makes a chamfer between two linear edges.</summary>
 /// <remarks>A working object; its results are new, frozen edges. The edges it is given are only read.</remarks>
-public sealed class ChamferApi
+internal sealed class ChamferApi
 {
     private Edge _edge1 = new(), _edge2 = new();
     private Curve3D? _curve1, _curve2;

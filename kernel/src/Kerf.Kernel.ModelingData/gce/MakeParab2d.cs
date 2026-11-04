@@ -15,7 +15,7 @@ namespace Kerf.Engine.Construction.Values;
 /// Constructions of a gp_Parab2d: from a symmetry axis or an axis system and a focal length, from a directrix and a
 /// focus, or from a focus and a vertex.
 /// </summary>
-public sealed class MakeParab2d : Root
+internal sealed class MakeParab2d : Root
 {
     private Parabola2D _theParab2d = new();
 

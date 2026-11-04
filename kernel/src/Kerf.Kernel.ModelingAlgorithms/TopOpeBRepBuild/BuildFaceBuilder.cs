@@ -26,7 +26,7 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 /// A working object. <see cref="CorrectGclosedWire"/> writes into the edges (their vertices), as in OCCT; the edges
 /// must then be unfrozen. OCCT's <c>myMOSI</c> map is never used and is left out.
 /// </remarks>
-public sealed class BuildFaceBuilder
+internal sealed class BuildFaceBuilder
 {
     private const int Isunknown = -1;
     private const int Isvertex = 0;

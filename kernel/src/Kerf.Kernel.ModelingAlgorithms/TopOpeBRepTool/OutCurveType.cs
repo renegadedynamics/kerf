@@ -10,7 +10,7 @@ namespace Kerf.Engine.Booleans.Legacy.Tools;
 /// The kind of 3D curve the legacy Booleans compute on a walking intersection line: a BSpline of degree 1 on its
 /// points, an approximation, or an interpolation.
 /// </summary>
-public enum OutCurveType
+internal enum OutCurveType
 {
     BSPLINE1,
     Approx,

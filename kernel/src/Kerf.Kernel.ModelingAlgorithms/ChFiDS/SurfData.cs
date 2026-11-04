@@ -21,7 +21,7 @@ namespace Kerf.Engine.Fillets.Data;
 /// internal mutators and the <c>Change*</c> accessors that return the stored values by reference. The public
 /// members only read.
 /// </remarks>
-public sealed class SurfData : Transient
+internal sealed class SurfData : Transient
 {
     private CommonPoint _pfirstOnS1 = new();
     private CommonPoint _plastOnS1 = new();

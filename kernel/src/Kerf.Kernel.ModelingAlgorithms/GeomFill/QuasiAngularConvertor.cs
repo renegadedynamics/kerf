@@ -26,7 +26,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// </para>
 /// <para>A working object; <see cref="Init"/> must be called before <c>Section</c>.</para>
 /// </remarks>
-public sealed class QuasiAngularConvertor
+internal sealed class QuasiAngularConvertor
 {
     private const double NullAngle = 1.0e-6;
 

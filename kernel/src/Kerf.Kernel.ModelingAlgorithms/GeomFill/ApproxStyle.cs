@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Surfaces;
 
 /// <summary>The approximation strategy of <see cref="SurfaceSweep.Build"/>.</summary>
-public enum ApproxStyle
+internal enum ApproxStyle
 {
     /// <summary>The composed function, location times section, is approximated directly.</summary>
     Section,

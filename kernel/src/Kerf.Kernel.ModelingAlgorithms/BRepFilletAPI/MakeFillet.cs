@@ -36,7 +36,7 @@ namespace Kerf.Engine.Fillets.Api;
 /// TopOpeBRepBuild_HBuilder: the result is native's geometrically, its faces in another order.
 /// </para>
 /// </remarks>
-public class MakeFillet : LocalOperation
+internal class MakeFillet : LocalOperation
 {
     private readonly FilBuilder _builder;
     private readonly HashSet<Shape> _map = new(ShapeHasher.Instance);

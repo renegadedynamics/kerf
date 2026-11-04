@@ -22,7 +22,7 @@ namespace Kerf.Engine.Fillets.BlendFunctions;
 /// <remarks>
 /// OCCT declares <c>BlendFunc::Knots</c> and <c>BlendFunc::Mults</c> but never defines them; they are left out.
 /// </remarks>
-public static class BlendFunc
+internal static class BlendFunc
 {
     // 09/09/1996 PMN Ajout des methodes GetCircle et GetTolerance.
     // 30/12/1996 PMN Ajout de GetMinimalWeight

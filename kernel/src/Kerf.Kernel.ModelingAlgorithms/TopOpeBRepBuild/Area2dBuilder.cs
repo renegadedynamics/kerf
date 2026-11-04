@@ -15,7 +15,7 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 /// edges (from interferences): as <see cref="AreaBuilder"/>, and the boundary loops left out of every
 /// area make one area when there is no other.
 /// </summary>
-public class Area2dBuilder : AreaBuilder
+internal class Area2dBuilder : AreaBuilder
 {
     /// <summary>An empty area builder.</summary>
     public Area2dBuilder()

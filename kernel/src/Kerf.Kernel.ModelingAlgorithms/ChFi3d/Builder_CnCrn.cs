@@ -42,7 +42,7 @@ using static Kerf.Topology.Containment;
 using static Kerf.Engine.Booleans.Legacy.Data.DsKind;
 
 namespace Kerf.Engine.Fillets;
-public partial class FilletBuilderBase
+internal partial class FilletBuilderBase
 {
 
     // Modified by  MPS (14-04-97)  traitement des cas  ou il n'y a pas

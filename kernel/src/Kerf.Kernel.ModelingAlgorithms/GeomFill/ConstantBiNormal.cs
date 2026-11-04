@@ -11,7 +11,7 @@ using static Kerf.Geometry.CurveKind;
 namespace Kerf.Engine.Construction.Surfaces;
 
 /// <summary>A trihedron law with a constant binormal: the Frenet tangent made normal to the binormal.</summary>
-public class ConstantBiNormal : TrihedronLaw
+internal class ConstantBiNormal : TrihedronLaw
 {
     private Vector3D _bn;
     private readonly Frenet _frenet;

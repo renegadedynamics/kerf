@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// A working buffer, a class as OCCT's math_Matrix is in the port; OCCT's <c>operator()</c> is the
 /// <c>ref</c> indexer (reading and writing), <c>Value</c> and <c>ChangeValue</c> are kept.
 /// </remarks>
-public sealed class SurfaceTensor
+internal sealed class SurfaceTensor
 {
     private readonly NCollection_Array1<double> _tab;
     private readonly int _nbrow;

@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Curves;
 /// Constructions of a Geom2d_Hyperbola: from a gp_Hypr2d, an axis (system) and two radii, or two apexes and the
 /// center.
 /// </summary>
-public sealed class MakeHyperbola2d : Root
+internal sealed class MakeHyperbola2d : Root
 {
     private HyperbolaCurve2D? _theHyperbola;
 

@@ -40,7 +40,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// face of cut edges (copies), and builds the parallels from new edges and vertices. A zero offset gives the spine's
 /// own wires back, moved by the altitude.</para>
 /// </remarks>
-public sealed class OffsetWire
+internal sealed class OffsetWire
 {
     private Face _spine = new();
     private Face _workSpine = new();

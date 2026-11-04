@@ -16,7 +16,7 @@ namespace Kerf.Engine.Fillets.Data;
 /// A working object (decision 21): OCCT holds it by value in the fillet builders and never copies it. The keys and
 /// lists are the caller's shapes.
 /// </remarks>
-public sealed class Map
+internal sealed class Map
 {
     private readonly IndexedMap<Shape, NCollection_List<Shape>> _map =
         new(ShapeHasher.Instance);

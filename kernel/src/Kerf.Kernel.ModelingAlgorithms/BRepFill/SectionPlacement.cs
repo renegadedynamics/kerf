@@ -27,7 +27,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// <c>SetLocation</c>/<c>Perform</c> on a GeomFill_SectionPlacement over the law's own elementary laws, which it
 /// evaluates; <see cref="AbscissaOnPath"/> may cache the path's lengths in the law (laws are working objects).
 /// </remarks>
-public sealed class SectionPlacement
+internal sealed class SectionPlacement
 {
     private readonly LocationLaw _law;
     private readonly Shape _section;

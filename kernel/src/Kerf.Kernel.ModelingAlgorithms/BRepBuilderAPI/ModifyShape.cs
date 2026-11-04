@@ -20,7 +20,7 @@ namespace Kerf.Engine.Construction.Api;
 /// and <see cref="ModifiedShape"/> (design 4.2), so a derived algorithm can go on updating it first (NurbsConvert's
 /// vertex tolerances).
 /// </remarks>
-public abstract class ModifyShape : MakeShape
+internal abstract class ModifyShape : MakeShape
 {
     protected Modifier _modifier;
     protected Shape _initialShape = new();

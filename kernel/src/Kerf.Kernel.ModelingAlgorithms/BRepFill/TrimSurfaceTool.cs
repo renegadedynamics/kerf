@@ -29,7 +29,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// bisector it was given in place (by the intersection tolerance at each end) when no intersection is found: the
 /// bisector must be a Geom2d_TrimmedCurve the caller owns, unfrozen (BRepFill_Evolved's copies are).
 /// </remarks>
-public sealed class TrimSurfaceTool
+internal sealed class TrimSurfaceTool
 {
     private readonly Face _face1;
     private readonly Face _face2;

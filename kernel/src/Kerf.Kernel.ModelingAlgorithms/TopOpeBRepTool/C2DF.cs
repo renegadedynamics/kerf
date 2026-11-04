@@ -12,7 +12,7 @@ namespace Kerf.Engine.Booleans.Legacy.Tools;
 
 /// <summary>A pcurve with its range and tolerance, and the face it lies on.</summary>
 /// <remarks>A working object of the legacy Booleans' pcurve cache (<see cref="Legacy2D"/>).</remarks>
-public sealed class C2DF
+internal sealed class C2DF
 {
     private Curve2D? _pc;
     private double _myf2d;

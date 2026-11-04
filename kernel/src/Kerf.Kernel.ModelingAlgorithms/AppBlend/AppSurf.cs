@@ -33,7 +33,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// A working object (decision 21). The arrays the accessors return are its own (decision 143): shared, don't modify.
 /// </para>
 /// </remarks>
-public class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
+internal class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
     where TheSectionGenerator : ISectionGenerator<ThePoint>
     where TheLine : class, ILine<ThePoint>
 {

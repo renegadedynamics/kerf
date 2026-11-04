@@ -14,7 +14,7 @@ namespace Kerf.Engine.Features.Local;
 
 /// <summary>A shape glued on another by some of its faces, as a generated shape.</summary>
 /// <remarks>It only reads the shape; the shapes it hands out are the shape's own sub-shapes.</remarks>
-public sealed class GluedShape : GeneratedShape
+internal sealed class GluedShape : GeneratedShape
 {
     private Shape _shape = new();
     // OCCT iterates this map keyed by the faces' addresses; the port in the order the faces were glued

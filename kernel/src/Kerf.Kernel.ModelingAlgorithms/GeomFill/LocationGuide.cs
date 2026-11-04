@@ -26,7 +26,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// law's curve and origin. OCCT's debug-only TraceRevol and the commented-out derivatives of the rotation (D1 and
 /// D2 return false with a rotation, as in OCCT) are not ported.
 /// </remarks>
-public class LocationGuide : SurfaceLocationLaw
+internal class LocationGuide : SurfaceLocationLaw
 {
     protected NCollection_HArray2<Point2D> _poles2d;
 

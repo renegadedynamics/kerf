@@ -25,7 +25,7 @@ namespace Kerf.Engine.Construction.Library;
 /// closed surface). Not intended for edges that aren't SameParameter.
 /// </summary>
 /// <remarks>A working object over <see cref="CheckCurveOnSurface"/> (decision 293).</remarks>
-public class LibraryCheckCurveOnSurface
+internal class LibraryCheckCurveOnSurface
 {
     private readonly CheckCurveOnSurface _cOnSurfGeom = new();
     private CurveOnSurface? _adaptorCurveOnSurface;

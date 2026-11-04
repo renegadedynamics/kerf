@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// P1 and P3 are the rows j = 1 and j = NbVPoles, P2 the column i = 1 and P4 the column i = NbUPoles (for the
 /// poles; OCCT's weights put W4 in column 1 and W2 in the last column, occt-issues.md).
 /// </remarks>
-public class Coons : Filling
+internal class Coons : Filling
 {
     public Coons()
     {

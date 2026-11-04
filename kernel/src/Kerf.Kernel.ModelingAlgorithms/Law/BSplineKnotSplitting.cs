@@ -12,7 +12,7 @@ namespace Kerf.Engine.Construction.Laws;
 /// The indexes of the knots where a 1D B-spline should be split to get arcs of a given continuity (at a knot the
 /// continuity is Degree - Mult(Index)). The splits are in [FirstUKnotIndex, LastUKnotIndex].
 /// </summary>
-public sealed class BSplineKnotSplitting
+internal sealed class BSplineKnotSplitting
 {
     private readonly NCollection_HArray1<int> _splitIndexes;
 

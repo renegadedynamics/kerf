@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// The line of the approximations <see cref="SurfaceAppSurf"/> and GeomFill_AppSweep: NbPoints sections, point
 /// <c>i</c> being the section index <c>i</c>.
 /// </summary>
-public class SurfaceLine : Transient, ILine<int>
+internal class SurfaceLine : Transient, ILine<int>
 {
     private readonly int _nbPoints;
 

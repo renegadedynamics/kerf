@@ -18,7 +18,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// and circles go to GccAna_Circ2dTanOnRad, other curves to Geom2dGcc_Circ2dTanOnRadGeo.
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (decision 117). Up to 8 solutions.</remarks>
-public sealed class Circ2dTanOnRad
+internal sealed class Circ2dTanOnRad
 {
     private readonly bool _wellDone;
     private readonly int _nbrSol;

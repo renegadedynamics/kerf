@@ -9,7 +9,7 @@ using static Kerf.Engine.Construction.Constraints.Qualifier;
 
 namespace Kerf.Engine.Construction.Constraints.Analytic;
 
-public sealed partial class AnalyticCirc2d2TanOn
+internal sealed partial class AnalyticCirc2d2TanOn
 {
     //=========================================================================
     //   Creation of a circle passing by  : 2 points Point1 and Point2.        +

@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.Data;
 
 /// <summary>The mode of a chamfer.</summary>
-public enum ChamfMode
+internal enum ChamfMode
 {
     /// <summary>Constant distance from the spine to one of the two surfaces.</summary>
     ClassicChamfer,

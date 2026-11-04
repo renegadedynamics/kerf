@@ -16,7 +16,7 @@ namespace Kerf.Engine.Offsets.Bisectors;
 /// F(u) = ||PC(u) - PBis1(u)|| - ||PC(u) - PBis2(u)||, used by Bisector_Inter to intersect two neighbouring bisectors
 /// parameterised by the same curve.
 /// </summary>
-public sealed class FunctionInter : FunctionWithDerivative
+internal sealed class FunctionInter : FunctionWithDerivative
 {
     private Curve2D _curve = null!;
     private BisectorCurve _bisector1 = null!;

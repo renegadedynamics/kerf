@@ -26,7 +26,7 @@ namespace Kerf.Engine.Features.Local;
 /// TShapes only for the caller's sub-shapes that changed (decision 1014). <see cref="Shapes"/> answers for the caller's edges. The shapes it hands
 /// out are frozen; ported callers (BRepFeat) read the <c>Internal</c> forms.
 /// </remarks>
-public sealed class LocalPrism
+internal sealed class LocalPrism
 {
     private Shape _base = new();
     private Vector3D _vec = new();

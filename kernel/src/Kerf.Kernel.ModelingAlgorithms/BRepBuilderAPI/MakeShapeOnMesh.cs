@@ -25,7 +25,7 @@ namespace Kerf.Engine.Construction.Api;
 /// The result is published frozen by <see cref="MakeShape.Shape"/>; the triangulation is only read.
 /// OCCT's map of mesh links is a hash map with insertion-ordered indices (NCollection_IndexedDataMap), as the port's.
 /// </remarks>
-public class MakeShapeOnMesh : MakeShape
+internal class MakeShapeOnMesh : MakeShape
 {
     private readonly Triangulation? _mesh;
 

@@ -68,7 +68,7 @@ public enum SimpleOffsetStatus
 /// publication point); ported code reads the <c>Internal</c> forms.
 /// </para>
 /// </remarks>
-public sealed class MakeSimpleOffset
+internal sealed class MakeSimpleOffset
 {
     // Input data.
     // Input shape.

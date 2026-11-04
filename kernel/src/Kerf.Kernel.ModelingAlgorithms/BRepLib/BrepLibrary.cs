@@ -38,7 +38,7 @@ namespace Kerf.Engine.Construction.Library;
 /// General utilities for BRep: the default precision and plane of the makers, the computation of missing 3D curves
 /// and pcurves, SameParameter and SameRange, tolerances, regularity, orientation of closed solids.
 /// </summary>
-public static partial class BrepLibrary
+internal static partial class BrepLibrary
 {
     // OCCT's file statics, process-wide in OCCT: settings of the operation context (unit 10I), whose setters are
     // internal (Draw-lite and tests), so callers see the defaults unless they set them in their flow

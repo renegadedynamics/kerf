@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// its right (GccEnt_outside), or on either side (GccEnt_unqualified).
 /// </summary>
 /// <remarks>A value: OCCT gives it no setters. <c>default</c> is an unqualified line along X through the origin.</remarks>
-public readonly struct QualifiedLin : IEquatable<QualifiedLin>
+internal readonly struct QualifiedLin : IEquatable<QualifiedLin>
 {
     private readonly Qualifier _theQualifier;
     private readonly Line2D _theQualified;

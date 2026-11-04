@@ -12,7 +12,7 @@ namespace Kerf.Engine.Construction.Curves;
 
 /// <summary>A translation in 2D, as a Geom2d_Transformation.</summary>
 /// <remarks>Not a GC_Root: the construction can't fail, as in OCCT.</remarks>
-public sealed class MakeTranslation2d
+internal sealed class MakeTranslation2d
 {
     private readonly Transformation2 _theTranslation;
 

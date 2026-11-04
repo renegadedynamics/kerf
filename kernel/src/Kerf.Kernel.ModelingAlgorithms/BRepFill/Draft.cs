@@ -49,7 +49,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// <see cref="Shape"/>, <see cref="Shell"/> and <see cref="Generated"/> freeze what they return; the internal forms
 /// don't.
 /// </remarks>
-public sealed class Draft
+internal sealed class Draft
 {
     private Direction3D _dir;
     private double _angle;

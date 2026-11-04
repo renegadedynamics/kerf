@@ -32,7 +32,7 @@ namespace Kerf.Engine.Fillets.Planar;
 /// <para>The history maps the face's edges to their trimmed descendants. Its iteration order isn't OCCT's (a hash order
 /// there too); <see cref="BasisEdge"/> finds the one key whose value is the edge, so the order doesn't change results.</para>
 /// </remarks>
-public sealed partial class PlanarBuilder
+internal sealed partial class PlanarBuilder
 {
     private ConstructionError _status;
     private Face _refFace = new();

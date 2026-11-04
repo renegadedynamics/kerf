@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Curves;
 /// Constructions of a trimmed cylinder as a Geom_RectangularTrimmedSurface: from three points, a circle and a
 /// height, or an axis, a radius and a height.
 /// </summary>
-public sealed class MakeTrimmedCylinder : Root
+internal sealed class MakeTrimmedCylinder : Root
 {
     private TrimmedSurface? _theCyl;
 

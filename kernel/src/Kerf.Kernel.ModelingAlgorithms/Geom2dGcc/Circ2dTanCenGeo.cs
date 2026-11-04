@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// of the distance from the point to the curve.
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (decision 117). Up to 2 solutions.</remarks>
-public sealed class Circ2dTanCenGeo
+internal sealed class Circ2dTanCenGeo
 {
     private readonly bool _wellDone;
     private readonly int _nbrSol;

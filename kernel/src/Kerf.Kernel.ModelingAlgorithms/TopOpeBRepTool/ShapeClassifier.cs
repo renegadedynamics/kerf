@@ -31,7 +31,7 @@ namespace Kerf.Engine.Booleans.Legacy.Tools;
 /// </para>
 /// <para>The list of shapes to avoid (<c>myPAvLS</c>, a pointer in OCCT) is a reference to the caller's list.</para>
 /// </remarks>
-public sealed class ShapeClassifier
+internal sealed class ShapeClassifier
 {
     private Shape _s = new();
     private Shape _ref = new();

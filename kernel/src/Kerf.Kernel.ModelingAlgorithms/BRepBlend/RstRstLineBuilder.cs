@@ -28,7 +28,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// A working object (decision 21). OCCT's <c>OCCT_DEBUG</c> drawing of the sections and its derivative traces are
 /// left out.
 /// </remarks>
-public class RstRstLineBuilder
+internal class RstRstLineBuilder
 {
     private bool _done;
     private Line? _line;

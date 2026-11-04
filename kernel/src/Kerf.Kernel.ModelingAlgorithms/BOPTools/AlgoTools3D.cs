@@ -35,7 +35,7 @@ namespace Kerf.Engine.Booleans.Tools;
 /// two-edge overload write the seam's two pcurves into the split edge they are given (plan 2.3).
 /// </para>
 /// </remarks>
-public static class AlgoTools3D
+internal static class AlgoTools3D
 {
     /// <summary>
     /// Makes the split edge a seam of the face: if its pcurve lies on a period boundary of the face's surface, gives it

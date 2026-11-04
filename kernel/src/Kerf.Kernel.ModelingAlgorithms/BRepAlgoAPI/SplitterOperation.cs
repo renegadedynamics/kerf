@@ -13,7 +13,7 @@ namespace Kerf.Engine.Booleans.Api;
 /// Splits the objects by the tools: the result holds the splits of the objects only (the splits of the tools are
 /// left out). Error: <see cref="AlertTooFewArguments"/> without objects or with fewer than two shapes.
 /// </summary>
-public class SplitterOperation : BuilderAlgo
+internal class SplitterOperation : BuilderAlgo
 {
     protected NCollection_List<Shape> _tools = new(); //!< Tool arguments of the operation
 

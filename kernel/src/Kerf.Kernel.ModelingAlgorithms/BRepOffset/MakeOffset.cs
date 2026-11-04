@@ -71,7 +71,7 @@ namespace Kerf.Engine.Offsets;
 /// offset's working shapes.
 /// </para>
 /// </remarks>
-public sealed partial class MakeOffset
+internal sealed partial class MakeOffset
 {
     private double _offset;
     private double _tol;

@@ -20,7 +20,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// <see cref="WithNorAng"/> and <see cref="Killed"/>. <c>new GeomFill_CornerState()</c> is OCCT's default (an
 /// infinite gap, a scale of 1, the Coons conditions met); <c>default</c> is all zeros.
 /// </remarks>
-public partial struct CornerState : IEquatable<CornerState>
+internal partial struct CornerState : IEquatable<CornerState>
 {
     private double _gap;
     private double _tgtang;

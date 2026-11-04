@@ -12,7 +12,7 @@ using static Kerf.Engine.Construction.Values.ErrorType;
 namespace Kerf.Engine.Construction.Curves;
 
 /// <summary>Constructions of an arc of ellipse in 2D as a Geom2d_TrimmedCurve.</summary>
-public sealed class MakeArcOfEllipse2d : Root
+internal sealed class MakeArcOfEllipse2d : Root
 {
     private TrimmedCurve2D? _theArc;
 

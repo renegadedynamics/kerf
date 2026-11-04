@@ -22,7 +22,7 @@ namespace Kerf.Engine.Booleans.Legacy;
 /// <see cref="Compare(double, in Direction3D, in Direction3D, double, Orientation, Orientation)"/> are public,
 /// as in OCCT. A class: OCCT holds it by value as a member of the classifiers, which pass it by reference.
 /// </remarks>
-public class CurveTransition
+internal class CurveTransition
 {
     private const int Greater = 1;
     private const int Same = 0;

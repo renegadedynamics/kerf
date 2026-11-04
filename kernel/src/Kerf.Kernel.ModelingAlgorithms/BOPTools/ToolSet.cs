@@ -29,7 +29,7 @@ namespace Kerf.Engine.Booleans.Tools;
 /// addresses), which changes no result: the port's maps iterate in insertion order (decision 18).
 /// </para>
 /// </remarks>
-public sealed class ToolSet : IEquatable<ToolSet>
+internal sealed class ToolSet : IEquatable<ToolSet>
 {
     private List<Shape> _shapes;
     private Shape _shape;

@@ -31,7 +31,7 @@ namespace Kerf.Engine.Booleans;
 /// sub-shapes are never written), and the materials of a changed shape are those of what stands for it. The
 /// materials map keys elements with their orientation (OCCT's default hasher).
 /// </remarks>
-public class MakeConnectedAlgorithm : Options
+internal class MakeConnectedAlgorithm : Options
 {
     protected NCollection_List<Shape> _arguments = new();                          //!< Input shapes for making them connected
     protected IndexedSet<Shape> _allInputsMap = new(ShapeHasher.Instance); //!< Map of all BRep sub-elements of the input shapes

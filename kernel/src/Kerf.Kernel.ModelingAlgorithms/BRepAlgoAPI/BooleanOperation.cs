@@ -25,7 +25,7 @@ namespace Kerf.Engine.Booleans.Api;
 /// variable), which writes files: a result never depends on the environment.
 /// </para>
 /// </remarks>
-public class BooleanOperation : BuilderAlgo
+internal class BooleanOperation : BuilderAlgo
 {
     protected NCollection_List<Shape> _tools = new(); //!< Tool arguments of operation
     protected Operation _operation;                  //!< Type of Boolean Operation

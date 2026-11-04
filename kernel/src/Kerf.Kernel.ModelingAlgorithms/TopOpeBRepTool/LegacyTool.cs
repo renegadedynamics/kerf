@@ -22,7 +22,7 @@ namespace Kerf.Engine.Booleans.Legacy.Tools;
 /// analysis (unit 7E): <c>Nt</c>, <c>NggeomF</c> with the file's <c>FUN_ngF</c>, and <c>minDUV</c>. The other members
 /// (about a hundred, for the Booleans' interferences) are left out.
 /// </remarks>
-public static class LegacyTool
+internal static class LegacyTool
 {
     // The edge is longer than the confusion tolerance (measured on ten chords), or doesn't have exactly one vertex
     private static bool CheckEdgeLength(in Edge e)

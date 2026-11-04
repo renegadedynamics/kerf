@@ -12,7 +12,7 @@ using static Kerf.Engine.Booleans.Legacy.Data.DsKind;
 namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>Iterates over the interferences of a list whose geometry is a point or a vertex: the points on a curve or edge.</summary>
-public sealed class DsPointIterator : DsInterferenceIterator
+internal sealed class DsPointIterator : DsInterferenceIterator
 {
     /// <summary>An iterator over the points of the interferences of <paramref name="l"/>.</summary>
     public DsPointIterator(NCollection_List<DsInterference> l)

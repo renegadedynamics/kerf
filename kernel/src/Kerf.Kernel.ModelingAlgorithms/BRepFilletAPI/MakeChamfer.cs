@@ -24,7 +24,7 @@ namespace Kerf.Engine.Fillets.Api;
 /// never written, the result, the history and the lists hand out frozen shapes, the history answers for the caller's
 /// sub-shapes, and the faces come from unit 7R's reconstruction (decision 992).
 /// </remarks>
-public class MakeChamfer : LocalOperation
+internal class MakeChamfer : LocalOperation
 {
     private readonly ChBuilder _builder;
     private readonly HashSet<Shape> _map = new(ShapeHasher.Instance);

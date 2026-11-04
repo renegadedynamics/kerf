@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Surfaces;
 
 /// <summary>Defines a trihedron along a curve with a guide curve.</summary>
-public abstract class TrihedronWithGuide : TrihedronLaw
+internal abstract class TrihedronWithGuide : TrihedronLaw
 {
     protected CurveAdaptorBase? _guide;
     protected CurveAdaptorBase? _trimG;

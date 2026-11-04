@@ -13,7 +13,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 
 /// <summary>The function C'(t) ^ C''(t) of a curve C, as a curve (Frenet's search for singular points).</summary>
 /// <remarks>A working adaptor (decision 101): it keeps the caller's curve and never changes it.</remarks>
-public class SnglrFunc : CurveAdaptorBase
+internal class SnglrFunc : CurveAdaptorBase
 {
     private readonly CurveAdaptorBase _hCurve;
     private double _ratio;

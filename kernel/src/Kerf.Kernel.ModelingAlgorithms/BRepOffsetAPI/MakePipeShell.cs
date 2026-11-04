@@ -28,7 +28,7 @@ namespace Kerf.Engine.Construction.Api;
 /// returned (design 4.2); <see cref="MakeShape.Generated"/> answers for the caller's own profiles,
 /// their edges and vertices, and the spine's edges and vertices.</para>
 /// </remarks>
-public class MakePipeShell : MakeSweep
+internal class MakePipeShell : MakeSweep
 {
     private readonly PipeShell _pipe;
 

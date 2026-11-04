@@ -20,7 +20,7 @@ using static Kerf.Topology.Orientation;
 
 namespace Kerf.Engine.Booleans;
 
-public partial class WireSplitter
+internal partial class WireSplitter
 {
     /// <summary>Splits an irregular connexity block of edges on the face into loops (the block's loops).</summary>
     public static void SplitBlock(in Face myFace, ConnexityBlock aCB, IntersectionContext context)

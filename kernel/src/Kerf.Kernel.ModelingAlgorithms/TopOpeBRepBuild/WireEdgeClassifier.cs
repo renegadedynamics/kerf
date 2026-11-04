@@ -29,7 +29,7 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 /// <see cref="CompareElement"/> and <see cref="LoopToShape"/> compute one and store it on the edge, as in OCCT: the
 /// edges must then be unfrozen (on a plane, BRep_Tool computes the pcurve and nothing is written).
 /// </remarks>
-public class WireEdgeClassifier : CompositeClassifier
+internal class WireEdgeClassifier : CompositeClassifier
 {
     private bool _firstCompare;
     private Point2D _point2d = new();

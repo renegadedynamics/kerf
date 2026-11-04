@@ -28,7 +28,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// <see cref="Surface"/> hands out the surface frozen. <see cref="SetParallelMode"/> runs the contact search in
 /// parallel; the result is the serial one (decision 490).
 /// </remarks>
-public class Gordon
+internal class Gordon
 {
     /// <summary>Result state of the last Perform() call.</summary>
     public enum ResultStatus

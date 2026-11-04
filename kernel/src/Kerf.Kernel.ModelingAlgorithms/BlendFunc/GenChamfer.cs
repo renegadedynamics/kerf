@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.BlendFunctions;
 
 /// <summary>The function of a general chamfer between two surfaces along a guide curve: linear sections.</summary>
-public abstract class GenChamfer : BlendFunction
+internal abstract class GenChamfer : BlendFunction
 {
     protected readonly SurfaceAdaptorBase _surf1;
     protected readonly SurfaceAdaptorBase _surf2;

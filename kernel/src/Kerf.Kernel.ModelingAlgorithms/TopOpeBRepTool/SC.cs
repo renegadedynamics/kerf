@@ -14,7 +14,7 @@ namespace Kerf.Engine.Booleans.Legacy.Tools;
 /// (<c>thread_local</c>), and so in the port (<c>[ThreadStatic]</c>); it keeps its state from one call to the next.
 /// <c>FSC_StatePonFace</c> and <c>FSC_StateEonFace</c> (the Booleans) are left out (plan 2.11).
 /// </remarks>
-public static class SC
+internal static class SC
 {
     [ThreadStatic]
     private static ShapeClassifier? s_topOpeBRepToolPSC;

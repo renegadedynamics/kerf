@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// the section is a B-spline curve, the caller's curve itself (read only, as OCCT keeps the handle), and a trimmed
 /// copy of the law (<see cref="LawsFunction.Trim"/>). <see cref="ConstantSection"/> builds new, unfrozen geometry.
 /// </remarks>
-public class EvolvedSection : SurfaceSectionLaw
+internal class EvolvedSection : SurfaceSectionLaw
 {
     private readonly double _first;
     private readonly double _last;

@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Features.Local;
 
 /// <summary>The kind of a local operation.</summary>
-public enum FeatureOperation
+internal enum FeatureOperation
 {
     Fuse,
     Cut,

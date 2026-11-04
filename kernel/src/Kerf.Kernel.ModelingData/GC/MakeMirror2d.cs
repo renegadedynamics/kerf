@@ -12,7 +12,7 @@ namespace Kerf.Engine.Construction.Curves;
 
 /// <summary>The symmetry with respect to a point or an axis in 2D, as a Geom2d_Transformation.</summary>
 /// <remarks>Not a GC_Root: the construction can't fail, as in OCCT.</remarks>
-public sealed class MakeMirror2d
+internal sealed class MakeMirror2d
 {
     private readonly Transformation2 _theMirror;
 

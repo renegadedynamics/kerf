@@ -15,7 +15,7 @@ namespace Kerf.Engine.Construction.Curves;
 /// Constructions of a Geom_Line: from a point and a direction, an axis, a gp_Lin, two points, or parallel to a line
 /// through a point.
 /// </summary>
-public sealed class MakeLine : Root
+internal sealed class MakeLine : Root
 {
     private LineCurve3D? _theLine;
 

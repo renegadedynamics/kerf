@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.Surfaces;
 
 /// <summary>The status of the computation of a <see cref="SurfaceBuilder"/>.</summary>
-public enum StatusDone
+internal enum StatusDone
 {
     IsOk,
     IsNotOk,

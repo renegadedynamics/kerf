@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Fairing;
 
 /// <summary>The optimisation algorithm of the fair curves: math_NewtonMinimum with a spatial convergence test.</summary>
-public class Newton : NewtonMinimum
+internal class Newton : NewtonMinimum
 {
     private readonly double _spTol;
 

@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Laws;
 /// <see cref="Curve"/> freezes the result before returning it. OCCT's <c>ClearTangents</c> is declared but never
 /// defined, and is not ported.
 /// </remarks>
-public sealed class LawsInterpolate
+internal sealed class LawsInterpolate
 {
     private readonly double _tolerance;
     private readonly NCollection_HArray1<double> _points;

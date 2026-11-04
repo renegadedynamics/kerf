@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// A working object (decision 21). <see cref="SetParam"/> keeps the caller's array, as OCCT keeps the handle, and
 /// writes into it (occt-issues.md); the parameters are needed only for an approximation with known parameters.
 /// </remarks>
-public class SectionGenerator : Profiler, ISectionGenerator<int>
+internal class SectionGenerator : Profiler, ISectionGenerator<int>
 {
     protected NCollection_HArray1<double>? _params;
 

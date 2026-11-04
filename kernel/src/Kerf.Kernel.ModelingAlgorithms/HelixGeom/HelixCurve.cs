@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Helix.Geometry;
 /// In cylindrical coordinates: x(t) = r(t) cos t, y(t) = r(t) sin t (negated when counter-clockwise),
 /// z(t) = pitch t / 2π, with r(t) = rStart + pitch tan(taper) t / 2π. An adaptor is a working object (decision 21).
 /// </remarks>
-public class HelixCurve : CurveAdaptorBase
+internal class HelixCurve : CurveAdaptorBase
 {
     protected double _first;
     protected double _last;

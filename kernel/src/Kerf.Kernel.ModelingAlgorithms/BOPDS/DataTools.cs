@@ -10,7 +10,7 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Engine.Booleans.Data;
 
 /// <summary>Auxiliary statics of the BOPDS package.</summary>
-public static class DataTools
+internal static class DataTools
 {
     /// <summary>True if the type is that of a shape with a boundary representation: vertex, edge or face.</summary>
     public static bool HasBRep(ShapeType aTi) => aTi == ShapeType.Vertex || aTi == ShapeType.Edge || aTi == ShapeType.Face;

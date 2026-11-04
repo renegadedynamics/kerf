@@ -25,7 +25,7 @@ namespace Kerf.Engine.Booleans.Api;
 /// <see cref="CheckInverted"/> is false.
 /// </para>
 /// </remarks>
-public struct AlgoApiOptions : IEquatable<AlgoApiOptions>
+internal struct AlgoApiOptions : IEquatable<AlgoApiOptions>
 {
     /// <summary>OCCT's defaults.</summary>
     public AlgoApiOptions()

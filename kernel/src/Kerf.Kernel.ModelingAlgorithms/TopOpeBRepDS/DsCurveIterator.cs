@@ -11,7 +11,7 @@ using static Kerf.Engine.Booleans.Legacy.Data.DsKind;
 namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>Iterates over the interferences of a list whose geometry is a curve: the curves on a face or surface.</summary>
-public sealed class DsCurveIterator : DsInterferenceIterator
+internal sealed class DsCurveIterator : DsInterferenceIterator
 {
     /// <summary>An iterator over the curves of the interferences of <paramref name="l"/>.</summary>
     public DsCurveIterator(NCollection_List<DsInterference> l)

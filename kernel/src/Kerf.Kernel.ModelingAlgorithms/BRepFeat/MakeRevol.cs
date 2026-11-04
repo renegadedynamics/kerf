@@ -30,7 +30,7 @@ namespace Kerf.Engine.Features;
 /// <para>The basis shape and the profile are read, never written: the revolution sweeps a copy of a frozen profile
 /// (LocOpe_Revol, decision 1014).</para>
 /// </remarks>
-public sealed class MakeRevol : Form
+internal sealed class MakeRevol : Form
 {
     private Shape _pbase = new();
     private readonly Dictionary<Shape, NCollection_List<Shape>> _slface = new(ShapeHasher.Instance);

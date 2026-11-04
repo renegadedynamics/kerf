@@ -14,7 +14,7 @@ namespace Kerf.Engine.Fillets.Data;
 
 /// <summary>The stripes that end at each vertex (an indexed data map of vertices to lists of stripes).</summary>
 /// <remarks>A working object (decision 21) of the fillet builders, keyed with OCCT's shape hasher (IsSame).</remarks>
-public sealed class StripeMap
+internal sealed class StripeMap
 {
     private readonly IndexedMap<Vertex, NCollection_List<Stripe>> _mymap =
         new(VertexHasher.Instance);

@@ -19,7 +19,7 @@ namespace Kerf.Engine.Fillets.Api;
 /// field by field (doubles as <c>double.Equals</c>). <c>new BRepFilletAPI_FilletOptions()</c> has OCCT's defaults
 /// (those of the MakeFillet constructor); <c>default</c> doesn't (all zero).
 /// </remarks>
-public struct MakeFilletOptions : IEquatable<MakeFilletOptions>
+internal struct MakeFilletOptions : IEquatable<MakeFilletOptions>
 {
     /// <summary>OCCT's defaults.</summary>
     public MakeFilletOptions()
@@ -97,7 +97,7 @@ public struct MakeFilletOptions : IEquatable<MakeFilletOptions>
 /// The options of a chamfer for the functional twin <see cref="BRepFilletApi.Chamfer(in Shape, IReadOnlyList{Edge}, double, in MakeChamferOptions, out History)"/>
 /// (decision 1139): BRepFilletAPI_MakeChamfer's one option, <c>SetMode</c>, with OCCT's default.
 /// </summary>
-public struct MakeChamferOptions : IEquatable<MakeChamferOptions>
+internal struct MakeChamferOptions : IEquatable<MakeChamferOptions>
 {
     /// <summary>OCCT's default.</summary>
     public MakeChamferOptions()

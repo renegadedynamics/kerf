@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Curves;
 /// Constructions of a Geom_Plane: from a gp_Pln, a point and a normal, a cartesian equation, three points, parallel
 /// to a plane at a distance or through a point, or normal to an axis.
 /// </summary>
-public sealed class MakePlane : Root
+internal sealed class MakePlane : Root
 {
     private PlaneSurface? _thePlane;
 

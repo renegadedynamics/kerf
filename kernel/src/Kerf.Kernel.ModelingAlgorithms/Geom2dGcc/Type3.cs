@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Constraints;
 
 /// <summary>The kinds of arguments of Geom2dGcc_FunctionTanCuCu (Cu a curve, Ci a circle).</summary>
-public enum Type3
+internal enum Type3
 {
     CuCu,
     CiCu,

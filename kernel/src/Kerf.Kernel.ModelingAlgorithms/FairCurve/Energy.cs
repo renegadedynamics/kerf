@@ -22,7 +22,7 @@ namespace Kerf.Engine.Construction.Fairing;
 /// writes the poles that correspond to the variables into it (<see cref="Poles"/>), as OCCT does: FairCurve_Batten
 /// relies on it to read the optimised poles back (decision 859).
 /// </remarks>
-public abstract class Energy : MultipleVarFunctionWithHessian
+internal abstract class Energy : MultipleVarFunctionWithHessian
 {
     protected NCollection_HArray1<Point2D> _myPoles;
     protected int _myContrOrder1;

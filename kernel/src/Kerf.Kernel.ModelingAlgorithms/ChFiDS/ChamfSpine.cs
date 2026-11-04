@@ -11,7 +11,7 @@ using static Kerf.Engine.Fillets.Data.ChamfMode;
 namespace Kerf.Engine.Fillets.Data;
 
 /// <summary>The spine of a chamfer, with its distances (or distance and angle) on the faces.</summary>
-public sealed class ChamfSpine : Spine
+internal sealed class ChamfSpine : Spine
 {
     private double _d1;
     private double _d2;

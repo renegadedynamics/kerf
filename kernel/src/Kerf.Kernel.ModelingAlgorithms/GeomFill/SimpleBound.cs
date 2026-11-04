@@ -18,7 +18,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// A working object (decision 806): it keeps the caller's adaptor, as OCCT keeps the handle, and never changes it.
 /// <see cref="Reparametrize"/> sets a reparametrisation law, a Law_BSpFunc whose B-spline is frozen.
 /// </remarks>
-public class SimpleBound : Boundary
+internal class SimpleBound : Boundary
 {
     private readonly CurveAdaptorBase _c3d;
     private LawsFunction? _par;

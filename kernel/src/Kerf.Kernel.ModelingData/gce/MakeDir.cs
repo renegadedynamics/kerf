@@ -12,7 +12,7 @@ using static Kerf.Engine.Construction.Values.ErrorType;
 namespace Kerf.Engine.Construction.Values;
 
 /// <summary>Constructions of a gp_Dir: from a vector, coordinates or two points.</summary>
-public sealed class MakeDir : Root
+internal sealed class MakeDir : Root
 {
     private Direction3D _theDir = new();
 

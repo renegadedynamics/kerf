@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Api;
 
 /// <summary>Builds wedges: boxes with inclined faces.</summary>
 /// <remarks>The shell and solid it returns are frozen (design 4.2); the internal forms aren't, for ported code.</remarks>
-public class MakeWedge : MakeShape
+internal class MakeWedge : MakeShape
 {
     private readonly Wedge _wedge;
 

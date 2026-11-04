@@ -20,7 +20,7 @@ namespace Kerf.Engine.Fillets.Data;
 /// A working object of the fillet builders (decision 21): they fill it through the internal mutators and the
 /// <c>Change*</c> accessors. The public members only read.
 /// </remarks>
-public sealed class Stripe : Transient
+internal sealed class Stripe : Transient
 {
     private double _pardeb1;
     private double _parfin1;

@@ -30,7 +30,7 @@ public sealed class BoxTree : BooleanBoxSet<double, NCollection_Vec3<double>, in
 }
 
 /// <summary>The 2D box tree (OCCT's typedef <c>BOPTools_BoxSet&lt;double, 2, int&gt;</c>).</summary>
-public sealed class Box2dTree : BooleanBoxSet<double, NCollection_Vec2<double>, int>
+internal sealed class Box2dTree : BooleanBoxSet<double, NCollection_Vec2<double>, int>
 {
     public Box2dTree(Builder<double, NCollection_Vec2<double>>? builder = null)
         : base(builder)
@@ -39,21 +39,21 @@ public sealed class Box2dTree : BooleanBoxSet<double, NCollection_Vec2<double>, 
 }
 
 /// <summary>Selects the elements of a 3D box tree (OCCT's typedef <c>BOPTools_BoxSelector&lt;3&gt;</c>).</summary>
-public class BoxTreeSelector : BoxSelector<NCollection_Vec3<double>>
+internal class BoxTreeSelector : BoxSelector<NCollection_Vec3<double>>
 {
 }
 
 /// <summary>Selects the elements of a 2D box tree (OCCT's typedef <c>BOPTools_BoxSelector&lt;2&gt;</c>).</summary>
-public sealed class Box2dTreeSelector : BoxSelector<NCollection_Vec2<double>>
+internal sealed class Box2dTreeSelector : BoxSelector<NCollection_Vec2<double>>
 {
 }
 
 /// <summary>Selects the pairs of elements of two 3D box trees (OCCT's typedef <c>BOPTools_PairSelector&lt;3&gt;</c>).</summary>
-public sealed class BoxPairSelector : PairSelector<NCollection_Vec3<double>>
+internal sealed class BoxPairSelector : PairSelector<NCollection_Vec3<double>>
 {
 }
 
 /// <summary>Selects the pairs of elements of two 2D box trees (OCCT's typedef <c>BOPTools_PairSelector&lt;2&gt;</c>).</summary>
-public sealed class Box2dPairSelector : PairSelector<NCollection_Vec2<double>>
+internal sealed class Box2dPairSelector : PairSelector<NCollection_Vec2<double>>
 {
 }

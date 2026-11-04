@@ -13,7 +13,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// <remarks>A working object of MAT2d_Mat2d (decision 21): the setters are internal. OCCT leaves theindexnumber,
 /// theissuepoint, theendpoint, the vectors, the sense and distissuepoint uninitialised; they are 0 in the port.
 /// Dump (to std::cout) is left out.</remarks>
-public sealed class MedialBisector : Transient
+internal sealed class MedialBisector : Transient
 {
     private int _thebisectornumber;
     private int _theindexnumber;

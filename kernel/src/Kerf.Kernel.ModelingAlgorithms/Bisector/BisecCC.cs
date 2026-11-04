@@ -27,7 +27,7 @@ namespace Kerf.Engine.Offsets.Bisectors;
 /// Standard_NotImplemented, as in OCCT. ValueAndDist and ValueByInt take their outputs by <c>ref</c>: OCCT leaves
 /// them unwritten on some paths.
 /// </remarks>
-public sealed class BisecCC : BisectorCurve
+internal sealed class BisecCC : BisectorCurve
 {
     private Curve2D _curve1 = null!;
     private Curve2D _curve2 = null!;

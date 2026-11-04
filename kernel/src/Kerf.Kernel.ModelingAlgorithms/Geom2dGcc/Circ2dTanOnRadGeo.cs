@@ -18,7 +18,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// offsets at the radius.
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (decision 117). Up to 8 solutions.</remarks>
-public sealed class Circ2dTanOnRadGeo
+internal sealed class Circ2dTanOnRadGeo
 {
     private const int ANbSolMAX = 8;
 

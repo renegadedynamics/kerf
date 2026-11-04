@@ -38,7 +38,7 @@ namespace Kerf.Engine.Booleans;
 /// <see cref="InternalGetCheckResult"/>. The tangency test is not implemented in OCCT. OCCT's pointer typedef
 /// <c>BOPAlgo_PArgumentAnalyzer</c> is the class reference.
 /// </remarks>
-public class ArgumentAnalyzer : BooleanAlgorithm
+internal class ArgumentAnalyzer : BooleanAlgorithm
 {
     private Shape _shape1 = new();
     private Shape _shape2 = new();

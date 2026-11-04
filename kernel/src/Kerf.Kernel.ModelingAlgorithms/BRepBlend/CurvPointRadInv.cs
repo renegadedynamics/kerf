@@ -17,7 +17,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// The inverse of the restriction/restriction function at an extremity: the section plane of the first curve (the
 /// guide) through a given point and a point of the second curve. The variables are the parameters on the two curves.
 /// </summary>
-public class CurvPointRadInv : CurvPointFuncInv
+internal class CurvPointRadInv : CurvPointFuncInv
 {
     private readonly CurveAdaptorBase _curv1;
     private readonly CurveAdaptorBase _curv2;

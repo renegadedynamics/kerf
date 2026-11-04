@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Api;
 /// Duplication of a shape: a new shape with new TShapes and, if asked, copies of its geometry and triangulations
 /// (<see cref="CopyModification"/>).
 /// </summary>
-public class Copy : ModifyShape
+internal class Copy : ModifyShape
 {
     /// <summary>An empty copy framework; give the shape with <see cref="Perform"/>.</summary>
     public Copy()

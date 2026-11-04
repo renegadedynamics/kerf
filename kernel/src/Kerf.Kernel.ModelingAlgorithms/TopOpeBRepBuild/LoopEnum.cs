@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Booleans.Legacy.Build;
 
 /// <summary>Which loops of an area a loop is compared with: any, the boundaries (shapes) or the blocks of elements.</summary>
-public enum LoopEnum
+internal enum LoopEnum
 {
     Anyloop,
     Boundary,

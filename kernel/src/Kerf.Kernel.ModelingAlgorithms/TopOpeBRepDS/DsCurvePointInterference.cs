@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>An interference with a parameter: a point or vertex on a curve or edge, at a parameter of it.</summary>
-public sealed class DsCurvePointInterference : DsInterference
+internal sealed class DsCurvePointInterference : DsInterference
 {
     private double _param;
 
