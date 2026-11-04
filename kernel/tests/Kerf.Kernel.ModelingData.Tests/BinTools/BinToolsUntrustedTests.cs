@@ -54,41 +54,41 @@ public class BinToolsUntrustedTests
     public void Counts_beyond_the_input_are_rejected_before_allocating()
     {
         var aWatch = Stopwatch.StartNew();
-        Assert.Throws<StreamFormatErrorException>(() => ReadSet(Ascii(V4 + "Locations 2000000000\n")));
-        Assert.Throws<StreamFormatErrorException>(() => ReadSet(Ascii(V4 + "Locations -5\n")));
-        Assert.Throws<StreamFormatErrorException>(() => ReadSet(Ascii(V4 + "Locations 99999999999\n")));
-        Assert.Throws<StreamFormatErrorException>(() => ReadSet(Ascii(V4 + "Locations 0\nCurve2ds 0\nCurves 1000000\n")));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadSet(Ascii(V4 + "Locations 2000000000\n")));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadSet(Ascii(V4 + "Locations -5\n")));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadSet(Ascii(V4 + "Locations 99999999999\n")));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadSet(Ascii(V4 + "Locations 0\nCurve2ds 0\nCurves 1000000\n")));
 
         // a B-spline curve claiming 2^30 poles
         byte[] aBSpline = Concat(Ascii("Curves 1\n"), [7, 0, 0, 3, 0], Int(1 << 30), Int(2));
-        Assert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryCurveSet().Read(new MemoryStream(aBSpline)));
+        EngineAssert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryCurveSet().Read(new MemoryStream(aBSpline)));
 
         // a Bezier surface of degrees 65535 x 65535
         byte[] aBezier = Concat(Ascii("Surfaces 1\n"), [8, 0, 0, 0xFF, 0xFF, 0xFF, 0xFF]);
-        Assert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinarySurfaceSet().Read(new MemoryStream(aBezier)));
+        EngineAssert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinarySurfaceSet().Read(new MemoryStream(aBezier)));
 
         // a triangulation claiming 2^30 nodes, in the table-based and the position-based formats
         byte[] aTriangulations = Concat(Ascii("Triangulations 1\n"), Int(1 << 30), Int(1), [0, 0], Real(0));
-        Assert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryShapeSet().ReadTriangulation(new MemoryStream(aTriangulations)));
+        EngineAssert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryShapeSet().ReadTriangulation(new MemoryStream(aTriangulations)));
         byte[] aPositional = Concat([200 + 4 * 4, 7, 0], Real(0), [14, 7, 2, 19], Int(1 << 30), Int(1), [0, 0], Real(0));
-        Assert.Throws<StreamFormatErrorException>(() => ReadPositional(aPositional));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadPositional(aPositional));
 
         // a non-seekable stream is bounded too
         byte[] aPolygons = Concat(Ascii("Polygon3D 1\n"), Int(int.MaxValue), [0], Real(0));
-        Assert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryShapeSet().ReadPolygon3D(new UnseekableStream(aPolygons)));
+        EngineAssert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryShapeSet().ReadPolygon3D(new UnseekableStream(aPolygons)));
         Assert.True(aWatch.Elapsed < TimeSpan.FromSeconds(10));
     }
 
     [Fact]
     public void Words_longer_than_OCCTs_buffer_are_rejected()
     {
-        Assert.Throws<StreamFormatErrorException>(() => ReadSet(Ascii(V4 + new string('L', 300) + " 0\n")));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadSet(Ascii(V4 + new string('L', 300) + " 0\n")));
         // a header line too long for OCCT's getline: not a known version, so nothing is read
         var aSet = new global::Kerf.Engine.Exchange.Brep.Binary.BinaryShapeSet();
         aSet.Read(new MemoryStream(Ascii(new string('x', 500) + "\n")));
         Assert.Equal(0, aSet.ShapeCount);
         // ... and BinTools::Read then finds no shape reference
-        Assert.ThrowsAny<FailureException>(() => ReadSet(Ascii("not a shape\n")));
+        EngineAssert.ThrowsAny<FailureException>(() => ReadSet(Ascii("not a shape\n")));
     }
 
     [Fact]
@@ -113,8 +113,8 @@ public class BinToolsUntrustedTests
         var aSet = new global::Kerf.Engine.Exchange.Brep.Binary.BinaryCurveSet();
         aSet.Read(new MemoryStream(NestedTrimmed(global::Kerf.Engine.Exchange.Brep.Binary.BinTools.MaxGeometryNesting)));
         Assert.IsType<TrimmedCurve3D>(aSet.Curve(1));
-        Assert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryCurveSet().Read(new MemoryStream(NestedTrimmed(global::Kerf.Engine.Exchange.Brep.Binary.BinTools.MaxGeometryNesting + 1))));
-        Assert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryCurveSet().Read(new MemoryStream(NestedTrimmed(100000))));
+        EngineAssert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryCurveSet().Read(new MemoryStream(NestedTrimmed(global::Kerf.Engine.Exchange.Brep.Binary.BinTools.MaxGeometryNesting + 1))));
+        EngineAssert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryCurveSet().Read(new MemoryStream(NestedTrimmed(100000))));
 
         // offset surfaces
         var aSurfaces = new MemoryStream();
@@ -125,7 +125,7 @@ public class BinToolsUntrustedTests
             aSurfaces.Write(Real(1));
         }
 
-        Assert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinarySurfaceSet().Read(new MemoryStream(aSurfaces.ToArray())));
+        EngineAssert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinarySurfaceSet().Read(new MemoryStream(aSurfaces.ToArray())));
     }
 
     private static Shape NestedCompounds(int theDepth)
@@ -151,14 +151,14 @@ public class BinToolsUntrustedTests
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.Read(out Shape aRead, new MemoryStream(anOk));
         Assert.Equal(anOk, BinToolsRoundTripTests.WriteSet(aRead, 4));
         byte[] aDeep = BinToolsRoundTripTests.WriteSet(NestedCompounds(global::Kerf.Engine.Exchange.Brep.Binary.BinTools.MaxShapeNesting), 4);
-        Assert.Throws<StreamFormatErrorException>(() => ReadSet(aDeep));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadSet(aDeep));
 
         // the position-based format reads recursively
         byte[] aPositional = BinToolsRoundTripTests.WriteShapes(true, false, NestedCompounds(global::Kerf.Engine.Exchange.Brep.Binary.BinTools.MaxShapeNesting / 2 - 2));
         Shape aShape = BinToolsRoundTripTests.ReadShapes(aPositional, 1)[0];
         Assert.Equal(ShapeType.Compound, aShape.Type);
         byte[] aTooDeep = BinToolsRoundTripTests.WriteShapes(true, false, NestedCompounds(global::Kerf.Engine.Exchange.Brep.Binary.BinTools.MaxShapeNesting));
-        Assert.Throws<StreamFormatErrorException>(() => ReadPositional(aTooDeep));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadPositional(aTooDeep));
 
         // 100,000 nested compounds as bytes, which no writer would produce: a deep stack becomes an error
         var aStream = new MemoryStream();
@@ -169,7 +169,7 @@ public class BinToolsUntrustedTests
             aStream.WriteByte(0);
         }
 
-        Assert.Throws<StreamFormatErrorException>(() => ReadPositional(aStream.ToArray()));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadPositional(aStream.ToArray()));
 
         // and as many nested locations
         var aLocations = new MemoryStream();
@@ -179,7 +179,7 @@ public class BinToolsUntrustedTests
             aLocations.WriteByte(5);
         }
 
-        Assert.Throws<StreamFormatErrorException>(() => ReadPositional(aLocations.ToArray()));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadPositional(aLocations.ToArray()));
     }
 
     [Fact]
@@ -187,16 +187,16 @@ public class BinToolsUntrustedTests
     {
         // a compound whose first sub-shape refers to the compound itself
         byte[] aCycle = [200, 7, 0, 1, 3, 7, 0, 199];
-        Assert.Throws<StreamFormatErrorException>(() => ReadPositional(aCycle));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadPositional(aCycle));
 
         // a location that contains itself
         byte[] aLocationCycle = [200, 5, 1, 1, 0, 0, 0, 0];
-        Assert.Throws<StreamFormatErrorException>(() => ReadPositional(aLocationCycle));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadPositional(aLocationCycle));
 
         // a reference before the start of the stream, a zero reference, a position past the end
-        Assert.Throws<StreamFormatErrorException>(() => ReadPositional([1, 5]));
-        Assert.ThrowsAny<FailureException>(() => ReadPositional([1, 0]));
-        Assert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.IStream(new MemoryStream([1, 2, 3])).GoTo(4));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadPositional([1, 5]));
+        EngineAssert.ThrowsAny<FailureException>(() => ReadPositional([1, 0]));
+        EngineAssert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.IStream(new MemoryStream([1, 2, 3])).GoTo(4));
 
         // an edge whose 3D curves are a chain of 100,000 references, each to the one before: a deep stack becomes an
         // error. Each representation: 1, the curve (here a reference: 1, offset), no location, the range.
@@ -219,7 +219,7 @@ public class BinToolsUntrustedTests
             aChain.Write(Real(1));
         }
 
-        Assert.Throws<StreamFormatErrorException>(() => ReadPositional(aChain.ToArray()));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadPositional(aChain.ToArray()));
     }
 
     [Fact]
@@ -229,11 +229,11 @@ public class BinToolsUntrustedTests
         byte[] aPowered = Concat(Ascii("Locations 4\n"), [1], Identity(), [1], Identity(),
                                  [2], Int(1), Int(1), Int(2), Int(1), Int(0),
                                  [2], Int(3), Int(1000000000), Int(0));
-        Assert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryLocationSet().Read(new MemoryStream(aPowered)));
+        EngineAssert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryLocationSet().Read(new MemoryStream(aPowered)));
         byte[] aMinPower = Concat(Ascii("Locations 4\n"), [1], Identity(), [1], Identity(),
                                   [2], Int(1), Int(1), Int(2), Int(1), Int(0),
                                   [2], Int(3), Int(int.MinValue), Int(0));
-        Assert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryLocationSet().Read(new MemoryStream(aMinPower)));
+        EngineAssert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryLocationSet().Read(new MemoryStream(aMinPower)));
 
         // a single datum to a huge power is one item: fine
         byte[] anElementary = Concat(Ascii("Locations 2\n"), [1], Identity(), [2], Int(1), Int(1000000000), Int(0));
@@ -251,11 +251,11 @@ public class BinToolsUntrustedTests
         }
 
         aChain.Write(Int(0));
-        Assert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryLocationSet().Read(new MemoryStream(aChain.ToArray())));
+        EngineAssert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryLocationSet().Read(new MemoryStream(aChain.ToArray())));
 
         // an index outside the set
         byte[] aBadIndex = Concat(Ascii("Locations 1\n"), [2], Int(5), Int(1), Int(0));
-        Assert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryLocationSet().Read(new MemoryStream(aBadIndex)));
+        EngineAssert.Throws<StreamFormatErrorException>(() => new global::Kerf.Engine.Exchange.Brep.Binary.BinaryLocationSet().Read(new MemoryStream(aBadIndex)));
     }
 
     [Fact]
@@ -267,15 +267,15 @@ public class BinToolsUntrustedTests
         // the final reference: orientation, TShape index from the end, location
         byte[] aBadOrientation = (byte[])aGood.Clone();
         aBadOrientation[^9] = 9;
-        Assert.Throws<StreamFormatErrorException>(() => ReadSet(aBadOrientation));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadSet(aBadOrientation));
         byte[] aBadShape = (byte[])aGood.Clone();
         BinaryPrimitives.WriteInt32LittleEndian(aBadShape.AsSpan(aBadShape.Length - 8), 1000);
-        Assert.Throws<StreamFormatErrorException>(() => ReadSet(aBadShape));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadSet(aBadShape));
         BinaryPrimitives.WriteInt32LittleEndian(aBadShape.AsSpan(aBadShape.Length - 8), int.MinValue);
-        Assert.Throws<StreamFormatErrorException>(() => ReadSet(aBadShape));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadSet(aBadShape));
         byte[] aBadLocation = (byte[])aGood.Clone();
         BinaryPrimitives.WriteInt32LittleEndian(aBadLocation.AsSpan(aBadLocation.Length - 4), 3);
-        Assert.Throws<StreamFormatErrorException>(() => ReadSet(aBadLocation));
+        EngineAssert.Throws<StreamFormatErrorException>(() => ReadSet(aBadLocation));
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -316,14 +316,14 @@ public class BinToolsUntrustedTests
                 {
                     global::Kerf.Engine.Exchange.Brep.Binary.BinTools.Write(aShape, new MemoryStream());
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                 }
             }
 
             return null;
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return null;
         }

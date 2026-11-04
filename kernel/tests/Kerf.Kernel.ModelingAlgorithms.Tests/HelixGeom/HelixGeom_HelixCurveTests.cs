@@ -51,16 +51,16 @@ public class HelixGeom_HelixCurveTests
         var aHelix = new HelixCurve();
 
         // Test invalid parameter range (T1 >= T2)
-        Assert.ThrowsAny<ConstructionErrorException>(() => aHelix.Load(2.0, 1.0, 5.0, 2.0, 0.0, true));
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => aHelix.Load(2.0, 1.0, 5.0, 2.0, 0.0, true));
 
         // Test negative pitch
-        Assert.ThrowsAny<ConstructionErrorException>(() => aHelix.Load(0.0, 2.0 * M_PI, -1.0, 2.0, 0.0, true));
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => aHelix.Load(0.0, 2.0 * M_PI, -1.0, 2.0, 0.0, true));
 
         // Test negative radius
-        Assert.ThrowsAny<ConstructionErrorException>(() => aHelix.Load(0.0, 2.0 * M_PI, 5.0, -1.0, 0.0, true));
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => aHelix.Load(0.0, 2.0 * M_PI, 5.0, -1.0, 0.0, true));
 
         // Test invalid taper angle
-        Assert.ThrowsAny<ConstructionErrorException>(() => aHelix.Load(0.0, 2.0 * M_PI, 5.0, 2.0, M_PI / 2.0, true));
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => aHelix.Load(0.0, 2.0 * M_PI, 5.0, 2.0, M_PI / 2.0, true));
     }
 
     [Fact]
@@ -100,10 +100,10 @@ public class HelixGeom_HelixCurveTests
         Assert.Equal(4.0 * M_PI, anIntervals[2]);
 
         // Test not implemented methods
-        Assert.ThrowsAny<MethodNotImplementedException>(() => aHelix.Resolution(1.0));
-        Assert.ThrowsAny<MethodNotImplementedException>(() => aHelix.IsClosed);
-        Assert.ThrowsAny<MethodNotImplementedException>(() => aHelix.IsPeriodic);
-        Assert.ThrowsAny<DomainErrorException>(() => aHelix.Period());
+        EngineAssert.ThrowsAny<MethodNotImplementedException>(() => aHelix.Resolution(1.0));
+        EngineAssert.ThrowsAny<MethodNotImplementedException>(() => aHelix.IsClosed);
+        EngineAssert.ThrowsAny<MethodNotImplementedException>(() => aHelix.IsPeriodic);
+        EngineAssert.ThrowsAny<DomainErrorException>(() => aHelix.Period());
     }
 
     [Fact]

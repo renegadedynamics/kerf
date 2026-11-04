@@ -114,9 +114,9 @@ public class ProjLib_ProjectOnPlaneTests
         Line3D aLin = aProj.Line();
         Assert.True(aLin.Direction.IsNormal(TiltedPlane().Direction, 1.0e-12));
         AssertSameImage(aProj, aC, 1.0e-9);
-        Assert.Throws<NoSuchObjectException>(() => aProj.Circle());
-        Assert.Throws<NoSuchObjectException>(() => aProj.Degree());
-        Assert.Throws<NoSuchObjectException>(() => aProj.BSpline());
+        EngineAssert.Throws<NoSuchObjectException>(() => aProj.Circle());
+        EngineAssert.Throws<NoSuchObjectException>(() => aProj.Degree());
+        EngineAssert.Throws<NoSuchObjectException>(() => aProj.BSpline());
     }
 
     [Fact]
@@ -211,7 +211,7 @@ public class ProjLib_ProjectOnPlaneTests
         aProj.Load(aC, Tol, true);
         Assert.Equal(CurveKind.BSplineCurve, aProj.GetType());
         Assert.False(aProj.IsPeriodic);
-        Assert.Throws<NoSuchObjectException>(() => aProj.Period());
+        EngineAssert.Throws<NoSuchObjectException>(() => aProj.Period());
         Assert.Equal(aProj.BSpline().Degree, aProj.Degree());
         Assert.Equal(aProj.BSpline().PoleCount, aProj.PoleCount);
         Assert.Equal(aProj.BSpline().KnotCount, aProj.KnotCount);
@@ -452,7 +452,7 @@ public class ProjLib_ProjectOnPlaneTests
         Assert.Equal(CurveKind.OtherCurve, anEmpty.GetType());
         Assert.Null(anEmpty.GetCurve());
         Assert.Null(anEmpty.GetResult());
-        Assert.Throws<MethodNotImplementedException>(() => anEmpty.Trim(0, 1, Tol));
+        EngineAssert.Throws<MethodNotImplementedException>(() => anEmpty.Trim(0, 1, Tol));
         Assert.Equal(0.0, anEmpty.Resolution(1.0));
 
         ProjectOnPlane aProj = new(SkewPlane());
@@ -483,7 +483,7 @@ public class ProjLib_ProjectOnSurfaceTests
         ProjectOnSurface aProj = new();
         aProj.Load(new CurveAdaptor(new LineCurve3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 0)), 0, 1), 1.0e-7);
         Assert.False(aProj.IsDone);
-        Assert.Throws<NoSuchObjectException>(() => aProj.BSpline());
+        EngineAssert.Throws<NoSuchObjectException>(() => aProj.BSpline());
     }
 
     [Theory]

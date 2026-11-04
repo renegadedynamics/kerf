@@ -66,15 +66,15 @@ public class Geom_PointVectorTests
     {
         CartesianPoint G = new(1, 2, 3);
         G.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => G.SetX(0));
-        Assert.Throws<ImmutableObjectException>(() => G.SetCoord(0, 0, 0));
-        Assert.Throws<ImmutableObjectException>(() => G.SetPnt(new Point3D()));
-        Assert.Throws<ImmutableObjectException>(() => G.Transform(new Transform3D()));
-        Assert.Throws<ImmutableObjectException>(() => G.Mirror(new Point3D()));
-        Assert.Throws<ImmutableObjectException>(() => G.Rotate(Axis, 1));
-        Assert.Throws<ImmutableObjectException>(() => G.Scale(new Point3D(), 2));
-        Assert.Throws<ImmutableObjectException>(() => G.Translate(new Vector3D(1, 0, 0)));
-        Assert.Throws<ImmutableObjectException>(() => G.Translate(new Point3D(), new Point3D(1, 0, 0)));
+        EngineAssert.Throws<ImmutableObjectException>(() => G.SetX(0));
+        EngineAssert.Throws<ImmutableObjectException>(() => G.SetCoord(0, 0, 0));
+        EngineAssert.Throws<ImmutableObjectException>(() => G.SetPnt(new Point3D()));
+        EngineAssert.Throws<ImmutableObjectException>(() => G.Transform(new Transform3D()));
+        EngineAssert.Throws<ImmutableObjectException>(() => G.Mirror(new Point3D()));
+        EngineAssert.Throws<ImmutableObjectException>(() => G.Rotate(Axis, 1));
+        EngineAssert.Throws<ImmutableObjectException>(() => G.Scale(new Point3D(), 2));
+        EngineAssert.Throws<ImmutableObjectException>(() => G.Translate(new Vector3D(1, 0, 0)));
+        EngineAssert.Throws<ImmutableObjectException>(() => G.Translate(new Point3D(), new Point3D(1, 0, 0)));
         AssertPnt(new Point3D(1, 2, 3), G.Pnt());
 
         // Copy is unfrozen; the public non-mutating forms work on a frozen object
@@ -95,8 +95,8 @@ public class Geom_PointVectorTests
         Assert.Equal(0.6, D.X(), Tol);
         Assert.Equal(0.8, D.Z(), Tol);
         Assert.Equal(1.0, D.Magnitude());
-        Assert.Throws<ConstructionErrorException>(() => new Direction(0, 0, 0));
-        Assert.Throws<ConstructionErrorException>(() => new Direction(1, 0, 0).WithX(0));
+        EngineAssert.Throws<ConstructionErrorException>(() => new Direction(0, 0, 0));
+        EngineAssert.Throws<ConstructionErrorException>(() => new Direction(1, 0, 0).WithX(0));
 
         // A scale doesn't change a direction's length
         Direction S = (Direction)D.Scaled(new Point3D(1, 1, 1), -2);
@@ -108,7 +108,7 @@ public class Geom_PointVectorTests
         GeometryVector3D C = DX.Crossed(DY);
         Assert.IsType<Direction>(C);
         Assert.Equal(1.0, C.Z(), Tol);
-        Assert.Throws<ConstructionErrorException>(() => DX.Crossed(new Direction(-1, 0, 0)));
+        EngineAssert.Throws<ConstructionErrorException>(() => DX.Crossed(new Direction(-1, 0, 0)));
         Assert.Equal(M_PI / 2, DX.Angle(DY), Tol);
         Assert.Equal(-M_PI / 2, DY.AngleWithRef(DX, new Direction(0, 0, 1)), Tol);
 
@@ -118,8 +118,8 @@ public class Geom_PointVectorTests
         Assert.Equal(1.0, M.Z(), Tol);
         Assert.Equal(1.0, DX.X());
         M.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => M.Cross(DX));
-        Assert.Throws<ImmutableObjectException>(() => M.Reverse());
+        EngineAssert.Throws<ImmutableObjectException>(() => M.Cross(DX));
+        EngineAssert.Throws<ImmutableObjectException>(() => M.Reverse());
         Assert.Equal(-1.0, M.Reversed().Z(), Tol);
     }
 
@@ -149,10 +149,10 @@ public class Geom_PointVectorTests
         M.Multiply(2);
         Assert.Equal(new Vector3D(2, 4, 8), M.Vec());
         M.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => M.Normalize());
-        Assert.Throws<ImmutableObjectException>(() => M.Subtract(W));
-        Assert.Throws<ImmutableObjectException>(() => M.Divide(2));
-        Assert.Throws<ImmutableObjectException>(() => M.SetVec(new Vector3D()));
+        EngineAssert.Throws<ImmutableObjectException>(() => M.Normalize());
+        EngineAssert.Throws<ImmutableObjectException>(() => M.Subtract(W));
+        EngineAssert.Throws<ImmutableObjectException>(() => M.Divide(2));
+        EngineAssert.Throws<ImmutableObjectException>(() => M.SetVec(new Vector3D()));
         Assert.Equal(new Vector3D(0, 4, 8), M.WithX(0).Vec());
         Assert.Equal(new Vector3D(2, 4, 8), M.Vec());
     }

@@ -218,7 +218,7 @@ internal class Profiler
         {
             UnifyByInsertingAllKnots(theCurves, pTol);
         }
-        catch (RangeErrorException) when (_isPeriodic)
+        catch (Exception caught) when (Refusal.Of(caught) is RangeErrorException && (_isPeriodic))
         {
             // BSplCLib::PrepareInsertKnots mispredicts the pole count of periodic curves (decision 1439)
             unified = false;

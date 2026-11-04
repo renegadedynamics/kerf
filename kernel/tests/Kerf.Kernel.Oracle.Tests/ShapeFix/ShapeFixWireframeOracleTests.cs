@@ -89,7 +89,7 @@ public class ShapeFixWireframeOracleTests(ITestOutputHelper output)
             aPRes = aFix.Shape();
             aPStatus = $"{aSmall}/{aGaps}, " + Status(aFix.StatusWireGaps, aFix.StatusSmallEdges);
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
             aPErr = ShapeFixOracleRun.ErrorOf(e);
         }

@@ -205,7 +205,7 @@ internal static class BinTools
         catch (Exception exception) when (IsSignal(exception))
         {
             // OCCT.NET: untrusted input: a malformed stream raised an exception that OCCT doesn't catch here
-            throw new StreamFormatErrorException("BinTools::Read: " + exception.Message, exception);
+            throw new StreamFormatErrorException("BinTools::Read: " + Refusal.Unwrapped(exception).Message, exception);
         }
     }
 
@@ -625,7 +625,7 @@ internal static class BinTools
             return false;
         }
 
-        return exception is FailureException || IsSignal(exception);
+        return Refusal.IsFailure(exception) || IsSignal(exception);
     }
 
     // The .NET exceptions that stand for OCCT's access violations and the like on malformed input

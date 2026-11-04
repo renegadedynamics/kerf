@@ -599,9 +599,9 @@ public class Geom_BezierSurfaceTests
     public void FrozenSurface_RejectsMutators_TwinsCopy()
     {
         myOriginalSurface.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => myOriginalSurface.SetPole(1, 1, new Point3D()));
-        Assert.Throws<ImmutableObjectException>(() => myOriginalSurface.Increase(3, 3));
-        Assert.Throws<ImmutableObjectException>(() => myOriginalSurface.VReverse());
+        EngineAssert.Throws<ImmutableObjectException>(() => myOriginalSurface.SetPole(1, 1, new Point3D()));
+        EngineAssert.Throws<ImmutableObjectException>(() => myOriginalSurface.Increase(3, 3));
+        EngineAssert.Throws<ImmutableObjectException>(() => myOriginalSurface.VReverse());
 
         BezierSurface aIncreased = myOriginalSurface.Increased(3, 4);
         Assert.False(aIncreased.IsFrozen);

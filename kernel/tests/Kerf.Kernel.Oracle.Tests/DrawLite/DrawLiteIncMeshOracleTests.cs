@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using System.Globalization;
@@ -159,7 +160,7 @@ public sealed partial class DrawLiteIncMeshOracleTests(ITestOutputHelper output)
         }
         catch (Exception anError)
         {
-            Disagree($"{theWhat}: the port fails: {anError.Message}");
+            Disagree($"{theWhat}: the port fails: {Refusal.Unwrapped(anError).Message}");
             return;
         }
 
@@ -320,7 +321,7 @@ public sealed partial class DrawLiteIncMeshOracleTests(ITestOutputHelper output)
             }
             catch (Exception anError)
             {
-                output.WriteLine($"{aName}: native can't read or write it ({anError.Message})");
+                output.WriteLine($"{aName}: native can't read or write it ({Refusal.Unwrapped(anError).Message})");
                 continue;
             }
             finally

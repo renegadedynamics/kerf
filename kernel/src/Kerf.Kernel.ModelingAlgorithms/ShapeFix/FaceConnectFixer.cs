@@ -333,7 +333,7 @@ internal sealed class FaceConnectFixer
                                     {
                                         theSewer.Perform();
                                     }
-                                    catch (FailureException)
+                                    catch (Exception caught) when (Refusal.IsFailure(caught))
                                     {
                                         sewing_ok = false;
                                     }

@@ -28,7 +28,7 @@ public sealed class CylindricalSurface : ElementarySurface
         _radius = radius;
         if (radius < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _pos = a3;
     }
@@ -81,7 +81,7 @@ public sealed class CylindricalSurface : ElementarySurface
         CheckMutable();
         if (r < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _radius = r;
     }
@@ -206,7 +206,7 @@ public sealed class CylindricalSurface : ElementarySurface
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
-            throw new UndefinedDerivative3DException();
+            throw Refusal.State(new UndefinedDerivative3DException());
         }
         if (nv > 1)
         {

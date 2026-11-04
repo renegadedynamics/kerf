@@ -134,9 +134,9 @@ internal static class FairCurveRecordings
             {
                 aVal = theF();
             }
-            catch (FailureException anExc)
+            catch (Exception anExc) when (Refusal.IsFailure(anExc))
             {
-                aVal = "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anExc.GetType());
+                aVal = "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anExc).GetType());
             }
             Put(theName + ":" + aVal);
         }
@@ -190,9 +190,9 @@ internal static class FairCurveRecordings
                 aB = new Batten(P1, P2, h, s);
             }
         }
-        catch (FailureException anExc)
+        catch (Exception anExc) when (Refusal.IsFailure(anExc))
         {
-            w.Put("ctor:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anExc.GetType()));
+            w.Put("ctor:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anExc).GetType()));
             return;
         }
 
@@ -270,9 +270,9 @@ internal static class FairCurveRecordings
                 aB = new Batten(P1, P2, h);
             }
         }
-        catch (FailureException anExc)
+        catch (Exception anExc) when (Refusal.IsFailure(anExc))
         {
-            w.Put("ctor:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anExc.GetType()));
+            w.Put("ctor:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anExc).GetType()));
             return;
         }
         aB.SetAngle1(a1 * M_PI / 180);
@@ -416,9 +416,9 @@ internal static class FairCurveRecordings
                 anE = new EnergyOfBatten(Degree + 1, aFlat, aPoles, o1, o2, aLaw, aSliding, fs, a1, a2);
             }
         }
-        catch (FailureException anExc)
+        catch (Exception anExc) when (Refusal.IsFailure(anExc))
         {
-            w.Put("ctor:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anExc.GetType()));
+            w.Put("ctor:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anExc).GetType()));
             return;
         }
         int n = anE.VariableCount;
@@ -494,9 +494,9 @@ internal static class FairCurveRecordings
                     throw new InvalidOperationException(theCase.Kind);
             }
         }
-        catch (FailureException anExc)
+        catch (Exception anExc) when (Refusal.IsFailure(anExc))
         {
-            w.Put("fail:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anExc.GetType()));
+            w.Put("fail:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anExc).GetType()));
         }
         if (!r.AtEnd)
         {

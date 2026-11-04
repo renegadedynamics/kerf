@@ -185,7 +185,7 @@ public sealed class OffsetCurve3D : Curve3D
             // Raise exception if still C0
             if (isC0)
             {
-                throw new ConstructionErrorException("Offset on C0 curve");
+                throw Refusal.Argument(new ConstructionErrorException("Offset on C0 curve"));
             }
         }
         //
@@ -254,7 +254,7 @@ public sealed class OffsetCurve3D : Curve3D
         Point3D value = basisD1.Point;
         if (!OffsetCurveUtils3D.CalculateD0(ref value, basisD1.D1, _direction.XYZ(), _offsetValue))
         {
-            throw new UndefinedValue3DException("Geom_OffsetCurve::EvalD0");
+            throw Refusal.State(new UndefinedValue3DException("Geom_OffsetCurve::EvalD0"));
         }
         return value;
     }
@@ -271,7 +271,7 @@ public sealed class OffsetCurve3D : Curve3D
         Vector3D d1 = basisD2.D1;
         if (!OffsetCurveUtils3D.CalculateD1(ref value, ref d1, basisD2.D2, _direction.XYZ(), _offsetValue))
         {
-            throw new UndefinedDerivative3DException("Geom_OffsetCurve::EvalD1");
+            throw Refusal.State(new UndefinedDerivative3DException("Geom_OffsetCurve::EvalD1"));
         }
         return new ResD1 { Point = value, D1 = d1 };
     }
@@ -300,7 +300,7 @@ public sealed class OffsetCurve3D : Curve3D
                                                         ref dummyD4,
                                                         out isDirectionChange))
             {
-                throw new UndefinedDerivative3DException("Geom_OffsetCurve::EvalD2");
+                throw Refusal.State(new UndefinedDerivative3DException("Geom_OffsetCurve::EvalD2"));
             }
         }
 
@@ -312,7 +312,7 @@ public sealed class OffsetCurve3D : Curve3D
                                                _offsetValue,
                                                isDirectionChange))
         {
-            throw new UndefinedDerivative3DException("Geom_OffsetCurve::EvalD2");
+            throw Refusal.State(new UndefinedDerivative3DException("Geom_OffsetCurve::EvalD2"));
         }
         return new ResD2 { Point = value, D1 = d1, D2 = d2 };
     }
@@ -342,7 +342,7 @@ public sealed class OffsetCurve3D : Curve3D
                                                         ref d4,
                                                         out isDirectionChange))
             {
-                throw new UndefinedDerivative3DException("Geom_OffsetCurve::EvalD3");
+                throw Refusal.State(new UndefinedDerivative3DException("Geom_OffsetCurve::EvalD3"));
             }
         }
 
@@ -355,7 +355,7 @@ public sealed class OffsetCurve3D : Curve3D
                                                _offsetValue,
                                                isDirectionChange))
         {
-            throw new UndefinedDerivative3DException("Geom_OffsetCurve::EvalD3");
+            throw Refusal.State(new UndefinedDerivative3DException("Geom_OffsetCurve::EvalD3"));
         }
         return new ResD3 { Point = value, D1 = d1, D2 = d2, D3 = d3 };
     }
@@ -366,7 +366,7 @@ public sealed class OffsetCurve3D : Curve3D
     {
         if (n < 1)
         {
-            throw new UndefinedDerivative3DException("Geom_OffsetCurve::EvalDN");
+            throw Refusal.State(new UndefinedDerivative3DException("Geom_OffsetCurve::EvalDN"));
         }
 
         if (RepUtils.TryEvalCurveDN(_evalRep, u, n, out Vector3D evalRepResult))
@@ -416,7 +416,7 @@ public sealed class OffsetCurve3D : Curve3D
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     internal sealed override bool IsCN(int n)
     {
-        Standard_RangeError_Raise_if(n < 0, " ");
+        Refusal.RangeIf(n < 0, FailureKind.RangeError, " ");
         return _basisCurve.IsCN(n + 1);
     }
 

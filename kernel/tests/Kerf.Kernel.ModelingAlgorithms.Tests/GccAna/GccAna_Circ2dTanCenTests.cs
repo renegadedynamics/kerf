@@ -100,7 +100,7 @@ public class GccAna_Circ2dTanCenTests
         Assert.Equal(1, anAlgo.SolutionCount);
         Assert.Equal(aC, anAlgo.ThisSolution(1));
         Assert.True(anAlgo.IsTheSame1(1));
-        Assert.Throws<NotDoneException>(() => anAlgo.Tangency1(1, out _, out _, out _));
+        EngineAssert.Throws<NotDoneException>(() => anAlgo.Tangency1(1, out _, out _, out _));
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public class GccAna_Circ2dTanCenTests
     public void Circle_CentreOnTheCircle_Throws()
     {
         Circle2D aC = Circ(0, 0, 2);
-        Assert.Throws<ConstructionErrorException>(() => new AnalyticCirc2dTanCen(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC), new Point2D(2, 0), 1.0e-9));
+        EngineAssert.Throws<ConstructionErrorException>(() => new AnalyticCirc2dTanCen(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC), new Point2D(2, 0), 1.0e-9));
     }
 
     [Fact]
@@ -149,7 +149,7 @@ public class GccAna_Circ2dTanCenTests
     public void Line_CentreAtTheLinesLocation_Throws()
     {
         Line2D aL = new(new Point2D(1, 1), DX);
-        Assert.Throws<ConstructionErrorException>(() => new AnalyticCirc2dTanCen(aL, new Point2D(1, 1)));
+        EngineAssert.Throws<ConstructionErrorException>(() => new AnalyticCirc2dTanCen(aL, new Point2D(1, 1)));
     }
 
     [Fact]
@@ -170,9 +170,9 @@ public class GccAna_Circ2dTanCenTests
         Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new AnalyticCirc2dTanCen(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(Circ(0, 0, 1), global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), new Point2D(3, 0), 1.0e-9));
         AnalyticCirc2dTanCen anAlgo = new(new Point2D(4, 5), new Point2D(1, 1));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(2));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.WhichQualifier(0, out _));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.Tangency1(2, out _, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.IsTheSame1(2));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(2));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.WhichQualifier(0, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.Tangency1(2, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.IsTheSame1(2));
     }
 }

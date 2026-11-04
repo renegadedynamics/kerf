@@ -39,7 +39,7 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
         _pos = new Frame2D(majorAxis, isSense);
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        Standard_ConstructionError_Raise_if(minorRadius < 0.0 || majorRadius < minorRadius, "gp_Elips2d() - invalid construction parameters");
+        Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < minorRadius, FailureKind.ConstructionError, "gp_Elips2d() - invalid construction parameters");
     }
 
     /// <exception cref="ConstructionErrorException">The minor radius is negative or greater than the major radius.</exception>
@@ -48,7 +48,7 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
         _pos = a;
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        Standard_ConstructionError_Raise_if(minorRadius < 0.0 || majorRadius < minorRadius, "gp_Elips2d() - invalid construction parameters");
+        Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < minorRadius, FailureKind.ConstructionError, "gp_Elips2d() - invalid construction parameters");
     }
 
     // Copies
@@ -63,8 +63,7 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
     public readonly Ellipse2D WithMajorRadius(double majorRadius)
     {
         double newMajorRadius = _majorRadius;
-        Standard_ConstructionError_Raise_if(majorRadius < _minorRadius,
-                                            "gp_Elips2d::SetMajorRadius() - major radius should be greater or equal to minor radius");
+        Refusal.ArgumentIf(majorRadius < _minorRadius, FailureKind.ConstructionError, "gp_Elips2d::SetMajorRadius() - major radius should be greater or equal to minor radius");
         newMajorRadius = majorRadius;
         return new Ellipse2D(_pos, newMajorRadius, _minorRadius);
     }
@@ -72,8 +71,7 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
     public readonly Ellipse2D WithMinorRadius(double minorRadius)
     {
         double newMinorRadius = _minorRadius;
-        Standard_ConstructionError_Raise_if(minorRadius < 0.0 || _majorRadius < minorRadius,
-                                            "gp_Elips2d::SetMinorRadius() - minor radius should be a "
+        Refusal.ArgumentIf(minorRadius < 0.0 || _majorRadius < minorRadius, FailureKind.ConstructionError, "gp_Elips2d::SetMinorRadius() - minor radius should be a "
                                             + "positive number lesser or equal to major radius");
         newMinorRadius = minorRadius;
         return new Ellipse2D(_pos, _majorRadius, newMinorRadius);
@@ -153,7 +151,7 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
         get
         {
             double e = Eccentricity;
-            Standard_ConstructionError_Raise_if(e <= Constants.Resolution(), "gp_Elips2d::Directrix1() - zero eccentricity");
+            Refusal.StateIf(e <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Elips2d::Directrix1() - zero eccentricity");
             Xy orig = _pos.XDirection.XY();
             orig.Multiply(_majorRadius / e);
             orig.Add(_pos.Location.XY());
@@ -168,7 +166,7 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
         get
         {
             double e = Eccentricity;
-            Standard_ConstructionError_Raise_if(e <= Constants.Resolution(), "gp_Elips2d::Directrix2() - zero eccentricity");
+            Refusal.StateIf(e <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Elips2d::Directrix2() - zero eccentricity");
             Xy orig = _pos.XDirection.XY();
             orig.Multiply(-_majorRadius / e);
             orig.Add(_pos.Location.XY());

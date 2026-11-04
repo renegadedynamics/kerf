@@ -77,10 +77,10 @@ public class Geom2dGcc_Circ2dTanCenTests
     {
         CurveAdaptor2D    anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(1, 1), DX), 3, 1));
         global::Kerf.Engine.Construction.Constraints.Circ2dTanCen aCirc = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), new CartesianPoint2(1, 1), 1e-9);
-        Assert.Throws<OutOfRangeException>(() => aCirc.ThisSolution(0));
-        Assert.Throws<OutOfRangeException>(() => aCirc.ThisSolution(2));
-        Assert.Throws<OutOfRangeException>(() => aCirc.Tangency1(2, out _, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => aCirc.WhichQualifier(-1, out _));
-        Assert.Throws<OutOfRangeException>(() => aCirc.IsTheSame1(2));
+        EngineAssert.Throws<OutOfRangeException>(() => aCirc.ThisSolution(0));
+        EngineAssert.Throws<OutOfRangeException>(() => aCirc.ThisSolution(2));
+        EngineAssert.Throws<OutOfRangeException>(() => aCirc.Tangency1(2, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => aCirc.WhichQualifier(-1, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => aCirc.IsTheSame1(2));
     }
 }

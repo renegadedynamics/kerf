@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Occt;
 using static Kerf.Geometry.TransformForm;
@@ -223,7 +224,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         shape = global::Kerf.Geometry.TransformForm.Scale;
         scale = s;
         loc = p.XYZ();
-        Standard_ConstructionError_Raise_if(Math.Abs(scale) <= Constants.Resolution(), "gp_Trsf::SetScaleFactor");
+        Refusal.ArgumentIf(Math.Abs(scale) <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Trsf::SetScaleFactor");
         matrix = matrix.WithIdentity();
         loc.Multiply(1 - s);
         return new Transform3D(scale, shape, matrix, loc);
@@ -388,7 +389,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
     {
         double scale = _scale;
         TransformForm shape = _shape;
-        Standard_ConstructionError_Raise_if(Math.Abs(s) <= Constants.Resolution(), "gp_Trsf::SetScaleFactor");
+        Refusal.ArgumentIf(Math.Abs(s) <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Trsf::SetScaleFactor");
         scale = s;
 
         bool unit = Math.Abs(scale - 1.0) <= Constants.Resolution();
@@ -472,7 +473,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         // compute the determinant
         Matrix3x3 m = new(col1, col2, col3);
         double s = m.Determinant;
-        Standard_ConstructionError_Raise_if(Math.Abs(s) < Constants.Resolution(), "gp_Trsf::SetValues, null determinant");
+        Refusal.ArgumentIf(Math.Abs(s) < Constants.Resolution(), FailureKind.ConstructionError, "gp_Trsf::SetValues, null determinant");
         if (s > 0)
         {
             s = Math.Pow(s, 1.0 / 3.0);
@@ -571,7 +572,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
     /// <summary>The coefficient at a row (1 to 3) and column (1 to 4) of the 3x4 matrix, scale included.</summary>
     internal readonly double Value(int row, int col)
     {
-        Standard_OutOfRange_Raise_if(row < 1 || row > 3 || col < 1 || col > 4, " ");
+        Refusal.RangeIf(row < 1 || row > 3 || col < 1 || col > 4, FailureKind.OutOfRange, " ");
         if (col < 4)
         {
             return _scale * _matrix.Value(row, col);
@@ -598,13 +599,13 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         }
         else if (_shape == global::Kerf.Geometry.TransformForm.Scale)
         {
-            Standard_ConstructionError_Raise_if(Math.Abs(newScale) <= Constants.Resolution(), "gp_Trsf::Invert() - transformation has zero scale");
+            Refusal.StateIf(Math.Abs(newScale) <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Trsf::Invert() - transformation has zero scale");
             newScale = 1.0 / newScale;
             loc.Multiply(-newScale);
         }
         else
         {
-            Standard_ConstructionError_Raise_if(Math.Abs(newScale) <= Constants.Resolution(), "gp_Trsf::Invert() - transformation has zero scale");
+            Refusal.StateIf(Math.Abs(newScale) <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Trsf::Invert() - transformation has zero scale");
             newScale = 1.0 / newScale;
             matrix = matrix.Transposed();
             loc.Multiply(matrix);

@@ -507,7 +507,7 @@ internal class ShapeSet
         {
             // OCCT.NET: untrusted input: a malformed stream raised an exception in ported code that OCCT doesn't catch
             // (where OCCT reads outside an array or dereferences a null handle)
-            throw new StreamFormatErrorException("TopTools_ShapeSet::Read: " + exception.Message, exception);
+            throw new StreamFormatErrorException("TopTools_ShapeSet::Read: " + Refusal.Unwrapped(exception).Message, exception);
         }
         finally
         {

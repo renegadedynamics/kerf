@@ -1443,7 +1443,7 @@ internal partial class UnifySameDomain
 
                 return iiInt.TangentFaces();
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 return false;
             }

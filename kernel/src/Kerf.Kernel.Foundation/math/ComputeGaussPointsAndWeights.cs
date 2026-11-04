@@ -74,7 +74,7 @@ internal class ComputeGaussPointsAndWeights
                 _isDone = true;
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
         }
     }

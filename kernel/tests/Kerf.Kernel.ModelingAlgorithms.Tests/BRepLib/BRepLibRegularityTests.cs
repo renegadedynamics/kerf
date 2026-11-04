@@ -110,7 +110,7 @@ public class BRepLibRegularityTests
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aBox);
         // OCCT swallows the exception of a locked edge; the port lets a frozen one through
-        Assert.Throws<LockedShapeException>(() => BrepLibrary.EncodeRegularity(aBox));
+        EngineAssert.Throws<LockedShapeException>(() => BrepLibrary.EncodeRegularity(aBox));
         aBefore.AssertUnchanged(aBox);
     }
 
@@ -280,7 +280,7 @@ public class BRepLibRegularityTests
         Point2D aP = aC2D!.Value(5.0); // the line is parametrised by length
         Assert.Equal(4.0, aP.X, 1e-12);
         Assert.Equal(6.0, aP.Y, 1e-12);
-        Assert.Throws<LockedShapeException>(() => BrepLibrary.BuildPCurveForEdgeOnPlane(anE, aF));
+        EngineAssert.Throws<LockedShapeException>(() => BrepLibrary.BuildPCurveForEdgeOnPlane(anE, aF));
 
         Shape aCopy = BrepTools.CopyForWrite(aC, out History aH);
         Face aFc = ShapeCasts.Face(aH.Modified(aF)[0]);

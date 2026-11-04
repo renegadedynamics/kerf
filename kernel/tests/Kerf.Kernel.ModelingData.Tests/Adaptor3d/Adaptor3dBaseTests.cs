@@ -23,19 +23,19 @@ public class Adaptor3dBaseTests
     public void Base_adaptors_throw_NotImplemented()
     {
         CurveAdaptorBase C = new();
-        Assert.Throws<MethodNotImplementedException>(() => C.FirstParameter());
-        Assert.Throws<MethodNotImplementedException>(() => C.Value(0));
-        Assert.Throws<MethodNotImplementedException>(() => C.GetType());
-        Assert.Throws<MethodNotImplementedException>(() => C.BSpline());
+        EngineAssert.Throws<MethodNotImplementedException>(() => C.FirstParameter());
+        EngineAssert.Throws<MethodNotImplementedException>(() => C.Value(0));
+        EngineAssert.Throws<MethodNotImplementedException>(() => C.GetType());
+        EngineAssert.Throws<MethodNotImplementedException>(() => C.BSpline());
         Assert.Equal(typeof(CurveAdaptorBase), C.DynamicType());
 
         SurfaceAdaptorBase S = new();
-        Assert.Throws<MethodNotImplementedException>(() => S.UResolution(1));
-        Assert.Throws<MethodNotImplementedException>(() => S.D1(0, 0, out _, out _, out _));
-        Assert.Throws<MethodNotImplementedException>(() => S.BasisSurface());
+        EngineAssert.Throws<MethodNotImplementedException>(() => S.UResolution(1));
+        EngineAssert.Throws<MethodNotImplementedException>(() => S.D1(0, 0, out _, out _, out _));
+        EngineAssert.Throws<MethodNotImplementedException>(() => S.BasisSurface());
 
         Curve2DAdaptorBase C2 = new();
-        Assert.Throws<MethodNotImplementedException>(() => C2.EvalD1(0)); // goes through D1
+        EngineAssert.Throws<MethodNotImplementedException>(() => C2.EvalD1(0)); // goes through D1
         Assert.Equal(20, C2.SampleCount);
     }
 
@@ -46,7 +46,7 @@ public class Adaptor3dBaseTests
         L.D1(2.5, out Point3D P, out Vector3D V);
         Assert.Equal(new Point3D(2.5, 0, 0), P);
         Assert.Equal(new Vector3D(1, 0, 0), V);
-        Assert.Throws<MethodNotImplementedException>(() => L.D2(0, out _, out _, out _));
+        EngineAssert.Throws<MethodNotImplementedException>(() => L.D2(0, out _, out _, out _));
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public class Adaptor3dBaseTests
         Assert.Equal(new Vector2D(0, 1), R.D1);
         Assert.Equal(new Vector2D(0, 0), R.D2);
         Assert.Equal(new Vector2D(0, 0), L.EvalDN(2, 3));
-        Assert.Throws<OutOfRangeException>(() => L.DN(2, 0));
+        EngineAssert.Throws<OutOfRangeException>(() => L.DN(2, 0));
     }
 
     [Fact]
@@ -78,6 +78,6 @@ public class Adaptor3dBaseTests
         Assert.Equal(1.0, d);
         Assert.True(F.Value(3, out f));
         Assert.Equal(1.5, f);
-        Assert.Throws<ConstructionErrorException>(() => new InterFunc(L, 0, 3));
+        EngineAssert.Throws<ConstructionErrorException>(() => new InterFunc(L, 0, 3));
     }
 }

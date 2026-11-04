@@ -33,7 +33,7 @@ public class InterfaceTests
             aSeen.Add(anIter.Value()!);
         }
         Assert.Equal([a, u, b], aSeen);
-        Assert.Throws<NoSuchObjectException>(() => anIter.Value());
+        EngineAssert.Throws<NoSuchObjectException>(() => anIter.Value());
         anIter.SelectType(typeof(ToyEntity), false);
         Assert.Equal(1, anIter.NbEntities());
         Assert.Same(u, anIter.Content()!.Value(1));
@@ -60,7 +60,7 @@ public class InterfaceTests
         Assert.Equal(9, aList.NbEntities());
         Assert.Same(anEnts[6], aList.Value(7));
         Assert.Equal(9, aList.NbTypedEntities(typeof(ToyEntity)));
-        Assert.Throws<InterfaceErrorException>(() => aList.TypedEntity(typeof(ToyEntity)));
+        EngineAssert.Throws<InterfaceErrorException>(() => aList.TypedEntity(typeof(ToyEntity)));
         Assert.Same(anEnts[0], aList.TypedEntity(typeof(ToyEntity), 4)); // OCCT counts each cluster backwards
         aList.SetValue(2, anEnts[8]);
         Assert.Same(anEnts[8], aList.Value(2));
@@ -73,7 +73,7 @@ public class InterfaceTests
         aList.Remove(2);
         Assert.Equal(7, aList.NbEntities());
         Assert.Same(anEnts[2], aList.Value(2));
-        Assert.Throws<NullObjectException>(() => aList.Append(null));
+        EngineAssert.Throws<NullObjectException>(() => aList.Append(null));
     }
 
     [Fact]
@@ -242,8 +242,8 @@ public class InterfaceTests
         Assert.Equal(12, new TCollection_HAsciiString("12abc").IntegerValue());
         Assert.True(new TCollection_HAsciiString("1.5e3").IsRealValue());
         Assert.Equal("1e+20", new TCollection_HAsciiString(1.0e20).ToCString());
-        Assert.Throws<NullObjectException>(() => s.IsSameString(null));
-        Assert.Throws<OutOfRangeException>(() => s.Value(0));
+        EngineAssert.Throws<NullObjectException>(() => s.IsSameString(null));
+        EngineAssert.Throws<OutOfRangeException>(() => s.Value(0));
     }
 
     [Fact]
@@ -312,7 +312,7 @@ public class InterfaceTests
         aBuf.Add("abc");
         Assert.Equal(5, aBuf.Length());
         Assert.Equal("  abc", aBuf.Moved().ToCString());
-        Assert.Throws<OutOfRangeException>(() => aBuf.SetInitial(20));
+        EngineAssert.Throws<OutOfRangeException>(() => aBuf.SetInitial(20));
     }
 
     [Fact]

@@ -210,7 +210,7 @@ internal static class GordonUtilities
                 curve.SetNotPeriodic();
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return false;
         }

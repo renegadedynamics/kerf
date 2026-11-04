@@ -187,8 +187,8 @@ public class Bnd_BoxTest
     {
         Box aBox = new(); // void box
 
-        Assert.ThrowsAny<ConstructionErrorException>(() => aBox.CornerMin());
-        Assert.ThrowsAny<ConstructionErrorException>(() => aBox.CornerMax());
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => aBox.CornerMin());
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => aBox.CornerMax());
     }
 
     [Fact]

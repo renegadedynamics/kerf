@@ -78,7 +78,7 @@ internal class ShapeReader : ShapeSetBase
         catch (Exception exception) when (global::Kerf.Engine.Exchange.Brep.Binary.BinTools.IsSignal(exception))
         {
             // OCCT.NET: untrusted input: a malformed stream raised an exception that OCCT doesn't catch here
-            throw new StreamFormatErrorException("BinTools_ShapeReader::Read: " + exception.Message, exception);
+            throw new StreamFormatErrorException("BinTools_ShapeReader::Read: " + Refusal.Unwrapped(exception).Message, exception);
         }
         finally
         {

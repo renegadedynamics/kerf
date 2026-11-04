@@ -18,8 +18,8 @@ public class GC_PortTests
         MakeCircle aCircle = new(theZAxes, -1.0);
         Assert.Equal(NegativeRadius, aCircle.Status());
         Assert.True(aCircle.IsError);
-        Assert.Throws<NotDoneException>(() => aCircle.Value());
-        Assert.Throws<NotDoneException>(() => (CircleCurve3D)aCircle);
+        EngineAssert.Throws<NotDoneException>(() => aCircle.Value());
+        EngineAssert.Throws<NotDoneException>(() => (CircleCurve3D)aCircle);
 
         Assert.Equal(InvertAxis, new MakeEllipse(theZAxes, 1.0, 2.0).Status());
         Assert.Equal(NegativeRadius, new MakeEllipse(theZAxes, 1.0, -2.0).Status());
@@ -40,7 +40,7 @@ public class GC_PortTests
     public void Segment_ConfusedPoints_Throws()
     {
         // OCCT's release build dereferences a null line here; the port throws from GC_MakeLine's Value().
-        Assert.Throws<NotDoneException>(() => new MakeSegment(new Point3D(1, 2, 3), new Point3D(1, 2, 3)));
+        EngineAssert.Throws<NotDoneException>(() => new MakeSegment(new Point3D(1, 2, 3), new Point3D(1, 2, 3)));
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class GC_PortTests
         Assert.Same(aCurve, aSegment.Value());
         Assert.Same(aCurve, (TrimmedCurve3D)aSegment);
         Assert.Equal(5.0, aCurve.LastParameter, 1e-15);
-        Assert.Throws<ImmutableObjectException>(() => aCurve.SetTrim(0.0, 1.0));
+        EngineAssert.Throws<ImmutableObjectException>(() => aCurve.SetTrim(0.0, 1.0));
         Assert.False(((TrimmedCurve3D)aCurve.Copy()).IsFrozen);
 
         MakeRotation aRotation = new(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0.5);
@@ -69,7 +69,7 @@ public class GC_PortTests
         // of a null vector (NaN parameters in the release build). The port reads the same default line, and throws
         // there instead.
         Point2D aP = new(1.0, 2.0);
-        Assert.Throws<ConstructionErrorException>(() => new MakeArcOfCircle2d(aP, new Vector2D(0.0, 1.0), aP));
+        EngineAssert.Throws<ConstructionErrorException>(() => new MakeArcOfCircle2d(aP, new Vector2D(0.0, 1.0), aP));
     }
 
     [Fact]

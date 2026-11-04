@@ -200,7 +200,7 @@ public sealed class TrimmedSurface : BoundedSurface
         {
             if (u1 == u2)
             {
-                throw new ConstructionErrorException("Geom_RectangularTrimmedSurface::U1==U2");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_RectangularTrimmedSurface::U1==U2"));
             }
 
             if (_basisSurf.IsUPeriodic)
@@ -234,8 +234,8 @@ public sealed class TrimmedSurface : BoundedSurface
 
                 if ((udeb - _utrim1 > global::Kerf.Engine.Foundation.Precision.PConfusion()) || (_utrim2 - ufin > global::Kerf.Engine.Foundation.Precision.PConfusion()))
                 {
-                    throw new ConstructionErrorException(
-                        "Geom_RectangularTrimmedSurface::U parameters out of range");
+                    throw Refusal.Argument(new ConstructionErrorException(
+                        "Geom_RectangularTrimmedSurface::U parameters out of range"));
                 }
             }
         }
@@ -251,7 +251,7 @@ public sealed class TrimmedSurface : BoundedSurface
         {
             if (v1 == v2)
             {
-                throw new ConstructionErrorException("Geom_RectangularTrimmedSurface::V1==V2");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_RectangularTrimmedSurface::V1==V2"));
             }
 
             if (_basisSurf.IsVPeriodic)
@@ -285,8 +285,8 @@ public sealed class TrimmedSurface : BoundedSurface
 
                 if ((vdeb - _vtrim1 > global::Kerf.Engine.Foundation.Precision.PConfusion()) || (_vtrim2 - vfin > global::Kerf.Engine.Foundation.Precision.PConfusion()))
                 {
-                    throw new ConstructionErrorException(
-                        "Geom_RectangularTrimmedSurface::V parameters out of range");
+                    throw Refusal.Argument(new ConstructionErrorException(
+                        "Geom_RectangularTrimmedSurface::V parameters out of range"));
                 }
             }
         }
@@ -438,7 +438,7 @@ public sealed class TrimmedSurface : BoundedSurface
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     internal sealed override bool IsCNu(int n)
     {
-        Standard_RangeError_Raise_if(n < 0, " ");
+        Refusal.RangeIf(n < 0, FailureKind.RangeError, " ");
         return _basisSurf.IsCNu(n);
     }
 
@@ -446,7 +446,7 @@ public sealed class TrimmedSurface : BoundedSurface
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     internal sealed override bool IsCNv(int n)
     {
-        Standard_RangeError_Raise_if(n < 0, " ");
+        Refusal.RangeIf(n < 0, FailureKind.RangeError, " ");
         return _basisSurf.IsCNv(n);
     }
 
@@ -548,7 +548,7 @@ public sealed class TrimmedSurface : BoundedSurface
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
-            throw new UndefinedDerivative3DException();
+            throw Refusal.State(new UndefinedDerivative3DException());
         }
         return _basisSurf.EvalDN(u, v, nu, nv);
     }
@@ -593,7 +593,7 @@ public sealed class TrimmedSurface : BoundedSurface
         {
             // OCCT returns a null handle here; no constructor leaves both directions untrimmed (the one-direction
             // SetTrim can only add a trimmed direction), so this is unreachable.
-            throw new ProgramErrorException("Geom_RectangularTrimmedSurface::Copy: not trimmed");
+            throw Refusal.State(new ProgramErrorException("Geom_RectangularTrimmedSurface::Copy: not trimmed"));
         }
 
         return s;

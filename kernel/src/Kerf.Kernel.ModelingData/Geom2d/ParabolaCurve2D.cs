@@ -44,7 +44,7 @@ public sealed class ParabolaCurve2D : ConicCurve2D
         _focalLength = focal;
         if (focal < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _pos = new Frame2D(mirrorAxis, sense);
     }
@@ -56,7 +56,7 @@ public sealed class ParabolaCurve2D : ConicCurve2D
         _focalLength = focal;
         if (focal < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _pos = axis;
     }
@@ -74,7 +74,7 @@ public sealed class ParabolaCurve2D : ConicCurve2D
         CheckMutable();
         if (focal < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _focalLength = focal;
     }
@@ -164,7 +164,7 @@ public sealed class ParabolaCurve2D : ConicCurve2D
     {
         if (n < 1)
         {
-            throw new UndefinedDerivative2DException();
+            throw Refusal.State(new UndefinedDerivative2DException());
         }
         return global::Kerf.Engine.Geometry.ElCLib.ParabolaDN(u, _pos, _focalLength, n);
     }

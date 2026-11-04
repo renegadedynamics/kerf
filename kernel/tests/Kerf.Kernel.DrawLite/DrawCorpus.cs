@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 
@@ -275,7 +276,7 @@ public sealed class DrawCorpus(string theTestsDirectory)
         catch (Exception anError) when (anError is not OutOfMemoryException)
         {
             // an exception from the port that a command didn't turn into a Tcl error
-            aLog.WriteLine("Tcl Exception: " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anError.GetType()) + ": " + anError.Message);
+            aLog.WriteLine("Tcl Exception: " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anError).GetType()) + ": " + Refusal.Unwrapped(anError).Message);
         }
         // OCCT's harness runs each case in a fresh DRAWEXE process: the settings a case's commands make (mpparallel,
         // mpsetdefaultname…) stay in its interpreter's context (unit 10I), so none carries over to the next case

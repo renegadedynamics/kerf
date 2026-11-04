@@ -196,7 +196,7 @@ public class BRepPrimAPISweepTests
     [Fact]
     public void A_null_vector_throws()
     {
-        Assert.ThrowsAny<ConstructionErrorException>(() => new ApiMakePrism(UnitSquare(), new Vector3D(0, 0, 0)));
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => new ApiMakePrism(UnitSquare(), new Vector3D(0, 0, 0)));
     }
 
     [Fact]
@@ -428,7 +428,7 @@ public class BRepPrimAPISweepTests
         Edge anE = new MakeEdge(new Point3D(-1, 0, 1), new Point3D(1, 0, 1)).Edge();
         var aMR = new ApiMakeRevol(anE, OZ);
         Assert.False(aMR.IsDone);
-        Assert.ThrowsAny<NotDoneException>(() => aMR.Shape());
+        EngineAssert.ThrowsAny<NotDoneException>(() => aMR.Shape());
     }
 
     [Fact]

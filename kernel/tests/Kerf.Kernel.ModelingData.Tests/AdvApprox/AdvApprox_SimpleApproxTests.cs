@@ -141,7 +141,7 @@ public class AdvApprox_SimpleApproxTests
     public void Constructor_rejects_other_continuities()
     {
         global::Kerf.Engine.Numerics.Polynomials.JacobiPolynomial aBase = new(14, C1);
-        Assert.ThrowsAny<ConstructionErrorException>(
+        EngineAssert.ThrowsAny<ConstructionErrorException>(
             () => new SimpleApprox(1, 1, C3, 14, 15, aBase, new CubicEvaluator()));
     }
 
@@ -186,6 +186,6 @@ public class AdvApprox_SimpleApproxTests
         Assert.True(aCut.Value(2.0, 4.0, out aV));
         Assert.Equal(3.0, aV);
 
-        Assert.ThrowsAny<DomainErrorException>(() => new PrefAndRec(aRec, aPref, 1));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => new PrefAndRec(aRec, aPref, 1));
     }
 }

@@ -495,6 +495,6 @@ public class Geom_BezierCurveTest
             aPoles.SetValue(i, new Point3D(i + 10, i * 2 + 20, i * 3 + 45));
         }
 
-        Assert.ThrowsAny<FailureException>(() => new BezierCurve3D(aPoles));
+        EngineAssert.ThrowsAny<FailureException>(() => new BezierCurve3D(aPoles));
     }
 }

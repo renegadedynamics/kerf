@@ -40,8 +40,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         _pos = a2;
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        Standard_ConstructionError_Raise_if(minorRadius < 0.0 || majorRadius < 0.0,
-                                            "gp_Hypr() - invalid construction parameters");
+        Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < 0.0, FailureKind.ConstructionError, "gp_Hypr() - invalid construction parameters");
     }
 
     // Copies
@@ -63,9 +62,8 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     public readonly Hyperbola3D WithMajorRadius(double majorRadius)
     {
         double newMajorRadius = _majorRadius;
-        Standard_ConstructionError_Raise_if(
-            majorRadius < 0.0,
-            "gp_Hypr::SetMajorRadius() - major radius should be greater or equal zero");
+        Refusal.ArgumentIf(
+            majorRadius < 0.0, FailureKind.ConstructionError, "gp_Hypr::SetMajorRadius() - major radius should be greater or equal zero");
         newMajorRadius = majorRadius;
         return new Hyperbola3D(_pos, newMajorRadius, _minorRadius);
     }
@@ -73,9 +71,8 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     public readonly Hyperbola3D WithMinorRadius(double minorRadius)
     {
         double newMinorRadius = _minorRadius;
-        Standard_ConstructionError_Raise_if(
-            minorRadius < 0.0,
-            "gp_Hypr::SetMinorRadius() - minor radius should be greater or equal zero");
+        Refusal.ArgumentIf(
+            minorRadius < 0.0, FailureKind.ConstructionError, "gp_Hypr::SetMinorRadius() - minor radius should be greater or equal zero");
         newMinorRadius = minorRadius;
         return new Hyperbola3D(_pos, _majorRadius, newMinorRadius);
     }
@@ -95,7 +92,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     {
         get
         {
-            Standard_ConstructionError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr::Asymptote1() - major radius is zero");
+            Refusal.StateIf(_majorRadius <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Hypr::Asymptote1() - major radius is zero");
             Vector3D v1 = new(_pos.YDirection);
             v1 = v1.Multiplied(_minorRadius / _majorRadius);
             Vector3D v = new(_pos.XDirection);
@@ -111,7 +108,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         get
         {
             // OCCT: the message names Asymptote1
-            Standard_ConstructionError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr::Asymptote1() - major radius is zero");
+            Refusal.StateIf(_majorRadius <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Hypr::Asymptote1() - major radius is zero");
             Vector3D v1 = new(_pos.YDirection);
             v1 = v1.Multiplied(-_minorRadius / _majorRadius);
             Vector3D v = new(_pos.XDirection);
@@ -169,7 +166,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     {
         get
         {
-            Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr::Eccentricity() - major radius is zero");
+            Refusal.StateIf(_majorRadius <= Constants.Resolution(), FailureKind.DomainError, "gp_Hypr::Eccentricity() - major radius is zero");
             return Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius) / _majorRadius;
         }
     }
@@ -222,7 +219,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     {
         get
         {
-            Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr::Parameter() - major radius is zero");
+            Refusal.StateIf(_majorRadius <= Constants.Resolution(), FailureKind.DomainError, "gp_Hypr::Parameter() - major radius is zero");
             return (_minorRadius * _minorRadius) / _majorRadius;
         }
     }

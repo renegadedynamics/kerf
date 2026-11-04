@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
@@ -188,7 +189,7 @@ internal static class BRepFillRecordingCases
         }
         catch (Exception anExc)
         {
-            Line("EXC " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anExc.GetType()));
+            Line("EXC " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anExc).GetType()));
         }
     }
 

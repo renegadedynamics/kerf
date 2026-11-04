@@ -155,11 +155,11 @@ public class IntPatchImpPrmIntersectionTests
     {
         SurfaceAdaptor aTorus = new(new ToroidalSurface(Axis, 1.0, 0.2));
         ImpPrmIntersection anInt = new();
-        Assert.Throws<ConstructionErrorException>(() =>
+        EngineAssert.Throws<ConstructionErrorException>(() =>
             anInt.Perform(aTorus, new TopolTool(aTorus), Patch(), new TopolTool(Patch()), TolArc,
                           TolTang, Fleche, Pas));
         Assert.False(anInt.IsDone);
-        Assert.Throws<NotDoneException>(() => anInt.LineCount);
+        EngineAssert.Throws<NotDoneException>(() => anInt.LineCount);
     }
 
     [Fact]

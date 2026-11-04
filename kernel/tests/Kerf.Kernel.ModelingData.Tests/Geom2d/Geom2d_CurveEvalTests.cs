@@ -132,8 +132,8 @@ public class Geom2d_CurveEvalTest
             MakeBSpline(new Point2D(0.0, 0.0), new Point2D(1.0, 1.0), new Point2D(2.0, 0.0));
 
         double aMid = (aCurve.FirstParameter + aCurve.LastParameter) / 2.0;
-        Assert.ThrowsAny<UndefinedDerivative2DException>(() => aCurve.EvalDN(aMid, 0));
-        Assert.ThrowsAny<UndefinedDerivative2DException>(() => aCurve.EvalDN(aMid, -1));
+        EngineAssert.ThrowsAny<UndefinedDerivative2DException>(() => aCurve.EvalDN(aMid, 0));
+        EngineAssert.ThrowsAny<UndefinedDerivative2DException>(() => aCurve.EvalDN(aMid, -1));
     }
 
     // OffsetCurve 2D EvalD1 singular test

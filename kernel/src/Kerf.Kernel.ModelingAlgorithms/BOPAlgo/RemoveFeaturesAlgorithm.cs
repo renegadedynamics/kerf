@@ -156,7 +156,7 @@ internal class RemoveFeaturesAlgorithm : BuilderShape
             // Post treatment
             PostTreat();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             AddError(new AlertRemoveFeaturesFailed());
         }
@@ -372,7 +372,7 @@ internal class RemoveFeaturesAlgorithm : BuilderShape
                 // Trim the extended faces
                 TrimExtendedFaces(faceExtFaceMap, ps.Next());
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 // Make sure the warning will be given on the higher level
                 _hasAdjacentFaces = true;

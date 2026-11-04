@@ -214,7 +214,7 @@ internal sealed class SurfaceOfRevolutionBounds : SurfaceBounds.ISurfaceEvaluato
 
             return BuildRevolutionBox(curveBox, origin, axisDir, uMin, uMax, tol);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             // Fall back to robust generic sampling if basis-curve segmentation fails.
             SurfaceAdaptor adaptor = new(_geom);
@@ -255,7 +255,7 @@ internal sealed class SurfaceOfRevolutionBounds : SurfaceBounds.ISurfaceEvaluato
 
             return BuildRevolutionBox(curveBox, origin, axisDir, uMin, uMax, tol);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             // Fall back to robust generic sampling if basis-curve segmentation fails.
             SurfaceAdaptor adaptor = new(_geom);

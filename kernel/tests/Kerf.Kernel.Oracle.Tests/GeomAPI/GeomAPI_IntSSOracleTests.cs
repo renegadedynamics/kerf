@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Topology;
@@ -153,7 +154,7 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
         catch (Exception anError)
         {
             // not an OCCT exception: a port bug
-            return new("port " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anError.GetType()) + ": " + anError.Message, []);
+            return new("port " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anError).GetType()) + ": " + Refusal.Unwrapped(anError).Message, []);
         }
     }
 
@@ -250,7 +251,7 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
             }
             catch (Exception anError) when (anError is Xunit.Sdk.XunitException)
             {
-                aDifference = anError.Message.Split('\n')[0];
+                aDifference = Refusal.Unwrapped(anError).Message.Split('\n')[0];
             }
             theTally.Lines += aCompare.Lines;
             theTally.IdenticalLines += aCompare.IdenticalLines;

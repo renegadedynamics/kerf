@@ -349,9 +349,9 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
             }
             aP.Build();
         }
-        catch (FailureException f)
+        catch (Exception f) when (Refusal.IsFailure(f))
         {
-            aPError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType());
+            aPError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(f).GetType());
             if (f is ImmutableObjectException or LockedShapeException)
             {
                 aPError += " " + string.Join(" / ", (f.StackTrace ?? "").Split('\n').Take(4).Select(l => l.Trim()));
@@ -359,7 +359,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
         }
         catch (Exception e)
         {
-            myDifferences.Add($"{aWhat}: native {aNError ?? "no exception"}, the port throws {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())} {e.StackTrace?.Split('\n')[0]}");
+            myDifferences.Add($"{aWhat}: native {aNError ?? "no exception"}, the port throws {Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType())} {e.StackTrace?.Split('\n')[0]}");
             return;
         }
 
@@ -448,9 +448,9 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                 {
                     aPG = string.Join(",", aP.Generated(aPS).Select(s => (aPResMap.IndexOf(s) + 1)));
                 }
-                catch (FailureException f)
+                catch (Exception f) when (Refusal.IsFailure(f))
                 {
-                    aPG = global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType());
+                    aPG = global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(f).GetType());
                 }
                 aNH.Add($"{k}.{i}:{aNG}");
                 aPH.Add($"{k}.{i}:{(aNG.StartsWith(aPG, StringComparison.Ordinal) ? aNG : aPG)}");

@@ -514,7 +514,7 @@ internal sealed class MakeSimpleOffset
                     {
                         Tgtfaces(e, f1, f2, couture, ref resAngle);
                     }
-                    catch (FailureException)
+                    catch (Exception caught) when (Refusal.IsFailure(caught))
                     {
                     }
                 }
@@ -737,7 +737,7 @@ internal sealed class MakeSimpleOffset
                 f = fm.InternalFace();
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
         }
 

@@ -30,7 +30,7 @@ public class HLRAlgoTests
         Assert.Equal(2.0, aP.Y, Tol);
         P.Project(new Point3D(1, 2, 3), out double X, out double Y, out double Z);
         Assert.Equal((1.0, 2.0, 3.0), (X, Y, Z));
-        Assert.ThrowsAny<NoSuchObjectException>(() => P.Focus());
+        EngineAssert.ThrowsAny<NoSuchObjectException>(() => P.Focus());
     }
 
     [Fact]

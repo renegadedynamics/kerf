@@ -77,10 +77,10 @@ public class GeomAdaptor_PortTests
         Assert.Equal(2 * Math.PI, aGen.LastUParameter());
         Assert.Equal(1, aGen.NbVIntervals(Continuity.C2)); // C2 at its single knot
         Assert.Equal(2, aGen.NbVIntervals(Continuity.C3));
-        Assert.Throws<OutOfRangeException>(() => aGen.UTrim(0.5, 1.0, 1e-7));
+        EngineAssert.Throws<OutOfRangeException>(() => aGen.UTrim(0.5, 1.0, 1e-7));
         global::Kerf.Engine.Geometry.Adaptors.SurfaceAdaptorBase aVTrim = aGen.VTrim(0.2, 0.6, 1e-7);
         Assert.Equal(0.6, aVTrim.LastVParameter());
-        Assert.Throws<NoSuchObjectException>(() => aGen.BSpline());
+        EngineAssert.Throws<NoSuchObjectException>(() => aGen.BSpline());
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class GeomAdaptor_PortTests
         AssertSameEval(aGen, aGeom, 0.3, -2.0);
         AssertSameEval(aGen, aGeom, 0.5, 7.0);
         Assert.Equal(RealFirst(), aGen.FirstVParameter());
-        Assert.Throws<DomainErrorException>(() => aGen.VPeriod());
+        EngineAssert.Throws<DomainErrorException>(() => aGen.VPeriod());
         Assert.Equal(3, aGen.UDegree());
 
         // VTrim bounds V, the distance along the direction, and UTrim the curve's parameter (OCCT's VTrim trimmed the
@@ -142,7 +142,7 @@ public class GeomAdaptor_PortTests
         Assert.IsType<TrimmedSurface>(anOffS.BasisSurface);
         Assert.True(anOffS.Value(0.5, 0.5).IsEqual(anOff.Value(0.5, 0.5), 1e-12));
 
-        Assert.Throws<DomainErrorException>(() => global::Kerf.Engine.Geometry.Adaptors.GeomAdaptor.MakeCurve(new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(new OffsetCurve3D(aC, 1, new Direction3D(0, 1, 0)))));
+        EngineAssert.Throws<DomainErrorException>(() => global::Kerf.Engine.Geometry.Adaptors.GeomAdaptor.MakeCurve(new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(new OffsetCurve3D(aC, 1, new Direction3D(0, 1, 0)))));
     }
 
     [Fact]

@@ -31,8 +31,8 @@ internal static class ExchangeTree
 
     /// <summary>The exceptions a reader throws on bad data (rather than misuse).</summary>
     public static bool IsBadData(Exception e)
-        => e is FailureException or InvalidDataException or FormatException or EndOfStreamException or OverflowException
-                or IndexOutOfRangeException or IOException;
+        => (Refusal.IsFailure(e) || e is InvalidDataException or FormatException or EndOfStreamException or OverflowException
+                or IndexOutOfRangeException or IOException);
 
     /// <summary>The diagnostic of a reader's exception on bad data.</summary>
     public static Diagnostic BadData(Exception e, string format)

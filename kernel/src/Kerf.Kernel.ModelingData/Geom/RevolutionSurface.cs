@@ -148,7 +148,7 @@ public sealed class RevolutionSurface : SweptSurface
     {
         get
         {
-            throw new MethodNotImplementedException();
+            throw Refusal.NotSupported(new MethodNotImplementedException());
         }
     }
 
@@ -212,7 +212,7 @@ public sealed class RevolutionSurface : SweptSurface
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     internal sealed override bool IsCNv(int n)
     {
-        Standard_RangeError_Raise_if(n < 0, " ");
+        Refusal.RangeIf(n < 0, FailureKind.RangeError, " ");
         return _basisCurve!.IsCN(n);
     }
 
@@ -355,7 +355,7 @@ public sealed class RevolutionSurface : SweptSurface
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
-            throw new UndefinedDerivative3DException();
+            throw Refusal.State(new UndefinedDerivative3DException());
         }
 
         Vector3D evalRepResult;

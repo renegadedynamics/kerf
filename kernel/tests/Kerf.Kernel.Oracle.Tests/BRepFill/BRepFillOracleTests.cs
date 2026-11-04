@@ -407,7 +407,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             {
                 aPR = Fill.Face(aE1, aE2);
             }
-            catch (FailureException anEx)
+            catch (Exception anEx) when (Refusal.IsFailure(anEx))
             {
                 aPEx = anEx;
             }
@@ -560,7 +560,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             {
                 aPR = Fill.Shell(aW1, aW2);
             }
-            catch (FailureException anEx)
+            catch (Exception anEx) when (Refusal.IsFailure(anEx))
             {
                 aPEx = anEx;
             }
@@ -663,7 +663,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             {
                 Fill.Axe(aSpine, aProfile, out aPAx, out aPOn, aTol);
             }
-            catch (FailureException anEx)
+            catch (Exception anEx) when (Refusal.IsFailure(anEx))
             {
                 aPEx = anEx;
             }
@@ -793,7 +793,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             {
                 aPR = Fill.InsertACR(aW, aPCuts, aPrec);
             }
-            catch (FailureException anEx)
+            catch (Exception anEx) when (Refusal.IsFailure(anEx))
             {
                 aPEx = anEx;
             }

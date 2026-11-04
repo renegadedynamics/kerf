@@ -261,7 +261,7 @@ public class BRepMeshShellTests
             Triangulation aTri = Triangulation(aF)!;
             Assert.True(aTri.IsFrozen);
             Assert.Equal(0.25, aTri.Deflection());
-            Assert.Throws<ImmutableObjectException>(() => aTri.Deflection(1.0));
+            EngineAssert.Throws<ImmutableObjectException>(() => aTri.Deflection(1.0));
             for (var anExp = new Explorer(aF, ShapeType.Edge); anExp.More(); anExp.Next())
             {
                 PolygonOnTriangulation aPoly = Tool.PolygonOnTriangulation(ShapeCasts.Edge(anExp.Current()), aTri, aF.Placement)!;
@@ -358,8 +358,8 @@ public class BRepMeshShellTests
     public void Parameters_are_checked_and_completed()
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        Assert.Throws<NumericErrorException>(() => new IncrementalMesh(aBox, 1e-8));
-        Assert.Throws<NumericErrorException>(() => new IncrementalMesh(aBox, 0.1, false, 1e-13));
+        EngineAssert.Throws<NumericErrorException>(() => new IncrementalMesh(aBox, 1e-8));
+        EngineAssert.Throws<NumericErrorException>(() => new IncrementalMesh(aBox, 0.1, false, 1e-13));
 
         var aMesh = new IncrementalMesh(aBox, 0.2, true, 0.3, true);
         ToolParameters aP = aMesh.Parameters();
@@ -480,7 +480,7 @@ public class BRepMeshShellTests
         aContext.SetPostProcessor(new StubPostProcessor()); // the post-processor attaches (decision 1561)
         aContext.SetShape(aBox);
         var aBuilder = new MeshBuilder(aContext);
-        Assert.ThrowsAny<DomainErrorException>(() => aBuilder.Perform(new ProgressRange()));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => aBuilder.Perform(new ProgressRange()));
     }
 
     // ------------------------------------------------------------------------------------------- IMeshTools_ShapeExplorer
@@ -630,7 +630,7 @@ public class BRepMeshShellTests
         Assert.True(aStored.Node(2).IsEqual(new Point3D(1, 0, 0), 1e-15));
         // frozen once attached (decision 1561; decision 488 left it writable until published)
         Assert.True(aStored.IsFrozen);
-        Assert.ThrowsAny<DomainErrorException>(() => aStored.Deflection(0.5));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => aStored.Deflection(0.5));
 
         // Polygons: on the triangulation, a seam's pair, a 3D polygon; all frozen; removed by Nullify.
         Edge anEdge = ShapeCasts.Edge(new Explorer(aFace, ShapeType.Edge).Current());
@@ -657,8 +657,8 @@ public class BRepMeshShellTests
 
         // Publication freezes the shape.
         aBox.TShape()!.FreezeGraph();
-        Assert.ThrowsAny<DomainErrorException>(() => ShapeTool.NullifyFace(aFace));
-        Assert.ThrowsAny<DomainErrorException>(() => ShapeTool.NullifyEdge(anEdge, new Placement()));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => ShapeTool.NullifyFace(aFace));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => ShapeTool.NullifyEdge(anEdge, new Placement()));
     }
 
     [Fact]

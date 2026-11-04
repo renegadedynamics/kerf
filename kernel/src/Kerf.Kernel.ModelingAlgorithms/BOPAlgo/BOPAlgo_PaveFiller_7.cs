@@ -208,7 +208,7 @@ internal sealed class MPC : ParallelAlgo, BooleanParallel.IContextSolver<Interse
                 PaveFiller.UpdateVertices(copyE, _f);
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             AddError(new AlertBuildingPCurveFailed(new Shape()));
         }

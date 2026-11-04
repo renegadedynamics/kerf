@@ -54,7 +54,7 @@ public class GeomPlate_ClassesTests
         aP.SetPnt2dOnSurf(new Point2D(4, 5));
         Assert.True(aP.HasPnt2dOnSurf);
         Assert.Equal(new Point2D(4, 5), aP.Pnt2dOnSurf());
-        Assert.Throws<FailureException>(() => new PointConstraint(new Point3D(), 2));
+        EngineAssert.Throws<FailureException>(() => new PointConstraint(new Point3D(), 2));
 
         var aSphere = new SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         var aS = new PointConstraint(0.3, 0.4, aSphere, 2, 1e-4, 1e-3, 1e-2);
@@ -94,10 +94,10 @@ public class GeomPlate_ClassesTests
 
         // a 3D curve: only G0 queries
         var a3d = new CurveConstraint(new CurveAdaptor(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 1), 0);
-        Assert.Throws<FailureException>(() => a3d.D1(0.5, out _, out _, out _));
-        Assert.Throws<FailureException>(() => a3d.G1Criterion(0.5));
-        Assert.Throws<FailureException>(() => a3d.LPropSurf(0.5));
-        Assert.Throws<FailureException>(() => new CurveConstraint(aCOS, 3));
+        EngineAssert.Throws<FailureException>(() => a3d.D1(0.5, out _, out _, out _));
+        EngineAssert.Throws<FailureException>(() => a3d.G1Criterion(0.5));
+        EngineAssert.Throws<FailureException>(() => a3d.LPropSurf(0.5));
+        EngineAssert.Throws<FailureException>(() => new CurveConstraint(aCOS, 3));
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public class GeomPlate_ClassesTests
         Assert.Equal(aSurf.Value(0.3, 0.6), aP2);
         Assert.Equal(new Vector3D(1, 0, 0) + new Vector3D(aPlate.EvaluateDerivative(new Xy(0.3, 0.6), 1, 0)), aD1U);
         Assert.Equal(new Vector3D(aPlate.EvaluateDerivative(new Xy(0.3, 0.6), 2, 0)), aD2U);
-        Assert.Throws<UndefinedDerivative3DException>(() => aSurf.D3(0.3, 0.6, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _));
+        EngineAssert.Throws<UndefinedDerivative3DException>(() => aSurf.D3(0.3, 0.6, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _));
 
         // the surface keeps its own copy of the plate
         aPlate.Init();
@@ -124,21 +124,21 @@ public class GeomPlate_ClassesTests
         aSurf.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         Assert.Equal((0.0, 1.0, 0.0, 1.0), (u1, u2, v1, v2));
         aSurf.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => aSurf.SetBounds(0, 2, 0, 2));
+        EngineAssert.Throws<ImmutableObjectException>(() => aSurf.SetBounds(0, 2, 0, 2));
         PlateSurface aWider = aSurf.WithBounds(-1, 2, -1, 2);
         aWider.ParameterBounds(out u1, out u2, out _, out _);
         Assert.Equal((-1.0, 2.0), (u1, u2));
         ((PlateSurface)aSurf.Copy()).ParameterBounds(out u1, out u2, out _, out _);
         Assert.Equal((0.0, 0.0), (u1, u2));
-        Assert.Throws<FailureException>(() => aSurf.WithBounds(1, 0, 0, 1));
-        Assert.Throws<FailureException>(() => aSurf.WithBounds(0, 0, 0, 1));
+        EngineAssert.Throws<FailureException>(() => aSurf.WithBounds(1, 0, 0, 1));
+        EngineAssert.Throws<FailureException>(() => aSurf.WithBounds(0, 0, 0, 1));
         aSurf.RealBounds(out u1, out u2, out v1, out v2);
         Assert.Equal((0.0, 1.0, 0.0, 1.0), (u1, u2, v1, v2));
         var aSeq = new NCollection_Sequence<Xy>();
         aSurf.Constraints(aSeq);
         Assert.Equal(5, aSeq.Length());
         Assert.Null(aSurf.UIso(0.5));
-        Assert.Throws<FailureException>(() => aSurf.IsCNu(1));
+        EngineAssert.Throws<FailureException>(() => aSurf.IsCNu(1));
     }
 
     [Fact]
@@ -168,7 +168,7 @@ public class GeomPlate_ClassesTests
         Assert.True(aPlane.IsFrozen);
         Assert.Equal(1.0, Math.Abs(aPlane.Plane.Axis.Direction.Z), 12);
         Assert.Equal(1.0, aPlane.Plane.Location.Z, 12);
-        Assert.Throws<NoSuchObjectException>(() => aBAP.Line());
+        EngineAssert.Throws<NoSuchObjectException>(() => aBAP.Line());
         aBAP.MinMaxBox(out double u1, out double u2, out double v1, out double v2);
         Assert.Equal(5.0, Math.Sqrt((u2 - u1) * (u2 - u1) + (v2 - v1) * (v2 - v1)), 9);
 

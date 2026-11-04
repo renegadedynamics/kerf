@@ -248,7 +248,7 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
         // An explorer that read nothing has a null shape: OCCT dereferences its null TShape, the port throws
         // Standard_NullObject (TopoDS_Shape.ShapeType).
         MedialAxisExplorer anExplo = new();
-        Assert.Throws<NullObjectException>(() => new LinkTopoBilo(anExplo, new BisectingLocus()));
+        EngineAssert.Throws<NullObjectException>(() => new LinkTopoBilo(anExplo, new BisectingLocus()));
     }
 
     [Fact]

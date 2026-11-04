@@ -203,7 +203,7 @@ internal class SolidFixer : RootFixer
                     }
                 }
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 continue;
             }
@@ -292,7 +292,7 @@ internal class SolidFixer : RootFixer
                     bsc3d.PerformInfinitePoint(Kerf.Engine.Foundation.Precision.Confusion());
                     infinstatus = bsc3d.State();
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                     shellSolid.Add(shell, aSolid);
                     continue;
@@ -637,7 +637,7 @@ internal class SolidFixer : RootFixer
                 _status |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE2);
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return solid;
         }

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Occt;
 using System.Diagnostics.CodeAnalysis;
@@ -80,7 +81,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         double m21 = _m21;
 
         double m22 = _m22;
-        Standard_OutOfRange_Raise_if(col < 1 || col > 3, " ");
+        Refusal.RangeIf(col < 1 || col > 3, FailureKind.OutOfRange, " ");
         if (col == 1)
         {
             m00 = value.X();
@@ -214,7 +215,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         double m20 = _m20;
         double m21 = _m21;
         double m22 = _m22;
-        Standard_OutOfRange_Raise_if(row < 1 || row > 3, " ");
+        Refusal.RangeIf(row < 1 || row > 3, FailureKind.OutOfRange, " ");
         if (row == 1)
         {
             m00 = value.X();
@@ -277,7 +278,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
 
     internal readonly Matrix3x3 WithValue(int row, int col, double value)
     {
-        Standard_OutOfRange_Raise_if(row < 1 || row > 3 || col < 1 || col > 3, " ");
+        Refusal.RangeIf(row < 1 || row > 3 || col < 1 || col > 3, FailureKind.OutOfRange, " ");
         Span<double> m = [_m00, _m01, _m02, _m10, _m11, _m12, _m20, _m21, _m22];
         m[(row - 1) * 3 + (col - 1)] = value;
         return new Matrix3x3(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8]);
@@ -287,7 +288,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
 
     internal readonly Xyz Column(int col)
     {
-        Standard_OutOfRange_Raise_if(col < 1 || col > 3, "gp_Mat::Column() - wrong index");
+        Refusal.RangeIf(col < 1 || col > 3, FailureKind.OutOfRange, "gp_Mat::Column() - wrong index");
         if (col == 1)
         {
             return new Xyz(_m00, _m10, _m20);
@@ -316,7 +317,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
 
     internal readonly Xyz Row(int row)
     {
-        Standard_OutOfRange_Raise_if(row < 1 || row > 3, "gp_Mat::Row() - wrong index");
+        Refusal.RangeIf(row < 1 || row > 3, FailureKind.OutOfRange, "gp_Mat::Row() - wrong index");
         if (row == 1)
         {
             return new Xyz(_m00, _m01, _m02);
@@ -332,7 +333,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
 
     internal readonly double Value(int row, int col)
     {
-        Standard_OutOfRange_Raise_if(row < 1 || row > 3 || col < 1 || col > 3, " ");
+        Refusal.RangeIf(row < 1 || row > 3 || col < 1 || col > 3, FailureKind.OutOfRange, " ");
         return Unsafe.Add(ref Unsafe.AsRef(in _m00), (row - 1) * 3 + (col - 1));
     }
 
@@ -382,7 +383,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         double m20 = _m20;
         double m21 = _m21;
         double m22 = _m22;
-        Standard_ConstructionError_Raise_if((scalar < 0.0 ? -scalar : scalar) <= Constants.Resolution(), "gp_Mat : Divide by 0");
+        Refusal.ArgumentIf((scalar < 0.0 ? -scalar : scalar) <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Mat : Divide by 0");
         double unSurScalar = 1.0 / scalar;
         (m00, m01, m02, m10, m11, m12, m20, m21, m22) = new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22).Multiplied(unSurScalar);
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
@@ -414,7 +415,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         double adj22 = a00 * a11 - a01 * a10;
 
         double det = a00 * adj00 + a01 * adj10 + a02 * adj20;
-        Standard_ConstructionError_Raise_if(Math.Abs(det) <= Constants.Resolution(), "gp_Mat::Invert() - matrix has zero determinant");
+        Refusal.StateIf(Math.Abs(det) <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Mat::Invert() - matrix has zero determinant");
 
         double invDet = 1.0 / det;
         m00 = adj00 * invDet;

@@ -254,19 +254,19 @@ public class AdvApprox_ApproxAFunctionTests
         Assert.Null(anApprox.Poles());
         Assert.Null(anApprox.MaxError(2));
         Assert.Null(anApprox.AverageError(3));
-        Assert.ThrowsAny<OutOfRangeException>(() => anApprox.MaxError(4));
-        Assert.ThrowsAny<ConstructionErrorException>(() => anApprox.NumSubSpaces(0));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => anApprox.MaxError(4));
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => anApprox.NumSubSpaces(0));
     }
 
     [Fact]
     public void Invalid_input_throws_and_evaluation_errors_give_no_result()
     {
         Evaluator aF = new(Cubic);
-        Assert.ThrowsAny<ConstructionErrorException>(
+        EngineAssert.ThrowsAny<ConstructionErrorException>(
             () => new ApproxAFunction(0, 0, 0, null, null, null, 0, 1, C1, 5, 5, aF));
-        Assert.ThrowsAny<ConstructionErrorException>(
+        EngineAssert.ThrowsAny<ConstructionErrorException>(
             () => new ApproxAFunction(1, 0, 0, Tol(1e-6), null, null, 1, 0, C1, 5, 5, aF));
-        Assert.ThrowsAny<ConstructionErrorException>(
+        EngineAssert.ThrowsAny<ConstructionErrorException>(
             () => new ApproxAFunction(1, 0, 0, Tol(1e-6), null, null, 0, 1, G1, 5, 5, aF));
 
         ApproxAFunction anApprox =

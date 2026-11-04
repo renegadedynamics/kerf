@@ -99,9 +99,9 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
                 aLines.Add($"M {aCount} {aMessage}");
             }
         }
-        catch (FailureException anExc)
+        catch (Exception anExc) when (Refusal.IsFailure(anExc))
         {
-            aLines.Add("EXC " + anExc.Message);
+            aLines.Add("EXC " + Refusal.Unwrapped(anExc).Message);
         }
         return aLines;
     }
@@ -285,9 +285,9 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
                             }
                         }
                     }
-                    catch (FailureException anExc)
+                    catch (Exception anExc) when (Refusal.IsFailure(anExc))
                     {
-                        aLines.Add(aHead + "EXC " + anExc.Message);
+                        aLines.Add(aHead + "EXC " + Refusal.Unwrapped(anExc).Message);
                     }
                     Block aNative = aBlocks[aCase++];
                     var aNativeLines = new List<string> { aNative.Name };

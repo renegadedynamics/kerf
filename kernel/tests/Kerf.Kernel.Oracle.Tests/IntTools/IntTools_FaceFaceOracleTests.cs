@@ -124,7 +124,7 @@ public class IntTools_FaceFaceOracleTests(ITestOutputHelper output) : IDisposabl
             {
                 aFF.Perform(PortFace(aText1), PortFace(aText2));
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 continue;
             }

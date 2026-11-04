@@ -289,7 +289,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
                 Variation.SetNbIterations(nbit);
                 Variation.SetCriteriumWeight(W1, W2, W3);
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 aPortThrew = true;
             }
@@ -311,7 +311,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
                         aPortDone = true;
                     }
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                 }
             }

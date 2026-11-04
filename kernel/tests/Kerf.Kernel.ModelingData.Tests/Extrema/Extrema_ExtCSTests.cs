@@ -97,7 +97,7 @@ public class Extrema_ExtCSTests
         Assert.Equal(1, anExt.ExtCount);
         Assert.Equal(4.0, anExt.SquareDistance(1), Tol);
         // OCCT stores no points for a parallel result.
-        Assert.ThrowsAny<OutOfRangeException>(() => anExt.Points(1, out _, out _));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => anExt.Points(1, out _, out _));
     }
 
     [Fact]
@@ -243,14 +243,14 @@ public class Extrema_ExtCSTests
     {
         var anEmpty = new ExtCS();
         Assert.False(anEmpty.IsDone);
-        Assert.ThrowsAny<NotDoneException>(() => anEmpty.ExtCount);
-        Assert.ThrowsAny<NotDoneException>(() => anEmpty.IsParallel);
-        Assert.ThrowsAny<NotDoneException>(() => anEmpty.SquareDistance(1));
+        EngineAssert.ThrowsAny<NotDoneException>(() => anEmpty.ExtCount);
+        EngineAssert.ThrowsAny<NotDoneException>(() => anEmpty.IsParallel);
+        EngineAssert.ThrowsAny<NotDoneException>(() => anEmpty.SquareDistance(1));
 
         var aC = new CurveAdaptor(new LineCurve3D(new Point3D(0, 0, 5), new Direction3D(1, 0, 0)), -10, 10);
         var anExt = new ExtCS(aC, Sphere(2), 1e-9, 1e-9);
-        Assert.ThrowsAny<OutOfRangeException>(() => anExt.SquareDistance(0));
-        Assert.ThrowsAny<OutOfRangeException>(() => anExt.SquareDistance(anExt.ExtCount + 1));
-        Assert.ThrowsAny<OutOfRangeException>(() => anExt.Points(anExt.ExtCount + 1, out _, out _));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => anExt.SquareDistance(0));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => anExt.SquareDistance(anExt.ExtCount + 1));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => anExt.Points(anExt.ExtCount + 1, out _, out _));
     }
 }

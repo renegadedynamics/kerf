@@ -191,7 +191,7 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
             {
                 aVal = theF();
             }
-            catch (FailureException e)
+            catch (Exception e) when (Refusal.IsFailure(e))
             {
                 aVal = ExcName(e);
             }
@@ -236,7 +236,7 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
             anE1 = MakeEdge(d1, aV11, aV12);
             anE2 = MakeEdge(d2, aV21, aV22);
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
             aOut.Add("edges:" + ExcName(e));
         }
@@ -369,7 +369,7 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
             }
             catch (Exception e)
             {
-                aDifferences.Add($"{theKind} #{i}: the port threw {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())}: {e.Message}");
+                aDifferences.Add($"{theKind} #{i}: the port threw {Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType())}: {Refusal.Unwrapped(e).Message}");
                 continue;
             }
             aTokens += aCase.Native.Length;

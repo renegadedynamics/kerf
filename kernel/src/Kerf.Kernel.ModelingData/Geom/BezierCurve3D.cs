@@ -98,7 +98,7 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
         int nbpoles = poles.Length();
         if (nbpoles < 2 || nbpoles > (BezierCurve3D.MaxDegree + 1))
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         // init non rational
         Init(poles, null);
@@ -114,13 +114,13 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
         int nbpoles = poles.Length();
         if (nbpoles < 2 || nbpoles > (BezierCurve3D.MaxDegree + 1))
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
 
         // check the weights
         if (weights.Length() != nbpoles)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
 
         for (int i = 1; i <= nbpoles; i++)
@@ -128,7 +128,7 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
             // OCCT: indexes Weights from 1 whatever its lower bound, as Rational does (out of range otherwise)
             if (weights[i] <= Constants.Resolution())
             {
-                throw new ConstructionErrorException();
+                throw Refusal.Argument(new ConstructionErrorException());
             }
         }
 
@@ -155,7 +155,7 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
 
         if (deg < Degree || deg > BezierCurve3D.MaxDegree)
         {
-            throw new ConstructionErrorException("Geom_BezierCurve::Increase");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BezierCurve::Increase"));
         }
 
         int aDeg = _poles.Length() - 1;
@@ -217,12 +217,12 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
         // OCCT: refuses a 25-pole curve, though the constructors accept MaxDegree() + 1 = 26 poles
         if (nbpoles >= BezierCurve3D.MaxDegree || weight <= Constants.Resolution())
         {
-            throw new ConstructionErrorException("Geom_BezierCurve::InsertPoleAfter");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BezierCurve::InsertPoleAfter"));
         }
 
         if (index < 0 || index > nbpoles)
         {
-            throw new OutOfRangeException("Geom_BezierCurve::InsertPoleAfter");
+            throw Refusal.Range(new OutOfRangeException("Geom_BezierCurve::InsertPoleAfter"));
         }
 
         int i;
@@ -307,12 +307,12 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
 
         if (nbpoles <= 2)
         {
-            throw new ConstructionErrorException("Geom_BezierCurve::RemovePole");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BezierCurve::RemovePole"));
         }
 
         if (index < 1 || index > nbpoles)
         {
-            throw new OutOfRangeException("Geom_BezierCurve::RemovePole");
+            throw Refusal.Range(new OutOfRangeException("Geom_BezierCurve::RemovePole"));
         }
 
         int i;
@@ -436,7 +436,7 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
         CheckMutable();
         if (index < 1 || index > PoleCount)
         {
-            throw new OutOfRangeException("Geom_BezierCurve::SetPole");
+            throw Refusal.Range(new OutOfRangeException("Geom_BezierCurve::SetPole"));
         }
 
         _poles[index] = p;
@@ -466,11 +466,11 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
 
         if (index < 1 || index > nbpoles)
         {
-            throw new OutOfRangeException("Geom_BezierCurve::SetWeight");
+            throw Refusal.Range(new OutOfRangeException("Geom_BezierCurve::SetWeight"));
         }
         if (weight <= Constants.Resolution())
         {
-            throw new ConstructionErrorException("Geom_BezierCurve::SetWeight");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BezierCurve::SetWeight"));
         }
 
         // compute new rationality
@@ -569,7 +569,7 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
     {
         if (n < 1)
         {
-            throw new UndefinedDerivative3DException();
+            throw Refusal.State(new UndefinedDerivative3DException());
         }
         if (RepUtils.TryEvalCurveDN(_evalRep, u, n, out Vector3D evalRepResult))
         {
@@ -601,7 +601,7 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
     {
         if (index < 1 || index > _poles.Length())
         {
-            throw new OutOfRangeException("Geom_BezierCurve::Pole");
+            throw Refusal.Range(new OutOfRangeException("Geom_BezierCurve::Pole"));
         }
         return _poles[index];
     }
@@ -612,7 +612,7 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
     {
         if (p.Length() != _poles.Length())
         {
-            throw new DimensionErrorException("Geom_BezierCurve::Poles");
+            throw Refusal.Argument(new DimensionErrorException("Geom_BezierCurve::Poles"));
         }
         p.Assign(_poles);
     }
@@ -626,7 +626,7 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
     {
         if (index < 1 || index > _poles.Length())
         {
-            throw new OutOfRangeException("Geom_BezierCurve::Weight");
+            throw Refusal.Range(new OutOfRangeException("Geom_BezierCurve::Weight"));
         }
         if (IsRational)
         {
@@ -645,7 +645,7 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
         int nbpoles = PoleCount;
         if (w.Length() != nbpoles)
         {
-            throw new DimensionErrorException("Geom_BezierCurve::Weights");
+            throw Refusal.Argument(new DimensionErrorException("Geom_BezierCurve::Weights"));
         }
         if (IsRational)
         {
@@ -776,14 +776,14 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
     /// <summary>The Bezier multiplicities {Degree + 1, Degree + 1}: shared, don't modify.</summary>
     internal NCollection_Array1<int> InternalMultiplicities()
     {
-        Standard_ProgramError_Raise_if(_poles.IsEmpty(), "Geom_BezierCurve: empty poles");
+        Refusal.StateIf(_poles.IsEmpty(), FailureKind.ProgramError, "Geom_BezierCurve: empty poles");
         return THE_MULTS[_poles.Length() - 1];
     }
 
     /// <summary>The Bezier flat knots (Degree + 1 zeros, Degree + 1 ones): shared, don't modify.</summary>
     internal NCollection_Array1<double> InternalKnotSequence()
     {
-        Standard_ProgramError_Raise_if(_poles.IsEmpty(), "Geom_BezierCurve: empty poles");
+        Refusal.StateIf(_poles.IsEmpty(), FailureKind.ProgramError, "Geom_BezierCurve: empty poles");
         return THE_FKNOTS[_poles.Length() - 1]!;
     }
 

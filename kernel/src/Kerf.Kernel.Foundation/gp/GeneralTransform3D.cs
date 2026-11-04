@@ -124,7 +124,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         Xyz loc = _loc;
         TransformForm shape = _shape;
         double scale = _scale;
-        Standard_OutOfRange_Raise_if(row < 1 || row > 3 || col < 1 || col > 4, " ");
+        Refusal.RangeIf(row < 1 || row > 3 || col < 1 || col > 4, FailureKind.OutOfRange, " ");
         if (col == 4)
         {
             loc.SetCoord(row, value);
@@ -194,7 +194,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
 
         if (Math.Abs(s) < Constants.Resolution())
         {
-            throw new ConstructionErrorException("gp_GTrsf::SetForm, null determinant");
+            throw Refusal.State(new ConstructionErrorException("gp_GTrsf::SetForm, null determinant"));
         }
 
         if (s > 0)
@@ -278,7 +278,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
     /// <summary>The coefficient at a row (1 to 3) and column (1 to 4) of the 3x4 matrix, scale included.</summary>
     internal readonly double Value(int row, int col)
     {
-        Standard_OutOfRange_Raise_if(row < 1 || row > 3 || col < 1 || col > 4, " ");
+        Refusal.RangeIf(row < 1 || row > 3 || col < 1 || col > 4, FailureKind.OutOfRange, " ");
         if (col == 4)
         {
             return _loc.Coord(row);
@@ -466,7 +466,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
     {
         if (Form == Other)
         {
-            throw new ConstructionErrorException("gp_GTrsf::Trsf() - non-orthogonal GTrsf");
+            throw Refusal.State(new ConstructionErrorException("gp_GTrsf::Trsf() - non-orthogonal GTrsf"));
         }
 
         return new Transform3D(_scale, _shape, _matrix, _loc);

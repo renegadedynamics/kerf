@@ -457,7 +457,7 @@ internal class MakeWireOffset : MakeShape
                 Done();
             }
         }
-        catch (Exception exception) when (exception is FailureException or NullReferenceException
+        catch (Exception exception) when ((Refusal.IsFailure(exception) || exception is NullReferenceException)
                                             && exception is not (ImmutableObjectException or LockedShapeException))
         {
             // OCCT catches Standard_Failure; with the signals Draw and build123d.NET set, an access violation (the

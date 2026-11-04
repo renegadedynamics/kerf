@@ -145,8 +145,8 @@ public class BOPTools_ParallelTests
     {
         ConcurrentDictionary<TestContext, ConcurrentBag<int>> aMap = new(ReferenceEqualityComparer.Instance);
         List<Solver> aSolvers = [.. Enumerable.Range(0, 64).Select(i => new Solver(i == 40 ? -1 : i, aMap))];
-        Assert.Throws<DomainErrorException>(() => BooleanParallel.Perform(true, aSolvers, new TestContext()));
-        Assert.Throws<DomainErrorException>(() => BooleanParallel.Perform(false, aSolvers, new TestContext()));
+        EngineAssert.Throws<DomainErrorException>(() => BooleanParallel.Perform(true, aSolvers, new TestContext()));
+        EngineAssert.Throws<DomainErrorException>(() => BooleanParallel.Perform(false, aSolvers, new TestContext()));
     }
 
     [Fact]

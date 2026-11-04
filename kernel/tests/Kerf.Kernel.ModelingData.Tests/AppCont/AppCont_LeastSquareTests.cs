@@ -196,9 +196,9 @@ public class AppCont_LeastSquareTests
     {
         PolynomialFunction aFunc = new(0.0, 1.0, false);
         // MMatrix holds classe up to 24 (degree 23), VBernstein up to 24 points
-        Assert.ThrowsAny<DimensionErrorException>(() => new LeastSquare(aFunc, 0.0, 1.0, PassPoint,
+        EngineAssert.ThrowsAny<DimensionErrorException>(() => new LeastSquare(aFunc, 0.0, 1.0, PassPoint,
                                                                                PassPoint, 24, 24));
-        Assert.ThrowsAny<DimensionErrorException>(() => new LeastSquare(aFunc, 0.0, 1.0, PassPoint,
+        EngineAssert.ThrowsAny<DimensionErrorException>(() => new LeastSquare(aFunc, 0.0, 1.0, PassPoint,
                                                                                PassPoint, 5, 25));
     }
 }

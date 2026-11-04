@@ -69,28 +69,28 @@ public class Geom2d_CurvesPortTest
     {
         CircleCurve2D aCircle = new CircleCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0);
         aCircle.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => aCircle.SetRadius(3.0));
-        Assert.Throws<ImmutableObjectException>(() => aCircle.Transform(Translation(1, 0)));
-        Assert.Throws<ImmutableObjectException>(() => aCircle.Reverse());
-        Assert.Throws<ImmutableObjectException>(() => aCircle.SetLocation(new Point2D(1, 1)));
+        EngineAssert.Throws<ImmutableObjectException>(() => aCircle.SetRadius(3.0));
+        EngineAssert.Throws<ImmutableObjectException>(() => aCircle.Transform(Translation(1, 0)));
+        EngineAssert.Throws<ImmutableObjectException>(() => aCircle.Reverse());
+        EngineAssert.Throws<ImmutableObjectException>(() => aCircle.SetLocation(new Point2D(1, 1)));
 
         EllipseCurve2D anEllipse = new EllipseCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 1.0);
         anEllipse.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => anEllipse.SetMajorRadius(4.0));
-        Assert.Throws<ImmutableObjectException>(() => anEllipse.SetMinorRadius(0.5));
+        EngineAssert.Throws<ImmutableObjectException>(() => anEllipse.SetMajorRadius(4.0));
+        EngineAssert.Throws<ImmutableObjectException>(() => anEllipse.SetMinorRadius(0.5));
 
         HyperbolaCurve2D aHyperbola = new HyperbolaCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 1.0);
         aHyperbola.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => aHyperbola.SetMajorRadius(4.0));
+        EngineAssert.Throws<ImmutableObjectException>(() => aHyperbola.SetMajorRadius(4.0));
 
         ParabolaCurve2D aParabola = new ParabolaCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0);
         aParabola.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => aParabola.SetFocal(3.0));
+        EngineAssert.Throws<ImmutableObjectException>(() => aParabola.SetFocal(3.0));
 
         LineCurve2D aLine = new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0));
         aLine.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => aLine.SetDirection(new Direction2D(0, 1)));
-        Assert.Throws<ImmutableObjectException>(() => aLine.Mirror(new Point2D(1, 1)));
+        EngineAssert.Throws<ImmutableObjectException>(() => aLine.SetDirection(new Direction2D(0, 1)));
+        EngineAssert.Throws<ImmutableObjectException>(() => aLine.Mirror(new Point2D(1, 1)));
     }
 
     [Fact]
@@ -98,31 +98,31 @@ public class Geom2d_CurvesPortTest
     {
         BSplineCurve2D aBSpline = CubicBSpline();
         aBSpline.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => aBSpline.SetPole(2, new Point2D(9, 9)));
-        Assert.Throws<ImmutableObjectException>(() => aBSpline.InsertKnot(0.5));
-        Assert.Throws<ImmutableObjectException>(() => aBSpline.Segment(0.5, 1.5));
-        Assert.Throws<ImmutableObjectException>(() => aBSpline.IncreaseDegree(4));
-        Assert.Throws<ImmutableObjectException>(() => aBSpline.SetPeriodic());
-        Assert.Throws<ImmutableObjectException>(() => aBSpline.RemoveKnot(2, 0, 1e-6));
-        Assert.Throws<ImmutableObjectException>(
+        EngineAssert.Throws<ImmutableObjectException>(() => aBSpline.SetPole(2, new Point2D(9, 9)));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBSpline.InsertKnot(0.5));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBSpline.Segment(0.5, 1.5));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBSpline.IncreaseDegree(4));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBSpline.SetPeriodic());
+        EngineAssert.Throws<ImmutableObjectException>(() => aBSpline.RemoveKnot(2, 0, 1e-6));
+        EngineAssert.Throws<ImmutableObjectException>(
             () => aBSpline.SetEvalRepresentation(new RepCurveDesc2D.Full { Representation = CubicBSpline() }));
 
         BezierCurve2D aBezier = CubicBezier();
         aBezier.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => aBezier.SetPole(2, new Point2D(9, 9)));
-        Assert.Throws<ImmutableObjectException>(() => aBezier.Increase(4));
-        Assert.Throws<ImmutableObjectException>(() => aBezier.Segment(0.2, 0.8));
-        Assert.Throws<ImmutableObjectException>(() => aBezier.SetWeight(2, 2.0));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBezier.SetPole(2, new Point2D(9, 9)));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBezier.Increase(4));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBezier.Segment(0.2, 0.8));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBezier.SetWeight(2, 2.0));
 
         TrimmedCurve2D aTrim = new TrimmedCurve2D(CubicBSpline(), 0.5, 2.5);
         aTrim.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => aTrim.SetTrim(1.0, 2.0));
-        Assert.Throws<ImmutableObjectException>(() => aTrim.Reverse());
+        EngineAssert.Throws<ImmutableObjectException>(() => aTrim.SetTrim(1.0, 2.0));
+        EngineAssert.Throws<ImmutableObjectException>(() => aTrim.Reverse());
 
         OffsetCurve2D anOffset = new OffsetCurve2D(CubicBSpline(), 0.5);
         anOffset.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => anOffset.SetOffsetValue(1.0));
-        Assert.Throws<ImmutableObjectException>(() => anOffset.Transform(Translation(1, 0)));
+        EngineAssert.Throws<ImmutableObjectException>(() => anOffset.SetOffsetValue(1.0));
+        EngineAssert.Throws<ImmutableObjectException>(() => anOffset.Transform(Translation(1, 0)));
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public class Geom2d_CurvesPortTest
         CircleCurve2D aBig = aCircle.WithRadius(5.0);
         Assert.Equal(2.0, aCircle.Radius);
         Assert.Equal(5.0, aBig.Radius);
-        Assert.Throws<ConstructionErrorException>(() => aCircle.WithRadius(-1.0));
+        EngineAssert.Throws<ConstructionErrorException>(() => aCircle.WithRadius(-1.0));
 
         EllipseCurve2D anEllipse = new EllipseCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 1.0);
         Assert.Equal(4.0, anEllipse.WithMajorRadius(4.0).MajorRadius);
@@ -335,7 +335,7 @@ public class Geom2d_CurvesPortTest
         // As in OCCT the offset curve shares the caller's curve, which is therefore frozen
         Assert.True(aCaller.IsFrozen);
         Assert.Same(aCaller, anOffset.BasisCurve);
-        Assert.Throws<ImmutableObjectException>(() => aCaller.SetPole(2, new Point2D(0, 9)));
+        EngineAssert.Throws<ImmutableObjectException>(() => aCaller.SetPole(2, new Point2D(0, 9)));
 
         Point2D aBasisPoint = aCaller.Value(1.0);
         Point2D anOffsetPoint = anOffset.Value(1.0);
@@ -500,7 +500,7 @@ public class Geom2d_CurvesPortTest
             Arr(0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0),
             Arr(1, 1, 1, 1, 1, 1, 1, 1, 1),
             3);
-        Assert.ThrowsAny<OutOfRangeException>(() => anUnclamped.IncreaseDegree(4));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => anUnclamped.IncreaseDegree(4));
     }
 
     /// <summary>
@@ -576,7 +576,7 @@ public class Geom2d_CurvesPortTest
         aDesc.Representation = CubicBSpline();
         AssertSamePoint(aRep.Value(1.2), aWith.EvalD0(1.2), 0.0);
         // A descriptor whose representation is the curve itself is rejected
-        Assert.Throws<ProgramErrorException>(
+        EngineAssert.Throws<ProgramErrorException>(
             () => aCurve.WithEvalRepresentation(new RepCurveDesc2D.Full { Representation = aCurve }));
     }
 

@@ -33,7 +33,7 @@ public sealed class CircleCurve3D : ConicCurve3D
         _radius = r;
         if (r < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _pos = a2;
     }
@@ -76,7 +76,7 @@ public sealed class CircleCurve3D : ConicCurve3D
         CheckMutable();
         if (r < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _radius = r;
     }
@@ -111,7 +111,7 @@ public sealed class CircleCurve3D : ConicCurve3D
     {
         if (n < 1)
         {
-            throw new UndefinedDerivative3DException();
+            throw Refusal.State(new UndefinedDerivative3DException());
         }
         return global::Kerf.Engine.Geometry.ElCLib.CircleDN(u, _pos, _radius, n);
     }

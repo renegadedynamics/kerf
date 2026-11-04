@@ -175,7 +175,7 @@ public class RWStlTests
         Triangulation? aRead = global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(aData));
         Assert.NotNull(aRead);
         Assert.True(aRead.IsFrozen);
-        Assert.Throws<ImmutableObjectException>(() => aRead.SetNode(1, new Point3D()));
+        EngineAssert.Throws<ImmutableObjectException>(() => aRead.SetNode(1, new Point3D()));
         var aList = new NCollection_Sequence<Triangulation>();
         global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(aData), Math.PI / 2, aList);
         Assert.True(aList.Value(1).IsFrozen);

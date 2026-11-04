@@ -116,7 +116,7 @@ public class HatchGenTests
         HatchingDomain aDomain = new(aP, true);
         Assert.True(aDomain.HasFirstPoint);
         Assert.False(aDomain.HasSecondPoint);
-        Assert.Throws<DomainErrorException>(() => aDomain.SecondPoint());
+        EngineAssert.Throws<DomainErrorException>(() => aDomain.SecondPoint());
         aP.SetParameter(9.0); // the domain has its copy
         Assert.Equal(1.5, aDomain.FirstPoint().Parameter());
 

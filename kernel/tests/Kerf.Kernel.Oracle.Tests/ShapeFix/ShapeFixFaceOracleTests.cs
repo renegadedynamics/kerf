@@ -248,7 +248,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
         {
             aPRes = PortFix(ShapeCasts.Face(aPS), theMode, out aPDone, out aPStatus);
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
             aPErr = ErrorOf(e);
         }

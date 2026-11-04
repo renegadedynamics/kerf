@@ -39,7 +39,7 @@ public class TransferBRepTests
         Assert.Equal(ShapeType.Face, aBinder.ShapeType());
         Assert.Equal("TopoDS_Face", aBinder.ResultTypeName());
         Assert.True(aBinder.Face().IsSame(myFaces[0]));
-        Assert.Throws<TypeMismatchException>(() => aBinder.Edge());
+        EngineAssert.Throws<TypeMismatchException>(() => aBinder.Edge());
         aBinder.SetAlreadyUsed();
         Assert.Throws<global::Kerf.Engine.Exchange.Framework.Transfer.TransferFailureException>(() => aBinder.SetResult(myBox));
 

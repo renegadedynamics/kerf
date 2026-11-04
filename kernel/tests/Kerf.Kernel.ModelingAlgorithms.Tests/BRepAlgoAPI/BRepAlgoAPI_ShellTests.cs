@@ -377,13 +377,13 @@ public class BRepAlgoAPI_ShellTests
     {
         // FUSE needs arguments of the same dimension (BOPAlgo_BOP::CheckData)
         Shape aFace = new MakeFace(new Plane3D(new Point3D(10, 10, 10), new Direction3D(0, 0, 1)), 0, 1, 0, 1).Shape();
-        var anError = Assert.Throws<BooleanFailureException>(
+        var anError = EngineAssert.Throws<BooleanFailureException>(
             () => Kerf.Engine.Booleans.Api.BRepAlgoApi.Fuse([Box(0)], [aFace], new AlgoApiOptions()));
         Assert.Contains("BOPAlgo_AlertBOPNotAllowed", anError.Message);
         Assert.True(anError.Report().HasAlert(typeof(AlertBopNotAllowed), global::Kerf.Engine.Foundation.Gravity.Fail));
         Assert.IsAssignableFrom<global::Kerf.Engine.Foundation.NotDoneException>(anError);
 
-        Assert.Throws<BooleanFailureException>(() => Kerf.Engine.Booleans.Api.BRepAlgoApi.Cut([Box(0)], [], new AlgoApiOptions()));
+        EngineAssert.Throws<BooleanFailureException>(() => Kerf.Engine.Booleans.Api.BRepAlgoApi.Cut([Box(0)], [], new AlgoApiOptions()));
     }
 
     [Fact]

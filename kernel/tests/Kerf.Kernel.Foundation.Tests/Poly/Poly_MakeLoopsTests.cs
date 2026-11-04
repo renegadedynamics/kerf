@@ -189,7 +189,7 @@ public class Poly_MakeLoopsTest
         aMap.Clear();
         Assert.True(aMap.IsEmpty());
         Assert.Empty(Keys(aMap));
-        Assert.Throws<NoSuchObjectException>(() => new NCollection_PackedMapOfInteger.Iterator(aMap).Key());
+        EngineAssert.Throws<NoSuchObjectException>(() => new NCollection_PackedMapOfInteger.Iterator(aMap).Key());
 
         // past the bucket count, the map grows to the next prime
         for (int i = 0; i < 200 * 32; i += 32)

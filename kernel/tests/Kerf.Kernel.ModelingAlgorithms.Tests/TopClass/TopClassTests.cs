@@ -262,7 +262,7 @@ public class TopClassTests
     public void Rejected_IsOutside()
     {
         Assert.Equal(Out, TopologicalFaceClassifier.State(true, false, new TestFClass2d()));
-        Assert.ThrowsAny<DomainErrorException>(() => TopologicalFaceClassifier.EdgeParameter(true, 0.5));
-        Assert.ThrowsAny<DomainErrorException>(() => TopologicalFaceClassifier.Edge(true, theSquare[0]));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => TopologicalFaceClassifier.EdgeParameter(true, 0.5));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => TopologicalFaceClassifier.Edge(true, theSquare[0]));
     }
 }

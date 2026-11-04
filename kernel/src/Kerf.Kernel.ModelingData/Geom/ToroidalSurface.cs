@@ -32,7 +32,7 @@ public sealed class ToroidalSurface : ElementarySurface
         _minorRadius = minorRadius;
         if (minorRadius < 0.0 || majorRadius < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         else
         {
@@ -85,7 +85,7 @@ public sealed class ToroidalSurface : ElementarySurface
         CheckMutable();
         if (majorRadius - _minorRadius <= Constants.Resolution())
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         else
         {
@@ -99,7 +99,7 @@ public sealed class ToroidalSurface : ElementarySurface
         CheckMutable();
         if (minorRadius < 0.0 || _majorRadius - minorRadius <= Constants.Resolution())
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         else
         {
@@ -220,7 +220,7 @@ public sealed class ToroidalSurface : ElementarySurface
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
-            throw new UndefinedDerivative3DException();
+            throw Refusal.State(new UndefinedDerivative3DException());
         }
         return global::Kerf.Engine.Geometry.ElSLib.TorusDN(u, v, _pos, _majorRadius, _minorRadius, nu, nv);
     }

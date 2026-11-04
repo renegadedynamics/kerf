@@ -284,9 +284,9 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
             {
                 aPort = RunCase(aWords, aShapes);
             }
-            catch (FailureException e)
+            catch (Exception e) when (Refusal.IsFailure(e))
             {
-                aTally.Differences.Add($"{aCase}: the port throws {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())} ({e.Message}), native {(isException ? "throws too" : "doesn't")}");
+                aTally.Differences.Add($"{aCase}: the port throws {Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType())} ({Refusal.Unwrapped(e).Message}), native {(isException ? "throws too" : "doesn't")}");
                 continue;
             }
             Assert.False(isException, aCase);

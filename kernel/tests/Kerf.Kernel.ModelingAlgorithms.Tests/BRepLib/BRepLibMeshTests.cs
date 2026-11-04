@@ -102,7 +102,7 @@ public class BRepLibMeshTests
     {
         Solid aBox = MeshedBox(0.3);
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aBox);
-        Assert.Throws<LockedShapeException>(() => BrepLibrary.UpdateDeflection(aBox));
+        EngineAssert.Throws<LockedShapeException>(() => BrepLibrary.UpdateDeflection(aBox));
 
         Shape aCopy = BrepTools.CopyForWrite(aBox, out History aH);
         BrepLibrary.UpdateDeflection(aCopy);
@@ -244,7 +244,7 @@ public class BRepLibMeshTests
         Solid aBox = MeshedBox(0.0);
         Face aF = BRepGPropTestShapes.Faces(aBox)[0];
         Triangulation aT = Triangulation(aF);
-        Assert.Throws<ImmutableObjectException>(() => ToolTriangulatedShape.ComputeNormals(aF, aT));
+        EngineAssert.Throws<ImmutableObjectException>(() => ToolTriangulatedShape.ComputeNormals(aF, aT));
 
         Triangulation aWithNormals = ToolTriangulatedShape.NormalsComputed(aF, aT)!;
         Assert.NotSame(aT, aWithNormals);

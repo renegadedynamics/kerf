@@ -98,9 +98,9 @@ public class GeomConvert_SurfaceSplittingTests
         var aC3 = new BSplineSurfaceKnotSplitting(aSurf, 3, 0);
         Assert.Equal(4, aC3.USplitCount);
 
-        Assert.ThrowsAny<RangeErrorException>(() => new BSplineSurfaceKnotSplitting(aSurf, -1, 0));
-        Assert.ThrowsAny<RangeErrorException>(() => aC2.USplitValue(0));
-        Assert.ThrowsAny<RangeErrorException>(() => aC2.VSplitValue(4));
+        EngineAssert.ThrowsAny<RangeErrorException>(() => new BSplineSurfaceKnotSplitting(aSurf, -1, 0));
+        EngineAssert.ThrowsAny<RangeErrorException>(() => aC2.USplitValue(0));
+        EngineAssert.ThrowsAny<RangeErrorException>(() => aC2.VSplitValue(4));
     }
 
     [Fact]
@@ -176,8 +176,8 @@ public class GeomConvert_SurfaceSplittingTests
         Assert.Equal(2, aConv.VPatchCount);
         CheckPatches(aSurf, aConv, 0.0, 3.0, 0.0, 1.0);
         Assert.Equal(theRational, aConv.Patch(1, 1).IsURational || aConv.Patch(1, 1).IsVRational);
-        Assert.ThrowsAny<OutOfRangeException>(() => aConv.Patch(4, 1));
-        Assert.ThrowsAny<OutOfRangeException>(() => aConv.Patch(1, 0));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aConv.Patch(4, 1));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aConv.Patch(1, 0));
 
         // The input is untouched (the converter works on a copy), and may be frozen
         Assert.Equal(4, aSurf.UKnotCount);
@@ -200,7 +200,7 @@ public class GeomConvert_SurfaceSplittingTests
         Assert.Equal(1, aSnapped.VPatchCount);
         CheckPatches(aSurf, aSnapped, 1.0, 3.0, 0.0, 0.5);
 
-        Assert.ThrowsAny<DomainErrorException>(() => new BSplineSurfaceToBezierSurface(aSurf, 1.0, 1.0 + 1e-8, 0.0, 1.0, 1e-6));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => new BSplineSurfaceToBezierSurface(aSurf, 1.0, 1.0 + 1e-8, 0.0, 1.0, 1e-6));
     }
 
     private static NCollection_Array2<BezierSurface> Split(BSplineSurface theSurf)
@@ -286,11 +286,11 @@ public class GeomConvert_SurfaceSplittingTests
                                                                      C2, C0, 1e-7);
         Assert.False(aC2.IsDone);
 
-        Assert.ThrowsAny<ConstructionErrorException>(
+        EngineAssert.ThrowsAny<ConstructionErrorException>(
             () => new CompBezierSurfacesToBSplineSurface(aPatches, Array(s_UKnots), Array(s_VKnots),
                                                                      G1, C0, 1e-7));
         // C2 in V needs degree 3 with several V patches
-        Assert.ThrowsAny<ConstructionErrorException>(
+        EngineAssert.ThrowsAny<ConstructionErrorException>(
             () => new CompBezierSurfacesToBSplineSurface(aPatches, Array(s_UKnots), Array(s_VKnots),
                                                                      C0, C2, 1e-7));
     }
@@ -356,6 +356,6 @@ public class GeomConvert_SurfaceSplittingTests
     public void CompBezierSurfaces_Rational_NotImplemented()
     {
         NCollection_Array2<BezierSurface> aPatches = Split(Surface(true));
-        Assert.ThrowsAny<MethodNotImplementedException>(() => new CompBezierSurfacesToBSplineSurface(aPatches));
+        EngineAssert.ThrowsAny<MethodNotImplementedException>(() => new CompBezierSurfacesToBSplineSurface(aPatches));
     }
 }

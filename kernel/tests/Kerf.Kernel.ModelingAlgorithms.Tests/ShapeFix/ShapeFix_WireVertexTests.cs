@@ -143,7 +143,7 @@ public class ShapeFix_WireVertexTests
         sfwv.Init(aSquare, 1.0e-3);
         Assert.Equal(1, sfwv.Analyzer().Status(1));
 
-        Assert.Throws<FrozenShapeException>(() => sfwv.FixSame());
+        EngineAssert.Throws<FrozenShapeException>(() => sfwv.FixSame());
         aSnap.AssertUnchanged(aSquare);
     }
 

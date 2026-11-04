@@ -74,7 +74,7 @@ public class Draft7GUnitTests
         aFinder.Perform();
         Assert.Equal(1, aFinder.ContigousEdgeCount);
         Assert.Equal(2, aFinder.ContigousEdgeCouple(1).Count);
-        Assert.Throws<OutOfRangeException>(() => aFinder.ContigousEdge(2));
+        EngineAssert.Throws<OutOfRangeException>(() => aFinder.ContigousEdge(2));
         Assert.Equal(0, aFinder.DegeneratedShapeCount);
 
         var aBoxFinder = new FindContiguousEdges();
@@ -116,7 +116,7 @@ public class Draft7GUnitTests
         Assert.True(aDraft.IsDone);
         aSnap.AssertUnchanged(aFace);
         Assert.True(Sub(aDraft.Shape(), ShapeType.Face).Count >= 5);
-        Assert.Throws<ConstructionErrorException>(() => new MakeDraft(new MakeBox(1, 1, 1).Shape(), new Direction3D(0, 0, 1), 0.1));
+        EngineAssert.Throws<ConstructionErrorException>(() => new MakeDraft(new MakeBox(1, 1, 1).Shape(), new Direction3D(0, 0, 1), 0.1));
     }
 
     [Fact]
@@ -152,12 +152,12 @@ public class Draft7GUnitTests
         Assert.Equal(CurveKind.Circle, aCurve.GetType());
         Assert.Equal(0.0, aCurve.Circle().Radius);
         Assert.True(aCurve.Value(1.0).DistanceTo(new Point3D(0, 0, 5)) < 1.0e-9);
-        Assert.Throws<MethodNotImplementedException>(() => aCurve.Continuity());
+        EngineAssert.Throws<MethodNotImplementedException>(() => aCurve.Continuity());
 
         Vertex aV = new MakeVertex(new Point3D(1, 2, 3)).Vertex();
         var aOnVertex = new CurveOnVertex(aCircle, aV);
         Assert.True(aOnVertex.Value(0.5).IsEqual(new Point3D(1, 2, 3), 0.0));
         Assert.Equal(2 * Math.PI, aOnVertex.LastParameter(), 1.0e-12);
-        Assert.Throws<NoSuchObjectException>(() => aOnVertex.Circle());
+        EngineAssert.Throws<NoSuchObjectException>(() => aOnVertex.Circle());
     }
 }

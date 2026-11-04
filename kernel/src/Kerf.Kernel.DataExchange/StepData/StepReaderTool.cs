@@ -81,11 +81,11 @@ internal class StepReaderTool : FileReaderTool
                 stepdat.SetEntityNumbers(optim);
                 SetEntities();
             }
-            catch (FailureException exception)
+            catch (Exception exception) when (Refusal.IsFailure(exception))
             {
                 using global::Kerf.Engine.Foundation.Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
                 sout.Append(" Exception Raised during Preparation :\n");
-                sout.Append(exception.Message);
+                sout.Append(Refusal.Unwrapped(exception).Message);
                 sout.Append("\n Now, trying to continue, but with presomption of failure\n");
             }
         }

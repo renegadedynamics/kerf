@@ -256,7 +256,7 @@ public class BRepFilletAPI_MakeFilletTests
                         break;
                     }
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                     continue;
                 }
@@ -441,7 +441,7 @@ public class BRepFilletAPI_MakeFilletTests
         {
             aBlend.Build();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             // Known exception on some platforms (OCC24156): OCCT's test skips.
             return;

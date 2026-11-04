@@ -44,10 +44,9 @@ public abstract class ModelAlgo : Transient
     /// </summary>
     internal static bool IsCaughtFailure(Exception exception)
         => exception is not (ImmutableObjectException or LockedShapeException)
-           && exception is FailureException
-               or NullReferenceException
+           && (Refusal.IsFailure(exception) || exception is NullReferenceException
                or InvalidCastException
                or IndexOutOfRangeException
                or ArgumentOutOfRangeException
-               or DivideByZeroException;
+               or DivideByZeroException);
 }

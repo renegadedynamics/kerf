@@ -121,7 +121,7 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
         {
             aPF.Perform();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return "throws\n";
         }

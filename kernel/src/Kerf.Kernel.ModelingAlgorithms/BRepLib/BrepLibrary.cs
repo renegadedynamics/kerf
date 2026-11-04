@@ -2474,7 +2474,7 @@ internal static partial class BrepLibrary
                 }
             }
         }
-        catch (FailureException exception) when (exception is not LockedShapeException) // OCCT.NET: frozen
+        catch (Exception exception) when (Refusal.IsFailure(exception) && (exception is not LockedShapeException)) // OCCT.NET: frozen
         {
         }
     }

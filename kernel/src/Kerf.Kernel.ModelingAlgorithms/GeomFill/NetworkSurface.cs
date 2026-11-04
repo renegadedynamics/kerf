@@ -1028,7 +1028,7 @@ internal class NetworkSurface
             }
             ReparametrizeSurface(_surface);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             _surface = null;
             _status = ResultStatus.ConstructionFailed;

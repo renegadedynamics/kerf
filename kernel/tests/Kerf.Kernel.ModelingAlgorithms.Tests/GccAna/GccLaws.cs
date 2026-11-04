@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Construction.Constraints;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
@@ -112,7 +113,7 @@ internal static class GccLaws
         }
         catch (Exception e)
         {
-            aBroken.Add("throws " + e.GetType().Name);
+            aBroken.Add("throws " + Refusal.Unwrapped(e).GetType().Name);
             return aBroken;
         }
         for (int i = 1; i <= aNb; i++)
@@ -123,7 +124,7 @@ internal static class GccLaws
             }
             catch (Exception e)
             {
-                aBroken.Add($"solution {i}: throws {e.GetType().Name}");
+                aBroken.Add($"solution {i}: throws {Refusal.Unwrapped(e).GetType().Name}");
             }
         }
         return aBroken;
@@ -360,7 +361,7 @@ internal static class GccLaws
         }
         catch (Exception e)
         {
-            aBroken.Add("throws " + e.GetType().Name);
+            aBroken.Add("throws " + Refusal.Unwrapped(e).GetType().Name);
             return aBroken;
         }
         for (int i = 1; i <= aNb; i++)
@@ -371,7 +372,7 @@ internal static class GccLaws
             }
             catch (Exception e)
             {
-                aBroken.Add($"solution {i}: throws {e.GetType().Name}");
+                aBroken.Add($"solution {i}: throws {Refusal.Unwrapped(e).GetType().Name}");
             }
         }
         return aBroken;

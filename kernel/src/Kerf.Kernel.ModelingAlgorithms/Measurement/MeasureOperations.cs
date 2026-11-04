@@ -273,7 +273,7 @@ public static class MeasureOperations
         {
             calc.Perform(indicator.Start());
         }
-        catch (Exception e) when (e is FailureException)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Result<DistanceResult>.Failure(OperationDiagnostics.FromException(e));

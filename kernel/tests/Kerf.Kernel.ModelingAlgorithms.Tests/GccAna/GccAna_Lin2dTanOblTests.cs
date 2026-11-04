@@ -112,9 +112,9 @@ public class GccAna_Lin2dTanOblTests
     public void Accessors_OutOfRange()
     {
         AnalyticLin2dTanObl anAlgo = new(new Point2D(1, 1), new Line2D(new Point2D(0, 0), DX), 0.3);
-        Assert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(2));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.WhichQualifier(0, out _));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.Tangency1(2, out _, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.Intersection2(2, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(2));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.WhichQualifier(0, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.Tangency1(2, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.Intersection2(2, out _, out _, out _));
     }
 }

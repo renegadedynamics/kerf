@@ -168,7 +168,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
             {
                 aPRes = PortFixShape(isFrozen ? aPS : aUS, thePrecision, theMaxTol, out aPStatus, out aPD1, out aPD2);
             }
-            catch (FailureException e)
+            catch (Exception e) when (Refusal.IsFailure(e))
             {
                 aPErr = ErrorOf(e);
             }

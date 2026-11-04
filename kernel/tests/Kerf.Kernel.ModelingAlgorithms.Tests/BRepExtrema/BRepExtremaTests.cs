@@ -60,8 +60,8 @@ public class BRepExtremaTests
         Assert.True(aD.SupportOnShape1(1).IsSame(a));
         Assert.True(aD.SupportOnShape2(1).IsSame(b));
         AssertPnt(new Point3D(3, 4, 0), aD.PointOnShape2(1));
-        Assert.ThrowsAny<IncompatibleShapeException>(() => aD.ParOnEdgeS1(1, out _));
-        Assert.ThrowsAny<IncompatibleShapeException>(() => aD.ParOnFaceS2(1, out _, out _));
+        EngineAssert.ThrowsAny<IncompatibleShapeException>(() => aD.ParOnEdgeS1(1, out _));
+        EngineAssert.ThrowsAny<IncompatibleShapeException>(() => aD.ParOnFaceS2(1, out _, out _));
     }
 
     [Fact]

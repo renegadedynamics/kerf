@@ -87,7 +87,7 @@ internal sealed class EdgeEdgeJob : EdgeEdge, BooleanParallel.ISolver
 
             base.Perform();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             _options.AddError(new AlertIntersectionFailed());
         }

@@ -211,7 +211,7 @@ internal sealed class SurfaceOfExtrusionBounds : SurfaceBounds.ISurfaceEvaluator
 
             return BuildExtrusionBox(curveBox, dir, dirXYZ, vMin, vMax, tol);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             // Fall back to robust generic sampling if basis-curve segmentation fails.
             SurfaceAdaptor adaptor = new(_geom);
@@ -252,7 +252,7 @@ internal sealed class SurfaceOfExtrusionBounds : SurfaceBounds.ISurfaceEvaluator
 
             return BuildExtrusionBox(curveBox, dir, dirXYZ, vMin, vMax, tol);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             // Fall back to robust generic sampling if basis-curve segmentation fails.
             SurfaceAdaptor adaptor = new(_geom);

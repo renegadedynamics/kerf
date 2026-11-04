@@ -42,7 +42,7 @@ public class GeomFill_FunctionsTests
             }
         }
         // OCCT reads through a null pointer for another order; the port throws
-        Assert.Throws<OutOfRangeException>(() =>
+        EngineAssert.Throws<OutOfRangeException>(() =>
         {
             Span<double> aR = stackalloc double[12];
             int anI = 0;

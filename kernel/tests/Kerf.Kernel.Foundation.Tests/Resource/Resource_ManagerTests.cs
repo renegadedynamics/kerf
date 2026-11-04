@@ -126,9 +126,9 @@ public sealed class Resource_ManagerTests : IDisposable
         Assert.Equal(42, aManager.Integer("int"));
         Assert.Equal(1.5e-3, aManager.Real("real"));
         Assert.Equal(4.5, aManager.Real("notint"));
-        Assert.ThrowsAny<TypeMismatchException>(() => aManager.Integer("notint"));
-        Assert.ThrowsAny<TypeMismatchException>(() => aManager.Real("a.b"));
-        Assert.ThrowsAny<NoSuchResourceException>(() => aManager.Value("missing"));
+        EngineAssert.ThrowsAny<TypeMismatchException>(() => aManager.Integer("notint"));
+        EngineAssert.ThrowsAny<TypeMismatchException>(() => aManager.Real("a.b"));
+        EngineAssert.ThrowsAny<NoSuchResourceException>(() => aManager.Value("missing"));
         Assert.True(aManager.Find("int", out string aValue));
         Assert.Equal("42", aValue);
 
@@ -194,14 +194,14 @@ public sealed class Resource_ManagerTests : IDisposable
         Assert.False(TCollection_AsciiString.IsIntegerValue("1 x."));
         Assert.True(TCollection_AsciiString.IsIntegerValue("-7"));
         Assert.False(TCollection_AsciiString.IsIntegerValue("&Runtime.Tolerance"));
-        Assert.ThrowsAny<NumericErrorException>(() => TCollection_AsciiString.IntegerValue("x"));
+        EngineAssert.ThrowsAny<NumericErrorException>(() => TCollection_AsciiString.IntegerValue("x"));
         Assert.Equal(int.MaxValue, TCollection_AsciiString.IntegerValue("99999999999"));
 
         Assert.True(TCollection_AsciiString.IsRealValue("1.e-7 "));
         Assert.False(TCollection_AsciiString.IsRealValue("1.e-7 ", true));
         Assert.Equal(1e-7, TCollection_AsciiString.RealValue("1.e-7"));
         Assert.False(TCollection_AsciiString.IsRealValue("C1"));
-        Assert.ThrowsAny<NumericErrorException>(() => TCollection_AsciiString.RealValue("x"));
+        EngineAssert.ThrowsAny<NumericErrorException>(() => TCollection_AsciiString.RealValue("x"));
 
         const string aSeq = " DirectFaces,ElementaryToRevolution;\tSplitAngle , ";
         Assert.Equal("DirectFaces", TCollection_AsciiString.Token(aSeq, " \t,;", 1));

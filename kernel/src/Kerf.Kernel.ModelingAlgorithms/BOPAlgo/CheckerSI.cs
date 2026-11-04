@@ -157,7 +157,7 @@ internal partial class CheckerSI : PaveFiller
             }
         }
         //
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             AddError(new AlertIntersectionFailed());
         }

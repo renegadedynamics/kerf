@@ -35,8 +35,8 @@ public class IntPatch_RLineTests
         Assert.Equal(WalkingSituation.Outside, aR.SituationS2());
         Assert.False(aR.IsArcOnS1 || aR.IsArcOnS2);
         Assert.False(aR.HasPolygon);
-        Assert.Throws<DomainErrorException>(() => aR.NbPnts());
-        Assert.Throws<DomainErrorException>(() => aR.Point(1));
+        EngineAssert.Throws<DomainErrorException>(() => aR.NbPnts());
+        EngineAssert.Throws<DomainErrorException>(() => aR.Point(1));
         Assert.Null(aR.Curve());
 
         LineOn2S aCurve = IntPatch_WLineTests.StraightLine(3);
@@ -93,7 +93,7 @@ public class IntPatch_RLineTests
         Assert.Equal(1.0, aR.FirstPoint().ParameterOnLine());
         Assert.Same(anOther, aR.LastPoint().ArcOnS1());
 
-        Assert.Throws<OutOfRangeException>(() => aR.RemoveVertex(5));
+        EngineAssert.Throws<OutOfRangeException>(() => aR.RemoveVertex(5));
         aR.ChangeVertex(2).SetParameter(2.5);
         Assert.Equal(2.5, aR.Vertex(2).ParameterOnLine());
         aR.Replace(2, IntPatch_WLineTests.Vtx(0, 9));
@@ -104,7 +104,7 @@ public class IntPatch_RLineTests
     public void Dump_needs_the_polygon()
     {
         RLine aR = new(false);
-        Assert.Throws<DomainErrorException>(() => aR.Dump(0, new StringWriter()));
+        EngineAssert.Throws<DomainErrorException>(() => aR.Dump(0, new StringWriter()));
         aR.Add(IntPatch_WLineTests.StraightLine(2));
         StringWriter aOut = new();
         aR.Dump(2, aOut);

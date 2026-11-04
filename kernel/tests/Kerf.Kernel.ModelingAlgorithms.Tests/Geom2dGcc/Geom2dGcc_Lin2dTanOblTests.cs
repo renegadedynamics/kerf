@@ -88,10 +88,10 @@ public class Geom2dGcc_Lin2dTanOblTests
         CurveAdaptor2D   anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
         Line2D              aLine = new(new Point2D(0, -4), DX);
         global::Kerf.Engine.Construction.Constraints.Lin2dTanObl aLin  = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), aLine, 1e-6, M_PI / 4);
-        Assert.Throws<OutOfRangeException>(() => aLin.ThisSolution(3));
-        Assert.Throws<OutOfRangeException>(() => aLin.Tangency1(0, out _, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => aLin.Intersection2(3, out _, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => aLin.WhichQualifier(3, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => aLin.ThisSolution(3));
+        EngineAssert.Throws<OutOfRangeException>(() => aLin.Tangency1(0, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => aLin.Intersection2(3, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => aLin.WhichQualifier(3, out _));
         Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new global::Kerf.Engine.Construction.Constraints.Lin2dTanObl(new global::Kerf.Engine.Construction.Constraints.QualifiedCurve(anEll, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), aLine, 1e-6, M_PI / 4));
     }

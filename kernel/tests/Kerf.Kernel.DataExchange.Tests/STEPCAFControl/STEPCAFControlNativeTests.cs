@@ -63,9 +63,9 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
                 aLines.AddRange(XdeDocDump.Dump(aDoc));
             }
         }
-        catch (FailureException anExc)
+        catch (Exception anExc) when (Refusal.IsFailure(anExc))
         {
-            aLines.Add("EXC " + anExc.Message);
+            aLines.Add("EXC " + Refusal.Unwrapped(anExc).Message);
         }
         return aLines;
     }
@@ -151,9 +151,9 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
             return aHead + $"1 {aWriter.Writer().Model().EntityCount} {Convert.ToHexStringLower(SHA256.HashData(aBytes))} {aBytes.Length} "
                    + Convert.ToHexStringLower(SHA256.HashData(Encoding.Latin1.GetBytes(Canonical(aText))));
         }
-        catch (FailureException anExc)
+        catch (Exception anExc) when (Refusal.IsFailure(anExc))
         {
-            return aHead + "EXC " + anExc.Message;
+            return aHead + "EXC " + Refusal.Unwrapped(anExc).Message;
         }
     }
 
@@ -240,7 +240,7 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
                     var aReader = new CafReader();
                     isOk = aReader.ReadFile(aFile) == ReturnStatus.RetDone && aReader.Transfer(aDoc);
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                     isOk = false;
                 }

@@ -26,17 +26,17 @@ public class Geom_ElementarySurfacesTests
     [Fact]
     public void Constructors_Check_Their_Arguments()
     {
-        Assert.Throws<ConstructionErrorException>(() => new CylindricalSurface(Frame, -1));
-        Assert.Throws<ConstructionErrorException>(() => new ConicalSurface(Frame, 0.4, -1));
-        Assert.Throws<ConstructionErrorException>(() => new ConicalSurface(Frame, 0.0, 1));
-        Assert.Throws<ConstructionErrorException>(() => new ConicalSurface(Frame, M_PI / 2, 1));
-        Assert.Throws<ConstructionErrorException>(() => new SphericalSurface(Frame, -1));
-        Assert.Throws<ConstructionErrorException>(() => new ToroidalSurface(Frame, -1, 1));
-        Assert.Throws<ConstructionErrorException>(() => new ToroidalSurface(Frame, 1, -1));
+        EngineAssert.Throws<ConstructionErrorException>(() => new CylindricalSurface(Frame, -1));
+        EngineAssert.Throws<ConstructionErrorException>(() => new ConicalSurface(Frame, 0.4, -1));
+        EngineAssert.Throws<ConstructionErrorException>(() => new ConicalSurface(Frame, 0.0, 1));
+        EngineAssert.Throws<ConstructionErrorException>(() => new ConicalSurface(Frame, M_PI / 2, 1));
+        EngineAssert.Throws<ConstructionErrorException>(() => new SphericalSurface(Frame, -1));
+        EngineAssert.Throws<ConstructionErrorException>(() => new ToroidalSurface(Frame, -1, 1));
+        EngineAssert.Throws<ConstructionErrorException>(() => new ToroidalSurface(Frame, 1, -1));
         // OCCT's constructor accepts MinorRadius > MajorRadius; SetMajorRadius and SetMinorRadius don't
         ToroidalSurface aTorus = new(Frame, 1, 2);
-        Assert.Throws<ConstructionErrorException>(() => aTorus.WithMajorRadius(1.5));
-        Assert.Throws<ConstructionErrorException>(() => new ToroidalSurface(Frame, 3, 1).WithMinorRadius(3));
+        EngineAssert.Throws<ConstructionErrorException>(() => aTorus.WithMajorRadius(1.5));
+        EngineAssert.Throws<ConstructionErrorException>(() => new ToroidalSurface(Frame, 3, 1).WithMinorRadius(3));
     }
 
     [Fact]
@@ -172,7 +172,7 @@ public class Geom_ElementarySurfacesTests
             double h = 1e-6;
             Vector3D aFdU = new Vector3D(S.Value(U - h, V), S.Value(U + h, V)) / (2 * h);
             Assert.True(aFdU.IsEqual(D1U, 1e-6, 1e-6));
-            Assert.Throws<UndefinedDerivative3DException>(() => S.DN(U, V, 0, 0));
+            EngineAssert.Throws<UndefinedDerivative3DException>(() => S.DN(U, V, 0, 0));
         }
     }
 
@@ -208,16 +208,16 @@ public class Geom_ElementarySurfacesTests
         foreach (ElementarySurface S in new ElementarySurface[] { aCyl, aCone, aSph, aTor })
         {
             S.Freeze();
-            Assert.Throws<ImmutableObjectException>(() => S.Transform(new Transform3D()));
-            Assert.Throws<ImmutableObjectException>(() => S.UReverse());
-            Assert.Throws<ImmutableObjectException>(() => S.VReverse());
-            Assert.Throws<ImmutableObjectException>(() => S.SetLocation(new Point3D()));
+            EngineAssert.Throws<ImmutableObjectException>(() => S.Transform(new Transform3D()));
+            EngineAssert.Throws<ImmutableObjectException>(() => S.UReverse());
+            EngineAssert.Throws<ImmutableObjectException>(() => S.VReverse());
+            EngineAssert.Throws<ImmutableObjectException>(() => S.SetLocation(new Point3D()));
             Assert.False(S.Copy().IsFrozen);
         }
-        Assert.Throws<ImmutableObjectException>(() => aCyl.SetRadius(1));
-        Assert.Throws<ImmutableObjectException>(() => aCone.SetSemiAngle(0.2));
-        Assert.Throws<ImmutableObjectException>(() => aSph.SetRadius(1));
-        Assert.Throws<ImmutableObjectException>(() => aTor.SetMinorRadius(1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aCyl.SetRadius(1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aCone.SetSemiAngle(0.2));
+        EngineAssert.Throws<ImmutableObjectException>(() => aSph.SetRadius(1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aTor.SetMinorRadius(1));
 
         Assert.Equal(1.0, aCyl.WithRadius(1).Radius);
         Assert.Equal(2.0, aCyl.WithCylinder(new Cylinder(Frame, 2)).Radius);

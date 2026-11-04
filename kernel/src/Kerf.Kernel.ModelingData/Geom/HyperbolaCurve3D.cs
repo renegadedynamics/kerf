@@ -37,7 +37,7 @@ public sealed class HyperbolaCurve3D : ConicCurve3D
         _minorRadius = minorRadius;
         if (majorRadius < 0.0 || minorRadius < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _pos = a;
     }
@@ -76,7 +76,7 @@ public sealed class HyperbolaCurve3D : ConicCurve3D
         CheckMutable();
         if (majorRadius < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         else
         {
@@ -90,7 +90,7 @@ public sealed class HyperbolaCurve3D : ConicCurve3D
         CheckMutable();
         if (minorRadius < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         else
         {
@@ -195,7 +195,7 @@ public sealed class HyperbolaCurve3D : ConicCurve3D
     {
         if (n < 1)
         {
-            throw new UndefinedDerivative3DException();
+            throw Refusal.State(new UndefinedDerivative3DException());
         }
         return global::Kerf.Engine.Geometry.ElCLib.HyperbolaDN(u, _pos, _majorRadius, _minorRadius, n);
     }
@@ -206,7 +206,7 @@ public sealed class HyperbolaCurve3D : ConicCurve3D
     {
         get
         {
-            Standard_ConstructionError_Raise_if(_majorRadius == 0.0, " ");
+            Refusal.StateIf(_majorRadius == 0.0, FailureKind.ConstructionError, " ");
             return (Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius)) / _majorRadius;
         }
     }
@@ -253,7 +253,7 @@ public sealed class HyperbolaCurve3D : ConicCurve3D
     {
         get
         {
-            Standard_ConstructionError_Raise_if(_majorRadius == 0.0, " ");
+            Refusal.StateIf(_majorRadius == 0.0, FailureKind.ConstructionError, " ");
             return (_minorRadius * _minorRadius) / _majorRadius;
         }
     }

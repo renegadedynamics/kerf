@@ -36,10 +36,10 @@ internal static class DrawCxx
                 aStatus = theCommand(i, aResult, a);
                 aText = aResult.ToString();
             }
-            catch (FailureException aFailure)
+            catch (Exception aFailure) when (Refusal.IsFailure(aFailure))
             {
                 aStatus = 1;
-                aText = "An exception was caught " + Print(aFailure);
+                aText = "An exception was caught " + Print(Refusal.Of(aFailure)!);
             }
 
             if (aDoLog && aText.Length > 0)

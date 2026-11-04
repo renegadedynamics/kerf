@@ -95,10 +95,10 @@ public static class Step
             cancellationToken.ThrowIfCancellationRequested();
             done = done && writer.WriteStream(stream) == ReturnStatus.RetDone;
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            return Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, $"The model couldn't be written as STEP ({e.Message})."));
+            return Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, $"The model couldn't be written as STEP ({Refusal.Unwrapped(e).Message})."));
         }
 
         return done ? Result.Success() : Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, "The model couldn't be written as STEP."));

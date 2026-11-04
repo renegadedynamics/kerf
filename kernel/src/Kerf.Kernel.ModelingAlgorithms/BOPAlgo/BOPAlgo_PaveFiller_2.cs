@@ -97,7 +97,7 @@ internal sealed class VertexEdge : ParallelAlgo, BooleanParallel.IContextSolver<
         {
             _flag = _context!.ComputeVE(_v, _e, ref _t, ref _tolVNew, _fuzzyValue);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             AddError(new AlertIntersectionFailed());
         }

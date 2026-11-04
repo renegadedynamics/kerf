@@ -136,10 +136,10 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         {
             aLine = theRun();
         }
-        catch (Exception e) when (e is FailureException or NullReferenceException && e is not (ImmutableObjectException or LockedShapeException))
+        catch (Exception e) when ((Refusal.IsFailure(e) || e is NullReferenceException) && e is not (ImmutableObjectException or LockedShapeException))
         {
             // an access violation natively (decision 977)
-            aLine = "THROW " + (e is NullReferenceException ? "OSD_Exception_ACCESS_VIOLATION" : global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
+            aLine = "THROW " + (e is NullReferenceException ? "OSD_Exception_ACCESS_VIOLATION" : global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()));
         }
         return aLine is null ? null : string.Create(CultureInfo.InvariantCulture, $"{theTool} {theIndex} {aLine}");
     }

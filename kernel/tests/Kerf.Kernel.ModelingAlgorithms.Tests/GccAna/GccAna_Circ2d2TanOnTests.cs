@@ -107,7 +107,7 @@ public class GccAna_Circ2d2TanOnTests
             }
             else
             {
-                Assert.Throws<NotDoneException>(() => theAlgo.Tangency1(i, out _, out _, out _));
+                EngineAssert.Throws<NotDoneException>(() => theAlgo.Tangency1(i, out _, out _, out _));
             }
             if (!theAlgo.IsTheSame2(i))
             {
@@ -574,14 +574,14 @@ public class GccAna_Circ2d2TanOnTests
     public void Accessors_OutOfRange()
     {
         AnalyticCirc2d2TanOn a = new(new Point2D(0, 0), new Point2D(2, 0), Lin(0, 0, 1, 0), Tol);
-        Assert.Throws<OutOfRangeException>(() => a.WhichQualifier(2, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => a.Tangency1(0, out _, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => a.Tangency2(2, out _, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => a.CenterOn3(2, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => a.IsTheSame1(2));
-        Assert.Throws<OutOfRangeException>(() => a.IsTheSame2(0));
+        EngineAssert.Throws<OutOfRangeException>(() => a.WhichQualifier(2, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => a.Tangency1(0, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => a.Tangency2(2, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => a.CenterOn3(2, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => a.IsTheSame1(2));
+        EngineAssert.Throws<OutOfRangeException>(() => a.IsTheSame2(0));
         // OCCT checked nothing in ThisSolution (decision 1541)
-        Assert.Throws<OutOfRangeException>(() => a.ThisSolution(2));
+        EngineAssert.Throws<OutOfRangeException>(() => a.ThisSolution(2));
     }
 
     [Fact]
@@ -591,6 +591,6 @@ public class GccAna_Circ2d2TanOnTests
         AnalyticCirc2d2TanOn a = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Lin(0, 0, 1, 0)), new Point2D(0, 2), Lin(1, 0, 1, 0), Tol);
         Assert.False(a.IsDone);
         Assert.Equal(0, a.SolutionCount);
-        Assert.Throws<NotDoneException>(() => a.WhichQualifier(1, out _, out _));
+        EngineAssert.Throws<NotDoneException>(() => a.WhichQualifier(1, out _, out _));
     }
 }

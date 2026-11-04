@@ -92,9 +92,9 @@ public class LocalAnalysis_CurveContinuityTests
         var c = new global::Kerf.Engine.Measurement.CurveContinuity(aL1, 0.0, aL2, 0.0, G2);
         Assert.False(c.IsDone);
         Assert.Equal(global::Kerf.Engine.Measurement.StatusErrorType.NormalNotDefined, c.StatusError());
-        Assert.Throws<NotDoneException>(() => c.C0Value());
-        Assert.Throws<NotDoneException>(() => c.IsC0());
-        Assert.Throws<NotDoneException>(() => c.ContinuityStatus());
+        EngineAssert.Throws<NotDoneException>(() => c.C0Value());
+        EngineAssert.Throws<NotDoneException>(() => c.IsC0());
+        EngineAssert.Throws<NotDoneException>(() => c.ContinuityStatus());
     }
 
     [Fact]

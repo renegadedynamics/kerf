@@ -153,9 +153,9 @@ internal static class GeometryArrays
         {
             return make();
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
-            throw new ArgumentException(e.Message is { Length: > 0 } message ? message : "The data don't make this geometry.", e);
+            throw new ArgumentException(Refusal.Unwrapped(e).Message is { Length: > 0 } message ? message : "The data don't make this geometry.", e);
         }
     }
 }

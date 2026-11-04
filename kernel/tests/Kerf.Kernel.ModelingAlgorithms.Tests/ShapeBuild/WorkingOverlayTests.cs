@@ -66,10 +66,10 @@ public class WorkingOverlayTests
         Shape box = FrozenBox();
         Vertex v = ShapeCasts.Vertex(SubShapes(box, ShapeType.Vertex)[0]);
         Edge e = ShapeCasts.Edge(SubShapes(box, ShapeType.Edge)[0]);
-        Assert.Throws<LockedShapeException>(() => new BrepBuilder().UpdateVertex(v, 1.0));
-        Assert.Throws<LockedShapeException>(() => new BrepBuilder().Range(e, 0, 1));
-        Assert.Throws<ImmutableObjectException>(() => ((BrepTVertex)v.TShape()!).Tolerance(1.0));
-        Assert.Throws<ImmutableObjectException>(() => box.Closed(false));
+        EngineAssert.Throws<LockedShapeException>(() => new BrepBuilder().UpdateVertex(v, 1.0));
+        EngineAssert.Throws<LockedShapeException>(() => new BrepBuilder().Range(e, 0, 1));
+        EngineAssert.Throws<ImmutableObjectException>(() => ((BrepTVertex)v.TShape()!).Tolerance(1.0));
+        EngineAssert.Throws<ImmutableObjectException>(() => box.Closed(false));
     }
 
     [Fact]
@@ -355,12 +355,12 @@ public class WorkingOverlayTests
     {
         Shape box = FrozenBox();
         using var overlay = WorkingOverlay.Begin(box);
-        Assert.Throws<ProgramErrorException>(() => overlay.History());
+        EngineAssert.Throws<ProgramErrorException>(() => overlay.History());
         overlay.Finish(box);
-        Assert.Throws<ProgramErrorException>(() => overlay.Finish(box));
+        EngineAssert.Throws<ProgramErrorException>(() => overlay.Finish(box));
         // after Finish the overlay takes no more writes
         Vertex v = ShapeCasts.Vertex(SubShapes(box, ShapeType.Vertex)[0]);
-        Assert.Throws<LockedShapeException>(() => new BrepBuilder().UpdateVertex(v, 1.0));
+        EngineAssert.Throws<LockedShapeException>(() => new BrepBuilder().UpdateVertex(v, 1.0));
     }
 
     // The in-place fix on an unfrozen exact copy, as OCCT runs it (the pilot's old path, decision 642, ran it on

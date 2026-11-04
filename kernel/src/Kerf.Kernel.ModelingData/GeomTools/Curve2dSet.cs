@@ -909,7 +909,7 @@ internal class Curve2dSet
                     break;
             }
         }
-        catch (FailureException exception) when (exception is not StreamFormatErrorException)
+        catch (Exception exception) when (Refusal.IsFailure(exception) && (exception is not StreamFormatErrorException))
         {
             // OCCT_DEBUG only: "EXCEPTION in GeomTools_Curve2dSet::ReadCurve2d(..)!!!"
         }

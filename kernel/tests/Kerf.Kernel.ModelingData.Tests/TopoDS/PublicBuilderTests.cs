@@ -59,7 +59,7 @@ public class PublicBuilderTests
         Assert.True(aCompound.TShape()!.IsFrozen);
         Assert.True(aCompound.Locked());
         Assert.Equal(1, aCompound.ChildCount);
-        Assert.ThrowsAny<FailureException>(() => aBuilder.Add(aCompound, aBox));
+        EngineAssert.ThrowsAny<FailureException>(() => aBuilder.Add(aCompound, aBox));
     }
 
     [Fact]

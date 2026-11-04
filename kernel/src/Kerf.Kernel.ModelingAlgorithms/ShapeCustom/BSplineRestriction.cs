@@ -60,7 +60,7 @@ internal class BSplineRestriction : CustomModification
     // into a frozen shape or geometry (decision 423)
     private static bool IsCaughtFailure(Exception exception)
         => exception is not (ImmutableObjectException or LockedShapeException)
-           && exception is FailureException or NullReferenceException;
+           && (Refusal.IsFailure(exception) || exception is NullReferenceException);
 
     private static Continuity IntegerToGeomAbsShape(int i)
     {

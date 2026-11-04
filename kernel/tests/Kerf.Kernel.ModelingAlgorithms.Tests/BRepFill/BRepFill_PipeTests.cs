@@ -152,7 +152,7 @@ public class BRepFill_PipeTests
         Wire aSpine = Polyline(new Point3D(0, 0, 0), new Point3D(0, 0, 4), new Point3D(0, 0, 10));
 
         Pipe aPipe = new();
-        var anError = Assert.Throws<DomainErrorException>(() => aPipe.Perform(aSpine, aBox));
+        var anError = EngineAssert.Throws<DomainErrorException>(() => aPipe.Perform(aSpine, aBox));
         Assert.Contains("profile contains solids", anError.Message, StringComparison.Ordinal);
         Assert.Equal(aBoxText, Text(aBox));
 
@@ -180,7 +180,7 @@ public class BRepFill_PipeTests
         Compound aCompound = new();
         aB.MakeCompound(ref aCompound);
         aB.Add(aCompound, aBox);
-        Assert.Throws<DomainErrorException>(() => new ApiMakePipe(aSpine, aCompound));
+        EngineAssert.Throws<DomainErrorException>(() => new ApiMakePipe(aSpine, aCompound));
         Assert.Equal(aBoxText, Text(aBox));
     }
 
@@ -190,17 +190,17 @@ public class BRepFill_PipeTests
         Shape aBox = new MakeBox(1, 1, 1).Shape();
         Wire aSpine = Polyline(new Point3D(0, 0, 0), new Point3D(0, 0, 3));
         Pipe aPipe = new();
-        Assert.Throws<DomainErrorException>(() => aPipe.Perform(aSpine, aBox));
+        EngineAssert.Throws<DomainErrorException>(() => aPipe.Perform(aSpine, aBox));
         Assert.True(aPipe.Shape().IsNull);
         Assert.Equal(ShapeType.Wire, aPipe.Spine().Type);
 
         Edge aSpineEdge = ShapeCasts.Edge(new Explorer(aSpine, ShapeType.Edge).Current());
         Edge aBoxEdge = ShapeCasts.Edge(new Explorer(aBox, ShapeType.Edge).Current());
         // the profile is searched first: a solid profile is refused
-        Assert.Throws<DomainErrorException>(() => aPipe.Face(aSpineEdge, aBoxEdge));
+        EngineAssert.Throws<DomainErrorException>(() => aPipe.Face(aSpineEdge, aBoxEdge));
         // a vertex not on the spine
         Vertex aV = new MakeVertex(new Point3D(5, 5, 5)).Vertex();
-        Assert.Throws<DomainErrorException>(() => aPipe.Section(aV));
+        EngineAssert.Throws<DomainErrorException>(() => aPipe.Section(aV));
         // a spine vertex: OCCT reads the sections the sweep would have made
         Vertex aSpineVertex = Exploration.FirstVertex(aSpineEdge);
         Assert.ThrowsAny<Exception>(() => aPipe.Section(aSpineVertex));

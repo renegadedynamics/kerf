@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Occt;
 using static Kerf.Geometry.TransformForm;
@@ -145,15 +146,15 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
 
     public readonly double AngleTo(in Vector3D other)
     {
-        gp_VectorWithNullMagnitude_Raise_if(_coord.Modulus() <= Constants.Resolution() || other._coord.Modulus() <= Constants.Resolution(), " ");
+        Refusal.StateIf(_coord.Modulus() <= Constants.Resolution() || other._coord.Modulus() <= Constants.Resolution(), FailureKind.NullVector, " ");
         return new Direction3D(_coord).AngleTo(new Direction3D(other._coord));
     }
 
     public readonly double AngleWithRef(in Vector3D other, in Vector3D vRef)
     {
-        gp_VectorWithNullMagnitude_Raise_if(_coord.Modulus() <= Constants.Resolution()
+        Refusal.StateIf(_coord.Modulus() <= Constants.Resolution()
                                             || vRef._coord.Modulus() <= Constants.Resolution()
-                                            || other._coord.Modulus() <= Constants.Resolution(), " ");
+                                            || other._coord.Modulus() <= Constants.Resolution(), FailureKind.NullVector, " ");
         return new Direction3D(_coord).AngleWithRef(new Direction3D(other._coord), new Direction3D(vRef._coord));
     }
 
@@ -214,7 +215,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
     public readonly Vector3D Normalized()
     {
         double d = _coord.Modulus();
-        Standard_ConstructionError_Raise_if(d <= Constants.Resolution(), "gp_Vec::Normalized() - vector has zero norm");
+        Refusal.StateIf(d <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Vec::Normalized() - vector has zero norm");
         Xyz coord = _coord;
         coord.Divide(d);
         return new Vector3D(coord);

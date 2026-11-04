@@ -95,12 +95,12 @@ public class IntAna_ConicQuadTests
                                            new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)),
                                            new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)));
         Assert.True(aParallel.IsEmpty);
-        Assert.Throws<DomainErrorException>(() => aParallel.Value());
+        EngineAssert.Throws<DomainErrorException>(() => aParallel.Value());
 
         var anEmpty = new Int3Pln();
         Assert.False(anEmpty.IsDone);
-        Assert.Throws<NotDoneException>(() => anEmpty.IsEmpty);
-        Assert.Throws<NotDoneException>(() => anEmpty.Value());
+        EngineAssert.Throws<NotDoneException>(() => anEmpty.IsEmpty);
+        EngineAssert.Throws<NotDoneException>(() => anEmpty.Value());
     }
 
     [Fact]
@@ -149,8 +149,8 @@ public class IntAna_ConicQuadTests
         Assert.Equal(-4, aParams[1], 1e-9);
         Assert.Equal(4, aParams[2], 1e-9);
         Assert.Equal(6, aParams[3], 1e-9);
-        Assert.Throws<OutOfRangeException>(() => aX.Value(5));
-        Assert.Throws<NotDoneException>(() => new IntLinTorus().PointCount);
+        EngineAssert.Throws<OutOfRangeException>(() => aX.Value(5));
+        EngineAssert.Throws<NotDoneException>(() => new IntLinTorus().PointCount);
     }
 
     [Fact]
@@ -250,12 +250,12 @@ public class IntAna_ConicQuadTests
         var anIn = new IntConicQuad(new Line3D(new Point3D(1, 2, 0), new Direction3D(1, 1, 0)), aPln, 1e-12);
         Assert.True(anIn.IsDone);
         Assert.True(anIn.IsParallel || anIn.IsInQuadric);
-        Assert.Throws<DomainErrorException>(() => anIn.PointCount);
+        EngineAssert.Throws<DomainErrorException>(() => anIn.PointCount);
         var aCross = new IntConicQuad(new Line3D(new Point3D(1, 2, 3), new Direction3D(0, 0, -1)), aPln, 1e-12);
         Assert.Equal(1, aCross.PointCount);
         Assert.Equal(3.0, aCross.ParamOnConic(1), 1e-15);
         Assert.True(aCross.Point(1).IsEqual(new Point3D(1, 2, 0), 1e-15));
-        Assert.Throws<OutOfRangeException>(() => aCross.Point(2));
+        EngineAssert.Throws<OutOfRangeException>(() => aCross.Point(2));
 
         // A circle of the sphere is in it
         var aSph = new Quadric(new Sphere(new CoordinateSystem(), 2));
@@ -273,7 +273,7 @@ public class IntAna_ConicQuadTests
         Assert.Equal(2, aLin.PointCount);
         Assert.Equal(4.0, Math.Abs(aLin.ParamOnConic(1) - aLin.ParamOnConic(2)), 1e-12);
 
-        Assert.Throws<NotDoneException>(() => new IntConicQuad().IsInQuadric);
+        EngineAssert.Throws<NotDoneException>(() => new IntConicQuad().IsInQuadric);
     }
 
     [Fact]

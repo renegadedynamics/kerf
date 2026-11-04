@@ -348,7 +348,7 @@ internal static class KPartRecorder
             o.SurfData(Data);
             o.DS(DStr);
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
             o.Exception(e);
         }
@@ -370,7 +370,7 @@ internal static class KPartRecorder
             o.SurfData(Data);
             o.DS(DStr);
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
             o.Exception(e);
         }
@@ -391,7 +391,7 @@ internal static class KPartRecorder
             o.SurfData(Data);
             o.DS(DStr);
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
             o.Exception(e);
         }
@@ -413,7 +413,7 @@ internal static class KPartRecorder
             o.SurfData(Data);
             o.DS(DStr);
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
             o.Exception(e);
         }
@@ -574,7 +574,7 @@ internal static class KPartRecorder
                         o.C2("pc2", Pc2);
                     }
                 }
-                catch (FailureException e)
+                catch (Exception e) when (Refusal.IsFailure(e))
                 {
                     o.Exception(e);
                 }
@@ -716,7 +716,7 @@ internal static class KPartRecorder
                 o.C3("curve", HES.BSpline());
             }
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
             o.Exception(e);
         }

@@ -172,8 +172,8 @@ public class ShapeExtendHealingTests
         Assert.Equal(0.0, aSurf.Value(new Point2D(5, 1)).Z);
 
         aSurf.Freeze();
-        Assert.ThrowsAny<ImmutableObjectException>(() => aSurf.SetUFirstValue(1));
-        Assert.ThrowsAny<ImmutableObjectException>(() => aSurf.Init(Grid()));
+        EngineAssert.ThrowsAny<ImmutableObjectException>(() => aSurf.SetUFirstValue(1));
+        EngineAssert.ThrowsAny<ImmutableObjectException>(() => aSurf.Init(Grid()));
     }
 
     [Fact]

@@ -203,25 +203,25 @@ public class GccAna_Circ2d2TanRadTests
     {
         Line2D aL1 = Lin(0, 0, 1, 0), aL2 = Lin(0, 0, 0, 1);
         Circle2D aC1 = Circ(0, 0, 1), aC2 = Circ(4, 0, 1);
-        Assert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL1), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL2), -1.0, Tol));
-        Assert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC1), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC2), -1.0, Tol));
-        Assert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC1), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL1), -1.0, Tol));
-        Assert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC1), new Point2D(3, 0), -1.0, Tol));
-        Assert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL1), new Point2D(3, 1), -1.0, Tol));
-        Assert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(new Point2D(0, 0), new Point2D(1, 0), -1.0, Tol));
+        EngineAssert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL1), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL2), -1.0, Tol));
+        EngineAssert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC1), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC2), -1.0, Tol));
+        EngineAssert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC1), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL1), -1.0, Tol));
+        EngineAssert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC1), new Point2D(3, 0), -1.0, Tol));
+        EngineAssert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL1), new Point2D(3, 1), -1.0, Tol));
+        EngineAssert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(new Point2D(0, 0), new Point2D(1, 0), -1.0, Tol));
     }
 
     [Fact]
     public void Accessors_OutOfRange()
     {
         AnalyticCirc2d2TanRad anAlgo = new(new Point2D(0, 0), new Point2D(2, 0), 2.0, Tol);
-        Assert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(0));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(3));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.WhichQualifier(3, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.Tangency1(3, out _, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.Tangency2(0, out _, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.IsTheSame1(3));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.IsTheSame2(3));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(0));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(3));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.WhichQualifier(3, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.Tangency1(3, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.Tangency2(0, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.IsTheSame1(3));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.IsTheSame2(3));
     }
 
     // C1 at the origin, C2 at (4, 0), both of radius 1, and solutions of radius 2.5: outside both (2), enclosing one
@@ -432,7 +432,7 @@ public class GccAna_Circ2d2TanRadTests
         Assert.True(anAlgo.SolutionCount >= 1);
         Assert.True(anAlgo.IsTheSame1(1));
         Assert.Equal(aC1.Location.X, anAlgo.ThisSolution(1).Location.X);
-        Assert.Throws<NotDoneException>(() => anAlgo.Tangency1(1, out _, out _, out _));
+        EngineAssert.Throws<NotDoneException>(() => anAlgo.Tangency1(1, out _, out _, out _));
         for (int i = 2; i <= anAlgo.SolutionCount; i++)
         {
             CheckTangency1(anAlgo, i, aC1);
@@ -450,6 +450,6 @@ public class GccAna_Circ2d2TanRadTests
         Assert.True(anAlgo.IsDone);
         Assert.True(anAlgo.SolutionCount >= 1);
         Assert.True(anAlgo.IsTheSame1(1));
-        Assert.Throws<NotDoneException>(() => anAlgo.Tangency1(1, out _, out _, out _));
+        EngineAssert.Throws<NotDoneException>(() => anAlgo.Tangency1(1, out _, out _, out _));
     }
 }

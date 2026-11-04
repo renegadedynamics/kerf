@@ -190,7 +190,7 @@ internal static class Failures
         }
         else
         {
-            cause = [failure is ArgumentException argument ? ArgumentDiagnostic(argument) : Diagnostic.FromException(failure)];
+            cause = [failure is ArgumentException argument && !Diagnostic.IsKernelFailure(failure) ? ArgumentDiagnostic(argument) : Diagnostic.FromException(failure)];
             kernel = failure;
         }
         var diagnostics = cause.Select(d => d.IsError ? d with { Message = $"{operation} failed: {d.Message}" } : d).ToImmutableArray();

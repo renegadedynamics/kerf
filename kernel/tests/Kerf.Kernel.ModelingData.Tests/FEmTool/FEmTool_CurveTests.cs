@@ -117,9 +117,9 @@ public class FEmTool_CurveTests
 
         aCurve.SetDegree(2, 5);
         Assert.Equal(5, aCurve.Degree(2));
-        Assert.ThrowsAny<OutOfRangeException>(() => aCurve.SetDegree(2, WorkDegree + 1));
-        Assert.ThrowsAny<OutOfRangeException>(() => aCurve.SetElement(3, anElement));
-        Assert.ThrowsAny<OutOfRangeException>(() => aCurve.GetElement(0, anElement));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aCurve.SetDegree(2, WorkDegree + 1));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aCurve.SetElement(3, anElement));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aCurve.GetElement(0, anElement));
     }
 
     [Fact]
@@ -172,7 +172,7 @@ public class FEmTool_CurveTests
         Assert.Equal(3 * aSqrt5, aLength, 1e-12);
         aLine.Length(0, 4, out aLength);
         Assert.Equal(4 * aSqrt5, aLength, 1e-12);
-        Assert.ThrowsAny<OutOfRangeException>(() => aLine.Length(2, 1, out _));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aLine.Length(2, 1, out _));
     }
 
     private static NCollection_HArray2<double> CriterionCoeffs(double a, double b)
@@ -210,7 +210,7 @@ public class FEmTool_CurveTests
             Assert.Equal(1, aDep[1, 1]);
             Assert.Equal(0, aDep[1, 2]);
             Assert.Equal(1, aDep[2, 2]);
-            Assert.ThrowsAny<DomainErrorException>(() => aCriterion.Hessian(1, 2, new Matrix(0, WorkDegree, 0, WorkDegree)));
+            EngineAssert.ThrowsAny<DomainErrorException>(() => aCriterion.Hessian(1, 2, new Matrix(0, WorkDegree, 0, WorkDegree)));
 
             // Value = 1/2 sum over the dimensions of tX H X, and G = H X
             double aSum = 0;
@@ -290,9 +290,9 @@ public class FEmTool_CurveTests
         Assert.Equal(1.0, Tension(C1), 1e-12);
         Assert.Equal(1.0, Tension(C0), 1e-12);
 
-        Assert.ThrowsAny<ConstructionErrorException>(() => new LinearJerk(15, C1));
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => new LinearJerk(15, C1));
         LinearTension anUnset = new(5, C0);
-        Assert.ThrowsAny<DomainErrorException>(() => anUnset.DependenceTable());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => anUnset.DependenceTable());
     }
 
     [Fact]
@@ -319,9 +319,9 @@ public class FEmTool_CurveTests
                     Assert.Equal(aB[i] * aB[j], aF[k++], 1e-12);
                 }
             }
-            Assert.ThrowsAny<OutOfRangeException>(() => anElem.Value(aX, new math_Vector(1, 27)));
+            EngineAssert.ThrowsAny<OutOfRangeException>(() => anElem.Value(aX, new math_Vector(1, 27)));
         }
-        Assert.ThrowsAny<ConstructionErrorException>(() => new ElementsOfRefMatrix(aBase, 4));
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => new ElementsOfRefMatrix(aBase, 4));
     }
 
     [Fact]

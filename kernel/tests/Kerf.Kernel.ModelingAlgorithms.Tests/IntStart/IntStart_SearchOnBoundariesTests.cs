@@ -238,10 +238,10 @@ public class IntStart_SearchOnBoundariesTests
     {
         TheSOnBounds aSearch = new();
         Assert.False(aSearch.IsDone);
-        Assert.ThrowsAny<NotDoneException>(() => aSearch.PointCount);
-        Assert.ThrowsAny<NotDoneException>(() => aSearch.AllArcSolution());
-        Assert.ThrowsAny<DomainErrorException>(() => new ThePathPointOfTheSOnBounds().Vertex());
-        Assert.ThrowsAny<DomainErrorException>(() => new TheSegmentOfTheSOnBounds().FirstPoint());
+        EngineAssert.ThrowsAny<NotDoneException>(() => aSearch.PointCount);
+        EngineAssert.ThrowsAny<NotDoneException>(() => aSearch.AllArcSolution());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => new ThePathPointOfTheSOnBounds().Vertex());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => new TheSegmentOfTheSOnBounds().FirstPoint());
     }
 
     [Fact]
@@ -312,7 +312,7 @@ public class IntStart_SearchInsideTests
         aFunc.Values(aX, aF, aD);
         Assert.Equal(0.0, aFunc.Root(), 1e-15);
         Assert.True(aFunc.IsTangent()); // the plane x = 1 touches the cylinder along u = 0
-        Assert.ThrowsAny<UndefinedDerivativeException>(() => aFunc.Direction3d());
+        EngineAssert.ThrowsAny<UndefinedDerivativeException>(() => aFunc.Direction3d());
 
         aX[1] = 0.3;
         aFunc.Value(aX, aF); // Value alone: IsTangent evaluates the derivatives itself
@@ -374,7 +374,7 @@ public class IntStart_SearchInsideTests
         aParam[4] = 1;
         anInt.Perform(aParam, new FunctionSetRoot(anInt.Function()));
         Assert.True(anInt.IsEmpty); // ComputeTangence: the surfaces are tangent, no search
-        Assert.ThrowsAny<DomainErrorException>(() => anInt.Point());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => anInt.Point());
     }
 
     [Fact]

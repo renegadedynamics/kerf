@@ -239,7 +239,7 @@ internal sealed class CurveAnalysis
                 }
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             ok = false;
         }
@@ -923,7 +923,7 @@ internal sealed class CurveAnalysis
                     AppendControlPoles(seq, bslp);
                     done = true;
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                 }
             }
@@ -936,7 +936,7 @@ internal sealed class CurveAnalysis
                     AppendControlPoles(seq, bz);
                     done = true;
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                 }
             }

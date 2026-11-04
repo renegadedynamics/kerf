@@ -247,12 +247,12 @@ public class math_JacobiTest
         if (!aJacobi.IsDone)
         {
             // Only test exceptions if computation actually failed
-            Assert.ThrowsAny<NotDoneException>(() => { aJacobi.Values(); });
-            Assert.ThrowsAny<NotDoneException>(() => { aJacobi.Value(1); });
-            Assert.ThrowsAny<NotDoneException>(() => { aJacobi.Vectors(); });
+            EngineAssert.ThrowsAny<NotDoneException>(() => { aJacobi.Values(); });
+            EngineAssert.ThrowsAny<NotDoneException>(() => { aJacobi.Value(1); });
+            EngineAssert.ThrowsAny<NotDoneException>(() => { aJacobi.Vectors(); });
 
             math_Vector aV = new(1, 2);
-            Assert.ThrowsAny<NotDoneException>(() => { aJacobi.Vector(1, aV); });
+            EngineAssert.ThrowsAny<NotDoneException>(() => { aJacobi.Vector(1, aV); });
         }
     }
 

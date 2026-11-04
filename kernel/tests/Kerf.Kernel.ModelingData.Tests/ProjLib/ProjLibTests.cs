@@ -123,10 +123,10 @@ public class ProjLibTests
     public void Plane_ThrowsOnOtherType()
     {
         var aProj = new global::Kerf.Engine.Geometry.Projection.PlaneProjector(new Plane3D(), new Line3D(new Point3D(), new Direction3D(1, 0, 0)));
-        Assert.Throws<NoSuchObjectException>(() => aProj.Circle());
-        Assert.Throws<NoSuchObjectException>(() => aProj.Ellipse());
-        Assert.Throws<NoSuchObjectException>(() => aProj.Parabola());
-        Assert.Throws<NoSuchObjectException>(() => aProj.Hyperbola());
+        EngineAssert.Throws<NoSuchObjectException>(() => aProj.Circle());
+        EngineAssert.Throws<NoSuchObjectException>(() => aProj.Ellipse());
+        EngineAssert.Throws<NoSuchObjectException>(() => aProj.Parabola());
+        EngineAssert.Throws<NoSuchObjectException>(() => aProj.Hyperbola());
         var anEmpty = new global::Kerf.Engine.Geometry.Projection.PlaneProjector();
         Assert.False(anEmpty.IsDone);
         Assert.Equal(BSplineCurve, anEmpty.GetType());
@@ -139,7 +139,7 @@ public class ProjLibTests
     {
         // The projected direction is null: gp_Dir2d throws, where OCCT's release build (No_Exception) returns a
         // line with a NaN direction (decision 9)
-        Assert.Throws<ConstructionErrorException>(() => global::Kerf.Engine.Geometry.Projection.ProjLib.Project(new Plane3D(), new Line3D()));
+        EngineAssert.Throws<ConstructionErrorException>(() => global::Kerf.Engine.Geometry.Projection.ProjLib.Project(new Plane3D(), new Line3D()));
     }
 
     // Cylinder
@@ -184,7 +184,7 @@ public class ProjLibTests
         var aLin = new global::Kerf.Engine.Geometry.Projection.CylinderProjector(aCyl, new Line3D(new Point3D(2, 0, 0), new Direction3D(0, 1, 1)));
         Assert.False(aLin.IsDone);
         Assert.Equal(OtherCurve, aLin.GetType());
-        Assert.Throws<NoSuchObjectException>(() => aLin.Line());
+        EngineAssert.Throws<NoSuchObjectException>(() => aLin.Line());
         var aCirc = new global::Kerf.Engine.Geometry.Projection.CylinderProjector(aCyl, new Circle3D(new Frame3D(new Point3D(), new Direction3D(0, 1, 1)), 2.0));
         Assert.False(aCirc.IsDone);
         var anElips = new global::Kerf.Engine.Geometry.Projection.CylinderProjector(aCyl, new Ellipse3D(new Frame3D(new Point3D(), new Direction3D(0, 1, 1)), 3.0, 2.0));
@@ -301,7 +301,7 @@ public class ProjLibTests
         var aSph = new Sphere(new CoordinateSystem(), 2.0);
         var aProj = new global::Kerf.Engine.Geometry.Projection.SphereProjector(aSph, new Circle3D(new Frame3D(new Point3D(0.5, 0, 0), new Direction3D(0, 1, 1)), 1.0));
         Assert.False(aProj.IsDone);
-        Assert.Throws<NotDoneException>(() => aProj.SetInBounds(0.0));
+        EngineAssert.Throws<NotDoneException>(() => aProj.SetInBounds(0.0));
         var aLin = new global::Kerf.Engine.Geometry.Projection.SphereProjector(aSph);
         aLin.Project(new Line3D());
         Assert.Equal(OtherCurve, aLin.GetType());

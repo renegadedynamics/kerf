@@ -265,12 +265,12 @@ public class Quantity_ColorTest
     [Fact]
     public void Out_of_range_values_throw()
     {
-        Assert.Throws<OutOfRangeException>(() => new LinearColor(1.1, 0, 0, TocRgb));
-        Assert.Throws<OutOfRangeException>(() => new LinearColor(-0.1, 0, 0, TOC_sRGB));
-        Assert.Throws<OutOfRangeException>(() => new LinearColor(361, 0.5, 0.5, TocHls));
-        Assert.Throws<OutOfRangeException>(() => new LinearColor(50, 101, 0, TOC_CIELab));
-        Assert.Throws<OutOfRangeException>(() => new LinearColor(50, 136, 0, TOC_CIELch));
-        Assert.Throws<OutOfRangeException>(() => new LinearColor((NameOfColor)600));
+        EngineAssert.Throws<OutOfRangeException>(() => new LinearColor(1.1, 0, 0, TocRgb));
+        EngineAssert.Throws<OutOfRangeException>(() => new LinearColor(-0.1, 0, 0, TOC_sRGB));
+        EngineAssert.Throws<OutOfRangeException>(() => new LinearColor(361, 0.5, 0.5, TocHls));
+        EngineAssert.Throws<OutOfRangeException>(() => new LinearColor(50, 101, 0, TOC_CIELab));
+        EngineAssert.Throws<OutOfRangeException>(() => new LinearColor(50, 136, 0, TOC_CIELch));
+        EngineAssert.Throws<OutOfRangeException>(() => new LinearColor((NameOfColor)600));
         Assert.Equal("UNDEFINED", LinearColor.StringName((NameOfColor)(-1)));
     }
 
@@ -285,7 +285,7 @@ public class Quantity_ColorTest
         Assert.False(LinearColor.ColorFromName("NOT A COLOUR", ref aName));
         Assert.Equal(NocBlue, aName); // unchanged
         // OCCT's SubString raises on the bare prefix (natively inside noexcept: the process terminates)
-        Assert.Throws<OutOfRangeException>(() => LinearColor.ColorFromName("Quantity_NOC_", ref aName));
+        EngineAssert.Throws<OutOfRangeException>(() => LinearColor.ColorFromName("Quantity_NOC_", ref aName));
         for (int i = 0; i <= (int)NocWhite; i++)
         {
             LinearColor aColor = new((NameOfColor)i);

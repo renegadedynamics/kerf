@@ -93,7 +93,7 @@ public class IntSurf_LineOn2STests
         aLine.InsertBefore(1, P(-1, -1, -1));
         Assert.Equal(new[] { -1.0, 0, 1, 2, 3, 4 }, Xs(aLine));
 
-        Assert.ThrowsAny<OutOfRangeException>(() => aLine.InsertBefore(0, P(9, 9, 9)));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aLine.InsertBefore(0, P(9, 9, 9)));
     }
 
     [Fact]
@@ -108,7 +108,7 @@ public class IntSurf_LineOn2STests
         Assert.Equal(new[] { 0.0, 1, 3, 4 }, Xs(aLine));
         aLine.Reverse();
         Assert.Equal(new[] { 4.0, 3, 1, 0 }, Xs(aLine));
-        Assert.ThrowsAny<OutOfRangeException>(() => aLine.RemovePoint(5));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aLine.RemovePoint(5));
         aLine.Clear();
         Assert.Equal(0, aLine.PointCount);
         Assert.False(aLine.IsOutBox(new Point3D(1e10, 0, 0)));
@@ -220,12 +220,12 @@ public class IntSurfTests
     {
         global::Kerf.Engine.Intersection.Walking.WalkingTransition anUndecided = new();
         Assert.Equal(global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.Undecided, anUndecided.TransitionType());
-        Assert.ThrowsAny<DomainErrorException>(() => anUndecided.IsTangent);
-        Assert.ThrowsAny<DomainErrorException>(() => anUndecided.Situation());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => anUndecided.IsTangent);
+        EngineAssert.ThrowsAny<DomainErrorException>(() => anUndecided.Situation());
 
         global::Kerf.Engine.Intersection.Walking.WalkingTransition anIn = new(true, global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.In);
         Assert.True(anIn.IsTangent);
-        Assert.ThrowsAny<DomainErrorException>(() => anIn.IsOpposite);
+        EngineAssert.ThrowsAny<DomainErrorException>(() => anIn.IsOpposite);
 
         global::Kerf.Engine.Intersection.Walking.WalkingTransition aTouch = new(false, global::Kerf.Engine.Intersection.Walking.WalkingSituation.Outside, true);
         Assert.Equal(global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.Touch, aTouch.TransitionType());
@@ -275,7 +275,7 @@ public class IntSurfTests
         global::Kerf.Engine.Intersection.Walking.PathPoint aP = new(new Point3D(1, 2, 3), 0.5, 0.25);
         Assert.True(aP.IsTangent);
         Assert.True(aP.IsPassingPnt);
-        Assert.ThrowsAny<UndefinedDerivativeException>(() => aP.Direction3d());
+        EngineAssert.ThrowsAny<UndefinedDerivativeException>(() => aP.Direction3d());
 
         global::Kerf.Engine.Intersection.Walking.PathPoint aCopy = aP;
         aCopy.AddUV(0.75, 0.125);

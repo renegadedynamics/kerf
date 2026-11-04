@@ -184,7 +184,7 @@ public class BRepToolsTests
         }
 
         Solid aFrozen = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        Assert.Throws<LockedShapeException>(() => BrepTools.CleanGeometry(aFrozen));
+        EngineAssert.Throws<LockedShapeException>(() => BrepTools.CleanGeometry(aFrozen));
 
         BrepTools.Clean(aBox);
         Assert.Null(Tool.Triangulation(aFace, out _));

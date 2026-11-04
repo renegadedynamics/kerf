@@ -29,7 +29,7 @@ public class Bnd_RangeTest
     [Fact]
     public void ParameterizedConstructor_InvalidRange()
     {
-        Assert.ThrowsAny<ConstructionErrorException>(() => new BoundRange(10.0, 5.0));
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => new BoundRange(10.0, 5.0));
     }
 
     [Fact]

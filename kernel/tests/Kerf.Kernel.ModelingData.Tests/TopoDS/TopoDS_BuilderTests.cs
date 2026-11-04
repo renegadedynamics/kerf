@@ -450,7 +450,7 @@ public class TopoDS_BuilderTests
         var aBuilder = new Builder();
         Wire aWire = new();
         aBuilder.MakeWire(ref aWire);
-        Assert.Throws<IncompatibleShapesException>(() => aBuilder.Add(aWire, MakeVertex(new Point3D())));
+        EngineAssert.Throws<IncompatibleShapesException>(() => aBuilder.Add(aWire, MakeVertex(new Point3D())));
 
         // a shape added to another isn't free any more: adding to it throws
         Compound anInner = new(), anOuter = new();
@@ -458,13 +458,13 @@ public class TopoDS_BuilderTests
         aBuilder.MakeCompound(ref anOuter);
         aBuilder.Add(anOuter, anInner);
         Assert.False(anInner.Free());
-        Assert.Throws<FrozenShapeException>(() => aBuilder.Add(anInner, MakeVertex(new Point3D())));
-        Assert.Throws<FrozenShapeException>(() => aBuilder.Remove(anInner, MakeVertex(new Point3D())));
+        EngineAssert.Throws<FrozenShapeException>(() => aBuilder.Add(anInner, MakeVertex(new Point3D())));
+        EngineAssert.Throws<FrozenShapeException>(() => aBuilder.Remove(anInner, MakeVertex(new Point3D())));
 
         // self-insertion: the component is made non-free first, so the shape isn't free any more
         Compound aSelf = new();
         aBuilder.MakeCompound(ref aSelf);
-        Assert.Throws<FrozenShapeException>(() => aBuilder.Add(aSelf, aSelf));
+        EngineAssert.Throws<FrozenShapeException>(() => aBuilder.Add(aSelf, aSelf));
     }
 
     [Fact]

@@ -177,10 +177,10 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         {
             return theBody();
         }
-        catch (Exception e) when (e is FailureException or NullReferenceException && e is not (ImmutableObjectException or global::Kerf.Engine.Topology.LockedShapeException))
+        catch (Exception e) when ((Refusal.IsFailure(e) || e is NullReferenceException) && e is not (ImmutableObjectException or global::Kerf.Engine.Topology.LockedShapeException))
         {
             // an access violation natively (decision 977)
-            return $"{theRun} THROW {(e is NullReferenceException ? "OSD_Exception_ACCESS_VIOLATION" : global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()))}";
+            return $"{theRun} THROW {(e is NullReferenceException ? "OSD_Exception_ACCESS_VIOLATION" : global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()))}";
         }
     }
 

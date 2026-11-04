@@ -71,7 +71,7 @@ public class GProp_ElementaryTests
         Assert.Equal(0.0, aIy, Tol);
         Assert.Equal(0.0, aIz, Tol);
 
-        Assert.ThrowsAny<DomainErrorException>(() => aSystem.Add(aP1, 0.0));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => aSystem.Add(aP1, 0.0));
     }
 
     [Fact]

@@ -144,7 +144,7 @@ public class BRepFilletAPI_MakeChamferTests
                 Assert.True(new Analyzer(aChamfer.Shape()).IsValid());
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             // Exception instead of crash is acceptable.
         }

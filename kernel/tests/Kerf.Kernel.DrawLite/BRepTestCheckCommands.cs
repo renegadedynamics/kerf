@@ -564,7 +564,7 @@ internal static class BRepTestCheckCommands
         {
             // OCCT prints what(): the message. The port's messages are its own, not OCCT's
             theCommands.Append("checkshape exception : ");
-            theCommands.Append(anException is FailureException aFailure ? aFailure.GetMessageString() : global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType()));
+            theCommands.Append(Refusal.Of(anException) is { } aFailure ? aFailure.GetMessageString() : global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anException).GetType()));
             theCommands.Append("\n");
             return 1;
         }
@@ -577,7 +577,7 @@ internal static class BRepTestCheckCommands
     /// stand for the signals OCCT turns into failures (as BRepCheck_Analyzer, decision 432).
     /// </summary>
     internal static bool IsCaughtByOcctSignals(Exception theException)
-        => theException is FailureException or NullReferenceException or InvalidCastException or IndexOutOfRangeException or DivideByZeroException;
+        => (Refusal.IsFailure(theException) || theException is NullReferenceException or InvalidCastException or IndexOutOfRangeException or DivideByZeroException);
 
     // -------------------------------------------------------------------------------------------------------------
     // checksection

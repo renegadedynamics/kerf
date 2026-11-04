@@ -217,7 +217,7 @@ public class BRepFill_FillingTests
         Assert.False(aFilling.IsDone);
         Assert.True(aFilling.Face().IsNull);
         var aMaker = new MakeFilling();
-        Assert.Throws<NotDoneException>(() => aMaker.Shape());
+        EngineAssert.Throws<NotDoneException>(() => aMaker.Shape());
     }
 
     [Fact]
@@ -241,8 +241,8 @@ public class BRepFill_FillingTests
         Assert.NotEqual(new EdgeFaceAndOrder(anEdge, aFace, Continuity.G1),
                         new EdgeFaceAndOrder(anEdge, aFace, Continuity.G2));
         Assert.Equal(new FaceAndOrder(aFace, Continuity.C0), new FaceAndOrder());
-        Assert.Throws<FailureException>(() => new FillingCurveConstraint((CurveOnSurface?)null, 1));
-        Assert.Throws<FailureException>(() => new FillingCurveConstraint(new EdgeCurveAdaptor(anEdge), 3));
+        EngineAssert.Throws<FailureException>(() => new FillingCurveConstraint((CurveOnSurface?)null, 1));
+        EngineAssert.Throws<FailureException>(() => new FillingCurveConstraint(new EdgeCurveAdaptor(anEdge), 3));
     }
     // build123d.NET's MakeSurfacePatch: a spline edge with its extrusion as the support face. The port's prism sweeps a
     // copy of the caller's frozen edge, so the edge has no pcurve on the face; the filling takes the face's edge on the

@@ -194,5 +194,5 @@ internal static class ShapeUpgrade
     /// </summary>
     internal static bool IsCaughtFailure(Exception exception)
         => exception is not (ImmutableObjectException or LockedShapeException)
-           && exception is FailureException or NullReferenceException;
+           && (Refusal.IsFailure(exception) || exception is NullReferenceException);
 }

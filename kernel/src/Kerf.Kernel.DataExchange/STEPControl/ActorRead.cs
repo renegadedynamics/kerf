@@ -1601,7 +1601,7 @@ internal class ActorRead : ActorOfTransientProcess, IActorRead
                 found = true;
             }
         }
-        catch (Exception exception) when (exception is FailureException || ImportRoot.CaughtBySignals(exception))
+        catch (Exception exception) when (Refusal.IsFailure(exception) || ImportRoot.CaughtBySignals(exception))
         {
             tp.AddFail(start, "Exception is raised. Entity was not translated.");
             tp.Bind(start, shbinder);
@@ -1829,7 +1829,7 @@ internal class ActorRead : ActorOfTransientProcess, IActorRead
             tp.Bind(fs, sb);
             return sb; // TP->Find (start);
         }
-        catch (Exception exception) when (exception is FailureException || ImportRoot.CaughtBySignals(exception))
+        catch (Exception exception) when (Refusal.IsFailure(exception) || ImportRoot.CaughtBySignals(exception))
         {
             tp.AddFail(fs, "Exception is raised. Entity was not translated.");
             sb = null;

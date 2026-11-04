@@ -99,7 +99,7 @@ public class Approx_CurveApproximationTests
         Assert.NotNull(anApprox.Curve2d());
         Assert.Equal(0.0, anApprox.MaxError3d());
 
-        Assert.Throws<ConstructionErrorException>(() => anApprox.Perform(30, 12, C2, true, true));
+        EngineAssert.Throws<ConstructionErrorException>(() => anApprox.Perform(30, 12, C2, true, true));
     }
 
     [Fact]

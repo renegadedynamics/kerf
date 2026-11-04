@@ -231,14 +231,14 @@ public class AppParCurvesTests
         Assert.Equal(3, aMP.Dimension(1));
         Assert.Equal(2, aMP.Dimension(3));
         Assert.Equal(new Point2D(6, 7), aMP.Point2d(3));
-        Assert.ThrowsAny<OutOfRangeException>(() => aMP.Point(2));
-        Assert.ThrowsAny<OutOfRangeException>(() => aMP.Point2d(1));
-        Assert.ThrowsAny<OutOfRangeException>(() => aMP.Dimension(4));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aMP.Point(2));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aMP.Point2d(1));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aMP.Dimension(4));
         aMP.Transform(1, 1, 2, 0, 1, 0, -1);
         Assert.Equal(new Point3D(3, 2, -3), aMP.Point(1));
         aMP.Transform2d(2, 1, 1, 1, 1);
         Assert.Equal(new Point2D(5, 6), aMP.Point2d(2));
-        Assert.ThrowsAny<OutOfRangeException>(() => aMP.Transform2d(1, 0, 1, 0, 1));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aMP.Transform2d(1, 0, 1, 0, 1));
         Assert.Contains("3D-Point #1", aMP.ToString());
         Assert.Contains(" Pole z = -3", aMP.ToString());
 
@@ -266,7 +266,7 @@ public class AppParCurvesTests
         aCurve.D2(2, 1.0, out Point2D aP2, out Vector2D aV12, out _);
         Assert.Equal(new Point2D(4, 0.5), aP2);
         Assert.True(aV12.IsEqual(new Vector2D(6, 4.5), 1e-14, 1e-14));
-        Assert.ThrowsAny<OutOfRangeException>(() => aCurve.Value(2, 0.5, out Point3D _));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aCurve.Value(2, 0.5, out Point3D _));
 
         NCollection_Array1<Point2D> aPoles2d = new(1, 4);
         aCurve.Curve(2, aPoles2d);
@@ -333,7 +333,7 @@ public class AppParCurvesTests
         Assert.True(aMax2d < 1e-10);
         global::Kerf.Engine.Numerics.Matrix aDist = aLSQ.Distance();
         Assert.True(aDist[5, 1] < 1e-10);
-        Assert.Throws<NoSuchObjectException>(() => new LeastSquare(aLine, Knots(), Mults(), 1, 12, theFirst, theLast,
+        EngineAssert.Throws<NoSuchObjectException>(() => new LeastSquare(aLine, Knots(), Mults(), 1, 12, theFirst, theLast,
                                                                    Vector(aParams), 5).BezierValue());
 
         if (theFirst == TangencyPoint)
@@ -455,9 +455,9 @@ public class AppParCurvesTests
         LeastSquare aLSQ = new(aLine, 1, 6, PassPoint, PassPoint, 2);
         aLSQ.Perform(Vector(Params(6)));
         Assert.False(aLSQ.IsDone);
-        Assert.Throws<NotDoneException>(() => aLSQ.BSplineValue());
-        Assert.Throws<NotDoneException>(() => aLSQ.Error(out _, out _, out _));
-        Assert.Throws<NotDoneException>(() => aLSQ.FunctionMatrix());
+        EngineAssert.Throws<NotDoneException>(() => aLSQ.BSplineValue());
+        EngineAssert.Throws<NotDoneException>(() => aLSQ.Error(out _, out _, out _));
+        EngineAssert.Throws<NotDoneException>(() => aLSQ.FunctionMatrix());
     }
 
     // ---------------------------------------------------------------- constraints and gradients
@@ -628,7 +628,7 @@ public class AppParCurvesTests
         // OCCT reads the 2d points of a mixed line at the curve index (occt-issues.md); the port's range check throws
         AppParCurves_TestLine aLine = Helix(10, out double[] aParams);
         var aConstraints = Constraints((1, PassPoint), (5, PassPoint), (10, PassPoint));
-        Assert.ThrowsAny<OutOfRangeException>(() => new Function(aLine, 1, 10, aConstraints, Vector(aParams), 4));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => new Function(aLine, 1, 10, aConstraints, Vector(aParams), 4));
     }
 
     [Fact]

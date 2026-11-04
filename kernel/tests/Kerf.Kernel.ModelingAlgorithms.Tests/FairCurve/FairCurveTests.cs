@@ -54,19 +54,19 @@ public class FairCurveTests
     public void Batten_checks_its_arguments()
     {
         Point2D p = new(1, 1);
-        Assert.Throws<NullValueException>(() => new Batten(p, new Point2D(1, 1 + 1e-8), 1));
-        Assert.Throws<NegativeValueException>(() => new Batten(p, new Point2D(2, 1), 0));
-        Assert.Throws<NegativeValueException>(() => new MinimalVariation(p, new Point2D(2, 1), -1));
+        EngineAssert.Throws<NullValueException>(() => new Batten(p, new Point2D(1, 1 + 1e-8), 1));
+        EngineAssert.Throws<NegativeValueException>(() => new Batten(p, new Point2D(2, 1), 0));
+        EngineAssert.Throws<NegativeValueException>(() => new MinimalVariation(p, new Point2D(2, 1), -1));
         MinimalVariation b = new(p, new Point2D(2, 1), 1);
-        Assert.Throws<NegativeValueException>(() => b.SetHeight(0));
-        Assert.Throws<NullValueException>(() => b.SetP1(new Point2D(2, 1)));
-        Assert.Throws<NullValueException>(() => b.SetP2(p));
-        Assert.Throws<DomainErrorException>(() => b.SetPhysicalRatio(1.5));
-        Assert.Throws<DomainErrorException>(() => b.SetPhysicalRatio(-0.1));
+        EngineAssert.Throws<NegativeValueException>(() => b.SetHeight(0));
+        EngineAssert.Throws<NullValueException>(() => b.SetP1(new Point2D(2, 1)));
+        EngineAssert.Throws<NullValueException>(() => b.SetP2(p));
+        EngineAssert.Throws<DomainErrorException>(() => b.SetPhysicalRatio(1.5));
+        EngineAssert.Throws<DomainErrorException>(() => b.SetPhysicalRatio(-0.1));
 
         // a ratio out of range given to the constructor is caught by the energy, in Compute
         MinimalVariation m = new(p, new Point2D(2, 1), 1, 0, 2);
-        Assert.Throws<DomainErrorException>(() => m.Compute(out _));
+        EngineAssert.Throws<DomainErrorException>(() => m.Compute(out _));
     }
 
     [Fact]
@@ -211,7 +211,7 @@ public class FairCurveTests
         BSplineCurve2D c1 = b.Curve(), c2 = b.Curve();
         Assert.NotSame(c1, c2);
         Assert.True(c1.IsFrozen);
-        Assert.Throws<ImmutableObjectException>(() => c1.SetPole(1, new Point2D(1, 1)));
+        EngineAssert.Throws<ImmutableObjectException>(() => c1.SetPole(1, new Point2D(1, 1)));
         // computing again doesn't change a curve handed out
         Point2D aPole = c1.Pole(5);
         b.SetAngle2(-0.3);

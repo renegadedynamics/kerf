@@ -29,8 +29,8 @@ public class IntAna2d_AnaIntersectionTest
     {
         var anInter = new AnalyticIntersection();
         Assert.False(anInter.IsDone);
-        Assert.Throws<NotDoneException>(() => anInter.PointCount);
-        Assert.Throws<NotDoneException>(() => anInter.IsEmpty);
+        EngineAssert.Throws<NotDoneException>(() => anInter.PointCount);
+        EngineAssert.Throws<NotDoneException>(() => anInter.IsEmpty);
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class IntAna2d_AnaIntersectionTest
             Assert.Equal(0.0, aL2.DistanceTo(aP.Value()), Tol);
             Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnFirst(), aL1).DistanceTo(aP.Value()), Tol);
             Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnSecond(), aL2).DistanceTo(aP.Value()), Tol);
-            Assert.Throws<OutOfRangeException>(() => anInter.Point(2));
+            EngineAssert.Throws<OutOfRangeException>(() => anInter.Point(2));
         }
 
         Line2D aL = new(new Point2D(1, 2), new Direction2D(1, 1));
@@ -120,7 +120,7 @@ public class IntAna2d_AnaIntersectionTest
                 Assert.Equal(0.0, aC.DistanceTo(aP.Value()), Tol);
                 Assert.Equal(0.0, aL.DistanceTo(aP.Value()), Tol);
                 Assert.True(aConic.Point(j).SecondIsImplicit());
-                Assert.Throws<DomainErrorException>(() => aConic.Point(j).ParamOnSecond());
+                EngineAssert.Throws<DomainErrorException>(() => aConic.Point(j).ParamOnSecond());
             }
         }
     }

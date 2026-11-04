@@ -156,7 +156,7 @@ public sealed class PlaneSurface : ElementarySurface
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
-            throw new UndefinedDerivative3DException();
+            throw Refusal.State(new UndefinedDerivative3DException());
         }
         if (nu == 0 && nv == 1)
         {

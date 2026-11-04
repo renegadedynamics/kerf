@@ -137,7 +137,7 @@ internal class EdgeProjAuxFixer : Transient
                 return false;
             }
         } // end try
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return false;
         }

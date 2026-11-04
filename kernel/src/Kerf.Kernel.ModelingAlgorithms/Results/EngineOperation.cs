@@ -47,7 +47,7 @@ internal static class EngineOperation
         {
             throw;
         }
-        catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+        catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Result<Built<TShape>>.Failure(OperationDiagnostics.FromException(e));
@@ -72,7 +72,7 @@ internal static class EngineOperation
         {
             shape = outcome.Shape();
         }
-        catch (Exception e) when (e is FailureException)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
             return Result<Built<TShape>>.Failure(OperationDiagnostics.FromException(e));
         }

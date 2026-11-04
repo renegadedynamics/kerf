@@ -44,7 +44,7 @@ internal static class Customize
             // (decision 973)
             result = modifier.InternalModifiedShape(shape);
         }
-        catch (NoSuchObjectException)
+        catch (Exception caught) when (Refusal.Of(caught) is NoSuchObjectException)
         {
             // the sub shape isn't in the map
             result = new Shape();

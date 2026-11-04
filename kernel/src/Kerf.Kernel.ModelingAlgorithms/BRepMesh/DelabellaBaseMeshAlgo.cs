@@ -127,7 +127,7 @@ internal class DelabellaBaseMeshAlgo : CustomBaseMeshAlgo
             triangulator.Destroy();
             triangulator = null;
         }
-        catch (FailureException theException)
+        catch (Exception theException) when (Refusal.IsFailure(theException))
         {
             if (triangulator is not null)
             {
@@ -135,7 +135,7 @@ internal class DelabellaBaseMeshAlgo : CustomBaseMeshAlgo
                 triangulator = null;
             }
 
-            throw new FailureException(theException.Message);
+            throw new FailureException(Refusal.Unwrapped(theException).Message);
         }
         catch (Exception exception) when (exception is not (ImmutableObjectException or LockedShapeException))
         {

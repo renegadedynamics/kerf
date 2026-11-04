@@ -63,7 +63,7 @@ public class NCollection_IntDataMapTests
         Assert.True(aMap.UnBind(108));
         Assert.False(aMap.UnBind(108));
         Assert.Equal([2, 7], Keys(aMap));
-        Assert.Throws<NoSuchObjectException>(() => aMap.Find(108));
+        EngineAssert.Throws<NoSuchObjectException>(() => aMap.Find(108));
     }
 
     [Fact]

@@ -111,7 +111,7 @@ public sealed record Diagnostic
     /// Whether an exception is one of the kernel's own failures (OCCT's exceptions, which the values and evaluators still
     /// throw on misuse), as opposed to .NET's.
     /// </summary>
-    public static bool IsKernelFailure(Exception exception) => exception is Kerf.Engine.Foundation.FailureException;
+    public static bool IsKernelFailure(Exception exception) => Kerf.Engine.Foundation.Refusal.IsFailure(exception);
 
     /// <summary>Whether this is an error.</summary>
     public bool IsError => Severity == Severity.Error;

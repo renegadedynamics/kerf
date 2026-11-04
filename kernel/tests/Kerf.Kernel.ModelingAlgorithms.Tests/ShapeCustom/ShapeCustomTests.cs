@@ -145,7 +145,7 @@ public class ShapeCustomTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFirst);
         // the second face shares an edge with the first: the modifier would add a pcurve to the first result's edge
         Shape aNeighbour = aFaces.Skip(1).First(f => SubShapes(f, ShapeType.Edge).Any(e => SubShapes(aFaces[0], ShapeType.Edge).Any(e0 => e0.IsSame(e))));
-        Assert.Throws<LockedShapeException>(() => Customize.ApplyModifier(aNeighbour, aDM, aContext, aMD));
+        EngineAssert.Throws<LockedShapeException>(() => Customize.ApplyModifier(aNeighbour, aDM, aContext, aMD));
         aSnap.AssertUnchanged(aFirst);
     }
 

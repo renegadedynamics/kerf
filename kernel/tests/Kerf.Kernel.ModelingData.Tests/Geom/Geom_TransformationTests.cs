@@ -105,12 +105,12 @@ public class Geom_TransformationTests
         GeometryTransformation T = GeometryTransformation.Rotation(Axis, 0.5);
         T.Freeze();
         Assert.True(T.IsFrozen);
-        Assert.Throws<ImmutableObjectException>(() => T.SetTranslation(new Vector3D(1, 0, 0)));
-        Assert.Throws<ImmutableObjectException>(() => T.Invert());
-        Assert.Throws<ImmutableObjectException>(() => T.Multiply(new GeometryTransformation()));
-        Assert.Throws<ImmutableObjectException>(() => T.PreMultiply(new GeometryTransformation()));
-        Assert.Throws<ImmutableObjectException>(() => T.Power(2));
-        Assert.Throws<ImmutableObjectException>(() => T.SetTrsf(new Transform3D()));
+        EngineAssert.Throws<ImmutableObjectException>(() => T.SetTranslation(new Vector3D(1, 0, 0)));
+        EngineAssert.Throws<ImmutableObjectException>(() => T.Invert());
+        EngineAssert.Throws<ImmutableObjectException>(() => T.Multiply(new GeometryTransformation()));
+        EngineAssert.Throws<ImmutableObjectException>(() => T.PreMultiply(new GeometryTransformation()));
+        EngineAssert.Throws<ImmutableObjectException>(() => T.Power(2));
+        EngineAssert.Throws<ImmutableObjectException>(() => T.SetTrsf(new Transform3D()));
         AssertSame(Transform3D.Rotation(Axis, 0.5), T);
 
         // Non-mutating forms still work on a frozen object and return unfrozen ones

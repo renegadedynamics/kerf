@@ -102,7 +102,7 @@ public class PolyTest
 
         var aNoParams = new global::Kerf.Engine.Meshing.Polygon3D(2, false);
         Assert.False(aNoParams.HasParameters);
-        Assert.ThrowsAny<NullObjectException>(() => aNoParams.Parameters());
+        EngineAssert.ThrowsAny<NullObjectException>(() => aNoParams.Parameters());
     }
 
     [Fact]
@@ -137,9 +137,9 @@ public class PolyTest
         Assert.Equal(3, aPoly.NodeCount);
         Assert.Equal(7, aPoly.Node(2));
         Assert.False(aPoly.HasParameters);
-        Assert.ThrowsAny<NullObjectException>(() => aPoly.Parameter(1));
+        EngineAssert.ThrowsAny<NullObjectException>(() => aPoly.Parameter(1));
 
-        Assert.ThrowsAny<OutOfRangeException>(() => aPoly.SetParameters(new NCollection_HArray1<double>(1, 2)));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aPoly.SetParameters(new NCollection_HArray1<double>(1, 2)));
         var aParams = new NCollection_HArray1<double>(1, 3);
         aPoly.SetParameters(aParams);
         aPoly.SetParameter(2, 0.75);

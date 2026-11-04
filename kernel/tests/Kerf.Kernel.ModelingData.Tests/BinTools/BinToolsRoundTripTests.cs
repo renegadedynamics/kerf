@@ -693,7 +693,7 @@ public class BinToolsRoundTripTests
             Assert.Equal(WriteShapes(false, false, aShape), aWriterOnly.Written());
 
             // the position-based reader needs to seek
-            Assert.Throws<ProgramErrorException>(() =>
+            EngineAssert.Throws<ProgramErrorException>(() =>
             {
                 Shape aShapeRead = new();
                 new global::Kerf.Engine.Exchange.Brep.Binary.ShapeReader().Read(new UnseekableStream(aWriterOnly.Written()), ref aShapeRead);

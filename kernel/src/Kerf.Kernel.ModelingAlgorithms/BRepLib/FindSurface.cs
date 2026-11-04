@@ -128,7 +128,7 @@ internal class FindSurface
             Vertex v2 = Exploration.LastVertex(lastEdge, true);
             return (v1.IsSame(v2) && Is2DConnected(lastEdge, fisrtEdge, surface, location));
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return false;
         }

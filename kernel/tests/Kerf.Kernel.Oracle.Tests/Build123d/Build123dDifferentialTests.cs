@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Healing.Checks;
@@ -286,7 +287,7 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
         }
         catch (Exception e)
         {
-            theDetail += $"\n  {aDiff}\n  canonical comparison failed: {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())}: {e.Message}";
+            theDetail += $"\n  {aDiff}\n  canonical comparison failed: {Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType())}: {Refusal.Unwrapped(e).Message}";
             return Kind.Different;
         }
         if (aCanon.IsIdentical)
@@ -407,7 +408,7 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
         }
         catch (Exception e)
         {
-            return $"unmeasured ({Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())})";
+            return $"unmeasured ({Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType())})";
         }
     }
 

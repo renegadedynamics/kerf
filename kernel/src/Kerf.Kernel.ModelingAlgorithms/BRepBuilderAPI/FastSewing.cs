@@ -354,7 +354,7 @@ internal class FastSewing : Transient
 
             _resShape = quilt.InternalShells();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             SetStatus(FS_Statuses.FS_Exception);
             return;

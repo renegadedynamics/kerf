@@ -393,7 +393,7 @@ public class GeomEval_TBezierSurfaceTest
                 EvalTestUtils.CheckSurfaceDerivatives(aRational, aU, aV, 3);
             }
         }
-        Assert.ThrowsAny<UndefinedDerivative3DException>(() => aRational.EvalDN(0.5, 0.5, 2, 2));
+        EngineAssert.ThrowsAny<UndefinedDerivative3DException>(() => aRational.EvalDN(0.5, 0.5, 2, 2));
     }
 
     // OCCT.NET addition: Poles() and Weights() are row-major copies of the grids.

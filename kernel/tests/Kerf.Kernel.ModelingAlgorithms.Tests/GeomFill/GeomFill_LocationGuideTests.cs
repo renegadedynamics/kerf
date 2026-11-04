@@ -52,7 +52,7 @@ public class GeomFill_LocationGuideTests
         Assert.False(aLaw.IsTranslation(ref anError));
         Assert.False(aLaw.IsRotation(ref anError));
         Point3D aCentre = new();
-        Assert.Throws<MethodNotImplementedException>(() => aLaw.Rotation(ref aCentre));
+        EngineAssert.Throws<MethodNotImplementedException>(() => aLaw.Rotation(ref aCentre));
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public class GeomFill_LocationGuideTests
         double aLastAngle = 0;
         aLaw.Set(Segment(), true, 0, 4, 0, ref aLastAngle);
         // OCCT: the copy computes its rotation before it has a path
-        Assert.Throws<ConstructionErrorException>(() => aLaw.Copy());
+        EngineAssert.Throws<ConstructionErrorException>(() => aLaw.Copy());
 
         aLaw.EraseRotation();
         var aCopy = (LocationGuide)aLaw.Copy();

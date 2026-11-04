@@ -165,7 +165,7 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
                     Result("result", global::Kerf.Engine.Booleans.Algo.BRepAlgo.ConvertWire(global::Kerf.Engine.Topology.ShapeCasts.Wire(anIn[1]), 0.01, global::Kerf.Engine.Topology.ShapeCasts.Face(anIn[0])));
                     Result("face", global::Kerf.Engine.Booleans.Algo.BRepAlgo.ConvertFace(global::Kerf.Engine.Topology.ShapeCasts.Face(anIn[0]), 0.01));
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                     aRec.Append("exception\n");
                 }
@@ -179,7 +179,7 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
                     Result("g1", global::Kerf.Engine.Booleans.Algo.BRepAlgo.ConcatenateWire(aRW, Continuity.G1));
                     Result("c0", global::Kerf.Engine.Booleans.Algo.BRepAlgo.ConcatenateWireC0(aRW));
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                     aRec.Append("exception\n");
                 }
@@ -228,7 +228,7 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
                         Result("edge", it.Value());
                     }
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                     aRec.Append("exception\n");
                 }
@@ -326,9 +326,9 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
                 aRec.Append("face\n").Append(Text(it.Value())).Append('\n');
             }
         }
-        catch (FailureException anE)
+        catch (Exception anE) when (Refusal.IsFailure(anE))
         {
-            aRec.Append("exception ").Append(global::Kerf.Engine.Foundation.OcctTypeNames.Of(anE.GetType())).Append('\n');
+            aRec.Append("exception ").Append(global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anE).GetType())).Append('\n');
         }
         return aRec.ToString();
     }

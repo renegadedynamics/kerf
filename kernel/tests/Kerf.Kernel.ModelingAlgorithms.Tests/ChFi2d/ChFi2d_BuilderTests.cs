@@ -119,7 +119,7 @@ public class ChFi2d_BuilderTests
                                              .First(e => !e.IsSame(E1) && !e.IsSame(E2)));
         Assert.False(aMaker.IsModified(anUntouched));
         // OCCT's Modified reads the history with Find: an edge without descendant throws
-        Assert.ThrowsAny<NoSuchObjectException>(() => aMaker.Modified(anUntouched));
+        EngineAssert.ThrowsAny<NoSuchObjectException>(() => aMaker.Modified(anUntouched));
         // the untouched edges are the caller's own
         Assert.Contains(Sub(aResult, ShapeType.Edge), e => e.IsSame(anUntouched));
     }
@@ -161,7 +161,7 @@ public class ChFi2d_BuilderTests
         Assert.Equal(ConstructionError.ComputationError, aMaker.Status());
         aMaker.Build();
         Assert.False(aMaker.IsDone);
-        Assert.ThrowsAny<NotDoneException>(() => aMaker.Shape());
+        EngineAssert.ThrowsAny<NotDoneException>(() => aMaker.Shape());
         // a chamfer distance not positive
         IndexedMap<Shape, NCollection_List<Shape>> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aSquare, ShapeType.Vertex, ShapeType.Edge, aMap);
@@ -405,7 +405,7 @@ public class ChFi2d_BuilderTests
         Assert.True(aChamfer.Result(ref M1, ref M2, 20.0, 1.0).IsNull);
 
         // the analytical algorithm needs two edges
-        Assert.ThrowsAny<TypeMismatchException>(() => new AnaFilletAlgo(new MakeWire(E1).Wire(), aPln));
-        Assert.ThrowsAny<ConstructionErrorException>(() => new FilletAlgo(new MakeWire(E1).Wire(), aPln));
+        EngineAssert.ThrowsAny<TypeMismatchException>(() => new AnaFilletAlgo(new MakeWire(E1).Wire(), aPln));
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => new FilletAlgo(new MakeWire(E1).Wire(), aPln));
     }
 }

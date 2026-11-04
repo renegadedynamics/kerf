@@ -100,11 +100,11 @@ internal static class StepFileReader
                 return 1;
             }
         }
-        catch (FailureException exception)
+        catch (Exception exception) when (Refusal.IsFailure(exception))
         {
             using Messenger.StreamBuffer fail = global::Kerf.Engine.Foundation.Message.SendFail();
             fail.Append(" ...  Exception Raised while reading Step File : '").Append(name).Append("':\n")
-                .Append(global::Kerf.Engine.Foundation.OcctTypeNames.Of(exception.GetType())).Append(": ").Append(exception.Message).Append("    ...");
+                .Append(global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(exception).GetType())).Append(": ").Append(Refusal.Unwrapped(exception).Message).Append("    ...");
             return 1;
         }
 

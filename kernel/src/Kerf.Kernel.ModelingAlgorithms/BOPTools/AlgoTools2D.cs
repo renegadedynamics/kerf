@@ -748,7 +748,7 @@ internal static class AlgoTools2D
             BrepLibrary.SameParameter(e1T);
             BrepLibrary.SameRange(e1T);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             iRet = 6;
             return iRet;

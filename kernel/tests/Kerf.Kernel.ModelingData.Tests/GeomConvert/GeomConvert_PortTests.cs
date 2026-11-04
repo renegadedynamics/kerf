@@ -89,8 +89,8 @@ public class GeomConvert_PortTests
             Assert.True(aResult.Value(aU).DistanceTo(anOffset.Value(aU)) < 1e-3);
         }
 
-        Assert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(new LineCurve3D(P(0, 0), new Direction3D(1, 0, 0))));
-        Assert.ThrowsAny<DomainErrorException>(
+        EngineAssert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(new LineCurve3D(P(0, 0), new Direction3D(1, 0, 0))));
+        EngineAssert.ThrowsAny<DomainErrorException>(
             () => global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(new ParabolaCurve3D(new Frame3D(P(0, 0), new Direction3D(0, 0, 1)), 1.0)));
     }
 
@@ -112,8 +112,8 @@ public class GeomConvert_PortTests
         Assert.True(aByParams.EndPoint.DistanceTo(aC.Value(0.5)) < Tol);
 
         // GeomConvert throws Standard_DomainError for both (Geom2dConvert: Standard_OutOfRange for the second)
-        Assert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 2, 2));
-        Assert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 0, 2));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 2, 2));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 0, 2));
     }
 
     private static BSplineSurface BiCubic()
@@ -152,9 +152,9 @@ public class GeomConvert_PortTests
         // reversed in V
         Assert.True(aParams.Value(1.0, aV1).DistanceTo(aS.Value(1.0, 1.5)) < Tol);
 
-        Assert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 1, 1, 1, 2));
-        Assert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 1, 4, false));
-        Assert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 1.0, 1.0, true, 1e-9));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 1, 1, 1, 2));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 1, 4, false));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 1.0, 1.0, true, 1e-9));
     }
 
     [Fact]
@@ -187,8 +187,8 @@ public class GeomConvert_PortTests
         NCollection_Array1<int> aValues = new(1, aSplit2.SplitCount);
         aSplit2.Splitting(aValues);
         Assert.Equal([1, 2, 3, 4], aValues.AsSpan().ToArray());
-        Assert.ThrowsAny<RangeErrorException>(() => new global::Kerf.Engine.Geometry.Conversion.BSplineCurveKnotSplitting(aC, -1));
-        Assert.ThrowsAny<RangeErrorException>(() => aSplit2.SplitValue(5));
+        EngineAssert.ThrowsAny<RangeErrorException>(() => new global::Kerf.Engine.Geometry.Conversion.BSplineCurveKnotSplitting(aC, -1));
+        EngineAssert.ThrowsAny<RangeErrorException>(() => aSplit2.SplitValue(5));
     }
 
     [Fact]
@@ -211,13 +211,13 @@ public class GeomConvert_PortTests
             Assert.False(anArcs[i].IsFrozen);
         }
 
-        Assert.ThrowsAny<OutOfRangeException>(() => aConv.Arc(4));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aConv.Arc(4));
 
         // A part, with bounds snapped onto knots within half the tolerance
         global::Kerf.Engine.Geometry.Conversion.BSplineCurveToBezierCurve aPart = new(aC, 0.5, 2.0 + 1e-4, 1e-3);
         Assert.Equal(2, aPart.ArcCount);
         AssertSamePoints(aC, 0.5, 1.0, aPart.Arc(1), 0.0, 1.0, Tol);
-        Assert.ThrowsAny<DomainErrorException>(() => new global::Kerf.Engine.Geometry.Conversion.BSplineCurveToBezierCurve(aC, 1.0, 1.0, 1e-3));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => new global::Kerf.Engine.Geometry.Conversion.BSplineCurveToBezierCurve(aC, 1.0, 1.0, 1e-3));
 
         // Rational
         BSplineCurve3D aRational = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(
@@ -351,7 +351,7 @@ public class GeomConvert_PortTests
         aCurves[1] = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 3, 4);
         bool isClosed = false;
         // GeomLProp::Continuity: "Courbes non jointives"
-        Assert.ThrowsAny<FailureException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatG1(aCurves, NCollection_Array1<double>.From([1e-7], 0),
+        EngineAssert.ThrowsAny<FailureException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatG1(aCurves, NCollection_Array1<double>.From([1e-7], 0),
                                                                        out _, ref isClosed, 1e-7));
     }
 
@@ -371,7 +371,7 @@ public class GeomConvert_PortTests
 
         NCollection_Array1<BSplineCurve3D> aCurves = NCollection_Array1<BSplineCurve3D>.From(aSegments, 0);
         bool isClosed = true;
-        Assert.ThrowsAny<ConstructionErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatG1(
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatG1(
             aCurves, NCollection_Array1<double>.From([1e-7, 1e-12, 1e-7], 0), out _, ref isClosed, 1e-4));
 
         aCurves = NCollection_Array1<BSplineCurve3D>.From(aSegments, 0);
@@ -550,7 +550,7 @@ public class GeomConvert_PortTests
             Assert.True(anE.Value(0.5 + 2 * aT, -1 + 3 * aT).DistanceTo(anExtru.Value(0.5 + 2 * aT, -1 + 3 * aT)) < Tol);
         }
 
-        Assert.ThrowsAny<DomainErrorException>(
+        EngineAssert.ThrowsAny<DomainErrorException>(
             () => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(new CylindricalSurface(new CoordinateSystem(Constants.XOY()), 1.0)));
         BSplineSurface aSphere = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(new SphericalSurface(new CoordinateSystem(Constants.XOY()), 3.0));
         Assert.True(aSphere.IsUPeriodic);

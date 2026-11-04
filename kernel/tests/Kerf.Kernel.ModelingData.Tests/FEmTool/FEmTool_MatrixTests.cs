@@ -101,7 +101,7 @@ public class FEmTool_MatrixTests
                 else
                 {
                     int ii = i, jj = j;
-                    Assert.ThrowsAny<OutOfRangeException>(() => aProfile.ChangeValue(ii, jj));
+                    EngineAssert.ThrowsAny<OutOfRangeException>(() => aProfile.ChangeValue(ii, jj));
                 }
             }
         }
@@ -117,10 +117,10 @@ public class FEmTool_MatrixTests
         aProfile.ChangeValue(2, 2) = 1;
         aProfile.ChangeValue(3, 3) = 1;
         math_Vector aB = new(1, 3, 1.0), aX = new(1, 3);
-        Assert.ThrowsAny<NotDoneException>(() => aProfile.Solve(aB, aX));
+        EngineAssert.ThrowsAny<NotDoneException>(() => aProfile.Solve(aB, aX));
         Assert.False(aProfile.Decompose()); // not positive definite
-        Assert.ThrowsAny<MethodNotImplementedException>(() => aProfile.Prepare());
-        Assert.ThrowsAny<MethodNotImplementedException>(() => aProfile.Solve(aB, aB, aX, aX));
+        EngineAssert.ThrowsAny<MethodNotImplementedException>(() => aProfile.Prepare());
+        EngineAssert.ThrowsAny<MethodNotImplementedException>(() => aProfile.Solve(aB, aB, aX, aX));
 
         StringWriter aWriter = new();
         aProfile.OutM(aWriter);
@@ -190,7 +190,7 @@ public class FEmTool_MatrixTests
         }
 
         math_Vector aX = new(1, 5);
-        Assert.ThrowsAny<NotDoneException>(() => anAssembly.Solution(aX));
+        EngineAssert.ThrowsAny<NotDoneException>(() => anAssembly.Solution(aX));
         Assert.True(anAssembly.Solve());
         anAssembly.Solution(aX);
         math_Vector anExpected = new(1, 5);
@@ -265,7 +265,7 @@ public class FEmTool_MatrixTests
         aTable[2, 1][2] = 4;
         Assembly anAssembly = new(aDep, aTable);
         Assert.Equal(4, anAssembly.GlobVarCount);
-        Assert.ThrowsAny<DomainErrorException>(() => anAssembly.AddMatrix(1, 1, 2, new Matrix(1, 2, 1, 2, 0.0)));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => anAssembly.AddMatrix(1, 1, 2, new Matrix(1, 2, 1, 2, 0.0)));
     }
 
     [Fact]

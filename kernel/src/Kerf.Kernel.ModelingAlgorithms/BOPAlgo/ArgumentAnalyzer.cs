@@ -255,7 +255,7 @@ internal class ArgumentAnalyzer : BooleanAlgorithm
                 }
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             CheckResult result = new();
             result.SetCheckStatus(CheckStatus.CheckUnknown);

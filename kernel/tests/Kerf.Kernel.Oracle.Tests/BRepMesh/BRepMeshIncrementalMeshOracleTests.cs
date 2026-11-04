@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
@@ -683,7 +684,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
             }
             catch (Exception anException) when (anException is not Xunit.Sdk.XunitException)
             {
-                output.WriteLine($"random shape {i}: native construction failed ({anException.Message})");
+                output.WriteLine($"random shape {i}: native construction failed ({Refusal.Unwrapped(anException).Message})");
                 aShape?.Dispose();
                 continue;
             }

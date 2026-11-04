@@ -121,7 +121,7 @@ public static partial class Operations
             {
                 facePlanes.Add(new Plane(face));
             }
-            catch (ArgumentException)
+            catch (ArgumentException e) when (!Diagnostic.IsKernelFailure(e))
             {
                 // A non-planar face
             }

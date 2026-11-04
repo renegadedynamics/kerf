@@ -476,7 +476,7 @@ public class BRepOffsetAPI_ThruSectionsTests
         aLoft.Build();
         Assert.False(aLoft.IsDone);
         Assert.Equal(ThruSectionErrorStatus.ThruSectionErrorStatus_WrongUsage, aLoft.GetStatus());
-        Assert.Throws<NotDoneException>(() => aLoft.Shape());
+        EngineAssert.Throws<NotDoneException>(() => aLoft.Shape());
     }
 
     [Fact]
@@ -551,12 +551,12 @@ public class BRepOffsetAPI_ThruSectionsTests
     {
         Shape aBox = new MakeBox(10, 10, 10).Shape();
         Vertex aV = new MakeVertex(new Point3D(1, 1, 1)).Vertex();
-        Assert.Throws<NullObjectException>(() => new Projection(new Shape(), aBox, new Direction3D(0, 0, 1)));
-        Assert.Throws<ConstructionErrorException>(() => new Projection(aV, aBox, new Direction3D(0, 0, 1)));
+        EngineAssert.Throws<NullObjectException>(() => new Projection(new Shape(), aBox, new Direction3D(0, 0, 1)));
+        EngineAssert.Throws<ConstructionErrorException>(() => new Projection(aV, aBox, new Direction3D(0, 0, 1)));
         Wire aSquare = Square(20, 1);
         Explorer anExp = new(aSquare, ShapeType.Vertex);
         Point3D aFirst = Tool.Pnt(ShapeCasts.Vertex(anExp.Current()));
-        Assert.Throws<ConstructionErrorException>(() => new Projection(aSquare, aBox, aFirst));
-        Assert.Throws<ConstructionErrorException>(() => new Projection(aSquare, aV, new Direction3D(0, 0, 1)));
+        EngineAssert.Throws<ConstructionErrorException>(() => new Projection(aSquare, aBox, aFirst));
+        EngineAssert.Throws<ConstructionErrorException>(() => new Projection(aSquare, aV, new Direction3D(0, 0, 1)));
     }
 }

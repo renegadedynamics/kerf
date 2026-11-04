@@ -39,8 +39,8 @@ public class IntPatch_GLineTests
         Assert.Equal(WalkingTypeTrans.In, aCircLine.TransitionOnS1());
         Assert.Equal(WalkingTypeTrans.Out, aCircLine.TransitionOnS2());
         Assert.Equal(theCircle, aCircLine.Circle());
-        Assert.Throws<DomainErrorException>(() => aCircLine.Line());
-        Assert.Throws<DomainErrorException>(() => aCircLine.SituationS1());
+        EngineAssert.Throws<DomainErrorException>(() => aCircLine.Line());
+        EngineAssert.Throws<DomainErrorException>(() => aCircLine.SituationS1());
 
         Line3D aLin = new(new Point3D(1, 2, 3), new Direction3D(0, 1, 0));
         GLine aLinLine = new(aLin, true, WalkingSituation.Inside, WalkingSituation.Outside);
@@ -60,7 +60,7 @@ public class IntPatch_GLineTests
         Assert.Equal(0.5, new GLine(new Parabola3D(new Frame3D(), 0.5), false).Parabola().Focal);
         Assert.Equal(2.0, new GLine(new Hyperbola3D(new Frame3D(), 4.0, 2.0), false).Hyperbola().MinorRadius);
         Assert.False(aCircLine.HasFirstPoint);
-        Assert.Throws<DomainErrorException>(() => aCircLine.FirstPoint());
+        EngineAssert.Throws<DomainErrorException>(() => aCircLine.FirstPoint());
     }
 
     [Fact]

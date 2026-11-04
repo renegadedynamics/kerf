@@ -142,7 +142,7 @@ public class BRepPrimAPIPrimitivesTests
     public void A_flat_box_has_no_shell_but_its_faces()
     {
         var aMaker = new MakeBox(2, 3, 0);
-        Assert.ThrowsAny<DomainErrorException>(() => aMaker.Shape());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => aMaker.Shape());
         Face aBottom = aMaker.BottomFace();
         Assert.True(AllFrozen(aBottom));
         Assert.Equal(6.0, Area(aBottom), 1e-9);
@@ -226,9 +226,9 @@ public class BRepPrimAPIPrimitivesTests
     [Fact]
     public void Cones_with_equal_radii_or_no_height_are_errors()
     {
-        Assert.ThrowsAny<DomainErrorException>(() => new ApiMakeCone(2, 2, 3));
-        Assert.ThrowsAny<DomainErrorException>(() => new ApiMakeCone(2, 1, 0));
-        Assert.ThrowsAny<DomainErrorException>(() => new ApiMakeCone(-1, 1, 3));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => new ApiMakeCone(2, 2, 3));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => new ApiMakeCone(2, 1, 0));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => new ApiMakeCone(-1, 1, 3));
     }
 
     // The volume of a sphere's zone between the latitudes a1 < a2, over an angle around the axis.

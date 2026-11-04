@@ -132,17 +132,17 @@ public class Geom2dGcc_Circ2dTanOnRadTests
     {
         CurveAdaptor2D anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
         CurveAdaptor2D aLine = new(new LineCurve2D(new Point2D(0, -2), new Direction2D(1, 0.3)));
-        Assert.Throws<NegativeValueException>(() => new global::Kerf.Engine.Construction.Constraints.Circ2dTanOnRad(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), aLine, -1, 1e-9));
+        EngineAssert.Throws<NegativeValueException>(() => new global::Kerf.Engine.Construction.Constraints.Circ2dTanOnRad(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), aLine, -1, 1e-9));
         Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new global::Kerf.Engine.Construction.Constraints.Circ2dTanOnRad(new global::Kerf.Engine.Construction.Constraints.QualifiedCurve(anEll, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), aLine, 1, 1e-9));
 
         global::Kerf.Engine.Construction.Constraints.Circ2dTanOnRad aCirc = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), aLine, 0.5, 1e-9);
-        Assert.Throws<OutOfRangeException>(() => aCirc.ThisSolution(0));
-        Assert.Throws<OutOfRangeException>(() => aCirc.CenterOn3(aCirc.SolutionCount + 1, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => aCirc.ThisSolution(0));
+        EngineAssert.Throws<OutOfRangeException>(() => aCirc.CenterOn3(aCirc.SolutionCount + 1, out _, out _));
 
         // Enclosing a free-form curve: no side to offset to, so no solution and not done
         global::Kerf.Engine.Construction.Constraints.Circ2dTanOnRad aNone = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Enclosing(anEll), aLine, 0.5, 1e-9);
         Assert.False(aNone.IsDone);
-        Assert.Throws<NotDoneException>(() => aNone.ThisSolution(1));
+        EngineAssert.Throws<NotDoneException>(() => aNone.ThisSolution(1));
     }
 }

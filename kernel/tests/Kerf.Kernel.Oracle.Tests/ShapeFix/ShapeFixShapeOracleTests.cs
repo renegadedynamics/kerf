@@ -360,7 +360,7 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
             aPRes = aFix.Shape();
             aPStatus = Status(isDone, aFix.Status);
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
             aPErr = ShapeFixOracleRun.ErrorOf(e);
         }
@@ -395,7 +395,7 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
             aPRes = aFix.SolidFromShell(ShapeCasts.Shell(aPS));
             aPStatus = $"{aFix.Status(DONE2)}";
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
             aPErr = ShapeFixOracleRun.ErrorOf(e);
         }

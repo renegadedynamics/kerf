@@ -175,9 +175,9 @@ public class Geom2dGcc_Circ2d2TanOnTests
                                               Qualified(new CircleCurve2D(c2), Qualifier.Outside),
                                               new CurveAdaptor2D(new LineCurve2D(Lin(1.5, 0, 0, 1))), 1.0e-7, 0, 0, 0);
         Assert.True(aGcc.IsDone);
-        Assert.Throws<OutOfRangeException>(() => aGcc.ThisSolution(0));
-        Assert.Throws<OutOfRangeException>(() => aGcc.ThisSolution(aGcc.SolutionCount + 1));
-        Assert.Throws<OutOfRangeException>(() => aGcc.CenterOn3(0, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => aGcc.ThisSolution(0));
+        EngineAssert.Throws<OutOfRangeException>(() => aGcc.ThisSolution(aGcc.SolutionCount + 1));
+        EngineAssert.Throws<OutOfRangeException>(() => aGcc.CenterOn3(0, out _, out _));
 
         // An iteration that fails: IsDone is false and the accessors throw StdFail_NotDone.
         var anIter = new Circ2d2TanOnIter(new QCurve(new CurveAdaptor2D(new CircleCurve2D(c1)), Qualifier.Enclosed),
@@ -185,8 +185,8 @@ public class Geom2dGcc_Circ2d2TanOnTests
                                                     Lin(0, 0, 1, 0), 0, 0, 0, 1.0e-7);
         if (!anIter.IsDone)
         {
-            Assert.Throws<NotDoneException>(() => anIter.WhichQualifier(out _, out _));
-            Assert.Throws<NotDoneException>(() => anIter.IsTheSame1());
+            EngineAssert.Throws<NotDoneException>(() => anIter.WhichQualifier(out _, out _));
+            EngineAssert.Throws<NotDoneException>(() => anIter.IsTheSame1());
         }
     }
 
@@ -195,11 +195,11 @@ public class Geom2dGcc_Circ2d2TanOnTests
     {
         var anEllipse = new EllipseCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 4, 2);
         // An enclosing line is meaningless.
-        Assert.Throws<BadQualifierException>(
+        EngineAssert.Throws<BadQualifierException>(
             () => new Circ2d2TanOnGeo(new QualifiedLin(Lin(0, 0, 1, 0), Qualifier.Enclosing),
                                                 new QualifiedLin(Lin(0, 1, 1, 0), Qualifier.Outside),
                                                 new CurveAdaptor2D(anEllipse), 1.0e-7));
-        Assert.Throws<BadQualifierException>(
+        EngineAssert.Throws<BadQualifierException>(
             () => new Circ2d2TanOnIter(new QualifiedLin(Lin(0, 0, 1, 0), Qualifier.Enclosing),
                                                  new QCurve(new CurveAdaptor2D(anEllipse), Qualifier.Outside),
                                                  Lin(0, 1, 1, 0), 0, 0, 0, 1.0e-7));

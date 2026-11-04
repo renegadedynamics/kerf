@@ -220,14 +220,14 @@ public class StepDataTests
     {
         var aSelect = new ColourSelect();
         var aMember = new SelectInt();
-        Assert.Throws<TypeMismatchException>(() => aSelect.SetValue(new TCollection_HAsciiString("x")));
+        EngineAssert.Throws<TypeMismatchException>(() => aSelect.SetValue(new TCollection_HAsciiString("x")));
         aSelect.SetValue(new UndefinedEntity());
         Assert.Equal(1, aSelect.CaseNumber());
         aSelect.SetReal(0.5, "RGB");
         Assert.Equal(0.5, aSelect.Real());
         Assert.Equal("RGB", aSelect.SelectName());
         Assert.IsType<SelectNamed>(aSelect.Value());
-        Assert.Throws<TypeMismatchException>(() => aSelect.SetInteger(3, "HSV"));
+        EngineAssert.Throws<TypeMismatchException>(() => aSelect.SetInteger(3, "HSV"));
 
         // OCCT stores every logical as 0 (occt-issues.md, 8B)
         aMember.SetLogical(Logical.LTrue);
@@ -341,6 +341,6 @@ public class StepDataTests
         // Not UTF-8 (a code point beyond U+10FFFF): one char per byte
         Assert.Equal("ÿÿ", Unicode.ConvertFormatToUnicode(FormatType.FormatType_UTF8, "ÿÿ"));
         // OCCT's GBK and Big5 converters insert an ASCII byte after a lead byte "at 0", which throws
-        Assert.Throws<OutOfRangeException>(() => Unicode.ConvertFormatToUnicode(FormatType.FormatType_Big5, "¤" + "0"));
+        EngineAssert.Throws<OutOfRangeException>(() => Unicode.ConvertFormatToUnicode(FormatType.FormatType_Big5, "¤" + "0"));
     }
 }

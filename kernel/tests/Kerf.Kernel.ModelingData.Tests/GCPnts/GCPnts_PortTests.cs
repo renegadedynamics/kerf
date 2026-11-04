@@ -132,9 +132,9 @@ public class GCPnts_PortTests
     public void AbscissaPoint_ZeroLength_Throws()
     {
         TestGeomAdaptor_Curve aC = new(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 1.0, 1.0);
-        Assert.Throws<ConstructionErrorException>(() => new AbscissaPoint(aC, 1.0, 1.0));
+        EngineAssert.Throws<ConstructionErrorException>(() => new AbscissaPoint(aC, 1.0, 1.0));
         Assert.False(new AbscissaPoint().IsDone);
-        Assert.Throws<NotDoneException>(() => new AbscissaPoint().Parameter());
+        EngineAssert.Throws<NotDoneException>(() => new AbscissaPoint().Parameter());
     }
 
     [Fact]
@@ -169,8 +169,8 @@ public class GCPnts_PortTests
         {
             Assert.Equal(aStep, AbscissaPoint.Length(aC, anUA.Parameter(i), anUA.Parameter(i + 1)), 1e-5);
         }
-        Assert.Throws<ConstructionErrorException>(() => new UniformAbscissa(aC, 1));
-        Assert.Throws<NotDoneException>(() => new UniformAbscissa().PointCount);
+        EngineAssert.Throws<ConstructionErrorException>(() => new UniformAbscissa(aC, 1));
+        EngineAssert.Throws<NotDoneException>(() => new UniformAbscissa().PointCount);
     }
 
     [Fact]
@@ -324,8 +324,8 @@ public class GCPnts_PortTests
         Assert.True(aTD.Value(2).IsEqual(new Point3D(9, 9, 9), 0.0));
         Assert.Equal(aNb + 2, aTD.AddPoint(aP, 10.0));
 
-        Assert.Throws<ConstructionErrorException>(() => new TangentialDeflection(aC, 0.5, 0.0));
-        Assert.Throws<ConstructionErrorException>(() => TangentialDeflection.ArcAngularStep(-1.0, 0.1, 0.1, 0.0));
+        EngineAssert.Throws<ConstructionErrorException>(() => new TangentialDeflection(aC, 0.5, 0.0));
+        EngineAssert.Throws<ConstructionErrorException>(() => TangentialDeflection.ArcAngularStep(-1.0, 0.1, 0.1, 0.0));
     }
 
     [Fact]
@@ -345,7 +345,7 @@ public class GCPnts_PortTests
         }
         Assert.Equal(1.0, aPrev);
         Assert.True(aNb > 3);
-        Assert.Throws<OutOfRangeException>(() => anIt.Next());
+        EngineAssert.Throws<OutOfRangeException>(() => anIt.Next());
     }
 
     // The 2D instantiations are generated from the 3D ones: on a planar curve built from the same numbers they must

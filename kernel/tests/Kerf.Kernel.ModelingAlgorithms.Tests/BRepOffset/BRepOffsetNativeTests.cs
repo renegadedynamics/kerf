@@ -125,7 +125,7 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                     }
                     aRes.Add((anExplode.ToString(), ""));
                 }
-                catch (FailureException e) when (e is not (ImmutableObjectException or LockedShapeException))
+                catch (Exception e) when (Refusal.IsFailure(e) && (e is not (ImmutableObjectException or LockedShapeException)))
                 {
                     aRes.Add(Throw(e));
                 }
@@ -143,7 +143,7 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                     Assert.True(aF.TShape()!.IsFrozen);
                     aRes.Add(Block("STATUS " + ((int)anOff.Status()).ToString(CultureInfo.InvariantCulture), Text(aF)));
                 }
-                catch (FailureException e) when (e is not (ImmutableObjectException or LockedShapeException))
+                catch (Exception e) when (Refusal.IsFailure(e) && (e is not (ImmutableObjectException or LockedShapeException)))
                 {
                     aRes.Add(Throw(e));
                 }
@@ -166,7 +166,7 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                     }
                     aRes.Add(Block($"DONE {(aMaker.IsDone ? "1" : "0")} {((int)aMaker.GetError()).ToString(CultureInfo.InvariantCulture)}", aText));
                 }
-                catch (FailureException e) when (e is not (ImmutableObjectException or LockedShapeException))
+                catch (Exception e) when (Refusal.IsFailure(e) && (e is not (ImmutableObjectException or LockedShapeException)))
                 {
                     aRes.Add(Throw(e));
                 }

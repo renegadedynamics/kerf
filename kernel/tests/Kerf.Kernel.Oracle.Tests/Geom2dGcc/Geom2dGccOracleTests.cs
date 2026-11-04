@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
@@ -343,7 +344,7 @@ public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDi
                 {
                     NullReferenceException => "fault",
                     IndexOutOfRangeException => "Standard_OutOfRange",
-                    _ => global::Kerf.Engine.Foundation.OcctTypeNames.Of(anE.GetType()),
+                    _ => global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anE).GetType()),
                 });
             }
         }

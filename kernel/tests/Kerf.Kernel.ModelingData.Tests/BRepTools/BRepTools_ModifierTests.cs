@@ -216,7 +216,7 @@ public class BRepTools_ModifierTests
         // OCCT's BRepTools_GTrsfModification transforms B-spline and Bezier geometry only (GTransform converts first)
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         var aG = new GeneralTransform3D(new Matrix3x3(2, 0, 0, 0, 1, 0, 0, 0, 1), new Xyz());
-        Assert.Throws<NoSuchObjectException>(() => new Modifier(aBox, new GTrsfModification(aG)));
+        EngineAssert.Throws<NoSuchObjectException>(() => new Modifier(aBox, new GTrsfModification(aG)));
     }
 
     [Fact]
@@ -237,7 +237,7 @@ public class BRepTools_ModifierTests
         // OCCT's mutable input updates the input's vertices in place: on a frozen edge that throws, as on a locked one
         var aMutable = new Modifier(true);
         aMutable.Init(anEdge);
-        Assert.Throws<LockedShapeException>(() => aMutable.Perform(new NurbsConvertModification()));
+        EngineAssert.Throws<LockedShapeException>(() => aMutable.Perform(new NurbsConvertModification()));
         aSnapshot.AssertUnchanged(anEdge);
     }
 
@@ -337,8 +337,8 @@ public class BRepTools_ModifierTests
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         var aModifier = new Modifier(aBox, new CopyModification());
-        Assert.Throws<NoSuchObjectException>(() => aModifier.ModifiedShape(TestShapes.Vertex(new Point3D())));
-        Assert.Throws<NullObjectException>(() => new Modifier().Perform(new CopyModification()));
+        EngineAssert.Throws<NoSuchObjectException>(() => aModifier.ModifiedShape(TestShapes.Vertex(new Point3D())));
+        EngineAssert.Throws<NullObjectException>(() => new Modifier().Perform(new CopyModification()));
     }
 
     // Copy for write

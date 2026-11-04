@@ -179,7 +179,7 @@ public class BRepAlgoAPIOracleTests(ITestOutputHelper output)
         }
         catch (Exception e) when (e is not OutOfMemoryException)
         {
-            theStop = e.Message.Split('\n')[0];
+            theStop = Refusal.Unwrapped(e).Message.Split('\n')[0];
         }
         return aRec.Runs;
     }

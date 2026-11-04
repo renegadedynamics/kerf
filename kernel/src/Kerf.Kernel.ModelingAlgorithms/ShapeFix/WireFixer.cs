@@ -3525,7 +3525,7 @@ internal partial class WireFixer : RootFixer
                     return false;
                 }
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 return false;
             }

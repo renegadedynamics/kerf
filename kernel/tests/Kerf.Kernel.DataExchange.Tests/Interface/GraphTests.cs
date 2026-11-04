@@ -214,7 +214,7 @@ public class GraphTests
         // for C ends with the last entity set (F, the one before G) and no message
         Assert.Same(F, aWarnings.Check(3)!.Entity());
         Assert.Equal(0, aWarnings.Check(3)!.WarningCount);
-        Assert.Throws<CheckFailureException>(() => aTool.CheckSuccess());
+        EngineAssert.Throws<CheckFailureException>(() => aTool.CheckSuccess());
         Assert.Empty(Names(aTool.UnknownEntities()));
 
         var aText = new StringWriter();
@@ -275,7 +275,7 @@ public class GraphTests
         var aTool2 = new CopyTool(myModel);
         Assert.Equal("D'", ((ToyEntity)aTool2.Transferred(D)!).Name);
         var anOrphan = new ToyModel();
-        Assert.Throws<InterfaceErrorException>(() => new CopyTool(anOrphan));
+        EngineAssert.Throws<InterfaceErrorException>(() => new CopyTool(anOrphan));
     }
 
     [Fact]

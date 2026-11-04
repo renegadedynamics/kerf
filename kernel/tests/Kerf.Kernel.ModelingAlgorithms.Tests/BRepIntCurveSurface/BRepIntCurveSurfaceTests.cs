@@ -73,9 +73,9 @@ public class BRepIntCurveSurfaceTests
         var anInter = new CurveShapeIntersector();
         anInter.Init(Box10(), new Line3D(new Point3D(30, 4, -5), new Direction3D(0, 0, 1)), 1e-7);
         Assert.False(anInter.More());
-        Assert.Throws<NotDoneException>(() => anInter.Pnt());
-        Assert.Throws<NotDoneException>(() => anInter.W());
-        Assert.Throws<NotDoneException>(() => anInter.Point());
+        EngineAssert.Throws<NotDoneException>(() => anInter.Pnt());
+        EngineAssert.Throws<NotDoneException>(() => anInter.W());
+        EngineAssert.Throws<NotDoneException>(() => anInter.Point());
     }
 
     [Fact]

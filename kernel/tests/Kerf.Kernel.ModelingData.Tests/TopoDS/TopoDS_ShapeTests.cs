@@ -35,8 +35,8 @@ public class TopoDS_ShapeTests
         Assert.Equal("NULL", aShape.ToString());
 
         // queries that need the TShape throw on a null shape (OCCT: undefined behaviour)
-        Assert.Throws<NullObjectException>(() => aShape.Type);
-        Assert.Throws<NullObjectException>(() => aShape.Free());
+        EngineAssert.Throws<NullObjectException>(() => aShape.Type);
+        EngineAssert.Throws<NullObjectException>(() => aShape.Free());
     }
 
     [Fact]
@@ -70,8 +70,8 @@ public class TopoDS_ShapeTests
     {
         Vertex aV = TestShapes.Vertex(new Point3D());
         var aScale = new Placement(Transform3D.Scale(new Point3D(), 2.0));
-        Assert.Throws<DomainErrorException>(() => aV.Located(aScale, true));
-        Assert.Throws<DomainErrorException>(() => aV.Moved(aScale, true));
+        EngineAssert.Throws<DomainErrorException>(() => aV.Located(aScale, true));
+        EngineAssert.Throws<DomainErrorException>(() => aV.Moved(aScale, true));
         Assert.Equal(aScale, aV.Located(aScale).Placement); // allowed without the check, as in OCCT
     }
 
@@ -134,8 +134,8 @@ public class TopoDS_ShapeTests
         Shape anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
         Edge aNarrowed = ShapeCasts.Edge(anEdge);
         Assert.True(aNarrowed.IsEqual(anEdge));
-        Assert.Throws<TypeMismatchException>(() => ShapeCasts.Face(anEdge));
-        Assert.Throws<TypeMismatchException>(() => ShapeCasts.Vertex(anEdge));
+        EngineAssert.Throws<TypeMismatchException>(() => ShapeCasts.Face(anEdge));
+        EngineAssert.Throws<TypeMismatchException>(() => ShapeCasts.Vertex(anEdge));
         // a null shape narrows to any type
         Assert.True(ShapeCasts.Solid(new Shape()).IsNull);
         Assert.Equal(External, ShapeCasts.Compound(new Shape()).Orientation);

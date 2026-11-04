@@ -48,8 +48,8 @@ public class BRepAlgo_ImageAsDesTests
         Assert.Equal([d, c], Items(anImage.Image(a)));
         Assert.False(anImage.HasImage(b));
 
-        Assert.Throws<ConstructionErrorException>(() => anImage.Bind(a, b));
-        Assert.Throws<ConstructionErrorException>(() => anImage.Add(b, c));
+        EngineAssert.Throws<ConstructionErrorException>(() => anImage.Bind(a, b));
+        EngineAssert.Throws<ConstructionErrorException>(() => anImage.Add(b, c));
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public class BRepAlgo_ImageAsDesTests
 
         anAsDes.Remove(e4);
         Assert.Equal([e1], Items(anAsDes.Descendant(f1)));
-        Assert.Throws<ConstructionErrorException>(() => anAsDes.Remove(f1));
+        EngineAssert.Throws<ConstructionErrorException>(() => anAsDes.Remove(f1));
         Assert.Empty(Items(anAsDes.Descendant(e1)));
     }
 }

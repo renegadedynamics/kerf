@@ -34,7 +34,7 @@ public readonly partial struct Circle3D : IEquatable<Circle3D>
     {
         _pos = a2;
         _radius = radius;
-        Standard_ConstructionError_Raise_if(radius < 0.0, "gp_Circ() - radius should be positive number");
+        Refusal.ArgumentIf(radius < 0.0, FailureKind.ConstructionError, "gp_Circ() - radius should be positive number");
     }
 
     // Copies
@@ -63,7 +63,7 @@ public readonly partial struct Circle3D : IEquatable<Circle3D>
     public readonly Circle3D WithRadius(double radius)
     {
         double newRadius = _radius;
-        Standard_ConstructionError_Raise_if(radius < 0.0, "gp_Circ::SetRadius() - radius should be positive number");
+        Refusal.ArgumentIf(radius < 0.0, FailureKind.ConstructionError, "gp_Circ::SetRadius() - radius should be positive number");
         newRadius = radius;
         return new Circle3D(_pos, newRadius);
     }

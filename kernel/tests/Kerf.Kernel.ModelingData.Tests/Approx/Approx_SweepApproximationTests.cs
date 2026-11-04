@@ -252,7 +252,7 @@ public class Approx_SweepApproximationTests
         GrowingCircle aFunc = new(true, theDerivatives);
         SweepApproximation anApprox = new(aFunc);
         Assert.False(anApprox.IsDone);
-        Assert.Throws<NotDoneException>(() => anApprox.UDegree());
+        EngineAssert.Throws<NotDoneException>(() => anApprox.UDegree());
         anApprox.Perform(0.0, 2.0, 1.0e-6, 1.0e-6, 1.0e-5, 1.0e-4, theContinuity, 11, 50);
 
         Assert.True(anApprox.IsDone);
@@ -303,7 +303,7 @@ public class Approx_SweepApproximationTests
 
         Assert.True(anApprox.IsDone);
         Assert.Equal(0, anApprox.Curves2dCount);
-        Assert.Throws<DomainErrorException>(() => anApprox.Curves2dDegree());
+        EngineAssert.Throws<DomainErrorException>(() => anApprox.Curves2dDegree());
         Assert.True(anApprox.MaxErrorOnSurf() < 1.0e-6);
         Assert.Equal(1.0, anApprox.SurfWeights()[2, 2]);
 
@@ -328,7 +328,7 @@ public class Approx_SweepApproximationTests
     {
         // OCCT checks D1 by calling it; the base class's D1 throws.
         SweepApproximation anApprox = new(new SineSection());
-        Assert.Throws<MethodNotImplementedException>(
+        EngineAssert.Throws<MethodNotImplementedException>(
             () => anApprox.Perform(0.0, 6.0, 1.0e-7, 1.0e-7, 1.0e-5, 1.0e-4, C1));
         Assert.Contains(" Not Done ", anApprox.ToString());
     }

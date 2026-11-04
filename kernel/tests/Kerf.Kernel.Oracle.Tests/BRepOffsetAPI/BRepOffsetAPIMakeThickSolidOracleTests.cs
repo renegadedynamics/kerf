@@ -704,9 +704,9 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
             }
             return new Outcome(null, aStatus, aText, aSb.ToString(), aRes);
         }
-        catch (Exception e) when (e is FailureException or NullReferenceException)
+        catch (Exception e) when ((Refusal.IsFailure(e) || e is NullReferenceException))
         {
-            return new Outcome(global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()), "", null, "", null);
+            return new Outcome(global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()), "", null, "", null);
         }
     }
 

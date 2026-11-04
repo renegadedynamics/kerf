@@ -40,8 +40,7 @@ public readonly partial struct Torus : IEquatable<Torus>
         _pos = a3;
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        Standard_ConstructionError_Raise_if(minorRadius < 0.0 || majorRadius < 0.0,
-                                            "gp_Torus() - invalid construction parameters");
+        Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < 0.0, FailureKind.ConstructionError, "gp_Torus() - invalid construction parameters");
     }
 
     // Copies
@@ -63,8 +62,7 @@ public readonly partial struct Torus : IEquatable<Torus>
     public readonly Torus WithMajorRadius(double majorRadius)
     {
         double newMajorRadius = _majorRadius;
-        Standard_ConstructionError_Raise_if(majorRadius - _minorRadius <= Constants.Resolution(),
-                                            "gp_Torus::SetMajorRadius() - invalid input parameters");
+        Refusal.ArgumentIf(majorRadius - _minorRadius <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Torus::SetMajorRadius() - invalid input parameters");
         newMajorRadius = majorRadius;
         return new Torus(_pos, newMajorRadius, _minorRadius);
     }
@@ -72,9 +70,8 @@ public readonly partial struct Torus : IEquatable<Torus>
     public readonly Torus WithMinorRadius(double minorRadius)
     {
         double newMinorRadius = _minorRadius;
-        Standard_ConstructionError_Raise_if(minorRadius < 0.0
-                                            || _majorRadius - minorRadius <= Constants.Resolution(),
-                                            "gp_Torus::SetMinorRadius() - invalid input parameters");
+        Refusal.ArgumentIf(minorRadius < 0.0
+                                            || _majorRadius - minorRadius <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Torus::SetMinorRadius() - invalid input parameters");
         newMinorRadius = minorRadius;
         return new Torus(_pos, _majorRadius, newMinorRadius);
     }
@@ -136,7 +133,7 @@ public readonly partial struct Torus : IEquatable<Torus>
         //   2*(R^2+r^2)*(X^2+Y^2)+
         //   2*(R^2-r^2)*Z^2+(R^2-r^2)^2 = 0.0
         const int lowIndex = 0;
-        Standard_DimensionError_Raise_if(coef.Length < 35, "gp_Torus::theCoefficients(): Dimension mismatch");
+        Refusal.ArgumentIf(coef.Length < 35, FailureKind.DimensionError, "gp_Torus::theCoefficients(): Dimension mismatch");
 
         Transform3D tr = new Transform3D().WithTransformation(_pos);
         double t11 = tr.Value(1, 1);

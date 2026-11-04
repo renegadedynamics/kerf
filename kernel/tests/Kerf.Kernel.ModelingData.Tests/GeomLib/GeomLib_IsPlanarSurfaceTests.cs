@@ -55,7 +55,7 @@ public class GeomLib_IsPlanarSurfaceTests
         {
             var anIs = new IsPlanarSurface(aS, 1.0);
             Assert.False(anIs.IsPlanar);
-            Assert.ThrowsAny<NotDoneException>(() => anIs.Plan());
+            EngineAssert.ThrowsAny<NotDoneException>(() => anIs.Plan());
         }
     }
 

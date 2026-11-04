@@ -28,7 +28,7 @@ public readonly partial struct Line2D : IEquatable<Line2D>
     public Line2D(double a, double b, double c)
     {
         double norm2 = a * a + b * b;
-        Standard_ConstructionError_Raise_if(norm2 <= Constants.Resolution(), " ");
+        Refusal.ArgumentIf(norm2 <= Constants.Resolution(), FailureKind.ConstructionError, " ");
         Point2D p = new(-a * c / norm2, -b * c / norm2);
         Direction2D v = new(-b, a);
         _pos = new Axis2D(p, v);

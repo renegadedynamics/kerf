@@ -143,7 +143,7 @@ public sealed class OffsetCurve2D : Curve2D
             // Raise exception if still C0
             if (isC0)
             {
-                throw new ConstructionErrorException("Offset on C0 curve");
+                throw Refusal.Argument(new ConstructionErrorException("Offset on C0 curve"));
             }
         }
         //
@@ -224,7 +224,7 @@ public sealed class OffsetCurve2D : Curve2D
         Point2D value = basisD1.Point;
         if (!OffsetCurveUtils2D.CalculateD0(ref value, basisD1.D1, _offsetValue))
         {
-            throw new UndefinedValue2DException("Geom2d_OffsetCurve::EvalD0");
+            throw Refusal.State(new UndefinedValue2DException("Geom2d_OffsetCurve::EvalD0"));
         }
         return value;
     }
@@ -243,7 +243,7 @@ public sealed class OffsetCurve2D : Curve2D
         Vector2D d1 = basisD2.D1;
         if (!OffsetCurveUtils2D.CalculateD1(ref value, ref d1, basisD2.D2, _offsetValue))
         {
-            throw new UndefinedDerivative2DException("Geom2d_OffsetCurve::EvalD1");
+            throw Refusal.State(new UndefinedDerivative2DException("Geom2d_OffsetCurve::EvalD1"));
         }
         return new ResD1 { Point = value, D1 = d1 };
     }
@@ -273,12 +273,12 @@ public sealed class OffsetCurve2D : Curve2D
                                                           ref dummyD4,
                                                           out isDirectionChange))
             {
-                throw new UndefinedDerivative2DException("Geom2d_OffsetCurve::EvalD2");
+                throw Refusal.State(new UndefinedDerivative2DException("Geom2d_OffsetCurve::EvalD2"));
             }
         }
         if (!OffsetCurveUtils2D.CalculateD2(ref value, ref d1, ref d2, d3, isDirectionChange, _offsetValue))
         {
-            throw new UndefinedDerivative2DException("Geom2d_OffsetCurve::EvalD2");
+            throw Refusal.State(new UndefinedDerivative2DException("Geom2d_OffsetCurve::EvalD2"));
         }
         return new ResD2 { Point = value, D1 = d1, D2 = d2 };
     }
@@ -310,7 +310,7 @@ public sealed class OffsetCurve2D : Curve2D
                                                           ref d4,
                                                           out isDirectionChange))
             {
-                throw new UndefinedDerivative2DException("Geom2d_OffsetCurve::EvalD3");
+                throw Refusal.State(new UndefinedDerivative2DException("Geom2d_OffsetCurve::EvalD3"));
             }
         }
         if (!OffsetCurveUtils2D.CalculateD3(ref value,
@@ -321,7 +321,7 @@ public sealed class OffsetCurve2D : Curve2D
                                                  isDirectionChange,
                                                  _offsetValue))
         {
-            throw new UndefinedDerivative2DException("Geom2d_OffsetCurve::EvalD3");
+            throw Refusal.State(new UndefinedDerivative2DException("Geom2d_OffsetCurve::EvalD3"));
         }
         return new ResD3 { Point = value, D1 = d1, D2 = d2, D3 = d3 };
     }
@@ -332,7 +332,7 @@ public sealed class OffsetCurve2D : Curve2D
     {
         if (n < 1)
         {
-            throw new UndefinedDerivative2DException("Geom2d_OffsetCurve::EvalDN");
+            throw Refusal.State(new UndefinedDerivative2DException("Geom2d_OffsetCurve::EvalDN"));
         }
 
         Vector2D evalRepResult;
@@ -385,7 +385,7 @@ public sealed class OffsetCurve2D : Curve2D
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     internal sealed override bool IsCN(int n)
     {
-        Standard_RangeError_Raise_if(n < 0, " ");
+        Refusal.RangeIf(n < 0, FailureKind.RangeError, " ");
         return _basisCurve.IsCN(n + 1);
     }
 

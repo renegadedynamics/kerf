@@ -97,6 +97,6 @@ public class IntTools_TopolToolTests
     public void Initialize_WithoutSurfaceThrows()
     {
         var aTool = new IntersectionTopolTool();
-        Assert.ThrowsAny<MethodNotImplementedException>(() => aTool.Initialize());
+        EngineAssert.ThrowsAny<MethodNotImplementedException>(() => aTool.Initialize());
     }
 }

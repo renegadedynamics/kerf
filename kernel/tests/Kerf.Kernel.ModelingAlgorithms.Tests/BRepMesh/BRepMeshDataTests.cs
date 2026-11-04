@@ -134,9 +134,9 @@ public class BRepMeshDataTests
         aPCurve.GetIndex(1) = 42;
         Assert.Equal(42, aPCurve.GetIndex(1));
         Assert.Equal(0.5, aPCurve.GetPoint(1).X);
-        Assert.Throws<OutOfRangeException>(() => aPCurve.GetPoint(3));
-        Assert.Throws<OutOfRangeException>(() => aPCurve.GetIndex(-1));
-        Assert.Throws<OutOfRangeException>(() => aPCurve.GetParameter(3));
+        EngineAssert.Throws<OutOfRangeException>(() => aPCurve.GetPoint(3));
+        EngineAssert.Throws<OutOfRangeException>(() => aPCurve.GetIndex(-1));
+        EngineAssert.Throws<OutOfRangeException>(() => aPCurve.GetParameter(3));
         aPCurve.RemovePoint(0);
         Assert.Equal(2, aPCurve.ParametersNb());
         Assert.Equal(42, aPCurve.GetIndex(0));
@@ -247,7 +247,7 @@ public class BRepMeshDataTests
 
         // The pcurves of another face aren't found by this one.
         FaceData anOther = new(aCyl);
-        Assert.Throws<NoSuchObjectException>(() => aDEdge.GetPCurves(anOther));
+        EngineAssert.Throws<NoSuchObjectException>(() => aDEdge.GetPCurves(anOther));
     }
 
     [Fact]

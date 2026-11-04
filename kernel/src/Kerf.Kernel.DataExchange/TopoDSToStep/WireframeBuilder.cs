@@ -117,7 +117,7 @@ internal sealed class WireframeBuilder : ExportRoot
         {
             ca.Initialize(anEdge);
         }
-        catch (NullObjectException)
+        catch (Exception caught) when (Refusal.Of(caught) is NullObjectException)
         {
             return false;
         }

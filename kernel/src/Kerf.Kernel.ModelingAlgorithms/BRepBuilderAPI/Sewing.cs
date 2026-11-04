@@ -245,7 +245,7 @@ internal class Sewing : Transient
                               requestedLast,
                               ref newCurvePtr);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
         }
         return newCurvePtr;
@@ -441,7 +441,7 @@ internal class Sewing : Transient
         {
             BrepLibrary.SameParameter(edge);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
         }
     }
@@ -1162,7 +1162,7 @@ internal class Sewing : Transient
                 tolReached = Tool.Tolerance(edge);
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             isSamePar = false;
         }
@@ -5191,7 +5191,7 @@ internal class Sewing : Transient
                     }
                 }
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 worktol = MinTolerance();
             }
@@ -5578,7 +5578,7 @@ internal class Sewing : Transient
             {
                 BrepLibrary.SameParameter(sec, Tool.Tolerance(sec));
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 continue;
             }

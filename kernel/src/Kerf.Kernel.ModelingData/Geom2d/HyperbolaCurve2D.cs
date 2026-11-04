@@ -47,7 +47,7 @@ public sealed class HyperbolaCurve2D : ConicCurve2D
         _minorRadius = minorRadius;
         if (majorRadius < 0.0 || minorRadius < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _pos = new Frame2D(majorAxis, sense);
     }
@@ -60,7 +60,7 @@ public sealed class HyperbolaCurve2D : ConicCurve2D
         _minorRadius = minorRadius;
         if (majorRadius < 0.0 || minorRadius < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _pos = axis;
     }
@@ -78,7 +78,7 @@ public sealed class HyperbolaCurve2D : ConicCurve2D
         CheckMutable();
         if (majorRadius < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         else
         {
@@ -91,7 +91,7 @@ public sealed class HyperbolaCurve2D : ConicCurve2D
         CheckMutable();
         if (minorRadius < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         else
         {
@@ -179,7 +179,7 @@ public sealed class HyperbolaCurve2D : ConicCurve2D
     {
         get
         {
-            Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), " ");
+            Refusal.StateIf(_majorRadius <= Constants.Resolution(), FailureKind.DomainError, " ");
             return (Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius)) / _majorRadius;
         }
     }
@@ -232,7 +232,7 @@ public sealed class HyperbolaCurve2D : ConicCurve2D
     {
         get
         {
-            Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), " ");
+            Refusal.StateIf(_majorRadius <= Constants.Resolution(), FailureKind.DomainError, " ");
             return (_minorRadius * _minorRadius) / _majorRadius;
         }
     }
@@ -272,7 +272,7 @@ public sealed class HyperbolaCurve2D : ConicCurve2D
     {
         if (n < 1)
         {
-            throw new UndefinedDerivative2DException();
+            throw Refusal.State(new UndefinedDerivative2DException());
         }
         return global::Kerf.Engine.Geometry.ElCLib.HyperbolaDN(u, _pos, _majorRadius, _minorRadius, n);
     }

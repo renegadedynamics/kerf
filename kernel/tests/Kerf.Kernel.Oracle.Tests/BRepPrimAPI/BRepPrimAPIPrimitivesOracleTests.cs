@@ -164,9 +164,9 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
         {
             aP = thePort();
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
-            aPErr = global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
+            aPErr = global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType());
         }
         Assert.True((aNErr is null) == (aPErr is null), $"{theKind}: native {aNErr ?? "built"}, port {aPErr ?? "built"}");
         if (aN is null)
@@ -199,10 +199,10 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
         {
             aP = thePort();
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
             aPThrew = true;
-            aPMessage = e.ToString();
+            aPMessage = Refusal.Unwrapped(e).ToString();
         }
         Assert.True(aNThrew == aPThrew, $"{theWhat}: native {(aNThrew ? "threw" : "built")}, port {(aPThrew ? "threw " + aPMessage : "built")}");
         if (aN is null)

@@ -195,7 +195,7 @@ public class Geom2dGcc_Circ2d2TanRadTests
     [Fact]
     public void Accessors_ThrowAsOcct()
     {
-        Assert.Throws<NegativeValueException>(() => new global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad(new CartesianPoint2(0, 0),
+        EngineAssert.Throws<NegativeValueException>(() => new global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad(new CartesianPoint2(0, 0),
                                                                                new CartesianPoint2(1, 0), -1, 1e-9));
         CurveAdaptor2D aLine = new(new LineCurve2D(new Point2D(0, 0), DX));
         CurveAdaptor2D anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 3), DX), 4, 2));
@@ -205,9 +205,9 @@ public class Geom2dGcc_Circ2d2TanRadTests
         global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad aFar = new(new CartesianPoint2(0, 0), new CartesianPoint2(10, 0), 1, 1e-9);
         Assert.True(aFar.IsDone);
         Assert.Equal(0, aFar.SolutionCount);
-        Assert.Throws<OutOfRangeException>(() => aFar.ThisSolution(1));
-        Assert.Throws<OutOfRangeException>(() => aFar.Tangency1(0, out _, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => aFar.WhichQualifier(1, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => aFar.IsTheSame2(1));
+        EngineAssert.Throws<OutOfRangeException>(() => aFar.ThisSolution(1));
+        EngineAssert.Throws<OutOfRangeException>(() => aFar.Tangency1(0, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => aFar.WhichQualifier(1, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => aFar.IsTheSame2(1));
     }
 }

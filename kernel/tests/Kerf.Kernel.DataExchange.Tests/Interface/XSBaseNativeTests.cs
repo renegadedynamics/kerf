@@ -126,7 +126,7 @@ public class XSBaseNativeTests
                             aBuf.SetInitial(anInit);
                             theOut.Add($"LB init {anInit}");
                         }
-                        catch (FailureException)
+                        catch (Exception caught) when (Refusal.IsFailure(caught))
                         {
                             theOut.Add($"LB init {anInit} failed");
                         }
@@ -438,7 +438,7 @@ public class XSBaseNativeTests
                     int aValue = ((IntVal)aList.Value(i)!).Value();
                     aVals.Append(' ').Append(aValue);
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                     aVals.Append(" !");
                 }

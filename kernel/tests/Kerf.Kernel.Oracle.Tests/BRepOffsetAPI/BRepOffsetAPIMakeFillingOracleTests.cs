@@ -255,7 +255,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         }
         catch (Exception e)
         {
-            return ErrorOf(e) ?? global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
+            return ErrorOf(e) ?? global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType());
         }
     }
 
@@ -969,7 +969,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             }
             catch (Exception e)
             {
-                aPErr = ErrorOf(e) ?? global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
+                aPErr = ErrorOf(e) ?? global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType());
             }
             if (aNErr is not null || aPErr is not null || aNRes is null || aPRes.IsNull)
             {

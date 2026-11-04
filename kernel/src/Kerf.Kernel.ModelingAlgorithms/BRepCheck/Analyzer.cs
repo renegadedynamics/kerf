@@ -172,11 +172,10 @@ internal class Analyzer
 
     // The exceptions OCCT's catch (Standard_Failure) handles under OCC_CATCH_SIGNALS
     private static bool IsCaught(Exception exception)
-        => exception is FailureException
-               or NullReferenceException
+        => (Refusal.IsFailure(exception) || exception is NullReferenceException
                or InvalidCastException
                or IndexOutOfRangeException
-               or DivideByZeroException;
+               or DivideByZeroException);
 
     private void Put(in Shape shape, bool b)
     {

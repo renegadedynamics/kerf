@@ -156,6 +156,6 @@ public class ShapeAnalysis_TransferParametersProjTests
 
         // the target edge must be writable: BRep_Builder.UpdateVertex refuses a locked (frozen) edge, as OCCT does
         aTo.TShape()!.FreezeGraph();
-        Assert.Throws<LockedShapeException>(() => TransferParametersProjAnalysis.CopyNMVertex(anInternal, aTo, anE));
+        EngineAssert.Throws<LockedShapeException>(() => TransferParametersProjAnalysis.CopyNMVertex(anInternal, aTo, anE));
     }
 }

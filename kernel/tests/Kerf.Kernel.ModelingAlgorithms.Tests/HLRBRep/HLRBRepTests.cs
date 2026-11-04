@@ -293,7 +293,7 @@ public class HLRBRepTests
         TopologyData DS = new();
         Dictionary<Shape, AdaptorTool> MST = new(ShapeHasher.Instance);
         Contour FO = new(new Vector3D(1, -1, 1));
-        Assert.Throws<LockedShapeException>(() => DSFiller.Insert(aCyl, FO, DS, MST, 0));
+        EngineAssert.Throws<LockedShapeException>(() => DSFiller.Insert(aCyl, FO, DS, MST, 0));
     }
 
     [Fact]

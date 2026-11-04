@@ -101,17 +101,17 @@ public sealed partial class BSplineSurface : BoundedSurface
         if (uDegree < 1 || uDegree > BSplineSurface.MaxDegree || vDegree < 1
             || vDegree > BSplineSurface.MaxDegree)
         {
-            throw new ConstructionErrorException("Geom_BSplineSurface: invalid degree");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface: invalid degree"));
         }
 
         if (sPoles.ColLength() < 2 || sPoles.RowLength() < 2)
         {
-            throw new ConstructionErrorException("Geom_BSplineSurface: at least 2 poles required");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface: at least 2 poles required"));
         }
 
         if (suKnots.Length() != suMults.Length() || svKnots.Length() != svMults.Length())
         {
-            throw new ConstructionErrorException("Geom_BSplineSurface: Knot and Mult array size mismatch");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface: Knot and Mult array size mismatch"));
         }
 
         int i;
@@ -119,7 +119,7 @@ public sealed partial class BSplineSurface : BoundedSurface
         {
             if (suKnots[i + 1] - suKnots[i] <= Epsilon(Math.Abs(suKnots[i])))
             {
-                throw new ConstructionErrorException("Geom_BSplineSurface: UKnots interval values too close");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface: UKnots interval values too close"));
             }
         }
 
@@ -127,18 +127,18 @@ public sealed partial class BSplineSurface : BoundedSurface
         {
             if (svKnots[i + 1] - svKnots[i] <= Epsilon(Math.Abs(svKnots[i])))
             {
-                throw new ConstructionErrorException("Geom_BSplineSurface: VKnots interval values too close");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface: VKnots interval values too close"));
             }
         }
 
         if (sPoles.ColLength() != global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(uDegree, uPeriodic, suMults))
         {
-            throw new ConstructionErrorException("Geom_BSplineSurface: # U Poles and degree mismatch");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface: # U Poles and degree mismatch"));
         }
 
         if (sPoles.RowLength() != global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(vDegree, vPeriodic, svMults))
         {
-            throw new ConstructionErrorException("Geom_BSplineSurface: # V Poles and degree mismatch");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface: # V Poles and degree mismatch"));
         }
     }
 
@@ -274,12 +274,12 @@ public sealed partial class BSplineSurface : BoundedSurface
         // check weights
         if (weights.ColLength() != poles.ColLength())
         {
-            throw new ConstructionErrorException("Geom_BSplineSurface: U Weights and Poles array size mismatch");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface: U Weights and Poles array size mismatch"));
         }
 
         if (weights.RowLength() != poles.RowLength())
         {
-            throw new ConstructionErrorException("Geom_BSplineSurface: V Weights and Poles array size mismatch");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface: V Weights and Poles array size mismatch"));
         }
 
         int i, j;
@@ -289,7 +289,7 @@ public sealed partial class BSplineSurface : BoundedSurface
             {
                 if (weights[i, j] <= Constants.Resolution())
                 {
-                    throw new ConstructionErrorException("Geom_BSplineSurface: Weights values too small");
+                    throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface: Weights values too small"));
                 }
             }
         }
@@ -391,7 +391,7 @@ public sealed partial class BSplineSurface : BoundedSurface
         {
             if (uDegree < _uDeg || uDegree > BSplineSurface.MaxDegree)
             {
-                throw new ConstructionErrorException("Geom_BSplineSurface::IncreaseDegree: bad U degree value");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::IncreaseDegree: bad U degree value"));
             }
 
             ClearEvalRepresentation();
@@ -456,7 +456,7 @@ public sealed partial class BSplineSurface : BoundedSurface
         {
             if (vDegree < _vDeg || vDegree > BSplineSurface.MaxDegree)
             {
-                throw new ConstructionErrorException("Geom_BSplineSurface::IncreaseDegree: bad V degree value");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::IncreaseDegree: bad V degree value"));
             }
 
             ClearEvalRepresentation();
@@ -584,7 +584,7 @@ public sealed partial class BSplineSurface : BoundedSurface
             double uPeriod = _uKnots.Last() - _uKnots.First();
             if (deltaU - uPeriod > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                throw new DomainErrorException("Geom_BSplineSurface::Segment");
+                throw Refusal.Argument(new DomainErrorException("Geom_BSplineSurface::Segment"));
             }
             if (deltaU > uPeriod)
             {
@@ -598,7 +598,7 @@ public sealed partial class BSplineSurface : BoundedSurface
             double vPeriod = _vKnots.Last() - _vKnots.First();
             if (deltaV - vPeriod > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                throw new DomainErrorException("Geom_BSplineSurface::Segment");
+                throw Refusal.Argument(new DomainErrorException("Geom_BSplineSurface::Segment"));
             }
             if (deltaV > vPeriod)
             {
@@ -818,7 +818,7 @@ public sealed partial class BSplineSurface : BoundedSurface
         CheckMutable();
         if ((u2 < u1) || (v2 < v1))
         {
-            throw new DomainErrorException("Geom_BSplineSurface::Segment");
+            throw Refusal.Argument(new DomainErrorException("Geom_BSplineSurface::Segment"));
         }
 
         double maxU = Max(Math.Abs(u2), Math.Abs(u1));
@@ -841,7 +841,7 @@ public sealed partial class BSplineSurface : BoundedSurface
         CheckMutable();
         if ((u2 < u1) || (v2 < v1))
         {
-            throw new DomainErrorException("Geom_BSplineSurface::CheckAndSegment");
+            throw Refusal.Argument(new DomainErrorException("Geom_BSplineSurface::CheckAndSegment"));
         }
 
         double maxU = Max(Math.Abs(u2), Math.Abs(u1));
@@ -866,7 +866,7 @@ public sealed partial class BSplineSurface : BoundedSurface
         CheckMutable();
         if (uIndex < 1 || uIndex > _uKnots.Length())
         {
-            throw new OutOfRangeException("Geom_BSplineSurface::SetUKnot: Index and #knots mismatch");
+            throw Refusal.Range(new OutOfRangeException("Geom_BSplineSurface::SetUKnot: Index and #knots mismatch"));
         }
 
         int newIndex = uIndex;
@@ -875,21 +875,21 @@ public sealed partial class BSplineSurface : BoundedSurface
         {
             if (k >= _uKnots.Value(2) - du)
             {
-                throw new ConstructionErrorException("Geom_BSplineSurface::SetUKnot: K out of range");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetUKnot: K out of range"));
             }
         }
         else if (uIndex == _uKnots.Length())
         {
             if (k <= _uKnots.Value(_uKnots.Length() - 1) + du)
             {
-                throw new ConstructionErrorException("Geom_BSplineSurface::SetUKnot: K out of range");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetUKnot: K out of range"));
             }
         }
         else
         {
             if (k <= _uKnots.Value(newIndex - 1) + du || k >= _uKnots.Value(newIndex + 1) - du)
             {
-                throw new ConstructionErrorException("Geom_BSplineSurface::SetUKnot: K out of range");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetUKnot: K out of range"));
             }
         }
 
@@ -910,20 +910,20 @@ public sealed partial class BSplineSurface : BoundedSurface
         int upper = uk.Upper();
         if (lower < 1 || lower > _uKnots.Length() || upper < 1 || upper > _uKnots.Length())
         {
-            throw new OutOfRangeException("Geom_BSplineSurface::SetUKnots: invalid array dimension");
+            throw Refusal.Range(new OutOfRangeException("Geom_BSplineSurface::SetUKnots: invalid array dimension"));
         }
         if (lower > 1)
         {
             if (Math.Abs(uk[lower] - _uKnots.Value(lower - 1)) <= Constants.Resolution())
             {
-                throw new ConstructionErrorException("Geom_BSplineSurface::SetUKnots: invalid knot value");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetUKnots: invalid knot value"));
             }
         }
         if (upper < _uKnots.Length())
         {
             if (Math.Abs(uk[upper] - _uKnots.Value(upper + 1)) <= Constants.Resolution())
             {
-                throw new ConstructionErrorException("Geom_BSplineSurface::SetUKnots: invalid knot value");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetUKnots: invalid knot value"));
             }
         }
         double k1 = uk[lower];
@@ -935,7 +935,7 @@ public sealed partial class BSplineSurface : BoundedSurface
             {
                 if (Math.Abs(uk[i] - k1) <= Constants.Resolution())
                 {
-                    throw new ConstructionErrorException("Geom_BSplineSurface::SetUKnots: invalid knot value");
+                    throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetUKnots: invalid knot value"));
                 }
                 k1 = uk[i];
             }
@@ -961,7 +961,7 @@ public sealed partial class BSplineSurface : BoundedSurface
         CheckMutable();
         if (vIndex < 1 || vIndex > _vKnots.Length())
         {
-            throw new OutOfRangeException("Geom_BSplineSurface::SetVKnot: Index and #knots mismatch");
+            throw Refusal.Range(new OutOfRangeException("Geom_BSplineSurface::SetVKnot: Index and #knots mismatch"));
         }
         int newIndex = vIndex + _vKnots.Lower() - 1;
         double dv = Math.Abs(Epsilon(k));
@@ -969,21 +969,21 @@ public sealed partial class BSplineSurface : BoundedSurface
         {
             if (k >= _vKnots.Value(2) - dv)
             {
-                throw new ConstructionErrorException("Geom_BSplineSurface::SetVKnot: K out of range");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetVKnot: K out of range"));
             }
         }
         else if (vIndex == _vKnots.Length())
         {
             if (k <= _vKnots.Value(_vKnots.Length() - 1) + dv)
             {
-                throw new ConstructionErrorException("Geom_BSplineSurface::SetVKnot: K out of range");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetVKnot: K out of range"));
             }
         }
         else
         {
             if (k <= _vKnots.Value(newIndex - 1) + dv || k >= _vKnots.Value(newIndex + 1) - dv)
             {
-                throw new ConstructionErrorException("Geom_BSplineSurface::SetVKnot: K out of range");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetVKnot: K out of range"));
             }
         }
 
@@ -1004,20 +1004,20 @@ public sealed partial class BSplineSurface : BoundedSurface
         int upper = vk.Upper();
         if (lower < 1 || lower > _vKnots.Length() || upper < 1 || upper > _vKnots.Length())
         {
-            throw new OutOfRangeException("Geom_BSplineSurface::SetVKnots: invalid array dimension");
+            throw Refusal.Range(new OutOfRangeException("Geom_BSplineSurface::SetVKnots: invalid array dimension"));
         }
         if (lower > 1)
         {
             if (Math.Abs(vk[lower] - _vKnots.Value(lower - 1)) <= Constants.Resolution())
             {
-                throw new ConstructionErrorException("Geom_BSplineSurface::SetVKnots: invalid knot value");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetVKnots: invalid knot value"));
             }
         }
         if (upper < _vKnots.Length())
         {
             if (Math.Abs(vk[upper] - _vKnots.Value(upper + 1)) <= Constants.Resolution())
             {
-                throw new ConstructionErrorException("Geom_BSplineSurface::SetVKnots: invalid knot value");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetVKnots: invalid knot value"));
             }
         }
         double k1 = vk[lower];
@@ -1029,7 +1029,7 @@ public sealed partial class BSplineSurface : BoundedSurface
             {
                 if (Math.Abs(vk[i] - k1) <= Constants.Resolution())
                 {
-                    throw new ConstructionErrorException("Geom_BSplineSurface::SetVKnots: invalid knot value");
+                    throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetVKnots: invalid knot value"));
                 }
                 k1 = vk[i];
             }
@@ -1197,7 +1197,7 @@ public sealed partial class BSplineSurface : BoundedSurface
 
             if (period <= eps)
             {
-                throw new OutOfRangeException("Geom_BSplineSurface::PeriodicNormalization: Uparameter is too great number");
+                throw Refusal.Range(new OutOfRangeException("Geom_BSplineSurface::PeriodicNormalization: Uparameter is too great number"));
             }
 
             bool isLess, isGreater;
@@ -1220,7 +1220,7 @@ public sealed partial class BSplineSurface : BoundedSurface
 
             if (period <= eps)
             {
-                throw new OutOfRangeException("Geom_BSplineSurface::PeriodicNormalization: Vparameter is too great number");
+                throw Refusal.Range(new OutOfRangeException("Geom_BSplineSurface::PeriodicNormalization: Vparameter is too great number"));
             }
 
             bool isLess, isGreater;
@@ -1244,12 +1244,12 @@ public sealed partial class BSplineSurface : BoundedSurface
         CheckMutable();
         if (weight <= Constants.Resolution())
         {
-            throw new ConstructionErrorException("Geom_BSplineSurface::SetWeight: Weight too small");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetWeight: Weight too small"));
         }
 
         if (uIndex < 1 || uIndex > _poles.ColLength() || vIndex < 1 || vIndex > _poles.RowLength())
         {
-            throw new OutOfRangeException("Geom_BSplineSurface::SetWeight: Index and #pole mismatch");
+            throw Refusal.Range(new OutOfRangeException("Geom_BSplineSurface::SetWeight: Index and #pole mismatch"));
         }
 
         ClearEvalRepresentation();
@@ -1274,13 +1274,13 @@ public sealed partial class BSplineSurface : BoundedSurface
         CheckMutable();
         if (vIndex < 1 || vIndex > _poles.RowLength())
         {
-            throw new OutOfRangeException("Geom_BSplineSurface::SetWeightCol: Index and #pole mismatch");
+            throw Refusal.Range(new OutOfRangeException("Geom_BSplineSurface::SetWeightCol: Index and #pole mismatch"));
         }
 
         if (cPoleWeights.Lower() < 1 || cPoleWeights.Lower() > _poles.ColLength() || cPoleWeights.Upper() < 1
             || cPoleWeights.Upper() > _poles.ColLength())
         {
-            throw new ConstructionErrorException("Geom_BSplineSurface::SetWeightCol: invalid array dimension");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetWeightCol: invalid array dimension"));
         }
 
         ClearEvalRepresentation();
@@ -1294,7 +1294,7 @@ public sealed partial class BSplineSurface : BoundedSurface
         {
             if (cPoleWeights[i] <= Constants.Resolution())
             {
-                throw new ConstructionErrorException("Geom_BSplineSurface::SetWeightCol: Weight too small");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetWeightCol: Weight too small"));
             }
             _weights[i + _weights.LowerRow() - 1, vIndex + _weights.LowerCol() - 1] = cPoleWeights[i];
             i++;
@@ -1315,13 +1315,13 @@ public sealed partial class BSplineSurface : BoundedSurface
         CheckMutable();
         if (uIndex < 1 || uIndex > _poles.ColLength())
         {
-            throw new OutOfRangeException("Geom_BSplineSurface::SetWeightRow: Index and #pole mismatch");
+            throw Refusal.Range(new OutOfRangeException("Geom_BSplineSurface::SetWeightRow: Index and #pole mismatch"));
         }
 
         if (cPoleWeights.Lower() < 1 || cPoleWeights.Lower() > _poles.RowLength() || cPoleWeights.Upper() < 1
             || cPoleWeights.Upper() > _poles.RowLength())
         {
-            throw new ConstructionErrorException("Geom_BSplineSurface::SetWeightRow: invalid array dimension");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetWeightRow: invalid array dimension"));
         }
 
         ClearEvalRepresentation();
@@ -1336,7 +1336,7 @@ public sealed partial class BSplineSurface : BoundedSurface
         {
             if (cPoleWeights[i] <= Constants.Resolution())
             {
-                throw new ConstructionErrorException("Geom_BSplineSurface::SetWeightRow: Weight too small");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetWeightRow: Weight too small"));
             }
             _weights[uIndex + _weights.LowerRow() - 1, i + _weights.LowerCol() - 1] = cPoleWeights[i];
             i++;
@@ -1359,7 +1359,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     internal sealed override bool IsCNu(int n)
     {
-        Standard_RangeError_Raise_if(n < 0, " ");
+        Refusal.RangeIf(n < 0, FailureKind.RangeError, " ");
         switch (_uSmooth)
         {
             case CN:
@@ -1386,7 +1386,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     internal sealed override bool IsCNv(int n)
     {
-        Standard_RangeError_Raise_if(n < 0, " ");
+        Refusal.RangeIf(n < 0, FailureKind.RangeError, " ");
 
         switch (_vSmooth)
         {
@@ -1580,7 +1580,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
-            throw new UndefinedDerivative3DException();
+            throw Refusal.State(new UndefinedDerivative3DException());
         }
 
         Vector3D evalRepResult;
@@ -1627,7 +1627,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     /// <exception cref="DomainErrorException">FromUK1 == ToUK2 or FromVK1 == ToVK2.</exception>
     internal void LocalD0(double U, double V, int fromUK1, int toUK2, int fromVK1, int toVK2, out Point3D p)
     {
-        Standard_DomainError_Raise_if(fromUK1 == toUK2 || fromVK1 == toVK2, "Geom_BSplineSurface::LocalD0");
+        Refusal.ArgumentIf(fromUK1 == toUK2 || fromVK1 == toVK2, FailureKind.DomainError, "Geom_BSplineSurface::LocalD0");
 
         double u, v;
         int uindex, vindex;
@@ -1668,7 +1668,7 @@ public sealed partial class BSplineSurface : BoundedSurface
                         out Vector3D d1U,
                         out Vector3D d1V)
     {
-        Standard_DomainError_Raise_if(fromUK1 == toUK2 || fromVK1 == toVK2, "Geom_BSplineSurface::LocalD1");
+        Refusal.ArgumentIf(fromUK1 == toUK2 || fromVK1 == toVK2, FailureKind.DomainError, "Geom_BSplineSurface::LocalD1");
 
         double u, v;
         int uindex, vindex;
@@ -1714,7 +1714,7 @@ public sealed partial class BSplineSurface : BoundedSurface
                         out Vector3D d2V,
                         out Vector3D d2UV)
     {
-        Standard_DomainError_Raise_if(fromUK1 == toUK2 || fromVK1 == toVK2, "Geom_BSplineSurface::LocalD2");
+        Refusal.ArgumentIf(fromUK1 == toUK2 || fromVK1 == toVK2, FailureKind.DomainError, "Geom_BSplineSurface::LocalD2");
 
         double u, v;
         int uindex, vindex;
@@ -1767,7 +1767,7 @@ public sealed partial class BSplineSurface : BoundedSurface
                         out Vector3D d3UUV,
                         out Vector3D d3UVV)
     {
-        Standard_DomainError_Raise_if(fromUK1 == toUK2 || fromVK1 == toVK2, "Geom_BSplineSurface::LocalD3");
+        Refusal.ArgumentIf(fromUK1 == toUK2 || fromVK1 == toVK2, FailureKind.DomainError, "Geom_BSplineSurface::LocalD3");
 
         double u, v;
         int uindex, vindex;
@@ -1809,7 +1809,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     /// <summary>The derivative of order Nu in U and Nv in V, evaluated on the given spans.</summary>
     internal Vector3D LocalDN(double U, double V, int fromUK1, int toUK2, int fromVK1, int toVK2, int nu, int nv)
     {
-        Standard_DomainError_Raise_if(fromUK1 == toUK2 || fromVK1 == toVK2, "Geom_BSplineSurface::LocalDN");
+        Refusal.ArgumentIf(fromUK1 == toUK2 || fromVK1 == toVK2, FailureKind.DomainError, "Geom_BSplineSurface::LocalDN");
 
         double u, v;
         int uindex, vindex;
@@ -1847,9 +1847,8 @@ public sealed partial class BSplineSurface : BoundedSurface
     /// <exception cref="OutOfRangeException">An index out of the pole grid.</exception>
     internal Point3D Pole(int uIndex, int vIndex)
     {
-        Standard_OutOfRange_Raise_if(uIndex < 1 || uIndex > _poles.ColLength() || vIndex < 1
-                                         || vIndex > _poles.RowLength(),
-                                     " ");
+        Refusal.RangeIf(uIndex < 1 || uIndex > _poles.ColLength() || vIndex < 1
+                                         || vIndex > _poles.RowLength(), FailureKind.OutOfRange, " ");
         return _poles.Value(uIndex, vIndex);
     }
 
@@ -1857,8 +1856,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     /// <exception cref="DimensionErrorException">P is not NbUPoles x NbVPoles.</exception>
     internal void CopyPolesTo(NCollection_Array2<Point3D> p)
     {
-        Standard_DimensionError_Raise_if(p.ColLength() != _poles.ColLength() || p.RowLength() != _poles.RowLength(),
-                                         " ");
+        Refusal.ArgumentIf(p.ColLength() != _poles.ColLength() || p.RowLength() != _poles.RowLength(), FailureKind.DimensionError, " ");
         p.Assign(_poles);
     }
 
@@ -1918,7 +1916,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     /// <exception cref="OutOfRangeException">UIndex out of [1, NbUKnots].</exception>
     internal double UKnot(int uIndex)
     {
-        Standard_OutOfRange_Raise_if(uIndex < 1 || uIndex > _uKnots.Length(), " ");
+        Refusal.RangeIf(uIndex < 1 || uIndex > _uKnots.Length(), FailureKind.OutOfRange, " ");
         return _uKnots.Value(uIndex);
     }
 
@@ -1926,14 +1924,14 @@ public sealed partial class BSplineSurface : BoundedSurface
     /// <exception cref="OutOfRangeException">VIndex out of [1, NbVKnots].</exception>
     internal double VKnot(int vIndex)
     {
-        Standard_OutOfRange_Raise_if(vIndex < 1 || vIndex > _vKnots.Length(), " ");
+        Refusal.RangeIf(vIndex < 1 || vIndex > _vKnots.Length(), FailureKind.OutOfRange, " ");
         return _vKnots.Value(vIndex);
     }
 
     /// <summary>Copies the U knots into Ku (deprecated in OCCT: use <see cref="UKnots"/>).</summary>
     internal void CopyUKnotsTo(NCollection_Array1<double> ku)
     {
-        Standard_DimensionError_Raise_if(ku.Length() != _uKnots.Length(), " ");
+        Refusal.ArgumentIf(ku.Length() != _uKnots.Length(), FailureKind.DimensionError, " ");
         ku.Assign(_uKnots);
     }
 
@@ -1943,7 +1941,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     /// <summary>Copies the V knots into Kv (deprecated in OCCT: use <see cref="VKnots"/>).</summary>
     internal void CopyVKnotsTo(NCollection_Array1<double> kv)
     {
-        Standard_DimensionError_Raise_if(kv.Length() != _vKnots.Length(), " ");
+        Refusal.ArgumentIf(kv.Length() != _vKnots.Length(), FailureKind.DimensionError, " ");
         kv.Assign(_vKnots);
     }
 
@@ -1953,7 +1951,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     /// <summary>Copies the U flat knots into Ku (deprecated in OCCT: use <see cref="UKnotSequence"/>).</summary>
     internal void CopyUKnotSequenceTo(NCollection_Array1<double> ku)
     {
-        Standard_DimensionError_Raise_if(ku.Length() != _uFlatKnots.Length(), " ");
+        Refusal.ArgumentIf(ku.Length() != _uFlatKnots.Length(), FailureKind.DimensionError, " ");
         ku.Assign(_uFlatKnots);
     }
 
@@ -1963,7 +1961,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     /// <summary>Copies the V flat knots into Kv (deprecated in OCCT: use <see cref="VKnotSequence"/>).</summary>
     internal void CopyVKnotSequenceTo(NCollection_Array1<double> kv)
     {
-        Standard_DimensionError_Raise_if(kv.Length() != _vFlatKnots.Length(), " ");
+        Refusal.ArgumentIf(kv.Length() != _vFlatKnots.Length(), FailureKind.DimensionError, " ");
         kv.Assign(_vFlatKnots);
     }
 
@@ -1973,14 +1971,14 @@ public sealed partial class BSplineSurface : BoundedSurface
     /// <summary>The multiplicity of the U knot UIndex.</summary>
     internal int UMultiplicity(int uIndex)
     {
-        Standard_OutOfRange_Raise_if(uIndex < 1 || uIndex > _uMults.Length(), " ");
+        Refusal.RangeIf(uIndex < 1 || uIndex > _uMults.Length(), FailureKind.OutOfRange, " ");
         return _uMults.Value(uIndex);
     }
 
     /// <summary>Copies the U multiplicities into Mu (deprecated in OCCT: use <see cref="UMultiplicities"/>).</summary>
     internal void CopyUMultiplicitiesTo(NCollection_Array1<int> mu)
     {
-        Standard_DimensionError_Raise_if(mu.Length() != _uMults.Length(), " ");
+        Refusal.ArgumentIf(mu.Length() != _uMults.Length(), FailureKind.DimensionError, " ");
         mu.Assign(_uMults);
     }
 
@@ -2039,14 +2037,14 @@ public sealed partial class BSplineSurface : BoundedSurface
     /// <summary>The multiplicity of the V knot VIndex.</summary>
     internal int VMultiplicity(int vIndex)
     {
-        Standard_OutOfRange_Raise_if(vIndex < 1 || vIndex > _vMults.Length(), " ");
+        Refusal.RangeIf(vIndex < 1 || vIndex > _vMults.Length(), FailureKind.OutOfRange, " ");
         return _vMults.Value(vIndex);
     }
 
     /// <summary>Copies the V multiplicities into Mv (deprecated in OCCT: use <see cref="VMultiplicities"/>).</summary>
     internal void CopyVMultiplicitiesTo(NCollection_Array1<int> mv)
     {
-        Standard_DimensionError_Raise_if(mv.Length() != _vMults.Length(), " ");
+        Refusal.ArgumentIf(mv.Length() != _vMults.Length(), FailureKind.DimensionError, " ");
         mv.Assign(_vMults);
     }
 
@@ -2060,9 +2058,8 @@ public sealed partial class BSplineSurface : BoundedSurface
         {
             return 1.0;
         }
-        Standard_OutOfRange_Raise_if(uIndex < 1 || uIndex > _weights.ColLength() || vIndex < 1
-                                         || vIndex > _weights.RowLength(),
-                                     " ");
+        Refusal.RangeIf(uIndex < 1 || uIndex > _weights.ColLength() || vIndex < 1
+                                         || vIndex > _weights.RowLength(), FailureKind.OutOfRange, " ");
         return _weights.Value(uIndex, vIndex);
     }
 
@@ -2072,14 +2069,12 @@ public sealed partial class BSplineSurface : BoundedSurface
     {
         if (!(_uRational || _vRational))
         {
-            Standard_DimensionError_Raise_if(w.ColLength() != _poles.ColLength()
-                                                 || w.RowLength() != _poles.RowLength(),
-                                             " ");
+            Refusal.ArgumentIf(w.ColLength() != _poles.ColLength()
+                                                 || w.RowLength() != _poles.RowLength(), FailureKind.DimensionError, " ");
             w.Init(1.0);
             return;
         }
-        Standard_DimensionError_Raise_if(w.ColLength() != _weights.ColLength() || w.RowLength() != _weights.RowLength(),
-                                         " ");
+        Refusal.ArgumentIf(w.ColLength() != _weights.ColLength() || w.RowLength() != _weights.RowLength(), FailureKind.DimensionError, " ");
         w.Assign(_weights);
     }
 
@@ -2200,7 +2195,7 @@ public sealed partial class BSplineSurface : BoundedSurface
         CheckMutable();
         if (!_uPeriodic)
         {
-            throw new NoSuchObjectException("Geom_BSplineSurface::SetUOrigin: surface is not U periodic");
+            throw Refusal.State(new NoSuchObjectException("Geom_BSplineSurface::SetUOrigin: surface is not U periodic"));
         }
 
         ClearEvalRepresentation();
@@ -2210,7 +2205,7 @@ public sealed partial class BSplineSurface : BoundedSurface
 
         if ((Index < first) || (Index > last))
         {
-            throw new DomainErrorException("Geom_BSplineCurve::SetUOrigin: Index out of range");
+            throw Refusal.Argument(new DomainErrorException("Geom_BSplineCurve::SetUOrigin: Index out of range"));
         }
 
         int nbknots = _uKnots.Length();
@@ -2307,7 +2302,7 @@ public sealed partial class BSplineSurface : BoundedSurface
         CheckMutable();
         if (!_vPeriodic)
         {
-            throw new NoSuchObjectException("Geom_BSplineSurface::SetVOrigin: surface is not V periodic");
+            throw Refusal.State(new NoSuchObjectException("Geom_BSplineSurface::SetVOrigin: surface is not V periodic"));
         }
 
         ClearEvalRepresentation();
@@ -2317,7 +2312,7 @@ public sealed partial class BSplineSurface : BoundedSurface
 
         if ((Index < first) || (Index > last))
         {
-            throw new DomainErrorException("Geom_BSplineCurve::SetVOrigin: Index out of range");
+            throw Refusal.Argument(new DomainErrorException("Geom_BSplineCurve::SetVOrigin: Index out of range"));
         }
 
         int nbknots = _vKnots.Length();
@@ -2792,12 +2787,12 @@ public sealed partial class BSplineSurface : BoundedSurface
         CheckMutable();
         if (vIndex < 1 || vIndex > _poles.RowLength())
         {
-            throw new OutOfRangeException("Geom_BSplineSurface::SetPoleCol: VIndex out of range");
+            throw Refusal.Range(new OutOfRangeException("Geom_BSplineSurface::SetPoleCol: VIndex out of range"));
         }
         if (cPoles.Lower() < 1 || cPoles.Lower() > _poles.ColLength() || cPoles.Upper() < 1
             || cPoles.Upper() > _poles.ColLength())
         {
-            throw new ConstructionErrorException("Geom_BSplineSurface::SetPoleCol: invalid array dimension");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetPoleCol: invalid array dimension"));
         }
 
         ClearEvalRepresentation();
@@ -2823,12 +2818,12 @@ public sealed partial class BSplineSurface : BoundedSurface
         CheckMutable();
         if (uIndex < 1 || uIndex > _poles.ColLength())
         {
-            throw new OutOfRangeException("Geom_BSplineSurface::SetPoleRow: UIndex out of range");
+            throw Refusal.Range(new OutOfRangeException("Geom_BSplineSurface::SetPoleRow: UIndex out of range"));
         }
         if (cPoles.Lower() < 1 || cPoles.Lower() > _poles.RowLength() || cPoles.Upper() < 1
             || cPoles.Upper() > _poles.RowLength())
         {
-            throw new ConstructionErrorException("Geom_BSplineSurface::SetPoleRow: invalid array dimension");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetPoleRow: invalid array dimension"));
         }
 
         ClearEvalRepresentation();
@@ -2889,7 +2884,7 @@ public sealed partial class BSplineSurface : BoundedSurface
             || uIndex1 > uIndex2 || vIndex1 < 1 || vIndex1 > _poles.UpperCol() || vIndex2 < 1
             || vIndex2 > _poles.UpperCol() || vIndex1 > vIndex2)
         {
-            throw new OutOfRangeException("Geom_BSplineSurface::MovePoint: Index and #pole mismatch");
+            throw Refusal.Range(new OutOfRangeException("Geom_BSplineSurface::MovePoint: Index and #pole mismatch"));
         }
 
         // OCCT: on a periodic surface, BSplSLib::MovePoint indexes the stored poles (and weights) with indices from the
@@ -2996,7 +2991,7 @@ public sealed partial class BSplineSurface : BoundedSurface
                                          parametricTolerance,
                                          add))
         {
-            throw new ConstructionErrorException("Geom_BSplineSurface::InsertUKnots");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::InsertUKnots"));
         }
 
         if (nbpoles == _poles.ColLength())
@@ -3077,7 +3072,7 @@ public sealed partial class BSplineSurface : BoundedSurface
                                          parametricTolerance,
                                          add))
         {
-            throw new ConstructionErrorException("Geom_BSplineSurface::InsertVKnots");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::InsertVKnots"));
         }
 
         if (nbpoles == _poles.RowLength())
@@ -3156,11 +3151,11 @@ public sealed partial class BSplineSurface : BoundedSurface
         // that BSplCLib::KnotSequence reads out of range (occt-issues.md; the port throws IndexOutOfRangeException)
         if (!_uPeriodic && (index <= i1 || index >= i2))
         {
-            throw new OutOfRangeException("Geom_BSplineSurface::RemoveUKnot: invalid Index");
+            throw Refusal.Range(new OutOfRangeException("Geom_BSplineSurface::RemoveUKnot: invalid Index"));
         }
         else if (_uPeriodic && (index < i1 || index > i2))
         {
-            throw new OutOfRangeException("Geom_BSplineSurface::RemoveUKnot: invalid Index for periodic case");
+            throw Refusal.Range(new OutOfRangeException("Geom_BSplineSurface::RemoveUKnot: invalid Index for periodic case"));
         }
 
         int step = _uMults.Value(index) - m;
@@ -3243,11 +3238,11 @@ public sealed partial class BSplineSurface : BoundedSurface
         // OCCT: the same as RemoveUKnot for the end knots of a periodic surface
         if (!_vPeriodic && (index <= i1 || index >= i2))
         {
-            throw new OutOfRangeException("Geom_BSplineSurface::RemoveVKnot: invalid Index");
+            throw Refusal.Range(new OutOfRangeException("Geom_BSplineSurface::RemoveVKnot: invalid Index"));
         }
         else if (_vPeriodic && (index < i1 || index > i2))
         {
-            throw new OutOfRangeException("Geom_BSplineSurface::RemoveVKnot: invalid Index for periodic case");
+            throw Refusal.Range(new OutOfRangeException("Geom_BSplineSurface::RemoveVKnot: invalid Index for periodic case"));
         }
 
         int step = _vMults.Value(index) - m;

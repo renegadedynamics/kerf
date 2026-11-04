@@ -60,7 +60,7 @@ public class BRepOffsetAPI_DraftAngleTests
         double anAngle = DraftTools.Angle(aLateral, new Direction3D(0, 0, 1));
         Assert.Equal(Math.Atan2(2, 10), anAngle, 9);
 
-        Assert.Throws<DomainErrorException>(() => DraftTools.Angle(aLateral, new Direction3D(1, 0, 0)));
+        EngineAssert.Throws<DomainErrorException>(() => DraftTools.Angle(aLateral, new Direction3D(1, 0, 0)));
     }
 
     [Fact]
@@ -132,9 +132,9 @@ public class BRepOffsetAPI_DraftAngleTests
         Assert.False(aDraft.AddDone());
         Assert.Equal(DraftErrorStatus.FaceRecomputation, aDraft.Status());
         Assert.True(aDraft.ProblematicShape().IsSame(aFace));
-        Assert.Throws<ConstructionErrorException>(() => aDraft.Build());
+        EngineAssert.Throws<ConstructionErrorException>(() => aDraft.Build());
         // OCCT: the face that failed was never added, so Remove can't take it back (occt-issues.md, unit 7G).
-        Assert.Throws<NoSuchObjectException>(() => aDraft.Remove(aFace));
+        EngineAssert.Throws<NoSuchObjectException>(() => aDraft.Remove(aFace));
         aDraft.Clear();
         Assert.True(aDraft.AddDone());
     }
@@ -157,7 +157,7 @@ public class BRepOffsetAPI_DraftAngleTests
     {
         var aDraft = new DraftAngle();
         Shape aBox = new MakeBox(10, 10, 10).Shape();
-        Assert.Throws<NullObjectException>(() => aDraft.Add(ShapeCasts.Face(Faces(aBox)[0]), new Direction3D(0, 0, 1), 0.1,
+        EngineAssert.Throws<NullObjectException>(() => aDraft.Add(ShapeCasts.Face(Faces(aBox)[0]), new Direction3D(0, 0, 1), 0.1,
                                                              new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))));
     }
 

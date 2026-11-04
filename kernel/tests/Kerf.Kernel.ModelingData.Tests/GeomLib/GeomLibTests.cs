@@ -329,7 +329,7 @@ public class GeomLibTests
         Assert.True(aBS.Value(10).IsEqual(aCurve.Value(2), 1e-12));
         Assert.Equal(0.0, aCurve.FirstParameter);
 
-        Assert.ThrowsAny<FailureException>(() => global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(1e-7, null, 0, 1, 0, 2, ref aRes));
+        EngineAssert.ThrowsAny<FailureException>(() => global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(1e-7, null, 0, 1, 0, 2, ref aRes));
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -643,7 +643,7 @@ public class GeomLibTests
         Assert.Equal(1.0, aSample.GetParameter(1));
         Assert.Equal(11.0, aSample.GetParameter(10));
         Assert.Equal(0.0 + Math.Exp(Math.Log(10.0) / 10 * 5), aSample.GetParameter(5), 1e-15);
-        Assert.ThrowsAny<OutOfRangeException>(() => aSample.GetParameter(11));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aSample.GetParameter(11));
 
         // p(x) = 1 + 2x + 3x^2 + 4x^3: the function is p'(x) = 2 + 6x + 12x^2, its derivative 6 + 24x
         math_Vector aCoeffs = new(1, 4);

@@ -369,7 +369,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                     throw new InvalidOperationException($"native OCCT threw on operation {theOp}");
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return true;
         }
@@ -511,7 +511,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                 {
                     aNEx = anEx;
                 }
-                catch (FailureException anEx)
+                catch (Exception anEx) when (Refusal.IsFailure(anEx))
                 {
                     aPEx = anEx;
                 }

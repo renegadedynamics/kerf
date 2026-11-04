@@ -35,9 +35,9 @@ public class BRepBlendTests
     {
         Line L = new();
         Assert.Equal(0, L.NbPoints());
-        Assert.ThrowsAny<DomainErrorException>(() => L.TransitionOnS1());
-        Assert.ThrowsAny<DomainErrorException>(() => L.TransitionOnS2());
-        Assert.ThrowsAny<DomainErrorException>(() => L.TransitionOnS());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => L.TransitionOnS1());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => L.TransitionOnS2());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => L.TransitionOnS());
 
         L.Append(Pt(2));
         L.Append(Pt(3));
@@ -50,7 +50,7 @@ public class BRepBlendTests
         L.Set(WalkingTypeTrans.Out);
         Assert.Equal(WalkingTypeTrans.Out, L.TransitionOnS1());
         Assert.Equal(WalkingTypeTrans.Out, L.TransitionOnS());
-        Assert.ThrowsAny<DomainErrorException>(() => L.TransitionOnS2());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => L.TransitionOnS2());
         L.Set(WalkingTypeTrans.In, WalkingTypeTrans.Out);
         Assert.Equal(WalkingTypeTrans.In, L.TransitionOnS1());
         Assert.Equal(WalkingTypeTrans.Out, L.TransitionOnS2());
@@ -66,7 +66,7 @@ public class BRepBlendTests
 
         L.Clear();
         Assert.Equal(0, L.NbPoints());
-        Assert.ThrowsAny<DomainErrorException>(() => L.TransitionOnS1());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => L.TransitionOnS1());
     }
 
     [Fact]
@@ -77,8 +77,8 @@ public class BRepBlendTests
         Assert.False(E.HasTangent);
         Assert.False(E.IsVertex);
         Assert.Equal(0, E.PointOnRstCount);
-        Assert.ThrowsAny<DomainErrorException>(() => E.Tangent());
-        Assert.ThrowsAny<DomainErrorException>(() => E.Vertex());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => E.Tangent());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => E.Vertex());
 
         E.SetValue(new Point3D(1, 2, 3), 0.5, 0.25, 4.0, 1.0e-4);
         E.Parameters(out double u, out double v);
@@ -113,7 +113,7 @@ public class BRepBlendTests
         Assert.Equal(0, E.PointOnRstCount);
         Assert.False(E.IsVertex);
         Assert.True(E.HasTangent);
-        Assert.ThrowsAny<OutOfRangeException>(() => E.PointOnRst(1));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => E.PointOnRst(1));
     }
 
     [Fact]
@@ -234,8 +234,8 @@ public class BRepBlendTests
         ConstRadInv FInv = new(S1, S2, G);
         FInv.Set(1.0, 1);
         Walking W = new(S1, S2, new TopolTool(S1), new TopolTool(S2), G);
-        Assert.ThrowsAny<NotDoneException>(() => W.Line());
-        Assert.ThrowsAny<NotDoneException>(() => W.Complete(F, FInv, 0.0));
+        EngineAssert.ThrowsAny<NotDoneException>(() => W.Line());
+        EngineAssert.ThrowsAny<NotDoneException>(() => W.Complete(F, FInv, 0.0));
         math_Vector X0 = new(1, 4);
         X0[1] = 4;
         X0[2] = 1;
@@ -323,7 +323,7 @@ public class BRepBlendTests
         F.Set(1.0, 1);
         CSWalking W = new(C, S, new TopolTool(S));
         Assert.False(W.IsDone);
-        Assert.ThrowsAny<NotDoneException>(() => W.Line());
+        EngineAssert.ThrowsAny<NotDoneException>(() => W.Line());
         math_Vector X3 = new(1, 3);
         X3[1] = 3.0;
         X3[2] = -0.5;

@@ -157,9 +157,9 @@ public class BRepFill_CompatibleWiresNativeTests(ITestOutputHelper output)
             }
             aOut.Append('\n');
         }
-        catch (FailureException anE)
+        catch (Exception anE) when (Refusal.IsFailure(anE))
         {
-            aOut.Append($"THROW {Kerf.Engine.Foundation.OcctTypeNames.Of(anE.GetType())}\n");
+            aOut.Append($"THROW {Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anE).GetType())}\n");
         }
         theInputAfter = Text(anIn);
         return aOut.ToString();

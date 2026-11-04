@@ -98,7 +98,7 @@ internal sealed class BezierSurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
                     return resultIso;
                 }
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 // Isoline extraction failed, fall through to surface evaluation
             }

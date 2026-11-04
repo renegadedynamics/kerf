@@ -28,20 +28,20 @@ public class BlendFuncTests
         P.ParametersOnS2(out double u, out double v);
         Assert.Equal((3.0, 4.0), (u, v));
         Assert.Equal(new Vector2D(2, 2), P.Tangent2dOnS2());
-        Assert.ThrowsAny<DomainErrorException>(() => P.ParameterOnC());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => P.ParameterOnC());
         Assert.Equal(0.5, P.Parameter());
         Assert.Equal(0.75, P.WithParameter(0.75).Parameter());
 
         BlendPoint C = new(new Point3D(1, 0, 0), new Point3D(0, 1, 0), 0.5, 1, 2, 7);
         Assert.True(C.IsTangencyPoint);
         Assert.Equal(7.0, C.ParameterOnC());
-        Assert.ThrowsAny<DomainErrorException>(() => C.ParametersOnS2(out _, out _));
-        Assert.ThrowsAny<DomainErrorException>(() => C.TangentOnS());
-        Assert.ThrowsAny<DomainErrorException>(() => C.ParameterOnC1());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => C.ParametersOnS2(out _, out _));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => C.TangentOnS());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => C.ParameterOnC1());
 
         BlendPoint R = P0.WithValue(new Point3D(), new Point3D(1, 1, 1), 2.0, 5, 6);
         Assert.Equal((5.0, 6.0), (R.ParameterOnC1(), R.ParameterOnC2()));
-        Assert.ThrowsAny<DomainErrorException>(() => R.ParametersOnS1(out _, out _));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => R.ParametersOnS1(out _, out _));
         Assert.Equal(P, new BlendPoint(new Point3D(1, 0, 0), new Point3D(0, 1, 0), 0.5, 1, 2, 3, 4, new Vector3D(1, 0, 0),
                                         new Vector3D(0, 1, 0), new Vector2D(1, 1), new Vector2D(2, 2)));
     }
@@ -109,7 +109,7 @@ public class BlendFuncTests
         Assert.Equal(4, aConstRad.NbVariables());
         Assert.Equal(4, aConstRad.NbEquations());
         Assert.True(aConstRad.IsTangencyPoint);
-        Assert.ThrowsAny<DomainErrorException>(() => aConstRad.TangentOnS1());
+        EngineAssert.ThrowsAny<DomainErrorException>(() => aConstRad.TangentOnS1());
         Assert.True(aConstRad.IsRational);
         aConstRad.Set(global::Kerf.Engine.Fillets.BlendFunctions.SectionShape.Linear);
         Assert.False(aConstRad.IsRational);
@@ -117,19 +117,19 @@ public class BlendFuncTests
 
         global::Kerf.Engine.Fillets.BlendFunctions.Chamfer aChamfer = new(S1, S2, G);
         Assert.False(aChamfer.IsRational);
-        Assert.ThrowsAny<MethodNotImplementedException>(() => aChamfer.GetSectionSize());
+        EngineAssert.ThrowsAny<MethodNotImplementedException>(() => aChamfer.GetSectionSize());
         var aKnots = new NCollection_Array1<double>(1, 2);
         aChamfer.Knots(aKnots);
         Assert.Equal((0.0, 1.0), (aKnots[1], aKnots[2]));
 
         global::Kerf.Engine.Fillets.BlendFunctions.Ruled aRuled = new(S1, S2, G);
-        Assert.ThrowsAny<MethodNotImplementedException>(() => aRuled.Set(0.0, 1.0));
+        EngineAssert.ThrowsAny<MethodNotImplementedException>(() => aRuled.Set(0.0, 1.0));
 
         global::Kerf.Engine.Fillets.BlendFunctions.CSConstRad aCS = new(S1, BlendRecorder.Guide(4), G);
         Assert.Equal(3, aCS.NbVariables());
         Assert.Equal(3, aCS.NbEquations());
         Assert.Equal(aCS.PointOnC(), aCS.Pnt1());
-        Assert.ThrowsAny<MethodNotImplementedException>(() => ((CSFunction)aCS).Set(0.0, 1.0));
+        EngineAssert.ThrowsAny<MethodNotImplementedException>(() => ((CSFunction)aCS).Set(0.0, 1.0));
 
         global::Kerf.Engine.Fillets.BlendFunctions.CSCircular aCirc = new(S1, BlendRecorder.Guide(4), G, new Linear());
         Assert.Equal(2, aCirc.NbVariables());

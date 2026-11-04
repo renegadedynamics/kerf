@@ -18,8 +18,8 @@ public class gce_PortTest
         var aMaker = new MakeLin(new Point3D(1, 2, 3), new Point3D(1, 2, 3));
         Assert.True(aMaker.IsError);
         Assert.Equal(ConfusedPoints, aMaker.Status());
-        Assert.Throws<NotDoneException>(() => aMaker.Value());
-        Assert.Throws<NotDoneException>(() => (Line3D)aMaker);
+        EngineAssert.Throws<NotDoneException>(() => aMaker.Value());
+        EngineAssert.Throws<NotDoneException>(() => (Line3D)aMaker);
     }
 
     [Fact]
