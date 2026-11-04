@@ -134,3 +134,14 @@ The first packages, for Bento's 3D-models extension.
   tangency points as given: no parameter offset for enclosed solutions, no re-intersection for tangent and oriented
   lines. Constrained arcs tangent to three curves now work on free-form curves (the third tangency threw). Two
   identical circles raise "Unable to find common tangent line(s)" (they gave no lines).
+- Kerf's unit 10M1: the layer calls the kernel's public API alone (the kernel gives it no `InternalsVisibleTo`), and
+  its public API shows no engine type: `Vector(Xyz)`, `ToGpXyz`, `Color(ColorWithAlpha)`, `ToQuantityColorRgba`,
+  `BoundBox.FromBndBox`, `OrientedBoundBox.FromBndObb`, `ShapeHistory.FromBoolean`, `FromUnify`, `FromSewing` and
+  `FromAlgorithm(MakeShape)` are gone or take the kernel's public types (`ToKerfColor`, `FromBoundingBox`,
+  `FromOrientedBox`, `FromHistory(Kerf.Topology.ShapeHistory)`); `Edge.GeomAdaptor()` and `Wire.GeomAdaptor()` return
+  the kernel's `EdgeCurve` and `WireCurve`. `Meshed` is gone (the kernel never stores a mesh on a shape). Numbers print
+  as .NET's invariant text ("1", not Python's "1.0") and `ToString(format)` takes .NET formats ("G6", "F2"); `Repr()`
+  is gone. A kernel failure is still a `KerfException` in context; an argument the kernel refuses first is one too
+  (`kernel.invalid-argument`), and BREP data that isn't BREP is `exchange.malformed`. STL, glTF and BREP are read
+  through `Kerf.Exchange`. Results are unchanged: volumes, face counts, the STEP references byte for byte, the
+  Python-reference tests at their level. `docs/10m1-bento.md` lists the members Bento sees renamed or removed.

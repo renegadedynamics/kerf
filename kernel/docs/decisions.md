@@ -15882,3 +15882,87 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        which nothing asks for yet. 10K4's `GccLaws` is internal to ModelingAlgorithms.Tests, which the public tests
        can't see; `Tangents2DTests` (7) checks the same laws through the public API: each contact on its target at its
        parameter, the solution's tangent parallel to the target's there, and the order of contacts.
+
+## Phase 10: unit 10M1, the modelling layer on the public API
+
+17401. **The modelling layer calls the public API alone.** `modeling/src` has no `using Kerf.Engine.*` or `Occt` and
+       names no engine type; `kernel/src/Directory.Build.props` no longer gives `Kerf.Modeling` `InternalsVisibleTo`.
+       Found as 10L5 found its causes: the IVT removed and the 158 types 10L5 traced to the modelling layer made
+       internal, the build's declaration errors swapped for `object` until the body errors showed (about 1,400 in 35
+       files), then each call moved onto the public operation that does what it did. The modelling tests
+       (`Build123d.Tests`) keep `InternalsVisibleTo` for what checks the layer against the engine itself: 4 files
+       (`StepAssemblyTests` against STEPCAFControl's own document, `ShapeMeshTests.ABigMeshComesOutQuickly` timing the
+       engine's mesh copy, `MemoryPressureTests` through the tests' new `EngineShapes`, which holds the shim's memory
+       estimate and an engine-meshed copy that the layer no longer has) and `EngineShapes` itself. The other 26 files that
+       reached the engine moved to the public API (`KernelTests`, `HistoryTests`, `FaceTests`, `GeomEqualTests` among
+       them), their assertions unchanged but where a later decision says.
+17402. **What the public API lacked, added where it belongs** (each with a public test, `ModelingLayerApiTests`, 24):
+       geometry (`Curve2D.Project`, `Curve3D.IsPlanar`, `LengthBetween`, `ParameterAtLength`, `CurveFrame`/`Frames`,
+       `SelfIntersections`, `CurvePoint2D`), topology (`WireCurve`; `EdgeCurve` lengths, `Discretize`, `ContinuityWith`,
+       `DerivativeN`, `TryGetOffsetCurve`; `FaceSurface.TryGetCurvature`, `SurfaceCurvature`; `Vertex.ParametersOn`,
+       `Edge.TryGetCurveOnPlane`, `TryGetLocalCurve`, `Wire.ToCurve`, `CheckClosed`), construction (`Wire.Connect`,
+       `Face.FromWires`, holes on `FromSurface`, `face.WithHoles`, `WithCurves3D` on any shape, `Solid.HalfSpace` of a
+       shell, `Transformed(…, copyGeometry)`, `Revolve(…, copyProfile)`, `ShapeProjections.Project(Edge…)`), healing
+       (`FixFace`, `FixWireframe`, `MisorientedEdges`, `ApproximateBSplines`), measurement (`Face.Classify`,
+       `ParametersOf`, `IsOnFace`, `ClassifyPoint` for any shape), features (`Chamfer2D` by corner, `Draft` with an
+       angle per face, `SplitAlong`, `ThickSolid` of any shape, `Offset2D` in a face) and foundation
+       (`Color.TryFromName`/`NearestName`, `OrientedBox.Contains`/`Diagonal`, `GetQuaternion`, `ToRotation`,
+       `GeneralTransform3D * Point3D`, `Diagnostic.FromException`/`IsKernelFailure`). Engine exceptions that still
+       escape a public value (a zero direction) are recognised by `Diagnostic.IsKernelFailure`, not by type.
+17403. **Options, not differences.** Where the public form of an operation differed from the engine call build123d makes,
+       the kernel gained the option rather than the layer a different result: a section's curves on its faces
+       (`BooleanOptions.SectionCurvesOnFaces`), the check after a fix (`FixOptions.CheckResult`), a wireframe fix's
+       order and limit (`WireframeFixOptions`), a feature that leaves its sketch face (`ExtrudeUntilOptions.
+       ModifySketchFace`, with no sketch face allowed), a sweep's `CurvilinearEquivalence`, conversion forced to
+       approximate, approximation's smoothing, periodic interpolation's closing parameter and a zero tangent left free,
+       and an edge on a surface without its 3D curve (`Edge.FromCurve(curve2d, surface, computeCurve3D: false)`), which
+       the helix needs: `FromCurve` computed it at OCCT's default 1e-5 and `WithCurves3D` won't recompute one, where
+       build123d computes it at 1e-9 (the helix's length moved in its seventh place, and three Python-reference cases
+       failed, until this). Booleans stay unsimplified (`Simplify = false`), as build123d runs them. `Sew`'s history now
+       records the edges and vertices it merges and what it removed (`ShapeHistory.FromSewing` had read the engine's
+       sewing for them). `face.WithHoles` added no hole: `BRepBuilderAPI_MakeFace(face)` copies the face without being
+       done, and the wrapper checked `IsDone` before adding the wires; it adds them, then reads the face.
+17404. **`Tangents2D`'s other solvers.** `CirclesCentredOn(first, second, locus)` (`Geom2dGcc_Circ2d2TanOn`),
+       `CirclesCentredOn(target, locus, radius)` (`Circ2dTanOnRad`) and `LinesAtAngle(target, reference, angle)`
+       (`Lin2dTanObl`, its second contact where the line crosses the reference, NaN where parallel), which 10L5 left out
+       as nothing asked for them; `TangentTarget2D.Tangent(curve, range, …)` gives a target a stretch of its curve (an
+       edge's range), which an iterative solve searches and starts in the middle of. Lines and circles are solved whole
+       by GccAna, as OCCT does: the modelling layer checks the contacts against the range, as build123d does. The
+       middle is `(last - first) / 2 + first`, build123d's arithmetic, for the same starting point to the bit. The
+       layer's check that a centre lies on its locus takes the nearest projection where build123d takes OCCT's first;
+       on lines and circles, the only loci its tests use, they are the same point.
+17405. **A mesh read keeps the shape read** (revises decision 1349's question 59 for meshes read). `ShapeMesh.
+       TriangulatedShape` is the STL or glTF reader's shape, faces holding only triangles, null for a shape's mesh.
+       build123d's `import_stl` returns that face, and Bento shows and places it as a shape; a shape the public API
+       makes still never carries a mesh. `Shape.Meshed` and `MeshedCopy` (a copy with OCCT's triangulation stored)
+       went: the kernel has no public way to store one, and nothing but the layer's own tests used them; a BRep written
+       with triangles has none to write.
+17406. **A kernel refusal is a failure in context.** The public API checks arguments before OCCT does (a box of zero
+       size: `ArgumentOutOfRangeException`, where OCCT threw `Standard_DomainError`). The layer's `Failures.Doing` treats
+       an `ArgumentException` thrown from the kernel's assemblies (the first frame outside `System.*`, read through
+       `DiagnosticMethodInfo`, which trimming keeps) as the kernel's failure: a `KerfException` "box 0 × 1 × 1 failed:
+       The value must be a positive number", code `kernel.invalid-argument`, so callers that caught the kernel's failure
+       still do. The layer's own `ArgumentException`s pass through. An operation that reports its failure in its own
+       name isn't named twice ("loft failed", not "loft / loft failed"). The filling of no boundary throws build123d's
+       `InvalidOperationException` before the kernel's `ArgumentException`.
+17407. **Results kept, and how.** A transformed box keeps its corners as transformed (`BoundBox.FromCorners`), a minimum
+       above its maximum included, as `Bnd_Box(min, max)` keeps them and build123d's tests read them. The public
+       extrusion's history also generates each profile sub-shape's top cap (decision 1560): the layer's tapered
+       extrusion already takes only the faces, and the one test of `FromAlgorithm` on a prism now counts the generated
+       face and edge. Volumes, face counts, the STEP references byte for byte and the Python-reference tests are as they
+       were: `Build123d.Tests` 1,884 of 1,884.
+17408. **Python's text retired, its results kept.** `PyFormat` is gone: numbers print as .NET's shortest invariant text
+       ("1", "0.5", "1E-07"), `ToString(format)` takes .NET numeric formats ("G6", "F2"; null for "G6"), and `Repr()`
+       (Vector, Location, Plane) is gone. build123d's own rounding of noise to zero stays. The tests that pinned Python's
+       text were rewritten one for one (listed in `modeling/docs/10m1-bento.md`). `PySet`, `PyComparer` and `PyMath`
+       stay: each decides a result (a plane's points in a CPython set's order, Python's ordering of mixed keys,
+       scipy's minimizers), and the Python-reference tests pin those results; see `modeling/docs/design.md`, "Left by
+       unit 10M1". Python's operators and build123d's messages are the API's shape, 10M2's.
+17409. **Exchange and meshing through the public API.** BREP is read and written through `Kerf.Exchange.Brep` (the
+       layer keeps its NUL and long-word checks, and reports a failure as `exchange.malformed`), STL and glTF through
+       `Stl.Read` and `Gltf.Read` (their meshes' `TriangulatedShape`), and the glue (`Extras.ReadStl`, `ReadGltf`,
+       `ExchangeNode`, `ExchangeReadLimits`, `AlgoErrors`, `EstimateMemory`) is gone. Meshing was already `Mesher`'s.
+17410. **The engine's public types.** Of the 158 types 10L5 traced to the modelling layer, 141 are internal; 17 stay public
+       because the WebAssembly sample shows them too (`Xyz`, `Box`, `Obb`, `History`, `CurveAdaptorBase`, the surface
+       adaptors, the messenger, `ProgressRange`, `IndexedSet`, `ToolParameters`, `MeshAlgoType`…). Counted by reflection
+       (top-level exported types in `Kerf.Engine.*`), 44 engine types remain public, none for the modelling layer.

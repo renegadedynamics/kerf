@@ -1991,3 +1991,23 @@ Phase 10 (part): the public API's leftovers (unit 10L5).
 - The mesher finishes each triangulation before attaching it, so meshes are frozen as soon as they are attached; the
   results are unchanged.
 - 1,161 more engine types are internal: 184 remain public, all but 26 shown by the modelling layer's public API.
+Phase 10 (part): the modelling layer on the public API (unit 10M1).
+- The modelling layer calls the public API alone, and `Kerf.Modeling` no longer has `InternalsVisibleTo`. What it
+  needed was added where it belongs: `Tangents2D.CirclesCentredOn` (two targets or a radius, centre on a locus) and
+  `LinesAtAngle`, a target's range; `Curve2D.Project`, `Curve3D.IsPlanar`, `LengthBetween` and `ParameterAtLength`;
+  `WireCurve` (a wire as one curve), and on `EdgeCurve` lengths, discretisation, continuity with another edge, frames
+  (`Frames`, Frenet or corrected Frenet); `FaceSurface.TryGetCurvature`; `Wire.Connect`, `Face.FromWires`, holes on
+  `FromSurface` and `WithHoles`, `WithCurves3D`, `Solid.HalfSpace` of a shell, `Transformed` with copied geometry,
+  `Revolve` with a copied profile, edges projected onto shapes; `Face.Classify`, `ParametersOf`, `IsOnFace`,
+  `ClassifyPoint` for any shape; `FixFace`, `FixWireframe`, `MisorientedEdges`, `ApproximateBSplines`; `Chamfer2D` by
+  corner, `Draft` with an angle per face, `SplitAlong`, `ThickSolid` of any shape, `Offset2D` in a face;
+  `Color.TryFromName` and `NearestName`, `OrientedBox.Contains` and `Diagonal`, a transform's quaternion and rotation,
+  `Diagnostic.FromException` and `IsKernelFailure`.
+- Options where the modelling layer's calls differed from a public default: `BooleanOptions.SectionCurvesOnFaces`,
+  `FixOptions.CheckResult`, `WireframeFixOptions`, `ExtrudeUntilOptions.ModifySketchFace`,
+  `SweepOptions.CurvilinearEquivalence`, `ConversionOptions.ForceApproximation`, `ApproximationOptions.Smoothing`,
+  periodic interpolation's closing parameter and free tangents, and `Edge.FromCurve(curve2d, surface, computeCurve3D:
+  false)`. `Sew`'s history records the edges and vertices it merges. A face's `WithHoles` adds its holes (it failed).
+- A mesh read from STL or glTF keeps the shape read, faces holding only triangles (`ShapeMesh.TriangulatedShape`).
+- The engine types public only for the modelling layer are internal, but for 17 the WebAssembly sample also shows: 44
+  public engine types remain (by reflection, top-level), none for the modelling layer.

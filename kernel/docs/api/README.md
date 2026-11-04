@@ -518,3 +518,25 @@ same on every machine (decision 1556). No engine type changed, and none became i
 - Drawing sheets (several views on a page), dimensions, title blocks, section views.
 - Feature edges for meshes without shapes; transparent faces.
 - Bento's functions (10N), and the modelling layer's own `ExportSVG`-like API (10M), on this one.
+
+## 14. Implemented: unit 10M1, the modelling layer on the public API
+
+*Unit 10M1, 4 November 2026: decisions 17401 to 17410 (placeholders).*
+
+**The modelling layer uses the public API alone,** and the kernel gives `Kerf.Modeling` no `InternalsVisibleTo`; the
+layer's public API shows no engine type (section 7's table is done). Its modelling tests keep `InternalsVisibleTo` to
+check the layer against the engine itself (4 files).
+
+**Public now,** for it, each in its area's page: `Tangents2D.CirclesCentredOn` and `LinesAtAngle`, a target's range
+(geometry.md); `Curve2D.Project`, `Curve3D.IsPlanar`, `LengthBetween`, `ParameterAtLength`, `Frames`; `WireCurve`,
+`EdgeCurve`'s lengths, discretisation and continuity, `FaceSurface.TryGetCurvature` (topology.md); `Wire.Connect`,
+`Face.FromWires`, holes on faces, `WithCurves3D`, `Edge.FromCurve(…, computeCurve3D)`, `Solid.HalfSpace(Shell…)`,
+`Transformed(…, copyGeometry)`, `Revolve(…, copyProfile)`, edges projected (construction.md);
+`BooleanOptions.SectionCurvesOnFaces` (booleans.md); `FixFace`, `FixWireframe`, `MisorientedEdges`,
+`ApproximateBSplines`, `FixOptions.CheckResult` (healing.md); `Face.Classify`, `ParametersOf`, `IsOnFace`,
+`ClassifyPoint` (measurement.md); `Chamfer2D` by corner, `Draft` by face, `SplitAlong`, `ThickSolid`, `Offset2D` in a
+face; `ShapeMesh.TriangulatedShape` for a mesh read (meshing.md, revising question 59 for meshes read).
+
+**Left:** the WebAssembly sample still shows 43 engine types and `Transient` (10L5's); the modelling layer's
+Python-emulating helpers that decide results (`PySet`, `PyComparer`, `PyMath`), its operators and messages, for 10M2
+(modeling/docs/design.md, "Left by unit 10M1").
