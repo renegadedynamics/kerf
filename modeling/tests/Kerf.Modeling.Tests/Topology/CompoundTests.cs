@@ -19,11 +19,11 @@ internal static class CompoundObjects
 {
     /// <summary>build123d's Box(l, w, h): a Part of a box centred on the origin.</summary>
     public static Part Box(double l, double w, double h) =>
-        new([Solid.MakeBox(l, w, h).Moved(new Location((-l / 2, -w / 2, -h / 2)))]);
+        new([Solid.MakeBox(l, w, h).Moved(new Location(new Vector(-l / 2, -w / 2, -h / 2)))]);
 
     /// <summary>build123d's Cylinder(r, h): a Part of a cylinder centred on the origin, or standing on it (<paramref name="onBase"/>).</summary>
     public static Part Cylinder(double r, double h, bool onBase = false) =>
-        new([onBase ? Solid.MakeCylinder(r, h) : Solid.MakeCylinder(r, h).Moved(new Location((0, 0, -h / 2)))]);
+        new([onBase ? Solid.MakeCylinder(r, h) : Solid.MakeCylinder(r, h).Moved(new Location(new Vector(0, 0, -h / 2)))]);
 
     /// <summary>build123d's Sphere(r): a Part of a sphere centred on the origin.</summary>
     public static Part Sphere(double r) => new([Solid.MakeSphere(r)]);
@@ -48,7 +48,7 @@ public class CompoundTests
     public void Fuse()
     {
         var box1 = Solid.MakeBox(1, 1, 1);
-        var box2 = Solid.MakeBox(1, 1, 1, new Plane((1, 0, 0)));
+        var box2 = Solid.MakeBox(1, 1, 1, new Plane(new Vector(1, 0, 0)));
         var combined = new Compound([box1]).Fuse(new Shape[] { box2 }, glue: true);
         Assert.True(combined.IsValid);
         Check.AlmostEqual(2, combined.Volume, 5);
@@ -69,18 +69,18 @@ public class CompoundTests
     {
         var testCompound = new Compound(
         [
-            Solid.MakeBox(2, 2, 2).Located(new Location((-1, -1, -1))),
-            Solid.MakeBox(1, 1, 1).Located(new Location((8.5, -0.5, -0.5))),
+            Solid.MakeBox(2, 2, 2).Located(new Location(new Vector(-1, -1, -1))),
+            Solid.MakeBox(1, 1, 1).Located(new Location(new Vector(8.5, -0.5, -0.5))),
         ]);
-        Check.AlmostEqual((1, 0, 0), testCompound.Center(CenterOf.Mass), 5);
-        Check.AlmostEqual((4.25, 0, 0), testCompound.Center(CenterOf.BoundingBox), 5);
+        Check.AlmostEqual(new Vector(1, 0, 0), testCompound.Center(CenterOf.Mass), 5);
+        Check.AlmostEqual(new Vector(4.25, 0, 0), testCompound.Center(CenterOf.BoundingBox), 5);
         Assert.Throws<ArgumentException>(() => testCompound.Center(CenterOf.Geometry));
     }
 
     [Fact]
     public void Volume()
     {
-        var e = Edge.MakeLine((0, 0), (1, 1));
+        var e = Edge.MakeLine(new Vector(0, 0), new Vector(1, 1));
         Check.AlmostEqual(0, e.Volume, 5);
 
         var f = Face.MakeRect(1, 1);
@@ -92,7 +92,7 @@ public class CompoundTests
         var bb = CompoundObjects.Box(1, 1, 1);
         Check.AlmostEqual(1, bb.Volume, 5);
 
-        var c = Compound.Assembly([e, f, b, bb, b.Translate((0, 5, 0))]);
+        var c = Compound.Assembly([e, f, b, bb, b.Translate(new Vector(0, 5, 0))]);
         Check.AlmostEqual(3, c.Volume, 5);
         // N.B. b and bb overlap but still add to Compound volume
     }
@@ -142,7 +142,7 @@ public class CompoundTests
         {
             var angle = i * 360.0 / 20;
             var (x, y) = TopologyUtils.Polar(15, angle);
-            return new Location((x, y, 0), (0, 0, angle));
+            return new Location(new Vector(x, y, 0), new Vector(0, 0, angle));
         });
         var baseShapes = Compound.Assembly(locations.Select(l => (Shape)(l * CompoundObjects.Box(4, 4, 4))));
         var fls = baseShapes.GetTopLevelShapes();
@@ -170,8 +170,8 @@ public class CompoundAlgebraTests
     [Fact]
     public void Adding1dContentThatFusesToOneEdge()
     {
-        var collinear = new Compound([Edge.MakeLine((0, 0), (1, 0))]);
-        var result = collinear + Edge.MakeLine((1, 0), (2, 0));
+        var collinear = new Compound([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))]);
+        var result = collinear + Edge.MakeLine(new Vector(1, 0), new Vector(2, 0));
 
         Assert.IsAssignableFrom<Curve>(result);
         Assert.Single(result.Edges());
@@ -181,8 +181,8 @@ public class CompoundAlgebraTests
     [Fact]
     public void Adding1dContentThatStaysApart()
     {
-        var separate = new Compound([Edge.MakeLine((0, 0), (1, 0))]);
-        var result = separate + Edge.MakeLine((5, 5), (6, 5));
+        var separate = new Compound([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))]);
+        var result = separate + Edge.MakeLine(new Vector(5, 5), new Vector(6, 5));
         Assert.Equal(2, result.Edges().Count);
     }
 
@@ -190,7 +190,7 @@ public class CompoundAlgebraTests
     public void IntersectionWithNoOverlapIsEmpty()
     {
         var left = new Compound([Solid.MakeBox(1, 1, 1)]);
-        var right = new Compound([Solid.MakeBox(1, 1, 1, new Plane((10, 0, 0)))]);
+        var right = new Compound([Solid.MakeBox(1, 1, 1, new Plane(new Vector(10, 0, 0)))]);
         var result = left & right;
 
         Assert.IsAssignableFrom<Compound>(result);
@@ -225,7 +225,7 @@ public class DoChildrenIntersectTests
     public void OverlappingChildren()
     {
         var overlapping = Compound.Assembly(
-            [Solid.MakeBox(1, 1, 1), Solid.MakeBox(1, 1, 1, new Plane((0.5, 0, 0)))], label: "asm");
+            [Solid.MakeBox(1, 1, 1), Solid.MakeBox(1, 1, 1, new Plane(new Vector(0.5, 0, 0)))], label: "asm");
         var (intersects, _, volume) = overlapping.DoChildrenIntersect();
         Assert.True(intersects);
         Assert.True(volume > 0);
@@ -235,7 +235,7 @@ public class DoChildrenIntersectTests
     public void ChildrenThatStayApart()
     {
         var apart = Compound.Assembly(
-            [Solid.MakeBox(1, 1, 1), Solid.MakeBox(1, 1, 1, new Plane((5, 0, 0)))], label: "asm");
+            [Solid.MakeBox(1, 1, 1), Solid.MakeBox(1, 1, 1, new Plane(new Vector(5, 0, 0)))], label: "asm");
         Assert.False(apart.DoChildrenIntersect().Intersect);
     }
 
@@ -246,8 +246,8 @@ public class DoChildrenIntersectTests
         var assembly = Compound.Assembly(
         [
             Solid.MakeBox(1, 1, 1),
-            Solid.MakeBox(1, 1, 1, new Plane((5, 0, 0))),
-            Solid.MakeBox(1, 1, 1, new Plane((5.5, 0, 0))),
+            Solid.MakeBox(1, 1, 1, new Plane(new Vector(5, 0, 0))),
+            Solid.MakeBox(1, 1, 1, new Plane(new Vector(5.5, 0, 0))),
         ], label: "asm");
         var (intersects, pair, _) = assembly.DoChildrenIntersect();
         Assert.True(intersects);
@@ -262,7 +262,7 @@ public class DoChildrenIntersectTests
     public void IncludingTheParent()
     {
         var assembly = Compound.Assembly(
-            [Solid.MakeBox(1, 1, 1), Solid.MakeBox(1, 1, 1, new Plane((5, 0, 0)))], label: "asm");
+            [Solid.MakeBox(1, 1, 1), Solid.MakeBox(1, 1, 1, new Plane(new Vector(5, 0, 0)))], label: "asm");
         Assert.False(assembly.DoChildrenIntersect().Intersect);
 
         var (intersects, pair, _) = assembly.DoChildrenIntersect(includeParent: true);
@@ -277,7 +277,7 @@ public class DoChildrenIntersectTests
         var assembly = Compound.Assembly(
         [
             Compound.Assembly([Solid.MakeBox(1, 1, 1)], label: "a"),
-            Compound.Assembly([Solid.MakeBox(1, 1, 1, new Plane((5, 0, 0)))], label: "b"),
+            Compound.Assembly([Solid.MakeBox(1, 1, 1, new Plane(new Vector(5, 0, 0)))], label: "b"),
         ], label: "asm");
         Assert.False(assembly.DoChildrenIntersect().Intersect);
     }
@@ -287,8 +287,8 @@ public class DoChildrenIntersectTests
     public void NestedPartsThatOverlapAfterPlacement()
     {
         var partA = Solid.MakeBox(1, 1, 1);
-        var partB = Solid.MakeBox(1, 1, 1, new Plane((5, 0, 0)));
-        var subAssembly = Compound.Assembly([partB], label: "b").WithLocation(new Location((-4.5, 0, 0)));
+        var partB = Solid.MakeBox(1, 1, 1, new Plane(new Vector(5, 0, 0)));
+        var subAssembly = Compound.Assembly([partB], label: "b").WithLocation(new Location(new Vector(-4.5, 0, 0)));
         var assembly = Compound.Assembly([Compound.Assembly([partA], label: "a"), subAssembly], label: "asm");
 
         var (intersects, pair, volume) = assembly.DoChildrenIntersect();
@@ -301,8 +301,8 @@ public class DoChildrenIntersectTests
     [Fact]
     public void NestedPartsApartAfterPlacement()
     {
-        var subAssembly = Compound.Assembly([Solid.MakeBox(1, 1, 1, new Plane((0.5, 0, 0)))], label: "b")
-            .WithLocation(new Location((5, 0, 0)));
+        var subAssembly = Compound.Assembly([Solid.MakeBox(1, 1, 1, new Plane(new Vector(0.5, 0, 0)))], label: "b")
+            .WithLocation(new Location(new Vector(5, 0, 0)));
         var assembly = Compound.Assembly(
             [Compound.Assembly([Solid.MakeBox(1, 1, 1)], label: "a"), subAssembly], label: "asm");
         Assert.False(assembly.DoChildrenIntersect().Intersect);
@@ -313,28 +313,28 @@ public class DoChildrenIntersectTests
 public class CurveOperatorsTests
 {
     // BuildLine with Polyline((0, 0), (5, 0), (5, 5)): the builder's line is a Curve of the two edges
-    readonly Curve _curve = new([Edge.MakeLine((0, 0), (5, 0)), Edge.MakeLine((5, 0), (5, 5))]);
+    readonly Curve _curve = new([Edge.MakeLine(new Vector(0, 0), new Vector(5, 0)), Edge.MakeLine(new Vector(5, 0), new Vector(5, 5))]);
 
     [Fact]
     public void LocationOperator()
     {
-        var location = _curve ^ 0.5;
+        var location = _curve.LocationAt(0.5);
         Assert.IsAssignableFrom<Location>(location);
-        Check.AlmostEqual((5, 0, 0), location.Position, 5);
+        Check.AlmostEqual(new Vector(5, 0, 0), location.Position, 5);
     }
 
     [Fact]
     public void MatchesPositionAndTangent()
     {
-        Check.AlmostEqual(_curve.PositionAt(0.5), (_curve ^ 0.5).Position, 5);
-        Check.AlmostEqual(_curve % 0.5, (_curve ^ 0.5).ZAxis.Direction, 5);
+        Check.AlmostEqual(_curve.PositionAt(0.5), (_curve.LocationAt(0.5)).Position, 5);
+        Check.AlmostEqual(_curve.TangentAt(0.5), (_curve.LocationAt(0.5)).ZAxis.Direction, 5);
     }
 }
 
 /// <summary>Changing the children of an assembly leaves the assembly where it is.</summary>
 public class CompoundTreeLocationTests
 {
-    static readonly Location Placed = new((10, 0, 0), (0, 0, 90));
+    static readonly Location Placed = new(new Vector(10, 0, 0), new Vector(0, 0, 90));
 
     /// <summary>An assembly at x=10 turned by 90°, with a marker child at x=4 in it.</summary>
     static (Compound Assembly, Part Marker) MovedAssembly()
@@ -348,7 +348,7 @@ public class CompoundTreeLocationTests
     {
         Assert.Equal(Placed, assembly.Location);
         Assert.Contains(assembly.AssemblyChildren, c => ReferenceEquals(c, marker));
-        Check.AlmostEqual((10, 4, 0), (assembly.Location * marker.Location).Position, 5);
+        Check.AlmostEqual(new Vector(10, 4, 0), (assembly.Location * marker.Location).Position, 5);
         Check.AlmostEqual(4.5, assembly.BoundingBox().Max.Y, 5);
     }
 

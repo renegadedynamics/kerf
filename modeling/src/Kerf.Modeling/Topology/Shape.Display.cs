@@ -111,7 +111,7 @@ public abstract partial class Shape
             var projectionAxis = new Axis(pathPosition, shapeCenter - pathPosition);
             var (surfacePoint, surfaceNormal) = SurfaceIntersection.FindPoints(this, projectionAxis, Constants.Tolerance)[0];
             var normalPlane = new Plane(surfacePoint, pathTangent, surfaceNormal);
-            var placed = normalPlane.FromLocalCoords(face.Moved(new Location((-faceCenterX, 0, 0))));
+            var placed = normalPlane.FromLocalCoords(face.Moved(new Location(new Vector(-faceCenterX, 0, 0))));
             projected.Add((Face)placed.ProjectToShape(this, surfaceNormal * -1)[0]);
         }
         return new ShapeList<Face>(projected);

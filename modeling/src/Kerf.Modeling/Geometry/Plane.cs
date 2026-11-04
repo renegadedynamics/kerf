@@ -42,20 +42,20 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     public Vector ZDir { get; }
 
 #pragma warning disable CS1591 // The standard planes are described in the remarks
-    public static Plane XY { get; } = new((0, 0, 0), (1, 0, 0), (0, 0, 1));
-    public static Plane YZ { get; } = new((0, 0, 0), (0, 1, 0), (1, 0, 0));
-    public static Plane ZX { get; } = new((0, 0, 0), (0, 0, 1), (0, 1, 0));
-    public static Plane XZ { get; } = new((0, 0, 0), (1, 0, 0), (0, -1, 0));
-    public static Plane YX { get; } = new((0, 0, 0), (0, 1, 0), (0, 0, -1));
-    public static Plane ZY { get; } = new((0, 0, 0), (0, 0, 1), (-1, 0, 0));
-    public static Plane Front { get; } = new((0, 0, 0), (1, 0, 0), (0, -1, 0));
-    public static Plane Back { get; } = new((0, 0, 0), (-1, 0, 0), (0, 1, 0));
-    public static Plane Left { get; } = new((0, 0, 0), (0, -1, 0), (-1, 0, 0));
-    public static Plane Right { get; } = new((0, 0, 0), (0, 1, 0), (1, 0, 0));
-    public static Plane Top { get; } = new((0, 0, 0), (1, 0, 0), (0, 0, 1));
-    public static Plane Bottom { get; } = new((0, 0, 0), (1, 0, 0), (0, 0, -1));
+    public static Plane XY { get; } = new(new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(0, 0, 1));
+    public static Plane YZ { get; } = new(new Vector(0, 0, 0), new Vector(0, 1, 0), new Vector(1, 0, 0));
+    public static Plane ZX { get; } = new(new Vector(0, 0, 0), new Vector(0, 0, 1), new Vector(0, 1, 0));
+    public static Plane XZ { get; } = new(new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(0, -1, 0));
+    public static Plane YX { get; } = new(new Vector(0, 0, 0), new Vector(0, 1, 0), new Vector(0, 0, -1));
+    public static Plane ZY { get; } = new(new Vector(0, 0, 0), new Vector(0, 0, 1), new Vector(-1, 0, 0));
+    public static Plane Front { get; } = new(new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(0, -1, 0));
+    public static Plane Back { get; } = new(new Vector(0, 0, 0), new Vector(-1, 0, 0), new Vector(0, 1, 0));
+    public static Plane Left { get; } = new(new Vector(0, 0, 0), new Vector(0, -1, 0), new Vector(-1, 0, 0));
+    public static Plane Right { get; } = new(new Vector(0, 0, 0), new Vector(0, 1, 0), new Vector(1, 0, 0));
+    public static Plane Top { get; } = new(new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(0, 0, 1));
+    public static Plane Bottom { get; } = new(new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(0, 0, -1));
     public static Plane Isometric { get; } = new(
-        (0, 0, 0), (1 / Math.Sqrt(2), 1 / Math.Sqrt(2), 0), (1 / Math.Sqrt(3), -1 / Math.Sqrt(3), 1 / Math.Sqrt(3)));
+        new Vector(0, 0, 0), new Vector(1 / Math.Sqrt(2), 1 / Math.Sqrt(2), 0), new Vector(1 / Math.Sqrt(3), -1 / Math.Sqrt(3), 1 / Math.Sqrt(3)));
 #pragma warning restore CS1591
 
     /// <summary>Wraps a gp_Pln this plane takes ownership of, making it right-handed if it isn't.</summary>
@@ -307,7 +307,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     }
 
     /// <summary>This plane with its origin moved by local (x, y) coordinates; the directions are unchanged.</summary>
-    public Plane ShiftOrigin((double X, double Y) local) => Create(FromLocalCoords(new Vector(local.X, local.Y)), XDir, ZDir);
+    public Plane ShiftOriginBy(double x, double y) => Create(FromLocalCoords(new Vector(x, y)), XDir, ZDir);
 
     /// <summary>This plane with its origin moved to where an axis crosses it; the directions are unchanged.</summary>
     /// <exception cref="ArgumentException">The axis doesn't cross the plane at a single point.</exception>
@@ -441,13 +441,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
 
     public static bool operator ==(Plane? a, Plane? b) => a is null ? b is null : a.Equals(b);
     public static bool operator !=(Plane? a, Plane? b) => !(a == b);
-    public static IGeometry? operator &(Plane a, Plane b) => a.Intersect(b);
-    public static IGeometry? operator &(Plane a, Axis b) => a.Intersect(b);
-    public static IGeometry? operator &(Plane a, Location b) => a.Intersect(b);
-    public static Vector? operator &(Plane a, Vector b) => a.Intersect(b);
 
-    /// <summary>Where a shape meets this plane (the shape's <see cref="Shape.Intersect(object[])"/>).</summary>
-    public static ShapeList<Shape> operator &(Plane a, Shape b) => a.Intersect(b);
 
     /// <summary>Where a shape meets this plane (the shape's <see cref="Shape.Intersect(object[])"/>), empty if nowhere.</summary>
     public ShapeList<Shape> Intersect(Shape shape) => shape.Intersect(this);

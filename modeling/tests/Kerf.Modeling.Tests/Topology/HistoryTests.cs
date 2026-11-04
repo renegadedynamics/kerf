@@ -29,7 +29,7 @@ public class ShapeHistoryTests
     [Fact]
     public void BooleanRecordsUntouchedModifiedRemovedAndGenerated()
     {
-        var cylinder = Solid.MakeCylinder(2, 5, new Plane((5, 5, 10)));
+        var cylinder = Solid.MakeCylinder(2, 5, new Plane(new Vector(5, 5, 10)));
         var fused = _box.Fuse(cylinder);
         var history = fused.History;
         Assert.IsType<ShapeHistory>(history);
@@ -44,7 +44,7 @@ public class ShapeHistoryTests
         Assert.Empty(history.Generated(_top.Wrapped));
 
         // A cylinder through the box: the circles where it pierces the top and bottom are generated from those faces
-        var through = _box.Fuse(Solid.MakeCylinder(2, 20, new Plane((5, 5, -5))));
+        var through = _box.Fuse(Solid.MakeCylinder(2, 20, new Plane(new Vector(5, 5, -5))));
         history = through.History!;
         Assert.NotEmpty(history.Generated(_top.Wrapped));
         Assert.Single(history.Modified(_top.Wrapped));
@@ -54,7 +54,7 @@ public class ShapeHistoryTests
     [Fact]
     public void CleanHistoryIsMergedIntoTheBoolean()
     {
-        var slab = Solid.MakeBox(10, 10, 5, new Plane((0, 0, 10)));
+        var slab = Solid.MakeBox(10, 10, 5, new Plane(new Vector(0, 0, 10)));
         var fused = _box.Fuse(slab);   // coplanar sides are unified by the clean
         var history = fused.History!;
         var side = _box.Faces().OrderBy(Axis.X)[0];
@@ -66,7 +66,7 @@ public class ShapeHistoryTests
     [Fact]
     public void TraceAnswersFromTheResultSide()
     {
-        var cylinder = Solid.MakeCylinder(2, 20, new Plane((5, 5, -5)));
+        var cylinder = Solid.MakeCylinder(2, 20, new Plane(new Vector(5, 5, -5)));
         var fused = _box.Fuse(cylinder);
         var trace = fused.History!.TraceOf([_box.Wrapped]);
         int untouched = 0, modified = 0, generated = 0, other = 0;
@@ -126,7 +126,7 @@ public class ShapeHistoryTests
     public void SewingHistory()
     {
         var left = Face.MakeRect(4, 4);
-        var right = Face.MakeRect(4, 4, new Plane((4, 0, 0)));
+        var right = Face.MakeRect(4, 4, new Plane(new Vector(4, 0, 0)));
         var sewn = global::Kerf.Healing.HealingOperations.Sew([left.Wrapped, right.Wrapped], new global::Kerf.Healing.SewOptions { Tolerance = 1e-6 }).Value;
         var history = ShapeHistory.FromHistory(sewn.History, [left.Wrapped, right.Wrapped]);
         foreach (var face in new[] { left, right })
@@ -143,7 +143,7 @@ public class ShapeHistoryTests
     [Fact]
     public void RelocationHistory()
     {
-        var moved = _box.Moved(new Plane((1, 2, 3)).Location);
+        var moved = _box.Moved(new Plane(new Vector(1, 2, 3)).Location);
         var history = ShapeHistory.FromRelocation(_box.Wrapped, moved.Wrapped);
         foreach (var face in _box.Faces())
         {
@@ -426,7 +426,7 @@ public class AlgebraSelectTests
     [Fact]
     public void JoinedLines()
     {
-        var bent = Edge.MakeLine((0, 0), (1, 0)) + Edge.MakeLine((1, 0), (1, 1));
+        var bent = Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)) + Edge.MakeLine(new Vector(1, 0), new Vector(1, 1));
         Assert.Equal(2, bent.Edges().Count);
         Assert.Single(bent.Edges(Select.Last));
         Assert.Empty(bent.Edges(Select.New));
@@ -434,16 +434,16 @@ public class AlgebraSelectTests
         Assert.Equal(2, bent.Vertices(Select.Last).Count);
         Assert.Empty(bent.Vertices(Select.New));
         // collinear lines are cleaned into one edge, which still carries the record
-        var straight = Edge.MakeLine((0, 0), (1, 0)) + Edge.MakeLine((1, 0), (2, 0));
+        var straight = Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)) + Edge.MakeLine(new Vector(1, 0), new Vector(2, 0));
         Assert.IsAssignableFrom<Edge>(straight);
         Assert.Single(straight.Edges(Select.Last));
         Assert.Empty(straight.Vertices(Select.New));
         // three edges joined into an empty curve: everything was brought in
         var chain = new Curve() + new Shape[]
         {
-            Edge.MakeLine((0, 0), (1, 0)),
-            Edge.MakeLine((1, 0), (1, 1)),
-            Edge.MakeLine((1, 1), (0, 1)),
+            Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)),
+            Edge.MakeLine(new Vector(1, 0), new Vector(1, 1)),
+            Edge.MakeLine(new Vector(1, 1), new Vector(0, 1)),
         };
         Assert.Equal(3, chain.Edges(Select.Last).Count);
     }

@@ -102,8 +102,8 @@ public class OperationsPartTests
     [Fact]
     public void ExtrudeUntil()
     {
-        Shape box = new Box(10, 10, 10, align: (Align.Center, Align.Center, Align.Min));
-        var target = box - Scale(box, by: (0.8, 0.8, 0.8));
+        Shape box = new Box(10, 10, 10, align: new Alignment(Align.Center, Align.Center, Align.Min));
+        var target = box - Scale(box, by: new Vector(0.8, 0.8, 0.8));
         var rib = Extrude(new Rectangle(1, 1), Until.Next, target);
         Check.AlmostEqual(10 * 10 * 10 - 8 * 8 * 8 + 1 * 1 * 8, (target + rib).Volume, 5);
     }
@@ -112,7 +112,7 @@ public class OperationsPartTests
     public void ExtrudeUntil2()
     {
         var target = new Box(10, 5, 5) - new Pos(2.5) * new Cylinder(0.5, 5);
-        var pln = new Plane((7, 0, 7), zDir: (-1, 0, -1));
+        var pln = new Plane(new Vector(7, 0, 7), zDir: new Vector(-1, 0, -1));
         var profile = (pln * new Circle(1)).SingleFace();
         var extrusion = Extrude(profile, Until.Next, target, new ExtrudeOptions { Direction = pln.ZDir });
         Assert.True(extrusion.BoundingBox().Min.Z < 2.5);
@@ -123,7 +123,7 @@ public class OperationsPartTests
     {
         var sketch = Plane.XZ * (new Rectangle(8, 8, align: Align.Min) - new Pos(1, 1) * new Rectangle(7, 7, align: Align.Min));
         var p = Extrude(sketch, 2, new ExtrudeOptions { Both = true });
-        var profile = new Plane((-2, 0, -2), (0, 1, 0), (1, 0, 1));
+        var profile = new Plane(new Vector(-2, 0, -2), new Vector(0, 1, 0), new Vector(1, 0, 1));
         var rib = Extrude(profile * new Rectangle(4, 1), Until.Next, p);
         Check.AlmostEqual(72.313, (p + rib).Volume, 2);
     }
@@ -133,8 +133,8 @@ public class OperationsPartTests
     {
         // A sketch drawn on a face of the target extrudes into it: LAST reaches the far side of the material, a cavity's
         // underside here. NEXT reaches the face the sketch lies in, which cuts nothing
-        var section = new Rectangle(20, 10, align: (Align.Center, Align.Min))
-                      - new Pos(0, 1) * new Circle(6, align: (Align.Center, Align.Min));
+        var section = new Rectangle(20, 10, align: new Alignment(Align.Center, Align.Min))
+                      - new Pos(0, 1) * new Circle(6, align: new Alignment(Align.Center, Align.Min));
         var body = Extrude(Plane.YZ.Offset(-10) * section, 20);
         var cross = new RectangleRounded(10, 3, 1, rotation: 0) + new RectangleRounded(10, 3, 1, rotation: 90);
         var rib = Extrude(cross, Until.Last, body);
@@ -150,13 +150,13 @@ public class OperationsPartTests
     public void ExtrudeUntilErrors()
     {
         Assert.Throws<ArgumentException>(() =>
-            Extrude(new Rectangle(1, 1), Until.Next, new Pos(0, 0, -10) * new Box(1, 1, 1), new ExtrudeOptions { Direction = (0, 0, 1) }));
+            Extrude(new Rectangle(1, 1), Until.Next, new Pos(0, 0, -10) * new Box(1, 1, 1), new ExtrudeOptions { Direction = new Vector(0, 0, 1) }));
     }
 
     [Fact]
     public void ExtrudeFace()
     {
-        var square = Plane.XZ * new Rectangle(10, 10, align: (Align.Center, Align.Min));
+        var square = Plane.XZ * new Rectangle(10, 10, align: new Alignment(Align.Center, Align.Min));
         Check.AlmostEqual(10 * 10 * 10, Extrude(square, 10).Volume, 5);
     }
 
@@ -165,7 +165,7 @@ public class OperationsPartTests
     {
         var cyl = new Cylinder(1, 2);
         var npf = cyl.Split(Plane.XZ).Faces().WhereNot(GeomType.Plane)[0];
-        var testSolid = Extrude(npf, 3, new ExtrudeOptions { Direction = (0, 1, 0) });
+        var testSolid = Extrude(npf, 3, new ExtrudeOptions { Direction = new Vector(0, 1, 0) });
         Check.AlmostEqual(2 * 2 * 3, testSolid.Volume, 5);
     }
 
@@ -207,8 +207,8 @@ public class OperationsPartTests
         // Issue #451: a section edge drawn as two collinear lines lofts into two coplanar faces that clean merges
         Shape[] sections =
         [
-            new Face(Wire.MakePolygon([(0, 0), (1, 0), (2, 0), (2, 1), (0, 1)])),
-            new Pos(0, 0, 1) * Face.MakeRect(2, 1, new Plane((1, 0.5, 0))),
+            new Face(Wire.MakePolygon([new Vector(0, 0), new Vector(1, 0), new Vector(2, 0), new Vector(2, 1), new Vector(0, 1)])),
+            new Pos(0, 0, 1) * Face.MakeRect(2, 1, new Plane(new Vector(1, 0.5, 0))),
         ];
         Assert.Equal(6, Loft(sections).Faces().Count);
         Assert.Equal(7, Loft(sections, clean: false).Faces().Count);
@@ -219,7 +219,7 @@ public class OperationsPartTests
     {
         const int sliceCount = 10;
         var sections = Enumerable.Range(0, sliceCount + 1).Select(i =>
-            (Shape)new Face(new Wire([Edge.MakeCircle(10 * Math.Sin(i * Math.PI / sliceCount) + 5).Moved(new Location((0, 0, i * 3)))])));
+            (Shape)new Face(new Wire([Edge.MakeCircle(10 * Math.Sin(i * Math.PI / sliceCount) + 5).Moved(new Location(new Vector(0, 0, i * 3)))])));
         var test = Loft(sections);
         Assert.True(test.Volume < 225 * Math.PI * 30);
         Assert.True(test.Volume > 25 * Math.PI * 30);
@@ -299,7 +299,7 @@ public class OperationsPartTests
     [Fact]
     public void ProjectWorkplaneBasic()
     {
-        var workplane = ProjectWorkplane((0, 0, 0), (1, 0, 0), (0, 0, 1), 10);
+        var workplane = ProjectWorkplane(new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(0, 0, 1), 10);
         Check.AlmostEqual(new Vector(0, 0, 10), workplane.Origin, 5);
         Check.AlmostEqual(new Vector(1, 0, 0), workplane.XDir, 5);
         Check.AlmostEqual(new Vector(0, 0, 1), workplane.ZDir, 5);
@@ -311,7 +311,7 @@ public class OperationsPartTests
     public void RevolveReturnIsCleaned()
     {
         // Issue #451: a profile edge drawn as two collinear lines revolves into two faces that clean merges
-        var profile = new Pos(5, 0, 0) * new Face(Wire.MakePolygon([(0, 0), (1, 0), (2, 0), (2, 1), (0, 1)]));
+        var profile = new Pos(5, 0, 0) * new Face(Wire.MakePolygon([new Vector(0, 0), new Vector(1, 0), new Vector(2, 0), new Vector(2, 1), new Vector(0, 1)]));
         Assert.Equal(4, Revolve(profile, Axis.Y).Faces().Count);
         Assert.Equal(5, Revolve(profile, Axis.Y, clean: false).Faces().Count);
     }
@@ -321,7 +321,7 @@ public class OperationsPartTests
     {
         // The revolution matches revolution_arc's size and direction
         var ax = Axis.X;
-        var profile = new RegularPolygon(10, 4, align: (Align.Center, Align.Min));
+        var profile = new RegularPolygon(10, 4, align: new Alignment(Align.Center, Align.Min));
         var fullVolume = Revolve(profile, ax, 360).Volume;
         int[] positive = [30, 90, 150, 180, 200, 360, 500, 720, 750];
         var sizes = positive.Reverse().Select(x => -x).Append(0).Concat(positive);
@@ -352,13 +352,13 @@ public class OperationsPartTests
     [Fact]
     public void SimpleRevolve()
     {
-        var l1 = new Line((0, 0), (12, 0));
-        var l2 = new RadiusArc(l1.PositionAt(1), (15, 20), 50);
-        var l3 = new Spline([l2.PositionAt(1), (22, 40), (20, 50)], tangents: [l2 % 1, (-0.75, 1)]);
+        var l1 = new Line(new Vector(0, 0), new Vector(12, 0));
+        var l2 = new RadiusArc(l1.PositionAt(1), new Vector(15, 20), 50);
+        var l3 = new Spline([l2.PositionAt(1), new Vector(22, 40), new Vector(20, 50)], tangents: [l2.TangentAt(1), new Vector(-0.75, 1)]);
         var l4 = new RadiusArc(l3.PositionAt(1), l3.PositionAt(1) + new Vector(0, 5), 5);
         var l5 = new Spline([l4.PositionAt(1), l4.PositionAt(1) + new Vector(2.5, 2.5), l4.PositionAt(1) + new Vector(0, 5)],
-                            tangents: [l4 % 1, (-1, 0)]);
-        var l6 = new Polyline(l5.PositionAt(1), l5.PositionAt(1) + new Vector(0, 1), (0, l5.PositionAt(1).Y + 1), l1.PositionAt(0));
+                            tangents: [l4.TangentAt(1), new Vector(-1, 0)]);
+        var l6 = new Polyline(l5.PositionAt(1), l5.PositionAt(1) + new Vector(0, 1), new Vector(0, l5.PositionAt(1).Y + 1), l1.PositionAt(0));
         var test = Revolve(MakeFace([l1, l2, l3, l4, l5, l6]), axis: Axis.Y);
         Assert.True(test.Volume < 22 * 22 * Math.PI * 50);
         Assert.True(test.Volume > 144 * Math.PI * 50);
@@ -367,9 +367,9 @@ public class OperationsPartTests
     [Fact]
     public void RevolveWithAxis()
     {
-        var l1 = new Line((0, 0), (0, 12));
-        var l2 = new RadiusArc(l1.PositionAt(1), (20, 10), 50);
-        var l3 = new Line(l2.PositionAt(1), (20, 0));
+        var l1 = new Line(new Vector(0, 0), new Vector(0, 12));
+        var l2 = new RadiusArc(l1.PositionAt(1), new Vector(20, 10), 50);
+        var l3 = new Line(l2.PositionAt(1), new Vector(20, 0));
         var l4 = new Line(l3.PositionAt(1), l1.PositionAt(0));
         var test = Revolve(MakeFace([l1, l2, l3, l4]), axis: Axis.X);
         Assert.True(test.Volume < 244 * Math.PI * 20);
@@ -464,13 +464,13 @@ public class OperationsPartTests
     [Fact]
     public void ThickenSweptSurface()
     {
-        var wire = (Shape1D)(new JernArc((0, -2), (-1, 0), 1, -180) + new JernArc((0, 0), (1, 0), 2, -90));
+        var wire = (Shape1D)(new JernArc(new Vector(0, -2), new Vector(-1, 0), 1, -180) + new JernArc(new Vector(0, 0), new Vector(1, 0), 2, -90));
 
-        var surface = Sweep((wire ^ 0) * new RadiusArc((0, 0), (0, -1), 1), wire);
+        var surface = Sweep((wire.LocationAt(0)) * new RadiusArc(new Vector(0, 0), new Vector(0, -1), 1), wire);
         var part = Thicken(surface, 0.4);
         Check.AlmostEqual(2.241583787221904, part.Volume, 5);
 
-        part = Thicken(Sweep((wire ^ 0) * new RadiusArc((0, 0), (0, -1), 1), wire), 0.4, new ThickenOptions { Both = true });
+        part = Thicken(Sweep((wire.LocationAt(0)) * new RadiusArc(new Vector(0, 0), new Vector(0, -1), 1), wire), 0.4, new ThickenOptions { Both = true });
         Check.AlmostEqual(4.711747154435256, part.Volume, 5);
     }
 

@@ -30,10 +30,10 @@ public partial class StepNativeTests
         yield return ("torus", () => new Torus(10, 2));
         yield return ("cone", () => new Cone(5, 2, 8));
         yield return ("fillet", () => Ops.Fillet(new Box(10, 10, 10).Edges(), 1));
-        yield return ("loft", () => Ops.Loft([new Circle(5), new Rectangle(6, 4).Moved(new Location((0.0, 0.0, 10.0)))]));
+        yield return ("loft", () => Ops.Loft([new Circle(5), new Rectangle(6, 4).Moved(new Location(new Vector(0.0, 0.0, 10.0)))]));
         yield return ("face", () => Face.MakeRect(10, 6));
-        yield return ("wire", () => new Polyline((0.0, 0.0), (10.0, 0.0), (10.0, 5.0), (3.0, 8.0)));
-        yield return ("compound", () => new Compound([new Box(1, 1, 1), new Sphere(1).Moved(new Location((4.0, 0.0, 0.0)))]));
+        yield return ("wire", () => new Polyline(new Vector(0.0, 0.0), new Vector(10.0, 0.0), new Vector(10.0, 5.0), new Vector(3.0, 8.0)));
+        yield return ("compound", () => new Compound([new Box(1, 1, 1), new Sphere(1).Moved(new Location(new Vector(4.0, 0.0, 0.0)))]));
     }
 
     public static TheoryData<string> Names()

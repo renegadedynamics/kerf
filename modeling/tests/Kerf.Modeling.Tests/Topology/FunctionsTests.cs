@@ -14,7 +14,7 @@ public class FunctionsTests
     public void EdgesToWires()
     {
         var squareEdges = Face.MakeRect(1, 1).Edges();
-        var rectangleEdges = Face.MakeRect(2, 1, new Plane((5, 0))).Edges();
+        var rectangleEdges = Face.MakeRect(2, 1, new Plane(new Vector(5, 0))).Edges();
         var wires = OneD.EdgesToWires(squareEdges.AddRange(rectangleEdges));
         Assert.Equal(2, wires.Count);
         Check.AlmostEqual(4, wires[0].Length, 5);
@@ -84,7 +84,7 @@ public class MakeTopodsFaceFromWiresTests
 {
     readonly Wire _outer = Wire.MakeRect(10, 10);
     readonly Wire _inner = Wire.MakeCircle(0.5);
-    readonly Wire _openWire = new([Edge.MakeLine((0, 0), (5, 0)), Edge.MakeLine((5, 0), (5, 5))]);
+    readonly Wire _openWire = new([Edge.MakeLine(new Vector(0, 0), new Vector(5, 0)), Edge.MakeLine(new Vector(5, 0), new Vector(5, 5))]);
 
     [Fact]
     public void OpenOuterWire()
@@ -117,7 +117,7 @@ public class UnwrappedShapetypeTests
     [Fact]
     public void MixedCompound()
     {
-        var compound = new Compound([CompoundObjects.Box(1, 1, 1).SingleSolid(), Edge.MakeLine((5, 0), (6, 0))]);
+        var compound = new Compound([CompoundObjects.Box(1, 1, 1).SingleSolid(), Edge.MakeLine(new Vector(5, 0), new Vector(6, 0))]);
         Assert.Equal(global::Kerf.Topology.ShapeType.Compound, TopoUtil.UnwrappedShapeType(compound));
     }
 }

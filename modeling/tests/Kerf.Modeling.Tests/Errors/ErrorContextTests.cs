@@ -34,8 +34,8 @@ public class ErrorContextTests
         {
             "extrude" => () => Solid.Extrude(Face.MakeRect(1, 1), new Vector(0, 0, 0)),
             "loft" => () => Solid.MakeLoft([Wire.MakeRect(1, 1), Wire.MakeRect(1, 1)]),
-            "revolve" => () => Solid.Revolve(Face.MakeRect(1, 1).Moved(new Location((5.0, 0.0, 0.0))), 0, Axis.Y),
-            _ => () => Solid.Sweep(Wire.MakeCircle(1), Edge.MakeLine((0, 0, 0), (0, 0, 1e-9))),
+            "revolve" => () => Solid.Revolve(Face.MakeRect(1, 1).Moved(new Location(new Vector(5.0, 0.0, 0.0))), 0, Axis.Y),
+            _ => () => Solid.Sweep(Wire.MakeCircle(1), Edge.MakeLine(new Vector(0, 0, 0), new Vector(0, 0, 1e-9))),
         };
         var e = Assert.Throws<Kerf.KerfException>(make);
         Assert.StartsWith($"{feature} failed: ", e.Message);

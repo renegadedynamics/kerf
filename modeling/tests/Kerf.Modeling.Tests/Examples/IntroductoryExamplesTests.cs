@@ -98,10 +98,10 @@ public class IntroductoryExamplesTests
     private static Shape Ex4()
     {
         var lines = new Curve().Add([
-            new Line((0, 0), (Length, 0)),
-            new Line((Length, 0), (Length, Width)),
-            new ThreePointArc((Length, Width), (Width, Width * 1.5), (0.0, Width)),
-            new Line((0.0, Width), (0, 0)),
+            new Line(new Vector(0, 0), new Vector(Length, 0)),
+            new Line(new Vector(Length, 0), new Vector(Length, Width)),
+            new ThreePointArc(new Vector(Length, Width), new Vector(Width, Width * 1.5), new Vector(0.0, Width)),
+            new Line(new Vector(0.0, Width), new Vector(0, 0)),
         ]);
         return Extrude(MakeFace(lines), Thickness);
     }
@@ -136,8 +136,8 @@ public class IntroductoryExamplesTests
         double l = 100.0, h = 20.0, w = 20.0, t = 1.0;
         Vector[] pts =
         [
-            (0, h / 2.0), (w / 2.0, h / 2.0), (w / 2.0, h / 2.0 - t), (t / 2.0, h / 2.0 - t),
-            (t / 2.0, t - h / 2.0), (w / 2.0, t - h / 2.0), (w / 2.0, h / -2.0), (0, h / -2.0),
+            new Vector(0, h / 2.0), new Vector(w / 2.0, h / 2.0), new Vector(w / 2.0, h / 2.0 - t), new Vector(t / 2.0, h / 2.0 - t),
+            new Vector(t / 2.0, t - h / 2.0), new Vector(w / 2.0, t - h / 2.0), new Vector(w / 2.0, h / -2.0), new Vector(0, h / -2.0),
         ];
         Shape ln = new Polyline(pts);
         ln += Mirror(ln, Plane.YZ);
@@ -182,9 +182,9 @@ public class IntroductoryExamplesTests
     // 12. Defining an edge with a spline
     private static Shape Ex12()
     {
-        var l1 = new Spline((55, 30), (50, 35), (40, 30), (30, 20), (20, 25), (10, 20), (0, 20));
-        var l2 = new Line(l1.PositionAt(0), (60, 0));
-        var l3 = new Line(l2.PositionAt(1), (0, 0));
+        var l1 = new Spline(new Vector(55, 30), new Vector(50, 35), new Vector(40, 30), new Vector(30, 20), new Vector(20, 25), new Vector(10, 20), new Vector(0, 20));
+        var l2 = new Line(l1.PositionAt(0), new Vector(60, 0));
+        var l3 = new Line(l2.PositionAt(1), new Vector(0, 0));
         var l4 = new Line(l3.PositionAt(1), l1.PositionAt(1));
         return Extrude(MakeFace([l1, l2, l3, l4]), 10);
     }
@@ -205,8 +205,8 @@ public class IntroductoryExamplesTests
     private static Shape Ex14()
     {
         double a = 40, b = 20;
-        var l1 = new JernArc((0, 0), (0, 1), a, 180);
-        var l2 = new JernArc(l1.PositionAt(1), l1 % 1, a, -90);
+        var l1 = new JernArc(new Vector(0, 0), new Vector(0, 1), a, 180);
+        var l2 = new JernArc(l1.PositionAt(1), l1.TangentAt(1), a, -90);
         var l3 = new Line(l2.PositionAt(1), l2.PositionAt(1) + new Vector(-a, a));
         var path = l1 + l2 + l3;
         var sk14 = Plane.XZ * new Rectangle(b, b);
@@ -217,11 +217,11 @@ public class IntroductoryExamplesTests
     private static Shape Ex15()
     {
         double a = 80, b = 40, c = 20;
-        var l1 = new Line((0, 0), (a, 0));
+        var l1 = new Line(new Vector(0, 0), new Vector(a, 0));
         var l2 = new Line(l1.PositionAt(1), l1.PositionAt(1) + new Vector(0, b));
         var l3 = new Line(l2.PositionAt(1), l2.PositionAt(1) + new Vector(-c, 0));
         var l4 = new Line(l3.PositionAt(1), l3.PositionAt(1) + new Vector(0, -c));
-        var l5 = new Line(l4.PositionAt(1), (0, l4.PositionAt(1).Y));
+        var l5 = new Line(l4.PositionAt(1), new Vector(0, l4.PositionAt(1).Y));
         Shape ln = new Curve().Add([l1, l2, l3, l4, l5]);
         ln += Mirror(ln, Plane.YZ);
         return Extrude(MakeFace(ln), c);
@@ -233,7 +233,7 @@ public class IntroductoryExamplesTests
         Shape sk16 = new Rectangle(Length, Width);
         sk16 = Fillet(sk16.Vertices(), Length / 10);
         var circles = new GridLocations(Length / 4, 0, 3, 1).Select(loc => (Shape)(loc * new Circle(Length / 12)));
-        sk16 = sk16 - circles - new Rectangle(Length, Width, align: (Align.Min, Align.Min));
+        sk16 = sk16 - circles - new Rectangle(Length, Width, align: new Alignment(Align.Min, Align.Min));
         var single = Extrude(Plane.XZ * sk16, Length);
         Plane[] planes = [Plane.XY.Offset(Width), Plane.YX.Offset(Width), Plane.YZ.Offset(Width), Plane.YZ.Offset(-Width)];
         return single + planes.Select(p => (Shape)Mirror(single, p));
@@ -267,7 +267,7 @@ public class IntroductoryExamplesTests
         Shape ex19 = Extrude(new RegularPolygon(length / 2, 7), thickness);
         var topf = ex19.Faces().OrderBy(Axis.Z).Last();
         var vtx = topf.Vertices().GroupBy(Axis.X)[^1][0];
-        var vtx2 = topf.Vertices().OrderBy(new Axis((0, 0, 0), (-1, -0.5, 0)))[^1];
+        var vtx2 = topf.Vertices().OrderBy(new Axis(new Vector(0, 0, 0), new Vector(-1, -0.5, 0)))[^1];
         var circle = new Circle(length / 8);
         var sk2 = new Pos(vtx.X, vtx.Y) * circle + new Pos(vtx2.X, vtx2.Y) * circle;
         ex19 -= Extrude(sk2, thickness);
@@ -288,7 +288,7 @@ public class IntroductoryExamplesTests
     {
         double width = 10.0, length = 60.0;
         Shape ex21 = Extrude(new Circle(width / 2), length);
-        var plane = new Plane(ex21.Center(), zDir: (-1, 0, 0));
+        var plane = new Plane(ex21.Center(), zDir: new Vector(-1, 0, 0));
         ex21 += plane * Extrude(new Circle(width / 2), length);
         return ex21;
     }
@@ -307,7 +307,7 @@ public class IntroductoryExamplesTests
     // 23. Revolve
     private static Shape Ex23()
     {
-        var l1 = new Polyline((-25, 35), (-25, 0), (-20, 0), (-20, 5), (-15, 10), (-15, 35));
+        var l1 = new Polyline(new Vector(-25, 35), new Vector(-25, 0), new Vector(-20, 0), new Vector(-20, 5), new Vector(-15, 10), new Vector(-15, 35));
         var l2 = new Line(l1.PositionAt(1), l1.PositionAt(0));
         Shape sk23 = MakeFace([l1, l2]);
         sk23 += new Pos(0, 35) * new Circle(25);
@@ -369,9 +369,9 @@ public class IntroductoryExamplesTests
     private static Shape Ex29()
     {
         double l = 60.0, w = 18.0, t = 9.0, b = 0.9, h = 90.0, n = 8.0;
-        var l1 = new Line((0, 0), (0, w / 2));
-        var l2 = new ThreePointArc(l1.PositionAt(1), (l / 2.0, w / 2.0 + t), (l, w / 2.0));
-        var l3 = new Line(l2.PositionAt(1), (l2.PositionAt(1).X, 0, 0));
+        var l1 = new Line(new Vector(0, 0), new Vector(0, w / 2));
+        var l2 = new ThreePointArc(l1.PositionAt(1), new Vector(l / 2.0, w / 2.0 + t), new Vector(l, w / 2.0));
+        var l3 = new Line(l2.PositionAt(1), new Vector(l2.PositionAt(1).X, 0, 0));
         Shape ln29 = l1 + l2 + l3;
         ln29 += Mirror(ln29);
         var sk29 = MakeFace(ln29);
@@ -386,7 +386,7 @@ public class IntroductoryExamplesTests
     // 30. Bezier curve
     private static Shape Ex30()
     {
-        Vector[] pts = [(0, 0), (20, 20), (40, 0), (0, -40), (-60, 0), (0, 100), (100, 0)];
+        Vector[] pts = [new Vector(0, 0), new Vector(20, 20), new Vector(40, 0), new Vector(0, -40), new Vector(-60, 0), new Vector(0, 100), new Vector(100, 0)];
         double[] wts = [1.0, 1.0, 2.0, 3.0, 4.0, 2.0, 1.0];
         var ln = new Polyline(pts) + new Bezier(pts, wts);
         return Extrude(MakeFace(ln), -10);
@@ -425,9 +425,9 @@ public class IntroductoryExamplesTests
         Shape ex35 = new Box(Length, Length, Thickness);
         var plane = new Plane(ex35.Faces().OrderBy(Axis.Z).Last());
         Shape sk = new SlotCenterToCenter(Width / 2, 10);
-        var ln = new RadiusArc((-Width / 2, 0), (0, Width / 2), Width / 2);
+        var ln = new RadiusArc(new Vector(-Width / 2, 0), new Vector(0, Width / 2), Width / 2);
         sk += new SlotCurve(ln.Edges()[0], Thickness);
-        var ln2 = new RadiusArc((0, -Width / 2), (Width / 2, 0), -Width / 2);
+        var ln2 = new RadiusArc(new Vector(0, -Width / 2), new Vector(Width / 2, 0), -Width / 2);
         sk += new SlotCurve(ln2.Edges()[0], Thickness);
         ex35 -= Extrude(plane * sk, -Thickness);
         return ex35;
@@ -447,10 +447,10 @@ public class IntroductoryExamplesTests
     // 37. Positioning sketches within a plane (builder mode in build123d: the three sketches' faces, extruded)
     private static Shape Ex37()
     {
-        var sk1 = new Rectangle(1, 2, align: (Align.Center, Align.Min));
+        var sk1 = new Rectangle(1, 2, align: new Alignment(Align.Center, Align.Min));
         var origin = sk1.Vertices().GroupBy(Axis.Y)[0].OrderBy(Axis.X)[0];
         var sk2 = Plane.XY.ShiftOrigin(origin) * new Circle(1);
-        var sk3 = new Plane((0.5, 2)) * new Ellipse(0.5, 1);
+        var sk3 = new Plane(new Vector(0.5, 2)) * new Ellipse(0.5, 1);
         return Extrude(new Sketch().Add([sk1, sk2, sk3]), 1);
     }
 
@@ -458,8 +458,8 @@ public class IntroductoryExamplesTests
     private static Shape Ex38()
     {
         double length = 24, width = 8, height = 4, spacing = 30;
-        var aboutAxis = new Box(length, width, height).Rotate(new Axis((-length / 2, -width / 2), (0, 0, 1)), 20);
-        var withConstructor = new Pos(y: spacing) * new Box(length, width, height, rotation: (0, 0, 40));
+        var aboutAxis = new Box(length, width, height).Rotate(new Axis(new Vector(-length / 2, -width / 2), new Vector(0, 0, 1)), 20);
+        var withConstructor = new Pos(y: spacing) * new Box(length, width, height, rotation: new Rotation(0, 0, 40));
         var withLocation = new Pos(y: 2 * spacing) * new Rot(z: 60) * new Box(length, width, height);
         return new Part().Add([aboutAxis, withConstructor, withLocation]);
     }

@@ -2,7 +2,7 @@ namespace Kerf.Modeling;
 
 /// <summary>
 /// How to align an object: one <see cref="Align"/> for every axis, or one per axis for two or three
-/// axes. Converts implicitly from an <see cref="Align"/> or a tuple of them.
+/// axes. Converts implicitly from an <see cref="Align"/>, the same on every axis.
 /// </summary>
 public readonly record struct Alignment
 {
@@ -20,10 +20,10 @@ public readonly record struct Alignment
     public static implicit operator Alignment(Align align) => new(1, align, align, align);
 
     /// <summary>Alignments for the X and Y axes.</summary>
-    public static implicit operator Alignment((Align X, Align Y) align) => new(2, align.X, align.Y, Align.None);
+    public Alignment(Align x, Align y) : this(2, x, y, Align.None) { }
 
     /// <summary>Alignments for the X, Y and Z axes.</summary>
-    public static implicit operator Alignment((Align X, Align Y, Align Z) align) => new(3, align.X, align.Y, align.Z);
+    public Alignment(Align x, Align y, Align z) : this(3, x, y, z) { }
 
     /// <summary>
     /// The amount to move an object spanning <paramref name="min"/> to <paramref name="max"/> to align it.

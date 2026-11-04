@@ -327,14 +327,16 @@ public partial class Curve : Compound
     /// <summary>The wires made from the curve's edges.</summary>
     public override ShapeList<Wire> Wires(Select select = Select.All) => Wire.Combine(Edges(select));
 
-    /// <summary>The point at a parameter along the curve, which must be continuous (build123d's <c>@</c>).</summary>
+    /// <summary>The point at a parameter along the curve, which must be continuous.</summary>
     public Vector PositionAt(double position) => new Wire(Edges()).PositionAt(position);
 
-    /// <summary>The tangent at a parameter along the curve, which must be continuous (build123d's <c>%</c>).</summary>
-    public static Vector operator %(Curve curve, double position) => new Wire(curve.Edges()).TangentAt(position);
+    /// <summary>The tangent at a parameter along the curve, which must be continuous.</summary>
+    public Vector TangentAt(double position) => new Wire(Edges()).TangentAt(position);
 
-    /// <summary>The location at a parameter along the curve, which must be continuous (build123d's <c>^</c>).</summary>
-    public static Location operator ^(Curve curve, double position) => new Wire(curve.Edges()).LocationAt(position);
+    /// <summary>The location at a parameter along the curve, which must be continuous.</summary>
+    public Location LocationAt(double position) => new Wire(Edges()).LocationAt(position);
+
+
 }
 
 /// <summary>A compound of 2D shapes: faces.</summary>

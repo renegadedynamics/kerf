@@ -17,7 +17,7 @@ public class OperationsSketchTests
     [Fact]
     public void FilletedFaceIsUpsideDown()
     {
-        var f1 = new Face(Wire.MakePolygon([(1, 0), (1.5, 0.5), (1, 2), (3, 1), (2, 0), (1, 0)]));
+        var f1 = new Face(Wire.MakePolygon([new Vector(1, 0), new Vector(1.5, 0.5), new Vector(1, 2), new Vector(3, 1), new Vector(2, 0), new Vector(1, 0)]));
         var f = (Fillet(f1.Vertices()[2..4], 0.2) - new Pos(1.8, 1.2, 0) * new Rectangle(0.2, 0.4)
                  - new Pos(2, 0.5, 0) * new Circle(0.2)).Faces()[0];
         Assert.True(f.NormalAt().Z < 0);   // Up-side-down, as the face it came from
@@ -35,7 +35,7 @@ public class OperationsSketchTests
     [Fact]
     public void MakeFaceFlipped()
     {
-        var wire = Wire.MakePolygon([(0, 0), (1, 1), (2, 0)]);
+        var wire = Wire.MakePolygon([new Vector(0, 0), new Vector(1, 1), new Vector(2, 0)]);
         var sketch = MakeFace(wire.Edges());
         Assert.True(sketch.Faces()[0].NormalAt().Z > 0);
     }
@@ -59,10 +59,10 @@ public class OperationsSketchTests
     {
         double length = 80.0, width = 60.0;
         var lines = new Curve([
-            Edge.MakeLine((0, 0), (length, 0)),
-            Edge.MakeLine((length, 0), (length, width)),
-            Edge.MakeThreePointArc((length, width), (width, width * 1.5), (0.0, width)),
-            Edge.MakeLine((0.0, width), (0.0, 0.0)),
+            Edge.MakeLine(new Vector(0, 0), new Vector(length, 0)),
+            Edge.MakeLine(new Vector(length, 0), new Vector(length, width)),
+            Edge.MakeThreePointArc(new Vector(length, width), new Vector(width, width * 1.5), new Vector(0.0, width)),
+            Edge.MakeLine(new Vector(0.0, width), new Vector(0.0, 0.0)),
         ]);
         var sketch = MakeFace(lines);
         Assert.IsType<Sketch>(sketch);
@@ -74,7 +74,7 @@ public class OperationsSketchTests
     {
         Edge[] edges =
         [
-            Edge.MakeCircle(1), Edge.MakeCircle(0.5, new Plane((1, 1.5))), Edge.MakeLine((0.0, 2), (-1, 3.0)),
+            Edge.MakeCircle(1), Edge.MakeCircle(0.5, new Plane(new Vector(1, 1.5))), Edge.MakeLine(new Vector(0.0, 2), new Vector(-1, 3.0)),
         ];
         Check.AlmostEqual(7.2582, MakeHull(edges).Area, 4);
 
@@ -87,13 +87,13 @@ public class OperationsSketchTests
     [Fact]
     public void TraceLines()
     {
-        var test = Trace(Edge.MakeLine((0, 0), (10, 0)), lineWidth: 1);
+        var test = Trace(Edge.MakeLine(new Vector(0, 0), new Vector(10, 0)), lineWidth: 1);
         Assert.Single(test.Faces());
         Check.AlmostEqual(10, test.Area, 5);
 
         Assert.Throws<ArgumentException>(() => Trace((IEnumerable<Shape>)null!));
 
-        var line = Wire.MakePolygon([(0, 0), (10, 10), (20, 10)], close: false);
+        var line = Wire.MakePolygon([new Vector(0, 0), new Vector(10, 10), new Vector(20, 10)], close: false);
         Assert.Single(Trace(line, 4).Faces());
     }
 
@@ -105,9 +105,9 @@ public class OperationsSketchTests
         Assert.True(test.SingleFace().Area < trap.SingleFace().Area);
 
         Assert.Throws<ArgumentException>(() => FullRound(trap.Edges().OrderBy(Axis.X)[^1]));
-        Assert.Throws<ArgumentException>(() => FullRound(Edge.MakeLine((0, 0), (1, 0))));
+        Assert.Throws<ArgumentException>(() => FullRound(Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))));
 
-        var l1 = Edge.MakeSpline([(-1, 0), (1, 0)], tangents: [new Vector(0, -8), new Vector(0, 8)], scale: true);
+        var l1 = Edge.MakeSpline([new Vector(-1, 0), new Vector(1, 0)], tangents: [new Vector(0, -8), new Vector(0, 8)], scale: true);
         var l2 = Edge.MakeLine(l1.PositionAt(0), l1.PositionAt(1));
         var face = new Face(new Wire([l1, l2]));
         Assert.Throws<ArgumentException>(() => FullRound(face.Edges()[0]));

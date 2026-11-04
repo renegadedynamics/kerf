@@ -32,8 +32,8 @@ public class ReferenceTests
     // Euler angles can legitimately differ at a gimbal-lock singularity; compare the rotation instead
     static void SameRotation(Vector expectedAngles, Vector actualAngles, string what)
     {
-        var e = new Plane(new Location((0, 0, 0), expectedAngles));
-        var a = new Plane(new Location((0, 0, 0), actualAngles));
+        var e = new Plane(new Location(new Vector(0, 0, 0), expectedAngles));
+        var a = new Plane(new Location(new Vector(0, 0, 0), actualAngles));
         Close(e.XDir, a.XDir, 1e-9, what + " x");
         Close(e.ZDir, a.ZDir, 1e-9, what + " z");
     }
@@ -147,7 +147,7 @@ public class ReferenceTests
     {
         foreach (var c in Cases("axis_intersect"))
         {
-            var hit = new Axis(V(c.GetProperty("p1")), V(c.GetProperty("d1"))) & new Axis(V(c.GetProperty("p2")), V(c.GetProperty("d2")));
+            var hit = (new Axis(V(c.GetProperty("p1")), V(c.GetProperty("d1")))).Intersect(new Axis(V(c.GetProperty("p2")), V(c.GetProperty("d2"))));
             Close(V(c.GetProperty("point")), Assert.IsType<Vector>(hit), 1e-9, "axis intersection");
         }
     }

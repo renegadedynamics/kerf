@@ -12,7 +12,7 @@ namespace Kerf.Modeling;
 /// classes at run time.
 /// </para>
 /// <para>
-/// Builder mode (phase 5) adds the builder's pending objects as defaults for the inputs and a <see cref="Mode"/> that
+/// Builder mode (phase 5) adds the builder's pending objects as defaults for the inputs and a mode that
 /// combines the result with the builder's object; in algebra mode the inputs are required and nothing is combined.
 /// </para>
 /// </remarks>
@@ -43,8 +43,8 @@ public static partial class Operations
                 var bbox = obj.BoundingBox();
                 Vector[] vertices =
                 [
-                    (bbox.Min.X, bbox.Min.Y), (bbox.Min.X, bbox.Max.Y), (bbox.Max.X, bbox.Max.Y), (bbox.Max.X, bbox.Min.Y),
-                    (bbox.Min.X, bbox.Min.Y),
+                    new Vector(bbox.Min.X, bbox.Min.Y), new Vector(bbox.Min.X, bbox.Max.Y), new Vector(bbox.Max.X, bbox.Max.Y), new Vector(bbox.Max.X, bbox.Min.Y),
+                    new Vector(bbox.Min.X, bbox.Min.Y),
                 ];
                 newFaces.Add(new Face(Wire.MakePolygon(vertices)));
             }

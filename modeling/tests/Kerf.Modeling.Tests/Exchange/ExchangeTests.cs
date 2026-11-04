@@ -92,7 +92,7 @@ public partial class ExchangeTests
     [Fact]
     public void StepOfSeveralShapesIsACompound()
     {
-        var two = new Compound([new Box(1, 1, 1), new Box(1, 1, 1).Moved(new Location((5.0, 0.0, 0.0)))]);
+        var two = new Compound([new Box(1, 1, 1), new Box(1, 1, 1).Moved(new Location(new Vector(5.0, 0.0, 0.0)))]);
         var stream = new MemoryStream();
         Exporters3D.ExportStep(two, stream);
         stream.Position = 0;
@@ -183,7 +183,7 @@ public partial class ExchangeTests
     public void StepKeepsLabelsColoursAndAssembliesOnOcctNetOnly()
     {
         var pair = Compound.Assembly([new Box(1, 1, 1).WithLabel("a").WithColor(new Color("red")),
-                                      new Sphere(1).Moved(new Location((3.0, 0.0, 0.0))).WithLabel("b")], "pair");
+                                      new Sphere(1).Moved(new Location(new Vector(3.0, 0.0, 0.0))).WithLabel("b")], "pair");
         var stream = new MemoryStream();
         Exporters3D.ExportStep(pair, stream);
         stream.Position = 0;
@@ -258,7 +258,7 @@ public partial class ExchangeTests
         var assembly = Compound.Assembly(
         [
             new Box(10, 10, 10).WithLabel("box").WithColor(new Color("red")),
-            new Sphere(4).Moved(new Location((20.0, 0.0, 0.0))).WithLabel("ball").WithColor(new Color(0.0, 0.5, 1.0)),
+            new Sphere(4).Moved(new Location(new Vector(20.0, 0.0, 0.0))).WithLabel("ball").WithColor(new Color(0.0, 0.5, 1.0)),
         ], "pair");
         foreach (var binary in new[] { true, false })
         {

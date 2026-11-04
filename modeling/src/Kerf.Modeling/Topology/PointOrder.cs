@@ -1,16 +1,21 @@
 namespace Kerf.Modeling;
 
 /// <summary>
-/// CPython's <c>list(set(points))</c> for vectors: the distinct points in the order a Python set iterates them, which
-/// depends on their hashes. build123d picks results by that order in places (the plane of
-/// <see cref="Shape1D.CommonPlane(IEnumerable{Shape1D?}, double)"/>), so the port reproduces it.
+/// The distinct points of a list in a fixed order that depends on their coordinates' hashes: that of an open-addressing
+/// hash table with perturbed probing, filled in the list's order and read in slot order.
 /// </summary>
-internal static class PySet
+/// <remarks>
+/// It keeps the order of CPython's <c>list(set(points))</c> (its float and tuple hashes, its set table and resizing),
+/// because build123d takes the first points of that list: <see cref="Shape1D.CommonPlane(IEnumerable{Shape1D?}, double)"/>
+/// picks its plane on a tie by it, and the Python-reference tests pin the plane. A <see cref="HashSet{T}"/> keeps no
+/// such order.
+/// </remarks>
+internal static class PointOrder
 {
     private const ulong Modulus = (1UL << 61) - 1;   // _PyHASH_MODULUS
     private const int LinearProbes = 9, PerturbShift = 5, MinSize = 8;
 
-    /// <summary>Python's <c>hash(float)</c> (finite values).</summary>
+    /// <summary>A double's hash: its value reduced modulo the Mersenne prime 2^61 - 1 (CPython's float hash).</summary>
     internal static long HashDouble(double v)
     {
         if (double.IsInfinity(v))
@@ -52,7 +57,7 @@ internal static class PySet
         return Math.ScaleB(v, -e);
     }
 
-    /// <summary>Python's <c>hash(tuple)</c> of three floats (the xxHash-based tuple hash of CPython 3.8 on).</summary>
+    /// <summary>Three doubles' hash, combined xxHash style (CPython's tuple hash, from 3.8).</summary>
     internal static long HashTuple(double a, double b, double c)
     {
         const ulong prime1 = 11400714785074694791UL, prime2 = 14029467366897019727UL, prime5 = 2870177450012600261UL;
@@ -67,7 +72,7 @@ internal static class PySet
         return acc == ulong.MaxValue ? 1546275796 : (long)acc;
     }
 
-    /// <summary>The distinct points (by <see cref="Vector"/> equality) in the order <c>list(set(points))</c> gives them.</summary>
+    /// <summary>The distinct points (by <see cref="Vector"/> equality), in the table's order.</summary>
     internal static List<Vector> Distinct(IEnumerable<Vector> points)
     {
         var table = new (Vector Key, long Hash, bool Used)[MinSize];
@@ -86,7 +91,7 @@ internal static class PySet
         return [.. table.Where(s => s.Used).Select(s => s.Key)];
     }
 
-    /// <summary>set_add_entry: false if an equal point is already there.</summary>
+    /// <summary>Adds a point to the table (CPython's set_add_entry): false if an equal point is already there.</summary>
     private static bool Add((Vector Key, long Hash, bool Used)[] table, Vector point, long hash)
     {
         var mask = (ulong)table.Length - 1;
@@ -112,7 +117,7 @@ internal static class PySet
         }
     }
 
-    /// <summary>set_table_resize: the entries reinserted, in table order, into a table larger than <paramref name="minUsed"/>.</summary>
+    /// <summary>The entries reinserted, in table order, into a table larger than <paramref name="minUsed"/> (set_table_resize).</summary>
     private static (Vector, long, bool)[] Resize((Vector Key, long Hash, bool Used)[] old, int minUsed)
     {
         var size = MinSize;

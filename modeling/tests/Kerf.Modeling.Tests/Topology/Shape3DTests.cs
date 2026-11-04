@@ -23,7 +23,7 @@ public class FilletFailuresTests
         + "[5] at (10, 0, 1), [7] at (10, 0, -1), [8] at (0, -10, -1), "
         + "[9] at (0, -10, 1), [10] at (0, 10, -1), [11] at (0, 10, 1))" + Advice;
 
-    static Part Box(double l, double w, double h) => new([Solid.MakeBox(l, w, h, new Plane((-l / 2, -w / 2, -h / 2)))]);
+    static Part Box(double l, double w, double h) => new([Solid.MakeBox(l, w, h, new Plane(new Vector(-l / 2, -w / 2, -h / 2)))]);
 
     [Fact]
     public void Plate()
@@ -107,9 +107,9 @@ public class FilletFailuresTests
 
 public class Shape3DTests
 {
-    static Part Box(double l, double w, double h) => new([Solid.MakeBox(l, w, h, new Plane((-l / 2, -w / 2, -h / 2)))]);
+    static Part Box(double l, double w, double h) => new([Solid.MakeBox(l, w, h, new Plane(new Vector(-l / 2, -w / 2, -h / 2)))]);
 
-    static Part Cylinder(double r, double h) => new([Solid.MakeCylinder(r, h, new Plane((0, 0, -h / 2)))]);
+    static Part Cylinder(double r, double h) => new([Solid.MakeCylinder(r, h, new Plane(new Vector(0, 0, -h / 2)))]);
 
     [Fact]
     public void Chamfer()
@@ -171,7 +171,7 @@ public class Shape3DTests
     [Fact]
     public void Make3DResultCompound()
     {
-        var compound = new Compound([Solid.MakeBox(1, 1, 1), Solid.MakeBox(1, 1, 1).Translate((2, 0, 0))]);
+        var compound = new Compound([Solid.MakeBox(1, 1, 1), Solid.MakeBox(1, 1, 1).Translate(new Vector(2, 0, 0))]);
         var result = Shape3D.Make3DResult(compound.Wrapped);
         Assert.IsType<Part>(result);
         Assert.Equal(2, result.Solids().Count);
@@ -211,12 +211,12 @@ public class Shape3DTests
     }
 
     [Fact]
-    public void IsInside() => Assert.True(Solid.MakeBox(1, 1, 1).IsInside((0.5, 0.5, 0.5)));
+    public void IsInside() => Assert.True(Solid.MakeBox(1, 1, 1).IsInside(new Vector(0.5, 0.5, 0.5)));
 
     [Fact]
     public void DPrism()
     {
-        static Solid Block() => Solid.MakeBox(1, 1, 1, new Plane((-0.5, -0.5, 0)));
+        static Solid Block() => Solid.MakeBox(1, 1, 1, new Plane(new Vector(-0.5, -0.5, 0)));
 
         // Face
         var f = Face.MakeRect(0.5, 0.5);
@@ -230,7 +230,7 @@ public class Shape3DTests
         Check.AlmostEqual(1 - Math.Pow(0.5, 3), d.Volume, 5);
 
         // Face until
-        var limit = Face.MakeRect(1, 1, new Plane((0, 0, 0.5)));
+        var limit = Face.MakeRect(1, 1, new Plane(new Vector(0, 0, 0.5)));
         d = Block().DPrism(null, [f], upToFace: limit, thruAll: false, additive: false);
         Assert.True(d.IsValid);
         Check.AlmostEqual(1 - Math.Pow(0.5, 3), d.Volume, 5);
@@ -246,6 +246,6 @@ public class Shape3DTests
     public void Center()
     {
         Assert.Throws<ArgumentException>(() => Solid.MakeBox(1, 1, 1).Center(CenterOf.Geometry));
-        Check.AlmostEqual((0.5, 0.5, 0.5), Solid.MakeBox(1, 1, 1).Center(CenterOf.BoundingBox), 5);
+        Check.AlmostEqual(new Vector(0.5, 0.5, 0.5), Solid.MakeBox(1, 1, 1).Center(CenterOf.BoundingBox), 5);
     }
 }

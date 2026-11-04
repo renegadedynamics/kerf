@@ -48,9 +48,9 @@ var examples = new (string Name, Func<Shape> Build)[]
     ("29 bottle", () =>
     {
         double l = 60.0, w = 18.0, t = 9.0, b = 0.9, h = 90.0, n = 8.0;
-        var l1 = new Line((0, 0), (0, w / 2));
-        var l2 = new ThreePointArc(l1.PositionAt(1), (l / 2.0, w / 2.0 + t), (l, w / 2.0));
-        var l3 = new Line(l2.PositionAt(1), (l2.PositionAt(1).X, 0, 0));
+        var l1 = new Line(new Vector(0, 0), new Vector(0, w / 2));
+        var l2 = new ThreePointArc(l1.PositionAt(1), new Vector(l / 2.0, w / 2.0 + t), new Vector(l, w / 2.0));
+        var l3 = new Line(l2.PositionAt(1), new Vector(l2.PositionAt(1).X, 0, 0));
         Shape profile = l1 + l2 + l3;
         profile += Mirror(profile);
         Shape body = Extrude(MakeFace(profile), -(h + b));

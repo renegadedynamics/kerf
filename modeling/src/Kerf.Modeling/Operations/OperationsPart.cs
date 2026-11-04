@@ -333,7 +333,7 @@ public static partial class Operations
         // Make sure we account for users specifying angles larger than 360 degrees, and for OCCT not assuming that a
         // 0 degree revolve means a 360 degree revolve
         double sign = revolutionArc >= 0 ? 1 : -1;
-        var angle = PyMath.Mod(revolutionArc, sign * 360.0);
+        var angle = Numerics.FloorMod(revolutionArc, sign * 360.0);
         angle = angle == 0 ? sign * 360.0 : angle;
 
         if (profileList.All(s => s is null))

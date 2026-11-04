@@ -44,11 +44,6 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     /// <summary>The point a vertex is at.</summary>
     public Vector(Vertex vertex) => this = vertex.ToVector();
 
-    /// <summary>The vector (x, y, 0).</summary>
-    public static implicit operator Vector((double X, double Y) v) => new(v.X, v.Y);
-
-    /// <summary>The vector (x, y, z).</summary>
-    public static implicit operator Vector((double X, double Y, double Z) v) => new(v.X, v.Y, v.Z);
 
     /// <summary>Deconstructs into components.</summary>
     public void Deconstruct(out double x, out double y, out double z) => (x, y, z) = (X, Y, Z);
@@ -81,14 +76,7 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     public static bool operator ==(Vector a, Vector b) => a.Equals(b);
     public static bool operator !=(Vector a, Vector b) => !a.Equals(b);
 
-    /// <summary>The intersection with another geometric value, as <see cref="Intersect(Vector)"/>.</summary>
-    public static Vector? operator &(Vector a, Vector b) => a.Intersect(b);
-    public static Vector? operator &(Vector a, Axis b) => a.Intersect(b);
-    public static Vector? operator &(Vector a, Plane b) => a.Intersect(b);
-    public static Vector? operator &(Vector a, Location b) => a.Intersect(b);
 
-    /// <summary>Where a shape meets this vector (the shape's <see cref="Shape.Intersect(object[])"/>).</summary>
-    public static ShapeList<Shape> operator &(Vector a, Shape b) => a.Intersect(b);
 
     /// <summary>Where a shape meets this vector (the shape's <see cref="Shape.Intersect(object[])"/>), empty if nowhere.</summary>
     public ShapeList<Shape> Intersect(Shape shape) => shape.Intersect(this);

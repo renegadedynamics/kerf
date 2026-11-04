@@ -10,12 +10,10 @@ public abstract class BaseSketchObject : Sketch, IBuilderObject
     /// <param name="obj">The faces.</param>
     /// <param name="rotation">An angle in degrees to rotate them about Z.</param>
     /// <param name="align">How to align their bounding box in X and Y; null for no alignment.</param>
-    /// <param name="mode">How the object combines with a builder's sketch.</param>
-    protected BaseSketchObject(Shape obj, double rotation = 0, Alignment? align = null, Mode mode = Mode.Add)
+    protected BaseSketchObject(Shape obj, double rotation = 0, Alignment? align = null)
         : base(Prepare(obj, rotation, align).Select(f => (Shape)f))
     {
         Rotation = rotation;
-        Mode = mode;
     }
 
     private static ShapeList<Face> Prepare(Shape obj, double rotation, Alignment? align)
@@ -26,30 +24,27 @@ public abstract class BaseSketchObject : Sketch, IBuilderObject
     }
 
     /// <summary>An alignment on X and Y only, as build123d's sketches take it.</summary>
-    internal static Alignment TwoAxes(Alignment a) => a.Count == 1 ? (a[0]!.Value, a[0]!.Value) : a.Count == 3 ? (a[0]!.Value, a[1]!.Value) : a;
+    internal static Alignment TwoAxes(Alignment a) => a.Count == 1 ? new Alignment(a[0]!.Value, a[0]!.Value) : a.Count == 3 ? new Alignment(a[0]!.Value, a[1]!.Value) : a;
 
     /// <summary>The rotation applied, in degrees about Z.</summary>
     public double Rotation { get; }
 
-    /// <inheritdoc/>
-    public Mode Mode { get; }
-
     /// <summary>A centred alignment in X and Y, the default of most sketch objects.</summary>
-    internal static readonly Alignment Centered = (Align.Center, Align.Center);
+    internal static readonly Alignment Centered = new Alignment(Align.Center, Align.Center);
 }
 
 /// <summary>A circle, or a sector of one; centred by default.</summary>
 public class Circle : BaseSketchObject
 {
     /// <summary>A circle of a radius; <paramref name="arcSize"/> below 360 makes a sector.</summary>
-    public Circle(double radius, double arcSize = 360.0, Alignment? align = null, Mode mode = Mode.Add)
-        : base(Make(radius, arcSize), 0, align ?? Centered, mode)
+    public Circle(double radius, double arcSize = 360.0, Alignment? align = null)
+        : base(Make(radius, arcSize), 0, align ?? Centered)
     {
         (Radius, ArcSize, Align) = (radius, arcSize, TwoAxes(align ?? Centered));
     }
 
     private static Face Make(double radius, double arcSize) =>
-        arcSize == 360.0 ? new Face(Wire.MakeCircle(radius)) : Face.Revolve(Edge.MakeLine((radius, 0), (0, 0)), arcSize, Axis.Z);
+        arcSize == 360.0 ? new Face(Wire.MakeCircle(radius)) : Face.Revolve(Edge.MakeLine(new Vector(radius, 0), new Vector(0, 0)), arcSize, Axis.Z);
 
     /// <summary>The radius.</summary>
     public double Radius { get; }
@@ -65,8 +60,8 @@ public class Circle : BaseSketchObject
 public class Ellipse : BaseSketchObject
 {
     /// <summary>An ellipse, rotated by <paramref name="rotation"/> degrees.</summary>
-    public Ellipse(double xRadius, double yRadius, double rotation = 0, Alignment? align = null, Mode mode = Mode.Add)
-        : base(new Face(Wire.MakeEllipse(xRadius, yRadius)), rotation, align ?? Centered, mode)
+    public Ellipse(double xRadius, double yRadius, double rotation = 0, Alignment? align = null)
+        : base(new Face(Wire.MakeEllipse(xRadius, yRadius)), rotation, align ?? Centered)
     {
         (XRadius, YRadius, Align) = (xRadius, yRadius, TwoAxes(align ?? Centered));
     }
@@ -88,16 +83,16 @@ public class Ellipse : BaseSketchObject
 public class Polygon : BaseSketchObject
 {
     /// <summary>A polygon through the points.</summary>
-    public Polygon(IEnumerable<Vector> pts, double rotation = 0, Alignment? align = null, Mode mode = Mode.Add)
-        : this(pts.ToList(), rotation, align, mode) { }
+    public Polygon(IEnumerable<Vector> pts, double rotation = 0, Alignment? align = null)
+        : this(pts.ToList(), rotation, align) { }
 
     /// <summary>A polygon through the points.</summary>
     public Polygon(params Vector[] pts) : this((IEnumerable<Vector>)pts) { }
 
-    private Polygon(List<Vector> pts, double rotation, Alignment? align, Mode mode)
-        : base(new Face(Wire.MakePolygon(pts)), rotation, align ?? (Kerf.Modeling.Align.None, Kerf.Modeling.Align.None), mode)
+    private Polygon(List<Vector> pts, double rotation, Alignment? align)
+        : base(new Face(Wire.MakePolygon(pts)), rotation, align ?? new Alignment(Kerf.Modeling.Align.None, Kerf.Modeling.Align.None))
     {
-        (Pts, Align) = (pts, TwoAxes(align ?? (Kerf.Modeling.Align.None, Kerf.Modeling.Align.None)));
+        (Pts, Align) = (pts, TwoAxes(align ?? new Alignment(Kerf.Modeling.Align.None, Kerf.Modeling.Align.None)));
     }
 
     /// <summary>The points.</summary>
@@ -111,8 +106,8 @@ public class Polygon : BaseSketchObject
 public class Rectangle : BaseSketchObject
 {
     /// <summary>A rectangle, rotated by <paramref name="rotation"/> degrees.</summary>
-    public Rectangle(double width, double height, double rotation = 0, Alignment? align = null, Mode mode = Mode.Add)
-        : base(Face.MakeRect(width, height), rotation, align ?? Centered, mode)
+    public Rectangle(double width, double height, double rotation = 0, Alignment? align = null)
+        : base(Face.MakeRect(width, height), rotation, align ?? Centered)
     {
         (Width, RectangleHeight, Align) = (width, height, TwoAxes(align ?? Centered));
     }
@@ -132,8 +127,8 @@ public class RectangleRounded : BaseSketchObject
 {
     /// <summary>A rounded rectangle.</summary>
     /// <exception cref="ArgumentException">The width or height is no more than twice the radius.</exception>
-    public RectangleRounded(double width, double height, double radius, double rotation = 0, Alignment? align = null, Mode mode = Mode.Add)
-        : base(Make(width, height, radius), rotation, align ?? Centered, mode)
+    public RectangleRounded(double width, double height, double radius, double rotation = 0, Alignment? align = null)
+        : base(Make(width, height, radius), rotation, align ?? Centered)
     {
         (Width, RectangleHeight, Radius, Align) = (width, height, radius, TwoAxes(align ?? Centered));
     }
@@ -167,9 +162,8 @@ public class RegularPolygon : BaseSketchObject
 {
     /// <summary>A regular polygon, its first vertex at <paramref name="rotation"/> degrees.</summary>
     /// <exception cref="ArgumentException">Fewer than three sides.</exception>
-    public RegularPolygon(double radius, int sideCount, bool majorRadius = true, double rotation = 0, Alignment? align = null,
-                          Mode mode = Mode.Add)
-        : base(Make(radius, sideCount, majorRadius, rotation, TwoAxes(align ?? Centered)), 0, null, mode)
+    public RegularPolygon(double radius, int sideCount, bool majorRadius = true, double rotation = 0, Alignment? align = null)
+        : base(Make(radius, sideCount, majorRadius, rotation, TwoAxes(align ?? Centered)), 0, null)
     {
         Radius = majorRadius ? radius : radius / Math.Cos(Math.PI / sideCount);
         Apothem = Radius * Math.Cos(Math.PI / sideCount);
@@ -208,8 +202,8 @@ public class RegularPolygon : BaseSketchObject
 public class SlotCurve : BaseSketchObject
 {
     /// <summary>A slot round a curve.</summary>
-    public SlotCurve(Shape1D curve, double height, double rotation = 0, Mode mode = Mode.Add)
-        : base(new Face((Wire)(curve as Wire ?? new Wire((Edge)curve)).Offset2D(height / 2)), rotation, null, mode)
+    public SlotCurve(Shape1D curve, double height, double rotation = 0)
+        : base(new Face((Wire)(curve as Wire ?? new Wire((Edge)curve)).Offset2D(height / 2)), rotation, null)
     {
         (Curve, SlotHeight) = (curve, height);
     }
@@ -226,7 +220,7 @@ public class SlotCurve : BaseSketchObject
 public class SlotArc : SlotCurve
 {
     /// <summary>A slot round a curve.</summary>
-    public SlotArc(Shape1D arc, double height, double rotation = 0, Mode mode = Mode.Add) : base(arc, height, rotation, mode) => Arc = arc;
+    public SlotArc(Shape1D arc, double height, double rotation = 0) : base(arc, height, rotation) => Arc = arc;
 
     /// <summary>The centre line.</summary>
     public Shape1D Arc { get; }
@@ -237,8 +231,8 @@ public class SlotCenterPoint : BaseSketchObject
 {
     /// <summary>A slot of a height (its width across).</summary>
     /// <exception cref="ArgumentException">The centre and point coincide.</exception>
-    public SlotCenterPoint(Vector center, Vector point, double height, double rotation = 0, Mode mode = Mode.Add)
-        : base(Make(center, point, height), rotation, null, mode)
+    public SlotCenterPoint(Vector center, Vector point, double height, double rotation = 0)
+        : base(Make(center, point, height), rotation, null)
     {
         (SlotCenter, Point, SlotHeight) = (center, point, height);
     }
@@ -268,20 +262,20 @@ public class SlotCenterToCenter : BaseSketchObject
 {
     /// <summary>A slot of a height (its width across).</summary>
     /// <exception cref="ArgumentException">The separation is negative.</exception>
-    public SlotCenterToCenter(double centerSeparation, double height, double rotation = 0, Mode mode = Mode.Add)
-        : base(Make(centerSeparation, height, mode), rotation, null, mode)
+    public SlotCenterToCenter(double centerSeparation, double height, double rotation = 0)
+        : base(Make(centerSeparation, height), rotation, null)
     {
         (CenterSeparation, SlotHeight) = (centerSeparation, height);
     }
 
-    private static Face Make(double separation, double height, Mode mode)
+    private static Face Make(double separation, double height)
     {
         if (separation < 0)
             throw new ArgumentException($"The centre separation must be positive, not {Formatting.Number(separation)}.");
         if (separation > 0)
             return new Face((Wire)new Wire([Edge.MakeLine(new Vector(-separation / 2, 0, 0), new Vector(0, 0, 0)),
                                             Edge.MakeLine(new Vector(0, 0, 0), new Vector(separation / 2, 0, 0))]).Offset2D(height / 2));
-        return new Circle(height / 2, mode: mode).SingleFace();
+        return new Circle(height / 2).SingleFace();
     }
 
     /// <summary>The distance between the centres of the end arcs.</summary>
@@ -296,20 +290,20 @@ public class SlotOverall : BaseSketchObject
 {
     /// <summary>A slot.</summary>
     /// <exception cref="ArgumentException">The width is less than the height.</exception>
-    public SlotOverall(double width, double height, double rotation = 0, Alignment? align = null, Mode mode = Mode.Add)
-        : base(Make(width, height, mode), rotation, align ?? Centered, mode)
+    public SlotOverall(double width, double height, double rotation = 0, Alignment? align = null)
+        : base(Make(width, height), rotation, align ?? Centered)
     {
         (Width, SlotHeight) = (width, height);
     }
 
-    private static Face Make(double width, double height, Mode mode)
+    private static Face Make(double width, double height)
     {
         if (width < height)
             throw new ArgumentException($"Slot requires that width > height. Got: width={Formatting.Number(width)}, height={Formatting.Number(height)}");
         if (width > height)
             return new Face((Wire)new Wire([Edge.MakeLine(new Vector(-width / 2 + height / 2, 0, 0), new Vector(0, 0, 0)),
                                             Edge.MakeLine(new Vector(0, 0, 0), new Vector(width / 2 - height / 2, 0, 0))]).Offset2D(height / 2));
-        return new Circle(width / 2, mode: mode).SingleFace();
+        return new Circle(width / 2).SingleFace();
     }
 
     /// <summary>The overall width.</summary>
@@ -327,9 +321,8 @@ public class Superellipse : BaseSketchObject
 {
     /// <summary>A superellipse; above order 2 each quadrant is a spline through <paramref name="pointCount"/> points.</summary>
     /// <exception cref="ArgumentException">The order isn't positive.</exception>
-    public Superellipse(double width, double height, double order = 4, int pointCount = 16, double rotation = 0, Alignment? align = null,
-                        Mode mode = Mode.Add)
-        : base(Make(width, height, order, pointCount), rotation, align ?? Centered, mode)
+    public Superellipse(double width, double height, double order = 4, int pointCount = 16, double rotation = 0, Alignment? align = null)
+        : base(Make(width, height, order, pointCount), rotation, align ?? Centered)
     {
         (Width, Height, SuperOrder, PointCount, Align) = (width, height, order, pointCount, TwoAxes(align ?? Centered));
     }
@@ -340,7 +333,7 @@ public class Superellipse : BaseSketchObject
             throw new ArgumentException("Order must be greater than zero.");
         Edge topRight;
         if (order == 1)
-            topRight = Edge.MakeLine((width / 2, 0), (0, height / 2));
+            topRight = Edge.MakeLine(new Vector(width / 2, 0), new Vector(0, height / 2));
         else if (order == 2)
             topRight = Edge.MakeEllipse(width / 2, height / 2, startAngle: 0, endAngle: 90);
         else
@@ -386,8 +379,8 @@ public class Trapezoid : BaseSketchObject
     /// <summary>A trapezoid.</summary>
     /// <exception cref="ArgumentException">The angles make an invalid trapezoid.</exception>
     public Trapezoid(double width, double height, double leftSideAngle, double? rightSideAngle = null, double rotation = 0,
-                     Alignment? align = null, Mode mode = Mode.Add)
-        : base(Make(width, height, leftSideAngle, rightSideAngle is { } r && r != 0 ? r : leftSideAngle), rotation, align ?? Centered, mode)
+                     Alignment? align = null)
+        : base(Make(width, height, leftSideAngle, rightSideAngle is { } r && r != 0 ? r : leftSideAngle), rotation, align ?? Centered)
     {
         (Width, TrapezoidHeight, LeftSideAngle, RightSideAngle, Align) =
             (width, height, leftSideAngle, rightSideAngle is { } r2 && r2 != 0 ? r2 : leftSideAngle, TwoAxes(align ?? Centered));
@@ -440,11 +433,11 @@ public class Triangle : BaseSketchObject
     /// <summary>A triangle; give one side and two other values (angles in degrees).</summary>
     /// <exception cref="ArgumentException">One length and two other values weren't given, or no such triangle exists.</exception>
     public Triangle(double? a = null, double? b = null, double? c = null, double? A = null, double? B = null, double? C = null,
-                    Alignment? align = null, double rotation = 0, Mode mode = Mode.Add)
-        : this(Solve(a, b, c, A, B, C), align, rotation, mode) { }
+                    Alignment? align = null, double rotation = 0)
+        : this(Solve(a, b, c, A, B, C), align, rotation) { }
 
-    private Triangle((double a, double b, double c, double A, double B, double C) t, Alignment? align, double rotation, Mode mode)
-        : base(Make(t), rotation, align, mode)
+    private Triangle((double a, double b, double c, double A, double B, double C) t, Alignment? align, double rotation)
+        : base(Make(t), rotation, align)
     {
         (SideA, SideB, SideC) = (t.a, t.b, t.c);
         (AngleA, AngleB, AngleC) = (t.A * Constants.RadToDeg, t.B * Constants.RadToDeg, t.C * Constants.RadToDeg);

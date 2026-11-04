@@ -55,7 +55,7 @@ public class ConstructionInputsUnchangedTests
         // build123d revolves with copy (BRepPrimAPI_MakeRevol's last argument): the solid shares nothing with the face
         Box part = Part();
         Face side = Side(part);
-        Untouched(part, () => Ops.Revolve(side, new Axis((20.0, 0.0, 0.0), (0.0, 0.0, 1.0)), 90, clean: false));
+        Untouched(part, () => Ops.Revolve(side, new Axis(new Vector(20.0, 0.0, 0.0), new Vector(0.0, 0.0, 1.0)), 90, clean: false));
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public class ConstructionInputsUnchangedTests
     {
         Box part = Part();
         Face top = Top(part);
-        Edge path = Edge.MakeThreePointArc((5, 3, 4), (5, 8, 9), (5, 13, 4));
+        Edge path = Edge.MakeThreePointArc(new Vector(5, 3, 4), new Vector(5, 8, 9), new Vector(5, 13, 4));
         Untouched(part, () => Ops.Sweep(top, path, new Ops.SweepOptions { Clean = false }));
     }
 
@@ -72,7 +72,7 @@ public class ConstructionInputsUnchangedTests
     {
         Box part = Part();
         Box other = new(4, 4, 4);
-        Shape moved = other.Moved(new Location((0.0, 0.0, 10.0)));
+        Shape moved = other.Moved(new Location(new Vector(0.0, 0.0, 10.0)));
         byte[] otherBefore = Text(other);
         Untouched(part, () => Ops.Loft([Top(part), Top(moved)], clean: false));
         Assert.True(otherBefore.AsSpan().SequenceEqual(Text(other)));

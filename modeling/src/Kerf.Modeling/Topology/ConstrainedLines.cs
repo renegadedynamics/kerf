@@ -30,11 +30,13 @@ public readonly record struct Tangent
     public static implicit operator Tangent(Axis axis) => new(null, axis, null, Tangency.Unqualified);
     public static implicit operator Tangent(Vector point) => new(null, null, point, Tangency.Unqualified);
     public static implicit operator Tangent(Vertex vertex) => new(null, null, vertex.ToVector(), Tangency.Unqualified);
-    public static implicit operator Tangent((double X, double Y) point) => new(null, null, (Vector)point, Tangency.Unqualified);
-    public static implicit operator Tangent((double X, double Y, double Z) point) => new(null, null, (Vector)point, Tangency.Unqualified);
-    public static implicit operator Tangent((Edge Edge, Tangency Tangency) t) => new(t.Edge, null, null, t.Tangency);
-    public static implicit operator Tangent((Axis Axis, Tangency Tangency) t) => new(null, t.Axis, null, t.Tangency);
 #pragma warning restore CS1591
+
+    /// <summary>An edge as a target, the solution on the side <paramref name="tangency"/> says.</summary>
+    public Tangent(Edge edge, Tangency tangency) : this(edge, null, null, tangency) { }
+
+    /// <summary>An axis as a target, the solution on the side <paramref name="tangency"/> says.</summary>
+    public Tangent(Axis axis, Tangency tangency) : this(null, axis, null, tangency) { }
 
     /// <summary>The target with an axis made into an edge.</summary>
     internal Tangent Resolved() => Axis is { } a ? new Tangent(Kerf.Modeling.Edge.FromAxis(a), null, null, Tangency) : this;
@@ -118,7 +120,7 @@ internal static class ConstrainedSolvers
     }
 
     private static double NormOnPeriod(double u, double first, double period) =>
-        Math.Abs(u - first) < Constants.Tolerance ? first : PyMath.Mod(u - first, period) + first;
+        Math.Abs(u - first) < Constants.Tolerance ? first : Numerics.FloorMod(u - first, period) + first;
 
     private static double ForwardDelta(double u1, double u2, double first, double period)
     {

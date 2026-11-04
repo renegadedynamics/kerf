@@ -13,13 +13,13 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     public Vector Direction { get; }
 
     /// <summary>The X axis.</summary>
-    public static Axis X => new((0, 0, 0), (1, 0, 0));
+    public static Axis X => new(new Vector(0, 0, 0), new Vector(1, 0, 0));
 
     /// <summary>The Y axis.</summary>
-    public static Axis Y => new((0, 0, 0), (0, 1, 0));
+    public static Axis Y => new(new Vector(0, 0, 0), new Vector(0, 1, 0));
 
     /// <summary>The Z axis.</summary>
-    public static Axis Z => new((0, 0, 0), (0, 0, 1));
+    public static Axis Z => new(new Vector(0, 0, 0), new Vector(0, 0, 1));
 
     /// <summary>An axis through <paramref name="origin"/> along <paramref name="direction"/>.</summary>
     /// <exception cref="ArgumentException">The direction has zero length.</exception>
@@ -165,13 +165,7 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     public static Axis operator -(Axis a) => a.Reverse();
     public static bool operator ==(Axis a, Axis b) => a.Equals(b);
     public static bool operator !=(Axis a, Axis b) => !a.Equals(b);
-    public static IGeometry? operator &(Axis a, Axis b) => a.Intersect(b);
-    public static IGeometry? operator &(Axis a, Plane b) => a.Intersect(b);
-    public static IGeometry? operator &(Axis a, Location b) => a.Intersect(b);
-    public static Vector? operator &(Axis a, Vector b) => a.Intersect(b);
 
-    /// <summary>Where a shape meets this axis (the shape's <see cref="Shape.Intersect(object[])"/>).</summary>
-    public static ShapeList<Shape> operator &(Axis a, Shape b) => a.Intersect(b);
 
     /// <summary>Where a shape meets this axis (the shape's <see cref="Shape.Intersect(object[])"/>), empty if nowhere.</summary>
     public ShapeList<Shape> Intersect(Shape shape) => shape.Intersect(this);

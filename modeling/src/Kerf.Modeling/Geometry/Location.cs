@@ -185,13 +185,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
 
     public static bool operator ==(Location? a, Location? b) => a is null ? b is null : a.Equals(b);
     public static bool operator !=(Location? a, Location? b) => !(a == b);
-    public static IGeometry? operator &(Location a, Location b) => a.Intersect(b);
-    public static IGeometry? operator &(Location a, Axis b) => a.Intersect(b);
-    public static IGeometry? operator &(Location a, Plane b) => a.Intersect(b);
-    public static Vector? operator &(Location a, Vector b) => a.Intersect(b);
 
-    /// <summary>Where a shape meets this location (the shape's <see cref="Shape.Intersect(object[])"/>).</summary>
-    public static ShapeList<Shape> operator &(Location a, Shape b) => a.Intersect(b);
 
     /// <summary>Where a shape meets this location (the shape's <see cref="Shape.Intersect(object[])"/>), empty if nowhere.</summary>
     public ShapeList<Shape> Intersect(Shape shape) => shape.Intersect(this);
@@ -254,8 +248,6 @@ public class Rotation : Location
     /// <summary>A copy of another rotation.</summary>
     public Rotation(Rotation rotation) : base(rotation) { }
 
-    /// <summary>A rotation by Euler angles (X, Y, Z) in degrees, as build123d's <c>RotationLike</c> tuples are.</summary>
-    public static implicit operator Rotation((double X, double Y, double Z) angles) => new(angles.X, angles.Y, angles.Z);
 
     static Placement AboutAxis(Axis axis, double angle)
     {

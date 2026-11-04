@@ -217,7 +217,7 @@ public abstract partial class Shape1D : Shape
     {
         plane ??= Plane.XY;
         var tangent = TangentAt(locationParam, mode);
-        return PyMath.Mod(plane.XDir.GetSignedAngle(tangent, plane.ZDir) + 360, 360.0);
+        return Numerics.FloorMod(plane.XDir.GetSignedAngle(tangent, plane.ZDir) + 360, 360.0);
     }
 
     /// <summary>The start point. A circle may start and end at the same point.</summary>
@@ -392,7 +392,7 @@ public abstract partial class Shape1D : Shape
                 int n = line.GeomType == GeomType.Line ? 2 : 8;
                 points.AddRange(Enumerable.Range(0, n).Select(i => line.PositionAt(i / (double)(n - 1))));
             }
-            points = PySet.Distinct(points);   // unique points, in the order of a Python set
+            points = PointOrder.Distinct(points);   // the distinct points, in build123d's order
             // The points making the largest triangle make the most accurate plane; on ties the last such found wins
             double bestArea = double.NegativeInfinity;
             (Vector, Vector, Vector) extremes = default;
@@ -596,11 +596,7 @@ public abstract partial class Shape1D : Shape
 
     // ---- Operators ----
 
-    /// <summary>The tangent at a parameter (build123d's <c>%</c>).</summary>
-    public static Vector operator %(Shape1D curve, double position) => curve.TangentAt(position);
 
-    /// <summary>The location at a parameter (build123d's <c>^</c>).</summary>
-    public static Location operator ^(Shape1D curve, double position) => curve.LocationAt(position);
 }
 
 /// <summary>The kernel's curve of an edge or a wire, for the code the two share (OCCT's adaptors, once).</summary>

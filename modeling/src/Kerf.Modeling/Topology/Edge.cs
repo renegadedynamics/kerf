@@ -451,7 +451,7 @@ public partial class Edge : Shape1D
         {
             var adaptor = TopoEdge.ToCurve();
             if (adaptor.IsPeriodic)
-                projected = paramMin + PyMath.Mod(projected - paramMin, adaptor.Period);
+                projected = paramMin + Numerics.FloorMod(projected - paramMin, adaptor.Period);
             var u = adaptor.LengthBetween(paramMin, projected) / adaptor.Length;
             if (!IsForward)
                 u = 1 - u;
@@ -467,7 +467,7 @@ public partial class Edge : Shape1D
             double step = 1.0 / intervals;
             for (int i = 0; i < intervals; i++)
             {
-                var (x, fun) = PyMath.MinimizeBounded(u => (PositionAt(u) - point).Length, i * step, (i + 1) * step,
+                var (x, fun) = Numerics.MinimizeBounded(u => (PositionAt(u) - point).Length, i * step, (i + 1) * step,
                                                        Constants.Tolerance / 2);
                 if (fun < (PositionAt(x + Constants.Tolerance) - PositionAt(x - Constants.Tolerance)).Length)
                 {
@@ -613,7 +613,7 @@ public partial class Edge : Shape1D
     /// <summary>The parameters (0 to 1) where the tangent of this planar edge is at <paramref name="angle"/> degrees.</summary>
     public IReadOnlyList<double> FindTangent(double angle)
     {
-        angle = PyMath.Mod(angle, 360);
+        angle = Numerics.FloorMod(angle, 360);
         if (GeomType == GeomType.Line)
             return TangentAngleAt(0) == angle ? [0] : [];
         // A curve of the tangent angle along the edge, intercepted by horizontal lines

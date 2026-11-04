@@ -290,7 +290,7 @@ public partial class Wire : Shape1D
             var adaptor = closestEdge.ToCurve();
             var (paramMin, paramMax) = closestEdge.Range;
             if (adaptor.IsPeriodic)
-                closestParam = PyMath.Mod(closestParam - paramMin, adaptor.Period) + paramMin;
+                closestParam = Numerics.FloorMod(closestParam - paramMin, adaptor.Period) + paramMin;
             distanceAlongWire = closestEdge.Orientation == global::Kerf.Topology.Orientation.Forward
                 ? adaptor.LengthBetween(paramMin, closestParam)
                 : adaptor.LengthBetween(closestParam, paramMax);

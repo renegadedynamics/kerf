@@ -58,7 +58,7 @@ public class WireTests
     [Fact]
     public void Close()
     {
-        var t = Wire.MakePolygon([(0, 0), (1, 0), (0, 1)], close: true);
+        var t = Wire.MakePolygon([new Vector(0, 0), new Vector(1, 0), new Vector(0, 1)], close: true);
         Assert.Same(t, t.Close());
     }
 
@@ -79,7 +79,7 @@ public class WireTests
         [
             Edge.MakeCircle(10, endAngle: 45),
             Edge.MakeCircle(10, startAngle: 315, endAngle: 360),
-            Edge.MakeLine((-10, 10), (-10, -10)),
+            Edge.MakeLine(new Vector(-10, 10), new Vector(-10, -10)),
         ];
         var hullWire = Wire.MakeConvexHull(adjoiningEdges);
         Check.AlmostEqual(319.9612, new Face(hullWire).Area, 4);
@@ -92,14 +92,14 @@ public class WireTests
     [Fact]
     public void Trim()
     {
-        var e0 = Edge.MakeLine((0, 0), (1, 0));
-        var e1 = Edge.MakeLine((2, 0), (1, 0));
-        var e2 = Edge.MakeLine((2, 0), (3, 0));
+        var e0 = Edge.MakeLine(new Vector(0, 0), new Vector(1, 0));
+        var e1 = Edge.MakeLine(new Vector(2, 0), new Vector(1, 0));
+        var e2 = Edge.MakeLine(new Vector(2, 0), new Vector(3, 0));
         var w1 = new Wire([e0, e1, e2]);
-        var t1 = w1.Trim(0.2, 0.9).Moved(new Location((0, 0.1, 0)));
+        var t1 = w1.Trim(0.2, 0.9).Moved(new Location(new Vector(0, 0.1, 0)));
         Check.AlmostEqual(2.1, t1.Length, 5);
 
-        var e = Edge.MakeThreePointArc((0, -20), (5, 0), (0, 20));
+        var e = Edge.MakeThreePointArc(new Vector(0, -20), new Vector(5, 0), new Vector(0, 20));
         // Three edges are created 0->0.5->0.75->1.0
         var o = (Wire)e.Offset2D(10, side: Side.Right, closed: false);
         var t2 = o.Trim(0.1, 0.9);
@@ -111,11 +111,11 @@ public class WireTests
         var t4 = o.Trim(0.5, 0.75);
         Check.AlmostEqual(o.Length * 0.25, t4.Length, 5);
 
-        var w0 = Polyline((0, 0), (0, 1), (1, 1), (1, 0));
+        var w0 = Polyline(new Vector(0, 0), new Vector(0, 1), new Vector(1, 1), new Vector(1, 0));
         var w2 = w0.Trim(0, new Vector(0.5, 1));
-        Check.AlmostEqual((0.5, 1), w2.PositionAt(1), 5);
+        Check.AlmostEqual(new Vector(0.5, 1), w2.PositionAt(1), 5);
 
-        var spline = Edge.MakeSpline([(0, 0, 0), (0, 10, 0)], tangents: [new Vector(0, 0, 2), new Vector(0, 0, -2)], scale: false);
+        var spline = Edge.MakeSpline([new Vector(0, 0, 0), new Vector(0, 10, 0)], tangents: [new Vector(0, 0, 2), new Vector(0, 0, -2)], scale: false);
         var half = spline.Trim(0.5, 1);
         Check.AlmostEqual(spline.PositionAt(0.5), half.PositionAt(0), 4);
         Check.AlmostEqual(spline.PositionAt(1), half.PositionAt(1), 4);
@@ -137,25 +137,25 @@ public class WireTests
         var t8 = c.Trim(0.4, 0.9);
         Check.AlmostEqual(c.Length * 0.5, t8.Length, 5);
 
-        var reversedArc = Edge.MakeCircle(3, new Plane((5, 3, 0)), startAngle: -90, endAngle: 0).Reversed();
-        var explicitReversedWire = new Wire([Edge.MakeLine((0, 0), (5, 0)), reversedArc, Edge.MakeLine((8, 3), (12, 3))]);
+        var reversedArc = Edge.MakeCircle(3, new Plane(new Vector(5, 3, 0)), startAngle: -90, endAngle: 0).Reversed();
+        var explicitReversedWire = new Wire([Edge.MakeLine(new Vector(0, 0), new Vector(5, 0)), reversedArc, Edge.MakeLine(new Vector(8, 3), new Vector(12, 3))]);
         var trimmedReversedWire = explicitReversedWire.Trim(0.2, 0.8);
         Assert.Equal(3, trimmedReversedWire.Edges().Count);
         Check.AlmostEqual(8.227433388230814, trimmedReversedWire.Length, 5);
-        Check.AlmostEqual((2.7424777960769386, 0, 0), trimmedReversedWire.PositionAt(0), 5);
-        Check.AlmostEqual((9.257522203923063, 3, 0), trimmedReversedWire.PositionAt(1), 5);
+        Check.AlmostEqual(new Vector(2.7424777960769386, 0, 0), trimmedReversedWire.PositionAt(0), 5);
+        Check.AlmostEqual(new Vector(9.257522203923063, 3, 0), trimmedReversedWire.PositionAt(1), 5);
     }
 
     [Fact]
     public void ParamAtPoint()
     {
-        var e = Edge.MakeThreePointArc((0, -20), (5, 0), (0, 20));
+        var e = Edge.MakeThreePointArc(new Vector(0, -20), new Vector(5, 0), new Vector(0, 20));
         // Three edges are created 0->0.5->0.75->1.0
         var o = (Wire)e.Offset2D(10, side: Side.Right, closed: false);
 
-        var e0 = Edge.MakeLine((0, 0), (1, 0));
-        var e1 = Edge.MakeLine((2, 0), (1, 0));
-        var e2 = Edge.MakeLine((2, 0), (3, 0));
+        var e0 = Edge.MakeLine(new Vector(0, 0), new Vector(1, 0));
+        var e1 = Edge.MakeLine(new Vector(2, 0), new Vector(1, 0));
+        var e2 = Edge.MakeLine(new Vector(2, 0), new Vector(3, 0));
         var w1 = new Wire([e0, e1, e2]);
         foreach (var wire in new[] { o, w1 })
             foreach (var uValue in new[] { 0.137, 0.42, 0.5, 0.83 })
@@ -164,15 +164,15 @@ public class WireTests
                 Check.AlmostEqual(uValue, wire.ParamAtPoint(position), 4);
             }
 
-        Assert.Throws<ArgumentException>(() => o.ParamAtPoint((-1, 1)));
-        Assert.Throws<ArgumentException>(() => w1.ParamAtPoint((20, 20, 20)));
-        Assert.Throws<InvalidOperationException>(() => new Wire().ParamAtPoint((0, 0)));
+        Assert.Throws<ArgumentException>(() => o.ParamAtPoint(new Vector(-1, 1)));
+        Assert.Throws<ArgumentException>(() => w1.ParamAtPoint(new Vector(20, 20, 20)));
+        Assert.Throws<InvalidOperationException>(() => new Wire().ParamAtPoint(new Vector(0, 0)));
     }
 
     [Fact]
     public void ParamAtPointReversedEdges()
     {
-        var l1 = new Line((0, 65), (80.0 / 2 + 1.526 * 4, 65));
+        var l1 = new Line(new Vector(0, 65), new Vector(80.0 / 2 + 1.526 * 4, 65));
         var l2 = new PolarLine(l1.PositionAt(1), 20.371288916, direction: new Vector(0, 1, 0).Rotate(Axis.X, -75));
         var w = Plane.YZ * (Wire)Ops.Fillet((l1 + l2).Vertices(), 7);
         var parameters = Enumerable.Range(0, 21).Select(i => w.ParamAtPoint(w.PositionAt(i / 20.0))).ToList();
@@ -184,7 +184,7 @@ public class WireTests
     [Fact]
     public void ParamAtPointNativeParameterOnMultiedgeAndReversedWires()
     {
-        var wire = new Wire([Edge.MakeLine((0, 0, 0), (10, 0, 0)), Edge.MakeLine((10, 0, 0), (10, 10, 0))], sequenced: true);
+        var wire = new Wire([Edge.MakeLine(new Vector(0, 0, 0), new Vector(10, 0, 0)), Edge.MakeLine(new Vector(10, 0, 0), new Vector(10, 10, 0))], sequenced: true);
         var reversedWire = new Wire(((global::Kerf.Topology.Wire)wire.Wrapped.Reversed()));
 
         foreach (var candidate in new[] { wire, reversedWire })
@@ -206,17 +206,17 @@ public class WireTests
     [Fact]
     public void ParamAtPointNormalizePreservesErrors()
     {
-        var wire = new Wire([Edge.MakeLine((0, 0, 0), (10, 0, 0)), Edge.MakeLine((10, 0, 0), (10, 10, 0))]);
+        var wire = new Wire([Edge.MakeLine(new Vector(0, 0, 0), new Vector(10, 0, 0)), Edge.MakeLine(new Vector(10, 0, 0), new Vector(10, 10, 0))]);
         foreach (var normalize in new[] { true, false })
         {
-            var ex = Assert.Throws<ArgumentException>(() => wire.ParamAtPoint((20, 20, 20), normalize: normalize));
+            var ex = Assert.Throws<ArgumentException>(() => wire.ParamAtPoint(new Vector(20, 20, 20), normalize: normalize));
             Assert.Matches("is .* from wire", ex.Message);
         }
 
         var empty = new Wire();
         foreach (var normalize in new[] { true, false })
         {
-            var ex = Assert.Throws<InvalidOperationException>(() => empty.ParamAtPoint((0, 0, 0), normalize: normalize));
+            var ex = Assert.Throws<InvalidOperationException>(() => empty.ParamAtPoint(new Vector(0, 0, 0), normalize: normalize));
             Assert.Contains("Can't find point on empty wire", ex.Message);
         }
     }
@@ -227,8 +227,8 @@ public class WireTests
         // LocationAt agrees with PositionAt on a reversed wire
         var wire = new Wire(
             [
-                Edge.MakeLine((0, 0, 0), (10, 0, 0)),
-                Edge.MakeCircle(5, new Plane((10, 5, 0)), startAngle: 270, endAngle: 360),
+                Edge.MakeLine(new Vector(0, 0, 0), new Vector(10, 0, 0)),
+                Edge.MakeCircle(5, new Plane(new Vector(10, 5, 0)), startAngle: 270, endAngle: 360),
             ],
             sequenced: true);
         var reversedWire = new Wire(((global::Kerf.Topology.Wire)wire.Wrapped.Reversed()));
@@ -254,11 +254,11 @@ public class WireTests
         // JernArc((0, 1), (0, 1), 1, -90) is the tangent arc from (0, 1) to (1, 2)
         var w = new Wire(
             [
-                Edge.MakeLine((0, 0), (0, 1)),
-                Edge.MakeTangentArc((0, 1), (0, 1), (1, 2)).Reversed(reconstruct: true),
+                Edge.MakeLine(new Vector(0, 0), new Vector(0, 1)),
+                Edge.MakeTangentArc(new Vector(0, 1), new Vector(0, 1), new Vector(1, 2)).Reversed(reconstruct: true),
             ]);
-        Check.AlmostEqual((0, 1, 0), w.TangentAt(0), 6);
-        Check.AlmostEqual((1, 0, 0), w.TangentAt(1), 6);
+        Check.AlmostEqual(new Vector(0, 1, 0), w.TangentAt(0), 6);
+        Check.AlmostEqual(new Vector(1, 0, 0), w.TangentAt(1), 6);
     }
 
     [Fact]
@@ -266,20 +266,20 @@ public class WireTests
     {
         var w1 = new Wire(
             [
-                Edge.MakeLine((0, 0), (1, 0)),
-                Edge.MakeLine((1, 1), (1, 0)),
-                Edge.MakeLine((0, 1), (1, 1)),
+                Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)),
+                Edge.MakeLine(new Vector(1, 1), new Vector(1, 0)),
+                Edge.MakeLine(new Vector(0, 1), new Vector(1, 1)),
             ]);
         var orderedEdges = w1.OrderEdges();
-        Check.AlmostEqual((0, 0, 0), orderedEdges[0].PositionAt(0), 5);
-        Check.AlmostEqual((1, 0, 0), orderedEdges[1].PositionAt(0), 5);
-        Check.AlmostEqual((1, 1, 0), orderedEdges[2].PositionAt(0), 5);
+        Check.AlmostEqual(new Vector(0, 0, 0), orderedEdges[0].PositionAt(0), 5);
+        Check.AlmostEqual(new Vector(1, 0, 0), orderedEdges[1].PositionAt(0), 5);
+        Check.AlmostEqual(new Vector(1, 1, 0), orderedEdges[2].PositionAt(0), 5);
     }
 
     [Fact]
     public void EdgesOfBranchingWire()
     {
-        var line = Edge.MakeLine((0, 0), (30, 0));
+        var line = Edge.MakeLine(new Vector(0, 0), new Vector(30, 0));
         var star = line + new Rot(z: -120) * line + new Rot(z: 120) * line;
         var starWire = Assert.IsType<Wire>(star);
         Assert.Equal(3, star.Edges().Count);
@@ -292,7 +292,7 @@ public class WireTests
     [Fact]
     public void EdgesConnectionOrder()
     {
-        var edges = Wire.MakePolygon([(0, 0), (1, 0), (1, 1), (0, 1)]).Edges();
+        var edges = Wire.MakePolygon([new Vector(0, 0), new Vector(1, 0), new Vector(1, 1), new Vector(0, 1)]).Edges();
         Assert.Equal(4, edges.Count);
         foreach (var (first, second) in edges.Zip(edges.Skip(1)))
             Check.AlmostEqual(first.EndPoint(), second.StartPoint(), 5);
@@ -305,15 +305,15 @@ public class WireTests
 
         var mixed = new Wire(
             [
-                Edge.MakeLine((0, 0), (4, 0)),
-                Edge.MakeLine((4, 3), (4, 0)),
-                Edge.MakeThreePointArc((4, 3), (3, 5), (1, 5)),
+                Edge.MakeLine(new Vector(0, 0), new Vector(4, 0)),
+                Edge.MakeLine(new Vector(4, 3), new Vector(4, 0)),
+                Edge.MakeThreePointArc(new Vector(4, 3), new Vector(3, 5), new Vector(1, 5)),
             ]);
         var wires = new Dictionary<string, Wire>
         {
-            ["open"] = Flipped(Polyline((0, 0), (4, 0), (4, 3), (1, 5))),
+            ["open"] = Flipped(Polyline(new Vector(0, 0), new Vector(4, 0), new Vector(4, 3), new Vector(1, 5))),
             ["open, edges in both directions"] = Flipped(mixed),
-            ["single edge"] = Flipped(new Wire([Edge.MakeLine((0, 0), (4, 0))])),
+            ["single edge"] = Flipped(new Wire([Edge.MakeLine(new Vector(0, 0), new Vector(4, 0))])),
             ["mirrored rectangle"] = new Sketch([Face.MakeRect(2, 2)]).Mirror().SingleWire(),
             ["mirrored rounded rectangle"] = new RectangleRounded(4, 3, 0.5).Mirror(Plane.YZ).SingleWire(),
             ["outer wire of a flipped face"] = ((Face)(-Face.MakeRect(2, 2))).OuterWire(),
@@ -334,7 +334,7 @@ public class WireTests
             }
 
         var mirrored = new Sketch([Face.MakeRect(2, 2)]).Mirror().SingleWire();
-        Check.AlmostEqual((1, 0, 0), mirrored.PositionAt(mirrored.ParamAtPoint((1, 0, 0))), 5);
+        Check.AlmostEqual(new Vector(1, 0, 0), mirrored.PositionAt(mirrored.ParamAtPoint(new Vector(1, 0, 0))), 5);
     }
 
     [Fact]
@@ -384,7 +384,7 @@ public class WireTests
     {
         // Issue #1073: the kernel's own offset curves cannot be written to STEP
         var ellipse = new Wire([Edge.MakeEllipse(50, 100)]);
-        foreach (var placement in new[] { new Location(), new Location((5, 6, 7), (30, 0, 0)) })
+        foreach (var placement in new[] { new Location(), new Location(new Vector(5, 6, 7), new Vector(30, 0, 0)) })
         {
             var placed = placement * ellipse;
             var grown = placed.Offset2D(50);
@@ -410,7 +410,7 @@ public class WireTests
     [Fact]
     public void Offset2DAsBSpline()
     {
-        var spline = Edge.MakeSpline([(0, 0), (2, 1), (4, 0)]);
+        var spline = Edge.MakeSpline([new Vector(0, 0), new Vector(2, 1), new Vector(4, 0)]);
         var ellipse = new Wire([Edge.MakeEllipse(3, 2)]);
         Shape1D[] curves = [spline, ellipse];
 
@@ -437,7 +437,7 @@ public class WireTests
     [Fact]
     public void GeomAdaptor()
     {
-        var w = Polyline((0, 0), (1, 0), (1, 1));
+        var w = Polyline(new Vector(0, 0), new Vector(1, 0), new Vector(1, 1));
         var adaptor = w.GeomAdaptor();
         Assert.IsType<global::Kerf.Topology.WireCurve>(adaptor);
         Assert.Throws<InvalidOperationException>(() => new Wire().GeomAdaptor());
@@ -446,8 +446,8 @@ public class WireTests
     [Fact]
     public void Constructor()
     {
-        var e0 = Edge.MakeLine((0, 0), (1, 0));
-        var e1 = Edge.MakeLine((1, 0), (1, 1));
+        var e0 = Edge.MakeLine(new Vector(0, 0), new Vector(1, 0));
+        var e1 = Edge.MakeLine(new Vector(1, 0), new Vector(1, 1));
         var w0 = Wire.MakeCircle(1);
         var w1 = new Wire(e0);
         Assert.True(w1.IsValid);
@@ -468,7 +468,7 @@ public class WireTests
         Check.TupleAlmostEqual([1.0, 0.0, 0.0, 1.0], Check.Of(w6.Color.Value), 5);
         var w7 = new Wire(w6);
         Assert.True(w7.IsValid);
-        var c0 = Polyline((0, 0), (1, 0), (1, 1));
+        var c0 = Polyline(new Vector(0, 0), new Vector(1, 0), new Vector(1, 1));
         var w8 = new Wire(c0.Edges());
         Assert.True(w8.IsValid);
         var w9 = new Wire(new Curve([e0, e1]));
@@ -584,16 +584,16 @@ public class WireValidationTests
 {
     private readonly Wire _wire = new(
         [
-            Edge.MakeLine((0, 0), (10, 0)),
-            Edge.MakeLine((10, 0), (10, 10)),
-            Edge.MakeLine((10, 10), (0, 10)),
-            Edge.MakeLine((0, 10), (0, 0)),
+            Edge.MakeLine(new Vector(0, 0), new Vector(10, 0)),
+            Edge.MakeLine(new Vector(10, 0), new Vector(10, 10)),
+            Edge.MakeLine(new Vector(10, 10), new Vector(0, 10)),
+            Edge.MakeLine(new Vector(0, 10), new Vector(0, 0)),
         ]);
 
     [Fact]
     public void ExtrudeIsInvalid()
     {
-        var ex = Assert.Throws<ArgumentException>(() => Wire.Extrude(Edge.MakeLine((0, 0), (1, 0)), (0, 0, 1)));
+        var ex = Assert.Throws<ArgumentException>(() => Wire.Extrude(Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), new Vector(0, 0, 1)));
         Assert.Contains("can't be created by extrusion", ex.Message);
     }
 
@@ -601,7 +601,7 @@ public class WireValidationTests
     public void ProjectToShapeEmptyTarget()
     {
         // Python projects onto []; the empty Face here
-        var ex = Assert.Throws<InvalidOperationException>(() => _wire.ProjectToShape(new Face(), direction: (0, 0, -1)));
+        var ex = Assert.Throws<InvalidOperationException>(() => _wire.ProjectToShape(new Face(), direction: new Vector(0, 0, -1)));
         Assert.Contains("Can't project empty Wires", ex.Message);
     }
 

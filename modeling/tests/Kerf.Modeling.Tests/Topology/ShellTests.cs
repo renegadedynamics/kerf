@@ -44,7 +44,7 @@ public class ShellTests
     public void Center()
     {
         var boxShell = new Shell(Solid.MakeBox(1, 1, 1).Faces());
-        Check.AlmostEqual((0.5, 0.5, 0.5), boxShell.Center(), 5);
+        Check.AlmostEqual(new Vector(0.5, 0.5, 0.5), boxShell.Center(), 5);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class ShellTests
     [Fact]
     public void Constructor()
     {
-        var xSection = new Rotation(90) * Edge.MakeSpline([(0, -5), (-3, -2), (-2, 0), (-3, 2), (0, 5)]);
+        var xSection = new Rotation(90) * Edge.MakeSpline([new Vector(0, -5), new Vector(-3, -2), new Vector(-2, 0), new Vector(-3, 2), new Vector(0, 5)]);
         var surface = Shell.Sweep(xSection, Wire.MakeCircle(5));
         var singleFace = new Shell(surface.SingleFace());
         Assert.True(singleFace.IsValid);
@@ -77,20 +77,20 @@ public class ShellTests
     public void Sweep()
     {
         // JernArc((0, 0), (-1, 0), 1, 180): a half circle about (0, -1)
-        var pathC1 = Edge.MakeThreePointArc((0, 0), (-1, -1), (0, -2));
+        var pathC1 = Edge.MakeThreePointArc(new Vector(0, 0), new Vector(-1, -1), new Vector(0, -2));
         var pathE = pathC1;
         // ... + JernArc((0, 0), (1, 0), 2, -90): a clockwise quarter circle about (0, -2)
-        var pathC2 = new Curve([pathC1, Edge.MakeThreePointArc((0, 0), (Math.Sqrt(2), -2 + Math.Sqrt(2)), (2, -2))]);
+        var pathC2 = new Curve([pathC1, Edge.MakeThreePointArc(new Vector(0, 0), new Vector(Math.Sqrt(2), -2 + Math.Sqrt(2)), new Vector(2, -2))]);
         var pathW = Assert.Single(pathC2.Wires());
         var sectionE = Edge.MakeCircle(0.5);
-        var sectionC2 = new Wire([Edge.MakeLine((0, 0), (0.1, 0)), Edge.MakeLine((0.1, 0), (0.2, 0.1))]);
+        var sectionC2 = new Wire([Edge.MakeLine(new Vector(0, 0), new Vector(0.1, 0)), Edge.MakeLine(new Vector(0.1, 0), new Vector(0.2, 0.1))]);
         var sectionW = sectionC2;
 
-        var sweepEW = Shell.Sweep((pathW ^ 0) * sectionE, pathW);
-        var sweepWE = Shell.Sweep((pathE ^ 0) * sectionW, pathE);
-        var sweepWW = Shell.Sweep((pathW ^ 0) * sectionW, pathW);
-        var sweepC2C1 = Shell.Sweep((pathC1 ^ 0) * sectionC2, pathC1);
-        var sweepC2C2 = Shell.Sweep((pathC2 ^ 0) * sectionC2, pathC2);
+        var sweepEW = Shell.Sweep((pathW.LocationAt(0)) * sectionE, pathW);
+        var sweepWE = Shell.Sweep((pathE.LocationAt(0)) * sectionW, pathE);
+        var sweepWW = Shell.Sweep((pathW.LocationAt(0)) * sectionW, pathW);
+        var sweepC2C1 = Shell.Sweep((pathC1.LocationAt(0)) * sectionC2, pathC1);
+        var sweepC2C2 = Shell.Sweep((pathC2.LocationAt(0)) * sectionC2, pathC2);
 
         Assert.Equal(2, sweepEW.Faces().Count);
         Assert.Equal(2, sweepWE.Faces().Count);
@@ -103,7 +103,7 @@ public class ShellTests
     public void MakeLoft()
     {
         const double r = 3, h = 2;
-        var loft = Shell.MakeLoft([Wire.MakeCircle(r, new Plane((0, 0, h))), Wire.MakeCircle(r)]);
+        var loft = Shell.MakeLoft([Wire.MakeCircle(r, new Plane(new Vector(0, 0, h))), Wire.MakeCircle(r)]);
         Assert.Equal(0, loft.Volume);   // A shell has no volume
         var cylinderArea = 2 * Math.PI * r * h;
         Check.AlmostEqual(cylinderArea, loft.Area);
@@ -126,10 +126,10 @@ public class ShellTests
     public void LocationAt()
     {
         var shell = Solid.MakeCylinder(1, 2).SingleShell();
-        var topCenter = shell.LocationAt((0, 0, 2));
-        Check.AlmostEqual((0, 0, 2), topCenter.Position, 5);
-        Check.AlmostEqual((0, 0, 1), topCenter.ZAxis.Direction, 5);
-        Check.AlmostEqual((1, 0, 0), topCenter.XAxis.Direction, 5);
+        var topCenter = shell.LocationAt(new Vector(0, 0, 2));
+        Check.AlmostEqual(new Vector(0, 0, 2), topCenter.Position, 5);
+        Check.AlmostEqual(new Vector(0, 0, 1), topCenter.ZAxis.Direction, 5);
+        Check.AlmostEqual(new Vector(1, 0, 0), topCenter.XAxis.Direction, 5);
     }
 
     [Fact]
@@ -160,13 +160,13 @@ public class ShellAddTests
 {
     // A 20 x 20 base in the XY plane and a wall standing on its x=10 edge
     readonly Face _base = Face.MakeRect(20, 20);
-    readonly Face _wall = Face.Extrude(Edge.MakeLine((10, -10, 0), (10, 10, 0)), (0, 0, 10));
+    readonly Face _wall = Face.Extrude(Edge.MakeLine(new Vector(10, -10, 0), new Vector(10, 10, 0)), new Vector(0, 0, 10));
 
-    static Face FarWall() => Face.Extrude(Edge.MakeLine((-10, -10, 0), (-10, 10, 0)), (0, 0, 10));
+    static Face FarWall() => Face.Extrude(Edge.MakeLine(new Vector(-10, -10, 0), new Vector(-10, 10, 0)), new Vector(0, 0, 10));
 
     /// <summary>A Rectangle(20, 10) standing on the base's x=10 edge, as a Sketch.</summary>
     static Sketch SketchWall() =>
-        new Plane((10, 0, 5), xDir: (0, 1, 0), zDir: (1, 0, 0)) * new Sketch([Face.MakeRect(20, 10)]);
+        new Plane(new Vector(10, 0, 5), xDir: new Vector(0, 1, 0), zDir: new Vector(1, 0, 0)) * new Sketch([Face.MakeRect(20, 10)]);
 
     /// <summary>The result is one connected Shell with the expected faces.</summary>
     static void AssertSewn(Shape result, int faceCount)
@@ -237,7 +237,7 @@ public class ShellAddTests
     public void NonManifoldRaises()
     {
         // Three faces meeting on one edge can't sew
-        var below = Face.Extrude(Edge.MakeLine((10, -10, 0), (10, 10, 0)), (0, 0, -10));
+        var below = Face.Extrude(Edge.MakeLine(new Vector(10, -10, 0), new Vector(10, 10, 0)), new Vector(0, 0, -10));
         Assert.Throws<ArgumentException>(() => new Shell([_base, _wall]) + below);
     }
 
@@ -261,7 +261,7 @@ public class ShellAddTests
     [Fact]
     public void MismatchedDimensionsRaise()
     {
-        Assert.Throws<ArgumentException>(() => new Shell([_base]) + Edge.MakeLine((0, 0, 0), (1, 0, 0)));
+        Assert.Throws<ArgumentException>(() => new Shell([_base]) + Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0)));
         Assert.Throws<ArgumentException>(() => new Shell([_base]) + Solid.MakeBox(1, 1, 1));
     }
 
