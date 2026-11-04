@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity FeaAxis2Placement3d
 /// </summary>
-public class FeaAxis2Placement3d : StepAxis2Placement3d
+internal class FeaAxis2Placement3d : StepAxis2Placement3d
 {
     private CoordinateSystemType _systemType;
     private TCollection_HAsciiString _description;

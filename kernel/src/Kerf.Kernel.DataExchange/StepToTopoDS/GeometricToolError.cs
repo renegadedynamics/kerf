@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 
 /// <summary>The error status of StepToTopoDS_GeometricTool.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepToTopoDS_GeometricToolError;</c>.</remarks>
-public enum GeometricToolError
+internal enum GeometricToolError
 {
     GeometricToolDone,
     GeometricToolIsDegenerated,

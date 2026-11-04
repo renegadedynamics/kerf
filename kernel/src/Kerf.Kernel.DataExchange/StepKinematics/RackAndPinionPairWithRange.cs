@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity RackAndPinionPairWithRange
 /// </summary>
-public class RackAndPinionPairWithRange : RackAndPinionPair
+internal class RackAndPinionPairWithRange : RackAndPinionPair
 {
     private double _lowerLimitRackDisplacement;
     /// <summary>

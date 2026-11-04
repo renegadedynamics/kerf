@@ -17,7 +17,7 @@ namespace Kerf.Engine.Classification;
 /// intersection with them.
 /// </summary>
 /// <remarks>A working object (decision 21).</remarks>
-public class SolidPassiveClassifier
+internal class SolidPassiveClassifier
 {
     private bool _isSet;
     private Face _face = new();

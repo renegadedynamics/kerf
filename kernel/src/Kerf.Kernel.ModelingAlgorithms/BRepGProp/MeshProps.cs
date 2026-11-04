@@ -17,7 +17,7 @@ namespace Kerf.Engine.Measurement;
 /// The global properties of a surface mesh, as a surface (<see cref="BRepGProp_MeshObjType.Sinert"/>) or as the piece
 /// of volume between the mesh and the reference point (<see cref="BRepGProp_MeshObjType.Vinert"/>).
 /// </summary>
-public class MeshProps : Properties
+internal class MeshProps : Properties
 {
     /// <summary>The types of geometric objects.</summary>
     public enum BRepGProp_MeshObjType

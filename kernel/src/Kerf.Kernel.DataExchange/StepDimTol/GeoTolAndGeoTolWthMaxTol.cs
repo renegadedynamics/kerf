@@ -13,7 +13,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Tolerances;
 
-public class GeoTolAndGeoTolWthMaxTol : GeoTolAndGeoTolWthMod
+internal class GeoTolAndGeoTolWthMaxTol : GeoTolAndGeoTolWthMod
 {
     private LengthMeasureWithUnit _maxTol;
 

@@ -690,37 +690,37 @@ public class Styles : ConstructTool
     }
 
     // the predefined colours of STEP (OCCT's C++ compares with Quantity_Color's operator==, IsEqual)
-    private static string PredefinedName(in Color c)
+    private static string PredefinedName(in LinearColor c)
     {
-        if (c.IsEqual(new Color(NocGreen)))
+        if (c.IsEqual(new LinearColor(NocGreen)))
         {
             return "green";
         }
-        if (c.IsEqual(new Color(NocRed)))
+        if (c.IsEqual(new LinearColor(NocRed)))
         {
             return "red";
         }
-        if (c.IsEqual(new Color(NocBlue1)))
+        if (c.IsEqual(new LinearColor(NocBlue1)))
         {
             return "blue";
         }
-        if (c.IsEqual(new Color(NocYellow)))
+        if (c.IsEqual(new LinearColor(NocYellow)))
         {
             return "yellow";
         }
-        if (c.IsEqual(new Color(NocMagenta1)))
+        if (c.IsEqual(new LinearColor(NocMagenta1)))
         {
             return "magenta";
         }
-        if (c.IsEqual(new Color(NocCyan1)))
+        if (c.IsEqual(new LinearColor(NocCyan1)))
         {
             return "cyan";
         }
-        if (c.IsEqual(new Color(NocBlack)))
+        if (c.IsEqual(new LinearColor(NocBlack)))
         {
             return "black";
         }
-        if (c.IsEqual(new Color(NocWhite)))
+        if (c.IsEqual(new LinearColor(NocWhite)))
         {
             return "white";
         }
@@ -731,7 +731,7 @@ public class Styles : ConstructTool
     /// Create STEP color entity by given Quantity_Color The analysis is performed for whether the color corresponds to
     /// one of standard colors predefined in STEP. In that case, PredefinedColour entity is created instead of RGBColour
     /// </summary>
-    public static Colour EncodeColor(in Color c)
+    public static Colour EncodeColor(in LinearColor c)
     {
         // detect if color corresponds to one of pre-defined colors
         string cName = PredefinedName(c);
@@ -759,7 +759,7 @@ public class Styles : ConstructTool
     /// one of standard colors predefined in STEP. In that case, PredefinedColour entity is created instead of RGBColour
     /// </summary>
     /// <remarks>OCCT.NET: the RGB colours are keyed by their sRGB values (OCCT: a gp_Pnt of them).</remarks>
-    public static Colour EncodeColor(in Color c, Dictionary<string, Transient> dpdCs,
+    public static Colour EncodeColor(in LinearColor c, Dictionary<string, Transient> dpdCs,
                                                 Dictionary<Point3D, Transient> colRGBs)
     {
         // detect if color corresponds to one of pre-defined colors
@@ -809,7 +809,7 @@ public class Styles : ConstructTool
     /// Decodes STEP color and fills the Quantity_Color. Returns True if OK or False if color is not recognized
     /// </summary>
     /// <remarks>OCCT.NET: <paramref name="col"/> is left unchanged when the colour isn't recognised, as in OCCT.</remarks>
-    public static bool DecodeColor(Colour colour, ref Color col)
+    public static bool DecodeColor(Colour colour, ref LinearColor col)
     {
         if (colour.IsKind(typeof(ColourRgb)))
         {
@@ -825,11 +825,11 @@ public class Styles : ConstructTool
                 {
                     norm = rgb.Blue();
                 }
-                col = new Color(rgb.Red() / norm, rgb.Green() / norm, rgb.Blue() / norm, TOC_sRGB);
+                col = new LinearColor(rgb.Red() / norm, rgb.Green() / norm, rgb.Blue() / norm, TOC_sRGB);
             }
             else
             {
-                col = new Color(rgb.Red(), rgb.Green(), rgb.Blue(), TOC_sRGB);
+                col = new LinearColor(rgb.Red(), rgb.Green(), rgb.Blue(), TOC_sRGB);
             }
             return true;
         }
@@ -841,28 +841,28 @@ public class Styles : ConstructTool
             switch (name)
             {
                 case "red":
-                    col = new Color(NocRed);
+                    col = new LinearColor(NocRed);
                     break;
                 case "green":
-                    col = new Color(NocGreen);
+                    col = new LinearColor(NocGreen);
                     break;
                 case "blue":
-                    col = new Color(NocBlue1);
+                    col = new LinearColor(NocBlue1);
                     break;
                 case "yellow":
-                    col = new Color(NocYellow);
+                    col = new LinearColor(NocYellow);
                     break;
                 case "magenta":
-                    col = new Color(NocMagenta1);
+                    col = new LinearColor(NocMagenta1);
                     break;
                 case "cyan":
-                    col = new Color(NocCyan1);
+                    col = new LinearColor(NocCyan1);
                     break;
                 case "black":
-                    col = new Color(NocBlack);
+                    col = new LinearColor(NocBlack);
                     break;
                 case "white":
-                    col = new Color(NocWhite);
+                    col = new LinearColor(NocWhite);
                     break;
                 default:
                     // OCCT_DEBUG output left out

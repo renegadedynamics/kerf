@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP entity Surface3dElementDescriptor
 /// </summary>
-public class Surface3dElementDescriptor : ElementDescriptor
+internal class Surface3dElementDescriptor : ElementDescriptor
 {
     private NCollection_HArray1<NCollection_HSequence<SurfaceElementPurposeMember>> _purpose;
     private Element2dShape _shape;

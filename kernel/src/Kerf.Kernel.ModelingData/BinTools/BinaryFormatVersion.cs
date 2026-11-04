@@ -11,7 +11,7 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 /// An unscoped enum in C++; ported code imports it with <c>using static Occt.BinTools_FormatVersion;</c>. OCCT's
 /// anonymous enum of bounds is <see cref="BinaryFormatVersionBounds"/>.
 /// </remarks>
-public enum BinaryFormatVersion
+internal enum BinaryFormatVersion
 {
     /// <summary>Doesn't write the UV points of curves on surfaces; reading calls Check().</summary>
     FormatVersion_VERSION_1 = 1,
@@ -30,7 +30,7 @@ public enum BinaryFormatVersion
 }
 
 /// <summary>The lowest and highest supported <see cref="BinaryFormatVersion"/> (OCCT's anonymous enum).</summary>
-public static class BinaryFormatVersionBounds
+internal static class BinaryFormatVersionBounds
 {
     public const BinaryFormatVersion BinTools_FormatVersion_LOWER = BinaryFormatVersion.FormatVersion_VERSION_1;
 

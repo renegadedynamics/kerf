@@ -22,7 +22,7 @@ namespace Kerf.Engine.Measurement.Distance;
 /// A working object (decision 21); it only reads the shapes' meshes. As in OCCT, computing the proximity value sets
 /// the tolerance to it, so a later Load switches to the overlap test.
 /// </remarks>
-public sealed class ShapeProximity
+internal sealed class ShapeProximity
 {
     private double _tolerance;
     private bool _isInitS1;

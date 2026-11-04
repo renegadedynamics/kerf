@@ -8,7 +8,7 @@ namespace Kerf.Engine.Measurement;
 
 /// <summary>Why a local continuity analysis failed.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.LocalAnalysis_StatusErrorType;</c>.</remarks>
-public enum StatusErrorType
+internal enum StatusErrorType
 {
     NullFirstDerivative,
     NullSecondDerivative,

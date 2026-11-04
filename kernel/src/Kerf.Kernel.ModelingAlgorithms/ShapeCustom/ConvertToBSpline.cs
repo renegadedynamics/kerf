@@ -21,7 +21,7 @@ namespace Kerf.Engine.Healing.Custom;
 /// The modes are extrusion, revolution and offset on, plane off by default. With the offset mode off, an offset
 /// surface whose basis is to convert keeps its offset over a B-spline basis.
 /// </remarks>
-public class ConvertToBSpline : CustomModification
+internal class ConvertToBSpline : CustomModification
 {
     private bool _extrMode;
     private bool _revolMode;

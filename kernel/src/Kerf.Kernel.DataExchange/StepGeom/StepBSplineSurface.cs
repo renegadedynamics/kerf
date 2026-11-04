@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepBSplineSurface : StepBoundedSurface
+internal class StepBSplineSurface : StepBoundedSurface
 {
     private int _uDegree;
     private int _vDegree;

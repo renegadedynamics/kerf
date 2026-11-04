@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity DirectedDimensionalLocation
 /// </summary>
-public class StepDirectedDimensionalLocation : StepDimensionalLocation
+internal class StepDirectedDimensionalLocation : StepDimensionalLocation
 {
     /// <summary>
     /// Empty constructor

@@ -11,7 +11,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// The library of Interface_ReaderModules: the readers of the entities from a file of a protocol, as <see cref="Library{TModule, TProtocol}"/>
 /// instantiated with <see cref="ReaderModule"/> and <see cref="Protocol"/>.
 /// </summary>
-public class ReaderLib : Library<ReaderModule, Protocol>
+internal class ReaderLib : Library<ReaderModule, Protocol>
 {
     /// <summary>
     /// Creates a library which complies with a protocol: it gets the modules from the global set which are bound to

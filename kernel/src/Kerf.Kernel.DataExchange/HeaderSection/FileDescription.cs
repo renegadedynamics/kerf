@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Header;
 
 /// <summary>The FILE_DESCRIPTION entity of a STEP file's header.</summary>
-public class FileDescription : Transient
+internal class FileDescription : Transient
 {
     private NCollection_HArray1<TCollection_HAsciiString> _description;
     private TCollection_HAsciiString _implementationLevel;

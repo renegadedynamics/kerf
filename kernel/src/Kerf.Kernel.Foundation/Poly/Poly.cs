@@ -20,7 +20,7 @@ namespace Kerf.Engine.Meshing;
 /// writes them by default (six significant digits, <c>%g</c>), so files match OCCT's byte for byte; reading follows
 /// C++'s extraction, where a failed read gives zero and makes the following reads fail too.
 /// </remarks>
-public static class Poly
+internal static class Poly
 {
     /// <summary>
     /// Joins several triangulations into a new one: a plain sum, without sharing nodes. UV nodes are dropped. Null

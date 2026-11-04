@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Meshing;
 
 /// <summary>The NURBS range splitter for surfaces of other types: one interval where the surface defines none.</summary>
-public class UndefinedRangeSplitter : NurbsRangeSplitter
+internal class UndefinedRangeSplitter : NurbsRangeSplitter
 {
     /// <summary>A splitter.</summary>
     public UndefinedRangeSplitter()

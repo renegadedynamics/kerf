@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// Complex Type between MeasureRepresentationItem and
 /// QualifiedRepresentationItem
 /// </summary>
-public class StepMeasureRepresentationItemAndQualifiedRepresentationItem : RepresentationItem
+internal class StepMeasureRepresentationItemAndQualifiedRepresentationItem : RepresentationItem
 {
     private MeasureWithUnit _measure;
     private NCollection_HArray1<StepValueQualifier> _qualifiers;

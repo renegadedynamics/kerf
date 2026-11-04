@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// type). Each particular class provides a specific Eval method, which calls SetOK(result) when it recognizes the
 /// key. Recognizers can be chained (Add): Evaluate then asks the next one when this one fails.
 /// </summary>
-public abstract class FileRecognizer : Transient
+internal abstract class FileRecognizer : Transient
 {
     //  WARNING: TransRecognizer has exactly the same code ...
     //  But produces a Transient instead of a Persistent

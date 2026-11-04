@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class DigitalDocument : Document
+internal class DigitalDocument : Document
 {
     public DigitalDocument()
     {

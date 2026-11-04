@@ -21,7 +21,7 @@ namespace Kerf.Engine.Healing.Extend;
 /// them as OCCT's const references do, for reading. Transients are keys by reference (OCCT's handle maps); shapes by
 /// <see cref="ShapeHasher"/>, as OCCT's.
 /// </remarks>
-public class MsgRegistrator : BasicMsgRegistrator
+internal class MsgRegistrator : BasicMsgRegistrator
 {
     private readonly Dictionary<Transient, NCollection_List<Msg>> _mapTransient =
         new(ReferenceEqualityComparer.Instance);

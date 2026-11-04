@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of Conic from Geom and Geom2d to a STEP conic (circle, ellipse, hyperbola, parabola).</summary>
-public sealed class MakeConic : GeometryRoot
+internal sealed class MakeConic : GeometryRoot
 {
     private StepConic _conic;
 

@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepGeometricCurveSet : StepGeometricSet
+internal class StepGeometricCurveSet : StepGeometricSet
 {
     /// <summary>
     /// Returns a GeometricCurveSet

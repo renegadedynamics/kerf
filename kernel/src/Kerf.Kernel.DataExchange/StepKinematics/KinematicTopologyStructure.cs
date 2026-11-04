@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity KinematicTopologyStructure
 /// </summary>
-public class KinematicTopologyStructure : StepRepresentation
+internal class KinematicTopologyStructure : StepRepresentation
 {
     /// <summary>
     /// default constructor

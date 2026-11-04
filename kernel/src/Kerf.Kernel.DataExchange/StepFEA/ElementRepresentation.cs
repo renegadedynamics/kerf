@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity ElementRepresentation
 /// </summary>
-public class ElementRepresentation : StepRepresentation
+internal class ElementRepresentation : StepRepresentation
 {
     private NCollection_HArray1<NodeRepresentation> _nodeList;
 

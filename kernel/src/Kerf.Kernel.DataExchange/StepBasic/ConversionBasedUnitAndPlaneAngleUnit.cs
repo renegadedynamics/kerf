@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ConversionBasedUnitAndPlaneAngleUnit : ConversionBasedUnit
+internal class ConversionBasedUnitAndPlaneAngleUnit : ConversionBasedUnit
 {
     private PlaneAngleUnit _planeAngleUnit;
 

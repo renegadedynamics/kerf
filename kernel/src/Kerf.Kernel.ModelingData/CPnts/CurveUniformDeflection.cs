@@ -43,7 +43,7 @@ namespace Kerf.Engine.Measurement.Points;
 /// <c>Value</c> and <c>Point</c>. 2D curves give points with Z = 0.
 /// </summary>
 /// <remarks>A working object (decision 21): it keeps a reference to the curve while points are read.</remarks>
-public sealed class CurveUniformDeflection
+internal sealed class CurveUniformDeflection
 {
     private bool _done;
     private bool _my3d;

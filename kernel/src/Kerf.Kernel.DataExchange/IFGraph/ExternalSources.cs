@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework.Graph;
 /// this class gives entities which are Source of entities of a sub-part, but are not contained by this
 /// sub-part
 /// </summary>
-public class ExternalSources : GraphContent
+internal class ExternalSources : GraphContent
 {
 
     /// <summary>

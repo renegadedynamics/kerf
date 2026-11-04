@@ -121,7 +121,7 @@ public class BRepBndLibTests
     public void Oriented_box_of_boxes()
     {
         Shape aBox = TestShapes.Frozen(TestShapes.Box(10, 20, 30));
-        OrientedBox anOBB = Bounds.OBB(aBox, true, false, false);
+        Obb anOBB = Bounds.OBB(aBox, true, false, false);
         Assert.False(anOBB.IsVoid);
         Assert.True(new Point3D(anOBB.Center()).IsEqual(new Point3D(5, 10, 15), 1e-9));
         double[] aHalf = [anOBB.XHSize(), anOBB.YHSize(), anOBB.ZHSize()];
@@ -132,7 +132,7 @@ public class BRepBndLibTests
 
         // rotated: the same sizes, the box turned with the shape
         Shape aRotated = ClassificationTestShapes.RotatedZ(aBox, Math.PI / 6);
-        OrientedBox aRotOBB = Bounds.OBB(aRotated, true, true, false);
+        Obb aRotOBB = Bounds.OBB(aRotated, true, true, false);
         double[] aRotHalf = [aRotOBB.XHSize(), aRotOBB.YHSize(), aRotOBB.ZHSize()];
         Array.Sort(aRotHalf);
         Assert.Equal(5.0, aRotHalf[0], 1e-6);
@@ -141,7 +141,7 @@ public class BRepBndLibTests
         Assert.False(aRotOBB.IsAABox);
 
         // AddOBB enlarges a box already holding something
-        OrientedBox anOther = Bounds.OBB(ClassificationTestShapes.Translated(aBox, new Vector3D(50, 0, 0)), true, false, false);
+        Obb anOther = Bounds.OBB(ClassificationTestShapes.Translated(aBox, new Vector3D(50, 0, 0)), true, false, false);
         Bounds.AddOBB(aBox, ref anOther, true, false, false);
         Assert.False(anOther.IsOut(new Point3D(1, 1, 1)));
         Assert.False(anOther.IsOut(new Point3D(59, 19, 29)));
@@ -152,7 +152,7 @@ public class BRepBndLibTests
     {
         Shape aCylinder = TestShapes.Frozen(BRepGPropTestShapes.CylinderSolid(2.0, 3.0));
         // curved faces without triangulations: the inertia path
-        OrientedBox anOBB = Bounds.OBB(aCylinder, true, true, false);
+        Obb anOBB = Bounds.OBB(aCylinder, true, true, false);
         Assert.False(anOBB.IsVoid);
         Assert.True(new Point3D(anOBB.Center()).IsEqual(new Point3D(0, 0, 1.5), 1e-6));
         double[] aHalf = [anOBB.XHSize(), anOBB.YHSize(), anOBB.ZHSize()];

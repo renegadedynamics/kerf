@@ -22,7 +22,7 @@ namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 /// The mapping of BSplineCurve from Geom and Geom2d to a STEP rational b_spline_curve_with_knots (the complex
 /// entity BSplineCurveWithKnotsAndRationalBSplineCurve).
 /// </summary>
-public sealed class MakeBSplineCurveWithKnotsAndRationalBSplineCurve : GeometryRoot
+internal sealed class MakeBSplineCurveWithKnotsAndRationalBSplineCurve : GeometryRoot
 {
     private StepBSplineCurveWithKnotsAndRationalBSplineCurve _bSplineCurveWithKnotsAndRationalBSplineCurve;
 

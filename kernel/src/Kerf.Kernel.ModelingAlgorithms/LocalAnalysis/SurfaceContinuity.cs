@@ -30,7 +30,7 @@ namespace Kerf.Engine.Measurement;
 /// and <c>GeomAbs_C0</c>.
 /// </para>
 /// </remarks>
-public class SurfaceContinuity
+internal class SurfaceContinuity
 {
     private double _contC0;
     private double _contC1U;

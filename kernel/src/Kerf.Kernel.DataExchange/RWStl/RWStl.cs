@@ -29,7 +29,7 @@ namespace Kerf.Engine.Exchange.Stl;
 /// (an <see cref="IOException"/>) returns false, as a C++ stream's fail state does.
 /// </para>
 /// </remarks>
-public static class RWStl
+internal static class RWStl
 {
     private const int THE_STL_SIZEOF_FACET = 50;
     private const int IND_THRESHOLD = 1000; // increment the indicator every 1k triangles

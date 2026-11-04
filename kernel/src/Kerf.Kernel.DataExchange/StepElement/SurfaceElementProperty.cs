@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP entity SurfaceElementProperty
 /// </summary>
-public class SurfaceElementProperty : Transient
+internal class SurfaceElementProperty : Transient
 {
     private TCollection_HAsciiString _propertyId;
     private TCollection_HAsciiString _description;

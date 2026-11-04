@@ -18,7 +18,7 @@ namespace Kerf.Engine.Meshing;
 /// <see cref="X"/>, <see cref="Y"/>, <see cref="Z"/> and <see cref="SetCoord"/> for convenience), since nodes are
 /// elements of a linked structure edited in place. OCCT's allocator arguments are dropped.
 /// </remarks>
-public class CoherentNode
+internal class CoherentNode
 {
     private Xyz _xyz;
     private double _uv0;

@@ -16,7 +16,7 @@ namespace Kerf.Engine.Meshing.Model;
 /// and its state, the status mask (<see cref="StatusModel.NoError"/> at first), lives in each of the
 /// three classes, with the same members.
 /// </remarks>
-public interface IStatusOwnerModel
+internal interface IStatusOwnerModel
 {
     /// <summary>True if the status is exactly the given value.</summary>
     bool IsEqual(StatusModel value);

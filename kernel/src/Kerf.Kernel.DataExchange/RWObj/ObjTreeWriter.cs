@@ -15,10 +15,10 @@ using System.Text;
 namespace Kerf.Engine.Exchange.Obj;
 
 /// <summary>The options of <see cref="ObjTreeWriter"/>.</summary>
-public sealed record ObjWriteOptions
+internal sealed record ObjWriterOptions
 {
     /// <summary>The defaults.</summary>
-    public static ObjWriteOptions Default { get; } = new();
+    public static ObjWriterOptions Default { get; } = new();
 
     /// <summary>The factor applied to coordinates (1: the model's unit).</summary>
     public double Scale { get; init; } = 1.0;
@@ -46,13 +46,13 @@ public sealed record ObjWriteOptions
 /// after faces with one take a white material, <c>default</c>. Streams first; the
 /// file form writes the MTL beside the OBJ. Numbers in the invariant culture, LF line ends. The tree isn't changed.
 /// </remarks>
-public sealed class ObjTreeWriter
+internal sealed class ObjTreeWriter
 {
     /// <summary>A writer with the options (the defaults if null).</summary>
-    public ObjTreeWriter(ObjWriteOptions? options = null) => Options = options ?? ObjWriteOptions.Default;
+    public ObjTreeWriter(ObjWriterOptions? options = null) => Options = options ?? ObjWriterOptions.Default;
 
     /// <summary>The options.</summary>
-    public ObjWriteOptions Options { get; }
+    public ObjWriterOptions Options { get; }
 
     /// <summary>
     /// Writes the tree's OBJ to <paramref name="obj"/> and its materials to <paramref name="mtl"/> (if not null),
@@ -196,7 +196,7 @@ public sealed class ObjTreeWriter
                 var aMtl = new StringBuilder("# OCCT.NET\n");
                 for (int i = 0; i < materials.Count; i++)
                 {
-                    Color rgb = materials[i].GetRGB();
+                    LinearColor rgb = materials[i].GetRGB();
                     rgb.Values(out double r, out double g, out double aB, ColorSpace.TOC_sRGB);
                     float alpha = materials[i].Alpha();
                     aMtl.Append("newmtl mat_").Append(i.ToString(CultureInfo.InvariantCulture)).Append('\n');

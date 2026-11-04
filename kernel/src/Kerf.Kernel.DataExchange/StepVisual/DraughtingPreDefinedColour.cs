@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class DraughtingPreDefinedColour : PreDefinedColour
+internal class DraughtingPreDefinedColour : PreDefinedColour
 {
     /// <summary>
     /// Returns a DraughtingPreDefinedColour

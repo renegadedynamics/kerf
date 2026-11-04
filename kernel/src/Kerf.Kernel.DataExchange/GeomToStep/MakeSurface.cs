@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 /// <summary>
 /// The mapping of Surface from Geom to a STEP surface: bounded, elementary, swept and offset surfaces.
 /// </summary>
-public sealed class MakeSurface : GeometryRoot
+internal sealed class MakeSurface : GeometryRoot
 {
     private StepSurface _surface;
 

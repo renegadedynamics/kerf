@@ -10,7 +10,7 @@ namespace Kerf.Engine.Meshing;
 
 /// <summary>Collects the triangles around nodes, links or triangles of a <see cref="DataStructureOfDelaun"/>.</summary>
 /// <remarks>A working object, as OCCT's. Only <see cref="Elements"/> is ever filled, as in OCCT.</remarks>
-public sealed class SelectorOfDataStructureOfDelaun : Transient
+internal sealed class SelectorOfDataStructureOfDelaun : Transient
 {
     private DataStructureOfDelaun? _mesh;
     private readonly NCollection_PackedMapOfInteger _nodes = new();

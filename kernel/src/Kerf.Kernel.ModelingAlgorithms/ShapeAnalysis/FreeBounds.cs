@@ -43,7 +43,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// bool)"/> the wires: the sequences are working collections.
 /// </para>
 /// </remarks>
-public sealed class FreeBounds
+internal sealed class FreeBounds
 {
     private Compound _wires = new();
     private Compound _edges = new();

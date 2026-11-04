@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Framework.Graph;
 /// Point divides the graph in two (or more) disconnected sub-graphs Identifying Articulation Points allows
 /// improving efficiency of splitting a set of Entities into sub-sets
 /// </summary>
-public class Articulations : GraphContent
+internal class Articulations : GraphContent
 {
 
     /// <summary>

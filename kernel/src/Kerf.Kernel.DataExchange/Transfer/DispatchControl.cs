@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// Interface, but based on a TransientProcess. Hence, it allows in addition more actions (such as recording results
 /// of adaptations).
 /// </summary>
-public class DispatchControl : CopyControl
+internal class DispatchControl : CopyControl
 {
     /// <summary>Creates the DispatchControl, ready for use.</summary>
     public DispatchControl(InterfaceModel? model, TransientProcess tp)

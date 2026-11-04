@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 
 /// <summary>Translates a connected_face_set (an open or closed shell) or a tessellated_shell into a TopoDS_Shell.</summary>
 /// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 1247).</remarks>
-public sealed class TranslateShell : ImportRoot
+internal sealed class TranslateShell : ImportRoot
 {
     private TranslateShellError _error;
     private Shape _result = new Shape();

@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepConic : StepCurve
+internal class StepConic : StepCurve
 {
     private StepAxis2Placement _position = new StepAxis2Placement();
 

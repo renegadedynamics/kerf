@@ -17,7 +17,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// <c>IntCurveSurface_Inter</c>, which holds OCCT's Perform overloads and protected methods (decision 337). A
 /// working object: <c>Perform</c> can be called again. The adaptors are kept only during <c>Perform</c>.
 /// </remarks>
-public sealed class HInter
+internal sealed class HInter
     : Inter<CurveAdaptorBase, TheHCurveTool, SurfaceAdaptorBase,
                             TheHSurfaceTool, ThePolygonOfHInter,
                             ThePolyhedronOfHInter, TheInterferenceOfHInter,

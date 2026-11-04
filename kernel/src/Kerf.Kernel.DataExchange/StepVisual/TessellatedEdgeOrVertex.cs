@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP SELECT type TessellatedEdgeOrVertex
 /// </summary>
-public class TessellatedEdgeOrVertex : SelectType
+internal class TessellatedEdgeOrVertex : SelectType
 {
     /// <summary>
     /// Empty constructor

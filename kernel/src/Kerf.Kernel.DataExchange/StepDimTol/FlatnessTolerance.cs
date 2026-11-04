@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity FlatnessTolerance
 /// </summary>
-public class FlatnessTolerance : GeometricTolerance
+internal class FlatnessTolerance : GeometricTolerance
 {
     /// <summary>
     /// Empty constructor

@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class OverRidingStyledItem : StyledItem
+internal class OverRidingStyledItem : StyledItem
 {
     private StyledItem _overRiddenStyle;
 

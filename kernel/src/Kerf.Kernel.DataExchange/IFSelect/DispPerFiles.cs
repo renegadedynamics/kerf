@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// input list has less than this count, of course there will be one packet per input entity. This count is a
 /// Parameter of the DispPerFiles, given as an IntParam, thus allowing external control of its Value
 /// </summary>
-public class DispPerFiles : Dispatch
+internal class DispPerFiles : Dispatch
 {
 
     /// <summary>

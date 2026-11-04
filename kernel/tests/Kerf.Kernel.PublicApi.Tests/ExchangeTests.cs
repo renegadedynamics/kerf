@@ -1,0 +1,185 @@
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using System.Text;
+using Kerf.Exchange;
+using Kerf.Measurement;
+using Kerf.Meshing;
+using Kerf.Topology;
+
+namespace Kerf.Kernel.PublicApi.Tests;
+
+/// <summary>Kerf.Exchange (docs/api/exchange.md): STEP, STL, glTF, 3MF, OBJ and BREP, ModelNode and Kerf.Color.</summary>
+public class ExchangeTests
+{
+    [Fact]
+    public void BREP_round_trips_as_text_and_binary()
+    {
+        Solid box = Fixtures.Box();
+        foreach (bool binary in new[] { false, true })
+        {
+            var stream = new MemoryStream();
+            Assert.True(Brep.Write(box, stream, new BrepWriteOptions { Binary = binary }).IsSuccess);
+            stream.Position = 0;
+            Result<Shape> read = Brep.Read(stream);
+            Assert.True(read.IsSuccess, read.Error?.Message);
+            Assert.Equal(6000, read.Value.Volume(), 1e-6);
+        }
+
+        // The text written is the text read
+        var text = new MemoryStream();
+        Brep.Write(box, text, new BrepWriteOptions { WithTriangles = false });
+        Assert.Equal(Encoding.ASCII.GetString(Fixtures.Bytes("box")), Encoding.ASCII.GetString(text.ToArray()));
+    }
+
+    [Fact]
+    public void Bad_BREP_is_a_failure()
+    {
+        Result<Shape> garbage = Brep.Read(new MemoryStream("not a shape at all"u8.ToArray()));
+        Assert.False(garbage.IsSuccess);
+        Assert.Equal("exchange.malformed", garbage.Error!.Code.Value);
+        Result<Shape> large = Brep.Read(new MemoryStream(Fixtures.Bytes("box")), new ReadLimits { MaxBytes = 100 });
+        Assert.Equal("exchange.limit-exceeded", large.Error!.Code.Value);
+    }
+
+    [Fact]
+    public void STEP_keeps_names_colours_and_the_assembly()
+    {
+        var orange = new Color(1, 0.5, 0);
+        ModelNode model = ModelNode.Assembly([ModelNode.Part(Fixtures.Box(), "Body", orange), ModelNode.Part(Fixtures.Cylinder(), "Lid")], "Box");
+        var stream = new MemoryStream();
+        Assert.True(Step.Write(model, stream).IsSuccess);
+        Assert.StartsWith("ISO-10303-21;", Encoding.ASCII.GetString(stream.ToArray()));
+
+        stream.Position = 0;
+        Result<ModelNode> read = Step.Read(stream);
+        Assert.True(read.IsSuccess);
+        ModelNode root = read.Value;
+        Assert.Equal("Box", root.Name);
+        Assert.Equal(2, root.Children.Length);
+        ModelNode body = root.Children.Single(c => c.Name == "Body");
+        Assert.Equal(orange, body.Color);
+        Assert.Equal(6000, body.Shape!.Value.Volume(), 1e-3);
+        Assert.Equal(6000 + Math.PI * 250, root.ToShape().Volume(), 1e-3);
+    }
+
+    [Fact]
+    public void STEP_of_a_shape_in_inches()
+    {
+        var stream = new MemoryStream();
+        Assert.True(Step.Write(Fixtures.Box(), stream, new StepWriteOptions { Unit = LengthUnit.Inch, Precision = StepPrecision.Greatest }).IsSuccess);
+        Assert.Contains("INCH", Encoding.ASCII.GetString(stream.ToArray()));
+    }
+
+    [Fact]
+    public void Bad_STEP_is_a_failure()
+    {
+        Result<ModelNode> garbage = Step.Read(new MemoryStream("ISO-10303-21;\nHEADER;\ngarbage"u8.ToArray()));
+        Assert.False(garbage.IsSuccess);
+        Assert.NotNull(garbage.Error);
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        Assert.ThrowsAny<OperationCanceledException>(() => Step.Read(new MemoryStream(), cancellationToken: cancelled.Token));
+    }
+
+    [Fact]
+    public void STL_writes_a_mesh_and_reads_one()
+    {
+        ShapeMesh mesh = Fixtures.Box().Mesh().Value;
+        var binary = new MemoryStream();
+        Assert.True(Stl.Write(mesh, binary).IsSuccess);
+        Assert.Equal(84 + 50 * 12, binary.Length);
+        var ascii = new MemoryStream();
+        Assert.True(Stl.Write(mesh, ascii, new StlWriteOptions { Ascii = true }).IsSuccess);
+        Assert.StartsWith("solid", Encoding.ASCII.GetString(ascii.ToArray()));
+
+        binary.Position = 0;
+        Result<ShapeMesh> read = Stl.Read(binary, new StlReadOptions { Unit = LengthUnit.Centimetre });
+        Assert.True(read.IsSuccess);
+        Assert.True(read.Value.Shape.IsNull);
+        Assert.Equal(12, read.Value.TriangleCount);
+        Assert.Equal(8, read.Value.NodeCount);   // the coincident nodes merged
+        Assert.Equal(300, read.Value.Positions.ToArray().Max(), 1e-3);   // centimetres scaled to millimetres
+        Assert.False(Stl.Read(new MemoryStream("solid x\nfacet garbage"u8.ToArray())).IsSuccess);
+    }
+
+    [Fact]
+    public void GlTF_writes_and_reads_a_model_of_meshes()
+    {
+        ModelNode model = ModelNode.Assembly([ModelNode.Part(Fixtures.Box(), "Body", new Color(0, 0, 1)), ModelNode.Part(Fixtures.Cylinder(), "Lid")]);
+        var glb = new MemoryStream();
+        Assert.True(Gltf.Write(model, glb).IsSuccess);
+        Assert.Equal("glTF", Encoding.ASCII.GetString(glb.ToArray(), 0, 4));
+        var json = new MemoryStream();
+        Assert.True(Gltf.Write(model, json, new GltfWriteOptions { Binary = false }).IsSuccess);
+        Assert.Contains("data:application/octet-stream;base64,", Encoding.UTF8.GetString(json.ToArray()));
+        var separate = new MemoryStream();
+        var bin = new MemoryStream();
+        Assert.True(Gltf.Write(model, separate, bin, "model.bin").IsSuccess);
+        Assert.True(bin.Length > 0);
+
+        glb.Position = 0;
+        Result<ModelNode> read = Gltf.Read(glb);
+        Assert.True(read.IsSuccess);
+        var parts = Parts(read.Value).ToList();
+        Assert.Equal(2, parts.Count);
+        Assert.All(parts, p => Assert.NotNull(p.Mesh));
+        Assert.Contains(parts, p => p.Mesh!.TriangleCount == 12);
+
+        // A mesh part is written as it is
+        var again = new MemoryStream();
+        Assert.True(Gltf.Write(ModelNode.Part(parts[0].Mesh!), again).IsSuccess);
+        Assert.False(Gltf.Read(new MemoryStream("{ not json"u8.ToArray())).IsSuccess);
+    }
+
+    [Fact]
+    public void ThreeMF_and_OBJ_are_written()
+    {
+        ModelNode model = ModelNode.Part(Fixtures.Box(), "Body", new Color(0.2, 0.4, 0.6));
+        var package = new MemoryStream();
+        Assert.True(ThreeMf.Write(model, package, new ThreeMfWriteOptions { Unit = LengthUnit.Millimetre }).IsSuccess);
+        Assert.Equal("PK", Encoding.ASCII.GetString(package.ToArray(), 0, 2));
+        var obj = new MemoryStream();
+        var mtl = new MemoryStream();
+        Assert.True(Obj.Write(model, obj, mtl, "body.mtl").IsSuccess);
+        string text = Encoding.ASCII.GetString(obj.ToArray());
+        Assert.Contains("mtllib body.mtl", text);
+        Assert.Contains("\nv ", text);
+        Assert.True(mtl.Length > 0);
+    }
+
+    [Fact]
+    public void Colours_are_sRGB_and_convert_to_linear()
+    {
+        var grey = new Color(0.5, 0.5, 0.5);
+        Assert.Equal(0.5, grey.R, 1e-6);
+        Assert.Equal(1, grey.A);
+        Assert.Equal(0.214, grey.ToLinear().R, 1e-3);
+        Color linear = Color.FromLinear(0.214041, 0.214041, 0.214041, 0.5);
+        Assert.Equal(0.5, linear.R, 1e-4);
+        Assert.Equal((float)0.214041, (float)linear.ToLinear().R);
+        Assert.Equal(0.5, linear.A);
+        Assert.Throws<ArgumentOutOfRangeException>(() => new Color(1.5, 0, 0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Color.FromLinear(0, 0, double.NaN));
+        Assert.NotEqual(new Color(1, 0, 0), new Color(1, 0, 0, 0.5));
+    }
+
+    [Fact]
+    public void A_model_node_is_a_part_or_an_assembly()
+    {
+        ModelNode part = ModelNode.Part(Fixtures.Box(), "Body");
+        Assert.True(part.IsPart);
+        Assert.Equal(6000, part.ToShape().Volume(), 1e-6);
+        var placement = new Placement(Kerf.Geometry.Transform3D.Translation(new Kerf.Geometry.Vector3D(100, 0, 0)));
+        ModelNode assembly = ModelNode.Assembly([part, part], "Pair", placement);
+        Assert.False(assembly.IsPart);
+        Shape all = assembly.ToShape();
+        Assert.Equal(12000, all.Volume(), 1e-6);
+        Assert.Equal(100, all.BoundingBox(optimal: true).Min.X, 1e-6);
+        Assert.Throws<ArgumentException>(() => ModelNode.Part(default(Shape)));
+        Assert.Equal(1L << 30, ReadLimits.Default.MaxBytes);
+        Assert.Equal(25.4, LengthUnit.Inch.Millimetres());
+    }
+
+    private static IEnumerable<ModelNode> Parts(ModelNode node)
+        => node.IsPart ? [node] : node.Children.SelectMany(Parts);
+}

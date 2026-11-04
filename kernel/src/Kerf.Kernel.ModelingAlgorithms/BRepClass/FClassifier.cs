@@ -15,7 +15,7 @@ namespace Kerf.Engine.Classification;
 
 /// <summary>Classifies a 2D point in a face explored by a <see cref="FaceExplorer"/>.</summary>
 /// <remarks>A working object (decision 21). The body is TopClass_FaceClassifier's (decision 285).</remarks>
-public class FClassifier
+internal class FClassifier
 {
     protected readonly FClass2dOfFClassifier _classifier = new();
     protected ClassifierEdge _edge = new();

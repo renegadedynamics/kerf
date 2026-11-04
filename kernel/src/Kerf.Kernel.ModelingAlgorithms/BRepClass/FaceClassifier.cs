@@ -17,7 +17,7 @@ namespace Kerf.Engine.Classification;
 /// the face's surface.
 /// </summary>
 /// <remarks>A working object (decision 21). It only reads the face.</remarks>
-public class FaceClassifier : FClassifier
+internal class FaceClassifier : FClassifier
 {
     /// <summary>An undefined classifier.</summary>
     public FaceClassifier()

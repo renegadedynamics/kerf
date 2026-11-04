@@ -17,7 +17,7 @@ namespace Kerf.Engine.Meshing;
 /// point within a tolerance.
 /// </summary>
 /// <remarks>A working object, as OCCT's (the allocator argument is dropped).</remarks>
-public sealed class MeshingVertexInspector : ICellFilterInspector<int, Xy>
+internal sealed class MeshingVertexInspector : ICellFilterInspector<int, Xy>
 {
     private int _index;
     private double _minSqDist;

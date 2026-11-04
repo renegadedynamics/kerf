@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity CylindricalPairWithRange
 /// </summary>
-public class CylindricalPairWithRange : CylindricalPair
+internal class CylindricalPairWithRange : CylindricalPair
 {
     private double _lowerLimitActualTranslation;
     /// <summary>

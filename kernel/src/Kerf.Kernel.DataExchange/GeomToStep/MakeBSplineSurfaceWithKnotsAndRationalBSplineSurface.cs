@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 /// The mapping of BSplineSurface from Geom to a STEP rational b_spline_surface_with_knots (the complex entity
 /// BSplineSurfaceWithKnotsAndRationalBSplineSurface).
 /// </summary>
-public sealed class MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface : GeometryRoot
+internal sealed class MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface : GeometryRoot
 {
     private StepBSplineSurfaceWithKnotsAndRationalBSplineSurface _bSplineSurfaceWithKnotsAndRationalBSplineSurface;
 

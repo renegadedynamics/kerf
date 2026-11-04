@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepVectorOrDirection : SelectType
+internal class StepVectorOrDirection : SelectType
 {
     /// <summary>
     /// Returns a VectorOrDirection SelectType

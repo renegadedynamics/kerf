@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Data;
 
 /// <summary>Describes a list of fields, in a general way. This class is for a dynamic size list.</summary>
-public class FieldListD : FieldList
+internal class FieldListD : FieldList
 {
     private NCollection_HArray1<Field> _thefields;
 

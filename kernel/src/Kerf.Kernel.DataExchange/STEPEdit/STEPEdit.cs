@@ -30,7 +30,7 @@ namespace Kerf.Engine.Exchange.Step.Edit;
 /// OCCT.NET: <see cref="SignType"/>'s signature, created once in OCCT under a mutex and shared by every caller, is
 /// created once too (a static readonly field); it doesn't change after creation (decision 1215).
 /// </remarks>
-public static class StepEdit
+internal static class StepEdit
 {
     private static readonly StepType SignTypeInstance = CreateSignType();
 
@@ -105,7 +105,7 @@ public static class StepEdit
 /// EditContext is an Editor fit for Product Definition Context (one per Model) , i.e. : - ProductDefinition -
 /// ApplicationProtocolDefinition - ProductRelatedProductCategory
 /// </summary>
-public class EditContext : Editor
+internal class EditContext : Editor
 {
     /// <summary>Creates an EditContext</summary>
     public EditContext() : base(5)
@@ -217,7 +217,7 @@ public class EditContext : Editor
 /// <summary>
 /// EditSDR is an Editor fit for a Shape Definition Representation which designates a Product Definition
 /// </summary>
-public class EditSdr : Editor
+internal class EditSdr : Editor
 {
     /// <summary>Creates an EditSDR</summary>
     public EditSdr() : base(11)

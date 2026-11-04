@@ -16,7 +16,7 @@ namespace Kerf.Engine.Meshing;
 /// <c>operator==</c> (the same nodes in either order, never a deleted link) is <see cref="IsEqual"/>, and maps in
 /// ported code take <see cref="Hasher"/>.
 /// </remarks>
-public partial struct MeshEdge : IEquatable<MeshEdge>
+internal partial struct MeshEdge : IEquatable<MeshEdge>
 {
     private int _firstNode;
     private int _lastNode;

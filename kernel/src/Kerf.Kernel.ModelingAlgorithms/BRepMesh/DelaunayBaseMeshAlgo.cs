@@ -17,7 +17,7 @@ namespace Kerf.Engine.Meshing;
 /// The vertex order 1..n is sorted by BRepMesh_Delaun with MSVC's heap algorithm (decision 491), so ties are broken as
 /// in native OCCT.
 /// </remarks>
-public class DelaunayBaseMeshAlgo : ConstrainedBaseMeshAlgo
+internal class DelaunayBaseMeshAlgo : ConstrainedBaseMeshAlgo
 {
     /// <summary>An algorithm.</summary>
     public DelaunayBaseMeshAlgo()

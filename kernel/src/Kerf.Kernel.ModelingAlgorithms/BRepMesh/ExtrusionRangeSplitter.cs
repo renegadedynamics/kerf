@@ -11,7 +11,7 @@ using static Kerf.Geometry.CurveKind;
 namespace Kerf.Engine.Meshing;
 
 /// <summary>The NURBS range splitter for surfaces of linear extrusion.</summary>
-public class ExtrusionRangeSplitter : NurbsRangeSplitter
+internal class ExtrusionRangeSplitter : NurbsRangeSplitter
 {
     /// <summary>A splitter.</summary>
     public ExtrusionRangeSplitter()

@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 /// The mapping of BoundedCurve from Geom and Geom2d to a STEP bounded_curve: B-spline curves (periodic ones made
 /// non-periodic on a copy) and Bezier curves (converted to B-splines).
 /// </summary>
-public sealed class MakeBoundedCurve : GeometryRoot
+internal sealed class MakeBoundedCurve : GeometryRoot
 {
     private StepBoundedCurve _boundedCurve;
 

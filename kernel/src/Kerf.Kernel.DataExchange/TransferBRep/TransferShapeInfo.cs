@@ -11,7 +11,7 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Engine.Exchange.Framework.Transfer;
 
 /// <summary>Gives information on an object, see template DataInfo. This class is for Shape.</summary>
-public static class TransferShapeInfo
+internal static class TransferShapeInfo
 {
     /// <summary>Returns the Type attached to an object. Here, TShape (Shape has no Dynamic Type).</summary>
     public static Type Type(in Shape ent)

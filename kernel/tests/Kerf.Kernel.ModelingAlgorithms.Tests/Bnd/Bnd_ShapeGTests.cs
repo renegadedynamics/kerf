@@ -64,7 +64,7 @@ public class Bnd_OBB_Test
         Shape aBox = aMkBox.Shape();
 
         // Add a bounding box of a shape to a void bounding box
-        OrientedBox aVoidBox = new(), aOBB = new();
+        Obb aVoidBox = new(), aOBB = new();
         Bounds.AddOBB(aBox, ref aOBB, false, false, false);
         aVoidBox.Add(aOBB);
 

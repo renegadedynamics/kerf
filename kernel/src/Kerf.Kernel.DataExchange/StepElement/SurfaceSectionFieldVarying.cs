@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP entity SurfaceSectionFieldVarying
 /// </summary>
-public class SurfaceSectionFieldVarying : SurfaceSectionField
+internal class SurfaceSectionFieldVarying : SurfaceSectionField
 {
     private NCollection_HArray1<SurfaceSection> _definitions;
     private bool _additionalNodeValues;

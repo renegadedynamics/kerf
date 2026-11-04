@@ -11,7 +11,7 @@ using static Kerf.Engine.Measurement.StatusErrorType;
 namespace Kerf.Engine.Measurement;
 
 /// <summary>Writes the results of local continuity analyses.</summary>
-public static class LocalAnalysis
+internal static class LocalAnalysis
 {
     // OCCT's `o << value`: the writer's precision (6 by default), as printf's %g
     private static string R(TextWriter o, double value) => StreamUtilities.FormatReal(value, StreamUtilities.Precision(o));

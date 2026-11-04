@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Measurement.Points;
 
 /// <summary>For the Gauss integration: computes the values of a <see cref="RealFunction"/> on client data.</summary>
-public sealed class MyGaussFunction : Function
+internal sealed class MyGaussFunction : Function
 {
     private RealFunction? _function;
     private object? _data;

@@ -26,7 +26,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// A public working object (decision 21; OCCT uses it by value). It only reads the shape; the free bounds and the
 /// notches it hands out are frozen.
 /// </remarks>
-public sealed class FreeBoundsPropertiesAnalysis
+internal sealed class FreeBoundsPropertiesAnalysis
 {
     private const int NbControl = 23;
 

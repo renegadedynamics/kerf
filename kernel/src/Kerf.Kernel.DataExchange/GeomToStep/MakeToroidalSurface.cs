@@ -14,7 +14,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of ToroidalSurface from Geom to a STEP toroidal_surface.</summary>
-public sealed class MakeToroidalSurface : GeometryRoot
+internal sealed class MakeToroidalSurface : GeometryRoot
 {
     private StepToroidalSurface _toroidalSurface;
 

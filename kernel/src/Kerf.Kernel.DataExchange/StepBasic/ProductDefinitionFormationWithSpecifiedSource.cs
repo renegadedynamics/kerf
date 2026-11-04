@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ProductDefinitionFormationWithSpecifiedSource : ProductDefinitionFormation
+internal class ProductDefinitionFormationWithSpecifiedSource : ProductDefinitionFormation
 {
     private Source _makeOrBuy;
 

@@ -27,7 +27,7 @@ namespace Kerf.Engine.Healing.Checks;
 /// same-range flags and the distance between its 3D curve and its pcurves (<see cref="InContext"/>); in a solid, that
 /// it bounds two faces.
 /// </summary>
-public class EdgeCheck : ResultCheck
+internal class EdgeCheck : ResultCheck
 {
     private const int Ncontrol = 23;
 

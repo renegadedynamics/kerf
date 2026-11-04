@@ -40,7 +40,7 @@ namespace Kerf.Engine.Measurement;
 /// adaptively and return the largest relative error reached by a face.
 /// </para>
 /// </remarks>
-public static class MassPropertiesBuilder
+internal static class MassPropertiesBuilder
 {
     /// <summary>Transforms GProp_GProps through its protected members, for the solid-level cache of volume properties.</summary>
     /// <remarks>

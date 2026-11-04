@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity TriangulatedFace
 /// </summary>
-public class TriangulatedFace : TessellatedFace
+internal class TriangulatedFace : TessellatedFace
 {
     private NCollection_HArray1<int> _pnindex;
     private NCollection_HArray2<int> _triangles;

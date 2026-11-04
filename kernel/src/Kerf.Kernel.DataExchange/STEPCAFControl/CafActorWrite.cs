@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Documents;
 /// <summary>
 /// Extends ActorWrite from STEPControl by analysis of whether shape is assembly (based on information from DECAF)
 /// </summary>
-public class CafActorWrite : ActorWrite
+internal class CafActorWrite : ActorWrite
 {
     public CafActorWrite()
     {

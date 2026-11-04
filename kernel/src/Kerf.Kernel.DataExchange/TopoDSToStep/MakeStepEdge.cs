@@ -33,7 +33,7 @@ namespace Kerf.Engine.Exchange.Step.Export;
 /// Maps a TopoDS_Edge (with its relative orientation in the wire) to a STEP edge_curve, its curve a surface_curve or a
 /// seam_curve when pcurves are written.
 /// </summary>
-public sealed class MakeStepEdge : ExportRoot
+internal sealed class MakeStepEdge : ExportRoot
 {
     private const int Nbpt = 21;
 

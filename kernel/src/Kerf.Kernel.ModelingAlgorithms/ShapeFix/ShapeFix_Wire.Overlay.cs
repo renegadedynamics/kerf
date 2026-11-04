@@ -14,7 +14,7 @@ using Occt;
 
 namespace Kerf.Engine.Healing.Fixes;
 
-public partial class WireFixer
+internal partial class WireFixer
 {
     // The working overlay of the loaded edges, from the first fix to the public result (Kerf unit 10H4): this tool's
     // own (detached, entered by each fix), or the overlay of the operation that runs this tool (ShapeFix_Face's, ...),

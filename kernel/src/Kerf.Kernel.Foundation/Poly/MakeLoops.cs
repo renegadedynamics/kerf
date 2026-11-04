@@ -22,7 +22,7 @@ namespace Kerf.Engine.Meshing;
 /// (<see cref="Helper.OnAddLink"/>, called only in OCCT's debug builds) isn't called. The set of start links is OCCT's
 /// packed integer map, ported with its iteration order, so loops are found in OCCT's order.
 /// </remarks>
-public abstract class MakeLoops
+internal abstract class MakeLoops
 {
     /// <summary>The orientation flags of a link.</summary>
     public enum LinkFlag
@@ -643,7 +643,7 @@ public abstract class MakeLoops
 }
 
 /// <summary>Poly_MakeLoops in 3D: the leftmost way is measured around the surface normal at the node.</summary>
-public class MakeLoops3D : MakeLoops
+internal class MakeLoops3D : MakeLoops
 {
     /// <summary>The helper: tangents of the links and normals at the nodes. Each method returns false if it can't.</summary>
     public new abstract class Helper : MakeLoops.Helper
@@ -731,7 +731,7 @@ public class MakeLoops3D : MakeLoops
 }
 
 /// <summary>Poly_MakeLoops in 2D: the leftmost (or rightmost) way is measured in the plane.</summary>
-public class MakeLoops2D : MakeLoops
+internal class MakeLoops2D : MakeLoops
 {
     /// <summary>The helper: tangents of the links. Each method returns false if it can't.</summary>
     public new abstract class Helper : MakeLoops.Helper

@@ -25,7 +25,7 @@ namespace Kerf.Engine.Meshing;
 /// the messenger (<see cref="Message.DefaultMessenger"/> unless one is set), which sends nothing by default
 /// (decision 493). <c>MoniTool_TimerSentry</c> (under <c>CHECK_PERF</c>) is left out.
 /// </remarks>
-public sealed class Triangulator
+internal sealed class Triangulator
 {
     private readonly List<Xyz> _xyZs;
     private readonly NCollection_List<NCollection_Sequence<int>> _wires;

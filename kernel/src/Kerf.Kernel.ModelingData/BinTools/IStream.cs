@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 /// the <c>Read*</c> methods. Reading past the end of the stream throws <see cref="StreamFormatErrorException"/> (OCCT
 /// throws Storage_StreamTypeMismatchError for reals, integers and points, and leaves bytes and floats unread).
 /// </remarks>
-public sealed class IStream
+internal sealed class IStream
 {
     private readonly Stream _stream;
 

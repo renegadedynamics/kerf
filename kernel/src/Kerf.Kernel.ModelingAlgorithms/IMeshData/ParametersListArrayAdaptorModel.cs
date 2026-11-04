@@ -12,7 +12,7 @@ namespace Kerf.Engine.Meshing.Model;
 /// <c>ParametersNb() - 1</c>, for tools written over arrays (<see cref="EdgeParameterProvider{ParametersCollection}"/>).
 /// </summary>
 /// <typeparam name="TParametersListPtrType">The list type: OCCT's template parameter is a handle to it.</typeparam>
-public sealed class ParametersListArrayAdaptorModel<TParametersListPtrType> : Transient, INCollection_ArrayRead<double>
+internal sealed class ParametersListArrayAdaptorModel<TParametersListPtrType> : Transient, INCollection_ArrayRead<double>
     where TParametersListPtrType : ParametersListModel
 {
     private readonly TParametersListPtrType _parameters;

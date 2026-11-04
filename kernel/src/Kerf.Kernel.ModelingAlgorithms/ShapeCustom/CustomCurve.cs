@@ -11,7 +11,7 @@ namespace Kerf.Engine.Healing.Custom;
 
 /// <summary>Converts a closed B-spline curve to its periodic form.</summary>
 /// <remarks>A working object (decision 21).</remarks>
-public sealed class CustomCurve
+internal sealed class CustomCurve
 {
     private Curve3D? _curve;
 

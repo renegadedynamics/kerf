@@ -19,7 +19,7 @@ namespace Kerf.Engine.Classification.Hatching;
 /// A working object (decision 21). The body is TopClass_FaceClassifier's (decision 285), as for BRepClass_FClassifier.
 /// <see cref="Edge"/> is a shallow copy of the deciding element's curve, as OCCT copies it.
 /// </remarks>
-public class Classifier2D
+internal class Classifier2D
 {
     protected readonly FClass2dOfClassifier2D _classifier = new();
     protected CurveAdaptor2D _edge = new();

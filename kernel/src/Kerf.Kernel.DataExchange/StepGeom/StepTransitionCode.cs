@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepGeom_TransitionCode;</c>.</remarks>
-public enum StepTransitionCode
+internal enum StepTransitionCode
 {
     TcDiscontinuous,
     TcContinuous,

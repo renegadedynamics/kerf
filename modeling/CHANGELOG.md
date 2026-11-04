@@ -126,3 +126,7 @@ The first packages, for Bento's 3D-models extension.
 - Kerf's unit 10L2: the kernel's `GlueMode`, `FilletShape`, `OffsetMode`, `TransitionMode` and `ParametrizationType`
   moved into its public namespaces (`GlueMode.GlueOff` is `GlueMode.Off`); the layer's call sites follow, rewritten by
   kerf-rename. No behaviour changes.
+- Kerf's unit 10L3: STEP is written and read, and STL, glTF and 3MF written, through the kernel's public
+  `Kerf.Exchange` (`Step`, `Stl`, `Gltf`, `ThreeMf`, `ModelNode`), and `Triangulate` meshes through `Kerf.Meshing`'s
+  `Mesher`, which meshes in a working overlay instead of a private copy. The files are byte for byte as before (the STEP
+  native references pass unchanged). The STL and glTF readers and BREP import keep their glue until 10M.

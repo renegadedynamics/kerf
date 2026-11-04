@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity SurfaceStyleReflectanceAmbientDiffuseSpecular
 /// </summary>
-public class SurfaceStyleReflectanceAmbientDiffuseSpecular : SurfaceStyleReflectanceAmbientDiffuse
+internal class SurfaceStyleReflectanceAmbientDiffuseSpecular : SurfaceStyleReflectanceAmbientDiffuse
 {
     private double _specularReflectance;
     private double _specularExponent;

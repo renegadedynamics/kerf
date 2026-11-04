@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 /// are written. <see cref="BinaryShapeSet"/> writes the table-based format (versions 1 to 4);
 /// <see cref="ShapeWriter"/> and <see cref="ShapeReader"/> the position-based one.
 /// </summary>
-public class ShapeSetBase
+internal class ShapeSetBase
 {
     // the header line of each format version (index 0 is unused)
     internal static readonly string[] THE_ASCII_VERSIONS =

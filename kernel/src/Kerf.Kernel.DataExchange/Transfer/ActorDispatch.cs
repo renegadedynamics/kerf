@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// of transfer, which may include data modifications, conversions ...; and other features from TransferDispatch (such
 /// as mapping other than one-one).
 /// </summary>
-public class ActorDispatch : ActorOfTransientProcess
+internal class ActorDispatch : ActorOfTransientProcess
 {
     /// <summary>
     /// Creates an ActorDispatch from a Model. Works with a General Service Library, given as an Argument. This causes

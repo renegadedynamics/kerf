@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class DraughtingCallout : StepGeometricRepresentationItem
+internal class DraughtingCallout : StepGeometricRepresentationItem
 {
     private NCollection_HArray1<DraughtingCalloutElement> _contents;
 

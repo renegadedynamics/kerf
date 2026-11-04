@@ -14,7 +14,7 @@ namespace Kerf.Engine.Measurement;
 
 /// <summary>Global properties of solids bounded by elementary surfaces (gp cylinders, cones, spheres and tori).</summary>
 /// <remarks>A working object: <c>SetLocation</c> and <c>Perform</c> are public, as in OCCT.</remarks>
-public class VelGProps : Properties
+internal class VelGProps : Properties
 {
     public VelGProps()
     {

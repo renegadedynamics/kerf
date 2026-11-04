@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepCylindricalSurface : StepElementarySurface
+internal class StepCylindricalSurface : StepElementarySurface
 {
     private double _radius;
 

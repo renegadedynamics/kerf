@@ -36,7 +36,7 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 /// Standard_Failure) are caught where OCCT catches, and surface from the public readers as a Standard_Failure.
 /// </para>
 /// </remarks>
-public static class BinTools
+internal static class BinTools
 {
     /// <summary>The deepest nesting of trimmed, offset and swept curves and surfaces a reader accepts.</summary>
     public const int MaxGeometryNesting = 64;

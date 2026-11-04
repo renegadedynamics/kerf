@@ -14,7 +14,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of CylindricalSurface from Geom to a STEP cylindrical_surface.</summary>
-public sealed class GeometryMakeCylindricalSurface : GeometryRoot
+internal sealed class GeometryMakeCylindricalSurface : GeometryRoot
 {
     private StepCylindricalSurface _cylindricalSurface;
 

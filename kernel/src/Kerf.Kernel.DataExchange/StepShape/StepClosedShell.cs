@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepClosedShell : StepConnectedFaceSet
+internal class StepClosedShell : StepConnectedFaceSet
 {
     /// <summary>
     /// Returns a ClosedShell

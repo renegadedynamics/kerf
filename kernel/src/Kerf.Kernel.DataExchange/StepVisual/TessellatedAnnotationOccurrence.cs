@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class TessellatedAnnotationOccurrence : StyledItem
+internal class TessellatedAnnotationOccurrence : StyledItem
 {
     /// <summary>
     /// Returns a TesselatedAnnotationOccurrence

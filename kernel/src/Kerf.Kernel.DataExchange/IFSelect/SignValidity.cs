@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// "OK" "Unknown" "Unloaded" "Syntactic Fail"(but loaded) "Syntactic Warning" "Semantic Fail" "Semantic
 /// Warning"
 /// </summary>
-public class SignValidity : Signature
+internal class SignValidity : Signature
 {
     private const string Nulsign = "";
 

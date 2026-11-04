@@ -27,7 +27,7 @@ namespace Kerf.Engine.Healing.Construct;
 /// <c>InternalShape()</c> serves ported code. The faces hold the given wire's edges (or, for points, the polygon's),
 /// which are only read: the new edges and wires are the maker's own.
 /// </remarks>
-public sealed class MakeTriangulation : MakeShape
+internal sealed class MakeTriangulation : MakeShape
 {
     private readonly double _precision;
     private readonly Wire _wire = new();

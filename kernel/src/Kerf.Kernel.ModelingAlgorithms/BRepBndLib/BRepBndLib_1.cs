@@ -278,7 +278,7 @@ public static partial class Bounds
                                     bool isTriangulationUsed,
                                     bool isOptimal,
                                     bool isShapeToleranceUsed,
-                                    ref OrientedBox obb)
+                                    ref Obb obb)
     {
         int nbPnts = PointsForOBB(s, isTriangulationUsed);
 
@@ -343,7 +343,7 @@ public static partial class Bounds
 
     // Creates OBB with axes of inertia.
     private static void ComputePCA(in Shape s,
-                                   ref OrientedBox obb,
+                                   ref Obb obb,
                                    bool isTriangulationUsed,
                                    bool isOptimal,
                                    bool isShapeToleranceUsed)
@@ -463,7 +463,7 @@ public static partial class Bounds
     /// <paramref name="isOptimal"/> looks for a tighter box, more slowly.
     /// </summary>
     public static void AddOBB(in Shape s,
-                              ref OrientedBox obb,
+                              ref Obb obb,
                               bool isTriangulationUsed = true,
                               bool isOptimal = false,
                               bool isShapeToleranceUsed = true)
@@ -477,12 +477,12 @@ public static partial class Bounds
     }
 
     /// <summary>The oriented box of the shape: a new box given to <see cref="AddOBB"/> (not in OCCT).</summary>
-    public static OrientedBox OBB(in Shape s,
+    public static Obb OBB(in Shape s,
                               bool isTriangulationUsed = true,
                               bool isOptimal = false,
                               bool isShapeToleranceUsed = true)
     {
-        OrientedBox obb = new();
+        Obb obb = new();
         AddOBB(s, ref obb, isTriangulationUsed, isOptimal, isShapeToleranceUsed);
         return obb;
     }

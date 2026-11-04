@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class InvisibilityContext : SelectType
+internal class InvisibilityContext : SelectType
 {
     /// <summary>
     /// Returns a InvisibilityContext SelectType

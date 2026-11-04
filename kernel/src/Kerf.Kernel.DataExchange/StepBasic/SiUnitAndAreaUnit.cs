@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class SiUnitAndAreaUnit : SiUnit
+internal class SiUnitAndAreaUnit : SiUnit
 {
     private AreaUnit _areaUnit;
 

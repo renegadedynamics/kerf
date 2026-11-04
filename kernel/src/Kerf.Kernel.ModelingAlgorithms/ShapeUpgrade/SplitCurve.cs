@@ -15,7 +15,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// values between them), computed by <see cref="Compute"/> and used by <see cref="Build"/>.
 /// </summary>
 /// <remarks>A working object (decision 21).</remarks>
-public class SplitCurve : Transient
+internal class SplitCurve : Transient
 {
     /// <summary>The splitting values, the first and last parameters included.</summary>
     protected NCollection_HSequence<double>? _splitValues;

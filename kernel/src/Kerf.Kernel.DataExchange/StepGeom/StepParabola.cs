@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepParabola : StepConic
+internal class StepParabola : StepConic
 {
     private double _focalDist;
 

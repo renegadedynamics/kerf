@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity PointOnSurfacePairWithRange
 /// </summary>
-public class PointOnSurfacePairWithRange : PointOnSurfacePair
+internal class PointOnSurfacePairWithRange : PointOnSurfacePair
 {
     private StepRectangularTrimmedSurface _rangeOnPairSurface;
     private double _lowerLimitYaw;

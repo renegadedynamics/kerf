@@ -27,7 +27,7 @@ namespace Kerf.Engine.Meshing;
 /// <see cref="Failure"/>, as OCCT's <c>catch (Standard_Failure)</c>.
 /// </para>
 /// </remarks>
-public class FaceDiscret : ModelAlgo
+internal class FaceDiscret : ModelAlgo
 {
     private readonly MeshAlgoFactory? _algoFactory;
     private ModelModel? _model;

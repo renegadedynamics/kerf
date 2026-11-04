@@ -22,7 +22,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// into the edges and vertices they are given (ranges, tolerances, the context), so they are internal. The new edges
 /// are unfrozen.
 /// </remarks>
-public sealed class SplitToolFixer
+internal sealed class SplitToolFixer
 {
     /// <summary>Empty constructor.</summary>
     public SplitToolFixer()

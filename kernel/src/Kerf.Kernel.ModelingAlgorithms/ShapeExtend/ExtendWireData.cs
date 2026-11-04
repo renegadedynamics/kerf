@@ -28,7 +28,7 @@ namespace Kerf.Engine.Healing.Extend;
 /// building uses <see cref="InternalWire"/> and <see cref="InternalWireAPIMake"/>. <see cref="Reverse(in Face)"/>
 /// swaps the pcurves of seam edges in place, so it is internal.
 /// </remarks>
-public class ExtendWireData : Transient
+internal class ExtendWireData : Transient
 {
     private NCollection_HSequence<Shape> _edges = null!;
     private NCollection_HSequence<Shape> _nonmanifoldEdges = null!;

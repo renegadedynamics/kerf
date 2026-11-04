@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity Datum
 /// </summary>
-public class Datum : ShapeAspect
+internal class Datum : ShapeAspect
 {
     private TCollection_HAsciiString _identification;
 

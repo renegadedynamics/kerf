@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity SlidingSurfacePair
 /// </summary>
-public class SlidingSurfacePair : SurfacePair
+internal class SlidingSurfacePair : SurfacePair
 {
     /// <summary>
     /// default constructor

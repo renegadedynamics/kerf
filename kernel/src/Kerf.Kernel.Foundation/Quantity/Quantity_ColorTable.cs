@@ -6,7 +6,7 @@ using Occt;
 
 namespace Kerf.Engine.Foundation;
 
-public partial struct Color
+public partial struct LinearColor
 {
     // The list of standard colours (defined within the enumeration): THE_COLORS, from Quantity_ColorTable.pxx.
     // RawColor(theName, ...) is Quantity_StandardColor(Quantity_NOC_theName, "theName", sRGB, RGB); the HTML hex is ignored.

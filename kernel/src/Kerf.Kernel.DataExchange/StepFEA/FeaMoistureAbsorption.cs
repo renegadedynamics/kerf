@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity FeaMoistureAbsorption
 /// </summary>
-public class FeaMoistureAbsorption : FeaMaterialPropertyRepresentationItem
+internal class FeaMoistureAbsorption : FeaMaterialPropertyRepresentationItem
 {
     private SymmetricTensor23d _feaConstants = new SymmetricTensor23d();
 

@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class RealRepresentationItem : RepresentationItem
+internal class RealRepresentationItem : RepresentationItem
 {
     private double _value;
 

@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity LinearFlexibleAndPlanarCurvePair
 /// </summary>
-public class LinearFlexibleAndPlanarCurvePair : HighOrderKinematicPair
+internal class LinearFlexibleAndPlanarCurvePair : HighOrderKinematicPair
 {
     private StepCurve _pairCurve;
     private bool _orientation;

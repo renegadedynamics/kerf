@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepSolidReplica : StepSolidModel
+internal class StepSolidReplica : StepSolidModel
 {
     private StepSolidModel _parentSolid;
     private StepCartesianTransformationOperator3d _transformation;

@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class CoordinatesList : TessellatedItem
+internal class CoordinatesList : TessellatedItem
 {
     private NCollection_HArray1<Xyz> _points;
 

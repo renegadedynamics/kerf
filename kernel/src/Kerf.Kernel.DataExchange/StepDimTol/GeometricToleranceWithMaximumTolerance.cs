@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity GeometricToleranceWithMaximumTolerance
 /// </summary>
-public class GeometricToleranceWithMaximumTolerance : GeometricToleranceWithModifiers
+internal class GeometricToleranceWithMaximumTolerance : GeometricToleranceWithModifiers
 {
     private LengthMeasureWithUnit _maximumUpperTolerance;
 

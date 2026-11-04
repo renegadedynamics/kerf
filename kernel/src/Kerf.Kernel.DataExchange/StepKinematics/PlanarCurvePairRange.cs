@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity PlanarCurvePairRange
 /// </summary>
-public class PlanarCurvePairRange : PlanarCurvePair
+internal class PlanarCurvePairRange : PlanarCurvePair
 {
     private StepTrimmedCurve _rangeOnCurve1;
     private StepTrimmedCurve _rangeOnCurve2;

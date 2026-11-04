@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity HomokineticPair
 /// </summary>
-public class HomokineticPair : UniversalPair
+internal class HomokineticPair : UniversalPair
 {
     /// <summary>
     /// default constructor

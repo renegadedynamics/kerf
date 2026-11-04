@@ -50,7 +50,7 @@ public sealed class STEPCAFControlTests
         var aDoc = new ExchangeDocument();
         Label aPart = aDoc.AddShape(Box(10.0), false);
         aDoc.SetName(aPart, "box");
-        aDoc.SetColor(aPart, new Color(0.25, 0.5, 0.75, ColorSpace.TocRgb), ColorType.ColorSurf);
+        aDoc.SetColor(aPart, new LinearColor(0.25, 0.5, 0.75, ColorSpace.TocRgb), ColorType.ColorSurf);
         aDoc.SetLayer(aPart, "parts");
         aDoc.SetVolume(aPart, 1000.0);
         string aBefore = string.Join("\n", XdeDocDump.Dump(aDoc));
@@ -64,8 +64,8 @@ public sealed class STEPCAFControlTests
         Label aLabel = aFree.Value(1);
         Assert.True(aRead.GetName(aLabel, out string? aName));
         Assert.Equal("box", aName);
-        Assert.True(aRead.GetColor(aLabel, ColorType.ColorSurf, out Color aColor));
-        Assert.True(aColor.IsEqual(new Color(0.25, 0.5, 0.75, ColorSpace.TocRgb)));
+        Assert.True(aRead.GetColor(aLabel, ColorType.ColorSurf, out LinearColor aColor));
+        Assert.True(aColor.IsEqual(new LinearColor(0.25, 0.5, 0.75, ColorSpace.TocRgb)));
         var aLayers = new NCollection_Sequence<string>();
         Assert.True(aRead.GetLayers(aLabel, aLayers));
         Assert.Equal("parts", aLayers.Value(1));
@@ -129,7 +129,7 @@ public sealed class STEPCAFControlTests
         Assert.True(aDoc.FindComponent(aBox.Located(aLoc), aLabels));
         Assert.Equal(aComp, aLabels.Value(1));
         Assert.True(aDoc.SetInstanceColor(aBox.Located(aLoc), ColorType.ColorSurf,
-                                          new Color(NameOfColor.NocRed)));
+                                          new LinearColor(NameOfColor.NocRed)));
         Assert.True(aDoc.IsSet(aComp, ColorType.ColorSurf));
         Assert.False(aDoc.FindComponent(aBox.Located(new Placement(new Transform3D())), aLabels));
     }
@@ -137,12 +137,12 @@ public sealed class STEPCAFControlTests
     [Fact]
     public void EncodesAndDecodesColours()
     {
-        Colour aRed = Styles.EncodeColor(new Color(NameOfColor.NocRed));
+        Colour aRed = Styles.EncodeColor(new LinearColor(NameOfColor.NocRed));
         Assert.IsType<DraughtingPreDefinedColour>(aRed);
-        var aColor = new Color();
+        var aColor = new LinearColor();
         Assert.True(Styles.DecodeColor(aRed, ref aColor));
-        Assert.True(aColor.IsEqual(new Color(NameOfColor.NocRed)));
-        var aRgb = new Color(0.25, 0.5, 0.75, ColorSpace.TOC_sRGB);
+        Assert.True(aColor.IsEqual(new LinearColor(NameOfColor.NocRed)));
+        var aRgb = new LinearColor(0.25, 0.5, 0.75, ColorSpace.TOC_sRGB);
         Colour anEncoded = Styles.EncodeColor(aRgb);
         Assert.IsType<ColourRgb>(anEncoded);
         Assert.True(Styles.DecodeColor(anEncoded, ref aColor));

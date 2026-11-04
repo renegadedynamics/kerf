@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity ConstantSurface3dElementCoordinateSystem
 /// </summary>
-public class ConstantSurface3dElementCoordinateSystem : FeaRepresentationItem
+internal class ConstantSurface3dElementCoordinateSystem : FeaRepresentationItem
 {
     private int _axis;
     private double _angle;

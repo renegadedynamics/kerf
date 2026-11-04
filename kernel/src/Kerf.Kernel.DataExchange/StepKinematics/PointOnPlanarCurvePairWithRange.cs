@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity PointOnPlanarCurvePairWithRange
 /// </summary>
-public class PointOnPlanarCurvePairWithRange : PointOnPlanarCurvePair
+internal class PointOnPlanarCurvePairWithRange : PointOnPlanarCurvePair
 {
     private StepTrimmedCurve _rangeOnPairCurve;
     private double _lowerLimitYaw;

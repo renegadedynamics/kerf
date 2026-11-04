@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP entity SurfaceSection
 /// </summary>
-public class SurfaceSection : Transient
+internal class SurfaceSection : Transient
 {
     private MeasureOrUnspecifiedValue _offset = new MeasureOrUnspecifiedValue();
     private MeasureOrUnspecifiedValue _nonStructuralMass = new MeasureOrUnspecifiedValue();

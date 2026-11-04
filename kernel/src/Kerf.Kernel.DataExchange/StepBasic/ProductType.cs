@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ProductType : ProductRelatedProductCategory
+internal class ProductType : ProductRelatedProductCategory
 {
     /// <summary>
     /// Returns a ProductType

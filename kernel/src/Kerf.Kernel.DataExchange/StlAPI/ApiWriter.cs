@@ -23,7 +23,7 @@ namespace Kerf.Engine.Exchange.Stl.Api;
 /// <remarks>
 /// The shape is only read. The file form writes the stream form's bytes (LF line ends: decision 1168).
 /// </remarks>
-public class ApiWriter
+internal class ApiWriter
 {
     private bool _asciiMode;
 

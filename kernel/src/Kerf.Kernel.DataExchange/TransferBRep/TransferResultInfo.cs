@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// fail(s), result + warning(s) + fail(s), no result, no result + warning(s), no result + fail(s), no result +
 /// warning(s) + fail(s). The counts are modifiable through their <c>ref</c> accessors, as OCCT's <c>int&amp;</c>.
 /// </summary>
-public class TransferResultInfo : Transient
+internal class TransferResultInfo : Transient
 {
     /// <summary>Creates object with all fields nullified.</summary>
     public TransferResultInfo()

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Geometry;
 /// complex type: bounded_curve + surface_curve
 /// needed for curve_bounded_surfaces (S4132)
 /// </summary>
-public class StepSurfaceCurveAndBoundedCurve : StepSurfaceCurve
+internal class StepSurfaceCurveAndBoundedCurve : StepSurfaceCurve
 {
     private StepBoundedCurve _boundedCurve;
 

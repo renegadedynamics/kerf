@@ -14,7 +14,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of Parabola from Geom and Geom2d to a STEP parabola.</summary>
-public sealed class MakeParabola : GeometryRoot
+internal sealed class MakeParabola : GeometryRoot
 {
     private StepParabola _parabola;
 

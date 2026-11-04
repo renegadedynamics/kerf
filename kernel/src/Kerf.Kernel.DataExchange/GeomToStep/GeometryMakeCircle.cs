@@ -15,7 +15,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of Circle from Geom and Geom2d (and Circ from gp) to a STEP circle.</summary>
-public sealed class GeometryMakeCircle : GeometryRoot
+internal sealed class GeometryMakeCircle : GeometryRoot
 {
     private StepCircle _circle;
 

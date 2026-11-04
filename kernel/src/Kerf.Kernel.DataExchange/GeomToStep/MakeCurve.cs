@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 /// The mapping of Curve from Geom and Geom2d to a STEP curve: lines, conics, bounded curves, and trimmed curves (a
 /// B-spline or Bezier basis segmented on a copy, any other basis passed untrimmed). Offset curves aren't mapped.
 /// </summary>
-public sealed class MakeCurve : GeometryRoot
+internal sealed class MakeCurve : GeometryRoot
 {
     private StepCurve _curve;
 

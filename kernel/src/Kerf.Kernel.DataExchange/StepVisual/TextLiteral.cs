@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class TextLiteral : StepGeometricRepresentationItem
+internal class TextLiteral : StepGeometricRepresentationItem
 {
     private TCollection_HAsciiString _literal;
     private StepAxis2Placement _placement = new StepAxis2Placement();

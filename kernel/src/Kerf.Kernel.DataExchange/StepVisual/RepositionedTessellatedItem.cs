@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity RepositionedTessellatedItem
 /// </summary>
-public class RepositionedTessellatedItem : TessellatedItem
+internal class RepositionedTessellatedItem : TessellatedItem
 {
     private StepAxis2Placement3d _location;
 

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP entity ElementMaterial
 /// </summary>
-public class ElementMaterial : Transient
+internal class ElementMaterial : Transient
 {
     private TCollection_HAsciiString _materialId;
     private TCollection_HAsciiString _description;

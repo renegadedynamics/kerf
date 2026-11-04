@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP SELECT type KinematicTopologyRepresentationSelect
 /// </summary>
-public class KinematicTopologyRepresentationSelect : SelectType
+internal class KinematicTopologyRepresentationSelect : SelectType
 {
     /// <summary>
     /// Empty constructor

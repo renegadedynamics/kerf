@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity KinematicJoint
 /// </summary>
-public class KinematicJoint : StepEdge
+internal class KinematicJoint : StepEdge
 {
     /// <summary>
     /// default constructor

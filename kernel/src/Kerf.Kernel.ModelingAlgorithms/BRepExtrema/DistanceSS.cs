@@ -33,7 +33,7 @@ namespace Kerf.Engine.Measurement.Distance;
 /// A working object computed in its constructor. The supports of its solutions are the input shapes, or, for an
 /// infinite edge or face facing a finite one, a trimmed copy built here and frozen (it is handed out as a support).
 /// </remarks>
-public sealed class DistanceSS
+internal sealed class DistanceSS
 {
     private readonly NCollection_Sequence<SolutionElem> _seqSolShape1 = new(); //!< Solutions on the first shape
     private readonly NCollection_Sequence<SolutionElem> _seqSolShape2 = new(); //!< Solutions on the second shape

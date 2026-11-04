@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Step.Export;
 
 /// <summary>The error status of TopoDSToStep_MakeEdge.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.TopoDSToStep_MakeEdgeError;</c>.</remarks>
-public enum MakeEdgeError
+internal enum MakeEdgeError
 {
     EdgeDone,
     NonManifoldEdge,

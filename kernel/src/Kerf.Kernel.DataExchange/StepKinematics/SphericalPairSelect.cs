@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP SELECT type SphericalPairSelect
 /// </summary>
-public class SphericalPairSelect : SelectType
+internal class SphericalPairSelect : SelectType
 {
     /// <summary>
     /// Empty constructor

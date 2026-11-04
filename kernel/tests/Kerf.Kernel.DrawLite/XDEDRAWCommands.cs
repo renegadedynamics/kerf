@@ -271,7 +271,7 @@ internal static class XDEDRAWCommands
         {
             if (PrintStructMode)
             {
-                di.Append("Color(").Append(Color.StringName(col.GetRGB().Name())).Append(" ").Append((double)col.Alpha()).Append(") ");
+                di.Append("Color(").Append(LinearColor.StringName(col.GetRGB().Name())).Append(" ").Append((double)col.Alpha()).Append(") ");
             }
             theStat.NbShapesWithColor++;
         }
@@ -393,7 +393,7 @@ internal static class XDEDRAWCommands
             foreach (Label aLabel in CLabels)
             {
                 aDoc.GetColor(aLabel, out ColorWithAlpha aColor);
-                di.Append(Color.StringName(aColor.GetRGB().Name())).Append(" ");
+                di.Append(LinearColor.StringName(aColor.GetRGB().Name())).Append(" ");
             }
             di.Append("\n");
         }

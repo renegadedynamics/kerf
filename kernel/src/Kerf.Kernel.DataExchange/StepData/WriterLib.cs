@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// <see cref="Library{TModule, TProtocol}"/> instantiated with <see cref="ReadWriteModule"/> and
 /// <see cref="StepProtocol"/> (decision 1182: its global list is the closed generic type's own).
 /// </summary>
-public class WriterLib : Library<ReadWriteModule, StepProtocol>
+internal class WriterLib : Library<ReadWriteModule, StepProtocol>
 {
     /// <summary>
     /// Creates a library which complies with a protocol: it gets the modules from the global set which are bound to

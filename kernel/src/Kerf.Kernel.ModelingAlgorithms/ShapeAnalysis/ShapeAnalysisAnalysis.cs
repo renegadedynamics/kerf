@@ -19,7 +19,7 @@ using static Kerf.Topology.Containment;
 namespace Kerf.Engine.Healing.Analysis;
 
 /// <summary>Tools for analysing shapes and their geometry: periodic adjustment, wire bounds and orientation, outer wires.</summary>
-public static class ShapeAnalysisAnalysis
+internal static class ShapeAnalysisAnalysis
 {
     /// <summary>
     /// Returns a shift required to move point <paramref name="val"/> to the range [ToVal-Period/2, ToVal+Period/2].

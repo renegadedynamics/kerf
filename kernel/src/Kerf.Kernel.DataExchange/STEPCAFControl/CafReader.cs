@@ -58,7 +58,7 @@ namespace Kerf.Engine.Exchange.Step.Caf;
 /// across them (<see cref="SetExternFileLimits"/>), and a cycle of references stops.
 /// </para>
 /// </remarks>
-public class CafReader
+internal class CafReader
 {
     /// <summary>Creates a reader with an empty STEP model and sets ColorMode, LayerMode, NameMode and PropsMode to true.</summary>
     public CafReader()
@@ -1157,11 +1157,11 @@ public class CafReader
     // the colours decoded as SetStyle and SetAssemblyComponentStyle decode them
     private static void DecodeColors(Colour aSurfCol, Colour aBoundCol, Colour aCurveCol,
                                      RenderingProperties aRenderProps, out ColorWithAlpha aFullSCol,
-                                     out Color aBCol, out Color aCCol)
+                                     out LinearColor aBCol, out LinearColor aCCol)
     {
-        Color sCol = new Color();
-        aBCol = new Color();
-        aCCol = new Color();
+        LinearColor sCol = new LinearColor();
+        aBCol = new LinearColor();
+        aCCol = new LinearColor();
         aFullSCol = new ColorWithAlpha();
         if (aSurfCol is not null)
         {
@@ -1274,7 +1274,7 @@ public class CafReader
         if (surfCol is not null || boundCol is not null || curveCol is not null || renderProps.IsDefined)
         {
             DecodeColors(surfCol, boundCol, curveCol, renderProps, out ColorWithAlpha fullSCol,
-                         out Color bCol, out Color cCol);
+                         out LinearColor bCol, out LinearColor cCol);
 
             if (surfCol is not null || renderProps.IsDefined)
             {
@@ -1431,7 +1431,7 @@ public class CafReader
                 if (surfCol is not null || boundCol is not null || curveCol is not null || renderProps.IsDefined)
                 {
                     DecodeColors(surfCol, boundCol, curveCol, renderProps, out ColorWithAlpha fullSCol,
-                                 out Color bCol, out Color cCol);
+                                 out LinearColor bCol, out LinearColor cCol);
                     if (isFound)
                     {
                         if (surfCol is not null || renderProps.IsDefined)

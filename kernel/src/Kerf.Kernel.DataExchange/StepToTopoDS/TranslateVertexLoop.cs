@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 
 /// <summary>Translates a vertex_loop into a wire of one degenerated edge.</summary>
 /// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 1247).</remarks>
-public sealed class TranslateVertexLoop : ImportRoot
+internal sealed class TranslateVertexLoop : ImportRoot
 {
     private TranslateVertexLoopError _error;
     private Shape _result = new Shape();

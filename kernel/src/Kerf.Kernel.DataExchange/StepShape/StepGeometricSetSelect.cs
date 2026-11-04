@@ -13,7 +13,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepGeometricSetSelect : SelectType
+internal class StepGeometricSetSelect : SelectType
 {
     /// <summary>
     /// Returns a GeometricSetSelect SelectType

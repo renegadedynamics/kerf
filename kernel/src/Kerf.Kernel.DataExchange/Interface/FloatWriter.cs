@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// STEP writes its reals through this class, so it reproduces OCCT's character buffer work exactly, including its
 /// limits (the zero suppression looks at the first 16 characters only).
 /// </remarks>
-public class FloatWriter
+internal class FloatWriter
 {
     /// <summary>
     /// Creates a FloatWriter ready to work, with default options: zero suppress option set, main format "%E",

@@ -9,7 +9,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// <summary>A dead loop in a transfer.</summary>
 /// <remarks>Deprecated in OCCT 7.9: no longer thrown, dead loops are handled with status flags. Kept for its type.</remarks>
 [Obsolete("This exception is no longer thrown; dead loop handling uses local status flags")]
-public class TransferDeadLoopException : TransferFailureException
+internal class TransferDeadLoopException : TransferFailureException
 {
     public TransferDeadLoopException() { }
 

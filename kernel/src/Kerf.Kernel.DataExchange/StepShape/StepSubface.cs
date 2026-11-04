@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity Subface
 /// </summary>
-public class StepSubface : StepFace
+internal class StepSubface : StepFace
 {
     private StepFace _parentFace;
 

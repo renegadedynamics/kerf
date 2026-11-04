@@ -19,7 +19,7 @@ using static Kerf.Geometry.TransformForm;
 namespace Kerf.Engine.Exchange.Step.Import;
 
 /// <summary>Produces instances by transformation of a basic item.</summary>
-public sealed class MakeTransformed : ImportRoot
+internal sealed class MakeTransformed : ImportRoot
 {
     private Transform3D _trsf = new Transform3D();
 

@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Measurement.Distance;
 
 /// <summary>A parameter was asked of a solution whose support isn't of that kind (an edge or a face).</summary>
-public class IncompatibleShapeException : DomainErrorException
+internal class IncompatibleShapeException : DomainErrorException
 {
     public IncompatibleShapeException() { }
 

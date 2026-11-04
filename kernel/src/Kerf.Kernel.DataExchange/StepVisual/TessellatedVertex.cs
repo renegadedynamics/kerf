@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity TessellatedVertex
 /// </summary>
-public class TessellatedVertex : TessellatedStructuredItem
+internal class TessellatedVertex : TessellatedStructuredItem
 {
     private CoordinatesList _coordinates;
     private StepVertexPoint _topologicalLink;

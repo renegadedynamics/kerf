@@ -10,14 +10,14 @@ using Occt;
 namespace Kerf.Engine.Healing.Process;
 
 /// <summary>The function an operator runs (OCCT's <c>ShapeProcess_OperFunc</c>, a function pointer).</summary>
-public delegate bool OperFunc(ProcessContext context, ProgressRange progress);
+internal delegate bool OperFunc(ProcessContext context, ProgressRange progress);
 
 /// <summary>An operator defined by a function.</summary>
 /// <remarks>
 /// On a <see cref="ShapeContext"/> holding frozen shapes, the function runs on the context's working copy
 /// (decision 1022), as it does inside <see cref="ShapeProcess.Perform(ProcessContext, string, ProgressRange)"/>.
 /// </remarks>
-public class UOperator : Operator
+internal class UOperator : Operator
 {
     private readonly OperFunc _func;
 

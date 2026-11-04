@@ -19,7 +19,7 @@ namespace Kerf.Engine.Foundation;
 /// <c>default</c> (black). <c>==</c> compares the components exactly; OCCT's <c>operator==</c>, which compares within
 /// <see cref="Epsilon"/>, is <see cref="IsEqual"/>.
 /// </remarks>
-public partial struct Color : IEquatable<Color>
+public partial struct LinearColor : IEquatable<LinearColor>
 {
     private const float RGBHLS_H_UNDEFINED = -1.0f;
     private const double DEG_TO_RAD = Math.PI / 180.0;
@@ -115,27 +115,27 @@ public partial struct Color : IEquatable<Color>
         => new(name, stringName, new NCollection_Vec3<float>(sR, sG, sB), new NCollection_Vec3<float>(r, g, b));
 
     /// <summary>Creates <see cref="NocYellow"/> (for historical reasons).</summary>
-    public Color()
+    public LinearColor()
     {
         _rgb = ValuesOf(NocYellow, TocRgb);
     }
 
     /// <summary>The colour of a name.</summary>
-    public Color(NameOfColor name)
+    public LinearColor(NameOfColor name)
     {
         _rgb = ValuesOf(name, TocRgb);
     }
 
     /// <summary>A colour in the colour space <paramref name="type"/>.</summary>
     /// <exception cref="OutOfRangeException">The values are out of the space's range.</exception>
-    public Color(double c1, double c2, double c3, ColorSpace type)
+    public LinearColor(double c1, double c2, double c3, ColorSpace type)
     {
         SetValues(c1, c2, c3, type);
     }
 
     /// <summary>A colour from linear RGB values.</summary>
     /// <exception cref="OutOfRangeException">A value is outside [0, 1].</exception>
-    public Color(in NCollection_Vec3<float> rgb)
+    public LinearColor(in NCollection_Vec3<float> rgb)
     {
         _rgb = rgb;
         ValidateRgbRange(rgb.R(), rgb.G(), rgb.B());
@@ -175,7 +175,7 @@ public partial struct Color : IEquatable<Color>
     public readonly NCollection_Vec3<float> Rgb() => _rgb;
 
     /// <summary>The colour as linear RGB (OCCT's conversion operator).</summary>
-    public static explicit operator NCollection_Vec3<float>(in Color color) => color._rgb;
+    public static explicit operator NCollection_Vec3<float>(in LinearColor color) => color._rgb;
 
     /// <summary>The components in the colour space <paramref name="type"/>.</summary>
     public readonly void Values(out double r1, out double r2, out double r3, ColorSpace type)
@@ -311,24 +311,24 @@ public partial struct Color : IEquatable<Color>
     }
 
     /// <summary>True if the distance between the colours is greater than <see cref="Epsilon"/>.</summary>
-    public readonly bool IsDifferent(in Color other) => (SquareDistance(other) > Epsilon() * Epsilon());
+    public readonly bool IsDifferent(in LinearColor other) => (SquareDistance(other) > Epsilon() * Epsilon());
 
     /// <summary>True if the distance between the colours is no greater than <see cref="Epsilon"/> (OCCT's <c>operator==</c>).</summary>
-    public readonly bool IsEqual(in Color other) => (SquareDistance(other) <= Epsilon() * Epsilon());
+    public readonly bool IsEqual(in LinearColor other) => (SquareDistance(other) <= Epsilon() * Epsilon());
 
     /// <summary>The distance between the colours' linear RGB values, within [0, sqrt(3)].</summary>
-    public readonly double Distance(in Color color)
+    public readonly double Distance(in LinearColor color)
         => (NCollection_Vec3<double>.From(_rgb) - NCollection_Vec3<double>.From(color._rgb)).Modulus();
 
     /// <summary>The square of <see cref="Distance"/>.</summary>
-    public readonly double SquareDistance(in Color color)
+    public readonly double SquareDistance(in LinearColor color)
         => (NCollection_Vec3<double>.From(_rgb) - NCollection_Vec3<double>.From(color._rgb)).SquareModulus();
 
     /// <summary>
     /// The change of contrast <paramref name="dc"/> (saturation) and intensity <paramref name="di"/> (lightness) of this
     /// colour with respect to <paramref name="color"/>.
     /// </summary>
-    public readonly void Delta(in Color color, out double dc, out double di)
+    public readonly void Delta(in LinearColor color, out double dc, out double di)
     {
         NCollection_Vec3<float> hls1 = Convert_LinearRGB_To_HLS(_rgb);
         NCollection_Vec3<float> hls2 = Convert_LinearRGB_To_HLS(color._rgb);
@@ -340,7 +340,7 @@ public partial struct Color : IEquatable<Color>
     /// The perceptual difference with <paramref name="other"/> by the CIEDE2000 formula, in [0, 100]; 1 is about the
     /// smallest perceivable difference.
     /// </summary>
-    public readonly double DeltaE2000(in Color other)
+    public readonly double DeltaE2000(in LinearColor other)
     {
         // get color components in CIE Lch space
         this.Values(out double l1, out double aa1, out double ab1, TOC_CIELab);
@@ -412,7 +412,7 @@ public partial struct Color : IEquatable<Color>
     /// <summary>The name of the enumeration's colour nearest to the linear RGB values.</summary>
     public static NameOfColor Name(double r, double g, double b)
     {
-        Color color = new(r, g, b, TocRgb);
+        LinearColor color = new(r, g, b, TocRgb);
         return color.Name();
     }
 
@@ -475,14 +475,14 @@ public partial struct Color : IEquatable<Color>
     }
 
     /// <summary>The colour of a name (see the other overload); false, <paramref name="color"/> unchanged, if unknown.</summary>
-    public static bool ColorFromName(string colorNameString, ref Color color)
+    public static bool ColorFromName(string colorNameString, ref LinearColor color)
     {
         NameOfColor colorName = NocBlack;
         if (!ColorFromName(colorNameString, ref colorName))
         {
             return false;
         }
-        color = new Color(colorName);
+        color = new LinearColor(colorName);
         return true;
     }
 
@@ -490,7 +490,7 @@ public partial struct Color : IEquatable<Color>
     /// Parses a hex sRGB colour (<c>"#FF0"</c>, <c>"#FFFF00"</c>, or <c>"FFFF00"</c>); false, <paramref name="color"/>
     /// unchanged, if it isn't one (a component of alpha included).
     /// </summary>
-    public static bool ColorFromHex(string hexColorString, ref Color color)
+    public static bool ColorFromHex(string hexColorString, ref LinearColor color)
     {
         ColorWithAlpha colorRGBA = new();
         if (!ColorWithAlpha.ColorFromHex(hexColorString, ref colorRGBA, true))
@@ -502,7 +502,7 @@ public partial struct Color : IEquatable<Color>
     }
 
     /// <summary>The hex sRGB string of the colour, <c>"#FFAAFF"</c> (without the hash if <paramref name="toPrefixHash"/> is false).</summary>
-    public static string ColorToHex(in Color color, bool toPrefixHash = true)
+    public static string ColorToHex(in LinearColor color, bool toPrefixHash = true)
     {
         NCollection_Vec3<float> sRgb = Convert_LinearRGB_To_sRGB(color._rgb);
         NCollection_Vec3<int> sRgbInt = NCollection_Vec3<int>.From(sRgb * 255.0f + new NCollection_Vec3<float>(0.5f));
@@ -734,7 +734,7 @@ public partial struct Color : IEquatable<Color>
     /// <summary>
     /// The colour as an ARGB integer with alpha 0 (0x00RRGGBB), from the linear values (no sRGB conversion).
     /// </summary>
-    public static void Color2argb(in Color color, out int argb)
+    public static void Color2argb(in LinearColor color, out int argb)
     {
         NCollection_Vec3<int> aColor = new((int)(255.0f * color._rgb.R() + 0.5f),
                                            (int)(255.0f * color._rgb.G() + 0.5f),
@@ -746,7 +746,7 @@ public partial struct Color : IEquatable<Color>
     /// The colour of an ARGB integer, the alpha bits ignored. Note that OCCT reads the bytes as sRGB, though
     /// <see cref="Color2argb"/> writes linear values.
     /// </summary>
-    public static void Argb2color(int argb, ref Color color)
+    public static void Argb2color(int argb, ref LinearColor color)
     {
         NCollection_Vec3<double> aColor = new((double)((argb & 0xff0000) >> 16),
                                               (double)((argb & 0x00ff00) >> 8),
@@ -860,48 +860,48 @@ public partial struct Color : IEquatable<Color>
     // The non-mutating twins of the mutators
 
     /// <summary>A copy set to the colour of a name.</summary>
-    public readonly Color WithValues(NameOfColor name)
+    public readonly LinearColor WithValues(NameOfColor name)
     {
-        Color copy = this;
+        LinearColor copy = this;
         copy.SetValues(name);
         return copy;
     }
 
     /// <summary>A copy set from components in the colour space <paramref name="type"/>.</summary>
-    public readonly Color WithValues(double c1, double c2, double c3, ColorSpace type)
+    public readonly LinearColor WithValues(double c1, double c2, double c3, ColorSpace type)
     {
-        Color copy = this;
+        LinearColor copy = this;
         copy.SetValues(c1, c2, c3, type);
         return copy;
     }
 
     /// <summary>A copy with the intensity changed (see <see cref="ChangeIntensity"/>).</summary>
-    public readonly Color ChangedIntensity(double delta)
+    public readonly LinearColor ChangedIntensity(double delta)
     {
-        Color copy = this;
+        LinearColor copy = this;
         copy.ChangeIntensity(delta);
         return copy;
     }
 
     /// <summary>A copy with the contrast changed (see <see cref="ChangeContrast"/>).</summary>
-    public readonly Color ChangedContrast(double delta)
+    public readonly LinearColor ChangedContrast(double delta)
     {
-        Color copy = this;
+        LinearColor copy = this;
         copy.ChangeContrast(delta);
         return copy;
     }
 
     // Exact equality, for use as a value (OCCT's tolerant operator== is IsEqual)
 
-    public readonly bool Equals(Color other) => _rgb.Equals(other._rgb);
+    public readonly bool Equals(LinearColor other) => _rgb.Equals(other._rgb);
 
-    public override readonly bool Equals(object? obj) => obj is Color other && Equals(other);
+    public override readonly bool Equals(object? obj) => obj is LinearColor other && Equals(other);
 
     public override readonly int GetHashCode() => _rgb.GetHashCode();
 
-    public static bool operator ==(in Color left, in Color right) => left.Equals(right);
+    public static bool operator ==(in LinearColor left, in LinearColor right) => left.Equals(right);
 
-    public static bool operator !=(in Color left, in Color right) => !left.Equals(right);
+    public static bool operator !=(in LinearColor left, in LinearColor right) => !left.Equals(right);
 
     public override readonly string ToString() => Constants.Format("Quantity_Color", _rgb.R(), _rgb.G(), _rgb.B());
 }

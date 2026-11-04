@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Brep;
 
 // TopTools::Dump, which comes with TopTools_ShapeSet
-public static partial class ShapeTools
+internal static partial class ShapeTools
 {
     /// <summary>Dumps the topological structure of the shape (without its geometry) in a readable form.</summary>
     public static void Dump(in Shape sh, TextWriter s)

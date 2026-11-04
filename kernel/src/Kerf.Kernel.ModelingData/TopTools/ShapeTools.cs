@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Brep;
 /// <c>Dump</c>, which writes a shape set, is in TopTools.Dump.cs with TopTools_ShapeSet.
 /// OCCT's <c>Dummy</c>, a workaround for an old extraction bug, does nothing.
 /// </remarks>
-public static partial class ShapeTools
+internal static partial class ShapeTools
 {
     /// <summary>Does nothing (OCCT: a workaround for an old extraction bug).</summary>
     public static void Dummy(int i)

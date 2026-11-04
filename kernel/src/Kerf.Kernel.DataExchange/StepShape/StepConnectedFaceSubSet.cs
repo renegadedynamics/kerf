@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity ConnectedFaceSubSet
 /// </summary>
-public class StepConnectedFaceSubSet : StepConnectedFaceSet
+internal class StepConnectedFaceSubSet : StepConnectedFaceSet
 {
     private StepConnectedFaceSet _parentFaceSet;
 

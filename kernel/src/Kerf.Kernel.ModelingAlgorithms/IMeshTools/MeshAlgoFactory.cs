@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Meshing.Tools;
 
 /// <summary>A factory of triangulation algorithms, chosen by the type of the face's surface.</summary>
-public abstract class MeshAlgoFactory : Transient
+internal abstract class MeshAlgoFactory : Transient
 {
     /// <summary>A factory.</summary>
     protected MeshAlgoFactory()

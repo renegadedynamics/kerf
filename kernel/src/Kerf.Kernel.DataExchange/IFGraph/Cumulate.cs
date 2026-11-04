@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework.Graph;
 /// this class evaluates effect of cumulated sub-parts : overlapping, forgotten entities Results are kept in
 /// a Graph, several question can be set Basic Iteration gives entities which are part of Cumulation
 /// </summary>
-public class Cumulate : GraphContent
+internal class Cumulate : GraphContent
 {
 
     /// <summary>

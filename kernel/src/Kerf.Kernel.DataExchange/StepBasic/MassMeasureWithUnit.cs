@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class MassMeasureWithUnit : MeasureWithUnit
+internal class MassMeasureWithUnit : MeasureWithUnit
 {
     /// <summary>
     /// Returns a MassMeasureWithUnit

@@ -28,7 +28,7 @@ namespace Kerf.Engine.Meshing;
 /// <see cref="BrepTools.Update(in Face)"/>, which marks an unfrozen face checked after updating its UV points,
 /// as in OCCT, and does nothing on a frozen face.
 /// </remarks>
-public class MeshShapeVisitor : ShapeVisitor
+internal class MeshShapeVisitor : ShapeVisitor
 {
     private readonly ModelModel _model;
     private readonly Dictionary<Shape, int> _dEdgeMap;

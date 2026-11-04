@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Header;
 
 /// <summary>The RWHeaderSection package: its initialisation.</summary>
-public static class RWHeaderSection
+internal static class RWHeaderSection
 {
     // OCCT keeps the two modules in statics created once; the whole initialisation is done once here (decision 1182),
     // so that a second call does not wrap the header protocol into a FileProtocol, as OCCT's does

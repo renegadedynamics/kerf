@@ -24,7 +24,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 
 /// <summary>Translates a poly_loop (of a faceted brep) into a wire of line edges on the given planar face.</summary>
 /// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 1247).</remarks>
-public sealed class TranslatePolyLoop : ImportRoot
+internal sealed class TranslatePolyLoop : ImportRoot
 {
     private TranslatePolyLoopError _error;
     private Shape _result = new Shape();

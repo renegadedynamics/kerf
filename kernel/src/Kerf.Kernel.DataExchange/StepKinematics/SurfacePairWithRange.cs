@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity SurfacePairWithRange
 /// </summary>
-public class SurfacePairWithRange : SurfacePair
+internal class SurfacePairWithRange : SurfacePair
 {
     private StepRectangularTrimmedSurface _rangeOnSurface1;
     private StepRectangularTrimmedSurface _rangeOnSurface2;

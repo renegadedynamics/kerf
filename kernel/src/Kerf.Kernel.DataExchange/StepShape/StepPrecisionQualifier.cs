@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class StepPrecisionQualifier : Transient
+internal class StepPrecisionQualifier : Transient
 {
     private int _precisionValue;
 

@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Tolerances;
 
-public class DatumReferenceModifier : SelectType
+internal class DatumReferenceModifier : SelectType
 {
     /// <summary>
     /// Returns a DatumReferenceModifier select type

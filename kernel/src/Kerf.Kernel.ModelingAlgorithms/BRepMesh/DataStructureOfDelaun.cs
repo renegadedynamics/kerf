@@ -35,7 +35,7 @@ namespace Kerf.Engine.Meshing;
 ///   as the C++ <c>const BRepMesh_PairOfIndex&amp;</c> does.</item>
 /// </list>
 /// </remarks>
-public sealed class DataStructureOfDelaun : Transient
+internal sealed class DataStructureOfDelaun : Transient
 {
     private readonly VertexTool _nodes;
     private readonly Dictionary<int, LinkedListOfInteger> _nodeLinks;

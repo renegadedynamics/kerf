@@ -17,7 +17,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export;
 
 /// <summary>Makes a manifold_solid_brep from a closed shell or from a solid's outer shell.</summary>
-public sealed class ManifoldSolidBrepMaker : ExportRoot
+internal sealed class ManifoldSolidBrepMaker : ExportRoot
 {
     private StepManifoldSolidBrep _manifoldSolidBrep;
     private TessellatedItem _tessellatedItem;

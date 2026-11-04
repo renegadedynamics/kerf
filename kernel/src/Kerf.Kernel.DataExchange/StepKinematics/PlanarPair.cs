@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity PlanarPair
 /// </summary>
-public class PlanarPair : LowOrderKinematicPair
+internal class PlanarPair : LowOrderKinematicPair
 {
     /// <summary>
     /// default constructor

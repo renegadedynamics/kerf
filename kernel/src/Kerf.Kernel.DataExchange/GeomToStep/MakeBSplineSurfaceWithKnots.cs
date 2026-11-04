@@ -18,7 +18,7 @@ using static Kerf.Engine.Exchange.Step.Geometry.StepKnotType;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of BSplineSurface from Geom to a STEP b_spline_surface_with_knots.</summary>
-public sealed class MakeBSplineSurfaceWithKnots : GeometryRoot
+internal sealed class MakeBSplineSurfaceWithKnots : GeometryRoot
 {
     private StepBSplineSurfaceWithKnots _bSplineSurfaceWithKnots;
 

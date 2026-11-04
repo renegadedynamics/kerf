@@ -28,7 +28,7 @@ namespace Kerf.Engine.Healing.Checks;
 /// the parametric space of a face (<see cref="Closed2d"/>), coherently oriented (<see cref="Orientation"/>) and
 /// without self-intersection on a face (<see cref="SelfIntersect"/>).
 /// </summary>
-public class WireCheck : ResultCheck
+internal class WireCheck : ResultCheck
 {
     private bool _cdone;
     private StatusCheck _cstat;

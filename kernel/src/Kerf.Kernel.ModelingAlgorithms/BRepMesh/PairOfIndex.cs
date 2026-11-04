@@ -12,7 +12,7 @@ namespace Kerf.Engine.Meshing;
 /// The default pair is empty (both indices -1), as OCCT's; <c>default(T)</c> holds 0 and 0, so ported code writes
 /// <c>new BRepMesh_PairOfIndex()</c>.
 /// </remarks>
-public partial struct PairOfIndex : IEquatable<PairOfIndex>
+internal partial struct PairOfIndex : IEquatable<PairOfIndex>
 {
     private int _index0;
     private int _index1;

@@ -17,7 +17,7 @@ namespace Kerf.Engine.Meshing;
 /// A class, as triangles refer to their links (OCCT stores pointers to them). OCCT's <c>void*</c> attribute is an
 /// <c>object</c>.
 /// </remarks>
-public class CoherentLink
+internal class CoherentLink
 {
     internal NCollection_Buffer2<int> _node;
     internal NCollection_Buffer2<int> _oppositeNode;

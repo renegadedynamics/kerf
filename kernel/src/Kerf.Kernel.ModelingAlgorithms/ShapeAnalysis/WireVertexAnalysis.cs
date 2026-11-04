@@ -22,7 +22,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// A working object (decision 21). Vertex <c>num</c> is the end vertex of edge <c>num</c>: edge <c>num</c> precedes
 /// it, edge <c>num+1</c> (edge 1 for the last) follows it.
 /// </remarks>
-public sealed class WireVertexAnalysis
+internal sealed class WireVertexAnalysis
 {
     private ExtendWireData? _wire;
     private NCollection_HArray1<int>? _stat;

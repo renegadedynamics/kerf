@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class CameraImage2dWithScale : CameraImage
+internal class CameraImage2dWithScale : CameraImage
 {
     public CameraImage2dWithScale()
     {

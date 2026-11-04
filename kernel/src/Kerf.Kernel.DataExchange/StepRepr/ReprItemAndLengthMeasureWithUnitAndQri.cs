@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class ReprItemAndLengthMeasureWithUnitAndQri : ReprItemAndMeasureWithUnitAndQri
+internal class ReprItemAndLengthMeasureWithUnitAndQri : ReprItemAndMeasureWithUnitAndQri
 {
     private LengthMeasureWithUnit _lengthMeasureWithUnit;
 

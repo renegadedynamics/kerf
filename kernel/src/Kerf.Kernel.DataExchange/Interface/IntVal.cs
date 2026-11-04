@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// <summary>
 /// An Integer through a Handle (i.e. managed as TShared)
 /// </summary>
-public class IntVal : Transient
+internal class IntVal : Transient
 {
 
     public IntVal()

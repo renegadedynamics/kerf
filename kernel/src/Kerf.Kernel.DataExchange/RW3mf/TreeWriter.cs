@@ -17,7 +17,7 @@ using System.Xml;
 namespace Kerf.Engine.Exchange.ThreeMf;
 
 /// <summary>The options of <see cref="TreeWriter"/>.</summary>
-public sealed record WriteOptions
+internal sealed record WriteOptions
 {
     /// <summary>The defaults.</summary>
     public static WriteOptions Default { get; } = new();
@@ -52,7 +52,7 @@ public sealed record WriteOptions
 /// The tree isn't changed.
 /// </para>
 /// </remarks>
-public sealed class TreeWriter
+internal sealed class TreeWriter
 {
     /// <summary>The namespace of the 3MF core model.</summary>
     public const string CoreNamespace = "http://schemas.microsoft.com/3dmanufacturing/core/2015/02";

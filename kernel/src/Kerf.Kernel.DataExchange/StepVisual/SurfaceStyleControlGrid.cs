@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class SurfaceStyleControlGrid : Transient
+internal class SurfaceStyleControlGrid : Transient
 {
     private CurveStyle _styleOfControlGrid;
 

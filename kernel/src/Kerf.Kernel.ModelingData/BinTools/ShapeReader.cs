@@ -24,7 +24,7 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 /// <see cref="BinTools.MaxShapeNesting"/> and of geometry at <see cref="BinTools.MaxGeometryNesting"/>; failures
 /// throw <see cref="StreamFormatErrorException"/>.
 /// </remarks>
-public class ShapeReader : ShapeSetBase
+internal class ShapeReader : ShapeSetBase
 {
     private static readonly BrepBuilder ABuilder = new();
 

@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Healing.Fixes;
 
-public static partial class ShapeFixFixer
+internal static partial class ShapeFixFixer
 {
     /// <summary>
     /// The functional twin of <see cref="SameParameter"/>: the shape with its edges made SameParameter by

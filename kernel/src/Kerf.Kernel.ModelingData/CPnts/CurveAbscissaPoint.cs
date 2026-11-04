@@ -30,7 +30,7 @@ namespace Kerf.Engine.Measurement.Points;
 /// A working object (decision 21): <c>Init</c> keeps a reference to the curve, which must outlive the next
 /// <c>Perform</c>.
 /// </remarks>
-public sealed class CurveAbscissaPoint
+internal sealed class CurveAbscissaPoint
 {
     private bool _done;
     private double _l;

@@ -14,7 +14,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of Hyperbola from Geom and Geom2d to a STEP hyperbola.</summary>
-public sealed class GeometryMakeHyperbola : GeometryRoot
+internal sealed class GeometryMakeHyperbola : GeometryRoot
 {
     private StepHyperbola _hyperbola;
 

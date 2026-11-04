@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity LowOrderKinematicPairWithRange
 /// </summary>
-public class LowOrderKinematicPairWithRange : LowOrderKinematicPair
+internal class LowOrderKinematicPairWithRange : LowOrderKinematicPair
 {
     private double _lowerLimitActualRotationX;
     /// <summary>

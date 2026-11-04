@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepBSplineSurfaceWithKnots : StepBSplineSurface
+internal class StepBSplineSurfaceWithKnots : StepBSplineSurface
 {
     private NCollection_HArray1<int> _uMultiplicities;
     private NCollection_HArray1<int> _vMultiplicities;

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Measurement;
 /// Global properties (length, area, volume, centre of mass, inertia) of sets of points, curves, surfaces, solids
 /// and compound systems.
 /// </summary>
-public static class GProp
+internal static class GProp
 {
     /// <summary>
     /// The "Huyghens operator" of a system of mass <paramref name="mass"/> and centre of mass <paramref name="g"/>

@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class TessellatedCurveSet : TessellatedItem
+internal class TessellatedCurveSet : TessellatedItem
 {
     private CoordinatesList _coordList;
     private List<NCollection_HSequence<int>> _curves;

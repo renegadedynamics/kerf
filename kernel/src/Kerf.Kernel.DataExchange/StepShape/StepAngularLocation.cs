@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity AngularLocation
 /// </summary>
-public class StepAngularLocation : StepDimensionalLocation
+internal class StepAngularLocation : StepDimensionalLocation
 {
     private StepAngleRelator _angleSelection;
 

@@ -19,7 +19,7 @@ namespace Kerf.Engine.Meshing;
 /// <see cref="DelaunayNodeInsertionMeshAlgoOfDelabella{RangeSplitter}"/> is the Delabella one (phase4-plan
 /// section 6).
 /// </remarks>
-public class DelaunayNodeInsertionMeshAlgo<RangeSplitter> : NodeInsertionMeshAlgo<RangeSplitter>
+internal class DelaunayNodeInsertionMeshAlgo<RangeSplitter> : NodeInsertionMeshAlgo<RangeSplitter>
     where RangeSplitter : DefaultRangeSplitter, new()
 {
     private bool _isPreProcessSurfaceNodes;

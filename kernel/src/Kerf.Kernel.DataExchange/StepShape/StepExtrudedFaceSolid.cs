@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepExtrudedFaceSolid : StepSweptFaceSolid
+internal class StepExtrudedFaceSolid : StepSweptFaceSolid
 {
     private StepDirection _extrudedDirection;
     private double _depth;

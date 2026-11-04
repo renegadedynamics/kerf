@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepBlock : StepGeometricRepresentationItem
+internal class StepBlock : StepGeometricRepresentationItem
 {
     private StepAxis2Placement3d _position;
     private double _x;

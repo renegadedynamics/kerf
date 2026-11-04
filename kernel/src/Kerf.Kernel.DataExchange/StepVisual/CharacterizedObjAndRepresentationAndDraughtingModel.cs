@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// Complex STEP entity Characterized_Object &amp; Characterized_Representation &amp; Draughting_Model &amp;
 /// Representation
 /// </summary>
-public class CharacterizedObjAndRepresentationAndDraughtingModel : DraughtingModel
+internal class CharacterizedObjAndRepresentationAndDraughtingModel : DraughtingModel
 {
     public CharacterizedObjAndRepresentationAndDraughtingModel()
     {

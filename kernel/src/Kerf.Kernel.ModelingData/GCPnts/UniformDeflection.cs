@@ -23,7 +23,7 @@ namespace Kerf.Engine.Measurement;
 /// A working object (decision 21): <c>Initialize</c> recomputes. The templates over the curve type are ported per
 /// instantiation (decision 187).
 /// </remarks>
-public sealed class UniformDeflection
+internal sealed class UniformDeflection
 {
     private bool _done;
     private double _deflection;

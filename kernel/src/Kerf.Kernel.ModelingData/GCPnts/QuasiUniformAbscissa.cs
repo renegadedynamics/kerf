@@ -20,7 +20,7 @@ namespace Kerf.Engine.Measurement;
 /// A working object (decision 21): <c>Initialize</c> recomputes. The templates over the curve type are ported per
 /// instantiation (decision 187).
 /// </remarks>
-public sealed class QuasiUniformAbscissa
+internal sealed class QuasiUniformAbscissa
 {
     private bool _done;
     private int _nbPoints;

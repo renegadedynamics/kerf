@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class PresentationStyleByContext : PresentationStyleAssignment
+internal class PresentationStyleByContext : PresentationStyleAssignment
 {
     private StyleContextSelect _styleContext = new StyleContextSelect();
 

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Measurement.Distance;
 
 /// <summary>The extrema of the distance between a vertex and an edge.</summary>
 /// <remarks>A working object (decision 21): initialize with an edge, then perform with any number of vertices.</remarks>
-public sealed class ExtPC
+internal sealed class ExtPC
 {
     private readonly CurvePointExtrema _extPC = new();
     private EdgeCurveAdaptor? _hc;

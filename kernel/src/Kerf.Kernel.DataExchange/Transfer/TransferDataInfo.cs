@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Framework.Transfer;
 
 /// <summary>Gives information on an object. Used as template to instantiate Mapper and SimpleBinder. This class is for Transient.</summary>
-public static class TransferDataInfo
+internal static class TransferDataInfo
 {
     /// <summary>Returns the Type attached to an object. Here, the Dynamic Type of a Transient.</summary>
     public static Type? Type(Transient? ent)

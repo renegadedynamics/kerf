@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class BetweenShapeAspect : ContinuosShapeAspect
+internal class BetweenShapeAspect : ContinuosShapeAspect
 {
     public BetweenShapeAspect()
     {

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity SlidingCurvePairValue
 /// </summary>
-public class SlidingCurvePairValue : PairValue
+internal class SlidingCurvePairValue : PairValue
 {
     private StepPointOnCurve _actualPointOnCurve1;
     private StepPointOnCurve _actualPointOnCurve2;

@@ -23,7 +23,7 @@ namespace Kerf.Engine.Measurement;
 /// Adaptor2d_Curve2d), with identical bodies (decision 187). GCPnts_TCurveTypes, the traits that resolve the 2D
 /// and 3D classes, is replaced by the types written out in each instantiation.
 /// </remarks>
-public sealed class AbscissaPoint
+internal sealed class AbscissaPoint
 {
     private readonly CurveAbscissaPoint _computer = new();
 

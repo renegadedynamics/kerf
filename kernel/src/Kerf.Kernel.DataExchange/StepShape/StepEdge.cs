@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepEdge : StepTopologicalRepresentationItem
+internal class StepEdge : StepTopologicalRepresentationItem
 {
     private StepVertex _edgeStart;
     private StepVertex _edgeEnd;

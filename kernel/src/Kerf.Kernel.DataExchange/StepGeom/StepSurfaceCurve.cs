@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepSurfaceCurve : StepCurve
+internal class StepSurfaceCurve : StepCurve
 {
     private StepCurve _curve3d;
     private NCollection_HArray1<StepPcurveOrSurface> _associatedGeometry;

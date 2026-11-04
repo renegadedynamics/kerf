@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// This class gives a simple way to create then write a Model compliant to a given norm, from a Shape The
 /// model can then be edited by tools by other appropriate tools
 /// </summary>
-public class FrameworkWriter
+internal class FrameworkWriter
 {
 
     /// <summary>

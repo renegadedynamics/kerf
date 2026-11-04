@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class ParallelOffset : DerivedShapeAspect
+internal class ParallelOffset : DerivedShapeAspect
 {
     private Transient _offset;
 

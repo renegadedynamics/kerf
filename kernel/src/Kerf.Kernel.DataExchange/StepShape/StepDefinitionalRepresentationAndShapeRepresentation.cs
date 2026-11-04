@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// Implements complex type
 /// (DEFINITIONAL_REPRESENTATION,REPRESENTATION,SHAPE_REPRESENTATION)
 /// </summary>
-public class StepDefinitionalRepresentationAndShapeRepresentation : DefinitionalRepresentation
+internal class StepDefinitionalRepresentationAndShapeRepresentation : DefinitionalRepresentation
 {
     public StepDefinitionalRepresentationAndShapeRepresentation()
     {

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity QuantifiedAssemblyComponentUsage
 /// </summary>
-public class QuantifiedAssemblyComponentUsage : AssemblyComponentUsage
+internal class QuantifiedAssemblyComponentUsage : AssemblyComponentUsage
 {
     private Transient _quantity;
 

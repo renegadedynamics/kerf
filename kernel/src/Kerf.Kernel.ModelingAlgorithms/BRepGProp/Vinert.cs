@@ -19,7 +19,7 @@ namespace Kerf.Engine.Measurement;
 /// The forms with <c>Eps</c> integrate adaptively to that relative error of the mass (non-adaptively above 0.001) and
 /// return the error reached; the others use numbers of Gauss points chosen by the types of the surface and curves.
 /// </remarks>
-public class Vinert : Properties
+internal class Vinert : Properties
 {
     private double _epsilon;
 

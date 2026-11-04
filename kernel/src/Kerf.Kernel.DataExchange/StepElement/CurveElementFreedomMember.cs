@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of member for STEP SELECT type CurveElementFreedom
 /// </summary>
-public class CurveElementFreedomMember : SelectNamed
+internal class CurveElementFreedomMember : SelectNamed
 {
     private const string Ecef = "ENUMERATED_CURVE_ELEMENT_FREEDOM";
     private const string Addf = "APPLICATION_DEFINED_DEGREE_OF_FREEDOM";

@@ -8,7 +8,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 
 /// <summary>Controls access on values by an editor: optional (may be removed), editable (must be present), protected (access must be validated), computed (it will be recomputed), read (read only), dynamic (not a field, only displayed).</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.IFSelect_EditValue;</c>.</remarks>
-public enum EditValue
+internal enum EditValue
 {
     Optional,
     Editable,

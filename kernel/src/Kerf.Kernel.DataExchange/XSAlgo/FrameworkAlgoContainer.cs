@@ -29,7 +29,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// The parameters OCCT reads from <c>Interface_Static</c> come from the <see cref="StaticSet"/> the caller
 /// passes (decision 1181). <c>PrepareForTransfer</c> is left out (decision 1203).
 /// </remarks>
-public class FrameworkAlgoContainer : Transient
+internal class FrameworkAlgoContainer : Transient
 {
     /// <summary>Empty constructor.</summary>
     public FrameworkAlgoContainer()

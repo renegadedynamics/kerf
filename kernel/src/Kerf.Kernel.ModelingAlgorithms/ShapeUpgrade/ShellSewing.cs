@@ -23,7 +23,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// A working object (decision 21). The shape given is not modified (decision 999): sewing works on a copy of frozen
 /// faces (decision 583) and the reshaper builds new shapes. <see cref="ApplySewing"/> freezes what it returns.
 /// </remarks>
-public class ShellSewing
+internal class ShellSewing
 {
     private readonly IndexedSet<Shape> _shells = new(ShapeHasher.Instance);
     private readonly ReShapeBuilder _reShape;

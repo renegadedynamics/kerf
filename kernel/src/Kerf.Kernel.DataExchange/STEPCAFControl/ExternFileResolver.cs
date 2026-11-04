@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Documents;
 /// <param name="referencingName">The name of the file holding the reference: the main file's name as given to
 /// ReadFile or ReadStream, or, for a file an external file refers to, the name the reader gave that file (see
 /// <see cref="CafReader.SetExternFileResolver"/>).</param>
-public delegate Stream? ExternFileResolver(string fileName, string referencingName);
+internal delegate Stream? ExternFileResolver(string fileName, string referencingName);
 
 /// <summary>
 /// Opens the stream an external file is written to, for <see cref="CafWriter.WriteStream(Stream,
@@ -26,14 +26,14 @@ public delegate Stream? ExternFileResolver(string fileName, string referencingNa
 /// </summary>
 /// <param name="fileName">The external file's name as the writer made it (the prefix and the label's name, as
 /// OCCT): it comes from the document and may hold separators, <c>..</c> or a drive.</param>
-public delegate Stream? ExternFileWriter(string fileName);
+internal delegate Stream? ExternFileWriter(string fileName);
 
 /// <summary>
 /// The budget of a <see cref="CafReader"/>'s external reads, across all the files read for one main file
 /// (OCCT.NET, unit 8Z). Each external file is read with the caller's <see cref="ParserReadLimits"/> too, its
 /// <see cref="ParserReadLimits.MaxFileSize"/> lowered to what is left of <see cref="MaxTotalSize"/>.
 /// </summary>
-public sealed record ExternFileLimits
+internal sealed record ExternFileLimits
 {
     /// <summary>The defaults: 1,000 files, 16 GiB in all, nesting 100 deep.</summary>
     public static ExternFileLimits Default { get; } = new();

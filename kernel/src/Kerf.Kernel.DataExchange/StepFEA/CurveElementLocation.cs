@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity CurveElementLocation
 /// </summary>
-public class CurveElementLocation : Transient
+internal class CurveElementLocation : Transient
 {
     private FeaParametricPoint _coordinate;
 

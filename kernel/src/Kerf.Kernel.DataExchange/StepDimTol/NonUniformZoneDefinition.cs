@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity NonUniformZoneDefinition
 /// </summary>
-public class NonUniformZoneDefinition : ToleranceZoneDefinition
+internal class NonUniformZoneDefinition : ToleranceZoneDefinition
 {
     /// <summary>
     /// Empty constructor

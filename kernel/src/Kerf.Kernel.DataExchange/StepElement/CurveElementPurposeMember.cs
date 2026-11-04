@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of member for STEP SELECT type CurveElementPurpose
 /// </summary>
-public class CurveElementPurposeMember : SelectNamed
+internal class CurveElementPurposeMember : SelectNamed
 {
     private const string Ecep = "ENUMERATED_CURVE_ELEMENT_PURPOSE";
     private const string Adep = "APPLICATION_DEFINED_ELEMENT_PURPOSE";

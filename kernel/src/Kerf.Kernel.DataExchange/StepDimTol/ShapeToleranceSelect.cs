@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP SELECT type ShapeToleranceSelect
 /// </summary>
-public class ShapeToleranceSelect : SelectType
+internal class ShapeToleranceSelect : SelectType
 {
     /// <summary>
     /// Empty constructor

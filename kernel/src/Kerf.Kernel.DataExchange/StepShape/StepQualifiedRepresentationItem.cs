@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class StepQualifiedRepresentationItem : RepresentationItem
+internal class StepQualifiedRepresentationItem : RepresentationItem
 {
     private NCollection_HArray1<StepValueQualifier> _qualifiers;
 

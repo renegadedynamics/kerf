@@ -42,7 +42,7 @@ namespace Kerf.Engine.Exchange.Step.Import.Geometry;
 /// overloads without factors use the defaults (millimetres and radians). The results are new, unfrozen geometry.
 /// <c>MakeYprRotation</c> was added by unit 8F (decision 1238).
 /// </remarks>
-public static class StepToGeom
+internal static class StepToGeom
 {
     //=============================================================================
     // Creation d' un Ax1Placement de Geom a partir d' un axis1_placement de Step

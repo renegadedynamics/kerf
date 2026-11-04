@@ -26,7 +26,7 @@ public class BndOBBOracleTests(ITestOutputHelper output)
             using var aNPoints = ToNative(aPoints);
             using var aNative = new N.Bnd_OBB();
             aNative.ReBuild(aNPoints);
-            OrientedBox anOBB = OrientedBox.FromPoints(aPoints);
+            Obb anOBB = Obb.FromPoints(aPoints);
             SameOBB(anOracle, aNative, anOBB, "ReBuild");
 
             // Every point inside
@@ -66,7 +66,7 @@ public class BndOBBOracleTests(ITestOutputHelper output)
             Box aBox = Box.FromPoint(aP1).Added(aP2);
 
             using var aNative = new N.Bnd_OBB(aNBox);
-            OrientedBox anOBB = new(aBox);
+            Obb anOBB = new(aBox);
             SameOBB(anOracle, aNative, anOBB, "from Bnd_Box");
 
             double aGap = anOracle.Real(-3, 3);
@@ -85,7 +85,7 @@ public class BndOBBOracleTests(ITestOutputHelper output)
             Frame3D anAx = anOracle.Ax2();
             double aHX = anOracle.Real(0, 30), aHY = anOracle.Real(0, 30), aHZ = anOracle.Real(0, 30);
             using var aNOther = ToNative(anAx, aHX, aHY, aHZ);
-            OrientedBox anOther = FromNative(aNOther);
+            Obb anOther = FromNative(aNOther);
             aNative.Add(aNOther);
             anOBB = anOBB.Added(anOther);
             SameOBB(anOracle, aNative, anOBB, "Add(OBB)");
@@ -93,7 +93,7 @@ public class BndOBBOracleTests(ITestOutputHelper output)
             // Adding to a void box copies the other
             using var aNVoid = new N.Bnd_OBB();
             aNVoid.Add(aNOther);
-            SameOBB(anOracle, aNVoid, new OrientedBox().Added(anOther), "Add(OBB) to void");
+            SameOBB(anOracle, aNVoid, new Obb().Added(anOther), "Add(OBB) to void");
         }
 
         anOracle.Report("Bnd_OBB from Bnd_Box, Enlarge, Add");
@@ -110,8 +110,8 @@ public class BndOBBOracleTests(ITestOutputHelper output)
                            anOracle.Real(0, 60), anOracle.Real(0, 60), anOracle.Real(0, 60)];
             using var aN1 = ToNative(anAx1, aH[0], aH[1], aH[2]);
             using var aN2 = ToNative(anAx2, aH[3], aH[4], aH[5]);
-            OrientedBox anOBB1 = FromNative(aN1);
-            OrientedBox anOBB2 = FromNative(aN2);
+            Obb anOBB1 = FromNative(aN1);
+            Obb anOBB2 = FromNative(aN2);
 
             anOracle.Same(aN1.IsOut(aN2), anOBB1.IsOut(anOBB2), "IsOut(OBB)");
             anOracle.Same(aN1.Intersects(aN2), anOBB1.Intersects(anOBB2), "Intersects");
@@ -119,7 +119,7 @@ public class BndOBBOracleTests(ITestOutputHelper output)
 
             // A box inside the other (shrunk copy) and an axis-aligned pair
             using var aNSmall = ToNative(anAx1, aH[0] / 2, aH[1] / 2, aH[2] / 2);
-            OrientedBox aSmall = FromNative(aNSmall);
+            Obb aSmall = FromNative(aNSmall);
             anOracle.Same(aN1.IsCompletelyInside(aNSmall), anOBB1.IsCompletelyInside(aSmall), "IsCompletelyInside(shrunk)");
 
             aN1.SetAABox(true);
@@ -181,20 +181,20 @@ public class BndOBBOracleTests(ITestOutputHelper output)
     /// The port's box with exactly the native box's values: the native gp_Dir constructor normalises the components again
     /// (the port keeps a vector within gp::Resolution of unit length), which can change the last bits.
     /// </summary>
-    private static OrientedBox FromNative(N.Bnd_OBB theNative)
+    private static Obb FromNative(N.Bnd_OBB theNative)
     {
         using var aC = theNative.Center();
         using var aX = theNative.XDirection();
         using var aY = theNative.YDirection();
         using var aZ = theNative.ZDirection();
-        return new OrientedBox().WithCenter(new Point3D(Oracle.FromNative(aC)))
+        return new Obb().WithCenter(new Point3D(Oracle.FromNative(aC)))
                             .WithXComponent(new Direction3D(Oracle.FromNative(aX)), theNative.XHSize())
                             .WithYComponent(new Direction3D(Oracle.FromNative(aY)), theNative.YHSize())
                             .WithZComponent(new Direction3D(Oracle.FromNative(aZ)), theNative.ZHSize())
                             .WithAABox(theNative.IsAABox());
     }
 
-    private static void SameOBB(Oracle theOracle, N.Bnd_OBB theNative, in OrientedBox thePort, string theWhat)
+    private static void SameOBB(Oracle theOracle, N.Bnd_OBB theNative, in Obb thePort, string theWhat)
     {
         theOracle.Same(theNative.IsVoid(), thePort.IsVoid, $"{theWhat}: IsVoid");
         theOracle.Same(theNative.IsAABox(), thePort.IsAABox, $"{theWhat}: IsAABox");

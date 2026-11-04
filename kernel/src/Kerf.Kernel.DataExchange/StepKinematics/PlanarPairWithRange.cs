@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity PlanarPairWithRange
 /// </summary>
-public class PlanarPairWithRange : PlanarPair
+internal class PlanarPairWithRange : PlanarPair
 {
     private double _lowerLimitActualRotation;
     /// <summary>

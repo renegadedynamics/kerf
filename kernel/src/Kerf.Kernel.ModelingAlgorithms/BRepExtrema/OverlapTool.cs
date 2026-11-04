@@ -21,7 +21,7 @@ namespace Kerf.Engine.Measurement.Distance;
 /// <see cref="SelfIntersection"/>; the result maps are its own. OCCT's debug output of the overlapped
 /// triangles (OVERLAP_TOOL_OUTPUT_TRIANGLES) is compiled out, as in OCCT.
 /// </remarks>
-public class OverlapTool : PairTraverse<double, BVH_Vec3d, double>
+internal class OverlapTool : PairTraverse<double, BVH_Vec3d, double>
 {
     private TriangleSet? _set1;
     private TriangleSet? _set2;

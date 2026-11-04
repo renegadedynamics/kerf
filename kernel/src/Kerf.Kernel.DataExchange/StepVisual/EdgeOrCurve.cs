@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP SELECT type EdgeOrCurve
 /// </summary>
-public class EdgeOrCurve : SelectType
+internal class EdgeOrCurve : SelectType
 {
     /// <summary>
     /// Empty constructor

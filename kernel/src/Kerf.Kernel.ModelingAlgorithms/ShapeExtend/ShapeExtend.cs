@@ -11,7 +11,7 @@ using static Kerf.Engine.Healing.Extend.ExtendStatus;
 namespace Kerf.Engine.Healing.Extend;
 
 /// <summary>General tools of Shape Healing: the coding of <see cref="ExtendStatus"/> flags into bit masks.</summary>
-public static class ShapeExtend
+internal static class ShapeExtend
 {
     // OCCT.NET: the messages go into the message table's defaults once per process (unit 10I)
     private static readonly Lazy<bool> Loaded = new(() =>

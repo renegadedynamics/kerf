@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity RollingSurfacePairValue
 /// </summary>
-public class RollingSurfacePairValue : PairValue
+internal class RollingSurfacePairValue : PairValue
 {
     private StepPointOnSurface _actualPointOnSurface;
     private double _actualRotation;

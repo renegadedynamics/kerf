@@ -17,7 +17,7 @@ namespace Kerf.Engine.Meshing;
 /// start at 1; a deleted vertex's index is reused.
 /// </summary>
 /// <remarks>A working object, as OCCT's (the allocator argument is dropped).</remarks>
-public sealed class VertexTool : Transient
+internal sealed class VertexTool : Transient
 {
     private readonly CellFilter<MeshingVertexInspector, int, Xy> _cellFilter;
     private MeshingVertexInspector _selector;

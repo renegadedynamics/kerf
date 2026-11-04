@@ -19,7 +19,7 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Engine.Exchange.Step.Export;
 
 /// <summary>Makes a brep_with_voids from a solid holding more than one closed shell.</summary>
-public sealed class MakeBrepWithVoids : ExportRoot
+internal sealed class MakeBrepWithVoids : ExportRoot
 {
     private StepBrepWithVoids _brepWithVoids;
     private TessellatedItem _tessellatedItem;

@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Elements;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepElement_Element2dShape;</c>.</remarks>
-public enum Element2dShape
+internal enum Element2dShape
 {
     Quadrilateral,
     Triangle,

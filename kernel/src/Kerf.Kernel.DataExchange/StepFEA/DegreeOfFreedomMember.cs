@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of member for STEP SELECT type CurveElementFreedom
 /// </summary>
-public class DegreeOfFreedomMember : SelectNamed
+internal class DegreeOfFreedomMember : SelectNamed
 {
     private const string AnEnumeratedCurveElementFreedom = "ENUMERATED_DEGREE_OF_FREEDOM";
     private const string AnApplicationDefinedDegreeOfFreedom = "APPLICATION_DEFINED_DEGREE_OF_FREEDOM";

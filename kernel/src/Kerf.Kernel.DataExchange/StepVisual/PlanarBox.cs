@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class PlanarBox : PlanarExtent
+internal class PlanarBox : PlanarExtent
 {
     private StepAxis2Placement _placement = new StepAxis2Placement();
 

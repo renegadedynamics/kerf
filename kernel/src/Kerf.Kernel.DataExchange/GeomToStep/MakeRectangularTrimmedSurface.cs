@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of RectangularTrimmedSurface from Geom to a STEP rectangular_trimmed_surface.</summary>
-public sealed class MakeRectangularTrimmedSurface : GeometryRoot
+internal sealed class MakeRectangularTrimmedSurface : GeometryRoot
 {
     private StepRectangularTrimmedSurface _rectangularTrimmedSurface;
 

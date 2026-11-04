@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity FeaGroup
 /// </summary>
-public class FeaGroup : Group
+internal class FeaGroup : Group
 {
     private FeaModel _modelRef;
 

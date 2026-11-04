@@ -25,7 +25,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// Edge, in Edge)"/> and its face form return new frozen vertices; ported code that goes on building
 /// calls the internal non-freezing forms.
 /// </remarks>
-public class TransferParametersProjAnalysis : TransferParametersAnalysis
+internal class TransferParametersProjAnalysis : TransferParametersAnalysis
 {
     private Curve3D?              _curve;
     private Curve2D?            _curve2d;

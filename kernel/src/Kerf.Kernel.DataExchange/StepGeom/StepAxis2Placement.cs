@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepAxis2Placement : SelectType
+internal class StepAxis2Placement : SelectType
 {
     /// <summary>
     /// Returns a Axis2Placement SelectType

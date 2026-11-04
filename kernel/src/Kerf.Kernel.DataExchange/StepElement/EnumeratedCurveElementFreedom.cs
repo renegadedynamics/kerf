@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Elements;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepElement_EnumeratedCurveElementFreedom;</c>.</remarks>
-public enum EnumeratedCurveElementFreedom
+internal enum EnumeratedCurveElementFreedom
 {
     XTranslation,
     YTranslation,

@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepRevolvedAreaSolid : StepSweptAreaSolid
+internal class StepRevolvedAreaSolid : StepSweptAreaSolid
 {
     private StepAxis1Placement _axis;
     private double _angle;

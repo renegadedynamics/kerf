@@ -15508,3 +15508,74 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        2,428/2,079/187, after 2,035/2,923/163 and 1,961/1,796/163; 6.91 MB a Boolean either way: noise. The benchmarks
        call the engine, whose code didn't change; the public operations add one argument check and one history copy
        per call, outside the engine's loops.
+## Phase 10: unit 10L3, the public API, part 3: measurement, healing, meshing and exchange
+
+1532. **Four areas public, on the README's pattern** (docs/api/README.md, section 12): `Kerf.Measurement`
+       (`MeasureOperations`), `Kerf.Healing` (`HealingOperations`), `Kerf.Meshing` (`Mesher`, `ShapeMesh`) in
+       ModelingAlgorithms, `Kerf.Exchange` (`Step`, `Stl`, `Gltf`, `ThreeMf`, `Obj`, `Brep`, `ModelNode`) in DataExchange,
+       `Kerf.Color` and `Kerf.Geometry.OrientedBox` in Foundation. Each operation is a static method declared as a C# 14
+       extension member (generic over `IShape<T>`, so `part.Volume()` and `MeasureOperations.Volume(part)` both work);
+       the shape-making ones run on `EngineOperation.Run` (decision 1515) unchanged, so no shared plumbing changed.
+       Volume, area and length are numbers; distances, fixes, sewing, unifying, meshing and every reader and writer are
+       `Result`s; a null shape is an `ArgumentException`. BREP lives in DataExchange with the other formats (exchange.md
+       put it in ModelingData): `ReadLimits` is DataExchange's, and one namespace in one assembly is simpler.
+1533. **Five engine types renamed for public names** (kerf-rename, Kerf.slnx and the benchmarks; kerf.map and
+       `OcctTypeNames` follow, so OCCT's printed names are unchanged): `Quantity_Color` is `LinearColor` (for
+       `Kerf.Color`), `Bnd_OBB` `Obb` (for `OrientedBox`), `RWGltf_ReadLimits` `GltfReadLimits`, `RWGltf_WriteOptions`
+       `GltfWriterOptions`, `RWObj_WriteOptions` `ObjWriterOptions`, `StepBasic_LengthUnit` `StepLengthUnit` (for
+       `ReadLimits`, `GltfWriteOptions`, `ObjWriteOptions`, `LengthUnit`). The tool also renamed the modelling layer's
+       `Geometry/Color.cs` (its type isn't the engine's): moved back by hand. No `Meshing.Triangle` record: the engine's
+       `Triangle` has the name, and the buffers are int triples.
+1534. **Measurement and healing follow OCCT where the review guessed otherwise.** `Length` counts an edge once per face
+       it bounds, as `BRepGProp::LinearProperties` (a box of 10 × 20 × 30 has 480), and `MassOptions.SkipShared` once.
+       `MassProperties.MomentOfInertia` is Huygens' theorem on the record's own inertia (GProp's `HOperator`), so the
+       record holds no engine object. `FixOptions`' modes are `bool?` (null is OCCT's -1, "decide") and its tolerances
+       OCCT's (1e-7, not the review's maximum of 1); a tolerance left at its default isn't passed on. `ConnectEdges` and
+       `FreeBoundaries` return wires, as they can't fail. `Classify` is on solids. `Validate`'s report lists every status
+       of every checked sub-shape, on its own and in its contexts, as `check.` and BRepCheck_Status in words
+       (`check.not-closed`); `IsValid` is the analyser's own (first status only, as OCCT).
+1535. **Meshing by the overlay route, read out unfinished** (decision 1444, question 59). `IncrementalMesh.ReadMeshed`
+       (internal) opens the mesher's overlay on the shape (its unfrozen TShapes copied first), meshes, and hands the
+       meshed target to a reader while the overlay is open; the overlay is dropped, so nothing is published and no
+       meshed copy is assembled. The reader is `MeshExtraction` (10B's, float for float), which now also returns each
+       face's triangulation and placement: `ShapeMesh` keeps them for `FaceMesh.GetNodes()` (double precision, on
+       demand) and the mesh writers. One triangle buffer, its indices local to each face (`FaceMesh.FirstNode` offsets
+       them), so the copy-out is 10H6's: 100,520 triangles copy out with 3.1 MB allocated for 2.4 MB of buffers (2.7 MB
+       of it the extraction, 0.4 MB the mesher's check that the shape's existing meshes are fine enough), 9.8 ms at best
+       (`MesherCopyOutTests`). `BrepBuilder.UpdateFaceMesh`/`UpdateEdgeMesh` stay: the post-processor sets each
+       triangulation's deflection and parameters after attaching it (deflection estimation reads the attached polygons),
+       and the engine's own meshing (Draw-lite, HLR, the writers' meshing of shapes) still stores meshes on faces;
+       retiring them means estimating before attaching, a change to the mesher left for a later unit.
+1536. **No mesh on a public face.** `Face.FromMesh` and `Face.TryGetMesh` are not written: a mesh read from a file
+       (`Stl.Read`, `Gltf.Read`) is a `ShapeMesh` whose `Shape` (and faces) are null, and a model's mesh part is
+       `ModelNode.Mesh`. Internally a mesh goes back to the engine's writers as a compound of faces holding only its
+       triangulations, at their placements and orientations (`ShapeMesh.ToMeshOnlyShape`), never handed out.
+1537. **Exchange.** `ModelNode.Placement` is a `Placement`, not a `Transform3D`: the writers share locations by
+       identity, and an assembly read keeps its instance's. A part's shape carries its own placement (STEP's reader
+       places it). `Kerf.Color` holds OCCT's linear single-precision values and shows sRGB (question 60): `FromLinear`
+       and `ToLinear` round-trip a file's values exactly. STEP data holding no shape reads as an empty assembly. No
+       `Obj.Read` (the engine has only OBJ's writer), no STEP healing switch or schema option yet. The modelling layer's
+       STEP writer and reader, its STL, glTF and 3MF writers and its mesh (`ShapeMesh`) moved onto the public API,
+       mechanically: its STEP native references (byte for byte), and `PublicExchangeIdentityTests` (STL binary and ASCII,
+       glTF, 3MF and BREP against the engine driven the old way, a meshed private copy) show the bytes unchanged. Its
+       STL and glTF readers (they make faces holding triangles) and BREP import stay on its glue until 10M.
+1538. **The six areas' engine internal where nothing public shows it**: 1,229 of the 1,695 top-level types of
+       `Kerf.Engine.Measurement…`, `Classification…`, `Intersection.CurveSurface`, `Healing…`, `Meshing…` and
+       `Exchange…` (927 of exchange's, 127 of healing's, 86 of meshing's, 60 of measurement's, 29 of classification's and
+       the curve-surface intersection's). Found as 10L1 found its own (decision 1520), by a script: all made internal,
+       then rounds of builds of Kerf.slnx and the benchmarks making public again the types the inaccessibility errors
+       named (33 rounds over three runs). The 466 left public are shown by the modelling layer's public API
+       (`Sewing`, `UnifySameDomain`, `Obb`, the colour types…), by public engine types of other areas (Poly's
+       triangulations on BRep's, the classifiers on the Booleans'), or by Draw-lite's and the tests' public helpers
+       (XdeDoc's tree, STEP's style entities); they go with those.
+1539. **Tests and measurement.** Suites keep their counts; no existing test changed. New: `Kerf.Kernel.PublicApi.Tests`
+       35 (measurement 9, healing 9, meshing 5, exchange 10, the areas' surface 2), its fixtures three BREP files read by
+       the public reader; ModelingAlgorithms.Tests 1 (`MesherCopyOutTests`); DataExchange.Tests 4
+       (`PublicExchangeIdentityTests`). Counts: Foundation 2,305, ModelingData 3,149, ModelingAlgorithms 4,845 (9
+       skipped), DataExchange 286 (1 skipped), Oracle 383, PublicApi 76, the modelling layer 1,884, Draw-lite's classes
+       687, all passing. Bento's benchmark (`Kerf.Kernel.Bento.Benchmarks 7 0`, Release, a machine shared with other
+       units), before (e668db9b with the renames) and after: the same volumes, faces and triangles in every example;
+       allocation per example the same or lower (nesting locations 33.6 to 25.9 MB, plate with hole 3.9 to 3.6, the
+       bottle 93.4 to 92.6: the mesher no longer copies the shape); median recalculation 1,532 ms before, 1,418 after.
+       STEP reading isn't in that benchmark; the reader's path is unchanged but for the tree's conversion to
+       `ModelNode`.

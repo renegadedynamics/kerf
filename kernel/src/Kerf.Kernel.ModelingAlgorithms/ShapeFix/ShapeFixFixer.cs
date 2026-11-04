@@ -33,7 +33,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// a copy of a frozen shape, give back its unchanged sub-shapes and freeze the result (plan 2.7, decision 583).
 /// <see cref="RemoveSmallEdges"/> runs ShapeFix_Shape, which copies a frozen shape itself, and freezes its result.
 /// </remarks>
-public static partial class ShapeFixFixer
+internal static partial class ShapeFixFixer
 {
     /// <summary>
     /// Runs ShapeFix_Edge's FixSameParameter on every edge of the shape (on each of its faces), then updates the

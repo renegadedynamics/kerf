@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class AreaInSet : Transient
+internal class AreaInSet : Transient
 {
     private PresentationArea _area;
     private PresentationSet _inSet;

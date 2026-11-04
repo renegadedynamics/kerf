@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP SELECT type SpatialRotation
 /// </summary>
-public class SpatialRotation : SelectType
+internal class SpatialRotation : SelectType
 {
     /// <summary>
     /// Empty constructor

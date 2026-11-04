@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepSeamCurve : StepSurfaceCurve
+internal class StepSeamCurve : StepSurfaceCurve
 {
     /// <summary>
     /// Returns a SeamCurve

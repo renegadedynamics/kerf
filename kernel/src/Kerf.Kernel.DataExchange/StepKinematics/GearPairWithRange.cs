@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity GearPairWithRange
 /// </summary>
-public class GearPairWithRange : GearPair
+internal class GearPairWithRange : GearPair
 {
     private double _lowerLimitActualRotation1;
     /// <summary>

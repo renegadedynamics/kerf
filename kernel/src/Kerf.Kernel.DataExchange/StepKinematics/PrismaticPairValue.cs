@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity PrismaticPairValue
 /// </summary>
-public class PrismaticPairValue : PairValue
+internal class PrismaticPairValue : PairValue
 {
     private double _actualTranslation;
 

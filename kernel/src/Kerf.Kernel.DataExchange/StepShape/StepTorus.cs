@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepTorus : StepGeometricRepresentationItem
+internal class StepTorus : StepGeometricRepresentationItem
 {
     private StepAxis1Placement _position;
     private double _majorRadius;

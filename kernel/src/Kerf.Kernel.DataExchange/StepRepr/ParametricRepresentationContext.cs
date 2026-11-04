@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class ParametricRepresentationContext : RepresentationContext
+internal class ParametricRepresentationContext : RepresentationContext
 {
     /// <summary>
     /// Returns a ParametricRepresentationContext

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Measurement;
 /// The curve tool of <see cref="Cinert"/>: the methods GProp's CurveTool template requires, on the curve of an
 /// edge.
 /// </summary>
-public static class EdgeTool
+internal static class EdgeTool
 {
     /// <summary>The parameter of the start point of the curve.</summary>
     public static double FirstParameter(EdgeCurveAdaptor c) => c.FirstParameter();

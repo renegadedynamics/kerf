@@ -30,7 +30,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 /// A segment may itself be a composite_curve; only one-level protection against cyclic references is implemented.
 /// <see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 1247).
 /// </remarks>
-public sealed class TranslateCompositeCurve : ImportRoot
+internal sealed class TranslateCompositeCurve : ImportRoot
 {
     private Wire _wire = new Wire();
     private bool _infiniteSegment;

@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Tolerances;
 
-public class GeoTolAndGeoTolWthDatRefAndUneqDisGeoTol : GeoTolAndGeoTolWthDatRef
+internal class GeoTolAndGeoTolWthDatRefAndUneqDisGeoTol : GeoTolAndGeoTolWthDatRef
 {
     private UnequallyDisposedGeometricTolerance _unequallyDisposedGeometricTolerance;
 

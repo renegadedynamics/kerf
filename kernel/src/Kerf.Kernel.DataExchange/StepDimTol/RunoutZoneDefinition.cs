@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity ToleranceZoneDefinition
 /// </summary>
-public class RunoutZoneDefinition : ToleranceZoneDefinition
+internal class RunoutZoneDefinition : ToleranceZoneDefinition
 {
     private RunoutZoneOrientation _orientation;
 

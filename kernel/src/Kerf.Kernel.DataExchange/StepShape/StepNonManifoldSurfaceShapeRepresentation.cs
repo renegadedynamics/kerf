@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity NonManifoldSurfaceShapeRepresentation
 /// </summary>
-public class StepNonManifoldSurfaceShapeRepresentation : StepShapeRepresentation
+internal class StepNonManifoldSurfaceShapeRepresentation : StepShapeRepresentation
 {
     /// <summary>
     /// Empty constructor

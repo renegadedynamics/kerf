@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Added from StepVisual Rev2 to Rev4
 /// </summary>
-public class PresentedItemRepresentation : Transient
+internal class PresentedItemRepresentation : Transient
 {
     private PresentationRepresentationSelect _presentation = new PresentationRepresentationSelect();
     private PresentedItem _item;

@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 /// it has written across calls of <see cref="Write(in Shape, Stream)"/> until <see cref="Clear"/>.
 /// </summary>
 /// <remarks>The format has no version and no Locked bit: a shape's flags are Free to Convex, in one byte.</remarks>
-public class ShapeWriter : ShapeSetBase
+internal class ShapeWriter : ShapeSetBase
 {
     // positions of the objects already stored
     private readonly Dictionary<Shape, ulong> _shapePos = new(ShapeHasher.Instance);

@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class DefinitionalRepresentation : StepRepresentation
+internal class DefinitionalRepresentation : StepRepresentation
 {
     /// <summary>
     /// Returns a DefinitionalRepresentation

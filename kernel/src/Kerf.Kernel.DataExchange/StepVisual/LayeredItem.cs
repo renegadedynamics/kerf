@@ -13,7 +13,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class LayeredItem : SelectType
+internal class LayeredItem : SelectType
 {
     /// <summary>
     /// Returns a LayeredItem SelectType

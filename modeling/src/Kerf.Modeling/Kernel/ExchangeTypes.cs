@@ -4,8 +4,8 @@ using Occt;
 namespace Kerf.Modeling;
 
 /// <summary>
-/// A node of an assembly tree, as the mesh writers take it and the glTF reader gives it (<see cref="Extras.WriteGltf"/>,
-/// <see cref="Extras.Write3mf"/>, <see cref="Extras.ReadGltf"/>): a part (<see cref="Shape"/>, placed by its own
+/// A node of an assembly tree, as the glTF reader gives it (<see cref="Extras.ReadGltf"/>; the writers and STEP take
+/// the kernel's <c>Kerf.Exchange.ModelNode</c>): a part (<see cref="Shape"/>, placed by its own
 /// location) or an assembly (<see cref="Children"/>, placed by <see cref="Location"/>), with a name and a colour.
 /// </summary>
 /// <param name="Name">The name, or null.</param>
@@ -36,19 +36,6 @@ internal sealed record ExchangeNode(string? Name, (double R, double G, double B,
 /// <param name="MaxTriangles">The most triangles (STL, glTF).</param>
 /// <param name="MaxNodes">The most glTF nodes.</param>
 internal sealed record ExchangeReadLimits(long MaxBytes, int MaxEntities, int MaxDepth, long MaxTriangles, int MaxNodes);
-
-/// <summary>
-/// STEP writing parameters, OCCT's statics: the shapes' length unit, which the file is written in, whether to write
-/// pcurves (<c>write.surfacecurve.mode</c>) and the precision mode (<c>write.precision.mode</c>).
-/// </summary>
-/// <param name="UnitInMillimetres">The unit's size in millimetres (OCCT's <c>write.step.unit</c>, and the shapes' unit).</param>
-/// <param name="WritePcurves">Whether to write the edges' curves on their faces.</param>
-/// <param name="PrecisionMode">-1 least, 0 average, 1 greatest, 2 session.</param>
-internal sealed record StepWriteSettings(double UnitInMillimetres = 1.0, bool WritePcurves = true, int PrecisionMode = 0)
-{
-    /// <summary>OCCT's defaults.</summary>
-    public static StepWriteSettings Default { get; } = new();
-}
 
 /// <summary>Stream helpers for the exchange code.</summary>
 internal static class ExchangeIO

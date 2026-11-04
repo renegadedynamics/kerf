@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// it shared items (one level) or all the entities its refers to, directly or recursively.
 /// </summary>
 /// <remarks>A C++ value class, a C# class here (decision 1185).</remarks>
-public class StepDumper
+internal class StepDumper
 {
     private readonly StepModel _themodel;
     private readonly GeneralLib _theslib;

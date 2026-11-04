@@ -244,18 +244,18 @@ public class RWGltfReaderTests
         }
         aDeep["nodes"] = aNodes;
         AssertError(aDeep, "deeper than the limit (256)");
-        Tree? aDeepTree = Read(aDeep, out TreeReader aReader, new ReadOptions { Limits = ReadLimits.Default with { MaxDepth = 1000 } });
+        Tree? aDeepTree = Read(aDeep, out TreeReader aReader, new ReadOptions { Limits = GltfReadLimits.Default with { MaxDepth = 1000 } });
         Assert.True(aDeepTree is not null, aReader.Error);
         Assert.Single(aDeepTree.Flatten());
-        AssertError(aDeep, "300 nodes, more than the limit (100)", new ReadOptions { Limits = ReadLimits.Default with { MaxNodes = 100 } });
+        AssertError(aDeep, "300 nodes, more than the limit (100)", new ReadOptions { Limits = GltfReadLimits.Default with { MaxNodes = 100 } });
     }
 
     [Fact]
     public void LimitsAndExtensions()
     {
-        AssertError(Model(), "larger than the limit (100 bytes)", new ReadOptions { Limits = ReadLimits.Default with { MaxBytes = 100 } });
-        AssertError(Model(), "Buffer 0: larger than the limit (10 bytes)", new ReadOptions { Limits = ReadLimits.Default with { MaxBufferBytes = 10 } });
-        AssertError(Model(), "More triangles than the limit (0)", new ReadOptions { Limits = ReadLimits.Default with { MaxTriangles = 0 } });
+        AssertError(Model(), "larger than the limit (100 bytes)", new ReadOptions { Limits = GltfReadLimits.Default with { MaxBytes = 100 } });
+        AssertError(Model(), "Buffer 0: larger than the limit (10 bytes)", new ReadOptions { Limits = GltfReadLimits.Default with { MaxBufferBytes = 10 } });
+        AssertError(Model(), "More triangles than the limit (0)", new ReadOptions { Limits = GltfReadLimits.Default with { MaxTriangles = 0 } });
 
         // JSON nested deeper than allowed
         string aNested = Model().ToJsonString().Insert(1, "\"extras\":" + new string('[', 100) + new string(']', 100) + ",");

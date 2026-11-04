@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity FeaMaterialPropertyRepresentation
 /// </summary>
-public class FeaMaterialPropertyRepresentation : MaterialPropertyRepresentation
+internal class FeaMaterialPropertyRepresentation : MaterialPropertyRepresentation
 {
     /// <summary>
     /// Empty constructor

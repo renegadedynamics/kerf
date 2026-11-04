@@ -16,7 +16,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export;
 
 /// <summary>Makes a geometric_curve_set of the (trimmed) curves of a shape's edges.</summary>
-public sealed class MakeGeometricCurveSet : ExportRoot
+internal sealed class MakeGeometricCurveSet : ExportRoot
 {
     private StepGeometricCurveSet _geometricCurveSet;
 

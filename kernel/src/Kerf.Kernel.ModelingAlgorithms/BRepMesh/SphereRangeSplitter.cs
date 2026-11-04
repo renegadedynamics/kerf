@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Meshing;
 
 /// <summary>Extends the default range splitter to generate the internal nodes of a spherical surface.</summary>
-public class SphereRangeSplitter : DefaultRangeSplitter
+internal class SphereRangeSplitter : DefaultRangeSplitter
 {
     /// <summary>A splitter.</summary>
     public SphereRangeSplitter()

@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Healing.Custom;
 
 /// <summary>Converts 2D curves to analytical form within a tolerance, or simplifies them.</summary>
-public static class CustomCurve2d
+internal static class CustomCurve2d
 {
     private static Line2D GetLine(in Point2D p1, in Point2D p2, double c1, out double cf, out double cl)
     {

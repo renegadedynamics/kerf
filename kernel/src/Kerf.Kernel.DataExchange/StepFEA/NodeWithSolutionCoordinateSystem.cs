@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity NodeWithSolutionCoordinateSystem
 /// </summary>
-public class NodeWithSolutionCoordinateSystem : FeaNode
+internal class NodeWithSolutionCoordinateSystem : FeaNode
 {
     /// <summary>
     /// Empty constructor

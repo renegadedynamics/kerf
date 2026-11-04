@@ -19,7 +19,7 @@ namespace Kerf.Engine.Healing.Checks;
 /// (<see cref="Orientation"/>), and its sets of faces connected through simple edges
 /// (<see cref="NbConnectedSet"/>).
 /// </summary>
-public class ShellCheck : ResultCheck
+internal class ShellCheck : ResultCheck
 {
     private int _nbori;
     private bool _cdone;

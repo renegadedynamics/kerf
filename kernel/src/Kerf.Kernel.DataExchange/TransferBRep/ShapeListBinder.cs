@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// simple list of shapes. Each part is not seen as a sub-result of an independent component, but as an item of a
 /// built-in list.
 /// </summary>
-public class ShapeListBinder : Binder
+internal class ShapeListBinder : Binder
 {
     public ShapeListBinder()
     {

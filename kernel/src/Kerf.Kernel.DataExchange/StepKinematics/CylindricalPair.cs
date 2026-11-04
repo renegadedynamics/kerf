@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity CylindricalPair
 /// </summary>
-public class CylindricalPair : LowOrderKinematicPair
+internal class CylindricalPair : LowOrderKinematicPair
 {
     /// <summary>
     /// default constructor

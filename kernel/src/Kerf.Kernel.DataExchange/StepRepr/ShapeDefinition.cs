@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class ShapeDefinition : SelectType
+internal class ShapeDefinition : SelectType
 {
     /// <summary>
     /// Returns a ShapeDefinition SelectType

@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class SurfaceStyleSilhouette : Transient
+internal class SurfaceStyleSilhouette : Transient
 {
     private CurveStyle _styleOfSilhouette;
 

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 /// <summary>
 /// The mapping of ElementarySurface from Geom to a STEP elementary_surface (cylinder, cone, sphere, torus, plane).
 /// </summary>
-public sealed class MakeElementarySurface : GeometryRoot
+internal sealed class MakeElementarySurface : GeometryRoot
 {
     private StepElementarySurface _elementarySurface;
 

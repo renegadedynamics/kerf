@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity TessellatedShell
 /// </summary>
-public class TessellatedShell : TessellatedItem
+internal class TessellatedShell : TessellatedItem
 {
     private NCollection_HArray1<TessellatedStructuredItem> _items;
     private StepConnectedFaceSet _topologicalLink;

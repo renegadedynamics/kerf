@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity TessellatedWire
 /// </summary>
-public class TessellatedWire : TessellatedItem
+internal class TessellatedWire : TessellatedItem
 {
     private NCollection_HArray1<TessellatedEdgeOrVertex> _items;
     private PathOrCompositeCurve _geometricModelLink = new PathOrCompositeCurve();

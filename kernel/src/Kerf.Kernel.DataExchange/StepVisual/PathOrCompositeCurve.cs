@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP SELECT type PathOrCompositeCurve
 /// </summary>
-public class PathOrCompositeCurve : SelectType
+internal class PathOrCompositeCurve : SelectType
 {
     /// <summary>
     /// Empty constructor

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity SlidingSurfacePairValue
 /// </summary>
-public class SlidingSurfacePairValue : PairValue
+internal class SlidingSurfacePairValue : PairValue
 {
     private StepPointOnSurface _actualPointOnSurface1;
     private StepPointOnSurface _actualPointOnSurface2;

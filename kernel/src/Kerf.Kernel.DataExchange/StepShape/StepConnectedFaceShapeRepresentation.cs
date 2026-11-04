@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity ConnectedFaceShapeRepresentation
 /// </summary>
-public class StepConnectedFaceShapeRepresentation : StepRepresentation
+internal class StepConnectedFaceShapeRepresentation : StepRepresentation
 {
     /// <summary>
     /// Empty constructor

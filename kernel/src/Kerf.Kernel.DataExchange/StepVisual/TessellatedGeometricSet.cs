@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class TessellatedGeometricSet : TessellatedItem
+internal class TessellatedGeometricSet : TessellatedItem
 {
     private NCollection_Array1<TessellatedItem> _items;
 

@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 /// The curves that <see cref="Read(Stream, ProgressRange)"/> creates are frozen: the set shares them with whoever asks. A curve that can't be
 /// read makes <see cref="Read(Stream, ProgressRange)"/> throw (OCCT's binary sets don't keep null entries, unlike GeomTools).
 /// </remarks>
-public class BinaryCurveSet
+internal class BinaryCurveSet
 {
     private const byte Line = 1;
     private const byte Circle = 2;

@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class ContextDependentOverRidingStyledItem : OverRidingStyledItem
+internal class ContextDependentOverRidingStyledItem : OverRidingStyledItem
 {
     private NCollection_HArray1<StyleContextSelect> _styleContext;
 

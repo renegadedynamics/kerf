@@ -34,7 +34,7 @@ namespace Kerf.Engine.Meshing;
 /// outside one, a frozen face or edge throws <see cref="LockedShapeException"/>.
 /// </para>
 /// </remarks>
-public static class ShapeTool
+internal static class ShapeTool
 {
     /// <summary>The maximum tolerance of the face, its edges and its vertices.</summary>
     public static double MaxFaceTolerance(in Face face)

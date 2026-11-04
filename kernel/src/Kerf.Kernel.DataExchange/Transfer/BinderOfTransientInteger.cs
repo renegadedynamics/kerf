@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// This type of Binder allows to attach as result, besides a Transient Object, an Integer Value, which can be an
 /// Index in the Object if it defines a List, for instance. Its basic result (for iterators, etc) is the Transient.
 /// </summary>
-public class BinderOfTransientInteger : SimpleBinderOfTransient
+internal class BinderOfTransientInteger : SimpleBinderOfTransient
 {
     /// <summary>Creates an empty BinderOfTransientInteger; Default value for the integer part is zero.</summary>
     public BinderOfTransientInteger()

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Framework.Monitoring;
 /// <summary>
 /// A Real through a Handle (i.e. managed as TShared)
 /// </summary>
-public class RealVal : Transient
+internal class RealVal : Transient
 {
 
     public RealVal(double val = 0.0)

@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepBSplineCurve : StepBoundedCurve
+internal class StepBSplineCurve : StepBoundedCurve
 {
     private int _degree;
     private NCollection_HArray1<StepCartesianPoint> _controlPointsList;

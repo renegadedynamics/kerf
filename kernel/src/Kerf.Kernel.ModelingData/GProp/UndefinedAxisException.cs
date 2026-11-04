@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Measurement;
 
 /// <summary>Raised when a method refers to an undefined inertia axis of symmetry.</summary>
-public class UndefinedAxisException : DomainErrorException
+internal class UndefinedAxisException : DomainErrorException
 {
     public UndefinedAxisException() { }
 

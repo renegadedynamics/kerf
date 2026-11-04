@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class StepValueFormatTypeQualifier : Transient
+internal class StepValueFormatTypeQualifier : Transient
 {
     private TCollection_HAsciiString _formatType;
 

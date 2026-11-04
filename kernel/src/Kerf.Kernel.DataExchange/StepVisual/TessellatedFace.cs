@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity TessellatedFace
 /// </summary>
-public class TessellatedFace : TessellatedStructuredItem
+internal class TessellatedFace : TessellatedStructuredItem
 {
     private CoordinatesList _coordinates;
     private int _pnmax;

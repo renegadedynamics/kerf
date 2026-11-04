@@ -23,7 +23,7 @@ namespace Kerf.Engine.Meshing;
 /// </para>
 /// <para>Names are compared ignoring the case of ASCII letters, as OCCT's <c>IsSameString(..., false)</c>.</para>
 /// </remarks>
-public abstract class DiscretAlgoFactory : Transient
+internal abstract class DiscretAlgoFactory : Transient
 {
     private static readonly DiscretAlgoFactory[] TheFactories = RegisterAll();
 

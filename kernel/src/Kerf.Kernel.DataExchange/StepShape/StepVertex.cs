@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepVertex : StepTopologicalRepresentationItem
+internal class StepVertex : StepTopologicalRepresentationItem
 {
     /// <summary>
     /// Returns a Vertex

@@ -24,7 +24,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// A working object (decision 21). OCCT's modifiable references (<see cref="MaxArea"/>, <see cref="NbParts"/>) return
 /// <c>ref</c>. The face given is not modified (see <see cref="FaceDivide"/>).
 /// </remarks>
-public class FaceDivideArea : FaceDivide
+internal class FaceDivideArea : FaceDivide
 {
     private double _maxArea;
     private int _nbParts;

@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// parameter where C++ copies a value (<see cref="ParamList.SetValue"/>), so a parameter returned by
 /// <c>ChangeValue</c>/<c>ChangeParam</c> is the stored one, changed in place as in C++.
 /// </remarks>
-public sealed class FileParameter
+internal sealed class FileParameter
 {
     /// <summary>An empty parameter (type Misc, no text, entity number 0).</summary>
     public FileParameter()

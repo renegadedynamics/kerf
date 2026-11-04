@@ -45,7 +45,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// under construction, not for published shapes (a frozen edge throws).
 /// </para>
 /// </remarks>
-public class ShapeProcessor
+internal class ShapeProcessor
 {
     /// <summary>
     /// Constructor. <paramref name="parameters"/>: pre-filled parameter map to be used in the processing (copied).

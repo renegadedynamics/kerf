@@ -21,7 +21,7 @@ namespace Kerf.Engine.Healing.Extend;
 /// (docs/phase3-design.md, section 4.2); ported code that goes on building on them uses
 /// <see cref="InternalCompoundFromSeq"/> and <see cref="InternalSortedCompound"/>.
 /// </remarks>
-public sealed class ExtendExplorer
+internal sealed class ExtendExplorer
 {
     /// <summary>Creates an explorer.</summary>
     public ExtendExplorer()

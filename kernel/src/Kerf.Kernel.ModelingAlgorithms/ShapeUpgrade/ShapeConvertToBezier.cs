@@ -37,7 +37,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// OCCT's change would show there (decision 998).
 /// </para>
 /// </remarks>
-public class ShapeConvertToBezier : ShapeDivide
+internal class ShapeConvertToBezier : ShapeDivide
 {
     private bool _my2dMode;
     private bool _my3dMode;

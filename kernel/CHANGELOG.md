@@ -1943,3 +1943,18 @@ Phase 10 (part): the public API, part 2: geometry's operations, construction, Bo
 - `GlueMode` (members `Off`, `Shift`, `Full`), `FilletShape`, `OffsetMode`, `TransitionMode` and `ParametrizationType`
   moved into the public namespaces; 686 more engine types (construction, Booleans, fillets, offsets, features) are
   internal. `docs/api/kerf-10l2.map` holds the renames.
+Phase 10 (part): the public API, part 3: measurement, healing, meshing and exchange (unit 10L3).
+- `Kerf.Measurement`: `part.Volume()`, `Area()`, `Length()`, `MassProperties(Dimension)`, `BoundingBox()`,
+  `OrientedBox()`, `Distance(other)` (a `Result` with the closest points and their supports), `Intersect(line)` and
+  `solid.Classify(point)`. `Kerf.Geometry.OrientedBox` is a value.
+- `Kerf.Healing`: `Validate()` (a report of every fault, coded `check.not-closed`…), `Fix()`, `Unify()`, `Sew(faces)`,
+  `shell.MakeSolid()`, `FixWireframe`, `ConvertToBSpline`, `ConnectEdges`, `FreeBoundaries`, with options records.
+- `Kerf.Meshing`: `part.Mesh(options)` gives a `ShapeMesh` of flat buffers (positions, normals, triangles per face,
+  edge polylines) and leaves the shape alone: no triangles are stored on its faces. A big mesh copies out with little
+  more than its buffers.
+- `Kerf.Exchange`: `Step`, `Stl`, `Gltf`, `ThreeMf`, `Obj` and `Brep` read and write streams with `ReadLimits` and
+  cancellation, and return `Result`s; assemblies, names and colours travel as `ModelNode`; `Kerf.Color` is sRGB. Files
+  are byte for byte what the engine wrote before. Meshes read from STL and glTF are `ShapeMesh`es.
+- Engine types renamed so the public names are free: `LinearColor` (Quantity_Color), `Obb` (Bnd_OBB),
+  `GltfReadLimits`, `GltfWriterOptions`, `ObjWriterOptions`, `StepLengthUnit`. 1,229 engine types of these areas are
+  internal; the kernel, its tests, Draw-lite, the benchmarks and, until 10M, the modelling layer still reach them.

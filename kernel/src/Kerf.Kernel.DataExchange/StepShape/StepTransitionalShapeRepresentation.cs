@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepTransitionalShapeRepresentation : StepShapeRepresentation
+internal class StepTransitionalShapeRepresentation : StepShapeRepresentation
 {
     /// <summary>
     /// Returns a TransitionalShapeRepresentation

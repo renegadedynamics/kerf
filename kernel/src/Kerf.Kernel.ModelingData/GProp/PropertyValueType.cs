@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Measurement;
 
 /// <summary>The global property an algorithm computes.</summary>
-public enum PropertyValueType
+internal enum PropertyValueType
 {
     Mass,
     CenterMassX,

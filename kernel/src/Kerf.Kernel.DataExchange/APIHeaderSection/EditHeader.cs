@@ -13,7 +13,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Header;
 
-public class EditHeader : Editor
+internal class EditHeader : Editor
 {
     private static bool IsTimeStamp(TCollection_HAsciiString? val)
     {

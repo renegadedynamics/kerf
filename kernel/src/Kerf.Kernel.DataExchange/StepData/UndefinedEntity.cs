@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// "Complex Type" (see ANDOR clause in Express).
 /// </summary>
 /// <remarks>Its literal parameters keep the file's text as it is (one char per byte, decision 1174), quotes included.</remarks>
-public class UndefinedEntity : Transient
+internal class UndefinedEntity : Transient
 {
     private TCollection_HAsciiString _thetype;
     private UndefinedContent _thecont;

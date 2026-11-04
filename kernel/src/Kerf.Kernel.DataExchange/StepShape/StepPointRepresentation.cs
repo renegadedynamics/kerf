@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity PointRepresentation
 /// </summary>
-public class StepPointRepresentation : StepShapeRepresentation
+internal class StepPointRepresentation : StepShapeRepresentation
 {
     /// <summary>
     /// Empty constructor

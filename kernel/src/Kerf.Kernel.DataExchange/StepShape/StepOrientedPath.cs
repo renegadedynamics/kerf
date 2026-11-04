@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepOrientedPath : StepPath
+internal class StepOrientedPath : StepPath
 {
     private StepEdgeLoop _pathElement;
     private bool _orientation;

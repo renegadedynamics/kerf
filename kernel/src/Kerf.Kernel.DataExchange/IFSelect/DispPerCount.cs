@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// count of Entity This count is a Parameter of the DispPerCount, given as an IntParam, thus allowing
 /// external control of its Value
 /// </summary>
-public class DispPerCount : Dispatch
+internal class DispPerCount : Dispatch
 {
 
     /// <summary>

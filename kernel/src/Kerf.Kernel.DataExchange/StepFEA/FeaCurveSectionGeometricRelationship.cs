@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity FeaCurveSectionGeometricRelationship
 /// </summary>
-public class FeaCurveSectionGeometricRelationship : Transient
+internal class FeaCurveSectionGeometricRelationship : Transient
 {
     private CurveElementSectionDefinition _sectionRef;
     private AnalysisItemWithinRepresentation _item;

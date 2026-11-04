@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class AnnotationPlaneElement : SelectType
+internal class AnnotationPlaneElement : SelectType
 {
     /// <summary>
     /// Returns a AnnotationPlaneElement select type

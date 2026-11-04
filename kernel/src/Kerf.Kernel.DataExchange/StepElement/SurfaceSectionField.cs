@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP entity SurfaceSectionField
 /// </summary>
-public class SurfaceSectionField : Transient
+internal class SurfaceSectionField : Transient
 {
     /// <summary>
     /// Empty constructor

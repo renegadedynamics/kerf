@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity PlanarPairValue
 /// </summary>
-public class PlanarPairValue : PairValue
+internal class PlanarPairValue : PairValue
 {
     private double _actualRotation;
     private double _actualTranslationX;

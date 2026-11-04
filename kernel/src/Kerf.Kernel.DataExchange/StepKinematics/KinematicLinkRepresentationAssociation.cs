@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity KinematicLinkRepresentationAssociation
 /// </summary>
-public class KinematicLinkRepresentationAssociation : RepresentationRelationship
+internal class KinematicLinkRepresentationAssociation : RepresentationRelationship
 {
     /// <summary>
     /// default constructor

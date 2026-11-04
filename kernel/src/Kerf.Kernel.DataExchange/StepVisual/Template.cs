@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class Template : StepRepresentation
+internal class Template : StepRepresentation
 {
     /// <summary>
     /// Returns a Template

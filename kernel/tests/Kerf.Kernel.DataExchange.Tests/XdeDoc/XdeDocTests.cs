@@ -208,7 +208,7 @@ public class XdeDocTests
         aDoc.SetName(anAssembly, "Asm");
         aDoc.SetName(aPart, "Box");
         aDoc.SetName(aComp2, "Box2");
-        aDoc.SetColor(aPart, new Color(NameOfColor.NocRed), ColorType.ColorSurf);
+        aDoc.SetColor(aPart, new LinearColor(NameOfColor.NocRed), ColorType.ColorSurf);
         aDoc.SetColor(aComp2, Green, ColorType.ColorGen);
         aDoc.SetColor(aSub, Blue, ColorType.ColorSurf);
         Assert.True(aDoc.GetColor(aSub, ColorType.ColorSurf, out ColorWithAlpha aBlue));
@@ -268,8 +268,8 @@ public class XdeDocTests
         Assert.Equal("0:1:1:2", aPart2.Entry());
         Assert.True(aDoc2.GetName(aPart2, out string? aName2));
         Assert.Equal("Box", aName2);
-        Assert.True(aDoc2.GetColor(aPart2, ColorType.ColorSurf, out Color aRed));
-        Assert.True(aRed.IsEqual(new Color(NameOfColor.NocRed)));
+        Assert.True(aDoc2.GetColor(aPart2, ColorType.ColorSurf, out LinearColor aRed));
+        Assert.True(aRed.IsEqual(new LinearColor(NameOfColor.NocRed)));
         var aSubs = new NCollection_Sequence<Label>();
         Assert.True(aDoc2.GetSubShapes(aPart2, aSubs));
         Assert.Equal("0:1:1:2:1", aSubs.Value(1).Entry());

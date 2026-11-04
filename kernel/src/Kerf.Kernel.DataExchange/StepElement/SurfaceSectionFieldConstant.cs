@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP entity SurfaceSectionFieldConstant
 /// </summary>
-public class SurfaceSectionFieldConstant : SurfaceSectionField
+internal class SurfaceSectionFieldConstant : SurfaceSectionField
 {
     private SurfaceSection _definition;
 

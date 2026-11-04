@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity PrismaticPairWithRange
 /// </summary>
-public class PrismaticPairWithRange : PrismaticPair
+internal class PrismaticPairWithRange : PrismaticPair
 {
     private double _lowerLimitActualTranslation;
     /// <summary>

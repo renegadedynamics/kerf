@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// <c>AddCategory</c> out (decision 1183). As OCCT's list is a dynamic array numbered from 0, "Shape" has the number
 /// 0, which <see cref="Number"/> also returns for an unknown name: reproduced.
 /// </remarks>
-public class Category
+internal class Category
 {
     // OCCT's theCats() after Init(): a 0-based NCollection_DynamicArray
     private static readonly string[] Cats =

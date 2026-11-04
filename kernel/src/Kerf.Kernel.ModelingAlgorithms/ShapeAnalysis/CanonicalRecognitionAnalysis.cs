@@ -31,7 +31,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// A working object (decision 21). The <c>Is*</c> methods take the sample entity by <c>ref</c>: they read its
 /// position and parameters as a first guess (for edges and wires) and write the result only on success.
 /// </remarks>
-public sealed class CanonicalRecognitionAnalysis
+internal sealed class CanonicalRecognitionAnalysis
 {
     private Shape _shape;
     private ShapeType _sType;

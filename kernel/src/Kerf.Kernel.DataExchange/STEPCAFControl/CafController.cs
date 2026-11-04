@@ -28,7 +28,7 @@ namespace Kerf.Engine.Exchange.Step.Documents;
 /// processing flags STEPControl_Controller's constructor gives its own actor are not set on it.
 /// </para>
 /// </remarks>
-public class CafController : StepController
+internal class CafController : StepController
 {
     // The controller recorded for STEP-XCAF, made once (a one-time initialisation, unit 10I)
     private static readonly Lazy<CafController> TheRecorded = new(() =>

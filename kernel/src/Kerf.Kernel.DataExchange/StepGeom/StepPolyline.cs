@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepPolyline : StepBoundedCurve
+internal class StepPolyline : StepBoundedCurve
 {
     private NCollection_HArray1<StepCartesianPoint> _points;
 

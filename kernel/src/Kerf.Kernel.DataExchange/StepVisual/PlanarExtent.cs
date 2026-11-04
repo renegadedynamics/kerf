@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class PlanarExtent : StepGeometricRepresentationItem
+internal class PlanarExtent : StepGeometricRepresentationItem
 {
     private double _sizeInX;
     private double _sizeInY;

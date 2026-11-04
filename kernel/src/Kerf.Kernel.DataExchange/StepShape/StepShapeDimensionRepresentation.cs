@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity ShapeDimensionRepresentation
 /// </summary>
-public class StepShapeDimensionRepresentation : StepShapeRepresentation
+internal class StepShapeDimensionRepresentation : StepShapeRepresentation
 {
     private NCollection_HArray1<StepShapeDimensionRepresentationItem> _itemsAP242;
 

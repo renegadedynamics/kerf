@@ -3,3 +3,4 @@
 *.sed text eol=lf
 *.pl text eol=lf
 tools/merge/decision-map.txt text eol=lf
+tests/Kerf.Kernel.PublicApi.Tests/Fixtures/*.brep -text

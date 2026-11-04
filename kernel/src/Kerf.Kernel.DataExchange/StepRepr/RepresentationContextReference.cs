@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity RepresentationContextReference
 /// </summary>
-public class RepresentationContextReference : Transient
+internal class RepresentationContextReference : Transient
 {
     private TCollection_HAsciiString _contextIdentifier;
 

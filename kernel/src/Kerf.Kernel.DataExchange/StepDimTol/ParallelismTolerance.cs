@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity ParallelismTolerance
 /// </summary>
-public class ParallelismTolerance : GeometricToleranceWithDatumReference
+internal class ParallelismTolerance : GeometricToleranceWithDatumReference
 {
     /// <summary>
     /// Empty constructor

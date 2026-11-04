@@ -30,7 +30,7 @@ namespace Kerf.Engine.Healing.Custom;
 /// which doesn't freeze, and freezes at its own publication point.
 /// </para>
 /// </remarks>
-public static class Customize
+internal static class Customize
 {
     // Updates the reshaper by the info of the given shape.
     private static bool UpdateHistoryShape(in Shape shape,

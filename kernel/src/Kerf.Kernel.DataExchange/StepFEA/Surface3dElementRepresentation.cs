@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity Surface3dElementRepresentation
 /// </summary>
-public class Surface3dElementRepresentation : ElementRepresentation
+internal class Surface3dElementRepresentation : ElementRepresentation
 {
     private FeaModel3d _modelRef;
     private Surface3dElementDescriptor _elementDescriptor;

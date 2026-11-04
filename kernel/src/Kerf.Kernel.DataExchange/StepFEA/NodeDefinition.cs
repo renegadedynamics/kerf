@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity NodeDefinition
 /// </summary>
-public class NodeDefinition : ShapeAspect
+internal class NodeDefinition : ShapeAspect
 {
     /// <summary>
     /// Empty constructor

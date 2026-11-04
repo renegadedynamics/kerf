@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Geometry;
 /// <summary>
 /// Representation of STEP entity OrientedSurface
 /// </summary>
-public class StepOrientedSurface : StepSurface
+internal class StepOrientedSurface : StepSurface
 {
     private bool _orientation;
 

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Meshing;
 /// Extends the default range splitter with maps of U and V parameters, kept in the order they are added
 /// (<c>IMeshData::IMapOfReal</c>).
 /// </summary>
-public class UVParamRangeSplitter : DefaultRangeSplitter
+internal class UVParamRangeSplitter : DefaultRangeSplitter
 {
     private readonly IndexedSet<double> _uParams = new();
     private readonly IndexedSet<double> _vParams = new();

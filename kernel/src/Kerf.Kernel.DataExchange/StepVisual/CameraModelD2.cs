@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class CameraModelD2 : CameraModel
+internal class CameraModelD2 : CameraModel
 {
     private PlanarBox _viewWindow;
     private bool _viewWindowClipping;

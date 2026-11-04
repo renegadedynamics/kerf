@@ -14,7 +14,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepGeomRepContextAndGlobUnitAssCtxAndGlobUncertaintyAssCtx : RepresentationContext
+internal class StepGeomRepContextAndGlobUnitAssCtxAndGlobUncertaintyAssCtx : RepresentationContext
 {
     private StepGeometricRepresentationContext _geometricRepresentationContext;
     private GlobalUnitAssignedContext _globalUnitAssignedContext;

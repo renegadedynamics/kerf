@@ -21,7 +21,7 @@ namespace Kerf.Engine.Healing.Process;
 /// 8703). The shape is never changed (decision 1022); <see cref="PrepareShape"/>'s result and <see cref="Map"/>'s values
 /// are frozen. A working object (decision 21).
 /// </remarks>
-public class ApplySequence
+internal class ApplySequence
 {
     private ShapeContext _context;
     private readonly string _seq;

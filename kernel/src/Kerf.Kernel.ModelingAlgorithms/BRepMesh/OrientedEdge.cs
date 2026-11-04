@@ -12,7 +12,7 @@ namespace Kerf.Engine.Meshing;
 /// <c>new BRepMesh_OrientedEdge()</c>. OCCT's equality is exact, so <see cref="Equals(OrientedEdge)"/> is
 /// OCCT's <c>IsEqual</c>, and <see cref="GetHashCode"/> is OCCT's hash (the two indices as 16-bit halves).
 /// </remarks>
-public readonly partial struct OrientedEdge : IEquatable<OrientedEdge>
+internal readonly partial struct OrientedEdge : IEquatable<OrientedEdge>
 {
     private readonly int _firstNode;
     private readonly int _lastNode;

@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Framework.Transfer;
 
 /// <summary>A container for a map of already translated (geometric) objects, keyed by reference.</summary>
-public class MapContainer : Transient
+internal class MapContainer : Transient
 {
     public MapContainer()
     {

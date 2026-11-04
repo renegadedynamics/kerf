@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity LinearFlexibleAndPinionPair
 /// </summary>
-public class LinearFlexibleAndPinionPair : LowOrderKinematicPairWithMotionCoupling
+internal class LinearFlexibleAndPinionPair : LowOrderKinematicPairWithMotionCoupling
 {
     private double _pinionRadius;
 

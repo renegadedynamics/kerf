@@ -14,7 +14,7 @@ namespace Kerf.Engine.Meshing;
 /// The default factory of face algorithms (Watson's Delaunay), of a complexity depending on the type of the face's
 /// surface.
 /// </summary>
-public class DefaultMeshAlgoFactory : MeshAlgoFactory
+internal class DefaultMeshAlgoFactory : MeshAlgoFactory
 {
     /// <summary>A factory.</summary>
     public DefaultMeshAlgoFactory()

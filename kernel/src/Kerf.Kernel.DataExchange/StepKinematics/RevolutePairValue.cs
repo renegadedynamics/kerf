@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity RevolutePairValue
 /// </summary>
-public class RevolutePairValue : PairValue
+internal class RevolutePairValue : PairValue
 {
     private double _actualRotation;
 

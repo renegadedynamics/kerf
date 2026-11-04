@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Healing.Fixes;
 
-public partial class FaceFixer
+internal partial class FaceFixer
 {
     // The working overlay of the loaded face, from the first fix to the public result (Kerf unit 10H4): this tool's own
     // (detached, entered by each fix), or the overlay of the operation that runs this tool (ShapeFix_Shell's, ...),

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity ScrewPairWithRange
 /// </summary>
-public class ScrewPairWithRange : ScrewPair
+internal class ScrewPairWithRange : ScrewPair
 {
     private double _lowerLimitActualRotation;
     /// <summary>

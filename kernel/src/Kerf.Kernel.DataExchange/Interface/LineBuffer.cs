@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// The buffer is OCCT's array of characters, 1-based, with its null terminators, so the line cutting is the same
 /// character for character.
 /// </remarks>
-public class LineBuffer
+internal class LineBuffer
 {
     /// <summary>Creates a line buffer with an absolute maximum size (the default only satisfies the compiler).</summary>
     public LineBuffer(int size = 10)

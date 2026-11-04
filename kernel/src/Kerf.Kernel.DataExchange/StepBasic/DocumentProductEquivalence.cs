@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity DocumentProductEquivalence
 /// </summary>
-public class DocumentProductEquivalence : DocumentProductAssociation
+internal class DocumentProductEquivalence : DocumentProductAssociation
 {
     /// <summary>
     /// Empty constructor

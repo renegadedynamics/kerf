@@ -21,7 +21,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// A working object (decision 21). <see cref="TransferRange"/> writes the ranges of a new edge in place, so it is
 /// internal: ported code calls it on edges it is building.
 /// </remarks>
-public class TransferParametersAnalysis : Transient
+internal class TransferParametersAnalysis : Transient
 {
     protected double _first;
     protected double _last;

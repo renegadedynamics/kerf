@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class PromissoryUsageOccurrence : AssemblyComponentUsage
+internal class PromissoryUsageOccurrence : AssemblyComponentUsage
 {
     public PromissoryUsageOccurrence()
     {

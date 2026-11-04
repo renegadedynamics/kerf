@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepLine : StepCurve
+internal class StepLine : StepCurve
 {
     private StepCartesianPoint _pnt;
     private StepVector _dir;

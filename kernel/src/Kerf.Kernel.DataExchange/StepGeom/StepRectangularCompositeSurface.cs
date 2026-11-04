@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepRectangularCompositeSurface : StepBoundedSurface
+internal class StepRectangularCompositeSurface : StepBoundedSurface
 {
     private NCollection_HArray2<StepSurfacePatch> _segments;
 

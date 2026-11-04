@@ -11,7 +11,7 @@ using static Kerf.Engine.Measurement.MeasurementGauss.BRepGProp_GaussType;
 namespace Kerf.Engine.Measurement;
 
 /// <summary>The global properties of a face in 3D space, by Gauss integration (<see cref="MeasurementGauss"/>).</summary>
-public class Sinert : Properties
+internal class Sinert : Properties
 {
     private double _epsilon;
 

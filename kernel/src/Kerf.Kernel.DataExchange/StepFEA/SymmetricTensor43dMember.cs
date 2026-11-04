@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of member for STEP SELECT type SymmetricTensor43d
 /// </summary>
-public class SymmetricTensor43dMember : SelectArrReal
+internal class SymmetricTensor43dMember : SelectArrReal
 {
     private const string Ast = "ANISOTROPIC_SYMMETRIC_TENSOR4_3D";
     private const string Ist = "FEA_ISOTROPIC_SYMMETRIC_TENSOR4_3D";

@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Framework.Transfer;
 
 /// <summary>A failure of a transfer (a binding refused, a transfer in error status...).</summary>
-public class TransferFailureException : InterfaceErrorException
+internal class TransferFailureException : InterfaceErrorException
 {
     public TransferFailureException() { }
 

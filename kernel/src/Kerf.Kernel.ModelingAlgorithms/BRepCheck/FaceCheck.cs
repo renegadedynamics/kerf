@@ -30,7 +30,7 @@ namespace Kerf.Engine.Healing.Checks;
 /// <see cref="ClassifyWires"/> classifies each wire in a face of its own, an unfrozen copy of the face's TShape
 /// sharing its surface, built for the call and never handed out; the checked face is only read.
 /// </remarks>
-public class FaceCheck : ResultCheck
+internal class FaceCheck : ResultCheck
 {
     private bool _intdone;
     private StatusCheck _intres;

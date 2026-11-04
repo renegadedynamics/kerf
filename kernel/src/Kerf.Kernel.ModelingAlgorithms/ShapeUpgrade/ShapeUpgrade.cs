@@ -19,7 +19,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// <remarks>
 /// OCCT's commented-out debug switch (SetDebug, Debug) is left out.
 /// </remarks>
-public static class ShapeUpgrade
+internal static class ShapeUpgrade
 {
     /// <summary>
     /// Converts a C0 B-spline curve into a sequence of C1 B-spline curves, splitting it at the knots whose

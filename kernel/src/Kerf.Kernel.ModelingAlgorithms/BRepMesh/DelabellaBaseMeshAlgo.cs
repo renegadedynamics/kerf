@@ -23,7 +23,7 @@ namespace Kerf.Engine.Meshing;
 /// Delabella's messages go to <see cref="Message"/>'s process-wide messenger, which sends nothing by default
 /// (decision 493): an error as a failure, a warning or a note as a trace.
 /// </remarks>
-public class DelabellaBaseMeshAlgo : CustomBaseMeshAlgo
+internal class DelabellaBaseMeshAlgo : CustomBaseMeshAlgo
 {
     /// <summary>An algorithm.</summary>
     public DelabellaBaseMeshAlgo()

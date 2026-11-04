@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class CompGroupShAspAndCompShAspAndDatumFeatAndShAsp : CompShAspAndDatumFeatAndShAsp
+internal class CompGroupShAspAndCompShAspAndDatumFeatAndShAsp : CompShAspAndDatumFeatAndShAsp
 {
     public CompGroupShAspAndCompShAspAndDatumFeatAndShAsp()
     {

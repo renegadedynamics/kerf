@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Meshing.Data;
 
 /// <summary>The default discrete face.</summary>
-public class FaceData : FaceModel
+internal class FaceData : FaceModel
 {
     private readonly List<WireModel> _dWires;
 

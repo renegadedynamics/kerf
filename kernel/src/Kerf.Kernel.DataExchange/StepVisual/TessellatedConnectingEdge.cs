@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity TessellatedConnectingEdge
 /// </summary>
-public class TessellatedConnectingEdge : TessellatedEdge
+internal class TessellatedConnectingEdge : TessellatedEdge
 {
     private Logical _smooth;
     private TessellatedFace _face1;

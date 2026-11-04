@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepPolyLoop : StepLoop
+internal class StepPolyLoop : StepLoop
 {
     private NCollection_HArray1<StepCartesianPoint> _polygon;
 

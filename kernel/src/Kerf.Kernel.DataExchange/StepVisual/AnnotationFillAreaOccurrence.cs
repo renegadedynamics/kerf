@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class AnnotationFillAreaOccurrence : AnnotationOccurrence
+internal class AnnotationFillAreaOccurrence : AnnotationOccurrence
 {
     private StepGeometricRepresentationItem _fillStyleTarget;
 

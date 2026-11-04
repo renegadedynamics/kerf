@@ -16,7 +16,7 @@ namespace Kerf.Engine.Classification.Hatching;
 /// A working object (decisions 21 and 663): a class, because it holds its intersections, which
 /// <see cref="AddIntersection"/> changes in place. Its fields are internal, as OCCT's friend Hatch_Hatcher reads them.
 /// </remarks>
-public sealed class HatchingLine
+internal sealed class HatchingLine
 {
     internal Line2D _lin;
     internal LineForm _form;

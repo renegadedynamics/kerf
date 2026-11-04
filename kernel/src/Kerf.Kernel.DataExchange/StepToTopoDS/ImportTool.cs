@@ -24,7 +24,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 /// A working object (OCCT's value class, decision 1185). It holds the translation's shapes as they are being built
 /// (unfrozen); the maps are keyed by reference and never iterated.
 /// </remarks>
-public sealed class ImportTool
+internal sealed class ImportTool
 {
     private Dictionary<StepTopologicalRepresentationItem, Shape> _dataMap = new();
     private Dictionary<StepCartesianPoint, Vertex> _vertexMap = new();

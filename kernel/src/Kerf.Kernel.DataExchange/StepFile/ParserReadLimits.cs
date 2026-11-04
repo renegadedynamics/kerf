@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Parser;
 /// number, a run of blanks inside a comment) is limited only by <see cref="MaxFileSize"/> (OCCT's scanner failed on one
 /// of 16,384 bytes or more: Kerf decision 1511).
 /// </remarks>
-public sealed record ParserReadLimits
+internal sealed record ParserReadLimits
 {
     /// <summary>The defaults: 4 GiB, 100 million records, nesting 10,000 deep.</summary>
     public static ParserReadLimits Default { get; } = new();

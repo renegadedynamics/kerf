@@ -29,7 +29,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// shapes need no copy at the entry, and the context answers for the caller's shapes as in OCCT. <see cref="Shape"/>
 /// freezes the result.
 /// </remarks>
-public class SplitCommonVertexFixer : RootFixer
+internal class SplitCommonVertexFixer : RootFixer
 {
     // OCCT declares its own private myShape, hiding ShapeFix_Root's (which the messages are attached to, and which
     // stays null here).

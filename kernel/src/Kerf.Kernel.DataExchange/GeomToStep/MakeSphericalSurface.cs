@@ -14,7 +14,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of SphericalSurface from Geom to a STEP spherical_surface.</summary>
-public sealed class MakeSphericalSurface : GeometryRoot
+internal sealed class MakeSphericalSurface : GeometryRoot
 {
     private StepSphericalSurface _sphericalSurface;
 

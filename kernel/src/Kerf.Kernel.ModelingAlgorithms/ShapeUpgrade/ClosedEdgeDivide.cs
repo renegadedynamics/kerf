@@ -16,7 +16,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// farthest from the vertex among 21 samples, if farther than the vertex's tolerance.
 /// </summary>
 /// <remarks>A working object (decision 21). It only reads the edge.</remarks>
-public class ClosedEdgeDivide : EdgeDivide
+internal class ClosedEdgeDivide : EdgeDivide
 {
     /// <summary>Empty constructor.</summary>
     public ClosedEdgeDivide()

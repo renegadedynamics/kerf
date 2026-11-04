@@ -8,7 +8,14 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Kerf.Kernel.Foundation\Kerf.Kernel.Foundation.csproj" />
     <ProjectReference Include="..\..\src\Kerf.Kernel.ModelingData\Kerf.Kernel.ModelingData.csproj" />
+    <!-- Measurement, healing, meshing and exchange (unit 10L3) -->
     <ProjectReference Include="..\..\src\Kerf.Kernel.ModelingAlgorithms\Kerf.Kernel.ModelingAlgorithms.csproj" />
+    <ProjectReference Include="..\..\src\Kerf.Kernel.DataExchange\Kerf.Kernel.DataExchange.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Unit 10L3's shapes, read with the public BREP reader -->
+    <EmbeddedResource Include="Fixtures\*.brep" LogicalName="Fixtures.%(Filename).brep" />
   </ItemGroup>
 
   <ItemGroup>

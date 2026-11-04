@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class GeometricAlignment : DerivedShapeAspect
+internal class GeometricAlignment : DerivedShapeAspect
 {
     public GeometricAlignment()
     {

@@ -18,7 +18,7 @@ namespace Kerf.Engine.Measurement;
 /// U2, used to find the maximal deflection of the chord.
 /// </summary>
 /// <remarks>Keeps a reference to the curve, as OCCT does.</remarks>
-public class DistFunction : Function
+internal class DistFunction : Function
 {
     private readonly CurveAdaptorBase _curve;
     private readonly Line3D _lin;
@@ -65,7 +65,7 @@ public class DistFunction : Function
 }
 
 /// <summary><see cref="DistFunction"/> as a function of one variable for the multi-variable minimisers.</summary>
-public class DistFunctionMV : MultipleVarFunction
+internal class DistFunctionMV : MultipleVarFunction
 {
     private readonly DistFunction _maxCurvLinDist;
 

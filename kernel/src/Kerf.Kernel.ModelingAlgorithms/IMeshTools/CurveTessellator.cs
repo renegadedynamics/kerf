@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Meshing.Tools;
 
 /// <summary>An edge tessellation tool: the points of a tessellation, indexed from 1.</summary>
-public abstract class CurveTessellator : Transient
+internal abstract class CurveTessellator : Transient
 {
     /// <summary>A tessellator.</summary>
     protected CurveTessellator()

@@ -16,7 +16,7 @@ using static Kerf.Engine.Exchange.Step.Import.TranslateVertexLoopError;
 namespace Kerf.Engine.Exchange.Step.Import;
 
 /// <summary>The texts of the STEP to topology translators' error codes.</summary>
-public static class StepToTopoDS
+internal static class StepToTopoDS
 {
     public static TCollection_HAsciiString? DecodeBuilderError(BuilderError error)
     {
