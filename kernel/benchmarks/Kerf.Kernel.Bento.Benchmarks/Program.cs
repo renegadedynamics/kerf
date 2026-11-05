@@ -6,10 +6,10 @@
 // tolerances as Bento's viewer does (ShapeModels.Part), and its volume and face count read, as a cell shows them.
 // tools/bench.ps1 runs it in fresh processes, ReadyToRun, and keeps the figures (docs/performance.md). By hand, from the
 // kernel folder:
-//   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks [-- passes [copies [threads]]]
+//   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks [-- passes [copies]]
 //   (or [-- images [passes]] for the SVG drawings and PNG pictures of unit 10L4)
-// (copies: how many of each example the parallel rounds run at once; 0 skips them; the default is a processor's worth;
-// threads: the most the rounds use, by default all of them. tools/parallel-curve.ps1 varies it, and the collector's settings)
+// (copies: how many of each example the parallel rounds run at once; 0 skips them; the default is a processor's worth)
+// tools/parallel-curve.ps1 varies the processors it has, and the collector's settings
 // The first pass is a workbook opening (it includes the JIT's work on Kerf); passes 2 to 9 are recalculations, of which
 // the median is shown, as native's frozen figures were taken (9 passes); with 12 or more passes the median of the last
 // half is the recalculation once the runtime has settled.
@@ -149,8 +149,10 @@ for (int i = 0; i < examples.Length; i++)
 
 string[] results = new string[examples.Length];
 var total = Stopwatch.StartNew();
+var passCpu = new double[passes];
 for (int pass = 0; pass < passes; pass++)
 {
+    TimeSpan passCpuBefore = Process.GetCurrentProcess().TotalProcessorTime;
     for (int i = 0; i < examples.Length; i++)
     {
         long before = GC.GetTotalAllocatedBytes(true);
@@ -165,6 +167,7 @@ for (int pass = 0; pass < passes; pass++)
             bytes[i] = GC.GetTotalAllocatedBytes(true) - before;
         }
     }
+    passCpu[pass] = (Process.GetCurrentProcess().TotalProcessorTime - passCpuBefore).TotalMilliseconds;
     if (pass == 0)
     {
         // Opening: from the process's start, so with the runtime's own start-up, and how much of it the JIT was
@@ -207,6 +210,7 @@ Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{"total",-24} {f
 BenchRows.Add("bento", "total", "first ms", firstSum);
 BenchRows.Add("bento", "total", "recalc ms", medianSum);
 BenchRows.Add("bento", "total", "alloc MB", bytesSum / 1048576.0);
+BenchRows.Add("bento", "total", "processor time in a recalculation ms", passes > 1 ? passCpu[1..Math.Min(passes, 9)].Order().ElementAt(Math.Min(passes - 1, 8) / 2) : passCpu[0]);
 if (passes >= 12)
 {
     BenchRows.Add("bento", "total", "settled ms", settledSum);
@@ -215,7 +219,6 @@ if (passes >= 12)
 // Independent workbooks recalculating at once (unit 10I): every example, `copies` times, on the thread pool; the
 // wall time of a round (the median of 3) and the bytes it allocates, each result checked against the serial one.
 int copies = args.Length > 1 ? int.Parse(args[1], CultureInfo.InvariantCulture) : Environment.ProcessorCount;
-int threads = args.Length > 2 ? int.Parse(args[2], CultureInfo.InvariantCulture) : -1;
 if (copies > 0)
 {
     var rounds = new double[3];
@@ -233,7 +236,7 @@ if (copies > 0)
         TimeSpan cpuBefore = self.TotalProcessorTime;
         long contentionsBefore = Monitor.LockContentionCount;
         var clock = Stopwatch.StartNew();
-        Parallel.For(0, copies * examples.Length, new ParallelOptions { MaxDegreeOfParallelism = threads }, k =>
+        Parallel.For(0, copies * examples.Length, k =>
         {
             int i = k % examples.Length;
             Shape shape = examples[i].Build();
