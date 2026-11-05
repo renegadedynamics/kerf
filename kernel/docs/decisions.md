@@ -16403,3 +16403,6 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        - **Porting more of OCCT:** not yet; [unported.md](unported.md) lists what's left.
        - **1.0:** needs a stable API and more testing by the owner and other potential users. A Kerf GUI on Avalonia might
          help with that, but is still to be decided.
+1645. **StepTidy goes into phase 11; the rest of unported OCCT is left for now** (the owner's decision, 5 November 2026).
+       It's unit 11N, for 0.3.0, done with STEP's header so that STEP's fixtures change once. Whether it's on by default is
+       the owner's decision, once its effect on file size and writing time has been measured.
