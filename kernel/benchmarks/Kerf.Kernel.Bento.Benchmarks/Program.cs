@@ -9,9 +9,9 @@
 //   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks [-- passes [copies]]
 //   (or [-- images [passes]] for the SVG drawings and PNG pictures of unit 10L4)
 // (copies: how many of each example the parallel rounds run at once; 0 skips them; the default is a processor's worth)
-// The first pass is a workbook opening (it includes the JIT's work on Kerf); passes 2 to 7 are recalculations, of which
-// the median is shown, as native's frozen figures were taken; with 12 or more passes the median of the last half is
-// the recalculation once the runtime has settled.
+// The first pass is a workbook opening (it includes the JIT's work on Kerf); passes 2 to 9 are recalculations, of which
+// the median is shown, as native's frozen figures were taken (9 passes); with 12 or more passes the median of the last
+// half is the recalculation once the runtime has settled.
 
 using System.Diagnostics;
 using System.Globalization;
@@ -138,7 +138,7 @@ if (args.Length > 0 && args[0] == "images")
     return 0;
 }
 
-int passes = args.Length > 0 ? int.Parse(args[0], CultureInfo.InvariantCulture) : 7;
+int passes = args.Length > 0 ? int.Parse(args[0], CultureInfo.InvariantCulture) : 9;
 var times = new double[examples.Length][];
 var bytes = new long[examples.Length];
 for (int i = 0; i < examples.Length; i++)
@@ -152,7 +152,7 @@ for (int pass = 0; pass < passes; pass++)
 {
     for (int i = 0; i < examples.Length; i++)
     {
-        long before = GC.GetAllocatedBytesForCurrentThread();
+        long before = GC.GetTotalAllocatedBytes(true);
         var clock = Stopwatch.StartNew();
         Shape shape = examples[i].Build();
         ShapeMesh mesh = shape.Triangulate();
@@ -161,7 +161,7 @@ for (int pass = 0; pass < passes; pass++)
         times[i][pass] = clock.Elapsed.TotalMilliseconds;
         if (pass == passes - 1)
         {
-            bytes[i] = GC.GetAllocatedBytesForCurrentThread() - before;
+            bytes[i] = GC.GetTotalAllocatedBytes(true) - before;
         }
     }
     if (pass == 0)
@@ -182,8 +182,8 @@ long bytesSum = 0;
 for (int i = 0; i < examples.Length; i++)
 {
     double first = times[i][0];
-    // Passes 2 to 7, as native's frozen figures were taken
-    double[] recalculations = times[i][1..Math.Min(passes, 7)];
+    // Passes 2 to 9, as native's frozen figures were taken
+    double[] recalculations = times[i][1..Math.Min(passes, 9)];
     double median = recalculations.Length > 0 ? recalculations.Order().ElementAt(recalculations.Length / 2) : first;
     firstSum += first;
     medianSum += median;
@@ -249,6 +249,9 @@ if (copies > 0)
     BenchRows.Add("parallel", roundName, "alloc MB", roundBytes / 1048576.0);
     BenchRows.Add("parallel", roundName, "result", $"{mismatches} differing from the serial run");
 }
+BenchRows.Add("process", copies > 0 ? "with the parallel rounds" : "the serial passes", "collector's pause ms", GC.GetTotalPauseDuration().TotalMilliseconds);
+BenchRows.Add("process", copies > 0 ? "with the parallel rounds" : "the serial passes", "generation 0 count", GC.CollectionCount(0));
+BenchRows.Add("process", copies > 0 ? "with the parallel rounds" : "the serial passes", "generation 2 count", GC.CollectionCount(2));
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
     $"GC: {GC.CollectionCount(0)}/{GC.CollectionCount(1)}/{GC.CollectionCount(2)} collections, pause {GC.GetTotalPauseDuration().TotalMilliseconds:F0} ms; JIT {System.Runtime.JitInfo.GetCompilationTime().TotalMilliseconds:F0} ms"));
 return 0;

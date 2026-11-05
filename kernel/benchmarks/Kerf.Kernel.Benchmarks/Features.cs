@@ -24,11 +24,11 @@ namespace Kerf.Kernel.Benchmarks;
 /// Offsets, fillets and features (Kerf unit 10H5) on frozen parts, as callers hold them: boxes, cylinders and Boolean
 /// results of several sizes, each offset (arc and intersection joins), hollowed (a thick solid open at the top),
 /// filleted and chamfered on every edge, drafted on its side faces, and given a boss (BRepFeat_MakePrism). Per
-/// operation the total of each part's fastest of three runs, and the bytes allocated by that run, serially.
+/// operation the total of each part's fastest of five runs, and the bytes allocated by that run, serially.
 /// </summary>
 internal static class Features
 {
-    private const int Rounds = 3;
+    private const int Rounds = 5;
 
     private static IEnumerable<(string Name, Shape Shape)> Parts()
     {
@@ -145,6 +145,7 @@ internal static class Features
         {
             double ms = 0;
             long bytes = 0;
+            theFailures = 0;
             foreach ((_, Shape part) in parts)
             {
                 (double m, long b) = Best(() => run(part));
@@ -155,10 +156,13 @@ internal static class Features
                 $"  {name,-22} {ms,9:F1} ms  {bytes / 1048576.0,9:F1} MB"));
             BenchRows.Add("features", name, "ms", ms);
             BenchRows.Add("features", name, "alloc MB", bytes / 1048576.0);
+            BenchRows.Add("features", name, "result", $"{theFailures} runs failed");
         }
     }
 
     // The fastest of the runs, with the bytes the thread allocated in it (failures count as runs)
+    private static int theFailures;
+
     private static (double Ms, long Bytes) Best(Action theRun)
     {
         double aBest = double.MaxValue;
@@ -171,8 +175,10 @@ internal static class Features
             {
                 theRun();
             }
-            catch (FailureException)
+            catch (Exception e) when (e is FailureException or InvalidOperationException or ArgumentException)
             {
+                // Kerf's refusals surface as .NET's exceptions, the engine's as the inner one
+                theFailures++;
             }
             double aMs = Stopwatch.GetElapsedTime(t0).TotalMilliseconds;
             if (aMs < aBest)

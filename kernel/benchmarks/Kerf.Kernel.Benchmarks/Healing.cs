@@ -106,9 +106,13 @@ internal static class Healing
             BenchRows.Add(aGroup, aRow, "ms", aMs);
             BenchRows.Add(aGroup, aRow, "alloc MB", aRowBytes / 1048576.0);
         }
+        Console.WriteLine($"  {theFailures} runs failed");
+        BenchRows.Add(aGroup, "all four", "result", $"{theFailures} runs failed");
     }
 
     // The fastest of the runs, with the bytes the thread allocated in it (failures count as runs)
+    private static int theFailures;
+
     private static (double Ms, long Bytes) Best(Action theRun)
     {
         double aBest = double.MaxValue;
@@ -121,8 +125,10 @@ internal static class Healing
             {
                 theRun();
             }
-            catch (FailureException)
+            catch (Exception e) when (e is FailureException or InvalidOperationException or ArgumentException)
             {
+                // Kerf's refusals surface as .NET's exceptions, the engine's as the inner one
+                theFailures++;
             }
             double aMs = Stopwatch.GetElapsedTime(t0).TotalMilliseconds;
             if (aMs < aBest)
