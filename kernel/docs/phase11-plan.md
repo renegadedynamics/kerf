@@ -1,8 +1,8 @@
 # Phase 11 plan: after 0.2.0
 
-> **Proposed, 5 November 2026, for the owner to agree.** Not started. The owner's order: "Let's get these phase 10 units
-> done, then we can go ahead and optimise from there." So optimisation comes first, and the points the owner set aside
-> until after 0.2.0 follow it.
+> **Agreed, 5 November 2026** (decision 1644). Started. The owner's order: "Let's get these phase 10 units done, then we
+> can go ahead and optimise from there." So optimisation comes first, and the points the owner set aside until after 0.2.0
+> follow it. The next release is 0.3.0.
 
 ## The goal
 
@@ -32,6 +32,16 @@ Three things to keep in mind:
 
 ## 2. The optimisation units
 
+**The targets (the owner's):** recalculation within 1.2× of native's frozen figure, and allocation cut by half, from 11A's
+baseline.
+
+**How the work runs (the owner's):**
+- **Pragmatic:** longer-running and more commonly used operations come first. 11A ranks them.
+- **A time box for each operation:** one helper's run, about two hours. An operation that doesn't reach its target by then
+  gets a note in `performance.md`, with what was tried and what's left. The owner hears about it, and the work moves on to
+  the next operation.
+- **Cheap wins are welcome:** if something beats the target at little cost, take it.
+
 In order. Each takes its figures from 11A, and states before and after. Results stay identical unless a unit says
 otherwise and records why: the corpus, the recordings and the Python-reference values are the check.
 
@@ -55,23 +65,28 @@ The owner set these aside until after 0.2.0 (decision 1642). They don't depend o
 | Unit | What | Note |
 |---|---|---|
 | **11H** Re-measure coverage | About four hours with `-WithOracle -FullCorpus`. The figures predate 10Q and 10Q2. | Run first, since 11I depends on it |
-| **11I** Coverage floor (question 49) | 81.6% overall at the last measure; 81 of 272 packages under 80%, 41 of them STEP's. The corpus adds at most 0.2 points, so all of them are real gaps. | **Owner's decision.** My recommendation: hand-written engine packages first, then decide on generated STEP entities, where the floor buys least |
+| **11I** Coverage floor (question 49) | 81.6% overall at the last measure; 81 of 272 packages under 80%, 41 of them STEP's. The corpus adds at most 0.2 points, so all of them are real gaps. | **The owner's decision:** hand-written engine packages first. Generated STEP entities are decided later |
 | **11J** Tests of their own (plan 3.2) | 0 of 4,417 public members are uncalled, but "called" includes indirect calls. Tighten to a direct call and a checked result, area by area, starting from what users meet first. | Large; do it in slices |
-| **11K** The remaining exceptions | Operators, constructors and the shapes' own methods still throw (decisions 1589, 1592). | **Owner's decision**, since they left these for now. Operators can't return a result without losing what makes them useful, so my recommendation is to keep them, and add a `Try` form only where Bento shows a need |
+| **11K** The remaining exceptions | Operators, constructors and the shapes' own methods still throw (decisions 1589, 1592). | **Closed: the owner keeps them** (decision 1644) |
 | **11L** Sharp edges in the API | From `one-set-of-shapes.md`'s "Left": `shape.BoundBox()` beside `shape.BoundingBox()`, with different defaults; clashes with `Kerf.Meshing`, `Kerf.Exchange` and `Kerf.Offsets`; odd internal names. Also error messages that still name OCCT's types: `Plane`'s "Expected gp_Pln…", which Bento shows in a cell for a zero `zDir`, and `TopoUtil.TypeName`'s `TopoDS_Face` and so on. And STEP's header, which still says organisation `Open CASCADE`, an Open CASCADE processor and the product name `Open CASCADE STEP translator`: change them to Kerf, and update STEP's fixtures once. | The API's points are best done before anyone relies on them. **The messages and STEP's header are the owner's for the next release** (decision 1643) |
 | **11M** Engine tidying | About 3,300 IDE1006 exemptions; the `Transient` base; 572 "touch" rows in the bug triage, fixed when their code is next changed. | Opportunistic: no unit of its own unless something needs it |
 
-## 4. Questions for the owner
+## 4. The owner's answers (decision 1644)
 
-1. **Is this order right?** Optimisation first, with the coverage work alongside it.
-2. **A target for optimisation?** I'd suggest deciding after 11A's baseline, rather than guessing now. "Recalculation within
-   1.2× of native's frozen figure, and allocation down by half" is a possible first target.
-3. **The coverage floor (11I):** hand-written engine packages first?
-4. **The remaining exceptions (11K):** keep them?
-5. **When is the next release, and what number?** STEP's header and the error messages go in it (decision 1643). I suggest
-   0.3.0, once the API fixes in 11L and the first optimisation results are in, rather than a 0.2.1 for these alone, unless
-   you want them out sooner.
-6. **The unported rest of OCCT.** The port status is 62.0%, and nothing in this plan adds to it. I suggest porting more only
-   when something needs it.
-7. **What would 1.0 mean?** A stable API needs real users to test it. I suggest considering it after phase 11, once Bento has
-   run on Kerf for a while.
+1. **The order:** as above, optimisation first, with the coverage work alongside it.
+2. **The target:** as in section 2, pragmatically, with a time box for each operation.
+3. **The coverage floor:** hand-written engine packages first. STEP is decided later.
+4. **The remaining exceptions:** they stay.
+5. **The next release:** 0.3.0, with 11L's fixes and the first optimisation results.
+6. **The unported rest of OCCT:** not yet. [unported.md](unported.md) says what's left and what it might be useful for.
+7. **1.0:** needs a stable API, and more testing by the owner and other potential users. A Kerf GUI on Avalonia might help
+   with that, but is still to be decided.
+
+## 5. Order on the machine
+
+Timing needs a quiet machine and the coverage run takes it over for hours, so they can't overlap. Allocation counts don't
+depend on load, though, so 11B's profiling can run beside it.
+
+1. 11A, with its baseline.
+2. 11H, alongside the allocation work in 11B.
+3. The rest, one timed unit at a time.
