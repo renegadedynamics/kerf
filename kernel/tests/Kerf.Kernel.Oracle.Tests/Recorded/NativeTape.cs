@@ -439,14 +439,14 @@ public static partial class Tape
         }
     }
 
-    /// <summary>A file's content as an argument: a STEP file's FILE_NAME (its time stamp) left out.</summary>
+    /// <summary>A file's content as an argument: a STEP file as native wrote it, with its FILE_NAME (its time stamp) left out.</summary>
     private static byte[] FileContent(string thePath)
     {
         byte[] aBytes = System.IO.File.ReadAllBytes(thePath);
         if (aBytes.Length > 12 && Encoding.ASCII.GetString(aBytes, 0, 12) == "ISO-10303-21")
         {
-            string aText = Encoding.Latin1.GetString(aBytes);
-            return Encoding.Latin1.GetBytes(System.Text.RegularExpressions.Regex.Replace(aText, @"FILE_NAME\((?s:.*?)\);", "FILE_NAME();"));
+            string aText = global::Kerf.Tests.Shared.NativeStepText.Of(Encoding.Latin1.GetString(aBytes));
+            return Encoding.Latin1.GetBytes(aText.Replace("FILE_NAME(...);", "FILE_NAME();", StringComparison.Ordinal));
         }
         return aBytes;
     }

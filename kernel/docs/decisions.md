@@ -16487,3 +16487,57 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 1661. **Proposal 5 isn't taken.** 225 MB was reached without an API change across `math`, so the work is left undone, with what
        remains in `performance.md`. Allocation work changed no result anywhere: where a saving might have, as with a reversed range
        in 18203, the old route stays.
+
+## Phase 11: units 11L and 11N, STEP's header, StepTidy and the API's sharp edges
+
+1662. **Engine messages leave in Kerf's terms, through one place.** 1,294 string literals in the engine name OCCT's types,
+       and rewriting them would lose the way back to OCCT's source and touch hot files. So they stay, and
+       `FailureDiagnostics.PublicText` turns them into public text: the OCCT member at the start goes, and a type named later
+       keeps its last part. `Refusal`'s messages, every diagnostic made from an exception, and the exchange and drawing
+       writers' messages all go through it. Any other exception's message passes untouched, as it can hold a path.
+       - **Left alone:** a refusal's `InnerException` keeps OCCT's words, so `ex.ToString()` shows them; `Message.SendTrace` and
+         `Check` texts, which no public member shows; the `Port of:` lines.
+       - **Reworded where they are:** `Plane`'s, `TopoUtil.TypeName`'s (now `obj.Type`) and `ShapeTypeOf`'s, `Color`'s and
+         `InputStream`'s.
+1663. **STEP's header says Kerf, and says where Kerf comes from.** `FILE_DESCRIPTION(('Kerf Model','Kerf is derived from Open
+       CASCADE Technology 8.0'),'2;1')`, name `Kerf Shape Model`, organisation `Kerf`, processor `Kerf STEP processor 0.3.0`, system
+       `Kerf 0.3.0`, and product `Kerf STEP translator N`. Kerf.Modeling's export names `Kerf.Modeling` as the system, where
+       build123d named itself.
+       - **The version is Kerf's own,** from the assembly, so the header changes with each release. `8.0` would have given
+         OCCT's version as Kerf's, so it appears only in the note saying what Kerf derives from. Tests match the form.
+       - **A default product name has no version:** a part read back is named after it, and a part's name shouldn't change with
+         a release.
+       - **The note is in the description:** Part 21 has it as free text, and the other fields identify a system.
+       - **Nothing reads these back:** the only branch on the header is the reader's on `I-DEAS`. The reference files, which name
+         Open CASCADE, still read as they did.
+       - **STL's default header** is now `STL Exported by Kerf`, for the same reason; it also linked to OCCT's site.
+       - **Not changed:** the BREP format's magic `Open CASCADE Topology V`, which is the format's name.
+1664. **Native's recordings stay frozen, and written STEP is compared as native wrote it.** `tests/Shared/NativeStepText` takes
+       FILE_DESCRIPTION and PRODUCT back to OCCT's bytes, line breaks included, and masks FILE_NAME. The tape's file arguments go
+       through it too, so its hashes still match.
+1665. **StepTidy merges exactly equal values, not values within 1e-12.** OCCT's hashers compare within 1e-12, but hash the array
+       of three doubles with a length of 3 taken as bytes, so only low bytes of the first coordinate: in effect it merges only
+       what's exactly equal, and all round first coordinates share a bucket. A proper hash with the tolerance kept gave 20.7%
+       over the dataset against 17.9%, and `bug32596_abc_0_13.step` then read back with 101 faces, not 99, and a different volume:
+       merging directions or vectors alone did it, so nearly equal values are what its healing is sensitive to. Exact merging
+       differs on no file, so that's what's ported, with a proper hash. 0 and -0 are equal.
+1666. **StepTidy's other differences from OCCT, each with a test** (`KerfCleanDuplicatesTests`, and `occt-issues.md`).
+       - A conic takes the kept placement. OCCT sets it on a copy of the conic's position, so the duplicate returns with the conic.
+       - A placement whose axis and reference direction are one duplicate has both replaced. OCCT returns after the axis.
+       - The cleaned model keeps its parameters and header. OCCT's forgets both, so its file names the default schema, whichever
+         was asked for.
+       - `CafWriter`'s stream forms clean as `Write` does: they're what `Step.Write` uses. OCCT's stream form doesn't.
+       - Reducers share their replacers, in one file, where OCCT repeats them class by class. The GTests, all 48, are as OCCT's.
+1667. **`CleanDuplicates` is public and off by default, in both layers,** on `StepWriteOptions` and `StepExportOptions`. Whether
+       it's on is the owner's decision, with performance.md's figures: 17.9% smaller, 10.7% more allocation, and no file differing.
+       Writing time waits for a quiet machine. This completes decision 1645, and decision 1271's omission of StepTidy no longer holds.
+1668. **The API's sharp edges (unit 11L).**
+       - **`shape.BoundBox()` is now `shape.Bounds(optimal = true)`.** Beside the kernel's `BoundingBox()` the two names read
+         as one thing, with different defaults. They do different jobs, so they stay two and the name says so: the kernel's is
+         the fast, loose box, and the layer's tight, falling back on a mesh. Moving the kernel's default instead would slow its
+         callers. `tolerance` goes: it did nothing and no caller gave it.
+       - **Name clashes stay:** `Kerf.Meshing`'s `FaceMesh`, `ShapeMesh` and `Triangle` against the layer's, and `Kerf.Exchange.Step`
+         against `Selector.Step`, mean different things, and a file using both qualifies one, which is what namespaces are for.
+         The options (`ExtrudeOptions`, `SweepOptions`, `OffsetOptions`) are already nested in `Operations`.
+       - **Odd internal names stay:** `CenterOfShape1D`, `IntersectCoreOfFace` and the like are the dispatch's targets. Nobody
+         outside sees them, and renaming them gains nothing a reader of the dispatch needs.

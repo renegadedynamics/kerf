@@ -77,7 +77,7 @@ public class MalformedInputTests
             try
             {
                 _ = shape.IsValid;
-                _ = shape.BoundBox();
+                _ = shape.Bounds();
                 _ = shape.Volume;
                 _ = shape.Faces().Sum(f => f.Area);
             }

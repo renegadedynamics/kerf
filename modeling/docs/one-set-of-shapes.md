@@ -155,9 +155,9 @@ matrix; `At` counts from zero, as the kernel's indexer counts from one.
 - **The objects don't have every edge's member.** `line.Length` and the other `IShape1D` members work on a `Line`; an `Edge`-only member
   needs `line.Edge.ArcCenter`.
 - **Names kept from the mechanical move.** The dispatch's targets (`CenterOfShape1D`, `IntersectCoreOfFace`) are internal, and read
-  oddly.
-- **Other namespaces still meet the layer's names.** `Kerf.Meshing`'s `FaceMesh`, `ShapeMesh` and `Triangle`, `Kerf.Exchange`'s `Step`, `Kerf.Construction`'s `ExtrudeOptions` and `SweepOptions`,
-  and `Kerf.Offsets`' `OffsetOptions`. The brief covered five namespaces; a file with these qualifies one.
-- **`shape.BoundBox()` beside the kernel's `shape.BoundingBox()`.** The same type now, but with a different default (tight, and falling back on a
-  mesh). Bringing them together would change the kernel's default for its own callers.
+  oddly. They stay (decision 18407).
+- **Other namespaces still meet the layer's names.** `Kerf.Meshing`'s `FaceMesh`, `ShapeMesh` and `Triangle`, and `Kerf.Exchange`'s
+  `Step`. A file with both qualifies one, and that stays (decision 18407). The options are nested in `Operations`.
+- **`shape.Bounds()` beside the kernel's `shape.BoundingBox()`.** The same type, with different jobs: tight, falling back on a mesh,
+  and fast and loose. It was `BoundBox()` until 0.3.0 (decision 18407).
 - **The `HistoryLog`.** Kept; see `kernel/docs/state.md`.

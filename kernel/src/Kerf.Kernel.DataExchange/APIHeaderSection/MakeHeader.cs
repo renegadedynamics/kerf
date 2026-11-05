@@ -61,19 +61,19 @@ internal class MakeHeader
         switch (shapetype)
         {
             case 1:
-                Init("Open CASCADE Facetted BRep Model");
+                Init("Kerf Facetted BRep Model");
                 break;
             case 2:
-                Init("Open CASCADE Face Based Surface Model");
+                Init("Kerf Face Based Surface Model");
                 break;
             case 3:
-                Init("Open CASCADE Shell Based Surface Model");
+                Init("Kerf Shell Based Surface Model");
                 break;
             case 4:
-                Init("Open CASCADE Manifold Solid Brep Model");
+                Init("Kerf Manifold Solid Brep Model");
                 break;
             default:
-                Init("Open CASCADE Shape Model");
+                Init("Kerf Shape Model");
                 break;
         }
     }
@@ -98,7 +98,7 @@ internal class MakeHeader
         authors.SetValue(1, a1);
         _fn.SetAuthor(authors);
         NCollection_HArray1<TCollection_HAsciiString> org = new NCollection_HArray1<TCollection_HAsciiString>(1, 1);
-        TCollection_HAsciiString org1 = new TCollection_HAsciiString("Open CASCADE");
+        TCollection_HAsciiString org1 = new TCollection_HAsciiString("Kerf");
         org.SetValue(1, org1);
         _fn.SetOrganization(org);
 
@@ -116,9 +116,10 @@ internal class MakeHeader
         {
             _fd = new FileDescription();
         }
-        NCollection_HArray1<TCollection_HAsciiString> descr = new NCollection_HArray1<TCollection_HAsciiString>(1, 1);
-        TCollection_HAsciiString descr1 = new TCollection_HAsciiString("Open CASCADE Model");
-        descr.SetValue(1, descr1);
+        // Part 21's description is free text: the place to say where Kerf comes from, which the other fields don't
+        NCollection_HArray1<TCollection_HAsciiString> descr = new NCollection_HArray1<TCollection_HAsciiString>(1, 2);
+        descr.SetValue(1, new TCollection_HAsciiString("Kerf Model"));
+        descr.SetValue(2, new TCollection_HAsciiString(InterfaceVersion.XSTEP_DERIVATION));
         _fd.SetDescription(descr);
         TCollection_HAsciiString il = new TCollection_HAsciiString("2;1");
         _fd.SetImplementationLevel(il);

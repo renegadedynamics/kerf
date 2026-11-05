@@ -129,7 +129,7 @@ public class ShapeMeshTests
         var box = new Box(2, 2, 2).Moved(new Location(new Point3D(10.0, 20.0, 30.0), new Vector3D(0.0, 0.0, 45.0)));
         var mesh = box.Triangulate(0.1);
         var points = mesh.Faces.SelectMany(f => Enumerable.Range(0, f.NodeCount).Select(i => Node(f.Positions, i))).ToList();
-        var bounds = box.BoundBox();
+        var bounds = box.Bounds();
         Assert.All(points, p => Assert.True(p.X >= bounds.Min.X - 1e-4 && p.X <= bounds.Max.X + 1e-4 && p.Y >= bounds.Min.Y - 1e-4 && p.Y <= bounds.Max.Y + 1e-4 && p.Z >= bounds.Min.Z - 1e-4 && p.Z <= bounds.Max.Z + 1e-4));
         Check.AlmostEqual(box.Center().ToVector(), points.Aggregate(Vector3D.Zero, (s, p) => s + p.ToVector()) * (1.0 / points.Count), 4);
     }

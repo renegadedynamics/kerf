@@ -224,7 +224,7 @@ public static class ShapeTraversal
         }
         catch (Exception e) when (Refusal.IsFailure(e) && (e is DomainErrorException))
         {
-            throw new ArgumentException($"A child can't be a sub-shape of a {shape.Type}: {Refusal.Unwrapped(e).Message}", nameof(children), e);
+            throw new ArgumentException($"A child can't be a sub-shape of a {shape.Type}: {FailureDiagnostics.PublicText(e)}", nameof(children), e);
         }
 
         result.TShape()!.FreezeGraph();

@@ -197,7 +197,7 @@ public static partial class Shape1DExtensions
                 case CenterOf.Mass:
                     return self.AsShape().MassProperties(Dimension.Length).CentreOfMass;
                 default:
-                    return self.BoundBox().Center();
+                    return self.Bounds().Center();
             }
         }
 
@@ -453,7 +453,7 @@ public static partial class Shape1DExtensions
                 kappas.Add(cross.Z >= 0 ? kappa : -kappa);
             }
             var maxKappa = Math.Max(Constants.Tolerance, kappas.Max(Math.Abs));
-            var size = self.BoundBox().Size;
+            var size = self.Bounds().Size;
             var tooth = maxToothSize ?? Math.Max(size.X, Math.Max(size.Y, size.Z)) / 10;
             var scale = tooth / maxKappa;
             var comb = new List<Edge>();
@@ -508,7 +508,7 @@ public static partial class Shape1DExtensions
             // Trim infinite edges before OCCT operations
             if (other is Edge { IsInfinite: true } infinite)
             {
-                var box = self.BoundBox(optimal: false);
+                var box = self.Bounds(optimal: false);
                 other = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Magnitude);
             }
             switch (other)

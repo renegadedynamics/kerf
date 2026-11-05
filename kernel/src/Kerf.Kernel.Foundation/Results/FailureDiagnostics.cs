@@ -2,6 +2,7 @@
 
 using System.Collections.Concurrent;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Kerf.Engine.Foundation;
 
@@ -19,10 +20,11 @@ namespace Kerf.Engine.Foundation;
 /// lists the codes.
 /// </para>
 /// <para>
-/// The message says in plain words what kind of failure it was, then OCCT's own message if it has one.
+/// The message says in plain words what kind of failure it was, then OCCT's own message if it has one, in Kerf's terms
+/// (<see cref="PublicText(string)"/>).
 /// </para>
 /// </remarks>
-internal static class FailureDiagnostics
+internal static partial class FailureDiagnostics
 {
     /// <summary>The code of a fault: an exception from the engine that isn't one of OCCT's.</summary>
     public static DiagnosticCode Fault { get; } = new("engine.fault");
@@ -50,13 +52,49 @@ internal static class FailureDiagnostics
     {
         ArgumentNullException.ThrowIfNull(exception);
         exception = Refusal.Unwrapped(exception);
-        var own = Refusal.Of(exception) is { } failure ? failure.GetMessageString() : exception.Message;
-        // A failure raised without a message has .NET's default one, where OCCT's would be empty
-        if (own.StartsWith("Exception of type '", StringComparison.Ordinal))
-            own = "";
+        var own = PublicText(exception);
         var kind = Describe(exception);
         return Diagnostic.Error(CodeOf(exception.GetType()), own.Length == 0 ? kind : $"{kind}: {own}");
     }
+
+    /// <summary>
+    /// What an exception says for a public message: the failure's own message in Kerf's terms (<see cref="PublicText(string)"/>),
+    /// empty if it was raised without one, or any other exception's message as it is, as that can hold a path.
+    /// </summary>
+    public static string PublicText(Exception exception)
+    {
+        if (Refusal.Of(exception) is not { } failure)
+            return exception.Message;
+        // A failure raised without a message has .NET's default one, where OCCT's would be empty
+        string own = failure.GetMessageString();
+        return own.StartsWith("Exception of type '", StringComparison.Ordinal) ? "" : PublicText(own);
+    }
+
+    /// <summary>
+    /// An engine message for callers who have never heard of OCCT: without the member it starts with
+    /// (<c>gp_Dir() - input vector has zero norm</c>), and with any type it names later on by its last part
+    /// (<c>Make Geom_Curve (3D) failed</c> says <c>Curve</c>). The engine's messages stay as OCCT words them, as the way
+    /// back to its source, and only this leaves.
+    /// </summary>
+    public static string PublicText(string message)
+    {
+        string text = LeadingMember().Replace(message.Trim(), "", 1);
+        text = NamedMember().Replace(text, "$1");
+        return NamedType().Replace(text, "$1").Trim();
+    }
+
+    // The type part of an OCCT name: TopoDS_Face, gp_Dir, BRepAlgoAPI_Failure, but not STEP's own CARTESIAN_POINT
+    private const string OcctType = @"(?=[A-Za-z0-9]*[a-z])[A-Za-z][A-Za-z0-9]*_[A-Za-z0-9_]+";
+
+    // At the start: an OCCT type, or a member (BRepTools::Read), with the separator after it
+    [GeneratedRegex(@"^(?:" + OcctType + @"(?:::~?\w+)?|[A-Za-z][A-Za-z0-9]*::~?\w+)(?:\(\))?(?:\s*[-:,]\s*|\s+|$)")]
+    private static partial Regex LeadingMember();
+
+    [GeneratedRegex(@"\b(?:" + OcctType + @"|[A-Za-z][A-Za-z0-9]*)::(~?\w+)(?:\(\))?")]
+    private static partial Regex NamedMember();
+
+    [GeneratedRegex(@"\b(?=[A-Za-z0-9]*[a-z])[A-Za-z][A-Za-z0-9]*_([A-Z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*)\b")]
+    private static partial Regex NamedType();
 
     /// <summary>The plain description of a kind of failure, by the nearest OCCT family it belongs to.</summary>
     internal static string Describe(Exception exception) => exception switch

@@ -69,7 +69,7 @@ public class OperationsGenericTests
     public void ExtrudeBoth()
     {
         var p = Extrude(new Circle(1), 1, new ExtrudeOptions { Both = true }).Value;
-        Check.AlmostEqual(2, p.BoundBox().Size.Z, 4);
+        Check.AlmostEqual(2, p.Bounds().Size.Z, 4);
     }
 
     // ---- BoundingBoxTests ----
@@ -400,7 +400,7 @@ public class OperationsGenericTests
     public void MirrorDefaultPlane()
     {
         var test = Mirror(new Pos(0, 5) * new Rectangle(1, 1));
-        Check.AlmostEqual(-5, test.BoundBox().Center().Y, 5);
+        Check.AlmostEqual(-5, test.Bounds().Center().Y, 5);
     }
 
     [Fact]
@@ -438,7 +438,7 @@ public class OperationsGenericTests
     {
         // Issue #604
         var around = Offset(Plane.XZ * Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(10, 10, 0)), 1).Value;
-        Check.AlmostEqual(0, around.BoundBox().Size.Y, 5);
+        Check.AlmostEqual(0, around.Bounds().Size.Y, 5);
     }
 
     [Fact]

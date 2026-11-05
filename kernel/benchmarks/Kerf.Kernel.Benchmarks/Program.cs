@@ -12,6 +12,8 @@
 //     -- booleans-profile [filter]: the pave filler and the builder apart;
 //   ... -- healing [filter]: STEP import with its healing, ShapeFix_Shape, UnifySameDomain and STEP export on the
 //     dataset's STEP files (unit 10H4, Healing.cs);
+//   ... -- step-tidy [filter]: STEP export with StepTidy off and on, on the same files: sizes, allocation, the files read
+//     back and compared (unit 11N, StepTidyFigures.cs);
 //   ... -- features [filter]: offsets, thick solids, fillets, chamfers, drafts and a BRepFeat boss on frozen parts
 //     (unit 10H5, Features.cs);
 //   ... -- stepfile [native-times.txt]: the STEP parser (unit 8P) on the dataset's STEP files, the fastest of 5 parses
@@ -73,6 +75,11 @@ if (args.Length > 0 && args[0] == "booleans-profile")
 if (args.Length > 0 && args[0] == "healing")
 {
     Healing.Run(aFilter);
+    return 0;
+}
+if (args.Length > 0 && args[0] == "step-tidy")
+{
+    StepTidyFigures.Run(aFilter);
     return 0;
 }
 if (args.Length > 0 && args[0] == "features")

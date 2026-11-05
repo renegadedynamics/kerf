@@ -14,10 +14,10 @@ public class ProjectionTests
         var target = CompoundObjects.Box(10, 10, 4) - new Pos(0, 0, 2) * CompoundObjects.Box(5, 5, 2);
         var circle = Wire.MakeCircle(3, Plane.XY.Offset(10));
         var projection = circle.ProjectToShape(target, new Vector3D(0, 0, -1));
-        var bbox = projection[0].BoundBox();
+        var bbox = projection[0].Bounds();
         Check.AlmostEqual(new Point3D(-3, -3, 1), bbox.Min, 2);
         Check.AlmostEqual(new Point3D(3, 3, 2), bbox.Max, 2);
-        bbox = projection[1].BoundBox();
+        bbox = projection[1].Bounds();
         Check.AlmostEqual(new Point3D(-3, -3, -2), bbox.Min, 2);
         Check.AlmostEqual(new Point3D(3, 3, -2), bbox.Max, 2);
     }

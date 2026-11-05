@@ -95,25 +95,12 @@ internal static partial class TopoUtil
     internal static ShapeType ShapeTypeOf(Shape obj)
     {
         if (obj.IsNull)
-            throw new ArgumentException("Null TopoDS_Shape object");
+            throw new ArgumentException("The shape is null");
         return obj.Type;
     }
 
-    /// <summary>
-    /// The name of the native binding's wrapper class for a shape (<c>TopoDS_Edge</c> for an edge), as messages name it.
-    /// </summary>
-    internal static string TypeName(Shape obj) => obj.IsNull ? "TopoDS_Shape" : obj.Type switch
-    {
-        ShapeType.Vertex => "TopoDS_Vertex",
-        ShapeType.Edge => "TopoDS_Edge",
-        ShapeType.Wire => "TopoDS_Wire",
-        ShapeType.Face => "TopoDS_Face",
-        ShapeType.Shell => "TopoDS_Shell",
-        ShapeType.Solid => "TopoDS_Solid",
-        ShapeType.CompSolid => "TopoDS_CompSolid",
-        ShapeType.Compound => "TopoDS_Compound",
-        _ => "TopoDS_Shape",
-    };
+    /// <summary>What a message calls a shape: its type, or <c>null shape</c>.</summary>
+    internal static string TypeName(Shape obj) => obj.IsNull ? "null shape" : obj.Type.ToString();
 
     /// <summary>
     /// The shape itself, checked to be one: the native binding's wrapper of its own type once (<c>TopoDS_Edge</c> for an

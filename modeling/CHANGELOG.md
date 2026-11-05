@@ -3,6 +3,15 @@
 All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET packages). Versions follow [SemVer](https://semver.org); before
 1.0 a minor version may break the API.
 
+## 0.3.0 (unreleased)
+
+- **`shape.BoundBox()` is now `shape.Bounds()`,** beside the kernel's `BoundingBox()`, which has a different default. Its `tolerance`
+  argument, which did nothing, has gone.
+- **STEP's header names Kerf:** `Kerf.Modeling` as the originating system, and the kernel's other changes.
+- **Messages in Kerf's terms:** `Plane`'s and the shapes' messages no longer name OCCT's types.
+- **`StepExportOptions.CleanDuplicates`** merges exactly equal entities when writing STEP. Off by default.
+- What Bento has to change: [docs/11l-bento.md](docs/11l-bento.md).
+
 ## 0.2.0
 
 The first release as Kerf.Modeling, replacing `Build123d` and `Build123d.OcctNet`. Every name and most signatures changed from the `OcctNet.*` and `Build123d` packages, and there's no compatibility

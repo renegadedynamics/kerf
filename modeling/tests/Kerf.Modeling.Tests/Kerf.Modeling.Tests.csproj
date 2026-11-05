@@ -18,10 +18,12 @@
 
   <ItemGroup>
     <None Include="Reference\**" CopyToOutputDirectory="PreserveNewest" />
+    <Compile Include="..\..\..\kernel\tests\Shared\NativeStepText.cs" Link="Shared\NativeStepText.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="Kerf.Tests.Shared" />
     <Using Include="Kerf.Topology" />
     <Using Include="Kerf.Geometry" />
     <Using Include="Kerf.Color" Alias="Color" />

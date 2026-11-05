@@ -37,8 +37,8 @@ internal static class ExchangeTree
     /// <summary>The diagnostic of a reader's exception on bad data.</summary>
     public static Diagnostic BadData(Exception e, string format)
         => e is InvalidDataException
-            ? Diagnostic.Error(LimitExceeded, $"The {format} data is larger than the limits: {e.Message}")
-            : Diagnostic.Error(Malformed, $"The {format} data couldn't be read: it is malformed or truncated ({e.Message}).");
+            ? Diagnostic.Error(LimitExceeded, $"The {format} data is larger than the limits: {FailureDiagnostics.PublicText(e)}")
+            : Diagnostic.Error(Malformed, $"The {format} data couldn't be read: it is malformed or truncated ({FailureDiagnostics.PublicText(e)}).");
 
     /// <summary>The stream read to its end, refusing more than <paramref name="maxBytes"/>.</summary>
     /// <exception cref="InvalidDataException">The stream holds more.</exception>

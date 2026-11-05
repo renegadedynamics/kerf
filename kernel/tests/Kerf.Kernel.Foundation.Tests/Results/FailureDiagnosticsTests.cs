@@ -23,6 +23,47 @@ public class FailureDiagnosticsTests
         Assert.Equal(code, FailureDiagnostics.CodeOf(type).Value);
     }
 
+    // Each form the engine's messages take; none of them may reach a user as it is (unit 11L)
+    [Theory]
+    [InlineData("gp_Dir() - input vector has zero norm", "input vector has zero norm")]
+    [InlineData("gp_Circ::SetRadius() - radius should be positive number", "radius should be positive number")]
+    [InlineData("gp_GTrsf::SetForm, null determinant", "null determinant")]
+    [InlineData(" Geom_OffsetSurface : UIso", "UIso")]
+    [InlineData("BRepTools::Read: bad header", "bad header")]
+    [InlineData("TopoDS_Builder::Add", "")]
+    [InlineData("math_Gauss ", "")]
+    [InlineData("BRepAlgoAPI_Failure", "")]
+    [InlineData(" Make Geom_Curve (3D) failed", "Make Curve (3D) failed")]
+    [InlineData("list(TopoDS_Shape)", "list(Shape)")]
+    [InlineData("called from BRepFill_Sweep::BuildEdge too early", "called from BuildEdge too early")]
+    [InlineData("BSpline curve: invalid degree", "BSpline curve: invalid degree")]
+    [InlineData("No CARTESIAN_POINT in entity 12", "No CARTESIAN_POINT in entity 12")]
+    [InlineData("radius should be >= 0", "radius should be >= 0")]
+    public void PublicTextIsInKerfsTerms(string engine, string expected)
+    {
+        Assert.Equal(expected, FailureDiagnostics.PublicText(engine));
+    }
+
+    [Fact]
+    public void PublicTextLeavesAnyOtherExceptionsMessageAlone()
+    {
+        const string message = "Access to C:/My_Files/a_B.step is denied";
+        Assert.Equal(message, FailureDiagnostics.PublicText(new IOException(message)));
+    }
+
+    [Fact]
+    public void ARefusalAndADiagnosticNameNoOcctType()
+    {
+        var refusal = Assert.Throws<ArgumentException>(
+            () => Refusal.ArgumentIf(true, FailureKind.ConstructionError, "gp_Circ() - radius should be positive number"));
+        Assert.Equal("The geometry can't be constructed: radius should be positive number.", refusal.Message.Split(" (Parameter")[0]);
+        Assert.Equal("the geometry can't be constructed: radius should be positive number", FailureDiagnostics.ToDiagnostic(refusal).Message);
+        Assert.Equal("the algorithm couldn't complete: command not done",
+                     FailureDiagnostics.ToDiagnostic(new NotDoneException("BRep_API: command not done")).Message);
+        // The engine's own failure keeps OCCT's words: only what leaves changes
+        Assert.Contains("gp_Circ()", ((FailureException)refusal.InnerException!).GetMessageString());
+    }
+
     [Theory]
     [InlineData("NotDone", "not-done")]
     [InlineData("VectorWithNullMagnitude", "vector-with-null-magnitude")]
@@ -47,10 +88,10 @@ public class FailureDiagnosticsTests
     [Fact]
     public void TheMessageSaysTheKindThenOcctsMessage()
     {
-        var diagnostic = FailureDiagnostics.ToDiagnostic(new NotDoneException("BRepAlgoAPI_BuilderAlgo::Shape"));
+        var diagnostic = FailureDiagnostics.ToDiagnostic(new NotDoneException("BRepAlgoAPI_BuilderAlgo::Shape: not built"));
         Assert.True(diagnostic.IsError);
         Assert.Equal("engine.not-done", diagnostic.Code.Value);
-        Assert.Equal("the algorithm couldn't complete: BRepAlgoAPI_BuilderAlgo::Shape", diagnostic.Message);
+        Assert.Equal("the algorithm couldn't complete: not built", diagnostic.Message);
     }
 
     [Fact]

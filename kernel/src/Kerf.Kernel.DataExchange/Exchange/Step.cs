@@ -76,11 +76,13 @@ public static class Step
         writer.SetColorMode(true);
         writer.SetNameMode(true);
         writer.SetLayerMode(true);
+        writer.SetCleanDuplicates(options.CleanDuplicates);
         var parameters = writer.Writer().Model().InternalParameters;
         parameters.InitFromStatic(writer.Writer().WS().Statics());
         parameters.WriteUnit = unit;
         parameters.WriteSurfaceCurMode = options.WritePcurves;
         parameters.WritePrecisionMode = (Parameters.WriteMode_PrecisionMode)(int)options.Precision;
+        parameters.CleanDuplicates = options.CleanDuplicates;
         parameters.WriteSchema = options.Schema switch
         {
             StepSchema.Ap203 => Parameters.WriteMode_StepSchema.WriteMode_StepSchema_AP203,
@@ -98,7 +100,7 @@ public static class Step
         catch (Exception e) when (Refusal.IsFailure(e))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            return Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, $"The model couldn't be written as STEP ({Refusal.Unwrapped(e).Message})."));
+            return Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, $"The model couldn't be written as STEP ({FailureDiagnostics.PublicText(e)})."));
         }
 
         return done ? Result.Success() : Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, "The model couldn't be written as STEP."));

@@ -2082,3 +2082,14 @@ classes.
 |---|---|---|---|
 | `ShapeUpgrade_UnifySameDomain.cxx`, `IsMergingPossible` | `Diff1.Angle(Diff2)` on two edges' end tangents, one of zero length (a B-spline with its end pole repeated) | `gp_VectorWithNullMagnitude` out of `Build`, where the checks are compiled in; where they aren't, a NaN angle passes the test and the edges can merge whatever the angle. bug28366_fuselage.stp, t4mec.stp | fixed (decision 1652) |
 | `ShapeUpgrade_UnifySameDomain.cxx`, `CheckSharedVertices` | Counts a second missing vertex as a shared vertex, then looks it up in a map that has no null key | `Standard_NoSuchObject` out of `Build` on any shape with two missing vertex ends (one infinite line). bug27333_simple.stp, OCC22459-TEST2.stp | fixed (decision 1653) |
+## Found by unit 11N's port of StepTidy
+
+| Where | What | Effect | Triage |
+|---|---|---|---|
+| `StepTidy_CartesianPointHasher`, `StepTidy_DirectionHasher` | `hashBytes(aCoords.data(), size)` passes the 3 coordinates as 3 bytes | Only low bytes of the first coordinate are hashed: values within the documented 1e-12 rarely merge, and round first coordinates share a bucket | settled (decision 1665: exact merging, with a proper hash) |
+| `StepTidy_VectorHasher`, `StepTidy_CircleHasher` | Hash the magnitude and radius by their integer parts | Vectors and circles under 1 share a bucket | settled (decision 1665) |
+| `StepTidy_*Hasher` comparisons | `Name()->IsSameString` is called when both names are null | A null dereference | settled (decision 1666) |
+| `StepTidy_Axis2Placement3dReducer::replaceCircle`, `replaceEllipse` | `SetValue` on a copy of the conic's position, and returns true | The conic keeps the duplicate, and `AddWithRefs` brings it back | settled (decision 1666) |
+| `StepTidy_DirectionReducer::replaceAxis2Placement3d` | Returns after the axis | A duplicate that's also the reference direction stays | settled (decision 1666) |
+| `StepTidy_DuplicateCleaner::removeEntities` | The new models have no parameters and no header | The written file names the default schema, whichever was asked for | settled (decision 1666) |
+| `STEPCAFControl_Writer` stream write | Only `Write(file)` cleans duplicates | `SetCleanDuplicates` is ignored when writing to a stream | settled (decision 1666) |

@@ -155,7 +155,7 @@ internal class StepController : Controller
             return;
         }
 
-        statics.Init("step", "write.step.product.name", 't', "Open CASCADE STEP translator " + InterfaceVersion.OCC_VERSION_STRING);
+        statics.Init("step", "write.step.product.name", 't', "Kerf STEP translator");
         statics.Init("step", "write.step.assembly", 'e', "");
         statics.Init("step", "write.step.assembly", '&', "enum 0");
         statics.Init("step", "write.step.assembly", '&', "eval Off");

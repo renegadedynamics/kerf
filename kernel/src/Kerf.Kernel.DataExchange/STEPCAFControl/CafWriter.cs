@@ -127,7 +127,7 @@ internal class CafWriter
     {
         if (_isCleanDuplicates)
         {
-            // remove duplicates: StepTidy is not ported (decision 1271)
+            _writer.CleanDuplicateEntities();
         }
 
         ReturnStatus status = _writer.Write(fileName);
@@ -175,6 +175,12 @@ internal class CafWriter
             return ReturnStatus.RetError;
         }
 
+        // Kerf: as Write, which OCCT's stream form forgets (occt-issues.md, unit 11N)
+        if (_isCleanDuplicates)
+        {
+            _writer.CleanDuplicateEntities();
+        }
+
         return _writer.WriteStream(stream);
     }
 
@@ -189,6 +195,11 @@ internal class CafWriter
     public ReturnStatus WriteStream(Stream stream, ExternFileWriter externStreams)
     {
         ArgumentNullException.ThrowIfNull(externStreams);
+        if (_isCleanDuplicates)
+        {
+            _writer.CleanDuplicateEntities();
+        }
+
         ReturnStatus status = _writer.WriteStream(stream);
         if (status != ReturnStatus.RetDone)
         {

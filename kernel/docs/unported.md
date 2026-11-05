@@ -20,7 +20,7 @@ early on not to need (design.md): OCCT's viewer, its document framework and its 
 | **VRML** (TKDEVRML) | 22,851 | Reads and writes VRML, an old web 3D format | Occasional old files; glTF has replaced it | Only if asked |
 | **Mesh formats** (TKDEGLTF, TKDEOBJ, TKRWMesh, TKDEPLY) | 20,068 | OCCT's readers and writers for meshes | glTF, OBJ, 3MF and STL already work through Kerf's own code. **PLY isn't covered**, and is small | PLY if asked |
 | **Expressions** (TKExpress) | 15,888 | Symbolic mathematical expressions | Formula-driven curves. Bento has its own formula language | No |
-| **Leftovers in ported areas** (TKXSBase, TKDESTEP, TKDE, TKDESTL and others) | 32,648 | Interactive selection in the STEP and exchange layers, STEP AP209, STEP's tidying step (StepTidy, 2,655 lines), and DE's plugin registry | StepTidy could make written STEP files smaller | **StepTidy: yes, in phase 11.** The rest, no |
+| **Leftovers in ported areas** (TKXSBase, TKDESTEP, TKDE, TKDESTL and others) | 32,648 | Interactive selection in the STEP and exchange layers, STEP AP209, and DE's plugin registry. StepTidy, once among them, is ported (unit 11N) | StepTidy could make written STEP files smaller | **StepTidy: yes, in phase 11.** The rest, no |
 
 ## For a Kerf GUI
 

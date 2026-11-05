@@ -8,6 +8,14 @@ version may break the API.
 - **Unifying (and so a simplified Boolean) no longer fails on two kinds of valid shape:** edges meeting where one has a
   zero-length tangent, as a B-spline with its end pole repeated, are left unmerged, and infinite lines, which have no
   vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 18301 and 18302).
+## 0.3.0 (unreleased)
+
+- **STEP's header names Kerf:** organisation `Kerf`, processor `Kerf STEP processor 0.3.0`, product `Kerf STEP translator N`, and
+  a description saying Kerf derives from Open CASCADE Technology. Files naming Open CASCADE read as before. STL's default
+  header is `STL Exported by Kerf`.
+- **Messages in Kerf's terms:** exceptions and diagnostics no longer name OCCT's types (`gp_Dir`, `TopoDS_Face`). Codes don't change.
+- **StepTidy:** `StepWriteOptions.CleanDuplicates` merges exactly equal entities when writing STEP, 17.9% smaller over the
+  dataset's files. Off by default.
 
 ## 0.2.0
 

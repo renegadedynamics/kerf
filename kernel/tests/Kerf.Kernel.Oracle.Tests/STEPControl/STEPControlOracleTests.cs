@@ -209,7 +209,7 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
 
     /// <summary>The STEP text with the header's FILE_NAME record (time, author, file name) and the NAUO identifiers masked.</summary>
     internal static string Masked(string theText) =>
-        ProductIndex.Replace(NauoId.Replace(FileNameRecord.Replace(theText.Replace("\r\n", "\n"), "FILE_NAME(...);\n"),
+        ProductIndex.Replace(NauoId.Replace(FileNameRecord.Replace(global::Kerf.Tests.Shared.NativeStepText.Of(theText.Replace("\r\n", "\n")), "FILE_NAME(...);\n"),
                                             "NEXT_ASSEMBLY_USAGE_OCCURRENCE('#'"), "$1 #");
 
     private (int Status, string Text, string File) NativeWrite(string theBRepFile, N.STEPControl_StepModelType theMode)

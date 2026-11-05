@@ -266,6 +266,12 @@ public sealed record StepWriteOptions
 
     /// <summary>The application protocol written (OCCT's <c>write.step.schema</c>).</summary>
     public StepSchema Schema { get; init; } = StepSchema.Ap214;
+
+    /// <summary>
+    /// Merge equal points, directions, lines, planes, circles and placements after the transfer, and remove the duplicates,
+    /// for a smaller file holding the same shapes (OCCT's <c>write.cleanduplicates</c>). Off by default, as in OCCT.
+    /// </summary>
+    public bool CleanDuplicates { get; init; }
 }
 
 /// <summary>The STEP application protocols written.</summary>

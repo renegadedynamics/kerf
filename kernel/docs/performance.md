@@ -229,6 +229,24 @@ loaded machine lets more methods tier up during the first pass. The quiet run sh
 To profile again, take a trace as `tools/profile-report.cs` says and read it with `tools/alloc-report.cs`, which sorts the bytes
 by type and by the first frame that isn't a collection.
 
+## StepTidy (unit 11N)
+
+*5 November 2026, `Kerf.Kernel.Benchmarks -- step-tidy` over the 289 files `-- healing` exports, written by the plain STEP
+writer with `CleanDuplicates` off and on. Whether it's on by default is the owner's decision (decision 1667).*
+
+| | Off | On | Change |
+|---|---:|---:|---:|
+| Total file size | 49,067,067 bytes | 40,272,582 bytes | 17.9% less |
+| Allocation, all files | 3,023 MB | 3,347 MB | 10.7% more |
+
+- **Per file:** the median reduction is 18.9%, and the largest 55.6% (`pr1db.stp`, 177,965 to 79,010 bytes). Some small files
+  have nothing to merge: 0.0%.
+- **Read back:** all 289 files, both ways. Volumes (to a part in 10^9) and face counts match on every file, and none failed.
+- **Writing time isn't measured yet:** the machine was running a coverage run. Taken there, the total was 3,068 ms off and
+  3,983 ms on, which only says the order of it. It belongs in a quiet run of the same command.
+- **Merging within OCCT's 1e-12 isn't worth it:** 20.7% where exact merging gives 17.9%, and one file read back differently
+  (decision 1665).
+
 ## How unit 9E measured it
 
 - **Machine:** 24 logical cores, Windows 11, .NET 10, Release builds. Other helpers were running tests on the same

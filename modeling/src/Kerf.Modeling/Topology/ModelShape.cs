@@ -435,7 +435,7 @@ public class Assembly : ModelShape
             children.Insert(0, this);
             placed.Insert(0, placed.Count > 0 ? Compound.Make(placed) : this);
         }
-        var boxes = placed.Select(p => Solid.FromBoundingBox(p.BoundBox())).ToList();
+        var boxes = placed.Select(p => Solid.FromBoundingBox(p.Bounds())).ToList();
         for (int i = 0; i < children.Count; i++)
             for (int j = i + 1; j < children.Count; j++)
             {

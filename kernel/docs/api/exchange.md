@@ -68,7 +68,7 @@ public sealed record StepReadOptions { public ReadLimits Limits { get; init; } =
                                        public bool ProductNames { get; init; } = true; public bool ExternalReferences { get; init; } }
 public sealed record StepWriteOptions { public LengthUnit Unit { get; init; } = LengthUnit.Millimetre; public bool WritePcurves { get; init; } = true;
                                         public StepPrecision Precision { get; init; } = StepPrecision.Average; public DateTimeOffset? Timestamp { get; init; }
-                                        public StepSchema Schema { get; init; } = StepSchema.Ap214; }
+                                        public StepSchema Schema { get; init; } = StepSchema.Ap214; public bool CleanDuplicates { get; init; } }
 public sealed record GltfWriteOptions { public bool Binary { get; init; } = true; public LengthUnit Unit { get; init; } = LengthUnit.Millimetre;
                                         public MeshOptions Mesh { get; init; } = MeshOptions.Default; }
 ```

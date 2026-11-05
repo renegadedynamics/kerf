@@ -152,6 +152,7 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
     /// <summary>The STEP text with its varying parts masked, as tools/stepctlrec masks it.</summary>
     internal static string Mask(string theText)
     {
+        theText = global::Kerf.Tests.Shared.NativeStepText.Of(theText);
         string[] aMasked = ["FILE_NAME", "CALENDAR_DATE", "LOCAL_TIME", "COORDINATED_UNIVERSAL_TIME_OFFSET", "PERSON", "ORGANIZATION"];
         var aRes = new StringBuilder();
         int aPos = 0;

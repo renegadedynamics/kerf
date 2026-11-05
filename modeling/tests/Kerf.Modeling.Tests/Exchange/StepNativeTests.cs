@@ -47,7 +47,7 @@ public partial class StepNativeTests
     // (OCCT's controller is process-wide, decisions 1264 and 1266 of Kerf); a fresh Kerf writer counts from 1
     private static string Masked(byte[] step)
     {
-        var text = Regex.Replace(Encoding.Latin1.GetString(step), @"(Open CASCADE STEP translator [0-9.]+) \d+", "$1 #");
+        var text = Regex.Replace(NativeStepText.Of(Encoding.Latin1.GetString(step)), @"(Open CASCADE STEP translator [0-9.]+) \d+", "$1 #");
         return Regex.Replace(text, @"NEXT_ASSEMBLY_USAGE_OCCURRENCE\('\d+'", "NEXT_ASSEMBLY_USAGE_OCCURRENCE('#'");
     }
 

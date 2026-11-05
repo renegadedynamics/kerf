@@ -110,16 +110,18 @@ public partial class ExchangeTests
     }
 
     [Fact]
-    public void StepHeaderNamesBuild123d()
+    public void StepHeaderNamesKerf()
     {
         var stream = new MemoryStream();
         Exporters3D.ExportStep(Block().WithLabel("bracket 'A' – v2"), stream, new StepExportOptions { Timestamp = "2026-11-02T12:00:00" });
         var text = Encoding.Latin1.GetString(stream.ToArray());
         var fileName = Regex.Match(text, @"FILE_NAME\((.*?)\);", RegexOptions.Singleline).Groups[1].Value;
         Assert.StartsWith(@"'bracket ''A'' \X2\2013\X0\ v2','2026-11-02T12:00:00',", fileName);
-        Assert.Contains("'build123d'", fileName);
-        // what OCCT wrote of the other arguments stays
-        Assert.Contains("'Open CASCADE STEP processor", fileName);
+        Assert.Contains("'Kerf.Modeling'", fileName);
+        Assert.Matches(@"'Kerf STEP processor \d+\.\d+\.\d+'", fileName);
+        Assert.Contains("'Kerf is derived from Open CASCADE Technology 8.0'", text);
+        Assert.DoesNotContain("Open CASCADE STEP", text);
+        Assert.DoesNotContain("'Open CASCADE'", text);
     }
 
     [Fact]
@@ -232,7 +234,7 @@ public partial class ExchangeTests
         var stream = new MemoryStream();
         Exporters3D.ExportStl(new Box(10, 20, 30), stream);
         stream.Position = 0;
-        var box = Importers.ImportStl(stream).Value.BoundBox();
+        var box = Importers.ImportStl(stream).Value.Bounds();
         Assert.False(box.IsEmpty);
         Check.AlmostEqual(20, box.Size.Y, 6);
         Check.AlmostEqual(-15, box.Min.Z, 6);

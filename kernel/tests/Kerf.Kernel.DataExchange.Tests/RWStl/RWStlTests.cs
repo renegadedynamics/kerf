@@ -100,7 +100,7 @@ public class RWStlTests
         Assert.NotEmpty(aBinaryContent);
         Assert.NotEqual(anAsciiContent, aBinaryContent);
         Assert.Equal(84 + 2 * 50, aBinaryContent.Length);
-        Assert.StartsWith("STL Exported by Open CASCADE Technology [dev.opencascade.org]", Encoding.ASCII.GetString(aBinaryContent, 0, 80), StringComparison.Ordinal);
+        Assert.StartsWith("STL Exported by Kerf", Encoding.ASCII.GetString(aBinaryContent, 0, 80), StringComparison.Ordinal);
     }
 
     [Fact]

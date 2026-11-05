@@ -116,7 +116,7 @@ public static class ColorExtensions
 
         // Fall back to OCCT's X11 names. build123d passes OCCT's linear components on as sRGB, so do the same.
         if (!Kerf.Color.TryFromName(name, out var color))
-            throw new ArgumentException($"'{name}' is not defined as a named color in CSS3 or OCCT/X11", nameof(name));
+            throw new ArgumentException($"'{name}' is not defined as a named color in CSS3 or X11", nameof(name));
         var (r, g, b, _) = color.ToLinear();
         return (r, g, b);
     }

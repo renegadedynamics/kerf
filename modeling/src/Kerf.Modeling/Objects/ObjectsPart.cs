@@ -20,7 +20,7 @@ public abstract class BasePartObject : Part
     private static Shape Prepare(Shape part, Rotation? rotation, Alignment? align)
     {
         if (align is { } a)
-            part = part.Moved(new Location(part.BoundBox().ToAlignOffset(a)));
+            part = part.Moved(new Location(part.Bounds().ToAlignOffset(a)));
         var rotated = rotation is not null && rotation != new Rotation() ? part.Moved(rotation) : part;
         // Don't add extra layers of compound
         return rotated.TryAs<Compound>(out _) ? rotated : TopoUtil.MakeCompound([rotated]);

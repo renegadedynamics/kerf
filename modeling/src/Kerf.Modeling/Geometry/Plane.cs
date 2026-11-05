@@ -174,7 +174,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         }
         catch (InvalidOperationException ex)
         {
-            throw new ArgumentException("Expected gp_Pln, Face, Location, Axis, VectorLike, or three points", ex);
+            throw new ArgumentException("A plane's directions can't have zero length", ex);
         }
     }
 

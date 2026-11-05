@@ -142,7 +142,7 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
             }
             var aStream = new MemoryStream();
             aWriter.WriteStream(aStream);
-            string aText = STEPControl.STEPControlNativeTests.Mask(Unwrap(Encoding.Latin1.GetString(aStream.ToArray())));
+            string aText = STEPControl.STEPControlNativeTests.Mask(Unwrap(global::Kerf.Tests.Shared.NativeStepText.Of(Encoding.Latin1.GetString(aStream.ToArray()))));
             byte[] aBytes = Encoding.Latin1.GetBytes(aText);
             if (theDump is not null)
             {
