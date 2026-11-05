@@ -8,6 +8,7 @@ using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Healing.Analysis;
@@ -947,6 +948,13 @@ internal partial class UnifySameDomain
         {
             ade2.D1(ade2.LastParameter(), out p2, out diff2);
             diff2 = -diff2;
+        }
+
+        // Not OCCT (decision 1652): a tangent of zero length, as a B-spline's with its end poles repeated, has no angle to
+        // compare. OCCT's Angle raises here and ends the whole unification; the edges are simply left as they are
+        if (diff1.Magnitude <= Constants.Resolution() || diff2.Magnitude <= Constants.Resolution())
+        {
+            return false;
         }
 
         if (diff1.AngleTo(diff2) > angTol)

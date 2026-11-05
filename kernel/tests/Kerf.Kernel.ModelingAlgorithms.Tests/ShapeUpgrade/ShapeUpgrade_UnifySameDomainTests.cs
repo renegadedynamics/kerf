@@ -259,4 +259,71 @@ public class ShapeUpgrade_UnifySameDomainTests
         Assert.True(hasPeriodic);
         Assert.True(AllFrozen(aResult));
     }
+
+    // A cubic B-spline edge through theFrom and theTo, with the tangent at the end named made zero by repeating that pole
+    private static BSplineCurve3D CubicWithZeroTangent(Point3D theFrom, Point3D theTo, bool theAtEnd)
+    {
+        Vector3D aStep = new Vector3D(theFrom, theTo) / 3;
+        Point3D aSecond = theFrom.Translated(aStep);
+        Point3D aThird = theFrom.Translated(aStep * 2);
+        Point3D[] aPoles = theAtEnd ? [theFrom, aSecond, theTo, theTo] : [theFrom, theFrom, aThird, theTo];
+        return new BSplineCurve3D(aPoles, [0.0, 1.0], [4, 4], 3);
+    }
+
+    private static Wire WireOf(params Edge[] theEdges)
+    {
+        var B = new BrepBuilder();
+        var aWire = new Wire();
+        B.MakeWire(ref aWire);
+        foreach (Edge anEdge in theEdges)
+        {
+            B.Add(aWire, anEdge);
+        }
+        return aWire;
+    }
+
+    // Decision 1652: OCCT's Diff1.Angle(Diff2) raises here, and the whole of the unification with it
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ZeroTangentWhereTwoEdgesMeet_TheyAreLeftUnmerged(bool theOnTheFirstEdge)
+    {
+        Point3D aStart = new(0, 0, 0), aMiddle = new(3, 0, 0), anEnd = new(6, 0, 0);
+        Vertex aV0 = new MakeVertex(aStart).Vertex(), aV1 = new MakeVertex(aMiddle).Vertex(), aV2 = new MakeVertex(anEnd).Vertex();
+        Curve3D aFirst = theOnTheFirstEdge
+            ? CubicWithZeroTangent(aStart, aMiddle, true)
+            : new BSplineCurve3D([aStart, new(1, 0, 0), new(2, 0, 0), aMiddle], [0.0, 1.0], [4, 4], 3);
+        Curve3D aSecond = theOnTheFirstEdge
+            ? new BSplineCurve3D([aMiddle, new(4, 0, 0), new(5, 0, 0), anEnd], [0.0, 1.0], [4, 4], 3)
+            : CubicWithZeroTangent(aMiddle, anEnd, false);
+        Wire aWire = WireOf(new MakeEdge(aFirst, aV0, aV1).InternalEdge(), new MakeEdge(aSecond, aV1, aV2).InternalEdge());
+
+        var aUnifier = new UnifySameDomain(aWire, true, false, false);
+        aUnifier.Build();
+
+        Assert.Equal(2, Count(aUnifier.Shape(), ShapeType.Edge));
+        Assert.Equal(3, Count(aUnifier.Shape(), ShapeType.Vertex));
+    }
+
+    // Decision 1653: OCCT's CheckSharedVertices looks up the null vertex of an edge with none, and raises. One infinite
+    // line has two such ends, as bug27333_simple.stp's has; a second gives the same with a further null
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void InfiniteLines_WithNoVertices_ComeThroughUnchanged(int theNbLines)
+    {
+        var B = new BrepBuilder();
+        var aCompound = new Compound();
+        B.MakeCompound(ref aCompound);
+        for (int i = 0; i < theNbLines; i++)
+        {
+            B.Add(aCompound, new MakeEdge(new Line3D(new Point3D(i, 0, 0), Direction3D.UnitZ)).InternalEdge());
+        }
+
+        var aUnifier = new UnifySameDomain(aCompound, true, true, false);
+        aUnifier.Build();
+
+        Assert.Equal(theNbLines, Count(aUnifier.Shape(), ShapeType.Edge));
+        Assert.Equal(0, Count(aUnifier.Shape(), ShapeType.Vertex));
+    }
 }

@@ -16440,3 +16440,23 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        `UnifySameDomain.IsMergingPossible`, ended the process. Nothing built it into a run, so nobody saw. It and
        `-- features` now count them; the rig compares the count. 12 of the suite's runs over its 289 files fail. Which
        files, and whether they should, wasn't looked into; the count is the same in every run.
+1652. **`UnifySameDomain` leaves edges unmerged where a tangent has zero length.** `IsMergingPossible` compares the two
+       end tangents with `gp_Vec::Angle`, which raises `gp_VectorWithNullMagnitude` on a null vector, and nothing catches
+       it, so one such vertex ended the whole unification. The port matched OCCT line for line, so this is OCCT's bug, not
+       Kerf's: the build the oracle used keeps the check (decision 9) and would have raised at the same point; a default
+       release build (`No_Exception`) gets NaN, `NaN > tolerance` is false, and it merges without knowing the angle. Nor is
+       the file bad: a B-spline may repeat its end pole, and t4mec.stp's curve #196 does, as does bug28366_fuselage.stp's
+       surface #207, whose boundary edge inherits it. With no tangent to compare, tangency can't be shown, so the
+       edges stay as they are. The test is the one `Angle` makes, so only calls that raised behave differently.
+       `directionVec.AngleTo(curV)` below it can't meet a null vector with edges that passed this test unless the
+       chain's edges have no length, and nothing has reached it, so it stays OCCT's.
+1653. **`UnifySameDomain` passes over an edge's missing vertices.** An infinite line has no vertices. `CheckSharedVertices`
+       adds each edge's two ends to a map, and collects any already there as shared; the second null is, and
+       `FindFromKey` raises `NoSuchObject` on it (unconditionally, in any OCCT build), as the vertex-to-edge map has no null
+       key. So OCCT can't unify any shape with two missing ends: one infinite line is enough. Such shapes are valid:
+       bug27333_simple.stp is one `LINE` in a `GEOMETRIC_CURVE_SET`, and OCC22459-TEST2.stp has six among its faces. Null
+       vertices are now skipped. A shape with one missing end, which OCCT accepted, comes out the same.
+1654. **`-- healing` has no failed runs.** The 12 runs of decision 1651 were 4 files, each failing `UnifySameDomain` in all
+       three rounds: decision 1653's two and decision 1652's two. The dated baseline (`docs/benchmarks/2026-11-05-a14650837`)
+       says 12, so the rig reports this result as changed until the next baseline. The unifier's timing and allocation
+       rows now include these 4 files' whole work.

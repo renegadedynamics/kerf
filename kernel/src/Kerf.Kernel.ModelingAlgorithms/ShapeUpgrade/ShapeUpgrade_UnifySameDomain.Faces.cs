@@ -1759,11 +1759,13 @@ internal partial class UnifySameDomain
         {
             Vertex v1 = sae.FirstVertex(ShapeCasts.Edge(seqEdges[k]));
             Vertex v2 = sae.LastVertex(ShapeCasts.Edge(seqEdges[k]));
-            if (!mapVertexes.Add(v1))
+            // Not OCCT (decision 1653): an edge with no vertex at an end, as an infinite line, has nothing to share there.
+            // OCCT collects the null vertex when it meets a second, and FindFromKey below raises on it
+            if (!v1.IsNull && !mapVertexes.Add(v1))
             {
                 seqVertexes.Append(v1);
             }
-            if (!mapVertexes.Add(v2))
+            if (!v2.IsNull && !mapVertexes.Add(v2))
             {
                 seqVertexes.Append(v2);
             }
