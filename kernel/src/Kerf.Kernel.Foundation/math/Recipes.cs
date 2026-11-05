@@ -227,8 +227,7 @@ internal static class Recipes
         int n = a.RowNumber();
         d = 1.0;
 
-        // None when nothing is watching, nearly always: math_NewtonMinimum comes here at every iteration (unit 11B)
-        using ProgressScope? ps = progress.IsActive ? new ProgressScope(progress, "math_Gauss LU_Decompose", n) : null;
+        using var ps = new ProgressScope(progress, "math_Gauss LU_Decompose", n);
 
         for (i = 1; i <= n; i++)
         {
@@ -249,7 +248,7 @@ internal static class Recipes
             vv[i] = 1.0 / big;
         }
 
-        for (j = 1; j <= n && (ps is null || ps.More()); j++, ps?.Next())
+        for (j = 1; j <= n && ps.More(); j++, ps.Next())
         {
             for (i = 1; i < j; i++)
             {
