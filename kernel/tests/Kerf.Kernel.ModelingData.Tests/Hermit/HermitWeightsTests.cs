@@ -141,6 +141,40 @@ public class HermitWeightsTests(ITestOutputHelper output)
         Assert.InRange(aKnotMax, 0.0, 1.0);
     }
 
+    [Theory]
+    [MemberData(nameof(Steep))]
+    public void Tighter_tolerances_on_the_poles_keep_the_promise_or_refuse(double[] theWeights)
+    {
+        foreach (double aTolerance in new[] { 0.5, 0.1, 0.01 })
+        {
+            foreach (double aKnots in new[] { 1e-6, 0.1 })
+            {
+                TheReparameterisation(theWeights, () => Hermit.Solution(Curve3D(theWeights), aTolerance, aKnots));
+                TheReparameterisation(theWeights, () => Hermit.Solution(Curve2D(theWeights), aTolerance, aKnots));
+                double aKnotMin = 0, aKnotMax = 1;
+                try
+                {
+                    Hermit.Solutionbis(Curve3D(theWeights), ref aKnotMin, ref aKnotMax, aTolerance, aKnots);
+                    Assert.InRange(aKnotMin, 0.0, 1.0);
+                    Assert.InRange(aKnotMax, 0.0, 1.0);
+                }
+                catch (Exception anError) when (Refusal.Unwrapped(anError) is DimensionErrorException)
+                {
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void Steep_weights_within_the_tolerances_are_solved_not_refused()
+    {
+        // a(u) would go negative here without the knots it inserts
+        BSplineCurve2D aResult = Hermit.Solution(Curve3D([1.0, 100.0, 1.0]));
+        Assert.True(aResult.KnotCount > 2);
+        Assert.NotNull(Hermit.Solution(Curve3D([1.0, 0.01, 1.0])));
+        Assert.NotNull(Hermit.Solution(Curve2D([1.0, 100.0, 100.0, 1.0])));
+    }
+
     [Fact]
     public void Tolerances_that_cannot_be_met_are_refused()
     {

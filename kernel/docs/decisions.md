@@ -16549,3 +16549,18 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        is above 1. Unit 11I does this first.
 1670. **The rig compares from here on against `docs/benchmarks/2026-11-05-0198121ae.tsv`,** the run after 11B, the healing fix, 11L
        and 11N. The targets stay as decision 1644 and 11A's baseline set them: recalculation 822 ms, and allocation 225 MB, which is met.
+18601. **A fillet contour without a radius can be reset** (`ChFiDS_FilSpine::Reset`). OCCT completes the radii by reading the
+       first and last of an empty sequence, which is undefined in a release build; the port threw. With none there's nothing
+       to complete, so it does nothing. Found by unit 11I.
+18602. **`ShapeAlgo_AlgoContainer::ApproxBSplineCurve` keeps the part after the last repeated pole.** OCCT cuts a degree-1
+       spline at its repeated poles, but appends a part only on reaching the next one, so the end of the curve is lost when
+       there's any cut at all. Both forms, 3D and 2D, now append it. Nothing in the kernel calls this yet. Found by unit 11I.
+18603. **`MathLin::Crout`'s `L` is the factor it's documented to be, with A = L D L^T.** OCCT inverts its working matrix in
+       place and then copies it out, so OCCT's `L` is L's inverse. The port copies the factor first. The result's `Inverse`,
+       and everything else, is unchanged, and nothing in the kernel reads `L`. Found by unit 11I.
+18604. **Coverage runs multiply the corpus's time limits by 3** (`tools/coverage.ps1`, decision 1669). Measured on 5 November
+       2026, by four runs of the same six corpus classes (fillets, features, healing, offsets and drafts): uninstrumented, 303 s
+       on a quiet machine and 457 s under load from other builds; instrumented, 723 s quiet and 877 s under load. So
+       instrumentation costs 2.4 times when quiet and 1.9 times under load, and the limits were set for uninstrumented runs under
+       load. 3 is 2.4 with a margin; the guess of 5 would only make a hung case take longer to stop, at 75 minutes against 45.
+       A wrong value in `KERF_CORPUS_TIME_SCALE` is refused rather than ignored.

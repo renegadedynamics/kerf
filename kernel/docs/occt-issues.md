@@ -2093,3 +2093,14 @@ classes.
 | `StepTidy_DirectionReducer::replaceAxis2Placement3d` | Returns after the axis | A duplicate that's also the reference direction stays | settled (decision 1666) |
 | `StepTidy_DuplicateCleaner::removeEntities` | The new models have no parameters and no header | The written file names the default schema, whichever was asked for | settled (decision 1666) |
 | `STEPCAFControl_Writer` stream write | Only `Write(file)` cleans duplicates | `SetCleanDuplicates` is ignored when writing to a stream | settled (decision 1666) |
+
+## Found by unit 11I's coverage tests
+
+| Where | What | Effect | State |
+|---|---|---|---|
+| `ChFiDS_FilSpine::Reset` | Reads the first and last radii when there may be none (`BRepFilletAPI_MakeFillet::Add(E)`, then `Reset`) | Undefined in a release build | fixed (decision 18601) |
+| `ShapeAlgo_AlgoContainer::ApproxBSplineCurve`, both forms | The part after the last repeated pole is never appended | A degree-1 spline with a repeated pole comes back without its end | fixed (decision 18602) |
+| `MathLin::Crout` | Inverts its working L in place, then copies it to the result's `L` | The result's `L` is L's inverse, against its comment | fixed (decision 18603) |
+| `gce_MakeLin2d(Lin, Dist)` | The header says a positive distance is to the right of the line; the code adds `Dist * (-dy, dx)`, to the left | Only the comment is wrong, as far as callers go; the port follows the code | leave |
+| `BndLib::Add(gp_Cone, ...)` with an infinite V bound | Opens the box along the axis only, though the cone widens without limit | The box doesn't hold the cone. Open for the owner: the port still does this | leave |
+| `BndLib::Add(gp_Cylinder, ...)` and `gp_Cone`, both V bounds infinite | Adds nothing but the open sides | The box is still void, so `Get` throws and `IsOut` says yes, though the surface is everywhere along its axis. Open for the owner: the port still does this | leave |
