@@ -10,6 +10,7 @@ version may break the API.
   vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 1652 and 1653).
 ## 0.3.0 (unreleased)
 
+- **Runtime settings for a host, measured:** the README lists them. A parallel round of Bento's examples takes 620 ms against 2,700 ms under the runtime's defaults, and a recalculation 180 ms against 360. `Placement.Inverted` keeps its result, for 2% less allocation. All of the kernel's locks stay, because a trace found no time lost on any of them.
 - **STEP's header names Kerf:** organisation `Kerf`, processor `Kerf STEP processor 0.3.0`, product `Kerf STEP translator N`, and
   a description saying Kerf derives from Open CASCADE Technology. Files naming Open CASCADE read as before. STL's default
   header is `STL Exported by Kerf`.

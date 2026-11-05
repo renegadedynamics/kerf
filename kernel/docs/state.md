@@ -132,6 +132,7 @@ The three tables the plan names (decision 1388):
 | Foundation/Poly/Triangulation.cs, the cached range | per instance, shared by every operation holding the frozen mesh: was a lock; now each box is published whole (`Volatile`), never changed once published |
 | ModelingData/FEmTool/LinearFlexion.cs, LinearJerk.cs, LinearTension.cs | per order, under a lock: now published by compare-and-swap (computed twice at worst; the values are the same) |
 | DataExchange/XdeDoc/DocumentProduct.cs, an assembly's compound | under a lock: now published by compare-and-swap (racing threads made equal compounds already) |
+| Foundation/TopLoc/SListNodeOfItemLocation.cs (`_inverse`) | per chain head, shared by every shape holding that placement (unit 11D): the inverse, published whole (`Volatile`). Threads racing make equal chains, and either may stay. `IsEqual` and the hash compare datums and powers, so which one stays can't show |
 | ModelingAlgorithms/ShapeProcess/ProcessContext.cs | see above: the compiled-in files, parsed once |
 | Foundation/Results/FailureDiagnostics.cs (`Codes`) | a `ConcurrentDictionary` of codes by exception type: stays |
 | Foundation/Standard/StreamUtilities.cs, ModelingData/BinTools/BinTools.cs | `ConditionalWeakTable`s of a stream's state: per stream, thread-safe, stay |
@@ -184,6 +185,14 @@ None guards process-wide state that an operation reads or writes, apart from the
 initialisation. The `Lazy<T>`s lock only while they initialise. Plan 2.7 asks for no locks but one-time initialisation's;
 the ones that stay guard one object against one operation's own parallel bodies, where the alternative is a data race,
 and only `ExchangeWorkSession`'s can make one session wait for another, on a controller they chose to share.
+
+**Unit 11D settled plan 2.7 by measurement: all 23 stay, because they cost nothing.** A trace of three rounds of Bento's
+examples, 24 copies on 24 logical processors under the server collector with PGO off (46 s of processor time), found 12 contentions and 0.35 ms of
+waiting in all. Every one of them was in the runtime's own `Parallel.For` (`ManualResetEventSlim`, in `Task.SpinThenBlockingWait` and
+`RunContinuations`), and none on any lock in this table. `tools/contention-report.cs` reads such a trace, and the rig's
+"contended locks in a round" row keeps the count. Removing a lock here would swap a lock nobody waits for
+for a race or a compare-and-swap (decision 18804). The trace covers what Bento's examples reach, and the STEP session locks and the
+BVH builder's queue aren't among that. Those are per object too, so they can't make independent workbooks wait for one another.
 
 ## Every field left
 
