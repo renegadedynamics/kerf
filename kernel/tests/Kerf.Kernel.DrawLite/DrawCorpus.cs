@@ -225,6 +225,36 @@ public sealed class DrawCorpus(string theTestsDirectory)
     }
 
     /// <summary>
+    /// What every case's time limit is multiplied by: <c>KERF_CORPUS_TIME_SCALE</c>, which tools/coverage.ps1 sets
+    /// because instrumented code runs slower (decision 1669), or 1 when it's unset. Above 1 the <c>bug24157</c> cases'
+    /// own performance check is passed over too.
+    /// </summary>
+    public double TimeScale { get; init; } = TimeScaleFrom(Environment.GetEnvironmentVariable(TimeScaleVariable));
+
+    /// <summary>The environment variable behind <see cref="TimeScale"/>.</summary>
+    public const string TimeScaleVariable = "KERF_CORPUS_TIME_SCALE";
+
+    /// <summary>
+    /// The scale a value of <see cref="TimeScaleVariable"/> asks for. A value that isn't a positive number is refused:
+    /// a mistyped scale mustn't quietly change the limits.
+    /// </summary>
+    public static double TimeScaleFrom(string? theValue)
+        => string.IsNullOrEmpty(theValue) ? 1.0
+           : double.TryParse(theValue, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double aScale)
+             && aScale > 0 && double.IsFinite(aScale) ? aScale
+           : throw new InvalidOperationException($"{TimeScaleVariable} must be a positive number, not \"{theValue}\"");
+
+    /// <summary>
+    /// A log with the time check of the <c>bug24157</c> scripts passed over, when the time limits are scaled: each script
+    /// compares bbuild's own time with a fixed figure (<c>if { $tps_time > $check_time } { puts "Error: low performance" }</c>),
+    /// which says nothing about an instrumented run. Only that line goes, so any other error in the log still fails the case.
+    /// </summary>
+    private string WithoutScaledPerformanceCheck(DrawTestCase theCase, string theLog)
+        => TimeScale > 1 && theCase.Name.StartsWith("bug24157", StringComparison.Ordinal)
+           ? theLog.Replace("Error: low performance", $"Passed over at time scale {TimeScale.ToString(System.Globalization.CultureInfo.InvariantCulture)}: bbuild's own time check", StringComparison.Ordinal)
+           : theLog;
+
+    /// <summary>
     /// Runs a case in a new interpreter with the DrawResources loaded, as OCCT's harness does (an error ends the
     /// script with "Tcl Exception: ..." in the log), then judges its log with the harness's own <c>_check_log</c>
     /// (TestCommands.tcl: parse.rules, TODO and REQUIRED statements, "TEST COMPLETED"). The status is _check_log's:
@@ -233,7 +263,7 @@ public sealed class DrawCorpus(string theTestsDirectory)
     /// <param name="theCase">The case.</param>
     /// <param name="theResourcesDirectory">OCCT's resources/DrawResources.</param>
     /// <param name="theDataPath">CSF_TestDataPath: directories of data files, separated by ';'.</param>
-    /// <param name="theTimeLimit">The time after which the case stops ("Process killed by elapsed limit").</param>
+    /// <param name="theTimeLimit">The time after which the case stops ("Process killed by elapsed limit"), multiplied by <see cref="TimeScale"/>.</param>
     /// <param name="theSetup">Runs on the interpreter before the case (to remove commands, for one).</param>
     public DrawCaseRun RunAndCheck(DrawTestCase theCase, string theResourcesDirectory, string? theDataPath, TimeSpan theTimeLimit,
                                    Action<DrawInterpreter>? theSetup = null)
@@ -260,7 +290,7 @@ public sealed class DrawCorpus(string theTestsDirectory)
         // _run_test logs the commands and their results (dlog on)
         anInterpreter.DoLog = true;
         theSetup?.Invoke(anInterpreter);
-        anInterpreter.Deadline = DateTime.UtcNow + theTimeLimit;
+        anInterpreter.Deadline = DateTime.UtcNow + theTimeLimit * TimeScale;
         try
         {
             Run(theCase, anInterpreter, anImages);
@@ -281,7 +311,7 @@ public sealed class DrawCorpus(string theTestsDirectory)
         // OCCT's harness runs each case in a fresh DRAWEXE process: the settings a case's commands make (mpparallel,
         // mpsetdefaultname…) stay in its interpreter's context (unit 10I), so none carries over to the next case
 
-        string aText = aLog.ToString();
+        string aText = WithoutScaledPerformanceCheck(theCase, aLog.ToString());
         var aChecker = new DrawInterpreter();
         aChecker.LoadDrawResources(theResourcesDirectory);
         aChecker.SetVariable("log", aText);

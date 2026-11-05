@@ -40,17 +40,10 @@ Kerf.Kernel.DataExchange	TopoDSToStep	The translators' rarer forms and write mod
 Kerf.Kernel.DataExchange	STEPControl	The translators' rarer forms and write modes; follows the STEP test data
 Kerf.Kernel.DataExchange	STEPConstruct	The translators' rarer forms and write modes; follows the STEP test data
 Kerf.Kernel.DataExchange	UnitsMethods	Conversions for units no test file uses
-Kerf.Kernel.Foundation	PLib	Polynomial bases at degrees and constraint orders the tests' approximations don't reach
-Kerf.Kernel.Foundation	Bnd	Box variants and transformed forms the tests rarely reach
-Kerf.Kernel.Foundation	MathOpt	OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them
-Kerf.Kernel.Foundation	MathUtils	OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them
-Kerf.Kernel.Foundation	MathRoot	OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them
-Kerf.Kernel.Foundation	MathSys	OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them
-Kerf.Kernel.Foundation	MathInteg	OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them
-Kerf.Kernel.Foundation	MathLin	OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them
-Kerf.Kernel.Foundation	MathPoly	OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them
+Kerf.Kernel.Foundation	MathRoot	11I's tests reach the solvers, their failures and the common forms. Left: rediscretising in FindAllRoots near tangent points, and trigonometric branches for coefficients within rounding of nil
+Kerf.Kernel.Foundation	MathSys	11I's tests reach the solvers, their failures and bounds. Left: the SVD fallback for a Jacobian within rounding of singular, and line-search back-offs
 Kerf.Kernel.Foundation	NCollection	OCCT's collections, going with 10J and 10P1; not worth new tests
-Kerf.Kernel.Foundation	BVH	Tree builders and traversal forms the tests don't reach
+Kerf.Kernel.Foundation	BVH	The tree builders and traversals are tested. DistanceField, Properties, the transforms, PairDistance, QuadTree and ObjectSet have no caller in the kernel: OCCT's visualisation uses them. Tests would judge nothing the kernel does
 Kerf.Kernel.ModelingAlgorithms	ShapeFix	Repairs for kinds of broken input neither the unit tests nor the corpus hold
 Kerf.Kernel.ModelingAlgorithms	LocOpe	Feature forms (prisms and pipes from and until faces, ribs) past what the corpus's feature cases use
 Kerf.Kernel.ModelingAlgorithms	BRepFeat	Feature forms (prisms and pipes from and until faces, ribs) past what the corpus's feature cases use
@@ -59,7 +52,6 @@ Kerf.Kernel.ModelingAlgorithms	HLRBRep	Hidden-line paths past the few hlr cases
 Kerf.Kernel.ModelingAlgorithms	BRepBlend	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
 Kerf.Kernel.ModelingAlgorithms	ChFi3d	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
 Kerf.Kernel.ModelingAlgorithms	Blend	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
-Kerf.Kernel.ModelingAlgorithms	BRepFilletAPI	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
 Kerf.Kernel.ModelingAlgorithms	FilletSurf	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
 Kerf.Kernel.ModelingAlgorithms	TopOpeBRepBuild	The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests
 Kerf.Kernel.ModelingAlgorithms	TopOpeBRepTool	The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests
@@ -69,7 +61,6 @@ Kerf.Kernel.ModelingAlgorithms	IntCurveSurface	Intersection forms by curve and s
 Kerf.Kernel.ModelingAlgorithms	Geom2dInt	Intersection forms by curve and surface type the tests don't reach
 Kerf.Kernel.ModelingAlgorithms	Geom2dHatch	Intersection forms by curve and surface type the tests don't reach
 Kerf.Kernel.ModelingAlgorithms	ShapeConstruct	Healing support, following ShapeFix's gap
-Kerf.Kernel.ModelingAlgorithms	ShapeAlgo	Healing support, following ShapeFix's gap
 Kerf.Kernel.ModelingAlgorithms	Plate	Constraint kinds the fill tests and cases don't reach
 Kerf.Kernel.ModelingAlgorithms	BiTgte	Forms past the corpus's few cases; both are small OCCT features
 Kerf.Kernel.ModelingAlgorithms	Draft	Forms past the corpus's few cases; both are small OCCT features
@@ -78,10 +69,6 @@ Kerf.Kernel.ModelingAlgorithms	TopBas	A single value type nothing calls (HLR's i
 Kerf.Kernel.ModelingAlgorithms	Sweep	A few accessors
 Kerf.Kernel.ModelingAlgorithms	Prs3d	A few accessors
 Kerf.Kernel.ModelingData	AppParCurves	Least-squares forms the tests' approximations don't reach
-Kerf.Kernel.ModelingData	GC	Factories' overloads and failure statuses the tests don't reach
-Kerf.Kernel.ModelingData	gce	Factories' overloads and failure statuses the tests don't reach
-Kerf.Kernel.ModelingData	Hermit	Hermite conversions the tests rarely reach
-Kerf.Kernel.ModelingData	BndLib	Boxes of conic and elementary pieces in forms the tests don't reach
+Kerf.Kernel.ModelingData	Hermit	11I's tests hold a(u) to its promise under steep weights and tight tolerances. Left: pole-moving branches for ratios beyond the tolerance whose end values stay within it, which no weights tried reach
 Kerf.Kernel.ModelingData	ExtremaPC	Search forms and curve kinds the tests don't reach
-Kerf.Kernel.ModelingData	Adaptor2d	Base-class defaults, mostly overridden
 Kerf.Modeling	(root)	Enum helpers

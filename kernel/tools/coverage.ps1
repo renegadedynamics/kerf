@@ -10,6 +10,7 @@
   and writes the report: coverage per OCCT package (the folder under each kernel assembly) and per folder of the
   modeling layer, the packages under the floor listed with their reasons (docs/coverage-gaps.tsv); and
   tools/public-members.cs compares the public API with the same data.
+  The Draw-lite corpus's time limits are multiplied for the run (KERF_CORPUS_TIME_SCALE).
 .PARAMETER Results
   The folder for the Cobertura files (a temporary one by default).
 .PARAMETER Report
@@ -34,6 +35,10 @@ param(
   [string[]] $BuildArgs = @()
 )
 # Not 'Stop': under redirection Windows PowerShell turns a native command's stderr (a failing test's name) into an error
+# Instrumented code runs about 2.4 times slower, measured on a sample of the corpus: the corpus's time limits stretch by
+# as much, with some margin, so no case fails for the instrumentation alone (decision 1679). Set here only, for this run.
+$timeScaleBefore = $env:KERF_CORPUS_TIME_SCALE
+$env:KERF_CORPUS_TIME_SCALE = '3'
 $ErrorActionPreference = 'Continue'
 
 $kernel = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -70,5 +75,6 @@ if ($FullCorpus) {
   Remove-Item Env:KERF_CORPUS_FULL
   if ($LASTEXITCODE) { Write-Warning "the whole corpus had failures: its coverage is still counted" }
 }
+$env:KERF_CORPUS_TIME_SCALE = $timeScaleBefore
 dotnet run (Join-Path $kernel 'tools/coverage-report.cs') -- $Results $Report 80 $corpus
 dotnet run (Join-Path $kernel 'tools/public-members.cs') -- $Results (Join-Path $root 'modeling/tests/Kerf.Modeling.Tests/bin/Release/net10.0') $PublicMembers

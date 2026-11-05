@@ -2100,3 +2100,14 @@ classes.
 |---|---|---|---|
 | `BRepBndLib.cxx`, `IsModifySize` and `AdjustFaceBox` | The search for whether a side of a surface's box is reached inside the face uses a plane patch set by the sides cut back before it, and takes one extremum where a whole curve may touch | A box larger than the face: on `shading_172.brep` the offset face's top is 301.6 where its mesh reaches 288.6, and the whole shape's box is 10 units too tall. It still holds the shape. Skipping the sides that couldn't matter made it right by chance, so the port keeps the order | kept, as OCCT (decision 1672) |
 | `GeomBndLib_Torus::BoxOptimal` | Searches a surface whose extremes have a closed form, and starts from a coarse grid | About 10 ms a patch, most of a filleted part's optimal box | fixed (decision 1671) |
+## Found by unit 11I's coverage tests
+
+| Where | What | Effect | State |
+|---|---|---|---|
+| `ChFiDS_FilSpine::Reset` | Reads the first and last radii when there may be none (`BRepFilletAPI_MakeFillet::Add(E)`, then `Reset`) | Undefined in a release build | fixed (decision 1676) |
+| `ShapeAlgo_AlgoContainer::ApproxBSplineCurve`, both forms | The part after the last repeated pole is never appended | A degree-1 spline with a repeated pole comes back without its end | fixed (decision 1677) |
+| `MathLin::Crout` | Inverts its working L in place, then copies it to the result's `L` | The result's `L` is L's inverse, against its comment | fixed (decision 1678) |
+| `PLib_JacobiPolynomial::AverageError` | Sums the coefficients only up to `myDegree`, where `MaxError` goes to `myWorkDegree`, and from one index later | Terms above q count for nothing, so the average understates the error. Open for the owner: the port keeps it. Approximations only report it (AdvApprox's average errors), and don't steer by it | leave |
+| `gce_MakeLin2d(Lin, Dist)` | The header says a positive distance is to the right of the line; the code adds `Dist * (-dy, dx)`, to the left | Only the comment is wrong, as far as callers go; the port follows the code | leave |
+| `BndLib::Add(gp_Cone, ...)` with an infinite V bound | Opens the box along the axis only, though the cone widens without limit | The box doesn't hold the cone. Open for the owner: the port still does this | leave |
+| `BndLib::Add(gp_Cylinder, ...)` and `gp_Cone`, both V bounds infinite | Adds nothing but the open sides | The box is still void, so `Get` throws and `IsOut` says yes, though the surface is everywhere along its axis. Open for the owner: the port still does this | leave |
