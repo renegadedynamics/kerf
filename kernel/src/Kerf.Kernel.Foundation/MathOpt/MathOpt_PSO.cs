@@ -243,7 +243,7 @@ internal static partial class MathOpt
     }
 
     /// <summary>A particle of the swarm (C++'s struct local to PSO, held by reference in the swarm array).</summary>
-    private sealed class PSO_Particle
+    internal sealed class PSO_Particle
     {
         public math_Vector Position;
         public math_Vector Velocity;
@@ -262,6 +262,43 @@ internal static partial class MathOpt
     }
 
     /// <summary>
+    /// A swarm kept between calls to <see cref="PSO{Function}(Function, math_Vector, math_Vector, PSOConfig, List{PSOSeedParticle}?, PSOStats?, PSOSwarm?)"/>,
+    /// for a caller that makes many on one thread (unit 11B: the optimal bounding box of every surface makes dozens). Each
+    /// call starts from particles as new.
+    /// </summary>
+    internal sealed class PSOSwarm
+    {
+        private readonly List<PSO_Particle> _particles = new();
+        private int _lower, _upper;
+
+        internal List<PSO_Particle> Renew(int nbParticles, int lower, int upper)
+        {
+            if (lower != _lower || upper != _upper)
+            {
+                _particles.Clear();
+                (_lower, _upper) = (lower, upper);
+            }
+
+            for (int i = 0; i < _particles.Count && i < nbParticles; i++)
+            {
+                PSO_Particle particle = _particles[i];
+                particle.Position.Init(0.0);
+                particle.Velocity.Init(0.0);
+                particle.BestPosition.Init(0.0);
+                particle.BestValue = double.MaxValue;
+                particle.CurrentValue = double.MaxValue;
+            }
+
+            while (_particles.Count < nbParticles)
+            {
+                _particles.Add(new PSO_Particle(lower, upper));
+            }
+
+            return _particles;
+        }
+    }
+
+    /// <summary>
     /// Particle Swarm Optimization for global minimization within box bounds, optionally initialized from seed
     /// particles (theSeeds, may be null) and reporting statistics into theStats (may be null). Stochastic, but
     /// reproducible for a given PSOConfig.Seed. The best point is polished coordinate-wise at the end.
@@ -271,7 +308,8 @@ internal static partial class MathOpt
                                              math_Vector upperBounds,
                                              PSOConfig config,
                                              List<PSOSeedParticle>? seeds,
-                                             PSOStats? stats = null)
+                                             PSOStats? stats = null,
+                                             PSOSwarm? keptSwarm = null)
         where Function : IVectorFunction
     {
         VectorResult result = new();
@@ -308,10 +346,18 @@ internal static partial class MathOpt
         // Initialize stats
         PSOStats localStats = new();
 
-        List<PSO_Particle> swarm = new();
-        for (int partIdx = 0; partIdx < nbParticles; ++partIdx)
+        List<PSO_Particle> swarm;
+        if (keptSwarm is not null)
         {
-            swarm.Add(new PSO_Particle(lower, upper));
+            swarm = keptSwarm.Renew(nbParticles, lower, upper);
+        }
+        else
+        {
+            swarm = new List<PSO_Particle>(nbParticles);
+            for (int partIdx = 0; partIdx < nbParticles; ++partIdx)
+            {
+                swarm.Add(new PSO_Particle(lower, upper));
+            }
         }
 
         // Random number generator
@@ -743,10 +789,11 @@ internal static partial class MathOpt
     public static VectorResult PSO<Function>(Function func,
                                              math_Vector lowerBounds,
                                              math_Vector upperBounds,
-                                             PSOConfig? config = null)
+                                             PSOConfig? config = null,
+                                             PSOSwarm? keptSwarm = null)
         where Function : IVectorFunction
     {
         config ??= new PSOConfig();
-        return PSO(func, lowerBounds, upperBounds, config, null, null);
+        return PSO(func, lowerBounds, upperBounds, config, null, null, keptSwarm);
     }
 }
