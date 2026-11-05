@@ -70,6 +70,7 @@ The owner set these aside until after 0.2.0 (decision 1642). They don't depend o
 | **11K** The remaining exceptions | Operators, constructors and the shapes' own methods still throw (decisions 1589, 1592). | **Closed: the owner keeps them** (decision 1644) |
 | **11L** Sharp edges in the API | From `one-set-of-shapes.md`'s "Left": `shape.BoundBox()` beside `shape.BoundingBox()`, with different defaults; clashes with `Kerf.Meshing`, `Kerf.Exchange` and `Kerf.Offsets`; odd internal names. Also error messages that still name OCCT's types: `Plane`'s "Expected gp_Pln…", which Bento shows in a cell for a zero `zDir`, and `TopoUtil.TypeName`'s `TopoDS_Face` and so on. And STEP's header, which still says organisation `Open CASCADE`, an Open CASCADE processor and the product name `Open CASCADE STEP translator`: change them to Kerf, and update STEP's fixtures once. | The API's points are best done before anyone relies on them. **The messages and STEP's header are the owner's for the next release** (decision 1643) |
 | **11M** Engine tidying | About 3,300 IDE1006 exemptions; the `Transient` base; 572 "touch" rows in the bug triage, fixed when their code is next changed. | Opportunistic: no unit of its own unless something needs it |
+| **11N** StepTidy (decision 1645) | Port OCCT's StepTidy (2,655 lines, with its GTests): after writing, it merges STEP entities that are equal, such as points, directions, lines and planes, and removes the duplicates. `CleanDuplicates` is already there for it, off by default as in OCCT. Then measure file size and writing time on the dataset's STEP files, and check that the files read back the same. | With STEP's header in 11L, so that STEP's fixtures change once. Whether it's on by default goes to the owner with the measurements. For 0.3.0 |
 
 ## 4. The owner's answers (decision 1644)
 
@@ -78,7 +79,8 @@ The owner set these aside until after 0.2.0 (decision 1642). They don't depend o
 3. **The coverage floor:** hand-written engine packages first. STEP is decided later.
 4. **The remaining exceptions:** they stay.
 5. **The next release:** 0.3.0, with 11L's fixes and the first optimisation results.
-6. **The unported rest of OCCT:** not yet. [unported.md](unported.md) says what's left and what it might be useful for.
+6. **The unported rest of OCCT:** StepTidy goes in (11N, decision 1645), and the rest is left for now. [unported.md](unported.md)
+   says what's left and what it might be useful for.
 7. **1.0:** needs a stable API, and more testing by the owner and other potential users. A Kerf GUI on Avalonia might help
    with that, but is still to be decided.
 

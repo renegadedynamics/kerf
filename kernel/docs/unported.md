@@ -1,8 +1,8 @@
 # What's left of OCCT
 
 *5 November 2026, for question 6 of [phase11-plan.md](phase11-plan.md). The figures come from
-[port-status.md](port-status.md), and count physical lines of OCCT 8.0.1. The owner's answer for now is not to port more,
-so this is a list to choose from, not a plan.*
+[port-status.md](port-status.md), and count physical lines of OCCT 8.0.1. The owner's answer: StepTidy goes into phase 11 (unit
+11N), and the rest is left for now, so this is a list to choose from, not a plan.*
 
 **Ported: 1,796,086 of 2,897,781 lines (62.0%).** That leaves 1,101,695 lines, and most of them are what Kerf decided
 early on not to need (design.md): OCCT's viewer, its document framework and its test console.
@@ -20,7 +20,7 @@ early on not to need (design.md): OCCT's viewer, its document framework and its 
 | **VRML** (TKDEVRML) | 22,851 | Reads and writes VRML, an old web 3D format | Occasional old files; glTF has replaced it | Only if asked |
 | **Mesh formats** (TKDEGLTF, TKDEOBJ, TKRWMesh, TKDEPLY) | 20,068 | OCCT's readers and writers for meshes | glTF, OBJ, 3MF and STL already work through Kerf's own code. **PLY isn't covered**, and is small | PLY if asked |
 | **Expressions** (TKExpress) | 15,888 | Symbolic mathematical expressions | Formula-driven curves. Bento has its own formula language | No |
-| **Leftovers in ported areas** (TKXSBase, TKDESTEP, TKDE, TKDESTL and others) | 32,648 | Interactive selection in the STEP and exchange layers, STEP AP209, STEP's tidying step (StepTidy, 2,655 lines), and DE's plugin registry | StepTidy could make written STEP files smaller, so it's worth a look when STEP's header is changed | StepTidy perhaps |
+| **Leftovers in ported areas** (TKXSBase, TKDESTEP, TKDE, TKDESTL and others) | 32,648 | Interactive selection in the STEP and exchange layers, STEP AP209, STEP's tidying step (StepTidy, 2,655 lines), and DE's plugin registry | StepTidy could make written STEP files smaller | **StepTidy: yes, in phase 11.** The rest, no |
 
 ## For a Kerf GUI
 
