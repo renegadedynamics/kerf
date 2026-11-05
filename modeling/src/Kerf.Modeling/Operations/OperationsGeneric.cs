@@ -66,7 +66,10 @@ public static partial class Operations
     public static ModelShape BoundingBox(Shape obj) => BoundingBox([obj]);
 
     /// <inheritdoc cref="BoundingBox(Shape)"/>
-    public static ModelShape BoundingBox(ModelShape obj) => obj.IsEmpty ? NothingOf(obj.Dim) : BoundingBox([obj.Shape]);
+    public static ModelShape BoundingBox(Part obj) => obj.IsEmpty ? new Part() : BoundingBox([obj.Shape]);
+
+    /// <inheritdoc cref="BoundingBox(Shape)"/>
+    public static ModelShape BoundingBox(Sketch obj) => obj.IsEmpty ? new Sketch() : BoundingBox([obj.Shape]);
 
     /// <inheritdoc cref="BoundingBox(IEnumerable{Shape})"/>
     public static ModelShape BoundingBox<T>(IEnumerable<T> objects) where T : IShape => BoundingBox(Shapes(objects));
