@@ -23,6 +23,11 @@ internal class Svd
     private math_Vector _diag;
     private int _rowA;
 
+    // Working vectors, for Perform and for a solve: both are written before they're read
+    private math_Vector? _rv1;
+    private math_Vector? _bb;
+    private math_Vector? _tmp;
+
     /// <summary>Performs the Singular Value Decomposition of the n x m matrix <paramref name="a"/>.</summary>
     public Svd(Matrix a)
     {
@@ -34,6 +39,33 @@ internal class Svd
         _rowA = a.RowNumber();
         _u.Set(1, a.RowNumber(), 1, a.ColNumber(), a);
         int error = SVD_Decompose(_u, _diag, _v);
+        _done = error == 0;
+    }
+
+    /// <summary>
+    /// The storage for n x m matrices, without a decomposition: <see cref="Perform"/> decomposes, as often as needed (unit
+    /// 11B: math_FunctionSetRoot repeats it at every iteration).
+    /// </summary>
+    internal Svd(int n, int m)
+    {
+        _u = new Matrix(1, Max(n, m), 1, m);
+        _v = new Matrix(1, m, 1, m);
+        _diag = new math_Vector(1, m);
+        _rv1 = new math_Vector(1, m);
+    }
+
+    /// <summary>Whether this is the storage for <paramref name="a"/>'s size.</summary>
+    internal bool Fits(Matrix a) => _u.RowNumber() == Max(a.RowNumber(), a.ColNumber()) && _u.ColNumber() == a.ColNumber();
+
+    /// <summary>The decomposition of <paramref name="a"/>, of the size given at construction, as the constructor's.</summary>
+    internal void Perform(Matrix a)
+    {
+        _v.Init(0.0);
+        _diag.Init(0.0);
+        _u.Init(0.0);
+        _rowA = a.RowNumber();
+        _u.Set(1, a.RowNumber(), 1, a.ColNumber(), a);
+        int error = SVD_Decompose(_u, _diag, _v, _rv1!);
         _done = error == 0;
     }
 
@@ -50,7 +82,8 @@ internal class Svd
         StdFail_NotDone_Raise_if(!_done, " ");
         Standard_DimensionError_Raise_if((_rowA != b.Length()) || (x.Length() != _diag.Length()), " ");
 
-        math_Vector bb = new(1, _u.RowNumber());
+        math_Vector bb = _bb ??= new(1, _u.RowNumber());
+        math_Vector tmp = _tmp ??= new(1, _u.ColNumber());
         bb.Init(0.0);
         bb.Set(1, b.Length(), b);
         double wmin = eps * _diag[_diag.Max()];
@@ -66,11 +99,11 @@ internal class Svd
         if (x.Lower() != 1)
         {
             math_Vector xTemp = new(x, x.Lower(), 1, x.Length());
-            SVD_Solve(_u, _diag, _v, bb, xTemp);
+            SVD_Solve(_u, _diag, _v, bb, xTemp, tmp);
         }
         else
         {
-            SVD_Solve(_u, _diag, _v, bb, x);
+            SVD_Solve(_u, _diag, _v, bb, x, tmp);
         }
     }
 
