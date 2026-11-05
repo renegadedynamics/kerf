@@ -3,7 +3,7 @@
 *Unit 10I, 3 November 2026 (phase10-plan.md, section 2.7). Counted at Kerf `main` 296531cd and after the unit with
 `tools/state-survey.py` (run `python -I tools/state-survey.py <repository> <out.tsv>` from `kernel/` to recount).
 Decisions 1385 to 1392. Unit 10P3, 4 November 2026, moved the BlendFunc and Contap scratch and the rest of what was cheap
-(decisions 18001 to 18004), and added [every field left, one by one](#every-field-left).*
+and added [every field left, one by one](#every-field-left).*
 
 ## What this is
 
