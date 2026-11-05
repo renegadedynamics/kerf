@@ -44,7 +44,7 @@ internal sealed class FilSpine : Spine
         {
             _parandrad.Clear();
         }
-        else // Complete parandrad
+        else if (_parandrad.Length() > 0) // Complete parandrad; a contour without radii has none (decision 18601)
         {
             double spinedeb = FirstParameter();
             double spinefin = LastParameter();
