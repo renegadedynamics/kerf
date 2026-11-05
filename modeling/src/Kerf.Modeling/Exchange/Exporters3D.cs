@@ -273,7 +273,7 @@ public static class Exporters3D
     {
         var model = shape as ModelShape;
         string? name = model is { Label.Length: > 0 } ? model.Label : null;
-        var color = Linear(model?.Color);
+        var color = model?.Color;
         if (model is Assembly { Children.Count: > 0 } assembly)
         {
             var children = assembly.Children.Where(c => !c.IsEmpty).Select(c => StepTree(c)).ToList();
@@ -294,12 +294,6 @@ public static class Exporters3D
             Generator = "build123d.NET",
         };
 
-    private static global::Kerf.Color? Linear(Color? color)
-    {
-        if (color is not { } c)
-            return null;
-        return c.ToKerfColor();
-    }
 }
 
 /// <summary>

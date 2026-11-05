@@ -73,5 +73,5 @@ internal static class Check
 
     public static double[] Of(Vector v) => [v.X, v.Y, v.Z];
 
-    public static double[] Of(Color c) => [c.R, c.G, c.B, c.A];
+    public static double[] Of(Color c) => [Math.Round(c.R, 7), Math.Round(c.G, 7), Math.Round(c.B, 7), Math.Round((double)(float)c.A, 7)];
 }

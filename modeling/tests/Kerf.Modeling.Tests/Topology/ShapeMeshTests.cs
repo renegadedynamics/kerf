@@ -217,7 +217,7 @@ public class ShapeMeshTests
     [Fact]
     public void AnAssemblyTreeSharesTheMeshOfInstances()
     {
-        var bolt = new Cylinder(1, 10).WithLabel("bolt").WithColor(new Color(0.5, 0.5, 0.5, 0.8));
+        var bolt = new Cylinder(1, 10).WithLabel("bolt").WithColor(Color.Rgb(0.5, 0.5, 0.5, 0.8));
         var plate = new Box(20, 20, 2).WithLabel("plate");
         var assembly = new Assembly(
             [plate, bolt.Moved(new Location(new Vector(-5.0, 0.0, 0.0))), bolt.Moved(new Location(new Vector(5.0, 0.0, 0.0)))], label: "joint");

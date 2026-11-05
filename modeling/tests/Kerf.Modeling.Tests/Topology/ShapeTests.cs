@@ -517,9 +517,9 @@ public class ShapeTests
     public void InheritColor()
     {
         // Create some objects and assign colours to them
-        var b = Objects.Box(1, 1, 1).Located(new Pos(2, 2, 0)).WithColor(new Color("blue"));
-        var c = Objects.Cylinder(1, 1).Located(new Pos(-2, 2, 0)).WithColor(new Color("red"));
-        var a = new Assembly([b, c]).WithColor(new Color(0, 1, 0));
+        var b = Objects.Box(1, 1, 1).Located(new Pos(2, 2, 0)).WithColor(Color.Parse("blue"));
+        var c = Objects.Cylinder(1, 1).Located(new Pos(-2, 2, 0)).WithColor(Color.Parse("red"));
+        var a = new Assembly([b, c]).WithColor(Color.Rgb(0, 1, 0));
         // Check that assigned colours stay
         Check.TupleAlmostEqual([0, 1, 0, 1], Check.Of(a.Color!.Value), 5);
         Check.TupleAlmostEqual([0, 0, 1, 1], Check.Of(b.Color!.Value), 5);

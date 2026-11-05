@@ -155,12 +155,12 @@ public class PublicMemberTests
     [Fact]
     public void Values_compare_and_take_apart()
     {
-        (double r, double g, double b, double a) = new Color(0.1, 0.2, 0.3, 0.4);
+        (double r, double g, double b, double a) = Color.Rgb(0.1, 0.2, 0.3, 0.4);
         Assert.Equal(0.3, b, 6);
         Assert.Equal((0.1, 0.2, 0.4), (Math.Round(r, 6), Math.Round(g, 6), Math.Round(a, 6)));
-        Assert.True(new Color(0.1, 0.2, 0.3) == new Color(0.1, 0.2, 0.3));
-        Assert.True(new Color(0.1, 0.2, 0.3) != new Color(0.3, 0.2, 0.1));
-        Assert.Equal(new Color(0.1, 0.2, 0.3).GetHashCode(), new Color(0.1, 0.2, 0.3).GetHashCode());
+        Assert.True(Color.Rgb(0.1, 0.2, 0.3) == Color.Rgb(0.1, 0.2, 0.3));
+        Assert.True(Color.Rgb(0.1, 0.2, 0.3) != Color.Rgb(0.3, 0.2, 0.1));
+        Assert.Equal(Color.Rgb(0.1, 0.2, 0.3).GetHashCode(), Color.Rgb(0.1, 0.2, 0.3).GetHashCode());
 
         Assert.True(Axis.X != Axis.Y);
         Assert.True(Plane.XY == new Plane(new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(0, 0, 1)));

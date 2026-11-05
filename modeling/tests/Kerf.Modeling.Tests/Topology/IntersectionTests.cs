@@ -710,7 +710,7 @@ public class IntersectionTests
 
     [Theory]
     [MemberData(nameof(ExceptionCases))]
-    public void Exceptions(string id) => Assert.Throws<ArgumentException>(() => ExceptionObjects[id].Intersect(new Color()));
+    public void Exceptions(string id) => Assert.Throws<ArgumentException>(() => ExceptionObjects[id].Intersect(Color.White));
 }
 
 /// <summary>Direct Touch() calls, for specific code paths.</summary>

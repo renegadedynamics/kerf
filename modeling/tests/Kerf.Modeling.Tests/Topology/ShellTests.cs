@@ -252,7 +252,7 @@ public class ShellAddTests
     [Fact]
     public void AttributesCarriedToResult()
     {
-        var shell = new Sketch(Shell.Make([_base])).WithLabel("sheet").WithColor(new Color("red"));
+        var shell = new Sketch(Shell.Make([_base])).WithLabel("sheet").WithColor(Color.Parse("red"));
         var result = shell + _wall;
         Assert.Equal("sheet", result.Label);
         Assert.NotNull(result.Color);

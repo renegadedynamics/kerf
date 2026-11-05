@@ -3,87 +3,108 @@ using System.Globalization;
 namespace Kerf.Modeling;
 
 /// <summary>
-/// An immutable colour with transparency. Components are sRGB values from 0 to 1. Colours are held as
-/// OCCT holds them (single-precision linear RGB), so converting to OCCT and back is exact.
+/// build123d's ways of making a colour, on the kernel's <see cref="Color"/> (question 60): from a CSS3 or X11 name, a hex
+/// string, a colour code, or sRGB components of which those left out are 1; and categorical palettes.
 /// </summary>
-public readonly struct Color : IEquatable<Color>
+public static class ColorExtensions
 {
-    // Linear RGB and alpha as Quantity_ColorRGBA stores them, in single precision
-    readonly float _r, _g, _b, _a;
-
-    /// <summary>The red sRGB component, 0 to 1, rounded to seven decimal places.</summary>
-    public double R { get; }
-
-    /// <summary>The green sRGB component, 0 to 1, rounded to seven decimal places.</summary>
-    public double G { get; }
-
-    /// <summary>The blue sRGB component, 0 to 1, rounded to seven decimal places.</summary>
-    public double B { get; }
-
-    /// <summary>The alpha (opacity), 0 to 1, rounded to seven decimal places.</summary>
-    public double A { get; }
-
-    /// <summary>Opaque white.</summary>
-    public Color() : this(1.0) { }
-
-    /// <summary>A colour from sRGB components and alpha, each from 0 to 1. Missing components are 1.</summary>
-    public Color(double red, double green = 1.0, double blue = 1.0, double alpha = 1.0)
+    extension(Color)
     {
-        var (r, g, b, _) = new Kerf.Color(red, green, blue).ToLinear();
-        this = FromLinear(r, g, b, (float)alpha);
-    }
+        /// <summary>Opaque white.</summary>
+        public static Color White => new(1, 1, 1);
 
-    /// <summary>
-    /// A colour from a CSS3 name ("steelblue"), an OCCT/X11 name ("BLUE1"), or a hexadecimal string
-    /// ("#f00", "#f008", "#ff0000", "#ff000080"). Alpha in a hex string overrides <paramref name="alpha"/>.
-    /// </summary>
-    /// <exception cref="ArgumentException">The name isn't a known colour, or the hex string is malformed.</exception>
-    public Color(string name, double alpha = 1.0)
-    {
-        name = name.Trim();
-        if (name.Contains('#'))
+        /// <summary>A colour from sRGB components and alpha, each from 0 to 1. Missing components are 1.</summary>
+        public static Color Rgb(double red, double green = 1.0, double blue = 1.0, double alpha = 1.0) => new(red, green, blue, alpha);
+
+        /// <summary>
+        /// A colour from a CSS3 name ("steelblue"), an OCCT/X11 name ("BLUE1"), or a hexadecimal string
+        /// ("#f00", "#f008", "#ff0000", "#ff000080"). Alpha in a hex string overrides <paramref name="alpha"/>.
+        /// </summary>
+        /// <exception cref="ArgumentException">The name isn't a known colour, or the hex string is malformed.</exception>
+        public static Color Parse(string name, double alpha = 1.0)
         {
-            // Alpha is quantised to a byte as build123d does, even when it isn't part of the string
-            string hexAlpha = ((int)(alpha * 255)).ToString("x", CultureInfo.InvariantCulture);
-            if (name.Length == 5)
-                (hexAlpha, name) = (new string(name[4], 2), name[..4]);
-            else if (name.Length == 9)
-                (hexAlpha, name) = (name[7..9], name[..7]);
-            else if (name.Length is not (4 or 7))
-                throw new ArgumentException($"\"{name}\" is not a valid hexadecimal color value.", nameof(name));
-            if (!int.TryParse(hexAlpha, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var a))
-                throw new ArgumentException($"Invalid alpha hex string: {hexAlpha}", nameof(alpha));
-            alpha = a / 255.0;
+            name = name.Trim();
+            if (name.Contains('#'))
+            {
+                // Alpha is quantised to a byte as build123d does, even when it isn't part of the string
+                string hexAlpha = ((int)(alpha * 255)).ToString("x", CultureInfo.InvariantCulture);
+                if (name.Length == 5)
+                    (hexAlpha, name) = (new string(name[4], 2), name[..4]);
+                else if (name.Length == 9)
+                    (hexAlpha, name) = (name[7..9], name[..7]);
+                else if (name.Length is not (4 or 7))
+                    throw new ArgumentException($"\"{name}\" is not a valid hexadecimal color value.", nameof(name));
+                if (!int.TryParse(hexAlpha, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var a))
+                    throw new ArgumentException($"Invalid alpha hex string: {hexAlpha}", nameof(alpha));
+                alpha = a / 255.0;
+            }
+            var (r, g, b) = RgbFromName(name);
+            return Color.Rgb(r, g, b, alpha);
         }
-        var (r, g, b) = RgbFromName(name);
-        this = new Color(r, g, b, alpha);
+
+        /// <summary>A colour from a hexadecimal code 0xRRGGBB and a byte alpha (0x00 to 0xFF).</summary>
+        public static Color FromCode(int colorCode, int alpha = 0xFF)
+        {
+            // build123d reads alpha 1 as the default, fully opaque, rather than 1/255
+            int red = colorCode / (256 * 256), green = colorCode / 256 % 256, blue = colorCode % 256;
+            return Color.Rgb(red / 255.0, green / 255.0, blue / 255.0, alpha == 1 ? 1.0 : alpha / 255.0);
+        }
+
+        /// <summary>
+        /// A palette of <paramref name="count"/> evenly spaced, visually distinct colours for categories, in the
+        /// style of Tableau 10 and D3 Category10: hues evenly spaced from <paramref name="startingHue"/>
+        /// (0 to 1), with lightness 0.55 and saturation 0.9.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">The hue is outside 0 to 1.</exception>
+        public static IReadOnlyList<Color> CategoricalSet(int count, double startingHue = 0.0, double alpha = 1.0)
+        {
+            if (startingHue is < 0.0 or > 1.0)
+                throw new ArgumentOutOfRangeException(nameof(startingHue), "Starting hue must be within range 0.0–1.0");
+            return CategoricalSet(count, startingHue, Enumerable.Repeat(alpha, count).ToArray());
+        }
+
+        /// <summary>A categorical palette (see <see cref="CategoricalSet(int, double, double)"/>) starting from a colour's hue.</summary>
+        public static IReadOnlyList<Color> CategoricalSet(int count, Color startingColor, double alpha = 1.0) =>
+            CategoricalSet(count, RgbToHue(startingColor.R, startingColor.G, startingColor.B), alpha);
+
+        /// <summary>A categorical palette (see <see cref="CategoricalSet(int, double, double)"/>) with one alpha per colour.</summary>
+        /// <exception cref="ArgumentException">The number of alphas doesn't match the count.</exception>
+        public static IReadOnlyList<Color> CategoricalSet(int count, double startingHue, IReadOnlyList<double> alphas)
+        {
+            if (alphas.Count != count)
+                throw new ArgumentException("The number of alpha values must match the colour count.", nameof(alphas));
+
+            // numpy.linspace(start, start + 1, count, endpoint=False)
+            double step = ((startingHue + 1.0) - startingHue) / count;
+            var colors = new Color[count];
+            for (int i = 0; i < count; i++)
+            {
+                double hue = i * step + startingHue;
+                var (r, g, b) = HlsToRgb(PyMod(hue, 1.0), 0.55, 0.9);
+                colors[i] = Color.Rgb(r, g, b, alphas[i]);
+            }
+            return colors;
+        }
     }
 
-    /// <summary>A colour from a hexadecimal code 0xRRGGBB and a byte alpha (0x00 to 0xFF).</summary>
-    public Color(int colorCode, int alpha = 0xFF)
-    {
-        // build123d reads alpha 1 as the default, fully opaque, rather than 1/255
-        int red = colorCode / (256 * 256), green = colorCode / 256 % 256, blue = colorCode % 256;
-        this = new Color(red / 255.0, green / 255.0, blue / 255.0, alpha == 1 ? 1.0 : alpha / 255.0);
-    }
+    /// <summary>Deconstructs into sRGB components and alpha.</summary>
+    public static void Deconstruct(this Color color, out double r, out double g, out double b, out double a) =>
+        (r, g, b, a) = (color.R, color.G, color.B, color.A);
 
-    /// <summary>A colour from the kernel's, its stored (linear) values kept.</summary>
-    public Color(Kerf.Color color)
+    extension(Color color)
     {
-        var (r, g, b, a) = color.ToLinear();
-        this = FromLinear(r, g, b, (float)a);
-    }
-
-    Color(float r, float g, float b, float a, double sr, double sg, double sb)
-    {
-        (_r, _g, _b, _a) = (r, g, b, a);
-        (R, G, B, A) = (Math.Round(sr, 7), Math.Round(sg, 7), Math.Round(sb, 7), Math.Round((double)a, 7));
-    }
-
-    static Color FromLinear(double r, double g, double b, float alpha)
-    {
-        var srgb = Kerf.Color.FromLinear(r, g, b);
-        return new Color((float)r, (float)g, (float)b, alpha, srgb.R, srgb.G, srgb.B);
+        /// <summary>
+        /// "Color: (1, 0, 0, 1) is 'RED'": the CSS3 name of an exact match, otherwise the nearest OCCT colour name
+        /// ("near 'SIENNA4'").
+        /// </summary>
+        public string Describe()
+        {
+            var key = ((int)Math.Round(color.R * 255), (int)Math.Round(color.G * 255), (int)Math.Round(color.B * 255));
+            string tuple = $"({Formatting.Number(Math.Round(color.R, 7))}, {Formatting.Number(Math.Round(color.G, 7))}, {Formatting.Number(Math.Round(color.B, 7))}, {Formatting.Number(Math.Round(color.A, 7))})";
+            if (CssColors.ByRgb.TryGetValue(key, out var css))
+                return $"Color: {tuple} is '{css.ToUpperInvariant()}'";
+            return $"Color: {tuple} near '{color.NearestName().ToUpperInvariant()}'";
+        }
     }
 
     static (double, double, double) RgbFromName(string name)
@@ -109,48 +130,6 @@ public readonly struct Color : IEquatable<Color>
         if (digits.Length != 6 || !int.TryParse(digits, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var v))
             throw new ArgumentException($"'{hex}' is not a valid hexadecimal color value.", nameof(hex));
         return ((v >> 16) / 255.0, ((v >> 8) & 0xFF) / 255.0, (v & 0xFF) / 255.0);
-    }
-
-    /// <summary>Deconstructs into sRGB components and alpha.</summary>
-    public void Deconstruct(out double r, out double g, out double b, out double a) => (r, g, b, a) = (R, G, B, A);
-
-    /// <summary>This colour as the kernel's, with the same stored (linear) values.</summary>
-    public Kerf.Color ToKerfColor() => Kerf.Color.FromLinear(_r, _g, _b, _a);
-
-    /// <summary>
-    /// A palette of <paramref name="count"/> evenly spaced, visually distinct colours for categories, in the
-    /// style of Tableau 10 and D3 Category10: hues evenly spaced from <paramref name="startingHue"/>
-    /// (0 to 1), with lightness 0.55 and saturation 0.9.
-    /// </summary>
-    /// <exception cref="ArgumentOutOfRangeException">The hue is outside 0 to 1.</exception>
-    public static IReadOnlyList<Color> CategoricalSet(int count, double startingHue = 0.0, double alpha = 1.0)
-    {
-        if (startingHue is < 0.0 or > 1.0)
-            throw new ArgumentOutOfRangeException(nameof(startingHue), "Starting hue must be within range 0.0–1.0");
-        return CategoricalSet(count, startingHue, Enumerable.Repeat(alpha, count).ToArray());
-    }
-
-    /// <summary>A categorical palette (see <see cref="CategoricalSet(int, double, double)"/>) starting from a colour's hue.</summary>
-    public static IReadOnlyList<Color> CategoricalSet(int count, Color startingColor, double alpha = 1.0) =>
-        CategoricalSet(count, RgbToHue(startingColor.R, startingColor.G, startingColor.B), alpha);
-
-    /// <summary>A categorical palette (see <see cref="CategoricalSet(int, double, double)"/>) with one alpha per colour.</summary>
-    /// <exception cref="ArgumentException">The number of alphas doesn't match the count.</exception>
-    public static IReadOnlyList<Color> CategoricalSet(int count, double startingHue, IReadOnlyList<double> alphas)
-    {
-        if (alphas.Count != count)
-            throw new ArgumentException("The number of alpha values must match the colour count.", nameof(alphas));
-
-        // numpy.linspace(start, start + 1, count, endpoint=False)
-        double step = ((startingHue + 1.0) - startingHue) / count;
-        var colors = new Color[count];
-        for (int i = 0; i < count; i++)
-        {
-            double hue = i * step + startingHue;
-            var (r, g, b) = HlsToRgb(PyMod(hue, 1.0), 0.55, 0.9);
-            colors[i] = new Color(r, g, b, alphas[i]);
-        }
-        return colors;
     }
 
     // Python's float modulo, which takes the divisor's sign
@@ -192,35 +171,5 @@ public readonly struct Color : IEquatable<Color>
         double rc = (maxc - r) / range, gc = (maxc - g) / range, bc = (maxc - b) / range;
         double h = r == maxc ? bc - gc : g == maxc ? 2.0 + rc - bc : 4.0 + gc - rc;
         return PyMod(h / 6.0, 1.0);
-    }
-
-    /// <summary>Colours are equal when their components and alpha are (to seven decimal places).</summary>
-    public bool Equals(Color other) => (R, G, B, A) == (other.R, other.G, other.B, other.A);
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj) => obj is Color c && Equals(c);
-
-    /// <inheritdoc/>
-    public override int GetHashCode() => (R, G, B, A).GetHashCode();
-
-#pragma warning disable CS1591
-    public static bool operator ==(Color a, Color b) => a.Equals(b);
-    public static bool operator !=(Color a, Color b) => !a.Equals(b);
-#pragma warning restore CS1591
-
-    /// <summary>
-    /// "Color: (1.0, 0.0, 0.0, 1.0) is 'RED'": the CSS3 name of an exact match, otherwise the nearest
-    /// OCCT colour name ("near 'SIENNA4'").
-    /// </summary>
-    public override string ToString()
-    {
-        var srgb = ToKerfColor();
-        double sr = srgb.R, sg = srgb.G, sb = srgb.B;
-        var key = ((int)Math.Round(sr * 255), (int)Math.Round(sg * 255), (int)Math.Round(sb * 255));
-        string tuple = $"({Formatting.Number(R)}, {Formatting.Number(G)}, {Formatting.Number(B)}, {Formatting.Number(A)})";
-        if (CssColors.ByRgb.TryGetValue(key, out var css))
-            return $"Color: {tuple} is '{css.ToUpperInvariant()}'";
-        var near = srgb.NearestName();
-        return $"Color: {tuple} near '{near.ToUpperInvariant()}'";
     }
 }

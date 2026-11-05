@@ -163,7 +163,7 @@ public class ReferenceTests
             var color = new Color(input[0], input[1], input[2], input[3]);
             Assert.Equal(Doubles(c.GetProperty("out")), Check.Of(color));
             // Python's repr printed whole numbers as "1.0"; .NET's invariant text is "1" (unit 10M1)
-            Assert.Equal(System.Text.RegularExpressions.Regex.Replace(c.GetProperty("str").GetString()!, @"(?<=\d)\.0(?=\D)", ""), color.ToString());
+            Assert.Equal(System.Text.RegularExpressions.Regex.Replace(c.GetProperty("str").GetString()!, @"(?<=\d)\.0(?=\D)", ""), color.Describe());
         }
     }
 
@@ -172,10 +172,10 @@ public class ReferenceTests
     {
         foreach (var c in Cases("colors_named"))
         {
-            var color = new Color(c.GetProperty("name").GetString()!);
+            var color = Color.Parse(c.GetProperty("name").GetString()!);
             Assert.Equal(Doubles(c.GetProperty("out")), Check.Of(color));
             // Python's repr printed whole numbers as "1.0"; .NET's invariant text is "1" (unit 10M1)
-            Assert.Equal(System.Text.RegularExpressions.Regex.Replace(c.GetProperty("str").GetString()!, @"(?<=\d)\.0(?=\D)", ""), color.ToString());
+            Assert.Equal(System.Text.RegularExpressions.Regex.Replace(c.GetProperty("str").GetString()!, @"(?<=\d)\.0(?=\D)", ""), color.Describe());
         }
     }
 

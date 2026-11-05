@@ -71,9 +71,7 @@ public static class Importers
     private static ModelShape FromModel(ModelNode node)
     {
         var label = node.Name ?? "";
-        Color? color = null;
-        if (node.Color is { } c)
-            color = new Color(c);
+        Color? color = node.Color;
         if (node.Shape is { } shape)
             return Leaf(shape, label, color);
         // A mesh read (glTF): the faces holding only its triangles, as they were read

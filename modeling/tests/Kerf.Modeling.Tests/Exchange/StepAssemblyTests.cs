@@ -50,7 +50,7 @@ public class StepAssemblyTests
 
     private static global::Kerf.Engine.Foundation.ColorWithAlpha Linear(Color color)
     {
-        var (r, g, b, a) = color.ToKerfColor().ToLinear();
+        var (r, g, b, a) = color.ToLinear();
         return new global::Kerf.Engine.Foundation.ColorWithAlpha((float)r, (float)g, (float)b, (float)a);
     }
 
@@ -108,8 +108,8 @@ public class StepAssemblyTests
     /// <summary>A plate and a sub-assembly of the same bolt placed twice, the sub-assembly itself placed.</summary>
     private static Assembly Fixture()
     {
-        var bolt = new Cylinder(1, 10).WithLabel("bolt").WithColor(new Color("silver"));
-        var plate = new Box(20, 20, 2).WithLabel("plate").WithColor(new Color("steelblue", 0.5));
+        var bolt = new Cylinder(1, 10).WithLabel("bolt").WithColor(Color.Parse("silver"));
+        var plate = new Box(20, 20, 2).WithLabel("plate").WithColor(Color.Parse("steelblue", 0.5));
         var bolts = new Assembly([bolt.Moved(new Location(new Vector(5.0, 5.0, 0.0))), bolt.Moved(new Location(new Vector(-5.0, 5.0, 0.0)))], "bolts");
         return new Assembly([plate, bolts.Moved(new Location(new Vector(0.0, 0.0, 6.0), new Vector(0.0, 0.0, 90.0)))], "fixture");
     }
@@ -146,10 +146,10 @@ public class StepAssemblyTests
         Assert.Equal("fixture", read.Label);
         Assert.Equal(["plate", "bolts"], read.Children.Select(c => c.Label));
         var plate = read.Children[0];
-        Assert.Equal(new Color("steelblue", 0.5), plate.Color);
+        Assert.Equal(Color.Parse("steelblue", 0.5), plate.Color);
         var bolts = Assert.IsType<Assembly>(read.Children[1]);
         Assert.Equal(["bolt", "bolt"], bolts.Children.Select(c => c.Label));
-        Assert.All(bolts.Children, b => Assert.Equal(new Color("silver"), b.Color));
+        Assert.All(bolts.Children, b => Assert.Equal(Color.Parse("silver"), b.Color));
         // Each part where it was, and the bolts still one shape placed twice
         var expected = fixture.Parts();
         var parts = read.Parts();
@@ -169,11 +169,11 @@ public class StepAssemblyTests
     [Fact]
     public void OneNamedShapeComesBackAsItself()
     {
-        var read = Importers.ImportStep(new MemoryStream(Export(new Box(1, 2, 3).WithLabel("brick").WithColor(new Color("red"))))).Value;
+        var read = Importers.ImportStep(new MemoryStream(Export(new Box(1, 2, 3).WithLabel("brick").WithColor(Color.Parse("red"))))).Value;
         var solid = read;
         Check.Is<Solid>(read);
         Assert.Equal("brick", solid.Label);
-        Assert.Equal(new Color("red"), solid.Color);
+        Assert.Equal(Color.Parse("red"), solid.Color);
         Check.AlmostEqual(6, solid.Volume, 6);
     }
 
@@ -182,21 +182,21 @@ public class StepAssemblyTests
     {
         // STEP's writer maps shapes to products, so the second name needs a shape of its own
         var ball = new Sphere(2);
-        var pair = new Assembly([ball.WithLabel("left"), ball.Moved(new Location(new Vector(5.0, 0.0, 0.0))).WithLabel("right").WithColor(new Color("blue"))]);
+        var pair = new Assembly([ball.WithLabel("left"), ball.Moved(new Location(new Vector(5.0, 0.0, 0.0))).WithLabel("right").WithColor(Color.Parse("blue"))]);
         var read = Assert.IsType<Assembly>(Importers.ImportStep(new MemoryStream(Export(pair))).Value);
         Assert.Equal(["left", "right"], read.Children.Select(c => c.Label));
         Assert.Null(read.Children[0].Color);
-        Assert.Equal(new Color("blue"), read.Children[1].Color);
+        Assert.Equal(Color.Parse("blue"), read.Children[1].Color);
         Check.AlmostEqual(5, read.Children[1].Center().X, 6);
     }
 
     [Fact]
     public void ACurveIsColouredAsACurve()
     {
-        var line = new Polyline(new Vector(0.0, 0.0), new Vector(10.0, 0.0), new Vector(10.0, 5.0)).WithLabel("path").WithColor(new Color("green"));
+        var line = new Polyline(new Vector(0.0, 0.0), new Vector(10.0, 0.0), new Vector(10.0, 5.0)).WithLabel("path").WithColor(Color.Parse("green"));
         var read = Importers.ImportStep(new MemoryStream(Export(line))).Value;
         Assert.Equal("path", read.Label);
-        Assert.Equal(new Color("green"), read.Color);
+        Assert.Equal(Color.Parse("green"), read.Color);
     }
 
     [Fact]
