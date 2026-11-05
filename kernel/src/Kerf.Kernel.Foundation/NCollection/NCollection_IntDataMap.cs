@@ -34,6 +34,7 @@ internal sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<
     private int _size;
     private Node? _freeNodes;
     private bool _keepsNodes;
+    private List<Node?[]>? _keptBuckets;
 
     /// <summary>An empty map with the given initial number of buckets (OCCT's default 1).</summary>
     public NCollection_IntDataMap(int nbBuckets = 1)
@@ -70,7 +71,7 @@ internal sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<
             }
         }
 
-        Node?[] newdata = new Node?[newBuck + 1];
+        Node?[] newdata = TakeBuckets(newBuck + 1);
         if (_data1 is not null)
         {
             for (long i = 0; i <= _nbBuckets; ++i)
@@ -87,8 +88,37 @@ internal sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<
             }
         }
 
+        if (_keepsNodes && _data1 is not null)
+        {
+            KeepBuckets(_data1);
+        }
+
         _nbBuckets = newBuck;
         _data1 = newdata;
+    }
+
+    private Node?[] TakeBuckets(long length)
+    {
+        if (_keptBuckets is not null)
+        {
+            for (int i = 0; i < _keptBuckets.Count; i++)
+            {
+                if (_keptBuckets[i].Length == length)
+                {
+                    Node?[] buckets = _keptBuckets[i];
+                    _keptBuckets.RemoveAt(i);
+                    return buckets;
+                }
+            }
+        }
+
+        return new Node?[length];
+    }
+
+    private void KeepBuckets(Node?[] buckets)
+    {
+        Array.Clear(buckets);
+        (_keptBuckets ??= []).Add(buckets);
     }
 
     private Node? Lookup(int key)
@@ -274,6 +304,11 @@ internal sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<
         Clear();
         if (_nbBuckets != nbBuckets)
         {
+            if (_keepsNodes && _data1 is not null)
+            {
+                KeepBuckets(_data1);
+            }
+
             _data1 = null;
             _nbBuckets = nbBuckets;
         }
