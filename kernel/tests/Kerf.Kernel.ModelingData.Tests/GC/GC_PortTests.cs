@@ -88,7 +88,7 @@ public class GC_PortTests
     [Fact]
     public void Surfaces_AndTrimmedSurfaces()
     {
-        Cylinder aCyl = new(new CoordinateSystem(theZAxes), 5.0);
+        Cylinder3D aCyl = new(new CoordinateSystem(theZAxes), 5.0);
         Assert.Equal(3.0, new MakeCylindricalSurface(aCyl, 2.0).Value().Radius);
         Assert.Equal(2.0, new MakeCylindricalSurface(aCyl, new Point3D(0.0, 2.0, 7.0)).Value().Radius, 1e-15);
 

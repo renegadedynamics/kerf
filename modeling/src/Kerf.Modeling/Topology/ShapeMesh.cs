@@ -33,7 +33,7 @@ public readonly record struct MeshTolerances(double Linear, double Angular, bool
 /// <remarks>The buffers are shared, read-only slices of a few large arrays; the mesh never changes.</remarks>
 public sealed class ShapeMesh
 {
-    internal ShapeMesh(IReadOnlyList<FaceMesh> faces, IReadOnlyList<EdgeMesh> edges, IReadOnlyList<Vector> vertices, MeshTolerances tolerances)
+    internal ShapeMesh(IReadOnlyList<FaceMesh> faces, IReadOnlyList<EdgeMesh> edges, IReadOnlyList<Point3D> vertices, MeshTolerances tolerances)
         => (Faces, Edges, Vertices, Tolerances) = (faces, edges, vertices, tolerances);
 
     /// <summary>The mesh of an empty shape: no faces, edges or vertices.</summary>
@@ -46,7 +46,7 @@ public sealed class ShapeMesh
     public IReadOnlyList<EdgeMesh> Edges { get; }
 
     /// <summary>The vertices' positions, in the order of <c>Vertices</c>.</summary>
-    public IReadOnlyList<Vector> Vertices { get; }
+    public IReadOnlyList<Point3D> Vertices { get; }
 
     /// <summary>The tolerances the mesh was made with.</summary>
     public MeshTolerances Tolerances { get; }
@@ -79,7 +79,7 @@ public sealed class ShapeMesh
         var mesh = Failures.Get(global::Kerf.Meshing.Mesher.Mesh(shape, options), () => "mesh");
         var faceMeshes = mesh.Faces.Select(f => new FaceMesh(f.Positions, f.Normals, f.Triangles, GeomTypeOf(f.Kind))).ToArray();
         var edgeMeshes = mesh.Edges.Select(e => new EdgeMesh(e.Points, GeomTypeOf(e.Kind))).ToArray();
-        return new ShapeMesh(faceMeshes, edgeMeshes, [.. shape.SelectVertices().Select(v => v.ToVector())], tolerances);
+        return new ShapeMesh(faceMeshes, edgeMeshes, [.. shape.Vertices().Select(v => v.Point)], tolerances);
     }
 
     private static GeomType GeomTypeOf(SurfaceKind type) => ShapeExtensions.GeomTypeOf(type);

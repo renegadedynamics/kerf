@@ -374,7 +374,7 @@ internal class PolyAlgo : Transient
         {
             if (!isoledF)
             {
-                isClosed = shape.IsClosed;
+                isClosed = shape.ClosedFlag;
                 if (!isClosed)
                 {
                     IndexedSet<Shape> em = new(ShapeHasher.Instance);

@@ -25,7 +25,7 @@ internal class SelGProps : Properties
         _loc = sLocation;
     }
 
-    public void Perform(in Cylinder s, double alpha1, double alpha2, double z1, double z2)
+    public void Perform(in Cylinder3D s, double alpha1, double alpha2, double z1, double z2)
     {
         // the patch (R cos a, R sin a, z), area R da dz (decision 1471)
         double r = s.Radius;
@@ -36,7 +36,7 @@ internal class SelGProps : Properties
                                                                     r * (z2 * z2 * z2 - z1 * z1 * z1) / 3.0, _loc, out _g, out _inertia);
     }
 
-    public void Perform(in Cone s, double alpha1, double alpha2, double z1, double z2)
+    public void Perform(in Cone3D s, double alpha1, double alpha2, double z1, double z2)
 
     {
         // the patch (rho cos a, rho sin a, v cos t), rho = R + v sin t, v along the generatrix, area rho da dv
@@ -49,7 +49,7 @@ internal class SelGProps : Properties
                                                                     cnt * cnt * P(1, 2), _loc, out _g, out _inertia);
     }
 
-    public void Perform(in Sphere s, double teta1, double teta2, double alpha1, double alpha2)
+    public void Perform(in Sphere3D s, double teta1, double teta2, double alpha1, double alpha2)
     {
         // the patch r (cos v cos u, cos v sin u, sin v), u in [teta1, teta2], v in [alpha1, alpha2], area r^2 cos v
         // du dv (decision 1471)
@@ -62,7 +62,7 @@ internal class SelGProps : Properties
                                                                     r4 * T(2, 1), r4 * T(1, 2), _loc, out _g, out _inertia);
     }
 
-    public void Perform(in Torus s, double teta1, double teta2, double alpha1, double alpha2)
+    public void Perform(in Torus3D s, double teta1, double teta2, double alpha1, double alpha2)
     {
         // the patch (w cos u, w sin u, r sin v), w = R + r cos v, area r w du dv (decision 1471)
         double rMax = s.MajorRadius, rmin = s.MinorRadius;
@@ -72,25 +72,25 @@ internal class SelGProps : Properties
                                                                     M(2, 1, 1), M(2, 2, 1), M(3, 1, 2), _loc, out _g, out _inertia);
     }
 
-    public SelGProps(in Cone s, double alpha1, double alpha2, double z1, double z2, in Point3D sLocation)
+    public SelGProps(in Cone3D s, double alpha1, double alpha2, double z1, double z2, in Point3D sLocation)
     {
         SetLocation(sLocation);
         Perform(s, alpha1, alpha2, z1, z2);
     }
 
-    public SelGProps(in Cylinder s, double alpha1, double alpha2, double z1, double z2, in Point3D sLocation)
+    public SelGProps(in Cylinder3D s, double alpha1, double alpha2, double z1, double z2, in Point3D sLocation)
     {
         SetLocation(sLocation);
         Perform(s, alpha1, alpha2, z1, z2);
     }
 
-    public SelGProps(in Sphere s, double teta1, double teta2, double alpha1, double alpha2, in Point3D sLocation)
+    public SelGProps(in Sphere3D s, double teta1, double teta2, double alpha1, double alpha2, in Point3D sLocation)
     {
         SetLocation(sLocation);
         Perform(s, teta1, teta2, alpha1, alpha2);
     }
 
-    public SelGProps(in Torus s, double teta1, double teta2, double alpha1, double alpha2, in Point3D sLocation)
+    public SelGProps(in Torus3D s, double teta1, double teta2, double alpha1, double alpha2, in Point3D sLocation)
     {
         SetLocation(sLocation);
         Perform(s, teta1, teta2, alpha1, alpha2);

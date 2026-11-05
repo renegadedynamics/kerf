@@ -23,6 +23,7 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <Using Include="Kerf.Topology" />
+    <Using Include="Kerf.Geometry" />
     <Using Include="Kerf.Color" Alias="Color" />
   </ItemGroup>
 

@@ -36,7 +36,7 @@ file static class Zeros
         (typeof(Curve), () => new Curve(), 1),
     ];
 
-    public static Solid Box(double l, double w, double h) => Solid.MakeBox(l, w, h, new Plane(new Vector(-l / 2, -w / 2, -h / 2)));
+    public static Solid Box(double l, double w, double h) => Solid.MakeBox(l, w, h, new Plane(new Point3D(-l / 2, -w / 2, -h / 2)));
 
     public static Part BoxPart(double l, double w, double h) => new([Box(l, w, h)]);
 
@@ -130,7 +130,7 @@ public class EmptyShapePlacementTests
     [Fact]
     public void MovingKeepsTheZero()
     {
-        var loc = new Location(new Vector(1, 2, 3), new Vector(10, 20, 30));
+        var loc = new Location(new Point3D(1, 2, 3), new Vector3D(10, 20, 30));
         foreach (var (cls, make, _) in Zeros.Classes)
         {
             var zero = make().AsShape();
@@ -141,7 +141,7 @@ public class EmptyShapePlacementTests
                 loc * zero,
                 Plane.XZ * zero,
                 zero.Rotate(Axis.Z, 30),
-                zero.Translate(new Vector(1, 2, 3)),
+                zero.Translate(new Vector3D(1, 2, 3)),
                 zero.Mirror(Plane.XY),
                 zero.Scale(2),
             ];
@@ -173,12 +173,12 @@ public class EmptyShapeQueriesTests
         foreach (var (_, make, _) in Zeros.Classes)
         {
             var zero = make();
-            Assert.Empty(zero.SelectVertices());
-            Assert.Empty(zero.SelectEdges());
-            Assert.Empty(zero.SelectWires());
-            Assert.Empty(zero.SelectFaces());
-            Assert.Empty(zero.SelectShells());
-            Assert.Empty(zero.SelectSolids());
+            Assert.Empty(zero.Vertices());
+            Assert.Empty(zero.Edges());
+            Assert.Empty(zero.Wires());
+            Assert.Empty(zero.Faces());
+            Assert.Empty(zero.Shells());
+            Assert.Empty(zero.Solids());
             Assert.Empty(zero.GetTopLevelShapes());
         }
     }
@@ -209,15 +209,15 @@ public class EmptyShapeQueriesTests
     public void BoundingBoxIsEmpty()
     {
         var box = Solid.MakeBox(1, 1, 1).BoundBox();
-        static (double, double, double) Size(BoundBox b) => (b.Size.X, b.Size.Y, b.Size.Z);
+        static (double, double, double) Size(BoundingBox b) => (b.Size.X, b.Size.Y, b.Size.Z);
         foreach (var (_, make, _) in Zeros.Classes)
         {
             var empty = make().BoundBox();
             Assert.True(empty.IsEmpty);
             Assert.Equal((0.0, 0.0, 0.0), Size(empty));
             // The bounding box of nothing adds nothing
-            Assert.Equal((1.0, 1.0, 1.0), Size(box.Add(empty)));
-            Assert.Equal((1.0, 1.0, 1.0), Size(empty.Add(box)));
+            Assert.Equal((1.0, 1.0, 1.0), Size(box.Union(empty)));
+            Assert.Equal((1.0, 1.0, 1.0), Size(empty.Union(box)));
         }
         Assert.False(box.IsEmpty);
     }
@@ -241,17 +241,17 @@ public class EmptyShapeAlgebraTests
     private static (Type Class, Func<Shape> Zero, Shape Other)[] Others() =>
     [
         (typeof(Vertex), () => default(Vertex), Vertex.Make(1, 2, 3)),
-        (typeof(Edge), () => default(Edge), Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0))),
+        (typeof(Edge), () => default(Edge), Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0))),
         (typeof(Wire), () => default(Wire), Wire.MakeRect(1, 1)),
         (typeof(Face), () => default(Face), Face.MakeRect(1, 1)),
         (typeof(Solid), () => default(Solid), Solid.MakeBox(1, 1, 1)),
         (typeof(Part), () => new Part(), Zeros.BoxPart(1, 1, 1)),
         (typeof(Sketch), () => new Sketch(), Zeros.Rectangle(1, 1)),
-        (typeof(Curve), () => new Curve(), new Curve() + Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0))),
+        (typeof(Curve), () => new Curve(), new Curve() + Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0))),
     ];
 
     private static (double, double, double) Size(Shape shape) =>
-        (shape.Volume, shape.Area, shape.SelectEdges().Sum(e => e.Length));
+        (shape.Volume, shape.Area, shape.Edges().Sum(e => e.Length));
 
     [Fact]
     public void IdentityForAddition()
@@ -356,7 +356,7 @@ public class EmptyShapeGeometryQueriesTests
             Assert.Contains("empty Vertex has no position",
                             Assert.Throws<InvalidOperationException>(() => coordinate()).Message);
         Assert.Contains("empty Vertex has no position",
-                        Assert.Throws<InvalidOperationException>(() => default(Vertex) + new Vector(1, 2, 3)).Message);
+                        Assert.Throws<InvalidOperationException>(() => default(Vertex) + new Vector3D(1, 2, 3)).Message);
     }
 
     [Fact]
@@ -387,7 +387,7 @@ public class EmptyShapeGeometryQueriesTests
     [Fact]
     public void NothingMeetsNothing()
     {
-        var line = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0));
+        var line = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         foreach (var zero in new Shape[] { default(Edge), default(Wire), default(Face), default(Shell) })
         {
             Assert.Empty(zero.Intersect(line));
@@ -413,7 +413,7 @@ public class EmptyShapeOperationsTests
     [Fact]
     public void OperationsOnAZero()
     {
-        var line = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0));
+        var line = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         (string Name, Func<IShape> Operation, Type Class)[] cases =
         [
             ("extrude", () => Ops.Extrude(new Sketch(), 1).Value, typeof(Part)),
@@ -484,8 +484,8 @@ public class EmptyShapeOperationsTests
     [Fact]
     public void TrimAndCommonVertexFindNothing()
     {
-        var line = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0));
-        var apart = Edge.MakeLine(new Vector(0, 5, 0), new Vector(1, 5, 0));
+        var line = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+        var apart = Edge.MakeLine(new Point3D(0, 5, 0), new Point3D(1, 5, 0));
         Assert.True(line.TrimToOther(apart).IsEmpty);
         Assert.True(default(Edge).TrimToOther(line).IsEmpty);
         Assert.True(Vertex.CommonVertex(line, apart).IsEmpty);
@@ -508,7 +508,7 @@ public class EmptyShapeContainersTests
         var box = Solid.MakeBox(1, 1, 1);
         var mixed = Compound.Make([default(Solid), box, default(Face)]);
         Assert.False(mixed.IsEmpty);
-        Assert.Single(mixed.SelectSolids());
+        Assert.Single(mixed.Solids());
         Check.AlmostEqual(1, mixed.Volume, 5);
     }
 }

@@ -158,7 +158,7 @@ public class ContapTests
     public void ContAna_Cylinder_TwoGeneratrices()
     {
         ContAna C = new();
-        Cylinder aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 3.0);
+        Cylinder3D aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 3.0);
         C.Perform(aCyl, new Direction3D(1, 0, 0));
         Assert.Equal(2, C.ContourCount);
         Assert.Equal(CurveKind.Line, C.TypeContour());

@@ -163,7 +163,7 @@ internal class ShellFixer : RootFixer
         for (var shellExp = new Explorer(aNewsh, global::Kerf.Topology.ShapeType.Shell); shellExp.More(); shellExp.Next())
         {
             Shell curShell = ShapeCasts.Shell(shellExp.Current());
-            if (curShell.IsClosed)
+            if (curShell.ClosedFlag)
             {
                 sas.LoadShells(curShell);
                 sas.CheckOrientedShells(curShell, true);

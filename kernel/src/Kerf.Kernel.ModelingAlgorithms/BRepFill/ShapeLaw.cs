@@ -176,7 +176,7 @@ internal class ShapeLaw : SectionLaw
         //  std::cout << "new law" << std::endl;
 
         //  Is the law closed by U ?
-        _uclosed = w.IsClosed;
+        _uclosed = w.ClosedFlag;
         if (!_uclosed)
         {
             // if not sure about the flag, make check

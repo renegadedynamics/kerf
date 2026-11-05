@@ -14,18 +14,18 @@ public readonly record struct CurvePosition
     public double? Value { get; }
 
     /// <summary>The point, if the position is given as a point on the curve.</summary>
-    public Vector? Point { get; }
+    public Point3D? Point { get; }
 
-    private CurvePosition(double? value, Vector? point) => (Value, Point) = (value, point);
+    private CurvePosition(double? value, Point3D? point) => (Value, Point) = (value, point);
 
     /// <summary>A position given as a parameter or length.</summary>
     public static implicit operator CurvePosition(double value) => new(value, null);
 
     /// <summary>A position given as a point on the curve.</summary>
-    public static implicit operator CurvePosition(Vector point) => new(null, point);
+    public static implicit operator CurvePosition(Point3D point) => new(null, point);
 
     /// <summary>A position given as a vertex on the curve.</summary>
-    public static implicit operator CurvePosition(Vertex vertex) => new(null, vertex.ToVector());
+    public static implicit operator CurvePosition(Vertex vertex) => new(null, vertex.Point);
 
     /// <summary>The normalised parameter on <paramref name="curve"/>: the number itself, or that of the point.</summary>
     internal double ToParam(IShape1D curve) => Value ?? curve.ParamAtPoint(Point!.Value);
@@ -55,17 +55,6 @@ public static partial class Shape1DExtensions
     extension<TSelf>(TSelf self) where TSelf : IShape1D
     {
 
-        /// <summary>Whether the start and end points are the same.</summary>
-        public bool IsClosed
-        {
-            get
-            {
-                if (self.IsEmpty)
-                    throw new InvalidOperationException("Can't determine if empty Edge or Wire is closed");
-                return self.AsShape().CheckClosed();
-            }
-        }
-
         /// <summary>Whether the edge or wire runs forward along its curve (rather than reversed).</summary>
         public bool IsForward
         {
@@ -78,7 +67,7 @@ public static partial class Shape1DExtensions
         }
 
         /// <summary>The length.</summary>
-        public double Length => self.IsEmpty ? 0.0 : self.AsShape().Length();
+        public double Length => self.IsEmpty ? 0.0 : self.AsShape().IntegrateLength();
 
         /// <summary>The radius of the circle the edge lies on; for a wire, that of its first edge.</summary>
         /// <exception cref="InvalidOperationException">The curve isn't a circle.</exception>
@@ -88,7 +77,7 @@ public static partial class Shape1DExtensions
             {
                 if (self.AsShape().TryAs<Wire>(out _))
                     // A wire: its comp curve reports OtherCurve, so ask its first edge
-                    return self.SelectEdges()[0].Radius;
+                    return self.Edges()[0].Radius;
                 if (!((Edge)self.AsShape()).GeomAdaptor().TryGetCircle(out var circle))
                     throw new InvalidOperationException("Shape could not be reduced to a circle");
                 return circle.Radius;
@@ -100,22 +89,22 @@ public static partial class Shape1DExtensions
         /// Positions are normally within the shape: [0, 1] as a parameter or [0, length] as a length. Beyond that an edge
         /// extrapolates or wraps where its curve allows, while a wire clamps to its first or last point.
         /// </remarks>
-        public Vector PositionAt(double position, PositionMode mode = PositionMode.Parameter)
+        public Point3D PositionAt(double position, PositionMode mode = PositionMode.Parameter)
         {
             var (curve, param, _) = self.OcctParamAt(position, mode);
             var p = curve.Evaluate(param);
-            return new Vector(p);
+            return p;
         }
 
         /// <summary>The points at several positions along the curve.</summary>
-        public IReadOnlyList<Vector> Positions(IEnumerable<double> distances, PositionMode mode = PositionMode.Parameter) =>
+        public IReadOnlyList<Point3D> Positions(IEnumerable<double> distances, PositionMode mode = PositionMode.Parameter) =>
             [.. distances.Select(d => self.PositionAt(d, mode))];
 
         /// <summary>Points along the curve such that the polygon through them stays within <paramref name="deflection"/> of it.</summary>
-        public IReadOnlyList<Vector> Positions(double deflection)
+        public IReadOnlyList<Point3D> Positions(double deflection)
         {
             var (curve, parameters) = self.DeflectionParameters(deflection);
-            return [.. parameters.Select(p => { var pnt = curve.Evaluate(p); return new Vector(pnt); })];
+            return [.. parameters.Select(p => { var pnt = curve.Evaluate(p); return pnt; })];
         }
 
         /// <summary>The curve and the parameters along it that keep a polygon through them within <paramref name="deflection"/>.</summary>
@@ -130,7 +119,7 @@ public static partial class Shape1DExtensions
         }
 
         /// <summary>The derivative of the curve of the given <paramref name="order"/> at a position or point.</summary>
-        public Vector DerivativeAt(CurvePosition position, int order = 2, PositionMode mode = PositionMode.Parameter)
+        public Vector3D DerivativeAt(CurvePosition position, int order = 2, PositionMode mode = PositionMode.Parameter)
         {
             EdgeCurve curve;
             double param;
@@ -142,15 +131,15 @@ public static partial class Shape1DExtensions
             {
                 var point = position.Point!.Value;
                 if (self.AsShape().TryAs<Wire>(out _))
-                    closest = self.SelectEdges().MinBy(e => e.DistanceTo(point))!;
+                    closest = self.Edges().MinBy(e => e.DistanceTo(point))!;
                 var u = closest.ParamAtPoint(point);
                 (curve, param, closestForward) = closest.OcctParamAt(u);
             }
             {
                 var d = curve.DerivativeN(param, order);
                 if (d.Magnitude == 0)
-                    return new Vector(0, 0, 0);
-                var derivative = new Vector(d);
+                    return new Vector3D(0, 0, 0);
+                var derivative = d;
                 // An odd derivative runs the way the shape does
                 if (order % 2 == 1)
                 {
@@ -164,11 +153,11 @@ public static partial class Shape1DExtensions
 
         /// <summary>The unit tangent at a position or point.</summary>
         /// <remarks>Beyond the shape an edge uses its extrapolated or periodic tangent, a wire its first or last.</remarks>
-        public Vector TangentAt(CurvePosition position, PositionMode mode = PositionMode.Parameter) =>
+        public Vector3D TangentAt(CurvePosition position, PositionMode mode = PositionMode.Parameter) =>
             self.DerivativeAt(position, 1, mode).Normalized();
 
         /// <summary>The unit tangent at the middle of the curve.</summary>
-        public Vector TangentAt() => self.TangentAt(0.5);
+        public Vector3D TangentAt() => self.TangentAt(0.5);
 
         /// <summary>The angle in degrees (0 to 360) of the tangent at a position, measured in <paramref name="plane"/> (default XY).</summary>
         public double TangentAngleAt(double locationParam = 0.5, PositionMode mode = PositionMode.Parameter, Plane? plane = null)
@@ -179,26 +168,26 @@ public static partial class Shape1DExtensions
         }
 
         /// <summary>The start point. A circle may start and end at the same point.</summary>
-        public Vector StartPoint()
+        public Point3D StartPoint()
         {
             var curve = self.Curve();
             var p = curve.Evaluate(self.IsForward ? curve.Range.Min : curve.Range.Max);
-            return new Vector(p);
+            return p;
         }
 
         /// <summary>The end point. A circle may start and end at the same point.</summary>
-        public Vector EndPoint()
+        public Point3D EndPoint()
         {
             var curve = self.Curve();
             var p = curve.Evaluate(self.IsForward ? curve.Range.Max : curve.Range.Min);
-            return new Vector(p);
+            return p;
         }
 
         /// <summary>The centre: the point half way along (by default), the centre of mass, or of the bounding box.</summary>
-        internal Vector CenterOfShape1D() => self.Center(CenterOf.Geometry);
+        internal Point3D CenterOfShape1D() => self.Center(CenterOf.Geometry);
 
         /// <summary>As the other forms of <c>Center</c>.</summary>
-        internal Vector CenterOfShape1D(CenterOf centerOf)
+        internal Point3D CenterOfShape1D(CenterOf centerOf)
         {
             self.NeedsGeometry("center");
             switch (centerOf)
@@ -206,7 +195,7 @@ public static partial class Shape1DExtensions
                 case CenterOf.Geometry:
                     return self.PositionAt(0.5);
                 case CenterOf.Mass:
-                    return new Vector(self.AsShape().MassProperties(Dimension.Length).CentreOfMass);
+                    return self.AsShape().MassProperties(Dimension.Length).CentreOfMass;
                 default:
                     return self.BoundBox().Center();
             }
@@ -223,7 +212,7 @@ public static partial class Shape1DExtensions
         /// </param>
         /// <param name="xDir">An x direction to use instead, which must be perpendicular to the tangent.</param>
         public Location LocationAt(double distance, PositionMode mode = PositionMode.Parameter,
-                                   FrameMethod frameMethod = FrameMethod.Frenet, Vector? xDir = null)
+                                   FrameMethod frameMethod = FrameMethod.Frenet, Vector3D? xDir = null)
         {
             ShapeCurve curve;
             double param;
@@ -253,21 +242,21 @@ public static partial class Shape1DExtensions
 
         /// <summary>The local coordinate systems at several positions along the curve.</summary>
         public IReadOnlyList<Location> Locations(IEnumerable<double> distances, PositionMode mode = PositionMode.Parameter,
-                                                 FrameMethod frameMethod = FrameMethod.Frenet, Vector? xDir = null) =>
+                                                 FrameMethod frameMethod = FrameMethod.Frenet, Vector3D? xDir = null) =>
             [.. distances.Select(d => self.LocationAt(d, mode, frameMethod, xDir))];
 
         /// <summary>
         /// Local coordinate systems wherever the curve needs one for the polygon through them to stay within
         /// <paramref name="deflection"/> of it, found in one pass over the whole curve.
         /// </summary>
-        public IReadOnlyList<Location> Locations(double deflection, FrameMethod frameMethod = FrameMethod.Frenet, Vector? xDir = null)
+        public IReadOnlyList<Location> Locations(double deflection, FrameMethod frameMethod = FrameMethod.Frenet, Vector3D? xDir = null)
         {
             var (curve, parameters) = self.DeflectionParameters(deflection);
             return [.. curve.Frames([.. parameters], Shape1DExtensions.Law(frameMethod)).Select(f => self.FrameLocation(f, xDir))];
         }
 
         /// <summary>The Location of a frame on the curve: at its point, its Z along the tangent.</summary>
-        private Location FrameLocation(CurveFrame frame, Vector? xDir)
+        private Location FrameLocation(CurveFrame frame, Vector3D? xDir)
         {
             var (pnt, tangent, normal, _) = frame;
             var trsf = new Transform3D();
@@ -277,14 +266,14 @@ public static partial class Shape1DExtensions
             {
                 try
                 {
-                    var xd = x.ToDirection3D();
+                    var xd = x.ToDirection();
                     var ax3 = new CoordinateSystem(pnt, zDir, xd);
                     trsf = trsf.WithTransformation(ax3, target);
                 }
                 catch (Exception e) when (Diagnostic.IsKernelFailure(e) && Diagnostic.FromException(e).Code.Value == "engine.construction-error")
                 {
                     throw new ArgumentException(
-                        $"Unable to create location with given x_dir {x}. x_dir must be perpendicular to shape's tangent {new Vector(tangent)}.", e);
+                        $"Unable to create location with given x_dir {x.Describe()}. x_dir must be perpendicular to shape's tangent {tangent.Describe()}.", e);
                 }
             }
             else
@@ -307,7 +296,7 @@ public static partial class Shape1DExtensions
             if (count < 2)
                 throw new ArgumentException("count must be two or greater", nameof(count));
             var locations = self.Locations(Enumerable.Range(0, count).Select(i => start + i * (stop - start) / (count - 1)));
-            return positionsOnly ? [.. locations.Select(l => l.WithOrientation(new Vector(0, 0, 0)))] : locations;
+            return positionsOnly ? [.. locations.Select(l => l.WithOrientation(new Vector3D(0, 0, 0)))] : locations;
         }
 
         // ---- Geometry ----
@@ -331,7 +320,7 @@ public static partial class Shape1DExtensions
             Plane? result = null;
 
             // All co-axial: pick one of the infinite planes
-            var allEdges = allLines.SelectMany(l => l.SelectEdges()).ToList();
+            var allEdges = allLines.SelectMany(l => l.Edges()).ToList();
             if (allEdges.All(e => e.GeomType == GeomType.Line))
             {
                 var asAxis = allEdges.Select(e => new Axis(e.PositionAt(0), e.TangentAt(0))).ToList();
@@ -349,7 +338,7 @@ public static partial class Shape1DExtensions
                 var normalLines = allLines.Where(l => l.Length <= 1e50);
                 var shortened = allLines.Where(l => l.Length > 1e50).Select(l => (IShape1D)((Edge)l.AsShape()).TrimToLength(0.5, 10));
                 allLines = [.. normalLines, .. shortened];
-                var points = new List<Vector>();
+                var points = new List<Point3D>();
                 foreach (var line in allLines)
                 {
                     int n = line.GeomType == GeomType.Line ? 2 : 8;
@@ -358,12 +347,12 @@ public static partial class Shape1DExtensions
                 points = PointOrder.Distinct(points);   // the distinct points, in build123d's order
                 // The points making the largest triangle make the most accurate plane; on ties the last such found wins
                 double bestArea = double.NegativeInfinity;
-                (Vector, Vector, Vector) extremes = default;
+                (Point3D, Point3D, Point3D) extremes = default;
                 for (int i = 0; i < points.Count; i++)
                     for (int j = i + 1; j < points.Count; j++)
                         for (int k = j + 1; k < points.Count; k++)
                         {
-                            var area = 0.5 * (points[j] - points[i]).Cross(points[k] - points[i]).Length;
+                            var area = 0.5 * (points[j] - points[i]).Cross(points[k] - points[i]).Magnitude;
                             if (area >= bestArea)
                                 (bestArea, extremes) = (area, (points[i], points[j], points[k]));
                         }
@@ -372,7 +361,7 @@ public static partial class Shape1DExtensions
                 Plane? candidate;
                 try
                 {
-                    candidate = new Plane((e0 + e1 + e2) / 3, zDir: zDir);
+                    candidate = new Plane(((e0.ToVector() + e1.ToVector() + e2.ToVector()) * (1.0 / 3)).ToPoint(), zDir: zDir);
                 }
                 catch (ArgumentException e) when (!Diagnostic.IsKernelFailure(e))
                 {
@@ -384,8 +373,8 @@ public static partial class Shape1DExtensions
                 return null;
 
             // Centre the plane on the lines
-            var globalCenter = allLines.Aggregate(new Vector(0, 0, 0), (sum, l) => sum + l.PositionAt(0.5)) / allLines.Count;
-            var origin = (Vector)result.Intersect(new Axis(globalCenter, result.ZDir))!;
+            var globalCenter = (allLines.Aggregate(Vector3D.Zero, (sum, l) => sum + l.PositionAt(0.5).ToVector()) * (1.0 / allLines.Count)).ToPoint();
+            var origin = (Point3D)result.Intersect(new Axis(globalCenter, result.ZDir))!;
             return result.ShiftOrigin(origin);
         }
 
@@ -394,7 +383,7 @@ public static partial class Shape1DExtensions
 
         /// <summary>The normal of a planar curve.</summary>
         /// <exception cref="InvalidOperationException">The curve isn't planar.</exception>
-        public Vector Normal()
+        public Vector3D Normal()
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("Can't find normal of empty edge/wire");
@@ -405,14 +394,14 @@ public static partial class Shape1DExtensions
                     ((Edge)self.AsShape()).GeomAdaptor().TryGetCircle(out var circ);
                     var axis = circ.Axis;
                     var dir = axis.Direction;
-                    return new Vector(dir);
+                    return dir;
                 }
                 case GeomType.Ellipse:
                 {
                     ((Edge)self.AsShape()).GeomAdaptor().TryGetEllipse(out var ell);
                     var axis = ell.Axis;
                     var dir = axis.Direction;
-                    return new Vector(dir);
+                    return dir;
                 }
                 default:
                 {
@@ -421,7 +410,7 @@ public static partial class Shape1DExtensions
                     var pln = plane.Plane;
                     var axis = pln.Axis;
                     var dir = axis.Direction;
-                    return new Vector(dir);
+                    return dir;
                 }
             }
         }
@@ -453,14 +442,14 @@ public static partial class Shape1DExtensions
             var uValues = Enumerable.Range(0, count)
                 .Select(i => count == 1 ? 0.0 : i / (double)(endpoint ? count - 1 : count)).ToList();
             var kappas = new List<double>();
-            var tangents = new List<Vector>();
+            var tangents = new List<Vector3D>();
             foreach (var u in uValues)
             {
                 var tangent = self.DerivativeAt(u, 1);
                 var curvature = self.DerivativeAt(u, 2);
                 tangents.Add(tangent);
                 var cross = tangent.Cross(curvature);
-                var kappa = cross.Length / (Math.Pow(tangent.Length, 3) + Constants.Tolerance);
+                var kappa = cross.Magnitude / (Math.Pow(tangent.Magnitude, 3) + Constants.Tolerance);
                 kappas.Add(cross.Z >= 0 ? kappa : -kappa);
             }
             var maxKappa = Math.Max(Constants.Tolerance, kappas.Max(Math.Abs));
@@ -474,18 +463,18 @@ public static partial class Shape1DExtensions
                 if (Math.Abs(length) < Constants.Tolerance)
                     continue;   // avoid tiny teeth
                 var onCurve = self.PositionAt(uValues[i]);
-                var kappaDir = tangents[i].Normalized().Cross(new Vector(0, 0, 1));
+                var kappaDir = tangents[i].Normalized().Cross(new Vector3D(0, 0, 1));
                 comb.Add(Edge.MakeLine(onCurve, onCurve + kappaDir * length));
             }
             return new ShapeList<Edge>(comb);
         }
 
         /// <summary>The curve projected onto a face along a direction: the projection closest to the curve, or all of them.</summary>
-        public ShapeList<IShape1D> Project(Face face, Vector direction, bool closest = true)
+        public ShapeList<IShape1D> Project(Face face, Vector3D direction, bool closest = true)
         {
             if (self.IsEmpty || face.IsEmpty)
                 throw new InvalidOperationException("Can't project an empty Edge or Wire onto empty Face");
-            var dir = direction.ToDirection3D();
+            var dir = direction.ToDirection();
             var projected = self.AsShape().IsEdge()
                 ? ShapeProjections.Project((Edge)self.AsShape(), face, dir)
                 : ShapeProjections.Project((Wire)self.AsShape(), face, dir);
@@ -510,17 +499,17 @@ public static partial class Shape1DExtensions
         {
             other = other switch
             {
-                Vector v => Vertex.Make(v),
+                Point3D v => Vertex.Make(v),
                 Location l => Vertex.Make(l.Position),
                 Axis a => Edge.FromAxis(a),
                 _ => other,
             };
             var results = new List<Shape>();
             // Trim infinite edges before OCCT operations
-            if (other is Edge { IsUnbounded: true } infinite)
+            if (other is Edge { IsInfinite: true } infinite)
             {
                 var box = self.BoundBox(optimal: false);
-                other = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Length);
+                other = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Magnitude);
             }
             switch (other)
             {

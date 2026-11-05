@@ -50,15 +50,15 @@ public class SkipCleanTests
     {
         // Fusing two boxes face to face normally merges the shared faces; inside SkipClean they survive
         var left = Solid.MakeBox(1, 1, 1);
-        var right = Solid.MakeBox(1, 1, 1, new Plane(new Vector(1, 0, 0)));
+        var right = Solid.MakeBox(1, 1, 1, new Plane(new Point3D(1, 0, 0)));
 
         var cleaned = left.Fuse(right);
         Shape uncleaned;
         using (new SkipClean())
             uncleaned = left.Fuse(right);
 
-        Assert.Equal(6, cleaned.SelectFaces().Count);
-        Assert.True(uncleaned.SelectFaces().Count > 6);
+        Assert.Equal(6, cleaned.Faces().Count);
+        Assert.True(uncleaned.Faces().Count > 6);
         Check.AlmostEqual(cleaned.Volume, uncleaned.Volume, 6);
     }
 }

@@ -32,7 +32,7 @@ internal class ConeRangeSplitter : DefaultRangeSplitter
         (double first, double second) rangeU = GetRangeU();
         (double first, double second) rangeV = GetRangeV();
 
-        Cone cone = GetDFace().GetSurface().Cone();
+        Cone3D cone = GetDFace().GetSurface().Cone();
         double refR = cone.RefRadius;
         double sAng = cone.SemiAngle;
         double radius = Max(Math.Abs(refR + rangeV.first * Math.Sin(sAng)),

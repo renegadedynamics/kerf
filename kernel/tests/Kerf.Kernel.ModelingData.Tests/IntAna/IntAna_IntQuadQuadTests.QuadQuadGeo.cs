@@ -23,8 +23,8 @@ public partial class IntAna_IntQuadQuad_Test
         CoordinateSystem anAxis1 = new(aCenter1, aZDir, anXDir);
         CoordinateSystem anAxis2 = new(aCenter2, aZDir, anXDir);
 
-        Cylinder aCyl1 = new(anAxis1, 1.0);
-        Cylinder aCyl2 = new(anAxis2, 1.0);
+        Cylinder3D aCyl1 = new(anAxis1, 1.0);
+        Cylinder3D aCyl2 = new(anAxis2, 1.0);
 
         QuadQuadGeo anInter = new(aCyl1, aCyl2, 1.0e-4);
 
@@ -44,8 +44,8 @@ public partial class IntAna_IntQuadQuad_Test
         CoordinateSystem anAxis1 = new(aCenter1, aZDir, anXDir);
         CoordinateSystem anAxis2 = new(aCenter2, aZDir, anXDir);
 
-        Cylinder aCyl1 = new(anAxis1, 1.0);
-        Cylinder aCyl2 = new(anAxis2, 1.0);
+        Cylinder3D aCyl1 = new(anAxis1, 1.0);
+        Cylinder3D aCyl2 = new(anAxis2, 1.0);
 
         QuadQuadGeo anInter = new(aCyl1, aCyl2, 1.0e-7);
 
@@ -65,8 +65,8 @@ public partial class IntAna_IntQuadQuad_Test
         CoordinateSystem anAxis1 = new(new Point3D(0.0, 0.0, 0.0), Direction3D.D.Z, Direction3D.D.X);
         CoordinateSystem anAxis2 = new(new Point3D(0.0, aDist, 0.0), Direction3D.D.X, Direction3D.D.Y);
 
-        Cylinder aCyl1 = new(anAxis1, aR1);
-        Cylinder aCyl2 = new(anAxis2, aR2);
+        Cylinder3D aCyl1 = new(anAxis1, aR1);
+        Cylinder3D aCyl2 = new(anAxis2, aR2);
 
         QuadQuadGeo anInter = new(aCyl1, aCyl2, 1.0e-7);
 

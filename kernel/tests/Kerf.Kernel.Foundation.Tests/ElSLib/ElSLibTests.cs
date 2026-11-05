@@ -161,36 +161,36 @@ public class ElSLibTests
 
         global::Kerf.Engine.Geometry.ElSLib.CylinderD0(aU, aV, aPos, Radius, out aP);
         Assert.Equal(global::Kerf.Engine.Geometry.ElSLib.CylinderValue(aU, aV, aPos, Radius), aP);
-        global::Kerf.Engine.Geometry.ElSLib.D0(aU, aV, new Cylinder(aPos, Radius), out aP);
+        global::Kerf.Engine.Geometry.ElSLib.D0(aU, aV, new Cylinder3D(aPos, Radius), out aP);
         Assert.Equal(global::Kerf.Engine.Geometry.ElSLib.CylinderValue(aU, aV, aPos, Radius), aP);
-        Assert.Equal(global::Kerf.Engine.Geometry.ElSLib.CylinderValue(aU, aV, aPos, Radius), global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, new Cylinder(aPos, Radius)));
+        Assert.Equal(global::Kerf.Engine.Geometry.ElSLib.CylinderValue(aU, aV, aPos, Radius), global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, new Cylinder3D(aPos, Radius)));
 
         global::Kerf.Engine.Geometry.ElSLib.ConeD0(aU, aV, aPos, Radius, SAngle, out aP);
         Assert.Equal(global::Kerf.Engine.Geometry.ElSLib.ConeValue(aU, aV, aPos, Radius, SAngle), aP);
-        global::Kerf.Engine.Geometry.ElSLib.D0(aU, aV, new Cone(aPos, SAngle, Radius), out aP);
+        global::Kerf.Engine.Geometry.ElSLib.D0(aU, aV, new Cone3D(aPos, SAngle, Radius), out aP);
         Assert.Equal(global::Kerf.Engine.Geometry.ElSLib.ConeValue(aU, aV, aPos, Radius, SAngle), aP);
-        Assert.Equal(global::Kerf.Engine.Geometry.ElSLib.ConeValue(aU, aV, aPos, Radius, SAngle), global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, new Cone(aPos, SAngle, Radius)));
+        Assert.Equal(global::Kerf.Engine.Geometry.ElSLib.ConeValue(aU, aV, aPos, Radius, SAngle), global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, new Cone3D(aPos, SAngle, Radius)));
 
         global::Kerf.Engine.Geometry.ElSLib.SphereD0(aU, aV, aPos, Radius, out aP);
         Assert.Equal(global::Kerf.Engine.Geometry.ElSLib.SphereValue(aU, aV, aPos, Radius), aP);
-        global::Kerf.Engine.Geometry.ElSLib.D0(aU, aV, new Sphere(aPos, Radius), out aP);
+        global::Kerf.Engine.Geometry.ElSLib.D0(aU, aV, new Sphere3D(aPos, Radius), out aP);
         Assert.Equal(global::Kerf.Engine.Geometry.ElSLib.SphereValue(aU, aV, aPos, Radius), aP);
-        Assert.Equal(global::Kerf.Engine.Geometry.ElSLib.SphereValue(aU, aV, aPos, Radius), global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, new Sphere(aPos, Radius)));
+        Assert.Equal(global::Kerf.Engine.Geometry.ElSLib.SphereValue(aU, aV, aPos, Radius), global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, new Sphere3D(aPos, Radius)));
 
         global::Kerf.Engine.Geometry.ElSLib.TorusD0(aU, aV, aPos, MajorRadius, MinorRadius, out aP);
         Assert.Equal(global::Kerf.Engine.Geometry.ElSLib.TorusValue(aU, aV, aPos, MajorRadius, MinorRadius), aP);
-        global::Kerf.Engine.Geometry.ElSLib.D0(aU, aV, new Torus(aPos, MajorRadius, MinorRadius), out aP);
+        global::Kerf.Engine.Geometry.ElSLib.D0(aU, aV, new Torus3D(aPos, MajorRadius, MinorRadius), out aP);
         Assert.Equal(global::Kerf.Engine.Geometry.ElSLib.TorusValue(aU, aV, aPos, MajorRadius, MinorRadius), aP);
         Assert.Equal(global::Kerf.Engine.Geometry.ElSLib.TorusValue(aU, aV, aPos, MajorRadius, MinorRadius),
-                     global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, new Torus(aPos, MajorRadius, MinorRadius)));
+                     global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, new Torus3D(aPos, MajorRadius, MinorRadius)));
 
         // and the gp overloads of D1 and the Parameters
-        global::Kerf.Engine.Geometry.ElSLib.D1(aU, aV, new Torus(aPos, MajorRadius, MinorRadius), out aP, out Vector3D aVu, out Vector3D aVv);
+        global::Kerf.Engine.Geometry.ElSLib.D1(aU, aV, new Torus3D(aPos, MajorRadius, MinorRadius), out aP, out Vector3D aVu, out Vector3D aVv);
         global::Kerf.Engine.Geometry.ElSLib.TorusD1(aU, aV, aPos, MajorRadius, MinorRadius, out Point3D aP2, out Vector3D aVu2, out Vector3D aVv2);
         Assert.Equal(aP2, aP);
         Assert.Equal(aVu2, aVu);
         Assert.Equal(aVv2, aVv);
-        global::Kerf.Engine.Geometry.ElSLib.Parameters(new Cone(aPos, SAngle, Radius), aP, out double aPU, out double aPV);
+        global::Kerf.Engine.Geometry.ElSLib.Parameters(new Cone3D(aPos, SAngle, Radius), aP, out double aPU, out double aPV);
         global::Kerf.Engine.Geometry.ElSLib.ConeParameters(aPos, Radius, SAngle, aP, out double aPU2, out double aPV2);
         Assert.Equal(aPU2, aPU);
         Assert.Equal(aPV2, aPV);

@@ -1592,7 +1592,7 @@ internal sealed class Contour
                     SurfaceAdaptorBase surfToCheck = _sFunc.Surface();
                     if (HSurfaceTool.GetType(surfToCheck) == SurfaceKind.Torus)
                     {
-                        Torus tor = HSurfaceTool.Torus(surfToCheck);
+                        Torus3D tor = HSurfaceTool.Torus(surfToCheck);
                         Direction3D torDir = tor.Axis.Direction;
                         Direction3D projDir = _sFunc.Direction();
 

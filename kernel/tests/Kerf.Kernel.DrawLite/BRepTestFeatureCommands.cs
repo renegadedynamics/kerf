@@ -305,7 +305,7 @@ internal static partial class BRepTestFeatureCommands
             }
             else if (Su.GetType() == typeof(CylindricalSurface))
             {
-                Cylinder cy = ((CylindricalSurface)Su).Cylinder;
+                Cylinder3D cy = ((CylindricalSurface)Su).Cylinder;
                 if (V.IsParallel(new Vector3D(cy.Axis.Direction), global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     FEIF.Set(ToPrism, fac);
@@ -844,7 +844,7 @@ internal static partial class BRepTestFeatureCommands
             }
             else if (Su.GetType() == typeof(CylindricalSurface))
             {
-                Cylinder cy = ((CylindricalSurface)Su).Cylinder;
+                Cylinder3D cy = ((CylindricalSurface)Su).Cylinder;
                 if (cy.Axis.IsCoaxial(theAxis, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion()))
                 {
                     FEIF.Set(ToRotate, fac);

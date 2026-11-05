@@ -456,7 +456,7 @@ internal partial class FilBuilder : FilletBuilderBase
                 v1 = Max(p1f.Y, p2f.Y);
                 v2 = Min(p1l.Y, p2l.Y);
                 sec = new NCollection_HArray1<CircSection>(1, 2);
-                Cylinder cy = AS.Cylinder();
+                Cylinder3D cy = AS.Cylinder();
                 ref CircSection sec1 = ref sec.ChangeValue(1);
                 ref CircSection sec2 = ref sec.ChangeValue(2);
                 sec1.Set(global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cy.Position, cy.Radius, v1), u1, u2);
@@ -469,7 +469,7 @@ internal partial class FilBuilder : FilletBuilderBase
                 u1 = Max(p1f.X, p2f.X);
                 u2 = Min(p1l.X, p2l.X);
                 double ang = (u2 - u1);
-                Torus to = AS.Torus();
+                Torus3D to = AS.Torus();
                 double majr = to.MajorRadius, minr = to.MinorRadius;
                 int n = (int)(36.0 * ang / M_PI + 1);
                 if (n < 2)
@@ -491,7 +491,7 @@ internal partial class FilBuilder : FilletBuilderBase
                 u1 = Max(p1f.X, p2f.X);
                 u2 = Min(p1l.X, p2l.X);
                 double ang = (u2 - u1);
-                Sphere sp = AS.Sphere();
+                Sphere3D sp = AS.Sphere();
                 double rad = sp.Radius;
                 int n = (int)(36.0 * ang / M_PI + 1);
                 if (n < 2)

@@ -52,7 +52,7 @@ internal partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
         p.Coefficients(out _prm1, out _prm2, out _prm3, out _prm4);
     }
 
-    public SurfaceQuadric(in Cylinder c)
+    public SurfaceQuadric(in Cylinder3D c)
     {
         _ax3 = c.Position;
         _lin = new Line3D(_ax3.Axis);
@@ -62,7 +62,7 @@ internal partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
         _prm1 = c.Radius;
     }
 
-    public SurfaceQuadric(in Sphere s)
+    public SurfaceQuadric(in Sphere3D s)
     {
         _ax3 = s.Position;
         _lin = new Line3D(_ax3.Axis);
@@ -72,7 +72,7 @@ internal partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
         _prm1 = s.Radius;
     }
 
-    public SurfaceQuadric(in Cone c)
+    public SurfaceQuadric(in Cone3D c)
     {
         _ax3 = c.Position;
         _lin = new Line3D();
@@ -85,7 +85,7 @@ internal partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
         _prm4 = 0.0;
     }
 
-    public SurfaceQuadric(in Torus t)
+    public SurfaceQuadric(in Torus3D t)
     {
         _ax3 = t.Position;
         _lin = new Line3D();
@@ -108,7 +108,7 @@ internal partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
         p.Coefficients(out _prm1, out _prm2, out _prm3, out _prm4);
     }
 
-    internal void SetValue(in Cylinder c)
+    internal void SetValue(in Cylinder3D c)
     {
         _typ = global::Kerf.Geometry.SurfaceKind.Cylinder;
         _ax3 = c.Position;
@@ -118,7 +118,7 @@ internal partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
         _prm2 = _prm3 = _prm4 = 0.0;
     }
 
-    internal void SetValue(in Sphere s)
+    internal void SetValue(in Sphere3D s)
     {
         _typ = global::Kerf.Geometry.SurfaceKind.Sphere;
         _ax3 = s.Position;
@@ -128,7 +128,7 @@ internal partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
         _prm2 = _prm3 = _prm4 = 0.0;
     }
 
-    internal void SetValue(in Cone c)
+    internal void SetValue(in Cone3D c)
     {
         _typ = global::Kerf.Geometry.SurfaceKind.Cone;
         _ax3 = c.Position;
@@ -140,7 +140,7 @@ internal partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
         _prm4 = 0.0;
     }
 
-    internal void SetValue(in Torus t)
+    internal void SetValue(in Torus3D t)
     {
         _typ = global::Kerf.Geometry.SurfaceKind.Torus;
         _ax3 = t.Position;
@@ -375,13 +375,13 @@ internal partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
 
     public readonly Plane3D Plane() => new(_ax3);
 
-    public readonly Sphere Sphere() => new(_ax3, _prm1);
+    public readonly Sphere3D Sphere() => new(_ax3, _prm1);
 
-    public readonly Cylinder Cylinder() => new(_ax3, _prm1);
+    public readonly Cylinder3D Cylinder() => new(_ax3, _prm1);
 
-    public readonly Cone Cone() => new(_ax3, _prm2, _prm1);
+    public readonly Cone3D Cone() => new(_ax3, _prm2, _prm1);
 
-    public readonly Torus Torus() => new(_ax3, _prm1, _prm2);
+    public readonly Torus3D Torus() => new(_ax3, _prm1, _prm2);
 
     public readonly Point3D Value(double u, double v)
     {

@@ -342,7 +342,7 @@ internal sealed class Rotation : Trsf
         }
         else if (AS.GetType() == SurfaceKind.Torus)
         {
-            Torus tor = AS.Torus();
+            Torus3D tor = AS.Torus();
             var bc = new EdgeCurveAdaptor(ShapeCasts.Edge(aNewEdge));
             double U = bc.FirstParameter();
             point = bc.Value(U);
@@ -379,7 +379,7 @@ internal sealed class Rotation : Trsf
         }
         else if (AS.GetType() == SurfaceKind.Sphere)
         {
-            Sphere sph = AS.Sphere();
+            Sphere3D sph = AS.Sphere();
             var bc = new EdgeCurveAdaptor(ShapeCasts.Edge(aNewEdge));
             double U = bc.FirstParameter();
             point = bc.Value(U);
@@ -435,7 +435,7 @@ internal sealed class Rotation : Trsf
             break;
             case SurfaceKind.Cone:
             {
-                Cone cone = AS.Cone();
+                Cone3D cone = AS.Cone();
                 global::Kerf.Engine.Geometry.ElSLib.ConeParameters(cone.Position, cone.RefRadius, cone.SemiAngle, p2, out u, out v);
                 p22d = p22d.WithCoord(0.0, v);
                 var l = new Line2D(p22d, Constants.DX2d());
@@ -445,7 +445,7 @@ internal sealed class Rotation : Trsf
             break;
             case SurfaceKind.Sphere:
             {
-                Sphere sph = AS.Sphere();
+                Sphere3D sph = AS.Sphere();
                 global::Kerf.Engine.Geometry.ElSLib.SphereParameters(sph.Position, sph.Radius, p2, out u, out v);
                 p22d = p22d.WithCoord(0.0, v);
                 var l = new Line2D(p22d, Constants.DX2d());
@@ -457,7 +457,7 @@ internal sealed class Rotation : Trsf
             {
                 Point3D p1;
                 double u1, u2, v1, v2;
-                Torus tor = AS.Torus();
+                Torus3D tor = AS.Torus();
                 var bc = new EdgeCurveAdaptor(ShapeCasts.Edge(aGenE));
                 p1 = bc.Value(bc.FirstParameter());
                 if (p1.DistanceTo(tor.Location) < global::Kerf.Engine.Foundation.Precision.Confusion())

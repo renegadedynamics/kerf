@@ -33,9 +33,9 @@ public sealed class Selector : IEquatable<Selector>
     {
         var selected = Of switch
         {
-            ShapeType.Face => shape.SelectFaces().Upcast(),
-            ShapeType.Edge => shape.SelectEdges().Upcast(),
-            _ => shape.SelectVertices().Upcast(),
+            ShapeType.Face => shape.Faces().Upcast(),
+            ShapeType.Edge => shape.Edges().Upcast(),
+            _ => shape.Vertices().Upcast(),
         };
         foreach (var step in Steps)
             selected = step.Apply(selected);

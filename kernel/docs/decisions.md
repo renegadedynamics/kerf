@@ -16320,3 +16320,38 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        `Convexity` on a lone edge, now asked of the parent; a topological face's label across `Offset`; `CreatedOn`, which nothing read; null as an
        operand's parameter name, which is `model` as a kernel shape can't be null. Each was a property of the classes that went, and none a result. Added: 11 tests
        (`OneSetOfShapesTests`) and 2 cases where `Assembly` and `Compound` now differ, so the intersection matrix swaps them. 1,904 to 1,917.
+
+## Phase 10: unit 10Q2, one set of values
+
+1628. **`Vector` goes, by meaning (the owner's answer to question 56, extended).** A position is a `Point3D`, an offset or computed direction a `Vector3D`, a kernel's unit
+       direction a `Direction3D`. `Axis.Direction` and `Plane`'s directions are `Direction3D`s, as they are one already; `TangentAt` and `NormalAt` stay `Vector3D`s, as a
+       `Direction3D` would normalise them again and move their last bits. build123d's conveniences are `PointExtensions`. Pure aliases went (`Length`, `Reverse`); `Cross` stays, as
+       `Direction3D.Crossed` normalises and refuses parallels. `modeling/docs/one-set-of-shapes.md` has the reasoning.
+1629. **Two additions to the kernel's values.** `Direction3D` converts implicitly to `Vector3D`, and `direction * scalar` is a `Vector3D`. Nothing is lost, so one parameter takes
+       both, and no kernel overload changes: an exact match still wins.
+1630. **Tolerance is named, not assumed.** The kernel's `==` is unchanged and exact. The old equality (components rounded to five places) is `IsNear`, and `PointComparer.Near` for
+       sets. Every `==`, `!=` and `/` on the old type was listed by marking them obsolete and building, as the compiler can't see the ones that still compile. Every
+       `/` by other than a power of two is written `* (1.0 / n)`, which is what the old one did.
+1631. **`Intersect` stays an `IGeometry?`.** Its result can be a point, axis, plane or location. The marker moved to `Kerf.Geometry`, and `Point3D` implements it, so
+       `a.Intersect(b) is Point3D p` reads as it did. `object` would lose what it can be, and a union type would add one to unwrap.
+1632. **`BoundBox` is the kernel's `BoundingBox`; the gap went.** It reached no result: every shape's box had none, and only `Empty.Add(point, tolerance)` made one. So the kernel's type
+       didn't gain it. The layer's tolerant test is `IntersectsNear`, as `Intersects` with one argument would bind to the kernel's exact one. `Min` and `Max` of an empty box throw; the
+       layer's members read an empty box as nothing. A transformed box's corners are `BoxCorners`, as build123d keeps them as they land and its `test_locate_bb` pins `Min` above `Max`.
+1633. **`Matrix` is `GeneralTransform3D`**, not `Transform3D`, which can't hold a stretch, and so that a point goes through the same sums. Its product is `Compose`, as the kernel's `*`
+       is OCCT's, and `At` counts from zero, as the kernel's indexer counts from one: both are noted in the change table as still compiling.
+1634. **`IsClosed` means closed.** The stored flags are internal (`ClosedFlag`, `InfiniteFlag`, `OrientableFlag`, `ConvexFlag`): nothing outside the engine needed them. `IsClosed`, on any `IShape`,
+       replaces `CheckClosed()`, adding a face (no free edge) and a solid or compound (every child closed), where it read the flag. A vertex isn't closed. This makes decision 1575's own
+       example, `part.Edges().Where(e => e.IsClosed)`, true. The flags were renamed before the new name was added, so that the compiler found every use: 32 test files and the
+       engine keep the flag's meaning under its new name.
+1635. **`Edges()` is the selection on a struct too; the kernel's is `AllEdges()`.** Decision 1622 is reversed, as are its other renames. One method couldn't serve, as the layer's returns a
+       `ShapeList` with an origin, which is a modelling idea, and the kernel's callers need degenerate edges. So the kernel's took a name that says so, for all six, and `SelectEdges` and
+       the rest went. `IsUnbounded` is `IsInfinite` again. `OrientationAngles` stays: `Orientation` on a shape is the kernel's enum, and rightly.
+1636. **The plain `Volume`, `Area` and `Length` are the layer's; the kernel's are `IntegrateVolume()` and so on.** The kernel's is what the faces bound, whatever the shape is, and takes options.
+       The layer's is what a user means: a face has no volume, and a compound's counts its solids. `OneSetOfShapesTests` pins the cases. `Area` and `Length` differ only on nothing.
+1637. **`Cylinder3D`, `Cone3D`, `Sphere3D`, `Torus3D`.** Overrides question 57 (decision 1349) for these four, for the reason `Plane3D` kept its suffix: the plain name is someone else's. The
+       layer's `Tangency` went for the kernel's, the same four values. Other namespaces still meet the layer's names; `one-set-of-shapes.md` lists them.
+1638. **The `HistoryLog` stays.** Looked at again: 35 notes in 14 files, and a struct's public operation has to return the bare shape. Threading needs a second, internal form of each, returning
+       `(shape, record)`, so it would double those signatures to remove one private `AsyncLocal`. `state.md` has the reason.
+1639. **Bento's benchmark didn't build after 10Q**, as it isn't in `Kerf.slnx` and 10Q's last edits missed it. Fixed first, so that before and after are the same examples.
+1640. **What the tests changed.** Added: 4 tests (`OneSetOfShapesTests`). 1,917 to 1,921. `PublicApi`'s laws no longer read the three flags or `IsInfinite`, as they are internal: 4 assertions gone,
+       none on a result. An empty box's `Min` and `Max` were compared with themselves; that test now pins that they throw. `Vector`'s own tests moved to the three types; its constructor from a span went, and its arithmetic on positions is now on vectors. A comparison that used the tolerance says `Check.Near`. No Python-reference value changed.

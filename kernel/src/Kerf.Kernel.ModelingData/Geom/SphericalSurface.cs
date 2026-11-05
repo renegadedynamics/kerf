@@ -33,7 +33,7 @@ public sealed class SphericalSurface : ElementarySurface
     }
 
     /// <summary>A sphere from a gp sphere.</summary>
-    public SphericalSurface(in Sphere s)
+    public SphericalSurface(in Sphere3D s)
     {
         _radius = s.Radius;
         _pos = s.Position;
@@ -81,7 +81,7 @@ public sealed class SphericalSurface : ElementarySurface
         _radius = r;
     }
 
-    internal void SetSphere(in Sphere s)
+    internal void SetSphere(in Sphere3D s)
     {
         CheckMutable();
         _radius = s.Radius;
@@ -98,7 +98,7 @@ public sealed class SphericalSurface : ElementarySurface
     }
 
     /// <summary>A copy that is the sphere S.</summary>
-    public SphericalSurface WithSphere(in Sphere s)
+    public SphericalSurface WithSphere(in Sphere3D s)
     {
         SphericalSurface copy = (SphericalSurface)Copy();
         copy.SetSphere(s);
@@ -215,7 +215,7 @@ public sealed class SphericalSurface : ElementarySurface
     }
 
     /// <summary>The non-persistent gp sphere with the same geometry.</summary>
-    public Sphere Sphere => new Sphere(_pos, _radius);
+    public Sphere3D Sphere => new Sphere3D(_pos, _radius);
 
     /// <summary>The U iso-parametric half circle (a Geom_TrimmedCurve on a Geom_Circle, in [-PI/2, PI/2]).</summary>
     public sealed override Curve3D UIso(double u)

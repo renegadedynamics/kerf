@@ -92,13 +92,13 @@ internal static class HSurfaceTool
 
     public static Plane3D Plane(SurfaceAdaptorBase surf) => surf.Plane();
 
-    public static Cylinder Cylinder(SurfaceAdaptorBase surf) => surf.Cylinder();
+    public static Cylinder3D Cylinder(SurfaceAdaptorBase surf) => surf.Cylinder();
 
-    public static Cone Cone(SurfaceAdaptorBase surf) => surf.Cone();
+    public static Cone3D Cone(SurfaceAdaptorBase surf) => surf.Cone();
 
-    public static Torus Torus(SurfaceAdaptorBase surf) => surf.Torus();
+    public static Torus3D Torus(SurfaceAdaptorBase surf) => surf.Torus();
 
-    public static Sphere Sphere(SurfaceAdaptorBase surf) => surf.Sphere();
+    public static Sphere3D Sphere(SurfaceAdaptorBase surf) => surf.Sphere();
 
     public static global::Kerf.Geometry.BezierSurface Bezier(SurfaceAdaptorBase surf) => surf.Bezier();
 

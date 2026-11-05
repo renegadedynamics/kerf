@@ -74,13 +74,13 @@ internal readonly struct TheHSurfaceTool
 
     public static Plane3D Plane(in SurfaceAdaptorBase s) => HSurfaceTool.Plane(s);
 
-    public static Cylinder Cylinder(in SurfaceAdaptorBase s) => HSurfaceTool.Cylinder(s);
+    public static Cylinder3D Cylinder(in SurfaceAdaptorBase s) => HSurfaceTool.Cylinder(s);
 
-    public static Cone Cone(in SurfaceAdaptorBase s) => HSurfaceTool.Cone(s);
+    public static Cone3D Cone(in SurfaceAdaptorBase s) => HSurfaceTool.Cone(s);
 
-    public static Torus Torus(in SurfaceAdaptorBase s) => HSurfaceTool.Torus(s);
+    public static Torus3D Torus(in SurfaceAdaptorBase s) => HSurfaceTool.Torus(s);
 
-    public static Sphere Sphere(in SurfaceAdaptorBase s) => HSurfaceTool.Sphere(s);
+    public static Sphere3D Sphere(in SurfaceAdaptorBase s) => HSurfaceTool.Sphere(s);
 
     public static Axis3D AxeOfRevolution(in SurfaceAdaptorBase s) => HSurfaceTool.AxeOfRevolution(s);
 

@@ -136,13 +136,13 @@ internal class SurfaceAdaptorBase : Transient
 
     public virtual Plane3D Plane() => throw new MethodNotImplementedException("Adaptor3d_Surface::Plane");
 
-    public virtual Cylinder Cylinder() => throw new MethodNotImplementedException("Adaptor3d_Surface::Cylinder");
+    public virtual Cylinder3D Cylinder() => throw new MethodNotImplementedException("Adaptor3d_Surface::Cylinder");
 
-    public virtual Cone Cone() => throw new MethodNotImplementedException("Adaptor3d_Surface::Cone");
+    public virtual Cone3D Cone() => throw new MethodNotImplementedException("Adaptor3d_Surface::Cone");
 
-    public virtual Sphere Sphere() => throw new MethodNotImplementedException("Adaptor3d_Surface::Sphere");
+    public virtual Sphere3D Sphere() => throw new MethodNotImplementedException("Adaptor3d_Surface::Sphere");
 
-    public virtual Torus Torus() => throw new MethodNotImplementedException("Adaptor3d_Surface::Torus");
+    public virtual Torus3D Torus() => throw new MethodNotImplementedException("Adaptor3d_Surface::Torus");
 
     public virtual int UDegree() => throw new MethodNotImplementedException("Adaptor3d_Surface::UDegree");
 

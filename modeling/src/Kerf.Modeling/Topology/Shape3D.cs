@@ -15,10 +15,10 @@ public static partial class Shape3DExtensions
     {
 
         /// <summary>The centre of mass (by default) or of the bounding box; the geometric centre isn't supported.</summary>
-        internal Vector CenterOfShape3D() => self.Center(CenterOf.Mass);
+        internal Point3D CenterOfShape3D() => self.Center(CenterOf.Mass);
 
         /// <summary>As the other forms of <c>Center</c>.</summary>
-        internal Vector CenterOfShape3D(CenterOf centerOf)
+        internal Point3D CenterOfShape3D(CenterOf centerOf)
         {
             self.NeedsGeometry("center");
             switch (centerOf)
@@ -26,7 +26,7 @@ public static partial class Shape3DExtensions
                 case CenterOf.Geometry:
                     throw new ArgumentException("Center of GEOMETRY is not supported for this object");
                 case CenterOf.Mass:
-                    return new Vector(ShapeExtensions.MassPropertiesOf(self.AsShape())!.CentreOfMass);
+                    return (ShapeExtensions.MassPropertiesOf(self.AsShape())!.CentreOfMass);
                 default:
                     return self.BoundBox().Center();
             }
@@ -46,7 +46,7 @@ public static partial class Shape3DExtensions
             var edges = edgeList.ToList();
             if (face is { } onFace)
             {
-                var faceEdges = onFace.SelectEdges();
+                var faceEdges = onFace.Edges();
                 if (edges.Any(e => !faceEdges.Contains(e, ShapeComparer<Edge>.Same)))
                     throw new ArgumentException("Some edges are not part of the face");
             }
@@ -78,7 +78,7 @@ public static partial class Shape3DExtensions
         /// </summary>
         public Shape DPrism(Face? basis, IReadOnlyList<IShape2D> bounds, double? depth = null, double taper = 0, Face? upToFace = null,
                             bool thruAll = true, bool additive = true) =>
-            self.DPrismCore(basis, bounds.SelectMany(b => b.SelectFaces()), depth, taper, upToFace, thruAll, additive);
+            self.DPrismCore(basis, bounds.SelectMany(b => b.Faces()), depth, taper, upToFace, thruAll, additive);
 
         /// <summary>As the other forms of <c>DPrism</c>.</summary>
         public Shape DPrism(Face? basis, IReadOnlyList<Wire> bounds, double? depth = null, double taper = 0, Face? upToFace = null,
@@ -189,17 +189,17 @@ public static partial class Shape3DExtensions
             if (faceList.Count > 0)
                 return (shellShape);
             // With no faces removed, make a watertight solid of the two shells
-            var shell1 = (shellShape).SelectShells()[0];
-            var shell2 = self.SelectShells()[0];
+            var shell1 = (shellShape).Shells()[0];
+            var shell2 = self.Shells()[0];
             // The first can be the outer or inner shell depending on the thickness's sign
             var solid = Failures.Get(Solid.FromShells(thickness > 0 ? [shell1, shell2] : [shell2, shell1]), () => "solid");
             return (solid).Fix();
         }
 
         /// <summary>Whether a point is inside the solid (or on its surface) within a tolerance.</summary>
-        public bool IsInside(Vector point, double tolerance = 1.0e-6)
+        public bool IsInside(Point3D point, double tolerance = 1.0e-6)
         {
-            var p = point.ToPoint3D();
+            var p = point;
             return self.AsShape().ClassifyPoint(p, tolerance) == Containment.In || self.AsShape().IsOnFace(p, tolerance);
         }
 
@@ -242,10 +242,10 @@ public static partial class Shape3DExtensions
             var shape = ShapeExtensions.ShapeOf(other);
             var results = new List<Shape>();
             // Trim infinite edges before OCCT operations
-            if (TopoUtil.Typed(shape) is Edge { IsUnbounded: true } infinite)
+            if (TopoUtil.Typed(shape) is Edge { IsInfinite: true } infinite)
             {
                 var box = self.BoundBox(optimal: false);
-                shape = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Length);
+                shape = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Magnitude);
             }
             switch (TopoUtil.Typed(shape))
             {
@@ -255,7 +255,7 @@ public static partial class Shape3DExtensions
                     break;
                 }
                 case Vertex vertex:
-                    if (self.IsInside(vertex.ToVector(), tolerance))
+                    if (self.IsInside(vertex.Point, tolerance))
                         results.Add(vertex);
                     break;
                 default:
@@ -324,7 +324,7 @@ public static partial class Shape3DExtensions
                 if (set.Contains(selected[i]))
                 {
                     rejected.Add(i);
-                    entries.Add($"[{i}] at {selected[i].Center().ToString("G6")}");
+                    entries.Add($"[{i}] at {selected[i].Center().Describe("G6")}");
                 }
             var tangentCount = set.Count(e => !selected.Contains(e, ShapeComparer<Edge>.Same));
             if (tangentCount > 0)
@@ -342,7 +342,7 @@ public static partial class Shape3DExtensions
         var solids = items.OfKind<Solid>().ToList();
         return items.Where(r =>
             !(r.TryAs(out Vertex v) && (edges.Any(e => e.DistanceTo(v) <= tolerance) || faces.Any(f => f.DistanceTo(v) <= tolerance)
-                                || solids.SelectMany(s => s.SelectFaces()).Any(sf => sf.DistanceTo(v) <= tolerance)))
+                                || solids.SelectMany(s => s.Faces()).Any(sf => sf.DistanceTo(v) <= tolerance)))
             && !(r.TryAs(out Edge e2) && faces.Any(f => f.DistanceTo(e2.Center()) <= tolerance))).ToList();
     }
 }

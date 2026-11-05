@@ -31,7 +31,7 @@ public static partial class SolidExtensions
                     throw new ArgumentException(
                         $"Face {face} has unsupported geometry type {face.GeomType.ToString().ToUpperInvariant()}. "
                         + "Only PLANAR, CYLINDRICAL, and CONICAL faces are supported.");
-            var dir = neutralPlane.ZDir.ToDirection3D();
+            var dir = neutralPlane.ZDir.ToDirection();
             var pln = neutralPlane.ToPlane3D();
             var drafted = self.Draft(faceList.Select(f => f), dir, angle * Constants.DegToRad, pln);
             if (!drafted.TryGetValue(out var built))
@@ -40,7 +40,7 @@ public static partial class SolidExtensions
                 Shape? problem = error.Shapes is [var shape, ..] ? shape : null;
                 // A face that couldn't be drafted is the problematic shape itself; a build that failed has no face
                 if (problem is { } p && p.IsFace() && faceList.FirstOrDefault(f => f.IsSame(p)) is { } face)
-                    throw Failures.Expected(ModelingDiagnostics.DraftFailed, $"The draft can't be added to the face at {face.Center().ToString("G6")}.",
+                    throw Failures.Expected(ModelingDiagnostics.DraftFailed, $"The draft can't be added to the face at {face.Center().Describe("G6")}.",
                                             drafted.Diagnostics, null, p);
                 throw Failures.Expected(ModelingDiagnostics.DraftFailed, "The drafted solid couldn't be built.", drafted.Diagnostics, null,
                                         problem is { } q ? [q] : []);
@@ -66,16 +66,16 @@ public static partial class SolidExtensions
             // Distance can't tell an edge on a face from one crossing it, so ask for the common part
             bool OnFaces(Shape s, IEnumerable<Face> faces) => faces.Any(f => ShapeExtensions.BoolOpList([s], [f], BooleanKind.Common).Count > 0);
             bool EdgeOnFaces(Edge e, IEnumerable<Face> faces) => OnFaces(e, faces);
-            (Vector, Vector) PointNormal(Face face, double u, double v)
+            (Point3D, Vector3D) PointNormal(Face face, double u, double v)
             {
                 var (u0, u1, v0, v1) = face.UVBounds();
                 double pu = u0 + u * (u1 - u0), pv = v0 + v * (v1 - v0);
-                return (new Vector(face.ToSurface().Evaluate(pu, pv)), TopoUtil.FaceNormalVector(face, pu, pv));
+                return ((face.ToSurface().Evaluate(pu, pv)), TopoUtil.FaceNormalVector(face, pu, pv));
             }
             // Faces are equal geometrically, not as the same OCCT object: compare a grid of positions and normals
             bool FacesEqual(Face f1, Face f2, int gridSize = 4)
             {
-                if (!f1.BoundBox(optimal: false).Intersects(f2.BoundBox(optimal: false), tolerance))
+                if (!f1.BoundBox(optimal: false).IntersectsNear(f2.BoundBox(optimal: false), tolerance))
                     return false;
                 for (int i = 0; i < gridSize; i++)
                     for (int j = 0; j < gridSize; j++)
@@ -83,14 +83,14 @@ public static partial class SolidExtensions
                         double u = i / (double)(gridSize - 1), v = j / (double)(gridSize - 1);
                         var (p1, n1) = PointNormal(f1, u, v);
                         var (p2, n2) = PointNormal(f2, u, v);
-                        if ((p1 - p2).Length > tolerance || Math.Abs(n1.Dot(n2)) < 0.99)
+                        if ((p1 - p2).Magnitude > tolerance || Math.Abs(n1.Dot(n2)) < 0.99)
                             return false;
                     }
                 return true;
             }
             bool IsDuplicate(Shape shape, IEnumerable<Shape> existing) => TopoUtil.Typed(shape) switch
             {
-                Vertex v => existing.OfKind<Vertex>().Any(o => v.ToVector() == o.ToVector()),
+                Vertex v => existing.OfKind<Vertex>().Any(o => v.Point.IsNear(o.Point)),
                 Edge e => existing.OfKind<Edge>().Any(o => e.GeomEqual(o, tolerance)),
                 Face f => existing.OfKind<Face>().Any(o => FacesEqual(f, o)),
                 _ => false,
@@ -106,15 +106,15 @@ public static partial class SolidExtensions
                     if (other.TryAs<Solid>(out _))
                     {
                         foundSolids ??= [.. ShapeExtensions.IntersectOne(self.AsShape(), other, tolerance, includeTouched: false) ?? []];
-                        intersectFaces = foundSolids.SelectMany(s => s.SelectFaces()).ToList();
+                        intersectFaces = foundSolids.SelectMany(s => s.Faces()).ToList();
                     }
-                    var selfFaces = self.SelectFaces().Select(f => (Face: f, Box: f.BoundBox(optimal: false))).ToList();
-                    var otherFaces = other.SelectFaces().Select(f => (Face: f, Box: f.BoundBox(optimal: false))).ToList();
+                    var selfFaces = self.Faces().Select(f => (Face: f, Box: f.BoundBox(optimal: false))).ToList();
+                    var otherFaces = other.Faces().Select(f => (Face: f, Box: f.BoundBox(optimal: false))).ToList();
                     var raw = new List<Shape>();
                     foreach (var (sf, sfBox) in selfFaces)
                         foreach (var (of, ofBox) in otherFaces)
                         {
-                            if (!sfBox.Intersects(ofBox, tolerance))
+                            if (!sfBox.IntersectsNear(ofBox, tolerance))
                                 continue;
                             // Touches first (cheap): tangent vertices
                             foreach (var r in sf.Touch(of, tolerance))
@@ -139,16 +139,16 @@ public static partial class SolidExtensions
                 }
                 case Edge or Wire:
                 {
-                    var selfFaces = self.SelectFaces().Select(f => (Face: f, Box: f.BoundBox(optimal: false))).ToList();
+                    var selfFaces = self.Faces().Select(f => (Face: f, Box: f.BoundBox(optimal: false))).ToList();
                     var otherBox = other.BoundBox(optimal: false);
                     // The edge's ends on the boundary
-                    foreach (var ov in other.SelectVertices())
+                    foreach (var ov in other.Vertices())
                         if (selfFaces.Any(sf => VertexOnFace(ov, sf.Face)))
                             results.Add(ov);
                     // And where it is tangent to the surface
                     foreach (var (sf, sfBox) in selfFaces)
                     {
-                        if (!sfBox.Intersects(otherBox, tolerance))
+                        if (!sfBox.IntersectsNear(otherBox, tolerance))
                             continue;
                         var distance = MeasureOperations.Distance(sf, other);
                         if (!distance.TryGetValue(out var extrema) || extrema.Value > tolerance)
@@ -167,7 +167,7 @@ public static partial class SolidExtensions
                     break;
                 }
                 case Vertex vertex:
-                    if (self.SelectFaces().Any(sf => VertexOnFace(vertex, sf)))
+                    if (self.Faces().Any(sf => VertexOnFace(vertex, sf)))
                         results.Add(vertex);
                     break;
                 default:
@@ -257,7 +257,7 @@ public static partial class SolidExtensions
             Failures.Doing(() => "loft", () => ((Solid)TopoUtil.MakeLoft(objs, true, ruled)));
 
         /// <summary>A box the size of a bounding box, where it is.</summary>
-        public static Solid FromBoundingBox(BoundBox box) => Solid.MakeBox(box.Size.X, box.Size.Y, box.Size.Z).Located(new Location(box.Min));
+        public static Solid FromBoundingBox(BoundingBox box) => Solid.MakeBox(box.Size.X, box.Size.Y, box.Size.Z).Located(new Location(box.Min));
 
         /// <summary>A box the size of an oriented bounding box, where it is.</summary>
         public static Solid FromBoundingBox(OrientedBoundBox box)
@@ -269,20 +269,20 @@ public static partial class SolidExtensions
         // ---- Extrusions, sweeps and revolutions ----
 
         /// <summary>A face extruded into a solid.</summary>
-        public static Solid Extrude(Face obj, Vector direction) =>
+        public static Solid Extrude(Face obj, Vector3D direction) =>
             Failures.Doing(() => "extrude", () => ((Solid)TopoUtil.Extrude(obj, direction)));
 
         /// <summary>
         /// A "twisted prism": a section (a face, or a wire with optional holes) extruded along <paramref name="normal"/> while
         /// rotating through <paramref name="angle"/> degrees about it.
         /// </summary>
-        public static Solid ExtrudeLinearWithRotation(IShape2D section, Vector center, Vector normal, double angle) =>
+        public static Solid ExtrudeLinearWithRotation(IShape2D section, Point3D center, Vector3D normal, double angle) =>
             section.AsShape().TryAs(out Face face)
                 ? Solid.ExtrudeLinearWithRotation(face.OuterWire(), center, normal, angle, face.InnerWires())
                 : throw new ArgumentException("section must be a Face or a Wire");
 
-        /// <inheritdoc cref="ExtrudeLinearWithRotation(IShape2D, Vector, Vector, double)"/>
-        public static Solid ExtrudeLinearWithRotation(Wire section, Vector center, Vector normal, double angle, IEnumerable<Wire>? innerWires = null) =>
+        /// <inheritdoc cref="ExtrudeLinearWithRotation(IShape2D, Point3D, Vector3D, double)"/>
+        public static Solid ExtrudeLinearWithRotation(Wire section, Point3D center, Vector3D normal, double angle, IEnumerable<Wire>? innerWires = null) =>
             Failures.Doing(() => "extrude with rotation", () => SolidExtensions.ExtrudeLinearWithRotationCore(section, center, normal, angle, innerWires));
 
         /// <summary>
@@ -291,7 +291,7 @@ public static partial class SolidExtensions
         /// is lofted to an offset copy. <paramref name="flipInner"/> tapers holes the opposite way, for mould release.
         /// </summary>
         /// <exception cref="InvalidOperationException">The taper can't be built, as when it collapses the profile.</exception>
-        public static Solid ExtrudeTaper(Face profile, Vector direction, double taper, bool flipInner = true) =>
+        public static Solid ExtrudeTaper(Face profile, Vector3D direction, double taper, bool flipInner = true) =>
             Failures.Doing(() => "tapered extrude", () => SolidExtensions.ExtrudeTaperCore(profile, direction, taper, flipInner));
 
         /// <summary>
@@ -300,7 +300,7 @@ public static partial class SolidExtensions
         /// fully cover the profile where they meet.
         /// </summary>
         /// <exception cref="ArgumentException">The extrusion doesn't reach the target, or the surface reached doesn't cut it.</exception>
-        public static Solid ExtrudeUntil(Face profile, Shape target, Vector direction, Until until = Until.Next) =>
+        public static Solid ExtrudeUntil(Face profile, Shape target, Vector3D direction, Until until = Until.Next) =>
             Failures.Doing(() => "extrude until", () => SolidExtensions.ExtrudeUntilCore(profile, target, direction, until));
 
         /// <summary>A cross section (a face, or a wire with optional holes) revolved through <paramref name="angle"/> degrees about an axis.</summary>
@@ -349,7 +349,7 @@ public static partial class SolidExtensions
         /// <paramref name="normalOverride"/> says which way is up, flipping the face's normal if it points the other way.
         /// </summary>
         /// <exception cref="InvalidOperationException">OCCT can't thicken the surface.</exception>
-        public static Solid Thicken(IShape2D surface, double depth, Vector? normalOverride = null) =>
+        public static Solid Thicken(IShape2D surface, double depth, Vector3D? normalOverride = null) =>
             Failures.Doing(() => "thicken", () => SolidExtensions.ThickenCore(surface, depth, normalOverride));
     }
 
@@ -367,7 +367,7 @@ public static partial class SolidExtensions
         return Failures.Get(shell.MakeSolid(), () => "solid from shell").Shape;
     }
 
-    private static Solid ExtrudeLinearWithRotationCore(Wire section, Vector center, Vector normal, double angle, IEnumerable<Wire>? innerWires)
+    private static Solid ExtrudeLinearWithRotationCore(Wire section, Point3D center, Vector3D normal, double angle, IEnumerable<Wire>? innerWires)
     {
         static Shape ExtrudeAuxSpine(Wire wire, Wire spine, Wire auxSpine)
         {
@@ -377,8 +377,8 @@ public static partial class SolidExtensions
         }
         // A straight spine and an auxiliary helical one that turns the section
         var straightSpine = Wire.Combine([Edge.MakeLine(center, center + normal)])[0];
-        var pitch = 360.0 / angle * normal.Length;
-        var auxSpine = Wire.Make([Edge.MakeHelix(pitch, normal.Length, 1, center, normal)]);
+        var pitch = 360.0 / angle * normal.Magnitude;
+        var auxSpine = Wire.Make([Edge.MakeHelix(pitch, normal.Magnitude, 1, center, normal)]);
         var outer = ExtrudeAuxSpine(section, straightSpine, auxSpine);
         var inner = (innerWires ?? []).Select(w => ExtrudeAuxSpine(w, straightSpine, auxSpine)).ToList();
         var innerComp = TopoUtil.MakeCompound(inner);
@@ -389,7 +389,7 @@ public static partial class SolidExtensions
             : ((Solid)difference);
     }
 
-    private static Solid ExtrudeTaperCore(Face profile, Vector direction, double taper, bool flipInner)
+    private static Solid ExtrudeTaperCore(Face profile, Vector3D direction, double taper, bool flipInner)
     {
         var pull = direction.Normalized();
         var profileWires = new List<Wire> { profile.OuterWire() };
@@ -398,14 +398,14 @@ public static partial class SolidExtensions
         // The prism shares the profile's face, which the draft no longer edits (the kernel's unit 10H5): no copy is made
 
         // Extrude the profile; its sides are the faces generated from its edges
-        var directionVec = direction.ToVector3D();
+        var directionVec = direction;
         var prismBuilt = Failures.Get(profile.Extrude(directionVec), () => "extrude");
         var prism = prismBuilt.Shape;
         var sideFaces = new List<(Face Face, double Angle)>();
         for (int i = 0; i < profileWires.Count; i++)
         {
             var angle = i > 0 && !flipInner ? -taper : taper;
-            foreach (var edge in profileWires[i].SelectEdges())
+            foreach (var edge in profileWires[i].Edges())
             {
                 // The faces an edge generates: its side (the history goes on to its copy in the top cap)
                 foreach (var side in prismBuilt.History.Generated(edge))
@@ -418,8 +418,8 @@ public static partial class SolidExtensions
         if (alongNormal && sideFaces.All(s => s.Face.GeomType is GeomType.Plane or GeomType.Cylinder or GeomType.Cone))
         {
             // Draft the sides about the plane of the profile, which keeps its size
-            var center = profile.Center().ToPoint3D();
-            var pullDir = pull.ToDirection3D();
+            var center = profile.Center();
+            var pullDir = pull.ToDirection();
             var neutral = new Plane3D(center, pullDir);
             // The draft can't build every taper a loft can: a failure falls back to the loft
             var drafted = prism.Draft(sideFaces.Select(s => (s.Face, s.Angle * Constants.DegToRad)), pullDir, neutral);
@@ -440,7 +440,7 @@ public static partial class SolidExtensions
         if (result is null)
         {
             // Loft to the profile offset by the amount that gives the taper
-            var offset = -direction.Length * Math.Tan(taper * Constants.DegToRad);
+            var offset = -direction.Magnitude * Math.Tan(taper * Constants.DegToRad);
             List<Solid> solids;
             try
             {
@@ -451,14 +451,14 @@ public static partial class SolidExtensions
                     var flip = i > 0 && flipInner ? -1 : 1;
                     var local = plane.ToLocalCoords(profileWires[i]);
                     var localTaper = local.Offset2D(flip * offset, kind: Kind.Intersection);
-                    taperWires.Add(Wire.Make(plane.FromLocalCoords(localTaper).SelectEdges()).Moved(new Location(direction)));
+                    taperWires.Add(Wire.Make(plane.FromLocalCoords(localTaper).Edges()).Moved(new Location(direction)));
                 }
                 solids = [.. profileWires.Zip(taperWires).Select(p => Solid.MakeLoft([p.First, p.Second]))];
             }
             catch (Exception e) when (e is InvalidOperationException || Failures.IsKernelFailure(e))
             {
                 throw new InvalidOperationException(
-                    $"Tapered extrusion of {Formatting.Number(taper)} degrees over {Formatting.Number(direction.Length)} could not be built. "
+                    $"Tapered extrusion of {Formatting.Number(taper)} degrees over {Formatting.Number(direction.Magnitude)} could not be built. "
                     + "The taper may collapse the profile - reduce the taper or the extrusion distance", e);
             }
             result = solids.Count > 1 ? (Solid)solids[0].Cut(solids.Skip(1)) : solids[0];
@@ -466,7 +466,7 @@ public static partial class SolidExtensions
         return result.Value;
     }
 
-    private static Solid ExtrudeUntilCore(Face profile, Shape target, Vector direction, Until until)
+    private static Solid ExtrudeUntilCore(Face profile, Shape target, Vector3D direction, Until until)
     {
         if (until is Until.Previous or Until.First)
         {
@@ -503,14 +503,14 @@ public static partial class SolidExtensions
 
         // 5: the profile is the extrusion's own base face and survives the split, so return the piece that holds it
         foreach (var piece in pieces)
-            if (piece.SelectFaces().Any(f => f.IsSame(profile)))
+            if (piece.Faces().Any(f => f.IsSame(profile)))
                 return (Solid)piece;
         // A kernel that never writes its inputs (OCCT.NET) gives the extrusion a copy of a profile it has to add pcurves
         // to, so then the piece holding the profile is found by place: the face at the profile's centre, of its area
         var center = profile.Center();
         foreach (var piece in pieces)
-            if (piece.SelectFaces().Any(f => Math.Abs(f.Area - profile.Area) <= Constants.Tolerance * Math.Max(1, profile.Area)
-                                       && (f.Center() - center).Length <= Constants.Tolerance))
+            if (piece.Faces().Any(f => Math.Abs(f.Area - profile.Area) <= Constants.Tolerance * Math.Max(1, profile.Area)
+                                       && (f.Center() - center).Magnitude <= Constants.Tolerance))
                 return (Solid)piece;
         throw new InvalidOperationException("The extrusion is empty.");
     }
@@ -549,11 +549,12 @@ public static partial class SolidExtensions
         {
             case null:
                 return new SweepOptions { Frame = isFrenet ? SweepFrame.Frenet : SweepFrame.CorrectedFrenet };
-            case Vector v:
+            case Direction3D or Vector3D:
             {
+                Vector3D v = binormal is Direction3D d ? d : (Vector3D)binormal;
                 var system = new Frame3D();
-                var start = path.StartPoint().ToPoint3D();
-                var dir = v.ToDirection3D();
+                var start = path.StartPoint();
+                var dir = v.ToDirection();
                 system = system.WithLocation(start);
                 system = system.WithDirection(dir);
                 return new SweepOptions { Frame = SweepFrame.Fixed, FixedFrame = system, WithCorrection = true };
@@ -563,7 +564,7 @@ public static partial class SolidExtensions
             case Edge e:
                 return new SweepOptions { Frame = SweepFrame.Auxiliary, AuxiliarySpine = Wire.Make(e), CurvilinearEquivalence = true };
             default:
-                throw new ArgumentException($"A sweep mode is a Vector, Wire or Edge, not a {binormal.GetType().Name}");
+                throw new ArgumentException($"A sweep mode is a vector, direction, Wire or Edge, not a {binormal.GetType().Name}");
         }
     }
 
@@ -579,7 +580,7 @@ public static partial class SolidExtensions
         return swept;
     }
 
-    private static Solid ThickenCore(IShape2D surface, double depth, Vector? normalOverride)
+    private static Solid ThickenCore(IShape2D surface, double depth, Vector3D? normalOverride)
     {
         var adjusted = depth;
         if (surface.AsShape().TryAs(out Face face) && normalOverride is { } up)

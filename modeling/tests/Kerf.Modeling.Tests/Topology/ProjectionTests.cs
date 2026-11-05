@@ -14,13 +14,13 @@ public class ProjectionTests
     {
         var target = CompoundObjects.Box(10, 10, 4) - new Pos(0, 0, 2) * CompoundObjects.Box(5, 5, 2);
         var circle = Wire.MakeCircle(3, Plane.XY.Offset(10));
-        var projection = circle.ProjectToShape(target, new Vector(0, 0, -1));
+        var projection = circle.ProjectToShape(target, new Vector3D(0, 0, -1));
         var bbox = projection[0].BoundBox();
-        Check.AlmostEqual(new Vector(-3, -3, 1), bbox.Min, 2);
-        Check.AlmostEqual(new Vector(3, 3, 2), bbox.Max, 2);
+        Check.AlmostEqual(new Point3D(-3, -3, 1), bbox.Min, 2);
+        Check.AlmostEqual(new Point3D(3, 3, 2), bbox.Max, 2);
         bbox = projection[1].BoundBox();
-        Check.AlmostEqual(new Vector(-3, -3, -2), bbox.Min, 2);
-        Check.AlmostEqual(new Vector(3, 3, -2), bbox.Max, 2);
+        Check.AlmostEqual(new Point3D(-3, -3, -2), bbox.Min, 2);
+        Check.AlmostEqual(new Point3D(3, 3, -2), bbox.Max, 2);
     }
 
     [Fact]
@@ -34,10 +34,10 @@ public class ProjectionTests
     [Fact]
     public void ProjectEdge()
     {
-        var projection = Edge.MakeCircle(1, Plane.XY.Offset(-5)).ProjectToShape(Solid.MakeBox(1, 1, 1), new Vector(0, 0, 1));
-        Check.AlmostEqual(new Vector(1, 0, 0), projection[0].PositionAt(1), 5);
-        Check.AlmostEqual(new Vector(0, 1, 0), projection[0].PositionAt(0), 5);
-        Check.AlmostEqual(new Vector(0, 0, 0), projection[0].ArcCenter, 5);
+        var projection = Edge.MakeCircle(1, Plane.XY.Offset(-5)).ProjectToShape(Solid.MakeBox(1, 1, 1), new Vector3D(0, 0, 1));
+        Check.AlmostEqual(new Point3D(1, 0, 0), projection[0].PositionAt(1), 5);
+        Check.AlmostEqual(new Point3D(0, 1, 0), projection[0].PositionAt(0), 5);
+        Check.AlmostEqual(new Point3D(0, 0, 0), projection[0].ArcCenter, 5);
     }
 
     /// <summary>Verify that the projected edge result is one edge - wire was cleaned.</summary>
@@ -46,8 +46,8 @@ public class ProjectionTests
     {
         double radiusX = 45, radiusY = 30, width = 25, openingAngle = 80;
         var centerArc = Edge.MakeEllipse(radiusX, radiusY, startAngle: 270 + openingAngle / 2, endAngle: 270 - openingAngle / 2);
-        var centerSurface = (Face)(-Face.Extrude(centerArc, new Vector(0, 0, 2 * width)).Moved(new Location(new Vector(0, 0, -width), new Vector(0, 0, 180))));
-        var tipCenterLoc = centerSurface.LocationAt(centerArc.PositionAt(1), xDir: new Vector(1, 0, 0));
+        var centerSurface = (Face)(-Face.Extrude(centerArc, new Vector3D(0, 0, 2 * width)).Moved(new Location(new Point3D(0, 0, -width), new Vector3D(0, 0, 180))));
+        var tipCenterLoc = centerSurface.LocationAt(centerArc.PositionAt(1), xDir: new Vector3D(1, 0, 0));
         var normalAtTipCenter = tipCenterLoc.ZAxis.Direction;
 
         var planarTipArc = Edge.MakeCircle(width / 2, startAngle: 270, endAngle: 450).Located(tipCenterLoc);

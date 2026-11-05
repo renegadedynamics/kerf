@@ -88,7 +88,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
 
         for (var anExp = new Explorer(aResult, ShapeType.Wire); anExp.More(); anExp.Next())
         {
-            Assert.True(anExp.Current().IsClosed);
+            Assert.True(anExp.Current().ClosedFlag);
         }
 
         // The history answers for the input's sub-shapes.
@@ -130,7 +130,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
 
         // The rebuilt shell is no longer closed.
         Shape aShell = SubShape(aResult, ShapeType.Shell, 1);
-        Assert.False(aShell.IsClosed);
+        Assert.False(aShell.ClosedFlag);
 
         History aHistory = aReShape.History();
         Assert.True(aHistory.IsRemoved(aF));
@@ -269,8 +269,8 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         Assert.Equal(ShapeType.Compound, aShells.Type);
         Assert.Equal(1, aShells.ChildCount);
         Shape aShell = new Iterator(aShells).Value();
-        Assert.True(aShell.IsClosed);
-        Assert.True(aShell.IsOrientable);
+        Assert.True(aShell.ClosedFlag);
+        Assert.True(aShell.OrientableFlag);
         Assert.Equal(6, Count(aShell, ShapeType.Face));
         Assert.Equal(12, Count(aShell, ShapeType.Edge));
     }
@@ -287,7 +287,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         Assert.Equal(2, aShells.ChildCount);
         for (var anIt = new Iterator(aShells); anIt.More(); anIt.Next())
         {
-            Assert.False(anIt.Value().IsClosed);
+            Assert.False(anIt.Value().ClosedFlag);
         }
     }
 
@@ -334,7 +334,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         Shape aShell = new Iterator(aShells).Value();
         Assert.Equal(2, Count(aShell, ShapeType.Face));
         Assert.Equal(7, Count(aShell, ShapeType.Edge));
-        Assert.False(aShell.IsClosed);
+        Assert.False(aShell.ClosedFlag);
     }
 
     [Fact]

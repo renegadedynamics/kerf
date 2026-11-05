@@ -246,7 +246,7 @@ internal class QuadQuadGeo
     // function : EstimDist
     // purpose  : returns a minimal distance from apex to any solution
     //=======================================================================
-    private static double EstimDist(in Cone con1, in Cone con2)
+    private static double EstimDist(in Cone3D con1, in Cone3D con2)
     {
         // It is supposed that axes of cones are coplanar and
         // distance between them > Precision::Confusion()
@@ -476,7 +476,7 @@ internal class QuadQuadGeo
     /// parallel to the plane. Tol decides between a circle and an ellipse (the circle when the ellipse is within Tol
     /// of it). H, the height of the cylinder, helps decide whether the plane and the cylinder are parallel.
     /// </summary>
-    public QuadQuadGeo(in Plane3D p, in Cylinder cl, double tolang, double tol, double h = 0)
+    public QuadQuadGeo(in Plane3D p, in Cylinder3D cl, double tolang, double tol, double h = 0)
         : this()
     {
         Perform(p, cl, tolang, tol, h);
@@ -487,7 +487,7 @@ internal class QuadQuadGeo
     /// plane. Tol decides between a circle and an ellipse. H, the height of the cylinder, helps decide whether the
     /// plane and the cylinder are parallel.
     /// </summary>
-    public void Perform(in Plane3D p, in Cylinder cl, double Tolang, double tol, double H = 0)
+    public void Perform(in Plane3D p, in Cylinder3D cl, double Tolang, double tol, double H = 0)
     {
         _done = false;
         double dist, radius;
@@ -666,14 +666,14 @@ internal class QuadQuadGeo
     /// axis is parallel or perpendicular to the plane and whether a generatrix is parallel to it; Tol the distance
     /// below which the apex is in the plane.
     /// </summary>
-    public QuadQuadGeo(in Plane3D p, in Cone co, double tolang, double tol)
+    public QuadQuadGeo(in Plane3D p, in Cone3D co, double tolang, double tol)
         : this()
     {
         Perform(p, co, tolang, tol);
     }
 
     /// <summary>Intersects a plane and a cone (see the constructor for the tolerances).</summary>
-    public void Perform(in Plane3D p, in Cone co, double tolang, double tol)
+    public void Perform(in Plane3D p, in Cone3D co, double tolang, double tol)
     {
         _done = false;
         _nbint = 0;
@@ -872,14 +872,14 @@ internal class QuadQuadGeo
     }
 
     /// <summary>The intersection between a plane and a sphere.</summary>
-    public QuadQuadGeo(in Plane3D p, in Sphere s)
+    public QuadQuadGeo(in Plane3D p, in Sphere3D s)
         : this()
     {
         Perform(p, s);
     }
 
     /// <summary>Intersects a plane and a sphere.</summary>
-    public void Perform(in Plane3D p, in Sphere s)
+    public void Perform(in Plane3D p, in Sphere3D s)
     {
         _done = false;
         double a, b, c, d, dist, radius;
@@ -922,14 +922,14 @@ internal class QuadQuadGeo
     }
 
     /// <summary>The intersection between two cylinders.</summary>
-    public QuadQuadGeo(in Cylinder cyl1, in Cylinder cyl2, double tol)
+    public QuadQuadGeo(in Cylinder3D cyl1, in Cylinder3D cyl2, double tol)
         : this()
     {
         Perform(cyl1, cyl2, tol);
     }
 
     /// <summary>Intersects two cylinders.</summary>
-    public void Perform(in Cylinder cyl1, in Cylinder cyl2, double tol)
+    public void Perform(in Cylinder3D cyl1, in Cylinder3D cyl2, double tol)
     {
         _done = true;
         //---------------------------- Parallel axes -------------------------
@@ -1179,14 +1179,14 @@ internal class QuadQuadGeo
     }
 
     /// <summary>The intersection between a cylinder and a cone (only when they are coaxial).</summary>
-    public QuadQuadGeo(in Cylinder cyl, in Cone con, double tol)
+    public QuadQuadGeo(in Cylinder3D cyl, in Cone3D con, double tol)
         : this()
     {
         Perform(cyl, con, tol);
     }
 
     /// <summary>Intersects a cylinder and a cone (only when they are coaxial). Tol is not used.</summary>
-    public void Perform(in Cylinder cyl, in Cone con, double tol)
+    public void Perform(in Cylinder3D cyl, in Cone3D con, double tol)
     {
         _ = tol;
         _done = true;
@@ -1210,14 +1210,14 @@ internal class QuadQuadGeo
     }
 
     /// <summary>The intersection between a cylinder and a sphere (only when the center is on the axis).</summary>
-    public QuadQuadGeo(in Cylinder cyl, in Sphere sph, double tol)
+    public QuadQuadGeo(in Cylinder3D cyl, in Sphere3D sph, double tol)
         : this()
     {
         Perform(cyl, sph, tol);
     }
 
     /// <summary>Intersects a cylinder and a sphere (only when the center is on the axis). Tol is not used.</summary>
-    public void Perform(in Cylinder cyl, in Sphere sph, double tol)
+    public void Perform(in Cylinder3D cyl, in Sphere3D sph, double tol)
     {
         _ = tol;
         _done = true;
@@ -1253,14 +1253,14 @@ internal class QuadQuadGeo
     }
 
     /// <summary>The intersection between two cones.</summary>
-    public QuadQuadGeo(in Cone con1, in Cone con2, double tol)
+    public QuadQuadGeo(in Cone3D con1, in Cone3D con2, double tol)
         : this()
     {
         Perform(con1, con2, tol);
     }
 
     /// <summary>Intersects two cones.</summary>
-    public void Perform(in Cone con1, in Cone con2, double tol)
+    public void Perform(in Cone3D con1, in Cone3D con2, double tol)
     {
         _done = true;
         //
@@ -1728,14 +1728,14 @@ internal class QuadQuadGeo
     }
 
     /// <summary>The intersection between a sphere and a cone (only when the center is on the axis).</summary>
-    public QuadQuadGeo(in Sphere sph, in Cone con, double tol)
+    public QuadQuadGeo(in Sphere3D sph, in Cone3D con, double tol)
         : this()
     {
         Perform(sph, con, tol);
     }
 
     /// <summary>Intersects a sphere and a cone (only when the center is on the axis). Tol is not used.</summary>
-    public void Perform(in Sphere sph, in Cone con, double tol)
+    public void Perform(in Sphere3D sph, in Cone3D con, double tol)
     {
         _ = tol;
         //
@@ -1826,14 +1826,14 @@ internal class QuadQuadGeo
     }
 
     /// <summary>The intersection between two spheres.</summary>
-    public QuadQuadGeo(in Sphere sph1, in Sphere sph2, double tol)
+    public QuadQuadGeo(in Sphere3D sph1, in Sphere3D sph2, double tol)
         : this()
     {
         Perform(sph1, sph2, tol);
     }
 
     /// <summary>Intersects two spheres.</summary>
-    public void Perform(in Sphere sph1, in Sphere sph2, double tol)
+    public void Perform(in Sphere3D sph1, in Sphere3D sph2, double tol)
     {
         _done = true;
         Point3D o1 = sph1.Location;
@@ -1938,14 +1938,14 @@ internal class QuadQuadGeo
     }
 
     /// <summary>The intersection between a plane and a torus.</summary>
-    public QuadQuadGeo(in Plane3D pln, in Torus tor, double tol)
+    public QuadQuadGeo(in Plane3D pln, in Torus3D tor, double tol)
         : this()
     {
         Perform(pln, tor, tol);
     }
 
     /// <summary>Intersects a plane and a torus (only a plane normal to the axis, or containing it).</summary>
-    public void Perform(in Plane3D pln, in Torus tor, double tol)
+    public void Perform(in Plane3D pln, in Torus3D tor, double tol)
     {
         _done = true;
         //
@@ -2034,14 +2034,14 @@ internal class QuadQuadGeo
     }
 
     /// <summary>The intersection between a cylinder and a torus.</summary>
-    public QuadQuadGeo(in Cylinder cyl, in Torus tor, double tol)
+    public QuadQuadGeo(in Cylinder3D cyl, in Torus3D tor, double tol)
         : this()
     {
         Perform(cyl, tor, tol);
     }
 
     /// <summary>Intersects a cylinder and a torus (only when they are coaxial).</summary>
-    public void Perform(in Cylinder cyl, in Torus tor, double tol)
+    public void Perform(in Cylinder3D cyl, in Torus3D tor, double tol)
     {
         _done = true;
         //
@@ -2096,14 +2096,14 @@ internal class QuadQuadGeo
     }
 
     /// <summary>The intersection between a cone and a torus.</summary>
-    public QuadQuadGeo(in Cone con, in Torus tor, double tol)
+    public QuadQuadGeo(in Cone3D con, in Torus3D tor, double tol)
         : this()
     {
         Perform(con, tor, tol);
     }
 
     /// <summary>Intersects a cone and a torus (only when they are coaxial).</summary>
-    public void Perform(in Cone con, in Torus tor, double tol)
+    public void Perform(in Cone3D con, in Torus3D tor, double tol)
     {
         _done = true;
         //
@@ -2224,14 +2224,14 @@ internal class QuadQuadGeo
     }
 
     /// <summary>The intersection between a sphere and a torus.</summary>
-    public QuadQuadGeo(in Sphere sph, in Torus tor, double tol)
+    public QuadQuadGeo(in Sphere3D sph, in Torus3D tor, double tol)
         : this()
     {
         Perform(sph, tor, tol);
     }
 
     /// <summary>Intersects a sphere and a torus (only when the center is on the axis).</summary>
-    public void Perform(in Sphere sph, in Torus tor, double tol)
+    public void Perform(in Sphere3D sph, in Torus3D tor, double tol)
     {
         _done = true;
         //
@@ -2299,14 +2299,14 @@ internal class QuadQuadGeo
     }
 
     /// <summary>The intersection between two tori.</summary>
-    public QuadQuadGeo(in Torus tor1, in Torus tor2, double tol)
+    public QuadQuadGeo(in Torus3D tor1, in Torus3D tor2, double tol)
         : this()
     {
         Perform(tor1, tor2, tol);
     }
 
     /// <summary>Intersects two tori (only when they are coaxial).</summary>
-    public void Perform(in Torus tor1, in Torus tor2, double tol)
+    public void Perform(in Torus3D tor1, in Torus3D tor2, double tol)
     {
         _done = true;
         //

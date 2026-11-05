@@ -148,7 +148,7 @@ internal sealed class EdgeConnectFixer
                     theEdge = theNext;
                 }
                 // Connect first and last edges if wire is closed
-                if (theWire.IsClosed)
+                if (theWire.ClosedFlag)
                 {
                     Add(theEdge, theFirst);
                 }

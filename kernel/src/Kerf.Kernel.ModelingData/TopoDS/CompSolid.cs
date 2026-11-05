@@ -125,25 +125,25 @@ public partial struct CompSolid : IEquatable<CompSolid>
     internal readonly void Checked(bool isChecked) => NonNullTShape().Checked(isChecked);
 
     /// <summary>The orientability flag of the underlying shape.</summary>
-    public readonly bool IsOrientable => NonNullTShape().Orientable();
+    internal readonly bool OrientableFlag => NonNullTShape().Orientable();
 
     /// <summary>Sets the orientability flag of the underlying shape.</summary>
     internal readonly void Orientable(bool isOrientable) => NonNullTShape().Orientable(isOrientable);
 
     /// <summary>The closedness flag of the underlying shape.</summary>
-    public readonly bool IsClosed => NonNullTShape().Closed();
+    internal readonly bool ClosedFlag => NonNullTShape().Closed();
 
     /// <summary>Sets the closedness flag of the underlying shape.</summary>
     internal readonly void Closed(bool isClosed) => NonNullTShape().Closed(isClosed);
 
     /// <summary>The infinity flag of the underlying shape.</summary>
-    public readonly bool IsInfinite => NonNullTShape().Infinite();
+    internal readonly bool InfiniteFlag => NonNullTShape().Infinite();
 
     /// <summary>Sets the infinity flag of the underlying shape.</summary>
     internal readonly void Infinite(bool isInfinite) => NonNullTShape().Infinite(isInfinite);
 
     /// <summary>The convexness flag of the underlying shape.</summary>
-    internal readonly bool IsConvex => NonNullTShape().Convex();
+    internal readonly bool ConvexFlag => NonNullTShape().Convex();
 
     /// <summary>Sets the convexness flag of the underlying shape.</summary>
     internal readonly void Convex(bool isConvex) => NonNullTShape().Convex(isConvex);

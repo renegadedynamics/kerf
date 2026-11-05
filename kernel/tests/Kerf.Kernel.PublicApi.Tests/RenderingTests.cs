@@ -79,13 +79,13 @@ public class RenderingTests
     {
         Solid box = Fixtures.Box();
         ShapeMesh mesh = box.Mesh().Value;
-        Face top = box.Faces().Single(f => f.Vertices().All(v => v.Point.Z == 30));
+        Face top = box.AllFaces().Single(f => f.AllVertices().All(v => v.Point.Z == 30));
         var item = new SceneItem(mesh).WithFaceColor(top, new Color(1, 0, 0));
         (byte r, byte g, byte b, _) = Renderer.Render(new Scene(item), Camera.Top, Small).Value.GetPixel(100, 75);
         Assert.InRange(r, 240, 255);
         Assert.Equal(0, g);
         Assert.Equal(0, b);
-        Assert.Throws<ArgumentException>(() => item.WithFaceColor(Fixtures.Cylinder().Faces()[0], new Color(0, 1, 0)));
+        Assert.Throws<ArgumentException>(() => item.WithFaceColor(Fixtures.Cylinder().AllFaces()[0], new Color(0, 1, 0)));
     }
 
     [Fact]

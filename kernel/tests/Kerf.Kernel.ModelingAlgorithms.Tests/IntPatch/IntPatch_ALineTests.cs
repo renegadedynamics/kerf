@@ -14,8 +14,8 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 public class IntPatch_ALineTests
 {
     // x^2 + y^2 = 1 and (x - 0.5)^2 + y^2 + z^2 = 4: two closed curves, z = +-sqrt(2.75 + x).
-    private static readonly Cylinder theCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
-    private static readonly Sphere theSph = new(new CoordinateSystem(new Point3D(0.5, 0, 0), new Direction3D(0, 0, 1)), 2.0);
+    private static readonly Cylinder3D theCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
+    private static readonly Sphere3D theSph = new(new CoordinateSystem(new Point3D(0.5, 0, 0), new Direction3D(0, 0, 1)), 2.0);
 
     private static ALine MakeLine()
     {

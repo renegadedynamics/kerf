@@ -27,11 +27,11 @@ public static partial class ShapeExtensions
             self.IsEmpty ? [] : TopoUtil.Entities(self.AsShape(), type);
 
         /// <summary>All the vertices in this shape, as a selection (a vertex holds itself).</summary>
-        public ShapeList<Vertex> SelectVertices() =>
+        public ShapeList<Vertex> Vertices() =>
             self.AsShape() is { IsNull: false } s && s.IsVertex() ? new ShapeList<Vertex>([(Vertex)s], (IShape)self) : ShapeListOf<Vertex>(self);
 
         /// <summary>All the non-degenerate edges in this shape, as a selection (a wire's in the order they connect).</summary>
-        public ShapeList<Edge> SelectEdges()
+        public ShapeList<Edge> Edges()
         {
             var shape = self.AsShape();
             if (!shape.IsNull && shape.IsWire())
@@ -41,16 +41,16 @@ public static partial class ShapeExtensions
         }
 
         /// <summary>All the wires in this shape, as a selection.</summary>
-        public ShapeList<Wire> SelectWires() => ShapeListOf<Wire>(self);
+        public ShapeList<Wire> Wires() => ShapeListOf<Wire>(self);
 
         /// <summary>All the faces in this shape, as a selection.</summary>
-        public ShapeList<Face> SelectFaces() => ShapeListOf<Face>(self);
+        public ShapeList<Face> Faces() => ShapeListOf<Face>(self);
 
         /// <summary>All the shells in this shape, as a selection.</summary>
-        public ShapeList<Shell> SelectShells() => ShapeListOf<Shell>(self);
+        public ShapeList<Shell> Shells() => ShapeListOf<Shell>(self);
 
         /// <summary>All the solids in this shape, as a selection.</summary>
-        public ShapeList<Solid> SelectSolids() => ShapeListOf<Solid>(self);
+        public ShapeList<Solid> Solids() => ShapeListOf<Solid>(self);
 
         /// <summary>The one vertex in this shape (build123d's <c>vertex()</c>).</summary>
         /// <exception cref="InvalidOperationException">The shape doesn't have exactly one.</exception>

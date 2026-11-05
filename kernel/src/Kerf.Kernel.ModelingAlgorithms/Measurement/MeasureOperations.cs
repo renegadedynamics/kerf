@@ -14,8 +14,8 @@ namespace Kerf.Measurement;
 
 /// <summary>
 /// Properties and measurement (docs/api/measurement.md): mass properties, bounding boxes, distances, classification and
-/// where a line meets a shape. Each is a C# 14 extension member too, so <c>MeasureOperations.Volume(part)</c> and
-/// <c>part.Volume()</c> both work.
+/// where a line meets a shape. Each is a C# 14 extension member too, so <c>MeasureOperations.IntegrateVolume(part)</c> and
+/// <c>part.IntegrateVolume()</c> both work.
 /// </summary>
 /// <remarks>
 /// Volume, area and length are numbers, not results: OCCT's integration can't fail on a valid shape, and on an invalid
@@ -29,18 +29,18 @@ public static class MeasureOperations
 
     extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
     {
-        /// <summary>The volume the shape's faces bound (OCCT's <c>BRepGProp::VolumeProperties</c>): zero for a shape
+        /// <summary>The volume the shape's faces bound, whatever the shape is (OCCT's <c>BRepGProp::VolumeProperties</c>): zero for a shape
         /// without faces; for an open shell, the signed volume of the cone from its location's origin.</summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
-        public double Volume(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Volume, options).Mass();
+        public double IntegrateVolume(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Volume, options).Mass();
 
         /// <summary>The area of the shape's faces (<c>BRepGProp::SurfaceProperties</c>).</summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
-        public double Area(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Area, options).Mass();
+        public double IntegrateArea(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Area, options).Mass();
 
         /// <summary>The length of the shape's edges (<c>BRepGProp::LinearProperties</c>).</summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
-        public double Length(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Length, options).Mass();
+        public double IntegrateLength(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Length, options).Mass();
 
         /// <summary>The shape's mass properties of the given dimension, with density 1.</summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>

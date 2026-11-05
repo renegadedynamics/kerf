@@ -110,25 +110,25 @@ internal class ComputeApprox
             }
             case SurfaceKind.Cylinder:
             {
-                Cylinder cylinder = mySurface.Cylinder();
+                Cylinder3D cylinder = mySurface.Cylinder();
                 global::Kerf.Engine.Geometry.ElSLib.Parameters(cylinder, p3d, out s, out t);
                 break;
             }
             case SurfaceKind.Cone:
             {
-                Cone cone = mySurface.Cone();
+                Cone3D cone = mySurface.Cone();
                 global::Kerf.Engine.Geometry.ElSLib.Parameters(cone, p3d, out s, out t);
                 break;
             }
             case SurfaceKind.Sphere:
             {
-                Sphere sphere = mySurface.Sphere();
+                Sphere3D sphere = mySurface.Sphere();
                 global::Kerf.Engine.Geometry.ElSLib.Parameters(sphere, p3d, out s, out t);
                 break;
             }
             case SurfaceKind.Torus:
             {
-                Torus torus = mySurface.Torus();
+                Torus3D torus = mySurface.Torus();
                 global::Kerf.Engine.Geometry.ElSLib.Parameters(torus, p3d, out s, out t);
                 break;
             }
@@ -289,7 +289,7 @@ internal class ComputeApprox
             {
                 double tol = Epsilon(1.0);
                 double ptol = global::Kerf.Engine.Foundation.Precision.PConfusion();
-                Cone cone = mySurface.Cone();
+                Cone3D cone = mySurface.Cone();
                 vCouture = false;
                 // Calculation of cone parameters for P == ConeApex often produces wrong
                 // values of U
@@ -483,7 +483,7 @@ internal class ComputeApprox
 
             case SurfaceKind.Cylinder:
             {
-                Cylinder cylinder = mySurface.Cylinder();
+                Cylinder3D cylinder = mySurface.Cylinder();
                 vCouture = false;
 
                 if (myCurve.GetType() == Ellipse)
@@ -623,7 +623,7 @@ internal class ComputeApprox
             case SurfaceKind.Sphere:
             {
                 vCouture = false;
-                Sphere sp = mySurface.Sphere();
+                Sphere3D sp = mySurface.Sphere();
                 if (myCurve.GetType() == Circle)
                 {
                     uCouture = true;
@@ -928,7 +928,7 @@ internal class ComputeApprox
             //
             case SurfaceKind.Torus:
             {
-                Torus tr = mySurface.Torus();
+                Torus3D tr = mySurface.Torus();
                 double u1, v1, u, v, dU, dV;
                 global::Kerf.Engine.Geometry.ElSLib.Parameters(tr, p1, out u1, out v1);
                 double r = tr.MinorRadius;
@@ -1500,25 +1500,25 @@ internal class ComputeApprox
                 }
                 case SurfaceKind.Cylinder:
                 {
-                    Cylinder cylinder = s.Cylinder();
+                    Cylinder3D cylinder = s.Cylinder();
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(cylinder, p3d, out u, out v);
                     break;
                 }
                 case SurfaceKind.Cone:
                 {
-                    Cone cone = s.Cone();
+                    Cone3D cone = s.Cone();
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(cone, p3d, out u, out v);
                     break;
                 }
                 case SurfaceKind.Sphere:
                 {
-                    Sphere sphere = s.Sphere();
+                    Sphere3D sphere = s.Sphere();
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(sphere, p3d, out u, out v);
                     break;
                 }
                 case SurfaceKind.Torus:
                 {
-                    Torus torus = s.Torus();
+                    Torus3D torus = s.Torus();
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(torus, p3d, out u, out v);
                     break;
                 }

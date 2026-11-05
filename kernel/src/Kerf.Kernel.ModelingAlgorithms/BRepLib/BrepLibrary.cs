@@ -797,10 +797,10 @@ internal static partial class BrepLibrary
                 //
                 nsh.Free(sh.Free());
                 nsh.Checked(sh.Checked());
-                nsh.Orientable(sh.IsOrientable);
-                nsh.Closed(sh.IsClosed);
-                nsh.Infinite(sh.IsInfinite);
-                nsh.Convex(sh.IsConvex);
+                nsh.Orientable(sh.OrientableFlag);
+                nsh.Closed(sh.ClosedFlag);
+                nsh.Infinite(sh.InfiniteFlag);
+                nsh.Convex(sh.ConvexFlag);
                 //
             }
             //

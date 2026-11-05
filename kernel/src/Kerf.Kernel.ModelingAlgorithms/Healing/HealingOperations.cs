@@ -244,7 +244,7 @@ public static class HealingOperations
             var analysis = new ShellAnalysis();
             analysis.LoadShells(input);
             analysis.CheckOrientedShells(input, true, checkInternalEdges);
-            return analysis.HasBadEdges ? [.. analysis.BadEdges().Edges()] : [];
+            return analysis.HasBadEdges ? [.. analysis.BadEdges().AllEdges()] : [];
         }
 
         /// <summary>
@@ -276,7 +276,7 @@ public static class HealingOperations
         {
             Shape input = NotNull(shape.AsShape());
             FreeBounds bounds = tolerance > 0 ? new FreeBounds(input, tolerance) : new FreeBounds(input);
-            return [.. bounds.GetClosedWires().Wires(), .. bounds.GetOpenWires().Wires()];
+            return [.. bounds.GetClosedWires().AllWires(), .. bounds.GetOpenWires().AllWires()];
         }
     }
 
@@ -311,7 +311,7 @@ public static class HealingOperations
         {
             Shell input = shell;
             NotNull(input.AsShape());
-            if (!input.IsClosed && !Engine.Topology.Brep.Tool.IsClosed(input))
+            if (!input.ClosedFlag && !Engine.Topology.Brep.Tool.IsClosed(input))
             {
                 return Result<Built<Solid>>.Failure(Diagnostic.Error(NotAClosedShell, "The shell isn't closed, so it bounds no solid."));
             }

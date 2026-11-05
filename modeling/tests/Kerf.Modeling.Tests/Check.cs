@@ -21,11 +21,26 @@ internal static class Check
     }
 
     /// <inheritdoc cref="AlmostEqual(double, double, int)"/>
-    public static void AlmostEqual(Vector expected, Vector actual, int places = 7)
+    public static void AlmostEqual(Vector3D expected, Vector3D actual, int places = 7)
     {
-        if (Math.Round((expected - actual).Length, places) != 0)
-            throw new XunitException($"Expected {expected} but got {actual} (to {places} places)");
+        if (Math.Round((expected - actual).Magnitude, places) != 0)
+            throw new XunitException($"Expected {expected.Describe()} but got {actual.Describe()} (to {places} places)");
     }
+
+    /// <inheritdoc cref="AlmostEqual(double, double, int)"/>
+    public static void AlmostEqual(Point3D expected, Point3D actual, int places = 7)
+    {
+        if (Math.Round(expected.DistanceTo(actual), places) != 0)
+            throw new XunitException($"Expected {expected.Describe()} but got {actual.Describe()} (to {places} places)");
+    }
+
+    /// <summary>The same point to the layer's tolerance (<c>IsNear</c>): what <c>Assert.Equal</c> meant on the layer's old <c>Vector</c>.</summary>
+    public static void Near(Point3D expected, Point3D actual) =>
+        Assert.True(expected.IsNear(actual), $"Expected {expected.Describe()} but got {actual.Describe()}");
+
+    /// <summary>The same vector to the layer's tolerance (<c>IsNear</c>).</summary>
+    public static void Near(Vector3D expected, Vector3D actual) =>
+        Assert.True(expected.IsNear(actual), $"Expected {expected.Describe()} but got {actual.Describe()}");
 
     /// <summary>Each component almost equal, as build123d's assertTupleAlmostEquals.</summary>
     public static void TupleAlmostEqual(IReadOnlyList<double> expected, IReadOnlyList<double> actual, int places = 7)
@@ -71,7 +86,11 @@ internal static class Check
     public static void NotSame<TA, TB>(TA expected, TB actual) where TA : IShape where TB : IShape =>
         Assert.False(expected.SameAs(actual), $"Both are {actual.AsShape().Describe()}");
 
-    public static double[] Of(Vector v) => [v.X, v.Y, v.Z];
+    public static double[] Of(Point3D v) => [v.X, v.Y, v.Z];
+
+    public static double[] Of(Vector3D v) => [v.X, v.Y, v.Z];
+
+    public static double[] Of(Direction3D v) => [v.X, v.Y, v.Z];
 
     public static double[] Of(Color c) => [Math.Round(c.R, 7), Math.Round(c.G, 7), Math.Round(c.B, 7), Math.Round((double)(float)c.A, 7)];
 }

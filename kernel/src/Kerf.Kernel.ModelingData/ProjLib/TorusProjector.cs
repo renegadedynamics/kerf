@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// <summary>Projects elementary curves on a torus: circles that are U or V isolines.</summary>
 internal class TorusProjector : Projector
 {
-    private Torus _torus = new();
+    private Torus3D _torus = new();
 
     /// <summary>Undefined projection.</summary>
     public TorusProjector()
@@ -21,19 +21,19 @@ internal class TorusProjector : Projector
     }
 
     /// <summary>Projection on the torus To.</summary>
-    public TorusProjector(in Torus to)
+    public TorusProjector(in Torus3D to)
     {
         Init(to);
     }
 
     /// <summary>Projection of the circle C on the torus To.</summary>
-    public TorusProjector(in Torus to, in Circle3D c)
+    public TorusProjector(in Torus3D to, in Circle3D c)
     {
         Init(to);
         Project(c);
     }
 
-    public void Init(in Torus to)
+    public void Init(in Torus3D to)
     {
         _type = OtherCurve;
         _torus = to;
@@ -41,7 +41,7 @@ internal class TorusProjector : Projector
         _isDone = false;
     }
 
-    private static Point2D EvalPnt2d(in Vector3D ve, in Torus to)
+    private static Point2D EvalPnt2d(in Vector3D ve, in Torus3D to)
     {
         double x = ve.Dot(new Vector3D(to.Position.XDirection));
         double y = ve.Dot(new Vector3D(to.Position.YDirection));

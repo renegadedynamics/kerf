@@ -1302,28 +1302,28 @@ internal class SurfaceAnalysis : Transient
                     }
                     case SurfaceKind.Cylinder:
                     {
-                        Cylinder cylinder = surfAdapt.Cylinder();
+                        Cylinder3D cylinder = surfAdapt.Cylinder();
                         global::Kerf.Engine.Geometry.ElSLib.Parameters(cylinder, p3D, out s, out t);
                         s += ShapeAnalysisAnalysis.AdjustByPeriod(s, 0.5 * (uf + ul), 2 * M_PI);
                         break;
                     }
                     case SurfaceKind.Cone:
                     {
-                        Cone cone = surfAdapt.Cone();
+                        Cone3D cone = surfAdapt.Cone();
                         global::Kerf.Engine.Geometry.ElSLib.Parameters(cone, p3D, out s, out t);
                         s += ShapeAnalysisAnalysis.AdjustByPeriod(s, 0.5 * (uf + ul), 2 * M_PI);
                         break;
                     }
                     case SurfaceKind.Sphere:
                     {
-                        Sphere sphere = surfAdapt.Sphere();
+                        Sphere3D sphere = surfAdapt.Sphere();
                         global::Kerf.Engine.Geometry.ElSLib.Parameters(sphere, p3D, out s, out t);
                         s += ShapeAnalysisAnalysis.AdjustByPeriod(s, 0.5 * (uf + ul), 2 * M_PI);
                         break;
                     }
                     case SurfaceKind.Torus:
                     {
-                        Torus torus = surfAdapt.Torus();
+                        Torus3D torus = surfAdapt.Torus();
                         global::Kerf.Engine.Geometry.ElSLib.Parameters(torus, p3D, out s, out t);
                         s += ShapeAnalysisAnalysis.AdjustByPeriod(s, 0.5 * (uf + ul), 2 * M_PI);
                         t += ShapeAnalysisAnalysis.AdjustByPeriod(t, 0.5 * (vf + vl), 2 * M_PI);

@@ -46,7 +46,7 @@ public sealed record FilletOptions
 ## Examples
 
 ```csharp
-var rounded = FilletOperations.Fillet(box, box.Edges().Where(IsVertical), radius: 2);
+var rounded = FilletOperations.Fillet(box, box.AllEdges().Where(IsVertical), radius: 2);
 if (!rounded.IsSuccess) return $"#VALUE! {rounded.Error!.Message}";   // "The fillet of radius 2 failed on 4 edges: …"
 ```
 

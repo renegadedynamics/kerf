@@ -53,25 +53,25 @@ internal class MakeFace : MakeShape
         TakeResult();
     }
 
-    public MakeFace(in Cylinder c)
+    public MakeFace(in Cylinder3D c)
     {
         _makeFace = new LibraryMakeFace(c);
         TakeResult();
     }
 
-    public MakeFace(in Cone c)
+    public MakeFace(in Cone3D c)
     {
         _makeFace = new LibraryMakeFace(c);
         TakeResult();
     }
 
-    public MakeFace(in Sphere s)
+    public MakeFace(in Sphere3D s)
     {
         _makeFace = new LibraryMakeFace(s);
         TakeResult();
     }
 
-    public MakeFace(in Torus t)
+    public MakeFace(in Torus3D t)
     {
         _makeFace = new LibraryMakeFace(t);
         TakeResult();
@@ -89,25 +89,25 @@ internal class MakeFace : MakeShape
         TakeResult();
     }
 
-    public MakeFace(in Cylinder c, double uMin, double uMax, double vMin, double vMax)
+    public MakeFace(in Cylinder3D c, double uMin, double uMax, double vMin, double vMax)
     {
         _makeFace = new LibraryMakeFace(c, uMin, uMax, vMin, vMax);
         TakeResult();
     }
 
-    public MakeFace(in Cone c, double uMin, double uMax, double vMin, double vMax)
+    public MakeFace(in Cone3D c, double uMin, double uMax, double vMin, double vMax)
     {
         _makeFace = new LibraryMakeFace(c, uMin, uMax, vMin, vMax);
         TakeResult();
     }
 
-    public MakeFace(in Sphere s, double uMin, double uMax, double vMin, double vMax)
+    public MakeFace(in Sphere3D s, double uMin, double uMax, double vMin, double vMax)
     {
         _makeFace = new LibraryMakeFace(s, uMin, uMax, vMin, vMax);
         TakeResult();
     }
 
-    public MakeFace(in Torus t, double uMin, double uMax, double vMin, double vMax)
+    public MakeFace(in Torus3D t, double uMin, double uMax, double vMin, double vMax)
     {
         _makeFace = new LibraryMakeFace(t, uMin, uMax, vMin, vMax);
         TakeResult();
@@ -131,25 +131,25 @@ internal class MakeFace : MakeShape
         TakeResult();
     }
 
-    public MakeFace(in Cylinder c, in Wire w, bool inside = true)
+    public MakeFace(in Cylinder3D c, in Wire w, bool inside = true)
     {
         _makeFace = new LibraryMakeFace(c, w, inside);
         TakeResult();
     }
 
-    public MakeFace(in Cone c, in Wire w, bool inside = true)
+    public MakeFace(in Cone3D c, in Wire w, bool inside = true)
     {
         _makeFace = new LibraryMakeFace(c, w, inside);
         TakeResult();
     }
 
-    public MakeFace(in Sphere s, in Wire w, bool inside = true)
+    public MakeFace(in Sphere3D s, in Wire w, bool inside = true)
     {
         _makeFace = new LibraryMakeFace(s, w, inside);
         TakeResult();
     }
 
-    public MakeFace(in Torus t, in Wire w, bool inside = true)
+    public MakeFace(in Torus3D t, in Wire w, bool inside = true)
     {
         _makeFace = new LibraryMakeFace(t, w, inside);
         TakeResult();

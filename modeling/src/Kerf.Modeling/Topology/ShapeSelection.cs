@@ -133,13 +133,13 @@ public static class ShapeSelection
         public ShapeList<T> OrderByDistanceTo(Shape other) => Sorted(shapes, o => o.DistanceTo(other), descending: false);
 
         /// <summary>The shapes sorted by their minimal distance to a point, the nearest first.</summary>
-        public ShapeList<T> OrderByDistanceTo(Vector point) => Sorted(shapes, o => o.DistanceTo(point), descending: false);
+        public ShapeList<T> OrderByDistanceTo(Point3D point) => Sorted(shapes, o => o.DistanceTo(point), descending: false);
 
         /// <summary>The shapes sorted by their minimal distance to <paramref name="other"/>, the furthest first.</summary>
         public ShapeList<T> OrderByDescendingDistanceTo(Shape other) => Sorted(shapes, o => o.DistanceTo(other), descending: true);
 
         /// <summary>The shapes sorted by their minimal distance to a point, the furthest first.</summary>
-        public ShapeList<T> OrderByDescendingDistanceTo(Vector point) => Sorted(shapes, o => o.DistanceTo(point), descending: true);
+        public ShapeList<T> OrderByDescendingDistanceTo(Point3D point) => Sorted(shapes, o => o.DistanceTo(point), descending: true);
 
         // ---- Grouping ----
 
@@ -258,7 +258,7 @@ public static class ShapeSelection
             var curve = edge.GeomAdaptor();
             var d = curve.Derivatives(curve.Range.Min, 1);
             var dir = new Direction3D(d.D1);
-            shapeAxis = new Axis(new Vector(d.Point), new Vector(dir));
+            shapeAxis = new Axis(d.Point, dir);
         }
         else
             return false;
@@ -278,7 +278,7 @@ public static class ShapeSelection
                 return planeAxis.IsParallel(new Axis(shape.Center(), face.NormalAtParameters(u0, v0)), tolerance);
             }
             case ShapeType.Wire:
-                return shape.SelectEdges().All(e => IsParallelTo(e, plane, planeAxis, tolerance));
+                return shape.Edges().All(e => IsParallelTo(e, plane, planeAxis, tolerance));
             case ShapeType.Edge:
             {
                 var edge = (Edge)shape;

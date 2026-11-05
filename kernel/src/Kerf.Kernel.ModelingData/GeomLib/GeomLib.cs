@@ -2704,7 +2704,7 @@ internal static partial class GeomLib
                 // find v with maximal distance from axis
                 if (!(global::Kerf.Engine.Foundation.Precision.IsInfinite(v1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(v2)))
                 {
-                    Cone cone = gas.Cone();
+                    Cone3D cone = gas.Cone();
                     Point3D apex = cone.Apex;
                     Point3D P1 = gas.Value(u1, v1);
                     Point3D P2 = gas.Value(u1, v2);

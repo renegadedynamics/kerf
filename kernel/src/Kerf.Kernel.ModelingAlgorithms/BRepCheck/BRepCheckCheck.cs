@@ -225,7 +225,7 @@ internal static class BRepCheckCheck
         SurfaceKind st = aAHSurf.GetType();
         if (st == SurfaceKind.Cone)
         {
-            Cone cone = aAHSurf.Cone();
+            Cone3D cone = aAHSurf.Cone();
             Span<double> x = stackalloc double[4];
             //
             cone.Location.Coord(out x[0], out x[1], out x[2]);

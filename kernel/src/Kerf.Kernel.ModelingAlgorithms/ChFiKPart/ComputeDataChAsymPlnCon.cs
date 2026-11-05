@@ -37,7 +37,7 @@ internal static class ComputeDataChAsymPlnCon
     /// <summary>The chamfer at the distance <paramref name="Dis"/> (on the plane if <paramref name="disOnP"/>) and
     /// the angle <paramref name="angle"/>.</summary>
     internal static bool ChFiKPart_MakeChAsym(DsDataStructure dStr, SurfData data, in Plane3D pln,
-                                              in Cone con, double fu, double lu, Orientation or1,
+                                              in Cone3D con, double fu, double lu, Orientation or1,
                                               Orientation or2, double Dis, double angle, in Circle3D spine,
                                               double first, Orientation ofpl, bool plandab, bool disOnP)
     {

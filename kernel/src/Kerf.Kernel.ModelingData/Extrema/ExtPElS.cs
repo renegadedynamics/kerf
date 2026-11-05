@@ -35,7 +35,7 @@ internal class ExtPElS
     }
 
     /// <summary>The distances between a point and a cylinder. Tol is used to test if the point is on the axis.</summary>
-    public ExtPElS(in Point3D p, in Cylinder s, double tol) => Perform(p, s, tol);
+    public ExtPElS(in Point3D p, in Cylinder3D s, double tol) => Perform(p, s, tol);
 
     /*-----------------------------------------------------------------------------
     Function:
@@ -53,7 +53,7 @@ internal class ExtPElS
          then (U1,V) corresponds to the min distance.
          and  (U2,V) corresponds to the max distance.
     -----------------------------------------------------------------------------*/
-    public void Perform(in Point3D p, in Cylinder s, double tol)
+    public void Perform(in Point3D p, in Cylinder3D s, double tol)
     {
         _done = false;
         _nbExt = 0;
@@ -98,7 +98,7 @@ internal class ExtPElS
     /// <summary>
     /// The distances between a point and a cone. Tol is used to test if the point is at the apex or on the axis.
     /// </summary>
-    public ExtPElS(in Point3D p, in Cone s, double tol) => Perform(p, s, tol);
+    public ExtPElS(in Point3D p, in Cone3D s, double tol) => Perform(p, s, tol);
 
     /*-----------------------------------------------------------------------------
     Function:
@@ -129,7 +129,7 @@ internal class ExtPElS
              V2 = (L * cos(B+A)) + Vm;
            then (U1,V1) and (U2,V2) correspond to min distances.
     -----------------------------------------------------------------------------*/
-    public void Perform(in Point3D p, in Cone s, double tol)
+    public void Perform(in Point3D p, in Cone3D s, double tol)
     {
         _done = false;
         _nbExt = 0;
@@ -226,7 +226,7 @@ internal class ExtPElS
     }
 
     /// <summary>The distances between a point and a sphere. Tol is used to test if the point is at the center.</summary>
-    public ExtPElS(in Point3D p, in Sphere s, double tol) => Perform(p, s, tol);
+    public ExtPElS(in Point3D p, in Sphere3D s, double tol) => Perform(p, s, tol);
 
     /*-----------------------------------------------------------------------------
     Function:
@@ -249,7 +249,7 @@ internal class ExtPElS
         then (U1, V1) corresponds to the min distance
         and  (U2,-V1) corresponds to the max distance.
     -----------------------------------------------------------------------------*/
-    public void Perform(in Point3D p, in Sphere s, double tol)
+    public void Perform(in Point3D p, in Sphere3D s, double tol)
     {
         _done = false;
         _nbExt = 0;
@@ -318,7 +318,7 @@ internal class ExtPElS
     }
 
     /// <summary>The distances between a point and a torus. Tol is used to test if the point is on the axis.</summary>
-    public ExtPElS(in Point3D p, in Torus s, double tol) => Perform(p, s, tol);
+    public ExtPElS(in Point3D p, in Torus3D s, double tol) => Perform(p, s, tol);
 
     /*-----------------------------------------------------------------------------
     Function:
@@ -339,7 +339,7 @@ internal class ExtPElS
          then (U1,V1) corresponds to the min distance
          and  (U2,V2) corresponds to the max distance.
     -----------------------------------------------------------------------------*/
-    public void Perform(in Point3D p, in Torus s, double tol)
+    public void Perform(in Point3D p, in Torus3D s, double tol)
     {
         double tol2 = tol * tol;
         _done = false;

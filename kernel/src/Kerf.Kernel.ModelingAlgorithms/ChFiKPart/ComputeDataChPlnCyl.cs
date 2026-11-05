@@ -37,7 +37,7 @@ internal static class ComputeDataChPlnCyl
 
     /// <summary>The conical chamfer along a circle of the cylinder.</summary>
     internal static bool ChFiKPart_MakeChamfer(DsDataStructure dStr, SurfData data,
-                                               ChamfMode mode, in Plane3D pln, in Cylinder cyl,
+                                               ChamfMode mode, in Plane3D pln, in Cylinder3D cyl,
                                                double fu, double lu, Orientation or1,
                                                Orientation or2, double dis1, double dis2,
                                                in Circle3D spine, double first, Orientation ofpl,
@@ -289,7 +289,7 @@ internal static class ComputeDataChPlnCyl
 
     /// <summary>The plane chamfer along a generatrix of the cylinder (classic chamfers only).</summary>
     internal static bool ChFiKPart_MakeChamfer(DsDataStructure dStr, SurfData data,
-                                               ChamfMode mode, in Plane3D pln, in Cylinder cyl,
+                                               ChamfMode mode, in Plane3D pln, in Cylinder3D cyl,
                                                double fu, double lu, Orientation or1,
                                                Orientation or2, double dis1, double dis2, in Line3D spine,
                                                double first, Orientation ofpl, bool plandab)

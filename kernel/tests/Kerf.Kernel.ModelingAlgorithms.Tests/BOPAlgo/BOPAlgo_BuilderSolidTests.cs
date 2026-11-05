@@ -182,7 +182,7 @@ public class BOPAlgo_BuilderSolidTests
         Assert.Equal(6, aSS.StartElements().Extent());
         Assert.Equal(1, aSS.Shells().Extent());
         Shape aShell = aSS.Shells().First();
-        Assert.True(aShell.IsClosed);
+        Assert.True(aShell.ClosedFlag);
         Assert.True(Tool.IsClosed(aShell));
         Assert.True(new Analyzer(aShell).IsValid());
     }
@@ -228,7 +228,7 @@ public class BOPAlgo_BuilderSolidTests
             Assert.Equal(2, aSS.Shells().Extent());
             foreach (Shape aShell in aSS.Shells())
             {
-                Assert.True(aShell.IsClosed);
+                Assert.True(aShell.ClosedFlag);
                 Assert.Equal(6, Faces(aShell).Extent());
             }
         }

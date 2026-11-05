@@ -41,7 +41,7 @@ public class PublicMemberTests
         Assert.Equal(MinAlign, wedge.Align);
         Assert.True(wedge.Volume > 0);
 
-        Vector[] corners = [new(0, 0, 0), new(1, 0, 0), new(0, 1, 0), new(0, 0, 1)];
+        Point3D[] corners = [new(0, 0, 0), new(1, 0, 0), new(0, 1, 0), new(0, 0, 1)];
         Assert.Equal(1.0 / 6, new ConvexPolyhedron(corners, new Rotation(), MinAlign).Volume, 6);
     }
 
@@ -76,7 +76,7 @@ public class PublicMemberTests
         Assert.Equal(2 * Math.Cos(Math.PI / 6), hexagon.Apothem, 9);
         Assert.Equal(Align.Center, hexagon.Align[0]);
 
-        Vector[] points = [new(0, 0), new(2, 0), new(2, 2), new(0, 2)];
+        Point3D[] points = [new(0, 0, 0), new(2, 0, 0), new(2, 2, 0), new(0, 2, 0)];
         var polygon = new Polygon(points, 0, MinAlign);
         Assert.Equal(4, polygon.Pts.Count);
         Assert.Equal(Align.Min, polygon.Align[0]);
@@ -93,8 +93,8 @@ public class PublicMemberTests
         Assert.Equal(90, triangle.AngleC, 6);
         Assert.Equal(180, triangle.AngleA + triangle.AngleB + triangle.AngleC, 6);
         Assert.Equal(6, triangle.Area, 6);
-        Assert.Equal(5, (triangle.VertexA.Center() - triangle.VertexB.Center()).Length, 6);
-        Assert.Equal(3, (triangle.VertexB.Center() - triangle.VertexC.Center()).Length, 6);
+        Assert.Equal(5, (triangle.VertexA.Center() - triangle.VertexB.Center()).Magnitude, 6);
+        Assert.Equal(3, (triangle.VertexB.Center() - triangle.VertexC.Center()).Magnitude, 6);
 
         var super = new Superellipse(4, 2, 2, 32, 0, new Alignment(Align.Center, Align.Center, Align.Center));
         Assert.Equal((4.0, 2.0, 2.0, 32), (super.Width, super.Height, super.SuperOrder, super.PointCount));
@@ -113,7 +113,7 @@ public class PublicMemberTests
         Assert.Equal((4.0, 2.0), (byCentres.CenterSeparation, byCentres.SlotHeight));
         Assert.Equal(4 * 2 + Math.PI, byCentres.Area, 6);
 
-        Edge line = Edge.MakeLine(new Vector(0, 0), new Vector(4, 0));
+        Edge line = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(4, 0, 0));
         var along = new SlotCurve(line, 2);
         Assert.Equal(2, along.SlotHeight);
         Assert.Equal(4, ((Edge)along.Curve).Length, 6);
@@ -124,9 +124,9 @@ public class PublicMemberTests
 #pragma warning restore CS0618
         Assert.Equal(Math.PI * 5 / 2, onArc.Arc.Length, 6);
 
-        var byPoint = new SlotCenterPoint(new Vector(0, 0), new Vector(2, 0), 2);
-        Assert.Equal(new Vector(2, 0), byPoint.Point);
-        Assert.Equal(new Vector(0, 0), byPoint.SlotCenter);
+        var byPoint = new SlotCenterPoint(new Point3D(0, 0, 0), new Point3D(2, 0, 0), 2);
+        Check.Near(new Point3D(2, 0, 0), byPoint.Point);
+        Check.Near(new Point3D(0, 0, 0), byPoint.SlotCenter);
         Assert.Equal(2, byPoint.SlotHeight);
     }
 
@@ -136,7 +136,7 @@ public class PublicMemberTests
         var grid = new GridLocations(2, 3, 2, 2);
         Assert.Equal((2.0, 3.0, 2, 2), (grid.XSpacing, grid.YSpacing, grid.XCount, grid.YCount));
         Assert.Equal(Align.Center, grid.Align[0]);
-        Assert.Equal(new Vector(1, 1.5), grid.Max);
+        Check.Near(new Point3D(1, 1.5, 0), grid.Max);
         Assert.Equal(4, grid.Count);
         Assert.Equal(4, grid.Locations.Count);
         Assert.Equal(grid.Locations[0], grid[0]);
@@ -148,7 +148,7 @@ public class PublicMemberTests
         Assert.Equal(4 / Math.Cos(Math.PI / 6), hex.Diagonal, 9);
         Assert.Equal(Align.Center, hex.Align[0]);
 
-        Assert.Equal(new Vector(0, 1, 0), new Location().YAxis.Direction);
+        Check.Near(new Vector3D(0, 1, 0), new Location().YAxis.Direction);
         Assert.Equal(new Rotation(10, 20, 30).Orientation, new Rotation(new Rotation(10, 20, 30)).Orientation);
     }
 
@@ -163,11 +163,11 @@ public class PublicMemberTests
         Assert.Equal(Color.Rgb(0.1, 0.2, 0.3).GetHashCode(), Color.Rgb(0.1, 0.2, 0.3).GetHashCode());
 
         Assert.True(Axis.X != Axis.Y);
-        Assert.True(Plane.XY == new Plane(new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(0, 0, 1)));
+        Assert.True(Plane.XY == new Plane(new Point3D(0, 0, 0), new Vector3D(1, 0, 0), new Vector3D(0, 0, 1)));
         Assert.True(Plane.XY != Plane.XZ);
         Assert.True(Plane.XY.Equals((object)Plane.XY));
         Assert.Equal(Plane.XY.Origin.Z, Plane.XY.ToCoordinateSystem().Location.Z, 9);
-        Assert.Equal(5, Plane.XY.LocationBetween(Plane.XY.Offset(5)).Position.Length, 9);
+        Assert.Equal(5, Plane.XY.LocationBetween(Plane.XY.Offset(5)).Position.ToVector().Magnitude, 9);
 
         var (x, y, z) = Vertex.Make(1, 2, 3);
         Assert.Equal((1.0, 2.0, 3.0), (x, y, z));
@@ -175,11 +175,11 @@ public class PublicMemberTests
         Assert.Equal(["µm", "mm", "cm", "m", "in", "ft", "g", "kg", "lb"],
                      new[] { Unit.Micrometer, Unit.Millimeter, Unit.Centimeter, Unit.Meter, Unit.Inch, Unit.Foot, Unit.Gram, Unit.Kilogram, Unit.Pound }.Select(u => u.Symbol()));
         Assert.Throws<ArgumentOutOfRangeException>(() => ((Unit)999).Symbol());
-        Assert.Equal([1.0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], new Matrix().TransposedList());
+        Assert.Equal([1.0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], new GeneralTransform3D().TransposedList());
         Assert.True(new MeshTolerances(0.1, 0.2) with { Relative = true, Linear = 0.3, Angular = 0.4 } is { Relative: true, Linear: 0.3, Angular: 0.4 });
 
-        BoundBox box = new Box(2, 2, 2).BoundBox();
-        Assert.Equal(1, box.ToBoundingBox().Max.X, 9);
+        BoundingBox box = new Box(2, 2, 2).BoundBox();
+        Assert.Equal(1, box.Max.X, 9);
 
         var selector = new Selector(ShapeType.Face, [new Selector.ParallelTo(Axis.X)]);
         Assert.True(selector.Equals((object)new Selector(ShapeType.Face, [new Selector.ParallelTo(Axis.X)])));
@@ -195,10 +195,10 @@ public class PublicMemberTests
     [Fact]
     public void Curves_combine()
     {
-        var curve = new Curve([Edge.MakeLine(new Vector(0, 0), new Vector(10, 0))]);
+        var curve = new Curve([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(10, 0, 0))]);
         var cutter = new Box(2, 2, 2);
-        Assert.Equal(2, Len(curve.Common([cutter.Moved(new Location(new Vector(5, 0, 0)))]).Value), 6);
-        Assert.Equal(8, Len(curve.Subtract([cutter.Moved(new Location(new Vector(5, 0, 0)))]).Value), 6);
+        Assert.Equal(2, Len(curve.Common([cutter.Moved(new Location(new Point3D(5, 0, 0)))]).Value), 6);
+        Assert.Equal(8, Len(curve.Subtract([cutter.Moved(new Location(new Point3D(5, 0, 0)))]).Value), 6);
         Assert.Equal(1, Len(curve & cutter), 6);
         Assert.Equal(9, Len(curve - cutter), 6);
         Assert.Equal(9, Len(curve - new Shape[] { cutter }), 6);
@@ -209,7 +209,7 @@ public class PublicMemberTests
     {
         var box = new Box(2, 2, 2);
         Part part = box;
-        Assert.Equal(4, part.Common([new Box(2, 2, 1).Moved(new Location(new Vector(0, 0, 0)))]).Value.Volume, 6);
+        Assert.Equal(4, part.Common([new Box(2, 2, 1).Moved(new Location(new Point3D(0, 0, 0)))]).Value.Volume, 6);
         Assert.Equal(4, (part & new Shape[] { new Box(2, 2, 1) }).Volume, 6);
         Assert.Equal(4, ((Shape)part & new Shape[] { new Box(2, 2, 1) }).Volume, 6);
 
@@ -225,27 +225,27 @@ public class PublicMemberTests
         var box = new Box(2, 2, 2);
         Face square = new Rectangle(2, 2).Faces()[0];
 
-        var target = new Box(10, 10, 1).Moved(new Location(new Vector(0, 0, 5)));
+        var target = new Box(10, 10, 1).Moved(new Location(new Point3D(0, 0, 5)));
         Assert.Equal(4 * 4.5, Extrude([square], Until.Next, target).Value.Volume, 3);
 
-        var curve = new Curve([Edge.MakeLine(new Vector(1, 0), new Vector(3, 0))]);
+        var curve = new Curve([Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(3, 0, 0))]);
         Assert.Equal(-3, Mirror(curve, Plane.YZ).BoundBox().Min.X, 6);
         Assert.Equal(2, Len(Split(curve, Plane.XZ.Offset(10), Keep.Bottom)), 6);
         Assert.True(Offset(curve, 1, new OffsetOptions { Closed = false }).IsSuccess);
 
         Face cutter = new Rectangle(20, 20).Faces()[0];
         Assert.Equal(4, Split((Shape)box, cutter, Keep.Top).Volume, 6);
-        Assert.Equal(2, Len(Split(new Curve([Edge.MakeLine(new Vector(0, 0, 0), new Vector(0, 0, 2))]), cutter, Keep.Top)), 6);
+        Assert.Equal(2, Len(Split(new Curve([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(0, 0, 2))]), cutter, Keep.Top)), 6);
         Sketch vertical = new Rotation(90, 0, 0) * (Sketch)new Rectangle(2, 2);
         Assert.Equal(2, Split(vertical, Plane.XY, Keep.Top).Area, 6);
         Assert.Equal(2, Split(vertical, cutter, Keep.Top).Area, 6);
 
-        Edge path = Edge.MakeLine(new Vector(0, 0, 0), new Vector(0, 0, 4));
+        Edge path = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(0, 0, 4));
         Assert.Equal(4 * 4, Sweep((Shape)new Rectangle(2, 2), path, new Kerf.Modeling.Operations.SweepOptions { IsFrenet = true }).Value.Volume, 3);
-        Assert.Equal(2 * 4, Sweep(new Curve([Edge.MakeLine(new Vector(-1, 0), new Vector(1, 0))]), path).Value.Area, 3);
+        Assert.Equal(2 * 4, Sweep(new Curve([Edge.MakeLine(new Point3D(-1, 0, 0), new Point3D(1, 0, 0))]), path).Value.Area, 3);
 
-        Assert.Equal(new Vector(1, 1, 0), ProjectPoints([Vertex.Make(1, 1, 5)], Plane.XY)[0]);
-        Plane projected = ProjectWorkplane(Vertex.Make(0, 0, 0), Vertex.Make(1, 0, 0), new Vector(0, 0, 1), 5);
+        Check.Near(new Point3D(1, 1, 0), ProjectPoints([Vertex.Make(1, 1, 5)], Plane.XY)[0]);
+        Plane projected = ProjectWorkplane(Vertex.Make(0, 0, 0), Vertex.Make(1, 0, 0), new Vector3D(0, 0, 1), 5);
         Assert.Equal(5, projected.Origin.Z, 6);
         Assert.True(MakeHull(Edge.MakeCircle(2)).Area > 12);
 
@@ -253,24 +253,24 @@ public class PublicMemberTests
         Assert.True(Fillet(new Rectangle(2, 2), new Rectangle(2, 2).Vertices()[0], 0.2).IsSuccess);
         Assert.Equal(8, flat.Volume, 6);
 
-        var thicken = new Kerf.Modeling.Operations.ThickenOptions { Clean = true, NormalOverride = new Vector(0, 0, 1) };
+        var thicken = new Kerf.Modeling.Operations.ThickenOptions { Clean = true, NormalOverride = new Vector3D(0, 0, 1) };
         Assert.Equal(4, Thicken(square, 1, thicken).Value.Volume, 6);
 
-        Assert.Equal(4, Kerf.Measurement.MeasureOperations.Area(OneD.OffsetTopodsFace(square, 0.1)), 6);
+        Assert.Equal(4, Kerf.Measurement.MeasureOperations.IntegrateArea(OneD.OffsetTopodsFace(square, 0.1)), 6);
     }
 
     [Fact]
     public void Shapes_answer_their_other_questions()
     {
         var box = new Box(2, 2, 2);
-        Assert.Equal(new Vector(0, 0, 0), box.Center(CenterOf.BoundingBox));
+        Check.Near(new Point3D(0, 0, 0), box.Center(CenterOf.BoundingBox));
 
-        var neighbour = box.Moved(new Location(new Vector(2, 0, 0)));
+        var neighbour = box.Moved(new Location(new Point3D(2, 0, 0)));
         Assert.NotEmpty(box.Touch(neighbour));
         // a shape that isn't a compound
         Face side = box.Faces()[0];
         Assert.Equal(side.Center(), side.Center(CenterOf.Mass));
-        Assert.Empty(side.Touch(side.Moved(new Location(new Vector(100, 0, 0)))));
+        Assert.Empty(side.Touch(side.Moved(new Location(new Point3D(100, 0, 0)))));
         // what the base class answers: no choice of centre, nothing touched
         var vertex = Vertex.Make(1, 2, 3);
         Assert.Throws<NotSupportedException>(() => vertex.Center(CenterOf.Mass));
@@ -335,11 +335,11 @@ public class PublicMemberTests
     [Fact]
     public void Arcs_and_constrained_lines_read_back()
     {
-        var arc = new JernArc(new Vector(0, 0), new Vector(1, 0), 2, 90);
-        Assert.Equal(new Vector(0, 2), arc.CenterPoint);
-        Assert.True((arc.EndOfArc - new Vector(2, 2)).Length < 1e-6);
+        var arc = new JernArc(new Point3D(0, 0, 0), new Vector3D(1, 0, 0), 2, 90);
+        Check.Near(new Point3D(0, 2, 0), arc.CenterPoint);
+        Assert.True((arc.EndOfArc - new Point3D(2, 2, 0)).Magnitude < 1e-6);
 
-        Edge circle = Edge.MakeCircle(1, new Plane(new Vector(3, 0)));
+        Edge circle = Edge.MakeCircle(1, new Plane(new Point3D(3, 0, 0)));
         var lines = new ConstrainedLines(new Tangent(circle, Tangency.Unqualified), Axis.X, 45, null);
         Assert.NotEmpty(lines.Edges());
         Assert.Equal(Axis.X, new Tangent(Axis.X, Tangency.Unqualified).Axis);

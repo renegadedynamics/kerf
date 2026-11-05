@@ -38,7 +38,7 @@ internal static class ComputeDataChPlnCon
     /// on the cone, computed by <see cref="ComputeDataChAsymPlnCon"/>.</summary>
     /// <remarks>The older direct construction OCCT keeps commented out after the function is not ported.</remarks>
     internal static bool ChFiKPart_MakeChamfer(DsDataStructure dStr, SurfData data,
-                                               ChamfMode mode, in Plane3D pln, in Cone con,
+                                               ChamfMode mode, in Plane3D pln, in Cone3D con,
                                                double fu, double lu, Orientation or1,
                                                Orientation or2, double dis1, double dis2,
                                                in Circle3D spine, double first, Orientation ofpl,

@@ -361,10 +361,10 @@ internal class BinaryShapeSet : ShapeSetBase
             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.Free());
             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.Modified());
             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.Checked());
-            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.IsOrientable);
-            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.IsClosed);
-            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.IsInfinite);
-            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.IsConvex);
+            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.OrientableFlag);
+            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.ClosedFlag);
+            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.InfiniteFlag);
+            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.ConvexFlag);
 
             // sub-shapes
             for (var its = new Iterator(s, false, false); its.More(); its.Next())

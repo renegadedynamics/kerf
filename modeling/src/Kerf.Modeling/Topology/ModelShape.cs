@@ -202,22 +202,22 @@ public abstract partial class ModelShape : IShape3D, IEquatable<ModelShape>
     // ---- Selection ----
 
     /// <summary>All the vertices in this object, or those <paramref name="select"/> picks.</summary>
-    public ShapeList<Vertex> Vertices(Select select = Select.All) => SelectFrom(this.SelectVertices(), select);
+    public ShapeList<Vertex> Vertices(Select select = Select.All) => SelectFrom(ShapeExtensions.Vertices(this), select);
 
     /// <summary>All the non-degenerate edges in this object, or those <paramref name="select"/> picks.</summary>
-    public ShapeList<Edge> Edges(Select select = Select.All) => SelectFrom(this.SelectEdges(), select);
+    public ShapeList<Edge> Edges(Select select = Select.All) => SelectFrom(ShapeExtensions.Edges(this), select);
 
     /// <summary>All the wires in this object, or those <paramref name="select"/> picks.</summary>
-    public virtual ShapeList<Wire> Wires(Select select = Select.All) => SelectFrom(this.SelectWires(), select);
+    public virtual ShapeList<Wire> Wires(Select select = Select.All) => SelectFrom(ShapeExtensions.Wires(this), select);
 
     /// <summary>All the faces in this object, or those <paramref name="select"/> picks.</summary>
-    public ShapeList<Face> Faces(Select select = Select.All) => SelectFrom(this.SelectFaces(), select);
+    public ShapeList<Face> Faces(Select select = Select.All) => SelectFrom(ShapeExtensions.Faces(this), select);
 
     /// <summary>All the shells in this object, or those <paramref name="select"/> picks.</summary>
-    public ShapeList<Shell> Shells(Select select = Select.All) => SelectFrom(this.SelectShells(), select);
+    public ShapeList<Shell> Shells(Select select = Select.All) => SelectFrom(ShapeExtensions.Shells(this), select);
 
     /// <summary>All the solids in this object, or those <paramref name="select"/> picks.</summary>
-    public ShapeList<Solid> Solids(Select select = Select.All) => SelectFrom(this.SelectSolids(), select);
+    public ShapeList<Solid> Solids(Select select = Select.All) => SelectFrom(ShapeExtensions.Solids(this), select);
 
     /// <summary>Narrows a list of this object's sub-shapes by what the last operation did.</summary>
     private protected ShapeList<T> SelectFrom<T>(ShapeList<T> shapes, Select select) where T : IShape
@@ -308,10 +308,10 @@ public partial class Curve : ModelShape, IShape1D
     private Wire AsWire() => Shape.TryAs(out Wire wire) && !Shape.IsNull ? wire : Wire.Make(Edges());
 
     /// <summary>The point at a parameter along the curve, which must be continuous.</summary>
-    public Vector PositionAt(double position) => Shape.TryAs(out Edge edge) && !Shape.IsNull ? edge.PositionAt(position) : AsWire().PositionAt(position);
+    public Point3D PositionAt(double position) => Shape.TryAs(out Edge edge) && !Shape.IsNull ? edge.PositionAt(position) : AsWire().PositionAt(position);
 
     /// <summary>The tangent at a parameter along the curve, which must be continuous.</summary>
-    public Vector TangentAt(double position) => Shape.TryAs(out Edge edge) && !Shape.IsNull ? edge.TangentAt(position) : AsWire().TangentAt(position);
+    public Vector3D TangentAt(double position) => Shape.TryAs(out Edge edge) && !Shape.IsNull ? edge.TangentAt(position) : AsWire().TangentAt(position);
 
     /// <summary>The location at a parameter along the curve, which must be continuous.</summary>
     public Location LocationAt(double position) => Shape.TryAs(out Edge edge) && !Shape.IsNull ? edge.LocationAt(position) : AsWire().LocationAt(position);

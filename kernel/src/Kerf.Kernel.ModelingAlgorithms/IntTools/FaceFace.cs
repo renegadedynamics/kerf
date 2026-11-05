@@ -163,7 +163,7 @@ internal partial class FaceFace
         SurfaceKind type2 = bas2.GetType();
 
         Plane3D s1;
-        Cylinder s2;
+        Cylinder3D s2;
         if (type1 == Plane)
         {
             s1 = bas1.Plane();

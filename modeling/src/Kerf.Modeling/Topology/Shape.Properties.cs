@@ -9,6 +9,17 @@ namespace Kerf.Modeling;
 
 public static partial class ShapeExtensions
 {
+    // Any mesh on the shape is ignored, as it can affect the box, unless the shape has nothing else (faces holding only
+    // triangles, as STL and glTF are read). The tolerance is accepted, as build123d accepts it, but unused.
+    private static BoundingBox BoxOf(Shape shape, double? tolerance, bool optimal)
+    {
+        _ = tolerance;
+        if (shape.IsEmpty)
+            return BoundingBox.Empty;
+        var box = shape.BoundingBox(optimal);
+        return box.IsEmpty ? shape.BoundingBox(optimal: false, useTriangulation: true) : box;
+    }
+
     extension<TSelf>(TSelf self) where TSelf : IShape
     {
         // ---- Kind ----
@@ -47,7 +58,7 @@ public static partial class ShapeExtensions
         }
 
         /// <summary>The position part of the shape's Location.</summary>
-        public Vector Position
+        public Point3D Position
         {
             get
             {
@@ -57,7 +68,7 @@ public static partial class ShapeExtensions
         }
 
         /// <summary>The orientation part of the shape's Location, as rotations in degrees.</summary>
-        public Vector OrientationAngles
+        public Vector3D OrientationAngles
         {
             get
             {
@@ -78,9 +89,9 @@ public static partial class ShapeExtensions
                 return 0.0;
             return TopoUtil.ShapeTypeOf(self.AsShape()) switch
             {
-                ShapeType.Edge or ShapeType.Wire => self.AsShape().Length(),
-                ShapeType.Face or ShapeType.Shell => self.AsShape().Area(),
-                _ => self.AsShape().Volume(),
+                ShapeType.Edge or ShapeType.Wire => self.AsShape().IntegrateLength(),
+                ShapeType.Face or ShapeType.Shell => self.AsShape().IntegrateArea(),
+                _ => self.AsShape().IntegrateVolume(),
             };
         }
 
@@ -98,7 +109,7 @@ public static partial class ShapeExtensions
         }
 
         /// <summary>The principal axes of inertia, each with its moment.</summary>
-        public IReadOnlyList<(Vector Axis, double Moment)> PrincipalProperties
+        public IReadOnlyList<(Direction3D Axis, double Moment)> PrincipalProperties
         {
             get
             {
@@ -106,7 +117,7 @@ public static partial class ShapeExtensions
                 var props = self.AsShape().MassProperties(Dimension.Volume);
                 var (m1, m2, m3) = props.PrincipalMoments;
                 var (a1, a2, a3) = props.PrincipalAxes;
-                return [(new Vector(a1), m1), (new Vector(a2), m2), (new Vector(a3), m3)];
+                return [(a1, m1), (a2, m2), (a3, m3)];
             }
         }
 
@@ -179,7 +190,7 @@ public static partial class ShapeExtensions
         // ---- Bounding boxes ----
 
         /// <summary>A box aligned with the axes containing this shape (tight when <paramref name="optimal"/>).</summary>
-        public BoundBox BoundBox(double? tolerance = null, bool optimal = true) => Kerf.Modeling.BoundBox.FromShape(self.AsShape(), tolerance, optimal);
+        public BoundingBox BoundBox(double? tolerance = null, bool optimal = true) => BoxOf(self.AsShape(), tolerance, optimal);
 
         /// <summary>The smallest box in any orientation containing this shape.</summary>
         public OrientedBoundBox OrientedBoundingBox()
@@ -202,24 +213,24 @@ public static partial class ShapeExtensions
         public double DistanceTo(Shape other) => self.DistanceToWithClosestPoints(other).Distance;
 
         /// <summary>The minimal distance between this shape and a point.</summary>
-        public double DistanceTo(Vector point) => self.DistanceToWithClosestPoints(point).Distance;
+        public double DistanceTo(Point3D point) => self.DistanceToWithClosestPoints(point).Distance;
 
         /// <summary>The points on this shape and another where they are closest.</summary>
-        public (Vector OnThis, Vector OnOther) ClosestPoints(Shape other)
+        public (Point3D OnThis, Point3D OnOther) ClosestPoints(Shape other)
         {
             var (_, a, b) = self.DistanceToWithClosestPoints(other);
             return (a, b);
         }
 
         /// <summary>The points on this shape and at <paramref name="point"/> where they are closest.</summary>
-        public (Vector OnThis, Vector OnOther) ClosestPoints(Vector point)
+        public (Point3D OnThis, Point3D OnOther) ClosestPoints(Point3D point)
         {
             var (_, a, b) = self.DistanceToWithClosestPoints(point);
             return (a, b);
         }
 
         /// <summary>The minimal distance to another shape and the points on each where it is found.</summary>
-        public (double Distance, Vector OnThis, Vector OnOther) DistanceToWithClosestPoints(Shape other)
+        public (double Distance, Point3D OnThis, Point3D OnOther) DistanceToWithClosestPoints(Shape other)
         {
             if (self.IsEmpty || other.IsEmpty)
                 throw new InvalidOperationException("Cannot calculate distance to or from an empty shape");
@@ -227,19 +238,19 @@ public static partial class ShapeExtensions
         }
 
         /// <summary>The minimal distance to a point and the points on each where it is found.</summary>
-        public (double Distance, Vector OnThis, Vector OnOther) DistanceToWithClosestPoints(Vector point)
+        public (double Distance, Point3D OnThis, Point3D OnOther) DistanceToWithClosestPoints(Point3D point)
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("Cannot calculate distance to or from an empty shape");
-            var pnt = point.ToPoint3D();
+            var pnt = point;
             return self.DistanceToTopo(Vertex.At(pnt));
         }
 
-        private (double, Vector, Vector) DistanceToTopo(Shape other)
+        private (double, Point3D, Point3D) DistanceToTopo(Shape other)
         {
             var distance = Failures.Get(MeasureOperations.Distance(self.AsShape(), other), () => "distance");
             var nearest = distance.Solutions[0];
-            return (distance.Value, new Vector(nearest.OnA), new Vector(nearest.OnB));
+            return (distance.Value, nearest.OnA, nearest.OnB);
         }
 
         /// <summary>The minimal distances from this shape to each of <paramref name="others"/>.</summary>
@@ -262,7 +273,7 @@ public static partial class ShapeExtensions
                 return [];
             var ax1 = axis.ToAxis3D();
             var line = new Line3D(ax1);
-            var origin = axis.Position.ToPoint3D();
+            var origin = axis.Position;
             var found = new List<(Face Face, double Distance)>();
             foreach (var hit in MeasureOperations.Intersect(self.AsShape(), in line, tolerance))
                 found.Add((hit.Face, Math.Abs(origin.SquareDistanceTo(hit.Point))));
@@ -272,7 +283,7 @@ public static partial class ShapeExtensions
         // ---- Meshing ----
 
         /// <summary>A triangulated approximation: the vertices and the triangles as index triples into them.</summary>
-        public (IReadOnlyList<Vector> Vertices, IReadOnlyList<(int, int, int)> Triangles) Tessellate(double tolerance, double angularTolerance = 0.1)
+        public (IReadOnlyList<Point3D> Vertices, IReadOnlyList<(int, int, int)> Triangles) Tessellate(double tolerance, double angularTolerance = 0.1)
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("Cannot tessellate an empty shape");
@@ -282,10 +293,10 @@ public static partial class ShapeExtensions
             var meshes = new Dictionary<Shape, global::Kerf.Meshing.FaceMesh>(ShapeComparer.Same);
             foreach (var faceMesh in mesh.Faces)
                 meshes.TryAdd(faceMesh.Face, faceMesh);
-            var vertices = new List<Vector>();
+            var vertices = new List<Point3D>();
             var triangles = new List<(int, int, int)>();
             int offset = 0;
-            foreach (var face in self.SelectFaces())
+            foreach (var face in self.Faces())
             {
                 if (!meshes.TryGetValue(face, out var faceMesh) || faceMesh.TriangleCount == 0)
                     continue;
@@ -294,7 +305,7 @@ public static partial class ShapeExtensions
                 bool mirrored = faceMesh.Face.Placement.Transformation.IsNegative;
                 var nodes = faceMesh.GetNodes();
                 foreach (var node in nodes)
-                    vertices.Add(new Vector(node.X, node.Y, node.Z));
+                    vertices.Add(new Point3D(node.X, node.Y, node.Z));
                 foreach (var t in faceMesh.GetTriangles())
                 {
                     int a = t.A + offset, b = t.B + offset, c = t.C + offset;
@@ -311,7 +322,7 @@ public static partial class ShapeExtensions
 
         /// <summary>The centre of several shapes, weighted by their volume (mass) or by their bounding boxes.</summary>
         /// <exception cref="ArgumentException"><see cref="CenterOf.Geometry"/> isn't implemented.</exception>
-        public static Vector CombinedCenter<T>(IEnumerable<T> objects, CenterOf centerOf = CenterOf.Mass) where T : IShape
+        public static Point3D CombinedCenter<T>(IEnumerable<T> objects, CenterOf centerOf = CenterOf.Mass) where T : IShape
         {
             var list = objects.ToList();
             switch (centerOf)
@@ -319,13 +330,13 @@ public static partial class ShapeExtensions
                 case CenterOf.Mass:
                 {
                     var totalMass = list.Sum(o => o.ComputeVolume());
-                    var sum = list.Select(o => o.Center(CenterOf.Mass) * o.ComputeVolume()).Aggregate((a, b) => a + b);
-                    return sum * (1.0 / totalMass);
+                    var sum = list.Select(o => o.Center(CenterOf.Mass).ToVector() * o.ComputeVolume()).Aggregate((a, b) => a + b);
+                    return (sum * (1.0 / totalMass)).ToPoint();
                 }
                 case CenterOf.BoundingBox:
                 {
-                    var sum = list.Select(o => o.BoundBox().Center()).Aggregate((a, b) => a + b);
-                    return sum * (1.0 / list.Count);
+                    var sum = list.Select(o => o.BoundBox().Center().ToVector()).Aggregate((a, b) => a + b);
+                    return (sum * (1.0 / list.Count)).ToPoint();
                 }
                 default:
                     throw new ArgumentException("CenterOf.Geometry not implemented");

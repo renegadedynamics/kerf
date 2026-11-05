@@ -1565,7 +1565,7 @@ internal class TopolTool : Transient
     }
 
     /// <summary>Computes the parameters of the apex of a cone.</summary>
-    public static void GetConeApexParam(in Cone c, out double u, out double v)
+    public static void GetConeApexParam(in Cone3D c, out double u, out double v)
     {
         CoordinateSystem pos = c.Position;
         double radius = c.RefRadius;

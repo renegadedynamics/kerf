@@ -11,6 +11,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Build123d.Tests" />
     <Using Include="Kerf.Topology" />
+    <Using Include="Kerf.Geometry" />
   </ItemGroup>
 
   <!-- The kernel, called directly (unit 10B): the kernel's projects (KerfKernelRoot), which pack as the package dependencies -->

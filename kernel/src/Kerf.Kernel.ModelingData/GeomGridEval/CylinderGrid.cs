@@ -44,7 +44,7 @@ internal sealed class CylinderGrid : GeomGridEvalGrid.ISurfaceEvaluator
 
     private Data ExtractData()
     {
-        Cylinder cyl = _geom!.Cylinder;
+        Cylinder3D cyl = _geom!.Cylinder;
         Point3D center = cyl.Location;
         Direction3D xDir = cyl.Position.XDirection;
         Direction3D yDir = cyl.Position.YDirection;

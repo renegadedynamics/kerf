@@ -1575,25 +1575,7 @@ internal static class Tool
     {
         if (shape.Type == ShapeType.Shell)
         {
-            var map = new HashSet<Shape>(ShapeHasher.Instance);
-            var exp = new Explorer(shape.Oriented(Forward), ShapeType.Edge);
-            bool hasBound = false;
-            for (; exp.More(); exp.Next())
-            {
-                Edge e = ShapeCasts.Edge(exp.Current());
-                if (Tool.Degenerated(e) || e.Orientation == Internal || e.Orientation == External)
-                {
-                    continue;
-                }
-
-                hasBound = true;
-                if (!map.Add(e))
-                {
-                    map.Remove(e);
-                }
-            }
-
-            return hasBound && map.Count == 0;
+            return NoFreeEdge(shape);
         }
         else if (shape.Type == ShapeType.Wire)
         {
@@ -1623,7 +1605,33 @@ internal static class Tool
             return !vFirst.IsNull && vFirst.IsSame(vLast);
         }
 
-        return shape.IsClosed;
+        return shape.ClosedFlag;
+    }
+
+    /// <summary>True for a face taken as a one-face shell: each of its edges is met twice.</summary>
+    internal static bool IsClosedAsFace(in Shape face) => NoFreeEdge(face);
+
+    private static bool NoFreeEdge(in Shape shape)
+    {
+        var map = new HashSet<Shape>(ShapeHasher.Instance);
+        var exp = new Explorer(shape.Oriented(Forward), ShapeType.Edge);
+        bool hasBound = false;
+        for (; exp.More(); exp.Next())
+        {
+            Edge e = ShapeCasts.Edge(exp.Current());
+            if (Tool.Degenerated(e) || e.Orientation == Internal || e.Orientation == External)
+            {
+                continue;
+            }
+
+            hasBound = true;
+            if (!map.Add(e))
+            {
+                map.Remove(e);
+            }
+        }
+
+        return hasBound && map.Count == 0;
     }
 
     // modified by NIZNHY-PKV Fri Oct 17 14:09:58 2008 f

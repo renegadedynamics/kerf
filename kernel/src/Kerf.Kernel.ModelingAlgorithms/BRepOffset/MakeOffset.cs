@@ -2268,7 +2268,7 @@ internal sealed partial class MakeOffset
         // OCCT.NET: OCCT iterates the apexes by their addresses; the port in insertion order (decision 1032).
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> cone in facesOfCone)
         {
-            Sphere theSphere = new();
+            Sphere3D theSphere = new();
             SphericalSurface? sphSurf = null;
             Wire sphereWire = new();
             bb.MakeWire(ref sphereWire);
@@ -2522,7 +2522,7 @@ internal sealed partial class MakeOffset
             theShell.Free(true);
             bb.Add(theShell, newSphericalFace);
             isModified = true;
-            if (!theShell.IsClosed)
+            if (!theShell.ClosedFlag)
             {
                 if (Tool.IsClosed(theShell))
                 {
@@ -2559,7 +2559,7 @@ internal sealed partial class MakeOffset
                 // if (myThickening && myOffset > 0.)
                 //   Sh.Reverse();
                 nbShell++;
-                if (sh.IsClosed)
+                if (sh.ClosedFlag)
                 {
                     bb.Add(sol, sh);
                 }
@@ -3107,7 +3107,7 @@ internal sealed partial class MakeOffset
                         }
                         else // case of cone
                         {
-                            Cone theCone =
+                            Cone3D theCone =
                                 new MakeCone(circ.Location, circOE.Location, circ.Radius, circOE.Radius).Value();
                             CoordinateSystem theAx3 = new(circ.Position);
                             if (circAxisDir * theCone.Axis.Direction < 0.0)
@@ -3459,7 +3459,7 @@ internal sealed partial class MakeOffset
         for (; explo.More(); explo.Next())
         {
             Shape s = explo.Current();
-            if (!s.IsClosed)
+            if (!s.ClosedFlag)
             {
                 if (Tool.IsClosed(s))
                 {
@@ -3509,7 +3509,7 @@ internal sealed partial class MakeOffset
                 sh.Reverse();
             }
             nbShell++;
-            if (sh.IsClosed && makeSolid)
+            if (sh.ClosedFlag && makeSolid)
             {
                 b.Add(sol, sh);
             }

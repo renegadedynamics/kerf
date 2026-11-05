@@ -34,7 +34,7 @@ public sealed class CylindricalSurface : ElementarySurface
     }
 
     /// <summary>A cylinder from a gp cylinder.</summary>
-    public CylindricalSurface(in Cylinder c)
+    public CylindricalSurface(in Cylinder3D c)
     {
         _radius = c.Radius;
         _pos = c.Position;
@@ -68,7 +68,7 @@ public sealed class CylindricalSurface : ElementarySurface
     /// <summary>False.</summary>
     public sealed override bool IsVPeriodic => false;
 
-    internal void SetCylinder(in Cylinder c)
+    internal void SetCylinder(in Cylinder3D c)
     {
         CheckMutable();
         _radius = c.Radius;
@@ -87,7 +87,7 @@ public sealed class CylindricalSurface : ElementarySurface
     }
 
     /// <summary>A copy that is the cylinder C.</summary>
-    public CylindricalSurface WithCylinder(in Cylinder c)
+    public CylindricalSurface WithCylinder(in Cylinder3D c)
     {
         CylindricalSurface copy = (CylindricalSurface)Copy();
         copy.SetCylinder(c);
@@ -149,7 +149,7 @@ public sealed class CylindricalSurface : ElementarySurface
     }
 
     /// <summary>The non-persistent gp cylinder with the same geometry.</summary>
-    public Cylinder Cylinder => new Cylinder(_pos, _radius);
+    public Cylinder3D Cylinder => new Cylinder3D(_pos, _radius);
 
     internal sealed override Point3D EvalD0(double u, double v)
     {

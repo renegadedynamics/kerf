@@ -62,12 +62,12 @@ internal class ExtElCS
     }
 
     /// <summary>The distances between a line and a cylinder.</summary>
-    public ExtElCS(in Line3D c, in Cylinder s)
+    public ExtElCS(in Line3D c, in Cylinder3D s)
     {
         Perform(c, s);
     }
 
-    public void Perform(in Line3D c, in Cylinder s)
+    public void Perform(in Line3D c, in Cylinder3D s)
     {
         _done = false;
         _nbExt = 0;
@@ -178,7 +178,7 @@ internal class ExtElCS
     }
 
     /// <summary>The distances between a line and a cone (not implemented in OCCT).</summary>
-    public ExtElCS(in Line3D c, in Cone s)
+    public ExtElCS(in Line3D c, in Cone3D s)
     {
         Perform(c, s);
     }
@@ -186,18 +186,18 @@ internal class ExtElCS
     // void Extrema_ExtElCS::Perform(const gp_Lin& C,
     //			      const gp_Cone& S)
     /// <exception cref="MethodNotImplementedException">Always.</exception>
-    public void Perform(in Line3D c, in Cone s)
+    public void Perform(in Line3D c, in Cone3D s)
     {
         throw new MethodNotImplementedException();
     }
 
     /// <summary>The distances between a line and a sphere.</summary>
-    public ExtElCS(in Line3D c, in Sphere s)
+    public ExtElCS(in Line3D c, in Sphere3D s)
     {
         Perform(c, s);
     }
 
-    public void Perform(in Line3D c, in Sphere s)
+    public void Perform(in Line3D c, in Sphere3D s)
     {
         // In case of intersection - return four points:
         // 2 intersection points and 2 perpendicular.
@@ -270,7 +270,7 @@ internal class ExtElCS
     }
 
     /// <summary>The distances between a line and a torus (not implemented in OCCT).</summary>
-    public ExtElCS(in Line3D c, in Torus s)
+    public ExtElCS(in Line3D c, in Torus3D s)
     {
         Perform(c, s);
     }
@@ -278,7 +278,7 @@ internal class ExtElCS
     // void Extrema_ExtElCS::Perform(const gp_Lin& C,
     //			      const gp_Torus& S)
     /// <exception cref="MethodNotImplementedException">Always.</exception>
-    public void Perform(in Line3D c, in Torus s)
+    public void Perform(in Line3D c, in Torus3D s)
     {
         throw new MethodNotImplementedException();
     }
@@ -390,14 +390,14 @@ internal class ExtElCS
     }
 
     /// <summary>The distances between a circle and a cylinder.</summary>
-    public ExtElCS(in Circle3D c, in Cylinder s)
+    public ExtElCS(in Circle3D c, in Cylinder3D s)
     {
         Perform(c, s);
     }
 
     //  Modified by skv - Thu Jul  7 14:37:05 2005 OCC9134 Begin
     // Implementation of the method.
-    public void Perform(in Circle3D c, in Cylinder s)
+    public void Perform(in Circle3D c, in Cylinder3D s)
     {
         _done = false;
         _isPar = false;
@@ -543,7 +543,7 @@ internal class ExtElCS
     //  Modified by skv - Thu Jul  7 14:37:05 2005 OCC9134 End
 
     /// <summary>The distances between a circle and a cone (not implemented in OCCT).</summary>
-    public ExtElCS(in Circle3D c, in Cone s)
+    public ExtElCS(in Circle3D c, in Cone3D s)
     {
         Perform(c, s);
     }
@@ -551,18 +551,18 @@ internal class ExtElCS
     // void Extrema_ExtElCS::Perform(const gp_Circ& C,
     //			 const gp_Cone& S)
     /// <exception cref="MethodNotImplementedException">Always.</exception>
-    public void Perform(in Circle3D c, in Cone s)
+    public void Perform(in Circle3D c, in Cone3D s)
     {
         throw new MethodNotImplementedException();
     }
 
     /// <summary>The distances between a circle and a sphere: the minimal ones only.</summary>
-    public ExtElCS(in Circle3D c, in Sphere s)
+    public ExtElCS(in Circle3D c, in Sphere3D s)
     {
         Perform(c, s);
     }
 
-    public void Perform(in Circle3D c, in Sphere s)
+    public void Perform(in Circle3D c, in Sphere3D s)
     {
         _done = false;
         _isPar = false;
@@ -692,7 +692,7 @@ internal class ExtElCS
     }
 
     /// <summary>The distances between a circle and a torus (not implemented in OCCT).</summary>
-    public ExtElCS(in Circle3D c, in Torus s)
+    public ExtElCS(in Circle3D c, in Torus3D s)
     {
         Perform(c, s);
     }
@@ -700,7 +700,7 @@ internal class ExtElCS
     // void Extrema_ExtElCS::Perform(const gp_Circ& C,
     //			      const gp_Torus& S)
     /// <exception cref="MethodNotImplementedException">Always.</exception>
-    public void Perform(in Circle3D c, in Torus s)
+    public void Perform(in Circle3D c, in Torus3D s)
     {
         throw new MethodNotImplementedException();
     }

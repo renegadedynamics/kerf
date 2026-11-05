@@ -471,7 +471,7 @@ internal abstract class NumLinearRegularSweep
             // the sweep's working overlay is finished, the caller's wire keeps its flag (the result holds the wire as
             // the sweep left it, which FromSwept gives).
             bool isClosed = Tool.IsClosed(_shapes[iGenS, iDirS]);
-            if (_shapes[iGenS, iDirS].IsClosed != isClosed && !WorkingOverlay.IsLocked(_shapes[iGenS, iDirS].TShape()!))
+            if (_shapes[iGenS, iDirS].ClosedFlag != isClosed && !WorkingOverlay.IsLocked(_shapes[iGenS, iDirS].TShape()!))
             {
                 _shapes[iGenS, iDirS].Closed(isClosed);
             }

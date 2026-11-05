@@ -15,7 +15,7 @@ public class Convert_ConeToBSplineSurfaceTest
     [Fact]
     public void FullCone()
     {
-        Cone aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 6.0, 3.0);
+        Cone3D aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 6.0, 3.0);
         ConeToBSplineSurface aConv = new(aCone, 0.0, 10.0);
 
         Assert.Equal(2, aConv.UDegree());
@@ -29,7 +29,7 @@ public class Convert_ConeToBSplineSurfaceTest
     [Fact]
     public void TrimmedCone()
     {
-        Cone aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 4.0, 2.0);
+        Cone3D aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 4.0, 2.0);
         double aU1 = 0.0, aU2 = M_PI;
         double aV1 = 0.0, aV2 = 5.0;
         ConeToBSplineSurface aConv = new(aCone, aU1, aU2, aV1, aV2);
@@ -41,7 +41,7 @@ public class Convert_ConeToBSplineSurfaceTest
     [Fact]
     public void WeightsArePositive()
     {
-        Cone aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 6.0, 1.0);
+        Cone3D aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 6.0, 1.0);
         ConeToBSplineSurface aConv = new(aCone, 0.0, 5.0);
 
         NCollection_Array2<double> aWeights = aConv.Weights();
@@ -60,7 +60,7 @@ public class Convert_ConeToBSplineSurfaceTest
         double aSemiAngle = M_PI / 6.0;
         double aRadius = 3.0;
         CoordinateSystem anAx3 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Cone aCone = new(anAx3, aSemiAngle, aRadius);
+        Cone3D aCone = new(anAx3, aSemiAngle, aRadius);
         ConeToBSplineSurface aConv = new(aCone, 0.0, M_PI, 0.0, 10.0);
 
         double aTol = 1.0e-10;

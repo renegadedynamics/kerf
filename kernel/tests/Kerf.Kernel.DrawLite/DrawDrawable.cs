@@ -65,22 +65,22 @@ public sealed class DrawShape(in Shape theShape) : DrawDrawable
             theResult.Append(" Modified");
         }
 
-        if (Shape.IsOrientable)
+        if (Shape.OrientableFlag)
         {
             theResult.Append(" Orientable");
         }
 
-        if (Shape.IsClosed)
+        if (Shape.ClosedFlag)
         {
             theResult.Append(" Closed");
         }
 
-        if (Shape.IsInfinite)
+        if (Shape.InfiniteFlag)
         {
             theResult.Append(" Infinite");
         }
 
-        if (Shape.IsConvex)
+        if (Shape.ConvexFlag)
         {
             theResult.Append(" Convex");
         }

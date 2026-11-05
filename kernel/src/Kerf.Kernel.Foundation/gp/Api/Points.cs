@@ -6,7 +6,7 @@ using System.Numerics;
 
 namespace Kerf.Geometry;
 
-public readonly partial struct Point3D
+public readonly partial struct Point3D : IGeometry
 {
     /// <summary>The origin, (0, 0, 0).</summary>
     public static Point3D Origin => default;
@@ -89,6 +89,15 @@ public readonly partial struct Vector2D
 
 public readonly partial struct Direction3D
 {
+    /// <summary>The vector of unit length along this direction: nothing is lost, so it converts implicitly.</summary>
+    public static implicit operator Vector3D(in Direction3D direction) => new(direction);
+
+    /// <summary>The vector along this direction with a length of <paramref name="scalar"/>.</summary>
+    public static Vector3D operator *(in Direction3D direction, double scalar) => new Vector3D(direction) * scalar;
+
+    /// <summary>The vector along this direction with a length of <paramref name="scalar"/>.</summary>
+    public static Vector3D operator *(double scalar, in Direction3D direction) => new Vector3D(direction) * scalar;
+
     /// <summary>The direction of the X axis, (1, 0, 0).</summary>
     public static Direction3D UnitX => new(D.X);
 

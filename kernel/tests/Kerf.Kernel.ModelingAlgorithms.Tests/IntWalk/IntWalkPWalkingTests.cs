@@ -28,7 +28,7 @@ public class IntWalkPWalkingTests
 
     private static readonly Plane3D PlaneX2 = new(new Point3D(2, 0, 0), new Direction3D(1, 0, 0));
 
-    private static readonly Cylinder Cylinder5 = new(new CoordinateSystem(), 5.0);
+    private static readonly Cylinder3D Cylinder5 = new(new CoordinateSystem(), 5.0);
 
     private static (SurfaceAdaptorBase Plane, SurfaceAdaptorBase Cylinder) PlaneAndCylinder() =>
         (new SurfaceAdaptor(new PlaneSurface(PlaneX2), -20.0, 20.0, -20.0, 20.0),

@@ -317,7 +317,7 @@ public static class FilletOperations
                 history.AddGenerated(corner, edge);
                 history.Remove(corner);
             }
-            foreach (Edge e in face.Edges())
+            foreach (Edge e in face.AllEdges())
             {
                 if (maker.IsModified(e))
                 {
@@ -381,7 +381,7 @@ public static class FilletOperations
     private static ImmutableArray<Edge> Owned(Shape shape, IEnumerable<Edge> edges)
     {
         MakerOutcome.NotNull(shape, nameof(shape));
-        ImmutableArray<Edge> own = shape.Edges();
+        ImmutableArray<Edge> own = shape.AllEdges();
         int count = 0;
         foreach (Edge e in edges)
         {
@@ -399,7 +399,7 @@ public static class FilletOperations
     }
 
     private static Face FirstFaceOf(Shape shape, Edge edge) =>
-        shape.Faces().FirstOrDefault(f => f.Edges().Any(e => e.IsSame(edge)));
+        shape.AllFaces().FirstOrDefault(f => f.AllEdges().Any(e => e.IsSame(edge)));
 
     private static Vertex[] Corners(Face face, IEnumerable<Vertex> vertices)
     {
@@ -409,7 +409,7 @@ public static class FilletOperations
         {
             throw new ArgumentException("There are no vertices.", nameof(vertices));
         }
-        ImmutableArray<Vertex> own = face.Vertices();
+        ImmutableArray<Vertex> own = face.AllVertices();
         if (corners.Any(v => v.IsNull || !own.Any(o => o.IsSame(v))))
         {
             throw new ArgumentException("A vertex isn't one of the face's.", nameof(vertices));
@@ -422,9 +422,9 @@ public static class FilletOperations
     {
         MakerOutcome.NotNull(first, "corners");
         MakerOutcome.NotNull(second, "corners");
-        foreach (Vertex v in first.Vertices())
+        foreach (Vertex v in first.AllVertices())
         {
-            if (second.Vertices().Any(w => w.IsSame(v)))
+            if (second.AllVertices().Any(w => w.IsSame(v)))
             {
                 return v;
             }
@@ -435,7 +435,7 @@ public static class FilletOperations
 
     private static (Edge, Edge) EdgesAt(Face face, Vertex vertex)
     {
-        Edge[] at = [.. face.Edges().Where(e => e.Vertices().Any(v => v.IsSame(vertex)))];
+        Edge[] at = [.. face.AllEdges().Where(e => e.AllVertices().Any(v => v.IsSame(vertex)))];
         return at.Length == 2 ? (at[0], at[1]) : throw new ArgumentException("A vertex isn't a corner between two edges.", "vertices");
     }
 }

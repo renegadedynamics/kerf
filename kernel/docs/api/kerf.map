@@ -4624,8 +4624,8 @@ type T:Occt.gp_Ax2d Kerf.Geometry.Axis2D  # public API (10D)
 type T:Occt.gp_Ax3 Kerf.Geometry.CoordinateSystem  # 10E: decision 1349 (57)
 type T:Occt.gp_Circ Kerf.Geometry.Circle3D  # public API (10D)
 type T:Occt.gp_Circ2d Kerf.Geometry.Circle2D  # public API (10D)
-type T:Occt.gp_Cone Kerf.Geometry.Cone  # 10E: decision 1349 (57)
-type T:Occt.gp_Cylinder Kerf.Geometry.Cylinder  # 10E: decision 1349 (57)
+type T:Occt.gp_Cone Kerf.Geometry.Cone3D  # 10Q2: the modelling objects keep the plain names
+type T:Occt.gp_Cylinder Kerf.Geometry.Cylinder3D  # 10Q2: the modelling objects keep the plain names
 type T:Occt.gp_Dir Kerf.Geometry.Direction3D  # public API (10D)
 type T:Occt.gp_Dir2d Kerf.Geometry.Direction2D  # public API (10D)
 type T:Occt.gp_Elips Kerf.Geometry.Ellipse3D  # public API (10D)
@@ -4647,8 +4647,8 @@ type T:Occt.gp_Pnt2d Kerf.Geometry.Point2D  # public API (10D)
 type T:Occt.gp_Quaternion Kerf.Engine.Geometry.Quaternion3  # engine (10D)
 type T:Occt.gp_QuaternionNLerp Kerf.Engine.Geometry.QuaternionNLerp  # engine (10D)
 type T:Occt.gp_QuaternionSLerp Kerf.Engine.Geometry.QuaternionSLerp  # engine (10D)
-type T:Occt.gp_Sphere Kerf.Geometry.Sphere  # 10E: decision 1349 (57)
-type T:Occt.gp_Torus Kerf.Geometry.Torus  # 10E: decision 1349 (57)
+type T:Occt.gp_Sphere Kerf.Geometry.Sphere3D  # 10Q2: the modelling objects keep the plain names
+type T:Occt.gp_Torus Kerf.Geometry.Torus3D  # 10Q2: the modelling objects keep the plain names
 type T:Occt.gp_Trsf Kerf.Geometry.Transform3D  # public API (10D)
 type T:Occt.gp_Trsf2d Kerf.Geometry.Transform2D  # public API (10D)
 type T:Occt.gp_TrsfForm Kerf.Geometry.TransformForm  # public API (10D)

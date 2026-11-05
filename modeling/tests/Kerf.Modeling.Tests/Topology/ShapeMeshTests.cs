@@ -8,10 +8,10 @@ using Kerf.Modeling;
 
 public class ShapeMeshTests
 {
-    private static Vector Node(ReadOnlyMemory<float> xyz, int i) => new(xyz.Span[3 * i], xyz.Span[3 * i + 1], xyz.Span[3 * i + 2]);
+    private static Point3D Node(ReadOnlyMemory<float> xyz, int i) => new(xyz.Span[3 * i], xyz.Span[3 * i + 1], xyz.Span[3 * i + 2]);
 
-    private static Vector Centroid(FaceMesh face) =>
-        Enumerable.Range(0, face.NodeCount).Aggregate(new Vector(0, 0, 0), (sum, i) => sum + Node(face.Positions, i)) * (1.0 / face.NodeCount);
+    private static Point3D Centroid(FaceMesh face) =>
+        Enumerable.Range(0, face.NodeCount).Aggregate(Vector3D.Zero, (sum, i) => sum + Node(face.Positions, i).ToVector()).ToPoint().Scaled(Point3D.Origin, 1.0 / face.NodeCount);
 
     [Fact]
     public void ABoxHasAMeshPerFaceEdgeAndVertex()
@@ -51,29 +51,29 @@ public class ShapeMeshTests
             Check.AlmostEqual(edges[i].StartPoint(), Node(points.Points, 0), 4);
             Check.AlmostEqual(edges[i].EndPoint(), Node(points.Points, points.PointCount - 1), 4);
         }
-        Assert.Equal(part.Vertices().Select(v => v.ToVector()), mesh.Vertices);
+        Assert.Equal(part.Vertices().Select(v => v.Point), mesh.Vertices);
     }
 
     [Fact]
     public void NormalsAndWindingFaceOut()
     {
-        var part = new Box(10, 10, 10) - new Sphere(4).Moved(new Location(new Vector(5.0, 5.0, 5.0)));
-        var center = new Vector(0, 0, 0);
+        var part = new Box(10, 10, 10) - new Sphere(4).Moved(new Location(new Point3D(5.0, 5.0, 5.0)));
+        var center = new Point3D(0, 0, 0);
         foreach (var face in part.Triangulate(0.05).Faces)
         {
             var tri = face.Triangles.Span;
             for (int t = 0; t < face.TriangleCount; t++)
             {
-                Vector a = Node(face.Positions, tri[3 * t]), b = Node(face.Positions, tri[3 * t + 1]), c = Node(face.Positions, tri[3 * t + 2]);
+                Point3D a = Node(face.Positions, tri[3 * t]), b = Node(face.Positions, tri[3 * t + 1]), c = Node(face.Positions, tri[3 * t + 2]);
                 var wound = (b - a).Cross(c - a);
-                if (wound.Length < 1e-9)
+                if (wound.Magnitude < 1e-9)
                     continue;   // a degenerate triangle, at a pole, has no winding
-                var normal = Node(face.Normals, tri[3 * t]) + Node(face.Normals, tri[3 * t + 1]) + Node(face.Normals, tri[3 * t + 2]);
+                var normal = Node(face.Normals, tri[3 * t]).ToVector() + Node(face.Normals, tri[3 * t + 1]).ToVector() + Node(face.Normals, tri[3 * t + 2]).ToVector();
                 Assert.True(wound.Dot(normal) > 0, "the winding agrees with the normals");
             }
             // Out of the solid: away from its centre on the box's sides, into the spherical pocket at the corner
-            var outward = face.Type == GeomType.Plane ? Centroid(face) - center : new Vector(5, 5, 5) - Centroid(face);
-            Assert.True(Node(face.Normals, 0).Dot(outward) > 0, $"{face.Type} faces out");
+            var outward = face.Type == GeomType.Plane ? Centroid(face) - center : new Point3D(5, 5, 5) - Centroid(face);
+            Assert.True(Node(face.Normals, 0).ToVector().Dot(outward) > 0, $"{face.Type} faces out");
         }
     }
 
@@ -81,8 +81,8 @@ public class ShapeMeshTests
     public void AReversedFaceIsFlipped()
     {
         var face = Face.MakeRect(4, 4);
-        Check.AlmostEqual(new Vector(0, 0, 1), Node(face.Triangulate(0.1).Faces[0].Normals, 0), 6);
-        Check.AlmostEqual(new Vector(0, 0, -1), Node((-face).Triangulate(0.1).Faces[0].Normals, 0), 6);
+        Check.AlmostEqual(new Point3D(0, 0, 1), Node(face.Triangulate(0.1).Faces[0].Normals, 0), 6);
+        Check.AlmostEqual(new Point3D(0, 0, -1), Node((-face).Triangulate(0.1).Faces[0].Normals, 0), 6);
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class ShapeMeshTests
         var face = Assert.Single(mesh.Faces);
         Assert.Equal(GeomType.Sphere, face.Type);
         for (int i = 0; i < face.NodeCount; i++)
-            Check.AlmostEqual(Node(face.Positions, i).Normalized(), Node(face.Normals, i), 5);
+            Check.AlmostEqual(Node(face.Positions, i).ToVector().Normalized(), Node(face.Normals, i).ToVector(), 5);
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public class ShapeMeshTests
         Assert.Equal(GeomType.Circle, circle.Type);
         Assert.True(circle.PointCount > 20);
         for (int i = 0; i < circle.PointCount; i++)
-            Assert.Equal(5, Node(circle.Points, i).Length, 4);
+            Assert.Equal(5, Node(circle.Points, i).ToVector().Magnitude, 4);
     }
 
     [Fact]
@@ -127,12 +127,12 @@ public class ShapeMeshTests
     [Fact]
     public void PositionsAreLocated()
     {
-        var box = new Box(2, 2, 2).Moved(new Location(new Vector(10.0, 20.0, 30.0), new Vector(0.0, 0.0, 45.0)));
+        var box = new Box(2, 2, 2).Moved(new Location(new Point3D(10.0, 20.0, 30.0), new Vector3D(0.0, 0.0, 45.0)));
         var mesh = box.Triangulate(0.1);
         var points = mesh.Faces.SelectMany(f => Enumerable.Range(0, f.NodeCount).Select(i => Node(f.Positions, i))).ToList();
         var bounds = box.BoundBox();
         Assert.All(points, p => Assert.True(p.X >= bounds.Min.X - 1e-4 && p.X <= bounds.Max.X + 1e-4 && p.Y >= bounds.Min.Y - 1e-4 && p.Y <= bounds.Max.Y + 1e-4 && p.Z >= bounds.Min.Z - 1e-4 && p.Z <= bounds.Max.Z + 1e-4));
-        Check.AlmostEqual(box.Center(), points.Aggregate(new Vector(0, 0, 0), (s, p) => s + p) * (1.0 / points.Count), 4);
+        Check.AlmostEqual(box.Center().ToVector(), points.Aggregate(Vector3D.Zero, (s, p) => s + p.ToVector()) * (1.0 / points.Count), 4);
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public class ShapeMeshTests
     public void ShapesSharingGeometryTriangulateConcurrently()
     {
         var part = Ops.Fillet(new Box(10, 10, 10).Edges(), 1).Value;
-        var copies = Enumerable.Range(0, 16).Select(i => part.Moved(new Location(new Vector(i * 20.0, 0.0, 0.0)))).ToList();
+        var copies = Enumerable.Range(0, 16).Select(i => part.Moved(new Location(new Point3D(i * 20.0, 0.0, 0.0)))).ToList();
         var expected = part.Triangulate(0.01).TriangleCount;
         var counts = new int[copies.Count];
         Parallel.For(0, copies.Count, i => counts[i] = copies[i].Triangulate(0.01).TriangleCount);
@@ -189,8 +189,8 @@ public class ShapeMeshTests
         // Meshing itself is OCCT's: what's timed is copying the mesh out, the part that is the library's
         var sphere = new Sphere(100);
         var meshed = sphere.Shape.MeshedCopy(0.01, 0.2, relative: false);
-        var faces = meshed.SelectFaces().Select(f => (Shape)f).ToList();
-        var edges = meshed.SelectEdges().Select(e => (Shape)e).ToList();
+        var faces = meshed.Faces().Select(f => (Shape)f).ToList();
+        var edges = meshed.Edges().Select(e => (Shape)e).ToList();
         // Kerf (unit 10H6): one cold wall-clock sample (the first call, with its JIT) failed in merge gates on a loaded
         // machine (1,200 ms against about 12 ms warm), so the test checks what the copy allocates, which load doesn't
         // change, and the best of five runs. The copy writes the normals straight into its buffer: it computed them on a
@@ -220,7 +220,7 @@ public class ShapeMeshTests
         var bolt = new Cylinder(1, 10).WithLabel("bolt").WithColor(Color.Rgb(0.5, 0.5, 0.5, 0.8));
         var plate = new Box(20, 20, 2).WithLabel("plate");
         var assembly = new Assembly(
-            [plate, bolt.Moved(new Location(new Vector(-5.0, 0.0, 0.0))), bolt.Moved(new Location(new Vector(5.0, 0.0, 0.0)))], label: "joint");
+            [plate, bolt.Moved(new Location(new Point3D(-5.0, 0.0, 0.0))), bolt.Moved(new Location(new Point3D(5.0, 0.0, 0.0)))], label: "joint");
 
         var tree = assembly.TriangulateTree();
         Assert.Equal("joint", tree.Label);
@@ -230,8 +230,8 @@ public class ShapeMeshTests
         Assert.Equal(("bolt", 0.8), (first.Label, first.Color!.Value.A));
         Assert.Same(first.Mesh, second.Mesh);
         Assert.NotSame(tree.Children[0].Mesh, first.Mesh);
-        Check.AlmostEqual(new Vector(-5, 0, 0), first.Location.Position, 6);
-        Check.AlmostEqual(new Vector(5, 0, 0), second.Location.Position, 6);
+        Check.AlmostEqual(new Point3D(-5, 0, 0), first.Location.Position, 6);
+        Check.AlmostEqual(new Point3D(5, 0, 0), second.Location.Position, 6);
         // An instance's mesh is in its own coordinates
         var cylinder = first.Mesh!.Faces.Single(f => f.Type == GeomType.Cylinder);
         var nodes = Enumerable.Range(0, cylinder.NodeCount).Select(i => Node(cylinder.Positions, i)).ToList();
@@ -241,9 +241,9 @@ public class ShapeMeshTests
     [Fact]
     public void APartIsALeaf()
     {
-        var tree = new Box(1, 1, 1).Moved(new Location(new Vector(1.0, 2.0, 3.0))).TriangulateTree();
+        var tree = new Box(1, 1, 1).Moved(new Location(new Point3D(1.0, 2.0, 3.0))).TriangulateTree();
         Assert.Empty(tree.Children);
         Assert.Equal(6, tree.Mesh!.Faces.Count);
-        Check.AlmostEqual(new Vector(1, 2, 3), tree.Location.Position, 6);
+        Check.AlmostEqual(new Point3D(1, 2, 3), tree.Location.Position, 6);
     }
 }

@@ -15,7 +15,7 @@ public class Convert_SphereToBSplineSurfaceTest
     [Fact]
     public void FullSphere()
     {
-        Sphere aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0);
+        Sphere3D aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0);
         SphereToBSplineSurface aConv = new(aSphere);
 
         Assert.Equal(2, aConv.UDegree());
@@ -41,7 +41,7 @@ public class Convert_SphereToBSplineSurfaceTest
     [Fact]
     public void TrimmedUV()
     {
-        Sphere aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 3.0);
+        Sphere3D aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 3.0);
         double aU1 = 0.0, aU2 = M_PI;
         double aV1 = -M_PI / 4.0, aV2 = M_PI / 4.0;
         SphereToBSplineSurface aConv = new(aSphere, aU1, aU2, aV1, aV2);
@@ -55,7 +55,7 @@ public class Convert_SphereToBSplineSurfaceTest
     [Fact]
     public void UTrimmed()
     {
-        Sphere aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 2.0);
+        Sphere3D aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 2.0);
         SphereToBSplineSurface aConv = new(aSphere, 0.0, M_PI, true);
 
         Assert.False(aConv.IsUPeriodic);
@@ -64,7 +64,7 @@ public class Convert_SphereToBSplineSurfaceTest
     [Fact]
     public void VTrimmed()
     {
-        Sphere aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 2.0);
+        Sphere3D aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 2.0);
         SphereToBSplineSurface aConv = new(aSphere, -M_PI / 4.0, M_PI / 4.0, false);
 
         Assert.True(aConv.IsUPeriodic);
@@ -73,7 +73,7 @@ public class Convert_SphereToBSplineSurfaceTest
     [Fact]
     public void KnotsAreMonotonic()
     {
-        Sphere aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 1.0);
+        Sphere3D aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 1.0);
         SphereToBSplineSurface aConv = new(aSphere);
 
         NCollection_Array1<double> aUKnots = aConv.UKnots();
@@ -93,7 +93,7 @@ public class Convert_SphereToBSplineSurfaceTest
     {
         double aRadius = 5.0;
         CoordinateSystem anAx3 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Sphere aSphere = new(anAx3, aRadius);
+        Sphere3D aSphere = new(anAx3, aRadius);
         // Use trimmed sphere to avoid degenerate poles
         SphereToBSplineSurface aConv = new(aSphere, 0.0, M_PI, -M_PI / 4.0, M_PI / 4.0);
 

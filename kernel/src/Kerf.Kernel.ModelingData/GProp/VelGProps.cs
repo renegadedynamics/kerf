@@ -25,31 +25,31 @@ internal class VelGProps : Properties
         _loc = vLocation;
     }
 
-    public VelGProps(in Cylinder s, double alpha1, double alpha2, double z1, double z2, in Point3D vLocation)
+    public VelGProps(in Cylinder3D s, double alpha1, double alpha2, double z1, double z2, in Point3D vLocation)
     {
         SetLocation(vLocation);
         Perform(s, alpha1, alpha2, z1, z2);
     }
 
-    public VelGProps(in Cone s, double alpha1, double alpha2, double z1, double z2, in Point3D vLocation)
+    public VelGProps(in Cone3D s, double alpha1, double alpha2, double z1, double z2, in Point3D vLocation)
     {
         SetLocation(vLocation);
         Perform(s, alpha1, alpha2, z1, z2);
     }
 
-    public VelGProps(in Sphere s, double teta1, double teta2, double alpha1, double alpha2, in Point3D vLocation)
+    public VelGProps(in Sphere3D s, double teta1, double teta2, double alpha1, double alpha2, in Point3D vLocation)
     {
         SetLocation(vLocation);
         Perform(s, teta1, teta2, alpha1, alpha2);
     }
 
-    public VelGProps(in Torus s, double teta1, double teta2, double alpha1, double alpha2, in Point3D vLocation)
+    public VelGProps(in Torus3D s, double teta1, double teta2, double alpha1, double alpha2, in Point3D vLocation)
     {
         SetLocation(vLocation);
         Perform(s, teta1, teta2, alpha1, alpha2);
     }
 
-    public void Perform(in Cylinder s, double alpha1, double alpha2, double z1, double z2)
+    public void Perform(in Cylinder3D s, double alpha1, double alpha2, double z1, double z2)
     {
         // the sector between the patch and the axis: (rho cos a, rho sin a, z), rho in [0, R], volume rho drho da dz
         // (decision 1471; OCCT's axial moment was twice too large)
@@ -62,7 +62,7 @@ internal class VelGProps : Properties
                                                                     out _inertia);
     }
 
-    public void Perform(in Cone s, double alpha1, double alpha2, double z1, double z2)
+    public void Perform(in Cone3D s, double alpha1, double alpha2, double z1, double z2)
     {
         // the sector between the patch and the axis: (sigma cos a, sigma sin a, v cos t), sigma in [0, R + v sin t],
         // volume sigma dsigma da cos t dv (decision 1471; OCCT's volume was not the frustum's)
@@ -75,7 +75,7 @@ internal class VelGProps : Properties
                                                                     cnt * cnt * cnt * P(2, 2) / 2.0, _loc, out _g, out _inertia);
     }
 
-    public void Perform(in Sphere s, double teta1, double teta2, double alpha1, double alpha2)
+    public void Perform(in Sphere3D s, double teta1, double teta2, double alpha1, double alpha2)
     {
         // the sector between the patch and the centre: rho (cos v cos u, cos v sin u, sin v), rho in [0, r], volume
         // rho^2 cos v drho du dv (decision 1471)
@@ -88,7 +88,7 @@ internal class VelGProps : Properties
                                                                     r5 * T(2, 1), r5 * T(1, 2), _loc, out _g, out _inertia);
     }
 
-    public void Perform(in Torus s, double teta1, double teta2, double alpha1, double alpha2)
+    public void Perform(in Torus3D s, double teta1, double teta2, double alpha1, double alpha2)
     {
         // the sector of the tube between the patch and the tube's axis: (w cos u, w sin u, rho sin v), w = R + rho cos
         // v, rho in [0, r], volume rho w drho du dv (decision 1471; OCCT read cos and sin of alpha2 for teta2)

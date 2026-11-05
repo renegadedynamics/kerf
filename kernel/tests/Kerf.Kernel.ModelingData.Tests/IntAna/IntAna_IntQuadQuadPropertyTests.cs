@@ -54,18 +54,18 @@ public class IntAna_IntQuadQuadPropertyTests
         {
             case 0:
                 {
-                    Sphere aS = new(anAx, 1.0 + 3.0 * theRnd.NextDouble());
+                    Sphere3D aS = new(anAx, 1.0 + 3.0 * theRnd.NextDouble());
                     return (new Quadric(aS), P => Math.Abs(P.DistanceTo(aS.Location) - aS.Radius), "sphere");
                 }
             case 1:
                 {
-                    Cylinder aC = new(anAx, 0.5 + 2.5 * theRnd.NextDouble());
+                    Cylinder3D aC = new(anAx, 0.5 + 2.5 * theRnd.NextDouble());
                     return (new Quadric(aC), P => Math.Abs(new Line3D(aC.Axis).DistanceTo(P) - aC.Radius),
                             "cylinder");
                 }
             case 2:
                 {
-                    Cone aK = new(anAx, 0.2 + 1.0 * theRnd.NextDouble(), 2.0 * theRnd.NextDouble());
+                    Cone3D aK = new(anAx, 0.2 + 1.0 * theRnd.NextDouble(), 2.0 * theRnd.NextDouble());
                     return (new Quadric(aK), P => ConeDistance(aK, P), "cone");
                 }
             default:
@@ -78,7 +78,7 @@ public class IntAna_IntQuadQuadPropertyTests
 
     // The distance from P to its ElSLib round trip on the cone: zero on the cone, of the order of the distance
     // to the cone near it
-    private static double ConeDistance(in Cone theCone, in Point3D theP)
+    private static double ConeDistance(in Cone3D theCone, in Point3D theP)
     {
         global::Kerf.Engine.Geometry.ElSLib.Parameters(theCone, theP, out double aU, out double aV);
         return theP.DistanceTo(global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, theCone));
@@ -142,7 +142,7 @@ public class IntAna_IntQuadQuadPropertyTests
         int aNbDone = 0, aNbCurves = 0, aNbPoints = 0, aNbFound = 0;
         for (int anIter = 0; anIter < 400; anIter++)
         {
-            Cylinder aCyl = new(RandomAx3(aRnd, 1.0), 0.5 + 2.5 * aRnd.NextDouble());
+            Cylinder3D aCyl = new(RandomAx3(aRnd, 1.0), 0.5 + 2.5 * aRnd.NextDouble());
             (Quadric aQuad, Func<Point3D, double> aDist, string aName) = RandomQuadric(aRnd, false);
             IntQuadQuad anInt = new(aCyl, aQuad, 1.0e-7);
             if (!anInt.IsDone)
@@ -175,7 +175,7 @@ public class IntAna_IntQuadQuadPropertyTests
         int aNbDone = 0, aNbCurves = 0, aNbPoints = 0, aNbFound = 0;
         for (int anIter = 0; anIter < 400; anIter++)
         {
-            Cone aCone = new(RandomAx3(aRnd, 1.0), 0.2 + 1.0 * aRnd.NextDouble(), 2.0 * aRnd.NextDouble());
+            Cone3D aCone = new(RandomAx3(aRnd, 1.0), 0.2 + 1.0 * aRnd.NextDouble(), 2.0 * aRnd.NextDouble());
             (Quadric aQuad, Func<Point3D, double> aDist, string aName) = RandomQuadric(aRnd, true);
             IntQuadQuad anInt = new(aCone, aQuad, 1.0e-7);
             if (!anInt.IsDone)
@@ -208,14 +208,14 @@ public class IntAna_IntQuadQuadPropertyTests
         Assert.True(aNbFound > 0.95 * aNbPoints, $"FindParameter found {aNbFound} of {aNbPoints}");
     }
 
-    private static Direction3D CylinderNormal(in Cylinder theCyl, in Point3D theP)
+    private static Direction3D CylinderNormal(in Cylinder3D theCyl, in Point3D theP)
     {
         global::Kerf.Engine.Geometry.ElSLib.Parameters(theCyl, theP, out double aU, out double aV);
         global::Kerf.Engine.Geometry.ElSLib.CylinderD1(aU, aV, theCyl.Position, theCyl.Radius, out _, out Vector3D aDu, out Vector3D aDv);
         return new Direction3D(aDu.Crossed(aDv));
     }
 
-    private static Direction3D ConeNormal(in Cone theCone, in Point3D theP)
+    private static Direction3D ConeNormal(in Cone3D theCone, in Point3D theP)
     {
         global::Kerf.Engine.Geometry.ElSLib.Parameters(theCone, theP, out double aU, out double aV);
         global::Kerf.Engine.Geometry.ElSLib.ConeD1(aU, aV, theCone.Position, theCone.RefRadius, theCone.SemiAngle, out _, out Vector3D aDu,
@@ -227,7 +227,7 @@ public class IntAna_IntQuadQuadPropertyTests
     public void CylinderPlane_NotDone()
     {
         // The quadric's Z² coefficient in the cylinder's frame is zero: OCCT gives up (QuadQuadGeo handles it)
-        Cylinder aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), Direction3D.D.Z, Direction3D.D.X), 2.0);
+        Cylinder3D aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), Direction3D.D.Z, Direction3D.D.X), 2.0);
         IntQuadQuad anInt = new(aCyl, new Quadric(new Plane3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 1))),
                                        1.0e-7);
         Assert.False(anInt.IsDone);
@@ -243,7 +243,7 @@ public class IntAna_IntQuadQuadPropertyTests
         Assert.Equal(new Point3D(0, 0, 0), anEmpty.Value(0.0));
         Assert.NotEqual(default, anEmpty);
 
-        Cylinder aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), Direction3D.D.Z, Direction3D.D.X), 3.0);
+        Cylinder3D aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), Direction3D.D.Z, Direction3D.D.X), 3.0);
         // The sphere of radius 5 at the origin: z = ±4 on the cylinder of radius 3
         Curve aC = anEmpty.WithCylinderQuadValues(aCyl, 1, 1, 1, 0, 0, 0, 0, 0, 0, -25, 1e-8, 0.0, 2 * M_PI,
                                                          false, true);
@@ -276,8 +276,8 @@ public class IntAna_IntQuadQuadPropertyTests
     {
         // Viviani's curve: the cylinder touches the sphere's axis, so the sphere's poles (its special points) are
         // intersection points, where the discriminant is zero. AddSpecialPoints keeps them in the curves' domains.
-        Cylinder aCyl = new(new CoordinateSystem(new Point3D(1, 0, 0), Direction3D.D.Z, Direction3D.D.X), 1.0);
-        Sphere aSph = new(new CoordinateSystem(new Point3D(0, 0, 0), Direction3D.D.Z, Direction3D.D.X), 2.0);
+        Cylinder3D aCyl = new(new CoordinateSystem(new Point3D(1, 0, 0), Direction3D.D.Z, Direction3D.D.X), 1.0);
+        Sphere3D aSph = new(new CoordinateSystem(new Point3D(0, 0, 0), Direction3D.D.Z, Direction3D.D.X), 2.0);
         IntQuadQuad anInt = new(aCyl, new Quadric(aSph), 1.0e-7);
         Assert.True(anInt.IsDone);
         Assert.True(anInt.CurveCount > 0);

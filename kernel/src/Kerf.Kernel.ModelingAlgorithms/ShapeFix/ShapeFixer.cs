@@ -264,7 +264,7 @@ internal class ShapeFixer : RootFixer
                 bool          savTopoMode   = sfw.ModifyTopologyMode();
                 bool          savClosedMode = sfw.ClosedWireMode();
                 sfw.ModifyTopologyMode() = true;
-                if (!s.IsClosed)
+                if (!s.ClosedFlag)
                 {
                     sfw.ClosedWireMode() = false;
                 }

@@ -41,10 +41,10 @@ public static partial class Operations
             foreach (var obj in objectList)
             {
                 var bbox = obj.BoundBox();
-                Vector[] vertices =
+                Point3D[] vertices =
                 [
-                    new Vector(bbox.Min.X, bbox.Min.Y), new Vector(bbox.Min.X, bbox.Max.Y), new Vector(bbox.Max.X, bbox.Max.Y), new Vector(bbox.Max.X, bbox.Min.Y),
-                    new Vector(bbox.Min.X, bbox.Min.Y),
+                    new Point3D(bbox.Min.X, bbox.Min.Y, 0), new Point3D(bbox.Min.X, bbox.Max.Y, 0), new Point3D(bbox.Max.X, bbox.Max.Y, 0), new Point3D(bbox.Max.X, bbox.Min.Y, 0),
+                    new Point3D(bbox.Min.X, bbox.Min.Y, 0),
                 ];
                 newFaces.Add(Face.Make(Wire.MakePolygon(vertices)));
             }
@@ -84,11 +84,11 @@ public static partial class Operations
     /// <inheritdoc cref="Project(IEnumerable{Shape}, Plane)"/>
     public static ModelShape Project<T>(IEnumerable<T> objects, Plane workplane) where T : IShape => Project(Shapes(objects), workplane);
 
-    /// <inheritdoc cref="Scale(IEnumerable{Shape}, double, Vector?)"/>
-    public static ModelShape Scale<T>(IEnumerable<T> objects, double by = 1, Vector? about = null) where T : IShape => Scale(Shapes(objects), by, about);
+    /// <inheritdoc cref="Scale(IEnumerable{Shape}, double, Point3D?)"/>
+    public static ModelShape Scale<T>(IEnumerable<T> objects, double by = 1, Point3D? about = null) where T : IShape => Scale(Shapes(objects), by, about);
 
-    /// <inheritdoc cref="Scale(IEnumerable{Shape}, Vector, Vector?)"/>
-    public static ModelShape Scale<T>(IEnumerable<T> objects, Vector by, Vector? about = null) where T : IShape => Scale(Shapes(objects), by, about);
+    /// <inheritdoc cref="Scale(IEnumerable{Shape}, Vector3D, Point3D?)"/>
+    public static ModelShape Scale<T>(IEnumerable<T> objects, Vector3D by, Point3D? about = null) where T : IShape => Scale(Shapes(objects), by, about);
 
     /// <inheritdoc cref="Split(IEnumerable{Shape}, Plane?, Keep)"/>
     public static ModelShape Split<T>(IEnumerable<T> objects, Plane? bisectBy = null, Keep keep = Keep.Top) where T : IShape => Split(Shapes(objects), bisectBy, keep);
@@ -212,9 +212,9 @@ public static partial class Operations
                 if (!objectList.All(o => o.IsVertex()))
                     throw new ArgumentException("2D chamfer operation takes only Vertices");
                 var newFaces = new List<Face>();
-                foreach (var face in target.SelectFaces())
+                foreach (var face in target.Faces())
                 {
-                    var inFace = face.SelectVertices().Where(v => objectList.Contains(v, ShapeComparer.Same)).ToList();
+                    var inFace = face.Vertices().Where(v => objectList.Contains(v, ShapeComparer.Same)).ToList();
                     newFaces.Add(inFace.Count > 0 ? face.Chamfer2D(length, distance2, inFace, referenceEdge) : face);
                 }
                 return new Sketch(newFaces).MadeBy(ModelHistory.Of(newFaces));
@@ -294,9 +294,9 @@ public static partial class Operations
                 if (!objectList.All(o => o.IsVertex()))
                     throw new ArgumentException("2D fillet operation takes only Vertices");
                 var newFaces = new List<Face>();
-                foreach (var face in target.SelectFaces())
+                foreach (var face in target.Faces())
                 {
-                    var inFace = face.SelectVertices().Where(v => objectList.Contains(v, ShapeComparer.Same)).ToList();
+                    var inFace = face.Vertices().Where(v => objectList.Contains(v, ShapeComparer.Same)).ToList();
                     newFaces.Add(inFace.Count > 0 ? face.Fillet2D(radius, inFace) : face);
                 }
                 return new Sketch(newFaces).MadeBy(ModelHistory.Of(newFaces));
@@ -333,10 +333,10 @@ public static partial class Operations
         // build123d's messages name BuildSheet, which handles sheets in builder mode
         if (!objectList.All(o => o.IsVertex()))
             throw new ArgumentException($"A sheet's {operation} takes only vertices.");
-        var targetFaces = target.SelectFaces();
+        var targetFaces = target.Faces();
         foreach (var vertex in objectList)
         {
-            var supportingFaces = targetFaces.Where(f => f.SelectVertices().Any(v => v.SameAs(vertex))).ToList();
+            var supportingFaces = targetFaces.Where(f => f.Vertices().Any(v => v.SameAs(vertex))).ToList();
             if (supportingFaces.Count != 1)
                 throw new ArgumentException($"A sheet's {operation} vertices must be on the free boundary of one face.");
             if (supportingFaces[0].GeomType != GeomType.Plane)
@@ -345,24 +345,24 @@ public static partial class Operations
         var newFaces = new List<Face>();
         foreach (var face in targetFaces)
         {
-            var inFace = face.SelectVertices().Where(v => objectList.Contains(v, ShapeComparer.Same)).ToList();
+            var inFace = face.Vertices().Where(v => objectList.Contains(v, ShapeComparer.Same)).ToList();
             newFaces.Add(inFace.Count > 0 ? edit(face, inFace) : face);
         }
         return newFaces;
     }
 
     /// <summary>The wire a 1D chamfer or fillet rebuilds: a line object as a plain wire, or the first wire of a curve.</summary>
-    private static Wire WireTargetOf(Shape target) => target.IsWire() ? (Wire)target : target.SelectWires()[0];
+    private static Wire WireTargetOf(Shape target) => target.IsWire() ? (Wire)target : target.Wires()[0];
 
     /// <summary>The vertices without those at the ends of an open wire, which can't be chamfered or filleted.</summary>
     private static List<Vertex> InnerVertices(Wire wire, List<Shape> vertices)
     {
-        if (wire.CheckClosed())
+        if (wire.IsClosed)
             return [.. vertices.Select(v => (Vertex)v)];
         var start = wire.PositionAt(0);
         var end = wire.PositionAt(1);
         return [.. vertices.Select(v => (Vertex)v).Where(v =>
-            !(TopologyUtils.IsCloseB((v.ToVector() - start).Length, 0.0) || TopologyUtils.IsCloseB((v.ToVector() - end).Length, 0.0)))];
+            !(TopologyUtils.IsCloseB((v.Point - start).Magnitude, 0.0) || TopologyUtils.IsCloseB((v.Point - end).Magnitude, 0.0)))];
     }
 
     // ---- mirror ----
@@ -459,7 +459,7 @@ public static partial class Operations
                     edges.Add(edge);
                     break;
                 case Wire wire:
-                    edges.AddRange(wire.SelectEdges());
+                    edges.AddRange(wire.Edges());
                     break;
                 default:
                     throw new ArgumentException($"Unsupported type {TopoUtil.KindName(obj)} for {obj.Describe()}");
@@ -488,7 +488,7 @@ public static partial class Operations
 
             // Inner wires may go beyond the outer wire, so they're cut away as faces
             var newFace = Face.Make(outerWire);
-            if ((newFace.NormalAt() - face.NormalAt()).Length > 0.001)
+            if ((newFace.NormalAt() - face.NormalAt()).Magnitude > 0.001)
                 newFace = (Face)(-newFace);
             if (innerWires.Count > 0)
             {
@@ -496,7 +496,7 @@ public static partial class Operations
                 // build123d would fail here on a cut into several pieces (it asks the face, not the result, to unwrap
                 // itself); the pieces are kept instead
                 if (subtraction.IsCompound())
-                    newFaces.AddRange(subtraction.SelectFaces().Select(f => (Shape)f));
+                    newFaces.AddRange(subtraction.Faces().Select(f => (Shape)f));
                 else
                     newFaces.Add(subtraction);
             }
@@ -518,7 +518,7 @@ public static partial class Operations
         var newSolids = new List<Shape>();
         foreach (var solid in solids)
         {
-            var solidFaces = solid.SelectFaces();
+            var solidFaces = solid.Faces();
             var openingsInThisSolid = openingList.Where(f => solidFaces.Contains(f, ShapeComparer<Face>.Same)).ToList();
             newSolids.Add(solid.Offset3D(openingsInThisSolid, amount, kind: kind).Fix());
         }
@@ -546,7 +546,7 @@ public static partial class Operations
     /// <summary>
     /// Edges, wires and faces projected onto a workplane, along its normal, in the workplane's local coordinates. As in
     /// build123d's algebra mode, the faces of the projection are kept, so edges and wires project to an empty Curve.
-    /// Points are projected with <see cref="ProjectPoints(IEnumerable{Vector}, Plane)"/>.
+    /// Points are projected with <see cref="ProjectPoints(IEnumerable{Point3D}, Plane)"/>.
     /// </summary>
     /// <returns>A Sketch or Curve when the objects are all 2D or 1D; otherwise a Compound.</returns>
     /// <exception cref="ArgumentException">No objects are given, or one of them is a vertex.</exception>
@@ -574,7 +574,7 @@ public static partial class Operations
         foreach (var obj in objectList.Where(o => o.IsFace()).Concat(objectList.Where(o => o.IsEdge() || o.IsWire())))
         {
             var objToScreen = (target.Center() - obj.Center()).Normalized();
-            var direction = workplane.FromLocalCoords(objToScreen).Z < 0 ? -workplane.ZDir : workplane.ZDir;
+            var direction = workplane.FromLocalCoords(objToScreen.ToPoint()).Z < 0 ? -workplane.ZDir : workplane.ZDir;
             ShapeList<Face> projection = TopoUtil.Typed(obj) switch
             {
                 Face face => face.ProjectToShape(target, direction).Faces(),
@@ -600,33 +600,33 @@ public static partial class Operations
     /// <c>project</c> of points, which returns a list of vectors).
     /// </summary>
     /// <exception cref="InvalidOperationException">The workplane is parallel to a projection axis.</exception>
-    public static IReadOnlyList<Vector> ProjectPoints(IEnumerable<Vector> points, Plane workplane)
+    public static IReadOnlyList<Point3D> ProjectPoints(IEnumerable<Point3D> points, Plane workplane)
     {
-        var projectedPoints = new List<Vector>();
+        var projectedPoints = new List<Point3D>();
         foreach (var pnt in points)
         {
             var pntToTarget = (workplane.Origin - pnt).Normalized();
-            var projectionAxis = workplane.FromLocalCoords(pntToTarget).Z < 0
+            var projectionAxis = workplane.FromLocalCoords(pntToTarget.ToPoint()).Z < 0
                 ? -new Axis(pnt, workplane.ZDir)
                 : new Axis(pnt, workplane.ZDir);
             var intersection = workplane.Intersect(projectionAxis);
             if (intersection is Axis)
                 throw new InvalidOperationException("The working plane and the projection axis are parallel.");
-            if (intersection is Vector v)
+            if (intersection is Point3D v)
                 projectedPoints.Add(workplane.ToLocalCoords(v));
         }
         return projectedPoints;
     }
 
-    /// <inheritdoc cref="ProjectPoints(IEnumerable{Vector}, Plane)"/>
-    public static IReadOnlyList<Vector> ProjectPoints(IEnumerable<Vertex> points, Plane workplane) =>
-        ProjectPoints(points.Select(p => p.ToVector()), workplane);
+    /// <inheritdoc cref="ProjectPoints(IEnumerable{Point3D}, Plane)"/>
+    public static IReadOnlyList<Point3D> ProjectPoints(IEnumerable<Vertex> points, Plane workplane) =>
+        ProjectPoints(points.Select(p => p.Point), workplane);
 
-    /// <inheritdoc cref="ProjectPoints(IEnumerable{Vector}, Plane)"/>
-    public static IReadOnlyList<Vector> ProjectPoints(Vector point, Plane workplane) => ProjectPoints([point], workplane);
+    /// <inheritdoc cref="ProjectPoints(IEnumerable{Point3D}, Plane)"/>
+    public static IReadOnlyList<Point3D> ProjectPoints(Point3D point, Plane workplane) => ProjectPoints([point], workplane);
 
-    /// <inheritdoc cref="ProjectPoints(IEnumerable{Vector}, Plane)"/>
-    public static IReadOnlyList<Vector> ProjectPoints(Vertex point, Plane workplane) => ProjectPoints([point.ToVector()], workplane);
+    /// <inheritdoc cref="ProjectPoints(IEnumerable{Point3D}, Plane)"/>
+    public static IReadOnlyList<Point3D> ProjectPoints(Vertex point, Plane workplane) => ProjectPoints([point.Point], workplane);
 
     // ---- scale ----
 
@@ -636,22 +636,22 @@ public static partial class Operations
     /// </summary>
     /// <returns>A Part, Sketch or Curve when the objects are all 3D, 2D or 1D; otherwise a Compound.</returns>
     /// <exception cref="ArgumentException">No objects are given.</exception>
-    public static ModelShape Scale(IEnumerable<Shape> objects, double by = 1, Vector? about = null) =>
+    public static ModelShape Scale(IEnumerable<Shape> objects, double by = 1, Point3D? about = null) =>
         ScaleCore(objects, o => o.Scale(by, about));
 
     /// <summary>
     /// The objects scaled by a factor along each axis, about <paramref name="about"/> or, by default, each object's
     /// location. Scaling unevenly may change the type of the geometry (a line or circle to a B-spline).
     /// </summary>
-    /// <inheritdoc cref="Scale(IEnumerable{Shape}, double, Vector?)"/>
-    public static ModelShape Scale(IEnumerable<Shape> objects, Vector by, Vector? about = null) =>
+    /// <inheritdoc cref="Scale(IEnumerable{Shape}, double, Point3D?)"/>
+    public static ModelShape Scale(IEnumerable<Shape> objects, Vector3D by, Point3D? about = null) =>
         ScaleCore(objects, o => o.Scale(by, about));
 
-    /// <inheritdoc cref="Scale(IEnumerable{Shape}, double, Vector?)"/>
-    public static ModelShape Scale(Shape obj, double by = 1, Vector? about = null) => Scale([obj], by, about);
+    /// <inheritdoc cref="Scale(IEnumerable{Shape}, double, Point3D?)"/>
+    public static ModelShape Scale(Shape obj, double by = 1, Point3D? about = null) => Scale([obj], by, about);
 
-    /// <inheritdoc cref="Scale(IEnumerable{Shape}, Vector, Vector?)"/>
-    public static ModelShape Scale(Shape obj, Vector by, Vector? about = null) => Scale([obj], by, about);
+    /// <inheritdoc cref="Scale(IEnumerable{Shape}, Vector3D, Point3D?)"/>
+    public static ModelShape Scale(Shape obj, Vector3D by, Point3D? about = null) => Scale([obj], by, about);
 
     private static ModelShape ScaleCore(IEnumerable<Shape> objects, Func<Shape, Shape> scale)
     {
@@ -732,7 +732,7 @@ public static partial class Operations
         // result is combined with mode
         if (path.IsEmpty)
             throw new ArgumentException("Can't sweep along an empty path.", nameof(path));
-        var pathWire = path.IsWire() ? (Wire)path : Wire.Make(path.SelectEdges());
+        var pathWire = path.IsWire() ? (Wire)path : Wire.Make(path.Edges());
         return SweepCore(sections, pathWire, options ?? SweepOptions.Default);
     }
 
@@ -810,9 +810,9 @@ public static partial class Operations
         foreach (var sec in sectionList)
         {
             if (sec.Dim == 1)
-                edgeList.AddRange(sec.SelectEdges());
+                edgeList.AddRange(sec.Edges());
             else
-                faceList.AddRange(sec.SelectFaces());
+                faceList.AddRange(sec.Faces());
         }
 
         // Sweep to create solids

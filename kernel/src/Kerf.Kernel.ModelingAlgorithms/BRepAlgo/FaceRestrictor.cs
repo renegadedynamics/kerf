@@ -223,7 +223,7 @@ internal sealed class FaceRestrictor
     // Whether the wire is closed (flag or same end vertices)
     private static bool IsClosed(in Wire w)
     {
-        if (w.IsClosed)
+        if (w.ClosedFlag)
         {
             return true;
         }

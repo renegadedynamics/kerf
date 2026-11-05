@@ -180,7 +180,7 @@ internal class ThruSections : MakeShape
         {
             throw new NotDoneException("Thrusections is not build");
         }
-        bool b = shell.IsClosed;
+        bool b = shell.ClosedFlag;
         BrepBuilder bb = new();
 
         if (!b)
@@ -778,7 +778,7 @@ internal class ThruSections : MakeShape
         for (i = 1; i <= nbSects; i++)
         {
             Wire wire = ShapeCasts.Wire(_wires.Value(i));
-            if (!wire.IsClosed)
+            if (!wire.ClosedFlag)
             {
                 // check if the vertices are the same
                 Exploration.Vertices(wire, out Vertex v1, out Vertex v2);

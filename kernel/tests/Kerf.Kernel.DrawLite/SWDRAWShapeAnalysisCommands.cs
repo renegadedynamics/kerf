@@ -963,7 +963,7 @@ internal static class SWDRAWShapeAnalysisCommands
             }
             case SurfaceKind.Cylinder:
             {
-                var aCyl = new Cylinder();
+                var aCyl = new Cylinder3D();
                 if (aSampleSurf.GetType() == SurfaceKind.Cylinder)
                 {
                     aCyl = aSampleSurf.Cylinder();
@@ -976,7 +976,7 @@ internal static class SWDRAWShapeAnalysisCommands
             }
             case SurfaceKind.Cone:
             {
-                var aCon = new Cone();
+                var aCon = new Cone3D();
                 if (aSampleSurf.GetType() == SurfaceKind.Cone)
                 {
                     aCon = aSampleSurf.Cone();
@@ -989,7 +989,7 @@ internal static class SWDRAWShapeAnalysisCommands
             }
             case SurfaceKind.Sphere:
             {
-                var aSph = new Sphere();
+                var aSph = new Sphere3D();
                 if (aSampleSurf.GetType() == SurfaceKind.Sphere)
                 {
                     aSph = aSampleSurf.Sphere();

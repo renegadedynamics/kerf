@@ -7,14 +7,14 @@ using Kerf.Modeling;
 
 public class GroupByTests
 {
-    readonly ShapeGroups<Vertex, double> _v = Solid.MakeBox(1, 1, 1).SelectVertices().GroupBy(Axis.Z);
+    readonly ShapeGroups<Vertex, double> _v = Solid.MakeBox(1, 1, 1).Vertices().GroupBy(Axis.Z);
 
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void FirstLast(bool reverse)
     {
-        var groups = Solid.MakeBox(1, 1, 2).SelectVertices().GroupBy(Axis.Z);
+        var groups = Solid.MakeBox(1, 1, 2).Vertices().GroupBy(Axis.Z);
         IReadOnlyList<ShapeList<Vertex>> grouped = reverse ? [.. groups.Reverse()] : groups;
         Assert.Same(grouped[0], grouped.First());
         Assert.Same(grouped[^1], grouped.Last());
@@ -25,7 +25,7 @@ public class GroupByTests
     [Fact]
     public void FirstLastSingleGroup()
     {
-        var grouped = Solid.MakeBox(1, 1, 1).SelectEdges().GroupByValue(e => e.Length);
+        var grouped = Solid.MakeBox(1, 1, 1).Edges().GroupByValue(e => e.Length);
         Assert.Same(grouped.First(), grouped.Last());
         Assert.Equal(12, grouped.First().Count);
     }
@@ -48,13 +48,13 @@ public class GroupByTests
     [Fact]
     public void NonRoundableProperty()
     {
-        var cyl = Solid.MakeCylinder(1, 2, new Plane(new Vector(0, 0, -1)));
-        var grouped = cyl.SelectFaces().GroupByValue(f => f.MatrixOfInertia);
+        var cyl = Solid.MakeCylinder(1, 2, new Plane(new Point3D(0, 0, -1)));
+        var grouped = cyl.Faces().GroupByValue(f => f.MatrixOfInertia);
         Assert.Equal(2, grouped.Count);
     }
 
     private static ShapeList<Edge> TangentLines() =>
-        Edge.MakeConstrainedLines(new CenterArc(new Vector(-5, 0), 2, 0, 360), new CenterArc(new Vector(5, 0), 4, 0, 360));
+        Edge.MakeConstrainedLines(new CenterArc(new Point3D(-5, 0, 0), 2, 0, 360), new CenterArc(new Point3D(5, 0, 0), 4, 0, 360));
 
     [Fact]
     public void Properties()

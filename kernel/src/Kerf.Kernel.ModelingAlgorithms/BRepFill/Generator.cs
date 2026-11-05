@@ -1171,10 +1171,10 @@ internal sealed class Generator
             newWire.Free(curWire.Free());
             newWire.Modified(curWire.Modified());
             newWire.Checked(curWire.Checked());
-            newWire.Orientable(curWire.IsOrientable);
-            newWire.Closed(curWire.IsClosed);
-            newWire.Infinite(curWire.IsInfinite);
-            newWire.Convex(curWire.IsConvex);
+            newWire.Orientable(curWire.OrientableFlag);
+            newWire.Closed(curWire.ClosedFlag);
+            newWire.Infinite(curWire.InfiniteFlag);
+            newWire.Convex(curWire.ConvexFlag);
 
             _oldNewShapes[curWire] = newWire;
         }

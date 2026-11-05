@@ -231,3 +231,12 @@ Each `DrawInterpreter.Eval` runs on a thread of its own (for Tcl's stack), so a 
 the call. The interpreter keeps an operation context (`Context`) from one `Eval` to the next, starting from its
 creator's: a session's settings last as DRAWEXE's do, and parallel interpreters (the corpus runs cases in parallel)
 don't see each other's.
+
+## The modelling layer's `HistoryLog`
+
+`Kerf.Modeling` keeps one piece of ambient state: `HistoryLog`, an internal `AsyncLocal` scope. An operation of a `Part`, `Sketch` or `Curve` opens one, the shared operations note
+their record in it, and the object keeps what it finds on its result. It is per flow of execution, so parallel workbooks don't see each other's.
+
+Unit 10Q2 looked again now that the layer is on structs, and kept it (decision 1638). There are 35 notes in 14 files. A struct's public operation must return the bare shape (`solid.Fillet(…)` is a `Solid`), so
+threading `(shape, record)` needs a second, internal form of each operation, about thirty signatures doubled, to remove one private field that no caller can see. A later unit that
+reworks those operations anyway could thread it then.

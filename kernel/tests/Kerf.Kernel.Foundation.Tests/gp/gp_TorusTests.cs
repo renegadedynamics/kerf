@@ -28,7 +28,7 @@ public class gp_TorusTest
                            new Direction3D(0.37231784651136368, 0.58886674834874120, 0.71736697293527607),
                            new Direction3D(0.80682335496555135, 0.17666016102759910, -0.56376170618524390));
 
-        Torus aTorus = new(anAx3, 87.08479625, 23.14682176);
+        Torus3D aTorus = new(anAx3, 87.08479625, 23.14682176);
 
         const double aTolerance = 3.0e-7;
         const int aNbPtsMax = 5;

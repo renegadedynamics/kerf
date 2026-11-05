@@ -12,7 +12,7 @@ public class ProjLib_ConeTest
     [Fact]
     public void ProjectCircle_ParallelAxes_DoneLine()
     {
-        Cone aCone = new(new CoordinateSystem(new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0))), M_PI / 6.0, 5.0);
+        Cone3D aCone = new(new CoordinateSystem(new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0))), M_PI / 6.0, 5.0);
         Circle3D aCircle = new(new Frame3D(new Point3D(0.0, 0.0, 10.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)),
                               2.0);
 
@@ -25,7 +25,7 @@ public class ProjLib_ConeTest
     [Fact]
     public void ProjectCircle_NonParallelAxes_NotDone()
     {
-        Cone aCone = new(new CoordinateSystem(new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0))), M_PI / 6.0, 5.0);
+        Cone3D aCone = new(new CoordinateSystem(new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0))), M_PI / 6.0, 5.0);
         Circle3D aCircle = new(new Frame3D(new Point3D(0.0, 0.0, 10.0), new Direction3D(1.0, 0.0, 0.0), new Direction3D(0.0, 1.0, 0.0)),
                               2.0);
 
@@ -36,7 +36,7 @@ public class ProjLib_ConeTest
     [Fact]
     public void ProjectCircle_OppositeNormal_DoneLineWithNegativeDirection()
     {
-        Cone aCone = new(new CoordinateSystem(new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0))), M_PI / 6.0, 5.0);
+        Cone3D aCone = new(new CoordinateSystem(new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0))), M_PI / 6.0, 5.0);
         Circle3D aCircle = new(new Frame3D(new Point3D(0.0, 0.0, 6.0), new Direction3D(0.0, 0.0, -1.0), new Direction3D(1.0, 0.0, 0.0)),
                               2.0);
 

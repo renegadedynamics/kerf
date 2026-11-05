@@ -31,10 +31,10 @@ public static partial class Operations
                                         + string.Join(", ", unsupported.Select(f => f.GeomType.ToString().ToUpperInvariant()).Distinct()));
 
         // Check that all the faces are of the one Solid
-        var targetFaces = target.SelectFaces();
+        var targetFaces = target.Faces();
         if (faceList.Any(f => !targetFaces.Contains(f, ShapeComparer<Face>.Same)))
             throw new ArgumentException("All faces must share the same topological parent (a Solid)");
-        var parentSolids = target.SelectSolids();
+        var parentSolids = target.Solids();
         if (parentSolids.Count != 1)
             throw new ArgumentException("Topological parent must be a single Solid");
 
@@ -68,7 +68,7 @@ public static partial class Operations
     {
         // Phase 5: in builder mode the faces default to the pending faces (on their pending planes), and the result is
         // combined with mode
-        return ExtrudeCore(toExtrude.SelectFaces(), amount, null, null, options ?? ExtrudeOptions.Default);
+        return ExtrudeCore(toExtrude.Faces(), amount, null, null, options ?? ExtrudeOptions.Default);
     }
 
     /// <inheritdoc cref="Extrude(Shape, double, ExtrudeOptions?)"/>
@@ -99,7 +99,7 @@ public static partial class Operations
 
     internal static Part ExtrudeOrThrow(Shape toExtrude, Until until, Shape target, ExtrudeOptions? options)
     {
-        return ExtrudeCore(toExtrude.SelectFaces(), null, until, target, options ?? ExtrudeOptions.Default);
+        return ExtrudeCore(toExtrude.Faces(), null, until, target, options ?? ExtrudeOptions.Default);
     }
 
     /// <inheritdoc cref="Extrude(Shape, Until, Shape, ExtrudeOptions?)"/>
@@ -218,7 +218,7 @@ public static partial class Operations
             if (s.TryAs<Vertex>(out _))
                 loftSections.Add(s);
             else
-                foreach (var face in s.SelectFaces())
+                foreach (var face in s.Faces())
                 {
                     loftSections.Add(face.OuterWire());
                     faces.Add(face);
@@ -238,7 +238,7 @@ public static partial class Operations
             foreach (var face in faces.Skip(1))
             {
                 var innerWires = face.InnerWires();
-                double Distance(int j, int k) => (holeSections[j][^1].Center() - innerWires[k].Center()).Length;
+                double Distance(int j, int k) => (holeSections[j][^1].Center() - innerWires[k].Center()).Magnitude;
                 // The first assignment (in lexicographic order) of the least total distance, as build123d's sort finds
                 int[]? best = null;
                 double bestQuality = double.PositiveInfinity;
@@ -265,7 +265,7 @@ public static partial class Operations
         {
             try
             {
-                var recoveryFaces = newSolid.SelectFaces().Concat(loftSections.Where(w => w.IsWire()).Select(w => Face.Make((Wire)w)));
+                var recoveryFaces = newSolid.Faces().Concat(loftSections.Where(w => w.IsWire()).Select(w => Face.Make((Wire)w)));
                 newSolid = Solid.Make(Shell.Make(recoveryFaces));
                 if (clean)
                     newSolid = newSolid.Clean();
@@ -314,7 +314,7 @@ public static partial class Operations
     /// projections of <paramref name="origin"/> and <paramref name="xDir"/> onto it.
     /// </summary>
     /// <exception cref="ArgumentException"><paramref name="xDir"/> is perpendicular to <paramref name="projectionDir"/>.</exception>
-    public static Plane ProjectWorkplane(Vector origin, Vector xDir, Vector projectionDir, double distance)
+    public static Plane ProjectWorkplane(Point3D origin, Vector3D xDir, Vector3D projectionDir, double distance)
     {
         // Phase 5: in builder mode this is only valid in a BuildPart
         var x = xDir.Normalized();
@@ -335,9 +335,9 @@ public static partial class Operations
         return workplane.WithXDir(found[0].Point - workplaneOrigin);
     }
 
-    /// <inheritdoc cref="ProjectWorkplane(Vector, Vector, Vector, double)"/>
-    public static Plane ProjectWorkplane(Vertex origin, Vertex xDir, Vector projectionDir, double distance) =>
-        ProjectWorkplane(origin.ToVector(), xDir.ToVector(), projectionDir, distance);
+    /// <inheritdoc cref="ProjectWorkplane(Point3D, Vector3D, Vector3D, double)"/>
+    public static Plane ProjectWorkplane(Vertex origin, Vertex xDir, Vector3D projectionDir, double distance) =>
+        ProjectWorkplane(origin.Point, xDir.Point.ToVector(), projectionDir, distance);
 
     // ---- revolve ----
 
@@ -387,7 +387,7 @@ public static partial class Operations
         // Phase 5: in builder mode the object defaults to the builder's part and the planes to its workplanes
 
         var bbox = obj.BoundBox(optimal: false);
-        var maxSize = new[] { bbox.Min.X, bbox.Min.Y, bbox.Min.Z, bbox.Max.X, bbox.Max.Y, bbox.Max.Z }.Max(Math.Abs) + bbox.Diagonal;
+        var maxSize = bbox.IsEmpty ? 0 : new[] { bbox.Min.X, bbox.Min.Y, bbox.Min.Z, bbox.Max.X, bbox.Max.Y, bbox.Max.Z }.Max(Math.Abs) + bbox.Diagonal;
 
         var planes = sectionBy.Select(plane =>
             Face.MakeRect(2 * maxSize, 2 * maxSize, new Plane(plane.Origin + plane.ZDir * height, zDir: plane.ZDir)));
@@ -420,7 +420,7 @@ public static partial class Operations
     {
         // Phase 5: in builder mode the faces default to the pending faces, and the result is combined with mode.
         // Phase 7: a sheet Shell with SheetMetalParameters (and BuildSheet's pending sheets) is thickened as sheet material
-        return ThickenCore(toThicken.SelectFaces(), amount, options ?? ThickenOptions.Default);
+        return ThickenCore(toThicken.Faces(), amount, options ?? ThickenOptions.Default);
     }
 
     /// <inheritdoc cref="Thicken(Shape, double, ThickenOptions?)"/>

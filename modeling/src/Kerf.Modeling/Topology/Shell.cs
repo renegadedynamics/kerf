@@ -25,31 +25,31 @@ public static partial class ShellExtensions
         }
 
         /// <summary>The centre of mass of the shell (computed, as build123d does, from its linear properties).</summary>
-        internal Vector CenterOfShell()
+        internal Point3D CenterOfShell()
         {
             self.NeedsGeometry("center");
-            return new Vector(self.MassProperties(Dimension.Length).CentreOfMass);
+            return self.MassProperties(Dimension.Length).CentreOfMass;
         }
 
         /// <summary>The location on the face of the shell nearest <paramref name="surfacePoint"/>.</summary>
-        public Location LocationAt(Vector surfacePoint, Vector? xDir = null) =>
-            self.SelectFaces().OrderBy(f => f.DistanceTo(surfacePoint)).First().LocationAt(surfacePoint, xDir);
+        public Location LocationAt(Point3D surfacePoint, Vector3D? xDir = null) =>
+            self.Faces().OrderBy(f => f.DistanceTo(surfacePoint)).First().LocationAt(surfacePoint, xDir);
 
         // ---- Sheet metal ----
 
         /// <summary>The cylindrical faces: on a sheet metal shell, the bends.</summary>
-        public ShapeList<Face> Bends() => self.SelectFaces().Where(GeomType.Cylinder);
+        public ShapeList<Face> Bends() => self.Faces().Where(GeomType.Cylinder);
 
         /// <summary>The planar faces: on a sheet metal shell, the base, walls and whatever the bends join.</summary>
-        public ShapeList<Face> Flats() => self.SelectFaces().Where(GeomType.Plane);
+        public ShapeList<Face> Flats() => self.Faces().Where(GeomType.Plane);
 
         /// <summary>The straight edges between two flats that still lie in one plane: the lines the sheet can be folded on.</summary>
         public ShapeList<Edge> FoldLines() =>
-            new(self.SelectEdges().Where(e => e.GeomType == GeomType.Line && TwoD.CoplanarPair(e, self) is not null));
+            new(self.Edges().Where(e => e.GeomType == GeomType.Line && TwoD.CoplanarPair(e, self) is not null));
 
         /// <summary>The free edges of the sheet's flats: what a flange or hem consumes (a bend's free edges aren't rims).</summary>
         public ShapeList<Edge> Rims() =>
-            new(self.SelectEdges().Where(e => OneD.ConnectedFaces(e, self) is [var only] && only.GeomType == GeomType.Plane));
+            new(self.Edges().Where(e => OneD.ConnectedFaces(e, self) is [var only] && only.GeomType == GeomType.Plane));
 
         /// <summary>
         /// This sheet trimmed by cutters, keeping its flats and bends. A solid cuts every face it passes through, so a cutout
@@ -59,7 +59,7 @@ public static partial class ShellExtensions
         public Shell CutSheet(params IEnumerable<Shape> cutters)
         {
             var cutterList = cutters.ToList();
-            var remaining = self.SelectFaces().ToList();
+            var remaining = self.Faces().ToList();
             var records = new List<ModelHistory>();
             var solids = cutterList.Where(c => c.Dim == 3).ToList();
             var planes = cutterList.OfKind<Face>().ToList();
@@ -69,7 +69,7 @@ public static partial class ShellExtensions
                 foreach (var face in remaining)
                 {
                     var result = face.Cut(solids);
-                    trimmed.AddRange(result.IsEmpty ? [] : result.SelectFaces());
+                    trimmed.AddRange(result.IsEmpty ? [] : result.Faces());
                     if (ModelHistory.Of([result]) is { } record)
                         records.Add(record);
                 }
@@ -90,7 +90,7 @@ public static partial class ShellExtensions
                         continue;
                     }
                     var result = face.Cut(matching);
-                    trimmed.AddRange(result.IsEmpty ? [] : result.SelectFaces());
+                    trimmed.AddRange(result.IsEmpty ? [] : result.Faces());
                     if (ModelHistory.Of([result]) is { } record)
                         records.Add(record);
                 }
@@ -109,7 +109,7 @@ public static partial class ShellExtensions
         // ---- Factories ----
 
         /// <summary>A wire extruded into a shell.</summary>
-        public static Shell Extrude(Wire obj, Vector direction) => (Shell)TopoUtil.Extrude(obj, direction);
+        public static Shell Extrude(Wire obj, Vector3D direction) => (Shell)TopoUtil.Extrude(obj, direction);
 
         /// <summary>
         /// A loft through wires (open or closed), optionally starting or ending with a vertex; ruled (stepped) or smooth.
@@ -119,7 +119,7 @@ public static partial class ShellExtensions
         /// <summary>A 1D profile revolved through <paramref name="angle"/> degrees about an axis.</summary>
         public static Shell Revolve(Shape profile, double angle, Axis axis)
         {
-            var wire = Wire.Make(profile.SelectEdges());
+            var wire = Wire.Make(profile.Edges());
             var ax1 = axis.ToAxis3D();
             // On a copy of the profile, as build123d revolves (BRepPrimAPI_MakeRevol with copy)
             var revolved = Failures.Get(wire.Revolve(ax1, angle * Constants.DegToRad, copyProfile: true), () => "revolve");
@@ -129,8 +129,8 @@ public static partial class ShellExtensions
         /// <summary>A 1D profile swept along a 1D path.</summary>
         public static Shell Sweep(Shape profile, Shape path, Transition transition = Transition.Transformed)
         {
-            var profileWire = Wire.Make(profile.SelectEdges());
-            var pathWire = Wire.Make(Wire.Make(path.SelectEdges()).OrderEdges());
+            var profileWire = Wire.Make(profile.Edges());
+            var pathWire = Wire.Make(Wire.Make(path.Edges()).OrderEdges());
             // BRepOffsetAPI_MakePipeShell's defaults (corrected Frenet), not closed into a solid
             var options = new SweepOptions { MakeSolid = false, Transition = FaceExtensions.TransitionMode(transition) };
             var built = Failures.Get(Sweeps.Sweep(profileWire, pathWire, options), () => "sweep");
@@ -216,7 +216,7 @@ public static partial class ShellExtensions
             : throw new ArgumentException("Sheet faces must sew into one connected shell");
         if (!shell.IsValid)
             throw new ArgumentException("Sheet faces produced an invalid shell");
-        if (shell.SelectEdges().Any(e => OneD.ConnectedFaces(e, shell).Count > 2))
+        if (shell.Edges().Any(e => OneD.ConnectedFaces(e, shell).Count > 2))
             throw new ArgumentException("Sheet faces produced non-manifold topology");
         var record = records.Aggregate(new ModelHistory(), (r, earlier) => r.Merge(earlier))
             .Merge(ModelHistory.FromHistory(sewing.History, faces.Select(f => (Shape)f)));
@@ -237,7 +237,7 @@ public static class TwoD
             return [wires];
         // This may make a compound of faces
         var faces = Face.Make(wires[0], wires.Skip(1));
-        return [.. faces.SelectFaces().Select(f => (IReadOnlyList<Wire>)[f.OuterWire(), .. f.InnerWires()])];
+        return [.. faces.Faces().Select(f => (IReadOnlyList<Wire>)[f.OuterWire(), .. f.InnerWires()])];
     }
 
     /// <summary>The pieces of an edge split at a vertex (<c>BOPAlgo_Splitter</c>).</summary>
@@ -255,7 +255,7 @@ public static class TwoD
         if (beside.Count != 2 || beside.Any(f => f.GeomType != GeomType.Plane))
             return null;
         var normals = beside.Select(f => f.NormalAt(f.Center())).ToList();
-        if (normals[0].Cross(normals[1]).Length > Constants.Tolerance)
+        if (normals[0].Cross(normals[1]).Magnitude > Constants.Tolerance)
             return null;
         return (beside[0], beside[1]);
     }

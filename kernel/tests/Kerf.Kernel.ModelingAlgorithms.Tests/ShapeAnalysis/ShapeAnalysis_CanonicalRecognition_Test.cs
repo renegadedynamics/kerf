@@ -79,7 +79,7 @@ public class CanonicalRecognitionApproxTest
         Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(aFaceMaker.Face()));
 
         myRecognizer.SetShape(aNurbsFace);
-        var aResultCylinder = new Cylinder();
+        var aResultCylinder = new Cylinder3D();
         bool aResult = myRecognizer.IsCylinder(myTolerance, ref aResultCylinder);
 
         Assert.True(aResult, "NURBS face should be recognized as cylinder");
@@ -97,7 +97,7 @@ public class CanonicalRecognitionApproxTest
         Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(aFaceMaker.Face()));
 
         myRecognizer.SetShape(aNurbsFace);
-        var aResultCone = new Cone();
+        var aResultCone = new Cone3D();
         bool aResult = myRecognizer.IsCone(myTolerance, ref aResultCone);
 
         Assert.True(aResult, "NURBS face should be recognized as cone");
@@ -114,7 +114,7 @@ public class CanonicalRecognitionApproxTest
         Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(aFaceMaker.Face()));
 
         myRecognizer.SetShape(aNurbsFace);
-        var aResultSphere = new Sphere();
+        var aResultSphere = new Sphere3D();
         bool aResult = myRecognizer.IsSphere(myTolerance, ref aResultSphere);
 
         Assert.True(aResult, "NURBS face should be recognized as sphere");
@@ -282,7 +282,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(Face(aCylSurf, 0, 2 * M_PI, -1, 1)));
 
         myRecognizer.SetShape(aNurbsFace);
-        var aResultCylinder = new Cylinder();
+        var aResultCylinder = new Cylinder3D();
         bool aResult = myRecognizer.IsCylinder(myTolerance, ref aResultCylinder);
 
         Assert.True(aResult, "Cylindrical surface should be recognized as cylinder");
@@ -297,7 +297,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(Face(aConeSurf, 0, 2 * M_PI, -1, 0)));
 
         myRecognizer.SetShape(aNurbsFace);
-        var aResultCone = new Cone();
+        var aResultCone = new Cone3D();
         bool aResult = myRecognizer.IsCone(myTolerance, ref aResultCone);
 
         Assert.True(aResult, "Conical surface should be recognized as cone");
@@ -314,7 +314,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         Face aFace = aFaceMaker.Face();
 
         myRecognizer.SetShape(aFace);
-        var aResultSphere = new Sphere();
+        var aResultSphere = new Sphere3D();
         bool aResult = myRecognizer.IsSphere(myTolerance, ref aResultSphere);
 
         Assert.True(aResult, "Spherical surface should be recognized as sphere");
@@ -347,7 +347,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         Shape aNurbsShape = CanonicalRecognitionTestUtils.NurbsConverted(aSewnShape);
 
         myRecognizer.SetShape(aNurbsShape);
-        var aResultCylinder = new Cylinder();
+        var aResultCylinder = new Cylinder3D();
         bool aResult = myRecognizer.IsCylinder(myTolerance, ref aResultCylinder);
 
         Assert.True(aResult, "Sewn cylindrical surface should be recognized as cylinder");
@@ -364,7 +364,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         Shape aNurbsShape = CanonicalRecognitionTestUtils.NurbsConverted(aSewnShape);
 
         myRecognizer.SetShape(aNurbsShape);
-        var aResultCone = new Cone();
+        var aResultCone = new Cone3D();
         bool aResult = myRecognizer.IsCone(myTolerance, ref aResultCone);
 
         Assert.True(aResult, "Sewn conical surface should be recognized as cone");
@@ -381,7 +381,7 @@ public class CanonicalRecognitionBaseSurfaceTest
             Face(aBSplineSurf, 3, 6, -1.5, 0));
 
         myRecognizer.SetShape(aSewnShape);
-        var aResultSphere = new Sphere();
+        var aResultSphere = new Sphere3D();
         bool aResult = myRecognizer.IsSphere(myTolerance, ref aResultSphere);
 
         Assert.True(aResult, "Sewn spherical surface should be recognized as sphere");
@@ -397,7 +397,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         Shape aNurbsShape = CanonicalRecognitionTestUtils.NurbsConverted(aSewnShape);
 
         myRecognizer.SetShape(aNurbsShape);
-        var aResultCylinder = new Cylinder();
+        var aResultCylinder = new Cylinder3D();
         bool aResult = myRecognizer.IsCylinder(myTolerance, ref aResultCylinder);
 
         Assert.True(aResult, "Sewn cylindrical shape should be recognized as cylinder");
@@ -421,7 +421,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(Face(anExtSurf, uMin, uMax, -1, 1)));
 
         myRecognizer.SetShape(aNurbsFace);
-        var aResultCylinder = new Cylinder();
+        var aResultCylinder = new Cylinder3D();
         bool aResult = myRecognizer.IsCylinder(myTolerance, ref aResultCylinder);
 
         Assert.True(aResult, "Extruded surface should be recognized as cylinder");

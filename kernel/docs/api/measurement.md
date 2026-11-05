@@ -61,7 +61,7 @@ public readonly record struct LineHit(Point3D Point, double LineParameter, Face 
 ## Examples
 
 ```csharp
-double volume = part.Volume();
+double volume = part.IntegrateVolume();
 Point3D centre = part.MassProperties(Dimension.Volume).CentreOfMass;
 ```
 
@@ -87,7 +87,7 @@ var hits = part.Intersect(new Line3D(eye, viewDirection));      // the faces a r
 
 | Today | Kerf |
 |---|---|
-| `GProp_GProps props; BRepGProp.VolumeProperties(shape, props); props.Mass()` | `shape.Volume()`, `MassProperties(Dimension.Volume)` |
+| `GProp_GProps props; BRepGProp.VolumeProperties(shape, props); props.Mass()` | `shape.IntegrateVolume()`, `MassProperties(Dimension.Volume)` |
 | `SurfaceProperties`, `LinearProperties` | `Area`, `Length`, `MassProperties(Dimension.Area/Length)` |
 | `props.CentreOfMass()`, `MatrixOfInertia()`, `PrincipalProperties()`, `GProp_PrincipalProps` | `MassProperties` record |
 | `BRepGProp_Face` (normals for area integration in the modelling layer) | `FaceSurface.Normal` (topology.md) |

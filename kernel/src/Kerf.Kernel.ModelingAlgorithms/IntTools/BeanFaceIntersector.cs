@@ -665,7 +665,7 @@ internal class BeanFaceIntersector
         // Cylinder - Line/Circle
         else if (st == SurfaceKind.Cylinder)
         {
-            Cylinder cylinder = _surface.Cylinder();
+            Cylinder3D cylinder = _surface.Cylinder();
             Axis3D cylAxis = cylinder.Axis;
             Direction3D cylDir = cylAxis.Direction;
             double cylRadius = cylinder.Radius;
@@ -709,7 +709,7 @@ internal class BeanFaceIntersector
         // Sphere - Line
         else if (st == SurfaceKind.Sphere)
         {
-            Sphere sph = _surface.Sphere();
+            Sphere3D sph = _surface.Sphere();
             Point3D sphLoc = sph.Location;
             if (ct == Line)
             {

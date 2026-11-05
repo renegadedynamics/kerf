@@ -153,7 +153,7 @@ public static partial class ShapeExtensions
 
         /// <summary>
         /// Where this shape's body meets (overlaps or crosses) <paramref name="toIntersect"/>: shapes or geometry objects
-        /// (<see cref="Vector"/>, <see cref="Location"/>, <see cref="Axis"/>, <see cref="Plane"/>).
+        /// (<see cref="Point3D"/>, <see cref="Location"/>, <see cref="Axis"/>, <see cref="Plane"/>).
         /// </summary>
         /// <remarks>
         /// Several arguments are chained: <c>c.Intersect(s1, s2)</c> is c ∩ s1 ∩ s2. A compound argument distributes:
@@ -168,7 +168,7 @@ public static partial class ShapeExtensions
             if (list.Any(o => o is IShape { IsEmpty: true }))
                 return [];
             foreach (var obj in list)
-                if (obj is not (IShape or Vector or Location or Axis or Plane))
+                if (obj is not (IShape or Point3D or Location or Axis or Plane))
                     throw new ArgumentException($"Unsupported type for intersect: {obj.GetType().Name}");
 
             var commonSet = new List<Shape> { self.AsShape() };
@@ -264,8 +264,8 @@ public static partial class ShapeExtensions
                 double u = (us.Min + us.Max) / 2, v = (vs.Min + vs.Max) / 2;
                 var surfacePnt = toolFace.ToSurface().Evaluate(u, v);
                 var surfaceNormal = TopoUtil.FaceNormalVector(toolFace, u, v);
-                var refPoint = new Vector(surfacePnt) + surfaceNormal.Normalized();
-                var refPnt = refPoint.ToPoint3D();
+                var refPoint = surfacePnt + surfaceNormal.Normalized();
+                var refPnt = refPoint;
                 var halfSpace = trimTool.IsShell()
                     ? Primitives.HalfSpace((Shell)trimTool, refPnt)
                     : Primitives.HalfSpace((Face)trimTool, refPnt);
@@ -282,14 +282,14 @@ public static partial class ShapeExtensions
                 {
                     // A piece lies wholly on one side of the plane and so does its centre of mass. Its geometric centre
                     // need not: that of a curved face is the middle of its surface, trimmed away or not.
-                    isUp = plane.ToLocalCoords(new Vector(ShapeExtensions.CentreOfMass(part))).Z >= 0;
+                    isUp = plane.ToLocalCoords(ShapeExtensions.CentreOfMass(part)).Z >= 0;
                 }
                 else
                 {
                     // Intersect the piece and the thickened tool
                     var isUpObj = TopoUtil.BoolOp([part], [toolSolid!.Value], BooleanKind.Common);
                     // Mass is the total length for linear properties
-                    isUp = isUpObj.Length() >= Constants.Tolerance;
+                    isUp = isUpObj.IntegrateLength() >= Constants.Tolerance;
                 }
                 (isUp ? tops : bottoms).Add(subShape);
             }

@@ -236,7 +236,7 @@ public static class FeatureOperations
         {
             throw new ArgumentException("There are no faces.", name);
         }
-        var own = shape.Faces();
+        var own = shape.AllFaces();
         if (list.Any(f => f.IsNull || !own.Any(o => o.IsSame(f))))
         {
             throw new ArgumentException("A face isn't one of the shape's.", name);

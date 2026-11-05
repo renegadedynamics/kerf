@@ -35,13 +35,13 @@ internal class IntLinTorus
     }
 
     /// <summary>Creates the intersection between a line and a torus.</summary>
-    public IntLinTorus(in Line3D l, in Torus t)
+    public IntLinTorus(in Line3D l, in Torus3D t)
     {
         Perform(l, t);
     }
 
     /// <summary>Intersects a line and a torus.</summary>
-    public void Perform(in Line3D l, in Torus T)
+    public void Perform(in Line3D l, in Torus3D T)
     {
         Point3D pl = l.Location;
         Direction3D dl = l.Direction;

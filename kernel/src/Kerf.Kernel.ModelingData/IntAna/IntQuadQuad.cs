@@ -58,7 +58,7 @@ internal class IntQuadQuad
     //=======================================================================
     // A template in OCCT, instantiated for gp_Cylinder only.
     private static void AddSpecialPoints(Quadric quad,
-                                         in Cylinder gpObj,
+                                         in Cylinder3D gpObj,
                                          ref double theta1,
                                          ref double theta2)
     {
@@ -346,7 +346,7 @@ internal class IntQuadQuad
     //=================================================================================================
 
     /// <summary>The intersection between a cylinder and a quadric. Tol is not used.</summary>
-    public IntQuadQuad(in Cylinder cyl, Quadric quad, double tol)
+    public IntQuadQuad(in Cylinder3D cyl, Quadric quad, double tol)
     {
         _nbMaxCurves = 12;
         _epsilon = 0.00000001;
@@ -360,7 +360,7 @@ internal class IntQuadQuad
     //=================================================================================================
 
     /// <summary>Intersects a cylinder and a quadric. Tol is not used.</summary>
-    public void Perform(in Cylinder cyl, Quadric quad, double tol)
+    public void Perform(in Cylinder3D cyl, Quadric quad, double tol)
     {
         _ = tol;
         _done = true;
@@ -664,7 +664,7 @@ internal class IntQuadQuad
     }
 
     /// <summary>The intersection between a cone and a quadric. Tol is not used.</summary>
-    public IntQuadQuad(in Cone cone, Quadric quad, double tol)
+    public IntQuadQuad(in Cone3D cone, Quadric quad, double tol)
     {
         _nbMaxCurves = 12;
         _epsilon = 0.00000001;
@@ -673,7 +673,7 @@ internal class IntQuadQuad
     }
 
     /// <summary>Intersects a cone and a quadric. Tol is not used.</summary>
-    public void Perform(in Cone cone, Quadric quad, double tol)
+    public void Perform(in Cone3D cone, Quadric quad, double tol)
     {
         _ = tol;
         //

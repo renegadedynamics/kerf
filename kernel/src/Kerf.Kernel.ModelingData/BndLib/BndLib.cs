@@ -1160,7 +1160,7 @@ internal static class BndLib
         b.Enlarge(tol);
     }
 
-    private static void ComputeCyl(in Cylinder cyl, double uMin, double uMax, double vMin, double vMax, ref Box b)
+    private static void ComputeCyl(in Cylinder3D cyl, double uMin, double uMax, double vMin, double vMax, ref Box b)
     {
         Circle3D c = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position, cyl.Radius, vMin);
         Add(c, uMin, uMax, 0.0, ref b);
@@ -1175,7 +1175,7 @@ internal static class BndLib
     /// be in [0, 2*pi]; VMin and VMax may be infinite.
     /// </summary>
     /// <exception cref="FailureException">VMin and VMax are both negative infinite, or both positive infinite.</exception>
-    public static void Add(in Cylinder s, double uMin, double uMax, double vMin, double vMax, double tol, ref Box b)
+    public static void Add(in Cylinder3D s, double uMin, double uMax, double vMin, double vMax, double tol, ref Box b)
     {
         // Cache axis direction for infinite cases.
         Direction3D dir = s.Axis.Direction;
@@ -1234,12 +1234,12 @@ internal static class BndLib
     }
 
     /// <summary>Adds the band [VMin, VMax] of the whole cylinder S to B, then enlarges B by Tol.</summary>
-    public static void Add(in Cylinder s, double vMin, double vMax, double tol, ref Box b)
+    public static void Add(in Cylinder3D s, double vMin, double vMax, double tol, ref Box b)
     {
         Add(s, 0.0, 2.0 * M_PI, vMin, vMax, tol, ref b);
     }
 
-    private static void ComputeCone(in Cone cone, double uMin, double uMax, double vMin, double vMax, ref Box b)
+    private static void ComputeCone(in Cone3D cone, double uMin, double uMax, double vMin, double vMax, ref Box b)
     {
         CoordinateSystem pos = cone.Position;
         double r = cone.RefRadius;
@@ -1270,7 +1270,7 @@ internal static class BndLib
     /// [0, 2*pi]; VMin and VMax may be infinite.
     /// </summary>
     /// <exception cref="FailureException">VMin and VMax are both negative infinite, or both positive infinite.</exception>
-    public static void Add(in Cone s, double uMin, double uMax, double vMin, double vMax, double tol, ref Box b)
+    public static void Add(in Cone3D s, double uMin, double uMax, double vMin, double vMax, double tol, ref Box b)
     {
         // Cache axis direction for infinite cases.
         Direction3D d = s.Axis.Direction;
@@ -1329,12 +1329,12 @@ internal static class BndLib
     }
 
     /// <summary>Adds the band [VMin, VMax] of the whole cone S to B, then enlarges B by Tol.</summary>
-    public static void Add(in Cone s, double vMin, double vMax, double tol, ref Box b)
+    public static void Add(in Cone3D s, double vMin, double vMax, double tol, ref Box b)
     {
         Add(s, 0.0, 2.0 * M_PI, vMin, vMax, tol, ref b);
     }
 
-    private static void ComputeSphere(in Sphere sphere, double uMin, double uMax, double vMin, double vMax, ref Box b)
+    private static void ComputeSphere(in Sphere3D sphere, double uMin, double uMax, double vMin, double vMax, ref Box b)
     {
         Point3D p = sphere.Location;
         double r = sphere.Radius;
@@ -1424,7 +1424,7 @@ internal static class BndLib
     }
 
     // Bounding box of a degenerated torus (major radius below the minor one).
-    private static void ComputeDegeneratedTorus(in Torus torus, double uMin, double uMax,
+    private static void ComputeDegeneratedTorus(in Torus3D torus, double uMin, double uMax,
                                                 double vMin, double vMax, ref Box b)
     {
         Point3D p = torus.Location;
@@ -1520,14 +1520,14 @@ internal static class BndLib
     /// Adds the patch [UMin, UMax] x [VMin, VMax] of the sphere S to B, then enlarges B by Tol. UMax - UMin can be
     /// in [0, 2*pi], VMin and VMax in [-pi/2, pi/2].
     /// </summary>
-    public static void Add(in Sphere s, double uMin, double uMax, double vMin, double vMax, double tol, ref Box b)
+    public static void Add(in Sphere3D s, double uMin, double uMax, double vMin, double vMax, double tol, ref Box b)
     {
         ComputeSphere(s, uMin, uMax, vMin, vMax, ref b);
         b.Enlarge(tol);
     }
 
     /// <summary>Adds the whole sphere S to B, then enlarges B by Tol.</summary>
-    public static void Add(in Sphere s, double tol, ref Box b)
+    public static void Add(in Sphere3D s, double tol, ref Box b)
     {
         Point3D p = s.Location;
         double r = s.Radius;
@@ -1546,7 +1546,7 @@ internal static class BndLib
     /// Adds the patch [UMin, UMax] x [VMin, VMax] of the torus S to B, then enlarges B by Tol. UMax - UMin can be
     /// in [0, 2*pi]. The box is built from 8 cross-section circles enlarged to circumscribed octagons.
     /// </summary>
-    public static void Add(in Torus s, double uMin, double uMax, double vMin, double vMax, double tol, ref Box b)
+    public static void Add(in Torus3D s, double uMin, double uMax, double vMin, double vMax, double tol, ref Box b)
     {
         int fi1;
         int fi2;
@@ -1600,7 +1600,7 @@ internal static class BndLib
     }
 
     /// <summary>Adds the whole torus S to B (the 8 corners of its box), then enlarges B by Tol.</summary>
-    public static void Add(in Torus s, double tol, ref Box b)
+    public static void Add(in Torus3D s, double tol, ref Box b)
     {
         double rMa = s.MajorRadius;
         double rmi = s.MinorRadius;

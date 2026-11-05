@@ -662,7 +662,7 @@ internal sealed class Pipe
                 b.MakeShell(ref sh);
                 result = sh;
                 explode = true;
-                if (!_spine.IsClosed && !theFirst.IsNull)
+                if (!_spine.ClosedFlag && !theFirst.IsNull)
                 {
                     b.Add(result, theFirst.Reversed());
                 }
@@ -891,7 +891,7 @@ internal sealed class Pipe
                 }
             }
 
-            if (!_spine.IsClosed)
+            if (!_spine.ClosedFlag)
             {
                 // if Spine is not closed
                 // add the last face of the solid

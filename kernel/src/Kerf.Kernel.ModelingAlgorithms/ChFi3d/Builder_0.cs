@@ -660,14 +660,14 @@ internal static partial class Builder_0
         {
             case SurfaceKind.Cylinder:
             {
-                Cylinder cyl = gs.Cylinder();
+                Cylinder3D cyl = gs.Cylinder();
                 r = cyl.Radius;
                 global::Kerf.Engine.Geometry.ElSLib.D1(pp.X, pp.Y, cyl, out pbid, out vbid, out v);
             }
                 break;
             case SurfaceKind.Torus:
             {
-                Torus tor = gs.Torus();
+                Torus3D tor = gs.Torus();
                 r = tor.MinorRadius;
                 global::Kerf.Engine.Geometry.ElSLib.D1(pp.X, pp.Y, tor, out pbid, out v, out vbid);
             }

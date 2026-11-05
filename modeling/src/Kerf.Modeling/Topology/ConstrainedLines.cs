@@ -7,11 +7,11 @@ namespace Kerf.Modeling;
 
 /// <summary>
 /// A target for a constrained arc or line: an edge (or axis) to be tangent to, with an optional
-/// <see cref="Kerf.Modeling.Tangency"/> qualifier, or a point to pass through.
+/// <see cref="Kerf.Geometry.Tangency"/> qualifier, or a point to pass through.
 /// </summary>
 public readonly record struct Tangent
 {
-    private Tangent(Edge? edge, Axis? axis, Vector? point, Tangency tangency) => (Edge, Axis, Point, Tangency) = (edge, axis, point, tangency);
+    private Tangent(Edge? edge, Axis? axis, Point3D? point, Tangency tangency) => (Edge, Axis, Point, Tangency) = (edge, axis, point, tangency);
 
     /// <summary>The edge to be tangent to.</summary>
     public Edge? Edge { get; }
@@ -20,7 +20,7 @@ public readonly record struct Tangent
     public Axis? Axis { get; }
 
     /// <summary>The point to pass through.</summary>
-    public Vector? Point { get; }
+    public Point3D? Point { get; }
 
     /// <summary>Which side of an edge the solution lies on.</summary>
     public Tangency Tangency { get; }
@@ -29,8 +29,8 @@ public readonly record struct Tangent
     public static implicit operator Tangent(Edge edge) => new(edge, null, null, Tangency.Unqualified);
     public static implicit operator Tangent(BaseEdgeObject edge) => new(edge.Edge, null, null, Tangency.Unqualified);
     public static implicit operator Tangent(Axis axis) => new(null, axis, null, Tangency.Unqualified);
-    public static implicit operator Tangent(Vector point) => new(null, null, point, Tangency.Unqualified);
-    public static implicit operator Tangent(Vertex vertex) => new(null, null, vertex.ToVector(), Tangency.Unqualified);
+    public static implicit operator Tangent(Point3D point) => new(null, null, point, Tangency.Unqualified);
+    public static implicit operator Tangent(Vertex vertex) => new(null, null, vertex.Point, Tangency.Unqualified);
 #pragma warning restore CS1591
 
     /// <summary>An edge as a target, the solution on the side <paramref name="tangency"/> says.</summary>
@@ -75,7 +75,7 @@ public static partial class EdgeExtensions
             ConstrainedSolvers.ThreeTanArcs(EdgeExtensions.Sorted(tangencyOne, tangencyTwo, tangencyThree), sagitta);
 
         /// <summary>The planar circles on XY with a fixed centre tangent to a curve or passing through a point.</summary>
-        public static ShapeList<Edge> MakeConstrainedArcs(Tangent tangencyOne, Vector center) =>
+        public static ShapeList<Edge> MakeConstrainedArcs(Tangent tangencyOne, Point3D center) =>
             ConstrainedSolvers.TanCenArcs(tangencyOne.Resolved(), center);
 
         /// <summary>The planar circles on XY of a radius, tangent to a curve or through a point, whose centre lies on a curve.</summary>
@@ -92,7 +92,7 @@ public static partial class EdgeExtensions
         {
             var sorted = EdgeExtensions.Sorted(tangencyOne, tangencyTwo);
             if (sorted[0].IsPoint)
-                throw new ArgumentException("Internal error - 1st tangency can't be an Axis | Vector");
+                throw new ArgumentException("Internal error - 1st tangency can't be an Axis | point");
             return ConstrainedSolvers.TwoTanLines(sorted[0], sorted[1]);
         }
 
@@ -101,7 +101,7 @@ public static partial class EdgeExtensions
             ConstrainedSolvers.TanOrientedLines(tangencyOne.Resolved(), reference, angle * Constants.DegToRad);
 
         /// <summary>The planar lines on XY tangent to a curve in a direction (its X and Y), measured from a reference axis.</summary>
-        public static ShapeList<Edge> MakeConstrainedLines(Tangent tangencyOne, Axis reference, Vector direction) =>
+        public static ShapeList<Edge> MakeConstrainedLines(Tangent tangencyOne, Axis reference, Vector3D direction) =>
             ConstrainedSolvers.TanOrientedLines(tangencyOne.Resolved(), reference, Math.Atan2(direction.Y, direction.X));
     }
 
@@ -305,7 +305,7 @@ internal static class ConstrainedSolvers
         return new ShapeList<Edge>(solutions.Select(e => e));
     }
 
-    internal static ShapeList<Edge> TanCenArcs(Tangent tangent, Vector center)
+    internal static ShapeList<Edge> TanCenArcs(Tangent tangent, Point3D center)
     {
         var c2d = new Point2D(center.X, center.Y);
         var arg = AsGccArg(tangent);

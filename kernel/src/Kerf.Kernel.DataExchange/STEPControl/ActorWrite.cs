@@ -148,7 +148,7 @@ internal class ActorWrite : ActorOfFinderProcess
     // shape; the port gives a shell that isn't closed as a copy (the same faces) marked closed (decision 1269)
     private static Shell ClosedShell(Shell shell)
     {
-        if (shell.IsClosed)
+        if (shell.ClosedFlag)
         {
             return shell;
         }

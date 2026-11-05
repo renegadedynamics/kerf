@@ -986,7 +986,7 @@ internal class ActorRead : ActorOfTransientProcess, IActorRead
             for (; exp.More(); exp.Next())
             {
                 Shape subShape = exp.Current();
-                if (subShape.Type == ShapeType.Shell && subShape.IsClosed)
+                if (subShape.Type == ShapeType.Shell && subShape.ClosedFlag)
                 {
                     Solid nextSolid = new Solid();
                     brepBuilder.MakeSolid(ref nextSolid);

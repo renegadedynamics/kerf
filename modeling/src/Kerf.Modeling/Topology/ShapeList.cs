@@ -48,7 +48,7 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
     /// <summary>
     /// The shape this list was selected from, if it was: <c>part.Edges()</c>'s is the part, and every selection on the list
     /// (<see cref="Where(Func{T, bool})"/>, <c>OrderBy</c>, <c>ParallelTo</c>…) keeps it. A selection through a shape's
-    /// sub-shape (<c>faces[0].SelectEdges()</c>) has that sub-shape. What needs the parent, such as a fillet or
+    /// sub-shape (<c>faces[0].Edges()</c>) has that sub-shape. What needs the parent, such as a fillet or
     /// <c>Where(Convexity)</c>, reads it here.
     /// </summary>
     public IShape? Origin { get; }
@@ -148,10 +148,10 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
                     expanded.AddRange(new ShapeList<Shape>(shape.ChildShapes()).Expand());
                     break;
                 case ShapeType.Shell:
-                    expanded.AddRange(shape.SelectFaces().Select(f => (Shape)f));
+                    expanded.AddRange(shape.Faces().Select(f => (Shape)f));
                     break;
                 case ShapeType.Wire:
-                    expanded.AddRange(shape.SelectEdges().Select(e => (Shape)e));
+                    expanded.AddRange(shape.Edges().Select(e => (Shape)e));
                     break;
                 default:
                     expanded.Add(shape);
@@ -162,26 +162,26 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
     }
 
     /// <summary>The average of the centres of the shapes.</summary>
-    public Vector Center() =>
-        Count == 0 ? new Vector(0, 0, 0) : Enumerable.Aggregate(this, new Vector(0, 0, 0), (sum, o) => sum + o.Center()) / Count;
+    public Point3D Center() =>
+        Count == 0 ? Point3D.Origin : (Enumerable.Aggregate(this, Vector3D.Zero, (sum, o) => sum + o.Center().ToVector()) * (1.0 / Count)).ToPoint();
 
     /// <summary>All the vertices of the shapes.</summary>
-    public ShapeList<Vertex> Vertices() => new(this.SelectMany(s => s.SelectVertices()));
+    public ShapeList<Vertex> Vertices() => new(this.SelectMany(s => s.Vertices()));
 
     /// <summary>All the edges of the shapes.</summary>
-    public ShapeList<Edge> Edges() => new(this.SelectMany(s => s.SelectEdges()));
+    public ShapeList<Edge> Edges() => new(this.SelectMany(s => s.Edges()));
 
     /// <summary>All the wires of the shapes.</summary>
-    public ShapeList<Wire> Wires() => new(this.SelectMany(s => s.SelectWires()));
+    public ShapeList<Wire> Wires() => new(this.SelectMany(s => s.Wires()));
 
     /// <summary>All the faces of the shapes.</summary>
-    public ShapeList<Face> Faces() => new(this.SelectMany(s => s.SelectFaces()));
+    public ShapeList<Face> Faces() => new(this.SelectMany(s => s.Faces()));
 
     /// <summary>All the shells of the shapes.</summary>
-    public ShapeList<Shell> Shells() => new(this.SelectMany(s => s.SelectShells()));
+    public ShapeList<Shell> Shells() => new(this.SelectMany(s => s.Shells()));
 
     /// <summary>All the solids of the shapes.</summary>
-    public ShapeList<Solid> Solids() => new(this.SelectMany(s => s.SelectSolids()));
+    public ShapeList<Solid> Solids() => new(this.SelectMany(s => s.Solids()));
 
     /// <summary>All the compounds of the shapes.</summary>
     public ShapeList<Compound> Compounds() => new(this.SelectMany(s => s.Compounds()));
@@ -342,7 +342,7 @@ internal static class Measures
     {
         ShapeKey.Length => Length(o),
         ShapeKey.Radius => Radius(o),
-        ShapeKey.Distance => o.Center().Length,
+        ShapeKey.Distance => o.Center().ToVector().Magnitude,
         ShapeKey.Area => o.Area,
         ShapeKey.Volume => o.Volume,
         _ => throw new ArgumentOutOfRangeException(nameof(measure)),

@@ -37,7 +37,7 @@ internal static class SurfProps
 
             case SurfaceKind.Sphere:
             {
-                Sphere sp = HSurfaceTool.Sphere(s);
+                Sphere3D sp = HSurfaceTool.Sphere(s);
                 p = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, sp);
                 norm = new Vector3D(sp.Location, p);
                 if (sp.IsDirect)
@@ -53,7 +53,7 @@ internal static class SurfProps
 
             case SurfaceKind.Cylinder:
             {
-                Cylinder cy = HSurfaceTool.Cylinder(s);
+                Cylinder3D cy = HSurfaceTool.Cylinder(s);
                 p = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, cy);
                 norm = Vector3D.LinearForm(Math.Cos(u), new Vector3D(cy.XAxis.Direction), Math.Sin(u),
                                    new Vector3D(cy.YAxis.Direction));
@@ -66,7 +66,7 @@ internal static class SurfProps
 
             case SurfaceKind.Cone:
             {
-                Cone co = HSurfaceTool.Cone(s);
+                Cone3D co = HSurfaceTool.Cone(s);
                 p = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, co);
                 double angle = co.SemiAngle;
                 double sina = Math.Sin(angle);
@@ -129,7 +129,7 @@ internal static class SurfProps
 
             case SurfaceKind.Sphere:
             {
-                Sphere sp = HSurfaceTool.Sphere(s);
+                Sphere3D sp = HSurfaceTool.Sphere(s);
                 global::Kerf.Engine.Geometry.ElSLib.D1(u, v, sp, out p, out d1u, out d1v);
                 norm = new Vector3D(sp.Location, p);
                 if (sp.IsDirect)
@@ -145,7 +145,7 @@ internal static class SurfProps
 
             case SurfaceKind.Cylinder:
             {
-                Cylinder cy = HSurfaceTool.Cylinder(s);
+                Cylinder3D cy = HSurfaceTool.Cylinder(s);
                 global::Kerf.Engine.Geometry.ElSLib.D1(u, v, cy, out p, out d1u, out d1v);
                 norm = Vector3D.LinearForm(Math.Cos(u), new Vector3D(cy.XAxis.Direction), Math.Sin(u),
                                    new Vector3D(cy.YAxis.Direction));
@@ -158,7 +158,7 @@ internal static class SurfProps
 
             case SurfaceKind.Cone:
             {
-                Cone co = HSurfaceTool.Cone(s);
+                Cone3D co = HSurfaceTool.Cone(s);
                 global::Kerf.Engine.Geometry.ElSLib.D1(u, v, co, out p, out d1u, out d1v);
                 double angle = co.SemiAngle;
                 double sina = Math.Sin(angle);
@@ -231,7 +231,7 @@ internal static class SurfProps
 
             case SurfaceKind.Sphere:
             {
-                Sphere sp = HSurfaceTool.Sphere(s);
+                Sphere3D sp = HSurfaceTool.Sphere(s);
                 global::Kerf.Engine.Geometry.ElSLib.D1(u, v, sp, out p, out dnu, out dnv);
                 norm = new Vector3D(sp.Location, p);
                 double rad = sp.Radius;
@@ -247,7 +247,7 @@ internal static class SurfProps
 
             case SurfaceKind.Cylinder:
             {
-                Cylinder cy = HSurfaceTool.Cylinder(s);
+                Cylinder3D cy = HSurfaceTool.Cylinder(s);
                 p = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, cy);
                 norm = Vector3D.LinearForm(Math.Cos(u), new Vector3D(cy.XAxis.Direction), Math.Sin(u),
                                    new Vector3D(cy.YAxis.Direction));
@@ -264,7 +264,7 @@ internal static class SurfProps
 
             case SurfaceKind.Cone:
             {
-                Cone co = HSurfaceTool.Cone(s);
+                Cone3D co = HSurfaceTool.Cone(s);
                 p = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, co);
                 double angle = co.SemiAngle;
                 double sina = Math.Sin(angle);

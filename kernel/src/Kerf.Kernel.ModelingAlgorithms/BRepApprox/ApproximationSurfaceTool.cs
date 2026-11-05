@@ -94,13 +94,13 @@ internal readonly struct ApproximationSurfaceTool : IApproxSurfaceTool<FaceSurfa
 
     public static Plane3D Plane(in FaceSurfaceAdaptor s) => s.Plane();
 
-    public static Cylinder Cylinder(in FaceSurfaceAdaptor s) => s.Cylinder();
+    public static Cylinder3D Cylinder(in FaceSurfaceAdaptor s) => s.Cylinder();
 
-    public static Cone Cone(in FaceSurfaceAdaptor s) => s.Cone();
+    public static Cone3D Cone(in FaceSurfaceAdaptor s) => s.Cone();
 
-    public static Torus Torus(in FaceSurfaceAdaptor s) => s.Torus();
+    public static Torus3D Torus(in FaceSurfaceAdaptor s) => s.Torus();
 
-    public static Sphere Sphere(in FaceSurfaceAdaptor s) => s.Sphere();
+    public static Sphere3D Sphere(in FaceSurfaceAdaptor s) => s.Sphere();
 
     public static BezierSurface Bezier(in FaceSurfaceAdaptor s) => (s.Bezier());
 

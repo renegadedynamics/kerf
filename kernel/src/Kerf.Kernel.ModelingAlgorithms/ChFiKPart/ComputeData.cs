@@ -336,7 +336,7 @@ internal static class ComputeData
         // The guideline is the circle corresponding
         // to the section of S2, and other construction elements.
 
-        Cylinder cyl = new();
+        Cylinder3D cyl = new();
         Circle3D circ = new();
         double first, last, fu, lu;
         ChFiKPart_CornerSpine(s1, s2, p1S1, p2S1, p1S2, p2S2, majRad, ref cyl, ref circ, out first, out last);

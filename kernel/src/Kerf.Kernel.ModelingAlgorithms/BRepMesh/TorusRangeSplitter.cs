@@ -33,7 +33,7 @@ internal class TorusRangeSplitter : UVParamRangeSplitter
         double diffU = rangeU.second - rangeU.first;
         double diffV = rangeV.second - rangeV.first;
 
-        Torus torus = GetDFace().GetSurface().Torus();
+        Torus3D torus = GetDFace().GetSurface().Torus();
         double r = torus.MinorRadius;
         double R = torus.MajorRadius;
 

@@ -49,12 +49,13 @@ public class Locations : LocationList
     private static Location ToLocation(object point) => (point is IShape held ? TopoUtil.Typed(held.AsShape()) : point) switch
     {
         Location l => l,
-        Vector v => new Location(v),
-        Vertex v => new Location(v.ToVector()),
-        ValueTuple<double, double> t => new Location(new Vector(t.Item1, t.Item2)),
-        ValueTuple<double, double, double> t => new Location(new Vector(t.Item1, t.Item2, t.Item3)),
-        ValueTuple<int, int> t => new Location(new Vector(t.Item1, t.Item2)),
-        ValueTuple<int, int, int> t => new Location(new Vector(t.Item1, t.Item2, t.Item3)),
+        Point3D q => new Location(q),
+        Vector3D v => new Location(v),
+        Vertex v => new Location(v.Point),
+        ValueTuple<double, double> t => new Location(new Point3D(t.Item1, t.Item2, 0)),
+        ValueTuple<double, double, double> t => new Location(new Point3D(t.Item1, t.Item2, t.Item3)),
+        ValueTuple<int, int> t => new Location(new Point3D(t.Item1, t.Item2, 0)),
+        ValueTuple<int, int, int> t => new Location(new Point3D(t.Item1, t.Item2, t.Item3)),
         Plane p => new Location(p),
         Axis a => a.Location,
         Face f => new Location(new Plane(f)),
@@ -91,28 +92,28 @@ public class GridLocations : LocationList
     public Alignment Align { get; }
 
     /// <summary>The size of the grid.</summary>
-    public Vector Size { get; }
+    public Vector3D Size { get; }
 
     /// <summary>The grid's bottom left corner.</summary>
-    public Vector Min { get; }
+    public Point3D Min { get; }
 
     /// <summary>The grid's top right corner.</summary>
-    public Vector Max { get; }
+    public Point3D Max { get; }
 
     internal static Alignment Expand(Alignment? align) =>
         align is { } a ? (a.Count == 1 ? new Alignment(a[0]!.Value, a[0]!.Value) : a) : new Alignment(Kerf.Modeling.Align.Center, Kerf.Modeling.Align.Center);
 
-    private static List<Location> Make(double xSpacing, double ySpacing, int xCount, int yCount, Alignment align, out Vector size, out Vector min)
+    private static List<Location> Make(double xSpacing, double ySpacing, int xCount, int yCount, Alignment align, out Vector3D size, out Point3D min)
     {
         if (xCount < 1 || yCount < 1)
             throw new ArgumentException($"At least 1 elements required, requested {xCount}, {yCount}");
-        size = new Vector(xSpacing * (xCount - 1), ySpacing * (yCount - 1));
-        var offset = align.Offset(new Vector(0, 0), size);
-        min = offset;
+        size = new Vector3D(xSpacing * (xCount - 1), ySpacing * (yCount - 1), 0);
+        var offset = align.Offset(Point3D.Origin, size.ToPoint());
+        min = offset.ToPoint();
         var locations = new List<Location>();
         for (int i = 0; i < xCount; i++)
             for (int j = 0; j < yCount; j++)
-                locations.Add(new Location(offset + new Vector(i * xSpacing, j * ySpacing)));
+                locations.Add(new Location(offset + new Vector3D(i * xSpacing, j * ySpacing, 0)));
         return locations;
     }
 }
@@ -139,7 +140,7 @@ public class PolarLocations : LocationList
         var step = count == 1 ? 0.0 : angularRange / (count - (endpoint ? 1 : 0));
         var locations = new List<Location>();
         for (int i = 0; i < count; i++)
-            locations.Add(new Location(new Vector(radius, 0).Rotate(Axis.Z, startAngle + step * i), new Vector(0, 0, 1),
+            locations.Add(new Location(new Vector3D(radius, 0, 0).Rotate(Axis.Z, startAngle + step * i).ToPoint(), new Vector3D(0, 0, 1),
                                        rotate ? step * i + startAngle : 0));
         return locations;
     }
@@ -194,19 +195,19 @@ public class HexLocations : LocationList
         if (xSpacing <= 0 || ySpacing <= 0 || xCount < 1 || yCount < 1)
             throw new ArgumentException("Spacing and count must be > 0 ");
         // The raw coordinates from the bottom left
-        var points = new List<Vector>();
+        var points = new List<Point3D>();
         for (int x = 0; x < xCount; x += 2)
             for (int y = 0; y < yCount; y++)
-                points.Add(new Vector(xSpacing * x, ySpacing * y + ySpacing / 2));
+                points.Add(new Point3D(xSpacing * x, ySpacing * y + ySpacing / 2, 0));
         for (int x = 1; x < xCount; x += 2)
             for (int y = 0; y < yCount; y++)
-                points.Add(new Vector(xSpacing * x, ySpacing * y + ySpacing));
+                points.Add(new Point3D(xSpacing * x, ySpacing * y + ySpacing, 0));
         // The minimum point and size of the array, as sorting by axis finds them
         var byX = points.OrderBy(p => p.X).ToList();
         var byY = points.OrderBy(p => p.Y).ToList();
-        var size = new Vector(byX[^1].X - byX[0].X, byY[^1].Y - byY[0].Y);
-        var minCorner = new Vector(byX[0].X, byY[0].Y);
-        var offset = align.Offset(new Vector(0, 0), size);
+        var size = new Point3D(byX[^1].X - byX[0].X, byY[^1].Y - byY[0].Y, 0);
+        var minCorner = new Point3D(byX[0].X, byY[0].Y, 0);
+        var offset = align.Offset(new Point3D(0, 0, 0), size);
         return [.. points.Select(p => new Location(p + offset - minCorner))];
     }
 }

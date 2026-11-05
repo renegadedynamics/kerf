@@ -495,9 +495,9 @@ internal sealed class HlrRecorder
 
     public void RecContAna()
     {
-        Sphere aSph = new(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
-        Cylinder aCyl = new(new CoordinateSystem(new Point3D(-1, 0, 2), new Direction3D(0.2, 0.1, 1), new Direction3D(1, 0, -0.2)), 3.0);
-        Cone aCone = new(new CoordinateSystem(new Point3D(0, 1, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 0.4, 2.0);
+        Sphere3D aSph = new(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Cylinder3D aCyl = new(new CoordinateSystem(new Point3D(-1, 0, 2), new Direction3D(0.2, 0.1, 1), new Direction3D(1, 0, -0.2)), 3.0);
+        Cone3D aCone = new(new CoordinateSystem(new Point3D(0, 1, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 0.4, 2.0);
         Direction3D aD1 = new(0.3, -0.4, 0.8), aD2 = new(0, 0, 1), aD3 = new(1, 0, 0);
         Point3D aEye = new(20, -15, 30), aEyeIn = new(1, 2, 4);
         Line("case contana sphere");

@@ -32,7 +32,7 @@ internal static partial class TopoUtil
     internal static Wire AsWire(IShape1D curve)
     {
         var shape = curve.AsShape();
-        return shape.IsWire() ? (Wire)shape : shape.IsEdge() ? Wire.Make((Edge)shape) : Wire.Make(shape.SelectEdges());
+        return shape.IsWire() ? (Wire)shape : shape.IsEdge() ? Wire.Make((Edge)shape) : Wire.Make(shape.Edges());
     }
 
     /// <summary>The shape as its one-dimensional type.</summary>
@@ -143,12 +143,12 @@ internal static partial class TopoUtil
     /// <summary>The distinct sub-shapes of a type (by <c>IsSame</c>), in the order exploration first reaches them.</summary>
     internal static List<Shape> Unique(Shape shape, ShapeType type) => type switch
     {
-        ShapeType.Vertex => [.. shape.Vertices().Select(s => s.AsShape())],
-        ShapeType.Edge => [.. shape.Edges().Select(s => s.AsShape())],
-        ShapeType.Wire => [.. shape.Wires().Select(s => s.AsShape())],
-        ShapeType.Face => [.. shape.Faces().Select(s => s.AsShape())],
-        ShapeType.Shell => [.. shape.Shells().Select(s => s.AsShape())],
-        ShapeType.Solid => [.. shape.Solids().Select(s => s.AsShape())],
+        ShapeType.Vertex => [.. shape.AllVertices().Select(s => s.AsShape())],
+        ShapeType.Edge => [.. shape.AllEdges().Select(s => s.AsShape())],
+        ShapeType.Wire => [.. shape.AllWires().Select(s => s.AsShape())],
+        ShapeType.Face => [.. shape.AllFaces().Select(s => s.AsShape())],
+        ShapeType.Shell => [.. shape.AllShells().Select(s => s.AsShape())],
+        ShapeType.Solid => [.. shape.AllSolids().Select(s => s.AsShape())],
         _ => [.. Explore(shape, type).Distinct(ShapeComparer.Same)],
     };
 
@@ -241,7 +241,7 @@ internal static partial class TopoUtil
     }
 
     /// <summary>The surface area of a shape's faces.</summary>
-    internal static double Area(Shape shape) => shape.Area();
+    internal static double Area(Shape shape) => shape.IntegrateArea();
 
     /// <summary>The faces sewn into a shell where they meet within <paramref name="tolerance"/>.</summary>
     internal static Shape SewFaces(IEnumerable<Shape> faces, double tolerance = Constants.Tolerance) =>
@@ -291,7 +291,7 @@ internal static partial class TopoUtil
     };
 
     /// <summary>The unit normal of a face at the point of it nearest <paramref name="surfacePoint"/>.</summary>
-    internal static Vector FaceNormalAt(Face face, Point3D surfacePoint)
+    internal static Vector3D FaceNormalAt(Face face, Point3D surfacePoint)
     {
         face.TryGetSurface(out var surface);
         if (surface is null || !surface.TryProjectNearest(surfacePoint, out var nearest))
@@ -303,13 +303,13 @@ internal static partial class TopoUtil
     /// The normal of a face at (u, v), not normalised, as <c>BRepGProp_Face::Normal</c> gives it: the cross product of the
     /// surface's derivatives there, reversed for a reversed face.
     /// </summary>
-    internal static Vector FaceNormalVector(Face face, double u, double v)
+    internal static Vector3D FaceNormalVector(Face face, double u, double v)
     {
         var d = face.ToSurface().Derivatives(u, v, 1);
         var normal = d.DU.Crossed(d.DV);
         if (face.Orientation == Orientation.Reversed)
             normal = normal.Reversed();
-        return new Vector(normal);
+        return normal;
     }
 }
 

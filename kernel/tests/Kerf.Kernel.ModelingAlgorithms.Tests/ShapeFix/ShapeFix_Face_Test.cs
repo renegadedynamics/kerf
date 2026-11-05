@@ -62,7 +62,7 @@ public class ShapeFix_Face_Test
 
         var aMakeWire = new LibraryMakeWire();
         aMakeWire.Add(aMakeEdge.Edge());
-        if (!aMakeWire.IsDone || !aMakeWire.Wire().IsClosed)
+        if (!aMakeWire.IsDone || !aMakeWire.Wire().ClosedFlag)
         {
             return new Face();
         }

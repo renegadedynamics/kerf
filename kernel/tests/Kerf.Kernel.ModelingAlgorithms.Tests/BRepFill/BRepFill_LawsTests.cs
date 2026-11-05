@@ -399,7 +399,7 @@ public class BRepFill_LawsTests
         FillingSection aSec = new(aV, new Vertex(), false, false);
         Assert.True(aSec.IsPunctual);
         Wire W = aSec.Wire();
-        Assert.True(W.IsClosed);
+        Assert.True(W.ClosedFlag);
         Explorer anExp = new(W, ShapeType.Edge);
         Assert.True(Tool.Degenerated(ShapeCasts.Edge(anExp.Current())));
         EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => new FillingSection(new MakeFace(new Plane3D(), 0, 1, 0, 1).Face(),

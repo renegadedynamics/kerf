@@ -256,13 +256,13 @@ internal class TransformedSurface : SurfaceAdaptorBase
 
     public override Plane3D Plane() => TransformedAdaptor().Plane();
 
-    public override Cylinder Cylinder() => TransformedAdaptor().Cylinder();
+    public override Cylinder3D Cylinder() => TransformedAdaptor().Cylinder();
 
-    public override Cone Cone() => TransformedAdaptor().Cone();
+    public override Cone3D Cone() => TransformedAdaptor().Cone();
 
-    public override Sphere Sphere() => TransformedAdaptor().Sphere();
+    public override Sphere3D Sphere() => TransformedAdaptor().Sphere();
 
-    public override Torus Torus() => TransformedAdaptor().Torus();
+    public override Torus3D Torus() => TransformedAdaptor().Torus();
 
     public override int UDegree() => _surf.UDegree();
 

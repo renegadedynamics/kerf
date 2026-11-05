@@ -49,10 +49,10 @@ public class OptionsAndResultsTests
     {
         Solid a = Box();
         Solid b = Box().Moved(new Placement(Transform3D.Translation(new Vector3D(5, 0, 0)))).As<Solid>();
-        double plain = a.Fuse(b).Value.Shape.Volume();
+        double plain = a.Fuse(b).Value.Shape.IntegrateVolume();
         var options = new BooleanOptions { CheckInverted = false, Parallel = true, UseObb = true };
         Assert.True(options.Parallel && options.UseObb && !options.CheckInverted);
-        Assert.Equal(plain, a.Fuse(b, options).Value.Shape.Volume(), Tol);
+        Assert.Equal(plain, a.Fuse(b, options).Value.Shape.IntegrateVolume(), Tol);
         Assert.Equal(1500, plain, Tol);
     }
 
@@ -61,7 +61,7 @@ public class OptionsAndResultsTests
     {
         Face square = Face.FromWire(Square(2)).Value;
         Built<Shape> prism = square.Extrude(new Vector3D(0, 0, 3), new ExtrudeOptions { Canonize = false }).Value;
-        Assert.Equal(12, prism.Shape.Volume(), Tol);
+        Assert.Equal(12, prism.Shape.IntegrateVolume(), Tol);
 
         var loftOptions = new LoftOptions
         {
@@ -73,23 +73,23 @@ public class OptionsAndResultsTests
             Tolerance = 1e-5,
         };
         Built<Shape> loft = Sweeps.Loft([Square(2), Square(2, 3)], loftOptions).Value;
-        Assert.Equal(12, loft.Shape.Volume(), 1e-3);
+        Assert.Equal(12, loft.Shape.IntegrateVolume(), 1e-3);
 
         Wire spine = Wire.Polygon([new(1, 1, 0), new(1, 1, 3)]).Value;
         var sweepOptions = new SweepOptions { Tolerance = 1e-5, WithContact = false, Frame = SweepFrame.Binormal, Binormal = Direction3D.UnitX };
         Built<Shape> swept = Sweeps.Sweep(Square(2), spine, sweepOptions).Value;
-        Assert.Equal(12, swept.Shape.Volume(), 1e-3);
+        Assert.Equal(12, swept.Shape.IntegrateVolume(), 1e-3);
 
         var helixOptions = new HelixOptions { Continuity = Continuity.C1, MaxDegree = 9, Tolerance = 1e-3 };
         Wire helix = Sweeps.Helix(5, 2, 4, helixOptions).Value;
-        Assert.Equal(2 * Math.Sqrt(Math.Pow(2 * Math.PI * 5, 2) + 4), helix.Length(), 1e-1);
+        Assert.Equal(2 * Math.Sqrt(Math.Pow(2 * Math.PI * 5, 2) + 4), helix.IntegrateLength(), 1e-1);
     }
 
     [Fact]
     public void A_fill_takes_its_options()
     {
         Face plane = Face.FromWire(Square(10)).Value;
-        FillBoundary[] boundaries = [.. plane.Edges().Select(e => new FillBoundary(e, Continuity.C0) { IsBoundary = true })];
+        FillBoundary[] boundaries = [.. plane.AllEdges().Select(e => new FillBoundary(e, Continuity.C0) { IsBoundary = true })];
         var options = new FillOptions
         {
             AngularTolerance = 0.1,
@@ -104,14 +104,14 @@ public class OptionsAndResultsTests
             Tolerance2D = 1e-5,
             Tolerance3D = 1e-4,
         };
-        Assert.Equal(100, Surfaces.Fill(boundaries, options).Value.Shape.Area(), 1e-2);
+        Assert.Equal(100, Surfaces.Fill(boundaries, options).Value.Shape.IntegrateArea(), 1e-2);
     }
 
     [Fact]
     public void Fillets_and_chamfers_take_their_options()
     {
         Solid box = Box();
-        Edge edge = box.Edges()[0];
+        Edge edge = box.AllEdges()[0];
         var tolerances = new FilletTolerances
         {
             Angular = 0.05,
@@ -128,12 +128,12 @@ public class OptionsAndResultsTests
             Shape = FilletShape.Rational,
             Tolerances = tolerances,
         };
-        double plain = box.Fillet([edge], 1).Value.Shape.Volume();
-        Assert.Equal(plain, box.Fillet([edge], 1, options).Value.Shape.Volume(), 1e-3);
+        double plain = box.Fillet([edge], 1).Value.Shape.IntegrateVolume();
+        Assert.Equal(plain, box.Fillet([edge], 1, options).Value.Shape.IntegrateVolume(), 1e-3);
         Assert.Equal(1000 - (1 - Math.PI / 4) * 10, plain, 1e-3);
 
         Built<Shape> chamfer = box.Chamfer([edge], 1, new ChamferOptions { Mode = ChamferMode.Classic }).Value;
-        Assert.Equal(1000 - 0.5 * 10, chamfer.Shape.Volume(), Tol);
+        Assert.Equal(1000 - 0.5 * 10, chamfer.Shape.IntegrateVolume(), Tol);
     }
 
     [Fact]
@@ -141,13 +141,13 @@ public class OptionsAndResultsTests
     {
         Solid box = Box();
         var fix = new FixOptions { FixFaces = true, FixSameParameter = true, FixWires = true, MinTolerance = 1e-7, Precision = 1e-6 };
-        Assert.Equal(1000, box.Fix(fix).Value.Shape.Volume(), Tol);
+        Assert.Equal(1000, box.Fix(fix).Value.Shape.IntegrateVolume(), Tol);
 
         var sew = new SewOptions { MaxTolerance = 1e-2, MinTolerance = 1e-5, NonManifold = false };
-        Built<Shape> sewn = HealingOperations.Sew(box.Faces().Select(f => (Shape)f), sew).Value;
-        Assert.Equal(6, sewn.Shape.Faces().Length);
+        Built<Shape> sewn = HealingOperations.Sew(box.AllFaces().Select(f => (Shape)f), sew).Value;
+        Assert.Equal(6, sewn.Shape.AllFaces().Length);
 
-        Assert.Equal(1000, box.Unify(new UnifyOptions { AngularTolerance = 1e-3, LinearTolerance = 1e-3 }).Value.Shape.Volume(), Tol);
+        Assert.Equal(1000, box.Unify(new UnifyOptions { AngularTolerance = 1e-3, LinearTolerance = 1e-3 }).Value.Shape.IntegrateVolume(), Tol);
         Assert.True(box.Validate(new ValidationOptions { Geometry = true }).IsValid);
 
         var approximate = new BSplineApproximationOptions
@@ -162,18 +162,18 @@ public class OptionsAndResultsTests
             Tolerance3D = 1e-3,
         };
         Solid cylinder = Fixtures.Cylinder();
-        Assert.Equal(cylinder.Volume(), cylinder.ApproximateBSplines(approximate).Value.Shape.Volume(), 1e-1);
+        Assert.Equal(cylinder.IntegrateVolume(), cylinder.ApproximateBSplines(approximate).Value.Shape.IntegrateVolume(), 1e-1);
 
         var convert = BSplineConversionOptions.Default with { Extrusions = true, Offsets = true, Revolutions = true };
         Assert.True(convert.Revolutions && convert.Offsets && convert.Extrusions);
-        Assert.Equal(cylinder.Volume(), cylinder.ConvertToBSpline(convert).Value.Shape.Volume(), 1e-3);
+        Assert.Equal(cylinder.IntegrateVolume(), cylinder.ConvertToBSpline(convert).Value.Shape.IntegrateVolume(), 1e-3);
     }
 
     [Fact]
     public void Measuring_and_meshing_take_their_options()
     {
         Solid box = Box();
-        Assert.Equal(1000, box.Volume(new MassOptions { OnlyClosed = true, UseTriangulation = false }), Tol);
+        Assert.Equal(1000, box.IntegrateVolume(new MassOptions { OnlyClosed = true, UseTriangulation = false }), Tol);
         Assert.Equal(0, box.Distance(box, new DistanceOptions { Parallel = true }).Value.Value, Tol);
 
         var options = new MeshOptions { InternalVertices = false, MinSize = 0.01 };
@@ -192,13 +192,13 @@ public class OptionsAndResultsTests
         {
             Assert.True(Brep.Write(box, stream, new BrepWriteOptions { WithNormals = false }).IsSuccess);
             stream.Position = 0;
-            Assert.Equal(1000, Brep.Read(stream).Value.Volume(), Tol);
+            Assert.Equal(1000, Brep.Read(stream).Value.IntegrateVolume(), Tol);
         }
         using (var stream = new MemoryStream())
         {
             Assert.True(Step.Write(box, stream).IsSuccess);
             stream.Position = 0;
-            Assert.Equal(1000, Step.Read(stream, new StepReadOptions { ProductNames = false }).Value.Shape!.Value.Volume(), 1e-3);
+            Assert.Equal(1000, Step.Read(stream, new StepReadOptions { ProductNames = false }).Value.Shape!.Value.IntegrateVolume(), 1e-3);
         }
 
         ModelNode model = ModelNode.Part(box);
@@ -261,7 +261,7 @@ public class OptionsAndResultsTests
         Wire open = Wire.Polygon([new(0, 0, 0), new(10, 0, 0)]).Value;
         Face plane = Face.FromPlane(new Plane3D(CoordinateSystem.World)).Value;
         Built<Shape> offset = open.Offset2D(1, plane, new Offset2DOptions { Open = true }).Value;
-        Assert.True(offset.Shape.Length() > 0);
+        Assert.True(offset.Shape.IntegrateLength() > 0);
     }
 
     [Fact]
@@ -280,17 +280,17 @@ public class OptionsAndResultsTests
         Assert.Equal(box, graph.Root);
         Assert.True(graph.Count > 26);
 
-        Built<Shape> filleted = box.Fillet([box.Edges()[0]], 1).Value;
+        Built<Shape> filleted = box.Fillet([box.AllEdges()[0]], 1).Value;
         Assert.True(filleted.History.HasGenerated);
 
-        Edge line = box.Edges()[0];
+        Edge line = box.AllEdges()[0];
         EdgeCurve curve = line.ToCurve();
         Assert.False(curve.IsClosed);
         Assert.Equal(Continuity.CN, curve.Continuity);
-        Assert.True(box.Faces()[0].ToSurface().Bounds.Item1.Length > 0);
+        Assert.True(box.AllFaces()[0].ToSurface().Bounds.Item1.Length > 0);
 
         WireCurve wire = Square(10).ToCurve();
-        Assert.Equal(4, wire.Wire.Edges().Length);
+        Assert.Equal(4, wire.Wire.AllEdges().Length);
         Assert.Equal(Continuity.C0, wire.Continuity);
         CurveDerivatives atStart = wire.Derivatives(0.5, 1);
         Assert.Equal(1, atStart.Order);
@@ -300,7 +300,7 @@ public class OptionsAndResultsTests
         Assert.Equal(2, hits.Length);
         Assert.All(hits, h => Assert.InRange(h.U + h.V, -1e6, 1e6));
 
-        DistanceResult distance = box.Faces()[0].Distance(box.Faces()[1]).Value;
+        DistanceResult distance = box.AllFaces()[0].Distance(box.AllFaces()[1]).Value;
         Assert.All(distance.Solutions, s =>
         {
             Assert.True(Enum.IsDefined(s.SupportA));
@@ -350,7 +350,7 @@ public class OptionsAndResultsTests
     [Fact]
     public void Shape_problems_read_back()
     {
-        var problem = new ShapeProblem(Box(), Box().Faces()[0], HealingOperations.NotFixed, "message");
+        var problem = new ShapeProblem(Box(), Box().AllFaces()[0], HealingOperations.NotFixed, "message");
         Assert.Equal(ShapeType.Face, problem.Context.Type);
     }
 

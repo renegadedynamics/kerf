@@ -10,30 +10,30 @@ namespace Kerf.Modeling;
 internal static partial class TopoUtil
 {
     /// <summary>The point of a face at normalised (u, v), each from 0 to 1 across the face's own parameter range.</summary>
-    internal static Vector FacePosition(Face face, double u, double v)
+    internal static Point3D FacePosition(Face face, double u, double v)
     {
         var (us, vs) = face.UVBounds;
         face.TryGetSurface(out var surface);
         var p = surface!.Evaluate(us.Min + u * (us.Max - us.Min), vs.Min + v * (vs.Max - vs.Min));
-        return new Vector(p);
+        return p;
     }
 
     /// <summary>
     /// The unit normal of a face at normalised (u, v), with the face's own orientation: reversed faces point the
     /// other way from their surface.
     /// </summary>
-    internal static Vector FaceNormal(Face face, double u = 0.5, double v = 0.5)
+    internal static Vector3D FaceNormal(Face face, double u = 0.5, double v = 0.5)
     {
         var (us, vs) = face.UVBounds;
         return FaceNormalVector(face, us.Min + u * (us.Max - us.Min), vs.Min + v * (vs.Max - vs.Min)).Normalized();
     }
 
     /// <summary>The centre of mass of a face's area.</summary>
-    internal static Vector FaceCenter(Face face) => new(face.MassProperties(Dimension.Area).CentreOfMass);
+    internal static Point3D FaceCenter(Face face) => face.MassProperties(Dimension.Area).CentreOfMass;
 
     /// <summary>Whether a point lies on a face, its boundary included, within a tolerance.</summary>
-    internal static bool PointOnFace(Face face, Vector point, double tolerance = Constants.Tolerance) =>
-        face.IsOnFace(point.ToPoint3D(), tolerance);
+    internal static bool PointOnFace(Face face, Point3D point, double tolerance = Constants.Tolerance) =>
+        face.IsOnFace(point, tolerance);
 
     /// <summary>BRepCheck_Analyzer's own defaults, serial: for the checks of single faces the modelling layer makes.</summary>
     internal static readonly ValidationOptions SerialCheck = new() { Parallel = false };
@@ -56,7 +56,7 @@ internal static partial class TopoUtil
     /// every wire as it walks it, so the normal crossed with the edge's tangent (as the face walks the edge) points in.
     /// </summary>
     /// <exception cref="ArgumentException">The edge isn't an edge of the face.</exception>
-    internal static Vector MaterialSide(Face face, Edge edge)
+    internal static Vector3D MaterialSide(Face face, Edge edge)
     {
         Edge? occurrence = null;
         foreach (var current in face.Explore<Edge>())
@@ -76,18 +76,18 @@ internal static partial class TopoUtil
         var tangent = d.D1;
         if (found.Orientation == Orientation.Reversed)
             tangent = tangent.Reversed();
-        return FaceNormalAt(face, d.Point).Cross(new Vector(tangent).Normalized());
+        return FaceNormalAt(face, d.Point).Cross(tangent.Normalized());
     }
 
     /// <summary>
     /// The shape extruded along <paramref name="direction"/>: a vertex makes an edge, an edge a face, a wire a shell,
     /// a face a solid and a shell a compound of solids.
     /// </summary>
-    internal static Shape Extrude(Shape obj, Vector direction)
+    internal static Shape Extrude(Shape obj, Vector3D direction)
     {
         if (!(obj.IsVertex() || obj.IsEdge() || obj.IsWire() || obj.IsFace() || obj.IsShell()))
             throw new ArgumentException($"extrude not supported for {TypeName(obj)}");
-        var vec = direction.ToVector3D();
+        var vec = direction;
         var extrusion = Downcast(Failures.Get(obj.Extrude(vec), () => "extrude").Shape);
         if (extrusion.Type == ShapeType.CompSolid)
             extrusion = MakeCompound(Explore(extrusion, ShapeType.Solid));
@@ -124,7 +124,7 @@ internal static partial class TopoUtil
     internal static Face MakeFaceFromWires(Wire outerWire, IEnumerable<Wire>? innerWires = null)
     {
         var inner = innerWires?.ToList() ?? [];
-        if (inner.Count > 0 && !outerWire.CheckClosed())
+        if (inner.Count > 0 && !outerWire.IsClosed)
             throw new ArgumentException("Cannot build face(s): outer wire is not closed");
         var verification = MakeCompound([outerWire, .. inner]);
         if (!verification.TryFindSurface(-1, out _, onlyPlane: true))
@@ -134,7 +134,7 @@ internal static partial class TopoUtil
         var holes = new List<Wire>();
         foreach (var innerWire in inner)
         {
-            if (!innerWire.CheckClosed())
+            if (!innerWire.IsClosed)
                 throw new ArgumentException("Cannot build face(s): inner wire is not closed");
             holes.Add((Wire)Fix(innerWire));
         }
@@ -201,14 +201,14 @@ public static partial class TopologyUtils
     public static double FindMaxDimension(IEnumerable<Shape> shapes)
     {
         var composite = TopoUtil.MakeCompound(shapes.Select(s => s));
-        return BoundBox.FromTopoDS(composite, Constants.Tolerance, optimal: true).Diagonal;
+        return composite.BoundBox().Diagonal;
     }
 
     /// <summary>The edges of <paramref name="combined"/> that none of <paramref name="objects"/> had.</summary>
     public static ShapeList<Edge> NewEdges(IEnumerable<Shape> objects, Shape combined)
     {
-        var combinedEdges = combined.SelectEdges().Where(e => !e.IsEmpty).Select(e => e).ToList();
-        var originalEdges = objects.SelectMany(o => o.SelectEdges()).Where(e => !e.IsEmpty).Select(e => e).ToList();
+        var combinedEdges = combined.Edges().Where(e => !e.IsEmpty).Select(e => e).ToList();
+        var originalEdges = objects.SelectMany(o => o.Edges()).Where(e => !e.IsEmpty).Select(e => e).ToList();
         if (combinedEdges.Count == 0)
             return [];
         // Non-destructive, as all the modelling layer's Booleans: the inputs' tolerances are left alone
@@ -264,12 +264,12 @@ public static partial class TopologyUtils
         };
         IEnumerable<Shape> peers = peerType switch
         {
-            ShapeType.Vertex => parent.SelectVertices().Upcast(),
-            ShapeType.Edge => parent.SelectEdges().Upcast(),
-            ShapeType.Wire => parent.SelectWires().Upcast(),
-            ShapeType.Face => parent.SelectFaces().Upcast(),
-            ShapeType.Shell => parent.SelectShells().Upcast(),
-            _ => parent.SelectSolids().Upcast(),
+            ShapeType.Vertex => parent.Vertices().Upcast(),
+            ShapeType.Edge => parent.Edges().Upcast(),
+            ShapeType.Wire => parent.Wires().Upcast(),
+            ShapeType.Face => parent.Faces().Upcast(),
+            ShapeType.Shell => parent.Shells().Upcast(),
+            _ => parent.Solids().Upcast(),
         };
         var peerList = peers.Where(p => !p.IsEmpty).ToList();
         // Shapes are equal (and hash) by IsSame, as build123d's hasher lookup is

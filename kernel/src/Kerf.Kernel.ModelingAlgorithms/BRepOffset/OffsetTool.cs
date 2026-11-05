@@ -1716,7 +1716,7 @@ internal static class OffsetTool
                 {
                     Wire wire = ShapeCasts.Wire(wseq[i]);
                     NCollection_Sequence<Shape> localEdgesForConcat = new();
-                    if (wire.IsClosed)
+                    if (wire.ClosedFlag)
                     {
                         Vertex startVertex = new();
                         Edge startEdge = new();
@@ -2458,7 +2458,7 @@ internal static class OffsetTool
         if (theSurf.GetType() == typeof(ConicalSurface))
         {
             ConicalSurface conicalS = (ConicalSurface)theSurf;
-            Cone theCone = conicalS.Cone;
+            Cone3D theCone = conicalS.Cone;
             Point3D theApex = theCone.Apex;
             global::Kerf.Engine.Geometry.ElSLib.Parameters(theCone, theApex, out double uapex, out double vapex);
             if (Math.Abs(vMin - vapex) <= global::Kerf.Engine.Foundation.Precision.Confusion())
@@ -3439,7 +3439,7 @@ internal static class OffsetTool
         if (theSurf.GetType() == typeof(ConicalSurface))
         {
             ConicalSurface conicalS = (ConicalSurface)theSurf;
-            Cone theCone = conicalS.Cone;
+            Cone3D theCone = conicalS.Cone;
             Point3D theApex = theCone.Apex;
             global::Kerf.Engine.Geometry.ElSLib.Parameters(theCone, theApex, out double uapex, out double vapex);
             if (vv1 < vapex && vapex < vv2)

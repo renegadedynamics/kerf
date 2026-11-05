@@ -654,9 +654,9 @@ internal sealed class Modifier
 
             // update flags
 
-            result.Orientable(s.IsOrientable);
-            result.Closed(s.IsClosed);
-            result.Infinite(s.IsInfinite);
+            result.Orientable(s.OrientableFlag);
+            result.Closed(s.ClosedFlag);
+            result.Infinite(s.InfiniteFlag);
         }
         else
         {
@@ -845,9 +845,9 @@ internal sealed class Modifier
     {
         outSh.Modified(inSh.Modified());
         outSh.Checked(inSh.Checked());
-        outSh.Orientable(inSh.IsOrientable);
-        outSh.Closed(inSh.IsClosed);
-        outSh.Infinite(inSh.IsInfinite);
-        outSh.Convex(inSh.IsConvex);
+        outSh.Orientable(inSh.OrientableFlag);
+        outSh.Closed(inSh.ClosedFlag);
+        outSh.Infinite(inSh.InfiniteFlag);
+        outSh.Convex(inSh.ConvexFlag);
     }
 }

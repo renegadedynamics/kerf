@@ -443,7 +443,7 @@ public sealed class FaceSurface
     }
 
     /// <summary>The cylinder the face lies on, if it is one.</summary>
-    public bool TryGetCylinder(out Cylinder cylinder)
+    public bool TryGetCylinder(out Cylinder3D cylinder)
     {
         bool found = Kind == SurfaceKind.Cylinder;
         cylinder = found ? _surface.Cylinder() : default;
@@ -451,7 +451,7 @@ public sealed class FaceSurface
     }
 
     /// <summary>The cone the face lies on, if it is one.</summary>
-    public bool TryGetCone(out Cone cone)
+    public bool TryGetCone(out Cone3D cone)
     {
         bool found = Kind == SurfaceKind.Cone;
         cone = found ? _surface.Cone() : default;
@@ -459,7 +459,7 @@ public sealed class FaceSurface
     }
 
     /// <summary>The sphere the face lies on, if it is one.</summary>
-    public bool TryGetSphere(out Sphere sphere)
+    public bool TryGetSphere(out Sphere3D sphere)
     {
         bool found = Kind == SurfaceKind.Sphere;
         sphere = found ? _surface.Sphere() : default;
@@ -467,7 +467,7 @@ public sealed class FaceSurface
     }
 
     /// <summary>The torus the face lies on, if it is one.</summary>
-    public bool TryGetTorus(out Torus torus)
+    public bool TryGetTorus(out Torus3D torus)
     {
         bool found = Kind == SurfaceKind.Torus;
         torus = found ? _surface.Torus() : default;

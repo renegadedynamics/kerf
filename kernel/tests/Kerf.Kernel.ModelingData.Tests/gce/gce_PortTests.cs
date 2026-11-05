@@ -103,7 +103,7 @@ public class gce_PortTest
         Assert.Equal(2.0, new MakeParab2d(new Point2D(2, 0), new Point2D(0, 0)).Value().Focal, Tol);
         Assert.Equal(BadAngle, new MakeCone(new Frame3D(), 0.0, 1.0).Status());
         Assert.Equal(NullAxis, new MakeCone(new Point3D(0, 0, 0), new Point3D(0, 0, 0), 1.0, 2.0).Status());
-        Assert.Equal(NegativeRadius, new MakeCylinder(new Cylinder(new CoordinateSystem(), 1.0), -2.0).Status());
+        Assert.Equal(NegativeRadius, new MakeCylinder(new Cylinder3D(new CoordinateSystem(), 1.0), -2.0).Status());
         Assert.Equal(3.0, new MakeCylinder(new Circle3D(new Frame3D(), 3.0)).Value().Radius);
     }
 

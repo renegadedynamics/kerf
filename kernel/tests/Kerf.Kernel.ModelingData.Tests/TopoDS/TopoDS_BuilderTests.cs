@@ -186,13 +186,13 @@ public class TopoDS_BuilderTests
         Assert.True(aCompound.Checked());
 
         aCompound.Closed(true);
-        Assert.True(aCompound.IsClosed);
+        Assert.True(aCompound.ClosedFlag);
 
         aCompound.Infinite(true);
-        Assert.True(aCompound.IsInfinite);
+        Assert.True(aCompound.InfiniteFlag);
 
         aCompound.Convex(true);
-        Assert.True(aCompound.IsConvex);
+        Assert.True(aCompound.ConvexFlag);
     }
 
     [Fact]

@@ -18,7 +18,7 @@ namespace Kerf.Engine.Construction.Values;
 /// </summary>
 internal sealed class MakeCone : Root
 {
-    private Cone _theCone = new();
+    private Cone3D _theCone = new();
 
     /// <summary>
     /// A cone from an axis system, a semi-angle Ang (radians, in ]0, PI/2[) and a reference radius. Fails with
@@ -39,7 +39,7 @@ internal sealed class MakeCone : Root
             else
             {
                 _theError = Done;
-                _theCone = new Cone(new CoordinateSystem(a2), ang, radius);
+                _theCone = new Cone3D(new CoordinateSystem(a2), ang, radius);
             }
         }
     }
@@ -110,7 +110,7 @@ internal sealed class MakeCone : Root
         {
             angle *= -1;
         }
-        _theCone = new Cone(new CoordinateSystem(new Frame3D(pp3, dd1, d2)), angle, r1);
+        _theCone = new Cone3D(new CoordinateSystem(new Frame3D(pp3, dd1, d2)), angle, r1);
         _theError = Done;
     }
 
@@ -140,7 +140,7 @@ internal sealed class MakeCone : Root
     /// A cone coaxial to Cone through the point P (the nearest such cone when there are two); fails with
     /// gce_NegativeRadius when no non-negative radius exists.
     /// </summary>
-    public MakeCone(in Cone cone, in Point3D p)
+    public MakeCone(in Cone3D cone, in Point3D p)
     {
         Xyz vecToPoint = p.XYZ() - cone.Location.XYZ();
         double vParam = vecToPoint.Dot(cone.Axis.Direction.XYZ());
@@ -176,7 +176,7 @@ internal sealed class MakeCone : Root
             _theError = NegativeRadius;
             return;
         }
-        _theCone = new Cone(cone.Position, cone.SemiAngle, resultRadius);
+        _theCone = new Cone3D(cone.Position, cone.SemiAngle, resultRadius);
         _theError = Done;
     }
 
@@ -184,7 +184,7 @@ internal sealed class MakeCone : Root
     /// A cone coaxial to Cone at the signed distance Dist; fails with gce_NullAngle if the semi-angle's cosine is
     /// too small and gce_NegativeRadius if the radius would be negative.
     /// </summary>
-    public MakeCone(in Cone cone, double dist)
+    public MakeCone(in Cone3D cone, double dist)
     {
         // gp_Cone keeps |SemiAngle| in ]gp::Resolution(), PI/2 - gp::Resolution()[,
         // thus aCos is expected to be positive and not too small.
@@ -200,7 +200,7 @@ internal sealed class MakeCone : Root
             _theError = NegativeRadius;
             return;
         }
-        _theCone = new Cone(cone.Position, cone.SemiAngle, radius);
+        _theCone = new Cone3D(cone.Position, cone.SemiAngle, radius);
         _theError = Done;
     }
 
@@ -272,7 +272,7 @@ internal sealed class MakeCone : Root
                     {
                         angle *= -1;
                     }
-                    _theCone = new Cone(new CoordinateSystem(new Frame3D(p1, d1, d2)), angle, r1);
+                    _theCone = new Cone3D(new CoordinateSystem(new Frame3D(p1, d1, d2)), angle, r1);
                     _theError = Done;
                 }
             }
@@ -281,15 +281,15 @@ internal sealed class MakeCone : Root
 
     /// <summary>The constructed cone.</summary>
     /// <exception cref="NotDoneException">No cone was constructed.</exception>
-    public Cone Value()
+    public Cone3D Value()
     {
         StdFail_NotDone_Raise_if(_theError != Done, "gce_MakeCone::Value() - no result");
         return _theCone;
     }
 
     /// <summary>Alias for Value().</summary>
-    public Cone Operator() => Value();
+    public Cone3D Operator() => Value();
 
     /// <summary>The constructed cone (OCCT's implicit conversion operator).</summary>
-    public static explicit operator Cone(MakeCone maker) => maker.Operator();
+    public static explicit operator Cone3D(MakeCone maker) => maker.Operator();
 }

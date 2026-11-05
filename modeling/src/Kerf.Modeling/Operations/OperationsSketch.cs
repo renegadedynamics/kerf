@@ -32,7 +32,7 @@ public static partial class Operations
         var fractions = Enumerable.Range(0, voronoiPointCount + 1).Select(i => i / (double)voronoiPointCount).ToList();
         var voronoiEdgePoints = edgeGroup.SelectMany(e => e.Positions(fractions)).ToList();
         var voronoiVertices = VoronoiVertices(voronoiEdgePoints.Select(p => (p.X, p.Y)).ToList())
-            .Select(v => new Vector(v.X, v.Y)).ToList();
+            .Select(v => new Point3D(v.X, v.Y, 0)).ToList();
 
         // Refine the largest empty circle center estimate by averaging the best three candidates. The minimum distance
         // between the edges and this center is the circle radius.
@@ -55,7 +55,7 @@ public static partial class Operations
         }
 
         // Refine by averaging the best three
-        var voronoiCircleCenter = bestThree.Aggregate(new Vector(0, 0, 0), (sum, b) => sum + voronoiVertices[b.Index]) / 3;
+        var voronoiCircleCenter = (bestThree.Aggregate(Vector3D.Zero, (sum, b) => sum + voronoiVertices[b.Index].ToVector()) * (1.0 / 3)).ToPoint();
 
         // Determine where the connected edges intersect with the largest empty circle
         var connectedEdgesEndPoints = connectedEdges.Select(e => e.DistanceToWithClosestPoints(voronoiCircleCenter).OnThis).ToList();
@@ -64,7 +64,7 @@ public static partial class Operations
         var middleEdgeArcPoint = edge.DistanceToWithClosestPoints(voronoiCircleCenter).OnThis;
 
         // Trim the connected edges to allow room for the circular feature
-        var origin = connectedEdgesEndPoints.Aggregate(new Vector(0, 0, 0), (sum, p) => sum + p) / 2;
+        var origin = (connectedEdgesEndPoints.Aggregate(Vector3D.Zero, (sum, p) => sum + p.ToVector()) / 2).ToPoint();
         var xDir = (connectedEdgesEndPoints[1] - connectedEdgesEndPoints[0]).Normalized();
         var toArcVec = origin - middleEdgeArcPoint;
         // Project `to_arc_vec` onto the plane perpendicular to `x_dir`
@@ -82,20 +82,20 @@ public static partial class Operations
 
         // Flip the middle point if the user wants the concave solution
         if (invert)
-            middleEdgeArcPoint = voronoiCircleCenter * 2 - middleEdgeArcPoint;
+            middleEdgeArcPoint = (voronoiCircleCenter.ToVector() * 2 - middleEdgeArcPoint.ToVector()).ToPoint();
 
         // Generate the new circular edge
         var newArc = Edge.MakeThreePointArc(connectedEdgesEndPoints[0], middleEdgeArcPoint, connectedEdgesEndPoints[1]);
 
         // Recover other edges
-        var otherEdges = parent.SelectEdges().Except(OneD.ConnectedEdges(edge, parent)).Except([edge]);
+        var otherEdges = parent.Edges().Except(OneD.ConnectedEdges(edge, parent)).Except([edge]);
 
         // Rebuild the face. Note that the longest wire must be the perimeter and others holes
         var faceWires = Wire.Combine([.. trimmedConnectedEdges, newArc, .. otherEdges]).OrderByDescending(ShapeKey.Length);
         var pendingFace = Face.Make(faceWires[0], faceWires.Skip(1));
 
         // Flip the face to match the original parent
-        if (parent.SelectFaces()[0].NormalAt() != pendingFace.NormalAt())
+        if (!parent.Faces()[0].NormalAt().IsNear(pendingFace.NormalAt()))
             pendingFace = (Face)(-pendingFace);
 
         return new Sketch([pendingFace]);
@@ -205,7 +205,7 @@ public static partial class Operations
         foreach (var item in edges)
         {
             if (item.IsWire() || item.IsCompound())
-                outerEdges.AddRange(item.SelectEdges());
+                outerEdges.AddRange(item.Edges());
             else
                 outerEdges.Add(item.IsEdge() ? (Edge)item : throw new ArgumentException($"Unable to make a face from a {TopoUtil.KindName(item)}"));
         }
@@ -254,7 +254,7 @@ public static partial class Operations
         // Phase 5: in builder mode the lines default to the pending edges, and the faces are combined with mode
         if (lines is null)
             throw new ArgumentException("No objects to trace");
-        var traceEdges = lines.SelectMany(l => l.SelectEdges()).ToList();
+        var traceEdges = lines.SelectMany(l => l.Edges()).ToList();
         if (traceEdges.Count == 0)
             return new Sketch();   // tracing nothing is nothing
 
@@ -265,7 +265,7 @@ public static partial class Operations
         foreach (var toTrace in traceWires)
         {
             var tracePen = toTrace.PerpendicularLine(lineWidth, 0);
-            newFaces.AddRange(Shell.Sweep(tracePen, toTrace, Transition.Right).SelectFaces());
+            newFaces.AddRange(Shell.Sweep(tracePen, toTrace, Transition.Right).Faces());
         }
 
         var combinedFaces = newFaces.Count > 1 ? newFaces[0].Fuse(newFaces.Skip(1)) : newFaces[0];

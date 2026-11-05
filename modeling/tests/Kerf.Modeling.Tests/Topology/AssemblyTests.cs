@@ -13,8 +13,8 @@ public class AssemblyTests
 {
     static Assembly CreateTestAssembly()
     {
-        var box = Solid.MakeBox(1, 1, 1).WithOrientation(new Vector(45, 45, 0)).WithLabel("box");
-        var sphere = Solid.MakeSphere(1).WithLabel("sphere").WithPosition(new Vector(1, 2, 3));
+        var box = Solid.MakeBox(1, 1, 1).WithOrientation(new Vector3D(45, 45, 0)).WithLabel("box");
+        var sphere = Solid.MakeSphere(1).WithLabel("sphere").WithPosition(new Point3D(1, 2, 3));
         return new Assembly([box, sphere], label: "assembly");
     }
 
@@ -98,8 +98,8 @@ public class AssemblyTests
     {
         var (overlap, _, _) = CreateTestAssembly().DoChildrenIntersect();
         Assert.False(overlap);
-        var box = Solid.MakeBox(1, 1, 1).WithOrientation(new Vector(45, 45, 0)).WithLabel("box");
-        var sphere = Solid.MakeSphere(1).WithLabel("sphere").WithPosition(new Vector(0, 0, 0));
+        var box = Solid.MakeBox(1, 1, 1).WithOrientation(new Vector3D(45, 45, 0)).WithLabel("box");
+        var sphere = Solid.MakeSphere(1).WithLabel("sphere").WithPosition(new Point3D(0, 0, 0));
         var assembly = new Assembly([box, sphere], label: "assembly");
         (overlap, _, _) = assembly.DoChildrenIntersect();
         Assert.True(overlap);

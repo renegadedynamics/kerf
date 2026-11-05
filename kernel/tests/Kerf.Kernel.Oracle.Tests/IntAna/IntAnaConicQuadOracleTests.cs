@@ -48,7 +48,7 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
 
     /// <summary>The points IntCurveSurface keeps (ComputeAppendPoint): parameters put in the period, then bounded.</summary>
     private static List<PortPoint> Keep(IntConicQuad theInter, Conic theConic, Surf theSurf, in Plane3D thePln,
-                                        in Cylinder theCyl, in Cone theCone, in Sphere theSph)
+                                        in Cylinder3D theCyl, in Cone3D theCone, in Sphere3D theSph)
     {
         var aResult = new List<PortPoint>();
         if (!theInter.IsDone || theInter.IsInQuadric || theInter.IsParallel)
@@ -115,9 +115,9 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
             double aR = anOracle.Real(1, 20);
             double aSemiAngle = anOracle.Real(0.1, 1.4);
             var aPln = new Plane3D(aSAx);
-            var aCyl = new Cylinder(aSAx, aR);
-            var aCone = new Cone(aSAx, aSemiAngle, aR);
-            var aSph = new Sphere(aSAx, aR);
+            var aCyl = new Cylinder3D(aSAx, aR);
+            var aCone = new Cone3D(aSAx, aSemiAngle, aR);
+            var aSph = new Sphere3D(aSAx, aR);
             using var aNSAx = Oracle.ToNative(aSAx);
             using N.Geom_Surface aNS = theSurf switch
             {
@@ -268,7 +268,7 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
             string aWhat = $"Line/torus case {i}";
             CoordinateSystem aSAx = SettledAx3(anOracle, anOracle.Pnt());
             double aMajor = anOracle.Real(3, 20), aMinor = anOracle.Real(0.5, aMajor - 0.5);
-            var aTorus = new Torus(aSAx, aMajor, aMinor);
+            var aTorus = new Torus3D(aSAx, aMajor, aMinor);
             using var aNSAx = Oracle.ToNative(aSAx);
             using var aNS = new N.Geom_ToroidalSurface(aNSAx, aMajor, aMinor);
 

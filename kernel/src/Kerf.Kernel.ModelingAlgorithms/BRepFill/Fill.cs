@@ -429,7 +429,7 @@ internal static class Fill
         Explorer ex1 = new();
         Explorer ex2 = new();
 
-        bool closed = wire1.IsClosed && wire2.IsClosed;
+        bool closed = wire1.ClosedFlag && wire2.ClosedFlag;
 
         bool thefirst = true;
 
@@ -880,7 +880,7 @@ internal static class Fill
     /// <exception cref="NoSuchObjectException">The wire isn't closed.</exception>
     internal static void SearchOrigin(ref Wire w, in Point3D p, in Vector3D dir, double tol)
     {
-        if (!w.IsClosed)
+        if (!w.ClosedFlag)
         {
             throw new NoSuchObjectException("BRepFill::SearchOrigin : the wire must be closed");
         }

@@ -114,10 +114,10 @@ public class HarnessTests
         {
             aBuilder.Add(aNew, aChild);
         }
-        aNew.Closed(theShape.IsClosed);
-        aNew.Orientable(theShape.IsOrientable);
-        aNew.Convex(theShape.IsConvex);
-        aNew.Infinite(theShape.IsInfinite);
+        aNew.Closed(theShape.ClosedFlag);
+        aNew.Orientable(theShape.OrientableFlag);
+        aNew.Convex(theShape.ConvexFlag);
+        aNew.Infinite(theShape.InfiniteFlag);
         return aNew.Located(theShape.Placement).Oriented(theShape.Orientation);
     }
 

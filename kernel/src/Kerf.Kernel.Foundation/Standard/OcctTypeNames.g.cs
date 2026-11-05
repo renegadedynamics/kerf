@@ -4311,7 +4311,7 @@ Kerf.Geometry.Circle2D gp_Circ2d
 Kerf.Geometry.Circle3D gp_Circ
 Kerf.Geometry.CircleCurve2D Geom2d_Circle
 Kerf.Geometry.CircleCurve3D Geom_Circle
-Kerf.Geometry.Cone gp_Cone
+Kerf.Geometry.Cone3D gp_Cone
 Kerf.Geometry.ConicCurve2D Geom2d_Conic
 Kerf.Geometry.ConicCurve3D Geom_Conic
 Kerf.Geometry.ConicalSurface Geom_ConicalSurface
@@ -4320,7 +4320,7 @@ Kerf.Geometry.CoordinateSystem gp_Ax3
 Kerf.Geometry.Curve2D Geom2d_Curve
 Kerf.Geometry.Curve3D Geom_Curve
 Kerf.Geometry.CurveKind GeomAbs_CurveType
-Kerf.Geometry.Cylinder gp_Cylinder
+Kerf.Geometry.Cylinder3D gp_Cylinder
 Kerf.Geometry.CylindricalSurface Geom_CylindricalSurface
 Kerf.Geometry.Direction2D gp_Dir2d
 Kerf.Geometry.Direction3D gp_Dir
@@ -4366,13 +4366,13 @@ Kerf.Geometry.Point2D gp_Pnt2d
 Kerf.Geometry.Point3D gp_Pnt
 Kerf.Geometry.RevolutionSurface Geom_SurfaceOfRevolution
 Kerf.Geometry.RevolutionUtils Geom_RevolutionUtils
-Kerf.Geometry.Sphere gp_Sphere
+Kerf.Geometry.Sphere3D gp_Sphere
 Kerf.Geometry.SphericalSurface Geom_SphericalSurface
 Kerf.Geometry.Surface Geom_Surface
 Kerf.Geometry.SurfaceKind GeomAbs_SurfaceType
 Kerf.Geometry.SweptSurface Geom_SweptSurface
 Kerf.Geometry.ToroidalSurface Geom_ToroidalSurface
-Kerf.Geometry.Torus gp_Torus
+Kerf.Geometry.Torus3D gp_Torus
 Kerf.Geometry.Transform2D gp_Trsf2d
 Kerf.Geometry.Transform3D gp_Trsf
 Kerf.Geometry.TransformForm gp_TrsfForm

@@ -321,7 +321,7 @@ public class BRepPrimAPIPrimitivesTests
         Assert.True(aMap.Contains(aFace));
         Assert.True(aMap.Contains(aShell));
         Assert.True(AllFrozen(aSolid));
-        Assert.True(((Shape)aShell).IsClosed);
+        Assert.True(((Shape)aShell).ClosedFlag);
     }
 
     // ------------------------------------------------------------ half-spaces

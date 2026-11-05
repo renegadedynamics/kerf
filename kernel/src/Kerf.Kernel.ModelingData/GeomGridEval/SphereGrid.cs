@@ -44,7 +44,7 @@ internal sealed class SphereGrid : GeomGridEvalGrid.ISurfaceEvaluator
 
     private Data ExtractData()
     {
-        Sphere sph = _geom!.Sphere;
+        Sphere3D sph = _geom!.Sphere;
         Point3D center = sph.Location;
         Direction3D xDir = sph.Position.XDirection;
         Direction3D yDir = sph.Position.YDirection;

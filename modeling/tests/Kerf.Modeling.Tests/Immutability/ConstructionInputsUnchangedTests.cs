@@ -14,18 +14,18 @@ public class ConstructionInputsUnchangedTests
 {
     private static Box Part() => new(10, 6, 4);
 
-    private static Face Top(Shape part) => part.SelectFaces().OrderBy(Axis.Z).Last();
+    private static Face Top(Shape part) => part.Faces().OrderBy(Axis.Z).Last();
 
-    private static Face Side(Shape part) => part.SelectFaces().OrderBy(Axis.X).Last();
+    private static Face Side(Shape part) => part.Faces().OrderBy(Axis.X).Last();
 
     private static byte[] Text(Shape shape) => Extras.WriteBRep(shape);
 
     private static bool Holds(Shape result, Shape sub) =>
         TopoUtil.Typed(sub) switch
         {
-            Face => result.SelectFaces().Any(f => f.IsSame(sub)),
-            Vertex => result.SelectVertices().Any(v => v.IsSame(sub)),
-            _ => result.SelectEdges().Any(e => e.IsSame(sub)),
+            Face => result.Faces().Any(f => f.IsSame(sub)),
+            Vertex => result.Vertices().Any(v => v.IsSame(sub)),
+            _ => result.Edges().Any(e => e.IsSame(sub)),
         };
 
     private static Shape Untouched(Shape part, Func<Shape> construction)
@@ -44,8 +44,8 @@ public class ConstructionInputsUnchangedTests
         Face top = Top(part);
         Shape result = Untouched(part, () => Ops.Extrude(top, 3, new Ops.ExtrudeOptions { Clean = false }).Value);
         Assert.True(Holds(result, top));
-        Assert.All(top.SelectEdges(), e => Assert.True(Holds(result, e)));
-        Shape solid = Untouched(part, () => Solid.Extrude(top, new Vector(0, 0, 3)));
+        Assert.All(top.Edges(), e => Assert.True(Holds(result, e)));
+        Shape solid = Untouched(part, () => Solid.Extrude(top, new Vector3D(0, 0, 3)));
         Assert.True(Holds(solid, top));
     }
 
@@ -55,7 +55,7 @@ public class ConstructionInputsUnchangedTests
         // build123d revolves with copy (BRepPrimAPI_MakeRevol's last argument): the solid shares nothing with the face
         Box part = Part();
         Face side = Side(part);
-        Untouched(part, () => Ops.Revolve(side, new Axis(new Vector(20.0, 0.0, 0.0), new Vector(0.0, 0.0, 1.0)), 90, clean: false).Value);
+        Untouched(part, () => Ops.Revolve(side, new Axis(new Point3D(20.0, 0.0, 0.0), new Vector3D(0.0, 0.0, 1.0)), 90, clean: false).Value);
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public class ConstructionInputsUnchangedTests
     {
         Box part = Part();
         Face top = Top(part);
-        Edge path = Edge.MakeThreePointArc(new Vector(5, 3, 4), new Vector(5, 8, 9), new Vector(5, 13, 4));
+        Edge path = Edge.MakeThreePointArc(new Point3D(5, 3, 4), new Point3D(5, 8, 9), new Point3D(5, 13, 4));
         Untouched(part, () => Ops.Sweep(top, path, new Ops.SweepOptions { Clean = false }).Value);
     }
 
@@ -72,7 +72,7 @@ public class ConstructionInputsUnchangedTests
     {
         Box part = Part();
         Box other = new(4, 4, 4);
-        Shape moved = other.Moved(new Location(new Vector(0.0, 0.0, 10.0)));
+        Shape moved = other.Moved(new Location(new Point3D(0.0, 0.0, 10.0)));
         byte[] otherBefore = Text(other);
         Untouched(part, () => Ops.Loft([Top(part), Top(moved)], clean: false).Value);
         Assert.True(otherBefore.AsSpan().SequenceEqual(Text(other)));

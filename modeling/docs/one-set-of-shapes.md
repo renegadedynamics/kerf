@@ -2,7 +2,8 @@
 
 The owner's answer: "the modelling layer uses the kernel's shapes directly (`Shape`, `Edge`, `Face` and so on), and keeps
 its own names only for modelling ideas (`Part`, `Sketch`, `Curve`). One set of shapes, not two." Decisions: unit 10Q's
-section of `kernel/docs/decisions.md`. The whole change table is [10q-bento.md](10q-bento.md).
+section of `kernel/docs/decisions.md`, and unit 10Q2's for the values and names. The change tables are [10q-bento.md](10q-bento.md) and
+[10q2-bento.md](10q2-bento.md).
 
 ## The design
 
@@ -54,8 +55,7 @@ section of `kernel/docs/decisions.md`. The whole change table is [10q-bento.md](
   shapes, and note their record (`shape.MadeBy(record)`) in a `HistoryLog` when one is open: an internal, `AsyncLocal`
   scope, as `Warnings` and `SkipClean` are. An operation of a `Part`, `Sketch` or `Curve` opens one and keeps the record it
   finds on its result. A struct's operation, with none open, computes the record as before and drops it.
-  This is the one piece of ambient state in the design. The alternative was a `(shape, record)` result threaded through about
-  thirty methods; the note exists so that a later unit can change its mind.
+  This is the one piece of ambient state in the design. Unit 10Q2 looked again and kept it: `kernel/docs/state.md` says why.
 - **Which side of an edge a face is on; convexity.** It used to read the parent from the sub-shape. Now the parent is
   said: `box.ConvexityOf(edge)`, `box.ConvexityOf(vertex, through: face)`; `edges.Where(Convexity.Concave)` reads the
   list's origin. Same code underneath, same answers.
@@ -83,20 +83,24 @@ Topological code uses the kernel's structs, and says what it means:
 Solid s = Solid.MakeBox(1, 2, 3);                   Solid s = Solid.MakeBox(1, 2, 3);        // the kernel's Solid
 Face f = new Face(outer, [hole]);                   Face f = Face.Make(outer, [hole]);       // no extension constructors
 Vertex v = new Vertex(1, 2, 3);                     Vertex v = Vertex.Make(1, 2, 3);
-Edge e = s.Edges().OrderBy(Axis.Z).Last();          Edge e = s.SelectEdges().OrderBy(Axis.Z).Last();
+Edge e = s.Edges().OrderBy(Axis.Z).Last();          Edge e = s.Edges().OrderBy(Axis.Z).Last();
 Convexity c = e.Convexity;                          Convexity c = s.ConvexityOf(e);
 s.WithLabel("bracket").WithColor(red);              s.WithLabel("bracket").WithColor(red);   // now a Part
 Compound.Assembly([a, b], "top");                   new Assembly([a, b], "top");
 if (shape is Face face) …                           if (shape.TryAs(out Face face)) …
 ```
 
-**`SelectEdges`, not `Edges`.** The kernel's instance method `solid.Edges()` wins over any extension, gives an
-`ImmutableArray<Edge>` and includes degenerate edges (a sphere's poles). build123d's selection leaves those out and
-returns a list with an origin. So on a struct it has its own name (`SelectVertices`, `SelectEdges`, `SelectWires`,
-`SelectFaces`, `SelectShells`, `SelectSolids`); on a `ModelShape`, `Edges()` is as it was.
+**A struct and an object read alike (unit 10Q2).** 10Q gave the layer's forms other names, as a struct's own member won. That left
+traps: `part.Edges().Where(e => e.IsClosed)` compiled and read OCCT's stored flag. So the kernel's names moved instead.
 
-**The same rule moved three other names.** `edge.IsClosed` on a struct is the kernel's stored flag: use the kernel's
-`CheckClosed()`. The layer's `IsInfinite` is `IsUnbounded`, and its `Orientation` (angles) `OrientationAngles`.
+| Name | Now | The kernel's other meaning |
+|---|---|---|
+| `Edges()`, `Faces()`… | The selection, on a struct and an object alike: a `ShapeList`, with its origin, without degenerate edges | `AllEdges()`, `AllFaces()`…: an `ImmutableArray`, with them. They can't be one method, as `ShapeList` is a modelling idea |
+| `IsClosed` | Closed in fact, on any shape or object | `ClosedFlag`, internal: nothing outside the engine needs what a builder set |
+| `IsInfinite` | The layer's, an axis made into an edge | `InfiniteFlag`, internal |
+| `IsOrientable`, `IsConvex` | Not public | `OrientableFlag`, `ConvexFlag`, internal |
+| `Orientation` | The kernel's enum, which is what the word means on a shape. The layer's angles stay `OrientationAngles`, the same on both | |
+| `Volume`, `Area`, `Length` | The layer's, as properties | `IntegrateVolume()`, `IntegrateArea()`, `IntegrateLength()`: what the faces bound, whatever the shape is, with options |
 
 **Equality.** `==` on a kernel shape includes orientation; `IsSame` doesn't. The layer's old `==` was `IsSame`. Inside
 the layer every set and comparison names `ShapeComparer<T>.Same` (new in the kernel), and `ShapeList` compares that way.
@@ -111,26 +115,49 @@ the layer every set and comparison names `ShapeComparer<T>.Same` (new in the ker
 | Type | Decision | Why |
 |---|---|---|
 | `Color` | Replaced by `Kerf.Color`, with `ColorExtensions` | Question 60 |
+| `Vector` | Replaced by `Point3D`, `Vector3D` and `Direction3D`, with `PointExtensions` (unit 10Q2) | Below |
+| `BoundBox` | Replaced by `BoundingBox`, with `BoundingBoxExtensions` (unit 10Q2) | Below |
+| `Matrix` | Replaced by `GeneralTransform3D`, with `TransformExtensions` (unit 10Q2) | Below |
+| `Tangency` | Replaced by the kernel's (unit 10Q2) | The same four values |
 | `Plane` | Kept | A modelling idea: build123d's named planes, `plane * shape`, `plane * location`, local coordinates. `Plane3D` is the kernel's surface value |
 | `Location`, `Rotation`, `Pos` | Kept | A modelling idea: `location * shape`, Euler orientation, build123d's algebra. It wraps `Placement` |
 | `Axis` | Kept | Not a duplicate in the audit; a selection key with build123d's named axes |
-| `Vector`, `BoundBox`, `Matrix` | Not replaced: see below | The brief: the shapes are the commitment |
+
+## Points, vectors and directions (unit 10Q2)
+
+- **By meaning.** A position is a `Point3D`, an offset or a computed direction a `Vector3D`. A `Direction3D` is a unit direction that came
+  from the kernel: an axis's, a plane's. `TangentAt` and `NormalAt` stay `Vector3D`s: they are computed, and making them directions would
+  normalise them again and move their last bits.
+- **Two additions to the kernel make that readable.** A `Direction3D` converts implicitly to a `Vector3D`, as nothing is lost, so one
+  parameter takes both; and it scales to one (`plane.ZDir * amount`).
+- **Tolerance has a name.** The kernel's `==` is exact and unchanged. What the old `Vector` called equal is `IsNear`, and `PointComparer.Near`
+  for sets; `PointOrder`, which keeps CPython's set order, compares with it. The compiler can't find a comparison that needs it, so every
+  `==`, `!=` and `/` on the old type was listed by marking those operators obsolete and building (47 in the library, 11 in the tests).
+- **The same bits.** The old `/` multiplied by `1.0 / n`, where the kernel divides. Those sites write it out where `n` isn't a power of two.
+  A vector's `Normalized`, cross and dot are the same sums. `ToDirection()` makes a direction again from its components, as the old
+  `ToDirection3D` did and build123d's `gp_Dir(*v)` does, where a value went through it twice.
+- **`Intersect` returns an `IGeometry?`.** It can be a point, axis, plane or location, so it stays one value to pattern-match:
+  `a.Intersect(b) is Point3D p`. The marker moved to `Kerf.Geometry`, and `Point3D` implements it. `object` would have lost what the result can be;
+  a union type would have added a type for callers to unwrap and left the pattern worse.
+- **No two-argument constructor, no indexer.** `new Point3D(1, 2, 0)` says its z. An extension can't add either.
+
+**`BoundBox` is the kernel's `BoundingBox`, and its gap went.** Only a box begun from nothing by `Add(point, tolerance)` had a gap; every
+shape's box was made with none, so none reached a result. `Min` and `Max` of an empty box throw, where the layer's gave the origin; the
+layer's `Center`, `Diagonal`, `Measure` and `ToAlignOffset` read an empty box as nothing, and `Section` checks. A transformed box's corners
+are `BoxCorners`, not a box: build123d keeps them as they land, so `Min` can be above `Max`, and its `test_locate_bb` pins that.
+
+**`Matrix` is the general form, `GeneralTransform3D`.** `Transform3D` can't hold a stretch. `Plane.ForwardTransform` stays general, so a point
+goes through the same sums. The layer's product is `Compose`, as the kernel's `*` is OCCT's, which loses a similarity's scale beside a general
+matrix; `At` counts from zero, as the kernel's indexer counts from one.
 
 ## Left
 
-- **`Vector` is still `Vector`.** It should become `Vector3D` with extension members; it wasn't reached. It isn't a mechanical
-  rename, which is why it is left rather than rushed: about 2,700 uses; it stands for both a point and a direction; its equality
-  has a tolerance where the kernel's is exact, and `PointOrder` and the Python-reference tests rest on that; a two-argument
-  constructor (`new Vector(1, 2)`) has no extension form; and `Intersect` returns it as an `IGeometry`.
-- **`BoundBox` and `Matrix`** follow `Vector`: `BoundBox`'s `Min`, `Max` and `Center()` are vectors, and `Matrix`'s `Multiply` takes
-  one. `BoundBox` also keeps a shape's gap, which the kernel's `BoundingBox` doesn't.
-- **`Kerf.Measurement` beside `Kerf.Modeling`.** In a file with both, `solid.Volume`, `.Area` and `edge.Length` are ambiguous with the
-  kernel's methods `Volume()`, `Area()` and `Length()`. The meanings differ (a face's volume is 0 here; a compound's counts the solids
-  directly in it), so the layer's can't simply go. `Kerf.Topology` itself is clean, which is what the owner's answer asked: see
-  `OneSetOfShapesTests`, which imports it with `Kerf` and `Kerf.Modeling` at file level.
-- **`Kerf.Geometry` beside `Kerf.Modeling`.** `Cylinder`, `Cone`, `Sphere` and `Torus` are the kernel's surface values and the layer's
-  objects. Different ideas; a file using both qualifies one.
 - **The objects don't have every edge's member.** `line.Length` and the other `IShape1D` members work on a `Line`; an `Edge`-only member
   needs `line.Edge.ArcCenter`.
 - **Names kept from the mechanical move.** The dispatch's targets (`CenterOfShape1D`, `IntersectCoreOfFace`) are internal, and read
   oddly.
+- **Other namespaces still meet the layer's names.** `Kerf.Meshing`'s `FaceMesh`, `ShapeMesh` and `Triangle`, `Kerf.Exchange`'s `Step`, `Kerf.Construction`'s `ExtrudeOptions` and `SweepOptions`,
+  and `Kerf.Offsets`' `OffsetOptions`. The brief covered five namespaces; a file with these qualifies one.
+- **`shape.BoundBox()` beside the kernel's `shape.BoundingBox()`.** The same type now, but with a different default (tight, and falling back on a
+  mesh). Bringing them together would change the kernel's default for its own callers.
+- **The `HistoryLog`.** Kept; see `kernel/docs/state.md`.

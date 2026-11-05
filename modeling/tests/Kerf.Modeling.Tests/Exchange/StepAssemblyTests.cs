@@ -68,7 +68,7 @@ public class StepAssemblyTests
             if (node.Label.Length > 0)
                 doc.SetName(label, node.Label);
             if (node.Color is { } c)
-                doc.SetColor(label, Linear(c), node.SelectFaces().Count > 0 ? global::Kerf.Engine.Exchange.Documents.ColorType.ColorSurf : global::Kerf.Engine.Exchange.Documents.ColorType.ColorCurv);
+                doc.SetColor(label, Linear(c), node.Faces().Count > 0 ? global::Kerf.Engine.Exchange.Documents.ColorType.ColorSurf : global::Kerf.Engine.Exchange.Documents.ColorType.ColorCurv);
         }
         global::Kerf.Engine.Exchange.Documents.Label AssemblyLabel(Assembly assembly, Shape s)
         {
@@ -110,8 +110,8 @@ public class StepAssemblyTests
     {
         var bolt = new Cylinder(1, 10).WithLabel("bolt").WithColor(Color.Parse("silver"));
         var plate = new Box(20, 20, 2).WithLabel("plate").WithColor(Color.Parse("steelblue", 0.5));
-        var bolts = new Assembly([bolt.Moved(new Location(new Vector(5.0, 5.0, 0.0))), bolt.Moved(new Location(new Vector(-5.0, 5.0, 0.0)))], "bolts");
-        return new Assembly([plate, bolts.Moved(new Location(new Vector(0.0, 0.0, 6.0), new Vector(0.0, 0.0, 90.0)))], "fixture");
+        var bolts = new Assembly([bolt.Moved(new Location(new Point3D(5.0, 5.0, 0.0))), bolt.Moved(new Location(new Point3D(-5.0, 5.0, 0.0)))], "bolts");
+        return new Assembly([plate, bolts.Moved(new Location(new Point3D(0.0, 0.0, 6.0), new Vector3D(0.0, 0.0, 90.0)))], "fixture");
     }
 
     public static TheoryData<string> Names() => StepNativeTests.Names();
@@ -182,7 +182,7 @@ public class StepAssemblyTests
     {
         // STEP's writer maps shapes to products, so the second name needs a shape of its own
         var ball = new Sphere(2);
-        var pair = new Assembly([ball.WithLabel("left"), ball.Moved(new Location(new Vector(5.0, 0.0, 0.0))).WithLabel("right").WithColor(Color.Parse("blue"))]);
+        var pair = new Assembly([ball.WithLabel("left"), ball.Moved(new Location(new Point3D(5.0, 0.0, 0.0))).WithLabel("right").WithColor(Color.Parse("blue"))]);
         var read = Assert.IsType<Assembly>(Importers.ImportStep(new MemoryStream(Export(pair))).Value);
         Assert.Equal(["left", "right"], read.Children.Select(c => c.Label));
         Assert.Null(read.Children[0].Color);
@@ -193,7 +193,7 @@ public class StepAssemblyTests
     [Fact]
     public void ACurveIsColouredAsACurve()
     {
-        var line = new Polyline(new Vector(0.0, 0.0), new Vector(10.0, 0.0), new Vector(10.0, 5.0)).WithLabel("path").WithColor(Color.Parse("green"));
+        var line = new Polyline(new Point3D(0.0, 0.0, 0), new Point3D(10.0, 0.0, 0), new Point3D(10.0, 5.0, 0)).WithLabel("path").WithColor(Color.Parse("green"));
         var read = Importers.ImportStep(new MemoryStream(Export(line))).Value;
         Assert.Equal("path", read.Label);
         Assert.Equal(Color.Parse("green"), read.Color);

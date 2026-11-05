@@ -266,13 +266,13 @@ internal partial class PatchIntersection
             //
             if (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs2 == global::Kerf.Geometry.SurfaceKind.Cone)
             {
-                Cone con1 = (ctType == global::Kerf.Geometry.SurfaceKind.Cone) ? ctSurf.Cone() : geomSurf.Cone();
+                Cone3D con1 = (ctType == global::Kerf.Geometry.SurfaceKind.Cone) ? ctSurf.Cone() : geomSurf.Cone();
                 double a1 = Math.Abs(con1.SemiAngle);
                 bToCheck = (a1 < 0.02) || (a1 > 1.55);
                 //
                 if (typs1 == typs2)
                 {
-                    Cone con2 = geomSurf.Cone();
+                    Cone3D con2 = geomSurf.Cone();
                     double a2 = Math.Abs(con2.SemiAngle);
                     bToCheck = bToCheck || (a2 < 0.02) || (a2 > 1.55);
                     //
@@ -300,11 +300,11 @@ internal partial class PatchIntersection
             //
             if (typs1 == global::Kerf.Geometry.SurfaceKind.Torus || typs2 == global::Kerf.Geometry.SurfaceKind.Torus)
             {
-                Torus tor1 = (ctType == global::Kerf.Geometry.SurfaceKind.Torus) ? ctSurf.Torus() : geomSurf.Torus();
+                Torus3D tor1 = (ctType == global::Kerf.Geometry.SurfaceKind.Torus) ? ctSurf.Torus() : geomSurf.Torus();
                 bToCheck = tor1.MajorRadius > tor1.MinorRadius;
                 if (typs1 == typs2)
                 {
-                    Torus tor2 = geomSurf.Torus();
+                    Torus3D tor2 = geomSurf.Torus();
                     // OCCT: this overload ignores aTor1's test for two tori (the list-of-points Perform combines
                     // both, and also accepts equal radii); ported as written.
                     bToCheck = tor2.MajorRadius > tor2.MinorRadius;
@@ -445,13 +445,13 @@ internal partial class PatchIntersection
             //
             if (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs2 == global::Kerf.Geometry.SurfaceKind.Cone)
             {
-                Cone con1 = (ctType == global::Kerf.Geometry.SurfaceKind.Cone) ? ctSurf.Cone() : geomSurf.Cone();
+                Cone3D con1 = (ctType == global::Kerf.Geometry.SurfaceKind.Cone) ? ctSurf.Cone() : geomSurf.Cone();
                 double a1 = Math.Abs(con1.SemiAngle);
                 bToCheck = (a1 < 0.02) || (a1 > 1.55);
                 //
                 if (typs1 == typs2)
                 {
-                    Cone con2 = geomSurf.Cone();
+                    Cone3D con2 = geomSurf.Cone();
                     double a2 = Math.Abs(con2.SemiAngle);
                     bToCheck = bToCheck || (a2 < 0.02) || (a2 > 1.55);
                     //
@@ -479,11 +479,11 @@ internal partial class PatchIntersection
             //
             if (typs1 == global::Kerf.Geometry.SurfaceKind.Torus || typs2 == global::Kerf.Geometry.SurfaceKind.Torus)
             {
-                Torus tor1 = (ctType == global::Kerf.Geometry.SurfaceKind.Torus) ? ctSurf.Torus() : geomSurf.Torus();
+                Torus3D tor1 = (ctType == global::Kerf.Geometry.SurfaceKind.Torus) ? ctSurf.Torus() : geomSurf.Torus();
                 bToCheck = tor1.MajorRadius > tor1.MinorRadius;
                 if (typs1 == typs2)
                 {
-                    Torus tor2 = geomSurf.Torus();
+                    Torus3D tor2 = geomSurf.Torus();
                     bToCheck = (bToCheck && (tor2.MajorRadius > tor2.MinorRadius))
                                || (Math.Abs(tor1.MajorRadius - tor2.MajorRadius) < tolTang
                                    && Math.Abs(tor1.MinorRadius - tor2.MinorRadius) < tolTang);
@@ -1288,7 +1288,7 @@ internal partial class PatchIntersection
             throw new NoSuchObjectException("IntPatch_Intersection : Surface is not Cone");
         }
 
-        Cone cone = s.Cone();
+        Cone3D cone = s.Cone();
 
         TopolTool.GetConeApexParam(cone, out double u0, out double v0);
 

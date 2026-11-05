@@ -15,32 +15,37 @@ public class ReferenceTests
 
     static IEnumerable<JsonElement> Cases(string name) => Data.GetProperty(name).EnumerateArray();
 
-    static Vector V(JsonElement e) => new(e[0].GetDouble(), e[1].GetDouble(), e[2].GetDouble());
+    static Vector3D V(JsonElement e) => new(e[0].GetDouble(), e[1].GetDouble(), e[2].GetDouble());
+
+    static Point3D P(JsonElement e) => new(e[0].GetDouble(), e[1].GetDouble(), e[2].GetDouble());
 
     static RotationOrder Order(JsonElement c) =>
         c.GetProperty("kind").GetString() == "Intrinsic"
             ? Enum.Parse<Intrinsic>(c.GetProperty("order").GetString()!)
             : Enum.Parse<Extrinsic>(c.GetProperty("order").GetString()!);
 
-    static void Close(Vector expected, Vector actual, double tolerance, string what)
+    static void Close(Point3D expected, Point3D actual, double tolerance, string what) => Close(expected.ToVector(), actual.ToVector(), tolerance, what);
+
+    static void Close(Vector3D expected, Vector3D actual, double tolerance, string what)
     {
+        double[] e = [expected.X, expected.Y, expected.Z], a = [actual.X, actual.Y, actual.Z];
         for (int i = 0; i < 3; i++)
-            if (Math.Abs(expected[i] - actual[i]) > tolerance * Math.Max(1, Math.Abs(expected[i])))
-                throw new XunitException($"{what}: expected {expected.ToString("R")} got {actual.ToString("R")}");
+            if (Math.Abs(e[i] - a[i]) > tolerance * Math.Max(1, Math.Abs(e[i])))
+                throw new XunitException($"{what}: expected {expected.Describe("R")} got {actual.Describe("R")}");
     }
 
     // Euler angles can legitimately differ at a gimbal-lock singularity; compare the rotation instead
-    static void SameRotation(Vector expectedAngles, Vector actualAngles, string what)
+    static void SameRotation(Vector3D expectedAngles, Vector3D actualAngles, string what)
     {
-        var e = new Plane(new Location(new Vector(0, 0, 0), expectedAngles));
-        var a = new Plane(new Location(new Vector(0, 0, 0), actualAngles));
+        var e = new Plane(new Location(new Point3D(0, 0, 0), expectedAngles));
+        var a = new Plane(new Location(new Point3D(0, 0, 0), actualAngles));
         Close(e.XDir, a.XDir, 1e-9, what + " x");
         Close(e.ZDir, a.ZDir, 1e-9, what + " z");
     }
 
     static void SamePlane(JsonElement expected, Plane actual, double tolerance, string what)
     {
-        Close(V(expected.GetProperty("origin")), actual.Origin, tolerance, what + " origin");
+        Close(P(expected.GetProperty("origin")), actual.Origin, tolerance, what + " origin");
         Close(V(expected.GetProperty("x")), actual.XDir, tolerance, what + " x");
         Close(V(expected.GetProperty("y")), actual.YDir, tolerance, what + " y");
         Close(V(expected.GetProperty("z")), actual.ZDir, tolerance, what + " z");
@@ -51,9 +56,9 @@ public class ReferenceTests
     {
         foreach (var c in Cases("location_euler"))
         {
-            var loc = new Location(V(c.GetProperty("pos")), V(c.GetProperty("angles")), Order(c));
+            var loc = new Location(P(c.GetProperty("pos")), V(c.GetProperty("angles")), Order(c));
             string what = $"{Order(c)} {V(c.GetProperty("angles"))}";
-            Close(V(c.GetProperty("position")), loc.Position, 1e-12, what);
+            Close(P(c.GetProperty("position")), loc.Position, 1e-12, what);
             Close(V(c.GetProperty("orientation")), loc.Orientation, 1e-9, what);
             SamePlane(c.GetProperty("plane"), new Plane(loc), 1e-12, what);
         }
@@ -64,13 +69,13 @@ public class ReferenceTests
     {
         foreach (var c in Cases("location_ops"))
         {
-            var a = new Location(V(c.GetProperty("a_pos")), V(c.GetProperty("a_orient")));
-            var b = new Location(V(c.GetProperty("b_pos")), V(c.GetProperty("b_orient")));
+            var a = new Location(P(c.GetProperty("a_pos")), V(c.GetProperty("a_orient")));
+            var b = new Location(P(c.GetProperty("b_pos")), V(c.GetProperty("b_orient")));
             int n = c.GetProperty("n").GetInt32();
             void Same(string name, Location actual)
             {
                 var expected = c.GetProperty(name);
-                Close(V(expected[0]), actual.Position, 1e-9, name);
+                Close(P(expected[0]), actual.Position, 1e-9, name);
                 SameRotation(V(expected[1]), actual.Orientation, name);
             }
             Same("product", a * b);
@@ -85,9 +90,9 @@ public class ReferenceTests
     {
         foreach (var c in Cases("location_mirror"))
         {
-            var loc = new Location(V(c.GetProperty("pos")), V(c.GetProperty("orient")));
-            var mirrored = loc.Mirror(new Plane(V(c.GetProperty("plane_origin")), zDir: V(c.GetProperty("plane_z"))));
-            Close(V(c.GetProperty("position")), mirrored.Position, 1e-9, "mirror position");
+            var loc = new Location(P(c.GetProperty("pos")), V(c.GetProperty("orient")));
+            var mirrored = loc.Mirror(new Plane(P(c.GetProperty("plane_origin")), zDir: V(c.GetProperty("plane_z"))));
+            Close(P(c.GetProperty("position")), mirrored.Position, 1e-9, "mirror position");
             SameRotation(V(c.GetProperty("orientation")), mirrored.Orientation, "mirror orientation");
         }
     }
@@ -97,8 +102,8 @@ public class ReferenceTests
     {
         foreach (var c in Cases("plane_from_mirror"))
         {
-            var p = V(c.GetProperty("point")).ToPoint3D();
-            var d = V(c.GetProperty("dir")).ToDirection3D();
+            var p = P(c.GetProperty("point"));
+            var d = V(c.GetProperty("dir")).ToDirection();
             var ax2 = new Kerf.Geometry.Frame3D(p, d);
             var trsf = new Kerf.Geometry.Transform3D();
             trsf = trsf.WithMirror(ax2);
@@ -111,7 +116,7 @@ public class ReferenceTests
     {
         foreach (var c in Cases("plane_dirs"))
         {
-            var o = V(c.GetProperty("origin"));
+            var o = P(c.GetProperty("origin"));
             var z = V(c.GetProperty("z"));
             SamePlane(c.GetProperty("plane"), new Plane(o, V(c.GetProperty("x")), z), 1e-12, "plane");
             SamePlane(c.GetProperty("no_x"), new Plane(o, zDir: z), 1e-12, "plane without x");
@@ -123,7 +128,7 @@ public class ReferenceTests
     {
         foreach (var c in Cases("plane_rotated"))
         {
-            var p = new Plane(V(c.GetProperty("origin")), V(c.GetProperty("x")), V(c.GetProperty("z")))
+            var p = new Plane(P(c.GetProperty("origin")), V(c.GetProperty("x")), V(c.GetProperty("z")))
                 .Rotated(V(c.GetProperty("angles")), Order(c));
             SamePlane(c.GetProperty("plane"), p, 1e-12, $"rotated {Order(c)}");
         }
@@ -147,8 +152,8 @@ public class ReferenceTests
     {
         foreach (var c in Cases("axis_intersect"))
         {
-            var hit = (new Axis(V(c.GetProperty("p1")), V(c.GetProperty("d1")))).Intersect(new Axis(V(c.GetProperty("p2")), V(c.GetProperty("d2"))));
-            Close(V(c.GetProperty("point")), Assert.IsType<Vector>(hit), 1e-9, "axis intersection");
+            var hit = (new Axis(P(c.GetProperty("p1")), V(c.GetProperty("d1")))).Intersect(new Axis(P(c.GetProperty("p2")), V(c.GetProperty("d2"))));
+            Close(P(c.GetProperty("point")), Assert.IsType<Point3D>(hit), 1e-9, "axis intersection");
         }
     }
 

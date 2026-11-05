@@ -248,7 +248,7 @@ internal class LibraryMakeWire : LibraryMakeShape
 
         else
         {
-            init = _shape.IsClosed; // If it is closed no control
+            init = _shape.ClosedFlag; // If it is closed no control
             Shape localShape = e.Oriented(Forward);
             Edge ee = ShapeCasts.Edge(localShape);
 

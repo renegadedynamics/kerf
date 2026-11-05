@@ -276,7 +276,7 @@ public class BRepCheckTests
             Assert.Equal(ShapeType.Shell, aSet.Type);
             Assert.Equal(6, Faces(aSet).Count);
             Assert.True(aSet.TShape()!.IsFrozen);
-            Assert.True(aSet.IsClosed);
+            Assert.True(aSet.ClosedFlag);
             Assert.Equal(StatusCheck.NoError, new ShellCheck(ShapeCasts.Shell(aSet)).Closed());
         }
     }

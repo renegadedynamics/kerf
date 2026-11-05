@@ -30,11 +30,11 @@ internal interface IApproxSurfaceTool<ThePSurface> : IZerCSParPSurfaceTool<ThePS
 
     static abstract Plane3D Plane(in ThePSurface s);
 
-    static abstract Cylinder Cylinder(in ThePSurface s);
+    static abstract Cylinder3D Cylinder(in ThePSurface s);
 
-    static abstract Sphere Sphere(in ThePSurface s);
+    static abstract Sphere3D Sphere(in ThePSurface s);
 
-    static abstract Cone Cone(in ThePSurface s);
+    static abstract Cone3D Cone(in ThePSurface s);
 
     static abstract bool IsUPeriodic(in ThePSurface s);
 

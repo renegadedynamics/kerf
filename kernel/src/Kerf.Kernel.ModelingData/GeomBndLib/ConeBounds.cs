@@ -35,7 +35,7 @@ internal sealed class ConeBounds : SurfaceBounds.ISurfaceEvaluator
     public Box BoxOptimal(double tol) => Box(tol);
 
     /// <summary>Compute bounding box for a finite cone patch.</summary>
-    private static void ComputeCone(in Cone cone,
+    private static void ComputeCone(in Cone3D cone,
                                     double uMin,
                                     double uMax,
                                     double vMin,
@@ -80,7 +80,7 @@ internal sealed class ConeBounds : SurfaceBounds.ISurfaceEvaluator
     public Box Box(double uMin, double uMax, double vMin, double vMax, double tol)
     {
         Box box = new();
-        Cone cone = _geom.Cone;
+        Cone3D cone = _geom.Cone;
         Direction3D dir = cone.Axis.Direction;
 
         // OCCT opens the box only along the axis for an infinite V: the cone widens away from its apex, so the

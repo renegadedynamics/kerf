@@ -26,8 +26,8 @@ public static partial class WireExtensions
             foreach (var vertex in vertices)
             {
                 var local = plane.ToLocalCoords(vertex);
-                var current = filleted.SelectVertices().OrderByDistanceTo(local)[0];
-                if ((current.ToVector() - local.ToVector()).Length > Constants.Tolerance)
+                var current = filleted.Vertices().OrderByDistanceTo(local)[0];
+                if ((current.Point - local.Point).Magnitude > Constants.Tolerance)
                     throw new ArgumentException($"Could not find fillet vertex on wire: {vertex}");
                 var beforeCorner = filleted;
                 filleted = WireFillet.FilletCorner(filleted, current, radius);
@@ -79,15 +79,15 @@ internal static class WireFillet
                        ?? throw Failures.Expected(ModelingDiagnostics.FilletFailed,
                                                   $"The corner at {vertex} can't be filleted with a radius of {Formatting.Number(radius)}.");
         var result = Splice(corner, solution);
-        if (!wire.CheckClosed() || result.CheckClosed())
+        if (!wire.IsClosed || result.IsClosed)
             return result;
         throw Failures.Expected(ModelingDiagnostics.FilletFailed, "The filleted wire isn't closed.");
     }
 
     internal static Corner Analyze(Wire wire, Vertex vertex)
     {
-        var all = wire.SelectEdges();
-        var connected = all.Where(e => e.SelectVertices().Any(v => v.IsSame(vertex))).ToList();
+        var all = wire.Edges();
+        var connected = all.Where(e => e.Vertices().Any(v => v.IsSame(vertex))).ToList();
         if (connected.Count == 0)
             throw new ArgumentException($"Could not find shared vertex on wire: {vertex}");
         if (connected.Count != 2)
@@ -121,21 +121,21 @@ internal static class WireFillet
         var (e0, e1) = (corner.ConnectedEdges[0], corner.ConnectedEdges[1]);
         var tangent0 = e0.TangentAt(corner.Vertex);
         var tangent1 = e1.TangentAt(corner.Vertex);
-        if (tangent0.Cross(tangent1).Length > Constants.Tolerance)
+        if (tangent0.Cross(tangent1).Magnitude > Constants.Tolerance)
             return false;
 
         var sampleLength = corner.ConnectedEdges.Min(e => e.Length) * 1e-3;
         sampleLength = Math.Min(sampleLength, corner.ConnectedEdges.Min(e => e.Length * 0.25));
         sampleLength = Math.Max(sampleLength, Constants.Tolerance * 100);
 
-        var reflected = new List<Vector>();
+        var reflected = new List<Point3D>();
         foreach (var edge in corner.ConnectedEdges)
         {
             var first = NaturalFirstVertex(edge);
             var samplePoint = first.IsSame(corner.Vertex)
                 ? edge.PositionAt(sampleLength, PositionMode.Length)
                 : edge.PositionAt(edge.Length - sampleLength, PositionMode.Length);
-            reflected.Add(corner.Vertex.ToVector() * 2 - samplePoint);
+            reflected.Add((corner.Vertex.Point.ToVector() * 2 - samplePoint.ToVector()).ToPoint());
         }
         return Math.Min(e1.DistanceTo(reflected[0]), e0.DistanceTo(reflected[1])) <= Math.Max(Constants.Tolerance * 10, sampleLength * 0.25);
     }
@@ -151,9 +151,9 @@ internal static class WireFillet
         var trimmed = new List<Edge?>();
         foreach (var connected in corner.ConnectedEdges)
         {
-            var other = connected.SelectVertices().First(v => !v.IsSame(corner.Vertex));
-            var filletVertex = arc.SelectVertices().OrderByDistanceTo(connected)[0];
-            var pnt = filletVertex.ToVector().ToPoint3D();
+            var other = connected.Vertices().First(v => !v.IsSame(corner.Vertex));
+            var filletVertex = arc.Vertices().OrderByDistanceTo(connected)[0];
+            var pnt = filletVertex.Point;
             var splitVertex = Vertex.At(pnt);
             // A copy is split, as build123d splits a deepcopy, so the pieces share nothing with the wire: the identity
             // applied with its geometry copied (BRepBuilderAPI_Transform with copy) rebuilds the edge throughout

@@ -548,7 +548,7 @@ internal class ProjectedCurve : Curve2DAdaptorBase
                     const double vmax = M_PI / 2.0;
                     const double vmin = -vmax;
                     const double minang = 1.0e-5 * M_PI;
-                    Sphere sph = _surface.Sphere();
+                    Sphere3D sph = _surface.Sphere();
                     double r = sph.Radius;
                     double f = _curve.FirstParameter();
                     double l = _curve.LastParameter();

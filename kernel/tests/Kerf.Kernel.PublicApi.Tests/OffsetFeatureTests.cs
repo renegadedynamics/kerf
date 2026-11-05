@@ -11,9 +11,9 @@ namespace Kerf.Kernel.PublicApi.Tests;
 /// <summary>Offsets and features (docs/api/offsets-features.md; unit 10L2).</summary>
 public class OffsetFeatureTests
 {
-    private static Face Top(Solid box) => box.Faces().MaxBy(f => f.Vertices().Min(v => v.Point.Z));
+    private static Face Top(Solid box) => box.AllFaces().MaxBy(f => f.AllVertices().Min(v => v.Point.Z));
 
-    private static double MaxX(Shape shape) => shape.Vertices().Max(v => v.Point.X);
+    private static double MaxX(Shape shape) => shape.AllVertices().Max(v => v.Point.X);
 
     [Fact]
     public void A_box_offset_outwards_grows_with_its_history()
@@ -21,8 +21,8 @@ public class OffsetFeatureTests
         Solid box = Solid.Box(10, 10, 10).Value;
         Built<Shape> grown = box.Offset(1, new OffsetOptions { Join = JoinKind.Intersection }).Value;
         Assert.Equal(11, MaxX(grown.Shape), 6);
-        Assert.Equal(6, grown.Shape.Faces().Length);
-        Assert.Single(grown.History.Generated(box.Faces()[0]));
+        Assert.Equal(6, grown.Shape.AllFaces().Length);
+        Assert.Single(grown.History.Generated(box.AllFaces()[0]));
         Assert.Throws<ArgumentOutOfRangeException>(() => box.Offset(0));
     }
 
@@ -31,8 +31,8 @@ public class OffsetFeatureTests
     {
         Solid box = Solid.Box(10, 10, 10).Value;
         Built<Solid> shelled = box.Hollow([Top(box)], -1).Value;
-        Assert.Equal(11, shelled.Shape.Faces().Length);
-        Assert.NotEmpty(shelled.History.Generated(box.Faces()[0]));
+        Assert.Equal(11, shelled.Shape.AllFaces().Length);
+        Assert.NotEmpty(shelled.History.Generated(box.AllFaces()[0]));
         Assert.Throws<ArgumentException>(() => box.Hollow([Face.FromWire(ConstructionTests.Square(1, 50)).Value], -1));
     }
 
@@ -50,7 +50,7 @@ public class OffsetFeatureTests
     {
         Face square = Face.FromWire(ConstructionTests.Square(10)).Value;
         Built<Solid> slab = square.Thicken(2).Value;
-        Assert.Equal(6, slab.Shape.Faces().Length);
+        Assert.Equal(6, slab.Shape.AllFaces().Length);
         Shape outline = square.Offset2D(1, new Offset2DOptions { Join = JoinKind.Intersection }).Value.Shape;
         Assert.Equal(11, MaxX(outline), 6);
         Assert.Throws<ArgumentException>(() => Solid.Box(1, 1, 1).Value.Shape.Thicken(1));
@@ -69,12 +69,12 @@ public class OffsetFeatureTests
     public void A_draft_tilts_side_faces_and_names_the_face_it_cant()
     {
         Solid box = Solid.Box(10, 10, 10).Value;
-        Face side = box.Faces().First(f => f.Vertices().All(v => Math.Abs(v.Point.X) < 1e-9));
+        Face side = box.AllFaces().First(f => f.AllVertices().All(v => Math.Abs(v.Point.X) < 1e-9));
         var basePlane = new Plane3D(Point3D.Origin, Direction3D.UnitZ);
         Built<Shape> drafted = box.Draft([side], Direction3D.UnitZ, 5 * Math.PI / 180, basePlane).Value;
-        Assert.Equal(6, drafted.Shape.Faces().Length);
+        Assert.Equal(6, drafted.Shape.AllFaces().Length);
         Assert.Single(drafted.History.Generated(side));
-        Assert.Contains(drafted.Shape.Vertices(), v => Math.Abs(Math.Abs(v.Point.X) - 10 * Math.Tan(5 * Math.PI / 180)) < 1e-6);
+        Assert.Contains(drafted.Shape.AllVertices(), v => Math.Abs(Math.Abs(v.Point.X) - 10 * Math.Tan(5 * Math.PI / 180)) < 1e-6);
 
         Face top = Top(box);
         var cant = box.Draft([top], Direction3D.UnitZ, 5 * Math.PI / 180, basePlane);
@@ -89,12 +89,12 @@ public class OffsetFeatureTests
         Face top = Top(box);
         Face profile = Face.FromWire(Wire.Polygon([new(3, 3, 10), new(6, 3, 10), new(6, 6, 10), new(3, 6, 10)], closed: true).Value).Value;
         Built<Shape> boss = box.ExtrudeUntil(profile, top, 0, new ExtrudeUntilOptions { Until = ExtrudeLimit.Height, Height = 5 }).Value;
-        Assert.Equal(15, boss.Shape.Vertices().Max(v => v.Point.Z), 6);
+        Assert.Equal(15, boss.Shape.AllVertices().Max(v => v.Point.Z), 6);
         Assert.Throws<ArgumentException>(() => box.ExtrudeUntil(profile, top, 0, new ExtrudeUntilOptions { Until = ExtrudeLimit.Face }));
 
         Edge across = Edge.Line(new(5, 0, 10), new(5, 10, 10)).Value;
         Built<Shape> split = box.SplitFaces([(top, (Shape)across)]).Value;
-        Assert.Equal(7, split.Shape.Faces().Length);
+        Assert.Equal(7, split.Shape.AllFaces().Length);
         Assert.Equal(2, split.History.Modified(top).Count);
     }
 }

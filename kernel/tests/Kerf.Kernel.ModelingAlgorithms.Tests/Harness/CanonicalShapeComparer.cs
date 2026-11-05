@@ -398,7 +398,7 @@ internal static class CanonicalShapeComparer
     // The tolerance (bits) and flags of a sub-shape, but not Free, Modified, Checked or Locked.
     private static string Attributes(Shape theShape)
     {
-        string aFlags = $"closed={B(theShape.IsClosed)} orientable={B(theShape.IsOrientable)} convex={B(theShape.IsConvex)} infinite={B(theShape.IsInfinite)}";
+        string aFlags = $"closed={B(theShape.ClosedFlag)} orientable={B(theShape.OrientableFlag)} convex={B(theShape.ConvexFlag)} infinite={B(theShape.InfiniteFlag)}";
         return theShape.Type switch
         {
             ShapeType.Vertex => $"tol={R(Tool.Tolerance(ShapeCasts.Vertex(theShape)))} {aFlags}",

@@ -12,9 +12,9 @@ namespace Kerf.Kernel.ModelingData.Tests;
 // The three IntAna_QuadQuadGeo tests of the suite (CylinderCylinder*) are in IntAna_IntQuadQuadTests.QuadQuadGeo.cs.
 public partial class IntAna_IntQuadQuad_Test
 {
-    protected readonly Sphere mySphere1;
-    protected readonly Cylinder myCylinder1;
-    protected readonly Cone myCone1;
+    protected readonly Sphere3D mySphere1;
+    protected readonly Cylinder3D myCylinder1;
+    protected readonly Cone3D myCone1;
     protected readonly Plane3D myPlane1;
 
     public IntAna_IntQuadQuad_Test()
@@ -26,13 +26,13 @@ public partial class IntAna_IntQuadQuad_Test
         CoordinateSystem anAxis = new(anOrigin, aZDir, anXDir);
 
         // Create sphere at origin with radius 5
-        mySphere1 = new Sphere(anAxis, 5.0);
+        mySphere1 = new Sphere3D(anAxis, 5.0);
 
         // Create cylinder with axis along Z, radius 3
-        myCylinder1 = new Cylinder(anAxis, 3.0);
+        myCylinder1 = new Cylinder3D(anAxis, 3.0);
 
         // Create cone with semi-angle 30 degrees
-        myCone1 = new Cone(anAxis, M_PI / 6, 2.0);
+        myCone1 = new Cone3D(anAxis, M_PI / 6, 2.0);
 
         // Create plane at Z = 2
         Point3D aPlaneOrigin = new(0, 0, 2);
@@ -126,14 +126,14 @@ public partial class IntAna_IntQuadQuad_Test
         CoordinateSystem anAxis1 = new(aCenter1, aZDir, anXDir);
         CoordinateSystem anAxis2 = new(aCenter2, aZDir, anXDir);
 
-        Sphere aSphere1 = new(anAxis1, 2.0);
-        Sphere aSphere2 = new(anAxis2, 2.0);
+        Sphere3D aSphere1 = new(anAxis1, 2.0);
+        Sphere3D aSphere2 = new(anAxis2, 2.0);
         _ = aSphere1;
 
         Quadric aSphere2Quad = new(aSphere2);
 
         IntQuadQuad anIntersector = new();
-        anIntersector.Perform(new Cylinder(anAxis1, 2.0), aSphere2Quad, 1e-7);
+        anIntersector.Perform(new Cylinder3D(anAxis1, 2.0), aSphere2Quad, 1e-7);
 
         Assert.True(anIntersector.IsDone);
 

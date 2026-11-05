@@ -19,14 +19,14 @@ internal static class GeomEqualObjects
 
     public static Wire RectangleWire(double width, double height) => Face.MakeRect(width, height).SingleWire();
 
-    public static Edge Spline(params Vector[] points) => Edge.MakeSpline(points);
+    public static Edge Spline(params Point3D[] points) => Edge.MakeSpline(points);
 
-    public static Edge Bezier(params Vector[] points) => Edge.MakeBezier(points);
+    public static Edge Bezier(params Point3D[] points) => Edge.MakeBezier(points);
 
     /// <summary>An edge on an OCCT B-spline built from its poles, knots and multiplicities (and weights).</summary>
-    public static Edge BSpline(Vector[] poles, double[] knots, int[] mults, int degree, double[]? weights = null)
+    public static Edge BSpline(Point3D[] poles, double[] knots, int[] mults, int degree, double[]? weights = null)
     {
-        Point3D[] poleArray = [.. poles.Select(p => p.ToPoint3D())];
+        Point3D[] poleArray = [.. poles.Select(p => p)];
         var curve = weights is null
             ? new BSplineCurve3D(poleArray, knots, mults, degree, false)
             : new BSplineCurve3D(poleArray, knots, mults, degree, false, weights);
@@ -39,8 +39,8 @@ public class EdgeGeomEqualLineTests
     [Fact]
     public void SameLine()
     {
-        var e1 = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 1, 1));
-        var e2 = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 1, 1));
+        var e1 = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 1, 1));
+        var e2 = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 1, 1));
         Assert.Equal(GeomType.Line, e1.GeomType);
         Assert.True(e1.GeomEqual(e2));
     }
@@ -48,8 +48,8 @@ public class EdgeGeomEqualLineTests
     [Fact]
     public void DifferentLine()
     {
-        var e1 = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 1, 1));
-        var e2 = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 1, 2));
+        var e1 = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 1, 1));
+        var e2 = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 1, 2));
         Assert.False(e1.GeomEqual(e2));
     }
 }
@@ -60,7 +60,7 @@ public class EdgeGeomEqualCircleTests
     public void DifferentCircleFromRevolve()
     {
         // Two circles with same radius/endpoints but different center/axis
-        var f1 = Ops.MakeFace(new RadiusArc(new Vector(5, 0), new Vector(-5, 0), 15) + new Line(new Vector(5, 0), new Vector(-5, 0)));
+        var f1 = Ops.MakeFace(new RadiusArc(new Point3D(5, 0, 0), new Point3D(-5, 0, 0), 15) + new Line(new Point3D(5, 0, 0), new Point3D(-5, 0, 0)));
         var p1 = Ops.Revolve(f1, Axis.X, 90).Value;
         var circles = p1.Edges().Where(GeomType.Circle);
         Assert.Equal(2, circles.Count);
@@ -104,15 +104,15 @@ public class EdgeGeomEqualCircleTests
     {
         // Circles with same radius but different center location
         var e1 = Edge.MakeCircle(10);
-        var e2 = Edge.MakeCircle(10).Located(new Location(new Vector(5, 0, 0)));
+        var e2 = Edge.MakeCircle(10).Located(new Location(new Point3D(5, 0, 0)));
         Assert.False(e1.GeomEqual(e2));
     }
 
     [Fact]
     public void SameLocation()
     {
-        var e1 = Edge.MakeCircle(10).Located(new Location(new Vector(5, 5, 0)));
-        var e2 = Edge.MakeCircle(10).Located(new Location(new Vector(5, 5, 0)));
+        var e1 = Edge.MakeCircle(10).Located(new Location(new Point3D(5, 5, 0)));
+        var e2 = Edge.MakeCircle(10).Located(new Location(new Point3D(5, 5, 0)));
         Assert.True(e1.GeomEqual(e2));
     }
 
@@ -156,15 +156,15 @@ public class EdgeGeomEqualEllipseTests
     public void DifferentLocation()
     {
         var e1 = Edge.MakeEllipse(10, 5);
-        var e2 = Edge.MakeEllipse(10, 5).Located(new Location(new Vector(5, 0, 0)));
+        var e2 = Edge.MakeEllipse(10, 5).Located(new Location(new Point3D(5, 0, 0)));
         Assert.False(e1.GeomEqual(e2));
     }
 
     [Fact]
     public void SameLocation()
     {
-        var e1 = Edge.MakeEllipse(10, 5).Located(new Location(new Vector(5, 5, 0)));
-        var e2 = Edge.MakeEllipse(10, 5).Located(new Location(new Vector(5, 5, 0)));
+        var e1 = Edge.MakeEllipse(10, 5).Located(new Location(new Point3D(5, 5, 0)));
+        var e2 = Edge.MakeEllipse(10, 5).Located(new Location(new Point3D(5, 5, 0)));
         Assert.True(e1.GeomEqual(e2));
     }
 
@@ -207,11 +207,11 @@ public class EdgeGeomEqualHyperbolaTests
 
     [Fact]
     public void DifferentLocation() =>
-        Assert.False(Hyperbola(10, 5).GeomEqual(Hyperbola(10, 5).Located(new Location(new Vector(5, 0, 0)))));
+        Assert.False(Hyperbola(10, 5).GeomEqual(Hyperbola(10, 5).Located(new Location(new Point3D(5, 0, 0)))));
 
     [Fact]
     public void SameLocation() =>
-        Assert.True(Hyperbola(10, 5).Located(new Location(new Vector(5, 5, 0))).GeomEqual(Hyperbola(10, 5).Located(new Location(new Vector(5, 5, 0)))));
+        Assert.True(Hyperbola(10, 5).Located(new Location(new Point3D(5, 5, 0))).GeomEqual(Hyperbola(10, 5).Located(new Location(new Point3D(5, 5, 0)))));
 
     [Fact]
     public void DifferentAxis() => Assert.False(Hyperbola(10, 5, Plane.XY).GeomEqual(Hyperbola(10, 5, Plane.XZ)));
@@ -239,11 +239,11 @@ public class EdgeGeomEqualParabolaTests
 
     [Fact]
     public void DifferentLocation() =>
-        Assert.False(Parabola(5).GeomEqual(Parabola(5).Located(new Location(new Vector(5, 0, 0)))));
+        Assert.False(Parabola(5).GeomEqual(Parabola(5).Located(new Location(new Point3D(5, 0, 0)))));
 
     [Fact]
     public void SameLocation() =>
-        Assert.True(Parabola(5).Located(new Location(new Vector(5, 5, 0))).GeomEqual(Parabola(5).Located(new Location(new Vector(5, 5, 0)))));
+        Assert.True(Parabola(5).Located(new Location(new Point3D(5, 5, 0))).GeomEqual(Parabola(5).Located(new Location(new Point3D(5, 5, 0)))));
 
     [Fact]
     public void DifferentAxis() => Assert.False(Parabola(5, Plane.XY).GeomEqual(Parabola(5, Plane.XZ)));
@@ -257,7 +257,7 @@ public class EdgeGeomEqualBezierTests
     [Fact]
     public void SameBezier()
     {
-        Vector[] pts = [new Vector(0, 0), new Vector(1, 1), new Vector(2, 0)];
+        Point3D[] pts = [new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)];
         var e1 = GeomEqualObjects.Bezier(pts);
         var e2 = GeomEqualObjects.Bezier(pts);
         Assert.Equal(GeomType.Bezier, e1.GeomType);
@@ -267,8 +267,8 @@ public class EdgeGeomEqualBezierTests
     [Fact]
     public void DifferentBezier()
     {
-        var e1 = GeomEqualObjects.Bezier(new Vector(0, 0), new Vector(1, 1), new Vector(2, 0));
-        var e2 = GeomEqualObjects.Bezier(new Vector(0, 0), new Vector(1, 2), new Vector(2, 0));
+        var e1 = GeomEqualObjects.Bezier(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0));
+        var e2 = GeomEqualObjects.Bezier(new Point3D(0, 0, 0), new Point3D(1, 2, 0), new Point3D(2, 0, 0));
         Assert.False(e1.GeomEqual(e2));
     }
 
@@ -276,9 +276,9 @@ public class EdgeGeomEqualBezierTests
     public void DifferentDegree()
     {
         // Quadratic (degree 2, 3 points)
-        var e1 = GeomEqualObjects.Bezier(new Vector(0, 0), new Vector(1, 1), new Vector(2, 0));
+        var e1 = GeomEqualObjects.Bezier(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0));
         // Cubic (degree 3, 4 points) - adjusted to have same endpoints
-        var e2 = GeomEqualObjects.Bezier(new Vector(0, 0), new Vector(0.5, 1), new Vector(1.5, 1), new Vector(2, 0));
+        var e2 = GeomEqualObjects.Bezier(new Point3D(0, 0, 0), new Point3D(0.5, 1, 0), new Point3D(1.5, 1, 0), new Point3D(2, 0, 0));
         Assert.Equal(GeomType.Bezier, e1.GeomType);
         Assert.Equal(GeomType.Bezier, e2.GeomType);
         Assert.False(e1.GeomEqual(e2));
@@ -287,7 +287,7 @@ public class EdgeGeomEqualBezierTests
     [Fact]
     public void RationalBezierDifferentWeights()
     {
-        Vector[] pts = [new Vector(0, 0, 0), new Vector(1, 1, 0), new Vector(2, 0, 0)];
+        Point3D[] pts = [new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)];
         var e1 = Edge.MakeBezier(pts, weights: [1.0, 2.0, 1.0]);
         var e2 = Edge.MakeBezier(pts, weights: [1.0, 3.0, 1.0]);
         Assert.Equal(GeomType.Bezier, e1.GeomType);
@@ -300,7 +300,7 @@ public class EdgeGeomEqualBSplineTests
     [Fact]
     public void SameSpline()
     {
-        Vector[] v = [new Vector(-2, 0), new Vector(-1, 0), new Vector(0, 0), new Vector(1, 0), new Vector(2, 0)];
+        Point3D[] v = [new Point3D(-2, 0, 0), new Point3D(-1, 0, 0), new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(2, 0, 0)];
         var e1 = GeomEqualObjects.Spline(v);
         var e2 = GeomEqualObjects.Spline(v);
         Assert.Equal(GeomType.BSpline, e1.GeomType);
@@ -310,15 +310,15 @@ public class EdgeGeomEqualBSplineTests
     [Fact]
     public void DifferentSpline()
     {
-        var e1 = GeomEqualObjects.Spline(new Vector(-2, 0), new Vector(-1, 0), new Vector(0, 0), new Vector(1, 0), new Vector(2, 0));
-        var e2 = GeomEqualObjects.Spline(new Vector(-2, 0), new Vector(-1, 1), new Vector(0, 0), new Vector(1, 0), new Vector(2, 0));
+        var e1 = GeomEqualObjects.Spline(new Point3D(-2, 0, 0), new Point3D(-1, 0, 0), new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(2, 0, 0));
+        var e2 = GeomEqualObjects.Spline(new Point3D(-2, 0, 0), new Point3D(-1, 1, 0), new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(2, 0, 0));
         Assert.False(e1.GeomEqual(e2));
     }
 
     [Fact]
     public void ComplexSpline()
     {
-        Vector[] v = [new Vector(-2, 0), new Vector(-1, 0), new Vector(0, 0), new Vector(1, 0), new Vector(2, 0), new Vector(3, 0.1), new Vector(4, 1), new Vector(5, 2.2), new Vector(6, 3), new Vector(7, 2), new Vector(8, -1)];
+        Point3D[] v = [new Point3D(-2, 0, 0), new Point3D(-1, 0, 0), new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(2, 0, 0), new Point3D(3, 0.1, 0), new Point3D(4, 1, 0), new Point3D(5, 2.2, 0), new Point3D(6, 3, 0), new Point3D(7, 2, 0), new Point3D(8, -1, 0)];
         Assert.True(GeomEqualObjects.Spline(v).GeomEqual(GeomEqualObjects.Spline(v)));
     }
 
@@ -326,7 +326,7 @@ public class EdgeGeomEqualBSplineTests
     public void DifferentPeriodicity()
     {
         // Same control points, different periodicity
-        Vector[] pts = [new Vector(0, 0), new Vector(1, 1), new Vector(2, 0), new Vector(1, -1)];
+        Point3D[] pts = [new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0), new Point3D(1, -1, 0)];
         var e1 = Edge.MakeSpline(pts, periodic: false);
         var e2 = Edge.MakeSpline(pts, periodic: true);
         Assert.Equal(GeomType.BSpline, e1.GeomType);
@@ -337,8 +337,8 @@ public class EdgeGeomEqualBSplineTests
     [Fact]
     public void DifferentPoleCount()
     {
-        var e1 = GeomEqualObjects.Spline(new Vector(0, 0), new Vector(1, 1), new Vector(2, 0), new Vector(3, 1), new Vector(4, 0));
-        var e2 = GeomEqualObjects.Spline(new Vector(0, 0), new Vector(0.8, 0.8), new Vector(1.6, 0.2), new Vector(2.4, 0.8), new Vector(3.2, 0.2), new Vector(4, 0));
+        var e1 = GeomEqualObjects.Spline(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0), new Point3D(3, 1, 0), new Point3D(4, 0, 0));
+        var e2 = GeomEqualObjects.Spline(new Point3D(0, 0, 0), new Point3D(0.8, 0.8, 0), new Point3D(1.6, 0.2, 0), new Point3D(2.4, 0.8, 0), new Point3D(3.2, 0.2, 0), new Point3D(4, 0, 0));
         Assert.Equal(GeomType.BSpline, e1.GeomType);
         Assert.Equal(GeomType.BSpline, e2.GeomType);
         Assert.False(e1.GeomEqual(e2));
@@ -348,7 +348,7 @@ public class EdgeGeomEqualBSplineTests
     public void DifferentKnotValues()
     {
         // 5 poles for degree 3 with one internal knot
-        Vector[] poles = [new Vector(0, 0, 0), new Vector(1, 2, 0), new Vector(2, 2, 0), new Vector(3, 2, 0), new Vector(4, 0, 0)];
+        Point3D[] poles = [new Point3D(0, 0, 0), new Point3D(1, 2, 0), new Point3D(2, 2, 0), new Point3D(3, 2, 0), new Point3D(4, 0, 0)];
         int[] mults = [4, 1, 4];
         var e1 = GeomEqualObjects.BSpline(poles, [0.0, 0.5, 1.0], mults, 3);
         // Internal knot at 0.3 - different position changes shape
@@ -363,7 +363,7 @@ public class EdgeGeomEqualBSplineTests
     public void DifferentMultiplicities()
     {
         // Same 7 poles and 4 knots for both curves
-        Vector[] poles = [new Vector(0, 0, 0), new Vector(1, 2, 0), new Vector(2, 1, 0), new Vector(3, 2, 0), new Vector(4, 1, 0), new Vector(5, 2, 0), new Vector(6, 0, 0)];
+        Point3D[] poles = [new Point3D(0, 0, 0), new Point3D(1, 2, 0), new Point3D(2, 1, 0), new Point3D(3, 2, 0), new Point3D(4, 1, 0), new Point3D(5, 2, 0), new Point3D(6, 0, 0)];
         double[] knots = [0.0, 0.33, 0.67, 1.0];
         // Multiplicities [4, 1, 2, 4] - sum = 11 = 7 + 3 + 1
         var e1 = GeomEqualObjects.BSpline(poles, knots, [4, 1, 2, 4], 3);
@@ -379,7 +379,7 @@ public class EdgeGeomEqualBSplineTests
     [Fact]
     public void RationalBSplineDifferentWeights()
     {
-        Vector[] poles = [new Vector(0, 0, 0), new Vector(1, 1, 0), new Vector(2, 1, 0), new Vector(3, 0, 0)];
+        Point3D[] poles = [new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 1, 0), new Point3D(3, 0, 0)];
         double[] knots = [0.0, 1.0];
         int[] mults = [4, 4];
         var e1 = GeomEqualObjects.BSpline(poles, knots, mults, 3, [1.0, 2.0, 2.0, 1.0]);
@@ -392,15 +392,15 @@ public class EdgeGeomEqualBSplineTests
 public class EdgeGeomEqualOffsetTests
 {
     /// <summary>An edge on an offset curve; Offset2D fits splines to those it makes.</summary>
-    private static Edge OffsetEdge(double distance, Vector? direction = null)
+    private static Edge OffsetEdge(double distance, Vector3D? direction = null)
     {
-        var spline = GeomEqualObjects.Spline(new Vector(0, 0), new Vector(1, 1), new Vector(2, 0), new Vector(3, 1));
+        var spline = GeomEqualObjects.Spline(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0), new Point3D(3, 1, 0));
         double first, last;
         var adaptor = spline.GeomAdaptor();
         (first, last) = (adaptor.Range.Min, adaptor.Range.Max);
         var topoEdge = ((Edge)spline);
         Assert.True(topoEdge.TryGetCurve(out var basis, out _));
-        var dir = (direction ?? new Vector(0, 0, 1)).ToDirection3D();
+        var dir = (direction ?? new Vector3D(0, 0, 1)).ToDirection();
         var curve = new OffsetCurve3D(basis, distance, dir);
         var edge = global::Kerf.Construction.ShapeFactory.FromCurve(curve, new(first, last)).Value;
         Assert.Equal(GeomType.Offset, edge.GeomType);
@@ -414,7 +414,7 @@ public class EdgeGeomEqualOffsetTests
     public void DifferentOffsetValue() => Assert.False(OffsetEdge(0.1).GeomEqual(OffsetEdge(0.2)));
 
     [Fact]
-    public void DifferentOffsetDirection() => Assert.False(OffsetEdge(0.1).GeomEqual(OffsetEdge(0.1, new Vector(0, 0, -1))));
+    public void DifferentOffsetDirection() => Assert.False(OffsetEdge(0.1).GeomEqual(OffsetEdge(0.1, new Vector3D(0, 0, -1))));
 }
 
 public class EdgeGeomEqualToleranceTests
@@ -430,26 +430,26 @@ public class EdgeGeomEqualToleranceTests
     [Fact]
     public void TolParameterAccepted()
     {
-        var e1 = Edge.MakeLine(new Vector(0, 0), new Vector(1, 1));
-        var e2 = Edge.MakeLine(new Vector(0, 0), new Vector(1, 1));
+        var e1 = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 1, 0));
+        var e2 = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 1, 0));
         Assert.True(e1.GeomEqual(e2, tolerance: 1e-9));
         Assert.True(e1.GeomEqual(e2, tolerance: 0.1));
     }
 
     [Fact]
     public void LineEndpointWithinTolerance() =>
-        Assert.True(Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 1, 1)).GeomEqual(Edge.MakeLine(new Vector(0, 0, 0), new Vector(1 + 1e-7, 1, 1))));
+        Assert.True(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 1, 1)).GeomEqual(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1 + 1e-7, 1, 1))));
 
     [Fact]
     public void LineEndpointOutsideTolerance() =>
-        Assert.False(Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 1, 1)).GeomEqual(Edge.MakeLine(new Vector(0, 0, 0), new Vector(1.001, 1, 1))));
+        Assert.False(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 1, 1)).GeomEqual(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1.001, 1, 1))));
 }
 
 public class EdgeGeomEqualReversedTests
 {
     [Fact]
     public void LineReversedNotEqual() =>
-        Assert.False(Edge.MakeLine(new Vector(0, 0), new Vector(1, 1)).GeomEqual(Edge.MakeLine(new Vector(1, 1), new Vector(0, 0))));
+        Assert.False(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 1, 0)).GeomEqual(Edge.MakeLine(new Point3D(1, 1, 0), new Point3D(0, 0, 0))));
 
     [Fact]
     public void ArcReversedNotEqual()
@@ -463,7 +463,7 @@ public class EdgeGeomEqualReversedTests
     [Fact]
     public void SplineReversedNotEqual()
     {
-        var e1 = GeomEqualObjects.Spline(new Vector(0, 0), new Vector(1, 1), new Vector(2, 0), new Vector(3, 1));
+        var e1 = GeomEqualObjects.Spline(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0), new Point3D(3, 1, 0));
         var e2 = e1.Reversed();
         Assert.False(e1.GeomEqual(e2));
     }
@@ -497,46 +497,46 @@ public class EdgeGeomEqualNumericalTests
 {
     [Fact]
     public void VerySmallEdge() =>
-        Assert.True(Edge.MakeLine(new Vector(0, 0), new Vector(1e-6, 1e-6)).GeomEqual(Edge.MakeLine(new Vector(0, 0), new Vector(1e-6, 1e-6))));
+        Assert.True(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1e-6, 1e-6, 0)).GeomEqual(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1e-6, 1e-6, 0))));
 
     [Fact]
     public void VeryLargeCoordinates() =>
-        Assert.True(Edge.MakeLine(new Vector(1e6, 1e6), new Vector(1e6 + 1, 1e6 + 1)).GeomEqual(Edge.MakeLine(new Vector(1e6, 1e6), new Vector(1e6 + 1, 1e6 + 1))));
+        Assert.True(Edge.MakeLine(new Point3D(1e6, 1e6, 0), new Point3D(1e6 + 1, 1e6 + 1, 0)).GeomEqual(Edge.MakeLine(new Point3D(1e6, 1e6, 0), new Point3D(1e6 + 1, 1e6 + 1, 0))));
 
     [Fact]
     public void LargeCoordinatesSmallDifference() =>
         // Difference is above tolerance
-        Assert.False(Edge.MakeLine(new Vector(1e6, 1e6), new Vector(1e6 + 1, 1e6 + 1)).GeomEqual(Edge.MakeLine(new Vector(1e6, 1e6), new Vector(1e6 + 1 + 1e-5, 1e6 + 1))));
+        Assert.False(Edge.MakeLine(new Point3D(1e6, 1e6, 0), new Point3D(1e6 + 1, 1e6 + 1, 0)).GeomEqual(Edge.MakeLine(new Point3D(1e6, 1e6, 0), new Point3D(1e6 + 1 + 1e-5, 1e6 + 1, 0))));
 }
 
 public class EdgeGeomEqual3DPositioningTests
 {
     [Fact]
     public void SameShapeDifferentZ() =>
-        Assert.False(Edge.MakeCircle(10).GeomEqual(Edge.MakeCircle(10).Located(new Location(new Vector(0, 0, 5)))));
+        Assert.False(Edge.MakeCircle(10).GeomEqual(Edge.MakeCircle(10).Located(new Location(new Point3D(0, 0, 5)))));
 
     [Fact]
-    public void LineIn3D() => Assert.True(Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 2, 3)).GeomEqual(Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 2, 3))));
+    public void LineIn3D() => Assert.True(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 2, 3)).GeomEqual(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 2, 3))));
 
     [Fact]
     public void LineIn3DDifferent() =>
-        Assert.False(Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 1, 0)).GeomEqual(Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 1, 1))));
+        Assert.False(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 1, 0)).GeomEqual(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 1, 1))));
 }
 
 public class EdgeGeomEqualSplineVariationsTests
 {
     [Fact]
     public void SplineControlPointWithinTolerance() =>
-        Assert.True(GeomEqualObjects.Spline(new Vector(0, 0), new Vector(1, 1), new Vector(2, 0)).GeomEqual(GeomEqualObjects.Spline(new Vector(0, 0), new Vector(1 + 1e-7, 1), new Vector(2, 0))));
+        Assert.True(GeomEqualObjects.Spline(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)).GeomEqual(GeomEqualObjects.Spline(new Point3D(0, 0, 0), new Point3D(1 + 1e-7, 1, 0), new Point3D(2, 0, 0))));
 
     [Fact]
     public void SplineControlPointOutsideTolerance() =>
-        Assert.False(GeomEqualObjects.Spline(new Vector(0, 0), new Vector(1, 1), new Vector(2, 0)).GeomEqual(GeomEqualObjects.Spline(new Vector(0, 0), new Vector(1.001, 1), new Vector(2, 0))));
+        Assert.False(GeomEqualObjects.Spline(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)).GeomEqual(GeomEqualObjects.Spline(new Point3D(0, 0, 0), new Point3D(1.001, 1, 0), new Point3D(2, 0, 0))));
 
     [Fact]
     public void SplineDifferentPointCount() =>
         // Different number of poles
-        Assert.False(GeomEqualObjects.Spline(new Vector(0, 0), new Vector(1, 1), new Vector(2, 0)).GeomEqual(GeomEqualObjects.Spline(new Vector(0, 0), new Vector(0.5, 0.5), new Vector(1, 1), new Vector(2, 0))));
+        Assert.False(GeomEqualObjects.Spline(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)).GeomEqual(GeomEqualObjects.Spline(new Point3D(0, 0, 0), new Point3D(0.5, 0.5, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0))));
 }
 
 public class EdgeGeomEqualUnknownTypeTests
@@ -544,8 +544,8 @@ public class EdgeGeomEqualUnknownTypeTests
     [Fact]
     public void InterpolationPointsUsed()
     {
-        var e1 = Edge.MakeLine(new Vector(0, 0), new Vector(1, 1));
-        var e2 = Edge.MakeLine(new Vector(0, 0), new Vector(1, 1));
+        var e1 = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 1, 0));
+        var e2 = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 1, 0));
         // Even with different numInterpolationPoints, these should be equal
         Assert.True(e1.GeomEqual(e2, numInterpolationPoints: 3));
         Assert.True(e1.GeomEqual(e2, numInterpolationPoints: 10));
@@ -565,7 +565,7 @@ public class WireGeomEqualTests
     [Fact]
     public void SameSplineWire()
     {
-        Vector[] v = [new Vector(0, 0), new Vector(1, 1), new Vector(2, 0), new Vector(3, 1)];
+        Point3D[] v = [new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0), new Point3D(3, 1, 0)];
         var w1 = Wire.Make([GeomEqualObjects.Spline(v)]);
         var w2 = Wire.Make([GeomEqualObjects.Spline(v)]);
         Assert.True(w1.GeomEqual(w2));
@@ -575,7 +575,7 @@ public class WireGeomEqualTests
     public void DifferentEdgeCount()
     {
         var w1 = GeomEqualObjects.RectangleWire(10, 5);
-        var w2 = Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(10, 0))]);
+        var w2 = Wire.Make([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(10, 0, 0))]);
         Assert.False(w1.GeomEqual(w2));
     }
 
@@ -583,16 +583,16 @@ public class WireGeomEqualTests
     public void IdenticalEdgeObjects()
     {
         // Two wires sharing the same edge objects
-        var e1 = Edge.MakeLine(new Vector(0, 0), new Vector(1, 0));
-        var e2 = Edge.MakeLine(new Vector(1, 0), new Vector(1, 1));
-        var e3 = Edge.MakeLine(new Vector(1, 1), new Vector(0, 0));
+        var e1 = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+        var e2 = Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(1, 1, 0));
+        var e3 = Edge.MakeLine(new Point3D(1, 1, 0), new Point3D(0, 0, 0));
         var w1 = Wire.Make([e1, e2, e3]);
         var w2 = Wire.Make([e1, e2, e3]);
         Assert.True(w1.GeomEqual(w2));
     }
 
     private static Wire Triangle() =>
-        Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 0), new Vector(1, 1)), Edge.MakeLine(new Vector(1, 1), new Vector(0, 0))]);
+        Wire.Make([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)), Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(1, 1, 0)), Edge.MakeLine(new Point3D(1, 1, 0), new Point3D(0, 0, 0))]);
 
     [Fact]
     public void GeometricallyEqualEdges() => Assert.True(Triangle().GeomEqual(Triangle()));
@@ -602,7 +602,7 @@ public class WireGeomEqualTests
     {
         // Two closed wires with same geometry but different starting vertex are not equal
         var w1 = Triangle();
-        var w2 = Wire.Make([Edge.MakeLine(new Vector(1, 1), new Vector(0, 0)), Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 0), new Vector(1, 1))]);
+        var w2 = Wire.Make([Edge.MakeLine(new Point3D(1, 1, 0), new Point3D(0, 0, 0)), Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)), Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(1, 1, 0))]);
         Assert.False(w1.GeomEqual(w2));
     }
 
@@ -611,7 +611,7 @@ public class WireGeomEqualTests
     {
         var w1 = Triangle();
         // Middle edge is reversed (direction (1,1) -> (1,0) instead of (1,0) -> (1,1))
-        var w2 = Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 1), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 1), new Vector(0, 0))]);
+        var w2 = Wire.Make([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)), Edge.MakeLine(new Point3D(1, 1, 0), new Point3D(1, 0, 0)), Edge.MakeLine(new Point3D(1, 1, 0), new Point3D(0, 0, 0))]);
         // OrderEdges should correct the orientation
         Assert.True(w1.GeomEqual(w2));
     }
@@ -621,15 +621,15 @@ public class WireGeomEqualTests
     {
         static Wire Square() => Wire.Make(
             [
-                Edge.MakeLine(new Vector(0, 0), new Vector(2, 0)),
-                Edge.MakeLine(new Vector(2, 0), new Vector(2, 2)),
-                Edge.MakeLine(new Vector(2, 2), new Vector(0, 2)),
-                Edge.MakeLine(new Vector(0, 2), new Vector(0, 0)),
+                Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(2, 0, 0)),
+                Edge.MakeLine(new Point3D(2, 0, 0), new Point3D(2, 2, 0)),
+                Edge.MakeLine(new Point3D(2, 2, 0), new Point3D(0, 2, 0)),
+                Edge.MakeLine(new Point3D(0, 2, 0), new Point3D(0, 0, 0)),
             ]);
         var w1 = Square();
         var w2 = Square();
-        Assert.True(w1.CheckClosed());
-        Assert.True(w2.CheckClosed());
+        Assert.True(w1.IsClosed);
+        Assert.True(w2.IsClosed);
         Assert.True(w1.GeomEqual(w2));
     }
 
@@ -639,9 +639,9 @@ public class WireGeomEqualTests
         // Wire with line + arc + line
         static Wire Make() => Wire.Make(
             [
-                Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)),
-                Edge.MakeCircle(0.5, startAngle: 0, endAngle: 180).Located(new Location(new Vector(1.5, 0, 0))),
-                Edge.MakeLine(new Vector(2, 0), new Vector(3, 0)),
+                Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)),
+                Edge.MakeCircle(0.5, startAngle: 0, endAngle: 180).Located(new Location(new Point3D(1.5, 0, 0))),
+                Edge.MakeLine(new Point3D(2, 0, 0), new Point3D(3, 0, 0)),
             ]);
         Assert.True(Make().GeomEqual(Make()));
     }
@@ -652,14 +652,14 @@ public class WireGeomEqualTests
         // Wire 1: line + arc
         var w1 = Wire.Make(
             [
-                Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)),
-                Edge.MakeCircle(0.5, startAngle: 0, endAngle: 180).Located(new Location(new Vector(1.5, 0, 0))),
+                Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)),
+                Edge.MakeCircle(0.5, startAngle: 0, endAngle: 180).Located(new Location(new Point3D(1.5, 0, 0))),
             ]);
         // Wire 2: line + different arc (different radius)
         var w2 = Wire.Make(
             [
-                Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)),
-                Edge.MakeCircle(0.6, startAngle: 0, endAngle: 180).Located(new Location(new Vector(1.6, 0, 0))),
+                Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)),
+                Edge.MakeCircle(0.6, startAngle: 0, endAngle: 180).Located(new Location(new Point3D(1.6, 0, 0))),
             ]);
         Assert.False(w1.GeomEqual(w2));
     }
@@ -668,11 +668,11 @@ public class WireGeomEqualTests
     public void AllEdgesReversedNotEqual()
     {
         // Wire 1: (0,0) -> (3,0)
-        var w1 = Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 0), new Vector(2, 1)), Edge.MakeLine(new Vector(2, 1), new Vector(3, 0))]);
+        var w1 = Wire.Make([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)), Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(2, 1, 0)), Edge.MakeLine(new Point3D(2, 1, 0), new Point3D(3, 0, 0))]);
         // Wire 2: (3,0) -> (0,0) - same path but opposite direction
-        var e1b = Edge.MakeLine(new Vector(1, 0), new Vector(0, 0));
-        var e2b = Edge.MakeLine(new Vector(2, 1), new Vector(1, 0));
-        var e3b = Edge.MakeLine(new Vector(3, 0), new Vector(2, 1));
+        var e1b = Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(0, 0, 0));
+        var e2b = Edge.MakeLine(new Point3D(2, 1, 0), new Point3D(1, 0, 0));
+        var e3b = Edge.MakeLine(new Point3D(3, 0, 0), new Point3D(2, 1, 0));
         var w2 = Wire.Make([e3b, e2b, e1b]);
         Assert.False(w1.GeomEqual(w2));
     }
@@ -680,17 +680,17 @@ public class WireGeomEqualTests
     [Fact]
     public void OpenWireDifferentStart()
     {
-        var w1 = Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 0), new Vector(2, 1)), Edge.MakeLine(new Vector(2, 1), new Vector(3, 0))]);
+        var w1 = Wire.Make([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)), Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(2, 1, 0)), Edge.MakeLine(new Point3D(2, 1, 0), new Point3D(3, 0, 0))]);
         // Different edges entirely (shifted)
-        var w2 = Wire.Make([Edge.MakeLine(new Vector(1, 0), new Vector(2, 0)), Edge.MakeLine(new Vector(2, 0), new Vector(3, 1)), Edge.MakeLine(new Vector(3, 1), new Vector(4, 0))]);
+        var w2 = Wire.Make([Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(2, 0, 0)), Edge.MakeLine(new Point3D(2, 0, 0), new Point3D(3, 1, 0)), Edge.MakeLine(new Point3D(3, 1, 0), new Point3D(4, 0, 0))]);
         Assert.False(w1.GeomEqual(w2));
     }
 
     [Fact]
     public void WireWithSplineEdges()
     {
-        Vector[] pts1 = [new Vector(0, 0), new Vector(1, 1), new Vector(2, 0), new Vector(3, 1), new Vector(4, 0)];
-        Vector[] pts2 = [new Vector(4, 0), new Vector(5, 1), new Vector(6, 0)];
+        Point3D[] pts1 = [new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0), new Point3D(3, 1, 0), new Point3D(4, 0, 0)];
+        Point3D[] pts2 = [new Point3D(4, 0, 0), new Point3D(5, 1, 0), new Point3D(6, 0, 0)];
         var w1 = Wire.Make([GeomEqualObjects.Spline(pts1), GeomEqualObjects.Spline(pts2)]);
         var w2 = Wire.Make([GeomEqualObjects.Spline(pts1), GeomEqualObjects.Spline(pts2)]);
         Assert.True(w1.GeomEqual(w2));
@@ -698,12 +698,12 @@ public class WireGeomEqualTests
 
     [Fact]
     public void SingleEdgeWire() =>
-        Assert.True(Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(5, 5))]).GeomEqual(Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(5, 5))])));
+        Assert.True(Wire.Make([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(5, 5, 0))]).GeomEqual(Wire.Make([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(5, 5, 0))])));
 
     [Fact]
     public void SingleEdgeWireReversedNotEqual() =>
         // Opposite direction means not equal
-        Assert.False(Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(5, 5))]).GeomEqual(Wire.Make([Edge.MakeLine(new Vector(5, 5), new Vector(0, 0))])));
+        Assert.False(Wire.Make([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(5, 5, 0))]).GeomEqual(Wire.Make([Edge.MakeLine(new Point3D(5, 5, 0), new Point3D(0, 0, 0))])));
 }
 
 public class GeomEqualTypeMismatchTests
@@ -711,7 +711,7 @@ public class GeomEqualTypeMismatchTests
     [Fact]
     public void DifferentGeomTypes()
     {
-        var line = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 1, 1));
+        var line = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 1, 1));
         var circle = GeomEqualObjects.CircleEdge(10);
         Assert.False(line.GeomEqual(circle));
     }

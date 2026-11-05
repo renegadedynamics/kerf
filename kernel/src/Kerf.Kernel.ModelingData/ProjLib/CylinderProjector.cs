@@ -12,7 +12,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// <summary>Projects elementary curves on a cylinder: lines parallel to the axis and circles normal to it.</summary>
 internal class CylinderProjector : Projector
 {
-    private Cylinder _cylinder = new();
+    private Cylinder3D _cylinder = new();
 
     /// <summary>Undefined projection.</summary>
     public CylinderProjector()
@@ -20,33 +20,33 @@ internal class CylinderProjector : Projector
     }
 
     /// <summary>Projection on the cylinder Cyl.</summary>
-    public CylinderProjector(in Cylinder cyl)
+    public CylinderProjector(in Cylinder3D cyl)
     {
         Init(cyl);
     }
 
     /// <summary>Projection of the line L on the cylinder Cyl.</summary>
-    public CylinderProjector(in Cylinder cyl, in Line3D l)
+    public CylinderProjector(in Cylinder3D cyl, in Line3D l)
     {
         Init(cyl);
         Project(l);
     }
 
     /// <summary>Projection of the circle C on the cylinder Cyl.</summary>
-    public CylinderProjector(in Cylinder cyl, in Circle3D c)
+    public CylinderProjector(in Cylinder3D cyl, in Circle3D c)
     {
         Init(cyl);
         Project(c);
     }
 
     /// <summary>Projection of the ellipse E on the cylinder Cyl (left to approximation: never done).</summary>
-    public CylinderProjector(in Cylinder cyl, in Ellipse3D e)
+    public CylinderProjector(in Cylinder3D cyl, in Ellipse3D e)
     {
         Init(cyl);
         Project(e);
     }
 
-    public void Init(in Cylinder cyl)
+    public void Init(in Cylinder3D cyl)
     {
         _type = OtherCurve;
         _cylinder = cyl;
@@ -54,7 +54,7 @@ internal class CylinderProjector : Projector
         _isDone = false;
     }
 
-    private static Point2D EvalPnt2d(in Point3D p, in Cylinder cy)
+    private static Point2D EvalPnt2d(in Point3D p, in Cylinder3D cy)
     {
         Vector3D op = new(cy.Location, p);
         double x = op.Dot(new Vector3D(cy.Position.XDirection));

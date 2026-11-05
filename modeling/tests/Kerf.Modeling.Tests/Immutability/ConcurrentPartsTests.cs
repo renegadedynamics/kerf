@@ -23,8 +23,8 @@ public class ConcurrentPartsTests
         ("chamfer, fillet", () =>
         {
             Shape a1 = new Box(Length, Width, Thickness);
-            Shape a4 = Chamfer(a1.SelectEdges().GroupBy(Axis.Z)[^1], length: 4).Value;
-            return Fillet(a4.SelectEdges().ParallelTo(Axis.Z), radius: 5).Value;
+            Shape a4 = Chamfer(a1.Edges().GroupBy(Axis.Z)[^1], length: 4).Value;
+            return Fillet(a4.Edges().ParallelTo(Axis.Z), radius: 5).Value;
         }),
         ("revolution", () => Revolve(new Pos(0, 50) * new Circle(6), Axis.X, revolutionArc: 180).Value),
     ];

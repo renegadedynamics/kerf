@@ -17,7 +17,7 @@ internal static class ComputeDataCS
     /// the cylinder around it; [<paramref name="first"/>, <paramref name="last"/>] its parameters.</summary>
     internal static void ChFiKPart_CornerSpine(SurfaceAdaptorBase s1, SurfaceAdaptorBase s2, in Point2D p1S1,
                                                in Point2D p2S1, in Point2D p1S2, in Point2D p2S2, double r,
-                                               ref Cylinder cyl, ref Circle3D circ, out double first,
+                                               ref Cylinder3D cyl, ref Circle3D circ, out double first,
                                                out double last)
     {
         CoordinateSystem ax = s1.Plane().Position;

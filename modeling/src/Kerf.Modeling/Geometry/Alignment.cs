@@ -31,32 +31,33 @@ public readonly record struct Alignment
     /// <param name="min">The object's minimum corner.</param>
     /// <param name="max">The object's maximum corner.</param>
     /// <param name="center">The point Center aligns; defaults to the midpoint of min and max.</param>
-    public Vector Offset(Vector min, Vector max, Vector? center = null)
+    public Vector3D Offset(Point3D min, Point3D max, Point3D? center = null)
     {
-        var c = center ?? (min + max) / 2;
+        var c = center ?? ((min.ToVector() + max.ToVector()) / 2).ToPoint();
         if (Count == 1)
         {
             return _x switch
             {
-                Align.None => new Vector(0, 0, 0),
-                Align.Min => -min,
-                Align.Max => -max,
-                _ => -c,
+                Align.None => new Vector3D(0, 0, 0),
+                Align.Min => -min.ToVector(),
+                Align.Max => -max.ToVector(),
+                _ => -c.ToVector(),
             };
         }
 
         // Per-axis alignment; a two-axis alignment leaves Z at zero
         Span<double> offset = [0, 0, 0];
+        ReadOnlySpan<double> mins = [min.X, min.Y, min.Z], centres = [c.X, c.Y, c.Z], maxes = [max.X, max.Y, max.Z];
         for (int i = 0; i < Count; i++)
         {
             offset[i] = this[i] switch
             {
-                Align.Min => -min[i],
-                Align.Center => -c[i],
-                Align.Max => -max[i],
+                Align.Min => -mins[i],
+                Align.Center => -centres[i],
+                Align.Max => -maxes[i],
                 _ => 0,
             };
         }
-        return new Vector(offset[0], offset[1], offset[2]);
+        return new Vector3D(offset[0], offset[1], offset[2]);
     }
 }

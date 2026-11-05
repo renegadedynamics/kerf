@@ -62,7 +62,7 @@ internal sealed class MakeFacetedBrepAndBrepWithVoids : ExportRoot
                 {
                     ProgressRange range = ps.Next();
                     Shell currentShell = ShapeCasts.Shell(it.Value());
-                    if (it.Value().IsClosed)
+                    if (it.Value().ClosedFlag)
                     {
                         tool.Init(map, false, stepModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0);
                         stepB.Init(currentShell, tool, fp, 0 /* OCCT: false */, localFactors, range);

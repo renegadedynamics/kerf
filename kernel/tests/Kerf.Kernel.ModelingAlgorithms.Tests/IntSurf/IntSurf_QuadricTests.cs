@@ -13,7 +13,7 @@ public class IntSurf_Quadric_Test
     [Fact]
     public void ConeApexGradientRemainsFinite()
     {
-        Cone aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)),
+        Cone3D aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)),
                             0.5, 0.0);
         SurfaceQuadric aQuadric = new(aCone);
         Point3D anApex = aCone.Apex;
@@ -39,10 +39,10 @@ public class IntSurf_QuadricTests
     private static SurfaceQuadric Make(int theKind) => theKind switch
     {
         0 => new SurfaceQuadric(new Plane3D(Frame)),
-        1 => new SurfaceQuadric(new Cylinder(Frame, 2.0)),
-        2 => new SurfaceQuadric(new Sphere(Frame, 3.0)),
-        3 => new SurfaceQuadric(new Cone(Frame, 0.4, 1.5)),
-        _ => new SurfaceQuadric(new Torus(Frame, 4.0, 1.0)),
+        1 => new SurfaceQuadric(new Cylinder3D(Frame, 2.0)),
+        2 => new SurfaceQuadric(new Sphere3D(Frame, 3.0)),
+        3 => new SurfaceQuadric(new Cone3D(Frame, 0.4, 1.5)),
+        _ => new SurfaceQuadric(new Torus3D(Frame, 4.0, 1.0)),
     };
 
     [Fact]
@@ -131,15 +131,15 @@ public class IntSurf_QuadricTests
     [Fact]
     public void QuadricsKeepTheirDefinition()
     {
-        Cylinder aCyl = new(Frame, 2.0);
+        Cylinder3D aCyl = new(Frame, 2.0);
         SurfaceQuadric aQ = new(aCyl);
         Assert.Equal(SurfaceKind.Cylinder, aQ.TypeQuadric());
         Assert.Equal(2.0, aQ.Cylinder().Radius);
         Assert.Equal(4.0e-6, QuadricTool.Tolerance(aQ));
-        Assert.Equal(6.0e-6, QuadricTool.Tolerance(new SurfaceQuadric(new Sphere(Frame, 3.0))));
+        Assert.Equal(6.0e-6, QuadricTool.Tolerance(new SurfaceQuadric(new Sphere3D(Frame, 3.0))));
         Assert.Equal(1.0e-6, QuadricTool.Tolerance(new SurfaceQuadric(new Plane3D(Frame))));
 
-        Cone aCone = new(Frame, 0.4, 1.5);
+        Cone3D aCone = new(Frame, 0.4, 1.5);
         SurfaceQuadric aQc = new(aCone);
         Assert.Equal(0.4, aQc.Cone().SemiAngle);
         Assert.Equal(1.5, aQc.Cone().RefRadius);
@@ -148,7 +148,7 @@ public class IntSurf_QuadricTests
         SurfaceQuadric aQs = new(new Plane3D(Frame));
         aQs.SetValue(aCyl);
         Assert.Equal(aQ, aQs);
-        SurfaceQuadric aQt = new(new Torus(Frame, 4.0, 1.0));
+        SurfaceQuadric aQt = new(new Torus3D(Frame, 4.0, 1.0));
         Assert.Equal(4.0, aQt.Torus().MajorRadius);
         Assert.Equal(1.0, aQt.Torus().MinorRadius);
     }

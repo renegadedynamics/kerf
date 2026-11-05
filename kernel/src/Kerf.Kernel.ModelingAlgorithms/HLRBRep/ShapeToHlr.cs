@@ -248,7 +248,7 @@ internal static class ShapeToHlr
         for (exshell.Init(original, ShapeType.Shell); exshell.More(); exshell.Next())
         { // faces in a shell (open or close)
 
-            bool closed = exshell.Current().IsClosed;
+            bool closed = exshell.Current().ClosedFlag;
 
             if (!closed)
             {

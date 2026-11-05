@@ -23,7 +23,7 @@ public sealed class OrientedBoundBox
     /// The distinct corners. A degenerate box (of a line or a planar face) has only two or four, and a
     /// flat box's corners are in order around it, ready to make a polygon.
     /// </summary>
-    public IReadOnlyList<Vector> Corners
+    public IReadOnlyList<Point3D> Corners
     {
         get
         {
@@ -47,7 +47,7 @@ public sealed class OrientedBoundBox
                 _ => [(1, 1, 1)],
             };
             var plane = Plane;
-            return order.Select(o => plane.FromLocalCoords(new Vector(o.Item1 * hs.X, o.Item2 * hs.Y, o.Item3 * hs.Z))).ToArray();
+            return order.Select(o => plane.FromLocalCoords(new Point3D(o.Item1 * hs.X, o.Item2 * hs.Y, o.Item3 * hs.Z))).ToArray();
         }
     }
 
@@ -61,28 +61,28 @@ public sealed class OrientedBoundBox
     public Plane Plane => IsEmpty ? Plane.XY : Plane.Create(Center(), XDirection, ZDirection);
 
     /// <summary>The full extents along the box's axes.</summary>
-    public Vector Size => IsEmpty
-        ? new Vector(0, 0, 0)
-        : new Vector(Wrapped.HalfSize) * 2.0;
+    public Vector3D Size => IsEmpty
+        ? new Vector3D(0, 0, 0)
+        : Wrapped.HalfSize * 2.0;
 
     /// <summary>The primary (X) direction, a unit vector.</summary>
-    public Vector XDirection => IsEmpty ? new Vector(1, 0, 0) : new Vector(Wrapped.XAxis);
+    public Direction3D XDirection => IsEmpty ? new Direction3D(1, 0, 0) : Wrapped.XAxis;
 
     /// <summary>The secondary (Y) direction, a unit vector.</summary>
-    public Vector YDirection => IsEmpty ? new Vector(0, 1, 0) : new Vector(Wrapped.YAxis);
+    public Direction3D YDirection => IsEmpty ? new Direction3D(0, 1, 0) : Wrapped.YAxis;
 
     /// <summary>The tertiary (Z) direction, a unit vector.</summary>
-    public Vector ZDirection => IsEmpty ? new Vector(0, 0, 1) : new Vector(Wrapped.ZAxis);
+    public Direction3D ZDirection => IsEmpty ? new Direction3D(0, 0, 1) : Wrapped.ZAxis;
 
     /// <summary>The centre point.</summary>
-    public Vector Center() => IsEmpty ? new Vector(0, 0, 0) : new Vector(Wrapped.Centre);
+    public Point3D Center() => IsEmpty ? new Point3D(0, 0, 0) : Wrapped.Centre;
 
     /// <summary>True if <paramref name="other"/> lies entirely within this box, by OCCT's criteria.</summary>
     public bool IsCompletelyInside(OrientedBoundBox other) => Wrapped.Contains(other.Wrapped);
 
     /// <summary>True if the point is neither inside the box nor on its surface.</summary>
-    public bool IsOutside(Vector point) => !Wrapped.Contains(point.ToPoint3D());
+    public bool IsOutside(Point3D point) => !Wrapped.Contains(point);
 
     /// <inheritdoc/>
-    public override string ToString() => $"OrientedBoundBox(center={Center().ToString("G13")}, size={Size.ToString("G13")}, plane={Plane.ToString("G13")})";
+    public override string ToString() => $"OrientedBoundBox(center={Center().Describe("G13")}, size={Size.Describe("G13")}, plane={Plane.ToString("G13")})";
 }

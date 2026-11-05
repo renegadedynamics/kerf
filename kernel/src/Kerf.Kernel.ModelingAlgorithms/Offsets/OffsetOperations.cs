@@ -196,7 +196,7 @@ public static class OffsetOperations
             foreach (Face face in openings)
             {
                 MakerOutcome.NotNull(face, nameof(openings));
-                if (!s.Faces().Any(f => f.IsSame(face)))
+                if (!s.AllFaces().Any(f => f.IsSame(face)))
                 {
                     throw new ArgumentException("An opening isn't one of the solid's faces.", nameof(openings));
                 }
@@ -216,7 +216,7 @@ public static class OffsetOperations
     private static NCollection_List<Shape> Openings(Shape shape, IEnumerable<Face> openings)
     {
         var faces = new NCollection_List<Shape>();
-        var own = shape.Faces();
+        var own = shape.AllFaces();
         foreach (Face face in openings)
         {
             MakerOutcome.NotNull(face, nameof(openings));

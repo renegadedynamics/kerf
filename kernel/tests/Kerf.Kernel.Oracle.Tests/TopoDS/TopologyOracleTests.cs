@@ -270,10 +270,10 @@ public class TopologyOracleTests(ITestOutputHelper output)
                 theOracle.Same(aS.N.Free(), aS.P.Free(), "Free");
                 theOracle.Same(aS.N.Modified(), aS.P.Modified(), "Modified");
                 theOracle.Same(aS.N.Checked(), aS.P.Checked(), "Checked");
-                theOracle.Same(aS.N.Orientable(), aS.P.IsOrientable, "Orientable");
-                theOracle.Same(aS.N.Closed(), aS.P.IsClosed, "Closed");
-                theOracle.Same(aS.N.Infinite(), aS.P.IsInfinite, "Infinite");
-                theOracle.Same(aS.N.Convex(), aS.P.IsConvex, "Convex");
+                theOracle.Same(aS.N.Orientable(), aS.P.OrientableFlag, "Orientable");
+                theOracle.Same(aS.N.Closed(), aS.P.ClosedFlag, "Closed");
+                theOracle.Same(aS.N.Infinite(), aS.P.InfiniteFlag, "Infinite");
+                theOracle.Same(aS.N.Convex(), aS.P.ConvexFlag, "Convex");
                 theOracle.Same(aS.N.Locked(), theStoredLocked ? aS.P.TShape()!.LockedFlag() : aS.P.Locked(), "Locked (unfrozen)");
             }
         }

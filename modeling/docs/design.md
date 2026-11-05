@@ -20,8 +20,8 @@ OpenCascade (OCCT).
 All modelling values are immutable. Forking a partly built design is plain assignment: no copies,
 no aliasing surprises.
 
-- **Geometry values** (`Vector`, `Axis`, `Plane`, `Location`, `BoundBox`, `Matrix`) are `readonly struct`s or immutable
-  classes.
+- **Geometry values** are the kernel's structs (`Point3D`, `Vector3D`, `Direction3D`, `BoundingBox`, `GeneralTransform3D`), and the layer's
+  `Axis`, `Plane` and `Location`, `readonly struct`s or immutable classes.
 - **Shapes** are the kernel's immutable structs, and objects (`Part`, `Sketch`, `Curve`, `Assembly`) immutable classes
   holding one (unit 10Q; [one-set-of-shapes.md](one-set-of-shapes.md)). Every operation returns a new shape.
   The Python in-place mutators become methods that return a copy:
@@ -56,13 +56,14 @@ through a generated C shim, or OCCT.NET through a generated forwarding layer (se
 
 #### Geometry values
 
-- **`Vector` and `Axis` are `readonly struct`s. `Color` is the kernel's `Kerf.Color`** (unit 10Q), with `ColorExtensions`.
-  - Plain arithmetic (add, dot, cross, normalise) runs in C#, in the same operation order as OCCT,
-    so results are bit-identical.
+- **Points, vectors, directions, boxes and transforms are the kernel's** (unit 10Q2;
+  [one-set-of-shapes.md](one-set-of-shapes.md)), with `PointExtensions`, `BoundingBoxExtensions` and `TransformExtensions`. `Color` is the kernel's
+  `Kerf.Color` (unit 10Q), with `ColorExtensions`. `Axis` is a `readonly struct`.
+  - Plain arithmetic (add, dot, cross, normalise) is the kernel's, in OCCT's operation order, so results are bit-identical.
   - Anything OCCT computes non-trivially goes through short-lived OCCT objects, so the numbers and
     the exceptions match build123d. This covers angles, axis tests, rotation, and sRGB ↔ linear
     colour conversion.
-- **`Location`, `Plane`, `Matrix`, `BoundBox` and `OrientedBoundBox` are immutable classes**, each
+- **`Location`, `Plane` and `OrientedBoundBox` are immutable classes**, each
   holding one OCCT value (OCCT.NET's structs, immutable themselves).
   - A `Location` keeps its `TopLoc_Location` for life. OCCT compares shape locations by identity, so
     shapes placed with the same `Location` instance share their location, as in build123d.
@@ -345,8 +346,8 @@ Unit 10M2 redesigned the layer's public API for .NET users (kernel decisions 157
   operator that must chain) or are the layer's lower level. They return the value, and a failure throws
   `InvalidOperationException` with the same message as the result's first error, the kernel's failure inside: they are
   for inputs known to work, as `plate -= holes` is. Kerf has no exception type of its own.
-- **No `Mode`, no tuples.** Objects take no `Mode`; the tuple conversions (`(1, 2, 3)` to a `Vector`, a `Rotation`,
-  an `Alignment`, a `Tangent`) went, for constructors: `new Vector(1, 2, 3)`, `new Alignment(Align.Min, Align.Max)`,
+- **No `Mode`, no tuples.** Objects take no `Mode`; the tuple conversions (`(1, 2, 3)` to a point, a `Rotation`,
+  an `Alignment`, a `Tangent`) went, for constructors: `new Point3D(1, 2, 3)`, `new Alignment(Align.Min, Align.Max)`,
   `new Tangent(edge, Tangency.Enclosing)`. The implicit conversions that aren't tuples stay (an `Align` to an
   `Alignment`, an `Edge` to a `Tangent`, a `double` to a `CurvePosition`): they stand for build123d's union
   parameters as overloads would, and read naturally in C#.

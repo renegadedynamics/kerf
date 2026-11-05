@@ -56,9 +56,9 @@ public class DrawingTests
         Assert.All(drawing.Edges, e => Assert.True(e.Curve is TrimmedCurve2D { BasisCurve: LineCurve2D }));
 
         // Each line's source is one of the box's edges, a visible one at the top
-        Edge[] edges = box.Edges().ToArray();
+        Edge[] edges = box.AllEdges().ToArray();
         Assert.All(drawing.Edges, e => Assert.Contains(edges, edge => edge.IsSame(e.Source)));
-        Assert.All(drawing.Visible, e => Assert.All(e.Source.Vertices(), v => Assert.Equal(30, v.Point.Z, 1e-9)));
+        Assert.All(drawing.Visible, e => Assert.All(e.Source.AllVertices(), v => Assert.Equal(30, v.Point.Z, 1e-9)));
         (Point2D min, Point2D max) = drawing.GetBounds()!.Value;
         Assert.Equal(new Point2D(0, 0), min);
         Assert.Equal(new Point2D(10, 20), max);
@@ -121,7 +121,7 @@ public class DrawingTests
         Assert.Equal(0.5 * perimeter, Length(drawing.Of(LineKind.Sharp, false)), 1e-3);
         Assert.All(drawing.Of(LineKind.Sharp, true), e => Assert.IsType<EllipseCurve2D>(((TrimmedCurve2D)e.Curve).BasisCurve));
         // Two silhouettes on the cylindrical face, and the seam in front, each 10 √(2/3)
-        Face side = cylinder.Faces().Single(f => f.Edges().Length == 3); // the side: its seam and two circles
+        Face side = cylinder.AllFaces().Single(f => f.AllEdges().Length == 3); // the side: its seam and two circles
         Assert.Equal(2, drawing.Of(LineKind.Outline, true).Count());
         Assert.All(drawing.Of(LineKind.Outline, true), e => Assert.True(e.Source.IsSame(side)));
         Assert.Equal(2 * 10 * Isometric, Length(drawing.Of(LineKind.Outline, true)), 1e-9);
@@ -144,7 +144,7 @@ public class DrawingTests
         LineDrawing drawing = cylinder.ProjectLines(Camera.Isometric, new DrawingOptions { IsoLineCount = 2 }).Value;
         Assert.NotEmpty(drawing.Of(LineKind.IsoLine, true));
         Assert.NotEmpty(drawing.Of(LineKind.IsoLine, false));
-        Face[] faces = cylinder.Faces().ToArray();
+        Face[] faces = cylinder.AllFaces().ToArray();
         Assert.All(drawing.Edges.Where(e => e.Kind == LineKind.IsoLine), e => Assert.Contains(faces, f => f.IsSame(e.Source)));
     }
 
@@ -166,7 +166,7 @@ public class DrawingTests
         LineDrawing drawing = box.ProjectLines(camera).Value;
         Assert.Equal(9, drawing.Visible.Count());
         Assert.Equal(3, drawing.Hidden.Count());
-        Point2D[] corners = [.. box.Vertices().Select(v => camera.Project(v.Point))];
+        Point2D[] corners = [.. box.AllVertices().Select(v => camera.Project(v.Point))];
         foreach (DrawnEdge edge in drawing.Edges)
         {
             Assert.True(edge.Curve is TrimmedCurve2D { BasisCurve: LineCurve2D });

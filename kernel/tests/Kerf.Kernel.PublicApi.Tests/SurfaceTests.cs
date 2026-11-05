@@ -96,10 +96,10 @@ public class SurfaceTests
         Assert.Equal(1, circle.DistanceTo(new Point3D(3, 0, 0)), 12);
         var line = new Line3D(Point3D.Origin, Direction3D.UnitX);
         Assert.Equal(3, line.DistanceTo(new Point3D(5, 3, 0)), 12);
-        var torus = new Torus(CoordinateSystem.World, 3, 1);
+        var torus = new Torus3D(CoordinateSystem.World, 3, 1);
         Assert.Equal(3, torus.MajorRadius);
         Assert.Equal(1, torus.MinorRadius);
-        var cone = new Cone(CoordinateSystem.World, Math.PI / 4, 1);
+        var cone = new Cone3D(CoordinateSystem.World, Math.PI / 4, 1);
         Assert.Equal(Math.PI / 4, cone.SemiAngle, 12);
         Assert.Equal(1, cone.RefRadius);
     }

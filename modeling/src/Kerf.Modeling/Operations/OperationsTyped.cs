@@ -15,22 +15,22 @@ public static partial class Operations
     public static Curve Mirror(Curve obj, Plane? about = null) => Mirror([(Shape)obj], about).As<Curve>();
 
     /// <summary>The part scaled by a factor about <paramref name="about"/> or, by default, its location.</summary>
-    public static Part Scale(Part obj, double by, Vector? about = null) => Scale([(Shape)obj], by, about).As<Part>();
+    public static Part Scale(Part obj, double by, Point3D? about = null) => Scale([(Shape)obj], by, about).As<Part>();
 
     /// <summary>The sketch scaled by a factor about <paramref name="about"/> or, by default, its location.</summary>
-    public static Sketch Scale(Sketch obj, double by, Vector? about = null) => Scale([(Shape)obj], by, about).As<Sketch>();
+    public static Sketch Scale(Sketch obj, double by, Point3D? about = null) => Scale([(Shape)obj], by, about).As<Sketch>();
 
     /// <summary>The curve scaled by a factor about <paramref name="about"/> or, by default, its location.</summary>
-    public static Curve Scale(Curve obj, double by, Vector? about = null) => Scale([(Shape)obj], by, about).As<Curve>();
+    public static Curve Scale(Curve obj, double by, Point3D? about = null) => Scale([(Shape)obj], by, about).As<Curve>();
 
     /// <summary>The part scaled by a factor along each axis.</summary>
-    public static Part Scale(Part obj, Vector by, Vector? about = null) => Scale([(Shape)obj], by, about).As<Part>();
+    public static Part Scale(Part obj, Vector3D by, Point3D? about = null) => Scale([(Shape)obj], by, about).As<Part>();
 
     /// <summary>The sketch scaled by a factor along each axis.</summary>
-    public static Sketch Scale(Sketch obj, Vector by, Vector? about = null) => Scale([(Shape)obj], by, about).As<Sketch>();
+    public static Sketch Scale(Sketch obj, Vector3D by, Point3D? about = null) => Scale([(Shape)obj], by, about).As<Sketch>();
 
     /// <summary>The curve scaled by a factor along each axis.</summary>
-    public static Curve Scale(Curve obj, Vector by, Vector? about = null) => Scale([(Shape)obj], by, about).As<Curve>();
+    public static Curve Scale(Curve obj, Vector3D by, Point3D? about = null) => Scale([(Shape)obj], by, about).As<Curve>();
 
     /// <summary>The part split by a plane (by default Plane.XZ), keeping the pieces <paramref name="keep"/> says.</summary>
     public static Part Split(Part obj, Plane? bisectBy = null, Keep keep = Keep.Top) => Split([(Shape)obj], bisectBy, keep).As<Part>();

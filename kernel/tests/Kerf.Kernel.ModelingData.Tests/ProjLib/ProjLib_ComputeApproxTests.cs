@@ -305,7 +305,7 @@ public class ProjLib_ComputeApproxTests
         var aProj = new ComputeApprox(new CurveAdaptor(anEl), aS, 1.0e-6);
         BSplineCurve2D? aRes = aProj.BSpline();
         Assert.NotNull(aRes);
-        Cone aCo = aCone.Cone;
+        Cone3D aCo = aCone.Cone;
         for (int i = 0; i <= 40; i++)
         {
             double t = 2 * M_PI * i / 40;

@@ -18,7 +18,7 @@ public static partial class CompoundExtensions
         public static Compound Make<T>(IEnumerable<T> shapes) where T : IShape => TopoUtil.MakeCompoundOf(shapes.Select(s => s.AsShape()));
 
         /// <summary>A shell extruded into a compound of solids.</summary>
-        public static Compound Extrude(Shell obj, Vector direction) => (Compound)TopoUtil.Extrude(obj, direction);
+        public static Compound Extrude(Shell obj, Vector3D direction) => (Compound)TopoUtil.Extrude(obj, direction);
     }
 
     extension<TSelf>(TSelf self) where TSelf : IShape3D
@@ -80,7 +80,7 @@ public static partial class CompoundExtensions
 
     /// <summary>
     /// The shapes of one kind directly inside this compound and the compounds directly inside it (build123d's
-    /// <c>get_type</c>): not, as <c>SelectFaces</c> does, the faces of its solids.
+    /// <c>get_type</c>): not, as <c>Faces</c> does, the faces of its solids.
     /// </summary>
     public static List<T> ElementsOfType<T>(this IShape3D self) where T : struct, IShape<T> => ElementsOfTypeOf<T>(self.AsShape());
 
@@ -97,7 +97,7 @@ public static partial class CompoundExtensions
     }
 
     /// <summary>The centre of mass of the compound's contents (by default) or of its bounding box.</summary>
-    internal static Vector CenterOf(Shape self, CenterOf centerOf)
+    internal static Point3D CenterOf(Shape self, CenterOf centerOf)
     {
         self.NeedsGeometry("center");
         switch (centerOf)
@@ -114,7 +114,7 @@ public static partial class CompoundExtensions
                     ShapeType.Face or ShapeType.Shell => Dimension.Area,
                     _ => Dimension.Volume,
                 };
-                return new Vector(self.MassProperties(dimension).CentreOfMass);
+                return self.MassProperties(dimension).CentreOfMass;
             }
             default:
                 return self.BoundBox().Center();

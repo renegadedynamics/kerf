@@ -304,7 +304,7 @@ internal class EdgeFace
 
         if (surfType == SurfaceKind.Cylinder)
         {
-            Cylinder cyl = aBAS.Cylinder();
+            Cylinder3D cyl = aBAS.Cylinder();
             Axis3D ax1 = cyl.Axis;
             Line3D linAxis = new(ax1);
             double dc, radius = cyl.Radius;
@@ -318,7 +318,7 @@ internal class EdgeFace
 
         if (surfType == SurfaceKind.Cone)
         {
-            Cone cone = aBAS.Cone();
+            Cone3D cone = aBAS.Cone();
             Axis3D ax1 = cone.Axis;
             Line3D linAxis = new(ax1);
             double dc, radius, ds, semiAngle;
@@ -339,7 +339,7 @@ internal class EdgeFace
         {
             double majorRadius, minorRadius, dc;
 
-            Torus torus = aBAS.Torus();
+            Torus3D torus = aBAS.Torus();
             Point3D pLoc = torus.Location;
             majorRadius = torus.MajorRadius;
 
@@ -898,7 +898,7 @@ internal class EdgeFace
 
             eLength = global::Kerf.Engine.Intersection.Tools.IntTools.Length(aCurve.Edge());
 
-            Cylinder cylinder = aSurface.Cylinder();
+            Cylinder3D cylinder = aSurface.Cylinder();
             radius = cylinder.Radius;
             dLR = 2 * radius;
 

@@ -1524,7 +1524,7 @@ internal sealed class Evolved
         {
             Wire nw = new();
             b.MakeWire(ref nw);
-            bool isClosed = iteF.Value().IsClosed;
+            bool isClosed = iteF.Value().ClosedFlag;
 
             for (Iterator iteW = new(iteF.Value()); iteW.More(); iteW.Next())
             {

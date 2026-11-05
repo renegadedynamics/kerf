@@ -410,7 +410,7 @@ internal class SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, TheSegm
         SurfaceKind typeQuad = quadric.TypeQuadric();
         if (typeQuad == SurfaceKind.Cone)
         {
-            Cone cone = quadric.Cone();
+            Cone3D cone = quadric.Cone();
             double semiAngle = Math.Abs(cone.SemiAngle);
             if (semiAngle < 0.02 || semiAngle > 1.55)
             {
@@ -1216,7 +1216,7 @@ internal class SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, TheSegm
         double f, l, u1f, u1l, u2f, u2l, uEgde, TOL, dist, r, rRel, tol;
         Curve3D cEdge = Tool.Curve(e, out f, out l)!;
 
-        Cylinder cyl = aQuadric.Cylinder();
+        Cylinder3D cyl = aQuadric.Cylinder();
         Axis3D ax1 = cyl.Axis;
         Line3D lin = new(ax1);
         LineCurve3D cAxis = new(lin);

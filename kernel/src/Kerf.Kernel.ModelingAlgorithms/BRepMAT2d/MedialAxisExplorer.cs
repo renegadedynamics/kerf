@@ -93,7 +93,7 @@ internal sealed class MedialAxisExplorer
 
         // Checks the connection and creates a new spine.
         NewContour();
-        _isClosed[_currentContour] = spine.IsClosed;
+        _isClosed[_currentContour] = spine.ClosedFlag;
 
         Edge firstEdge = exp.Current();
         Edge prevEdge = firstEdge;

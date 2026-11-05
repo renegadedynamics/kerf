@@ -81,7 +81,7 @@ public sealed class EdgeCurve
     public Vector3D Tangent(double u);
     public bool TryGetLine(out Line3D line);  public bool TryGetCircle(out Circle3D circle);   // and Ellipse, Hyperbola, Parabola
     public bool TryGetBSpline(out BSplineCurve3D curve);  public bool TryGetBezier(out BezierCurve3D curve);
-    public double Length();                                     // Measurement area, GCPnts_AbscissaPoint
+    public double IntegrateLength();                                   // Measurement area, GCPnts_AbscissaPoint
     public double ParameterAtLength(double length, double fromParameter);
     public ImmutableArray<CurvePoint> Discretize(DiscretizeOptions options);   // GCPnts_(Quasi)UniformDeflection
 }
@@ -125,7 +125,7 @@ public sealed class ShapeGraph                                  // TopExp.MapSha
 ## Examples
 
 ```csharp
-foreach (Face face in solid.Faces())
+foreach (Face face in solid.AllFaces())
     if (face.ToSurface().TryGetPlane(out Plane3D plane) && plane.Normal.IsParallel(Direction3D.Z, 1e-9))
         topFaces.Add(face);
 ```

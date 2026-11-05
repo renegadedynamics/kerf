@@ -265,7 +265,7 @@ internal class ALineToWLine
             SurfaceQuadric quad = (ii == 1) ? _quad1 : _quad2;
             if (quad.TypeQuadric() == SurfaceKind.Cone)
             {
-                Cone cone = quad.Cone();
+                Cone3D cone = quad.Cone();
                 Point3D apex = cone.Apex;
                 if (apex.SquareDistanceTo(pntOn2S.Value()) > sqTol)
                 {
@@ -314,7 +314,7 @@ internal class ALineToWLine
             SurfaceQuadric quad = (i != 0) ? _quad2 : _quad1;
             if (quad.TypeQuadric() == SurfaceKind.Cone)
             {
-                Cone cone = quad.Cone();
+                Cone3D cone = quad.Cone();
                 Xyz rVec = pnt3d.XYZ() - cone.Apex.XYZ();
                 Xyz dir = cone.Axis.Direction.XYZ();
 
@@ -322,7 +322,7 @@ internal class ALineToWLine
             }
             else if (quad.TypeQuadric() == SurfaceKind.Sphere)
             {
-                Sphere sphere = quad.Sphere();
+                Sphere3D sphere = quad.Sphere();
                 Xyz rVec = pnt3d.XYZ() - sphere.Location.XYZ();
                 Xyz dir = sphere.Position.Direction.XYZ();
                 double r = sphere.Radius;

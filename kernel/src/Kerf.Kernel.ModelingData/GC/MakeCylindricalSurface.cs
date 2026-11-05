@@ -20,7 +20,7 @@ internal sealed class MakeCylindricalSurface : Root
     private CylindricalSurface? _theCylinder;
 
     /// <summary>A cylinder from the gp_Cylinder C.</summary>
-    public MakeCylindricalSurface(in Cylinder c)
+    public MakeCylindricalSurface(in Cylinder3D c)
     {
         _theError = Done;
         _theCylinder = new CylindricalSurface(c);
@@ -55,7 +55,7 @@ internal sealed class MakeCylindricalSurface : Root
     public MakeCylindricalSurface(in Circle3D circ)
     {
         // gce_MakeCylinder(Circ) always succeeds, so its implicit conversion can't throw.
-        Cylinder cyl = new MakeCylinder(circ).Value();
+        Cylinder3D cyl = new MakeCylinder(circ).Value();
         _theCylinder = new CylindricalSurface(cyl);
         _theError = Done;
     }
@@ -72,7 +72,7 @@ internal sealed class MakeCylindricalSurface : Root
     }
 
     /// <summary>A cylinder coaxial to Cyl with radius |Cyl.Radius() − Dist|.</summary>
-    public MakeCylindricalSurface(in Cylinder cyl, double dist)
+    public MakeCylindricalSurface(in Cylinder3D cyl, double dist)
     {
         _theError = Done;
         double r = Math.Abs(cyl.Radius - dist);
@@ -81,10 +81,10 @@ internal sealed class MakeCylindricalSurface : Root
     }
 
     /// <summary>A cylinder coaxial to Cyl through Point.</summary>
-    public MakeCylindricalSurface(in Cylinder cyl, in Point3D point)
+    public MakeCylindricalSurface(in Cylinder3D cyl, in Point3D point)
     {
         _theError = Done;
-        Cylinder c = cyl;
+        Cylinder3D c = cyl;
         Line3D l = new Line3D(c.Axis);
         double r = l.DistanceTo(point);
         c = c.WithRadius(r);
