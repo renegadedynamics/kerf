@@ -2,7 +2,7 @@
 
 > **Agreed, 5 November 2026** (decision 1644). Started. The owner's order: "Let's get these phase 10 units done, then we
 > can go ahead and optimise from there." So optimisation comes first, and the points the owner set aside until after 0.2.0
-> follow it. The next release is 0.3.0.
+> follow it. The next release is 0.3.0, with no fixed scope and no rush: possibly Saturday 7 November (decision 1681).
 
 ## The goal
 
@@ -73,6 +73,8 @@ The owner set these aside until after 0.2.0 (decision 1642). They don't depend o
 | **11K** The remaining exceptions | Operators, constructors and the shapes' own methods still throw (decisions 1589, 1592). | **Closed: the owner keeps them** (decision 1644) |
 | **11L** Sharp edges in the API | From `one-set-of-shapes.md`'s "Left": `shape.BoundBox()` beside `shape.BoundingBox()`, with different defaults; clashes with `Kerf.Meshing`, `Kerf.Exchange` and `Kerf.Offsets`; odd internal names. Also error messages that still name OCCT's types: `Plane`'s "Expected gp_Pln…", which Bento shows in a cell for a zero `zDir`, and `TopoUtil.TypeName`'s `TopoDS_Face` and so on. And STEP's header, which still says organisation `Open CASCADE`, an Open CASCADE processor and the product name `Open CASCADE STEP translator`: change them to Kerf, and update STEP's fixtures once. | The API's points are best done before anyone relies on them. **The messages and STEP's header are the owner's for the next release** (decision 1643) |
 | **11O** Deflection without a flag (decision 1680) | OCCT's mesher doesn't check surface deflection on elementary surfaces, so long fillets miss it: 3.7× on `data/occ/bottle.brep`, 1.7× on `Ball.brep`. `ControlAllSurfaces` narrows that, with more triangles, and is off by default. The owner feels we can do better here. Find a mesher that meets the deflection well enough, at a sensible triangle count, for the option to go altogether. | **The owner's note, for later.** Not for 0.3.0 |
+| **11P** Flaky tests (decision 1681) | The ones known: `bug24157`'s time checks, and the memory trends of `bug7287` and `bug24863`, which flip between runs because they measure heap growth under a garbage collector, and `bug31075`. Find out why each flips, and redesign it if it can't be made reliable as it is. Every corpus comparison has had to explain these. | The owner asked for this |
+| **11Q** Slow use cases (decision 1681) | Once Kerf is close to native in most or all cases, stop comparing with native and simply improve what's slow. Build the list from what takes longest: the corpus's slowest cases and the rig's slowest suites, as well as Bento's examples. "Extrude until" is the model: most of its time went on a sort that barely needed to run. | The owner would happily spend more time on this, before or after 0.3.0 |
 | **11M** Engine tidying | About 3,300 IDE1006 exemptions; the `Transient` base; 572 "touch" rows in the bug triage, fixed when their code is next changed. | Opportunistic: no unit of its own unless something needs it |
 | **11N** StepTidy (decision 1645) | Port OCCT's StepTidy (2,655 lines, with its GTests): after writing, it merges STEP entities that are equal, such as points, directions, lines and planes, and removes the duplicates. `CleanDuplicates` is already there for it, off by default as in OCCT. Then measure file size and writing time on the dataset's STEP files, and check that the files read back the same. | With STEP's header in 11L, so that STEP's fixtures change once. Whether it's on by default goes to the owner with the measurements. For 0.3.0 |
 
