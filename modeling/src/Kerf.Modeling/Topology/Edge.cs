@@ -17,7 +17,7 @@ public static partial class EdgeExtensions
 
         /// <summary>The centre of the circle or ellipse the edge lies on.</summary>
         /// <exception cref="InvalidOperationException">The edge is neither.</exception>
-        public Vector ArcCenter
+        public Point3D ArcCenter
         {
             get
             {
@@ -30,14 +30,14 @@ public static partial class EdgeExtensions
                         geom.TryGetCircle(out var c);
                         var pos = c.Position;
                         var loc = pos.Location;
-                        return new Vector(loc);
+                        return loc;
                     }
                     case GeomType.Ellipse:
                     {
                         geom.TryGetEllipse(out var c);
                         var pos = c.Position;
                         var loc = pos.Location;
-                        return new Vector(loc);
+                        return loc;
                     }
                     default:
                         throw new InvalidOperationException($"{type} has no arc center");
@@ -93,15 +93,15 @@ public static partial class EdgeExtensions
         /// and if that fails to validate, the edge is searched numerically.
         /// </remarks>
         /// <exception cref="ArgumentException">The point isn't on the edge.</exception>
-        internal double ParamAtPointOfEdge(Vector point, bool normalize = true)
+        internal double ParamAtPointOfEdge(Point3D point, bool normalize = true)
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("Can't find param on empty edge");
             var (paramMin, paramMax) = self.Range;
 
             // Method 1: the point is a vertex of the edge (on a closed edge, either end)
-            var nearest = self.SelectVertices().MinBy(v => (v.ToVector() - point).Length);
-            if (!nearest.IsEmpty && (nearest.ToVector() - point).Length <= Constants.Tolerance)
+            var nearest = self.SelectVertices().MinBy(v => (v.Point - point).Magnitude);
+            if (!nearest.IsEmpty && (nearest.Point - point).Magnitude <= Constants.Tolerance)
             {
                 var param = self.ParameterOf(nearest);
                 var adaptor = self.ToCurve();
@@ -113,13 +113,13 @@ public static partial class EdgeExtensions
 
             var separation = self.DistanceTo(point);
             if (!TopologyUtils.IsCloseB(separation, 0, absTol: Constants.Tolerance))
-                throw new ArgumentException($"point ({point}) is {separation} from edge");
+                throw new ArgumentException($"point ({point.Describe()}) is {separation} from edge");
 
             // Method 2: project the point onto the curve. Some curves give a value outside the range.
             double projected;
             {
                 self.TryGetCurve(out var curve, out _);
-                var pnt = point.ToPoint3D();
+                var pnt = point;
                 if (curve is null || !curve.TryProjectNearest(pnt, out var nearestPoint))
                     throw new InvalidOperationException("The point can't be projected onto the edge's curve");
                 projected = nearestPoint.Parameter;
@@ -131,7 +131,7 @@ public static partial class EdgeExtensions
                 var u = adaptor.LengthBetween(paramMin, projected) / adaptor.Length;
                 if (!self.IsForward)
                     u = 1 - u;
-                if ((self.PositionAt(u) - point).Length < Constants.Tolerance)
+                if ((self.PositionAt(u) - point).Magnitude < Constants.Tolerance)
                     return normalize ? u : projected;
             }
 
@@ -143,9 +143,9 @@ public static partial class EdgeExtensions
                 double step = 1.0 / intervals;
                 for (int i = 0; i < intervals; i++)
                 {
-                    var (x, fun) = Numerics.MinimizeBounded(u => (self.PositionAt(u) - point).Length, i * step, (i + 1) * step,
+                    var (x, fun) = Numerics.MinimizeBounded(u => (self.PositionAt(u) - point).Magnitude, i * step, (i + 1) * step,
                                                            Constants.Tolerance / 2);
-                    if (fun < (self.PositionAt(x + Constants.Tolerance) - self.PositionAt(x - Constants.Tolerance)).Length)
+                    if (fun < (self.PositionAt(x + Constants.Tolerance) - self.PositionAt(x - Constants.Tolerance)).Magnitude)
                     {
                         var normalized = Math.Round(x, Constants.ToleranceDigits);
                         return normalize ? normalized : self.ParamAt(normalized);
@@ -189,7 +189,7 @@ public static partial class EdgeExtensions
                 trimmed = Failures.Get(Edge.FromCurve(curve!, range), () => "trim");
             }
             // Reverse it if necessary
-            bool sameStart = (trimmed.PositionAt(0) - startPoint).Length < Constants.Tolerance;
+            bool sameStart = (trimmed.PositionAt(0) - startPoint).Magnitude < Constants.Tolerance;
             bool sameDirection = self.TangentAt(startU).Dot(trimmed.TangentAt(0)) > 1 - Constants.Tolerance;
             return sameStart && sameDirection ? trimmed : trimmed.Reversed(reconstruct: true);
         }
@@ -215,7 +215,7 @@ public static partial class EdgeExtensions
             var intersections = self.Intersect(other);
             if (intersections.Count == 0)
                 return default(Edge);
-            var trims = new ShapeList<Edge>(intersections.Vertices().Select(p => self.Trim(0, p.ToVector())));
+            var trims = new ShapeList<Edge>(intersections.Vertices().Select(p => self.Trim(0, p.Point)));
             return trims.OrderBy(e => e.Length).First();
         }
 
@@ -239,7 +239,7 @@ public static partial class EdgeExtensions
             new(self.FindIntersections(other, tolerance).Select(p => Vertex.Make(p)));
 
         /// <inheritdoc cref="FindIntersectionPoints"/>
-        public IReadOnlyList<Vector> FindIntersections(object? other = null, double tolerance = Constants.Tolerance)
+        public IReadOnlyList<Point3D> FindIntersections(object? other = null, double tolerance = Constants.Tolerance)
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("Can't find intersections of empty edge");
@@ -257,11 +257,11 @@ public static partial class EdgeExtensions
             var intersected = otherEdge is { IsEmpty: false }
                 ? selfCurve.Intersect(EdgeExtensions.CurveOnPlane(otherEdge!.Value, pln), tolerance)
                 : selfCurve.SelfIntersections(tolerance);
-            var crosses = new List<Vector>();
+            var crosses = new List<Point3D>();
             foreach (var hit in Failures.Get(intersected, () => "intersect"))
-                crosses.Add(plane.FromLocalCoords(new Vector(hit.Point.X, hit.Point.Y)));
+                crosses.Add(plane.FromLocalCoords(new Point3D(hit.Point.X, hit.Point.Y, 0)));
             // The crossings may lie beyond the ends of the edges
-            var valid = new List<Vector>();
+            var valid = new List<Point3D>();
             foreach (var pnt in crosses)
             {
                 try
@@ -288,7 +288,7 @@ public static partial class EdgeExtensions
                 return self.TangentAngleAt(0) == angle ? [0] : [];
             // A curve of the tangent angle along the edge, intercepted by horizontal lines
             int periodic = self.CheckClosed() ? 1 : 0;   // a closed edge's end is its start
-            var points = new List<Vector>();
+            var points = new List<Point3D>();
             double? previous = null;
             double discontinuities = 0.0;
             for (int i = 0; i < 101 - periodic; i++)
@@ -301,16 +301,16 @@ public static partial class EdgeExtensions
                     tangent += 360 * discontinuities;
                 }
                 previous = tangent;
-                points.Add(new Vector(i / 100.0, tangent));
+                points.Add(new Point3D(i / 100.0, tangent, 0));
             }
             var tanCurve = Edge.MakeSpline(points);
             var box = tanCurve.BoundBox();
             int minRange = 360 * (int)Math.Floor(box.Min.Y / 360);
             int maxRange = 360 * (int)Math.Ceiling(box.Max.Y / 360);
-            var intercepts = new List<Vector>();
+            var intercepts = new List<Point3D>();
             for (int i = minRange; i <= maxRange; i += 360)
             {
-                var line = Edge.MakeLine(new Vector(0, angle + i, 0), new Vector(100, angle + i, 0));
+                var line = Edge.MakeLine(new Point3D(0, angle + i, 0), new Point3D(100, angle + i, 0));
                 intercepts.AddRange(tanCurve.FindIntersections(line));
             }
             return [.. intercepts.Select(p => p.X)];
@@ -324,12 +324,10 @@ public static partial class EdgeExtensions
         {
             if (self.GeomType != other.GeomType)
                 return false;
-            if (self.PositionAt(0) != other.PositionAt(0) || self.PositionAt(1) != other.PositionAt(1))
+            if (!self.PositionAt(0).IsNear(other.PositionAt(0)) || !self.PositionAt(1).IsNear(other.PositionAt(1)))
                 return false;
             var ga1 = self.GeomAdaptor();
             var ga2 = other.GeomAdaptor();
-            static Vector V(Point3D p) => new(p);
-            static Vector D(Axis3D a) => new(a.Direction);
             switch (self.GeomType)
             {
                 case GeomType.Line:
@@ -338,8 +336,8 @@ public static partial class EdgeExtensions
                 {
                     ga1.TryGetCircle(out var c1);
                     ga2.TryGetCircle(out var c2);
-                    return Math.Abs(c1.Radius - c2.Radius) < tolerance && V(c1.Location) == V(c2.Location)
-                           && D(c1.Axis) == D(c2.Axis);
+                    return Math.Abs(c1.Radius - c2.Radius) < tolerance && c1.Location.IsNear(c2.Location)
+                           && c1.Axis.Direction.IsNear(c2.Axis.Direction);
                 }
                 case GeomType.Ellipse:
                 {
@@ -347,7 +345,7 @@ public static partial class EdgeExtensions
                     ga2.TryGetEllipse(out var e2);
                     return Math.Abs(e1.MajorRadius - e2.MajorRadius) < tolerance
                            && Math.Abs(e1.MinorRadius - e2.MinorRadius) < tolerance
-                           && V(e1.Location) == V(e2.Location) && D(e1.Axis) == D(e2.Axis);
+                           && e1.Location.IsNear(e2.Location) && e1.Axis.Direction.IsNear(e2.Axis.Direction);
                 }
                 case GeomType.Hyperbola:
                 {
@@ -355,14 +353,14 @@ public static partial class EdgeExtensions
                     ga2.TryGetHyperbola(out var h2);
                     return Math.Abs(h1.MajorRadius - h2.MajorRadius) < tolerance
                            && Math.Abs(h1.MinorRadius - h2.MinorRadius) < tolerance
-                           && V(h1.Location) == V(h2.Location) && D(h1.Axis) == D(h2.Axis);
+                           && h1.Location.IsNear(h2.Location) && h1.Axis.Direction.IsNear(h2.Axis.Direction);
                 }
                 case GeomType.Parabola:
                 {
                     ga1.TryGetParabola(out var p1);
                     ga2.TryGetParabola(out var p2);
-                    return Math.Abs(p1.Focal - p2.Focal) < tolerance && V(p1.Location) == V(p2.Location)
-                           && D(p1.Axis) == D(p2.Axis);
+                    return Math.Abs(p1.Focal - p2.Focal) < tolerance && p1.Location.IsNear(p2.Location)
+                           && p1.Axis.Direction.IsNear(p2.Axis.Direction);
                 }
                 case GeomType.Bezier:
                 {
@@ -372,7 +370,7 @@ public static partial class EdgeExtensions
                         return false;
                     for (int i = 0; i < b1.PoleCount; i++)
                     {
-                        if (V(b1.Poles[i]) != V(b2.Poles[i]))
+                        if (!b1.Poles[i].IsNear(b2.Poles[i]))
                             return false;
                         if (b1.IsRational && Math.Abs(b1.Weights[i] - b2.Weights[i]) >= tolerance)
                             return false;
@@ -388,7 +386,7 @@ public static partial class EdgeExtensions
                         return false;
                     for (int i = 0; i < s1.PoleCount; i++)
                     {
-                        if (V(s1.Poles[i]) != V(s2.Poles[i]))
+                        if (!s1.Poles[i].IsNear(s2.Poles[i]))
                             return false;
                         if (s1.IsRational && Math.Abs(s1.Weights[i] - s2.Weights[i]) >= tolerance)
                             return false;
@@ -406,7 +404,7 @@ public static partial class EdgeExtensions
                         return false;
                     var d1 = o1.Direction;
                     var d2 = o2.Direction;
-                    if (new Vector(d1) != new Vector(d2))
+                    if (!d1.IsNear(d2))
                         return false;
                     var basis1 = o1.BasisCurve;
                     var basis2 = o2.BasisCurve;
@@ -416,7 +414,7 @@ public static partial class EdgeExtensions
                     for (int i = 1; i <= numInterpolationPoints; i++)
                     {
                         double t = i / (double)(numInterpolationPoints + 1);
-                        if (self.PositionAt(t) != other.PositionAt(t))
+                        if (!self.PositionAt(t).IsNear(other.PositionAt(t)))
                             return false;
                     }
                     return true;
@@ -427,7 +425,7 @@ public static partial class EdgeExtensions
         /// The edge projected onto a shape along <paramref name="direction"/>, or from a <paramref name="center"/>; one of the
         /// two must be given. The projections run the same way as this edge.
         /// </summary>
-        public ShapeList<Edge> ProjectToShape(Shape targetObject, Vector? direction = null, Vector? center = null) =>
+        public ShapeList<Edge> ProjectToShape(Shape targetObject, Vector3D? direction = null, Point3D? center = null) =>
             Wire.Make([self]).ProjectToShape(targetObject, direction, center).Edges();
     }
 
@@ -437,8 +435,8 @@ public static partial class EdgeExtensions
         /// <summary>An infinite line along an axis.</summary>
         public static Edge FromAxis(Axis axis)
         {
-            var pnt = axis.Position.ToPoint3D();
-            var dir = axis.Direction.ToDirection3D();
+            var pnt = axis.Position;
+            var dir = axis.Direction.ToDirection();
             var line = new LineCurve3D(pnt, dir);
             return EdgeExtensions.FromCurve(line);
         }
@@ -446,7 +444,7 @@ public static partial class EdgeExtensions
         // ---- Factories ----
 
         /// <summary>A vertex extruded into an edge.</summary>
-        public static Edge Extrude(Vertex obj, Vector direction)
+        public static Edge Extrude(Vertex obj, Vector3D direction)
         {
             if (obj.IsEmpty)
                 throw new ArgumentException("Can't extrude empty vertex");
@@ -457,7 +455,7 @@ public static partial class EdgeExtensions
         /// A Bézier curve, rational if <paramref name="weights"/> (one per control point) are given. The first and last
         /// control points are the ends of the curve.
         /// </summary>
-        public static Edge MakeBezier(IReadOnlyList<Vector> controlPoints, IReadOnlyList<double>? weights = null)
+        public static Edge MakeBezier(IReadOnlyList<Point3D> controlPoints, IReadOnlyList<double>? weights = null)
         {
             if (controlPoints.Count < 2)
                 throw new ArgumentException("Give at least two control points, the start and the end.");
@@ -474,8 +472,8 @@ public static partial class EdgeExtensions
             return EdgeExtensions.FromCurve(curve);
         }
 
-        /// <inheritdoc cref="MakeBezier(IReadOnlyList{Vector}, IReadOnlyList{double}?)"/>
-        public static Edge MakeBezier(params Vector[] controlPoints) => Edge.MakeBezier((IReadOnlyList<Vector>)controlPoints);
+        /// <inheritdoc cref="MakeBezier(IReadOnlyList{Point3D}, IReadOnlyList{double}?)"/>
+        public static Edge MakeBezier(params Point3D[] controlPoints) => Edge.MakeBezier((IReadOnlyList<Point3D>)controlPoints);
 
         /// <summary>A circle, or an arc of one, centred on the plane's origin (default XY).</summary>
         public static Edge MakeCircle(double radius, Plane? plane = null, double startAngle = 360.0, double endAngle = 360.0,
@@ -497,8 +495,8 @@ public static partial class EdgeExtensions
                                        AngularDirection angularDirection = AngularDirection.CounterClockwise)
         {
             plane ??= Plane.XY;
-            var origin = plane.Origin.ToPoint3D();
-            var zDir = plane.ZDir.ToDirection3D();
+            var origin = plane.Origin;
+            var zDir = plane.ZDir.ToDirection();
             var ax1 = new Axis3D(origin, zDir);
             var ax2 = plane.ToFrame3D();
             double correction;
@@ -556,8 +554,8 @@ public static partial class EdgeExtensions
                                          AngularDirection angularDirection = AngularDirection.CounterClockwise)
         {
             plane ??= Plane.XY;
-            var origin = plane.Origin.ToPoint3D();
-            var zDir = plane.ZDir.ToDirection3D();
+            var origin = plane.Origin;
+            var zDir = plane.ZDir.ToDirection();
             var ax1 = new Axis3D(origin, zDir);
             var ax2 = plane.ToFrame3D();
             double correction;
@@ -586,18 +584,18 @@ public static partial class EdgeExtensions
         /// <summary>
         /// A helix of a given pitch, height and radius, on a cylinder or, with a cone <paramref name="angle"/> (degrees), on a cone.
         /// </summary>
-        public static Edge MakeHelix(double pitch, double height, double radius, Vector? center = null, Vector? normal = null,
+        public static Edge MakeHelix(double pitch, double height, double radius, Point3D? center = null, Vector3D? normal = null,
                                      double angle = 0.0, bool lefthand = false)
         {
-            var c = (center ?? new Vector(0, 0, 0)).ToPoint3D();
-            var n = (normal ?? new Vector(0, 0, 1)).ToDirection3D();
+            var c = (center ?? new Point3D(0, 0, 0));
+            var n = (normal ?? new Vector3D(0, 0, 1)).ToDirection();
             var ax3 = new CoordinateSystem(c, n);
             // The surface the helix is wrapped around
             Surface surface = angle == 0.0
                 ? new CylindricalSurface(ax3, radius)
                 : new ConicalSurface(ax3, angle * Constants.DegToRad, radius);
             // A segment in the surface's (u, v) domain
-            var lineDir = new Vector((lefthand ? -1 : 1) * 2 * Math.PI, pitch).Normalized();
+            var lineDir = new Vector3D((lefthand ? -1 : 1) * 2 * Math.PI, pitch, 0).Normalized();
             var lineLength = height / lineDir.Y / Math.Cos(angle * Constants.DegToRad);
             var origin2d = new Point2D(0, 0);
             var dir2d = new Direction2D(lineDir.X, lineDir.Y);
@@ -611,10 +609,10 @@ public static partial class EdgeExtensions
         }
 
         /// <summary>A line between two points.</summary>
-        public static Edge MakeLine(Vector point1, Vector point2)
+        public static Edge MakeLine(Point3D point1, Point3D point2)
         {
-            var p1 = point1.ToPoint3D();
-            var p2 = point2.ToPoint3D();
+            var p1 = point1;
+            var p2 = point2;
             var line = Edge.Line(p1, p2);
             if (!line.TryGetValue(out var edge))
                 throw new ArgumentException($"Can't make a line from {point1} to {point2}: {line.Error!.Message}");
@@ -643,10 +641,10 @@ public static partial class EdgeExtensions
         /// <param name="parameters">The parameter at each point (one more if periodic).</param>
         /// <param name="scale">Scale the tangents to the derivative of the Lagrange interpolation, using only their direction.</param>
         /// <param name="tolerance">How close points and how short tangents may be.</param>
-        public static Edge MakeSpline(IReadOnlyList<Vector> points, IReadOnlyList<Vector?>? tangents = null, bool periodic = false,
+        public static Edge MakeSpline(IReadOnlyList<Point3D> points, IReadOnlyList<Vector3D?>? tangents = null, bool periodic = false,
                                       IReadOnlyList<double>? parameters = null, bool scale = true, double tolerance = 1e-6)
         {
-            var pnts = points.Select(p => p.ToPoint3D()).ToArray();
+            var pnts = points.Select(p => p).ToArray();
             if (parameters is not null && parameters.Count != points.Count + (periodic ? 1 : 0))
                 throw new ArgumentException(
                     "There must be one parameter for each interpolation point (plus one if periodic), or none specified. "
@@ -656,7 +654,7 @@ public static partial class EdgeExtensions
             {
                 if (tangents.Count == 2 && points.Count != 2)
                     // The start and end tangents only
-                    tangentArray = [(tangents[0] ?? new Vector(0, 0, 0)).ToVector3D(), (tangents[1] ?? new Vector(0, 0, 0)).ToVector3D()];
+                    tangentArray = [tangents[0] ?? Vector3D.Zero, tangents[1] ?? Vector3D.Zero];
                 else
                 {
                     if (tangents.Count != points.Count)
@@ -664,7 +662,7 @@ public static partial class EdgeExtensions
                             "There must be one tangent for each interpolation point, or just two end point tangents. "
                             + $"Tangent count: {tangents.Count}, point count: {points.Count}");
                     // A missing tangent is a zero one, which the kernel leaves free
-                    tangentArray = [.. tangents.Select(t => (t ?? new Vector(0, 0, 0)).ToVector3D())];
+                    tangentArray = [.. tangents.Select(t => t ?? Vector3D.Zero)];
                 }
             }
             var options = new InterpolationOptions
@@ -685,7 +683,7 @@ public static partial class EdgeExtensions
         /// An exact B-spline from control points and knots. Repeated knots become one knot with a multiplicity; optional
         /// weights (one per control point) make it rational.
         /// </summary>
-        public static Edge MakeBSpline(IEnumerable<Vector> controlPoints, IEnumerable<double> knots, int degree,
+        public static Edge MakeBSpline(IEnumerable<Point3D> controlPoints, IEnumerable<double> knots, int degree,
                                        IEnumerable<double>? weights = null, bool periodic = false)
         {
             var knotList = knots.ToList();
@@ -714,10 +712,10 @@ public static partial class EdgeExtensions
         /// A spline approximating points within <paramref name="tolerance"/>, optionally with variational
         /// <paramref name="smoothing"/> weights (which raise the maximum degree to at least 6).
         /// </summary>
-        public static Edge MakeSplineApprox(IReadOnlyList<Vector> points, double tolerance = 1e-3,
+        public static Edge MakeSplineApprox(IReadOnlyList<Point3D> points, double tolerance = 1e-3,
                                             (double, double, double)? smoothing = null, int minDeg = 1, int maxDeg = 6)
         {
-            var array = points.Select(p => p.ToPoint3D()).ToArray();
+            var array = points.Select(p => p).ToArray();
             var options = smoothing is var (w1, w2, w3)
                 // The smoothing asks for C2, whose Jacobi basis needs a degree of at least 6 (OCCT 8)
                 ? new ApproximationOptions { Smoothing = (w1, w2, w3), MaxDegree = Math.Max(maxDeg, 6), Continuity = Continuity.C2, Tolerance = tolerance }
@@ -729,20 +727,20 @@ public static partial class EdgeExtensions
         }
 
         /// <summary>A circular arc from <paramref name="start"/>, leaving in the direction of <paramref name="tangent"/>, to <paramref name="end"/>.</summary>
-        public static Edge MakeTangentArc(Vector start, Vector tangent, Vector end)
+        public static Edge MakeTangentArc(Point3D start, Vector3D tangent, Point3D end)
         {
-            var p1 = start.ToPoint3D();
-            var t = tangent.ToVector3D();
-            var p2 = end.ToPoint3D();
+            var p1 = start;
+            var t = tangent;
+            var p2 = end;
             return EdgeExtensions.FromCurve(Failures.Get(TrimmedCurve3D.ArcTangent(p1, t, p2), () => "tangent arc"));
         }
 
         /// <summary>A circular arc through three points.</summary>
-        public static Edge MakeThreePointArc(Vector point1, Vector point2, Vector point3)
+        public static Edge MakeThreePointArc(Point3D point1, Point3D point2, Point3D point3)
         {
-            var p1 = point1.ToPoint3D();
-            var p2 = point2.ToPoint3D();
-            var p3 = point3.ToPoint3D();
+            var p1 = point1;
+            var p2 = point2;
+            var p3 = point3;
             return EdgeExtensions.FromCurve(Failures.Get(TrimmedCurve3D.ArcThrough(p1, p2, p3), () => "three-point arc"));
         }
     }
@@ -752,7 +750,7 @@ public static partial class EdgeExtensions
     /// <summary>An edge along the whole of a curve.</summary>
     internal static Edge FromCurve(Curve3D curve) => Failures.Get(Edge.FromCurve(curve), () => "edge");
 
-    internal static Point3D[] PointArray(IReadOnlyList<Vector> points) => [.. points.Select(p => p.ToPoint3D())];
+    internal static Point3D[] PointArray(IReadOnlyList<Point3D> points) => [.. points.Select(p => p)];
 
     private static Curve2D CurveOnPlane(Edge edge, Plane3D plane)
     {

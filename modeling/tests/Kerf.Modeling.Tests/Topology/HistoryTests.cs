@@ -30,7 +30,7 @@ public class ShapeHistoryTests
     public void BooleanRecordsUntouchedModifiedRemovedAndGenerated()
     {
         using var log = HistoryLog.Open();
-        var cylinder = Solid.MakeCylinder(2, 5, new Plane(new Vector(5, 5, 10)));
+        var cylinder = Solid.MakeCylinder(2, 5, new Plane(new Point3D(5, 5, 10)));
         var fused = _box.Fuse(cylinder);
         var history = fused.History;
         Assert.IsType<ModelHistory>(history);
@@ -45,7 +45,7 @@ public class ShapeHistoryTests
         Assert.Empty(history.Generated(_top));
 
         // A cylinder through the box: the circles where it pierces the top and bottom are generated from those faces
-        var through = _box.Fuse(Solid.MakeCylinder(2, 20, new Plane(new Vector(5, 5, -5))));
+        var through = _box.Fuse(Solid.MakeCylinder(2, 20, new Plane(new Point3D(5, 5, -5))));
         history = through.History!;
         Assert.NotEmpty(history.Generated(_top));
         Assert.Single(history.Modified(_top));
@@ -56,7 +56,7 @@ public class ShapeHistoryTests
     public void CleanHistoryIsMergedIntoTheBoolean()
     {
         using var log = HistoryLog.Open();
-        var slab = Solid.MakeBox(10, 10, 5, new Plane(new Vector(0, 0, 10)));
+        var slab = Solid.MakeBox(10, 10, 5, new Plane(new Point3D(0, 0, 10)));
         var fused = _box.Fuse(slab);   // coplanar sides are unified by the clean
         var history = fused.History!;
         var side = _box.SelectFaces().OrderBy(Axis.X)[0];
@@ -69,7 +69,7 @@ public class ShapeHistoryTests
     public void TraceAnswersFromTheResultSide()
     {
         using var log = HistoryLog.Open();
-        var cylinder = Solid.MakeCylinder(2, 20, new Plane(new Vector(5, 5, -5)));
+        var cylinder = Solid.MakeCylinder(2, 20, new Plane(new Point3D(5, 5, -5)));
         var fused = _box.Fuse(cylinder);
         var trace = fused.History!.TraceOf([_box]);
         int untouched = 0, modified = 0, generated = 0, other = 0;
@@ -132,7 +132,7 @@ public class ShapeHistoryTests
     {
         using var log = HistoryLog.Open();
         var left = Face.MakeRect(4, 4);
-        var right = Face.MakeRect(4, 4, new Plane(new Vector(4, 0, 0)));
+        var right = Face.MakeRect(4, 4, new Plane(new Point3D(4, 0, 0)));
         var sewn = global::Kerf.Healing.HealingOperations.Sew([left, right], new global::Kerf.Healing.SewOptions { Tolerance = 1e-6 }).Value;
         var history = ModelHistory.FromHistory(sewn.History, [left, right]);
         foreach (var face in new[] { left, right })
@@ -150,7 +150,7 @@ public class ShapeHistoryTests
     public void RelocationHistory()
     {
         using var log = HistoryLog.Open();
-        var moved = _box.Moved(new Plane(new Vector(1, 2, 3)).Location);
+        var moved = _box.Moved(new Plane(new Point3D(1, 2, 3)).Location);
         var history = ModelHistory.FromRelocation(_box, moved);
         foreach (var face in _box.SelectFaces())
         {
@@ -284,8 +284,8 @@ public class ShapeHistoryTests
         operations.Add(("rotated copy", recorded.Rotate(Axis.Z, 31, transform: true), new Rotation(0, 0, -31).ToTransform3D()));
 
         var mirrorTransform = new Transform3D();
-        var origin = Plane.YZ.Origin.ToPoint3D();
-        var normal = Plane.YZ.ZDir.ToDirection3D();
+        var origin = Plane.YZ.Origin;
+        var normal = Plane.YZ.ZDir.ToDirection();
         var ax2 = new Frame3D(origin, normal);
         mirrorTransform = mirrorTransform.WithMirror(ax2);
         operations.Add(("mirror copy", recorded.Mirror(Plane.YZ), mirrorTransform));
@@ -439,7 +439,7 @@ public class AlgebraSelectTests
     [Fact]
     public void JoinedLines()
     {
-        var bent = new Curve((Shape)Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))) + Edge.MakeLine(new Vector(1, 0), new Vector(1, 1));
+        var bent = new Curve((Shape)Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0))) + Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(1, 1, 0));
         Assert.Equal(2, bent.SelectEdges().Count);
         Assert.Single(bent.Edges(Select.Last));
         Assert.Empty(bent.Edges(Select.New));
@@ -447,16 +447,16 @@ public class AlgebraSelectTests
         Assert.Equal(2, bent.Vertices(Select.Last).Count);
         Assert.Empty(bent.Vertices(Select.New));
         // collinear lines are cleaned into one edge, which still carries the record
-        var straight = new Curve((Shape)Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))) + Edge.MakeLine(new Vector(1, 0), new Vector(2, 0));
+        var straight = new Curve((Shape)Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0))) + Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(2, 0, 0));
         Assert.Single(straight.Edges());
         Assert.Single(straight.Edges(Select.Last));
         Assert.Empty(straight.Vertices(Select.New));
         // three edges joined into an empty curve: everything was brought in
         var chain = new Curve() + new Shape[]
         {
-            Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)),
-            Edge.MakeLine(new Vector(1, 0), new Vector(1, 1)),
-            Edge.MakeLine(new Vector(1, 1), new Vector(0, 1)),
+            Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)),
+            Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(1, 1, 0)),
+            Edge.MakeLine(new Point3D(1, 1, 0), new Point3D(0, 1, 0)),
         };
         Assert.Equal(3, chain.Edges(Select.Last).Count);
     }

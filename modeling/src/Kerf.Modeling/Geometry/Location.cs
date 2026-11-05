@@ -30,17 +30,20 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     public Location(Transform3D trsf) : this(new Placement(trsf), owned: true) { }
 
     /// <summary>A location at a position, without rotation.</summary>
-    public Location(Vector position) : this(Build(position, trsf => trsf), owned: true) { }
+    public Location(Point3D position) : this(Build(position, trsf => trsf), owned: true) { }
+
+    /// <summary>A location at an offset from the origin, without rotation.</summary>
+    public Location(Vector3D offset) : this(offset.ToPoint()) { }
 
     /// <summary>A location at a position, rotated about the Z axis by an angle in degrees.</summary>
-    public Location(Vector position, double angle) : this(position, new Vector(0, 0, 1), angle) { }
+    public Location(Point3D position, double angle) : this(position, new Vector3D(0, 0, 1), angle) { }
 
     /// <summary>A location at a position, rotated about <paramref name="direction"/> by an angle in degrees.</summary>
-    public Location(Vector position, Vector direction, double angle)
+    public Location(Point3D position, Vector3D direction, double angle)
         : this(Build(position, trsf =>
         {
             var origin = new Point3D(0, 0, 0);
-            var dir = direction.ToDirection3D();
+            var dir = direction.ToDirection();
             var axis = new Axis3D(origin, dir);
             return trsf.WithRotation(axis, angle * Constants.DegToRad);
         }), owned: true)
@@ -51,7 +54,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     /// A location at a position, oriented by Euler angles in degrees applied in <paramref name="ordering"/>
     /// (default <see cref="Intrinsic.XYZ"/>).
     /// </summary>
-    public Location(Vector position, Vector orientation, RotationOrder ordering = default)
+    public Location(Point3D position, Vector3D orientation, RotationOrder ordering = default)
         : this(Build(position, _ => Transform3D.Rotation(ordering.ToOcct(), orientation.X * Constants.DegToRad,
                                                          orientation.Y * Constants.DegToRad, orientation.Z * Constants.DegToRad)),
                owned: true)
@@ -67,19 +70,19 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     /// <summary>Wraps a new TopLoc_Location this location takes ownership of.</summary>
     static Location Own(Placement location) => new(location, owned: true);
 
-    static Placement Build(Vector position, Func<Transform3D, Transform3D> rotate)
+    static Placement Build(Point3D position, Func<Transform3D, Transform3D> rotate)
     {
         var trsf = rotate(new Transform3D());
-        var translation = position.ToVector3D();
+        var translation = position.ToVector();
         trsf = trsf.WithTranslationPart(translation);
         return new Placement(trsf);
     }
 
     static Placement FromPlane(Plane plane)
     {
-        var origin = plane.Origin.ToPoint3D();
-        var z = plane.ZDir.ToDirection3D();
-        var x = plane.XDir.ToDirection3D();
+        var origin = plane.Origin;
+        var z = plane.ZDir.ToDirection();
+        var x = plane.XDir.ToDirection();
         var cs = new CoordinateSystem(origin, z, x);
         var trsf = new Transform3D();
         trsf = trsf.WithTransformation(cs);
@@ -94,32 +97,32 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     public Transform3D ToTransform3D() => Wrapped.Transformation;
 
     /// <summary>The position (translation) part.</summary>
-    public Vector Position
+    public Point3D Position
     {
         get
         {
-            return new Vector(Wrapped.Transformation.TranslationPart);
+            return Wrapped.Transformation.TranslationPart.ToPoint();
         }
     }
 
     /// <summary>The orientation part, as intrinsic XYZ Euler angles in degrees.</summary>
-    public Vector Orientation
+    public Vector3D Orientation
     {
         get
         {
             var (a, b, c) = Wrapped.Transformation.GetEulerAngles(EulerSequence.Intrinsic_XYZ);
-            return new Vector(a * Constants.RadToDeg, b * Constants.RadToDeg, c * Constants.RadToDeg);
+            return new Vector3D(a * Constants.RadToDeg, b * Constants.RadToDeg, c * Constants.RadToDeg);
         }
     }
 
     /// <summary>Deconstructs into position and orientation (intrinsic XYZ Euler angles in degrees).</summary>
-    public void Deconstruct(out Vector position, out Vector orientation) => (position, orientation) = (Position, Orientation);
+    public void Deconstruct(out Point3D position, out Vector3D orientation) => (position, orientation) = (Position, Orientation);
 
     /// <summary>This location with a new position and the same orientation.</summary>
-    public Location WithPosition(Vector position)
+    public Location WithPosition(Point3D position)
     {
         var trsfPosition = new Transform3D();
-        var v = position.ToVector3D();
+        var v = position.ToVector();
         trsfPosition = trsfPosition.WithTranslationPart(v);
         var trsfOrientation = Wrapped.Transformation.ToRotation();
         var combined = trsfPosition.Multiplied(trsfOrientation);
@@ -127,7 +130,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     }
 
     /// <summary>This location with a new orientation (intrinsic XYZ Euler angles in degrees) and the same position.</summary>
-    public Location WithOrientation(Vector orientation)
+    public Location WithOrientation(Vector3D orientation)
     {
         var trsfPosition = new Transform3D();
         var v = Wrapped.Transformation.TranslationPart;
@@ -154,7 +157,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     public Location Pow(int exponent) => Own(Wrapped.Powered(exponent));
 
     /// <summary>The centre of a location is its position, which is useful for sorting.</summary>
-    public Vector Center() => Position;
+    public Point3D Center() => Position;
 
     /// <summary>
     /// This location mirrored across a plane. A true mirror image is left-handed, so the X and Z
@@ -162,7 +165,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     /// </summary>
     public Location Mirror(Plane mirrorPlane)
     {
-        Vector MirrorDir(Vector v) => v - 2 * v.Dot(mirrorPlane.ZDir) * mirrorPlane.ZDir;
+        Vector3D MirrorDir(Vector3D v) => v - 2 * v.Dot(mirrorPlane.ZDir) * mirrorPlane.ZDir;
 
         var toPlane = Position - mirrorPlane.Origin;
         double distance = toPlane.Dot(mirrorPlane.ZDir);
@@ -192,11 +195,11 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
 #pragma warning restore CS1591
 
     /// <summary>The point if it is this location's position, else null.</summary>
-    public Vector? Intersect(Vector point) => Position == point ? point : null;
+    public Point3D? Intersect(Point3D point) => Position.IsNear(point) ? point : null;
 
     /// <summary>This location if the two are equal, the shared position if only that matches, else null.</summary>
     public IGeometry? Intersect(Location location) =>
-        this == location ? this : Position == location.Position ? location.Position : null;
+        this == location ? this : Position.IsNear(location.Position) ? location.Position : null;
 
     /// <summary>The intersection with an axis (see <see cref="Axis.Intersect(Location)"/>).</summary>
     public IGeometry? Intersect(Axis axis) => axis.Intersect(this);
@@ -223,11 +226,11 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
 
     /// <summary>"Location: (position=(1, 2, 3), orientation=(10, 20, 30))".</summary>
     public override string ToString() =>
-        $"Location: (position={Position.ToString("G6")}, orientation={Orientation.ToString("G6")})";
+        $"Location: (position={Position.Describe("G6")}, orientation={Orientation.Describe("G6")})";
 
-    /// <summary>"(position, orientation)" with components formatted as <see cref="Vector.ToString(string?, IFormatProvider?)"/>.</summary>
+    /// <summary>"(position, orientation)" with components formatted as <c>Describe(format)</c> does.</summary>
     public string ToString(string? format, IFormatProvider? formatProvider = null) =>
-        $"({Position.ToString(format)}, {Orientation.ToString(format)})";
+        $"({Position.Describe(format)}, {Orientation.Describe(format)})";
 }
 
 /// <summary>A <see cref="Location"/> that only rotates, about the origin.</summary>
@@ -235,12 +238,12 @@ public class Rotation : Location
 {
     /// <summary>A rotation by Euler angles in degrees, applied in <paramref name="ordering"/> (default <see cref="Intrinsic.XYZ"/>).</summary>
     public Rotation(double x = 0, double y = 0, double z = 0, RotationOrder ordering = default)
-        : base(new Vector(0, 0, 0), new Vector(x, y, z), ordering)
+        : base(new Point3D(0, 0, 0), new Vector3D(x, y, z), ordering)
     {
     }
 
     /// <summary>A rotation by Euler angles (X, Y, Z) in degrees, applied in <paramref name="ordering"/>.</summary>
-    public Rotation(Vector angles, RotationOrder ordering = default) : base(new Vector(0, 0, 0), angles, ordering) { }
+    public Rotation(Vector3D angles, RotationOrder ordering = default) : base(new Point3D(0, 0, 0), angles, ordering) { }
 
     /// <summary>A rotation about an axis by an angle in degrees.</summary>
     public Rotation(Axis axis, double angle) : base(AboutAxis(axis, angle), owned: true) { }
@@ -265,8 +268,11 @@ public class Rotation : Location
 public class Pos : Location
 {
     /// <summary>A translation by (x, y, z).</summary>
-    public Pos(double x = 0, double y = 0, double z = 0) : base(new Vector(x, y, z)) { }
+    public Pos(double x = 0, double y = 0, double z = 0) : base(new Point3D(x, y, z)) { }
 
     /// <summary>A translation by a vector.</summary>
-    public Pos(Vector v) : base(v) { }
+    public Pos(Vector3D v) : base(v) { }
+
+    /// <summary>A translation to a point.</summary>
+    public Pos(Point3D p) : base(p) { }
 }

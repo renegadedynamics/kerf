@@ -49,7 +49,7 @@ public static partial class WireExtensions
             var sorted = (self.IsForward ? self.SelectEdges().OrderBy(self) : self.SelectEdges().OrderByDescending(self));
             var ordered = new List<Edge> { sorted[0] };
             foreach (var edge in sorted.Skip(1))
-                ordered.Add((ordered[^1].PositionAt(1) - edge.PositionAt(0)).Length < Constants.Tolerance ? edge : edge.Reversed());
+                ordered.Add((ordered[^1].PositionAt(1) - edge.PositionAt(0)).Magnitude < Constants.Tolerance ? edge : edge.Reversed());
             return new ShapeList<Edge>(ordered);
         }
 
@@ -70,27 +70,27 @@ public static partial class WireExtensions
         {
             var curve = self.GeomAdaptor();
             var target = self.PositionAt(position);
-            var pnt = target.ToPoint3D();
+            var pnt = target;
             // The extrema of the distance, nearest first
             var extrema = curve.Project(pnt);
             if (extrema.IsEmpty)
                 throw new InvalidOperationException("Failed to find point on curve");
-            var closest = new Vector(extrema[0].Point);
-            if ((closest - target).Length > Constants.Tolerance)
+            var closest = extrema[0].Point;
+            if ((closest - target).Magnitude > Constants.Tolerance)
                 throw new InvalidOperationException("Failed to find point on curve");
             return extrema[0].Parameter;
         }
 
         /// <inheritdoc/>
         /// <exception cref="ArgumentException">The point isn't on the wire.</exception>
-        internal double ParamAtPointOfWire(Vector point, bool normalize = true)
+        internal double ParamAtPointOfWire(Point3D point, bool normalize = true)
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("Can't find point on empty wire");
             var vertex = Vertex.Make(point);
             var separation = self.DistanceTo(point);
             if (!TopologyUtils.IsCloseB(separation, 0, absTol: Constants.Tolerance))
-                throw new ArgumentException($"point ({point}) is {separation} from wire");
+                throw new ArgumentException($"point ({point.Describe()}) is {separation} from wire");
             var distance = MeasureOperations.Distance(vertex, self);
             if (!distance.TryGetValue(out var extrema) || extrema.Solutions.IsEmpty)
                 throw new ArgumentException("point is not on Wire");
@@ -320,22 +320,22 @@ public static partial class WireExtensions
         /// The wire projected onto a shape along <paramref name="direction"/>, or from a <paramref name="center"/>; one of the two
         /// must be given. The projected wires run the same way as this one, nearest first.
         /// </summary>
-        public ShapeList<Wire> ProjectToShape(Shape targetObject, Vector? direction = null, Vector? center = null)
+        public ShapeList<Wire> ProjectToShape(Shape targetObject, Vector3D? direction = null, Point3D? center = null)
         {
             if (self.IsEmpty || targetObject.IsEmpty)
                 throw new InvalidOperationException("Can't project empty Wires or to empty Shapes");
-            Vector? directionVector;
-            Vector centerPoint;
+            Vector3D? directionVector;
+            Point3D centerPoint;
             if (direction is { } d && center is null)
-                (directionVector, centerPoint) = (d.Normalized(), new Vector(0, 0, 0));
+                (directionVector, centerPoint) = (d.Normalized(), new Point3D(0, 0, 0));
             else if (center is { } c && direction is null)
                 (directionVector, centerPoint) = (null, c);
             else
                 throw new ArgumentException("Provide exactly one of direction or center");
 
             var projection = directionVector is { } dv
-                ? ShapeProjections.Project(self, targetObject, dv.ToDirection3D())
-                : ShapeProjections.Project(self, targetObject, centerPoint.ToPoint3D());
+                ? ShapeProjections.Project(self, targetObject, dv.ToDirection())
+                : ShapeProjections.Project(self, targetObject, centerPoint);
             var output = new List<Wire>();
             {
                 var orientation = self.Orientation;
@@ -358,10 +358,10 @@ public static partial class WireExtensions
                     if (directionVector is { } dv2)
                     {
                         if ((wireCenter - planarCenter).Normalized().Dot(dv2) >= 0)
-                            withDistance.Add((w, (wireCenter - planarCenter).Length));
+                            withDistance.Add((w, (wireCenter - planarCenter).Magnitude));
                     }
                     else
-                        withDistance.Add((w, (wireCenter - centerPoint).Length));
+                        withDistance.Add((w, (wireCenter - centerPoint).Magnitude));
                 }
                 output = withDistance.OrderBy(x => x.Distance).Select(x => x.Wire).ToList();
             }
@@ -396,12 +396,12 @@ public static partial class WireExtensions
         }
 
         /// <summary>A polygon through points, closed unless <paramref name="close"/> is false.</summary>
-        public static Wire MakePolygon(IEnumerable<Vector> vertices, bool close = true)
+        public static Wire MakePolygon(IEnumerable<Point3D> vertices, bool close = true)
         {
             var vectors = vertices.ToList();
-            if ((vectors[0] - vectors[^1]).Length > Constants.Tolerance && close)
+            if ((vectors[0] - vectors[^1]).Magnitude > Constants.Tolerance && close)
                 vectors.Add(vectors[0]);
-            var points = vectors.Select(v => v.ToPoint3D()).ToArray();
+            var points = vectors.Select(v => v).ToArray();
             return Failures.Get(Wire.Polygon(points), () => "polygon");
         }
 
@@ -410,7 +410,7 @@ public static partial class WireExtensions
         {
             plane ??= Plane.XY;
             (double, double)[] corners = [(width / 2, height / 2), (width / 2, height / -2), (width / -2, height / -2), (width / -2, height / 2)];
-            return Wire.MakePolygon(corners.Select(c => plane.FromLocalCoords(new Vector(c.Item1, c.Item2))), close: true);
+            return Wire.MakePolygon(corners.Select(c => plane.FromLocalCoords(new Point3D(c.Item1, c.Item2, 0))), close: true);
         }
 
         /// <summary>
@@ -476,7 +476,7 @@ public static partial class WireExtensions
         }
 
         /// <summary>A wire extruded: not possible.</summary>
-        public static Wire Extrude(Shape obj, Vector direction) => throw new ArgumentException("Wires can't be created by extrusion");
+        public static Wire Extrude(Shape obj, Vector3D direction) => throw new ArgumentException("Wires can't be created by extrusion");
 
         /// <summary>The two edges at a chamfered corner, the reference edge first if there is one.</summary>
         public static (Edge, Edge) OrderChamferEdges(Edge? referenceEdge, (Edge, Edge) edges)
@@ -545,7 +545,7 @@ public static partial class WireExtensions
             while (unplaced.Count > 0)
             {
                 var target = Wire.Make(placed).PositionAt(1);
-                var next = unplaced.OrderBy(e => Math.Min((target - e.PositionAt(0)).Length, (target - e.PositionAt(1)).Length)).First();
+                var next = unplaced.OrderBy(e => Math.Min((target - e.PositionAt(0)).Magnitude, (target - e.PositionAt(1)).Magnitude)).First();
                 unplaced.Remove(next);
                 placed.Add(next);
             }

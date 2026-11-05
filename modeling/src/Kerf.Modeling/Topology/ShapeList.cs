@@ -162,8 +162,8 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
     }
 
     /// <summary>The average of the centres of the shapes.</summary>
-    public Vector Center() =>
-        Count == 0 ? new Vector(0, 0, 0) : Enumerable.Aggregate(this, new Vector(0, 0, 0), (sum, o) => sum + o.Center()) / Count;
+    public Point3D Center() =>
+        Count == 0 ? Point3D.Origin : (Enumerable.Aggregate(this, Vector3D.Zero, (sum, o) => sum + o.Center().ToVector()) * (1.0 / Count)).ToPoint();
 
     /// <summary>All the vertices of the shapes.</summary>
     public ShapeList<Vertex> Vertices() => new(this.SelectMany(s => s.SelectVertices()));
@@ -342,7 +342,7 @@ internal static class Measures
     {
         ShapeKey.Length => Length(o),
         ShapeKey.Radius => Radius(o),
-        ShapeKey.Distance => o.Center().Length,
+        ShapeKey.Distance => o.Center().ToVector().Magnitude,
         ShapeKey.Area => o.Area,
         ShapeKey.Volume => o.Volume,
         _ => throw new ArgumentOutOfRangeException(nameof(measure)),

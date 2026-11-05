@@ -15,10 +15,10 @@ public static partial class Shape3DExtensions
     {
 
         /// <summary>The centre of mass (by default) or of the bounding box; the geometric centre isn't supported.</summary>
-        internal Vector CenterOfShape3D() => self.Center(CenterOf.Mass);
+        internal Point3D CenterOfShape3D() => self.Center(CenterOf.Mass);
 
         /// <summary>As the other forms of <c>Center</c>.</summary>
-        internal Vector CenterOfShape3D(CenterOf centerOf)
+        internal Point3D CenterOfShape3D(CenterOf centerOf)
         {
             self.NeedsGeometry("center");
             switch (centerOf)
@@ -26,7 +26,7 @@ public static partial class Shape3DExtensions
                 case CenterOf.Geometry:
                     throw new ArgumentException("Center of GEOMETRY is not supported for this object");
                 case CenterOf.Mass:
-                    return new Vector(ShapeExtensions.MassPropertiesOf(self.AsShape())!.CentreOfMass);
+                    return (ShapeExtensions.MassPropertiesOf(self.AsShape())!.CentreOfMass);
                 default:
                     return self.BoundBox().Center();
             }
@@ -197,9 +197,9 @@ public static partial class Shape3DExtensions
         }
 
         /// <summary>Whether a point is inside the solid (or on its surface) within a tolerance.</summary>
-        public bool IsInside(Vector point, double tolerance = 1.0e-6)
+        public bool IsInside(Point3D point, double tolerance = 1.0e-6)
         {
-            var p = point.ToPoint3D();
+            var p = point;
             return self.AsShape().ClassifyPoint(p, tolerance) == Containment.In || self.AsShape().IsOnFace(p, tolerance);
         }
 
@@ -245,7 +245,7 @@ public static partial class Shape3DExtensions
             if (TopoUtil.Typed(shape) is Edge { IsUnbounded: true } infinite)
             {
                 var box = self.BoundBox(optimal: false);
-                shape = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Length);
+                shape = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Magnitude);
             }
             switch (TopoUtil.Typed(shape))
             {
@@ -255,7 +255,7 @@ public static partial class Shape3DExtensions
                     break;
                 }
                 case Vertex vertex:
-                    if (self.IsInside(vertex.ToVector(), tolerance))
+                    if (self.IsInside(vertex.Point, tolerance))
                         results.Add(vertex);
                     break;
                 default:
@@ -324,7 +324,7 @@ public static partial class Shape3DExtensions
                 if (set.Contains(selected[i]))
                 {
                     rejected.Add(i);
-                    entries.Add($"[{i}] at {selected[i].Center().ToString("G6")}");
+                    entries.Add($"[{i}] at {selected[i].Center().Describe("G6")}");
                 }
             var tangentCount = set.Count(e => !selected.Contains(e, ShapeComparer<Edge>.Same));
             if (tangentCount > 0)

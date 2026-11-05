@@ -37,7 +37,7 @@ public class SelectorTests
     [Fact]
     public void AnInnerHoleOfAGridIsPickedByItsPlace()
     {
-        var holes = Enumerable.Range(0, 16).Select(k => (Shape)new Cylinder(1, 20).Moved(new Location(new Vector(-15.0 + 10 * (k % 4), -15.0 + 10 * (k / 4), 0.0))));
+        var holes = Enumerable.Range(0, 16).Select(k => (Shape)new Cylinder(1, 20).Moved(new Location(new Point3D(-15.0 + 10 * (k % 4), -15.0 + 10 * (k / 4), 0.0))));
         var plate = new Box(40, 40, 2).Cut(holes);
         var inner = plate.SelectFaces().Where(GeomType.Cylinder).GroupBy(Axis.X)[1].GroupBy(Axis.Y)[2].Single();
         var found = Selector.For(plate, inner);
@@ -140,7 +140,7 @@ public class SelectorTests
     {
         // Two coincident boxes side by side in a compound: either top face can't be told from the other by place alone
         var box = new Box(1, 1, 1);
-        var twins = Compound.Make([box, box.Moved(new Location(new Vector(0.0, 0.0, 0.0)))]);
+        var twins = Compound.Make([box, box.Moved(new Location(new Point3D(0.0, 0.0, 0.0)))]);
         Assert.Empty(Selector.For(twins, twins.SelectFaces().GroupBy(Axis.Z).Last()[0]));
     }
 }

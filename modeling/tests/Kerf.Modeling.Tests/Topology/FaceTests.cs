@@ -36,9 +36,9 @@ using Kerf.Modeling;
 /// <summary>Direct-API stand-ins for build123d's centred objects.</summary>
 file static class Obj
 {
-    public static Solid Box(double l, double w, double h) => Solid.MakeBox(l, w, h, new Plane(new Vector(-l / 2, -w / 2, -h / 2)));
-    public static Solid Cylinder(double r, double h) => Solid.MakeCylinder(r, h, new Plane(new Vector(0, 0, -h / 2)));
-    public static Solid Cone(double bottom, double top, double h) => Solid.MakeCone(bottom, top, h, new Plane(new Vector(0, 0, -h / 2)));
+    public static Solid Box(double l, double w, double h) => Solid.MakeBox(l, w, h, new Plane(new Point3D(-l / 2, -w / 2, -h / 2)));
+    public static Solid Cylinder(double r, double h) => Solid.MakeCylinder(r, h, new Plane(new Point3D(0, 0, -h / 2)));
+    public static Solid Cone(double bottom, double top, double h) => Solid.MakeCone(bottom, top, h, new Plane(new Point3D(0, 0, -h / 2)));
     public static Face Circle(double r) => Face.Make(Wire.MakeCircle(r));
     public static Face Rectangle(double w, double h) => Face.MakeRect(w, h);
 
@@ -48,7 +48,7 @@ file static class Obj
         {
             var angle = i * 360.0 / count;
             var a = angle * Math.PI / 180;
-            return new Location(new Vector(radius * Math.Cos(a), radius * Math.Sin(a), 0), new Vector(0, 0, angle));
+            return new Location(new Point3D(radius * Math.Cos(a), radius * Math.Sin(a), 0), new Vector3D(0, 0, angle));
         });
 }
 
@@ -58,14 +58,14 @@ public class FaceTests
     public void MakeSurfaceFromCurves()
     {
         var bottomEdge = Edge.MakeCircle(1, endAngle: 90);
-        var topEdge = Edge.MakeCircle(1, new Plane(new Vector(0, 0, 1)), endAngle: 90);
+        var topEdge = Edge.MakeCircle(1, new Plane(new Point3D(0, 0, 1)), endAngle: 90);
         var curved = Face.MakeSurfaceFromCurves(bottomEdge, topEdge);
         Assert.True(curved.IsValid);
         Check.AlmostEqual(Math.PI / 2, curved.Area, 5);
-        Check.AlmostEqual(new Vector(Math.Sqrt(2) / 2, Math.Sqrt(2) / 2, 0), curved.NormalAt(), 5);
+        Check.AlmostEqual(new Vector3D(Math.Sqrt(2) / 2, Math.Sqrt(2) / 2, 0), curved.NormalAt(), 5);
 
         var bottomWire = Wire.MakeCircle(1);
-        var topWire = Wire.MakeCircle(1, new Plane(new Vector(0, 0, 1)));
+        var topWire = Wire.MakeCircle(1, new Plane(new Point3D(0, 0, 1)));
         var curvedShape = Face.MakeSurfaceFromCurves(bottomWire, topWire);
         Assert.True(curvedShape.IsValid);
         Check.AlmostEqual(2 * Math.PI, curvedShape.Area, 5);
@@ -74,9 +74,9 @@ public class FaceTests
     [Fact]
     public void Center()
     {
-        var testFace = Face.Make(Wire.MakePolygon([new Vector(0, 0), new Vector(1, 0), new Vector(1, 1), new Vector(0, 0)]));
-        Check.AlmostEqual(new Vector(2.0 / 3, 1.0 / 3, 0), testFace.Center(CenterOf.Mass), 1);
-        Check.AlmostEqual(new Vector(0.5, 0.5, 0), testFace.Center(CenterOf.BoundingBox), 5);
+        var testFace = Face.Make(Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 0, 0)]));
+        Check.AlmostEqual(new Point3D(2.0 / 3, 1.0 / 3, 0), testFace.Center(CenterOf.Mass), 1);
+        Check.AlmostEqual(new Point3D(0.5, 0.5, 0), testFace.Center(CenterOf.BoundingBox), 5);
     }
 
     [Fact]
@@ -91,14 +91,14 @@ public class FaceTests
         var sphere = Solid.MakeSphere(10).Rotate(Axis.Z, 90);
         var target0 = sphere.SelectFaces()[0];
         var circle = Plane.YZ.Offset(15) * Obj.Circle(5);
-        var circleProjected = circle.ProjectToShape(sphere, new Vector(-1, 0, 0))[0];
+        var circleProjected = circle.ProjectToShape(sphere, new Vector3D(-1, 0, 0))[0];
         var circleOuterwire = circleProjected.SingleEdge();
         var (inside0, outside0) = target0.SplitByPerimeter(circleOuterwire);
         Assert.True(AreaOf(inside0) < AreaOf(outside0));
 
         // Test 1 - extract ring of a sphere from a Face
         var ring = new Pos(z: 15) * (Obj.Circle(5) - Obj.Circle(3)).SingleFace();
-        var ringProjected = (Face)ring.ProjectToShape(sphere, new Vector(0, 0, -1))[0];
+        var ringProjected = (Face)ring.ProjectToShape(sphere, new Vector3D(0, 0, -1))[0];
         var ringOuterwire = ringProjected.OuterWire();
         var (inside1, outside1) = target0.SplitByPerimeter(ringOuterwire);
         Assert.True(AreaOf(inside1) < AreaOf(outside1));
@@ -106,8 +106,8 @@ public class FaceTests
 
         // Test 2 - extract multiple faces from a Shell
         var target2 = Obj.Box(1, 10, 10).SingleShell();
-        var square = Face.MakeRect(3, 3, new Plane(new Vector(12, 0, 0), zDir: new Vector(1, 0, 0)));
-        var squareProjected = (Face)square.ProjectToShape(target2, new Vector(-1, 0, 0))[0];
+        var square = Face.MakeRect(3, 3, new Plane(new Point3D(12, 0, 0), zDir: new Vector3D(1, 0, 0)));
+        var squareProjected = (Face)square.ProjectToShape(target2, new Vector3D(-1, 0, 0))[0];
         var outside2 = target2.SplitByPerimeter(squareProjected.OuterWire(), Keep.Outside);
         Check.Is<Shell>(outside2);
         var inside2 = target2.SplitByPerimeter(squareProjected.OuterWire(), Keep.Inside);
@@ -117,9 +117,9 @@ public class FaceTests
         sphere = Solid.MakeSphere(10);
         var target3 = sphere.SingleFace();
         circle = Plane.YZ.Offset(15) * Obj.Circle(5);
-        var projectedWire = Wire.Make(circle.ProjectToShape(sphere, new Vector(-1, 0, 0))[0].SelectEdges().GroupBy(Axis.X)[0]);
+        var projectedWire = Wire.Make(circle.ProjectToShape(sphere, new Vector3D(-1, 0, 0))[0].SelectEdges().GroupBy(Axis.X)[0]);
         var perimeter = Edge.MakeCircle(projectedWire.SelectEdges()[0].Radius,
-                                        new Plane(projectedWire.SelectEdges()[0].ArcCenter, zDir: new Vector(1, 0, 0)));
+                                        new Plane(projectedWire.SelectEdges()[0].ArcCenter, zDir: new Vector3D(1, 0, 0)));
 
         Assert.True(target3.Seams[0].DistanceTo(perimeter) < 1e-5);
         var (inside3, outside3) = target3.SplitByPerimeter(perimeter);
@@ -129,7 +129,7 @@ public class FaceTests
         Check.AlmostEqual(target3.Area, AreaOf(inside3) + AreaOf(outside3), 3);
 
         // Test 4 - invalid inputs
-        Assert.Throws<ArgumentException>(() => target2.SplitByPerimeter(Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))));
+        Assert.Throws<ArgumentException>(() => target2.SplitByPerimeter(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0))));
         Assert.Throws<ArgumentException>(() => target2.SplitByPerimeter(Edge.MakeCircle(1), Keep.Top));
     }
 
@@ -139,7 +139,7 @@ public class FaceTests
         var sphere = Solid.MakeSphere(10).Rotate(Axis.Z, 90);
         var sphericalFace = sphere.SelectFaces()[0];
         var circle = Plane.YZ.Offset(15) * Obj.Circle(5);
-        var perimeter = circle.ProjectToShape(sphere, new Vector(-1, 0, 0))[0].SingleEdge();
+        var perimeter = circle.ProjectToShape(sphere, new Vector3D(-1, 0, 0))[0].SingleEdge();
 
         Assert.True(sphericalFace.Seams[0].DistanceTo(perimeter) > 1);
         var (inside, outside) = sphericalFace.SplitByPerimeter(perimeter);
@@ -234,7 +234,7 @@ public class FaceTests
     }
 
     [Fact]
-    public void PlaneAsFace() => Check.AlmostEqual(new Vector(0, 0, 1), Face.FromPlane(Plane.XY).NormalAt(), 5);
+    public void PlaneAsFace() => Check.AlmostEqual(new Vector3D(0, 0, 1), Face.FromPlane(Plane.XY).NormalAt(), 5);
 
     [Fact]
     public void LengthWidth()
@@ -260,8 +260,8 @@ public class FaceTests
         Assert.Equal("RECTANGLE", box.SelectFaces().OrderBy(Axis.Y).Last().Geometry);
         // RegularPolygon(1, 3) extruded by 1
         var triangle = Enumerable.Range(0, 3)
-            .Select(i => new Vector(Math.Cos(i * 2 * Math.PI / 3) - 0.25, Math.Sin(i * 2 * Math.PI / 3)));
-        var prism = Solid.Extrude(Face.Make(Wire.MakePolygon(triangle)), new Vector(0, 0, 1));
+            .Select(i => new Point3D(Math.Cos(i * 2 * Math.PI / 3) - 0.25, Math.Sin(i * 2 * Math.PI / 3), 0));
+        var prism = Solid.Extrude(Face.Make(Wire.MakePolygon(triangle)), new Vector3D(0, 0, 1));
         Assert.Equal("POLYGON", prism.SelectFaces().OrderBy(Axis.Z).Last().Geometry);
     }
 
@@ -273,8 +273,8 @@ public class FaceTests
         // Some of these faces have geom_type BSPLINE but are planar
         var mount = Solid.MakeLoft(
         [
-            Wire.MakeRect(1 + 16 + 4, 20, new Plane(new Vector(10.5, 0, 0))),
-            new Pos(1, 0, 4) * Wire.MakeRect(16, 20, new Plane(new Vector(8, 0, 0))),
+            Wire.MakeRect(1 + 16 + 4, 20, new Plane(new Point3D(10.5, 0, 0))),
+            new Pos(1, 0, 4) * Wire.MakeRect(16, 20, new Plane(new Point3D(8, 0, 0))),
         ]);
         Assert.All(mount.SelectFaces(), f => Assert.NotNull(f.IsPlanar));
     }
@@ -283,9 +283,9 @@ public class FaceTests
     public void Negate()
     {
         var square = Face.MakeRect(1, 1);
-        Check.AlmostEqual(new Vector(0, 0, 1), square.NormalAt(), 5);
+        Check.AlmostEqual(new Vector3D(0, 0, 1), square.NormalAt(), 5);
         var flippedSquare = (Face)(-square);
-        Check.AlmostEqual(new Vector(0, 0, -1), flippedSquare.NormalAt(), 5);
+        Check.AlmostEqual(new Vector3D(0, 0, -1), flippedSquare.NormalAt(), 5);
 
         // Ensure the topo_parent is cleared when a face is negated
         // (otherwise the original Rectangle would be the topo_parent)
@@ -318,8 +318,8 @@ public class FaceTests
     public void Offset()
     {
         var bbox = Face.MakeRect(2, 2, Plane.XY).Offset(5).BoundBox();
-        Check.AlmostEqual(new Vector(-1, -1, 5), bbox.Min, 5);
-        Check.AlmostEqual(new Vector(1, 1, 5), bbox.Max, 5);
+        Check.AlmostEqual(new Point3D(-1, -1, 5), bbox.Min, 5);
+        Check.AlmostEqual(new Point3D(1, 1, 5), bbox.Max, 5);
     }
 
     [Fact]
@@ -328,8 +328,8 @@ public class FaceTests
         var outer = Wire.MakeCircle(10);
         Wire[] inners =
         [
-            Wire.MakeCircle(1).Located(new Location(new Vector(-2, 2, 0))),
-            Wire.MakeCircle(1).Located(new Location(new Vector(2, 2, 0))),
+            Wire.MakeCircle(1).Located(new Location(new Point3D(-2, 2, 0))),
+            Wire.MakeCircle(1).Located(new Location(new Point3D(2, 2, 0))),
         ];
         var happy = Face.Make(outer, inners);
         Check.AlmostEqual(Math.PI * (Math.Pow(10, 2) - 2), happy.Area, 5);
@@ -341,8 +341,8 @@ public class FaceTests
         outer = Wire.MakeCircle(10);
         inners =
         [
-            Wire.MakeCircle(1).Located(new Location(new Vector(-2, 2, 0))),
-            Wire.Make(Edge.MakeCircle(1, endAngle: 180)).Located(new Location(new Vector(2, 2, 0))),
+            Wire.MakeCircle(1).Located(new Location(new Point3D(-2, 2, 0))),
+            Wire.Make(Edge.MakeCircle(1, endAngle: 180)).Located(new Location(new Point3D(2, 2, 0))),
         ];
         Assert.Throws<ArgumentException>(() => Face.Make(outer, inners));
     }
@@ -353,7 +353,7 @@ public class FaceTests
         var patches = (from x in Enumerable.Range(0, 2)
                        from y in Enumerable.Range(0, 2)
                        from z in Enumerable.Range(0, 3)
-                       select Face.MakeRect(1, 1, new Plane(new Vector(x, y, z)))).ToArray();
+                       select Face.MakeRect(1, 1, new Plane(new Point3D(x, y, z)))).ToArray();
         new Random(1).Shuffle(patches);
         var sheets = Face.SewFaces(patches);
         Assert.Equal(3, sheets.Count);
@@ -361,41 +361,41 @@ public class FaceTests
         Check.Is<Face>(sheets[0][0]);
     }
 
-    static Vector[][] WavePoints() =>
+    static Point3D[][] WavePoints() =>
         [.. Enumerable.Range(0, 11).Select(y => Enumerable.Range(0, 11)
-            .Select(x => new Vector(x, y, Math.Cos(Math.PI * x / 10) + Math.Sin(Math.PI * y / 10))).ToArray())];
+            .Select(x => new Point3D(x, y, Math.Cos(Math.PI * x / 10) + Math.Sin(Math.PI * y / 10))).ToArray())];
 
     [Fact]
     public void SurfaceFromArrayOfPoints()
     {
         var surface = Face.MakeSurfaceFromArrayOfPoints(WavePoints());
         var bbox = surface.BoundBox();
-        Check.AlmostEqual(new Vector(0, 0, -1), bbox.Min, 3);
-        Check.AlmostEqual(new Vector(10, 10, 2), bbox.Max, 2);
+        Check.AlmostEqual(new Point3D(0, 0, -1), bbox.Min, 3);
+        Check.AlmostEqual(new Point3D(10, 10, 2), bbox.Max, 2);
     }
 
     [Fact]
     public void BezierSurface()
     {
-        Vector[][] Grid(int from, int to) =>
+        Point3D[][] Grid(int from, int to) =>
             [.. Enumerable.Range(from, to - from).Select(y => Enumerable.Range(from, to - from)
-                .Select(x => new Vector(x, y, x == 0 && y == 0 ? 2 : x == 0 || y == 0 ? 1 : 0)).ToArray())];
+                .Select(x => new Point3D(x, y, x == 0 && y == 0 ? 2 : x == 0 || y == 0 ? 1 : 0)).ToArray())];
         var points = Grid(-1, 2);
         var surface = Face.MakeBezierSurface(points);
         var bbox = surface.BoundBox();
-        Check.AlmostEqual(new Vector(-1, -1, 0), bbox.Min, 3);
-        Check.AlmostEqual(new Vector(1, 1, 1), bbox.Max, 1);
+        Check.AlmostEqual(new Point3D(-1, -1, 0), bbox.Min, 3);
+        Check.AlmostEqual(new Point3D(1, 1, 1), bbox.Max, 1);
         Assert.True(bbox.Max.Z < 1.0);
 
         double[][] weights =
         [.. Enumerable.Range(-1, 3).Select(y => Enumerable.Range(-1, 3).Select(x => x == 0 || y == 0 ? 2.0 : 1.0).ToArray())];
         surface = Face.MakeBezierSurface(points, weights);
         bbox = surface.BoundBox();
-        Check.AlmostEqual(new Vector(-1, -1, 0), bbox.Min, 3);
+        Check.AlmostEqual(new Point3D(-1, -1, 0), bbox.Min, 3);
         Assert.True(bbox.Max.Z > 1.0);
 
         var tooManyPoints = Grid(-1, 27);
-        Assert.Throws<ArgumentException>(() => Face.MakeBezierSurface([[new Vector(0, 0)]]));
+        Assert.Throws<ArgumentException>(() => Face.MakeBezierSurface([[new Point3D(0, 0, 0)]]));
         Assert.Throws<ArgumentException>(() => Face.MakeBezierSurface(points, [[1.0, 1.0], [1.0, 1.0]]));
         Assert.Throws<ArgumentException>(() => Face.MakeBezierSurface(tooManyPoints));
     }
@@ -408,9 +408,9 @@ public class FaceTests
         Check.AlmostEqual(101.59, solid.Volume, 2);
 
         var square = Face.MakeRect(10, 10);
-        var bbox = Solid.Thicken(square, 1, normalOverride: new Vector(0, 0, -1)).BoundBox();
-        Check.AlmostEqual(new Vector(-5, -5, -1), bbox.Min, 5);
-        Check.AlmostEqual(new Vector(5, 5, 0), bbox.Max, 5);
+        var bbox = Solid.Thicken(square, 1, normalOverride: new Vector3D(0, 0, -1)).BoundBox();
+        Check.AlmostEqual(new Point3D(-5, -5, -1), bbox.Min, 5);
+        Check.AlmostEqual(new Point3D(5, 5, 0), bbox.Max, 5);
     }
 
     [Fact]
@@ -446,7 +446,7 @@ public class FaceTests
         Check.AlmostEqual(band.Area, shifted.Area, 5);
 
         Assert.Throws<ArgumentException>(() => Face.Make(top, [bottom], surface: default(Face)));
-        Assert.Throws<ArgumentException>(() => Face.Make(Wire.Make(Edge.MakeLine(new Vector(0, 0, 7), new Vector(2, 0, 7))), surface: wall));
+        Assert.Throws<ArgumentException>(() => Face.Make(Wire.Make(Edge.MakeLine(new Point3D(0, 0, 7), new Point3D(2, 0, 7))), surface: wall));
         Assert.Throws<InvalidOperationException>(() => Face.Make(Wire.Make(Edge.MakeCircle(3, Plane.XY.Offset(7))), surface: wall));
     }
 
@@ -461,14 +461,14 @@ public class FaceTests
         // BuildSketch(Plane.XZ.offset(radius)) with Locations((0, hex_diagonal)): RegularPolygon(hex_diagonal * 0.4, 6)
         var r = hexDiagonal * 0.4;
         var hex = Wire.MakePolygon(Enumerable.Range(0, 6)
-            .Select(i => new Vector(r * Math.Cos(i * Math.PI / 3), hexDiagonal + r * Math.Sin(i * Math.PI / 3))));
+            .Select(i => new Point3D(r * Math.Cos(i * Math.PI / 3), hexDiagonal + r * Math.Sin(i * Math.PI / 3), 0)));
         var hexWireVertical = (Plane.XZ.Offset(radius) * Face.Make(hex)).OuterWire();
 
-        var projectedWire = hexWireVertical.ProjectToShape(cylinder, center: new Vector(0, 0, hexWireVertical.Center().Z))[0];
+        var projectedWire = hexWireVertical.ProjectToShape(cylinder, center: new Point3D(0, 0, hexWireVertical.Center().Z))[0];
         var projectedWires =
             from i in Enumerable.Range(0, 5)
             from j in Enumerable.Range(0, 4 - i % 2)
-            select projectedWire.Rotate(Axis.Z, -90 + i * 360.0 / 10).Translate(new Vector(0, 0, (j + (i % 2) / 2.0) * hexDiagonal));
+            select projectedWire.Rotate(Axis.Z, -90 + i * 360.0 / 10).Translate(new Vector3D(0, 0, (j + (i % 2) / 2.0) * hexDiagonal));
         var cylinderWallsWithHoles = cylinderWall.MakeHoles(projectedWires);
         Assert.True(cylinderWallsWithHoles.IsValid);
         Assert.True(cylinderWallsWithHoles.Area < cylinderWall.Area);
@@ -478,8 +478,8 @@ public class FaceTests
     public void IsInside()
     {
         var square = Face.MakeRect(10, 10);
-        Assert.True(square.IsInside(new Vector(1, 1)));
-        Assert.False(square.IsInside(new Vector(20, 1)));
+        Assert.True(square.IsInside(new Point3D(1, 1, 0)));
+        Assert.False(square.IsInside(new Point3D(20, 1, 0)));
     }
 
     [Fact]
@@ -498,7 +498,7 @@ public class FaceTests
     {
         var square = Face.MakeRect(1, 1, Plane.XZ);
         var cl = square.CenterLocation;
-        Check.AlmostEqual(new Vector(0, 0, 0), cl.Position, 5);
+        Check.AlmostEqual(new Point3D(0, 0, 0), cl.Position, 5);
         Check.AlmostEqual(Plane.XZ.ZDir, new Plane(cl).ZDir, 5);
     }
 
@@ -506,7 +506,7 @@ public class FaceTests
     public void PositionAt()
     {
         var square = Face.MakeRect(2, 2, Plane.XZ.Offset(1));
-        Check.AlmostEqual(new Vector(-0.5, -1.0, 0.5), square.PositionAt(0.25, 0.75), 5);
+        Check.AlmostEqual(new Point3D(-0.5, -1.0, 0.5), square.PositionAt(0.25, 0.75), 5);
     }
 
     [Fact]
@@ -543,8 +543,8 @@ public class FaceTests
         // on the surface but beyond the face's boundary
         Check.AlmostEqual(1.5, patch.ParamAtPoint(patch.PositionAt(1.5, 0.5)).U, 6);
 
-        Assert.Contains("from the face's surface", Assert.Throws<ArgumentException>(() => cylinder.ParamAtPoint(new Vector(0, 0, 5))).Message);
-        Assert.Contains("empty face", Assert.Throws<InvalidOperationException>(() => default(Face).ParamAtPoint(new Vector(0, 0, 0))).Message);
+        Assert.Contains("from the face's surface", Assert.Throws<ArgumentException>(() => cylinder.ParamAtPoint(new Point3D(0, 0, 5))).Message);
+        Assert.Contains("empty face", Assert.Throws<InvalidOperationException>(() => default(Face).ParamAtPoint(new Point3D(0, 0, 0))).Message);
     }
 
     [Fact]
@@ -556,14 +556,14 @@ public class FaceTests
         const double h = 1e-4;
         foreach (var face in new[] { cylinder, torus })
         {
-            Vector At(double du, double dv) => face.PositionAt(0.3 + du, 0.6 + dv);
-            var expected = new Dictionary<(int, int), Vector>
+            Point3D At(double du, double dv) => face.PositionAt(0.3 + du, 0.6 + dv);
+            var expected = new Dictionary<(int, int), Vector3D>
             {
                 [(1, 0)] = (At(h, 0) - At(-h, 0)) / (2 * h),
                 [(0, 1)] = (At(0, h) - At(0, -h)) / (2 * h),
-                [(2, 0)] = (At(h, 0) - At(0, 0) * 2 + At(-h, 0)) / (h * h),
-                [(0, 2)] = (At(0, h) - At(0, 0) * 2 + At(0, -h)) / (h * h),
-                [(1, 1)] = (At(h, h) - At(h, -h) - At(-h, h) + At(-h, -h)) / (4 * h * h),
+                [(2, 0)] = (At(h, 0).ToVector() - At(0, 0).ToVector() * 2 + At(-h, 0).ToVector()) / (h * h),
+                [(0, 2)] = (At(0, h).ToVector() - At(0, 0).ToVector() * 2 + At(0, -h).ToVector()) / (h * h),
+                [(1, 1)] = (At(h, h).ToVector() - At(h, -h).ToVector() - At(-h, h).ToVector() + At(-h, -h).ToVector()) / (4 * h * h),
             };
             foreach (var ((uOrder, vOrder), value) in expected)
                 Check.AlmostEqual(value, face.DerivativeAt(0.3, 0.6, uOrder, vOrder), 3);
@@ -571,8 +571,8 @@ public class FaceTests
 
         // the kernel's own: a radius per radian about the axis, 1 along it
         var (u, v) = cylinder.ParamAtPoint(cylinder.PositionAt(0.25, 0.5), false);
-        Check.AlmostEqual(new Vector(-5, 0, 0), cylinder.DerivativeAt(u, v, 1, 0, normalize: false), 6);
-        Check.AlmostEqual(new Vector(0, 0, 1), cylinder.DerivativeAt(u, v, 0, 1, normalize: false), 6);
+        Check.AlmostEqual(new Vector3D(-5, 0, 0), cylinder.DerivativeAt(u, v, 1, 0, normalize: false), 6);
+        Check.AlmostEqual(new Vector3D(0, 0, 1), cylinder.DerivativeAt(u, v, 0, 1, normalize: false), 6);
 
         Assert.Contains("orders", Assert.Throws<ArgumentException>(() => cylinder.DerivativeAt(0.5, 0.5, 0, 0)).Message);
         Assert.Contains("orders", Assert.Throws<ArgumentException>(() => cylinder.DerivativeAt(0.5, 0.5, -1, 2)).Message);
@@ -582,43 +582,43 @@ public class FaceTests
     [Fact]
     public void MakeSurface()
     {
-        Vector[] corners = [.. from x in new[] { -50.5, 50.5 } from y in new[] { -24.5, 24.5 } select new Vector(x, y)];
+        Point3D[] corners = [.. from x in new[] { -50.5, 50.5 } from y in new[] { -24.5, 24.5 } select new Point3D(x, y, 0)];
         var netExterior = Wire.Make(
         [
             Edge.MakeLine(corners[3], corners[1]),
             Edge.MakeLine(corners[1], corners[0]),
             Edge.MakeLine(corners[0], corners[2]),
-            Edge.MakeThreePointArc(corners[2], (corners[2] + corners[3]) / 2 - new Vector(0, 0, 3), corners[3]),
+            Edge.MakeThreePointArc(corners[2], ((corners[2].ToVector() + corners[3].ToVector()) / 2 - new Vector3D(0, 0, 3)).ToPoint(), corners[3]),
         ]);
-        var surface = Face.MakeSurface(netExterior, surfacePoints: [new Vector(0, 0, -5)]);
+        var surface = Face.MakeSurface(netExterior, surfacePoints: [new Point3D(0, 0, -5)]);
         var holeFlat = Wire.MakeCircle(10);
-        var hole = holeFlat.ProjectToShape(surface, new Vector(0, 0, -1))[0];
-        surface = Face.MakeSurface(netExterior, surfacePoints: [new Vector(0, 0, -5)], interiorWires: [hole]);
+        var hole = holeFlat.ProjectToShape(surface, new Vector3D(0, 0, -1))[0];
+        surface = Face.MakeSurface(netExterior, surfacePoints: [new Point3D(0, 0, -5)], interiorWires: [hole]);
         Assert.True(surface.IsValid);
         Assert.Equal(GeomType.BSpline, surface.GeomType);
         var bbox = surface.BoundBox();
-        Check.AlmostEqual(new Vector(-50.5, -24.5, -5.113393280136395), bbox.Min, 5);
-        Check.AlmostEqual(new Vector(50.5, 24.5, 0), bbox.Max, 5);
+        Check.AlmostEqual(new Point3D(-50.5, -24.5, -5.113393280136395), bbox.Min, 5);
+        Check.AlmostEqual(new Point3D(50.5, 24.5, 0), bbox.Max, 5);
 
         // With no surface point
         surface = Face.MakeSurface(netExterior);
         bbox = surface.BoundBox();
-        Check.AlmostEqual(new Vector(-50.5, -24.5, -3), bbox.Min, 5);
-        Check.AlmostEqual(new Vector(50.5, 24.5, 0), bbox.Max, 5);
+        Check.AlmostEqual(new Point3D(-50.5, -24.5, -3), bbox.Min, 5);
+        Check.AlmostEqual(new Point3D(50.5, 24.5, 0), bbox.Max, 5);
 
         // Exterior Edge
-        surface = Face.MakeSurface([Edge.MakeCircle(50)], surfacePoints: [new Vector(0, 0, -5)]);
+        surface = Face.MakeSurface([Edge.MakeCircle(50)], surfacePoints: [new Point3D(0, 0, -5)]);
         bbox = surface.BoundBox();
-        Check.AlmostEqual(new Vector(-50, -50, -5), bbox.Min, 5);
-        Check.AlmostEqual(new Vector(50, 50, 0), bbox.Max, 5);
+        Check.AlmostEqual(new Point3D(-50, -50, -5), bbox.Min, 5);
+        Check.AlmostEqual(new Point3D(50, 50, 0), bbox.Max, 5);
     }
 
     [Fact]
     public void MakeSurfaceErrorChecking()
     {
-        Assert.Throws<InvalidOperationException>(() => Face.MakeSurface([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))]));
+        Assert.Throws<InvalidOperationException>(() => Face.MakeSurface([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0))]));
         Assert.Throws<InvalidOperationException>(() =>
-            Face.MakeSurface([Edge.MakeCircle(50)], surfacePoints: [new Vector(0, 0, -50), new Vector(0, 0, 50)]));
+            Face.MakeSurface([Edge.MakeCircle(50)], surfacePoints: [new Point3D(0, 0, -50), new Point3D(0, 0, 50)]));
         Assert.Throws<InvalidOperationException>(() =>
             Face.MakeSurface([Edge.MakeCircle(50)], interiorWires: [Wire.MakeCircle(5, Plane.XZ)]));
     }
@@ -626,28 +626,28 @@ public class FaceTests
     [Fact]
     public void Sweep()
     {
-        var edge = Edge.MakeLine(new Vector(1, 0), new Vector(2, 0));
+        var edge = Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(2, 0, 0));
         var path = Wire.MakeCircle(1);
         var circleWithHole = Face.Sweep(edge, path);
         Check.Is<Face>(circleWithHole);
         Check.AlmostEqual(Math.PI * (Math.Pow(2, 2) - 1), circleWithHole.Area, 5);
-        var polyline = Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(0.1, 0)), Edge.MakeLine(new Vector(0.1, 0), new Vector(0.2, 0.1))]);
+        var polyline = Wire.Make([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(0.1, 0, 0)), Edge.MakeLine(new Point3D(0.1, 0, 0), new Point3D(0.2, 0.1, 0))]);
         Assert.Throws<ArgumentException>(() => Face.Sweep(edge, polyline));
     }
 
     [Fact]
     public void MakeSurfacePatch()
     {
-        var m1 = Edge.MakeSpline([new Vector(0, 0), new Vector(1, 0), new Vector(10, 0, -10)]);
-        var m2 = Edge.MakeSpline([new Vector(0, 0), new Vector(0, 1), new Vector(0, 10, -10)]);
-        var m3 = Edge.MakeSpline([m1.PositionAt(1), new Vector(7, 7, -10), m2.PositionAt(1)]);
+        var m1 = Edge.MakeSpline([new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(10, 0, -10)]);
+        var m2 = Edge.MakeSpline([new Point3D(0, 0, 0), new Point3D(0, 1, 0), new Point3D(0, 10, -10)]);
+        var m3 = Edge.MakeSpline([m1.PositionAt(1), new Point3D(7, 7, -10), m2.PositionAt(1)]);
 
         var patch = Face.MakeSurfacePatch(edgeConstraints: [m1, m2, m3]);
         Check.AlmostEqual(157.186, patch.Area, 3);
 
-        var f1 = Face.Extrude(m1, new Vector(0, -1, 0));
-        var f2 = Face.Extrude(m2, new Vector(-1, 0, 0));
-        var f3 = Face.Extrude(m3, new Vector(0, 0, -1));
+        var f1 = Face.Extrude(m1, new Vector3D(0, -1, 0));
+        var f2 = Face.Extrude(m2, new Vector3D(-1, 0, 0));
+        var f3 = Face.Extrude(m3, new Vector3D(0, 0, -1));
 
         var patch2 = Face.MakeSurfacePatch(edgeFaceConstraints:
         [
@@ -674,7 +674,7 @@ public class FaceTests
         Assert.True(patchC2.IsValid);
         Check.AlmostEqual(patch2.OuterWire().Length, patchC2.OuterWire().Length, 3); // bounded by the same edges
 
-        var point = patch.PositionAt(0.5, 0.5) + new Vector(0.5, 0.5);
+        var point = patch.PositionAt(0.5, 0.5) + new Vector3D(0.5, 0.5, 0);
         var patch4 = -Face.MakeSurfacePatch(edgeConstraints: [m1, m2, m3], pointConstraints: [point]);
         Check.AlmostEqual(164.618, patch4.Area, 3);
     }
@@ -682,10 +682,10 @@ public class FaceTests
     [Fact]
     public void MakeSurfacePatchErrorChecking()
     {
-        Assert.Throws<InvalidOperationException>(() => Face.MakeSurfacePatch(edgeConstraints: [Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))]));
+        Assert.Throws<InvalidOperationException>(() => Face.MakeSurfacePatch(edgeConstraints: [Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0))]));
         Assert.Throws<InvalidOperationException>(() => Face.MakeSurfacePatch(edgeConstraints: []));
         Assert.Throws<InvalidOperationException>(() =>
-            Face.MakeSurfacePatch(edgeConstraints: [Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(0, 0), new Vector(0, 1))]));
+            Face.MakeSurfacePatch(edgeConstraints: [Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)), Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(0, 1, 0))]));
     }
 
     static Face Frame() => (Face.MakeRect(1, 1) - Face.MakeRect(0.5, 0.5)).SingleFace();
@@ -707,10 +707,10 @@ public class FaceTests
     public void NormalAt()
     {
         var face = Face.MakeRect(1, 1);
-        Check.AlmostEqual(new Vector(0, 0, 1), face.NormalAt(0, 0), 5);
-        Check.AlmostEqual(new Vector(0, 0, 1), face.NormalAt(face.PositionAt(0, 0)), 5);
+        Check.AlmostEqual(new Vector3D(0, 0, 1), face.NormalAt(0, 0), 5);
+        Check.AlmostEqual(new Vector3D(0, 0, 1), face.NormalAt(face.PositionAt(0, 0)), 5);
         face = Obj.Cylinder(1, 1).SelectFaces().Where(GeomType.Cylinder)[0];
-        Check.AlmostEqual(new Vector(1, 0, 0), face.NormalAt(0, 1), 5);
+        Check.AlmostEqual(new Vector3D(1, 0, 0), face.NormalAt(0, 1), 5);
     }
 
     [Fact]
@@ -720,30 +720,30 @@ public class FaceTests
 
         // Default center (u=0, v=0)
         var loc = face.LocationAt(0, 0);
-        Check.AlmostEqual(new Vector(-0.5, -0.5, 0), loc.Position, 5);
-        Check.AlmostEqual(new Vector(0, 0, 1), loc.ZAxis.Direction, 5);
+        Check.AlmostEqual(new Point3D(-0.5, -0.5, 0), loc.Position, 5);
+        Check.AlmostEqual(new Vector3D(0, 0, 1), loc.ZAxis.Direction, 5);
 
         // Using surface_point instead of u,v
         var point = face.PositionAt(0, 0);
         var loc2 = face.LocationAt(point);
-        Check.AlmostEqual(new Vector(-0.5, -0.5, 0), loc2.Position, 5);
-        Check.AlmostEqual(new Vector(0, 0, 1), loc2.ZAxis.Direction, 5);
+        Check.AlmostEqual(new Point3D(-0.5, -0.5, 0), loc2.Position, 5);
+        Check.AlmostEqual(new Vector3D(0, 0, 1), loc2.ZAxis.Direction, 5);
 
         // Curved surface: verify z-direction is outward normal
         face = Obj.Cylinder(1, 1).SelectFaces().Where(GeomType.Cylinder)[0];
         var loc3 = face.LocationAt(0, 1);
-        Check.AlmostEqual(new Vector(1, 0, 0), loc3.ZAxis.Direction, 5);
+        Check.AlmostEqual(new Vector3D(1, 0, 0), loc3.ZAxis.Direction, 5);
 
         // Curved surface: verify center
         var loc4 = face.LocationAt();
-        Check.AlmostEqual(new Vector(-1, 0, 0), loc4.Position, 5);
-        Check.AlmostEqual(new Vector(-1, 0, 0), loc4.ZAxis.Direction, 5);
+        Check.AlmostEqual(new Point3D(-1, 0, 0), loc4.Position, 5);
+        Check.AlmostEqual(new Vector3D(-1, 0, 0), loc4.ZAxis.Direction, 5);
 
         // Reversed face: z-direction must follow the orientation flag (#1007)
         var rect = Face.MakeRect(34, 10);
         var rectFlipped = (Face)(-rect);
-        Check.AlmostEqual(new Vector(0, 0, 1), rect.LocationAt().ZAxis.Direction, 5);
-        Check.AlmostEqual(new Vector(0, 0, -1), rectFlipped.LocationAt().ZAxis.Direction, 5);
+        Check.AlmostEqual(new Vector3D(0, 0, 1), rect.LocationAt().ZAxis.Direction, 5);
+        Check.AlmostEqual(new Vector3D(0, 0, -1), rectFlipped.LocationAt().ZAxis.Direction, 5);
     }
 
     [Fact]
@@ -788,7 +788,7 @@ public class FaceTests
         Assert.Throws<InvalidOperationException>(() => cylinder.AxesOfSymmetry);
 
         // Test a variety of shapes
-        var rectMin = Face.MakeRect(1, 2, new Plane(new Vector(0.5, 1)));
+        var rectMin = Face.MakeRect(1, 2, new Plane(new Point3D(0.5, 1, 0)));
         var rectMinWithHole = (rectMin - new Pos(0.5, 0.75) * Obj.Circle(0.2)).SingleFace();
         IEnumerable<Shape> Circles(Location at) => Obj.PolarLocations(1, 3).Select(l => (Shape)(at * l * Obj.Circle(0.3)));
         (Face Face, int Axes)[] shapes =
@@ -799,7 +799,7 @@ public class FaceTests
             (rectMinWithHole, 1),
             (rectMinWithHole.Rotate(Axis.Z, 10), 1),
             // Triangle(a=1, b=0.5, C=90)
-            (Face.Make(Wire.MakePolygon([new Vector(-2.0 / 3, -1.0 / 6), new Vector(1.0 / 3, -1.0 / 6), new Vector(1.0 / 3, 1.0 / 3)])), 0),
+            (Face.Make(Wire.MakePolygon([new Point3D(-2.0 / 3, -1.0 / 6, 0), new Point3D(1.0 / 3, -1.0 / 6, 0), new Point3D(1.0 / 3, 1.0 / 3, 0)])), 0),
             ((Obj.Circle(2) - new Pos(0.1) * Obj.Rectangle(0.5, 0.5)).SingleFace(), 1),
             ((Obj.Circle(2) - new Pos(0.1, 0.1) * Obj.Rectangle(0.5, 0.5)).SingleFace(), 1),
             ((Obj.Circle(2) - Circles(new Pos(0.1, 0.1))).SingleFace(), 0),
@@ -817,19 +817,19 @@ public class FaceTests
         // Fast abort code paths
         var s1 = Edge.MakeSpline(
         [
-            new Vector(0.0293923441471, 1.9478225275438),
-            new Vector(0.0293923441471, 1.2810839877038),
-            new Vector(0, -0.0521774724562),
-            new Vector(0.0293923441471, -1.3158620329962),
-            new Vector(0.0293923441471, -1.9478180575162),
+            new Point3D(0.0293923441471, 1.9478225275438, 0),
+            new Point3D(0.0293923441471, 1.2810839877038, 0),
+            new Point3D(0, -0.0521774724562, 0),
+            new Point3D(0.0293923441471, -1.3158620329962, 0),
+            new Point3D(0.0293923441471, -1.9478180575162, 0),
         ]);
         var l1 = Edge.MakeLine(s1.PositionAt(1), s1.PositionAt(0));
         Assert.Empty(Face.Make(Wire.Make([s1, l1])).AxesOfSymmetry);
 
         // BuildLine + make_face
-        static Edge L(double x1, double y1, double x2, double y2) => Edge.MakeLine(new Vector(x1, y1), new Vector(x2, y2));
+        static Edge L(double x1, double y1, double x2, double y2) => Edge.MakeLine(new Point3D(x1, y1, 0), new Point3D(x2, y2, 0));
         static Edge A(double x1, double y1, double x2, double y2, double x3, double y3) =>
-            Edge.MakeThreePointArc(new Vector(x1, y1), new Vector(x2, y2), new Vector(x3, y3));
+            Edge.MakeThreePointArc(new Point3D(x1, y1, 0), new Point3D(x2, y2, 0), new Point3D(x3, y3, 0));
         Edge[] edges =
         [
             L(-13.186467340991, 2.3737403364651, -5.1864673409911, 2.3737403364651),
@@ -893,28 +893,28 @@ public class FaceTests
     {
         // CONE
         var cone = Solid.MakeCone(2, 1, 2).SelectFaces().Where(GeomType.Cone)[0];
-        Check.AlmostEqual(new Vector(0, 0, 1), cone.AxisOfRotation!.Value.Direction, 5);
-        Check.AlmostEqual(new Vector(0, 0, 0), cone.AxisOfRotation!.Value.Position, 5);
+        Check.AlmostEqual(new Vector3D(0, 0, 1), cone.AxisOfRotation!.Value.Direction, 5);
+        Check.AlmostEqual(new Point3D(0, 0, 0), cone.AxisOfRotation!.Value.Position, 5);
 
         // CYLINDER
         var cyl = (new Rotation(90, 0, 0) * Obj.Cylinder(1.5, 2)).SelectFaces().Where(GeomType.Cylinder)[0];
-        Check.AlmostEqual(new Vector(0, -1, 0), cyl.AxisOfRotation!.Value.Direction, 5);
-        Check.AlmostEqual(new Vector(0, 1, 0), cyl.AxisOfRotation!.Value.Position, 5);
+        Check.AlmostEqual(new Vector3D(0, -1, 0), cyl.AxisOfRotation!.Value.Direction, 5);
+        Check.AlmostEqual(new Point3D(0, 1, 0), cyl.AxisOfRotation!.Value.Position, 5);
 
         // REVOLUTION
-        var r = Face.Revolve(Edge.MakeSpline([new Vector(0, 0, 0), new Vector(1, 0, 0.5), new Vector(1, 0, 2)]), 90, Axis.Z);
-        Check.AlmostEqual(new Vector(0, 0, 1), r.AxisOfRotation!.Value.Direction, 5);
-        Check.AlmostEqual(new Vector(0, 0, 0), r.AxisOfRotation!.Value.Position, 5);
+        var r = Face.Revolve(Edge.MakeSpline([new Point3D(0, 0, 0), new Point3D(1, 0, 0.5), new Point3D(1, 0, 2)]), 90, Axis.Z);
+        Check.AlmostEqual(new Vector3D(0, 0, 1), r.AxisOfRotation!.Value.Direction, 5);
+        Check.AlmostEqual(new Point3D(0, 0, 0), r.AxisOfRotation!.Value.Position, 5);
 
         // SPHERE
         var s = Solid.MakeSphere(3).SelectFaces().Where(GeomType.Sphere)[0];
-        Check.AlmostEqual(new Vector(0, 0, 1), s.AxisOfRotation!.Value.Direction, 5);
-        Check.AlmostEqual(new Vector(0, 0, 0), s.AxisOfRotation!.Value.Position, 5);
+        Check.AlmostEqual(new Vector3D(0, 0, 1), s.AxisOfRotation!.Value.Direction, 5);
+        Check.AlmostEqual(new Point3D(0, 0, 0), s.AxisOfRotation!.Value.Position, 5);
 
         // TORUS
         var t = (new Rotation(90, 0, 0) * Solid.MakeTorus(4, 1)).SelectFaces().Where(GeomType.Torus)[0];
-        Check.AlmostEqual(new Vector(0, -1, 0), t.AxisOfRotation!.Value.Direction, 5);
-        Check.AlmostEqual(new Vector(0, 0, 0), t.AxisOfRotation!.Value.Position, 5);
+        Check.AlmostEqual(new Vector3D(0, -1, 0), t.AxisOfRotation!.Value.Direction, 5);
+        Check.AlmostEqual(new Point3D(0, 0, 0), t.AxisOfRotation!.Value.Position, 5);
 
         // Geom_RectangularTrimmedSurface
         var origin = new Point3D(0, 0, 0);
@@ -923,15 +923,15 @@ public class FaceTests
         var cylSurf = new CylindricalSurface(ax3, 2.0);
         var trimSurf = new TrimmedSurface(cylSurf, 0.0, 1.0, 0.5, 1.5);
         var trimFace = SurfaceFaces.Of(trimSurf);
-        Check.AlmostEqual(new Vector(0, 0, 1), trimFace.AxisOfRotation!.Value.Direction, 5);
-        Check.AlmostEqual(new Vector(0, 0, 0), trimFace.AxisOfRotation!.Value.Position, 5);
+        Check.AlmostEqual(new Vector3D(0, 0, 1), trimFace.AxisOfRotation!.Value.Direction, 5);
+        Check.AlmostEqual(new Point3D(0, 0, 0), trimFace.AxisOfRotation!.Value.Position, 5);
         Check.AlmostEqual(2.0, trimFace.Radius!.Value, 5);
 
         // Geom_OffsetSurface
         var cylOffSurf = new OffsetSurface(cylSurf, 0.5);
         var offFace = SurfaceFaces.Of(cylOffSurf);
-        Check.AlmostEqual(new Vector(0, 0, 1), offFace.AxisOfRotation!.Value.Direction, 5);
-        Check.AlmostEqual(new Vector(0, 0, 0), offFace.AxisOfRotation!.Value.Position, 5);
+        Check.AlmostEqual(new Vector3D(0, 0, 1), offFace.AxisOfRotation!.Value.Direction, 5);
+        Check.AlmostEqual(new Point3D(0, 0, 0), offFace.AxisOfRotation!.Value.Position, 5);
 
         // Invalid
         Assert.Null(Face.MakeRect(1, 1).AxisOfRotation);
@@ -966,13 +966,13 @@ public class FaceTests
     [Fact]
     public void Revolve()
     {
-        var l1 = Edge.MakeLine(new Vector(3, 0), new Vector(3, 2));
+        var l1 = Edge.MakeLine(new Point3D(3, 0, 0), new Point3D(3, 2, 0));
         var revolved = Face.Revolve(l1, 360, Axis.Y);
         Check.Is<Face>(revolved);
         Check.AlmostEqual(2 * Math.PI * 3 * 2, revolved.Area, 5);
 
         // JernArc(l1 @ 1, l1 % 1, 1, 90): a quarter circle about (2, 2) from (3, 2) to (2, 3)
-        var l2 = Edge.MakeThreePointArc(l1.PositionAt(1), new Vector(2 + Math.Sqrt(0.5), 2 + Math.Sqrt(0.5)), new Vector(2, 3));
+        var l2 = Edge.MakeThreePointArc(l1.PositionAt(1), new Point3D(2 + Math.Sqrt(0.5), 2 + Math.Sqrt(0.5), 0), new Point3D(2, 3, 0));
         var w1 = Wire.Make([l1, l2]);
         var revolvedShell = Shell.Revolve(w1, 180, Axis.Y);
         Check.Is<Shell>(revolvedShell);
@@ -984,9 +984,9 @@ public class FaceTests
     {
         var perimeter = Wire.Make(
         [
-            Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)),
-            Edge.MakeLine(new Vector(1, 0), new Vector(1, 1)),
-            Edge.MakeLine(new Vector(1, 1), new Vector(0, 1)),
+            Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)),
+            Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(1, 1, 0)),
+            Edge.MakeLine(new Point3D(1, 1, 0), new Point3D(0, 1, 0)),
         ]);
         Assert.Throws<ArgumentException>(() => Face.Make(perimeter));
         Assert.Throws<ArgumentException>(() => Face.Make(Wire.MakeCircle(5), [perimeter]));
@@ -1005,7 +1005,7 @@ public class FaceTests
 public class SurfaceOffsetTests
 {
     static Face QuarterCylinder(double radius = 5.0) =>
-        Face.Extrude(Edge.MakeCircle(radius, Plane.XY, 0, 90), new Vector(0, 0, 10));
+        Face.Extrude(Edge.MakeCircle(radius, Plane.XY, 0, 90), new Vector3D(0, 0, 10));
 
     [Fact]
     public void PlanarFaceTranslates()
@@ -1075,7 +1075,7 @@ public class SurfaceOffsetTests
     {
         // A kernel face has no attributes; an object placed or offset keeps its own
         var plate = new Sketch(Face.MakeRect(10, 10)).WithLabel("plate");
-        Assert.Equal("plate", plate.Moved(new Location(new Vector(1, 0, 0))).Label);
+        Assert.Equal("plate", plate.Moved(new Location(new Point3D(1, 0, 0))).Label);
     }
 }
 
@@ -1085,12 +1085,12 @@ public class FaceValidationTests
     [Fact]
     public void ExtrudeRejectsAnEmptyObject() =>
         Assert.Contains("Can't extrude empty object",
-                        Assert.Throws<ArgumentException>(() => Face.Extrude(default(Edge), new Vector(0, 0, 1))).Message);
+                        Assert.Throws<ArgumentException>(() => Face.Extrude(default(Edge), new Vector3D(0, 0, 1))).Message);
 
     [Fact]
     public void SurfaceExteriorRejectsEmptyEdges() =>
         Assert.Contains("exterior contains empty edges",
-                        Assert.Throws<ArgumentException>(() => Face.MakeSurface([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), default(Edge)])).Message);
+                        Assert.Throws<ArgumentException>(() => Face.MakeSurface([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)), default(Edge)])).Message);
 
     [Fact]
     public void SurfaceInteriorRejectsAnEmptyWire()
@@ -1105,7 +1105,7 @@ public class FaceValidationTests
     {
         var face = Face.MakeRect(2, 2);
         Assert.Contains("projection to a vertex",
-                        Assert.Throws<ArgumentException>(() => face.ProjectToShape(Vertex.Make(0, 0, 5), new Vector(0, 0, -1))).Message);
+                        Assert.Throws<ArgumentException>(() => face.ProjectToShape(Vertex.Make(0, 0, 5), new Vector3D(0, 0, -1))).Message);
     }
 }
 
@@ -1115,7 +1115,7 @@ public class SortWiresByBuildOrderTests
     public void OuterWireFirstThenHoles()
     {
         var outer = Wire.MakeRect(10, 10);
-        Wire[] holes = [Wire.MakeCircle(1, new Plane(new Vector(-2, 0))), Wire.MakeCircle(1, new Plane(new Vector(2, 0)))];
+        Wire[] holes = [Wire.MakeCircle(1, new Plane(new Point3D(-2, 0, 0))), Wire.MakeCircle(1, new Plane(new Point3D(2, 0, 0)))];
         var groups = TwoD.SortWiresByBuildOrder([outer, .. holes]);
 
         var group = Assert.Single(groups);
@@ -1175,9 +1175,9 @@ public class FacePropertiesTests
 
 public class SurfaceFromArrayOfPointsTests
 {
-    static Vector[][] Grid() =>
+    static Point3D[][] Grid() =>
         [.. Enumerable.Range(0, 6).Select(y => Enumerable.Range(0, 6)
-            .Select(x => new Vector(x, y, Math.Sin(x / 3.0) * Math.Cos(y / 3.0))).ToArray())];
+            .Select(x => new Point3D(x, y, Math.Sin(x / 3.0) * Math.Cos(y / 3.0))).ToArray())];
 
     [Theory]
     [InlineData(1.0, 1.0, 1.0)]

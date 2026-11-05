@@ -21,16 +21,16 @@ public class InputsUnchangedTests
 
     // Inputs, built once and shared by every case (moved copies share their TShape with the original)
     private static readonly Box Box = new(10, 10, 10);
-    private static readonly Box MovedBox = Box.Moved(new Location(new Vector(3.0, 3.0, 3.0)));
+    private static readonly Box MovedBox = Box.Moved(new Location(new Point3D(3.0, 3.0, 3.0)));
     private static readonly Cylinder Cylinder = new(3, 14);
     private static readonly Sphere Sphere = new(4);
     private static readonly Face Plate = Face.MakeRect(10, 6);
     private static readonly Circle Circle = new(2);
     private static readonly Wire RectWire = Wire.MakeRect(8, 4);
-    private static readonly Edge Spline = Edge.MakeSpline([new Vector(0.0, 0.0), new Vector(3.0, 2.0), new Vector(6.0, -1.0), new Vector(9.0, 1.0)]);
-    private static readonly Edge Path = Edge.MakeThreePointArc(new Vector(0, 0, 0), new Vector(5, 0, 5), new Vector(10, 0, 0));
+    private static readonly Edge Spline = Edge.MakeSpline([new Point3D(0.0, 0.0, 0), new Point3D(3.0, 2.0, 0), new Point3D(6.0, -1.0, 0), new Point3D(9.0, 1.0, 0)]);
+    private static readonly Edge Path = Edge.MakeThreePointArc(new Point3D(0, 0, 0), new Point3D(5, 0, 5), new Point3D(10, 0, 0));
     private static readonly Edge ArcEdge = Edge.MakeCircle(3);
-    private static readonly Edge LineEdge = Edge.MakeLine(new Vector(-5, 1, 0), new Vector(5, 1, 0));
+    private static readonly Edge LineEdge = Edge.MakeLine(new Point3D(-5, 1, 0), new Point3D(5, 1, 0));
     private static readonly Part Fused = (Part)(Box + Cylinder);
     private static readonly SlotOverall Slot = new(10, 4);
 
@@ -57,7 +57,7 @@ public class InputsUnchangedTests
             C("intersect edge", [ArcEdge, LineEdge], () => ArcEdge.Intersect(LineEdge)),
             C("split plane", [Box], () => Box.Split(Plane.XY)),
             C("split both", [Sphere], () => Sphere.SplitBoth(Plane.XZ)),
-            C("split by face", [Box, Plate], () => Box.Split(Plate.Moved(new Location(new Vector(0.0, 0.0, 0.0), new Vector(90.0, 0.0, 0.0))))),
+            C("split by face", [Box, Plate], () => Box.Split(Plate.Moved(new Location(new Point3D(0.0, 0.0, 0.0), new Vector3D(90.0, 0.0, 0.0))))),
             C("touch", [Box, MovedBox], () => ((Solid)Box.Solids()[0]).Touch(MovedBox)),
             C("section", [Box], () => Ops.Section(Box)),
             // Features
@@ -70,13 +70,13 @@ public class InputsUnchangedTests
             C("draft", [Box], () => Ops.Draft(Box.Faces().NotParallelTo(Axis.Z), Plane.XY.Offset(-5), 5)),
             C("mirror", [Box], () => Ops.Mirror(Box, Plane.YZ.Offset(5))),
             C("scale", [Box], () => Ops.Scale(Box, 2)),
-            C("scale xyz", [Sphere], () => Ops.Scale(Sphere, new Vector(1.0, 2.0, 3.0))),
+            C("scale xyz", [Sphere], () => Ops.Scale(Sphere, new Vector3D(1.0, 2.0, 3.0))),
             // Sketch to part
             C("extrude", [Plate], () => Ops.Extrude(Plate, 5)),
             C("extrude taper", [Circle], () => Ops.Extrude(Circle, 5, new Ops.ExtrudeOptions { Taper = 10 })),
-            C("extrude until", [Plate, Sphere], () => Ops.Extrude(Plate.Moved(new Location(new Vector(0.0, 0.0, -10.0))), Until.Next, Sphere, new Ops.ExtrudeOptions { Direction = new Vector(0, 0, 1) })),
-            C("revolve", [Plate], () => Ops.Revolve(Plate.Moved(new Location(new Vector(10.0, 0.0, 0.0))), Axis.Y, 180)),
-            C("loft", [Circle, Plate], () => Ops.Loft([Circle, Plate.Moved(new Location(new Vector(0.0, 0.0, 5.0)))])),
+            C("extrude until", [Plate, Sphere], () => Ops.Extrude(Plate.Moved(new Location(new Point3D(0.0, 0.0, -10.0))), Until.Next, Sphere, new Ops.ExtrudeOptions { Direction = new Vector3D(0, 0, 1) })),
+            C("revolve", [Plate], () => Ops.Revolve(Plate.Moved(new Location(new Point3D(10.0, 0.0, 0.0))), Axis.Y, 180)),
+            C("loft", [Circle, Plate], () => Ops.Loft([Circle, Plate.Moved(new Location(new Point3D(0.0, 0.0, 5.0)))])),
             C("sweep", [Circle, Path], () => Ops.Sweep(Circle.Moved(new Location(Path.LocationAt(0))), Path)),
             C("thicken", [Plate], () => Ops.Thicken(Plate, 1)),
             C("make face", [RectWire], () => Ops.MakeFace(RectWire.SelectEdges())),
@@ -89,12 +89,12 @@ public class InputsUnchangedTests
             C("wire fillet 2d", [RectWire], () => RectWire.Fillet2D(1, RectWire.SelectVertices())),
             C("wire offset 2d", [RectWire], () => RectWire.Offset2D(1)),
             C("constrained arcs", [ArcEdge, LineEdge], () => Edge.MakeConstrainedArcs(ArcEdge, LineEdge, 1.0)),
-            C("constrained lines", [ArcEdge], () => Edge.MakeConstrainedLines(ArcEdge, new Vector(6, 6))),
-            C("fillet polyline", [], () => new FilletPolyline([new Vector(0.0, 0.0), new Vector(5.0, 0.0), new Vector(5.0, 5.0)], 1)),
+            C("constrained lines", [ArcEdge], () => Edge.MakeConstrainedLines(ArcEdge, new Point3D(6, 6, 0))),
+            C("fillet polyline", [], () => new FilletPolyline([new Point3D(0.0, 0.0, 0), new Point3D(5.0, 0.0, 0), new Point3D(5.0, 5.0, 0)], 1)),
             C("rounded rectangle", [], () => new RectangleRounded(6, 4, 1)),
             // Curves
             C("trim to other", [Spline, LineEdge], () => Spline.TrimToOther(LineEdge)),
-            C("project to shape", [ArcEdge, Box], () => ArcEdge.Moved(new Location(new Vector(5.0, 5.0, 20.0))).ProjectToShape(Box, new Vector(0, 0, -1))),
+            C("project to shape", [ArcEdge, Box], () => ArcEdge.Moved(new Location(new Point3D(5.0, 5.0, 20.0))).ProjectToShape(Box, new Vector3D(0, 0, -1))),
             C("find intersections", [Spline, LineEdge], () => Spline.FindIntersectionPoints(LineEdge)),
             // Measures, meshes and the rest
             C("bounding box", [Box], () => Box.BoundBox()),
@@ -106,13 +106,13 @@ public class InputsUnchangedTests
             C("triangulate tree", [Box, MovedBox], () => new Assembly([Box, MovedBox]).TriangulateTree()),
             C("selectors by value", [Fused], () => Fused.Faces().OrderBy(ShapeKey.Area).GroupByValue(f => f.GeomType).Count + Fused.Edges().Count(e => e.CheckClosed())),
             C("selector for a pick", [Fused], () => Selector.For(Fused, Fused.Faces()[0])),
-            C("distance", [Box, Sphere], () => Box.DistanceToWithClosestPoints(Sphere.Moved(new Location(new Vector(20.0, 0.0, 0.0))))),
+            C("distance", [Box, Sphere], () => Box.DistanceToWithClosestPoints(Sphere.Moved(new Location(new Point3D(20.0, 0.0, 0.0))))),
             C("surface intersections", [Sphere], () => Sphere.FindIntersectionPoints(Axis.X)),
             C("clean", [Fused], () => Fused.Clean()),
             C("fix", [Fused], () => Fused.Fix()),
             C("is valid", [Fused], () => Fused.IsValid),
             C("show topology", [Box], () => Box.ShowTopology()),
-            C("is inside", [Sphere], () => ((Solid)Sphere.Solids()[0]).IsInside(new Vector(1, 1, 1))),
+            C("is inside", [Sphere], () => ((Solid)Sphere.Solids()[0]).IsInside(new Point3D(1, 1, 1))),
             // Import and export
             C("export brep", [Fused], () => Exporters3D.ExportBrep(Fused, new MemoryStream())),
             C("export step", [Fused, MovedBox], () => Exporters3D.ExportStep(new Assembly([Fused, MovedBox]), new MemoryStream())),

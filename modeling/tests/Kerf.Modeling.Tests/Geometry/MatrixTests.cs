@@ -68,15 +68,15 @@ public class MatrixTests
         var mz = new Matrix().Rotated(Axis.Z, 30);
         AlmostEqual(rotateZ30, mz);
 
-        var v = new Vector(1, 0, 0);
-        Check.AlmostEqual(new Vector(r32, 0.5, 0), mz.Multiply(v), 7);
+        var v = new Point3D(1, 0, 0);
+        Check.AlmostEqual(new Point3D(r32, 0.5, 0), mz.Multiply(v), 7);
 
         // The same rotation written as values multiplies a vector too
-        Check.AlmostEqual(new Vector(r32, 0.5, 0), new Matrix(rotateZ30).Multiply(v), 7);
+        Check.AlmostEqual(new Point3D(r32, 0.5, 0), new Matrix(rotateZ30).Multiply(v), 7);
 
         // A matrix built from values, rotated afterwards
         var listIdentity = new Matrix(new double[,] { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } }).Rotated(Axis.Z, 30);
-        Check.AlmostEqual(new Vector(r32, 0.5, 0), listIdentity.Multiply(v), 7);
+        Check.AlmostEqual(new Point3D(r32, 0.5, 0), listIdentity.Multiply(v), 7);
 
         AlmostEqual(new double[,]
         {
@@ -117,7 +117,7 @@ public class MatrixTests
     {
         var translation = new Matrix(new double[,] { { 1, 0, 0, 1 }, { 0, 1, 0, 2 }, { 0, 0, 1, 3 }, { 0, 0, 0, 1 } });
         Assert.NotEqual(TransformForm.Other, Form(translation));
-        Check.AlmostEqual(new Vector(11, 22, 33), translation.Multiply(new Vector(10, 20, 30)), 7);
+        Check.AlmostEqual(new Point3D(11, 22, 33), translation.Multiply(new Point3D(10, 20, 30)), 7);
         Assert.Equal(1.0, translation[0, 0]);
         Assert.Equal(2.0, translation[1, 3]);
     }
@@ -128,14 +128,14 @@ public class MatrixTests
         double c = Math.Cos(Math.PI / 6), s = Math.Sin(Math.PI / 6);
         var rotationScaleMirror = new Matrix(new double[,] { { -2 * c, 2 * s, 0, 5 }, { 2 * s, 2 * c, 0, 0 }, { 0, 0, 2, 0 } });
         Assert.NotEqual(TransformForm.Other, Form(rotationScaleMirror));
-        Check.AlmostEqual(new Vector(5 - 2 * c, 2 * s, 0), rotationScaleMirror.Multiply(new Vector(1, 0, 0)), 7);
+        Check.AlmostEqual(new Point3D(5 - 2 * c, 2 * s, 0), rotationScaleMirror.Multiply(new Point3D(1, 0, 0)), 7);
 
         // A similarity converts to a gp_Trsf, so it can place a shape
         var g = rotationScaleMirror.ToGeneralTransform3D();
         var trsf = g.ToTransform();
     }
 
-    static Vector Reconstruct(Matrix matrix)
+    static Vector3D Reconstruct(Matrix matrix)
     {
         var (left, scales, right) = matrix.Svd();
         var diagonal = new Matrix(new double[,] { { scales.X, 0, 0, 0 }, { 0, scales.Y, 0, 0 }, { 0, 0, scales.Z, 0 } });
@@ -147,8 +147,8 @@ public class MatrixTests
         // Both factors are proper rotations
         foreach (var factor in new[] { left, right })
         {
-            double handedness = factor.Multiply(new Vector(1, 0, 0)).Cross(factor.Multiply(new Vector(0, 1, 0)))
-                                      .Dot(factor.Multiply(new Vector(0, 0, 1)));
+            double handedness = factor.Multiply(new Point3D(1, 0, 0)).ToVector().Cross(factor.Multiply(new Point3D(0, 1, 0)).ToVector())
+                                      .Dot(factor.Multiply(new Point3D(0, 0, 1)).ToVector());
             Check.AlmostEqual(1.0, handedness, 9);
         }
         return scales;
@@ -158,10 +158,10 @@ public class MatrixTests
     public void SvdOfRotationScaleAndMirror()
     {
         double c = Math.Cos(Math.PI / 6), s = Math.Sin(Math.PI / 6);
-        Check.AlmostEqual(new Vector(1, 1, 1), Reconstruct(new Matrix(new double[,] { { c, -s, 0, 0 }, { s, c, 0, 0 }, { 0, 0, 1, 0 } })), 9);
-        Check.AlmostEqual(new Vector(2, 2, 2), Reconstruct(new Matrix(new double[,] { { 2, 0, 0, 5 }, { 0, 2, 0, 0 }, { 0, 0, 2, 0 } })), 9);
-        Check.AlmostEqual(new Vector(3, 2, 1), Reconstruct(new Matrix(new double[,] { { 3, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 2, 0 } })), 9);
-        Check.AlmostEqual(new Vector(1, 1, -1), Reconstruct(new Matrix(new double[,] { { -1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } })), 9);
+        Check.AlmostEqual(new Vector3D(1, 1, 1), Reconstruct(new Matrix(new double[,] { { c, -s, 0, 0 }, { s, c, 0, 0 }, { 0, 0, 1, 0 } })), 9);
+        Check.AlmostEqual(new Vector3D(2, 2, 2), Reconstruct(new Matrix(new double[,] { { 2, 0, 0, 5 }, { 0, 2, 0, 0 }, { 0, 0, 2, 0 } })), 9);
+        Check.AlmostEqual(new Vector3D(3, 2, 1), Reconstruct(new Matrix(new double[,] { { 3, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 2, 0 } })), 9);
+        Check.AlmostEqual(new Vector3D(1, 1, -1), Reconstruct(new Matrix(new double[,] { { -1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } })), 9);
     }
 
     [Fact]
@@ -169,7 +169,7 @@ public class MatrixTests
     {
         // A map acting only in a plane sorts its zero scale last
         var (left, scales, _) = new Matrix(new double[,] { { 0.2, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 0, 0 } }).Svd();
-        Check.AlmostEqual(new Vector(1, 0.2, 0), scales, 9);
+        Check.AlmostEqual(new Vector3D(1, 0.2, 0), scales, 9);
         Check.AlmostEqual(0, left[2, 0], 9);
         Check.AlmostEqual(0, left[2, 1], 9);
         Check.AlmostEqual(1, Math.Abs(left[2, 2]), 9);
@@ -202,13 +202,13 @@ public class MatrixTests
     {
         var nonUniform = new Matrix(new double[,] { { 2, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } });
         Assert.Equal(TransformForm.Other, Form(nonUniform));
-        Check.AlmostEqual(new Vector(2, 1, 1), nonUniform.Multiply(new Vector(1, 1, 1)), 7);
+        Check.AlmostEqual(new Point3D(2, 1, 1), nonUniform.Multiply(new Point3D(1, 1, 1)), 7);
 
         var shear = new Matrix(new double[,] { { 1, 0.5, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } });
-        Check.AlmostEqual(new Vector(20, 20, 30), shear.Multiply(new Vector(10, 20, 30)), 7);
+        Check.AlmostEqual(new Point3D(20, 20, 30), shear.Multiply(new Point3D(10, 20, 30)), 7);
 
         var projection = new Matrix(new double[,] { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 0, 0 } });
-        Check.AlmostEqual(new Vector(10, 20, 0), projection.Multiply(new Vector(10, 20, 30)), 7);
+        Check.AlmostEqual(new Point3D(10, 20, 0), projection.Multiply(new Point3D(10, 20, 30)), 7);
     }
 
     [Fact]
@@ -232,7 +232,7 @@ public class MatrixTests
                     Check.AlmostEqual(expected, product[row, col], 12);
                 }
             }
-            var point = new Vector(1, 2, 3);
+            var point = new Point3D(1, 2, 3);
             Check.AlmostEqual(left * (right * point), product * point, 12);
         }
     }

@@ -14,11 +14,11 @@ public partial class ExchangeTests
     private static Part Block() => (Part)(new Box(10, 10, 10) - new Cylinder(3, 14));
 
     // The extent of a mesh read from STL or glTF, from its triangles
-    private static (Vector Min, Vector Max) Extent(Shape mesh)
+    private static (Point3D Min, Point3D Max) Extent(Shape mesh)
     {
         var vertices = mesh.Tessellate(1).Vertices;
-        return (new Vector(vertices.Min(v => v.X), vertices.Min(v => v.Y), vertices.Min(v => v.Z)),
-                new Vector(vertices.Max(v => v.X), vertices.Max(v => v.Y), vertices.Max(v => v.Z)));
+        return (new Point3D(vertices.Min(v => v.X), vertices.Min(v => v.Y), vertices.Min(v => v.Z)),
+                new Point3D(vertices.Max(v => v.X), vertices.Max(v => v.Y), vertices.Max(v => v.Z)));
     }
 
     // ---- BREP ----
@@ -100,7 +100,7 @@ public partial class ExchangeTests
     [Fact]
     public void StepOfSeveralShapesIsACompound()
     {
-        var two = Compound.Make([new Box(1, 1, 1), new Box(1, 1, 1).Moved(new Location(new Vector(5.0, 0.0, 0.0)))]);
+        var two = Compound.Make([new Box(1, 1, 1), new Box(1, 1, 1).Moved(new Location(new Point3D(5.0, 0.0, 0.0)))]);
         var stream = new MemoryStream();
         Exporters3D.ExportStep(two, stream);
         stream.Position = 0;
@@ -192,7 +192,7 @@ public partial class ExchangeTests
     public void StepKeepsLabelsColoursAndAssembliesOnOcctNetOnly()
     {
         var pair = new Assembly([new Box(1, 1, 1).WithLabel("a").WithColor(Color.Parse("red")),
-                                      new Sphere(1).Moved(new Location(new Vector(3.0, 0.0, 0.0))).WithLabel("b")], "pair");
+                                      new Sphere(1).Moved(new Location(new Point3D(3.0, 0.0, 0.0))).WithLabel("b")], "pair");
         var stream = new MemoryStream();
         Exporters3D.ExportStep(pair, stream);
         stream.Position = 0;
@@ -267,7 +267,7 @@ public partial class ExchangeTests
         var assembly = new Assembly(
         [
             new Box(10, 10, 10).WithLabel("box").WithColor(Color.Parse("red")),
-            new Sphere(4).Moved(new Location(new Vector(20.0, 0.0, 0.0))).WithLabel("ball").WithColor(Color.Rgb(0.0, 0.5, 1.0)),
+            new Sphere(4).Moved(new Location(new Point3D(20.0, 0.0, 0.0))).WithLabel("ball").WithColor(Color.Rgb(0.0, 0.5, 1.0)),
         ], "pair");
         foreach (var binary in new[] { true, false })
         {

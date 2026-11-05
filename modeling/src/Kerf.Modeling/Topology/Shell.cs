@@ -25,14 +25,14 @@ public static partial class ShellExtensions
         }
 
         /// <summary>The centre of mass of the shell (computed, as build123d does, from its linear properties).</summary>
-        internal Vector CenterOfShell()
+        internal Point3D CenterOfShell()
         {
             self.NeedsGeometry("center");
-            return new Vector(self.MassProperties(Dimension.Length).CentreOfMass);
+            return self.MassProperties(Dimension.Length).CentreOfMass;
         }
 
         /// <summary>The location on the face of the shell nearest <paramref name="surfacePoint"/>.</summary>
-        public Location LocationAt(Vector surfacePoint, Vector? xDir = null) =>
+        public Location LocationAt(Point3D surfacePoint, Vector3D? xDir = null) =>
             self.SelectFaces().OrderBy(f => f.DistanceTo(surfacePoint)).First().LocationAt(surfacePoint, xDir);
 
         // ---- Sheet metal ----
@@ -109,7 +109,7 @@ public static partial class ShellExtensions
         // ---- Factories ----
 
         /// <summary>A wire extruded into a shell.</summary>
-        public static Shell Extrude(Wire obj, Vector direction) => (Shell)TopoUtil.Extrude(obj, direction);
+        public static Shell Extrude(Wire obj, Vector3D direction) => (Shell)TopoUtil.Extrude(obj, direction);
 
         /// <summary>
         /// A loft through wires (open or closed), optionally starting or ending with a vertex; ruled (stepped) or smooth.
@@ -255,7 +255,7 @@ public static class TwoD
         if (beside.Count != 2 || beside.Any(f => f.GeomType != GeomType.Plane))
             return null;
         var normals = beside.Select(f => f.NormalAt(f.Center())).ToList();
-        if (normals[0].Cross(normals[1]).Length > Constants.Tolerance)
+        if (normals[0].Cross(normals[1]).Magnitude > Constants.Tolerance)
             return null;
         return (beside[0], beside[1]);
     }

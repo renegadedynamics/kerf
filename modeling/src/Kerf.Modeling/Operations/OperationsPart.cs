@@ -238,7 +238,7 @@ public static partial class Operations
             foreach (var face in faces.Skip(1))
             {
                 var innerWires = face.InnerWires();
-                double Distance(int j, int k) => (holeSections[j][^1].Center() - innerWires[k].Center()).Length;
+                double Distance(int j, int k) => (holeSections[j][^1].Center() - innerWires[k].Center()).Magnitude;
                 // The first assignment (in lexicographic order) of the least total distance, as build123d's sort finds
                 int[]? best = null;
                 double bestQuality = double.PositiveInfinity;
@@ -314,7 +314,7 @@ public static partial class Operations
     /// projections of <paramref name="origin"/> and <paramref name="xDir"/> onto it.
     /// </summary>
     /// <exception cref="ArgumentException"><paramref name="xDir"/> is perpendicular to <paramref name="projectionDir"/>.</exception>
-    public static Plane ProjectWorkplane(Vector origin, Vector xDir, Vector projectionDir, double distance)
+    public static Plane ProjectWorkplane(Point3D origin, Vector3D xDir, Vector3D projectionDir, double distance)
     {
         // Phase 5: in builder mode this is only valid in a BuildPart
         var x = xDir.Normalized();
@@ -335,9 +335,9 @@ public static partial class Operations
         return workplane.WithXDir(found[0].Point - workplaneOrigin);
     }
 
-    /// <inheritdoc cref="ProjectWorkplane(Vector, Vector, Vector, double)"/>
-    public static Plane ProjectWorkplane(Vertex origin, Vertex xDir, Vector projectionDir, double distance) =>
-        ProjectWorkplane(origin.ToVector(), xDir.ToVector(), projectionDir, distance);
+    /// <inheritdoc cref="ProjectWorkplane(Point3D, Vector3D, Vector3D, double)"/>
+    public static Plane ProjectWorkplane(Vertex origin, Vertex xDir, Vector3D projectionDir, double distance) =>
+        ProjectWorkplane(origin.Point, xDir.Point.ToVector(), projectionDir, distance);
 
     // ---- revolve ----
 

@@ -202,12 +202,12 @@ public class Wedge : BasePartObject
 public class ConvexPolyhedron : BasePartObject
 {
     /// <summary>The convex hull of the points.</summary>
-    public ConvexPolyhedron(IEnumerable<Vector> points, Rotation? rotation = null, Alignment? align = null)
+    public ConvexPolyhedron(IEnumerable<Point3D> points, Rotation? rotation = null, Alignment? align = null)
         : base(Make(points), rotation, align ?? Kerf.Modeling.Align.None)
     {
     }
 
-    private static Shape Make(IEnumerable<Vector> points)
+    private static Shape Make(IEnumerable<Point3D> points)
     {
         var pts = points.ToList();
         var faces = ConvexHull3D.Facets(pts).Select(f => Face.Make(Wire.MakePolygon(f.Select(i => pts[i])))).ToList();
@@ -239,8 +239,8 @@ public class CounterBoreHole : BaseHole
     }
 
     private static Shape Make(double radius, double counterBoreRadius, double counterBoreDepth, double depth) =>
-        Solid.MakeCylinder(radius, depth, new Plane(new Vector(0, 0, 0), zDir: new Vector(0, 0, -1)))
-            .Fuse(Solid.MakeCylinder(counterBoreRadius, counterBoreDepth + depth, new Plane(new Vector(0, 0, -counterBoreDepth))));
+        Solid.MakeCylinder(radius, depth, new Plane(new Point3D(0, 0, 0), zDir: new Vector3D(0, 0, -1)))
+            .Fuse(Solid.MakeCylinder(counterBoreRadius, counterBoreDepth + depth, new Plane(new Point3D(0, 0, -counterBoreDepth))));
 
 #pragma warning disable CS1591 // The constructor's parameters
     public double Radius { get; }
@@ -266,7 +266,7 @@ public class CounterSinkHole : BaseHole
     private static Shape Make(double radius, double counterSinkRadius, double depth, double angle)
     {
         var coneHeight = counterSinkRadius / Math.Tan(angle / 2.0 * Constants.DegToRad);
-        var down = new Plane(new Vector(0, 0, 0), zDir: new Vector(0, 0, -1));
+        var down = new Plane(new Point3D(0, 0, 0), zDir: new Vector3D(0, 0, -1));
         return Solid.MakeCylinder(radius, depth, down)
             .Fuse(Solid.MakeCone(counterSinkRadius, 0.0, coneHeight, down), Solid.MakeCylinder(counterSinkRadius, depth));
     }
@@ -290,7 +290,7 @@ public class Hole : BaseHole
         : this(radius, 2 * (depth ?? ThroughHoleDepth()), depth is null) { }
 
     private Hole(double radius, double holeDepth, bool through)
-        : base(Solid.MakeCylinder(radius, holeDepth, new Plane(through ? new Vector(0, 0, holeDepth / 2) : new Vector(0, 0, 0), zDir: new Vector(0, 0, -1))),
+        : base(Solid.MakeCylinder(radius, holeDepth, new Plane(through ? new Point3D(0, 0, holeDepth / 2) : new Point3D(0, 0, 0), zDir: new Vector3D(0, 0, -1))),
                Centered)
     {
         (Radius, HoleDepth) = (radius, holeDepth);
@@ -307,17 +307,17 @@ public class Hole : BaseHole
 internal static class ConvexHull3D
 {
     /// <summary>The hull's facets as point-index triples, outward-facing (incremental hull; coplanar points left out).</summary>
-    internal static List<int[]> Facets(IReadOnlyList<Vector> points)
+    internal static List<int[]> Facets(IReadOnlyList<Point3D> points)
     {
         var scale = points.Max(p => Math.Max(Math.Abs(p.X), Math.Max(Math.Abs(p.Y), Math.Abs(p.Z))));
         var eps = 1e-10 * Math.Max(1, scale);
         // An initial tetrahedron of four points not in one plane
         int a = 0, b = -1, c = -1, d = -1;
         for (int i = 1; i < points.Count && b < 0; i++)
-            if ((points[i] - points[a]).Length > eps)
+            if ((points[i] - points[a]).Magnitude > eps)
                 b = i;
         for (int i = 1; i < points.Count && c < 0 && b >= 0; i++)
-            if ((points[b] - points[a]).Cross(points[i] - points[a]).Length > eps)
+            if ((points[b] - points[a]).Cross(points[i] - points[a]).Magnitude > eps)
                 c = i;
         for (int i = 1; i < points.Count && d < 0 && c >= 0; i++)
             if (Math.Abs(Volume(points, a, b, c, i)) > eps)
@@ -357,6 +357,6 @@ internal static class ConvexHull3D
     }
 
     /// <summary>Six times the signed volume of the tetrahedron (p, q, r, s): positive when s is in front of the facet p, q, r.</summary>
-    private static double Volume(IReadOnlyList<Vector> pts, int p, int q, int r, int s) =>
+    private static double Volume(IReadOnlyList<Point3D> pts, int p, int q, int r, int s) =>
         (pts[q] - pts[p]).Cross(pts[r] - pts[p]).Dot(pts[s] - pts[p]);
 }

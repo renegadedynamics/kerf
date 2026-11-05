@@ -81,12 +81,12 @@ public static partial class ShapeExtensions
         return $"{name} at {new Location(shape.Placement)}";
     }
 
-    /// <summary>The shape equivalent of a geometry object: a Vertex for a Vector or Location, an Edge for an Axis, a Face for a Plane.</summary>
+    /// <summary>The shape equivalent of a geometry object: a Vertex for a point or Location, an Edge for an Axis, a Face for a Plane.</summary>
     /// <exception cref="ArgumentException">The object has no shape equivalent.</exception>
     public static Shape ShapeOf(object obj) => obj switch
     {
         IShape s => s.AsShape(),
-        Vector v => Vertex.Make(v),
+        Point3D v => Vertex.Make(v),
         Location l => Vertex.Make(l.Position),
         Axis a => Edge.FromAxis(a),
         Plane p => Face.FromPlane(p),

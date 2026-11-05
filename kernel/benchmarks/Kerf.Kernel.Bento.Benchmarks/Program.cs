@@ -13,6 +13,7 @@
 
 using System.Diagnostics;
 using System.Globalization;
+using Point3D = Kerf.Geometry.Point3D;
 using Kerf.Modeling;
 using Kerf.Topology;
 using static Kerf.Modeling.Operations;
@@ -29,7 +30,7 @@ var examples = new (string Name, Func<Shape> Build)[]
     // A2 =CAD_PT_EXTRUDE(A1, 15)
     ("5 working point", () => Extrude(new Circle(90) - new Pos(45, 0.0) * new Rectangle(15, 15) - new Pos(0.0, 45) * new Circle(7.5), 15).Value),
     // A1 =CAD_CUT(CAD_SK_CIRCLE(80), CAD_MOVE(CAD_SK_CIRCLE(10), CAD_LOC_LIST({60, 0; 0, 60; -60, 0; 0, -60}))); A2 =CAD_PT_EXTRUDE(A1, 10)
-    ("6 point lists", () => Extrude(new Circle(80) - new Locations(new Vector(60, 0), new Vector(0, 60), new Vector(-60, 0), new Vector(0, -60))
+    ("6 point lists", () => Extrude(new Circle(80) - new Locations(new Point3D(60, 0, 0), new Point3D(0, 60, 0), new Point3D(-60, 0, 0), new Point3D(0, -60, 0))
         .Select(loc => (Shape)(loc * new Circle(10))), 10).Value),
     // A1 =CAD_PT_BOX(80, 60, 10); A4 =CAD_PT_CHAMFER(A1, A1.Edges().GroupBy("Z")[-1], 4); A5 =CAD_PT_FILLET(A4, A4.Edges().FilterBy("Z"), 5)
     ("9 chamfer, fillet", () =>
@@ -49,9 +50,9 @@ var examples = new (string Name, Func<Shape> Build)[]
     ("29 bottle", () =>
     {
         double l = 60.0, w = 18.0, t = 9.0, b = 0.9, h = 90.0, n = 8.0;
-        var l1 = new Line(new Vector(0, 0), new Vector(0, w / 2));
-        var l2 = new ThreePointArc(l1.PositionAt(1), new Vector(l / 2.0, w / 2.0 + t), new Vector(l, w / 2.0));
-        var l3 = new Line(l2.PositionAt(1), new Vector(l2.PositionAt(1).X, 0, 0));
+        var l1 = new Line(new Point3D(0, 0, 0), new Point3D(0, w / 2, 0));
+        var l2 = new ThreePointArc(l1.PositionAt(1), new Point3D(l / 2.0, w / 2.0 + t, 0), new Point3D(l, w / 2.0, 0));
+        var l3 = new Line(l2.PositionAt(1), new Point3D(l2.PositionAt(1).X, 0, 0));
         Curve profile = l1 + l2 + l3;
         profile += Mirror(profile);
         Part body = Extrude(MakeFace(profile), -(h + b)).Value;

@@ -48,13 +48,13 @@ public class GroupByTests
     [Fact]
     public void NonRoundableProperty()
     {
-        var cyl = Solid.MakeCylinder(1, 2, new Plane(new Vector(0, 0, -1)));
+        var cyl = Solid.MakeCylinder(1, 2, new Plane(new Point3D(0, 0, -1)));
         var grouped = cyl.SelectFaces().GroupByValue(f => f.MatrixOfInertia);
         Assert.Equal(2, grouped.Count);
     }
 
     private static ShapeList<Edge> TangentLines() =>
-        Edge.MakeConstrainedLines(new CenterArc(new Vector(-5, 0), 2, 0, 360), new CenterArc(new Vector(5, 0), 4, 0, 360));
+        Edge.MakeConstrainedLines(new CenterArc(new Point3D(-5, 0, 0), 2, 0, 360), new CenterArc(new Point3D(5, 0, 0), 4, 0, 360));
 
     [Fact]
     public void Properties()

@@ -40,18 +40,11 @@ public static partial class VertexExtensions
             (x, y, z) = (p.X, p.Y, p.Z);
         }
 
-        /// <summary>The point the vertex is at.</summary>
-        public Vector ToVector()
-        {
-            var p = self.Point;
-            return new Vector(p);
-        }
-
         /// <summary>The centre of a vertex is itself.</summary>
-        internal Vector CenterOfVertex()
+        internal Point3D CenterOfVertex()
         {
             self.NeedsGeometry("center");
-            return self.ToVector();
+            return self.Point;
         }
 
         
@@ -59,7 +52,7 @@ public static partial class VertexExtensions
         {
             switch (other)
             {
-                case Vector v:
+                case Point3D v:
                     other = Vertex.Make(v);
                     break;
                 case Location l:
@@ -191,14 +184,14 @@ public static partial class VertexExtensions
     extension(Vertex)
     {
         /// <summary>A vertex at a point.</summary>
-        public static Vertex Make(double x, double y, double z = 0) => Vertex.Make(new Vector(x, y, z));
+        public static Vertex Make(double x, double y, double z = 0) => Vertex.Make(new Point3D(x, y, z));
     }
 
 
     extension(Vertex)
     {
         /// <summary>A vertex at a point.</summary>
-        public static Vertex Make(Vector point) => Vertex.At(point.ToPoint3D());
+        public static Vertex Make(Point3D point) => Vertex.At(point);
     }
 
 

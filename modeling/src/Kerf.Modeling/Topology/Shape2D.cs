@@ -124,7 +124,7 @@ public static partial class Shape2DExtensions
         }
 
         /// <summary>The points where an axis meets the surface, nearest the axis's start first, each with the surface normal there.</summary>
-        public IReadOnlyList<(Vector Point, Vector Normal)> FindIntersectionPoints(Axis other, double tolerance = Constants.Tolerance) =>
+        public IReadOnlyList<(Point3D Point, Vector3D Normal)> FindIntersectionPoints(Axis other, double tolerance = Constants.Tolerance) =>
             SurfaceIntersection.FindPoints(self.AsShape(), other, tolerance);
 
         internal ShapeList<Shape>? IntersectCoreOfShape2D(object other, double tolerance, bool includeTouched)
@@ -135,7 +135,7 @@ public static partial class Shape2DExtensions
             if (TopoUtil.Typed(shape) is Edge { IsUnbounded: true } infinite)
             {
                 var box = self.BoundBox(optimal: false);
-                shape = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Length);
+                shape = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Magnitude);
             }
             switch (TopoUtil.Typed(shape))
             {
@@ -199,8 +199,8 @@ public static partial class Shape2DExtensions
             bool OnFaces(Vertex v, IEnumerable<Face> faces) => faces.Any(f => v.DistanceTo(f) <= tolerance);
             static bool IsDuplicate(Vertex v, IEnumerable<Vertex> vertices)
             {
-                var vec = v.ToVector();
-                return vertices.Any(o => vec == o.ToVector());
+                var vec = v.Point;
+                return vertices.Any(o => vec.IsNear(o.Point));
             }
 
             if (foundFaces is null)

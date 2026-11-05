@@ -29,13 +29,13 @@ public sealed class BoundBox
     private readonly double _gap;
 
     /// <summary>The minimum corner; the origin for an empty box.</summary>
-    public Vector Min { get; }
+    public Point3D Min { get; }
 
     /// <summary>The maximum corner; the origin for an empty box.</summary>
-    public Vector Max { get; }
+    public Point3D Max { get; }
 
     /// <summary>The overall size.</summary>
-    public Vector Size { get; }
+    public Vector3D Size { get; }
 
     /// <summary>The bounding box of nothing.</summary>
     public static BoundBox Empty { get; } = new(BoundingBox.Empty, 0.0);
@@ -48,8 +48,8 @@ public sealed class BoundBox
         }
         _extents = extents;
         _gap = gap;
-        Min = new Vector(extents.Min.X - gap, extents.Min.Y - gap, extents.Min.Z - gap);
-        Max = new Vector(extents.Max.X + gap, extents.Max.Y + gap, extents.Max.Z + gap);
+        Min = new Point3D(extents.Min.X - gap, extents.Min.Y - gap, extents.Min.Z - gap);
+        Max = new Point3D(extents.Max.X + gap, extents.Max.Y + gap, extents.Max.Z + gap);
         Size = Max - Min;
     }
 
@@ -60,10 +60,10 @@ public sealed class BoundBox
     /// A box with the given corners as they are, even where a minimum is above its maximum (a box's corners transformed,
     /// as OCCT's <c>Bnd_Box(min, max)</c> keeps them); its extents are the box around both.
     /// </summary>
-    internal static BoundBox FromCorners(Vector min, Vector max) =>
-        new(BoundingBox.Of([min.ToPoint3D(), max.ToPoint3D()]), min, max);
+    internal static BoundBox FromCorners(Point3D min, Point3D max) =>
+        new(BoundingBox.Of([min, max]), min, max);
 
-    BoundBox(BoundingBox extents, Vector min, Vector max)
+    BoundBox(BoundingBox extents, Point3D min, Point3D max)
     {
         _extents = extents;
         Min = min;
@@ -107,8 +107,8 @@ public sealed class BoundBox
         {
             double result = 1;
             for (int i = 0; i < 3; i++)
-                if (Size[i] > Constants.Tolerance)
-                    result *= Size[i];
+                if (Component(Size, i) > Constants.Tolerance)
+                    result *= Component(Size, i);
             return result;
         }
     }
@@ -119,14 +119,18 @@ public sealed class BoundBox
 
     static double Square(double x) => x * x;
 
+    static double Component(Point3D p, int i) => i == 0 ? p.X : i == 1 ? p.Y : p.Z;
+
+    static double Component(Vector3D v, int i) => i == 0 ? v.X : i == 1 ? v.Y : v.Z;
+
     /// <summary>The centre.</summary>
-    public Vector Center() => (Min + Max) / 2;
+    public Point3D Center() => ((Min.ToVector() + Max.ToVector()) / 2).ToPoint();
 
     /// <summary>A box enlarged to include a point, with a gap of <paramref name="tolerance"/> (default <see cref="Constants.LooseTolerance"/>).</summary>
-    public BoundBox Add(Vector point, double? tolerance = null) =>
+    public BoundBox Add(Point3D point, double? tolerance = null) =>
         // As Bnd_Box: the gap asked for applies only to a box started from nothing; one added to keeps its own
-        IsEmpty ? new BoundBox(BoundingBox.Of(point.ToPoint3D()), Math.Abs(tolerance ?? Constants.LooseTolerance))
-                : new BoundBox(_extents.Including(point.ToPoint3D()), _gap);
+        IsEmpty ? new BoundBox(BoundingBox.Of(point), Math.Abs(tolerance ?? Constants.LooseTolerance))
+                : new BoundBox(_extents.Including(point), _gap);
 
     /// <summary>A box enclosing this and another, with a gap of <paramref name="tolerance"/> (default <see cref="Constants.LooseTolerance"/>).</summary>
     public BoundBox Add(BoundBox other, double? tolerance = null)
@@ -148,7 +152,7 @@ public sealed class BoundBox
         var axes = new List<(double, double, double, double)>(3);
         for (int i = 0; i < 3; i++)
         {
-            double sMin = Min[i], sMax = Max[i], oMin = other.Min[i], oMax = other.Max[i];
+            double sMin = Component(Min, i), sMax = Component(Max, i), oMin = Component(other.Min, i), oMax = Component(other.Max, i);
             bool selfDegenerate = sMax - sMin <= tolerance;
             bool otherDegenerate = oMax - oMin <= tolerance;
             if (selfDegenerate && otherDegenerate)
@@ -178,7 +182,7 @@ public sealed class BoundBox
         if (IsEmpty || other.IsEmpty)
             return false;
         for (int i = 0; i < 3; i++)
-            if (!(Min[i] <= other.Min[i] + tolerance && other.Max[i] <= Max[i] + tolerance))
+            if (!(Component(Min, i) <= Component(other.Min, i) + tolerance && Component(other.Max, i) <= Component(Max, i) + tolerance))
                 return false;
         return true;
     }
@@ -217,7 +221,7 @@ public sealed class BoundBox
         double sum = 0;
         for (int i = 0; i < 3; i++)
         {
-            double min1 = Min[i], max1 = Max[i], min2 = other.Min[i], max2 = other.Max[i];
+            double min1 = Component(Min, i), max1 = Component(Max, i), min2 = Component(other.Min, i), max2 = Component(other.Max, i);
             if ((min1 <= min2 && min2 <= max1) || (min2 <= min1 && min1 <= max2))
                 continue;
             sum += Math.Min(Square(min1 - max2), Square(max1 - min2));
@@ -237,7 +241,7 @@ public sealed class BoundBox
         HasInteriorOverlap(other, tolerance) && !Contains(other, tolerance) && !other.Contains(this, tolerance);
 
     /// <summary>The amount to move the object to align it.</summary>
-    public Vector ToAlignOffset(Alignment align) => align.Offset(Min, Max);
+    public Vector3D ToAlignOffset(Alignment align) => align.Offset(Min, Max);
 
     /// <summary>"bbox: 0.0 &lt;= x &lt;= 1.0, 0.0 &lt;= y &lt;= 1.0, 0.0 &lt;= z &lt;= 1.0".</summary>
     public override string ToString()

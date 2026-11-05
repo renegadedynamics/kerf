@@ -16,7 +16,7 @@ public static partial class Operations
         public static ExtrudeOptions Default { get; } = new();
 
         /// <summary>The direction to extrude in, instead of each face's normal; non-planar faces need it.</summary>
-        public Vector? Direction { get; init; }
+        public Vector3D? Direction { get; init; }
 
         /// <summary>Extrude both ways from the faces.</summary>
         public bool Both { get; init; }
@@ -48,7 +48,7 @@ public static partial class Operations
         public Transition Transition { get; init; } = Transition.Transformed;
 
         /// <summary>A fixed normal for the sections.</summary>
-        public Vector? Normal { get; init; }
+        public Vector3D? Normal { get; init; }
 
         /// <summary>An edge or wire guiding the rotation of the sections along the path.</summary>
         public IShape1D? Binormal { get; init; }
@@ -89,7 +89,7 @@ public static partial class Operations
         /// Which way is up: faces whose normals point the other way (by more than 90°) are flipped, so that faces with
         /// different normals all go the same way.
         /// </summary>
-        public Vector? NormalOverride { get; init; }
+        public Vector3D? NormalOverride { get; init; }
 
         /// <summary>Thicken both ways from the faces.</summary>
         public bool Both { get; init; }

@@ -72,10 +72,10 @@ internal static class PointOrder
         return acc == ulong.MaxValue ? 1546275796 : (long)acc;
     }
 
-    /// <summary>The distinct points (by <see cref="Vector"/> equality), in the table's order.</summary>
-    internal static List<Vector> Distinct(IEnumerable<Vector> points)
+    /// <summary>The distinct points (by <c>IsNear</c>), in the table's order.</summary>
+    internal static List<Point3D> Distinct(IEnumerable<Point3D> points)
     {
-        var table = new (Vector Key, long Hash, bool Used)[MinSize];
+        var table = new (Point3D Key, long Hash, bool Used)[MinSize];
         int fill = 0;
         foreach (var point in points)
         {
@@ -92,7 +92,7 @@ internal static class PointOrder
     }
 
     /// <summary>Adds a point to the table (CPython's set_add_entry): false if an equal point is already there.</summary>
-    private static bool Add((Vector Key, long Hash, bool Used)[] table, Vector point, long hash)
+    private static bool Add((Point3D Key, long Hash, bool Used)[] table, Point3D point, long hash)
     {
         var mask = (ulong)table.Length - 1;
         var perturb = (ulong)hash;
@@ -108,7 +108,7 @@ internal static class PointOrder
                     table[j] = (point, hash, true);
                     return true;
                 }
-                if (table[j].Hash == hash && table[j].Key == point)
+                if (table[j].Hash == hash && table[j].Key.IsNear(point))
                     return false;
                 j++;
             } while (probes-- > 0);
@@ -118,12 +118,12 @@ internal static class PointOrder
     }
 
     /// <summary>The entries reinserted, in table order, into a table larger than <paramref name="minUsed"/> (set_table_resize).</summary>
-    private static (Vector, long, bool)[] Resize((Vector Key, long Hash, bool Used)[] old, int minUsed)
+    private static (Point3D, long, bool)[] Resize((Point3D Key, long Hash, bool Used)[] old, int minUsed)
     {
         var size = MinSize;
         while (size <= minUsed)
             size <<= 1;
-        var table = new (Vector Key, long Hash, bool Used)[size];
+        var table = new (Point3D Key, long Hash, bool Used)[size];
         var mask = (ulong)size - 1;
         foreach (var entry in old)
         {

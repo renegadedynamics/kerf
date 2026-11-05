@@ -41,7 +41,7 @@ public class OneSetOfShapesTests
     [Fact]
     public void ATypedShapeKeepsItsType()
     {
-        Edge edge = Edge.MakeLine(new Vector(0, 0), new Vector(1, 0));
+        Edge edge = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         Edge moved = edge.Moved(new Pos(0, 0, 5));
         Edge viaOperator = new Pos(0, 0, 5) * edge;
         Edge reversed = edge.Reversed();
@@ -120,7 +120,7 @@ public class OneSetOfShapesTests
         Assert.Equal("brick", part.Label);
         Assert.Equal(new Color(1, 0, 0), part.Color);
         Assert.IsType<Sketch>(Face.MakeRect(1, 1).WithLabel("plate"));
-        Assert.IsType<Curve>(Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)).WithLabel("line"));
+        Assert.IsType<Curve>(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).WithLabel("line"));
         Assert.IsType<Assembly>(Vertex.Make(0, 0, 0).WithLabel("point"));
     }
 
@@ -138,11 +138,11 @@ public class OneSetOfShapesTests
     [Fact]
     public void ALineIsACurveAndConvertsToItsEdge()
     {
-        var line = new Line(new Vector(0, 0), new Vector(3, 4));
+        var line = new Line(new Point3D(0, 0, 0), new Point3D(3, 4, 0));
         Edge edge = line;
         Assert.Equal(5, line.Length, 9);
         Assert.Equal(5, edge.Length, 9);
-        Curve joined = line + new Line(new Vector(3, 4), new Vector(3, 0));
+        Curve joined = line + new Line(new Point3D(3, 4, 0), new Point3D(3, 0, 0));
         Assert.Equal(ShapeType.Wire, joined.Shape.Type);
     }
 
@@ -150,8 +150,8 @@ public class OneSetOfShapesTests
     public void ProjectingFacesOntoACurvedSurfaceKeepsTheirFaces()
     {
         // Unit 10P3 found an InvalidCastException here: a projection onto a curved surface can be a shell, not a face
-        var cylinder = Solid.MakeCylinder(20, 40, new Plane(new Vector(0, 0, -20)));
-        var path = Edge.MakeLine(new Vector(-20, -50, 0), new Vector(-20, 50, 0));
+        var cylinder = Solid.MakeCylinder(20, 40, new Plane(new Point3D(0, 0, -20)));
+        var path = Edge.MakeLine(new Point3D(-20, -50, 0), new Point3D(-20, 50, 0));
         var faces = new[] { Face.MakeRect(4, 4) };
         var projected = cylinder.ProjectFaces(faces, path, 0.5);
         Assert.NotEmpty(projected);

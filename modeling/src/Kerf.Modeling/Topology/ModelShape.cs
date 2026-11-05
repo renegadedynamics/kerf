@@ -308,10 +308,10 @@ public partial class Curve : ModelShape, IShape1D
     private Wire AsWire() => Shape.TryAs(out Wire wire) && !Shape.IsNull ? wire : Wire.Make(Edges());
 
     /// <summary>The point at a parameter along the curve, which must be continuous.</summary>
-    public Vector PositionAt(double position) => Shape.TryAs(out Edge edge) && !Shape.IsNull ? edge.PositionAt(position) : AsWire().PositionAt(position);
+    public Point3D PositionAt(double position) => Shape.TryAs(out Edge edge) && !Shape.IsNull ? edge.PositionAt(position) : AsWire().PositionAt(position);
 
     /// <summary>The tangent at a parameter along the curve, which must be continuous.</summary>
-    public Vector TangentAt(double position) => Shape.TryAs(out Edge edge) && !Shape.IsNull ? edge.TangentAt(position) : AsWire().TangentAt(position);
+    public Vector3D TangentAt(double position) => Shape.TryAs(out Edge edge) && !Shape.IsNull ? edge.TangentAt(position) : AsWire().TangentAt(position);
 
     /// <summary>The location at a parameter along the curve, which must be continuous.</summary>
     public Location LocationAt(double position) => Shape.TryAs(out Edge edge) && !Shape.IsNull ? edge.LocationAt(position) : AsWire().LocationAt(position);

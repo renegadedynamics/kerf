@@ -129,7 +129,7 @@ public sealed class Matrix
     public Matrix Inverse() => new(GTrsf.Inverted(), owned: true);
 
     /// <summary>A vector transformed by this matrix.</summary>
-    public Vector Multiply(Vector v) => v.Transform(this);
+    public Point3D Multiply(Point3D v) => v.Transform(this);
 
     /// <summary>The product that applies <paramref name="other"/> first and then this matrix.</summary>
     public Matrix Multiply(Matrix other)
@@ -153,7 +153,7 @@ public sealed class Matrix
 
 #pragma warning disable CS1591
     public static Matrix operator *(Matrix a, Matrix b) => a.Multiply(b);
-    public static Vector operator *(Matrix a, Vector v) => a.Multiply(v);
+    public static Point3D operator *(Matrix a, Point3D v) => a.Multiply(v);
 #pragma warning restore CS1591
 
     /// <summary>The 16 values in column-major order (each column's four values in turn), as glTF expects.</summary>
@@ -172,7 +172,7 @@ public sealed class Matrix
     /// turns it again. Both are proper rotations; when the transform mirrors, the last scale is negative.
     /// Scales come in descending order of magnitude.
     /// </summary>
-    public (Matrix Left, Vector Scales, Matrix Right) Svd()
+    public (Matrix Left, Vector3D Scales, Matrix Right) Svd()
     {
         var a = new double[3, 3];
         for (int i = 0; i < 3; i++)
@@ -199,7 +199,7 @@ public sealed class Matrix
             { r[1, 0], r[1, 1], r[1, 2], 0 },
             { r[2, 0], r[2, 1], r[2, 2], 0 },
         });
-        return (AsMatrix(u), new Vector(s[0], s[1], s[2]), AsMatrix(vt));
+        return (AsMatrix(u), new Vector3D(s[0], s[1], s[2]), AsMatrix(vt));
     }
 
     static double Det3(double[,] m) =>
@@ -297,16 +297,16 @@ public sealed class Matrix
     // A unit vector orthogonal to the first `count` columns of u
     static double[] CompleteBasis(double[,] u, int count)
     {
-        Span<Vector> axes = [new(1, 0, 0), new(0, 1, 0), new(0, 0, 1)];
+        Span<Vector3D> axes = [new(1, 0, 0), new(0, 1, 0), new(0, 0, 1)];
         foreach (var axis in axes)
         {
             var w = axis;
             for (int c = 0; c < count; c++)
             {
-                var uc = new Vector(u[0, c], u[1, c], u[2, c]);
+                var uc = new Vector3D(u[0, c], u[1, c], u[2, c]);
                 w -= uc * w.Dot(uc);
             }
-            if (w.Length > 1e-6)
+            if (w.Magnitude > 1e-6)
             {
                 var n = w.Normalized();
                 return [n.X, n.Y, n.Z];

@@ -13,11 +13,11 @@ public static partial class ShapeExtensions
         public double Volume => VolumeOf(self.AsShape());
 
         /// <summary>The centre of the shape, by the calculation its kind uses by default.</summary>
-        public Vector Center() => CenterOfShape(self.AsShape());
+        public Point3D Center() => CenterOfShape(self.AsShape());
 
         /// <summary>The centre of the shape by a chosen calculation.</summary>
         /// <exception cref="NotSupportedException">The kind of shape doesn't offer a choice.</exception>
-        public Vector Center(CenterOf centerOf) => CenterOfShape(self.AsShape(), centerOf);
+        public Point3D Center(CenterOf centerOf) => CenterOfShape(self.AsShape(), centerOf);
 
         /// <summary>Where this shape touches <paramref name="other"/> at its boundary: for faces, solids and compounds.</summary>
         public ShapeList<Shape> Touch(Shape other, double tolerance = 1e-6) => TouchOf(self.AsShape(), other, tolerance);
@@ -44,7 +44,7 @@ public static partial class ShapeExtensions
         };
     }
 
-    private static Vector CenterOfShape(Shape s)
+    private static Point3D CenterOfShape(Shape s)
     {
         s.NeedsGeometry("center");
         return s.Type switch
@@ -59,7 +59,7 @@ public static partial class ShapeExtensions
         };
     }
 
-    private static Vector CenterOfShape(Shape s, CenterOf centerOf)
+    private static Point3D CenterOfShape(Shape s, CenterOf centerOf)
     {
         if (TopoUtil.IsNothing(s))
             s.NeedsGeometry("center");
@@ -128,7 +128,7 @@ public static partial class Shape1DExtensions
         /// The parameter of the point on this curve closest to <paramref name="point"/>: the arc-length fraction
         /// <see cref="PositionAt"/> uses, or with <paramref name="normalize"/> false the kernel's own parameter.
         /// </summary>
-        public double ParamAtPoint(Vector point, bool normalize = true) =>
+        public double ParamAtPoint(Point3D point, bool normalize = true) =>
             Dispatch(self, e => e.ParamAtPointOfEdge(point, normalize), w => w.ParamAtPointOfWire(point, normalize));
     }
 

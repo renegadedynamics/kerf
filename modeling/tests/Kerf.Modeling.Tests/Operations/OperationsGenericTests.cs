@@ -85,7 +85,7 @@ public class OperationsGenericTests
         var ears = box.SelectVertices().OrderBy(Axis.Y)[..^2];
         Shape mickey = new Circle(10);
         foreach (var ear in ears)
-            mickey = mickey + new Location(ear.ToVector()) * new Circle(7);
+            mickey = mickey + new Location(ear.Point) * new Circle(7);
         Check.AlmostEqual(586.1521145312807, mickey.Area, 5);
     }
 
@@ -208,7 +208,7 @@ public class OperationsGenericTests
         Check.AlmostEqual(9, test.SelectEdges().OrderBy(Axis.Y)[0].Length);
     }
 
-    private static Wire Corner() => Wire.MakePolygon([new Vector(0, 0), new Vector(10, 0), new Vector(10, 10)], close: false);
+    private static Wire Corner() => Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0)], close: false);
 
     [Fact]
     public void WireChamfer()
@@ -259,7 +259,7 @@ public class OperationsGenericTests
     [Fact]
     public void NothingToChamfer()
     {
-        var e = Assert.Throws<ArgumentException>(() => Chamfer([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))], length: 0.1));
+        var e = Assert.Throws<ArgumentException>(() => Chamfer([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0))], length: 0.1));
         Assert.Contains("Nothing to chamfer", e.Message);
     }
 
@@ -267,7 +267,7 @@ public class OperationsGenericTests
     public void ChamferInvalidDimension()
     {
         // A parent compound of mixed dimension has no dimension to dispatch on
-        var mixed = Compound.Make([new Box(1, 1, 1).SingleSolid(), Edge.MakeLine(new Vector(5, 0), new Vector(6, 0))]);
+        var mixed = Compound.Make([new Box(1, 1, 1).SingleSolid(), Edge.MakeLine(new Point3D(5, 0, 0), new Point3D(6, 0, 0))]);
         var e = Assert.Throws<ArgumentException>(() => Chamfer(mixed, mixed.SelectEdges()[0], length: 0.1));
         Assert.Contains("Invalid object dimension", e.Message);
     }
@@ -330,14 +330,14 @@ public class OperationsGenericTests
     [Fact]
     public void NothingToFillet()
     {
-        var e = Assert.Throws<ArgumentException>(() => Fillet([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))], radius: 0.1));
+        var e = Assert.Throws<ArgumentException>(() => Fillet([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0))], radius: 0.1));
         Assert.Contains("Nothing to fillet", e.Message);
     }
 
     [Fact]
     public void Fillet1DRequiresVertices()
     {
-        var line = Wire.MakePolygon([new Vector(0, 0), new Vector(5, 0), new Vector(5, 5)], close: false);
+        var line = Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(5, 0, 0), new Point3D(5, 5, 0)], close: false);
         var e = Assert.Throws<ArgumentException>(() => Fillet(line.SelectEdges(), radius: 1));
         Assert.Contains("takes only Vertices", e.Message);
     }
@@ -346,7 +346,7 @@ public class OperationsGenericTests
     public void Fillet1D()
     {
         // The ends of an open wire are skipped
-        var line = Wire.MakePolygon([new Vector(0, 0), new Vector(5, 0), new Vector(5, 5)], close: false);
+        var line = Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(5, 0, 0), new Point3D(5, 5, 0)], close: false);
         var test = (Wire)Fillet(line.SelectVertices(), radius: 1).Value;
         Check.AlmostEqual(4 + 4 + Math.PI / 2, test.Length, 5);
     }
@@ -354,7 +354,7 @@ public class OperationsGenericTests
     [Fact]
     public void FilletInvalidDimension()
     {
-        var mixed = Compound.Make([new Box(1, 1, 1).SingleSolid(), Edge.MakeLine(new Vector(5, 0), new Vector(6, 0))]);
+        var mixed = Compound.Make([new Box(1, 1, 1).SingleSolid(), Edge.MakeLine(new Point3D(5, 0, 0), new Point3D(6, 0, 0))]);
         var e = Assert.Throws<ArgumentException>(() => Fillet(mixed, mixed.SelectEdges()[0], radius: 0.1));
         Assert.Contains("Invalid object dimension", e.Message);
     }
@@ -364,8 +364,8 @@ public class OperationsGenericTests
     [Fact]
     public void MirrorLine()
     {
-        var edge = Edge.MakeLine(new Vector(1, 0, 0), new Vector(2, 0, 0));
-        var wire = Wire.MakeCircle(1, new Plane(new Vector(5, 0, 0)));
+        var edge = Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(2, 0, 0));
+        var wire = Wire.MakeCircle(1, new Plane(new Point3D(5, 0, 0)));
         var test = Mirror([edge, wire], Plane.YZ);
         Check.Is<Compound>(test);
         Assert.Empty(test.SelectEdges().Between(Axis.X, minimum: 0, maximum: 10));
@@ -375,10 +375,10 @@ public class OperationsGenericTests
     [Fact]
     public void MirrorSketch()
     {
-        var edge = Edge.MakeLine(new Vector(1, 0), new Vector(2, 0));
-        var wire = Wire.MakeCircle(1, new Plane(new Vector(5, 0, 0)));
-        var face = Face.MakeRect(2, 2, new Plane(new Vector(8, 0)));
-        var compound = Compound.Make([Face.MakeRect(2, 2, new Plane(new Vector(8, 8))), Face.MakeRect(2, 2, new Plane(new Vector(8, -8)))]);
+        var edge = Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(2, 0, 0));
+        var wire = Wire.MakeCircle(1, new Plane(new Point3D(5, 0, 0)));
+        var face = Face.MakeRect(2, 2, new Plane(new Point3D(8, 0, 0)));
+        var compound = Compound.Make([Face.MakeRect(2, 2, new Plane(new Point3D(8, 8, 0))), Face.MakeRect(2, 2, new Plane(new Point3D(8, -8, 0)))]);
         var test = Mirror([edge, wire, face, compound], Plane.YZ);
         // Mixed dimensions: a plain compound, held by an assembly with no children
         Assert.Equal(typeof(Assembly), test.GetType());
@@ -391,7 +391,7 @@ public class OperationsGenericTests
     [Fact]
     public void MirrorPart()
     {
-        var cone = Solid.MakeCone(2, 1, 2, new Plane(new Vector(5, 4, 0)));
+        var cone = Solid.MakeCone(2, 1, 2, new Plane(new Point3D(5, 4, 0)));
         var test = Mirror(cone, Plane.YZ);
         Check.Is<Compound>(test);
         Assert.Single(test.SelectSolids().Between(Axis.X, minimum: -10, maximum: 0));
@@ -429,7 +429,7 @@ public class OperationsGenericTests
     [Fact]
     public void SingleLineOffset()
     {
-        var test = Offset(Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), 1).Value;
+        var test = Offset(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)), 1).Value;
         Check.Is<Compound>(test);
         Check.AlmostEqual(2 + 2 * Math.PI, test.SelectWires()[0].Length, 5);
     }
@@ -438,15 +438,15 @@ public class OperationsGenericTests
     public void SingleLineOffsetStaysInPlane()
     {
         // Issue #604
-        var around = Offset(Plane.XZ * Edge.MakeLine(new Vector(0, 0), new Vector(10, 10)), 1).Value;
+        var around = Offset(Plane.XZ * Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(10, 10, 0)), 1).Value;
         Check.AlmostEqual(0, around.BoundBox().Size.Y, 5);
     }
 
     [Fact]
     public void LineOffset()
     {
-        var l1 = Edge.MakeLine(new Vector(0, 0), new Vector(1, 0));
-        var l2 = Edge.MakeLine(l1.PositionAt(1), new Vector(1, 1));
+        var l1 = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+        var l2 = Edge.MakeLine(l1.PositionAt(1), new Point3D(1, 1, 0));
         var test = MakeFace(Offset([l1, l2], 1).Value);
         Check.AlmostEqual(Math.PI * 1.25 + 3, test.Area, 5);
     }
@@ -493,7 +493,7 @@ public class OperationsGenericTests
     [Fact]
     public void OffsetCurve()
     {
-        Shape s = Offset(Edge.MakeBezier(new Vector(0, 0), new Vector(1, 5), new Vector(0, 10)), 1).Value;
+        Shape s = Offset(Edge.MakeBezier(new Point3D(0, 0, 0), new Point3D(1, 5, 0), new Point3D(0, 10, 0)), 1).Value;
         s = s - new Rectangle(100, 100, align: new Alignment(Align.Max, Align.Center));
         Check.Is<Compound>(s);
         var offset = Offset(s, 1).Value;
@@ -538,7 +538,7 @@ public class OperationsGenericTests
     [Fact]
     public void OffsetReturnsACurveForEdges()
     {
-        var result = Offset(Edge.MakeLine(new Vector(0, 0), new Vector(10, 0)), 1, new OffsetOptions { Side = Side.Left }).Value;
+        var result = Offset(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(10, 0, 0)), 1, new OffsetOptions { Side = Side.Left }).Value;
         Check.Is<Compound>(result);
         Assert.True(result.SelectEdges().Count > 1);
     }
@@ -546,10 +546,10 @@ public class OperationsGenericTests
     [Fact]
     public void OffsetAlgebraWire()
     {
-        Vector[] pts =
+        Point3D[] pts =
         [
-            new Vector(11.421, 10.15), new Vector(11.421, 84.582), new Vector(19.213, 118.618), new Vector(17.543, 127.548), new Vector(-10.675, 127.548), new Vector(-10.675, 118.618),
-            new Vector(-19.313, 118.618),
+            new Point3D(11.421, 10.15, 0), new Point3D(11.421, 84.582, 0), new Point3D(19.213, 118.618, 0), new Point3D(17.543, 127.548, 0), new Point3D(-10.675, 127.548, 0), new Point3D(-10.675, 118.618, 0),
+            new Point3D(-19.313, 118.618, 0),
         ];
         var line = new FilletPolyline(pts, radius: 3.177);
         Assert.Equal(11, line.Edges().Count);
@@ -597,9 +597,9 @@ public class OperationsGenericTests
         var profile = Fillet(new Rectangle(10, 15).Vertices().GroupBy(Axis.Y).Last(), 2).Value;
         var loaf = Extrude(Plane.YZ * profile, 15, new ExtrudeOptions { Both = true }).Value;
         var refPoints = loaf.Vertices().GroupBy(Axis.X).Last().GroupBy(Axis.Z).First();
-        var origin = (refPoints[0].ToVector() + refPoints[1].ToVector()) / 2;
-        var xDir = refPoints.OrderBy(Axis.Y)[^1].ToVector() - refPoints.OrderBy(Axis.Y)[0].ToVector();
-        var workplane = ProjectWorkplane(origin, xDir, new Vector(1, 0, 1), 30);
+        var origin = ((refPoints[0].Point.ToVector() + refPoints[1].Point.ToVector()) / 2).ToPoint();
+        var xDir = refPoints.OrderBy(Axis.Y)[^1].Point - refPoints.OrderBy(Axis.Y)[0].Point;
+        var workplane = ProjectWorkplane(origin, xDir, new Vector3D(1, 0, 1), 30);
         var projection = Project(loaf.Faces().OrderBy(Axis.X)[^1], workplane);
         Check.Is<Compound>(projection);
         Check.AlmostEqual(104.85204601097809, projection.Area, 5);
@@ -609,9 +609,9 @@ public class OperationsGenericTests
     [Fact]
     public void ProjectPoint()
     {
-        Check.AlmostEqual(new Vector(1, 2, 0), ProjectPoints(new Vector(1, 2, 3), Plane.XY)[0], 5);
-        Check.AlmostEqual(new Vector(1, 3, 0), ProjectPoints(Vertex.Make(1, 2, 3), Plane.XZ)[0], 5);
-        Check.AlmostEqual(new Vector(2, 3, 0), ProjectPoints(Vertex.Make(1, 2, 3), Plane.YZ)[0], 5);
+        Check.AlmostEqual(new Point3D(1, 2, 0), ProjectPoints(new Point3D(1, 2, 3), Plane.XY)[0], 5);
+        Check.AlmostEqual(new Point3D(1, 3, 0), ProjectPoints(Vertex.Make(1, 2, 3), Plane.XZ)[0], 5);
+        Check.AlmostEqual(new Point3D(2, 3, 0), ProjectPoints(Vertex.Make(1, 2, 3), Plane.YZ)[0], 5);
     }
 
     [Fact]
@@ -620,14 +620,14 @@ public class OperationsGenericTests
         var projection = Project(Face.MakeRect(1, 1, Plane.XY.Offset(5)), Plane.XY);
         Check.Is<Compound>(projection);
         Check.AlmostEqual(1, projection.Area, 5);
-        Check.AlmostEqual(new Vector(0, 0, 0), projection.SelectFaces()[0].Center(), 5);
+        Check.AlmostEqual(new Point3D(0, 0, 0), projection.SelectFaces()[0].Center(), 5);
     }
 
     [Fact]
     public void ProjectEdgesKeepsOnlyFaces()
     {
         // As build123d's algebra mode, which keeps the faces of each projection
-        var projection = Project([Edge.MakeLine(new Vector(0, 1, 2), new Vector(3, 4, 5)), Edge.MakeLine(new Vector(-1, 2, 3), new Vector(-4, 5, -6))], Plane.XY);
+        var projection = Project([Edge.MakeLine(new Point3D(0, 1, 2), new Point3D(3, 4, 5)), Edge.MakeLine(new Point3D(-1, 2, 3), new Point3D(-4, 5, -6))], Plane.XY);
         Check.Is<Compound>(projection);
         Assert.Empty(projection.SelectEdges());
     }
@@ -644,7 +644,7 @@ public class OperationsGenericTests
     [Fact]
     public void ScaleLine()
     {
-        var curve = Scale(Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), 2);
+        var curve = Scale(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)), 2);
         Check.Is<Compound>(curve);
         Check.AlmostEqual(2, curve.SelectEdges().Sum(e => e.Length), 5);
     }
@@ -661,7 +661,7 @@ public class OperationsGenericTests
     [Fact]
     public void ScalePart()
     {
-        var part = Scale(new Box(1, 1, 1), by: new Vector(2, 2, 2));
+        var part = Scale(new Box(1, 1, 1), by: new Vector3D(2, 2, 2));
         Assert.IsType<Part>(part);
         Check.AlmostEqual(8.0, part.Volume, 5);
     }
@@ -669,9 +669,9 @@ public class OperationsGenericTests
     [Fact]
     public void ScaleAbout()
     {
-        var box = new Box(1, 1, 1).Located(new Location(new Vector(10, 0, 0)));
+        var box = new Box(1, 1, 1).Located(new Location(new Point3D(10, 0, 0)));
         Check.AlmostEqual(10, Scale(box, 2).Center().X, 5);
-        Check.AlmostEqual(20, Scale(box, 2, about: new Vector(0, 0, 0)).Center().X, 5);
+        Check.AlmostEqual(20, Scale(box, 2, about: new Point3D(0, 0, 0)).Center().X, 5);
     }
 
     [Fact]
@@ -686,7 +686,7 @@ public class OperationsGenericTests
     [Fact]
     public void ScaleChangingGeometry()
     {
-        Check.AlmostEqual(4, Scale(new Rectangle(1, 2), by: new Vector(2, 1, 0)).Area, 5);
+        Check.AlmostEqual(4, Scale(new Rectangle(1, 2), by: new Vector3D(2, 1, 0)).Area, 5);
     }
 
     [Fact]
@@ -708,7 +708,7 @@ public class OperationsGenericTests
     [Fact]
     public void SplitReturnsACurveForEdges()
     {
-        var result = Split(Edge.MakeLine(new Vector(-5, 0), new Vector(5, 0)), Plane.YZ, keep: Keep.Top);
+        var result = Split(Edge.MakeLine(new Point3D(-5, 0, 0), new Point3D(5, 0, 0)), Plane.YZ, keep: Keep.Top);
         Check.Is<Compound>(result);
         Check.AlmostEqual(5, result.SelectEdges().Sum(e => e.Length), 5);
     }
@@ -743,7 +743,7 @@ public class OperationsGenericTests
     public void SweepReturnIsCleaned()
     {
         // Issue #451: a path of two collinear lines sweeps seams between the side faces; clean removes them
-        var path = Wire.Make([Edge.MakeLine(new Vector(0, 0, 0), new Vector(0, 0, 1)), Edge.MakeLine(new Vector(0, 0, 1), new Vector(0, 0, 2))]);
+        var path = Wire.Make([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(0, 0, 1)), Edge.MakeLine(new Point3D(0, 0, 1), new Point3D(0, 0, 2))]);
         var section = Face.MakeRect(2, 1);
         Assert.Equal(6, Sweep(section, path).Value.Faces().Count);
         Assert.Equal(10, Sweep(section, path, new SweepOptions { Clean = false }).Value.Faces().Count);
@@ -753,11 +753,11 @@ public class OperationsGenericTests
     public void SweepFixedNormal()
     {
         // normal holds the section's orientation instead of letting it follow the path's own framing
-        var path = Edge.MakeSpline([new Vector(0, 0, 0), new Vector(5, 3, 5), new Vector(10, 0, 10)]);
-        var section = new Plane(new Vector(0, 0, 0), zDir: path.TangentAt(0)) * new Rectangle(2, 1);
+        var path = Edge.MakeSpline([new Point3D(0, 0, 0), new Point3D(5, 3, 5), new Point3D(10, 0, 10)]);
+        var section = new Plane(new Point3D(0, 0, 0), zDir: path.TangentAt(0)) * new Rectangle(2, 1);
 
         var following = Sweep(section, path).Value;
-        var fixedNormal = Sweep(section, path, new SweepOptions { Normal = new Vector(0, 0, 1) }).Value;
+        var fixedNormal = Sweep(section, path, new SweepOptions { Normal = new Vector3D(0, 0, 1) }).Value;
 
         Assert.True(Math.Abs(following.Volume - fixedNormal.Volume) > 1e-6);
         Check.AlmostEqual(20, fixedNormal.Volume, 3);
@@ -766,7 +766,7 @@ public class OperationsGenericTests
     [Fact]
     public void SweepSingleSection()
     {
-        var test = Sweep(new Rectangle(2, 2), Edge.MakeLine(new Vector(0, 0, 0), new Vector(0, 0, 10))).Value;
+        var test = Sweep(new Rectangle(2, 2), Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(0, 0, 10))).Value;
         Assert.IsType<Part>(test);
         Check.AlmostEqual(40, test.Volume, 5);
     }
@@ -775,7 +775,7 @@ public class OperationsGenericTests
     public void SweepMultiSection()
     {
         const int segmentCount = 6;
-        var handlePath = Wire.Make(new Spline([new Vector(-10, 0, 0), new Vector(0, 0, 5), new Vector(10, 0, 0)], tangents: [new Vector(0, 0, 1), new Vector(0, 0, -1)],
+        var handlePath = Wire.Make(new Spline([new Point3D(-10, 0, 0), new Point3D(0, 0, 5), new Point3D(10, 0, 0)], tangents: [new Vector3D(0, 0, 1), new Vector3D(0, 0, -1)],
                                              tangentScalars: [1.5, 1.5]));
         var sections = new List<Shape>();
         for (int i = 0; i <= segmentCount; i++)
@@ -793,8 +793,8 @@ public class OperationsGenericTests
     [Fact]
     public void SweepBinormal()
     {
-        var path = Edge.MakeSpline([new Vector(0, 0, 0), new Vector(-12, 8, 10)], tangents: [new Vector(0, 0, 1), new Vector(-1, 0, 0)]);
-        var binormal = Edge.MakeLine(new Vector(-5, 5), new Vector(-8, 10));
+        var path = Edge.MakeSpline([new Point3D(0, 0, 0), new Point3D(-12, 8, 10)], tangents: [new Vector3D(0, 0, 1), new Vector3D(-1, 0, 0)]);
+        var binormal = Edge.MakeLine(new Point3D(-5, 5, 0), new Point3D(-8, 10, 0));
         var swept = Sweep(new Rectangle(4, 6), path, new SweepOptions { Binormal = binormal }).Value;
 
         var endFace = swept.Faces().Where(GeomType.Plane).OrderBy(Axis.X)[0];
@@ -806,7 +806,7 @@ public class OperationsGenericTests
     [Fact]
     public void SweepEdge()
     {
-        var arc = new PolarLine(new Vector(1, 0), 2, 135);
+        var arc = new PolarLine(new Point3D(1, 0, 0), 2, 135);
         var arcPath = new PolarLine(arc.PositionAt(1), 10, 45);
         var swept = Sweep(arc, arcPath).Value;
         Assert.IsType<Sketch>(swept);
@@ -816,7 +816,7 @@ public class OperationsGenericTests
     [Fact]
     public void SweepEdgeAlongWire()
     {
-        var spine = Wire.MakePolygon([new Vector(0, 0), new Vector(1, 10), new Vector(10, 10)], close: false);
+        var spine = Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(1, 10, 0), new Point3D(10, 10, 0)], close: false);
         var sect = spine.PerpendicularLine(2, 0);
         var swept = Sweep(sect, spine, new SweepOptions { Transition = Transition.Right }).Value;
         Assert.True(swept.Area > 38);
@@ -825,13 +825,13 @@ public class OperationsGenericTests
     [Fact]
     public void SweepNoPath()
     {
-        Assert.Throws<ArgumentNullException>(() => Sweep(new PolarLine(new Vector(1, 0), 2, 135), (ModelShape)null!));
+        Assert.Throws<ArgumentNullException>(() => Sweep(new PolarLine(new Point3D(1, 0, 0), 2, 135), (ModelShape)null!));
     }
 
     [Fact]
     public void SweepNoSections()
     {
-        Assert.Throws<ArgumentException>(() => Sweep([], new PolarLine(new Vector(1, 0), 2, 135)));
+        Assert.Throws<ArgumentException>(() => Sweep([], new PolarLine(new Point3D(1, 0, 0), 2, 135)));
     }
 
     [Fact]
@@ -850,7 +850,7 @@ public class OperationsGenericTests
     public void EdgeSweepKeepsShell()
     {
         // Issue #777: the faces an edge sweeps out stay in their shell
-        var swept = Sweep(Edge.MakeLine(new Vector(0, 0), new Vector(0, 10)), Wire.MakePolygon([new Vector(0, 0), new Vector(10, 0), new Vector(10, 0, 10)], close: false)).Value;
+        var swept = Sweep(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(0, 10, 0)), Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 0, 10)], close: false)).Value;
         Assert.IsType<Sketch>(swept);
         Assert.Equal(2, swept.Faces().Count);
         Check.AlmostEqual(200, swept.Area, 5);
@@ -862,8 +862,8 @@ public class OperationsGenericTests
     [Fact]
     public void SweepPathError()
     {
-        var e1 = Edge.MakeLine(new Vector(0, 0), new Vector(1, 0));
-        var e2 = Edge.MakeLine(new Vector(2, 0), new Vector(3, 0));
-        Assert.Throws<ArgumentException>(() => Sweep(Edge.MakeLine(new Vector(0, 0), new Vector(0, 1)), new ShapeList<Edge>([e1, e2])));
+        var e1 = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+        var e2 = Edge.MakeLine(new Point3D(2, 0, 0), new Point3D(3, 0, 0));
+        Assert.Throws<ArgumentException>(() => Sweep(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(0, 1, 0)), new ShapeList<Edge>([e1, e2])));
     }
 }

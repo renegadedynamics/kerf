@@ -44,7 +44,7 @@ public class Circle : BaseSketchObject
     }
 
     private static Face Make(double radius, double arcSize) =>
-        arcSize == 360.0 ? Face.Make(Wire.MakeCircle(radius)) : Face.Revolve(Edge.MakeLine(new Vector(radius, 0), new Vector(0, 0)), arcSize, Axis.Z);
+        arcSize == 360.0 ? Face.Make(Wire.MakeCircle(radius)) : Face.Revolve(Edge.MakeLine(new Point3D(radius, 0, 0), new Point3D(0, 0, 0)), arcSize, Axis.Z);
 
     /// <summary>The radius.</summary>
     public double Radius { get; }
@@ -83,20 +83,20 @@ public class Ellipse : BaseSketchObject
 public class Polygon : BaseSketchObject
 {
     /// <summary>A polygon through the points.</summary>
-    public Polygon(IEnumerable<Vector> pts, double rotation = 0, Alignment? align = null)
+    public Polygon(IEnumerable<Point3D> pts, double rotation = 0, Alignment? align = null)
         : this(pts.ToList(), rotation, align) { }
 
     /// <summary>A polygon through the points.</summary>
-    public Polygon(params Vector[] pts) : this((IEnumerable<Vector>)pts) { }
+    public Polygon(params Point3D[] pts) : this((IEnumerable<Point3D>)pts) { }
 
-    private Polygon(List<Vector> pts, double rotation, Alignment? align)
+    private Polygon(List<Point3D> pts, double rotation, Alignment? align)
         : base(Face.Make(Wire.MakePolygon(pts)), rotation, align ?? new Alignment(Kerf.Modeling.Align.None, Kerf.Modeling.Align.None))
     {
         (Pts, Align) = (pts, TwoAxes(align ?? new Alignment(Kerf.Modeling.Align.None, Kerf.Modeling.Align.None)));
     }
 
     /// <summary>The points.</summary>
-    public IReadOnlyList<Vector> Pts { get; }
+    public IReadOnlyList<Point3D> Pts { get; }
 
     /// <summary>The alignment.</summary>
     public Alignment Align { get; }
@@ -177,11 +177,11 @@ public class RegularPolygon : BaseSketchObject
             throw new ArgumentException($"RegularPolygon must have at least three sides, not {sideCount}");
         var rad = majorRadius ? radius : radius / Math.Cos(Math.PI / sideCount);
         var pts = Enumerable.Range(0, sideCount + 1)
-            .Select(i => new Vector(rad * Math.Cos(i * 2 * Math.PI / sideCount + rotation * Constants.DegToRad),
-                                    rad * Math.Sin(i * 2 * Math.PI / sideCount + rotation * Constants.DegToRad))).ToList();
+            .Select(i => new Point3D(rad * Math.Cos(i * 2 * Math.PI / sideCount + rotation * Constants.DegToRad),
+                                    rad * Math.Sin(i * 2 * Math.PI / sideCount + rotation * Constants.DegToRad), 0)).ToList();
         var byX = pts.OrderBy(p => p.X).ToList();
         var byY = pts.OrderBy(p => p.Y).ToList();
-        var offset = align.Offset(new Vector(byX[0].X, byY[0].Y), new Vector(byX[^1].X, byY[^1].Y), new Vector(0, 0));
+        var offset = align.Offset(new Point3D(byX[0].X, byY[0].Y, 0), new Point3D(byX[^1].X, byY[^1].Y, 0), new Point3D(0, 0, 0));
         return Face.Make(Wire.MakePolygon(pts.Select(p => p + offset)));
     }
 
@@ -231,27 +231,27 @@ public class SlotCenterPoint : BaseSketchObject
 {
     /// <summary>A slot of a height (its width across).</summary>
     /// <exception cref="ArgumentException">The centre and point coincide.</exception>
-    public SlotCenterPoint(Vector center, Vector point, double height, double rotation = 0)
+    public SlotCenterPoint(Point3D center, Point3D point, double height, double rotation = 0)
         : base(Make(center, point, height), rotation, null)
     {
         (SlotCenter, Point, SlotHeight) = (center, point, height);
     }
 
-    private static Face Make(Vector center, Vector point, double height)
+    private static Face Make(Point3D center, Point3D point, double height)
     {
         var halfLine = point - center;
-        if (halfLine.Length <= 0)
+        if (halfLine.Magnitude <= 0)
             throw new ArgumentException(
-                $"Distance between center and point must be greater than 0 Got: distance = {Formatting.Number(halfLine.Length)} (computed)");
+                $"Distance between center and point must be greater than 0 Got: distance = {Formatting.Number(halfLine.Magnitude)} (computed)");
         var wires = Wire.Combine([Edge.MakeLine(point, center), Edge.MakeLine(center, center - halfLine)]);
         return Face.Make((Wire)wires[0].Offset2D(height / 2));
     }
 
     /// <summary>The centre of the slot.</summary>
-    public Vector SlotCenter { get; }
+    public Point3D SlotCenter { get; }
 
     /// <summary>The centre of one end arc.</summary>
-    public Vector Point { get; }
+    public Point3D Point { get; }
 
     /// <summary>The width across the slot.</summary>
     public double SlotHeight { get; }
@@ -273,8 +273,8 @@ public class SlotCenterToCenter : BaseSketchObject
         if (separation < 0)
             throw new ArgumentException($"The centre separation must be positive, not {Formatting.Number(separation)}.");
         if (separation > 0)
-            return Face.Make((Wire)Wire.Make([Edge.MakeLine(new Vector(-separation / 2, 0, 0), new Vector(0, 0, 0)),
-                                            Edge.MakeLine(new Vector(0, 0, 0), new Vector(separation / 2, 0, 0))]).Offset2D(height / 2));
+            return Face.Make((Wire)Wire.Make([Edge.MakeLine(new Point3D(-separation / 2, 0, 0), new Point3D(0, 0, 0)),
+                                            Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(separation / 2, 0, 0))]).Offset2D(height / 2));
         return new Circle(height / 2).SingleFace();
     }
 
@@ -301,8 +301,8 @@ public class SlotOverall : BaseSketchObject
         if (width < height)
             throw new ArgumentException($"Slot requires that width > height. Got: width={Formatting.Number(width)}, height={Formatting.Number(height)}");
         if (width > height)
-            return Face.Make((Wire)Wire.Make([Edge.MakeLine(new Vector(-width / 2 + height / 2, 0, 0), new Vector(0, 0, 0)),
-                                            Edge.MakeLine(new Vector(0, 0, 0), new Vector(width / 2 - height / 2, 0, 0))]).Offset2D(height / 2));
+            return Face.Make((Wire)Wire.Make([Edge.MakeLine(new Point3D(-width / 2 + height / 2, 0, 0), new Point3D(0, 0, 0)),
+                                            Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(width / 2 - height / 2, 0, 0))]).Offset2D(height / 2));
         return new Circle(width / 2).SingleFace();
     }
 
@@ -333,21 +333,21 @@ public class Superellipse : BaseSketchObject
             throw new ArgumentException("Order must be greater than zero.");
         Edge topRight;
         if (order == 1)
-            topRight = Edge.MakeLine(new Vector(width / 2, 0), new Vector(0, height / 2));
+            topRight = Edge.MakeLine(new Point3D(width / 2, 0, 0), new Point3D(0, height / 2, 0));
         else if (order == 2)
             topRight = Edge.MakeEllipse(width / 2, height / 2, startAngle: 0, endAngle: 90);
         else
         {
-            var points = new List<Vector> { new(width / 2, 0.0) };
+            var points = new List<Point3D> { new(width / 2, 0.0, 0) };
             for (int i = 1; i < pointCount - 1; i++)
             {
                 var t = i * Math.PI / pointCount / 2;
                 double c = Math.Cos(t), s = Math.Sin(t);
                 var x = Math.Pow(Math.Abs(c), 2 / order) * width * Math.CopySign(1, c) / 2;
                 var y = Math.Pow(Math.Abs(s), 2 / order) * height * Math.CopySign(1, s) / 2;
-                points.Add(new Vector(x, y));
+                points.Add(new Point3D(x, y, 0));
             }
-            points.Add(new Vector(0.0, height / 2));
+            points.Add(new Point3D(0.0, height / 2, 0));
             topRight = Edge.MakeSpline(points);
         }
         var topLeft = topRight.Mirror(Plane.YZ).Reversed();
@@ -403,7 +403,7 @@ public class Trapezoid : BaseSketchObject
             throw new ArgumentException("Trapezoid bottom invalid - change angles");
         if (topLeft + topRight < 0)
             throw new ArgumentException("Trapezoid top invalid - change angles");
-        Vector[] pts = [new(-botLeft, -height / 2), new(botRight, -height / 2), new(topRight, height / 2), new(-topLeft, height / 2), new(-botLeft, -height / 2)];
+        Point3D[] pts = [new(-botLeft, -height / 2, 0), new(botRight, -height / 2, 0), new(topRight, height / 2, 0), new(-topLeft, height / 2, 0), new(-botLeft, -height / 2, 0)];
         return Face.Make(Wire.MakePolygon(pts));
     }
 
@@ -461,8 +461,8 @@ public class Triangle : BaseSketchObject
 
     private static Face Make((double a, double b, double c, double A, double B, double C) t)
     {
-        var triangle = Face.Make(Wire.MakePolygon([new Vector(0, 0), new Vector(t.a, 0), new Vector(t.c, 0).Rotate(Axis.Z, t.B * Constants.RadToDeg)]));
-        var center = triangle.SelectVertices().Aggregate(new Vector(0, 0, 0), (sum, v) => sum + v.ToVector()) / 3;
+        var triangle = Face.Make(Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(t.a, 0, 0), new Vector3D(t.c, 0, 0).Rotate(Axis.Z, t.B * Constants.RadToDeg).ToPoint()]));
+        var center = triangle.SelectVertices().Aggregate(Vector3D.Zero, (sum, v) => sum + v.Point.ToVector()) * (1.0 / 3);
         return triangle.Moved(new Location(-center));
     }
 

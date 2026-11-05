@@ -82,13 +82,13 @@ public static partial class FaceExtensions
                 var cog = self.Center();
                 var normal = self.NormalAt();
                 var innerWires = self.InnerWires();
-                List<Vector> crossDirs;
+                List<Vector3D> crossDirs;
                 if (innerWires.Count > 0)
                 {
                     var holeFaces = innerWires.Select(w => Face.Make(w)).ToList();
                     var holesCentroid = Shape.CombinedCenter(holeFaces);
                     // If the holes aren't centred on the centre of gravity, the axis must pass through both
-                    crossDirs = (holesCentroid - cog).Length > Constants.Tolerance
+                    crossDirs = (holesCentroid - cog).Magnitude > Constants.Tolerance
                         ? [(holesCentroid - cog).Normalized()]
                         : [.. holeFaces.Select(f => (f.Center() - cog).Normalized())];
                 }
@@ -105,7 +105,7 @@ public static partial class FaceExtensions
                     crossDirs = [.. edges.SelectMany(e => new[] { 0.0, 0.5, 1.0 }.Select(p => (e.PositionAt(p) - cog).Normalized()))];
                 }
 
-                var symmetryDirs = new List<Vector>();
+                var symmetryDirs = new List<Vector3D>();
                 foreach (var crossDir in crossDirs)
                 {
                     // Split the face along the candidate axis and flip the top over
@@ -132,7 +132,7 @@ public static partial class FaceExtensions
                         continue;
                     // The halves match: an axis, unless its opposite is already one
                     if (Math.Abs(intersectArea - bottomArea) < Constants.Tolerance
-                        && !symmetryDirs.Any(d => d.Dot(crossDir) < -1 + Constants.Tolerance) && !symmetryDirs.Contains(crossDir))
+                        && !symmetryDirs.Any(d => d.Dot(crossDir) < -1 + Constants.Tolerance) && !symmetryDirs.Any(d => d.IsNear(crossDir)))
                         symmetryDirs.Add(crossDir);
                 }
                 return [.. symmetryDirs.Select(d => new Axis(cog, d))];
@@ -200,11 +200,11 @@ public static partial class FaceExtensions
                         if (!surface.TryGetCurvature(u, v, Constants.Tolerance, out var props))
                             continue;
                         var normal = TopoUtil.FaceNormalVector(self, u, v);
-                        if (normal.Length < 1e-12)
+                        if (normal.Magnitude < 1e-12)
                             continue;
                         // Curvatures signed toward the outward normal: negative bends away
                         var propsNormal = props.Normal;
-                        var normalDir = normal.ToDirection3D();
+                        var normalDir = normal.ToDirection();
                         var sign = propsNormal.Dot(normalDir) > 0 ? 1.0 : -1.0;
                         var a = sign * props.Min;
                         var b = sign * props.Max;
@@ -385,10 +385,10 @@ public static partial class FaceExtensions
         /// The centre of the face: by default its geometric centre, which for a planar face is its centre of mass and
         /// otherwise the middle of its parameter range.
         /// </summary>
-        internal Vector CenterOfFace() => self.Center(CenterOf.Geometry);
+        internal Point3D CenterOfFace() => self.Center(CenterOf.Geometry);
 
         /// <summary>As the other forms of <c>Center</c>.</summary>
-        internal Vector CenterOfFace(CenterOf centerOf)
+        internal Point3D CenterOfFace(CenterOf centerOf)
         {
             self.NeedsGeometry("center");
             if (centerOf == CenterOf.Mass || (centerOf == CenterOf.Geometry && self.IsPlanar is not null))
@@ -399,10 +399,10 @@ public static partial class FaceExtensions
         }
 
         /// <summary>The point at normalised surface parameters (u, v), each 0 to 1 across the face.</summary>
-        public Vector PositionAt(double u, double v) => TopoUtil.FacePosition(self, u, v);
+        public Point3D PositionAt(double u, double v) => TopoUtil.FacePosition(self, u, v);
 
         /// <summary>The unit normal at normalised (u, v), with the face's orientation.</summary>
-        public Vector NormalAt(double u, double v)
+        public Vector3D NormalAt(double u, double v)
         {
             self.NeedsGeometry("normal");
             var (u0, u1, v0, v1) = self.UVBounds();
@@ -410,7 +410,7 @@ public static partial class FaceExtensions
         }
 
         /// <summary>The unit normal at the point of the surface nearest <paramref name="surfacePoint"/> (default the middle of the face).</summary>
-        public Vector NormalAt(Vector? surfacePoint = null)
+        public Vector3D NormalAt(Point3D? surfacePoint = null)
         {
             self.NeedsGeometry("normal");
             if (surfacePoint is null)
@@ -420,22 +420,22 @@ public static partial class FaceExtensions
         }
 
         /// <summary>The surface parameters of the point of the surface nearest <paramref name="point"/> (GeomAPI_ProjectPointOnSurf).</summary>
-        private (double U, double V) NearestParameters(Vector point)
+        private (double U, double V) NearestParameters(Point3D point)
         {
-            if (!self.GeomAdaptor().TryProjectNearest(point.ToPoint3D(), out var nearest))
+            if (!self.GeomAdaptor().TryProjectNearest(point, out var nearest))
                 throw new InvalidOperationException("The point can't be projected onto the face's surface");
             return (nearest.U, nearest.V);
         }
 
         /// <summary>The unit normal at surface parameters (u, v), with the face's orientation.</summary>
-        internal Vector NormalAtParameters(double u, double v) => TopoUtil.FaceNormalVector(self, u, v).Normalized();
+        internal Vector3D NormalAtParameters(double u, double v) => TopoUtil.FaceNormalVector(self, u, v).Normalized();
 
         /// <summary>
         /// A partial derivative of the surface, <paramref name="uOrder"/> times in u and <paramref name="vOrder"/> times in v.
         /// Normalised, u and v are fractions of the face's parameter range and the derivative is with respect to those
         /// fractions; otherwise both are in OCCT's own parameters. These ignore the face's orientation.
         /// </summary>
-        public Vector DerivativeAt(double u, double v, int uOrder, int vOrder, bool normalize = true)
+        public Vector3D DerivativeAt(double u, double v, int uOrder, int vOrder, bool normalize = true)
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("Can't find derivative on empty face");
@@ -450,7 +450,7 @@ public static partial class FaceExtensions
                 scale = Math.Pow(uMax - uMin, uOrder) * Math.Pow(vMax - vMin, vOrder);
             }
             var d = self.ToSurface().DerivativeN(u, v, uOrder, vOrder);
-            return new Vector(d) * scale;
+            return d * scale;
         }
 
         /// <summary>
@@ -458,15 +458,15 @@ public static partial class FaceExtensions
         /// <see cref="PositionAt"/> uses) or OCCT's own. On a periodic surface they are those nearest the middle of the face.
         /// </summary>
         /// <exception cref="ArgumentException">The point isn't on the surface.</exception>
-        public (double U, double V) ParamAtPoint(Vector point, bool normalize = true)
+        public (double U, double V) ParamAtPoint(Point3D point, bool normalize = true)
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("Can't find param on empty face");
             var surface = self.GeomAdaptor();
-            var pnt = point.ToPoint3D();
+            var pnt = point;
             var (uv, separation) = self.ParametersOf(pnt, Constants.Tolerance);
             if (separation > Constants.Tolerance)
-                throw new ArgumentException($"point ({point}) is {separation} from the face's surface");
+                throw new ArgumentException($"point ({point.Describe()}) is {separation} from the face's surface");
             double u = uv.X, v = uv.Y;
             var (uMin, uMax, vMin, vMax) = self.UVBounds();
             if (surface.IsUPeriodic)
@@ -491,7 +491,7 @@ public static partial class FaceExtensions
         /// The location on the surface at normalised (u, v): its origin on the surface, z along the face's normal, and x
         /// along <paramref name="xDir"/> or else the u tangent.
         /// </summary>
-        public Location LocationAt(double u, double v, Vector? xDir = null)
+        public Location LocationAt(double u, double v, Vector3D? xDir = null)
         {
             self.NeedsGeometry("location");
             var (uMin, uMax, vMin, vMax) = self.UVBounds();
@@ -499,7 +499,7 @@ public static partial class FaceExtensions
         }
 
         /// <summary>The location on the surface at the point nearest <paramref name="surfacePoint"/> (default the middle of the face).</summary>
-        public Location LocationAt(Vector? surfacePoint = null, Vector? xDir = null)
+        public Location LocationAt(Point3D? surfacePoint = null, Vector3D? xDir = null)
         {
             self.NeedsGeometry("location");
             if (surfacePoint is null)
@@ -508,16 +508,16 @@ public static partial class FaceExtensions
             return self.LocationAtParameters(u, v, xDir);
         }
 
-        private Location LocationAtParameters(double u, double v, Vector? xDir)
+        private Location LocationAtParameters(double u, double v, Vector3D? xDir)
         {
             var d = self.GeomAdaptor().Derivatives(u, v, 1);
             var (pnt, du, dv) = (d.Point, d.DU, d.DV);
-            var origin = new Vector(pnt);
-            var zDir = new Vector(du).Cross(new Vector(dv)).Normalized();
+            var origin = pnt;
+            var zDir = du.Cross(dv).Normalized();
             // The surface normal ignores the face's orientation, so flip it to match the face's own (see NormalAt)
             if (self.Orientation == Orientation.Reversed)
                 zDir = -zDir;
-            var x = xDir is { } given ? given.Normalized() : new Vector(du).Normalized();
+            var x = xDir is { } given ? given.Normalized() : du.Normalized();
             return new Location(Plane.Create(origin, x, zDir));
         }
 
@@ -545,11 +545,11 @@ public static partial class FaceExtensions
             var (u0, _, v0, _) = self.UVBounds();
             var pnt = self.ToSurface().Evaluate(u0, v0);
             var normal = TopoUtil.FaceNormalVector(self, u0, v0);
-            return plane.Contains(new Vector(pnt)) && 1 - Math.Abs(plane.ZDir.Dot(normal)) < Constants.Tolerance;
+            return plane.Contains(pnt) && 1 - Math.Abs(plane.ZDir.Dot(normal)) < Constants.Tolerance;
         }
 
         /// <summary>Whether a point lies on the face within a tolerance, its boundary included.</summary>
-        public bool IsInside(Vector point, double tolerance = 1.0e-6) => TopoUtil.PointOnFace(self, point, tolerance);
+        public bool IsInside(Point3D point, double tolerance = 1.0e-6) => TopoUtil.PointOnFace(self, point, tolerance);
 
         /// <summary>
         /// This face with holes cut by interior wires, which must lie wholly inside it. More efficient than a boolean; OCCT may
@@ -600,7 +600,7 @@ public static partial class FaceExtensions
             }
             var built = Failures.Get(self.Chamfer2D(corners, distance, distance2), () => "2D chamfer");
             var face = built.Shape.Fix();
-            if (self.NormalAt() != face.NormalAt())
+            if (!self.NormalAt().IsNear(face.NormalAt()))
                 face = (Face)(-face);
             // The edges the chamfers trimmed are modified (OCCT's DescendantEdge); the builder answers nothing as generated
             var record = ModelHistory.FromAlgorithm(s => built.History.Modified(s), _ => [], [self], face);
@@ -635,7 +635,7 @@ public static partial class FaceExtensions
                     wires.Add(wire);
             }
             var face = Face.Make(wires[0], wires.Skip(1));
-            if (self.NormalAt() != face.NormalAt())
+            if (!self.NormalAt().IsNear(face.NormalAt()))
                 face = (Face)(-face);
             return (Face)face.MadeBy(record.AddModified(self, face));
         }
@@ -644,7 +644,7 @@ public static partial class FaceExtensions
         /// This face projected onto a shape along <paramref name="direction"/>: the faces or shells of the projection, nearest
         /// first (those behind the projection aren't returned).
         /// </summary>
-        public ShapeList<IShape2D> ProjectToShape(Shape targetObject, Vector direction)
+        public ShapeList<IShape2D> ProjectToShape(Shape targetObject, Vector3D direction)
         {
             if (targetObject.TryAs<Vertex>(out _))
                 throw new ArgumentException("projection to a vertex is not supported");
@@ -677,7 +677,7 @@ public static partial class FaceExtensions
         // ---- Factories ----
 
         /// <summary>An edge extruded into a face.</summary>
-        public static Face Extrude(Edge obj, Vector direction)
+        public static Face Extrude(Edge obj, Vector3D direction)
         {
             if (obj.IsEmpty)
                 throw new ArgumentException("Can't extrude empty object");
@@ -685,7 +685,7 @@ public static partial class FaceExtensions
         }
 
         /// <summary>A Bézier surface from a 2D array of control points (up to 25 each way), rational with weights.</summary>
-        public static Face MakeBezierSurface(IReadOnlyList<IReadOnlyList<Vector>> points, IReadOnlyList<IReadOnlyList<double>>? weights = null)
+        public static Face MakeBezierSurface(IReadOnlyList<IReadOnlyList<Point3D>> points, IReadOnlyList<IReadOnlyList<double>>? weights = null)
         {
             if (points.Count < 2 || points[0].Count < 2)
                 throw new ArgumentException("Give at least two control points, the start and the end.");
@@ -693,7 +693,7 @@ public static partial class FaceExtensions
                 throw new ArgumentException("The maximum number of control points is 25");
             if (weights is { Count: > 0 } && (points.Count != weights.Count || points[0].Count != weights[0].Count))
                 throw new ArgumentException("Give a weight for each control point.");
-            var poles = FaceExtensions.Grid(points, p => p.ToPoint3D());
+            var poles = FaceExtensions.Grid(points, p => p);
             BezierSurface bezier = weights is { Count: > 0 } ? new BezierSurface(poles, FaceExtensions.Grid(weights, w => w)) : new BezierSurface(poles);
             return Failures.Get(Face.FromSurface(bezier), () => "Bezier face");
         }
@@ -711,7 +711,7 @@ public static partial class FaceExtensions
         /// A possibly non-planar face bounded by a wire (or edges), optionally refined by points on the surface, with holes.
         /// </summary>
         /// <exception cref="InvalidOperationException">OCCT can't build the face, or it isn't valid.</exception>
-        public static Face MakeSurface(IEnumerable<Edge> exterior, IEnumerable<Vector>? surfacePoints = null, IEnumerable<Wire>? interiorWires = null)
+        public static Face MakeSurface(IEnumerable<Edge> exterior, IEnumerable<Point3D>? surfacePoints = null, IEnumerable<Wire>? interiorWires = null)
         {
             var edges = exterior.ToList();
             if (edges.Any(e => e.IsEmpty))
@@ -721,7 +721,7 @@ public static partial class FaceExtensions
             var face = FaceExtensions.BuildFilling(boundaries, FillOptions.Default, "Error building non-planar face with provided exterior");
             var points = surfacePoints?.ToList();
             if (points is { Count: > 0 })
-                face = FaceExtensions.BuildFilling(boundaries, FillOptions.Default with { Points = [.. points.Select(p => p.ToPoint3D())] },
+                face = FaceExtensions.BuildFilling(boundaries, FillOptions.Default with { Points = [.. points.Select(p => p)] },
                                     "Error building non-planar face with provided surface_points");
             if (interiorWires is not null)
             {
@@ -735,18 +735,18 @@ public static partial class FaceExtensions
             return face;
         }
 
-        /// <inheritdoc cref="MakeSurface(IEnumerable{Edge}, IEnumerable{Vector}?, IEnumerable{Wire}?)"/>
-        public static Face MakeSurface(Wire exterior, IEnumerable<Vector>? surfacePoints = null, IEnumerable<Wire>? interiorWires = null) =>
+        /// <inheritdoc cref="MakeSurface(IEnumerable{Edge}, IEnumerable{Point3D}?, IEnumerable{Wire}?)"/>
+        public static Face MakeSurface(Wire exterior, IEnumerable<Point3D>? surfacePoints = null, IEnumerable<Wire>? interiorWires = null) =>
             Face.MakeSurface(exterior.SelectEdges(), surfacePoints, interiorWires);
 
         /// <summary>
         /// A spline surface approximating a 2D array of points: the first index is v, the second u, in the face's parameters.
         /// <paramref name="smoothing"/> weights raise the maximum degree to at least 6.
         /// </summary>
-        public static Face MakeSurfaceFromArrayOfPoints(IReadOnlyList<IReadOnlyList<Vector>> points, double tolerance = 1e-2,
+        public static Face MakeSurfaceFromArrayOfPoints(IReadOnlyList<IReadOnlyList<Point3D>> points, double tolerance = 1e-2,
                                                         (double, double, double)? smoothing = null, int minDeg = 1, int maxDeg = 3)
         {
-            var array = FaceExtensions.Grid(points, p => p.ToPoint3D());
+            var array = FaceExtensions.Grid(points, p => p);
             var options = smoothing is var (w1, w2, w3)
                 // The smoothing asks for C2, whose Jacobi basis needs a degree of at least 6 (OCCT 8)
                 ? new ApproximationOptions { Smoothing = (w1, w2, w3), MaxDegree = Math.Max(maxDeg, 6), Continuity = Continuity.C2, Tolerance = tolerance }
@@ -769,7 +769,7 @@ public static partial class FaceExtensions
         /// optionally refined by points on the surface.
         /// </summary>
         public static Face MakeSurfacePatch(IEnumerable<(Edge Edge, Face Face, ContinuityLevel Continuity)>? edgeFaceConstraints = null,
-                                            IEnumerable<Edge>? edgeConstraints = null, IEnumerable<Vector>? pointConstraints = null)
+                                            IEnumerable<Edge>? edgeConstraints = null, IEnumerable<Point3D>? pointConstraints = null)
         {
             static Continuity Continuity(ContinuityLevel c) => c switch
             {
@@ -782,7 +782,7 @@ public static partial class FaceExtensions
                 boundaries.Add(new FillBoundary(edge, Continuity(continuity)) { Support = face });
             foreach (var edge in edgeConstraints ?? [])
                 boundaries.Add(new FillBoundary(edge, global::Kerf.Geometry.Continuity.C0));
-            var options = FillOptions.Default with { Points = [.. (pointConstraints ?? []).Select(p => p.ToPoint3D())] };
+            var options = FillOptions.Default with { Points = [.. (pointConstraints ?? []).Select(p => p)] };
             var result = FaceExtensions.BuildFilling(boundaries, options, "Error building non-planar face with provided constraints").Fix();
             if (!result.IsValid || result.IsEmpty)
                 throw new InvalidOperationException("Non planar face is invalid");

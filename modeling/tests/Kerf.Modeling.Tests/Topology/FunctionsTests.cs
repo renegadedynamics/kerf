@@ -14,7 +14,7 @@ public class FunctionsTests
     public void EdgesToWires()
     {
         var squareEdges = Face.MakeRect(1, 1).SelectEdges();
-        var rectangleEdges = Face.MakeRect(2, 1, new Plane(new Vector(5, 0))).SelectEdges();
+        var rectangleEdges = Face.MakeRect(2, 1, new Plane(new Point3D(5, 0, 0))).SelectEdges();
         var wires = OneD.EdgesToWires(squareEdges.AddRange(rectangleEdges));
         Assert.Equal(2, wires.Count);
         Check.AlmostEqual(4, wires[0].Length, 5);
@@ -84,7 +84,7 @@ public class MakeTopodsFaceFromWiresTests
 {
     readonly Wire _outer = Wire.MakeRect(10, 10);
     readonly Wire _inner = Wire.MakeCircle(0.5);
-    readonly Wire _openWire = Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(5, 0)), Edge.MakeLine(new Vector(5, 0), new Vector(5, 5))]);
+    readonly Wire _openWire = Wire.Make([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(5, 0, 0)), Edge.MakeLine(new Point3D(5, 0, 0), new Point3D(5, 5, 0))]);
 
     [Fact]
     public void OpenOuterWire()
@@ -117,7 +117,7 @@ public class UnwrappedShapetypeTests
     [Fact]
     public void MixedCompound()
     {
-        var compound = Compound.Make([CompoundObjects.Box(1, 1, 1).SingleSolid(), Edge.MakeLine(new Vector(5, 0), new Vector(6, 0))]);
+        var compound = Compound.Make([CompoundObjects.Box(1, 1, 1).SingleSolid(), Edge.MakeLine(new Point3D(5, 0, 0), new Point3D(6, 0, 0))]);
         Assert.Equal(ShapeType.Compound, TopoUtil.UnwrappedShapeType(compound));
     }
 }

@@ -178,8 +178,8 @@ public static class OneD
             var tangent = curve.Derivatives(param, 1).D1;
             var uv1 = pcurve1!.Evaluate(param);
             var uv2 = pcurve2!.Evaluate(param);
-            var normal1 = TopoUtil.FaceNormalVector(face1, uv1.X, uv1.Y).ToVector3D();
-            var normal2 = TopoUtil.FaceNormalVector(face2, uv2.X, uv2.Y).ToVector3D();
+            var normal1 = TopoUtil.FaceNormalVector(face1, uv1.X, uv1.Y);
+            var normal2 = TopoUtil.FaceNormalVector(face2, uv2.X, uv2.Y);
             if (Math.Min(tangent.Magnitude, Math.Min(normal1.Magnitude, normal2.Magnitude)) < 1e-12)
                 continue;
             tangent = tangent.Normalized();
@@ -221,7 +221,7 @@ public static class OneD
         foreach (var source in edges)
         {
             var midpoint = source.PositionAt(0.5);
-            var distances = midpoints.Select(m => (m - midpoint).Length).ToList();
+            var distances = midpoints.Select(m => (m - midpoint).Magnitude).ToList();
             var min = distances.Min();
             if (min > Constants.Tolerance)
                 continue;   // MakeWire keeps every edge it is given
@@ -338,8 +338,8 @@ public static partial class Shape1DExtensions
 
             // The normal of the plane of the offset: the curve fixes the plane but not which way its normal points (and a
             // straight one doesn't fix the plane), so both are settled by the curve's location, or failing that Plane.XY
-            Vector[] references = [self.Location.ZAxis.Direction, lineEdges[0].Location.ZAxis.Direction, new Vector(0, 0, 1)];
-            Vector? normal = null;
+            Vector3D[] references = [self.Location.ZAxis.Direction, lineEdges[0].Location.ZAxis.Direction, new Vector3D(0, 0, 1)];
+            Vector3D? normal = null;
             if (plane is not null)
                 normal = plane.ZDir;
             else if (isStraight)
@@ -400,9 +400,9 @@ public static partial class Shape1DExtensions
             if (side != Side.Both && !line.CheckClosed())
             {
                 // Remove the end arcs
-                Vector[] endpoints = [line.PositionAt(0), line.PositionAt(1)];
+                Point3D[] endpoints = [line.PositionAt(0), line.PositionAt(1)];
                 var offsetEdges = offsetWire.SelectEdges().Where(
-                    e => !(e.GeomType == GeomType.Circle && endpoints.Any(pt => (e.ArcCenter - pt).Length < Constants.Tolerance))).ToShapeList();
+                    e => !(e.GeomType == GeomType.Circle && endpoints.Any(pt => (e.ArcCenter - pt).Magnitude < Constants.Tolerance))).ToShapeList();
                 var wires = OneD.EdgesToWires(offsetEdges);
                 if (normal is null)
                 {
@@ -416,7 +416,7 @@ public static partial class Shape1DExtensions
                     var toTheLeft = normal.Value.Cross(tangent);
                     var onSide = wires.Where(w =>
                     {
-                        var besideStart = new[] { w.PositionAt(0), w.PositionAt(1) }.MinBy(e => (e - start).Length);
+                        var besideStart = new[] { w.PositionAt(0), w.PositionAt(1) }.MinBy(e => (e - start).Magnitude);
                         return (besideStart - start).Dot(toTheLeft) > 0 == (side == Side.Left);
                     }).ToList();
                     if (onSide.Count == 0)
@@ -432,7 +432,7 @@ public static partial class Shape1DExtensions
                     var end0 = offsetWire.PositionAt(0);
                     var end1 = offsetWire.PositionAt(1);
                     Edge edge0, edge1;
-                    if ((self0 - end0).Length - Math.Abs(distance) <= Constants.Tolerance)
+                    if ((self0 - end0).Magnitude - Math.Abs(distance) <= Constants.Tolerance)
                         (edge0, edge1) = (Edge.MakeLine(self0, end0), Edge.MakeLine(self1, end1));
                     else
                         (edge0, edge1) = (Edge.MakeLine(self0, end1), Edge.MakeLine(self1, end0));

@@ -54,7 +54,7 @@ public static partial class ShapeExtensions
                 var projectionAxis = new Axis(pathPosition, shapeCenter - pathPosition);
                 var (surfacePoint, surfaceNormal) = SurfaceIntersection.FindPoints(self.AsShape(), projectionAxis, Constants.Tolerance)[0];
                 var normalPlane = new Plane(surfacePoint, pathTangent, surfaceNormal);
-                var placed = normalPlane.FromLocalCoords(face.Moved(new Location(new Vector(-faceCenterX, 0, 0))));
+                var placed = normalPlane.FromLocalCoords(face.Moved(new Location(new Point3D(-faceCenterX, 0, 0))));
                 // Onto a curved surface the projection may come back as a shell of several faces
                 projected.AddRange(placed.ProjectToShape(self.AsShape(), surfaceNormal * -1)[0].SelectFaces());
             }
@@ -76,15 +76,15 @@ public static partial class ShapeExtensions
 
     private static DisplayNode AssemblyTree(ModelShape node, bool showCenter) => new(
         node.Label, node.GetType().Name.PadRight(9), RuntimeHelpers.GetHashCode(node),
-        showCenter ? "Center" + node.Center().ToString("G6") : $"Location({node.Location.Position.ToString("G6")}, {node.Location.Orientation.ToString("G6")})",
+        showCenter ? "Center" + node.Center().Describe("G6") : $"Location({node.Location.Position.Describe("G6")}, {node.Location.Orientation.Describe("G6")})",
         node is Assembly assembly ? [.. assembly.Children.Select(ch => AssemblyTree(ch, showCenter))] : []);
 
     private static DisplayNode BuildTree(Shape shape, ShapeType limit, bool showCenter, string caption)
     {
         var label = (shape.Type).ToString();
         var position = caption + (showCenter
-            ? Kerf.Modeling.BoundBox.FromTopoDS(shape).Center().ToString("G6")
-            : new Location(shape.Placement).Position.ToString("G6"));
+            ? Kerf.Modeling.BoundBox.FromTopoDS(shape).Center().Describe("G6")
+            : new Location(shape.Placement).Position.Describe("G6"));
         var children = new List<DisplayNode>();
         foreach (var child in shape.Children)
         {
@@ -131,7 +131,7 @@ public static partial class Shape3DExtensions
     extension<TSelf>(TSelf self) where TSelf : IShape3D
     {
         /// <summary>The points where an axis meets the shape's surface, nearest the axis's start first, each with the normal there.</summary>
-        public IReadOnlyList<(Vector Point, Vector Normal)> FindIntersectionPoints(Axis other, double tolerance = Constants.Tolerance) =>
+        public IReadOnlyList<(Point3D Point, Vector3D Normal)> FindIntersectionPoints(Axis other, double tolerance = Constants.Tolerance) =>
             SurfaceIntersection.FindPoints(self.AsShape(), other, tolerance);
     }
 
@@ -140,22 +140,22 @@ public static partial class Shape3DExtensions
 /// <summary>The axis-surface intersection shared by faces, shells, solids and compounds (Mixin3D borrows Mixin2D's).</summary>
 internal static class SurfaceIntersection
 {
-    internal static IReadOnlyList<(Vector Point, Vector Normal)> FindPoints(Shape shape, Axis axis, double tolerance)
+    internal static IReadOnlyList<(Point3D Point, Vector3D Normal)> FindPoints(Shape shape, Axis axis, double tolerance)
     {
         if (shape.IsEmpty)
             return [];
         var ax1 = axis.ToAxis3D();
         var line = new Line3D(ax1);
         var plane = new Plane(axis);
-        var found = new List<(Face Face, Vector Point, double Distance)>();
+        var found = new List<(Face Face, Point3D Point, double Distance)>();
         foreach (var hit in MeasureOperations.Intersect(shape, in line, tolerance))
         {
-            var point = new Vector(hit.Point);
+            var point = hit.Point;
             found.Add((hit.Face, point, plane.ToLocalCoords(point).Z));
         }
         return [.. found.OrderBy(f => f.Distance).Select(f =>
         {
-            var pnt = f.Point.ToPoint3D();
+            var pnt = f.Point;
             return (f.Point, TopoUtil.FaceNormalAt(f.Face, pnt));
         })];
     }

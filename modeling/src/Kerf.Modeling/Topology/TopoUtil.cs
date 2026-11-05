@@ -291,7 +291,7 @@ internal static partial class TopoUtil
     };
 
     /// <summary>The unit normal of a face at the point of it nearest <paramref name="surfacePoint"/>.</summary>
-    internal static Vector FaceNormalAt(Face face, Point3D surfacePoint)
+    internal static Vector3D FaceNormalAt(Face face, Point3D surfacePoint)
     {
         face.TryGetSurface(out var surface);
         if (surface is null || !surface.TryProjectNearest(surfacePoint, out var nearest))
@@ -303,13 +303,13 @@ internal static partial class TopoUtil
     /// The normal of a face at (u, v), not normalised, as <c>BRepGProp_Face::Normal</c> gives it: the cross product of the
     /// surface's derivatives there, reversed for a reversed face.
     /// </summary>
-    internal static Vector FaceNormalVector(Face face, double u, double v)
+    internal static Vector3D FaceNormalVector(Face face, double u, double v)
     {
         var d = face.ToSurface().Derivatives(u, v, 1);
         var normal = d.DU.Crossed(d.DV);
         if (face.Orientation == Orientation.Reversed)
             normal = normal.Reversed();
-        return new Vector(normal);
+        return normal;
     }
 }
 

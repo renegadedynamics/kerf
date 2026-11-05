@@ -44,8 +44,8 @@ public class Fillet2DTests
         var squaroid = square.Fillet2D(0.1, square.SelectVertices());
         Check.AlmostEqual(4 * (1 - 2 * 0.1) + 2 * Math.PI * 0.1, squaroid.Length, 5);
 
-        var straightWire = Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 0), new Vector(2, 0))]);
-        var straightVertex = straightWire.SelectVertices().OrderByDistanceTo(new Vector(1, 0, 0))[0];
+        var straightWire = Wire.Make([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)), Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(2, 0, 0))]);
+        var straightVertex = straightWire.SelectVertices().OrderByDistanceTo(new Point3D(1, 0, 0))[0];
         var unmodifiedWire = straightWire.Fillet2D(0.1, [straightVertex]);
         Check.AlmostEqual(straightWire.Length, unmodifiedWire.Length, 5);
         Assert.Equal(2, unmodifiedWire.SelectEdges().Count);
@@ -56,7 +56,7 @@ public class Fillet2DTests
     [Fact]
     public void FilletNonPlanar()
     {
-        var wire = Wire.Make([Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0)), Edge.MakeLine(new Vector(1, 0, 0), new Vector(1, 1, 0)), Edge.MakeLine(new Vector(1, 1, 0), new Vector(0, 0, 1))]);
+        var wire = Wire.Make([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)), Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(1, 1, 0)), Edge.MakeLine(new Point3D(1, 1, 0), new Point3D(0, 0, 1))]);
         Assert.Throws<ArgumentException>(() => wire.Fillet2D(0.1, [wire.SelectVertices()[1]]));
     }
 
@@ -105,8 +105,8 @@ public class Fillet2DTests
     [Fact]
     public void WireFilletCornerIsTangentContinuousStraightWire()
     {
-        var wire = Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 0), new Vector(2, 0))]);
-        var corner = WireFillet.Analyze(wire, wire.SelectVertices().OrderByDistanceTo(new Vector(1, 0, 0))[0]);
+        var wire = Wire.Make([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)), Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(2, 0, 0))]);
+        var corner = WireFillet.Analyze(wire, wire.SelectVertices().OrderByDistanceTo(new Point3D(1, 0, 0))[0]);
         Assert.True(WireFillet.IsTangentContinuous(corner));
     }
 
@@ -116,7 +116,7 @@ public class Fillet2DTests
         Shape sketch = new RectangleRounded(20, 10, 2);
         sketch -= sketch.SelectEdges().Where(GeomType.Circle).Select(e => (Shape)(new Location(e.ArcCenter) * new Circle(2)));
         var wire = sketch.SingleWire();
-        foreach (Vector point in new Vector[] { new Vector(-10, -3, 0), new Vector(-10, 3, 0), new Vector(-8, 5, 0) })
+        foreach (Point3D point in new Point3D[] { new Point3D(-10, -3, 0), new Point3D(-10, 3, 0), new Point3D(-8, 5, 0) })
         {
             var corner = WireFillet.Analyze(wire, wire.SelectVertices().OrderByDistanceTo(point)[0]);
             Assert.False(WireFillet.IsTangentContinuous(corner));
@@ -153,7 +153,7 @@ public class Fillet2DTests
         // Ellipse(x_radius=74 / 2, y_radius=54 / 2) with GridLocations(49, 32, 2, 2) of Circle(12 / 2) subtracted
         Location[] grid = [new Pos(-24.5, -16), new Pos(-24.5, 16), new Pos(24.5, -16), new Pos(24.5, 16)];
         var sketch = new Ellipse(74 / 2.0, 54 / 2.0) - grid.Select(l => (Shape)(l * new Circle(12 / 2.0)));
-        var vertex = sketch.Vertices().OrderByDistanceTo(new Vector(30, 20))[0];
+        var vertex = sketch.Vertices().OrderByDistanceTo(new Point3D(30, 20, 0))[0];
         var original = sketch.SingleFace();
         var filleted = original.Fillet2D(2.0, [vertex]);
         Assert.True(filleted.IsValid);
@@ -188,7 +188,7 @@ public class Fillet2DTests
         Assert.Equal(1, r.Radius);
         Assert.Equal(new Alignment(Align.Center, Align.Center), r.Align);
         Check.AlmostEqual(20 * 10 - 4 * 1 + Math.PI * 1, r.Area, 5);
-        Assert.Equal(new Vector(0, 0, 1), r.Faces()[0].NormalAt());
+        Check.Near(new Vector3D(0, 0, 1), r.Faces()[0].NormalAt());
 
         Assert.Throws<ArgumentException>(() => new RectangleRounded(20, 10, 5));
         Assert.Throws<ArgumentException>(() => new RectangleRounded(10, 20, 5));
@@ -208,7 +208,7 @@ public class Fillet2DTests
     [Fact]
     public void OffsetBaseWire()
     {
-        var baseWire = Wire.MakePolygon([new Vector(0, 0), new Vector(1, 0), new Vector(1, 1)], close: false);
+        var baseWire = Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0)], close: false);
         var corner = baseWire.SelectVertices().GroupBy(Axis.Y)[0].OrderBy(Axis.X)[^1];
         baseWire = baseWire.Fillet2D(0.4, [corner]);
         Assert.Equal(3, baseWire.SelectEdges().Count);
@@ -224,7 +224,7 @@ public class Fillet2DTests
     {
         // A cross with rounded inner corners, as cut for a Phillips recess
         var cross = (new Rectangle(5.3, 5.3 / 6) + new Rectangle(5.3 / 6, 5.3)).SingleFace();
-        var inner = new ShapeList<Vertex>(cross.SelectVertices()).OrderByDistanceTo(new Vector(0, 0, 0)).Take(4);
+        var inner = new ShapeList<Vertex>(cross.SelectVertices()).OrderByDistanceTo(new Point3D(0, 0, 0)).Take(4);
         var recess = cross.Fillet2D(5.3 / 3, inner);
         Assert.True(recess.IsValid);
         Assert.Equal(4, recess.SelectEdges().Where(GeomType.Circle).Count);
@@ -238,8 +238,8 @@ public class Fillet2DTests
     /// <summary>The two-arc profile of the regression tests, with the top edge made by <paramref name="top"/>.</summary>
     private static Face Profile(Func<JernArc, JernArc, Edge> top)
     {
-        var ln1 = new JernArc(new Vector(0, 0), new Vector(1, 0), 20, 90);
-        var ln2 = new JernArc(new Vector(0, 10), new Vector(1, 0), 10, 90);
+        var ln1 = new JernArc(new Point3D(0, 0, 0), new Vector3D(1, 0, 0), 20, 90);
+        var ln2 = new JernArc(new Point3D(0, 10, 0), new Vector3D(1, 0, 0), 10, 90);
         return MakeFace(ln1, ln2, top(ln1, ln2), new Line(ln1.PositionAt(0), ln2.PositionAt(0)));
     }
 
@@ -261,8 +261,8 @@ public class Fillet2DTests
     public void FilletLineAllEdgesConsumed()
     {
         // All the edges of the sketch consumed ("Face can only be created with closed wires")
-        var cr1 = new CenterArc(new Vector(14.142135623730951, 14.999999999999996, 0.0), Radius, 0, 360);
-        var cn1 = new ConstrainedLines(cr1.SingleEdge(), new Vector(0, 20), selector: lines => [lines[1]]).SingleEdge();
+        var cr1 = new CenterArc(new Point3D(14.142135623730951, 14.999999999999996, 0.0), Radius, 0, 360);
+        var cn1 = new ConstrainedLines(cr1.SingleEdge(), new Point3D(0, 20, 0), selector: lines => [lines[1]]).SingleEdge();
         var cut = new Plane(cn1.PositionAt(0), xDir: cn1.TangentAt(1)) * new Rectangle(20, 20, align: new Alignment(Align.Center, Align.Min));
         var sk = LineProfile() - cut;
         Assert.Single(Fillet(sk, sk.SelectVertices(), Radius).Edges());
@@ -273,8 +273,8 @@ public class Fillet2DTests
     {
         foreach (var allVerts in new[] { false, true })
         {
-            var ln1 = new JernArc(new Vector(0, 0), new Vector(1, 0), 20, 90);
-            var ln2 = new JernArc(new Vector(0, 10), new Vector(1, 0), 10, 90);
+            var ln1 = new JernArc(new Point3D(0, 0, 0), new Vector3D(1, 0, 0), 20, 90);
+            var ln2 = new JernArc(new Point3D(0, 10, 0), new Vector3D(1, 0, 0), 10, 90);
             var ln3 = new RadiusArc(ln1.PositionAt(1), ln2.PositionAt(1), EdgeRadius);
             var profile = MakeFace(ln1, ln2, ln3, new Line(ln1.PositionAt(0), ln2.PositionAt(0)));
             var arc3tan = new ConstrainedArcs(ln1, ln2, ln3, sagitta: Sagitta.Both, selector: arcs => [arcs.OrderBy(Axis.Y)[0]]);
@@ -326,13 +326,13 @@ public class Fillet2DTests
     {
         using var log = HistoryLog.Open();
         // The filleted vertex is removed (its arc counts as new), the edges beside it are modified and the rest untouched
-        var w = Wire.MakePolygon([new Vector(0, 0), new Vector(3, 0), new Vector(4, 2), new Vector(1, 5), new Vector(-1, 2)], close: true);
+        var w = Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(3, 0, 0), new Point3D(4, 2, 0), new Point3D(1, 5, 0), new Point3D(-1, 2, 0)], close: true);
         Assert.Equal("100 001 100 100 100 100 100 100 100 100 new 011000010000", Record(w, w.Fillet2D(0.7, [w.SelectVertices()[1]])));
         Assert.Equal("001 001 001 001 001 100 100 100 100 100 new 11111111110101010101", Record(w, w.Fillet2D(0.7, w.SelectVertices())));
 
         // A whole edge consumed: it is removed
-        var ln1 = new JernArc(new Vector(0, 0), new Vector(1, 0), 20, 90);
-        var ln2 = new JernArc(new Vector(0, 10), new Vector(1, 0), 10, 90);
+        var ln1 = new JernArc(new Point3D(0, 0, 0), new Vector3D(1, 0, 0), 20, 90);
+        var ln2 = new JernArc(new Point3D(0, 10, 0), new Vector3D(1, 0, 0), 10, 90);
         var w2 = Wire.Combine([ln1, ln2, new Line(ln1.PositionAt(1), ln2.PositionAt(1)), new Line(ln1.PositionAt(0), ln2.PositionAt(0))])[0];
         Assert.Equal("100 001 001 100 100 001 100 100 new 0111001100", Record(w2, w2.Fillet2D(5, w2.SelectVertices().OrderBy(Axis.Y).TakeLast(2))));
 

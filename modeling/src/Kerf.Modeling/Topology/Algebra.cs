@@ -275,13 +275,13 @@ public static class VertexOperators
         public static Vertex operator +(Vertex a, Vertex b) => Vertex.Make(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
 
         /// <summary>A vertex moved by a vector.</summary>
-        public static Vertex operator +(Vertex a, Vector b) => Vertex.Make(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
+        public static Vertex operator +(Vertex a, Vector3D b) => Vertex.Make(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
 
         /// <summary>A vertex at the difference of two vertices' coordinates.</summary>
         public static Vertex operator -(Vertex a, Vertex b) => Vertex.Make(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
 
         /// <summary>A vertex moved back by a vector.</summary>
-        public static Vertex operator -(Vertex a, Vector b) => Vertex.Make(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
+        public static Vertex operator -(Vertex a, Vector3D b) => Vertex.Make(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
     }
 }
 

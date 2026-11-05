@@ -28,21 +28,21 @@ public class SolidTests
     [Fact]
     public void Extrude()
     {
-        var v = Edge.Extrude(Vertex.Make(1, 1, 1), new Vector(0, 0, 1));
+        var v = Edge.Extrude(Vertex.Make(1, 1, 1), new Vector3D(0, 0, 1));
         Check.AlmostEqual(1, v.Length, 5);
 
-        var e = Face.Extrude(Edge.MakeLine(new Vector(2, 1), new Vector(2, 0)), new Vector(0, 0, 1));
+        var e = Face.Extrude(Edge.MakeLine(new Point3D(2, 1, 0), new Point3D(2, 0, 0)), new Vector3D(0, 0, 1));
         Check.AlmostEqual(1, e.Area, 5);
 
-        var w = Shell.Extrude(Wire.Make([Edge.MakeLine(new Vector(1, 1), new Vector(0, 2)), Edge.MakeLine(new Vector(1, 1), new Vector(1, 0))]), new Vector(0, 0, 1));
+        var w = Shell.Extrude(Wire.Make([Edge.MakeLine(new Point3D(1, 1, 0), new Point3D(0, 2, 0)), Edge.MakeLine(new Point3D(1, 1, 0), new Point3D(1, 0, 0))]), new Vector3D(0, 0, 1));
         Check.AlmostEqual(1 + Math.Sqrt(2), w.Area, 5);
 
-        var f = Solid.Extrude(Face.MakeRect(1, 1), new Vector(0, 0, 1));
+        var f = Solid.Extrude(Face.MakeRect(1, 1), new Vector3D(0, 0, 1));
         Check.AlmostEqual(1, f.Volume, 5);
 
         var s = Compound.Extrude(
-            Shell.Make(Solid.MakeBox(1, 1, 1).Located(new Location(new Vector(-2, 1, 0))).SelectFaces().OrderBy(new Axis(new Vector(0, 0, 0), new Vector(1, 1, 1)))[^2..]),
-            new Vector(0.1, 0.1, 0.1));
+            Shell.Make(Solid.MakeBox(1, 1, 1).Located(new Location(new Point3D(-2, 1, 0))).SelectFaces().OrderBy(new Axis(new Point3D(0, 0, 0), new Vector3D(1, 1, 1)))[^2..]),
+            new Vector3D(0.1, 0.1, 0.1));
         Check.AlmostEqual(0.2, s.Volume, 5);
     }
 
@@ -63,11 +63,11 @@ public class SolidTests
         const double a = 1;
         var rect = Face.MakeRect(a, a);
         var face = flipped ? (Face)(-rect) : rect;
-        var direction = new Vector(0, 0, directionZ);
-        var offsetAmt = -direction.Length * Math.Tan(taper * Math.PI / 180);
+        var direction = new Vector3D(0, 0, directionZ);
+        var offsetAmt = -direction.Magnitude * Math.Tan(taper * Math.PI / 180);
         var taperSolid = Solid.ExtrudeTaper(face, direction, taper);
         // V = 1/3 × h × (a² + b² + ab)
-        var h = direction.Length;
+        var h = direction.Magnitude;
         var b = a + 2 * offsetAmt;
         var v = h * (a * a + b * b + a * b) / 3;
         Check.AlmostEqual(v, taperSolid.Volume, 5);
@@ -75,13 +75,13 @@ public class SolidTests
         var size = Math.Max(1, b) / 2;
         if (direction.Z > 0)
         {
-            Check.AlmostEqual(new Vector(-size, -size, 0), bbox.Min, 1);
-            Check.AlmostEqual(new Vector(size, size, h), bbox.Max, 1);
+            Check.AlmostEqual(new Point3D(-size, -size, 0), bbox.Min, 1);
+            Check.AlmostEqual(new Point3D(size, size, h), bbox.Max, 1);
         }
         else
         {
-            Check.AlmostEqual(new Vector(-size, -size, -h), bbox.Min, 1);
-            Check.AlmostEqual(new Vector(size, size, 0), bbox.Max, 1);
+            Check.AlmostEqual(new Point3D(-size, -size, -h), bbox.Min, 1);
+            Check.AlmostEqual(new Point3D(size, size, 0), bbox.Max, 1);
         }
     }
 
@@ -91,9 +91,9 @@ public class SolidTests
         // A cross with rounded inner corners, as cut for a Phillips recess, cannot be drafted at this angle but can be
         // lofted
         var cross = (new Rectangle(5.3, 5.3 / 6) + new Rectangle(5.3 / 6, 5.3)).SingleFace();
-        var inner = new ShapeList<Vertex>(cross.SelectVertices()).OrderByDistanceTo(new Vector(0, 0, 0))[..4];
+        var inner = new ShapeList<Vertex>(cross.SelectVertices()).OrderByDistanceTo(new Point3D(0, 0, 0))[..4];
         var recess = cross.Fillet2D(5.3 / 3, inner);
-        var tapered = Solid.ExtrudeTaper(recess, new Vector(0, 0, -3.27), 20);
+        var tapered = Solid.ExtrudeTaper(recess, new Vector3D(0, 0, -3.27), 20);
         Assert.True(tapered.IsValid);
         Check.AlmostEqual(-3.27, tapered.BoundBox().Min.Z, 5);
     }
@@ -102,10 +102,10 @@ public class SolidTests
     public void ExtrudeTaperWithHole()
     {
         var rectHole = Face.MakeRect(1, 1).MakeHoles([Wire.MakeCircle(0.25)]);
-        var direction = new Vector(0, 0, 0.5);
+        var direction = new Vector3D(0, 0, 0.5);
         const double taper = 10;
         var taperSolid = Solid.ExtrudeTaper(rectHole, direction, taper);
-        var offsetAmt = -direction.Length * Math.Tan(taper * Math.PI / 180);
+        var offsetAmt = -direction.Magnitude * Math.Tan(taper * Math.PI / 180);
         var hole = taperSolid.SelectEdges().Where(GeomType.Circle).OrderBy(Axis.Z)[^1];
         Check.AlmostEqual(0.25 - offsetAmt, hole.Radius, 5);
     }
@@ -114,7 +114,7 @@ public class SolidTests
     public void ExtrudeTaperWithHoleFlipped()
     {
         var rectHole = Face.MakeRect(1, 1).MakeHoles([Wire.MakeCircle(0.25)]);
-        var direction = new Vector(0, 0, 1);
+        var direction = new Vector3D(0, 0, 1);
         const double taper = 10;
         var taperSolidT = Solid.ExtrudeTaper(rectHole, direction, taper, true);
         var taperSolidF = Solid.ExtrudeTaper(rectHole, direction, taper, false);
@@ -129,7 +129,7 @@ public class SolidTests
         // The hole widens as the walls close in and breaks through them part way up, which the draft builds as an
         // invalid solid
         var rectHole = Face.MakeRect(20, 12).MakeHoles([Wire.MakeCircle(3)]);
-        var taperSolid = Solid.ExtrudeTaper(rectHole, new Vector(0, 0, 5), 20);
+        var taperSolid = Solid.ExtrudeTaper(rectHole, new Vector3D(0, 0, 5), 20);
         Assert.True(taperSolid.IsValid);
         Check.AlmostEqual(687.89, taperSolid.Volume, 1);
     }
@@ -139,8 +139,8 @@ public class SolidTests
     {
         var rect = Face.MakeRect(2, 1);
         var rectHole = rect.MakeHoles([Wire.MakeCircle(0.25)]);
-        var oRectHole = rectHole.Moved(new Location(new Vector(0, 0, 0), new Vector(1, 0.1, 0), 77));
-        var taper0 = Solid.ExtrudeTaper(rectHole, new Vector(0, 0, 1), 5);
+        var oRectHole = rectHole.Moved(new Location(new Point3D(0, 0, 0), new Vector3D(1, 0.1, 0), 77));
+        var taper0 = Solid.ExtrudeTaper(rectHole, new Vector3D(0, 0, 1), 5);
         var taper1 = Solid.ExtrudeTaper(oRectHole, oRectHole.NormalAt(), 5);
         Check.AlmostEqual(taper0.Volume, taper1.Volume, 5);
     }
@@ -149,11 +149,11 @@ public class SolidTests
     public void ExtrudeTaperFollowsDirection()
     {
         // Issues #553, #987: the winding of the profile must not set the direction
-        Vector[] points = [new Vector(0, 0), new Vector(0, -20), new Vector(-10, -21), new Vector(-11, 0)];
+        Point3D[] points = [new Point3D(0, 0, 0), new Point3D(0, -20, 0), new Point3D(-10, -21, 0), new Point3D(-11, 0, 0)];
         foreach (var outline in new[] { points, points.Reverse().ToArray() })
         {
             var profile = Face.Make(Wire.MakePolygon(outline));
-            foreach (var direction in new Vector[] { new Vector(0, 0, 5), new Vector(0, 0, -5) })
+            foreach (var direction in new Vector3D[] { new Vector3D(0, 0, 5), new Vector3D(0, 0, -5) })
             {
                 var box = Solid.ExtrudeTaper(profile, direction, 1).BoundBox();
                 Check.AlmostEqual(5, box.Max.Z - box.Min.Z, 5);
@@ -165,7 +165,7 @@ public class SolidTests
     [Fact]
     public void ExtrudeTaperKeepsPlanarSides()
     {
-        var tapered = Solid.ExtrudeTaper(Face.MakeRect(10, 10), new Vector(0, 0, 5), -10);
+        var tapered = Solid.ExtrudeTaper(Face.MakeRect(10, 10), new Vector3D(0, 0, 5), -10);
         Assert.All(tapered.SelectFaces(), f => Assert.Equal(GeomType.Plane, f.GeomType));
     }
 
@@ -175,7 +175,7 @@ public class SolidTests
         // Issue #568: three thin bars crossing at the origin, widening taper
         var bar = Face.MakeRect(100, 1);
         var star = (bar + bar.Rotate(Axis.Z, 60) + bar.Rotate(Axis.Z, 120)).SingleFace();
-        var tapered = Solid.ExtrudeTaper(star, new Vector(0, 0, -2), -15);
+        var tapered = Solid.ExtrudeTaper(star, new Vector3D(0, 0, -2), -15);
         Assert.True(tapered.IsValid);
         Assert.True(tapered.Volume > star.Area * 2);
     }
@@ -185,13 +185,13 @@ public class SolidTests
     {
         // The sides of an ellipse cannot be drafted, so it is lofted
         var ellipse = Face.Make(Wire.Make(Edge.MakeEllipse(8, 4)));
-        var tapered = Solid.ExtrudeTaper(ellipse, new Vector(0, 0, 5), 10);
+        var tapered = Solid.ExtrudeTaper(ellipse, new Vector3D(0, 0, 5), 10);
         Assert.True(tapered.IsValid);
         Assert.True(tapered.Volume < ellipse.Area * 5);
         Check.AlmostEqual(5, tapered.BoundBox().Max.Z, 5);
 
         var holed = ellipse.MakeHoles([Wire.MakeCircle(1)]);
-        var taperedHoled = Solid.ExtrudeTaper(holed, new Vector(0, 0, 5), 10);
+        var taperedHoled = Solid.ExtrudeTaper(holed, new Vector3D(0, 0, 5), 10);
         Assert.True(taperedHoled.IsValid);
         Assert.True(taperedHoled.Volume < tapered.Volume);
     }
@@ -201,8 +201,8 @@ public class SolidTests
     {
         // Issue #567: a 15 degree taper over 2 closes up the 1 wide arms
         var cross = (Face.MakeRect(10, 1) + Face.MakeRect(1, 10)).SingleFace();
-        Assert.True(Solid.ExtrudeTaper(cross, new Vector(0, 0, 2), 10).IsValid);
-        var e = Assert.Throws<InvalidOperationException>(() => Solid.ExtrudeTaper(cross, new Vector(0, 0, 2), 15));
+        Assert.True(Solid.ExtrudeTaper(cross, new Vector3D(0, 0, 2), 10).IsValid);
+        var e = Assert.Throws<InvalidOperationException>(() => Solid.ExtrudeTaper(cross, new Vector3D(0, 0, 2), 15));
         Assert.Contains("may collapse the profile", e.Message);
     }
 
@@ -214,20 +214,20 @@ public class SolidTests
             Check.AlmostEqual(1, twist.Volume, 5);
             var top = twist.SelectFaces().OrderBy(Axis.Z)[^1].Rotate(Axis.Z, 45);
             var bottom = twist.SelectFaces().OrderBy(Axis.Z)[0];
-            var intersect = top.Translate(new Vector(0, 0, -1)).Intersect(bottom);
+            var intersect = top.Translate(new Vector3D(0, 0, -1)).Intersect(bottom);
             var area = intersect.SelectMany(s => s.SelectFaces()).Sum(f => f.Area);
             Check.AlmostEqual(1, area, 5);
         }
         // Face
-        CheckTwist(Solid.ExtrudeLinearWithRotation(Face.MakeRect(1, 1), center: new Vector(0, 0, 0), normal: new Vector(0, 0, 1), angle: 45));
+        CheckTwist(Solid.ExtrudeLinearWithRotation(Face.MakeRect(1, 1), center: new Point3D(0, 0, 0), normal: new Vector3D(0, 0, 1), angle: 45));
         // Wire
-        CheckTwist(Solid.ExtrudeLinearWithRotation(Wire.MakeRect(1, 1), center: new Vector(0, 0, 0), normal: new Vector(0, 0, 1), angle: 45));
+        CheckTwist(Solid.ExtrudeLinearWithRotation(Wire.MakeRect(1, 1), center: new Point3D(0, 0, 0), normal: new Vector3D(0, 0, 1), angle: 45));
     }
 
     [Fact]
     public void MakeLoft()
     {
-        var loft = Solid.MakeLoft([Wire.MakeRect(2, 2), Wire.MakeCircle(1, new Plane(new Vector(0, 0, 1)))]);
+        var loft = Solid.MakeLoft([Wire.MakeRect(2, 2), Wire.MakeCircle(1, new Plane(new Point3D(0, 0, 1)))]);
         Check.AlmostEqual((4 + Math.PI) / 2, loft.Volume, 1);
 
         Assert.Throws<ArgumentException>(() => Solid.MakeLoft([Wire.MakeRect(1, 1)]));
@@ -254,19 +254,19 @@ public class SolidTests
     public void ExtrudeUntil()
     {
         var square = Face.MakeRect(1, 1);
-        var box = Solid.MakeBox(4, 4, 1, new Plane(new Vector(-2, -2, 3)));
-        var extrusion = Solid.ExtrudeUntil(square, box, new Vector(0, 0, 1), Until.Last);
+        var box = Solid.MakeBox(4, 4, 1, new Plane(new Point3D(-2, -2, 3)));
+        var extrusion = Solid.ExtrudeUntil(square, box, new Vector3D(0, 0, 1), Until.Last);
         Check.AlmostEqual(4, extrusion.Volume, 5);
 
-        box = Solid.MakeBox(4, 4, 1, new Plane(new Vector(-2, -2, -3)));
-        extrusion = Solid.ExtrudeUntil(square, box, new Vector(0, 0, 1), Until.Previous);
+        box = Solid.MakeBox(4, 4, 1, new Plane(new Point3D(-2, -2, -3)));
+        extrusion = Solid.ExtrudeUntil(square, box, new Vector3D(0, 0, 1), Until.Previous);
         Check.AlmostEqual(2, extrusion.Volume, 5);
     }
 
     [Fact]
     public void Sweep()
     {
-        var path = Edge.MakeSpline([new Vector(0, 0), new Vector(3, 5), new Vector(7, -2)]);
+        var path = Edge.MakeSpline([new Point3D(0, 0, 0), new Point3D(3, 5, 0), new Point3D(7, -2, 0)]);
         var section = Wire.MakeCircle(1, new Plane(path.PositionAt(0), zDir: path.TangentAt(0)));
         var area = Face.Make(section).Area;
         var swept = Solid.Sweep(section, path);
@@ -276,28 +276,28 @@ public class SolidTests
     [Fact]
     public void HollowSweep()
     {
-        var path = Edge.MakeLine(new Vector(0, 0, 0), new Vector(0, 0, 5));
+        var path = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(0, 0, 5));
         var section = (Face.MakeRect(1, 1) - Face.MakeRect(0.1, 0.1)).SelectFaces()[0];
         var swept = Solid.Sweep(section, path);
         Check.AlmostEqual(5 * (1 - 0.1 * 0.1), swept.Volume, 5);
     }
 
     // Spline(points, tangents=...) is Edge.make_spline with the tangents normalized and scale=True
-    static Edge Spline(Vector start, Vector end, Vector tangent0, Vector tangent1) =>
-        Edge.MakeSpline([start, end], [tangent0.Normalized(), tangent1.Normalized()], scale: true);
+    static Edge Spline(Point3D start, Point3D end, Point3D tangent0, Point3D tangent1) =>
+        Edge.MakeSpline([start, end], [tangent0.ToVector().Normalized(), tangent1.ToVector().Normalized()], scale: true);
 
     [Fact]
     public void SweepMulti()
     {
         var f0 = Face.MakeRect(1, 1);
         var f1 = new Pos(x: 10) * Face.Make(Wire.MakeCircle(1));
-        var path = Spline(new Vector(0, 0), new Vector(10, 0), new Vector(0, 0, 1), new Vector(0, 0, -1));
-        var binormal = Edge.MakeLine(new Vector(0, 1), new Vector(10, 1));
+        var path = Spline(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(0, 0, 1), new Point3D(0, 0, -1));
+        var binormal = Edge.MakeLine(new Point3D(0, 1, 0), new Point3D(10, 1, 0));
         var swept = Solid.SweepMulti([f0, f1], path, isFrenet: true, binormal: binormal);
         Check.AlmostEqual(23.782, swept.Volume, 2);
 
-        path = Spline(new Vector(0, 0), new Vector(10, 0), new Vector(0, 0, 1), new Vector(1, 0, 0));
-        swept = Solid.SweepMulti([f0, f1], path, isFrenet: true, binormal: new Vector(5, 0, 1));
+        path = Spline(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(0, 0, 1), new Point3D(1, 0, 0));
+        swept = Solid.SweepMulti([f0, f1], path, isFrenet: true, binormal: new Vector3D(5, 0, 1));
         Check.AlmostEqual(20.75, swept.Volume, 2);
     }
 
@@ -306,8 +306,8 @@ public class SolidTests
     {
         var warnings = Warnings.Capture();
         // The kernel reports success for a sweep that folds over itself
-        var path = Wire.MakePolygon([new Vector(0, 20), new Vector(20, 20), new Vector(20, 0)], close: false);
-        var section = new Plane(new Vector(0, 20, 0), zDir: new Vector(1, 0, 0)) * Face.MakeRect(10, 10);
+        var path = Wire.MakePolygon([new Point3D(0, 20, 0), new Point3D(20, 20, 0), new Point3D(20, 0, 0)], close: false);
+        var section = new Plane(new Point3D(0, 20, 0), zDir: new Vector3D(1, 0, 0)) * Face.MakeRect(10, 10);
         var folded = Solid.Sweep(section, path);
         Assert.Contains(warnings.Messages, w => w.Contains("sweep created an invalid solid"));
         Assert.False(folded.IsValid);
@@ -325,7 +325,7 @@ public class SolidTests
     [Fact]
     public void Revolve()
     {
-        var r = Solid.Revolve(Face.MakeRect(1, 1, new Plane(new Vector(10, 0, 0))).SingleWire(), 180, axis: Axis.Y);
+        var r = Solid.Revolve(Face.MakeRect(1, 1, new Plane(new Point3D(10, 0, 0))).SingleWire(), 180, axis: Axis.Y);
         Assert.Equal(6, r.SelectFaces().Count);
     }
 
@@ -396,7 +396,7 @@ public class SolidDraftTests
     public SolidDraftTests()
     {
         // A simple box to test draft
-        _box = Solid.MakeBox(10, 10, 10, new Plane(new Vector(-5, -5, -5)));
+        _box = Solid.MakeBox(10, 10, 10, new Plane(new Point3D(-5, -5, -5)));
         _sides = _box.SelectFaces().NotParallelTo(Axis.Z);
         _bottomFace = _box.SelectFaces().OrderBy(Axis.Z)[0];
         _neutralPlane = new Plane(_bottomFace);

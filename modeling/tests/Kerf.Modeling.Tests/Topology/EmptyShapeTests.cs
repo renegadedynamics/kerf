@@ -36,7 +36,7 @@ file static class Zeros
         (typeof(Curve), () => new Curve(), 1),
     ];
 
-    public static Solid Box(double l, double w, double h) => Solid.MakeBox(l, w, h, new Plane(new Vector(-l / 2, -w / 2, -h / 2)));
+    public static Solid Box(double l, double w, double h) => Solid.MakeBox(l, w, h, new Plane(new Point3D(-l / 2, -w / 2, -h / 2)));
 
     public static Part BoxPart(double l, double w, double h) => new([Box(l, w, h)]);
 
@@ -130,7 +130,7 @@ public class EmptyShapePlacementTests
     [Fact]
     public void MovingKeepsTheZero()
     {
-        var loc = new Location(new Vector(1, 2, 3), new Vector(10, 20, 30));
+        var loc = new Location(new Point3D(1, 2, 3), new Vector3D(10, 20, 30));
         foreach (var (cls, make, _) in Zeros.Classes)
         {
             var zero = make().AsShape();
@@ -141,7 +141,7 @@ public class EmptyShapePlacementTests
                 loc * zero,
                 Plane.XZ * zero,
                 zero.Rotate(Axis.Z, 30),
-                zero.Translate(new Vector(1, 2, 3)),
+                zero.Translate(new Vector3D(1, 2, 3)),
                 zero.Mirror(Plane.XY),
                 zero.Scale(2),
             ];
@@ -241,13 +241,13 @@ public class EmptyShapeAlgebraTests
     private static (Type Class, Func<Shape> Zero, Shape Other)[] Others() =>
     [
         (typeof(Vertex), () => default(Vertex), Vertex.Make(1, 2, 3)),
-        (typeof(Edge), () => default(Edge), Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0))),
+        (typeof(Edge), () => default(Edge), Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0))),
         (typeof(Wire), () => default(Wire), Wire.MakeRect(1, 1)),
         (typeof(Face), () => default(Face), Face.MakeRect(1, 1)),
         (typeof(Solid), () => default(Solid), Solid.MakeBox(1, 1, 1)),
         (typeof(Part), () => new Part(), Zeros.BoxPart(1, 1, 1)),
         (typeof(Sketch), () => new Sketch(), Zeros.Rectangle(1, 1)),
-        (typeof(Curve), () => new Curve(), new Curve() + Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0))),
+        (typeof(Curve), () => new Curve(), new Curve() + Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0))),
     ];
 
     private static (double, double, double) Size(Shape shape) =>
@@ -356,7 +356,7 @@ public class EmptyShapeGeometryQueriesTests
             Assert.Contains("empty Vertex has no position",
                             Assert.Throws<InvalidOperationException>(() => coordinate()).Message);
         Assert.Contains("empty Vertex has no position",
-                        Assert.Throws<InvalidOperationException>(() => default(Vertex) + new Vector(1, 2, 3)).Message);
+                        Assert.Throws<InvalidOperationException>(() => default(Vertex) + new Vector3D(1, 2, 3)).Message);
     }
 
     [Fact]
@@ -387,7 +387,7 @@ public class EmptyShapeGeometryQueriesTests
     [Fact]
     public void NothingMeetsNothing()
     {
-        var line = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0));
+        var line = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         foreach (var zero in new Shape[] { default(Edge), default(Wire), default(Face), default(Shell) })
         {
             Assert.Empty(zero.Intersect(line));
@@ -413,7 +413,7 @@ public class EmptyShapeOperationsTests
     [Fact]
     public void OperationsOnAZero()
     {
-        var line = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0));
+        var line = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         (string Name, Func<IShape> Operation, Type Class)[] cases =
         [
             ("extrude", () => Ops.Extrude(new Sketch(), 1).Value, typeof(Part)),
@@ -484,8 +484,8 @@ public class EmptyShapeOperationsTests
     [Fact]
     public void TrimAndCommonVertexFindNothing()
     {
-        var line = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0));
-        var apart = Edge.MakeLine(new Vector(0, 5, 0), new Vector(1, 5, 0));
+        var line = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+        var apart = Edge.MakeLine(new Point3D(0, 5, 0), new Point3D(1, 5, 0));
         Assert.True(line.TrimToOther(apart).IsEmpty);
         Assert.True(default(Edge).TrimToOther(line).IsEmpty);
         Assert.True(Vertex.CommonVertex(line, apart).IsEmpty);

@@ -7,30 +7,29 @@ namespace Kerf.Modeling;
 public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
 {
     /// <summary>The global position of the axis origin.</summary>
-    public Vector Position { get; }
+    public Point3D Position { get; }
 
     /// <summary>The unit direction.</summary>
-    public Vector Direction { get; }
+    public Direction3D Direction { get; }
 
     /// <summary>The X axis.</summary>
-    public static Axis X => new(new Vector(0, 0, 0), new Vector(1, 0, 0));
+    public static Axis X => new(Point3D.Origin, new Vector3D(1, 0, 0));
 
     /// <summary>The Y axis.</summary>
-    public static Axis Y => new(new Vector(0, 0, 0), new Vector(0, 1, 0));
+    public static Axis Y => new(Point3D.Origin, new Vector3D(0, 1, 0));
 
     /// <summary>The Z axis.</summary>
-    public static Axis Z => new(new Vector(0, 0, 0), new Vector(0, 0, 1));
+    public static Axis Z => new(Point3D.Origin, new Vector3D(0, 0, 1));
 
     /// <summary>An axis through <paramref name="origin"/> along <paramref name="direction"/>.</summary>
     /// <exception cref="ArgumentException">The direction has zero length.</exception>
-    public Axis(Vector origin, Vector direction)
+    public Axis(Point3D origin, Vector3D direction)
     {
-        Vector unit;
+        Direction3D unit;
         try
         {
             // As gp_Dir(*direction.normalized()): normalised, then normalised again by gp_Dir
-            var dir = direction.Normalized().ToDirection3D();
-            unit = new Vector(dir);
+            unit = direction.Normalized().ToDirection();
         }
         catch (Exception ex) when (Failures.IsKernelFailure(ex) || ex is InvalidOperationException)
         {
@@ -45,8 +44,8 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     {
         var loc = ax1.Location;
         var dir = ax1.Direction;
-        Position = new Vector(loc);
-        Direction = new Vector(dir);
+        Position = loc;
+        Direction = dir;
     }
 
     /// <summary>The axis along an edge's curve where it starts (ignoring the edge's orientation), as build123d's <c>Axis(edge)</c>.</summary>
@@ -55,27 +54,27 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
         if (!edge.TryGetCurve(out var curve, out _))
             throw new ArgumentException($"Invalid edge argument: {edge}");
         var start = curve.Derivatives(edge.Range.Min, 1);
-        this = new Axis(new Vector(start.Point), new Vector(start.D1));
+        this = new Axis(start.Point, start.D1);
     }
 
     /// <summary>The Z axis of a location.</summary>
     public Axis(Location location) => this = Z.Located(location);
 
     // Exact copy without re-normalising, for values OCCT has already produced
-    Axis(Vector position, Vector direction, bool _) => (Position, Direction) = (position, direction);
+    Axis(Point3D position, Direction3D direction, bool _) => (Position, Direction) = (position, direction);
 
     /// <summary>An axis from <paramref name="origin"/> towards <paramref name="endPoint"/>.</summary>
-    public static Axis FromPoints(Vector origin, Vector endPoint) => new(origin, endPoint - origin);
+    public static Axis FromPoints(Point3D origin, Point3D endPoint) => new(origin, endPoint - origin);
 
     /// <summary>This axis moved to a new position, with the same direction.</summary>
-    public Axis WithPosition(Vector position) => new(position, Direction, true);
+    public Axis WithPosition(Point3D position) => new(position, Direction, true);
 
     /// <summary>This axis with a new direction (normalised), at the same position.</summary>
     /// <exception cref="Exception">The direction has zero length (the kernel's construction error).</exception>
-    public Axis WithDirection(Vector direction)
+    public Axis WithDirection(Vector3D direction)
     {
-        var d = direction.ToDirection3D();
-        return new Axis(Position, new Vector(d), true);
+        var d = direction.ToDirection();
+        return new Axis(Position, d, true);
     }
 
     /// <summary>This axis as a location: at its position, with its direction as Z.</summary>
@@ -84,8 +83,8 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     /// <summary>A new OCCT gp_Ax1 for this axis.</summary>
     public Axis3D ToAxis3D()
     {
-        var p = Position.ToPoint3D();
-        var d = Direction.ToDirection3D();
+        var p = Position;
+        var d = Direction.ToDirection();
         return new Axis3D(p, d);
     }
 
@@ -142,7 +141,7 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
         {
             // Parallel axes are skew only if distinct
             var parallelOffset = (Position - other.Position).Cross(Direction);
-            return parallelOffset.Length > tolerance;
+            return parallelOffset.Magnitude > tolerance;
         }
 
         // Coplanar when the offset between them lies in the plane their directions span
@@ -198,11 +197,11 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     public IGeometry? Intersect(Plane plane) => plane.Intersect(this);
 
     /// <summary>The point if it lies on this axis, else null.</summary>
-    public Vector? Intersect(Vector point)
+    public Point3D? Intersect(Point3D point)
     {
         var toPoint = point - Position;
-        var projected = Direction * toPoint.Dot(Direction) + Position;
-        return point == projected ? point : null;
+        var projected = Position + Direction * toPoint.Dot(Direction);
+        return point.IsNear(projected) ? point : null;
     }
 
     /// <summary>
@@ -214,7 +213,7 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
         var locationDir = new Plane(location).ZDir;
         if (Intersect(location.Position) is null)
             return null;
-        return locationDir == Direction ? location : location.Position;
+        return locationDir.IsNear(Direction) ? location : location.Position;
     }
 
     internal ((double, double, double), (double, double, double)) Key => (Position.Key, Direction.Key);
@@ -230,9 +229,9 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
 
     /// <summary>"Axis: (position=(0, 0, 0), direction=(1, 0, 0))".</summary>
     public override string ToString() =>
-        $"Axis: (position={Position.ToString("G6")}, direction={Direction.ToString("G6")})";
+        $"Axis: (position={Position.Describe("G6")}, direction={Direction.Describe("G6")})";
 
-    /// <summary>"(position, direction)" with components formatted as <see cref="Vector.ToString(string?, IFormatProvider?)"/>.</summary>
+    /// <summary>"(position, direction)" with components formatted as <c>Describe(format)</c> does.</summary>
     public string ToString(string? format, IFormatProvider? formatProvider = null) =>
-        $"({Position.ToString(format)}, {Direction.ToString(format)})";
+        $"({Position.Describe(format)}, {Direction.Describe(format)})";
 }

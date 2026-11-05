@@ -36,10 +36,10 @@ public class ErrorContextTests
     {
         Func<Shape> make = feature switch
         {
-            "extrude" => () => Solid.Extrude(Face.MakeRect(1, 1), new Vector(0, 0, 0)),
+            "extrude" => () => Solid.Extrude(Face.MakeRect(1, 1), new Vector3D(0, 0, 0)),
             "loft" => () => Solid.MakeLoft([Wire.MakeRect(1, 1), Wire.MakeRect(1, 1)]),
-            "revolve" => () => Solid.Revolve(Face.MakeRect(1, 1).Moved(new Location(new Vector(5.0, 0.0, 0.0))), 0, Axis.Y),
-            _ => () => Solid.Sweep(Wire.MakeCircle(1), Edge.MakeLine(new Vector(0, 0, 0), new Vector(0, 0, 1e-9))),
+            "revolve" => () => Solid.Revolve(Face.MakeRect(1, 1).Moved(new Location(new Point3D(5.0, 0.0, 0.0))), 0, Axis.Y),
+            _ => () => Solid.Sweep(Wire.MakeCircle(1), Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(0, 0, 1e-9))),
         };
         var failed = Failures.Try(make);
         Assert.StartsWith($"{feature} failed: ", failed.Error!.Message);
