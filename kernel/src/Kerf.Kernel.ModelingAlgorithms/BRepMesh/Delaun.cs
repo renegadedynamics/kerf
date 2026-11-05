@@ -44,6 +44,12 @@ internal sealed class Delaun
     private DataStructureOfDelaun? _meshData;
     private readonly CircleTool _circles;
     private readonly List<int> _supVert;
+
+    // Kept from one vertex to the next (unit 11B); see where they're used
+    private NCollection_IntDataMap<bool>? _spareLoopEdges;
+    private readonly NCollection_IntDataMap<bool>.Iterator _polyIterator = new();
+    private Stack<int>? _frontierLinks;
+    private HashSet<int>? _frontierVisited;
     private bool _initCircles;
     private Triangle _supTrian;
 
@@ -629,16 +635,17 @@ internal sealed class Delaun
 
     private void CreateTriangles(int vertexIndex, NCollection_IntDataMap<bool> poly)
     {
-        NCollection_List<int> loopEdges = new();
-        NCollection_List<int> externalEdges = new();
+        // Most triangles need neither of these (unit 11B); so nothing here is on the stack across a recursion into this method
+        NCollection_List<int>? loopEdges = null;
+        NCollection_List<int>? externalEdges = null;
         Xy vertexCoord = _meshData!.GetNode(vertexIndex).Coord();
 
         Span<int> nodes = stackalloc int[3];
         Span<int> edgesInfo = stackalloc int[3];
         Span<int> edgeIds = stackalloc int[3];
         Span<bool> edgesOri = stackalloc bool[3];
-        NCollection_IntDataMap<bool>.Iterator edges = new(poly);
-        for (; edges.More(); edges.Next())
+        NCollection_IntDataMap<bool>.Iterator edges = _polyIterator;
+        for (edges.Initialize(poly); edges.More(); edges.Next())
         {
             int edgeId = edges.Key();
             MeshEdge edge = GetEdge(edgeId);
@@ -701,6 +708,8 @@ internal sealed class Delaun
             }
             else
             {
+                loopEdges ??= new NCollection_List<int>();
+                externalEdges ??= new NCollection_List<int>();
                 if (isPositive)
                 {
                     loopEdges.Append(edges.Key());
@@ -722,7 +731,7 @@ internal sealed class Delaun
         }
 
         poly.Clear();
-        while (!externalEdges.IsEmpty())
+        while (externalEdges is not null && !externalEdges.IsEmpty())
         {
             ref readonly PairOfIndex pair =
                 ref _meshData.ElementsConnectedTo(Math.Abs(externalEdges.First()));
@@ -743,7 +752,7 @@ internal sealed class Delaun
             }
         }
 
-        while (!loopEdges.IsEmpty())
+        while (loopEdges is not null && !loopEdges.IsEmpty())
         {
             MeshEdge edge = GetEdge(Math.Abs(loopEdges.First()));
             if (edge.Movability() != DegreeOfFreedom.Deleted)
@@ -777,7 +786,10 @@ internal sealed class Delaun
                 return;
             }
 
-            NCollection_IntDataMap<bool> loopEdges = new(10);
+            // Taken and put back, as this can be reached again from within CreateTriangles below
+            NCollection_IntDataMap<bool> loopEdges = _spareLoopEdges ?? new(10);
+            _spareLoopEdges = null;
+            loopEdges.KeepNodes();
 
             int vertexIdx = vertexIndexes[index];
             MeshVertex vertex = GetVertex(vertexIdx);
@@ -851,6 +863,9 @@ internal sealed class Delaun
                 // and removal of these edges from the list of free edges
                 CreateTriangles(vertexIdx, loopEdges);
             }
+
+            loopEdges.Renew(10);
+            _spareLoopEdges = loopEdges;
         }
 
         ProcessConstraints();
@@ -902,8 +917,11 @@ internal sealed class Delaun
 
     private bool IsBoundToFrontier(int refNodeId, int refLinkId)
     {
-        Stack<int> linkStack = new();
-        NCollection_PackedMapOfInteger visitedLinks = new();
+        // Only ever asked whether a link is in it, so a kept HashSet in place of OCCT's map (unit 11B)
+        Stack<int> linkStack = _frontierLinks ??= new Stack<int>();
+        HashSet<int> visitedLinks = _frontierVisited ??= new HashSet<int>();
+        linkStack.Clear();
+        visitedLinks.Clear();
 
         linkStack.Push(refLinkId);
         while (linkStack.Count != 0)
