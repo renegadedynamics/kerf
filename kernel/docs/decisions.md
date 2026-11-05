@@ -16389,3 +16389,17 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        ships as packed, tagged `v0.2.0` at d1b15fca, the commit its packages record. So its STEP files still name Open
        CASCADE, and `Plane`'s "Expected gp_Pln…" and `TopoUtil.TypeName`'s `TopoDS_*` still reach users. All three go in
        the next release, under unit 11L.
+
+## Phase 11
+
+1644. **Phase 11 is agreed, with the owner's answers** (5 November 2026; [phase11-plan.md](phase11-plan.md) section 4).
+       - **Order:** optimisation first, with coverage alongside it.
+       - **Targets:** recalculation within 1.2× of native and allocation cut by half, prioritising longer-running and more
+         commonly used operations. Each operation is time boxed: if it misses, tell the owner, make a note, and move on.
+         Cheap wins beyond the target are welcome. I've taken a time box to mean one helper's run, about two hours.
+       - **Coverage floor:** hand-written engine packages first; STEP's generated entities are decided later.
+       - **Remaining exceptions:** they stay, which closes 11K.
+       - **Next release:** 0.3.0.
+       - **Porting more of OCCT:** not yet; [unported.md](unported.md) lists what's left.
+       - **1.0:** needs a stable API and more testing by the owner and other potential users. A Kerf GUI on Avalonia might
+         help with that, but is still to be decided.
