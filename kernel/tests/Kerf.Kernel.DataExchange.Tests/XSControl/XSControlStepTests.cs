@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Framework.Selection;
@@ -81,10 +81,10 @@ public class XSControlStepTests
         string? aName = new MakeHeader(aModel).Name()?.ToCString();
         Assert.Equal(aName, aForm.OriginalValue(1)!.ToCString());
         Assert.True(aForm.Modify(1, new TCollection_HAsciiString("renamed")));
-        Assert.True(aForm.Modify(6, new TCollection_HAsciiString("OCCT.NET")));
+        Assert.True(aForm.Modify(6, new TCollection_HAsciiString("Kerf")));
         Assert.True(aForm.ApplyData(aForm.Entity(), aModel));
         Assert.Equal("renamed", new MakeHeader(aModel).Name()!.ToCString());
-        Assert.Equal("OCCT.NET", new MakeHeader(aModel).OriginatingSystem()!.ToCString());
+        Assert.Equal("Kerf", new MakeHeader(aModel).OriginatingSystem()!.ToCString());
         // another kind of model: not loaded
         Assert.False(aForm.LoadModel(new Interface.ToyModel()));
     }

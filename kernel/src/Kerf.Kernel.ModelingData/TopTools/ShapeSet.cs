@@ -1,13 +1,13 @@
 // Port of: src/ModelingData/TKBRep/TopTools/TopTools_ShapeSet.hxx
 // Port of: src/ModelingData/TKBRep/TopTools/TopTools_ShapeSet.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using static Kerf.Topology.Orientation;
@@ -103,7 +103,7 @@ internal class ShapeSet
             return 0;
         }
 
-        // OCCT.NET: Add recurses once per level of nesting; throw rather than overflow the stack
+        // Kerf: Add recurses once per level of nesting; throw rather than overflow the stack
         RuntimeHelpers.EnsureSufficientExecutionStack();
 
         _locations.Add(s.Placement);
@@ -292,7 +292,7 @@ internal class ShapeSet
             os.Write(s.ClosedFlag ? "1" : "0");
             os.Write(s.InfiniteFlag ? "1" : "0");
             os.Write(s.ConvexFlag ? "1" : "0");
-            // OCCT.NET: the stored Locked bit, not Locked(), which is also true of every frozen shape (design 4.3)
+            // Kerf: the stored Locked bit, not Locked(), which is also true of every frozen shape (design 4.3)
             os.Write(s.TShape()!.LockedFlag() ? "1" : "0");
             os.Write(" " + RuntimeHelpers.GetHashCode(s.TShape()).ToString("X16", CultureInfo.InvariantCulture) + "\n");
 
@@ -505,7 +505,7 @@ internal class ShapeSet
         }
         catch (Exception exception) when (IsSignal(exception))
         {
-            // OCCT.NET: untrusted input: a malformed stream raised an exception in ported code that OCCT doesn't catch
+            // Kerf: untrusted input: a malformed stream raised an exception in ported code that OCCT doesn't catch
             // (where OCCT reads outside an array or dereferences a null handle)
             throw new StreamFormatErrorException("TopTools_ShapeSet::Read: " + Refusal.Unwrapped(exception).Message, exception);
         }
@@ -619,10 +619,10 @@ internal class ShapeSet
         // OCCT's nbShapes is uninitialised if the count can't be read
         int nbShapes = 0;
         StreamUtilities.Read(IS, ref nbShapes);
-        // OCCT.NET: untrusted input: a shape takes at least 13 characters ("Wi\n\n0000000\n*\n")
+        // Kerf: untrusted input: a shape takes at least 13 characters ("Wi\n\n0000000\n*\n")
         StreamUtilities.CheckCount(IS, Math.Max(nbShapes, 0), 8, "shapes");
 
-        // OCCT.NET: untrusted input: the nesting depth of each shape read, by index
+        // Kerf: untrusted input: the nesting depth of each shape read, by index
         var depths = new List<int> { 0 };
 
         // OCC19559
@@ -645,19 +645,19 @@ internal class ShapeSet
             do
             {
                 Read(out ss, IS, nbShapes);
-                // OCCT.NET: untrusted input: OCCT loops for ever on a stream that has failed
+                // Kerf: untrusted input: OCCT loops for ever on a stream that has failed
                 StreamUtilities.CheckNotFailed(IS, "TopTools_ShapeSet::Read");
                 if (!ss.IsNull)
                 {
                     AddShapes(ref s, ss);
-                    // OCCT.NET: untrusted input
+                    // Kerf: untrusted input
                     depth = Math.Max(depth, depths[_shapes.IndexOf(ss.Located(new Placement())) + 1] + 1);
                 }
             } while (!ss.IsNull);
 
             if (depth > MaxShapeNesting)
             {
-                // OCCT.NET: untrusted input: writing or exploring the shape would recurse this deep
+                // Kerf: untrusted input: writing or exploring the shape would recurse this deep
                 throw new StreamFormatErrorException("TopTools_ShapeSet::Read: shapes nested more than "
                                                     + MaxShapeNesting + " deep");
             }
@@ -763,7 +763,7 @@ internal class ShapeSet
         else
         {
             long index = (long)nbshapes - StreamUtilities.Atoi(buffer.AsSpan(1)) + 1;
-            // OCCT.NET: untrusted input: OCCT reads outside its map
+            // Kerf: untrusted input: OCCT reads outside its map
             if (index < 1 || index > _shapes.Count)
             {
                 throw new StreamFormatErrorException("TopTools_ShapeSet::Read: no shape "

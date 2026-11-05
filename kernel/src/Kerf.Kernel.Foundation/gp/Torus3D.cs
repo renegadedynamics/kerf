@@ -1,13 +1,13 @@
 // Port of: src/FoundationClasses/TKMath/gp/gp_Torus.hxx
 // Port of: src/FoundationClasses/TKMath/gp/gp_Torus.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Geometry;
 
@@ -350,5 +350,5 @@ public readonly partial struct Torus3D : IEquatable<Torus3D>
 
     public static bool operator !=(in Torus3D left, in Torus3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => FormattableString.Invariant($"gp_Torus({_pos}, {_majorRadius:R}, {_minorRadius:R})");
+    public override readonly string ToString() => FormattableString.Invariant($"Torus3D({_pos}, {_majorRadius:R}, {_minorRadius:R})");
 }

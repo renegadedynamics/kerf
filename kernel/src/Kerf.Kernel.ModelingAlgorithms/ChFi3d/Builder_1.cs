@@ -1,6 +1,6 @@
 // Port of: src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_1.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -21,7 +21,7 @@ using Kerf.Engine.Topology.Properties;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Builder_0;
 using static Kerf.Engine.Fillets.Builder_1;
 using static Kerf.Engine.Fillets.Data.ErrorStatus;
@@ -99,7 +99,7 @@ internal partial class FilletBuilderBase
         return result;
     }
 
-    /// <summary>The result, unfrozen, for ported callers (OCCT.NET).</summary>
+    /// <summary>The result, unfrozen, for ported callers (Kerf).</summary>
     internal Shape InternalShape()
     {
         Standard_NoSuchObject_Raise_if(!_done, "ChFi3d_Builder.Shape() - no result");
@@ -275,7 +275,7 @@ internal partial class FilletBuilderBase
 
     /// <summary>
     /// OCCT's <c>TopOpeBRepBuild_HBuilder</c>: the reconstruction (unit 7R). Internal (decision 1137): its type is
-    /// OCCT.NET's seam, not an OCCT class.
+    /// Kerf's seam, not an OCCT class.
     /// </summary>
     internal Reconstruction Builder()
     {

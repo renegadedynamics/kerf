@@ -1,14 +1,14 @@
 // Port of: src/ModelingData/TKG3d/Geom/Geom_Direction.hxx
 // Port of: src/ModelingData/TKG3d/Geom/Geom_Direction.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Geometry.Objects;
 
@@ -130,7 +130,7 @@ internal class Direction : GeometryVector3D
         _gpVec = new Vector3D(v);
     }
 
-    // Non-mutating twins of the Set methods (OCCT.NET)
+    // Non-mutating twins of the Set methods (Kerf)
 
     public Direction WithCoord(double x, double y, double z)
     {

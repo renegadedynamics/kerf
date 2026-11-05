@@ -1,13 +1,13 @@
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepBuilderAPI/BRepBuilderAPI_GTransform.hxx
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepBuilderAPI/BRepBuilderAPI_GTransform.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Api;
 
@@ -46,7 +46,7 @@ internal class GTransform : ModifyShape
         var nc = new NurbsConvert();
         nc.Perform(s, copy);
         _hist.Add(s, nc);
-        // OCCT.NET: the converted shape is only an intermediate, read without freezing it
+        // Kerf: the converted shape is only an intermediate, read without freezing it
         Shape slocal = nc.InternalShape();
         var theModif = (GTrsfModification)_modification!;
         theModif.GTrsf() = _gTrsf;

@@ -93,7 +93,7 @@ public static class Stl
     }
 }
 
-/// <summary>glTF 2.0: models read (as meshes) and written (OCCT.NET's RWGltf tree reader and writer).</summary>
+/// <summary>glTF 2.0: models read (as meshes) and written (Kerf's RWGltf tree reader and writer).</summary>
 public static class Gltf
 {
     // The placeholder URI of a buffer embedded afterwards, in a glTF written to one stream
@@ -217,7 +217,7 @@ public static class Gltf
     }
 }
 
-/// <summary>3MF (3MF Core): models written (OCCT.NET's RW3mf tree writer).</summary>
+/// <summary>3MF (3MF Core): models written (Kerf's RW3mf tree writer).</summary>
 public static class ThreeMf
 {
     /// <summary>
@@ -240,7 +240,7 @@ public static class ThreeMf
     }
 }
 
-/// <summary>Wavefront OBJ: models written (OCCT.NET's RWObj tree writer), with their materials.</summary>
+/// <summary>Wavefront OBJ: models written (Kerf's RWObj tree writer), with their materials.</summary>
 public static class Obj
 {
     /// <summary>

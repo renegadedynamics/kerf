@@ -97,7 +97,7 @@ public static class ShapeFactory
         public static Result<Wire> Connect(IEnumerable<Edge> edges)
         {
             ArgumentNullException.ThrowIfNull(edges);
-            var list = new Occt.NCollection_List<Shape>();
+            var list = new Kerf.Engine.NCollection_List<Shape>();
             foreach (Edge e in edges)
             {
                 MakerOutcome.NotNull(e, nameof(edges));

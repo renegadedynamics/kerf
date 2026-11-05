@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>Occt</RootNamespace>
+    <RootNamespace>Kerf.Engine</RootNamespace>
     <Description>Kerf.Kernel modelling algorithms, derived from Open CASCADE Technology 8.0.1 (Open Cascade SAS), ported to C# and redesigned: a port of OCCT's TKGeomAlgo, TKTopAlgo and TKPrim (intersections, classification, topological algorithms, primitives).</Description>
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

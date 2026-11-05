@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Framework.Selection;
@@ -250,7 +250,7 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
         }
 
         List<Block> aBlocks = Recording("STEPControl.stepctlrec-write.txt.gz", "W ");
-        string? aDump = Environment.GetEnvironmentVariable("OCCTNET_STEPCTL_DUMP");
+        string? aDump = Environment.GetEnvironmentVariable("KERF_STEPCTL_DUMP");
         int aCase = 0, aSame = 0;
         var aDifferent = new List<string>();
         foreach ((string aName, Shape aShape) in aShapes)

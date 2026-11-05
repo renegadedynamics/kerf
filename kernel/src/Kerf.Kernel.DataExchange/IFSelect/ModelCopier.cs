@@ -1,12 +1,12 @@
 // Port of: src/DataExchange/TKXSBase/IFSelect/IFSelect_ModelCopier.hxx
 // Port of: src/DataExchange/TKXSBase/IFSelect/IFSelect_ModelCopier.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Framework.Selection;
 
@@ -200,7 +200,7 @@ internal class ModelCopier : Transient
     /// Sends a model (defined in &lt;G&gt;) into one file, without managing remaining data, already sent files,
     /// etc. Applies the Model and File Modifiers. Returns True if well done, False else
     /// </summary>
-    /// <remarks>OCCT.NET: <paramref name="stream"/>, when given, is written in place of the file (decision 1225).</remarks>
+    /// <remarks>Kerf: <paramref name="stream"/>, when given, is written in place of the file (decision 1225).</remarks>
     public CheckIterator SendAll(string filename, EntityGraph g, WorkLibrary? wl, Protocol? protocol,
                                            Stream? stream = null)
     {
@@ -246,7 +246,7 @@ internal class ModelCopier : Transient
     /// &lt;iter&gt;. Remaining data are managed and can be later be worked on. Returns True if well done, False
     /// else
     /// </summary>
-    /// <remarks>OCCT.NET: <paramref name="stream"/>, when given, is written in place of the file (decision 1225).</remarks>
+    /// <remarks>Kerf: <paramref name="stream"/>, when given, is written in place of the file (decision 1225).</remarks>
     public CheckIterator SendSelected(string filename, EntityGraph g, WorkLibrary? wl, Protocol? protocol,
                                                 EntityIterator list, Stream? stream = null)
     {

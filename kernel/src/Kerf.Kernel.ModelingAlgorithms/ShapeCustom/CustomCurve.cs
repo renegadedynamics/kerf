@@ -1,11 +1,11 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeCustom/ShapeCustom_Curve.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeCustom/ShapeCustom_Curve.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Healing.Custom;
 
@@ -102,7 +102,7 @@ internal sealed class CustomCurve
             }
             if (set)
             {
-                // OCCT.NET: OCCT makes the caller's curve periodic in place; a frozen curve is copied first
+                // Kerf: OCCT makes the caller's curve periodic in place; a frozen curve is copied first
                 // (decision 974)
                 if (bSpl.IsFrozen)
                 {

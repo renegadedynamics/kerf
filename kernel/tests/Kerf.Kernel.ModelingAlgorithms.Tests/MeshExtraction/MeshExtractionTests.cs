@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
@@ -15,7 +15,7 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
 /// The viewer's mesh extraction (unit 4W): counts, order, normals, winding, locations and orientations, and where each
-/// edge's polyline comes from. The oracle compares it with build123d.NET's native extraction float for float.
+/// edge's polyline comes from. The oracle compares it with Kerf.Modeling's native extraction float for float.
 /// </summary>
 public class MeshExtractionTests
 {

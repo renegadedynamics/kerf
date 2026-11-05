@@ -1,11 +1,11 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Geometry.Library;
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Kernel.DrawLite;
 

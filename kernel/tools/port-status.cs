@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
 // Writes docs/port-status.md: for each OCCT toolkit and package, how many of its source files have been ported,
 // read from the "// Port of:" lines at the top of the C# files (docs/translation-rules.md).
@@ -10,7 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 string aRoot = FindRoot(AppContext.BaseDirectory) ?? FindRoot(Directory.GetCurrentDirectory())
-               ?? throw new InvalidOperationException("Run from inside the OCCT.NET repository.");
+               ?? throw new InvalidOperationException("Run from inside the Kerf repository.");
 string anOcctSrc = Path.Combine(aRoot, ".deps", "occt-src", "src");
 if (!Directory.Exists(anOcctSrc))
 {

@@ -1,5 +1,5 @@
-// Port of OCCT's src/ModelingData/TKG3d/GTests/Geom_BSplineSurface_Test.cxx (V8_0_1), plus OCCT.NET's own checks.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Port of OCCT's src/ModelingData/TKG3d/GTests/Geom_BSplineSurface_Test.cxx (V8_0_1), plus Kerf's own checks.
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 
@@ -670,7 +670,7 @@ public class Geom_BSplineSurfaceTests
     }
 
     //=============================================================================================
-    // OCCT.NET
+    // Kerf
     //=============================================================================================
 
     [Fact]

@@ -1,6 +1,6 @@
-// OCCT.NET: the working overlay of ShapeFix_Wire (a copy at the entry until Kerf unit 10H4; decision 583) and its
+// Kerf: the working overlay of ShapeFix_Wire (a copy at the entry until Kerf unit 10H4; decision 583) and its
 // public results. Not a port of an OCCT file.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Topology;
@@ -10,7 +10,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Healing.Fixes;
 

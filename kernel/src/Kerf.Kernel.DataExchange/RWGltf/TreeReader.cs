@@ -1,8 +1,8 @@
-// New in OCCT.NET (unit 8T): glTF 2.0 read fresh into the assembly tree with System.Text.Json (decisions 1166, 1236).
+// New in Kerf (unit 8T): glTF 2.0 read fresh into the assembly tree with System.Text.Json (decisions 1166, 1236).
 // Not a port of OCCT's RWGltf_CafReader, which needs XCAF and RapidJSON; its result is kept: each primitive a face
 // holding only its triangulation (BRep_Builder::MakeFace with a Poly_Triangulation, as RWMesh does), the meshes' names
 // and colours, the node hierarchy, glTF's Y-up turned Z-up and the metres turned into the model's unit.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Exchange.Mesh;
@@ -11,7 +11,7 @@ using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Buffers.Binary;
 using System.Text;
 using System.Text.Json;

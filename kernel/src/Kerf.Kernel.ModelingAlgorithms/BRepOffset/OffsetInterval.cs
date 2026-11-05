@@ -2,11 +2,11 @@
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_Interval.lxx
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_Interval.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Offsets;
 
@@ -67,5 +67,5 @@ internal partial struct OffsetInterval : IEquatable<OffsetInterval>
     public static bool operator !=(OffsetInterval left, OffsetInterval right) => !left.Equals(right);
 
     /// <inheritdoc/>
-    public override readonly string ToString() => Constants.Format("BRepOffset_Interval", _f, _l)[..^1] + ", " + _type + ")";
+    public override readonly string ToString() => Constants.Format("OffsetInterval", _f, _l)[..^1] + ", " + _type + ")";
 }

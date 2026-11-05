@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/STEPCAFControl/STEPCAFControl_Writer.hxx
 // Port of: src/DataExchange/TKDESTEP/STEPCAFControl/STEPCAFControl_Writer.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -22,7 +22,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Exchange.Framework.Selection.ReturnStatus;
 using static Kerf.Engine.Foundation.NameOfColor;
 using static Kerf.Engine.Exchange.Step.ModelType;
@@ -40,7 +40,7 @@ namespace Kerf.Engine.Exchange.Step.Caf;
 /// Also supports multifile writing
 /// </para>
 /// <para>
-/// OCCT.NET: the document is an <see cref="ExchangeDocument"/> (decisions 1166, 1231); the writer reads its labels as
+/// Kerf: the document is an <see cref="ExchangeDocument"/> (decisions 1166, 1231); the writer reads its labels as
 /// OCCT reads XCAF's, in OCCT's order, so the STEP text is native's. Shapes, assemblies, external references (the
 /// multifile mode), names, colours, layers, validation properties, the length unit and, if
 /// <c>write.stepcaf.subshapes.name</c> asks, the sub-shapes' names are written. SHUOs, GD&amp;T, materials, visual
@@ -51,7 +51,7 @@ namespace Kerf.Engine.Exchange.Step.Caf;
 /// </remarks>
 internal class CafWriter
 {
-    // XCAFPrs_Style as MakeSTEPStyles uses it: the colours and the visibility (OCCT.NET, decision 1279: no materials)
+    // XCAFPrs_Style as MakeSTEPStyles uses it: the colours and the visibility (Kerf, decision 1279: no materials)
     private sealed class Style
     {
         public ColorWithAlpha? ColorSurf;
@@ -179,7 +179,7 @@ internal class CafWriter
     }
 
     /// <summary>
-    /// OCCT.NET (unit 8Z): writes the main model into <paramref name="stream"/> and, in the multifile mode, each
+    /// Kerf (unit 8Z): writes the main model into <paramref name="stream"/> and, in the multifile mode, each
     /// external file into the stream <paramref name="externStreams"/> opens for its name (which it may refuse with
     /// null: that file's write status is then <c>IFSelect_RetError</c>, and so is the result). The writer opens no
     /// file itself: the names come from the document's labels and may hold separators or <c>..</c>, so the caller
@@ -641,7 +641,7 @@ internal class CafWriter
             }
 
             // register all MDGPRs in model
-            // OCCT.NET: OCCT iterates a map keyed by shapes (by address); here in the order the MDGPRs were made
+            // Kerf: OCCT iterates a map keyed by shapes (by address); here in the order the MDGPRs were made
             // (decision 1280)
             foreach (KeyValuePair<Shape, Transient> itr in _mapCompMDGPR)
             {
@@ -1467,7 +1467,7 @@ internal class CafWriter
     }
 
     /// <summary>Write metadata assigned to specified labels, to STEP model</summary>
-    /// <remarks>OCCT.NET: the document has no metadata (TDataStd_NamedData); nothing is written (decision 1279).</remarks>
+    /// <remarks>Kerf: the document has no metadata (TDataStd_NamedData); nothing is written (decision 1279).</remarks>
     protected bool WriteMetadata(ExchangeWorkSession ws, NCollection_Sequence<Label> labels)
     {
         _ = ws;
@@ -1671,7 +1671,7 @@ internal class CafWriter
     }
 
     /// <summary>Write SHUO assigned to specified component, to STEP model</summary>
-    /// <remarks>OCCT.NET: the document has no SHUOs; nothing is written (decision 1279).</remarks>
+    /// <remarks>Kerf: the document has no SHUOs; nothing is written (decision 1279).</remarks>
     protected bool WriteSHUOs(ExchangeWorkSession ws, NCollection_Sequence<Label> labels)
     {
         _ = ws;
@@ -1679,7 +1679,7 @@ internal class CafWriter
     }
 
     /// <summary>Write D&amp;GTs assigned to specified labels, to STEP model</summary>
-    /// <remarks>OCCT.NET: the document has no GD&amp;T; nothing is written (decision 1279).</remarks>
+    /// <remarks>Kerf: the document has no GD&amp;T; nothing is written (decision 1279).</remarks>
     protected bool WriteDGTs(ExchangeWorkSession ws, NCollection_Sequence<Label> labels)
     {
         _ = ws;
@@ -1688,7 +1688,7 @@ internal class CafWriter
     }
 
     /// <summary>Write D&amp;GTs assigned to specified labels, to STEP model, according AP242</summary>
-    /// <remarks>OCCT.NET: the document has no GD&amp;T; nothing is written (decision 1279).</remarks>
+    /// <remarks>Kerf: the document has no GD&amp;T; nothing is written (decision 1279).</remarks>
     protected bool WriteDGTsAP242(ExchangeWorkSession ws, NCollection_Sequence<Label> labels,
                                   in Factors localFactors)
     {
@@ -1698,7 +1698,7 @@ internal class CafWriter
     }
 
     /// <summary>Write materials assigned to specified labels, to STEP model</summary>
-    /// <remarks>OCCT.NET: the document has no materials; nothing is written (decision 1279).</remarks>
+    /// <remarks>Kerf: the document has no materials; nothing is written (decision 1279).</remarks>
     protected bool WriteMaterials(ExchangeWorkSession ws, NCollection_Sequence<Label> labels)
     {
         _ = ws;

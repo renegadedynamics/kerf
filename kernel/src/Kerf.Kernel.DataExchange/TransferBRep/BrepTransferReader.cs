@@ -1,14 +1,14 @@
 // Port of: src/DataExchange/TKXSBase/TransferBRep/TransferBRep_Reader.hxx
 // Port of: src/DataExchange/TKXSBase/TransferBRep/TransferBRep_Reader.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Framework.Transfer;
 
@@ -169,7 +169,7 @@ internal class BrepTransferReader
         NCollection_HSequence<Shape> shapes = global::Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.Shapes(_proc, true);
         for (int i = 1; i <= shapes.Length(); i++)
         {
-            shapes.Value(i).TShape()?.FreezeGraph(); // OCCT.NET: the reader's results are published (decision 1205)
+            shapes.Value(i).TShape()?.FreezeGraph(); // Kerf: the reader's results are published (decision 1205)
         }
         _shapes.Append(shapes);
         int nb = _proc.RootCount;
@@ -358,7 +358,7 @@ internal class BrepTransferReader
             {
                 b.Add(c, _shapes.Value(i));
             }
-            c.TShape()?.FreezeGraph(); // OCCT.NET: published
+            c.TShape()?.FreezeGraph(); // Kerf: published
             return c;
         }
     }

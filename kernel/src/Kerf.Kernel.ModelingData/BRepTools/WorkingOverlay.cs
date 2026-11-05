@@ -6,7 +6,7 @@
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;

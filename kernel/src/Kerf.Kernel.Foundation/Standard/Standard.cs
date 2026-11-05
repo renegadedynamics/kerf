@@ -1,17 +1,17 @@
 // Port of: src/FoundationClasses/TKernel/Standard/Standard_Real.hxx
 // Port of: src/FoundationClasses/TKernel/Standard/Standard_Integer.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Numerics;
-using Occt;
+using Kerf.Engine;
 using System.Runtime.CompilerServices;
 
 namespace Kerf.Engine.Foundation;
 
 /// <summary>
 /// OCCT's free functions on reals and integers (<c>RealSmall()</c>, <c>Square()</c>, <c>IsOdd()</c>, ...).
-/// Every OCCT.NET project imports this class with <c>using static</c>, so ported code calls them unqualified,
+/// Every Kerf project imports this class with <c>using static</c>, so ported code calls them unqualified,
 /// as in C++. Min and Max follow <c>std::min</c>/<c>std::max</c>, not <see cref="Math.Min(double, double)"/>,
 /// so they treat NaN as OCCT does.
 /// </summary>

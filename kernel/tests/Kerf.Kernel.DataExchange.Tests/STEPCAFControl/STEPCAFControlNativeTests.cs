@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Exchange.Framework.Selection;
@@ -82,7 +82,7 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
         Assert.Equal(aFiles.Count, aBlocks.Count);
         int aSame = 0;
         var aDifferent = new List<string>();
-        string? aDump = Environment.GetEnvironmentVariable("OCCTNET_STEPCAF_DUMP");
+        string? aDump = Environment.GetEnvironmentVariable("KERF_STEPCAF_DUMP");
         object aLock = new();
         Parallel.For(0, aFiles.Count, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount / 2 + 1 }, i =>
         {
@@ -199,7 +199,7 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
         string[] aSchemas = ["AP203", "AP214IS", "AP242DIS"];
         var aCases = new List<(string Line, Func<string> Port)>();
         List<Block> aBlocks = Recording("STEPCAFControl.stepcafrec-write.txt.gz", "W ");
-        string? aDump = Environment.GetEnvironmentVariable("OCCTNET_STEPCAF_DUMP");
+        string? aDump = Environment.GetEnvironmentVariable("KERF_STEPCAF_DUMP");
         int anIndex = 0;
         var aPaths = new Dictionary<string, string>();
         var aJobs = new List<Func<string>>();

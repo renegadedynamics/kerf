@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKBool/BRepFill/BRepFill_Filling.hxx
 // Port of: src/ModelingAlgorithms/TKBool/BRepFill/BRepFill_Filling.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
@@ -16,7 +16,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Topology.Orientation;
 
@@ -43,7 +43,7 @@ internal class SurfaceFilling
     private readonly NCollection_Sequence<FaceAndOrder> _freeConstraints = new();
     private readonly NCollection_Sequence<PointConstraint> _points = new();
     private readonly Dictionary<Shape, Shape> _oldNewMap = new(ShapeHasher.Instance);
-    // OCCT.NET: frozen. The boundary's vertices BuildWires' MakeWire replaced by its copies for write (see BuildWires).
+    // Kerf: frozen. The boundary's vertices BuildWires' MakeWire replaced by its copies for write (see BuildWires).
     private readonly Dictionary<Shape, Shape> _vertexCopies = new(ShapeHasher.Instance);
     private readonly NCollection_List<Shape> _generated = new();
     private Face _face = new();
@@ -258,7 +258,7 @@ internal class SurfaceFilling
         return (_boundary.Length() + _freeConstraints.Length() + _constraints.Length() + _points.Length());
     }
 
-    // OCCT.NET: OCCT's sweeps of an edge (MakePrism, MakeRevol, ...) write the new face's pcurve into the caller's edge,
+    // Kerf: OCCT's sweeps of an edge (MakePrism, MakeRevol, ...) write the new face's pcurve into the caller's edge,
     // which the face shares; the port sweeps a frozen edge as a copy (decision 468), so the caller's edge has no pcurve
     // on the face the sweep made, and the constraint would read a null pcurve (OCCT's comment below). For a frozen edge
     // without a pcurve on the support, the support's edge on the same 3D curve, location and range stands for it, as it
@@ -382,7 +382,7 @@ internal class SurfaceFilling
             LibraryMakeWire mw = new LibraryMakeWire();
             Edge firstEdge = ShapeCasts.Edge(edgeList.First());
             mw.Add(firstEdge);
-            var added = new List<(Edge, Edge)> { (firstEdge, firstEdge) }; // OCCT.NET: frozen
+            var added = new List<(Edge, Edge)> { (firstEdge, firstEdge) }; // Kerf: frozen
             edgeList.RemoveFirst();
             Vertex[] V_wire = new Vertex[2], V_edge = new Vertex[2];
 
@@ -464,7 +464,7 @@ internal class SurfaceFilling
         } // end of while (! EdgeList.IsEmpty())
     }
 
-    // OCCT.NET: frozen. Merging an edge's vertex onto a wire vertex that must move or grow, OCCT's MakeWire changes that
+    // Kerf: frozen. Merging an edge's vertex onto a wire vertex that must move or grow, OCCT's MakeWire changes that
     // vertex in place, so the edges added before it (the boundary's own edges, or the copies bound in myOldNewMap) end at
     // the moved vertex, and the final edges share it. The port's MakeWire goes on with a copy for write of the wire built
     // so far when the vertex is frozen (BRepLib_MakeWire's remarks): each boundary edge is bound here to the edge
@@ -821,7 +821,7 @@ internal class SurfaceFilling
         {
             _generated.Append(_oldNewMap.GetValue(s));
         }
-        // OCCT.NET: frozen. A boundary vertex BuildWires' MakeWire copied (OCCT moves it in place): its copy's
+        // Kerf: frozen. A boundary vertex BuildWires' MakeWire copied (OCCT moves it in place): its copy's
         else if (_vertexCopies.TryGetValue(s, out Shape copy) && _oldNewMap.ContainsKey(copy))
         {
             _generated.Append(_oldNewMap.GetValue(copy));

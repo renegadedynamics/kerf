@@ -1,6 +1,6 @@
 // Port of: src/ModelingAlgorithms/TKMesh/GTests/BRepMesh_DiscretAlgoFactory_Test.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Meshing;
@@ -127,7 +127,7 @@ public class BRepMesh_DiscretAlgoFactoryTest
         Assert.Equal(1, aCount);
     }
 
-    // OCCT.NET: the two factories OCCT registers when TKMesh and TKXMesh load, in that order (decision 492)
+    // Kerf: the two factories OCCT registers when TKMesh and TKXMesh load, in that order (decision 492)
     [Fact]
     public void Registry_holds_FastDiscret_then_XBRepMesh()
     {

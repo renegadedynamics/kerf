@@ -14,9 +14,8 @@
 // The BuildLine/BuildSketch profiles of TestRevolve are made with the curve objects and MakeFace.
 using static Kerf.Modeling.Operations;
 
-namespace Build123d.Tests.Operations;
+namespace Kerf.Modeling.Tests.Operations;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class OperationsPartTests

@@ -1,11 +1,11 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeUpgrade/ShapeUpgrade_SplitSurfaceContinuity.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeUpgrade/ShapeUpgrade_SplitSurfaceContinuity.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Healing.Extend;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Engine.Healing.Extend.ExtendStatus;
 
@@ -160,7 +160,7 @@ internal class SplitSurfaceContinuity : SplitSurface
             {
                 _status |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE3);
                 Curve3D newBascurve = spc.GetCurve()!;
-                // OCCT.NET: OCCT sets the basis curve of the surface it was given (the face's own); a frozen surface
+                // Kerf: OCCT sets the basis curve of the surface it was given (the face's own); a frozen surface
                 // is copied first and the copy becomes the tool's surface (decision 998)
                 if (surfaceExt.IsFrozen)
                 {

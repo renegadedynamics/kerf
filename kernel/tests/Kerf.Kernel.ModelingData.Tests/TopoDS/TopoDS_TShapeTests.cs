@@ -1,6 +1,6 @@
 // Port of: src/ModelingData/TKBRep/GTests/TopoDS_TShape_Test.cxx
 // Port of: src/ModelingData/TKBRep/GTests/TopoDS_Edge_Test.cxx
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;

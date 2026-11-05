@@ -1,14 +1,14 @@
 // Port of: src/ModelingAlgorithms/TKPrim/BRepSweep/BRepSweep_NumLinearRegularSweep.hxx
 // Port of: src/ModelingAlgorithms/TKPrim/BRepSweep/BRepSweep_NumLinearRegularSweep.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -466,7 +466,7 @@ internal abstract class NumLinearRegularSweep
         // Change the "Closed" flag only for Wires and Shells
         if (_shapes[iGenS, iDirS].Type == ShapeType.Wire || _shapes[iGenS, iDirS].Type == ShapeType.Shell)
         {
-            // OCCT.NET: frozen. OCCT sets the flag again on each call; a result already published (frozen), or a
+            // Kerf: frozen. OCCT sets the flag again on each call; a result already published (frozen), or a
             // generating shape's own wire, is written only if the flag changes, and only where a write is taken: after
             // the sweep's working overlay is finished, the caller's wire keeps its flag (the result holds the wire as
             // the sweep left it, which FromSwept gives).

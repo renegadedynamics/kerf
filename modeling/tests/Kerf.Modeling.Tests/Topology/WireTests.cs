@@ -14,9 +14,8 @@
 using Ops = Kerf.Modeling.Operations;
 using Rot = Kerf.Modeling.Rotation;
 
-namespace Build123d.Tests.Topology;
+namespace Kerf.Modeling.Tests.Topology;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class WireTests

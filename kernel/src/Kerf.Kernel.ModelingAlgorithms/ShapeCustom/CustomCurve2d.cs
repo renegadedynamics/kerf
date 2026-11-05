@@ -1,12 +1,12 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeCustom/ShapeCustom_Curve2d.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeCustom/ShapeCustom_Curve2d.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Healing.Custom;
 
@@ -142,7 +142,7 @@ internal static class CustomCurve2d
     /// </remarks>
     public static bool SimplifyBSpline2d(ref BSplineCurve2D bSpline2d, double tolerance)
     {
-        // OCCT.NET: copy on write of a frozen curve (decision 974); the copy is given back only if a knot was removed
+        // Kerf: copy on write of a frozen curve (decision 974); the copy is given back only if a knot was removed
         BSplineCurve2D original = bSpline2d;
         BSplineCurve2D aBSpline2d = original.IsFrozen ? (BSplineCurve2D)original.Copy() : original;
         int initNbK;

@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Edge.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Edge.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 // abv 30 Dec 98: code optimizations
 //: o1 abv 16.02.99: updating vertices tolerance when edge is updated
@@ -24,7 +24,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.ShapeType;
 
@@ -430,7 +430,7 @@ internal partial class EdgeFixer : Transient
 
             if (isSeam)
             {
-                // OCCT.NET: a null pcurve here is OCCT's null dereference, which OCC_CATCH_SIGNALS turns into a
+                // Kerf: a null pcurve here is OCCT's null dereference, which OCC_CATCH_SIGNALS turns into a
                 // Standard_Failure (FAIL2)
                 if (c2d is null)
                 {
@@ -637,7 +637,7 @@ internal partial class EdgeFixer : Transient
         ea.PCurve(edge, surface, location, out Curve2D? c2d, out double f, out double l, false);
         // #46 rln 01.12.98 buc40130, entity 272 (4-th curve)
         double newf = c2d!.ReversedParameter(l), newl = c2d.ReversedParameter(f);
-        // OCCT.NET: frozen. OCCT reverses the pcurve stored in the edge in place (any other edge sharing it is
+        // Kerf: frozen. OCCT reverses the pcurve stored in the edge in place (any other edge sharing it is
         // reversed too); the port reverses a copy and puts it in the edge's representation in its place.
         Curve2D reversed = (Curve2D)c2d.Copy();
         reversed.Reverse();
@@ -658,7 +658,7 @@ internal partial class EdgeFixer : Transient
         return true;
     }
 
-    // OCCT.NET: frozen. Puts theNew in place of the pcurve object theOld wherever the edge's representations hold it
+    // Kerf: frozen. Puts theNew in place of the pcurve object theOld wherever the edge's representations hold it
     // (as OCCT's in-place change of theOld would be seen through them).
     internal static void InternalReplacePCurveObject(in Edge edge, Curve2D old, Curve2D theNew)
     {

@@ -22,7 +22,7 @@ These rules turn OCCT's C++ into OCCT.NET's C#. They aim for two things at once:
   // Port of: src/FoundationClasses/TKMath/gp/gp_Pnt.hxx
   // Port of: src/FoundationClasses/TKMath/gp/gp_Pnt.cxx
   // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-  // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+  // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
   ```
 
 - Port from the commit in `occt-version.json` (V8_0_1), which `tools/get-occt.ps1` checks out in `.deps/occt-src`.

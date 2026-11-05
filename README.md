@@ -11,18 +11,29 @@ Kerf has two layers, each under its own licence, in its own folder:
 
 The modelling layer references the kernel's assemblies; no source file is shared between the two.
 
+## Using it
+
+```powershell
+dotnet add package Kerf.Modeling
+```
+
+```csharp
+using Kerf.Modeling;
+
+Part rounded = Operations.Fillet(new Box(10, 10, 10).Edges(), 1).Value;
+Part part = rounded - new Cylinder(2, 20);
+Exporters3D.ExportStep(part, "part.step");
+```
+
+Operations that can fail for an expected reason return a `Result`, whose diagnostics say why; operators throw. Shapes
+are the kernel's structs (`Kerf.Topology`), every value is immutable, and nothing native is loaded.
+
 ## Status
 
-Phase 10 ([kernel/docs/phase10-plan.md](kernel/docs/phase10-plan.md)) turns the two ports, OCCT.NET and build123d.NET,
-into Kerf:
-- .NET names and conventions (done in unit 10E: `Kerf.Kernel.*` with namespaces `Kerf.Geometry`, `Kerf.Topology` and
-  `Kerf.Engine.*`, and `Kerf.Modeling`);
-- full immutability;
-- results in place of expected exceptions;
-- the kernel's own tests in place of the comparison with native OCCT.
-
-The packages move to `Kerf.Kernel.*` and `Kerf.Modeling` at 0.2.0 (the `OcctNet.*` and `Build123d` packages end at
-0.1.0). Kerf diverges from OCCT and build123d from here on, and isn't endorsed by either project.
+0.2.0 is the first release under the name Kerf, and a pre-1.0 one: minor versions may break the API. It replaces the
+`OcctNet.*` and `Build123d` packages, which end at 0.1.0. Kerf diverges from OCCT and build123d, and isn't endorsed by
+either project. What's next is in [kernel/docs/phase11-plan.md](kernel/docs/phase11-plan.md), and the changes are in
+each layer's CHANGELOG ([kernel](kernel/CHANGELOG.md), [modeling](modeling/CHANGELOG.md)).
 
 ## Building
 

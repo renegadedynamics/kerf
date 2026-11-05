@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using System.Globalization;
@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>
 /// What NCollection_Vec2, NCollection_Vec3 and NCollection_Vec4 have in common, so that code OCCT templates over
@@ -16,7 +16,7 @@ namespace Occt;
 /// <remarks>
 /// Not in OCCT, where <c>BVH::VectorType&lt;T, N&gt;::Type</c> selects the vector type. Generic code writes a
 /// component through <c>NCollection_VecTools.Change</c>, which is internal, so a vector stays immutable outside
-/// OCCT.NET.
+/// Kerf.
 /// </remarks>
 /// <typeparam name="T">The element type.</typeparam>
 /// <typeparam name="TSelf">The vector type itself.</typeparam>

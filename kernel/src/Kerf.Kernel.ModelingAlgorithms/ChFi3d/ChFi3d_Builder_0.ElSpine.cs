@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.cxx (ChFi3d_PerformElSpine, ChFi3d_ApproxByC2,
 //          ChFi3d_IsSmooth)
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Fillets.Data;
@@ -17,7 +17,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.Continuity;
@@ -334,7 +334,7 @@ internal static partial class Builder_0
         //
         // On a la portion d elspine calculee sans prolongements sur la partie
         // valide des aretes du chemin.
-        // OCCT.NET: OCCT changes the concatenation's curve in place (SetKnots, Segment...) and drops the
+        // Kerf: OCCT changes the concatenation's curve in place (SetKnots, Segment...) and drops the
         // concatenation; the curve is taken unfrozen (decision 1088).
         bSpline = concat.InternalBSplineCurve()!;
         // There is a reparametrisation to maximally connect the abscissas of edges.

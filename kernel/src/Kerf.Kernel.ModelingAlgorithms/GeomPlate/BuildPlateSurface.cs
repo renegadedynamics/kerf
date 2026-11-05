@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKGeomAlgo/GeomPlate/GeomPlate_BuildPlateSurface.hxx
 // Port of: src/ModelingAlgorithms/TKGeomAlgo/GeomPlate/GeomPlate_BuildPlateSurface.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Construction.Laws;
@@ -14,7 +14,7 @@ using Kerf.Engine.Geometry.Properties;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Construction.Plate;
@@ -1137,7 +1137,7 @@ internal class BuildPlateSurface
 
     /// <summary>
     /// The number of intervals of the last discretisation of the curve constraint <paramref name="index"/>, which
-    /// G0Error(Index) to G2Error(Index) fill (OCCT.NET, for the oracle's attribution of OCCT's uninitialised reads).
+    /// G0Error(Index) to G2Error(Index) fill (Kerf, for the oracle's attribution of OCCT's uninitialised reads).
     /// </summary>
     internal int NbIntervalsChecked(int index)
     {

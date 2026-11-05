@@ -1,6 +1,6 @@
 // Port of: src/ModelingData/TKG3d/GTests/GeomEval_AHTBezierCurve_Test.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Geometry;
@@ -316,7 +316,7 @@ public class GeomEval_AHTBezierCurveTest
         }
     }
 
-    // OCCT.NET addition: derivatives up to D7 against finite differences for every combination of the basis
+    // Kerf addition: derivatives up to D7 against finite differences for every combination of the basis
     // parts, non-rational and rational (the general EvalDN paths run for N > 3).
     [Theory]
     [InlineData(2, 0.0, 0.0)]

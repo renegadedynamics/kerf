@@ -1,11 +1,11 @@
 // Port of: src/FoundationClasses/TKMath/gp/gp_Mat.hxx
 // Port of: src/FoundationClasses/TKMath/gp/gp_Mat.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
-using Occt;
+using Kerf.Engine;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -610,5 +610,5 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
 
     public static bool operator !=(in Matrix3x3 left, in Matrix3x3 right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("gp_Mat", _m00, _m01, _m02, _m10, _m11, _m12, _m20, _m21, _m22);
+    public override readonly string ToString() => Constants.Format("Matrix3x3", _m00, _m01, _m02, _m10, _m11, _m12, _m20, _m21, _m22);
 }

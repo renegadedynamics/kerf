@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
 // Writes one C# file per OCCT class (its header and source merged), per enum, and per RW enum tool, following
 // docs/translation-rules.md.
@@ -91,10 +91,9 @@ internal sealed class Emitter
         var sb = new StringBuilder();
         sb.Append("// Port of: ").Append(theHeader).Append('\n');
         sb.Append(Copyright(theHeader)).Append('\n');
-        sb.Append("// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).\n");
-        sb.Append(GeneratedLine).Append("\n\nnamespace Occt;\n\n");
+        sb.Append("// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).\n");
+        sb.Append(GeneratedLine).Append("\n\nnamespace Kerf.Engine;\n\n");
         Doc(sb, theEnum.Doc, "");
-        sb.Append("/// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.").Append(theEnum.Name).Append(";</c>.</remarks>\n");
         sb.Append("public enum ").Append(theEnum.Name).Append("\n{\n");
         var aTr = new Translator(myDb, new FnCtx { Cls = new CppClass { Name = theEnum.Name } }, 1);
         foreach (var m in theEnum.Members)
@@ -352,7 +351,7 @@ internal sealed class Emitter
         }
 
         sb.Append(Copyright(cls.Header)).Append('\n');
-        sb.Append("// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).\n");
+        sb.Append("// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).\n");
         sb.Append(GeneratedLine).Append("\n\n");
         sb.Append("#nullable disable warnings\n");
         if (r.UnusedLocals)
@@ -367,11 +366,11 @@ internal sealed class Emitter
             sb.Append('\n');
             foreach (string u in aUsings)
             {
-                sb.Append("using static Occt.").Append(u).Append(";\n");
+                sb.Append("using static Kerf.Engine.").Append(u).Append(";\n");
             }
         }
 
-        sb.Append("\nnamespace Occt;\n\n");
+        sb.Append("\nnamespace Kerf.Engine;\n\n");
         Doc(sb, cls.Doc, "");
         string anAccess = isRwTool || cls.IsNamespace ? "internal" : "public";
         bool isAbstract = aMembers.Any(m => m.Decl.IsPure) || (!cls.IsNamespace && cls.Methods.Any(m => m.IsCtor) && cls.Methods.Where(m => m.IsCtor).All(m => m.Access == "protected") && false);

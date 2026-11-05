@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 
@@ -11,7 +11,7 @@ using Kerf.Geometry;
 namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
-/// OCCT.NET's own tests of GeomLib_Tool, GeomLib_CheckBSplineCurve, GeomLib_Check2dBSplineCurve,
+/// Kerf's own tests of GeomLib_Tool, GeomLib_CheckBSplineCurve, GeomLib_Check2dBSplineCurve,
 /// GeomLib_Interpolate and the paths of GeomLib_CheckCurveOnSurface the GTests don't reach.
 /// </summary>
 public class GeomLib_ToolAndChecksTests

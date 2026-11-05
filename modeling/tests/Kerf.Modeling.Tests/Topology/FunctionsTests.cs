@@ -3,9 +3,8 @@
 // - Functions.parse_intersect_args: a TypeError for intersecting with a tuple of strings, which the compiler rules out.
 // - MakeTopodsFaceFromWires.builder_failure: patches BRepBuilderAPI_MakeFace with a MagicMock.
 
-namespace Build123d.Tests.Topology;
+namespace Kerf.Modeling.Tests.Topology;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class FunctionsTests

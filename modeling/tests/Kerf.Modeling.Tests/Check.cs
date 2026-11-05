@@ -1,8 +1,7 @@
 using Xunit.Sdk;
 
-namespace Build123d.Tests;
+namespace Kerf.Modeling.Tests;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 /// <summary>Assertions matching the ones build123d's Python tests use.</summary>

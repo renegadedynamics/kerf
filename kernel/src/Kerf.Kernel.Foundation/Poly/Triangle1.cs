@@ -1,9 +1,9 @@
 // Port of: src/FoundationClasses/TKMath/Poly/Poly_Triangle.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
@@ -82,7 +82,7 @@ internal partial struct Triangle1 : IEquatable<Triangle1>
     /// <summary>The node index at position 1, 2 or 3 (OCCT's <c>operator()</c>).</summary>
     public readonly int this[int index] => Value(index);
 
-    // Equality and formatting (OCCT.NET additions)
+    // Equality and formatting (Kerf additions)
 
     public readonly bool Equals(Triangle1 other) => _nodes[0] == other._nodes[0] && _nodes[1] == other._nodes[1] && _nodes[2] == other._nodes[2];
 

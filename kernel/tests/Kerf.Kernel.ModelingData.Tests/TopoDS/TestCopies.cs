@@ -62,7 +62,7 @@ internal static class TestCopies
 
         RuntimeHelpers.EnsureSufficientExecutionStack();
         TShape copy = BrepTools.CopyData(tShape);
-        for (var it = new Occt.NCollection_List<Shape>.Iterator(tShape._shapes); it.More(); it.Next())
+        for (var it = new Kerf.Engine.NCollection_List<Shape>.Iterator(tShape._shapes); it.More(); it.Next())
         {
             Shape child = it.Value();
             TShape childCopy = ExactCopy(child.TShape()!, copies);

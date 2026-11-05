@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKOffset/BiTgte/BiTgte_Blend.hxx
 // Port of: src/ModelingAlgorithms/TKOffset/BiTgte/BiTgte_Blend.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Booleans.Algo;
@@ -21,7 +21,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Offsets.Blend.ContactType;
 using static Kerf.Engine.Offsets.OffsetStatus;
 using static Kerf.Engine.Fillets.Data.TypeOfConcavity;

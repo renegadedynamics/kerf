@@ -2,12 +2,12 @@
 // Port of: src/ModelingAlgorithms/TKGeomAlgo/IntSurf/IntSurf_PntOn2S.lxx
 // Port of: src/ModelingAlgorithms/TKGeomAlgo/IntSurf/IntSurf_PntOn2S.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Walking;
 
@@ -203,5 +203,5 @@ internal partial struct PntOn2S : IEquatable<PntOn2S>
 
     public static bool operator !=(in PntOn2S left, in PntOn2S right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("IntSurf_PntOn2S", _pt.X, _pt.Y, _pt.Z, _u1, _v1, _u2, _v2);
+    public override readonly string ToString() => Constants.Format("PntOn2S", _pt.X, _pt.Y, _pt.Z, _u1, _v1, _u2, _v2);
 }

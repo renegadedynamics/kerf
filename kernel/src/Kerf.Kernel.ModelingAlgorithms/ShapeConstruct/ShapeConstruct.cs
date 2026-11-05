@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeConstruct/ShapeConstruct.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeConstruct/ShapeConstruct.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Api;
@@ -12,7 +12,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Topology.Orientation;
@@ -382,7 +382,7 @@ internal static partial class ShapeConstruct
         }
         catch (Exception caught) when (Refusal.IsFailure(caught) && (!edge.IsNull && !WorkingOverlay.IsReadOnly(edge.TShape()!)))
         {
-            // OCCT.NET: a frozen edge's exception goes through (decision 423's pattern)
+            // Kerf: a frozen edge's exception goes through (decision 423's pattern)
         }
         return false;
     }
@@ -659,7 +659,7 @@ internal static partial class ShapeConstruct
     }
 
     //=================================================================================================
-    // The functional twin of JoinPCurves (OCCT.NET)
+    // The functional twin of JoinPCurves (Kerf)
     //=================================================================================================
 
     /// <summary>

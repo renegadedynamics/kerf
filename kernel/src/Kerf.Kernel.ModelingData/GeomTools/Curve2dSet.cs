@@ -1,12 +1,12 @@
 // Port of: src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.hxx
 // Port of: src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using System.Globalization;
 
 namespace Kerf.Engine.Exchange.Brep;
@@ -762,7 +762,7 @@ internal class Curve2dSet
         int i = 0, degree = 0;
         StreamUtilities.Read(IS, ref degree);
 
-        // OCCT.NET: untrusted input: counts checked against the input before allocating (a pole takes at least 4
+        // Kerf: untrusted input: counts checked against the input before allocating (a pole takes at least 4
         // characters, a knot 4)
         StreamUtilities.CheckCount(IS, Math.Max(degree + 1L, 0), 4, "Bezier poles");
         var poles = new NCollection_Array1<Point2D>(1, degree + 1);
@@ -797,7 +797,7 @@ internal class Curve2dSet
         StreamUtilities.Read(IS, ref nbpoles);
         StreamUtilities.Read(IS, ref nbknots);
 
-        // OCCT.NET: untrusted input: counts checked against the input before allocating (a pole takes at least 4
+        // Kerf: untrusted input: counts checked against the input before allocating (a pole takes at least 4
         // characters, a knot 4)
         StreamUtilities.CheckCount(IS, Math.Max(nbpoles, 0), 4, "B-spline poles");
         StreamUtilities.CheckCount(IS, Math.Max(nbknots, 0), 4, "B-spline knots");
@@ -857,7 +857,7 @@ internal class Curve2dSet
         int ctype = 0;
 
         Curve2D? c = null;
-        // OCCT.NET: untrusted input: trimmed, offset and swept geometry recurse; the nesting is capped
+        // Kerf: untrusted input: trimmed, offset and swept geometry recurse; the nesting is capped
         using var nesting = global::Kerf.Engine.Exchange.Brep.GeomTools.Nesting();
         try
         {
@@ -928,7 +928,7 @@ internal class Curve2dSet
     /// </summary>
     public void Read(TextReader IS, ProgressRange progress = default)
     {
-        // OCCT reads into char[255]: a longer word is an error (OCCT.NET: untrusted input)
+        // OCCT reads into char[255]: a longer word is an error (Kerf: untrusted input)
         char[] buffer = new char[255];
         bool isRead = StreamUtilities.ReadWord(IS, buffer);
         if (!isRead || StreamUtilities.CString(buffer) != "Curve2ds")
@@ -940,7 +940,7 @@ internal class Curve2dSet
         // OCCT's nbcurve is uninitialised if the count can't be read
         int i, nbcurve = 0;
         StreamUtilities.Read(IS, ref nbcurve);
-        // OCCT.NET: untrusted input: an object takes at least 2 characters
+        // Kerf: untrusted input: an object takes at least 2 characters
         StreamUtilities.CheckCount(IS, Math.Max(nbcurve, 0), 2, "2D curves");
         using var ps = new ProgressScope(progress, "2D Curves", nbcurve);
         for (i = 1; i <= nbcurve && ps.More(); i++, ps.Next())

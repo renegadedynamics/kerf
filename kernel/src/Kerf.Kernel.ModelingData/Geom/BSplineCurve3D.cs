@@ -2,14 +2,14 @@
 // Port of: src/ModelingData/TKG3d/Geom/Geom_BSplineCurve.cxx
 // Port of: src/ModelingData/TKG3d/Geom/Geom_BSplineCurve_1.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.BSplKnotDistribution;
 using static Kerf.Geometry.Continuity;
 
@@ -26,7 +26,7 @@ namespace Kerf.Geometry;
 /// <para>
 /// Arrays: <see cref="Poles"/>, <see cref="WeightsOrNull()"/>, <see cref="Weights"/>, <see cref="Knots"/>,
 /// <see cref="Multiplicities"/> and <see cref="KnotSequence"/> return immutable copies (OCCT returns
-/// references to the curve's arrays); their index 0 is OCCT's index 1. Code inside OCCT.NET that passes the
+/// references to the curve's arrays); their index 0 is OCCT's index 1. Code inside Kerf that passes the
 /// arrays on to BSplCLib and the like uses the internal <c>Internal*</c> accessors, which return the stored
 /// arrays (shared: don't modify).
 /// </para>
@@ -1966,7 +1966,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <remarks>Non-const in OCCT, because it caches a value; not a mutator, so it works on a frozen curve.</remarks>
     internal void Resolution(double tolerance3D, out double uTolerance)
     {
-        // OCCT.NET: a cache filled on a possibly shared curve; the flag is published after the value.
+        // Kerf: a cache filled on a possibly shared curve; the flag is published after the value.
         if (!Volatile.Read(ref _maxDerivInvOk))
         {
             double maxDerivInv;
@@ -2069,7 +2069,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     }
 
     //=============================================================================================
-    // Internal access to the stored arrays (OCCT.NET)
+    // Internal access to the stored arrays (Kerf)
     //=============================================================================================
 
     /// <summary>The stored poles: shared, don't modify (OCCT's <c>Poles()</c> const reference).</summary>
@@ -2091,7 +2091,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     internal NCollection_Array1<double> InternalKnotSequence() => _flatKnots;
 
     //=============================================================================================
-    // Non-mutating twins (OCCT.NET)
+    // Non-mutating twins (Kerf)
     //=============================================================================================
 
     private BSplineCurve3D CopyBSpline() => (BSplineCurve3D)Copy();

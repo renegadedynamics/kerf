@@ -18,7 +18,7 @@ with native's results as recorded, exactly as it did live. If the port's results
 OCCT, the replay fails at that call ("the recording has ... here"): compare differently (phase10-plan.md 3.2), as
 native OCCT can't be asked again.
 
-**Frozen** (unit 10B, decision 1343). Until unit 10B the tests could also record (`OCCTNET_ORACLE_RECORD=1`, built
+**Frozen** (unit 10B, decision 1343). Until unit 10B the tests could also record (`KERF_ORACLE_RECORD=1`, built
 with native OCCT: `HAS_ORACLE`, `Recorded/Native.Record.g.cs`) and run live (`-p:OracleDirect=true`), and
 `tools/oracle-facade.cs` generated the facade from a live build. All went with native OCCT: the facade is committed
 code now, and a test can only use the members it has, replayed as recorded.

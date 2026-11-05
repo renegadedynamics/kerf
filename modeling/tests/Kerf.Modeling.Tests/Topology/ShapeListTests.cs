@@ -14,9 +14,8 @@
 // test_vertex, test_edge, … test_compound are Vertex_, Edge_, … Compound_, as a member can't share a type's name.
 // filter_by_value_radius_over_mixed_faces: the fillet() operation on a Part is translated to IShape3D.Fillet.
 // group_by's BuildPart with GridLocations/PolarLocations is replaced by the same boxes placed with Pos.
-namespace Build123d.Tests.Topology;
+namespace Kerf.Modeling.Tests.Topology;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class ShapeListTests

@@ -1,6 +1,6 @@
 // Port of: src/ModelingData/TKG3d/GTests/GeomEval_HyperboloidSurface_Test.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Geometry;
@@ -279,7 +279,7 @@ public class GeomEval_HyperboloidSurfaceTest
         ExpectNear(aD2.D2UV, aFD_D2UV, THE_FD_TOL);
     }
 
-    // OCCT.NET addition: all partial derivatives up to order 4 against finite differences, both sheet modes,
+    // Kerf addition: all partial derivatives up to order 4 against finite differences, both sheet modes,
     // off the standard frame.
     [Theory]
     [InlineData(HyperboloidSurface.SheetMode.OneSheet)]
@@ -298,7 +298,7 @@ public class GeomEval_HyperboloidSurfaceTest
         }
     }
 
-    // OCCT.NET addition: the setters' With twins and freezing.
+    // Kerf addition: the setters' With twins and freezing.
     [Fact]
     public void Setters_WithTwins_Freeze()
     {

@@ -26,7 +26,7 @@ Set `PYTHONDONTWRITEBYTECODE=1` so nothing is written into the build123d checkou
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=../build123d/src .deps/py/Scripts/python -W ignore \
-    tests/reference/geometry_reference.py tests/Build123d.Tests/Reference/geometry.json
+    tests/reference/geometry_reference.py tests/Kerf.Modeling.Tests/Reference/geometry.json
 ```
 
 Inputs come from fixed seeds, so the output changes only when build123d's results do.

@@ -1,10 +1,10 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeExtend/ShapeExtend_CompositeSurface.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeExtend/ShapeExtend_CompositeSurface.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Engine.Healing.Extend.Parametrisation;
 
@@ -68,7 +68,7 @@ internal class CompositeSurface : Surface
         {
             return false;
         }
-        _patches = new NCollection_HArray2<Surface>(gridSurf); // OCCT.NET: OCCT shares the caller's array
+        _patches = new NCollection_HArray2<Surface>(gridSurf); // Kerf: OCCT shares the caller's array
         ComputeJointValues(param);
         return CheckConnectivity(Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -85,7 +85,7 @@ internal class CompositeSurface : Surface
         {
             return false;
         }
-        _patches = new NCollection_HArray2<Surface>(gridSurf); // OCCT.NET: OCCT shares the caller's array
+        _patches = new NCollection_HArray2<Surface>(gridSurf); // Kerf: OCCT shares the caller's array
 
         bool ok = true;
         if (!SetUJointValues(uJoints) || !SetVJointValues(vJoints))
@@ -414,7 +414,7 @@ internal class CompositeSurface : Surface
         {
             for (int j = 1; j <= VPatchCount; j++)
             {
-                // OCCT.NET: frozen: OCCT transforms the patch in place, which may be shared; the port transforms its
+                // Kerf: frozen: OCCT transforms the patch in place, which may be shared; the port transforms its
                 // own copy of a frozen patch.
                 Surface patch = _patches.Value(i, j);
                 if (patch.IsFrozen)
@@ -451,7 +451,7 @@ internal class CompositeSurface : Surface
         return surf;
     }
 
-    // OCCT.NET: a copy keeping the joint values, for the With* twins (Copy() resets them, as OCCT's).
+    // Kerf: a copy keeping the joint values, for the With* twins (Copy() resets them, as OCCT's).
     private CompositeSurface CopyKeepingJoints()
     {
         var surf = (CompositeSurface)Copy();

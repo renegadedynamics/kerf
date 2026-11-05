@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Collections;
@@ -40,7 +40,7 @@ namespace Kerf.Kernel.Oracle.Tests;
 public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output) : IDisposable
 {
     private readonly string myDirectory = Directory.CreateTempSubdirectory("occtnet-brepmesh4d-").FullName;
-    private readonly bool myKeepFiles = Environment.GetEnvironmentVariable("OCCTNET_KEEP_MESH_FILES") == "1";
+    private readonly bool myKeepFiles = Environment.GetEnvironmentVariable("KERF_KEEP_MESH_FILES") == "1";
     private int myFileNumber;
 
     public void Dispose()

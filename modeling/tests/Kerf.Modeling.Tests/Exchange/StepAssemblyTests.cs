@@ -1,16 +1,15 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using O = global::Occt;
+using O = global::Kerf.Engine;
 
-namespace Build123d.Tests.Exchange;
+namespace Kerf.Modeling.Tests.Exchange;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 /// <summary>
-/// STEP's names, colours and assemblies on the OCCT.NET backend (OCCT.NET's STEPCAFControl over its XdeDoc tree).
+/// STEP's names, colours and assemblies on the Kerf backend (Kerf's STEPCAFControl over its XdeDoc tree).
 /// What <see cref="Exporters3D.ExportStep(Shape, Stream, StepExportOptions?, CancellationToken)"/>
-/// writes is compared with OCCT.NET's STEPCAFControl_Writer (compared with native XCAF by OCCT.NET's unit 8G2) over a
+/// writes is compared with Kerf's STEPCAFControl_Writer (compared with native XCAF by Kerf's unit 8G2) over a
 /// document built with XCAF's calls, as build123d's <c>_create_xde</c> builds its XCAF document, but for one thing: a
 /// node without assembly children is a part even when its shape is a compound (build123d's Part is one), where
 /// <c>AddShape(shape, makeAssembly: true)</c> of the whole would make it an assembly of its solid. Reading back checks
@@ -38,7 +37,7 @@ public class StepAssemblyTests
         return stream.ToArray();
     }
 
-    // The shape as OCCT.NET holds it, from the same BRep text (shared sub-shapes stay shared)
+    // The shape as Kerf holds it, from the same BRep text (shared sub-shapes stay shared)
     private static Shape Occt(Shape shape)
     {
         var text = Encoding.ASCII.GetString(Extras.WriteBRep(shape));
@@ -55,7 +54,7 @@ public class StepAssemblyTests
     }
 
     /// <summary>
-    /// What OCCT.NET's STEPCAFControl writes of a document built with XCAF's calls: a part added with <c>AddShape</c>
+    /// What Kerf's STEPCAFControl writes of a document built with XCAF's calls: a part added with <c>AddShape</c>
     /// (not as an assembly, so parts of one shape share their label) and placed with <c>AddComponent</c>, an assembly
     /// made with <c>NewShape</c>; each node's label and colour set on its shape's label.
     /// </summary>

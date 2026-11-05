@@ -3,9 +3,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Ops = Kerf.Modeling.Operations;
 
-namespace Build123d.Tests.Exchange;
+namespace Kerf.Modeling.Tests.Exchange;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 /// <summary>Import and export: BREP, STEP, STL, glTF and 3MF.</summary>
@@ -153,7 +152,7 @@ public partial class ExchangeTests
     [Fact]
     public void StepPastTheRecordLimitIsRefused()
     {
-        // OCCT.NET's parser counts records; native OCCT reads from a temporary file, with no such limit
+        // Kerf's parser counts records; native OCCT reads from a temporary file, with no such limit
         var stream = new MemoryStream();
         Exporters3D.ExportStep(Block(), stream);
         stream.Position = 0;

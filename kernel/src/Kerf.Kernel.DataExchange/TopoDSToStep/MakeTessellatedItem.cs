@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/TopoDSToStep/TopoDSToStep_MakeTessellatedItem.hxx
 // Port of: src/DataExchange/TKDESTEP/TopoDSToStep/TopoDSToStep_MakeTessellatedItem.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2022-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -16,7 +16,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Exchange.Step.Export;
@@ -45,7 +45,7 @@ internal sealed class MakeTessellatedItem : ExportRoot
 
         if (!mesh.HasNormals)
         {
-            // OCCT.NET: OCCT computes the normals into the face's own triangulation; the port into a copy, so the
+            // Kerf: OCCT computes the normals into the face's own triangulation; the port into a copy, so the
             // shape written never changes (decision 1252)
             mesh = new Triangulation(mesh);
             global::Kerf.Engine.Meshing.Poly.ComputeNormals(mesh);

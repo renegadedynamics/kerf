@@ -2,7 +2,7 @@
 // Port of: src/FoundationClasses/TKMath/BSplCLib/BSplCLib.lxx
 // Port of: src/FoundationClasses/TKMath/BSplCLib/BSplCLib.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 // Modified RLE 9 Sep 1993
 // pmn : modified 28-01-97  : fixed a mistake in LocateParameter (PRO6973)
@@ -20,7 +20,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.Splines.KnotDistribution;
 using static Kerf.Engine.Geometry.Splines.MultDistribution;
 using static Kerf.Engine.Geometry.BSplKnotDistribution;

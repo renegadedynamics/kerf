@@ -89,12 +89,12 @@ public sealed record ThreeMfExportOptions
 /// missing file is for the importers). Cancellation throws <see cref="OperationCanceledException"/>.
 /// </para>
 /// <para>
-/// STEP is written as build123d writes it: through an assembly document (OCCT.NET's STEPCAFControl over its XdeDoc
+/// STEP is written as build123d writes it: through an assembly document (Kerf's STEPCAFControl over its XdeDoc
 /// tree), a product per part and assembly, named by its label and coloured by its colour. The FILE_NAME header carries
 /// the shape's label, the time stamp given and "build123d" as the originating system, as build123d's.
 /// </para>
 /// <para>
-/// STL, glTF and 3MF are written by OCCT.NET's writers. glTF and 3MF keep the assembly tree, its labels and colours.
+/// STL, glTF and 3MF are written by Kerf's writers. glTF and 3MF keep the assembly tree, its labels and colours.
 /// </para>
 /// </remarks>
 public static class Exporters3D
@@ -291,7 +291,7 @@ public static class Exporters3D
             Binary = options.Binary,
             Unit = ExchangeUnits.LengthUnit(options.Unit, "unit"),
             Mesh = MeshOptions(options.LinearDeflection, options.AngularDeflection),
-            Generator = "build123d.NET",
+            Generator = "Kerf",
         };
 
 }

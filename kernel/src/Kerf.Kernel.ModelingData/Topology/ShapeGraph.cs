@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Topology;
 

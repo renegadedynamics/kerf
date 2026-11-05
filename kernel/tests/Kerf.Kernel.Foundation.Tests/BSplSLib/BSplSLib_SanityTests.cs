@@ -1,6 +1,6 @@
-// OCCT.NET's own tests (not a port of an OCCT GTest): BSplSLib checked against an independent tensor-product
+// Kerf's own tests (not a port of an OCCT GTest): BSplSLib checked against an independent tensor-product
 // evaluation (BSplCLib's B-spline basis), against its own cache, and by round trips of its operations.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
 

@@ -1,14 +1,14 @@
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_MakeFilling.hxx
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_MakeFilling.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Api;
 
@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Api;
 /// <remarks>
 /// A maker (decisions 414, 454): <c>Shape()</c> freezes the face, <c>Generated</c> lists frozen shapes (the new edge
 /// or vertex made from a boundary edge or vertex). The caller's edges and faces are never written. As in OCCT,
-/// <see cref="Build"/> may be called again after more constraints are added (build123d.NET's <c>MakeSurface</c>
+/// <see cref="Build"/> may be called again after more constraints are added (Kerf.Modeling's <c>MakeSurface</c>
 /// adds points to a built filling): it builds a new face, and the face already handed out doesn't change.
 /// </remarks>
 internal class MakeFilling : MakeShape

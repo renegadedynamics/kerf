@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_Offset.lxx
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_Offset.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
@@ -20,7 +20,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Offsets.OffsetStatus;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.JoinKind;
@@ -570,7 +570,7 @@ internal sealed class Offset
                 }
                 else // TheSurf->DynamicType() == STANDARD_TYPE(Geom_OffsetSurface)
                 {
-                    // OCCT.NET: the bounds of the extended surface are named aU1.. (C# forbids reusing u1.. below)
+                    // Kerf: the bounds of the extended surface are named aU1.. (C# forbids reusing u1.. below)
                     if (uminDegen)
                     {
                         Curve3D uiso = theSurf.UIso(uf1);
@@ -1064,7 +1064,7 @@ internal sealed class Offset
             c12d = new TrimmedCurve2D(c12d!, f[1], l[1]);
             var hs1 = new SurfaceAdaptor(s1);
             var hc1 = new CurveAdaptor2D(c12d);
-            // OCCT.NET: OCCT copies a local Adaptor3d_CurveOnSurface Cons(HC1, HS1)
+            // Kerf: OCCT copies a local Adaptor3d_CurveOnSurface Cons(HC1, HS1)
             hEdge1 = new CurveOnSurface(hc1, hs1);
         }
         else
@@ -1091,7 +1091,7 @@ internal sealed class Offset
             c12d = new TrimmedCurve2D(c12d!, f[2], l[2]);
             var hs1 = new SurfaceAdaptor(s1);
             var hc1 = new CurveAdaptor2D(c12d);
-            // OCCT.NET: OCCT copies a local Adaptor3d_CurveOnSurface Cons(HC1, HS1)
+            // Kerf: OCCT copies a local Adaptor3d_CurveOnSurface Cons(HC1, HS1)
             hEdge2 = new CurveOnSurface(hc1, hs1);
         }
         else

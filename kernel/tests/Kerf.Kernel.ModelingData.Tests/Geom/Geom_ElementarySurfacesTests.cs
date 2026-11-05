@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 
@@ -8,7 +8,7 @@ using Kerf.Geometry;
 namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
-/// OCCT.NET's own checks of Geom_CylindricalSurface, Geom_ConicalSurface, Geom_SphericalSurface and
+/// Kerf's own checks of Geom_CylindricalSurface, Geom_ConicalSurface, Geom_SphericalSurface and
 /// Geom_ToroidalSurface (OCCT has no GTests for them; the oracle tests compare them with native OCCT).
 /// </summary>
 public class Geom_ElementarySurfacesTests

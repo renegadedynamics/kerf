@@ -1,6 +1,9 @@
-# OCCT.NET design
+# Kerf.Kernel design
 
-OCCT.NET is a managed port of [Open CASCADE Technology](https://github.com/Open-Cascade-SAS/OCCT) (OCCT) to .NET.
+> Names: until phase 10 the kernel was OCCT.NET and the modelling layer build123d.NET. The older sections keep the names of
+> their day, as do the decisions, the phase plans and the CHANGELOGs' earlier entries.
+
+Kerf.Kernel is a managed port of [Open CASCADE Technology](https://github.com/Open-Cascade-SAS/OCCT) (OCCT) to .NET.
 Its first user is Bento, a spreadsheet whose cells hold immutable .NET values, through build123d.NET, which
 today wraps native OCCT. A managed kernel removes native crashes, the 52 MB of native libraries, load-context
 plumbing, shared-geometry races and finalisers, and lets models run where Bento's engine runs in WebAssembly.
@@ -68,6 +71,8 @@ Progress is measured by `dotnet run tools/port-status.cs`, which writes [port-st
 | **7. Finishing** (done; [phase7-plan.md](phase7-plan.md)) | The rest of ShapeHealing (ShapeUpgrade's divide and convert tools, ShapeCustom, ShapeProcess), fillets and chamfers (TKFillet but ChFi2d), offsets and drafts (TKOffset but phase 5's wrappers, BRepFill_Draft, AdvancedEvolved), features (TKFeat), helix, then HLR | build123d parity |
 | **8. Data exchange** (done; [phase8-plan.md](phase8-plan.md)) | STEP's entity classes generated from OCCT's own C++ (decision 1166), StepData/XSBase/STEPControl ported; immutable assembly tree; STL, glTF, 3MF, OBJ written fresh | Bytes in and out without native code |
 | **9. Switch-over** (done; [phase9-plan.md](phase9-plan.md)) | build123d.NET moves onto OCCT.NET, op by op through BRep bytes, then drops native OCCT | |
+| **10. A .NET library** (done; [phase10-plan.md](phase10-plan.md)) | Kerf: the public API, immutability with no copy at entry, results, OCCT's bugs, one set of shapes with the modelling layer | |
+| **11. Optimisation** ([phase11-plan.md](phase11-plan.md)) | A benchmark rig, then speed and memory; the points left from phase 10 | |
 
 ## Not ported
 

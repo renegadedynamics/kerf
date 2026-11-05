@@ -1,13 +1,13 @@
-// OCCT.NET: the copy for write and the functional twins of BRepTools' in-place statics
+// Kerf: the copy for write and the functional twins of BRepTools' in-place statics
 // (docs/phase3-design.md, section 4.6). Not a port of an OCCT file.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Topology.Tools;

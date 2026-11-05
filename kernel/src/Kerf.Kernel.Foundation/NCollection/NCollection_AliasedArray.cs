@@ -1,12 +1,12 @@
 // Port of: src/FoundationClasses/TKernel/NCollection/NCollection_AliasedArray.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>
 /// An array of fixed-size elements whose type is chosen at run time by the element size (the stride): the storage of

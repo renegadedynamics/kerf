@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeAnalysis/ShapeAnalysis_Wire.lxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeAnalysis/ShapeAnalysis_Wire.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
@@ -18,7 +18,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Intersection.TwoD.Position2D;
 using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.Orientation;
@@ -152,7 +152,7 @@ internal class WireAnalysis : Transient
         BrepBuilder b    = new BrepBuilder();
         Face  face = new Face();
         b.MakeFace(ref face, surface, location, Kerf.Engine.Foundation.Precision.Confusion());
-        // OCCT.NET: the face is reachable through Face(), so it is published frozen (design 4.2)
+        // Kerf: the face is reachable through Face(), so it is published frozen (design 4.2)
         face.TShape()!.FreezeGraph();
         SetFace(face);
     }
@@ -2226,7 +2226,7 @@ internal class WireAnalysis : Transient
     public bool CheckShapeConnect(out double tailhead, out double tailtail, out double headtail, out double headhead,
                                   in Shape shape, double prec = 0.0)
     {
-        // OCCT.NET: OCCT leaves the distances unchanged when it returns FAIL1; they are out here, set to 0
+        // Kerf: OCCT leaves the distances unchanged when it returns FAIL1; they are out here, set to 0
         tailhead = tailtail = headtail = headhead = 0.0;
         _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.FAIL1);
         if (!IsLoaded || shape.IsNull)
@@ -2712,7 +2712,7 @@ internal class WireAnalysis : Transient
             new BrepBuilder().SameParameter(eParts2[1], false);
             satpp.TransferRange(eParts2[0], ls[ei, 0], aParams[ei], false);
             satpp.TransferRange(eParts2[1], aParams[ei], ls[ei, 1], false);
-            // OCCT.NET: the new parts are published frozen (design 4.2)
+            // Kerf: the new parts are published frozen (design 4.2)
             if (toFreeze)
             {
                 eParts2[0].TShape()!.FreezeGraph();

@@ -1,12 +1,12 @@
 // Port of: src/ModelingAlgorithms/TKFillet/ChFiDS/ChFiDS_CircSection.hxx
 // Port of: src/ModelingAlgorithms/TKFillet/ChFiDS/ChFiDS_CircSection.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Fillets.Data;
 
@@ -82,5 +82,5 @@ internal partial struct CircSection : IEquatable<CircSection>
 
     public static bool operator !=(in CircSection left, in CircSection right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("ChFiDS_CircSection", _f, _l);
+    public override readonly string ToString() => Constants.Format("CircSection", _f, _l);
 }

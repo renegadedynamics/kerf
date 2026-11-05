@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 
@@ -7,7 +7,7 @@ using Kerf.Geometry;
 namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
-/// OCCT.NET's own tests of Geom_OffsetSurface: freezing of the shared basis, the twins, the osculating surfaces at
+/// Kerf's own tests of Geom_OffsetSurface: freezing of the shared basis, the twins, the osculating surfaces at
 /// degenerate iso-curves, the trimmed offset of Geom_RectangularTrimmedSurface, and the OCCT behaviours listed in
 /// occt-issues.md.
 /// </summary>

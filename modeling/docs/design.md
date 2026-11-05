@@ -1,4 +1,7 @@
-# build123d.NET design
+# Kerf.Modeling design
+
+> Names: until phase 10 the kernel was OCCT.NET and the modelling layer build123d.NET. The older sections keep the names of
+> their day, as do the decisions, the phase plans and the CHANGELOGs' earlier entries.
 
 A .NET port of [build123d](https://github.com/gumyr/build123d), the Python CAD library built on
 OpenCascade (OCCT).

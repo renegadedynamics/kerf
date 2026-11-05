@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
@@ -32,7 +32,7 @@ public class BRepFill_FillingTests
 
     private static Edge Segment(in Point3D P1, in Point3D P2) => new MakeEdge(P1, P2).Edge();
 
-    // A closed contour around the square [0, 10]^2: three segments and an arc bulging up (as build123d.NET's
+    // A closed contour around the square [0, 10]^2: three segments and an arc bulging up (as Kerf.Modeling's
     // MakeSurface takes them, on shared vertices).
     private static Edge[] Contour()
     {
@@ -244,7 +244,7 @@ public class BRepFill_FillingTests
         EngineAssert.Throws<FailureException>(() => new FillingCurveConstraint((CurveOnSurface?)null, 1));
         EngineAssert.Throws<FailureException>(() => new FillingCurveConstraint(new EdgeCurveAdaptor(anEdge), 3));
     }
-    // build123d.NET's MakeSurfacePatch: a spline edge with its extrusion as the support face. The port's prism sweeps a
+    // Kerf.Modeling's MakeSurfacePatch: a spline edge with its extrusion as the support face. The port's prism sweeps a
     // copy of the caller's frozen edge, so the edge has no pcurve on the face; the filling takes the face's edge on the
     // same curve (decision 1103). It threw NullReferenceException in Geom2dAdaptor_Curve.EvalD1.
     [Fact]

@@ -1,11 +1,11 @@
 // Port of: src/ModelingAlgorithms/TKBO/BOPDS/BOPDS_Pair.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation.Std;
 
 using Kerf.Engine.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Booleans.Data;
 
@@ -57,7 +57,7 @@ internal partial struct Pair : IEquatable<Pair>, IComparable<Pair>
         (_index1 == other._index1 && _index2 == other._index2)
         || (_index1 == other._index2 && _index2 == other._index1);
 
-    // ---- OCCT.NET additions
+    // ---- Kerf additions
 
     /// <summary>C++'s <c>operator&lt;</c> for <see cref="Sorting"/>.</summary>
     public readonly struct LessThan : Heap.ILess<Pair>
@@ -78,5 +78,5 @@ internal partial struct Pair : IEquatable<Pair>, IComparable<Pair>
 
     public static bool operator !=(Pair left, Pair right) => !left.IsEqual(right);
 
-    public override readonly string ToString() => Constants.Format("BOPDS_Pair", _index1, _index2);
+    public override readonly string ToString() => Constants.Format("Pair", _index1, _index2);
 }

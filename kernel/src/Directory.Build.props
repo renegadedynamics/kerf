@@ -14,7 +14,7 @@
     <!-- Checks ported code for mutating calls that would land on a defensive copy (docs/translation-rules.md) -->
     <ProjectReference Include="$(MSBuildThisFileDirectory)Kerf.Analyzers/Kerf.Analyzers.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    <!-- Every OCCT.NET assembly may use the internal mutators of the others -->
+    <!-- Every Kerf assembly may use the internal mutators of the others -->
     <InternalsVisibleTo Include="Kerf.Kernel.ModelingData" />
     <InternalsVisibleTo Include="Kerf.Kernel.ModelingAlgorithms" />
     <InternalsVisibleTo Include="Kerf.Kernel.DataExchange" />
@@ -30,6 +30,6 @@
     <InternalsVisibleTo Include="Kerf.Kernel.Benchmarks" />
     <!-- The modelling layer's tests that check it against the engine itself (the STEP writer's document, the BRep reader):
          the modelling layer is on the public API alone (unit 10M1) -->
-    <InternalsVisibleTo Include="Build123d.Tests" />
+    <InternalsVisibleTo Include="Kerf.Modeling.Tests" />
   </ItemGroup>
 </Project>

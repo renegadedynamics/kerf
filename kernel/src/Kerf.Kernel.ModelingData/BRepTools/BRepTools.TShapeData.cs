@@ -1,15 +1,15 @@
-// OCCT.NET: the BRep data of a TShape, copied and compared one TShape at a time (docs/phase3-design.md, section 4.6):
+// Kerf: the BRep data of a TShape, copied and compared one TShape at a time (docs/phase3-design.md, section 4.6):
 // the working overlay's working copies are made with CopyData and CopyFlags, and a working copy left equal to its
 // original (IsSameData) gives back the original (decisions 416, 1361). Not a port of an OCCT file. Kerf (unit 10H6):
 // the exact copy for write and KeepUnchanged, which copy at entry used, are gone with it.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Runtime.CompilerServices;
 
 namespace Kerf.Engine.Topology.Tools;

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
 // The C++ lexer of tools/stepgen: tokens with their comments, and the preprocessor reduced to what OCCT's STEP
 // packages use (include guards, #include, and #ifdef OCCT_DEBUG blocks, which are dropped).

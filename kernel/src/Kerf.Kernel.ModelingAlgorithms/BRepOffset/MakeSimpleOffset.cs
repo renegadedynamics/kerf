@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_MakeSimpleOffset.hxx
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_MakeSimpleOffset.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
@@ -16,7 +16,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Offsets.SimpleOffsetStatus;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Topology.Orientation;
@@ -372,7 +372,7 @@ internal sealed class MakeSimpleOffset
 
         double u;
         Edge e = ed;
-        // OCCT.NET: OCCT makes aBAS1 and aBAS2, then copies them into HS1 and HS2; the copies are made directly
+        // Kerf: OCCT makes aBAS1 and aBAS2, then copies them into HS1 and HS2; the copies are made directly
         var hs1 = new FaceSurfaceAdaptor(f1, false);
         FaceSurfaceAdaptor hs2;
         if (couture)
@@ -397,7 +397,7 @@ internal sealed class MakeSimpleOffset
         bool rev2 = (f2.Orientation == Reversed);
         double f, l, eps;
         Tool.Range(e, out f, out l);
-        // OCCT.NET: OCCT's unused local Extrema_LocateExtPC ext is left out
+        // Kerf: OCCT's unused local Extrema_LocateExtPC ext is left out
 
         eps = (l - f) / 100.0;
         f += eps; // to avoid calculations on

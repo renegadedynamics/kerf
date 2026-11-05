@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_FixSmallFace.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_FixSmallFace.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -13,7 +13,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
@@ -698,7 +698,7 @@ internal class FixSmallFaceFixer : RootFixer
         // smh#8
         Shape tmpShape = Context()!.InternalApply(F);
         F = ShapeCasts.Face(tmpShape);
-        // OCCT.NET: the in-place form, into the compound this method owns (each splitting vertex comes twice, as in OCCT)
+        // Kerf: the in-place form, into the compound this method owns (each splitting vertex comes twice, as in OCCT)
         if (_analyzer.InternalCheckSplittingVertices(F, mapEdges, mapParam, theAllVert) != 0)
         {
             Wire tempwire = new();
@@ -820,7 +820,7 @@ internal class FixSmallFaceFixer : RootFixer
                 var sfw = new WireFixer();
                 sfw.Init(wireonface, F, Kerf.Engine.Foundation.Precision.Confusion());
                 sfw.FixReorder();
-                wireonface = sfw.InternalWire(); // OCCT.NET: written below
+                wireonface = sfw.InternalWire(); // Kerf: written below
 
                 // Create two new wires
                 Wire w1 = new(), w2 = new();
@@ -919,7 +919,7 @@ internal class FixSmallFaceFixer : RootFixer
         sff.Perform();
         // sff->Init(theFixedFace);
         // sff->FixOrientation();
-        theFixedFace = sff.InternalFace(); // OCCT.NET: the face of the shape being fixed
+        theFixedFace = sff.InternalFace(); // Kerf: the face of the shape being fixed
         return theFixedFace;
     }
 

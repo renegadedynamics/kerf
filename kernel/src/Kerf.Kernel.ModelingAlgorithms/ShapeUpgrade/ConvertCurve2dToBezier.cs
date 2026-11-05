@@ -1,13 +1,13 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeUpgrade/ShapeUpgrade_ConvertCurve2dToBezier.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeUpgrade/ShapeUpgrade_ConvertCurve2dToBezier.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Healing.Custom;
 using Kerf.Engine.Healing.Extend;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Engine.Healing.Extend.ExtendStatus;
@@ -174,7 +174,7 @@ internal class ConvertCurve2dToBezier : SplitCurve2d
             }
 
             // PTV 20.12.2001 Try to simplify BSpline Curve
-            // OCCT.NET: OCCT simplifies the curve in place (the tool's own copy here, or the approximation's); a frozen
+            // Kerf: OCCT simplifies the curve in place (the tool's own copy here, or the approximation's); a frozen
             // curve is simplified on a copy, given back through the ref (decision 974)
             CustomCurve2d.SimplifyBSpline2d(ref bSpline2d, Kerf.Engine.Foundation.Precision.Approximation());
 

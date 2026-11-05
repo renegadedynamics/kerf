@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepBuilderAPI/BRepBuilderAPI_Sewing.lxx
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepBuilderAPI/BRepBuilderAPI_Sewing.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
@@ -18,7 +18,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -159,7 +159,7 @@ internal class Sewing : Transient
     public bool NonManifoldMode() => _nonmanifold;
 
     //=================================================================================================
-    // OCCT.NET: publication and the working overlay (decision 583; Kerf unit 10H4).
+    // Kerf: publication and the working overlay (decision 583; Kerf unit 10H4).
 
     // The shape sewing worked with for a shape a caller passes: one it handed out stands for the shape it replaced.
     private Shape ToWork(in Shape shape) => _overlay is null || shape.IsNull ? shape : _overlay.Initial(shape);

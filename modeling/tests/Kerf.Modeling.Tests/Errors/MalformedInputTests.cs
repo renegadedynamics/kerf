@@ -1,9 +1,8 @@
 using System.Text;
 using Ops = Kerf.Modeling.Operations;
 
-namespace Build123d.Tests.Errors;
+namespace Kerf.Modeling.Tests.Errors;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 /// <summary>

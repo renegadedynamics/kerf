@@ -1,10 +1,10 @@
-// New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 1229). Not a port.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// New in Kerf (unit 8T): the immutable assembly tree in place of XCAF (decision 1229). Not a port.
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 

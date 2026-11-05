@@ -1,11 +1,11 @@
 // Port of: src/ModelingAlgorithms/TKBO/IntTools/IntTools_Curve.hxx
 // Port of: src/ModelingAlgorithms/TKBO/IntTools/IntTools_Curve.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Tools;
 
@@ -120,7 +120,7 @@ internal partial struct IntersectionCurve
         return type;
     }
 
-    // ---- OCCT.NET additions: the setters' non-mutating twins
+    // ---- Kerf additions: the setters' non-mutating twins
 
     public readonly IntersectionCurve WithCurves(Curve3D? the3dCurve, Curve2D? the2dCurve1, Curve2D? the2dCurve2)
     {

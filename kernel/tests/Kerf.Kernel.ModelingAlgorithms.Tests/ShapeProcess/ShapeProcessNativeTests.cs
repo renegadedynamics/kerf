@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Brep;
@@ -165,8 +165,8 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
                              + $"{aMap.Count} {Fnv(aSig.ToString()):x16} {aTexts.Count} {Fnv(aJoined.ToString()):x16} {Fnv(thePrinter.Text.ToString()):x16}");
     }
 
-    // OCCTNET_SHPROC_DUMP: a directory the results' texts are written to, as the recorder's SHPROCREC_DUMP
-    private static readonly string? s_dump = Environment.GetEnvironmentVariable("OCCTNET_SHPROC_DUMP");
+    // KERF_SHPROC_DUMP: a directory the results' texts are written to, as the recorder's SHPROCREC_DUMP
+    private static readonly string? s_dump = Environment.GetEnvironmentVariable("KERF_SHPROC_DUMP");
 
     [ThreadStatic]
     private static string? s_name;
@@ -312,7 +312,7 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         }
 
         List<(string Name, List<string> Lines)> aSections = Sections();
-        string? aOnly = Environment.GetEnvironmentVariable("OCCTNET_SHPROC_ONLY");
+        string? aOnly = Environment.GetEnvironmentVariable("KERF_SHPROC_ONLY");
         var aPorted = new ConcurrentDictionary<int, List<string>>();
         var aInstances = new ConcurrentDictionary<int, bool>();
         int aMissing = 0;

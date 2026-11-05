@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKMesh/BRepMesh/BRepMesh_IncrementalMesh.hxx
 // Port of: src/ModelingAlgorithms/TKMesh/BRepMesh/BRepMesh_IncrementalMesh.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2013-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing.Model;
@@ -9,7 +9,7 @@ using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Meshing.Model.StatusModel;
 
 namespace Kerf.Engine.Meshing;
@@ -32,7 +32,7 @@ namespace Kerf.Engine.Meshing;
 /// result, it doesn't write into the operation's shapes.</item>
 /// <item>On an unfrozen shape (ported code's), it meshes in place, as OCCT does; <see cref="History"/> is empty.</item>
 /// </list>
-/// So build123d.NET's <c>new BRepMesh_IncrementalMesh(copy, tol, rel, ang, true)</c> becomes
+/// So Kerf.Modeling's <c>new BRepMesh_IncrementalMesh(copy, tol, rel, ang, true)</c> becomes
 /// <c>new BRepMesh_IncrementalMesh(shape, tol, rel, ang, true).Shape()</c>. The functional twin is <see cref="Meshed(in Shape, in ToolParameters)"/>.
 /// </para>
 /// <para>
@@ -55,7 +55,7 @@ internal class IncrementalMesh : DiscretRoot
     protected bool _modified;
     protected int _status;
 
-    // OCCT.NET: the history of a frozen shape's meshing (decision 489)
+    // Kerf: the history of a frozen shape's meshing (decision 489)
     private History _history = new();
     private bool _toCopyAlways;
 
@@ -111,7 +111,7 @@ internal class IncrementalMesh : DiscretRoot
     {
         InitParameters();
 
-        // OCCT.NET: a shape holding frozen TShapes is meshed in a working overlay (decision 489, unit 10H6)
+        // Kerf: a shape holding frozen TShapes is meshed in a working overlay (decision 489, unit 10H6)
         Shape input = Shape();
         _history = new History();
         Dictionary<TShape, TShape>? copies = null;
@@ -194,7 +194,7 @@ internal class IncrementalMesh : DiscretRoot
             }
         }
 
-        // OCCT.NET: publish the meshed shape, sharing what meshing left unchanged (unit 10H6)
+        // Kerf: publish the meshed shape, sharing what meshing left unchanged (unit 10H6)
         if (overlay is not null && finish)
         {
             _shape = WorkingOverlay.UncopiedWhereUnchanged(overlay.Finish(target), copies);
@@ -245,7 +245,7 @@ internal class IncrementalMesh : DiscretRoot
     public int GetStatusFlags() => _status;
 
     /// <summary>
-    /// The history of the meshed copy (OCCT.NET, decision 489): the input's vertices, edges, faces and solids modified
+    /// The history of the meshed copy (Kerf, decision 489): the input's vertices, edges, faces and solids modified
     /// into the result's. Empty when the shape was meshed in place, or left as it was.
     /// </summary>
     public History History() => _history;

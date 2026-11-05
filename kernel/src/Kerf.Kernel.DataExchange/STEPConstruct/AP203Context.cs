@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/STEPConstruct/STEPConstruct_AP203Context.hxx
 // Port of: src/DataExchange/TKDESTEP/STEPConstruct/STEPConstruct_AP203Context.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -10,7 +10,7 @@ using Kerf.Engine.Exchange.Step.Basic;
 using Kerf.Engine.Exchange.Step.Representation;
 using Kerf.Engine.Exchange.Step.Shapes;
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 using System.Net;
 using System.Net.Sockets;
 using static Kerf.Engine.Exchange.Step.Basic.AheadOrBehind;

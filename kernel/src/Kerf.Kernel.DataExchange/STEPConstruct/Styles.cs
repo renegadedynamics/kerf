@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/STEPConstruct/STEPConstruct_Styles.hxx
 // Port of: src/DataExchange/TKDESTEP/STEPConstruct/STEPConstruct_Styles.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -18,7 +18,7 @@ using Kerf.Engine.Exchange.Step.Visual;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Foundation.NameOfColor;
 using static Kerf.Engine.Foundation.ColorSpace;
 using static Kerf.Engine.Exchange.Step.Visual.SurfaceSide;
@@ -758,7 +758,7 @@ internal class Styles : ConstructTool
     /// Create STEP color entity by given Quantity_Color The analysis is performed for whether the color corresponds to
     /// one of standard colors predefined in STEP. In that case, PredefinedColour entity is created instead of RGBColour
     /// </summary>
-    /// <remarks>OCCT.NET: the RGB colours are keyed by their sRGB values (OCCT: a gp_Pnt of them).</remarks>
+    /// <remarks>Kerf: the RGB colours are keyed by their sRGB values (OCCT: a gp_Pnt of them).</remarks>
     public static Colour EncodeColor(in LinearColor c, Dictionary<string, Transient> dpdCs,
                                                 Dictionary<Point3D, Transient> colRGBs)
     {
@@ -808,7 +808,7 @@ internal class Styles : ConstructTool
     /// <summary>
     /// Decodes STEP color and fills the Quantity_Color. Returns True if OK or False if color is not recognized
     /// </summary>
-    /// <remarks>OCCT.NET: <paramref name="col"/> is left unchanged when the colour isn't recognised, as in OCCT.</remarks>
+    /// <remarks>Kerf: <paramref name="col"/> is left unchanged when the colour isn't recognised, as in OCCT.</remarks>
     public static bool DecodeColor(Colour colour, ref LinearColor col)
     {
         if (colour.IsKind(typeof(ColourRgb)))

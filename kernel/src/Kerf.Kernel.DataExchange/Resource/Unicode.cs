@@ -3,10 +3,10 @@
 // Port of: src/FoundationClasses/TKernel/Resource/Resource_ConvertUnicode.c
 // Port of: src/FoundationClasses/TKernel/NCollection/NCollection_UtfIterator.lxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 using System.Text;
 
 namespace Kerf.Engine.Foundation.Resources;
@@ -100,7 +100,7 @@ internal static class Unicode
                 ExtendedStringFromMultiByte(aFrom, toStr); // TCollection_ExtendedString(theFromStr, true)
                 break;
             case FormatType.FormatType_SystemLocale:
-                // OCCT.NET: OCCT converts from the process's C locale (NCollection_UtfString::FromLocale); the port has
+                // Kerf: OCCT converts from the process's C locale (NCollection_UtfString::FromLocale); the port has
                 // no such locale and reads the text as UTF-8 (decision 1191)
                 toStr.Clear();
                 ExtendedStringFromMultiByte(aFrom, toStr);
@@ -186,7 +186,7 @@ internal static class Unicode
     /// dropped, as GetUtf16 does); if one code point is above U+10FFFF, each byte as a char instead.
     /// </summary>
     /// <remarks>
-    /// OCCT.NET: a lead byte near the end makes OCCT read its terminating zero as a continuation byte, then go on past
+    /// Kerf: a lead byte near the end makes OCCT read its terminating zero as a continuation byte, then go on past
     /// it (beyond the string); the port reads zeros there and stops at the end.
     /// </remarks>
     private static void ExtendedStringFromMultiByte(byte[] bytes, StringBuilder toStr)

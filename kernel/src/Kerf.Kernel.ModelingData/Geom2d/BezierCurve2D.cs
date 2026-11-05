@@ -1,14 +1,14 @@
 // Port of: src/ModelingData/TKG2d/Geom2d/Geom2d_BezierCurve.hxx
 // Port of: src/ModelingData/TKG2d/Geom2d/Geom2d_BezierCurve.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Geometry;
@@ -658,7 +658,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
     /// </summary>
     internal void Resolution(double toleranceUV, out double uTolerance)
     {
-        // OCCT.NET: a cache filled on a possibly shared curve; the flag is published after the value.
+        // Kerf: a cache filled on a possibly shared curve; the flag is published after the value.
         if (!Volatile.Read(ref _maxDerivInvOk))
         {
             double maxDerivInv;
@@ -746,7 +746,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
 
         if (weights is not null)
         {
-            // OCCT.NET: never write into the shared unit weights (a resize to the same size keeps the view).
+            // Kerf: never write into the shared unit weights (a resize to the same size keeps the view).
             if (!_weights.IsDeletable())
             {
                 _weights = new NCollection_Array1<double>();
@@ -770,7 +770,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
         ClearEvalRepresentation();
     }
 
-    // Non-mutating twins of the mutators (OCCT.NET)
+    // Non-mutating twins of the mutators (Kerf)
 
     /// <summary>A copy with its degree raised to Deg.</summary>
     public BezierCurve2D Increased(int deg)

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Values;
 using Kerf.Engine.Foundation;
@@ -7,7 +7,7 @@ using static Kerf.Engine.Construction.Values.ErrorType;
 
 namespace Kerf.Kernel.ModelingData.Tests;
 
-/// <summary>OCCT.NET's own checks of gce: the classes OCCT's GTests leave out and the port's decisions.</summary>
+/// <summary>Kerf's own checks of gce: the classes OCCT's GTests leave out and the port's decisions.</summary>
 public class gce_PortTest
 {
     private const double Tol = 1e-12;

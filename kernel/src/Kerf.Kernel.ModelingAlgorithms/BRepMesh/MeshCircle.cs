@@ -1,9 +1,9 @@
 // Port of: src/ModelingAlgorithms/TKMesh/BRepMesh/BRepMesh_Circle.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2013-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Meshing;
 
@@ -49,5 +49,5 @@ internal partial struct MeshCircle : IEquatable<MeshCircle>
 
     public static bool operator !=(in MeshCircle left, in MeshCircle right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("BRepMesh_Circle", _location.X(), _location.Y(), _radius);
+    public override readonly string ToString() => Constants.Format("MeshCircle", _location.X(), _location.Y(), _radius);
 }

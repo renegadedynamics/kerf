@@ -1,14 +1,14 @@
 // Port of: src/ModelingData/TKBRep/BRep/BRep_TFace.hxx
 // Port of: src/ModelingData/TKBRep/BRep/BRep_TFace.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Engine.Meshing;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Meshing.MeshPurpose;
 
 namespace Kerf.Engine.Topology.Brep;
@@ -23,7 +23,7 @@ namespace Kerf.Engine.Topology.Brep;
 /// The location applies to the surface, not to the triangulations, which are in the face's own coordinate system.
 /// </para>
 /// <para>
-/// The setters are internal to OCCT.NET and throw <see cref="ImmutableObjectException"/> once the face is frozen, unless
+/// The setters are internal to Kerf and throw <see cref="ImmutableObjectException"/> once the face is frozen, unless
 /// a working overlay is open: then they write into its working copy of the face (<see cref="WorkingOverlay"/>). The
 /// surface and the triangulations are frozen as soon as the face takes them (docs/phase3-design.md, section 4.1).
 /// OCCT marks the active triangulation with the Poly_MeshPurpose_Active bit of its purpose; the port leaves the
@@ -59,7 +59,7 @@ internal class BrepTFace : TFace
         }
 
         CheckMutable();
-        surface?.Freeze(); // OCCT.NET: attached geometry is frozen
+        surface?.Freeze(); // Kerf: attached geometry is frozen
         _surface = surface;
     }
 
@@ -180,7 +180,7 @@ internal class BrepTFace : TFace
                 SetActiveBit(triangulation, true);
                 if (toFreeze)
                 {
-                    triangulation.Freeze(); // OCCT.NET: attached meshes are frozen
+                    triangulation.Freeze(); // Kerf: attached meshes are frozen
                 }
             }
 
@@ -218,7 +218,7 @@ internal class BrepTFace : TFace
                 SetActiveBit(triangulation, true);
                 if (toFreeze)
                 {
-                    triangulation.Freeze(); // OCCT.NET: attached meshes are frozen
+                    triangulation.Freeze(); // Kerf: attached meshes are frozen
                 }
                 return;
             }
@@ -239,7 +239,7 @@ internal class BrepTFace : TFace
     /// <summary>The face's triangulations (internal: ported code reads the list itself).</summary>
     internal NCollection_List<Triangulation> Triangulations() => View()._triangulations;
 
-    /// <summary>The face's triangulations, as a new read-only list (OCCT.NET addition).</summary>
+    /// <summary>The face's triangulations, as a new read-only list (Kerf addition).</summary>
     public IReadOnlyList<Triangulation> TriangulationList() => ImmutableArrays.Own([.. View()._triangulations]);
 
     /// <summary>
@@ -293,7 +293,7 @@ internal class BrepTFace : TFace
         SetActiveBit(_activeTriangulation, true);
         foreach (Triangulation triangulation in _triangulations)
         {
-            triangulation.Freeze(); // OCCT.NET: attached meshes are frozen
+            triangulation.Freeze(); // Kerf: attached meshes are frozen
         }
     }
 
@@ -315,7 +315,7 @@ internal class BrepTFace : TFace
         }
     }
 
-    // OCCT.NET: frozen: OCCT sets and clears the Active bit of the purpose of attached triangulations; a frozen
+    // Kerf: frozen: OCCT sets and clears the Active bit of the purpose of attached triangulations; a frozen
     // triangulation (attached before, possibly shared by another face) keeps its purpose (docs/decisions.md, 3106).
     private static void SetActiveBit(Triangulation triangulation, bool isActive)
     {

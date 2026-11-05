@@ -1,9 +1,9 @@
 // Port of: src/ModelingAlgorithms/TKBO/IntTools/IntTools_BaseRangeSample.hxx
 // Port of: src/ModelingAlgorithms/TKBO/IntTools/IntTools_BaseRangeSample.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2005-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Tools;
 
@@ -30,7 +30,7 @@ internal partial struct BaseRangeSample : IEquatable<BaseRangeSample>
 
     public readonly int GetDepth() => _depth;
 
-    // ---- OCCT.NET additions
+    // ---- Kerf additions
 
     public readonly BaseRangeSample WithDepth(int depth)
     {

@@ -1,6 +1,6 @@
 // Port of: src/ModelingAlgorithms/TKFillet/ChFi2d/ChFi2d_Builder_0.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 // Modified : 08/07/97 : JPI : traitement des edges degeneres comme pour les fillets 2D
 // Modified:	Fri Sep 25 09:38:04 1998
@@ -19,7 +19,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Planar.ConstructionError;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Topology.Orientation;
@@ -669,7 +669,7 @@ internal sealed partial class PlanarBuilder
         return chamfer;
     }
 
-    // OCCT.NET: frozen (decision 855). OCCT's B.UpdateVertex(NewExtr, param, AdjEdge, tol) gives the new vertex its
+    // Kerf: frozen (decision 855). OCCT's B.UpdateVertex(NewExtr, param, AdjEdge, tol) gives the new vertex its
     // points on the adjacent edge's curves (the vertex isn't on the edge, so nothing else of the edge is read), raises
     // its tolerance, and sets the edge's Modified flag. When the adjacent edge is read-only (frozen, the caller's or one
     // the builder published, and no working overlay here takes the write), the same call goes through an EmptyCopied

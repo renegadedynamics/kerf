@@ -1,6 +1,6 @@
 // Port of: src/FoundationClasses/TKernel/GTests/OSD_Parallel_Test.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 // The OSD_ThreadPool::Launcher parts of the tests are left out: OSD_ThreadPool isn't ported (decision 487's helper
 // replaces it). The functors are lambdas.
@@ -8,9 +8,9 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Foundation.Std;
 using Kerf.Engine.Geometry.Bvh;
-using Box3d = Kerf.Engine.Geometry.Bvh.Box<double, Occt.NCollection_Vec3<double>>;
-using BoxSet3d = Kerf.Engine.Geometry.Bvh.BoxSet<double, Occt.NCollection_Vec3<double>>;
-using Tree3d = Kerf.Engine.Geometry.Bvh.Tree<double, Occt.NCollection_Vec3<double>>;
+using Box3d = Kerf.Engine.Geometry.Bvh.Box<double, Kerf.Engine.NCollection_Vec3<double>>;
+using BoxSet3d = Kerf.Engine.Geometry.Bvh.BoxSet<double, Kerf.Engine.NCollection_Vec3<double>>;
+using Tree3d = Kerf.Engine.Geometry.Bvh.Tree<double, Kerf.Engine.NCollection_Vec3<double>>;
 
 namespace Kerf.Kernel.Foundation.Tests;
 

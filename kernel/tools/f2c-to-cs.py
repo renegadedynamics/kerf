@@ -1,4 +1,4 @@
-# Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+# Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 #
 # A porting aid for AdvApp2Var's f2c code (decision 905): translates the functions of an f2c-generated .cxx into C#
 # with the conventions of decision 901, as a first draft that is then fixed by hand until it compiles. It is not a
@@ -516,7 +516,7 @@ def main():
         if unnamed:
             out.append("\n" + "".join(f"        _ = {n};\n" for n in unnamed))
         body = convert_body(f, sigs)
-        # OCCT indents by 2, OCCT.NET by 4, inside a class
+        # OCCT indents by 2, Kerf by 4, inside a class
         body = "\n".join((" " * (4 + 2 * (len(l) - len(l.lstrip(" ")))) + l.lstrip(" ") if l.strip() else "")
                          for l in body.split("\n"))
         out.append(body.rstrip())

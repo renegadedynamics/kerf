@@ -1,7 +1,7 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // The behaviour of C++'s std::istream (OCCT's Standard_IStream typedef) in binary mode, for ports that read bytes.
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Foundation;
 

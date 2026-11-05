@@ -1,10 +1,10 @@
 // Port of: src/FoundationClasses/TKMath/gp/gp_Pnt.hxx
 // Port of: src/FoundationClasses/TKMath/gp/gp_Pnt.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
-using Occt;
+using Kerf.Engine;
 using System.Diagnostics.CodeAnalysis;
 using static Kerf.Geometry.TransformForm;
 
@@ -172,5 +172,5 @@ public readonly partial struct Point3D : IEquatable<Point3D>
 
     public static bool operator !=(in Point3D left, in Point3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("gp_Pnt", _coord.X(), _coord.Y(), _coord.Z());
+    public override readonly string ToString() => Constants.Format("Point3D", _coord.X(), _coord.Y(), _coord.Z());
 }

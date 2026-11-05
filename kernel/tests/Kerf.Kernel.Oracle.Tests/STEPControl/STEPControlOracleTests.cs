@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Exchange.Framework.Selection;
 using Kerf.Engine.Exchange.Step;
@@ -126,7 +126,7 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
                    + $"port {thePort.Status}/{thePort.NbRoots}/{thePort.NbTransferred}/{thePort.NbShapes}";
         }
         BRepTextDiff aDiff = BRepTextComparison.Compare(theNative.BRep, thePort.BRep);
-        if (!aDiff.IsIdenticalMaskingFree && Environment.GetEnvironmentVariable("OCCTNET_STEP_DUMP") is { } aDump)
+        if (!aDiff.IsIdenticalMaskingFree && Environment.GetEnvironmentVariable("KERF_STEP_DUMP") is { } aDump)
         {
             int aNumber = Interlocked.Increment(ref theDumpNumber);
             File.WriteAllText(Path.Combine(aDump, $"d{aNumber}-native.brep"), theNative.BRep);

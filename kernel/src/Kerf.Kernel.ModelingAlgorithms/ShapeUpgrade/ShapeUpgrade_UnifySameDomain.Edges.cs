@@ -2,7 +2,7 @@
 // edges: MergeEdges, MergeSeq, MergeSubSeq, UnionPCurves and their file-static functions; the class is in
 // ShapeUpgrade_UnifySameDomain.cs)
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2012-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Curves;
@@ -17,7 +17,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
@@ -35,7 +35,7 @@ internal partial class UnifySameDomain
         public Edge UnionEdges = new();
     }
 
-    // OCCT.NET: frozen. A curve OCCT edits in place that may have been handed out frozen (a basis curve read through
+    // Kerf: frozen. A curve OCCT edits in place that may have been handed out frozen (a basis curve read through
     // BasisCurve(), which freezes it): the edit is made on a copy. OCCT edits curves it made itself at these sites.
     private static T Owned<T>(T curve) where T : Transient
         => curve.IsFrozen ? (T)(object)CopyOf(curve) : curve;

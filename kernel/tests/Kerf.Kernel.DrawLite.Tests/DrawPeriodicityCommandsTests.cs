@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Kernel.DrawLite;
 using Xunit.Abstractions;
@@ -132,12 +132,12 @@ public class DrawPeriodicityCommandsTests(ITestOutputHelper output)
 
     /// <summary>
     /// Writes the capture of the periodicity and mkconnected grids for tools/borec (connected area) when
-    /// OCCTNET_BOREC_CAPTURE names a directory; otherwise does nothing.
+    /// KERF_BOREC_CAPTURE names a directory; otherwise does nothing.
     /// </summary>
     [Fact]
     public void Capture_for_borec()
     {
-        string? aDir = Environment.GetEnvironmentVariable("OCCTNET_BOREC_CAPTURE");
+        string? aDir = Environment.GetEnvironmentVariable("KERF_BOREC_CAPTURE");
         if (string.IsNullOrEmpty(aDir))
         {
             return;

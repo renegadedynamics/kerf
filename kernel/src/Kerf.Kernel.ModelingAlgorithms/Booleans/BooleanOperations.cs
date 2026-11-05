@@ -4,7 +4,7 @@ using System.Collections.Immutable;
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using EngineCommon = Kerf.Engine.Booleans.Api.Common;
 using EngineCut = Kerf.Engine.Booleans.Api.Cut;
 using EngineFuse = Kerf.Engine.Booleans.Api.Fuse;

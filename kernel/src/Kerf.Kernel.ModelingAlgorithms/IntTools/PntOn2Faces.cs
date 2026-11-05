@@ -1,9 +1,9 @@
 // Port of: src/ModelingAlgorithms/TKBO/IntTools/IntTools_PntOn2Faces.hxx
 // Port of: src/ModelingAlgorithms/TKBO/IntTools/IntTools_PntOn2Faces.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Tools;
 
@@ -43,7 +43,7 @@ internal partial struct PntOn2Faces : IEquatable<PntOn2Faces>
 
     public readonly bool IsValid => _isValid;
 
-    // ---- OCCT.NET additions
+    // ---- Kerf additions
 
     public readonly PntOn2Faces WithP1(in PntOnFace aP)
     {

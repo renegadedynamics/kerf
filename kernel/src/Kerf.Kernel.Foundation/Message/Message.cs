@@ -1,9 +1,9 @@
 // Port of: src/FoundationClasses/TKernel/Message/Message.hxx
 // Port of: src/FoundationClasses/TKernel/Message/Message.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Foundation.Gravity;
 
 namespace Kerf.Engine.Foundation;
@@ -49,7 +49,7 @@ internal static class Message
 
     /// <summary>
     /// Installs a messenger standing for the default one in the current flow of execution (the thread and the tasks it
-    /// starts), until replaced; null removes it. Returns the one it replaces (OCCT.NET, for Draw-lite's commands).
+    /// starts), until replaced; null removes it. Returns the one it replaces (Kerf, for Draw-lite's commands).
     /// </summary>
     internal static Messenger? SetFlowMessenger(Messenger? messenger) => OperationContext.Set(MessengerSetting, messenger);
 

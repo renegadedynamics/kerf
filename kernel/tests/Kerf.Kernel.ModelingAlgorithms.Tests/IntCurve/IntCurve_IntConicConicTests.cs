@@ -2,7 +2,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Curves;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Engine.Intersection.TwoD.Position2D;
 using static Kerf.Engine.Intersection.TwoD.TypeTrans;

@@ -11,9 +11,8 @@
 // - test_extrude_taper_draft_falls_back_to_loft, test_offset_2d: only the filleted profiles are checked here (the
 //   rest belongs to the Solid and Wire tests).
 
-namespace Build123d.Tests.Objects;
+namespace Kerf.Modeling.Tests.Objects;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class Fillet2DTests

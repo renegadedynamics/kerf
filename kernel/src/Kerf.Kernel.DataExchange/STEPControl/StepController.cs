@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/STEPControl/STEPControl_Controller.hxx
 // Port of: src/DataExchange/TKDESTEP/STEPControl/STEPControl_Controller.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -17,7 +17,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Exchange.Framework.Selection.ReturnStatus;
 using static Kerf.Topology.ShapeType;
 
@@ -26,7 +26,7 @@ namespace Kerf.Engine.Exchange.Step;
 /// <summary>defines basic controller for STEP processor</summary>
 /// <remarks>
 /// <para>
-/// OCCT.NET (plan 2.7, decisions 1181, 1222, 1264): OCCT's constructor registers the STEP modules and declares STEP's
+/// Kerf (plan 2.7, decisions 1181, 1222, 1264): OCCT's constructor registers the STEP modules and declares STEP's
 /// statics in the process-wide <c>Interface_Static</c> the first time; the port registers the modules once per process
 /// (<see cref="Init"/> and the constructor, idempotent) and declares the statics in each session's parameter set
 /// (<see cref="InitStatics"/>, once per set). <see cref="Init"/> records one controller under "STEP" and "step", as
@@ -144,7 +144,7 @@ internal class StepController : Controller
 
     /// <summary>
     /// Declares STEP's statics (OCCT's constructor's <c>Interface_Static::Init</c> calls) in a parameter set, once per
-    /// set, after the standard ones and XSAlgo's (OCCT.NET, decision 1181).
+    /// set, after the standard ones and XSAlgo's (Kerf, decision 1181).
     /// </summary>
     public override void InitStatics(StaticSet statics)
     {
@@ -473,7 +473,7 @@ internal class StepController : Controller
     /// Standard Initialisation. It creates a Controller for STEP and records it to various names, available to
     /// select it later Returns True when done, False if could not be done
     /// </summary>
-    /// <remarks>OCCT.NET: once per process, thread-safe; also initialises ShapeAlgo (decision 1241).</remarks>
+    /// <remarks>Kerf: once per process, thread-safe; also initialises ShapeAlgo (decision 1241).</remarks>
     public static bool Init()
     {
         _ = TheRecorded.Value;
@@ -483,7 +483,7 @@ internal class StepController : Controller
     /// <summary>
     /// Selects STEP in a session as STEPControl_Reader and STEPControl_Writer do (OCCT: <c>SelectNorm("STEP")</c>, the
     /// controller recorded process-wide): a session already working with a STEP controller keeps it; another gets a
-    /// controller of its own, so that the write actor's settings and counters belong to the session (OCCT.NET, decision
+    /// controller of its own, so that the write actor's settings and counters belong to the session (Kerf, decision
     /// 13201). As SelectNorm, it clears the session's transfer reader first.
     /// </summary>
     public static bool SelectFor(ExchangeWorkSession session)

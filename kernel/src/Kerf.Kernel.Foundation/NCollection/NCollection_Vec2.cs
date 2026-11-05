@@ -1,11 +1,11 @@
 // Port of: src/FoundationClasses/TKernel/NCollection/NCollection_Vec2.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2013-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 
 /// <summary>A 2D vector of numbers (float, double or int), for low-level arrays and BVH.</summary>

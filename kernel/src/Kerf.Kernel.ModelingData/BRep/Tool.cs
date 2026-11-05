@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKBRep/BRep/BRep_Tool.hxx
 // Port of: src/ModelingData/TKBRep/BRep/BRep_Tool.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
@@ -9,7 +9,7 @@ using Kerf.Engine.Geometry.Projection;
 using Kerf.Engine.Meshing;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Engine.Meshing.MeshPurpose;
 using static Kerf.Topology.Orientation;
@@ -884,7 +884,7 @@ internal static class Tool
             Range(e, out first, out last);
         }
 
-        // OCCT (occt-issues.md): a query that sets the Modified flag. OCCT.NET: frozen: not on a frozen edge.
+        // OCCT (occt-issues.md): a query that sets the Modified flag. Kerf: frozen: not on a frozen edge.
         if (!e.TShape()!.IsFrozen)
         {
             e.TShape()!.Modified(true);

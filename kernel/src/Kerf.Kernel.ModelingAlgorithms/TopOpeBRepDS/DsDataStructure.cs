@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKBool/TopOpeBRepDS/TopOpeBRepDS_DataStructure.hxx
 // Port of: src/ModelingAlgorithms/TKBool/TopOpeBRepDS/TopOpeBRepDS_DataStructure.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Tools;
 using Kerf.Engine.Collections;
@@ -9,7 +9,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Booleans.Legacy.Data.DsConfig;
 
 namespace Kerf.Engine.Booleans.Legacy.Data;
@@ -60,7 +60,7 @@ internal sealed class DsDataStructure
     private readonly IndexedSet<Shape> _mapOfRejectedShapesObj = new(ShapeHasher.Instance);
     private readonly IndexedSet<Shape> _mapOfRejectedShapesTool = new(ShapeHasher.Instance);
 
-    // OCCT.NET: OCCT's function-scope statics of ChangeMapOfShapeWithState and GetShapeWithState (decision 1063)
+    // Kerf: OCCT's function-scope statics of ChangeMapOfShapeWithState and GetShapeWithState (decision 1063)
     private readonly IndexedMap<Shape, DsShapeWithState> _dummyMapOfShapeWithState = new(ShapeHasher.Instance);
     private readonly DsShapeWithState _dummyShapeWithState = new();
 

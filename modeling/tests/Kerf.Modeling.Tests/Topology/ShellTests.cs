@@ -3,9 +3,8 @@
 // - The Shell(foo="bar") check in test_constructor: an argument-type check the compiler rules out.
 // Translated: the objects become direct-API shapes (Rectangle, Circle, Spline, Polyline, JernArc as three-point
 // arcs), and in test_constructor sweep() of a 1D section becomes the Shell.sweep it calls.
-namespace Build123d.Tests.Topology;
+namespace Kerf.Modeling.Tests.Topology;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class ShellTests

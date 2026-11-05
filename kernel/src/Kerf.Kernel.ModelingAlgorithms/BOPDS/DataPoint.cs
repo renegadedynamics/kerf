@@ -1,12 +1,12 @@
 // Port of: src/ModelingAlgorithms/TKBO/BOPDS/BOPDS_Point.hxx
 // Port of: src/ModelingAlgorithms/TKBO/BOPDS/BOPDS_Point.lxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Booleans.Data;
 
@@ -43,7 +43,7 @@ internal partial struct DataPoint : IEquatable<DataPoint>
 
     public readonly Point2D Pnt2D2() => _pnt2D2;
 
-    // ---- OCCT.NET additions
+    // ---- Kerf additions
 
     public readonly DataPoint WithIndex(int index)
     {

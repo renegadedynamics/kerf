@@ -1,13 +1,13 @@
 // Port of: src/ModelingAlgorithms/TKGeomAlgo/IntPolyh/IntPolyh_Point.hxx
 // Port of: src/ModelingAlgorithms/TKGeomAlgo/IntPolyh/IntPolyh_Point.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Polyhedra;
 
@@ -295,5 +295,5 @@ internal partial struct PolyhedronPoint : IEquatable<PolyhedronPoint>, IPolyhedr
 
     public static bool operator !=(in PolyhedronPoint left, in PolyhedronPoint right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("IntPolyh_Point", _x, _y, _z, _u, _v);
+    public override readonly string ToString() => Constants.Format("PolyhedronPoint", _x, _y, _z, _u, _v);
 }

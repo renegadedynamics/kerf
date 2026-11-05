@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/TopoDSToStep/TopoDSToStep_MakeStepWire.hxx
 // Port of: src/DataExchange/TKDESTEP/TopoDSToStep/TopoDSToStep_MakeStepWire.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 #pragma warning disable CS0168 // locals OCCT declares and never uses
@@ -19,7 +19,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Topology.Orientation;
 using static Kerf.Engine.Exchange.Step.Export.MakeWireError;
 
@@ -165,7 +165,7 @@ internal sealed class MakeStepWire : ExportRoot
             // for toroidal like surfaces we need to use both (3d and 2d) mode to correctly reorder the
             // edges
             stw.FixReorder(true);
-            // OCCT.NET: the fix works on copies of frozen edges; a result gives the wire data back the caller's own
+            // Kerf: the fix works on copies of frozen edges; a result gives the wire data back the caller's own
             // edges, which the tool keys the edges' entities by (decision 1250)
             stw.Wire();
             ExtendWireData extWire = stw.WireData();

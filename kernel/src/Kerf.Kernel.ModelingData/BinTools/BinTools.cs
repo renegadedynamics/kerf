@@ -1,11 +1,11 @@
 // Port of: src/ModelingData/TKBRep/BinTools/BinTools.hxx
 // Port of: src/ModelingData/TKBRep/BinTools/BinTools.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -187,7 +187,7 @@ internal static class BinTools
         shape = new Shape();
         if (!stream.CanSeek)
         {
-            // OCCT.NET: reading a vertex steps back in the stream (BinTools_ShapeSet::ReadShape's tellg and seekg), so
+            // Kerf: reading a vertex steps back in the stream (BinTools_ShapeSet::ReadShape's tellg and seekg), so
             // a stream that can't seek is read into memory first
             var buffer = new MemoryStream();
             stream.CopyTo(buffer);
@@ -204,7 +204,7 @@ internal static class BinTools
         }
         catch (Exception exception) when (IsSignal(exception))
         {
-            // OCCT.NET: untrusted input: a malformed stream raised an exception that OCCT doesn't catch here
+            // Kerf: untrusted input: a malformed stream raised an exception that OCCT doesn't catch here
             throw new StreamFormatErrorException("BinTools::Read: " + Refusal.Unwrapped(exception).Message, exception);
         }
     }
@@ -289,7 +289,7 @@ internal static class BinTools
             if (nb <= 0)
             {
                 // OCCT: throws Storage_StreamTypeMismatchError
-                // OCCT.NET: untrusted input: the stream ended early
+                // Kerf: untrusted input: the stream ended early
                 throw EndOfStream();
             }
 
@@ -310,7 +310,7 @@ internal static class BinTools
 
         if (aByte < 0)
         {
-            // OCCT.NET: untrusted input: the stream ended early
+            // Kerf: untrusted input: the stream ended early
             throw EndOfStream();
         }
 
@@ -364,7 +364,7 @@ internal static class BinTools
             if (builder.Length >= 254)
             {
                 // OCCT overflows its buffer
-                // OCCT.NET: untrusted input: a word longer than OCCT's buffer
+                // Kerf: untrusted input: a word longer than OCCT's buffer
                 throw new StreamFormatErrorException("BinTools: a word longer than 254 characters");
             }
 
@@ -411,7 +411,7 @@ internal static class BinTools
             value = value * 10 + (aChar - '0');
             if (value > (long)int.MaxValue + 1)
             {
-                // OCCT.NET: untrusted input: the count overflows
+                // Kerf: untrusted input: the count overflows
                 throw new StreamFormatErrorException("BinTools: an integer out of range");
             }
 
@@ -420,7 +420,7 @@ internal static class BinTools
 
         if (!hasDigit)
         {
-            // OCCT.NET: untrusted input: C++ fails and reads 0
+            // Kerf: untrusted input: C++ fails and reads 0
             throw new StreamFormatErrorException("BinTools: an integer expected");
         }
 
@@ -433,7 +433,7 @@ internal static class BinTools
         value = isNegative ? -value : value;
         if (value > int.MaxValue || value < int.MinValue)
         {
-            // OCCT.NET: untrusted input: the count overflows
+            // Kerf: untrusted input: the count overflows
             throw new StreamFormatErrorException("BinTools: an integer out of range");
         }
 
@@ -545,7 +545,7 @@ internal static class BinTools
     /// </summary>
     internal static void CheckCount(Stream IS, long count, long bytesPerItem, string what)
     {
-        // OCCT.NET: untrusted input
+        // Kerf: untrusted input
         if (count < 0)
         {
             throw new StreamFormatErrorException("BinTools: a negative count of " + what);
@@ -561,7 +561,7 @@ internal static class BinTools
     /// <summary>Checks an index read from the stream: <paramref name="lower"/> to <paramref name="upper"/>.</summary>
     internal static void CheckIndex(int index, int lower, int upper, string what)
     {
-        // OCCT.NET: untrusted input: OCCT reads outside its maps (an exception in debug builds only)
+        // Kerf: untrusted input: OCCT reads outside its maps (an exception in debug builds only)
         if (index < lower || index > upper)
         {
             throw new StreamFormatErrorException("BinTools: no " + what + " " + index);
@@ -571,7 +571,7 @@ internal static class BinTools
     /// <summary>Checks the orientation byte read from the stream.</summary>
     internal static Orientation CheckOrientation(int value)
     {
-        // OCCT.NET: untrusted input: OCCT casts any byte to TopAbs_Orientation
+        // Kerf: untrusted input: OCCT casts any byte to TopAbs_Orientation
         if (value < 0 || value > 3)
         {
             throw new StreamFormatErrorException("BinTools: no orientation " + value);
@@ -586,7 +586,7 @@ internal static class BinTools
     /// </summary>
     internal static Placement PoweredTimes(in Placement location, int power, in Placement right)
     {
-        // OCCT.NET: untrusted input: bound the recursion of Powered and Multiplied
+        // Kerf: untrusted input: bound the recursion of Powered and Multiplied
         long nbItems = NbItems(location);
         if (nbItems > 1 && (power == int.MinValue || nbItems * Math.Abs((long)power) > MaxLocationItems))
         {

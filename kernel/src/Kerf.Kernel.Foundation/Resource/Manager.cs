@@ -2,10 +2,10 @@
 // Port of: src/FoundationClasses/TKernel/Resource/Resource_Manager.cxx
 // Port of: src/FoundationClasses/TKernel/Resource/Resource_NoSuchResource.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
-using Occt;
+using Kerf.Engine;
 using System.Text;
 
 namespace Kerf.Engine.Foundation.Resources;
@@ -29,7 +29,7 @@ internal class NoSuchResourceException : NoSuchObjectException
 /// <c>!</c> are comments.
 /// </para>
 /// <para>
-/// OCCT.NET reads no environment variable (open question 26): OCCT's <c>Resource_Manager(aName)</c> loads the files
+/// Kerf reads no environment variable (open question 26): OCCT's <c>Resource_Manager(aName)</c> loads the files
 /// that <c>CSF_&lt;aName&gt;Defaults</c> and <c>CSF_&lt;aName&gt;UserDefaults</c> name; the port's loads the resource
 /// file OCCT ships under that name, compiled in (<see cref="EmbeddedDefaults"/>: OCCT's <c>IGES</c> and <c>STEP</c>
 /// files of resources/XSTEPResource, which hold ShapeProcess's sequences for data exchange), and nothing for another

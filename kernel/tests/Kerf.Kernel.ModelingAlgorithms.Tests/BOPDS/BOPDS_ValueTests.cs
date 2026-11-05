@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Collections;
@@ -67,7 +67,7 @@ public class BOPDS_ValueTests
 
         Pair[] aPairs = [new(3, 1), new(1, 5), new(1, 2), new(0, 9)];
         Sorting.stable_sort(aPairs.AsSpan(), new Pair.LessThan());
-        Assert.Equal(new[] { "BOPDS_Pair(0, 9)", "BOPDS_Pair(1, 2)", "BOPDS_Pair(1, 5)", "BOPDS_Pair(3, 1)" },
+        Assert.Equal(new[] { "Pair(0, 9)", "Pair(1, 2)", "Pair(1, 5)", "Pair(3, 1)" },
                      aPairs.Select(p => p.ToString()));
     }
 

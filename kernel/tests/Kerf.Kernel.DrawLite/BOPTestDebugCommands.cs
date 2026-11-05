@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Data;
@@ -8,7 +8,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
 using System.Globalization;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Kernel.DrawLite;
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
 // Reads OCCT's headers (.hxx, .pxx) and sources (.cxx) into the model: classes with their fields, methods and
 // documentation; the RW enum tools' namespaces; function definitions with their bodies as tokens.

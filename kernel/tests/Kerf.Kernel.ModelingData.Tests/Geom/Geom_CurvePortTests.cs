@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Geometry;
@@ -6,7 +6,7 @@ using Kerf.Geometry;
 namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
-/// OCCT.NET's own tests of the Geom curves: freezing, the non-mutating twins, the returned arrays, and the OCCT
+/// Kerf's own tests of the Geom curves: freezing, the non-mutating twins, the returned arrays, and the OCCT
 /// behaviours listed in occt-issues.md.
 /// </summary>
 public class Geom_CurvePortTests

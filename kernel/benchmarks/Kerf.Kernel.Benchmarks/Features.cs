@@ -16,7 +16,7 @@ using Kerf.Offsets;
 using Kerf.Topology;
 using System.Diagnostics;
 using System.Globalization;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Kernel.Benchmarks;
 

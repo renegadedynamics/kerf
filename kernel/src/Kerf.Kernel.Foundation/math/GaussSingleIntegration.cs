@@ -2,7 +2,7 @@
 // Port of: src/FoundationClasses/TKMath/math/math_GaussSingleIntegration.lxx
 // Port of: src/FoundationClasses/TKMath/math/math_GaussSingleIntegration.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 /*
 Par Gauss le calcul d'une integrale simple se transforme en sommation des
@@ -27,7 +27,7 @@ Etapes du calcul:
 */
 
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 using System.Globalization;
 
 namespace Kerf.Engine.Numerics;

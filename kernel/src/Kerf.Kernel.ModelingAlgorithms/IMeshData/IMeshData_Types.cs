@@ -1,8 +1,8 @@
 // Port of: src/ModelingAlgorithms/TKMesh/IMeshData/IMeshData_Types.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+namespace Kerf.Engine;
 
 // IMeshData_Types.hxx is a header of typedefs. The port writes each type out where it is used (translation-rules
 // section 9), with these meanings:

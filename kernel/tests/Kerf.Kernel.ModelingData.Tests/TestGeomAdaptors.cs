@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
 // Test-only stand-ins for GeomAdaptor_Curve (unit 2A) and Geom2dAdaptor_Curve (unit 2B), written after OCCT V8_0_1's
 // src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Curve.cxx and src/ModelingData/TKG2d/Geom2dAdaptor/Geom2dAdaptor_Curve.cxx

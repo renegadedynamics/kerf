@@ -1,6 +1,6 @@
 // Port of: src/ModelingData/TKG3d/GTests/GeomEval_TBezierSurface_Test.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Engine.Geometry.Objects;
@@ -375,7 +375,7 @@ public class GeomEval_TBezierSurfaceTest
                            : new TBezierSurface(aPoles, 0.9, 1.3);
     }
 
-    // OCCT.NET addition: partial derivatives against finite differences, non-rational up to order 4 and rational up
+    // Kerf addition: partial derivatives against finite differences, non-rational up to order 4 and rational up
     // to order 3 (OCCT doesn't evaluate rational derivatives above 3).
     [Theory]
     [InlineData(3, 3)]
@@ -396,7 +396,7 @@ public class GeomEval_TBezierSurfaceTest
         EngineAssert.ThrowsAny<UndefinedDerivative3DException>(() => aRational.EvalDN(0.5, 0.5, 2, 2));
     }
 
-    // OCCT.NET addition: Poles() and Weights() are row-major copies of the grids.
+    // Kerf addition: Poles() and Weights() are row-major copies of the grids.
     [Fact]
     public void Poles_Weights_RowMajor()
     {
@@ -407,7 +407,7 @@ public class GeomEval_TBezierSurfaceTest
         Assert.Empty(createGeneralSurface(3, 3, false).Weights());
     }
 
-    // OCCT.NET addition: OCCT's IsUClosed/IsVClosed compare the first and last rows (columns) of poles, which in
+    // Kerf addition: OCCT's IsUClosed/IsVClosed compare the first and last rows (columns) of poles, which in
     // the trigonometric basis are the constant and the last cosine terms, not the boundary iso-curves.
     [Fact]
     public void IsClosed_ComparesPoleRows_OcctIssue()

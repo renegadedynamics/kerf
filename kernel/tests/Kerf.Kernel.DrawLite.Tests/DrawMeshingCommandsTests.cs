@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.HiddenLines.Presentation;
 using Kerf.Engine.Meshing;
@@ -6,7 +6,7 @@ using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using Kerf.Kernel.DrawLite;
 
 namespace Kerf.Kernel.DrawLite.Tests;

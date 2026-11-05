@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKMesh/BRepMesh/BRepMesh_NURBSRangeSplitter.hxx
 // Port of: src/ModelingAlgorithms/TKMesh/BRepMesh/BRepMesh_NURBSRangeSplitter.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
@@ -10,7 +10,7 @@ using Kerf.Engine.Meshing.Model;
 using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.IsoType;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;

@@ -141,4 +141,4 @@ A struct's own member wins over an extension of the same name, so these moved:
   kernel's shape.
 - **The enum text** of `ShapeType` parses the kernel's enum: the same names, plus `Shape`.
 - **`Location *`** is unchanged, on objects and structs.
-- **The differential log.** `BUILD123D_SHAPE_LOG` and `ShapeLog` went: every operation no longer passes through one constructor.
+- **The differential log.** `KERF_SHAPE_LOG` and `ShapeLog` went: every operation no longer passes through one constructor.

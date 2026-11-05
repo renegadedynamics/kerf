@@ -1,15 +1,15 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Exchange.Step.Caf;
 
 using Kerf.Engine.Exchange.Step.Parser;
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Step.Documents;
 
 /// <summary>
-/// Opens an external file a STEP file refers to, for <see cref="CafReader"/> (OCCT.NET, unit 8Z: OCCT
+/// Opens an external file a STEP file refers to, for <see cref="CafReader"/> (Kerf, unit 8Z: OCCT
 /// reads external files from the disk, beside the main file). Returns a readable stream, which the reader disposes, or
 /// null to leave the reference unresolved, as OCCT leaves a reference to a missing file.
 /// </summary>
@@ -21,7 +21,7 @@ internal delegate Stream? ExternFileResolver(string fileName, string referencing
 
 /// <summary>
 /// Opens the stream an external file is written to, for <see cref="CafWriter.WriteStream(Stream,
-/// ExternFileWriter)"/> (OCCT.NET, unit 8Z). Returns a writable stream, which the writer disposes, or
+/// ExternFileWriter)"/> (Kerf, unit 8Z). Returns a writable stream, which the writer disposes, or
 /// null to refuse the file (its write status is then <c>IFSelect_RetError</c>).
 /// </summary>
 /// <param name="fileName">The external file's name as the writer made it (the prefix and the label's name, as
@@ -30,7 +30,7 @@ internal delegate Stream? ExternFileWriter(string fileName);
 
 /// <summary>
 /// The budget of a <see cref="CafReader"/>'s external reads, across all the files read for one main file
-/// (OCCT.NET, unit 8Z). Each external file is read with the caller's <see cref="ParserReadLimits"/> too, its
+/// (Kerf, unit 8Z). Each external file is read with the caller's <see cref="ParserReadLimits"/> too, its
 /// <see cref="ParserReadLimits.MaxFileSize"/> lowered to what is left of <see cref="MaxTotalSize"/>.
 /// </summary>
 internal sealed record ExternFileLimits

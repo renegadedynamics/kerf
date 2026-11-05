@@ -1,6 +1,6 @@
 // Port of: src/ModelingData/TKG2d/GTests/Geom2d_CurveEval_Test.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
@@ -9,7 +9,7 @@ namespace Kerf.Kernel.ModelingData.Tests;
 
 public class Geom2d_CurveEvalTest
 {
-    // OCCT.NET: OCCT builds the B-splines below with Geom2dAPI_PointsToBSpline, which isn't ported yet; the port's
+    // Kerf: OCCT builds the B-splines below with Geom2dAPI_PointsToBSpline, which isn't ported yet; the port's
     // tests use a cubic B-spline through the same kind of points, built from poles directly.
     private static BSplineCurve2D MakeBSpline(params Point2D[] thePoles)
     {
@@ -71,7 +71,7 @@ public class Geom2d_CurveEvalTest
     [Fact]
     public void BSplineCurve_EvalD1_ConsistentWithOldAPI()
     {
-        // OCCT.NET: built from poles (Geom2dAPI_PointsToBSpline not ported)
+        // Kerf: built from poles (Geom2dAPI_PointsToBSpline not ported)
         BSplineCurve2D aCurve = MakeBSpline(new Point2D(0.0, 0.0),
                                                  new Point2D(1.0, 2.0),
                                                  new Point2D(3.0, 1.0),
@@ -127,7 +127,7 @@ public class Geom2d_CurveEvalTest
     [Fact]
     public void BSplineCurve_EvalDN_InvalidN_Throws()
     {
-        // OCCT.NET: built from poles (Geom2dAPI_PointsToBSpline not ported)
+        // Kerf: built from poles (Geom2dAPI_PointsToBSpline not ported)
         BSplineCurve2D aCurve =
             MakeBSpline(new Point2D(0.0, 0.0), new Point2D(1.0, 1.0), new Point2D(2.0, 0.0));
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Offsets.Api;
 using Kerf.Engine.Offsets.MedialAxis;
@@ -6,7 +6,7 @@ using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.JoinKind;
 using static Kerf.Engine.Offsets.MedialAxis.MedialSide;
 using static Kerf.Topology.ShapeType;

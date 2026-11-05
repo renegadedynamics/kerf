@@ -1,11 +1,11 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Globalization;
 
 namespace Kerf.Engine.Fillets.Api;
@@ -15,7 +15,7 @@ namespace Kerf.Engine.Fillets.Api;
 /// (decision 1139): BRepFilletAPI_MakeFillet's options under OCCT's names, with OCCT's defaults.
 /// </summary>
 /// <remarks>
-/// An OCCT.NET addition, as <see cref="AlgoApiOptions"/> (decision 579): a struct with public fields, equatable
+/// An Kerf addition, as <see cref="AlgoApiOptions"/> (decision 579): a struct with public fields, equatable
 /// field by field (doubles as <c>double.Equals</c>). <c>new BRepFilletAPI_FilletOptions()</c> has OCCT's defaults
 /// (those of the MakeFillet constructor); <c>default</c> doesn't (all zero).
 /// </remarks>

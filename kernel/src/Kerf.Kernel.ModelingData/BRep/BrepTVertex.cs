@@ -2,18 +2,18 @@
 // Port of: src/ModelingData/TKBRep/BRep/BRep_TVertex.lxx
 // Port of: src/ModelingData/TKBRep/BRep/BRep_TVertex.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The geometry of a vertex: a 3D point, a tolerance and a list of point representations.</summary>
 /// <remarks>
-/// The setters and the list of representations are internal to OCCT.NET and throw
+/// The setters and the list of representations are internal to Kerf and throw
 /// <see cref="ImmutableObjectException"/> once the vertex is frozen. <see cref="PointRepresentations"/> is the public,
 /// read-only view of the list.
 /// </remarks>
@@ -98,7 +98,7 @@ internal class BrepTVertex : TVertex
         return _points;
     }
 
-    /// <summary>The point representations, as a new read-only list (OCCT.NET addition).</summary>
+    /// <summary>The point representations, as a new read-only list (Kerf addition).</summary>
     public IReadOnlyList<PointRepresentation> PointRepresentations() => ImmutableArrays.Own([.. View()._points]);
 
     /// <summary>A new vertex with the same point and tolerance, without representations.</summary>

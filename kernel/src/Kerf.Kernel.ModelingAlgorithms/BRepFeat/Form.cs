@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKFeat/BRepFeat/BRepFeat_Form.lxx
 // Port of: src/ModelingAlgorithms/TKFeat/BRepFeat/BRepFeat_Form.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Collections;
@@ -13,7 +13,7 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Features.PerfSelection;
 using static Kerf.Engine.Features.StatusError;
 using static Kerf.Engine.Features.Local.FeatureOperation;
@@ -68,7 +68,7 @@ internal abstract class Form : MakeShape
     private protected WorkingShapes? _work;
     private WorkingShapes? _finishedWork;
 
-    // OCCT.NET: OCCT's IsSame(sh, F) in the history, where sh may stand for the caller's F changed in place: OCCT
+    // Kerf: OCCT's IsSame(sh, F) in the history, where sh may stand for the caller's F changed in place: OCCT
     // changes F in place, keeping its identity, so what stands for it counts as F (decision 1052)
     private bool IsSameInHistory(in Shape sh, in Shape f) =>
         sh.IsSame(f) || (_finishedWork is not null && sh.IsSame(_finishedWork.Final(f)));
@@ -125,7 +125,7 @@ internal abstract class Form : MakeShape
     public StatusError CurrentStatusError() => _statusError;
 
     /// <summary>
-    /// OCCT.NET: starts the feature's working overlay (decision 1052, unit 10H5). OCCT's feature writes into the shapes
+    /// Kerf: starts the feature's working overlay (decision 1052, unit 10H5). OCCT's feature writes into the shapes
     /// it is given: the Booleans it runs are destructive (they raise tolerances and add pcurves in place) and the sweeps
     /// write into the profile. The feature works on the caller's shapes in a detached working overlay, which each of
     /// its public calls that runs the construction enters (<see cref="EnterWork"/>); the result, the history and the
@@ -146,7 +146,7 @@ internal abstract class Form : MakeShape
     }
 
     /// <summary>
-    /// OCCT.NET: ends the working overlay (decision 1052, unit 10H5): the result and the lists get new TShapes for the
+    /// Kerf: ends the working overlay (decision 1052, unit 10H5): the result and the lists get new TShapes for the
     /// caller's sub-shapes the feature changed; the history is keyed by the caller's shapes. Once per construction;
     /// called by every accessor of the result and the history.
     /// </summary>

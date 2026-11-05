@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeCustom/ShapeCustom.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeCustom/ShapeCustom.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Build;
@@ -10,7 +10,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -40,7 +40,7 @@ internal static class Customize
         Shape result;
         try
         {
-            // OCCT.NET: the internal accessor, so the shapes recorded aren't frozen before the whole result is built
+            // Kerf: the internal accessor, so the shapes recorded aren't frozen before the whole result is built
             // (decision 973)
             result = modifier.InternalModifiedShape(shape);
         }
@@ -188,7 +188,7 @@ internal static class Customize
             return s;
         }
 
-        // OCCT.NET: the internal accessor; the result is frozen at the publication point (decision 973)
+        // Kerf: the internal accessor; the result is frozen at the publication point (decision 973)
         Shape result = md.InternalModifiedShape(sf);
         result.Orient(s.Orientation);
 

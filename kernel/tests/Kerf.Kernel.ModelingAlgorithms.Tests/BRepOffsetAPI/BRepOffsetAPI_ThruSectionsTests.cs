@@ -1,5 +1,5 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
-// Port of: src/ModelingAlgorithms/TKTopAlgo/GTests/BRepOffsetAPI_ThruSections_Test.cxx (OCCT V8_0_1), with OCCT.NET's
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Port of: src/ModelingAlgorithms/TKTopAlgo/GTests/BRepOffsetAPI_ThruSections_Test.cxx (OCCT V8_0_1), with Kerf's
 // checks of frozen inputs, the history, BRepFill_Generator and BRepProj_Projection added.
 
 using Kerf.Engine.Approximation;
@@ -388,7 +388,7 @@ public class BRepOffsetAPI_ThruSectionsTests
         Assert.Equal(18.1614, Area(aThruSect.Shape()), 0.01);
     }
 
-    // ---- OCCT.NET: frozen inputs, the history ----
+    // ---- Kerf: frozen inputs, the history ----
 
     [Theory]
     [InlineData(false, true)]

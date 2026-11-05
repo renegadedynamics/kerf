@@ -207,7 +207,7 @@ public static class FeatureOperations
     {
         ArgumentNullException.ThrowIfNull(edges);
         MakerOutcome.NotNull(shape, nameof(shape));
-        var sequence = new Occt.NCollection_Sequence<Shape>();
+        var sequence = new Kerf.Engine.NCollection_Sequence<Shape>();
         foreach (Edge edge in edges)
         {
             MakerOutcome.NotNull(edge, nameof(edges));

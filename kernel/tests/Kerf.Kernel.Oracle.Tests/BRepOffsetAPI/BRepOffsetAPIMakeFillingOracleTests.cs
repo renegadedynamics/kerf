@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Plate;
@@ -380,7 +380,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             Assert.True(BrepTools.Read(out Shape aNP, aFile));
             File.Delete(aFile);
             CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aNP, aPRes, new CanonicalOptions { CheckValidity = false });
-            if (Environment.GetEnvironmentVariable("OCCTNET_FILL_DUMP") is string aDump)
+            if (Environment.GetEnvironmentVariable("KERF_FILL_DUMP") is string aDump)
             {
                 Directory.CreateDirectory(aDump);
                 File.WriteAllText(Path.Combine(aDump, $"{myBuilds}_native.brep"), aNT);

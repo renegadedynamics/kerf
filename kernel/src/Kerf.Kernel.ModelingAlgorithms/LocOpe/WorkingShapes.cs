@@ -1,12 +1,12 @@
-// OCCT.NET: the working overlay of LocOpe's local operations and BRepFeat's features (units 7H, 10H5), which write into
+// Kerf: the working overlay of LocOpe's local operations and BRepFeat's features (units 7H, 10H5), which write into
 // the shapes they are given (point representations added to vertices, pcurves to edges, tolerances raised,
 // continuities set). Not a port of an OCCT file.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Topology.Tools;
 
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Features.Local;
 

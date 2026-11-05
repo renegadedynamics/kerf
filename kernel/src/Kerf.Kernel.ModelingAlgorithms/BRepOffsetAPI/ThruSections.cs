@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_ThruSections.hxx
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_ThruSections.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Classification;
@@ -17,7 +17,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Engine.Construction.Filling.ThruSectionErrorStatus;
 using static Kerf.Geometry.Continuity;
@@ -51,7 +51,7 @@ internal class ThruSections : MakeShape
 {
     private readonly NCollection_List<Shape> _inputWires = new(); //!< List of input wires
     private NCollection_Sequence<Shape> _wires = new();           //!< Working wires
-    private readonly NCollection_Sequence<Shape> _sections = new(); // OCCT.NET: the sections as added
+    private readonly NCollection_Sequence<Shape> _sections = new(); // Kerf: the sections as added
     private readonly Dictionary<Shape, NCollection_List<int>> _edgeNewIndices = new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, int> _vertexIndex = new(ShapeHasher.Instance);
     private int _nbEdgesInSection;
@@ -1602,7 +1602,7 @@ internal class ThruSections : MakeShape
                 firstEdgeInFace = explo.Current();
                 Vertex[] vv = new Vertex[2];
                 Exploration.Vertices(firstEdge, out vv[0], out vv[1]);
-                vv[0] = ShapeCasts.Vertex(Final(vv[0])); // OCCT.NET: a section's edge may be outside the result
+                vv[0] = ShapeCasts.Vertex(Final(vv[0])); // Kerf: a section's edge may be outside the result
                 vv[1] = ShapeCasts.Vertex(Final(vv[1]));
                 if (vindex == 0)
                 {

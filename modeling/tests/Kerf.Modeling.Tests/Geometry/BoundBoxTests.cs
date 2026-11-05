@@ -1,9 +1,8 @@
 // Ported from build123d tests/test_direct_api/test_bound_box.py. Boxes of shapes follow with the
 // topology port; here boxes are built from their corners, as the Python predicate tests do.
 
-namespace Build123d.Tests.Geometry;
+namespace Kerf.Modeling.Tests.Geometry;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class BoundBoxTests

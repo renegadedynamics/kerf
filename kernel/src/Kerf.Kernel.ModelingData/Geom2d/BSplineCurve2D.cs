@@ -2,14 +2,14 @@
 // Port of: src/ModelingData/TKG2d/Geom2d/Geom2d_BSplineCurve.cxx
 // Port of: src/ModelingData/TKG2d/Geom2d/Geom2d_BSplineCurve_1.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.BSplKnotDistribution;
 using static Kerf.Geometry.Continuity;
 
@@ -2082,7 +2082,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     /// </summary>
     internal void Resolution(double toleranceUV, out double uTolerance)
     {
-        // OCCT.NET: a cache filled on a possibly shared curve; the flag is published after the value.
+        // Kerf: a cache filled on a possibly shared curve; the flag is published after the value.
         if (!Volatile.Read(ref _maxDerivInvOk))
         {
             double maxDerivInv;
@@ -2127,7 +2127,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
         uTolerance = toleranceUV * _maxDerivInv;
     }
 
-    // Non-mutating twins of the mutators (OCCT.NET)
+    // Non-mutating twins of the mutators (Kerf)
 
     /// <summary>A copy with its degree raised to Degree.</summary>
     public BSplineCurve2D DegreeIncreased(int degree)

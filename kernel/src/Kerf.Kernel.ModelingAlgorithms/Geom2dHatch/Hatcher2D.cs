@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKGeomAlgo/Geom2dHatch/Geom2dHatch_Hatcher.lxx
 // Port of: src/ModelingAlgorithms/TKGeomAlgo/Geom2dHatch/Geom2dHatch_Hatcher.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy;
 using Kerf.Engine.Foundation;
@@ -10,7 +10,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Classification.Hatching.HatchingErrorStatus;
 using static Kerf.Engine.Classification.Hatching.IntersectionType;
 using static Kerf.Engine.Intersection.TwoD.Position2D;
@@ -1620,7 +1620,7 @@ internal class Hatcher2D
         return domain;
     }
 
-    /// <summary>The <paramref name="iDom"/>-th domain of the <paramref name="indH"/>-th hatching, for writing (OCCT.NET:
+    /// <summary>The <paramref name="iDom"/>-th domain of the <paramref name="indH"/>-th hatching, for writing (Kerf:
     /// ChFi3d_Builder_SpKP's <c>Tri</c> casts the constness of <see cref="Domain"/> away and edits it in place).</summary>
     internal ref HatchingDomain ChangeDomain(int indH, int iDom)
     {

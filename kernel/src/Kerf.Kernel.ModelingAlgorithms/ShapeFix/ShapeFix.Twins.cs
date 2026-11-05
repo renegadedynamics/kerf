@@ -1,6 +1,6 @@
-// OCCT.NET: the functional twins of ShapeFix's in-place statics (docs/phase5-6-plan.md, section 2.7; decision 583),
+// Kerf: the functional twins of ShapeFix's in-place statics (docs/phase5-6-plan.md, section 2.7; decision 583),
 // on the working overlay since Kerf unit 10H4. Not a port of an OCCT file.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Build;
@@ -8,7 +8,7 @@ using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Healing.Fixes;
 

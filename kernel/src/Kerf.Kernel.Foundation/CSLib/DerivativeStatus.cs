@@ -1,12 +1,11 @@
 // Port of: src/FoundationClasses/TKMath/CSLib/CSLib_DerivativeStatus.hxx
 
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Geometry;
 
 /// <summary>The result of computing a surface normal from the first derivatives D1U and D1V.</summary>
-/// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.CSLib_DerivativeStatus;</c>.</remarks>
 internal enum DerivativeStatus
 {
     /// <summary>Normal computed successfully.</summary>

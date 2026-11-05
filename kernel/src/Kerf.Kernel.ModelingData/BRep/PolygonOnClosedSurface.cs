@@ -1,13 +1,13 @@
 // Port of: src/ModelingData/TKBRep/BRep/BRep_PolygonOnClosedSurface.hxx
 // Port of: src/ModelingData/TKBRep/BRep/BRep_PolygonOnClosedSurface.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Meshing;
 
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Topology.Brep;
 
@@ -20,7 +20,7 @@ internal class PolygonOnClosedSurface : PolygonOnSurface
     public PolygonOnClosedSurface(Polygon2D? p1, Polygon2D? p2, Surface? s, in Placement l)
         : base(p1, s, l)
     {
-        p2?.Freeze(); // OCCT.NET: attached meshes are frozen
+        p2?.Freeze(); // Kerf: attached meshes are frozen
         _polygon2 = p2;
     }
 
@@ -32,7 +32,7 @@ internal class PolygonOnClosedSurface : PolygonOnSurface
     internal override void Polygon2(Polygon2D? p)
     {
         CheckMutable();
-        p?.Freeze(); // OCCT.NET: attached meshes are frozen
+        p?.Freeze(); // Kerf: attached meshes are frozen
         _polygon2 = p;
     }
 

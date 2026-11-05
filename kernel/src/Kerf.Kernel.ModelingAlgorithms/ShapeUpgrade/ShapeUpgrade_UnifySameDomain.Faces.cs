@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeUpgrade/ShapeUpgrade_UnifySameDomain.cxx (the file-static
 // functions of the unification of faces; the class is in ShapeUpgrade_UnifySameDomain.cs)
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2012-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
@@ -17,7 +17,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using DataMapOfFacePlane = System.Collections.Generic.Dictionary<Kerf.Topology.Shape, Kerf.Geometry.PlaneSurface>;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
@@ -1480,7 +1480,7 @@ internal partial class UnifySameDomain
         return false;
     }
 
-    // OCCT.NET: frozen. Puts theNew in the place of theOld in every face and every edge's curve on surface reachable
+    // Kerf: frozen. Puts theNew in the place of theOld in every face and every edge's curve on surface reachable
     // from theRoots, keeping the representations' order, ranges, UV points and continuities: what OCCT's in-place edit
     // of theOld does to those shapes (IntUnifyFaces' periodic B-spline surface).
     private static void ReplaceSurface(Surface old, Surface theNew, IEnumerable<Shape> roots)

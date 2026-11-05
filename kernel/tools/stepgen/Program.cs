@@ -1,6 +1,6 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
-// tools/stepgen: generates OCCT.NET's STEP entity classes and their readers and writers from OCCT 8's own C++
+// tools/stepgen: generates Kerf's STEP entity classes and their readers and writers from OCCT 8's own C++
 // (phase8-plan.md 2.1, decision 1166), by translating each class's header and source to C# by
 // docs/translation-rules.md (decisions 1208 to 12610).
 //

@@ -1,13 +1,13 @@
 // Port of: src/FoundationClasses/TKMath/gp/gp_Elips2d.hxx
 // Port of: src/FoundationClasses/TKMath/gp/gp_Elips2d.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Geometry;
 
@@ -342,5 +342,5 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
 
     public static bool operator !=(in Ellipse2D left, in Ellipse2D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Elips2d({_pos}, major {_majorRadius}, minor {_minorRadius})";
+    public override readonly string ToString() => $"Ellipse2D({_pos}, major {_majorRadius}, minor {_minorRadius})";
 }

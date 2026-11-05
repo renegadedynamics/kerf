@@ -1,13 +1,13 @@
 // Port of: src/ModelingData/TKBRep/TopoDS/TopoDS_Shape.hxx
 // Port of: src/ModelingData/TKBRep/TopoDS/TopoDS_Shape.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1990-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Runtime.CompilerServices;
 
 namespace Kerf.Topology;
@@ -21,7 +21,7 @@ namespace Kerf.Topology;
 /// <para>
 /// A value, as in OCCT: copying a shape copies its three fields, and the copies share the TShape. The forms that
 /// return a changed shape (<see cref="Located"/>, <see cref="Oriented"/>, <see cref="Moved"/>, <see cref="Reversed"/>,
-/// <see cref="Complemented"/>, <see cref="Composed"/>) are public; the in-place forms are internal to OCCT.NET.
+/// <see cref="Complemented"/>, <see cref="Composed"/>) are public; the in-place forms are internal to Kerf.
 /// </para>
 /// <para>
 /// Equality is OCCT's <see cref="IsEqual"/>: the same TShape (by reference), the same location (by the identity of

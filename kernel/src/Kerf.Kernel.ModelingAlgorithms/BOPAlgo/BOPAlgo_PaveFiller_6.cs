@@ -1,6 +1,6 @@
 // Port of: src/ModelingAlgorithms/TKBO/BOPAlgo/BOPAlgo_PaveFiller_6.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
@@ -20,7 +20,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Runtime.InteropServices;
 using static Kerf.Booleans.GlueMode;
 using static Kerf.Geometry.CurveKind;
@@ -1012,7 +1012,7 @@ internal partial class PaveFiller
                 //
                 Vertex v = ShapeCasts.Vertex(_ds.Shape(nV1));
                 BrepTVertex tv = (BrepTVertex)v.TShape()!;
-                // OCCT.NET: frozen. OCCT writes the saved tolerance back also when it is the vertex's own (a vertex
+                // Kerf: frozen. OCCT writes the saved tolerance back also when it is the vertex's own (a vertex
                 // only used as an existing pave keeps its tolerance): a no-op, which on a frozen argument vertex would
                 // throw, so it is skipped. A different value is written as OCCT writes it (decision 875).
                 if (tv.Tolerance() != tol)
@@ -2437,7 +2437,7 @@ internal partial class PaveFiller
                     Vertex v = ShapeCasts.Vertex(_ds!.Shape(nV));
                     double realTol = Max(pTol, Math.Sqrt(maxDistKept) + global::Kerf.Engine.Foundation.Precision.Confusion());
                     // OCCT writes the tolerance into the vertex's TShape directly (a frozen vertex throws).
-                    // OCCT.NET: an identical write is skipped, as in MakeBlocks (unit 6G).
+                    // Kerf: an identical write is skipped, as in MakeBlocks (unit 6G).
                     if (((BrepTVertex)v.TShape()!).Tolerance() != realTol)
                     {
                         ((BrepTVertex)v.TShape()!).Tolerance(realTol);

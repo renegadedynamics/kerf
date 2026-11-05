@@ -12,9 +12,8 @@
 // - TestSweep.test_return_is_cleaned_inside_a_builder's builder half.
 using static Kerf.Modeling.Operations;
 
-namespace Build123d.Tests.Operations;
+namespace Kerf.Modeling.Tests.Operations;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class OperationsGenericTests

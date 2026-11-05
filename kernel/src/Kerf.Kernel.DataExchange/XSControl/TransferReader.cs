@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKXSBase/XSControl/XSControl_TransferReader.hxx
 // Port of: src/DataExchange/TKXSBase/XSControl/XSControl_TransferReader.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -14,7 +14,7 @@ using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Exchange.Framework.Selection.PrintCount;
 
 using static Kerf.Engine.Exchange.Framework.FrameworkCheckStatus;
@@ -245,7 +245,7 @@ internal class TransferReader : Transient
     /// Sets a new value for (loaded) file name
     /// </summary>
     /// <summary>
-    /// The parameter set the reader reads its statics from (OCCT.NET: OCCT's process-wide statics, decision
+    /// The parameter set the reader reads its statics from (Kerf: OCCT's process-wide statics, decision
     /// 1181); set by its work session.
     /// </summary>
     public StaticSet? Statics()
@@ -253,13 +253,13 @@ internal class TransferReader : Transient
         return _statics;
     }
 
-    /// <summary>Sets the parameter set the reader reads its statics from (OCCT.NET).</summary>
+    /// <summary>Sets the parameter set the reader reads its statics from (Kerf).</summary>
     public void SetStatics(StaticSet? statics)
     {
         _statics = statics;
     }
 
-    // C++'s assignment of a map: theTarget becomes a copy of theSource (OCCT.NET).
+    // C++'s assignment of a map: theTarget becomes a copy of theSource (Kerf).
     internal static void AssignContext(Dictionary<string, Transient> target,
                                        Dictionary<string, Transient> source)
     {
@@ -619,7 +619,7 @@ internal class TransferReader : Transient
         Shape sh = xu.BinderShape(mres.Binder());
 
         //   Ooh the ugly wart
-        // OCCT.NET: the static is the reader's parameter set's (OCCT: the process-wide one; without a set, its
+        // Kerf: the static is the reader's parameter set's (OCCT: the process-wide one; without a set, its
         // default 0.01); OCCT encodes the regularity into the recorded shape itself (ShapeFix::EncodeRegularity), as
         // the port does into a reader's working shape (unfrozen: STEPControl_ActorRead's, decision 1273), so that
         // results sharing it keep sharing it; a shape holding frozen shapes is encoded into a copy (BRepLib's
@@ -639,7 +639,7 @@ internal class TransferReader : Transient
             sh = BrepLibrary.RegularityEncoded(sh, tolang);
             return sh;
         }
-        // OCCT.NET (unit 8G2): an unfrozen shape holding frozen ones (an assembly whose parts were published before):
+        // Kerf (unit 8G2): an unfrozen shape holding frozen ones (an assembly whose parts were published before):
         // encoded in place into its unfrozen parts, the frozen ones (results encoded when published) kept, so that the
         // shape keeps sharing its parts with the results of their entities (a copy broke STEPCAFControl_Reader's
         // search of the parts in the assembly: occt-issues.md, unit 8G2)

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Collections;
@@ -19,8 +19,8 @@ namespace Kerf.Kernel.Oracle.Tests;
 
 /// <summary>
 /// The differential run (phase 9, unit 9D2; phase9-plan.md section 2.3): build123d.NET's whole test suite, run with its
-/// shape log on (<c>BUILD123D_SHAPE_LOG</c>), logs in BRep text every new shape a build123d <c>Shape</c> wraps, test by
-/// test and in order. This compares OCCT.NET's log with native OCCT's, entry by entry, as BRep text, then with the Free
+/// shape log on (<c>KERF_SHAPE_LOG</c>), logs in BRep text every new shape a build123d <c>Shape</c> wraps, test by
+/// test and in order. This compares Kerf's log with native OCCT's, entry by entry, as BRep text, then with the Free
 /// and the Checked flags masked, then canonically (<see cref="CanonicalShapeComparer"/>). The first divergence of a test
 /// is reported: later ones usually follow from it. Retired in unit 10Q: the script that ran the suite and the log it read went, as the layer has no wrappers to log, so this test checks the recording.
 /// </summary>
@@ -28,8 +28,8 @@ namespace Kerf.Kernel.Oracle.Tests;
 /// Native's log is recorded (unit 10A, decision 1338): <c>Recordings/Build123dDifferential.native.gz</c> keeps, for each
 /// test, each native entry's header, the digests of its BRep text (as is, with the Free flag masked, with the Free and
 /// Checked flags masked) and its properties (sub-shape counts, volume, area, bounding box), plus its full text where
-/// OCCT.NET's entry wasn't the same under the masks when it was recorded; and where native's own runs differed from each
-/// other. OCCT.NET's log is read from the folder <c>B3D_DIFF_LOGS</c> names (its <c>occtnet</c> folder); without it the
+/// Kerf's entry wasn't the same under the masks when it was recorded; and where native's own runs differed from each
+/// other. Kerf's log is read from the folder <c>B3D_DIFF_LOGS</c> names (its <c>occtnet</c> folder); without it the
 /// test checks the recording and compares nothing. The recording was made from six native runs, and is frozen since
 /// native OCCT went (unit 10B). A report and the texts of each first divergence are written to the folder's
 /// <c>report</c> folder.
@@ -41,7 +41,7 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
     [
         ("IntroductoryExamplesTests.MatchesNative",
          "decisions 468 and 1102: Extrude(both) fuses a face's two prisms; native's share the sketch's face, into which both "
-         + "sweeps write pcurves, OCCT.NET's each hold a changed copy of the caller's frozen face, so the fuse meets two faces "
+         + "sweeps write pcurves, Kerf's each hold a changed copy of the caller's frozen face, so the fuse meets two faces "
          + "where native meets one (decision 1306)"),
         ("MalformedInputTests.MutatedBRepReadsOrFailsCleanly",
          "the test mutates the BRep text of its sources at random, one of them a fillet's result that is native's canonically "
@@ -50,14 +50,14 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
         ("ExchangeTests.StepOfSeveralShapesIsACompound", StepRead),
         ("ExchangeTests.StepKeepsLabelsColoursAndAssembliesOnOcctNetOnly", StepRead),
         ("StepNativeTests.WritesAsNative",
-         "the theory's compound row returns at once on OCCT.NET (#if OCCTNET), so its rows' shapes, logged under one name, "
+         "the theory's compound row returns at once on Kerf (#if OCCTNET), so its rows' shapes, logged under one name, "
          + "don't line up (decision 1306)"),
         ("InputsUnchangedTests.NoParameterlessMemberChangesItsShape",
          "Triangulate and TriangulateTree on a wire threw on both backends until unit 10B, whose binding wrapped the meshed "
-         + "copy as a plain TopoDS_Shape that Wire.Edges couldn't cast to TopoDS_Wire; on OCCT.NET's structs they work, so "
+         + "copy as a plain TopoDS_Shape that Wire.Edges couldn't cast to TopoDS_Wire; on Kerf's structs they work, so "
          + "they log the copy's edges native never reached (decision 1345)"),
         ("Fillet2DTests.FilletRecord",
-         "the test fails on OCCT.NET at its first assertion, as before (build123d.NET's design.md: the 2D fillet's history "
+         "the test fails on Kerf at its first assertion, as before (build123d.NET's design.md: the 2D fillet's history "
          + "has two shapes for a vertex native modifies in place), so it logs 9 shapes, all native's, to native's 103 "
          + "(decision 1306)"),
         ("OffsetOrientationTests.OffsetBoxBothWaysAndKinds",
@@ -67,11 +67,11 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
     ];
 
     private const string StepRead =
-        "STEP is read through the assembly tree on OCCT.NET and shape-only natively (decision 1296: the native backend has no "
+        "STEP is read through the assembly tree on Kerf and shape-only natively (decision 1296: the native backend has no "
         + "XCAF), so build123d.NET's importer wraps other shapes on its way; the shapes read are native's (StepNativeTests "
         + "compares their BRep text) (decision 1306)";
 
-    /// <summary>A log entry: OCCT.NET's as logged, native's as recorded (digests, properties, and its text where kept).</summary>
+    /// <summary>A log entry: Kerf's as logged, native's as recorded (digests, properties, and its text where kept).</summary>
     private sealed record Entry(string Header, string Op, string? Text, string? Points, string Hash = "", string FreeHash = "",
                                 string CheckedHash = "", string Properties = "")
     {
@@ -100,7 +100,7 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
             return;
         }
         string aPort = Path.Combine(aRoot, "occtnet");
-        Assert.True(Directory.Exists(aPort), $"{aRoot} needs occtnet, OCCT.NET's log");
+        Assert.True(Directory.Exists(aPort), $"{aRoot} needs occtnet, Kerf's log");
         string aReportDir = Path.Combine(aRoot, "report");
         Directory.CreateDirectory(aReportDir);
 
@@ -124,7 +124,7 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
             if (aN.Count == 0 || aP.Count == 0)
             {
                 // a test of one backend only (#if OCCTNET, NativeFact), or one that logs nothing on the other
-                anOneSide.Add($"{aTest}: {aN.Count} shapes native, {aP.Count} OCCT.NET");
+                anOneSide.Add($"{aTest}: {aN.Count} shapes native, {aP.Count} Kerf");
                 continue;
             }
             int aNativeAt = aNT!.NativeAt;
@@ -180,7 +180,7 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
 
         var aSummary = new StringBuilder();
         aSummary.Append(CultureInfo.InvariantCulture,
-            $"{aTests.Count} tests; {aLogged} shapes logged by native (recorded), {aPortLogged} by OCCT.NET; {aCompared} compared before any divergence: ");
+            $"{aTests.Count} tests; {aLogged} shapes logged by native (recorded), {aPortLogged} by Kerf; {aCompared} compared before any divergence: ");
         aSummary.Append(CultureInfo.InvariantCulture,
             $"{aByKind.GetValueOrDefault(Kind.Identical)} byte-identical, {aByKind.GetValueOrDefault(Kind.FreeMasked)} with the Free flag masked, "
             + $"{aByKind.GetValueOrDefault(Kind.CheckedMasked)} with the Free and Checked flags masked, {aByKind.GetValueOrDefault(Kind.Canonical)} canonically identical, "
@@ -227,8 +227,8 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
         {
             if (i >= theNative.Count || i >= thePort.Count)
             {
-                theWhy = $"native logs {theNative.Count} shapes, OCCT.NET {thePort.Count}";
-                theDetail = $"  {(i < theNative.Count ? "native: " + theNative[i].Header : "OCCT.NET: " + thePort[i].Header)}";
+                theWhy = $"native logs {theNative.Count} shapes, Kerf {thePort.Count}";
+                theDetail = $"  {(i < theNative.Count ? "native: " + theNative[i].Header : "Kerf: " + thePort[i].Header)}";
                 return i;
             }
             Kind aKind = Compare(theNative[i], thePort[i], theKinds is not null, out string aDetail);
@@ -252,7 +252,7 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
         theDetail = "";
         if (theNative.Header != thePort.Header && HeaderShape(theNative.Header) != HeaderShape(thePort.Header))
         {
-            theDetail = $"  native {theNative.Header}\n  OCCT.NET {thePort.Header}";
+            theDetail = $"  native {theNative.Header}\n  Kerf {thePort.Header}";
             // the class or type differ: still compared below, for the report
         }
         if (theNative.Hash == thePort.Hash)
@@ -275,7 +275,7 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
         {
             // byte-identical (under the masks) when recorded, so native's text wasn't kept: its properties say how far
             theDetail += $"\n  the same as native's under the masks when recorded, now not; native {theNative.Properties}, "
-                         + $"OCCT.NET {Properties(thePort.Text!)}";
+                         + $"Kerf {Properties(thePort.Text!)}";
             return Kind.Different;
         }
         BRepTextDiff aDiff = BRepTextComparison.Compare(aNText, thePort.Text!);

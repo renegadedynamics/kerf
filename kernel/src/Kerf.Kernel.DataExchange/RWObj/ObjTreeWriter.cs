@@ -1,14 +1,14 @@
-// New in OCCT.NET (unit 8T): Wavefront OBJ written fresh over the assembly tree (decisions 1166, 1234). Not a port of
+// New in Kerf (unit 8T): Wavefront OBJ written fresh over the assembly tree (decisions 1166, 1234). Not a port of
 // OCCT's RWObj_CafWriter, which needs XCAF; its conventions are kept where they show: a group per placed part named by
 // its path, MTL diffuse colours in sRGB, transparency as "Tr".
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Exchange.Mesh;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing.Tools;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using System.Globalization;
 using System.Text;
 
@@ -80,7 +80,7 @@ internal sealed class ObjTreeWriter
         var materials = new List<ColorWithAlpha>();
         var materialIndex = new Dictionary<ColorWithAlpha, int>();
         var anObj = new StringBuilder();
-        anObj.Append("# OCCT.NET\n");
+        anObj.Append("# Kerf\n");
         if (mtl is not null)
         {
             anObj.Append("mtllib ").Append(mtlName).Append('\n');
@@ -193,7 +193,7 @@ internal sealed class ObjTreeWriter
             obj.Flush();
             if (mtl is not null)
             {
-                var aMtl = new StringBuilder("# OCCT.NET\n");
+                var aMtl = new StringBuilder("# Kerf\n");
                 for (int i = 0; i < materials.Count; i++)
                 {
                     LinearColor rgb = materials[i].GetRGB();

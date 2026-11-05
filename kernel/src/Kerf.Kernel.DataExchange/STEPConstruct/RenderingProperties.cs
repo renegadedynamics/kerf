@@ -1,13 +1,13 @@
 // Port of: src/DataExchange/TKDESTEP/STEPConstruct/STEPConstruct_RenderingProperties.hxx
 // Port of: src/DataExchange/TKDESTEP/STEPConstruct/STEPConstruct_RenderingProperties.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
 using Kerf.Engine.Exchange.Step.Visual;
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Foundation.NameOfColor;
 using static Kerf.Engine.Exchange.Step.Visual.ShadingSurfaceMethod;
 
@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Step.Construct;
 /// </summary>
 /// <remarks>
 /// A C++ value class, a C# class here (decision 1185): callers copy it with <see cref="Copy"/> where C++ copies it.
-/// OCCT.NET: the constructors and <c>Init</c>s from XCAF's visualisation materials (<c>XCAFDoc_VisMaterial</c>,
+/// Kerf: the constructors and <c>Init</c>s from XCAF's visualisation materials (<c>XCAFDoc_VisMaterial</c>,
 /// <c>XCAFDoc_VisMaterialCommon</c>) and <c>CreateXCAFMaterial</c> are left out with the materials (decision 1276).
 /// </remarks>
 internal class RenderingProperties

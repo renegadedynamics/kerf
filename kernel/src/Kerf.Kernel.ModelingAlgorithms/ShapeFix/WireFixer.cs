@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Wire.lxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Wire.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
@@ -20,7 +20,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
@@ -2255,7 +2255,7 @@ internal partial class WireFixer : RootFixer
     private static int HowMuchPCurves(in Edge e)
     {
         int count = 0;
-        // OCCT.NET: frozen: the list is only read (OCCT walks ChangeCurves())
+        // Kerf: frozen: the list is only read (OCCT walks ChangeCurves())
         var itcr = new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)e.TShape()!).Curves());
 
         while (itcr.More())
@@ -3482,7 +3482,7 @@ internal partial class WireFixer : RootFixer
                 {
                     return false;
                 }
-                // OCCT.NET: frozen: the poles are moved and the curve segmented in place; a copy above in OCCT too,
+                // Kerf: frozen: the poles are moved and the curve segmented in place; a copy above in OCCT too,
                 // but guard against a converter that hands back a shared curve
                 if (bs.IsFrozen)
                 {
@@ -4021,7 +4021,7 @@ internal partial class WireFixer : RootFixer
     {
         Placement fromLoc = fromedge.Placement;
         Placement toLoc   = toedge.Placement;
-        // OCCT.NET: frozen: the source edge's list is only read (OCCT walks ChangeCurves())
+        // Kerf: frozen: the source edge's list is only read (OCCT walks ChangeCurves())
         for (var fromitcr = new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)fromedge.TShape()!).Curves());
              fromitcr.More();
              fromitcr.Next())
@@ -4208,7 +4208,7 @@ internal partial class WireFixer : RootFixer
                 eParts[k, 0] = new Edge();
                 eParts[k, 1] = new Edge();
             }
-            // OCCT.NET: frozen: the internal form leaves the cut parts unfrozen, since they go into the working wire
+            // Kerf: frozen: the internal form leaves the cut parts unfrozen, since they go into the working wire
             if (!_analyzer.InternalCheckTail(es[0],
                                               es[1],
                                               checkAngle ? _maxTailAngleSine : -1,

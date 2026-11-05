@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
@@ -183,7 +183,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         }
 
         theOracle.Same(aN.Value(), aP.Value(), aWhat + " Value");
-        if (Environment.GetEnvironmentVariable("OCCTNET_DEBUG") == "1")
+        if (Environment.GetEnvironmentVariable("KERF_DEBUG") == "1")
         {
             output.WriteLine($"{aWhat}: value {aN.Value():R} / {aP.Value():R}");
             for (int i = 1; i <= aP.SolutionCount; i++)

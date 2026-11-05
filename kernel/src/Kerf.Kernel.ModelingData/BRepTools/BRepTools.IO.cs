@@ -1,13 +1,13 @@
 // Port of: src/ModelingData/TKBRep/BRepTools/BRepTools.hxx
 // Port of: src/ModelingData/TKBRep/BRepTools/BRepTools.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Text;
 
 namespace Kerf.Engine.Topology.Tools;
@@ -86,7 +86,7 @@ internal static partial class BrepTools
         }
         catch (Exception exception) when (ShapeSet.IsSignal(exception))
         {
-            // OCCT.NET: untrusted input
+            // Kerf: untrusted input
             throw new StreamFormatErrorException("BRepTools::Read: " + Refusal.Unwrapped(exception).Message, exception);
         }
     }

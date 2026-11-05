@@ -1,6 +1,6 @@
 // Port of: src/ModelingAlgorithms/TKOffset/Draft/Draft_Modification_1.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Collections;
@@ -19,7 +19,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Engine.Features.Draft.DraftErrorStatus;
 using static Kerf.Geometry.Continuity;
@@ -1048,7 +1048,7 @@ internal sealed partial class DraftModification
                             } // if (i2s.Line(1)->DynamicType() != STANDARD_TYPE(Geom_BSplineCurve))
                             else // i2s.Line(1) is BSplineCurve
                             {
-                                // OCCT.NET: OCCT reverses the intersection's own curves in place and compares them
+                                // Kerf: OCCT reverses the intersection's own curves in place and compares them
                                 // by handle; the port's are frozen, so this branch works on unfrozen copies of them,
                                 // made once (the same handles throughout).
                                 NCollection_Array1<Curve3D> lines = new(1, i2s.LineCount);
@@ -2247,7 +2247,7 @@ internal sealed partial class DraftModification
 
     //=================================================================================================
 
-    // OCCT.NET: OCCT reverses curves in place (the intersection's curves, its pcurves, the curves kept for an edge);
+    // Kerf: OCCT reverses curves in place (the intersection's curves, its pcurves, the curves kept for an edge);
     // a frozen one (the intersection's are) is reversed on a copy, which takes its place.
     private static void Reverse(ref Curve3D? curve)
     {

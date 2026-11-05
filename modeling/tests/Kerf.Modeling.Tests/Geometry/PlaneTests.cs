@@ -3,9 +3,8 @@
 // plane; the port's WithOrigin/WithXDir/WithYDir and Moved return new planes.
 using Kerf.Geometry;
 
-namespace Build123d.Tests.Geometry;
+namespace Kerf.Modeling.Tests.Geometry;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class PlaneTests

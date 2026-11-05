@@ -1,15 +1,15 @@
 // Port of: src/ModelingAlgorithms/TKHLR/HLRAlgo/HLRAlgo_PolyMask.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.HiddenLines.Algorithm;
 
 /// <summary>The bit masks of the triangles' and edges' flags of the polygonal hidden-line removal.</summary>
 /// <remarks>
 /// OCCT's unscoped enum is only ever combined with the integer flags (<c>Flags &amp; HLRAlgo_PolyMask_FMskBack</c>), so
-/// the port makes its members integer constants; code that writes <c>using static Occt.HLRAlgo_PolyMask;</c> reads as
+/// the port makes its members integer constants; code that writes <c>using static Kerf.Engine.HLRAlgo_PolyMask;</c> reads as
 /// the C++ does (decision 1079).
 /// </remarks>
 internal static class PolyMask

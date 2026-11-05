@@ -2,14 +2,14 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeAnalysis/ShapeAnalysis_Surface.lxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeAnalysis/ShapeAnalysis_Surface.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.IsoType;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
@@ -632,7 +632,7 @@ internal class SurfaceAnalysis : Transient
             iso = null;
         }
 
-        iso?.Freeze(); // OCCT.NET: a curve handed out (and cached) is frozen
+        iso?.Freeze(); // Kerf: a curve handed out (and cached) is frozen
         return iso;
     }
 

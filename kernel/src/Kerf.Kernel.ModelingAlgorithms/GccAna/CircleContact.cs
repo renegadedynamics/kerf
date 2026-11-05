@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -159,7 +159,7 @@ internal readonly struct CircleContact
     /// and returns 0; returns 1 and writes nothing if the solution is the argument itself.
     /// </summary>
     public int Touch(int n, in Circle2D sol, Qualifier qualifier, double tolerance,
-                     Occt.NCollection_Array1<Point2D> pnt, Occt.NCollection_Array1<double> parSol, Occt.NCollection_Array1<double> parArg)
+                     Kerf.Engine.NCollection_Array1<Point2D> pnt, Kerf.Engine.NCollection_Array1<double> parSol, Kerf.Engine.NCollection_Array1<double> parArg)
     {
         if (IsSame(sol, tolerance))
         {

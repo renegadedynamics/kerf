@@ -1,10 +1,10 @@
 // Port of: src/ModelingData/TKG2d/Geom2d/Geom2d_AxisPlacement.hxx
 // Port of: src/ModelingData/TKG2d/Geom2d/Geom2d_AxisPlacement.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Geometry.Objects;
 
@@ -80,7 +80,7 @@ internal class AxisPlacement2 : Geometry2D
     /// <summary>The angle, in [-PI, PI], between the directions of this axis and Other.</summary>
     public double Angle(AxisPlacement2 other) => _axis.AngleTo(other.Ax2d());
 
-    // Non-mutating twins of the Set methods (OCCT.NET)
+    // Non-mutating twins of the Set methods (Kerf)
 
     public AxisPlacement2 WithAxis(in Axis2D a)
     {

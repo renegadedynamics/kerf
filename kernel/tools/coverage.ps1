@@ -5,7 +5,7 @@
 .DESCRIPTION
   Runs, each with Microsoft's code coverage (part of Microsoft.NET.Test.Sdk) writing Cobertura: the kernel's unit tests
   (Foundation, ModelingData, ModelingAlgorithms, DataExchange), the public API's tests, the Draw-lite tests in their default form (the corpus
-  classes sample their cases; OCCTNET_CORPUS_FULL isn't set) and the modeling layer's suite (Kerf.Modeling.Tests);
+  classes sample their cases; KERF_CORPUS_FULL isn't set) and the modeling layer's suite (Kerf.Modeling.Tests);
   with -WithOracle, the oracle tests too (replayed from their recordings). Then tools/coverage-report.cs merges them
   and writes the report: coverage per OCCT package (the folder under each kernel assembly) and per folder of the
   modeling layer, the packages under the floor listed with their reasons (docs/coverage-gaps.tsv); and
@@ -19,7 +19,7 @@
 .PARAMETER WithOracle
   Run the oracle tests too (they replay native OCCT's recorded side, decision 1336).
 .PARAMETER FullCorpus
-  Also run the Draw-lite corpus whole (OCCTNET_CORPUS_FULL=1, about 25 minutes uninstrumented), kept apart in
+  Also run the Draw-lite corpus whole (KERF_CORPUS_FULL=1, about 25 minutes uninstrumented), kept apart in
   <Results>-corpus: the report's gaps then show how far the corpus covers each package.
 .PARAMETER BuildArgs
   Extra build properties, e.g. OcctSourceDir and OcctTestDataDir where kernel/.deps lacks them.
@@ -57,7 +57,7 @@ foreach ($project in $projects) {
   Remove-Item -Recurse -Force $out -ErrorAction SilentlyContinue
   Write-Host "== $name"
   # the full corpus is slow: the Draw-lite tests run their default samples
-  Remove-Item Env:OCCTNET_CORPUS_FULL -ErrorAction SilentlyContinue
+  Remove-Item Env:KERF_CORPUS_FULL -ErrorAction SilentlyContinue
   dotnet test (Join-Path $root $project) -c Release @BuildArgs --collect 'Code Coverage;Format=cobertura' --results-directory $out
   if ($LASTEXITCODE) { Write-Warning "$name had failures: its coverage is still counted" }
 }
@@ -65,9 +65,9 @@ foreach ($project in $projects) {
 $corpus = "$Results-corpus"
 if ($FullCorpus) {
   Remove-Item -Recurse -Force $corpus -ErrorAction SilentlyContinue
-  $env:OCCTNET_CORPUS_FULL = '1'
+  $env:KERF_CORPUS_FULL = '1'
   dotnet test (Join-Path $root 'kernel/tests/Kerf.Kernel.DrawLite.Tests') -c Release @BuildArgs --filter 'FullyQualifiedName~DrawCorpusTests' --collect 'Code Coverage;Format=cobertura' --results-directory $corpus
-  Remove-Item Env:OCCTNET_CORPUS_FULL
+  Remove-Item Env:KERF_CORPUS_FULL
   if ($LASTEXITCODE) { Write-Warning "the whole corpus had failures: its coverage is still counted" }
 }
 dotnet run (Join-Path $kernel 'tools/coverage-report.cs') -- $Results $Report 80 $corpus

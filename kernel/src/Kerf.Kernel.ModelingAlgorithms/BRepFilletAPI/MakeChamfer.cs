@@ -1,14 +1,14 @@
 // Port of: src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeChamfer.hxx
 // Port of: src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeChamfer.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Data.ChamfMethod;
 using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
@@ -285,14 +285,14 @@ internal class MakeChamfer : LocalOperation
 
     /// <summary>
     /// OCCT's <c>TopOpeBRepBuild_HBuilder</c>, here the reconstruction's seam (decision 1137): internal, its type
-    /// being OCCT.NET's.
+    /// being Kerf's.
     /// </summary>
     internal Reconstruction Builder()
     {
         return _builder.Builder();
     }
 
-    /// <summary>The chamfer builder (OCCT.NET, for ported callers and tests).</summary>
+    /// <summary>The chamfer builder (Kerf, for ported callers and tests).</summary>
     internal ChBuilder InternalBuilder() => _builder;
 
     //=================================================================================================

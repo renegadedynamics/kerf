@@ -9,7 +9,7 @@ using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Geometry.Library;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Meshing.Tools;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Geometry;
 

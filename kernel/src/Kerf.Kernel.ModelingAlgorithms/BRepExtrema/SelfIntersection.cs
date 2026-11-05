@@ -1,13 +1,13 @@
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepExtrema/BRepExtrema_SelfIntersection.hxx
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepExtrema/BRepExtrema_SelfIntersection.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2014-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Occt;
-using BVH_Vec3d = Occt.NCollection_Vec3<double>;
+using Kerf.Engine;
+using BVH_Vec3d = Kerf.Engine.NCollection_Vec3<double>;
 using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Measurement.Distance;

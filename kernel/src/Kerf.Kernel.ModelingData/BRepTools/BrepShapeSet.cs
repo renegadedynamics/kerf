@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.hxx
 // Port of: src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
@@ -11,7 +11,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Globalization;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Topology.ShapeType;
@@ -197,7 +197,7 @@ internal class BrepShapeSet : ShapeSet
                         // Bin(Brep)Tools_ShapeSet::AddGeometry() is called from Bin(Brep)Tools_ShapeSet::Add()
                         // that processes shapes recursively from complex to elementary ones.
                         // As a result, the TopAbs_FACE's will be processed earlier than the TopAbs_EDGE's.
-                        // OCCT.NET: OCCT adds a null triangulation as a key, and crashes writing it
+                        // Kerf: OCCT adds a null triangulation as a key, and crashes writing it
                         _triangulations.Add(NotNull(cr.Triangulation()), false); // edge triangulation does not need normals
                         _nodes.Add(NotNull(cr.PolygonOnTriangulation()));
                         ChangeLocations().Add(cr.Location());
@@ -1008,7 +1008,7 @@ internal class BrepShapeSet : ShapeSet
                 {
                     global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(IS, out p1);
                     StreamUtilities.Read(IS, ref val);
-                    // OCCT.NET: untrusted input: OCCT loops for ever on a stream that has failed
+                    // Kerf: untrusted input: OCCT loops for ever on a stream that has failed
                     StreamUtilities.CheckNotFailed(IS, "BRepTools_ShapeSet::ReadGeometry");
 
                     PointRepresentation? pr = null;
@@ -1103,7 +1103,7 @@ internal class BrepShapeSet : ShapeSet
                 do
                 {
                     StreamUtilities.Read(IS, ref val);
-                    // OCCT.NET: untrusted input: OCCT loops for ever on a stream that has failed
+                    // Kerf: untrusted input: OCCT loops for ever on a stream that has failed
                     StreamUtilities.CheckNotFailed(IS, "BRepTools_ShapeSet::ReadGeometry");
                     switch (val)
                     {
@@ -1334,7 +1334,7 @@ internal class BrepShapeSet : ShapeSet
                 {
                     // only triangulation
                     StreamUtilities.Read(IS, ref s);
-                    // OCCT.NET: untrusted input: OCCT reads outside its map
+                    // Kerf: untrusted input: OCCT reads outside its map
                     if (s < 1 || s > _triangulations.Count)
                     {
                         throw new StreamFormatErrorException("BRepTools_ShapeSet::ReadGeometry: no triangulation "
@@ -1568,14 +1568,14 @@ internal class BrepShapeSet : ShapeSet
         double par;
         PolygonOnTriangulation poly;
         StreamUtilities.Read(IS, ref nbpol);
-        // OCCT.NET: untrusted input: a polygon takes at least 9 characters ("0 \np 0 0 \n")
+        // Kerf: untrusted input: a polygon takes at least 9 characters ("0 \np 0 0 \n")
         StreamUtilities.CheckCount(IS, Math.Max(nbpol, 0), 8, "polygons on triangulations");
         // OCC19559
         using var ps = new ProgressScope(progress, "Polygons On Triangulation", nbpol);
         for (i = 1; i <= nbpol && ps.More(); i++, ps.Next())
         {
             StreamUtilities.Read(IS, ref nbnodes);
-            // OCCT.NET: untrusted input: OCCT allocates for any count, and again for each polygon on a failed stream
+            // Kerf: untrusted input: OCCT allocates for any count, and again for each polygon on a failed stream
             StreamUtilities.CheckNotFailed(IS, "BRepTools_ShapeSet::ReadPolygonOnTriangulation");
             StreamUtilities.CheckCount(IS, nbnodes, 2, "polygon nodes");
             NCollection_Array1<int> nodes = new(1, nbnodes);
@@ -1770,7 +1770,7 @@ internal class BrepShapeSet : ShapeSet
 
         Polygon3D P;
         StreamUtilities.Read(IS, ref nbpol);
-        // OCCT.NET: untrusted input: a polygon takes at least 6 characters ("0 0\n0\n\n")
+        // Kerf: untrusted input: a polygon takes at least 6 characters ("0 0\n0\n\n")
         StreamUtilities.CheckCount(IS, Math.Max(nbpol, 0), 6, "3D polygons");
         // OCC19559
         using var ps = new ProgressScope(progress, "3D Polygons", nbpol);
@@ -1778,7 +1778,7 @@ internal class BrepShapeSet : ShapeSet
         {
             StreamUtilities.Read(IS, ref nbnodes);
             StreamUtilities.Read(IS, ref hasparameters);
-            // OCCT.NET: untrusted input: OCCT allocates for any count, and again for each polygon on a failed stream
+            // Kerf: untrusted input: OCCT allocates for any count, and again for each polygon on a failed stream
             StreamUtilities.CheckNotFailed(IS, "BRepTools_ShapeSet::ReadPolygon3D");
             StreamUtilities.CheckCount(IS, nbnodes, 6, "polygon nodes");
             NCollection_Array1<Point3D> nodes = new(1, nbnodes);
@@ -2111,7 +2111,7 @@ internal class BrepShapeSet : ShapeSet
         }
 
         StreamUtilities.Read(IS, ref nbtri);
-        // OCCT.NET: untrusted input: a triangulation takes at least 10 characters ("0 0 0 0 0\n\n")
+        // Kerf: untrusted input: a triangulation takes at least 10 characters ("0 0 0 0 0\n\n")
         StreamUtilities.CheckCount(IS, Math.Max(nbtri, 0), 10, "triangulations");
         // OCC19559
         using var ps = new ProgressScope(progress, "Triangulations", nbtri);
@@ -2125,7 +2125,7 @@ internal class BrepShapeSet : ShapeSet
                 StreamUtilities.Read(IS, ref hasNormals);
             }
 
-            // OCCT.NET: untrusted input: OCCT allocates for any count, and again for each triangulation on a failed
+            // Kerf: untrusted input: OCCT allocates for any count, and again for each triangulation on a failed
             // stream; a node takes at least 6 characters, a triangle 6
             StreamUtilities.CheckNotFailed(IS, "BRepTools_ShapeSet::ReadTriangulation");
             StreamUtilities.CheckCount(IS, nbNodes, hasUV ? 10 : 6, "triangulation nodes");

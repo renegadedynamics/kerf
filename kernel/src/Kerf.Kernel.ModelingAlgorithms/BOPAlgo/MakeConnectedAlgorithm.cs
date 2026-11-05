@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKBO/BOPAlgo/BOPAlgo_MakeConnected.hxx
 // Port of: src/ModelingAlgorithms/TKBO/BOPAlgo/BOPAlgo_MakeConnected.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2018-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Collections;
@@ -9,7 +9,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Booleans.GlueMode;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;

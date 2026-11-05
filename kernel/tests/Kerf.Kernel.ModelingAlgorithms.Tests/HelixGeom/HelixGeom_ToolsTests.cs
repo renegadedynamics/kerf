@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Port of OCCT's GTest src/ModelingAlgorithms/TKHelix/GTests/HelixGeom_Tools_Test.cxx (HelixGeom_Tools_Test).
 
 using Kerf.Engine.Construction.Helix.Geometry;

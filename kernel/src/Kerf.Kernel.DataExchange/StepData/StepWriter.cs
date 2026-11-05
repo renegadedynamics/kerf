@@ -1,13 +1,13 @@
 // Port of: src/DataExchange/TKDESTEP/StepData/StepData_StepWriter.hxx
 // Port of: src/DataExchange/TKDESTEP/StepData/StepData_StepWriter.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 using System.Text;
 using static Kerf.Engine.Exchange.Step.Data.Logical;
 
@@ -917,7 +917,7 @@ internal class StepWriter
     {
         AddParam();
         // Use helper function to clean text while preserving control directives
-        // OCCT.NET: OCCT's text is UTF-8, so the line is filled with its bytes (decision 1192)
+        // Kerf: OCCT's text is UTF-8, so the line is filled with its bytes (decision 1192)
         string aVal = ToFileText(CleanTextForSend(val));
         int nn = aVal.Length;
         // Add surrounding quotes

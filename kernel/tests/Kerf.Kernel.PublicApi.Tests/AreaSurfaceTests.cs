@@ -12,7 +12,7 @@ namespace Kerf.Kernel.PublicApi.Tests;
 /// Unit 10L3's areas show no engine (decision 1519's rule, as <see cref="PublicSurfaceTests"/> checks it for 10L1's):
 /// no public or protected member of a public type in <c>Kerf.Measurement</c>, <c>Kerf.Healing</c>, <c>Kerf.Meshing</c>
 /// or <c>Kerf.Exchange</c>, nor <c>Kerf.Color</c> and <c>Kerf.Geometry.OrientedBox</c>, names a type of
-/// <c>Kerf.Engine.*</c> or <c>Occt</c>.
+/// <c>Kerf.Engine.*</c>.
 /// </summary>
 public class AreaSurfaceTests
 {
@@ -37,7 +37,7 @@ public class AreaSurfaceTests
         }
 
         string? ns = type.Namespace;
-        return ns is not null && (ns == "Occt" || ns.StartsWith("Occt.", StringComparison.Ordinal) || ns.StartsWith("Kerf.Engine", StringComparison.Ordinal));
+        return ns is not null && ns.StartsWith("Kerf.Engine", StringComparison.Ordinal);
     }
 
     [Fact]

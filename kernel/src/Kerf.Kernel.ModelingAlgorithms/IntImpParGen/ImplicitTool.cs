@@ -1,12 +1,12 @@
 // Port of: src/ModelingAlgorithms/TKGeomAlgo/IntImpParGen/IntImpParGen_Tool.hxx
 // Port of: src/ModelingAlgorithms/TKGeomAlgo/IntImpParGen/IntImpParGen_Tool.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Intersection.TwoD.Position2D;
 using static Kerf.Engine.Intersection.TwoD.Situation;
 using static Kerf.Engine.Intersection.TwoD.TypeTrans;
@@ -15,7 +15,7 @@ namespace Kerf.Engine.Intersection.Implicit;
 
 /// <summary>
 /// The free functions of IntImpParGen_Tool.hxx (used by IntCurve_IntConicConic): older variants of the
-/// <see cref="IntImpParGen"/> statics. Ported code imports them with <c>using static Occt.IntImpParGen_Tool;</c>.
+/// <see cref="IntImpParGen"/> statics. Ported code imports them with <c>using static Kerf.Engine.IntImpParGen_Tool;</c>.
 /// </summary>
 internal static class ImplicitTool
 {

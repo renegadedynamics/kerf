@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Collections;
@@ -76,8 +76,8 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         return aHash;
     }
 
-    // OCCTNET_LOCOPE_DUMP: a directory the shapes' texts are written to, named as the recorder's (LOCOPEREC_DUMP)
-    private static readonly string? s_dump = Environment.GetEnvironmentVariable("OCCTNET_LOCOPE_DUMP");
+    // KERF_LOCOPE_DUMP: a directory the shapes' texts are written to, named as the recorder's (LOCOPEREC_DUMP)
+    private static readonly string? s_dump = Environment.GetEnvironmentVariable("KERF_LOCOPE_DUMP");
 
     [ThreadStatic]
     private static string? s_tag;
@@ -655,7 +655,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         List<(string Name, List<string> Lines)> aSections = Sections();
         var aPorted = new ConcurrentDictionary<int, List<string>>();
         int aMissing = 0;
-        string? aTrace = Environment.GetEnvironmentVariable("OCCTNET_LOCOPE_TRACE");
+        string? aTrace = Environment.GetEnvironmentVariable("KERF_LOCOPE_TRACE");
         Parallel.For(0, aSections.Count, new ParallelOptions { MaxDegreeOfParallelism = aTrace is null ? -1 : 1 }, i =>
         {
             if (aTrace is not null)

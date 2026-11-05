@@ -4,9 +4,8 @@
 // - attributes: ported without the .parent checks; children hold no parent link.
 using System.Text.RegularExpressions;
 
-namespace Build123d.Tests.Topology;
+namespace Kerf.Modeling.Tests.Topology;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class AssemblyTests

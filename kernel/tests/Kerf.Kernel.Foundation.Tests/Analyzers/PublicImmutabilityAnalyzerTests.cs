@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
@@ -38,7 +38,7 @@ public class PublicImmutabilityAnalyzerTests
 
     [Theory]
     [InlineData("Kerf.Engine.Booleans")]
-    [InlineData("Occt")]
+    [InlineData("Other")]
     public void Leaves_the_engine_and_other_namespaces_alone(string ns)
         => Assert.Empty(Analyze(ns, "public sealed class C { public int X { get; set; } }"));
 

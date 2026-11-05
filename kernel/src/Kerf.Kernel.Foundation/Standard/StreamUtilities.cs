@@ -1,8 +1,8 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Strtod follows OCCT's Strtod (src/FoundationClasses/TKernel/Standard/Standard_CString.hxx), the C library's strtod
 // in the C locale. Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 
-using Occt;
+using Kerf.Engine;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -343,7 +343,7 @@ internal static class StreamUtilities
     /// writes past the end of its buffer).</exception>
     public static bool ReadWord(TextReader IS, char[] buffer)
     {
-        // OCCT.NET: untrusted input: at most the buffer's length is read, and a word that long doesn't fit
+        // Kerf: untrusted input: at most the buffer's length is read, and a word that long doesn't fit
         string? word = ReadWord(IS, buffer.Length + 1);
         if (word is null)
         {

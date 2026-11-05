@@ -1,5 +1,5 @@
-// Port of OCCT's src/ModelingData/TKG3d/GTests/Geom_Plane_Test.cxx (V8_0_1), plus OCCT.NET's own checks.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Port of OCCT's src/ModelingData/TKG3d/GTests/Geom_Plane_Test.cxx (V8_0_1), plus Kerf's own checks.
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
 
@@ -102,7 +102,7 @@ public class Geom_PlaneTests
         Assert.True(aCopyPlane.Location.IsEqual(new Point3D(1.0, 2.0, 3.0), global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
 
-    // OCCT.NET's own checks
+    // Kerf's own checks
 
     [Fact]
     public void Reversal_And_Parameters()

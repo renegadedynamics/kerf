@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Geometry.Bounds;
@@ -7,7 +7,7 @@ using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using System.Reflection;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Kernel.Benchmarks;
 

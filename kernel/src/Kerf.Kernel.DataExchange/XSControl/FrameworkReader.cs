@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKXSBase/XSControl/XSControl_Reader.hxx
 // Port of: src/DataExchange/TKXSBase/XSControl/XSControl_Reader.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -10,7 +10,7 @@ using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Exchange.Framework.FrameworkCheckStatus;
 
 namespace Kerf.Engine.Exchange.Framework;
@@ -111,7 +111,7 @@ internal class FrameworkReader
     /// <summary>
     /// Loads a file and returns the read status Zero for a Model which complies with the Controller
     /// </summary>
-    /// <remarks>OCCT.NET: <paramref name="progress"/> (not in OCCT) is given to the session (plan 2.7).</remarks>
+    /// <remarks>Kerf: <paramref name="progress"/> (not in OCCT) is given to the session (plan 2.7).</remarks>
     public virtual ReturnStatus ReadFile(string filename, ProgressRange progress = default)
     {
         ReturnStatus stat = _thesession.ReadFile(filename, progress);
@@ -123,7 +123,7 @@ internal class FrameworkReader
     /// Loads a file from stream and returns the read status
     /// </summary>
     /// <remarks>
-    /// OCCT.NET: the stream is a .NET <see cref="Stream"/>; <paramref name="progress"/> (not in OCCT) is given to
+    /// Kerf: the stream is a .NET <see cref="Stream"/>; <paramref name="progress"/> (not in OCCT) is given to
     /// the session (plan 2.7).
     /// </remarks>
     public virtual ReturnStatus ReadStream(string name, Stream iStream, ProgressRange progress = default)
@@ -262,7 +262,7 @@ internal class FrameworkReader
 
         Shape shape = transferReader.ShapeResult(start);
         // Null shapes are allowed intentionally.
-        shape.TShape()?.FreezeGraph(); // OCCT.NET: the reader publishes frozen shapes (plan 2.7)
+        shape.TShape()?.FreezeGraph(); // Kerf: the reader publishes frozen shapes (plan 2.7)
         // SMH May 00: allow empty shapes (STEP CAX-IF, external references)
         _theshapes.Append(shape);
         return true;
@@ -296,7 +296,7 @@ internal class FrameworkReader
 
             Shape shape = transferReader.ShapeResult(start);
             // Null shapes are allowed intentionally.
-            shape.TShape()?.FreezeGraph(); // OCCT.NET: the reader publishes frozen shapes (plan 2.7)
+            shape.TShape()?.FreezeGraph(); // Kerf: the reader publishes frozen shapes (plan 2.7)
             // SMH May 00: allow empty shapes (STEP CAX-IF, external references)
             _theshapes.Append(shape);
             ++transferredCount;
@@ -328,7 +328,7 @@ internal class FrameworkReader
 
             Shape shape = transferReader.ShapeResult(start);
             // Null shapes are allowed intentionally.
-            shape.TShape()?.FreezeGraph(); // OCCT.NET: the reader publishes frozen shapes (plan 2.7)
+            shape.TShape()?.FreezeGraph(); // Kerf: the reader publishes frozen shapes (plan 2.7)
             // SMH May 00: allow empty shapes (STEP CAX-IF, external references)
             _theshapes.Append(shape);
             ++transferredCount;
@@ -395,7 +395,7 @@ internal class FrameworkReader
         {
             return default;
         }
-        result.TShape()?.FreezeGraph(); // OCCT.NET: published (the reader's result)
+        result.TShape()?.FreezeGraph(); // Kerf: published (the reader's result)
         return result;
     }
 

@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/STEPControl/STEPControl_ActorRead.hxx
 // Port of: src/DataExchange/TKDESTEP/STEPControl/STEPControl_ActorRead.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -25,7 +25,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Runtime.CompilerServices;
 using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Geometry.TransformForm;
@@ -39,7 +39,7 @@ namespace Kerf.Engine.Exchange.Step;
 /// </summary>
 /// <remarks>
 /// <para>
-/// OCCT.NET (decisions 1247, 1249, 1265, 1268):
+/// Kerf (decisions 1247, 1249, 1265, 1268):
 /// </para>
 /// <list type="bullet">
 /// <item>the shapes are made unfrozen (StepToTopoDS's <c>InternalValue</c>), bound and reused through the transient
@@ -1848,7 +1848,7 @@ internal class ActorRead : ActorOfTransientProcess, IActorRead
         {
             return NullResult();
         }
-        // OCCT.NET: a cycle of assembly links overflows OCCT's stack; here an exception (decision 1268)
+        // Kerf: a cycle of assembly links overflows OCCT's stack; here an exception (decision 1268)
         RuntimeHelpers.EnsureSufficientExecutionStack();
 
         // TRANSLOG

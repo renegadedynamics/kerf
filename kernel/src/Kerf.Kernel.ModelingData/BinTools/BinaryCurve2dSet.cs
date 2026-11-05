@@ -1,13 +1,13 @@
 // Port of: src/ModelingData/TKBRep/BinTools/BinTools_Curve2dSet.hxx
 // Port of: src/ModelingData/TKBRep/BinTools/BinTools_Curve2dSet.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Brep.Binary;
 
@@ -329,7 +329,7 @@ internal class BinaryCurve2dSet
         // degree;
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetExtChar(IS, out char val);
         degree = val;
-        // OCCT.NET: untrusted input
+        // Kerf: untrusted input
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, degree + 1L, rational ? 24 : 16, "poles");
 
         var poles = new NCollection_Array1<Point2D>(1, degree + 1);
@@ -362,7 +362,7 @@ internal class BinaryCurve2dSet
         degree = val;
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out nbpoles);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out nbknots);
-        // OCCT.NET: untrusted input
+        // Kerf: untrusted input
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, nbpoles, rational ? 24 : 16, "poles");
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, nbknots, 12, "knots");
 
@@ -419,7 +419,7 @@ internal class BinaryCurve2dSet
         {
             if (depth > global::Kerf.Engine.Exchange.Brep.Binary.BinTools.MaxGeometryNesting)
             {
-                // OCCT.NET: untrusted input: OCCT recurses without limit
+                // Kerf: untrusted input: OCCT recurses without limit
                 throw new StreamFormatErrorException("BinTools_Curve2dSet: curves nested too deeply");
             }
 
@@ -492,7 +492,7 @@ internal class BinaryCurve2dSet
         nbCurves = global::Kerf.Engine.Exchange.Brep.Binary.BinTools.ReadFormattedInteger(IS);
         using var ps = new ProgressScope(range, "Reading curves 2d", nbCurves);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.Get(IS); // remove <lf>
-        // OCCT.NET: untrusted input: a 2D curve takes at least 20 bytes (a Bezier curve of degree 0)
+        // Kerf: untrusted input: a 2D curve takes at least 20 bytes (a Bezier curve of degree 0)
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, nbCurves, 20, "2D curves");
         for (i = 1; i <= nbCurves && ps.More(); i++, ps.Next())
         {

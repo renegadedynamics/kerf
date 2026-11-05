@@ -1,5 +1,5 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
-// Port of: src/ModelingAlgorithms/TKBool/GTests/BRepFill_PipeShell_Test.cxx (OCCT V8_0_1), with OCCT.NET's checks of
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Port of: src/ModelingAlgorithms/TKBool/GTests/BRepFill_PipeShell_Test.cxx (OCCT V8_0_1), with Kerf's checks of
 // frozen inputs and the history added.
 
 using Kerf.Engine.Collections;
@@ -87,7 +87,7 @@ public class BRepFill_PipeShellTests
     public void Frozen_inputs_are_unchanged_and_the_history_answers_for_them(object theTransitionValue)
     {
         var theTransition = (TransitionStyle)theTransitionValue; // the theory's data as object: the engine type is internal
-        // OCCT.NET: a closed spine whose wire isn't flagged closed (the pipe closes a new wire of the caller's edges)
+        // Kerf: a closed spine whose wire isn't flagged closed (the pipe closes a new wire of the caller's edges)
         MakePolygon aSpinePolygon = new();
         aSpinePolygon.Add(new Point3D(0.0, 0.0, 0.0));
         aSpinePolygon.Add(new Point3D(0.0, 0.0, 5.0));

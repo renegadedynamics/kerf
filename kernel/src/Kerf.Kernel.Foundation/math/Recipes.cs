@@ -1,17 +1,17 @@
 // Port of: src/FoundationClasses/TKMath/math/math_Recipes.hxx
 // Port of: src/FoundationClasses/TKMath/math/math_Recipes.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Numerics;
 
 /// <summary>
 /// The free functions of math_Recipes.hxx (LU, SVD, DACTCL and Jacobi decompositions, after Numerical Recipes).
-/// Ported code imports them with <c>using static Occt.math_Recipes;</c> and calls them unqualified, as in C++.
+/// Ported code imports them with <c>using static Kerf.Engine.math_Recipes;</c> and calls them unqualified, as in C++.
 /// </summary>
 /// <remarks>The matrices and vectors are indexed from 1, as OCCT requires.</remarks>
 internal static class Recipes

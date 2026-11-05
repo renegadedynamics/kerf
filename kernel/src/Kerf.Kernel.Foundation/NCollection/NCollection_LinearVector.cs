@@ -1,12 +1,12 @@
 // Port of: src/FoundationClasses/TKernel/NCollection/NCollection_LinearVector.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 
 using Kerf.Engine.Foundation;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>
 /// OCCT's contiguous growable array indexed from 0 (like <c>std::vector</c>), over a .NET array. Reimplemented, not

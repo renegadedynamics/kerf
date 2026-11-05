@@ -3,9 +3,8 @@
 using Kerf.Geometry;
 using static Kerf.Modeling.Operations;
 
-namespace Build123d.Tests;
+namespace Kerf.Modeling.Tests;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class PublicMemberTests

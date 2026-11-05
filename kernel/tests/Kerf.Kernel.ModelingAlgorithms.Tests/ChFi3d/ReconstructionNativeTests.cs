@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Fillets;
 using Kerf.Engine.Healing.Checks;
@@ -24,7 +24,7 @@ public class ReconstructionNativeTests
         // 10704) and its face is valid. Volume, area, counts, box and history are equal.
         ["H8"] = ("native's face at the apex is unorientable", ["valid False | True native {FACE:UnorientableShape}"]),
         // a radius larger than the cube: native says done, but its result is degenerate (negative volume, an area of
-        // -6e29, B-spline faces of 30 units on a cube of 10); build123d.NET rejects it. Nothing to compare.
+        // -6e29, B-spline faces of 30 units on a cube of 10); Kerf.Modeling rejects it. Nothing to compare.
         ["fail_cube_radius_6"] = ("native's result is degenerate", null),
         // a Bezier face cut: TopOpeBRepBuild's pieces are on a B-spline copy of its surface, the reconstruction's on
         // the face's Bezier surface itself. Same geometry.
@@ -79,7 +79,7 @@ public class ReconstructionNativeTests
     [Fact]
     public void TheRecordingHasTheCases()
     {
-        // tools/dsrec --recon: dsrec's 15, blend/simple's A2 to H9, build123d.NET's, a shell, voids, a compound,
+        // tools/dsrec --recon: dsrec's 15, blend/simple's A2 to H9, Kerf.Modeling's, a shell, voids, a compound,
         // pyramids, failures, blend/complex (the shapes in the dataset)
         Assert.Equal(138, ReconRecordings.Cases.Count);
         Assert.All(ReconRecordings.Cases.Values, c => Assert.True(c.Done, c.Name));

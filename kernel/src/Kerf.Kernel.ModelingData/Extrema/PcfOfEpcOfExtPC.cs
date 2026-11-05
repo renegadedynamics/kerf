@@ -3,13 +3,13 @@
 // Port of: src/ModelingData/TKGeomBase/Extrema/Extrema_PCFOfEPCOfELPCOfLocateExtPC.hxx
 // Port of: src/ModelingData/TKGeomBase/Extrema/Extrema_PCLocFOfLocEPCOfLocateExtPC.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 
 namespace Kerf.Engine.Extrema;

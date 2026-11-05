@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Brep;
@@ -235,7 +235,7 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                         continue;
                     }
                     aDifferences.Add($"{aName} '{aCase}': '{aNH}' natively, '{aPH}' in the port");
-                    string? aDump = Environment.GetEnvironmentVariable("OCCTNET_OFFSETREC_DUMP");
+                    string? aDump = Environment.GetEnvironmentVariable("KERF_OFFSETREC_DUMP");
                     if (!string.IsNullOrEmpty(aDump))
                     {
                         string aBase = Path.Combine(aDump, $"{aName}-{aDifferences.Count}");

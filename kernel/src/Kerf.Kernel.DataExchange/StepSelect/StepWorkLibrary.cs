@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/StepSelect/StepSelect_WorkLibrary.hxx
 // Port of: src/DataExchange/TKDESTEP/StepSelect/StepSelect_WorkLibrary.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -10,7 +10,7 @@ using Kerf.Engine.Exchange.Framework.Selection;
 using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Exchange.Step.Parser;
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Step.Selections;
 
@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Step.Selections;
 /// Performs Read and Write a STEP File with a STEP Model Following the protocols, Copy may be implemented or not
 /// </summary>
 /// <remarks>
-/// OCCT.NET: reading takes a .NET stream, a progress range and the parser's limits for hostile input
+/// Kerf: reading takes a .NET stream, a progress range and the parser's limits for hostile input
 /// (<see cref="ParserReadLimits"/>, through the overloads that take them); writing writes the context's stream when
 /// it has one (<see cref="ContextWrite.OStream"/>, decision 1225), else the file. Like OCCT 8's, the library
 /// reads into the model it is given (decision 1227): STEPControl_Reader makes it.
@@ -79,7 +79,7 @@ internal class StepWorkLibrary : WorkLibrary
         return aModel;
     }
 
-    /// <summary>As <see cref="ReadFile(string, ref InterfaceModel, Protocol, ProgressRange)"/>, with the parser's limits (OCCT.NET).</summary>
+    /// <summary>As <see cref="ReadFile(string, ref InterfaceModel, Protocol, ProgressRange)"/>, with the parser's limits (Kerf).</summary>
     public int ReadFile(string name, InterfaceModel model, Protocol protocol,
                         ProgressRange progress, ParserReadLimits limits)
     {
@@ -108,7 +108,7 @@ internal class StepWorkLibrary : WorkLibrary
         return status;
     }
 
-    /// <summary>As <see cref="ReadStream(string, Stream, ref InterfaceModel, Protocol, ProgressRange)"/>, with the parser's limits (OCCT.NET).</summary>
+    /// <summary>As <see cref="ReadStream(string, Stream, ref InterfaceModel, Protocol, ProgressRange)"/>, with the parser's limits (Kerf).</summary>
     public int ReadStream(string name, Stream iStream, InterfaceModel model, Protocol protocol,
                           ProgressRange progress, ParserReadLimits limits)
     {
@@ -136,7 +136,7 @@ internal class StepWorkLibrary : WorkLibrary
             return false;
         }
 
-        // OCCT.NET: the context's stream, when it has one (decision 1225), else the file
+        // Kerf: the context's stream, when it has one (decision 1225), else the file
         Stream stream = ctx.OStream();
         FileStream file = null;
         if (stream is null)

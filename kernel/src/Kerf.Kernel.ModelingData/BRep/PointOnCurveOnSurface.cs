@@ -1,11 +1,11 @@
 // Port of: src/ModelingData/TKBRep/BRep/BRep_PointOnCurveOnSurface.hxx
 // Port of: src/ModelingData/TKBRep/BRep/BRep_PointOnCurveOnSurface.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Topology.Brep;
 
@@ -17,7 +17,7 @@ internal class PointOnCurveOnSurface : PointsOnSurface
     /// <summary>The parameter <paramref name="p"/> on the pcurve <paramref name="c"/> on <paramref name="s"/> (frozen here).</summary>
     public PointOnCurveOnSurface(double p, Curve2D? c, Surface? s, in Placement l) : base(p, s, l)
     {
-        c?.Freeze(); // OCCT.NET: attached geometry is frozen
+        c?.Freeze(); // Kerf: attached geometry is frozen
         _pCurve = c;
     }
 
@@ -33,7 +33,7 @@ internal class PointOnCurveOnSurface : PointsOnSurface
     internal override void PCurve(Curve2D? c)
     {
         CheckMutable();
-        c?.Freeze(); // OCCT.NET: attached geometry is frozen
+        c?.Freeze(); // Kerf: attached geometry is frozen
         _pCurve = c;
     }
 }

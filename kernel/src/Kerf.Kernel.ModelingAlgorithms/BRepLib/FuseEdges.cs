@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepLib/BRepLib_FuseEdges.hxx
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepLib/BRepLib_FuseEdges.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Extrema;
@@ -13,7 +13,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -131,7 +131,7 @@ internal sealed class FuseEdges
     private static void MakeClosedCurve(ref Curve3D c, in Point3D pf, ref double f, ref double l)
     {
         BSplineCurve3D bc = (BSplineCurve3D)c;
-        // OCCT.NET: frozen. OCCT makes the curve periodic and moves its origin in place, and the curve can be the old
+        // Kerf: frozen. OCCT makes the curve periodic and moves its origin in place, and the curve can be the old
         // edge's own (or the basis curve of its trimmed curve), shared with the caller's shape: the port works on a copy.
         if (bc.IsFrozen)
         {

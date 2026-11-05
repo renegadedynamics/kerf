@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeAnalysis/ShapeAnalysis_CanonicalRecognition.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeAnalysis/ShapeAnalysis_CanonicalRecognition.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2022-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Geometry;
@@ -14,7 +14,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Engine.Geometry.Conversion.ConvType;
@@ -323,7 +323,7 @@ internal sealed class CanonicalRecognitionAnalysis
         return false;
     }
 
-    // OCCT.NET: the wire OCCT builds inline in IsCylinder, IsCone and IsSphere (a new wire holding the edge, or the wire
+    // Kerf: the wire OCCT builds inline in IsCylinder, IsCone and IsSphere (a new wire holding the edge, or the wire
     // itself). Only that new wire is written.
     private static Wire MakeWireOf(in Shape shape)
     {
@@ -651,7 +651,7 @@ internal sealed class CanonicalRecognitionAnalysis
         CoordinateSystem pos1 = pos;
         int nbPars = GetNbPars(target);
         NCollection_Array1<double> params1 = new(1, Max(1, nbPars));
-        double gap1 = 0.0; // OCCT.NET: uninitialised in OCCT; written whenever the result is used
+        double gap1 = 0.0; // Kerf: uninitialised in OCCT; written whenever the result is used
         int i;
         for (i = 1; i <= nbPars; ++i)
         {
@@ -841,7 +841,7 @@ internal sealed class CanonicalRecognitionAnalysis
         if (!loc.IsIdentity)
         {
             // OCCT: when the edge's curve is already the target conic, the converter returns the edge's own curve,
-            // and OCCT transforms that shared curve in place (occt-issues.md). OCCT.NET: frozen: it is frozen here, so
+            // and OCCT transforms that shared curve in place (occt-issues.md). Kerf: frozen: it is frozen here, so
             // the port transforms a copy; the result is the same, and the edge is unchanged.
             if (anaCurv.IsFrozen)
             {
@@ -1092,7 +1092,7 @@ internal sealed class CanonicalRecognitionAnalysis
     private static bool GetSamplePoints(in Wire wire, double tol, int maxNbInt,
                                         out NCollection_HArray1<Xyz>? points)
     {
-        points = null; // OCCT.NET: OCCT leaves the caller's handle unchanged (null) when it returns false
+        points = null; // Kerf: OCCT leaves the caller's handle unchanged (null) when it returns false
         List<double> lengths = new();
         List<EdgeCurveAdaptor> curves = new();
         List<Xyz> aPoints = new();

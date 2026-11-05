@@ -1,12 +1,12 @@
 // Port of: src/FoundationClasses/TKMath/Bnd/Bnd_B3.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2005-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
 // OCCT's template Bnd_B3<RealType> is ported once per instantiation (Bnd_B3d, Bnd_B3f) from the same text, with
 // RealType a file-level alias, so C++'s float/double promotions are kept exactly (see docs/decisions.md).
 
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using System.Runtime.CompilerServices;
 using static Kerf.Geometry.TransformForm;
 using RealType = double;

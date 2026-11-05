@@ -1,9 +1,9 @@
 // Port of: src/FoundationClasses/TKMath/gp/gp_Ax2.hxx
 // Port of: src/FoundationClasses/TKMath/gp/gp_Ax2.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Geometry;
 
@@ -421,5 +421,5 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
 
     public static bool operator !=(in Frame3D left, in Frame3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Ax2({_axis.Location}, {_axis.Direction}, {_vxdir})";
+    public override readonly string ToString() => $"Frame3D({_axis.Location}, {_axis.Direction}, {_vxdir})";
 }

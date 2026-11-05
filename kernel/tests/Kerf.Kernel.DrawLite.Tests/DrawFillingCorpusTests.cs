@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Kernel.DrawLite;
 using Xunit.Abstractions;
@@ -100,7 +100,7 @@ public class DrawFillingCorpusTests(ITestOutputHelper output)
                                                            || l.Contains("xception", StringComparison.Ordinal)
                                                            || l.Contains("Faulty", StringComparison.Ordinal));
                 output.WriteLine($"      {aLine ?? aLines.Reverse().Skip(1).FirstOrDefault()}");
-                if (Environment.GetEnvironmentVariable("OCCTNET_FILL_LOG") is not null)
+                if (Environment.GetEnvironmentVariable("KERF_FILL_LOG") is not null)
                 {
                     output.WriteLine(aRun.Log);
                 }

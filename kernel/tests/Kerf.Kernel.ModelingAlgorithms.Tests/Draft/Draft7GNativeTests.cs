@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
@@ -21,7 +21,7 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// Unit 7G's algorithms that build123d.NET doesn't bind against native OCCT's recordings (tools/draftrec):
+/// Unit 7G's algorithms that Kerf.Modeling doesn't bind against native OCCT's recordings (tools/draftrec):
 /// BRepOffsetAPI_MakeDraft (wires, faces and an open shell; by length, up to a plane and up to a shape; internal and
 /// round-corner variants), BiTgte_Blend (pairs of faces of a box, of a Boolean result and bug29861's cylinders, with and
 /// without the resulting shape) and BRepOffsetAPI_MakeEvolved's volume mode (BRepFill_AdvancedEvolved, four spines and
@@ -123,7 +123,7 @@ public class Draft7GNativeTests(ITestOutputHelper output)
             theTally.Canonical++;
             return;
         }
-        if (Environment.GetEnvironmentVariable("OCCTNET_DRAFTREC_DUMP") is string aDir && theTally.Differences.Count == 0)
+        if (Environment.GetEnvironmentVariable("KERF_DRAFTREC_DUMP") is string aDir && theTally.Differences.Count == 0)
         {
             File.WriteAllText(Path.Combine(aDir, "native.brep"), theNative);
             File.WriteAllText(Path.Combine(aDir, "port.brep"), aPort);

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
 // A development aid: C# stubs (signatures only) of StepData's classes, mapped by the generator's own rules, so the
 // generated code can be compiled before StepData is ported (--stubs <dir>). Never committed as source.
@@ -17,7 +17,7 @@ internal static class Stubs
         foreach (var cls in theDb.Classes.Values.Where(c => c.Package == "StepData").OrderBy(c => c.Name, StringComparer.Ordinal))
         {
             var sb = new StringBuilder();
-            sb.Append("#nullable disable\nnamespace Occt;\n");
+            sb.Append("#nullable disable\nnamespace Kerf.Engine;\n");
             bool isAbstract = cls.Methods.Any(m => m.IsPure);
             sb.Append("public ").Append(isAbstract ? "abstract " : "").Append("partial class ").Append(cls.Name);
             if (cls.Base != null)
@@ -97,7 +97,7 @@ internal static class Stubs
             }
 
             File.WriteAllText(Path.Combine(theDir, e.Name + ".cs"),
-                "namespace Occt;\npublic enum " + e.Name + " { " + string.Join(", ", e.Members.Select(m => m.Name)) + " }\n");
+                "namespace Kerf.Engine;\npublic enum " + e.Name + " { " + string.Join(", ", e.Members.Select(m => m.Name)) + " }\n");
         }
 
         _ = theOcct;

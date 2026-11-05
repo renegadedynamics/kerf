@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder.hxx
 // Port of: src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -26,7 +26,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Fillets;
 
@@ -100,7 +100,7 @@ internal abstract partial class FilletBuilderBase
     /// </summary>
     private WorkingOverlay? _overlay;
 
-    /// <summary>The shape the builder works on: the caller's (OCCT.NET, for tests and unit 7R).</summary>
+    /// <summary>The shape the builder works on: the caller's (Kerf, for tests and unit 7R).</summary>
     internal Shape WorkingShape() => _shape;
 
     /// <summary>
@@ -896,7 +896,7 @@ internal abstract partial class FilletBuilderBase
         return ImmutableArrays.Own(shapes);
     }
 
-    /// <summary>OCCT's <c>Generated</c>: the list itself, unfrozen, for ported callers (OCCT.NET).</summary>
+    /// <summary>OCCT's <c>Generated</c>: the list itself, unfrozen, for ported callers (Kerf).</summary>
     internal NCollection_List<Shape> InternalGenerated(in Shape eouV)
     {
         _generated.Clear();

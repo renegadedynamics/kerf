@@ -1,14 +1,14 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 // Bento's CAD workload (unit 9E, docs/performance.md): examples from Bento's guide to its CAD functions
 // (docs/cad/build123d-in-bento.md, section 9), the introductory examples of build123d written as Bento's formulas, here
-// through build123d.NET's algebra API as the CAD_ functions call it. Each is built, triangulated with build123d's
+// through Kerf.Modeling's algebra API as the CAD_ functions call it. Each is built, triangulated with build123d's
 // tolerances as Bento's viewer does (ShapeModels.Part), and its volume and face count read, as a cell shows them.
-//   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks -p:KerfModelingRoot=<build123d.NET>/ [-- passes [copies]]
+//   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks -p:KerfModelingRoot=<Kerf.Modeling>/ [-- passes [copies]]
 //   (or [-- images [passes]] for the SVG drawings and PNG pictures of unit 10L4)
 // (copies: how many of each example the parallel rounds run at once; 0 skips them; the default is a processor's worth)
 // and on native OCCT, for comparison: --project benchmarks/Kerf.Kernel.Bento.Benchmarks/Native (the same arguments).
-// The first pass is a workbook opening (it includes the JIT's work on OCCT.NET); the others are recalculations, of
+// The first pass is a workbook opening (it includes the JIT's work on Kerf); the others are recalculations, of
 // which the median is shown.
 
 using System.Diagnostics;
@@ -159,7 +159,7 @@ for (int pass = 0; pass < passes; pass++)
 }
 
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
-    $"Bento's examples on OCCT.NET, {passes} passes, {total.Elapsed.TotalSeconds:F1} s"));
+    $"Bento's examples on Kerf, {passes} passes, {total.Elapsed.TotalSeconds:F1} s"));
 Console.WriteLine("example                    first ms  median ms   alloc MB  result");
 double firstSum = 0, medianSum = 0;
 for (int i = 0; i < examples.Length; i++)

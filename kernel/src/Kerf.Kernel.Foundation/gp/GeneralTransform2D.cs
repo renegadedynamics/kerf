@@ -1,11 +1,11 @@
 // Port of: src/FoundationClasses/TKMath/gp/gp_GTrsf2d.hxx
 // Port of: src/FoundationClasses/TKMath/gp/gp_GTrsf2d.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.TransformForm;
 
 namespace Kerf.Geometry;
@@ -389,5 +389,5 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
 
     public static bool operator !=(in GeneralTransform2D left, in GeneralTransform2D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_GTrsf2d({_shape}, scale {_scale}, {_matrix}, {_loc})";
+    public override readonly string ToString() => $"GeneralTransform2D({_shape}, scale {_scale}, {_matrix}, {_loc})";
 }

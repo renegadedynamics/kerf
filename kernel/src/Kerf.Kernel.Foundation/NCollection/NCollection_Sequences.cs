@@ -4,14 +4,14 @@
 // Port of: src/FoundationClasses/TKernel/NCollection/NCollection_DynamicArray.hxx
 // Port of: src/FoundationClasses/TKernel/NCollection/NCollection_LocalArray.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2002-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using System.Collections;
 using System.Runtime.InteropServices;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>
 /// OCCT's sequence: a list indexed from 1. Not OCCT's linked implementation but a .NET list with OCCT's API;

@@ -1,12 +1,12 @@
 // Port of: src/DataExchange/TKXSBase/Transfer/Transfer_ActorDispatch.hxx
 // Port of: src/DataExchange/TKXSBase/Transfer/Transfer_ActorDispatch.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Framework.Transfer;
 
@@ -68,7 +68,7 @@ internal class ActorDispatch : ActorOfTransientProcess
     public override Binder? Transfer(Transient? start, TransientProcess? tp,
                                               ProgressRange progress = default)
     {
-        // OCCT.NET fix (decision 1207): the copy of <start> is the copy tool's own, not the process's again
+        // Kerf fix (decision 1207): the copy of <start> is the copy tool's own, not the process's again
         Transient? former = _thetool._dispatched;
         _thetool._dispatched = start;
         try

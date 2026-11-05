@@ -1,13 +1,13 @@
 // Port of: src/FoundationClasses/TKMath/gp/gp_Hypr2d.hxx
 // Port of: src/FoundationClasses/TKMath/gp/gp_Hypr2d.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Geometry;
 
@@ -380,5 +380,5 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
 
     public static bool operator !=(in Hyperbola2D left, in Hyperbola2D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Hypr2d({_pos}, major {_majorRadius}, minor {_minorRadius})";
+    public override readonly string ToString() => $"Hyperbola2D({_pos}, major {_majorRadius}, minor {_minorRadius})";
 }

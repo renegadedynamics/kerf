@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKFeat/LocOpe/LocOpe_SplitDrafts.hxx
 // Port of: src/ModelingAlgorithms/TKFeat/LocOpe/LocOpe_SplitDrafts.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Surfaces;
@@ -18,7 +18,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Intersection.ResultType;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
@@ -1555,7 +1555,7 @@ internal sealed class SplitDrafts
         return false;
     }
 
-    // OCCT.NET: OCCT translates the intersection's pcurve in place; a frozen one is translated on a copy
+    // Kerf: OCCT translates the intersection's pcurve in place; a frozen one is translated on a copy
     private static Curve2D Translatable(Curve2D curve) =>
         curve.IsFrozen ? (Curve2D)curve.Copy() : curve;
 

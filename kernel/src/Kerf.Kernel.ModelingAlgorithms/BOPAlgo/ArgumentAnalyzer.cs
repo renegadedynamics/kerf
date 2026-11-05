@@ -3,7 +3,7 @@
 // Port of: src/ModelingAlgorithms/TKBO/BOPAlgo/BOPAlgo_ArgumentAnalyzer.cxx
 // Port of: src/ModelingAlgorithms/TKBO/BOPAlgo/BOPAlgo_PArgumentAnalyzer.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
@@ -15,7 +15,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Booleans.CheckStatus;
 using static Kerf.Engine.Booleans.Operation;
 using static Kerf.Topology.Orientation;
@@ -738,7 +738,7 @@ internal class ArgumentAnalyzer : BooleanAlgorithm
             map2.Add(s2);
         }
 
-        // OCCT.NET: an empty side makes OCCT's Array2(1, 0, ...) an empty array; NCollection_Array2 needs a size
+        // Kerf: an empty side makes OCCT's Array2(1, 0, ...) an empty array; NCollection_Array2 needs a size
         bool[,] arrayOfFlag = new bool[seq1.Length() + 1, seq2.Length() + 1];
         int i = 0, j = 0;
         for (i = 1; i <= seq1.Length(); i++)

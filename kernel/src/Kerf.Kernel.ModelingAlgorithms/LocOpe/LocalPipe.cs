@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKFeat/LocOpe/LocOpe_Pipe.lxx
 // Port of: src/ModelingAlgorithms/TKFeat/LocOpe/LocOpe_Pipe.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Filling;
@@ -13,7 +13,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -51,7 +51,7 @@ internal sealed class LocalPipe
     {
         _spine = spine;
         _profile = profile;
-        // OCCT.NET: the pipe writes into the profile it shares (decisions 910, 1014): in the working overlay (unit 10H5)
+        // Kerf: the pipe writes into the profile it shares (decisions 910, 1014): in the working overlay (unit 10H5)
         using WorkingOverlay.Scope scope = _work.Enter();
         _pipe = new Pipe(spine, profile);
 
@@ -363,7 +363,7 @@ internal sealed class LocalPipe
         return _map.GetValue(eProfile);
     }
 
-    // OCCT.NET: OCCT segments and re-knots the converted curve in place; a frozen one is changed on a copy
+    // Kerf: OCCT segments and re-knots the converted curve in place; a frozen one is changed on a copy
     private static BSplineCurve3D Writable(BSplineCurve3D curve) =>
         curve.IsFrozen ? (BSplineCurve3D)curve.Copy() : curve;
 

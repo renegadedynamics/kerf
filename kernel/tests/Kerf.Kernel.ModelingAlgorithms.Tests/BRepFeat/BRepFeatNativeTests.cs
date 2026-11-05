@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
@@ -22,7 +22,7 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// BRepFeat's makers that build123d.NET doesn't bind (MakePrism, MakeRevol, MakePipe, MakeCylindricalHole, Gluer)
+/// BRepFeat's makers that Kerf.Modeling doesn't bind (MakePrism, MakeRevol, MakePipe, MakeCylindricalHole, Gluer)
 /// against native OCCT's recording (tools/featrec): the same operations on the same inputs (read from the recording's
 /// BRep texts, frozen as a caller's), compared by the result's BRep text (Free and Checked masked), its canonical record
 /// (decision 1017), the status and the history (IsDeleted and the number of Modified faces of the basis shape's faces,

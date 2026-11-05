@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/STEPCAFControl/STEPCAFControl_Reader.hxx
 // Port of: src/DataExchange/TKDESTEP/STEPCAFControl/STEPCAFControl_Reader.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -24,7 +24,7 @@ using Kerf.Engine.Geometry.Objects;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Exchange.Framework.Selection.ReturnStatus;
 using static Kerf.Topology.ShapeType;
 using static Kerf.Engine.Exchange.Documents.ColorType;
@@ -42,7 +42,7 @@ namespace Kerf.Engine.Exchange.Step.Caf;
 /// by name of the file or by iterating on a readers
 /// </para>
 /// <para>
-/// OCCT.NET: the document is an <see cref="ExchangeDocument"/> (decision 1166, 1231), whose labels and methods stand in
+/// Kerf: the document is an <see cref="ExchangeDocument"/> (decision 1166, 1231), whose labels and methods stand in
 /// for OCAF's <c>TDF_Label</c>s and XCAF's tools; the reader fills it as OCCT fills an XCAF document, in OCCT's order.
 /// Shapes, assemblies, external references, names, colours (surface, curve, per sub-shape, visibility), layers,
 /// validation properties, the length unit and, if the session's <c>read.stepcaf.subshapes.name</c> asks, the
@@ -52,7 +52,7 @@ namespace Kerf.Engine.Exchange.Step.Caf;
 /// The document's shapes are those the reader publishes, frozen.
 /// </para>
 /// <para>
-/// OCCT.NET (unit 8Z): external files are opened by a resolver (<see cref="SetExternFileResolver"/>): from the disk as
+/// Kerf (unit 8Z): external files are opened by a resolver (<see cref="SetExternFileResolver"/>): from the disk as
 /// OCCT for a file loaded by ReadFile, none for one loaded by ReadStream unless a resolver is given, none at all with
 /// <see cref="SetExternFilesMode"/> false; each is read with the caller's limits and cancellation, within a budget
 /// across them (<see cref="SetExternFileLimits"/>), and a cycle of references stops.
@@ -106,7 +106,7 @@ internal class CafReader
     public void Init(ExchangeWorkSession ws, bool scratch = true)
     {
         // necessary only in Writer, to set good actor:  WS->SelectNorm ( "STEP" );
-        // OCCT.NET: the session's controller is a STEPCAFControl_Controller of its own (decision 1264)
+        // Kerf: the session's controller is a STEPCAFControl_Controller of its own (decision 1264)
         CafController.SelectFor(ws);
         _reader.SetWS(ws, scratch);
         _files.Clear();
@@ -138,7 +138,7 @@ internal class CafReader
     }
 
     /// <summary>
-    /// Loads a file with limits for hostile input (OCCT.NET, plan 2.7). The limits apply to the external files too
+    /// Loads a file with limits for hostile input (Kerf, plan 2.7). The limits apply to the external files too
     /// (unit 8Z).
     /// </summary>
     public ReturnStatus ReadFile(string fileName, ProgressRange progress, ParserReadLimits limits)
@@ -149,7 +149,7 @@ internal class CafReader
 
     /// <summary>Loads a file from stream and returns the read status.</summary>
     /// <remarks>
-    /// OCCT.NET (unit 8Z): external references are read only through a resolver given by
+    /// Kerf (unit 8Z): external references are read only through a resolver given by
     /// <see cref="SetExternFileResolver"/>; without one, none is read (OCCT reads them from the disk).
     /// </remarks>
     public ReturnStatus ReadStream(string name, Stream iStream)
@@ -159,7 +159,7 @@ internal class CafReader
     }
 
     /// <summary>
-    /// Loads a file from stream with limits for hostile input (OCCT.NET, plan 2.7). The limits apply to the external
+    /// Loads a file from stream with limits for hostile input (Kerf, plan 2.7). The limits apply to the external
     /// files too, which are read only through a resolver (unit 8Z).
     /// </summary>
     public ReturnStatus ReadStream(string name, Stream iStream, ProgressRange progress,
@@ -169,21 +169,21 @@ internal class CafReader
         return _reader.ReadStream(name, iStream, progress, limits);
     }
 
-    // ---- OCCT.NET (unit 8Z): how external files are read ------------------------------------------------------
+    // ---- Kerf (unit 8Z): how external files are read ------------------------------------------------------
 
     /// <summary>
-    /// OCCT.NET (unit 8Z): whether external references are read at all (default true). When false, none is opened and
+    /// Kerf (unit 8Z): whether external references are read at all (default true). When false, none is opened and
     /// every reference stays unresolved as OCCT leaves a reference to a missing file: the transient process records
     /// "Can not read external file", the shape's label records the file's name (<c>SetExternRefs</c>), and the
     /// <see cref="ExternFiles"/> entry has the load status <c>IFSelect_RetError</c>.
     /// </summary>
     public void SetExternFilesMode(bool mode) => _externFilesMode = mode;
 
-    /// <summary>OCCT.NET (unit 8Z): see <see cref="SetExternFilesMode"/>.</summary>
+    /// <summary>Kerf (unit 8Z): see <see cref="SetExternFilesMode"/>.</summary>
     public bool GetExternFilesMode() => _externFilesMode;
 
     /// <summary>
-    /// OCCT.NET (unit 8Z): opens the external files. When null (the default), a file loaded by ReadFile reads them from
+    /// Kerf (unit 8Z): opens the external files. When null (the default), a file loaded by ReadFile reads them from
     /// the disk as OCCT does (<see cref="FileSystemResolver"/>), and a file loaded by ReadStream reads none. A resolver
     /// other than <see cref="FileSystemResolver"/> names the files it is given lexically: an external file's name is
     /// its reference combined with the referencing file's folder, <c>.</c> and <c>..</c> folded, without the disk or
@@ -193,11 +193,11 @@ internal class CafReader
     /// </summary>
     public void SetExternFileResolver(ExternFileResolver? resolver) => _externResolver = resolver;
 
-    /// <summary>OCCT.NET (unit 8Z): see <see cref="SetExternFileResolver"/>.</summary>
+    /// <summary>Kerf (unit 8Z): see <see cref="SetExternFileResolver"/>.</summary>
     public ExternFileResolver? GetExternFileResolver() => _externResolver;
 
     /// <summary>
-    /// OCCT.NET (unit 8Z): the budget of the external reads for one main file (files, bytes, depth). A reference past
+    /// Kerf (unit 8Z): the budget of the external reads for one main file (files, bytes, depth). A reference past
     /// the budget, or to a file being read already (a cycle), stays unresolved with a warning in the transient process.
     /// </summary>
     public void SetExternFileLimits(ExternFileLimits limits)
@@ -206,11 +206,11 @@ internal class CafReader
         _externLimits = limits;
     }
 
-    /// <summary>OCCT.NET (unit 8Z): see <see cref="SetExternFileLimits"/>.</summary>
+    /// <summary>Kerf (unit 8Z): see <see cref="SetExternFileLimits"/>.</summary>
     public ExternFileLimits GetExternFileLimits() => _externLimits;
 
     /// <summary>
-    /// OCCT.NET (unit 8Z): OCCT's way, the file a reference names read from the disk: an absolute name as it is, a
+    /// Kerf (unit 8Z): OCCT's way, the file a reference names read from the disk: an absolute name as it is, a
     /// relative one beside the referencing file (<c>OSD_Path::AbsolutePath</c>; as it is if the referencing name has
     /// no folder, that is from the current directory). The default of the file API.
     /// </summary>
@@ -225,7 +225,7 @@ internal class CafReader
     };
 
     /// <summary>
-    /// OCCT.NET (unit 8Z): a resolver confined to a folder: a reference is resolved beside the referencing file (its
+    /// Kerf (unit 8Z): a resolver confined to a folder: a reference is resolved beside the referencing file (its
     /// folder taken inside <paramref name="root"/>; a referencing name outside the folder, or absolute, stands for the
     /// folder itself) and read only if it lies inside the folder. Absolute names, drive-relative names, UNC and device
     /// paths, names with a colon (alternate data streams) and names leaving the folder by <c>..</c> are refused, as are
@@ -637,7 +637,7 @@ internal class CafReader
         // Collect information on shapes originating from SDRs
         // this will be used to distinguish compounds representing assemblies
         // from the ones representing hybrid models and shape sets
-        // OCCT.NET: the map iterates in insertion order (ExpandSubShapes iterates it; decision 1280)
+        // Kerf: the map iterates in insertion order (ExpandSubShapes iterates it; decision 1280)
         Dictionary<Shape, ProductDefinition> shapePDMap =
             new Dictionary<Shape, ProductDefinition>(ShapeHasher.Instance);
         Dictionary<ProductDefinition, ExternFile> pdFileMap =
@@ -691,7 +691,7 @@ internal class CafReader
         string mainName = Path.GetFileName(loadedFile);
         string dpath = Path.GetDirectoryName(loadedFile) ?? "";
 
-        // OCCT.NET (unit 8Z): the resolver opens the external files; OCCT's naming unless it is another than the disk's
+        // Kerf (unit 8Z): the resolver opens the external files; OCCT's naming unless it is another than the disk's
         ExternFileResolver resolver = EffectiveResolver();
         bool isOcctNaming = resolver is null || ReferenceEquals(resolver, FileSystemResolver);
 
@@ -708,7 +708,7 @@ internal class CafReader
         }
         extRefs.LoadExternRefs();
         using ProgressScope pse = new ProgressScope(psRoot.Next(), null, extRefs.ExternRefCount);
-        // OCCT.NET: the files being read, the main one first, against cycles (OCCT recurses without end)
+        // Kerf: the files being read, the main one first, against cycles (OCCT recurses without end)
         bool isTopFile = _externStack.Count == 0;
         if (isTopFile)
         {
@@ -741,7 +741,7 @@ internal class CafReader
                 }
 
                 // compute true path to the extern file
-                // OCCT.NET: a resolver's name is lexical (unit 8Z)
+                // Kerf: a resolver's name is lexical (unit 8Z)
                 string fullname = isOcctNaming ? ExternRefs.AbsolutePath(dpath, filename) : CombineName(loadedFile, filename);
                 if (fullname.Length <= 0)
                 {
@@ -767,7 +767,7 @@ internal class CafReader
                     continue; // this PD is not concerned by current transfer
                 }
 
-                // OCCT.NET (unit 8Z): a cycle or a reference past the budget stays unresolved, with a warning
+                // Kerf (unit 8Z): a cycle or a reference past the budget stays unresolved, with a warning
                 if (resolver is not null && !_files.ContainsKey(filename))
                 {
                     string refusal = ExternRefusal(fullname);
@@ -990,7 +990,7 @@ internal class CafReader
 
     /// <summary>Reads (or if returns already read) extern file with given name</summary>
     /// <remarks>
-    /// OCCT.NET: the external file is read by a session on the main session's parameter set (OCCT's statics are
+    /// Kerf: the external file is read by a session on the main session's parameter set (OCCT's statics are
     /// process-wide), through the reader's resolver (unit 8Z: OCCT reads <paramref name="fullname"/> from the disk),
     /// with the caller's limits and within the external files' budget; it is read under the name
     /// <paramref name="fullname"/>, against which its own references are resolved.
@@ -1021,7 +1021,7 @@ internal class CafReader
         ef.SetName(new TCollection_HAsciiString(file));
 
         // read file
-        // OCCT.NET: through the resolver, with the limits and progress (unit 8Z)
+        // Kerf: through the resolver, with the limits and progress (unit 8Z)
         using ProgressScope ps = new ProgressScope(progress, null, 2);
         ef.SetLoadStatus(ReadExternStream(sr, file, fullname, referencingName, ps.Next()));
 
@@ -2052,7 +2052,7 @@ internal class CafReader
     }
 
     /// <summary>Reads SHUO for instances defined in the STEP model</summary>
-    /// <remarks>OCCT.NET: not read (the document has no SHUOs, decision 1279).</remarks>
+    /// <remarks>Kerf: not read (the document has no SHUOs, decision 1279).</remarks>
     protected bool ReadSHUOs(ExchangeWorkSession ws, ExchangeDocument doc,
                              Dictionary<ProductDefinition, ExternFile> pdFileMap)
     {
@@ -2063,7 +2063,7 @@ internal class CafReader
     }
 
     /// <summary>Reads D&amp;GT for instances defined in the STEP model</summary>
-    /// <remarks>OCCT.NET: not read (decision 1279).</remarks>
+    /// <remarks>Kerf: not read (decision 1279).</remarks>
     protected bool ReadGDTs(ExchangeWorkSession ws, ExchangeDocument doc, in Factors localFactors)
     {
         _ = ws;
@@ -2072,7 +2072,7 @@ internal class CafReader
     }
 
     /// <summary>Reads materials for instances defined in the STEP model</summary>
-    /// <remarks>OCCT.NET: not read (decision 1279).</remarks>
+    /// <remarks>Kerf: not read (decision 1279).</remarks>
     protected bool ReadMaterials(ExchangeWorkSession ws, ExchangeDocument doc, NCollection_HSequence<Transient> seqPDS,
                                  in Factors localFactors)
     {
@@ -2083,7 +2083,7 @@ internal class CafReader
     }
 
     /// <summary>Reads Views for instances defined in the STEP model</summary>
-    /// <remarks>OCCT.NET: not read (decision 1279).</remarks>
+    /// <remarks>Kerf: not read (decision 1279).</remarks>
     protected bool ReadViews(ExchangeWorkSession ws, ExchangeDocument doc, in Factors localFactors)
     {
         _ = ws;
@@ -2092,7 +2092,7 @@ internal class CafReader
     }
 
     /// <summary>Reads metadata assigned to shapes in the STEP model</summary>
-    /// <remarks>OCCT.NET: not read (decision 1279).</remarks>
+    /// <remarks>Kerf: not read (decision 1279).</remarks>
     protected bool ReadMetadata(ExchangeWorkSession ws, ExchangeDocument doc, in Factors localFactors)
     {
         _ = ws;
@@ -2101,7 +2101,7 @@ internal class CafReader
     }
 
     /// <summary>Reads product metadata assigned to shapes in the STEP model</summary>
-    /// <remarks>OCCT.NET: not read (decision 1279).</remarks>
+    /// <remarks>Kerf: not read (decision 1279).</remarks>
     protected bool ReadProductMetadata(ExchangeWorkSession ws, ExchangeDocument doc)
     {
         _ = ws;
@@ -2176,7 +2176,7 @@ internal class CafReader
             }
         }
 
-        // OCCT.NET: a cycle of representation relationships recurses without end in OCCT; stopped (decision 1280)
+        // Kerf: a cycle of representation relationships recurses without end in OCCT; stopped (decision 1280)
         if (depth > 1000)
         {
             return;
@@ -2525,7 +2525,7 @@ internal class CafReader
     private bool _gdtMode;
     private bool _matMode;
     private bool _viewMode;
-    // OCCT.NET (unit 8Z): the external reads
+    // Kerf (unit 8Z): the external reads
     private bool _externFilesMode = true;
     private ExternFileResolver? _externResolver;
     private ExternFileLimits _externLimits = ExternFileLimits.Default;

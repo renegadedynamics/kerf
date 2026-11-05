@@ -1,10 +1,10 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
 /// BRepBlend's walkers against native OCCT, bit for bit and step by step: tools/blendrec records them with
-/// build123d.NET's OCCT V8_0_1 (BRepBlend is not bound), <see cref="BlendRecorder"/> makes the same calls on the port,
+/// Kerf.Modeling's OCCT V8_0_1 (BRepBlend is not bound), <see cref="BlendRecorder"/> makes the same calls on the port,
 /// and the texts are compared case by case. Each case records every point of the walking line (guide parameter,
 /// points, parameters, tangents), the extremities (points, parameters, tangents, the arcs they lie on with their
 /// transitions), the transitions and statuses, then the line's approximation by BRepBlend_AppSurface (and

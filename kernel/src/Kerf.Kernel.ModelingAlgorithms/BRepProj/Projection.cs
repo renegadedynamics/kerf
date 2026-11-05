@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKBool/BRepProj/BRepProj_Projection.lxx
 // Port of: src/ModelingAlgorithms/TKBool/BRepProj/BRepProj_Projection.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Construction.Filling;
@@ -18,7 +18,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -166,7 +166,7 @@ internal sealed class Projection
             {
                 b.Add(shapeC, _section.Value(i));
             }
-            shapeC.TShape()!.FreezeGraph(); // OCCT.NET: handed out as is
+            shapeC.TShape()!.FreezeGraph(); // Kerf: handed out as is
             _shape = shapeC;
 
             // initialize iteration (for compatibility with previous versions)

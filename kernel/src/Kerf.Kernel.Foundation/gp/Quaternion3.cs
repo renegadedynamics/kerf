@@ -1,10 +1,10 @@
 // Port of: src/FoundationClasses/TKMath/gp/gp_Quaternion.hxx
 // Port of: src/FoundationClasses/TKMath/gp/gp_Quaternion.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.EulerSequence;
 
 namespace Kerf.Engine.Geometry;
@@ -498,7 +498,7 @@ internal partial struct Quaternion3 : IEquatable<Quaternion3>
 
     public static bool operator !=(in Quaternion3 left, in Quaternion3 right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("gp_Quaternion", _x, _y, _z, _w);
+    public override readonly string ToString() => Constants.Format("Quaternion3", _x, _y, _z, _w);
 
     /// <summary>How an Euler sequence maps onto rotation axes (OCCT's gp_EulerSequence_Parameters).</summary>
     private readonly struct EulerSequenceParameters

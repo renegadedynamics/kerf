@@ -1,9 +1,9 @@
 // Port of: src/ModelingAlgorithms/TKBool/TopOpeBRepTool/TopOpeBRepTool_GeomTool.hxx
 // Port of: src/ModelingAlgorithms/TKBool/TopOpeBRepTool/TopOpeBRepTool_GeomTool.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Booleans.Legacy.Tools.OutCurveType;
 
 namespace Kerf.Engine.Booleans.Legacy.Tools;
@@ -114,7 +114,7 @@ internal partial struct ToolGeomTool : IEquatable<ToolGeomTool>
     /// <summary>Whether the pcurve on the second surface is computed.</summary>
     public readonly bool CompPC2() => _compPC2;
 
-    // OCCT.NET: value equality
+    // Kerf: value equality
 
     public readonly bool Equals(ToolGeomTool other)
         => _typeC3D == other._typeC3D && _compC3D == other._compC3D && _compPC1 == other._compPC1

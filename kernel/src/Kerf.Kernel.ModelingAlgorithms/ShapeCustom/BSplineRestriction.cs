@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeCustom/ShapeCustom_BSplineRestriction.lxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeCustom/ShapeCustom_BSplineRestriction.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
@@ -13,7 +13,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.Continuity;
 
@@ -803,7 +803,7 @@ internal class BSplineRestriction : CustomModification
                             nbOfSpan = (approx.Surface()!.UKnotCount - 1) * (approx.Surface()!.VKnotCount - 1);
                             s = approx.Surface();
                             BSplineSurface bsc = (BSplineSurface)s!;
-                            // OCCT.NET: the approximation's surface is frozen (decision 197); OCCT changes it in place
+                            // Kerf: the approximation's surface is frozen (decision 197); OCCT changes it in place
                             // below, the port changes a copy (decision 974)
                             if (aSurface.IsUPeriodic || aSurface.IsVPeriodic || Math.Abs(shiftU) > global::Kerf.Engine.Foundation.Precision.PConfusion()
                                 || Math.Abs(shiftV) > global::Kerf.Engine.Foundation.Precision.PConfusion())
@@ -1385,7 +1385,7 @@ internal class BSplineRestriction : CustomModification
         BrepBuilder b = new BrepBuilder();
         if (!isConv && !newE.IsSame(e))
         {
-            // OCCT.NET: NewE is the modifier's new edge (or its dummy), never the caller's (decision 973)
+            // Kerf: NewE is the modifier's new edge (or its dummy), never the caller's (decision 973)
             b.Range(newE, first, last);
         }
         return isConv;

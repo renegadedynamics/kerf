@@ -9,9 +9,8 @@
 // - TestShapeListExpand.test_expand_with_vector, and the Point3D in test_expand_mixed: a ShapeList holds only shapes.
 using Xunit.Sdk;
 
-namespace Build123d.Tests.Topology;
+namespace Kerf.Modeling.Tests.Topology;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 /// <summary>build123d's objects, made with the direct API.</summary>

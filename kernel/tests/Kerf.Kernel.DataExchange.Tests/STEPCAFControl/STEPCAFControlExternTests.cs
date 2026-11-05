@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Exchange.Documents;
@@ -138,7 +138,7 @@ public sealed class STEPCAFControlExternTests : IDisposable
         Assert.True(anEF!.GetTransferStatus());
     }
 
-    // The issue build123d.NET found: ReadStream under the file's name read its siblings from the disk
+    // The issue Kerf.Modeling found: ReadStream under the file's name read its siblings from the disk
     [Fact]
     public void StreamApiReadsNoExternalFileWithoutAResolver()
     {

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -10,7 +10,7 @@ using Xunit.Abstractions;
 namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
-/// OCCT.NET's own tests (no native binding exists for Geom2dGridEval): every grid evaluator against point-by-point
+/// Kerf's own tests (no native binding exists for Geom2dGridEval): every grid evaluator against point-by-point
 /// evaluation of the same curve, on random curves of every kind. Point evaluation (Geom2d curves and
 /// Geom2dAdaptor_Curve) is bit-identical to native OCCT, so this is the oracle substitute.
 /// </summary>

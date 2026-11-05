@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
@@ -160,9 +160,9 @@ internal sealed class IntersectionComparison : IDisposable
             IdenticalLines++;
             return true;
         }
-        if (Environment.GetEnvironmentVariable("OCCTNET_DUMP_INTSS") != null)
+        if (Environment.GetEnvironmentVariable("KERF_DUMP_INTSS") != null)
         {
-            File.AppendAllText(Environment.GetEnvironmentVariable("OCCTNET_DUMP_INTSS")!,
+            File.AppendAllText(Environment.GetEnvironmentVariable("KERF_DUMP_INTSS")!,
                                $"{theWhat}\nN: {theNative}\nP: {thePort}\n");
         }
         return false;

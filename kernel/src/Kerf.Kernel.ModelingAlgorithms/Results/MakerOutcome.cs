@@ -4,7 +4,7 @@ using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Foundation;
 

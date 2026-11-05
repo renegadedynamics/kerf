@@ -2,12 +2,12 @@
 // Port of: src/ModelingData/TKBRep/BRep/BRep_CurveOnSurface.lxx
 // Port of: src/ModelingData/TKBRep/BRep/BRep_CurveOnSurface.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
 
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Topology.Brep;
 
@@ -23,7 +23,7 @@ internal class CurveOnSurfaceRepresentation : GCurve
     public CurveOnSurfaceRepresentation(Curve2D pc, Surface? s, in Placement l)
         : base(l, pc.FirstParameter, pc.LastParameter)
     {
-        pc.Freeze(); // OCCT.NET: attached geometry is frozen
+        pc.Freeze(); // Kerf: attached geometry is frozen
         s?.Freeze();
         _uv1 = new Point2D();
         _uv2 = new Point2D();
@@ -32,7 +32,7 @@ internal class CurveOnSurfaceRepresentation : GCurve
     }
 
     /// <summary>
-    /// OCCT.NET: puts the pcurve on <paramref name="s"/>, which stands for its surface changed in place by OCCT (the
+    /// Kerf: puts the pcurve on <paramref name="s"/>, which stands for its surface changed in place by OCCT (the
     /// offset surface whose basis BRepOffset_Tool's EnlargeGeometry enlarges, decision 1101).
     /// </summary>
     internal void ReplaceSurface(Surface s)
@@ -79,7 +79,7 @@ internal class CurveOnSurfaceRepresentation : GCurve
     internal override void PCurve(Curve2D? c)
     {
         CheckMutable();
-        c?.Freeze(); // OCCT.NET: attached geometry is frozen
+        c?.Freeze(); // Kerf: attached geometry is frozen
         _pCurve = c;
     }
 

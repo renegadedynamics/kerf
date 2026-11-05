@@ -1,7 +1,7 @@
-// New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 1229). Not a port; its methods
+// New in Kerf (unit 8T): the immutable assembly tree in place of XCAF (decision 1229). Not a port; its methods
 // follow XCAF's tools (src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_ShapeTool, _ColorTool, _LayerTool, _DocumentTool)
 // so that code ported from STEPCAFControl and the XDE Draw commands can call them in place of the tools'.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
@@ -9,7 +9,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;

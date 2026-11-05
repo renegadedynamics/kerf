@@ -5,7 +5,7 @@
 // that OCCT's construction errors become ArgumentExceptions.
 
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Geometry;
 

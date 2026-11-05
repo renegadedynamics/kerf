@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.lxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 //: l2 abv 10.01.99: USA60022 7289: corrections for reversed face
 // gka 11.01.99 file PRO7755.stp #2018: work-around error in BRepLib_MakeFace
@@ -33,7 +33,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.Orientation;
@@ -809,7 +809,7 @@ internal partial class FaceFixer : RootFixer
     }
 
     /// <summary>
-    /// OCCT.NET: frozen. Edits in place the pcurve <paramref name="c2d"/> of the edge, as OCCT does: when it is
+    /// Kerf: frozen. Edits in place the pcurve <paramref name="c2d"/> of the edge, as OCCT does: when it is
     /// frozen (a curve a caller's shape holds), the edit is made on a copy, which is put in its place in the edge's
     /// representations (OCCT edits the stored curve in place, and with it any other edge sharing it). Returns the
     /// curve edited.

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -10,7 +10,7 @@ using static Kerf.Geometry.Continuity;
 namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
-/// OCCT.NET's own tests of GeomConvert's statics, GeomConvert_ApproxCurve, GeomConvert_ApproxSurface,
+/// Kerf's own tests of GeomConvert's statics, GeomConvert_ApproxCurve, GeomConvert_ApproxSurface,
 /// GeomConvert_BSplineCurveKnotSplitting, GeomConvert_BSplineCurveToBezierCurve and the freezing rules of
 /// GeomConvert_CompCurveToBSplineCurve (OCCT's GTests cover little of them).
 /// </summary>

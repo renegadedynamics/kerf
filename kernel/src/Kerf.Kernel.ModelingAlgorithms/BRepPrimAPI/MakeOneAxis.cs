@@ -1,14 +1,14 @@
 // Port of: src/ModelingAlgorithms/TKPrim/BRepPrimAPI/BRepPrimAPI_MakeOneAxis.hxx
 // Port of: src/ModelingAlgorithms/TKPrim/BRepPrimAPI/BRepPrimAPI_MakeOneAxis.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Primitives;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Api;
 
@@ -30,7 +30,7 @@ internal abstract class MakeOneAxis : MakeShape
     public override void Build(ProgressRange range = default)
     {
         var b = new BrepBuilder();
-        // OCCT.NET: a new solid in a new variable (OCCT remakes the one in myShape, decision 414).
+        // Kerf: a new solid in a new variable (OCCT remakes the one in myShape, decision 414).
         Solid solid = new();
         b.MakeSolid(ref solid);
         b.Add(solid, OneAxis().Shell());

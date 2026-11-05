@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Collections;
@@ -314,7 +314,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         Setup(theTol, out double aTolerance, out double aMinTol);
         theTally.Cases++;
         string aCase = $"{theCase} at {theTol}";
-        string? aProgress = Environment.GetEnvironmentVariable("OCCTNET_PROGRESS");
+        string? aProgress = Environment.GetEnvironmentVariable("KERF_PROGRESS");
         if (aProgress is not null)
         {
             File.AppendAllText(aProgress, $"{DateTime.Now:HH:mm:ss} {aCase} ({aPInputs.Count} inputs)\n");

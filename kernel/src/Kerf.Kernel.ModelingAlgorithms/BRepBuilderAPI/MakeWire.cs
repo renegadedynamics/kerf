@@ -1,12 +1,12 @@
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepBuilderAPI/BRepBuilderAPI_MakeWire.hxx
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepBuilderAPI/BRepBuilderAPI_MakeWire.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Construction.Api.WireError;
 using static Kerf.Engine.Construction.Library.LibraryWireError;
 
@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Api;
 /// <remarks>
 /// A wrapper of <see cref="LibraryMakeWire"/>. The result is BRepLib's, read without freezing it; <see cref="MakeShape.Shape"/>
 /// and the typed accessors freeze it (design 4.2), and the internal accessors don't, for ported code.
-/// <para>OCCT.NET: where the maker had to copy frozen sub-shapes of its input to update them (decision 417), the
+/// <para>Kerf: where the maker had to copy frozen sub-shapes of its input to update them (decision 417), the
 /// copies are what OCCT's in-place result holds, and <see cref="MakeShape.Modified"/> answers them for
 /// the input's sub-shapes (OCCT's Modified, which would answer nothing, has nothing to report since it changes them in
 /// place).</para>
@@ -161,7 +161,7 @@ internal class MakeWire : MakeShape
         return WireError.WireDone;
     }
 
-    // OCCT.NET: the replacements of frozen input sub-shapes by the copies the maker updated (decision 417).
+    // Kerf: the replacements of frozen input sub-shapes by the copies the maker updated (decision 417).
     internal override NCollection_List<Shape> InternalModified(in Shape s)
     {
         _generated.Clear();

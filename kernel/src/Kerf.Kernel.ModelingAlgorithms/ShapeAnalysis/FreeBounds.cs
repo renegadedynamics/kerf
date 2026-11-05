@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeAnalysis/ShapeAnalysis_FreeBounds.lxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeAnalysis/ShapeAnalysis_FreeBounds.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry.Bounds;
@@ -12,7 +12,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
@@ -664,7 +664,7 @@ internal sealed class FreeBounds
     /// </summary>
     public static void DispatchWires(NCollection_HSequence<Shape>? wires, ref Compound closed, ref Compound open)
     {
-        // OCCT.NET: frozen: copy-on-write of the caller's compounds.
+        // Kerf: frozen: copy-on-write of the caller's compounds.
         closed = Writable(closed);
         open = Writable(open);
         InternalDispatchWires(wires, ref closed, ref open);
