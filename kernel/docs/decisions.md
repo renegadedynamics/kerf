@@ -16602,3 +16602,6 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        - **The flag is public, off by default,** as `MeshOptions.ControlAllSurfaces` and `MeshTolerances.ControlAllSurfaces`: the bottle 0.65× with 39% more triangles, `data/occ` 9% more, Bento's examples unchanged, `Ball.brep` still 1.36×.
        - **`MeshTolerances` no longer promises a maximum,** which it never delivered.
        - **The owner wants to come back to this:** "it feels like we should be able to do better here and (ideally) remove the flag altogether". Unit 11O.
+1681. **The rest of phase 11, and 0.3.0's scope** (the owner's direction, 5 November 2026). Nothing specific is targeted for 0.3.0 and there's no rush: "We might target a release on
+       Saturday afternoon." Until then the work is cleaning up the code, public and private; investigating and ideally fixing bugs, including flaky tests (unit 11P); and improving performance. Once
+       Kerf is close to native in most or all cases, the focus moves from comparing with native to improving slow use cases (unit 11Q), which can go on before or after the release.
