@@ -232,7 +232,7 @@ internal sealed class OffsetBlend
                         }
                         else
                         {
-                            Sphere sph = s.Sphere();
+                            Sphere3D sph = s.Sphere();
                             CoordinateSystem axis = sph.Position;
                             Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.SphereVIso(axis, sph.Radius, p.Y);
                             Direction3D dRev = axis.XDirection.Crossed(axis.YDirection);
@@ -248,7 +248,7 @@ internal sealed class OffsetBlend
                     }
                     else if (sTy == SurfaceKind.Cylinder)
                     {
-                        Cylinder cyl = s.Cylinder();
+                        Cylinder3D cyl = s.Cylinder();
                         Point2D p = c.Line().Location;
                         CoordinateSystem axis = cyl.Position;
                         Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(axis, cyl.Radius, p.Y);
@@ -264,7 +264,7 @@ internal sealed class OffsetBlend
                     }
                     else if (sTy == SurfaceKind.Cone)
                     {
-                        Cone cone = s.Cone();
+                        Cone3D cone = s.Cone();
                         Point2D p = c.Line().Location;
                         CoordinateSystem axis = cone.Position;
                         Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(axis, cone.RefRadius, cone.SemiAngle, p.Y);
@@ -280,7 +280,7 @@ internal sealed class OffsetBlend
                     }
                     else if (sTy == SurfaceKind.Torus)
                     {
-                        Torus tore = s.Torus();
+                        Torus3D tore = s.Torus();
                         Point2D p = c.Line().Location;
                         CoordinateSystem axis = tore.Position;
                         Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(axis, tore.MajorRadius, tore.MinorRadius, p.Y);
@@ -299,7 +299,7 @@ internal sealed class OffsetBlend
                 { // Iso U.
                     if (sTy == SurfaceKind.Sphere)
                     {
-                        Sphere sph = s.Sphere();
+                        Sphere3D sph = s.Sphere();
                         Point2D p = c.Line().Location;
                         CoordinateSystem axis = sph.Position;
                         // calculate iso 0.
@@ -324,7 +324,7 @@ internal sealed class OffsetBlend
                     }
                     else if (sTy == SurfaceKind.Cylinder)
                     {
-                        Cylinder cyl = s.Cylinder();
+                        Cylinder3D cyl = s.Cylinder();
                         Point2D p = c.Line().Location;
                         Line3D l = global::Kerf.Engine.Geometry.ElSLib.CylinderUIso(cyl.Position, cyl.Radius, p.X);
                         Vector3D tr = new(l.Direction);
@@ -339,7 +339,7 @@ internal sealed class OffsetBlend
                     }
                     else if (sTy == SurfaceKind.Cone)
                     {
-                        Cone cone = s.Cone();
+                        Cone3D cone = s.Cone();
                         Point2D p = c.Line().Location;
                         Line3D l = global::Kerf.Engine.Geometry.ElSLib.ConeUIso(cone.Position, cone.RefRadius, cone.SemiAngle, p.X);
                         Vector3D tr = new(l.Direction);

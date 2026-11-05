@@ -201,8 +201,8 @@ internal sealed partial class ImpImpIntersection
         PatchPoint ptsol = new();
         Circle3D cirsol;
 
-        Cylinder cy;
-        Sphere sp;
+        Cylinder3D cy;
+        Sphere3D sp;
 
         if (!reversed)
         {
@@ -471,8 +471,8 @@ internal sealed partial class ImpImpIntersection
         ResultType typint;
         Circle3D cirsol;
 
-        Cylinder cy;
-        Cone co;
+        Cylinder3D cy;
+        Cone3D co;
 
         if (!reversed)
         {
@@ -692,7 +692,7 @@ internal sealed partial class ImpImpIntersection
     // function : ExploreCurve
     // purpose  : Splits aC on several curves in the cone apex points.
     //=======================================================================
-    private static bool ExploreCurve(in Cone co,
+    private static bool ExploreCurve(in Cone3D co,
                                      ref Curve crv,
                                      double tol,
                                      NCollection_List<Curve> lc)
@@ -776,8 +776,8 @@ internal sealed partial class ImpImpIntersection
         WalkingTypeTrans trans1, trans2;
         ResultType typint;
         //
-        Cone co1 = quad1.Cone();
-        Cone co2 = quad2.Cone();
+        Cone3D co1 = quad1.Cone();
+        Cone3D co2 = quad2.Cone();
         //
         QuadQuadGeo inter = new(co1, co2, tol);
         if (!inter.IsDone)
@@ -1284,8 +1284,8 @@ internal sealed partial class ImpImpIntersection
         WalkingTypeTrans trans1, trans2;
         ResultType typint;
 
-        Sphere sp;
-        Cone co;
+        Sphere3D sp;
+        Cone3D co;
         double u1 = 0, v1 = 0, u2 = 0, v2 = 0;
 
         if (!reversed)
@@ -1582,8 +1582,8 @@ internal sealed partial class ImpImpIntersection
     {
         WalkingTypeTrans trans1, trans2;
         ResultType typint;
-        Sphere sph1 = quad1.Sphere();
-        Sphere sph2 = quad2.Sphere();
+        Sphere3D sph1 = quad1.Sphere();
+        Sphere3D sph2 = quad2.Sphere();
 
         QuadQuadGeo inter = new(sph1, sph2, tol);
         if (!inter.IsDone)
@@ -1664,8 +1664,8 @@ internal sealed partial class ImpImpIntersection
                                 ref bool bEmpty,
                                 NCollection_Sequence<PatchLine> seqLin)
     {
-        Cylinder cyl = bReversed ? quad2.Cylinder() : quad1.Cylinder();
-        Torus torus = bReversed ? quad1.Torus() : quad2.Torus();
+        Cylinder3D cyl = bReversed ? quad2.Cylinder() : quad1.Cylinder();
+        Torus3D torus = bReversed ? quad1.Torus() : quad2.Torus();
         //
         QuadQuadGeo anInt = new(cyl, torus, tolTang);
         bool bRet = TreatResultTorus(quad1, quad2, anInt, ref bEmpty, seqLin);
@@ -1682,8 +1682,8 @@ internal sealed partial class ImpImpIntersection
                                 ref bool bEmpty,
                                 NCollection_Sequence<PatchLine> seqLin)
     {
-        Cone cone = bReversed ? quad2.Cone() : quad1.Cone();
-        Torus torus = bReversed ? quad1.Torus() : quad2.Torus();
+        Cone3D cone = bReversed ? quad2.Cone() : quad1.Cone();
+        Torus3D torus = bReversed ? quad1.Torus() : quad2.Torus();
         //
         QuadQuadGeo anInt = new(cone, torus, tolTang);
         bool bRet = TreatResultTorus(quad1, quad2, anInt, ref bEmpty, seqLin);
@@ -1700,8 +1700,8 @@ internal sealed partial class ImpImpIntersection
                                 ref bool bEmpty,
                                 NCollection_Sequence<PatchLine> seqLin)
     {
-        Sphere sphere = bReversed ? quad2.Sphere() : quad1.Sphere();
-        Torus torus = bReversed ? quad1.Torus() : quad2.Torus();
+        Sphere3D sphere = bReversed ? quad2.Sphere() : quad1.Sphere();
+        Torus3D torus = bReversed ? quad1.Torus() : quad2.Torus();
         //
         QuadQuadGeo anInt = new(sphere, torus, tolTang);
         bool bRet = TreatResultTorus(quad1, quad2, anInt, ref bEmpty, seqLin);
@@ -1718,8 +1718,8 @@ internal sealed partial class ImpImpIntersection
                                 ref bool bEmpty,
                                 NCollection_Sequence<PatchLine> seqLin)
     {
-        Torus torus1 = quad1.Torus();
-        Torus torus2 = quad2.Torus();
+        Torus3D torus1 = quad1.Torus();
+        Torus3D torus2 = quad2.Torus();
         //
         QuadQuadGeo anInt = new(torus1, torus2, tolTang);
         bool bRet = anInt.IsDone;

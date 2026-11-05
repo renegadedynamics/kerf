@@ -57,7 +57,7 @@ internal static class DraftTools
         }
         else if (typeS == typeof(CylindricalSurface))
         {
-            Cylinder cy = ((CylindricalSurface)s).Cylinder;
+            Cylinder3D cy = ((CylindricalSurface)s).Cylinder;
             double testdir = d.Dot(cy.Axis.Direction);
             if (Math.Abs(testdir) <= 1.0 - global::Kerf.Engine.Foundation.Precision.Angular())
             {
@@ -67,7 +67,7 @@ internal static class DraftTools
         }
         else
         { // STANDARD_TYPE(Geom_ConicalSurface)
-            Cone co = ((ConicalSurface)s).Cone;
+            Cone3D co = ((ConicalSurface)s).Cone;
             double testdir = d.Dot(co.Axis.Direction);
             if (Math.Abs(testdir) <= 1.0 - global::Kerf.Engine.Foundation.Precision.Angular())
             {

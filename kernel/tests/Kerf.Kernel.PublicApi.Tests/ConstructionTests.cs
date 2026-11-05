@@ -69,7 +69,7 @@ public class ConstructionTests
         Wire skew = Wire.Polygon([new(0, 0, 0), new(1, 0, 0), new(1, 1, 1), new(0, 1, 0)], closed: true).Value;
         Assert.Equal("construction.not-planar", Face.FromWire(skew, onlyPlane: true).Error!.Code.Value);
 
-        var sphere = new SphericalSurface(new Sphere(CoordinateSystem.World, 1));
+        var sphere = new SphericalSurface(new Sphere3D(CoordinateSystem.World, 1));
         Assert.Equal(ShapeType.Face, Face.FromSurface(sphere).Value.Type);
         Assert.Equal(ShapeType.Shell, Shell.FromSurface(sphere).Value.Type);
         Face onPlane = Face.FromPlane(new Plane3D(Point3D.Origin, Direction3D.UnitZ), square).Value;

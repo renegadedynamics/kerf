@@ -1683,7 +1683,7 @@ internal static class GeomConvert
             }
             else if (surf is CylindricalSurface theCylSurf)
             {
-                Cylinder cyl = theCylSurf.Cylinder;
+                Cylinder3D cyl = theCylSurf.Cylinder;
                 if (isUClosed)
                 {
                     CylinderToBSplineSurface convert = new(cyl, vFirst, vLast);
@@ -1703,7 +1703,7 @@ internal static class GeomConvert
 
             else if (surf is ConicalSurface theConeSurf)
             {
-                Cone co = theConeSurf.Cone;
+                Cone3D co = theConeSurf.Cone;
                 if (isUClosed)
                 {
                     ConeToBSplineSurface convert = new(co, vFirst, vLast);
@@ -1723,7 +1723,7 @@ internal static class GeomConvert
 
             else if (surf is SphericalSurface theSphSurf)
             {
-                Sphere sph = theSphSurf.Sphere;
+                Sphere3D sph = theSphSurf.Sphere;
                 // OCC217
                 if (isUClosed)
                 {
@@ -1744,7 +1744,7 @@ internal static class GeomConvert
 
             else if (surf is ToroidalSurface theTorSurf)
             {
-                Torus tr = theTorSurf.Torus;
+                Torus3D tr = theTorSurf.Torus;
                 //
                 // if isUClosed = true and U trim does not coincide with first period of torus,
                 // method CheckAndSegment shifts position of U seam boundary of surface.
@@ -2034,14 +2034,14 @@ internal static class GeomConvert
         {
             if (s is SphericalSurface theSphSurf)
             {
-                Sphere sph = theSphSurf.Sphere;
+                Sphere3D sph = theSphSurf.Sphere;
                 SphereToBSplineSurface convert = new(sph);
                 theSurface = BSplineSurfaceBuilder(convert);
             }
 
             else if (s is ToroidalSurface theTorSurf)
             {
-                Torus tr = theTorSurf.Torus;
+                Torus3D tr = theTorSurf.Torus;
                 TorusToBSplineSurface convert = new(tr);
                 theSurface = BSplineSurfaceBuilder(convert);
             }

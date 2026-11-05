@@ -855,7 +855,7 @@ internal sealed class SurfacePipe
             }
 
             // OK it`s a Toroidal Surface !!  OUF !!
-            Torus t = new Torus(new CoordinateSystem(a0), ci.Radius, _radius);
+            Torus3D t = new Torus3D(new CoordinateSystem(a0), ci.Radius, _radius);
             Vector3D xRef = new Vector3D(a0.Location, p0);
             // au maximum on fait un tore d`ouverture en V = PI
             double vv1 = v1.AngleWithRef(new Direction3D(xRef), new Direction3D(yRef));

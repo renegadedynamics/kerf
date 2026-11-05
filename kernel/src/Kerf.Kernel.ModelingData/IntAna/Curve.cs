@@ -120,7 +120,7 @@ internal partial struct Curve : IEquatable<Curve>
     //=================================================================================================
 
     /// <summary>Sets the parameters used to compute points and derivatives on the curve (cone and quadric).</summary>
-    internal void SetConeQuadValues(in Cone cone,
+    internal void SetConeQuadValues(in Cone3D cone,
                                     double qxx,
                                     double qyy,
                                     double qzz,
@@ -187,7 +187,7 @@ internal partial struct Curve : IEquatable<Curve>
     //=================================================================================================
 
     /// <summary>Sets the parameters used to compute points and derivatives on the curve (cylinder and quadric).</summary>
-    internal void SetCylinderQuadValues(in Cylinder cyl,
+    internal void SetCylinderQuadValues(in Cylinder3D cyl,
                                         double qxx,
                                         double qyy,
                                         double qzz,
@@ -596,7 +596,7 @@ internal partial struct Curve : IEquatable<Curve>
     // Non-mutating twins (docs/translation-rules.md, section 3)
 
     /// <summary>A copy set by <see cref="SetConeQuadValues"/>.</summary>
-    public readonly Curve WithConeQuadValues(in Cone cone, double qxx, double qyy, double qzz, double qxy,
+    public readonly Curve WithConeQuadValues(in Cone3D cone, double qxx, double qyy, double qzz, double qxy,
                                                     double qxz, double qyz, double qx, double qy, double qz, double q1,
                                                     double tol, double domInf, double domSup, bool twocurves,
                                                     bool takezpositive)
@@ -608,7 +608,7 @@ internal partial struct Curve : IEquatable<Curve>
     }
 
     /// <summary>A copy set by <see cref="SetCylinderQuadValues"/>.</summary>
-    public readonly Curve WithCylinderQuadValues(in Cylinder cyl, double qxx, double qyy, double qzz,
+    public readonly Curve WithCylinderQuadValues(in Cylinder3D cyl, double qxx, double qyy, double qzz,
                                                         double qxy, double qxz, double qyz, double qx, double qy,
                                                         double qz, double q1, double tol, double domInf, double domSup,
                                                         bool twocurves, bool takezpositive)

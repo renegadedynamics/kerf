@@ -86,7 +86,7 @@ internal sealed partial class ImpImpIntersection
                                double h = 0.0)
     {
         Plane3D pl;
-        Cylinder cy;
+        Cylinder3D cy;
 
         WalkingTypeTrans trans1, trans2;
         ResultType typint;
@@ -284,7 +284,7 @@ internal sealed partial class ImpImpIntersection
     {
         Circle3D cirsol;
         Plane3D pl;
-        Sphere sp;
+        Sphere3D sp;
         WalkingTypeTrans trans1, trans2;
         ResultType typint;
 
@@ -379,7 +379,7 @@ internal sealed partial class ImpImpIntersection
         Point3D apex;
 
         Plane3D pl;
-        Cone co;
+        Cone3D co;
 
         WalkingTypeTrans trans1, trans2;
         ResultType typint;
@@ -722,7 +722,7 @@ internal sealed partial class ImpImpIntersection
                                NCollection_Sequence<PatchLine> seqLin)
     {
         Plane3D pln = bReversed ? quad2.Plane() : quad1.Plane();
-        Torus torus = bReversed ? quad1.Torus() : quad2.Torus();
+        Torus3D torus = bReversed ? quad1.Torus() : quad2.Torus();
         //
         QuadQuadGeo inter = new(pln, torus, tolTang);
         bool bRet = inter.IsDone;
@@ -786,7 +786,7 @@ internal sealed partial class ImpImpIntersection
     // modified by NIZNHY-PKV Thu Sep 15 10:53:39 2011f
     //=================================================================================================
 
-    private static void AdjustToSeam(in Cone aQuad, ref Circle3D aCirc)
+    private static void AdjustToSeam(in Cone3D aQuad, ref Circle3D aCirc)
     {
         Frame3D ax2;
         //
@@ -798,7 +798,7 @@ internal sealed partial class ImpImpIntersection
 
     //=================================================================================================
 
-    private static void AdjustToSeam(in Sphere aQuad, ref Circle3D aCirc, double aTolAng)
+    private static void AdjustToSeam(in Sphere3D aQuad, ref Circle3D aCirc, double aTolAng)
     {
         Frame3D ax2;
         //
@@ -818,7 +818,7 @@ internal sealed partial class ImpImpIntersection
 
     //=================================================================================================
 
-    private static void AdjustToSeam(in Cylinder aQuad, ref Circle3D aCirc)
+    private static void AdjustToSeam(in Cylinder3D aQuad, ref Circle3D aCirc)
     {
         Frame3D ax2;
         //
@@ -830,7 +830,7 @@ internal sealed partial class ImpImpIntersection
 
     //=================================================================================================
 
-    private static void AdjustToSeam(in Torus aQuad, ref Circle3D aCirc)
+    private static void AdjustToSeam(in Torus3D aQuad, ref Circle3D aCirc)
     {
         Frame3D ax2;
         //

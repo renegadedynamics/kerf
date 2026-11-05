@@ -195,7 +195,7 @@ internal sealed class HlrSurface
             {
                 return false;
             }
-            Cylinder cyl = BSurfaceTool.Cylinder(_surf);
+            Cylinder3D cyl = BSurfaceTool.Cylinder(_surf);
             Axis3D a = cyl.Axis;
             d = new Vector3D(a.Direction);
             d = d.Transformed(Proj().Transformation());
@@ -208,7 +208,7 @@ internal sealed class HlrSurface
             {
                 return false;
             }
-            Cone con = BSurfaceTool.Cone(_surf);
+            Cone3D con = BSurfaceTool.Cone(_surf);
             pt = con.Apex;
             pt = pt.Transformed(Proj().Transformation());
             double tol = 0.001;
@@ -406,13 +406,13 @@ internal sealed class HlrSurface
         }
     }
 
-    public Cylinder Cylinder() => BSurfaceTool.Cylinder(_surf);
+    public Cylinder3D Cylinder() => BSurfaceTool.Cylinder(_surf);
 
-    public Cone Cone() => BSurfaceTool.Cone(_surf);
+    public Cone3D Cone() => BSurfaceTool.Cone(_surf);
 
-    public Sphere Sphere() => BSurfaceTool.Sphere(_surf);
+    public Sphere3D Sphere() => BSurfaceTool.Sphere(_surf);
 
-    public Torus Torus() => BSurfaceTool.Torus(_surf);
+    public Torus3D Torus() => BSurfaceTool.Torus(_surf);
 
     public int UDegree() => BSurfaceTool.UDegree(_surf);
 

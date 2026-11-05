@@ -15,7 +15,7 @@ public class Convert_TorusToBSplineSurfaceTest
     [Fact]
     public void FullTorus()
     {
-        Torus aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0, 2.0);
+        Torus3D aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0, 2.0);
         TorusToBSplineSurface aConv = new(aTorus);
 
         Assert.Equal(2, aConv.UDegree());
@@ -29,7 +29,7 @@ public class Convert_TorusToBSplineSurfaceTest
     [Fact]
     public void TrimmedUV()
     {
-        Torus aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0, 2.0);
+        Torus3D aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0, 2.0);
         double aU1 = 0.0, aU2 = M_PI;
         double aV1 = 0.0, aV2 = M_PI;
         TorusToBSplineSurface aConv = new(aTorus, aU1, aU2, aV1, aV2);
@@ -43,7 +43,7 @@ public class Convert_TorusToBSplineSurfaceTest
     [Fact]
     public void UTrimmed()
     {
-        Torus aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0, 2.0);
+        Torus3D aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0, 2.0);
         TorusToBSplineSurface aConv = new(aTorus, 0.0, M_PI, true);
 
         Assert.False(aConv.IsUPeriodic);
@@ -53,7 +53,7 @@ public class Convert_TorusToBSplineSurfaceTest
     [Fact]
     public void VTrimmed()
     {
-        Torus aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0, 2.0);
+        Torus3D aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0, 2.0);
         TorusToBSplineSurface aConv = new(aTorus, 0.0, M_PI, false);
 
         Assert.True(aConv.IsUPeriodic);
@@ -63,7 +63,7 @@ public class Convert_TorusToBSplineSurfaceTest
     [Fact]
     public void WeightsArePositive()
     {
-        Torus aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0, 2.0);
+        Torus3D aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0, 2.0);
         TorusToBSplineSurface aConv = new(aTorus);
 
         NCollection_Array2<double> aWeights = aConv.Weights();
@@ -79,7 +79,7 @@ public class Convert_TorusToBSplineSurfaceTest
     [Fact]
     public void KnotsAreMonotonic()
     {
-        Torus aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0, 2.0);
+        Torus3D aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0, 2.0);
         TorusToBSplineSurface aConv = new(aTorus);
 
         NCollection_Array1<double> aUKnots = aConv.UKnots();
@@ -100,7 +100,7 @@ public class Convert_TorusToBSplineSurfaceTest
         double aMajorRadius = 5.0;
         double aMinorRadius = 2.0;
         CoordinateSystem anAx3 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Torus aTorus = new(anAx3, aMajorRadius, aMinorRadius);
+        Torus3D aTorus = new(anAx3, aMajorRadius, aMinorRadius);
         TorusToBSplineSurface aConv = new(aTorus, 0.0, M_PI, 0.0, M_PI);
 
         double aTol = 1.0e-10;

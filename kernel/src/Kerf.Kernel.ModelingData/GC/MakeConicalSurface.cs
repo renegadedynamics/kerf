@@ -42,7 +42,7 @@ internal sealed class MakeConicalSurface : Root
     }
 
     /// <summary>A cone from the gp_Cone C.</summary>
-    public MakeConicalSurface(in Cone c)
+    public MakeConicalSurface(in Cone3D c)
     {
         _theError = Done;
         _theCone = new ConicalSurface(c);

@@ -61,13 +61,13 @@ internal interface IIntersectionSurfaceTool<TheSurface> : IZerCSParPSurfaceTool<
 
     static abstract Plane3D Plane(in TheSurface s);
 
-    static abstract Cylinder Cylinder(in TheSurface s);
+    static abstract Cylinder3D Cylinder(in TheSurface s);
 
-    static abstract Cone Cone(in TheSurface s);
+    static abstract Cone3D Cone(in TheSurface s);
 
-    static abstract Sphere Sphere(in TheSurface s);
+    static abstract Sphere3D Sphere(in TheSurface s);
 
-    static abstract Torus Torus(in TheSurface s);
+    static abstract Torus3D Torus(in TheSurface s);
 
     static abstract int NbSamplesU(in TheSurface s, double u1, double u2);
 
@@ -562,7 +562,7 @@ internal class Inter<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool, ThePoly
             case SurfaceKind.Cone:
             {
                 double correction = 1.0E+5 * global::Kerf.Engine.Foundation.Precision.Angular();
-                Cone cn = TheSurfaceTool.Cone(surface);
+                Cone3D cn = TheSurfaceTool.Cone(surface);
                 if (Math.Abs(cn.SemiAngle) < M_PI / 2.0 - correction)
                 {
                     IntConicQuad linCone = new(line, new Quadric(cn));

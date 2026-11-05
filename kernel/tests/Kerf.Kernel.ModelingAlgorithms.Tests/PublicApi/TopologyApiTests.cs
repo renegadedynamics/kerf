@@ -179,7 +179,7 @@ public class TopologyApiTests
         Solid cylinder = Cylinder();
         Face side = cylinder.AllFaces().First(f => f.ToSurface().Kind == SurfaceKind.Cylinder);
         FaceSurface surface = side.ToSurface();
-        Assert.True(surface.TryGetCylinder(out Kerf.Geometry.Cylinder analytic));
+        Assert.True(surface.TryGetCylinder(out Kerf.Geometry.Cylinder3D analytic));
         Assert.Equal(1, analytic.Radius);
         Assert.False(surface.TryGetPlane(out _));
         Direction3D normal = surface.Normal(0, 1);

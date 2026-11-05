@@ -137,7 +137,7 @@ public class FailureSurfaceTests
                 new Point3D(1, 2, 3), new Vector3D(1, 2, 3), new Direction3D(0, 0, 1), new Point2D(1, 2), new Vector2D(1, 2), new Direction2D(1, 0),
                 Axis3D.ZAxis, Frame3D.World, Transform3D.Identity, Transform2D.Identity,
                 new Circle3D(Frame3D.World, 2), new Ellipse3D(Frame3D.World, 3, 2), new Hyperbola3D(Frame3D.World, 3, 2), new Parabola3D(Frame3D.World, 2),
-                new Plane3D(new CoordinateSystem(Frame3D.World)), new Cylinder(new CoordinateSystem(Frame3D.World), 2), new Sphere(new CoordinateSystem(Frame3D.World), 2), new Torus(new CoordinateSystem(Frame3D.World), 3, 1), new Cone(new CoordinateSystem(Frame3D.World), 0.3, 2),
+                new Plane3D(new CoordinateSystem(Frame3D.World)), new Cylinder3D(new CoordinateSystem(Frame3D.World), 2), new Sphere3D(new CoordinateSystem(Frame3D.World), 2), new Torus3D(new CoordinateSystem(Frame3D.World), 3, 1), new Cone3D(new CoordinateSystem(Frame3D.World), 0.3, 2),
                 new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), new CircleCurve3D(Frame3D.World, 2),
                 BSplineCurve3D.Interpolate(points).Value,
                 new PlaneSurface(new Plane3D(new CoordinateSystem(Frame3D.World))), new CylindricalSurface(new CoordinateSystem(Frame3D.World), 2),

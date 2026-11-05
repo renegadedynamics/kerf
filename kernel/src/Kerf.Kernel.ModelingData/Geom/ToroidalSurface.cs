@@ -41,7 +41,7 @@ public sealed class ToroidalSurface : ElementarySurface
     }
 
     /// <summary>A torus from a gp torus.</summary>
-    public ToroidalSurface(in Torus t)
+    public ToroidalSurface(in Torus3D t)
     {
         _majorRadius = t.MajorRadius;
         _minorRadius = t.MinorRadius;
@@ -107,7 +107,7 @@ public sealed class ToroidalSurface : ElementarySurface
         }
     }
 
-    internal void SetTorus(in Torus t)
+    internal void SetTorus(in Torus3D t)
     {
         CheckMutable();
         _minorRadius = t.MinorRadius;
@@ -134,7 +134,7 @@ public sealed class ToroidalSurface : ElementarySurface
     }
 
     /// <summary>A copy that is the torus T.</summary>
-    public ToroidalSurface WithTorus(in Torus t)
+    public ToroidalSurface WithTorus(in Torus3D t)
     {
         ToroidalSurface copy = (ToroidalSurface)Copy();
         copy.SetTorus(t);
@@ -159,7 +159,7 @@ public sealed class ToroidalSurface : ElementarySurface
     /// <exception cref="DimensionErrorException">Coef has fewer than 35 elements.</exception>
     internal void Coefficients(NCollection_Array1<double> coef)
     {
-        Torus tor = new Torus(_pos, _majorRadius, _minorRadius);
+        Torus3D tor = new Torus3D(_pos, _majorRadius, _minorRadius);
         tor.Coefficients(coef.AsSpan());
     }
 
@@ -226,7 +226,7 @@ public sealed class ToroidalSurface : ElementarySurface
     }
 
     /// <summary>The non-persistent gp torus with the same geometry.</summary>
-    public Torus Torus => new Torus(_pos, _majorRadius, _minorRadius);
+    public Torus3D Torus => new Torus3D(_pos, _majorRadius, _minorRadius);
 
     /// <summary>The U iso-parametric circle (a Geom_Circle).</summary>
     public sealed override Curve3D UIso(double u)

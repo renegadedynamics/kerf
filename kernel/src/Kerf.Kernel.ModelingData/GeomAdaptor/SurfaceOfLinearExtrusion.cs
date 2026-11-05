@@ -283,7 +283,7 @@ internal class SurfaceOfLinearExtrusion : SurfaceAdaptor
     }
 
     /// <exception cref="NoSuchObjectException">The surface is not a cylinder.</exception>
-    public override Cylinder Cylinder()
+    public override Cylinder3D Cylinder()
     {
         Standard_NoSuchObject_Raise_if(GetType() != global::Kerf.Geometry.SurfaceKind.Cylinder, "GeomAdaptor_SurfaceOfLinearExtrusion::Cylinder");
 
@@ -293,17 +293,17 @@ internal class SurfaceOfLinearExtrusion : SurfaceAdaptor
         {
             ax3 = ax3.ZReversed();
         }
-        return new Cylinder(ax3, c.Radius);
+        return new Cylinder3D(ax3, c.Radius);
     }
 
     /// <exception cref="NoSuchObjectException">Always.</exception>
-    public override Cone Cone() => throw new NoSuchObjectException("GeomAdaptor_SurfaceOfLinearExtrusion::Cone");
+    public override Cone3D Cone() => throw new NoSuchObjectException("GeomAdaptor_SurfaceOfLinearExtrusion::Cone");
 
     /// <exception cref="NoSuchObjectException">Always.</exception>
-    public override Sphere Sphere() => throw new NoSuchObjectException("GeomAdaptor_SurfaceOfLinearExtrusion::Sphere");
+    public override Sphere3D Sphere() => throw new NoSuchObjectException("GeomAdaptor_SurfaceOfLinearExtrusion::Sphere");
 
     /// <exception cref="NoSuchObjectException">Always.</exception>
-    public override Torus Torus() => throw new NoSuchObjectException("GeomAdaptor_SurfaceOfLinearExtrusion::Torus");
+    public override Torus3D Torus() => throw new NoSuchObjectException("GeomAdaptor_SurfaceOfLinearExtrusion::Torus");
 
     /// <exception cref="NoSuchObjectException">Always.</exception>
     public override Axis3D AxeOfRevolution() =>

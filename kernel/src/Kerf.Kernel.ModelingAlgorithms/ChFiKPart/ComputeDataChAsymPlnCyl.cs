@@ -38,7 +38,7 @@ internal static class ComputeDataChAsymPlnCyl
 
     /// <summary>The conical distance-angle chamfer along a circle of the cylinder.</summary>
     internal static bool ChFiKPart_MakeChAsym(DsDataStructure dStr, SurfData data, in Plane3D pln,
-                                              in Cylinder cyl, double fu, double lu, Orientation or1,
+                                              in Cylinder3D cyl, double fu, double lu, Orientation or1,
                                               Orientation or2, double dis, double angle, in Circle3D spine,
                                               double first, Orientation ofpl, bool plandab, bool disOnP)
     {
@@ -292,7 +292,7 @@ internal static class ComputeDataChAsymPlnCyl
 
     /// <summary>The plane distance-angle chamfer along a generatrix of the cylinder.</summary>
     internal static bool ChFiKPart_MakeChAsym(DsDataStructure dStr, SurfData data, in Plane3D pln,
-                                              in Cylinder cyl, double fu, double lu, Orientation or1,
+                                              in Cylinder3D cyl, double fu, double lu, Orientation or1,
                                               Orientation or2, double dis, double angle, in Line3D spine,
                                               double first, Orientation ofpl, bool plandab, bool disOnP)
     {

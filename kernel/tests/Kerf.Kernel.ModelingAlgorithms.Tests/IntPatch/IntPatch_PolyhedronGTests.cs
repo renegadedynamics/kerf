@@ -114,12 +114,12 @@ public class IntPatch_PolyhedronBVHTest
     public IntPatch_PolyhedronBVHTest()
     {
         // Create a sphere surface
-        Sphere aSphere = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
+        Sphere3D aSphere = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
         SphericalSurface aSphereSurf = new(aSphere);
         mySphereAdaptor = new SurfaceAdaptor(aSphereSurf);
 
         // Create a cylinder surface
-        Cylinder aCyl = new(new CoordinateSystem(new Point3D(0.5, 0, 0), new Direction3D(0, 0, 1)), 0.8);
+        Cylinder3D aCyl = new(new CoordinateSystem(new Point3D(0.5, 0, 0), new Direction3D(0, 0, 1)), 0.8);
         CylindricalSurface aCylSurf = new(aCyl);
         myCylAdaptor = new SurfaceAdaptor(aCylSurf, 0, 2 * M_PI, -1, 1);
     }

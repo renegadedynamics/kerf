@@ -648,7 +648,7 @@ internal partial class ChBuilder : FilletBuilderBase
                 u1 = Max(p1f.X, p2f.X);
                 u2 = Min(p1l.X, p2l.X);
                 double ang = (u2 - u1);
-                Cone co = AS.Cone();
+                Cone3D co = AS.Cone();
                 double rad = co.RefRadius, sang = co.SemiAngle;
                 int n = (int)(36.0 * ang / M_PI + 1);
                 if (n < 2)

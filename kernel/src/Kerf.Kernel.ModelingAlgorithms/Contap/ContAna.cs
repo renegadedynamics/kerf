@@ -43,7 +43,7 @@ internal sealed class ContAna
     }
 
     /// <summary>The silhouette of a sphere for the direction <paramref name="d"/>.</summary>
-    public void Perform(in Sphere s, in Direction3D d)
+    public void Perform(in Sphere3D s, in Direction3D d)
     {
         _done = false;
         _typL = global::Kerf.Geometry.CurveKind.Circle;
@@ -63,7 +63,7 @@ internal sealed class ContAna
     }
 
     /// <summary>The draft contour of angle <paramref name="angle"/> of a sphere for the direction <paramref name="d"/>.</summary>
-    public void Perform(in Sphere s, in Direction3D d, double angle)
+    public void Perform(in Sphere3D s, in Direction3D d, double angle)
     {
         _done = false;
         _typL = global::Kerf.Geometry.CurveKind.Circle;
@@ -85,7 +85,7 @@ internal sealed class ContAna
     }
 
     /// <summary>The silhouette of a sphere for the eye <paramref name="eye"/>.</summary>
-    public void Perform(in Sphere s, in Point3D eye)
+    public void Perform(in Sphere3D s, in Point3D eye)
     {
         _done = false;
 
@@ -123,7 +123,7 @@ internal sealed class ContAna
     }
 
     /// <summary>The silhouette of a cylinder for the direction <paramref name="d"/>.</summary>
-    public void Perform(in Cylinder c, in Direction3D d)
+    public void Perform(in Cylinder3D c, in Direction3D d)
     {
         _done = false;
 
@@ -148,7 +148,7 @@ internal sealed class ContAna
     }
 
     /// <summary>The draft contour of angle <paramref name="angle"/> of a cylinder for the direction <paramref name="d"/>.</summary>
-    public void Perform(in Cylinder c, in Direction3D d, double angle)
+    public void Perform(in Cylinder3D c, in Direction3D d, double angle)
     {
         _done = false;
 
@@ -209,7 +209,7 @@ internal sealed class ContAna
     }
 
     /// <summary>The silhouette of a cylinder for the eye <paramref name="eye"/>.</summary>
-    public void Perform(in Cylinder c, in Point3D eye)
+    public void Perform(in Cylinder3D c, in Point3D eye)
     {
         _done = false;
 
@@ -238,7 +238,7 @@ internal sealed class ContAna
     }
 
     /// <summary>The silhouette of a cone for the direction <paramref name="d"/>.</summary>
-    public void Perform(in Cone c, in Direction3D d)
+    public void Perform(in Cone3D c, in Direction3D d)
     {
         _done = false;
 
@@ -289,7 +289,7 @@ internal sealed class ContAna
     }
 
     /// <summary>The draft contours of angle <paramref name="angle"/> of a cone for the direction <paramref name="d"/>.</summary>
-    public void Perform(in Cone c, in Direction3D d, double angle)
+    public void Perform(in Cone3D c, in Direction3D d, double angle)
     {
         _done = false;
         _nbSol = 0;
@@ -386,7 +386,7 @@ internal sealed class ContAna
     }
 
     /// <summary>The silhouette of a cone for the eye <paramref name="eye"/>.</summary>
-    public void Perform(in Cone c, in Point3D eye)
+    public void Perform(in Cone3D c, in Point3D eye)
     {
         _done = false;
 

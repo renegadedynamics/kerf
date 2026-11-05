@@ -38,7 +38,7 @@ public sealed class ConicalSurface : ElementarySurface
     }
 
     /// <summary>A cone from a gp cone.</summary>
-    public ConicalSurface(in Cone c)
+    public ConicalSurface(in Cone3D c)
     {
         _radius = c.RefRadius;
         _semiAngle = c.SemiAngle;
@@ -85,9 +85,9 @@ public sealed class ConicalSurface : ElementarySurface
     public sealed override bool IsVPeriodic => false;
 
     /// <summary>The non-persistent gp cone with the same geometry.</summary>
-    public Cone Cone => new Cone(_pos, _semiAngle, _radius);
+    public Cone3D Cone => new Cone3D(_pos, _semiAngle, _radius);
 
-    internal void SetCone(in Cone c)
+    internal void SetCone(in Cone3D c)
     {
         CheckMutable();
         _radius = c.RefRadius;
@@ -118,7 +118,7 @@ public sealed class ConicalSurface : ElementarySurface
     }
 
     /// <summary>A copy that is the cone C.</summary>
-    public ConicalSurface WithCone(in Cone c)
+    public ConicalSurface WithCone(in Cone3D c)
     {
         ConicalSurface copy = (ConicalSurface)Copy();
         copy.SetCone(c);

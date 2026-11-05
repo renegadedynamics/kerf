@@ -300,7 +300,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 using var aNAx = Oracle.ToNative(theAx);
                 using var aNCyl = new N.gp_Cylinder(aNAx, r);
                 return (new N.BRepBuilderAPI_MakeFace(aNCyl, u1, u2, v1, v2).Face(),
-                        new MakeFace(new Cylinder(theAx, r), u1, u2, v1, v2).Face(), "cylinder patch");
+                        new MakeFace(new Cylinder3D(theAx, r), u1, u2, v1, v2).Face(), "cylinder patch");
             }
             case 9:
             {
@@ -625,11 +625,11 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
         var aFaces = new List<(Func<N.TopoDS_Shape>, Func<Shape>, string)>
         {
             (() => new N.BRepBuilderAPI_MakeFace(new N.gp_Cylinder(aNAx, 15), 0, 2 * Math.PI, 0, 40).Face(),
-             () => new MakeFace(new Cylinder(anAx, 15), 0, 2 * Math.PI, 0, 40).Face(), "cylinder"),
+             () => new MakeFace(new Cylinder3D(anAx, 15), 0, 2 * Math.PI, 0, 40).Face(), "cylinder"),
             (() => new N.BRepBuilderAPI_MakeFace(new N.gp_Sphere(aNAx, 20), 0, 2 * Math.PI, -0.5, 0.7).Face(),
-             () => new MakeFace(new Sphere(anAx, 20), 0, 2 * Math.PI, -0.5, 0.7).Face(), "sphere band"),
+             () => new MakeFace(new Sphere3D(anAx, 20), 0, 2 * Math.PI, -0.5, 0.7).Face(), "sphere band"),
             (() => new N.BRepBuilderAPI_MakeFace(new N.gp_Sphere(aNAx, 20), 0, 2 * Math.PI, 0.4, Math.PI / 2).Face(),
-             () => new MakeFace(new Sphere(anAx, 20), 0, 2 * Math.PI, 0.4, Math.PI / 2).Face(), "sphere cap"),
+             () => new MakeFace(new Sphere3D(anAx, 20), 0, 2 * Math.PI, 0.4, Math.PI / 2).Face(), "sphere cap"),
         };
         using var aNZ = Oracle.ToNative(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
         var aZ = new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));

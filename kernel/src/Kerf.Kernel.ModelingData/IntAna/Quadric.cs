@@ -83,13 +83,13 @@ internal sealed class Quadric
     //----------------------------------------------------------------------
 
     /// <summary>Initializes the quadric with a cylinder.</summary>
-    public void SetQuadric(in Cylinder cyl)
+    public void SetQuadric(in Cylinder3D cyl)
     {
         cyl.Coefficients(out _cxx, out _cyy, out _czz, out _cxy, out _cxz, out _cyz, out _cx, out _cy, out _cz, out _cCte);
     }
 
     /// <summary>Creates a quadric from a cylinder.</summary>
-    public Quadric(in Cylinder cyl)
+    public Quadric(in Cylinder3D cyl)
     {
         cyl.Coefficients(out _cxx, out _cyy, out _czz, out _cxy, out _cxz, out _cyz, out _cx, out _cy, out _cz, out _cCte);
     }
@@ -99,13 +99,13 @@ internal sealed class Quadric
     //----------------------------------------------------------------------
 
     /// <summary>Creates a quadric from a cone. Its apex is a special point.</summary>
-    public Quadric(in Cone cone)
+    public Quadric(in Cone3D cone)
     {
         SetQuadric(cone);
     }
 
     /// <summary>Initializes the quadric with a cone, and appends its apex to the special points.</summary>
-    public void SetQuadric(in Cone cone)
+    public void SetQuadric(in Cone3D cone)
     {
         cone.Coefficients(out _cxx, out _cyy, out _czz, out _cxy, out _cxz, out _cyz, out _cx, out _cy, out _cz, out _cCte);
         double vParam = -cone.RefRadius / Math.Sin(cone.SemiAngle);
@@ -117,7 +117,7 @@ internal sealed class Quadric
     //----------------------------------------------------------------------
 
     /// <summary>Initializes the quadric with a sphere, and appends its poles to the special points.</summary>
-    public void SetQuadric(in Sphere sph)
+    public void SetQuadric(in Sphere3D sph)
     {
         sph.Coefficients(out _cxx, out _cyy, out _czz, out _cxy, out _cxz, out _cyz, out _cx, out _cy, out _cz, out _cCte);
         _specialPoints.Append(global::Kerf.Engine.Geometry.ElSLib.Value(0.0, -M_PI_2, sph));
@@ -125,7 +125,7 @@ internal sealed class Quadric
     }
 
     /// <summary>Creates a quadric from a sphere. Its poles are special points.</summary>
-    public Quadric(in Sphere sph)
+    public Quadric(in Sphere3D sph)
     {
         SetQuadric(sph);
     }

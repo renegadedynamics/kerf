@@ -45,7 +45,7 @@ internal sealed class TorusGrid : GeomGridEvalGrid.ISurfaceEvaluator
 
     private Data ExtractData()
     {
-        Torus torus = _geom!.Torus;
+        Torus3D torus = _geom!.Torus;
         Point3D center = torus.Location;
         Direction3D xDir = torus.Position.XDirection;
         Direction3D yDir = torus.Position.YDirection;

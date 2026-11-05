@@ -53,10 +53,10 @@ public class GeometryValueLawsTests
         Row(new Parabola3D(Frame, 2), new Parabola3D(Frame, 2), new Parabola3D(Frame, 3)),
         Row(new Parabola2D(Frame2, 2), new Parabola2D(Frame2, 2), new Parabola2D(Frame2, 3)),
         Row(new Plane3D(System), new Plane3D(P, Up), new Plane3D(OtherSystem)),
-        Row(new Cylinder(System, 2), new Cylinder(System, 2), new Cylinder(System, 3)),
-        Row(new Cone(System, 0.5, 2), new Cone(System, 0.5, 2), new Cone(System, 0.25, 2)),
-        Row(new Sphere(System, 2), new Sphere(System, 2), new Sphere(System, 3)),
-        Row(new Torus(System, 5, 2), new Torus(System, 5, 2), new Torus(System, 5, 3)),
+        Row(new Cylinder3D(System, 2), new Cylinder3D(System, 2), new Cylinder3D(System, 3)),
+        Row(new Cone3D(System, 0.5, 2), new Cone3D(System, 0.5, 2), new Cone3D(System, 0.25, 2)),
+        Row(new Sphere3D(System, 2), new Sphere3D(System, 2), new Sphere3D(System, 3)),
+        Row(new Torus3D(System, 5, 2), new Torus3D(System, 5, 2), new Torus3D(System, 5, 3)),
         Row(Shift(1), Shift(1), Shift(2)),
         Row(Shift2(1), Shift2(1), Shift2(2)),
         Row(new GeneralTransform3D(Shift(1)), new GeneralTransform3D(Shift(1)), new GeneralTransform3D(Shift(2))),
@@ -101,10 +101,10 @@ public class GeometryValueLawsTests
         [new Ellipse3D(Frame, 3, 2), "MajorRadius"],
         [new Hyperbola3D(Frame, 3, 4), "MajorRadius"],
         [new Parabola3D(Frame, 2), "Focal"],
-        [new Cylinder(System, 2), "Radius"],
-        [new Cone(System, 0.5, 2), "RefRadius"],
-        [new Sphere(System, 2), "Radius"],
-        [new Torus(System, 5, 2), "MajorRadius"],
+        [new Cylinder3D(System, 2), "Radius"],
+        [new Cone3D(System, 0.5, 2), "RefRadius"],
+        [new Sphere3D(System, 2), "Radius"],
+        [new Torus3D(System, 5, 2), "MajorRadius"],
     ];
 
     private static void Same(Point3D expected, Point3D actual)
@@ -392,14 +392,14 @@ public class GeometryValueLawsTests
     [Fact]
     public void Elementary_surfaces_measure_and_reverse()
     {
-        var sphere = new Sphere(CoordinateSystem.World, 2);
+        var sphere = new Sphere3D(CoordinateSystem.World, 2);
         Assert.Equal(16 * Math.PI, sphere.Area, 9);
         Assert.Equal(32.0 / 3 * Math.PI, sphere.Volume, 9);
         Same(P, sphere.WithLocation(P).Location);
         Assert.False(sphere.UReversed().IsDirect);
         Assert.False(sphere.VReversed().IsDirect);
 
-        var torus = new Torus(CoordinateSystem.World, 5, 2);
+        var torus = new Torus3D(CoordinateSystem.World, 5, 2);
         Assert.Equal(4 * Math.PI * Math.PI * 5 * 2, torus.Area, 9);
         Assert.Equal(2 * Math.PI * Math.PI * 5 * 4, torus.Volume, 9);
         Assert.True(torus.IsDirect);
@@ -410,12 +410,12 @@ public class GeometryValueLawsTests
         Assert.Equal(1, torus.WithMinorRadius(1).MinorRadius, 9);
         Same(P, torus.WithPosition(System).Location);
 
-        var cylinder = new Cylinder(CoordinateSystem.World, 2);
+        var cylinder = new Cylinder3D(CoordinateSystem.World, 2);
         Same(P, cylinder.WithLocation(P).Location);
         Assert.False(cylinder.UReversed().IsDirect);
         Assert.False(cylinder.VReversed().IsDirect);
 
-        var cone = new Cone(CoordinateSystem.World, 0.5, 2);
+        var cone = new Cone3D(CoordinateSystem.World, 0.5, 2);
         Same(P, cone.WithLocation(P).Location);
         Assert.Equal(1, cone.WithAxis(Axis3D.XAxis).Axis.Direction.X, 9);
         Assert.False(cone.UReversed().IsDirect);

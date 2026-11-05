@@ -53,7 +53,7 @@ internal static partial class ProjLib
         return proj.Hyperbola();
     }
 
-    public static Point2D Project(in Cylinder cy, in Point3D p)
+    public static Point2D Project(in Cylinder3D cy, in Point3D p)
     {
         double u, v;
         global::Kerf.Engine.Geometry.ElSLib.Parameters(cy, p, out u, out v);
@@ -61,20 +61,20 @@ internal static partial class ProjLib
     }
 
     /// <exception cref="NoSuchObjectException">The line is not parallel to the axis.</exception>
-    public static Line2D Project(in Cylinder cy, in Line3D l)
+    public static Line2D Project(in Cylinder3D cy, in Line3D l)
     {
         CylinderProjector proj = new(cy, l);
         return proj.Line();
     }
 
     /// <exception cref="NoSuchObjectException">The circle is not normal to the axis.</exception>
-    public static Line2D Project(in Cylinder cy, in Circle3D ci)
+    public static Line2D Project(in Cylinder3D cy, in Circle3D ci)
     {
         CylinderProjector proj = new(cy, ci);
         return proj.Line();
     }
 
-    public static Point2D Project(in Cone co, in Point3D p)
+    public static Point2D Project(in Cone3D co, in Point3D p)
     {
         double u, v;
         global::Kerf.Engine.Geometry.ElSLib.Parameters(co, p, out u, out v);
@@ -82,7 +82,7 @@ internal static partial class ProjLib
     }
 
     /// <exception cref="NoSuchObjectException">The line is not a generatrix of the cone.</exception>
-    public static Line2D Project(in Cone co, in Line3D l)
+    public static Line2D Project(in Cone3D co, in Line3D l)
     {
         ConeProjector proj = new(co, l);
         return proj.Line();
@@ -90,13 +90,13 @@ internal static partial class ProjLib
 
     /// <remarks>As in OCCT, a circle not normal to the axis gives the default line: ProjLib_Cone sets the type to
     /// Line before it checks.</remarks>
-    public static Line2D Project(in Cone co, in Circle3D ci)
+    public static Line2D Project(in Cone3D co, in Circle3D ci)
     {
         ConeProjector proj = new(co, ci);
         return proj.Line();
     }
 
-    public static Point2D Project(in Sphere sp, in Point3D p)
+    public static Point2D Project(in Sphere3D sp, in Point3D p)
     {
         double u, v;
         global::Kerf.Engine.Geometry.ElSLib.Parameters(sp, p, out u, out v);
@@ -104,20 +104,20 @@ internal static partial class ProjLib
     }
 
     /// <exception cref="NoSuchObjectException">The circle is not an isoline.</exception>
-    public static Line2D Project(in Sphere sp, in Circle3D ci)
+    public static Line2D Project(in Sphere3D sp, in Circle3D ci)
     {
         SphereProjector proj = new(sp, ci);
         return proj.Line();
     }
 
-    public static Point2D Project(in Torus to, in Point3D p)
+    public static Point2D Project(in Torus3D to, in Point3D p)
     {
         double u, v;
         global::Kerf.Engine.Geometry.ElSLib.Parameters(to, p, out u, out v);
         return new Point2D(u, v);
     }
 
-    public static Line2D Project(in Torus to, in Circle3D ci)
+    public static Line2D Project(in Torus3D to, in Circle3D ci)
     {
         TorusProjector proj = new(to, ci);
         return proj.Line();

@@ -174,7 +174,7 @@ internal class SurfaceSet
             os.Write("CylindricalSurface");
         }
 
-        Cylinder p = s.Cylinder;
+        Cylinder3D p = s.Cylinder;
         if (!compact)
         {
             os.Write("\n  Origin :");
@@ -224,7 +224,7 @@ internal class SurfaceSet
             os.Write("ConicalSurface");
         }
 
-        Cone p = s.Cone;
+        Cone3D p = s.Cone;
         if (!compact)
         {
             os.Write("\n  Origin :");
@@ -281,7 +281,7 @@ internal class SurfaceSet
             os.Write("SphericalSurface");
         }
 
-        Sphere p = s.Sphere;
+        Sphere3D p = s.Sphere;
         if (!compact)
         {
             os.Write("\n  Center :");
@@ -331,7 +331,7 @@ internal class SurfaceSet
             os.Write("ToroidalSurface");
         }
 
-        Torus p = s.Torus;
+        Torus3D p = s.Torus;
         if (!compact)
         {
             os.Write("\n  Origin :");

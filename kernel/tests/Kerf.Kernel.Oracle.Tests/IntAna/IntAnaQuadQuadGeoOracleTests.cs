@@ -133,7 +133,7 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
             using var aNAx2 = Oracle.ToNative(anAx2);
             using var aS1 = new N.Geom_Plane(aNAx1);
             using var aS2 = new N.Geom_CylindricalSurface(aNAx2, aR);
-            var aPort = new QuadQuadGeo(new Plane3D(anAx1), new Cylinder(anAx2, aR), TolAng, Tol);
+            var aPort = new QuadQuadGeo(new Plane3D(anAx1), new Cylinder3D(anAx2, aR), TolAng, Tol);
             Compare(anOracle, aS1, aS2, aPort, $"case {i}");
         }
         anOracle.Report("IntAna_QuadQuadGeo plane/cylinder");
@@ -151,7 +151,7 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
             using var aNAx2 = Oracle.ToNative(anAx2);
             using var aS1 = new N.Geom_Plane(aNAx1);
             using var aS2 = new N.Geom_SphericalSurface(aNAx2, aR);
-            var aPort = new QuadQuadGeo(new Plane3D(anAx1), new Sphere(anAx2, aR));
+            var aPort = new QuadQuadGeo(new Plane3D(anAx1), new Sphere3D(anAx2, aR));
             Compare(anOracle, aS1, aS2, aPort, $"case {i}");
         }
         anOracle.Report("IntAna_QuadQuadGeo plane/sphere");
@@ -169,7 +169,7 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
             using var aNAx2 = Oracle.ToNative(anAx2);
             using var aS1 = new N.Geom_SphericalSurface(aNAx1, aR1);
             using var aS2 = new N.Geom_SphericalSurface(aNAx2, aR2);
-            var aPort = new QuadQuadGeo(new Sphere(anAx1, aR1), new Sphere(anAx2, aR2), Tol);
+            var aPort = new QuadQuadGeo(new Sphere3D(anAx1, aR1), new Sphere3D(anAx2, aR2), Tol);
             Compare(anOracle, aS1, aS2, aPort, $"case {i}");
         }
         anOracle.Report("IntAna_QuadQuadGeo sphere/sphere");

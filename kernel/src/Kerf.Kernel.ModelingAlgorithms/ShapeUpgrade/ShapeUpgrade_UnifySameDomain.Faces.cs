@@ -1228,7 +1228,7 @@ internal partial class UnifySameDomain
         return isDropped;
     }
 
-    private static bool GetCylinder(Surface inSurface, ref Cylinder outCylinder)
+    private static bool GetCylinder(Surface inSurface, ref Cylinder3D outCylinder)
     {
         bool isCylinder = false;
 
@@ -1257,7 +1257,7 @@ internal partial class UnifySameDomain
                     double r     = basisLine.Line.DistanceTo(loc);
                     var    cylAx = new CoordinateSystem(loc, dir);
 
-                    outCylinder = new Cylinder(cylAx, r);
+                    outCylinder = new Cylinder3D(cylAx, r);
                     isCylinder     = true;
                 }
             }
@@ -1282,7 +1282,7 @@ internal partial class UnifySameDomain
                     double r     = basisCircle.Radius;
                     var    cylAx = new CoordinateSystem(loc, dir);
 
-                    outCylinder = new Cylinder(cylAx, r);
+                    outCylinder = new Cylinder3D(cylAx, r);
                     isCylinder     = true;
                 }
             }
@@ -1454,8 +1454,8 @@ internal partial class UnifySameDomain
         if ((s1 is CylindricalSurface || s1 is SweptSurface)
             && (s2 is CylindricalSurface || s2 is SweptSurface))
         {
-            var cyl1 = new Cylinder();
-            var cyl2 = new Cylinder();
+            var cyl1 = new Cylinder3D();
+            var cyl2 = new Cylinder3D();
             if (GetCylinder(s1, ref cyl1) && GetCylinder(s2, ref cyl2))
             {
                 if (Math.Abs(cyl1.Radius - cyl2.Radius) < linTol)

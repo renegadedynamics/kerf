@@ -17,19 +17,19 @@ namespace Kerf.Geometry;
 /// <c>new gp_Cylinder()</c> is OCCT's indefinite cylinder (radius <see cref="Standard.RealLast"/>);
 /// <c>default(gp_Cylinder)</c> is not valid.
 /// </remarks>
-public readonly partial struct Cylinder : IEquatable<Cylinder>
+public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
 {
     private readonly CoordinateSystem _pos;
     private readonly double _radius;
 
-    public Cylinder()
+    public Cylinder3D()
     {
         _pos = new CoordinateSystem();
         _radius = RealLast();
     }
 
     /// <exception cref="ConstructionErrorException"><paramref name="radius"/> is negative.</exception>
-    public Cylinder(in CoordinateSystem a3, double radius)
+    public Cylinder3D(in CoordinateSystem a3, double radius)
     {
         _pos = a3;
         _radius = radius;
@@ -38,47 +38,47 @@ public readonly partial struct Cylinder : IEquatable<Cylinder>
 
     // Copies
 
-    public readonly Cylinder WithAxis(in Axis3D a1)
+    public readonly Cylinder3D WithAxis(in Axis3D a1)
     {
         CoordinateSystem pos = _pos;
         pos = pos.WithAxis(a1);
-        return new Cylinder(pos, _radius);
+        return new Cylinder3D(pos, _radius);
     }
 
-    public readonly Cylinder WithLocation(in Point3D loc)
+    public readonly Cylinder3D WithLocation(in Point3D loc)
     {
         CoordinateSystem pos = _pos;
         pos = pos.WithLocation(loc);
-        return new Cylinder(pos, _radius);
+        return new Cylinder3D(pos, _radius);
     }
 
-    public readonly Cylinder WithPosition(in CoordinateSystem a3)
+    public readonly Cylinder3D WithPosition(in CoordinateSystem a3)
     {
         CoordinateSystem pos = _pos;
         pos = a3;
-        return new Cylinder(pos, _radius);
+        return new Cylinder3D(pos, _radius);
     }
 
-    public readonly Cylinder WithRadius(double r)
+    public readonly Cylinder3D WithRadius(double r)
     {
         double newRadius = _radius;
         Refusal.ArgumentIf(r < 0.0, FailureKind.ConstructionError, "gp_Cylinder::SetRadius() - radius should be positive number");
         newRadius = r;
-        return new Cylinder(_pos, newRadius);
+        return new Cylinder3D(_pos, newRadius);
     }
 
-    public readonly Cylinder UReversed()
+    public readonly Cylinder3D UReversed()
     {
         CoordinateSystem pos = _pos;
         pos = pos.YReversed();
-        return new Cylinder(pos, _radius);
+        return new Cylinder3D(pos, _radius);
     }
 
-    public readonly Cylinder VReversed()
+    public readonly Cylinder3D VReversed()
     {
         CoordinateSystem pos = _pos;
         pos = pos.ZReversed();
-        return new Cylinder(pos, _radius);
+        return new Cylinder3D(pos, _radius);
     }
 
     // Queries
@@ -131,35 +131,35 @@ public readonly partial struct Cylinder : IEquatable<Cylinder>
 
     public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
-    public readonly Cylinder Mirrored(in Point3D p)
+    public readonly Cylinder3D Mirrored(in Point3D p)
     {
         CoordinateSystem pos = _pos;
         pos = pos.Mirrored(p);
-        return new Cylinder(pos, _radius);
+        return new Cylinder3D(pos, _radius);
     }
 
-    public readonly Cylinder Mirrored(in Axis3D a1)
+    public readonly Cylinder3D Mirrored(in Axis3D a1)
     {
         CoordinateSystem pos = _pos;
         pos = pos.Mirrored(a1);
-        return new Cylinder(pos, _radius);
+        return new Cylinder3D(pos, _radius);
     }
 
-    public readonly Cylinder Mirrored(in Frame3D a2)
+    public readonly Cylinder3D Mirrored(in Frame3D a2)
     {
         CoordinateSystem pos = _pos;
         pos = pos.Mirrored(a2);
-        return new Cylinder(pos, _radius);
+        return new Cylinder3D(pos, _radius);
     }
 
-    public readonly Cylinder Rotated(in Axis3D a1, double ang)
+    public readonly Cylinder3D Rotated(in Axis3D a1, double ang)
     {
         CoordinateSystem pos = _pos;
         pos = pos.Rotated(a1, ang);
-        return new Cylinder(pos, _radius);
+        return new Cylinder3D(pos, _radius);
     }
 
-    public readonly Cylinder Scaled(in Point3D p, double s)
+    public readonly Cylinder3D Scaled(in Point3D p, double s)
     {
         CoordinateSystem pos = _pos;
         double radius = _radius;
@@ -170,10 +170,10 @@ public readonly partial struct Cylinder : IEquatable<Cylinder>
             radius = -radius;
         }
 
-        return new Cylinder(pos, radius);
+        return new Cylinder3D(pos, radius);
     }
 
-    public readonly Cylinder Transformed(in Transform3D t)
+    public readonly Cylinder3D Transformed(in Transform3D t)
     {
         CoordinateSystem pos = _pos;
         double radius = _radius;
@@ -184,32 +184,32 @@ public readonly partial struct Cylinder : IEquatable<Cylinder>
             radius = -radius;
         }
 
-        return new Cylinder(pos, radius);
+        return new Cylinder3D(pos, radius);
     }
 
-    public readonly Cylinder Translated(in Vector3D v)
+    public readonly Cylinder3D Translated(in Vector3D v)
     {
         CoordinateSystem pos = _pos;
         pos = pos.Translated(v);
-        return new Cylinder(pos, _radius);
+        return new Cylinder3D(pos, _radius);
     }
 
-    public readonly Cylinder Translated(in Point3D p1, in Point3D p2)
+    public readonly Cylinder3D Translated(in Point3D p1, in Point3D p2)
     {
         CoordinateSystem pos = _pos;
         pos = pos.Translated(p1, p2);
-        return new Cylinder(pos, _radius);
+        return new Cylinder3D(pos, _radius);
     }
 
-    public readonly bool Equals(Cylinder other) => _pos.Equals(other._pos) && _radius.Equals(other._radius);
+    public readonly bool Equals(Cylinder3D other) => _pos.Equals(other._pos) && _radius.Equals(other._radius);
 
-    public override readonly bool Equals(object? obj) => obj is Cylinder other && Equals(other);
+    public override readonly bool Equals(object? obj) => obj is Cylinder3D other && Equals(other);
 
     public override readonly int GetHashCode() => HashCode.Combine(_pos, _radius);
 
-    public static bool operator ==(in Cylinder left, in Cylinder right) => left.Equals(right);
+    public static bool operator ==(in Cylinder3D left, in Cylinder3D right) => left.Equals(right);
 
-    public static bool operator !=(in Cylinder left, in Cylinder right) => !left.Equals(right);
+    public static bool operator !=(in Cylinder3D left, in Cylinder3D right) => !left.Equals(right);
 
     public override readonly string ToString() => FormattableString.Invariant($"gp_Cylinder({_pos}, {_radius:R})");
 }

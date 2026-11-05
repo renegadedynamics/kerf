@@ -564,7 +564,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                 {
                     double r = anO.Real(0.5, 10);
                     using var aNS = new N.gp_Cylinder(aNAx, r);
-                    var aS = new Cylinder(anAx, r);
+                    var aS = new Cylinder3D(anAx, r);
                     if (anO.Bool())
                     {
                         u1 = 0;
@@ -579,7 +579,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                 {
                     double ang = anO.Real(0.1, 1.2), r = anO.Real(0.5, 10);
                     using var aNS = new N.gp_Cone(aNAx, ang, r);
-                    var aS = new Cone(anAx, ang, r);
+                    var aS = new Cone3D(anAx, ang, r);
                     if (anO.Bool())
                     {
                         v1 = -r / Math.Sin(ang); // the apex
@@ -593,7 +593,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                 {
                     double r = anO.Real(0.5, 10);
                     using var aNS = new N.gp_Sphere(aNAx, r);
-                    var aS = new Sphere(anAx, r);
+                    var aS = new Sphere3D(anAx, r);
                     v1 = anO.Real(-1.6, 0);
                     v2 = anO.Real(0, 1.6);
                     if (anO.Bool())
@@ -609,7 +609,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                 {
                     double r1 = anO.Real(2, 10), r2 = anO.Real(0.2, 1.9);
                     using var aNS = new N.gp_Torus(aNAx, r1, r2);
-                    var aS = new Torus(anAx, r1, r2);
+                    var aS = new Torus3D(anAx, r1, r2);
                     (aNM, aPM) = aWhole ? (new N.BRepBuilderAPI_MakeFace(aNS), new MakeFace(aS))
                                         : (new N.BRepBuilderAPI_MakeFace(aNS, u1, u2, v1, v2), new MakeFace(aS, u1, u2, v1, v2));
                     aWhat = "torus";

@@ -42,15 +42,15 @@ public class Geom_ElementarySurfacesTests
     [Fact]
     public void From_gp_And_Back()
     {
-        Cylinder aCyl = new(Frame, 2);
+        Cylinder3D aCyl = new(Frame, 2);
         Assert.Equal(2.0, new CylindricalSurface(aCyl).Cylinder.Radius);
-        Cone aCone = new(Frame, 0.3, 4);
+        Cone3D aCone = new(Frame, 0.3, 4);
         ConicalSurface aGCone = new(aCone);
         Assert.Equal(0.3, aGCone.Cone.SemiAngle);
         Assert.Equal(4.0, aGCone.RefRadius);
         Assert.True(aGCone.Apex.IsEqual(aCone.Apex, 1e-12));
-        Assert.Equal(7.0, new SphericalSurface(new Sphere(Frame, 7)).Sphere.Radius);
-        ToroidalSurface aTor = new(new Torus(Frame, 6, 2));
+        Assert.Equal(7.0, new SphericalSurface(new Sphere3D(Frame, 7)).Sphere.Radius);
+        ToroidalSurface aTor = new(new Torus3D(Frame, 6, 2));
         Assert.Equal(6.0, aTor.Torus.MajorRadius);
         Assert.Equal(2.0, aTor.MinorRadius);
         Assert.Equal(4.0 * M_PI * M_PI * 12.0, aTor.Area, 1e-12);
@@ -220,15 +220,15 @@ public class Geom_ElementarySurfacesTests
         EngineAssert.Throws<ImmutableObjectException>(() => aTor.SetMinorRadius(1));
 
         Assert.Equal(1.0, aCyl.WithRadius(1).Radius);
-        Assert.Equal(2.0, aCyl.WithCylinder(new Cylinder(Frame, 2)).Radius);
+        Assert.Equal(2.0, aCyl.WithCylinder(new Cylinder3D(Frame, 2)).Radius);
         Assert.Equal(0.2, aCone.WithSemiAngle(0.2).SemiAngle);
         Assert.Equal(0.5, aCone.WithRadius(0.5).RefRadius);
-        Assert.Equal(0.1, aCone.WithCone(new Cone(Frame, 0.1, 1)).SemiAngle);
+        Assert.Equal(0.1, aCone.WithCone(new Cone3D(Frame, 0.1, 1)).SemiAngle);
         Assert.Equal(1.0, aSph.WithRadius(1).Radius);
-        Assert.Equal(4.0, aSph.WithSphere(new Sphere(Frame, 4)).Radius);
+        Assert.Equal(4.0, aSph.WithSphere(new Sphere3D(Frame, 4)).Radius);
         Assert.Equal(1.0, aTor.WithMinorRadius(1).MinorRadius);
         Assert.Equal(6.0, aTor.WithMajorRadius(6).MajorRadius);
-        Assert.Equal(3.0, aTor.WithTorus(new Torus(Frame, 7, 3)).MinorRadius);
+        Assert.Equal(3.0, aTor.WithTorus(new Torus3D(Frame, 7, 3)).MinorRadius);
         Assert.Equal(2.5, aCyl.Radius);
     }
 

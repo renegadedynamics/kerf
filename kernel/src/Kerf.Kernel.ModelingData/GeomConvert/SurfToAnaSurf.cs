@@ -488,7 +488,7 @@ internal sealed class SurfToAnaSurf
         Vector3D t = new(sign * avR * norm.XYZ());
         loc = loc.Translated(t);
         Axis3D ax1 = new(loc, axD);
-        Cylinder cyl = new Cylinder().WithAxis(ax1);
+        Cylinder3D cyl = new Cylinder3D().WithAxis(ax1);
         cyl = cyl.WithRadius(avR);
 
         if (leastSquare)
@@ -620,10 +620,10 @@ internal sealed class SurfToAnaSurf
         SurfaceAdaptor gas = new(newSurf);
         SurfaceKind sType = gas.GetType();
         Plane3D pln = new();
-        Cylinder cyl = new();
-        Cone con = new();
-        Sphere sphere = new();
-        Torus tor = new();
+        Cylinder3D cyl = new();
+        Cone3D con = new();
+        Sphere3D sphere = new();
+        Torus3D tor = new();
         switch (sType)
         {
             case Plane:

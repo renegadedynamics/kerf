@@ -50,7 +50,7 @@ public class Adaptor3d_TopolToolTests
             _ => OtherSurface,
         };
 
-        public override Cone Cone() => ((ConicalSurface)mySurf).Cone;
+        public override Cone3D Cone() => ((ConicalSurface)mySurf).Cone;
         public override global::Kerf.Geometry.BSplineSurface BSpline() => (global::Kerf.Geometry.BSplineSurface)mySurf;
         public override global::Kerf.Geometry.BezierSurface Bezier() => (global::Kerf.Geometry.BezierSurface)mySurf;
         public override int UKnotCount => BSpline().UKnotCount;

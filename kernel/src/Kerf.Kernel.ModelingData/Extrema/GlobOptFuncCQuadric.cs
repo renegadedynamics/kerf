@@ -27,10 +27,10 @@ internal class GlobOptFuncCQuadric : MultipleVarFunction
     private SurfaceAdaptorBase? _s;
     private SurfaceKind _sType;
     private Plane3D _pln = new();
-    private Cone _cone = new();
-    private Cylinder _cylinder = new();
-    private Sphere _sphere = new();
-    private Torus _torus = new();
+    private Cone3D _cone = new();
+    private Cylinder3D _cylinder = new();
+    private Sphere3D _sphere = new();
+    private Torus3D _torus = new();
     private readonly Point3D[] _pTrim = [new(), new(), new(), new()];
     // Boundaries
     private readonly double _tf;

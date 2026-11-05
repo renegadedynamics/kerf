@@ -108,7 +108,7 @@ internal sealed partial class ImpImpIntersection
                 COE13 = 3,
             }
 
-            internal StCoeffsValue(in Cylinder cyl1, in Cylinder cyl2)
+            internal StCoeffsValue(in Cylinder3D cyl1, in Cylinder3D cyl2)
             {
                 _mVecA1 = new math_Vector(-cyl1.Radius * cyl1.XAxis.Direction.XYZ());
                 _mVecA2 = new math_Vector(cyl2.Radius * cyl2.XAxis.Direction.XYZ());
@@ -1069,8 +1069,8 @@ internal sealed partial class ImpImpIntersection
         // function : BoundaryEstimation
         // purpose  : Rough estimation of the parameter range.
         //=======================================================================
-        internal void BoundaryEstimation(in Cylinder cy1,
-                                         in Cylinder cy2,
+        internal void BoundaryEstimation(in Cylinder3D cy1,
+                                         in Cylinder3D cy2,
                                          ref BoundRange outBoxS1,
                                          ref BoundRange outBoxS2)
         {
@@ -1395,8 +1395,8 @@ internal sealed partial class ImpImpIntersection
         Ellipse3D elipsol;
         Line3D linsol;
 
-        Cylinder cy1 = quad1.Cylinder();
-        Cylinder cy2 = quad2.Cylinder();
+        Cylinder3D cy1 = quad1.Cylinder();
+        Cylinder3D cy2 = quad2.Cylinder();
 
         typint = inter.TypeInter();
         int nbSol = inter.SolutionCount;
@@ -2454,8 +2454,8 @@ internal sealed partial class ImpImpIntersection
 
     //=================================================================================================
 
-    private static IntStatus CyCyNoGeometric(in Cylinder cyl1,
-                                             in Cylinder cyl2,
+    private static IntStatus CyCyNoGeometric(in Cylinder3D cyl1,
+                                             in Cylinder3D cyl2,
                                              WorkWithBoundaries bw,
                                              BoundRange[] range,
                                              int nbOfRanges /*=2*/,
@@ -3752,7 +3752,7 @@ internal sealed partial class ImpImpIntersection
         slin.Clear();
         sPnt.Clear();
 
-        Cylinder cyl1 = quad1.Cylinder(), cyl2 = quad2.Cylinder();
+        Cylinder3D cyl1 = quad1.Cylinder(), cyl2 = quad2.Cylinder();
 
         QuadQuadGeo inter = new(cyl1, cyl2, tol3D);
 

@@ -15,7 +15,7 @@ public class Convert_CylinderToBSplineSurfaceTest
     [Fact]
     public void FullCylinder()
     {
-        Cylinder aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 3.0);
+        Cylinder3D aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 3.0);
         CylinderToBSplineSurface aConv = new(aCyl, 0.0, 10.0);
 
         Assert.Equal(2, aConv.UDegree());
@@ -29,7 +29,7 @@ public class Convert_CylinderToBSplineSurfaceTest
     [Fact]
     public void TrimmedCylinder()
     {
-        Cylinder aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 2.0);
+        Cylinder3D aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 2.0);
         double aU1 = 0.0, aU2 = M_PI;
         double aV1 = -5.0, aV2 = 5.0;
         CylinderToBSplineSurface aConv = new(aCyl, aU1, aU2, aV1, aV2);
@@ -43,7 +43,7 @@ public class Convert_CylinderToBSplineSurfaceTest
     [Fact]
     public void WeightsArePositive()
     {
-        Cylinder aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 1.0);
+        Cylinder3D aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 1.0);
         CylinderToBSplineSurface aConv = new(aCyl, 0.0, 1.0);
 
         NCollection_Array2<double> aWeights = aConv.Weights();
@@ -59,7 +59,7 @@ public class Convert_CylinderToBSplineSurfaceTest
     [Fact]
     public void KnotsAreMonotonic()
     {
-        Cylinder aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 1.0);
+        Cylinder3D aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 1.0);
         CylinderToBSplineSurface aConv = new(aCyl, 0.0, 1.0);
 
         NCollection_Array1<double> aUKnots = aConv.UKnots();
@@ -80,7 +80,7 @@ public class Convert_CylinderToBSplineSurfaceTest
         double aRadius = 3.0;
         double aV1 = -5.0, aV2 = 5.0;
         CoordinateSystem anAx3 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Cylinder aCyl = new(anAx3, aRadius);
+        Cylinder3D aCyl = new(anAx3, aRadius);
         CylinderToBSplineSurface aConv = new(aCyl, 0.0, M_PI, aV1, aV2);
 
         double aTol = 1.0e-10;

@@ -190,7 +190,7 @@ internal class ComputeApproxOnPolarSurface
             {
                 case SurfaceKind.Cylinder:
                 {
-                    Cylinder cylinder = data.mySurf.Cylinder();
+                    Cylinder3D cylinder = data.mySurf.Cylinder();
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(cylinder, p, out s, out t);
                     if (u0 < uinf)
                     {
@@ -205,7 +205,7 @@ internal class ComputeApproxOnPolarSurface
                 }
                 case SurfaceKind.Cone:
                 {
-                    Cone cone = data.mySurf.Cone();
+                    Cone3D cone = data.mySurf.Cone();
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(cone, p, out s, out t);
                     if (u0 < uinf)
                     {
@@ -220,7 +220,7 @@ internal class ComputeApproxOnPolarSurface
                 }
                 case SurfaceKind.Sphere:
                 {
-                    Sphere sphere = data.mySurf.Sphere();
+                    Sphere3D sphere = data.mySurf.Sphere();
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(sphere, p, out s, out t);
                     if (u0 < uinf)
                     {
@@ -256,7 +256,7 @@ internal class ComputeApproxOnPolarSurface
                 }
                 case SurfaceKind.Torus:
                 {
-                    Torus torus = data.mySurf.Torus();
+                    Torus3D torus = data.mySurf.Torus();
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(torus, p, out s, out t);
                     if (u0 < uinf)
                     {
@@ -964,7 +964,7 @@ internal class ComputeApproxOnPolarSurface
                 {
                     double sloc;
                     int usens = 0;
-                    Cylinder cylinder = surf.Cylinder();
+                    Cylinder3D cylinder = surf.Cylinder();
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(cylinder, pts[1], out s, out t);
                     pts2d[1] = pts2d[1].WithCoord(s, t);
                     for (i = 2; i <= nbOfPnts; i++)
@@ -991,7 +991,7 @@ internal class ComputeApproxOnPolarSurface
                 {
                     double sloc;
                     int usens = 0;
-                    Cone cone = surf.Cone();
+                    Cone3D cone = surf.Cone();
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(cone, pts[1], out s, out t);
                     pts2d[1] = pts2d[1].WithCoord(s, t);
                     for (i = 2; i <= nbOfPnts; i++)
@@ -1019,7 +1019,7 @@ internal class ComputeApproxOnPolarSurface
                     double sloc, tloc;
                     int usens = 0, vsens = 0; // usens steps by half-period
                     bool vparit = false;
-                    Sphere sphere = surf.Sphere();
+                    Sphere3D sphere = surf.Sphere();
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(sphere, pts[1], out s, out t);
                     pts2d[1] = pts2d[1].WithCoord(s, t);
                     for (i = 2; i <= nbOfPnts; i++)
@@ -1074,7 +1074,7 @@ internal class ComputeApproxOnPolarSurface
                 {
                     double sloc, tloc;
                     int usens = 0, vsens = 0;
-                    Torus torus = surf.Torus();
+                    Torus3D torus = surf.Torus();
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(torus, pts[1], out s, out t);
                     pts2d[1] = pts2d[1].WithCoord(s, t);
                     for (i = 2; i <= nbOfPnts; i++)

@@ -630,7 +630,7 @@ public class BRepLibMakersTests
     [Fact]
     public void Face_on_a_whole_cylinder_band_has_a_seam()
     {
-        var aCyl = new Cylinder(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
+        var aCyl = new Cylinder3D(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         Face aF = new LibraryMakeFace(aCyl, 0, 2 * Math.PI, 0, 5).Face();
         Assert.Equal(3, Count(aF, ShapeType.Edge));
         Assert.Equal(4, CountOccurrences(aF, ShapeType.Edge));
@@ -648,7 +648,7 @@ public class BRepLibMakersTests
     [Fact]
     public void Face_on_a_whole_sphere_has_degenerated_poles()
     {
-        Face aF = new LibraryMakeFace(new Sphere(new CoordinateSystem(new Point3D(1, 1, 1), new Direction3D(0, 0, 1)), 3.0)).Face();
+        Face aF = new LibraryMakeFace(new Sphere3D(new CoordinateSystem(new Point3D(1, 1, 1), new Direction3D(0, 0, 1)), 3.0)).Face();
         int aDegenerated = 0;
         for (var anExp = new Explorer(aF, ShapeType.Edge); anExp.More(); anExp.Next())
         {
@@ -667,7 +667,7 @@ public class BRepLibMakersTests
     public void Face_on_a_cone_from_its_apex_is_degenerated_there()
     {
         double aSemi = Math.PI / 6;
-        var aCone = new Cone(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aSemi, 1.0);
+        var aCone = new Cone3D(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aSemi, 1.0);
         double vApex = -1.0 / Math.Sin(aSemi);
         Face aF = new LibraryMakeFace(aCone, 0, 2 * Math.PI, vApex, 1.0).Face();
         int aDegenerated = 0;

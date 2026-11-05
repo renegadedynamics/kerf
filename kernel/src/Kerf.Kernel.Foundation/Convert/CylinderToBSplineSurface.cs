@@ -63,7 +63,7 @@ internal class CylinderToBSplineSurface : ElementarySurfaceToBSplineSurface
     /// The B-spline surface equivalent to the cylinder between the parameters U1, U2 and V1, V2, with the
     /// cylinder's orientation. Throws <see cref="DomainErrorException"/> if V1 = V2 or U2 - U1 is outside [0, 2 Pi].
     /// </summary>
-    public CylinderToBSplineSurface(in Cylinder cyl, double u1, double u2, double v1, double v2)
+    public CylinderToBSplineSurface(in Cylinder3D cyl, double u1, double u2, double v1, double v2)
         : base(TheNbUPoles, TheNbVPoles, TheNbUKnots, TheNbVKnots, TheUDegree, TheVDegree)
     {
         double deltaU = u2 - u1;
@@ -132,7 +132,7 @@ internal class CylinderToBSplineSurface : ElementarySurfaceToBSplineSurface
     /// The B-spline surface equivalent to the whole cylinder between the parameters V1 and V2 (periodic in U),
     /// with the cylinder's orientation. Throws <see cref="DomainErrorException"/> if V1 = V2.
     /// </summary>
-    public CylinderToBSplineSurface(in Cylinder cyl, double v1, double v2)
+    public CylinderToBSplineSurface(in Cylinder3D cyl, double v1, double v2)
         : base(TheNbUPoles, TheNbVPoles, TheNbUKnots, TheNbVKnots, TheUDegree, TheVDegree)
     {
         Standard_DomainError_Raise_if(Math.Abs(v2 - v1) <= Math.Abs(Epsilon(v1)),

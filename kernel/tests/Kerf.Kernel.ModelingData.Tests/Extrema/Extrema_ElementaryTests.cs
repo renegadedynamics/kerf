@@ -161,10 +161,10 @@ public class Extrema_ElementaryTest
 
             double aSemiAngle = 0.1 + 1.2 * aRandom.NextDouble();
             Check(aP, new ExtPElS(aP, new Plane3D(anAx), 1e-7), new Plane3D(anAx), 1);
-            Check(aP, new ExtPElS(aP, new Cylinder(anAx, aR), 1e-7), new Cylinder(anAx, aR), 2);
-            Check(aP, new ExtPElS(aP, new Cone(anAx, aSemiAngle, aR), 1e-7), new Cone(anAx, aSemiAngle, aR), 2);
-            Check(aP, new ExtPElS(aP, new Sphere(anAx, aR), 1e-7), new Sphere(anAx, aR), 2);
-            Check(aP, new ExtPElS(aP, new Torus(anAx, aR + 5, aR), 1e-7), new Torus(anAx, aR + 5, aR), 4);
+            Check(aP, new ExtPElS(aP, new Cylinder3D(anAx, aR), 1e-7), new Cylinder3D(anAx, aR), 2);
+            Check(aP, new ExtPElS(aP, new Cone3D(anAx, aSemiAngle, aR), 1e-7), new Cone3D(anAx, aSemiAngle, aR), 2);
+            Check(aP, new ExtPElS(aP, new Sphere3D(anAx, aR), 1e-7), new Sphere3D(anAx, aR), 2);
+            Check(aP, new ExtPElS(aP, new Torus3D(anAx, aR + 5, aR), 1e-7), new Torus3D(anAx, aR + 5, aR), 4);
         }
 
         static void Check<TSurface>(Point3D theP, ExtPElS theExt, TSurface theSurface, int theNb)
@@ -178,10 +178,10 @@ public class Extrema_ElementaryTest
                 Point3D aS = theSurface switch
                 {
                     Plane3D aPln => global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aPln),
-                    Cylinder aCyl => global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aCyl),
-                    Cone aCone => global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aCone),
-                    Sphere aSph => global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aSph),
-                    Torus aTor => global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aTor),
+                    Cylinder3D aCyl => global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aCyl),
+                    Cone3D aCone => global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aCone),
+                    Sphere3D aSph => global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aSph),
+                    Torus3D aTor => global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aTor),
                     _ => throw new InvalidOperationException(),
                 };
                 Assert.Equal(0.0, aS.DistanceTo(aPOn.Value()), 1e-7);
@@ -283,6 +283,6 @@ public class Extrema_ElementaryTest
         Assert.True(aCrossing.IsDone);
         Assert.Equal(0, aCrossing.ExtCount);
 
-        EngineAssert.Throws<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => new ExtElSS(new Sphere(), new Sphere()));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => new ExtElSS(new Sphere3D(), new Sphere3D()));
     }
 }

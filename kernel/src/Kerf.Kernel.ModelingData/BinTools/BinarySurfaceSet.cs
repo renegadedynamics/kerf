@@ -85,7 +85,7 @@ internal class BinarySurfaceSet
     private static void Write(OStream os, CylindricalSurface s)
     {
         os = os << global::Kerf.Engine.Exchange.Brep.Binary.BinarySurfaceSet.Cylinder;
-        Cylinder p = s.Cylinder;
+        Cylinder3D p = s.Cylinder;
         os = os << p.Location; // Pnt
         os = os << p.Axis.Direction;
         os = os << p.XAxis.Direction;
@@ -96,7 +96,7 @@ internal class BinarySurfaceSet
     private static void Write(OStream os, ConicalSurface s)
     {
         os = os << global::Kerf.Engine.Exchange.Brep.Binary.BinarySurfaceSet.Cone;
-        Cone p = s.Cone;
+        Cone3D p = s.Cone;
         os = os << p.Location; // Pnt
         os = os << p.Axis.Direction;
         os = os << p.XAxis.Direction;
@@ -108,7 +108,7 @@ internal class BinarySurfaceSet
     private static void Write(OStream os, SphericalSurface s)
     {
         os = os << global::Kerf.Engine.Exchange.Brep.Binary.BinarySurfaceSet.Sphere;
-        Sphere p = s.Sphere;
+        Sphere3D p = s.Sphere;
         os = os << p.Location; // Pnt
         os = os << p.Position.Axis.Direction;
         os = os << p.XAxis.Direction;
@@ -119,7 +119,7 @@ internal class BinarySurfaceSet
     private static void Write(OStream os, ToroidalSurface s)
     {
         os = os << global::Kerf.Engine.Exchange.Brep.Binary.BinarySurfaceSet.Torus;
-        Torus p = s.Torus;
+        Torus3D p = s.Torus;
         os = os << p.Location; // Pnt
         os = os << p.Axis.Direction;
         os = os << p.XAxis.Direction;

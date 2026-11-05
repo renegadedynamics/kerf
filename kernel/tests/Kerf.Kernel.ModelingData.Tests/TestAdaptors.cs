@@ -151,10 +151,10 @@ internal sealed class TestSurfaceAdaptor : SurfaceAdaptorBase
     };
 
     public override Plane3D Plane() => ((PlaneSurface)mySurf).Plane;
-    public override Cylinder Cylinder() => ((CylindricalSurface)mySurf).Cylinder;
-    public override Cone Cone() => ((ConicalSurface)mySurf).Cone;
-    public override Sphere Sphere() => ((SphericalSurface)mySurf).Sphere;
-    public override Torus Torus() => ((ToroidalSurface)mySurf).Torus;
+    public override Cylinder3D Cylinder() => ((CylindricalSurface)mySurf).Cylinder;
+    public override Cone3D Cone() => ((ConicalSurface)mySurf).Cone;
+    public override Sphere3D Sphere() => ((SphericalSurface)mySurf).Sphere;
+    public override Torus3D Torus() => ((ToroidalSurface)mySurf).Torus;
     public override int UDegree() => mySurf is global::Kerf.Geometry.BezierSurface B ? B.UDegree : ((global::Kerf.Geometry.BSplineSurface)mySurf).UDegree;
     public override int VDegree() => mySurf is global::Kerf.Geometry.BezierSurface B ? B.VDegree : ((global::Kerf.Geometry.BSplineSurface)mySurf).VDegree;
     public override int UPoleCount => mySurf is global::Kerf.Geometry.BezierSurface B ? B.UPoleCount : ((global::Kerf.Geometry.BSplineSurface)mySurf).UPoleCount;

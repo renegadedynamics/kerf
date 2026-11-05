@@ -181,7 +181,7 @@ public class GeomBndLib_SurfaceTest
     {
         double aRefRadius = 2.0;
         double aSemiAngle = M_PI / 4.0;
-        Cone aCone = new(XOY3(), aSemiAngle, aRefRadius);
+        Cone3D aCone = new(XOY3(), aSemiAngle, aRefRadius);
         ConicalSurface aConeSurf = new(aCone);
         SurfaceBounds aSurf = new(aConeSurf);
         Assert.Equal(SurfaceKind.Cone, aSurf.GetType());
@@ -203,7 +203,7 @@ public class GeomBndLib_SurfaceTest
     [Fact]
     public void Cone_CompareWithBndLib()
     {
-        Cone aCone = new(XOY3(), M_PI / 6.0, 3.0);
+        Cone3D aCone = new(XOY3(), M_PI / 6.0, 3.0);
         ConicalSurface aConeSurf = new(aCone);
         SurfaceAdaptor anAdaptor = new(aConeSurf);
 

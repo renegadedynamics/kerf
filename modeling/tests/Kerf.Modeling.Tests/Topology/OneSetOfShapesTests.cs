@@ -1,6 +1,8 @@
 // A file that imports the kernel's and the modelling layer's namespaces together, at the top as a user's would: question 56,
 // one set of shapes. Everything here has to bind without ambiguity.
 using Kerf;
+using Kerf.Geometry;
+using Kerf.Measurement;
 using Kerf.Modeling;
 using Kerf.Topology;
 using static Kerf.Modeling.Operations;
@@ -156,5 +158,106 @@ public class OneSetOfShapesTests
         var projected = cylinder.ProjectFaces(faces, path, 0.5);
         Assert.NotEmpty(projected);
         Assert.All(projected, f => Assert.Equal(ShapeType.Face, f.Type));
+    }
+
+    [Fact]
+    public void AFileWithEveryNamespaceBindsTheCommonNames()
+    {
+        // Kerf.Geometry beside Kerf.Modeling: the objects keep the plain names, the analytic values say 3D
+        Part cylinder = new Cylinder(1, 2);
+        Part sphere = new Sphere(1);
+        Part cone = new Cone(1, 0.5, 2);
+        Part torus = new Torus(2, 0.5);
+        var surface = new Cylinder3D(new CoordinateSystem(), 1);
+        Assert.Equal(1, surface.Radius);
+        Assert.Equal(Math.PI * 2, cylinder.Volume, 6);
+        Assert.Equal(4 * Math.PI / 3, sphere.Volume, 6);
+        Assert.True(cone.Volume > 0 && torus.Volume > 0);
+        Assert.Equal(new Sphere3D(new CoordinateSystem(), 2).Radius, new Torus3D(new CoordinateSystem(), 2, 1).MajorRadius);
+        Assert.True(new Cone3D(new CoordinateSystem(), 0.5, 1).RefRadius == 1);
+        Point3D point = new(1, 2, 3);
+        Tangency tangency = Tangency.Enclosing;
+        Assert.Equal(1, (int)tangency);
+        Assert.Equal(1, point.X);
+
+        // Kerf.Measurement beside Kerf.Modeling: the plain names are properties
+        Solid box = Solid.MakeBox(1, 2, 3);
+        Assert.Equal(6, box.Volume, 6);
+        Assert.Equal(22, box.Area, 6);
+        Assert.Equal(Math.PI * 2, Edge.MakeCircle(1).Length, 6);
+        Assert.Equal(6, box.IntegrateVolume(), 6);
+    }
+
+    [Fact]
+    public void VolumeCountsSolidsWhereIntegratingCountsWhateverTheFacesBound()
+    {
+        // A face has no volume; integrating gives what its surface bounds
+        Face sphereFace = Solid.MakeSphere(1).Faces()[0];
+        Assert.Equal(0, sphereFace.Volume);
+        Assert.Equal(4 * Math.PI / 3, sphereFace.IntegrateVolume(), 6);
+
+        // A compound's counts the solids in it, and its loose faces not at all
+        Compound mixed = Compound.Make([Solid.MakeBox(1, 1, 1), sphereFace]);
+        Assert.Equal(1, mixed.Volume, 6);
+        Assert.Equal(1 + 4 * Math.PI / 3, mixed.IntegrateVolume(), 6);
+
+        // The other two differ only on nothing: zero, where the kernel refuses
+        Assert.Equal(0, default(Face).Area);
+        Assert.Equal(0, default(Edge).Length);
+        Assert.Throws<ArgumentException>(() => default(Face).IntegrateArea());
+        Assert.Throws<ArgumentException>(() => default(Edge).IntegrateLength());
+        Assert.Equal(4 * Math.PI, sphereFace.Area, 6);
+        Assert.Equal(sphereFace.Area, sphereFace.IntegrateArea(), 12);
+    }
+
+    [Fact]
+    public void IsClosedLooks()
+    {
+        // The trap of decision 1622: a full circle's edge, which no builder flags as closed
+        Part ring = new Sphere(2) - new Box(10, 10, 1);
+        Edge circle = Edge.MakeCircle(1);
+        Assert.True(circle.IsClosed);
+        Assert.False(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).IsClosed);
+        Assert.Contains(ring.Edges(), e => e.IsClosed);
+        Part cylinder = new Cylinder(1, 2);
+        Assert.Equal(2, cylinder.Edges().Where(e => e.IsClosed && e.GeomType == GeomType.Circle).Count);
+
+        Assert.True(Wire.MakeCircle(1).IsClosed);
+        Assert.False(Wire.Make([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0))]).IsClosed);
+        Assert.False(Face.MakeRect(1, 1).IsClosed);
+        Assert.True(Solid.MakeSphere(1).Faces()[0].IsClosed);
+        Assert.True(Solid.MakeBox(1, 1, 1).Shells()[0].IsClosed);
+        Assert.True(Solid.MakeBox(1, 1, 1).IsClosed);
+        Assert.True(Compound.Make([Solid.MakeBox(1, 1, 1), Edge.MakeCircle(1)]).IsClosed);
+        Assert.False(Compound.Make([Solid.MakeBox(1, 1, 1), Face.MakeRect(1, 1)]).IsClosed);
+        Assert.False(Vertex.Make(0, 0, 0).IsClosed);
+        Assert.True(new Curve((Shape)circle).IsClosed);
+        Assert.Throws<InvalidOperationException>(() => default(Edge).IsClosed);
+    }
+
+    [Fact]
+    public void AStructAndAnObjectSelectAlike()
+    {
+        Solid solid = Solid.MakeSphere(1);
+        Part part = new Part(solid);
+
+        // The plain names leave out a sphere's degenerate edges and return a selection, on either
+        ShapeList<Edge> ofStruct = solid.Edges(), ofObject = part.Edges();
+        Assert.Equal(ofObject.Count, ofStruct.Count);
+        Assert.True(solid.AllEdges().Length > ofStruct.Count);
+        Assert.Contains(solid.AllEdges(), e => e.IsDegenerated);
+        Assert.DoesNotContain(ofStruct, e => e.IsDegenerated);
+        Assert.True(ofStruct.Origin is not null);
+        Assert.Equal(part.Faces().Count, solid.Faces().Count);
+        Assert.Equal(part.Vertices().Count, solid.Vertices().Count);
+        Assert.Equal(part.Wires().Count, solid.Wires().Count);
+        Assert.Equal(part.Shells().Count, solid.Shells().Count);
+        Assert.Equal(part.Solids().Count, solid.Solids().Count);
+
+        // A shape's Location is Kerf's; OrientationAngles reads the same on both, and the kernel's Orientation is the enum
+        Assert.Equal(part.OrientationAngles, solid.OrientationAngles);
+        Assert.Equal(Orientation.Forward, solid.Orientation);
+        Assert.False(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).IsInfinite);
+        Assert.True(Edge.FromAxis(new Axis(Point3D.Origin, new Vector3D(1, 0, 0))).IsInfinite);
     }
 }

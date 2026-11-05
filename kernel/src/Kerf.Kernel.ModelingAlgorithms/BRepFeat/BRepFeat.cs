@@ -513,7 +513,7 @@ internal static class BRepFeat
         }
         else if (s.GetType() == typeof(CylindricalSurface))
         {
-            Cylinder cyl = ((CylindricalSurface)s).Cylinder;
+            Cylinder3D cyl = ((CylindricalSurface)s).Cylinder;
             double u, v, vmin = RealLast(), vmax = -vmin;
             for (int i = 0; i < 2; i++)
             {
@@ -540,7 +540,7 @@ internal static class BRepFeat
         }
         else if (s.GetType() == typeof(ConicalSurface))
         {
-            Cone con = ((ConicalSurface)s).Cone;
+            Cone3D con = ((ConicalSurface)s).Cone;
             double u, v, vmin = RealLast(), vmax = -vmin;
             for (int i = 0; i < 2; i++)
             {

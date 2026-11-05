@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// <summary>Projects elementary curves on a sphere: circles that are U or V isolines.</summary>
 internal class SphereProjector : Projector
 {
-    private Sphere _sphere = new();
+    private Sphere3D _sphere = new();
 
     /// <summary>Undefined projection.</summary>
     public SphereProjector()
@@ -24,19 +24,19 @@ internal class SphereProjector : Projector
     }
 
     /// <summary>Projection on the sphere Sp.</summary>
-    public SphereProjector(in Sphere sp)
+    public SphereProjector(in Sphere3D sp)
     {
         Init(sp);
     }
 
     /// <summary>Projection of the circle C on the sphere Sp.</summary>
-    public SphereProjector(in Sphere sp, in Circle3D c)
+    public SphereProjector(in Sphere3D sp, in Circle3D c)
     {
         Init(sp);
         Project(c);
     }
 
-    public void Init(in Sphere sp)
+    public void Init(in Sphere3D sp)
     {
         _type = OtherCurve;
         _sphere = sp;
@@ -44,7 +44,7 @@ internal class SphereProjector : Projector
         _isDone = false;
     }
 
-    private static Point2D EvalPnt2d(in Vector3D p, in Sphere sp)
+    private static Point2D EvalPnt2d(in Vector3D p, in Sphere3D sp)
     {
         double x = p.Dot(new Vector3D(sp.Position.XDirection));
         double y = p.Dot(new Vector3D(sp.Position.YDirection));

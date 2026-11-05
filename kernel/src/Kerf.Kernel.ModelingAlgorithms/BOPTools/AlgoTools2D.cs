@@ -262,7 +262,7 @@ internal static class AlgoTools2D
                 {
                     double r, dFi, tol;
                     //
-                    Cylinder cylinder = aBAS.Cylinder();
+                    Cylinder3D cylinder = aBAS.Cylinder();
                     r = cylinder.Radius;
                     tol = MaxToleranceEdge(f);
                     dFi = tol / r;

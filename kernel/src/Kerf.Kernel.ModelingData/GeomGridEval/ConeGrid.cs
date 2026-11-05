@@ -46,7 +46,7 @@ internal sealed class ConeGrid : GeomGridEvalGrid.ISurfaceEvaluator
 
     private Data ExtractData()
     {
-        Cone cone = _geom!.Cone;
+        Cone3D cone = _geom!.Cone;
         Point3D center = cone.Location;
         Direction3D xDir = cone.Position.XDirection;
         Direction3D yDir = cone.Position.YDirection;

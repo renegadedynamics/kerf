@@ -385,17 +385,17 @@ internal class RevolutionSurfaceAdaptor : SurfaceAdaptor
     }
 
     /// <exception cref="NoSuchObjectException">The surface is not a cylinder.</exception>
-    public override Cylinder Cylinder()
+    public override Cylinder3D Cylinder()
     {
         Standard_NoSuchObject_Raise_if(GetType() != global::Kerf.Geometry.SurfaceKind.Cylinder, "GeomAdaptor_SurfaceOfRevolution::Cylinder");
 
         Point3D p = Value(0.0, 0.0);
         double r = new Vector3D(_axeRev.Location, p) * new Vector3D(_axeRev.XDirection);
-        return new Cylinder(_axeRev, r);
+        return new Cylinder3D(_axeRev, r);
     }
 
     /// <exception cref="NoSuchObjectException">The surface is not a cone.</exception>
-    public override Cone Cone()
+    public override Cone3D Cone()
     {
         Standard_NoSuchObject_Raise_if(GetType() != global::Kerf.Geometry.SurfaceKind.Cone, "GeomAdaptor_SurfaceOfRevolution:Cone");
 
@@ -416,28 +416,28 @@ internal class RevolutionSurfaceAdaptor : SurfaceAdaptor
                 angle = -angle;
             }
         }
-        return new Cone(axe, angle, r);
+        return new Cone3D(axe, angle, r);
     }
 
     /// <exception cref="NoSuchObjectException">The surface is not a sphere.</exception>
-    public override Sphere Sphere()
+    public override Sphere3D Sphere()
     {
         Standard_NoSuchObject_Raise_if(GetType() != global::Kerf.Geometry.SurfaceKind.Sphere, "GeomAdaptor_SurfaceOfRevolution:Sphere");
 
         Circle3D c = _basisCurve!.Circle();
         CoordinateSystem axe = _axeRev;
         axe = axe.WithLocation(c.Location);
-        return new Sphere(axe, c.Radius);
+        return new Sphere3D(axe, c.Radius);
     }
 
     /// <exception cref="NoSuchObjectException">The surface is not a torus.</exception>
-    public override Torus Torus()
+    public override Torus3D Torus()
     {
         Standard_NoSuchObject_Raise_if(GetType() != global::Kerf.Geometry.SurfaceKind.Torus, "GeomAdaptor_SurfaceOfRevolution:Torus");
 
         Circle3D c = _basisCurve!.Circle();
         double majorRadius = new Line3D(_axis).DistanceTo(c.Location);
-        return new Torus(_axeRev, majorRadius, c.Radius);
+        return new Torus3D(_axeRev, majorRadius, c.Radius);
     }
 
     public override int VDegree() => _basisCurve!.Degree();

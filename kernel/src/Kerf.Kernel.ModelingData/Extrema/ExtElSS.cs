@@ -50,9 +50,9 @@ internal class ExtElSS
     }
 
     /// <summary>The distances between a plane and a sphere (not implemented in OCCT).</summary>
-    public ExtElSS(in Plane3D s1, in Sphere s2) => Perform(s1, s2);
+    public ExtElSS(in Plane3D s1, in Sphere3D s2) => Perform(s1, s2);
 
-    public void Perform(in Plane3D s1, in Sphere s2)
+    public void Perform(in Plane3D s1, in Sphere3D s2)
     {
         _done = true;
         _isPar = false;
@@ -61,9 +61,9 @@ internal class ExtElSS
     }
 
     /// <summary>The distances between 2 spheres (not implemented in OCCT).</summary>
-    public ExtElSS(in Sphere s1, in Sphere s2) => Perform(s1, s2);
+    public ExtElSS(in Sphere3D s1, in Sphere3D s2) => Perform(s1, s2);
 
-    public void Perform(in Sphere s1, in Sphere s2)
+    public void Perform(in Sphere3D s1, in Sphere3D s2)
     {
         _done = true;
         _isPar = false;
@@ -72,9 +72,9 @@ internal class ExtElSS
     }
 
     /// <summary>The distances between a sphere and a cylinder (not implemented in OCCT).</summary>
-    public ExtElSS(in Sphere s1, in Cylinder s2) => Perform(s1, s2);
+    public ExtElSS(in Sphere3D s1, in Cylinder3D s2) => Perform(s1, s2);
 
-    public void Perform(in Sphere s1, in Cylinder s2)
+    public void Perform(in Sphere3D s1, in Cylinder3D s2)
     {
         _done = true;
         _isPar = false;
@@ -83,9 +83,9 @@ internal class ExtElSS
     }
 
     /// <summary>The distances between a sphere and a cone (not implemented in OCCT).</summary>
-    public ExtElSS(in Sphere s1, in Cone s2) => Perform(s1, s2);
+    public ExtElSS(in Sphere3D s1, in Cone3D s2) => Perform(s1, s2);
 
-    public void Perform(in Sphere s1, in Cone s2)
+    public void Perform(in Sphere3D s1, in Cone3D s2)
     {
         _done = true;
         _isPar = false;
@@ -94,9 +94,9 @@ internal class ExtElSS
     }
 
     /// <summary>The distances between a sphere and a torus (not implemented in OCCT).</summary>
-    public ExtElSS(in Sphere s1, in Torus s2) => Perform(s1, s2);
+    public ExtElSS(in Sphere3D s1, in Torus3D s2) => Perform(s1, s2);
 
-    public void Perform(in Sphere s1, in Torus s2)
+    public void Perform(in Sphere3D s1, in Torus3D s2)
     {
         _done = true;
         _isPar = false;

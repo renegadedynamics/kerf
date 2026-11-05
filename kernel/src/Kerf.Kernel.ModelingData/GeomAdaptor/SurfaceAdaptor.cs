@@ -1056,16 +1056,16 @@ internal class SurfaceAdaptor : SurfaceAdaptorBase
                 global::Kerf.Engine.Geometry.ElSLib.D0(U, V, (Plane3D)_surfaceData!, out p);
                 return p;
             case global::Kerf.Geometry.SurfaceKind.Cylinder:
-                global::Kerf.Engine.Geometry.ElSLib.D0(U, V, (Cylinder)_surfaceData!, out p);
+                global::Kerf.Engine.Geometry.ElSLib.D0(U, V, (Cylinder3D)_surfaceData!, out p);
                 return p;
             case global::Kerf.Geometry.SurfaceKind.Cone:
-                global::Kerf.Engine.Geometry.ElSLib.D0(U, V, (Cone)_surfaceData!, out p);
+                global::Kerf.Engine.Geometry.ElSLib.D0(U, V, (Cone3D)_surfaceData!, out p);
                 return p;
             case global::Kerf.Geometry.SurfaceKind.Sphere:
-                global::Kerf.Engine.Geometry.ElSLib.D0(U, V, (Sphere)_surfaceData!, out p);
+                global::Kerf.Engine.Geometry.ElSLib.D0(U, V, (Sphere3D)_surfaceData!, out p);
                 return p;
             case global::Kerf.Geometry.SurfaceKind.Torus:
-                global::Kerf.Engine.Geometry.ElSLib.D0(U, V, (Torus)_surfaceData!, out p);
+                global::Kerf.Engine.Geometry.ElSLib.D0(U, V, (Torus3D)_surfaceData!, out p);
                 return p;
 
             case SurfaceKind.BezierSurface:
@@ -1187,16 +1187,16 @@ internal class SurfaceAdaptor : SurfaceAdaptorBase
                 global::Kerf.Engine.Geometry.ElSLib.D1(u, v, (Plane3D)_surfaceData!, out result.Point, out result.D1U, out result.D1V);
                 return result;
             case global::Kerf.Geometry.SurfaceKind.Cylinder:
-                global::Kerf.Engine.Geometry.ElSLib.D1(u, v, (Cylinder)_surfaceData!, out result.Point, out result.D1U, out result.D1V);
+                global::Kerf.Engine.Geometry.ElSLib.D1(u, v, (Cylinder3D)_surfaceData!, out result.Point, out result.D1U, out result.D1V);
                 return result;
             case global::Kerf.Geometry.SurfaceKind.Cone:
-                global::Kerf.Engine.Geometry.ElSLib.D1(u, v, (Cone)_surfaceData!, out result.Point, out result.D1U, out result.D1V);
+                global::Kerf.Engine.Geometry.ElSLib.D1(u, v, (Cone3D)_surfaceData!, out result.Point, out result.D1U, out result.D1V);
                 return result;
             case global::Kerf.Geometry.SurfaceKind.Sphere:
-                global::Kerf.Engine.Geometry.ElSLib.D1(u, v, (Sphere)_surfaceData!, out result.Point, out result.D1U, out result.D1V);
+                global::Kerf.Engine.Geometry.ElSLib.D1(u, v, (Sphere3D)_surfaceData!, out result.Point, out result.D1U, out result.D1V);
                 return result;
             case global::Kerf.Geometry.SurfaceKind.Torus:
-                global::Kerf.Engine.Geometry.ElSLib.D1(u, v, (Torus)_surfaceData!, out result.Point, out result.D1U, out result.D1V);
+                global::Kerf.Engine.Geometry.ElSLib.D1(u, v, (Torus3D)_surfaceData!, out result.Point, out result.D1U, out result.D1V);
                 return result;
 
             case SurfaceKind.BezierSurface:
@@ -1315,7 +1315,7 @@ internal class SurfaceAdaptor : SurfaceAdaptorBase
             case global::Kerf.Geometry.SurfaceKind.Cylinder:
                 global::Kerf.Engine.Geometry.ElSLib.D2(u,
                           v,
-                          (Cylinder)_surfaceData!,
+                          (Cylinder3D)_surfaceData!,
                           out result.Point,
                           out result.D1U,
                           out result.D1V,
@@ -1326,7 +1326,7 @@ internal class SurfaceAdaptor : SurfaceAdaptorBase
             case global::Kerf.Geometry.SurfaceKind.Cone:
                 global::Kerf.Engine.Geometry.ElSLib.D2(u,
                           v,
-                          (Cone)_surfaceData!,
+                          (Cone3D)_surfaceData!,
                           out result.Point,
                           out result.D1U,
                           out result.D1V,
@@ -1337,7 +1337,7 @@ internal class SurfaceAdaptor : SurfaceAdaptorBase
             case global::Kerf.Geometry.SurfaceKind.Sphere:
                 global::Kerf.Engine.Geometry.ElSLib.D2(u,
                           v,
-                          (Sphere)_surfaceData!,
+                          (Sphere3D)_surfaceData!,
                           out result.Point,
                           out result.D1U,
                           out result.D1V,
@@ -1348,7 +1348,7 @@ internal class SurfaceAdaptor : SurfaceAdaptorBase
             case global::Kerf.Geometry.SurfaceKind.Torus:
                 global::Kerf.Engine.Geometry.ElSLib.D2(u,
                           v,
-                          (Torus)_surfaceData!,
+                          (Torus3D)_surfaceData!,
                           out result.Point,
                           out result.D1U,
                           out result.D1V,
@@ -1512,7 +1512,7 @@ internal class SurfaceAdaptor : SurfaceAdaptorBase
             case global::Kerf.Geometry.SurfaceKind.Cylinder:
                 global::Kerf.Engine.Geometry.ElSLib.D3(u,
                           v,
-                          (Cylinder)_surfaceData!,
+                          (Cylinder3D)_surfaceData!,
                           out result.Point,
                           out result.D1U,
                           out result.D1V,
@@ -1527,7 +1527,7 @@ internal class SurfaceAdaptor : SurfaceAdaptorBase
             case global::Kerf.Geometry.SurfaceKind.Cone:
                 global::Kerf.Engine.Geometry.ElSLib.D3(u,
                           v,
-                          (Cone)_surfaceData!,
+                          (Cone3D)_surfaceData!,
                           out result.Point,
                           out result.D1U,
                           out result.D1V,
@@ -1542,7 +1542,7 @@ internal class SurfaceAdaptor : SurfaceAdaptorBase
             case global::Kerf.Geometry.SurfaceKind.Sphere:
                 global::Kerf.Engine.Geometry.ElSLib.D3(u,
                           v,
-                          (Sphere)_surfaceData!,
+                          (Sphere3D)_surfaceData!,
                           out result.Point,
                           out result.D1U,
                           out result.D1V,
@@ -1557,7 +1557,7 @@ internal class SurfaceAdaptor : SurfaceAdaptorBase
             case global::Kerf.Geometry.SurfaceKind.Torus:
                 global::Kerf.Engine.Geometry.ElSLib.D3(u,
                           v,
-                          (Torus)_surfaceData!,
+                          (Torus3D)_surfaceData!,
                           out result.Point,
                           out result.D1U,
                           out result.D1V,
@@ -1765,13 +1765,13 @@ internal class SurfaceAdaptor : SurfaceAdaptorBase
             case global::Kerf.Geometry.SurfaceKind.Plane:
                 return global::Kerf.Engine.Geometry.ElSLib.DN(u, v, (Plane3D)_surfaceData!, Nu, Nv);
             case global::Kerf.Geometry.SurfaceKind.Cylinder:
-                return global::Kerf.Engine.Geometry.ElSLib.DN(u, v, (Cylinder)_surfaceData!, Nu, Nv);
+                return global::Kerf.Engine.Geometry.ElSLib.DN(u, v, (Cylinder3D)_surfaceData!, Nu, Nv);
             case global::Kerf.Geometry.SurfaceKind.Cone:
-                return global::Kerf.Engine.Geometry.ElSLib.DN(u, v, (Cone)_surfaceData!, Nu, Nv);
+                return global::Kerf.Engine.Geometry.ElSLib.DN(u, v, (Cone3D)_surfaceData!, Nu, Nv);
             case global::Kerf.Geometry.SurfaceKind.Sphere:
-                return global::Kerf.Engine.Geometry.ElSLib.DN(u, v, (Sphere)_surfaceData!, Nu, Nv);
+                return global::Kerf.Engine.Geometry.ElSLib.DN(u, v, (Sphere3D)_surfaceData!, Nu, Nv);
             case global::Kerf.Geometry.SurfaceKind.Torus:
-                return global::Kerf.Engine.Geometry.ElSLib.DN(u, v, (Torus)_surfaceData!, Nu, Nv);
+                return global::Kerf.Engine.Geometry.ElSLib.DN(u, v, (Torus3D)_surfaceData!, Nu, Nv);
 
             case SurfaceKind.BezierSurface:
             case OtherSurface:
@@ -1946,43 +1946,43 @@ internal class SurfaceAdaptor : SurfaceAdaptorBase
     }
 
     /// <exception cref="NoSuchObjectException">The surface is not a cylinder.</exception>
-    public override Cylinder Cylinder()
+    public override Cylinder3D Cylinder()
     {
         if (_surfaceType != global::Kerf.Geometry.SurfaceKind.Cylinder)
         {
             throw new NoSuchObjectException("GeomAdaptor_Surface::Cylinder");
         }
-        return (Cylinder)_surfaceData!;
+        return (Cylinder3D)_surfaceData!;
     }
 
     /// <exception cref="NoSuchObjectException">The surface is not a cone.</exception>
-    public override Cone Cone()
+    public override Cone3D Cone()
     {
         if (_surfaceType != global::Kerf.Geometry.SurfaceKind.Cone)
         {
             throw new NoSuchObjectException("GeomAdaptor_Surface::Cone");
         }
-        return (Cone)_surfaceData!;
+        return (Cone3D)_surfaceData!;
     }
 
     /// <exception cref="NoSuchObjectException">The surface is not a sphere.</exception>
-    public override Sphere Sphere()
+    public override Sphere3D Sphere()
     {
         if (_surfaceType != global::Kerf.Geometry.SurfaceKind.Sphere)
         {
             throw new NoSuchObjectException("GeomAdaptor_Surface::Sphere");
         }
-        return (Sphere)_surfaceData!;
+        return (Sphere3D)_surfaceData!;
     }
 
     /// <exception cref="NoSuchObjectException">The surface is not a torus.</exception>
-    public override Torus Torus()
+    public override Torus3D Torus()
     {
         if (_surfaceType != global::Kerf.Geometry.SurfaceKind.Torus)
         {
             throw new NoSuchObjectException("GeomAdaptor_Surface::Torus");
         }
-        return (Torus)_surfaceData!;
+        return (Torus3D)_surfaceData!;
     }
 
     /// <exception cref="NoSuchObjectException">The surface is not a B-spline, Bezier or extrusion surface.</exception>

@@ -13,7 +13,7 @@
 
 using System.Diagnostics;
 using System.Globalization;
-using Point3D = Kerf.Geometry.Point3D;
+using Kerf.Geometry;
 using Kerf.Modeling;
 using Kerf.Topology;
 using static Kerf.Modeling.Operations;

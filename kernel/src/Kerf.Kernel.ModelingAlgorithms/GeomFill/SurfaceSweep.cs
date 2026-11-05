@@ -797,7 +797,7 @@ internal sealed class SurfaceSweep
                             centre = centre.BaryCentered(1.0, c.Location, 1.0);
                             CoordinateSystem axisOfSphere = new CoordinateSystem(centre, new Direction3D(dn), new Direction3D(ds));
                             aRadius = c.Radius;
-                            Sphere theSphere = new Sphere(axisOfSphere, aRadius);
+                            Sphere3D theSphere = new Sphere3D(axisOfSphere, aRadius);
                             s = new SphericalSurface(theSphere);
                             // Pour les spheres on ne peut pas controler le parametre
                             // V (donc U car  myExchUV = true)

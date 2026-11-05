@@ -96,7 +96,7 @@ public class Extrema_ExtElCSTests
     [Fact]
     public void LineCylinder()
     {
-        var aCyl = new Cylinder(new CoordinateSystem(), 2.0);
+        var aCyl = new Cylinder3D(new CoordinateSystem(), 2.0);
         // Parallel to the axis, at distance 5
         var aPar = new ExtElCS(new Line3D(new Point3D(5, 0, 0), new Direction3D(0, 0, 1)), aCyl);
         Assert.True(aPar.IsParallel);
@@ -118,7 +118,7 @@ public class Extrema_ExtElCSTests
     [Fact]
     public void LineSphere()
     {
-        var aSph = new Sphere(new CoordinateSystem(new Point3D(1, 1, 1), new Direction3D(0, 0, 1)), 2.0);
+        var aSph = new Sphere3D(new CoordinateSystem(new Point3D(1, 1, 1), new Direction3D(0, 0, 1)), 2.0);
         // Through the centre: the 2 intersections only (the centre, the foot of the perpendicular, has no extremum
         // on the sphere)
         var aCentre = new ExtElCS(new Line3D(new Point3D(1, 1, 1), new Direction3D(1, 0, 0)), aSph);
@@ -143,10 +143,10 @@ public class Extrema_ExtElCSTests
     [Fact]
     public void NotImplemented()
     {
-        EngineAssert.Throws<MethodNotImplementedException>(() => new ExtElCS(new Line3D(), new Cone()));
-        EngineAssert.Throws<MethodNotImplementedException>(() => new ExtElCS(new Line3D(), new Torus()));
-        EngineAssert.Throws<MethodNotImplementedException>(() => new ExtElCS(new Circle3D(), new Cone()));
-        EngineAssert.Throws<MethodNotImplementedException>(() => new ExtElCS(new Circle3D(), new Torus()));
+        EngineAssert.Throws<MethodNotImplementedException>(() => new ExtElCS(new Line3D(), new Cone3D()));
+        EngineAssert.Throws<MethodNotImplementedException>(() => new ExtElCS(new Line3D(), new Torus3D()));
+        EngineAssert.Throws<MethodNotImplementedException>(() => new ExtElCS(new Circle3D(), new Cone3D()));
+        EngineAssert.Throws<MethodNotImplementedException>(() => new ExtElCS(new Circle3D(), new Torus3D()));
         var anEmpty = new ExtElCS();
         Assert.False(anEmpty.IsDone);
         EngineAssert.Throws<NotDoneException>(() => anEmpty.ExtCount);
@@ -181,7 +181,7 @@ public class Extrema_ExtElCSTests
     [Fact]
     public void CircleCylinder()
     {
-        var aCyl = new Cylinder(new CoordinateSystem(), 2.0);
+        var aCyl = new Cylinder3D(new CoordinateSystem(), 2.0);
         // Coaxial: parallel, at distance |5 - 2|
         var aPar = new ExtElCS(new Circle3D(new Frame3D(new Point3D(0, 0, 3), new Direction3D(0, 0, 1)), 5), aCyl);
         Assert.True(aPar.IsParallel);
@@ -191,7 +191,7 @@ public class Extrema_ExtElCSTests
         for (int i = 0; i < Cases; i++)
         {
             CoordinateSystem anAx = RandomAx3(aRandom);
-            var aC = new Cylinder(anAx, Real(aRandom, 0.5, 5));
+            var aC = new Cylinder3D(anAx, Real(aRandom, 0.5, 5));
             var aCirc = new Circle3D(new Frame3D(anAx.Location.Translated(new Vector3D(RandomDir(aRandom)) * Real(aRandom, 0, 8)),
                                                RandomDir(aRandom)), Real(aRandom, 0.5, 6));
             var anExt = new ExtElCS(aCirc, aC);
@@ -202,7 +202,7 @@ public class Extrema_ExtElCSTests
     [Fact]
     public void CircleSphere()
     {
-        var aSph = new Sphere(new CoordinateSystem(), 2.0);
+        var aSph = new Sphere3D(new CoordinateSystem(), 2.0);
         // On the sphere's axis: parallel
         var aPar = new ExtElCS(new Circle3D(new Frame3D(new Point3D(0, 0, 3), new Direction3D(0, 0, 1)), 4), aSph);
         Assert.True(aPar.IsParallel);
@@ -218,7 +218,7 @@ public class Extrema_ExtElCSTests
         for (int i = 0; i < Cases; i++)
         {
             CoordinateSystem anAx = RandomAx3(aRandom);
-            var aS = new Sphere(anAx, Real(aRandom, 0.5, 5));
+            var aS = new Sphere3D(anAx, Real(aRandom, 0.5, 5));
             var aCirc = new Circle3D(new Frame3D(anAx.Location.Translated(new Vector3D(RandomDir(aRandom)) * Real(aRandom, 0.5, 8)),
                                                RandomDir(aRandom)), Real(aRandom, 0.5, 6));
             var anExt = new ExtElCS(aCirc, aS);
@@ -276,8 +276,8 @@ public class Extrema_ExtElCSTests
             var aLin = new Line3D(anAx.Location.Translated(new Vector3D(RandomDir(aRandom)) * Real(aRandom, 0, 8)), RandomDir(aRandom));
             var aCirc = new Circle3D(new Frame3D(aLin.Location, RandomDir(aRandom)), Real(aRandom, 0.5, 6));
             var aPln = new Plane3D(anAx);
-            var aCyl = new Cylinder(anAx, aR);
-            var aSph = new Sphere(anAx, aR);
+            var aCyl = new Cylinder3D(anAx, aR);
+            var aSph = new Sphere3D(anAx, aR);
             CheckPoints(new ExtElCS(aLin, aCyl), t => global::Kerf.Engine.Geometry.ElCLib.Value(t, aLin), (u, v) => global::Kerf.Engine.Geometry.ElSLib.Value(u, v, aCyl), $"case {i} line/cylinder");
             CheckPoints(new ExtElCS(aLin, aSph), t => global::Kerf.Engine.Geometry.ElCLib.Value(t, aLin), (u, v) => global::Kerf.Engine.Geometry.ElSLib.Value(u, v, aSph), $"case {i} line/sphere");
             CheckPoints(new ExtElCS(aCirc, aPln), t => global::Kerf.Engine.Geometry.ElCLib.Value(t, aCirc), (u, v) => global::Kerf.Engine.Geometry.ElSLib.Value(u, v, aPln), $"case {i} circle/plane");

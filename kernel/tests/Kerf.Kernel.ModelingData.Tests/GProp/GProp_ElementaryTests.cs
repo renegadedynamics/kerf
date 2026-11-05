@@ -302,7 +302,7 @@ public class GProp_ElementaryTests
     public void Cylinder_shell_and_solid()
     {
         const double R = 2.0, H = 5.0;
-        var aCyl = new Cylinder(Tilted, R);
+        var aCyl = new Cylinder3D(Tilted, R);
         Point3D aCentre = Tilted.Location.Translated(new Vector3D(Tilted.Direction) * (H / 2.0));
 
         var aShell = new global::Kerf.Engine.Measurement.SelGProps(aCyl, 0.0, 2.0 * Math.PI, 0.0, H, Loc);
@@ -332,7 +332,7 @@ public class GProp_ElementaryTests
         // a cone from its apex (reference radius 0) along its generatrix to L: height h = L cos t, base radius
         // a = L sin t
         double t = Math.PI / 6.0, L = 2.0, h = L * Math.Cos(t), a = L * Math.Sin(t);
-        var aCone = new Cone(Tilted, t, 0.0);
+        var aCone = new Cone3D(Tilted, t, 0.0);
         Point3D Axial(double theZ) => Tilted.Location.Translated(new Vector3D(Tilted.Direction) * theZ);
 
         // the lateral area pi a L (OCCT multiplied it by cos t), its centroid at 2 h / 3
@@ -353,7 +353,7 @@ public class GProp_ElementaryTests
 
         // a frustum's patch
         double R0 = 1.0, sn = Math.Sin(t), cs = Math.Cos(t);
-        var aFrustum = new Cone(Tilted, t, R0);
+        var aFrustum = new Cone3D(Tilted, t, R0);
         aShell.Perform(aFrustum, 0.5, 2.5, -0.5, 1.5);
         AssertSame(aShell, Integrate((u, v, _) => InFrame(Tilted, R0 + v * sn, u, v * cs), (_, v, _) => R0 + v * sn, 0.5, 2.5, -0.5, 1.5, 0, 0));
         aSolid.Perform(aFrustum, 0.5, 2.5, -0.5, 1.5);
@@ -365,7 +365,7 @@ public class GProp_ElementaryTests
     public void Sphere_shell_and_solid()
     {
         const double R = 1.5;
-        var aSph = new Sphere(Tilted, R);
+        var aSph = new Sphere3D(Tilted, R);
         var aShell = new global::Kerf.Engine.Measurement.SelGProps(aSph, 0.0, 2.0 * Math.PI, -Math.PI / 2.0, Math.PI / 2.0, Loc);
         double m = 4.0 * Math.PI * R * R;
         Assert.Equal(m, aShell.Mass(), Tol);
@@ -395,7 +395,7 @@ public class GProp_ElementaryTests
     public void Torus_shell_and_solid()
     {
         const double RMaj = 3.0, RMin = 1.0;
-        var aTor = new Torus(Tilted, RMaj, RMin);
+        var aTor = new Torus3D(Tilted, RMaj, RMin);
 
         // the shell: 4 pi^2 R r, moments m (R^2 + 3 r^2 / 2) about the axis, m (R^2 / 2 + 5 r^2 / 4) across it
         var aShell = new global::Kerf.Engine.Measurement.SelGProps(aTor, 0.0, 2.0 * Math.PI, 0.0, 2.0 * Math.PI, Loc);

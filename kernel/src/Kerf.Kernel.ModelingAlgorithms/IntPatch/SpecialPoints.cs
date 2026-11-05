@@ -374,7 +374,7 @@ internal static class SpecialPoints
     /// Computes the "special point" on a cone (the U parameter at the apex), in [0, 2*PI]; the caller adjusts it.
     /// </summary>
     internal static bool ProcessCone(in PntOn2S ptIso, in Vector3D dUofPSurf, in Vector3D dVofPSurf,
-                                     in Cone cone, bool isReversed, ref double uquad,
+                                     in Cone3D cone, bool isReversed, ref double uquad,
                                      out bool isIsoChoosen)
     {
         isIsoChoosen = false;
@@ -573,7 +573,7 @@ internal static class SpecialPoints
         }
         else if (qSurf.GetType() == SurfaceKind.Cone)
         {
-            Cone co = qSurf.Cone();
+            Cone3D co = qSurf.Cone();
             double radius = co.RefRadius;
             double semiAngle = co.SemiAngle;
             vquad = -radius / Math.Sin(semiAngle);

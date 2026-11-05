@@ -447,7 +447,7 @@ internal partial class CheckerSI : PaveFiller
 
             if (surfType == SurfaceKind.Torus)
             {
-                Torus torus = bAsurf.Torus();
+                Torus3D torus = bAsurf.Torus();
                 double majorRadius = torus.MajorRadius;
                 double minorRadius = torus.MinorRadius;
                 if (majorRadius > minorRadius + global::Kerf.Engine.Foundation.Precision.Confusion())

@@ -64,7 +64,7 @@ internal sealed class FindEdgesInFace
         Type tc, ts;
         bool toAdd;
         Plane3D pl = new();
-        Cylinder cy = new();
+        Cylinder3D cy = new();
 
         double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         double tolAng = global::Kerf.Engine.Foundation.Precision.Angular();

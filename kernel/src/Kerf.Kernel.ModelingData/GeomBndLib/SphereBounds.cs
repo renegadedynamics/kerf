@@ -36,7 +36,7 @@ internal sealed class SphereBounds : SurfaceBounds.ISurfaceEvaluator
     public Box Box(double tol)
     {
         Box box = new();
-        Sphere sphere = _geom.Sphere;
+        Sphere3D sphere = _geom.Sphere;
         Point3D p = sphere.Location;
         double r = sphere.Radius;
         box.Update(p.X - r, p.Y - r, p.Z - r, p.X + r, p.Y + r, p.Z + r);
@@ -45,7 +45,7 @@ internal sealed class SphereBounds : SurfaceBounds.ISurfaceEvaluator
     }
 
     /// <summary>Compute bounding box for a sphere patch.</summary>
-    private static void ComputeSphere(in Sphere sphere,
+    private static void ComputeSphere(in Sphere3D sphere,
                                       double uMin,
                                       double uMax,
                                       double vMin,
@@ -142,7 +142,7 @@ internal sealed class SphereBounds : SurfaceBounds.ISurfaceEvaluator
     /// <summary>Compute bounding box for sphere patch [theUMin, theUMax] x [theVMin, theVMax].</summary>
     public Box Box(double uMin, double uMax, double vMin, double vMax, double tol)
     {
-        Sphere sphere = _geom.Sphere;
+        Sphere3D sphere = _geom.Sphere;
 
         // Check if it is a whole sphere.
         if (Math.Abs(uMin) < global::Kerf.Engine.Foundation.Precision.Angular()

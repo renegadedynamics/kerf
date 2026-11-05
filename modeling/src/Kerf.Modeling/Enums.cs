@@ -236,14 +236,6 @@ public enum PageSize
 #pragma warning restore CS1591
 }
 
-/// <summary>Tangency constraint for solvers' edge selection (OCCT's GccEnt_Position).</summary>
-public enum Tangency
-{
-#pragma warning disable CS1591 // Values match GccEnt_Position
-    Unqualified = 0, Enclosing = 1, Enclosed = 2, Outside = 3,
-#pragma warning restore CS1591
-}
-
 /// <summary>Position along a curve mode.</summary>
 public enum PositionMode
 {

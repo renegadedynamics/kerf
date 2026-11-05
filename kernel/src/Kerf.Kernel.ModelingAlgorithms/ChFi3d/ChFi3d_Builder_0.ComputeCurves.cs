@@ -84,7 +84,7 @@ internal static partial class Builder_0
             || (s1.GetType() == Plane && s2.GetType() == SurfaceKind.Cylinder))
         {
             Plane3D pl;
-            Cylinder cyl;
+            Cylinder3D cyl;
             if (s1.GetType() == Plane)
             {
                 pl = s1.Plane();

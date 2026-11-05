@@ -208,7 +208,7 @@ internal sealed class CanonicalRecognitionAnalysis
     /// <paramref name="cyl"/>. For an edge or a wire, the sample cylinder (if its radius is set) starts a
     /// least-squares fit.
     /// </summary>
-    public bool IsCylinder(double tol, ref Cylinder cyl)
+    public bool IsCylinder(double tol, ref Cylinder3D cyl)
     {
         CoordinateSystem pos = cyl.Position;
         NCollection_Array1<double> aParams = new(1, 1);
@@ -247,7 +247,7 @@ internal sealed class CanonicalRecognitionAnalysis
     /// <paramref name="cone"/>. For an edge or a wire, the sample cone (if its radius is set) starts a least-squares
     /// fit.
     /// </summary>
-    public bool IsCone(double tol, ref Cone cone)
+    public bool IsCone(double tol, ref Cone3D cone)
     {
         CoordinateSystem pos = cone.Position;
         NCollection_Array1<double> aParams = new(1, 2);
@@ -289,7 +289,7 @@ internal sealed class CanonicalRecognitionAnalysis
     /// <paramref name="sphere"/>. For an edge or a wire, the sample sphere (if its radius is set) starts a
     /// least-squares fit.
     /// </summary>
-    public bool IsSphere(double tol, ref Sphere sphere)
+    public bool IsSphere(double tol, ref Sphere3D sphere)
     {
         CoordinateSystem pos = sphere.Position;
         NCollection_Array1<double> aParams = new(1, 1);
@@ -994,20 +994,20 @@ internal sealed class CanonicalRecognitionAnalysis
         }
         else if (target == SurfaceKind.Cylinder)
         {
-            Cylinder cyl = gas.Cylinder();
+            Cylinder3D cyl = gas.Cylinder();
             pos = cyl.Position;
             theParams[1] = cyl.Radius;
         }
         else if (target == SurfaceKind.Cone)
         {
-            Cone con = gas.Cone();
+            Cone3D con = gas.Cone();
             pos = con.Position;
             theParams[1] = con.SemiAngle;
             theParams[2] = con.RefRadius;
         }
         else if (target == SurfaceKind.Sphere)
         {
-            Sphere sph = gas.Sphere();
+            Sphere3D sph = gas.Sphere();
             pos = sph.Position;
             theParams[1] = sph.Radius;
         }
@@ -1053,8 +1053,8 @@ internal sealed class CanonicalRecognitionAnalysis
 
         if (target == SurfaceKind.Cone)
         {
-            Cone refCone = new(refPos, refParams[1], refParams[2]);
-            Cone cone = new(pos, theParams[1], theParams[2]);
+            Cone3D refCone = new(refPos, refParams[1], refParams[2]);
+            Cone3D cone = new(pos, theParams[1], theParams[2]);
             Point3D refApex = refCone.Apex;
             Point3D apex = cone.Apex;
             return refApex.SquareDistanceTo(apex) <= tol * tol;

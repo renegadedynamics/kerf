@@ -59,28 +59,28 @@ internal class LibraryMakeFace : LibraryMakeShape
     }
 
     /// <summary>A face on the whole cylinder.</summary>
-    public LibraryMakeFace(in Cylinder c)
+    public LibraryMakeFace(in Cylinder3D c)
     {
         var gc = new CylindricalSurface(c);
         Init(gc, true, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>A face on the whole cone.</summary>
-    public LibraryMakeFace(in Cone c)
+    public LibraryMakeFace(in Cone3D c)
     {
         var gc = new ConicalSurface(c);
         Init(gc, true, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>A face on the whole sphere.</summary>
-    public LibraryMakeFace(in Sphere s)
+    public LibraryMakeFace(in Sphere3D s)
     {
         var gs = new SphericalSurface(s);
         Init(gs, true, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>A face on the whole torus.</summary>
-    public LibraryMakeFace(in Torus t)
+    public LibraryMakeFace(in Torus3D t)
     {
         var gt = new ToroidalSurface(t);
         Init(gt, true, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -98,25 +98,25 @@ internal class LibraryMakeFace : LibraryMakeShape
         Init(gp, uMin, uMax, vMin, vMax, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
-    public LibraryMakeFace(in Cylinder c, double uMin, double uMax, double vMin, double vMax)
+    public LibraryMakeFace(in Cylinder3D c, double uMin, double uMax, double vMin, double vMax)
     {
         var gc = new CylindricalSurface(c);
         Init(gc, uMin, uMax, vMin, vMax, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
-    public LibraryMakeFace(in Cone c, double uMin, double uMax, double vMin, double vMax)
+    public LibraryMakeFace(in Cone3D c, double uMin, double uMax, double vMin, double vMax)
     {
         var gc = new ConicalSurface(c);
         Init(gc, uMin, uMax, vMin, vMax, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
-    public LibraryMakeFace(in Sphere s, double uMin, double uMax, double vMin, double vMax)
+    public LibraryMakeFace(in Sphere3D s, double uMin, double uMax, double vMin, double vMax)
     {
         var gs = new SphericalSurface(s);
         Init(gs, uMin, uMax, vMin, vMax, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
-    public LibraryMakeFace(in Torus t, double uMin, double uMax, double vMin, double vMax)
+    public LibraryMakeFace(in Torus3D t, double uMin, double uMax, double vMin, double vMax)
     {
         var gt = new ToroidalSurface(t);
         Init(gt, uMin, uMax, vMin, vMax, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -227,7 +227,7 @@ internal class LibraryMakeFace : LibraryMakeShape
         }
     }
 
-    public LibraryMakeFace(in Cylinder c, in Wire w, bool inside = true)
+    public LibraryMakeFace(in Cylinder3D c, in Wire w, bool inside = true)
     {
         var gc = new CylindricalSurface(c);
         Init(gc, false, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -238,7 +238,7 @@ internal class LibraryMakeFace : LibraryMakeShape
         }
     }
 
-    public LibraryMakeFace(in Cone c, in Wire w, bool inside = true)
+    public LibraryMakeFace(in Cone3D c, in Wire w, bool inside = true)
     {
         var gc = new ConicalSurface(c);
         Init(gc, false, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -249,7 +249,7 @@ internal class LibraryMakeFace : LibraryMakeShape
         }
     }
 
-    public LibraryMakeFace(in Sphere s, in Wire w, bool inside = true)
+    public LibraryMakeFace(in Sphere3D s, in Wire w, bool inside = true)
     {
         var gs = new SphericalSurface(s);
         Init(gs, false, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -260,7 +260,7 @@ internal class LibraryMakeFace : LibraryMakeShape
         }
     }
 
-    public LibraryMakeFace(in Torus t, in Wire w, bool inside = true)
+    public LibraryMakeFace(in Torus3D t, in Wire w, bool inside = true)
     {
         var gt = new ToroidalSurface(t);
         Init(gt, false, global::Kerf.Engine.Foundation.Precision.Confusion());

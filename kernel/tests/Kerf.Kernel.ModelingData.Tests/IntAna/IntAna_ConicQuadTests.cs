@@ -112,7 +112,7 @@ public class IntAna_ConicQuadTests
         {
             double aMaj = Real(aRandom, 3, 10), aMin = Real(aRandom, 0.5, aMaj - 0.5);
             CoordinateSystem anAx = RandomAx3(aRandom, RandomPnt(aRandom));
-            var aTor = new Torus(anAx, aMaj, aMin);
+            var aTor = new Torus3D(anAx, aMaj, aMin);
             var aLin = new Line3D(anAx.Location.Translated(new Vector3D(Real(aRandom, -aMaj, aMaj), Real(aRandom, -aMaj, aMaj),
                                                                         Real(aRandom, -aMin, aMin))), RandomDir(aRandom));
             var anInt = new IntLinTorus(aLin, aTor);
@@ -135,7 +135,7 @@ public class IntAna_ConicQuadTests
     [Fact]
     public void IntLinTorus_AlongTheAxis_AndThroughTheCentre()
     {
-        var aTor = new Torus(new CoordinateSystem(), 5, 1);
+        var aTor = new Torus3D(new CoordinateSystem(), 5, 1);
         // The axis misses the torus
         var anAxis = new IntLinTorus(new Line3D(new Point3D(), new Direction3D(0, 0, 1)), aTor);
         Assert.True(anAxis.IsDone);
@@ -165,9 +165,9 @@ public class IntAna_ConicQuadTests
             Quadric aQuad = (i % 4) switch
             {
                 0 => new Quadric(new Plane3D(anAx)),
-                1 => new Quadric(new Cylinder(anAx, aR)),
-                2 => new Quadric(new Cone(anAx, Real(aRandom, 0.1, 1.4), aR)),
-                _ => new Quadric(new Sphere(anAx, aR)),
+                1 => new Quadric(new Cylinder3D(anAx, aR)),
+                2 => new Quadric(new Cone3D(anAx, Real(aRandom, 0.1, 1.4), aR)),
+                _ => new Quadric(new Sphere3D(anAx, aR)),
             };
             Point3D aLoc = anAx.Location.Translated(new Vector3D(Real(aRandom, -aR, aR), Real(aRandom, -aR, aR), Real(aRandom, -aR, aR)));
             var aCAx = new Frame3D(aLoc, RandomDir(aRandom));
@@ -258,7 +258,7 @@ public class IntAna_ConicQuadTests
         EngineAssert.Throws<OutOfRangeException>(() => aCross.Point(2));
 
         // A circle of the sphere is in it
-        var aSph = new Quadric(new Sphere(new CoordinateSystem(), 2));
+        var aSph = new Quadric(new Sphere3D(new CoordinateSystem(), 2));
         var aCirc = new IntConicQuad(new Circle3D(new Frame3D(new Point3D(), new Direction3D(0, 1, 1)), 2), aSph);
         Assert.True(aCirc.IsDone);
         Assert.True(aCirc.IsInQuadric);
@@ -279,16 +279,16 @@ public class IntAna_ConicQuadTests
     [Fact]
     public void Quadric_Coefficients_AndSpecialPoints()
     {
-        var aQ = new Quadric(new Sphere(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 2));
+        var aQ = new Quadric(new Sphere3D(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 2));
         Assert.Equal(2, aQ.SpecialPoints().Count);
         Assert.True(aQ.SpecialPoints()[0].IsEqual(new Point3D(1, 2, 1), 1e-15));
         Assert.True(aQ.SpecialPoints()[1].IsEqual(new Point3D(1, 2, 5), 1e-15));
         Assert.True(Residual(aQ, new Point3D(3, 2, 3)) < 1e-15);
 
-        var aCone = new Quadric(new Cone(new CoordinateSystem(), M_PI / 4, 1));
+        var aCone = new Quadric(new Cone3D(new CoordinateSystem(), M_PI / 4, 1));
         Assert.Single(aCone.SpecialPoints());
         Assert.True(aCone.SpecialPoints()[0].IsEqual(new Point3D(0, 0, -1), 1e-12));
-        Assert.Empty(new Quadric(new Cylinder(new CoordinateSystem(), 1)).SpecialPoints());
+        Assert.Empty(new Quadric(new Cylinder3D(new CoordinateSystem(), 1)).SpecialPoints());
 
         // The empty quadric is 1 = 0
         new Quadric().Coefficients(out double xx, out _, out _, out _, out _, out _, out _, out _, out _, out double c);
@@ -297,7 +297,7 @@ public class IntAna_ConicQuadTests
 
         // New coefficients in a local system: a cylinder of axis Z is x² + y² - R² in its own system
         var anAx = new CoordinateSystem(new Point3D(1, -2, 4), new Direction3D(1, 1, 1), new Direction3D(1, -1, 0));
-        var aCyl = new Quadric(new Cylinder(anAx, 3));
+        var aCyl = new Quadric(new Cylinder3D(anAx, 3));
         aCyl.Coefficients(out double a, out double b, out double cc, out double d, out double e, out double f, out double g,
                           out double h, out double k, out double l);
         aCyl.NewCoefficients(ref a, ref b, ref cc, ref d, ref e, ref f, ref g, ref h, ref k, ref l, anAx);

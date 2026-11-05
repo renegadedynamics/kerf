@@ -65,7 +65,7 @@ internal sealed partial class DraftModification
                 Circle3D cir;
                 if (typS == typeof(CylindricalSurface))
                 {
-                    Cylinder cyl = ((CylindricalSurface)s).Cylinder;
+                    Cylinder3D cyl = ((CylindricalSurface)s).Cylinder;
                     Axis3D axcyl = cyl.Axis;
                     cir = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position, cyl.Radius, 0.0);
                     Vector3D vv = new(cyl.Location, neutralPlane.Location);
@@ -137,7 +137,7 @@ internal sealed partial class DraftModification
                     }
                     else
                     {
-                        Cone co = ((ConicalSurface)newS).Cone;
+                        Cone3D co = ((ConicalSurface)newS).Cone;
                         double vapex = -co.RefRadius / Math.Sin(co.SemiAngle);
                         if (vmin < vapex)
                         { // vmax should not exceed Vapex
@@ -948,7 +948,7 @@ internal sealed partial class DraftModification
                                                     }
                                                     else if (theSurf.GetType() == typeof(CylindricalSurface))
                                                     {
-                                                        Cylinder cy = DownCast<CylindricalSurface>(s2).Cylinder;
+                                                        Cylinder3D cy = DownCast<CylindricalSurface>(s2).Cylinder;
                                                         global::Kerf.Engine.Geometry.ElSLib.Parameters(cy, plv, out ul, out vl);
                                                         global::Kerf.Engine.Geometry.ElSLib.Parameters(cy, pfv, out uf, out vf);
                                                         global::Kerf.Engine.Geometry.ElSLib.Parameters(cy, plvprim, out ulprim, out vlprim);
@@ -1238,7 +1238,7 @@ internal sealed partial class DraftModification
                         // bool dirfound = false;
                         if (localS1.GetType() == typeof(CylindricalSurface))
                         {
-                            Cylinder cyl = ((CylindricalSurface)localS1).Cylinder;
+                            Cylinder3D cyl = ((CylindricalSurface)localS1).Cylinder;
                             dirextr = cyl.Axis.Direction;
                             // dirfound = true;
                             //  see direction...
@@ -1261,7 +1261,7 @@ internal sealed partial class DraftModification
 
                         else if (localS2.GetType() == typeof(CylindricalSurface))
                         {
-                            Cylinder cyl = ((CylindricalSurface)localS2).Cylinder;
+                            Cylinder3D cyl = ((CylindricalSurface)localS2).Cylinder;
                             dirextr = cyl.Axis.Direction;
                             // dirfound = true;
                             // see direction...
@@ -1656,7 +1656,7 @@ internal sealed partial class DraftModification
             {
                 return newS;
             }
-            Cylinder cy = ((CylindricalSurface)s).Cylinder;
+            Cylinder3D cy = ((CylindricalSurface)s).Cylinder;
             testdir = direction.Dot(cy.Axis.Direction);
             if (Math.Abs(testdir) <= 1.0 - global::Kerf.Engine.Foundation.Precision.Angular())
             {
@@ -1704,7 +1704,7 @@ internal sealed partial class DraftModification
                 {
                     alpha = -alpha;
                 }
-                Cone co = new(axcone, alpha, rad);
+                Cone3D co = new(axcone, alpha, rad);
                 newS = new ConicalSurface(co);
             }
             else
@@ -1720,7 +1720,7 @@ internal sealed partial class DraftModification
                 return newS;
             }
 
-            Cone co1 = ((ConicalSurface)s).Cone;
+            Cone3D co1 = ((ConicalSurface)s).Cone;
 
             testdir = direction.Dot(co1.Axis.Direction);
             if (Math.Abs(testdir) <= 1.0 - global::Kerf.Engine.Foundation.Precision.Angular())
@@ -1766,13 +1766,13 @@ internal sealed partial class DraftModification
                 }
                 else
                 {
-                    Cone co = new(axcone, alpha, rad);
+                    Cone3D co = new(axcone, alpha, rad);
                     newS = new ConicalSurface(co);
                 }
             }
             else
             {
-                newS = new CylindricalSurface(new Cylinder(axcone, i2s.Circle(1).Radius));
+                newS = new CylindricalSurface(new Cylinder3D(axcone, i2s.Circle(1).Radius));
             }
         }
         return newS;
@@ -1822,14 +1822,14 @@ internal sealed partial class DraftModification
         Direction3D norm = new();
         if (typeS == typeof(CylindricalSurface))
         {
-            Cylinder cy = ((CylindricalSurface)s).Cylinder;
+            Cylinder3D cy = ((CylindricalSurface)s).Cylinder;
             global::Kerf.Engine.Geometry.ElSLib.Parameters(cy, lin.Location, out double u, out double v);
             global::Kerf.Engine.Geometry.ElSLib.D1(u, v, cy, out Point3D pbid, out Vector3D d1u, out Vector3D d1v);
             norm = new Direction3D(d1u.Crossed(d1v));
         }
         else if (typeS == typeof(ConicalSurface))
         {
-            Cone co = ((ConicalSurface)s).Cone;
+            Cone3D co = ((ConicalSurface)s).Cone;
             global::Kerf.Engine.Geometry.ElSLib.Parameters(co, lin.Location, out double u, out double v);
             global::Kerf.Engine.Geometry.ElSLib.D1(u, v, co, out Point3D pbid, out Vector3D d1u, out Vector3D d1v);
             norm = new Direction3D(d1u.Crossed(d1v));

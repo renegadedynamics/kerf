@@ -26,7 +26,7 @@ internal static class ComputeDataFilPlnCyl
 
     /// <summary>The fillet along a generatrix of the cylinder (a straight guide).</summary>
     internal static bool ChFiKPart_MakeFillet(DsDataStructure dStr, SurfData data, in Plane3D pln,
-                                              in Cylinder cyl, double fu, double lu, Orientation or1,
+                                              in Cylinder3D cyl, double fu, double lu, Orientation or1,
                                               Orientation or2, double radius, in Line3D spine, double first,
                                               Orientation ofpl, bool plandab)
     {
@@ -57,7 +57,7 @@ internal static class ComputeDataFilPlnCyl
             return false;
         }
         // intersection of the parallel plane and of the parallel cylinder.
-        Cylinder cylOffset = new(cyl.Position, rOff);
+        Cylinder3D cylOffset = new(cyl.Position, rOff);
         QuadQuadGeo lInt = new(planOffset, cylOffset, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Point3D orSpine = global::Kerf.Engine.Geometry.ElCLib.Value(first, spine);
         Point3D orFillet;
@@ -217,7 +217,7 @@ internal static class ComputeDataFilPlnCyl
 
     /// <summary>The fillet along a circle of the cylinder: a torus, or a sphere when the radii are equal.</summary>
     internal static bool ChFiKPart_MakeFillet(DsDataStructure dStr, SurfData data, in Plane3D pln,
-                                              in Cylinder cyl, double fu, double lu, Orientation or1,
+                                              in Cylinder3D cyl, double fu, double lu, Orientation or1,
                                               Orientation or2, double radius, in Circle3D spine, double first,
                                               Orientation ofpl, bool plandab)
     {

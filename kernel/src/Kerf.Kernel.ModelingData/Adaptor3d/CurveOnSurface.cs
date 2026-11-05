@@ -1470,7 +1470,7 @@ internal class CurveOnSurface : CurveAdaptorBase
                         if (Math.Abs(Math.Abs(p.Y) - M_PI / 2.0) >= global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             _type = global::Kerf.Geometry.CurveKind.Circle;
-                            Sphere sph = _surface.Sphere();
+                            Sphere3D sph = _surface.Sphere();
                             CoordinateSystem axis = sph.Position;
                             _circ = global::Kerf.Engine.Geometry.ElSLib.SphereVIso(axis, sph.Radius, p.Y);
                             Direction3D dRev = axis.XDirection.Crossed(axis.YDirection);
@@ -1487,7 +1487,7 @@ internal class CurveOnSurface : CurveAdaptorBase
                     else if (sTy == SurfaceKind.Cylinder)
                     {
                         _type = global::Kerf.Geometry.CurveKind.Circle;
-                        Cylinder cyl = _surface.Cylinder();
+                        Cylinder3D cyl = _surface.Cylinder();
                         Point2D p = _curve.Line().Location;
                         CoordinateSystem axis = cyl.Position;
                         _circ = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(axis, cyl.Radius, p.Y);
@@ -1504,7 +1504,7 @@ internal class CurveOnSurface : CurveAdaptorBase
                     else if (sTy == SurfaceKind.Cone)
                     {
                         _type = global::Kerf.Geometry.CurveKind.Circle;
-                        Cone cone = _surface.Cone();
+                        Cone3D cone = _surface.Cone();
                         Point2D p = _curve.Line().Location;
                         CoordinateSystem axis = cone.Position;
                         _circ = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(axis, cone.RefRadius, cone.SemiAngle, p.Y);
@@ -1521,7 +1521,7 @@ internal class CurveOnSurface : CurveAdaptorBase
                     else if (sTy == SurfaceKind.Torus)
                     {
                         _type = global::Kerf.Geometry.CurveKind.Circle;
-                        Torus tore = _surface.Torus();
+                        Torus3D tore = _surface.Torus();
                         Point2D p = _curve.Line().Location;
                         CoordinateSystem axis = tore.Position;
                         _circ = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(axis, tore.MajorRadius, tore.MinorRadius, p.Y);
@@ -1541,7 +1541,7 @@ internal class CurveOnSurface : CurveAdaptorBase
                     if (sTy == SurfaceKind.Sphere)
                     {
                         _type = global::Kerf.Geometry.CurveKind.Circle;
-                        Sphere sph = _surface.Sphere();
+                        Sphere3D sph = _surface.Sphere();
                         Point2D p = _curve.Line().Location;
                         CoordinateSystem axis = sph.Position;
                         // Compute the iso 0.
@@ -1567,7 +1567,7 @@ internal class CurveOnSurface : CurveAdaptorBase
                     else if (sTy == SurfaceKind.Cylinder)
                     {
                         _type = global::Kerf.Geometry.CurveKind.Line;
-                        Cylinder cyl = _surface.Cylinder();
+                        Cylinder3D cyl = _surface.Cylinder();
                         Point2D p = _curve.Line().Location;
                         _lin = global::Kerf.Engine.Geometry.ElSLib.CylinderUIso(cyl.Position, cyl.Radius, p.X);
                         Vector3D tr = new Vector3D(_lin.Direction);
@@ -1581,7 +1581,7 @@ internal class CurveOnSurface : CurveAdaptorBase
                     else if (sTy == SurfaceKind.Cone)
                     {
                         _type = global::Kerf.Geometry.CurveKind.Line;
-                        Cone cone = _surface.Cone();
+                        Cone3D cone = _surface.Cone();
                         Point2D p = _curve.Line().Location;
                         _lin = global::Kerf.Engine.Geometry.ElSLib.ConeUIso(cone.Position, cone.RefRadius, cone.SemiAngle, p.X);
                         Vector3D tr = new Vector3D(_lin.Direction);
@@ -1595,7 +1595,7 @@ internal class CurveOnSurface : CurveAdaptorBase
                     else if (sTy == SurfaceKind.Torus)
                     {
                         _type = global::Kerf.Geometry.CurveKind.Circle;
-                        Torus tore = _surface.Torus();
+                        Torus3D tore = _surface.Torus();
                         Point2D p = _curve.Line().Location;
                         CoordinateSystem axis = tore.Position;
                         _circ = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(axis, tore.MajorRadius, tore.MinorRadius, p.X);

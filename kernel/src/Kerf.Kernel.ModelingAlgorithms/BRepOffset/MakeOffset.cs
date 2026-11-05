@@ -2268,7 +2268,7 @@ internal sealed partial class MakeOffset
         // OCCT.NET: OCCT iterates the apexes by their addresses; the port in insertion order (decision 1032).
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> cone in facesOfCone)
         {
-            Sphere theSphere = new();
+            Sphere3D theSphere = new();
             SphericalSurface? sphSurf = null;
             Wire sphereWire = new();
             bb.MakeWire(ref sphereWire);
@@ -3107,7 +3107,7 @@ internal sealed partial class MakeOffset
                         }
                         else // case of cone
                         {
-                            Cone theCone =
+                            Cone3D theCone =
                                 new MakeCone(circ.Location, circOE.Location, circ.Radius, circOE.Radius).Value();
                             CoordinateSystem theAx3 = new(circ.Position);
                             if (circAxisDir * theCone.Axis.Direction < 0.0)

@@ -12,7 +12,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// <summary>Projects elementary curves on a cone: lines along a generatrix and circles normal to the axis.</summary>
 internal class ConeProjector : Projector
 {
-    private Cone _cone = new();
+    private Cone3D _cone = new();
 
     /// <summary>Undefined projection.</summary>
     public ConeProjector()
@@ -20,26 +20,26 @@ internal class ConeProjector : Projector
     }
 
     /// <summary>Projection on the cone Co.</summary>
-    public ConeProjector(in Cone co)
+    public ConeProjector(in Cone3D co)
     {
         Init(co);
     }
 
     /// <summary>Projection of the line L on the cone Co.</summary>
-    public ConeProjector(in Cone co, in Line3D l)
+    public ConeProjector(in Cone3D co, in Line3D l)
     {
         Init(co);
         Project(l);
     }
 
     /// <summary>Projection of the circle C on the cone Co.</summary>
-    public ConeProjector(in Cone co, in Circle3D c)
+    public ConeProjector(in Cone3D co, in Circle3D c)
     {
         Init(co);
         Project(c);
     }
 
-    public void Init(in Cone co)
+    public void Init(in Cone3D co)
     {
         _type = OtherCurve;
         _cone = co;

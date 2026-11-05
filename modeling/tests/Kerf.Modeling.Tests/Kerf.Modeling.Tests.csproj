@@ -23,11 +23,7 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <Using Include="Kerf.Topology" />
-    <Using Include="Kerf.Geometry.Point3D" Alias="Point3D" />
-    <Using Include="Kerf.Geometry.Vector3D" Alias="Vector3D" />
-    <Using Include="Kerf.Geometry.Direction3D" Alias="Direction3D" />
-    <Using Include="Kerf.Geometry.BoundingBox" Alias="BoundingBox" />
-    <Using Include="Kerf.Geometry.GeneralTransform3D" Alias="GeneralTransform3D" />
+    <Using Include="Kerf.Geometry" />
     <Using Include="Kerf.Color" Alias="Color" />
   </ItemGroup>
 

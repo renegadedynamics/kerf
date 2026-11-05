@@ -39,13 +39,13 @@ internal static class BSurfaceTool
 
     public static Plane3D Plane(FaceSurfaceAdaptor s) => s.Plane();
 
-    public static Cylinder Cylinder(FaceSurfaceAdaptor s) => s.Cylinder();
+    public static Cylinder3D Cylinder(FaceSurfaceAdaptor s) => s.Cylinder();
 
-    public static Cone Cone(FaceSurfaceAdaptor s) => s.Cone();
+    public static Cone3D Cone(FaceSurfaceAdaptor s) => s.Cone();
 
-    public static Sphere Sphere(FaceSurfaceAdaptor s) => s.Sphere();
+    public static Sphere3D Sphere(FaceSurfaceAdaptor s) => s.Sphere();
 
-    public static Torus Torus(FaceSurfaceAdaptor s) => s.Torus();
+    public static Torus3D Torus(FaceSurfaceAdaptor s) => s.Torus();
 
     public static global::Kerf.Geometry.BezierSurface Bezier(FaceSurfaceAdaptor s) => s.Bezier();
 

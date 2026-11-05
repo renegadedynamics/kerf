@@ -117,16 +117,16 @@ internal readonly struct HiddenLineSurfaceTool : IIntersectionSurfaceTool<HlrSur
     public static Plane3D Plane(in HlrSurface surf) =>
         surf.Plane();
 
-    public static Cylinder Cylinder(in HlrSurface surf) =>
+    public static Cylinder3D Cylinder(in HlrSurface surf) =>
         surf.Cylinder();
 
-    public static Cone Cone(in HlrSurface surf) =>
+    public static Cone3D Cone(in HlrSurface surf) =>
         surf.Cone();
 
-    public static Sphere Sphere(in HlrSurface surf) =>
+    public static Sphere3D Sphere(in HlrSurface surf) =>
         surf.Sphere();
 
-    public static Torus Torus(in HlrSurface surf) =>
+    public static Torus3D Torus(in HlrSurface surf) =>
         surf.Torus();
 
     public static global::Kerf.Geometry.BezierSurface Bezier(in HlrSurface surf) =>

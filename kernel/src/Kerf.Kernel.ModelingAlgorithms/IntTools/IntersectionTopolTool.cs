@@ -167,7 +167,7 @@ internal class IntersectionTopolTool : TopolTool
                 break;
             case SurfaceKind.Cone:
                 {
-                    Cone cone = _s.Cone();
+                    Cone3D cone = _s.Cone();
                     Circle3D circle = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(cone.Position, cone.RefRadius, cone.SemiAngle, vinf);
                     double radius = circle.Radius;
                     circle = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(cone.Position, cone.RefRadius, cone.SemiAngle, vsup);
@@ -220,7 +220,7 @@ internal class IntersectionTopolTool : TopolTool
 
                     if (typS == SurfaceKind.Torus)
                     {
-                        Torus torus = _s.Torus();
+                        Torus3D torus = _s.Torus();
                         circle = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(torus.Position, torus.MajorRadius, torus.MinorRadius, uinf);
                         radius2 = circle.Radius;
                         circle = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(torus.Position, torus.MajorRadius, torus.MinorRadius, usup);
@@ -233,7 +233,7 @@ internal class IntersectionTopolTool : TopolTool
                     }
                     else
                     {
-                        Sphere sphere = _s.Sphere();
+                        Sphere3D sphere = _s.Sphere();
                         radius1 = sphere.Radius;
                         radius2 = sphere.Radius;
                     }

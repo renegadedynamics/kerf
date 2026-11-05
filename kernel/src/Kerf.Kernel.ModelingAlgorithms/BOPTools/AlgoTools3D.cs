@@ -537,7 +537,7 @@ internal static class AlgoTools3D
                 { // pkv/909/F8
                     double r, dT;
                     //
-                    Cylinder cyl = gas.Cylinder();
+                    Cylinder3D cyl = gas.Cylinder();
                     r = cyl.Radius;
                     dT = 1.0 - transVal / r;
                     if (dT >= -1 && dT <= 1)

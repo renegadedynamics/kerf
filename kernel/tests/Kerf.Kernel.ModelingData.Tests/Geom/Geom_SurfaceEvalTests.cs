@@ -40,7 +40,7 @@ public class Geom_SurfaceEvalTests
     public void Sphere_EvalD1_PartialDerivatives()
     {
         double aRadius = 5.0;
-        Sphere aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), aRadius);
+        Sphere3D aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), aRadius);
         SphericalSurface aSurf = new(aSphere);
 
         double aU = M_PI / 4.0; // longitude

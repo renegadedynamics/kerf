@@ -18,19 +18,19 @@ namespace Kerf.Geometry;
 /// <c>new gp_Sphere()</c> is OCCT's indefinite sphere (radius <see cref="Standard.RealLast"/>);
 /// <c>default(gp_Sphere)</c> is not valid.
 /// </remarks>
-public readonly partial struct Sphere : IEquatable<Sphere>
+public readonly partial struct Sphere3D : IEquatable<Sphere3D>
 {
     private readonly CoordinateSystem _pos;
     private readonly double _radius;
 
-    public Sphere()
+    public Sphere3D()
     {
         _pos = new CoordinateSystem();
         _radius = RealLast();
     }
 
     /// <exception cref="ConstructionErrorException"><paramref name="radius"/> is negative.</exception>
-    public Sphere(in CoordinateSystem a3, double radius)
+    public Sphere3D(in CoordinateSystem a3, double radius)
     {
         _pos = a3;
         _radius = radius;
@@ -39,40 +39,40 @@ public readonly partial struct Sphere : IEquatable<Sphere>
 
     // Copies
 
-    public readonly Sphere WithLocation(in Point3D loc)
+    public readonly Sphere3D WithLocation(in Point3D loc)
     {
         CoordinateSystem pos = _pos;
         pos = pos.WithLocation(loc);
-        return new Sphere(pos, _radius);
+        return new Sphere3D(pos, _radius);
     }
 
-    public readonly Sphere WithPosition(in CoordinateSystem a3)
+    public readonly Sphere3D WithPosition(in CoordinateSystem a3)
     {
         CoordinateSystem pos = _pos;
         pos = a3;
-        return new Sphere(pos, _radius);
+        return new Sphere3D(pos, _radius);
     }
 
-    public readonly Sphere WithRadius(double r)
+    public readonly Sphere3D WithRadius(double r)
     {
         double newRadius = _radius;
         Refusal.ArgumentIf(r < 0.0, FailureKind.ConstructionError, "gp_Sphere::SetRadius() - radius should be >= 0");
         newRadius = r;
-        return new Sphere(_pos, newRadius);
+        return new Sphere3D(_pos, newRadius);
     }
 
-    public readonly Sphere UReversed()
+    public readonly Sphere3D UReversed()
     {
         CoordinateSystem pos = _pos;
         pos = pos.YReversed();
-        return new Sphere(pos, _radius);
+        return new Sphere3D(pos, _radius);
     }
 
-    public readonly Sphere VReversed()
+    public readonly Sphere3D VReversed()
     {
         CoordinateSystem pos = _pos;
         pos = pos.ZReversed();
-        return new Sphere(pos, _radius);
+        return new Sphere3D(pos, _radius);
     }
 
     // Queries
@@ -131,35 +131,35 @@ public readonly partial struct Sphere : IEquatable<Sphere>
 
     public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
-    public readonly Sphere Mirrored(in Point3D p)
+    public readonly Sphere3D Mirrored(in Point3D p)
     {
         CoordinateSystem pos = _pos;
         pos = pos.Mirrored(p);
-        return new Sphere(pos, _radius);
+        return new Sphere3D(pos, _radius);
     }
 
-    public readonly Sphere Mirrored(in Axis3D a1)
+    public readonly Sphere3D Mirrored(in Axis3D a1)
     {
         CoordinateSystem pos = _pos;
         pos = pos.Mirrored(a1);
-        return new Sphere(pos, _radius);
+        return new Sphere3D(pos, _radius);
     }
 
-    public readonly Sphere Mirrored(in Frame3D a2)
+    public readonly Sphere3D Mirrored(in Frame3D a2)
     {
         CoordinateSystem pos = _pos;
         pos = pos.Mirrored(a2);
-        return new Sphere(pos, _radius);
+        return new Sphere3D(pos, _radius);
     }
 
-    public readonly Sphere Rotated(in Axis3D a1, double ang)
+    public readonly Sphere3D Rotated(in Axis3D a1, double ang)
     {
         CoordinateSystem pos = _pos;
         pos = pos.Rotated(a1, ang);
-        return new Sphere(pos, _radius);
+        return new Sphere3D(pos, _radius);
     }
 
-    public readonly Sphere Scaled(in Point3D p, double s)
+    public readonly Sphere3D Scaled(in Point3D p, double s)
     {
         CoordinateSystem pos = _pos;
         double radius = _radius;
@@ -170,10 +170,10 @@ public readonly partial struct Sphere : IEquatable<Sphere>
             radius = -radius;
         }
 
-        return new Sphere(pos, radius);
+        return new Sphere3D(pos, radius);
     }
 
-    public readonly Sphere Transformed(in Transform3D t)
+    public readonly Sphere3D Transformed(in Transform3D t)
     {
         CoordinateSystem pos = _pos;
         double radius = _radius;
@@ -184,32 +184,32 @@ public readonly partial struct Sphere : IEquatable<Sphere>
             radius = -radius;
         }
 
-        return new Sphere(pos, radius);
+        return new Sphere3D(pos, radius);
     }
 
-    public readonly Sphere Translated(in Vector3D v)
+    public readonly Sphere3D Translated(in Vector3D v)
     {
         CoordinateSystem pos = _pos;
         pos = pos.Translated(v);
-        return new Sphere(pos, _radius);
+        return new Sphere3D(pos, _radius);
     }
 
-    public readonly Sphere Translated(in Point3D p1, in Point3D p2)
+    public readonly Sphere3D Translated(in Point3D p1, in Point3D p2)
     {
         CoordinateSystem pos = _pos;
         pos = pos.Translated(p1, p2);
-        return new Sphere(pos, _radius);
+        return new Sphere3D(pos, _radius);
     }
 
-    public readonly bool Equals(Sphere other) => _pos.Equals(other._pos) && _radius.Equals(other._radius);
+    public readonly bool Equals(Sphere3D other) => _pos.Equals(other._pos) && _radius.Equals(other._radius);
 
-    public override readonly bool Equals(object? obj) => obj is Sphere other && Equals(other);
+    public override readonly bool Equals(object? obj) => obj is Sphere3D other && Equals(other);
 
     public override readonly int GetHashCode() => HashCode.Combine(_pos, _radius);
 
-    public static bool operator ==(in Sphere left, in Sphere right) => left.Equals(right);
+    public static bool operator ==(in Sphere3D left, in Sphere3D right) => left.Equals(right);
 
-    public static bool operator !=(in Sphere left, in Sphere right) => !left.Equals(right);
+    public static bool operator !=(in Sphere3D left, in Sphere3D right) => !left.Equals(right);
 
     public override readonly string ToString() => FormattableString.Invariant($"gp_Sphere({_pos}, {_radius:R})");
 }

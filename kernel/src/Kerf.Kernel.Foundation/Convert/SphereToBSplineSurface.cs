@@ -86,7 +86,7 @@ internal class SphereToBSplineSurface : ElementarySurfaceToBSplineSurface
     /// orientation. Throws <see cref="DomainErrorException"/> if U2 - U1 is outside [0, 2 Pi] or V1, V2 outside
     /// [-Pi / 2, Pi / 2].
     /// </summary>
-    public SphereToBSplineSurface(in Sphere sph, double u1, double u2, double v1, double v2)
+    public SphereToBSplineSurface(in Sphere3D sph, double u1, double u2, double v1, double v2)
         : base(MaxNbUPoles, MaxNbVPoles, MaxNbUKnots, MaxNbVKnots, TheUDegree, TheVDegree)
     {
         double deltaU = u2 - u1;
@@ -171,7 +171,7 @@ internal class SphereToBSplineSurface : ElementarySurfaceToBSplineSurface
     /// with the sphere's orientation. Throws <see cref="DomainErrorException"/> if Param2 - Param1 is outside
     /// [0, 2 Pi].
     /// </summary>
-    public SphereToBSplineSurface(in Sphere sph, double param1, double param2, bool uTrim = true)
+    public SphereToBSplineSurface(in Sphere3D sph, double param1, double param2, bool uTrim = true)
         : base(MaxNbUPoles, MaxNbVPoles, MaxNbUKnots, MaxNbVKnots, TheUDegree, TheVDegree)
     {
         double delta = param2 - param1;
@@ -282,7 +282,7 @@ internal class SphereToBSplineSurface : ElementarySurfaceToBSplineSurface
     }
 
     /// <summary>The B-spline surface equivalent to the whole sphere (periodic in U), with the sphere's orientation.</summary>
-    public SphereToBSplineSurface(in Sphere sph)
+    public SphereToBSplineSurface(in Sphere3D sph)
         : base(MaxNbUPoles, MaxNbVPoles, MaxNbUKnots, MaxNbVKnots, TheUDegree, TheVDegree)
     {
         _isUPeriodic = true;

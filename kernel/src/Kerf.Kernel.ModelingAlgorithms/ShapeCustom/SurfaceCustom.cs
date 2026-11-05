@@ -396,25 +396,25 @@ internal sealed class SurfaceCustom
                 {
                     case SurfaceKind.Cylinder:
                     {
-                        Cylinder cylinder = surfAdapt.Cylinder();
+                        Cylinder3D cylinder = surfAdapt.Cylinder();
                         global::Kerf.Engine.Geometry.ElSLib.Parameters(cylinder, p3d, out s, out t);
                         break;
                     }
                     case SurfaceKind.Cone:
                     {
-                        Cone cone = surfAdapt.Cone();
+                        Cone3D cone = surfAdapt.Cone();
                         global::Kerf.Engine.Geometry.ElSLib.Parameters(cone, p3d, out s, out t);
                         break;
                     }
                     case SurfaceKind.Sphere:
                     {
-                        Sphere sphere = surfAdapt.Sphere();
+                        Sphere3D sphere = surfAdapt.Sphere();
                         global::Kerf.Engine.Geometry.ElSLib.Parameters(sphere, p3d, out s, out t);
                         break;
                     }
                     case SurfaceKind.Torus:
                     {
-                        Torus torus = surfAdapt.Torus();
+                        Torus3D torus = surfAdapt.Torus();
                         global::Kerf.Engine.Geometry.ElSLib.Parameters(torus, p3d, out s, out t);
                         break;
                     }

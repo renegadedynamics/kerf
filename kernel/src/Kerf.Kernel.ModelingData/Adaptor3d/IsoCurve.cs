@@ -574,7 +574,7 @@ internal class IsoCurve : CurveAdaptorBase
         {
             case SurfaceKind.Cylinder:
                 {
-                    Cylinder cyl = _surface.Cylinder();
+                    Cylinder3D cyl = _surface.Cylinder();
 
                     switch (_iso)
                     {
@@ -597,7 +597,7 @@ internal class IsoCurve : CurveAdaptorBase
 
             case SurfaceKind.Cone:
                 {
-                    Cone cone = _surface.Cone();
+                    Cone3D cone = _surface.Cone();
 
                     switch (_iso)
                     {
@@ -620,7 +620,7 @@ internal class IsoCurve : CurveAdaptorBase
 
             case SurfaceKind.Sphere:
                 {
-                    Sphere sph = _surface.Sphere();
+                    Sphere3D sph = _surface.Sphere();
 
                     switch (_iso)
                     {
@@ -645,7 +645,7 @@ internal class IsoCurve : CurveAdaptorBase
 
             case SurfaceKind.Torus:
                 {
-                    Torus tor = _surface.Torus();
+                    Torus3D tor = _surface.Torus();
 
                     switch (_iso)
                     {

@@ -152,7 +152,7 @@ public class ProjLibTests
         {
             CoordinateSystem anAx = RandomAx3(aRandom);
             double aR = Real(aRandom, 0.5, 10);
-            var aCyl = new Cylinder(anAx, aR);
+            var aCyl = new Cylinder3D(anAx, aR);
             double aU = Real(aRandom, 0, 2 * M_PI), aV = Real(aRandom, -10, 10);
             Point3D aP = global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aCyl);
 
@@ -180,7 +180,7 @@ public class ProjLibTests
     [Fact]
     public void Cylinder_SkewLineAndTiltedCircle_NotDone()
     {
-        var aCyl = new Cylinder(new CoordinateSystem(), 2.0);
+        var aCyl = new Cylinder3D(new CoordinateSystem(), 2.0);
         var aLin = new global::Kerf.Engine.Geometry.Projection.CylinderProjector(aCyl, new Line3D(new Point3D(2, 0, 0), new Direction3D(0, 1, 1)));
         Assert.False(aLin.IsDone);
         Assert.Equal(OtherCurve, aLin.GetType());
@@ -202,7 +202,7 @@ public class ProjLibTests
         {
             CoordinateSystem anAx = RandomAx3(aRandom);
             double aR = Real(aRandom, 0.5, 10), anAng = Real(aRandom, 0.1, 1.4) * (aRandom.Next(2) == 0 ? 1 : -1);
-            var aCone = new Cone(anAx, anAng, aR);
+            var aCone = new Cone3D(anAx, anAng, aR);
             double aU = Real(aRandom, 0, 2 * M_PI), aV = Real(aRandom, -10, 10);
 
             // A generatrix through a point of the cone (the apex sometimes), either way
@@ -239,7 +239,7 @@ public class ProjLibTests
     [Fact]
     public void Cone_SkewLine_NotDone()
     {
-        var aCone = new Cone(new CoordinateSystem(), M_PI / 6, 2.0);
+        var aCone = new Cone3D(new CoordinateSystem(), M_PI / 6, 2.0);
         var aProj = new global::Kerf.Engine.Geometry.Projection.ConeProjector(aCone, new Line3D(new Point3D(2, 0, 0), new Direction3D(0, 1, 0)));
         Assert.False(aProj.IsDone);
         Assert.Equal(OtherCurve, aProj.GetType());
@@ -255,7 +255,7 @@ public class ProjLibTests
         {
             CoordinateSystem anAx = RandomAx3(aRandom);
             double aR = Real(aRandom, 0.5, 10);
-            var aSph = new Sphere(anAx, aR);
+            var aSph = new Sphere3D(anAx, aR);
             double aU = Real(aRandom, 0, 2 * M_PI), aV = Real(aRandom, -1.4, 1.4);
 
             // A parallel (iso V), either orientation, starting anywhere
@@ -298,7 +298,7 @@ public class ProjLibTests
     [Fact]
     public void Sphere_OtherCircle_NotDone()
     {
-        var aSph = new Sphere(new CoordinateSystem(), 2.0);
+        var aSph = new Sphere3D(new CoordinateSystem(), 2.0);
         var aProj = new global::Kerf.Engine.Geometry.Projection.SphereProjector(aSph, new Circle3D(new Frame3D(new Point3D(0.5, 0, 0), new Direction3D(0, 1, 1)), 1.0));
         Assert.False(aProj.IsDone);
         EngineAssert.Throws<NotDoneException>(() => aProj.SetInBounds(0.0));
@@ -317,7 +317,7 @@ public class ProjLibTests
         {
             CoordinateSystem anAx = RandomAx3(aRandom);
             double aMaj = Real(aRandom, 3, 10), aMin = Real(aRandom, 0.5, aMaj - 1);
-            var aTor = new Torus(anAx, aMaj, aMin);
+            var aTor = new Torus3D(anAx, aMaj, aMin);
             double aU = Real(aRandom, 0, 2 * M_PI), aV = Real(aRandom, 0, 2 * M_PI);
             Point3D aStart = global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aTor);
 
@@ -357,10 +357,10 @@ public class ProjLibTests
             CoordinateSystem anAx = RandomAx3(aRandom);
             double aU = Real(aRandom, 0, 2 * M_PI), aV = Real(aRandom, -1.4, 1.4);
             var aPln = new Plane3D(anAx);
-            var aCyl = new Cylinder(anAx, 3);
-            var aCone = new Cone(anAx, 0.5, 3);
-            var aSph = new Sphere(anAx, 3);
-            var aTor = new Torus(anAx, 5, 2);
+            var aCyl = new Cylinder3D(anAx, 3);
+            var aCone = new Cone3D(anAx, 0.5, 3);
+            var aSph = new Sphere3D(anAx, 3);
+            var aTor = new Torus3D(anAx, 5, 2);
             Check(global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aPln)), aU, aV);
             Check(global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aCyl, global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aCyl)), aU, aV);
             Check(global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aCone, global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aCone)), aU, aV);
@@ -383,7 +383,7 @@ public class ProjLibTests
         aProj.UFrame(0, 1, 0, 2 * M_PI); // the default line (origin, X) is already in the frame
         Assert.Equal(0.0, aProj.Line().Location.X);
 
-        var aCyl = new global::Kerf.Engine.Geometry.Projection.CylinderProjector(new Cylinder(new CoordinateSystem(), 1.0),
+        var aCyl = new global::Kerf.Engine.Geometry.Projection.CylinderProjector(new Cylinder3D(new CoordinateSystem(), 1.0),
                                         new Line3D(new Point3D(0, 1, 0), new Direction3D(0, 0, 1)));
         Assert.Equal(M_PI / 2, aCyl.Line().Location.X, 1e-15);
         aCyl.UFrame(0.0, 1.0, 10.0, 2 * M_PI);

@@ -30,101 +30,101 @@ internal static class ElSLib
     /// <summary>The point of parameters (U, V) on an elementary surface.</summary>
     public static Point3D Value(double u, double v, in Plane3D pl) => PlaneValue(u, v, pl.Position);
 
-    public static Point3D Value(double u, double v, in Cone c)
+    public static Point3D Value(double u, double v, in Cone3D c)
         => ConeValue(u, v, c.Position, c.RefRadius, c.SemiAngle);
 
-    public static Point3D Value(double u, double v, in Cylinder c) => CylinderValue(u, v, c.Position, c.Radius);
+    public static Point3D Value(double u, double v, in Cylinder3D c) => CylinderValue(u, v, c.Position, c.Radius);
 
-    public static Point3D Value(double u, double v, in Sphere s) => SphereValue(u, v, s.Position, s.Radius);
+    public static Point3D Value(double u, double v, in Sphere3D s) => SphereValue(u, v, s.Position, s.Radius);
 
-    public static Point3D Value(double u, double v, in Torus t)
+    public static Point3D Value(double u, double v, in Torus3D t)
         => TorusValue(u, v, t.Position, t.MajorRadius, t.MinorRadius);
 
     /// <summary>The derivative of order Nu in U and Nv in V at the point of parameters (U, V).</summary>
     public static Vector3D DN(double u, double v, in Plane3D pl, int nu, int nv) => PlaneDN(u, v, pl.Position, nu, nv);
 
-    public static Vector3D DN(double u, double v, in Cone c, int nu, int nv)
+    public static Vector3D DN(double u, double v, in Cone3D c, int nu, int nv)
         => ConeDN(u, v, c.Position, c.RefRadius, c.SemiAngle, nu, nv);
 
-    public static Vector3D DN(double u, double v, in Cylinder c, int nu, int nv)
+    public static Vector3D DN(double u, double v, in Cylinder3D c, int nu, int nv)
         => CylinderDN(u, v, c.Position, c.Radius, nu, nv);
 
-    public static Vector3D DN(double u, double v, in Sphere s, int nu, int nv)
+    public static Vector3D DN(double u, double v, in Sphere3D s, int nu, int nv)
         => SphereDN(u, v, s.Position, s.Radius, nu, nv);
 
-    public static Vector3D DN(double u, double v, in Torus t, int nu, int nv)
+    public static Vector3D DN(double u, double v, in Torus3D t, int nu, int nv)
         => TorusDN(u, v, t.Position, t.MajorRadius, t.MinorRadius, nu, nv);
 
     /// <summary>The point P of parameters (U, V).</summary>
     public static void D0(double u, double v, in Plane3D pl, out Point3D p) => PlaneD0(u, v, pl.Position, out p);
 
-    public static void D0(double u, double v, in Cone c, out Point3D p)
+    public static void D0(double u, double v, in Cone3D c, out Point3D p)
         => ConeD0(u, v, c.Position, c.RefRadius, c.SemiAngle, out p);
 
-    public static void D0(double u, double v, in Cylinder c, out Point3D p)
+    public static void D0(double u, double v, in Cylinder3D c, out Point3D p)
         => CylinderD0(u, v, c.Position, c.Radius, out p);
 
-    public static void D0(double u, double v, in Sphere s, out Point3D p)
+    public static void D0(double u, double v, in Sphere3D s, out Point3D p)
         => SphereD0(u, v, s.Position, s.Radius, out p);
 
-    public static void D0(double u, double v, in Torus t, out Point3D p)
+    public static void D0(double u, double v, in Torus3D t, out Point3D p)
         => TorusD0(u, v, t.Position, t.MajorRadius, t.MinorRadius, out p);
 
     /// <summary>The point P of parameters (U, V) and the first derivatives Vu and Vv.</summary>
     public static void D1(double u, double v, in Plane3D pl, out Point3D p, out Vector3D vu, out Vector3D vv)
         => PlaneD1(u, v, pl.Position, out p, out vu, out vv);
 
-    public static void D1(double u, double v, in Cone c, out Point3D p, out Vector3D vu, out Vector3D vv)
+    public static void D1(double u, double v, in Cone3D c, out Point3D p, out Vector3D vu, out Vector3D vv)
         => ConeD1(u, v, c.Position, c.RefRadius, c.SemiAngle, out p, out vu, out vv);
 
-    public static void D1(double u, double v, in Cylinder c, out Point3D p, out Vector3D vu, out Vector3D vv)
+    public static void D1(double u, double v, in Cylinder3D c, out Point3D p, out Vector3D vu, out Vector3D vv)
         => CylinderD1(u, v, c.Position, c.Radius, out p, out vu, out vv);
 
-    public static void D1(double u, double v, in Sphere s, out Point3D p, out Vector3D vu, out Vector3D vv)
+    public static void D1(double u, double v, in Sphere3D s, out Point3D p, out Vector3D vu, out Vector3D vv)
         => SphereD1(u, v, s.Position, s.Radius, out p, out vu, out vv);
 
-    public static void D1(double u, double v, in Torus t, out Point3D p, out Vector3D vu, out Vector3D vv)
+    public static void D1(double u, double v, in Torus3D t, out Point3D p, out Vector3D vu, out Vector3D vv)
         => TorusD1(u, v, t.Position, t.MajorRadius, t.MinorRadius, out p, out vu, out vv);
 
     /// <summary>The point, the first derivatives and the second derivatives Vuu, Vvv and Vuv.</summary>
-    public static void D2(double u, double v, in Cone c, out Point3D p, out Vector3D vu, out Vector3D vv,
+    public static void D2(double u, double v, in Cone3D c, out Point3D p, out Vector3D vu, out Vector3D vv,
                           out Vector3D vuu, out Vector3D vvv, out Vector3D vuv)
         => ConeD2(u, v, c.Position, c.RefRadius, c.SemiAngle, out p, out vu, out vv, out vuu, out vvv, out vuv);
 
-    public static void D2(double u, double v, in Cylinder c, out Point3D p, out Vector3D vu, out Vector3D vv,
+    public static void D2(double u, double v, in Cylinder3D c, out Point3D p, out Vector3D vu, out Vector3D vv,
                           out Vector3D vuu, out Vector3D vvv, out Vector3D vuv)
         => CylinderD2(u, v, c.Position, c.Radius, out p, out vu, out vv, out vuu, out vvv, out vuv);
 
-    public static void D2(double u, double v, in Sphere s, out Point3D p, out Vector3D vu, out Vector3D vv,
+    public static void D2(double u, double v, in Sphere3D s, out Point3D p, out Vector3D vu, out Vector3D vv,
                           out Vector3D vuu, out Vector3D vvv, out Vector3D vuv)
         => SphereD2(u, v, s.Position, s.Radius, out p, out vu, out vv, out vuu, out vvv, out vuv);
 
-    public static void D2(double u, double v, in Torus t, out Point3D p, out Vector3D vu, out Vector3D vv,
+    public static void D2(double u, double v, in Torus3D t, out Point3D p, out Vector3D vu, out Vector3D vv,
                           out Vector3D vuu, out Vector3D vvv, out Vector3D vuv)
         => TorusD2(u, v, t.Position, t.MajorRadius, t.MinorRadius, out p, out vu, out vv, out vuu, out vvv, out vuv);
 
     /// <summary>
     /// The point, the first and second derivatives, and the third derivatives Vuuu, Vvvv, Vuuv and Vuvv.
     /// </summary>
-    public static void D3(double u, double v, in Cone c, out Point3D p, out Vector3D vu, out Vector3D vv,
+    public static void D3(double u, double v, in Cone3D c, out Point3D p, out Vector3D vu, out Vector3D vv,
                           out Vector3D vuu, out Vector3D vvv, out Vector3D vuv,
                           out Vector3D vuuu, out Vector3D vvvv, out Vector3D vuuv, out Vector3D vuvv)
         => ConeD3(u, v, c.Position, c.RefRadius, c.SemiAngle, out p, out vu, out vv, out vuu, out vvv, out vuv,
                   out vuuu, out vvvv, out vuuv, out vuvv);
 
-    public static void D3(double u, double v, in Cylinder c, out Point3D p, out Vector3D vu, out Vector3D vv,
+    public static void D3(double u, double v, in Cylinder3D c, out Point3D p, out Vector3D vu, out Vector3D vv,
                           out Vector3D vuu, out Vector3D vvv, out Vector3D vuv,
                           out Vector3D vuuu, out Vector3D vvvv, out Vector3D vuuv, out Vector3D vuvv)
         => CylinderD3(u, v, c.Position, c.Radius, out p, out vu, out vv, out vuu, out vvv, out vuv,
                       out vuuu, out vvvv, out vuuv, out vuvv);
 
-    public static void D3(double u, double v, in Sphere s, out Point3D p, out Vector3D vu, out Vector3D vv,
+    public static void D3(double u, double v, in Sphere3D s, out Point3D p, out Vector3D vu, out Vector3D vv,
                           out Vector3D vuu, out Vector3D vvv, out Vector3D vuv,
                           out Vector3D vuuu, out Vector3D vvvv, out Vector3D vuuv, out Vector3D vuvv)
         => SphereD3(u, v, s.Position, s.Radius, out p, out vu, out vv, out vuu, out vvv, out vuv,
                     out vuuu, out vvvv, out vuuv, out vuvv);
 
-    public static void D3(double u, double v, in Torus t, out Point3D p, out Vector3D vu, out Vector3D vv,
+    public static void D3(double u, double v, in Torus3D t, out Point3D p, out Vector3D vu, out Vector3D vv,
                           out Vector3D vuu, out Vector3D vvv, out Vector3D vuv,
                           out Vector3D vuuu, out Vector3D vvvv, out Vector3D vuuv, out Vector3D vuvv)
         => TorusD3(u, v, t.Position, t.MajorRadius, t.MinorRadius, out p, out vu, out vv, out vuu, out vvv, out vuv,
@@ -134,16 +134,16 @@ internal static class ElSLib
     public static void Parameters(in Plane3D pl, in Point3D p, out double u, out double v)
         => PlaneParameters(pl.Position, p, out u, out v);
 
-    public static void Parameters(in Cylinder c, in Point3D p, out double u, out double v)
+    public static void Parameters(in Cylinder3D c, in Point3D p, out double u, out double v)
         => CylinderParameters(c.Position, c.Radius, p, out u, out v);
 
-    public static void Parameters(in Cone c, in Point3D p, out double u, out double v)
+    public static void Parameters(in Cone3D c, in Point3D p, out double u, out double v)
         => ConeParameters(c.Position, c.RefRadius, c.SemiAngle, p, out u, out v);
 
-    public static void Parameters(in Sphere s, in Point3D p, out double u, out double v)
+    public static void Parameters(in Sphere3D s, in Point3D p, out double u, out double v)
         => SphereParameters(s.Position, s.Radius, p, out u, out v);
 
-    public static void Parameters(in Torus t, in Point3D p, out double u, out double v)
+    public static void Parameters(in Torus3D t, in Point3D p, out double u, out double v)
         => TorusParameters(t.Position, t.MajorRadius, t.MinorRadius, p, out u, out v);
 
     // ElSLib.cxx

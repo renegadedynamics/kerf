@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Values;
 /// </summary>
 internal sealed class MakeCylinder : Root
 {
-    private Cylinder _theCylinder = new();
+    private Cylinder3D _theCylinder = new();
 
     /// <summary>A cylinder from an axis system and a radius; fails with gce_NegativeRadius if Radius is negative.</summary>
     public MakeCylinder(in Frame3D a2, double radius)
@@ -28,7 +28,7 @@ internal sealed class MakeCylinder : Root
         }
         else
         {
-            _theCylinder = new Cylinder(new CoordinateSystem(a2), radius);
+            _theCylinder = new Cylinder3D(new CoordinateSystem(a2), radius);
             _theError = Done;
         }
     }
@@ -59,7 +59,7 @@ internal sealed class MakeCylinder : Root
             {
                 direc = new Direction3D(z, 0.0, -x);
             }
-            _theCylinder = new Cylinder(new CoordinateSystem(new Frame3D(axis.Location, d, direc)), radius);
+            _theCylinder = new Cylinder3D(new CoordinateSystem(new Frame3D(axis.Location, d, direc)), radius);
             _theError = Done;
         }
     }
@@ -67,7 +67,7 @@ internal sealed class MakeCylinder : Root
     /// <summary>A cylinder whose axis and radius are those of a circle.</summary>
     public MakeCylinder(in Circle3D circ)
     {
-        _theCylinder = new Cylinder(new CoordinateSystem(circ.Position), circ.Radius);
+        _theCylinder = new Cylinder3D(new CoordinateSystem(circ.Position), circ.Radius);
         _theError = Done;
     }
 
@@ -102,7 +102,7 @@ internal sealed class MakeCylinder : Root
             {
                 d2 = new Direction3D(z, 0.0, -x);
             }
-            _theCylinder = new Cylinder(new CoordinateSystem(new Frame3D(p1, d1, d2)), new Line3D(p1, d1).DistanceTo(p3));
+            _theCylinder = new Cylinder3D(new CoordinateSystem(new Frame3D(p1, d1, d2)), new Line3D(p1, d1).DistanceTo(p3));
             _theError = Done;
         }
     }
@@ -111,7 +111,7 @@ internal sealed class MakeCylinder : Root
     /// A cylinder coaxial to Cyl at the signed distance Dist; fails with gce_NegativeRadius if the radius would be
     /// negative.
     /// </summary>
-    public MakeCylinder(in Cylinder cyl, double dist)
+    public MakeCylinder(in Cylinder3D cyl, double dist)
     {
         double rad = cyl.Radius + dist;
         if (rad < 0.0)
@@ -127,7 +127,7 @@ internal sealed class MakeCylinder : Root
     }
 
     /// <summary>A cylinder coaxial to Cyl through the point P.</summary>
-    public MakeCylinder(in Cylinder cyl, in Point3D p)
+    public MakeCylinder(in Cylinder3D cyl, in Point3D p)
     {
         Line3D l = new(cyl.Axis);
         double rad = l.DistanceTo(p);
@@ -138,15 +138,15 @@ internal sealed class MakeCylinder : Root
 
     /// <summary>The constructed cylinder.</summary>
     /// <exception cref="NotDoneException">No cylinder was constructed.</exception>
-    public Cylinder Value()
+    public Cylinder3D Value()
     {
         StdFail_NotDone_Raise_if(_theError != Done, "gce_MakeCylinder::Value() - no result");
         return _theCylinder;
     }
 
     /// <summary>Alias for Value().</summary>
-    public Cylinder Operator() => Value();
+    public Cylinder3D Operator() => Value();
 
     /// <summary>The constructed cylinder (OCCT's implicit conversion operator).</summary>
-    public static explicit operator Cylinder(MakeCylinder maker) => maker.Operator();
+    public static explicit operator Cylinder3D(MakeCylinder maker) => maker.Operator();
 }

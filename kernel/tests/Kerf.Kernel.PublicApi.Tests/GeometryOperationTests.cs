@@ -132,7 +132,7 @@ public class GeometryOperationTests
     public void Intersections_give_points_and_curves()
     {
         var line = new LineCurve3D(new Line3D(new Point3D(0, 0, -5), Direction3D.UnitZ));
-        var sphere = new SphericalSurface(new Sphere(CoordinateSystem.World, 2));
+        var sphere = new SphericalSurface(new Sphere3D(CoordinateSystem.World, 2));
         var hits = line.Intersect(sphere).Value;
         Assert.Equal(2, hits.Length);
         Assert.All(hits, h => Assert.Equal(2, Math.Abs(h.Point.Z), 9));
@@ -155,7 +155,7 @@ public class GeometryOperationTests
     {
         Assert.True(new PlaneSurface(XY).TryGetPlane(Tolerances.Confusion, out Plane3D plane));
         Assert.True(plane.Axis.Direction.IsParallel(Direction3D.UnitZ, 1e-12));
-        Assert.False(new SphericalSurface(new Sphere(CoordinateSystem.World, 2)).TryGetPlane(1e-3, out _));
+        Assert.False(new SphericalSurface(new Sphere3D(CoordinateSystem.World, 2)).TryGetPlane(1e-3, out _));
     }
 
     [Fact]

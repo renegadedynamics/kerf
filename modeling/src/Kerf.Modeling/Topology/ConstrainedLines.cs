@@ -7,7 +7,7 @@ namespace Kerf.Modeling;
 
 /// <summary>
 /// A target for a constrained arc or line: an edge (or axis) to be tangent to, with an optional
-/// <see cref="Kerf.Modeling.Tangency"/> qualifier, or a point to pass through.
+/// <see cref="Kerf.Geometry.Tangency"/> qualifier, or a point to pass through.
 /// </summary>
 public readonly record struct Tangent
 {

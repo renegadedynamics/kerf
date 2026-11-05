@@ -38,7 +38,7 @@ public class Extrema_ExtPC_Test
 
         // Compute parameters on cylinder
         Frame3D aCylAxis = new(new Point3D(0, 2103.87, 0), global::Kerf.Engine.Geometry.Constants.DY().Reversed(), global::Kerf.Engine.Geometry.Constants.DX().Reversed());
-        Cylinder aCylinder = new(new CoordinateSystem(aCylAxis), 1890.0);
+        Cylinder3D aCylinder = new(new CoordinateSystem(aCylAxis), 1890.0);
 
         global::Kerf.Engine.Geometry.ElSLib.Parameters(aCylinder, aProj, out double aU, out double aV);
 

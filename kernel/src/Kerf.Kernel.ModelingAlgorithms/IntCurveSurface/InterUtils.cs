@@ -486,7 +486,7 @@ internal static class InterUtils
         }
         else if (typeOfBasSurf == SurfaceKind.Cylinder)
         {
-            Cylinder cyl = basSurf.Cylinder();
+            Cylinder3D cyl = basSurf.Cylinder();
 
             double r = cyl.Radius;
             CoordinateSystem a = cyl.Position;
@@ -544,7 +544,7 @@ internal static class InterUtils
         }
         else if (typeOfBasSurf == SurfaceKind.Cone)
         {
-            Cone con = basSurf.Cone();
+            Cone3D con = basSurf.Cone();
             double ang = con.SemiAngle;
             double r = con.RefRadius + offVal * Math.Cos(ang);
             CoordinateSystem a = con.Position;

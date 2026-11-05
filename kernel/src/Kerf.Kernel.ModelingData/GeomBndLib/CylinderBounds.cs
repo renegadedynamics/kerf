@@ -42,7 +42,7 @@ internal sealed class CylinderBounds : SurfaceBounds.ISurfaceEvaluator
     public Box BoxOptimal(double tol) => Box(tol);
 
     /// <summary>Compute bounding box for a finite cylinder patch.</summary>
-    private static void ComputeCylinder(in Cylinder cyl,
+    private static void ComputeCylinder(in Cylinder3D cyl,
                                         double uMin,
                                         double uMax,
                                         double vMin,
@@ -63,7 +63,7 @@ internal sealed class CylinderBounds : SurfaceBounds.ISurfaceEvaluator
     public Box Box(double uMin, double uMax, double vMin, double vMax, double tol)
     {
         Box box = new();
-        Cylinder cyl = _geom.Cylinder;
+        Cylinder3D cyl = _geom.Cylinder;
         Direction3D dir = cyl.Axis.Direction;
 
         if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(vMin))

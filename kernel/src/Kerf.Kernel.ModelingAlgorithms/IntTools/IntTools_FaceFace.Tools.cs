@@ -398,7 +398,7 @@ internal partial class FaceFace
         return true;
     }
 
-    private static bool ApproxWithPCurves(in Cylinder cyl, in Sphere sph)
+    private static bool ApproxWithPCurves(in Cylinder3D cyl, in Sphere3D sph)
     {
         bool bRes = true;
         double r1 = cyl.Radius, r2 = sph.Radius;
@@ -780,8 +780,8 @@ internal partial class FaceFace
         if ((ts1 == SurfaceKind.Cylinder && ts2 == SurfaceKind.Torus) || (ts2 == SurfaceKind.Cylinder && ts1 == SurfaceKind.Torus))
         {
             double rc, rt, dR, pc;
-            Cylinder cylinder;
-            Torus torus;
+            Cylinder3D cylinder;
+            Torus3D torus;
             //
             pc = global::Kerf.Engine.Foundation.Precision.Confusion();
             //
@@ -818,8 +818,8 @@ internal partial class FaceFace
         if ((ts1 == SurfaceKind.Cylinder && ts2 == SurfaceKind.Torus) || (ts2 == SurfaceKind.Cylinder && ts1 == SurfaceKind.Torus))
         {
             double rc, rt, dR, pc;
-            Cylinder cylinder;
-            Torus torus;
+            Cylinder3D cylinder;
+            Torus3D torus;
             //
             pc = global::Kerf.Engine.Foundation.Precision.Confusion();
             //

@@ -314,7 +314,7 @@ public class BRepLibRegularityTests
     [Fact]
     public void ExtendFace_of_a_cylinder_stays_within_its_period()
     {
-        var aCyl = new Cylinder(new CoordinateSystem(), 2.0);
+        var aCyl = new Cylinder3D(new CoordinateSystem(), 2.0);
         Face aF = new LibraryMakeFace(aCyl, 1.0, 2.0, 0, 1).Face();
         BrepLibrary.ExtendFace(aF, 1.0, true, true, false, false, out Face anExt);
         BrepTools.UVBounds(anExt, out double u1, out double u2, out double v1, out double v2);

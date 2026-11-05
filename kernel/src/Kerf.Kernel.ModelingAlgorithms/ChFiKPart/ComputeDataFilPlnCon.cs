@@ -25,7 +25,7 @@ internal static class ComputeDataFilPlnCon
 
     /// <summary>The fillet between a plane and a cone orthogonal to it, along their circle.</summary>
     internal static bool ChFiKPart_MakeFillet(DsDataStructure dStr, SurfData data, in Plane3D pln,
-                                              in Cone con, double fu, double lu, Orientation or1,
+                                              in Cone3D con, double fu, double lu, Orientation or1,
                                               Orientation or2, double radius, in Circle3D spine, double first,
                                               Orientation ofpl, bool plandab)
     {

@@ -86,7 +86,7 @@ internal class TorusToBSplineSurface : ElementarySurfaceToBSplineSurface
     /// The B-spline surface equivalent to the torus between the parameters U1, U2 and V1, V2, with the torus's
     /// orientation. Throws <see cref="DomainErrorException"/> if U2 - U1 or V2 - V1 is outside [0, 2 Pi].
     /// </summary>
-    public TorusToBSplineSurface(in Torus t, double u1, double u2, double v1, double v2)
+    public TorusToBSplineSurface(in Torus3D t, double u1, double u2, double v1, double v2)
         : base(MaxNbUPoles, MaxNbVPoles, MaxNbUKnots, MaxNbVKnots, TheUDegree, TheVDegree)
     {
         double deltaU = u2 - u1;
@@ -171,7 +171,7 @@ internal class TorusToBSplineSurface : ElementarySurfaceToBSplineSurface
     /// in U (<paramref name="uTrim"/>; whole and periodic in V) or in V (whole and periodic in U), with the torus's
     /// orientation. Throws <see cref="DomainErrorException"/> if Param2 - Param1 is outside [0, 2 Pi].
     /// </summary>
-    public TorusToBSplineSurface(in Torus t, double param1, double param2, bool uTrim = true)
+    public TorusToBSplineSurface(in Torus3D t, double param1, double param2, bool uTrim = true)
         : base(MaxNbUPoles, MaxNbVPoles, MaxNbUKnots, MaxNbVKnots, TheUDegree, TheVDegree)
     {
         double delta = param2 - param1;
@@ -282,7 +282,7 @@ internal class TorusToBSplineSurface : ElementarySurfaceToBSplineSurface
     }
 
     /// <summary>The B-spline surface equivalent to the whole torus (periodic in U and V), with the torus's orientation.</summary>
-    public TorusToBSplineSurface(in Torus t)
+    public TorusToBSplineSurface(in Torus3D t)
         : base(MaxNbUPoles, MaxNbVPoles, MaxNbUKnots, MaxNbVKnots, TheUDegree, TheVDegree)
     {
         _isUPeriodic = true;

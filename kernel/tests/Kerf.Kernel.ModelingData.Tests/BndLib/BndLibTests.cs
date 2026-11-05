@@ -330,7 +330,7 @@ public partial class BndLibTest
     public void Sphere_Full()
     {
         // Sphere of radius 7 centered at origin
-        Sphere aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 7.0);
+        Sphere3D aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 7.0);
         Box aBox = new();
         double aTol = 0.0;
 
@@ -350,7 +350,7 @@ public partial class BndLibTest
     public void Sphere_Patch()
     {
         // Sphere patch: upper hemisphere (V from 0 to PI/2)
-        Sphere aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0);
+        Sphere3D aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0);
         Box aBox = new();
         double aTol = 0.0;
 
@@ -371,7 +371,7 @@ public partial class BndLibTest
     public void Sphere_Translated()
     {
         // Sphere centered at (10, 20, 30) with radius 3
-        Sphere aSphere = new(new CoordinateSystem(new Point3D(10.0, 20.0, 30.0), new Direction3D(0.0, 0.0, 1.0)), 3.0);
+        Sphere3D aSphere = new(new CoordinateSystem(new Point3D(10.0, 20.0, 30.0), new Direction3D(0.0, 0.0, 1.0)), 3.0);
         Box aBox = new();
         double aTol = 0.0;
 
@@ -395,7 +395,7 @@ public partial class BndLibTest
     public void Cylinder_FinitePatch()
     {
         // Cylinder of radius 4, axis along Z
-        Cylinder aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 4.0);
+        Cylinder3D aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 4.0);
         Box aBox = new();
         double aTol = 0.0;
 
@@ -416,7 +416,7 @@ public partial class BndLibTest
     public void Cylinder_InfiniteV()
     {
         // Cylinder with infinite V parameter
-        Cylinder aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 4.0);
+        Cylinder3D aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 4.0);
         Box aBox = new();
         double aTol = 0.0;
 
@@ -430,7 +430,7 @@ public partial class BndLibTest
     public void Cylinder_PartialU()
     {
         // Cylinder with partial U range (quarter cylinder)
-        Cylinder aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0);
+        Cylinder3D aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 5.0);
         Box aBox = new();
         double aTol = 0.0;
 
@@ -457,7 +457,7 @@ public partial class BndLibTest
         // Cone with semi-angle PI/4 (45 deg), reference radius 2
         // Cone parameterization: P(u,v) = Apex + (RefRadius + v*sin(SemiAngle)) * (cos(u)*XDir +
         // sin(u)*YDir) + v*cos(SemiAngle) * Axis
-        Cone aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 4.0, 2.0);
+        Cone3D aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 4.0, 2.0);
         Box aBox = new();
         double aTol = 0.0;
 
@@ -481,7 +481,7 @@ public partial class BndLibTest
     {
         // Cone with negative V range (cone extending in opposite direction)
         // Cone parameterization: Z = v*cos(SemiAngle)
-        Cone aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 6.0, 3.0);
+        Cone3D aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 6.0, 3.0);
         Box aBox = new();
         double aTol = 0.0;
 
@@ -503,7 +503,7 @@ public partial class BndLibTest
         // Cone with infinite V parameter
         // Note: BndLib::Add for cone with U,V parameters opens Z but not X/Y
         // since the cone's bounding in X/Y is computed from the circular cross-sections
-        Cone aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 4.0, 2.0);
+        Cone3D aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 4.0, 2.0);
         Box aBox = new();
         double aTol = 0.0;
 
@@ -521,7 +521,7 @@ public partial class BndLibTest
     public void Torus_Full()
     {
         // Torus with major radius 10, minor radius 3
-        Torus aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 10.0, 3.0);
+        Torus3D aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 10.0, 3.0);
         Box aBox = new();
         double aTol = 0.0;
 
@@ -545,7 +545,7 @@ public partial class BndLibTest
         // Torus patch: quarter in U, half in V
         // Torus parameterization: P(u,v) = Center + (R + r*cos(v)) * (cos(u)*XDir + sin(u)*YDir)
         //                                         + r*sin(v) * Axis
-        Torus aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 10.0, 3.0);
+        Torus3D aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 10.0, 3.0);
         Box aBox = new();
         double aTol = 0.0;
 
@@ -573,7 +573,7 @@ public partial class BndLibTest
         // Torus patch with negative V parameters.
         // This tests the fix for negative modulo: ((i % 8) + 8) % 8
         // The main purpose is to verify no crash occurs with negative V.
-        Torus aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 10.0, 3.0);
+        Torus3D aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 10.0, 3.0);
         Box aBox = new();
         double aTol = 0.0;
 
@@ -597,7 +597,7 @@ public partial class BndLibTest
         // Torus with large negative V parameter that would cause
         // out-of-bounds array access with incorrect modulo.
         // This is the primary test for the negative modulo fix.
-        Torus aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 10.0, 3.0);
+        Torus3D aTorus = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 10.0, 3.0);
         Box aBox = new();
         double aTol = 0.0;
 
@@ -621,7 +621,7 @@ public partial class BndLibTest
     public void Torus_Translated()
     {
         // Torus centered at (5, 5, 5)
-        Torus aTorus = new(new CoordinateSystem(new Point3D(5.0, 5.0, 5.0), new Direction3D(0.0, 0.0, 1.0)), 8.0, 2.0);
+        Torus3D aTorus = new(new CoordinateSystem(new Point3D(5.0, 5.0, 5.0), new Direction3D(0.0, 0.0, 1.0)), 8.0, 2.0);
         Box aBox = new();
         double aTol = 0.0;
 
@@ -756,7 +756,7 @@ public partial class BndLibTest
     [Fact]
     public void Sphere_WithTolerance()
     {
-        Sphere aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 3.0);
+        Sphere3D aSphere = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 3.0);
         Box aBox = new();
         double aTol = 1.0;
 
