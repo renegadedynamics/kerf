@@ -5,6 +5,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine;
@@ -31,18 +32,114 @@ namespace Kerf.Engine.Numerics;
 internal class VectorBase<TheItemType>
     where TheItemType : struct, INumber<TheItemType>
 {
-    private NCollection_Array1<TheItemType> _array;
+    private Storage _array;
+
+    // NCollection_Array1's fields and checks, held in the vector (unit 11B): as an object of its own it was one object more
+    // for every vector. Array1() makes the array when something asks for it, over the same values.
+    private struct Storage
+    {
+        private TheItemType[] _data;
+        private int _offset;
+        private int _size;
+        private int _lowerBound;
+
+        public Storage(int lower, int upper)
+        {
+            Standard_RangeError_Raise_if(upper < lower - 1, "NCollection_Array1::Create");
+            _lowerBound = lower;
+            _size = upper - lower + 1;
+            _data = Default<TheItemType>.NewArray(_size);
+        }
+
+        public Storage(TheItemType[] data, int offset, int lower, int upper)
+        {
+            _data = data;
+            _offset = offset;
+            _size = upper - lower + 1;
+            _lowerBound = lower;
+        }
+
+        public Storage(in Storage other, int otherIndex, int lower, int upper)
+        {
+            int size = upper - lower + 1;
+            int start = other._offset + (otherIndex - other._lowerBound);
+            Standard_RangeError_Raise_if(size < 0 || start < other._offset || start + size > other._offset + other._size,
+                                         "NCollection_Array1::Create");
+            _data = other._data;
+            _offset = start;
+            _size = size;
+            _lowerBound = lower;
+        }
+
+        public Storage(in Storage other)
+        {
+            _lowerBound = other._lowerBound;
+            _size = other._size;
+            _data = other.AsSpan().ToArray();
+        }
+
+        public readonly NCollection_Array1<TheItemType> ToArray1() => new(_data, _offset, _lowerBound, _lowerBound + _size - 1);
+
+        public readonly ref TheItemType this[int index]
+        {
+            get
+            {
+                int position = index - _lowerBound;
+                if ((uint)position >= (uint)_size)
+                {
+                    throw new OutOfRangeException("NCollection_Array1::Value");
+                }
+
+                return ref _data[_offset + position];
+            }
+        }
+
+        public readonly void Init(TheItemType value) => AsSpan().Fill(value);
+
+        public readonly int Length() => _size;
+
+        public readonly int Lower() => _lowerBound;
+
+        public readonly int Upper() => _lowerBound + _size - 1;
+
+        public readonly Span<TheItemType> AsSpan() => new(_data, _offset, _size);
+
+        public readonly void CopyValues(in Storage other)
+        {
+            Standard_DimensionMismatch_Raise_if(_size != other._size, "NCollection_Array1::CopyValues");
+            other.AsSpan().CopyTo(AsSpan());
+        }
+
+        public void UpdateLowerBound(int lower) => _lowerBound = lower;
+
+        public void Resize(int lower, int upper)
+        {
+            Standard_RangeError_Raise_if(upper < lower, "NCollection_Array1::Resize");
+            int newSize = upper - lower + 1;
+            _lowerBound = lower;
+            if (newSize == _size)
+            {
+                return;
+            }
+
+            TheItemType[] newData = Default<TheItemType>.NewArray(newSize);
+            AsSpan()[..Math.Min(_size, newSize)].CopyTo(newData);
+            _data = newData;
+            _offset = 0;
+            _size = newSize;
+        }
+    }
 
     /// <summary>A vector of range [theLower..theUpper], its values zero (OCCT leaves them uninitialised).</summary>
     public VectorBase(int lower, int upper)
     {
-        _array = new NCollection_Array1<TheItemType>(lower, upper);
+        _array = new Storage(lower, upper);
     }
 
     /// <summary>A vector of range [theLower..theUpper], every value <paramref name="initialValue"/>.</summary>
     public VectorBase(int lower, int upper, TheItemType initialValue)
     {
-        _array = new NCollection_Array1<TheItemType>(lower, upper);
+        _array = new Storage(lower, upper);
         _array.Init(initialValue);
     }
 
@@ -52,7 +149,7 @@ internal class VectorBase<TheItemType>
     /// </summary>
     public VectorBase(TheItemType[] tab, int lower, int upper)
     {
-        _array = new NCollection_Array1<TheItemType>(tab, 0, lower, upper);
+        _array = new Storage(tab, 0, lower, upper);
     }
 
     /// <summary>
@@ -61,7 +158,8 @@ internal class VectorBase<TheItemType>
     /// </summary>
     public VectorBase(NCollection_Array1<TheItemType> tab, int index, int lower, int upper)
     {
-        _array = new NCollection_Array1<TheItemType>(tab, index, lower, upper);
+        (TheItemType[] data, int offset) = tab.Storage();
+        _array = new Storage(new Storage(data, offset, tab.Lower(), tab.Upper()), index, lower, upper);
     }
 
     /// <summary>
@@ -70,13 +168,13 @@ internal class VectorBase<TheItemType>
     /// </summary>
     public VectorBase(VectorBase<TheItemType> tab, int index, int lower, int upper)
     {
-        _array = new NCollection_Array1<TheItemType>(tab._array, index, lower, upper);
+        _array = new Storage(tab._array, index, lower, upper);
     }
 
     /// <summary>A vector of range [1..2] holding the coordinates of <paramref name="other"/>.</summary>
     public VectorBase(in Xy other)
     {
-        _array = new NCollection_Array1<TheItemType>(1, 2);
+        _array = new Storage(1, 2);
         _array[1] = TheItemType.CreateTruncating(other.X());
         _array[2] = TheItemType.CreateTruncating(other.Y());
     }
@@ -84,7 +182,7 @@ internal class VectorBase<TheItemType>
     /// <summary>A vector of range [1..3] holding the coordinates of <paramref name="other"/>.</summary>
     public VectorBase(in Xyz other)
     {
-        _array = new NCollection_Array1<TheItemType>(1, 3);
+        _array = new Storage(1, 3);
         _array[1] = TheItemType.CreateTruncating(other.X());
         _array[2] = TheItemType.CreateTruncating(other.Y());
         _array[3] = TheItemType.CreateTruncating(other.Z());
@@ -93,7 +191,7 @@ internal class VectorBase<TheItemType>
     /// <summary>A copy (OCCT's copy constructor).</summary>
     public VectorBase(VectorBase<TheItemType> other)
     {
-        _array = new NCollection_Array1<TheItemType>(other._array);
+        _array = new Storage(other._array);
     }
 
     public void Init(TheItemType initialValue) => _array.Init(initialValue);
@@ -612,8 +710,8 @@ internal class VectorBase<TheItemType>
         }
     }
 
-    /// <summary>The underlying array, shared (OCCT returns it by const reference).</summary>
-    public NCollection_Array1<TheItemType> Array1() => _array;
+    /// <summary>An array over the same values, so writes are shared (OCCT returns its own by const reference).</summary>
+    public NCollection_Array1<TheItemType> Array1() => _array.ToArray1();
 
     /// <summary>Changes the length, keeping the lower bound and the values that fit.</summary>
     /// <remarks>OCCT shrinks and regrows within its inline buffer of 32 without clearing it, so values beyond the old
@@ -622,7 +720,7 @@ internal class VectorBase<TheItemType>
     {
         int theLower = _array.Lower();
         int theUpper = theLower + size - 1;
-        _array.Resize(theLower, theUpper, true);
+        _array.Resize(theLower, theUpper);
     }
 
     /// <summary>The values, without copying; index 0 is <see cref="Lower"/>.</summary>
