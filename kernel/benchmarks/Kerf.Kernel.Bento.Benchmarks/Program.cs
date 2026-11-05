@@ -6,9 +6,10 @@
 // tolerances as Bento's viewer does (ShapeModels.Part), and its volume and face count read, as a cell shows them.
 // tools/bench.ps1 runs it in fresh processes, ReadyToRun, and keeps the figures (docs/performance.md). By hand, from the
 // kernel folder:
-//   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks [-- passes [copies]]
+//   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks [-- passes [copies [threads]]]
 //   (or [-- images [passes]] for the SVG drawings and PNG pictures of unit 10L4)
-// (copies: how many of each example the parallel rounds run at once; 0 skips them; the default is a processor's worth)
+// (copies: how many of each example the parallel rounds run at once; 0 skips them; the default is a processor's worth;
+// threads: the most the rounds use, by default all of them. tools/parallel-curve.ps1 varies it, and the collector's settings)
 // The first pass is a workbook opening (it includes the JIT's work on Kerf); passes 2 to 9 are recalculations, of which
 // the median is shown, as native's frozen figures were taken (9 passes); with 12 or more passes the median of the last
 // half is the recalculation once the runtime has settled.
@@ -214,16 +215,25 @@ if (passes >= 12)
 // Independent workbooks recalculating at once (unit 10I): every example, `copies` times, on the thread pool; the
 // wall time of a round (the median of 3) and the bytes it allocates, each result checked against the serial one.
 int copies = args.Length > 1 ? int.Parse(args[1], CultureInfo.InvariantCulture) : Environment.ProcessorCount;
+int threads = args.Length > 2 ? int.Parse(args[2], CultureInfo.InvariantCulture) : -1;
 if (copies > 0)
 {
     var rounds = new double[3];
+    var roundPauses = new double[3];
+    var roundCpu = new double[3];
+    var roundContentions = new long[3];
     long roundBytes = 0;
     int mismatches = 0;
+    using Process self = Process.GetCurrentProcess();
     for (int round = 0; round < rounds.Length; round++)
     {
         long allocatedBefore = GC.GetTotalAllocatedBytes(true);
+        TimeSpan pausedBefore = GC.GetTotalPauseDuration();
+        self.Refresh();
+        TimeSpan cpuBefore = self.TotalProcessorTime;
+        long contentionsBefore = Monitor.LockContentionCount;
         var clock = Stopwatch.StartNew();
-        Parallel.For(0, copies * examples.Length, k =>
+        Parallel.For(0, copies * examples.Length, new ParallelOptions { MaxDegreeOfParallelism = threads }, k =>
         {
             int i = k % examples.Length;
             Shape shape = examples[i].Build();
@@ -237,16 +247,28 @@ if (copies > 0)
         });
         rounds[round] = clock.Elapsed.TotalMilliseconds;
         roundBytes = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
+        roundPauses[round] = (GC.GetTotalPauseDuration() - pausedBefore).TotalMilliseconds;
+        self.Refresh();
+        roundCpu[round] = (self.TotalProcessorTime - cpuBefore).TotalMilliseconds;
+        roundContentions[round] = Monitor.LockContentionCount - contentionsBefore;
     }
     Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
         $"parallel: {copies} copies of every example on {Environment.ProcessorCount} processors, median round {rounds.Order().ElementAt(1):F1} ms "
         + $"({medianSum * copies:F1} ms of serial work), {roundBytes / 1048576.0:F1} MB a round, {mismatches} results differing from the serial run"));
     double medianRound = rounds.Order().ElementAt(1);
+    self.Refresh();
+    double peakMB = self.PeakWorkingSet64 / 1048576.0;
+    Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+        $"rounds: pause {string.Join(' ', roundPauses.Select(p => p.ToString("F0", CultureInfo.InvariantCulture)))} ms, processor time {string.Join(' ', roundCpu.Select(p => p.ToString("F0", CultureInfo.InvariantCulture)))} ms, contended locks {string.Join(' ', roundContentions)}; peak working set {peakMB:F0} MB; all rounds {string.Join(' ', rounds.Select(p => p.ToString("F0", CultureInfo.InvariantCulture)))} ms"));
     string roundName = $"{copies} copies of every example on {Environment.ProcessorCount} processors";
     BenchRows.Add("parallel", roundName, "round ms", medianRound);
     BenchRows.Add("parallel", roundName, "serial work ms", medianSum * copies);
     BenchRows.Add("parallel", roundName, "speed-up x", medianSum * copies / medianRound);
     BenchRows.Add("parallel", roundName, "alloc MB", roundBytes / 1048576.0);
+    BenchRows.Add("parallel", roundName, "collector's pause in a round ms", roundPauses.Order().ElementAt(1));
+    BenchRows.Add("parallel", roundName, "processor time in a round ms", roundCpu.Order().ElementAt(1));
+    BenchRows.Add("parallel", roundName, "contended locks in a round count", roundContentions.Order().ElementAt(1));
+    BenchRows.Add("parallel", roundName, "peak working set in MB, count", peakMB);
     BenchRows.Add("parallel", roundName, "result", $"{mismatches} differing from the serial run");
 }
 BenchRows.Add("process", copies > 0 ? "with the parallel rounds" : "the serial passes", "collector's pause ms", GC.GetTotalPauseDuration().TotalMilliseconds);
