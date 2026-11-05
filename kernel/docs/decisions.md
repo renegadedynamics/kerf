@@ -16440,3 +16440,30 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        `UnifySameDomain.IsMergingPossible`, ended the process. Nothing built it into a run, so nobody saw. It and
        `-- features` now count them; the rig compares the count. 12 of the suite's runs over its 289 files fail. Which
        files, and whether they should, wasn't looked into; the count is the same in every run.
+
+18201. **`math_GlobOptMin` keeps one `math_NewtonMinimum`.** OCCT has it on the stack, where it costs nothing; here each local
+       search allocated about 20 objects. `Reset` puts every field back as the constructor leaves it, zeroing the gradient and the
+       hessian as well, so that a function writing only part of them sees what it would have seen. A function of another size gets
+       a new one. This was 17% of the bytes.
+18202. **`NCollection_CellFilter` holds its lists in one array, with no objects per cell.** Targets in a cell are still visited
+       newest first, and the cells in the same order, so nothing can tell. Nothing enumerates the cells, so the new key's hash can't
+       reach a result. It's no longer re-entrant: it keeps its working indexes, and no inspector calls its own filter, and no filter
+       is used from two threads.
+18203. **`BRep_Tool::CurveOnPlane` takes a short cut for a line in the plane.** The same arithmetic in the same order as OCCT's
+       route through `GeomProjLib::ProjectOnPlane`, `ProjLib_ProjectedCurve` and `Geom2dAdaptor::MakeCurve`, by the same two
+       functions, without a dozen objects. A line that doesn't project to a unit vector goes the old way (it becomes a B-spline), and
+       so does a reversed range (the trimmed curve reverses the line). The result is frozen, as the old route's is. `CurveOnPlaneLineTests`
+       holds the two to the bit on 2,000 lines, on planes of both hands. Circles still take the old route.
+18204. **`math_VectorBase` holds its values itself.** `Array1()` now makes a view over them, so writes are still shared, but it's a
+       new object each time: a caller that resized the array it got back wouldn't resize the vector. None does.
+18205. **`NCollection_IntDataMap` can keep its nodes and buckets, when asked.** A map's iteration order depends on its buckets, and
+       the mesher iterates over its map of free edges, so a map used again must have the buckets of a new one: `Renew` goes back to
+       the first count, and the grown arrays wait to be used again rather than being used early. With `KeepNodes` an iterator
+       mustn't stand on a key that goes. The mesher's don't, and no other map turns it on.
+18206. **Work objects belong to whoever repeats the work, not to a static.** `PSOSwarm` is passed down from the box to the optimiser,
+       and the others are fields of a working object, so `state.md`'s statics and locks don't change, and neither does what 11D
+       has to look at. `Approx_SameParameter` borrows from `ArrayPool<double>.Shared`, which is the runtime's, and clears what it
+       borrows, since new arrays were zero.
+18207. **Proposal 5 isn't taken.** 225 MB was reached without an API change across `math`, so the work is left undone, with what
+       remains in `performance.md`. Allocation work changed no result anywhere: where a saving might have, as with a reversed range
+       in 18203, the old route stays.

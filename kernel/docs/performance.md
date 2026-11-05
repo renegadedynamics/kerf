@@ -146,6 +146,89 @@ its own was still going.
 So allocation and the totals are a real check, and one short operation's time only catches something large: single rows
 are bimodal, depending on when the runtime tiers up. Don't read a 20% move on one row as a finding without running it again.
 
+## Unit 11B: allocation
+
+*5 November 2026, on a busy machine: a four-hour coverage run was going alongside, so this unit reads only allocation and
+results, and claims nothing about time. The timed run on a quiet machine comes after merging.*
+
+**Allocation per recalculation of Bento's examples: 450 MB to 217 MB, against the target of 225 MB** (`tools/bench.ps1 -Quick
+-Force`, compared with 11A's baseline). Every volume, face count and triangle count is unchanged, and every test suite passes.
+The rig's run isn't in `docs/benchmarks`, because it was taken on a busy machine. No site needed a change to the public API.
+
+### Each site
+
+Each row is one commit, so that any one can be dropped. The figures are the benchmark's total at each commit, in order, so a
+row's saving depends a little on the rows above it. These builds weren't ReadyToRun; the last agrees with the rig's within 1 MB.
+
+| Site | What changed | Total after, MB | Saved, MB |
+|---|---|---:|---:|
+| `math_GlobOptMin`, `math_NewtonMinimum` | One `NewtonMinimum` for each `GlobOptMin`, reset for each local search (it was new each time); its iterates and `GlobOptMin`'s small vectors kept | 371.9 | 78.1 |
+| `NCollection_CellFilter` | A cell's list is in one array, linked by position; keys need no array up to three dimensions; no `Cell` objects for a range | 342.1 | 29.8 |
+| `BRep_Tool::CurveOnPlane` | A line in the plane is worked out directly, with the projection's arithmetic | 310.1 | 32.0 |
+| `math_VectorBase` | Holds its values itself, not through an `NCollection_Array1` object | 296.0 | 14.1 |
+| Optimal box, `MathOpt::PSO` | One swarm for each surface's box, reset for each optimisation | 274.7 | 21.3 |
+| `LU_Decompose` | No `ProgressScope` when nothing is watching | 275.6 | none |
+| Delaunay mesher | The map of free edges kept between vertices, with its nodes; iterators and the frontier search kept; `CreateTriangles`' lists made only when needed | 258.3 | 17.3 |
+| The same map | Also keeps the buckets it grew through | 247.0 | 11.3 |
+| `Approx_SameParameter` | Borrows its four 8 kB arrays from the pool | 241.6 | 5.4 |
+| `TopoDS_Iterator` | Holds a list and a position, not a list iterator | 237.1 | 4.5 |
+| `math_FunctionSetRoot`, `math_SVD` | Its Gauss, its SVD and their work vectors kept between iterations | 217.6 | 19.5 |
+
+The first two are the sites 11A's ranking named first. `CurveOnPlane` wasn't on its list: the profile found it, at 12% of the
+bytes, under `Tool.CurveOnSurface` for every edge on a plane without a stored pcurve.
+
+### Bento's examples, and the rest
+
+| Example | MB, baseline | MB, now | |
+|---|---:|---:|---:|
+| 2 plate with hole | 5.6 | 4.3 | −24% |
+| 3 prismatic solid | 4.6 | 3.2 | −31% |
+| 5 working point | 8.1 | 5.6 | −31% |
+| 6 point lists | 13.2 | 9.0 | −32% |
+| 9 chamfer, fillet | 17.0 | 12.9 | −24% |
+| 10 select last, hole | 17.6 | 9.0 | −49% |
+| 29 bottle | 139 | 83.8 | −40% |
+| 31 nesting locations | 38.1 | 23.1 | −39% |
+| 32 for-loop | 21.2 | 12.4 | −41% |
+| 33 function, for-loop | 16.4 | 9.5 | −42% |
+| 36 extrude until | 169 | 44.0 | −74% |
+| **Total** | **450** | **217** | **−52%** |
+
+Elsewhere in the rig's quick set: a parallel round 10.8 GB to 5.2 GB; meshing the seven `data/occ` shapes about half (Motor-c 230 to
+116 MB, Axis_of_bearing 257 to 109 MB); fillet every edge 181 to 102 MB, chamfer 171 to 107 MB; offsets 90 and 98 to 62 and 58 MB;
+Booleans, 407 simple cases, 2,811 to 2,554 MB, with the clean 362 to 296 MB. The quick set leaves out the complex Booleans and
+STEP's import and export. No allocation row went up.
+
+In ten passes of the benchmark, collections went from 284/83/29 (generations 0/1/2) to 152/70/26. Whether that gives the time the
+collector took back is for the timed run.
+
+### Reading the rig's run
+
+It exits with 1 on this run: 78 regressions, all of them times, which are meaningless on a busy machine. One row needed
+checking: **methods the JIT compiled at opening went from 4,738 to 8,079**, which isn't a result but could have been this unit's
+doing. It isn't: four alternating runs under the same load gave 8,080 to 9,451 for `main` and 7,999 to 9,528 for this unit. A
+loaded machine lets more methods tier up during the first pass. The quiet run should show the baseline's figure again.
+
+### What didn't work, and what's left
+
+- **`LU_Decompose`'s `ProgressScope` saved nothing measurable,** though the profile gave it 46 MB over nine passes. Why isn't
+  known; the commit is harmless, and can be dropped.
+- **Proposal 5 (small vectors on the stack) wasn't taken.** Keeping the work objects removed most of what it was for, without the
+  API change across `math`. Vectors are now 1.7% of the bytes (`VectorBase`) and doubles 7.2%, from 3.9% and 13.7%.
+- **The adaptors' boxed elementary curves and surfaces** (`Line3D`, `Plane3D` and so on in `_curveData`, about 1%). Reading them
+  from the curve instead would see a curve changed after loading, which the copy doesn't, so they stay.
+- **`Matrix` has three objects over its array** (`DoubleTab`, `NCollection_Array2`). After the above that's little; not done.
+- **Left, each under about 2% of what remains, for a later look:**
+  - `CurveOnPlane` for circles, which still takes the whole projection;
+  - `LinkedListOfInteger`'s nodes in the mesher, about 8 MB a recalculation. A removed node has to keep its link, so they can't
+    simply be reused;
+  - the growth of the mesher's `Triangle[]`, `MeshCircle[]` and cell list arrays;
+  - `Explorer`'s iterators and `Placement.Inverted`, from `ReShapeBuilder`;
+  - `MeshTolerances.For`'s optimal box, which is 11E's: finding it less often is an algorithm change.
+
+To profile again, take a trace as `tools/profile-report.cs` says and read it with `tools/alloc-report.cs`, which sorts the bytes
+by type and by the first frame that isn't a collection.
+
 ## How unit 9E measured it
 
 - **Machine:** 24 logical cores, Windows 11, .NET 10, Release builds. Other helpers were running tests on the same
