@@ -14,6 +14,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using Kerf.Modeling;
+using Kerf.Topology;
 using static Kerf.Modeling.Operations;
 
 const double Length = 80.0, Width = 60.0, Thickness = 10.0;
@@ -94,7 +95,7 @@ if (args.Length > 0 && args[0] == "images")
     Console.WriteLine("example                   svg ms  svg MB  edges   svg KB  png ms  png MB  render ms  png KB");
     foreach ((string name, Func<Shape> build) in examples)
     {
-        global::Kerf.Topology.Shape part = build().KernelShape;
+        global::Kerf.Topology.Shape part = build();
         var svgTimes = new double[imagePasses];
         var pngTimes = new double[imagePasses];
         var renderTimes = new double[imagePasses];
@@ -147,7 +148,7 @@ for (int pass = 0; pass < passes; pass++)
         Shape shape = examples[i].Build();
         ShapeMesh mesh = shape.Triangulate();
         results[i] = string.Create(CultureInfo.InvariantCulture,
-            $"volume {shape.Volume:F3}, {shape.Faces().Count} faces, {mesh.TriangleCount} triangles");
+            $"volume {shape.Volume:F3}, {shape.SelectFaces().Count} faces, {mesh.TriangleCount} triangles");
         times[i][pass] = clock.Elapsed.TotalMilliseconds;
         if (pass == passes - 1)
         {
@@ -190,7 +191,7 @@ if (copies > 0)
             Shape shape = examples[i].Build();
             ShapeMesh mesh = shape.Triangulate();
             string result = string.Create(CultureInfo.InvariantCulture,
-                $"volume {shape.Volume:F3}, {shape.Faces().Count} faces, {mesh.TriangleCount} triangles");
+                $"volume {shape.Volume:F3}, {shape.SelectFaces().Count} faces, {mesh.TriangleCount} triangles");
             if (result != results[i])
             {
                 Interlocked.Increment(ref mismatches);
