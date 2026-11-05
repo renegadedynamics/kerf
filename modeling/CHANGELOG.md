@@ -173,3 +173,4 @@ Phase 10 (part): no Schematiq.Collections (unit 10P1).
   and take options records (`StepExportOptions`, `StlExportOptions`, `GltfExportOptions`, `ThreeMfExportOptions`). The
   kernel's values refuse misuse with .NET's exceptions, which the layer reports as before. KERF0003 now covers the layer,
   and finds nothing. Results are unchanged. `docs/10p2-bento.md` lists what changed for Bento.
+**Tests (unit 10P3).** Every public member runs in a test (`PublicMemberTests`). The packaging test is `ExtensionLoadTests`, reading `KERF_MODELING_LIB`.

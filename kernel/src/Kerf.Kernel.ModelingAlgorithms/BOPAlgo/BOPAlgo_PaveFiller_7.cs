@@ -111,9 +111,13 @@ internal sealed class MPC : ParallelAlgo, BooleanParallel.IContextSolver<Interse
     //
     private IntersectionContext? _context;
 
-    public MPC()
+    private readonly Lock _verticesLock;
+
+    // verticesLock: the filler's, guarding the tolerances of the vertices its solvers share
+    public MPC(Lock verticesLock)
     {
         _flag = false;
+        _verticesLock = verticesLock;
     }
 
     public void SetEdge(in Edge aE) => _e = aE;
@@ -205,7 +209,7 @@ internal sealed class MPC : ParallelAlgo, BooleanParallel.IContextSolver<Interse
                 // OCCT: updates the tolerances of the edge's vertices in place, from parallel solvers that may share
                 // a vertex (unsynchronised read-compare-writes: the port takes a lock, decision 789), and in
                 // non-destructive mode a section edge may have an argument vertex (see BOPAlgo_PaveFiller.UpdateVertices).
-                PaveFiller.UpdateVertices(copyE, _f);
+                PaveFiller.UpdateVertices(copyE, _f, _verticesLock);
             }
         }
         catch (Exception caught) when (Refusal.IsFailure(caught))
@@ -520,7 +524,7 @@ internal partial class PaveFiller
                 }
                 Edge e = ShapeCasts.Edge(_ds.Shape(nE));
                 //
-                MPC mpc =  new MPC();
+                MPC mpc =  new MPC(_verticesLock);
                 vmpc.Add(mpc);
                 mpc.SetEdge(e);
                 mpc.SetFace(f1F);
@@ -540,7 +544,7 @@ internal partial class PaveFiller
                     continue;
                 }
                 //
-                MPC mpc =  new MPC();
+                MPC mpc =  new MPC(_verticesLock);
                 vmpc.Add(mpc);
 
                 CommonBlock? cb = _ds.CommonBlock(pb);
@@ -642,7 +646,7 @@ internal partial class PaveFiller
                         {
                             if (bPCurveOnS[m] && efPairs.Add(new Pair(nE, nF[m])))
                             {
-                                MPC mpc =  new MPC();
+                                MPC mpc =  new MPC(_verticesLock);
                                 vmpc.Add(mpc);
                                 mpc.SetEdge(e);
                                 mpc.SetFace(aFf[m]);
@@ -698,13 +702,14 @@ internal partial class PaveFiller
         }
     }
 
-    private static readonly Lock VerticesLock = new();
+    // This filler's solvers share vertices (decision 789); another operation's have their own working copies.
+    private readonly Lock _verticesLock = new();
 
     /// <summary>
     /// Updates the tolerances of the edge's vertices comparing the extremities of its 3D curve and of its p-curve on
     /// the face (OCCT's file-static <c>UpdateVertices</c>; writes into the vertices in place).
     /// </summary>
-    internal static void UpdateVertices(in Edge aE, in Face aF)
+    internal static void UpdateVertices(in Edge aE, in Face aF, Lock verticesLock)
     {
         // OCCT.NET: the solvers of MakePCurves run this in parallel on section edges that share vertices. OCCT's
         // tolerance update (a read-compare-write in BRep_TVertex::UpdateTolerance) can lose a larger value to a
@@ -744,7 +749,7 @@ internal partial class PaveFiller
             if (d2 > tolV2)
             {
                 d = Math.Sqrt(d2);
-                lock (VerticesLock)
+                lock (verticesLock)
                 {
                     bb.UpdateVertex(v[j], d + AlgoTools.DTolerance());
                 }

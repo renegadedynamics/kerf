@@ -2035,3 +2035,4 @@ Phase 10 (part): no Schematiq.Collections; the engine internal (unit 10P1).
   with messages free of OCCT's names; the engine still reads each as the failure it was, so results, codes and recordings
   are unchanged. `LockedShapeException` and `FrozenShapeException` went. A trimmed curve or surface given a NaN
   parameter is refused, where it overflowed the stack and killed the process. KERF0003 covers `Kerf.Modeling`.
+**State and the coverage floor (unit 10P3).** BlendFunc's scratch is per instance, Contap's and the legacy classifier's per-thread state is gone, the Booleans' vertices lock is per operation: 5 `[ThreadStatic]`s remain, from 19, each justified in `docs/state.md`. `docs/coverage.md` is measured again, with a reason for each of the 81 packages under the floor; `tools/public-members.cs` writes `docs/public-members.md`, and every public member now runs in a test.

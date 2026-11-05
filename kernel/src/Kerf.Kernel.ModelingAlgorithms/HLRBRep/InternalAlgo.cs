@@ -38,8 +38,7 @@ internal class InternalAlgo : Transient
 
     // The function-scope static of HideSelected's trace (only with myDebug, which OCCT's trace reaches only when
     // HLRBRep_InternalAlgo_TRACE10 is false: never)
-    [ThreadStatic]
-    private static int s_rty;
+    private int _rty;
 
     public InternalAlgo()
     {
@@ -885,9 +884,9 @@ internal class InternalAlgo : Transient
                         {
                             j++;
                             Console.Write($"{fi,6}");
-                            if (++s_rty > 25)
+                            if (++_rty > 25)
                             {
-                                s_rty = 0;
+                                _rty = 0;
                                 Console.Write("\n");
                             }
                         }

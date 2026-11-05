@@ -1,63 +1,120 @@
 # Line coverage
 
-Unit 10A's measurement (phase10-plan.md 3.2; the floor of question 49: every public member tested, at least 80% line
-coverage per engine package, lower where the Draw-lite corpus covers a package and the gap is listed). Written by
-`tools/coverage.ps1` (`tools/coverage-report.cs`): line coverage of the kernel's and the modeling layer's assemblies
-under the tests that don't need native OCCT, merged (a line is covered if any run covered it): the kernel's unit
-tests, the Draw-lite tests as they run by default (the corpus classes on their samples, `OCCTNET_CORPUS_FULL` unset)
-and the modeling layer's suite on OCCT.NET; the oracle tests only with `-WithOracle`. A package is the folder under
-the assembly (OCCT's package for the kernel). Lines are the coverable lines Microsoft's code coverage counts.
-Measured on 3 November, before units 10B and 10E: `Build123d.Occt` and `Build123d.OcctNet`, the native runtime and the
-forwarding layer, are gone (10B), and the assemblies have been renamed since (10E: `OcctNet.*` is `Kerf.Kernel.*`,
-`Build123d` is `Kerf.Modeling`). `tools/coverage.ps1` measures under the new names when run again.
+The floor of question 49 (phase10-plan.md 3.2): every public member tested, at least 80% line coverage per engine
+package, lower where the Draw-lite corpus covers a package and the gap is listed. Written by `tools/coverage.ps1`
+(`tools/coverage-report.cs`): line coverage of the kernel's and the modeling layer's assemblies, merged (a line is
+covered if any run covered it): the kernel's unit tests, the public API's tests, the Draw-lite tests as they run by
+default (the corpus classes on their samples, `OCCTNET_CORPUS_FULL` unset), the modeling layer's suite, and the
+oracle tests' replays with `-WithOracle`. A package is the folder under the assembly (OCCT's package for the kernel).
+Lines are the coverable lines Microsoft's code coverage counts. The public members no test calls are in
+[public-members.md](public-members.md).
 
-Test projects merged: `Build123d.Tests`, `OcctNet.DataExchange.Tests`, `OcctNet.DrawLite.Tests`, `OcctNet.Foundation.Tests`, `OcctNet.ModelingAlgorithms.Tests`, `OcctNet.ModelingData.Tests`.
+Measured on 5 November 2026.
+Test projects merged: `Kerf.Kernel.DataExchange.Tests`, `Kerf.Kernel.DrawLite.Tests`, `Kerf.Kernel.Foundation.Tests`, `Kerf.Kernel.ModelingAlgorithms.Tests`, `Kerf.Kernel.ModelingData.Tests`, `Kerf.Kernel.Oracle.Tests`, `Kerf.Kernel.PublicApi.Tests`, `Kerf.Modeling.Tests`.
 
 ## By assembly
 
 | Assembly | Packages | Lines | Covered | % | Packages under 80% |
 |---|---:|---:|---:|---:|---:|
-| Build123d | 7 | 8,975 | 7,972 | 88.8 | 3 |
-| Build123d.Occt | 1 | 23 | 13 | 56.5 | 1 |
-| Build123d.OcctNet | 2 | 24,455 | 4,138 | 16.9 | 2 |
-| OcctNet.DataExchange | 59 | 84,798 | 49,141 | 58.0 | 41 |
-| OcctNet.Foundation | 30 | 61,532 | 47,623 | 77.4 | 13 |
-| OcctNet.ModelingAlgorithms | 108 | 258,543 | 213,658 | 82.6 | 28 |
-| OcctNet.ModelingData | 48 | 143,467 | 128,035 | 89.2 | 13 |
-| **Total** | 255 | 581,793 | 450,580 | 77.4 | 101 |
+| Kerf.Kernel.DataExchange | 61 | 85,235 | 49,571 | 58.2 | 41 |
+| Kerf.Kernel.Foundation | 34 | 61,539 | 50,092 | 81.4 | 11 |
+| Kerf.Kernel.ModelingAlgorithms | 119 | 259,250 | 217,985 | 84.1 | 23 |
+| Kerf.Kernel.ModelingData | 50 | 143,879 | 130,114 | 90.4 | 6 |
+| Kerf.Modeling | 8 | 8,107 | 7,413 | 91.4 | 0 |
+| **Total** | 272 | 558,010 | 455,175 | 81.6 | 81 |
 
-## Build123d
+## The gaps
 
-Packages under 80%, least covered first (uncovered lines in brackets); the rest after.
+Every package under the floor, with the reason (`docs/coverage-gaps.tsv`; written from what each package does, not from
+a line-by-line audit). "With corpus" adds the whole Draw-lite corpus (`-FullCorpus`) to the runs above: where it
+equals the percentage beside it, the corpus's sample already reaches all the corpus does, so question 49's allowance
+for a package the corpus covers doesn't apply, and these stay open gaps for the owner.
 
-| Package | Files | Lines | Covered | % |
-|---|---:|---:|---:|---:|
-| **(root)** | 1 | 13 | 0 (13) | 0.0 |
-| **Build** | 1 | 90 | 37 (53) | 41.1 |
-| **Objects** | 3 | 808 | 576 (232) | 71.3 |
-| Exchange | 3 | 225 | 187 (38) | 83.1 |
-| Topology | 30 | 5,847 | 5,268 (579) | 90.1 |
-| Operations | 3 | 618 | 583 (35) | 94.3 |
-| Geometry | 13 | 1,374 | 1,321 (53) | 96.1 |
+| Assembly | Package | Lines | Uncovered | % | With corpus % | Reason |
+|---|---|---:|---:|---:|---:|---|
+| Kerf.Kernel.DataExchange | RWStepAP214 | 13,030 | 5,328 | 59.1 | 59.1 | One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call |
+| Kerf.Kernel.DataExchange | RWStepKinematics | 4,448 | 4,448 | 0.0 | 0.0 | One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call |
+| Kerf.Kernel.DataExchange | RWStepDimTol | 2,624 | 2,248 | 14.3 | 14.3 | One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call |
+| Kerf.Kernel.DataExchange | IFSelect | 3,948 | 1,830 | 53.6 | 53.6 | OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs |
+| Kerf.Kernel.DataExchange | StepData | 3,602 | 1,750 | 51.4 | 51.4 | OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs |
+| Kerf.Kernel.DataExchange | RWStepGeom | 3,446 | 1,575 | 54.3 | 54.3 | One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call |
+| Kerf.Kernel.DataExchange | RWStepBasic | 3,182 | 1,376 | 56.8 | 56.8 | One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call |
+| Kerf.Kernel.DataExchange | Interface | 4,107 | 1,277 | 68.9 | 68.9 | OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs |
+| Kerf.Kernel.DataExchange | RWStepShape | 2,390 | 1,254 | 47.5 | 47.5 | One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call |
+| Kerf.Kernel.DataExchange | RWStepVisual | 2,952 | 1,209 | 59.0 | 59.0 | One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call |
+| Kerf.Kernel.DataExchange | RWStepFEA | 1,431 | 922 | 35.6 | 35.6 | One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call |
+| Kerf.Kernel.DataExchange | RWStepRepr | 1,703 | 906 | 46.8 | 46.8 | One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call |
+| Kerf.Kernel.DataExchange | XSControl | 2,072 | 846 | 59.2 | 59.2 | OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs |
+| Kerf.Kernel.DataExchange | StepToTopoDS | 2,232 | 814 | 63.5 | 63.5 | The translators' rarer forms and write modes; follows the STEP test data |
+| Kerf.Kernel.DataExchange | STEPControl | 2,687 | 771 | 71.3 | 71.3 | The translators' rarer forms and write modes; follows the STEP test data |
+| Kerf.Kernel.DataExchange | StepBasic | 1,878 | 684 | 63.6 | 63.6 | STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages |
+| Kerf.Kernel.DataExchange | Transfer | 2,109 | 677 | 67.9 | 67.9 | OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs |
+| Kerf.Kernel.DataExchange | StepElement | 894 | 662 | 26.0 | 26.0 | STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages |
+| Kerf.Kernel.DataExchange | StepAP214 | 1,703 | 578 | 66.1 | 66.1 | STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages |
+| Kerf.Kernel.DataExchange | STEPConstruct | 2,209 | 546 | 75.3 | 75.3 | The translators' rarer forms and write modes; follows the STEP test data |
+| Kerf.Kernel.DataExchange | StepKinematics | 1,257 | 503 | 60.0 | 60.0 | STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages |
+| Kerf.Kernel.DataExchange | StepVisual | 1,482 | 501 | 66.2 | 66.2 | STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages |
+| Kerf.Kernel.DataExchange | StepToGeom | 1,242 | 435 | 65.0 | 65.0 | The translators' rarer forms and write modes; follows the STEP test data |
+| Kerf.Kernel.DataExchange | RWStepElement | 523 | 423 | 19.1 | 19.1 | One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call |
+| Kerf.Kernel.DataExchange | StepShape | 1,090 | 405 | 62.8 | 62.8 | STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages |
+| Kerf.Kernel.DataExchange | StepGeom | 1,281 | 357 | 72.1 | 72.1 | STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages |
+| Kerf.Kernel.DataExchange | TopoDSToStep | 1,469 | 356 | 75.8 | 75.8 | The translators' rarer forms and write modes; follows the STEP test data |
+| Kerf.Kernel.DataExchange | StepFEA | 748 | 311 | 58.4 | 58.4 | STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages |
+| Kerf.Kernel.DataExchange | StepRepr | 760 | 243 | 68.0 | 68.0 | STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages |
+| Kerf.Kernel.DataExchange | RWStepAP203 | 341 | 217 | 36.4 | 36.4 | One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call |
+| Kerf.Kernel.DataExchange | STEPSelections | 229 | 209 | 8.7 | 8.7 | OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs |
+| Kerf.Kernel.DataExchange | MoniTool | 787 | 208 | 73.6 | 73.6 | OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs |
+| Kerf.Kernel.DataExchange | StepDimTol | 560 | 184 | 67.1 | 67.1 | STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages |
+| Kerf.Kernel.DataExchange | IFGraph | 379 | 156 | 58.8 | 58.8 | OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs |
+| Kerf.Kernel.DataExchange | StepAP203 | 285 | 146 | 48.8 | 48.8 | STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages |
+| Kerf.Kernel.DataExchange | APIHeaderSection | 299 | 116 | 61.2 | 61.2 | OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs |
+| Kerf.Kernel.DataExchange | STEPEdit | 156 | 98 | 37.2 | 37.2 | OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs |
+| Kerf.Kernel.DataExchange | StepSelect | 167 | 71 | 57.5 | 57.5 | OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs |
+| Kerf.Kernel.DataExchange | StepAP242 | 144 | 70 | 51.4 | 51.4 | STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages |
+| Kerf.Kernel.DataExchange | RWStepAP242 | 150 | 46 | 69.3 | 69.3 | One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call |
+| Kerf.Kernel.DataExchange | UnitsMethods | 82 | 29 | 64.6 | 64.6 | Conversions for units no test file uses |
+| Kerf.Kernel.Foundation | PLib | 13,724 | 3,604 | 73.7 | 73.7 | Polynomial bases at degrees and constraint orders the tests' approximations don't reach |
+| Kerf.Kernel.Foundation | Bnd | 3,205 | 1,215 | 62.1 | 62.1 | Box variants and transformed forms the tests rarely reach |
+| Kerf.Kernel.Foundation | MathOpt | 1,777 | 736 | 58.6 | 58.6 | OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them |
+| Kerf.Kernel.Foundation | MathUtils | 1,331 | 567 | 57.4 | 57.4 | OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them |
+| Kerf.Kernel.Foundation | NCollection | 2,435 | 555 | 77.2 | 77.3 | OCCT's collections, going with 10J and 10P1; not worth new tests |
+| Kerf.Kernel.Foundation | MathRoot | 1,183 | 429 | 63.7 | 63.7 | OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them |
+| Kerf.Kernel.Foundation | BVH | 1,436 | 397 | 72.4 | 72.4 | Tree builders and traversal forms the tests don't reach |
+| Kerf.Kernel.Foundation | MathSys | 940 | 263 | 72.0 | 72.0 | OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them |
+| Kerf.Kernel.Foundation | MathInteg | 616 | 238 | 61.4 | 61.4 | OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them |
+| Kerf.Kernel.Foundation | MathLin | 861 | 213 | 75.3 | 75.3 | OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them |
+| Kerf.Kernel.Foundation | MathPoly | 341 | 88 | 74.2 | 74.2 | OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them |
+| Kerf.Kernel.ModelingAlgorithms | ShapeFix | 12,709 | 3,282 | 74.2 | 74.2 | Repairs for kinds of broken input neither the unit tests nor the corpus hold |
+| Kerf.Kernel.ModelingAlgorithms | LocOpe | 5,971 | 2,028 | 66.0 | 66.0 | Feature forms (prisms and pipes from and until faces, ribs) past what the corpus's feature cases use |
+| Kerf.Kernel.ModelingAlgorithms | Geom2dGcc | 6,253 | 1,997 | 68.1 | 68.1 | Tangent-circle solvers by qualifier and curve type: many combinations, few tested |
+| Kerf.Kernel.ModelingAlgorithms | HLRBRep | 6,881 | 1,716 | 75.1 | 75.1 | Hidden-line paths past the few hlr cases |
+| Kerf.Kernel.ModelingAlgorithms | BRepFeat | 6,612 | 1,621 | 75.5 | 75.5 | Feature forms (prisms and pipes from and until faces, ribs) past what the corpus's feature cases use |
+| Kerf.Kernel.ModelingAlgorithms | BRepBlend | 6,123 | 1,239 | 79.8 | 79.8 | Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run |
+| Kerf.Kernel.ModelingAlgorithms | TopOpeBRepBuild | 1,310 | 922 | 29.6 | 29.6 | The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests |
+| Kerf.Kernel.ModelingAlgorithms | TopOpeBRepTool | 988 | 719 | 27.2 | 27.2 | The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests |
+| Kerf.Kernel.ModelingAlgorithms | IntCurveSurface | 1,942 | 654 | 66.3 | 66.3 | Intersection forms by curve and surface type the tests don't reach |
+| Kerf.Kernel.ModelingAlgorithms | TopOpeBRepDS | 2,009 | 536 | 73.3 | 73.3 | The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests |
+| Kerf.Kernel.ModelingAlgorithms | ShapeConstruct | 1,924 | 402 | 79.1 | 79.1 | Healing support, following ShapeFix's gap |
+| Kerf.Kernel.ModelingAlgorithms | Plate | 1,890 | 398 | 78.9 | 78.9 | Constraint kinds the fill tests and cases don't reach |
+| Kerf.Kernel.ModelingAlgorithms | BiTgte | 1,131 | 382 | 66.2 | 66.2 | Forms past the corpus's few cases; both are small OCCT features |
+| Kerf.Kernel.ModelingAlgorithms | Draft | 1,429 | 368 | 74.2 | 74.2 | Forms past the corpus's few cases; both are small OCCT features |
+| Kerf.Kernel.ModelingAlgorithms | Geom2dHatch | 998 | 270 | 72.9 | 72.9 | Intersection forms by curve and surface type the tests don't reach |
+| Kerf.Kernel.ModelingAlgorithms | ShapeAlgo | 344 | 210 | 39.0 | 39.0 | Healing support, following ShapeFix's gap |
+| Kerf.Kernel.ModelingAlgorithms | Blend | 395 | 138 | 65.1 | 65.1 | Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run |
+| Kerf.Kernel.ModelingAlgorithms | BRepFilletAPI | 350 | 125 | 64.3 | 64.3 | Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run |
+| Kerf.Kernel.ModelingAlgorithms | FilletSurf | 374 | 104 | 72.2 | 72.2 | Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run |
+| Kerf.Kernel.ModelingAlgorithms | TopTrans | 400 | 102 | 74.5 | 74.5 | The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests |
+| Kerf.Kernel.ModelingAlgorithms | BRepApprox | 135 | 90 | 33.3 | 33.3 | A small approximation wrapper, partly run |
+| Kerf.Kernel.ModelingAlgorithms | Geom2dInt | 183 | 53 | 71.0 | 71.0 | Intersection forms by curve and surface type the tests don't reach |
+| Kerf.Kernel.ModelingAlgorithms | TopBas | 41 | 41 | 0.0 | 0.0 | A single value type nothing calls (HLR's interference): a candidate for removal, not tests |
+| Kerf.Kernel.ModelingData | AppParCurves | 2,689 | 727 | 73.0 | 73.0 | Least-squares forms the tests' approximations don't reach |
+| Kerf.Kernel.ModelingData | GC | 881 | 459 | 47.9 | 47.9 | Factories' overloads and failure statuses the tests don't reach |
+| Kerf.Kernel.ModelingData | gce | 846 | 320 | 62.2 | 62.2 | Factories' overloads and failure statuses the tests don't reach |
+| Kerf.Kernel.ModelingData | Hermit | 518 | 299 | 42.3 | 42.3 | Hermite conversions the tests rarely reach |
+| Kerf.Kernel.ModelingData | BndLib | 871 | 293 | 66.4 | 66.6 | Boxes of conic and elementary pieces in forms the tests don't reach |
+| Kerf.Kernel.ModelingData | Adaptor2d | 307 | 86 | 72.0 | 72.0 | Base-class defaults, mostly overridden |
 
-## Build123d.Occt
-
-Packages under 80%, least covered first (uncovered lines in brackets); the rest after.
-
-| Package | Files | Lines | Covered | % |
-|---|---:|---:|---:|---:|
-| **Runtime** | 2 | 23 | 13 (10) | 56.5 |
-
-## Build123d.OcctNet
-
-Packages under 80%, least covered first (uncovered lines in brackets); the rest after.
-
-| Package | Files | Lines | Covered | % |
-|---|---:|---:|---:|---:|
-| **Generated** | 257 | 22,798 | 3,116 (19,682) | 13.7 |
-| **Runtime** | 11 | 1,657 | 1,022 (635) | 61.7 |
-
-## OcctNet.DataExchange
+## Kerf.Kernel.DataExchange
 
 Packages under 80%, least covered first (uncovered lines in brackets); the rest after.
 
@@ -78,254 +135,288 @@ Packages under 80%, least covered first (uncovered lines in brackets); the rest 
 | **StepData** | 33 | 3,602 | 1,852 (1,750) | 51.4 |
 | **IFSelect** | 40 | 3,948 | 2,118 (1,830) | 53.6 |
 | **RWStepGeom** | 89 | 3,446 | 1,871 (1,575) | 54.3 |
-| **StepSelect** | 3 | 154 | 87 (67) | 56.5 |
 | **RWStepBasic** | 123 | 3,182 | 1,806 (1,376) | 56.8 |
+| **StepSelect** | 3 | 167 | 96 (71) | 57.5 |
 | **StepFEA** | 62 | 748 | 437 (311) | 58.4 |
-| **RWStepAP214** | 29 | 13,016 | 7,655 (5,361) | 58.8 |
 | **IFGraph** | 11 | 379 | 223 (156) | 58.8 |
 | **RWStepVisual** | 102 | 2,952 | 1,743 (1,209) | 59.0 |
-| **XSControl** | 11 | 2,076 | 1,232 (844) | 59.3 |
-| **StepKinematics** | 85 | 1,257 | 760 (497) | 60.5 |
+| **RWStepAP214** | 29 | 13,030 | 7,702 (5,328) | 59.1 |
+| **XSControl** | 11 | 2,072 | 1,226 (846) | 59.2 |
+| **StepKinematics** | 85 | 1,257 | 754 (503) | 60.0 |
 | **APIHeaderSection** | 2 | 299 | 183 (116) | 61.2 |
-| **StepShape** | 103 | 1,090 | 679 (411) | 62.3 |
-| **StepBasic** | 144 | 1,878 | 1,193 (685) | 63.5 |
+| **StepShape** | 103 | 1,090 | 685 (405) | 62.8 |
 | **StepToTopoDS** | 18 | 2,232 | 1,418 (814) | 63.5 |
+| **StepBasic** | 144 | 1,878 | 1,194 (684) | 63.6 |
 | **UnitsMethods** | 1 | 82 | 53 (29) | 64.6 |
-| **StepToGeom** | 1 | 1,242 | 806 (436) | 64.9 |
-| **StepAP214** | 46 | 1,704 | 1,126 (578) | 66.1 |
-| **StepVisual** | 136 | 1,481 | 980 (501) | 66.2 |
+| **StepToGeom** | 1 | 1,242 | 807 (435) | 65.0 |
+| **StepAP214** | 46 | 1,703 | 1,125 (578) | 66.1 |
+| **StepVisual** | 136 | 1,482 | 981 (501) | 66.2 |
 | **StepDimTol** | 56 | 560 | 376 (184) | 67.1 |
-| **Transfer** | 31 | 2,109 | 1,433 (676) | 67.9 |
+| **Transfer** | 31 | 2,109 | 1,432 (677) | 67.9 |
 | **StepRepr** | 85 | 760 | 517 (243) | 68.0 |
-| **Interface** | 42 | 4,105 | 2,827 (1,278) | 68.9 |
+| **Interface** | 42 | 4,107 | 2,830 (1,277) | 68.9 |
 | **RWStepAP242** | 4 | 150 | 104 (46) | 69.3 |
-| **STEPControl** | 5 | 2,686 | 1,915 (771) | 71.3 |
+| **STEPControl** | 5 | 2,687 | 1,916 (771) | 71.3 |
 | **StepGeom** | 91 | 1,281 | 924 (357) | 72.1 |
-| **MoniTool** | 10 | 792 | 583 (209) | 73.6 |
-| **STEPConstruct** | 11 | 2,211 | 1,663 (548) | 75.2 |
+| **MoniTool** | 10 | 787 | 579 (208) | 73.6 |
+| **STEPConstruct** | 11 | 2,209 | 1,663 (546) | 75.3 |
 | **TopoDSToStep** | 17 | 1,469 | 1,113 (356) | 75.8 |
-| STEPCAFControl | 6 | 1,826 | 1,536 (290) | 84.1 |
+| STEPCAFControl | 6 | 1,827 | 1,537 (290) | 84.1 |
 | LibCtl | 1 | 95 | 80 (15) | 84.2 |
 | XSAlgo | 3 | 437 | 372 (65) | 85.1 |
 | TransferBRep | 8 | 526 | 463 (63) | 88.0 |
 | RWHeaderSection | 6 | 244 | 217 (27) | 88.9 |
-| GeomToStep | 33 | 1,181 | 1,060 (121) | 89.8 |
-| XdeDoc | 12 | 1,103 | 994 (109) | 90.1 |
+| GeomToStep | 33 | 1,185 | 1,067 (118) | 90.0 |
+| XdeDoc | 12 | 1,100 | 991 (109) | 90.1 |
+| Exchange | 5 | 390 | 352 (38) | 90.3 |
 | HeaderSection | 5 | 79 | 73 (6) | 92.4 |
 | RWObj | 1 | 121 | 113 (8) | 93.4 |
 | DESTEP | 1 | 99 | 93 (6) | 93.9 |
 | RWGltf | 4 | 814 | 769 (45) | 94.5 |
-| RWStl | 3 | 468 | 443 (25) | 94.7 |
+| RWStl | 3 | 472 | 447 (25) | 94.7 |
 | StlAPI | 3 | 76 | 72 (4) | 94.7 |
 | Resource | 2 | 367 | 349 (18) | 95.1 |
 | RW3mf | 1 | 247 | 236 (11) | 95.5 |
-| StepFile | 5 | 863 | 839 (24) | 97.2 |
+| StepFile | 5 | 875 | 847 (28) | 96.8 |
 | RWMesh | 2 | 138 | 135 (3) | 97.8 |
 | DE | 1 | 55 | 55 (0) | 100.0 |
+| Results | 1 | 10 | 10 (0) | 100.0 |
 
-## OcctNet.Foundation
+## Kerf.Kernel.Foundation
 
 Packages under 80%, least covered first (uncovered lines in brackets); the rest after.
 
 | Package | Files | Lines | Covered | % |
 |---|---:|---:|---:|---:|
-| **Storage** | 1 | 3 | 1 (2) | 33.3 |
-| **gp** | 41 | 6,333 | 3,480 (2,853) | 55.0 |
-| **Bnd** | 11 | 3,205 | 1,838 (1,367) | 57.3 |
 | **MathUtils** | 14 | 1,331 | 764 (567) | 57.4 |
 | **MathOpt** | 8 | 1,777 | 1,041 (736) | 58.6 |
 | **MathInteg** | 5 | 616 | 378 (238) | 61.4 |
+| **Bnd** | 11 | 3,205 | 1,990 (1,215) | 62.1 |
 | **MathRoot** | 8 | 1,183 | 754 (429) | 63.7 |
 | **MathSys** | 6 | 940 | 677 (263) | 72.0 |
 | **BVH** | 31 | 1,436 | 1,039 (397) | 72.4 |
-| **PLib** | 5 | 13,733 | 10,062 (3,671) | 73.3 |
+| **PLib** | 5 | 13,724 | 10,120 (3,604) | 73.7 |
 | **MathPoly** | 4 | 341 | 253 (88) | 74.2 |
 | **MathLin** | 7 | 861 | 648 (213) | 75.3 |
-| **NCollection** | 23 | 2,513 | 1,952 (561) | 77.7 |
+| **NCollection** | 26 | 2,435 | 1,880 (555) | 77.2 |
 | TCollection | 2 | 186 | 155 (31) | 83.3 |
-| Standard | 10 | 830 | 700 (130) | 84.3 |
-| Message | 19 | 1,192 | 1,012 (180) | 84.9 |
-| BSplCLib | 8 | 4,642 | 3,945 (697) | 85.0 |
-| Resource | 1 | 184 | 158 (26) | 85.9 |
-| Quantity | 3 | 966 | 839 (127) | 86.9 |
+| Message | 19 | 1,203 | 1,022 (181) | 85.0 |
+| Standard | 11 | 845 | 722 (123) | 85.4 |
+| BSplCLib | 8 | 4,642 | 3,971 (671) | 85.5 |
+| Resource | 1 | 189 | 164 (25) | 86.8 |
+| gp | 44 | 6,001 | 5,214 (787) | 86.9 |
 | Collections | 1 | 49 | 43 (6) | 87.8 |
-| TopLoc | 5 | 166 | 146 (20) | 88.0 |
-| Poly | 17 | 2,310 | 2,068 (242) | 89.5 |
-| CSLib | 3 | 415 | 377 (38) | 90.8 |
-| math | 48 | 10,675 | 9,837 (838) | 92.1 |
-| Convert | 16 | 1,692 | 1,577 (115) | 93.2 |
+| Poly | 17 | 2,301 | 2,061 (240) | 89.6 |
+| TopLoc | 5 | 169 | 152 (17) | 89.9 |
+| math | 48 | 10,697 | 9,869 (828) | 92.3 |
+| Results | 3 | 162 | 150 (12) | 92.6 |
+| CSLib | 3 | 415 | 386 (29) | 93.0 |
+| Convert | 16 | 1,675 | 1,565 (110) | 93.4 |
 | OSD | 1 | 46 | 43 (3) | 93.5 |
+| Context | 1 | 56 | 53 (3) | 94.6 |
 | Precision | 1 | 20 | 19 (1) | 95.0 |
-| BSplSLib | 2 | 2,328 | 2,270 (58) | 97.5 |
+| Geometry | 5 | 130 | 125 (5) | 96.2 |
+| Quantity | 3 | 966 | 941 (25) | 97.4 |
+| BSplSLib | 2 | 2,329 | 2,296 (33) | 98.6 |
 | ElCLib | 1 | 646 | 639 (7) | 98.9 |
-| ElSLib | 1 | 913 | 908 (5) | 99.5 |
+| ElSLib | 1 | 916 | 911 (5) | 99.5 |
+| Colors | 1 | 44 | 44 (0) | 100.0 |
+| Storage | 1 | 3 | 3 (0) | 100.0 |
 
-## OcctNet.ModelingAlgorithms
+## Kerf.Kernel.ModelingAlgorithms
 
 Packages under 80%, least covered first (uncovered lines in brackets); the rest after.
 
 | Package | Files | Lines | Covered | % |
 |---|---:|---:|---:|---:|
 | **TopBas** | 1 | 41 | 0 (41) | 0.0 |
-| **TopOpeBRepTool** | 11 | 993 | 269 (724) | 27.1 |
-| **TopOpeBRepBuild** | 14 | 1,324 | 401 (923) | 30.3 |
+| **TopOpeBRepTool** | 10 | 988 | 269 (719) | 27.2 |
+| **TopOpeBRepBuild** | 14 | 1,310 | 388 (922) | 29.6 |
 | **BRepApprox** | 25 | 135 | 45 (90) | 33.3 |
-| **ShapeAlgo** | 3 | 343 | 133 (210) | 38.8 |
-| **Geom2dGcc** | 26 | 6,255 | 2,572 (3,683) | 41.1 |
-| **BRepFilletAPI** | 5 | 350 | 210 (140) | 60.0 |
+| **ShapeAlgo** | 3 | 344 | 134 (210) | 39.0 |
+| **BRepFilletAPI** | 5 | 350 | 225 (125) | 64.3 |
 | **Blend** | 11 | 395 | 257 (138) | 65.1 |
-| **IntCurveSurface** | 20 | 1,942 | 1,276 (666) | 65.7 |
-| **LocOpe** | 23 | 5,999 | 3,976 (2,023) | 66.3 |
-| **BiTgte** | 3 | 1,143 | 759 (384) | 66.4 |
-| **Geom2dInt** | 12 | 183 | 131 (52) | 71.6 |
-| **FilletSurf** | 2 | 372 | 268 (104) | 72.0 |
-| **Draft** | 6 | 1,429 | 1,033 (396) | 72.3 |
-| **Geom2dHatch** | 7 | 998 | 726 (272) | 72.7 |
+| **LocOpe** | 23 | 5,971 | 3,943 (2,028) | 66.0 |
+| **BiTgte** | 3 | 1,131 | 749 (382) | 66.2 |
+| **IntCurveSurface** | 20 | 1,942 | 1,288 (654) | 66.3 |
+| **Geom2dGcc** | 26 | 6,253 | 4,256 (1,997) | 68.1 |
+| **Geom2dInt** | 12 | 183 | 130 (53) | 71.0 |
+| **FilletSurf** | 2 | 374 | 270 (104) | 72.2 |
+| **Geom2dHatch** | 7 | 998 | 728 (270) | 72.9 |
 | **TopOpeBRepDS** | 30 | 2,009 | 1,473 (536) | 73.3 |
-| **ShapeFix** | 27 | 12,691 | 9,378 (3,313) | 73.9 |
+| **ShapeFix** | 27 | 12,709 | 9,427 (3,282) | 74.2 |
+| **Draft** | 6 | 1,429 | 1,061 (368) | 74.2 |
 | **TopTrans** | 2 | 400 | 298 (102) | 74.5 |
-| **BRepFeat** | 13 | 6,599 | 4,933 (1,666) | 74.8 |
-| **HLRBRep** | 54 | 6,889 | 5,173 (1,716) | 75.1 |
-| **Sweep** | 3 | 97 | 76 (21) | 78.4 |
+| **HLRBRep** | 54 | 6,881 | 5,165 (1,716) | 75.1 |
+| **BRepFeat** | 13 | 6,612 | 4,991 (1,621) | 75.5 |
 | **Plate** | 13 | 1,890 | 1,492 (398) | 78.9 |
-| **ShapeConstruct** | 4 | 1,921 | 1,519 (402) | 79.1 |
-| **Intf** | 9 | 2,145 | 1,703 (442) | 79.4 |
-| **Prs3d** | 2 | 68 | 54 (14) | 79.4 |
-| **BRepBuilderAPI** | 23 | 4,272 | 3,401 (871) | 79.6 |
+| **ShapeConstruct** | 4 | 1,924 | 1,522 (402) | 79.1 |
 | **BRepBlend** | 25 | 6,123 | 4,884 (1,239) | 79.8 |
-| **ChFi2d** | 7 | 2,036 | 1,627 (409) | 79.9 |
-| ChFi3d | 28 | 16,659 | 13,366 (3,293) | 80.2 |
 | Intrv | 2 | 234 | 188 (46) | 80.3 |
+| ChFi3d | 28 | 16,673 | 13,401 (3,272) | 80.4 |
 | HatchGen | 4 | 297 | 239 (58) | 80.5 |
+| Intf | 9 | 2,145 | 1,730 (415) | 80.7 |
 | LocalAnalysis | 3 | 590 | 476 (114) | 80.7 |
 | GeomInt | 29 | 1,708 | 1,382 (326) | 80.9 |
-| BRepPrim | 10 | 1,457 | 1,185 (272) | 81.3 |
-| ShapeCustom | 12 | 1,921 | 1,566 (355) | 81.5 |
-| IntCurve | 16 | 4,344 | 3,556 (788) | 81.9 |
-| ShapeExtend | 7 | 881 | 726 (155) | 82.4 |
-| BRepGProp | 13 | 2,247 | 1,863 (384) | 82.9 |
-| Contap | 13 | 2,167 | 1,801 (366) | 83.1 |
+| BRepPrim | 10 | 1,456 | 1,184 (272) | 81.3 |
+| BRepBuilderAPI | 23 | 4,230 | 3,446 (784) | 81.5 |
+| ShapeCustom | 12 | 1,916 | 1,562 (354) | 81.5 |
+| IntCurve | 16 | 4,343 | 3,560 (783) | 82.0 |
+| Prs3d | 2 | 68 | 56 (12) | 82.4 |
+| ShapeExtend | 7 | 879 | 725 (154) | 82.5 |
+| Contap | 13 | 2,170 | 1,804 (366) | 83.1 |
 | NLPlate | 9 | 258 | 215 (43) | 83.3 |
-| IntStart | 2 | 628 | 524 (104) | 83.4 |
 | IntRes2d | 5 | 464 | 388 (76) | 83.6 |
-| IntPolyh | 11 | 2,757 | 2,308 (449) | 83.7 |
-| BRepClass3d | 7 | 1,005 | 849 (156) | 84.5 |
-| GeomPlate | 9 | 2,143 | 1,813 (330) | 84.6 |
+| IntStart | 2 | 628 | 526 (102) | 83.8 |
+| IntPolyh | 11 | 2,757 | 2,310 (447) | 83.8 |
+| BRepClass3d | 7 | 1,005 | 853 (152) | 84.9 |
 | HelixBRep | 1 | 298 | 253 (45) | 84.9 |
 | BRepAlgoAPI | 12 | 552 | 469 (83) | 85.0 |
-| IntPatch | 47 | 14,863 | 12,690 (2,173) | 85.4 |
-| AppBlend | 2 | 599 | 512 (87) | 85.5 |
-| IntWalk | 7 | 3,464 | 2,963 (501) | 85.5 |
-| ShapeUpgrade | 31 | 5,939 | 5,097 (842) | 85.8 |
-| BRepOffset | 12 | 12,501 | 10,737 (1,764) | 85.9 |
-| BRepExtrema | 17 | 2,564 | 2,205 (359) | 86.0 |
+| ShapeUpgrade | 31 | 5,926 | 5,084 (842) | 85.8 |
+| AppBlend | 2 | 599 | 514 (85) | 85.8 |
+| IntWalk | 7 | 3,464 | 2,973 (491) | 85.8 |
+| IntPatch | 47 | 14,862 | 12,761 (2,101) | 85.9 |
 | Hatch | 3 | 166 | 143 (23) | 86.1 |
 | HLRAlgo | 18 | 2,281 | 1,967 (314) | 86.2 |
-| BRepAlgo | 6 | 1,603 | 1,385 (218) | 86.4 |
-| ShapeBuild | 5 | 553 | 479 (74) | 86.6 |
-| ChFiDS | 12 | 1,482 | 1,285 (197) | 86.7 |
-| BRepLib | 19 | 4,749 | 4,123 (626) | 86.8 |
-| BRepMesh | 61 | 5,802 | 5,041 (761) | 86.9 |
-| BRepOffsetAPI | 13 | 2,361 | 2,054 (307) | 87.0 |
-| BRepPrimAPI | 12 | 672 | 585 (87) | 87.1 |
-| GccAna | 46 | 6,749 | 5,893 (856) | 87.3 |
-| ShapeAnalysis | 19 | 6,480 | 5,679 (801) | 87.6 |
-| GeomAPI | 11 | 1,495 | 1,311 (184) | 87.7 |
-| BOPTools | 12 | 2,527 | 2,216 (311) | 87.7 |
-| IntImpParGen | 3 | 594 | 523 (71) | 88.0 |
-| BRepCheck | 9 | 2,722 | 2,397 (325) | 88.1 |
+| BRepOffset | 12 | 12,486 | 10,773 (1,713) | 86.3 |
+| BRepAlgo | 6 | 1,594 | 1,376 (218) | 86.3 |
+| ShapeBuild | 5 | 556 | 482 (74) | 86.7 |
+| ChFiDS | 12 | 1,484 | 1,287 (197) | 86.7 |
+| BOPTools | 12 | 2,525 | 2,203 (322) | 87.2 |
+| BRepMesh | 61 | 5,851 | 5,107 (744) | 87.3 |
+| BRepLib | 19 | 4,718 | 4,157 (561) | 88.1 |
+| IntImpParGen | 3 | 592 | 522 (70) | 88.2 |
+| GeomPlate | 9 | 2,142 | 1,891 (251) | 88.3 |
+| ShapeAnalysis | 19 | 6,482 | 5,733 (749) | 88.4 |
 | ShapeProcessAPI | 1 | 26 | 23 (3) | 88.5 |
+| BRepCheck | 9 | 2,726 | 2,412 (314) | 88.5 |
 | Geom2dAPI | 5 | 700 | 620 (80) | 88.6 |
 | TopCnx | 1 | 35 | 31 (4) | 88.6 |
 | GccEnt | 4 | 53 | 47 (6) | 88.7 |
-| BRepSweep | 9 | 968 | 860 (108) | 88.8 |
-| ShapeProcess | 5 | 1,012 | 902 (110) | 89.1 |
 | IntSurf | 11 | 651 | 581 (70) | 89.2 |
-| Bisector | 10 | 2,079 | 1,862 (217) | 89.6 |
-| BRepBndLib | 2 | 523 | 469 (54) | 89.7 |
-| BlendFunc | 21 | 4,961 | 4,474 (487) | 90.2 |
-| IntTools | 25 | 6,410 | 5,815 (595) | 90.7 |
-| GeomFill | 58 | 10,382 | 9,439 (943) | 90.9 |
+| BRepOffsetAPI | 13 | 2,353 | 2,101 (252) | 89.3 |
+| ChFi2d | 7 | 2,036 | 1,821 (215) | 89.4 |
+| Bisector | 10 | 2,079 | 1,863 (216) | 89.6 |
+| BRepGProp | 13 | 2,247 | 2,020 (227) | 89.9 |
+| BlendFunc | 21 | 4,959 | 4,473 (486) | 90.2 |
+| BRepSweep | 9 | 968 | 876 (92) | 90.5 |
+| BRepExtrema | 17 | 2,564 | 2,325 (239) | 90.7 |
+| BRepPrimAPI | 12 | 667 | 605 (62) | 90.7 |
+| Sweep | 3 | 97 | 88 (9) | 90.7 |
+| ShapeProcess | 5 | 927 | 841 (86) | 90.7 |
+| Drawing | 9 | 1,243 | 1,131 (112) | 91.0 |
+| GeomAPI | 11 | 1,494 | 1,361 (133) | 91.1 |
+| GeomFill | 58 | 10,381 | 9,458 (923) | 91.1 |
 | StdPrs | 1 | 34 | 31 (3) | 91.2 |
-| BRepFill | 31 | 12,981 | 11,853 (1,128) | 91.3 |
-| HLRTopoBRep | 6 | 813 | 743 (70) | 91.4 |
+| IntTools | 25 | 6,410 | 5,866 (544) | 91.5 |
+| HLRTopoBRep | 6 | 804 | 737 (67) | 91.7 |
 | BRepTopAdaptor | 4 | 682 | 626 (56) | 91.8 |
-| MAT2d | 7 | 1,567 | 1,439 (128) | 91.8 |
+| MAT2d | 7 | 1,570 | 1,442 (128) | 91.8 |
 | ApproxInt | 7 | 1,549 | 1,423 (126) | 91.9 |
 | IMeshTools | 10 | 190 | 175 (15) | 92.1 |
 | IntCurvesFace | 2 | 378 | 349 (29) | 92.3 |
 | BRepClass | 7 | 556 | 514 (42) | 92.4 |
-| BOPAlgo | 44 | 12,654 | 11,767 (887) | 93.0 |
-| IMeshData | 10 | 86 | 80 (6) | 93.0 |
+| GccAna | 47 | 4,008 | 3,711 (297) | 92.6 |
+| BRepFill | 31 | 12,936 | 11,978 (958) | 92.6 |
+| Features | 1 | 124 | 115 (9) | 92.7 |
+| Fillets | 1 | 230 | 214 (16) | 93.0 |
+| Construction | 6 | 562 | 523 (39) | 93.1 |
+| Measurement | 2 | 173 | 161 (12) | 93.1 |
+| IMeshData | 10 | 87 | 81 (6) | 93.1 |
+| Meshing | 2 | 160 | 149 (11) | 93.1 |
 | TopClass | 2 | 146 | 136 (10) | 93.2 |
-| BOPDS | 17 | 1,617 | 1,519 (98) | 93.9 |
+| BOPAlgo | 44 | 12,671 | 11,845 (826) | 93.5 |
+| BOPDS | 17 | 1,623 | 1,524 (99) | 93.9 |
+| Results | 4 | 164 | 154 (10) | 93.9 |
 | IntImp | 6 | 706 | 665 (41) | 94.2 |
 | Law | 10 | 1,603 | 1,511 (92) | 94.3 |
+| BRepBndLib | 2 | 523 | 493 (30) | 94.3 |
+| Geometry | 4 | 543 | 514 (29) | 94.7 |
 | MAT | 8 | 550 | 522 (28) | 94.9 |
 | HelixGeom | 6 | 347 | 330 (17) | 95.1 |
-| BRepProj | 1 | 130 | 124 (6) | 95.4 |
 | BRepIntCurveSurface | 1 | 112 | 107 (5) | 95.5 |
-| ChFiKPart | 14 | 1,879 | 1,796 (83) | 95.6 |
-| BRepMAT2d | 3 | 390 | 380 (10) | 97.4 |
-| FairCurve | 11 | 1,577 | 1,548 (29) | 98.2 |
-| BRepMeshData | 6 | 118 | 118 (0) | 100.0 |
+| ChFiKPart | 14 | 1,877 | 1,796 (81) | 95.7 |
+| Offsets | 1 | 116 | 111 (5) | 95.7 |
+| Healing | 2 | 267 | 258 (9) | 96.6 |
+| BRepMAT2d | 3 | 390 | 381 (9) | 97.7 |
+| FairCurve | 11 | 1,577 | 1,549 (28) | 98.2 |
+| BRepProj | 1 | 126 | 124 (2) | 98.4 |
+| Booleans | 1 | 69 | 68 (1) | 98.6 |
+| BRepMeshData | 6 | 120 | 120 (0) | 100.0 |
 | BRepPreviewAPI | 1 | 50 | 50 (0) | 100.0 |
 | GccInt | 7 | 36 | 36 (0) | 100.0 |
-| HLRAppli | 1 | 27 | 27 (0) | 100.0 |
-| OcctNet | 1 | 137 | 137 (0) | 100.0 |
-| XBRepMesh | 1 | 10 | 10 (0) | 100.0 |
+| HLRAppli | 1 | 30 | 30 (0) | 100.0 |
+| OcctNet | 1 | 147 | 147 (0) | 100.0 |
+| XBRepMesh | 1 | 7 | 7 (0) | 100.0 |
 
-## OcctNet.ModelingData
+## Kerf.Kernel.ModelingData
 
 Packages under 80%, least covered first (uncovered lines in brackets); the rest after.
 
 | Package | Files | Lines | Covered | % |
 |---|---:|---:|---:|---:|
-| **GC** | 33 | 881 | 370 (511) | 42.0 |
 | **Hermit** | 1 | 518 | 219 (299) | 42.3 |
-| **Adaptor2d** | 3 | 307 | 182 (125) | 59.3 |
-| **gce** | 24 | 846 | 518 (328) | 61.2 |
-| **BndLib** | 4 | 875 | 582 (293) | 66.5 |
-| **TopoDS** | 25 | 1,107 | 787 (320) | 71.1 |
-| **LProp** | 6 | 397 | 287 (110) | 72.3 |
-| **AppParCurves** | 13 | 2,689 | 1,956 (733) | 72.7 |
-| **Geom2d** | 22 | 2,747 | 2,014 (733) | 73.3 |
-| **GCPnts** | 8 | 2,368 | 1,790 (578) | 75.6 |
-| **CPnts** | 4 | 382 | 298 (84) | 78.0 |
-| **ExtremaPC** | 13 | 1,086 | 852 (234) | 78.5 |
-| **Geom2dConvert** | 7 | 1,358 | 1,074 (284) | 79.1 |
-| GeomLProp | 9 | 768 | 625 (143) | 81.4 |
-| GeomBndLib | 36 | 2,704 | 2,208 (496) | 81.7 |
-| Geom | 42 | 8,760 | 7,198 (1,562) | 82.2 |
-| Extrema | 53 | 8,786 | 7,222 (1,564) | 82.2 |
+| **GC** | 33 | 881 | 422 (459) | 47.9 |
+| **gce** | 24 | 846 | 526 (320) | 62.2 |
+| **BndLib** | 4 | 871 | 578 (293) | 66.4 |
+| **Adaptor2d** | 3 | 307 | 221 (86) | 72.0 |
+| **AppParCurves** | 13 | 2,689 | 1,962 (727) | 73.0 |
+| Geom2dConvert | 7 | 1,356 | 1,089 (267) | 80.3 |
+| CPnts | 4 | 382 | 307 (75) | 80.4 |
+| LProp | 6 | 398 | 321 (77) | 80.7 |
+| ExtremaPC | 13 | 1,086 | 878 (208) | 80.8 |
+| GCPnts | 8 | 2,368 | 1,915 (453) | 80.9 |
+| GeomBndLib | 36 | 2,726 | 2,227 (499) | 81.7 |
+| GProp | 9 | 561 | 460 (101) | 82.0 |
+| GeomLProp | 9 | 770 | 632 (138) | 82.1 |
+| Geom2d | 23 | 2,750 | 2,276 (474) | 82.8 |
 | Geom2dEval | 8 | 1,376 | 1,145 (231) | 83.2 |
-| AppDef | 30 | 2,086 | 1,739 (347) | 83.4 |
-| Adaptor3d | 8 | 2,221 | 1,894 (327) | 85.3 |
-| GeomConvert | 15 | 3,189 | 2,746 (443) | 86.1 |
-| ProjLib | 15 | 4,751 | 4,096 (655) | 86.2 |
+| Extrema | 53 | 8,783 | 7,314 (1,469) | 83.3 |
+| AppDef | 30 | 2,086 | 1,744 (342) | 83.6 |
+| TopoDS | 25 | 1,137 | 951 (186) | 83.6 |
+| Adaptor3d | 8 | 2,220 | 1,894 (326) | 85.3 |
+| ProjLib | 15 | 4,805 | 4,148 (657) | 86.3 |
 | BRepLProp | 4 | 88 | 76 (12) | 86.4 |
-| GeomAdaptor | 7 | 2,289 | 1,995 (294) | 87.2 |
-| BRep | 21 | 1,805 | 1,577 (228) | 87.4 |
-| GeomLib | 11 | 2,653 | 2,339 (314) | 88.2 |
 | GeomProjLib | 1 | 111 | 98 (13) | 88.3 |
-| BRepTools | 19 | 4,565 | 4,053 (512) | 88.8 |
-| IntAna2d | 4 | 661 | 593 (68) | 89.7 |
-| GeomEval | 14 | 3,310 | 2,978 (332) | 90.0 |
-| GProp | 9 | 1,023 | 921 (102) | 90.0 |
-| IntAna | 7 | 2,586 | 2,342 (244) | 90.6 |
-| Approx | 14 | 4,069 | 3,689 (380) | 90.7 |
+| GeomLib | 11 | 2,653 | 2,350 (303) | 88.6 |
+| BRep | 21 | 1,832 | 1,623 (209) | 88.6 |
+| BRepTools | 19 | 4,640 | 4,137 (503) | 89.2 |
+| GeomAdaptor | 7 | 2,296 | 2,050 (246) | 89.3 |
+| Geom | 47 | 8,972 | 8,019 (953) | 89.4 |
+| GeomEval | 14 | 3,306 | 2,974 (332) | 90.0 |
+| IntAna | 7 | 2,583 | 2,343 (240) | 90.7 |
 | GeomHash | 31 | 731 | 665 (66) | 91.0 |
-| FEmTool | 8 | 968 | 894 (74) | 92.4 |
-| AdvApp2Var | 21 | 24,846 | 22,956 (1,890) | 92.4 |
+| GeomConvert | 15 | 3,188 | 2,903 (285) | 91.1 |
+| Approx | 14 | 4,077 | 3,713 (364) | 91.1 |
+| Topology | 8 | 434 | 396 (38) | 91.2 |
+| IntAna2d | 4 | 664 | 607 (57) | 91.4 |
+| AdvApp2Var | 21 | 24,819 | 22,934 (1,885) | 92.4 |
+| FEmTool | 8 | 965 | 892 (73) | 92.4 |
 | Geom2dAdaptor | 2 | 615 | 576 (39) | 93.7 |
-| BRepAdaptor | 4 | 349 | 331 (18) | 94.8 |
 | GeomGridEval | 23 | 3,534 | 3,363 (171) | 95.2 |
 | TopTools | 5 | 505 | 481 (24) | 95.2 |
-| BinTools | 11 | 2,877 | 2,759 (118) | 95.9 |
+| BinTools | 11 | 2,876 | 2,758 (118) | 95.9 |
 | GeomTools | 5 | 1,520 | 1,459 (61) | 96.0 |
+| BRepAdaptor | 4 | 349 | 335 (14) | 96.0 |
 | Geom2dGridEval | 10 | 1,151 | 1,107 (44) | 96.2 |
 | Geom2dHash | 13 | 240 | 232 (8) | 96.7 |
 | AdvApprox | 5 | 621 | 603 (18) | 97.1 |
-| AppCont | 8 | 31,895 | 31,893 (2) | 100.0 |
+| AppCont | 8 | 31,896 | 31,894 (2) | 100.0 |
+| Results | 2 | 44 | 44 (0) | 100.0 |
 | TopAbs | 1 | 46 | 46 (0) | 100.0 |
 | TopExp | 2 | 207 | 207 (0) | 100.0 |
+
+## Kerf.Modeling
+
+Packages under 80%, least covered first (uncovered lines in brackets); the rest after.
+
+| Package | Files | Lines | Covered | % |
+|---|---:|---:|---:|---:|
+| Build | 1 | 90 | 75 (15) | 83.3 |
+| Objects | 3 | 799 | 712 (87) | 89.1 |
+| Topology | 30 | 4,861 | 4,428 (433) | 91.1 |
+| Kernel | 4 | 98 | 90 (8) | 91.8 |
+| Geometry | 14 | 1,337 | 1,235 (102) | 92.4 |
+| Exchange | 3 | 235 | 218 (17) | 92.8 |
+| Operations | 5 | 674 | 642 (32) | 95.3 |
+| (root) | 1 | 13 | 13 (0) | 100.0 |

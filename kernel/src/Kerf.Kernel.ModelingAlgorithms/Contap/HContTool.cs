@@ -21,17 +21,11 @@ namespace Kerf.Engine.HiddenLines.Contours;
 /// <remarks>
 /// A struct with static members (decision 338), so that it can be the boundary search's tool
 /// (<see cref="TheSearch"/>, through <see cref="ISobTool"/>). OCCT keeps the sampling bounds that
-/// <see cref="NbSamplePoints"/> sets and <see cref="SamplePoint"/> reads in file-scope statics; they are read across
-/// calls, so they are <c>[ThreadStatic]</c> here (plan 2.3, decision 1075).
+/// <see cref="NbSamplePoints"/> sets and <see cref="SamplePoint"/> reads in file-scope statics; here each works them
+/// out from its surface, which is the same one.
 /// </remarks>
 internal readonly struct HContTool : ISobTool
 {
-    // OCCT: static double uinf, vinf, usup, vsup; (decision 1075)
-    [ThreadStatic] private static double s_uinf;
-    [ThreadStatic] private static double s_vinf;
-    [ThreadStatic] private static double s_usup;
-    [ThreadStatic] private static double s_vsup;
-
     /// <summary>The number of samples in V of a surface, by its type.</summary>
     public static int NbSamplesV(SurfaceAdaptorBase s, double v1, double v2)
     {
@@ -108,56 +102,62 @@ internal readonly struct HContTool : ISobTool
         return (nbs);
     }
 
-    /// <summary>The number of sample points of the surface; sets the sampling bounds <see cref="SamplePoint"/> reads.</summary>
+    // The sampling bounds of a surface (OCCT's file-scope uinf, vinf, usup, vsup, set by NbSamplePoints).
+    private static void SamplingBounds(SurfaceAdaptorBase s, out double uinf, out double vinf, out double usup, out double vsup)
+    {
+        uinf = s.FirstUParameter();
+        usup = s.LastUParameter();
+        vinf = s.FirstVParameter();
+        vsup = s.LastVParameter();
+
+        if (usup < uinf)
+        {
+            double temp = uinf;
+            uinf = usup;
+            usup = temp;
+        }
+        if (vsup < vinf)
+        {
+            double temp = vinf;
+            vinf = vsup;
+            vsup = temp;
+        }
+        if (uinf == RealFirst() && usup == RealLast())
+        {
+            uinf = -1.0e5;
+            usup = 1.0e5;
+        }
+        else if (uinf == RealFirst())
+        {
+            uinf = usup - 2.0e5;
+        }
+        else if (usup == RealLast())
+        {
+            usup = uinf + 2.0e5;
+        }
+
+        if (vinf == RealFirst() && vsup == RealLast())
+        {
+            vinf = -1.0e5;
+            vsup = 1.0e5;
+        }
+        else if (vinf == RealFirst())
+        {
+            vinf = vsup - 2.0e5;
+        }
+        else if (vsup == RealLast())
+        {
+            vsup = vinf + 2.0e5;
+        }
+    }
+
+    /// <summary>The number of sample points of the surface.</summary>
     public static int NbSamplePoints(SurfaceAdaptorBase s)
     {
-        s_uinf = s.FirstUParameter();
-        s_usup = s.LastUParameter();
-        s_vinf = s.FirstVParameter();
-        s_vsup = s.LastVParameter();
-
-        if (s_usup < s_uinf)
-        {
-            double temp = s_uinf;
-            s_uinf = s_usup;
-            s_usup = temp;
-        }
-        if (s_vsup < s_vinf)
-        {
-            double temp = s_vinf;
-            s_vinf = s_vsup;
-            s_vsup = temp;
-        }
-        if (s_uinf == RealFirst() && s_usup == RealLast())
-        {
-            s_uinf = -1.0e5;
-            s_usup = 1.0e5;
-        }
-        else if (s_uinf == RealFirst())
-        {
-            s_uinf = s_usup - 2.0e5;
-        }
-        else if (s_usup == RealLast())
-        {
-            s_usup = s_uinf + 2.0e5;
-        }
-
-        if (s_vinf == RealFirst() && s_vsup == RealLast())
-        {
-            s_vinf = -1.0e5;
-            s_vsup = 1.0e5;
-        }
-        else if (s_vinf == RealFirst())
-        {
-            s_vinf = s_vsup - 2.0e5;
-        }
-        else if (s_vsup == RealLast())
-        {
-            s_vsup = s_vinf + 2.0e5;
-        }
+        SamplingBounds(s, out double uinf, out double vinf, out double usup, out double vsup);
         if (s.GetType() == SurfaceKind.BSplineSurface)
         {
-            int m = (NbSamplesU(s, s_uinf, s_usup) / 3) * (NbSamplesV(s, s_vinf, s_vsup) / 3);
+            int m = (NbSamplesU(s, uinf, usup) / 3) * (NbSamplesV(s, vinf, vsup) / 3);
             if (m > 5)
             {
                 return (m);
@@ -173,20 +173,21 @@ internal readonly struct HContTool : ISobTool
         }
     }
 
-    /// <summary>The parameters of the sample point <paramref name="index"/>, in the bounds the last <see cref="NbSamplePoints"/> set.</summary>
+    /// <summary>The parameters of the sample point <paramref name="index"/> of the surface.</summary>
     public static void SamplePoint(SurfaceAdaptorBase s, int index, out double u, out double v)
     {
+        SamplingBounds(s, out double uinf, out double vinf, out double usup, out double vsup);
         if (s.GetType() == SurfaceKind.BSplineSurface)
         {
-            int nbIntU = NbSamplesU(s, s_uinf, s_usup) / 3;
-            int nbIntV = NbSamplesV(s, s_vinf, s_vsup) / 3;
+            int nbIntU = NbSamplesU(s, uinf, usup) / 3;
+            int nbIntV = NbSamplesV(s, vinf, vsup) / 3;
             if (nbIntU * nbIntV > 5)
             {
                 int indU = (index - 1) / nbIntU;        //----   0 --> nbIntV
                 int indV = (index - 1) - indU * nbIntU; //----   0 --> nbIntU
 
-                u = s_uinf + ((s_usup - s_uinf) / ((double)(nbIntU + 1))) * (double)(indU + 1);
-                v = s_vinf + ((s_vsup - s_vinf) / ((double)(nbIntV + 2))) * (double)(indV + 1);
+                u = uinf + ((usup - uinf) / ((double)(nbIntU + 1))) * (double)(indU + 1);
+                v = vinf + ((vsup - vinf) / ((double)(nbIntV + 2))) * (double)(indV + 1);
                 return;
             }
         }
@@ -194,24 +195,24 @@ internal readonly struct HContTool : ISobTool
         switch (index)
         {
             case 1:
-                u = 0.75 * s_uinf + 0.25 * s_usup; // 0.25;
-                v = 0.75 * s_vinf + 0.25 * s_vsup; // 0.25;
+                u = 0.75 * uinf + 0.25 * usup; // 0.25;
+                v = 0.75 * vinf + 0.25 * vsup; // 0.25;
                 break;
             case 2:
-                u = 0.75 * s_uinf + 0.25 * s_usup; // 0.25;
-                v = 0.25 * s_vinf + 0.75 * s_vsup; // 0.75;
+                u = 0.75 * uinf + 0.25 * usup; // 0.25;
+                v = 0.25 * vinf + 0.75 * vsup; // 0.75;
                 break;
             case 3:
-                u = 0.25 * s_uinf + 0.75 * s_usup; // 0.75;
-                v = 0.75 * s_vinf + 0.25 * s_vsup; // 0.25;
+                u = 0.25 * uinf + 0.75 * usup; // 0.75;
+                v = 0.75 * vinf + 0.25 * vsup; // 0.25;
                 break;
             case 4:
-                u = 0.25 * s_uinf + 0.75 * s_usup; // 0.75;
-                v = 0.25 * s_vinf + 0.75 * s_vsup; // 0.75;
+                u = 0.25 * uinf + 0.75 * usup; // 0.75;
+                v = 0.25 * vinf + 0.75 * vsup; // 0.75;
                 break;
             default:
-                u = 0.5 * (s_uinf + s_usup); // 0.5;
-                v = 0.5 * (s_vinf + s_vsup); // 0.5;
+                u = 0.5 * (uinf + usup); // 0.5;
+                v = 0.5 * (vinf + vsup); // 0.5;
                 break;
         }
     }

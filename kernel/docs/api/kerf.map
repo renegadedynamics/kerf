@@ -4455,7 +4455,6 @@ type T:Occt.TopOpeBRepTool_CurveTool Kerf.Engine.Booleans.Legacy.Tools.ToolCurve
 type T:Occt.TopOpeBRepTool_GeomTool Kerf.Engine.Booleans.Legacy.Tools.ToolGeomTool  # 10E: settled by hand (its name is also another type's: a reference with both namespaces imported would be ambiguous)
 type T:Occt.TopOpeBRepTool_OutCurveType Kerf.Engine.Booleans.Legacy.Tools.OutCurveType  # engine (10D)
 type T:Occt.TopOpeBRepTool_PROJECT Kerf.Engine.Booleans.Legacy.Tools.Project  # engine (10D)
-type T:Occt.TopOpeBRepTool_SC Kerf.Engine.Booleans.Legacy.Tools.SC  # engine (10D)
 type T:Occt.TopOpeBRepTool_ShapeClassifier Kerf.Engine.Booleans.Legacy.Tools.ShapeClassifier  # engine (10D)
 type T:Occt.TopOpeBRepTool_ShapeExplorer Kerf.Engine.Booleans.Legacy.Tools.ToolShapeExplorer  # 10E: settled by hand (its name is also another type's: a reference with both namespaces imported would be ambiguous)
 type T:Occt.TopOpeBRepTool_ShapeTool Kerf.Engine.Booleans.Legacy.Tools.ToolShapeTool  # 10E: settled by hand (its name is also another type's: a reference with both namespaces imported would be ambiguous)

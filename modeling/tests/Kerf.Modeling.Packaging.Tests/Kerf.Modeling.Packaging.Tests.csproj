@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Loads build123d.NET from a build output folder (B3D_OCCTNET_LIB), not its projects, so it references neither -->
+  <!-- Loads Kerf.Modeling from a build output folder (KERF_MODELING_LIB), not its projects, so it references neither -->
   <PropertyGroup>
     <IsPackable>false</IsPackable>
   </PropertyGroup>

@@ -233,8 +233,8 @@ with no native code, and calls its types directly (unit 10B).
   given, OCCT.NET's result holds a copy instead, so the prism of a circular face doesn't share the face.
   `Solid.ExtrudeUntil` then finds the piece that holds the profile by place.
 - **Packaging.** `Build123d` and OCCT.NET's four assemblies load and unload through a collectible
-  `AssemblyLoadContext` with no native library (`OcctNetBackendTests` in the packaging tests, given the build output
-  as `B3D_OCCTNET_LIB`).
+  `AssemblyLoadContext` with no native library (`ExtensionLoadTests` in the packaging tests, given the build output
+  as `KERF_MODELING_LIB`).
 - **History.** Until unit 10B, `Build123d` compiled against `Build123d.Occt`, a binding with OCCT's API, on either of
   two backends: native OCCT through a generated C shim (`b3docct`, from `tools/OcctGen`), the reference OCCT.NET's
   oracle compared against, or OCCT.NET through a generated forwarding layer (`Build123d.OcctNet`, from

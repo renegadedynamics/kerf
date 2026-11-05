@@ -133,7 +133,7 @@ internal class WireEdgeClassifier : CompositeClassifier
                 {
                     return state;
                 }
-                ShapeClassifier sc = global::Kerf.Engine.Booleans.Legacy.Tools.SC.FSC_GetPSC();
+                ShapeClassifier sc = new();
                 int samedomain = sc.SameDomain();
                 sc.SameDomain(1);
                 sc.SetReference(s2);

@@ -361,6 +361,7 @@ public class ModelingLayerApiTests
         Assert.Equal(2, split.Shape.Faces().Length);
         Assert.Single(split.Left);
         Assert.Single(split.Right);
+        Assert.NotEmpty(split.History.Modified(face));
     }
 
     [Fact]
