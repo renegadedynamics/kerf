@@ -140,7 +140,8 @@ public partial class Sketch
 
 public partial class Curve
 {
-    private Curve Run(Func<Shape> operation) => Finish<Curve>(operation, r => new Curve(r), () => new Curve());
+    // A line or polyline holds its edge or wire, and combines into what the kernel gives: one edge or wire, or a compound
+    private Curve Run(Func<Shape> operation) => Finish<Curve>(operation, r => new Curve(r), () => new Curve(), this is BaseEdgeObject or BaseLineObject);
 
     /// <summary>
     /// This curve joined with <paramref name="others"/>, edges, wires or curves: a wire where they connect, otherwise a
@@ -212,7 +213,7 @@ public abstract partial class ModelShape
     /// if the result is empty, else that class around the kernel's compound, with this object's attributes and the
     /// operation's record.
     /// </summary>
-    private protected T Finish<T>(Func<Shape> operation, Func<Shape, T> make, Func<T> zero) where T : ModelShape
+    private protected T Finish<T>(Func<Shape> operation, Func<Shape, T> make, Func<T> zero, bool holdResult = false) where T : ModelShape
     {
         using var log = HistoryLog.Open();
         var result = operation();
@@ -221,7 +222,7 @@ public abstract partial class ModelShape
             return same;
         if (TopoUtil.IsNothing(result))
             return CopyAttributesTo(zero());
-        var held = result.IsCompound() ? result : TopoUtil.MakeCompound([result]);
+        var held = holdResult || result.IsCompound() ? result : TopoUtil.MakeCompound([result]);
         return (T)CopyAttributesTo(make(held)).MadeBy(record);
     }
 }
@@ -240,13 +241,13 @@ public static class ShapeOperators
         /// of the same dimension can be added. A <see cref="Part"/>, <see cref="Sketch"/> or <see cref="Curve"/> has its own
         /// typed operator.
         /// </summary>
-        public static Shape operator +(T a, Shape b) => ShapeAlgebra.Add(a.AsShape(), [b]);
+        public static Shape operator +(T a, Shape b) => ShapeAlgebra.Add(a.AsShape(), [b], T.Type);
 
         /// <summary>This shape fused with others.</summary>
-        public static Shape operator +(T a, IEnumerable<Shape> b) => ShapeAlgebra.Add(a.AsShape(), b);
+        public static Shape operator +(T a, IEnumerable<Shape> b) => ShapeAlgebra.Add(a.AsShape(), b, T.Type);
 
         /// <summary>This shape fused with others of its type.</summary>
-        public static Shape operator +(T a, IEnumerable<T> b) => ShapeAlgebra.Add(a.AsShape(), b.Select(s => s.AsShape()));
+        public static Shape operator +(T a, IEnumerable<T> b) => ShapeAlgebra.Add(a.AsShape(), b.Select(s => s.AsShape()), T.Type);
 
         /// <summary>This shape with another cut away: only shapes of an equal or greater dimension can be subtracted.</summary>
         public static Shape operator -(T a, Shape b) => ShapeAlgebra.Subtract(a.AsShape(), [b]);
@@ -291,10 +292,17 @@ internal static class ShapeAlgebra
     internal static List<Shape> Operands(IEnumerable<Shape>? others) =>
         others is null ? [] : others.SelectMany(o => o.GetTopLevelShapes()).ToList();
 
-    internal static Shape Add(Shape self, IEnumerable<Shape> other)
+    internal static Shape Add(Shape self, IEnumerable<Shape> other, ShapeType typeOfZero = ShapeType.Shape)
     {
         if (self.IsNull)
-            return AddPlain(self, null, other);
+            // The zero of a type adds as that type does
+            return typeOfZero switch
+            {
+                ShapeType.Edge or ShapeType.Wire => OneD.Add1D(self, other),
+                ShapeType.Shell => default(Shell).AddCore_Shape2D(other),
+                ShapeType.Compound => AddToCompound(self, null, other),
+                _ => AddPlain(self, null, other),
+            };
         return self.Type switch
         {
             ShapeType.Edge or ShapeType.Wire => OneD.Add1D(self, other),

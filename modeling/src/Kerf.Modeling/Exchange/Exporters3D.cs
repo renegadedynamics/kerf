@@ -106,7 +106,7 @@ public static class Exporters3D
     public static Result ExportBrep(IShape toExport, Stream stream)
     {
         ArgumentNullException.ThrowIfNull(stream);
-        return Export(toExport.AsShape(), () =>
+        return Export(toExport, () =>
         {
             stream.Write(Extras.WriteBRep(toExport.AsShape(), withTriangles: true));
             return Result.Success();
@@ -132,7 +132,7 @@ public static class Exporters3D
             WritePcurves = options.WritePcurves,
             Precision = (StepPrecision)(int)options.PrecisionMode,
         };
-        return Export(toExport.AsShape(), () =>
+        return Export(toExport, () =>
         {
             using var text = new MemoryStream();
             var written = Step.Write(StepTree(toExport), text, writeOptions, cancellationToken: cancellationToken);
@@ -152,7 +152,7 @@ public static class Exporters3D
     {
         ArgumentNullException.ThrowIfNull(stream);
         options ??= StlExportOptions.Default;
-        return Export(toExport.AsShape(), () =>
+        return Export(toExport, () =>
         {
             var mesh = Failures.Get(Mesher.Mesh(toExport.AsShape(), MeshOptions(options.Tolerance, options.AngularTolerance), cancellationToken: cancellationToken),
                                     () => "mesh");
@@ -173,7 +173,7 @@ public static class Exporters3D
     {
         ArgumentNullException.ThrowIfNull(stream);
         var writeOptions = GltfOptions(options ?? GltfExportOptions.Default);
-        return Export(toExport.AsShape(), () => Gltf.Write(MeshTree(toExport), stream, writeOptions, cancellationToken));
+        return Export(toExport, () => Gltf.Write(MeshTree(toExport), stream, writeOptions, cancellationToken));
     }
 
     /// <summary>
@@ -189,7 +189,7 @@ public static class Exporters3D
         var writeOptions = GltfOptions(options);
         var binPath = Path.ChangeExtension(filePath, ".bin");
         using var bin = new MemoryStream();
-        var done = ToFile(filePath, s => Export(toExport.AsShape(), () => Gltf.Write(MeshTree(toExport), s, bin, Path.GetFileName(binPath), writeOptions, cancellationToken)));
+        var done = ToFile(filePath, s => Export(toExport, () => Gltf.Write(MeshTree(toExport), s, bin, Path.GetFileName(binPath), writeOptions, cancellationToken)));
         if (done.IsFailure || bin.Length == 0)
             return done;
         try
@@ -213,7 +213,7 @@ public static class Exporters3D
         ArgumentNullException.ThrowIfNull(stream);
         options ??= ThreeMfExportOptions.Default;
         var writeOptions = new ThreeMfWriteOptions { Unit = ExchangeUnits.LengthUnit(options.Unit, "unit"), Mesh = MeshOptions(options.LinearDeflection, options.AngularDeflection) };
-        return Export(toExport.AsShape(), () => ThreeMf.Write(MeshTree(toExport), stream, writeOptions, cancellationToken));
+        return Export(toExport, () => ThreeMf.Write(MeshTree(toExport), stream, writeOptions, cancellationToken));
     }
 
     /// <summary>Writes a shape or assembly to a 3MF file.</summary>
@@ -222,7 +222,7 @@ public static class Exporters3D
 
     // An export's failures as its result: nothing to write, a failure carried up from the kernel, or a stream or
     // file that can't be written
-    private static Result Export(Shape shape, Func<Result> write)
+    private static Result Export(IShape shape, Func<Result> write)
     {
         if (shape.IsEmpty)
             return Result.Failure(Diagnostic.Error(NothingDone, $"There is nothing to export: the {shape.GetType().Name} is empty"));

@@ -247,13 +247,13 @@ public static partial class EdgeExtensions
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("Can't find intersections of empty edge");
-            Edge? otherEdge = other switch
+            Edge? otherEdge = (other is IShape held ? TopoUtil.Typed(held.AsShape()) : other) switch
             {
                 null => null,
                 Edge e => e,
                 // An axis becomes an edge at least as large as this edge and the axis's start
                 Axis axis => AxisEdge(axis),
-                _ => throw new ArgumentException($"Can't intersect with a {other.GetType().Name}"),
+                _ => throw new ArgumentException($"Can't intersect with a {other!.GetType().Name}"),
             };
             var plane = self.CommonPlane(otherEdge) ?? throw new ArgumentException("All objects must be on the same plane");
             var pln = plane.ToPlane3D();
@@ -755,7 +755,7 @@ public static partial class EdgeExtensions
     extension(Edge)
     {
         /// <summary>An edge wrapping an OCCT edge.</summary>
-        public static Edge Make(Edge edge) => (Edge)TopoUtil.Downcast(edge!);
+        public static Edge Make(Edge edge) => edge;
     }
 
 

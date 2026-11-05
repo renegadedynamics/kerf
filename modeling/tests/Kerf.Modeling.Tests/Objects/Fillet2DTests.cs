@@ -324,6 +324,7 @@ public class Fillet2DTests
     [Fact]
     public void FilletRecord()
     {
+        using var log = HistoryLog.Open();
         // The filleted vertex is removed (its arc counts as new), the edges beside it are modified and the rest untouched
         var w = Wire.MakePolygon([new Vector(0, 0), new Vector(3, 0), new Vector(4, 2), new Vector(1, 5), new Vector(-1, 2)], close: true);
         Assert.Equal("100 001 100 100 100 100 100 100 100 100 new 011000010000", Record(w, w.Fillet2D(0.7, [w.SelectVertices()[1]])));

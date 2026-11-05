@@ -31,7 +31,7 @@ public class StepAssemblyTests
         return Regex.Replace(text, @"NEXT_ASSEMBLY_USAGE_OCCURRENCE\('\d+'", "NEXT_ASSEMBLY_USAGE_OCCURRENCE('#'");
     }
 
-    private static byte[] Export(Shape shape)
+    private static byte[] Export(IShape shape)
     {
         var stream = new MemoryStream();
         Assert.True(Exporters3D.ExportStep(shape, stream, new StepExportOptions { Timestamp = Timestamp }).IsSuccess);

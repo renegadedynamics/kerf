@@ -34,13 +34,13 @@ public static partial class VertexExtensions
         }
 
         /// <summary>The X coordinate, including the vertex's Location.</summary>
-        public double X { get { var p = self.Point; return p.X; } }
+        public double X { get { self.NeedsGeometry("position"); return self.Point.X; } }
 
         /// <summary>The Y coordinate, including the vertex's Location.</summary>
-        public double Y { get { var p = self.Point; return p.Y; } }
+        public double Y { get { self.NeedsGeometry("position"); return self.Point.Y; } }
 
         /// <summary>The Z coordinate, including the vertex's Location.</summary>
-        public double Z { get { var p = self.Point; return p.Z; } }
+        public double Z { get { self.NeedsGeometry("position"); return self.Point.Z; } }
 
         /// <summary>The coordinates of the vertex.</summary>
         public void Deconstruct(out double x, out double y, out double z)
@@ -205,21 +205,21 @@ public static partial class VertexExtensions
     extension(Vertex)
     {
         /// <summary>A vertex wrapping an OCCT vertex.</summary>
-        public static Vertex Make(Vertex vertex) => (Vertex)TopoUtil.Downcast(vertex!);
+        public static Vertex Make(Vertex vertex) => vertex;
     }
 
 
     extension(Vertex)
     {
         /// <summary>A vertex at a point.</summary>
-        public static Vertex Make(double x, double y, double z = 0) => (Vertex)TopoUtil.Downcast(VertexExtensions.Make(new Vector(x, y, z))!);
+        public static Vertex Make(double x, double y, double z = 0) => Vertex.Make(new Vector(x, y, z));
     }
 
 
     extension(Vertex)
     {
         /// <summary>A vertex at a point.</summary>
-        public static Vertex Make(Vector point) => (Vertex)TopoUtil.Downcast(VertexExtensions.Make(point)!);
+        public static Vertex Make(Vector point) => Vertex.At(point.ToPoint3D());
     }
 
 

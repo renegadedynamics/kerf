@@ -161,7 +161,7 @@ public class ShapeTests
             .ToList();
         var solid = Solid.MakeLoft(sections);
         var edge = solid.SelectEdges().GroupByValue(e => e.Length, digits: 6).Last().OrderBy(Axis.X)[^2..].OrderBy(Axis.Z).Last();
-        var faces = solid.SelectFaces().Where(f => f.SelectEdges().Any(e => edge == e)).ToList();
+        var faces = solid.SelectFaces().Where(f => f.SelectEdges().Any(e => edge.IsSame(e))).ToList();
         Assert.Equal(2, faces.Count);
 
         foreach (var uValue in new[] { 0.0, 0.4 })
@@ -586,9 +586,9 @@ public class ShapeTests
     {
         var empty = default(Solid);
         var box = Solid.MakeBox(1, 1, 1);
-        Assert.Throws<InvalidOperationException>(() => new Location(empty.AsShape().Placement));
+        Assert.Throws<InvalidOperationException>(() => Check.LocationOf(empty));
         Assert.Throws<InvalidOperationException>(() => empty.Position);
-        Assert.Throws<InvalidOperationException>(() => empty.Orientation);
+        Assert.Throws<InvalidOperationException>(() => empty.OrientationAngles);
         Assert.False(empty.IsManifold);
         Assert.Throws<InvalidOperationException>(() => empty.GeomType);
         Check.Same(empty, empty.Fix());
@@ -712,7 +712,7 @@ public class ShapeCastTests
             (typeof(Compound), Compound.Make([_box])),
         ];
         foreach (var (expected, shape) in samples)
-            Assert.IsType(expected, (shape));
+            Assert.IsType(expected, TopoUtil.Typed(shape));
     }
 
     [Fact]

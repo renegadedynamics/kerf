@@ -15,7 +15,7 @@ public class SolidSmokeTests
         var cylinder = Solid.MakeCylinder(3, 10, new Plane(new Vector(0, 0, -5)));
         var block = new Part(box) - cylinder;
         Check.AlmostEqual(BlockVolume, block.Volume, 6);
-        Check.Is<Solid>(block);
+        Check.Is<Solid>(block.SingleSolid());
         Assert.Equal(7, block.SelectFaces().Count);
         Assert.Single(block.SelectFaces().Where(GeomType.Cylinder));
         // The face the cut brought in, from the tool; it isn't new, as it descends from the cylinder's face

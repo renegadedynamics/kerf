@@ -723,7 +723,7 @@ public class FilletPolyline : BaseLineObject
         var vertexToEdges = new List<(Vertex Vertex, List<Edge> Edges)>();
         foreach (var v in orderedVertices)
             if (!vertexToEdges.Any(entry => entry.Vertex == v))
-                vertexToEdges.Add((v, [.. wireEdges.Where(e => e.SelectVertices().Contains(v))]));
+                vertexToEdges.Add((v, [.. wireEdges.Where(e => e.SelectVertices().Contains(v, ShapeComparer<Vertex>.Same))]));
         var fillets = new List<Edge?>();
         for (int i = 0; i < vertexToEdges.Count; i++)
         {
@@ -736,7 +736,7 @@ public class FilletPolyline : BaseLineObject
                 fillets.Add(null);
                 continue;
             }
-            var others = corner.SelectMany(e => e.SelectVertices()).Where(ve => ve != vertex).Distinct().ToList();
+            var others = corner.SelectMany(e => e.SelectVertices()).Where(ve => !ve.IsSame(vertex)).Distinct(ShapeComparer<Vertex>.Same).ToList();
             var thirdEdge = Edge.MakeLine(others[0].ToVector(), others[1].ToVector());
             var filletFace = Face.Make(Wire.Make([.. corner, thirdEdge])).Fillet2D(currentRadius, [vertex]);
             fillets.Add(filletFace.SelectEdges().Where(GeomType.Circle)[0]);

@@ -83,13 +83,7 @@ public static partial class Shape1DExtensions
         }
 
         /// <summary>The length.</summary>
-        public double Length
-        {
-            get
-            {
-                return self.AsShape().Length();
-            }
-        }
+        public double Length => self.IsEmpty ? 0.0 : self.AsShape().Length();
 
         /// <summary>The radius of the circle the edge lies on; for a wire, that of its first edge.</summary>
         /// <exception cref="InvalidOperationException">The curve isn't a circle.</exception>
@@ -559,7 +553,7 @@ public static partial class Shape1DExtensions
                     if (vertex.DistanceTo(self.AsShape()) <= tolerance)
                         results.Add(vertex);
                     break;
-                case Shape shape:
+                case IShape shape:
                     // Delegate to higher-order shapes
                     if (ShapeExtensions.IntersectOne(shape.AsShape(), self.AsShape(), tolerance, includeTouched) is { } found)
                         results.AddRange(found);

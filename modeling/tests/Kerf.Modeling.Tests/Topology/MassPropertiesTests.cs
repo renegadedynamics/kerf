@@ -123,7 +123,7 @@ public class EmptyShapeMassPropertiesTests
     [Fact]
     public void Orientation()
     {
-        var error = Assert.Throws<InvalidOperationException>(() => default(Solid).Orientation);
+        var error = Assert.Throws<InvalidOperationException>(() => default(Solid).OrientationAngles);
         Assert.Contains("empty Solid has no orientation", error.Message);
     }
 }

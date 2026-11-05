@@ -50,7 +50,7 @@ public class VertexTests
     }
 
     [Fact]
-    public void VertexStr() => Assert.Equal("Vertex(0, 0, 0)", Vertex.Make(0, 0, 0).ToString());
+    public void VertexStr() => Assert.Equal("Vertex(0, 0, 0)", Vertex.Make(0, 0, 0).Describe());
 
     [Fact]
     public void NoIntersect() =>

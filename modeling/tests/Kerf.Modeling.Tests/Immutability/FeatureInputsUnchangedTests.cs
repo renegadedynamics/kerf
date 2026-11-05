@@ -34,8 +34,8 @@ public class FeatureInputsUnchangedTests
     {
         Part part = Fused();
         Edge edge = part.Edges().GroupBy(Axis.Z)[0][0];
-        Shape fillet = Untouched(part, () => Ops.Fillet([edge], 0.5).Value);
-        Shape chamfer = Untouched(part, () => Ops.Chamfer([edge], 0.5).Value);
+        Shape fillet = Untouched(part, () => Ops.Fillet(part, [edge], 0.5).Value);
+        Shape chamfer = Untouched(part, () => Ops.Chamfer(part, [edge], 0.5).Value);
         int faces = part.Faces().Count;
         Assert.True(SharedFaces(fillet, part) >= faces - 4);
         Assert.True(SharedFaces(chamfer, part) >= faces - 4);

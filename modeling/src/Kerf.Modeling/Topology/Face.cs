@@ -171,7 +171,7 @@ public static partial class FaceExtensions
                 var result = "POLYGON";
                 if (flatEdges.Count == 4)
                 {
-                    var pairs = flat.SelectVertices().Select(v => flatEdges.Where(e => e.SelectVertices().Contains(v)).ToList()).ToList();
+                    var pairs = flat.SelectVertices().Select(v => flatEdges.Where(e => e.SelectVertices().Contains(v, ShapeComparer<Vertex>.Same)).ToList()).ToList();
                     if (pairs.All(p => p[0].TangentAt(0).GetAngle(p[1].TangentAt(0)) == 90))
                     {
                         result = "RECTANGLE";
@@ -845,7 +845,7 @@ public static partial class FaceExtensions
     extension(Face)
     {
         /// <summary>A face wrapping an OCCT face.</summary>
-        public static Face Make(Face face) => (Face)TopoUtil.Downcast(face!);
+        public static Face Make(Face face) => face;
     }
 
 
@@ -858,7 +858,7 @@ public static partial class FaceExtensions
         /// </summary>
         /// <exception cref="ArgumentException">A wire isn't closed, the wires aren't planar (without a surface), or the surface is empty.</exception>
         /// <exception cref="InvalidOperationException">The wires don't lie on the surface.</exception>
-        public static Face Make(Wire outerWire, IEnumerable<Wire>? innerWires = null, Face? surface = null) => (Face)TopoUtil.Downcast(FaceExtensions.MakeFromWires(outerWire, innerWires, surface)!);
+        public static Face Make(Wire outerWire, IEnumerable<Wire>? innerWires = null, Face? surface = null) => FaceExtensions.MakeFromWires(outerWire, innerWires, surface);
     }
 
 

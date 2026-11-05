@@ -92,7 +92,7 @@ internal static class WireFillet
             throw new ArgumentException($"Could not find shared vertex on wire: {vertex}");
         if (connected.Count != 2)
             throw new ArgumentException($"Vertex must connect exactly two edges: {vertex}");
-        var indices = connected.Select(e => all.ToList().IndexOf(e)).ToList();
+        var indices = connected.Select(e => all.ToList().FindIndex(a => a.IsSame(e))).ToList();
         return new Corner(wire, vertex, all, connected, indices);
     }
 
@@ -151,7 +151,7 @@ internal static class WireFillet
         var trimmed = new List<Edge?>();
         foreach (var connected in corner.ConnectedEdges)
         {
-            var other = connected.SelectVertices().First(v => v != corner.Vertex);
+            var other = connected.SelectVertices().First(v => !v.IsSame(corner.Vertex));
             var filletVertex = arc.SelectVertices().OrderByDistanceTo(connected)[0];
             var pnt = filletVertex.ToVector().ToPoint3D();
             var splitVertex = Vertex.At(pnt);

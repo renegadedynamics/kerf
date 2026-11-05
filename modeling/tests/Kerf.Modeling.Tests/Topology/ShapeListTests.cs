@@ -471,7 +471,7 @@ public class ShapeListTests
     public void FilterByConvexityNeedsAnElement()
     {
         var e = Assert.Throws<InvalidOperationException>(() => new ShapeList<Shape>([new Part([Box(1, 1, 1)])]).Where(Convexity.Convex));
-        Assert.Contains("has no convexity", e.Message);
+        Assert.Contains("not taken from a shape", e.Message);
     }
 
     [Fact]

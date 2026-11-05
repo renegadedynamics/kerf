@@ -191,6 +191,7 @@ public static partial class Operations
 
     internal static Part LoftOrThrow(IEnumerable<Shape> sections, bool ruled, bool clean)
     {
+        using var log = HistoryLog.Open();
         // Phase 5: in builder mode the sections default to the pending faces, and the result is combined with mode
         var sectionList = sections?.ToList() ?? [];
         if (sectionList.Count == 0)

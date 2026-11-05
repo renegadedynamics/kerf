@@ -367,7 +367,7 @@ public class CurveObjectTests
 
         // A polyline closed by the user
         var l1 = new FilletPolyline([new Vector(0, 0), new Vector(2, 6), new Vector(0, 5), new Vector(-2, 6), new Vector(0, 0)], radii: [0, 0.1, 0, 0]);
-        Assert.All(l1.Vertices(), v => Assert.Equal(2, l1.Edges().Count(e => e.SelectVertices().Contains(v))));
+        Assert.All(l1.Vertices(), v => Assert.Equal(2, l1.Edges().Count(e => e.SelectVertices().Contains(v, ShapeComparer<Vertex>.Same))));
         Assert.Single(l1.Edges().Where(GeomType.Circle));
     }
 

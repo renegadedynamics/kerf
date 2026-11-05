@@ -380,8 +380,9 @@ public class OperationsGenericTests
         var face = Face.MakeRect(2, 2, new Plane(new Vector(8, 0)));
         var compound = Compound.Make([Face.MakeRect(2, 2, new Plane(new Vector(8, 8))), Face.MakeRect(2, 2, new Plane(new Vector(8, -8)))]);
         var test = Mirror([edge, wire, face, compound], Plane.YZ);
-        // Mixed dimensions: a plain compound
-        Assert.Equal(typeof(Compound), test.GetType());
+        // Mixed dimensions: a plain compound, held by an assembly with no children
+        Assert.Equal(typeof(Assembly), test.GetType());
+        Check.Is<Compound>(test);
         Assert.Empty(test.SelectEdges().Between(Axis.X, minimum: 0, maximum: 10));
         Assert.Empty(test.SelectFaces().Between(Axis.X, minimum: 0, maximum: 10));
         Assert.Equal(3, test.SelectFaces().Between(Axis.X, minimum: -10, maximum: 0).Count);

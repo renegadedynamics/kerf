@@ -450,7 +450,7 @@ public class EdgeTests
         Check.AlmostEqual(e2.PositionAt(0.1).X, -e2r.PositionAt(0.1).X, 5);
 
         e2 = default(Edge);
-        Assert.Throws<InvalidOperationException>(() => e2.Reversed());
+        Assert.Throws<InvalidOperationException>(() => e2.Reversed(reconstruct: false));
     }
 
     [Fact]
@@ -501,8 +501,9 @@ public class EdgeTests
         Assert.DoesNotContain(rounded.Edges(), e => rounded.ConvexityOf(e) == Convexity.Concave);
         // a seam has the same face on both sides
         Solid Cylinder() => Solid.MakeCylinder(3, 5, new Plane(new Vector(0, 0, -2.5)));
-        var seam = Cylinder().SelectEdges().Where(GeomType.Line)[0];
-        Assert.Equal(Convexity.Smooth, Cylinder().ConvexityOf(seam));
+        var cylinder = Cylinder();
+        var seam = cylinder.SelectEdges().Where(GeomType.Line)[0];
+        Assert.Equal(Convexity.Smooth, cylinder.ConvexityOf(seam));
         Assert.Equal(2, Cylinder().SelectEdges().Where(Convexity.Convex).Count);
     }
 
@@ -527,7 +528,7 @@ public class EdgeTests
     {
         var e = Assert.Throws<InvalidOperationException>(() => default(Compound).ConvexityOf(Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))));
         Assert.Contains("no valid parent", e.Message);
-        e = Assert.Throws<InvalidOperationException>(() => Face.MakeRect(1, 1).ConvexityOf(Face.MakeRect(1, 1).SelectEdges()[0]));
+        e = Assert.Throws<InvalidOperationException>(() => { var rect = Face.MakeRect(1, 1); return rect.ConvexityOf(rect.SelectEdges()[0]); });
         Assert.Contains("one face only", e.Message);
     }
 

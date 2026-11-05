@@ -182,7 +182,7 @@ public static partial class SolidExtensions
                     results.AddRange(other.Touch(self, tolerance));
                     break;
             }
-            return new ShapeList<Shape>(results.Distinct());
+            return new ShapeList<Shape>(results.Distinct(ShapeComparer.Same));
         }
     }
 
@@ -364,14 +364,14 @@ public static partial class SolidExtensions
     extension(Solid)
     {
         /// <summary>A solid wrapping an OCCT solid.</summary>
-        public static Solid Make(Solid solid) => (Solid)TopoUtil.Downcast(solid!);
+        public static Solid Make(Solid solid) => solid;
     }
 
 
     extension(Solid)
     {
         /// <summary>The solid a closed shell bounds.</summary>
-        public static Solid Make(Shell shell) => (Solid)TopoUtil.Downcast(SolidExtensions.MakeSolid(shell)!);
+        public static Solid Make(Shell shell) => SolidExtensions.MakeSolid(shell);
     }
 
 

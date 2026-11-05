@@ -38,9 +38,9 @@ public class AssemblyTests
         var assembly = CreateTestAssembly();
         string[] expected =
         [
-            "assembly   Compound at 0x7fced0fd1b50, Location((0, 0, 0), (0, 0, 0))",
-            "├── box    Solid    at 0x7fced102d3a0, Location((0, 0, 0), (45, 45, 0))",
-            "└── sphere Solid    at 0x7fced0fd1f10, Location((1, 2, 3), (0, 0, 0))",
+            "assembly   Assembly at 0x7fced0fd1b50, Location((0, 0, 0), (0, 0, 0))",
+            "├── box    Part     at 0x7fced102d3a0, Location((0, 0, 0), (45, 45, 0))",
+            "└── sphere Part     at 0x7fced0fd1f10, Location((1, 2, 3), (0, 0, 0))",
         ];
         AssertTopoEqual(assembly.ShowTopology(ShapeType.Solid), expected);
     }

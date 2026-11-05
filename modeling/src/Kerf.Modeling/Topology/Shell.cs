@@ -171,14 +171,14 @@ public static partial class ShellExtensions
     extension(Shell)
     {
         /// <summary>A shell wrapping an OCCT shell.</summary>
-        public static Shell Make(Shell shell) => (Shell)TopoUtil.Downcast(shell!);
+        public static Shell Make(Shell shell) => shell;
     }
 
 
     extension(Shell)
     {
         /// <summary>A shell of one face.</summary>
-        public static Shell Make(Face face) => (Shell)TopoUtil.Downcast(ShellExtensions.MakeFromFaces([face], Constants.Tolerance)!);
+        public static Shell Make(Face face) => ShellExtensions.MakeFromFaces([face], Constants.Tolerance);
     }
 
 
@@ -189,7 +189,7 @@ public static partial class ShellExtensions
         /// separate, so faces whose shared edges were built independently may need a tolerance above their approximation error.
         /// </summary>
         /// <exception cref="ArgumentException">The tolerance isn't positive, or the faces don't sew into one shell.</exception>
-        public static Shell Make(IEnumerable<Face> faces, double tolerance = Constants.Tolerance) => (Shell)TopoUtil.Downcast(ShellExtensions.MakeFromFaces(faces.ToList(), tolerance)!);
+        public static Shell Make(IEnumerable<Face> faces, double tolerance = Constants.Tolerance) => ShellExtensions.MakeFromFaces(faces.ToList(), tolerance);
     }
 
 

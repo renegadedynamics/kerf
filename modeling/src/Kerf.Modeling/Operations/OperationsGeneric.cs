@@ -114,7 +114,7 @@ public static partial class Operations
     private static IEnumerable<Shape> Shapes<T>(IEnumerable<T> shapes) where T : IShape
     {
         ArgumentNullException.ThrowIfNull(shapes);
-        return shapes.Select(s => s.AsShape());
+        return shapes.Select(s => s is null ? throw new ArgumentNullException(nameof(shapes), "A shape is null.") : s.AsShape());
     }
 
     // ---- chamfer ----
@@ -312,6 +312,8 @@ public static partial class Operations
     /// <summary>The shape a selection was taken out of, which a chamfer or fillet rebuilds.</summary>
     private static Shape TargetOf<T>(IEnumerable<T> objects, string operation) where T : IShape
     {
+        if (objects is null)
+            throw new ArgumentException("No objects provided");
         if (objects is ShapeList<T> { Origin: { IsEmpty: false } origin })
             return origin.AsShape();
         throw new ArgumentException($"Nothing to {operation}: select from a shape, or give the shape as the first argument");

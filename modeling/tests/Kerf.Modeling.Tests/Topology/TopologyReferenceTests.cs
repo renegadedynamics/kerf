@@ -125,7 +125,9 @@ public class TopologyReferenceTests
     {
         var expected = Data.GetProperty(name);
         var shape = Cases()[name]();
-        Assert.Equal(expected.GetProperty("type").GetString(), shape.GetType().Name);
+        // A build123d composite of pieces (a Part of solids…) is the kernel's compound
+        var expectedType = expected.GetProperty("type").GetString() is "Part" or "Sketch" or "Curve" ? "Compound" : expected.GetProperty("type").GetString();
+        Assert.Equal(expectedType, TopoUtil.KindName(shape));
         Assert.Equal(expected.GetProperty("vertices").GetInt32(), shape.SelectVertices().Count);
         Assert.Equal(expected.GetProperty("edges").GetInt32(), shape.SelectEdges().Count);
         Assert.Equal(expected.GetProperty("faces").GetInt32(), shape.SelectFaces().Count);

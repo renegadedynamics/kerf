@@ -214,7 +214,7 @@ public static partial class ShapeExtensions
         /// geometry meshed once however many instances there are. By default the tolerances are
         /// <see cref="MeshTolerances.For"/> the whole shape, so every part is meshed to the same quality.
         /// </summary>
-        public MeshNode TriangulateTree(MeshTolerances? tolerances = null) => MeshNode.Of(self.AsShape(), tolerances ?? MeshTolerances.For(self.AsShape()));
+        public MeshNode TriangulateTree(MeshTolerances? tolerances = null) => MeshNode.Of(self, tolerances ?? MeshTolerances.For(self.AsShape()));
     }
 
 }

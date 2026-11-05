@@ -192,8 +192,8 @@ public static partial class TopologyUtils
     {
         var one = shapesOne.ToList();
         var two = shapesTwo.ToList();
-        var twoSet = two.ToHashSet();
-        var onlyOne = one.Where(s => !twoSet.Contains(s)).ToHashSet();
+        var twoSet = two.ToHashSet(ShapeComparer.Same);
+        var onlyOne = one.Where(s => !twoSet.Contains(s)).ToHashSet(ShapeComparer.Same);
         return one.Concat(two).Where(onlyOne.Contains).ToList();
     }
 

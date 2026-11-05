@@ -58,8 +58,8 @@ public class ShapePlacementTests
         var bbox = shape.BoundingBox();
         var vertices = shape.SelectVertices()
             .Select(v => (R4(v.X), R4(v.Y), R4(v.Z))).Order().Select(t => t.ToString());
-        var children = ChildrenOf(shape).Select(c => Rounded((new Location(shape.AsShape().Placement) * new Location(c.AsShape().Placement)).Position));
-        return new Placement(new Location(shape.AsShape().Placement), Rounded(bbox.Min), Rounded(bbox.Max),
+        var children = ChildrenOf(shape).Select(c => Rounded((Check.LocationOf(shape) * Check.LocationOf(c)).Position));
+        return new Placement(Check.LocationOf(shape), Rounded(bbox.Min), Rounded(bbox.Max),
                              string.Join(" ", vertices), string.Join(" ", children));
     }
 
@@ -84,7 +84,7 @@ public class ShapePlacementTests
     {
         foreach (var (name, make) in Kinds)
         {
-            Assert.True(new Location(make(Placed).AsShape().Placement) == Placed, name);
+            Assert.True(Check.LocationOf(make(Placed)) == Placed, name);
             Assert.True(PlacementOf(make(Placed)) != PlacementOf(make(Elsewhere)), name);
         }
     }
@@ -98,7 +98,7 @@ public class ShapePlacementTests
             var original = make(Placed);
             var before = PlacementOf(original);
             var relocated = original.Located(Elsewhere);
-            Assert.True(new Location(relocated.AsShape().Placement) == Elsewhere, name);
+            Assert.True(Check.LocationOf(relocated) == Elsewhere, name);
             AssertPlacedLike(relocated, make(Elsewhere), name);
             AssertSharesGeometry(relocated, original);
             Assert.Equal(before, PlacementOf(original));
@@ -114,7 +114,7 @@ public class ShapePlacementTests
             var original = make(Placed);
             var before = PlacementOf(original);
             var moved = original.Moved(Elsewhere);
-            Assert.True(new Location(moved.AsShape().Placement) == Elsewhere * Placed, name);
+            Assert.True(Check.LocationOf(moved) == Elsewhere * Placed, name);
             AssertPlacedLike(moved, make(Elsewhere * Placed), name);
             AssertSharesGeometry(moved, original);
             Assert.Equal(before, PlacementOf(original));
@@ -161,7 +161,7 @@ public class ShapePlacementTests
                 Assert.True(child.Location == source.Location, name);
             }
             // the copy's compound was rebuilt from its children at its location
-            Assert.Equal(Rounded(MakeAssembly(new Location(relocated.AsShape().Placement)).BoundingBox().Max), Rounded(relocated.BoundingBox().Max));
+            Assert.Equal(Rounded(MakeAssembly(Check.LocationOf(relocated)).BoundingBox().Max), Rounded(relocated.BoundingBox().Max));
         }
     }
 }

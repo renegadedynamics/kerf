@@ -263,7 +263,7 @@ public class ShapeHistoryTests
 
         var location = new Pos(12, -8, 5) * new Rotation(13, 0, 29);
         var inverseLocation = location.ToTransform3D().Inverted();
-        var operations = new List<(string Name, Shape Placed, Transform3D Inverse)>
+        var operations = new List<(string Name, ModelShape Placed, Transform3D Inverse)>
         {
             ("positioning operator", location * recorded, inverseLocation),
             ("moved", recorded.Moved(location), inverseLocation),

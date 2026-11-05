@@ -234,6 +234,7 @@ public sealed class ShapeGroups<T, TKey> : IReadOnlyList<ShapeList<T>> where T :
     {
         _key = key;
         _comparer = comparer ?? KeyComparer<TKey>.Instance;
+        var origin = (shapes as ShapeList<T>)?.Origin;
         var keyed = shapes.Select(s => (Key: key(s), Shape: s));
         // Consecutive runs of equal keys after a stable sort, as build123d's sorted() then itertools.groupby make them
         var run = new List<T>();
@@ -242,14 +243,14 @@ public sealed class ShapeGroups<T, TKey> : IReadOnlyList<ShapeList<T>> where T :
         {
             if (run.Count > 0 && _comparer.Compare(runKey, k) != 0)
             {
-                _groups.Add((runKey, new ShapeList<T>(run)));
+                _groups.Add((runKey, new ShapeList<T>(run, origin)));
                 run.Clear();
             }
             run.Add(s);
             runKey = k;
         }
         if (run.Count > 0)
-            _groups.Add((runKey, new ShapeList<T>(run)));
+            _groups.Add((runKey, new ShapeList<T>(run, origin)));
     }
 
     /// <summary>The number of groups.</summary>

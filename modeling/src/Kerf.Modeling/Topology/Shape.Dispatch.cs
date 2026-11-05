@@ -23,6 +23,14 @@ public static partial class ShapeExtensions
         public ShapeList<Shape> Touch(Shape other, double tolerance = 1e-6) => TouchOf(self.AsShape(), other, tolerance);
     }
 
+    /// <summary>The dimension of a shape's kind: for the zero of a type, the type's.</summary>
+    private static int? DimOfType(Type type) =>
+        type == typeof(Vertex) ? 0
+        : type == typeof(Edge) || type == typeof(Wire) ? 1
+        : type == typeof(Face) || type == typeof(Shell) ? 2
+        : type == typeof(Solid) ? 3
+        : null;
+
     private static double VolumeOf(Shape s)
     {
         if (TopoUtil.IsNothing(s))
@@ -107,28 +115,29 @@ public static partial class Shape1DExtensions
     extension<TSelf>(TSelf self) where TSelf : IShape1D
     {
         /// <summary>The kernel's curve: an edge's <see cref="EdgeCurve"/>, or a wire's <see cref="WireCurve"/>.</summary>
-        internal ShapeCurve Curve() => Dispatch(self.AsShape(), e => e.Curve_Edge(), w => w.Curve_Wire());
+        internal ShapeCurve Curve() => Dispatch(self, e => e.Curve_Edge(), w => w.Curve_Wire());
 
         /// <summary>The edge (as its curve) and the kernel's curve parameter at a position, and whether that edge runs forward.</summary>
         internal (EdgeCurve Curve, double Param, bool Forward) OcctParamAt(double position, PositionMode mode = PositionMode.Parameter) =>
-            Dispatch(self.AsShape(), e => e.OcctParamAt_Edge(position, mode), w => w.OcctParamAt_Wire(position, mode));
+            Dispatch(self, e => e.OcctParamAt_Edge(position, mode), w => w.OcctParamAt_Wire(position, mode));
 
         /// <summary>The kernel's curve parameter at a normalised arc-length position (0 at the start, 1 at the end).</summary>
-        public double ParamAt(double position) => Dispatch(self.AsShape(), e => e.ParamAt_Edge(position), w => w.ParamAt_Wire(position));
+        public double ParamAt(double position) => Dispatch(self, e => e.ParamAt_Edge(position), w => w.ParamAt_Wire(position));
 
         /// <summary>
         /// The parameter of the point on this curve closest to <paramref name="point"/>: the arc-length fraction
         /// <see cref="PositionAt"/> uses, or with <paramref name="normalize"/> false the kernel's own parameter.
         /// </summary>
         public double ParamAtPoint(Vector point, bool normalize = true) =>
-            Dispatch(self.AsShape(), e => e.ParamAtPoint_Edge(point, normalize), w => w.ParamAtPoint_Wire(point, normalize));
+            Dispatch(self, e => e.ParamAtPoint_Edge(point, normalize), w => w.ParamAtPoint_Wire(point, normalize));
     }
 
     /// <summary>What to do with an edge or a wire; a curve object of several pieces goes as a wire of them.</summary>
-    internal static T Dispatch<T>(Shape shape, Func<Edge, T> edge, Func<Wire, T> wire)
+    internal static T Dispatch<TSelf, T>(TSelf self, Func<Edge, T> edge, Func<Wire, T> wire) where TSelf : IShape1D
     {
+        var shape = self.AsShape();
         if (TopoUtil.IsNothing(shape))
-            return shape.TryAs(out Edge none) ? edge(none) : wire(default);
+            return self is Wire ? wire(default) : edge(default);
         return shape.Type switch
         {
             ShapeType.Edge => edge((Edge)shape),

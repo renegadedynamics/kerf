@@ -31,7 +31,7 @@ public static partial class ShapeExtensions
         }
 
         /// <summary>The dimension of the shape (0 to 3), or null for a compound of mixed or no dimension.</summary>
-        internal int? Dim => self is ModelShape model ? model.Dimension : TopoUtil.Dim(self.AsShape());
+        internal int? Dim => self is ModelShape model ? model.Dimension : self.AsShape().IsNull ? DimOfType(self.GetType()) : TopoUtil.Dim(self.AsShape());
 
         /// <summary>The rank of the type in a boolean's result: Vertex 0 … Solid 3, Compound 4.</summary>
         internal double Order => OrderOf(self.AsShape());

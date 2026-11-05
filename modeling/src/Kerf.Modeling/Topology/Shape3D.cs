@@ -269,7 +269,7 @@ public static partial class Shape3DExtensions
             if (includeTouched && self.AsShape().TryAs(out Solid solid))
             {
                 results.AddRange(solid.Touch(shape, tolerance));
-                results = Shape3DExtensions.FilterRedundantTouches(results.Distinct().ToList(), tolerance);
+                results = Shape3DExtensions.FilterRedundantTouches(results.Distinct(ShapeComparer.Same).ToList(), tolerance);
             }
             return results.Count > 0 ? new ShapeList<Shape>(results) : null;
         }
@@ -328,7 +328,7 @@ public static partial class Shape3DExtensions
                     rejected.Add(i);
                     entries.Add($"[{i}] at {selected[i].Center().ToString("G6")}");
                 }
-            var tangentCount = set.Count(e => !selected.Contains(e));
+            var tangentCount = set.Count(e => !selected.Contains(e, ShapeComparer<Edge>.Same));
             if (tangentCount > 0)
                 entries.Add($"{tangentCount} additional tangent {(tangentCount == 1 ? "edge" : "edges")}");
             groups.Add($"{reason}: {string.Join(", ", entries)}");

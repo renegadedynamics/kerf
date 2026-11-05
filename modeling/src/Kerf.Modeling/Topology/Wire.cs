@@ -488,9 +488,9 @@ public static partial class WireExtensions
             if (referenceEdge is null)
                 return edges;
             var (edge1, edge2) = edges;
-            if (edge1 == referenceEdge)
+            if (referenceEdge is { } r1 && edge1.IsSame(r1))
                 return (edge1, edge2);
-            if (edge2 == referenceEdge)
+            if (referenceEdge is { } r2 && edge2.IsSame(r2))
                 return (edge2, edge1);
             throw new ArgumentException("reference edge not in edges");
         }
@@ -500,7 +500,7 @@ public static partial class WireExtensions
     extension(Wire)
     {
         /// <summary>A wire wrapping an OCCT wire.</summary>
-        public static Wire Make(Wire wire) => (Wire)TopoUtil.Downcast(wire!);
+        public static Wire Make(Wire wire) => wire;
     }
 
 
@@ -509,7 +509,7 @@ public static partial class WireExtensions
     extension(Wire)
     {
         /// <summary>A wire of one edge.</summary>
-        public static Wire Make(Edge edge) => (Wire)TopoUtil.Downcast(WireExtensions.MakeWire([edge])!);
+        public static Wire Make(Edge edge) => WireExtensions.MakeWire([edge]);
     }
 
 
@@ -522,7 +522,7 @@ public static partial class WireExtensions
         public static Wire Make(BaseLineObject curve) => curve.Wire;
 
         /// <inheritdoc cref="Make(Edge)"/>
-        public static Wire Make(Curve curve) => (Wire)TopoUtil.Downcast(WireExtensions.MakeWire(curve.Edges())!);
+        public static Wire Make(Curve curve) => WireExtensions.MakeWire(curve.Edges());
     }
 
 

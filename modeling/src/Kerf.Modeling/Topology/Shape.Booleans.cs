@@ -165,10 +165,10 @@ public static partial class ShapeExtensions
             var list = toIntersect.ToList();
             if (list.Count == 0 || self.IsEmpty)
                 return [];
-            if (list.Any(o => o is Shape { IsEmpty: true }))
+            if (list.Any(o => o is IShape { IsEmpty: true }))
                 return [];
             foreach (var obj in list)
-                if (obj is not (Shape or Vector or Kerf.Modeling.Location or Axis or Plane))
+                if (obj is not (IShape or Vector or Location or Axis or Plane))
                     throw new ArgumentException($"Unsupported type for intersect: {obj.GetType().Name}");
 
             var commonSet = new List<Shape> { self.AsShape() };
@@ -244,7 +244,7 @@ public static partial class ShapeExtensions
             var trimTool = tool switch
             {
                 Plane p => ShapeExtensions.MakePlaneFace(p),
-                Shape s => s,
+                IShape s => s.AsShape(),
                 _ => throw new ArgumentException($"Can't split with a {tool.GetType().Name}"),
             };
             var splitResult = TopoUtil.BoolOp([self.AsShape()], [trimTool], BooleanKind.Split);

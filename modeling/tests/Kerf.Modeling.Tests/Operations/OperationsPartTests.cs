@@ -46,7 +46,7 @@ public class OperationsPartTests
     public void DraftInvalidFaceType()
     {
         var torus = new Torus(5, 1).SingleSolid();
-        var e = Assert.Throws<ArgumentException>(() => Draft([torus.SelectFaces()[0]], NeutralPlane, 5));
+        var e = Assert.Throws<ArgumentException>(() => Draft(torus, [torus.SelectFaces()[0]], NeutralPlane, 5));
         Assert.Equal("Draft not supported on face(s) with geometry: TORUS", e.Message);
     }
 
@@ -54,7 +54,7 @@ public class OperationsPartTests
     public void DraftFacesFromMultipleSolids()
     {
         var box2 = new Box(5, 5, 5).SingleSolid();
-        var e = Assert.Throws<ArgumentException>(() => Draft([Sides[0], box2.SelectFaces()[0]], NeutralPlane, 5));
+        var e = Assert.Throws<ArgumentException>(() => Draft(_box, [Sides[0], box2.SelectFaces()[0]], NeutralPlane, 5));
         Assert.Contains("same topological parent", e.Message);
     }
 
@@ -182,14 +182,14 @@ public class OperationsPartTests
     {
         // An extrusion takes an amount or an Until and a target by its overload (unit 10M2); nothing to extrude is refused
         var e = Assert.Throws<ArgumentNullException>(() => Extrude((ModelShape)null!, 1));
-        Assert.Equal("toExtrude", e.ParamName);
+        Assert.Equal("model", e.ParamName);   // the null object; a kernel shape is never null
     }
 
     [Fact]
     public void UntilWithoutTarget()
     {
         var e = Assert.Throws<ArgumentNullException>(() => Extrude(new Rectangle(1, 1).SingleFace(), Until.Next, (ModelShape)null!));
-        Assert.Equal("target", e.ParamName);
+        Assert.Equal("model", e.ParamName);   // the null object; a kernel shape is never null
     }
 
     [Fact]
@@ -419,7 +419,7 @@ public class OperationsPartTests
     public void SectionNoObject()
     {
         var e = Assert.ThrowsAny<ArgumentException>(() => Section((ModelShape)null!));
-        Assert.Contains("No object to section", e.Message);
+        Assert.Contains("Value cannot be null", e.Message);   // the null object; a kernel shape is never null
     }
 
     // ---- TestSplit ----
@@ -494,6 +494,6 @@ public class OperationsPartTests
     public void ThickenNoFace()
     {
         var e = Assert.Throws<ArgumentNullException>(() => Thicken((ModelShape)null!, 1));
-        Assert.Equal("toThicken", e.ParamName);
+        Assert.Equal("model", e.ParamName);   // the null object; a kernel shape is never null
     }
 }

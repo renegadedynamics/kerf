@@ -289,7 +289,7 @@ public class PublicMemberTests
         Assert.True(sheet.CutSheet([new Box(2, 2, 2)]).Area < 16);
 
         Assert.True(box.Triangulate(0.1).NodeCount >= 8);
-        Assert.NotNull(box.Fillet(0.1, box.Edges()).History?.ToHistory());
+        Assert.NotNull(Kerf.Modeling.Operations.Fillet(box.Edges(), 0.1).Value.History?.ToHistory());
     }
 
     [Fact]

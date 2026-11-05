@@ -49,18 +49,19 @@ internal static partial class TopoUtil
     {
         if (shape.IsNull)
             return shape;
-        return shape.Type switch
+        // Not a switch expression: its natural type would be Shape, and every arm would box as one
+        switch (shape.Type)
         {
-            ShapeType.Vertex => (Vertex)shape,
-            ShapeType.Edge => (Edge)shape,
-            ShapeType.Wire => (Wire)shape,
-            ShapeType.Face => (Face)shape,
-            ShapeType.Shell => (Shell)shape,
-            ShapeType.Solid => (Solid)shape,
-            ShapeType.Compound => (Compound)shape,
-            ShapeType.CompSolid => (CompSolid)shape,
-            _ => shape,
-        };
+            case ShapeType.Vertex: return (Vertex)shape;
+            case ShapeType.Edge: return (Edge)shape;
+            case ShapeType.Wire: return (Wire)shape;
+            case ShapeType.Face: return (Face)shape;
+            case ShapeType.Shell: return (Shell)shape;
+            case ShapeType.Solid: return (Solid)shape;
+            case ShapeType.Compound: return (Compound)shape;
+            case ShapeType.CompSolid: return (CompSolid)shape;
+            default: return shape;
+        }
     }
 
     /// <summary>The OCCT shape type of a Shapes name ("Edge" → TopAbs_EDGE).</summary>

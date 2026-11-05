@@ -579,7 +579,7 @@ public class IntersectionTests
         var vertex = Vertex.Make(0, 0, 0);
         var extractedVertex = Compound.Make(B.Grid2(5, vertex)).ElementsOfType<Vertex>()[0];
         Assert.Equal(-2.5, extractedVertex.X);
-        Assert.Equal(-2.5, new Location(extractedVertex.AsShape().Placement).Position.X);
+        Assert.Equal(-2.5, Check.LocationOf(extractedVertex).Position.X);
 
         var result = new Assembly([Solid.MakeBox(1, 1, 1).Moved(new Pos(-2.5, 0, 0))])
             .Intersect(new Assembly([extractedVertex]));

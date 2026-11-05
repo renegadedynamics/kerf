@@ -26,7 +26,7 @@ public static partial class Shape2DExtensions
             if (summands.Count == 0)
                 return self.AsShape();
             // Only sew when a shell is being built up
-            if (!self.AsShape().IsShell() && !summands.Any(s => s.IsShell()))
+            if (self is not Shell && !self.AsShape().IsShell() && !summands.Any(s => s.IsShell()))
                 return ShapeAlgebra.AddPlain(self.AsShape(), null, other);
             if (summands.Any(s => s.Dim != 2))
                 throw new ArgumentException("Only shapes with the same dimension can be added");
@@ -67,6 +67,8 @@ public static partial class Shape2DExtensions
         {
             if (keep is not (Keep.Inside or Keep.Outside))
                 throw new ArgumentException("keep must be one of Keep.INSIDE, Keep.OUTSIDE, or Keep.BOTH (use the overload without keep for both)");
+            if (self.IsEmpty)
+                return default;
             var (inside, outside) = self.SplitByPerimeterCore(perimeter);
             return keep == Keep.Inside ? inside : outside;
         }

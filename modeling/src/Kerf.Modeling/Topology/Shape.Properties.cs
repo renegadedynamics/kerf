@@ -57,7 +57,7 @@ public static partial class ShapeExtensions
         }
 
         /// <summary>The orientation part of the shape's Location, as rotations in degrees.</summary>
-        public Vector Orientation
+        public Vector OrientationAngles
         {
             get
             {

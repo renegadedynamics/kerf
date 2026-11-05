@@ -346,9 +346,9 @@ public class CompoundTreeLocationTests
 
     static void AssertInPlace(Assembly assembly, Part marker)
     {
-        Assert.Equal(Placed, new Location(assembly.AsShape().Placement));
+        Assert.Equal(Placed, Check.LocationOf(assembly));
         Assert.Contains(assembly.Children, c => ReferenceEquals(c, marker));
-        Check.AlmostEqual(new Vector(10, 4, 0), (new Location(assembly.AsShape().Placement) * new Location(marker.AsShape().Placement)).Position, 5);
+        Check.AlmostEqual(new Vector(10, 4, 0), (Check.LocationOf(assembly) * Check.LocationOf(marker)).Position, 5);
         Check.AlmostEqual(4.5, assembly.BoundingBox().Max.Y, 5);
     }
 

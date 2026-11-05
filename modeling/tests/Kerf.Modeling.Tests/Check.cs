@@ -57,6 +57,9 @@ internal static class Check
     /// <summary>The kernel's shape held is a solid or compound.</summary>
     public static void IsShape3D(IShape shape) => Assert.Equal(3, shape.IsEmpty ? 3 : shape.AsShape().Type is ShapeType.Solid or ShapeType.Compound or ShapeType.CompSolid ? 3 : 0);
 
+    /// <summary>A shape's location, through the interface: the kernel's internal <c>Location()</c> hides the extension on the struct here, as the tests see the kernel's internals.</summary>
+    public static Location LocationOf(IShape shape) => shape.Location;
+
     /// <summary>It is a shape, or holds one.</summary>
     public static void IsShape(IShape shape) => Assert.NotNull(shape);
 
