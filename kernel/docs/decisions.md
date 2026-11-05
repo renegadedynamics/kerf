@@ -16541,3 +16541,11 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          The options (`ExtrudeOptions`, `SweepOptions`, `OffsetOptions`) are already nested in `Operations`.
        - **Odd internal names stay:** `CenterOfShape1D`, `IntersectCoreOfFace` and the like are the dispatch's targets. Nobody
          outside sees them, and renaming them gains nothing a reader of the dispatch needs.
+1669. **Coverage runs scale the corpus's time limits, by a variable they set themselves** (the owner's choice, 5 November
+       2026). 11H's run had 11 corpus cases fail in 8 classes: 8 killed by the elapsed time limit, and 3 `bug24157` cases with their
+       own time check. Without instrumentation and other work alongside, 10 of them pass and `bug27534` is its known problem. So
+       `tools/coverage.ps1` sets `KERF_CORPUS_TIME_SCALE`, and the runner multiplies its limits by it. Unset, nothing changes, so the
+       gate's limits still catch hangs and large slowdowns. The `bug24157` scripts' performance check is passed over when the scale
+       is above 1. Unit 11I does this first.
+1670. **The rig compares from here on against `docs/benchmarks/2026-11-05-0198121ae.tsv`,** the run after 11B, the healing fix, 11L
+       and 11N. The targets stay as decision 1644 and 11A's baseline set them: recalculation 822 ms, and allocation 225 MB, which is met.

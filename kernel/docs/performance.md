@@ -123,7 +123,7 @@ Run `kernel/tools/bench.ps1`, on Windows PowerShell 5.1 or later. It takes about
 `docs/benchmarks/<date>-<commit>.md` and `.tsv`. For a unit's before-and-after, on each commit:
 
 ```powershell
-kernel/tools/bench.ps1 -Quick -Compare kernel/docs/benchmarks/2026-11-05-a14650837.tsv
+kernel/tools/bench.ps1 -Quick -Compare kernel/docs/benchmarks/2026-11-05-0198121ae.tsv
 ```
 
 It exits with 1 on a regression and 2 on a busy machine; `-Result <tsv>` compares without running. Each row is the median
@@ -154,6 +154,27 @@ results, and claims nothing about time. The timed run on a quiet machine comes a
 **Allocation per recalculation of Bento's examples: 450 MB to 217 MB, against the target of 225 MB** (`tools/bench.ps1 -Quick
 -Force`, compared with 11A's baseline). Every volume, face count and triangle count is unchanged, and every test suite passes.
 The rig's run isn't in `docs/benchmarks`, because it was taken on a busy machine. No site needed a change to the public API.
+
+### The timed run
+
+*[benchmarks/2026-11-05-0198121ae.md](benchmarks/2026-11-05-0198121ae.md), on a quiet machine, after 11B, the healing fix, 11L and
+11N were merged. The rig's only regression is the healing suite's failed runs going from 12 to 0, which is the fix. Every other result
+matches, and the full corpus, against `v0.2.0`, differs only in four memory-trend cases.*
+
+| | 11A's baseline | Now | Change | Target |
+|---|---:|---:|---:|---:|
+| Recalculation, ms (native 685) | 1,211 | 1,095 (1.60×) | −9.6% | 822 |
+| Settled recalculation, ms | 969 | 804 | −17.0% | |
+| Opening, ms (native 921) | 1,764 | 1,738 (1.89×) | −1.5% | |
+| Allocated per recalculation, MB | 450 | 217 | −51.8% | 225 |
+| Booleans, 407 simple cases, serial, ms | 2,168 | 1,746 | −19.5% | |
+| Booleans, 193 complex cases, serial, ms | 2,251 | 2,049 | −9.0% | |
+| STEP import with healing, 289 files, ms | 6,529 | 5,854 | −10.3% | |
+
+- **What's left is two examples:** "extrude until" is 736 ms against its 1.2× of 548, and the bottle 229 ms against 127. Together that's 290 of the
+  total's excess, and the other nine are within 22 ms of theirs in all.
+- **Settled recalculation is now under the target's figure:** 804 ms against 822. So once the runtime has finished tiering up, Kerf is at 1.17× native,
+  and part of what's left is how quickly it gets there. That makes the tiering settings in 11C worth trying early.
 
 ### Each site
 

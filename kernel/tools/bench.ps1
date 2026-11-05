@@ -126,7 +126,7 @@ function Get-Kind([string] $metric) {
 function Read-Results([string] $path) {
   $header = [ordered]@{}
   $rows = New-Object Collections.ArrayList
-  foreach ($line in [IO.File]::ReadAllLines($path)) {
+  foreach ($line in [IO.File]::ReadAllLines((Resolve-Path $path).Path)) { # .NET's own current folder isn't PowerShell's
     if ($line.StartsWith('# ')) {
       $p = $line.Substring(2).Split("`t")
       $header[$p[0]] = $p[1]
