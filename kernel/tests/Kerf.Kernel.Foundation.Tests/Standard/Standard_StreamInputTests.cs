@@ -60,7 +60,7 @@ public class Standard_StreamInputTests
 
         // nine characters fit a buffer of ten; ten don't (OCCT writes past its buffer)
         Assert.True(StreamUtilities.ReadWord(new StringReader("123456789"), aBuffer));
-        Assert.Throws<StreamFormatErrorException>(() => StreamUtilities.ReadWord(new StringReader("1234567890"), aBuffer));
+        EngineAssert.Throws<StreamFormatErrorException>(() => StreamUtilities.ReadWord(new StringReader("1234567890"), aBuffer));
     }
 
     [Fact]
@@ -107,8 +107,8 @@ public class Standard_StreamInputTests
         StreamUtilities.SetInputLength(aReader, 10);
         Assert.Equal(10, StreamUtilities.InputLength(aReader));
         StreamUtilities.CheckCount(aReader, 5, 2, "items");
-        Assert.Throws<StreamFormatErrorException>(() => StreamUtilities.CheckCount(aReader, 6, 2, "items"));
-        Assert.Throws<StreamFormatErrorException>(() => StreamUtilities.CheckCount(aReader, -1, 2, "items"));
+        EngineAssert.Throws<StreamFormatErrorException>(() => StreamUtilities.CheckCount(aReader, 6, 2, "items"));
+        EngineAssert.Throws<StreamFormatErrorException>(() => StreamUtilities.CheckCount(aReader, -1, 2, "items"));
         Assert.Throws<ArgumentOutOfRangeException>(() => StreamUtilities.SetInputLength(aReader, -1));
 
         var aStream = new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes("12345")));
@@ -121,6 +121,6 @@ public class Standard_StreamInputTests
         StreamUtilities.Read(new StringReader("x"), ref aValue);
         var aFailed = new StringReader("x");
         StreamUtilities.Read(aFailed, ref aValue);
-        Assert.Throws<StreamFormatErrorException>(() => StreamUtilities.CheckNotFailed(aFailed, "here"));
+        EngineAssert.Throws<StreamFormatErrorException>(() => StreamUtilities.CheckNotFailed(aFailed, "here"));
     }
 }

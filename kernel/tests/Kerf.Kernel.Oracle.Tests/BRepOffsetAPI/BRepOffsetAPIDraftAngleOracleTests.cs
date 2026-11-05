@@ -413,7 +413,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
                                                          .Order(StringComparer.Ordinal)) + "]");
     }
 
-    private static string NativeErrorOf(Exception e) => ShapeFixOracleRun.ErrorOf(e) ?? global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
+    private static string NativeErrorOf(Exception e) => ShapeFixOracleRun.ErrorOf(e) ?? global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType());
 
     private static string IndexOf(N.TopTools_IndexedMapOfShape theMap, N.TopoDS_Shape theS)
     {
@@ -548,9 +548,9 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
             }
             return new Outcome(null, aStatus, aText, aSb.ToString(), aRes);
         }
-        catch (Exception e) when (e is FailureException or NullReferenceException)
+        catch (Exception e) when ((Refusal.IsFailure(e) || e is NullReferenceException))
         {
-            return new Outcome(global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()), "", null, "", null);
+            return new Outcome(global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()), "", null, "", null);
         }
     }
 

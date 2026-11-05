@@ -212,7 +212,7 @@ public class OSD_ParallelAdditionsTest
     [InlineData(true)]
     public void Exceptions_AreUnwrapped(bool theIsSequential)
     {
-        FailureException aFor = Assert.Throws<DomainErrorException>(() =>
+        FailureException aFor = EngineAssert.Throws<DomainErrorException>(() =>
             OsdParallel.For(0, 100, theIndex =>
             {
                 if (theIndex == 37)

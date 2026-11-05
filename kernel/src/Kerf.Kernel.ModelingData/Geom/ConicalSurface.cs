@@ -32,7 +32,7 @@ public sealed class ConicalSurface : ElementarySurface
         if (radius < 0.0 || Math.Abs(ang) <= Constants.Resolution()
             || Math.Abs(ang) >= M_PI / 2.0 - Constants.Resolution())
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _pos = a3;
     }
@@ -101,7 +101,7 @@ public sealed class ConicalSurface : ElementarySurface
         CheckMutable();
         if (r < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _radius = r;
     }
@@ -112,7 +112,7 @@ public sealed class ConicalSurface : ElementarySurface
         CheckMutable();
         if (Math.Abs(ang) <= Constants.Resolution() || Math.Abs(ang) >= M_PI / 2.0 - Constants.Resolution())
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _semiAngle = ang;
     }
@@ -258,7 +258,7 @@ public sealed class ConicalSurface : ElementarySurface
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
-            throw new UndefinedDerivative3DException();
+            throw Refusal.State(new UndefinedDerivative3DException());
         }
         if (nv > 1)
         {

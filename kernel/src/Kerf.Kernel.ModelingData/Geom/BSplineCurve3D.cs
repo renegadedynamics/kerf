@@ -84,30 +84,30 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     {
         if (degree < 1 || degree > BSplineCurve3D.MaxDegree)
         {
-            throw new ConstructionErrorException("BSpline curve: invalid degree");
+            throw Refusal.Argument(new ConstructionErrorException("BSpline curve: invalid degree"));
         }
 
         if (cPoles.Length() < 2)
         {
-            throw new ConstructionErrorException("BSpline curve: at least 2 poles required");
+            throw Refusal.Argument(new ConstructionErrorException("BSpline curve: at least 2 poles required"));
         }
 
         if (cKnots.Length() != cMults.Length())
         {
-            throw new ConstructionErrorException("BSpline curve: Knot and Mult array size mismatch");
+            throw Refusal.Argument(new ConstructionErrorException("BSpline curve: Knot and Mult array size mismatch"));
         }
 
         for (int i = cKnots.Lower(); i < cKnots.Upper(); i++)
         {
             if (cKnots[i + 1] - cKnots[i] <= Epsilon(Math.Abs(cKnots[i])))
             {
-                throw new ConstructionErrorException("BSpline curve: Knots interval values too close");
+                throw Refusal.Argument(new ConstructionErrorException("BSpline curve: Knots interval values too close"));
             }
         }
 
         if (cPoles.Length() != global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(degree, periodic, cMults))
         {
-            throw new ConstructionErrorException("BSpline curve: # Poles and degree mismatch");
+            throw Refusal.Argument(new ConstructionErrorException("BSpline curve: # Poles and degree mismatch"));
         }
     }
 
@@ -206,7 +206,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
 
         if (weights.Length() != poles.Length())
         {
-            throw new ConstructionErrorException("Geom_BSplineCurve: Weights and Poles array size mismatch");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineCurve: Weights and Poles array size mismatch"));
         }
 
         int i;
@@ -214,7 +214,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
         {
             if (weights[i] <= Constants.Resolution())
             {
-                throw new ConstructionErrorException("Geom_BSplineCurve: Weights values too small");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineCurve: Weights values too small"));
             }
         }
 
@@ -263,7 +263,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
 
         if (degree < _deg || degree > BSplineCurve3D.MaxDegree)
         {
-            throw new ConstructionErrorException("BSpline curve: IncreaseDegree: bad degree value");
+            throw Refusal.Argument(new ConstructionErrorException("BSpline curve: IncreaseDegree: bad degree value"));
         }
 
         int fromK1 = FirstUKnotIndex();
@@ -386,7 +386,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
                                          parametricTolerance,
                                          add))
         {
-            throw new ConstructionErrorException("Geom_BSplineCurve::InsertKnots");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineCurve::InsertKnots"));
         }
 
         if (nbpoles == _poles.Length())
@@ -454,11 +454,11 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
 
         if (!_periodic && (index <= i1 || index >= i2))
         {
-            throw new OutOfRangeException("BSpline curve: RemoveKnot: index out of range");
+            throw Refusal.Range(new OutOfRangeException("BSpline curve: RemoveKnot: index out of range"));
         }
         else if (_periodic && (index < i1 || index > i2))
         {
-            throw new OutOfRangeException("BSpline curve: RemoveKnot: index out of range");
+            throw Refusal.Range(new OutOfRangeException("BSpline curve: RemoveKnot: index out of range"));
         }
 
         NCollection_Array1<Point3D> oldpoles = _poles;
@@ -558,7 +558,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
         CheckMutable();
         if (u2 < u1)
         {
-            throw new DomainErrorException("Geom_BSplineCurve::Segment");
+            throw Refusal.Argument(new DomainErrorException("Geom_BSplineCurve::Segment"));
         }
 
         ClearEvalRepresentation();
@@ -578,7 +578,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
             du = u2 - u1;
             if (du - period > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                throw new DomainErrorException("Geom_BSplineCurve::Segment");
+                throw Refusal.Argument(new DomainErrorException("Geom_BSplineCurve::Segment"));
             }
             if (du > period)
             {
@@ -755,28 +755,28 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
         CheckMutable();
         if (index < 1 || index > _knots.Length())
         {
-            throw new OutOfRangeException("BSpline curve: SetKnot: Index and #knots mismatch");
+            throw Refusal.Range(new OutOfRangeException("BSpline curve: SetKnot: Index and #knots mismatch"));
         }
         double dk = Math.Abs(Epsilon(k));
         if (index == 1)
         {
             if (k >= _knots.Value(2) - dk)
             {
-                throw new ConstructionErrorException("BSpline curve: SetKnot: K out of range");
+                throw Refusal.Argument(new ConstructionErrorException("BSpline curve: SetKnot: K out of range"));
             }
         }
         else if (index == _knots.Length())
         {
             if (k <= _knots.Value(_knots.Length() - 1) + dk)
             {
-                throw new ConstructionErrorException("BSpline curve: SetKnot: K out of range");
+                throw Refusal.Argument(new ConstructionErrorException("BSpline curve: SetKnot: K out of range"));
             }
         }
         else
         {
             if (k <= _knots.Value(index - 1) + dk || k >= _knots.Value(index + 1) - dk)
             {
-                throw new ConstructionErrorException("BSpline curve: SetKnot: K out of range");
+                throw Refusal.Argument(new ConstructionErrorException("BSpline curve: SetKnot: K out of range"));
             }
         }
         if (k != _knots.Value(index))
@@ -862,7 +862,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
         CheckMutable();
         if (!_periodic)
         {
-            throw new NoSuchObjectException("Geom_BSplineCurve::SetOrigin");
+            throw Refusal.State(new NoSuchObjectException("Geom_BSplineCurve::SetOrigin"));
         }
 
         ClearEvalRepresentation();
@@ -873,7 +873,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
 
         if ((Index < first) || (Index > last))
         {
-            throw new DomainErrorException("Geom_BSplineCurve::SetOrigin");
+            throw Refusal.Argument(new DomainErrorException("Geom_BSplineCurve::SetOrigin"));
         }
 
         int nbknots = _knots.Length();
@@ -960,7 +960,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
         CheckMutable();
         if (!_periodic)
         {
-            throw new NoSuchObjectException("Geom_BSplineCurve::SetOrigin");
+            throw Refusal.State(new NoSuchObjectException("Geom_BSplineCurve::SetOrigin"));
         }
         // Is U within the period?
         double uf = FirstParameter, ul = LastParameter;
@@ -1074,7 +1074,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
         CheckMutable();
         if (index < 1 || index > _poles.Length())
         {
-            throw new OutOfRangeException("BSpline curve: SetPole: index and #pole mismatch");
+            throw Refusal.Range(new OutOfRangeException("BSpline curve: SetPole: index and #pole mismatch"));
         }
         ClearEvalRepresentation();
         _poles.SetValue(index, p);
@@ -1097,12 +1097,12 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
         CheckMutable();
         if (index < 1 || index > _poles.Length())
         {
-            throw new OutOfRangeException("BSpline curve: SetWeight: Index and #pole mismatch");
+            throw Refusal.Range(new OutOfRangeException("BSpline curve: SetWeight: Index and #pole mismatch"));
         }
 
         if (w <= Constants.Resolution())
         {
-            throw new ConstructionErrorException("BSpline curve: SetWeight: Weight too small");
+            throw Refusal.Argument(new ConstructionErrorException("BSpline curve: SetWeight: Weight too small"));
         }
 
         ClearEvalRepresentation();
@@ -1150,7 +1150,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
         if (index1 < 1 || index1 > _poles.Length() || index2 < 1 || index2 > _poles.Length()
             || index1 > index2)
         {
-            throw new OutOfRangeException("BSpline curve: MovePoint: Index and #pole mismatch");
+            throw Refusal.Range(new OutOfRangeException("BSpline curve: MovePoint: Index and #pole mismatch"));
         }
         NCollection_Array1<Point3D> npoles = new NCollection_Array1<Point3D>(1, _poles.Length());
         Point3D p0;
@@ -1328,7 +1328,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     internal sealed override bool IsCN(int n)
     {
-        Standard_RangeError_Raise_if(n < 0, "Geom_BSplineCurve::IsCN");
+        Refusal.RangeIf(n < 0, FailureKind.RangeError, "Geom_BSplineCurve::IsCN");
 
         switch (_smooth)
         {
@@ -1569,7 +1569,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     {
         if (n < 1)
         {
-            throw new UndefinedDerivative3DException();
+            throw Refusal.State(new UndefinedDerivative3DException());
         }
 
         if (RepUtils.TryEvalCurveDN(_evalRep, u, n, out Vector3D evalRepResult))
@@ -1617,7 +1617,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <exception cref="OutOfRangeException">Index is not in [1, NbKnots].</exception>
     internal double Knot(int index)
     {
-        Standard_OutOfRange_Raise_if(index < 1 || index > _knots.Length(), "Geom_BSplineCurve::Knot");
+        Refusal.RangeIf(index < 1 || index > _knots.Length(), FailureKind.OutOfRange, "Geom_BSplineCurve::Knot");
         return _knots[index];
     }
 
@@ -1628,8 +1628,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <exception cref="DomainErrorException">K's bounds are outside [1, NbKnots].</exception>
     internal void CopyKnotsTo(NCollection_Array1<double> k)
     {
-        Standard_DomainError_Raise_if(k.Lower() < _knots.Lower() || k.Upper() > _knots.Upper(),
-                                      "Geom_BSplineCurve::Knots");
+        Refusal.ArgumentIf(k.Lower() < _knots.Lower() || k.Upper() > _knots.Upper(), FailureKind.DomainError, "Geom_BSplineCurve::Knots");
         for (int idx = k.Lower(); idx <= k.Upper(); idx++)
         {
             k[idx] = _knots[idx];
@@ -1643,8 +1642,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <exception cref="DomainErrorException">K's bounds are outside the knot sequence's.</exception>
     internal void CopyKnotSequenceTo(NCollection_Array1<double> k)
     {
-        Standard_DomainError_Raise_if(k.Lower() < _flatKnots.Lower() || k.Upper() > _flatKnots.Upper(),
-                                      "Geom_BSplineCurve::KnotSequence");
+        Refusal.ArgumentIf(k.Lower() < _flatKnots.Lower() || k.Upper() > _flatKnots.Upper(), FailureKind.DomainError, "Geom_BSplineCurve::KnotSequence");
         for (int idx = k.Lower(); idx <= k.Upper(); idx++)
         {
             k[idx] = _flatKnots[idx];
@@ -1680,7 +1678,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
     internal void LocalD0(double U, int fromK1, int toK2, out Point3D p)
     {
-        Standard_DomainError_Raise_if(fromK1 == toK2, "Geom_BSplineCurve::LocalValue");
+        Refusal.ArgumentIf(fromK1 == toK2, FailureKind.DomainError, "Geom_BSplineCurve::LocalValue");
 
         double u = U;
         int index = 0;
@@ -1701,7 +1699,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
     internal void LocalD1(double U, int fromK1, int toK2, out Point3D p, out Vector3D v1)
     {
-        Standard_DomainError_Raise_if(fromK1 == toK2, "Geom_BSplineCurve::LocalD1");
+        Refusal.ArgumentIf(fromK1 == toK2, FailureKind.DomainError, "Geom_BSplineCurve::LocalD1");
 
         double u = U;
         int index = 0;
@@ -1723,7 +1721,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
     internal void LocalD2(double U, int fromK1, int toK2, out Point3D p, out Vector3D v1, out Vector3D v2)
     {
-        Standard_DomainError_Raise_if(fromK1 == toK2, "Geom_BSplineCurve::LocalD2");
+        Refusal.ArgumentIf(fromK1 == toK2, FailureKind.DomainError, "Geom_BSplineCurve::LocalD2");
 
         double u = U;
         int index = 0;
@@ -1746,7 +1744,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
     internal void LocalD3(double U, int fromK1, int toK2, out Point3D p, out Vector3D v1, out Vector3D v2, out Vector3D v3)
     {
-        Standard_DomainError_Raise_if(fromK1 == toK2, "Geom_BSplineCurve::LocalD3");
+        Refusal.ArgumentIf(fromK1 == toK2, FailureKind.DomainError, "Geom_BSplineCurve::LocalD3");
 
         double u = U;
         int index = 0;
@@ -1770,7 +1768,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
     internal Vector3D LocalDN(double U, int fromK1, int toK2, int n)
     {
-        Standard_DomainError_Raise_if(fromK1 == toK2, "Geom_BSplineCurve::LocalD3"); // OCCT: says LocalD3 in LocalDN
+        Refusal.ArgumentIf(fromK1 == toK2, FailureKind.DomainError, "Geom_BSplineCurve::LocalD3"); // OCCT: says LocalD3 in LocalDN
 
         double u = U;
         int index = 0;
@@ -1795,7 +1793,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <exception cref="OutOfRangeException">Index is not in [1, NbKnots].</exception>
     internal int Multiplicity(int index)
     {
-        Standard_OutOfRange_Raise_if(index < 1 || index > _mults.Length(), "Geom_BSplineCurve::Multiplicity");
+        Refusal.RangeIf(index < 1 || index > _mults.Length(), FailureKind.OutOfRange, "Geom_BSplineCurve::Multiplicity");
         return _mults[index];
     }
 
@@ -1803,7 +1801,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <exception cref="DimensionErrorException">M has not NbKnots elements.</exception>
     internal void CopyMultiplicitiesTo(NCollection_Array1<int> m)
     {
-        Standard_DimensionError_Raise_if(m.Length() != _mults.Length(), "Geom_BSplineCurve::Multiplicities");
+        Refusal.ArgumentIf(m.Length() != _mults.Length(), FailureKind.DimensionError, "Geom_BSplineCurve::Multiplicities");
         m.Assign(_mults);
     }
 
@@ -1818,7 +1816,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <exception cref="OutOfRangeException">Index is not in [1, NbPoles].</exception>
     internal Point3D Pole(int index)
     {
-        Standard_OutOfRange_Raise_if(index < 1 || index > _poles.Length(), "Geom_BSplineCurve::Pole");
+        Refusal.RangeIf(index < 1 || index > _poles.Length(), FailureKind.OutOfRange, "Geom_BSplineCurve::Pole");
         return _poles[index];
     }
 
@@ -1826,7 +1824,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <exception cref="DimensionErrorException">P has not NbPoles elements.</exception>
     internal void CopyPolesTo(NCollection_Array1<Point3D> p)
     {
-        Standard_DimensionError_Raise_if(p.Length() != _poles.Length(), "Geom_BSplineCurve::Poles");
+        Refusal.ArgumentIf(p.Length() != _poles.Length(), FailureKind.DimensionError, "Geom_BSplineCurve::Poles");
         p.Assign(_poles);
     }
 
@@ -1853,7 +1851,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <exception cref="OutOfRangeException">Index is not in [1, NbPoles].</exception>
     internal double Weight(int index)
     {
-        Standard_OutOfRange_Raise_if(index < 1 || index > _poles.Length(), "Geom_BSplineCurve::Weight");
+        Refusal.RangeIf(index < 1 || index > _poles.Length(), FailureKind.OutOfRange, "Geom_BSplineCurve::Weight");
         if (IsRational)
         {
             return _weights[index];
@@ -1868,7 +1866,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <exception cref="DimensionErrorException">W has not NbPoles elements.</exception>
     internal void CopyWeightsTo(NCollection_Array1<double> w)
     {
-        Standard_DimensionError_Raise_if(w.Length() != _poles.Length(), "Geom_BSplineCurve::Weights");
+        Refusal.ArgumentIf(w.Length() != _poles.Length(), FailureKind.DimensionError, "Geom_BSplineCurve::Weights");
         if (IsRational)
         {
             w.Assign(_weights);
@@ -2163,7 +2161,14 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     public BSplineCurve3D Segmented(double u1, double u2, double tolerance = Precision_PConfusion)
     {
         BSplineCurve3D copy = CopyBSpline();
-        copy.Segment(u1, u2, tolerance);
+        try
+        {
+            copy.Segment(u1, u2, tolerance);
+        }
+        catch (FailureException failure)
+        {
+            throw Refusal.Argument(failure);
+        }
         return copy;
     }
 

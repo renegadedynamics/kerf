@@ -169,3 +169,7 @@ The first packages, for Bento's 3D-models extension.
 Phase 10 (part): no Schematiq.Collections (unit 10P1).
 - `ShapeList<T>` holds an `ImmutableArray<T>`, and the package no longer depends on Schematiq.Collections. No public signature
   changed, and results are the same; `Add` and `AddRange` now copy the list. `docs/10p-bento.md` lists what changed for Bento.
+- Kerf's unit 10P2: the exporters return `Result` with the exchange's diagnostics, where they returned `bool` and threw,
+  and take options records (`StepExportOptions`, `StlExportOptions`, `GltfExportOptions`, `ThreeMfExportOptions`). The
+  kernel's values refuse misuse with .NET's exceptions, which the layer reports as before. KERF0003 now covers the layer,
+  and finds nothing. Results are unchanged. `docs/10p2-bento.md` lists what changed for Bento.

@@ -102,7 +102,7 @@ public sealed class GeomToStepTests
         var anOffset = new OffsetCurve3D(aLine, 1, new Direction3D(0, 0, 1));
         var C = new MakeCurve(anOffset);
         Assert.False(C.IsDone);
-        Assert.Throws<NotDoneException>(() => C.Value());
+        EngineAssert.Throws<NotDoneException>(() => C.Value());
 
         // a 2D trimmed curve is written as its basis (OCCT tested it as a bounded curve first, which MakeBoundedCurve
         // doesn't map, and threw: occt-issues.md, GeomToStep_MakeCurve; Kerf decision 1507)
@@ -136,7 +136,7 @@ public sealed class GeomToStepTests
     public void A_cone_with_a_negative_semi_angle_is_refused()
     {
         var aCone = new ConicalSurface(new CoordinateSystem(Tilted), -0.3, 2);
-        Assert.Throws<DomainErrorException>(() => new GeometryMakeConicalSurface(aCone));
+        EngineAssert.Throws<DomainErrorException>(() => new GeometryMakeConicalSurface(aCone));
     }
 
     [Fact]

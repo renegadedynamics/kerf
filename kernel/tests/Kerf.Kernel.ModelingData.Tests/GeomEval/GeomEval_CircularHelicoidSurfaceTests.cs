@@ -25,7 +25,7 @@ public class GeomEval_CircularHelicoidSurfaceTest
     public void Construction_ZeroPitch_Throws()
     {
         CoordinateSystem anAx3 = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new CircularHelicoidSurface(anAx3, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new CircularHelicoidSurface(anAx3, 0.0));
     }
 
     [Fact]
@@ -151,8 +151,8 @@ public class GeomEval_CircularHelicoidSurfaceTest
         Assert.False(aSurf.IsVClosed);
         Assert.False(aSurf.IsUPeriodic);
         Assert.False(aSurf.IsVPeriodic);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UIso(0.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VIso(0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UIso(0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VIso(0.0));
     }
 
     [Fact]
@@ -160,10 +160,10 @@ public class GeomEval_CircularHelicoidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         CircularHelicoidSurface aSurf = new(anAx3, 10.0);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReverse());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReverse());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReversedParameter(0.5));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReversedParameter(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReverse());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReverse());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReversedParameter(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReversedParameter(0.5));
     }
 
     [Fact]
@@ -173,8 +173,8 @@ public class GeomEval_CircularHelicoidSurfaceTest
         CircularHelicoidSurface aSurf = new(anAx3, 10.0);
         Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(1.0, 2.0, 3.0));
 
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transform(aTrsf));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transformed(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transform(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transformed(aTrsf));
     }
 
     [Fact]
@@ -212,9 +212,9 @@ public class GeomEval_CircularHelicoidSurfaceTest
         CircularHelicoidSurface aCopy = aSurf.WithPitch(-2.0);
         Assert.Equal(10.0, aSurf.Pitch());
         Assert.Equal(-2.0, aCopy.Pitch());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aSurf.WithPitch(0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aSurf.WithPitch(0.0));
 
         aSurf.Freeze();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aSurf.SetPitch(1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aSurf.SetPitch(1.0));
     }
 }

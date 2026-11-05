@@ -206,7 +206,7 @@ public class BRepFillTests
     {
         Face aCyl = new MakeFace(new CylindricalSurface(new CoordinateSystem(), 5), 0, 2, 0, 3, 1e-7).Face();
         Wire aProfile = Polygon(false, new Point3D(5, 0, 0), new Point3D(6, 0, 0));
-        Assert.ThrowsAny<NoSuchObjectException>(() => Fill.Axe(aCyl, aProfile, out _, out _, 1e-7));
+        EngineAssert.ThrowsAny<NoSuchObjectException>(() => Fill.Axe(aCyl, aProfile, out _, out _, 1e-7));
     }
 
     private static Wire Polyline345() =>
@@ -279,7 +279,7 @@ public class BRepFillTests
         Assert.True(aRev.IsClosed);
 
         Assert.Equal(aBefore, BRepTextComparison.Write(aW));
-        Assert.Throws<NoSuchObjectException>(() =>
+        EngineAssert.Throws<NoSuchObjectException>(() =>
         {
             Wire anOpen = Polyline345();
             Fill.SearchOrigin(ref anOpen, new Point3D(0, 0, 0), new Vector3D(1, 0, 0), 1e-7);

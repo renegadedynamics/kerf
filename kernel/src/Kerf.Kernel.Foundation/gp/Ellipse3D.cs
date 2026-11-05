@@ -41,8 +41,7 @@ public readonly partial struct Ellipse3D : IEquatable<Ellipse3D>
         _pos = a2;
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        Standard_ConstructionError_Raise_if(minorRadius < 0.0 || majorRadius < minorRadius,
-                                            "gp_Elips() - invalid construction parameters");
+        Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < minorRadius, FailureKind.ConstructionError, "gp_Elips() - invalid construction parameters");
     }
 
     // Copies
@@ -64,9 +63,8 @@ public readonly partial struct Ellipse3D : IEquatable<Ellipse3D>
     public readonly Ellipse3D WithMajorRadius(double majorRadius)
     {
         double newMajorRadius = _majorRadius;
-        Standard_ConstructionError_Raise_if(
-            majorRadius < _minorRadius,
-            "gp_Elips::SetMajorRadius() - major radius should be greater or equal to minor radius");
+        Refusal.ArgumentIf(
+            majorRadius < _minorRadius, FailureKind.ConstructionError, "gp_Elips::SetMajorRadius() - major radius should be greater or equal to minor radius");
         newMajorRadius = majorRadius;
         return new Ellipse3D(_pos, newMajorRadius, _minorRadius);
     }
@@ -74,8 +72,7 @@ public readonly partial struct Ellipse3D : IEquatable<Ellipse3D>
     public readonly Ellipse3D WithMinorRadius(double minorRadius)
     {
         double newMinorRadius = _minorRadius;
-        Standard_ConstructionError_Raise_if(minorRadius < 0.0 || _majorRadius < minorRadius,
-                                            "gp_Elips::SetMinorRadius() - minor radius should be a "
+        Refusal.ArgumentIf(minorRadius < 0.0 || _majorRadius < minorRadius, FailureKind.ConstructionError, "gp_Elips::SetMinorRadius() - minor radius should be a "
                                             + "positive number lesser or equal to major radius");
         newMinorRadius = minorRadius;
         return new Ellipse3D(_pos, _majorRadius, newMinorRadius);
@@ -102,7 +99,7 @@ public readonly partial struct Ellipse3D : IEquatable<Ellipse3D>
         get
         {
             double e = Eccentricity;
-            Standard_ConstructionError_Raise_if(e <= Constants.Resolution(), "gp_Elips::Directrix1() - zero eccentricity");
+            Refusal.StateIf(e <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Elips::Directrix1() - zero eccentricity");
             Xyz orig = _pos.XDirection.XYZ();
             orig.Multiply(_majorRadius / e);
             orig.Add(_pos.Location.XYZ());
@@ -117,7 +114,7 @@ public readonly partial struct Ellipse3D : IEquatable<Ellipse3D>
         get
         {
             double e = Eccentricity;
-            Standard_ConstructionError_Raise_if(e <= Constants.Resolution(), "gp_Elips::Directrix2() - zero eccentricity");
+            Refusal.StateIf(e <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Elips::Directrix2() - zero eccentricity");
             Xyz orig = _pos.XDirection.XYZ();
             orig.Multiply(-_majorRadius / e);
             orig.Add(_pos.Location.XYZ());

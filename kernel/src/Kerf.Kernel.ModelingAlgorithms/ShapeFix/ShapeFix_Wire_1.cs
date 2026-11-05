@@ -347,7 +347,7 @@ internal partial class WireFixer
                         }
                         bsp = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(tc);
                     }
-                    catch (FailureException)
+                    catch (Exception caught) when (Refusal.IsFailure(caught))
                     {
                         // OCCT_DEBUG warning left out
                     }
@@ -629,7 +629,7 @@ internal partial class WireFixer
                                 done1 = done2 = true;
                             }
                         }
-                        catch (FailureException)
+                        catch (Exception caught) when (Refusal.IsFailure(caught))
                         {
                         }
                     }
@@ -690,7 +690,7 @@ internal partial class WireFixer
                         }
                     }
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                     // OCCT_DEBUG warning left out
                 }
@@ -1048,7 +1048,7 @@ internal partial class WireFixer
                         }
                         bsp = Geom2dConvert2D.CurveToBSplineCurve(c);
                     }
-                    catch (FailureException)
+                    catch (Exception caught) when (Refusal.IsFailure(caught))
                     {
                         // OCCT_DEBUG warning left out
                     }
@@ -1797,7 +1797,7 @@ internal partial class WireFixer
                         }
                     }
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                     // OCCT_DEBUG warning left out
                 }

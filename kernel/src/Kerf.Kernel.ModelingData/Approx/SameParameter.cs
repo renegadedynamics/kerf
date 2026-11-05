@@ -260,7 +260,7 @@ internal sealed class SameParameter
                 pc3d = c3d.Value(u);
                 pcons = cons.Value(u);
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 d2 = global::Kerf.Engine.Foundation.Precision.Infinite();
                 break;

@@ -100,17 +100,17 @@ public class Geom_AxisPlacementTests
         Axis2Placement C = (Axis2Placement)G.Copy();
         Assert.False(C.IsFrozen);
         AssertAx2(A, C);
-        Assert.Throws<ImmutableObjectException>(() => G.SetXDirection(new Direction3D(1, 0, 0)));
-        Assert.Throws<ImmutableObjectException>(() => G.SetDirection(new Direction3D(1, 0, 0)));
-        Assert.Throws<ImmutableObjectException>(() => G.SetLocation(new Point3D()));
-        Assert.Throws<ImmutableObjectException>(() => G.Transform(T));
+        EngineAssert.Throws<ImmutableObjectException>(() => G.SetXDirection(new Direction3D(1, 0, 0)));
+        EngineAssert.Throws<ImmutableObjectException>(() => G.SetDirection(new Direction3D(1, 0, 0)));
+        EngineAssert.Throws<ImmutableObjectException>(() => G.SetLocation(new Point3D()));
+        EngineAssert.Throws<ImmutableObjectException>(() => G.Transform(T));
     }
 
     [Fact]
     public void Axis2Placement_SetDirection_parallel_to_X_throws()
     {
         Axis2Placement G = new(new Frame3D());
-        Assert.Throws<ConstructionErrorException>(() => G.WithDirection(new Direction3D(1, 0, 0).Reversed()));
+        EngineAssert.Throws<ConstructionErrorException>(() => G.WithDirection(new Direction3D(1, 0, 0).Reversed()));
     }
 
     [Fact]

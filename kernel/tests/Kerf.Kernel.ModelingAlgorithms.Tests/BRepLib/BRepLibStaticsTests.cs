@@ -397,11 +397,11 @@ public class BRepLibStaticsTests
         Edge aFrozenE = ShapeCasts.Edge(new Explorer(aFrozen, ShapeType.Edge).Current());
         var aSnapshot = ShapeSnapshot.Of(aFrozen);
 
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.SameParameter(aFrozen, 1e-6));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.SameParameter(aFrozenE, 1e-6));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.SameRange(aFrozenE));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.UpdateInnerTolerances(aFrozen));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.UpdateEdgeTolerance(aFrozen, 1e-5, 1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.SameParameter(aFrozen, 1e-6));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.SameParameter(aFrozenE, 1e-6));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.SameRange(aFrozenE));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.UpdateInnerTolerances(aFrozen));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.UpdateEdgeTolerance(aFrozen, 1e-5, 1.0));
         aSnapshot.AssertUnchanged(aFrozen);
 
         Shape aCopy = BrepTools.CopyForWrite(aFrozen, out History aHistory);
@@ -421,7 +421,7 @@ public class BRepLibStaticsTests
         Face aTop = ShapeCasts.Face(new Explorer(aBox, ShapeType.Face).Current());
         new BrepBuilder().UpdateFace(aTop, 1e-3);
         Solid aFrozen = TestShapes.Frozen(aBox);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.UpdateTolerances(aFrozen));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.UpdateTolerances(aFrozen));
         Assert.True(BrepLibrary.BuildCurves3d(aFrozen)); // every edge has its curve: nothing is written
     }
 }

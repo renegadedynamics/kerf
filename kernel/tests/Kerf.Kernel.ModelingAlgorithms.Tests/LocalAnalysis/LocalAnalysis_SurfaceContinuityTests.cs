@@ -102,7 +102,7 @@ public class LocalAnalysis_SurfaceContinuityTests
         Assert.Equal(global::Kerf.Engine.Measurement.StatusErrorType.NullFirstDerivative, c.StatusError());
         c.ComputeAnalysis(aP1, aP3, G2);
         Assert.False(c.IsDone);
-        Assert.Throws<NotDoneException>(() => c.C0Value());
+        EngineAssert.Throws<NotDoneException>(() => c.C0Value());
     }
 
     [Fact]

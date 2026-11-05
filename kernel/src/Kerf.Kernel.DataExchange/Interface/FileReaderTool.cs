@@ -287,7 +287,7 @@ internal abstract class FileReaderTool
             {
                 BeginRead(amodel); // according to the standard
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 // Sendinf of message : Internal error during the header reading
                 if (tf is not null)
@@ -355,7 +355,7 @@ internal abstract class FileReaderTool
                 // clang-format on
                 // OCCT: a system signal (OSD_Exception, OSD_Signal: an access violation...) gives ierr = 2; their .NET
                 // counterparts are the exceptions that aren't Standard_Failure (decision 1183)
-                if (exception is not FailureException)
+                if (!Refusal.IsFailure(exception))
                 {
                     ierr = 2;
                 }
@@ -482,7 +482,7 @@ internal abstract class FileReaderTool
             {
                 EndRead(amodel); // according to the standard
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 // Sendinf of message : Internal error during the header reading
                 if (tf is not null)

@@ -203,7 +203,7 @@ public static class ShapeFactory
                 surface = find.Location().IsIdentity ? found : (Surface)found.Transformed(find.Location().Transformation);
                 return true;
             }
-            catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+            catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
             {
                 return false;
             }
@@ -403,7 +403,7 @@ public static class ShapeFactory
         {
             return run();
         }
-        catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+        catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
         {
             return Result<T>.Failure(FailureDiagnostics.ToDiagnostic(e));
         }

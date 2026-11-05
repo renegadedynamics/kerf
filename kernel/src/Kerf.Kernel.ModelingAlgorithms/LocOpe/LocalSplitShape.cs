@@ -638,7 +638,7 @@ internal sealed class LocalSplitShape
                 }
             }
         }
-        catch (Exception e) when (e is FailureException or NullReferenceException && e is not (ImmutableObjectException or LockedShapeException))
+        catch (Exception e) when ((Refusal.IsFailure(e) || e is NullReferenceException) && e is not ImmutableObjectException)
         {
             // OCCT_DEBUG trace left out: "SpliShape internal problem detected, some faces may be lost"
             return false;

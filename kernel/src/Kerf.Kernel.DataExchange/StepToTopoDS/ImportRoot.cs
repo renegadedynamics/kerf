@@ -41,6 +41,5 @@ internal class ImportRoot
     /// (decisions 1183, 1201).
     /// </summary>
     internal static bool CaughtBySignals(Exception exception)
-        => exception is not OutOfMemoryException and not OperationCanceledException and not ImmutableObjectException
-                           and not LockedShapeException;
+        => exception is not OutOfMemoryException and not OperationCanceledException and not ImmutableObjectException;
 }

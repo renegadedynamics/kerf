@@ -140,7 +140,7 @@ internal sealed class FaceFaceJob : FaceFace, BooleanParallel.ISolver
 
             Perform(f1, f2, _options.RunParallel());
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             _options.AddError(new AlertIntersectionFailed());
         }

@@ -254,7 +254,7 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
             }
             catch (Exception anError)
             {
-                aPort = "port throws " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anError.GetType()) + ": " + anError.Message + "\n";
+                aPort = "port throws " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anError).GetType()) + ": " + Refusal.Unwrapped(anError).Message + "\n";
             }
             if (aPort == aCase.Native)
             {

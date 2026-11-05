@@ -381,7 +381,7 @@ public sealed partial class BezierSurface : BoundedSurface
         int nbVPoles = surfacePoles.RowLength();
         if (nbUPoles < 2 || nbUPoles > MaxDegree + 1 || nbVPoles < 2 || nbVPoles > MaxDegree + 1)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
 
         _uRational = false;
@@ -404,7 +404,7 @@ public sealed partial class BezierSurface : BoundedSurface
         if (nbUPoles < 2 || nbUPoles > MaxDegree + 1 || nbVPoles < 2 || nbVPoles > MaxDegree + 1
             || nbVPoles != poleWeights.RowLength() || nbUPoles != poleWeights.ColLength())
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
 
         int col = poleWeights.LowerCol();
@@ -415,7 +415,7 @@ public sealed partial class BezierSurface : BoundedSurface
             {
                 if (poleWeights[row, col] <= Constants.Resolution())
                 {
-                    throw new ConstructionErrorException();
+                    throw Refusal.Argument(new ConstructionErrorException());
                 }
                 row++;
             }
@@ -514,7 +514,7 @@ public sealed partial class BezierSurface : BoundedSurface
         if (uDeg < UDegree || uDeg > BezierSurface.MaxDegree || vDeg < VDegree
             || vDeg > BezierSurface.MaxDegree)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
 
         int oldUDeg = UDegree;
@@ -632,11 +632,11 @@ public sealed partial class BezierSurface : BoundedSurface
         CheckMutable();
         if (vIndex < 1 || vIndex > _poles.RowLength())
         {
-            throw new OutOfRangeException();
+            throw Refusal.Range(new OutOfRangeException());
         }
         if (cPoles.Length() != _poles.ColLength())
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
 
         int nbUPoles = _poles.ColLength();
@@ -669,18 +669,18 @@ public sealed partial class BezierSurface : BoundedSurface
         CheckMutable();
         if (vIndex < 1 || vIndex > _poles.RowLength())
         {
-            throw new OutOfRangeException();
+            throw Refusal.Range(new OutOfRangeException());
         }
         if (cPoles.Length() != _poles.ColLength() || cPoleWeights.Length() != cPoles.Length())
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         int index = cPoleWeights.Lower();
         while (index <= cPoleWeights.Upper())
         {
             if (cPoleWeights[index] <= Constants.Resolution())
             {
-                throw new ConstructionErrorException();
+                throw Refusal.Argument(new ConstructionErrorException());
             }
             index++;
         }
@@ -730,11 +730,11 @@ public sealed partial class BezierSurface : BoundedSurface
         CheckMutable();
         if (uIndex < 1 || uIndex > _poles.ColLength())
         {
-            throw new OutOfRangeException();
+            throw Refusal.Range(new OutOfRangeException());
         }
         if (cPoles.Length() != _poles.RowLength())
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
 
         int nbUPoles = _poles.ColLength();
@@ -767,18 +767,18 @@ public sealed partial class BezierSurface : BoundedSurface
         CheckMutable();
         if (uIndex < 1 || uIndex > _poles.ColLength())
         {
-            throw new OutOfRangeException();
+            throw Refusal.Range(new OutOfRangeException());
         }
         if (cPoles.Length() != _poles.RowLength() || cPoleWeights.Length() != cPoles.Length())
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         int index = cPoleWeights.Lower();
         while (index <= cPoleWeights.Upper())
         {
             if (cPoleWeights[index] <= Constants.Resolution())
             {
-                throw new ConstructionErrorException();
+                throw Refusal.Argument(new ConstructionErrorException());
             }
             index++;
         }
@@ -828,11 +828,11 @@ public sealed partial class BezierSurface : BoundedSurface
         CheckMutable();
         if (vIndex < 1 || vIndex > _poles.RowLength())
         {
-            throw new OutOfRangeException();
+            throw Refusal.Range(new OutOfRangeException());
         }
         if (_poles.RowLength() <= 2)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
 
         int nbUPoles = _poles.ColLength();
@@ -871,11 +871,11 @@ public sealed partial class BezierSurface : BoundedSurface
         CheckMutable();
         if (uIndex < 1 || uIndex > _poles.ColLength())
         {
-            throw new OutOfRangeException();
+            throw Refusal.Range(new OutOfRangeException());
         }
         if (_poles.ColLength() <= 2)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
 
         int nbUPoles = _poles.ColLength();
@@ -1022,7 +1022,7 @@ public sealed partial class BezierSurface : BoundedSurface
         CheckMutable();
         if (uIndex < 1 || uIndex > _poles.ColLength() || vIndex < 1 || vIndex > _poles.RowLength())
         {
-            throw new OutOfRangeException();
+            throw Refusal.Range(new OutOfRangeException());
         }
         // OCCT: keeps the evaluation representation, as every edit but Transform, UReverse and VReverse does
         // (Geom_BSplineSurface clears it): the surface goes on evaluating the old shape (occt-issues.md)
@@ -1038,11 +1038,11 @@ public sealed partial class BezierSurface : BoundedSurface
         CheckMutable();
         if (weight <= Constants.Resolution())
         {
-            throw new ConstructionErrorException("Geom_BezierSurface::SetPole");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BezierSurface::SetPole"));
         }
         if (uIndex < 1 || uIndex > _poles.ColLength() || vIndex < 1 || vIndex > _poles.RowLength())
         {
-            throw new OutOfRangeException("Geom_BezierSurface::SetPole");
+            throw Refusal.Range(new OutOfRangeException("Geom_BezierSurface::SetPole"));
         }
 
         _poles[uIndex, vIndex] = p;
@@ -1056,14 +1056,14 @@ public sealed partial class BezierSurface : BoundedSurface
         CheckMutable();
         if (vIndex < 1 || vIndex > _poles.RowLength())
         {
-            throw new OutOfRangeException();
+            throw Refusal.Range(new OutOfRangeException());
         }
 
         if (cPoles.Lower() < 1 || cPoles.Lower() > _poles.ColLength() || cPoles.Upper() < 1
             || cPoles.Upper() > _poles.ColLength() || cPoleWeights.Lower() != cPoles.Lower()
             || cPoleWeights.Upper() != cPoles.Upper())
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
 
         int i;
@@ -1080,13 +1080,13 @@ public sealed partial class BezierSurface : BoundedSurface
         CheckMutable();
         if (vIndex < 1 || vIndex > _poles.RowLength())
         {
-            throw new OutOfRangeException();
+            throw Refusal.Range(new OutOfRangeException());
         }
 
         if (cPoles.Lower() < 1 || cPoles.Lower() > _poles.ColLength() || cPoles.Upper() < 1
             || cPoles.Upper() > _poles.ColLength())
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
 
         for (int i = cPoles.Lower(); i <= cPoles.Upper(); i++)
@@ -1102,12 +1102,12 @@ public sealed partial class BezierSurface : BoundedSurface
         CheckMutable();
         if (uIndex < 1 || uIndex > _poles.ColLength())
         {
-            throw new OutOfRangeException();
+            throw Refusal.Range(new OutOfRangeException());
         }
         if (cPoles.Lower() < 1 || cPoles.Lower() > _poles.RowLength() || cPoles.Upper() < 1
             || cPoles.Upper() > _poles.RowLength())
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
 
         for (int i = cPoles.Lower(); i <= cPoles.Upper(); i++)
@@ -1123,13 +1123,13 @@ public sealed partial class BezierSurface : BoundedSurface
         CheckMutable();
         if (uIndex < 1 || uIndex > _poles.ColLength())
         {
-            throw new OutOfRangeException();
+            throw Refusal.Range(new OutOfRangeException());
         }
         if (cPoles.Lower() < 1 || cPoles.Lower() > _poles.RowLength() || cPoles.Upper() < 1
             || cPoles.Upper() > _poles.RowLength() || cPoleWeights.Lower() != cPoles.Lower()
             || cPoleWeights.Upper() != cPoles.Upper())
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
 
         int i;
@@ -1150,12 +1150,12 @@ public sealed partial class BezierSurface : BoundedSurface
         CheckMutable();
         if (weight <= Constants.Resolution())
         {
-            throw new ConstructionErrorException("Geom_BezierSurface::SetWeight");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BezierSurface::SetWeight"));
         }
 
         if (uIndex < 1 || uIndex > _poles.ColLength() || vIndex < 1 || vIndex > _poles.RowLength())
         {
-            throw new OutOfRangeException();
+            throw Refusal.Range(new OutOfRangeException());
         }
 
         // compute new rationality
@@ -1191,12 +1191,12 @@ public sealed partial class BezierSurface : BoundedSurface
         CheckMutable();
         if (vIndex < 1 || vIndex > _poles.RowLength())
         {
-            throw new OutOfRangeException();
+            throw Refusal.Range(new OutOfRangeException());
         }
 
         if (cPoleWeights.Length() != _poles.ColLength())
         {
-            throw new ConstructionErrorException("Geom_BezierSurface::SetWeightCol");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BezierSurface::SetWeightCol"));
         }
 
         int i;
@@ -1214,7 +1214,7 @@ public sealed partial class BezierSurface : BoundedSurface
         {
             if (cPoleWeights[i] <= Constants.Resolution())
             {
-                throw new ConstructionErrorException();
+                throw Refusal.Argument(new ConstructionErrorException());
             }
             _weights[i, vIndex] = cPoleWeights[i];
             i++;
@@ -1235,12 +1235,12 @@ public sealed partial class BezierSurface : BoundedSurface
         CheckMutable();
         if (uIndex < 1 || uIndex > _poles.ColLength())
         {
-            throw new OutOfRangeException("Geom_BezierSurface::SetWeightRow");
+            throw Refusal.Range(new OutOfRangeException("Geom_BezierSurface::SetWeightRow"));
         }
         if (cPoleWeights.Lower() < 1 || cPoleWeights.Lower() > _poles.RowLength() || cPoleWeights.Upper() < 1
             || cPoleWeights.Upper() > _poles.RowLength())
         {
-            throw new ConstructionErrorException("Geom_BezierSurface::SetWeightRow");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_BezierSurface::SetWeightRow"));
         }
 
         int i;
@@ -1258,7 +1258,7 @@ public sealed partial class BezierSurface : BoundedSurface
         {
             if (cPoleWeights[i] <= Constants.Resolution())
             {
-                throw new ConstructionErrorException();
+                throw Refusal.Argument(new ConstructionErrorException());
             }
             _weights[uIndex, i] = cPoleWeights[i];
             i++;
@@ -1631,7 +1631,7 @@ public sealed partial class BezierSurface : BoundedSurface
 
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
-            throw new UndefinedDerivative3DException();
+            throw Refusal.State(new UndefinedDerivative3DException());
         }
 
         Vector3D derivative;
@@ -1692,9 +1692,8 @@ public sealed partial class BezierSurface : BoundedSurface
     /// <exception cref="OutOfRangeException">An index out of the pole grid.</exception>
     internal Point3D Pole(int uIndex, int vIndex)
     {
-        Standard_OutOfRange_Raise_if(uIndex < 1 || uIndex > _poles.ColLength() || vIndex < 1
-                                         || vIndex > _poles.RowLength(),
-                                     " ");
+        Refusal.RangeIf(uIndex < 1 || uIndex > _poles.ColLength() || vIndex < 1
+                                         || vIndex > _poles.RowLength(), FailureKind.OutOfRange, " ");
         return _poles[uIndex, vIndex];
     }
 
@@ -1702,8 +1701,7 @@ public sealed partial class BezierSurface : BoundedSurface
     /// <exception cref="DimensionErrorException">P is not NbUPoles x NbVPoles.</exception>
     internal void CopyPolesTo(NCollection_Array2<Point3D> p)
     {
-        Standard_DimensionError_Raise_if(p.RowLength() != _poles.RowLength() || p.ColLength() != _poles.ColLength(),
-                                         " ");
+        Refusal.ArgumentIf(p.RowLength() != _poles.RowLength() || p.ColLength() != _poles.ColLength(), FailureKind.DimensionError, " ");
         p.Assign(_poles);
     }
 
@@ -1809,9 +1807,8 @@ public sealed partial class BezierSurface : BoundedSurface
     /// <exception cref="OutOfRangeException">An index out of the pole grid.</exception>
     internal double Weight(int uIndex, int vIndex)
     {
-        Standard_OutOfRange_Raise_if(uIndex < 1 || uIndex > _poles.ColLength() || vIndex < 1
-                                         || vIndex > _poles.RowLength(),
-                                     " ");
+        Refusal.RangeIf(uIndex < 1 || uIndex > _poles.ColLength() || vIndex < 1
+                                         || vIndex > _poles.RowLength(), FailureKind.OutOfRange, " ");
         if (_uRational || _vRational)
         {
             return _weights[uIndex, vIndex];
@@ -1826,8 +1823,7 @@ public sealed partial class BezierSurface : BoundedSurface
     /// <exception cref="DimensionErrorException">W is not NbUPoles x NbVPoles.</exception>
     internal void CopyWeightsTo(NCollection_Array2<double> w)
     {
-        Standard_DimensionError_Raise_if(w.RowLength() != _poles.RowLength() || w.ColLength() != _poles.ColLength(),
-                                         " ");
+        Refusal.ArgumentIf(w.RowLength() != _poles.RowLength() || w.ColLength() != _poles.ColLength(), FailureKind.DimensionError, " ");
         if (_uRational || _vRational)
         {
             w.Assign(_weights);
@@ -2042,28 +2038,28 @@ public sealed partial class BezierSurface : BoundedSurface
     /// <summary>The U multiplicities (UDegree + 1 twice): a shared static array, don't modify.</summary>
     internal NCollection_Array1<int> InternalUMultiplicities()
     {
-        Standard_ProgramError_Raise_if(_poles.IsEmpty(), "Geom_BezierSurface: empty poles");
+        Refusal.StateIf(_poles.IsEmpty(), FailureKind.ProgramError, "Geom_BezierSurface: empty poles");
         return THE_MULTS[_poles.ColLength() - 1];
     }
 
     /// <summary>The V multiplicities (VDegree + 1 twice): a shared static array, don't modify.</summary>
     internal NCollection_Array1<int> InternalVMultiplicities()
     {
-        Standard_ProgramError_Raise_if(_poles.IsEmpty(), "Geom_BezierSurface: empty poles");
+        Refusal.StateIf(_poles.IsEmpty(), FailureKind.ProgramError, "Geom_BezierSurface: empty poles");
         return THE_MULTS[_poles.RowLength() - 1];
     }
 
     /// <summary>The U flat knots (UDegree + 1 zeros and ones): a shared static array, don't modify.</summary>
     internal NCollection_Array1<double> InternalUKnotSequence()
     {
-        Standard_ProgramError_Raise_if(_poles.IsEmpty(), "Geom_BezierSurface: empty poles");
+        Refusal.StateIf(_poles.IsEmpty(), FailureKind.ProgramError, "Geom_BezierSurface: empty poles");
         return THE_FKNOTS[_poles.ColLength() - 1]!;
     }
 
     /// <summary>The V flat knots (VDegree + 1 zeros and ones): a shared static array, don't modify.</summary>
     internal NCollection_Array1<double> InternalVKnotSequence()
     {
-        Standard_ProgramError_Raise_if(_poles.IsEmpty(), "Geom_BezierSurface: empty poles");
+        Refusal.StateIf(_poles.IsEmpty(), FailureKind.ProgramError, "Geom_BezierSurface: empty poles");
         return THE_FKNOTS[_poles.RowLength() - 1]!;
     }
 

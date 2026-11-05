@@ -62,9 +62,9 @@ internal static class FillRecordings
             {
                 aVal = theF();
             }
-            catch (FailureException anExc)
+            catch (Exception anExc) when (Refusal.IsFailure(anExc))
             {
-                aVal = ExcName(anExc);
+                aVal = ExcName(Refusal.Of(anExc)!);
             }
             Put(theName + ":" + aVal);
         }
@@ -376,9 +376,9 @@ internal static class FillRecordings
                 PutBezierSurface(theW, aFill.Surface());
             }
         }
-        catch (FailureException anExc)
+        catch (Exception anExc) when (Refusal.IsFailure(anExc))
         {
-            theW.Put("init:" + ExcName(anExc));
+            theW.Put("init:" + ExcName(Refusal.Of(anExc)!));
         }
     }
 
@@ -431,9 +431,9 @@ internal static class FillRecordings
             }
             PutFilling(theW, F);
         }
-        catch (FailureException anExc)
+        catch (Exception anExc) when (Refusal.IsFailure(anExc))
         {
-            theW.Put("init:" + ExcName(anExc));
+            theW.Put("init:" + ExcName(Refusal.Of(anExc)!));
         }
     }
 
@@ -621,9 +621,9 @@ internal static class FillRecordings
                 CF.Init(aUsed[0], aUsed[1], aUsed[2], aNoCheck);
             }
         }
-        catch (FailureException anExc)
+        catch (Exception anExc) when (Refusal.IsFailure(anExc))
         {
-            theW.Put("init:" + ExcName(anExc));
+            theW.Put("init:" + ExcName(Refusal.Of(anExc)!));
             return;
         }
         PutBSplineSurface(theW, CF.Surface());

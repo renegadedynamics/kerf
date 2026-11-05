@@ -325,7 +325,7 @@ internal class PointsToBSpline2D
         {
             variation.Approximate();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return;
         }

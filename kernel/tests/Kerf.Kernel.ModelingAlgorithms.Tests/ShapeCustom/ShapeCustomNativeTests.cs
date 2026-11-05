@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Healing.Custom;
 using Kerf.Engine.Topology;
@@ -91,7 +92,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
             Records.Add(($"{theHead} {aNb}", theText.Length > 0 && theText[^1] != '\n' ? theText + "\n" : theText));
         }
 
-        public void Throw(Exception theException) => Line("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theException.GetType()));
+        public void Throw(Exception theException) => Line("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(theException).GetType()));
     }
 
     private static string Text(Action<StringWriter> theWrite)
@@ -144,7 +145,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
             Assert.True(aRes.TShape()!.IsFrozen);
             theW.Block("OUT", Text(w => BrepTools.Write(aRes, w, true, false, global::Kerf.Engine.Exchange.Brep.FormatVersion.FormatVersion_VERSION_3)));
         }
-        catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or LockedShapeException))
+        catch (Exception e) when (Refusal.IsFailure(e) && (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException)))
         {
             theW.Throw(e);
         }
@@ -175,7 +176,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
                     Surface? aRes = aTool.ConvertToAnalytical(aTol, false);
                     theW.Block($"ANA {Hex(aTol)} {Hex(aTool.Gap())}", Text(aRes));
                 }
-                catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or LockedShapeException))
+                catch (Exception e) when (Refusal.IsFailure(e) && (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException)))
                 {
                     theW.Throw(e);
                 }
@@ -189,7 +190,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
                 Assert.True(aRes is null || !ReferenceEquals(aRes, aS));
                 theW.Block("PER", Text(aRes));
             }
-            catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or LockedShapeException))
+            catch (Exception e) when (Refusal.IsFailure(e) && (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException)))
             {
                 theW.Throw(e);
             }
@@ -212,7 +213,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
                 Assert.Equal(wasPeriodic, aC.IsPeriodic);
                 theW.Block("PER", Text(aRes));
             }
-            catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or LockedShapeException))
+            catch (Exception e) when (Refusal.IsFailure(e) && (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException)))
             {
                 theW.Throw(e);
             }
@@ -240,7 +241,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
                     LineCurve2D? aLine = CustomCurve2d.ConvertToLine2d(aC, f, l, 1e-4, ref cf, ref cl, ref aDev);
                     theW.Block($"LINE {Hex(cf)} {Hex(cl)} {Hex(aDev)}", Text(aLine));
                 }
-                catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or LockedShapeException))
+                catch (Exception e) when (Refusal.IsFailure(e) && (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException)))
                 {
                     theW.Throw(e);
                 }
@@ -255,7 +256,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
                         Assert.Equal(aNbKnots, aBS.KnotCount);
                         theW.Block("SIMP " + (isDone ? "1" : "0"), Text(aCurve));
                     }
-                    catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or LockedShapeException))
+                    catch (Exception e) when (Refusal.IsFailure(e) && (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException)))
                     {
                         theW.Throw(e);
                     }

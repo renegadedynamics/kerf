@@ -34,7 +34,7 @@ public readonly partial struct Sphere : IEquatable<Sphere>
     {
         _pos = a3;
         _radius = radius;
-        Standard_ConstructionError_Raise_if(radius < 0.0, "gp_Sphere() - radius should be >= 0");
+        Refusal.ArgumentIf(radius < 0.0, FailureKind.ConstructionError, "gp_Sphere() - radius should be >= 0");
     }
 
     // Copies
@@ -56,7 +56,7 @@ public readonly partial struct Sphere : IEquatable<Sphere>
     public readonly Sphere WithRadius(double r)
     {
         double newRadius = _radius;
-        Standard_ConstructionError_Raise_if(r < 0.0, "gp_Sphere::SetRadius() - radius should be >= 0");
+        Refusal.ArgumentIf(r < 0.0, FailureKind.ConstructionError, "gp_Sphere::SetRadius() - radius should be >= 0");
         newRadius = r;
         return new Sphere(_pos, newRadius);
     }

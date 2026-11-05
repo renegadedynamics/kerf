@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
@@ -141,7 +142,7 @@ public class BRepToolsTests
         Edge anEdge = ShapeCasts.Edge(anExp.Current());
         Assert.Equal(anEdge.Orientation, BrepTools.OriEdgeInFace(anEdge, aFace));
         Assert.True(BrepTools.Compare(anEdge, ShapeCasts.Edge(anEdge.Reversed())));
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(
             () => BrepTools.OriEdgeInFace(TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0)), aFace));
 
         Vertex aV1 = TestShapes.Vertex(new Point3D(0, 0, 0));
@@ -184,7 +185,7 @@ public class BRepToolsTests
         }
 
         Solid aFrozen = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        Assert.Throws<LockedShapeException>(() => BrepTools.CleanGeometry(aFrozen));
+        EngineAssert.Throws<ImmutableObjectException>(() => BrepTools.CleanGeometry(aFrozen));
 
         BrepTools.Clean(aBox);
         Assert.Null(Tool.Triangulation(aFace, out _));

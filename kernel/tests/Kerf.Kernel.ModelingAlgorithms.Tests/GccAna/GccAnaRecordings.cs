@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Construction.Constraints;
 using Kerf.Engine.Construction.Constraints.Analytic;
 using Kerf.Geometry;
@@ -166,7 +167,7 @@ internal static class GccAnaRecordings
             }
             catch (Exception e)
             {
-                aVal = "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
+                aVal = "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType());
             }
             Put(theName + ":" + aVal);
         }
@@ -186,7 +187,7 @@ internal static class GccAnaRecordings
             }
             catch (Exception e)
             {
-                Put("nb:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
+                Put("nb:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()));
                 return;
             }
             Put("nb:" + aNb.ToString(CultureInfo.InvariantCulture));
@@ -550,7 +551,7 @@ internal static class GccAnaRecordings
         }
         catch (Exception e) when (e is not InvalidOperationException)
         {
-            w.Put("ctor:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
+            w.Put("ctor:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()));
         }
         return w.Tokens.ToArray();
     }

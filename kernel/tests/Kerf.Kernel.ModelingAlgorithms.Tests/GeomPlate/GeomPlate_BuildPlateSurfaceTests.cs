@@ -100,7 +100,7 @@ public class GeomPlate_BuildPlateSurfaceTests
         // G0Error(Index) and the approximation
         // OCCT's bug: G0Error(Index) sizes its arrays by NbPtsOnCur (15), but the curves have more points now
         Assert.True(aBuilder.CurveConstraint(1).PointCount > 15);
-        Assert.Throws<OutOfRangeException>(() => aBuilder.G0Error(1));
+        EngineAssert.Throws<OutOfRangeException>(() => aBuilder.G0Error(1));
         var aSeq2d = new NCollection_Sequence<Xy>();
         var aSeq3d = new NCollection_Sequence<Xyz>();
         aBuilder.Disc2dContour(4, aSeq2d);
@@ -165,12 +165,12 @@ public class GeomPlate_BuildPlateSurfaceTests
         aCurves.SetValue(1, Contour()[0]);
         var aTang = new NCollection_HArray1<int>(1, 1, 0);
         var aNoPoints = new NCollection_HArray1<int>(1, 1, 0);
-        Assert.Throws<ConstructionErrorException>(() => new BuildPlateSurface(aNoPoints, aCurves, aTang, 3));
+        EngineAssert.Throws<ConstructionErrorException>(() => new BuildPlateSurface(aNoPoints, aCurves, aTang, 3));
         var aPoints = new NCollection_HArray1<int>(1, 1, 10);
-        Assert.Throws<ConstructionErrorException>(() => new BuildPlateSurface(aPoints, aCurves, aTang, 1));
-        Assert.Throws<ConstructionErrorException>(() => new BuildPlateSurface(aPoints, aCurves, aTang, 3, 0));
-        Assert.Throws<ConstructionErrorException>(() => new BuildPlateSurface(3, 10, 0));
-        Assert.Throws<ConstructionErrorException>(() => new BuildPlateSurface(1));
+        EngineAssert.Throws<ConstructionErrorException>(() => new BuildPlateSurface(aPoints, aCurves, aTang, 1));
+        EngineAssert.Throws<ConstructionErrorException>(() => new BuildPlateSurface(aPoints, aCurves, aTang, 3, 0));
+        EngineAssert.Throws<ConstructionErrorException>(() => new BuildPlateSurface(3, 10, 0));
+        EngineAssert.Throws<ConstructionErrorException>(() => new BuildPlateSurface(1));
         var aBuilder = new BuildPlateSurface(aPoints, aCurves, aTang, 3);
         Assert.Equal(10, aBuilder.CurveConstraint(1).PointCount);
     }

@@ -114,7 +114,7 @@ public class gp_Lin2dTest
     public void ConstructFromEquation_ZeroDirection_ThrowsException()
     {
         // A=0, B=0 -> direction vector is zero -> must throw
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Line2D(0.0, 0.0, 1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Line2D(0.0, 0.0, 1.0));
     }
 
     [Fact]

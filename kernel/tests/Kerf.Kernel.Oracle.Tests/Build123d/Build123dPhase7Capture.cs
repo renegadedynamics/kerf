@@ -182,12 +182,12 @@ internal static partial class Build123dPhase7Capture
     // The runners
 
     /// <summary>The type of a native exception (OCCT's), as the oracles name it.</summary>
-    internal static string ErrorOf(Exception e) => e switch
+    internal static string ErrorOf(Exception e) => Refusal.Unwrapped(e) switch
     {
         N.OcctException o => o.Message.IndexOf(':') is int c and > 0 ? o.Message[..c] : o.Message,
         FailureException f => global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType()),
         NullReferenceException => "OSD_Exception_ACCESS_VIOLATION",
-        _ => global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()),
+        _ => global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()),
     };
 
     private static string Index(N.TopTools_IndexedMapOfShape theMap, N.TopoDS_Shape theS)
@@ -539,7 +539,7 @@ internal static partial class Build123dPhase7Capture
                 }
             }
         }
-        catch (Exception e) when (e is FailureException or NullReferenceException)
+        catch (Exception e) when ((Refusal.IsFailure(e) || e is NullReferenceException))
         {
             return new P7Port(ErrorOf(e), "", null, "");
         }

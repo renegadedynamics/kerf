@@ -425,7 +425,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
                     {
                         aPCont = global::Kerf.Engine.Topology.Properties.BRepLProp.Continuity(aPrev, aPC, u1, u2);
                     }
-                    catch (FailureException)
+                    catch (Exception caught) when (Refusal.IsFailure(caught))
                     {
                         isPThrow = true;
                     }

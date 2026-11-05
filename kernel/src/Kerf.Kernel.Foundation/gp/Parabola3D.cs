@@ -34,7 +34,7 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
     {
         _pos = a2;
         _focalLength = focal;
-        Standard_ConstructionError_Raise_if(focal < 0.0, "gp_Parab() - focal length should be >= 0");
+        Refusal.ArgumentIf(focal < 0.0, FailureKind.ConstructionError, "gp_Parab() - focal length should be >= 0");
     }
 
     /// <summary>The parabola with directrix <paramref name="d"/> and focus <paramref name="f"/>.</summary>
@@ -65,7 +65,7 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
     public readonly Parabola3D WithFocal(double focal)
     {
         double focalLength = _focalLength;
-        Standard_ConstructionError_Raise_if(focal < 0.0, "gp_Parab::SetFocal() - focal length should be >= 0");
+        Refusal.ArgumentIf(focal < 0.0, FailureKind.ConstructionError, "gp_Parab::SetFocal() - focal length should be >= 0");
         focalLength = focal;
         return new Parabola3D(_pos, focalLength);
     }

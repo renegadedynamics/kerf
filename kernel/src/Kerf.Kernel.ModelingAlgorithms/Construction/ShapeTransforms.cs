@@ -122,7 +122,7 @@ public static class ShapeProjections
                 ? wires.ToImmutable()
                 : Result<ImmutableArray<Wire>>.Failure(Diagnostic.Error(ProjectionEmpty, "The wire's projection doesn't meet the shape."));
         }
-        catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+        catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
         {
             return Result<ImmutableArray<Wire>>.Failure(FailureDiagnostics.ToDiagnostic(e));
         }

@@ -53,9 +53,9 @@ public class QuantityColorOracleTests(ITestOutputHelper output)
         {
             aP = thePort();
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
-            aP = "exception " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
+            aP = "exception " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType());
         }
         Same(theWhat, aN, aP);
     }

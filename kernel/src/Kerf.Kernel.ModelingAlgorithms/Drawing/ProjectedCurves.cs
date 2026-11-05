@@ -58,7 +58,7 @@ internal static class ProjectedCurves
                     return Within(spline, sta, end);
             }
         }
-        catch (Exception e) when (e is FailureException || e is ArgumentException)
+        catch (Exception e) when (Refusal.IsFailure(e) || e is ArgumentException)
         {
             // A curve the cases can't make: drawn as a polyline below
         }

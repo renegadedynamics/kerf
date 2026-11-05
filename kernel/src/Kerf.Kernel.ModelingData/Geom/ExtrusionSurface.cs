@@ -223,7 +223,7 @@ public sealed class ExtrusionSurface : SweptSurface
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
-            throw new UndefinedDerivative3DException();
+            throw Refusal.State(new UndefinedDerivative3DException());
         }
 
         Vector3D evalRepResult;
@@ -266,7 +266,7 @@ public sealed class ExtrusionSurface : SweptSurface
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     internal sealed override bool IsCNu(int n)
     {
-        Standard_RangeError_Raise_if(n < 0, " ");
+        Refusal.RangeIf(n < 0, FailureKind.RangeError, " ");
         return _basisCurve!.IsCN(n);
     }
 

@@ -661,9 +661,9 @@ public class BooleanOracleTests(ITestOutputHelper output)
                 }
             }
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
-            return (null, null, "throws " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
+            return (null, null, "throws " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()));
         }
     }
 

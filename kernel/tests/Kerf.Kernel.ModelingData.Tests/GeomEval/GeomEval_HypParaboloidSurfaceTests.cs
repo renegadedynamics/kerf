@@ -29,9 +29,9 @@ public class GeomEval_HypParaboloidSurfaceTest
     public void Construction_InvalidAxes_Throws()
     {
         CoordinateSystem anAx3 = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HypParaboloidSurface(anAx3, -1.0, 1.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HypParaboloidSurface(anAx3, 1.0, 0.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HypParaboloidSurface(anAx3, 0.0, 1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HypParaboloidSurface(anAx3, -1.0, 1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HypParaboloidSurface(anAx3, 1.0, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HypParaboloidSurface(anAx3, 0.0, 1.0));
     }
 
     // Test EvalD0 at u=0, v=0: P = origin
@@ -140,8 +140,8 @@ public class GeomEval_HypParaboloidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UIso(0.5));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VIso(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UIso(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VIso(0.5));
     }
 
     [Fact]
@@ -149,10 +149,10 @@ public class GeomEval_HypParaboloidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReverse());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReverse());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReversedParameter(0.5));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReversedParameter(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReverse());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReverse());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReversedParameter(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReversedParameter(0.5));
     }
 
     // Test implicit equation at evaluated points
@@ -183,8 +183,8 @@ public class GeomEval_HypParaboloidSurfaceTest
         HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
         Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(1.0, 2.0, 3.0));
 
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transform(aTrsf));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transformed(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transform(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transformed(aTrsf));
     }
 
     // Test Copy produces independent identical object
@@ -302,9 +302,9 @@ public class GeomEval_HypParaboloidSurfaceTest
         Assert.Equal(2.0, aSurf.SemiAxisA());
         Assert.Equal(4.0, aCopy.SemiAxisA());
         Assert.Equal(5.0, aCopy.SemiAxisB());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aSurf.WithSemiAxisB(-1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aSurf.WithSemiAxisB(-1.0));
 
         aSurf.Freeze();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aSurf.SetSemiAxisB(1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aSurf.SetSemiAxisB(1.0));
     }
 }

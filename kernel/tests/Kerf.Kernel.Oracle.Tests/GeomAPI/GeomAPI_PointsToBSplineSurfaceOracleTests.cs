@@ -36,7 +36,7 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
         {
             thePort();
         }
-        catch (FailureException anE)
+        catch (Exception anE) when (Refusal.IsFailure(anE))
         {
             aPortError = anE;
         }

@@ -340,7 +340,7 @@ internal class Gordon
                 }
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return false;
         }

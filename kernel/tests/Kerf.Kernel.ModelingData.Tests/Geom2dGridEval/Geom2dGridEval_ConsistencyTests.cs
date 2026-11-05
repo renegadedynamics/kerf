@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Evaluation.Grid;
@@ -296,11 +297,11 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
             {
                 aDN = theEval.EvaluateGridDN(theParams, aN);
             }
-            catch (global::Kerf.Engine.Foundation.MethodNotImplementedException)
+            catch (Exception caught) when (Refusal.Of(caught) is global::Kerf.Engine.Foundation.MethodNotImplementedException)
             {
                 // The adaptor fallback calls the adaptor's DN above 3, which Adaptor2d_OffsetCurve doesn't have
                 Assert.Null(theCurve);
-                Assert.Throws<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => theAdaptor.EvalDN(theParams.Value(1), aN));
+                EngineAssert.Throws<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => theAdaptor.EvalDN(theParams.Value(1), aN));
                 continue;
             }
             Assert.Equal(aNb, aDN.Length());

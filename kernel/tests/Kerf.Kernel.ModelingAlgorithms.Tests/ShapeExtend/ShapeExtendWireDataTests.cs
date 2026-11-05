@@ -301,7 +301,7 @@ public class ShapeExtendWireDataTests
 
         // on the frozen face's wire, the seam edge is frozen: the write throws
         var aFrozenWD = new ExtendWireData(BrepTools.OuterWire(aFrozen));
-        Assert.ThrowsAny<FailureException>(() => aFrozenWD.Reverse(aFrozen));
+        EngineAssert.ThrowsAny<FailureException>(() => aFrozenWD.Reverse(aFrozen));
         // without seams nothing is written
         Face aBoxF = FirstFace(new MakeBox(1, 1, 1).Shape());
         var aBoxWD = new ExtendWireData(BrepTools.OuterWire(aBoxF));

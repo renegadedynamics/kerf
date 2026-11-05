@@ -126,9 +126,9 @@ public class BRepTopAdaptorTests
     {
         var aTool = new BrepTopolTool();
         var aGeomSurf = new SurfaceAdaptor(new PlaneSurface(new CoordinateSystem()));
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aTool.Initialize(aGeomSurf));
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aTool.Initialize(new CurveAdaptor2D(new LineCurve2D(new Point2D(), new Direction2D()))));
-        Assert.Throws<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aTool.Initialize());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aTool.Initialize(aGeomSurf));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aTool.Initialize(new CurveAdaptor2D(new LineCurve2D(new Point2D(), new Direction2D()))));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aTool.Initialize());
         Assert.Equal(Unknown, aTool.Classify(new Point2D(), 1e-7));
     }
 

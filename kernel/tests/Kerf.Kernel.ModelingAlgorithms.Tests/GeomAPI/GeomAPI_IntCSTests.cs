@@ -300,7 +300,7 @@ public class GeomAPI_IntCSTests
     {
         HInter aHInter = new();
         Assert.False(aHInter.IsDone);
-        Assert.ThrowsAny<NotDoneException>(() => aHInter.PointCount);
+        EngineAssert.ThrowsAny<NotDoneException>(() => aHInter.PointCount);
         CurveSurfaceIntersection anInter = new();
         Assert.False(anInter.IsDone);
     }

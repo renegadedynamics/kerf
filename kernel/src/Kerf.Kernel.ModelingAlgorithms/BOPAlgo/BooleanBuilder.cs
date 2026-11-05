@@ -776,7 +776,7 @@ internal partial class BooleanBuilder : BuilderShape
             PerformInternal1(filler, range);
         }
         //
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             AddError(new AlertBuilderFailed());
         }

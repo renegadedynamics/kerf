@@ -358,11 +358,11 @@ public class AdvApp2Var_ApproxAFunc2VarTests
         Assert.Equal(0.0, anApprox.CritError(3, 1));
         Assert.Same(anApprox.Surface(1), anApprox.Surface(1));
         Assert.Equal(anApprox.UDegree(), anApprox.Surface(1).UDegree);
-        Assert.ThrowsAny<OutOfRangeException>(() => anApprox.MaxError(4));
-        Assert.ThrowsAny<OutOfRangeException>(() => anApprox.VFrontError(0));
-        Assert.ThrowsAny<OutOfRangeException>(() => anApprox.MaxError(2, 1));
-        Assert.ThrowsAny<OutOfRangeException>(() => anApprox.CritError(3, 2));
-        Assert.ThrowsAny<ImmutableObjectException>(() => anApprox.Surface(1).SetPole(1, 1, new Point3D()));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => anApprox.MaxError(4));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => anApprox.VFrontError(0));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => anApprox.MaxError(2, 1));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => anApprox.CritError(3, 2));
+        EngineAssert.ThrowsAny<ImmutableObjectException>(() => anApprox.Surface(1).SetPole(1, 1, new Point3D()));
         string aDump = anApprox.ToString();
         Assert.Contains("There is a result within the requested tolerance 1E-06", aDump);
         Assert.Contains("Number of knots in U : ", aDump);
@@ -371,9 +371,9 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     [Fact]
     public void InvalidContinuity_Throws()
     {
-        Assert.ThrowsAny<ConstructionErrorException>(
+        EngineAssert.ThrowsAny<ConstructionErrorException>(
             () => Approximate(Plane, 0, 1, 0, 1, 1e-6, C3, C1));
-        Assert.ThrowsAny<ConstructionErrorException>(
+        EngineAssert.ThrowsAny<ConstructionErrorException>(
             () => Approximate(Plane, 0, 1, 0, 1, 1e-6, C1, G1));
     }
 
@@ -383,7 +383,7 @@ public class AdvApp2Var_ApproxAFunc2VarTests
         // one 1D subspace, which the evaluator refuses (it answers only in dimension 3): the iso approximation fails
         Evaluator anEval = new(Plane);
         DichoCutting aCut = new();
-        Assert.ThrowsAny<ConstructionErrorException>(
+        EngineAssert.ThrowsAny<ConstructionErrorException>(
             () => new ApproxAFunc2Var(1, 0, 0, Tol1(1e-6), null, null, Tol2(1e-6), null, null, 0, 1, 0, 1,
                                                  IsoV, C1, C1, 1, 8, 8, 4, anEval, aCut,
                                                  aCut));

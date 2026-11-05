@@ -122,7 +122,7 @@ public abstract partial class Surface : Geometry3D
     {
         get
         {
-            Standard_NoSuchObject_Raise_if(!IsUPeriodic, "Geom_Surface::UPeriod");
+            Refusal.StateIf(!IsUPeriodic, FailureKind.NoSuchObject, "Geom_Surface::UPeriod");
             double u1, u2, v1, v2;
             ParameterBounds(out u1, out u2, out v1, out v2);
             return (u2 - u1);
@@ -138,7 +138,7 @@ public abstract partial class Surface : Geometry3D
     {
         get
         {
-            Standard_NoSuchObject_Raise_if(!IsVPeriodic, "Geom_Surface::VPeriod");
+            Refusal.StateIf(!IsVPeriodic, FailureKind.NoSuchObject, "Geom_Surface::VPeriod");
             double u1, u2, v1, v2;
             ParameterBounds(out u1, out u2, out v1, out v2);
             return (v2 - v1);

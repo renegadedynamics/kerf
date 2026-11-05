@@ -215,7 +215,7 @@ public class Adaptor3d_IsoCurveTests
             Assert.True(aRot.Value(t).IsEqual(aRU.Value(t), 1e-12));
         }
         IsoCurve aRV = new IsoCurve(aRev, IsoV, 0.5);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aRV.Degree());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aRV.Degree());
         Assert.True(aRV.IsPeriodic);
         Assert.Equal(2 * Math.PI, aRV.Period());
 
@@ -224,8 +224,8 @@ public class Adaptor3d_IsoCurveTests
         IsoCurve anEV = new IsoCurve(anExt, IsoV, 1.5);
         Circle3D aC = anEV.Circle();
         Assert.True(aC.Location.IsEqual(new Point3D(0, 0, 0).Translated(1.5 * new Vector3D(new Direction3D(0.1, 0.2, 1.0))), 1e-12));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEV.Hyperbola());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEV.Parabola());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEV.Hyperbola());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEV.Parabola());
     }
 
     [Fact]
@@ -234,12 +234,12 @@ public class Adaptor3d_IsoCurveTests
         TestSurfaceAdaptor aS = MakeSurface("plane");
         IsoCurve anIsoC = new IsoCurve(aS);
         Assert.Equal(NoneIso, anIsoC.Iso());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anIsoC.Value(0.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anIsoC.Continuity());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anIsoC.NbIntervals(C1));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anIsoC.IsClosed);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anIsoC.Load(NoneIso, 0.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => new IsoCurve(MakeSurface("cylinder")).GetType());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anIsoC.Value(0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anIsoC.Continuity());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anIsoC.NbIntervals(C1));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anIsoC.IsClosed);
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anIsoC.Load(NoneIso, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => new IsoCurve(MakeSurface("cylinder")).GetType());
 
         // Loading a surface resets the iso
         anIsoC.Load(IsoU, 1.0);

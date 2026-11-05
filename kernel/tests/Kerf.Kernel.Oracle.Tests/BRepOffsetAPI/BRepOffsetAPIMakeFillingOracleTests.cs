@@ -91,11 +91,11 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         return aText;
     }
 
-    private static string? ErrorOf(Exception theException) => theException switch
+    private static string? ErrorOf(Exception theException) => Refusal.Unwrapped(theException) switch
     {
         N.OcctException e => e.Message.IndexOf(':') is int c and > 0 ? e.Message[..c] : e.Message,
         FailureException f => global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType()),
-        _ => global::Kerf.Engine.Foundation.OcctTypeNames.Of(theException.GetType()),
+        _ => global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(theException).GetType()),
     };
 
     // ---- the operations replayed on both sides ----
@@ -255,7 +255,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         }
         catch (Exception e)
         {
-            return ErrorOf(e) ?? global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
+            return ErrorOf(e) ?? global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType());
         }
     }
 
@@ -969,7 +969,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             }
             catch (Exception e)
             {
-                aPErr = ErrorOf(e) ?? global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
+                aPErr = ErrorOf(e) ?? global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType());
             }
             if (aNErr is not null || aPErr is not null || aNRes is null || aPRes.IsNull)
             {

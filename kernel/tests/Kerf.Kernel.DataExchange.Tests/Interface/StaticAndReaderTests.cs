@@ -107,8 +107,8 @@ public class StaticAndReaderTests
         Assert.False(anObj.SetObjectValue(new ToyUnknown()));
         Assert.True(anObj.SetObjectValue(new ToyEntity("o")));
         Assert.Equal("ToyEntity", anObj.ObjectTypeName());
-        Assert.Throws<ConstructionErrorException>(() => new TypedValue("bad", MonitorValueType.ValueHexa));
-        Assert.Throws<ConstructionErrorException>(() => anObj.SetIntegerLimit(true, 1));
+        EngineAssert.Throws<ConstructionErrorException>(() => new TypedValue("bad", MonitorValueType.ValueHexa));
+        EngineAssert.Throws<ConstructionErrorException>(() => anObj.SetIntegerLimit(true, 1));
 
         var aStatic = new Static("fam", "copy.of.logical", ParamType.ParamEnum);
         Assert.Equal(ParamType.ParamEnum, aStatic.Type());

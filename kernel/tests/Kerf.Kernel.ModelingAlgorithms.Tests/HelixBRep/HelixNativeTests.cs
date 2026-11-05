@@ -217,9 +217,9 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
                 theOut.AddRange((aText[^1] == '\n' ? aText[..^1] : aText).Split('\n'));
             }
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
-            theOut.Add("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
+            theOut.Add("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()));
         }
     }
 
@@ -249,9 +249,9 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
                     Curve(theOut, aCurves[k - 1], k, aCurves.Count);
                 }
             }
-            catch (FailureException e)
+            catch (Exception e) when (Refusal.IsFailure(e))
             {
-                theOut.Add("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
+                theOut.Add("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()));
             }
             double aT2c = aT2 < aTwoPI ? aT2 : aTwoPI;
             try
@@ -266,9 +266,9 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
                     Curve(theOut, aCurves[k - 1], k, aCurves.Count);
                 }
             }
-            catch (FailureException e)
+            catch (Exception e) when (Refusal.IsFailure(e))
             {
-                theOut.Add("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
+                theOut.Add("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()));
             }
             try
             {
@@ -281,9 +281,9 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
                     Curve(theOut, aBS, 1, 1);
                 }
             }
-            catch (FailureException e)
+            catch (Exception e) when (Refusal.IsFailure(e))
             {
-                theOut.Add("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
+                theOut.Add("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()));
             }
         }
     }

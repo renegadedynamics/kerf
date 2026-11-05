@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Kerf.Analyzers;
 
 /// <summary>
-/// Reports a way to change a public type of a public namespace (<c>Kerf</c>, <c>Kerf.Geometry</c>, <c>Kerf.Topology</c>
+/// Reports a way to change a public type of a public namespace (<c>Kerf</c>, <c>Kerf.Geometry</c>, <c>Kerf.Modeling</c>
 /// and the other areas; not <c>Kerf.Engine.*</c>) from outside the kernel: a public or protected <c>set</c> accessor,
 /// a public field that isn't <c>readonly</c> or <c>const</c>, a public member of a struct that isn't <c>readonly</c>,
 /// or a public method shaped like an in-place mutator (a <c>void</c> method named <c>Set…</c>, or one of OCCT's
@@ -56,7 +56,6 @@ public sealed class PublicImmutabilityAnalyzer : DiagnosticAnalyzer
         string name = ns?.ToDisplayString() ?? "";
         return name == "Kerf" || name.StartsWith("Kerf.", System.StringComparison.Ordinal)
                && !name.StartsWith("Kerf.Engine", System.StringComparison.Ordinal)
-               && !name.StartsWith("Kerf.Modeling", System.StringComparison.Ordinal)
                && !name.StartsWith("Kerf.Kernel", System.StringComparison.Ordinal);
     }
 

@@ -79,8 +79,8 @@ public class GccAna_Lin2dTanParTests
     public void BadQualifiers_Throw()
     {
         Line2D aL = new(new Point2D(0, 0), new Direction2D(1, 0));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new Lin2dTanPar(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(Circ(0, 3, 1)), aL));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new Lin2dTanPar(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(Circ(0, 3, 1)), aL));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new Lin2dTanPar(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(Circ(0, 3, 1), global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), aL));
     }
 
@@ -88,8 +88,8 @@ public class GccAna_Lin2dTanParTests
     public void Accessors_OutOfRange()
     {
         Lin2dTanPar anAlgo = new(new Point2D(1, 1), new Line2D(new Point2D(0, 0), DX));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(2));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.WhichQualifier(0, out _));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.Tangency1(2, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(2));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.WhichQualifier(0, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.Tangency1(2, out _, out _, out _));
     }
 }

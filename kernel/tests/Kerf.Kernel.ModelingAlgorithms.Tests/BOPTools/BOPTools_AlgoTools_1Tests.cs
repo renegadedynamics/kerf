@@ -173,7 +173,7 @@ public class BOPTools_AlgoTools_1Tests
     {
         Shape aShape = ShrunkCopy("bottle.brep");
         aShape.TShape()!.FreezeGraph();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => AlgoTools.CorrectTolerances(aShape, EmptyMap(), 1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => AlgoTools.CorrectTolerances(aShape, EmptyMap(), 1.0));
     }
 
     [Fact]

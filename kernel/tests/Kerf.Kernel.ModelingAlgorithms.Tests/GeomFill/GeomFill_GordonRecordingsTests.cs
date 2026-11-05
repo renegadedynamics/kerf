@@ -181,7 +181,7 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
                     PutSurface(anOut, aGordon.Surface());
                 }
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 anOut.Add("exc");
             }
@@ -246,7 +246,7 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
                     PutSurface(anOut, aNetwork.Surface());
                 }
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 anOut.Add("exc");
             }

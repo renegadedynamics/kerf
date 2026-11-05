@@ -42,9 +42,8 @@ public readonly partial struct Cone : IEquatable<Cone>
         _radius = radius;
         _semiAngle = ang;
         double absAng = ang < 0.0 ? -ang : ang;
-        Standard_ConstructionError_Raise_if(radius < 0.0 || absAng <= Constants.Resolution()
-                                            || M_PI * 0.5 - absAng <= Constants.Resolution(),
-                                            "gp_Cone() - invalid construction parameters");
+        Refusal.ArgumentIf(radius < 0.0 || absAng <= Constants.Resolution()
+                                            || M_PI * 0.5 - absAng <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Cone() - invalid construction parameters");
     }
 
     // Copies
@@ -73,7 +72,7 @@ public readonly partial struct Cone : IEquatable<Cone>
     public readonly Cone WithRadius(double r)
     {
         double newRadius = _radius;
-        Standard_ConstructionError_Raise_if(r < 0.0, "gp_Cone::SetRadius() - radius should be positive number");
+        Refusal.ArgumentIf(r < 0.0, FailureKind.ConstructionError, "gp_Cone::SetRadius() - radius should be positive number");
         newRadius = r;
         return new Cone(_pos, _semiAngle, newRadius);
     }
@@ -81,9 +80,8 @@ public readonly partial struct Cone : IEquatable<Cone>
     public readonly Cone WithSemiAngle(double ang)
     {
         double semiAngle = _semiAngle;
-        Standard_ConstructionError_Raise_if(Math.Abs(ang) <= Constants.Resolution()
-                                            || M_PI * 0.5 - Math.Abs(ang) <= Constants.Resolution(),
-                                            "gp_Cone::SetSemiAngle() - invalid angle range");
+        Refusal.ArgumentIf(Math.Abs(ang) <= Constants.Resolution()
+                                            || M_PI * 0.5 - Math.Abs(ang) <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Cone::SetSemiAngle() - invalid angle range");
         semiAngle = ang;
         return new Cone(_pos, semiAngle, _radius);
     }

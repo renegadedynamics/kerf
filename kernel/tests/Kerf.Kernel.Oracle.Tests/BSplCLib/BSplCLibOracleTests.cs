@@ -376,7 +376,7 @@ public class BSplCLibOracleTests(ITestOutputHelper output)
                     Kerf.Engine.Geometry.Splines.BSplCLib.MovePointAndTangent(aU, aDelta, aDeltaD, 1e-9, aCurve.Degree, 0, 0, aPoles, aCurve.Weights,
                                                       aCurve.FlatKnots, aNewPoles, out anError);
                 }
-                catch (ConstructionErrorException)
+                catch (Exception caught) when (Refusal.Of(caught) is global::Kerf.Engine.Foundation.ConstructionErrorException)
                 {
                     // gp_Mat2d::Invert found the 2 x 2 system singular: the port always checks, OCCT's release build
                     // (No_Exception) doesn't and goes on with an infinite or meaningless inverse. Not comparable.

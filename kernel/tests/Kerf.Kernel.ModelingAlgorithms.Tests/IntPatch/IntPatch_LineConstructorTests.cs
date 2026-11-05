@@ -48,7 +48,7 @@ public class IntPatch_LineConstructorTests
         var aLC = new PatchLineConstructor(2);
         var aSLin = new NCollection_Sequence<PatchLine>();
         aSLin.Append(aL);
-        Assert.Throws<DomainErrorException>(() => aLC.Perform(aSLin, aL, aS1, new TopolTool(aS1), aS2,
+        EngineAssert.Throws<DomainErrorException>(() => aLC.Perform(aSLin, aL, aS1, new TopolTool(aS1), aS2,
                                                                new TopolTool(aS2), Tol));
         aLC.Perform(aSLin, aL, aS1, aD1, aS2, aD2, Tol);
         Assert.Equal(4, aLC.LineCount);

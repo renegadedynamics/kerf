@@ -166,7 +166,7 @@ public class ShapeAnalysis_CurveTests
         BSplineCurve3D anArch = Arch();
         anArch.Freeze();
         double aFirst = 0.8, aLast = 0.2;
-        Assert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => SAC.ValidateRange(anArch, ref aFirst, ref aLast, 1e-7));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => SAC.ValidateRange(anArch, ref aFirst, ref aLast, 1e-7));
 
         // a range needing no reversal reads a frozen curve
         aFirst = 0.2;

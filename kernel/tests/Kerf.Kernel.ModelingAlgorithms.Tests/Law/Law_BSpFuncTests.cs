@@ -101,7 +101,7 @@ public class Law_BSpFuncTests
         var aT3 = new NCollection_Array1<double>(1, 4);
         aLaw.Intervals(aT3, Continuity.C3);
         Assert.Equal([0.5, 1.0, 2.0, 2.5], aT3.AsSpan().ToArray());
-        Assert.Throws<DomainErrorException>(() => aLaw.NbIntervals(Continuity.G1));
+        EngineAssert.Throws<DomainErrorException>(() => aLaw.NbIntervals(Continuity.G1));
         // a law inside one span
         var anInner = new BSpFunc(aCurve, 1.2, 1.8);
         Assert.Equal(1, anInner.NbIntervals(Continuity.CN));

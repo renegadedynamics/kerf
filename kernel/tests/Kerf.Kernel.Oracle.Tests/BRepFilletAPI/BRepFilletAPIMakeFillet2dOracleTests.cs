@@ -66,7 +66,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         return aText;
     }
 
-    private static string? ErrorOf(Exception theException) => theException switch
+    private static string? ErrorOf(Exception theException) => Refusal.Unwrapped(theException) switch
     {
         N.OcctException e => e.Message.IndexOf(':') is int c and > 0 ? e.Message[..c] : e.Message,
         FailureException f => global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType()),
@@ -235,9 +235,9 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
                 }
                 aStep = $"{anOp.Kind} {(anEdge.IsNull ? "e0" : "e1")} {(int)aMaker.Status()}";
             }
-            catch (FailureException e)
+            catch (Exception e) when (Refusal.IsFailure(e))
             {
-                aStep = $"{anOp.Kind} !{Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())}";
+                aStep = $"{anOp.Kind} !{Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType())}";
             }
             aRun.Steps.Add(aStep);
         }
@@ -442,9 +442,9 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
             {
                 aPH.Add(string.Join(",", aP.Maker.Modified(aPE).Select(s => (aPResEdges.IndexOf(s) + 1))));
             }
-            catch (FailureException e)
+            catch (Exception e) when (Refusal.IsFailure(e))
             {
-                aPH.Add("!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
+                aPH.Add("!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()));
             }
         }
         for (int k = 1; k <= aN.Maker.NbCurves(); k++)
@@ -522,7 +522,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
             {
                 aFace = Profile(anOracle, isArcs, out aSize);
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 continue; // a profile the makers reject (a degenerate arc)
             }

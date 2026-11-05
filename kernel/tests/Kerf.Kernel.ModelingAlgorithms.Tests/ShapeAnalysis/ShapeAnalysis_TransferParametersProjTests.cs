@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -156,6 +157,6 @@ public class ShapeAnalysis_TransferParametersProjTests
 
         // the target edge must be writable: BRep_Builder.UpdateVertex refuses a locked (frozen) edge, as OCCT does
         aTo.TShape()!.FreezeGraph();
-        Assert.Throws<LockedShapeException>(() => TransferParametersProjAnalysis.CopyNMVertex(anInternal, aTo, anE));
+        EngineAssert.Throws<ImmutableObjectException>(() => TransferParametersProjAnalysis.CopyNMVertex(anInternal, aTo, anE));
     }
 }

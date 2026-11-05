@@ -193,11 +193,11 @@ internal class StepReader : FrameworkReader
                 status = ReturnStatus.RetFail;
             }
         }
-        catch (Exception exception) when (exception is FailureException || ImportRoot.CaughtBySignals(exception))
+        catch (Exception exception) when (Refusal.IsFailure(exception) || ImportRoot.CaughtBySignals(exception))
         {
             using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
             sout.Append("    ****    Interruption ReadFile par Exception :   ****\n");
-            sout.Append(exception.Message);
+            sout.Append(Refusal.Unwrapped(exception).Message);
             sout.Append("\n    Abandon").Append('\n');
             status = ReturnStatus.RetFail;
         }

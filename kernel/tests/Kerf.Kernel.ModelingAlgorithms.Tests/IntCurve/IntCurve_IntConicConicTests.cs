@@ -589,7 +589,7 @@ public class IntCurve_IntConicConicTests
     {
         IConicTool ITool = new(theUnitCircle);
         PConic PCurve = new(new Line2D(Ax(0, 0, 1, 0)));
-        Assert.ThrowsAny<ConstructionErrorException>(
+        EngineAssert.ThrowsAny<ConstructionErrorException>(
             () => new IntImpConicParConic(ITool, Closed(u => global::Kerf.Engine.Geometry.ElCLib.Value(u, theUnitCircle)), PCurve,
                                                    new TwoDDomain(), TolConf, Tol));
     }

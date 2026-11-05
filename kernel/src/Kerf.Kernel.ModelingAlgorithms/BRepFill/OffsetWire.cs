@@ -488,8 +488,8 @@ internal sealed class OffsetWire
                 PerformWithBiLo(_workSpine, offset, _bilo, _link, _joinType, alt);
             }
         }
-        catch (Exception exception) when (exception is FailureException or NullReferenceException
-                                            && exception is not (ImmutableObjectException or LockedShapeException))
+        catch (Exception exception) when ((Refusal.IsFailure(exception) || exception is NullReferenceException)
+                                            && exception is not ImmutableObjectException)
         {
             // OCC_CATCH_SIGNALS turns OCCT's access violations (a null bisector, occt-issues.md) into failures caught
             // here: the port's NullReferenceException (decision 917)

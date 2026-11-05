@@ -116,7 +116,7 @@ public static class Sweeps
         {
             builder.Perform();
         }
-        catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+        catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
         {
             return Result<Wire>.Failure(FailureDiagnostics.ToDiagnostic(e));
         }

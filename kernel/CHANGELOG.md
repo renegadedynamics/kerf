@@ -2030,3 +2030,8 @@ Phase 10 (part): no Schematiq.Collections; the engine internal (unit 10P1).
   geometry, with no public or protected members.
 - `PublicSurfaceTests` read every public type, and fail on a public type left in the engine that isn't listed with its reason.
 - The WebAssembly sample is on the public API alone. `Kerf.Kernel.Bento.Benchmarks` no longer sees the kernel's internals.
+- Kerf's unit 10P2: no exception of the engine reaches a public caller. The public values, geometry and shapes refuse
+  misuse with `ArgumentException`, `ArgumentOutOfRangeException`, `InvalidOperationException` or `NotSupportedException`,
+  with messages free of OCCT's names; the engine still reads each as the failure it was, so results, codes and recordings
+  are unchanged. `LockedShapeException` and `FrozenShapeException` went. A trimmed curve or surface given a NaN
+  parameter is refused, where it overflowed the stack and killed the process. KERF0003 covers `Kerf.Modeling`.

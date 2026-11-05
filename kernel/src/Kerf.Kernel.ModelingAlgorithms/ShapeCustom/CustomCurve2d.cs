@@ -167,7 +167,7 @@ internal static class CustomCurve2d
                     {
                         aBSpline2d.RemoveKnot(knotIndx, mult - 1, tolerance);
                     }
-                    catch (FailureException)
+                    catch (Exception caught) when (Refusal.IsFailure(caught))
                     {
                     }
                 }

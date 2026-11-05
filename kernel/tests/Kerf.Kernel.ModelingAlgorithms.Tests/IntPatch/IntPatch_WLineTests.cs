@@ -51,7 +51,7 @@ public class IntPatch_WLineTests
         Assert.Equal(3, aW.NbPnts());
         Assert.False(aW.HasFirstPoint);
         Assert.False(aW.HasLastPoint);
-        Assert.Throws<DomainErrorException>(() => aW.FirstPoint());
+        EngineAssert.Throws<DomainErrorException>(() => aW.FirstPoint());
         Assert.True(aW.IsPurgingAllowed);
         aW.EnablePurging(false);
         Assert.False(aW.IsPurgingAllowed);
@@ -81,8 +81,8 @@ public class IntPatch_WLineTests
         Assert.Equal(new[] { 1.0, 2.0, 3.0, 5.0 },
                      Enumerable.Range(1, aW.VertexCount).Select(i => aW.Vertex(i).ParameterOnLine()));
 
-        Assert.Throws<OutOfRangeException>(() => aW.RemoveVertex(0));
-        Assert.Throws<OutOfRangeException>(() => aW.RemoveVertex(5));
+        EngineAssert.Throws<OutOfRangeException>(() => aW.RemoveVertex(0));
+        EngineAssert.Throws<OutOfRangeException>(() => aW.RemoveVertex(5));
         aW.RemoveVertex(2);
         Assert.Equal(3, aW.VertexCount);
 

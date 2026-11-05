@@ -222,7 +222,7 @@ internal partial class PaveFiller : BooleanAlgorithm
             PerformInternal(range);
         }
         //
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             AddError(new AlertIntersectionFailed());
         }

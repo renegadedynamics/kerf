@@ -204,7 +204,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aHeights[1] = 50.0;
         aPitches[1] = 10.0;
         aIsPitches[1] = true;
-        Assert.ThrowsAny<ConstructionErrorException>(() => aBuilder.SetParameters(myAxis, aDiams, aHeights, aPitches, aIsPitches));
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => aBuilder.SetParameters(myAxis, aDiams, aHeights, aPitches, aIsPitches));
     }
 
     [Fact]
@@ -217,7 +217,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aPitches[1] = 10.0;
         aPitches[2] = 10.0;
         aNbTurns[1] = 5.0;
-        Assert.ThrowsAny<ConstructionErrorException>(() => aBuilder.SetParameters(myAxis, 100.0, aPitches, aNbTurns));
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => aBuilder.SetParameters(myAxis, 100.0, aPitches, aNbTurns));
     }
 
     // Test tolerance and approximation quality

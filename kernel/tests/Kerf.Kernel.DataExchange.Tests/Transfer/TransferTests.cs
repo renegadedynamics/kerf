@@ -108,7 +108,7 @@ public class TransferTests
         // a used result can't change
         b1.SetAlreadyUsed();
         Assert.Equal(StatusResult.StatusUsed, b1.Status());
-        Assert.Throws<TransferFailureException>(() => b1.SetResult(null));
+        EngineAssert.Throws<TransferFailureException>(() => b1.SetResult(null));
 
         // fails and warnings, and Merge
         var b4 = new VoidBinder();
@@ -171,7 +171,7 @@ public class TransferTests
         var TP = new TransientProcess();
         Assert.Null(TP.Find(A));
         Assert.False(TP.IsBound(A));
-        Assert.Throws<TransferFailureException>(() => TP.IsAlreadyUsed(A));
+        EngineAssert.Throws<TransferFailureException>(() => TP.IsAlreadyUsed(A));
 
         // a void binder is replaced, its check kept
         TP.AddWarning(A, "early");
@@ -190,7 +190,7 @@ public class TransferTests
         Assert.Equal(1, TP.Check(A)!.WarningCount);
         TP.Find(A)!.SetAlreadyUsed();
         Assert.True(TP.IsAlreadyUsed(A));
-        Assert.Throws<TransferFailureException>(() => TP.Bind(A, new VoidBinder()));
+        EngineAssert.Throws<TransferFailureException>(() => TP.Bind(A, new VoidBinder()));
 
         // FindElseBind, FindTransient, FindTypedTransient
         Binder aVoid = TP.FindElseBind(B);
@@ -206,9 +206,9 @@ public class TransferTests
         TP.AddMultiple(C, D);
         TP.AddMultiple(C, E);
         Assert.Equal(2, ((MultipleBinder)TP.Find(C)!).ResultCount);
-        Assert.Throws<TransferFailureException>(() => TP.BindMultiple(A));
-        Assert.Throws<TransferFailureException>(() => TP.AddMultiple(F, D));
-        Assert.Throws<TransferFailureException>(() => TP.AddMultiple(A, D));
+        EngineAssert.Throws<TransferFailureException>(() => TP.BindMultiple(A));
+        EngineAssert.Throws<TransferFailureException>(() => TP.AddMultiple(F, D));
+        EngineAssert.Throws<TransferFailureException>(() => TP.AddMultiple(A, D));
 
         // roots
         TP.SetRoot(A);
@@ -217,7 +217,7 @@ public class TransferTests
         Assert.Same(A, TP.Root(1));
         Assert.Equal(1, TP.RootIndex(A));
         Assert.Equal(0, TP.RootIndex(B));
-        Assert.Throws<OutOfRangeException>(() => TP.Root(2));
+        EngineAssert.Throws<OutOfRangeException>(() => TP.Root(2));
 
         // OCCT's Unbind keeps the binder in the map (thelastbnd is the former binder), but drops the root
         Assert.True(TP.Unbind(A));
@@ -303,7 +303,7 @@ public class TransferTests
         IteratorOfProcessForTransient anAll = TP.CompleteResult();
         Assert.Equal(3, anAll.Number());
         Assert.False(anAll.HasStarting);
-        Assert.Throws<NoSuchObjectException>(() => anAll.Starting());
+        EngineAssert.Throws<NoSuchObjectException>(() => anAll.Starting());
         Assert.Equal(0, TP.AbnormalResult().Number());
         Assert.True(TP.CheckList(false).IsEmpty(false));
 
@@ -368,10 +368,10 @@ public class TransferTests
         Assert.Equal("Transfer stopped by exception raising", aBinder.Check().CFail(1));
         Assert.Contains("*** Raised : boom B", aPrinter.Text.ToString());
         // a binder in error status: the next transfer throws
-        Assert.Throws<TransferFailureException>(() => TP.Transferring(B));
+        EngineAssert.Throws<TransferFailureException>(() => TP.Transferring(B));
 
         TP.SetErrorHandle(false);
-        Assert.Throws<FailureException>(() => TP.Transferring(new ToyEntity("B")));
+        EngineAssert.Throws<FailureException>(() => TP.Transferring(new ToyEntity("B")));
     }
 
     [Fact]
@@ -422,7 +422,7 @@ public class TransferTests
         anIter.AddItem(b2);
         anIter.AddItem(b3);
         Assert.Equal(3, anIter.Number());
-        Assert.Throws<NoSuchObjectException>(() => new TransferIterator().Value());
+        EngineAssert.Throws<NoSuchObjectException>(() => new TransferIterator().Value());
 
         var aTypes = new List<string>();
         for (anIter.Start(); anIter.More(); anIter.Next())
@@ -464,7 +464,7 @@ public class TransferTests
         anIter.Add(new VoidBinder(), A);
         anIter.Add(new VoidBinder(), B);
         anIter.Add(new VoidBinder(), C);
-        Assert.Throws<NoSuchObjectException>(() => anIter.Add(new VoidBinder()));
+        EngineAssert.Throws<NoSuchObjectException>(() => anIter.Add(new VoidBinder()));
         var aList = new NCollection_HSequence<Transient>();
         aList.Append(B);
         anIter.Filter(aList);
@@ -634,7 +634,7 @@ public class TransferTests
         Assert.Same(A, TP.Root(1));
         Assert.Same(F, TP.Root(2));
         Assert.Equal("a", Res(TP.Find(A)));
-        Assert.Throws<TransferFailureException>(() => anOut.Transfer(new ToyEntity("Z")));
+        EngineAssert.Throws<TransferFailureException>(() => anOut.Transfer(new ToyEntity("Z")));
         anOut.Transfer(D);
         TP.AddFail(F, "f");
         Assert.Equal("F", Names(anOut.ListForStatus(false, false)));
@@ -669,7 +669,7 @@ public class TransferTests
         Assert.Equal("B C", Names(aNew2.Entities())); // the root's result and what it shares
         var aList = new IteratorOfProcessForTransient(false);
         aList.Add(new ShapeBinder());
-        Assert.Throws<TransferFailureException>(() => anIn.Entities(aList));
+        EngineAssert.Throws<TransferFailureException>(() => anIn.Entities(aList));
 
         var aFP = new FinderProcess();
         aFP.BindTransient(new TransientMapper(A), C);

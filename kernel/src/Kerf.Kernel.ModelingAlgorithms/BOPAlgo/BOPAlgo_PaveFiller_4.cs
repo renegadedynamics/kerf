@@ -95,7 +95,7 @@ internal sealed class VertexFace : ParallelAlgo, BooleanParallel.IContextSolver<
         {
             _flag = _context!.ComputeVF(_v, _f, ref _t1, ref _t2, ref _tolVNew, _fuzzyValue);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             AddError(new AlertIntersectionFailed());
         }

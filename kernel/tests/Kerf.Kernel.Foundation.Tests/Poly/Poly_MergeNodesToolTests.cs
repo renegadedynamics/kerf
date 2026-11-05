@@ -177,7 +177,7 @@ public class Poly_MergeNodesToolTest
         Assert.Equal(new Triangle1(1, 3, 4), aResult.Triangle(2));
         Assert.Equal(new Triangle1(2, 5, 3), aResult.Triangle(3));
 
-        Assert.ThrowsAny<ProgramErrorException>(() => aTool.PushLastElement(5));
+        EngineAssert.ThrowsAny<ProgramErrorException>(() => aTool.PushLastElement(5));
     }
 
     [Fact]

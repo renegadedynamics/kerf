@@ -39,7 +39,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         _pos = new Frame2D(majorAxis, isSense);
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        Standard_ConstructionError_Raise_if(minorRadius < 0.0 || majorRadius < 0.0, "gp_Hypr2d() - invalid construction parameters");
+        Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < 0.0, FailureKind.ConstructionError, "gp_Hypr2d() - invalid construction parameters");
     }
 
     /// <exception cref="ConstructionErrorException">A radius is negative.</exception>
@@ -48,7 +48,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         _pos = a;
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        Standard_ConstructionError_Raise_if(minorRadius < 0.0 || majorRadius < 0.0, "gp_Hypr2d() - invalid construction parameters");
+        Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < 0.0, FailureKind.ConstructionError, "gp_Hypr2d() - invalid construction parameters");
     }
 
     // Copies
@@ -63,7 +63,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     public readonly Hyperbola2D WithMajorRadius(double majorRadius)
     {
         double newMajorRadius = _majorRadius;
-        Standard_ConstructionError_Raise_if(majorRadius < 0.0, "gp_Hypr2d::SetMajorRadius() - major radius should be greater or equal zero");
+        Refusal.ArgumentIf(majorRadius < 0.0, FailureKind.ConstructionError, "gp_Hypr2d::SetMajorRadius() - major radius should be greater or equal zero");
         newMajorRadius = majorRadius;
         return new Hyperbola2D(_pos, newMajorRadius, _minorRadius);
     }
@@ -71,7 +71,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     public readonly Hyperbola2D WithMinorRadius(double minorRadius)
     {
         double newMinorRadius = _minorRadius;
-        Standard_ConstructionError_Raise_if(minorRadius < 0.0, "gp_Hypr2d::SetMinorRadius() - minor radius should be greater or equal zero");
+        Refusal.ArgumentIf(minorRadius < 0.0, FailureKind.ConstructionError, "gp_Hypr2d::SetMinorRadius() - minor radius should be greater or equal zero");
         newMinorRadius = minorRadius;
         return new Hyperbola2D(_pos, _majorRadius, newMinorRadius);
     }
@@ -105,7 +105,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     {
         get
         {
-            Standard_ConstructionError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr2d::Asymptote1() - major radius is zero");
+            Refusal.StateIf(_majorRadius <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Hypr2d::Asymptote1() - major radius is zero");
             Direction2D vdir = _pos.XDirection;
             Xy coord1 = _pos.XDirection.XY();
             Xy coord2 = _pos.YDirection.XY().Multiplied(_minorRadius / _majorRadius);
@@ -121,7 +121,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     {
         get
         {
-            Standard_ConstructionError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr2d::Asymptote2() - major radius is zero");
+            Refusal.StateIf(_majorRadius <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Hypr2d::Asymptote2() - major radius is zero");
             Vector2D vdir = new(_pos.XDirection);
             Xy coord1 = _pos.XDirection.XY();
             Xy coord2 = _pos.YDirection.XY().Multiplied(-_minorRadius / _majorRadius);
@@ -222,7 +222,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     {
         get
         {
-            Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr2d::Eccentricity() - major radius is zero");
+            Refusal.StateIf(_majorRadius <= Constants.Resolution(), FailureKind.DomainError, "gp_Hypr2d::Eccentricity() - major radius is zero");
             return Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius) / _majorRadius;
         }
     }
@@ -269,7 +269,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     {
         get
         {
-            Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr2d::Parameter() - major radius is zero");
+            Refusal.StateIf(_majorRadius <= Constants.Resolution(), FailureKind.DomainError, "gp_Hypr2d::Parameter() - major radius is zero");
             return (_minorRadius * _minorRadius) / _majorRadius;
         }
     }

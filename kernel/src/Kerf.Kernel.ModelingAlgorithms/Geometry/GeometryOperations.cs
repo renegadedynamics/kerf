@@ -122,7 +122,7 @@ public static partial class GeometryOperations
                         ? new ApiInterpolate(poles, options.Periodic, options.Tolerance)
                         : new ApiInterpolate(poles, new NCollection_HArray1<double>(GeometryArrays.Of(parameters.AsSpan())), options.Periodic, options.Tolerance);
                 }
-                catch (ConstructionErrorException)
+                catch (Exception caught) when (Refusal.Of(caught) is ConstructionErrorException)
                 {
                     return Result<BSplineCurve3D>.Failure(Diagnostic.Error(InterpolationFailed,
                         "Two points coincide (within the tolerance), so no curve passes through them in turn."));
@@ -255,7 +255,7 @@ public static partial class GeometryOperations
                     {
                         return GeomConvert.CurveToBSplineCurve(source);
                     }
-                    catch (FailureException)
+                    catch (Exception caught) when (Refusal.IsFailure(caught))
                     {
                         // Not convertible exactly (an offset curve, an untrimmed line): approximate
                     }
@@ -298,7 +298,7 @@ public static partial class GeometryOperations
                 // Stable, so of equally near points the first OCCT found comes first, as its LowerDistance picks it
                 return [.. points.OrderBy(static p => p.Distance)];
             }
-            catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+            catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
             {
                 return [];
             }
@@ -366,7 +366,7 @@ public static partial class GeometryOperations
                 // Stable, so of equally near points the first OCCT found comes first, as its LowerDistance picks it
                 return [.. points.OrderBy(static p => p.Distance)];
             }
-            catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+            catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
             {
                 return [];
             }
@@ -441,7 +441,7 @@ public static partial class GeometryOperations
                 // Stable, so of equally near points the first OCCT found comes first, as its LowerDistance picks it
                 return [.. points.OrderBy(static p => p.Distance)];
             }
-            catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+            catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
             {
                 return [];
             }
@@ -523,7 +523,7 @@ public static partial class GeometryOperations
         {
             return run();
         }
-        catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+        catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
         {
             Diagnostic engine = FailureDiagnostics.ToDiagnostic(e);
             return Result<T>.Failure(Diagnostic.Error(code, engine.Message));

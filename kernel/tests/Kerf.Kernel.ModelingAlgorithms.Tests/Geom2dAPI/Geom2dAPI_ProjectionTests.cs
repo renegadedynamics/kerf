@@ -41,8 +41,8 @@ public class Geom2dAPI_ProjectionTests
         // Outside the range: no orthogonal projection.
         aProj.Init(new Point2D(30, 2), aLine, -10, 10);
         Assert.Equal(0, aProj.NbPoints());
-        Assert.ThrowsAny<NotDoneException>(() => aProj.NearestPoint());
-        Assert.ThrowsAny<OutOfRangeException>(() => aProj.Point(1));
+        EngineAssert.ThrowsAny<NotDoneException>(() => aProj.NearestPoint());
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aProj.Point(1));
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class Geom2dAPI_ProjectionTests
     {
         ProjectPointOnCurve2D aProj = new();
         Assert.Equal(0, aProj.NbPoints());
-        Assert.ThrowsAny<NotDoneException>(() => aProj.LowerDistance());
+        EngineAssert.ThrowsAny<NotDoneException>(() => aProj.LowerDistance());
     }
 
     [Fact]
@@ -112,6 +112,6 @@ public class Geom2dAPI_ProjectionTests
         anExt.LowerDistanceParameters(out double aU1, out double aU2);
         Assert.Equal(0.5, aU1, 1e-7);
         Assert.Equal(0.5, aU2, 1e-7);
-        Assert.ThrowsAny<OutOfRangeException>(() => anExt.Distance(anExt.NbExtrema() + 1));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => anExt.Distance(anExt.NbExtrema() + 1));
     }
 }

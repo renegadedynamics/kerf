@@ -156,7 +156,7 @@ public class GeomFill_SectionsTests
         var aLine = new SurfaceSectionPlacement(XLaw(0, 10), new TrimmedCurve3D(new LineCurve3D(new Point3D(3, 1, 1), new Direction3D(0, 1, 1)), 0, 2));
         aLine.Perform(1e-7);
         Assert.True(aLine.IsDone);
-        Assert.Throws<FailureException>(() => aLine.Transformation(false, true));
+        EngineAssert.Throws<FailureException>(() => aLine.Transformation(false, true));
     }
 
     [Fact]

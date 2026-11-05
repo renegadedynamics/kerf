@@ -248,7 +248,7 @@ public class BRepFill_OffsetWireTests
     [Fact]
     public void Perform_without_a_spine_throws()
     {
-        Assert.Throws<NotDoneException>(() => new MakeWireOffset().Perform(1.0));
+        EngineAssert.Throws<NotDoneException>(() => new MakeWireOffset().Perform(1.0));
         // a non-planar wire: not done
         MakePolygon aMP = new(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 1), new Point3D(0, 1, 0), true);
         MakeWireOffset anOffset = new(aMP.Wire());

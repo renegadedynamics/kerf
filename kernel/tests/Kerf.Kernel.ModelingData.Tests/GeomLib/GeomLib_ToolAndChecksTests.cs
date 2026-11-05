@@ -148,7 +148,7 @@ public class GeomLib_ToolAndChecksTests
         aFrozen.SetPole(2, new Point3D(-0.1, 0, 0));
         aFrozen.Freeze();
         CheckBSplineCurve aCheckFrozen = new(aFrozen, 1e-7, 1e-7);
-        Assert.Throws<ImmutableObjectException>(() => aCheckFrozen.FixTangent(true, true));
+        EngineAssert.Throws<ImmutableObjectException>(() => aCheckFrozen.FixTangent(true, true));
 
         // A curve without reversed tangents needs no fix
         CheckBSplineCurve aWavy = new(Wavy3d(), 1e-7, 1e-7);

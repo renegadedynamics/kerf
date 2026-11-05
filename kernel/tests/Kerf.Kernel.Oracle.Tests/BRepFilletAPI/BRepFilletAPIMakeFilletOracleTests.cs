@@ -400,7 +400,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
             }
             return new Analyzer(aB.Shape()).IsValid();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return false;
         }
@@ -643,9 +643,9 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
             }
             return new Outcome(null, aStatus, aRes, aHistory);
         }
-        catch (Exception e) when (e is FailureException or NullReferenceException or IndexOutOfRangeException)
+        catch (Exception e) when ((Refusal.IsFailure(e) || e is NullReferenceException or IndexOutOfRangeException))
         {
-            return new Outcome(global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()), "", null, []);
+            return new Outcome(global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()), "", null, []);
         }
     }
 

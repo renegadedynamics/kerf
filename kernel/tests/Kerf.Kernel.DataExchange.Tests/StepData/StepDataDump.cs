@@ -130,7 +130,7 @@ internal static class StepDataDump
                 return (aRead, aWrite);
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             aRead.Add("RESULT FATAL");
             return (aRead, aWrite);
@@ -205,9 +205,9 @@ internal static class StepDataDump
                     undirec.ReadString(num, nump, "t", ach, ref aVal);
                     aRead.Add(aPrefix + Str(aVal));
                 }
-                catch (FailureException anEx)
+                catch (Exception anEx) when (Refusal.IsFailure(anEx))
                 {
-                    aRead.Add(aPrefix + "THROW " + StepFileDump.Esc(anEx.Message) + " " + StepFileDump.Esc(undirec.ParamCValue(num, nump)));
+                    aRead.Add(aPrefix + "THROW " + StepFileDump.Esc(Refusal.Unwrapped(anEx).Message) + " " + StepFileDump.Esc(undirec.ParamCValue(num, nump)));
                 }
             }
         }

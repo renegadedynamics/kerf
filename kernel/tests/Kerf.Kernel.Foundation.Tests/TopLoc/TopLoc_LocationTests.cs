@@ -86,8 +86,8 @@ public class TopLoc_LocationSemanticsTests
         Assert.Equal(0, aDefault.HashCode());
         Assert.Equal(new Transform3D(), aDefault.Transformation);
         Assert.True(aDefault.NextLocation().IsIdentity);
-        Assert.ThrowsAny<NoSuchObjectException>(() => aDefault.FirstDatum());
-        Assert.ThrowsAny<NoSuchObjectException>(() => aDefault.FirstPower());
+        EngineAssert.ThrowsAny<NoSuchObjectException>(() => aDefault.FirstDatum());
+        EngineAssert.ThrowsAny<NoSuchObjectException>(() => aDefault.FirstPower());
     }
 
     [Fact]
@@ -213,6 +213,6 @@ public class TopLoc_LocationSemanticsTests
         Assert.Equal(2, aLonger.Tail().Value()._power);
         // Each node holds the product of its own transformation and its tail's
         AssertSameTrsf(Translation(1).Powered(3), aLonger.Value()._trsf);
-        Assert.ThrowsAny<NoSuchObjectException>(() => anEmpty.Value());
+        EngineAssert.ThrowsAny<NoSuchObjectException>(() => anEmpty.Value());
     }
 }

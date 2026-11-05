@@ -190,9 +190,9 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
         {
             return theRun();
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
-            return "THROW " + e.OcctType;
+            return "THROW " + Refusal.Of(e)!.OcctType;
         }
     }
 

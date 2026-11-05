@@ -601,7 +601,7 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
                 }
             }
         }
-        catch (Exception e) when (e is FailureException or NullReferenceException)
+        catch (Exception e) when ((Refusal.IsFailure(e) || e is NullReferenceException))
         {
             return (Build123dPhase7Capture.ErrorOf(e), "", null);
         }

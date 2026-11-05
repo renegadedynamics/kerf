@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Exchange.Stl.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
@@ -118,7 +119,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
         }
         catch (Exception e)
         {
-            return "THROW class " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
+            return "THROW class " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType());
         }
     }
 

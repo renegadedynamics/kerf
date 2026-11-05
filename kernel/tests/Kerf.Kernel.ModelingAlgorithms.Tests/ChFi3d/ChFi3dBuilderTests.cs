@@ -98,7 +98,7 @@ public class ChFi3dBuilderTests
     public void ANoEdgeComputeThrowsAsOcct()
     {
         FilBuilder aB = new(Box());
-        FailureException e = Assert.Throws<FailureException>(aB.Compute);
+        FailureException e = EngineAssert.Throws<FailureException>(aB.Compute);
         Assert.Equal("There are no suitable edges for chamfer or fillet", e.Message);
     }
 
@@ -117,7 +117,7 @@ public class ChFi3dBuilderTests
         {
             Assert.Equal(ErrorStatus.StartsolFailure, aB.StripeStatus(ic));
         }
-        Assert.Throws<NoSuchObjectException>(() => aB.Shape());
+        EngineAssert.Throws<NoSuchObjectException>(() => aB.Shape());
     }
 
     [Fact]

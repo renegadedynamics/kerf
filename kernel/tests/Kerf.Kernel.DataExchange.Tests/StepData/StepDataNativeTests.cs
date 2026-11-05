@@ -166,9 +166,9 @@ public class StepDataNativeTests(ITestOutputHelper output)
 
             return aRes;
         }
-        catch (FailureException anEx)
+        catch (Exception anEx) when (Refusal.IsFailure(anEx))
         {
-            return "THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anEx.GetType()) + " " + StepFileDump.Esc(anEx.Message);
+            return "THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anEx).GetType()) + " " + StepFileDump.Esc(Refusal.Unwrapped(anEx).Message);
         }
     }
 

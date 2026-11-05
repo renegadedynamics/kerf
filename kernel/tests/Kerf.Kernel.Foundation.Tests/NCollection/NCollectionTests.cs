@@ -32,7 +32,7 @@ public class NCollectionTests
         Assert.Equal(3, anArray.Length());
         Assert.Equal((5, 7), (anArray.Lower(), anArray.Upper()));
         Assert.Equal([1.0, 2.0, 3.0], anArray.AsSpan().ToArray());
-        Assert.Throws<OutOfRangeException>(() => anArray.Value(8));
+        EngineAssert.Throws<OutOfRangeException>(() => anArray.Value(8));
     }
 
     [Fact]

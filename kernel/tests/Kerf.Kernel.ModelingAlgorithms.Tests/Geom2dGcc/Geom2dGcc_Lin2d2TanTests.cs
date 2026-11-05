@@ -156,13 +156,13 @@ public class Geom2dGcc_Lin2d2TanTests
         global::Kerf.Engine.Construction.Constraints.Lin2d2Tan aNone = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), new Point2D(0.5, 0), 1e-6);
         Assert.False(aNone.IsDone);
         Assert.Equal(0, aNone.SolutionCount);
-        Assert.Throws<NotDoneException>(() => aNone.Tangency1(1, out _, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => aNone.ThisSolution(1));
+        EngineAssert.Throws<NotDoneException>(() => aNone.Tangency1(1, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => aNone.ThisSolution(1));
 
         global::Kerf.Engine.Construction.Constraints.Lin2d2Tan aLin = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), new Point2D(0, 5), 1e-6);
-        Assert.Throws<OutOfRangeException>(() => aLin.ThisSolution(0));
-        Assert.Throws<OutOfRangeException>(() => aLin.Tangency2(3, out _, out _, out _));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+        EngineAssert.Throws<OutOfRangeException>(() => aLin.ThisSolution(0));
+        EngineAssert.Throws<OutOfRangeException>(() => aLin.Tangency2(3, out _, out _, out _));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new global::Kerf.Engine.Construction.Constraints.Lin2d2Tan(new global::Kerf.Engine.Construction.Constraints.QualifiedCurve(anEll, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), new Point2D(0, 5), 1e-6));
     }
 }

@@ -100,7 +100,7 @@ internal sealed class TestStepController : Controller
         {
             stat = WS.WorkLibrary()!.ReadFile(thePath, ref aRead, WS.Protocol());
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return ReturnStatus.RetFail;
         }
@@ -216,9 +216,9 @@ internal static class XSControlDump
             Record(O, thePath, false);
             Record(O, thePath, true);
         }
-        catch (FailureException anExc)
+        catch (Exception anExc) when (Refusal.IsFailure(anExc))
         {
-            O.Add("exception " + anExc.Message);
+            O.Add("exception " + Refusal.Unwrapped(anExc).Message);
         }
         return O;
     }

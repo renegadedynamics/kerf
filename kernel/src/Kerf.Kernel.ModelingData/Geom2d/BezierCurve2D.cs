@@ -84,7 +84,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
         int nbpoles = curvePoles.Length();
         if (nbpoles < 2 || nbpoles > (BezierCurve2D.MaxDegree + 1))
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         // init non rational
         Init(curvePoles, null);
@@ -103,12 +103,12 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
         int nbpoles = curvePoles.Length();
         if (nbpoles < 2 || nbpoles > (BezierCurve2D.MaxDegree + 1))
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
 
         if (poleWeights.Length() != nbpoles)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
 
         for (int i = 1; i <= nbpoles; i++)
@@ -116,7 +116,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
             // OCCT: indexes the weights from 1 whatever their lower bound (occt-issues.md).
             if (poleWeights[i] <= Constants.Resolution())
             {
-                throw new ConstructionErrorException();
+                throw Refusal.Argument(new ConstructionErrorException());
             }
         }
 
@@ -153,8 +153,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
             return;
         }
 
-        Standard_ConstructionError_Raise_if(deg < Degree || deg > BezierCurve2D.MaxDegree,
-                                            "Geom2d_BezierCurve::Increase");
+        Refusal.ArgumentIf(deg < Degree || deg > BezierCurve2D.MaxDegree, FailureKind.ConstructionError, "Geom2d_BezierCurve::Increase");
 
         NCollection_Array1<Point2D> npoles = new NCollection_Array1<Point2D>(1, deg + 1);
         NCollection_Array1<double> nknots = new NCollection_Array1<double>(1, 2);
@@ -206,11 +205,10 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
         CheckMutable();
         int nbpoles = PoleCount;
 
-        Standard_ConstructionError_Raise_if(nbpoles >= BezierCurve2D.MaxDegree
-                                              || weight <= Constants.Resolution(),
-                                            "Geom2d_BezierCurve::InsertPoleAfter");
+        Refusal.ArgumentIf(nbpoles >= BezierCurve2D.MaxDegree
+                                              || weight <= Constants.Resolution(), FailureKind.ConstructionError, "Geom2d_BezierCurve::InsertPoleAfter");
 
-        Standard_OutOfRange_Raise_if(index < 0 || index > nbpoles, "Geom2d_BezierCurve::InsertPoleAfter");
+        Refusal.RangeIf(index < 0 || index > nbpoles, FailureKind.OutOfRange, "Geom2d_BezierCurve::InsertPoleAfter");
 
         int i;
 
@@ -289,9 +287,9 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
         CheckMutable();
         int nbpoles = PoleCount;
 
-        Standard_ConstructionError_Raise_if(nbpoles <= 2, "Geom2d_BezierCurve::RemovePole");
+        Refusal.ArgumentIf(nbpoles <= 2, FailureKind.ConstructionError, "Geom2d_BezierCurve::RemovePole");
 
-        Standard_OutOfRange_Raise_if(index < 1 || index > nbpoles, "Geom2d_BezierCurve::RemovePole");
+        Refusal.RangeIf(index < 1 || index > nbpoles, FailureKind.OutOfRange, "Geom2d_BezierCurve::RemovePole");
 
         int i;
 
@@ -412,7 +410,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
     internal void SetPole(int index, in Point2D p)
     {
         CheckMutable();
-        Standard_OutOfRange_Raise_if(index < 1 || index > PoleCount, "Geom2d_BezierCurve::SetPole");
+        Refusal.RangeIf(index < 1 || index > PoleCount, FailureKind.OutOfRange, "Geom2d_BezierCurve::SetPole");
         _poles[index] = p;
 
         if (index == 1 || index == _poles.Length())
@@ -440,8 +438,8 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
         CheckMutable();
         int nbpoles = PoleCount;
 
-        Standard_OutOfRange_Raise_if(index < 1 || index > nbpoles, "Geom2d_BezierCurve::SetWeight");
-        Standard_ConstructionError_Raise_if(weight <= Constants.Resolution(), "Geom2d_BezierCurve::SetWeight");
+        Refusal.RangeIf(index < 1 || index > nbpoles, FailureKind.OutOfRange, "Geom2d_BezierCurve::SetWeight");
+        Refusal.ArgumentIf(weight <= Constants.Resolution(), FailureKind.ConstructionError, "Geom2d_BezierCurve::SetWeight");
 
         // compute new rationality
         bool wasrat = IsRational;
@@ -544,7 +542,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
     {
         if (n < 1)
         {
-            throw new UndefinedDerivative2DException();
+            throw Refusal.State(new UndefinedDerivative2DException());
         }
         Vector2D evalRepResult;
         if (RepUtils2D.TryEvalCurveDN(_evalRep, u, n, out evalRepResult))
@@ -572,7 +570,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
     /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
     internal Point2D Pole(int index)
     {
-        Standard_OutOfRange_Raise_if(index < 1 || index > _poles.Length(), "Geom2d_BezierCurve::Pole");
+        Refusal.RangeIf(index < 1 || index > _poles.Length(), FailureKind.OutOfRange, "Geom2d_BezierCurve::Pole");
         return _poles[index];
     }
 
@@ -580,7 +578,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
     /// <exception cref="DimensionErrorException">P's length is not NbPoles().</exception>
     internal void CopyPolesTo(NCollection_Array1<Point2D> p)
     {
-        Standard_DimensionError_Raise_if(p.Length() != _poles.Length(), "Geom2d_BezierCurve::Poles");
+        Refusal.ArgumentIf(p.Length() != _poles.Length(), FailureKind.DimensionError, "Geom2d_BezierCurve::Poles");
         p.Assign(_poles);
     }
 
@@ -597,7 +595,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
     /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
     internal double Weight(int index)
     {
-        Standard_OutOfRange_Raise_if(index < 1 || index > _poles.Length(), "Geom2d_BezierCurve::Weight");
+        Refusal.RangeIf(index < 1 || index > _poles.Length(), FailureKind.OutOfRange, "Geom2d_BezierCurve::Weight");
         if (IsRational)
         {
             return _weights[index];
@@ -613,7 +611,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
     internal void CopyWeightsTo(NCollection_Array1<double> w)
     {
         int nbpoles = PoleCount;
-        Standard_DimensionError_Raise_if(w.Length() != nbpoles, "Geom2d_BezierCurve::Weights");
+        Refusal.ArgumentIf(w.Length() != nbpoles, FailureKind.DimensionError, "Geom2d_BezierCurve::Weights");
         if (IsRational)
         {
             w.Assign(_weights);
@@ -724,14 +722,14 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
     /// <summary>The shared multiplicity array of this degree, for ported code: don't modify it.</summary>
     internal NCollection_Array1<int> InternalMultiplicities()
     {
-        Standard_ProgramError_Raise_if(_poles.IsEmpty(), "Geom2d_BezierCurve: empty poles");
+        Refusal.StateIf(_poles.IsEmpty(), FailureKind.ProgramError, "Geom2d_BezierCurve: empty poles");
         return THE_MULTS[_poles.Length() - 1];
     }
 
     /// <summary>The shared flat knot array of this degree, for ported code: don't modify it.</summary>
     internal NCollection_Array1<double> InternalKnotSequence()
     {
-        Standard_ProgramError_Raise_if(_poles.IsEmpty(), "Geom2d_BezierCurve: empty poles");
+        Refusal.StateIf(_poles.IsEmpty(), FailureKind.ProgramError, "Geom2d_BezierCurve: empty poles");
         return THE_FKNOTS[_poles.Length() - 1];
     }
 

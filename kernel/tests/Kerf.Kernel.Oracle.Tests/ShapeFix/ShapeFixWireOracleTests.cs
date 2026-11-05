@@ -120,7 +120,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
         return theShape.TShape()!.IsFrozen ? aFix.Shape() : aFix.InternalShape();
     }
 
-    private static string? ErrorOf(Exception theException) => theException switch
+    private static string? ErrorOf(Exception theException) => Refusal.Unwrapped(theException) switch
     {
         N.OcctException e => e.Message.IndexOf(':') is int c and > 0 ? e.Message[..c] : e.Message,
         FailureException f => global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType()),
@@ -168,7 +168,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
             {
                 aPRes = PortFixShape(isFrozen ? aPS : aUS, thePrecision, theMaxTol, out aPStatus, out aPD1, out aPD2);
             }
-            catch (FailureException e)
+            catch (Exception e) when (Refusal.IsFailure(e))
             {
                 aPErr = ErrorOf(e);
             }

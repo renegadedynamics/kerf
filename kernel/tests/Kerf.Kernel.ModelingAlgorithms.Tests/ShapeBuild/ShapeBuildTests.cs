@@ -241,15 +241,15 @@ public class ShapeBuildTests
     {
         var sbe = new BuildEdgeBuilder();
         (Edge anE, Face aF) = BoxEdge();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.RemoveCurve3d(anE));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.SetRange3d(anE, 0, 1));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.RemovePCurve(anE, aF));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.CopyRanges(anE, anE));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.RemoveCurve3d(anE));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.SetRange3d(anE, 0, 1));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.RemovePCurve(anE, aF));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.CopyRanges(anE, anE));
 
         // OCCT's BuildCurve3d catches every failure; the port lets the frozen edge's through
         (Edge aPOnly, _) = PCurveOnlyEdge();
         Edge aFrozen = TestShapes.Frozen(aPOnly);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.BuildCurve3d(aFrozen));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.BuildCurve3d(aFrozen));
     }
 
     [Fact]

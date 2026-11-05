@@ -221,8 +221,8 @@ public class Geom2dEval_AHTBezierCurveTest
         AhtBezierCurve2D aCurve = createFullBasisCurve();
         Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(1.0, 2.0));
 
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));
     }
 
     [Fact]
@@ -247,7 +247,7 @@ public class Geom2dEval_AHTBezierCurveTest
         // Verify behavior: transformation is not supported on the copy either.
         Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(10.0, 10.0));
         AhtBezierCurve2D aCopyHandle = (AhtBezierCurve2D)aCopy;
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCopyHandle.Transform(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCopyHandle.Transform(aTrsf));
 
         Point2D aOrigMid = aCurve.EvalD0(0.5);
         Point2D aCopyMid = aCopyHandle.EvalD0(0.5);
@@ -273,7 +273,7 @@ public class Geom2dEval_AHTBezierCurveTest
         aPoles.SetValue(3, new Point2D(1.0, 1.0));
         aPoles.SetValue(4, new Point2D(0.0, 1.0));
         // algDegree=1, alpha=1.0, beta=1.0 => basisDim = 2+2+2 = 6, but only 4 poles
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new AhtBezierCurve2D(aPoles, 1, 1.0, 1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new AhtBezierCurve2D(aPoles, 1, 1.0, 1.0));
     }
 
     [Fact]
@@ -283,7 +283,7 @@ public class Geom2dEval_AHTBezierCurveTest
         aPoles.SetValue(1, new Point2D(0.0, 0.0));
         aPoles.SetValue(2, new Point2D(1.0, 0.0));
         aPoles.SetValue(3, new Point2D(2.0, 0.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new AhtBezierCurve2D(aPoles, 2, -1.0, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new AhtBezierCurve2D(aPoles, 2, -1.0, 0.0));
     }
 
     [Fact]
@@ -293,7 +293,7 @@ public class Geom2dEval_AHTBezierCurveTest
         aPoles.SetValue(1, new Point2D(0.0, 0.0));
         aPoles.SetValue(2, new Point2D(1.0, 0.0));
         aPoles.SetValue(3, new Point2D(2.0, 0.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new AhtBezierCurve2D(aPoles, 2, 0.0, -1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new AhtBezierCurve2D(aPoles, 2, 0.0, -1.0));
     }
 
     [Fact]
@@ -306,7 +306,7 @@ public class Geom2dEval_AHTBezierCurveTest
         NCollection_Array1<double> aWeights = new(1, 2);
         aWeights.SetValue(1, 1.0);
         aWeights.SetValue(2, 1.0);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new AhtBezierCurve2D(aPoles, aWeights, 2, 0.0, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new AhtBezierCurve2D(aPoles, aWeights, 2, 0.0, 0.0));
     }
 
     [Fact]
@@ -320,15 +320,15 @@ public class Geom2dEval_AHTBezierCurveTest
         aWeights.SetValue(1, 1.0);
         aWeights.SetValue(2, -1.0);
         aWeights.SetValue(3, 1.0);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new AhtBezierCurve2D(aPoles, aWeights, 2, 0.0, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new AhtBezierCurve2D(aPoles, aWeights, 2, 0.0, 0.0));
     }
 
     [Fact]
     public void Reverse_NotImplemented()
     {
         AhtBezierCurve2D aCurve = createFullBasisCurve();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Reverse());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.ReversedParameter(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Reverse());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.ReversedParameter(0.5));
     }
 
     [Fact]

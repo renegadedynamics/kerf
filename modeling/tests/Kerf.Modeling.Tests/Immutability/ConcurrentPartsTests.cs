@@ -32,7 +32,7 @@ public class ConcurrentPartsTests
     private static string Text(Shape shape)
     {
         using var stream = new MemoryStream();
-        Assert.True(Exporters3D.ExportBrep(shape, stream));
+        Assert.True(Exporters3D.ExportBrep(shape, stream).IsSuccess);
         ShapeMesh mesh = shape.Triangulate();
         return System.Text.Encoding.UTF8.GetString(stream.ToArray()) + $"\n{mesh.TriangleCount} triangles, volume {shape.Volume:R}";
     }

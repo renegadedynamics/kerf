@@ -761,7 +761,7 @@ internal static partial class BuilderTools
                     bb.Add(rFaces, fSp);
                 }
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 continue;
             }

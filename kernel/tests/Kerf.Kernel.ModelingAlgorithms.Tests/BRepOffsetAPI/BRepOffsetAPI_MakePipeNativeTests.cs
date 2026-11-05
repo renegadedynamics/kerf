@@ -180,9 +180,9 @@ public class BRepOffsetAPI_MakePipeNativeTests(ITestOutputHelper output)
                 }
             }
         }
-        catch (FailureException anE)
+        catch (Exception anE) when (Refusal.IsFailure(anE))
         {
-            aOut.Append($"THROW {Kerf.Engine.Foundation.OcctTypeNames.Of(anE.GetType())}\n");
+            aOut.Append($"THROW {Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anE).GetType())}\n");
         }
         catch (Exception anE) when (anE is NullReferenceException or IndexOutOfRangeException)
         {

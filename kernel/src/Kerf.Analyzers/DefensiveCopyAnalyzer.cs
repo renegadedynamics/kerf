@@ -50,7 +50,8 @@ public sealed class DefensiveCopyAnalyzer : DiagnosticAnalyzer
         }
 
         var type = method.ContainingType;
-        if (type is null || !type.IsValueType || type.IsReadOnly || type.IsRefLikeType)
+        // A tuple has no method that changes it, though ValueTuple's aren't marked readonly
+        if (type is null || !type.IsValueType || type.IsReadOnly || type.IsRefLikeType || type.IsTupleType)
         {
             return;
         }

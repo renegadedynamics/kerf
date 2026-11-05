@@ -205,7 +205,7 @@ public class GeomIntTests
     {
         (global::Kerf.Engine.Intersection.Surfaces.LineConstructor aLC, SurfaceAdaptor aHS1, SurfaceAdaptor aHS2) = PlanePlane();
         Assert.False(aLC.IsDone);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aLC.PartCount);
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aLC.PartCount);
 
         // Points x = 0..9 at (x, 0) on S1 and (x, 1) on S2; vertices at points 1, 5 and 10. The middle of [1, 5] is
         // point 3 (x = 2), inside both; the middle of [5, 10] is point 7 (x = 6), outside the second domain.

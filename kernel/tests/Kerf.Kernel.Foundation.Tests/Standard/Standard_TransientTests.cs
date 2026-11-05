@@ -28,7 +28,7 @@ public class Standard_TransientTests
         aCounter.Freeze();
 
         Assert.True(aCounter.IsFrozen);
-        Assert.Throws<ImmutableObjectException>(aCounter.Increment);
+        EngineAssert.Throws<ImmutableObjectException>(aCounter.Increment);
         Assert.Equal(1, aCounter.Value);
     }
 

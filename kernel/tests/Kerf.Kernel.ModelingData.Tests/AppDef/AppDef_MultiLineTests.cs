@@ -30,9 +30,9 @@ public class AppDef_MultiLineTests
         Assert.Equal(new Vector3D(0, 0, 2), aMPC.Curv(1));
         Assert.Equal(new Vector2D(3, 0), aMPC.Curv2d(2));
         Assert.Equal(new Point2D(6, 7), aMPC.Point2d(3));
-        Assert.Throws<OutOfRangeException>(() => aMPC.Tang(2));
-        Assert.Throws<OutOfRangeException>(() => aMPC.Tang2d(1));
-        Assert.Throws<ConstructionErrorException>(() => new MultiPointConstraint(aP, aP2d, aV, aV2d, aC, NCollection_Array1<Vector2D>.From([new Vector2D(3, 0)])));
+        EngineAssert.Throws<OutOfRangeException>(() => aMPC.Tang(2));
+        EngineAssert.Throws<OutOfRangeException>(() => aMPC.Tang2d(1));
+        EngineAssert.Throws<ConstructionErrorException>(() => new MultiPointConstraint(aP, aP2d, aV, aV2d, aC, NCollection_Array1<Vector2D>.From([new Vector2D(3, 0)])));
 
         MultiPointConstraint aPlain = new(2, 0);
         Assert.False(aPlain.IsTangencyPoint);
@@ -41,7 +41,7 @@ public class AppDef_MultiLineTests
         Assert.False(aPlain.IsCurvaturePoint);
         aPlain.SetCurv(1, new Vector3D(0, 0, 1));
         Assert.True(aPlain.IsCurvaturePoint);
-        Assert.Throws<OutOfRangeException>(() => aPlain.SetTang(3, new Vector3D(1, 0, 0)));
+        EngineAssert.Throws<OutOfRangeException>(() => aPlain.SetTang(3, new Vector3D(1, 0, 0)));
         Assert.Equal("AppDef_MultiPointConstraint dump:\n", aPlain.ToString());
     }
 
@@ -53,9 +53,9 @@ public class AppDef_MultiLineTests
         Assert.Equal(3, aLine.MultiPointCount);
         Assert.Equal(1, aLine.PointCount);
         Assert.Equal(new Point3D(2, 1, 0), aLine.Value(3).Point(1));
-        Assert.Throws<OutOfRangeException>(() => aLine.Value(0));
-        Assert.Throws<OutOfRangeException>(() => aLine.Value(4));
-        Assert.Throws<ConstructionErrorException>(() => new MultiLine(-1));
+        EngineAssert.Throws<OutOfRangeException>(() => aLine.Value(0));
+        EngineAssert.Throws<OutOfRangeException>(() => aLine.Value(4));
+        EngineAssert.Throws<ConstructionErrorException>(() => new MultiLine(-1));
         Assert.Equal("AppDef_MultiLine dump:\nIt contains 3 MultiPointConstraint\n", aLine.ToString());
 
         MultiLine aLine2d = new(NCollection_Array1<Point2D>.From([new Point2D(1, 1), new Point2D(2, 2)]));

@@ -178,6 +178,6 @@ public class XSAlgoTests
         // and not on a published shape
         var aFace2 = ShapeCasts.Face(new Explorer(aBox, ShapeType.Face).Current());
         var anEdge2 = ShapeCasts.Edge(new Explorer(aFace2, ShapeType.Edge).Current());
-        Assert.ThrowsAny<FailureException>(() => aContainer.CheckPCurve(anEdge2, aFace2, 1e-3, false, aStatics));
+        EngineAssert.ThrowsAny<FailureException>(() => aContainer.CheckPCurve(anEdge2, aFace2, 1e-3, false, aStatics));
     }
 }

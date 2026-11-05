@@ -302,7 +302,7 @@ public class Extrema_SurfaceCSSSTests
         Assert.Equal(aC.Value(1.3).SquareDistanceTo(aS.Value(1.7, 0.6)), aF.SquareDistance(1), 1e-14);
         Assert.Equal(1.3, aF.PointOnCurve(1).Parameter());
 
-        Assert.Throws<TypeMismatchException>(() => new FuncExtCS().Value(X, F));
+        EngineAssert.Throws<TypeMismatchException>(() => new FuncExtCS().Value(X, F));
     }
 
     [Fact]
@@ -401,8 +401,8 @@ public class Extrema_SurfaceCSSSTests
         Assert.True(aMin <= aSampled + 1e-9, $"{aMin} > sampled {aSampled}");
         Assert.True(Math.Sqrt(aMin) > Math.Sqrt(aSampled) - 0.05);
 
-        Assert.Throws<OutOfRangeException>(() => anExt.SquareDistance(anExt.ExtCount + 1));
-        Assert.Throws<NotDoneException>(() => new GenExtCS().ExtCount);
+        EngineAssert.Throws<OutOfRangeException>(() => anExt.SquareDistance(anExt.ExtCount + 1));
+        EngineAssert.Throws<NotDoneException>(() => new GenExtCS().ExtCount);
     }
 
     [Fact]
@@ -434,7 +434,7 @@ public class Extrema_SurfaceCSSSTests
         Assert.Equal(M_PI / 2, u, 1e-7);
         Assert.Equal(0.5, v, 1e-7);
 
-        Assert.Throws<NotDoneException>(() => new GenLocateExtCS().SquareDistance());
+        EngineAssert.Throws<NotDoneException>(() => new GenLocateExtCS().SquareDistance());
     }
 
     [Fact]
@@ -480,7 +480,7 @@ public class Extrema_SurfaceCSSSTests
         Assert.Equal(1, anExt.ExtCount);
         Assert.Equal(6.25, anExt.SquareDistance(1), 1e-14);
         // OCCT stores no points for parallel planes
-        Assert.ThrowsAny<FailureException>(() => anExt.Points(1, out _, out _));
+        EngineAssert.ThrowsAny<FailureException>(() => anExt.Points(1, out _, out _));
     }
 
     [Fact]

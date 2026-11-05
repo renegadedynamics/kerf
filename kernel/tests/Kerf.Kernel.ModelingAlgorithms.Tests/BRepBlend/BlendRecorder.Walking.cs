@@ -49,7 +49,7 @@ internal sealed partial class BlendRecorder
             Hex(u);
             Hex(v);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Tag(" X");
         }
@@ -59,7 +59,7 @@ internal sealed partial class BlendRecorder
             Hex(u);
             Hex(v);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Tag(" X");
         }
@@ -67,7 +67,7 @@ internal sealed partial class BlendRecorder
         {
             Hex(P.ParameterOnC1());
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Tag(" X");
         }
@@ -75,7 +75,7 @@ internal sealed partial class BlendRecorder
         {
             Hex(P.ParameterOnC2());
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Tag(" X");
         }
@@ -87,7 +87,7 @@ internal sealed partial class BlendRecorder
             {
                 Vec2d(P.Tangent2dOnS1());
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 Tag(" X");
             }
@@ -95,7 +95,7 @@ internal sealed partial class BlendRecorder
             {
                 Vec2d(P.Tangent2dOnS2());
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 Tag(" X");
             }
@@ -137,7 +137,7 @@ internal sealed partial class BlendRecorder
         {
             Int((int)L.TransitionOnS1());
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Tag(" X");
         }
@@ -145,7 +145,7 @@ internal sealed partial class BlendRecorder
         {
             Int((int)L.TransitionOnS2());
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Tag(" X");
         }
@@ -167,7 +167,7 @@ internal sealed partial class BlendRecorder
         {
             Hex(F.GetMinimalDistance());
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Tag(" X");
         }
@@ -671,7 +671,7 @@ internal sealed partial class BlendRecorder
         {
             theCase();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Fail("exception");
         }

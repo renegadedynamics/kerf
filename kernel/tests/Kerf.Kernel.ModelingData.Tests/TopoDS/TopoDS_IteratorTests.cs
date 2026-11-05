@@ -274,7 +274,7 @@ public class TopoDS_IteratorTests
         Assert.False(anIt.More());
 
         // Value() should throw Standard_NoSuchObject when !More()
-        Assert.ThrowsAny<NoSuchObjectException>(() => anIt.Value());
+        EngineAssert.ThrowsAny<NoSuchObjectException>(() => anIt.Value());
     }
 
     [Fact]

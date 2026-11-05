@@ -99,7 +99,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         Matrix2x2 matrix = _matrix;
         Xy loc = _loc;
         TransformForm shape = _shape;
-        Standard_OutOfRange_Raise_if(row < 1 || row > 2 || col < 1 || col > 3, " ");
+        Refusal.RangeIf(row < 1 || row > 2 || col < 1 || col > 3, FailureKind.OutOfRange, " ");
         if (col == 3)
         {
             loc.SetCoord(row, value);
@@ -160,7 +160,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
     /// <summary>The coefficient at a row (1 to 2) and column (1 to 3) of the 2x3 matrix.</summary>
     internal readonly double Value(int row, int col)
     {
-        Standard_OutOfRange_Raise_if(row < 1 || row > 2 || col < 1 || col > 3, " ");
+        Refusal.RangeIf(row < 1 || row > 2 || col < 1 || col > 3, FailureKind.OutOfRange, " ");
         if (col == 3)
         {
             return _loc.Coord(row);
@@ -352,25 +352,25 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
 
         if (Form == Other)
         {
-            throw new ConstructionErrorException("gp_GTrsf2d::Trsf2d() - non-orthogonal GTrsf2d(0)");
+            throw Refusal.State(new ConstructionErrorException("gp_GTrsf2d::Trsf2d() - non-orthogonal GTrsf2d(0)"));
         }
 
         double value = (_matrix.Value(1, 1) * _matrix.Value(1, 1) + _matrix.Value(2, 1) * _matrix.Value(2, 1));
         if (Math.Abs(value - 1.0) > tolerance2)
         {
-            throw new ConstructionErrorException("gp_GTrsf2d::Trsf2d() - non-orthogonal GTrsf2d(1)");
+            throw Refusal.State(new ConstructionErrorException("gp_GTrsf2d::Trsf2d() - non-orthogonal GTrsf2d(1)"));
         }
 
         value = (_matrix.Value(1, 2) * _matrix.Value(1, 2) + _matrix.Value(2, 2) * _matrix.Value(2, 2));
         if (Math.Abs(value - 1.0) > tolerance2)
         {
-            throw new ConstructionErrorException("gp_GTrsf2d::Trsf2d() - non-orthogonal GTrsf2d(2)");
+            throw Refusal.State(new ConstructionErrorException("gp_GTrsf2d::Trsf2d() - non-orthogonal GTrsf2d(2)"));
         }
 
         value = (_matrix.Value(1, 1) * _matrix.Value(1, 2) + _matrix.Value(2, 1) * _matrix.Value(2, 2));
         if (Math.Abs(value) > tolerance)
         {
-            throw new ConstructionErrorException("gp_GTrsf2d::Trsf2d() - non-orthogonal GTrsf2d(3)");
+            throw Refusal.State(new ConstructionErrorException("gp_GTrsf2d::Trsf2d() - non-orthogonal GTrsf2d(3)"));
         }
 
         return new Transform2D(_scale, _shape, _matrix, _loc);

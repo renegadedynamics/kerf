@@ -147,7 +147,7 @@ public class BRepAdaptor_CurveTests
         var aB = new BrepBuilder();
         Edge anE = new Edge();
         aB.MakeEdge(ref anE);
-        Assert.Throws<global::Kerf.Engine.Foundation.NullObjectException>(() => new EdgeCurveAdaptor(anE));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NullObjectException>(() => new EdgeCurveAdaptor(anE));
 
         Edge aLine = TestShapes.Frozen(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)));
         var aC = new EdgeCurveAdaptor(aLine);

@@ -87,7 +87,7 @@ public static class DrawingOperations
         {
             throw;
         }
-        catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+        catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Result<LineDrawing>.Failure(OperationDiagnostics.FromException(e));

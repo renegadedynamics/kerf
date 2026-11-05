@@ -143,7 +143,7 @@ public class HLRBRepAlgoTests
         Assert.Equal(2, aCopy.ShapeCount);
 
         // remove: the data structure is gone until the next update
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anAlgo.Remove(3));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anAlgo.Remove(3));
         anAlgo.Remove(1);
         Assert.Null(anAlgo.DataStructure());
         Assert.Equal(1, anAlgo.Index(aSph));
@@ -270,7 +270,7 @@ public class HLRBRepAlgoTests
         Assert.Equal(1, aCopy.ShapeCount);
         anAlgo.TolCoef(0.2);
         Assert.Equal(0.2, anAlgo.TolCoef());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anAlgo.Remove(2));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anAlgo.Remove(2));
         anAlgo.Remove(1);
         Assert.Equal(0, anAlgo.ShapeCount);
     }

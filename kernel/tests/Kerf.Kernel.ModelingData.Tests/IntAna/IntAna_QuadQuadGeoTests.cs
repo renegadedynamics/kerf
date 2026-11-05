@@ -543,16 +543,16 @@ public class IntAna_QuadQuadGeoTest
     {
         var anEmpty = new QuadQuadGeo();
         Assert.False(anEmpty.IsDone);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anEmpty.TypeInter());
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anEmpty.SolutionCount);
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anEmpty.TypeInter());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anEmpty.SolutionCount);
 
         var aPlnPln = new QuadQuadGeo(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                              new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), global::Kerf.Engine.Foundation.Precision.Angular(), Tol);
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aPlnPln.Line(2));
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aPlnPln.Circle(1));
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aPlnPln.Ellipse(1));
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aPlnPln.Hyperbola(1));
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aPlnPln.Parabola(1));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aPlnPln.Line(2));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aPlnPln.Circle(1));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aPlnPln.Ellipse(1));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aPlnPln.Hyperbola(1));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aPlnPln.Parabola(1));
         Assert.False(aPlnPln.HasCommonGen);
         Assert.Equal(new Point3D(0, 0, 0), aPlnPln.PChar());
     }

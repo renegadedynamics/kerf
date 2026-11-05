@@ -612,7 +612,7 @@ public class LocOpeTests
         // as in OCCT, the pipe lines of a straight spine are infinite lines, which GeomConvert can't convert
         var aPoints = new NCollection_Sequence<Point3D>();
         aPoints.Append(new Point3D(0.5, 0.5, 0));
-        Assert.Throws<DomainErrorException>(() => aPipe.Curves(aPoints));
+        EngineAssert.Throws<DomainErrorException>(() => aPipe.Curves(aPoints));
     }
 
     [Fact]
@@ -636,7 +636,7 @@ public class LocOpeTests
         var aDrafts = new global::Kerf.Engine.Features.Local.SplitDrafts(aBox);
         // as natively (tools/locoperec's DRAFT records, occt-issues.md): the drafted planes meet along a line, and
         // GeomFill_Pipe can't convert the infinite line to a B-spline
-        Assert.Throws<DomainErrorException>(() => aDrafts.Perform(aSide, aWire, new Direction3D(0, 0, 1),
+        EngineAssert.Throws<DomainErrorException>(() => aDrafts.Perform(aSide, aWire, new Direction3D(0, 0, 1),
                                                                    new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5 * Math.PI / 180));
         aSnap.AssertUnchanged(aBox);
         aWireSnap.AssertUnchanged(aWire);

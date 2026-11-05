@@ -440,7 +440,7 @@ internal sealed class MakeStepFace : ExportRoot
                 _done = false;
             }
         }
-        catch (FailureException theFailure)
+        catch (Exception theFailure) when (Refusal.IsFailure(theFailure))
         {
             fp.AddFail(errShape, ProcessForTransient.What(theFailure));
             _error = MakeFaceError.FaceOther;

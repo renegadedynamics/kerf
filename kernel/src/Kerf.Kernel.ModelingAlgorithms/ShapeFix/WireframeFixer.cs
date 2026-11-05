@@ -457,7 +457,7 @@ internal class WireframeFixer : RootFixer
             e3 = newedge;
             return replaceFirst;
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return replaceFirst;
         }

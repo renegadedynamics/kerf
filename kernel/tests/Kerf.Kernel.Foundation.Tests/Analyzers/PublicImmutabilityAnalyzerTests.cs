@@ -38,10 +38,13 @@ public class PublicImmutabilityAnalyzerTests
 
     [Theory]
     [InlineData("Kerf.Engine.Booleans")]
-    [InlineData("Kerf.Modeling")]
     [InlineData("Occt")]
     public void Leaves_the_engine_and_other_namespaces_alone(string ns)
         => Assert.Empty(Analyze(ns, "public sealed class C { public int X { get; set; } }"));
+
+    [Fact]
+    public void Covers_the_modelling_layer()
+        => Assert.Single(Analyze("Kerf.Modeling", "public sealed class C { public int X { get; set; } }"));
 
     [Fact]
     public void Covers_the_root_namespace()

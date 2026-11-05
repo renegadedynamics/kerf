@@ -49,7 +49,8 @@ internal static class FailureDiagnostics
     public static Diagnostic ToDiagnostic(Exception exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
-        var own = exception is FailureException failure ? failure.GetMessageString() : exception.Message;
+        exception = Refusal.Unwrapped(exception);
+        var own = Refusal.Of(exception) is { } failure ? failure.GetMessageString() : exception.Message;
         // A failure raised without a message has .NET's default one, where OCCT's would be empty
         if (own.StartsWith("Exception of type '", StringComparison.Ordinal))
             own = "";
@@ -58,7 +59,7 @@ internal static class FailureDiagnostics
     }
 
     /// <summary>The plain description of a kind of failure, by the nearest OCCT family it belongs to.</summary>
-    private static string Describe(Exception exception) => exception switch
+    internal static string Describe(Exception exception) => exception switch
     {
         NotDoneException => "the algorithm couldn't complete",
         ConstructionErrorException => "the geometry can't be constructed",

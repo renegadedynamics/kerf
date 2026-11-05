@@ -198,7 +198,7 @@ public class BRepFilletAPITests
         Assert.Equal(1, aFillet.FaultyContour(1));
         Assert.NotEqual(ErrorStatus.Ok, aFillet.StripeStatus(1));
         Assert.False(aFillet.HasResult);
-        Assert.Throws<NotDoneException>(() => aFillet.Shape());
+        EngineAssert.Throws<NotDoneException>(() => aFillet.Shape());
     }
 
     [Fact]
@@ -278,7 +278,7 @@ public class BRepFilletAPITests
         SurfaceBuilder anEmpty = new(aBox, new NCollection_List<Shape>(), 1.0);
         Assert.Equal(StatusDone.IsNotOk, anEmpty.IsDone);
         Assert.Equal(ErrorTypeStatus.EmptyList, anEmpty.StatusError());
-        Assert.Throws<NotDoneException>(() => anEmpty.NbSurface());
+        EngineAssert.Throws<NotDoneException>(() => anEmpty.NbSurface());
 
         NCollection_List<Shape> aForeign = new();
         aForeign.Append(EdgeOf(Box(), 1));
@@ -306,6 +306,6 @@ public class BRepFilletAPITests
         Assert.Equal(1000.0 - 0.5 * 10.0, ReconComparison.Volume(aChamfer), 1.0e-6);
 
         Shape aSmall = Box(1.0);
-        Assert.Throws<NotDoneException>(() => BRepFilletApi.Fillet(aSmall, [EdgeOf(aSmall, 1)], 5.0, new MakeFilletOptions()));
+        EngineAssert.Throws<NotDoneException>(() => BRepFilletApi.Fillet(aSmall, [EdgeOf(aSmall, 1)], 5.0, new MakeFilletOptions()));
     }
 }

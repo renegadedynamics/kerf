@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
@@ -98,7 +99,7 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
         {
             thePort();
         }
-        catch (global::Kerf.Engine.Foundation.FailureException anE)
+        catch (Exception anE) when (Refusal.IsFailure(anE))
         {
             aPortError = anE;
         }

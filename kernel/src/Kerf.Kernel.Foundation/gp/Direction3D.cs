@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Occt;
 using static Kerf.Geometry.TransformForm;
@@ -59,7 +60,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
             return;
         }
 
-        Standard_ConstructionError_Raise_if(sqMod <= Constants.Resolution() * Constants.Resolution(), "gp_Dir::SetCoord() - input vector has zero norm");
+        Refusal.ArgumentIf(sqMod <= Constants.Resolution() * Constants.Resolution(), FailureKind.ConstructionError, "gp_Dir::SetCoord() - input vector has zero norm");
         double d = Math.Sqrt(sqMod);
         _coord = new Xyz(xv / d, yv / d, zv / d);
     }
@@ -68,7 +69,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
 
     internal readonly Direction3D WithCoord(int index, double xi)
     {
-        Standard_OutOfRange_Raise_if(index < 1 || index > 3, "gp_Dir::SetCoord() - index is out of range [1, 3]");
+        Refusal.RangeIf(index < 1 || index > 3, FailureKind.OutOfRange, "gp_Dir::SetCoord() - index is out of range [1, 3]");
         return index == 1 ? WithX(xi) : index == 2 ? WithY(xi) : WithZ(xi);
     }
 
@@ -180,7 +181,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
             return new Direction3D(coord, isUnit: true);
         }
 
-        Standard_ConstructionError_Raise_if(sqMod <= Constants.Resolution() * Constants.Resolution(), "gp_Dir::Cross() - result vector has zero norm");
+        Refusal.ArgumentIf(sqMod <= Constants.Resolution() * Constants.Resolution(), FailureKind.ConstructionError, "gp_Dir::Cross() - result vector has zero norm");
         coord.Divide(Math.Sqrt(sqMod));
         return new Direction3D(coord, isUnit: true);
     }
@@ -195,7 +196,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
             return new Direction3D(coord, isUnit: true);
         }
 
-        Standard_ConstructionError_Raise_if(sqMod <= Constants.Resolution() * Constants.Resolution(), "gp_Dir::CrossCross() - result vector has zero norm");
+        Refusal.ArgumentIf(sqMod <= Constants.Resolution() * Constants.Resolution(), FailureKind.ConstructionError, "gp_Dir::CrossCross() - result vector has zero norm");
         coord.Divide(Math.Sqrt(sqMod));
         return new Direction3D(coord, isUnit: true);
     }

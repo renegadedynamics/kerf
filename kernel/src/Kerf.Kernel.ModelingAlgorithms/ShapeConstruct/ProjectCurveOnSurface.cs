@@ -242,7 +242,7 @@ internal class ProjectCurveOnSurface : Transient
                 return true;
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.FAIL3);
             c2D = null;
@@ -1536,7 +1536,7 @@ internal class ProjectCurveOnSurface : Transient
                 c2D = myInterPol2d.InternalCurve();
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             c2D = null;
         }
@@ -1591,7 +1591,7 @@ internal class ProjectCurveOnSurface : Transient
             c2D = new BSplineCurve2D(poles2d, weights, knots, multiplicities, crv3d.Degree, crv3d.IsPeriodic);
             return c2D;
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             c2D = null;
         }
@@ -2074,7 +2074,7 @@ internal class ProjectCurveOnSurface : Transient
             }
             return isoParam;
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return false;
         }

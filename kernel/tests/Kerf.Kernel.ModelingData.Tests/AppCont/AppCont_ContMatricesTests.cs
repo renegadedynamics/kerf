@@ -143,28 +143,28 @@ public class AppCont_ContMatricesTest
             Matrix aMat24 = new(1, 24, 1, 24);
             Matrix aMat25 = new(1, 25, 1, 25);
             ContMatrices.MMatrix(24, aMat24);
-            Assert.ThrowsAny<DimensionErrorException>(() => ContMatrices.MMatrix(25, aMat25));
+            EngineAssert.ThrowsAny<DimensionErrorException>(() => ContMatrices.MMatrix(25, aMat25));
         }
 
         {
             Matrix anInv24 = new(1, 24, 1, 24);
             Matrix anInv25 = new(1, 25, 1, 25);
             ContMatrices.InvMMatrix(24, anInv24);
-            Assert.ThrowsAny<DimensionErrorException>(() => ContMatrices.InvMMatrix(25, anInv25));
+            EngineAssert.ThrowsAny<DimensionErrorException>(() => ContMatrices.InvMMatrix(25, anInv25));
         }
 
         {
             Matrix anIBP26 = new(1, 24, 1, 24);
             Matrix anIBP27 = new(1, 25, 1, 25);
             ContMatrices.IBPMatrix(26, anIBP26);
-            Assert.ThrowsAny<DimensionErrorException>(() => ContMatrices.IBPMatrix(27, anIBP27));
+            EngineAssert.ThrowsAny<DimensionErrorException>(() => ContMatrices.IBPMatrix(27, anIBP27));
         }
 
         {
             Matrix anIBT26 = new(1, 22, 1, 22);
             Matrix anIBT27 = new(1, 23, 1, 23);
             ContMatrices.IBTMatrix(26, anIBT26);
-            Assert.ThrowsAny<DimensionErrorException>(() => ContMatrices.IBTMatrix(27, anIBT27));
+            EngineAssert.ThrowsAny<DimensionErrorException>(() => ContMatrices.IBTMatrix(27, anIBT27));
         }
 
         {
@@ -172,8 +172,8 @@ public class AppCont_ContMatricesTest
             Matrix aVB27x24 = new(1, 27, 1, 24);
             Matrix aVB26x25 = new(1, 26, 1, 25);
             ContMatrices.VBernstein(26, 24, aVB26x24);
-            Assert.ThrowsAny<DimensionErrorException>(() => ContMatrices.VBernstein(27, 24, aVB27x24));
-            Assert.ThrowsAny<DimensionErrorException>(() => ContMatrices.VBernstein(26, 25, aVB26x25));
+            EngineAssert.ThrowsAny<DimensionErrorException>(() => ContMatrices.VBernstein(27, 24, aVB27x24));
+            EngineAssert.ThrowsAny<DimensionErrorException>(() => ContMatrices.VBernstein(26, 25, aVB26x25));
         }
     }
 

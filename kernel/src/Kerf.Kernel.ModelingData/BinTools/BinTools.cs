@@ -205,7 +205,7 @@ internal static class BinTools
         catch (Exception exception) when (IsSignal(exception))
         {
             // OCCT.NET: untrusted input: a malformed stream raised an exception that OCCT doesn't catch here
-            throw new StreamFormatErrorException("BinTools::Read: " + exception.Message, exception);
+            throw new StreamFormatErrorException("BinTools::Read: " + Refusal.Unwrapped(exception).Message, exception);
         }
     }
 
@@ -625,7 +625,7 @@ internal static class BinTools
             return false;
         }
 
-        return exception is FailureException || IsSignal(exception);
+        return Refusal.IsFailure(exception) || IsSignal(exception);
     }
 
     // The .NET exceptions that stand for OCCT's access violations and the like on malformed input
@@ -643,7 +643,7 @@ internal static class BinTools
     // OCCT's message of a caught exception, "EXCEPTION in ...\n" followed by the exception
     internal static FailureException Rethrow(string theWhere, Exception exception)
     {
-        return new FailureException("EXCEPTION in " + theWhere + "\n" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(exception.GetType()) + ": "
+        return new FailureException("EXCEPTION in " + theWhere + "\n" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(exception).GetType()) + ": "
                                     + exception.Message + "\n", exception);
     }
 }

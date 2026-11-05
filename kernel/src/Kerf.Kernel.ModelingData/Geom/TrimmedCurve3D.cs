@@ -87,10 +87,12 @@ public sealed class TrimmedCurve3D : BoundedCurve3D
     internal void SetTrim(double u1, double u2, bool sense = true, bool adjustPeriodic = true)
     {
         CheckMutable();
+        // A NaN compares false either way, and Reverse would come back here for ever
+        Refusal.ArgumentIf(double.IsNaN(u1) || double.IsNaN(u2), FailureKind.ConstructionError, "The trimming parameters aren't numbers");
         bool sameSense = true;
         if (u1 == u2)
         {
-            throw new ConstructionErrorException("Geom_TrimmedCurve::U1 == U2");
+            throw Refusal.Argument(new ConstructionErrorException("Geom_TrimmedCurve::U1 == U2"));
         }
 
         double udeb = _basisCurve.FirstParameter;
@@ -130,7 +132,7 @@ public sealed class TrimmedCurve3D : BoundedCurve3D
 
             if ((udeb - _uTrim1 > global::Kerf.Engine.Foundation.Precision.PConfusion()) || (_uTrim2 - ufin > global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
-                throw new ConstructionErrorException("Geom_TrimmedCurve::parameters out of range");
+                throw Refusal.Argument(new ConstructionErrorException("Geom_TrimmedCurve::parameters out of range"));
             }
         }
         if (!sameSense)
@@ -217,7 +219,7 @@ public sealed class TrimmedCurve3D : BoundedCurve3D
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     internal sealed override bool IsCN(int n)
     {
-        Standard_RangeError_Raise_if(n < 0, " ");
+        Refusal.RangeIf(n < 0, FailureKind.RangeError, " ");
         return _basisCurve.IsCN(n);
     }
 

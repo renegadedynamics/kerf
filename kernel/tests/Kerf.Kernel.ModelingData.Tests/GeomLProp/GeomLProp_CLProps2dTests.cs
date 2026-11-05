@@ -153,7 +153,7 @@ public class GeomLProp_CLProps2dTest
     {
         // Centre of curvature is not defined for a line (zero curvature)
         var aProps = new CLProps2d(myLine, 5.0, 2, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.ThrowsAny<NotDefinedException>(() => aProps.CentreOfCurvature(out _));
+        EngineAssert.ThrowsAny<NotDefinedException>(() => aProps.CentreOfCurvature(out _));
     }
 
     [Fact]

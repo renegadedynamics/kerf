@@ -521,7 +521,7 @@ internal sealed class SurfaceSweep
                               tf[3, 3],
                               tf[3, 4]);
             }
-            catch (ConstructionErrorException)
+            catch (Exception caught) when (Refusal.Of(caught) is ConstructionErrorException)
             {
                 isTrsf = false;
             }

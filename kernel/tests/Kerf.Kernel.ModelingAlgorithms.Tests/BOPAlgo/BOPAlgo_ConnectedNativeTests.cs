@@ -309,7 +309,7 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
             {
                 aDumps.Add(Run(aState, aStep, aShapes));
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 aDumps.Add("throws\n");
             }
@@ -575,7 +575,7 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
                 {
                     Run(aState, aStep, aShapes);
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                 }
                 foreach ((string aKey, Shape aS) in aShapes)

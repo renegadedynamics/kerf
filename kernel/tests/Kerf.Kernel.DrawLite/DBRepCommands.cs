@@ -333,7 +333,7 @@ internal static class DBRepCommands
         // OCCT's TopoDS_Builder::Add refuses a shape that isn't free before it changes anything
         if (!S2.Free())
         {
-            throw new FrozenShapeException("TopoDS_Builder::Add");
+            throw new DomainErrorException("TopoDS_Builder::Add");
         }
 
         Shape aCopy = WritableCopy(S2);

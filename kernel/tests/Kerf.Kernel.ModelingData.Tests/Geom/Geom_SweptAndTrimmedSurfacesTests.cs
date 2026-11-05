@@ -36,7 +36,7 @@ public class Geom_SweptAndTrimmedSurfacesTests
             Assert.Equal(0.0, Math.Abs(P.X * aT.Y - P.Y * aT.X), 1e-12);
         }
         Assert.Equal(S.Axis.Direction, new Direction3D(0, 0, 1));
-        Assert.Throws<MethodNotImplementedException>(() => S.ReferencePlane);
+        EngineAssert.Throws<MethodNotImplementedException>(() => S.ReferencePlane);
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public class Geom_SweptAndTrimmedSurfacesTests
         double h = 1e-6;
         Assert.True((new Vector3D(S.Value(U - h, V), S.Value(U + h, V)) / (2 * h)).IsEqual(D1U, 1e-6, 1e-6));
         Assert.True((new Vector3D(S.Value(U, V - h), S.Value(U, V + h)) / (2 * h)).IsEqual(D1V, 1e-6, 1e-6));
-        Assert.Throws<UndefinedDerivative3DException>(() => S.DN(U, V, 0, 0));
+        EngineAssert.Throws<UndefinedDerivative3DException>(() => S.DN(U, V, 0, 0));
     }
 
     [Fact]
@@ -151,11 +151,11 @@ public class Geom_SweptAndTrimmedSurfacesTests
 
         E.Freeze();
         R.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => E.SetDirection(new Direction3D(1, 0, 0)));
-        Assert.Throws<ImmutableObjectException>(() => R.SetAxis(new Axis3D()));
-        Assert.Throws<ImmutableObjectException>(() => R.SetLocation(new Point3D()));
-        Assert.Throws<ImmutableObjectException>(() => E.UReverse());
-        Assert.Throws<ImmutableObjectException>(() => R.VReverse());
+        EngineAssert.Throws<ImmutableObjectException>(() => E.SetDirection(new Direction3D(1, 0, 0)));
+        EngineAssert.Throws<ImmutableObjectException>(() => R.SetAxis(new Axis3D()));
+        EngineAssert.Throws<ImmutableObjectException>(() => R.SetLocation(new Point3D()));
+        EngineAssert.Throws<ImmutableObjectException>(() => E.UReverse());
+        EngineAssert.Throws<ImmutableObjectException>(() => R.VReverse());
 
         Assert.Equal(new Direction3D(1, 0, 0), E.WithDirection(new Direction3D(1, 0, 0)).Direction);
         Assert.Equal(new Point3D(1, 1, 1), R.WithLocation(new Point3D(1, 1, 1)).Location);
@@ -198,8 +198,8 @@ public class Geom_SweptAndTrimmedSurfacesTests
         Assert.True(T4.IsUClosed);
         Assert.True(T4.IsUPeriodic);
 
-        Assert.Throws<ConstructionErrorException>(() => new TrimmedSurface(aSph, 1.0, 1.0, true));
-        Assert.Throws<ConstructionErrorException>(() => new TrimmedSurface(aSph, 0.0, 2.0, false));
+        EngineAssert.Throws<ConstructionErrorException>(() => new TrimmedSurface(aSph, 1.0, 1.0, true));
+        EngineAssert.Throws<ConstructionErrorException>(() => new TrimmedSurface(aSph, 0.0, 2.0, false));
     }
 
     [Fact]
@@ -241,7 +241,7 @@ public class Geom_SweptAndTrimmedSurfacesTests
         Assert.Equal((-3.0, 1.0), (V1, V2));
 
         T.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => T.SetTrim(0.1, 0.2, true));
+        EngineAssert.Throws<ImmutableObjectException>(() => T.SetTrim(0.1, 0.2, true));
         TrimmedSurface aRetrimmed = T.WithTrim(0.1, 0.2, true);
         aRetrimmed.ParameterBounds(out U1, out U2, out V1, out V2);
         Assert.Equal((0.1, 0.2, -1.0, 3.0), (U1, U2, V1, V2));
@@ -283,7 +283,7 @@ public class Geom_SweptAndTrimmedSurfacesTests
         Assert.Same(aBasis, T.BasisSurface);
         Assert.False(T.IsFrozen);
         Assert.False(aCyl.IsFrozen);
-        Assert.Throws<ImmutableObjectException>(() => aBasis.UReverse());
+        EngineAssert.Throws<ImmutableObjectException>(() => aBasis.UReverse());
 
         // A trimmed surface of T copies T's basis without freezing it
         TrimmedSurface aT2 = new(T, 0.6, 1.0, true);
@@ -319,7 +319,7 @@ public class Geom_SweptAndTrimmedSurfacesTests
         Assert.Same(aRBasis, R.BasisCurve);
         Assert.Same(aEBasis, E.BasisCurve);
         Assert.False(C.IsFrozen || R.IsFrozen || E.IsFrozen);
-        Assert.Throws<ImmutableObjectException>(() => aRBasis.Reverse());
+        EngineAssert.Throws<ImmutableObjectException>(() => aRBasis.Reverse());
 
         Point3D aRBefore = aRBasis.Value(1.0);
         Point3D aEBefore = aEBasis.Value(1.0);

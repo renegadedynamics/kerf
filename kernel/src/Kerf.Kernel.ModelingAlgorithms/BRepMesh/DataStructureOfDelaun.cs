@@ -612,9 +612,9 @@ internal sealed class DataStructureOfDelaun : Transient
                 return "Error: write failed";
             }
         }
-        catch (FailureException exception)
+        catch (Exception exception) when (Refusal.IsFailure(exception))
         {
-            return exception.Message;
+            return Refusal.Unwrapped(exception).Message;
         }
 
         return fileNameStr;

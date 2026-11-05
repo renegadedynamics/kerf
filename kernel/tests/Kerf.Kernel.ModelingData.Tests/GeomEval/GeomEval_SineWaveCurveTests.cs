@@ -26,10 +26,10 @@ public class GeomEval_SineWaveCurveTest
     public void Construction_InvalidParams_Throws()
     {
         Frame3D anAx2 = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new SineWaveCurve(anAx2, 0.0, 1.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new SineWaveCurve(anAx2, -1.0, 1.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new SineWaveCurve(anAx2, 1.0, 0.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new SineWaveCurve(anAx2, 1.0, -1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new SineWaveCurve(anAx2, 0.0, 1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new SineWaveCurve(anAx2, -1.0, 1.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new SineWaveCurve(anAx2, 1.0, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new SineWaveCurve(anAx2, 1.0, -1.0));
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class GeomEval_SineWaveCurveTest
         Frame3D anAx2 = new();
         SineWaveCurve aCurve = new(anAx2, 2.0, 3.0, 0.0);
         Assert.False(aCurve.IsPeriodic);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCurve.Period);
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCurve.Period);
         Assert.False(aCurve.IsClosed);
     }
 
@@ -68,8 +68,8 @@ public class GeomEval_SineWaveCurveTest
     {
         Frame3D anAx2 = new();
         SineWaveCurve aCurve = new(anAx2, 2.0, 3.0, 0.0);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Reverse());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.ReversedParameter(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Reverse());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.ReversedParameter(0.5));
     }
 
     [Fact]
@@ -127,8 +127,8 @@ public class GeomEval_SineWaveCurveTest
         SineWaveCurve aCurve = new(anAx2, 2.0, 3.0, 0.5);
         Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(1.0, 2.0, 3.0));
 
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));
     }
 
     [Fact]

@@ -114,7 +114,7 @@ public class GeomFill_FillingTests
                 Assert.True(aP[i, j].DistanceTo(new Point3D(i - 1, j - 1, 0)) < 1e-14, $"{i},{j}");
             }
         }
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => new Coons(P1, P2, Row(new Point3D()), P4));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => new Coons(P1, P2, Row(new Point3D()), P4));
     }
 
     [Fact]
@@ -138,7 +138,7 @@ public class GeomFill_FillingTests
             Assert.Equal(W4[2], aW[1, 2]);
             Assert.Equal(W2[2], aW[4, 2]);
         }
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => new Stretch(P1, P2, P3, P4, W1, W2, W1, W4.Length() == 3 ? Weights(1, 1) : W4));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => new Stretch(P1, P2, P3, P4, W1, W2, W1, W4.Length() == 3 ? Weights(1, 1) : W4));
     }
 
     [Fact]
@@ -313,7 +313,7 @@ public class GeomFill_FillingTests
         Assert.True(MaxDistanceToSurface(C1, aT) < 1e-7);
         Assert.True(MaxDistanceToSurface(C3, aT) < 1e-7);
 
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => new BSplineCurves(C1, C2, FillingStyle.CurvedStyle));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => new BSplineCurves(C1, C2, FillingStyle.CurvedStyle));
     }
 
     [Fact]
@@ -336,12 +336,12 @@ public class GeomFill_FillingTests
     {
         BSplineCurve3D[] C = Contour();
         BSplineCurve3D aFar = BS(new Point3D(10, 10, 10), new Point3D(11, 10, 10));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new BSplineCurves(C[0], C[1], C[2], aFar, FillingStyle.StretchStyle));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new BSplineCurves(C[0], C[1], C[2], aFar, FillingStyle.StretchStyle));
         BSplineCurve3D L1 = BS(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         BSplineCurve3D L2 = BS(new Point3D(1, 0, 0), new Point3D(1, 1, 0));
         BSplineCurve3D L3 = BS(new Point3D(1, 1, 0), new Point3D(0, 1, 0));
         BSplineCurve3D L4 = BS(new Point3D(0, 1, 0), new Point3D(0, 0, 0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new BSplineCurves(L1, L2, L3, L4, FillingStyle.CoonsStyle));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new BSplineCurves(L1, L2, L3, L4, FillingStyle.CoonsStyle));
         BSplineSurface aPlane = new BSplineCurves(L1, L2, L3, L4, FillingStyle.StretchStyle).Surface()!;
         Assert.True(aPlane.Value(0.5, 0.5).DistanceTo(new Point3D(0.5, 0.5, 0)) < 1e-15);
     }
@@ -433,8 +433,8 @@ public class GeomFill_FillingTests
         Assert.Equal(1e-4, B.Tol3d());
         B.Tol3d(1e-3);
         Assert.Equal(1e-3, B.Tol3d());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => B.Norm(0.5));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => B.D1Norm(0.5, out _, out _));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => B.Norm(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => B.D1Norm(0.5, out _, out _));
         B.Bounds(out double f, out double l);
         Assert.Equal(0.0, f);
         Assert.Equal(1.0, l);
@@ -609,7 +609,7 @@ public class GeomFill_FillingTests
         BSplineSurface S = Patch();
         Boundary[] B = [.. Enumerable.Range(0, 4).Select(k => FillRecordings.MakeBound(S, k, theType, 1e-4, 1e-2))];
         ConstrainedFilling F = new(8, 10);
-        Assert.Throws<global::Kerf.Engine.Foundation.FailureException>(() => F.ReBuild());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.FailureException>(() => F.ReBuild());
         F.Init(B[2], B[0], B[3], B[1], theNoCheck); // any order
         BSplineSurface R = F.Surface()!;
         Assert.True(R.IsFrozen);

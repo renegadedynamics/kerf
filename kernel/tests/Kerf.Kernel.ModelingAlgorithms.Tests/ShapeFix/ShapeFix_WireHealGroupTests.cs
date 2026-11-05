@@ -115,13 +115,13 @@ public class ShapeFix_WireHealGroupTests(ITestOutputHelper output)
                             Wire aRes = sfw.Wire();
                             Assert.True(aRes.IsNull || aRes.TShape()!.IsFrozen);
                         }
-                        catch (FailureException)
+                        catch (Exception caught) when (Refusal.IsFailure(caught))
                         {
                             aOcctExceptions++;
                         }
                         catch (Exception e)
                         {
-                            aFailures.Add($"{Path.GetFileName(aFile)} face {f} (topology {isTopo}): {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())}: {e.Message} {e.StackTrace?.Split('\n').FirstOrDefault()?.Trim()}");
+                            aFailures.Add($"{Path.GetFileName(aFile)} face {f} (topology {isTopo}): {Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType())}: {Refusal.Unwrapped(e).Message} {e.StackTrace?.Split('\n').FirstOrDefault()?.Trim()}");
                         }
                         foreach ((string aName, Func<ExtendStatus, bool> aStatus) in new (string, Func<ExtendStatus, bool>)[]
                                  {

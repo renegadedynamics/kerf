@@ -506,7 +506,7 @@ internal sealed class TranslateEdge : ImportRoot
                 c2d = Units.DegreeToRadian(c2d, convSurf, localFactors.LengthFactor(), localFactors.FactorDegreeRadian());
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return c2d;
         }

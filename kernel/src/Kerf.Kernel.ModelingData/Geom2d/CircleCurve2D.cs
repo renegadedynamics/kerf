@@ -45,7 +45,7 @@ public sealed class CircleCurve2D : ConicCurve2D
         _radius = radius;
         if (radius < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _pos = new Frame2D(a, sense);
     }
@@ -57,7 +57,7 @@ public sealed class CircleCurve2D : ConicCurve2D
         _radius = radius;
         if (radius < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _pos = a;
     }
@@ -74,7 +74,7 @@ public sealed class CircleCurve2D : ConicCurve2D
         CheckMutable();
         if (r < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _radius = r;
     }
@@ -131,7 +131,7 @@ public sealed class CircleCurve2D : ConicCurve2D
     {
         if (n < 1)
         {
-            throw new UndefinedDerivative2DException();
+            throw Refusal.State(new UndefinedDerivative2DException());
         }
         return global::Kerf.Engine.Geometry.ElCLib.CircleDN(u, _pos, _radius, n);
     }

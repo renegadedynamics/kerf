@@ -89,9 +89,9 @@ public class GProp_PEquationTest
 
         var anEq = new PEquation(aPnts, 1e-6);
         Assert.Equal(PEquation.Type.Line, anEq.GetType());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEq.Plane());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEq.Point());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEq.Box(out _, out _, out _, out _));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEq.Plane());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEq.Point());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEq.Box(out _, out _, out _, out _));
         Assert.Equal(1.0, anEq.Barycentre().X, Conf);
         Assert.Equal(2.0, anEq.Extent(3), Conf); // sorted by decreasing moment: the line is the last axis
     }

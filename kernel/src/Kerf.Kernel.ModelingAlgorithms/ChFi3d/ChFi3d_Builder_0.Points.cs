@@ -380,7 +380,7 @@ internal static partial class Builder_0
     /// <remarks>
     /// <b>This writes into the vertex</b> (<c>BRep_Builder::UpdateVertex</c>, OCCT's line 2333 and plan 2.2): the
     /// common points hold the vertices of the shape the builder works on, written in the builder's working overlay
-    /// (decision 1087, unit 10H5). Outside one, a locked vertex throws <see cref="LockedShapeException"/>.
+    /// (decision 1087, unit 10H5). Outside one, a locked vertex throws <see cref="ImmutableObjectException"/>.
     /// </remarks>
     internal static int ChFi3d_IndexPointInDS(in CommonPoint p1, DsDataStructure dStr)
     {

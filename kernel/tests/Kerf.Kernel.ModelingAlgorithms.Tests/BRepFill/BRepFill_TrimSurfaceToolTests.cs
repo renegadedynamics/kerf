@@ -104,7 +104,7 @@ public class BRepFill_TrimSurfaceToolTests
 
         ApproxSeewing anEmpty = new();
         Assert.False(anEmpty.IsDone);
-        Assert.Throws<NotDoneException>(() => anEmpty.Curve());
+        EngineAssert.Throws<NotDoneException>(() => anEmpty.Curve());
 
         ApproxSeewing anApprox = new(aML);
         Assert.True(anApprox.IsDone);

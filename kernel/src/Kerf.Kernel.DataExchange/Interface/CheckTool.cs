@@ -97,9 +97,9 @@ internal class CheckTool
             {
                 module.CheckCase(cn, ent, sh, ref ach);
             }
-            catch (FailureException exception)
+            catch (Exception exception) when (Refusal.IsFailure(exception))
             {
-                Raisecheck(exception, ach);
+                Raisecheck(Refusal.Of(exception)!, ach);
             }
         }
         else
@@ -312,10 +312,10 @@ internal class CheckTool
                 }
                 n0 = nb + 1;
             }
-            catch (FailureException exception)
+            catch (Exception exception) when (Refusal.IsFailure(exception))
             {
                 n0 = i + 1;
-                Raisecheck(exception, ach);
+                Raisecheck(Refusal.Of(exception)!, ach);
                 res.Add(ach, i);
                 _thestat |= 12;
             }
@@ -386,10 +386,10 @@ internal class CheckTool
                 }
                 n0 = nb + 1;
             }
-            catch (FailureException exception)
+            catch (Exception exception) when (Refusal.IsFailure(exception))
             {
                 n0 = i + 1;
-                Raisecheck(exception, ach);
+                Raisecheck(Refusal.Of(exception)!, ach);
                 res.Add(ach, i);
                 _thestat |= 12;
             }
@@ -430,10 +430,10 @@ internal class CheckTool
                 }
                 n0 = nb + 1;
             }
-            catch (FailureException exception)
+            catch (Exception exception) when (Refusal.IsFailure(exception))
             {
                 n0 = i + 1;
-                Raisecheck(exception, ach);
+                Raisecheck(Refusal.Of(exception)!, ach);
                 res.Add(ach, i);
                 _thestat |= 8;
             }
@@ -484,10 +484,10 @@ internal class CheckTool
                 }
                 n0 = nb + 1;
             }
-            catch (FailureException exception)
+            catch (Exception exception) when (Refusal.IsFailure(exception))
             {
                 n0 = i + 1;
-                Raisecheck(exception, ach);
+                Raisecheck(Refusal.Of(exception)!, ach);
                 res.Add(ach, i);
                 _thestat |= 4;
             }
@@ -547,10 +547,10 @@ internal class CheckTool
                 }
                 n0 = nb + 1;
             }
-            catch (FailureException exception)
+            catch (Exception exception) when (Refusal.IsFailure(exception))
             {
                 n0 = i + 1;
-                Raisecheck(exception, ach);
+                Raisecheck(Refusal.Of(exception)!, ach);
                 res.Add(ach, i);
                 _thestat |= 12;
             }

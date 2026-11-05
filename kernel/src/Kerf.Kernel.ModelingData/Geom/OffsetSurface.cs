@@ -205,7 +205,7 @@ public sealed class OffsetSurface : Surface
             // Raise exception if still C0
             if (isC0)
             {
-                throw new ConstructionErrorException("Offset with no C1 Surface");
+                throw Refusal.Argument(new ConstructionErrorException("Offset with no C1 Surface"));
             }
         }
 
@@ -331,7 +331,7 @@ public sealed class OffsetSurface : Surface
                                                 _oscSurf,
                                                 out Point3D p))
         {
-            throw new UndefinedValue3DException("Geom_OffsetSurface::EvalD0");
+            throw Refusal.State(new UndefinedValue3DException("Geom_OffsetSurface::EvalD0"));
         }
         return p;
     }
@@ -354,7 +354,7 @@ public sealed class OffsetSurface : Surface
                                                 out result.D1U,
                                                 out result.D1V))
         {
-            throw new UndefinedDerivative3DException("Geom_OffsetSurface::EvalD1");
+            throw Refusal.State(new UndefinedDerivative3DException("Geom_OffsetSurface::EvalD1"));
         }
         return result;
     }
@@ -380,7 +380,7 @@ public sealed class OffsetSurface : Surface
                                                 out result.D2V,
                                                 out result.D2UV))
         {
-            throw new UndefinedDerivative3DException("Geom_OffsetSurface::EvalD2");
+            throw Refusal.State(new UndefinedDerivative3DException("Geom_OffsetSurface::EvalD2"));
         }
         return result;
     }
@@ -410,7 +410,7 @@ public sealed class OffsetSurface : Surface
                                                 out result.D3UUV,
                                                 out result.D3UVV))
         {
-            throw new UndefinedDerivative3DException("Geom_OffsetSurface::EvalD3");
+            throw Refusal.State(new UndefinedDerivative3DException("Geom_OffsetSurface::EvalD3"));
         }
         return result;
     }
@@ -422,7 +422,7 @@ public sealed class OffsetSurface : Surface
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
-            throw new UndefinedDerivative3DException("Geom_OffsetSurface::EvalDN");
+            throw Refusal.State(new UndefinedDerivative3DException("Geom_OffsetSurface::EvalDN"));
         }
         if (RepUtils.TryEvalSurfaceDN(_evalRep, u, v, nu, nv, out Vector3D evalRepResult))
         {
@@ -438,7 +438,7 @@ public sealed class OffsetSurface : Surface
                                                 _oscSurf,
                                                 out Vector3D result))
         {
-            throw new UndefinedDerivative3DException("Geom_OffsetSurface::EvalDN");
+            throw Refusal.State(new UndefinedDerivative3DException("Geom_OffsetSurface::EvalDN"));
         }
         return result;
     }
@@ -553,7 +553,7 @@ public sealed class OffsetSurface : Surface
             Geom_OffsetSurface_UIsoEvaluator ev = new(this, uu);
             ApproxAFunction approx = new(num1, num2, num3, t1, t2, t3, v1, v2, cont, maxDeg, maxSeg, ev);
 
-            Standard_ConstructionError_Raise_if(!approx.IsDone, " Geom_OffsetSurface : UIso");
+            Refusal.ArgumentIf(!approx.IsDone, FailureKind.ConstructionError, " Geom_OffsetSurface : UIso");
 
             int nbPoles = approx.NbPoles();
 
@@ -590,7 +590,7 @@ public sealed class OffsetSurface : Surface
             Geom_OffsetSurface_VIsoEvaluator ev = new(this, vv);
             ApproxAFunction approx = new(num1, num2, num3, t1, t2, t3, u1, u2, cont, maxDeg, maxSeg, ev);
 
-            Standard_ConstructionError_Raise_if(!approx.IsDone, " Geom_OffsetSurface : VIso");
+            Refusal.ArgumentIf(!approx.IsDone, FailureKind.ConstructionError, " Geom_OffsetSurface : VIso");
 
             NCollection_Array1<Point3D> poles = new(1, approx.NbPoles());
 
@@ -608,7 +608,7 @@ public sealed class OffsetSurface : Surface
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     internal sealed override bool IsCNu(int n)
     {
-        Standard_RangeError_Raise_if(n < 0, " ");
+        Refusal.RangeIf(n < 0, FailureKind.RangeError, " ");
         return _basisSurf.IsCNu(n + 1);
     }
 
@@ -616,7 +616,7 @@ public sealed class OffsetSurface : Surface
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     internal sealed override bool IsCNv(int n)
     {
-        Standard_RangeError_Raise_if(n < 0, " ");
+        Refusal.RangeIf(n < 0, FailureKind.RangeError, " ");
         return _basisSurf.IsCNv(n + 1);
     }
 

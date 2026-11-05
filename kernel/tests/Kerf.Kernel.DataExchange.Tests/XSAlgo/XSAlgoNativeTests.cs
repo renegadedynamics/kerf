@@ -204,9 +204,9 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         {
             return theBody();
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
-            return $"{theRun} THROW {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())}";
+            return $"{theRun} THROW {Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType())}";
         }
     }
 

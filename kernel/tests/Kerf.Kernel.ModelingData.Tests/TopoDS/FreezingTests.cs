@@ -37,7 +37,7 @@ public class FreezingTests
         aBuilder.MakeEdge(ref anEdge, aLine, 1e-7);
         Assert.True(aLine.IsFrozen);
         // a frozen curve can't change; its copy can
-        Assert.Throws<ImmutableObjectException>(() => aLine.SetLocation(new Point3D(1, 1, 1)));
+        EngineAssert.Throws<ImmutableObjectException>(() => aLine.SetLocation(new Point3D(1, 1, 1)));
         var aCopy = (LineCurve3D)aLine.Copy();
         Assert.False(aCopy.IsFrozen);
         aCopy.SetLocation(new Point3D(1, 1, 1));
@@ -92,8 +92,8 @@ public class FreezingTests
         Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
         aBuilder.UpdateEdge(anEdge, aPoly);
         Assert.True(aPoly.IsFrozen);
-        Assert.Throws<ImmutableObjectException>(() => aPoly.Deflection(0.2));
-        Assert.Throws<ImmutableObjectException>(() => aPoly.ChangeNodes());
+        EngineAssert.Throws<ImmutableObjectException>(() => aPoly.Deflection(0.2));
+        EngineAssert.Throws<ImmutableObjectException>(() => aPoly.ChangeNodes());
         Assert.Equal(0.1, aPoly.Deflection());
 
         var aTri = new Triangulation(3, 1, false);
@@ -103,10 +103,10 @@ public class FreezingTests
         aTri.SetTriangle(1, new Triangle1(1, 2, 3));
         Face aFace = new();
         aBuilder.MakeFace(ref aFace, aTri);
-        Assert.Throws<ImmutableObjectException>(() => aTri.SetNode(1, new Point3D(5, 5, 5)));
-        Assert.Throws<ImmutableObjectException>(() => aTri.ComputeNormals());
-        Assert.Throws<ImmutableObjectException>(() => aTri.SetMeshPurpose(MeshPurpose.MeshPurpose_Calculation));
-        Assert.Throws<ImmutableObjectException>(() => aTri.Clear());
+        EngineAssert.Throws<ImmutableObjectException>(() => aTri.SetNode(1, new Point3D(5, 5, 5)));
+        EngineAssert.Throws<ImmutableObjectException>(() => aTri.ComputeNormals());
+        EngineAssert.Throws<ImmutableObjectException>(() => aTri.SetMeshPurpose(MeshPurpose.MeshPurpose_Calculation));
+        EngineAssert.Throws<ImmutableObjectException>(() => aTri.Clear());
         // a copy can be changed (and so meshing works on copies)
         Triangulation aCopy = aTri.Copy();
         aCopy.ComputeNormals();
@@ -119,8 +119,8 @@ public class FreezingTests
         var aPoly2D = new Polygon2D(2);
         aBuilder.UpdateEdge(anEdge, aPolyOnTri, aTri, new Placement());
         aBuilder.UpdateEdge(anEdge, aPoly2D, aFace);
-        Assert.Throws<ImmutableObjectException>(() => aPolyOnTri.SetNode(1, 2));
-        Assert.Throws<ImmutableObjectException>(() => aPoly2D.ChangeNodes());
+        EngineAssert.Throws<ImmutableObjectException>(() => aPolyOnTri.SetNode(1, 2));
+        EngineAssert.Throws<ImmutableObjectException>(() => aPoly2D.ChangeNodes());
     }
 
     [Fact]
@@ -214,7 +214,7 @@ public class FreezingTests
         Assert.True(aSecond.TShape()!.IsFrozen);
 
         Assert.Equal(0, Builder.MakeCompound().ChildCount);
-        Assert.Throws<NullObjectException>(() => Builder.MakeCompound(new Shape()));
+        EngineAssert.Throws<NullObjectException>(() => Builder.MakeCompound(new Shape()));
     }
 
     [Fact]
@@ -247,10 +247,10 @@ public class FreezingTests
         Assert.Equal(2, aCS.ChildCount);
 
         // OCCT's rules: only faces into a shell, solids into a compsolid; no null shape
-        Assert.Throws<IncompatibleShapesException>(() => Builder.MakeShell([anE1]));
-        Assert.Throws<IncompatibleShapesException>(() => Builder.MakeCompSolid([aShell]));
-        Assert.Throws<IncompatibleShapesException>(() => Builder.MakeWire([aShell]));
-        Assert.Throws<NullObjectException>(() => Builder.MakeSolid([new Shape()]));
+        EngineAssert.Throws<IncompatibleShapesException>(() => Builder.MakeShell([anE1]));
+        EngineAssert.Throws<IncompatibleShapesException>(() => Builder.MakeCompSolid([aShell]));
+        EngineAssert.Throws<IncompatibleShapesException>(() => Builder.MakeWire([aShell]));
+        EngineAssert.Throws<NullObjectException>(() => Builder.MakeSolid([new Shape()]));
         Assert.Equal(0, Builder.MakeShell([]).ChildCount);
     }
 
@@ -318,24 +318,24 @@ public class FreezingTests
         Assert.False(anEdge.TShape()!.LockedFlag()); // files carry the stored bit
 
         var aBuilder = new BrepBuilder();
-        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateEdge(anEdge, 0.1));
-        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateEdge(anEdge, new LineCurve3D(Constants.OX()), 0.1));
-        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateEdge(anEdge, new LineCurve2D(Constants.OX2d()), aFace, 0.1));
-        Assert.Throws<LockedShapeException>(() => aBuilder.Range(anEdge, 0, 1));
-        Assert.Throws<LockedShapeException>(() => aBuilder.SameParameter(anEdge, false));
-        Assert.Throws<LockedShapeException>(() => aBuilder.Degenerated(anEdge, true));
-        Assert.Throws<LockedShapeException>(() => aBuilder.Continuity(anEdge, aFace, aFace, Continuity.C1));
-        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateVertex(aVertex, new Point3D(), 0.1));
-        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateVertex(aVertex, 0.1));
-        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateVertex(aVertex, 0.0, anEdge, 0.1));
-        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateFace(aFace, 0.1));
-        Assert.Throws<LockedShapeException>(() => aBuilder.NaturalRestriction(aFace, true));
-        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateFace(aFace, (Triangulation?)null));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateEdge(anEdge, 0.1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateEdge(anEdge, new LineCurve3D(Constants.OX()), 0.1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateEdge(anEdge, new LineCurve2D(Constants.OX2d()), aFace, 0.1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.Range(anEdge, 0, 1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.SameParameter(anEdge, false));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.Degenerated(anEdge, true));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.Continuity(anEdge, aFace, aFace, Continuity.C1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateVertex(aVertex, new Point3D(), 0.1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateVertex(aVertex, 0.1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateVertex(aVertex, 0.0, anEdge, 0.1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateFace(aFace, 0.1));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.NaturalRestriction(aFace, true));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateFace(aFace, (Triangulation?)null));
         // the Make methods refuse to replace a variable holding a locked shape, as in OCCT
         Edge aVariable = anEdge;
-        Assert.Throws<LockedShapeException>(() => aBuilder.MakeEdge(ref aVariable));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.MakeEdge(ref aVariable));
         Face aFaceVariable = aFace;
-        Assert.Throws<LockedShapeException>(() => aBuilder.MakeFace(ref aFaceVariable, new PlaneSurface(new CoordinateSystem(Constants.XOY())), 1e-7));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.MakeFace(ref aFaceVariable, new PlaneSurface(new CoordinateSystem(Constants.XOY())), 1e-7));
     }
 
     [Fact]
@@ -347,22 +347,22 @@ public class FreezingTests
         var aTV = (BrepTVertex)FirstVertex(aBox).TShape()!;
         var aTF = (BrepTFace)FirstFace(aBox).TShape()!;
 
-        Assert.Throws<ImmutableObjectException>(() => aTE.ChangeCurves());
-        Assert.Throws<ImmutableObjectException>(() => aTE.Tolerance(1.0));
-        Assert.Throws<ImmutableObjectException>(() => aTE.UpdateTolerance(1.0));
-        Assert.Throws<ImmutableObjectException>(() => aTE.SameRange(false));
-        Assert.Throws<ImmutableObjectException>(() => aTV.ChangePoints());
-        Assert.Throws<ImmutableObjectException>(() => aTV.Pnt(new Point3D(1, 1, 1)));
-        Assert.Throws<ImmutableObjectException>(() => aTF.Surface(new PlaneSurface(new CoordinateSystem(Constants.XOY()))));
-        Assert.Throws<ImmutableObjectException>(() => aTF.Triangulation(null));
-        Assert.Throws<ImmutableObjectException>(() => aTF.Location(new Placement()));
+        EngineAssert.Throws<ImmutableObjectException>(() => aTE.ChangeCurves());
+        EngineAssert.Throws<ImmutableObjectException>(() => aTE.Tolerance(1.0));
+        EngineAssert.Throws<ImmutableObjectException>(() => aTE.UpdateTolerance(1.0));
+        EngineAssert.Throws<ImmutableObjectException>(() => aTE.SameRange(false));
+        EngineAssert.Throws<ImmutableObjectException>(() => aTV.ChangePoints());
+        EngineAssert.Throws<ImmutableObjectException>(() => aTV.Pnt(new Point3D(1, 1, 1)));
+        EngineAssert.Throws<ImmutableObjectException>(() => aTF.Surface(new PlaneSurface(new CoordinateSystem(Constants.XOY()))));
+        EngineAssert.Throws<ImmutableObjectException>(() => aTF.Triangulation(null));
+        EngineAssert.Throws<ImmutableObjectException>(() => aTF.Location(new Placement()));
 
         var aCR = (GCurve)aTE.Curves().First();
-        Assert.Throws<ImmutableObjectException>(() => aCR.SetRange(0, 2));
-        Assert.Throws<ImmutableObjectException>(() => aCR.Location(new Placement()));
+        EngineAssert.Throws<ImmutableObjectException>(() => aCR.SetRange(0, 2));
+        EngineAssert.Throws<ImmutableObjectException>(() => aCR.Location(new Placement()));
         CurveRepresentation aPCurveRep = aTE.CurveRepresentations().First(r => r.IsCurveOnSurface());
-        Assert.Throws<ImmutableObjectException>(() => aPCurveRep.PCurve(new LineCurve2D(Constants.OX2d())));
-        Assert.Throws<ImmutableObjectException>(() => Tool.SetUVPoints(anEdge, FirstFace(aBox), new Point2D(), new Point2D()));
+        EngineAssert.Throws<ImmutableObjectException>(() => aPCurveRep.PCurve(new LineCurve2D(Constants.OX2d())));
+        EngineAssert.Throws<ImmutableObjectException>(() => Tool.SetUVPoints(anEdge, FirstFace(aBox), new Point2D(), new Point2D()));
         // a copy of a representation is unfrozen and shares the geometry
         CurveRepresentation aCopy = aCR.Copy();
         Assert.False(aCopy.IsFrozen);
@@ -378,13 +378,13 @@ public class FreezingTests
         Assert.True(aBox.Free());
         Shell aShell = new();
         aBuilder.MakeShell(ref aShell);
-        Assert.Throws<ImmutableObjectException>(() => aBuilder.Add(aBox, aShell));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.Add(aBox, aShell));
         Shape anOldShell = new Iterator(aBox).Value();
-        Assert.Throws<ImmutableObjectException>(() => aBuilder.Remove(aBox, anOldShell));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.Remove(aBox, anOldShell));
         Assert.Equal(1, aBox.ChildCount);
         // a shape inside it isn't free: OCCT's own check throws first
         Face aFace = FirstFace(aBox);
-        Assert.Throws<FrozenShapeException>(() => aBuilder.Remove(aFace, new Iterator(aFace).Value()));
+        EngineAssert.Throws<DomainErrorException>(() => aBuilder.Remove(aFace, new Iterator(aFace).Value()));
     }
 
     [Fact]
@@ -417,16 +417,16 @@ public class FreezingTests
         Assert.True(aFrozen.Free()); // OCCT.NET: frozen children keep their flag
         Assert.False(anUnfrozen.Free()); // OCCT clears it
 
-        Assert.Throws<ImmutableObjectException>(() => aFrozen.Free(false));
-        Assert.Throws<ImmutableObjectException>(() => aFrozen.Free(true));
-        Assert.Throws<ImmutableObjectException>(() => aFrozen.Locked(false));
-        Assert.Throws<ImmutableObjectException>(() => aFrozen.Locked(true));
-        Assert.Throws<ImmutableObjectException>(() => aFrozen.Closed(false));
-        Assert.Throws<ImmutableObjectException>(() => aFrozen.Orientable(false));
-        Assert.Throws<ImmutableObjectException>(() => aFrozen.Infinite(true));
-        Assert.Throws<ImmutableObjectException>(() => aFrozen.Convex(false));
-        Assert.Throws<ImmutableObjectException>(() => aFrozen.Modified(true));
-        Assert.Throws<ImmutableObjectException>(() => aFrozen.Checked(true));
+        EngineAssert.Throws<ImmutableObjectException>(() => aFrozen.Free(false));
+        EngineAssert.Throws<ImmutableObjectException>(() => aFrozen.Free(true));
+        EngineAssert.Throws<ImmutableObjectException>(() => aFrozen.Locked(false));
+        EngineAssert.Throws<ImmutableObjectException>(() => aFrozen.Locked(true));
+        EngineAssert.Throws<ImmutableObjectException>(() => aFrozen.Closed(false));
+        EngineAssert.Throws<ImmutableObjectException>(() => aFrozen.Orientable(false));
+        EngineAssert.Throws<ImmutableObjectException>(() => aFrozen.Infinite(true));
+        EngineAssert.Throws<ImmutableObjectException>(() => aFrozen.Convex(false));
+        EngineAssert.Throws<ImmutableObjectException>(() => aFrozen.Modified(true));
+        EngineAssert.Throws<ImmutableObjectException>(() => aFrozen.Checked(true));
     }
 
     [Fact]
@@ -466,6 +466,6 @@ public class FreezingTests
         Exploration.Vertices(FirstEdge(aBox), out Vertex aV1, out Vertex aV2);
         var aLine = new LineCurve3D(Tool.Pnt(aV1), new Direction3D(new Vector3D(Tool.Pnt(aV1), Tool.Pnt(aV2))));
         Edge aNewEdge = TestShapes.Edge(aLine, 0, 1, aV1, aV2);
-        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateVertex(aV1, 0.5, aNewEdge, 1e-7));
+        EngineAssert.Throws<ImmutableObjectException>(() => aBuilder.UpdateVertex(aV1, 0.5, aNewEdge, 1e-7));
     }
 }

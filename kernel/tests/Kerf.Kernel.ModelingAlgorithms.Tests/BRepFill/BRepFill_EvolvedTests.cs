@@ -216,7 +216,7 @@ public class BRepFill_EvolvedTests
         Assert.False(aResult.IsNull);
         Assert.True(new Analyzer(aResult).IsValid());
         Assert.Equal(100.0, Volume(aResult), 1.0e-6);
-        Assert.Throws<TypeMismatchException>(() => aMaker.Evolved());
+        EngineAssert.Throws<TypeMismatchException>(() => aMaker.Evolved());
     }
 
     [Fact]
@@ -225,9 +225,9 @@ public class BRepFill_EvolvedTests
         Wire aSpine = Square();
         // (a slanted profile, swept by BRepFill_Pipe, works since unit 5S2: Slanted_profiles_are_swept_by_the_pipe)
         // only the arc join is implemented, as in OCCT
-        Assert.Throws<MethodNotImplementedException>(() => new MakeEvolved(aSpine, Polygon(false, 0, 0, 0, 0, 0, 1),
+        EngineAssert.Throws<MethodNotImplementedException>(() => new MakeEvolved(aSpine, Polygon(false, 0, 0, 0, 0, 0, 1),
                                                                                     global::Kerf.Geometry.JoinKind.Intersection));
-        Assert.Throws<TypeMismatchException>(() => new MakeEvolved(new MakeVertex(new Point3D()).Shape(),
+        EngineAssert.Throws<TypeMismatchException>(() => new MakeEvolved(new MakeVertex(new Point3D()).Shape(),
                                                                                   Polygon(false, 0, 0, 0, 0, 0, 1)));
     }
 

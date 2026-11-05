@@ -410,7 +410,7 @@ internal sealed class HlrDataRecorder
                     DS.NextEdge();
                 }
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 Line("exception");
             }
@@ -437,7 +437,7 @@ internal sealed class HlrDataRecorder
             RecFData(DS);
             RecHide(DS, MST, theMaxFaces);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Line("exception");
         }

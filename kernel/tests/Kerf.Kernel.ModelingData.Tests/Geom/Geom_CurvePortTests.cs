@@ -30,11 +30,11 @@ public class Geom_CurvePortTests
     {
         BSplineCurve3D aC = Cubic();
         aC.Freeze();
-        Assert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aC.InsertKnot(0.25));
-        Assert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aC.SetPole(1, new Point3D(5, 5, 5)));
-        Assert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aC.Reverse());
-        Assert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aC.Transform(Transform3D.Translation(new Vector3D(1, 0, 0))));
-        Assert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aC.ClearEvalRepresentation());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aC.InsertKnot(0.25));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aC.SetPole(1, new Point3D(5, 5, 5)));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aC.Reverse());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aC.Transform(Transform3D.Translation(new Vector3D(1, 0, 0))));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aC.ClearEvalRepresentation());
 
         BSplineCurve3D aK = aC.KnotInserted(0.25, 2);
         Assert.False(aK.IsFrozen);
@@ -51,7 +51,7 @@ public class Geom_CurvePortTests
 
         var aL = new LineCurve3D(new Point3D(), new Direction3D(1, 0, 0));
         aL.Freeze();
-        Assert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aL.SetLocation(new Point3D(1, 1, 1)));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aL.SetLocation(new Point3D(1, 1, 1)));
         Assert.Equal(new Point3D(1, 1, 1), aL.WithLocation(new Point3D(1, 1, 1)).Position.Location);
     }
 
@@ -138,7 +138,7 @@ public class Geom_CurvePortTests
             aPoles[i] = new Point3D(i, i * i % 7, 0);
         }
         var aC = new BezierCurve3D(aPoles);
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aC.PoleInsertedAfter(1, new Point3D(0, 1, 0)));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aC.PoleInsertedAfter(1, new Point3D(0, 1, 0)));
         Assert.Equal(25, aC.Increased(25).Degree);
     }
 

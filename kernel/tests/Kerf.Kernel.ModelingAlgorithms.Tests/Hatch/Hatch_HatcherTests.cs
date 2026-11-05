@@ -62,7 +62,7 @@ public class Hatch_HatcherTests
         aHatcher.AddLine(new Direction2D(0, 1), -0.5);
         Assert.Equal(LineForm.Anyline, aHatcher.LineForm(1));
         Assert.Equal(0.5, aHatcher.Line(1).Location.X, 1e-15);
-        Assert.Throws<OutOfRangeException>(() => aHatcher.Coordinate(1));
+        EngineAssert.Throws<OutOfRangeException>(() => aHatcher.Coordinate(1));
 
         TrimBySquare(aHatcher);
         Assert.Equal(1, aHatcher.NbIntervals(1));
@@ -87,7 +87,7 @@ public class Hatch_HatcherTests
         anUnoriented.AddXLine(5.0);
         TrimBySquare(anUnoriented);
         Assert.Equal(0, anUnoriented.NbIntervals(1));
-        Assert.Throws<OutOfRangeException>(() => anUnoriented.Start(1, 1));
+        EngineAssert.Throws<OutOfRangeException>(() => anUnoriented.Start(1, 1));
     }
 
     [Fact]

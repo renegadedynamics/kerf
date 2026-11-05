@@ -411,7 +411,7 @@ public abstract partial class Shape1D : Shape
             {
                 candidate = new Plane((e0 + e1 + e2) / 3, zDir: zDir);
             }
-            catch (ArgumentException)
+            catch (ArgumentException e) when (!Diagnostic.IsKernelFailure(e))
             {
                 candidate = null;   // no valid common plane
             }

@@ -486,9 +486,9 @@ public sealed partial class DrawLiteMeshOracleTests(ITestOutputHelper output) : 
             {
                 CheckFile(aFile, aWhat);
             }
-            catch (Exception anError) when (anError is DrawException or FailureException)
+            catch (Exception anError) when (anError is DrawException || Refusal.IsFailure(anError))
             {
-                Disagree($"{aWhat}: {anError.Message}");
+                Disagree($"{aWhat}: {Refusal.Unwrapped(anError).Message}");
             }
         }
 

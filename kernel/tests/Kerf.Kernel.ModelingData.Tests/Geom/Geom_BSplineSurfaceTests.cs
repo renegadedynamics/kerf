@@ -729,10 +729,10 @@ public class Geom_BSplineSurfaceTests
     public void FrozenSurface_RejectsMutators_TwinsCopy()
     {
         myOriginalSurface.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => myOriginalSurface.SetPole(1, 1, new Point3D()));
-        Assert.Throws<ImmutableObjectException>(() => myOriginalSurface.InsertUKnot(0.5, 1, 0.0));
-        Assert.Throws<ImmutableObjectException>(() => myOriginalSurface.UReverse());
-        Assert.Throws<ImmutableObjectException>(() => myOriginalSurface.Transform(Transform3D.Translation(new Vector3D(1, 0, 0))));
+        EngineAssert.Throws<ImmutableObjectException>(() => myOriginalSurface.SetPole(1, 1, new Point3D()));
+        EngineAssert.Throws<ImmutableObjectException>(() => myOriginalSurface.InsertUKnot(0.5, 1, 0.0));
+        EngineAssert.Throws<ImmutableObjectException>(() => myOriginalSurface.UReverse());
+        EngineAssert.Throws<ImmutableObjectException>(() => myOriginalSurface.Transform(Transform3D.Translation(new Vector3D(1, 0, 0))));
 
         BSplineSurface aMoved = myOriginalSurface.WithPoleOneBased(2, 2, new Point3D(5, 5, 5));
         Assert.False(aMoved.IsFrozen);

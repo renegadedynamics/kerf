@@ -196,7 +196,7 @@ public class GccAna_Circ2d3TanTests
     {
         AnalyticCirc2d3Tan aSolver = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(C1), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(C1), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(C3), Tol);
         Assert.False(aSolver.IsDone);
-        Assert.Throws<NotDoneException>(() => aSolver.ThisSolution(1));
+        EngineAssert.Throws<NotDoneException>(() => aSolver.ThisSolution(1));
     }
 
     [Fact]
@@ -214,7 +214,7 @@ public class GccAna_Circ2d3TanTests
             if (aSolver.IsTheSame3(i))
             {
                 aFound = true;
-                Assert.Throws<NotDoneException>(() => aSolver.Tangency3(i, out _, out _, out _));
+                EngineAssert.Throws<NotDoneException>(() => aSolver.Tangency3(i, out _, out _, out _));
             }
         }
         Assert.True(aFound);
@@ -343,7 +343,7 @@ public class GccAna_Circ2d3TanTests
     [Fact]
     public void ThreeLines_EnclosingQualifier_Throws()
     {
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new AnalyticCirc2d3Tan(new global::Kerf.Engine.Construction.Constraints.QualifiedLin(T1, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(T2),
                                         global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(T3), Tol));
     }
@@ -460,20 +460,20 @@ public class GccAna_Circ2d3TanTests
     public void Accessors_OutOfRange_Throw()
     {
         AnalyticCirc2d3Tan aSolver = new(new Point2D(0.0, 0.0), new Point2D(2.0, 0.0), new Point2D(0.0, 2.0), Tol);
-        Assert.Throws<OutOfRangeException>(() => aSolver.ThisSolution(0));
-        Assert.Throws<OutOfRangeException>(() => aSolver.ThisSolution(2));
-        Assert.Throws<OutOfRangeException>(() => aSolver.WhichQualifier(2, out _, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => aSolver.Tangency1(2, out _, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => aSolver.IsTheSame3(0));
+        EngineAssert.Throws<OutOfRangeException>(() => aSolver.ThisSolution(0));
+        EngineAssert.Throws<OutOfRangeException>(() => aSolver.ThisSolution(2));
+        EngineAssert.Throws<OutOfRangeException>(() => aSolver.WhichQualifier(2, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => aSolver.Tangency1(2, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => aSolver.IsTheSame3(0));
     }
 
     [Fact]
     public void Constructor_NoQualifier_Throws()
     {
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new AnalyticCirc2d3Tan(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(C1, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(C2),
                                         global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(C3), Tol));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new AnalyticCirc2d3Tan(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(C1), new global::Kerf.Engine.Construction.Constraints.QualifiedLin(LX, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier),
                                         new Point2D(1.0, 1.0), Tol));
     }

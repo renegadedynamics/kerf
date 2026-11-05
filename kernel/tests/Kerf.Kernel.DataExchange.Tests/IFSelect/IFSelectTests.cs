@@ -218,7 +218,7 @@ public class IFSelectTests
         Assert.Equal("Data-Warning", SignValidity.CVal(WS.StartingEntity(8), M));
         Assert.True(Signature.MatchValue("ToyEntity", "Ent", false));
         Assert.False(Signature.MatchValue("ToyEntity", "Ent", true));
-        Assert.Throws<OutOfRangeException>(() => Signature.MatchValue("ToyEntity", "", false)); // OCCT
+        EngineAssert.Throws<OutOfRangeException>(() => Signature.MatchValue("ToyEntity", "", false)); // OCCT
         Assert.Equal("12", Signature.IntValue(12));
         // a counter of validities
         var cnt = new SignCounter(new SignValidity(), true, true);
@@ -405,7 +405,7 @@ public class IFSelectTests
         Assert.Same(sign, Functions.GiveDispatch(WS, "bysign(validity)"));
         Assert.Null(Functions.GiveDispatch(WS, "bysign(nothing)"));
         // OCCT: an unknown name without parentheses raises (TCollection_AsciiString::SetValue(0, ...))
-        Assert.Throws<OutOfRangeException>(() => Functions.GiveDispatch(WS, "unknown"));
+        EngineAssert.Throws<OutOfRangeException>(() => Functions.GiveDispatch(WS, "unknown"));
     }
 
     [Fact]

@@ -107,7 +107,7 @@ internal sealed class EdgeFaceJob : EdgeFace, BooleanParallel.IContextSolver<Int
 
             base.Perform();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             _options.AddError(new AlertIntersectionFailed());
         }

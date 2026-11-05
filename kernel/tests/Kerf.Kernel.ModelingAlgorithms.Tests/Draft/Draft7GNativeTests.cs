@@ -228,9 +228,9 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                                 aSb.Append(' ').Append(aType);
                             }
                         }
-                        catch (FailureException e)
+                        catch (Exception e) when (Refusal.IsFailure(e))
                         {
-                            aPort.Add((aSb.Append(" THROW ").Append(global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())).ToString(), null));
+                            aPort.Add((aSb.Append(" THROW ").Append(global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType())).ToString(), null));
                             break;
                         }
                         aPort.Add((aSb.ToString(), null));
@@ -246,9 +246,9 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                     }
                 }
             }
-            catch (Exception e) when (e is FailureException)
+            catch (Exception e) when (Refusal.IsFailure(e))
             {
-                aPort.Add(("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()), null));
+                aPort.Add(("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType()), null));
             }
             foreach ((Shape aS, ShapeSnapshot aSnap) in aSnaps)
             {

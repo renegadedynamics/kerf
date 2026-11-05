@@ -1234,7 +1234,7 @@ internal sealed class CheckSmallFaceAnalysis
                 angle1 = v11.AngleTo(v12);
                 angle2 = v21.AngleTo(v22);
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 return false;
             }

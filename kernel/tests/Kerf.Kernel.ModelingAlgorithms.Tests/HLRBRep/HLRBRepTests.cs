@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.HiddenLines;
 using Kerf.Engine.HiddenLines.Algorithm;
@@ -293,7 +294,7 @@ public class HLRBRepTests
         TopologyData DS = new();
         Dictionary<Shape, AdaptorTool> MST = new(ShapeHasher.Instance);
         Contour FO = new(new Vector3D(1, -1, 1));
-        Assert.Throws<LockedShapeException>(() => DSFiller.Insert(aCyl, FO, DS, MST, 0));
+        EngineAssert.Throws<ImmutableObjectException>(() => DSFiller.Insert(aCyl, FO, DS, MST, 0));
     }
 
     [Fact]

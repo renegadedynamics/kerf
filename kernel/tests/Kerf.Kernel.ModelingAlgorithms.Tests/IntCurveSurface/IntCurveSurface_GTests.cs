@@ -226,7 +226,7 @@ public class IntCurveSurface_ThePolyhedronOfHInterTest
         aVpars[1] = -1.0;
         aVpars[2] = 1.0;
 
-        Assert.ThrowsAny<OutOfRangeException>(() => new ThePolyhedronOfHInter(aSurf, aUpars, aVpars));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => new ThePolyhedronOfHInter(aSurf, aUpars, aVpars));
 
         NCollection_Array1<double> aValidUpars = new(1, 2);
         aValidUpars[1] = -1.0;
@@ -235,7 +235,7 @@ public class IntCurveSurface_ThePolyhedronOfHInterTest
         NCollection_Array1<double> aSingleVpars = new(1, 1);
         aSingleVpars[1] = 0.0;
 
-        Assert.ThrowsAny<OutOfRangeException>(() => new ThePolyhedronOfHInter(aSurf, aValidUpars, aSingleVpars));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => new ThePolyhedronOfHInter(aSurf, aValidUpars, aSingleVpars));
     }
 
     // PlaneEquation for a valid triangle must produce finite results.

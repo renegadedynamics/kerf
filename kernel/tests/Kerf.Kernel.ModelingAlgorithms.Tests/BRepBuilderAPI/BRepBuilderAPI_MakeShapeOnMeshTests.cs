@@ -78,7 +78,7 @@ public class BRepBuilderAPI_MakeShapeOnMeshTests
         var aMaker = new MakeShapeOnMesh(null);
         aMaker.Build();
         Assert.False(aMaker.IsDone);
-        Assert.ThrowsAny<NotDoneException>(() => aMaker.Shape());
+        EngineAssert.ThrowsAny<NotDoneException>(() => aMaker.Shape());
         Assert.False(new MakeShapeOnMesh(new Triangulation()).IsDone);
     }
 

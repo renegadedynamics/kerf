@@ -64,7 +64,7 @@ public class Geom2dAPI_InterCurveCurveTests
         CurveCurveIntersection2D anIntersector = new(aCurve1, aCurve2, 1.0e-7);
         Assert.True(anIntersector.NbPoints() > 0);
 
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anIntersector.Point(0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anIntersector.Point(0));
     }
 
     // Regression test for bug #11: Init with null handle must raise Standard_NullObject.
@@ -76,17 +76,17 @@ public class Geom2dAPI_InterCurveCurveTests
         Curve2D aValidCurve = new EllipseCurve2D(anEllipse);
 
         // Both null.
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new CurveCurveIntersection2D(aNullCurve, aNullCurve, 1.0e-7));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new CurveCurveIntersection2D(aNullCurve, aNullCurve, 1.0e-7));
 
         // First null.
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new CurveCurveIntersection2D(aNullCurve, aValidCurve, 1.0e-7));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new CurveCurveIntersection2D(aNullCurve, aValidCurve, 1.0e-7));
 
         // Second null.
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new CurveCurveIntersection2D(aValidCurve, aNullCurve, 1.0e-7));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new CurveCurveIntersection2D(aValidCurve, aNullCurve, 1.0e-7));
 
         // Single-curve Init with null.
         CurveCurveIntersection2D anInter = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => anInter.Init(aNullCurve, 1.0e-7));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => anInter.Init(aNullCurve, 1.0e-7));
     }
 
     [Fact]
@@ -307,7 +307,7 @@ public class Geom2dAPI_InterCurveCurveTests
         CurveCurveIntersection2D anInter = new(aC1, aC2);
         Assert.Equal(0, anInter.NbPoints());
         Assert.Equal(0, anInter.NbSegments());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anInter.Segment(1, out _, out _));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anInter.Segment(1, out _, out _));
     }
 
     [Fact]

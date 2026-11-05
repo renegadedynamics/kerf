@@ -172,7 +172,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         {
             return v.Normalized();
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException ex) when (!Diagnostic.IsKernelFailure(ex))
         {
             throw new ArgumentException("Expected gp_Pln, Face, Location, Axis, VectorLike, or three points", ex);
         }

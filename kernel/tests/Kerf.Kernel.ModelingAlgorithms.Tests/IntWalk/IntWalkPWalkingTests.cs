@@ -185,8 +185,8 @@ public class IntWalkPWalkingTests
         // Coincident planes: tangent everywhere, the walking stops before marching and is not done
         aWalk.Perform(Origin());
         Assert.False(aWalk.IsDone);
-        Assert.Throws<NotDoneException>(() => aWalk.PointCount);
+        EngineAssert.Throws<NotDoneException>(() => aWalk.PointCount);
         Assert.Equal(aWalk.MaxStep(0), aWalk.MaxStep(0));
-        Assert.ThrowsAny<OutOfRangeException>(() => aWalk.MaxStep(4));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aWalk.MaxStep(4));
     }
 }

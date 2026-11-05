@@ -30,10 +30,10 @@ internal static class StepFileDump
             StepParser aParser = new(aScanner, theRange);
             aResult = aParser.Parse().ToString(CultureInfo.InvariantCulture);
         }
-        catch (FailureException anEx)
+        catch (Exception anEx) when (Refusal.IsFailure(anEx))
         {
             aResult = "FATAL";
-            aFatal = anEx.GetMessageString();
+            aFatal = Refusal.Of(anEx)!.GetMessageString();
         }
 
         aLines.Add("RESULT " + aResult);

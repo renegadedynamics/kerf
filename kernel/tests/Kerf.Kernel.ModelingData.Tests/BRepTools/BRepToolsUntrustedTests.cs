@@ -30,7 +30,7 @@ public class BRepToolsUntrustedTests
     private static void Rejects(string theText)
     {
         var aWatch = Stopwatch.StartNew();
-        Assert.Throws<StreamFormatErrorException>(() => Read(theText));
+        EngineAssert.Throws<StreamFormatErrorException>(() => Read(theText));
         Assert.True(aWatch.Elapsed < TimeSpan.FromSeconds(5), "too slow: " + aWatch.Elapsed);
     }
 
@@ -76,7 +76,7 @@ public class BRepToolsUntrustedTests
         // a stream reader over a seekable stream knows its length
         var aStreamReader = new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes(aText)));
         Assert.Equal(aText.Length, StreamUtilities.InputLength(aStreamReader));
-        Assert.Throws<StreamFormatErrorException>(() => BrepTools.Read(out _, aStreamReader));
+        EngineAssert.Throws<StreamFormatErrorException>(() => BrepTools.Read(out _, aStreamReader));
         Assert.Throws<ArgumentOutOfRangeException>(() => StreamUtilities.SetInputLength(new StringReader(""), -1));
     }
 
@@ -123,7 +123,7 @@ public class BRepToolsUntrustedTests
                 + "1 0 0 0 0 0 1 1 0 0 0 1 0\nTriangulations 0\n\nTShapes 0\n");
 
         // the static readers too
-        Assert.Throws<StreamFormatErrorException>(() => global::Kerf.Engine.Exchange.Brep.CurveSet.ReadCurve(new StringReader(Trimmed(65))));
+        EngineAssert.Throws<StreamFormatErrorException>(() => global::Kerf.Engine.Exchange.Brep.CurveSet.ReadCurve(new StringReader(Trimmed(65))));
         Assert.NotNull(global::Kerf.Engine.Exchange.Brep.CurveSet.ReadCurve(new StringReader(Trimmed(64))));
     }
 
@@ -229,7 +229,7 @@ public class BRepToolsUntrustedTests
         // a face made of a triangulation that isn't there
         Rejects(V3 + "Locations 0\n" + NoGeometry + "\nTShapes 1\nFa\n2  5\n\n1100000\n*\n\n+1 0 ");
         // a sub-shape of the wrong type is OCCT's TopoDS_UnCompatibleShapes
-        Assert.Throws<IncompatibleShapesException>(
+        EngineAssert.Throws<IncompatibleShapesException>(
             () => Read(V3 + "Locations 0\n" + NoGeometry + "\nTShapes 2\nCo\n\n1100000\n*\nVe\n1e-07\n0 0 0\n0 0\n\n1101101\n+2 0 *\n\n+1 0 "));
     }
 
@@ -276,7 +276,7 @@ public class BRepToolsUntrustedTests
                 {
                     BrepTools.Write(aShape, new StringWriter());
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                     // a shape OCCT can't write either (a null triangulation or polygon)
                 }
@@ -284,7 +284,7 @@ public class BRepToolsUntrustedTests
 
             return null;
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return null;
         }

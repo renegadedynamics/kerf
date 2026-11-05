@@ -352,10 +352,10 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
         // As in OCCT: planes and swept surfaces aren't polar surfaces; BuildInitialCurve2d throws for them.
         var aC = new CurveAdaptor(new CircleCurve3D(new Frame3D(), 1.0));
         var aPlane = new SurfaceAdaptor(new PlaneSurface(new Plane3D()));
-        Assert.ThrowsAny<NoSuchObjectException>(() => new ComputeApproxOnPolarSurface(aC, aPlane));
+        EngineAssert.ThrowsAny<NoSuchObjectException>(() => new ComputeApproxOnPolarSurface(aC, aPlane));
         var aRev = new SurfaceAdaptor(
             new RevolutionSurface(new LineCurve3D(new Point3D(1, 0, 0), new Direction3D(0, 0, 1)), new Axis3D()));
-        Assert.ThrowsAny<NoSuchObjectException>(() => new ComputeApproxOnPolarSurface(aC, aRev));
+        EngineAssert.ThrowsAny<NoSuchObjectException>(() => new ComputeApproxOnPolarSurface(aC, aRev));
     }
 
     [Fact]
@@ -399,7 +399,7 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
     {
         var aProj = new ComputeApproxOnPolarSurface();
         Assert.False(aProj.IsDone);
-        Assert.ThrowsAny<NoSuchObjectException>(() => aProj.Curve2d());
+        EngineAssert.ThrowsAny<NoSuchObjectException>(() => aProj.Curve2d());
         Assert.Equal(-1.0, aProj.Tolerance());
     }
 }

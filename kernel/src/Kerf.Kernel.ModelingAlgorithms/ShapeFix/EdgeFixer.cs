@@ -479,7 +479,7 @@ internal partial class EdgeFixer : Transient
                 b.Range(edge, g3dCFirst, g3dCLast, true);
             }
         } // end try
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             _status |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.FAIL2);
         }
@@ -749,7 +749,7 @@ internal partial class EdgeFixer : Transient
                     }
                 }
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 _status |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.FAIL2);
             }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
@@ -222,7 +223,7 @@ public class BRepCheckAnalyzerTests
         {
             return theA.Result(theSub);
         }
-        catch (global::Kerf.Engine.Foundation.NoSuchObjectException)
+        catch (Exception caught) when (Refusal.Of(caught) is global::Kerf.Engine.Foundation.NoSuchObjectException)
         {
             return null;
         }
@@ -272,10 +273,10 @@ public class BRepCheckAnalyzerTests
     [Fact]
     public void The_analyzer_checks_a_null_shape_never()
     {
-        Assert.Throws<global::Kerf.Engine.Foundation.NullObjectException>(() => new Analyzer(new Shape()));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NullObjectException>(() => new Analyzer(new Shape()));
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         var anA = new Analyzer(aBox);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => anA.Result(TestShapes.Frozen(TestShapes.Box(1, 1, 1))));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => anA.Result(TestShapes.Frozen(TestShapes.Box(1, 1, 1))));
         anA.SetParallel(true);
         anA.SetExactMethod(true);
         anA.Init(aBox, false);

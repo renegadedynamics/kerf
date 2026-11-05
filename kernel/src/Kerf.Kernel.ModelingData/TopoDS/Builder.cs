@@ -176,7 +176,7 @@ internal class Builder
     /// Adds the shape <paramref name="aComponent"/> to <paramref name="aShape"/>. Only the TShape of aShape changes,
     /// so it is taken by <c>in</c>.
     /// </summary>
-    /// <exception cref="FrozenShapeException">aShape isn't free.</exception>
+    /// <exception cref="DomainErrorException">aShape isn't free.</exception>
     /// <exception cref="IncompatibleShapesException">aShape can't contain aComponent.</exception>
     /// <exception cref="ImmutableObjectException">aShape is frozen.</exception>
     public void Add(in Shape aShape, in Shape aComponent)
@@ -228,7 +228,7 @@ internal class Builder
         }
         else
         {
-            throw new FrozenShapeException("TopoDS_Builder::Add");
+            throw new DomainErrorException("TopoDS_Builder::Add");
         }
     }
 
@@ -259,12 +259,12 @@ internal class Builder
     /// Removes the shape <paramref name="aComponent"/> from <paramref name="aShape"/>. Only the TShape of aShape
     /// changes, so it is taken by <c>in</c>.
     /// </summary>
-    /// <exception cref="FrozenShapeException">aShape isn't free.</exception>
+    /// <exception cref="DomainErrorException">aShape isn't free.</exception>
     /// <exception cref="ImmutableObjectException">aShape is frozen.</exception>
     public void Remove(in Shape aShape, in Shape aComponent)
     {
         // check if aShape  is not Frozen
-        Raise.TopoDS_FrozenShape_Raise_if(!aShape.Free(), "TopoDS_Builder::Remove");
+        Raise.DomainError_Raise_if(!aShape.Free(), "TopoDS_Builder::Remove");
 
         // compute the relative Orientation and Location of aComponent
         Shape s = aComponent;

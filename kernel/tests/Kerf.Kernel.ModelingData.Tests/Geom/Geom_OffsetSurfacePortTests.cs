@@ -43,7 +43,7 @@ public class Geom_OffsetSurfacePortTests
         Surface aBasis = anOff.BasisSurface;
         Assert.True(aBasis.IsFrozen);
         Assert.Same(aBasis, anOff.BasisSurface);
-        Assert.Throws<ImmutableObjectException>(() => aBasis.UReverse());
+        EngineAssert.Throws<ImmutableObjectException>(() => aBasis.UReverse());
 
         Point3D aBefore = aBasis.Value(0.3, 0.6);
         Point3D anExpected = anOff.Value(0.3, 0.6);
@@ -65,11 +65,11 @@ public class Geom_OffsetSurfacePortTests
     {
         OffsetSurface anOff = new(Cylinder(), 1.0);
         anOff.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => anOff.SetOffsetValue(2.0));
-        Assert.Throws<ImmutableObjectException>(() => anOff.SetBasisSurface(Cylinder()));
-        Assert.Throws<ImmutableObjectException>(() => anOff.UReverse());
-        Assert.Throws<ImmutableObjectException>(() => anOff.Transform(new Transform3D()));
-        Assert.Throws<ImmutableObjectException>(() => anOff.ClearEvalRepresentation());
+        EngineAssert.Throws<ImmutableObjectException>(() => anOff.SetOffsetValue(2.0));
+        EngineAssert.Throws<ImmutableObjectException>(() => anOff.SetBasisSurface(Cylinder()));
+        EngineAssert.Throws<ImmutableObjectException>(() => anOff.UReverse());
+        EngineAssert.Throws<ImmutableObjectException>(() => anOff.Transform(new Transform3D()));
+        EngineAssert.Throws<ImmutableObjectException>(() => anOff.ClearEvalRepresentation());
 
         OffsetSurface aCopy = anOff.WithOffsetValue(2.0);
         Assert.False(aCopy.IsFrozen);
@@ -175,7 +175,7 @@ public class Geom_OffsetSurfacePortTests
         var aVKnots = NCollection_Array1<double>.From([0.0, 1.0]);
         var aVMults = NCollection_Array1<int>.From([2, 2]);
         BSplineSurface aCorner = new(aPoles, aUKnots, aVKnots, aUMults, aVMults, 1, 1); // a sharp corner at U = 1
-        Assert.Throws<ConstructionErrorException>(() => new OffsetSurface(aCorner, 0.1));
+        EngineAssert.Throws<ConstructionErrorException>(() => new OffsetSurface(aCorner, 0.1));
         OffsetSurface anOff = new(aCorner, 0.1, true);
         Assert.Equal(Continuity.C0, anOff.GetBasisSurfContinuity());
     }

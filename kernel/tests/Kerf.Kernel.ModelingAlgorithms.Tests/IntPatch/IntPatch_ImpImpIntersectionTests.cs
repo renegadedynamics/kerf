@@ -220,7 +220,7 @@ public class IntPatch_ImpImpIntersectionTests
         SameSurfaces(Run(Pln(Ax(0, 0, 0, 0, 0, 1)), Pln(Ax(0, 0, 0, 0, 0, -1))), theOpposite: true);
         SameSurfaces(Run(Pln(Ax(0, 0, 0, 0, 0, 1)), Pln(Ax(1, 2, 0, 0, 0, 1))), theOpposite: false);
         Empty(Run(Pln(Ax(0, 0, 0, 0, 0, 1)), Pln(Ax(0, 0, 1, 0, 0, 1))));
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => Run(Pln(Ax(0, 0, 0, 0, 0, 1)), Pln(Ax(0, 0, 0, 1, 0, 0))).Inter.OppositeFaces());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => Run(Pln(Ax(0, 0, 0, 0, 0, 1)), Pln(Ax(0, 0, 0, 1, 0, 0))).Inter.OppositeFaces());
     }
 
     // lowalgos/intss/buc60815: the planes z = 0 (origin (1, 0, 0)) and x = 0, trimmed to squares of sides 100 and 150: one line, with a vertex where it crosses each
@@ -629,7 +629,7 @@ public class IntPatch_ImpImpIntersectionTests
         Result aR = Run(Tor(Ax(0, 0, 0, 0, 0, 1), 20, 5), Tor(Ax(40, 0, 0, 0, 0, 1), 20, 5));
         Assert.Equal(Status.IntStatus_Fail, aR.Inter.GetStatus());
         Assert.False(aR.Inter.IsDone);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aR.Inter.LineCount);
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aR.Inter.LineCount);
     }
 
     [Fact]
@@ -637,11 +637,11 @@ public class IntPatch_ImpImpIntersectionTests
     {
         var anInter = new ImpImpIntersection();
         Assert.False(anInter.IsDone);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInter.IsEmpty);
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInter.IsEmpty);
 
         SurfaceAdaptor aBezier = new(new BezierSurface(new NCollection_Array2<Point3D>(1, 2, 1, 2)));
         SurfaceAdaptor aPlane = new(Pln(Ax(0, 0, 0, 0, 0, 1)));
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new ImpImpIntersection(
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new ImpImpIntersection(
             aBezier, new TopolTool(aBezier), aPlane, new TopolTool(aPlane), Tol, Tol));
     }
 }

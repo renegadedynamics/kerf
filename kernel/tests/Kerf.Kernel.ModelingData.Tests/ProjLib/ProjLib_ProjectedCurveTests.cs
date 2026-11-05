@@ -161,8 +161,8 @@ public class ProjLib_ProjectedCurveTests
         Assert.Equal(CurveKind.BezierCurve, aProj.GetType());
         Assert.Equal(2, aProj.Degree());
         Assert.True(aProj.Bezier().IsFrozen);
-        Assert.Throws<NoSuchObjectException>(() => aProj.KnotCount);
-        Assert.Throws<MethodNotImplementedException>(() => global::Kerf.Engine.Geometry.Projection.ProjLib.MakePCurveOfType(aProj, out _));
+        EngineAssert.Throws<NoSuchObjectException>(() => aProj.KnotCount);
+        EngineAssert.Throws<MethodNotImplementedException>(() => global::Kerf.Engine.Geometry.Projection.ProjLib.MakePCurveOfType(aProj, out _));
     }
 
     [Fact]
@@ -171,21 +171,21 @@ public class ProjLib_ProjectedCurveTests
         var aS = new SurfaceAdaptor(new PlaneSurface(Std));
         var aC = new CurveAdaptor(new LineCurve3D(new Line3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0))), 0.0, 1.0);
         var aProj = new global::Kerf.Engine.Geometry.Projection.ProjectedCurve(aS, aC);
-        Assert.Throws<MethodNotImplementedException>(() => aProj.Continuity());
-        Assert.Throws<MethodNotImplementedException>(() => aProj.NbIntervals(Continuity.C0));
-        Assert.Throws<MethodNotImplementedException>(() => aProj.Intervals(new NCollection_Array1<double>(1, 2), Continuity.C0));
-        Assert.Throws<MethodNotImplementedException>(() => aProj.IsClosed);
-        Assert.Throws<MethodNotImplementedException>(() => aProj.Period());
-        Assert.Throws<MethodNotImplementedException>(() => aProj.Value(0.5));
-        Assert.Throws<MethodNotImplementedException>(() => aProj.D0(0.5, out _));
-        Assert.Throws<MethodNotImplementedException>(() => aProj.D1(0.5, out _, out _));
-        Assert.Throws<MethodNotImplementedException>(() => aProj.D2(0.5, out _, out _, out _));
-        Assert.Throws<MethodNotImplementedException>(() => aProj.D3(0.5, out _, out _, out _, out _));
-        Assert.Throws<MethodNotImplementedException>(() => aProj.DN(0.5, 1));
-        Assert.Throws<MethodNotImplementedException>(() => aProj.Resolution(1.0));
-        Assert.Throws<MethodNotImplementedException>(() => aProj.Trim(0.0, 1.0, 1.0e-7));
-        Assert.Throws<NoSuchObjectException>(() => aProj.Circle());
-        Assert.Throws<NoSuchObjectException>(() => aProj.Degree());
+        EngineAssert.Throws<MethodNotImplementedException>(() => aProj.Continuity());
+        EngineAssert.Throws<MethodNotImplementedException>(() => aProj.NbIntervals(Continuity.C0));
+        EngineAssert.Throws<MethodNotImplementedException>(() => aProj.Intervals(new NCollection_Array1<double>(1, 2), Continuity.C0));
+        EngineAssert.Throws<MethodNotImplementedException>(() => aProj.IsClosed);
+        EngineAssert.Throws<MethodNotImplementedException>(() => aProj.Period());
+        EngineAssert.Throws<MethodNotImplementedException>(() => aProj.Value(0.5));
+        EngineAssert.Throws<MethodNotImplementedException>(() => aProj.D0(0.5, out _));
+        EngineAssert.Throws<MethodNotImplementedException>(() => aProj.D1(0.5, out _, out _));
+        EngineAssert.Throws<MethodNotImplementedException>(() => aProj.D2(0.5, out _, out _, out _));
+        EngineAssert.Throws<MethodNotImplementedException>(() => aProj.D3(0.5, out _, out _, out _, out _));
+        EngineAssert.Throws<MethodNotImplementedException>(() => aProj.DN(0.5, 1));
+        EngineAssert.Throws<MethodNotImplementedException>(() => aProj.Resolution(1.0));
+        EngineAssert.Throws<MethodNotImplementedException>(() => aProj.Trim(0.0, 1.0, 1.0e-7));
+        EngineAssert.Throws<NoSuchObjectException>(() => aProj.Circle());
+        EngineAssert.Throws<NoSuchObjectException>(() => aProj.Degree());
     }
 
     [Fact]

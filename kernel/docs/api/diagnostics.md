@@ -55,13 +55,11 @@ report's alerts in its place (next section). Several of OCCT's classes share a c
 | `engine.divide-by-zero` | `Standard_DivideByZero` | a numeric error |
 | `engine.domain-error` | `Standard_DomainError` | a value is outside what the operation accepts |
 | `engine.failure` | `Standard_Failure` | the operation failed |
-| `engine.frozen-shape` | `TopoDS_FrozenShape` | a value is outside what the operation accepts |
 | `engine.immutable-object` | `Standard_ImmutableObject` | a value is outside what the operation accepts |
 | `engine.infinite-solutions` | `StdFail_InfiniteSolutions` | there are infinitely many solutions |
 | `engine.interface-error` | `Interface_InterfaceError` | the operation failed |
 | `engine.interface-mismatch` | `Interface_InterfaceMismatch` | the operation failed |
 | `engine.is-parallel` | `Geom2dGcc_IsParallel` | a value is outside what the operation accepts |
-| `engine.locked-shape` | `TopoDS_LockedShape` | a value is outside what the operation accepts |
 | `engine.multiply-defined` | `Standard_MultiplyDefined` | a value is outside what the operation accepts |
 | `engine.negative-value` | `Standard_NegativeValue` | a value is out of range |
 | `engine.no-more-object` | `Standard_NoMoreObject` | something looked for isn't there |

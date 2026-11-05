@@ -64,7 +64,7 @@ internal static class SpecialPoints
 
                 (p1.XYZ() - p2.XYZ()).Coord(out f[indF], out f[indF + 1], out f[indF + 2]);
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 return false;
             }
@@ -96,7 +96,7 @@ internal static class SpecialPoints
                                                                     out d[indRD + 1, indCD + 2],
                                                                     out d[indRD + 2, indCD + 2]);
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 return false;
             }

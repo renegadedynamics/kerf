@@ -231,7 +231,7 @@ public class IntAna_IntQuadQuadPropertyTests
         IntQuadQuad anInt = new(aCyl, new Quadric(new Plane3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 1))),
                                        1.0e-7);
         Assert.False(anInt.IsDone);
-        Assert.ThrowsAny<NotDoneException>(() => anInt.CurveCount);
+        EngineAssert.ThrowsAny<NotDoneException>(() => anInt.CurveCount);
     }
 
     [Fact]
@@ -239,7 +239,7 @@ public class IntAna_IntQuadQuadPropertyTests
     {
         Curve anEmpty = new();
         Assert.False(anEmpty.IsOpen);
-        Assert.ThrowsAny<DomainErrorException>(() => anEmpty.Domain(out _, out _));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => anEmpty.Domain(out _, out _));
         Assert.Equal(new Point3D(0, 0, 0), anEmpty.Value(0.0));
         Assert.NotEqual(default, anEmpty);
 
@@ -254,7 +254,7 @@ public class IntAna_IntQuadQuadPropertyTests
         Point3D aP = aC.Value(1.0);
         Assert.Equal(4.0, aP.Z, 1e-12);
         Assert.Equal(3.0 * Math.Cos(1.0), aP.X, 1e-12);
-        Assert.ThrowsAny<DomainErrorException>(() => aC.Value(7.0));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => aC.Value(7.0));
 
         Curve aTrimmed = aC.WithDomain(1.0, 2.0).WithIsFirstOpen(true).WithIsLastOpen(true);
         aTrimmed.Domain(out aFirst, out aLast);
@@ -263,7 +263,7 @@ public class IntAna_IntQuadQuadPropertyTests
         Assert.False(aC.IsFirstOpen); // the twins copy
         Assert.NotEqual(aC, aTrimmed);
         Assert.Equal(aC, aC.WithDomain(0.0, 2 * M_PI));
-        Assert.ThrowsAny<DomainErrorException>(() => aC.WithDomain(2.0, 1.0));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => aC.WithDomain(2.0, 1.0));
 
         NCollection_List<double> aParams = new();
         aC.FindParameter(aP, aParams);

@@ -127,10 +127,10 @@ public class ContapTests
     {
         Contour C = new();
         Assert.False(C.IsDone);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => C.LineCount);
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => C.LineCount);
         Face aFace = HlrRecorder.Faces().First(f => f.Name == "sphere").Face;
         AdaptorTool aTool = new(aFace, global::Kerf.Engine.Foundation.Precision.PConfusion());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => C.Perform(aTool.GetSurface()!, aTool.GetTopolTool()));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => C.Perform(aTool.GetSurface()!, aTool.GetTopolTool()));
     }
 
     [Fact]
@@ -165,6 +165,6 @@ public class ContapTests
         Assert.True(C.Line(1).Location.IsEqual(new Point3D(0, 3, 0), 1e-12) || C.Line(1).Location.IsEqual(new Point3D(0, -3, 0), 1e-12));
         C.Perform(aCyl, new Direction3D(0, 0, 1));
         Assert.Equal(0, C.ContourCount);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => C.TypeContour());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => C.TypeContour());
     }
 }

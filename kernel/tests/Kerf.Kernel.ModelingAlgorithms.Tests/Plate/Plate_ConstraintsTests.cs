@@ -63,8 +63,8 @@ public class Plate_ConstraintsTests
         a2.Init(0.5);
         var aC2 = new LinearXyzConstraint(aPPC, a2);
         Assert.Equal(2, aC2.Coeff().ColLength());
-        Assert.Throws<DimensionMismatchException>(() => new LinearXyzConstraint(aPPC, new NCollection_Array1<double>(1, 3)));
-        Assert.Throws<DimensionMismatchException>(() => new LinearXyzConstraint(aPPC, new NCollection_Array2<double>(1, 2, 1, 3)));
+        EngineAssert.Throws<DimensionMismatchException>(() => new LinearXyzConstraint(aPPC, new NCollection_Array1<double>(1, 3)));
+        EngineAssert.Throws<DimensionMismatchException>(() => new LinearXyzConstraint(aPPC, new NCollection_Array2<double>(1, 2, 1, 3)));
 
         var aC3 = new LinearXyzConstraint(2, 3);
         Assert.Equal(0.0, aC3.Coeff()[2, 3]);
@@ -84,7 +84,7 @@ public class Plate_ConstraintsTests
         aCoeff[2] = new Xyz(1.0, 0.0, 0.0);
         var aC2 = new LinearScalarConstraint(aPPC, aCoeff);
         Assert.Equal(new Xyz(1.0, 0.0, 0.0), aC2.Coeff()[1, 2]);
-        Assert.Throws<DimensionMismatchException>(() => new LinearScalarConstraint(aPPC, new NCollection_Array2<Xyz>(1, 1, 1, 3)));
+        EngineAssert.Throws<DimensionMismatchException>(() => new LinearScalarConstraint(aPPC, new NCollection_Array2<Xyz>(1, 1, 1, 3)));
         var aC3 = new LinearScalarConstraint(2, 1);
         aC3.SetCoeff(2, 1, new Xyz(0.0, 1.0, 0.0));
         aC3.SetPPC(1, aP);

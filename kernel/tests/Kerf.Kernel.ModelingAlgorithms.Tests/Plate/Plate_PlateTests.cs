@@ -308,7 +308,7 @@ public class Plate_PlateTests
             }
             Assert.Equal(aWanted, aGot, 1.0e-9);
         }
-        Assert.Throws<DimensionMismatchException>(() => new SampledCurveConstraint(aSeq, 8));
+        EngineAssert.Throws<DimensionMismatchException>(() => new SampledCurveConstraint(aSeq, 8));
     }
 
     [Fact]

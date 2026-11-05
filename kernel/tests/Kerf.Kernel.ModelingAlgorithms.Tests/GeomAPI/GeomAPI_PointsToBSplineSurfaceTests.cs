@@ -30,7 +30,7 @@ public class GeomAPI_PointsToBSplineSurface_Test
         aZPoints[2, 1] = 1.0;
         aZPoints[3, 1] = 0.0;
 
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() =>
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() =>
             anApprox.Init(aZPoints, 0.0, 1.0, 0.0, 0.0, 3, 5, Continuity.C2, global::Kerf.Engine.Foundation.Precision.Confusion()));
         Assert.False(anApprox.IsDone);
     }
@@ -152,6 +152,6 @@ public class GeomAPI_PointsToBSplineSurfaceTests
     {
         PointsToBSplineSurface anApprox = new();
         Assert.False(anApprox.IsDone);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anApprox.Surface());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anApprox.Surface());
     }
 }

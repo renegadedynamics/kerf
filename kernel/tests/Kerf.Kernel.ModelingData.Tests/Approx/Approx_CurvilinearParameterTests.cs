@@ -65,9 +65,9 @@ public class Approx_CurvilinearParameterTests
         }
         Assert.False(aFunc.EvalCase1(0.5, 3, aRes));
         Assert.Equal(0.0, aRes[0]);
-        Assert.Throws<ConstructionErrorException>(() => aFunc.EvalCase2(0.5, 0, new NCollection_Array1<double>(0, 4)));
-        Assert.Throws<ConstructionErrorException>(() => aFunc.GetUParameter(aCurve, 1.5, 1));
-        Assert.Throws<OutOfRangeException>(() => aFunc.Trim(-0.1, 0.5, 1.0e-9));
+        EngineAssert.Throws<ConstructionErrorException>(() => aFunc.EvalCase2(0.5, 0, new NCollection_Array1<double>(0, 4)));
+        EngineAssert.Throws<ConstructionErrorException>(() => aFunc.GetUParameter(aCurve, 1.5, 1));
+        EngineAssert.Throws<OutOfRangeException>(() => aFunc.Trim(-0.1, 0.5, 1.0e-9));
     }
 
     [Fact]
@@ -211,6 +211,6 @@ public class Approx_CurvilinearParameterTests
         Assert.Equal(1.0, aT[3], 1.0e-9);
         NCollection_Array1<double> aRes = new(0, 6);
         Assert.True(aFunc.EvalCase3(0.5, 0, aRes));
-        Assert.Throws<ConstructionErrorException>(() => aFunc.EvalCase1(0.5, 0, aRes));
+        EngineAssert.Throws<ConstructionErrorException>(() => aFunc.EvalCase1(0.5, 0, aRes));
     }
 }

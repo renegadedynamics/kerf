@@ -122,9 +122,9 @@ public sealed class BRepFillAxeOracleTests(ITestOutputHelper output) : IDisposab
             {
                 Fill.Axe(aPSpine, ShapeCasts.Wire(aPProf), out aPAxe, out aPOn, aTol);
             }
-            catch (FailureException f)
+            catch (Exception f) when (Refusal.IsFailure(f))
             {
-                aPError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType());
+                aPError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(f).GetType());
             }
             string aWhat = $"case {aCase} ({(isFace ? "face" : "wire")}{(isOnVertex ? ", on a vertex" : "")})";
             if (aNError is not null || aPError is not null)

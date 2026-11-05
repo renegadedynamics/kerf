@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Classification;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -136,7 +137,7 @@ public class IntTools_FClass2dOracleTests(ITestOutputHelper output)
             }
             catch (Exception e)
             {
-                myMismatches.Add($"{aWhat}: port Init throws {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())}");
+                myMismatches.Add($"{aWhat}: port Init throws {Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType())}");
                 continue;
             }
             using var aN = new N.IntTools_FClass2d(aNF, aTol);

@@ -118,8 +118,8 @@ public class LProp_CurAndInfTest
         var aResult = new CurAndInf();
         aResult.AddInflection(1.0);
 
-        Assert.ThrowsAny<OutOfRangeException>(() => aResult.Parameter(0));
-        Assert.ThrowsAny<OutOfRangeException>(() => aResult.Parameter(2));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aResult.Parameter(0));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aResult.Parameter(2));
     }
 
     [Fact]
@@ -128,7 +128,7 @@ public class LProp_CurAndInfTest
         var aResult = new CurAndInf();
         aResult.AddInflection(1.0);
 
-        Assert.ThrowsAny<OutOfRangeException>(() => aResult.Type(0));
-        Assert.ThrowsAny<OutOfRangeException>(() => aResult.Type(2));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aResult.Type(0));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aResult.Type(2));
     }
 }

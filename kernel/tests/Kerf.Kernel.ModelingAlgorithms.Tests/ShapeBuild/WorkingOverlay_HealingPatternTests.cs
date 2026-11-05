@@ -267,8 +267,8 @@ public class WorkingOverlay_HealingPatternTests
     {
         Shape aBox = Box();
         using var anOverlay = WorkingOverlay.Begin(aBox);
-        Assert.ThrowsAny<ProgramErrorException>(() => anOverlay.History());
+        EngineAssert.ThrowsAny<ProgramErrorException>(() => anOverlay.History());
         anOverlay.Finish(aBox);
-        Assert.ThrowsAny<ProgramErrorException>(() => anOverlay.Finish(aBox));
+        EngineAssert.ThrowsAny<ProgramErrorException>(() => anOverlay.Finish(aBox));
     }
 }

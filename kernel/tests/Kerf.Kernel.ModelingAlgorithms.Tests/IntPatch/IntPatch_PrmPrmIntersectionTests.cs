@@ -191,9 +191,9 @@ public class IntPatch_PrmPrmIntersectionTests
     {
         var anInt = new PrmPrmIntersection();
         Assert.False(anInt.IsDone);
-        Assert.Throws<NotDoneException>(() => anInt.LineCount);
-        Assert.Throws<NotDoneException>(() => anInt.IsEmpty);
-        Assert.Throws<NotDoneException>(() => anInt.Line(1));
+        EngineAssert.Throws<NotDoneException>(() => anInt.LineCount);
+        EngineAssert.Throws<NotDoneException>(() => anInt.IsEmpty);
+        EngineAssert.Throws<NotDoneException>(() => anInt.Line(1));
     }
 
     [Fact]
@@ -228,8 +228,8 @@ public class IntPatch_PrmPrmIntersectionTests
             Assert.True(aS1.Value(u1, v1).DistanceTo(aP.Value()) < 1.0e-5);
             Assert.True(aS2.Value(u2, v2).DistanceTo(aP.Value()) < 1.0e-5);
         }
-        Assert.Throws<OutOfRangeException>(() => anInt.NewLine(aS1, aS2, 0, 1, 2, 5));
-        Assert.Throws<OutOfRangeException>(() => anInt.NewLine(aS1, aS2, 1, 3, 3, 5));
+        EngineAssert.Throws<OutOfRangeException>(() => anInt.NewLine(aS1, aS2, 0, 1, 2, 5));
+        EngineAssert.Throws<OutOfRangeException>(() => anInt.NewLine(aS1, aS2, 1, 3, 3, 5));
     }
 
     [Fact]

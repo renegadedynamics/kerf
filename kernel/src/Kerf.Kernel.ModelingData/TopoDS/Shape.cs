@@ -270,13 +270,13 @@ public partial struct Shape : IEquatable<Shape>
         if (Math.Abs(Math.Abs(trsf.ScaleFactor) - 1.0) > Placement.ScalePrec() || trsf.IsNegative)
         {
             // Exception
-            throw new DomainErrorException("Transformation with scaling transformation is forbidden");
+            throw Refusal.Argument(new DomainErrorException("Transformation with scaling transformation is forbidden"));
         }
     }
 
     // OCCT dereferences the null handle (undefined behaviour); the port throws Standard_NullObject.
     private readonly TShape NonNullTShape()
-        => _tShape ?? throw new NullObjectException("TopoDS_Shape: the shape is null");
+        => _tShape ?? throw Refusal.State(new NullObjectException("TopoDS_Shape: the shape is null"));
 
     // </generated-members>
 

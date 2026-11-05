@@ -87,7 +87,7 @@ internal static partial class BrepTools
         catch (Exception exception) when (ShapeSet.IsSignal(exception))
         {
             // OCCT.NET: untrusted input
-            throw new StreamFormatErrorException("BRepTools::Read: " + exception.Message, exception);
+            throw new StreamFormatErrorException("BRepTools::Read: " + Refusal.Unwrapped(exception).Message, exception);
         }
     }
 

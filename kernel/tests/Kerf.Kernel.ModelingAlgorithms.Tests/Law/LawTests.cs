@@ -155,8 +155,8 @@ public class LawTests
         Assert.Equal([1, 4, 5], Splits(1));
         Assert.Equal([1, 3, 4, 5], Splits(2));
         Assert.Equal([1, 2, 3, 4, 5], Splits(3));
-        Assert.Throws<RangeErrorException>(() => new global::Kerf.Engine.Construction.Laws.BSplineKnotSplitting(aCurve, -1));
-        Assert.Throws<RangeErrorException>(() => new global::Kerf.Engine.Construction.Laws.BSplineKnotSplitting(aCurve, 1).SplitValue(4));
+        EngineAssert.Throws<RangeErrorException>(() => new global::Kerf.Engine.Construction.Laws.BSplineKnotSplitting(aCurve, -1));
+        EngineAssert.Throws<RangeErrorException>(() => new global::Kerf.Engine.Construction.Laws.BSplineKnotSplitting(aCurve, 1).SplitValue(4));
     }
 
     private sealed class ConstantField : TgtField

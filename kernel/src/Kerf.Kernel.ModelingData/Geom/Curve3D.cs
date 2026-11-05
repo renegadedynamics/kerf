@@ -97,7 +97,7 @@ public abstract partial class Curve3D : Geometry3D
     {
         get
         {
-            Standard_NoSuchObject_Raise_if(!IsPeriodic, "Geom_Curve::Period");
+            Refusal.StateIf(!IsPeriodic, FailureKind.NoSuchObject, "Geom_Curve::Period");
             return (LastParameter - FirstParameter);
         }
     }

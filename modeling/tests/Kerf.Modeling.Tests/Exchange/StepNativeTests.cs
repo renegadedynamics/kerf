@@ -55,7 +55,7 @@ public partial class StepNativeTests
     private static byte[] Write(Shape shape)
     {
         var stream = new MemoryStream();
-        Assert.True(Exporters3D.ExportStep(shape, stream, timestamp: Timestamp));
+        Assert.True(Exporters3D.ExportStep(shape, stream, new StepExportOptions { Timestamp = Timestamp }).IsSuccess);
         return stream.ToArray();
     }
 

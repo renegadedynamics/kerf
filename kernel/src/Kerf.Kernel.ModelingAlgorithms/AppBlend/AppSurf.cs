@@ -497,7 +497,7 @@ internal class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
                 {
                     variation.Approximate();
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                     return;
                 }

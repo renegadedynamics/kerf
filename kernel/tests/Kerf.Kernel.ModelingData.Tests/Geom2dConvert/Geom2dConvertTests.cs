@@ -152,8 +152,8 @@ public class Geom2dConvertTests
     [Fact]
     public void CurveToBSplineCurve_UnboundedCurves_Throw()
     {
-        Assert.ThrowsAny<DomainErrorException>(() => Geom2dConvert2D.CurveToBSplineCurve(new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0))));
-        Assert.ThrowsAny<DomainErrorException>(() => Geom2dConvert2D.CurveToBSplineCurve(
+        EngineAssert.ThrowsAny<DomainErrorException>(() => Geom2dConvert2D.CurveToBSplineCurve(new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0))));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => Geom2dConvert2D.CurveToBSplineCurve(
             new ParabolaCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0)));
     }
 
@@ -174,8 +174,8 @@ public class Geom2dConvertTests
         Assert.True(aByParams.StartPoint.DistanceTo(aC.Value(2.5)) < Tol);
         Assert.True(aByParams.EndPoint.DistanceTo(aC.Value(0.5)) < Tol);
 
-        Assert.ThrowsAny<DomainErrorException>(() => Geom2dConvert2D.SplitBSplineCurve(aC, 2, 2));
-        Assert.ThrowsAny<OutOfRangeException>(() => Geom2dConvert2D.SplitBSplineCurve(aC, 0, 2));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => Geom2dConvert2D.SplitBSplineCurve(aC, 2, 2));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => Geom2dConvert2D.SplitBSplineCurve(aC, 0, 2));
     }
 
     [Fact]
@@ -194,8 +194,8 @@ public class Geom2dConvertTests
         NCollection_Array1<int> aValues = new(1, aSplit2.SplitCount);
         aSplit2.Splitting(aValues);
         Assert.Equal([1, 2, 3, 4], aValues.AsSpan().ToArray());
-        Assert.ThrowsAny<RangeErrorException>(() => new BSplineCurveKnotSplitting2D(aC, -1));
-        Assert.ThrowsAny<RangeErrorException>(() => aSplit2.SplitValue(5));
+        EngineAssert.ThrowsAny<RangeErrorException>(() => new BSplineCurveKnotSplitting2D(aC, -1));
+        EngineAssert.ThrowsAny<RangeErrorException>(() => aSplit2.SplitValue(5));
     }
 
     [Fact]
@@ -216,13 +216,13 @@ public class Geom2dConvertTests
             Assert.NotSame(anArcs[i], aConv.Arc(i));
         }
 
-        Assert.ThrowsAny<OutOfRangeException>(() => aConv.Arc(4));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aConv.Arc(4));
 
         // A part, with bounds snapped onto knots within half the tolerance
         BSplineCurveToBezierCurve2D aPart = new(aC, 0.5, 2.0 + 1e-4, 1e-3);
         Assert.Equal(2, aPart.ArcCount);
         AssertSamePoints(aC, 0.5, 1.0, aPart.Arc(1), 0.0, 1.0, Tol);
-        Assert.ThrowsAny<DomainErrorException>(() => new BSplineCurveToBezierCurve2D(aC, 1.0, 1.0, 1e-3));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => new BSplineCurveToBezierCurve2D(aC, 1.0, 1.0, 1e-3));
     }
 
     [Fact]
@@ -322,7 +322,7 @@ public class Geom2dConvertTests
         aCurves[0] = Geom2dConvert2D.SplitBSplineCurve(aC, 1, 2);
         aCurves[1] = Geom2dConvert2D.SplitBSplineCurve(aC, 3, 4);
         bool isClosed = false;
-        Assert.ThrowsAny<FailureException>(() => Geom2dConvert2D.ConcatG1(aCurves, NCollection_Array1<double>.From([1e-7], 0),
+        EngineAssert.ThrowsAny<FailureException>(() => Geom2dConvert2D.ConcatG1(aCurves, NCollection_Array1<double>.From([1e-7], 0),
                                                                          out _, ref isClosed, 1e-7));
     }
 
@@ -347,7 +347,7 @@ public class Geom2dConvertTests
 
         NCollection_Array1<BSplineCurve2D> aCurves = NCollection_Array1<BSplineCurve2D>.From(aSegments, 0);
         bool isClosed = true;
-        Assert.ThrowsAny<ConstructionErrorException>(() => Geom2dConvert2D.ConcatG1(
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => Geom2dConvert2D.ConcatG1(
             aCurves, NCollection_Array1<double>.From([1e-7, 1e-12, 1e-7], 0), out _, ref isClosed, 1e-4));
 
         // With the junction s1-s2 given the closure's tolerance, the closure merges

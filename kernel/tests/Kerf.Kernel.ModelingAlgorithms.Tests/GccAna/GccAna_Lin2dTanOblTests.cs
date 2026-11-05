@@ -54,7 +54,7 @@ public class GccAna_Lin2dTanOblTests
         Line2D aL = new(new Point2D(1, 0), DX);
         AnalyticLin2dTanObl anAlgo = new(new Point2D(0, 3), aL, 0.0);
         Assert.Equal(1, anAlgo.SolutionCount);
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.IsParallelException>(() => anAlgo.Intersection2(1, out _, out _, out _));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.IsParallelException>(() => anAlgo.Intersection2(1, out _, out _, out _));
     }
 
     [Fact]
@@ -103,8 +103,8 @@ public class GccAna_Lin2dTanOblTests
     public void BadQualifiers_Throw()
     {
         Line2D aL = new(new Point2D(0, 0), DX);
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticLin2dTanObl(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(Circ(0, 3, 1)), aL, 0.5));
-        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticLin2dTanObl(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(Circ(0, 3, 1)), aL, 0.5));
+        EngineAssert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
             () => new AnalyticLin2dTanObl(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(Circ(0, 3, 1), global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), aL, 0.5));
     }
 
@@ -112,9 +112,9 @@ public class GccAna_Lin2dTanOblTests
     public void Accessors_OutOfRange()
     {
         AnalyticLin2dTanObl anAlgo = new(new Point2D(1, 1), new Line2D(new Point2D(0, 0), DX), 0.3);
-        Assert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(2));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.WhichQualifier(0, out _));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.Tangency1(2, out _, out _, out _));
-        Assert.Throws<OutOfRangeException>(() => anAlgo.Intersection2(2, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(2));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.WhichQualifier(0, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.Tangency1(2, out _, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.Intersection2(2, out _, out _, out _));
     }
 }

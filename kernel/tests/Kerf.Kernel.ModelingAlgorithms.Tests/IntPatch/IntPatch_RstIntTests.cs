@@ -84,7 +84,7 @@ public class IntPatch_RstIntTests
     {
         Face aFace = new MakeFace(new Plane3D(), 0, 10, 0, 10).Face();
         FaceSurfaceAdaptor aSurf = new(aFace);
-        Assert.Throws<DomainErrorException>(() => RstInt.PutVertexOnLine(
+        EngineAssert.Throws<DomainErrorException>(() => RstInt.PutVertexOnLine(
             new RLine(false), aSurf, new BrepTopolTool(aSurf), aSurf, true, 1e-7));
     }
 }

@@ -491,7 +491,7 @@ public static class Tangents2D
         {
             return run();
         }
-        catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+        catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
         {
             return Result<T>.Failure(Diagnostic.Error(TangentsFailed, FailureDiagnostics.ToDiagnostic(e).Message));
         }

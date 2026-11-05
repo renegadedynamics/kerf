@@ -4263,12 +4263,10 @@ Kerf.Engine.Topology.Builder TopoDS_Builder
 Kerf.Engine.Topology.Datum3D TopLoc_Datum3D
 Kerf.Engine.Topology.Exploration TopExp
 Kerf.Engine.Topology.Explorer TopExp_Explorer
-Kerf.Engine.Topology.FrozenShapeException TopoDS_FrozenShape
 Kerf.Engine.Topology.History BRepTools_History
 Kerf.Engine.Topology.IncompatibleShapesException TopoDS_UnCompatibleShapes
 Kerf.Engine.Topology.ItemLocation TopLoc_ItemLocation
 Kerf.Engine.Topology.Iterator TopoDS_Iterator
-Kerf.Engine.Topology.LockedShapeException TopoDS_LockedShape
 Kerf.Engine.Topology.Properties.CLProps BRepLProp_CLProps
 Kerf.Engine.Topology.Properties.SLProps BRepLProp_SLProps
 Kerf.Engine.Topology.Properties.SurfaceTool BRepLProp_SurfaceTool

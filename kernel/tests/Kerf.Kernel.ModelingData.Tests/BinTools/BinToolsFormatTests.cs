@@ -78,8 +78,8 @@ public class BinToolsFormatTests
         Assert.True(aBool);
 
         // the end of the stream (OCCT: Storage_StreamTypeMismatchError, or garbage from a byte read)
-        Assert.Throws<global::Kerf.Engine.Foundation.StreamFormatErrorException>(() => global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(aStream, out _));
-        Assert.Throws<global::Kerf.Engine.Foundation.StreamFormatErrorException>(() => global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetBool(aStream, out _));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.StreamFormatErrorException>(() => global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(aStream, out _));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.StreamFormatErrorException>(() => global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetBool(aStream, out _));
     }
 
     [Fact]

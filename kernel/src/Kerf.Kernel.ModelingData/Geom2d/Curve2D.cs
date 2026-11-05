@@ -97,7 +97,7 @@ public abstract partial class Curve2D : Geometry2D
     {
         get
         {
-            Standard_NoSuchObject_Raise_if(!IsPeriodic, "Geom2d_Curve::Period");
+            Refusal.StateIf(!IsPeriodic, FailureKind.NoSuchObject, "Geom2d_Curve::Period");
             return (LastParameter - FirstParameter);
         }
     }

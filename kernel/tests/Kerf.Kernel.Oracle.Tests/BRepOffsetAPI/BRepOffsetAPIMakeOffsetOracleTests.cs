@@ -204,7 +204,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             }
             catch (Exception e)
             {
-                myDifferences.Add($"{aWhat}: native IsDone {aN.IsDone()}, the port throws {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())} {e.StackTrace?.Split('\n')[0]}");
+                myDifferences.Add($"{aWhat}: native IsDone {aN.IsDone()}, the port throws {Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType())} {e.StackTrace?.Split('\n')[0]}");
                 return;
             }
             bool isDone = aN.IsDone();
@@ -348,7 +348,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                     aShape = anOuter;
                 }
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 continue; // a degenerate arc
             }
@@ -378,7 +378,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             {
                 aWire = OpenProfile(anOracle, anAx, aSize, isArcs);
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 continue;
             }
@@ -499,7 +499,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                     {
                         aW = new MakeWire(Arc(P(a0), P((a0 + am) / 2), P(am)), Arc(P(am), P((am + a1) / 2), P(a1))).Wire();
                     }
-                    catch (FailureException)
+                    catch (Exception caught) when (Refusal.IsFailure(caught))
                     {
                         continue;
                     }

@@ -84,7 +84,7 @@ public class Law_CompositeTests
         var aT = new NCollection_Array1<double>(1, 4);
         aComp.Intervals(aT, Continuity.C2);
         Assert.Equal([0.0, 1.0, 2.0, 4.0], aT.AsSpan().ToArray());
-        Assert.Throws<MethodNotImplementedException>(() => aComp.Continuity());
+        EngineAssert.Throws<MethodNotImplementedException>(() => aComp.Continuity());
 
         var aTrim = Assert.IsType<Composite>(aComp.Trim(0.5, 3.5, 1.0e-9));
         Assert.Equal(3, aTrim.ChangeLaws().Extent());

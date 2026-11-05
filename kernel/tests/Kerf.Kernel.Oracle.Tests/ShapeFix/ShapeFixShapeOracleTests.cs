@@ -81,7 +81,7 @@ internal sealed class ShapeFixOracleRun(ITestOutputHelper output, string thePref
         return (aNShape, aPShape);
     }
 
-    public static string? ErrorOf(Exception theException) => theException switch
+    public static string? ErrorOf(Exception theException) => Refusal.Unwrapped(theException) switch
     {
         N.OcctException e => e.Message.IndexOf(':') is int c and > 0 ? e.Message[..c] : e.Message,
         FailureException f => global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType()),
@@ -360,7 +360,7 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
             aPRes = aFix.Shape();
             aPStatus = Status(isDone, aFix.Status);
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
             aPErr = ShapeFixOracleRun.ErrorOf(e);
         }
@@ -395,7 +395,7 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
             aPRes = aFix.SolidFromShell(ShapeCasts.Shell(aPS));
             aPStatus = $"{aFix.Status(DONE2)}";
         }
-        catch (FailureException e)
+        catch (Exception e) when (Refusal.IsFailure(e))
         {
             aPErr = ShapeFixOracleRun.ErrorOf(e);
         }

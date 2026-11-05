@@ -148,10 +148,10 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `import_stl(path, model_unit)` | `Importers.ImportStl(stream or path, modelUnit, limits, token)`: a `Face` holding the triangles (OCCT.NET backend) |
 | (none) | `Importers.ImportGltf(stream or path, modelUnit, limits, token)`: parts and assemblies with names and colours (OCCT.NET backend) |
 | `export_brep(shape, path)` | `Exporters3D.ExportBrep(shape, stream or path)` |
-| `export_step(shape, path, unit, write_pcurves, precision_mode, timestamp=…)` | `Exporters3D.ExportStep(shape, stream or path, unit, writePcurves, precisionMode, timestamp, token)`: a `string` time stamp (`datetime.isoformat()`'s); assemblies, product names and colours on the OCCT.NET backend, natively the shape's compound alone |
-| `export_stl(shape, path, tolerance, angular_tolerance, ascii_format)` | `Exporters3D.ExportStl(…)`, the same parameters (OCCT.NET backend) |
-| `export_gltf(shape, path, unit, binary, linear_deflection, angular_deflection)` | `Exporters3D.ExportGltf(…)`, the same parameters; to a stream, a `.gltf` embeds its buffer (OCCT.NET backend) |
-| `Mesher(unit).add_shape(shape, linear_deflection, angular_deflection)` then `write("x.3mf")` | `Exporters3D.Export3mf(shape, stream or path, unit, linearDeflection, angularDeflection)` (OCCT.NET backend) |
+| `export_step(shape, path, unit, write_pcurves, precision_mode, timestamp=…)` | `Exporters3D.ExportStep(shape, stream or path, StepExportOptions, token)`: a `string` time stamp (`datetime.isoformat()`'s); assemblies, product names and colours on the OCCT.NET backend, natively the shape's compound alone |
+| `export_stl(shape, path, tolerance, angular_tolerance, ascii_format)` | `Exporters3D.ExportStl(shape, stream or path, StlExportOptions, token)` (OCCT.NET backend) |
+| `export_gltf(shape, path, unit, binary, linear_deflection, angular_deflection)` | `Exporters3D.ExportGltf(shape, stream or path, GltfExportOptions, token)`; to a stream, a `.gltf` embeds its buffer (OCCT.NET backend) |
+| `Mesher(unit).add_shape(shape, linear_deflection, angular_deflection)` then `write("x.3mf")` | `Exporters3D.Export3mf(shape, stream or path, ThreeMfExportOptions, token)` (OCCT.NET backend) |
 | `ValueError` from a reader | `ArgumentException`; past an `ImportLimits` limit, `InvalidDataException` |
 | `FileNotFoundError` (no file, or `export_stl`'s missing folder) | `FileNotFoundException`, `DirectoryNotFoundException` (every exporter) |
 

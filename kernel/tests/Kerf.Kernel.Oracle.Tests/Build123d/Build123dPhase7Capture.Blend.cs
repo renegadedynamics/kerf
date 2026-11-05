@@ -244,7 +244,7 @@ internal static partial class Build123dPhase7Capture
         {
             aRes = aB.Shape();
         }
-        catch (Exception e) when (e is FailureException or NullReferenceException)
+        catch (Exception e) when ((Refusal.IsFailure(e) || e is NullReferenceException))
         {
             anError = ErrorOf(e);
         }
@@ -404,7 +404,7 @@ internal static partial class Build123dPhase7Capture
                     {
                         aRes = aB.Shape();
                     }
-                    catch (Exception e) when (e is FailureException or NullReferenceException)
+                    catch (Exception e) when ((Refusal.IsFailure(e) || e is NullReferenceException))
                     {
                         anError = ErrorOf(e);
                     }
@@ -446,7 +446,7 @@ internal static partial class Build123dPhase7Capture
                 }
             }
         }
-        catch (Exception e) when (e is FailureException or NullReferenceException)
+        catch (Exception e) when ((Refusal.IsFailure(e) || e is NullReferenceException))
         {
             return new P7Port(ErrorOf(e), "", null, "");
         }

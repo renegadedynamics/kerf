@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.HiddenLines;
 using Kerf.Engine.HiddenLines.Algorithm;
 using Kerf.Engine.HiddenLines.Presentation;
@@ -159,10 +160,10 @@ internal static class ViewerTestCommands
                 DrawShapeRebind.Rebind(theDI, aShape, aMeshed);
             }
         }
-        catch (global::Kerf.Engine.Foundation.FailureException anException)
+        catch (Exception anException) when (Refusal.IsFailure(anException))
         {
             theDI.Output.WriteLine("Error: AIS_Shape::Compute() shaded presentation builder has failed ("
-                                   + anException.GetMessageString() + ")");
+                                   + Refusal.Of(anException)!.GetMessageString() + ")");
         }
     }
 
@@ -187,9 +188,9 @@ internal static class ViewerTestCommands
                 DrawShapeRebind.Rebind(theDI, aShape, aMesher.Shape());
             }
         }
-        catch (global::Kerf.Engine.Foundation.FailureException anException)
+        catch (Exception anException) when (Refusal.IsFailure(anException))
         {
-            theDI.Output.WriteLine("Error: AIS_Shape::ComputeSelection(0) has failed (" + anException.GetMessageString() + ")");
+            theDI.Output.WriteLine("Error: AIS_Shape::ComputeSelection(0) has failed (" + Refusal.Of(anException)!.GetMessageString() + ")");
         }
     }
 

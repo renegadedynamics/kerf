@@ -168,7 +168,7 @@ public class BRepLib_FuseEdgesTests
     [Fact]
     public void Null_shape_throws()
     {
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new FuseEdges(new Shape()));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new FuseEdges(new Shape()));
     }
 
     [Fact]

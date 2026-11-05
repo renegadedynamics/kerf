@@ -204,7 +204,7 @@ internal sealed class Triangulator
                 }
             }
         }
-        catch (Exception exception) when (ModelAlgo.IsCaughtFailure(exception) || exception is FailureException)
+        catch (Exception exception) when (ModelAlgo.IsCaughtFailure(exception) || Refusal.IsFailure(exception))
         {
             // OCCT catches everything (catch (...)); the port catches what decision 529 maps OCCT's failures to.
             _mess!.Send("makeTrianglesUsingBRepMesh: Exception raised during filling of "
@@ -248,10 +248,10 @@ internal sealed class Triangulator
                 polyTriangles.Append(t);
             }
         }
-        catch (FailureException failure)
+        catch (Exception failure) when (Refusal.IsFailure(failure))
         {
             string str = "makeTrianglesUsingBRepMesh: Exception raised during polygon triangulation: ";
-            str += failure.Message;
+            str += Refusal.Unwrapped(failure).Message;
             _mess!.Send(str, Fail);
             return false;
         }

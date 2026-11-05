@@ -144,7 +144,7 @@ public class BRepFilletAPI_MakeChamferTests
                 Assert.True(new Analyzer(aChamfer.Shape()).IsValid());
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             // Exception instead of crash is acceptable.
         }
@@ -197,7 +197,7 @@ public class BRepFilletAPI_MakeChamferTests
                     break;
                 }
             }
-            catch (ConstructionErrorException)
+            catch (Exception caught) when (Refusal.Of(caught) is global::Kerf.Engine.Foundation.ConstructionErrorException)
             {
                 break;
             }

@@ -37,7 +37,7 @@ public sealed class EllipseCurve3D : ConicCurve3D
         _minorRadius = minorRadius;
         if (majorRadius < minorRadius || minorRadius < 0.0)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         _pos = a;
     }
@@ -76,7 +76,7 @@ public sealed class EllipseCurve3D : ConicCurve3D
         CheckMutable();
         if (majorRadius < _minorRadius)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         else
         {
@@ -90,7 +90,7 @@ public sealed class EllipseCurve3D : ConicCurve3D
         CheckMutable();
         if (minorRadius < 0 || _majorRadius < minorRadius)
         {
-            throw new ConstructionErrorException();
+            throw Refusal.Argument(new ConstructionErrorException());
         }
         else
         {
@@ -161,7 +161,7 @@ public sealed class EllipseCurve3D : ConicCurve3D
     {
         if (n < 1)
         {
-            throw new UndefinedDerivative3DException();
+            throw Refusal.State(new UndefinedDerivative3DException());
         }
         return global::Kerf.Engine.Geometry.ElCLib.EllipseDN(u, _pos, _majorRadius, _minorRadius, n);
     }

@@ -28,7 +28,7 @@ public partial class ExchangeTests
     {
         var block = Block();
         var stream = new MemoryStream();
-        Assert.True(Exporters3D.ExportBrep(block, stream));
+        Assert.True(Exporters3D.ExportBrep(block, stream).IsSuccess);
         stream.Position = 0;
         var read = Importers.ImportBrep(stream).Value;
         Assert.IsType<Compound>(read);   // a Part's shape is a compound
@@ -37,7 +37,7 @@ public partial class ExchangeTests
         var path = Path.Combine(Path.GetTempPath(), $"b3d-{Guid.NewGuid():N}.brep");
         try
         {
-            Assert.True(Exporters3D.ExportBrep(block, path));
+            Assert.True(Exporters3D.ExportBrep(block, path).IsSuccess);
             Check.AlmostEqual(block.Volume, Importers.ImportBrep(path).Value.Volume, 9);
         }
         finally
@@ -49,9 +49,17 @@ public partial class ExchangeTests
     [Fact]
     public void NothingToExportSaysSo()
     {
-        var e = Assert.Throws<InvalidOperationException>(() => Exporters3D.ExportStep(new Compound(), new MemoryStream()));
-        Assert.Equal("There is nothing to export: the Compound is empty", e.Message);
-        Assert.Throws<InvalidOperationException>(() => Exporters3D.ExportBrep(new Compound(), new MemoryStream()));
+        var error = Exporters3D.ExportStep(new Compound(), new MemoryStream()).Error!;
+        Assert.Equal("exchange.nothing-done", error.Code.Value);
+        Assert.Equal("There is nothing to export: the Compound is empty", error.Message);
+        Assert.Equal("exchange.nothing-done", Exporters3D.ExportBrep(new Compound(), new MemoryStream()).Error!.Code.Value);
+    }
+
+    [Fact]
+    public void AFileThatCantBeWrittenIsAFailedResult()
+    {
+        var folder = Path.GetTempPath();   // a folder can't be opened as a file
+        Assert.Equal("exchange.write-failed", Exporters3D.ExportStep(Block(), folder.TrimEnd(Path.DirectorySeparatorChar)).Error!.Code.Value);
     }
 
     [Fact]
@@ -70,7 +78,7 @@ public partial class ExchangeTests
     {
         var block = Block();
         var stream = new MemoryStream();
-        Assert.True(Exporters3D.ExportStep(block, stream));
+        Assert.True(Exporters3D.ExportStep(block, stream).IsSuccess);
         stream.Position = 0;
         var read = Importers.ImportStep(stream).Value;
         Assert.IsType<Solid>(read);
@@ -80,7 +88,7 @@ public partial class ExchangeTests
         var path = Path.Combine(Path.GetTempPath(), $"b3d-{Guid.NewGuid():N}.step");
         try
         {
-            Assert.True(Exporters3D.ExportStep(block, path));
+            Assert.True(Exporters3D.ExportStep(block, path).IsSuccess);
             Check.AlmostEqual(block.Volume, Importers.ImportStep(path).Value.Volume, 6);
         }
         finally
@@ -106,7 +114,7 @@ public partial class ExchangeTests
     public void StepHeaderNamesBuild123d()
     {
         var stream = new MemoryStream();
-        Exporters3D.ExportStep(Block().WithLabel("bracket 'A' – v2"), stream, timestamp: "2026-11-02T12:00:00");
+        Exporters3D.ExportStep(Block().WithLabel("bracket 'A' – v2"), stream, new StepExportOptions { Timestamp = "2026-11-02T12:00:00" });
         var text = Encoding.Latin1.GetString(stream.ToArray());
         var fileName = Regex.Match(text, @"FILE_NAME\((.*?)\);", RegexOptions.Singleline).Groups[1].Value;
         Assert.StartsWith(@"'bracket ''A'' \X2\2013\X0\ v2','2026-11-02T12:00:00',", fileName);
@@ -157,7 +165,7 @@ public partial class ExchangeTests
     {
         var box = new Box(10, 20, 30);
         var inches = new MemoryStream();
-        Exporters3D.ExportStep(box, inches, Unit.Inch, writePcurves: false, precisionMode: PrecisionMode.Greatest);
+        Exporters3D.ExportStep(box, inches, new StepExportOptions { Unit = Unit.Inch, WritePcurves = false, PrecisionMode = PrecisionMode.Greatest });
         var text = Encoding.Latin1.GetString(inches.ToArray());
         Assert.Contains("'INCH'", text);
         Assert.DoesNotContain("PCURVE", text);
@@ -202,7 +210,7 @@ public partial class ExchangeTests
         foreach (var ascii in new[] { false, true })
         {
             var stream = new MemoryStream();
-            Assert.True(Exporters3D.ExportStl(box, stream, asciiFormat: ascii));
+            Assert.True(Exporters3D.ExportStl(box, stream, new StlExportOptions { Ascii = ascii }).IsSuccess);
             if (ascii)
                 Assert.StartsWith("solid", Encoding.ASCII.GetString(stream.ToArray()));
             else
@@ -264,7 +272,7 @@ public partial class ExchangeTests
         foreach (var binary in new[] { true, false })
         {
             var stream = new MemoryStream();
-            Assert.True(Exporters3D.ExportGltf(assembly, stream, binary: binary));
+            Assert.True(Exporters3D.ExportGltf(assembly, stream, new GltfExportOptions { Binary = binary }).IsSuccess);
             if (binary)
                 Assert.Equal("glTF"u8.ToArray(), stream.ToArray()[..4]);
             else
@@ -289,7 +297,7 @@ public partial class ExchangeTests
         try
         {
             var path = Path.Combine(folder, "part.gltf");
-            Assert.True(Exporters3D.ExportGltf(Block(), path));
+            Assert.True(Exporters3D.ExportGltf(Block(), path).IsSuccess);
             Assert.True(File.Exists(Path.Combine(folder, "part.bin")));
             Assert.Contains("\"part.bin\"", File.ReadAllText(path));
         }
@@ -303,7 +311,7 @@ public partial class ExchangeTests
     public void ThreeMfHoldsAModel()
     {
         var stream = new MemoryStream();
-        Assert.True(Exporters3D.Export3mf(Compound.Assembly([Block(), new Sphere(3).WithColor(new Color("blue"))]), stream));
+        Assert.True(Exporters3D.Export3mf(Compound.Assembly([Block(), new Sphere(3).WithColor(new Color("blue"))]), stream).IsSuccess);
         stream.Position = 0;
         var zip = new ZipArchive(stream, ZipArchiveMode.Read);
         using var model = new StreamReader(zip.GetEntry("3D/3dmodel.model")!.Open());

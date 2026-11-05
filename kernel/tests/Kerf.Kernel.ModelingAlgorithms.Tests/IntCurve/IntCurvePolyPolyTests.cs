@@ -398,7 +398,7 @@ public class IntCurvePolyPolyTests
     {
         TheIntPCurvePCurveOfGInter anInter = new();
         Assert.False(anInter.IsDone);
-        Assert.ThrowsAny<NotDoneException>(() => anInter.PointCount);
+        EngineAssert.ThrowsAny<NotDoneException>(() => anInter.PointCount);
     }
 
     [Fact]
@@ -420,7 +420,7 @@ public class IntCurvePolyPolyTests
         aPoly.Segment(1, out Point2D aBegin, out Point2D anEnd);
         Assert.True(aBegin.DistanceTo(c.Value(0.2)) < 1e-15);
         Assert.True(anEnd.DistanceTo(c.Value(0.25)) < 1e-12);
-        Assert.ThrowsAny<OutOfRangeException>(() => aPoly.Segment(15, out _, out _));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aPoly.Segment(15, out _, out _));
 
         // The deflection bounds the distance between the curve and its polygon, and the box holds the curve.
         Box2d aBox = aPoly.Bounding();

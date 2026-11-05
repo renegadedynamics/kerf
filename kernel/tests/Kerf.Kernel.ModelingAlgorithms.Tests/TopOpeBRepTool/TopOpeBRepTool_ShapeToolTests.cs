@@ -28,8 +28,8 @@ public class TopOpeBRepTool_ShapeToolTests
         Shape B = new MakeBox(1.0, 2.0, 3.0).Shape();
         Assert.Equal(0.0, ToolShapeTool.Tolerance(new Shape()));
         Assert.Equal(Tool.Tolerance(ShapeCasts.Face(Sub(B, ShapeType.Face, 1))), ToolShapeTool.Tolerance(Sub(B, ShapeType.Face, 1)));
-        Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => ToolShapeTool.Tolerance(B));
-        Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => ToolShapeTool.Pnt(Sub(B, ShapeType.Edge, 1)));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => ToolShapeTool.Tolerance(B));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => ToolShapeTool.Pnt(Sub(B, ShapeType.Edge, 1)));
         Assert.True(ToolShapeTool.Pnt(Sub(B, ShapeType.Vertex, 1)).IsEqual(Tool.Pnt(ShapeCasts.Vertex(Sub(B, ShapeType.Vertex, 1))), 0.0));
     }
 

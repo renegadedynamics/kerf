@@ -178,7 +178,7 @@ internal sealed class ConstructCurve
             {
                 bspl = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(tc);
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
             }
         }
@@ -208,7 +208,7 @@ internal sealed class ConstructCurve
                 bspl.Segment(fbsp, lbsp);
                 return bspl;
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
             }
         }
@@ -228,7 +228,7 @@ internal sealed class ConstructCurve
                 bspl = conv.InternalCurve();
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
         }
         return bspl;
@@ -261,7 +261,7 @@ internal sealed class ConstructCurve
             {
                 bspl = Geom2dConvert2D.CurveToBSplineCurve(tc);
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
             }
         }
@@ -291,7 +291,7 @@ internal sealed class ConstructCurve
                 bspl.Segment(fbsp, lbsp);
                 return bspl;
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
             }
         }
@@ -312,7 +312,7 @@ internal sealed class ConstructCurve
                 bspl = conv.InternalCurve();
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
         }
         return bspl;

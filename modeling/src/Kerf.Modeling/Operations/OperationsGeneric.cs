@@ -658,7 +658,7 @@ public static partial class Operations
         {
             pathWire = new Wire(path);
         }
-        catch (ArgumentException e)
+        catch (ArgumentException e) when (!Diagnostic.IsKernelFailure(e))
         {
             throw new ArgumentException("The path's edges don't join into a wire.", nameof(path), e);
         }

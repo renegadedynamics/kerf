@@ -164,13 +164,13 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
             aP = theDir is { } d ? new Projection(thePIn[0], thePIn[1], d)
                                  : new Projection(thePIn[0], thePIn[1], thePnt!.Value);
         }
-        catch (FailureException f)
+        catch (Exception f) when (Refusal.IsFailure(f))
         {
-            aPError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType());
+            aPError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(f).GetType());
         }
         catch (Exception e)
         {
-            myDifferences.Add($"{theName}: native {aNError ?? "no exception"}, the port throws {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())} {e.StackTrace?.Split('\n')[0]}");
+            myDifferences.Add($"{theName}: native {aNError ?? "no exception"}, the port throws {Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(e).GetType())} {e.StackTrace?.Split('\n')[0]}");
             return;
         }
         for (int i = 0; i < thePIn.Length; i++)

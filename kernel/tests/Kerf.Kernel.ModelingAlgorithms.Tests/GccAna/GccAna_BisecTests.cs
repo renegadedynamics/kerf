@@ -82,7 +82,7 @@ public class GccAna_BisecTests
         Pnt2dBisec anAlgo = new(new Point2D(1, 1), new Point2D(1, 1));
         Assert.True(anAlgo.IsDone);
         Assert.False(anAlgo.HasSolution);
-        Assert.Throws<NoSolutionException>(() => anAlgo.ThisSolution());
+        EngineAssert.Throws<NoSolutionException>(() => anAlgo.ThisSolution());
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class GccAna_BisecTests
         Assert.Equal(ConstraintCurveType.Lin, aB.ArcType());
         Assert.Equal(0.0, aB.Line().Direction.Dot(DX), Tol);
         Assert.Equal(0.0, aB.Line().DistanceTo(new Point2D(2, 0)), Tol);
-        Assert.Throws<MethodNotImplementedException>(() => aB.Parabola());
+        EngineAssert.Throws<MethodNotImplementedException>(() => aB.Parabola());
     }
 
     [Fact]
@@ -140,7 +140,7 @@ public class GccAna_BisecTests
             Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aL2).DistanceTo(aPnt), Tol);
         }
         Assert.Equal(0.0, anAlgo.ThisSolution(1).Direction.Dot(anAlgo.ThisSolution(2).Direction), Tol);
-        Assert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(3));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(3));
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public class GccAna_BisecTests
                 Assert.Equal(aL.DistanceTo(aP), i == 1 ? Math.Abs(aDc - aC.Radius) : aDc + aC.Radius, Tol);
             }
         }
-        Assert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(3));
+        EngineAssert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(3));
     }
 
     [Fact]
@@ -290,11 +290,11 @@ public class GccAna_BisecTests
         Assert.Equal(2.0, aBs[3].Ellipse().MinorRadius);
         Assert.Equal(3.0, aBs[4].Hyperbola().MajorRadius);
         Assert.Equal(2.0, aBs[5].Parabola().Focal);
-        Assert.Throws<MethodNotImplementedException>(() => aBs[0].Line());
-        Assert.Throws<MethodNotImplementedException>(() => aBs[1].Circle());
-        Assert.Throws<MethodNotImplementedException>(() => aBs[2].Ellipse());
-        Assert.Throws<MethodNotImplementedException>(() => aBs[3].Hyperbola());
-        Assert.Throws<MethodNotImplementedException>(() => aBs[4].Parabola());
-        Assert.Throws<MethodNotImplementedException>(() => aBs[5].Point());
+        EngineAssert.Throws<MethodNotImplementedException>(() => aBs[0].Line());
+        EngineAssert.Throws<MethodNotImplementedException>(() => aBs[1].Circle());
+        EngineAssert.Throws<MethodNotImplementedException>(() => aBs[2].Ellipse());
+        EngineAssert.Throws<MethodNotImplementedException>(() => aBs[3].Hyperbola());
+        EngineAssert.Throws<MethodNotImplementedException>(() => aBs[4].Parabola());
+        EngineAssert.Throws<MethodNotImplementedException>(() => aBs[5].Point());
     }
 }

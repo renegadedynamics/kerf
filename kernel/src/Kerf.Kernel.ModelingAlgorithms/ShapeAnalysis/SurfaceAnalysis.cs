@@ -627,7 +627,7 @@ internal class SurfaceAnalysis : Transient
                 iso = surf.VIso(par);
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             iso = null;
         }
@@ -1484,7 +1484,7 @@ internal class SurfaceAnalysis : Transient
                         break;
                 }
             } // end Try ValueOfUV (CKY 30-DEC-1997)
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 // No reason, but who knows. Better to return something wrong than to stop.
                 s = (global::Kerf.Engine.Foundation.Precision.IsInfinite(uf)) ? 0 : (uf + ul) / 2.0;
@@ -1827,7 +1827,7 @@ internal class SurfaceAnalysis : Transient
             u = uu;
             v = vv;
         } // end try RAJOUT
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             theMin = RealLast(); // the starting theMin
         }

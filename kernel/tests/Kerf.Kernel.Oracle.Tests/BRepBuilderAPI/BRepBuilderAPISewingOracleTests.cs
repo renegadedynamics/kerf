@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Healing;
 using Kerf.Engine.Topology;
@@ -338,7 +339,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         }
         catch (Exception anException)
         {
-            aNError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType());
+            aNError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anException).GetType());
         }
         theTally.NativeSeconds += aWatch.Elapsed.TotalSeconds;
         if (aProgress is not null)
@@ -365,7 +366,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         }
         catch (Exception anException)
         {
-            aPError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType()) + ": " + anException.Message;
+            aPError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anException).GetType()) + ": " + Refusal.Unwrapped(anException).Message;
         }
         theTally.PortSeconds += aWatch.Elapsed.TotalSeconds;
         if (aProgress is not null)

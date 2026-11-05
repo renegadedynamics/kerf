@@ -241,9 +241,9 @@ internal static class ShapeChecks
         {
             return make(shapes);
         }
-        catch (FailureException e) when (e is IncompatibleShapesException)
+        catch (Exception e) when (Refusal.IsFailure(e) && (e is IncompatibleShapesException))
         {
-            throw new ArgumentException(e.Message, nameof(parts), e);
+            throw new ArgumentException(Refusal.Unwrapped(e).Message, nameof(parts), e);
         }
     }
 

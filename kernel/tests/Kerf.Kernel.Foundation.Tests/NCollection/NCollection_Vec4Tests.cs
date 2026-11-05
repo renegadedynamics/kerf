@@ -167,7 +167,7 @@ public class NCollection_VecMatTest
         Assert.False(aSingular.Inverted(ref anUntouched, out double aDet));
         Assert.Equal(0.0, aDet);
         Assert.True(anUntouched.IsIdentity());
-        Assert.ThrowsAny<ConstructionErrorException>(() => aSingular.Inverted());
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => aSingular.Inverted());
     }
 
     [Fact]

@@ -607,7 +607,7 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                 Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.MovePoint(aU, aV, aDispl, aUI1, aUI2, aVI1, aVI2, S.UDegree, S.VDegree, R.URat || R.VRat, S.Poles,
                                         S.AllWeights, S.UFlatKnots, S.VFlatKnots, out aUF, out aUL, out aVF, out aVL, aNewPoles);
             }
-            catch (OutOfRangeException) when (!isNativeThrown)
+            catch (Exception caught) when (Refusal.Of(caught) is OutOfRangeException && (!isNativeThrown))
             {
                 // The index window misses the poles that act at (U, V): OCCT then reads its basis matrices out of
                 // range unchecked (No_Exception, occt-issues.md), where the port throws. Not comparable.

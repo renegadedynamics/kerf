@@ -136,7 +136,7 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
         {
             aDF.Build();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return ("throws\n", null, "", anInput);
         }

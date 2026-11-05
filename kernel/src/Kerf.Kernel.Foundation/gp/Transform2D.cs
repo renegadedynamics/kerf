@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Occt;
 using static Kerf.Geometry.TransformForm;
@@ -365,7 +366,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         // compute the determinant
         Matrix2x2 m = new(col1, col2);
         double s = m.Determinant();
-        Standard_ConstructionError_Raise_if(Math.Abs(s) < Constants.Resolution(), "gp_Trsf2d::SetValues, null determinant");
+        Refusal.ArgumentIf(Math.Abs(s) < Constants.Resolution(), FailureKind.ConstructionError, "gp_Trsf2d::SetValues, null determinant");
         if (s > 0)
         {
             s = Math.Sqrt(s);
@@ -381,7 +382,14 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         shape = CompoundTrsf;
 
         matrix = m;
-        matrix = Orthogonalized(matrix);
+        try
+        {
+            matrix = Orthogonalized(matrix);
+        }
+        catch (FailureException failure)
+        {
+            throw Refusal.Argument(failure);
+        }
 
         loc = col3;
         return new Transform2D(scale, shape, matrix, loc);
@@ -456,7 +464,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
     /// <summary>The coefficient at a row (1 to 2) and column (1 to 3) of the 2x3 matrix, scale included.</summary>
     internal readonly double Value(int row, int col)
     {
-        Standard_OutOfRange_Raise_if(row < 1 || row > 2 || col < 1 || col > 3, " ");
+        Refusal.RangeIf(row < 1 || row > 2 || col < 1 || col > 3, FailureKind.OutOfRange, " ");
         if (col < 3)
         {
             return _scale * _matrix.Value(row, col);
@@ -483,13 +491,13 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         }
         else if (_shape == global::Kerf.Geometry.TransformForm.Scale)
         {
-            Standard_ConstructionError_Raise_if(Math.Abs(newScale) <= Constants.Resolution(), "gp_Trsf2d::Invert() - transformation has zero scale");
+            Refusal.StateIf(Math.Abs(newScale) <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Trsf2d::Invert() - transformation has zero scale");
             newScale = 1.0 / newScale;
             loc.Multiply(-newScale);
         }
         else
         {
-            Standard_ConstructionError_Raise_if(Math.Abs(newScale) <= Constants.Resolution(), "gp_Trsf2d::Invert() - transformation has zero scale");
+            Refusal.StateIf(Math.Abs(newScale) <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Trsf2d::Invert() - transformation has zero scale");
             newScale = 1.0 / newScale;
             matrix.Transpose();
             loc.Multiply(matrix);

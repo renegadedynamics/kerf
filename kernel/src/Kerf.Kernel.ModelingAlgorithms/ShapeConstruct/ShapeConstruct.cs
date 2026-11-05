@@ -79,7 +79,7 @@ internal static partial class ShapeConstruct
                     bSpline = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(c3D, QuasiAngular);
                 }
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 bSpline = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(c3D, QuasiAngular);
             }
@@ -245,7 +245,7 @@ internal static partial class ShapeConstruct
                     break;
                 }
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 // a lower continuity is tried; a failure at C0 gives up, where OCCT retried C0 without end (decision
                 // 16505)
@@ -380,7 +380,7 @@ internal static partial class ShapeConstruct
             // the documentation. No caller in OCCT reads it.
             return (i <= edges.Length());
         }
-        catch (FailureException) when (!edge.IsNull && !WorkingOverlay.IsReadOnly(edge.TShape()!))
+        catch (Exception caught) when (Refusal.IsFailure(caught) && (!edge.IsNull && !WorkingOverlay.IsReadOnly(edge.TShape()!)))
         {
             // OCCT.NET: a frozen edge's exception goes through (decision 423's pattern)
         }

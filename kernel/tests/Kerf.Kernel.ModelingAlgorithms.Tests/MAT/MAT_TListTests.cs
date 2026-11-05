@@ -180,13 +180,13 @@ public class MAT_TListTests
         anArc.SetFirstNode(aN1);
         anArc.SetSecondNode(aN2);
         Assert.Same(aN2, anArc.TheOtherNode(aN1));
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anArc.TheOtherNode(new MedialNode(3, anArc, 1.0)));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anArc.TheOtherNode(new MedialNode(3, anArc, 1.0)));
         Assert.False(anArc.HasNeighbour(aN2, MedialSide.Left));
         anArc.SetNeighbour(MedialSide.Left, aN2, anOther);
         Assert.True(anArc.HasNeighbour(aN2, MedialSide.Left));
         Assert.Same(anOther, anArc.Neighbour(aN2, MedialSide.Left));
         Assert.Null(anArc.Neighbour(aN2, MedialSide.Right));
-        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anArc.Neighbour(new MedialNode(3, anArc, 1.0), MedialSide.Left));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anArc.Neighbour(new MedialNode(3, anArc, 1.0), MedialSide.Left));
         Assert.True(aN1.OnBasicElt());
         Assert.True(aN1.PendingNode());
         Assert.False(new MedialNode(0, anArc, global::Kerf.Engine.Foundation.Precision.Infinite()).OnBasicElt());

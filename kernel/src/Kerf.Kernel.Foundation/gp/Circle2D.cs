@@ -36,7 +36,7 @@ public readonly partial struct Circle2D : IEquatable<Circle2D>
     {
         _pos = new Frame2D(xAxis, isSense);
         _radius = radius;
-        Standard_ConstructionError_Raise_if(radius < 0.0, "gp_Circ2d() - radius should be positive number");
+        Refusal.ArgumentIf(radius < 0.0, FailureKind.ConstructionError, "gp_Circ2d() - radius should be positive number");
     }
 
     /// <exception cref="ConstructionErrorException">The radius is negative.</exception>
@@ -44,7 +44,7 @@ public readonly partial struct Circle2D : IEquatable<Circle2D>
     {
         _pos = axis;
         _radius = radius;
-        Standard_ConstructionError_Raise_if(radius < 0.0, "gp_Circ2d() - radius should be positive number");
+        Refusal.ArgumentIf(radius < 0.0, FailureKind.ConstructionError, "gp_Circ2d() - radius should be positive number");
     }
 
     // Copies
@@ -80,7 +80,7 @@ public readonly partial struct Circle2D : IEquatable<Circle2D>
     public readonly Circle2D WithRadius(double radius)
     {
         double newRadius = _radius;
-        Standard_ConstructionError_Raise_if(radius < 0.0, "gp_Circ2d::SetRadius() - radius should be positive number");
+        Refusal.ArgumentIf(radius < 0.0, FailureKind.ConstructionError, "gp_Circ2d::SetRadius() - radius should be positive number");
         newRadius = radius;
         return new Circle2D(_pos, newRadius);
     }

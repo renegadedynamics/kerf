@@ -97,7 +97,7 @@ internal class InternalAlgo : Transient
                     {
                         Console.Write("An exception was caught when preparing the Shape " + i);
                         Console.Write(" and computing its OutLines " + '\n');
-                        Console.Write(exception.Message + '\n');
+                        Console.Write(Refusal.Unwrapped(exception).Message + '\n');
                     }
                     ds[i - 1] = new HiddenLineData(0, 0, 0);
                     dv = 0;
@@ -178,12 +178,11 @@ internal class InternalAlgo : Transient
 
     // The exceptions OCCT's catch (Standard_Failure) handles under OCC_CATCH_SIGNALS
     private static bool IsCaught(Exception exception)
-        => exception is FailureException
-               or NullReferenceException
+        => (Refusal.IsFailure(exception) || exception is NullReferenceException
                or InvalidCastException
                or IndexOutOfRangeException
                or ArgumentOutOfRangeException
-               or DivideByZeroException;
+               or DivideByZeroException);
 
     /// <summary>Add the shape S, with the shape data SData and nbIso isolines.</summary>
     public void Load(OutLiner s, Transient? sData, int nbIso = 0)

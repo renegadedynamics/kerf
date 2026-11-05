@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Buffers.Binary;
 using System.IO.Compression;
 using System.Text;
@@ -53,7 +54,7 @@ public static class Png
         }
         catch (Exception e) when (e is IOException or NotSupportedException or ObjectDisposedException or UnauthorizedAccessException)
         {
-            return Result.Failure(Diagnostic.Error(WriteFailed, $"The PNG couldn't be written: {e.Message}"));
+            return Result.Failure(Diagnostic.Error(WriteFailed, $"The PNG couldn't be written: {Refusal.Unwrapped(e).Message}"));
         }
     }
 

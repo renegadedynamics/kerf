@@ -188,8 +188,8 @@ public class GeomFill_SweepTests
         Assert.True(aSweep.Restriction(true)!.IsFrozen);
         Assert.True(aSweep.Restriction(false)!.IsFrozen);
         Assert.Equal(0, aSweep.NumberOfTrace());
-        Assert.Throws<OutOfRangeException>(() => aSweep.Trace(1));
-        Assert.Throws<OutOfRangeException>(() => aSweep.ErrorOnTrace(1, out _, out _));
+        EngineAssert.Throws<OutOfRangeException>(() => aSweep.Trace(1));
+        EngineAssert.Throws<OutOfRangeException>(() => aSweep.ErrorOnTrace(1, out _, out _));
         aSweep.ErrorOnRestriction(true, out double aU, out double aV);
         Assert.Equal(0.0, aU);
         Assert.Equal(0.0, aV);
@@ -231,7 +231,7 @@ public class GeomFill_SweepTests
         Assert.Null(aSec.BSplineSurface());
         double anErr = 1;
         Assert.False(aSec.IsConstant(ref anErr));
-        Assert.Throws<NotDoneException>(() => aSec.ConstantSection());
+        EngineAssert.Throws<NotDoneException>(() => aSec.ConstantSection());
         aSec.GetDomain(out double d1, out double d2);
         Assert.Equal((0.0, 3.0), (d1, d2));
         aSec.SetInterval(1, 2);
@@ -328,7 +328,7 @@ public class GeomFill_SweepTests
         aPar.Append(9);
         aLaw = new global::Kerf.Engine.Construction.Surfaces.SurfaceNSections(aSeq, aPar, 0, 2 * M_PI, 0, 9);
         Assert.False(aLaw.IsConicalLaw(ref anErr));
-        Assert.Throws<NotDoneException>(() => aLaw.CirclSection(1));
+        EngineAssert.Throws<NotDoneException>(() => aLaw.CirclSection(1));
     }
 
     [Fact]
@@ -555,7 +555,7 @@ public class GeomFill_SweepTests
         Transform3D aRot = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
         BSplineCurve3D aFirst = OpenSection(new Point3D(8, 0, 0));
         Assert.True(aP[1].DistanceTo(aFirst.Pole(1).Transformed(aRot)) < 1e-9);
-        Assert.Throws<RangeErrorException>(() => aGen.Transformation(aNbS));
+        EngineAssert.Throws<RangeErrorException>(() => aGen.Transformation(aNbS));
     }
 
     [Fact]
@@ -704,16 +704,16 @@ public class GeomFill_SweepTests
         // the old algorithm of a polynomial pipe on an edge: the generator's shape is the quasi-angular one
         (BSplineCurve3D aP, BSplineCurve3D aC1, BSplineCurve3D aC2) = EdgeCurves(2);
         aPipe = new global::Kerf.Engine.Construction.Surfaces.SurfacePipe(aP, aC1, aC2, 2);
-        Assert.Throws<OutOfRangeException>(() => aPipe.Perform(true, true));
+        EngineAssert.Throws<OutOfRangeException>(() => aPipe.Perform(true, true));
 
         // N sections at one parameter of the path
         NCollection_Sequence<Curve3D> aSeq = new();
         aSeq.Append(CircleAtStart(aPath, 1));
         aSeq.Append(CircleAtStart(aPath, 2));
-        Assert.Throws<ConstructionErrorException>(() => new global::Kerf.Engine.Construction.Surfaces.SurfacePipe(aPath, aSeq));
+        EngineAssert.Throws<ConstructionErrorException>(() => new global::Kerf.Engine.Construction.Surfaces.SurfacePipe(aPath, aSeq));
 
         // an option the pipe doesn't build
-        Assert.Throws<ConstructionErrorException>(() => new global::Kerf.Engine.Construction.Surfaces.SurfacePipe(aPath, CircleAtStart(aPath, 1), global::Kerf.Engine.Construction.Surfaces.Trihedron.IsGuideAC));
+        EngineAssert.Throws<ConstructionErrorException>(() => new global::Kerf.Engine.Construction.Surfaces.SurfacePipe(aPath, CircleAtStart(aPath, 1), global::Kerf.Engine.Construction.Surfaces.Trihedron.IsGuideAC));
     }
 
     [Fact]

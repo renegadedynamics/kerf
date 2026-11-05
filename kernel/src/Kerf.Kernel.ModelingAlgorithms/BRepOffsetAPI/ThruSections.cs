@@ -547,7 +547,7 @@ internal class ThruSections : MakeShape
                 CreateSmoothed();
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             NotDone();
             return;

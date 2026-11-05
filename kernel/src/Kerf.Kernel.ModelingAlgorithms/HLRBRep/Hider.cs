@@ -29,12 +29,11 @@ internal sealed class Hider
 
     // The exceptions OCCT's catch (Standard_Failure) handles under OCC_CATCH_SIGNALS around each edge
     private static bool IsCaught(Exception exception)
-        => exception is FailureException
-               or NullReferenceException
+        => (Refusal.IsFailure(exception) || exception is NullReferenceException
                or InvalidCastException
                or IndexOutOfRangeException
                or ArgumentOutOfRangeException
-               or DivideByZeroException;
+               or DivideByZeroException);
 
     /// <summary>Hides the selected edges of the data structure by the face FI; MST caches the faces' adaptors.</summary>
     public void Hide(int fi, Dictionary<Shape, AdaptorTool> mst)

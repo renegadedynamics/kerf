@@ -90,7 +90,7 @@ public class Extrema_ExtElCSTests
         Assert.True(aCross.IsDone);
         Assert.False(aCross.IsParallel);
         Assert.Equal(0, aCross.ExtCount);
-        Assert.Throws<OutOfRangeException>(() => aCross.SquareDistance(1));
+        EngineAssert.Throws<OutOfRangeException>(() => aCross.SquareDistance(1));
     }
 
     [Fact]
@@ -143,14 +143,14 @@ public class Extrema_ExtElCSTests
     [Fact]
     public void NotImplemented()
     {
-        Assert.Throws<MethodNotImplementedException>(() => new ExtElCS(new Line3D(), new Cone()));
-        Assert.Throws<MethodNotImplementedException>(() => new ExtElCS(new Line3D(), new Torus()));
-        Assert.Throws<MethodNotImplementedException>(() => new ExtElCS(new Circle3D(), new Cone()));
-        Assert.Throws<MethodNotImplementedException>(() => new ExtElCS(new Circle3D(), new Torus()));
+        EngineAssert.Throws<MethodNotImplementedException>(() => new ExtElCS(new Line3D(), new Cone()));
+        EngineAssert.Throws<MethodNotImplementedException>(() => new ExtElCS(new Line3D(), new Torus()));
+        EngineAssert.Throws<MethodNotImplementedException>(() => new ExtElCS(new Circle3D(), new Cone()));
+        EngineAssert.Throws<MethodNotImplementedException>(() => new ExtElCS(new Circle3D(), new Torus()));
         var anEmpty = new ExtElCS();
         Assert.False(anEmpty.IsDone);
-        Assert.Throws<NotDoneException>(() => anEmpty.ExtCount);
-        Assert.Throws<NotDoneException>(() => anEmpty.IsParallel);
+        EngineAssert.Throws<NotDoneException>(() => anEmpty.ExtCount);
+        EngineAssert.Throws<NotDoneException>(() => anEmpty.IsParallel);
     }
 
     [Fact]

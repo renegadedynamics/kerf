@@ -31,7 +31,7 @@ public class Geom_CurveSurfaceBaseTests
 
         Assert.Equal(5.0, L.TransformedParameter(5.0, Transform3D.Scale(new Point3D(), 3)));
         Assert.Equal(1.0, L.ParametricTransformation(Transform3D.Scale(new Point3D(), 3)));
-        Assert.Throws<NoSuchObjectException>(() => L.Period);
+        EngineAssert.Throws<NoSuchObjectException>(() => L.Period);
     }
 
     [Fact]
@@ -39,7 +39,7 @@ public class Geom_CurveSurfaceBaseTests
     {
         TestLine L = new(new Point3D(0, 0, 0), new Vector3D(1, 0, 0));
         L.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => L.Mirror(new Point3D()));
+        EngineAssert.Throws<ImmutableObjectException>(() => L.Mirror(new Point3D()));
         Curve3D R = L.Reversed();
         Assert.False(R.IsFrozen);
         Assert.Equal(new Point3D(-2, 0, 0), R.Value(2));
@@ -68,8 +68,8 @@ public class Geom_CurveSurfaceBaseTests
         S.TransformParameters(ref U, ref V, Transform3D.Scale(new Point3D(), 2));
         Assert.Equal((1.0, 2.0), (U, V));
         Assert.Equal(new GeneralTransform2D().Form, S.ParametricTransformation(new Transform3D()).Form);
-        Assert.Throws<NoSuchObjectException>(() => S.UPeriod);
-        Assert.Throws<NoSuchObjectException>(() => S.VPeriod);
+        EngineAssert.Throws<NoSuchObjectException>(() => S.UPeriod);
+        EngineAssert.Throws<NoSuchObjectException>(() => S.VPeriod);
     }
 
     [Fact]
@@ -105,11 +105,11 @@ public class Geom_CurveSurfaceBaseTests
         Assert.Equal(1, aClone.MaxDerivOrder);
 
         // Invalid descriptors
-        Assert.Throws<ProgramErrorException>(() => RepUtils.ValidateCurveDesc(aDesc, aRep));
-        Assert.Throws<ProgramErrorException>(() =>
+        EngineAssert.Throws<ProgramErrorException>(() => RepUtils.ValidateCurveDesc(aDesc, aRep));
+        EngineAssert.Throws<ProgramErrorException>(() =>
             RepUtils.ValidateCurveDesc(new RepCurveDesc.Full(), anOwner));
         aDesc.ParamMap = new RepCurveDesc.Map1d { Scale = 0.0 };
-        Assert.Throws<ProgramErrorException>(() => RepUtils.ValidateCurveDesc(aDesc, anOwner));
+        EngineAssert.Throws<ProgramErrorException>(() => RepUtils.ValidateCurveDesc(aDesc, anOwner));
         Assert.True(new RepCurveDesc.Map1d().IsIdentity);
     }
 

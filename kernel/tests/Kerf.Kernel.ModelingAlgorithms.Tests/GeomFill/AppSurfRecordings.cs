@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Construction.Surfaces;
 using Kerf.Geometry;
@@ -307,9 +308,9 @@ internal static class AppSurfRecordings
                                          theA.SurfUMults(), theA.SurfVMults(), theA.UDegree(), theA.VDegree());
             PutBSplineSurface(theW, aS);
         }
-        catch (global::Kerf.Engine.Foundation.FailureException anExc)
+        catch (Exception anExc) when (Refusal.IsFailure(anExc))
         {
-            theW.Put("srf:" + ExcName(anExc));
+            theW.Put("srf:" + ExcName(Refusal.Of(anExc)!));
         }
     }
 
@@ -352,9 +353,9 @@ internal static class AppSurfRecordings
                 aGen.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
                 PutBSplineSurface(aW, (BSplineSurface)aGen.Surface()!);
             }
-            catch (global::Kerf.Engine.Foundation.FailureException anExc)
+            catch (Exception anExc) when (Refusal.IsFailure(anExc))
             {
-                aW.Put("exc:" + ExcName(anExc));
+                aW.Put("exc:" + ExcName(Refusal.Of(anExc)!));
             }
             return aW.Tokens;
         }
@@ -430,9 +431,9 @@ internal static class AppSurfRecordings
             }
             PutApprox(aW, anApp);
         }
-        catch (global::Kerf.Engine.Foundation.FailureException anExc)
+        catch (Exception anExc) when (Refusal.IsFailure(anExc))
         {
-            aW.Put("exc:" + ExcName(anExc));
+            aW.Put("exc:" + ExcName(Refusal.Of(anExc)!));
         }
         return aW.Tokens;
     }

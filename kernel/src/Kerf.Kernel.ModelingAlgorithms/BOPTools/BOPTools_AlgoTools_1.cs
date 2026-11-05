@@ -24,7 +24,7 @@ namespace Kerf.Engine.Booleans.Tools;
 //
 // They are in-place utilities (design family 1): they grow the tolerances of the edges and vertices of the shape
 // they are given (BRep_Builder.UpdateEdge/UpdateVertex in UpdateShape, the only write site), except those in the map
-// to avoid. A frozen sub-shape throws TopoDS_LockedShape. Ported callers (BOPAlgo's post-passes) give them results
+// to avoid. A frozen sub-shape throws ImmutableObjectException. Ported callers (BOPAlgo's post-passes) give them results
 // they are still building (plan 2.3).
 //
 // Decision 6430: OCCT runs the five loops in parallel when asked. Their bodies write the tolerances of sub-shapes

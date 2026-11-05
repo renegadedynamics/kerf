@@ -172,9 +172,9 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
             theError = aColon > 0 ? aMessage[..aColon] : aMessage;
             return null;
         }
-        catch (FailureException anException)
+        catch (Exception anException) when (Refusal.IsFailure(anException))
         {
-            theError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType());
+            theError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anException).GetType());
             return null;
         }
     }

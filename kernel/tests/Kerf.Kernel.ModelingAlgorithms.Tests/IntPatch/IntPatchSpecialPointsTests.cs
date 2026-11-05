@@ -111,7 +111,7 @@ public class IntPatchSpecialPointsTests
         PatchPoint aVertex = new();
         aVertex.SetTolerance(1e-3);
         PntOn2S anAdded = new();
-        Assert.Throws<TypeMismatchException>(() =>
+        EngineAssert.Throws<TypeMismatchException>(() =>
             SpecialPoints.AddSingularPole(aQ, aP, aVertex.PntOn2S(), ref aVertex, ref anAdded));
     }
 

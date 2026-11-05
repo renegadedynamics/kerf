@@ -284,7 +284,7 @@ public class IntImpParGenTests
         Assert.True(anInter.IsEmpty);
 
         // the parametric curve's domain must be bounded on both sides
-        Assert.ThrowsAny<ConstructionErrorException>(
+        EngineAssert.ThrowsAny<ConstructionErrorException>(
             () => new CircleSegmentIntersector(theUnitCircle, CircleDomain(), aSeg, new TwoDDomain(), 1e-9, 1e-9));
     }
 

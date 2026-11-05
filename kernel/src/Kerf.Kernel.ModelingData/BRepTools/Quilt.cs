@@ -28,7 +28,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// <para>
 /// Adding a face that uses a bound edge gives the edge it is bound to a pcurve on that face, in place, as in OCCT. An
 /// edge bound with <see cref="Bind(in Edge, in Edge)"/> to a frozen edge (any shape a caller holds)
-/// therefore makes <see cref="Add"/> throw <see cref="LockedShapeException"/>, as OCCT does for a locked one; ported code
+/// therefore makes <see cref="Add"/> throw <see cref="ImmutableObjectException"/>, as OCCT does for a locked one; ported code
 /// passes edges it built itself.
 /// </para>
 /// </remarks>

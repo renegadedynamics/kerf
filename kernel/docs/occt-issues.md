@@ -2069,3 +2069,9 @@ classes.
 | `Geom2dGcc_Lin2dTanObl.cxx` (curve, line, param, angle) | NbrSol is never set for the iterative solution, and its tangency isn't checked | No solution reported; with the parameters fixed, non-tangent lines | fixed (decision 1544) |
 | `Geom2dGcc_Circ2d3TanIter.cxx` | par1sol..par3sol are 0 or distances between tangency points | Wrong parameters on the solution (build123d.NET's arcs) | fixed (decision 1546) |
 | `Geom2dGcc_Circ2dTanOnRadGeo.cxx` | Offset-curve intersections give circles off the argument or the curve, and on the wrong side of a qualified circle | Wrong solutions (once row 1068 lets curves be found) | fixed (decision 1547) |
+
+## Found by unit 10P2's run of the public members
+
+| Where | What | Effect | Triage |
+|---|---|---|---|
+| `Geom_TrimmedCurve.cxx`, `Geom2d_TrimmedCurve.cxx`, `Geom_RectangularTrimmedSurface.cxx` (`SetTrim`, `Reverse`) | With a NaN parameter on a basis that is not periodic, `U1 < U2` is false, so the sense is reversed, and `Reverse` calls `SetTrim` with NaN again | Unbounded recursion: the stack overflows | fixed: a NaN is refused (decision 1604) |

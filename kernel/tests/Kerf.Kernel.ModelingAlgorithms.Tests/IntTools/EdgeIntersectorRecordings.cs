@@ -174,9 +174,9 @@ internal static class EdgeIntersectorRecordings
             }
             return aS.ToString();
         }
-        catch (FailureException anEx)
+        catch (Exception anEx) when (Refusal.IsFailure(anEx))
         {
-            return "X " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anEx.GetType());
+            return "X " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anEx).GetType());
         }
     }
 
@@ -205,9 +205,9 @@ internal static class EdgeIntersectorRecordings
             }
             return aS.ToString();
         }
-        catch (FailureException anEx)
+        catch (Exception anEx) when (Refusal.IsFailure(anEx))
         {
-            return "X " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anEx.GetType());
+            return "X " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anEx).GetType());
         }
     }
 

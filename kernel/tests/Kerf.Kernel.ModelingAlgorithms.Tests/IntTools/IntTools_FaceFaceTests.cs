@@ -57,7 +57,7 @@ public class IntTools_FaceFaceTests
     public void Lines_throw_when_not_done()
     {
         FaceFace aFF = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aFF.Lines());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aFF.Lines());
     }
 
     [Fact]
@@ -146,7 +146,7 @@ public class IntTools_FaceFaceTests
         aBB.MakeFace(ref aF1, new PlaneSurface(new CoordinateSystem(new Point3D(0, -0.2, 0.3), new Direction3D(0, 1, 0.3))), 1.0e-7);
         aBB.MakeFace(ref aF2, new PlaneSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(1, 0, 0.5))), 1.0e-7);
         FaceFace aFF = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aFF.Perform(aF1, aF2));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aFF.Perform(aF1, aF2));
     }
 
     [Fact]

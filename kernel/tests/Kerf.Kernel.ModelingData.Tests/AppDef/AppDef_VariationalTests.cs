@@ -261,9 +261,9 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
         aV.CriteriumWeight(out p1, out p2, out p3);
         Assert.Equal(1.0, p1 + p2 + p3, 1.0e-15);
         Assert.Equal(0.25 / 1.0, p1, 1.0e-15);
-        Assert.Throws<DomainErrorException>(() => aV.SetCriteriumWeight(-1.0, 1.0, 1.0));
-        Assert.Throws<DomainErrorException>(() => aV.SetCriteriumWeight(1, -1.0));
-        Assert.Throws<ConstructionErrorException>(() => aV.SetCriteriumWeight(4, 1.0));
+        EngineAssert.Throws<DomainErrorException>(() => aV.SetCriteriumWeight(-1.0, 1.0, 1.0));
+        EngineAssert.Throws<DomainErrorException>(() => aV.SetCriteriumWeight(1, -1.0));
+        EngineAssert.Throws<ConstructionErrorException>(() => aV.SetCriteriumWeight(4, 1.0));
     }
 
     [Fact]
@@ -330,20 +330,20 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
         Assert.Equal(0.01, aV.Tolerance());
         Assert.Equal(3, aV.IterationCount);
         Assert.False(aV.IsDone);
-        Assert.Throws<NotDoneException>(() => aV.Value());
-        Assert.Throws<NotDoneException>(() => aV.MaxError());
+        EngineAssert.Throws<NotDoneException>(() => aV.Value());
+        EngineAssert.Throws<NotDoneException>(() => aV.MaxError());
         Assert.True(aV.SetMaxDegree(6));
         Assert.Equal(6, aV.MaxDegree());
         Assert.True(aV.SetMaxSegment(5));
         Assert.True(aV.SetContinuity(C2));
-        Assert.Throws<ConstructionErrorException>(() => aV.SetContinuity(C3));
+        EngineAssert.Throws<ConstructionErrorException>(() => aV.SetContinuity(C3));
         aV.SetNbIterations(1);
         Assert.Equal(1, aV.IterationCount);
         aV.Approximate();
         Assert.True(aV.IsDone);
         Assert.True(aV.Value().Degree() <= 6);
         // OCCT clamps MaxDegree to 30, but FEmTool's criteria take at most 14 (decision 148)
-        Assert.Throws<ConstructionErrorException>(() => new Variational(aLine, 1, 20, Constraints(), 40));
+        EngineAssert.Throws<ConstructionErrorException>(() => new Variational(aLine, 1, 20, Constraints(), 40));
     }
 
     [Fact]
@@ -359,7 +359,7 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
         Variational aV = new(aLine, 1, 10, Constraints(aAll), 6, 1, C2, false, false);
         Assert.True(aV.IsOverConstrained);
         Assert.False(aV.IsCreated);
-        Assert.Throws<NotDoneException>(() => aV.Approximate());
+        EngineAssert.Throws<NotDoneException>(() => aV.Approximate());
         // fewer constraints: no longer over-constrained, but OCCT's Init never clears the flag, so SetConstraints
         // still returns false (occt-issues.md)
         Assert.False(aV.SetConstraints(Constraints((1, PassPoint))));
@@ -373,15 +373,15 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
     public void InvalidArguments_Throw()
     {
         MultiLine aLine = Line3d(10, Circle);
-        Assert.Throws<DomainErrorException>(() => new Variational(aLine, 1, 10, Constraints(), 0));
-        Assert.Throws<DomainErrorException>(() => new Variational(aLine, 1, 10, Constraints(), 8, 0));
-        Assert.Throws<ConstructionErrorException>(() => new Variational(aLine, 1, 10, Constraints(), 8, 10, G1));
+        EngineAssert.Throws<DomainErrorException>(() => new Variational(aLine, 1, 10, Constraints(), 0));
+        EngineAssert.Throws<DomainErrorException>(() => new Variational(aLine, 1, 10, Constraints(), 8, 0));
+        EngineAssert.Throws<ConstructionErrorException>(() => new Variational(aLine, 1, 10, Constraints(), 8, 10, G1));
         // a tangency point without tangents
-        Assert.Throws<ConstructionErrorException>(
+        EngineAssert.Throws<ConstructionErrorException>(
             () => new Variational(aLine, 1, 10, Constraints((1, TangencyPoint))));
         // coincident points: no length
         MultiLine aPoint = Line3d(5, _ => new Point3D(1, 2, 3));
-        Assert.Throws<ConstructionErrorException>(() => new Variational(aPoint, 1, 5, Constraints()));
+        EngineAssert.Throws<ConstructionErrorException>(() => new Variational(aPoint, 1, 5, Constraints()));
     }
 
     [Fact]
@@ -390,7 +390,7 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
         // OCCT estimates a tangent at the third point of a two-point line, reading past the points (occt-issues.md);
         // the port's range checks throw.
         MultiLine aLine = Line3d(2, t => new Point3D(t, 0, 0));
-        Assert.ThrowsAny<FailureException>(() => new Variational(aLine, 1, 2, Constraints()));
+        EngineAssert.ThrowsAny<FailureException>(() => new Variational(aLine, 1, 2, Constraints()));
     }
 
     [Fact]
@@ -399,9 +399,9 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
         MultiLine aLine = Line3d(10, Circle);
         LinearCriteria aJ = new(aLine, 1, 10);
         Assert.Null(aJ.Curve());
-        Assert.Throws<DomainErrorException>(() => aJ.AssemblyTable());
-        Assert.Throws<DomainErrorException>(() => aJ.SetWeight(-1.0, 1.0, 1.0, 1.0, 1.0));
-        Assert.Throws<DomainErrorException>(() => aJ.SetWeight(1.0, 1.0, -1.0, 1.0, 1.0));
+        EngineAssert.Throws<DomainErrorException>(() => aJ.AssemblyTable());
+        EngineAssert.Throws<DomainErrorException>(() => aJ.SetWeight(-1.0, 1.0, 1.0, 1.0, 1.0));
+        EngineAssert.Throws<DomainErrorException>(() => aJ.SetWeight(1.0, 1.0, -1.0, 1.0, 1.0));
 
         aJ.SetWeight(2.0, 3.0, 1.0, 1.0, 2.0);
         aJ.GetWeight(out double aQuad, out double aQual);

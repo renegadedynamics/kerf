@@ -129,7 +129,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         double otherNorm = other.Magnitude;
         if (norm <= Constants.Resolution() || otherNorm <= Constants.Resolution())
         {
-            throw new NullVectorException();
+            throw Refusal.State(new NullVectorException());
         }
 
         double d = norm * otherNorm;
@@ -195,7 +195,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
     public readonly Vector2D Normalized()
     {
         double d = _coord.Modulus();
-        Standard_ConstructionError_Raise_if(d <= Constants.Resolution(), "gp_Vec2d::Normalized() - vector has zero norm");
+        Refusal.StateIf(d <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Vec2d::Normalized() - vector has zero norm");
         Xy coord = _coord;
         coord.Divide(d);
         return new Vector2D(coord);

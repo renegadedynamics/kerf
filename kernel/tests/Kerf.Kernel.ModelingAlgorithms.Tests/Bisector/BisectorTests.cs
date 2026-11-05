@@ -70,7 +70,7 @@ public class BisectorTests
         Assert.Equal(1.0, aP.X, 1e-12);
         Assert.Equal(1.0, aP.Y, 1e-12);
         Assert.Equal(aCurve.FirstParameter + 1.0, anAna.Parameter(aCurve.Value(aCurve.FirstParameter + 1.0)), 1e-12);
-        Assert.ThrowsAny<OutOfRangeException>(() => anAna.IntervalFirst(2));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => anAna.IntervalFirst(2));
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public class BisectorTests
     public void CoincidentPoints_Throw()
     {
         global::Kerf.Engine.Offsets.Bisectors.Bisec aPP = new();
-        Assert.ThrowsAny<NoSolutionException>(() => aPP.Perform(new CartesianPoint2(1, 1),
+        EngineAssert.ThrowsAny<NoSolutionException>(() => aPP.Perform(new CartesianPoint2(1, 1),
                                                                  new CartesianPoint2(1, 1), new Point2D(1, 1),
                                                                  new Vector2D(1, 0), new Vector2D(0, 1), 1.0));
     }
@@ -126,8 +126,8 @@ public class BisectorTests
             Assert.Equal(aP.SquareDistanceTo(new Point2D(1.5, -2.0)), aPC.Distance(u), 1e-9);
             Assert.Equal(u, aPC.LinkCurveBis(aPC.LinkBisCurve(u)));
         }
-        Assert.ThrowsAny<MethodNotImplementedException>(() => aPC.Reversed());
-        Assert.ThrowsAny<UndefinedDerivative2DException>(() => aPC.DN(0.5, 4));
+        EngineAssert.ThrowsAny<MethodNotImplementedException>(() => aPC.Reversed());
+        EngineAssert.ThrowsAny<UndefinedDerivative2DException>(() => aPC.DN(0.5, 4));
     }
 
     [Fact]
@@ -148,7 +148,7 @@ public class BisectorTests
         global::Kerf.Engine.Offsets.Bisectors.BisecCC aGuide = aCC.ChangeGuide();
         Assert.Same(aCC.Curve(2), aGuide.Curve(1));
         Assert.Equal(aCC.Polygon().Length(), aGuide.Polygon().Length());
-        Assert.ThrowsAny<OutOfRangeException>(() => aCC.Curve(3));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aCC.Curve(3));
 
         // Copy owns copies of everything.
         global::Kerf.Engine.Offsets.Bisectors.BisecCC aCopy = (global::Kerf.Engine.Offsets.Bisectors.BisecCC)aCC.Copy();
@@ -241,6 +241,6 @@ public class BisectorTests
         // A frozen bisector refuses to change.
         global::Kerf.Engine.Offsets.Bisectors.BisecAna aFrozen = (global::Kerf.Engine.Offsets.Bisectors.BisecAna)anAna.Copy();
         aFrozen.Freeze();
-        Assert.ThrowsAny<ImmutableObjectException>(() => aFrozen.SetTrim(0.0, 1.0));
+        EngineAssert.ThrowsAny<ImmutableObjectException>(() => aFrozen.SetTrim(0.0, 1.0));
     }
 }

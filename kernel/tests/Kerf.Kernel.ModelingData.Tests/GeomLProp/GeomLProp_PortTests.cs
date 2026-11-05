@@ -88,21 +88,21 @@ public class GeomLProp_PortTests
         Assert.Equal(1.0 / Math.Sqrt(2.0), aTangent.X, 1e-15);
         Assert.Equal(1.0 / Math.Sqrt(2.0), aTangent.Y, 1e-15);
         Assert.Equal(RealLast(), aProps.Curvature());
-        Assert.ThrowsAny<global::Kerf.Engine.Geometry.Properties.NotDefinedException>(() => aProps.Normal(out _));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Geometry.Properties.NotDefinedException>(() => aProps.Normal(out _));
 
         // OCCT goes on with the null normal D2 (D1.D1) - D1 (D1.D2) and the stale curvature 0 (occt-issues.md): its
         // release build computes NaN, the port's gp_Vec::Normalize throws
-        Assert.ThrowsAny<ConstructionErrorException>(() => aProps.CentreOfCurvature(out _));
+        EngineAssert.ThrowsAny<ConstructionErrorException>(() => aProps.CentreOfCurvature(out _));
 
         // a point (all derivatives null): no tangent
         var aPoint = new BezierCurve3D(new NCollection_Array1<Point3D>(1, 2));
         var aPointProps = new global::Kerf.Engine.Geometry.Properties.CLProps(aPoint, 0.5, 1, 1e-7);
         Assert.False(aPointProps.IsTangentDefined());
-        Assert.ThrowsAny<global::Kerf.Engine.Geometry.Properties.NotDefinedException>(() => aPointProps.Tangent(out _));
-        Assert.ThrowsAny<global::Kerf.Engine.Geometry.Properties.NotDefinedException>(() => aPointProps.Curvature());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Geometry.Properties.NotDefinedException>(() => aPointProps.Tangent(out _));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Geometry.Properties.NotDefinedException>(() => aPointProps.Curvature());
 
-        Assert.ThrowsAny<OutOfRangeException>(() => new global::Kerf.Engine.Geometry.Properties.CLProps(aCurve, 4, 1e-7));
-        Assert.ThrowsAny<OutOfRangeException>(() => new global::Kerf.Engine.Geometry.Properties.SLProps(3, 1e-7));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => new global::Kerf.Engine.Geometry.Properties.CLProps(aCurve, 4, 1e-7));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => new global::Kerf.Engine.Geometry.Properties.SLProps(3, 1e-7));
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public class GeomLProp_PortTests
         var aLine3 = new LineCurve3D(new Point3D(5, 0, 0), new Direction3D(0, 1, 0));
         Assert.Equal(C0, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aLine1, aLine3, 5.0, 0.0, false, false));
 
-        Assert.ThrowsAny<FailureException>(() => global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aLine1, aLine3, 4.0, 0.0, false, false));
+        EngineAssert.ThrowsAny<FailureException>(() => global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aLine1, aLine3, 4.0, 0.0, false, false));
     }
 
     private static BSplineCurve3D CubicWithKnot(int theMult)
@@ -195,8 +195,8 @@ public class GeomLProp_PortTests
         var aCone = new global::Kerf.Engine.Geometry.Properties.SLProps(new ConicalSurface(anAx3, 0.5, 0.0), 0.0, 0.0, 2, 1e-7);
         Assert.False(aCone.IsNormalDefined);
         Assert.False(aCone.IsCurvatureDefined());
-        Assert.ThrowsAny<global::Kerf.Engine.Geometry.Properties.NotDefinedException>(() => aCone.Normal());
-        Assert.ThrowsAny<global::Kerf.Engine.Geometry.Properties.NotDefinedException>(() => aCone.MaxCurvature());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Geometry.Properties.NotDefinedException>(() => aCone.Normal());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Geometry.Properties.NotDefinedException>(() => aCone.MaxCurvature());
 
         // the adaptor instantiation agrees on the sphere
         var anAdapted = new global::Kerf.Engine.Geometry.Properties.SLProps3d(new SurfaceAdaptor(new SphericalSurface(anAx3, 2.0)), 0.4, 0.3, 2, 1e-7);

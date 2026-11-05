@@ -657,6 +657,6 @@ public class BRepGPropKnownAnswerTests
         double aMass = 0;
         Point3D aG = new();
         Matrix3x3 anI = new();
-        Assert.Throws<ProgramErrorException>(() => aGauss.Compute(aBF, new Point3D(), ref aMass, ref aG, ref anI));
+        EngineAssert.Throws<ProgramErrorException>(() => aGauss.Compute(aBF, new Point3D(), ref aMass, ref aG, ref anI));
     }
 }

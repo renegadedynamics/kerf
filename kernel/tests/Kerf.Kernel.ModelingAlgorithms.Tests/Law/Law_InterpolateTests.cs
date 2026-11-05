@@ -37,7 +37,7 @@ public class Law_InterpolateTests
         }
         var anInter = new LawsInterpolate(Array(aValues), Array(aParams), false, 1.0e-9);
         Assert.False(anInter.IsDone);
-        Assert.Throws<NotDoneException>(() => anInter.Curve());
+        EngineAssert.Throws<NotDoneException>(() => anInter.Curve());
         anInter.Perform();
         Assert.True(anInter.IsDone);
         BSpline aCurve = anInter.Curve();
@@ -110,7 +110,7 @@ public class Law_InterpolateTests
         aCurve.D1(0.0, out _, out double D0);
         aCurve.D1(4.0, out _, out double D4);
         Assert.Equal(D0, D4, 1.0e-10);
-        Assert.Throws<ConstructionErrorException>(() => new LawsInterpolate(Array(aValues), Array(aParams), false, 1.0e-9)
+        EngineAssert.Throws<ConstructionErrorException>(() => new LawsInterpolate(Array(aValues), Array(aParams), false, 1.0e-9)
                                                         .Load(new NCollection_Array1<double>(1, 3), new NCollection_HArray1<bool>(1, 3)));
     }
 
@@ -125,7 +125,7 @@ public class Law_InterpolateTests
         Assert.Equal(7.0, aCurve.LastParameter());
         Assert.Equal(3.0, aCurve.Value(2.0), 1.0e-12);
         Assert.Equal(2.0, aCurve.Value(3.0), 1.0e-12);
-        Assert.Throws<ConstructionErrorException>(() => new LawsInterpolate(Array(1.0, 2.0), Array(0.0, 0.0), false, 1.0e-9));
+        EngineAssert.Throws<ConstructionErrorException>(() => new LawsInterpolate(Array(1.0, 2.0), Array(0.0, 0.0), false, 1.0e-9));
     }
 
     [Fact]

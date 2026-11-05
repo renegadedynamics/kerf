@@ -137,7 +137,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
         catch (Exception anException)
         {
             aNative = null;
-            aNativeError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType()) + ": " + anException.Message;
+            aNativeError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anException).GetType()) + ": " + Refusal.Unwrapped(anException).Message;
         }
 
         bool isPortDone;
@@ -240,7 +240,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
                     {
                         anAx = new Frame3D(anOrigin, aD, aX);
                     }
-                    catch (FailureException)
+                    catch (Exception caught) when (Refusal.IsFailure(caught))
                     {
                         break;
                     }
@@ -286,7 +286,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
                     {
                         anAx = new Frame3D(anOrigin, aD, aX);
                     }
-                    catch (FailureException)
+                    catch (Exception caught) when (Refusal.IsFailure(caught))
                     {
                         break;
                     }
@@ -612,7 +612,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
         {
             anAx3 = new CoordinateSystem(theO.Pnt(), aD, aX);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             theNative = null;
             mySkipped++;

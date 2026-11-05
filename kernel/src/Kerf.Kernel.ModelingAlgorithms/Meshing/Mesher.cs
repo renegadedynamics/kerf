@@ -53,7 +53,7 @@ public static class Mesher
             {
                 throw;
             }
-            catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+            catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 return Result<ShapeMesh>.Failure(OperationDiagnostics.FromException(e));

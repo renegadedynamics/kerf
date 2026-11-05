@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using Occt;
@@ -139,7 +140,7 @@ public sealed class LineCurve2D : Curve2D
     {
         if (n < 1)
         {
-            throw new UndefinedDerivative2DException();
+            throw Refusal.State(new UndefinedDerivative2DException());
         }
         if (n == 1)
         {

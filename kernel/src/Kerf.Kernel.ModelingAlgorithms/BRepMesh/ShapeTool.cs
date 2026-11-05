@@ -32,7 +32,7 @@ namespace Kerf.Engine.Meshing;
 /// triangulations are finished before they are attached (<see cref="AddInFace(FaceModel, Triangulation)"/>; unit 10L5
 /// retired decision 488's unfrozen attach). The mesher
 /// writes into an unfrozen shape in place, and into a frozen one in a working overlay (unit 10H6, decision 489);
-/// outside one, a frozen face or edge throws <see cref="LockedShapeException"/>.
+/// outside one, a frozen face or edge throws <see cref="ImmutableObjectException"/>.
 /// </para>
 /// </remarks>
 internal static class ShapeTool

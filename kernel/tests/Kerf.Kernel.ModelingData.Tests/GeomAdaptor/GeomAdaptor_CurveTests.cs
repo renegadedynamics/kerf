@@ -103,7 +103,7 @@ public class GeomAdaptor_Curve_Test
         // Test loading with UFirst > ULast + Precision::Confusion()
         // This should throw Standard_ConstructionError
         CurveAdaptor anAdaptor = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => anAdaptor.Load(myLine, 10.0, 5.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => anAdaptor.Load(myLine, 10.0, 5.0));
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public class GeomAdaptor_Curve_Test
         double aParam2 = 5.0 - global::Kerf.Engine.Foundation.Precision.Confusion() * 2.0;
 
         CurveAdaptor anAdaptor = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => anAdaptor.Load(myLine, aParam1, aParam2));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => anAdaptor.Load(myLine, aParam1, aParam2));
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public class GeomAdaptor_Curve_Test
     public void Constructor_InvalidParameters_ThrowsException()
     {
         // Test constructor with invalid parameters
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new CurveAdaptor(myCircle, 10.0, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new CurveAdaptor(myCircle, 10.0, 0.0));
     }
 
     [Fact]
@@ -140,7 +140,7 @@ public class GeomAdaptor_Curve_Test
         Curve3D? aNullCurve = null;
         CurveAdaptor anAdaptor = new();
 
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => anAdaptor.Load(aNullCurve!, 0.0, 10.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => anAdaptor.Load(aNullCurve!, 0.0, 10.0));
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public class GeomAdaptor_Curve_Test
         double aParam2 = 5.0 - global::Kerf.Engine.Foundation.Precision.Confusion() - 1e-10;
 
         CurveAdaptor anAdaptor = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => anAdaptor.Load(myLine, aParam1, aParam2));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => anAdaptor.Load(myLine, aParam1, aParam2));
     }
 
     [Fact]

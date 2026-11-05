@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
@@ -102,7 +103,7 @@ public partial class DrawLiteChecksOracleTests(ITestOutputHelper output) : IDisp
         }
         catch (Exception anException)
         {
-            return "exception " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType());
+            return "exception " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anException).GetType());
         }
     }
 

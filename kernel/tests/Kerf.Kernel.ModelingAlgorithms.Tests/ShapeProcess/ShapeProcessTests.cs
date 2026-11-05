@@ -86,7 +86,7 @@ public class ShapeProcessTests
         Assert.Equal("x", aContext.StringVal("Bad", null));
         Assert.Equal("def", aContext.StringVal("Missing", "def"));
         // OCCT reads the first character of an empty value: Standard_OutOfRange, which the performer catches
-        Assert.ThrowsAny<OutOfRangeException>(() => aContext.RealVal("Empty", 0));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aContext.RealVal("Empty", 0));
 
         aContext.UnSetScope();
         Assert.Equal(-1.0, aContext.RealVal("Real", -1.0));

@@ -138,8 +138,8 @@ public class Intf_ToolTest
         Assert.Equal(-1.0, y, 1e-12);
         Assert.Equal(2.0, X, 1e-12);
         Assert.Equal(2.0, Y, 1e-12);
-        Assert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => aTool.BeginParam(2));
-        Assert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => aTool.EndParam(0));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => aTool.BeginParam(2));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => aTool.EndParam(0));
     }
 
     [Fact]

@@ -101,15 +101,15 @@ public partial class IntAna_IntQuadQuad_Test
         Assert.True(anIntersector.IsDone);
 
         // Test with invalid indices (should throw exceptions)
-        Assert.ThrowsAny<OutOfRangeException>(() => anIntersector.HasNextCurve(0));
-        Assert.ThrowsAny<OutOfRangeException>(() => anIntersector.HasNextCurve(anIntersector.CurveCount + 1));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => anIntersector.HasNextCurve(0));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => anIntersector.HasNextCurve(anIntersector.CurveCount + 1));
 
         // Test NextCurve on curves that don't have next curves
         for (int i = 1; i <= anIntersector.CurveCount; i++)
         {
             if (!anIntersector.HasNextCurve(i)) // Only test exception when HasNextCurve is false
             {
-                Assert.ThrowsAny<DomainErrorException>(() => anIntersector.NextCurve(i, out _));
+                EngineAssert.ThrowsAny<DomainErrorException>(() => anIntersector.NextCurve(i, out _));
             }
         }
     }

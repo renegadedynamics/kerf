@@ -15,7 +15,7 @@ public class IntImp_ComputeTangenceTests
     {
         Assert.Equal(ConstIsoparametric.UIsoparametricOnCaro1, Tangence.ChoixRef(0));
         Assert.Equal(ConstIsoparametric.VIsoparametricOnCaro2, Tangence.ChoixRef(3));
-        Assert.ThrowsAny<OutOfRangeException>(() => Tangence.ChoixRef(4));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => Tangence.ChoixRef(4));
     }
 
     [Fact]

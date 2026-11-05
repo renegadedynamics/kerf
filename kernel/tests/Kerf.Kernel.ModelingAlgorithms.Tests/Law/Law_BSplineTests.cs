@@ -337,7 +337,7 @@ public class Law_BSplineTests
         Assert.Equal(aSeq.AsSpan().ToArray(), aLaw.KnotSequence().ToArray());
         aPoles[1] = 1.0e10; // the caller's array, not the curve's
         Assert.NotEqual(1.0e10, aLaw.Pole(1));
-        Assert.Throws<DimensionErrorException>(() => aLaw.Poles(new NCollection_Array1<double>(1, aLaw.PoleCount + 1)));
+        EngineAssert.Throws<DimensionErrorException>(() => aLaw.Poles(new NCollection_Array1<double>(1, aLaw.PoleCount + 1)));
     }
 
     [Fact]
@@ -357,8 +357,8 @@ public class Law_BSplineTests
         BSpline aPW = aLaw.WithPole(2, 3.0, 2.0);
         Assert.Equal(3.0, aPW.Pole(2));
         Assert.Equal(2.0, aPW.Weight(2));
-        Assert.Throws<ConstructionErrorException>(() => aLaw.WithWeight(1, 0.0));
-        Assert.Throws<OutOfRangeException>(() => aLaw.WithPole(0, 1.0));
+        EngineAssert.Throws<ConstructionErrorException>(() => aLaw.WithWeight(1, 0.0));
+        EngineAssert.Throws<OutOfRangeException>(() => aLaw.WithPole(0, 1.0));
     }
 
     [Fact]
@@ -382,7 +382,7 @@ public class Law_BSplineTests
         BSpline aK = aLaw.WithKnot(2, 1.5);
         Assert.Equal(1.5, aK.Knot(2));
         Assert.Equal(BSplKnotDistribution.NonUniform, aK.KnotDistribution());
-        Assert.Throws<ConstructionErrorException>(() => aLaw.WithKnot(2, 2.0));
+        EngineAssert.Throws<ConstructionErrorException>(() => aLaw.WithKnot(2, 2.0));
         BSpline aKM = aLaw.WithKnot(2, 1.25, 3);
         // OCCT's IncreaseMultiplicity inserts 3 - 1 with Add = false (occt-issues.md): multiplicity 2, not 3
         Assert.Equal(2, aKM.Multiplicity(2));
@@ -477,10 +477,10 @@ public class Law_BSplineTests
         Pair p = RandomPair(aRnd, thePeriodic: false);
         BSpline aLaw = p.Law;
         aLaw.Freeze();
-        Assert.Throws<ImmutableObjectException>(() => aLaw.SetPole(1, 1.0));
-        Assert.Throws<ImmutableObjectException>(() => aLaw.InsertKnot(0.5 * (aLaw.FirstParameter() + aLaw.LastParameter())));
-        Assert.Throws<ImmutableObjectException>(() => aLaw.Reverse());
-        Assert.Throws<ImmutableObjectException>(() => aLaw.Segment(aLaw.FirstParameter(), aLaw.LastParameter()));
+        EngineAssert.Throws<ImmutableObjectException>(() => aLaw.SetPole(1, 1.0));
+        EngineAssert.Throws<ImmutableObjectException>(() => aLaw.InsertKnot(0.5 * (aLaw.FirstParameter() + aLaw.LastParameter())));
+        EngineAssert.Throws<ImmutableObjectException>(() => aLaw.Reverse());
+        EngineAssert.Throws<ImmutableObjectException>(() => aLaw.Segment(aLaw.FirstParameter(), aLaw.LastParameter()));
         BSpline aCopy = aLaw.Copy();
         Assert.False(aCopy.IsFrozen);
         aCopy.SetPole(1, 1.0);
@@ -497,8 +497,8 @@ public class Law_BSplineTests
         aKnots[2] = 1;
         var aMults = new NCollection_Array1<int>(1, 2);
         aMults[1] = aMults[2] = 3;
-        Assert.Throws<ConstructionErrorException>(() => new BSpline(aPoles, aKnots, aMults, 3));
-        Assert.Throws<ConstructionErrorException>(() => new BSpline(aPoles, aKnots, aMults, 0));
+        EngineAssert.Throws<ConstructionErrorException>(() => new BSpline(aPoles, aKnots, aMults, 3));
+        EngineAssert.Throws<ConstructionErrorException>(() => new BSpline(aPoles, aKnots, aMults, 0));
         var aLaw = new BSpline(aPoles, aKnots, aMults, 2);
         Assert.Equal(BSplKnotDistribution.PiecewiseBezier, aLaw.KnotDistribution());
         Assert.Equal(Continuity.CN, aLaw.Continuity());
@@ -506,6 +506,6 @@ public class Law_BSplineTests
         aWeights.Init(2.0);
         Assert.False(new BSpline(aPoles, aWeights, aKnots, aMults, 2).IsRational);
         aWeights[2] = -1.0;
-        Assert.Throws<ConstructionErrorException>(() => new BSpline(aPoles, aWeights, aKnots, aMults, 2));
+        EngineAssert.Throws<ConstructionErrorException>(() => new BSpline(aPoles, aWeights, aKnots, aMults, 2));
     }
 }

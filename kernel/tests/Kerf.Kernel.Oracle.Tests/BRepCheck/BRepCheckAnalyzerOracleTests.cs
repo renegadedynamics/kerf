@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
@@ -90,7 +91,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
         }
         catch (Exception anException)
         {
-            return (null, global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType()));
+            return (null, global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anException).GetType()));
         }
     }
 
@@ -121,7 +122,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
         }
         catch (Exception anException)
         {
-            return (null, "", global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType()) + ": " + anException.Message + "\n" + anException.StackTrace);
+            return (null, "", global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anException).GetType()) + ": " + Refusal.Unwrapped(anException).Message + "\n" + anException.StackTrace);
         }
     }
 
@@ -168,7 +169,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
         }
         catch (Exception anException)
         {
-            return global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType());
+            return global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anException).GetType());
         }
     }
 

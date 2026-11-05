@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Construction.Laws;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
@@ -353,7 +354,7 @@ internal static class SweepRecordingCases
         }
         catch (Exception anExc)
         {
-            Line("EXC " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anExc.GetType()));
+            Line("EXC " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(Refusal.Unwrapped(anExc).GetType()));
         }
     }
 

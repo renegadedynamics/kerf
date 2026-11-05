@@ -216,7 +216,7 @@ internal class MakeBox : MakeShape
                 {
                     _wedge.Face(d);
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                 }
             }

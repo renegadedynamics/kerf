@@ -179,7 +179,7 @@ internal class ComputeKronrodPointsAndWeights
                 _isDone = true;
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
         }
     }

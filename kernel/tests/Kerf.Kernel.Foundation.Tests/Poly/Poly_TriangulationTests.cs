@@ -53,13 +53,13 @@ public class Poly_TriangulationTest
         Assert.Equal(4, aTri.Value(1));
         Assert.Equal(5, aTri[2]);
         Assert.Equal(6, aTri.Value(3));
-        Assert.ThrowsAny<OutOfRangeException>(() => aTri.Value(0));
-        Assert.ThrowsAny<OutOfRangeException>(() => aTri.Value(4));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aTri.Value(0));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aTri.Value(4));
 
         global::Kerf.Engine.Meshing.Triangle1 aChanged = aTri.WithNode(2, 9);
         Assert.Equal(new global::Kerf.Engine.Meshing.Triangle1(4, 9, 6), aChanged);
         Assert.Equal(new global::Kerf.Engine.Meshing.Triangle1(4, 5, 6), aTri);
-        Assert.ThrowsAny<OutOfRangeException>(() => aTri.WithNode(4, 1));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aTri.WithNode(4, 1));
 
         aTri.Set(1, 2, 3);
         aTri.ChangeValue(3) = 7;
@@ -90,7 +90,7 @@ public class Poly_TriangulationTest
         Assert.Equal(new global::Kerf.Engine.Meshing.Triangle1(), aTri.Triangle(3));
 
         // as in OCCT, an array of nodes can't be allocated empty
-        Assert.ThrowsAny<RangeErrorException>(() => new global::Kerf.Engine.Meshing.Triangulation(0, 0, false));
+        EngineAssert.ThrowsAny<RangeErrorException>(() => new global::Kerf.Engine.Meshing.Triangulation(0, 0, false));
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class Poly_TriangulationTest
         aTris[0] = new global::Kerf.Engine.Meshing.Triangle1(1, 2, 3);
         var aTri = new global::Kerf.Engine.Meshing.Triangulation(aNodes, aTris);
         Assert.Equal(new global::Kerf.Engine.Meshing.Triangle1(1, 2, 3), aTri.Triangle(0));
-        Assert.ThrowsAny<OutOfRangeException>(() => aTri.Triangle(1));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aTri.Triangle(1));
     }
 
     [Fact]
@@ -139,16 +139,16 @@ public class Poly_TriangulationTest
         Assert.Equal(new Point3D(1, 1, 0), aTri.Node(3));
         Assert.Equal(new Point2D(0, 1), aTri.UVNode(4));
         Assert.Equal(new global::Kerf.Engine.Meshing.Triangle1(1, 3, 4), aTri.Triangle(2));
-        Assert.ThrowsAny<OutOfRangeException>(() => aTri.Node(0));
-        Assert.ThrowsAny<OutOfRangeException>(() => aTri.Node(5));
-        Assert.ThrowsAny<OutOfRangeException>(() => aTri.Triangle(3));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aTri.Node(0));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aTri.Node(5));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aTri.Triangle(3));
 
         Assert.Equal(new double[] { 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0 }, aTri.NodeCoordinates().ToArray());
         Assert.Equal(new[] { 1, 2, 3, 1, 3, 4 }, aTri.TriangleIndices().ToArray());
         Assert.Equal(new double[] { 0, 0, 1, 0, 1, 1, 0, 1 }, aTri.UVNodeCoordinates().ToArray());
         Assert.Equal(2, aTri.TriangleSpan().Length);
         Assert.True(aTri.NormalComponents().IsEmpty);
-        Assert.ThrowsAny<TypeMismatchException>(() => aTri.NodeCoordinatesF().Length);
+        EngineAssert.ThrowsAny<TypeMismatchException>(() => aTri.NodeCoordinatesF().Length);
 
         var aFloats = new float[12];
         aTri.CopyNodeCoordinatesTo(aFloats);
@@ -290,14 +290,14 @@ public class Poly_TriangulationTest
         Assert.Equal(new Point2D((float)0.4, (float)0.5), aTri.UVNode(2));
         Assert.Equal(new[] { 0.1f, 0.2f, 0.3f, 0f, 0f, 0f }, aTri.NodeCoordinatesF().ToArray());
         Assert.Equal(new[] { 0f, 0f, 0.4f, 0.5f }, aTri.UVNodeCoordinatesF().ToArray());
-        Assert.ThrowsAny<TypeMismatchException>(() => aTri.NodeCoordinates().Length);
+        EngineAssert.ThrowsAny<TypeMismatchException>(() => aTri.NodeCoordinates().Length);
 
         var aDoubles = new double[6];
         aTri.CopyNodeCoordinatesTo(aDoubles);
         Assert.Equal((double)0.2f, aDoubles[1]);
 
         // the precision can't change once allocated
-        Assert.ThrowsAny<ProgramErrorException>(() => aTri.SetDoublePrecision(true));
+        EngineAssert.ThrowsAny<ProgramErrorException>(() => aTri.SetDoublePrecision(true));
 
         // a copy keeps the precision; MapNodeArray copies the nodes
         global::Kerf.Engine.Meshing.Triangulation aCopy = aTri.Copy();
@@ -321,7 +321,7 @@ public class Poly_TriangulationTest
         Assert.Equal(48L, aDouble.SizeBytes());
 
         var aShort = new global::Kerf.Engine.Meshing.ArrayOfNodes(1);
-        Assert.ThrowsAny<DimensionMismatchException>(() => aShort.Assign(aDouble));
+        EngineAssert.ThrowsAny<DimensionMismatchException>(() => aShort.Assign(aDouble));
 
         Point3D[] aPoints = [new(1, 1, 1), new(2, 2, 2), new(3, 3, 3)];
         var aWrap = new global::Kerf.Engine.Meshing.ArrayOfNodes(aPoints, 1, 2);
@@ -329,7 +329,7 @@ public class Poly_TriangulationTest
         Assert.Equal(new Point3D(2, 2, 2), aWrap.Value(0));
         aWrap.SetValue(1, new Point3D(7, 7, 7));
         Assert.Equal(new Point3D(7, 7, 7), aPoints[2]);
-        Assert.ThrowsAny<OutOfRangeException>(() => aWrap.Value(2));
+        EngineAssert.ThrowsAny<OutOfRangeException>(() => aWrap.Value(2));
 
         var aCopy = new global::Kerf.Engine.Meshing.ArrayOfNodes(aWrap);
         Assert.True(aCopy.IsDeletable());
@@ -339,7 +339,7 @@ public class Poly_TriangulationTest
         aCopy.Resize(3, true);
         Assert.Equal(new Point3D(7, 7, 7), aCopy[1]);
         Assert.Equal(3, aCopy.AsSpan<Point3D>().Length);
-        Assert.ThrowsAny<TypeMismatchException>(() => aCopy.AsSpan<NCollection_Vec3<float>>().Length);
+        EngineAssert.ThrowsAny<TypeMismatchException>(() => aCopy.AsSpan<NCollection_Vec3<float>>().Length);
     }
 
     [Fact]
@@ -393,7 +393,7 @@ public class Poly_TriangulationTest
         var aValues = new NCollection_HArray1<float>(1, 12, 0.0f);
         aValues[12] = 1.0f;
 #pragma warning disable CS0618 // OCCT's deprecated method, tested as ported
-        Assert.ThrowsAny<DomainErrorException>(() => aTri.SetNormals(new NCollection_HArray1<float>(1, 3)));
+        EngineAssert.ThrowsAny<DomainErrorException>(() => aTri.SetNormals(new NCollection_HArray1<float>(1, 3)));
         aTri.SetNormals(aValues);
 #pragma warning restore CS0618
         Assert.Equal(new NCollection_Vec3<float>(0.0f, 0.0f, 1.0f), Normal(aTri, 4));

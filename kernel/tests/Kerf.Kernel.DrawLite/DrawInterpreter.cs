@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
@@ -398,7 +399,7 @@ public sealed partial class DrawInterpreter
         }
         catch (Exception anError) when (anError is not (DrawException or TclFlowException or DrawExitException or DrawTimeoutException))
         {
-            throw new DrawException($"{theArgs[0]}: {anError.Message}", theLine);
+            throw new DrawException($"{theArgs[0]}: {Refusal.Unwrapped(anError).Message}", theLine);
         }
     }
 

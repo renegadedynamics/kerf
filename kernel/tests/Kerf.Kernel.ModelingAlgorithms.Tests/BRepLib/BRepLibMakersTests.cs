@@ -125,8 +125,8 @@ public class BRepLibMakersTests
         var aME = new LibraryMakeEdge(new Point3D(1, 1, 1), new Point3D(1, 1, 1));
         Assert.False(aME.IsDone);
         Assert.Equal(LibraryEdgeError.LineThroughIdenticPoints, aME.Error());
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aME.Edge());
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aME.Vertex1());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aME.Edge());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aME.Vertex1());
     }
 
     [Fact]
@@ -401,7 +401,7 @@ public class BRepLibMakersTests
         aMW.Add(E(5, 0, 0, 6, 0, 0));
         Assert.Equal(LibraryWireError.DisconnectedWire, aMW.Error());
         Assert.False(aMW.IsDone);
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aMW.Wire());
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aMW.Wire());
     }
 
     [Fact]

@@ -266,7 +266,7 @@ public class ProjLib_CompProjectedCurveTests
                 Assert.True(aDist < 1.0e-5, $"part {i}, t = {t}: {aP}");
             }
         }
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => aProj.Value(0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => aProj.Value(0.0));
 
         // The intervals are the parts' bounds (a circle has one interval and a plane none).
         int aNb = aProj.NbIntervals(Continuity.C1);
@@ -388,14 +388,14 @@ public class ProjLib_CompProjectedCurveTests
     public void Errors()
     {
         CompProjectedCurve aProj = new(UnitSquare(), Circle(new Point3D(0.5, 0.5, 1), 0.3, 0.0, 2 * M_PI), Tol, Tol);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aProj.Bounds(0, out _, out _));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aProj.IsUIso(2, out _));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => aProj.DN(1.0, 0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aProj.DN(1.0, 3));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aProj.Bounds(0, out _, out _));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aProj.IsUIso(2, out _));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => aProj.DN(1.0, 0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aProj.DN(1.0, 3));
         aProj.D1(1.0, out _, out Vector2D aV);
         Assert.Equal(aV, aProj.DN(1.0, 1));
         aProj.Perform();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.TypeMismatchException>(() => aProj.GetResult2dP(1));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.TypeMismatchException>(() => aProj.GetResult2dP(1));
 
         CompProjectedCurve anEmpty = new();
         Assert.Equal(0, anEmpty.CurveCount);
@@ -431,10 +431,10 @@ public class ProjLib_CompProjectedCurveTests
         // Outside the bounds: not done.
         aSolver.Perform(0.0, 0.5, 0.5, new Point2D(Tol, Tol), new Point2D(0, 0), new Point2D(0.6, 1), 1.0e-10);
         Assert.False(aSolver.IsDone);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aSolver.Solution());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aSolver.Solution());
 
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new PrjResolve(aC, aS, 0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new PrjResolve(aC, aS, 4));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new PrjResolve(aC, aS, 0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new PrjResolve(aC, aS, 4));
     }
 
     [Fact]
@@ -455,6 +455,6 @@ public class ProjLib_CompProjectedCurveTests
         Assert.Equal(0.0, aVal[1], 1.0e-15);
         Assert.Equal(0.0, aVal[2], 1.0e-15);
         Assert.Equal(new Point2D(0.0, 0.5), aF.Solution());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new PrjFunc(aC, 0.0, aS, 0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new PrjFunc(aC, 0.0, aS, 0));
     }
 }

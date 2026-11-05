@@ -230,7 +230,7 @@ internal sealed partial class BlendRecorder
             End();
             Vector("value", aF);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Fail("value");
         }
@@ -240,7 +240,7 @@ internal sealed partial class BlendRecorder
             F.Derivatives(X, aD);
             Matrix("derivatives", aD);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Fail("derivatives");
         }
@@ -251,7 +251,7 @@ internal sealed partial class BlendRecorder
             Vector("values.f", aF);
             Matrix("values.d", aD);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Fail("values");
         }
@@ -295,7 +295,7 @@ internal sealed partial class BlendRecorder
             Hex(aSize);
             End();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Fail("sectionsize");
         }
@@ -307,7 +307,7 @@ internal sealed partial class BlendRecorder
             Hex(aDist);
             End();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Fail("mindist");
         }
@@ -319,7 +319,7 @@ internal sealed partial class BlendRecorder
             Vector("tol3d", aTol3d);
             Vector("tol1d", aTol1d);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Fail("tol3d");
         }
@@ -370,7 +370,7 @@ internal sealed partial class BlendRecorder
 
             End();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Fail("section0");
         }
@@ -402,7 +402,7 @@ internal sealed partial class BlendRecorder
 
             End();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Fail("section1");
         }
@@ -434,7 +434,7 @@ internal sealed partial class BlendRecorder
 
             End();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Fail("section2");
         }
@@ -465,7 +465,7 @@ internal sealed partial class BlendRecorder
         {
             isSol = F.IsSolution(Sol, 1.0e-6);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Fail("issolution");
             return;
@@ -490,7 +490,7 @@ internal sealed partial class BlendRecorder
                 Int(t1);
                 Int(F.TwistOnS2() ? 1 : 0);
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 Tag(" X");
             }
@@ -539,7 +539,7 @@ internal sealed partial class BlendRecorder
         {
             isSol = F.IsSolution(Sol, 1.0e-6);
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             Fail("issolution");
             return;
@@ -690,7 +690,7 @@ internal sealed partial class BlendRecorder
 
                     End();
                 }
-                catch (FailureException)
+                catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
                     Fail("getsection");
                 }
@@ -845,7 +845,7 @@ internal sealed partial class BlendRecorder
                 Pnt(Sp.Value(W));
                 End();
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 Fail("d2");
             }

@@ -249,7 +249,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         // a recorded frozen replacement can't be changed in place: OCCT's guard for locked shapes
         var aFrozenCase = new ReShape();
         aFrozenCase.Replace(aV, TestShapes.Frozen(TestShapes.Vertex(new Point3D(0, 0, 0))));
-        Assert.Throws<LockedShapeException>(() => aFrozenCase.CopyVertex(aV, 0.5));
+        EngineAssert.Throws<ImmutableObjectException>(() => aFrozenCase.CopyVertex(aV, 0.5));
     }
 
     [Fact]
@@ -347,7 +347,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         aQuilt.Add(aF1);
         aQuilt.Bind(anE2, anE1);
         // OCCT gives the frozen first edge a pcurve on the second face in place
-        Assert.Throws<LockedShapeException>(() => aQuilt.Add(aF2));
+        EngineAssert.Throws<ImmutableObjectException>(() => aQuilt.Add(aF2));
     }
 
     [Fact]
@@ -370,7 +370,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         var aSubst = new Substitution();
         aSubst.Substitute(anE, aNew);
         aSubst.Substitute(anOther, new NCollection_List<Shape>());
-        Assert.Throws<ConstructionErrorException>(() => aSubst.Substitute(anE, aNew));
+        EngineAssert.Throws<ConstructionErrorException>(() => aSubst.Substitute(anE, aNew));
         aSubst.Build(aF);
 
         aSnapshot.AssertUnchanged(aF);
@@ -378,7 +378,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         Assert.True(aSubst.IsCopied(anE));
         Assert.True(aSubst.IsCopied(anOther));
         Assert.Empty(aSubst.Copy(anOther));
-        Assert.Throws<NoSuchObjectException>(() => aSubst.Copy(SubShape(aF, ShapeType.Edge, 2)));
+        EngineAssert.Throws<NoSuchObjectException>(() => aSubst.Copy(SubShape(aF, ShapeType.Edge, 2)));
         var aCopies = aSubst.Copy(aF);
         Assert.Single(aCopies);
         Shape aNewF = aCopies[0];

@@ -468,7 +468,7 @@ public class ProjLib_ComputeApproxTests
         BSplineSurface aS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(new TrimmedSurface(
             new CylindricalSurface(Std, 2.0), 0.0, 3.0, 0.0, 2.0));
         var aC = new TrimmedCurve3D(new CylindricalSurface(Std, 2.0).VIso(1.0), 0.5, 2.5);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() =>
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() =>
             new ComputeApprox(new CurveAdaptor(aC), new SurfaceAdaptor(aS), 1.0e-6));
     }
 }

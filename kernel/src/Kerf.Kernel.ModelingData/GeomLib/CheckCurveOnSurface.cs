@@ -159,7 +159,7 @@ internal sealed class CheckCurveOnSurface
 
             _maxDistance = Math.Sqrt(Math.Abs(_maxDistance));
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             _errorStatus = 3;
         }
@@ -225,7 +225,7 @@ internal sealed class CheckCurveOnSurface
 
                 fVal = -1.0 * p1.SquareDistanceTo(p2);
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 return false;
             }
@@ -284,7 +284,7 @@ internal sealed class CheckCurveOnSurface
                     deriv2 = -2.0 * (vec2.SquareMagnitude + vec1.Dot(vec3));
                 }
             }
-            catch (FailureException)
+            catch (Exception caught) when (Refusal.IsFailure(caught))
             {
                 return false;
             }
@@ -753,7 +753,7 @@ internal sealed class CheckCurveOnSurface
                 nbParticles = Max(nbParticles, bs2DCurv.Degree);
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             nbSubIntervals = 0;
         }
@@ -881,7 +881,7 @@ internal sealed class CheckCurveOnSurface
                 }
             }
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return false;
         }

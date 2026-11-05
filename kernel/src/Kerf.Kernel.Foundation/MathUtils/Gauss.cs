@@ -100,7 +100,7 @@ internal static class Gauss
 
             return true;
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return false;
         }

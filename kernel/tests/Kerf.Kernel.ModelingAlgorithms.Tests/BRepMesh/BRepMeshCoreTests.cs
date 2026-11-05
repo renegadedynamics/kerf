@@ -27,8 +27,8 @@ public class BRepMeshCoreTests
         Assert.Equal(2, aPair.Extent());
         Assert.Equal(5, aPair.FirstIndex());
         Assert.Equal(7, aPair.LastIndex());
-        Assert.Throws<OutOfRangeException>(() => aPair.Appended(9));
-        Assert.Throws<OutOfRangeException>(() => aPair.Index(3));
+        EngineAssert.Throws<OutOfRangeException>(() => aPair.Appended(9));
+        EngineAssert.Throws<OutOfRangeException>(() => aPair.Index(3));
         PairOfIndex aRemoved = aPair.IndexRemoved(1);
         Assert.Equal(1, aRemoved.Extent());
         Assert.Equal(7, aRemoved.FirstIndex());

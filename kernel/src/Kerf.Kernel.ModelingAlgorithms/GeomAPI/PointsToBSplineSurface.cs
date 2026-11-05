@@ -503,7 +503,7 @@ internal class PointsToBSplineSurface
         {
             variation.Approximate();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return;
         }
@@ -567,7 +567,7 @@ internal class PointsToBSplineSurface
         {
             variation2.Approximate();
         }
-        catch (FailureException)
+        catch (Exception caught) when (Refusal.IsFailure(caught))
         {
             return;
         }

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Occt;
 using static Kerf.Geometry.TransformForm;
@@ -55,7 +56,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
             return;
         }
 
-        Standard_ConstructionError_Raise_if(sqMod <= Constants.Resolution() * Constants.Resolution(), "gp_Dir2d() - input vector has zero norm");
+        Refusal.ArgumentIf(sqMod <= Constants.Resolution() * Constants.Resolution(), FailureKind.ConstructionError, "gp_Dir2d() - input vector has zero norm");
         double d = Math.Sqrt(sqMod);
         _coord.SetCoord(xv / d, yv / d);
     }
@@ -64,7 +65,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
 
     internal readonly Direction2D WithCoord(int index, double xi)
     {
-        Standard_OutOfRange_Raise_if(index < 1 || index > 2, "gp_Dir2d::SetCoord() - index is out of range [1, 2]");
+        Refusal.RangeIf(index < 1 || index > 2, FailureKind.OutOfRange, "gp_Dir2d::SetCoord() - index is out of range [1, 2]");
         return index == 1 ? WithX(xi) : WithY(xi);
     }
 
@@ -78,7 +79,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
             return new Direction2D(coord, isUnit: true);
         }
 
-        Standard_ConstructionError_Raise_if(sqMod <= Constants.Resolution() * Constants.Resolution(), "gp_Dir2d::SetCoord() - result vector has zero norm");
+        Refusal.ArgumentIf(sqMod <= Constants.Resolution() * Constants.Resolution(), FailureKind.ConstructionError, "gp_Dir2d::SetCoord() - result vector has zero norm");
         double d = Math.Sqrt(sqMod);
         coord.SetCoord(xv / d, yv / d);
         return new Direction2D(coord, isUnit: true);

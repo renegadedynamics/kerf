@@ -113,6 +113,6 @@ public class BRepLPropTests
         Assert.Equal(C0, global::Kerf.Engine.Topology.Properties.BRepLProp.Continuity(aB1, aB2, u1, u2));
 
         // points that don't coincide
-        Assert.Throws<global::Kerf.Engine.Foundation.FailureException>(() => global::Kerf.Engine.Topology.Properties.BRepLProp.Continuity(aB1, aB2, u1 == f1 ? l1 : f1, u2));
+        EngineAssert.Throws<global::Kerf.Engine.Foundation.FailureException>(() => global::Kerf.Engine.Topology.Properties.BRepLProp.Continuity(aB1, aB2, u1 == f1 ? l1 : f1, u2));
     }
 }

@@ -549,7 +549,7 @@ internal class ReShape : Transient
     /// <summary>
     /// A copy of the vertex with a new tolerance if it isn't recorded (then recorded as its replacement), or its
     /// recorded replacement changed in place. Internal: it returns an unfrozen vertex, and changes a recorded one in
-    /// place (which throws <see cref="LockedShapeException"/> on a frozen one, as OCCT does on a locked one).
+    /// place (which throws <see cref="ImmutableObjectException"/> on a frozen one, as OCCT does on a locked one).
     /// </summary>
     internal Vertex CopyVertex(in Vertex v, double tol = -1.0)
     {

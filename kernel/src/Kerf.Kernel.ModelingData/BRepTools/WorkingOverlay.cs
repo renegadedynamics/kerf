@@ -56,7 +56,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// </para>
 /// <para>
 /// Without an open overlay nothing changes: a write into a frozen TShape throws
-/// (<see cref="LockedShapeException"/> from the builder, <see cref="ImmutableObjectException"/> from a TShape's
+/// (<see cref="ImmutableObjectException"/> from the builder, <see cref="ImmutableObjectException"/> from a TShape's
 /// setter), and the accessors read the TShape's own data. That is the one rule protecting published shapes:
 /// <see cref="IsReadOnly"/> (frozen, and no overlay here takes the write). The cost when no overlay is open anywhere in
 /// the process is one static read per accessor.

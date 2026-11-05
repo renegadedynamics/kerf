@@ -26,10 +26,10 @@ public class Geom2dEval_LogarithmicSpiralCurveTest
     public void Construction_InvalidParams_Throws()
     {
         Axis2D anAx2d = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new LogarithmicSpiralCurve2D(anAx2d, 0.0, 0.2));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new LogarithmicSpiralCurve2D(anAx2d, -1.0, 0.2));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new LogarithmicSpiralCurve2D(anAx2d, 1.0, 0.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new LogarithmicSpiralCurve2D(anAx2d, 1.0, -0.2));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new LogarithmicSpiralCurve2D(anAx2d, 0.0, 0.2));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new LogarithmicSpiralCurve2D(anAx2d, -1.0, 0.2));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new LogarithmicSpiralCurve2D(anAx2d, 1.0, 0.0));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new LogarithmicSpiralCurve2D(anAx2d, 1.0, -0.2));
     }
 
     [Fact]
@@ -163,8 +163,8 @@ public class Geom2dEval_LogarithmicSpiralCurveTest
     {
         Axis2D anAx2d = new();
         LogarithmicSpiralCurve2D aCurve = new(anAx2d, 1.0, 0.2);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Reverse());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.ReversedParameter(0.5));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Reverse());
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.ReversedParameter(0.5));
     }
 
     [Fact]
@@ -173,8 +173,8 @@ public class Geom2dEval_LogarithmicSpiralCurveTest
         Axis2D anAx2d = new();
         LogarithmicSpiralCurve2D aCurve = new(anAx2d, 1.0, 0.2);
         Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(1.0, 2.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
+        EngineAssert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));
     }
 
     [Fact]
