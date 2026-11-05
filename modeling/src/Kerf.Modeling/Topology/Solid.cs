@@ -17,13 +17,6 @@ public static partial class SolidExtensions
 
         internal Solid TopoSolid => (Solid)self;
 
-        internal double Order_Solid => 3.0;
-
-        internal Shape MakeZero_Solid() => default(Solid);
-
-        /// <summary>The volume of the solid.</summary>
-        internal double Volume_Solid => self.ComputeVolume();
-
         /// <summary>The solid with a draft of <paramref name="angle"/> degrees applied to planar, cylindrical or conical faces.</summary>
         /// <exception cref="InvalidOperationException">
         /// The draft can't be added to a face, or built: the shorthand's failure (unit 10M3).
@@ -63,7 +56,7 @@ public static partial class SolidExtensions
         /// Where this solid's boundary contacts another shape without their interiors overlapping: shared faces, edges and
         /// vertices with another solid, face or shell; edge ends and tangent points on the boundary for an edge or wire.
         /// </summary>
-        internal ShapeList<Shape> Touch_Solid(Shape other, double tolerance = 1e-6) => self.TouchCore(other, tolerance, null);
+        internal ShapeList<Shape> TouchOfSolid(Shape other, double tolerance = 1e-6) => self.TouchCore(other, tolerance, null);
 
         internal ShapeList<Shape> TouchCore(Shape other, double tolerance, List<Shape>? foundSolids)
         {
@@ -360,12 +353,6 @@ public static partial class SolidExtensions
             Failures.Doing(() => "thicken", () => SolidExtensions.ThickenCore(surface, depth, normalOverride));
     }
 
-
-    extension(Solid)
-    {
-        /// <summary>A solid wrapping an OCCT solid.</summary>
-        public static Solid Make(Solid solid) => solid;
-    }
 
 
     extension(Solid)

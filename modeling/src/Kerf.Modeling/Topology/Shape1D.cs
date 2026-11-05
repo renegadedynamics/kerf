@@ -55,11 +55,6 @@ public static partial class Shape1DExtensions
     extension<TSelf>(TSelf self) where TSelf : IShape1D
     {
 
-        internal int? Dim_Shape1D => 1;
-
-        /// <summary>The volume of an edge or wire, which is zero.</summary>
-        internal double Volume_Shape1D => 0.0;
-
         /// <summary>Whether the start and end points are the same.</summary>
         public bool IsClosed
         {
@@ -200,10 +195,10 @@ public static partial class Shape1DExtensions
         }
 
         /// <summary>The centre: the point half way along (by default), the centre of mass, or of the bounding box.</summary>
-        internal Vector Center_Shape1D() => self.Center(CenterOf.Geometry);
+        internal Vector CenterOfShape1D() => self.Center(CenterOf.Geometry);
 
         /// <summary>As the other forms of <c>Center</c>.</summary>
-        internal Vector Center_Shape1D(CenterOf centerOf)
+        internal Vector CenterOfShape1D(CenterOf centerOf)
         {
             self.NeedsGeometry("center");
             switch (centerOf)
@@ -511,13 +506,7 @@ public static partial class Shape1DExtensions
 
         // ---- Combining ----
 
-        /// <summary>
-        /// This edge or wire joined with other edges and wires (build123d's <c>+</c>): connected pieces make a wire,
-        /// others a fused curve; a single edge is returned as an Edge.
-        /// </summary>
-        internal Shape AddCore_Shape1D(IEnumerable<Shape> other) => OneD.Add1D(self.AsShape(), other);
-
-        internal ShapeList<Shape>? IntersectCore_Shape1D(object other, double tolerance, bool includeTouched)
+        internal ShapeList<Shape>? IntersectCoreOfShape1D(object other, double tolerance, bool includeTouched)
         {
             other = other switch
             {

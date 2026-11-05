@@ -15,15 +15,6 @@ public static partial class VertexExtensions
 
         internal Vertex TopoVertex => (Vertex)self;
 
-        internal int? Dim_Vertex => 0;
-
-        internal double Order_Vertex => 0.0;
-
-        internal Shape MakeZero_Vertex() => default(Vertex);
-
-        /// <summary>The volume of a vertex, which is zero.</summary>
-        internal double Volume_Vertex => 0.0;
-
         private Point3D Point
         {
             get
@@ -57,20 +48,14 @@ public static partial class VertexExtensions
         }
 
         /// <summary>The centre of a vertex is itself.</summary>
-        internal Vector Center_Vertex()
+        internal Vector CenterOfVertex()
         {
             self.NeedsGeometry("center");
             return self.ToVector();
         }
 
         
-        /// <summary>Vertices can't be intersected with <c>&amp;</c>.</summary>
-        internal Shape CommonCore_Vertex(IEnumerable<object> others) =>
-            throw new NotSupportedException("Vertices can't be intersected");
-
-        internal Shape TransformShapeCore_Vertex(Matrix matrix) => Vertex.Make(matrix.Multiply(self.ToVector()));
-
-        internal ShapeList<Shape>? IntersectCore_Vertex(object other, double tolerance, bool includeTouched)
+        internal ShapeList<Shape>? IntersectCoreOfVertex(object other, double tolerance, bool includeTouched)
         {
             switch (other)
             {
@@ -201,12 +186,6 @@ public static partial class VertexExtensions
         }
     }
 
-
-    extension(Vertex)
-    {
-        /// <summary>A vertex wrapping an OCCT vertex.</summary>
-        public static Vertex Make(Vertex vertex) => vertex;
-    }
 
 
     extension(Vertex)

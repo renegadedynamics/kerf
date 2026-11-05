@@ -16,14 +16,7 @@ public static partial class FaceExtensions
 
         internal Face TopoFace => (Face)self;
 
-        internal double Order_Face => 2.0;
-
-        internal Shape MakeZero_Face() => default(Face);
-
         // ---- Properties ----
-
-        /// <summary>The volume of a face, which is zero.</summary>
-        internal double Volume_Face => 0.0;
 
         /// <summary>The area of the face as if its holes were filled in.</summary>
         public double AreaWithoutHoles => self.IsEmpty ? 0.0 : self.WithoutHoles().Area;
@@ -392,10 +385,10 @@ public static partial class FaceExtensions
         /// The centre of the face: by default its geometric centre, which for a planar face is its centre of mass and
         /// otherwise the middle of its parameter range.
         /// </summary>
-        internal Vector Center_Face() => self.Center(CenterOf.Geometry);
+        internal Vector CenterOfFace() => self.Center(CenterOf.Geometry);
 
         /// <summary>As the other forms of <c>Center</c>.</summary>
-        internal Vector Center_Face(CenterOf centerOf)
+        internal Vector CenterOfFace(CenterOf centerOf)
         {
             self.NeedsGeometry("center");
             if (centerOf == CenterOf.Mass || (centerOf == CenterOf.Geometry && self.IsPlanar is not null))
@@ -841,12 +834,6 @@ public static partial class FaceExtensions
         }
     }
 
-
-    extension(Face)
-    {
-        /// <summary>A face wrapping an OCCT face.</summary>
-        public static Face Make(Face face) => face;
-    }
 
 
     extension(Face)

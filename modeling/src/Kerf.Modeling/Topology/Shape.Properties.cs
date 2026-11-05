@@ -130,11 +130,6 @@ public static partial class ShapeExtensions
             return self.AsShape().MassProperties(Dimension.Volume).RadiusOfGyration(ax1);
         }
 
-        /// <summary>The centre of the shape by a chosen calculation.</summary>
-        /// <exception cref="NotSupportedException">The class doesn't offer a choice.</exception>
-        internal Vector Center_Shape(CenterOf centerOf) =>
-            throw new NotSupportedException($"{typeof(TSelf).Name}.Center doesn't take a CenterOf");
-
         // ---- Checks ----
 
         /// <summary>True if OCCT finds no defect in the shape or its sub-shapes (<c>BRepCheck_Analyzer</c>).</summary>

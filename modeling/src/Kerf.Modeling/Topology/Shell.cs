@@ -12,12 +12,8 @@ public static partial class ShellExtensions
 
         internal Shell TopoShell => (Shell)self;
 
-        internal double Order_Shell => 2.5;
-
-        internal Shape MakeZero_Shell() => default(Shell);
-
         /// <summary>The volume enclosed by the shell if it is manifold, otherwise zero.</summary>
-        internal double Volume_Shell
+        internal double VolumeOfShell
         {
             get
             {
@@ -29,7 +25,7 @@ public static partial class ShellExtensions
         }
 
         /// <summary>The centre of mass of the shell (computed, as build123d does, from its linear properties).</summary>
-        internal Vector Center_Shell()
+        internal Vector CenterOfShell()
         {
             self.NeedsGeometry("center");
             return new Vector(self.MassProperties(Dimension.Length).CentreOfMass);
@@ -167,12 +163,6 @@ public static partial class ShellExtensions
         }
     }
 
-
-    extension(Shell)
-    {
-        /// <summary>A shell wrapping an OCCT shell.</summary>
-        public static Shell Make(Shell shell) => shell;
-    }
 
 
     extension(Shell)

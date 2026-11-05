@@ -14,13 +14,11 @@ public static partial class Shape3DExtensions
     extension<TSelf>(TSelf self) where TSelf : IShape3D
     {
 
-        internal int? Dim_Shape3D => 3;
-
         /// <summary>The centre of mass (by default) or of the bounding box; the geometric centre isn't supported.</summary>
-        internal Vector Center_Shape3D() => self.Center(CenterOf.Mass);
+        internal Vector CenterOfShape3D() => self.Center(CenterOf.Mass);
 
         /// <summary>As the other forms of <c>Center</c>.</summary>
-        internal Vector Center_Shape3D(CenterOf centerOf)
+        internal Vector CenterOfShape3D(CenterOf centerOf)
         {
             self.NeedsGeometry("center");
             switch (centerOf)
@@ -239,7 +237,7 @@ public static partial class Shape3DExtensions
             return result.Volume < 0 ? (result.Reversed()) : result;
         }
 
-        internal ShapeList<Shape>? IntersectCore_Shape3D(object other, double tolerance, bool includeTouched)
+        internal ShapeList<Shape>? IntersectCoreOfShape3D(object other, double tolerance, bool includeTouched)
         {
             var shape = ShapeExtensions.ShapeOf(other);
             var results = new List<Shape>();

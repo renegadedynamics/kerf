@@ -12,15 +12,13 @@ public static partial class Shape2DExtensions
     extension<TSelf>(TSelf self) where TSelf : IShape2D
     {
 
-        internal int? Dim_Shape2D => 2;
-
         /// <summary>
         /// This face or shell joined with other 2D shapes (build123d's <c>+</c>). When a shell is involved the faces are
         /// sewn into one shell, which joining sheet surfaces along shared edges needs; otherwise they are fused as for any
         /// shape, so coplanar faces make a Face or Sketch.
         /// </summary>
         /// <exception cref="ArgumentException">The operands aren't all 2D, or the faces don't sew into one connected shell.</exception>
-        internal Shape AddCore_Shape2D(IEnumerable<Shape> other)
+        internal Shape AddCoreOfShape2D(IEnumerable<Shape> other)
         {
             var summands = ShapeExtensions.Operands(other);
             if (summands.Count == 0)
@@ -129,7 +127,7 @@ public static partial class Shape2DExtensions
         public IReadOnlyList<(Vector Point, Vector Normal)> FindIntersectionPoints(Axis other, double tolerance = Constants.Tolerance) =>
             SurfaceIntersection.FindPoints(self.AsShape(), other, tolerance);
 
-        internal ShapeList<Shape>? IntersectCore_Shape2D(object other, double tolerance, bool includeTouched)
+        internal ShapeList<Shape>? IntersectCoreOfShape2D(object other, double tolerance, bool includeTouched)
         {
             var shape = ShapeExtensions.ShapeOf(other);
             var results = new List<Shape>();
@@ -189,7 +187,7 @@ public static partial class Shape2DExtensions
         /// Where this face or shell touches another at its boundary: for two faces, the vertices where they meet at a corner
         /// or cross at a point without an edge or face in common.
         /// </summary>
-        internal ShapeList<Shape> Touch_Shape2D(Shape other, double tolerance = 1e-6) => self.TouchCore(other, tolerance, null, null);
+        internal ShapeList<Shape> TouchOfShape2D(Shape other, double tolerance = 1e-6) => self.TouchCore(other, tolerance, null, null);
 
         internal ShapeList<Shape> TouchCore(Shape other, double tolerance, List<Face>? foundFaces, List<Edge>? foundEdges)
         {

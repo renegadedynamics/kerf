@@ -299,15 +299,15 @@ internal static class ShapeAlgebra
             return typeOfZero switch
             {
                 ShapeType.Edge or ShapeType.Wire => OneD.Add1D(self, other),
-                ShapeType.Shell => default(Shell).AddCore_Shape2D(other),
+                ShapeType.Shell => default(Shell).AddCoreOfShape2D(other),
                 ShapeType.Compound => AddToCompound(self, null, other),
                 _ => AddPlain(self, null, other),
             };
         return self.Type switch
         {
             ShapeType.Edge or ShapeType.Wire => OneD.Add1D(self, other),
-            ShapeType.Face => ((Face)self).AddCore_Shape2D(other),
-            ShapeType.Shell => ((Shell)self).AddCore_Shape2D(other),
+            ShapeType.Face => ((Face)self).AddCoreOfShape2D(other),
+            ShapeType.Shell => ((Shell)self).AddCoreOfShape2D(other),
             ShapeType.Compound or ShapeType.CompSolid => AddToCompound(self, null, other),
             _ => AddPlain(self, null, other),
         };

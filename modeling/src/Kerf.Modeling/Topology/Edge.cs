@@ -15,10 +15,6 @@ public static partial class EdgeExtensions
 
         internal Edge TopoEdge => (Edge)self;
 
-        internal double Order_Edge => 1.0;
-
-        internal Shape MakeZero_Edge() => default(Edge);
-
         /// <summary>The centre of the circle or ellipse the edge lies on.</summary>
         /// <exception cref="InvalidOperationException">The edge is neither.</exception>
         public Vector ArcCenter
@@ -62,9 +58,9 @@ public static partial class EdgeExtensions
             return self.ToCurve();
         }
 
-        internal ShapeCurve Curve_Edge() => new(self.GeomAdaptor());
+        internal ShapeCurve CurveOfEdge() => new(self.GeomAdaptor());
 
-        internal (EdgeCurve Curve, double Param, bool Forward) OcctParamAt_Edge(double position, PositionMode mode = PositionMode.Parameter)
+        internal (EdgeCurve Curve, double Param, bool Forward) OcctParamAtOfEdge(double position, PositionMode mode = PositionMode.Parameter)
         {
             var curve = self.GeomAdaptor();
             var length = curve.Length;
@@ -85,7 +81,7 @@ public static partial class EdgeExtensions
         /// edge is oriented (on a reversed edge, <c>ParamAt(0)</c> is larger than <c>ParamAt(1)</c>). A closed edge may give a
         /// value outside its nominal range.
         /// </summary>
-        internal double ParamAt_Edge(double position)
+        internal double ParamAtOfEdge(double position)
         {
             var (curve, param, _) = self.OcctParamAt(position);
             return param;
@@ -97,7 +93,7 @@ public static partial class EdgeExtensions
         /// and if that fails to validate, the edge is searched numerically.
         /// </remarks>
         /// <exception cref="ArgumentException">The point isn't on the edge.</exception>
-        internal double ParamAtPoint_Edge(Vector point, bool normalize = true)
+        internal double ParamAtPointOfEdge(Vector point, bool normalize = true)
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("Can't find param on empty edge");
@@ -751,12 +747,6 @@ public static partial class EdgeExtensions
         }
     }
 
-
-    extension(Edge)
-    {
-        /// <summary>An edge wrapping an OCCT edge.</summary>
-        public static Edge Make(Edge edge) => edge;
-    }
 
 
     /// <summary>An edge along the whole of a curve.</summary>

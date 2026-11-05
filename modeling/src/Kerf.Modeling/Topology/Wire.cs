@@ -17,10 +17,6 @@ public static partial class WireExtensions
 
         internal Wire TopoWire => (Wire)self;
 
-        internal double Order_Wire => 1.5;
-
-        internal Shape MakeZero_Wire() => default(Wire);
-
         // ---- Edges ----
 
         /// <summary>
@@ -67,10 +63,10 @@ public static partial class WireExtensions
             return self.ToCurve();
         }
 
-        internal ShapeCurve Curve_Wire() => new(self.GeomAdaptor());
+        internal ShapeCurve CurveOfWire() => new(self.GeomAdaptor());
 
         /// <summary>The parameter of the wire's <c>BRepAdaptor_CompCurve</c> at a position (not an edge parameter).</summary>
-        internal double ParamAt_Wire(double position)
+        internal double ParamAtOfWire(double position)
         {
             var curve = self.GeomAdaptor();
             var target = self.PositionAt(position);
@@ -87,7 +83,7 @@ public static partial class WireExtensions
 
         /// <inheritdoc/>
         /// <exception cref="ArgumentException">The point isn't on the wire.</exception>
-        internal double ParamAtPoint_Wire(Vector point, bool normalize = true)
+        internal double ParamAtPointOfWire(Vector point, bool normalize = true)
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("Can't find point on empty wire");
@@ -145,7 +141,7 @@ public static partial class WireExtensions
             return normalize ? normalized : self.ParamAt(normalized);
         }
 
-        internal (EdgeCurve Curve, double Param, bool Forward) OcctParamAt_Wire(double position, PositionMode mode = PositionMode.Parameter)
+        internal (EdgeCurve Curve, double Param, bool Forward) OcctParamAtOfWire(double position, PositionMode mode = PositionMode.Parameter)
         {
             // The absolute distance along the wire
             double distance;
@@ -496,12 +492,6 @@ public static partial class WireExtensions
         }
     }
 
-
-    extension(Wire)
-    {
-        /// <summary>A wire wrapping an OCCT wire.</summary>
-        public static Wire Make(Wire wire) => wire;
-    }
 
 
 

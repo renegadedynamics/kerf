@@ -38,7 +38,7 @@ public static partial class ShapeExtensions
         return s.Type switch
         {
             ShapeType.Vertex or ShapeType.Edge or ShapeType.Wire or ShapeType.Face => 0.0,
-            ShapeType.Shell => ((Shell)s).Volume_Shell,
+            ShapeType.Shell => ((Shell)s).VolumeOfShell,
             ShapeType.Solid => ((Solid)s).ComputeVolume(),
             _ => CompoundExtensions.VolumeOf(s),
         };
@@ -49,12 +49,12 @@ public static partial class ShapeExtensions
         s.NeedsGeometry("center");
         return s.Type switch
         {
-            ShapeType.Vertex => ((Vertex)s).Center_Vertex(),
-            ShapeType.Edge => ((Edge)s).Center_Shape1D(CenterOf.Geometry),
-            ShapeType.Wire => ((Wire)s).Center_Shape1D(CenterOf.Geometry),
-            ShapeType.Face => ((Face)s).Center_Face(CenterOf.Geometry),
-            ShapeType.Shell => ((Shell)s).Center_Shell(),
-            ShapeType.Solid => ((Solid)s).Center_Shape3D(CenterOf.Mass),
+            ShapeType.Vertex => ((Vertex)s).CenterOfVertex(),
+            ShapeType.Edge => ((Edge)s).CenterOfShape1D(CenterOf.Geometry),
+            ShapeType.Wire => ((Wire)s).CenterOfShape1D(CenterOf.Geometry),
+            ShapeType.Face => ((Face)s).CenterOfFace(CenterOf.Geometry),
+            ShapeType.Shell => ((Shell)s).CenterOfShell(),
+            ShapeType.Solid => ((Solid)s).CenterOfShape3D(CenterOf.Mass),
             _ => CompoundExtensions.CenterOf(s, CenterOf.Mass),
         };
     }
@@ -65,10 +65,10 @@ public static partial class ShapeExtensions
             s.NeedsGeometry("center");
         return s.Type switch
         {
-            ShapeType.Edge => ((Edge)s).Center_Shape1D(centerOf),
-            ShapeType.Wire => ((Wire)s).Center_Shape1D(centerOf),
-            ShapeType.Face => ((Face)s).Center_Face(centerOf),
-            ShapeType.Solid => ((Solid)s).Center_Shape3D(centerOf),
+            ShapeType.Edge => ((Edge)s).CenterOfShape1D(centerOf),
+            ShapeType.Wire => ((Wire)s).CenterOfShape1D(centerOf),
+            ShapeType.Face => ((Face)s).CenterOfFace(centerOf),
+            ShapeType.Solid => ((Solid)s).CenterOfShape3D(centerOf),
             ShapeType.Compound or ShapeType.CompSolid => CompoundExtensions.CenterOf(s, centerOf),
             _ => throw new NotSupportedException($"{s.Type}.Center doesn't take a CenterOf"),
         };
@@ -80,9 +80,9 @@ public static partial class ShapeExtensions
             return [];
         return s.Type switch
         {
-            ShapeType.Face => ((Face)s).Touch_Shape2D(other, tolerance),
-            ShapeType.Shell => ((Shell)s).Touch_Shape2D(other, tolerance),
-            ShapeType.Solid => ((Solid)s).Touch_Solid(other, tolerance),
+            ShapeType.Face => ((Face)s).TouchOfShape2D(other, tolerance),
+            ShapeType.Shell => ((Shell)s).TouchOfShape2D(other, tolerance),
+            ShapeType.Solid => ((Solid)s).TouchOfSolid(other, tolerance),
             ShapeType.Compound or ShapeType.CompSolid => CompoundExtensions.Touch(s, other, tolerance),
             _ => [],
         };
@@ -99,12 +99,12 @@ public static partial class ShapeExtensions
         other = other is IShape held ? TopoUtil.Typed(held.AsShape()) : other;
         return s.Type switch
         {
-            ShapeType.Vertex => ((Vertex)s).IntersectCore_Vertex(other, tolerance, includeTouched),
-            ShapeType.Edge => ((Edge)s).IntersectCore_Shape1D(other, tolerance, includeTouched),
-            ShapeType.Wire => ((Wire)s).IntersectCore_Shape1D(other, tolerance, includeTouched),
-            ShapeType.Face => ((Face)s).IntersectCore_Shape2D(other, tolerance, includeTouched),
-            ShapeType.Shell => ((Shell)s).IntersectCore_Shape2D(other, tolerance, includeTouched),
-            ShapeType.Solid => ((Solid)s).IntersectCore_Shape3D(other, tolerance, includeTouched),
+            ShapeType.Vertex => ((Vertex)s).IntersectCoreOfVertex(other, tolerance, includeTouched),
+            ShapeType.Edge => ((Edge)s).IntersectCoreOfShape1D(other, tolerance, includeTouched),
+            ShapeType.Wire => ((Wire)s).IntersectCoreOfShape1D(other, tolerance, includeTouched),
+            ShapeType.Face => ((Face)s).IntersectCoreOfShape2D(other, tolerance, includeTouched),
+            ShapeType.Shell => ((Shell)s).IntersectCoreOfShape2D(other, tolerance, includeTouched),
+            ShapeType.Solid => ((Solid)s).IntersectCoreOfShape3D(other, tolerance, includeTouched),
             _ => CompoundExtensions.IntersectCore(s, other, tolerance, includeTouched),
         };
     }
@@ -115,21 +115,21 @@ public static partial class Shape1DExtensions
     extension<TSelf>(TSelf self) where TSelf : IShape1D
     {
         /// <summary>The kernel's curve: an edge's <see cref="EdgeCurve"/>, or a wire's <see cref="WireCurve"/>.</summary>
-        internal ShapeCurve Curve() => Dispatch(self, e => e.Curve_Edge(), w => w.Curve_Wire());
+        internal ShapeCurve Curve() => Dispatch(self, e => e.CurveOfEdge(), w => w.CurveOfWire());
 
         /// <summary>The edge (as its curve) and the kernel's curve parameter at a position, and whether that edge runs forward.</summary>
         internal (EdgeCurve Curve, double Param, bool Forward) OcctParamAt(double position, PositionMode mode = PositionMode.Parameter) =>
-            Dispatch(self, e => e.OcctParamAt_Edge(position, mode), w => w.OcctParamAt_Wire(position, mode));
+            Dispatch(self, e => e.OcctParamAtOfEdge(position, mode), w => w.OcctParamAtOfWire(position, mode));
 
         /// <summary>The kernel's curve parameter at a normalised arc-length position (0 at the start, 1 at the end).</summary>
-        public double ParamAt(double position) => Dispatch(self, e => e.ParamAt_Edge(position), w => w.ParamAt_Wire(position));
+        public double ParamAt(double position) => Dispatch(self, e => e.ParamAtOfEdge(position), w => w.ParamAtOfWire(position));
 
         /// <summary>
         /// The parameter of the point on this curve closest to <paramref name="point"/>: the arc-length fraction
         /// <see cref="PositionAt"/> uses, or with <paramref name="normalize"/> false the kernel's own parameter.
         /// </summary>
         public double ParamAtPoint(Vector point, bool normalize = true) =>
-            Dispatch(self, e => e.ParamAtPoint_Edge(point, normalize), w => w.ParamAtPoint_Wire(point, normalize));
+            Dispatch(self, e => e.ParamAtPointOfEdge(point, normalize), w => w.ParamAtPointOfWire(point, normalize));
     }
 
     /// <summary>What to do with an edge or a wire; a curve object of several pieces goes as a wire of them.</summary>
