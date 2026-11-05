@@ -212,6 +212,10 @@ internal static partial class Bounds
     /// tolerances, which also drive the numerical methods; otherwise it bounds the geometry, computed with
     /// Precision::Confusion.
     /// </summary>
+    /// <remarks>
+    /// The box is the union of its parts, so a part already inside it adds nothing and needn't be found precisely (unit 11E;
+    /// OCCT searches every face). Faces that take their box from their edges come first, then the rest, cheapest first.
+    /// </remarks>
     public static void AddOptimal(in Shape s,
                                   ref Box b,
                                   bool useTriangulation = true,
@@ -225,6 +229,7 @@ internal static partial class Bounds
         Placement l;
         int i, nbNodes;
         var bc = new EdgeCurveAdaptor();
+        List<Face>? analytic = null, searched = null;
 
         for (ex.Init(s, ShapeType.Face); ex.More(); ex.Next())
         {
@@ -274,33 +279,14 @@ internal static partial class Bounds
                     }
                     else
                     {
-                        double umin, umax, vmin, vmax;
-                        bool isNaturalRestriction = false;
-                        double tol = useShapeTolerance ? Tool.Tolerance(f) : 0.0;
-                        FindExactUVBounds(f, out umin, out umax, out vmin, out vmax, tol, out isNaturalRestriction);
-                        AddSurface.AddOptimal(bs, umin, umax, vmin, vmax, tol, ref locBox);
-                        //
-                        if (!isNaturalRestriction)
+                        SurfaceKind kind = bs.GetType();
+                        if (kind == SurfaceKind.Sphere || kind == SurfaceKind.Torus)
                         {
-                            var ex2 = new Explorer(f, ShapeType.Edge);
-                            Box EBox = new();
-                            for (; ex2.More(); ex2.Next())
-                            {
-                                Box eBox = new();
-                                Edge anE = ShapeCasts.Edge(ex2.Current());
-                                if (Tool.Degenerated(anE) || !Tool.IsGeometric(anE))
-                                {
-                                    continue;
-                                }
-
-                                bc.Initialize(anE);
-                                tol = useShapeTolerance ? Tool.Tolerance(anE) : 0.0;
-                                Add3dCurve.AddOptimal(bc, tol, ref eBox);
-                                EBox.Add(eBox);
-                            }
-
-                            tol = useShapeTolerance ? Tool.Tolerance(f) : 0.0;
-                            AdjustFaceBox(bs, umin, umax, vmin, vmax, ref locBox, EBox, tol);
+                            (analytic ??= []).Add(f);
+                        }
+                        else
+                        {
+                            (searched ??= []).Add(f);
                         }
                     }
 
@@ -311,6 +297,16 @@ internal static partial class Bounds
                     }
                 }
             }
+        }
+
+        foreach (Face f in analytic ?? [])
+        {
+            AddCurvedFaceOptimal(f, bs, bc, ref b, useShapeTolerance);
+        }
+
+        foreach (Face f in searched ?? [])
+        {
+            AddCurvedFaceOptimal(f, bs, bc, ref b, useShapeTolerance);
         }
 
         // Add the edges not in faces
@@ -390,6 +386,75 @@ internal static partial class Bounds
             locBox.Get(out double xmin, out double ymin, out double zmin, out double xmax, out double ymax, out double zmax);
             b.Update(xmin, ymin, zmin, xmax, ymax, zmax);
         }
+    }
+
+    /// <summary>
+    /// A face whose box doesn't come from its edges: the optimal box of its surface over its parameters, cut back to the
+    /// edges' box on any side where the surface's extreme lies outside the face. Skipped as soon as it can't enlarge
+    /// <paramref name="b"/>: the surface's box contains the face's, and a B-spline's poles contain the surface.
+    /// </summary>
+    private static void AddCurvedFaceOptimal(Face f, FaceSurfaceAdaptor bs, EdgeCurveAdaptor bc, ref Box b, bool useShapeTolerance)
+    {
+        bs.Initialize(f, false);
+        double tol = useShapeTolerance ? Tool.Tolerance(f) : 0.0;
+        FindExactUVBounds(f, out double umin, out double umax, out double vmin, out double vmax, tol, out bool isNaturalRestriction);
+        if (bs.GetType() == SurfaceKind.BSplineSurface)
+        {
+            // Searching only ever enlarges the box by the larger of the tolerance and Confusion
+            Box hull = new();
+            AddSurface.Add(bs, umin, umax, vmin, vmax, 2.0 * Max(tol, global::Kerf.Engine.Foundation.Precision.Confusion()), ref hull);
+            if (Holds(b, hull))
+            {
+                return;
+            }
+        }
+
+        Box locBox = new();
+        AddSurface.AddOptimal(bs, umin, umax, vmin, vmax, tol, ref locBox);
+        if (Holds(b, locBox))
+        {
+            return;
+        }
+
+        if (!isNaturalRestriction)
+        {
+            var ex2 = new Explorer(f, ShapeType.Edge);
+            Box eBoxes = new();
+            for (; ex2.More(); ex2.Next())
+            {
+                Box eBox = new();
+                Edge anE = ShapeCasts.Edge(ex2.Current());
+                if (Tool.Degenerated(anE) || !Tool.IsGeometric(anE))
+                {
+                    continue;
+                }
+
+                bc.Initialize(anE);
+                Add3dCurve.AddOptimal(bc, useShapeTolerance ? Tool.Tolerance(anE) : 0.0, ref eBox);
+                eBoxes.Add(eBox);
+            }
+
+            AdjustFaceBox(bs, umin, umax, vmin, vmax, ref locBox, eBoxes, tol, b);
+        }
+
+        if (!locBox.IsVoid)
+        {
+            locBox.Get(out double xmin, out double ymin, out double zmin, out double xmax, out double ymax, out double zmax);
+            b.Update(xmin, ymin, zmin, xmax, ymax, zmax);
+        }
+    }
+
+    // Whether the box already holds all of the other, which isn't empty. A box with a gap is enlarged only when read, so it can't say
+    private static bool Holds(in Box outer, in Box inner)
+    {
+        if (outer.IsVoid || inner.IsVoid || outer.GetGap() != 0.0)
+        {
+            return false;
+        }
+
+        outer.Get(out double xmin, out double ymin, out double zmin, out double xmax, out double ymax, out double zmax);
+        inner.Get(out double ixmin, out double iymin, out double izmin, out double ixmax, out double iymax, out double izmax);
+        return ixmin >= xmin && iymin >= ymin && izmin >= zmin && ixmax <= xmax && iymax <= ymax && izmax <= zmax;
     }
 
     // Defines whether the box of the face can be found from the boxes of its edges only
@@ -696,7 +761,8 @@ internal static partial class Bounds
                                       double vmax,
                                       ref Box faceBox,
                                       in Box edgeBox,
-                                      double tol)
+                                      double tol,
+                                      in Box shapeBox)
     {
         if (edgeBox.IsVoid)
         {
@@ -711,6 +777,23 @@ internal static partial class Bounds
 
         faceBox.Get(out double fxmin, out double fymin, out double fzmin, out double fxmax, out double fymax, out double fzmax);
         edgeBox.Get(out double exmin, out double eymin, out double ezmin, out double exmax, out double eymax, out double ezmax);
+        // A side inside the shape's box so far can't enlarge it, cut back or not, so with no other side the search below, the
+        // costly part, can be left out (unit 11E). Any other side has to take them all in turn, as each search's plane
+        // depends on the sides cut back before it: skipping those gave a different box on shading_172.brep
+        double sxmin = double.PositiveInfinity, symin = double.PositiveInfinity, szmin = double.PositiveInfinity;
+        double sxmax = double.NegativeInfinity, symax = double.NegativeInfinity, szmax = double.NegativeInfinity;
+        if (!shapeBox.IsVoid && shapeBox.GetGap() == 0.0)
+        {
+            shapeBox.Get(out sxmin, out symin, out szmin, out sxmax, out symax, out szmax);
+        }
+
+        if (!((exmin > fxmin && fxmin < sxmin) || (exmax < fxmax && fxmax > sxmax)
+              || (eymin > fymin && fymin < symin) || (eymax < fymax && fymax > symax)
+              || (ezmin > fzmin && fzmin < szmin) || (ezmax < fzmax && fzmax > szmax)))
+        {
+            return;
+        }
+
         //
         double tolU = Max(bs.UResolution(tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
         double tolV = Max(bs.VResolution(tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
