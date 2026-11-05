@@ -133,7 +133,7 @@ function Read-Results([string] $path) {
     }
     elseif ($line -and -not $line.StartsWith("group`t")) {
       $p = $line.Split("`t")
-      [void] $rows.Add([pscustomobject]@{ Group = "$($suite.Prefix)$($p[0])"; Name = $p[1]; Metric = $p[2]; Value = $p[3]; Runs = $p[4]; Spread = $p[5] })
+      [void] $rows.Add([pscustomobject]@{ Group = $p[0]; Name = $p[1]; Metric = $p[2]; Value = $p[3]; Runs = $p[4]; Spread = $p[5] })
     }
   }
   @{ Header = $header; Rows = $rows }
@@ -343,7 +343,7 @@ foreach ($suite in $suites) {
     if ($process.ExitCode) { throw "$($suite.Name) failed with exit code $($process.ExitCode): see $logs" }
     foreach ($line in [IO.File]::ReadAllLines($rowFile)) {
       $p = $line.Split("`t")
-      [void] $rows.Add([pscustomobject]@{ Group = $p[0]; Name = $p[1]; Metric = $p[2]; Value = $p[3] })
+      [void] $rows.Add([pscustomobject]@{ Group = "$($suite.Prefix)$($p[0])"; Name = $p[1]; Metric = $p[2]; Value = $p[3] })
     }
   }
   [void] $suiteNotes.Add("$($suite.Name): $times x $(($suite.Args) -join ' '), $([int] $clock.Elapsed.TotalSeconds) s")
