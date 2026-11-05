@@ -1,9 +1,8 @@
-namespace Build123d.Tests;
+namespace Kerf.Modeling.Tests;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
-/// <summary>The kernel under build123d.NET: Kerf, the managed port, with no native code.</summary>
+/// <summary>The kernel under Kerf.Modeling: Kerf, the managed port, with no native code.</summary>
 public class KernelTests
 {
     [Fact]

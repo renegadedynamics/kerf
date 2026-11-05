@@ -3,9 +3,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Ops = Kerf.Modeling.Operations;
 
-namespace Build123d.Tests.Exchange;
+namespace Kerf.Modeling.Tests.Exchange;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 /// <summary>Import and export: BREP, STEP, STL, glTF and 3MF.</summary>

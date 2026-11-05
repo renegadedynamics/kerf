@@ -32,7 +32,7 @@ namespace Kerf.Engine.Meshing;
 /// result, it doesn't write into the operation's shapes.</item>
 /// <item>On an unfrozen shape (ported code's), it meshes in place, as OCCT does; <see cref="History"/> is empty.</item>
 /// </list>
-/// So build123d.NET's <c>new BRepMesh_IncrementalMesh(copy, tol, rel, ang, true)</c> becomes
+/// So Kerf.Modeling's <c>new BRepMesh_IncrementalMesh(copy, tol, rel, ang, true)</c> becomes
 /// <c>new BRepMesh_IncrementalMesh(shape, tol, rel, ang, true).Shape()</c>. The functional twin is <see cref="Meshed(in Shape, in ToolParameters)"/>.
 /// </para>
 /// <para>

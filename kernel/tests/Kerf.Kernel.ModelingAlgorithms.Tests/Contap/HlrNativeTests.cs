@@ -6,7 +6,7 @@ using System.Text;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// The foundations of the hidden-line removal against native OCCT: tools/hlrrec records them with build123d.NET's
+/// The foundations of the hidden-line removal against native OCCT: tools/hlrrec records them with Kerf.Modeling's
 /// OCCT V8_0_1 (they are not bound), <see cref="HlrRecorder"/> makes the same calls on the port, and the two texts are
 /// compared case by case. HLRAlgo_Projector (parallel, the four hard-coded view matrices, perspective, scaled, given
 /// directions), Intrv_Intervals' operations and positions, HLRAlgo_EdgeStatus with HLRAlgo_EdgeIterator, HLRAlgo's

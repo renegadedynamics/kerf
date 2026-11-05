@@ -10,7 +10,7 @@ namespace Kerf.Kernel.ModelingData.Tests;
 /// <summary>
 /// Property tests of IntAna_IntQuadQuad and IntAna_Curve on random cylinder/quadric and cone/quadric pairs: the
 /// points of every curve lie on both surfaces, D1u is tangent to them, and FindParameter finds the points again.
-/// There is no oracle: build123d.NET doesn't bind IntAna or IntPatch.
+/// There is no oracle: Kerf.Modeling doesn't bind IntAna or IntPatch.
 /// </summary>
 public class IntAna_IntQuadQuadPropertyTests
 {

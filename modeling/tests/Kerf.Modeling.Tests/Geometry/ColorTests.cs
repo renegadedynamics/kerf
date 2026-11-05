@@ -1,9 +1,8 @@
 // Ported from build123d tests/test_direct_api/test_color.py. Argument-type validation is the compiler's
 // job in C#, and Python's repr has no counterpart.
 
-namespace Build123d.Tests.Geometry;
+namespace Kerf.Modeling.Tests.Geometry;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class ColorTests

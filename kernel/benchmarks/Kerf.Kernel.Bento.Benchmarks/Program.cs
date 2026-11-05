@@ -2,9 +2,9 @@
 
 // Bento's CAD workload (unit 9E, docs/performance.md): examples from Bento's guide to its CAD functions
 // (docs/cad/build123d-in-bento.md, section 9), the introductory examples of build123d written as Bento's formulas, here
-// through build123d.NET's algebra API as the CAD_ functions call it. Each is built, triangulated with build123d's
+// through Kerf.Modeling's algebra API as the CAD_ functions call it. Each is built, triangulated with build123d's
 // tolerances as Bento's viewer does (ShapeModels.Part), and its volume and face count read, as a cell shows them.
-//   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks -p:KerfModelingRoot=<build123d.NET>/ [-- passes [copies]]
+//   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks -p:KerfModelingRoot=<Kerf.Modeling>/ [-- passes [copies]]
 //   (or [-- images [passes]] for the SVG drawings and PNG pictures of unit 10L4)
 // (copies: how many of each example the parallel rounds run at once; 0 skips them; the default is a processor's worth)
 // and on native OCCT, for comparison: --project benchmarks/Kerf.Kernel.Bento.Benchmarks/Native (the same arguments).

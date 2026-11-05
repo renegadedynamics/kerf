@@ -10,9 +10,8 @@
 //   checked in algebra form instead.
 using Kerf.Geometry;
 
-namespace Build123d.Tests.Objects;
+namespace Kerf.Modeling.Tests.Objects;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class ConstrainedArcsTests

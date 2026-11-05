@@ -6,9 +6,8 @@
 //   test_param_at_point_search_fallback, test_param_at_point_not_found: patch OCCT classes with mocks.
 using static Kerf.Modeling.Operations;
 
-namespace Build123d.Tests.Topology;
+namespace Kerf.Modeling.Tests.Topology;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class EdgeTests

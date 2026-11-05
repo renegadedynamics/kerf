@@ -2,9 +2,8 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using Ops = Kerf.Modeling.Operations;
 
-namespace Build123d.Tests.Immutability;
+namespace Kerf.Modeling.Tests.Immutability;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 /// <summary>

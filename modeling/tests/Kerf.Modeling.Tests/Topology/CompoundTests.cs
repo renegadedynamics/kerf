@@ -10,9 +10,8 @@
 // - TestCompoundTreeValidation: _pre_attach and _pre_attach_children belong to the parent-link tree.
 // - TestCompoundTreeLocation: ported with WithAssemblyChildren in place of setting .parent and .children; the marker's
 //   global location is the assembly's location times its own, as there is no parent link to read it through.
-namespace Build123d.Tests.Topology;
+namespace Kerf.Modeling.Tests.Topology;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 internal static class CompoundObjects

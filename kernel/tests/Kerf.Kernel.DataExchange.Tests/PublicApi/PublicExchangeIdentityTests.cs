@@ -29,7 +29,7 @@ public class PublicExchangeIdentityTests
         yield return new MakeSphere(7).Shape();
     }
 
-    // The old way: a private copy meshed in place (relative deflection, in parallel), as build123d.NET's MeshedCopy
+    // The old way: a private copy meshed in place (relative deflection, in parallel), as Kerf.Modeling's MeshedCopy
     private static Shape MeshedCopy(in Shape shape, double linear, double angular)
         => new IncrementalMesh(new Copy(shape, false, false).Shape(), linear, true, angular, true).Shape();
 

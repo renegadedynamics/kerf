@@ -14,7 +14,7 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 /// The walking step by step against native OCCT (decision 687): every return of TestDeflection (its status, the point
 /// and its parameters) and the result, every double bit for bit, as tools/walkrec records them from OCCT's own
 /// IntWalk_IWalking.gxx, IntPatch_ImpPrmIntersection.cxx and IntWalk_PWalking.cxx built with MSVC against
-/// build123d.NET's OCCT V8_0_1. Through IntPatch_ImpPrmIntersection (IntWalk_IWalking): a cylinder against a B-spline
+/// Kerf.Modeling's OCCT V8_0_1. Through IntPatch_ImpPrmIntersection (IntWalk_IWalking): a cylinder against a B-spline
 /// patch (closed and open lines), a plane against a torus, a sphere, a cone and a tilted plane against patches. Through
 /// IntWalk_PWalking from a start point: a cylinder, a torus and another patch against a patch. Each gives the same
 /// line serially on every run and from parallel threads (decision 490).

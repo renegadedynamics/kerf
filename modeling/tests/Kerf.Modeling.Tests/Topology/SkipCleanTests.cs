@@ -1,8 +1,7 @@
 // Ported from build123d tests/test_direct_api/test_skip_clean.py. SkipClean.clean is read-only here (SkipClean.Clean),
 // so setUp's reset to True has no counterpart: each test starts outside any scope.
-namespace Build123d.Tests.Topology;
+namespace Kerf.Modeling.Tests.Topology;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class SkipCleanTests

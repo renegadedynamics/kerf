@@ -291,7 +291,7 @@ public static class Exporters3D
             Binary = options.Binary,
             Unit = ExchangeUnits.LengthUnit(options.Unit, "unit"),
             Mesh = MeshOptions(options.LinearDeflection, options.AngularDeflection),
-            Generator = "build123d.NET",
+            Generator = "Kerf",
         };
 
 }

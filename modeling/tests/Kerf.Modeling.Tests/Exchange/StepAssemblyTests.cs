@@ -2,9 +2,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using O = global::Occt;
 
-namespace Build123d.Tests.Exchange;
+namespace Kerf.Modeling.Tests.Exchange;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 /// <summary>

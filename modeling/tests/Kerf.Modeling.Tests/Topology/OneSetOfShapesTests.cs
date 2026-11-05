@@ -7,7 +7,7 @@ using Kerf.Modeling;
 using Kerf.Topology;
 using static Kerf.Modeling.Operations;
 
-namespace Build123d.Tests.Topology;
+namespace Kerf.Modeling.Tests.Topology;
 
 public class OneSetOfShapesTests
 {

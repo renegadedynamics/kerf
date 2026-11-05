@@ -79,7 +79,7 @@ public class ShapeFix_FaceTests
         }
     }
 
-    // A face on a cylinder bounded by two 3d circles without pcurves, as build123d.NET's MakeFaceOnSurface makes it.
+    // A face on a cylinder bounded by two 3d circles without pcurves, as Kerf.Modeling's MakeFaceOnSurface makes it.
     private static Face CylinderBand(double theR, double theH)
     {
         var aMaker = new MakeFace(new CylindricalSurface(ZAx3(), theR), CircleWire(0.0, theR), true);

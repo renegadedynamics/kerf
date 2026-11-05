@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Build123d.Tests" />
+    <InternalsVisibleTo Include="Kerf.Modeling.Tests" />
     <Using Include="Kerf.Topology" />
     <Using Include="Kerf.Geometry" />
   </ItemGroup>

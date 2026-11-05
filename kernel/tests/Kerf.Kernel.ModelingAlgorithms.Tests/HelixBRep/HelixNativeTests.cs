@@ -15,7 +15,7 @@ using static Kerf.Geometry.Continuity;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// TKHelix against native OCCT's results recorded once by tools/helixrec (unit 7D; build123d.NET doesn't bind TKHelix):
+/// TKHelix against native OCCT's results recorded once by tools/helixrec (unit 7D; Kerf.Modeling doesn't bind TKHelix):
 /// HelixBRep_BuilderHelix through each SetParameters overload the helix commands use, on the parameters of every
 /// command the corpus's helix grid calls (with its setaxis axes), with the commands' approximation parameters and
 /// with 1e-5, degree 8, C2; and per part HelixGeom_BuilderHelix, HelixGeom_BuilderHelixCoil and

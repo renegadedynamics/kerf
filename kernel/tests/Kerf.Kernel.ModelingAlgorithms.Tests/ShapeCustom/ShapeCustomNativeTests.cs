@@ -21,7 +21,7 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
 /// ShapeCustom against native OCCT's recordings (tools/shcustomrec, unit 7A): BSplineRestriction with restriction
-/// parameters build123d.NET's binding can't set, and ShapeCustom_Surface, Curve and Curve2d on the B-spline and Bezier
+/// parameters Kerf.Modeling's binding can't set, and ShapeCustom_Surface, Curve and Curve2d on the B-spline and Bezier
 /// geometry of data/occ's shapes and the heal group's public inputs. The port reads each input frozen, as a caller's,
 /// writes the same records as the recorder, and compares them: BRep text with the Free and Checked columns masked
 /// where native writes into its own input (decision 347), GeomTools text and the outputs' bits exactly.

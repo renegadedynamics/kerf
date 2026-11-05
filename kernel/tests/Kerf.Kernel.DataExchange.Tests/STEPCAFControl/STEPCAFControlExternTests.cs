@@ -138,7 +138,7 @@ public sealed class STEPCAFControlExternTests : IDisposable
         Assert.True(anEF!.GetTransferStatus());
     }
 
-    // The issue build123d.NET found: ReadStream under the file's name read its siblings from the disk
+    // The issue Kerf.Modeling found: ReadStream under the file's name read its siblings from the disk
     [Fact]
     public void StreamApiReadsNoExternalFileWithoutAResolver()
     {

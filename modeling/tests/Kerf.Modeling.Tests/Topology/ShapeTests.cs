@@ -16,9 +16,8 @@
 // - TestShapeCast.test_unregistered_type_is_reported, .test_registry_covers_every_wrapped_type and
 //   TestAsShape.test_registry_covers_the_geometry_types: Shape.Cast and AsShape are switches, not registries.
 
-namespace Build123d.Tests.Topology;
+namespace Kerf.Modeling.Tests.Topology;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 file static class Objects

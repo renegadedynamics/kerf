@@ -14,9 +14,8 @@
 //   Shape.Cast is static, so Solid.cast's class-specific result is checked through the internal CastLike.
 using Ops = Kerf.Modeling.Operations;
 
-namespace Build123d.Tests.Topology;
+namespace Kerf.Modeling.Tests.Topology;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 file static class Zeros

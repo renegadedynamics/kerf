@@ -105,7 +105,7 @@ public class ChFi3dBuilderTests
     [Fact]
     public void ARadiusTooLargeGivesTheStripeStatusesBuild123dReads()
     {
-        // build123d.NET's "fillet too large" (MalformedInputTests): every contour faulty, ChFiDS_StartsolFailure (no start solution),
+        // Kerf.Modeling's "fillet too large" (MalformedInputTests): every contour faulty, ChFiDS_StartsolFailure (no start solution),
         // Perform never reached (native: tools/dsrec's b3d_fail_box_fillet_too_large)
         Shape aBox = new MakeBox(1, 1, 1).Shape();
         (FilBuilder aB, ChFi3dBuilderNativeTests.RecordingReconstruction aRec) =

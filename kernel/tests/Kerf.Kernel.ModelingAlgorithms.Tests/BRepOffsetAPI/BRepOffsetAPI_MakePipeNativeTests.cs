@@ -17,7 +17,7 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
 /// The port's BRepOffsetAPI_MakePipe (BRepFill_Pipe, BRepFill_Sweep) and BRepOffsetAPI_MiddlePath against native OCCT's,
-/// recorded by tools/piperec (unit 5S2; build123d.NET binds neither). Each recorded case holds its inputs as BRep text,
+/// recorded by tools/piperec (unit 5S2; Kerf.Modeling binds neither). Each recorded case holds its inputs as BRep text,
 /// which native OCCT read back before running, so both sides run on the same shapes; the port reads them, freezes them
 /// (as a caller's published shapes are) and runs. Compared: the exception, IsDone, ErrorOnSurface's bits, the result,
 /// FirstShape and LastShape as BRep text (then with the Free column masked), Generated for every sub-shape of the

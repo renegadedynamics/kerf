@@ -10,7 +10,7 @@ namespace Kerf.Kernel.ModelingData.Tests;
 /// <summary>
 /// Extrema_ExtElCS: known cases, and properties on random inputs (each extremum's points lie on the curve and the
 /// surface at their parameters, its square distance is theirs, and the minimum is not above the distance between
-/// sampled points). There is no native oracle: build123d.NET doesn't bind Extrema_ExtElCS or Extrema_ExtCS.
+/// sampled points). There is no native oracle: Kerf.Modeling doesn't bind Extrema_ExtElCS or Extrema_ExtCS.
 /// </summary>
 public class Extrema_ExtElCSTests
 {

@@ -8,9 +8,8 @@
 // - test_polyline_with_list: Polyline((0, 0), [(1, 0), (1, 1)], (0, 1)) mixes points and lists of points, which the
 //   C# overloads (points or one list) don't; test_polyline covers the same polyline.
 
-namespace Build123d.Tests.Objects;
+namespace Kerf.Modeling.Tests.Objects;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class CurveObjectTests

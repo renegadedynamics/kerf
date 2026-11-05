@@ -2,9 +2,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Ops = Kerf.Modeling.Operations;
 
-namespace Build123d.Tests.Exchange;
+namespace Kerf.Modeling.Tests.Exchange;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 /// <summary>
@@ -12,7 +11,7 @@ using Kerf.Modeling;
 /// text (<c>name.brep</c>), the STEP native OCCT writes of it (<c>name.step</c>, with a fixed time stamp) and the BRep
 /// text native OCCT reads back from that (<c>name.read.brep</c>). Both backends start from the same BRep, so what's
 /// compared is the exchange alone. The native backend writes the files when <c>B3D_WRITE_EXCHANGE_REFERENCE</c> names
-/// the folder (tests/Build123d.Tests/Reference/Exchange). Natively, STEP is written by STEPControl_Writer; on Kerf by
+/// the folder (tests/Kerf.Modeling.Tests/Reference/Exchange). Natively, STEP is written by STEPControl_Writer; on Kerf by
 /// STEPCAFControl_Writer, which writes these shapes' text as STEPControl does but for the compound's.
 /// </summary>
 public partial class StepNativeTests

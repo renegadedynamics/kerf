@@ -7,9 +7,8 @@
 // - test_full_round's full_round(ShapeList): a type error the compiler rules out.
 using static Kerf.Modeling.Operations;
 
-namespace Build123d.Tests.Operations;
+namespace Kerf.Modeling.Tests.Operations;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 public class OperationsSketchTests

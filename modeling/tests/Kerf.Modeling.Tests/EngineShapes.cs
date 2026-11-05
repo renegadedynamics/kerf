@@ -4,9 +4,8 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 
-namespace Build123d.Tests;
+namespace Kerf.Modeling.Tests;
 
-// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
 /// <summary>

@@ -13,7 +13,7 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
 /// IntPatch_PrmPrmIntersection step by step against native OCCT: tools/walkrec compiles OCCT's own
-/// IntPatch_PrmPrmIntersection.cxx with the instrumented IntWalk_PWalking.cxx (decision 687) against build123d.NET's
+/// IntPatch_PrmPrmIntersection.cxx with the instrumented IntWalk_PWalking.cxx (decision 687) against Kerf.Modeling's
 /// OCCT V8_0_1 and records every walking step (status, point, parameters), the polyhedra, their interference (section
 /// lines and tangent zones, point by point), the voxel search's start points and every line (transitions, points,
 /// vertices), every double as its 64 bits. The cases cover each Perform: on the domains' samplings through

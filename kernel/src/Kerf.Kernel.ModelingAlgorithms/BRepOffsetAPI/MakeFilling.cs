@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Api;
 /// <remarks>
 /// A maker (decisions 414, 454): <c>Shape()</c> freezes the face, <c>Generated</c> lists frozen shapes (the new edge
 /// or vertex made from a boundary edge or vertex). The caller's edges and faces are never written. As in OCCT,
-/// <see cref="Build"/> may be called again after more constraints are added (build123d.NET's <c>MakeSurface</c>
+/// <see cref="Build"/> may be called again after more constraints are added (Kerf.Modeling's <c>MakeSurface</c>
 /// adds points to a built filling): it builds a new face, and the face already handed out doesn't change.
 /// </remarks>
 internal class MakeFilling : MakeShape

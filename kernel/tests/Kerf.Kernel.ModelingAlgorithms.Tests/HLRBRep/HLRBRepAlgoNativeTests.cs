@@ -18,7 +18,7 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// The hidden-line removal algorithms against native OCCT: tools/hlrrec (algo.cpp) records, with build123d.NET's OCCT
+/// The hidden-line removal algorithms against native OCCT: tools/hlrrec (algo.cpp) records, with Kerf.Modeling's OCCT
 /// V8_0_1 (HLR is not bound), the exact hidden-line removal (HLRBRep_Algo, then every compound of HLRBRep_HLRToShape:
 /// the visible and hidden sharp, smooth, sewn, outline and isoline edges in 2D, outlines and sharp and smooth edges in
 /// 3D, one shape's and one face's), the polygonal one (HLRBRep_PolyAlgo on meshed shapes, then HLRBRep_PolyHLRToShape's

@@ -2,10 +2,10 @@
 
   <!--
     Bento's CAD workload (unit 9E): a handful of the introductory examples as Bento's guide writes them
-    (docs/cad/build123d-in-bento.md in Bento), through build123d.NET's algebra API, each built, triangulated as the
+    (docs/cad/build123d-in-bento.md in Bento), through Kerf.Modeling's algebra API, each built, triangulated as the
     viewer does, and measured, as a workbook does on opening and on every recalculation.
 
-    It builds build123d.NET from the repository's modeling folder (KerfModelingRoot) on this kernel. Run it in Release;
+    It builds Kerf.Modeling from the repository's modeling folder (KerfModelingRoot) on this kernel. Run it in Release;
     Program.cs has the command line.
   -->
   <PropertyGroup>

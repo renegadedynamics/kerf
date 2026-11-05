@@ -7,7 +7,7 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
 /// BlendFunc's functions and ChFiDS's spines against native OCCT, bit for bit: tools/blendrec records them with
-/// build123d.NET's OCCT V8_0_1 (they are not bound), <see cref="BlendRecorder"/> makes the same calls on the port, and
+/// Kerf.Modeling's OCCT V8_0_1 (they are not bound), <see cref="BlendRecorder"/> makes the same calls on the port, and
 /// the two texts are compared case by case. The functions: ConstRad and EvolRad (every "quadrant"), Chamfer,
 /// ConstThroat, ConstThroatWithPenetration, ChAsym and Ruled on plane/plane, plane/cylinder, cylinder/cylinder,
 /// cone/plane and B-spline/B-spline pairs (values, derivatives, the solution from a start point, IsSolution, the

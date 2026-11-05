@@ -1,5 +1,5 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
-// An Kerf addition, not a port: the managed equivalent of build123d.NET's native mesh extraction
+// An Kerf addition, not a port: the managed equivalent of Kerf.Modeling's native mesh extraction
 // (native/shim/src/b3d_mesh.cpp, b3d_mesh_extract), which fills Bento's viewer's buffers. Open question 12.
 
 using Kerf.Engine.Collections;
@@ -19,7 +19,7 @@ namespace Kerf.Engine.Meshing;
 
 /// <summary>
 /// Every face's triangulation and every edge's polyline of a meshed shape, in a few flat buffers, for a viewer: the
-/// managed equivalent of build123d.NET's native <c>Extras.ExtractMesh</c>, float for float.
+/// managed equivalent of Kerf.Modeling's native <c>Extras.ExtractMesh</c>, float for float.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -98,18 +98,18 @@ internal static class MeshExtraction
 
     /// <summary>
     /// The buffers of every face and every edge of the meshed <paramref name="root"/>, in the order of
-    /// <see cref="Faces"/> and <see cref="Edges"/>: build123d.NET's <c>ShapeMesh</c>.
+    /// <see cref="Faces"/> and <see cref="Edges"/>: Kerf.Modeling's <c>ShapeMesh</c>.
     /// </summary>
     public static global::Kerf.Engine.Meshing.MeshBuffers Extract(in Shape root, double deflection, double angle)
         => Extract(root, Faces(root), Edges(root), deflection, angle);
 
     /// <summary>
-    /// The distinct faces of a shape in exploration order, as build123d.NET's <c>Shape.Faces()</c>: each face once
+    /// The distinct faces of a shape in exploration order, as Kerf.Modeling's <c>Shape.Faces()</c>: each face once
     /// (<see cref="Shape.IsSame"/>), at its first place, with the orientation of its last occurrence.
     /// </summary>
     public static List<Shape> Faces(in Shape shape) => Entities(shape, ShapeType.Face);
 
-    /// <summary>The distinct edges of a shape, as <see cref="Faces"/>: build123d.NET's <c>Shape.Edges()</c>.</summary>
+    /// <summary>The distinct edges of a shape, as <see cref="Faces"/>: Kerf.Modeling's <c>Shape.Edges()</c>.</summary>
     public static List<Shape> Edges(in Shape shape) => Entities(shape, ShapeType.Edge);
 
     private static List<Shape> Entities(in Shape shape, ShapeType type)
@@ -295,7 +295,7 @@ internal static class MeshExtraction
 
 /// <summary>
 /// The buffers <see cref="MeshExtraction.Extract(in Shape, IReadOnlyList{Shape}, IReadOnlyList{Shape}, double, double)"/>
-/// fills, laid out as build123d.NET's <c>MeshBuffers</c>: every face's nodes (x, y, z each, located), their unit
+/// fills, laid out as Kerf.Modeling's <c>MeshBuffers</c>: every face's nodes (x, y, z each, located), their unit
 /// normals (facing out of a reversed face too) and its triangles (index triples into the face's own nodes, wound to
 /// face out) end to end, then every edge's polyline. The offsets have one entry per face or edge and a final total.
 /// </summary>

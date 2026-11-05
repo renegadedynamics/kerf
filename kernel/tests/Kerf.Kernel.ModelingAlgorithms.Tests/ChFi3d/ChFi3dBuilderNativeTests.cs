@@ -224,7 +224,7 @@ public class ChFi3dBuilderNativeTests
     [MemberData(nameof(CaseNames))]
     public void TheDiagnosticsAreNatives(string theName)
     {
-        // what build123d.NET reads after a fillet (plan 2.6): the faulty contours, the stripes' ChFiDS_ErrorStatus, the
+        // what Kerf.Modeling reads after a fillet (plan 2.6): the faulty contours, the stripes' ChFiDS_ErrorStatus, the
         // faulty vertices; recorded for the fillets (BRepFilletAPI_MakeChamfer does not expose them)
         DsCase aCase = DsRecordings.Cases[theName];
         if (CaseEdges(aCase).Chamfer)

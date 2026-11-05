@@ -22,7 +22,7 @@ public static class Mesher
     extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
     {
         /// <summary>
-        /// The shape's mesh (OCCT's <c>BRepMesh_IncrementalMesh</c>, read out as build123d.NET's and Bento's viewers read
+        /// The shape's mesh (OCCT's <c>BRepMesh_IncrementalMesh</c>, read out as Kerf.Modeling's and Bento's viewers read
         /// it). The shape isn't changed: it is meshed in a working overlay that is dropped, so its faces hold no
         /// triangles afterwards and it can be meshed from any thread. A face that already holds a mesh fine enough
         /// (one read from a BREP file) keeps it.

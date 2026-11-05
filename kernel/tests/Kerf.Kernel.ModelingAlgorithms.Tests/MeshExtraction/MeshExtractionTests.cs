@@ -15,7 +15,7 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
 /// The viewer's mesh extraction (unit 4W): counts, order, normals, winding, locations and orientations, and where each
-/// edge's polyline comes from. The oracle compares it with build123d.NET's native extraction float for float.
+/// edge's polyline comes from. The oracle compares it with Kerf.Modeling's native extraction float for float.
 /// </summary>
 public class MeshExtractionTests
 {

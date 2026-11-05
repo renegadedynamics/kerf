@@ -7,7 +7,7 @@ using System.Text;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// HLR's data model against native OCCT: tools/hlrrec (data.cpp) records, with build123d.NET's OCCT V8_0_1 (HLR is not
+/// HLR's data model against native OCCT: tools/hlrrec (data.cpp) records, with Kerf.Modeling's OCCT V8_0_1 (HLR is not
 /// bound), HLRTopoBRep's outlining (the internal outlines, outlines and isolines of each face, the splits of the edges,
 /// every new edge's vertices, parameters, pcurve and points), HLRBRep_Data after <c>Update</c> (each edge's flags,
 /// vertices, min-max box, status and projected curve; each face's flags, size, wires and boxes), and the hider's walk
