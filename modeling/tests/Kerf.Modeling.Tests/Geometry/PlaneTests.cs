@@ -111,7 +111,8 @@ public class PlaneTests
         Check.Near(new Vector3D(1, 0, 0), plane.ZDir);
         Assert.True(plane.ZDir.Cross(plane.XDir).Dot(plane.YDir) > 0.99);
 
-        Assert.Throws<ArgumentException>(() => new Plane(new Axis(new Point3D(0, 0, 0), new Vector3D(0, 0, 1)), xDir: new Vector3D(0, 0, 0)));
+        var zero = Assert.Throws<ArgumentException>(() => new Plane(new Axis(new Point3D(0, 0, 0), new Vector3D(0, 0, 1)), xDir: new Vector3D(0, 0, 0)));
+        Assert.Equal("A plane's directions can't have zero length", zero.Message);
     }
 
     [Fact]

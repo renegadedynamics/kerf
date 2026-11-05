@@ -98,7 +98,7 @@ public static class Step
         catch (Exception e) when (Refusal.IsFailure(e))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            return Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, $"The model couldn't be written as STEP ({Refusal.Unwrapped(e).Message})."));
+            return Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, $"The model couldn't be written as STEP ({FailureDiagnostics.PublicText(e)})."));
         }
 
         return done ? Result.Success() : Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, "The model couldn't be written as STEP."));

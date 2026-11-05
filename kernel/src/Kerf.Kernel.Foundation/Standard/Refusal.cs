@@ -120,23 +120,12 @@ internal static class Refusal
         _ => new FailureException(message),
     };
 
-    // The failure's description, then what its message says without the OCCT member it names at its start
-    // ("gp_Dir() - input vector has zero norm"), for callers who have never heard of it
+    // The failure's description, then what its message says in Kerf's terms, for callers who have never heard of OCCT
     private static string PublicMessage(FailureException failure)
     {
         string kind = FailureDiagnostics.Describe(failure);
         kind = char.ToUpperInvariant(kind[0]) + kind[1..];
-        string own = failure.GetMessageString();
-        if (own.StartsWith("Exception of type '", StringComparison.Ordinal))
-            own = "";
-        if (own.StartsWith("gp_", StringComparison.Ordinal) || own.StartsWith("Geom", StringComparison.Ordinal)
-            || own.StartsWith("TopoDS_", StringComparison.Ordinal))
-        {
-            int dash = own.IndexOf(" - ", StringComparison.Ordinal);
-            int colon = own.LastIndexOf(": ", StringComparison.Ordinal);
-            own = dash >= 0 ? own[(dash + 3)..] : colon >= 0 ? own[(colon + 2)..] : "";
-        }
-        own = own.Trim();
+        string own = FailureDiagnostics.PublicText(failure);
         return own.Length == 0 ? kind + "." : $"{kind}: {own}.";
     }
 }

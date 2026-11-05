@@ -39,7 +39,7 @@ internal sealed class InputStream
         ArgumentNullException.ThrowIfNull(stream);
         if (!stream.CanRead || !stream.CanSeek)
         {
-            throw new ArgumentException("Standard_IStream: the stream must be readable and seekable", nameof(stream));
+            throw new ArgumentException("The stream must be readable and seekable", nameof(stream));
         }
 
         _stream = stream;

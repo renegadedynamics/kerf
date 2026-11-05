@@ -54,7 +54,7 @@ public static class Png
         }
         catch (Exception e) when (e is IOException or NotSupportedException or ObjectDisposedException or UnauthorizedAccessException)
         {
-            return Result.Failure(Diagnostic.Error(WriteFailed, $"The PNG couldn't be written: {Refusal.Unwrapped(e).Message}"));
+            return Result.Failure(Diagnostic.Error(WriteFailed, $"The PNG couldn't be written: {FailureDiagnostics.PublicText(e)}"));
         }
     }
 

@@ -243,7 +243,7 @@ internal static class ShapeChecks
         }
         catch (Exception e) when (Refusal.IsFailure(e) && (e is IncompatibleShapesException))
         {
-            throw new ArgumentException(Refusal.Unwrapped(e).Message, nameof(parts), e);
+            throw new ArgumentException(FailureDiagnostics.PublicText(e), nameof(parts), e);
         }
     }
 
