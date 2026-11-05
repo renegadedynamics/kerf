@@ -4,16 +4,19 @@
 // (docs/cad/build123d-in-bento.md, section 9), the introductory examples of build123d written as Bento's formulas, here
 // through Kerf.Modeling's algebra API as the CAD_ functions call it. Each is built, triangulated with build123d's
 // tolerances as Bento's viewer does (ShapeModels.Part), and its volume and face count read, as a cell shows them.
-//   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks -p:KerfModelingRoot=<Kerf.Modeling>/ [-- passes [copies]]
+// tools/bench.ps1 runs it in fresh processes, ReadyToRun, and keeps the figures (docs/performance.md). By hand, from the
+// kernel folder:
+//   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks [-- passes [copies]]
 //   (or [-- images [passes]] for the SVG drawings and PNG pictures of unit 10L4)
 // (copies: how many of each example the parallel rounds run at once; 0 skips them; the default is a processor's worth)
-// and on native OCCT, for comparison: --project benchmarks/Kerf.Kernel.Bento.Benchmarks/Native (the same arguments).
-// The first pass is a workbook opening (it includes the JIT's work on Kerf); the others are recalculations, of
-// which the median is shown.
+// The first pass is a workbook opening (it includes the JIT's work on Kerf); passes 2 to 9 are recalculations, of which
+// the median is shown, as native's frozen figures were taken (9 passes); with 12 or more passes the median of the last
+// half is the recalculation once the runtime has settled.
 
 using System.Diagnostics;
 using System.Globalization;
 using Kerf.Geometry;
+using Kerf.Kernel.Benchmarks;
 using Kerf.Modeling;
 using Kerf.Topology;
 using static Kerf.Modeling.Operations;
@@ -125,12 +128,17 @@ if (args.Length > 0 && args[0] == "images")
         static double Median(double[] t) => t.Length > 1 ? t[1..].Order().ElementAt((t.Length - 1) / 2) : t[0];
         Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
             $"{name,-24} {Median(svgTimes),7:F1} {svgBytes / 1048576.0,7:F1} {edges,6} {svgLength / 1024.0,8:F1} {Median(pngTimes),7:F1} {pngBytes / 1048576.0,7:F1} {Median(renderTimes),10:F1} {pngLength / 1024.0,7:F1}"));
+        BenchRows.Add("images", name, "svg ms", Median(svgTimes));
+        BenchRows.Add("images", name, "svg MB", svgBytes / 1048576.0);
+        BenchRows.Add("images", name, "png ms", Median(pngTimes));
+        BenchRows.Add("images", name, "png MB", pngBytes / 1048576.0);
+        BenchRows.Add("images", name, "result", $"{edges} edges, {svgLength} characters of SVG, {pngLength} bytes of PNG");
     }
 
     return 0;
 }
 
-int passes = args.Length > 0 ? int.Parse(args[0], CultureInfo.InvariantCulture) : 7;
+int passes = args.Length > 0 ? int.Parse(args[0], CultureInfo.InvariantCulture) : 9;
 var times = new double[examples.Length][];
 var bytes = new long[examples.Length];
 for (int i = 0; i < examples.Length; i++)
@@ -144,7 +152,7 @@ for (int pass = 0; pass < passes; pass++)
 {
     for (int i = 0; i < examples.Length; i++)
     {
-        long before = GC.GetAllocatedBytesForCurrentThread();
+        long before = GC.GetTotalAllocatedBytes(true);
         var clock = Stopwatch.StartNew();
         Shape shape = examples[i].Build();
         ShapeMesh mesh = shape.Triangulate();
@@ -153,26 +161,55 @@ for (int pass = 0; pass < passes; pass++)
         times[i][pass] = clock.Elapsed.TotalMilliseconds;
         if (pass == passes - 1)
         {
-            bytes[i] = GC.GetAllocatedBytesForCurrentThread() - before;
+            bytes[i] = GC.GetTotalAllocatedBytes(true) - before;
         }
+    }
+    if (pass == 0)
+    {
+        // Opening: from the process's start, so with the runtime's own start-up, and how much of it the JIT was
+        double sinceStart = (DateTime.Now - Process.GetCurrentProcess().StartTime).TotalMilliseconds;
+        BenchRows.Add("opening", "from the process's start to the end of the first pass", "ms", sinceStart);
+        BenchRows.Add("opening", "the JIT's time in that", "ms", System.Runtime.JitInfo.GetCompilationTime().TotalMilliseconds);
+        BenchRows.Add("opening", "methods the JIT compiled in that", "count", System.Runtime.JitInfo.GetCompiledMethodCount());
     }
 }
 
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
     $"Bento's examples on Kerf, {passes} passes, {total.Elapsed.TotalSeconds:F1} s"));
 Console.WriteLine("example                    first ms  median ms   alloc MB  result");
-double firstSum = 0, medianSum = 0;
+double firstSum = 0, medianSum = 0, settledSum = 0;
+long bytesSum = 0;
 for (int i = 0; i < examples.Length; i++)
 {
     double first = times[i][0];
-    double median = passes > 1 ? times[i][1..].Order().ElementAt((passes - 1) / 2) : first;
+    // Passes 2 to 9, as native's frozen figures were taken
+    double[] recalculations = times[i][1..Math.Min(passes, 9)];
+    double median = recalculations.Length > 0 ? recalculations.Order().ElementAt(recalculations.Length / 2) : first;
     firstSum += first;
     medianSum += median;
+    bytesSum += bytes[i];
+    BenchRows.Add("bento", examples[i].Name, "first ms", first);
+    BenchRows.Add("bento", examples[i].Name, "recalc ms", median);
+    BenchRows.Add("bento", examples[i].Name, "alloc MB", bytes[i] / 1048576.0);
+    BenchRows.Add("bento", examples[i].Name, "result", results[i]);
+    if (passes >= 12)
+    {
+        double settled = times[i][(passes / 2)..].Order().ElementAt((passes - passes / 2) / 2);
+        settledSum += settled;
+        BenchRows.Add("bento", examples[i].Name, "settled ms", settled);
+    }
     Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
         $"{examples[i].Name,-24} {first,10:F1} {median,10:F1} {bytes[i] / 1048576.0,10:F1}  {results[i]}"));
 }
 
-Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{"total",-24} {firstSum,10:F1} {medianSum,10:F1}"));
+Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{"total",-24} {firstSum,10:F1} {medianSum,10:F1} {bytesSum / 1048576.0,10:F1}"));
+BenchRows.Add("bento", "total", "first ms", firstSum);
+BenchRows.Add("bento", "total", "recalc ms", medianSum);
+BenchRows.Add("bento", "total", "alloc MB", bytesSum / 1048576.0);
+if (passes >= 12)
+{
+    BenchRows.Add("bento", "total", "settled ms", settledSum);
+}
 
 // Independent workbooks recalculating at once (unit 10I): every example, `copies` times, on the thread pool; the
 // wall time of a round (the median of 3) and the bytes it allocates, each result checked against the serial one.
@@ -204,7 +241,17 @@ if (copies > 0)
     Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
         $"parallel: {copies} copies of every example on {Environment.ProcessorCount} processors, median round {rounds.Order().ElementAt(1):F1} ms "
         + $"({medianSum * copies:F1} ms of serial work), {roundBytes / 1048576.0:F1} MB a round, {mismatches} results differing from the serial run"));
+    double medianRound = rounds.Order().ElementAt(1);
+    string roundName = $"{copies} copies of every example on {Environment.ProcessorCount} processors";
+    BenchRows.Add("parallel", roundName, "round ms", medianRound);
+    BenchRows.Add("parallel", roundName, "serial work ms", medianSum * copies);
+    BenchRows.Add("parallel", roundName, "speed-up x", medianSum * copies / medianRound);
+    BenchRows.Add("parallel", roundName, "alloc MB", roundBytes / 1048576.0);
+    BenchRows.Add("parallel", roundName, "result", $"{mismatches} differing from the serial run");
 }
+BenchRows.Add("process", copies > 0 ? "with the parallel rounds" : "the serial passes", "collector's pause ms", GC.GetTotalPauseDuration().TotalMilliseconds);
+BenchRows.Add("process", copies > 0 ? "with the parallel rounds" : "the serial passes", "generation 0 count", GC.CollectionCount(0));
+BenchRows.Add("process", copies > 0 ? "with the parallel rounds" : "the serial passes", "generation 2 count", GC.CollectionCount(2));
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
     $"GC: {GC.CollectionCount(0)}/{GC.CollectionCount(1)}/{GC.CollectionCount(2)} collections, pause {GC.GetTotalPauseDuration().TotalMilliseconds:F0} ms; JIT {System.Runtime.JitInfo.GetCompilationTime().TotalMilliseconds:F0} ms"));
 return 0;

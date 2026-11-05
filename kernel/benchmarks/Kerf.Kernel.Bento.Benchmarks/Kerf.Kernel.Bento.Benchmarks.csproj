@@ -5,8 +5,8 @@
     (docs/cad/build123d-in-bento.md in Bento), through Kerf.Modeling's algebra API, each built, triangulated as the
     viewer does, and measured, as a workbook does on opening and on every recalculation.
 
-    It builds Kerf.Modeling from the repository's modeling folder (KerfModelingRoot) on this kernel. Run it in Release;
-    Program.cs has the command line.
+    It builds Kerf.Modeling from the repository's modeling folder (KerfModelingRoot) on this kernel. In Kerf.slnx since
+    unit 11A, so the merge gate builds it. tools/bench.ps1 runs it; to run it by hand, Program.cs has the command line.
   -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(KerfModelingRoot)src/Kerf.Modeling/Kerf.Modeling.csproj" />
+    <Compile Include="..\BenchRows.cs" Link="BenchRows.cs" />
   </ItemGroup>
 
 </Project>

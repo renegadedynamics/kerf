@@ -1,26 +1,26 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-// Phase 4's benchmarks (phase4-plan 2.5), of the port alone: they compared it with native OCCT through build123d.NET's
-// native backend until unit 10B retired it, and the native columns now repeat the port's. In Release:
+// The engine's benchmarks. tools/bench.ps1 runs the fixed set in fresh processes, ReadyToRun, and keeps the figures
+// (docs/performance.md); by hand, from the kernel folder, in Release:
 //   dotnet run -c Release --project benchmarks/Kerf.Kernel.Benchmarks -- quick [filter]
-//     a Stopwatch table: per shape, serial and parallel, the median of the port's mesh and extraction, and the port's
-//     allocations;
+//     a Stopwatch table: per shape, serial and parallel, the median of the mesh and extraction, and their allocations;
 //   dotnet run -c Release --project benchmarks/Kerf.Kernel.Benchmarks -- bdn [BenchmarkDotNet arguments]
 //     the same mesh-and-extract under BenchmarkDotNet (in process, with its memory diagnoser);
 //   ... -- alloc [filter]: the types the port allocates;
-//   ... -- booleans [filter]: the Booleans suite (unit 6M, phase5-6-plan 2.9): BRepAlgoAPI and build123d.NET's clean,
+//   ... -- booleans [filter]: the Booleans suite (unit 6M, phase5-6-plan 2.9): the Boolean and Kerf.Modeling's clean,
 //     serial and parallel, with allocation, over the corpus's simple and complex grids (Booleans.cs); ...
-//     -- booleans-profile [filter]: the port's pave filler and builder apart;
-//   ... -- healing [filter]: STEP import with its healing, ShapeFix_Shape and UnifySameDomain on the dataset's STEP
-//     files (unit 10H4, Healing.cs);
+//     -- booleans-profile [filter]: the pave filler and the builder apart;
+//   ... -- healing [filter]: STEP import with its healing, ShapeFix_Shape, UnifySameDomain and STEP export on the
+//     dataset's STEP files (unit 10H4, Healing.cs);
 //   ... -- features [filter]: offsets, thick solids, fillets, chamfers, drafts and a BRepFeat boss on frozen parts
 //     (unit 10H5, Features.cs);
-//   ... -- stepfile [steprec-bench.txt]: the STEP parser (unit 8P) on the dataset's STEP files, the port's fastest of 5
-//     parses from memory, against native's from tools/steprec/build.ps1 -Bench when its file is given (StepFileBench.cs);
+//   ... -- stepfile [native-times.txt]: the STEP parser (unit 8P) on the dataset's STEP files, the fastest of 5 parses
+//     from memory, against native's when a file of them, frozen before unit 10B, is given (StepFileBench.cs);
 //   ... -- construction [filter]: prisms, revolutions, pipes, lofts and the makers on frozen inputs (unit 10H3,
 //     Construction.cs);
 //   ... -- wasm-compare report.json data-folder: the WebAssembly demo's report against win-x64 (run-headless.ps1).
-// Pass the same -p:OcctSourceDir as for the tests.
+// OCCT's source and test data come from kernel/.deps (tools/get-occt.ps1, tools/get-occt-testdata.ps1), or wherever
+// -p:OcctSourceDir and -p:OcctTestDataDir say.
 
 using Kerf.Engine.Meshing;
 using Kerf.Topology;
@@ -136,11 +136,10 @@ namespace Kerf.Kernel.Benchmarks
         public static void Run(string? theFilter)
         {
             Console.WriteLine($".NET {Environment.Version}, {Environment.ProcessorCount} logical processors, {(Debugger.IsAttached ? "debugger" : "no debugger")}");
-            Console.WriteLine("Medians in ms; mesh = BRepMesh_IncrementalMesh (the port's includes copying the frozen input), "
-                              + "extract = the viewer's buffers. Native: build123d.NET's binding of OCCT 8.0.1 (MSVC).");
+            Console.WriteLine("Medians in ms; mesh = IncrementalMesh, extract = the viewer's buffers.");
             Console.WriteLine();
-            Console.WriteLine("| shape | faces | mode | port mesh | port extract | port total | native mesh | native extract | native total | port/native | port MB allocated |");
-            Console.WriteLine("|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|");
+            Console.WriteLine("| shape | faces | mode | mesh | extract | total | MB allocated |");
+            Console.WriteLine("|---|---:|---|---:|---:|---:|---:|");
             foreach (Case aCase in Cases.All())
             {
                 if (theFilter is not null && !aCase.Name.Contains(theFilter, StringComparison.OrdinalIgnoreCase))
@@ -162,17 +161,19 @@ namespace Kerf.Kernel.Benchmarks
                         anAllocated = GC.GetTotalAllocatedBytes(true) - aBytes;
                         return [Ms(t1 - t0), Ms(t2 - t1), Ms(t2 - t0)];
                     });
-                    string aNativeColumns = "| | | | ";
-                    string aRatio = "";
                     Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
                         $"| {aCase.Name} | {aCase.Faces} | {(isParallel ? "parallel" : "serial")} | {aPort[0]:F2} | {aPort[1]:F2} | {aPort[2]:F2} "
-                        + $"{aNativeColumns}| {aRatio} | {anAllocated / 1048576.0:F1} |"));
+                        + $"| {anAllocated / 1048576.0:F1} |"));
+                    string aRow = $"{aCase.Name}, {(isParallel ? "parallel" : "serial")}";
+                    BenchRows.Add("meshing", aRow, "mesh ms", aPort[0]);
+                    BenchRows.Add("meshing", aRow, "extract ms", aPort[1]);
+                    BenchRows.Add("meshing", aRow, "alloc MB", anAllocated / 1048576.0);
                 }
             }
         }
     }
 
-    /// <summary>Mesh and extract, the port against native, under BenchmarkDotNet.</summary>
+    /// <summary>Mesh and extract under BenchmarkDotNet.</summary>
     [MemoryDiagnoser]
     public class MeshBenchmarks
     {

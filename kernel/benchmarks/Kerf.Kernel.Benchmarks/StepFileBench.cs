@@ -83,6 +83,7 @@ internal static class StepFileBench
 
         Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
             $"STEP parser: {aFiles.Count} files, {aBytes / 1e6:F1} MB: the port {aPortTotal:F0} ms ({aBytes / 1e3 / aPortTotal:F1} MB/s)"));
+        BenchRows.Add("step", $"parser, {aFiles.Count} files, {aBytes / 1e6:F1} MB", "ms", aPortTotal);
         if (aNativeTotal > 0)
         {
             Console.WriteLine(string.Create(CultureInfo.InvariantCulture,

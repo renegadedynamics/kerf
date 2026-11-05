@@ -21,19 +21,17 @@ namespace Kerf.Kernel.Benchmarks;
 public sealed record BooleanCase(string Group, string Name, string ArgsText, int NbObjects, string Op, double Fuzzy, bool Glue, bool Clean);
 
 /// <summary>
-/// The Booleans benchmark (plan 2.9, unit 6M): the port's BRepAlgoAPI against native OCCT's, serially and in parallel,
-/// with the clean build123d.NET makes after each (<c>ShapeUpgrade_UnifySameDomain(shape, true, true, true)</c> without
-/// internal edges), and the port's allocation. Three groups of inputs:
+/// The Booleans benchmark (plan 2.9, unit 6M): the Booleans, serially and in parallel, with the clean Kerf.Modeling makes
+/// after each (<c>UnifySameDomain(shape, true, true, true)</c> without internal edges), and their allocation. Two groups of
+/// inputs:
 /// <list type="bullet">
-/// <item><c>build123d</c>: every Boolean build123d.NET's own tests make (the milestone's capture, decision 947), with its
-/// options (non-destructive, glue, fuzzy value);</item>
 /// <item><c>simple</c>: the corpus's <c>bopfuse_simple</c> grid (tools/pfrec's recording of its arguments, decision 785);</item>
 /// <item><c>complex</c>: the corpus's <c>bfuse_complex</c>, <c>bcut_complex</c> and <c>bcommon_complex</c> cases that restore
 /// two shapes from the public test data and run one Boolean on them.</item>
 /// </list>
-/// Both sides read the same text; the port's arguments are frozen (a caller's), native's operation non-destructive.
-/// Each timing is a median after a warm-up. Run in Release: <c>-- booleans [filter]</c> (a filter on the group or the
-/// name), or <c>-- booleans-profile [filter]</c> for the port's time split between the pave filler and the builder.
+/// The arguments are frozen, as a caller's are. Each timing is a median after a warm-up. Run in Release:
+/// <c>-- booleans [filter]</c> (a filter on the group or the name), or <c>-- booleans-profile [filter]</c> for the time
+/// split between the pave filler and the builder.
 /// </summary>
 public static class Booleans
 {
@@ -270,16 +268,16 @@ public static class Booleans
     private sealed class Totals
     {
         public int Cases;
-        public double PortSerial, PortParallel, NativeSerial, NativeParallel, PortClean, NativeClean, LogRatio, AllocatedMB, CleanAllocatedMB;
-        public readonly List<(string Name, double Port, double Native)> Worst = [];
+        public double PortSerial, PortParallel, PortClean, AllocatedMB, CleanAllocatedMB;
+        public long Faces;
+        public readonly List<(string Name, double Ms)> Slowest = [];
     }
 
     public static void Run(string? theFilter)
     {
         Console.WriteLine($".NET {Environment.Version}, {Environment.ProcessorCount} logical processors, {(Debugger.IsAttached ? "debugger" : "no debugger")}");
-        Console.WriteLine("Medians in ms of BRepAlgoAPI's Build (the port's arguments frozen, native's operation non-destructive) and of "
-                          + "build123d.NET's clean of the result; native: build123d.NET's binding of OCCT 8.0.1 (MSVC). "
-                          + "The port's MB are allocated by one serial Boolean (and one clean).");
+        Console.WriteLine("Medians in ms of the Boolean (its arguments frozen) and of Kerf.Modeling's clean of the result. "
+                          + "The MB are allocated by one serial Boolean (and one clean).");
         var aTotals = new SortedDictionary<string, Totals>(StringComparer.Ordinal);
         foreach (BooleanCase aCase in All())
         {
@@ -303,7 +301,6 @@ public static class Booleans
                 aCleanAllocated = (GC.GetTotalAllocatedBytes(true) - aBytes) / 1048576.0;
                 aPortClean = Measure(() => PortClean(aPResult));
             }
-            double aNativeSerial = aPortSerial, aNativeParallel = aPortParallel, aNativeClean = aPortClean;
             if (!aTotals.TryGetValue(aCase.Group, out Totals? aT))
             {
                 aTotals[aCase.Group] = aT = new Totals();
@@ -311,45 +308,52 @@ public static class Booleans
             aT.Cases++;
             aT.PortSerial += aPortSerial;
             aT.PortParallel += aPortParallel;
-            aT.NativeSerial += aNativeSerial;
-            aT.NativeParallel += aNativeParallel;
             aT.PortClean += aPortClean;
-            aT.NativeClean += aNativeClean;
-            aT.LogRatio += Math.Log(aPortSerial / aNativeSerial);
             aT.AllocatedMB += anAllocated;
             aT.CleanAllocatedMB += aCleanAllocated;
-            aT.Worst.Add((aCase.Name, aPortSerial, aNativeSerial));
+            aT.Slowest.Add((aCase.Name, aPortSerial));
+            if (!aPResult.IsNull)
+            {
+                for (Explorer anExplorer = new(aPResult, ShapeType.Face); anExplorer.More(); anExplorer.Next())
+                {
+                    aT.Faces++;
+                }
+            }
         }
 
         Console.WriteLine();
-        Console.WriteLine("| group | cases | port serial | native serial | port/native serial | geometric mean | port parallel | native parallel "
-                          + "| port/native parallel | port speed-up | native speed-up | port clean | native clean | port/native clean "
-                          + "| port MB per Boolean | port MB per clean |");
-        Console.WriteLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|");
+        Console.WriteLine("| group | cases | serial | parallel | speed-up | clean | MB per Boolean | MB per clean |");
+        Console.WriteLine("|---|---:|---:|---:|---:|---:|---:|---:|");
         foreach ((string aGroup, Totals aT) in aTotals)
         {
             Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
-                $"| {aGroup} | {aT.Cases} | {aT.PortSerial:F1} | {aT.NativeSerial:F1} | {aT.PortSerial / aT.NativeSerial:F2}× | "
-                + $"{Math.Exp(aT.LogRatio / aT.Cases):F2}× | {aT.PortParallel:F1} | {aT.NativeParallel:F1} | {aT.PortParallel / aT.NativeParallel:F2}× | "
-                + $"{aT.PortSerial / aT.PortParallel:F2} | {aT.NativeSerial / aT.NativeParallel:F2} | {aT.PortClean:F1} | {aT.NativeClean:F1} | "
-                + $"{aT.PortClean / Math.Max(aT.NativeClean, 1e-9):F2}× | {aT.AllocatedMB / aT.Cases:F2} | {aT.CleanAllocatedMB / aT.Cases:F2} |"));
+                $"| {aGroup} | {aT.Cases} | {aT.PortSerial:F1} | {aT.PortParallel:F1} | {aT.PortSerial / aT.PortParallel:F2} | {aT.PortClean:F1} | "
+                + $"{aT.AllocatedMB / aT.Cases:F2} | {aT.CleanAllocatedMB / aT.Cases:F2} |"));
+            string aRow = $"{aGroup}, {aT.Cases} cases";
+            BenchRows.Add("booleans", aRow, "serial ms", aT.PortSerial);
+            BenchRows.Add("booleans", aRow, "parallel ms", aT.PortParallel);
+            BenchRows.Add("booleans", aRow, "speed-up x", aT.PortSerial / aT.PortParallel);
+            BenchRows.Add("booleans", aRow, "clean ms", aT.PortClean);
+            BenchRows.Add("booleans", aRow, "alloc MB", aT.AllocatedMB);
+            BenchRows.Add("booleans", aRow, "clean alloc MB", aT.CleanAllocatedMB);
+            BenchRows.Add("booleans", aRow, "result", $"{aT.Faces} faces");
         }
         Console.WriteLine();
-        Console.WriteLine("The slowest port/native serial ratios (cases over 1 ms natively):");
+        Console.WriteLine("The slowest cases, serially:");
         foreach ((string aGroup, Totals aT) in aTotals)
         {
-            foreach ((string aName, double aPort, double aNative) in aT.Worst.Where(w => w.Native > 1).OrderByDescending(w => w.Port / w.Native).Take(5))
+            foreach ((string aName, double aMs) in aT.Slowest.OrderByDescending(w => w.Ms).Take(5))
             {
-                Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"  {aGroup} {aName}: port {aPort:F2} ms, native {aNative:F2} ms, {aPort / aNative:F2}×"));
+                Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"  {aGroup} {aName}: {aMs:F2} ms"));
             }
         }
     }
 
-    /// <summary>The port's serial time split between the pave filler (the intersections) and the builder, against native's total.</summary>
+    /// <summary>The serial time split between the pave filler (the intersections) and the builder.</summary>
     public static void Profile(string? theFilter)
     {
-        Console.WriteLine("| group | cases | port pave filler | port builder | port total | native total |");
-        Console.WriteLine("|---|---:|---:|---:|---:|---:|");
+        Console.WriteLine("| group | cases | pave filler | builder | total |");
+        Console.WriteLine("|---|---:|---:|---:|---:|");
         var aTotals = new SortedDictionary<string, double[]>(StringComparer.Ordinal);
         foreach (BooleanCase aCase in All())
         {
@@ -389,20 +393,21 @@ public static class Booleans
                 aBuilders.Add(Ms(t2 - t1));
             });
             double aFiller = Median(aFillers), aBuilder = Median(aBuilders);
-            double aNative = aTotal;
             if (!aTotals.TryGetValue(aCase.Group, out double[]? aT))
             {
-                aTotals[aCase.Group] = aT = new double[5];
+                aTotals[aCase.Group] = aT = new double[4];
             }
             aT[0]++;
             aT[1] += aFiller;
             aT[2] += aBuilder;
             aT[3] += aTotal;
-            aT[4] += aNative;
         }
         foreach ((string aGroup, double[] aT) in aTotals)
         {
-            Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"| {aGroup} | {aT[0]} | {aT[1]:F1} | {aT[2]:F1} | {aT[3]:F1} | {aT[4]:F1} |"));
+            Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"| {aGroup} | {aT[0]} | {aT[1]:F1} | {aT[2]:F1} | {aT[3]:F1} |"));
+            string aRow = $"{aGroup}, {aT[0]} cases";
+            BenchRows.Add("booleans", aRow, "pave filler ms", aT[1]);
+            BenchRows.Add("booleans", aRow, "builder ms", aT[2]);
         }
     }
 }

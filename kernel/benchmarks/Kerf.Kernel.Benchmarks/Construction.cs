@@ -136,6 +136,8 @@ public static class Construction
             aBytes.Sort();
             Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
                 $"| {aCase.Name} | {aCase.Repeats} | {aTimes[4]:F1} | {aBytes[4] / 1024:F1} |"));
+            BenchRows.Add("construction", aCase.Name, "us", aTimes[4]);
+            BenchRows.Add("construction", aCase.Name, "alloc KB", aBytes[4] / 1024);
         }
     }
 }

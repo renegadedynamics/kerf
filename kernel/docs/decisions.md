@@ -16406,3 +16406,37 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 1645. **StepTidy goes into phase 11; the rest of unported OCCT is left for now** (the owner's decision, 5 November 2026).
        It's unit 11N, for 0.3.0, done with STEP's header so that STEP's fixtures change once. Whether it's on by default is
        the owner's decision, once its effect on file size and writing time has been measured.
+
+## Phase 11: unit 11A, the benchmark rig and the baseline
+
+1646. **Both benchmarks are in Kerf.slnx, so the merge gate builds them.** They were left out for reasons that have gone:
+       `Kerf.Kernel.Benchmarks` had native comparisons (decision 1318) and the Bento benchmark needed build123d.NET's checkout
+       (decision 1314). Units 10A and 10B retired native, and the repository holds both layers. `dotnet test` passes over
+       them as projects with no tests, and they need no settings beyond `kernel/.deps`, which the gate has already.
+1647. **`tools/bench.ps1` is the one way to measure** (phase11-plan.md, unit 11A). Fresh processes, Release, published
+       ReadyToRun with the assemblies checked, each row the median across its suite's processes. Rows reach it through a
+       file named by `KERF_BENCH_ROWS` (`benchmarks/BenchRows.cs`, linked into both projects), so the benchmarks' own output
+       stays as it was for running them by hand. The metric's last word says how a row is compared. A full run takes about
+       15 minutes, `-Quick` about 5, with the same row names.
+       - **A busy machine is refused above 10% total CPU** over 5 s, read from `GetSystemTimes`, as performance counters'
+         names depend on the language. Each suite samples again before starting; a run that went over is marked, not
+         stopped, as most of its figures are good.
+       - **Results are compared as well as timings:** volumes, faces and triangles, Booleans' face counts, failed runs. Any
+         difference fails, and a difference between a run's own processes fails at once.
+1648. **The thresholds come from the noise measured** (performance.md's table): allocation 2%, Bento's total recalculation
+       and first pass 5%, other totals and the speed-up 15%, one operation's time 60% with a floor. Between runs, allocation
+       moved at most 1.3%, the totals at most 10.2%, and a single row as much as 60%, as single rows are bimodal.
+1649. **Allocation is counted on all threads, so the baseline is 450 MB and the target 225 MB.** The Bento benchmark
+       read `GetAllocatedBytesForCurrentThread`, which misses the parallel mesher's workers: 311 MB on the old counter.
+       The parallel rounds, which counted all threads, were already showing the difference (449 MB per copy). The earlier
+       figures (9E's 1,025 MB, 10J's 142 MB for "extrude until") are the old counter's, and aren't comparable.
+1650. **Recalculation means the median of passes 2 to 9, summed**, as native's frozen 685 ms was taken: unit 9E's native run
+       had 9 passes, though units since ran 7. The default goes back to 9. The rig runs 20 and also records the median of
+       the last 10, "settled": 969 ms against 1,211, as the first passes catch the runtime tiering up. The target stays on
+       native's definition.
+1651. **Benchmarks count Kerf's refusals as failed runs.** `-- healing` had been crashing: its `catch (FailureException)`
+       predates `Refusal`, under which a refusal reaches callers as `InvalidOperationException` with the engine's
+       exception inside. It caught nothing, and a zero-length vector in `Vector3D.AngleTo`, from
+       `UnifySameDomain.IsMergingPossible`, ended the process. Nothing built it into a run, so nobody saw. It and
+       `-- features` now count them; the rig compares the count. 12 of the suite's runs over its 289 files fail. Which
+       files, and whether they should, wasn't looked into; the count is the same in every run.

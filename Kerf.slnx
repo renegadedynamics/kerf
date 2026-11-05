@@ -1,6 +1,10 @@
 <Solution>
-  <!-- Everything but the kernel's benchmarks (kernel/Kerf.Kernel.slnx) -->
   <Folder Name="/kernel/" />
+  <!-- In the gate's build since unit 11A, so they can't break unnoticed; kernel/tools/bench.ps1 runs them -->
+  <Folder Name="/kernel/benchmarks/">
+    <Project Path="kernel/benchmarks/Kerf.Kernel.Benchmarks/Kerf.Kernel.Benchmarks.csproj" />
+    <Project Path="kernel/benchmarks/Kerf.Kernel.Bento.Benchmarks/Kerf.Kernel.Bento.Benchmarks.csproj" />
+  </Folder>
   <Folder Name="/kernel/samples/">
     <Project Path="kernel/samples/Kerf.Kernel.WasmDemo/Kerf.Kernel.WasmDemo.csproj" />
   </Folder>
