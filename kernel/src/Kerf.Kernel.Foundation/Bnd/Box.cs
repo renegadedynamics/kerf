@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Bounds;
 /// OCCT's default (and <c>new Bnd_Box()</c>) is a void box with a null gap. <c>default(Bnd_Box)</c> is not: it is a
 /// non-void box reduced to the origin. Ported code must write <c>new Bnd_Box()</c>.
 /// </remarks>
-public partial struct Box : IEquatable<Box>, ISpatialTreeBox<Box>
+internal partial struct Box : IEquatable<Box>, ISpatialTreeBox<Box>
 {
     /// <summary>The box limits (Xmin, Xmax, Ymin, Ymax, Zmin, Zmax), gap and open directions included.</summary>
     public readonly record struct Limits(double Xmin, double Xmax, double Ymin, double Ymax, double Zmin, double Zmax);

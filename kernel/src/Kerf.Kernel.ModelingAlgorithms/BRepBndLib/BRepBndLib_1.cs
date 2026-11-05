@@ -21,7 +21,7 @@ using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Measurement;
 
-public static partial class Bounds
+internal static partial class Bounds
 {
     // Returns TRUE if theC is line-like.
     private static bool IsLinear(CurveAdaptorBase c)

@@ -10,7 +10,7 @@ using Kerf.Topology;
 namespace Occt;
 
 /// <summary>A shape held by reference (OCCT's handle to a shape), as a working object.</summary>
-public class TopoDS_HShape : Transient
+internal class TopoDS_HShape : Transient
 {
     private Shape _shape;
 

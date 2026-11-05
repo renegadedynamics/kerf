@@ -8,7 +8,6 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Schematiq.Collections;
 using Kerf.Kernel.ModelingData.Tests;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Topology.Orientation;
@@ -183,14 +182,14 @@ public class BRepLibRegularityTests
             new TrimmedSurface(new PlaneSurface(new CoordinateSystem()), 0, 1, 0, 1));
         Compound aC = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aMesh, aBSpline, aSphere, aTrimmedPlane, aCylinder, aPlane));
 
-        ISchematiqList<Shape> aSorted = BrepLibrary.SortFaces(aC);
+        IReadOnlyList<Shape> aSorted = BrepLibrary.SortFaces(aC);
         Shape[] anIn = [aTrimmedPlane, aPlane, aCylinder, aSphere, aBSpline, aMesh];
         Assert.Equal("0 1 2 3 4 5", string.Join(" ", aSorted.Select(s => Array.FindIndex(anIn, f => f.IsEqual(s)))));
         Assert.Equal(new Shape[] { aTrimmedPlane, aPlane, aCylinder, aSphere, aBSpline, aMesh }, aSorted.ToList(),
                      EqualityComparer<Shape>.Default);
 
         // ReverseSortFaces doesn't unwrap the trimmed surface, but its adaptor does
-        ISchematiqList<Shape> aReversed = BrepLibrary.ReverseSortFaces(aC);
+        IReadOnlyList<Shape> aReversed = BrepLibrary.ReverseSortFaces(aC);
         Assert.Equal(new Shape[] { aMesh, aBSpline, aSphere, aCylinder, aTrimmedPlane, aPlane }, aReversed.ToList(),
                      EqualityComparer<Shape>.Default);
 

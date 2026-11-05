@@ -23,7 +23,7 @@ namespace Kerf.Geometry;
 /// <para>
 /// Arrays: <see cref="Poles"/>, <see cref="WeightsOrNull()"/> and <see cref="Weights"/> return new copies (OCCT
 /// returns references to the surface's arrays); the knots, multiplicities and knot sequences of the equivalent
-/// B-spline are immutable <see cref="PackedList{T}"/>s. Code inside OCCT.NET uses the internal <c>Internal*</c>
+/// B-spline are immutable <see cref="IReadOnlyList{T}"/>s. Code inside OCCT.NET uses the internal <c>Internal*</c>
 /// accessors, which return the stored (or shared static) arrays: don't modify them.
 /// </para>
 /// <para>
@@ -2068,22 +2068,22 @@ public sealed partial class BezierSurface : BoundedSurface
     }
 
     /// <summary>The U knots of the equivalent B-spline surface: (0, 1).</summary>
-    public IReadOnlyList<double> UKnots => InternalUKnots().ToPackedList();
+    public IReadOnlyList<double> UKnots => InternalUKnots().ToImmutableArray();
 
     /// <summary>The V knots of the equivalent B-spline surface: (0, 1).</summary>
-    public IReadOnlyList<double> VKnots => InternalVKnots().ToPackedList();
+    public IReadOnlyList<double> VKnots => InternalVKnots().ToImmutableArray();
 
     /// <summary>The U multiplicities of the equivalent B-spline surface: (UDegree + 1, UDegree + 1).</summary>
-    public IReadOnlyList<int> UMultiplicities => InternalUMultiplicities().ToPackedList();
+    public IReadOnlyList<int> UMultiplicities => InternalUMultiplicities().ToImmutableArray();
 
     /// <summary>The V multiplicities of the equivalent B-spline surface: (VDegree + 1, VDegree + 1).</summary>
-    public IReadOnlyList<int> VMultiplicities => InternalVMultiplicities().ToPackedList();
+    public IReadOnlyList<int> VMultiplicities => InternalVMultiplicities().ToImmutableArray();
 
     /// <summary>The U flat knots of the equivalent B-spline surface.</summary>
-    public IReadOnlyList<double> UKnotSequence => InternalUKnotSequence().ToPackedList();
+    public IReadOnlyList<double> UKnotSequence => InternalUKnotSequence().ToImmutableArray();
 
     /// <summary>The V flat knots of the equivalent B-spline surface.</summary>
-    public IReadOnlyList<double> VKnotSequence => InternalVKnotSequence().ToPackedList();
+    public IReadOnlyList<double> VKnotSequence => InternalVKnotSequence().ToImmutableArray();
 
     //=============================================================================================
     // Internal access to the stored arrays and non-mutating twins (OCCT.NET)

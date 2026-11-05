@@ -11,7 +11,7 @@ namespace Kerf.Engine.Foundation;
 /// type (<see cref="StatusType"/>) plus the index in the type, from 0.
 /// </summary>
 /// <remarks>Unscoped in OCCT: files that use it write <c>using static Occt.Message_Status;</c>.</remarks>
-public enum Status
+internal enum Status
 {
     /// <summary>Empty status.</summary>
     None = 0,

@@ -16,7 +16,7 @@ namespace Occt;
 /// iteration order. Only the 32-bit instantiation and the set operations ported code uses are ported (no boolean
 /// operations between maps, no statistics).
 /// </remarks>
-public sealed class NCollection_PackedMapOfInteger
+internal sealed class NCollection_PackedMapOfInteger
 {
     // Number of low bits used for position within a block
     private const int MaskLowBits = 5;

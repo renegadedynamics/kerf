@@ -14,7 +14,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -229,14 +228,14 @@ internal sealed class FuseEdges
     /// The lists of connected edges to be fused, by index: each list is a set of connected edges, in the forward
     /// direction, that can be fused into one. The edges are the input shape's own.
     /// </summary>
-    public IReadOnlyDictionary<int, ISchematiqList<Shape>> Edges()
+    public IReadOnlyDictionary<int, IReadOnlyList<Shape>> Edges()
     {
         var map = new Dictionary<int, NCollection_List<Shape>>();
         Edges(map);
-        var result = new Dictionary<int, ISchematiqList<Shape>>();
+        var result = new Dictionary<int, IReadOnlyList<Shape>>();
         foreach (KeyValuePair<int, NCollection_List<Shape>> item in map)
         {
-            result.Add(item.Key, PackedList.Own([.. item.Value]));
+            result.Add(item.Key, ImmutableArrays.Own([.. item.Value]));
         }
         return result;
     }

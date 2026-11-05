@@ -16,7 +16,7 @@ namespace Kerf.Engine.Meshing.Tools;
 /// Statuses by default: <see cref="Done1"/>, the model is built; <see cref="Fail1"/>, an empty shape;
 /// <see cref="Fail2"/>, the model wasn't built for an unexpected reason.
 /// </remarks>
-public abstract class ModelBuilder : Algorithm
+internal abstract class ModelBuilder : Algorithm
 {
     /// <summary>A builder.</summary>
     protected ModelBuilder()

@@ -29,7 +29,7 @@ namespace Occt;
 /// so it is reproducible. The Boolean component uses it wherever OCCT iterates such a map (decision 784).
 /// </para>
 /// </remarks>
-public sealed class NCollection_IntMap : IEnumerable<int>
+internal sealed class NCollection_IntMap : IEnumerable<int>
 {
     private sealed class Node(int theKey, Node? theNext)
     {

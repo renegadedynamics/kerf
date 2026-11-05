@@ -11,7 +11,7 @@ using System.Runtime.CompilerServices;
 namespace Kerf.Engine.Geometry;
 
 /// <summary>A triple of reals: the coordinates of a point, vector or direction, without their meaning.</summary>
-public struct Xyz : IEquatable<Xyz>
+internal struct Xyz : IEquatable<Xyz>
 {
     private double _x;
     private double _y;

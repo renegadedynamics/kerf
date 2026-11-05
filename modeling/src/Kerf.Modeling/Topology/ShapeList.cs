@@ -1,7 +1,7 @@
 using Kerf.Geometry;
 using System.Collections;
+using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
-using Schematiq.Collections;
 
 namespace Kerf.Modeling;
 
@@ -9,7 +9,7 @@ namespace Kerf.Modeling;
 public static class ShapeList
 {
     /// <summary>A list of the given shapes.</summary>
-    public static ShapeList<T> Create<T>(ReadOnlySpan<T> shapes) where T : Shape => new(SchematiqList.Create(shapes));
+    public static ShapeList<T> Create<T>(ReadOnlySpan<T> shapes) where T : Shape => new(ImmutableArray.Create(shapes));
 }
 
 /// <summary>
@@ -22,18 +22,18 @@ public static class ShapeList
 [CollectionBuilder(typeof(ShapeList), nameof(ShapeList.Create))]
 public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> where T : Shape
 {
-    private readonly ISchematiqList<T> _items;
+    private readonly ImmutableArray<T> _items;
 
-    internal ShapeList(ISchematiqList<T> items) => _items = items;
+    internal ShapeList(ImmutableArray<T> items) => _items = items;
 
     /// <summary>A list of the given shapes, in order.</summary>
-    public ShapeList(IEnumerable<T> shapes) => _items = SchematiqList.Create(shapes);
+    public ShapeList(IEnumerable<T> shapes) => _items = [.. shapes];
 
     /// <summary>The empty list.</summary>
-    public static ShapeList<T> Empty { get; } = new(SchematiqList.Empty<T>());
+    public static ShapeList<T> Empty { get; } = new(ImmutableArray<T>.Empty);
 
     /// <summary>The number of shapes.</summary>
-    public int Count => _items.Count;
+    public int Count => _items.Length;
 
     /// <summary>The shape at an index.</summary>
     public T this[int index] => _items[index];
@@ -44,26 +44,31 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
         get
         {
             var (start, length) = range.GetOffsetAndLength(Count);
-            return new(_items.Subset(start, length));
+            return new(_items.Slice(start, length));
         }
     }
 
     /// <summary>Iterates the shapes in order.</summary>
-    public IEnumerator<T> GetEnumerator() => _items.GetEnumerator();
+    public IEnumerator<T> GetEnumerator() => ((IEnumerable<T>)_items).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     /// <summary>This list with a shape added at the end.</summary>
-    public ShapeList<T> Add(T shape) => new(_items.Push(shape));
+    public ShapeList<T> Add(T shape) => new(_items.Add(shape));
 
     /// <summary>This list with shapes added at the end.</summary>
-    public ShapeList<T> AddRange(IEnumerable<T> shapes) => new(_items.Concat(SchematiqList.Create(shapes)));
+    public ShapeList<T> AddRange(IEnumerable<T> shapes) => new(_items.AddRange(shapes));
 
     /// <summary>The list as a list of a base class of its shapes.</summary>
-    public ShapeList<TBase> Upcast<TBase>() where TBase : Shape => new(_items.View(s => (TBase)(Shape)s));
+    public ShapeList<TBase> Upcast<TBase>() where TBase : Shape
+    {
+        // Sharing the array where it is one of TBase already (arrays of classes are covariant, and this one is never written)
+        ImmutableArray<TBase> shared = _items.As<TBase>();
+        return new(shared.IsDefault ? [.. _items.Select(s => (TBase)(Shape)s)] : shared);
+    }
 
     /// <summary>The shapes of another class in the list.</summary>
-    public ShapeList<TOther> OfType<TOther>() where TOther : Shape => new(Enumerable.OfType<TOther>(_items));
+    public ShapeList<TOther> OfType<TOther>() where TOther : Shape => new(Enumerable.OfType<TOther>(this));
 
     // ---- Set operations ----
 
@@ -200,13 +205,20 @@ public sealed class ShapeGroups<T, TKey> : IReadOnlyList<ShapeList<T>> where T :
         _comparer = comparer ?? KeyComparer<TKey>.Instance;
         var keyed = shapes.Select(s => (Key: key(s), Shape: s));
         // Consecutive runs of equal keys after a stable sort, as build123d's sorted() then itertools.groupby make them
+        var run = new List<T>();
+        TKey runKey = default!;
         foreach (var (k, s) in keyed.OrderBy(k => k.Key, _comparer))
         {
-            if (_groups.Count > 0 && _comparer.Compare(_groups[^1].Key, k) == 0)
-                _groups[^1] = (k, _groups[^1].Group.Add(s));
-            else
-                _groups.Add((k, [s]));
+            if (run.Count > 0 && _comparer.Compare(runKey, k) != 0)
+            {
+                _groups.Add((runKey, new ShapeList<T>(run)));
+                run.Clear();
+            }
+            run.Add(s);
+            runKey = k;
         }
+        if (run.Count > 0)
+            _groups.Add((runKey, new ShapeList<T>(run)));
     }
 
     /// <summary>The number of groups.</summary>

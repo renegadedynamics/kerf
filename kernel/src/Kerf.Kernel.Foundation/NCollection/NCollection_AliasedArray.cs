@@ -21,7 +21,7 @@ namespace Occt;
 /// "wrapping" constructors share the caller's array, as OCCT's share its memory; <see cref="Move"/> leaves the
 /// moved-from array sharing the storage too, as in OCCT.
 /// </remarks>
-public class NCollection_AliasedArray
+internal class NCollection_AliasedArray
 {
     /// <summary>The storage: an array of an unmanaged element type, or null before allocation.</summary>
     protected Array? _data;

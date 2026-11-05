@@ -31,7 +31,7 @@ namespace Kerf.Engine.Measurement;
 /// <c>Box</c> methods return a new box. They only read the shape: a shape carrying meshes gives the same box whoever
 /// asks (design 5).
 /// </remarks>
-public static partial class Bounds
+internal static partial class Bounds
 {
     /// <summary>
     /// Adds the shape <paramref name="s"/> to the box <paramref name="b"/>: each face (its triangulation if it has one

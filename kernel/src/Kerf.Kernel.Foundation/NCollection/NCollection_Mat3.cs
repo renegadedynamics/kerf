@@ -13,7 +13,7 @@ namespace Occt;
 /// OCCT's default constructor makes the identity, and so does <c>new NCollection_Mat3&lt;T&gt;()</c>;
 /// <c>default(NCollection_Mat3&lt;T&gt;)</c> is the zero matrix.
 /// </remarks>
-public partial struct NCollection_Mat3<T> : IEquatable<NCollection_Mat3<T>>
+internal partial struct NCollection_Mat3<T> : IEquatable<NCollection_Mat3<T>>
     where T : unmanaged, INumber<T>
 {
     private NCollection_Buffer9<T> _mat;

@@ -18,7 +18,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Engine.Measurement.Distance.SupportType;
 using static Kerf.Engine.Construction.Filling.ThruSectionErrorStatus;
@@ -742,7 +741,7 @@ internal sealed class CompatibleWires
     //=================================================================================================
 
     /// <summary>The compatible wires, one per section, frozen.</summary>
-    public ISchematiqList<Shape> Shape()
+    public IReadOnlyList<Shape> Shape()
     {
         var shapes = new Shape[_work.Length()];
         for (int i = 1; i <= _work.Length(); i++)
@@ -750,7 +749,7 @@ internal sealed class CompatibleWires
             shapes[i - 1] = _work.Value(i);
             shapes[i - 1].TShape()?.FreezeGraph();
         }
-        return PackedList.Own(shapes);
+        return ImmutableArrays.Own(shapes);
     }
 
     /// <summary>The algorithm's own sequence of wires, not frozen, for ported callers.</summary>
@@ -762,7 +761,7 @@ internal sealed class CompatibleWires
     //=================================================================================================
 
     /// <summary>The edges made from the edge <paramref name="subSection"/> of a section, frozen (empty if none).</summary>
-    public ISchematiqList<Shape> GeneratedShapes(in Edge subSection) => Published(InternalGeneratedShapes(subSection));
+    public IReadOnlyList<Shape> GeneratedShapes(in Edge subSection) => Published(InternalGeneratedShapes(subSection));
 
     private static readonly NCollection_List<Shape> Empty = new();
 
@@ -784,17 +783,17 @@ internal sealed class CompatibleWires
     /// Each edge of the sections with the edges made from it (itself when it wasn't cut), in the order of the
     /// sections and their edges, frozen.
     /// </summary>
-    public ISchematiqList<KeyValuePair<Shape, ISchematiqList<Shape>>> Generated()
+    public IReadOnlyList<KeyValuePair<Shape, IReadOnlyList<Shape>>> Generated()
     {
-        var pairs = new KeyValuePair<Shape, ISchematiqList<Shape>>[_map.Count];
+        var pairs = new KeyValuePair<Shape, IReadOnlyList<Shape>>[_map.Count];
         int i = 0;
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> it in _map)
         {
             Shape key = it.Key;
             key.TShape()?.FreezeGraph();
-            pairs[i++] = new KeyValuePair<Shape, ISchematiqList<Shape>>(key, Published(it.Value));
+            pairs[i++] = new KeyValuePair<Shape, IReadOnlyList<Shape>>(key, Published(it.Value));
         }
-        return PackedList.Own(pairs);
+        return ImmutableArrays.Own(pairs);
     }
 
     /// <summary>The algorithm's own map from the sections' edges to the edges made from them, for ported callers.</summary>
@@ -803,11 +802,11 @@ internal sealed class CompatibleWires
         return _map;
     }
 
-    private static ISchematiqList<Shape> Published(NCollection_List<Shape> list)
+    private static IReadOnlyList<Shape> Published(NCollection_List<Shape> list)
     {
         if (list.IsEmpty())
         {
-            return PackedList<Shape>.Empty;
+            return Array.Empty<Shape>();
         }
         var shapes = new Shape[list.Extent()];
         int i = 0;
@@ -817,7 +816,7 @@ internal sealed class CompatibleWires
             shapes[i].TShape()?.FreezeGraph();
             i++;
         }
-        return PackedList.Own(shapes);
+        return ImmutableArrays.Own(shapes);
     }
 
     //=================================================================================================

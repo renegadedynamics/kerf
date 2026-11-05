@@ -454,10 +454,10 @@ internal sealed class AhtBezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>The poles (a copy, indexed from 0).</summary>
-    public PackedList<Point2D> Poles() => _poles.ToPackedList();
+    public IReadOnlyList<Point2D> Poles() => _poles.ToImmutableArray();
 
     /// <summary>The weights (a copy, indexed from 0). A non-rational curve has one weight, 0, as OCCT's.</summary>
-    public PackedList<double> Weights() => _weights.ToPackedList();
+    public IReadOnlyList<double> Weights() => _weights.ToImmutableArray();
 
     /// <summary>The degree of the polynomial part.</summary>
     public int AlgDegree() => _algDegree;

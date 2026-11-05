@@ -11,7 +11,7 @@ namespace Kerf.Engine.Meshing;
 
 /// <summary>The common interface of the meshing algorithms made by the mesh factories.</summary>
 /// <remarks>A working object: the shape is set, then <see cref="Perform"/> meshes it.</remarks>
-public abstract class DiscretRoot : Transient
+internal abstract class DiscretRoot : Transient
 {
     protected Shape _shape;
     protected bool _isDone;

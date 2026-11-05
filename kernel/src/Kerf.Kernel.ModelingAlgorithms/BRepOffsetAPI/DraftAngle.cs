@@ -16,7 +16,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -165,7 +164,7 @@ internal class DraftAngle : ModifyShape
     /// <exception cref="NullObjectException">No shape was given.</exception>
     /// <exception cref="NoSuchObjectException">The face wasn't added.</exception>
     /// <exception cref="NotDoneException">The draft isn't built.</exception>
-    public ISchematiqList<Shape> ConnectedFaces(in Face f)
+    public IReadOnlyList<Shape> ConnectedFaces(in Face f)
     {
         Standard_NullObject_Raise_if(_initialShape.IsNull,
                                      "BRepOffsetAPI_DraftAngle::ConnectedFaces() - initial shape is not set");
@@ -177,7 +176,7 @@ internal class DraftAngle : ModifyShape
     /// <summary>The faces of the shape on which a draft was given.</summary>
     /// <exception cref="NullObjectException">No shape was given.</exception>
     /// <exception cref="NotDoneException">An Add failed.</exception>
-    public ISchematiqList<Shape> ModifiedFaces()
+    public IReadOnlyList<Shape> ModifiedFaces()
     {
         Standard_NullObject_Raise_if(_initialShape.IsNull,
                                      "BRepOffsetAPI_DraftAngle::ModifiedFaces() - initial shape is not set");

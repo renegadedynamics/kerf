@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Meshing.Model;
 
 /// <summary>The discrete 3D curve of an edge: points with their parameters, indexed from zero.</summary>
-public abstract class CurveModel : ParametersListModel
+internal abstract class CurveModel : ParametersListModel
 {
     /// <summary>An empty curve.</summary>
     protected CurveModel()

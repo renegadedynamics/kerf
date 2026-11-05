@@ -2022,3 +2022,11 @@ Phase 10 (part): expected failures are results (unit 10M3).
   its own. Reading `Value` of a failed result is a programmer's error and throws `InvalidOperationException`, naming the
   first error's code and message. `Match` gives one value either way, and `Select` and `SelectMany` let a chain of
   operations read as a LINQ query that stops at the first failure.
+
+Phase 10 (part): no Schematiq.Collections; the engine internal (unit 10P1).
+- The kernel no longer depends on Schematiq.Collections: lists are returned as `IReadOnlyList<T>`, over `ImmutableArray<T>`,
+  and `PackedList<T>` is gone. Bento's benchmark and the Booleans are unchanged.
+- Every public type of `Occt` and `Kerf.Engine.*` is internal but `Transient`, which stays public as the base of the public
+  geometry, with no public or protected members.
+- `PublicSurfaceTests` read every public type, and fail on a public type left in the engine that isn't listed with its reason.
+- The WebAssembly sample is on the public API alone. `Kerf.Kernel.Bento.Benchmarks` no longer sees the kernel's internals.

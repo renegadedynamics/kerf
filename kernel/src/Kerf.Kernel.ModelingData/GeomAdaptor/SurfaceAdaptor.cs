@@ -28,7 +28,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// the surfaces returned by <see cref="BSpline"/>, <see cref="Bezier"/> and <see cref="Surface"/> are the shared
 /// geometry: the adaptor never changes it.</para>
 /// </remarks>
-public class SurfaceAdaptor : SurfaceAdaptorBase
+internal class SurfaceAdaptor : SurfaceAdaptorBase
 {
     private static readonly double PosTol = global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.5;
 

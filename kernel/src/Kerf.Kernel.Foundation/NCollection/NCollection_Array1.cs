@@ -12,7 +12,7 @@ namespace Occt;
 
 /// <summary>
 /// OCCT's array with arbitrary bounds (1-based by convention). A mutable container for ported algorithms and
-/// for the inputs and outputs of low-level APIs; immutable objects return <see cref="PackedList{T}"/> instead.
+/// for the inputs and outputs of low-level APIs; immutable objects return <see cref="IReadOnlyList{T}"/> instead.
 /// </summary>
 /// <remarks>
 /// Not OCCT's implementation: a .NET array with OCCT's API. Two differences matter when porting:
@@ -24,7 +24,7 @@ namespace Occt;
 /// </list>
 /// An array made over another array's storage (OCCT's "buffer" constructors) shares it, as in OCCT.
 /// </remarks>
-public class NCollection_Array1<T> : Transient, IEnumerable<T>, INCollection_ArrayRead<T>
+internal class NCollection_Array1<T> : Transient, IEnumerable<T>, INCollection_ArrayRead<T>
 {
     private T[] _data;
     private int _offset;
@@ -241,7 +241,7 @@ public class NCollection_Array1<T> : Transient, IEnumerable<T>, INCollection_Arr
     internal (T[] Data, int Offset) Storage() => (_data, _offset);
 
     /// <summary>An immutable copy, for returning from immutable objects.</summary>
-    public PackedList<T> ToPackedList() => PackedList.Create<T>(AsSpan());
+    public System.Collections.Immutable.ImmutableArray<T> ToImmutableArray() => ImmutableArrays.Copy<T>(AsSpan());
 
     public Span<T>.Enumerator GetEnumerator() => AsSpan().GetEnumerator();
 
@@ -300,7 +300,7 @@ public class NCollection_Array1<T> : Transient, IEnumerable<T>, INCollection_Arr
 /// OCCT's handle-able array (<c>occ::handle&lt;NCollection_HArray1&lt;T&gt;&gt;</c>). Arrays are classes here
 /// already, so this only adds OCCT's accessors.
 /// </summary>
-public class NCollection_HArray1<T> : NCollection_Array1<T>
+internal class NCollection_HArray1<T> : NCollection_Array1<T>
 {
     public NCollection_HArray1() { }
 

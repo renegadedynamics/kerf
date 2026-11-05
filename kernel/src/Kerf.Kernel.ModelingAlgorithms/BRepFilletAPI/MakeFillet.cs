@@ -12,7 +12,6 @@ using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Fillets.FilletShape;
 using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
@@ -459,7 +458,7 @@ internal class MakeFillet : LocalOperation
     //=================================================================================================
 
     /// <summary>The faces built on the surface <paramref name="i"/> (frozen).</summary>
-    public ISchematiqList<Shape> NewFaces(int i)
+    public IReadOnlyList<Shape> NewFaces(int i)
     {
         BeforePublishingLists();
         return PublishedList(_builder.Builder().NewFaces(i));

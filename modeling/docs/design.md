@@ -83,7 +83,7 @@ through a generated C shim, or OCCT.NET through a generated forwarding layer (se
   carries a subclass's own fields (a Box's dimensions) as Python's `copy.copy` does.
 - **History** (`ShapeHistory`, behind `Select.Last` and `Select.New`) is immutable: `Merge` returns a new
   record built on a copy of the OCCT `BRepTools_History`, so shapes sharing a record never see it change.
-- **Collections.** `ShapeList<T>` is an immutable list over Schematiq.Collections' `ISchematiqList<T>`. OCCT's
+- **Collections.** `ShapeList<T>` is an immutable list over .NET's `ImmutableArray<T>` (unit 10P1). OCCT's
   collections are OCCT.NET's (`NCollection_List<TopoDS_Shape>` and friends, which OCCT names `TopTools_ListOfShape`…),
   maps of shapes made with `TopTools_ShapeMapHasher`, as OCCT's typedefs are.
 
@@ -389,8 +389,8 @@ Result<Part> pocketed =
   triangle's sides and angles), the exporters' (STEP's unit, pcurves, precision and time stamp; glTF's), and the
   topology factories (`Edge.MakeSpline`, `Shape1D.Offset2D`, `Solid.Sweep`); none has more than five. The exporters
   still return `true` on success, as build123d's do, and throw on failure.
-- **Schematiq.Collections.** `ShapeList<T>` is still built over it (plan 2.6 has the layer drop it): it is internal to
-  `ShapeList<T>`, which exposes only the .NET read-only interfaces.
+- **Schematiq.Collections** went in unit 10P1 (plan 2.6): `ShapeList<T>` is over `ImmutableArray<T>`, and exposes only the
+  .NET read-only interfaces.
 
 ### 3. Behavioural parity is tested, not assumed
 

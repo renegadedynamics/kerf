@@ -9,7 +9,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Globalization;
-using Schematiq.Collections;
 using static Kerf.Engine.Construction.Filling.ThruSectionErrorStatus;
 
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
@@ -102,7 +101,7 @@ public class BRepFill_CompatibleWiresTests
         Assert.True(aCW.IsDone);
         Assert.False(aCW.IsDegeneratedFirstSection);
         Assert.False(aCW.IsDegeneratedLastSection);
-        ISchematiqList<Shape> aRes = aCW.Shape();
+        IReadOnlyList<Shape> aRes = aCW.Shape();
         Assert.Equal(3, aRes.Count);
         int aNb = NbEdges(aRes[0]);
         Assert.True(aNb >= 6);
@@ -118,7 +117,7 @@ public class BRepFill_CompatibleWiresTests
             int aTotal = 0;
             for (Explorer anExp = new(anIn, ShapeType.Edge); anExp.More(); anExp.Next())
             {
-                ISchematiqList<Shape> aGen = aCW.GeneratedShapes(ShapeCasts.Edge(anExp.Current()));
+                IReadOnlyList<Shape> aGen = aCW.GeneratedShapes(ShapeCasts.Edge(anExp.Current()));
                 Assert.NotEmpty(aGen);
                 Assert.All(aGen, e => Assert.True(aResEdges.Contains(e)));
                 aTotal += aGen.Count;
@@ -138,7 +137,7 @@ public class BRepFill_CompatibleWiresTests
         CompatibleWires aCW = new(Seq(aW1, aW2));
         aCW.Perform();
         Assert.True(aCW.IsDone);
-        ISchematiqList<Shape> aRes = aCW.Shape();
+        IReadOnlyList<Shape> aRes = aCW.Shape();
         Assert.Equal(5, NbEdges(aRes[1]));
         // the result's edges are the caller's edges
         IndexedSet<Shape> anIn = new(ShapeHasher.Instance);
@@ -168,7 +167,7 @@ public class BRepFill_CompatibleWiresTests
         aCW.SetPercent(0.05);
         aCW.Perform();
         Assert.True(aCW.IsDone);
-        ISchematiqList<Shape> aRes = aCW.Shape();
+        IReadOnlyList<Shape> aRes = aCW.Shape();
         Assert.Equal(NbEdges(aRes[0]), NbEdges(aRes[1]));
         Assert.True(NbEdges(aRes[0]) >= 3);
         Exploration.Vertices(ShapeCasts.Wire(aRes[0]), out Vertex a0, out _);

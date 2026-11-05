@@ -6,7 +6,6 @@
   Kerf.Modeling, which calls the kernel directly (unit 10B: no native code, no forwarding layer), in Release with symbol
   packages, each depending on the one below at the same version. The repository's committed HEAD is copied (git
   archive) into a work folder and built there, so nothing is written into the checkout.
-  Schematiq.Collections, which Kerf.Kernel.Foundation and Kerf.Modeling depend on, comes from nuget.org.
 
   Each assembly is compiled ahead of time (ReadyToRun) for win-x64, as Bento runs, keeping its IL: elsewhere .NET ignores
   the precompiled code and compiles the IL as usual. It cut the opening of Bento's example workbook by about a third

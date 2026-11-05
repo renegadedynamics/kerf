@@ -12,7 +12,6 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Schematiq.Collections;
 using Kerf.Kernel.ModelingData.Tests;
 using static Kerf.Engine.Foundation.Status;
 using static Kerf.Topology.Orientation;
@@ -278,7 +277,7 @@ public class BRepMeshShellTests
         }
         foreach (Face aF in Faces(aBox))
         {
-            ISchematiqList<Shape> aModified = aMesh.History().Modified(aF);
+            IReadOnlyList<Shape> aModified = aMesh.History().Modified(aF);
             Assert.Single(aModified);
             Assert.NotNull(Triangulation(ShapeCasts.Face(aModified[0])));
         }

@@ -19,7 +19,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -2268,7 +2267,7 @@ internal class Sewing : Transient
     //=================================================================================================
 
     /// <summary>The sections (edges) of the <paramref name="index"/>-th contiguous edge, frozen, in a new list.</summary>
-    public ISchematiqList<Shape> ContigousEdgeCouple(int index)
+    public IReadOnlyList<Shape> ContigousEdgeCouple(int index)
     {
         NCollection_List<Shape> list = InternalContigousEdgeCouple(index);
         var shapes = new Shape[list.Extent()];
@@ -2277,7 +2276,7 @@ internal class Sewing : Transient
         {
             shapes[i++] = Published(it.Value());
         }
-        return PackedList.Own(shapes);
+        return ImmutableArrays.Own(shapes);
     }
 
     /// <summary>The sections of the <paramref name="index"/>-th contiguous edge: the algorithm's own list (ported code).</summary>

@@ -10,7 +10,7 @@ namespace Kerf.Engine.Foundation;
 /// The gravity of a message: Trace (details of an algorithm's run), Info, Warning, Alarm (a non-critical error) and
 /// Fail (a fatal error).
 /// </summary>
-public enum Gravity
+internal enum Gravity
 {
     Trace,
     Info,

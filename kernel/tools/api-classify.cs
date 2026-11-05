@@ -200,7 +200,7 @@ if (args is ["--finish-map", string draftPath, string outPath])
         "# Made by `kerf-rename draft` with the seed docs/api/kerf-seed.map (from tools/api-classify.cs and",
         "# docs/api/classification-rules.txt), then `api-classify.cs --finish-map`. Types marked 'public API (10D)' take the",
         "# names of the API reviews in docs/api; 'engine (10D)' the engine's namespaces; 'draft' the drafter's systematic",
-        "# names. Removed types (NCollection, TCollection, PackedList…) have no entries: they keep their OCCT names until 10J.",
+        "# names. Removed types (NCollection, TCollection…) have no entries: they keep their OCCT names until 10J.",
         "#",
     };
     int dropped = 0, recased = 0;

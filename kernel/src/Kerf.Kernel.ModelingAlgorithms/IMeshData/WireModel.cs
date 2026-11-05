@@ -11,7 +11,7 @@ using static Kerf.Engine.Meshing.Model.StatusModel;
 namespace Kerf.Engine.Meshing.Model;
 
 /// <summary>The discrete model of a wire: an ordered chain of discrete edges with their orientations.</summary>
-public abstract class WireModel : TessellatedShapeModel, IStatusOwnerModel
+internal abstract class WireModel : TessellatedShapeModel, IStatusOwnerModel
 {
     private int _status; // IMeshData_StatusOwner
 

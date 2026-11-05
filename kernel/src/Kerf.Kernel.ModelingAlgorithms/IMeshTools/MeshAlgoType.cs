@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Meshing.Tools;
 
 /// <summary>The built-in 2D triangulation algorithms (factories of <see cref="MeshAlgoFactory"/>).</summary>
-public enum MeshAlgoType
+internal enum MeshAlgoType
 {
     /// <summary>The global default: <see cref="MeshAlgoType_Watson"/> (OCCT.NET doesn't read <c>CSF_MeshAlgo</c>, decision 492).</summary>
     MeshAlgoType_DEFAULT = -1,

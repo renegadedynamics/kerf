@@ -9,7 +9,6 @@ using Kerf.Engine.Meshing;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Engine.Meshing.MeshPurpose;
 
 namespace Kerf.Engine.Topology.Brep;
@@ -241,7 +240,7 @@ internal class BrepTFace : TFace
     internal NCollection_List<Triangulation> Triangulations() => View()._triangulations;
 
     /// <summary>The face's triangulations, as a new read-only list (OCCT.NET addition).</summary>
-    public ISchematiqList<Triangulation> TriangulationList() => PackedList.Own([.. View()._triangulations]);
+    public IReadOnlyList<Triangulation> TriangulationList() => ImmutableArrays.Own([.. View()._triangulations]);
 
     /// <summary>
     /// Sets the list of triangulations and the active one (the first if null). An empty list clears them.

@@ -16,7 +16,6 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Engine.Features.PerfSelection;
 using static Kerf.Engine.Features.StatusError;
 using static Kerf.Topology.Orientation;
@@ -987,7 +986,7 @@ internal sealed class MakeDraftPrism : Form
     }
 
     /// <summary>The edges of the top of the boss (frozen).</summary>
-    public ISchematiqList<Shape> TopEdges()
+    public IReadOnlyList<Shape> TopEdges()
     {
         BeforePublishingTopology();
         return PublishedList(_topEdges);
@@ -997,7 +996,7 @@ internal sealed class MakeDraftPrism : Form
     internal NCollection_List<Shape> InternalTopEdges() => _topEdges;
 
     /// <summary>The lateral edges of the boss (frozen).</summary>
-    public ISchematiqList<Shape> LatEdges()
+    public IReadOnlyList<Shape> LatEdges()
     {
         BeforePublishingTopology();
         return PublishedList(_latEdges);

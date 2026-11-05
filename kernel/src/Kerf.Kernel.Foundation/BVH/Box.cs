@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// </remarks>
 /// <typeparam name="T">The element type (float or double).</typeparam>
 /// <typeparam name="TVec">The vector type, which fixes the dimension (OCCT's <c>N</c>).</typeparam>
-public partial struct Box<T, TVec> : IEquatable<Box<T, TVec>>
+internal partial struct Box<T, TVec> : IEquatable<Box<T, TVec>>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

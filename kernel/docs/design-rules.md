@@ -24,7 +24,7 @@ file is corrected.
 | `Kerf.Engine.<Area>` | Everything else, internal: the algorithms (`Kerf.Engine.Booleans.PaveFiller`) |
 | `Kerf.Modeling` | The modelling layer |
 
-Removed types (NCollection, TCollection, `PackedList`) keep their OCCT names in the namespace `Occt` until unit 10J
+Removed types (NCollection, TCollection) keep their OCCT names in the namespace `Occt` until unit 10J
 replaces them (decision 1349, 58). Unit 10E applied these names: [api/kerf.map](api/kerf.map) is the map, and
 `OcctTypeNames` (Foundation) gives each renamed type's and enum member's OCCT name at run time.
 
@@ -228,7 +228,7 @@ Use them where they make the code simpler or faster; don't convert working code 
 in the build: kernel/ and modeling/Directory.Build.props set `EnforceCodeStyleInBuild` (unit 10E). The file's last
 sections turn it off, by folder, where the code doesn't obey yet:
 
-- **OCCT's names, on purpose:** NCollection, TCollection and `PackedList` (removed types, kept in `Occt` until 10J) and
+- **OCCT's names, on purpose:** NCollection and TCollection (removed types, kept in `Occt` until 10J) and
   AdvApp2Var's f2c translation of OCCT's Fortran.
 - **Tests, Draw-lite, benchmarks, samples and tools:** 10E renamed the kernel's symbols wherever they are used, not
   these projects' own.

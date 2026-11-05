@@ -61,7 +61,7 @@ internal static class WasmCompare
                     bool isMeshSame = aWasmFaces[f] == aX64.FaceHashes[f].ToString("x16", CultureInfo.InvariantCulture);
                     bool isNormalSame = aWasmNormals.Length == aWasmFaces.Length
                                         && aWasmNormals[f] == aX64.NormalHashes[f].ToString("x16", CultureInfo.InvariantCulture);
-                    string aKey = ((SurfaceKind)aX64.Buffers.FaceTypes[f]).ToString().Replace("GeomAbs_", "", StringComparison.Ordinal);
+                    string aKey = aX64.Mesh.Faces[f].Kind.ToString().Replace("GeomAbs_", "", StringComparison.Ordinal);
                     theTypes[aKey] = theTypes.GetValueOrDefault(aKey) + 1;
                     if (!isMeshSame)
                     {

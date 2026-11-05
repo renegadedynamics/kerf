@@ -16,7 +16,6 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
 using System.Runtime.CompilerServices;
-using Schematiq.Collections;
 using static Kerf.Booleans.GlueMode;
 
 namespace Kerf.Engine.Booleans;
@@ -296,10 +295,10 @@ internal class MakePeriodicAlgorithm : Options
     /// The sub-shapes identical to <paramref name="s"/> on the opposite sides (of the repeated shape once it is
     /// repeated). The result graphs are frozen first.
     /// </summary>
-    public ISchematiqList<Shape> GetTwins(in Shape s)
+    public IReadOnlyList<Shape> GetTwins(in Shape s)
     {
         FreezeResults();
-        return new PackedList<Shape>([.. InternalGetTwins(s)]);
+        return ImmutableArrays.Own<Shape>([.. InternalGetTwins(s)]);
     }
 
     /// <summary>OCCT's GetTwins, the algorithm's own list (empty if none), without freezing.</summary>
@@ -664,7 +663,7 @@ internal class MakePeriodicAlgorithm : Options
         for (int i = 0; i < nbSH; ++i)
         {
             Shape pS = translationHistMap.KeyAt(i);
-            ISchematiqList<Shape> sIm = splitShapeHist.Modified(pS);
+            IReadOnlyList<Shape> sIm = splitShapeHist.Modified(pS);
             if (sIm.Count == 1)
             {
                 pS = sIm[0];
@@ -681,7 +680,7 @@ internal class MakePeriodicAlgorithm : Options
             {
                 Shape t = itLT.Value();
                 // Get shapes modifications during the split
-                ISchematiqList<Shape> tSplits = splitToolsHist.Modified(t);
+                IReadOnlyList<Shape> tSplits = splitToolsHist.Modified(t);
 
                 // Associate the shapes to each other
                 foreach (Shape sp in tSplits)
@@ -904,7 +903,7 @@ internal class MakePeriodicAlgorithm : Options
         history.Merge(images);
         foreach (Shape s in shapes)
         {
-            ISchematiqList<Shape> now = images.Modified(s);
+            IReadOnlyList<Shape> now = images.Modified(s);
             if (now.Count != 0 && history.Modified(s).Count == 0 && history.Generated(s).Count != 0
                 && !history.IsRemoved(s))
             {
@@ -984,7 +983,7 @@ internal class MakePeriodicAlgorithm : Options
                 Shape twin = bShape ? s : itLT.Value();
                 foreach (Shape g in translationHistory.Generated(twin))
                 {
-                    ISchematiqList<Shape> lm = gluingHistory.Modified(g);
+                    IReadOnlyList<Shape> lm = gluingHistory.Modified(g);
                     if (lm.Count == 0)
                     {
                         newGroup.Add(g);

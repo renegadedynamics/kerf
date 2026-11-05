@@ -23,7 +23,7 @@ namespace Kerf.Geometry;
 /// <remarks>
 /// <para>
 /// OCCT returns its pole, weight and knot arrays by const reference. The port returns them to callers as
-/// <see cref="PackedList{T}"/> copies (<see cref="Poles"/>, <see cref="Knots"/>, ...), and gives ported code
+/// <see cref="IReadOnlyList{T}"/> copies (<see cref="Poles"/>, <see cref="Knots"/>, ...), and gives ported code
 /// the arrays themselves through internal <c>Internal...()</c> accessors, which must not be modified (decision 131).
 /// The arrays are indexed from 1.
 /// </para>
@@ -1710,7 +1710,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The knots (a copy; OCCT returns a reference to its array).</summary>
-    public IReadOnlyList<double> Knots => _knots.ToPackedList();
+    public IReadOnlyList<double> Knots => _knots.ToImmutableArray();
 
     /// <summary>The knot array itself, indexed from 1, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<double> InternalKnots() => _knots;
@@ -1728,7 +1728,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The flat knots, each knot repeated by its multiplicity (a copy).</summary>
-    public IReadOnlyList<double> KnotSequence => _flatKnots.ToPackedList();
+    public IReadOnlyList<double> KnotSequence => _flatKnots.ToImmutableArray();
 
     /// <summary>The flat knot array itself, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<double> InternalKnotSequence() => _flatKnots;
@@ -1904,7 +1904,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The multiplicities (a copy).</summary>
-    public IReadOnlyList<int> Multiplicities => _mults.ToPackedList();
+    public IReadOnlyList<int> Multiplicities => _mults.ToImmutableArray();
 
     /// <summary>The multiplicity array itself, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<int> InternalMultiplicities() => _mults;
@@ -1932,7 +1932,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The poles (a copy; OCCT returns a reference to its array).</summary>
-    public IReadOnlyList<Point2D> Poles => _poles.ToPackedList();
+    public IReadOnlyList<Point2D> Poles => _poles.ToImmutableArray();
 
     /// <summary>The pole array itself, indexed from 1, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<Point2D> InternalPoles() => _poles;
@@ -1990,7 +1990,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The weights (a copy), or null if the curve is not rational (OCCT's <c>BSplCLib::NoWeights()</c>).</summary>
-    internal IReadOnlyList<double>? WeightsOrNull() => IsRational ? _weights.ToPackedList() : null;
+    internal IReadOnlyList<double>? WeightsOrNull() => IsRational ? _weights.ToImmutableArray() : null;
 
     /// <summary>The weight array for ported code, or null if the curve is not rational: don't modify it.</summary>
     internal NCollection_Array1<double>? InternalWeights()
@@ -2003,7 +2003,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The weights (a copy), ones if the curve is not rational.</summary>
-    public IReadOnlyList<double> Weights => _weights.ToPackedList();
+    public IReadOnlyList<double> Weights => _weights.ToImmutableArray();
 
     /// <summary>The weight array (shared unit weights if not rational) for ported code: don't modify it.</summary>
     internal NCollection_Array1<double> InternalWeightsArray() => _weights;

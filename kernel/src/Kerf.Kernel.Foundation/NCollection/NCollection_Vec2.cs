@@ -10,7 +10,7 @@ namespace Occt;
 
 /// <summary>A 2D vector of numbers (float, double or int), for low-level arrays and BVH.</summary>
 /// <remarks>The default value is the zero vector, as OCCT's default constructor.</remarks>
-public partial struct NCollection_Vec2<T> : INCollection_Vec<T, NCollection_Vec2<T>>
+internal partial struct NCollection_Vec2<T> : INCollection_Vec<T, NCollection_Vec2<T>>
     where T : unmanaged, INumber<T>
 {
     private NCollection_Buffer2<T> _v;

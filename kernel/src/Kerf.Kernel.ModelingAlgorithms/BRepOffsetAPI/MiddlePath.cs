@@ -20,7 +20,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Engine.Measurement.Distance.SupportType;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Topology.Orientation;
@@ -168,7 +167,7 @@ internal class MiddlePath : MakeShape
         for (; wexp.More(); wexp.Next())
         {
             Shape edge = wexp.Current();
-            ISchematiqList<Shape> ls = unifier.History()!.Modified(edge);
+            IReadOnlyList<Shape> ls = unifier.History()!.Modified(edge);
             if (ls.Count != 0)
             {
                 foreach (Shape shape in ls)

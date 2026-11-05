@@ -15,7 +15,7 @@ plumbing, shared-geometry races and finalisers, and lets models run where Bento'
 | Shape of the port | **Mechanical and class for class.** OCCT's type, method, field and parameter names and its file layout are kept, so code can be compared with OCCT and upstream fixes carried across. See [translation-rules.md](translation-rules.md). |
 | Public API | **Functional.** Every value a caller sees is immutable. Mutators exist but are `internal`, for ported algorithms. Mutable builders are allowed. |
 | Value types | gp and other by-value classes are structs, passed `in`. An analyzer (OCCTNET0001) stops internal mutators from being called where C# would silently mutate a copy. |
-| Collections | Returned collections are Schematiq.Collections interfaces (`ISchematiqList<T>` and friends), against the version Bento ships (1.0.0-beta.1, from nuget.org). Numeric arrays are `PackedList<T>`: contiguous, readable as a span, still an `ISchematiqList<T>`. |
+| Collections | Returned collections are .NET's read-only types: `IReadOnlyList<T>` over `ImmutableArray<T>` (question 50, unit 10P1). No Schematiq.Collections. |
 | Floating point | Parity with OCCT is not required everywhere, but the C++ order of operations is kept. In the first package (gp), 66–100% of results are bit-identical to native OCCT, depending on the operation, and the rest agree to within 5e-14. |
 | Errors | OCCT's exception hierarchy (`Standard_Failure` and subclasses). OCCT's release builds compile most argument checks out; the port always makes them. |
 | Serialisation | OCCT's formats, ported faithfully (BRep text and binary in phase 3, STEP in phase 8), so files round-trip with OCCT and its viewers. |

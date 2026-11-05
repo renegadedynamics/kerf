@@ -8,7 +8,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Occt;
-using Schematiq.Collections;
 
 namespace Kerf.Engine.Topology.Brep;
 
@@ -100,7 +99,7 @@ internal class BrepTVertex : TVertex
     }
 
     /// <summary>The point representations, as a new read-only list (OCCT.NET addition).</summary>
-    public ISchematiqList<PointRepresentation> PointRepresentations() => PackedList.Own([.. View()._points]);
+    public IReadOnlyList<PointRepresentation> PointRepresentations() => ImmutableArrays.Own([.. View()._points]);
 
     /// <summary>A new vertex with the same point and tolerance, without representations.</summary>
     public override TShape EmptyCopy()

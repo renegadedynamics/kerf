@@ -28,7 +28,7 @@ namespace Kerf.Engine.Construction.Laws;
 /// curve it keeps.
 /// </para>
 /// <para>
-/// The arrays are returned to callers as <see cref="PackedList{T}"/> copies (<see cref="Poles()"/>,
+/// The arrays are returned to callers as <see cref="IReadOnlyList{T}"/> copies (<see cref="Poles()"/>,
 /// <see cref="Knots()"/>, ...), and to ported code through the internal <c>Internal...()</c> accessors, which must
 /// not be modified (decision 131). They are indexed from 1, whatever the bounds of the arrays given (OCCT 8 would
 /// copy those bounds, occt-issues.md).
@@ -1147,7 +1147,7 @@ internal sealed class BSpline : Transient
     }
 
     /// <summary>The knots (a copy).</summary>
-    public PackedList<double> Knots() => _knots.ToPackedList();
+    public IReadOnlyList<double> Knots() => _knots.ToImmutableArray();
 
     /// <summary>The knot array itself, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<double> InternalKnots() => _knots;
@@ -1160,7 +1160,7 @@ internal sealed class BSpline : Transient
     }
 
     /// <summary>The flat knots, each knot repeated by its multiplicity (a copy).</summary>
-    public PackedList<double> KnotSequence() => _flatknots.ToPackedList();
+    public IReadOnlyList<double> KnotSequence() => _flatknots.ToImmutableArray();
 
     /// <summary>The flat knot array itself, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<double> InternalKnotSequence() => _flatknots;
@@ -1283,7 +1283,7 @@ internal sealed class BSpline : Transient
     }
 
     /// <summary>The multiplicities (a copy).</summary>
-    public PackedList<int> Multiplicities() => _mults.ToPackedList();
+    public IReadOnlyList<int> Multiplicities() => _mults.ToImmutableArray();
 
     /// <summary>The multiplicity array itself, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<int> InternalMultiplicities() => _mults;
@@ -1306,7 +1306,7 @@ internal sealed class BSpline : Transient
     }
 
     /// <summary>The poles (a copy).</summary>
-    public PackedList<double> Poles() => _poles.ToPackedList();
+    public IReadOnlyList<double> Poles() => _poles.ToImmutableArray();
 
     /// <summary>The pole array itself, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<double> InternalPoles() => _poles;
@@ -1355,7 +1355,7 @@ internal sealed class BSpline : Transient
     }
 
     /// <summary>The weights (a copy), or null for a non-rational curve.</summary>
-    public PackedList<double>? Weights() => IsRational ? _weights!.ToPackedList() : null;
+    public IReadOnlyList<double>? Weights() => IsRational ? _weights!.ToImmutableArray() : null;
 
     /// <summary>The weight array itself (null if non-rational), for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<double>? InternalWeights() => _weights;

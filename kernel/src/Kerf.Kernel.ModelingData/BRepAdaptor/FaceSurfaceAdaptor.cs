@@ -17,7 +17,7 @@ namespace Kerf.Engine.Topology.Adaptors;
 /// default) the parameter range is the UV bounds of the face's boundary.
 /// </summary>
 /// <remarks>Most methods come from <see cref="TransformedSurface"/>, which applies the location.</remarks>
-public class FaceSurfaceAdaptor : TransformedSurface
+internal class FaceSurfaceAdaptor : TransformedSurface
 {
     private Face _face;
 

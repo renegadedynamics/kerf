@@ -5,7 +5,6 @@
 
 using Kerf.Geometry;
 using Occt;
-using Schematiq.Collections;
 
 namespace Kerf.Engine.Construction.Helix.Geometry;
 
@@ -69,7 +68,7 @@ internal abstract class BuilderApproxCurve
     public double ToleranceReached() => _tolReached;
 
     /// <summary>The B-spline curves representing the helix's coils, in order: a new list each call, of the same curves, frozen.</summary>
-    public ISchematiqList<Curve3D> Curves()
+    public IReadOnlyList<Curve3D> Curves()
     {
         var curves = new Curve3D[_curves.Length()];
         for (int i = 1; i <= _curves.Length(); i++)
@@ -79,7 +78,7 @@ internal abstract class BuilderApproxCurve
             curves[i - 1] = curve;
         }
 
-        return PackedList.Own(curves);
+        return ImmutableArrays.Own(curves);
     }
 
     /// <summary>OCCT's <c>Curves()</c>: the stored sequence, unfrozen, for ported code.</summary>

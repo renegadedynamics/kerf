@@ -26,9 +26,8 @@
     <InternalsVisibleTo Include="Kerf.Kernel.Oracle.Tests" />
     <InternalsVisibleTo Include="Kerf.Kernel.DrawLite" />
     <InternalsVisibleTo Include="Kerf.Kernel.DrawLite.Tests" />
-    <!-- The benchmarks measure the engine's own algorithms -->
+    <!-- The benchmarks measure the engine's own algorithms (Bento's benchmark is on the public API, and needs nothing here) -->
     <InternalsVisibleTo Include="Kerf.Kernel.Benchmarks" />
-    <InternalsVisibleTo Include="Kerf.Kernel.Bento.Benchmarks" />
     <!-- The modelling layer's tests that check it against the engine itself (the STEP writer's document, the BRep reader):
          the modelling layer is on the public API alone (unit 10M1) -->
     <InternalsVisibleTo Include="Build123d.Tests" />

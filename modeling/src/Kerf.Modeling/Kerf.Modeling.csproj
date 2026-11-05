@@ -12,10 +12,6 @@
     <InternalsVisibleTo Include="Build123d.Tests" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Schematiq.Collections" Version="1.0.0-beta.1" />
-  </ItemGroup>
-
   <!-- The kernel, called directly (unit 10B): the kernel's projects (KerfKernelRoot), which pack as the package dependencies -->
   <ItemGroup>
     <ProjectReference Include="$(KerfKernelRoot)src/Kerf.Kernel.DataExchange/Kerf.Kernel.DataExchange.csproj" />

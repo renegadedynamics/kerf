@@ -20,7 +20,7 @@ namespace Occt;
 /// bucket by bucket. <see cref="Clear()"/> keeps the buckets, as OCCT's <c>Clear()</c> does. Iteration goes bucket by
 /// bucket from 0, each chain from its head. Decisions 66, 67 and 332 port other maps the same way for the same reason.
 /// </remarks>
-public sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<int, TValue>>
+internal sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<int, TValue>>
 {
     private sealed class Node(int theKey, TValue theValue, Node? theNext)
     {

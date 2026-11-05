@@ -14,7 +14,7 @@ using System.Runtime.CompilerServices;
 
 namespace Kerf.Engine.Topology.Tools;
 
-public static partial class BrepTools
+internal static partial class BrepTools
 {
     // A new TShape with the BRep data of theTShape (its representations copied, its geometry shared), without its
     // children and flags: the working overlay's working copies.

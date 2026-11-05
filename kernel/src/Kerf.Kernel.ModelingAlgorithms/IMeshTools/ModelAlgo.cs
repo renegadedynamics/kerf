@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Meshing.Tools;
 
 /// <summary>An algorithm that updates or modifies a discrete model.</summary>
-public abstract class ModelAlgo : Transient
+internal abstract class ModelAlgo : Transient
 {
     /// <summary>An algorithm.</summary>
     protected ModelAlgo()

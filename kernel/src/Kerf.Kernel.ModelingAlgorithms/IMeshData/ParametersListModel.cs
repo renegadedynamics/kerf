@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Meshing.Model;
 
 /// <summary>A list of parameters on a curve, indexed from zero.</summary>
-public abstract class ParametersListModel : Transient
+internal abstract class ParametersListModel : Transient
 {
     /// <summary>An empty list.</summary>
     protected ParametersListModel()

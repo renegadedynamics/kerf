@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Meshing.Model;
 
 /// <summary>A discrete shape with a deflection (<see cref="RealLast"/> until set).</summary>
-public abstract class TessellatedShapeModel : ShapeModel
+internal abstract class TessellatedShapeModel : ShapeModel
 {
     private double _deflection;
 

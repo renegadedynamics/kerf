@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Meshing.Model;
 
 /// <summary>The discrete model of a shape: its discrete faces and edges, indexed from zero.</summary>
-public abstract class ModelModel : ShapeModel
+internal abstract class ModelModel : ShapeModel
 {
     /// <summary>An empty model of the shape.</summary>
     protected ModelModel(in Shape shape) : base(shape)

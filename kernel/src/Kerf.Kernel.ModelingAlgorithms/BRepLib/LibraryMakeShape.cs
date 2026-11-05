@@ -9,7 +9,6 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Engine.Construction.Library.LibraryShapeModification;
 
 namespace Kerf.Engine.Construction.Library;
@@ -108,7 +107,7 @@ internal abstract class LibraryMakeShape : LibraryCommand
     }
 
     /// <summary>Returns the list of generated faces (a frozen copy of the maker's list).</summary>
-    public ISchematiqList<Shape> DescendantFaces(in Face f) => PublishedList(InternalDescendantFaces(f));
+    public IReadOnlyList<Shape> DescendantFaces(in Face f) => PublishedList(InternalDescendantFaces(f));
 
     /// <summary>The maker's own list behind <see cref="DescendantFaces"/>, unfrozen, for ported code.</summary>
     internal virtual NCollection_List<Shape> InternalDescendantFaces(in Face f)
@@ -126,7 +125,7 @@ internal abstract class LibraryMakeShape : LibraryCommand
     }
 
     /// <summary>Returns the faces of the surface <paramref name="i"/> (a frozen copy of the maker's list).</summary>
-    public ISchematiqList<Shape> NewFaces(int i) => PublishedList(InternalNewFaces(i));
+    public IReadOnlyList<Shape> NewFaces(int i) => PublishedList(InternalNewFaces(i));
 
     /// <summary>The maker's own list behind <see cref="NewFaces"/>, unfrozen, for ported code.</summary>
     internal virtual NCollection_List<Shape> InternalNewFaces(int i)
@@ -135,7 +134,7 @@ internal abstract class LibraryMakeShape : LibraryCommand
     }
 
     /// <summary>Returns the faces built from the edge <paramref name="e"/> (a frozen copy of the maker's list).</summary>
-    public ISchematiqList<Shape> FacesFromEdges(in Edge e) => PublishedList(InternalFacesFromEdges(e));
+    public IReadOnlyList<Shape> FacesFromEdges(in Edge e) => PublishedList(InternalFacesFromEdges(e));
 
     /// <summary>The maker's own list behind <see cref="FacesFromEdges"/>, unfrozen, for ported code.</summary>
     internal virtual NCollection_List<Shape> InternalFacesFromEdges(in Edge e)
@@ -143,11 +142,11 @@ internal abstract class LibraryMakeShape : LibraryCommand
         return _edgFaces;
     }
 
-    private static ISchematiqList<Shape> PublishedList(NCollection_List<Shape> list)
+    private static IReadOnlyList<Shape> PublishedList(NCollection_List<Shape> list)
     {
         if (list.IsEmpty())
         {
-            return PackedList<Shape>.Empty;
+            return Array.Empty<Shape>();
         }
         var shapes = new Shape[list.Extent()];
         int i = 0;
@@ -157,6 +156,6 @@ internal abstract class LibraryMakeShape : LibraryCommand
             shapes[i].TShape()?.FreezeGraph();
             i++;
         }
-        return PackedList.Own(shapes);
+        return ImmutableArrays.Own(shapes);
     }
 }

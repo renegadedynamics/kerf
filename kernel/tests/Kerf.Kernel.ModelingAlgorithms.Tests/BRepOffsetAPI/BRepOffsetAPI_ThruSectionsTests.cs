@@ -17,7 +17,6 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Schematiq.Collections;
 using static Kerf.Engine.Construction.Filling.ThruSectionErrorStatus;
 using static Kerf.Topology.ShapeType;
 
@@ -424,7 +423,7 @@ public class BRepOffsetAPI_ThruSectionsTests
         int aNbFaces = 0;
         for (Explorer anExp = new(aWires[0], ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            ISchematiqList<Shape> aFaces = aLoft.Generated(anExp.Current());
+            IReadOnlyList<Shape> aFaces = aLoft.Generated(anExp.Current());
             Assert.NotEmpty(aFaces); // one face per piece of the edge (per section and piece when ruled)
             Assert.All(aFaces, f => Assert.True(aResultMap.Contains(f)));
             Shape aFace = aLoft.GeneratedFace(anExp.Current()); // null for an edge CompatibleWires cut, as natively
@@ -434,7 +433,7 @@ public class BRepOffsetAPI_ThruSectionsTests
         Assert.Equal(3, aNbFaces);
         for (Explorer anExp = new(aWires[0], ShapeType.Vertex); anExp.More(); anExp.Next())
         {
-            ISchematiqList<Shape> anEdges = aLoft.Generated(anExp.Current());
+            IReadOnlyList<Shape> anEdges = aLoft.Generated(anExp.Current());
             Assert.Equal(theRuled ? 2 : 1, anEdges.Count);
             Assert.All(anEdges, e => Assert.True(aResultMap.Contains(e) && e.Type == ShapeType.Edge));
         }

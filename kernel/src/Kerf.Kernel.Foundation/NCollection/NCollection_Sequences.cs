@@ -17,7 +17,7 @@ namespace Occt;
 /// OCCT's sequence: a list indexed from 1. Not OCCT's linked implementation but a .NET list with OCCT's API;
 /// allocator arguments are dropped. A class: copy with <c>new(other)</c> or <c>Assign</c>.
 /// </summary>
-public class NCollection_Sequence<T> : Transient, IEnumerable<T>
+internal class NCollection_Sequence<T> : Transient, IEnumerable<T>
 {
     private readonly List<T> _items;
 
@@ -158,7 +158,7 @@ public class NCollection_Sequence<T> : Transient, IEnumerable<T>
 }
 
 /// <summary>OCCT's handle-able sequence.</summary>
-public class NCollection_HSequence<T> : NCollection_Sequence<T>
+internal class NCollection_HSequence<T> : NCollection_Sequence<T>
 {
     public NCollection_HSequence() { }
 
@@ -173,7 +173,7 @@ public class NCollection_HSequence<T> : NCollection_Sequence<T>
 /// OCCT's singly linked list, with its <see cref="Iterator"/> (More/Next/Value). A .NET list underneath;
 /// allocator arguments are dropped. A class: copy with <c>new(other)</c> or <c>Assign</c>.
 /// </summary>
-public class NCollection_List<T> : IEnumerable<T>
+internal class NCollection_List<T> : IEnumerable<T>
 {
     private readonly List<T> _items;
 
@@ -355,7 +355,7 @@ public class NCollection_List<T> : IEnumerable<T>
 /// OCCT's scratch array, which lives on the stack when small. Here a .NET array, indexed from 0. Ported code that
 /// only needs a short-lived buffer can use <c>stackalloc</c> and a span instead.
 /// </summary>
-public sealed class NCollection_LocalArray<T>
+internal sealed class NCollection_LocalArray<T>
 {
     private T[] _data;
 

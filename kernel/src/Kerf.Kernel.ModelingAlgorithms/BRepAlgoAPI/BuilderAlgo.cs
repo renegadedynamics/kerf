@@ -10,7 +10,6 @@ using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 
 namespace Kerf.Engine.Booleans.Api;
 
@@ -220,7 +219,7 @@ internal class BuilderAlgo : Algo
     public bool HasHistory => _fillHistory;
 
     /// <summary>The section edges: the edges where the arguments intersect (frozen, with the whole result).</summary>
-    public ISchematiqList<Shape> SectionEdges()
+    public IReadOnlyList<Shape> SectionEdges()
     {
         BeforePublishingLists();
         return PublishedList(InternalSectionEdges());
@@ -268,7 +267,7 @@ internal class BuilderAlgo : Algo
                             continue;
                         }
 
-                        ISchematiqList<Shape> lseIm = _simplifierHistory.Modified(se);
+                        IReadOnlyList<Shape> lseIm = _simplifierHistory.Modified(se);
                         if (lseIm.Count != 0)
                         {
                             foreach (Shape seIm in lseIm)

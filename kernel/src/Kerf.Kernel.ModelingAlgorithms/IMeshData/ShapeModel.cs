@@ -18,7 +18,7 @@ namespace Kerf.Engine.Meshing.Model;
 /// classes; its raw pointers (<c>IMeshData::IFacePtr</c>, <c>IEdgePtr</c>) are the same references, and maps keyed by
 /// them compare by reference and iterate in insertion order (decision 490).
 /// </remarks>
-public abstract class ShapeModel : Transient
+internal abstract class ShapeModel : Transient
 {
     private Shape _shape;
 

@@ -69,7 +69,7 @@ internal sealed class ProgressIndicator
 /// cancelled. A range that is never used is consumed when it is closed, as in OCCT; in C# that means calling
 /// <see cref="Close"/> (C++ does it in the destructor), which ported code does where OCCT relies on it.
 /// </summary>
-public struct ProgressRange
+internal struct ProgressRange
 {
     internal ProgressIndicator? _indicator;
     internal readonly double _start;

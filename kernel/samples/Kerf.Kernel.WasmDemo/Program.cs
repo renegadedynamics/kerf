@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Meshing;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.JavaScript;
 using System.Runtime.Versioning;
@@ -34,35 +35,46 @@ namespace Kerf.Kernel.WasmDemo
             }
         }
 
-        private static global::Kerf.Engine.Meshing.MeshBuffers Last => theLast?.Buffers ?? throw new InvalidOperationException("Nothing meshed yet.");
+        private static ShapeMesh Last => theLast?.Mesh ?? throw new InvalidOperationException("Nothing meshed yet.");
 
         [JSExport]
-        public static byte[] Positions() => MemoryMarshal.AsBytes(Last.Positions.AsSpan()).ToArray();
+        public static byte[] Positions() => MemoryMarshal.AsBytes(Last.Positions.Span).ToArray();
 
         [JSExport]
-        public static byte[] Normals() => MemoryMarshal.AsBytes(Last.Normals.AsSpan()).ToArray();
+        public static byte[] Normals() => MemoryMarshal.AsBytes(Last.Normals.Span).ToArray();
 
         /// <summary>The triangles with each face's node offset added: indices into all the nodes.</summary>
         [JSExport]
         public static int[] Triangles()
         {
-            global::Kerf.Engine.Meshing.MeshBuffers aBuffers = Last;
-            var anIndices = new int[aBuffers.Triangles.Length];
-            for (int f = 0; f < aBuffers.FaceTypes.Length; f++)
+            ShapeMesh aMesh = Last;
+            ReadOnlySpan<int> aTriangles = aMesh.Triangles.Span;
+            var anIndices = new int[aTriangles.Length];
+            foreach (FaceMesh aFace in aMesh.Faces)
             {
-                int anOffset = (int)aBuffers.FaceNodes[f];
-                for (long t = aBuffers.FaceTriangles[f]; t < aBuffers.FaceTriangles[f + 1]; t++)
+                int anEnd = 3 * (aFace.FirstTriangle + aFace.TriangleCount);
+                for (int t = 3 * aFace.FirstTriangle; t < anEnd; t++)
                 {
-                    anIndices[t] = aBuffers.Triangles[t] + anOffset;
+                    anIndices[t] = aTriangles[t] + aFace.FirstNode;
                 }
             }
             return anIndices;
         }
 
         [JSExport]
-        public static byte[] Points() => MemoryMarshal.AsBytes(Last.Points.AsSpan()).ToArray();
+        public static byte[] Points() => MemoryMarshal.AsBytes(Last.EdgePoints.Span).ToArray();
 
+        /// <summary>Each edge's first point, then the total.</summary>
         [JSExport]
-        public static int[] EdgePoints() => Last.EdgePoints.Select(p => (int)p).ToArray();
+        public static int[] EdgePoints()
+        {
+            IReadOnlyList<EdgePolyline> anEdges = Last.Edges;
+            var anOffsets = new int[anEdges.Count + 1];
+            for (int e = 0; e < anEdges.Count; e++)
+            {
+                anOffsets[e + 1] = anOffsets[e] + anEdges[e].PointCount;
+            }
+            return anOffsets;
+        }
     }
 }

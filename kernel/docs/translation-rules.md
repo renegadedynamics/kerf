@@ -204,9 +204,8 @@ oracle tests can show what changes.
 - **Progress**: `Message_ProgressRange` and `Message_ProgressScope` keep OCCT's API (More, Next, UserBreak).
   A C# caller makes a `Message_ProgressIndicator` from a `CancellationToken` and an `IProgress<double>`.
   Where the C++ relies on a scope's destructor, use `using var aPS = new Message_ProgressScope(...)`.
-- **Returned immutable collections** are `ISchematiqList<T>` and the other Schematiq.Collections interfaces. For
-  numeric arrays (poles, knots, mesh nodes) return a `PackedList<T>`: one contiguous array implementing
-  `ISchematiqList<T>`, readable as a `ReadOnlySpan<T>` without copying. Low-level APIs (BSplCLib, PLib, math) keep
+- **Returned immutable collections** are `IReadOnlyList<T>`, over an `ImmutableArray<T>` (`ImmutableArrays.Own` for an
+  array just filled, `ToImmutableArray()` for a copy of an `NCollection_Array1`; question 50). Low-level APIs (BSplCLib, PLib, math) keep
   OCCT's NCollection and span parameters: they are tools for ported code, not values for callers.
 - Pass structs `in`; use `stackalloc` for small fixed scratch buffers; no LINQ or allocations in inner loops.
 - Floating-point parity with OCCT isn't required everywhere, but keeping the C++ order of operations costs

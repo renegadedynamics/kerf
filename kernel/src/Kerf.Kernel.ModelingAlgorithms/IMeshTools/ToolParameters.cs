@@ -21,7 +21,7 @@ namespace Kerf.Engine.Meshing.Tools;
 /// is zero or false and the algorithm is Watson. Ported code writes <c>new IMeshTools_Parameters()</c>.
 /// </para>
 /// </remarks>
-public struct ToolParameters : IEquatable<ToolParameters>
+internal struct ToolParameters : IEquatable<ToolParameters>
 {
     /// <summary>OCCT's defaults.</summary>
     public ToolParameters()

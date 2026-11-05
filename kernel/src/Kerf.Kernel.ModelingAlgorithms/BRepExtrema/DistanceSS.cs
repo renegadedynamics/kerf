@@ -15,7 +15,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 using static Kerf.Engine.Measurement.Distance.SupportType;
 using static Kerf.Engine.Extrema.ExtAlgo;
 using static Kerf.Engine.Extrema.ExtFlag;
@@ -72,10 +71,10 @@ internal sealed class DistanceSS
     public double DistValue() => _dstRef;
 
     /// <summary>The solutions on the first shape (a copy).</summary>
-    public ISchematiqList<SolutionElem> Seq1Value() => PackedList.Own([.. _seqSolShape1]);
+    public IReadOnlyList<SolutionElem> Seq1Value() => ImmutableArrays.Own([.. _seqSolShape1]);
 
     /// <summary>The solutions on the second shape (a copy).</summary>
-    public ISchematiqList<SolutionElem> Seq2Value() => PackedList.Own([.. _seqSolShape2]);
+    public IReadOnlyList<SolutionElem> Seq2Value() => ImmutableArrays.Own([.. _seqSolShape2]);
 
     /// <summary>The solutions on the first shape, the object's own sequence (OCCT's const reference).</summary>
     internal NCollection_Sequence<SolutionElem> InternalSeq1Value() => _seqSolShape1;

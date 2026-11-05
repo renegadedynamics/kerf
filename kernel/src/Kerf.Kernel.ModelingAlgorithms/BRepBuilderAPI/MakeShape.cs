@@ -7,7 +7,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 
 namespace Kerf.Engine.Construction.Api;
 
@@ -60,7 +59,7 @@ internal abstract class MakeShape : Command, History.IAlgorithm
     public static explicit operator Shape(MakeShape maker) => maker.Shape();
 
     /// <summary>The shapes generated from the shape <paramref name="s"/> (frozen).</summary>
-    public ISchematiqList<Shape> Generated(in Shape s)
+    public IReadOnlyList<Shape> Generated(in Shape s)
     {
         BeforePublishingLists();
         return PublishedList(InternalGenerated(s));
@@ -74,7 +73,7 @@ internal abstract class MakeShape : Command, History.IAlgorithm
     }
 
     /// <summary>The shapes modified from the shape <paramref name="s"/> (frozen).</summary>
-    public ISchematiqList<Shape> Modified(in Shape s)
+    public IReadOnlyList<Shape> Modified(in Shape s)
     {
         BeforePublishingLists();
         return PublishedList(InternalModified(s));
@@ -109,11 +108,11 @@ internal abstract class MakeShape : Command, History.IAlgorithm
     IEnumerable<Shape> History.IAlgorithm.Generated(in Shape s) => Generated(s);
 
     // A frozen copy of a list of shapes, each shape's graph frozen.
-    private protected static ISchematiqList<Shape> PublishedList(NCollection_List<Shape> list)
+    private protected static IReadOnlyList<Shape> PublishedList(NCollection_List<Shape> list)
     {
         if (list.IsEmpty())
         {
-            return PackedList<Shape>.Empty;
+            return Array.Empty<Shape>();
         }
         var shapes = new Shape[list.Extent()];
         int i = 0;
@@ -123,6 +122,6 @@ internal abstract class MakeShape : Command, History.IAlgorithm
             shapes[i].TShape()?.FreezeGraph();
             i++;
         }
-        return PackedList.Own(shapes);
+        return ImmutableArrays.Own(shapes);
     }
 }
