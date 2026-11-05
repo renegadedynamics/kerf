@@ -199,7 +199,7 @@ public class TopoDS_ShapeTests
     {
         // tools/gen-topods-subtypes.cs copies TopoDS_Shape's members into the subtypes: each has them all, but for the
         // casts only Shape has (TryAs, As); the vertex's, edge's, wire's and face's own data come beside them (unit 10L1)
-        string[] aShapeMembers = [.. Members(typeof(Shape)).Where(m => !m.Contains(" TryAs(") && !m.Contains(" As("))];
+        string[] aShapeMembers = [.. Members(typeof(Shape)).Where(m => !m.Contains(" TryAs(") && !m.Contains(" As(") && !m.Contains(" Reversed("))];
         foreach (Type aType in new[] { typeof(Vertex), typeof(Edge), typeof(Wire), typeof(Face),
                                        typeof(Shell), typeof(Solid), typeof(CompSolid), typeof(Compound) })
         {

@@ -61,7 +61,9 @@ public class ShapeLawsTests
         Assert.Equal(general.ChildCount, (int)Get(shape, "ChildCount"));
 
         // orientation
-        var reversed = (Shape)Call(shape, "Reversed");
+        var reversedTyped = Call(shape, "Reversed");
+        Assert.IsType(shape.GetType(), reversedTyped);   // a typed shape's Reversed keeps its type
+        var reversed = ((IShape)reversedTyped).AsShape();
         Assert.Equal(Orientation.Reversed, reversed.Orientation);
         Assert.Equal(Orientation.Reversed, ((Shape)Call(shape, "Complemented")).Orientation);
         Assert.Equal(Orientation.Reversed, ((Shape)Call(shape, "Composed", Orientation.Reversed)).Orientation);
