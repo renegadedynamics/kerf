@@ -52,7 +52,6 @@ Kerf.Kernel.ModelingAlgorithms	HLRBRep	Hidden-line paths past the few hlr cases
 Kerf.Kernel.ModelingAlgorithms	BRepBlend	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
 Kerf.Kernel.ModelingAlgorithms	ChFi3d	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
 Kerf.Kernel.ModelingAlgorithms	Blend	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
-Kerf.Kernel.ModelingAlgorithms	BRepFilletAPI	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
 Kerf.Kernel.ModelingAlgorithms	FilletSurf	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
 Kerf.Kernel.ModelingAlgorithms	TopOpeBRepBuild	The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests
 Kerf.Kernel.ModelingAlgorithms	TopOpeBRepTool	The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests
@@ -62,7 +61,6 @@ Kerf.Kernel.ModelingAlgorithms	IntCurveSurface	Intersection forms by curve and s
 Kerf.Kernel.ModelingAlgorithms	Geom2dInt	Intersection forms by curve and surface type the tests don't reach
 Kerf.Kernel.ModelingAlgorithms	Geom2dHatch	Intersection forms by curve and surface type the tests don't reach
 Kerf.Kernel.ModelingAlgorithms	ShapeConstruct	Healing support, following ShapeFix's gap
-Kerf.Kernel.ModelingAlgorithms	ShapeAlgo	Healing support, following ShapeFix's gap
 Kerf.Kernel.ModelingAlgorithms	Plate	Constraint kinds the fill tests and cases don't reach
 Kerf.Kernel.ModelingAlgorithms	BiTgte	Forms past the corpus's few cases; both are small OCCT features
 Kerf.Kernel.ModelingAlgorithms	Draft	Forms past the corpus's few cases; both are small OCCT features
