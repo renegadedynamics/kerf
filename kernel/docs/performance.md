@@ -1,9 +1,11 @@
 # Performance: where OCCT.NET's time goes
 
 *Unit 9E, 2 November 2026: the performance review of phase9-plan.md section 2.4 and item 2 of
-beyond-compatibility.md. Only changes that keep native's results were made; the rest are proposals.*
+beyond-compatibility.md. Only changes that keep native's results were made; the rest are proposals. The summary, and
+everything after the next section, are unit 9E's figures. The current ones are [the 0.2.0 baseline](#the-020-baseline-unit-11a)
+and the dated files in [benchmarks/](benchmarks/).*
 
-## Summary
+## Summary (unit 9E's)
 
 - **The "4.4× native" was mostly three things, none of them OCCT's algorithms:**
   - one accidental quadratic in the port (a tangent zone's insertions at the front of a .NET list), which alone
@@ -21,7 +23,130 @@ beyond-compatibility.md. Only changes that keep native's results were made; the 
 - **Bento's workload** (the guide's examples, built, meshed and measured): recalculation **1.5× native**, opening a
   workbook 3.5× native (the JIT).
 
-## How it was measured
+## The 0.2.0 baseline (unit 11A)
+
+*5 November 2026, the head of phase 11's rig, a14650837: the code of `v0.2.0` with only the benchmarks changed. Every table
+is in [benchmarks/2026-11-05-a14650837.md](benchmarks/2026-11-05-a14650837.md).*
+
+| | Native (frozen) | Kerf | Kerf / native | Target |
+|---|---:|---:|---:|---:|
+| Recalculation (median of passes 2 to 9, summed), ms | 685 | 1,211 | 1.77× | 822 (1.2×) |
+| Opening (first pass, summed), ms | 921 | 1,764 | 1.92× | |
+| Allocated per recalculation, MB | 3 | 450 | | 225 (half) |
+
+Every example gives native's volume, face count and triangle count.
+
+### Bento's examples
+
+Native's per-example figures are unit 9E's run of the benchmark's native project (9 passes), kept in its working files and
+never committed until now; `tools/bench.ps1` holds them. Native can't be measured again.
+
+| Example | First pass, ms | Native | Recalculation, ms | Native | Ratio | Over 1.2× native, ms | Settled, ms | MB |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 2 plate with hole | 141 | 103 | 8.2 | 5.4 | 1.52× | 1.7 | 3.4 | 5.6 |
+| 3 prismatic solid | 31 | 16 | 5.5 | 4.7 | 1.16× | | 2.7 | 4.6 |
+| 5 working point | 12 | 8.1 | 9.1 | 7.8 | 1.16× | | 4.7 | 8.1 |
+| 6 point lists | 17 | 13 | 13.4 | 7.6 | 1.76× | 4.3 | 7.2 | 13.2 |
+| 9 chamfer, fillet | 76 | 52 | 14.4 | 12.9 | 1.12× | | 9.5 | 17.0 |
+| 10 select last, hole | 58 | 18 | 44.5 | 17.4 | 2.56× | 23.6 | 22.2 | 17.6 |
+| 29 bottle | 296 | 143 | 273 | 106 | 2.58× | 146 | 156 | 139 |
+| 31 nesting locations | 44 | 46 | 36.1 | 34.2 | 1.06× | | 21.8 | 38.1 |
+| 32 for-loop | 21 | 21 | 19.0 | 17.5 | 1.08× | | 10.5 | 21.2 |
+| 33 function, for-loop | 16 | 15 | 14.8 | 15.2 | 0.98× | | 8.0 | 16.4 |
+| 36 extrude until | 1,054 | 486 | 774 | 457 | 1.69× | 226 | 725 | 169 |
+| **Total** | **1,764** | **921** | **1,211** | **685** | **1.77×** | | **969** | **450** |
+
+- **Two examples are 93% of the excess.** The sum over 1.2× is 402 ms, and "extrude until" and the bottle are 372 of it. Eight of the eleven are within 1.2×, or within a few milliseconds of it.
+- **"Settled"** is the median of passes 11 to 20. Recalculation by native's definition (passes 2 to 9) still catches
+  the runtime tiering up, so the same work takes 969 ms once it has finished: 1.41× native. Native's figure is the
+  one the target is set against, so the target stays on passes 2 to 9.
+- **ReadyToRun costs recalculation what it gives opening.** Without it, in the same rig (`-NoReadyToRun`): opening 2,619 ms
+  (1,764 with) with 1,254 ms in the JIT (430 with) and 14,251 methods compiled (4,738 with), but recalculation **1,041 ms**
+  (1,211 with) and settled 912 (969 with). Precompiled code is slower than tier 1 until the runtime replaces it. Unit 11C's
+  to weigh, with tiered settings: 170 ms may be the cheapest on the table.
+- **Allocation is 450 MB, not the 311 MB the old counter would show.** The benchmark read the calling thread's bytes, so
+  it missed what the parallel mesher allocates on other threads. It now reads all threads'. Unit 9E's 1,025 MB and
+  unit 10J's 142 MB for "extrude until" are the old counter's (169 MB on the new).
+
+### The rest of the set
+
+| Suite | Time | Allocated |
+|---|---:|---:|
+| Booleans, 407 simple cases, serial (sum of medians) | 2,168 ms: pave filler 1,403, builder 789 | 2,811 MB |
+| Booleans, 193 complex cases, serial | 2,251 ms: pave filler 1,474, builder 429 | 2,077 MB |
+| Booleans' speed-up with their own parallel option | 1.32× simple, 1.47× complex | |
+| The clean after each Boolean, simple / complex | 184 ms / 80 ms | 362 / 124 MB |
+| Offset, arc join / intersection, 16 parts | 118 / 76 ms | 90 / 98 MB |
+| Thick solid | 117 ms | 104 MB |
+| Fillet / chamfer every edge | 98 / 86 ms | 181 / 171 MB |
+| Draft the sides / boss | 5.9 / 39 ms | 7 / 39 MB |
+| STEP parser, 340 files, 125 MB | 857 ms (146 MB/s) | |
+| STEP import with healing, 289 files up to 400 kB | 6,529 ms | 6,215 MB |
+| ShapeFixer / UnifySameDomain on those | 3,936 / 801 ms | 5,159 / 1,273 MB |
+| STEP export of those | 2,234 ms | 3,039 MB |
+| Meshing seven `data/occ` shapes, serial | 39 to 272 ms each | 28 to 257 MB each |
+| Construction | 4 µs (a wire) to 2.5 ms (a projection) | 7 KB to 2.3 MB |
+| Images: SVG / PNG, per example | 1 to 48 ms / 42 to 174 ms | 0.4 to 14 / 22 to 50 MB |
+| **Parallel:** 24 copies of the examples on 24 logical processors | a round 5.2 s, **5.5× speed-up** | 10.8 GB a round, 10 s of the collector's pauses |
+
+### The ranking, for the optimisation units
+
+"Longer-running" comes from a sampling profile of the recalculation (`tools/profile-report.cs`, passes 2 to 20, 12,040 samples
+on any thread, so shares of thread time, not wall time; each sample goes to the outermost operation on its stack).
+"More commonly used" has **no telemetry behind it**. The proxy is how often the guide
+(`docs/cad/build123d-in-bento.md` in Bento) mentions each family of `CAD_` functions, which measures what the guide chooses to
+show, not what users do. Mesh and volume run on every recalculation whatever the guide says.
+
+| Rank | Operation | Thread time | Without "until" | Allocation | In the guide | Why here |
+|---:|---|---:|---:|---:|---:|---|
+| 1 | **Meshing and the mesh's tolerance** | 15.0% + 12.7% | 30.8% + 23.3% | 29.2% + 8.3% | every recalculation | Runs on every shape. The second figure is `MeshTolerances.For` asking for an *optimal* bounding box to set the deflection: extrema on every face, for one number. It's the likeliest cheap win; a cheaper box has to give the same deflection, or the meshes change |
+| 2 | **Curve extrema in "extrude until"** (`DistanceShapeShape`, `GlobOptMin`, `NewtonMinimum`) | 48.6% | | 17.6% | `CAD_PT_EXTRUDE` 11, few with `until` | The longest by far, and 226 ms over target alone. It's one example, and slow on native too (457 ms). 11E may change the algorithm |
+| 3 | **Booleans**: pave filler, builder, clean | 8.1% + 2.2% + 1.2% | 14.0% + 4.5% + 2.4% | 16.9% + 2.3% + 4.8% | `CAD_CUT`, `CAD_FUSE`, `CAD_INTERSECT` 21 | The most used modelling operation. Each is quick, and there are many |
+| – | **The collector** (threads stopped, across all of the above) | 16.5% | 31.3% | | | Not an operation: 11B's measure. Doubles, `NCollection_Array1<double>`, `VectorBase` and `NCollection_Array2` are 29% of the bytes, which supports proposal 5 as the first step |
+| 4 | **Construction**: extrude, revolve, faces | 1.5% | 3.0% | 6.8% | `CAD_PT_EXTRUDE` and others 14 | Cheap in time, worth a look for allocation |
+| 5 | **Fillets and chamfers** | 0.6% | 1.3% | 4.1% | 10 | Low in the examples. On every edge of a part they're the features' largest allocators |
+| 6 | **Offsets, thick solids** | 1.3% | 2.8% | 3.8% | 8 | The bottle only |
+| 7 | **Healing** inside other operations; **volume** | 1.6%; 1.3% | 3.3%; 2.7% | 3.4%; 1.5% | every recalculation (volume) | Small |
+| 8 | **STEP import and export** | not in a recalculation | | 6.2 GB and 3.0 GB on the set | 9 | Long, and paid once per file on opening or saving. Worth 11C's attention, not 11B's first |
+| 9 | **Images** | not in a recalculation | | | not counted | 42 to 174 ms each |
+
+The bottle has about 4% of the samples in its build, against 22% of the recalculation's time. That suggests its excess is
+mostly meshing its 9,556 triangles and finding its box, not its fillets and offset, though the two shares aren't quite
+like for like (thread time over all passes, wall time over passes 2 to 9).
+
+The order for the units: 11B's allocation work starts with `NewtonMinimum`'s arrays and the mesher's cell filter, the two
+largest named sites; 11E starts with the mesh's tolerance box and then "extrude until".
+
+### Noise, and how to run it
+
+Run `kernel/tools/bench.ps1`, on Windows PowerShell 5.1 or later. It takes about 15 minutes (`-Quick`: 5), and writes
+`docs/benchmarks/<date>-<commit>.md` and `.tsv`. For a unit's before-and-after, on each commit:
+
+```powershell
+kernel/tools/bench.ps1 -Quick -Compare kernel/docs/benchmarks/2026-11-05-a14650837.tsv
+```
+
+It exits with 1 on a regression and 2 on a busy machine; `-Result <tsv>` compares without running. Each row is the median
+of its suite's fresh processes (Bento 5, most others 3, the long ones 2, the lower of two).
+
+Four full runs and a quick one, as two pairs, the second after the noisiest suites were given more runs. The busy threshold is 10% total CPU. This machine idled at 2%, and at 6 to 7% through all of these, because of a stray
+script spinning on one thread; one busy thread is about 4%, a build far more. The rig refused twice while an earlier run of
+its own was still going.
+
+| Kind of row | Largest change between runs | Threshold |
+|---|---:|---:|
+| Allocation | 1.3% (0.0% median) | 2%, and 0.1 of its unit |
+| Bento's total recalculation / first pass | 2.4% / 0.7% | 5% |
+| Bento's settled total | 8.8% | 15% |
+| Other totals: Booleans, STEP, the parallel round, the clean | 10.2% | 15% |
+| Parallel speed-up | 4.9% | 15% |
+| One operation's time (median 2.3%, 90th percentile 11%) | 60% (5 passes of PNG; 51.5% after) | 60%, and 10 ms or 20 µs |
+| A result: a volume, a face count, failed runs | none | any change |
+
+So allocation and the totals are a real check, and one short operation's time only catches something large: single rows
+are bimodal, depending on when the runtime tiers up. Don't read a 20% move on one row as a finding without running it again.
+
+## How unit 9E measured it
 
 - **Machine:** 24 logical cores, Windows 11, .NET 10, Release builds. Other helpers were running tests on the same
   machine, so timings vary by up to 30% from run to run; the figures below are the quieter runs, and each comparison
@@ -40,7 +165,7 @@ beyond-compatibility.md. Only changes that keep native's results were made; the 
   does, and its volume and face count read. The first pass is a workbook being opened; the median of the others is a
   recalculation. `Native/` runs the same program on native OCCT.
 
-## The measurements
+## Unit 9E's measurements
 
 ### build123d.NET's suite
 
@@ -171,11 +296,9 @@ Anything beyond these (iteration order, different algorithms) waits for beyond-c
 
 ## Running the measurements again
 
-- Bento's workload: `dotnet run -c Release --project benchmarks/OcctNet.Bento.Benchmarks -p:Build123dNetRoot=<build123d.NET>/`,
-  and `--project benchmarks/OcctNet.Bento.Benchmarks/Native` for native OCCT (with build123d.NET's native build).
-- The suite: `dotnet test` in build123d.NET with `-p:Build123dBackend=OcctNet -p:OcctNetRoot=<this checkout>/`, and with
-  the default backend; `--logger trx` gives each test's time.
+- Everything Bento-shaped: `kernel/tools/bench.ps1`, above. Native's project went in unit 10B.
+- The modelling layer's suite: `dotnet test modeling/tests/Kerf.Modeling.Tests`; `--logger trx` gives each test's time.
 - A trace: run any of these with `DOTNET_EnableEventPipe=1`, `DOTNET_EventPipeOutputPath=<file>.nettrace` and
-  `DOTNET_EventPipeConfig=Microsoft-DotNETCore-SampleProfiler:0:5,Microsoft-Windows-DotNETRuntime:0x8019:5`
+  `DOTNET_EventPipeConfig=Microsoft-DotNETCore-SampleProfiler:0:5,Microsoft-Windows-DotNETRuntime:4c14fccbd:5`
   (in a process that exits normally: vstest kills its test host before the trace is written), and read it with
-  PerfView or TraceEvent.
+  `tools/profile-report.cs`, PerfView or TraceEvent.

@@ -36,6 +36,8 @@
   The folder for the .md and the .tsv.
 .PARAMETER Work
   A folder for the build and the suites' logs, which is kept; a new temporary one, removed afterwards, if not given.
+.PARAMETER HeadlinePercent
+  The regression threshold on Bento's total recalculation and first pass, the owner's figures, in percent.
 .PARAMETER TotalPercent
   The regression threshold on the times that add up many operations: Bento's totals and opening, the Booleans, the parallel
   round and STEP, in percent of the earlier run's.
@@ -54,7 +56,7 @@
 .EXAMPLE
   kernel/tools/bench.ps1
 .EXAMPLE
-  kernel/tools/bench.ps1 -Quick -Compare kernel/docs/benchmarks/2026-11-05-0fdc08955.tsv
+  kernel/tools/bench.ps1 -Quick -Compare kernel/docs/benchmarks/2026-11-05-a14650837.tsv
 #>
 param(
   [switch] $Quick,
@@ -66,8 +68,9 @@ param(
   [switch] $NoReadyToRun,
   [string] $Out = '',
   [string] $Work = '',
+  [double] $HeadlinePercent = 5,
   [double] $TotalPercent = 15,
-  [double] $TimePercent = 40,
+  [double] $TimePercent = 60,
   [double] $TimeFloor = 10,
   [double] $MicrosecondFloor = 20,
   [double] $AllocationPercent = 2,
@@ -174,7 +177,8 @@ function Compare-Results([string] $beforePath, [string] $afterPath) {
     switch ($kind) {
       'time' {
         $isTotal = $b.Name -eq 'total' -or $b.Group -in 'opening', 'booleans', 'parallel', 'process' -or $b.Group -like 'step*'
-        $percent = if ($isTotal) { $TotalPercent } else { $TimePercent }
+        $isHeadline = $b.Group -eq 'bento' -and $b.Name -eq 'total' -and $b.Metric -in 'recalc ms', 'first ms'
+        $percent = if ($isHeadline) { $HeadlinePercent } elseif ($isTotal) { $TotalPercent } else { $TimePercent }
         $floor = if ($isTotal) { 0 } elseif ($b.Metric -like '* us' -or $b.Metric -eq 'us') { $MicrosecondFloor } else { $TimeFloor }
         if ($change -gt $percent -and $difference -gt $floor) { $flag = '!!' }
         elseif ($change -lt - $percent -and $difference -lt - $floor) { $flag = '++' }
@@ -194,7 +198,7 @@ function Compare-Results([string] $beforePath, [string] $afterPath) {
   }
   $new = @($after.Rows | Where-Object { -not $seen["$($_.Group)`t$($_.Name)`t$($_.Metric)"] }).Count
   ''
-  "$regressions regressions past the thresholds (totals' time $TotalPercent%, other times $TimePercent% and $TimeFloor ms or $MicrosecondFloor us, allocation $AllocationPercent% and $AllocationFloor MB, speed-up $SpeedUpPercent%), $improvements improvements past them; $absent rows only in the earlier run, $new only in the later"
+  "$regressions regressions past the thresholds (Bento's total $HeadlinePercent%, other totals $TotalPercent%, other times $TimePercent% and $TimeFloor ms or $MicrosecondFloor us, allocation $AllocationPercent% and $AllocationFloor MB, speed-up $SpeedUpPercent%), $improvements improvements past them; $absent rows only in the earlier run, $new only in the later"
   # The count last: the caller reads it from the end of the output
   $regressions
 }
