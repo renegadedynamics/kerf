@@ -211,7 +211,7 @@ loaded machine lets more methods tier up during the first pass. The quiet run sh
 
 ### What didn't work, and what's left
 
-- **`LU_Decompose`'s `ProgressScope` saved nothing measurable,** though the profile gave it 46 MB over nine passes. Why isn't
+- **`LU_Decompose`'s `ProgressScope` saved nothing measurable, so it was reverted,** though the profile gave it 46 MB over nine passes. Why isn't
   known; the commit is harmless, and can be dropped.
 - **Proposal 5 (small vectors on the stack) wasn't taken.** Keeping the work objects removed most of what it was for, without the
   API change across `math`. Vectors are now 1.7% of the bytes (`VectorBase`) and doubles 7.2%, from 3.9% and 13.7%.
