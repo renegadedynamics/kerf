@@ -17,8 +17,8 @@
 .PARAMETER Copies
   How many of each example a round runs.
 .PARAMETER Independent
-  Instead of the round: n processes at once, each pinned to one logical processor, doing 40 passes of the serial examples;
-  each row gives the median settled recalculation across them.
+  Instead of the round: n processes at once, each pinned to one logical processor, doing -Passes passes of the serial examples
+  with -IndependentVars; each row gives the median settled recalculation across them.
 .PARAMETER Configs
   name=VAR:value,VAR:value entries; the variables get the DOTNET_ prefix unless they start with KERF_. An empty list of
   variables is the runtime's default.
@@ -31,6 +31,8 @@ param(
   [int[]] $Threads = @(1, 2, 4, 8, 12, 16, 24),
   [int] $Copies = 24,
   [switch] $Independent,
+  [int] $Passes = 120,
+  [string] $IndependentVars = 'gcConcurrent:0,TieredPGO:0',
   [string[]] $Configs = @('workstation concurrent=', 'workstation=gcConcurrent:0', 'server concurrent, DATAS=gcServer:1', 'server, DATAS=gcServer:1,gcConcurrent:0', 'server concurrent, fixed heaps=gcServer:1,GCDynamicAdaptationMode:0', 'server, fixed heaps=gcServer:1,gcConcurrent:0,GCDynamicAdaptationMode:0')
 )
 $ErrorActionPreference = 'Stop'
@@ -57,7 +59,7 @@ if ($Independent) {
   foreach ($t in $Threads) {
     $started = for ($i = 0; $i -lt $t; $i++) {
       $rows = [IO.Path]::GetTempFileName()
-      [pscustomobject] @{ Rows = $rows; Process = Start-Pinned ([long] 1 -shl (Get-Bit $i)) '40 0' $rows 'gcConcurrent:0' }
+      [pscustomobject] @{ Rows = $rows; Process = Start-Pinned ([long] 1 -shl (Get-Bit $i)) "$Passes 0" $rows $IndependentVars }
     }
     $settled = @(); $cpu = @()
     foreach ($s in $started) {
