@@ -76,11 +76,13 @@ public static class Step
         writer.SetColorMode(true);
         writer.SetNameMode(true);
         writer.SetLayerMode(true);
+        writer.SetCleanDuplicates(options.CleanDuplicates);
         var parameters = writer.Writer().Model().InternalParameters;
         parameters.InitFromStatic(writer.Writer().WS().Statics());
         parameters.WriteUnit = unit;
         parameters.WriteSurfaceCurMode = options.WritePcurves;
         parameters.WritePrecisionMode = (Parameters.WriteMode_PrecisionMode)(int)options.Precision;
+        parameters.CleanDuplicates = options.CleanDuplicates;
         parameters.WriteSchema = options.Schema switch
         {
             StepSchema.Ap203 => Parameters.WriteMode_StepSchema.WriteMode_StepSchema_AP203,

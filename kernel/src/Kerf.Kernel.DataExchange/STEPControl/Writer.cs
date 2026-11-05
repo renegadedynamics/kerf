@@ -224,7 +224,11 @@ internal class Writer
         _thesession.TransferWriter().PrintStats(what, mode);
     }
 
-    // CleanDuplicateEntities (StepTidy_DuplicateCleaner, write.step.cleanduplicates) is not ported (decision 1271)
+    /// <summary>Merges equal entities in the model and removes the duplicates, to shorten the file written.</summary>
+    public void CleanDuplicateEntities()
+    {
+        new Tidy.DuplicateCleaner(_thesession).Perform();
+    }
 
     /// <summary>Sets parameters for shape processing.</summary>
     public void SetShapeFixParameters(Dictionary<string, string> parameters)

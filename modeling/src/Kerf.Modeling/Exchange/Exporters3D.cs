@@ -21,6 +21,12 @@ public sealed record StepExportOptions
 
     /// <summary>An ISO 8601 time stamp in place of the time of writing in the header, for repeatable output.</summary>
     public string? Timestamp { get; init; }
+
+    /// <summary>
+    /// Merge equal points, directions, lines, planes, circles and placements, for a smaller file holding the same shapes.
+    /// Off by default.
+    /// </summary>
+    public bool CleanDuplicates { get; init; }
 }
 
 /// <summary>How <c>ExportStl</c> meshes and writes STL.</summary>
@@ -131,6 +137,7 @@ public static class Exporters3D
             Unit = ExchangeUnits.LengthUnit(options.Unit, "unit"),
             WritePcurves = options.WritePcurves,
             Precision = (StepPrecision)(int)options.PrecisionMode,
+            CleanDuplicates = options.CleanDuplicates,
         };
         return Export(toExport, () =>
         {

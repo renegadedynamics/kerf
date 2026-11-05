@@ -673,7 +673,10 @@ internal static class XSDRAWDECommands
             {
                 return fail(theDI, "Error in the DESTEP_Provider during reading the file " + thePath + "\t: abandon, no model loaded");
             }
-            // CleanDuplicateEntities: StepTidy isn't ported (decision 1271)
+            if (myStep.CleanDuplicates)
+            {
+                aWriter.CleanDuplicateEntities();
+            }
             if (XSDRAWSTEPCommands.Write(theDI, aWriter, thePath) != ReturnStatus.RetDone)
             {
                 return fail(theDI, "DESTEP_Provider: Error on writing file");
