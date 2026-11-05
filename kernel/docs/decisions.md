@@ -16385,3 +16385,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        - **Corrects decision 1599:** its "class hasn't passed" was resolved by a merge gate on a quiet machine.
        - **The coverage figures predate 10Q and 10Q2:** the re-measure takes about four hours, and is phase 11's.
        - **Bento:** unit 10N is on Bento's branch `kerf/0.2.0`, for the owner to merge.
+1643. **STEP's header and the error messages wait for the next release** (the owner's decision, 5 November 2026). 0.2.0
+       ships as packed, tagged `v0.2.0` at d1b15fca, the commit its packages record. So its STEP files still name Open
+       CASCADE, and `Plane`'s "Expected gp_Pln…" and `TopoUtil.TypeName`'s `TopoDS_*` still reach users. All three go in
+       the next release, under unit 11L.

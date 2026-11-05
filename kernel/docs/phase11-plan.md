@@ -58,7 +58,7 @@ The owner set these aside until after 0.2.0 (decision 1642). They don't depend o
 | **11I** Coverage floor (question 49) | 81.6% overall at the last measure; 81 of 272 packages under 80%, 41 of them STEP's. The corpus adds at most 0.2 points, so all of them are real gaps. | **Owner's decision.** My recommendation: hand-written engine packages first, then decide on generated STEP entities, where the floor buys least |
 | **11J** Tests of their own (plan 3.2) | 0 of 4,417 public members are uncalled, but "called" includes indirect calls. Tighten to a direct call and a checked result, area by area, starting from what users meet first. | Large; do it in slices |
 | **11K** The remaining exceptions | Operators, constructors and the shapes' own methods still throw (decisions 1589, 1592). | **Owner's decision**, since they left these for now. Operators can't return a result without losing what makes them useful, so my recommendation is to keep them, and add a `Try` form only where Bento shows a need |
-| **11L** Sharp edges in the API | From `one-set-of-shapes.md`'s "Left": `shape.BoundBox()` beside `shape.BoundingBox()`, with different defaults; clashes with `Kerf.Meshing`, `Kerf.Exchange` and `Kerf.Offsets`; odd internal names. Also error messages that still name OCCT's types: `Plane`'s "Expected gp_Pln…", which Bento shows in a cell for a zero `zDir`, and `TopoUtil.TypeName`'s `TopoDS_Face` and so on. | Best done before anyone relies on them |
+| **11L** Sharp edges in the API | From `one-set-of-shapes.md`'s "Left": `shape.BoundBox()` beside `shape.BoundingBox()`, with different defaults; clashes with `Kerf.Meshing`, `Kerf.Exchange` and `Kerf.Offsets`; odd internal names. Also error messages that still name OCCT's types: `Plane`'s "Expected gp_Pln…", which Bento shows in a cell for a zero `zDir`, and `TopoUtil.TypeName`'s `TopoDS_Face` and so on. And STEP's header, which still says organisation `Open CASCADE`, an Open CASCADE processor and the product name `Open CASCADE STEP translator`: change them to Kerf, and update STEP's fixtures once. | The API's points are best done before anyone relies on them. **The messages and STEP's header are the owner's for the next release** (decision 1643) |
 | **11M** Engine tidying | About 3,300 IDE1006 exemptions; the `Transient` base; 572 "touch" rows in the bug triage, fixed when their code is next changed. | Opportunistic: no unit of its own unless something needs it |
 
 ## 4. Questions for the owner
@@ -68,11 +68,9 @@ The owner set these aside until after 0.2.0 (decision 1642). They don't depend o
    1.2× of native's frozen figure, and allocation down by half" is a possible first target.
 3. **The coverage floor (11I):** hand-written engine packages first?
 4. **The remaining exceptions (11K):** keep them?
-5. **STEP's header.** STEP files written by Kerf still say organisation `Open CASCADE`, an Open CASCADE processor and the
-   product name `Open CASCADE STEP translator` (decision 1641). Phase 10 kept STEP's bytes identical, so they stayed. Since
-   Kerf is a modified version and isn't endorsed by Open Cascade SAS, I recommend changing them to Kerf. Other tools may
-   read those strings, but they shouldn't act on them. It changes every STEP file's bytes, so it needs its fixtures updating
-   once, and is simplest done early.
+5. **When is the next release, and what number?** STEP's header and the error messages go in it (decision 1643). I suggest
+   0.3.0, once the API fixes in 11L and the first optimisation results are in, rather than a 0.2.1 for these alone, unless
+   you want them out sooner.
 6. **The unported rest of OCCT.** The port status is 62.0%, and nothing in this plan adds to it. I suggest porting more only
    when something needs it.
 7. **What would 1.0 mean?** A stable API needs real users to test it. I suggest considering it after phase 11, once Bento has
