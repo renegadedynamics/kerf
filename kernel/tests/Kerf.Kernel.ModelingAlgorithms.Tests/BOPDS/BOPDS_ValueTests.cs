@@ -67,7 +67,7 @@ public class BOPDS_ValueTests
 
         Pair[] aPairs = [new(3, 1), new(1, 5), new(1, 2), new(0, 9)];
         Sorting.stable_sort(aPairs.AsSpan(), new Pair.LessThan());
-        Assert.Equal(new[] { "BOPDS_Pair(0, 9)", "BOPDS_Pair(1, 2)", "BOPDS_Pair(1, 5)", "BOPDS_Pair(3, 1)" },
+        Assert.Equal(new[] { "Pair(0, 9)", "Pair(1, 2)", "Pair(1, 5)", "Pair(3, 1)" },
                      aPairs.Select(p => p.ToString()));
     }
 
