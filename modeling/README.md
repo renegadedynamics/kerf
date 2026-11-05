@@ -13,8 +13,9 @@ fresh clone needs only the .NET 10 SDK:
 dotnet test
 ```
 
-Its own shape classes (`Shape`, `Edge`, `Face`…) still sit beside the kernel's (`Kerf.Topology.Shape`, `Edge`, `Face`…),
-which it names in full where both are meant; unit 10M2 decides how they merge onto the kernel's (decision 1349). The native backend
+Its shapes are the kernel's (`Kerf.Topology.Shape`, `Edge`, `Face`…), with build123d's conveniences as extension members; it
+adds modelling objects, `Part`, `Sketch`, `Curve` and `Assembly`, which hold a shape and carry a label, colour and history
+([docs/one-set-of-shapes.md](docs/one-set-of-shapes.md)). The native backend
 and the forwarding layer to OCCT.NET went in unit 10B.
 
 ## Packages

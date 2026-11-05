@@ -20,9 +20,10 @@ OpenCascade (OCCT).
 All modelling values are immutable. Forking a partly built design is plain assignment: no copies,
 no aliasing surprises.
 
-- **Geometry values** (`Vector`, `Axis`, `Plane`, `Location`, `Color`, `BoundBox`, `Matrix`) are
-  `readonly struct`s or immutable records.
-- **Shapes** (`Vertex` … `Compound`) are immutable classes. Every operation returns a new shape.
+- **Geometry values** (`Vector`, `Axis`, `Plane`, `Location`, `BoundBox`, `Matrix`) are `readonly struct`s or immutable
+  classes.
+- **Shapes** are the kernel's immutable structs, and objects (`Part`, `Sketch`, `Curve`, `Assembly`) immutable classes
+  holding one (unit 10Q; [one-set-of-shapes.md](one-set-of-shapes.md)). Every operation returns a new shape.
   The Python in-place mutators become methods that return a copy:
 
   | Python (mutates) | .NET (returns new) |
@@ -49,14 +50,13 @@ no aliasing surprises.
 
 ### 2. OCCT's names below; idiomatic API above them
 
-`Build123d` calls OCCT.NET's classes under OCCT's names, so Python lines like `BRepAlgoAPI_Cut(a, b).Shape()` port
-almost one-to-one. Only `Build123d` itself exposes idiomatic .NET names. `Shape.KernelShape` (Python's `wrapped`; unit
-10M2 renamed it) remains as an escape hatch to the kernel's shape. Until unit 10B the calls went through `Build123d.Occt`, a binding with OCCT's API: native OCCT
+The layer calls the kernel's public API, and exposes idiomatic .NET names. A shape is the kernel's; `ModelShape.Shape` is what an
+object holds (Python's `wrapped`). Until unit 10B the calls went through `Build123d.Occt`, a binding with OCCT's API: native OCCT
 through a generated C shim, or OCCT.NET through a generated forwarding layer (see "The kernel").
 
 #### Geometry values
 
-- **`Vector`, `Axis` and `Color` are `readonly struct`s.**
+- **`Vector` and `Axis` are `readonly struct`s. `Color` is the kernel's `Kerf.Color`** (unit 10Q), with `ColorExtensions`.
   - Plain arithmetic (add, dot, cross, normalise) runs in C#, in the same operation order as OCCT,
     so results are bit-identical.
   - Anything OCCT computes non-trivially goes through short-lived OCCT objects, so the numbers and
@@ -74,15 +74,19 @@ through a generated C shim, or OCCT.NET through a generated forwarding layer (se
 
 #### Shapes
 
-- **Classes** follow build123d's: `Shape` ← `Vertex`; `Shape1D` ← `Edge`, `Wire`; `Shape2D` ← `Face`,
-  `Shell`; `Shape3D` ← `Solid`, `Compound` ← `Curve`, `Sketch`, `Part`. The `Mixin1D/2D/3D` bases are
-  abstract classes here.
-- **`Self` return types.** Operations that keep a shape's class (`Moved`, `Located`, `Rotate`, `Clean`,
-  `WithLabel`, `Location * shape`, …) are C# 14 extension members generic in the shape's type, so
-  `box.Moved(loc)` is still a `Box`. A copy is a `MemberwiseClone` around a new `TopoDS_Shape`, which
-  carries a subclass's own fields (a Box's dimensions) as Python's `copy.copy` does.
-- **History** (`ShapeHistory`, behind `Select.Last` and `Select.New`) is immutable: `Merge` returns a new
-  record built on a copy of the OCCT `BRepTools_History`, so shapes sharing a record never see it change.
+- **The kernel's, with extension members** (unit 10Q; [one-set-of-shapes.md](one-set-of-shapes.md)). build123d's `Mixin1D/2D/3D` are the
+  kernel's `IShape1D`, `IShape2D`, `IShape3D`: `extension<T>(T s) where T : IShape1D` is on an edge, a wire and a `Line`. What was virtual
+  decides by the kind of shape held (`Shape.Dispatch.cs`).
+- **Objects.** `ModelShape` ← `Part`, `Sketch`, `Curve`, `Assembly`. It holds a kernel shape, with the label, colour, construction flag and
+  record, and converts implicitly to `Shape`.
+- **`Self` return types.** Operations that keep a shape's type (`Moved`, `Located`, `Rotate`, `Clean`, `Location * shape`, …) are C# 14
+  extension members generic in the type, twice: `ShapeOperations` on the structs (`edge.Moved(loc)` is an `Edge`) and `ModelShapeOperations` on
+  objects (`box.Moved(loc)` is a `Box`). An object's copy is a `MemberwiseClone` around a new kernel shape, which carries a subclass's
+  own fields (a Box's dimensions) as Python's `copy.copy` does.
+- **Provenance is the list's.** `ShapeList<T>.Origin` is the shape a list was selected from, kept by every selection; what needs a parent reads it, or
+  takes the parent as an argument (`box.ConvexityOf(edge)`, `Fillet(box, edge, r)`).
+- **History** (`ModelHistory`, behind `Select.Last` and `Select.New`) is immutable: `Merge` returns a new record over the kernel's
+  `ShapeHistory`. An object keeps it; operations on kernel shapes note it in a `HistoryLog` an object's operation opens.
 - **Collections.** `ShapeList<T>` is an immutable list over .NET's `ImmutableArray<T>` (unit 10P1). OCCT's
   collections are OCCT.NET's (`NCollection_List<TopoDS_Shape>` and friends, which OCCT names `TopTools_ListOfShape`…),
   maps of shapes made with `TopTools_ShapeMapHasher`, as OCCT's typedefs are.
@@ -128,7 +132,7 @@ change every shape sharing it, and race between threads. So:
   reversed face or a mirroring location. An edge's polyline is its polygon on an adjacent face's
   triangulation, so it lies exactly on the shading. The faces and edges of a `ShapeMesh` are read-only
   slices of those buffers. Copying out 100k triangles takes a few milliseconds; OCCT's meshing dominates.
-- **`TriangulateTree`** follows `AssemblyChildren`. It gives a node per child with its label, colour and
+- **`TriangulateTree`** follows an `Assembly`'s `Children`. It gives a node per child with its label, colour and
   location relative to its parent, and meshes each `TShape` once in its own coordinates. Instances share
   the same `ShapeMesh` object.
 
@@ -186,8 +190,8 @@ change every shape sharing it, and race between threads. So:
 
 #### Objects
 
-- **Objects are shapes.** `Box` is a `Part`, `Circle` a `Sketch`, `Line` an `Edge`, `Polyline` a `Wire`,
-  as in build123d. Each computes its shape in a static method and hands it to its base constructor
+- **Objects hold shapes.** `Box` is a `Part`, `Circle` a `Sketch`, and `Line` and `Polyline` `Curve`s holding an `Edge` and a `Wire`, to which they
+  convert. Each computes its shape in a static method and hands it to its base constructor
   (`BasePartObject`, `BaseSketchObject`, `BaseEdgeObject`, `BaseLineObject`, `BaseCurveObject`), which
   aligns and rotates it. An object's parameters are read-only properties, and the self-typed operations
   keep the class, so `box.Moved(loc)` is still a `Box` with its `Length`.
@@ -232,6 +236,7 @@ with no native code, and calls its types directly (unit 10B).
 - **Differences from native OCCT.** OCCT.NET never writes a caller's shape. Where OCCT adds pcurves to a profile it was
   given, OCCT.NET's result holds a copy instead, so the prism of a circular face doesn't share the face.
   `Solid.ExtrudeUntil` then finds the piece that holds the profile by place.
+- **The differential run** (units 9D2 and 10A) went in unit 10Q: its log hooked each new wrapper, and there are no wrappers.
 - **Packaging.** `Build123d` and OCCT.NET's four assemblies load and unload through a collectible
   `AssemblyLoadContext` with no native library (`ExtensionLoadTests` in the packaging tests, given the build output
   as `KERF_MODELING_LIB`).
@@ -269,7 +274,7 @@ build123d's `importers.py` and `exporters3d.py` are `Importers` and `Exporters3D
 - **STEP's names, colours and assemblies.** build123d writes and reads STEP through XCAF (`STEPCAFControl`);
   `Build123d` does the same through OCCT.NET's STEPCAFControl over its assembly document (`XdeDoc_Document`, frozen
   into an `XdeDoc_Tree`), reached through `Kerf.Exchange.Step` on `ModelNode`s.
-  - `ExportStep` writes a compound with `AssemblyChildren` as an assembly, each child a component at its location, a
+  - `ExportStep` writes an `Assembly` with `Children` as an assembly, each child a component at its location, a
     product per part and assembly named by its label and coloured by its colour (a surface colour, or a curve colour
     for a shape without faces). Children of one shape, label and colour share a product, placed once per child, as
     XCAF's `AddShape` shares a compound's equal shapes; a child of the same shape under another label or colour gets
@@ -279,7 +284,7 @@ build123d's `importers.py` and `exporters3d.py` are `Importers` and `Exporters3D
     one solid (a decision). The shapes are written unprocessed, as OCCT's STEPCAFControl writes them (OCCT.NET's
     decision 1277).
   - `ImportStep` gives build123d's `import_step` tree: the free shapes (one returned as it is, several in a
-    compound), each assembly a compound whose `AssemblyChildren` are its components placed by their locations, each
+    compound), each assembly an `Assembly` whose `Children` are its components placed by their locations, each
     part its shape at its place; labels are the products' names (STEP's instance names are the occurrences'
     identifiers), colours the shape's own or its product's (surface, else generic, else curve). An unnamed product
     keeps the name OCCT wrote for it ("Open CASCADE STEP translator 8.0 1"), as in build123d.
@@ -318,9 +323,9 @@ Unit 10M2 redesigned the layer's public API for .NET users (kernel decisions 157
 - **Typed results.** A Part, Sketch or Curve combines into its own class: `Part + Shape` is a `Part`, with `Add`,
   `Subtract` and `Common` methods beside `+`, `-` and `&`. `Mirror`, `Scale`, `Split` and `Offset` of a Part give a
   Part (of a Sketch, a Sketch; of a Curve, a Curve); `Sweep` of a face or sketch gives a Part, of an edge or curve a
-  Sketch. The topological shapes (Solid, Face, Edge…) keep `+ - &` returning `Shape`, the kernel's result: one solid or
+  Sketch. The kernel's shapes (Solid, Face, Edge…) keep `+ - &` returning `Shape`, the kernel's result: one solid or
   a compound of pieces, a wire or a compound of edges, as build123d returns them and the Python-reference tests pin
-  them. The forms that take any shapes (a mix of dimensions) return `Compound`.
+  them. The forms that take any shapes (a mix of dimensions) return `ModelShape`.
 - **Options records** in place of long optional-parameter lists: `Operations.ExtrudeOptions`, `SweepOptions`,
   `OffsetOptions` and `ThickenOptions`, as the kernel's `XxxOptions? options = null`. They are nested in `Operations`
   because the kernel has records of the same names; `using static Kerf.Modeling.Operations;` brings them in by their
@@ -385,13 +390,13 @@ Result<Part> pocketed =
 
 - **Union returns that remain:** the topological Booleans (`Shape + Shape`, `Fuse`, `Cut`, reasons above), the
   vertex forms of `Fillet` and `Chamfer` (the result is the class of the shape the vertices came from: a Sketch, a
-  Shell or a Wire), `Shape3D.Fillet`, `Chamfer`, `Hollow` and `DPrism`, `Shape.Intersect(params object[])` (a shape or a
+  Shell or a Wire), `Fillet`, `Chamfer`, `Hollow` and `DPrism` of an `IShape3D`, `Intersect(params object[])` (a shape or a
   geometry value), and the importers (the file decides).
-- **History as `Built<T>`.** The layer's shapes carry their own `ShapeHistory`, which `Select.Last` and `Select.New`
+- **History as `Built<T>`.** The layer's objects carry their own `ModelHistory`, which `Select.Last` and `Select.New`
   read; returning the kernel's `Built<T>` beside it would say the same twice, so no operation does.
 - **Options left as parameters:** the primitives' and objects' geometric parameters (a sphere's three angles, a
   triangle's sides and angles), the exporters' (STEP's unit, pcurves, precision and time stamp; glTF's), and the
-  topology factories (`Edge.MakeSpline`, `Shape1D.Offset2D`, `Solid.Sweep`); none has more than five. The exporters
+  topology factories (`Edge.MakeSpline`, `Offset2D`, `Solid.Sweep`); none has more than five. The exporters
   still return `true` on success, as build123d's do, and throw on failure.
 - **Schematiq.Collections** went in unit 10P1 (plan 2.6): `ShapeList<T>` is over `ImmutableArray<T>`, and exposes only the
   .NET read-only interfaces.

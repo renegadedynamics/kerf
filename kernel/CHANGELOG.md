@@ -2036,3 +2036,5 @@ Phase 10 (part): no Schematiq.Collections; the engine internal (unit 10P1).
   are unchanged. `LockedShapeException` and `FrozenShapeException` went. A trimmed curve or surface given a NaN
   parameter is refused, where it overflowed the stack and killed the process. KERF0003 covers `Kerf.Modeling`.
 **State and the coverage floor (unit 10P3).** BlendFunc's scratch is per instance, Contap's and the legacy classifier's per-thread state is gone, the Booleans' vertices lock is per operation: 5 `[ThreadStatic]`s remain, from 19, each justified in `docs/state.md`. `docs/coverage.md` is measured again, with a reason for each of the 81 packages under the floor; `tools/public-members.cs` writes `docs/public-members.md`, and every public member now runs in a test.
+
+**One set of shapes (unit 10Q).** `IShape`, the non-generic base of `IShape<T>`, and the markers `IShape1D`, `IShape2D` and `IShape3D`, for extension members over kinds of shape, as the modelling layer's now are. `ShapeComparer<T>`. A typed shape's `Reversed()` keeps its type. `tools/b3d-differential.ps1` went, with the modelling layer's log it read.

@@ -228,7 +228,7 @@ public class BoundBoxWithShapesTests
 {
     static BoundBox Box(Vector min, Vector max)
     {
-        var box = new global::Kerf.Geometry.BoundBox(new global::Kerf.Geometry.Point3D(min.X, min.Y, min.Z),
+        var box = new global::Kerf.Geometry.BoundingBox(new global::Kerf.Geometry.Point3D(min.X, min.Y, min.Z),
                                                        new global::Kerf.Geometry.Point3D(max.X, max.Y, max.Z));
         return BoundBox.FromBoundingBox(box);
     }

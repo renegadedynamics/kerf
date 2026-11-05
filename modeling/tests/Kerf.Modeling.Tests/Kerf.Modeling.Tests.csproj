@@ -3,7 +3,7 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <!-- The assembly and its namespaces keep build123d.NET's test names: xUnit orders the tests by IDs made from them, and
-         the differential run's native log (b3d-differential.ps1) was recorded in that order, which decides which test
+         the differential run's native log (retired in unit 10Q) was recorded in that order, which decides which test
          logs a shape the tests share (unit 10E) -->
     <AssemblyName>Build123d.Tests</AssemblyName>
     <RootNamespace>Build123d.Tests</RootNamespace>

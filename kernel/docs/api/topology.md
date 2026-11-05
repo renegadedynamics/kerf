@@ -6,7 +6,7 @@
 ## Main types
 
 `Shape` and the typed `Vertex`, `Edge`, `Wire`, `Face`, `Shell`, `Solid`, `CompSolid`, `Compound` (README section 5);
-`ShapeType`, `Orientation`, `Containment` (from TopAbs); `Placement` (from `TopLoc_Location`). New: `IShape<T>`,
+`ShapeType`, `Orientation`, `Containment` (from TopAbs); `Placement` (from `TopLoc_Location`). New: `IShape`, `IShape<T>`, `IShape1D`, `IShape2D`, `IShape3D`,
 `ShapeComparer`, `ShapeHistory`, `ShapeGraph`, `EdgeCurve`, `FaceSurface`, `WireCurve`, `SubShapes<T>`.
 
 ```csharp

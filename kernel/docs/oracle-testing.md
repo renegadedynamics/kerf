@@ -96,6 +96,8 @@ calls are recorded:
 
 ## The differential run (units 9D2 and 10A)
 
+*Retired in unit 10Q, with the script and the log: the log hooked each new wrapper of the modelling layer, and it has none now. `Build123dDifferentialTests` still checks the recording. What follows is the record of what it was.*
+
 `tools/b3d-differential.ps1` runs build123d.NET's suite on OCCT.NET with its shape log on, and
 `Build123dDifferentialTests` compares the log with native's, recorded in `Recordings/Build123dDifferential.native.gz`
 (decision 1338: per entry the digests of its BRep text as is and masked, its properties, and its text where OCCT.NET's
