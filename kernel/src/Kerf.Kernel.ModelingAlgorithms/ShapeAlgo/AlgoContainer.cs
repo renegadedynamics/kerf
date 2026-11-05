@@ -148,6 +148,30 @@ internal class AlgoContainer : Transient
         int j, poleIndex, i1;
         poleIndex = 1;
         i1 = 1;
+
+        void AppendPart()
+        {
+            var newPoles = new NCollection_Array1<Point3D>(1, jpole);
+            var newWeigs = new NCollection_Array1<double>(1, jpole);
+            newWeigs.Init(1.0);
+            int nbNew = jpole - deg + 1;
+            var newKnots = new NCollection_Array1<double>(1, nbNew);
+            var newMults = new NCollection_Array1<int>(1, nbNew);
+            for (j = 1; j <= nbNew; j++)
+            {
+                newKnots[j] = knots[i1 + j - 1];
+                newMults[j] = mults[i1 + j - 1];
+            }
+            newMults[1] = newMults[nbNew] = deg + 1;
+            for (j = 1; j <= jpole; j++)
+            {
+                newWeigs[j] = weigs[poleIndex];
+                newPoles[j] = poles[poleIndex++];
+            }
+
+            sCurve.Append(new BSplineCurve3D(newPoles, newWeigs, newKnots, newMults, deg));
+        }
+
         for (int ipole = 1; ipole < nbPoles; ipole++)
         {
             if (poles[ipole].IsEqual(poles[ipole + 1], Kerf.Engine.Foundation.Precision.Confusion()))
@@ -158,26 +182,7 @@ internal class AlgoContainer : Transient
                 }
                 else
                 {
-                    var newPoles = new NCollection_Array1<Point3D>(1, jpole);
-                    var newWeigs = new NCollection_Array1<double>(1, jpole);
-                    newWeigs.Init(1.0);
-                    int nbNew = jpole - deg + 1;
-                    var newKnots = new NCollection_Array1<double>(1, nbNew);
-                    var newMults = new NCollection_Array1<int>(1, nbNew);
-                    for (j = 1; j <= nbNew; j++)
-                    {
-                        newKnots[j] = knots[i1 + j - 1];
-                        newMults[j] = mults[i1 + j - 1];
-                    }
-                    newMults[1] = newMults[nbNew] = deg + 1;
-                    for (j = 1; j <= jpole; j++)
-                    {
-                        newWeigs[j] = weigs[poleIndex];
-                        newPoles[j] = poles[poleIndex++];
-                    }
-
-                    var newC = new BSplineCurve3D(newPoles, newWeigs, newKnots, newMults, deg);
-                    sCurve.Append(newC);
+                    AppendPart();
                     i1 = ipole + 1;
                     jpole = 1;
                 }
@@ -186,6 +191,12 @@ internal class AlgoContainer : Transient
             {
                 jpole++;
             }
+        }
+
+        // OCCT stops here, which loses the part after the last repeated pole (decision 18602)
+        if (sCurve.Length() > 0 && jpole > 1)
+        {
+            AppendPart();
         }
 
         BSplineCurve3D mycurve;
@@ -280,6 +291,30 @@ internal class AlgoContainer : Transient
         int j, poleIndex, i1;
         poleIndex = 1;
         i1 = 1;
+
+        void AppendPart()
+        {
+            var newPoles = new NCollection_Array1<Point2D>(1, jpole);
+            var newWeigs = new NCollection_Array1<double>(1, jpole);
+            newWeigs.Init(1.0);
+            int nbNew = jpole - deg + 1;
+            var newKnots = new NCollection_Array1<double>(1, nbNew);
+            var newMults = new NCollection_Array1<int>(1, nbNew);
+            for (j = 1; j <= nbNew; j++)
+            {
+                newKnots[j] = knots[i1 + j - 1];
+                newMults[j] = mults[i1 + j - 1];
+            }
+            newMults[1] = newMults[nbNew] = deg + 1;
+            for (j = 1; j <= jpole; j++)
+            {
+                newWeigs[j] = weigs[poleIndex];
+                newPoles[j] = poles[poleIndex++];
+            }
+
+            sCurve.Append(new BSplineCurve2D(newPoles, newWeigs, newKnots, newMults, deg));
+        }
+
         for (int ipole = 1; ipole < nbPoles; ipole++)
         {
             if (poles[ipole].IsEqual(poles[ipole + 1], Kerf.Engine.Foundation.Precision.PConfusion()))
@@ -290,26 +325,7 @@ internal class AlgoContainer : Transient
                 }
                 else
                 {
-                    var newPoles = new NCollection_Array1<Point2D>(1, jpole);
-                    var newWeigs = new NCollection_Array1<double>(1, jpole);
-                    newWeigs.Init(1.0);
-                    int nbNew = jpole - deg + 1;
-                    var newKnots = new NCollection_Array1<double>(1, nbNew);
-                    var newMults = new NCollection_Array1<int>(1, nbNew);
-                    for (j = 1; j <= nbNew; j++)
-                    {
-                        newKnots[j] = knots[i1 + j - 1];
-                        newMults[j] = mults[i1 + j - 1];
-                    }
-                    newMults[1] = newMults[nbNew] = deg + 1;
-                    for (j = 1; j <= jpole; j++)
-                    {
-                        newWeigs[j] = weigs[poleIndex];
-                        newPoles[j] = poles[poleIndex++];
-                    }
-
-                    var newC = new BSplineCurve2D(newPoles, newWeigs, newKnots, newMults, deg);
-                    sCurve.Append(newC);
+                    AppendPart();
                     i1 = ipole + 1;
                     jpole = 1;
                 }
@@ -318,6 +334,12 @@ internal class AlgoContainer : Transient
             {
                 jpole++;
             }
+        }
+
+        // OCCT stops here, which loses the part after the last repeated pole (decision 18602)
+        if (sCurve.Length() > 0 && jpole > 1)
+        {
+            AppendPart();
         }
 
         BSplineCurve2D mycurve;
