@@ -28,6 +28,23 @@ Point3D point = new Point3D(1, 0, 0).Transformed(rotation);   // (0, 1, 0); the 
 | `Kerf.Kernel.ModelingAlgorithms` | Construction, Booleans, fillets, offsets, features, healing, meshing |
 | `Kerf.Kernel.DataExchange` | STEP, STL, glTF, 3MF, OBJ and BREP |
 
+## Runtime settings for a host
+
+These belong to the application, not the library. For work on many threads, such as a spreadsheet recalculating workbooks at once:
+
+```xml
+<PropertyGroup>
+  <ServerGarbageCollection>true</ServerGarbageCollection>
+  <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+  <TieredPGO>false</TieredPGO>
+</PropertyGroup>
+<ItemGroup>
+  <RuntimeHostConfigurationOption Include="System.Runtime.TieredCompilation.CallCountingDelayMs" Value="0" />
+</ItemGroup>
+```
+
+Measured on 24 logical processors, a round of 24 copies of Bento's examples takes 620 ms against 2,700 ms with the runtime's defaults, and a single recalculation 180 ms against 360, at a peak of about 400 MB against 200. Leave the server collector's dynamic adaptation (DATAS) on: turning it off gains little and takes about 700 MB. Without PGO, code that has settled for minutes is about 6% slower, so a long batch job may prefer to leave it on. See [docs/performance.md](docs/performance.md), "Unit 11D".
+
 ## Building
 
 Requirements: the .NET 10 SDK and git.
