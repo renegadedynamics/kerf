@@ -8,7 +8,7 @@ projection and intersection members are extension members declared in ModelingAl
 
 **Values** (gp, `readonly struct`; README section 4): `Point3D`, `Vector3D`, `Direction3D`, `Axis3D`, `Frame3D`,
 `CoordinateSystem`, `Transform3D`, `GeneralTransform3D`, `Matrix3x3`, `Line3D`, `Circle3D`, `Ellipse3D`,
-`Hyperbola3D`, `Parabola3D`, `Plane3D`, `Cylinder`, `Cone`, `Sphere`, `Torus`, and the 2D twins; enums
+`Hyperbola3D`, `Parabola3D`, `Plane3D`, `Cylinder3D`, `Cone3D`, `Sphere3D`, `Torus3D`, and the 2D twins; enums
 `EulerSequence`, `TransformForm`, `Continuity`, `CurveKind`, `SurfaceKind`, `JoinKind`. New: `BoundingBox`,
 `OrientedBox`, `Interval`, `Tolerances`, `Grid<T>`, `CurvePoint`, `SurfacePoint`.
 

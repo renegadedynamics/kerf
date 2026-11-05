@@ -598,3 +598,20 @@ carry their own history. modeling/docs/design.md, "The .NET API (unit 10M2)", ha
 **Question 56 is met for the shapes:** `Kerf.Modeling` uses `Kerf.Topology`'s `Shape`, `Vertex`, `Edge`, `Wire`, `Face`, `Shell`, `Solid` and `Compound`, with its conveniences as extension members, and a file can import both namespaces (`OneSetOfShapesTests`). It keeps `Part`, `Sketch`, `Curve` and `Assembly`, over `ModelShape`, as modelling ideas, and `Plane`, `Location` and `Axis` as placement types. **Question 60 is met:** `Kerf.Color` is the colour. **Not met:** `Vector`, `BoundBox` and `Matrix` still duplicate `Vector3D`, `BoundingBox` and `GeneralTransform3D`; `modeling/docs/one-set-of-shapes.md` says why, and the next step.
 
 What the kernel gained for it: `IShape` with the markers `IShape1D`, `IShape2D` and `IShape3D` ([topology.md](topology.md)), `ShapeComparer<T>`, and `Reversed()` on a typed shape keeping its type.
+
+## 19. Implemented: unit 10Q2, one set of values
+
+**Question 56 is met for the values too.** `Kerf.Modeling` has no `Vector`, `BoundBox`, `Matrix` or `Tangency`: it uses `Point3D`, `Vector3D`, `Direction3D`,
+`BoundingBox`, `GeneralTransform3D` and `Tangency` from `Kerf.Geometry`. `modeling/docs/one-set-of-shapes.md` is the design, and `modeling/docs/10q2-bento.md` the
+change table. What changed in this API:
+
+- **`Direction3D` converts implicitly to `Vector3D`**, and `direction * scalar` is a `Vector3D`. `Point3D` implements `IGeometry` (new, in `Kerf.Geometry`).
+- **`IsClosed` looks,** on any `IShape`: an edge's two vertices the same, a wire with no free vertex, a face or shell with no free edge, every child of a solid
+  or compound. It replaces `CheckClosed()`. OCCT's stored flags left the public API: `ClosedFlag`, `InfiniteFlag`, `OrientableFlag` and `ConvexFlag` are internal.
+- **`AllVertices()`, `AllEdges()`, `AllWires()`, `AllFaces()`, `AllShells()`, `AllSolids()`** are the traversal, for `Vertices()` and so on, which are the modelling
+  layer's selections.
+- **`IntegrateVolume()`, `IntegrateArea()`, `IntegrateLength()`** are the measurements, for `Volume()`, `Area()`, `Length()`: `Volume`, `Area` and `Length` are the
+  modelling layer's properties.
+- **`Cylinder3D`, `Cone3D`, `Sphere3D`, `Torus3D`** are the analytic surface values. This overrides question 57's "`3D` only where both exist", for the
+  reason `Plane3D` already had one: the plain name is someone else's. OCCT's names are unchanged in `OcctTypeNames`.
+- **Importing `Kerf`, `Kerf.Geometry`, `Kerf.Topology`, `Kerf.Measurement` and `Kerf.Modeling` in one file** qualifies nothing common: `OneSetOfShapesTests` pins it.

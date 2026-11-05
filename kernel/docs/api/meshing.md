@@ -78,7 +78,7 @@ foreach (FaceMesh face in mesh.Faces)
 ```csharp
 double meshArea = 0;
 foreach (FaceMesh face in mesh.Faces) meshArea += Area(face.Nodes, face.Triangles.Span);
-Debug.Assert(Math.Abs(meshArea - part.Area()) < 1e-2 * part.Area());   // plan 3.2's invariant
+Debug.Assert(Math.Abs(meshArea - part.IntegrateArea()) < 1e-2 * part.IntegrateArea());   // plan 3.2's invariant
 ```
 
 ```csharp

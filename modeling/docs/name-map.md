@@ -24,10 +24,11 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | Python | .NET |
 |---|---|
 | `TOLERANCE`, `TOL` | `Constants.Tolerance`, `Constants.LooseTolerance` |
-| `VectorLike` tuples, `(x, y, z)` | `new Vector(x, y, z)` (no conversion from tuples) |
-| `Vector(X=…)`, `vector.X = …` | Constructor arguments; vectors are immutable |
-| `vector.to_pnt()`, `.to_dir()`, `.wrapped` | `ToPoint3D()`, `ToDirection3D()`, `ToVector3D()` (the kernel's values) |
-| `abs(vector)` | `vector.Length` |
+| `VectorLike` tuples, `(x, y, z)` | `new Point3D(x, y, z)` for a position, `new Vector3D(x, y, z)` for an offset (no conversion from tuples) |
+| `Vector`, `Vector(X=…)`, `vector.X = …` | The kernel's `Point3D`, `Vector3D`, `Direction3D`, with `PointExtensions` (unit 10Q2); constructor arguments, as they are immutable |
+| `vector == other` (a tolerance) | `a.IsNear(b)`, `PointComparer.Near`; the kernel's `==` is exact |
+| `vector.to_pnt()`, `.to_dir()`, `.wrapped` | `ToPoint()`, `ToDirection()`, `ToVector()` (they are the kernel's values) |
+| `abs(vector)` | `vector.Magnitude` |
 | `round(vector, n)` | `vector.Round(n)` |
 | `format(v, ".3f")` | `v.ToString("F3")`: .NET's numeric formats |
 | `Axis(origin, end_point=…)` | `Axis.FromPoints(origin, endPoint)` |
@@ -49,18 +50,20 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `plane.move(loc)` | `plane.Moved(loc)` |
 | `plane.wrapped`, `.to_gp_ax3()`, `.to_gp_ax2()` | `ToPlane3D()`, `ToCoordinateSystem()`, `ToFrame3D()` |
 | `plane.shift_origin((x, y))` (local coordinates) | `ShiftOriginBy(x, y)`; `ShiftOrigin(point)` takes a global point |
-| `Matrix([[…], …])` | `new Matrix(new double[,] { … })` |
+| `Matrix([[…], …])` | `GeneralTransform3D.FromValues(new double[,] { … })`, with `TransformExtensions` (unit 10Q2) |
+| `matrix[r, c]`, `a * b` | `matrix.At(r, c)`, from zero; `a.Compose(b)` |
 | `matrix.rotate(axis, angle)` | `matrix.Rotated(axis, angle)` |
-| `matrix.wrapped` | `ToGeneralTransform3D()` |
-| `BoundBox(bnd_box)` | `BoundBox.FromBoundingBox(box)`; `BoundBox.Empty` for the box of nothing |
+| `matrix.wrapped` | Nothing: it is the kernel's |
+| `BoundBox`, `BoundBox(bnd_box)` | The kernel's `BoundingBox`, with `BoundingBoxExtensions` (unit 10Q2); `BoundingBox.Empty` for the box of nothing |
+| `box.add(x, tol)`, `box.intersects(o)` | `box.Including(p)`, `box.Union(o)`; `box.IntersectsNear(o)` |
 | `BoundBox.find_outside_box_2d`, `.is_inside` (deprecated) | Not ported; use `Contains`, `Within` |
 | `Color(color_like=…)`, tuples | Constructor overloads |
 | `tuple(color)` | `color.R`, `.G`, `.B`, `.A`, or deconstruction |
 | `color.wrapped` | `ToKerfColor()` |
 | `Color.categorical_set(n, starting_hue=0xff0000)` | `Color.CategoricalSet(n, new Color(0xff0000))` |
 | `GeomEncoder` (JSON) | Not yet ported |
-| `Vector(vertex)` | `new Vector(vertex)` or `vertex.ToVector()` |
-| `Plane(face)`, `BoundBox(shape)` | `new Plane(face)`, `shape.BoundBox()` / `BoundBox.FromShape(shape)` |
+| `Vector(vertex)` | `vertex.Point` |
+| `Plane(face)`, `BoundBox(shape)` | `new Plane(face)`, `shape.BoundBox()` |
 | `plane.to_local_coords(shape)` | `plane.ToLocalCoords(shape)` (keeps the shape's class) |
 
 ## Topology
@@ -76,7 +79,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `shape.topo_parent` | `list.Origin`; what needs a parent takes it (`box.ConvexityOf(edge)`, `Fillet(box, edge, r)`) |
 | `edge.is_interior`, `shape.convexity` | `parent.ConvexityOf(edge) == Convexity.Concave`; `face.Convexity` |
 | `shape.is_null`, `bool(shape)` | `IsEmpty` |
-| `vertices()`, `edges()`, … `solids()` | On an object, `Vertices()`, `Edges()`, … `Solids()`, each taking `Select`; on a kernel shape, `SelectVertices()`, `SelectEdges()`, … |
+| `vertices()`, `edges()`, … `solids()` | `Vertices()`, `Edges()`, … `Solids()`, a selection, on an object (taking `Select`) or a struct alike. The kernel\'s array, with degenerate edges, is `AllEdges()` and so on |
 | `vertex()`, `edge()`, `wire()`, `face()`, `shell()`, `solid()`, `compound()` | `SingleVertex()`, `SingleEdge()`, … `SingleCompound()` (a method can't share its type's name) |
 | `locate(loc)`, `move(loc)`, `shape.location = …` | `Located(loc)`, `Moved(loc)`, `WithLocation(loc)`: copies |
 | `shape.label = …`, `.color = …` | `WithLabel(…)`, `WithColor(…)` |
@@ -91,7 +94,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `ShapeList.first`, `.last`, `shapes[-1]` | LINQ's `First()`, `Last()`; `shapes[^1]` |
 | `filter_by(lambda)`, `sort_by(lambda)` | LINQ's `Where(e => …)`, `OrderBy(e => …)` (then `ToShapeList()` for a list) |
 | `filter_by(GeomType.LINE)`, `filter_by(Axis.Z)`, `filter_by(Plane.XY)`, `reverse=True` | `Where(GeomType.Line)`, `ParallelTo(Axis.Z)`, `ParallelTo(Plane.XY)`; `WhereNot(…)`, `NotParallelTo(…)` |
-| `filter_by(Edge.is_closed)` (a `property`, or its name) | `Where(e => e.CheckClosed())`; names aren't taken (unit 10M2) |
+| `filter_by(Edge.is_closed)` (a `property`, or its name) | `Where(e => e.IsClosed)`; names aren't taken (unit 10M2) |
 | `filter_by_position(Axis.Z, min, max, inclusive=(a, b))` | `Between(Axis.Z, min, max, includeMinimum: a, includeMaximum: b)` |
 | `sort_by(Axis.Z)`, `sort_by(SortBy.AREA)`, `reverse=True` | `OrderBy(Axis.Z)`, `OrderBy(ShapeKey.Area)`; `OrderByDescending(…)` |
 | `sort_by_distance(other)` | `OrderByDistanceTo(other)`, `OrderByDescendingDistanceTo(other)` |
