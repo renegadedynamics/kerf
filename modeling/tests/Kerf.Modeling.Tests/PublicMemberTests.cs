@@ -172,7 +172,9 @@ public class PublicMemberTests
         var (x, y, z) = new Vertex(1, 2, 3);
         Assert.Equal((1.0, 2.0, 3.0), (x, y, z));
 
-        Assert.Equal("mm", Unit.Millimeter.Symbol());
+        Assert.Equal(["µm", "mm", "cm", "m", "in", "ft", "g", "kg", "lb"],
+                     new[] { Unit.Micrometer, Unit.Millimeter, Unit.Centimeter, Unit.Meter, Unit.Inch, Unit.Foot, Unit.Gram, Unit.Kilogram, Unit.Pound }.Select(u => u.Symbol()));
+        Assert.Throws<ArgumentOutOfRangeException>(() => ((Unit)999).Symbol());
         Assert.Equal([1.0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], new Matrix().TransposedList());
         Assert.True(new MeshTolerances(0.1, 0.2) with { Relative = true, Linear = 0.3, Angular = 0.4 } is { Relative: true, Linear: 0.3, Angular: 0.4 });
 
@@ -269,6 +271,10 @@ public class PublicMemberTests
         Face side = box.Faces()[0];
         Assert.Equal(side.Center(), side.Center(CenterOf.Mass));
         Assert.Empty(side.Touch(side.Moved(new Location(new Vector(100, 0, 0)))));
+        // what the base class answers: no choice of centre, nothing touched
+        var vertex = new Vertex(1, 2, 3);
+        Assert.Throws<NotSupportedException>(() => vertex.Center(CenterOf.Mass));
+        Assert.Empty(vertex.Touch(box));
 
         Assert.Equal(new Vector(1, 2, 3), new Rectangle(1, 1).Faces()[0].WithCreatedOn(new Plane(new Vector(1, 2, 3))).CreatedOn!.Origin);
 

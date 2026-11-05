@@ -141,7 +141,7 @@ The three tables the plan names (decision 1388):
 
 | Where | Decision |
 |---|---|
-| ModelingAlgorithms/BlendFunc/ConstRad.cs, EvolRad.cs (14 variables each) | **per instance** (10P3). OCCT's are `thread_local`, read across calls when an instance's guard skips a positioning (decision 1037). A new instance always positions first, so the scratch belongs with the guards that decide when it is read, which are the instance's. Two instances interleaved on one thread no longer read each other's guide point; no recording or corpus case depended on that |
+| ModelingAlgorithms/BlendFunc/ConstRad.cs, EvolRad.cs (14 variables each) | **per instance** (10P3). OCCT's are `thread_local`, read across calls when an instance's guard skips a positioning (decision 1037). A new instance always positions first, so the scratch belongs with the guards that decide when it is read, which are the instance's. Two instances interleaved on one thread no longer read each other's guide point; no recording or fillet corpus case depended on that |
 | ModelingAlgorithms/Contap/HContTool.cs (4 bounds) | **gone** (10P3): `SamplePoint` works the bounds out from its surface, the one `NbSamplePoints` was just given by its only two callers |
 | ModelingAlgorithms/TopOpeBRepTool/SC.cs | **gone** (10P3): its one caller makes its own classifier, and it no longer holds on to a thread's last shapes |
 | ModelingData/GeomTools/GeomTools.cs (`s_nesting`) | stays: a reader's recursion depth, on its own thread |

@@ -100,7 +100,17 @@ foreach ((string aFile, var aFileLines) in aLines)
     aWithCorpus[aKey] = aWithCorpus.GetValueOrDefault(aKey)
         + aFileLines.Count(l => l.Value || (aCorpusFile is not null && aCorpusFile.GetValueOrDefault(l.Key)));
 }
-aText.Append("\n## The gaps\n\nEvery package under the floor, with the reason (`docs/coverage-gaps.tsv`). \"With corpus\" adds the whole Draw-lite corpus (`-FullCorpus`) to the runs above.\n\n");
+aText.Append("""
+
+    ## The gaps
+
+    Every package under the floor, with the reason (`docs/coverage-gaps.tsv`; written from what each package does, not from
+    a line-by-line audit). "With corpus" adds the whole Draw-lite corpus (`-FullCorpus`) to the runs above: where it
+    equals the percentage beside it, the corpus's sample already reaches all the corpus does, so question 49's allowance
+    for a package the corpus covers doesn't apply, and these stay open gaps for the owner.
+
+
+    """);
 aText.Append("| Assembly | Package | Lines | Uncovered | % | With corpus % | Reason |\n|---|---|---:|---:|---:|---:|---|\n");
 foreach (var p in aPackages.Where(p => Percent(p.Value.Covered, p.Value.Lines) < aFloor)
                            .OrderBy(p => p.Key.Area, StringComparer.Ordinal).ThenByDescending(p => p.Value.Lines - p.Value.Covered))

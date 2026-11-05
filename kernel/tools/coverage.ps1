@@ -33,7 +33,8 @@ param(
   [switch] $FullCorpus,
   [string[]] $BuildArgs = @()
 )
-$ErrorActionPreference = 'Stop'
+# Not 'Stop': under redirection Windows PowerShell turns a native command's stderr (a failing test's name) into an error
+$ErrorActionPreference = 'Continue'
 
 $kernel = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $root = (Resolve-Path (Join-Path $kernel '..')).Path

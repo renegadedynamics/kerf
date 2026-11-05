@@ -16123,3 +16123,45 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 1592. **The remaining exceptions stay for now (the owner, 4 November 2026: "Regarding the remaining exceptions, let's leave them
        for now.").** The operators, the object constructors and the topological shapes' own methods keep throwing
        `InvalidOperationException` as decision 1589 has them; this can be looked at again later.
+
+## Phase 10: unit 10P3, state and the coverage floor
+
+18001. **BlendFunc's scratch is per instance.** `ConstRad`'s and `EvolRad`'s 14 `[ThreadStatic]` variables, which plan 2.7
+       names, are fields. This changes decision 1037's "keeps OCCT's semantics exactly" in one case: two instances
+       interleaved on a thread no longer read each other's guide point, as they do in native. Nothing measured depended on
+       it: oracle 383 of 383, `DrawFilletCorpusTests` run whole (884 new cases, OK and known-failure gates held), Bento's
+       volumes and faces unchanged.
+18002. **What else moved.** Contap's sampling bounds are gone: `HContTool.SamplePoint` works them out from its surface, the
+       one its only two callers just gave `NbSamplePoints`. `TopOpeBRepTool_SC`'s per-thread classifier is gone (removed
+       from `kerf.map`, `classification.tsv` and `OcctTypeNames`): its one caller makes its own. HLR's trace column is
+       per instance. `MathBase`'s precision block is constants, `mmwprcs_` gone. `HermitJacobi`'s matrices are `Lazy<T>`.
+       The survey's counts go from 14 to 9 mutable statics, 19 to 5 `[ThreadStatic]`s (39 to 5 variables).
+18003. **The filler's vertices lock is the filler's.** `VerticesLock` was static, so two Booleans waited for each other. It
+       guards a vertex's tolerance against one filler's own solvers; another operation writes to its own working copies.
+       The lock statements stay at 23. The rest are justified in `state.md`: plan 2.7's "none but one-time initialisation"
+       isn't met literally, because those left guard one object against one operation's parallel bodies. `state.md` has
+       every remaining field in a table with why it stays.
+18004. **Checked in parallel:** `ConcurrencyTests` 3 of 3, and Bento's benchmark at 24 copies of each example, 0 results
+       differing from serial (a median round 6.2 s, 10.7 GB).
+18005. **The public-member report.** `tools/public-members.cs` compares the public API by reflection with the coverage data
+       and writes `docs/public-members.md`; `coverage.ps1` runs it. Before this unit's tests 944 of 4,417 members ran in no
+       test; now none. A member counts as called if it ran at all, also through another member, so this is weaker than
+       plan 3.2's "a test of its own". Abstract members, fields, compiler-written members without lines and positional
+       records' init accessors aren't measured, and are counted in the report.
+18006. **The new tests** are additions; none is rewritten. `Kerf.Kernel.PublicApi.Tests` goes from 192 to 293 (the laws
+       of equality and transformation over every geometric value, the curves' With forms, the options passed to their
+       operations, the laws of the eight shape types), `Kerf.Modeling.Tests` from 1,890 to 1,903, and 7 small tests lift
+       Sweep, Prs3d, Storage, ExtremaPC and the modelling layer's root over the floor. They found one bug, left for the
+       owner because this unit changes no behaviour: `Shape.ProjectFaces` casts its projection to `Face`, and throws
+       `InvalidCastException` where the projection onto a curved surface is a `Shell`.
+18007. **The floor isn't met, and the corpus doesn't excuse it.** 81 of 272 packages are under 80%, 41 of them STEP's in
+       `DataExchange`; overall 81.6%. `coverage.ps1 -FullCorpus` measured the whole corpus for the first time: it adds at most
+       0.2 points to any package under the floor, because the default sample already reaches what the corpus does. So
+       question 49's allowance doesn't apply, and `coverage.md` lists the 81 with a reason each (`docs/coverage-gaps.tsv`),
+       as gaps for the owner. The largest (STEP entities) need STEP files holding those entities, not shallow tests.
+18008. **Coverage tooling.** `coverage.ps1` adds the public API's tests, `-FullCorpus`, and no longer stops on a native
+       command's stderr under redirection. Under instrumentation 9 of Draw-lite's 687 tests fail, by cases' time limits as far
+       as seen: without it the suite passes 687 of 687. Their coverage still counts.
+18009. **`Kerf.Modeling.Packaging.Tests`** stays out of the solution and passes (1 of 1): the layer loads in a collectible
+       `AssemblyLoadContext`, loads no native library, and unloads. `OcctNetBackendTests` is `ExtensionLoadTests`, and
+       `B3D_OCCTNET_LIB` is `KERF_MODELING_LIB`.

@@ -2022,3 +2022,5 @@ Phase 10 (part): expected failures are results (unit 10M3).
   its own. Reading `Value` of a failed result is a programmer's error and throws `InvalidOperationException`, naming the
   first error's code and message. `Match` gives one value either way, and `Select` and `SelectMany` let a chain of
   operations read as a LINQ query that stops at the first failure.
+
+**State and the coverage floor (unit 10P3).** BlendFunc's scratch is per instance, Contap's and the legacy classifier's per-thread state is gone, the Booleans' vertices lock is per operation: 5 `[ThreadStatic]`s remain, from 19, each justified in `docs/state.md`. `docs/coverage.md` is measured again, with a reason for each of the 81 packages under the floor; `tools/public-members.cs` writes `docs/public-members.md`, and every public member now runs in a test.

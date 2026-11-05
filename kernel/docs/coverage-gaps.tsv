@@ -1,0 +1,87 @@
+# The reason each package is under coverage.md's floor: assembly, package, reason. Read by tools/coverage-report.cs.
+Kerf.Kernel.DataExchange	RWStepAP214	One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call
+Kerf.Kernel.DataExchange	RWStepKinematics	One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call
+Kerf.Kernel.DataExchange	RWStepDimTol	One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call
+Kerf.Kernel.DataExchange	RWStepGeom	One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call
+Kerf.Kernel.DataExchange	RWStepBasic	One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call
+Kerf.Kernel.DataExchange	RWStepShape	One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call
+Kerf.Kernel.DataExchange	RWStepVisual	One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call
+Kerf.Kernel.DataExchange	RWStepFEA	One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call
+Kerf.Kernel.DataExchange	RWStepRepr	One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call
+Kerf.Kernel.DataExchange	RWStepElement	One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call
+Kerf.Kernel.DataExchange	RWStepAP203	One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call
+Kerf.Kernel.DataExchange	RWStepAP242	One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call
+Kerf.Kernel.DataExchange	StepBasic	STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages
+Kerf.Kernel.DataExchange	StepElement	STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages
+Kerf.Kernel.DataExchange	StepAP214	STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages
+Kerf.Kernel.DataExchange	StepKinematics	STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages
+Kerf.Kernel.DataExchange	StepVisual	STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages
+Kerf.Kernel.DataExchange	StepShape	STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages
+Kerf.Kernel.DataExchange	StepGeom	STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages
+Kerf.Kernel.DataExchange	StepFEA	STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages
+Kerf.Kernel.DataExchange	StepRepr	STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages
+Kerf.Kernel.DataExchange	StepDimTol	STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages
+Kerf.Kernel.DataExchange	StepAP203	STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages
+Kerf.Kernel.DataExchange	StepAP242	STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages
+Kerf.Kernel.DataExchange	IFSelect	OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs
+Kerf.Kernel.DataExchange	IFGraph	OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs
+Kerf.Kernel.DataExchange	Interface	OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs
+Kerf.Kernel.DataExchange	XSControl	OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs
+Kerf.Kernel.DataExchange	Transfer	OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs
+Kerf.Kernel.DataExchange	MoniTool	OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs
+Kerf.Kernel.DataExchange	STEPEdit	OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs
+Kerf.Kernel.DataExchange	STEPSelections	OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs
+Kerf.Kernel.DataExchange	StepSelect	OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs
+Kerf.Kernel.DataExchange	APIHeaderSection	OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs
+Kerf.Kernel.DataExchange	StepData	OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs
+Kerf.Kernel.DataExchange	StepToTopoDS	The translators' rarer forms and write modes; follows the STEP test data
+Kerf.Kernel.DataExchange	StepToGeom	The translators' rarer forms and write modes; follows the STEP test data
+Kerf.Kernel.DataExchange	TopoDSToStep	The translators' rarer forms and write modes; follows the STEP test data
+Kerf.Kernel.DataExchange	STEPControl	The translators' rarer forms and write modes; follows the STEP test data
+Kerf.Kernel.DataExchange	STEPConstruct	The translators' rarer forms and write modes; follows the STEP test data
+Kerf.Kernel.DataExchange	UnitsMethods	Conversions for units no test file uses
+Kerf.Kernel.Foundation	PLib	Polynomial bases at degrees and constraint orders the tests' approximations don't reach
+Kerf.Kernel.Foundation	Bnd	Box variants and transformed forms the tests rarely reach
+Kerf.Kernel.Foundation	MathOpt	OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them
+Kerf.Kernel.Foundation	MathUtils	OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them
+Kerf.Kernel.Foundation	MathRoot	OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them
+Kerf.Kernel.Foundation	MathSys	OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them
+Kerf.Kernel.Foundation	MathInteg	OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them
+Kerf.Kernel.Foundation	MathLin	OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them
+Kerf.Kernel.Foundation	MathPoly	OCCT's newer numerics: solver variants and failure branches, reached only through the callers the corpus runs. Shallow tests wouldn't judge them
+Kerf.Kernel.Foundation	NCollection	OCCT's collections, going with 10J and 10P1; not worth new tests
+Kerf.Kernel.Foundation	BVH	Tree builders and traversal forms the tests don't reach
+Kerf.Kernel.ModelingAlgorithms	ShapeFix	Repairs for kinds of broken input neither the unit tests nor the corpus hold
+Kerf.Kernel.ModelingAlgorithms	LocOpe	Feature forms (prisms and pipes from and until faces, ribs) past what the corpus's feature cases use
+Kerf.Kernel.ModelingAlgorithms	BRepFeat	Feature forms (prisms and pipes from and until faces, ribs) past what the corpus's feature cases use
+Kerf.Kernel.ModelingAlgorithms	Geom2dGcc	Tangent-circle solvers by qualifier and curve type: many combinations, few tested
+Kerf.Kernel.ModelingAlgorithms	HLRBRep	Hidden-line paths past the few hlr cases
+Kerf.Kernel.ModelingAlgorithms	BRepBlend	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
+Kerf.Kernel.ModelingAlgorithms	ChFi3d	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
+Kerf.Kernel.ModelingAlgorithms	Blend	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
+Kerf.Kernel.ModelingAlgorithms	BRepFilletAPI	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
+Kerf.Kernel.ModelingAlgorithms	FilletSurf	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
+Kerf.Kernel.ModelingAlgorithms	TopOpeBRepBuild	The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests
+Kerf.Kernel.ModelingAlgorithms	TopOpeBRepTool	The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests
+Kerf.Kernel.ModelingAlgorithms	TopOpeBRepDS	The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests
+Kerf.Kernel.ModelingAlgorithms	TopTrans	The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests
+Kerf.Kernel.ModelingAlgorithms	IntCurveSurface	Intersection forms by curve and surface type the tests don't reach
+Kerf.Kernel.ModelingAlgorithms	Geom2dInt	Intersection forms by curve and surface type the tests don't reach
+Kerf.Kernel.ModelingAlgorithms	Geom2dHatch	Intersection forms by curve and surface type the tests don't reach
+Kerf.Kernel.ModelingAlgorithms	ShapeConstruct	Healing support, following ShapeFix's gap
+Kerf.Kernel.ModelingAlgorithms	ShapeAlgo	Healing support, following ShapeFix's gap
+Kerf.Kernel.ModelingAlgorithms	Plate	Constraint kinds the fill tests and cases don't reach
+Kerf.Kernel.ModelingAlgorithms	BiTgte	Forms past the corpus's few cases; both are small OCCT features
+Kerf.Kernel.ModelingAlgorithms	Draft	Forms past the corpus's few cases; both are small OCCT features
+Kerf.Kernel.ModelingAlgorithms	BRepApprox	A small approximation wrapper, partly run
+Kerf.Kernel.ModelingAlgorithms	TopBas	A single value type nothing calls (HLR's interference): a candidate for removal, not tests
+Kerf.Kernel.ModelingAlgorithms	Sweep	A few accessors
+Kerf.Kernel.ModelingAlgorithms	Prs3d	A few accessors
+Kerf.Kernel.ModelingData	AppParCurves	Least-squares forms the tests' approximations don't reach
+Kerf.Kernel.ModelingData	GC	Factories' overloads and failure statuses the tests don't reach
+Kerf.Kernel.ModelingData	gce	Factories' overloads and failure statuses the tests don't reach
+Kerf.Kernel.ModelingData	Hermit	Hermite conversions the tests rarely reach
+Kerf.Kernel.ModelingData	BndLib	Boxes of conic and elementary pieces in forms the tests don't reach
+Kerf.Kernel.ModelingData	ExtremaPC	Search forms and curve kinds the tests don't reach
+Kerf.Kernel.ModelingData	Adaptor2d	Base-class defaults, mostly overridden
+Kerf.Modeling	(root)	Enum helpers
