@@ -23,11 +23,11 @@ A file written by Kerf now starts:
 FILE_DESCRIPTION(('Kerf Model',
     'Kerf is derived from Open CASCADE Technology 8.0'),'2;1');
 FILE_NAME('Kerf Shape Model','2026-11-05T14:32:36',('Author'),('Kerf'),
-  'Kerf STEP processor 8.0','Kerf 8.0','Unknown');
+  'Kerf STEP processor 0.3.0','Kerf 0.3.0','Unknown');
 ```
 
 `ExportStep` puts the shape's label and the time stamp in `FILE_NAME` as before, and `'Kerf.Modeling'` in place of
-`'Kerf 8.0'`. A product with no name is `Kerf STEP translator 8.0 1`. Files naming Open CASCADE read as they did, and nothing
+`'Kerf 0.3.0'`. A product with no name is `Kerf STEP translator 1`. Files naming Open CASCADE read as they did, and nothing
 reads these strings back. Anything comparing written STEP with a stored file changes once.
 
 ## Messages

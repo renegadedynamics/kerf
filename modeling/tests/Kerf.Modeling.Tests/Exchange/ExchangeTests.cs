@@ -118,7 +118,7 @@ public partial class ExchangeTests
         var fileName = Regex.Match(text, @"FILE_NAME\((.*?)\);", RegexOptions.Singleline).Groups[1].Value;
         Assert.StartsWith(@"'bracket ''A'' \X2\2013\X0\ v2','2026-11-02T12:00:00',", fileName);
         Assert.Contains("'Kerf.Modeling'", fileName);
-        Assert.Contains("'Kerf STEP processor 8.0'", fileName);
+        Assert.Matches(@"'Kerf STEP processor \d+\.\d+\.\d+'", fileName);
         Assert.Contains("'Kerf is derived from Open CASCADE Technology 8.0'", text);
         Assert.DoesNotContain("Open CASCADE STEP", text);
         Assert.DoesNotContain("'Open CASCADE'", text);

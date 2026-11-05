@@ -5,8 +5,9 @@ version may break the API.
 
 ## 0.3.0 (unreleased)
 
-- **STEP's header names Kerf:** organisation `Kerf`, processor `Kerf STEP processor 8.0`, product `Kerf STEP translator 8.0 N`, and
-  a description saying Kerf derives from Open CASCADE Technology. Files naming Open CASCADE read as before.
+- **STEP's header names Kerf:** organisation `Kerf`, processor `Kerf STEP processor 0.3.0`, product `Kerf STEP translator N`, and
+  a description saying Kerf derives from Open CASCADE Technology. Files naming Open CASCADE read as before. STL's default
+  header is `STL Exported by Kerf`.
 - **Messages in Kerf's terms:** exceptions and diagnostics no longer name OCCT's types (`gp_Dir`, `TopoDS_Face`). Codes don't change.
 - **StepTidy:** `StepWriteOptions.CleanDuplicates` merges exactly equal entities when writing STEP, 17.9% smaller over the
   dataset's files. Off by default.

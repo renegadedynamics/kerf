@@ -19,7 +19,7 @@ internal static partial class NativeStepText
         text = FileDescription().Replace(text, "FILE_DESCRIPTION(('Open CASCADE Model'),'2;1');");
         text = FileName().Replace(text, "FILE_NAME(...);");
         return KerfProduct().Replace(text, m =>
-            $"PRODUCT('Open CASCADE STEP translator {m.Groups[1].Value}',{newLine}  'Open CASCADE STEP translator {m.Groups[1].Value}','',({m.Groups[2].Value}));");
+            $"PRODUCT('Open CASCADE STEP translator 8.0{m.Groups[1].Value}',{newLine}  'Open CASCADE STEP translator 8.0{m.Groups[1].Value}','',({m.Groups[2].Value}));");
     }
 
     [GeneratedRegex(@"FILE_DESCRIPTION\(\('Kerf Model'.*?\),\s*'2;1'\);", RegexOptions.Singleline)]
@@ -28,6 +28,6 @@ internal static partial class NativeStepText
     [GeneratedRegex(@"FILE_NAME\(.*?\);", RegexOptions.Singleline)]
     private static partial Regex FileName();
 
-    [GeneratedRegex(@"PRODUCT\(\s*'Kerf STEP translator ([0-9. ]+)',\s*'Kerf STEP translator \1',\s*'',\s*\((#\d+)\)\);")]
+    [GeneratedRegex(@"PRODUCT\(\s*'Kerf STEP translator( [0-9.]+)?',\s*'Kerf STEP translator\1',\s*'',\s*\((#\d+)\)\);")]
     private static partial Regex KerfProduct();
 }

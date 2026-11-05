@@ -188,7 +188,7 @@ public class StepDataTests
         var aMake = new MakeHeader(4);
         aMake.AddSchemaIdentifier(new TCollection_HAsciiString("AP242"));
         Assert.Equal("Kerf Manifold Solid Brep Model", aMake.Name()!.ToCString());
-        Assert.Equal("Kerf STEP processor 8.0", aMake.PreprocessorVersion()!.ToCString());
+        Assert.Matches(@"^Kerf STEP processor \d+\.\d+\.\d+$", aMake.PreprocessorVersion()!.ToCString());
         Assert.Equal(2, aMake.SchemaIdentifierCount);
         StepModel aModel = aMake.NewModel(StepDataDump.HeaderOnlyProtocol());
         Assert.Equal(3, aModel.Header().NbEntities());

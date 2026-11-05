@@ -36,7 +36,7 @@ internal static class RWStl
     private const int THE_BUFFER_SIZE = 1024; // The length of buffer to read (in bytes)
 
     // OCCT's binary header: the text, zero-filled to 80 bytes
-    private const string THE_HEADER = "STL Exported by Open CASCADE Technology [dev.opencascade.org]";
+    private const string THE_HEADER = "STL Exported by Kerf";
 
     //! Writing a Little Endian 32 bits integer
     private static void ConvertInteger(int value, Span<byte> result) => BinaryPrimitives.WriteInt32LittleEndian(result, value);

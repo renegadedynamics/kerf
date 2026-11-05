@@ -16453,16 +16453,18 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        - **Reworded where they are:** `Plane`'s, `TopoUtil.TypeName`'s (now `obj.Type`) and `ShapeTypeOf`'s, `Color`'s and
          `InputStream`'s.
 18402. **STEP's header says Kerf, and says where Kerf comes from.** `FILE_DESCRIPTION(('Kerf Model','Kerf is derived from Open
-       CASCADE Technology 8.0'),'2;1')`, name `Kerf Shape Model`, organisation `Kerf`, processor `Kerf STEP processor 8.0`, system
-       `Kerf 8.0`, and product `Kerf STEP translator 8.0 N`. Kerf.Modeling's export names `Kerf.Modeling` as the system, where
+       CASCADE Technology 8.0'),'2;1')`, name `Kerf Shape Model`, organisation `Kerf`, processor `Kerf STEP processor 0.3.0`, system
+       `Kerf 0.3.0`, and product `Kerf STEP translator N`. Kerf.Modeling's export names `Kerf.Modeling` as the system, where
        build123d named itself.
-       - **The version is the OCCT version ported, as before:** the brief's "keeping the version". It doesn't change with each
-         of Kerf's releases, so fixtures don't.
+       - **The version is Kerf's own,** from the assembly, so the header changes with each release. `8.0` would have given
+         OCCT's version as Kerf's, so it appears only in the note saying what Kerf derives from. Tests match the form.
+       - **A default product name has no version:** a part read back is named after it, and a part's name shouldn't change with
+         a release.
        - **The note is in the description:** Part 21 has it as free text, and the other fields identify a system.
        - **Nothing reads these back:** the only branch on the header is the reader's on `I-DEAS`. The reference files, which name
          Open CASCADE, still read as they did.
-       - **Not changed:** the BREP format's magic `Open CASCADE Topology V`, which is the format's name. STL's default header
-         still says `STL Exported by Open CASCADE Technology`, outside this unit's brief: a question for the owner.
+       - **STL's default header** is now `STL Exported by Kerf`, for the same reason; it also linked to OCCT's site.
+       - **Not changed:** the BREP format's magic `Open CASCADE Topology V`, which is the format's name.
 18403. **Native's recordings stay frozen, and written STEP is compared as native wrote it.** `tests/Shared/NativeStepText` takes
        FILE_DESCRIPTION and PRODUCT back to OCCT's bytes, line breaks included, and masks FILE_NAME. The tape's file arguments go
        through it too, so its hashes still match.
