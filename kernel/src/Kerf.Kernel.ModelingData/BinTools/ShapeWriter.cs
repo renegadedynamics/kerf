@@ -143,10 +143,10 @@ internal class ShapeWriter : ShapeSetBase
         stream.PutBools(aShape.Free(),
                            aShape.Modified(),
                            aShape.Checked(),
-                           aShape.IsOrientable,
-                           aShape.IsClosed,
-                           aShape.IsInfinite,
-                           aShape.IsConvex);
+                           aShape.OrientableFlag,
+                           aShape.ClosedFlag,
+                           aShape.InfiniteFlag,
+                           aShape.ConvexFlag);
 
         // process sub-shapes
         for (var sub = new Iterator(aShape, false, false); sub.More(); sub.Next())

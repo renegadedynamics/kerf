@@ -324,7 +324,7 @@ public class IntersectionTests
     static readonly Face Fc4 = new Rotation(z: 45) * B.Rectangle(5, 5);
     static readonly Face Fc5 = new Pos(2.5, 2.5, 2.5) * new Rotation(0, 90) * B.Rectangle(5, 5);
     static readonly Face Fc6 = new Pos(2.5, 2.5) * new Rotation(0, 90, 45, Extrinsic.XYZ) * B.Rectangle(5, 5);
-    static readonly Face Fc7 = (new Rotation(90) * B.Cylinder(2, 4)).SelectFaces().Where(GeomType.Cylinder)[0];
+    static readonly Face Fc7 = (new Rotation(90) * B.Cylinder(2, 4)).Faces().Where(GeomType.Cylinder)[0];
     static readonly Face Fc8 = Face.Make(Wire.MakePolygon(
         [new Point3D(-1.5, 1, 1), new Point3D(-1.5, -1, 1), new Point3D(3.5, -1, -1), new Point3D(3.5, 1, -1), new Point3D(-1.5, 1, 1)], close: false));   // make_face(Polyline(…))
     static readonly Face Fc9 = new Pos(-2) * Fc8.Mirror(Plane.XY);
@@ -332,17 +332,17 @@ public class IntersectionTests
     static readonly Face Fc11 = B.Rectangle(4, 4);
     // sweep(Rot(90) * CenterArc((0, 0), 2, 0, 180), Line((0, 2), (0, -2))): the faces of the swept shell, cleaned
     static readonly Shell Fc22 = Shell.Sweep(new Rotation(90) * B.CenterArc(new Vector3D(0, 0, 0), 2, 0, 180), Wire.Make(B.Line(new Point3D(0, 2, 0), new Point3D(0, -2, 0)))).Clean();
-    static readonly Shell Sh1 = Shell.Make([new Pos(-4) * Fc11, .. Fc22.SelectFaces()]);
+    static readonly Shell Sh1 = Shell.Make([new Pos(-4) * Fc11, .. Fc22.Faces()]);
     static readonly Shell Sh2 = new Pos(z: 1) * Sh1;
-    static readonly Shell Sh3 = Shell.Make([new Pos(-4) * Fc11, .. Fc22.SelectFaces(), new Pos(2, 0, -2) * new Rotation(0, 90) * Fc11]);
-    static readonly Shell Sh4 = Shell.Make([new Pos(-4) * Fc11, .. Fc22.SelectFaces(), new Pos(4) * Fc11]);
+    static readonly Shell Sh3 = Shell.Make([new Pos(-4) * Fc11, .. Fc22.Faces(), new Pos(2, 0, -2) * new Rotation(0, 90) * Fc11]);
+    static readonly Shell Sh4 = Shell.Make([new Pos(-4) * Fc11, .. Fc22.Faces(), new Pos(4) * Fc11]);
     static readonly Shell Sh5 = new Pos(z: 1) * Shell.Make(
-        [new Pos(-2, 0, -2) * new Rotation(0, -90) * Fc11, .. Fc22.SelectFaces(), new Pos(2, 0, -2) * new Rotation(0, 90) * Fc11]);
+        [new Pos(-2, 0, -2) * new Rotation(0, -90) * Fc11, .. Fc22.Faces(), new Pos(2, 0, -2) * new Rotation(0, 90) * Fc11]);
     static readonly Shell Sh6 = B.Box(2, 2, 2).SingleShell();
 
     // Shell tangent touch objects (half spheres)
     static readonly Shape HalfSphereSolid = B.Sphere(1) & new Pos(0, 0, 0.5) * B.Box(3, 3, 2);
-    static readonly Shell Sh7 = Shell.Make(HalfSphereSolid.SelectFaces());
+    static readonly Shell Sh7 = Shell.Make(HalfSphereSolid.Faces());
     static readonly Shell Sh8 = new Pos(2, 0, 0) * Sh7;   // tangent at (1, 0, 0)
     static readonly Face Fc10 = new Pos(1, 0, 0) * (new Rotation(0, 90, 0) * B.Rectangle(2, 2));   // tangent to the sphere at x=1
 
@@ -420,7 +420,7 @@ public class IntersectionTests
     // Extended T-shaped solid for coplanar edge touches
     static readonly Part Sl9 = new([B.Box(2, 2, 2) + Sl5]);
 
-    static readonly Edge L1 = Sl3.SelectFaces().OrderBy(Axis.Z).Last().SelectEdges()[0].Trim(0.3, 0.4);
+    static readonly Edge L1 = Sl3.Faces().OrderBy(Axis.Z).Last().Edges()[0].Trim(0.3, 0.4);
     static readonly Edge L2 = L1.Trim(2, 3);
     static readonly Wire Wi7 = Wire.Make([L1, L2, B.RadiusArc(L1.PositionAt(1), L2.PositionAt(0), 1, shortSagitta: false)]);
 
@@ -746,7 +746,7 @@ public class TouchMethodTests
     [Fact]
     public void ShellTangentTouch()
     {
-        var shell = Shell.Make([B.Sphere(1).SelectFaces()[0]]);
+        var shell = Shell.Make([B.Sphere(1).Faces()[0]]);
         var tangentFace = Face.FromPlane(Plane.XY.Offset(-1));
         var result = shell.Touch(tangentFace);
         Assert.NotEmpty(result);
@@ -769,7 +769,7 @@ public class TouchMethodTests
         var assembly = new Rotation(0, 0, 90) * new Assembly([new Pos(10, 0, 0) * B.Box(2, 2, 2)]);
         var toucher = new Pos(0, 12, 0) * B.Box(2, 2, 2);   // shares the face at y == 11
         Assert.NotEmpty(assembly.Touch(toucher));
-        Assert.NotEmpty(toucher.SelectSolids()[0].Touch(assembly));
+        Assert.NotEmpty(toucher.Solids()[0].Touch(assembly));
         // A box against the child's unplaced position touches nothing
         Assert.Empty(assembly.Touch(new Pos(12, 0, 0) * B.Box(2, 2, 2)));
     }
@@ -789,7 +789,7 @@ public class ShapeListExpandTests
     [Fact]
     public void ExpandShellToFaces()
     {
-        var shells = B.Box(1, 1, 1).SelectShells();
+        var shells = B.Box(1, 1, 1).Shells();
         if (shells.Count > 0)
         {
             var expanded = new ShapeList<Shape>([shells[0]]).Expand();
@@ -821,7 +821,7 @@ public class ShapeListExpandTests
 /// <summary>Shell tangent touches, which find the face of a shell holding the contact point.</summary>
 public class ShellTangentTouchCoverageTests
 {
-    static Shell HalfSphere() => Shell.Make((B.Sphere(1) & new Pos(0, 0, 0.5) * B.Box(3, 3, 2)).SelectFaces());
+    static Shell HalfSphere() => Shell.Make((B.Sphere(1) & new Pos(0, 0, 0.5) * B.Box(3, 3, 2)).Faces());
 
     [Fact]
     public void ShellSelfTangentTouchMultipleFaces()
@@ -845,7 +845,7 @@ public class ShellTangentTouchCoverageTests
     public void ShellShellTangentTouchMultipleFaces()
     {
         var shell1 = HalfSphere();
-        var shell2 = Shell.Make((new Pos(2, 0, 0) * (B.Sphere(1) & new Pos(0, 0, 0.5) * B.Box(3, 3, 2))).SelectFaces());
+        var shell2 = Shell.Make((new Pos(2, 0, 0) * (B.Sphere(1) & new Pos(0, 0, 0.5) * B.Box(3, 3, 2))).Faces());
         var result = shell1.Touch(shell2);
         Assert.NotEmpty(result);
         Assert.NotEmpty(result.OfType<Vertex>());
@@ -864,7 +864,7 @@ public class ShellTangentTouchCoverageTests
     [Fact]
     public void InteriorTangentContactShellFace()
     {
-        var shell = Shell.Make(B.Sphere(2).SelectFaces());
+        var shell = Shell.Make(B.Sphere(2).Faces());
         var result = shell.Touch(SmallTangentFace());
         Assert.NotEmpty(result);
         Assert.NotEmpty(result.OfType<Vertex>());
@@ -873,7 +873,7 @@ public class ShellTangentTouchCoverageTests
     [Fact]
     public void InteriorTangentContactFaceShell()
     {
-        var shell = Shell.Make(B.Sphere(2).SelectFaces());
+        var shell = Shell.Make(B.Sphere(2).Faces());
         var result = SmallTangentFace().Touch(shell);
         Assert.NotEmpty(result);
         Assert.NotEmpty(result.OfType<Vertex>());

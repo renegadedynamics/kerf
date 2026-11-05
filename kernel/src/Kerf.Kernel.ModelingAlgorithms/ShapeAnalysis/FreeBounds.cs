@@ -691,7 +691,7 @@ internal sealed class FreeBounds
 
         for (int iw = 1; iw <= wires.Length(); iw++)
         {
-            if (wires.Value(iw).IsClosed)
+            if (wires.Value(iw).ClosedFlag)
             {
                 b.Add(closed, wires.Value(iw));
             }

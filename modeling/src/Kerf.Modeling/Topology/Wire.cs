@@ -46,7 +46,7 @@ public static partial class WireExtensions
         public ShapeList<Edge> OrderEdges()
         {
             // Sorting by a reversed wire runs against the orientation of its edges
-            var sorted = (self.IsForward ? self.SelectEdges().OrderBy(self) : self.SelectEdges().OrderByDescending(self));
+            var sorted = (self.IsForward ? self.Edges().OrderBy(self) : self.Edges().OrderByDescending(self));
             var ordered = new List<Edge> { sorted[0] };
             foreach (var edge in sorted.Skip(1))
                 ordered.Add((ordered[^1].PositionAt(1) - edge.PositionAt(0)).Magnitude < Constants.Tolerance ? edge : edge.Reversed());
@@ -150,7 +150,7 @@ public static partial class WireExtensions
             else
                 distance = self.IsForward ? position : self.Length - position;
 
-            var edges = self.SelectEdges();
+            var edges = self.Edges();
             var lengths = edges.Select(e => e.Length).ToList();
             var cumulative = new List<double>();
             double total = 0.0;
@@ -183,7 +183,7 @@ public static partial class WireExtensions
         /// <summary>This wire if closed, else this wire closed with a line from its end to its start.</summary>
         public Wire Close()
         {
-            if (self.CheckClosed())
+            if (self.IsClosed)
                 return self;
             return Wire.Combine([self, Edge.MakeLine(self.EndPoint(), self.StartPoint())])[0];
         }
@@ -271,7 +271,7 @@ public static partial class WireExtensions
             var startU = start.ToParam(self);
             var endU = end.ToParam(self);
             (startU, endU) = (Math.Min(startU, endU), Math.Max(startU, endU));
-            var ordered = self.SelectEdges().OrderBy(self);
+            var ordered = self.Edges().OrderBy(self);
             if (!self.IsForward)
                 // The edges of a reversed wire run against its positions, so turn each around
                 ordered = new ShapeList<Edge>(ordered.Select(e => e.Reversed()));
@@ -380,7 +380,7 @@ public static partial class WireExtensions
 
         /// <inheritdoc cref="Combine(IEnumerable{IShape1D}, double)"/>
         public static ShapeList<Wire> Combine(IEnumerable<IShape1D> wires, double tolerance = 1e-9) =>
-            OneD.EdgesToWires(wires.SelectMany(w => w.SelectEdges()), tolerance);
+            OneD.EdgesToWires(wires.SelectMany(w => w.Edges()), tolerance);
 
         /// <summary>A circle centred on the plane's origin (default XY).</summary>
         public static Wire MakeCircle(double radius, Plane? plane = null) => Wire.Make([Edge.MakeCircle(radius, plane)]);

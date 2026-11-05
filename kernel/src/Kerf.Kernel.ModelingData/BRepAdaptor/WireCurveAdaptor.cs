@@ -152,7 +152,7 @@ internal class WireCurveAdaptor : CurveAdaptorBase
         }
 
         _forward = true; // Default ; The Reverse Edges are parsed.
-        if ((nbEdge > 2) || ((nbEdge == 2) && (!_wire.IsClosed)))
+        if ((nbEdge > 2) || ((nbEdge == 2) && (!_wire.ClosedFlag)))
         {
             Orientation or = _curves.Value(1).Edge().Orientation;
             Vertex vi = new Vertex(), vl;
@@ -335,7 +335,7 @@ internal class WireCurveAdaptor : CurveAdaptorBase
         return hc;
     }
 
-    public override bool IsClosed => _wire.IsClosed;
+    public override bool IsClosed => _wire.ClosedFlag;
 
     public override bool IsPeriodic => false;
 

@@ -16,41 +16,75 @@ namespace Kerf.Topology;
 /// </summary>
 public static class ShapeTraversal
 {
+    extension<TSelf>(TSelf self) where TSelf : IShape
+    {
+        /// <summary>
+        /// Whether the shape is closed, as a reader means it, looked for in its sub-shapes: an edge whose two vertices are the
+        /// same, a wire with no free vertex, a face or shell with no free edge, and a solid or compound of which every child is
+        /// closed. A vertex isn't. Internal and external sub-shapes are ignored.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The shape is null.</exception>
+        public bool IsClosed
+        {
+            get
+            {
+                Shape shape = self.AsShape();
+                return shape.IsNull ? throw new InvalidOperationException("Can't determine if an empty shape is closed") : ClosedInFact(shape);
+            }
+        }
+    }
+
+    private static bool ClosedInFact(Shape shape)
+    {
+        switch (shape.Type)
+        {
+            case ShapeType.Vertex:
+                return false;
+            case ShapeType.Edge:
+            case ShapeType.Wire:
+            case ShapeType.Shell:
+                return Kerf.Engine.Topology.Brep.Tool.IsClosed(shape);
+            case ShapeType.Face:
+                // A one-face shell: a sphere's seam meets itself, a rectangle's edges are free
+                return Kerf.Engine.Topology.Brep.Tool.IsClosedAsFace(shape);
+            default:
+                bool any = false;
+                foreach (Shape child in shape.Children)
+                {
+                    if (!ClosedInFact(child))
+                    {
+                        return false;
+                    }
+
+                    any = true;
+                }
+
+                return any;
+        }
+    }
+
     extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
     {
         /// <summary>The direct sub-shapes, with the shape's placement and orientation composed into theirs.</summary>
         public SubShapes<Shape> Children => new(shape.AsShape(), ShapeType.Shape, ShapeType.Shape, children: true);
 
         /// <summary>The distinct vertices (<see cref="Shape.IsSame"/>), in the order they are first explored.</summary>
-        public ImmutableArray<Vertex> Vertices() => Unique<Vertex>(shape.AsShape());
-
-        /// <summary>
-        /// Whether the shape is closed, checked from its sub-shapes (OCCT's <c>BRep_Tool::IsClosed</c>): a shell with no free
-        /// edge, a wire with no free vertex, an edge whose two vertices are the same; for other shapes, <c>IsClosed</c>. Where
-        /// <c>IsClosed</c> is the flag the shape's builder set, this looks. Internal and external sub-shapes are ignored.
-        /// </summary>
-        /// <exception cref="ArgumentException">The shape is null.</exception>
-        public bool CheckClosed()
-        {
-            Shape self = shape.AsShape();
-            NotNull(self);
-            return Kerf.Engine.Topology.Brep.Tool.IsClosed(self);
-        }
+        public ImmutableArray<Vertex> AllVertices() => Unique<Vertex>(shape.AsShape());
 
         /// <summary>The distinct edges (<see cref="Shape.IsSame"/>), in the order they are first explored.</summary>
-        public ImmutableArray<Edge> Edges() => Unique<Edge>(shape.AsShape());
+        public ImmutableArray<Edge> AllEdges() => Unique<Edge>(shape.AsShape());
 
         /// <summary>The distinct wires (<see cref="Shape.IsSame"/>), in the order they are first explored.</summary>
-        public ImmutableArray<Wire> Wires() => Unique<Wire>(shape.AsShape());
+        public ImmutableArray<Wire> AllWires() => Unique<Wire>(shape.AsShape());
 
         /// <summary>The distinct faces (<see cref="Shape.IsSame"/>), in the order they are first explored.</summary>
-        public ImmutableArray<Face> Faces() => Unique<Face>(shape.AsShape());
+        public ImmutableArray<Face> AllFaces() => Unique<Face>(shape.AsShape());
 
         /// <summary>The distinct shells (<see cref="Shape.IsSame"/>), in the order they are first explored.</summary>
-        public ImmutableArray<Shell> Shells() => Unique<Shell>(shape.AsShape());
+        public ImmutableArray<Shell> AllShells() => Unique<Shell>(shape.AsShape());
 
         /// <summary>The distinct solids (<see cref="Shape.IsSame"/>), in the order they are first explored.</summary>
-        public ImmutableArray<Solid> Solids() => Unique<Solid>(shape.AsShape());
+        public ImmutableArray<Solid> AllSolids() => Unique<Solid>(shape.AsShape());
 
         /// <summary>The leaves of a compound, nested compounds flattened; any other shape is its own only leaf.</summary>
         public ImmutableArray<Shape> TopLevelShapes()

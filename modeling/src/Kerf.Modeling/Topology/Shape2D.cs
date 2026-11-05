@@ -28,7 +28,7 @@ public static partial class Shape2DExtensions
                 return ShapeAlgebra.AddPlain(self.AsShape(), null, other);
             if (summands.Any(s => s.Dim != 2))
                 throw new ArgumentException("Only shapes with the same dimension can be added");
-            var faces = self.SelectFaces().Concat(summands.SelectMany(s => s.SelectFaces())).ToList();
+            var faces = self.Faces().Concat(summands.SelectMany(s => s.Faces())).ToList();
             Shape sum;
             try
             {
@@ -54,7 +54,7 @@ public static partial class Shape2DExtensions
         public (IReadOnlyList<Face> Inside, IReadOnlyList<Face> Outside) SplitByPerimeter(IShape1D perimeter)
         {
             var (inside, outside) = self.SplitByPerimeterCore(perimeter);
-            return (inside.SelectFaces(), outside.SelectFaces());
+            return (inside.Faces(), outside.Faces());
         }
 
         /// <summary>
@@ -89,8 +89,8 @@ public static partial class Shape2DExtensions
 
             // Split each perimeter edge where it crosses a seam, so the pieces lie in one patch of the surface
             var perimeterEdges = new List<Edge>();
-            var seams = self.SelectFaces().SelectMany(f => f.Seams).ToList();
-            foreach (var edge in perimeter.SelectEdges())
+            var seams = self.Faces().SelectMany(f => f.Seams).ToList();
+            foreach (var edge in perimeter.Edges())
             {
                 if (edge.IsEmpty)
                     continue;
@@ -101,7 +101,7 @@ public static partial class Shape2DExtensions
                     if (crossing.Count == 0)
                         continue;
                     foreach (var vertex in crossing.Vertices())
-                        if (edge.SelectVertices().All(ev => vertex.DistanceTo(ev) > Constants.Tolerance)
+                        if (edge.Vertices().All(ev => vertex.DistanceTo(ev) > Constants.Tolerance)
                             && seamVertices.All(existing => vertex.DistanceTo(existing) > Constants.Tolerance))
                             seamVertices.Add(vertex);
                 }
@@ -117,8 +117,8 @@ public static partial class Shape2DExtensions
 
             // Is the left or the right the inside?
             var perimeterLength = perimeter.Length;
-            var leftLength = left.IsEmpty ? 0 : left.SelectEdges().Sum(e => e.Length);
-            var rightLength = right.IsEmpty ? 0 : right.SelectEdges().Sum(e => e.Length);
+            var leftLength = left.IsEmpty ? 0 : left.Edges().Sum(e => e.Length);
+            var rightLength = right.IsEmpty ? 0 : right.Edges().Sum(e => e.Length);
             bool leftInside = Math.Abs(perimeterLength - leftLength) < Math.Abs(perimeterLength - rightLength);
             return leftInside ? (left, right) : (right, left);
         }
@@ -132,7 +132,7 @@ public static partial class Shape2DExtensions
             var shape = ShapeExtensions.ShapeOf(other);
             var results = new List<Shape>();
             // Trim infinite edges before OCCT operations
-            if (TopoUtil.Typed(shape) is Edge { IsUnbounded: true } infinite)
+            if (TopoUtil.Typed(shape) is Edge { IsInfinite: true } infinite)
             {
                 var box = self.BoundBox(optimal: false);
                 shape = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Magnitude);
@@ -153,7 +153,7 @@ public static partial class Shape2DExtensions
                     else
                     {
                         // Leave out edges on the boundary of the overlap, which aren't crossings
-                        var commonEdges = commonFaces.SelectMany(f => f.SelectEdges()).Select(ce => (Edge: ce, Box: ce.BoundBox(optimal: false))).ToList();
+                        var commonEdges = commonFaces.SelectMany(f => f.Edges()).Select(ce => (Edge: ce, Box: ce.BoundBox(optimal: false))).ToList();
                         foreach (var edge in sectionEdges)
                         {
                             var box = edge.BoundBox(optimal: false);
@@ -221,10 +221,10 @@ public static partial class Shape2DExtensions
             var distance = self.AsShape().Distance(other, new DistanceOptions { Deflection = tolerance * 1e-3 });
             if (distance.TryGetValue(out var extrema) && extrema.Value <= tolerance)
             {
-                var selfEdges = self.SelectEdges();
-                var otherEdges = other.SelectEdges();
-                var selfVertices = self.SelectVertices();
-                var otherVertices = other.SelectVertices();
+                var selfEdges = self.Edges();
+                var otherEdges = other.Edges();
+                var selfVertices = self.Vertices();
+                var otherVertices = other.Vertices();
                 foreach (var solution in extrema.Solutions)
                 {
                     var (p1, p2) = (solution.OnA, solution.OnB);
@@ -278,8 +278,8 @@ public static partial class Shape2DExtensions
             var offset = built.Shape;
             var result = (offset);
             // The builder always returns a shell; a face offsets to a single face
-            if (self.AsShape().TryAs<Face>(out _) && result.SelectFaces().Count == 1)
-                result = result.SelectFaces()[0];
+            if (self.AsShape().TryAs<Face>(out _) && result.Faces().Count == 1)
+                result = result.Faces()[0];
             if (result.Area <= Constants.Tolerance)
                 throw new InvalidOperationException($"Offsetting by {amount} collapsed the {typeof(TSelf).Name} onto itself");
             return result;
@@ -298,7 +298,7 @@ public static partial class Shape2DExtensions
             foreach (var segment in segments)
             {
                 if (segment.DistanceTo(vertex) > Constants.Tolerance
-                    || segment.SelectVertices().Any(v => vertex.DistanceTo(v) <= Constants.Tolerance))
+                    || segment.Vertices().Any(v => vertex.DistanceTo(v) <= Constants.Tolerance))
                 {
                     next.Add(segment);
                     continue;

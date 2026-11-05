@@ -149,7 +149,7 @@ for (int pass = 0; pass < passes; pass++)
         Shape shape = examples[i].Build();
         ShapeMesh mesh = shape.Triangulate();
         results[i] = string.Create(CultureInfo.InvariantCulture,
-            $"volume {shape.Volume:F3}, {shape.SelectFaces().Count} faces, {mesh.TriangleCount} triangles");
+            $"volume {shape.Volume:F3}, {shape.Faces().Count} faces, {mesh.TriangleCount} triangles");
         times[i][pass] = clock.Elapsed.TotalMilliseconds;
         if (pass == passes - 1)
         {
@@ -192,7 +192,7 @@ if (copies > 0)
             Shape shape = examples[i].Build();
             ShapeMesh mesh = shape.Triangulate();
             string result = string.Create(CultureInfo.InvariantCulture,
-                $"volume {shape.Volume:F3}, {shape.SelectFaces().Count} faces, {mesh.TriangleCount} triangles");
+                $"volume {shape.Volume:F3}, {shape.Faces().Count} faces, {mesh.TriangleCount} triangles");
             if (result != results[i])
             {
                 Interlocked.Increment(ref mismatches);

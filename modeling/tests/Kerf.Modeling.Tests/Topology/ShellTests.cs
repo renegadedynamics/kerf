@@ -13,7 +13,7 @@ public class ShellTests
     [Fact]
     public void ShellInit()
     {
-        var boxFaces = Solid.MakeBox(1, 1, 1).SelectFaces();
+        var boxFaces = Solid.MakeBox(1, 1, 1).Faces();
         var boxShell = Shell.Make(boxFaces);
         Assert.True(boxShell.IsValid);
     }
@@ -21,7 +21,7 @@ public class ShellTests
     [Fact]
     public void ShellInitSingleFace()
     {
-        var face = Solid.MakeCone(1, 0, 2).SelectFaces().Where(GeomType.Cone).First();
+        var face = Solid.MakeCone(1, 0, 2).Faces().Where(GeomType.Cone).First();
         var shell = Shell.Make(face);
         Assert.True(shell.IsValid);
     }
@@ -30,7 +30,7 @@ public class ShellTests
     public void ShellInitTolerance()
     {
         // the lid sits 1e-5 above the box's sides: too far for the default tolerance, within reach of a larger one
-        var sorted = Solid.MakeBox(1, 1, 1).SelectFaces().OrderBy(Axis.Z);
+        var sorted = Solid.MakeBox(1, 1, 1).Faces().OrderBy(Axis.Z);
         Face[] faces = [.. sorted.Take(sorted.Count - 1), sorted.Last().Moved(new Pos(0, 0, 1e-5))];
         Assert.Throws<ArgumentException>(() => Shell.Make(faces));
         Assert.Throws<ArgumentException>(() => Shell.Make(faces, tolerance: 1e-6));
@@ -43,22 +43,22 @@ public class ShellTests
     [Fact]
     public void Center()
     {
-        var boxShell = Shell.Make(Solid.MakeBox(1, 1, 1).SelectFaces());
+        var boxShell = Shell.Make(Solid.MakeBox(1, 1, 1).Faces());
         Check.AlmostEqual(new Point3D(0.5, 0.5, 0.5), boxShell.Center(), 5);
     }
 
     [Fact]
     public void ManifoldShellVolume()
     {
-        var boxShell = Shell.Make(Solid.MakeBox(1, 1, 1).SelectFaces());
+        var boxShell = Shell.Make(Solid.MakeBox(1, 1, 1).Faces());
         Check.AlmostEqual(1, boxShell.Volume, 5);
     }
 
     [Fact]
     public void NonmanifoldShellVolume()
     {
-        var nmShell = Shell.Make(Solid.MakeBox(1, 1, 1).SelectFaces());
-        var opened = nmShell - nmShell.SelectFaces()[0];
+        var nmShell = Shell.Make(Solid.MakeBox(1, 1, 1).Faces());
+        var opened = nmShell - nmShell.Faces()[0];
         Check.AlmostEqual(0, opened.Volume, 5);
     }
 
@@ -69,7 +69,7 @@ public class ShellTests
         var surface = Shell.Sweep(xSection, Wire.MakeCircle(5));
         var singleFace = Shell.Make(surface.SingleFace());
         Assert.True(singleFace.IsValid);
-        singleFace = Shell.Make(surface.SelectFaces());
+        singleFace = Shell.Make(surface.Faces());
         Assert.True(singleFace.IsValid);
     }
 
@@ -92,11 +92,11 @@ public class ShellTests
         var sweepC2C1 = Shell.Sweep((pathC1.LocationAt(0)) * sectionC2, pathC1);
         var sweepC2C2 = Shell.Sweep((pathC2.LocationAt(0)) * sectionC2, pathC2);
 
-        Assert.Equal(2, sweepEW.SelectFaces().Count);
-        Assert.Equal(2, sweepWE.SelectFaces().Count);
-        Assert.Equal(2, sweepC2C1.SelectFaces().Count);
-        Assert.Equal(3, sweepWW.SelectFaces().Count);   // 3 with clean, 4 without
-        Assert.Equal(3, sweepC2C2.SelectFaces().Count);   // 3 with clean, 4 without
+        Assert.Equal(2, sweepEW.Faces().Count);
+        Assert.Equal(2, sweepWE.Faces().Count);
+        Assert.Equal(2, sweepC2C1.Faces().Count);
+        Assert.Equal(3, sweepWW.Faces().Count);   // 3 with clean, 4 without
+        Assert.Equal(3, sweepC2C2.Faces().Count);   // 3 with clean, 4 without
     }
 
     [Fact]
@@ -138,18 +138,18 @@ public class ShellTests
         // A shell made of planes and cylinders splits into the two, which is how a sheet metal part reads: flats
         // joined by bends.
         var tube = Solid.MakeCylinder(5, 10);
-        var shell = Shell.Make(tube.SelectFaces());
+        var shell = Shell.Make(tube.Faces());
         Assert.Single(shell.Bends());
         Assert.Equal(2, shell.Flats().Count);
-        Assert.Equal(shell.SelectFaces().Where(GeomType.Cylinder), shell.Bends());
-        Assert.Equal(shell.SelectFaces().Where(GeomType.Plane), shell.Flats());
-        Assert.Equal(shell.SelectFaces().Count, shell.Bends().Count + shell.Flats().Count);
+        Assert.Equal(shell.Faces().Where(GeomType.Cylinder), shell.Bends());
+        Assert.Equal(shell.Faces().Where(GeomType.Plane), shell.Flats());
+        Assert.Equal(shell.Faces().Count, shell.Bends().Count + shell.Flats().Count);
     }
 
     [Fact]
     public void BendsAndFlatsIgnoreOtherSurfaces()
     {
-        var sphere = Shell.Make(Solid.MakeSphere(5).SelectFaces());
+        var sphere = Shell.Make(Solid.MakeSphere(5).Faces());
         Assert.Empty(sphere.Bends());
         Assert.Empty(sphere.Flats());
     }
@@ -173,8 +173,8 @@ public class ShellAddTests
     {
         Check.Is<Shell>(result);
         Assert.True(result.IsValid);
-        Assert.Single(result.SelectShells());
-        Assert.Equal(faceCount, result.SelectFaces().Count);
+        Assert.Single(result.Shells());
+        Assert.Equal(faceCount, result.Faces().Count);
     }
 
     [Fact]

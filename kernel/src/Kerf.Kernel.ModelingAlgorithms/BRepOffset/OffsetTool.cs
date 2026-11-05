@@ -1716,7 +1716,7 @@ internal static class OffsetTool
                 {
                     Wire wire = ShapeCasts.Wire(wseq[i]);
                     NCollection_Sequence<Shape> localEdgesForConcat = new();
-                    if (wire.IsClosed)
+                    if (wire.ClosedFlag)
                     {
                         Vertex startVertex = new();
                         Edge startEdge = new();

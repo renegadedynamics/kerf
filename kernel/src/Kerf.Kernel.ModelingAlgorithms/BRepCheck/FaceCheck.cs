@@ -477,7 +477,7 @@ internal class FaceCheck : ResultCheck
     {
         NCollection_List<StatusCheck> statusList = LockedStatusList();
         // WARNING : it is assumed that the edges of a wire are correctly oriented
-        bool infinite = _shape.IsInfinite;
+        bool infinite = _shape.InfiniteFlag;
         if (_oridone)
         {
             if (update)

@@ -79,14 +79,14 @@ public class InputsUnchangedTests
             C("loft", [Circle, Plate], () => Ops.Loft([Circle, Plate.Moved(new Location(new Point3D(0.0, 0.0, 5.0)))])),
             C("sweep", [Circle, Path], () => Ops.Sweep(Circle.Moved(new Location(Path.LocationAt(0))), Path)),
             C("thicken", [Plate], () => Ops.Thicken(Plate, 1)),
-            C("make face", [RectWire], () => Ops.MakeFace(RectWire.SelectEdges())),
+            C("make face", [RectWire], () => Ops.MakeFace(RectWire.Edges())),
             C("make hull", [ArcEdge, LineEdge], () => Ops.MakeHull([ArcEdge, LineEdge])),
             C("trace", [Spline], () => Ops.Trace([Spline], 0.5)),
             C("full round", [Slot], () => Ops.FullRound(Slot.Edges().OrderBy(Axis.X)[0], Slot)),
             // 2D
-            C("face fillet 2d", [Plate], () => Plate.Fillet2D(1, Plate.SelectVertices())),
-            C("face chamfer 2d", [Plate], () => Plate.Chamfer2D(1, 1, Plate.SelectVertices())),
-            C("wire fillet 2d", [RectWire], () => RectWire.Fillet2D(1, RectWire.SelectVertices())),
+            C("face fillet 2d", [Plate], () => Plate.Fillet2D(1, Plate.Vertices())),
+            C("face chamfer 2d", [Plate], () => Plate.Chamfer2D(1, 1, Plate.Vertices())),
+            C("wire fillet 2d", [RectWire], () => RectWire.Fillet2D(1, RectWire.Vertices())),
             C("wire offset 2d", [RectWire], () => RectWire.Offset2D(1)),
             C("constrained arcs", [ArcEdge, LineEdge], () => Edge.MakeConstrainedArcs(ArcEdge, LineEdge, 1.0)),
             C("constrained lines", [ArcEdge], () => Edge.MakeConstrainedLines(ArcEdge, new Point3D(6, 6, 0))),
@@ -104,7 +104,7 @@ public class InputsUnchangedTests
             C("triangulate", [Fused], () => Fused.Triangulate(0.01)),
             C("triangulate free edge", [Spline], () => Spline.Triangulate(0.01)),
             C("triangulate tree", [Box, MovedBox], () => new Assembly([Box, MovedBox]).TriangulateTree()),
-            C("selectors by value", [Fused], () => Fused.Faces().OrderBy(ShapeKey.Area).GroupByValue(f => f.GeomType).Count + Fused.Edges().Count(e => e.CheckClosed())),
+            C("selectors by value", [Fused], () => Fused.Faces().OrderBy(ShapeKey.Area).GroupByValue(f => f.GeomType).Count + Fused.Edges().Count(e => e.IsClosed)),
             C("selector for a pick", [Fused], () => Selector.For(Fused, Fused.Faces()[0])),
             C("distance", [Box, Sphere], () => Box.DistanceToWithClosestPoints(Sphere.Moved(new Location(new Point3D(20.0, 0.0, 0.0))))),
             C("surface intersections", [Sphere], () => Sphere.FindIntersectionPoints(Axis.X)),
@@ -243,7 +243,7 @@ public class InputsUnchangedTests
             return run() switch
             {
                 Shape s when s.IsEmpty => "empty " + s.GetType().Name,
-                Shape s => $"{s.GetType().Name} V={s.Volume:G9} A={Area(s):G9} E={s.SelectEdges().Count} F={s.SelectFaces().Count}",
+                Shape s => $"{s.GetType().Name} V={s.Volume:G9} A={Area(s):G9} E={s.Edges().Count} F={s.Faces().Count}",
                 System.Collections.IEnumerable list and not string => $"{list.Cast<object>().Count()} items",
                 var value => value?.ToString() ?? "null",
             };
@@ -254,5 +254,5 @@ public class InputsUnchangedTests
         }
     }
 
-    private static double Area(Shape s) => s.SelectFaces().Sum(f => f.Area);
+    private static double Area(Shape s) => s.Faces().Sum(f => f.Area);
 }

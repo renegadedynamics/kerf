@@ -545,7 +545,7 @@ internal class FindSurface
         {
             _surface = plane;
             // If S is wire, try to orient surface according to orientation of wire.
-            if (s.Type == ShapeType.Wire && s.IsClosed)
+            if (s.Type == ShapeType.Wire && s.ClosedFlag)
             {
                 Wire aW = ShapeCasts.Wire(s);
                 Face tmpFace = new LibraryMakeFace(_surface, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalFace();

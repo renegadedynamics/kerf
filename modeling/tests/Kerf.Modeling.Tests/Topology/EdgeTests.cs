@@ -261,7 +261,7 @@ public class EdgeTests
             CurveObjects.CenterArc(new Point3D(0, 0, 0), 1, 45, 90),
             Rect().Rotate(Axis.Z, -45).SingleWire(),
             Rect().Rotate(Axis.Z, -45),
-            new Curve(Rect().Rotate(Axis.Z, -45).SelectEdges()),
+            new Curve(Rect().Rotate(Axis.Z, -45).Edges()),
             Solid.MakeBox(1, 1, 1, new Plane(new Point3D(-1, 0, -0.5))).Rotate(Axis.Z, -45),
             new Axis(new Point3D(0, 0, 0), new Vector3D(1, 1, 0)),
             new Location(new Point3D(Math.Sqrt(2) / 2, Math.Sqrt(2) / 2, 0), new Vector3D(0, 0, 1)),
@@ -472,7 +472,7 @@ public class EdgeTests
         // A moved copy of an extracted solid still names the unmoved container as its topo_parent; the faces have to
         // be found by TShape, not Location
         var moved = new Pos(10) * Extrude(Cross(), 2).Value.SingleSolid();
-        var insideEdges = moved.SelectEdges().Where(Convexity.Concave);
+        var insideEdges = moved.Edges().Where(Convexity.Concave);
         Assert.Equal(4, insideEdges.Count);
         Assert.All(insideEdges, e => Assert.True(e.Center().X > 5));
     }
@@ -502,9 +502,9 @@ public class EdgeTests
         // a seam has the same face on both sides
         Solid Cylinder() => Solid.MakeCylinder(3, 5, new Plane(new Point3D(0, 0, -2.5)));
         var cylinder = Cylinder();
-        var seam = cylinder.SelectEdges().Where(GeomType.Line)[0];
+        var seam = cylinder.Edges().Where(GeomType.Line)[0];
         Assert.Equal(Convexity.Smooth, cylinder.ConvexityOf(seam));
-        Assert.Equal(2, Cylinder().SelectEdges().Where(Convexity.Convex).Count);
+        Assert.Equal(2, Cylinder().Edges().Where(Convexity.Convex).Count);
     }
 
     [Fact]
@@ -518,7 +518,7 @@ public class EdgeTests
             new Point3D(x, 5 * Math.Cos(Math.PI / 2 * x / 10), 5 * Math.Sin(Math.PI / 2 * x / 10)))]);
         var wall = Face.MakeSurfaceFromCurves(along, rim);
         var shell = (Shell)TopoUtil.SewFaces([plate, wall], 1e-6);
-        var shared = shell.SelectEdges().Where(e => e.GeomType == GeomType.Line && Math.Abs(e.Center().Y) < 1e-6).ToList();
+        var shared = shell.Edges().Where(e => e.GeomType == GeomType.Line && Math.Abs(e.Center().Y) < 1e-6).ToList();
         Assert.Single(shared);
         Assert.Equal(Convexity.Saddle, shell.ConvexityOf(shared[0]));
     }
@@ -528,7 +528,7 @@ public class EdgeTests
     {
         var e = Assert.Throws<InvalidOperationException>(() => default(Compound).ConvexityOf(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0))));
         Assert.Contains("no valid parent", e.Message);
-        e = Assert.Throws<InvalidOperationException>(() => { var rect = Face.MakeRect(1, 1); return rect.ConvexityOf(rect.SelectEdges()[0]); });
+        e = Assert.Throws<InvalidOperationException>(() => { var rect = Face.MakeRect(1, 1); return rect.ConvexityOf(rect.Edges()[0]); });
         Assert.Contains("one face only", e.Message);
     }
 

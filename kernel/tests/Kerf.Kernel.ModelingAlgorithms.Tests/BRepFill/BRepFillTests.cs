@@ -168,7 +168,7 @@ public class BRepFillTests
         Assert.Equal(4, Count(aS, ShapeType.Face));
         Assert.Equal(12, Count(aS, ShapeType.Edge));
         Assert.Equal(8, Count(aS, ShapeType.Vertex));
-        Assert.False(aS.IsClosed);
+        Assert.False(aS.ClosedFlag);
         Assert.Equal(4 * 10 * 7, Area(aS), 1e-9);
         Assert.Equal(aBefore1, BRepTextComparison.Write(aW1));
         Assert.Equal(aBefore2, BRepTextComparison.Write(aW2));
@@ -264,7 +264,7 @@ public class BRepFillTests
         Wire aCut = aW;
         Fill.SearchOrigin(ref aCut, new Point3D(5, 0, 0), new Vector3D(1, 0, 0), 1e-7);
         Assert.Equal(5, Count(aCut, ShapeType.Edge));
-        Assert.True(aCut.IsClosed);
+        Assert.True(aCut.ClosedFlag);
         var anExp = new WireExplorer(aCut);
         Assert.True(Tool.Pnt(anExp.CurrentVertex()).IsEqual(new Point3D(5, 0, 0), 1e-9));
         Vertex aV1 = Exploration.LastVertex(anExp.Current(), true);
@@ -276,7 +276,7 @@ public class BRepFillTests
         Fill.SearchOrigin(ref aRev, new Point3D(10, 10, 0), new Vector3D(1, 0, 0), 1e-7);
         Assert.Equal(4, Count(aRev, ShapeType.Edge));
         Assert.Equal(4, Count(aRev, ShapeType.Vertex));
-        Assert.True(aRev.IsClosed);
+        Assert.True(aRev.ClosedFlag);
 
         Assert.Equal(aBefore, BRepTextComparison.Write(aW));
         EngineAssert.Throws<NoSuchObjectException>(() =>

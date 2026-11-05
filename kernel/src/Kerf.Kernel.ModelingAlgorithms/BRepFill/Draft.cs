@@ -261,7 +261,7 @@ internal sealed class Draft
         }
 
         // Attention to closed non declared wires !
-        if (!_wire.IsClosed)
+        if (!_wire.ClosedFlag)
         {
             Exploration.Vertices(_wire, out Vertex vf, out Vertex vl);
             if (vf.IsSame(vl))
@@ -908,7 +908,7 @@ internal sealed class Draft
                 }
             }
 
-            if (_shape.IsClosed)
+            if (_shape.ClosedFlag)
             { // Make a Solid
                 Solid solid = new();
                 BrepBuilder bs = new();

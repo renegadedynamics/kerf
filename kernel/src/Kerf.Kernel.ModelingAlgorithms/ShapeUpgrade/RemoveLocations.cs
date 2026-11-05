@@ -334,7 +334,7 @@ internal sealed class RemoveLocations : Transient
             {
                 aNewShape = shape.EmptyCopied();
                 // it is safe to simply copy Closed flag since this operation does not change topology
-                aNewShape.Closed(shape.IsClosed);
+                aNewShape.Closed(shape.ClosedFlag);
             }
             Placement oldLoc, nullloc = new();
             oldLoc = shape.Placement;

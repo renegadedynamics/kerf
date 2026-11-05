@@ -223,7 +223,7 @@ internal class MakeWireOffset : MakeShape
         for (; itl.More(); itl.Next())
         {
             Wire w = ShapeCasts.Wire(itl.Value());
-            if (w.IsClosed)
+            if (w.ClosedFlag)
             {
                 fr.Add(w);
                 continue;

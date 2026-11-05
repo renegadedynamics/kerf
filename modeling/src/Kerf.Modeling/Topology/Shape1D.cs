@@ -55,17 +55,6 @@ public static partial class Shape1DExtensions
     extension<TSelf>(TSelf self) where TSelf : IShape1D
     {
 
-        /// <summary>Whether the start and end points are the same.</summary>
-        public bool IsClosed
-        {
-            get
-            {
-                if (self.IsEmpty)
-                    throw new InvalidOperationException("Can't determine if empty Edge or Wire is closed");
-                return self.AsShape().CheckClosed();
-            }
-        }
-
         /// <summary>Whether the edge or wire runs forward along its curve (rather than reversed).</summary>
         public bool IsForward
         {
@@ -88,7 +77,7 @@ public static partial class Shape1DExtensions
             {
                 if (self.AsShape().TryAs<Wire>(out _))
                     // A wire: its comp curve reports OtherCurve, so ask its first edge
-                    return self.SelectEdges()[0].Radius;
+                    return self.Edges()[0].Radius;
                 if (!((Edge)self.AsShape()).GeomAdaptor().TryGetCircle(out var circle))
                     throw new InvalidOperationException("Shape could not be reduced to a circle");
                 return circle.Radius;
@@ -142,7 +131,7 @@ public static partial class Shape1DExtensions
             {
                 var point = position.Point!.Value;
                 if (self.AsShape().TryAs<Wire>(out _))
-                    closest = self.SelectEdges().MinBy(e => e.DistanceTo(point))!;
+                    closest = self.Edges().MinBy(e => e.DistanceTo(point))!;
                 var u = closest.ParamAtPoint(point);
                 (curve, param, closestForward) = closest.OcctParamAt(u);
             }
@@ -331,7 +320,7 @@ public static partial class Shape1DExtensions
             Plane? result = null;
 
             // All co-axial: pick one of the infinite planes
-            var allEdges = allLines.SelectMany(l => l.SelectEdges()).ToList();
+            var allEdges = allLines.SelectMany(l => l.Edges()).ToList();
             if (allEdges.All(e => e.GeomType == GeomType.Line))
             {
                 var asAxis = allEdges.Select(e => new Axis(e.PositionAt(0), e.TangentAt(0))).ToList();
@@ -517,7 +506,7 @@ public static partial class Shape1DExtensions
             };
             var results = new List<Shape>();
             // Trim infinite edges before OCCT operations
-            if (other is Edge { IsUnbounded: true } infinite)
+            if (other is Edge { IsInfinite: true } infinite)
             {
                 var box = self.BoundBox(optimal: false);
                 other = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Magnitude);

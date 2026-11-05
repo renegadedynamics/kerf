@@ -393,7 +393,7 @@ internal sealed class LocalSplitShape
             }
             for (;;)
             {
-                if (mw.InternalWire().IsClosed)
+                if (mw.InternalWire().ClosedFlag)
                 {
                     break;
                 }
@@ -413,7 +413,7 @@ internal sealed class LocalSplitShape
                     wexp.Init(curWire, faceRef);
                 }
             }
-            if (mw.InternalWire().IsClosed)
+            if (mw.InternalWire().ClosedFlag)
             {
                 newWires.Append(mw.InternalWire());
                 theStartVertex = ShapeCasts.Vertex(breakVertices.First());
@@ -439,7 +439,7 @@ internal sealed class LocalSplitShape
                 {
                     sectionsTimes.Remove(sectionWire);
                 }
-                if (mw.InternalWire().IsClosed)
+                if (mw.InternalWire().ClosedFlag)
                 {
                     newWires.Append(mw.InternalWire());
                     if (sectionsTimes.Count == 0)

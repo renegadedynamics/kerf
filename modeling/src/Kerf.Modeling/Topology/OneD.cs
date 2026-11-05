@@ -25,7 +25,7 @@ public static class OneD
         if (topoSummands.Any(s => TopoUtil.Dim(s) != 1))
             throw new ArgumentException("Only shapes with the same dimension can be added");
         var summands = topoSummands;
-        var summandEdges = summands.SelectMany(s => s.SelectEdges()).ToList();
+        var summandEdges = summands.SelectMany(s => s.Edges()).ToList();
         var brought = summands;
 
         Shape sum;
@@ -51,7 +51,7 @@ public static class OneD
         {
             try
             {
-                sum = JoinedWire([.. self.SelectEdges(), .. summandEdges], [self], brought);
+                sum = JoinedWire([.. self.Edges(), .. summandEdges], [self], brought);
             }
             catch (Exception e) when (e is ArgumentException or InvalidOperationException || Failures.IsKernelFailure(e))
             {
@@ -61,7 +61,7 @@ public static class OneD
         if (SkipClean.Clean)
             sum = sum.Clean();
         // A single edge is returned as an Edge, with the record of how it was made
-        return sum.SelectEdges().Count == 1 ? (Shape)sum.SingleEdge().MadeBy(sum.History) : sum;
+        return sum.Edges().Count == 1 ? (Shape)sum.SingleEdge().MadeBy(sum.History) : sum;
     }
 
     /// <summary>A face offset by <paramref name="amount"/> (<c>BRepOffset_MakeOffset</c>).</summary>
@@ -82,7 +82,7 @@ public static class OneD
             throw new ArgumentException("edge has no valid parent");
         if (edge.IsEmpty)
             throw new ArgumentException("edge is empty");
-        var topoEdges = parent.SelectEdges().Where(e => !e.IsEmpty).Select(e => (Shape)e).ToList();
+        var topoEdges = parent.Edges().Where(e => !e.IsEmpty).Select(e => (Shape)e).ToList();
         // Work with the parent's own copy of the edge so vertices match
         var parentEdge = TopoUtil.FindSame(edge, topoEdges);
         if (parentEdge is null)
@@ -216,7 +216,7 @@ public static class OneD
     {
         var wire = Wire.Make(edges);
         var history = new List<ShapeHistoryEntry>();
-        var placed = wire.SelectEdges();
+        var placed = wire.Edges();
         var midpoints = placed.Select(e => e.PositionAt(0.5)).ToList();
         foreach (var source in edges)
         {
@@ -262,7 +262,7 @@ public static class OneD
     /// </summary>
     internal static Wire OffsetCurvesToBSplines(Wire wire)
     {
-        var edges = wire.SelectEdges();
+        var edges = wire.Edges();
         if (edges.All(e => e.GeomType != GeomType.Offset))
             return wire;
         var fitted = new List<Edge>();
@@ -329,7 +329,7 @@ public static partial class Shape1DExtensions
                 _ => JoinKind.Tangent,
             };
             var line = TopoUtil.AsWire(self);
-            var lineEdges = line.SelectEdges();
+            var lineEdges = line.Edges();
             var start = line.PositionAt(0);
             var tangent = line.TangentAt(0);
             var startAxis = new Axis(start, tangent);
@@ -363,7 +363,7 @@ public static partial class Shape1DExtensions
             }
 
             var signedDistance = distance;
-            if (side != Side.Both && line.CheckClosed() && normal is { } n)
+            if (side != Side.Both && line.IsClosed && normal is { } n)
             {
                 // OCCT offsets a closed wire outwards for a positive distance; which side is outside depends on the winding
                 int steps = Math.Max(16, 8 * lineEdges.Count);
@@ -397,11 +397,11 @@ public static partial class Shape1DExtensions
             if (asBSpline)
                 offsetWire = OneD.OffsetCurvesToBSplines(offsetWire);
 
-            if (side != Side.Both && !line.CheckClosed())
+            if (side != Side.Both && !line.IsClosed)
             {
                 // Remove the end arcs
                 Point3D[] endpoints = [line.PositionAt(0), line.PositionAt(1)];
-                var offsetEdges = offsetWire.SelectEdges().Where(
+                var offsetEdges = offsetWire.Edges().Where(
                     e => !(e.GeomType == GeomType.Circle && endpoints.Any(pt => (e.ArcCenter - pt).Magnitude < Constants.Tolerance))).ToShapeList();
                 var wires = OneD.EdgesToWires(offsetEdges);
                 if (normal is null)
@@ -436,10 +436,10 @@ public static partial class Shape1DExtensions
                         (edge0, edge1) = (Edge.MakeLine(self0, end0), Edge.MakeLine(self1, end1));
                     else
                         (edge0, edge1) = (Edge.MakeLine(self0, end1), Edge.MakeLine(self1, end0));
-                    offsetWire = Wire.Make([.. line.SelectEdges(), .. offsetWire.SelectEdges(), edge0, edge1]);
+                    offsetWire = Wire.Make([.. line.Edges(), .. offsetWire.Edges(), edge0, edge1]);
                 }
             }
-            var result = offsetWire.SelectEdges();
+            var result = offsetWire.Edges();
             return result.Count == 1 ? result[0] : offsetWire;
         }
     }

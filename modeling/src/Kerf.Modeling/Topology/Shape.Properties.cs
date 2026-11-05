@@ -296,7 +296,7 @@ public static partial class ShapeExtensions
             var vertices = new List<Point3D>();
             var triangles = new List<(int, int, int)>();
             int offset = 0;
-            foreach (var face in self.SelectFaces())
+            foreach (var face in self.Faces())
             {
                 if (!meshes.TryGetValue(face, out var faceMesh) || faceMesh.TriangleCount == 0)
                     continue;

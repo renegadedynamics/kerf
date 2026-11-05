@@ -115,7 +115,7 @@ internal sealed class CompatibleWires
         // shielding for particular cases : only one edge circle or ellipse
         // on a closed wire !
 
-        bool wClosed = w.IsClosed;
+        bool wClosed = w.ClosedFlag;
         if (!wClosed)
         {
             // it is checked if the vertices are the same.
@@ -936,7 +936,7 @@ internal sealed class CompatibleWires
         bool wClosed, allClosed = true, allOpen = true;
         for (i = ideb; i <= ifin; i++)
         {
-            wClosed = _work[i].IsClosed;
+            wClosed = _work[i].ClosedFlag;
             if (!wClosed)
             {
                 // check if the vertices are the same.
@@ -1794,7 +1794,7 @@ internal sealed class CompatibleWires
 
         for (i = ideb; i <= ifin; i++)
         {
-            wClosed = _work[i].IsClosed;
+            wClosed = _work[i].ClosedFlag;
             if (!wClosed)
             {
                 // check if the vertices are the same.
@@ -2104,7 +2104,7 @@ internal sealed class CompatibleWires
         int i;
         for (i = ideb; i <= ifin; i++)
         {
-            allOpen = (allOpen && !_work[i].IsClosed);
+            allOpen = (allOpen && !_work[i].ClosedFlag);
         }
         if (!allOpen)
         {

@@ -46,7 +46,7 @@ public static partial class EdgeExtensions
         }
 
         /// <summary>Whether the edge is a line longer than 1e100: an axis made into an edge.</summary>
-        public bool IsUnbounded => self.GeomType == GeomType.Line && self.Length > 1e100;
+        public bool IsInfinite => self.GeomType == GeomType.Line && self.Length > 1e100;
 
         // ---- Curve parameters ----
 
@@ -100,7 +100,7 @@ public static partial class EdgeExtensions
             var (paramMin, paramMax) = self.Range;
 
             // Method 1: the point is a vertex of the edge (on a closed edge, either end)
-            var nearest = self.SelectVertices().MinBy(v => (v.Point - point).Magnitude);
+            var nearest = self.Vertices().MinBy(v => (v.Point - point).Magnitude);
             if (!nearest.IsEmpty && (nearest.Point - point).Magnitude <= Constants.Tolerance)
             {
                 var param = self.ParameterOf(nearest);
@@ -222,7 +222,7 @@ public static partial class EdgeExtensions
         /// <summary>An infinite line trimmed to 2 × <paramref name="halfLength"/> about its centre; any other edge unchanged.</summary>
         public Edge TrimInfinite(double halfLength)
         {
-            if (!self.IsUnbounded)
+            if (!self.IsInfinite)
                 return self;
             var origin = self.Center();
             var direction = (self.EndPoint() - self.StartPoint()).Normalized();
@@ -230,7 +230,7 @@ public static partial class EdgeExtensions
         }
 
         /// <summary>This edge if closed, else a wire closing it with a line.</summary>
-        public IShape1D Close() => self.CheckClosed() ? self : Wire.Make([self]).Close();
+        public IShape1D Close() => self.IsClosed ? self : Wire.Make([self]).Close();
 
         // ---- Queries ----
 
@@ -287,7 +287,7 @@ public static partial class EdgeExtensions
             if (self.GeomType == GeomType.Line)
                 return self.TangentAngleAt(0) == angle ? [0] : [];
             // A curve of the tangent angle along the edge, intercepted by horizontal lines
-            int periodic = self.CheckClosed() ? 1 : 0;   // a closed edge's end is its start
+            int periodic = self.IsClosed ? 1 : 0;   // a closed edge's end is its start
             var points = new List<Point3D>();
             double? previous = null;
             double discontinuities = 0.0;

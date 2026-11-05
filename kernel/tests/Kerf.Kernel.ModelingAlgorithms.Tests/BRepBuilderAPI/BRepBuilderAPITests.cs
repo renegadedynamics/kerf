@@ -135,7 +135,7 @@ public class BRepBuilderAPITests
         Assert.False(aMP.InternalLastVertex().TShape()!.IsFrozen);
         aMP.Close();
         Wire aW = aMP.Wire();
-        Assert.True(aW.IsClosed);
+        Assert.True(aW.ClosedFlag);
         Assert.Equal(3, Count(aW, ShapeType.Edge));
         Assert.Equal(3, Count(aW, ShapeType.Vertex));
         Assert.True(AllFrozen(aW));

@@ -89,7 +89,7 @@ public class FaceTests
     {
         // Test 0 - extract a spherical cap from a Face
         var sphere = Solid.MakeSphere(10).Rotate(Axis.Z, 90);
-        var target0 = sphere.SelectFaces()[0];
+        var target0 = sphere.Faces()[0];
         var circle = Plane.YZ.Offset(15) * Obj.Circle(5);
         var circleProjected = circle.ProjectToShape(sphere, new Vector3D(-1, 0, 0))[0];
         var circleOuterwire = circleProjected.SingleEdge();
@@ -117,9 +117,9 @@ public class FaceTests
         sphere = Solid.MakeSphere(10);
         var target3 = sphere.SingleFace();
         circle = Plane.YZ.Offset(15) * Obj.Circle(5);
-        var projectedWire = Wire.Make(circle.ProjectToShape(sphere, new Vector3D(-1, 0, 0))[0].SelectEdges().GroupBy(Axis.X)[0]);
-        var perimeter = Edge.MakeCircle(projectedWire.SelectEdges()[0].Radius,
-                                        new Plane(projectedWire.SelectEdges()[0].ArcCenter, zDir: new Vector3D(1, 0, 0)));
+        var projectedWire = Wire.Make(circle.ProjectToShape(sphere, new Vector3D(-1, 0, 0))[0].Edges().GroupBy(Axis.X)[0]);
+        var perimeter = Edge.MakeCircle(projectedWire.Edges()[0].Radius,
+                                        new Plane(projectedWire.Edges()[0].ArcCenter, zDir: new Vector3D(1, 0, 0)));
 
         Assert.True(target3.Seams[0].DistanceTo(perimeter) < 1e-5);
         var (inside3, outside3) = target3.SplitByPerimeter(perimeter);
@@ -137,7 +137,7 @@ public class FaceTests
     public void SplitByPerimeterStandaloneSphericalFaceWithoutSeamCrossing()
     {
         var sphere = Solid.MakeSphere(10).Rotate(Axis.Z, 90);
-        var sphericalFace = sphere.SelectFaces()[0];
+        var sphericalFace = sphere.Faces()[0];
         var circle = Plane.YZ.Offset(15) * Obj.Circle(5);
         var perimeter = circle.ProjectToShape(sphere, new Vector3D(-1, 0, 0))[0].SingleEdge();
 
@@ -154,7 +154,7 @@ public class FaceTests
     public void Chamfer2D()
     {
         var testFace = Face.MakeRect(10, 10);
-        testFace = testFace.Chamfer2D(1, 2, testFace.SelectVertices());
+        testFace = testFace.Chamfer2D(1, 2, testFace.Vertices());
         Check.AlmostEqual(100 - 4 * 0.5 * 1 * 2, testFace.Area);
     }
 
@@ -162,33 +162,33 @@ public class FaceTests
     public void Chamfer2DReference()
     {
         var testFace = Face.MakeRect(10, 10);
-        var edge = testFace.SelectEdges().OrderBy(Axis.Y)[0];
-        var vertex = edge.SelectVertices().OrderBy(Axis.X)[0];
+        var edge = testFace.Edges().OrderBy(Axis.Y)[0];
+        var vertex = edge.Vertices().OrderBy(Axis.X)[0];
         testFace = testFace.Chamfer2D(1, 2, [vertex], edge);
         Check.AlmostEqual(100 - 0.5 * 1 * 2, testFace.Area);
-        Check.AlmostEqual(9, testFace.SelectEdges().OrderBy(Axis.Y)[0].Length);
-        Check.AlmostEqual(8, testFace.SelectEdges().OrderBy(Axis.X)[0].Length);
+        Check.AlmostEqual(9, testFace.Edges().OrderBy(Axis.Y)[0].Length);
+        Check.AlmostEqual(8, testFace.Edges().OrderBy(Axis.X)[0].Length);
     }
 
     [Fact]
     public void Chamfer2DReferenceInverted()
     {
         var testFace = Face.MakeRect(10, 10);
-        var edge = testFace.SelectEdges().OrderBy(Axis.Y)[0];
-        var vertex = edge.SelectVertices().OrderBy(Axis.X)[0];
+        var edge = testFace.Edges().OrderBy(Axis.Y)[0];
+        var vertex = edge.Vertices().OrderBy(Axis.X)[0];
         testFace = testFace.Chamfer2D(2, 1, [vertex], edge);
         Check.AlmostEqual(100 - 0.5 * 1 * 2, testFace.Area);
-        Check.AlmostEqual(8, testFace.SelectEdges().OrderBy(Axis.Y)[0].Length);
-        Check.AlmostEqual(9, testFace.SelectEdges().OrderBy(Axis.X)[0].Length);
+        Check.AlmostEqual(8, testFace.Edges().OrderBy(Axis.Y)[0].Length);
+        Check.AlmostEqual(9, testFace.Edges().OrderBy(Axis.X)[0].Length);
     }
 
     [Fact]
     public void Chamfer2DErrorChecking()
     {
         var testFace = Face.MakeRect(10, 10);
-        var edge = testFace.SelectEdges().OrderBy(Axis.Y)[0];
-        var vertex = edge.SelectVertices().OrderBy(Axis.X)[0];
-        var otherEdge = testFace.SelectEdges().OrderBy(Axis.Y).Last();
+        var edge = testFace.Edges().OrderBy(Axis.Y)[0];
+        var vertex = edge.Vertices().OrderBy(Axis.X)[0];
+        var otherEdge = testFace.Edges().OrderBy(Axis.Y).Last();
         Assert.Throws<ArgumentException>(() => testFace.Chamfer2D(1, 2, [vertex], otherEdge));
     }
 
@@ -198,7 +198,7 @@ public class FaceTests
     public void Chamfer2DWithHole()
     {
         var holeFace = HoleFace();
-        var corner = holeFace.SelectVertices().GroupBy(Axis.Y).Last().OrderBy(Axis.X)[0];
+        var corner = holeFace.Vertices().GroupBy(Axis.Y).Last().OrderBy(Axis.X)[0];
         var chamfered = holeFace.Chamfer2D(2, 2, [corner]);
         Assert.True(chamfered.IsValid);
         Assert.Single(chamfered.InnerWires());
@@ -209,7 +209,7 @@ public class FaceTests
     public void Chamfer2DHoleVertices()
     {
         var holeFace = HoleFace();
-        var holeVertices = holeFace.InnerWires()[0].SelectVertices();
+        var holeVertices = holeFace.InnerWires()[0].Vertices();
         var chamfered = holeFace.Chamfer2D(1, 1, holeVertices);
         Assert.True(chamfered.IsValid);
         Assert.Single(chamfered.InnerWires());
@@ -227,7 +227,7 @@ public class FaceTests
     public void Chamfer2DReversedFaceKeepsNormal()
     {
         var holeFace = (Face)(-HoleFace());
-        var corner = holeFace.SelectVertices().GroupBy(Axis.Y).Last().OrderBy(Axis.X)[0];
+        var corner = holeFace.Vertices().GroupBy(Axis.Y).Last().OrderBy(Axis.X)[0];
         var chamfered = holeFace.Chamfer2D(2, 2, [corner]);
         Check.AlmostEqual(holeFace.NormalAt(), chamfered.NormalAt(), 5);
         Check.AlmostEqual(375 - 2, chamfered.Area, 5);
@@ -247,7 +247,7 @@ public class FaceTests
     [Fact]
     public void LengthIsNoneForOtherSurfaces()
     {
-        var sphere = Solid.MakeSphere(5).SelectFaces()[0];
+        var sphere = Solid.MakeSphere(5).Faces()[0];
         Assert.Null(sphere.Length);
         Assert.Null(sphere.Width);
     }
@@ -256,27 +256,27 @@ public class FaceTests
     public void Geometry()
     {
         var box = Solid.MakeBox(1, 1, 2);
-        Assert.Equal("SQUARE", box.SelectFaces().OrderBy(Axis.Z).Last().Geometry);
-        Assert.Equal("RECTANGLE", box.SelectFaces().OrderBy(Axis.Y).Last().Geometry);
+        Assert.Equal("SQUARE", box.Faces().OrderBy(Axis.Z).Last().Geometry);
+        Assert.Equal("RECTANGLE", box.Faces().OrderBy(Axis.Y).Last().Geometry);
         // RegularPolygon(1, 3) extruded by 1
         var triangle = Enumerable.Range(0, 3)
             .Select(i => new Point3D(Math.Cos(i * 2 * Math.PI / 3) - 0.25, Math.Sin(i * 2 * Math.PI / 3), 0));
         var prism = Solid.Extrude(Face.Make(Wire.MakePolygon(triangle)), new Vector3D(0, 0, 1));
-        Assert.Equal("POLYGON", prism.SelectFaces().OrderBy(Axis.Z).Last().Geometry);
+        Assert.Equal("POLYGON", prism.Faces().OrderBy(Axis.Z).Last().Geometry);
     }
 
     [Fact]
     public void IsPlanar()
     {
         Assert.NotNull(Face.MakeRect(1, 1).IsPlanar);
-        Assert.Null(Solid.MakeCylinder(1, 1).SelectFaces().Where(GeomType.Cylinder)[0].IsPlanar);
+        Assert.Null(Solid.MakeCylinder(1, 1).Faces().Where(GeomType.Cylinder)[0].IsPlanar);
         // Some of these faces have geom_type BSPLINE but are planar
         var mount = Solid.MakeLoft(
         [
             Wire.MakeRect(1 + 16 + 4, 20, new Plane(new Point3D(10.5, 0, 0))),
             new Pos(1, 0, 4) * Wire.MakeRect(16, 20, new Plane(new Point3D(8, 0, 0))),
         ]);
-        Assert.All(mount.SelectFaces(), f => Assert.NotNull(f.IsPlanar));
+        Assert.All(mount.Faces(), f => Assert.NotNull(f.IsPlanar));
     }
 
     [Fact]
@@ -290,10 +290,10 @@ public class FaceTests
         // Ensure the topo_parent is cleared when a face is negated
         // (otherwise the original Rectangle would be the topo_parent)
         var flipped = (Face)(-Obj.Rectangle(34, 10));
-        var leftEdge = flipped.SelectEdges().OrderBy(Axis.X)[0];
+        var leftEdge = flipped.Edges().OrderBy(Axis.X)[0];
         // The edge's list knows the face it was selected from: the flipped one
-        var parentFace = (Face)flipped.SelectEdges().Origin!.AsShape();
-        Check.Same(leftEdge, flipped.SelectEdges().OrderBy(Axis.X).First());
+        var parentFace = (Face)flipped.Edges().Origin!.AsShape();
+        Check.Same(leftEdge, flipped.Edges().OrderBy(Axis.X).First());
         Check.AlmostEqual(parentFace.NormalAt(), flipped.NormalAt(), 5);
     }
 
@@ -417,7 +417,7 @@ public class FaceTests
     public void FaceOnSurface()
     {
         // a band of a cylinder between two circles: the seam comes from the fix
-        var wall = Solid.MakeCylinder(2, 10).SelectFaces().Where(GeomType.Cylinder)[0];
+        var wall = Solid.MakeCylinder(2, 10).Faces().Where(GeomType.Cylinder)[0];
         var top = Wire.Make(Edge.MakeCircle(2, Plane.XY.Offset(7)));
         var bottom = Wire.Make(Edge.MakeCircle(2, Plane.XY.Offset(3)));
         var band = Face.Make(top, [bottom], surface: wall);
@@ -426,7 +426,7 @@ public class FaceTests
         Check.AlmostEqual(2 * Math.PI * 2 * 4, band.Area, 5);
 
         // a frustum of a cone, on a cone face of a different extent
-        var cone = Solid.MakeCone(4, 0, 4).SelectFaces().Where(GeomType.Cone)[0];
+        var cone = Solid.MakeCone(4, 0, 4).Faces().Where(GeomType.Cone)[0];
         var outer = Wire.Make(Edge.MakeCircle(3, Plane.XY.Offset(1)));
         var inner = Wire.Make(Edge.MakeCircle(1, Plane.XY.Offset(3)));
         var frustum = Face.Make(outer, [inner], surface: cone);
@@ -457,7 +457,7 @@ public class FaceTests
         var circumference = 2 * Math.PI * radius;
         var hexDiagonal = 4 * (circumference / 10) / 3;
         var cylinder = Solid.MakeCylinder(radius, hexDiagonal * 5);
-        var cylinderWall = cylinder.SelectFaces().WhereNot(GeomType.Plane)[0];
+        var cylinderWall = cylinder.Faces().WhereNot(GeomType.Plane)[0];
         // BuildSketch(Plane.XZ.offset(radius)) with Locations((0, hex_diagonal)): RegularPolygon(hex_diagonal * 0.4, 6)
         var r = hexDiagonal * 0.4;
         var hex = Wire.MakePolygon(Enumerable.Range(0, 6)
@@ -489,7 +489,7 @@ public class FaceTests
         Assert.True(square.IsCoplanar(Plane.XZ));
         Assert.True(((Face)(-square)).IsCoplanar(Plane.XZ));
         Assert.False(square.IsCoplanar(Plane.XY));
-        var surface = Solid.MakeSphere(1).SelectFaces()[0];
+        var surface = Solid.MakeSphere(1).Faces()[0];
         Assert.False(surface.IsCoplanar(Plane.XY));
     }
 
@@ -513,7 +513,7 @@ public class FaceTests
     public void ParamAtPoint()
     {
         // normalized parameters invert position_at, on a moved face too
-        var cylinder = Obj.Cylinder(5, 10).SelectFaces().Where(GeomType.Cylinder)[0];
+        var cylinder = Obj.Cylinder(5, 10).Faces().Where(GeomType.Cylinder)[0];
         var torus = Solid.MakeTorus(10, 2).SingleFace();
         var patch = new Pos(1, 2, 3) * new Rotation(30, 40, 50) * Face.MakeRect(4, 2);
         foreach (var face in new[] { cylinder, torus, patch, new Pos(1, 2, 3) * new Rotation(25) * torus })
@@ -551,7 +551,7 @@ public class FaceTests
     public void DerivativeAt()
     {
         // normalized derivatives are those of position_at, by central differences
-        var cylinder = Obj.Cylinder(5, 10).SelectFaces().Where(GeomType.Cylinder)[0];
+        var cylinder = Obj.Cylinder(5, 10).Faces().Where(GeomType.Cylinder)[0];
         var torus = new Pos(1, 2, 3) * new Rotation(25) * Solid.MakeTorus(10, 2).SingleFace();
         const double h = 1e-4;
         foreach (var face in new[] { cylinder, torus })
@@ -709,7 +709,7 @@ public class FaceTests
         var face = Face.MakeRect(1, 1);
         Check.AlmostEqual(new Vector3D(0, 0, 1), face.NormalAt(0, 0), 5);
         Check.AlmostEqual(new Vector3D(0, 0, 1), face.NormalAt(face.PositionAt(0, 0)), 5);
-        face = Obj.Cylinder(1, 1).SelectFaces().Where(GeomType.Cylinder)[0];
+        face = Obj.Cylinder(1, 1).Faces().Where(GeomType.Cylinder)[0];
         Check.AlmostEqual(new Vector3D(1, 0, 0), face.NormalAt(0, 1), 5);
     }
 
@@ -730,7 +730,7 @@ public class FaceTests
         Check.AlmostEqual(new Vector3D(0, 0, 1), loc2.ZAxis.Direction, 5);
 
         // Curved surface: verify z-direction is outward normal
-        face = Obj.Cylinder(1, 1).SelectFaces().Where(GeomType.Cylinder)[0];
+        face = Obj.Cylinder(1, 1).Faces().Where(GeomType.Cylinder)[0];
         var loc3 = face.LocationAt(0, 1);
         Check.AlmostEqual(new Vector3D(1, 0, 0), loc3.ZAxis.Direction, 5);
 
@@ -766,7 +766,7 @@ public class FaceTests
 
         // Non-planar test
         var cylFace = (Obj.Cylinder(1, 3) - new Rotation(90, 0, 0) * Obj.Cylinder(0.5, 3))
-            .SelectFaces().OrderBy(f => f.Area).ToShapeList().Last();
+            .Faces().OrderBy(f => f.Area).ToShapeList().Last();
         filled = cylFace.WithoutHoles();
         Assert.Equal(2, cylFace.InnerWires().Count);
         Assert.Empty(filled.InnerWires());
@@ -784,7 +784,7 @@ public class FaceTests
         Assert.Throws<InvalidOperationException>(() => default(Face).AxesOfSymmetry);
 
         // Non planar
-        var cylinder = Solid.MakeCylinder(1, 2).SelectFaces().Where(GeomType.Cylinder)[0];
+        var cylinder = Solid.MakeCylinder(1, 2).Faces().Where(GeomType.Cylinder)[0];
         Assert.Throws<InvalidOperationException>(() => cylinder.AxesOfSymmetry);
 
         // Test a variety of shapes
@@ -880,9 +880,9 @@ public class FaceTests
     [Fact]
     public void RadiusProperty()
     {
-        var c = Obj.Cylinder(1.5, 2).SelectFaces().Where(GeomType.Cylinder)[0];
-        var s = Solid.MakeSphere(3).SelectFaces().Where(GeomType.Sphere)[0];
-        var b = Obj.Box(1, 1, 1).SelectFaces()[0];
+        var c = Obj.Cylinder(1.5, 2).Faces().Where(GeomType.Cylinder)[0];
+        var s = Solid.MakeSphere(3).Faces().Where(GeomType.Sphere)[0];
+        var b = Obj.Box(1, 1, 1).Faces()[0];
         Check.AlmostEqual(1.5, c.Radius!.Value, 5);
         Check.AlmostEqual(3, s.Radius!.Value, 5);
         Assert.Null(b.Radius);
@@ -892,12 +892,12 @@ public class FaceTests
     public void AxisOfRotationProperty()
     {
         // CONE
-        var cone = Solid.MakeCone(2, 1, 2).SelectFaces().Where(GeomType.Cone)[0];
+        var cone = Solid.MakeCone(2, 1, 2).Faces().Where(GeomType.Cone)[0];
         Check.AlmostEqual(new Vector3D(0, 0, 1), cone.AxisOfRotation!.Value.Direction, 5);
         Check.AlmostEqual(new Point3D(0, 0, 0), cone.AxisOfRotation!.Value.Position, 5);
 
         // CYLINDER
-        var cyl = (new Rotation(90, 0, 0) * Obj.Cylinder(1.5, 2)).SelectFaces().Where(GeomType.Cylinder)[0];
+        var cyl = (new Rotation(90, 0, 0) * Obj.Cylinder(1.5, 2)).Faces().Where(GeomType.Cylinder)[0];
         Check.AlmostEqual(new Vector3D(0, -1, 0), cyl.AxisOfRotation!.Value.Direction, 5);
         Check.AlmostEqual(new Point3D(0, 1, 0), cyl.AxisOfRotation!.Value.Position, 5);
 
@@ -907,12 +907,12 @@ public class FaceTests
         Check.AlmostEqual(new Point3D(0, 0, 0), r.AxisOfRotation!.Value.Position, 5);
 
         // SPHERE
-        var s = Solid.MakeSphere(3).SelectFaces().Where(GeomType.Sphere)[0];
+        var s = Solid.MakeSphere(3).Faces().Where(GeomType.Sphere)[0];
         Check.AlmostEqual(new Vector3D(0, 0, 1), s.AxisOfRotation!.Value.Direction, 5);
         Check.AlmostEqual(new Point3D(0, 0, 0), s.AxisOfRotation!.Value.Position, 5);
 
         // TORUS
-        var t = (new Rotation(90, 0, 0) * Solid.MakeTorus(4, 1)).SelectFaces().Where(GeomType.Torus)[0];
+        var t = (new Rotation(90, 0, 0) * Solid.MakeTorus(4, 1)).Faces().Where(GeomType.Torus)[0];
         Check.AlmostEqual(new Vector3D(0, -1, 0), t.AxisOfRotation!.Value.Direction, 5);
         Check.AlmostEqual(new Point3D(0, 0, 0), t.AxisOfRotation!.Value.Position, 5);
 
@@ -940,16 +940,16 @@ public class FaceTests
     [Fact]
     public void ConvexityBySurface()
     {
-        Assert.All(Obj.Box(1, 1, 1).SelectFaces(), f => Assert.Equal(Convexity.Smooth, f.Convexity));
-        var boss = Obj.Cylinder(3, 5).SelectFaces().Where(GeomType.Cylinder)[0];
+        Assert.All(Obj.Box(1, 1, 1).Faces(), f => Assert.Equal(Convexity.Smooth, f.Convexity));
+        var boss = Obj.Cylinder(3, 5).Faces().Where(GeomType.Cylinder)[0];
         Assert.Equal(Convexity.Convex, boss.Convexity);
-        var hole = (Obj.Box(10, 10, 5) - Obj.Cylinder(2, 10)).SelectFaces().Where(GeomType.Cylinder)[0];
+        var hole = (Obj.Box(10, 10, 5) - Obj.Cylinder(2, 10)).Faces().Where(GeomType.Cylinder)[0];
         Assert.Equal(Convexity.Concave, hole.Convexity);
-        Assert.Equal(Convexity.Convex, Solid.MakeSphere(5).SelectFaces()[0].Convexity);
-        var cavity = (Obj.Box(20, 20, 20) - Solid.MakeSphere(5)).SelectFaces().Where(GeomType.Sphere)[0];
+        Assert.Equal(Convexity.Convex, Solid.MakeSphere(5).Faces()[0].Convexity);
+        var cavity = (Obj.Box(20, 20, 20) - Solid.MakeSphere(5)).Faces().Where(GeomType.Sphere)[0];
         Assert.Equal(Convexity.Concave, cavity.Convexity);
         // the inner half of a torus bends the other way to the outer half
-        Assert.Equal(Convexity.Saddle, Solid.MakeTorus(10, 3).SelectFaces()[0].Convexity);
+        Assert.Equal(Convexity.Saddle, Solid.MakeTorus(10, 3).Faces()[0].Convexity);
         Assert.Contains("empty face", Assert.Throws<InvalidOperationException>(() => default(Face).Convexity).Message);
     }
 
@@ -976,7 +976,7 @@ public class FaceTests
         var w1 = Wire.Make([l1, l2]);
         var revolvedShell = Shell.Revolve(w1, 180, Axis.Y);
         Check.Is<Shell>(revolvedShell);
-        Check.AlmostEqual(2, revolvedShell.SelectEdges().OrderBy(Axis.Y).Last().Radius, 5);
+        Check.AlmostEqual(2, revolvedShell.Edges().OrderBy(Axis.Y).Last().Radius, 5);
     }
 
     [Fact]
@@ -1038,7 +1038,7 @@ public class SurfaceOffsetTests
     public void PositiveFollowsTheNormal()
     {
         // A sphere's normal points outward, so a positive offset grows it
-        var sphere = Solid.MakeSphere(5).SelectFaces()[0];
+        var sphere = Solid.MakeSphere(5).Faces()[0];
         Check.AlmostEqual(4 * Math.PI * 36, sphere.Offset(1).Area, 4);
         Check.AlmostEqual(4 * Math.PI * 16, sphere.Offset(-1).Area, 4);
     }
@@ -1046,10 +1046,10 @@ public class SurfaceOffsetTests
     [Fact]
     public void ShellStaysAShell()
     {
-        var boxShell = Solid.MakeBox(10, 10, 10).SelectShells()[0];
+        var boxShell = Solid.MakeBox(10, 10, 10).Shells()[0];
         var bigger = boxShell.Offset(0.5);
         Check.Is<Shell>(bigger);
-        Assert.Equal(6, bigger.SelectFaces().Count);
+        Assert.Equal(6, bigger.Faces().Count);
         Check.AlmostEqual(6 * 11 * 11, bigger.Area, 6);
     }
 
@@ -1144,7 +1144,7 @@ public class FacePropertiesTests
     {
         // The magnitude is atan(radius change / height); OCCT signs it against the cone's axis, so a narrowing cone
         // reads negative.
-        var lateral = Obj.Cone(bottom, top, height).SelectFaces().Where(GeomType.Cone)[0];
+        var lateral = Obj.Cone(bottom, top, height).Faces().Where(GeomType.Cone)[0];
         var expected = Math.Atan((bottom - top) / height) * 180 / Math.PI;
         Check.AlmostEqual(expected, Math.Abs(lateral.SemiAngle!.Value), 5);
     }
@@ -1153,7 +1153,7 @@ public class FacePropertiesTests
     public void SemiAngleOfATrimmedCone()
     {
         // A cone that arrived as a trimmed surface is still a cone
-        var lateral = Obj.Cone(5, 0, 5).SelectFaces().Where(GeomType.Cone)[0];
+        var lateral = Obj.Cone(5, 0, 5).Faces().Where(GeomType.Cone)[0];
         Assert.True(((Face)lateral).TryGetSurface(out var surface));
         var trimmed = new TrimmedSurface(surface, 0.0, 1.0, 0.0, 2.0);
         var face = SurfaceFaces.Of(trimmed);
@@ -1165,7 +1165,7 @@ public class FacePropertiesTests
     public void SemiAngleOfOtherSurfaces()
     {
         Assert.Null(Obj.Rectangle(1, 1).SemiAngle);
-        var cylinder = Obj.Cylinder(1, 2).SelectFaces().Where(GeomType.Cylinder)[0];
+        var cylinder = Obj.Cylinder(1, 2).Faces().Where(GeomType.Cylinder)[0];
         Assert.Null(cylinder.SemiAngle);
     }
 

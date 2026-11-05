@@ -16,7 +16,7 @@ public class CurveDifferentialTests
         Check.AlmostEqual(start, curve.PositionAt(0), 7);
         Check.AlmostEqual(end, curve.PositionAt(1), 7);
         Check.AlmostEqual(at37, curve.PositionAt(0.37), 7);
-        Assert.Equal(edgeCount, curve.SelectEdges().Count);
+        Assert.Equal(edgeCount, curve.Edges().Count);
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public class CurveDifferentialTests
         void Same(Wire p, double length, int edges, Point3D start, Point3D mid, Point3D end)
         {
             Check.AlmostEqual(length, p.Length, 7);
-            Assert.Equal(edges, p.SelectEdges().Count);
+            Assert.Equal(edges, p.Edges().Count);
             Check.AlmostEqual(start, p.PositionAt(0), 7);
             Check.AlmostEqual(mid, p.PositionAt(0.5), 7);
             Check.AlmostEqual(end, p.PositionAt(1), 7);
@@ -231,29 +231,29 @@ public class CurveDifferentialTests
         var r = new Rectangle(6, 6) - new Pos(1, 1) * new Circle(2) - new Pos(3, 3) * new Rectangle(4, 4);
         var filleted = r.SingleFace().Fillet2D(0.2, r.Vertices());
         Check.AlmostEqual(22.3180459479, filleted.Area, 7);
-        Assert.Equal(10, filleted.SelectEdges().Count);
+        Assert.Equal(10, filleted.Edges().Count);
 
         var cross = (new Rectangle(5.3, 5.3 / 6) + new Rectangle(5.3 / 6, 5.3)).SingleFace();
-        var recess = cross.Fillet2D(5.3 / 3, new ShapeList<Vertex>(cross.SelectVertices()).OrderByDistanceTo(new Point3D(0, 0, 0)).Take(4));
+        var recess = cross.Fillet2D(5.3 / 3, new ShapeList<Vertex>(cross.Vertices()).OrderByDistanceTo(new Point3D(0, 0, 0)).Take(4));
         Check.AlmostEqual(11.2622402623, recess.Area, 7);
-        Assert.Equal(16, recess.SelectEdges().Count);
+        Assert.Equal(16, recess.Edges().Count);
 
         var sketch = new Sketch() + new Rectangle(10, 20) + new Ellipse(20, 5);
         var mixed = sketch.Faces()[0].Fillet2D(1.0, [sketch.Vertices().GroupBy(Axis.X)[0].OrderBy(Axis.Y)[0]]);
         Check.AlmostEqual(414.996320666, mixed.Area, 6);
-        Assert.Equal(10, mixed.SelectEdges().Count);
+        Assert.Equal(10, mixed.Edges().Count);
         mixed = sketch.Faces()[0].Fillet2D(1.0, [sketch.Vertices().GroupBy(Axis.X)[1].OrderBy(Axis.Y)[1]]);
         Check.AlmostEqual(415.391549244, mixed.Area, 6);
-        Assert.Equal(10, mixed.SelectEdges().Count);
+        Assert.Equal(10, mixed.Edges().Count);
 
         var rounded = new RectangleRounded(20, 10, 1);
         Check.AlmostEqual(199.141592654, rounded.Area, 7);
         Assert.Equal(8, rounded.Edges().Count);
 
         var polygon = Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(3, 0, 0), new Point3D(4, 2, 0), new Point3D(1, 5, 0), new Point3D(-1, 2, 0)], close: true);
-        var filletedPolygon = polygon.Fillet2D(0.7, polygon.SelectVertices());
+        var filletedPolygon = polygon.Fillet2D(0.7, polygon.Vertices());
         Check.AlmostEqual(14.4588225426, filletedPolygon.Length, 7);
-        Assert.Equal(10, filletedPolygon.SelectEdges().Count);
+        Assert.Equal(10, filletedPolygon.Edges().Count);
         Check.AlmostEqual(new Point3D(0.432623792125, 0, 0), filletedPolygon.PositionAt(0), 7);
         Check.AlmostEqual(new Point3D(3.82112355044, 1.66874161429, 0), filletedPolygon.PositionAt(0.3), 7);
     }

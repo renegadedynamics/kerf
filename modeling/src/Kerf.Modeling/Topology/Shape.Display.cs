@@ -56,13 +56,13 @@ public static partial class ShapeExtensions
                 var normalPlane = new Plane(surfacePoint, pathTangent, surfaceNormal);
                 var placed = normalPlane.FromLocalCoords(face.Moved(new Location(new Point3D(-faceCenterX, 0, 0))));
                 // Onto a curved surface the projection may come back as a shell of several faces
-                projected.AddRange(placed.ProjectToShape(self.AsShape(), surfaceNormal * -1)[0].SelectFaces());
+                projected.AddRange(placed.ProjectToShape(self.AsShape(), surfaceNormal * -1)[0].Faces());
             }
             return new ShapeList<Face>(projected);
         }
 
         /// <summary>As the other forms of <c>ProjectFaces</c>.</summary>
-        public ShapeList<Face> ProjectFaces(Compound faces, IShape1D path, double start = 0) => self.ProjectFaces(faces.SelectFaces(), path, start);
+        public ShapeList<Face> ProjectFaces(Compound faces, IShape1D path, double start = 0) => self.ProjectFaces(faces.Faces(), path, start);
     }
 
 

@@ -984,7 +984,7 @@ internal sealed class TrimShellCorner
             Edge firstEdge = ShapeCasts.Edge(explo.Current());
             Wire newWire = new LibraryMakeWire(firstEdge).InternalWire();
             b.Remove(oldComp2, firstEdge);
-            if (newWire.IsClosed)
+            if (newWire.ClosedFlag)
             {
                 wseq.Append(newWire);
                 continue;
@@ -1050,7 +1050,7 @@ internal sealed class TrimShellCorner
                     newWire = new LibraryMakeWire(newWire, ShapeCasts.Edge(edges[theind])).InternalWire();
                     b.Remove(oldComp2, edges[theind]);
                 }
-                if (newWire.IsClosed)
+                if (newWire.ClosedFlag)
                 {
                     break;
                 }

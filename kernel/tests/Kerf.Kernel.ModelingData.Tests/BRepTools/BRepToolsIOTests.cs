@@ -186,7 +186,7 @@ public class BRepToolsIOTests
                 Assert.Equal(anOriginal[i].Orientation, aCopy[i].Orientation);
                 Assert.True(anOriginal[i].Placement.Transformation.TranslationXyz()
                                 .IsEqual(aCopy[i].Placement.Transformation.TranslationXyz(), 1e-12));
-                Assert.Equal(anOriginal[i].IsClosed, aCopy[i].IsClosed);
+                Assert.Equal(anOriginal[i].ClosedFlag, aCopy[i].ClosedFlag);
                 if (anOriginal[i].Type == ShapeType.Vertex)
                 {
                     Assert.True(Tool.Pnt(ShapeCasts.Vertex(anOriginal[i])).IsEqual(Tool.Pnt(ShapeCasts.Vertex(aCopy[i])), 1e-12));

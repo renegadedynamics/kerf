@@ -53,7 +53,7 @@ public class MeshingTests
             Assert.Equal(nodes, face.FirstNode);
             Assert.Equal(triangles, face.FirstTriangle);
             Assert.Equal(SurfaceKind.Plane, face.Kind);
-            Assert.Equal(box.Faces().Single(f => f.IsSame(face.Face)).Orientation, face.Face.Orientation);
+            Assert.Equal(box.AllFaces().Single(f => f.IsSame(face.Face)).Orientation, face.Face.Orientation);
             Assert.Equal(face.NodeCount, face.GetNodes().Length);
             Assert.Equal(face.NodeCount, face.GetSurfaceParameters().Length);
             nodes += face.NodeCount;

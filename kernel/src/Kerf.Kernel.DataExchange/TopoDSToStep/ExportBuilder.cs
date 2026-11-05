@@ -122,7 +122,7 @@ internal sealed class ExportBuilder : ExportRoot
                     }
 
                     StepConnectedFaceSet cfSpms;
-                    if (myShell.IsClosed)
+                    if (myShell.ClosedFlag)
                     {
                         cfSpms = new StepClosedShell();
                     }

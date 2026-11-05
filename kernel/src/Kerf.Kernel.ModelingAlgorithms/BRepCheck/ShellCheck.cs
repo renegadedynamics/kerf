@@ -211,7 +211,7 @@ internal class ShellCheck : ResultCheck
             case ShapeType.Solid:
             {
                 StatusCheck fst = Closed();
-                if ((fst == StatusCheck.NotClosed && s.IsClosed) || (fst != StatusCheck.NoError))
+                if ((fst == StatusCheck.NotClosed && s.ClosedFlag) || (fst != StatusCheck.NoError))
                 {
                     BRepCheckCheck.Add(lst, fst);
                 }

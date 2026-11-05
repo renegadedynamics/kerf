@@ -119,7 +119,7 @@ internal sealed class MakeShellBasedSurfaceModel : ExportRoot
             if (stepB.Value() is not null)
             {
                 sbsmBoundary = new NCollection_HArray1<StepShell>(1, 1);
-                if (aShell.IsClosed)
+                if (aShell.ClosedFlag)
                 {
                     closedShell = stepB.Value() as StepClosedShell;
                     shellSelect.SetValue(closedShell);

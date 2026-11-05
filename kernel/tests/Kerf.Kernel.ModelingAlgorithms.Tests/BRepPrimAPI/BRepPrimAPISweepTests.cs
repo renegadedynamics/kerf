@@ -111,7 +111,7 @@ public class BRepPrimAPISweepTests
         Assert.Equal(10, Count(aSh, ShapeType.Edge));
         Assert.Equal(8, Count(aSh, ShapeType.Vertex));
         Assert.Equal(6.0, Area(aSh), Tol);
-        Assert.False(aSh.IsClosed);
+        Assert.False(aSh.ClosedFlag);
     }
 
     [Fact]

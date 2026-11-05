@@ -95,7 +95,7 @@ public static partial class FaceExtensions
                 else
                 {
                     var outer = self.OuterWire();
-                    var shapeEdges = outer.SelectEdges();
+                    var shapeEdges = outer.Edges();
                     IEnumerable<Edge> edges = shapeEdges;
                     if (shapeEdges.Any(e => e.GeomType != GeomType.Line))
                     {
@@ -158,13 +158,13 @@ public static partial class FaceExtensions
                 if (self.IsEmpty || self.IsPlanar is null)
                     return null;
                 var flat = new Plane(self).ToLocalCoords(self);
-                var flatEdges = flat.SelectEdges();
+                var flatEdges = flat.Edges();
                 if (!flatEdges.All(e => e.GeomType == GeomType.Line))
                     return null;
                 var result = "POLYGON";
                 if (flatEdges.Count == 4)
                 {
-                    var pairs = flat.SelectVertices().Select(v => flatEdges.Where(e => e.SelectVertices().Contains(v, ShapeComparer<Vertex>.Same)).ToList()).ToList();
+                    var pairs = flat.Vertices().Select(v => flatEdges.Where(e => e.Vertices().Contains(v, ShapeComparer<Vertex>.Same)).ToList()).ToList();
                     if (pairs.All(p => p[0].TangentAt(0).GetAngle(p[1].TangentAt(0)) == 90))
                     {
                         result = "RECTANGLE";
@@ -275,7 +275,7 @@ public static partial class FaceExtensions
                 if (self.IsPlanar is not null)
                 {
                     // Repositioned on Plane.XY
-                    var vertices = new Plane(self).ToLocalCoords(self).SelectVertices().OrderBy(Axis.X);
+                    var vertices = new Plane(self).ToLocalCoords(self).Vertices().OrderBy(Axis.X);
                     return vertices[^1].X - vertices[0].X;
                 }
                 if (self.GeomType == GeomType.Cylinder)
@@ -296,7 +296,7 @@ public static partial class FaceExtensions
                     return null;
                 if (self.IsPlanar is not null)
                 {
-                    var vertices = new Plane(self).ToLocalCoords(self).SelectVertices().OrderBy(Axis.Y);
+                    var vertices = new Plane(self).ToLocalCoords(self).Vertices().OrderBy(Axis.Y);
                     return vertices[^1].Y - vertices[0].Y;
                 }
                 if (self.GeomType == GeomType.Cylinder && self.Radius is not null)
@@ -348,7 +348,7 @@ public static partial class FaceExtensions
         {
             get
             {
-                return self.SelectEdges().Where(e => e.IsSeam(self)).ToShapeList();
+                return self.Edges().Where(e => e.IsSeam(self)).ToShapeList();
             }
         }
 
@@ -536,7 +536,7 @@ public static partial class FaceExtensions
             if (self.IsEmpty)
                 return [];
             var outer = self.OuterWire();
-            return new ShapeList<Wire>(self.SelectWires().Where(w => !w.IsSame(outer)));
+            return new ShapeList<Wire>(self.Wires().Where(w => !w.IsSame(outer)));
         }
 
         /// <summary>Whether this planar face lies in <paramref name="plane"/>.</summary>
@@ -623,7 +623,7 @@ public static partial class FaceExtensions
             var record = new ModelHistory();
             foreach (var wire in new[] { self.OuterWire() }.Concat(self.InnerWires()))
             {
-                var wireVertices = wire.SelectVertices();
+                var wireVertices = wire.Vertices();
                 var inWire = list.Where(v => wireVertices.Any(wv => wv.IsSame(v))).ToList();
                 if (inWire.Count > 0)
                 {
@@ -658,13 +658,13 @@ public static partial class FaceExtensions
                     intersected.AddRange(TopoUtil.TopLevelShapes(shape).Select(f => (IShape2D)(Face)f));
             }
             else
-                foreach (var shell in targetObject.SelectShells())
+                foreach (var shell in targetObject.Shells())
                 {
                     var shape = TopoUtil.BoolOp([extruded], [shell], BooleanKind.Common);
                     intersected.AddRange(TopoUtil.TopLevelShapes(shape).Select(s => (IShape2D)(Shell)s));
                 }
             var sorted = new ShapeList<IShape2D>(intersected).OrderBy(new Axis(self.Center(), direction));
-            return new ShapeList<IShape2D>(sorted.Select(s => s.SelectFaces().Count == 1 ? (IShape2D)s.SingleFace() : s));
+            return new ShapeList<IShape2D>(sorted.Select(s => s.Faces().Count == 1 ? (IShape2D)s.SingleFace() : s));
         }
     }
 
@@ -737,7 +737,7 @@ public static partial class FaceExtensions
 
         /// <inheritdoc cref="MakeSurface(IEnumerable{Edge}, IEnumerable{Point3D}?, IEnumerable{Wire}?)"/>
         public static Face MakeSurface(Wire exterior, IEnumerable<Point3D>? surfacePoints = null, IEnumerable<Wire>? interiorWires = null) =>
-            Face.MakeSurface(exterior.SelectEdges(), surfacePoints, interiorWires);
+            Face.MakeSurface(exterior.Edges(), surfacePoints, interiorWires);
 
         /// <summary>
         /// A spline surface approximating a 2D array of points: the first index is v, the second u, in the face's parameters.
@@ -808,7 +808,7 @@ public static partial class FaceExtensions
                 groups.Add(top.Type switch
                 {
                     ShapeType.Face => [(Face)top],
-                    ShapeType.Shell => top.SelectFaces(),
+                    ShapeType.Shell => top.Faces(),
                     ShapeType.Solid => new ShapeList<Face>(TopoUtil.Entities(top, ShapeType.Face).Select(f => (Face)f)),
                     _ => throw new InvalidOperationException($"SewedShape returned a {TopoUtil.TypeName(top)} which was unexpected"),
                 });
@@ -819,7 +819,7 @@ public static partial class FaceExtensions
         /// <summary>A one-edge profile swept along a one-edge path (see <c>Shell.Sweep</c> for more edges).</summary>
         public static Face Sweep(Shape profile, Shape path, Transition transition = Transition.Transformed)
         {
-            if (profile.SelectEdges().Count != 1 || path.SelectEdges().Count != 1)
+            if (profile.Edges().Count != 1 || path.Edges().Count != 1)
                 throw new ArgumentException("Use Shell.sweep for multi Edge objects");
             var profileWire = Wire.Make([profile.SingleEdge()]);
             var pathWire = Wire.Make([path.SingleEdge()]);
@@ -852,7 +852,7 @@ public static partial class FaceExtensions
     private static Face MakeFromWires(Wire outerWire, IEnumerable<Wire>? innerWires, Face? surface)
     {
         var inner = innerWires?.Select(w => w).ToList() ?? [];
-        if (!outerWire.CheckClosed() || inner.Any(w => !w.CheckClosed()))
+        if (!outerWire.IsClosed || inner.Any(w => !w.IsClosed))
             throw new ArgumentException("Face can only be created with closed wires");
         if (surface is null)
             return TopoUtil.MakeFaceFromWires(outerWire, inner);

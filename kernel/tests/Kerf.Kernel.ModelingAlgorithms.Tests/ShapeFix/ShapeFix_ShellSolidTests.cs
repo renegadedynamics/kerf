@@ -230,8 +230,8 @@ public class ShapeFix_ShellTests
         aFix.Perform();
         Shape aResult = aFix.Shape();
         aSnap.AssertUnchanged(aShell);
-        Assert.False(aShell.IsClosed);
-        Assert.True(aResult.IsClosed);
+        Assert.False(aShell.ClosedFlag);
+        Assert.True(aResult.ClosedFlag);
         Assert.False(ReferenceEquals(aResult.TShape(), aShell.TShape()));
         foreach (Shape aF in ShapeFixShapes.SubShapes(aShell, ShapeType.Face))
         {

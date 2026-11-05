@@ -22,7 +22,7 @@ public class MalformedInputTests
         {
             var read = (Extras.ReadBRep(Brep(part, withTriangles)).Value);
             Assert.Equal(part.Volume, read.Volume, 6);
-            Assert.Equal(part.Faces().Count, read.SelectFaces().Count);
+            Assert.Equal(part.Faces().Count, read.Faces().Count);
         }
     }
 
@@ -80,7 +80,7 @@ public class MalformedInputTests
                 _ = shape.IsValid;
                 _ = shape.BoundBox();
                 _ = shape.Volume;
-                _ = shape.SelectFaces().Sum(f => f.Area);
+                _ = shape.Faces().Sum(f => f.Area);
             }
             catch (Exception e) when (Failures.IsKernelFailure(e) || e is ArgumentException or InvalidOperationException)
             {

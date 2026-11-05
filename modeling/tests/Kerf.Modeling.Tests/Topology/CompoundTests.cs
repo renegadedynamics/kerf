@@ -174,8 +174,8 @@ public class CompoundAlgebraTests
         var result = collinear + Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(2, 0, 0));
 
         Check.Is<Compound>(result);
-        Assert.Single(result.SelectEdges());
-        Check.AlmostEqual(2, result.SelectEdges()[0].Length, 5);
+        Assert.Single(result.Edges());
+        Check.AlmostEqual(2, result.Edges()[0].Length, 5);
     }
 
     [Fact]
@@ -183,7 +183,7 @@ public class CompoundAlgebraTests
     {
         var separate = Compound.Make([Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0))]);
         var result = separate + Edge.MakeLine(new Point3D(5, 5, 0), new Point3D(6, 5, 0));
-        Assert.Equal(2, result.SelectEdges().Count);
+        Assert.Equal(2, result.Edges().Count);
     }
 
     [Fact]

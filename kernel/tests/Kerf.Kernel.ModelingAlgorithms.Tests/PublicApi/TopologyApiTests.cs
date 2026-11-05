@@ -48,12 +48,12 @@ public class TopologyApiTests
     public void Traversal_finds_each_sub_shape_once()
     {
         Solid box = Box();
-        Assert.Equal(6, box.Faces().Length);
-        Assert.Equal(12, box.Edges().Length);
-        Assert.Equal(8, box.Vertices().Length);
-        Assert.Equal(6, box.Wires().Length);
-        Assert.Single(box.Shells());
-        Assert.Single(box.Solids());
+        Assert.Equal(6, box.AllFaces().Length);
+        Assert.Equal(12, box.AllEdges().Length);
+        Assert.Equal(8, box.AllVertices().Length);
+        Assert.Equal(6, box.AllWires().Length);
+        Assert.Single(box.AllShells());
+        Assert.Single(box.AllSolids());
         Assert.Equal(24, box.Explore<Edge>().Count());
         Assert.Equal(6, box.Explore<Face>().Count());
         Assert.Empty(box.Explore<Edge>(avoid: ShapeType.Face));
@@ -66,7 +66,7 @@ public class TopologyApiTests
     public void Comparers_tell_same_from_equal()
     {
         Solid box = Box();
-        Face face = box.Faces()[0];
+        Face face = box.AllFaces()[0];
         Shape reversed = face.Reversed();
         Assert.True(ShapeComparer.Same.Equals(face, reversed));
         Assert.False(ShapeComparer.Equal.Equals(face, reversed));
@@ -87,30 +87,30 @@ public class TopologyApiTests
         Solid cylinder = Cylinder();
         Compound both = Compound.Create([box, cylinder.Moved(Transform3D.Translation(new Vector3D(5, 0, 0)))]);
         Assert.Equal(2, both.ChildCount);
-        Assert.Equal(2, both.Solids().Length);
+        Assert.Equal(2, both.AllSolids().Length);
         Assert.Equal(2, both.TopLevelShapes().Length);
 
-        Shell shell = Shell.Create(box.Faces());
-        Assert.Equal(6, shell.Faces().Length);
-        Wire wire = Wire.Create(box.Faces()[0].Edges());
-        Assert.Equal(4, wire.Edges().Length);
-        Solid solid = Solid.Create(box.Shells());
-        Assert.Equal(6, solid.Faces().Length);
+        Shell shell = Shell.Create(box.AllFaces());
+        Assert.Equal(6, shell.AllFaces().Length);
+        Wire wire = Wire.Create(box.AllFaces()[0].AllEdges());
+        Assert.Equal(4, wire.AllEdges().Length);
+        Solid solid = Solid.Create(box.AllShells());
+        Assert.Equal(6, solid.AllFaces().Length);
         CompSolid compSolid = CompSolid.Create([box]);
-        Assert.Single(compSolid.Solids());
+        Assert.Single(compSolid.AllSolids());
         Assert.Throws<ArgumentException>(() => Compound.Create([default(Shape)]));
     }
 
     [Fact]
     public void A_shape_is_rebuilt_with_other_children_and_the_original_is_unchanged()
     {
-        Shell shell = Box().Shells()[0];
-        Face first = shell.Faces()[0];
+        Shell shell = Box().AllShells()[0];
+        Face first = shell.AllFaces()[0];
         Shape fewer = shell.WithoutChild(first);
-        Assert.Equal(5, ((Shell)fewer).Faces().Length);
-        Assert.Equal(6, shell.Faces().Length);
-        Shape again = fewer.WithChildren(shell.Faces().Select(f => (Shape)f));
-        Assert.Equal(6, ((Shell)again).Faces().Length);
+        Assert.Equal(5, ((Shell)fewer).AllFaces().Length);
+        Assert.Equal(6, shell.AllFaces().Length);
+        Shape again = fewer.WithChildren(shell.AllFaces().Select(f => (Shape)f));
+        Assert.Equal(6, ((Shell)again).AllFaces().Length);
         Assert.Throws<ArgumentException>(() => shell.WithoutChild(Cylinder()));
     }
 
@@ -141,11 +141,11 @@ public class TopologyApiTests
     public void Vertices_and_edges_read_their_geometry()
     {
         Solid box = Box();
-        Vertex vertex = box.Vertices()[0];
+        Vertex vertex = box.AllVertices()[0];
         Assert.True(BoundingBox.Of(Point3D.Origin, new Point3D(1, 2, 3)).Contains(vertex.Point));
         Assert.True(vertex.Tolerance > 0);
 
-        Edge edge = box.Edges()[0];
+        Edge edge = box.AllEdges()[0];
         Assert.True(edge.TryGetCurve(out Curve3D? curve, out Interval range));
         Assert.Equal(edge.Range, range);
         Assert.True(curve!.Evaluate(range.Min).IsEqual(edge.FirstVertex.Point, 1e-7)
@@ -160,14 +160,14 @@ public class TopologyApiTests
     public void Faces_read_their_surface_boundary_and_curves_on_them()
     {
         Solid cylinder = Cylinder();
-        Face side = cylinder.Faces().First(f => f.ToSurface().Kind == SurfaceKind.Cylinder);
+        Face side = cylinder.AllFaces().First(f => f.ToSurface().Kind == SurfaceKind.Cylinder);
         Assert.True(side.TryGetSurface(out Surface? surface));
         Assert.Equal(SurfaceKind.Cylinder, surface!.Kind);
         Assert.False(side.OuterWire.IsNull);
         (Interval u, Interval v) = side.UVBounds;
         Assert.Equal(2 * Math.PI, u.Length, 9);
         Assert.Equal(2, v.Length, 9);
-        Edge seam = side.Edges().First(e => e.IsSeam(side));
+        Edge seam = side.AllEdges().First(e => e.IsSeam(side));
         Assert.True(seam.TryGetCurveOnFace(side, out Curve2D? pcurve, out _));
         Assert.Equal(CurveKind.Line, pcurve!.Kind);
         Assert.Equal(4, side.OuterWire.OrderedEdges().Length);
@@ -177,7 +177,7 @@ public class TopologyApiTests
     public void Evaluators_answer_in_world_coordinates()
     {
         Solid cylinder = Cylinder();
-        Face side = cylinder.Faces().First(f => f.ToSurface().Kind == SurfaceKind.Cylinder);
+        Face side = cylinder.AllFaces().First(f => f.ToSurface().Kind == SurfaceKind.Cylinder);
         FaceSurface surface = side.ToSurface();
         Assert.True(surface.TryGetCylinder(out Kerf.Geometry.Cylinder analytic));
         Assert.Equal(1, analytic.Radius);
@@ -187,7 +187,7 @@ public class TopologyApiTests
         Assert.True(surface.Evaluate(0, 1).IsEqual(new Point3D(1, 0, 1), 1e-9));
         Assert.Equal(1, surface.Derivatives(0, 1, 1).Order);
 
-        Edge circle = cylinder.Edges().First(e => e.ToCurve().Kind == CurveKind.Circle);
+        Edge circle = cylinder.AllEdges().First(e => e.ToCurve().Kind == CurveKind.Circle);
         EdgeCurve curve = circle.ToCurve();
         Assert.True(curve.TryGetCircle(out Circle3D c));
         Assert.Equal(1, c.Radius);
@@ -197,7 +197,7 @@ public class TopologyApiTests
         Assert.False(curve.TryGetLine(out _));
         Assert.Equal(circle, curve.Edge);
 
-        Face top = Box().Faces().First(f => f.ToSurface().TryGetPlane(out Plane3D p) && p.Location.Z > 2.5);
+        Face top = Box().AllFaces().First(f => f.ToSurface().TryGetPlane(out Plane3D p) && p.Location.Z > 2.5);
         Assert.True(top.ToSurface().Normal(0, 0).IsEqual(Direction3D.UnitZ, 1e-9));
     }
 
@@ -206,7 +206,7 @@ public class TopologyApiTests
     {
         Solid box = Box();
         var graph = ShapeGraph.Build(box);
-        Edge edge = box.Edges()[0];
+        Edge edge = box.AllEdges()[0];
         Assert.Equal(2, graph.Ancestors(edge, ShapeType.Face).Length);
         Assert.Single(graph.Ancestors(edge, ShapeType.Solid));
         Assert.Equal(0, graph.IndexOf(box));
@@ -219,9 +219,9 @@ public class TopologyApiTests
     public void A_history_reads_and_composes()
     {
         Solid box = Box();
-        Face a = box.Faces()[0];
-        Face b = box.Faces()[1];
-        Face c = box.Faces()[2];
+        Face a = box.AllFaces()[0];
+        Face b = box.AllFaces()[1];
+        Face c = box.AllFaces()[2];
         ShapeHistory first = ShapeHistory.Create([new ShapeHistoryEntry(a, ShapeHistoryKind.Modified, [b])]);
         ShapeHistory second = ShapeHistory.Create([new ShapeHistoryEntry(b, ShapeHistoryKind.Modified, [c])]);
         Assert.Equal([b], first.Modified(a));

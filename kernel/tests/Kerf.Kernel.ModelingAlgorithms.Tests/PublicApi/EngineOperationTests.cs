@@ -23,7 +23,7 @@ public class EngineOperationTests
     {
         Result<Built<Solid>> result = EngineOperation.Run<Solid>(_ => Box(2), Failed);
         Assert.True(result.IsSuccess);
-        Assert.Equal(6, result.Value.Shape.Faces().Length);
+        Assert.Equal(6, result.Value.Shape.AllFaces().Length);
         Assert.False(result.Value.History.HasModified);
         Result<Built<Shape>> asShape = EngineOperation.Run<Shape>(_ => Box(2), Failed);
         Assert.Equal(ShapeType.Solid, asShape.Value.Shape.Type);

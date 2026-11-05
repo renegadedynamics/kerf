@@ -337,7 +337,7 @@ public class ChFi2d_BuilderTests
         {
             List<Shape> aWires = Sub(theFace, ShapeType.Wire);
             Assert.Equal(2, aWires.Count);
-            Assert.All(aWires, w => Assert.True(!theFlagged || ShapeCasts.Wire(w).IsClosed));
+            Assert.All(aWires, w => Assert.True(!theFlagged || ShapeCasts.Wire(w).ClosedFlag));
             Assert.Equal(theArea, Area(theFace), 1.0e-9);
             Assert.True(new Analyzer(theFace).IsValid());
         }

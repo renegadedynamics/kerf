@@ -288,10 +288,10 @@ internal class ShapeSet
             os.Write(s.Free() ? "1" : "0");
             os.Write(s.Modified() ? "1" : "0");
             os.Write(s.Checked() ? "1" : "0");
-            os.Write(s.IsOrientable ? "1" : "0");
-            os.Write(s.IsClosed ? "1" : "0");
-            os.Write(s.IsInfinite ? "1" : "0");
-            os.Write(s.IsConvex ? "1" : "0");
+            os.Write(s.OrientableFlag ? "1" : "0");
+            os.Write(s.ClosedFlag ? "1" : "0");
+            os.Write(s.InfiniteFlag ? "1" : "0");
+            os.Write(s.ConvexFlag ? "1" : "0");
             // OCCT.NET: the stored Locked bit, not Locked(), which is also true of every frozen shape (design 4.3)
             os.Write(s.TShape()!.LockedFlag() ? "1" : "0");
             os.Write(" " + RuntimeHelpers.GetHashCode(s.TShape()).ToString("X16", CultureInfo.InvariantCulture) + "\n");
@@ -407,10 +407,10 @@ internal class ShapeSet
                 os.Write(s.Free() ? "1" : "0");
                 os.Write(s.Modified() ? "1" : "0");
                 os.Write(s.Checked() ? "1" : "0");
-                os.Write(s.IsOrientable ? "1" : "0");
-                os.Write(s.IsClosed ? "1" : "0");
-                os.Write(s.IsInfinite ? "1" : "0");
-                os.Write(s.IsConvex ? "1" : "0");
+                os.Write(s.OrientableFlag ? "1" : "0");
+                os.Write(s.ClosedFlag ? "1" : "0");
+                os.Write(s.InfiniteFlag ? "1" : "0");
+                os.Write(s.ConvexFlag ? "1" : "0");
                 os.Write("\n");
 
                 // sub-shapes

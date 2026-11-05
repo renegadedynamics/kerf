@@ -84,13 +84,13 @@ public class ShapeExtendWireDataTests
 
         Wire aNew = aWD.Wire();
         Assert.True(aNew.TShape()!.IsFrozen);
-        Assert.True(aNew.IsClosed);
+        Assert.True(aNew.ClosedFlag);
         Assert.Equal(4, aNew.ChildCount);
 
         Wire anAPI = aWD.WireAPIMake();
         Assert.False(anAPI.IsNull);
         Assert.True(anAPI.TShape()!.IsFrozen);
-        Assert.True(anAPI.IsClosed);
+        Assert.True(anAPI.ClosedFlag);
 
         Wire anInternal = aWD.InternalWire();
         Assert.False(anInternal.TShape()!.IsFrozen);
@@ -146,7 +146,7 @@ public class ShapeExtendWireDataTests
         Assert.Equal(5, aNM.EdgeCount);
         Assert.Equal(0, aNM.NonManifoldEdgeCount);
         Assert.True(aNM.Edge(5).IsSame(anInternal));
-        Assert.False(aNM.Wire().IsClosed); // not manifold: the wire isn't marked closed
+        Assert.False(aNM.Wire().ClosedFlag); // not manifold: the wire isn't marked closed
 
         // Init from another wire data copies both lists and the mode
         var aCopy = new ExtendWireData();
@@ -316,7 +316,7 @@ public class ShapeExtendWireDataTests
         aWD.Add(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)));
         aWD.Add(TestShapes.Edge(new Point3D(5, 0, 0), new Point3D(6, 0, 0)));
         Assert.True(aWD.WireAPIMake().IsNull);
-        Assert.False(aWD.Wire().IsClosed);
+        Assert.False(aWD.Wire().ClosedFlag);
         Assert.True(IsPlanar(FirstFace(new MakeBox(1, 1, 1).Shape())));
     }
 }

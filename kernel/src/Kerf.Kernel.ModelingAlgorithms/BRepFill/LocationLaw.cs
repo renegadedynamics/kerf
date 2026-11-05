@@ -212,7 +212,7 @@ internal abstract class LocationLaw : Transient
         }
 
         // Is the law periodical ?
-        if (_path.IsClosed)
+        if (_path.ClosedFlag)
         {
             _laws.Value(_laws.Length()).D0(last, ref m1, ref v);
             _laws.Value(1).GetDomain(out first, out last);
@@ -393,7 +393,7 @@ internal abstract class LocationLaw : Transient
 
         if (index == 0 || index == _laws!.Length())
         {
-            if (!_path.IsClosed || (IsG1(index, tolMin) != 1))
+            if (!_path.ClosedFlag || (IsG1(index, tolMin) != 1))
             {
                 isBary = false;
                 if (index == 0)
@@ -483,7 +483,7 @@ internal abstract class LocationLaw : Transient
     /// <summary>True if the path is closed (by its flag or by its end vertices).</summary>
     public bool IsClosed()
     {
-        if (_path.IsClosed)
+        if (_path.ClosedFlag)
         {
             return true;
         }
@@ -536,7 +536,7 @@ internal abstract class LocationLaw : Transient
         }
         if (index == 0 || index == _laws!.Length())
         {
-            if (!_path.IsClosed)
+            if (!_path.ClosedFlag)
             {
                 return -1;
             }

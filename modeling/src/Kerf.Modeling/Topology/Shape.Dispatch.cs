@@ -142,7 +142,7 @@ public static partial class Shape1DExtensions
         {
             ShapeType.Edge => edge((Edge)shape),
             ShapeType.Wire => wire((Wire)shape),
-            _ => wire(Wire.Make(shape.SelectEdges())),
+            _ => wire(Wire.Make(shape.Edges())),
         };
     }
 }

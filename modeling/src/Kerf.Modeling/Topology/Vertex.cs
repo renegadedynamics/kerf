@@ -74,7 +74,7 @@ public static partial class VertexExtensions
         /// <summary>The one face of a sketch-like parent (no solids or shells) that holds this vertex.</summary>
         private Face? OnlyFace(Shape parent)
         {
-            if (parent.IsEmpty || parent.SelectSolids().Count > 0 || parent.SelectShells().Count > 0)
+            if (parent.IsEmpty || parent.Solids().Count > 0 || parent.Shells().Count > 0)
                 return null;
             var holding = new List<Face>();
             foreach (var face in parent.Explore<Face>())

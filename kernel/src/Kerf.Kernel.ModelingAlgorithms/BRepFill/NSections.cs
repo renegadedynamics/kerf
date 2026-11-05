@@ -477,7 +477,7 @@ internal sealed class NSections : SectionLaw
 
             // Is the law closed by U ?
 
-            wClosed = w.IsClosed;
+            wClosed = w.ClosedFlag;
             if (!wClosed)
             {
                 // if unsure about the flag, make check

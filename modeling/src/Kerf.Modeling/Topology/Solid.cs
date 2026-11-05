@@ -106,10 +106,10 @@ public static partial class SolidExtensions
                     if (other.TryAs<Solid>(out _))
                     {
                         foundSolids ??= [.. ShapeExtensions.IntersectOne(self.AsShape(), other, tolerance, includeTouched: false) ?? []];
-                        intersectFaces = foundSolids.SelectMany(s => s.SelectFaces()).ToList();
+                        intersectFaces = foundSolids.SelectMany(s => s.Faces()).ToList();
                     }
-                    var selfFaces = self.SelectFaces().Select(f => (Face: f, Box: f.BoundBox(optimal: false))).ToList();
-                    var otherFaces = other.SelectFaces().Select(f => (Face: f, Box: f.BoundBox(optimal: false))).ToList();
+                    var selfFaces = self.Faces().Select(f => (Face: f, Box: f.BoundBox(optimal: false))).ToList();
+                    var otherFaces = other.Faces().Select(f => (Face: f, Box: f.BoundBox(optimal: false))).ToList();
                     var raw = new List<Shape>();
                     foreach (var (sf, sfBox) in selfFaces)
                         foreach (var (of, ofBox) in otherFaces)
@@ -139,10 +139,10 @@ public static partial class SolidExtensions
                 }
                 case Edge or Wire:
                 {
-                    var selfFaces = self.SelectFaces().Select(f => (Face: f, Box: f.BoundBox(optimal: false))).ToList();
+                    var selfFaces = self.Faces().Select(f => (Face: f, Box: f.BoundBox(optimal: false))).ToList();
                     var otherBox = other.BoundBox(optimal: false);
                     // The edge's ends on the boundary
-                    foreach (var ov in other.SelectVertices())
+                    foreach (var ov in other.Vertices())
                         if (selfFaces.Any(sf => VertexOnFace(ov, sf.Face)))
                             results.Add(ov);
                     // And where it is tangent to the surface
@@ -167,7 +167,7 @@ public static partial class SolidExtensions
                     break;
                 }
                 case Vertex vertex:
-                    if (self.SelectFaces().Any(sf => VertexOnFace(vertex, sf)))
+                    if (self.Faces().Any(sf => VertexOnFace(vertex, sf)))
                         results.Add(vertex);
                     break;
                 default:
@@ -405,7 +405,7 @@ public static partial class SolidExtensions
         for (int i = 0; i < profileWires.Count; i++)
         {
             var angle = i > 0 && !flipInner ? -taper : taper;
-            foreach (var edge in profileWires[i].SelectEdges())
+            foreach (var edge in profileWires[i].Edges())
             {
                 // The faces an edge generates: its side (the history goes on to its copy in the top cap)
                 foreach (var side in prismBuilt.History.Generated(edge))
@@ -451,7 +451,7 @@ public static partial class SolidExtensions
                     var flip = i > 0 && flipInner ? -1 : 1;
                     var local = plane.ToLocalCoords(profileWires[i]);
                     var localTaper = local.Offset2D(flip * offset, kind: Kind.Intersection);
-                    taperWires.Add(Wire.Make(plane.FromLocalCoords(localTaper).SelectEdges()).Moved(new Location(direction)));
+                    taperWires.Add(Wire.Make(plane.FromLocalCoords(localTaper).Edges()).Moved(new Location(direction)));
                 }
                 solids = [.. profileWires.Zip(taperWires).Select(p => Solid.MakeLoft([p.First, p.Second]))];
             }
@@ -503,13 +503,13 @@ public static partial class SolidExtensions
 
         // 5: the profile is the extrusion's own base face and survives the split, so return the piece that holds it
         foreach (var piece in pieces)
-            if (piece.SelectFaces().Any(f => f.IsSame(profile)))
+            if (piece.Faces().Any(f => f.IsSame(profile)))
                 return (Solid)piece;
         // A kernel that never writes its inputs (OCCT.NET) gives the extrusion a copy of a profile it has to add pcurves
         // to, so then the piece holding the profile is found by place: the face at the profile's centre, of its area
         var center = profile.Center();
         foreach (var piece in pieces)
-            if (piece.SelectFaces().Any(f => Math.Abs(f.Area - profile.Area) <= Constants.Tolerance * Math.Max(1, profile.Area)
+            if (piece.Faces().Any(f => Math.Abs(f.Area - profile.Area) <= Constants.Tolerance * Math.Max(1, profile.Area)
                                        && (f.Center() - center).Magnitude <= Constants.Tolerance))
                 return (Solid)piece;
         throw new InvalidOperationException("The extrusion is empty.");

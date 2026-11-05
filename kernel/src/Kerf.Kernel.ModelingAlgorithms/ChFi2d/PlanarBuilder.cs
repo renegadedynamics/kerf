@@ -538,7 +538,7 @@ internal sealed partial class PlanarBuilder
         var exW = new Explorer(_refFace, ShapeType.Wire);
         if (exW.More())
         {
-            closedStatus = ShapeCasts.Wire(exW.Current()).IsClosed;
+            closedStatus = ShapeCasts.Wire(exW.Current()).ClosedFlag;
         }
 
         bool filletIsAdded = false;

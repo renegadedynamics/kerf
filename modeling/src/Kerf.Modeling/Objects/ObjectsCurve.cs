@@ -275,7 +275,7 @@ public class BlendCurve : BaseEdgeObject
 
     private static (Point3D, Point3D) Closest(Edge curve0, Edge curve1)
     {
-        var (a, b) = curve0.SelectVertices().SelectMany(a => curve1.SelectVertices().Select(b => (a, b))).MinBy(pair => pair.a.DistanceTo(pair.b));
+        var (a, b) = curve0.Vertices().SelectMany(a => curve1.Vertices().Select(b => (a, b))).MinBy(pair => pair.a.DistanceTo(pair.b));
         return (a.Point, b.Point);
     }
 
@@ -467,7 +467,7 @@ public class DoubleTangentArc : BaseEdgeObject
         if (keep is not (Keep.Top or Keep.Bottom))
             throw new ArgumentException($"Only the TOP or BOTTOM options are supported not {keep}");
         var arcTangent = tangent.Normalized();
-        var coplane = Edge.MakeLine(arcPoint, arcPoint + arcTangent).CommonPlane(other.SelectEdges().Select(e => (IShape1D?)e))
+        var coplane = Edge.MakeLine(arcPoint, arcPoint + arcTangent).CommonPlane(other.Edges().Select(e => (IShape1D?)e))
                       ?? throw new ArgumentException("DoubleTangentArc only works on a single plane");
         var workplane = -coplane;   // flipped to help with TOP/BOTTOM
         var rotationAxis = new Axis(new Point3D(0, 0, 0), workplane.ZDir);
@@ -716,15 +716,15 @@ public class FilletPolyline : BaseLineObject
         var wireOfLines = Wire.Make(edges);
 
         // The wire's vertices in the order of the points, so the fillets are in order
-        var wireVertices = wireOfLines.SelectVertices();
+        var wireVertices = wireOfLines.Vertices();
         var orderedVertices = points.Select(p => wireVertices.MinBy(v => (p - v.Point).Magnitude)!).ToList();
 
         // A fillet edge for each corner, or null for a sharp one (keyed as build123d's dict, so a repeated vertex counts once)
-        var wireEdges = wireOfLines.SelectEdges();
+        var wireEdges = wireOfLines.Edges();
         var vertexToEdges = new List<(Vertex Vertex, List<Edge> Edges)>();
         foreach (var v in orderedVertices)
             if (!vertexToEdges.Any(entry => entry.Vertex == v))
-                vertexToEdges.Add((v, [.. wireEdges.Where(e => e.SelectVertices().Contains(v, ShapeComparer<Vertex>.Same))]));
+                vertexToEdges.Add((v, [.. wireEdges.Where(e => e.Vertices().Contains(v, ShapeComparer<Vertex>.Same))]));
         var fillets = new List<Edge?>();
         for (int i = 0; i < vertexToEdges.Count; i++)
         {
@@ -737,10 +737,10 @@ public class FilletPolyline : BaseLineObject
                 fillets.Add(null);
                 continue;
             }
-            var others = corner.SelectMany(e => e.SelectVertices()).Where(ve => !ve.IsSame(vertex)).Distinct(ShapeComparer<Vertex>.Same).ToList();
+            var others = corner.SelectMany(e => e.Vertices()).Where(ve => !ve.IsSame(vertex)).Distinct(ShapeComparer<Vertex>.Same).ToList();
             var thirdEdge = Edge.MakeLine(others[0].Point, others[1].Point);
             var filletFace = Face.Make(Wire.Make([.. corner, thirdEdge])).Fillet2D(currentRadius, [vertex]);
-            fillets.Add(filletFace.SelectEdges().Where(GeomType.Circle)[0]);
+            fillets.Add(filletFace.Edges().Where(GeomType.Circle)[0]);
         }
 
         // The lines joining the fillets
@@ -875,7 +875,7 @@ public class IntersectingLine : BaseEdgeObject
     {
         direction = direction.Normalized();
         var axis = new Axis(start, direction);
-        var points = other.SelectEdges().SelectMany(e => e.FindIntersectionPoints(axis)).ToList();
+        var points = other.Edges().SelectMany(e => e.FindIntersectionPoints(axis)).ToList();
         if (points.Count == 0)
             throw new ArgumentException("No intersections found");
         var length = points.Min(p => (start - p.Point).Magnitude);

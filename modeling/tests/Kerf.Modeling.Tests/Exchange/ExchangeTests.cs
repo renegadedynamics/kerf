@@ -83,7 +83,7 @@ public partial class ExchangeTests
         var read = Importers.ImportStep(stream).Value;
         Check.Is<Solid>(read);
         Check.AlmostEqual(block.Volume, read.Volume, 6);
-        Assert.Equal(block.Faces().Count, read.SelectFaces().Count);
+        Assert.Equal(block.Faces().Count, read.Faces().Count);
 
         var path = Path.Combine(Path.GetTempPath(), $"b3d-{Guid.NewGuid():N}.step");
         try
@@ -106,8 +106,8 @@ public partial class ExchangeTests
         stream.Position = 0;
         var read = Importers.ImportStep(stream).Value;
         Check.Is<Compound>(read);
-        Assert.Equal(2, read.SelectSolids().Count);
-        Check.AlmostEqual(2.0, read.SelectSolids().Sum(s => s.Volume), 9);
+        Assert.Equal(2, read.Solids().Count);
+        Check.AlmostEqual(2.0, read.Solids().Sum(s => s.Volume), 9);
     }
 
     [Fact]

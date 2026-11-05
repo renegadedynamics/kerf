@@ -17,7 +17,7 @@ public class SolidTests
     [Fact]
     public void MakeSolid()
     {
-        var boxFaces = Solid.MakeBox(1, 1, 1).SelectFaces();
+        var boxFaces = Solid.MakeBox(1, 1, 1).Faces();
         var boxShell = Shell.Make(boxFaces);
         var box = Solid.Make(boxShell);
         Check.AlmostEqual(6, box.Area, 5);
@@ -41,7 +41,7 @@ public class SolidTests
         Check.AlmostEqual(1, f.Volume, 5);
 
         var s = Compound.Extrude(
-            Shell.Make(Solid.MakeBox(1, 1, 1).Located(new Location(new Point3D(-2, 1, 0))).SelectFaces().OrderBy(new Axis(new Point3D(0, 0, 0), new Vector3D(1, 1, 1)))[^2..]),
+            Shell.Make(Solid.MakeBox(1, 1, 1).Located(new Location(new Point3D(-2, 1, 0))).Faces().OrderBy(new Axis(new Point3D(0, 0, 0), new Vector3D(1, 1, 1)))[^2..]),
             new Vector3D(0.1, 0.1, 0.1));
         Check.AlmostEqual(0.2, s.Volume, 5);
     }
@@ -91,7 +91,7 @@ public class SolidTests
         // A cross with rounded inner corners, as cut for a Phillips recess, cannot be drafted at this angle but can be
         // lofted
         var cross = (new Rectangle(5.3, 5.3 / 6) + new Rectangle(5.3 / 6, 5.3)).SingleFace();
-        var inner = new ShapeList<Vertex>(cross.SelectVertices()).OrderByDistanceTo(new Point3D(0, 0, 0))[..4];
+        var inner = new ShapeList<Vertex>(cross.Vertices()).OrderByDistanceTo(new Point3D(0, 0, 0))[..4];
         var recess = cross.Fillet2D(5.3 / 3, inner);
         var tapered = Solid.ExtrudeTaper(recess, new Vector3D(0, 0, -3.27), 20);
         Assert.True(tapered.IsValid);
@@ -106,7 +106,7 @@ public class SolidTests
         const double taper = 10;
         var taperSolid = Solid.ExtrudeTaper(rectHole, direction, taper);
         var offsetAmt = -direction.Magnitude * Math.Tan(taper * Math.PI / 180);
-        var hole = taperSolid.SelectEdges().Where(GeomType.Circle).OrderBy(Axis.Z)[^1];
+        var hole = taperSolid.Edges().Where(GeomType.Circle).OrderBy(Axis.Z)[^1];
         Check.AlmostEqual(0.25 - offsetAmt, hole.Radius, 5);
     }
 
@@ -118,8 +118,8 @@ public class SolidTests
         const double taper = 10;
         var taperSolidT = Solid.ExtrudeTaper(rectHole, direction, taper, true);
         var taperSolidF = Solid.ExtrudeTaper(rectHole, direction, taper, false);
-        var holeT = taperSolidT.SelectEdges().Where(GeomType.Circle).OrderBy(Axis.Z)[^1];
-        var holeF = taperSolidF.SelectEdges().Where(GeomType.Circle).OrderBy(Axis.Z)[^1];
+        var holeT = taperSolidT.Edges().Where(GeomType.Circle).OrderBy(Axis.Z)[^1];
+        var holeF = taperSolidF.Edges().Where(GeomType.Circle).OrderBy(Axis.Z)[^1];
         Assert.True(holeT.Radius > holeF.Radius);
     }
 
@@ -166,7 +166,7 @@ public class SolidTests
     public void ExtrudeTaperKeepsPlanarSides()
     {
         var tapered = Solid.ExtrudeTaper(Face.MakeRect(10, 10), new Vector3D(0, 0, 5), -10);
-        Assert.All(tapered.SelectFaces(), f => Assert.Equal(GeomType.Plane, f.GeomType));
+        Assert.All(tapered.Faces(), f => Assert.Equal(GeomType.Plane, f.GeomType));
     }
 
     [Fact]
@@ -212,10 +212,10 @@ public class SolidTests
         static void CheckTwist(Solid twist)
         {
             Check.AlmostEqual(1, twist.Volume, 5);
-            var top = twist.SelectFaces().OrderBy(Axis.Z)[^1].Rotate(Axis.Z, 45);
-            var bottom = twist.SelectFaces().OrderBy(Axis.Z)[0];
+            var top = twist.Faces().OrderBy(Axis.Z)[^1].Rotate(Axis.Z, 45);
+            var bottom = twist.Faces().OrderBy(Axis.Z)[0];
             var intersect = top.Translate(new Vector3D(0, 0, -1)).Intersect(bottom);
-            var area = intersect.SelectMany(s => s.SelectFaces()).Sum(f => f.Area);
+            var area = intersect.SelectMany(s => s.Faces()).Sum(f => f.Area);
             Check.AlmostEqual(1, area, 5);
         }
         // Face
@@ -277,7 +277,7 @@ public class SolidTests
     public void HollowSweep()
     {
         var path = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(0, 0, 5));
-        var section = (Face.MakeRect(1, 1) - Face.MakeRect(0.1, 0.1)).SelectFaces()[0];
+        var section = (Face.MakeRect(1, 1) - Face.MakeRect(0.1, 0.1)).Faces()[0];
         var swept = Solid.Sweep(section, path);
         Check.AlmostEqual(5 * (1 - 0.1 * 0.1), swept.Volume, 5);
     }
@@ -326,7 +326,7 @@ public class SolidTests
     public void Revolve()
     {
         var r = Solid.Revolve(Face.MakeRect(1, 1, new Plane(new Point3D(10, 0, 0))).SingleWire(), 180, axis: Axis.Y);
-        Assert.Equal(6, r.SelectFaces().Count);
+        Assert.Equal(6, r.Faces().Count);
     }
 
     [Fact]
@@ -356,10 +356,10 @@ public class OffsetOrientationTests
     public void OffsetCupCanBeFilleted()
     {
         var cone = Solid.MakeCone(22.5, 33.75, 40);
-        var cup = TopoUtil.As3D(cone.Offset3D(cone.SelectFaces().OrderBy(Axis.Z)[^1..], 3, kind: Kind.Intersection));
+        var cup = TopoUtil.As3D(cone.Offset3D(cone.Faces().OrderBy(Axis.Z)[^1..], 3, kind: Kind.Intersection));
         Assert.Equal(Orientation.Forward, cup.AsShape().Orientation);
         Assert.True(cup.Volume > 0);
-        var rim = cup.SelectEdges().Where(GeomType.Circle).OrderBy(Axis.Z)[0];
+        var rim = cup.Edges().Where(GeomType.Circle).OrderBy(Axis.Z)[0];
         var rounded = cup.Fillet(1, [rim]);
         Assert.True(rounded.IsValid);
         Assert.InRange(rounded.Volume, cup.Volume - cup.Volume / 100, cup.Volume + cup.Volume / 100);
@@ -374,12 +374,12 @@ public class OffsetOrientationTests
     public void OffsetBoxBothWaysAndKinds(double amount, Kind kind)
     {
         var box = Solid.MakeBox(30, 20, 10);
-        var top = box.SelectFaces().OrderBy(Axis.Z)[^1..];
+        var top = box.Faces().OrderBy(Axis.Z)[^1..];
         var shelled = TopoUtil.As3D(box.Offset3D(top, amount, kind: kind));
         Assert.Equal(Orientation.Forward, shelled.AsShape().Orientation);
         Assert.True(shelled.Volume > 0);
         // The sharp edges around the opening fillet on every variant
-        var rim = shelled.SelectEdges().Where(GeomType.Line).GroupBy(Axis.Z)[^1];
+        var rim = shelled.Edges().Where(GeomType.Line).GroupBy(Axis.Z)[^1];
         var rounded = shelled.Fillet(0.5, rim);
         Assert.True(rounded.IsValid);
         Assert.True(rounded.Volume < shelled.Volume);
@@ -397,8 +397,8 @@ public class SolidDraftTests
     {
         // A simple box to test draft
         _box = Solid.MakeBox(10, 10, 10, new Plane(new Point3D(-5, -5, -5)));
-        _sides = _box.SelectFaces().NotParallelTo(Axis.Z);
-        _bottomFace = _box.SelectFaces().OrderBy(Axis.Z)[0];
+        _sides = _box.Faces().NotParallelTo(Axis.Z);
+        _bottomFace = _box.Faces().OrderBy(Axis.Z)[0];
         _neutralPlane = new Plane(_bottomFace);
     }
 
@@ -416,7 +416,7 @@ public class SolidDraftTests
     {
         // Unsupported face geometry is rejected: a toroidal face
         var torus = Solid.MakeTorus(5, 1);
-        var e = Assert.Throws<ArgumentException>(() => torus.Draft([torus.SelectFaces()[0]], _neutralPlane, 5));
+        var e = Assert.Throws<ArgumentException>(() => torus.Draft([torus.Faces()[0]], _neutralPlane, 5));
         Assert.Contains("unsupported geometry type", e.Message);
     }
 

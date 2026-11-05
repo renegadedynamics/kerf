@@ -77,7 +77,7 @@ public class EdgeWireSmokeTests
         Check.AlmostEqual(new Point3D(1.5, 2, 0), line.PositionAt(0.5));
         Check.AlmostEqual(new Vector3D(3, 4, 0).Normalized(), line.TangentAt(0.2));
         Assert.Equal(GeomType.Line, line.GeomType);
-        Assert.Equal(2, line.SelectVertices().Count);
+        Assert.Equal(2, line.Vertices().Count);
         Check.AlmostEqual(0.25, line.ParamAtPoint(new Point3D(0.75, 1, 0)));
     }
 
@@ -88,7 +88,7 @@ public class EdgeWireSmokeTests
         Check.AlmostEqual(2, circle.Radius);
         Check.AlmostEqual(4 * Math.PI, circle.Length);
         Check.AlmostEqual(new Point3D(0, 0, 0), circle.ArcCenter);
-        Assert.True(circle.CheckClosed());
+        Assert.True(circle.IsClosed);
         var arc = Edge.MakeCircle(1, startAngle: 0, endAngle: 90);
         Check.AlmostEqual(new Point3D(1, 0, 0), arc.StartPoint());
         Check.AlmostEqual(new Point3D(0, 1, 0), arc.EndPoint());
@@ -98,9 +98,9 @@ public class EdgeWireSmokeTests
     public void RectangleWireHasFourEdgesInOrder()
     {
         var rect = Wire.MakeRect(4, 2);
-        var edges = rect.SelectEdges();
+        var edges = rect.Edges();
         Assert.Equal(4, edges.Count);
-        Assert.True(rect.CheckClosed());
+        Assert.True(rect.IsClosed);
         Check.AlmostEqual(12, rect.Length);
         for (int i = 0; i < 4; i++)
             Check.AlmostEqual(edges[i].EndPoint(), edges[(i + 1) % 4].StartPoint());
@@ -117,7 +117,7 @@ public class EdgeWireSmokeTests
         var b = Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(1, 1, 0));
         var joined = a + b;
         var wire = Check.Is<Wire>(joined);
-        Assert.Equal(2, wire.SelectEdges().Count);
+        Assert.Equal(2, wire.Edges().Count);
         Check.AlmostEqual(2, wire.Length);
     }
 

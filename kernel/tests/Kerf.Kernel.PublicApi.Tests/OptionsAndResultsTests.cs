@@ -89,7 +89,7 @@ public class OptionsAndResultsTests
     public void A_fill_takes_its_options()
     {
         Face plane = Face.FromWire(Square(10)).Value;
-        FillBoundary[] boundaries = [.. plane.Edges().Select(e => new FillBoundary(e, Continuity.C0) { IsBoundary = true })];
+        FillBoundary[] boundaries = [.. plane.AllEdges().Select(e => new FillBoundary(e, Continuity.C0) { IsBoundary = true })];
         var options = new FillOptions
         {
             AngularTolerance = 0.1,
@@ -111,7 +111,7 @@ public class OptionsAndResultsTests
     public void Fillets_and_chamfers_take_their_options()
     {
         Solid box = Box();
-        Edge edge = box.Edges()[0];
+        Edge edge = box.AllEdges()[0];
         var tolerances = new FilletTolerances
         {
             Angular = 0.05,
@@ -144,8 +144,8 @@ public class OptionsAndResultsTests
         Assert.Equal(1000, box.Fix(fix).Value.Shape.Volume(), Tol);
 
         var sew = new SewOptions { MaxTolerance = 1e-2, MinTolerance = 1e-5, NonManifold = false };
-        Built<Shape> sewn = HealingOperations.Sew(box.Faces().Select(f => (Shape)f), sew).Value;
-        Assert.Equal(6, sewn.Shape.Faces().Length);
+        Built<Shape> sewn = HealingOperations.Sew(box.AllFaces().Select(f => (Shape)f), sew).Value;
+        Assert.Equal(6, sewn.Shape.AllFaces().Length);
 
         Assert.Equal(1000, box.Unify(new UnifyOptions { AngularTolerance = 1e-3, LinearTolerance = 1e-3 }).Value.Shape.Volume(), Tol);
         Assert.True(box.Validate(new ValidationOptions { Geometry = true }).IsValid);
@@ -280,17 +280,17 @@ public class OptionsAndResultsTests
         Assert.Equal(box, graph.Root);
         Assert.True(graph.Count > 26);
 
-        Built<Shape> filleted = box.Fillet([box.Edges()[0]], 1).Value;
+        Built<Shape> filleted = box.Fillet([box.AllEdges()[0]], 1).Value;
         Assert.True(filleted.History.HasGenerated);
 
-        Edge line = box.Edges()[0];
+        Edge line = box.AllEdges()[0];
         EdgeCurve curve = line.ToCurve();
         Assert.False(curve.IsClosed);
         Assert.Equal(Continuity.CN, curve.Continuity);
-        Assert.True(box.Faces()[0].ToSurface().Bounds.Item1.Length > 0);
+        Assert.True(box.AllFaces()[0].ToSurface().Bounds.Item1.Length > 0);
 
         WireCurve wire = Square(10).ToCurve();
-        Assert.Equal(4, wire.Wire.Edges().Length);
+        Assert.Equal(4, wire.Wire.AllEdges().Length);
         Assert.Equal(Continuity.C0, wire.Continuity);
         CurveDerivatives atStart = wire.Derivatives(0.5, 1);
         Assert.Equal(1, atStart.Order);
@@ -300,7 +300,7 @@ public class OptionsAndResultsTests
         Assert.Equal(2, hits.Length);
         Assert.All(hits, h => Assert.InRange(h.U + h.V, -1e6, 1e6));
 
-        DistanceResult distance = box.Faces()[0].Distance(box.Faces()[1]).Value;
+        DistanceResult distance = box.AllFaces()[0].Distance(box.AllFaces()[1]).Value;
         Assert.All(distance.Solutions, s =>
         {
             Assert.True(Enum.IsDefined(s.SupportA));
@@ -350,7 +350,7 @@ public class OptionsAndResultsTests
     [Fact]
     public void Shape_problems_read_back()
     {
-        var problem = new ShapeProblem(Box(), Box().Faces()[0], HealingOperations.NotFixed, "message");
+        var problem = new ShapeProblem(Box(), Box().AllFaces()[0], HealingOperations.NotFixed, "message");
         Assert.Equal(ShapeType.Face, problem.Context.Type);
     }
 

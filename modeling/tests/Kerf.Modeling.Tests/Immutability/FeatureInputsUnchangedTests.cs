@@ -18,7 +18,7 @@ public class FeatureInputsUnchangedTests
     private static byte[] Text(Shape shape) => Extras.WriteBRep(shape);
 
     private static int SharedFaces(Shape result, Shape part) =>
-        part.SelectFaces().Count(f => result.SelectFaces().Any(r => r.IsSame(f)));
+        part.Faces().Count(f => result.Faces().Any(r => r.IsSame(f)));
 
     private static Shape Untouched(Shape part, Func<Shape> operation)
     {
@@ -49,7 +49,7 @@ public class FeatureInputsUnchangedTests
         Shape shell = Untouched(part, () => Ops.Offset(part, -0.5, new Ops.OffsetOptions { Openings = [part.Faces().OrderBy(Axis.Z).Last()] }).Value);
         // the bottom face, away from the opening, is the part's own
         Face bottom = part.Faces().OrderBy(Axis.Z)[0];
-        Assert.Contains(shell.SelectFaces(), f => f.IsSame(bottom));
+        Assert.Contains(shell.Faces(), f => f.IsSame(bottom));
     }
 
     [Fact]

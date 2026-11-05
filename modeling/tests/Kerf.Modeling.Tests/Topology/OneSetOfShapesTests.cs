@@ -23,7 +23,7 @@ public class OneSetOfShapesTests
         Assert.Equal(100, face.Area, 9);
         Assert.Equal(GeomType.Plane, face.GeomType);
         Assert.Equal(1000, solid.Volume, 6);
-        Assert.Equal(12, solid.SelectEdges().Count);
+        Assert.Equal(12, solid.Edges().Count);
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class OneSetOfShapesTests
 
         // A selection through a sub-shape has that sub-shape
         Face face = box.Faces()[0];
-        Assert.True(face.SelectEdges().Origin!.AsShape().IsSame(face));
+        Assert.True(face.Edges().Origin!.AsShape().IsSame(face));
     }
 
     [Fact]
@@ -109,7 +109,7 @@ public class OneSetOfShapesTests
 
         // Through a face, a vertex is a corner of that face
         Face face = box.Faces()[0];
-        Assert.Equal(Convexity.Convex, box.ConvexityOf(face.SelectVertices()[0], through: face));
+        Assert.Equal(Convexity.Convex, box.ConvexityOf(face.Vertices()[0], through: face));
     }
 
     [Fact]

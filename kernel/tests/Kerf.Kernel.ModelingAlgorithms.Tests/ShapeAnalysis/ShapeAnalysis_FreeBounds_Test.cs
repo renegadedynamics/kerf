@@ -95,7 +95,7 @@ public class ShapeAnalysis_FreeBoundsTest
                     ++aNbExternalEdges;
                 }
             }
-            if (aNbWireEdges == 3 && aWire.IsClosed)
+            if (aNbWireEdges == 3 && aWire.ClosedFlag)
             {
                 hasClosedLoop = true;
             }

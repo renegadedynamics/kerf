@@ -124,7 +124,7 @@ internal static partial class TopoUtil
     internal static Face MakeFaceFromWires(Wire outerWire, IEnumerable<Wire>? innerWires = null)
     {
         var inner = innerWires?.ToList() ?? [];
-        if (inner.Count > 0 && !outerWire.CheckClosed())
+        if (inner.Count > 0 && !outerWire.IsClosed)
             throw new ArgumentException("Cannot build face(s): outer wire is not closed");
         var verification = MakeCompound([outerWire, .. inner]);
         if (!verification.TryFindSurface(-1, out _, onlyPlane: true))
@@ -134,7 +134,7 @@ internal static partial class TopoUtil
         var holes = new List<Wire>();
         foreach (var innerWire in inner)
         {
-            if (!innerWire.CheckClosed())
+            if (!innerWire.IsClosed)
                 throw new ArgumentException("Cannot build face(s): inner wire is not closed");
             holes.Add((Wire)Fix(innerWire));
         }
@@ -207,8 +207,8 @@ public static partial class TopologyUtils
     /// <summary>The edges of <paramref name="combined"/> that none of <paramref name="objects"/> had.</summary>
     public static ShapeList<Edge> NewEdges(IEnumerable<Shape> objects, Shape combined)
     {
-        var combinedEdges = combined.SelectEdges().Where(e => !e.IsEmpty).Select(e => e).ToList();
-        var originalEdges = objects.SelectMany(o => o.SelectEdges()).Where(e => !e.IsEmpty).Select(e => e).ToList();
+        var combinedEdges = combined.Edges().Where(e => !e.IsEmpty).Select(e => e).ToList();
+        var originalEdges = objects.SelectMany(o => o.Edges()).Where(e => !e.IsEmpty).Select(e => e).ToList();
         if (combinedEdges.Count == 0)
             return [];
         // Non-destructive, as all the modelling layer's Booleans: the inputs' tolerances are left alone
@@ -264,12 +264,12 @@ public static partial class TopologyUtils
         };
         IEnumerable<Shape> peers = peerType switch
         {
-            ShapeType.Vertex => parent.SelectVertices().Upcast(),
-            ShapeType.Edge => parent.SelectEdges().Upcast(),
-            ShapeType.Wire => parent.SelectWires().Upcast(),
-            ShapeType.Face => parent.SelectFaces().Upcast(),
-            ShapeType.Shell => parent.SelectShells().Upcast(),
-            _ => parent.SelectSolids().Upcast(),
+            ShapeType.Vertex => parent.Vertices().Upcast(),
+            ShapeType.Edge => parent.Edges().Upcast(),
+            ShapeType.Wire => parent.Wires().Upcast(),
+            ShapeType.Face => parent.Faces().Upcast(),
+            ShapeType.Shell => parent.Shells().Upcast(),
+            _ => parent.Solids().Upcast(),
         };
         var peerList = peers.Where(p => !p.IsEmpty).ToList();
         // Shapes are equal (and hash) by IsSame, as build123d's hasher lookup is

@@ -278,7 +278,7 @@ public static class ShapeSelection
                 return planeAxis.IsParallel(new Axis(shape.Center(), face.NormalAtParameters(u0, v0)), tolerance);
             }
             case ShapeType.Wire:
-                return shape.SelectEdges().All(e => IsParallelTo(e, plane, planeAxis, tolerance));
+                return shape.Edges().All(e => IsParallelTo(e, plane, planeAxis, tolerance));
             case ShapeType.Edge:
             {
                 var edge = (Edge)shape;

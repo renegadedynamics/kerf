@@ -222,7 +222,7 @@ internal sealed class PipeShell : Transient
         _maxSegments = 100;
 
         // Attention to closed non-declared wire !
-        if (!_spine.IsClosed)
+        if (!_spine.ClosedFlag)
         {
             Exploration.Vertices(_spine, out Vertex vf, out Vertex vl);
             if (vf.IsSame(vl))
@@ -355,7 +355,7 @@ internal sealed class PipeShell : Transient
         // Reorganization of the guide (pb of orientation and origin)
         Wire theGuide;
         theGuide = auxiliarySpine;
-        bool spClose = _spine.IsClosed, guideClose = auxiliarySpine.IsClosed;
+        bool spClose = _spine.ClosedFlag, guideClose = auxiliarySpine.ClosedFlag;
 
         if (keepContact == TypeOfContact.ContactOnBorder)
         {
@@ -861,14 +861,14 @@ internal sealed class PipeShell : Transient
         {
             throw new NotDoneException("PipeShell is not built");
         }
-        bool b = _shape.IsClosed;
+        bool b = _shape.ClosedFlag;
         BrepBuilder bs = new();
 
         if (!b)
         {
             if (!_first.IsNull && !_last.IsNull)
             {
-                b = (_first.IsClosed && _last.IsClosed);
+                b = (_first.ClosedFlag && _last.ClosedFlag);
             }
             if (b)
             {

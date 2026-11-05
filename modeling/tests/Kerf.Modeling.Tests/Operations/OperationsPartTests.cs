@@ -25,9 +25,9 @@ public class OperationsPartTests
 
     private readonly Solid _box = new Box(10, 10, 10).SingleSolid();
 
-    private ShapeList<Face> Sides => _box.SelectFaces().NotParallelTo(Axis.Z);
+    private ShapeList<Face> Sides => _box.Faces().NotParallelTo(Axis.Z);
 
-    private Plane NeutralPlane => new(_box.SelectFaces().OrderBy(Axis.Z)[0]);
+    private Plane NeutralPlane => new(_box.Faces().OrderBy(Axis.Z)[0]);
 
     [Fact]
     public void SuccessfulDraft()
@@ -46,7 +46,7 @@ public class OperationsPartTests
     public void DraftInvalidFaceType()
     {
         var torus = new Torus(5, 1).SingleSolid();
-        var e = Assert.Throws<ArgumentException>(() => Draft(torus, [torus.SelectFaces()[0]], NeutralPlane, 5));
+        var e = Assert.Throws<ArgumentException>(() => Draft(torus, [torus.Faces()[0]], NeutralPlane, 5));
         Assert.Equal("Draft not supported on face(s) with geometry: TORUS", e.Message);
     }
 
@@ -54,7 +54,7 @@ public class OperationsPartTests
     public void DraftFacesFromMultipleSolids()
     {
         var box2 = new Box(5, 5, 5).SingleSolid();
-        var e = Assert.Throws<ArgumentException>(() => Draft(_box, [Sides[0], box2.SelectFaces()[0]], NeutralPlane, 5));
+        var e = Assert.Throws<ArgumentException>(() => Draft(_box, [Sides[0], box2.Faces()[0]], NeutralPlane, 5));
         Assert.Contains("same topological parent", e.Message);
     }
 
@@ -70,10 +70,10 @@ public class OperationsPartTests
     [Fact]
     public void BadDraftFaces()
     {
-        var drafted = Draft(_box, _box.SelectFaces().OrderBy(Axis.Z)[0], NeutralPlane, 10);
+        var drafted = Draft(_box, _box.Faces().OrderBy(Axis.Z)[0], NeutralPlane, 10);
         Assert.Equal(ModelingDiagnostics.DraftFailed, drafted.Error!.Code);
         // The same failure from the faces' form
-        Assert.Equal(ModelingDiagnostics.DraftFailed, Draft(_box, [_box.SelectFaces().OrderBy(Axis.Z)[0]], NeutralPlane, 10).Error!.Code);
+        Assert.Equal(ModelingDiagnostics.DraftFailed, Draft(_box, [_box.Faces().OrderBy(Axis.Z)[0]], NeutralPlane, 10).Error!.Code);
     }
 
     // ---- TestExtrude ----

@@ -82,7 +82,7 @@ public class OperationsGenericTests
         Check.Is<Compound>(box);
         Check.AlmostEqual(400, box.Area, 5);
         // The ears of mickey: the top corners of the box
-        var ears = box.SelectVertices().OrderBy(Axis.Y)[..^2];
+        var ears = box.Vertices().OrderBy(Axis.Y)[..^2];
         Shape mickey = new Circle(10);
         foreach (var ear in ears)
             mickey = mickey + new Location(ear.Point) * new Circle(7);
@@ -130,7 +130,7 @@ public class OperationsGenericTests
     {
         var box = new Box(10, 10, 10);
         var face = box.Faces().OrderBy(Axis.Z)[^1];
-        var test = Chamfer(box, face.SelectEdges()[0], length: 1, length2: Math.Sqrt(3), reference: face).Value;
+        var test = Chamfer(box, face.Edges()[0], length: 1, length2: Math.Sqrt(3), reference: face).Value;
         Check.AlmostEqual(1000 - 1 * 0.5 * 10 * Math.Sqrt(3), test.Volume, 5);
     }
 
@@ -139,7 +139,7 @@ public class OperationsGenericTests
     {
         var box = new Box(10, 10, 10);
         var face = box.Faces().OrderBy(Axis.Z)[^1];
-        var test = Chamfer(box, face.SelectEdges()[0], length: 1, angle: 60, reference: face).Value;
+        var test = Chamfer(box, face.Edges()[0], length: 1, angle: 60, reference: face).Value;
         Check.AlmostEqual(1000 - 1 * 0.5 * 10 * Math.Sqrt(3), test.Volume, 5);
     }
 
@@ -192,7 +192,7 @@ public class OperationsGenericTests
     {
         var rect = new Rectangle(10, 10);
         var edge = rect.Edges().OrderBy(Axis.Y)[0];
-        var vertex = edge.SelectVertices()[0];
+        var vertex = edge.Vertices()[0];
         var test = Chamfer(rect, vertex, length: 1, angle: 60, reference: edge).Value;
         Check.AlmostEqual(100 - 0.5 * Math.Sqrt(3), test.Area, 5);
     }
@@ -202,10 +202,10 @@ public class OperationsGenericTests
     {
         var rect = new Rectangle(10, 10);
         var edge = rect.Edges().OrderBy(Axis.Y)[0];
-        var vertex = edge.SelectVertices()[0];
+        var vertex = edge.Vertices()[0];
         var test = Chamfer(rect, vertex, length: 1, length2: Math.Sqrt(3), reference: edge).Value;
         Check.AlmostEqual(100 - 0.5 * Math.Sqrt(3), test.Area, 5);
-        Check.AlmostEqual(9, test.SelectEdges().OrderBy(Axis.Y)[0].Length);
+        Check.AlmostEqual(9, test.Edges().OrderBy(Axis.Y)[0].Length);
     }
 
     private static Wire Corner() => Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0)], close: false);
@@ -213,7 +213,7 @@ public class OperationsGenericTests
     [Fact]
     public void WireChamfer()
     {
-        var test = Chamfer(Corner().SelectVertices(), length: 1).Value;
+        var test = Chamfer(Corner().Vertices(), length: 1).Value;
         Check.Is<Wire>(test);
         Check.AlmostEqual(9 + 9 + Math.Sqrt(2), ((Wire)test).Length);
     }
@@ -221,7 +221,7 @@ public class OperationsGenericTests
     [Fact]
     public void WireChamferLength2()
     {
-        var test = (Wire)Chamfer(Corner().SelectVertices(), length: 1, length2: 2).Value;
+        var test = (Wire)Chamfer(Corner().Vertices(), length: 1, length2: 2).Value;
         Check.AlmostEqual(9 + 8 + Math.Sqrt(1 + 2 * 2), test.Length);
     }
 
@@ -229,9 +229,9 @@ public class OperationsGenericTests
     public void WireChamferLength2Edge()
     {
         var line = Corner();
-        var edge = line.SelectEdges().OrderBy(Axis.Y)[0];
-        var test = Chamfer(line.SelectVertices(), length: 1, length2: 2, reference: edge).Value;
-        Check.AlmostEqual(9, test.SelectEdges().OrderBy(Axis.Y)[0].Length);
+        var edge = line.Edges().OrderBy(Axis.Y)[0];
+        var test = Chamfer(line.Vertices(), length: 1, length2: 2, reference: edge).Value;
+        Check.AlmostEqual(9, test.Edges().OrderBy(Axis.Y)[0].Length);
     }
 
     [Fact]
@@ -251,9 +251,9 @@ public class OperationsGenericTests
 
         var box10 = new Box(10, 10, 10);
         var face = box10.Faces().OrderBy(Axis.Z)[^1];
-        Assert.Throws<ArgumentException>(() => Chamfer(box10, face.SelectEdges()[0], length: 1, reference: face));
+        Assert.Throws<ArgumentException>(() => Chamfer(box10, face.Edges()[0], length: 1, reference: face));
 
-        Assert.Throws<ArgumentException>(() => Chamfer(Corner(), Corner().SelectEdges()[0], length: 1));
+        Assert.Throws<ArgumentException>(() => Chamfer(Corner(), Corner().Edges()[0], length: 1));
     }
 
     [Fact]
@@ -268,7 +268,7 @@ public class OperationsGenericTests
     {
         // A parent compound of mixed dimension has no dimension to dispatch on
         var mixed = Compound.Make([new Box(1, 1, 1).SingleSolid(), Edge.MakeLine(new Point3D(5, 0, 0), new Point3D(6, 0, 0))]);
-        var e = Assert.Throws<ArgumentException>(() => Chamfer(mixed, mixed.SelectEdges()[0], length: 0.1));
+        var e = Assert.Throws<ArgumentException>(() => Chamfer(mixed, mixed.Edges()[0], length: 0.1));
         Assert.Contains("Invalid object dimension", e.Message);
     }
 
@@ -277,7 +277,7 @@ public class OperationsGenericTests
     {
         // A vertex on the free boundary of a planar face of a sheet
         var sheet = Shell.Make([Face.MakeRect(10, 10)]);
-        var vertex = sheet.SelectVertices()[0];
+        var vertex = sheet.Vertices()[0];
         var test = Chamfer(sheet, vertex, length: 1).Value;
         Check.Is<Shell>(test);
         Check.AlmostEqual(100 - 0.5, test.Area, 5);
@@ -306,7 +306,7 @@ public class OperationsGenericTests
     public void SheetFillet()
     {
         var sheet = Shell.Make([Face.MakeRect(10, 10)]);
-        var test = Fillet(sheet.SelectVertices(), radius: 1).Value;
+        var test = Fillet(sheet.Vertices(), radius: 1).Value;
         Check.Is<Shell>(test);
         Check.AlmostEqual(100 - 4 + Math.PI, test.Area, 5);
     }
@@ -338,7 +338,7 @@ public class OperationsGenericTests
     public void Fillet1DRequiresVertices()
     {
         var line = Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(5, 0, 0), new Point3D(5, 5, 0)], close: false);
-        var e = Assert.Throws<ArgumentException>(() => Fillet(line.SelectEdges(), radius: 1));
+        var e = Assert.Throws<ArgumentException>(() => Fillet(line.Edges(), radius: 1));
         Assert.Contains("takes only Vertices", e.Message);
     }
 
@@ -347,7 +347,7 @@ public class OperationsGenericTests
     {
         // The ends of an open wire are skipped
         var line = Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(5, 0, 0), new Point3D(5, 5, 0)], close: false);
-        var test = (Wire)Fillet(line.SelectVertices(), radius: 1).Value;
+        var test = (Wire)Fillet(line.Vertices(), radius: 1).Value;
         Check.AlmostEqual(4 + 4 + Math.PI / 2, test.Length, 5);
     }
 
@@ -355,7 +355,7 @@ public class OperationsGenericTests
     public void FilletInvalidDimension()
     {
         var mixed = Compound.Make([new Box(1, 1, 1).SingleSolid(), Edge.MakeLine(new Point3D(5, 0, 0), new Point3D(6, 0, 0))]);
-        var e = Assert.Throws<ArgumentException>(() => Fillet(mixed, mixed.SelectEdges()[0], radius: 0.1));
+        var e = Assert.Throws<ArgumentException>(() => Fillet(mixed, mixed.Edges()[0], radius: 0.1));
         Assert.Contains("Invalid object dimension", e.Message);
     }
 
@@ -368,8 +368,8 @@ public class OperationsGenericTests
         var wire = Wire.MakeCircle(1, new Plane(new Point3D(5, 0, 0)));
         var test = Mirror([edge, wire], Plane.YZ);
         Check.Is<Compound>(test);
-        Assert.Empty(test.SelectEdges().Between(Axis.X, minimum: 0, maximum: 10));
-        Assert.Equal(2, test.SelectEdges().Between(Axis.X, minimum: -10, maximum: 0).Count);
+        Assert.Empty(test.Edges().Between(Axis.X, minimum: 0, maximum: 10));
+        Assert.Equal(2, test.Edges().Between(Axis.X, minimum: -10, maximum: 0).Count);
     }
 
     [Fact]
@@ -383,9 +383,9 @@ public class OperationsGenericTests
         // Mixed dimensions: a plain compound, held by an assembly with no children
         Assert.Equal(typeof(Assembly), test.GetType());
         Check.Is<Compound>(test);
-        Assert.Empty(test.SelectEdges().Between(Axis.X, minimum: 0, maximum: 10));
-        Assert.Empty(test.SelectFaces().Between(Axis.X, minimum: 0, maximum: 10));
-        Assert.Equal(3, test.SelectFaces().Between(Axis.X, minimum: -10, maximum: 0).Count);
+        Assert.Empty(test.Edges().Between(Axis.X, minimum: 0, maximum: 10));
+        Assert.Empty(test.Faces().Between(Axis.X, minimum: 0, maximum: 10));
+        Assert.Equal(3, test.Faces().Between(Axis.X, minimum: -10, maximum: 0).Count);
     }
 
     [Fact]
@@ -394,7 +394,7 @@ public class OperationsGenericTests
         var cone = Solid.MakeCone(2, 1, 2, new Plane(new Point3D(5, 4, 0)));
         var test = Mirror(cone, Plane.YZ);
         Check.Is<Compound>(test);
-        Assert.Single(test.SelectSolids().Between(Axis.X, minimum: -10, maximum: 0));
+        Assert.Single(test.Solids().Between(Axis.X, minimum: -10, maximum: 0));
     }
 
     [Fact]
@@ -431,7 +431,7 @@ public class OperationsGenericTests
     {
         var test = Offset(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)), 1).Value;
         Check.Is<Compound>(test);
-        Check.AlmostEqual(2 + 2 * Math.PI, test.SelectWires()[0].Length, 5);
+        Check.AlmostEqual(2 + 2 * Math.PI, test.Wires()[0].Length, 5);
     }
 
     [Fact]
@@ -498,7 +498,7 @@ public class OperationsGenericTests
         Check.Is<Compound>(s);
         var offset = Offset(s, 1).Value;
         Assert.False(offset.IsEmpty);
-        Assert.True(offset.SelectEdges().Count > 4);
+        Assert.True(offset.Edges().Count > 4);
     }
 
     [Fact]
@@ -540,7 +540,7 @@ public class OperationsGenericTests
     {
         var result = Offset(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(10, 0, 0)), 1, new OffsetOptions { Side = Side.Left }).Value;
         Check.Is<Compound>(result);
-        Assert.True(result.SelectEdges().Count > 1);
+        Assert.True(result.Edges().Count > 1);
     }
 
     [Fact]
@@ -554,7 +554,7 @@ public class OperationsGenericTests
         var line = new FilletPolyline(pts, radius: 3.177);
         Assert.Equal(11, line.Edges().Count);
         var oLine = Offset(line, 2).Value;
-        Assert.Equal(24, oLine.SelectEdges().Count);
+        Assert.Equal(24, oLine.Edges().Count);
     }
 
     [Fact]
@@ -603,7 +603,7 @@ public class OperationsGenericTests
         var projection = Project(loaf.Faces().OrderBy(Axis.X)[^1], workplane);
         Check.Is<Compound>(projection);
         Check.AlmostEqual(104.85204601097809, projection.Area, 5);
-        Assert.Equal(6, projection.SelectEdges().Count);
+        Assert.Equal(6, projection.Edges().Count);
     }
 
     [Fact]
@@ -620,7 +620,7 @@ public class OperationsGenericTests
         var projection = Project(Face.MakeRect(1, 1, Plane.XY.Offset(5)), Plane.XY);
         Check.Is<Compound>(projection);
         Check.AlmostEqual(1, projection.Area, 5);
-        Check.AlmostEqual(new Point3D(0, 0, 0), projection.SelectFaces()[0].Center(), 5);
+        Check.AlmostEqual(new Point3D(0, 0, 0), projection.Faces()[0].Center(), 5);
     }
 
     [Fact]
@@ -629,7 +629,7 @@ public class OperationsGenericTests
         // As build123d's algebra mode, which keeps the faces of each projection
         var projection = Project([Edge.MakeLine(new Point3D(0, 1, 2), new Point3D(3, 4, 5)), Edge.MakeLine(new Point3D(-1, 2, 3), new Point3D(-4, 5, -6))], Plane.XY);
         Check.Is<Compound>(projection);
-        Assert.Empty(projection.SelectEdges());
+        Assert.Empty(projection.Edges());
     }
 
     [Fact]
@@ -646,7 +646,7 @@ public class OperationsGenericTests
     {
         var curve = Scale(Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)), 2);
         Check.Is<Compound>(curve);
-        Check.AlmostEqual(2, curve.SelectEdges().Sum(e => e.Length), 5);
+        Check.AlmostEqual(2, curve.Edges().Sum(e => e.Length), 5);
     }
 
     [Fact]
@@ -710,7 +710,7 @@ public class OperationsGenericTests
     {
         var result = Split(Edge.MakeLine(new Point3D(-5, 0, 0), new Point3D(5, 0, 0)), Plane.YZ, keep: Keep.Top);
         Check.Is<Compound>(result);
-        Check.AlmostEqual(5, result.SelectEdges().Sum(e => e.Length), 5);
+        Check.AlmostEqual(5, result.Edges().Sum(e => e.Length), 5);
     }
 
     [Fact]
@@ -726,7 +726,7 @@ public class OperationsGenericTests
     {
         var result = Split(new Rectangle(10, 10).SingleFace(), Plane.YZ, keep: Keep.Both);
         Check.Is<Compound>(result);
-        Assert.Equal(2, result.SelectFaces().Count);
+        Assert.Equal(2, result.Faces().Count);
         Check.AlmostEqual(100, result.Area, 5);
     }
 
@@ -856,7 +856,7 @@ public class OperationsGenericTests
         Check.AlmostEqual(200, swept.Area, 5);
         var shell = swept.SingleShell();
         Assert.True(shell.IsValid);
-        Assert.Equal(2, shell.SelectFaces().Count);
+        Assert.Equal(2, shell.Faces().Count);
     }
 
     [Fact]

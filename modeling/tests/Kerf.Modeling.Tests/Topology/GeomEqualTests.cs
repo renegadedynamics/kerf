@@ -628,8 +628,8 @@ public class WireGeomEqualTests
             ]);
         var w1 = Square();
         var w2 = Square();
-        Assert.True(w1.CheckClosed());
-        Assert.True(w2.CheckClosed());
+        Assert.True(w1.IsClosed);
+        Assert.True(w2.IsClosed);
         Assert.True(w1.GeomEqual(w2));
     }
 

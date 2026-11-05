@@ -51,7 +51,7 @@ public class BRepFill_PipeShellTests
 
         Shape aResult = aPipe.Shape();
         Assert.False(aResult.IsNull);
-        Assert.True(aResult.IsClosed);
+        Assert.True(aResult.ClosedFlag);
 
         Analyzer anAnalyzer = new(aResult);
         Assert.True(anAnalyzer.IsValid());
@@ -77,7 +77,7 @@ public class BRepFill_PipeShellTests
 
         Shape aResult = aPipe.Shape();
         Assert.False(aResult.IsNull);
-        Assert.True(aResult.IsClosed);
+        Assert.True(aResult.ClosedFlag);
     }
 
     [Theory]
@@ -155,12 +155,12 @@ public class BRepFill_PipeShellTests
             aB.Add(anOpen, anIt.Value());
         }
         anOpen.TShape()!.FreezeGraph();
-        Assert.False(anOpen.IsClosed);
+        Assert.False(anOpen.ClosedFlag);
 
         PipeShell aPipe = new(anOpen);
-        Assert.False(anOpen.IsClosed);
+        Assert.False(anOpen.ClosedFlag);
         Wire aPipeSpine = aPipe.Spine();
-        Assert.True(aPipeSpine.IsClosed);
+        Assert.True(aPipeSpine.ClosedFlag);
         Assert.False(aPipeSpine.IsSame(anOpen));
         global::Kerf.Engine.Topology.Explorer anExp1 = new(anOpen, ShapeType.Edge), anExp2 = new(aPipeSpine, ShapeType.Edge);
         for (; anExp1.More(); anExp1.Next(), anExp2.Next())

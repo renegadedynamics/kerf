@@ -13,23 +13,23 @@ public class ConstructionTests
     internal static Wire Square(double size, double z = 0) =>
         Wire.Polygon([new(0, 0, z), new(size, 0, z), new(size, size, z), new(0, size, z)], closed: true).Value;
 
-    private static double MaxZ(Shape shape) => shape.Vertices().Max(v => v.Point.Z);
+    private static double MaxZ(Shape shape) => shape.AllVertices().Max(v => v.Point.Z);
 
     [Fact]
     public void Primitives_are_solids_of_their_sizes()
     {
         Solid box = Solid.Box(80, 60, 10).Value;
-        Assert.Equal(6, box.Faces().Length);
-        Assert.Equal(8, box.Vertices().Length);
+        Assert.Equal(6, box.AllFaces().Length);
+        Assert.Equal(8, box.AllVertices().Length);
         Assert.Equal(10, MaxZ(box), 12);
-        Assert.Equal(3, Solid.Cylinder(5, 30).Value.Shape.Faces().Length);
+        Assert.Equal(3, Solid.Cylinder(5, 30).Value.Shape.AllFaces().Length);
         Assert.Equal(40, MaxZ(Solid.Cylinder(5, 30, new Frame3D(new Point3D(0, 0, 10), Direction3D.UnitZ)).Value.Shape), 12);
-        Assert.Equal(2, Solid.Cone(5, 0, 10).Value.Shape.Faces().Length);
-        Assert.Single(Solid.Sphere(3).Value.Shape.Faces());
-        Assert.Single(Solid.Torus(10, 2).Value.Shape.Faces());
-        Assert.Equal(6, Solid.Wedge(10, 10, 10, new WedgeOptions { TopLength = 5 }).Value.Shape.Faces().Length);
-        Assert.Equal(6, Primitives.Box(new Point3D(1, 1, 1), new Point3D(0, 0, 0)).Value.Shape.Faces().Length);
-        Assert.Equal(ShapeType.Solid, Solid.HalfSpace(box.Faces()[0], new Point3D(40, 30, 5)).Value.Shape.Type);
+        Assert.Equal(2, Solid.Cone(5, 0, 10).Value.Shape.AllFaces().Length);
+        Assert.Single(Solid.Sphere(3).Value.Shape.AllFaces());
+        Assert.Single(Solid.Torus(10, 2).Value.Shape.AllFaces());
+        Assert.Equal(6, Solid.Wedge(10, 10, 10, new WedgeOptions { TopLength = 5 }).Value.Shape.AllFaces().Length);
+        Assert.Equal(6, Primitives.Box(new Point3D(1, 1, 1), new Point3D(0, 0, 0)).Value.Shape.AllFaces().Length);
+        Assert.Equal(ShapeType.Solid, Solid.HalfSpace(box.AllFaces()[0], new Point3D(40, 30, 5)).Value.Shape.Type);
     }
 
     [Fact]
@@ -46,10 +46,10 @@ public class ConstructionTests
     public void Shapes_are_made_from_geometry_and_their_failures_carry_the_builders_status()
     {
         Edge line = Edge.Line(new(0, 0, 0), new(1, 0, 0)).Value;
-        Assert.Equal(2, line.Vertices().Length);
+        Assert.Equal(2, line.AllVertices().Length);
         Assert.Equal("construction.line-through-identical-points", Edge.Line(Point3D.Origin, Point3D.Origin).Error!.Code.Value);
-        Assert.Single(Edge.Circle(new Circle3D(Frame3D.World, 1)).Value.Vertices());
-        Assert.Equal(2, Edge.Arc(new Circle3D(Frame3D.World, 1), 0, Math.PI).Value.Vertices().Length);
+        Assert.Single(Edge.Circle(new Circle3D(Frame3D.World, 1)).Value.AllVertices());
+        Assert.Equal(2, Edge.Arc(new Circle3D(Frame3D.World, 1), 0, Math.PI).Value.AllVertices().Length);
         Assert.Equal(new Point3D(2, 0, 0), Vertex.At(new Point3D(2, 0, 0)).Point);
 
         Edge far = Edge.Line(new(5, 5, 0), new(6, 5, 0)).Value;
@@ -64,7 +64,7 @@ public class ConstructionTests
         Assert.True(face.TryFindSurface(-1, out Surface? surface) && surface is PlaneSurface);
 
         Wire hole = Wire.Polygon([new(2, 2, 0), new(2, 4, 0), new(4, 4, 0), new(4, 2, 0)], closed: true).Value;
-        Assert.Equal(2, Face.FromWires(square, [hole]).Value.Wires().Length);
+        Assert.Equal(2, Face.FromWires(square, [hole]).Value.AllWires().Length);
 
         Wire skew = Wire.Polygon([new(0, 0, 0), new(1, 0, 0), new(1, 1, 1), new(0, 1, 0)], closed: true).Value;
         Assert.Equal("construction.not-planar", Face.FromWire(skew, onlyPlane: true).Error!.Code.Value);
@@ -73,7 +73,7 @@ public class ConstructionTests
         Assert.Equal(ShapeType.Face, Face.FromSurface(sphere).Value.Type);
         Assert.Equal(ShapeType.Shell, Shell.FromSurface(sphere).Value.Type);
         Face onPlane = Face.FromPlane(new Plane3D(Point3D.Origin, Direction3D.UnitZ), square).Value;
-        Assert.Equal(4, onPlane.Edges().Length);
+        Assert.Equal(4, onPlane.AllEdges().Length);
         Assert.Throws<ArgumentException>(() => Wire.Polygon([Point3D.Origin]));
         Assert.Throws<ArgumentException>(() => Solid.FromShells([]));
     }
@@ -85,7 +85,7 @@ public class ConstructionTests
         var segment = new LineCurve2D(new Line2D(Point2D.Origin, Direction2D.UnitX));
         Edge edge = Edge.FromCurve(segment, plane, new Interval(0, 2)).Value;
         Assert.True(edge.TryGetCurve(out _, out _));
-        Assert.Equal(2, edge.Vertices().Max(v => v.Point.X), 9);
+        Assert.Equal(2, edge.AllVertices().Max(v => v.Point.X), 9);
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public class ConstructionTests
         Built<Shape> prism = face.Extrude(new Vector3D(0, 0, 15)).Value;
         Assert.Equal(ShapeType.Solid, prism.Shape.Type);
         Assert.Equal(15, MaxZ(prism.Shape), 12);
-        Edge bottomEdge = face.Edges()[0];
+        Edge bottomEdge = face.AllEdges()[0];
         // the side face it swept, then its top edge (the caps, decision 1560)
         Assert.Equal(2, prism.History.Generated(bottomEdge).Count);
         Assert.Equal(ShapeType.Face, prism.History.Generated(bottomEdge)[0].Type);
@@ -110,17 +110,17 @@ public class ConstructionTests
         // the top cap is generated beside the solid; the bottom cap is the profile, or what stands for it
         IReadOnlyList<Shape> generated = prism.History.Generated(face);
         Assert.Equal([ShapeType.Solid, ShapeType.Face], generated.Select(g => g.Type));
-        Assert.Equal(15, generated[1].Vertices().Min(v => v.Point.Z), 9);
+        Assert.Equal(15, generated[1].AllVertices().Min(v => v.Point.Z), 9);
         Shape bottom = prism.History.Modified(face) is [var modified] ? modified : face;
-        Assert.Contains(prism.Shape.Faces(), f => f.IsSame(bottom));
-        Assert.Equal(0, bottom.Vertices().Max(v => v.Point.Z), 9);
-        Vertex corner = face.Vertices()[0];
+        Assert.Contains(prism.Shape.AllFaces(), f => f.IsSame(bottom));
+        Assert.Equal(0, bottom.AllVertices().Max(v => v.Point.Z), 9);
+        Vertex corner = face.AllVertices()[0];
         Assert.Contains(prism.History.Generated(corner), g => g.Type == ShapeType.Vertex && Math.Abs(((Vertex)g).Point.Z - 15) < 1e-9);
 
         Face section = Face.FromWire(Wire.Polygon([new(5, 0, 0), new(6, 0, 0), new(6, 0, 1), new(5, 0, 1)], closed: true).Value).Value;
         Built<Shape> quarter = section.Revolve(Axis3D.ZAxis, Math.PI / 2).Value;
         Shape end = Assert.Single(quarter.History.Generated(section), g => g.Type == ShapeType.Face);
-        Assert.Equal(5, end.Vertices().Min(v => v.Point.Y), 9);
+        Assert.Equal(5, end.AllVertices().Min(v => v.Point.Y), 9);
         // a whole turn ends where it starts: no cap
         Built<Shape> ring = section.Revolve(Axis3D.ZAxis).Value;
         Assert.DoesNotContain(ring.History.Generated(section), g => g.Type == ShapeType.Face);
@@ -132,7 +132,7 @@ public class ConstructionTests
         Face face = Face.FromWire(Wire.Polygon([new(5, 0, 0), new(6, 0, 0), new(6, 0, 1), new(5, 0, 1)], closed: true).Value).Value;
         Built<Shape> ring = face.Revolve(Axis3D.ZAxis).Value;
         Assert.Equal(ShapeType.Solid, ring.Shape.Type);
-        Assert.Single(ring.History.Generated(face.Edges()[0]));
+        Assert.Single(ring.History.Generated(face.AllEdges()[0]));
         Assert.Throws<ArgumentOutOfRangeException>(() => face.Revolve(Axis3D.ZAxis, 0));
     }
 
@@ -144,12 +144,12 @@ public class ConstructionTests
         {
             Built<Shape> revolved = face.Revolve(Axis3D.ZAxis, angle).Value;
             // no copy of the profile: its vertices are the result's own
-            Assert.All(face.Vertices(), v => Assert.Contains(revolved.Shape.Vertices(), r => r.IsSame(v)));
+            Assert.All(face.AllVertices(), v => Assert.Contains(revolved.Shape.AllVertices(), r => r.IsSame(v)));
             // every edge swept a face of the result, even those a whole turn leaves out (decision 1558)
-            foreach (Edge edge in face.Edges())
+            foreach (Edge edge in face.AllEdges())
             {
                 Shape swept = Assert.Single(revolved.History.Generated(edge), g => g.Type == ShapeType.Face);
-                Assert.Contains(revolved.Shape.Faces(), f => f.IsSame(swept));
+                Assert.Contains(revolved.Shape.AllFaces(), f => f.IsSame(swept));
             }
         }
     }
@@ -158,11 +158,11 @@ public class ConstructionTests
     public void A_filling_spans_its_boundary_and_passes_through_its_points()
     {
         Wire square = Square(10);
-        FillBoundary[] boundary = [.. square.Edges().Select(e => new FillBoundary(e))];
+        FillBoundary[] boundary = [.. square.AllEdges().Select(e => new FillBoundary(e))];
         Built<Face> flat = Surfaces.Fill(boundary).Value;
-        Assert.Equal(4, flat.Shape.Edges().Length);
-        Assert.Equal(0, flat.Shape.Vertices().Max(v => Math.Abs(v.Point.Z)), 6);
-        Assert.Single(flat.History.Generated(square.Edges()[0]));
+        Assert.Equal(4, flat.Shape.AllEdges().Length);
+        Assert.Equal(0, flat.Shape.AllVertices().Max(v => Math.Abs(v.Point.Z)), 6);
+        Assert.Single(flat.History.Generated(square.AllEdges()[0]));
 
         Built<Face> domed = Surfaces.Fill(boundary, new FillOptions { Points = [new Point3D(5, 5, 2)] }).Value;
         Assert.True(domed.Shape.TryFindSurface(-1, out Surface? surface));
@@ -170,7 +170,7 @@ public class ConstructionTests
         Assert.Equal(2, MaxZOfSurface(surface!), 1);
 
         Assert.Throws<ArgumentException>(() => Surfaces.Fill([]));
-        Assert.Throws<ArgumentException>(() => Surfaces.Fill([new FillBoundary(square.Edges()[0], Continuity.C2)]));
+        Assert.Throws<ArgumentException>(() => Surfaces.Fill([new FillBoundary(square.AllEdges()[0], Continuity.C2)]));
     }
 
     private static double MaxZOfSurface(Surface surface)
@@ -191,12 +191,12 @@ public class ConstructionTests
     public void A_helix_rises_by_its_pitch()
     {
         Wire helix = Sweeps.Helix(5, 2, 10).Value;
-        Point3D[] ends = [.. helix.Vertices().Select(v => v.Point)];
+        Point3D[] ends = [.. helix.AllVertices().Select(v => v.Point)];
         Assert.Contains(ends, p => p.DistanceTo(new Point3D(5, 0, 0)) < 1e-6);
         Assert.Contains(ends, p => p.DistanceTo(new Point3D(5, 0, 10)) < 1e-6);
 
         Wire cone = Sweeps.Helix(new Frame3D(new Point3D(0, 0, 1), Direction3D.UnitZ), 5, 2, 10, new HelixOptions { EndRadius = 2 }).Value;
-        Assert.Contains(cone.Vertices(), v => v.Point.DistanceTo(new Point3D(2, 0, 11)) < 1e-6);
+        Assert.Contains(cone.AllVertices(), v => v.Point.DistanceTo(new Point3D(2, 0, 11)) < 1e-6);
 
         Assert.Throws<ArgumentOutOfRangeException>(() => Sweeps.Helix(5, 0, 10));
         Assert.Throws<ArgumentOutOfRangeException>(() => Sweeps.Helix(5, 2, 10, new HelixOptions { EndRadius = -1 }));
@@ -236,7 +236,7 @@ public class ConstructionTests
         Edge a = Edge.Line(new(0, 0, 0), new(1, 0, 0)).Value;
         Edge b = Edge.Line(new(0, 1, 1), new(1, 1, 1)).Value;
         Assert.Equal(ShapeType.Face, Sweeps.Ruled(a, b).Value.Shape.Type);
-        Assert.Equal(4, Sweeps.Ruled(Square(1), Square(1, 2)).Value.Shape.Faces().Length);
+        Assert.Equal(4, Sweeps.Ruled(Square(1), Square(1, 2)).Value.Shape.AllFaces().Length);
     }
 
     [Fact]
@@ -257,7 +257,7 @@ public class ConstructionTests
         Assert.Equal(6, MaxZ(moved.Shape), 12);
         Built<Shape> scaled = box.Scaled(Point3D.Origin, 3).Value;
         Assert.Equal(3, MaxZ(scaled.Shape), 12);
-        Assert.Single(scaled.History.Modified(box.Faces()[0]));
+        Assert.Single(scaled.History.Modified(box.AllFaces()[0]));
         Built<Shape> mirrored = box.Mirrored(new Frame3D(Point3D.Origin, Direction3D.UnitZ)).Value;
         Assert.Equal(0, MaxZ(mirrored.Shape), 12);
         Assert.Throws<ArgumentOutOfRangeException>(() => box.Scaled(Point3D.Origin, 0));

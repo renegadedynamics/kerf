@@ -176,7 +176,7 @@ public class BRepBuilderAPI_SewingTests
 
         Shape aResult = aSewing.SewedShape();
         Assert.Equal(ShapeType.Shell, aResult.Type);
-        Assert.True(aResult.IsClosed);
+        Assert.True(aResult.ClosedFlag);
         Assert.True(AllFrozen(aResult));
         Assert.Equal(6, Count(aResult, ShapeType.Face));
         Assert.Equal(12, Count(aResult, ShapeType.Edge));

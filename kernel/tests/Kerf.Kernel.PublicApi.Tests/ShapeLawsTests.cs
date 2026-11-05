@@ -27,11 +27,11 @@ public class ShapeLawsTests
     public static IEnumerable<object[]> Shapes =>
     [
         [(Shape)Box(), ShapeType.Solid],
-        [(Shape)Box().Shells()[0], ShapeType.Shell],
-        [(Shape)Box().Faces()[0], ShapeType.Face],
-        [(Shape)Box().Wires()[0], ShapeType.Wire],
-        [(Shape)Box().Edges()[0], ShapeType.Edge],
-        [(Shape)Box().Vertices()[0], ShapeType.Vertex],
+        [(Shape)Box().AllShells()[0], ShapeType.Shell],
+        [(Shape)Box().AllFaces()[0], ShapeType.Face],
+        [(Shape)Box().AllWires()[0], ShapeType.Wire],
+        [(Shape)Box().AllEdges()[0], ShapeType.Edge],
+        [(Shape)Box().AllVertices()[0], ShapeType.Vertex],
         [(Shape)Compound.Create([Box()]), ShapeType.Compound],
         [(Shape)MakeCompSolid(), ShapeType.CompSolid],
     ];
@@ -55,9 +55,6 @@ public class ShapeLawsTests
         Assert.Equal(type, (ShapeType)Get(shape, "Type"));
         Assert.Equal(Orientation.Forward, (Orientation)Get(shape, "Orientation"));
         Assert.True(((Placement)Get(shape, "Placement")).IsIdentity);
-        Assert.False((bool)Get(shape, "IsInfinite"));
-        Assert.Equal(general.IsClosed, (bool)Get(shape, "IsClosed"));
-        Assert.Equal(general.IsOrientable, (bool)Get(shape, "IsOrientable"));
         Assert.Equal(general.ChildCount, (int)Get(shape, "ChildCount"));
 
         // orientation
@@ -105,14 +102,14 @@ public class ShapeLawsTests
     {
         Solid box = Box();
         Assert.Equal(1, Count(box.Explore<Shell>()));
-        Assert.Equal(6, Count(box.Shells()[0].Explore<Face>()));
-        Assert.Equal(4, Count(box.Wires()[0].Explore<Edge>()));
-        Assert.Equal(0, Count(box.Vertices()[0].Explore<Edge>()));
-        Assert.Equal(8, Count(box.Faces()[0].Explore<Vertex>()));
+        Assert.Equal(6, Count(box.AllShells()[0].Explore<Face>()));
+        Assert.Equal(4, Count(box.AllWires()[0].Explore<Edge>()));
+        Assert.Equal(0, Count(box.AllVertices()[0].Explore<Edge>()));
+        Assert.Equal(8, Count(box.AllFaces()[0].Explore<Vertex>()));
         Assert.Equal(1, Count(Compound.Create([box]).Explore<Solid>()));
         Assert.Equal(2, Count(MakeCompSolid().Explore<Solid>()));
         // avoiding wires, no edges are reached
-        Assert.Equal(0, Count(box.Faces()[0].Explore<Edge>(ShapeType.Wire)));
+        Assert.Equal(0, Count(box.AllFaces()[0].Explore<Edge>(ShapeType.Wire)));
     }
 
     private static int Count<T>(SubShapes<T> shapes) where T : struct, IShape<T>
@@ -129,11 +126,10 @@ public class ShapeLawsTests
     public void A_vertex_edge_and_face_read_back()
     {
         Solid box = Box();
-        Assert.Equal(1, box.Faces()[0].ChildCount);
-        Assert.Equal(1e-7, box.Faces()[0].Tolerance, 12);
-        Assert.False(box.IsInfinite);
-        Assert.Equal(0, box.Vertices()[0].ChildCount);
-        Assert.Equal(2, box.Edges()[0].ChildCount);
+        Assert.Equal(1, box.AllFaces()[0].ChildCount);
+        Assert.Equal(1e-7, box.AllFaces()[0].Tolerance, 12);
+        Assert.Equal(0, box.AllVertices()[0].ChildCount);
+        Assert.Equal(2, box.AllEdges()[0].ChildCount);
         Assert.Throws<InvalidCastException>(() => (CompSolid)(Shape)box);
         Assert.Equal(ShapeType.CompSolid, ((CompSolid)(Shape)MakeCompSolid()).Type);
         Assert.Equal(1000, box.Oriented(Orientation.Forward).Volume(), 6);
@@ -153,17 +149,17 @@ public class ShapeLawsTests
     public void TheDimensionInterfacesSayWhatEachShapeIs()
     {
         Solid box = Box();
-        Face face = box.Faces()[0];
-        Edge edge = box.Edges()[0];
+        Face face = box.AllFaces()[0];
+        Edge edge = box.AllEdges()[0];
 
         Assert.True(((object)edge) is IShape1D);
         Assert.True(((object)Wire.Create([edge])) is IShape1D);
         Assert.True(((object)face) is IShape2D);
-        Assert.True(((object)box.Shells()[0]) is IShape2D);
+        Assert.True(((object)box.AllShells()[0]) is IShape2D);
         Assert.True(((object)box) is IShape3D);
         Assert.True(((object)MakeCompSolid()) is IShape3D);
         Assert.True(((object)Compound.Create([box])) is IShape3D);
-        Assert.False(((object)box.Vertices()[0]) is IShape1D or IShape2D or IShape3D);
+        Assert.False(((object)box.AllVertices()[0]) is IShape1D or IShape2D or IShape3D);
         Assert.False(((object)(Shape)edge) is IShape1D);
         // Non-generic, as modelling objects implement it
         Assert.True(AsShapeOf<IShape>(face).IsSame(face));
@@ -175,7 +171,7 @@ public class ShapeLawsTests
     [Fact]
     public void ATypedComparerComparesAsShapeComparerDoes()
     {
-        Edge edge = Box().Edges()[0];
+        Edge edge = Box().AllEdges()[0];
         Edge reversed = (Edge)edge.Reversed();
 
         Assert.True(ShapeComparer<Edge>.Same.Equals(edge, reversed));

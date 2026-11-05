@@ -35,7 +35,7 @@ public class CurveObjectTests
         var l7 = new Line(new Point3D(0.0692, 0.7808, 0), new Point3D(0.0000, 0.9167, 0));
         var a5 = new TangentArc(l6.PositionAt(1), l7.PositionAt(0), tangent: l6.TangentAt(1));
         Shape[] outline = [l1, l2, a1, l3, a2, l4, a3, l5, a4, l6, s1, l7, a5];
-        var edges = outline.SelectMany(s => s.SelectEdges()).ToList();
+        var edges = outline.SelectMany(s => s.Edges()).ToList();
         edges.AddRange(edges.Select(e => e.Mirror(Plane.YZ)).ToList());
         var leaf = Face.Make(Wire.Combine(edges)[0]);
         Check.AlmostEqual(0.2741600685288115, leaf.Area, 5);
@@ -367,7 +367,7 @@ public class CurveObjectTests
 
         // A polyline closed by the user
         var l1 = new FilletPolyline([new Point3D(0, 0, 0), new Point3D(2, 6, 0), new Point3D(0, 5, 0), new Point3D(-2, 6, 0), new Point3D(0, 0, 0)], radii: [0, 0.1, 0, 0]);
-        Assert.All(l1.Vertices(), v => Assert.Equal(2, l1.Edges().Count(e => e.SelectVertices().Contains(v, ShapeComparer<Vertex>.Same))));
+        Assert.All(l1.Vertices(), v => Assert.Equal(2, l1.Edges().Count(e => e.Vertices().Contains(v, ShapeComparer<Vertex>.Same))));
         Assert.Single(l1.Edges().Where(GeomType.Circle));
     }
 
@@ -648,7 +648,7 @@ public class CurveObjectTests
         var l2 = new Line(new Point3D(1, 1, 0), new Point3D(0, 0, 0));
         var l = l1 + l2;
         var wire = Check.Is<Wire>(l);
-        Assert.True(wire.CheckClosed());
+        Assert.True(wire.IsClosed);
         Check.TupleAlmostEqual([0.6464466094067263, 0.35355339059327373, 0.0], Check.Of(l.Center(CenterOf.Mass)), 6);
     }
 
@@ -658,7 +658,7 @@ public class CurveObjectTests
         var l1 = new Line(new Point3D(0, 0, 0), new Point3D(1, 1, 0));
         var l2 = new Line(new Point3D(0.25, 0.25, 0), new Point3D(0.75, 0.75, 0));
         var l = l1 - l2;
-        var vertices = l.SelectVertices().OrderBy(Axis.X);
+        var vertices = l.Vertices().OrderBy(Axis.X);
         Assert.Equal(4, vertices.Count);
         Check.TupleAlmostEqual([0.0, 0.0, 0.0], Check.Of(vertices[0].Point), 6);
         Check.TupleAlmostEqual([0.25, 0.25, 0.0], Check.Of(vertices[1].Point), 6);
@@ -672,7 +672,7 @@ public class CurveObjectTests
         var l1 = new Line(new Point3D(0, 0, 0), new Point3D(1, 1, 0));
         var l2 = new Line(new Point3D(0.25, 0.25, 0), new Point3D(0.75, 0.75, 0));
         var l = l1 & l2;
-        var vertices = l.SelectVertices().OrderBy(Axis.X);
+        var vertices = l.Vertices().OrderBy(Axis.X);
         Assert.Equal(2, vertices.Count);
         Check.TupleAlmostEqual(Check.Of(l2.PositionAt(0)), Check.Of(vertices[0].Point), 6);
         Check.TupleAlmostEqual(Check.Of(l2.PositionAt(1)), Check.Of(vertices[1].Point), 6);
@@ -695,7 +695,7 @@ public class CurveObjectTests
     {
         var line = new Line(new Point3D(0, 0, 0), new Point3D(1, 1, 0));
         var rectangle = new Rectangle(1, 1);
-        var vertices = (line - rectangle).SelectVertices();
+        var vertices = (line - rectangle).Vertices();
         Assert.Equal(2, vertices.Count);
         Check.TupleAlmostEqual([0.5, 0.5, 0.0], Check.Of(vertices[0].Point), 6);
         Check.TupleAlmostEqual([1.0, 1.0, 0.0], Check.Of(vertices[1].Point), 6);

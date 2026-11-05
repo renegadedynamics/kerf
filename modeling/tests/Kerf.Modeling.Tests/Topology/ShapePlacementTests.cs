@@ -28,13 +28,13 @@ public class ShapePlacementTests
     [
         ("vertex", loc => Vertex.Make(1, 2, 3).Moved(loc)),
         ("vertex of a moved wire", loc =>
-            Wire.MakePolygon(new Point3D[] { new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0) }, close: false).Moved(loc).SelectVertices()[1]),
+            Wire.MakePolygon(new Point3D[] { new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0) }, close: false).Moved(loc).Vertices()[1]),
         ("edge", loc => Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Moved(loc)),
-        ("edge of a moved face", loc => Face.MakeRect(2, 1).Moved(loc).SelectEdges()[0]),
+        ("edge of a moved face", loc => Face.MakeRect(2, 1).Moved(loc).Edges()[0]),
         ("wire", loc => Wire.MakePolygon(new Point3D[] { new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0) }).Moved(loc)),
         ("face", loc => Face.MakeRect(2, 1).Moved(loc)),
         ("face with a hole", loc => Face.MakeRect(4, 4).MakeHoles([Wire.MakeCircle(1)]).Moved(loc)),
-        ("shell", loc => Solid.MakeBox(1, 2, 3).SelectShells()[0].Moved(loc)),
+        ("shell", loc => Solid.MakeBox(1, 2, 3).Shells()[0].Moved(loc)),
         ("solid", loc => Solid.MakeBox(1, 2, 3).Moved(loc)),
         ("labelled solid", loc => Solid.MakeBox(1, 2, 3).Moved(loc).WithLabel("brick")),
         ("compound", loc => Compound.Make([Solid.MakeBox(1, 1, 1), Solid.MakeSphere(0.5).Moved(new Pos(3, 0, 0))]).Moved(loc)),
@@ -56,7 +56,7 @@ public class ShapePlacementTests
     static Placement PlacementOf(Shape shape)
     {
         var bbox = shape.BoundBox();
-        var vertices = shape.SelectVertices()
+        var vertices = shape.Vertices()
             .Select(v => (R4(v.X), R4(v.Y), R4(v.Z))).Order().Select(t => t.ToString());
         var children = ChildrenOf(shape).Select(c => Rounded((Check.LocationOf(shape) * Check.LocationOf(c)).Position));
         return new Placement(Check.LocationOf(shape), Rounded(bbox.Min), Rounded(bbox.Max),
@@ -129,7 +129,7 @@ public class ShapePlacementTests
         var solid = Solid.Extrude(cross, new Vector3D(0, 0, 2));   // extrude(cross, 2)
         foreach (var (name, relocated) in new[] { ("located", solid.Located(Elsewhere)), ("moved", solid.Moved(Elsewhere)) })
         {
-            var interior = relocated.SelectEdges().Where(Convexity.Concave);
+            var interior = relocated.Edges().Where(Convexity.Concave);
             Assert.True(interior.Count == 4, name);
         }
     }

@@ -119,7 +119,7 @@ public class PlaneWithShapesTests
             (Axis.X.Direction, Axis.Z.Direction, -Axis.Y.Direction),   // trapezoid face, negative y
             (-Axis.X.Direction, Axis.Z.Direction, Axis.Y.Direction),   // trapezoid face, positive y
         ];
-        var faces = loftedSolid.SelectFaces().ParallelTo(Plane.XZ).OrderBy(Axis.Y);
+        var faces = loftedSolid.Faces().ParallelTo(Plane.XZ).OrderBy(Axis.Y);
         Assert.Equal(2, faces.Count);
         for (int i = 0; i < faces.Count; i++)
         {
@@ -146,7 +146,7 @@ public class PlaneWithShapesTests
     {
         var p = new Plane(new Point3D(0, 0, 0), xDir: new Vector3D(1, 0, 0), zDir: new Vector3D(0, 1, 0));
         var localBox = p.ToLocalCoords(Solid.MakeBox(1, 1, 1));
-        var vertices = localBox.SelectVertices();
+        var vertices = localBox.Vertices();
         double[][] targets =
         [
             [0, -1, 0], [0, 0, 0], [0, -1, 1], [0, 0, 1],
@@ -171,7 +171,7 @@ public class PlaneWithShapesTests
     public void FromNonPlanarFace()
     {
         Assert.IsType<Plane>(new Plane(Face.MakeRect(1, 1)));
-        var cyl = Solid.MakeCylinder(1, 4).SelectFaces().WhereNot(GeomType.Plane)[0];
+        var cyl = Solid.MakeCylinder(1, 4).Faces().WhereNot(GeomType.Plane)[0];
         Assert.Throws<ArgumentException>(() => new Plane(cyl));
     }
 
@@ -190,7 +190,7 @@ public class PlaneWithShapesTests
     {
         var box = new Box(1, 1, 1, align: Align.Min);
         var front = box.Faces().OrderBy(Axis.X)[^1];
-        var pln = new Plane(front).ShiftOrigin(front.SelectVertices().GroupBy(Axis.Z)[^1].OrderBy(Axis.Y)[^1]);
+        var pln = new Plane(front).ShiftOrigin(front.Vertices().GroupBy(Axis.Z)[^1].OrderBy(Axis.Y)[^1]);
         var p = box - Ops.Extrude(pln * (new Pos(-0.5, 0.5) * new Circle(0.5)), -1).Value;
         Check.AlmostEqual(1 - Math.PI * 0.5 * 0.5 * 1, p.Volume, 5);
     }
@@ -200,7 +200,7 @@ public class PlaneWithShapesTests
     {
         var b = Ops.Fillet(new Box(4, 4, 2).Edges().ParallelTo(Axis.Z), 0.5).Value;
         var top = b.Faces().OrderBy(Axis.Z)[^1];
-        var reference = top.SelectEdges().Where(GeomType.Circle).GroupBy(Axis.X)[^1].OrderBy(Axis.Y)[0].ArcCenter;
+        var reference = top.Edges().Where(GeomType.Circle).GroupBy(Axis.X)[^1].OrderBy(Axis.Y)[0].ArcCenter;
         var pln = new Plane(top, xDir: new Vector3D(0, 1, 0)).ShiftOrigin(reference);
         var p = b - Ops.Extrude(pln * (new Pos(0.5, 0.5) * new Rectangle(2, 2, align: Align.Min)), -1).Value;
         Check.AlmostEqual(b.Volume - 2 * 2 * 1, p.Volume, 5);
@@ -450,7 +450,7 @@ public class OrientedBoundBoxWithShapesTests
             Check.AlmostEqual(rect.Area, area, 5);
         }
 
-        foreach (var face in Objects.Box(1, 2, 3).SelectFaces())
+        foreach (var face in Objects.Box(1, 2, 3).Faces())
         {
             var poly = Face.Make(Wire.MakePolygon(face.OrientedBoundingBox().Corners));
             var area = face.Intersect(poly).Faces().Sum(f => f.Area);

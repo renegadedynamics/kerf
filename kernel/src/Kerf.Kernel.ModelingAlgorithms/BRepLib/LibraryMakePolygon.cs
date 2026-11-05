@@ -185,7 +185,7 @@ internal class LibraryMakePolygon : LibraryMakeShape
         }
 
         // check not already closed
-        if (_shape.IsClosed)
+        if (_shape.ClosedFlag)
         {
             return;
         }

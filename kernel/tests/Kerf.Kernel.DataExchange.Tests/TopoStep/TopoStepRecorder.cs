@@ -274,7 +274,7 @@ internal static class TopoStepRecorder
                     var M = new MakeShellBasedSurfaceModel(aShell, FP, F);
                     return (M.IsDone, M.IsDone ? M.Value() : null);
                 });
-                if (aShell.IsClosed && FacetedTool.CheckTopoDSShape(aShell) == FacetedError.FacetedDone)
+                if (aShell.ClosedFlag && FacetedTool.CheckTopoDSShape(aShell) == FacetedError.FacetedDone)
                 {
                     Convert(aLines, theDump, "fb-shell", i, aTag, FP =>
                     {

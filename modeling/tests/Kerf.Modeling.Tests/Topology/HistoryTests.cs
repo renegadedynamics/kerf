@@ -20,7 +20,7 @@ public class ShapeHistoryTests
     readonly Solid _box = Solid.MakeBox(10, 10, 10);
     readonly Face _top;
 
-    public ShapeHistoryTests() => _top = _box.SelectFaces().OrderBy(Axis.Z)[^1];
+    public ShapeHistoryTests() => _top = _box.Faces().OrderBy(Axis.Z)[^1];
 
     /// <summary>
     /// A cylinder standing on the box: the top is rebuilt around the cylinder's own bottom circle, the cylinder's
@@ -35,12 +35,12 @@ public class ShapeHistoryTests
         var history = fused.History;
         Assert.IsType<ModelHistory>(history);
         Assert.Single(history.Modified(_top));
-        foreach (var side in _box.SelectFaces().NotParallelTo(Axis.Z))
+        foreach (var side in _box.Faces().NotParallelTo(Axis.Z))
         {
             Assert.Empty(history.Modified(side));
             Assert.False(history.IsRemoved(side));
         }
-        var bottomCap = cylinder.SelectFaces().OrderBy(Axis.Z)[0];
+        var bottomCap = cylinder.Faces().OrderBy(Axis.Z)[0];
         Assert.True(history.IsRemoved(bottomCap));
         Assert.Empty(history.Generated(_top));
 
@@ -59,7 +59,7 @@ public class ShapeHistoryTests
         var slab = Solid.MakeBox(10, 10, 5, new Plane(new Point3D(0, 0, 10)));
         var fused = _box.Fuse(slab);   // coplanar sides are unified by the clean
         var history = fused.History!;
-        var side = _box.SelectFaces().OrderBy(Axis.X)[0];
+        var side = _box.Faces().OrderBy(Axis.X)[0];
         var merged = history.Modified(side);
         Assert.Single(merged);
         Check.AlmostEqual(150, ((Face)(merged[0])).Area, 5);
@@ -73,7 +73,7 @@ public class ShapeHistoryTests
         var fused = _box.Fuse(cylinder);
         var trace = fused.History!.TraceOf([_box]);
         int untouched = 0, modified = 0, generated = 0, other = 0;
-        foreach (var face in fused.SelectFaces())
+        foreach (var face in fused.Faces())
         {
             if (trace.IsUntouched(face))
                 untouched++;
@@ -86,7 +86,7 @@ public class ShapeHistoryTests
         }
         // four box sides untouched, top and bottom rebuilt, and the cylinder's faces are not the box's at all
         Assert.Equal((4, 2, 0, 4), (untouched, modified, generated, other));
-        var circles = fused.SelectEdges().Where(e => trace.IsGenerated(e)).ToList();
+        var circles = fused.Edges().Where(e => trace.IsGenerated(e)).ToList();
         Assert.True(circles.Count >= 2);
         Assert.All(circles, e => Assert.Equal(GeomType.Circle, e.GeomType));
     }
@@ -95,14 +95,14 @@ public class ShapeHistoryTests
     public void AlgorithmHistoryFromAFillet()
     {
         using var log = HistoryLog.Open();
-        var rounded = _box.Fillet(1, _box.SelectEdges().ParallelTo(Axis.Z));
+        var rounded = _box.Fillet(1, _box.Edges().ParallelTo(Axis.Z));
         var trace = rounded.History!.TraceOf([_box]);
-        var faces = rounded.SelectFaces();
+        var faces = rounded.Faces();
         Assert.Equal(6, faces.Count(f => trace.IsModified(f)));
         Assert.Equal(4, faces.Count(f => trace.IsGenerated(f)));
         Assert.Equal(10, faces.Count(f => trace.IsDescendant(f)));
         // the filleted edges are gone and the fillet faces came from them
-        foreach (var edge in _box.SelectEdges().ParallelTo(Axis.Z))
+        foreach (var edge in _box.Edges().ParallelTo(Axis.Z))
         {
             Assert.True(rounded.History!.IsRemoved(edge));
             Assert.Single(rounded.History!.Generated(edge));
@@ -119,9 +119,9 @@ public class ShapeHistoryTests
         var prism = global::Kerf.Construction.Sweeps.Extrude(square, vec).Value;
         var history = ModelHistory.FromAlgorithm(s => prism.History.Modified(s), s => prism.History.Generated(s), [square], prism.Shape);
         // The kernel's extrusion history also generates each sub-shape's copy in the top cap (decision 1558)
-        foreach (var edge in square.SelectEdges())
+        foreach (var edge in square.Edges())
             Assert.Single(history.Generated(edge), g => g.Type == ShapeType.Face);
-        foreach (var vertex in square.SelectVertices())
+        foreach (var vertex in square.Vertices())
             Assert.Single(history.Generated(vertex), g => g.Type == ShapeType.Edge);
         Assert.False(history.IsRemoved(square));
     }
@@ -138,8 +138,8 @@ public class ShapeHistoryTests
         foreach (var face in new[] { left, right })
             Assert.Single(history.Modified(face));
         // the two coincident edges were merged into one edge of the shell
-        var leftEdge = left.SelectEdges().OrderBy(Axis.X)[^1];
-        var rightEdge = right.SelectEdges().OrderBy(Axis.X)[0];
+        var leftEdge = left.Edges().OrderBy(Axis.X)[^1];
+        var rightEdge = right.Edges().OrderBy(Axis.X)[0];
         var mergedLeft = history.Modified(leftEdge);
         var mergedRight = history.Modified(rightEdge);
         Assert.Single(mergedLeft);
@@ -152,7 +152,7 @@ public class ShapeHistoryTests
         using var log = HistoryLog.Open();
         var moved = _box.Moved(new Plane(new Point3D(1, 2, 3)).Location);
         var history = ModelHistory.FromRelocation(_box, moved);
-        foreach (var face in _box.SelectFaces())
+        foreach (var face in _box.Faces())
         {
             var placed = history.Modified(face);
             Assert.Single(placed);
@@ -206,9 +206,9 @@ public class ShapeHistoryTests
         var center = $"({R5(c.X)}, {R5(c.Y)}, {R5(c.Z)})";
         return TopoUtil.Typed(shape) switch
         {
-            Face f => $"Face {f.GeomType} {R5(f.Area)} {center} {f.SelectEdges().Count}",
-            Edge e => $"Edge {e.GeomType} {R5(e.Length)} {center} {e.SelectVertices().Count}",
-            Solid s => $"Solid {R5(s.Volume)} {center} {s.SelectFaces().Count} {s.SelectEdges().Count}",
+            Face f => $"Face {f.GeomType} {R5(f.Area)} {center} {f.Edges().Count}",
+            Edge e => $"Edge {e.GeomType} {R5(e.Length)} {center} {e.Vertices().Count}",
+            Solid s => $"Solid {R5(s.Volume)} {center} {s.Faces().Count} {s.Edges().Count}",
             _ => $"Vertex {center}",
         };
     }
@@ -440,7 +440,7 @@ public class AlgebraSelectTests
     public void JoinedLines()
     {
         var bent = new Curve((Shape)Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 0, 0))) + Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(1, 1, 0));
-        Assert.Equal(2, bent.SelectEdges().Count);
+        Assert.Equal(2, bent.Edges().Count);
         Assert.Single(bent.Edges(Select.Last));
         Assert.Empty(bent.Edges(Select.New));
         // both ends of the new line, including the one it shares with the old

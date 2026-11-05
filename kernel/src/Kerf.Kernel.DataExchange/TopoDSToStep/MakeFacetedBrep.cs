@@ -27,7 +27,7 @@ internal sealed class MakeFacetedBrep : ExportRoot
                                         ProgressRange progress = default)
     {
         _done = false;
-        if (aShell.IsClosed)
+        if (aShell.ClosedFlag)
         {
             StepTopologicalRepresentationItem item;
             var map = new Dictionary<Shape, Transient>(ShapeHasher.Instance);
@@ -88,7 +88,7 @@ internal sealed class MakeFacetedBrep : ExportRoot
 
         if (!outerShell.IsNull)
         {
-            if (outerShell.IsClosed)
+            if (outerShell.ClosedFlag)
             {
                 StepTopologicalRepresentationItem item;
                 var map = new Dictionary<Shape, Transient>(ShapeHasher.Instance);

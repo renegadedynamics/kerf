@@ -57,8 +57,8 @@ public class SkipCleanTests
         using (new SkipClean())
             uncleaned = left.Fuse(right);
 
-        Assert.Equal(6, cleaned.SelectFaces().Count);
-        Assert.True(uncleaned.SelectFaces().Count > 6);
+        Assert.Equal(6, cleaned.Faces().Count);
+        Assert.True(uncleaned.Faces().Count > 6);
         Check.AlmostEqual(cleaned.Volume, uncleaned.Volume, 6);
     }
 }

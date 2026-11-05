@@ -22,7 +22,7 @@ public class HealingTests
     public void A_solid_of_an_open_shell_is_reported()
     {
         Solid box = Fixtures.Box();
-        Shell open = Shell.Create(box.Faces().Take(5));
+        Shell open = Shell.Create(box.AllFaces().Take(5));
         ValidationReport report = Solid.Create([open]).Validate();
         Assert.False(report.IsValid);
         Assert.Contains(report.Problems, p => p.Code.Value == "check.not-closed");
@@ -44,7 +44,7 @@ public class HealingTests
     [Fact]
     public void A_shape_left_invalid_by_fixing_carries_a_warning()
     {
-        Shell open = Shell.Create(Fixtures.Box().Faces().Take(5));
+        Shell open = Shell.Create(Fixtures.Box().AllFaces().Take(5));
         Result<Built<Shape>> fixedSolid = Solid.Create([open]).Fix(new FixOptions { FixSolids = false, FixShells = false });
         Assert.True(fixedSolid.IsSuccess);
         Diagnostic warning = Assert.Single(fixedSolid.Diagnostics, d => d.Code == HealingOperations.NotFixed);
@@ -57,21 +57,21 @@ public class HealingTests
     public void Unifying_merges_the_faces_on_one_plane()
     {
         Shape fused = Fixtures.TwoBoxesFused();
-        Assert.Equal(10, fused.Faces().Length);
+        Assert.Equal(10, fused.AllFaces().Length);
         Result<Built<Shape>> unified = fused.Unify();
         Assert.True(unified.IsSuccess);
         Shape result = unified.Value;
-        Assert.Equal(6, result.Faces().Length);
+        Assert.Equal(6, result.AllFaces().Length);
         Assert.Equal(2000, result.Volume(), 1e-6);
-        Assert.Contains(fused.Faces(), f => unified.Value.History.Modified(f).Count > 0);
-        Assert.Equal(10, fused.Faces().Length);   // the input is unchanged
+        Assert.Contains(fused.AllFaces(), f => unified.Value.History.Modified(f).Count > 0);
+        Assert.Equal(10, fused.AllFaces().Length);   // the input is unchanged
     }
 
     [Fact]
     public void Faces_sew_into_a_shell_that_makes_a_solid()
     {
         Solid box = Fixtures.Box();
-        Result<Built<Shape>> sewn = HealingOperations.Sew(box.Faces().Select(f => (Shape)f), new SewOptions { Tolerance = 1e-4 });
+        Result<Built<Shape>> sewn = HealingOperations.Sew(box.AllFaces().Select(f => (Shape)f), new SewOptions { Tolerance = 1e-4 });
         Assert.True(sewn.IsSuccess);
         Assert.True(sewn.Value.Shape.TryAs(out Shell shell));
         Result<Built<Solid>> solid = shell.MakeSolid();
@@ -82,7 +82,7 @@ public class HealingTests
     [Fact]
     public void An_open_shell_makes_no_solid()
     {
-        Shell open = Shell.Create(Fixtures.Box().Faces().Take(5));
+        Shell open = Shell.Create(Fixtures.Box().AllFaces().Take(5));
         Result<Built<Solid>> solid = open.MakeSolid();
         Assert.False(solid.IsSuccess);
         Assert.Equal(HealingOperations.NotAClosedShell, solid.Error!.Code);
@@ -92,16 +92,16 @@ public class HealingTests
     public void Edges_connect_into_wires_and_free_boundaries_are_found()
     {
         Solid box = Fixtures.Box();
-        Face face = box.Faces()[0];
-        var wires = HealingOperations.ConnectEdges(face.Edges(), 1e-6);
+        Face face = box.AllFaces()[0];
+        var wires = HealingOperations.ConnectEdges(face.AllEdges(), 1e-6);
         Assert.Single(wires);
-        Assert.Equal(4, wires[0].Edges().Length);
+        Assert.Equal(4, wires[0].AllEdges().Length);
 
-        Shell open = Shell.Create(box.Faces().Take(5));
+        Shell open = Shell.Create(box.AllFaces().Take(5));
         var bounds = open.FreeBoundaries();
         Assert.Single(bounds);
-        Assert.Equal(4, bounds[0].Edges().Length);
-        Assert.Empty(box.Shells()[0].FreeBoundaries());
+        Assert.Equal(4, bounds[0].AllEdges().Length);
+        Assert.Empty(box.AllShells()[0].FreeBoundaries());
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public class HealingTests
 
         Result<Built<Shape>> wireframe = Fixtures.Box().FixWireframe(1e-4);
         Assert.True(wireframe.IsSuccess);
-        Assert.Equal(12, wireframe.Value.Shape.Edges().Length);
+        Assert.Equal(12, wireframe.Value.Shape.AllEdges().Length);
         Assert.Throws<ArgumentOutOfRangeException>(() => Fixtures.Box().FixWireframe(0));
     }
 

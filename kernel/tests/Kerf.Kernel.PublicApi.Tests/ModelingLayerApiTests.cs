@@ -79,15 +79,15 @@ public class ModelingLayerApiTests
     [Fact]
     public void A_closed_shell_checks_closed_and_an_open_one_doesnt()
     {
-        Assert.True(Shell.Create(Box().Faces()).CheckClosed());
-        Assert.False(Shell.Create(Box().Faces().Take(5)).CheckClosed());
+        Assert.True(Shell.Create(Box().AllFaces()).IsClosed);
+        Assert.False(Shell.Create(Box().AllFaces().Take(5)).IsClosed);
     }
 
     [Fact]
     public void Edges_give_their_curves_local_on_a_plane_and_as_a_wire()
     {
         Face face = SquareFace();
-        Vertex corner = face.Vertices()[0];
+        Vertex corner = face.AllVertices()[0];
         Point2D uv = corner.ParametersOn(face);
         Assert.True(face.ToSurface().Evaluate(uv.X, uv.Y).DistanceTo(corner.Point) < Tol);
 
@@ -129,7 +129,7 @@ public class ModelingLayerApiTests
     [Fact]
     public void A_face_surface_gives_derivatives_and_curvature()
     {
-        Face sphere = Solid.Sphere(2).Value.Shape.Faces()[0];
+        Face sphere = Solid.Sphere(2).Value.Shape.AllFaces()[0];
         FaceSurface surface = sphere.ToSurface();
         Assert.True(surface.TryGetCurvature(0.3, 0.2, 1e-9, out SurfaceCurvature curvature));
         Assert.Equal(0.25, curvature.Gaussian, 9);
@@ -232,9 +232,9 @@ public class ModelingLayerApiTests
     [Fact]
     public void Wires_and_faces_are_built_from_parts()
     {
-        Edge[] edges = [.. Square().Edges()];
+        Edge[] edges = [.. Square().AllEdges()];
         Wire connected = Wire.Connect(edges).Value;
-        Assert.Equal(4, connected.Edges().Length);
+        Assert.Equal(4, connected.AllEdges().Length);
 
         Wire hole = Wire.Polygon([new(4, 4, 0), new(6, 4, 0), new(6, 6, 0), new(4, 6, 0)], closed: true).Value;
         Face holed = Face.FromWires(Square(), [(Wire)hole.Reversed()]).Value;
@@ -268,13 +268,13 @@ public class ModelingLayerApiTests
         Face profile = (Face)SquareFace(1).Moved(new Placement(Transform3D.Translation(new Vector3D(5, 0, 0))));
         Built<Shape> revolved = profile.Revolve(Axis3D.YAxis, Math.PI, copyProfile: true).Value;
         Assert.Equal(Math.PI * 5.5, revolved.Shape.Volume(), 6);
-        Assert.DoesNotContain(revolved.Shape.Faces(), f => f.IsSame(profile));
+        Assert.DoesNotContain(revolved.Shape.AllFaces(), f => f.IsSame(profile));
     }
 
     [Fact]
     public void A_half_space_of_a_shell_and_edges_projected_onto_a_shape()
     {
-        Shell top = Shell.Create([Box().Faces().First(f => f.ToSurface().Evaluate(0, 0).Z > 9)]);
+        Shell top = Shell.Create([Box().AllFaces().First(f => f.ToSurface().Evaluate(0, 0).Z > 9)]);
         Solid half = Solid.HalfSpace(top, new Point3D(5, 5, 0)).Value.Shape;
         Assert.Equal(Containment.In, half.ClassifyPoint(new Point3D(5, 5, 0)));
 
@@ -289,14 +289,14 @@ public class ModelingLayerApiTests
     {
         // A plane's curves are computed on demand, so a sphere shows what was stored
         Solid ball = Solid.Sphere(5).Value.Shape;
-        Face sphere = ball.Faces()[0];
+        Face sphere = ball.AllFaces()[0];
         Face plane = Face.FromPlane(new Plane3D(new Point3D(0, 0, 1), Direction3D.UnitZ)).Value;
         var without = BooleanOptions.Default with { SectionCurvesOnFaces = false };
         Shape bare = BooleanOperations.Section([sphere], [plane], without).Value.Shape;
-        Assert.NotEmpty(bare.Edges());
-        Assert.All(bare.Edges(), e => Assert.False(e.TryGetCurveOnFace(sphere, out _, out _)));
+        Assert.NotEmpty(bare.AllEdges());
+        Assert.All(bare.AllEdges(), e => Assert.False(e.TryGetCurveOnFace(sphere, out _, out _)));
         Shape full = BooleanOperations.Section([sphere], [plane]).Value.Shape;
-        Assert.Contains(full.Edges(), e => e.TryGetCurveOnFace(sphere, out _, out _));
+        Assert.Contains(full.AllEdges(), e => e.TryGetCurveOnFace(sphere, out _, out _));
     }
 
     // ---------------------------------------------------------------------------------------------- healing
@@ -308,9 +308,9 @@ public class ModelingLayerApiTests
         Assert.Equal(100, face.FixFace().Value.Shape.Area(), 9);
         Assert.Empty(Box().MisorientedEdges());
         Shape wire = Square().FixWireframe(1e-3, new WireframeFixOptions { SmallEdgesFirst = true, MaxTolerance = 1e-2 }).Value.Shape;
-        Assert.Equal(4, wire.Edges().Length);
+        Assert.Equal(4, wire.AllEdges().Length);
         Shape splines = Solid.Cylinder(1, 2).Value.Shape.ApproximateBSplines(BSplineApproximationOptions.Default).Value.Shape;
-        Assert.Equal(3, splines.Faces().Length);
+        Assert.Equal(3, splines.AllFaces().Length);
         Assert.Equal(Math.PI * 2, splines.Volume(), 4);
         Assert.True(Box().Fix(new FixOptions { CheckResult = false }).IsSuccess);
     }
@@ -321,7 +321,7 @@ public class ModelingLayerApiTests
         Face left = SquareFace(4);
         Face right = (Face)SquareFace(4).Moved(new Placement(Transform3D.Translation(new Vector3D(4, 0, 0))));
         Built<Shape> sewn = HealingOperations.Sew([left, right]).Value;
-        Edge leftEdge = left.Edges().First(e => e.ToCurve().Evaluate(e.ToCurve().Range.Min).X == 4 && e.ToCurve().Evaluate(e.ToCurve().Range.Max).X == 4);
+        Edge leftEdge = left.AllEdges().First(e => e.ToCurve().Evaluate(e.ToCurve().Range.Min).X == 4 && e.ToCurve().Evaluate(e.ToCurve().Range.Max).X == 4);
         Assert.NotEmpty(sewn.History.Modified(leftEdge));
     }
 
@@ -347,18 +347,18 @@ public class ModelingLayerApiTests
     public void Faces_are_chamfered_by_corner_drafted_by_angle_and_split_along_edges()
     {
         Face face = SquareFace();
-        Edge[] edges = [.. face.Edges()];
+        Edge[] edges = [.. face.AllEdges()];
         Face chamfered = face.Chamfer2D([(edges[0], edges[1])], 1).Value.Shape;
         Assert.Equal(99.5, chamfered.Area(), 9);
 
         Solid box = Box();
-        Face[] sides = [.. box.Faces().Where(f => Math.Abs(f.ToSurface().Normal(0.5, 0.5).Z) < 0.5)];
+        Face[] sides = [.. box.AllFaces().Where(f => Math.Abs(f.ToSurface().Normal(0.5, 0.5).Z) < 0.5)];
         Shape drafted = box.Draft(sides.Select(f => (f, 0.05)), Direction3D.UnitZ, new Plane3D()).Value.Shape;
         Assert.True(drafted.Volume() < 1000);
 
         Edge cut = Edge.Line(new(5, 0, 0), new(5, 10, 0)).Value;
         SplitFacesResult split = FeatureOperations.SplitAlong(face, [cut]).Value;
-        Assert.Equal(2, split.Shape.Faces().Length);
+        Assert.Equal(2, split.Shape.AllFaces().Length);
         Assert.Single(split.Left);
         Assert.Single(split.Right);
         Assert.NotEmpty(split.History.Modified(face));
@@ -368,11 +368,11 @@ public class ModelingLayerApiTests
     public void Offsets_hollow_any_shape_and_offset_a_wire_in_a_face()
     {
         Solid box = Box();
-        Face top = box.Faces().First(f => f.ToSurface().Evaluate(0, 0).Z > 9);
+        Face top = box.AllFaces().First(f => f.ToSurface().Evaluate(0, 0).Z > 9);
         Shape hollow = ((Shape)box).ThickSolid([top], -1).Value.Shape;
         Assert.Equal(1000 - 8 * 8 * 9, hollow.Volume(), 6);
         Shape grown = Square().Offset2D(1, SquareFace()).Value.Shape;
-        Assert.True(grown.Edges().Length >= 4);
+        Assert.True(grown.AllEdges().Length >= 4);
     }
 
     [Fact]

@@ -179,7 +179,7 @@ internal class LibraryMakeFace : LibraryMakeShape
             if (hasDegenerated)
             {
                 aW.Orient(w.Orientation); // return to original orient
-                aW.Closed(w.IsClosed);
+                aW.Closed(w.ClosedFlag);
             }
             else
             {

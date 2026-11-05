@@ -189,8 +189,8 @@ public class ShapeMeshTests
         // Meshing itself is OCCT's: what's timed is copying the mesh out, the part that is the library's
         var sphere = new Sphere(100);
         var meshed = sphere.Shape.MeshedCopy(0.01, 0.2, relative: false);
-        var faces = meshed.SelectFaces().Select(f => (Shape)f).ToList();
-        var edges = meshed.SelectEdges().Select(e => (Shape)e).ToList();
+        var faces = meshed.Faces().Select(f => (Shape)f).ToList();
+        var edges = meshed.Edges().Select(e => (Shape)e).ToList();
         // Kerf (unit 10H6): one cold wall-clock sample (the first call, with its JIT) failed in merge gates on a loaded
         // machine (1,200 ms against about 12 ms warm), so the test checks what the copy allocates, which load doesn't
         // change, and the best of five runs. The copy writes the normals straight into its buffer: it computed them on a

@@ -612,7 +612,7 @@ internal static class DBRepCommands
 
         var B = new BrepBuilder();
         Shape NS = S.EmptyCopied();
-        NS.Closed(S.IsClosed);
+        NS.Closed(S.ClosedFlag);
         for (var itr = new Iterator(S); itr.More(); itr.Next())
         {
             B.Add(NS, itr.Value().Reversed());

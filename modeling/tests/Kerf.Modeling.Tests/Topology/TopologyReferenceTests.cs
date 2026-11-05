@@ -42,10 +42,10 @@ public class TopologyReferenceTests
             ["disjoint_fuse"] = () => Box(1, 1, 1) + Box(1, 1, 1, new Point3D(3, 0, 0)),
             ["pocket"] = () => Box(20, 20, 10) - Box(10, 10, 10, new Point3D(5, 5, 5)),
             // Features
-            ["fillet_top"] = () => block.Fillet(1.5, block.SelectEdges().GroupBy(Axis.Z).Last()),
-            ["chamfer_vertical"] = () => block.Chamfer(1, null, block.SelectEdges().ParallelTo(Axis.Z)),
-            ["chamfer_asymmetric"] = () => block.Chamfer(2, 1, block.SelectEdges().GroupBy(Axis.Z).Last()),
-            ["hollow"] = () => block.Hollow([block.SelectFaces().OrderBy(Axis.Z).Last()], -1),
+            ["fillet_top"] = () => block.Fillet(1.5, block.Edges().GroupBy(Axis.Z).Last()),
+            ["chamfer_vertical"] = () => block.Chamfer(1, null, block.Edges().ParallelTo(Axis.Z)),
+            ["chamfer_asymmetric"] = () => block.Chamfer(2, 1, block.Edges().GroupBy(Axis.Z).Last()),
+            ["hollow"] = () => block.Hollow([block.Faces().OrderBy(Axis.Z).Last()], -1),
             ["offset_3d"] = () => block.Offset3D(null, 1),
             // Faces and extrusions
             ["rect_face"] = () => rect,
@@ -85,7 +85,7 @@ public class TopologyReferenceTests
             ["offset_wire_intersection"] = () => Wire.MakeRect(4, 2).Offset2D(-0.5, kind: Kind.Intersection).AsShape(),
             ["offset_arc"] = () => Edge.MakeCircle(3, startAngle: 0, endAngle: 120).Offset2D(0.5).AsShape(),
             ["offset_arc_left"] = () => Edge.MakeCircle(3, startAngle: 0, endAngle: 120).Offset2D(0.5, side: Side.Left).AsShape(),
-            ["chamfer_wire"] = () => square.Chamfer2D(1, 0.5, square.SelectVertices()[..2]),
+            ["chamfer_wire"] = () => square.Chamfer2D(1, 0.5, square.Vertices()[..2]),
             // Transforms
             ["mirror_box"] = () => Box(1, 2, 3, new Point3D(1, 1, 1)).Mirror(Plane.YZ),
             ["rotate_box"] = () => Box(1, 2, 3).Rotate(Axis.Z, 30),
@@ -132,10 +132,10 @@ public class TopologyReferenceTests
         // A build123d composite of pieces (a Part of solids…) is the kernel's compound
         var expectedType = expected.GetProperty("type").GetString() is "Part" or "Sketch" or "Curve" ? "Compound" : expected.GetProperty("type").GetString();
         Assert.Equal(expectedType, TopoUtil.KindName(shape));
-        Assert.Equal(expected.GetProperty("vertices").GetInt32(), shape.SelectVertices().Count);
-        Assert.Equal(expected.GetProperty("edges").GetInt32(), shape.SelectEdges().Count);
-        Assert.Equal(expected.GetProperty("faces").GetInt32(), shape.SelectFaces().Count);
-        Assert.Equal(expected.GetProperty("solids").GetInt32(), shape.SelectSolids().Count);
+        Assert.Equal(expected.GetProperty("vertices").GetInt32(), shape.Vertices().Count);
+        Assert.Equal(expected.GetProperty("edges").GetInt32(), shape.Edges().Count);
+        Assert.Equal(expected.GetProperty("faces").GetInt32(), shape.Faces().Count);
+        Assert.Equal(expected.GetProperty("solids").GetInt32(), shape.Solids().Count);
         Assert.Equal(expected.GetProperty("valid").GetBoolean(), shape.IsValid);
         // Mass properties and boxes come from the same OCCT algorithms, so they agree closely
         Close(expected.GetProperty("volume").GetDouble(), shape.Volume, "volume", 1e-7);

@@ -32,7 +32,7 @@ internal static partial class TopoUtil
     internal static Wire AsWire(IShape1D curve)
     {
         var shape = curve.AsShape();
-        return shape.IsWire() ? (Wire)shape : shape.IsEdge() ? Wire.Make((Edge)shape) : Wire.Make(shape.SelectEdges());
+        return shape.IsWire() ? (Wire)shape : shape.IsEdge() ? Wire.Make((Edge)shape) : Wire.Make(shape.Edges());
     }
 
     /// <summary>The shape as its one-dimensional type.</summary>
@@ -143,12 +143,12 @@ internal static partial class TopoUtil
     /// <summary>The distinct sub-shapes of a type (by <c>IsSame</c>), in the order exploration first reaches them.</summary>
     internal static List<Shape> Unique(Shape shape, ShapeType type) => type switch
     {
-        ShapeType.Vertex => [.. shape.Vertices().Select(s => s.AsShape())],
-        ShapeType.Edge => [.. shape.Edges().Select(s => s.AsShape())],
-        ShapeType.Wire => [.. shape.Wires().Select(s => s.AsShape())],
-        ShapeType.Face => [.. shape.Faces().Select(s => s.AsShape())],
-        ShapeType.Shell => [.. shape.Shells().Select(s => s.AsShape())],
-        ShapeType.Solid => [.. shape.Solids().Select(s => s.AsShape())],
+        ShapeType.Vertex => [.. shape.AllVertices().Select(s => s.AsShape())],
+        ShapeType.Edge => [.. shape.AllEdges().Select(s => s.AsShape())],
+        ShapeType.Wire => [.. shape.AllWires().Select(s => s.AsShape())],
+        ShapeType.Face => [.. shape.AllFaces().Select(s => s.AsShape())],
+        ShapeType.Shell => [.. shape.AllShells().Select(s => s.AsShape())],
+        ShapeType.Solid => [.. shape.AllSolids().Select(s => s.AsShape())],
         _ => [.. Explore(shape, type).Distinct(ShapeComparer.Same)],
     };
 

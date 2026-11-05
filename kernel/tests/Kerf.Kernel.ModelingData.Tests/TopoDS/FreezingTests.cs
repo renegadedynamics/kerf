@@ -226,7 +226,7 @@ public class FreezingTests
         Wire aWire = Builder.MakeWire([anE1, anE2]);
         Assert.True(aWire.TShape()!.IsFrozen);
         Assert.Equal(2, aWire.ChildCount);
-        Assert.False(aWire.IsClosed);
+        Assert.False(aWire.ClosedFlag);
         Assert.True(new Iterator(aWire).Value() == anE1);
 
         Shape aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
@@ -238,7 +238,7 @@ public class FreezingTests
         Shell aShell = Builder.MakeShell(aFaces);
         Assert.True(aShell.TShape()!.IsFrozen);
         Assert.Equal(6, aShell.ChildCount);
-        Assert.False(aShell.IsClosed); // as OCCT's builder leaves it
+        Assert.False(aShell.ClosedFlag); // as OCCT's builder leaves it
         Solid aSolid = Builder.MakeSolid([aShell]);
         Assert.True(aSolid.TShape()!.IsFrozen);
         Assert.True(new Iterator(aSolid).Value() == aShell);

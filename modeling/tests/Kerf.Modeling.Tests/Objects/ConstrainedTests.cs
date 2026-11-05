@@ -221,7 +221,7 @@ public class ConstrainedArcsTests
         var c5 = new PolarLine(new Point3D(0, 0, 0), 4, 60);
         var tanCenter = Edge.MakeConstrainedArcs(new Tangent(c5, Tangency.Unqualified), center: new Point3D(2, 1, 0));
         Assert.Single(tanCenter);
-        Assert.True(tanCenter[0].CheckClosed());
+        Assert.True(tanCenter[0].IsClosed);
         Assert.True(Have3DCurves(tanCenter));
     }
 
@@ -230,7 +230,7 @@ public class ConstrainedArcsTests
     {
         var tanCenter = Edge.MakeConstrainedArcs(Axis.X, center: new Point3D(2, 1, 5));
         Assert.Single(tanCenter);
-        Assert.True(tanCenter[0].CheckClosed());
+        Assert.True(tanCenter[0].IsClosed);
         Assert.True(Have3DCurves(tanCenter));
     }
 
@@ -240,7 +240,7 @@ public class ConstrainedArcsTests
         var l1 = new CenterArc(new Point3D(0, 0, 0), 1, 180, 5);
         var tanCenter = Edge.MakeConstrainedArcs(l1, center: new Point3D(2, 0, 0));
         Assert.Single(tanCenter);
-        Assert.True(tanCenter[0].CheckClosed());
+        Assert.True(tanCenter[0].IsClosed);
         Assert.True(Have3DCurves(tanCenter));
     }
 
@@ -249,12 +249,12 @@ public class ConstrainedArcsTests
     {
         var pntCenter = Edge.MakeConstrainedArcs(new Point3D(-2.5, 1.5, 0), center: new Point3D(-2, 1, 0));
         Assert.Single(pntCenter);
-        Assert.True(pntCenter[0].CheckClosed());
+        Assert.True(pntCenter[0].IsClosed);
         Assert.True(Have3DCurves(pntCenter));
 
         pntCenter = Edge.MakeConstrainedArcs(new Point3D(-2.5, 1.5, 0), center: Vertex.Make(-2, 1, 0).Point);
         Assert.Single(pntCenter);
-        Assert.True(pntCenter[0].CheckClosed());
+        Assert.True(pntCenter[0].IsClosed);
     }
 
     [Fact]
@@ -271,7 +271,7 @@ public class ConstrainedArcsTests
         var c3CenterOn = new Line(new Point3D(3, -2, 0), new Point3D(3, 2, 0));
         var tanRadOn = Edge.MakeConstrainedArcs(new Tangent(c1, Tangency.Unqualified), radius: 1, centerOn: c3CenterOn);
         Assert.Single(tanRadOn);
-        Assert.True(tanRadOn[0].CheckClosed());
+        Assert.True(tanRadOn[0].IsClosed);
         Assert.True(Have3DCurves(tanRadOn));
     }
 
@@ -281,7 +281,7 @@ public class ConstrainedArcsTests
         var c1 = new PolarLine(new Point3D(0, 0, 0), 4, -20, lengthMode: LengthMode.Horizontal);
         var tanRadOn = Edge.MakeConstrainedArcs(c1, radius: 1, centerOn: Axis.X);
         Assert.Single(tanRadOn);
-        Assert.True(tanRadOn[0].CheckClosed());
+        Assert.True(tanRadOn[0].IsClosed);
         Assert.True(Have3DCurves(tanRadOn));
     }
 
@@ -309,7 +309,7 @@ public class ConstrainedArcsTests
         var c7 = new CenterArc(new Point3D(0, 0, 0), 4, 0, 90);
         var tan3 = Edge.MakeConstrainedArcs(new Tangent(c5, Tangency.Unqualified), new Tangent(c6, Tangency.Unqualified), new Tangent(c7, Tangency.Unqualified));
         Assert.Single(tan3);
-        Assert.False(tan3[0].CheckClosed());
+        Assert.False(tan3[0].IsClosed);
 
         var tan3b = Edge.MakeConstrainedArcs(c5, c6, c7, sagitta: Sagitta.Both);
         Assert.Equal(2, tan3b.Count);
@@ -385,14 +385,14 @@ public class ConstrainedArcsTests
             .OrderBy(Axis.Y)[0];
         var eggTop = Edge.MakeConstrainedArcs(new Tangent(conCircleRight, Tangency.Enclosing), new Tangent(conCircleLeft, Tangency.Enclosing), radius: rTop)
             .OrderBy(Axis.Y)[^1];
-        var eggRight = new ThreePointArc(eggBottom.SelectVertices().OrderBy(Axis.X)[^1].Point, conCircleRight.PositionAt(0),
-                                         eggTop.SelectVertices().OrderBy(Axis.X)[^1].Point);
-        var eggLeft = new ThreePointArc(eggBottom.SelectVertices().OrderBy(Axis.X)[0].Point, conCircleLeft.PositionAt(0.5),
-                                        eggTop.SelectVertices().OrderBy(Axis.X)[0].Point);
+        var eggRight = new ThreePointArc(eggBottom.Vertices().OrderBy(Axis.X)[^1].Point, conCircleRight.PositionAt(0),
+                                         eggTop.Vertices().OrderBy(Axis.X)[^1].Point);
+        var eggLeft = new ThreePointArc(eggBottom.Vertices().OrderBy(Axis.X)[0].Point, conCircleLeft.PositionAt(0.5),
+                                        eggTop.Vertices().OrderBy(Axis.X)[0].Point);
 
         var eggPlant = Wire.Make([eggLeft, eggTop, eggRight, eggBottom]);
-        Assert.True(eggPlant.CheckClosed());
-        var edges = eggPlant.SelectEdges().OrderBy(eggPlant);
+        Assert.True(eggPlant.IsClosed);
+        var edges = eggPlant.Edges().OrderBy(eggPlant);
         Assert.Equal(4, Enumerable.Range(0, 4).Count(i => !Vertex.CommonVertex(edges[i], edges[(i + 1) % 4]).IsEmpty));
 
         // C1 continuity

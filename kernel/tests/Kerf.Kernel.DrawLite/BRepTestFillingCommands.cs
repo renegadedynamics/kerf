@@ -149,7 +149,7 @@ internal static class BRepTestFillingCommands
         }
         Wire W;
         W = MW.Wire();
-        if (!(W.IsClosed))
+        if (!(W.ClosedFlag))
         {
             throw new global::Kerf.Engine.Foundation.FailureException("Wire is not closed");
         }
@@ -391,7 +391,7 @@ internal static class BRepTestFillingCommands
         }
         Wire W;
         W = MW.Wire();
-        if (!(W.IsClosed))
+        if (!(W.ClosedFlag))
         {
             throw new global::Kerf.Engine.Foundation.FailureException("Wire is not closed");
         }

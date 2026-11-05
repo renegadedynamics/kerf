@@ -443,7 +443,7 @@ internal sealed class OffsetWire
                     if (subst.IsCopied(wire))
                     {
                         Wire newWire = ShapeCasts.Wire(subst.InternalCopy(wire).First());
-                        newWire.Closed(wire.IsClosed);
+                        newWire.Closed(wire.ClosedFlag);
                         NCollection_List<Shape> lw = new();
                         lw.Append(newWire);
                         wwmap[wire] = lw;
@@ -507,7 +507,7 @@ internal sealed class OffsetWire
             {
                 Shape wire = exp.Current();
 
-                if (!wire.IsClosed)
+                if (!wire.ClosedFlag)
                 {
                     _shape.Nullify();
                     _isDone = false;
@@ -1412,7 +1412,7 @@ internal sealed class OffsetWire
                 }
             }
             // Sorting
-            if (wire.IsClosed)
+            if (wire.ClosedFlag)
             {
                 closedWires.Append(wire);
             }
@@ -1645,7 +1645,7 @@ internal sealed class OffsetWire
                 }
                 unclosedWires.Remove(indexL);
             }
-            if (Base.IsClosed)
+            if (Base.ClosedFlag)
             {
                 closedWires.Append(Base);
                 unclosedWires.Remove(1);

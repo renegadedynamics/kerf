@@ -26,7 +26,7 @@ public static partial class WireExtensions
             foreach (var vertex in vertices)
             {
                 var local = plane.ToLocalCoords(vertex);
-                var current = filleted.SelectVertices().OrderByDistanceTo(local)[0];
+                var current = filleted.Vertices().OrderByDistanceTo(local)[0];
                 if ((current.Point - local.Point).Magnitude > Constants.Tolerance)
                     throw new ArgumentException($"Could not find fillet vertex on wire: {vertex}");
                 var beforeCorner = filleted;
@@ -79,15 +79,15 @@ internal static class WireFillet
                        ?? throw Failures.Expected(ModelingDiagnostics.FilletFailed,
                                                   $"The corner at {vertex} can't be filleted with a radius of {Formatting.Number(radius)}.");
         var result = Splice(corner, solution);
-        if (!wire.CheckClosed() || result.CheckClosed())
+        if (!wire.IsClosed || result.IsClosed)
             return result;
         throw Failures.Expected(ModelingDiagnostics.FilletFailed, "The filleted wire isn't closed.");
     }
 
     internal static Corner Analyze(Wire wire, Vertex vertex)
     {
-        var all = wire.SelectEdges();
-        var connected = all.Where(e => e.SelectVertices().Any(v => v.IsSame(vertex))).ToList();
+        var all = wire.Edges();
+        var connected = all.Where(e => e.Vertices().Any(v => v.IsSame(vertex))).ToList();
         if (connected.Count == 0)
             throw new ArgumentException($"Could not find shared vertex on wire: {vertex}");
         if (connected.Count != 2)
@@ -151,8 +151,8 @@ internal static class WireFillet
         var trimmed = new List<Edge?>();
         foreach (var connected in corner.ConnectedEdges)
         {
-            var other = connected.SelectVertices().First(v => !v.IsSame(corner.Vertex));
-            var filletVertex = arc.SelectVertices().OrderByDistanceTo(connected)[0];
+            var other = connected.Vertices().First(v => !v.IsSame(corner.Vertex));
+            var filletVertex = arc.Vertices().OrderByDistanceTo(connected)[0];
             var pnt = filletVertex.Point;
             var splitVertex = Vertex.At(pnt);
             // A copy is split, as build123d splits a deepcopy, so the pieces share nothing with the wire: the identity

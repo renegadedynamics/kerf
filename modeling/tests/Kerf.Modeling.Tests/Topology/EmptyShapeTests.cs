@@ -173,12 +173,12 @@ public class EmptyShapeQueriesTests
         foreach (var (_, make, _) in Zeros.Classes)
         {
             var zero = make();
-            Assert.Empty(zero.SelectVertices());
-            Assert.Empty(zero.SelectEdges());
-            Assert.Empty(zero.SelectWires());
-            Assert.Empty(zero.SelectFaces());
-            Assert.Empty(zero.SelectShells());
-            Assert.Empty(zero.SelectSolids());
+            Assert.Empty(zero.Vertices());
+            Assert.Empty(zero.Edges());
+            Assert.Empty(zero.Wires());
+            Assert.Empty(zero.Faces());
+            Assert.Empty(zero.Shells());
+            Assert.Empty(zero.Solids());
             Assert.Empty(zero.GetTopLevelShapes());
         }
     }
@@ -251,7 +251,7 @@ public class EmptyShapeAlgebraTests
     ];
 
     private static (double, double, double) Size(Shape shape) =>
-        (shape.Volume, shape.Area, shape.SelectEdges().Sum(e => e.Length));
+        (shape.Volume, shape.Area, shape.Edges().Sum(e => e.Length));
 
     [Fact]
     public void IdentityForAddition()
@@ -508,7 +508,7 @@ public class EmptyShapeContainersTests
         var box = Solid.MakeBox(1, 1, 1);
         var mixed = Compound.Make([default(Solid), box, default(Face)]);
         Assert.False(mixed.IsEmpty);
-        Assert.Single(mixed.SelectSolids());
+        Assert.Single(mixed.Solids());
         Check.AlmostEqual(1, mixed.Volume, 5);
     }
 }

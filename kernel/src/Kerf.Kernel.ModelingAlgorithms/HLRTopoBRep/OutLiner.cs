@@ -316,7 +316,7 @@ internal class OutLiner : Transient
 
             Shell theShell = new();
             b.MakeShell(ref theShell);
-            theShell.Closed(exshell.Current().IsClosed);
+            theShell.Closed(exshell.Current().ClosedFlag);
 
             for (exface.Init(exshell.Current(), ShapeType.Face); exface.More(); exface.Next())
             {

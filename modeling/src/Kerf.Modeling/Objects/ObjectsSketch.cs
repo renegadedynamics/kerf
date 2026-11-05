@@ -20,7 +20,7 @@ public abstract class BaseSketchObject : Sketch
     {
         if (align is { } a)
             obj = obj.Moved(new Location(obj.BoundBox().ToAlignOffset(TwoAxes(a))));
-        return rotation != 0 ? obj.Moved(new Rotation(0, 0, rotation)).SelectFaces() : obj.SelectFaces();
+        return rotation != 0 ? obj.Moved(new Rotation(0, 0, rotation)).Faces() : obj.Faces();
     }
 
     /// <summary>An alignment on X and Y only, as build123d's sketches take it.</summary>
@@ -138,7 +138,7 @@ public class RectangleRounded : BaseSketchObject
         if (width <= 2 * radius || height <= 2 * radius)
             throw new ArgumentException("width and height must be > 2*radius");
         var face = Face.MakeRect(width, height);
-        return face.Fillet2D(radius, face.SelectVertices());
+        return face.Fillet2D(radius, face.Vertices());
     }
 
     /// <summary>The size along X.</summary>
@@ -462,7 +462,7 @@ public class Triangle : BaseSketchObject
     private static Face Make((double a, double b, double c, double A, double B, double C) t)
     {
         var triangle = Face.Make(Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(t.a, 0, 0), new Vector3D(t.c, 0, 0).Rotate(Axis.Z, t.B * Constants.RadToDeg).ToPoint()]));
-        var center = triangle.SelectVertices().Aggregate(Vector3D.Zero, (sum, v) => sum + v.Point.ToVector()) * (1.0 / 3);
+        var center = triangle.Vertices().Aggregate(Vector3D.Zero, (sum, v) => sum + v.Point.ToVector()) * (1.0 / 3);
         return triangle.Moved(new Location(-center));
     }
 

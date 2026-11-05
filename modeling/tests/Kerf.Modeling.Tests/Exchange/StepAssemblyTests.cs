@@ -68,7 +68,7 @@ public class StepAssemblyTests
             if (node.Label.Length > 0)
                 doc.SetName(label, node.Label);
             if (node.Color is { } c)
-                doc.SetColor(label, Linear(c), node.SelectFaces().Count > 0 ? global::Kerf.Engine.Exchange.Documents.ColorType.ColorSurf : global::Kerf.Engine.Exchange.Documents.ColorType.ColorCurv);
+                doc.SetColor(label, Linear(c), node.Faces().Count > 0 ? global::Kerf.Engine.Exchange.Documents.ColorType.ColorSurf : global::Kerf.Engine.Exchange.Documents.ColorType.ColorCurv);
         }
         global::Kerf.Engine.Exchange.Documents.Label AssemblyLabel(Assembly assembly, Shape s)
         {

@@ -18,8 +18,8 @@ public class OperationsSketchTests
     public void FilletedFaceIsUpsideDown()
     {
         var f1 = Face.Make(Wire.MakePolygon([new Point3D(1, 0, 0), new Point3D(1.5, 0.5, 0), new Point3D(1, 2, 0), new Point3D(3, 1, 0), new Point3D(2, 0, 0), new Point3D(1, 0, 0)]));
-        var f = ((Sketch)Fillet(f1.SelectVertices()[2..4], 0.2).Value - new Pos(1.8, 1.2, 0) * new Rectangle(0.2, 0.4)
-                 - new Pos(2, 0.5, 0) * new Circle(0.2)).SelectFaces()[0];
+        var f = ((Sketch)Fillet(f1.Vertices()[2..4], 0.2).Value - new Pos(1.8, 1.2, 0) * new Rectangle(0.2, 0.4)
+                 - new Pos(2, 0.5, 0) * new Circle(0.2)).Faces()[0];
         Assert.True(f.NormalAt().Z < 0);   // Up-side-down, as the face it came from
     }
 
@@ -36,7 +36,7 @@ public class OperationsSketchTests
     public void MakeFaceFlipped()
     {
         var wire = Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)]);
-        var sketch = MakeFace(wire.SelectEdges());
+        var sketch = MakeFace(wire.Edges());
         Assert.True(sketch.Faces()[0].NormalAt().Z > 0);
     }
 
@@ -44,7 +44,7 @@ public class OperationsSketchTests
     public void OffsetSketchFace()
     {
         var test = Offset(new Circle(10).Faces()[0], 1).Value;
-        Check.AlmostEqual(11, test.SelectEdges()[0].Radius);
+        Check.AlmostEqual(11, test.Edges()[0].Radius);
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public class OperationsSketchTests
         var l1 = Edge.MakeSpline([new Point3D(-1, 0, 0), new Point3D(1, 0, 0)], tangents: [new Vector3D(0, -8, 0), new Vector3D(0, 8, 0)], scale: true);
         var l2 = Edge.MakeLine(l1.PositionAt(0), l1.PositionAt(1));
         var face = Face.Make(Wire.Make([l1, l2]));
-        Assert.Throws<ArgumentException>(() => FullRound(face.SelectEdges()[0], face));
+        Assert.Throws<ArgumentException>(() => FullRound(face.Edges()[0], face));
 
         var positive = FullRound(trap.Edges().OrderBy(ShapeKey.Length)[0], trap);
         var negative = FullRound(trap.Edges().OrderBy(ShapeKey.Length)[0], trap, invert: true);
@@ -134,7 +134,7 @@ public class OperationsSketchTests
 
         // Flipping the face
         var flipped = (Face)(-Face.MakeRect(34, 10));
-        var rounded = FullRound(flipped.SelectEdges().GroupBy(Axis.X).First()[0], flipped).SingleFace();
+        var rounded = FullRound(flipped.Edges().GroupBy(Axis.X).First()[0], flipped).SingleFace();
         Assert.Equal(flipped.NormalAt(), rounded.NormalAt());
     }
 

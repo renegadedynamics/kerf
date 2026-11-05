@@ -212,9 +212,9 @@ public static partial class Operations
                 if (!objectList.All(o => o.IsVertex()))
                     throw new ArgumentException("2D chamfer operation takes only Vertices");
                 var newFaces = new List<Face>();
-                foreach (var face in target.SelectFaces())
+                foreach (var face in target.Faces())
                 {
-                    var inFace = face.SelectVertices().Where(v => objectList.Contains(v, ShapeComparer.Same)).ToList();
+                    var inFace = face.Vertices().Where(v => objectList.Contains(v, ShapeComparer.Same)).ToList();
                     newFaces.Add(inFace.Count > 0 ? face.Chamfer2D(length, distance2, inFace, referenceEdge) : face);
                 }
                 return new Sketch(newFaces).MadeBy(ModelHistory.Of(newFaces));
@@ -294,9 +294,9 @@ public static partial class Operations
                 if (!objectList.All(o => o.IsVertex()))
                     throw new ArgumentException("2D fillet operation takes only Vertices");
                 var newFaces = new List<Face>();
-                foreach (var face in target.SelectFaces())
+                foreach (var face in target.Faces())
                 {
-                    var inFace = face.SelectVertices().Where(v => objectList.Contains(v, ShapeComparer.Same)).ToList();
+                    var inFace = face.Vertices().Where(v => objectList.Contains(v, ShapeComparer.Same)).ToList();
                     newFaces.Add(inFace.Count > 0 ? face.Fillet2D(radius, inFace) : face);
                 }
                 return new Sketch(newFaces).MadeBy(ModelHistory.Of(newFaces));
@@ -333,10 +333,10 @@ public static partial class Operations
         // build123d's messages name BuildSheet, which handles sheets in builder mode
         if (!objectList.All(o => o.IsVertex()))
             throw new ArgumentException($"A sheet's {operation} takes only vertices.");
-        var targetFaces = target.SelectFaces();
+        var targetFaces = target.Faces();
         foreach (var vertex in objectList)
         {
-            var supportingFaces = targetFaces.Where(f => f.SelectVertices().Any(v => v.SameAs(vertex))).ToList();
+            var supportingFaces = targetFaces.Where(f => f.Vertices().Any(v => v.SameAs(vertex))).ToList();
             if (supportingFaces.Count != 1)
                 throw new ArgumentException($"A sheet's {operation} vertices must be on the free boundary of one face.");
             if (supportingFaces[0].GeomType != GeomType.Plane)
@@ -345,19 +345,19 @@ public static partial class Operations
         var newFaces = new List<Face>();
         foreach (var face in targetFaces)
         {
-            var inFace = face.SelectVertices().Where(v => objectList.Contains(v, ShapeComparer.Same)).ToList();
+            var inFace = face.Vertices().Where(v => objectList.Contains(v, ShapeComparer.Same)).ToList();
             newFaces.Add(inFace.Count > 0 ? edit(face, inFace) : face);
         }
         return newFaces;
     }
 
     /// <summary>The wire a 1D chamfer or fillet rebuilds: a line object as a plain wire, or the first wire of a curve.</summary>
-    private static Wire WireTargetOf(Shape target) => target.IsWire() ? (Wire)target : target.SelectWires()[0];
+    private static Wire WireTargetOf(Shape target) => target.IsWire() ? (Wire)target : target.Wires()[0];
 
     /// <summary>The vertices without those at the ends of an open wire, which can't be chamfered or filleted.</summary>
     private static List<Vertex> InnerVertices(Wire wire, List<Shape> vertices)
     {
-        if (wire.CheckClosed())
+        if (wire.IsClosed)
             return [.. vertices.Select(v => (Vertex)v)];
         var start = wire.PositionAt(0);
         var end = wire.PositionAt(1);
@@ -459,7 +459,7 @@ public static partial class Operations
                     edges.Add(edge);
                     break;
                 case Wire wire:
-                    edges.AddRange(wire.SelectEdges());
+                    edges.AddRange(wire.Edges());
                     break;
                 default:
                     throw new ArgumentException($"Unsupported type {TopoUtil.KindName(obj)} for {obj.Describe()}");
@@ -496,7 +496,7 @@ public static partial class Operations
                 // build123d would fail here on a cut into several pieces (it asks the face, not the result, to unwrap
                 // itself); the pieces are kept instead
                 if (subtraction.IsCompound())
-                    newFaces.AddRange(subtraction.SelectFaces().Select(f => (Shape)f));
+                    newFaces.AddRange(subtraction.Faces().Select(f => (Shape)f));
                 else
                     newFaces.Add(subtraction);
             }
@@ -518,7 +518,7 @@ public static partial class Operations
         var newSolids = new List<Shape>();
         foreach (var solid in solids)
         {
-            var solidFaces = solid.SelectFaces();
+            var solidFaces = solid.Faces();
             var openingsInThisSolid = openingList.Where(f => solidFaces.Contains(f, ShapeComparer<Face>.Same)).ToList();
             newSolids.Add(solid.Offset3D(openingsInThisSolid, amount, kind: kind).Fix());
         }
@@ -732,7 +732,7 @@ public static partial class Operations
         // result is combined with mode
         if (path.IsEmpty)
             throw new ArgumentException("Can't sweep along an empty path.", nameof(path));
-        var pathWire = path.IsWire() ? (Wire)path : Wire.Make(path.SelectEdges());
+        var pathWire = path.IsWire() ? (Wire)path : Wire.Make(path.Edges());
         return SweepCore(sections, pathWire, options ?? SweepOptions.Default);
     }
 
@@ -810,9 +810,9 @@ public static partial class Operations
         foreach (var sec in sectionList)
         {
             if (sec.Dim == 1)
-                edgeList.AddRange(sec.SelectEdges());
+                edgeList.AddRange(sec.Edges());
             else
-                faceList.AddRange(sec.SelectFaces());
+                faceList.AddRange(sec.Faces());
         }
 
         // Sweep to create solids

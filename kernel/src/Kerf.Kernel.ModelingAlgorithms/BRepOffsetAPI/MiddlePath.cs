@@ -224,7 +224,7 @@ internal class MiddlePath : MakeShape
         _startWire = GetUnifiedWire(startWire, unifier);
         _endWire = GetUnifiedWire(endWire, unifier);
 
-        _closedSection = _startWire.IsClosed;
+        _closedSection = _startWire.ClosedFlag;
         _closedRing = _startWire.IsSame(_endWire);
         _ = _closedRing;
     }
