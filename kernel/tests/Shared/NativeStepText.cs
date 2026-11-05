@@ -7,7 +7,8 @@ namespace Kerf.Tests.Shared;
 /// <summary>
 /// Written STEP as native OCCT wrote it, for comparing with its frozen recordings: Kerf's files name Kerf (unit 11L), and
 /// the recordings stay as they are. FILE_DESCRIPTION and PRODUCT's names go back to OCCT's bytes, its line breaks
-/// included, and FILE_NAME (the time, the names) is masked. Everything else is compared as written.
+/// included, and FILE_NAME (the time, the names) is masked. A file another system wrote keeps its description, as the
+/// tape hashes the corpus's files through this. Everything else is compared as written.
 /// </summary>
 internal static partial class NativeStepText
 {
@@ -21,7 +22,7 @@ internal static partial class NativeStepText
             $"PRODUCT('Open CASCADE STEP translator {m.Groups[1].Value}',{newLine}  'Open CASCADE STEP translator {m.Groups[1].Value}','',({m.Groups[2].Value}));");
     }
 
-    [GeneratedRegex(@"FILE_DESCRIPTION\(\(.*?\),\s*'2;1'\);", RegexOptions.Singleline)]
+    [GeneratedRegex(@"FILE_DESCRIPTION\(\('Kerf Model'.*?\),\s*'2;1'\);", RegexOptions.Singleline)]
     private static partial Regex FileDescription();
 
     [GeneratedRegex(@"FILE_NAME\(.*?\);", RegexOptions.Singleline)]
