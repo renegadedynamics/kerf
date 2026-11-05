@@ -175,11 +175,11 @@ public class PublicMemberTests
         Assert.Equal(["µm", "mm", "cm", "m", "in", "ft", "g", "kg", "lb"],
                      new[] { Unit.Micrometer, Unit.Millimeter, Unit.Centimeter, Unit.Meter, Unit.Inch, Unit.Foot, Unit.Gram, Unit.Kilogram, Unit.Pound }.Select(u => u.Symbol()));
         Assert.Throws<ArgumentOutOfRangeException>(() => ((Unit)999).Symbol());
-        Assert.Equal([1.0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], new Matrix().TransposedList());
+        Assert.Equal([1.0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], new GeneralTransform3D().TransposedList());
         Assert.True(new MeshTolerances(0.1, 0.2) with { Relative = true, Linear = 0.3, Angular = 0.4 } is { Relative: true, Linear: 0.3, Angular: 0.4 });
 
-        BoundBox box = new Box(2, 2, 2).BoundBox();
-        Assert.Equal(1, box.ToBoundingBox().Max.X, 9);
+        BoundingBox box = new Box(2, 2, 2).BoundBox();
+        Assert.Equal(1, box.Max.X, 9);
 
         var selector = new Selector(ShapeType.Face, [new Selector.ParallelTo(Axis.X)]);
         Assert.True(selector.Equals((object)new Selector(ShapeType.Face, [new Selector.ParallelTo(Axis.X)])));

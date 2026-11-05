@@ -8,17 +8,17 @@ using Kerf.Modeling;
 
 public class BoundBoxTests
 {
-    static BoundBox Box(Point3D min, Point3D max)
+    static BoundingBox Box(Point3D min, Point3D max)
     {
         var box = new global::Kerf.Geometry.BoundingBox(new global::Kerf.Geometry.Point3D(min.X, min.Y, min.Z),
                                                        new global::Kerf.Geometry.Point3D(max.X, max.Y, max.Z));
-        return BoundBox.FromBoundingBox(box);
+        return box;
     }
 
     [Fact]
     public void EmptyBoxPredicates()
     {
-        var empty = BoundBox.Empty;
+        var empty = BoundingBox.Empty;
         var box = Box(new Point3D(0, 0, 0), new Point3D(1, 1, 1));
         Assert.True(empty.IsEmpty);
         Assert.False(empty.Covers(box));
@@ -26,7 +26,7 @@ public class BoundBoxTests
         Assert.False(empty.Contains(box));
         Assert.False(empty.ContainsProperly(box));
         Assert.False(empty.Within(box));
-        Assert.False(empty.Intersects(box));
+        Assert.False(empty.IntersectsNear(box));
         Assert.True(empty.Disjoint(box));
         Assert.False(empty.Touches(box));
         Assert.False(empty.Overlaps(box));
@@ -37,21 +37,21 @@ public class BoundBoxTests
     [Fact]
     public void Add()
     {
-        var bb1 = Box(new Point3D(1, 1, 1), new Point3D(1, 1, 1)).Add(Box(new Point3D(2, 2, 2), new Point3D(2, 2, 2)));
+        var bb1 = Box(new Point3D(1, 1, 1), new Point3D(1, 1, 1)).Union(Box(new Point3D(2, 2, 2), new Point3D(2, 2, 2)));
         Check.AlmostEqual(1.0, bb1.Size.X, 1);   // the default gap enlarges the box a little
 
-        var bb2 = Box(new Point3D(0, 0, 0), new Point3D(0, 0, 0)).Add(Box(new Point3D(1, 1, 1), new Point3D(1, 1, 1)), tolerance: 0);
-        var bb3 = bb1.Add(bb2, tolerance: 0);
+        var bb2 = Box(new Point3D(0, 0, 0), new Point3D(0, 0, 0)).Union(Box(new Point3D(1, 1, 1), new Point3D(1, 1, 1)));
+        var bb3 = bb1.Union(bb2);
         Check.AlmostEqual(new Vector3D(2, 2, 2), bb3.Size, 1);
 
-        bb3 = bb2.Add(new Point3D(3, 3, 3), tolerance: 0);
+        bb3 = bb2.Including(new Point3D(3, 3, 3));
         Check.AlmostEqual(new Vector3D(3, 3, 3), bb3.Size, 7);
         Check.AlmostEqual(27, bb3.Measure, 5);
 
         // The original is unchanged
         Check.AlmostEqual(new Vector3D(1, 1, 1), bb2.Size, 7);
 
-        var flat = Box(new Point3D(0, 0, 0), new Point3D(0, 0, 0)).Add(Box(new Point3D(3, 3, 0), new Point3D(3, 3, 0)), tolerance: 0);
+        var flat = Box(new Point3D(0, 0, 0), new Point3D(0, 0, 0)).Union(Box(new Point3D(3, 3, 0), new Point3D(3, 3, 0)));
         Check.AlmostEqual(9, flat.Measure, 5);
     }
 
@@ -79,24 +79,24 @@ public class BoundBoxTests
         Assert.False(outer.Contains(boundaryFace));
         Assert.False(boundaryFace.Within(outer));
 
-        Assert.True(outer.Intersects(partial));
+        Assert.True(outer.IntersectsNear(partial));
         Assert.True(outer.Overlaps(partial));
         Assert.False(outer.Overlaps(outer));
         Assert.False(outer.Contains(partial));
         Assert.False(partial.Contains(outer));
 
-        Assert.True(outer.Intersects(touching));
+        Assert.True(outer.IntersectsNear(touching));
         Assert.True(outer.Touches(touching));
         Assert.False(outer.Overlaps(touching));
         Assert.True(outer.Disjoint(disjoint));
-        Assert.False(outer.Intersects(disjoint));
+        Assert.False(outer.IntersectsNear(disjoint));
 
-        Assert.True(outer.Intersects(near));
+        Assert.True(outer.IntersectsNear(near));
         Assert.False(outer.Overlaps(near));
         Assert.True(outer.Disjoint(near, tolerance: 0.0));
 
         var diagonalNear = Box(new Point3D(3 + 0.8e-6, 3 + 0.8e-6, 0), new Point3D(4, 4, 1));
-        Assert.False(outer.Intersects(diagonalNear));
+        Assert.False(outer.IntersectsNear(diagonalNear));
         Assert.True(outer.Disjoint(diagonalNear));
     }
 
@@ -130,7 +130,7 @@ public class BoundBoxTests
 
     [Fact]
     public void Formatting() =>
-        Assert.Equal("bbox: 0 <= x <= 1, 0 <= y <= 1, 0 <= z <= 1", Box(new Point3D(0, 0, 0), new Point3D(1, 1, 1)).ToString());
+        Assert.Equal("bbox: 0 <= x <= 1, 0 <= y <= 1, 0 <= z <= 1", Box(new Point3D(0, 0, 0), new Point3D(1, 1, 1)).Describe());
 
     [Fact]
     public void CenterAndAlignment()

@@ -53,7 +53,7 @@ public static class PointExtensions
         /// <summary>This point transformed by a matrix: rotated, scaled, sheared and translated as it prescribes.</summary>
         // gp_GTrsf.Transforms applies the general transform directly; converting to a gp_Trsf first
         // would reject every matrix that isn't a similarity
-        public Point3D Transform(Matrix transform) => transform.GTrsf * p;
+        public Point3D Transform(GeneralTransform3D transform) => transform * p;
 
         /// <summary>This point with each component rounded to a number of decimal places.</summary>
         public Point3D Round(int digits) => new(Math.Round(p.X, digits), Math.Round(p.Y, digits), Math.Round(p.Z, digits));
@@ -120,14 +120,14 @@ public static class PointExtensions
         /// <summary>This vector transformed by a matrix as the point at its tip would be, or, as a direction, turned but not translated and returned with unit length.</summary>
         /// <param name="transform">Any affine transformation.</param>
         /// <param name="isDirection">Treat this as a direction: turned but not translated, and returned with unit length.</param>
-        public Vector3D Transform(Matrix transform, bool isDirection = false)
+        public Vector3D Transform(GeneralTransform3D transform, bool isDirection = false)
         {
-            var coords = transform.GTrsf * v.ToPoint();
+            var coords = transform * v.ToPoint();
             if (!isDirection)
                 return coords.ToVector();
 
             // A direction has no position: remove the translation by subtracting where the origin lands
-            var origin = transform.GTrsf * Point3D.Origin;
+            var origin = transform * Point3D.Origin;
             return (coords.ToVector() - origin.ToVector()).Normalized();
         }
 

@@ -137,8 +137,8 @@ public class PlaneWithShapesTests
     public void PlaneMulShape()
     {
         var p = Plane.XY.Offset(2);
-        Assert.Equal(Objects.Box(1, 2, 3).Translate(new Vector3D(0, 0, 2)).BoundBox().ToString(),
-                     (p * Objects.Box(1, 2, 3)).BoundBox().ToString());
+        Assert.Equal(Objects.Box(1, 2, 3).Translate(new Vector3D(0, 0, 2)).BoundBox().Describe(),
+                     (p * Objects.Box(1, 2, 3)).BoundBox().Describe());
     }
 
     [Fact]
@@ -226,11 +226,11 @@ public class PlaneWithShapesTests
 
 public class BoundBoxWithShapesTests
 {
-    static BoundBox Box(Point3D min, Point3D max)
+    static BoundingBox Box(Point3D min, Point3D max)
     {
         var box = new global::Kerf.Geometry.BoundingBox(new global::Kerf.Geometry.Point3D(min.X, min.Y, min.Z),
                                                        new global::Kerf.Geometry.Point3D(max.X, max.Y, max.Z));
-        return BoundBox.FromBoundingBox(box);
+        return box;
     }
 
     [Fact]
@@ -238,12 +238,12 @@ public class BoundBoxWithShapesTests
     {
         var shape = Solid.MakeBox(1, 2, 3);
         var expected = shape.BoundBox();
-        var bbox = BoundBox.FromShape(shape);
+        var bbox = shape.BoundBox();
         Check.AlmostEqual(expected.Min, bbox.Min, 7);
         Check.AlmostEqual(expected.Max, bbox.Max, 7);
 
         var expectedNonoptimal = shape.BoundBox(optimal: false);
-        var bboxNonoptimal = BoundBox.FromShape(shape, null, false);
+        var bboxNonoptimal = shape.BoundBox(optimal: false);
         Check.AlmostEqual(expectedNonoptimal.Min, bboxNonoptimal.Min, 7);
         Check.AlmostEqual(expectedNonoptimal.Max, bboxNonoptimal.Max, 7);
     }
@@ -253,24 +253,24 @@ public class BoundBoxWithShapesTests
     {
         var emptyShape = default(Solid);
         var expected = emptyShape.BoundBox();
-        var bbox = BoundBox.FromShape(emptyShape);
+        var bbox = emptyShape.BoundBox();
         Assert.True(bbox.IsEmpty);
-        Assert.Equal(expected.Min, bbox.Min);
-        Assert.Equal(expected.Max, bbox.Max);
+        Assert.Equal(expected, bbox);   // the kernel's box has no corners when empty, where the layer's had the origin
+        Assert.Throws<InvalidOperationException>(() => bbox.Min);
         Assert.Equal(expected.Size, bbox.Size);
     }
 
     [Fact]
     public void EmptyBoxPredicates()
     {
-        var empty = BoundBox.FromShape(default(Solid));
+        var empty = default(Solid).BoundBox();
         var box = Box(new Point3D(0, 0, 0), new Point3D(1, 1, 1));
         Assert.False(empty.Covers(box));
         Assert.False(empty.CoveredBy(box));
         Assert.False(empty.Contains(box));
         Assert.False(empty.ContainsProperly(box));
         Assert.False(empty.Within(box));
-        Assert.False(empty.Intersects(box));
+        Assert.False(empty.IntersectsNear(box));
         Assert.True(empty.Disjoint(box));
         Assert.False(empty.Touches(box));
         Assert.False(empty.Overlaps(box));
@@ -281,43 +281,43 @@ public class BoundBoxWithShapesTests
     {
         var v = Vertex.Make(1, 1, 1);
         var v2 = Vertex.Make(2, 2, 2);
-        Assert.IsType<BoundBox>(v.BoundBox());
-        Assert.IsType<BoundBox>(v2.BoundBox());
+        Assert.IsType<BoundingBox>(v.BoundBox());
+        Assert.IsType<BoundingBox>(v2.BoundBox());
 
-        var bb1 = v.BoundBox().Add(v2.BoundBox());
+        var bb1 = v.BoundBox().Union(v2.BoundBox());
         // OCC uses some approximations
         Check.AlmostEqual(1.0, bb1.Size.X, 1);
         Check.AlmostEqual(1.0, bb1.Measure, 5);
 
         // Adding to an existing bounding box
         var v0 = Vertex.Make(0, 0, 0);
-        var bb2 = v0.BoundBox().Add(v.BoundBox());
-        var bb3 = bb1.Add(bb2);
+        var bb2 = v0.BoundBox().Union(v.BoundBox());
+        var bb3 = bb1.Union(bb2);
         Check.AlmostEqual(new Vector3D(2, 2, 2), bb3.Size, 7);
         Check.AlmostEqual(8, bb3.Measure, 5);
 
-        bb3 = bb2.Add(new Point3D(3, 3, 3));
+        bb3 = bb2.Including(new Point3D(3, 3, 3));
         Check.AlmostEqual(new Vector3D(3, 3, 3), bb3.Size, 7);
-        bb3 = bb2.Add(new Point3D(3, 3, 3));
+        bb3 = bb2.Including(new Point3D(3, 3, 3));
         Check.AlmostEqual(new Vector3D(3, 3, 3), bb3.Size, 7);
 
         // 2D bounding boxes
-        bb2 = Vertex.Make(0, 0, 0).BoundBox().Add(Vertex.Make(3, 3, 0).BoundBox());
+        bb2 = Vertex.Make(0, 0, 0).BoundBox().Union(Vertex.Make(3, 3, 0).BoundBox());
         Check.AlmostEqual(9, bb2.Measure, 5);
 
         // A box from a shape: low accuracy, as the box is a little larger than the shape
         var cylinder = Solid.MakeCylinder(1, 1);
-        bb1 = BoundBox.FromTopoDS(cylinder, optimal: false);
+        bb1 = cylinder.BoundBox(optimal: false);
         Check.AlmostEqual(new Vector3D(2, 2, 1), bb1.Size, 1);
 
         var small = Solid.MakeCylinder(0.5, 0.5).Translate(new Vector3D(0, 0, 0.1));
-        bb2 = BoundBox.FromTopoDS(small, optimal: false);
+        bb2 = small.BoundBox(optimal: false);
         Assert.True(bb2.Within(bb1));
     }
 
     [Fact]
     public void BoundingBoxRepr() =>
-        Assert.Equal("bbox: 0 <= x <= 1, 0 <= y <= 1, 0 <= z <= 1", Solid.MakeBox(1, 1, 1).BoundBox().ToString());
+        Assert.Equal("bbox: 0 <= x <= 1, 0 <= y <= 1, 0 <= z <= 1", Solid.MakeBox(1, 1, 1).BoundBox().Describe());
 
     [Fact]
     public void CenterOfBoundbox() => Check.AlmostEqual(new Point3D(0.5, 0.5, 0.5), Solid.MakeBox(1, 1, 1).BoundBox().Center(), 5);

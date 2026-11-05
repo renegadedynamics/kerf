@@ -83,7 +83,7 @@ public static partial class ShapeExtensions
     {
         var label = (shape.Type).ToString();
         var position = caption + (showCenter
-            ? Kerf.Modeling.BoundBox.FromTopoDS(shape).Center().Describe("G6")
+            ? shape.BoundBox().Center().Describe("G6")
             : new Location(shape.Placement).Position.Describe("G6"));
         var children = new List<DisplayNode>();
         foreach (var child in shape.Children)

@@ -9,6 +9,17 @@ namespace Kerf.Modeling;
 
 public static partial class ShapeExtensions
 {
+    // Any mesh on the shape is ignored, as it can affect the box, unless the shape has nothing else (faces holding only
+    // triangles, as STL and glTF are read). The tolerance is accepted, as build123d accepts it, but unused.
+    private static BoundingBox BoxOf(Shape shape, double? tolerance, bool optimal)
+    {
+        _ = tolerance;
+        if (shape.IsEmpty)
+            return BoundingBox.Empty;
+        var box = shape.BoundingBox(optimal);
+        return box.IsEmpty ? shape.BoundingBox(optimal: false, useTriangulation: true) : box;
+    }
+
     extension<TSelf>(TSelf self) where TSelf : IShape
     {
         // ---- Kind ----
@@ -179,7 +190,7 @@ public static partial class ShapeExtensions
         // ---- Bounding boxes ----
 
         /// <summary>A box aligned with the axes containing this shape (tight when <paramref name="optimal"/>).</summary>
-        public BoundBox BoundBox(double? tolerance = null, bool optimal = true) => Kerf.Modeling.BoundBox.FromShape(self.AsShape(), tolerance, optimal);
+        public BoundingBox BoundBox(double? tolerance = null, bool optimal = true) => BoxOf(self.AsShape(), tolerance, optimal);
 
         /// <summary>The smallest box in any orientation containing this shape.</summary>
         public OrientedBoundBox OrientedBoundingBox()

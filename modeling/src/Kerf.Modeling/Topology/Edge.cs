@@ -275,7 +275,7 @@ public static partial class EdgeExtensions
 
             Edge AxisEdge(Axis axis)
             {
-                var diagonal = self.BoundBox().Add(Vertex.Make(axis.Position).BoundBox()).Diagonal;
+                var diagonal = self.BoundBox().Union(Vertex.Make(axis.Position).BoundBox()).Diagonal;
                 return Edge.MakeLine(axis.Position - axis.Direction * diagonal, axis.Position + axis.Direction * diagonal);
             }
         }

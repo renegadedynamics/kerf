@@ -201,7 +201,7 @@ public static partial class TopologyUtils
     public static double FindMaxDimension(IEnumerable<Shape> shapes)
     {
         var composite = TopoUtil.MakeCompound(shapes.Select(s => s));
-        return BoundBox.FromTopoDS(composite, Constants.Tolerance, optimal: true).Diagonal;
+        return composite.BoundBox().Diagonal;
     }
 
     /// <summary>The edges of <paramref name="combined"/> that none of <paramref name="objects"/> had.</summary>

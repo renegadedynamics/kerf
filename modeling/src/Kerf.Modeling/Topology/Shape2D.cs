@@ -157,7 +157,7 @@ public static partial class Shape2DExtensions
                         foreach (var edge in sectionEdges)
                         {
                             var box = edge.BoundBox(optimal: false);
-                            if (!commonEdges.Any(ce => box.Intersects(ce.Box, tolerance) && edge.DistanceTo(ce.Edge) <= tolerance))
+                            if (!commonEdges.Any(ce => box.IntersectsNear(ce.Box, tolerance) && edge.DistanceTo(ce.Edge) <= tolerance))
                                 results.Add(edge);
                         }
                     }

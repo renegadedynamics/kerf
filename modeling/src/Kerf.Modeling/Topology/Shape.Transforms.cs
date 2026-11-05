@@ -21,7 +21,7 @@ internal static class ShapeTransforms
 
     internal static Transform3D ScaleAbout(Point3D point, double factor) => new Transform3D().WithScale(point, factor);
 
-    internal static Matrix ScaleMatrix(Vector3D factors, Point3D p) => new(new double[,]
+    internal static GeneralTransform3D ScaleMatrix(Vector3D factors, Point3D p) => GeneralTransform3D.FromValues(new double[,]
     {
         { factors.X, 0, 0, p.X * (1 - factors.X) },
         { 0, factors.Y, 0, p.Y * (1 - factors.Y) },
@@ -45,25 +45,25 @@ internal static class ShapeTransforms
         Failures.Get(shape.Transformed(transformation, copyGeometry: true), () => "transform");
 
     /// <summary>The shape with the matrix applied as its affine transform.</summary>
-    internal static Shape TransformGeometry(Shape shape, Matrix matrix)
+    internal static Shape TransformGeometry(Shape shape, GeneralTransform3D matrix)
     {
-        if (matrix.GTrsf.Form == TransformForm.Other)
+        if (matrix.Form == TransformForm.Other)
             // A general affine transform (stretch, shear): only GTransform can apply it, converting geometry to splines
-            return Failures.Get(shape.Transformed(matrix.GTrsf, copyGeometry: true), () => "transform").Shape;
+            return Failures.Get(shape.Transformed(matrix, copyGeometry: true), () => "transform").Shape;
         // A similarity: Transform applies it exactly and keeps the geometry types; GTransform would drop its
         // scale factor, which a gp_GTrsf of any recognised form keeps apart from its matrix
-        return Failures.Get(shape.Transformed(matrix.GTrsf.ToTransform(), copyGeometry: true), () => "transform").Shape;
+        return Failures.Get(shape.Transformed(matrix.ToTransform(), copyGeometry: true), () => "transform").Shape;
     }
 
     /// <summary>The shape with the matrix applied by the kernel's <c>Transformed</c>, as a plane repositions shapes.</summary>
-    internal static Shape TransformedBy(Shape shape, Matrix matrix) =>
-        TopoUtil.IsNothing(shape) ? shape : Failures.Get(shape.Transformed(matrix.GTrsf.ToTransform()), () => "transform").Shape;
+    internal static Shape TransformedBy(Shape shape, GeneralTransform3D matrix) =>
+        TopoUtil.IsNothing(shape) ? shape : Failures.Get(shape.Transformed(matrix.ToTransform()), () => "transform").Shape;
 
     /// <summary>The shape with the matrix applied keeping every geometry type.</summary>
-    internal static Shape TransformShape(Shape shape, Matrix matrix) =>
+    internal static Shape TransformShape(Shape shape, GeneralTransform3D matrix) =>
         shape.TryAs(out Vertex vertex) && shape.IsVertex()
-            ? Vertex.Make(matrix.Multiply(vertex.Point))
-            : Failures.Get(shape.Transformed(matrix.GTrsf.ToTransform()), () => "transform").Shape;
+            ? Vertex.Make(matrix * vertex.Point)
+            : Failures.Get(shape.Transformed(matrix.ToTransform()), () => "transform").Shape;
 
     internal static Shape ToSplines(Shape shape, int degree, double tolerance, bool nurbs)
     {
@@ -178,10 +178,10 @@ public static class ShapeOperations
         /// A copy with an affine transform applied to its geometry. Handles stretch and skew, at the cost of sometimes
         /// turning lines and circles into splines; <see cref="TransformShape"/> keeps the geometry types.
         /// </summary>
-        public T TransformGeometry(Matrix matrix) => shape.IsEmpty ? shape : shape.Narrowed(ShapeTransforms.TransformGeometry(shape.AsShape(), matrix));
+        public T TransformGeometry(GeneralTransform3D matrix) => shape.IsEmpty ? shape : shape.Narrowed(ShapeTransforms.TransformGeometry(shape.AsShape(), matrix));
 
         /// <summary>A copy transformed (translation and rotation, chiefly) keeping every geometry type.</summary>
-        public T TransformShape(Matrix matrix) => shape.IsEmpty ? shape : shape.Narrowed(ShapeTransforms.TransformShape(shape.AsShape(), matrix));
+        public T TransformShape(GeneralTransform3D matrix) => shape.IsEmpty ? shape : shape.Narrowed(ShapeTransforms.TransformShape(shape.AsShape(), matrix));
 
         /// <summary>A copy rotated by the angles in degrees about X, Y then Z, and then moved by <paramref name="offset"/>.</summary>
         public T Transformed(Vector3D? rotate = null, Vector3D? offset = null) =>
@@ -313,10 +313,10 @@ public static class ModelShapeOperations
         /// A copy with an affine transform applied to its geometry. Handles stretch and skew, at the cost of sometimes
         /// turning lines and circles into splines; <see cref="TransformShape"/> keeps the geometry types.
         /// </summary>
-        public T TransformGeometry(Matrix matrix) => shape.IsEmpty ? shape : (T)shape.Rewrapped(ShapeTransforms.TransformGeometry(shape.Shape, matrix));
+        public T TransformGeometry(GeneralTransform3D matrix) => shape.IsEmpty ? shape : (T)shape.Rewrapped(ShapeTransforms.TransformGeometry(shape.Shape, matrix));
 
         /// <summary>A copy transformed (translation and rotation, chiefly) keeping every geometry type.</summary>
-        public T TransformShape(Matrix matrix) => shape.IsEmpty ? shape : (T)shape.Rewrapped(ShapeTransforms.TransformShape(shape.Shape, matrix));
+        public T TransformShape(GeneralTransform3D matrix) => shape.IsEmpty ? shape : (T)shape.Rewrapped(ShapeTransforms.TransformShape(shape.Shape, matrix));
 
         /// <summary>A copy rotated by the angles in degrees about X, Y then Z, and then moved by <paramref name="offset"/>.</summary>
         public T Transformed(Vector3D? rotate = null, Vector3D? offset = null) =>

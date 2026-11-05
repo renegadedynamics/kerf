@@ -387,7 +387,7 @@ public static partial class Operations
         // Phase 5: in builder mode the object defaults to the builder's part and the planes to its workplanes
 
         var bbox = obj.BoundBox(optimal: false);
-        var maxSize = new[] { bbox.Min.X, bbox.Min.Y, bbox.Min.Z, bbox.Max.X, bbox.Max.Y, bbox.Max.Z }.Max(Math.Abs) + bbox.Diagonal;
+        var maxSize = bbox.IsEmpty ? 0 : new[] { bbox.Min.X, bbox.Min.Y, bbox.Min.Z, bbox.Max.X, bbox.Max.Y, bbox.Max.Z }.Max(Math.Abs) + bbox.Diagonal;
 
         var planes = sectionBy.Select(plane =>
             Face.MakeRect(2 * maxSize, 2 * maxSize, new Plane(plane.Origin + plane.ZDir * height, zDir: plane.ZDir)));

@@ -75,7 +75,7 @@ public static partial class SolidExtensions
             // Faces are equal geometrically, not as the same OCCT object: compare a grid of positions and normals
             bool FacesEqual(Face f1, Face f2, int gridSize = 4)
             {
-                if (!f1.BoundBox(optimal: false).Intersects(f2.BoundBox(optimal: false), tolerance))
+                if (!f1.BoundBox(optimal: false).IntersectsNear(f2.BoundBox(optimal: false), tolerance))
                     return false;
                 for (int i = 0; i < gridSize; i++)
                     for (int j = 0; j < gridSize; j++)
@@ -114,7 +114,7 @@ public static partial class SolidExtensions
                     foreach (var (sf, sfBox) in selfFaces)
                         foreach (var (of, ofBox) in otherFaces)
                         {
-                            if (!sfBox.Intersects(ofBox, tolerance))
+                            if (!sfBox.IntersectsNear(ofBox, tolerance))
                                 continue;
                             // Touches first (cheap): tangent vertices
                             foreach (var r in sf.Touch(of, tolerance))
@@ -148,7 +148,7 @@ public static partial class SolidExtensions
                     // And where it is tangent to the surface
                     foreach (var (sf, sfBox) in selfFaces)
                     {
-                        if (!sfBox.Intersects(otherBox, tolerance))
+                        if (!sfBox.IntersectsNear(otherBox, tolerance))
                             continue;
                         var distance = MeasureOperations.Distance(sf, other);
                         if (!distance.TryGetValue(out var extrema) || extrema.Value > tolerance)
@@ -257,7 +257,7 @@ public static partial class SolidExtensions
             Failures.Doing(() => "loft", () => ((Solid)TopoUtil.MakeLoft(objs, true, ruled)));
 
         /// <summary>A box the size of a bounding box, where it is.</summary>
-        public static Solid FromBoundingBox(BoundBox box) => Solid.MakeBox(box.Size.X, box.Size.Y, box.Size.Z).Located(new Location(box.Min));
+        public static Solid FromBoundingBox(BoundingBox box) => Solid.MakeBox(box.Size.X, box.Size.Y, box.Size.Z).Located(new Location(box.Min));
 
         /// <summary>A box the size of an oriented bounding box, where it is.</summary>
         public static Solid FromBoundingBox(OrientedBoundBox box)

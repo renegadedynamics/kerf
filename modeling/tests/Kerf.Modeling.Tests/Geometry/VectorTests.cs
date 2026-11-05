@@ -180,7 +180,7 @@ public class VectorTests
         Check.Near(a.Normalized(), a.Transform(pxyO1.ForwardTransform, isDirection: true));
 
         // Matrices that aren't similarities apply too
-        var stretch = new Matrix(new double[,] { { 2, 0, 0, 1 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } });
+        var stretch = GeneralTransform3D.FromValues(new double[,] { { 2, 0, 0, 1 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } });
         Check.AlmostEqual(new Vector3D(3, 2, 3), a.Transform(stretch), 7);
         Check.AlmostEqual(new Vector3D(2, 2, 3).Normalized(), a.Transform(stretch, isDirection: true), 7);
         Check.Near(new Vector3D(1, 2, 4), a.Transform(pxyO1.ReverseTransform));

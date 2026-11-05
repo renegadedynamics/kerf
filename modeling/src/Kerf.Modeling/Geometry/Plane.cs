@@ -335,7 +335,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     public Location Location => new(this);
 
     /// <summary>The matrix taking global coordinates to this plane's local ones.</summary>
-    public Matrix ForwardTransform
+    public GeneralTransform3D ForwardTransform
     {
         get
         {
@@ -343,12 +343,12 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
             var local = Pln.Position;
             var t = new Transform3D();
             t = t.WithTransformation(global, local);
-            return new Matrix(t);
+            return new GeneralTransform3D(t);
         }
     }
 
     /// <summary>The matrix taking this plane's local coordinates to global ones.</summary>
-    public Matrix ReverseTransform
+    public GeneralTransform3D ReverseTransform
     {
         get
         {
@@ -356,7 +356,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
             var local = Pln.Position;
             var t = new Transform3D();
             t = t.WithTransformation(local, global);
-            return new Matrix(t);
+            return new GeneralTransform3D(t);
         }
     }
 
@@ -366,11 +366,11 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     /// <summary>A point in this plane's local coordinates in global ones.</summary>
     public Point3D FromLocalCoords(Point3D point) => point.Transform(ReverseTransform);
 
-    /// <summary>A bounding box's corners in this plane's local coordinates.</summary>
-    public BoundBox ToLocalCoords(BoundBox box) => TransformBox(box, ForwardTransform);
+    /// <summary>A bounding box's corners in this plane's local coordinates, each as it lands.</summary>
+    public BoxCorners ToLocalCoords(BoundingBox box) => TransformBox(box, ForwardTransform);
 
-    /// <summary>A bounding box's corners, in this plane's local coordinates, in global ones.</summary>
-    public BoundBox FromLocalCoords(BoundBox box) => TransformBox(box, ReverseTransform);
+    /// <summary>A bounding box's corners, in this plane's local coordinates, in global ones, each as it lands.</summary>
+    public BoxCorners FromLocalCoords(BoundingBox box) => TransformBox(box, ReverseTransform);
 
     /// <summary>A copy of the shape repositioned relative to this plane: its global coordinates become local ones.</summary>
     public T ToLocalCoords<T>(T shape) where T : IShape => TopoUtil.Rewrap(shape, ShapeTransforms.TransformedBy(shape.AsShape(), ForwardTransform));
@@ -378,10 +378,11 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     /// <summary>A copy of the shape repositioned from this plane's local coordinates to global ones.</summary>
     public T FromLocalCoords<T>(T shape) where T : IShape => TopoUtil.Rewrap(shape, ShapeTransforms.TransformedBy(shape.AsShape(), ReverseTransform));
 
-    static BoundBox TransformBox(BoundBox box, Matrix transform)
+    static BoxCorners TransformBox(BoundingBox box, GeneralTransform3D transform)
     {
         // The two corners are transformed as they are; the box isn't re-fitted around the result
-        return BoundBox.FromCorners(box.Min.Transform(transform), box.Max.Transform(transform));
+        var (min, max) = box.IsEmpty ? (Point3D.Origin, Point3D.Origin) : (box.Min, box.Max);
+        return new BoxCorners(min.Transform(transform), max.Transform(transform));
     }
 
     /// <summary>The location taking this plane to another.</summary>

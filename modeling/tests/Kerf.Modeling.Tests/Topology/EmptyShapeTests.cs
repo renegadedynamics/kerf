@@ -209,15 +209,15 @@ public class EmptyShapeQueriesTests
     public void BoundingBoxIsEmpty()
     {
         var box = Solid.MakeBox(1, 1, 1).BoundBox();
-        static (double, double, double) Size(BoundBox b) => (b.Size.X, b.Size.Y, b.Size.Z);
+        static (double, double, double) Size(BoundingBox b) => (b.Size.X, b.Size.Y, b.Size.Z);
         foreach (var (_, make, _) in Zeros.Classes)
         {
             var empty = make().BoundBox();
             Assert.True(empty.IsEmpty);
             Assert.Equal((0.0, 0.0, 0.0), Size(empty));
             // The bounding box of nothing adds nothing
-            Assert.Equal((1.0, 1.0, 1.0), Size(box.Add(empty)));
-            Assert.Equal((1.0, 1.0, 1.0), Size(empty.Add(box)));
+            Assert.Equal((1.0, 1.0, 1.0), Size(box.Union(empty)));
+            Assert.Equal((1.0, 1.0, 1.0), Size(empty.Union(box)));
         }
         Assert.False(box.IsEmpty);
     }

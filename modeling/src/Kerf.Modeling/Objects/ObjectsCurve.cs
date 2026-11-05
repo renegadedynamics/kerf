@@ -472,7 +472,7 @@ public class DoubleTangentArc : BaseEdgeObject
         var workplane = -coplane;   // flipped to help with TOP/BOTTOM
         var rotationAxis = new Axis(new Point3D(0, 0, 0), workplane.ZDir);
         // Protect against massive circles that are effectively straight lines
-        var maxSize = 10 * other.BoundBox().Add(arcPoint).Diagonal;
+        var maxSize = 10 * other.BoundBox().Including(arcPoint).Diagonal;
 
         var centers = new List<Point3D>();
         foreach (var angle in new[] { 90.0, -90.0 })
@@ -932,7 +932,7 @@ public class PolarLine : BaseEdgeObject
         var (dir, _) = Direction(angle, direction);
         if (limit.Target is Shape shape)
         {
-            var maxLength = shape.BoundBox().Add(start).Diagonal;
+            var maxLength = shape.BoundBox().Including(start).Diagonal;
             var trimmed = Edge.MakeLine(start, start + dir * maxLength).TrimToOther(shape);
             return trimmed.IsEmpty ? throw new ArgumentException($"Polar line doesn't intersect length limit {limit}") : trimmed;
         }

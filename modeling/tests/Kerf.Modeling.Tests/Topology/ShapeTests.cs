@@ -604,7 +604,7 @@ public class ShapeTests
         Assert.Empty(empty.Entities(Kerf.Topology.ShapeType.Face));
         Assert.Equal(0, empty.Area);
         Check.Same(empty, empty.Rotate(Axis.Z, 90));
-        var translateMatrix = new Matrix(new double[,]
+        var translateMatrix = GeneralTransform3D.FromValues(new double[,]
         {
             { 1.0, 0.0, 0.0, 1.0 },
             { 0.0, 1.0, 0.0, 2.0 },
@@ -739,7 +739,7 @@ public class TransformShapeTests
     public void RigidTransformKeepsTypeAndSize()
     {
         var box = Solid.MakeBox(1, 2, 3);
-        var matrix = new Matrix().Rotated(Axis.Z, 90);
+        var matrix = new GeneralTransform3D().Rotated(Axis.Z, 90);
         var rotated = box.TransformShape(matrix);
 
         Check.Is<Solid>(rotated);
@@ -752,7 +752,7 @@ public class TransformShapeTests
     public void OriginalIsLeftAlone()
     {
         var box = Solid.MakeBox(1, 2, 3);
-        var matrix = new Matrix().Rotated(Axis.Z, 90);
+        var matrix = new GeneralTransform3D().Rotated(Axis.Z, 90);
         var rotated = box.TransformShape(matrix);
 
         Check.NotSame(box, rotated);

@@ -1,51 +1,135 @@
-using Kerf.Geometry;
 using System.Text;
 
 namespace Kerf.Modeling;
 
 /// <summary>
-/// An immutable 4×4 affine transformation matrix, used to move geometry in space. The fourth row is
-/// always (0, 0, 0, 1).
+/// build123d's conveniences on the kernel's <see cref="GeneralTransform3D"/>, an affine transformation of which the fourth
+/// row is always (0, 0, 0, 1). It took the place of the layer's <c>Matrix</c>.
 /// </summary>
-public sealed class Matrix
+/// <remarks>
+/// <c>At</c> counts from zero; the kernel's indexer, as OCCT's, from one. <c>Compose</c> is the product of the values,
+/// where the kernel's <c>*</c> on two transformations is OCCT's (see <c>Compose</c>).
+/// </remarks>
+public static class TransformExtensions
 {
-    /// <summary>The OCCT transformation. Never modified.</summary>
-    internal GeneralTransform3D GTrsf { get; }
-
-    Matrix(GeneralTransform3D gtrsf, bool owned) => GTrsf = gtrsf;
-
-    /// <summary>The identity matrix.</summary>
-    public Matrix() : this(new GeneralTransform3D(), owned: true) { }
-
-    /// <summary>A matrix from an OCCT gp_GTrsf (copied).</summary>
-    public Matrix(GeneralTransform3D gtrsf) : this(Copy(gtrsf), owned: true) { }
-
-    /// <summary>A matrix from an OCCT gp_Trsf.</summary>
-    public Matrix(Transform3D trsf) : this(new GeneralTransform3D(trsf), owned: true) { }
-
-    /// <summary>
-    /// A matrix from its values: 3 rows of 4 (the fourth row is implied), or 4 rows of 4 whose last row
-    /// must be (0, 0, 0, 1).
-    /// </summary>
-    /// <exception cref="ArgumentException">The array isn't 3×4 or 4×4, or its last row isn't (0, 0, 0, 1).</exception>
-    public Matrix(double[,] values) : this(FromValues(values), owned: true) { }
-
-    static GeneralTransform3D Copy(GeneralTransform3D source)
+    extension(GeneralTransform3D)
     {
-        // A similarity is copied through its gp_Trsf, which keeps OCCT's record of its form and scale; a
-        // general affine transform, which Trsf() refuses, from its matrix and translation
-        if (source.Form != TransformForm.Other)
-        {
-            var trsf = source.ToTransform();
-            return new GeneralTransform3D(trsf);
-        }
-        return GeneralTransform3D.Mat4([source[1, 1], source[1, 2], source[1, 3], source[1, 4],
-                                        source[2, 1], source[2, 2], source[2, 3], source[2, 4],
-                                        source[3, 1], source[3, 2], source[3, 3], source[3, 4],
-                                        0, 0, 0, 1]);
+        /// <summary>
+        /// A transformation from its values: 3 rows of 4 (the fourth row is implied), or 4 rows of 4 whose last row
+        /// must be (0, 0, 0, 1). A similarity keeps OCCT's record of its form and scale.
+        /// </summary>
+        /// <exception cref="ArgumentException">The array isn't 3×4 or 4×4, or its last row isn't (0, 0, 0, 1).</exception>
+        public static GeneralTransform3D FromValues(double[,] values) => FromValuesCore(values);
     }
 
-    static GeneralTransform3D FromValues(double[,] values)
+    extension(GeneralTransform3D m)
+    {
+        /// <summary>A value by zero-based row and column; the fourth row is (0, 0, 0, 1).</summary>
+        /// <exception cref="IndexOutOfRangeException">The row or column is outside 0 to 3.</exception>
+        public double At(int row, int col)
+        {
+            if (row is < 0 or > 3 || col is < 0 or > 3)
+                throw new IndexOutOfRangeException($"Out of bounds access into 4x4 matrix: ({row}, {col})");
+            if (row < 3)
+                return m[row + 1, col + 1];
+            return col == 3 ? 1.0 : 0.0;
+        }
+
+        /// <summary>This transformation followed by a rotation about an axis by an angle in degrees.</summary>
+        public GeneralTransform3D Rotated(Axis axis, double angle)
+        {
+            var rotation = new Transform3D().WithRotation(axis.ToAxis3D(), angle * Constants.DegToRad);
+            return m.Multiplied(new GeneralTransform3D(rotation));
+        }
+
+        /// <summary>The product that applies <paramref name="other"/> first and then this transformation.</summary>
+        public GeneralTransform3D Compose(GeneralTransform3D other)
+        {
+            // OCCT's gp_GTrsf product mixes the bare rotation of a similarity with its scale factor kept
+            // aside, so a mirror or a uniform scale times a general affine matrix loses that factor;
+            // multiply the values instead
+            var values = new double[3, 4];
+            for (int row = 0; row < 3; row++)
+            {
+                for (int col = 0; col < 4; col++)
+                {
+                    double sum = 0;
+                    for (int k = 0; k < 3; k++)
+                        sum += m.At(row, k) * other.At(k, col);
+                    values[row, col] = sum + (col == 3 ? m.At(row, 3) : 0.0);
+                }
+            }
+            return GeneralTransform3D.FromValues(values);
+        }
+
+        /// <summary>The 16 values in column-major order (each column's four values in turn), as glTF expects.</summary>
+        public double[] TransposedList()
+        {
+            var result = new double[16];
+            for (int col = 0; col < 4; col++)
+                for (int row = 0; row < 4; row++)
+                    result[col * 4 + row] = m.At(row, col);
+            return result;
+        }
+
+        /// <summary>
+        /// The singular value decomposition of the linear (3×3) part as <c>left · diag(scales) · right</c>:
+        /// read from the right, <c>right</c> turns space, the scales stretch it along the axes, and <c>left</c>
+        /// turns it again. Both are proper rotations; when the transform mirrors, the last scale is negative.
+        /// Scales come in descending order of magnitude.
+        /// </summary>
+        public (GeneralTransform3D Left, Vector3D Scales, GeneralTransform3D Right) Svd()
+        {
+            var a = new double[3, 3];
+            for (int i = 0; i < 3; i++)
+                for (int j = 0; j < 3; j++)
+                    a[i, j] = m.At(i, j);
+
+            var (u, s, vt) = Svd3(a);
+            if (Det3(u) < 0)
+            {
+                for (int i = 0; i < 3; i++)
+                    u[i, 2] = -u[i, 2];
+                s[2] = -s[2];
+            }
+            if (Det3(vt) < 0)
+            {
+                for (int j = 0; j < 3; j++)
+                    vt[2, j] = -vt[2, j];
+                s[2] = -s[2];
+            }
+
+            static GeneralTransform3D AsMatrix(double[,] r) => GeneralTransform3D.FromValues(new double[,]
+            {
+                { r[0, 0], r[0, 1], r[0, 2], 0 },
+                { r[1, 0], r[1, 1], r[1, 2], 0 },
+                { r[2, 0], r[2, 1], r[2, 2], 0 },
+            });
+            return (AsMatrix(u), new Vector3D(s[0], s[1], s[2]), AsMatrix(vt));
+        }
+
+        /// <summary>"Matrix([[1.0, 0.0, 0.0, 0.0], ...])", each row in turn.</summary>
+        public string Describe()
+        {
+            var sb = new StringBuilder("Matrix([");
+            for (int row = 0; row < 4; row++)
+            {
+                if (row > 0)
+                    sb.Append(",\n        ");
+                sb.Append('[');
+                for (int col = 0; col < 4; col++)
+                {
+                    if (col > 0)
+                        sb.Append(", ");
+                    sb.Append(Formatting.Number(m.At(row, col)));
+                }
+                sb.Append(']');
+            }
+            return sb.Append("])").ToString();
+        }
+    }
+
+    static GeneralTransform3D FromValuesCore(double[,] values)
     {
         int rows = values.GetLength(0), cols = values.GetLength(1);
         if (cols != 4 || rows is not (3 or 4))
@@ -95,111 +179,6 @@ public sealed class Matrix
             }
         }
         return true;
-    }
-
-    /// <summary>A value by zero-based row and column; the fourth row is (0, 0, 0, 1).</summary>
-    /// <exception cref="IndexOutOfRangeException">The row or column is outside 0 to 3.</exception>
-    public double this[int row, int col]
-    {
-        get
-        {
-            if (row is < 0 or > 3 || col is < 0 or > 3)
-                throw new IndexOutOfRangeException($"Out of bounds access into 4x4 matrix: ({row}, {col})");
-            if (row < 3)
-                return GTrsf[row + 1, col + 1];
-            return col == 3 ? 1.0 : 0.0;
-        }
-    }
-
-    /// <summary>A new OCCT gp_GTrsf for this matrix.</summary>
-    public GeneralTransform3D ToGeneralTransform3D() => Copy(GTrsf);
-
-    /// <summary>This matrix followed by a rotation about an axis by an angle in degrees.</summary>
-    public Matrix Rotated(Axis axis, double angle)
-    {
-        var rotation = new Transform3D();
-        var ax1 = axis.ToAxis3D();
-        rotation = rotation.WithRotation(ax1, angle * Constants.DegToRad);
-        var g = new GeneralTransform3D(rotation);
-        return new Matrix(GTrsf.Multiplied(g), owned: true);
-    }
-
-    /// <summary>The inverse matrix.</summary>
-    /// <exception cref="Exception">The matrix is singular (the kernel's construction error).</exception>
-    public Matrix Inverse() => new(GTrsf.Inverted(), owned: true);
-
-    /// <summary>A vector transformed by this matrix.</summary>
-    public Point3D Multiply(Point3D v) => v.Transform(this);
-
-    /// <summary>The product that applies <paramref name="other"/> first and then this matrix.</summary>
-    public Matrix Multiply(Matrix other)
-    {
-        // OCCT's gp_GTrsf product mixes the bare rotation of a similarity with its scale factor kept
-        // aside, so a mirror or a uniform scale times a general affine matrix loses that factor;
-        // multiply the values instead
-        var values = new double[3, 4];
-        for (int row = 0; row < 3; row++)
-        {
-            for (int col = 0; col < 4; col++)
-            {
-                double sum = 0;
-                for (int k = 0; k < 3; k++)
-                    sum += this[row, k] * other[k, col];
-                values[row, col] = sum + (col == 3 ? this[row, 3] : 0.0);
-            }
-        }
-        return new Matrix(values);
-    }
-
-#pragma warning disable CS1591
-    public static Matrix operator *(Matrix a, Matrix b) => a.Multiply(b);
-    public static Point3D operator *(Matrix a, Point3D v) => a.Multiply(v);
-#pragma warning restore CS1591
-
-    /// <summary>The 16 values in column-major order (each column's four values in turn), as glTF expects.</summary>
-    public double[] TransposedList()
-    {
-        var result = new double[16];
-        for (int col = 0; col < 4; col++)
-            for (int row = 0; row < 4; row++)
-                result[col * 4 + row] = this[row, col];
-        return result;
-    }
-
-    /// <summary>
-    /// The singular value decomposition of the linear (3×3) part as <c>left · diag(scales) · right</c>:
-    /// read from the right, <c>right</c> turns space, the scales stretch it along the axes, and <c>left</c>
-    /// turns it again. Both are proper rotations; when the transform mirrors, the last scale is negative.
-    /// Scales come in descending order of magnitude.
-    /// </summary>
-    public (Matrix Left, Vector3D Scales, Matrix Right) Svd()
-    {
-        var a = new double[3, 3];
-        for (int i = 0; i < 3; i++)
-            for (int j = 0; j < 3; j++)
-                a[i, j] = this[i, j];
-
-        var (u, s, vt) = Svd3(a);
-        if (Det3(u) < 0)
-        {
-            for (int i = 0; i < 3; i++)
-                u[i, 2] = -u[i, 2];
-            s[2] = -s[2];
-        }
-        if (Det3(vt) < 0)
-        {
-            for (int j = 0; j < 3; j++)
-                vt[2, j] = -vt[2, j];
-            s[2] = -s[2];
-        }
-
-        static Matrix AsMatrix(double[,] r) => new(new double[,]
-        {
-            { r[0, 0], r[0, 1], r[0, 2], 0 },
-            { r[1, 0], r[1, 1], r[1, 2], 0 },
-            { r[2, 0], r[2, 1], r[2, 2], 0 },
-        });
-        return (AsMatrix(u), new Vector3D(s[0], s[1], s[2]), AsMatrix(vt));
     }
 
     static double Det3(double[,] m) =>
@@ -313,25 +292,5 @@ public sealed class Matrix
             }
         }
         return [0, 0, 1];
-    }
-
-    /// <summary>"Matrix([[1.0, 0.0, 0.0, 0.0], ...])", each row in turn.</summary>
-    public override string ToString()
-    {
-        var sb = new StringBuilder("Matrix([");
-        for (int row = 0; row < 4; row++)
-        {
-            if (row > 0)
-                sb.Append(",\n        ");
-            sb.Append('[');
-            for (int col = 0; col < 4; col++)
-            {
-                if (col > 0)
-                    sb.Append(", ");
-                sb.Append(Formatting.Number(this[row, col]));
-            }
-            sb.Append(']');
-        }
-        return sb.Append("])").ToString();
     }
 }
