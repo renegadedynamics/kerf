@@ -42,6 +42,10 @@ internal class NewtonMinimum
     private Jacobi? _eigen;
     private Gauss? _lu;
 
+    // Perform's two iterates, likewise (unit 11B): both are written before they're read
+    private math_Vector? _point1;
+    private math_Vector? _point2;
+
     /// <summary>
     /// Prepares the algorithm; <see cref="Perform"/> does the job. Iterations stop if (!theWithSingularity) and the
     /// hessian is not definite positive (its smallest eigenvalue below theConvexity), or when
@@ -70,6 +74,28 @@ internal class NewtonMinimum
         _itermax = nbIterations;
     }
 
+    /// <summary>
+    /// As newly constructed with the same arguments, keeping the storage (unit 11B): math_GlobOptMin constructs a new
+    /// one for every local search, and in Bento's "extrude until" those were the largest allocation of all.
+    /// </summary>
+    internal void Reset()
+    {
+        _theStatus = NotBracketed;
+        _theLocation.Init(0.0);
+        _theGradient.Init(0.0);
+        _theStep.Init(10.0 * _xTol);
+        _theHessian.Init(0.0);
+        _previousMinimum = 0.0;
+        _theMinimum = 0.0;
+        _minEigenValue = 0.0;
+        _nbiter = 0;
+        _convex = true;
+        _isBoundsDefined = false;
+        _left.Init(0.0);
+        _right.Init(0.0);
+        _done = false;
+    }
+
     /// <summary>Sets the boundaries for conditional optimization.</summary>
     public void SetBoundary(math_Vector leftBorder, math_Vector rightBorder)
     {
@@ -81,9 +107,17 @@ internal class NewtonMinimum
     /// <summary>Searches the minimum from <paramref name="startingPoint"/>.</summary>
     public void Perform(MultipleVarFunctionWithHessian f, math_Vector startingPoint)
     {
-        math_Vector point1 = new(1, f.VariableCount);
+        // A second Perform on one object may take a function of another size, and startingPoint may be this object's own
+        // Location(), which is a different vector from these two
+        if (_point1 is null || _point1.Length() != f.VariableCount)
+        {
+            _point1 = new math_Vector(1, f.VariableCount);
+            _point2 = new math_Vector(1, f.VariableCount);
+        }
+
+        math_Vector point1 = _point1;
         point1.Initialized(startingPoint);
-        math_Vector point2 = new(1, f.VariableCount);
+        math_Vector point2 = _point2!;
         math_Vector precedent = point1;
         math_Vector suivant = point2;
 
