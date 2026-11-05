@@ -8,8 +8,8 @@
   fresh processes; a row's value is the median across a suite's processes.
 
   Writes <date>-<short commit>.md for people and a .tsv beside it for comparing, with the commit, the machine, whether it
-  was quiet and whether ReadyToRun was on at the top. A full run goes to docs/benchmarks and takes about 12 minutes. -Quick
-  runs a subset with the same row names, fewer times, in about 4 minutes, for a unit's before-and-after; it writes to the
+  was quiet and whether ReadyToRun was on at the top. A full run goes to docs/benchmarks and takes about 15 minutes. -Quick
+  runs a subset with the same row names, fewer times, in about 5 minutes, for a unit's before-and-after; it writes to the
   work folder unless -Out says otherwise.
 
   A comparison exits with 1 on a regression past the thresholds: docs/performance.md says how they were chosen from
@@ -36,10 +36,15 @@
   The folder for the .md and the .tsv.
 .PARAMETER Work
   A folder for the build and the suites' logs, which is kept; a new temporary one, removed afterwards, if not given.
+.PARAMETER TotalPercent
+  The regression threshold on the times that add up many operations: Bento's totals and opening, the Booleans, the parallel
+  round and STEP, in percent of the earlier run's.
 .PARAMETER TimePercent
-  The regression threshold on a time, in percent of the earlier run's.
+  The regression threshold on any other time, which is one short operation and so noisier.
 .PARAMETER TimeFloor
-  A time's change under this many of its unit (ms, or us for construction's) is never a regression.
+  Any other time's change under this many milliseconds is never a regression.
+.PARAMETER MicrosecondFloor
+  The same for construction's times, which are in microseconds.
 .PARAMETER AllocationPercent
   The regression threshold on allocation, in percent.
 .PARAMETER AllocationFloor
@@ -61,11 +66,13 @@ param(
   [switch] $NoReadyToRun,
   [string] $Out = '',
   [string] $Work = '',
-  [double] $TimePercent = 15,
-  [double] $TimeFloor = 5,
+  [double] $TotalPercent = 15,
+  [double] $TimePercent = 40,
+  [double] $TimeFloor = 10,
+  [double] $MicrosecondFloor = 20,
   [double] $AllocationPercent = 2,
   [double] $AllocationFloor = 0.1,
-  [double] $SpeedUpPercent = 25
+  [double] $SpeedUpPercent = 15
 )
 $ErrorActionPreference = 'Stop'
 # powershell -File passes -Only a,b as one string
@@ -91,7 +98,7 @@ $nativeBento = @{
 }
 # The owner's targets (phase11-plan.md section 2): recalculation within 1.2 times native's; allocation half of 11A's baseline
 $targetRecalculationMs = 1.2 * 685.4
-$targetAllocationMB = 0
+$targetAllocationMB = 225
 
 function Parse-Number([string] $text) { [double]::Parse($text, $invariant) }
 function Format-Number([double] $value) {
@@ -136,7 +143,8 @@ function Compare-Results([string] $beforePath, [string] $afterPath) {
   "Before: $beforePath ($($before.Header['commit']), quiet: $($before.Header['quiet']), ReadyToRun: $($before.Header['readytorun']))"
   "After:  $afterPath ($($after.Header['commit']), quiet: $($after.Header['quiet']), ReadyToRun: $($after.Header['readytorun']))"
   foreach ($key in 'quiet', 'readytorun', 'machine') {
-    if ($before.Header[$key] -ne $after.Header[$key]) { "WARNING: the runs differ in '$key', so their times aren't comparable" }
+    # Of 'quiet', whether it was, not how much it measured
+    if (($before.Header[$key] -split ':')[0] -ne ($after.Header[$key] -split ':')[0]) { "WARNING: the runs differ in '$key', so their times aren't comparable" }
   }
   $afterByKey = @{}
   foreach ($r in $after.Rows) { $afterByKey["$($r.Group)`t$($r.Name)`t$($r.Metric)"] = $r }
@@ -165,8 +173,11 @@ function Compare-Results([string] $beforePath, [string] $afterPath) {
     $flag = '  '
     switch ($kind) {
       'time' {
-        if ($change -gt $TimePercent -and $difference -gt $TimeFloor) { $flag = '!!' }
-        elseif ($change -lt - $TimePercent -and $difference -lt - $TimeFloor) { $flag = '++' }
+        $isTotal = $b.Name -eq 'total' -or $b.Group -in 'opening', 'booleans', 'parallel', 'process' -or $b.Group -like 'step*'
+        $percent = if ($isTotal) { $TotalPercent } else { $TimePercent }
+        $floor = if ($isTotal) { 0 } elseif ($b.Metric -like '* us' -or $b.Metric -eq 'us') { $MicrosecondFloor } else { $TimeFloor }
+        if ($change -gt $percent -and $difference -gt $floor) { $flag = '!!' }
+        elseif ($change -lt - $percent -and $difference -lt - $floor) { $flag = '++' }
       }
       'allocation' {
         if ($change -gt $AllocationPercent -and $difference -gt $AllocationFloor) { $flag = '!!' }
@@ -183,7 +194,7 @@ function Compare-Results([string] $beforePath, [string] $afterPath) {
   }
   $new = @($after.Rows | Where-Object { -not $seen["$($_.Group)`t$($_.Name)`t$($_.Metric)"] }).Count
   ''
-  "$regressions regressions past the thresholds (time $TimePercent% and $TimeFloor ms, allocation $AllocationPercent% and $AllocationFloor MB, speed-up $SpeedUpPercent%), $improvements improvements past them; $absent rows only in the earlier run, $new only in the later"
+  "$regressions regressions past the thresholds (totals' time $TotalPercent%, other times $TimePercent% and $TimeFloor ms or $MicrosecondFloor us, allocation $AllocationPercent% and $AllocationFloor MB, speed-up $SpeedUpPercent%), $improvements improvements past them; $absent rows only in the earlier run, $new only in the later"
   # The count last: the caller reads it from the end of the output
   $regressions
 }
@@ -287,9 +298,9 @@ $buildSeconds = [int] $overallClock.Elapsed.TotalSeconds
 $suites = @(
   @{ Name = 'bento'; Exe = 'bento'; Args = @('20', '0'); Full = 5; Quick = 3 },
   @{ Name = 'parallel'; Exe = 'bento'; Args = @('9', "$([Environment]::ProcessorCount)"); Full = 3; Quick = 1 },
-  @{ Name = 'images'; Exe = 'bento'; Args = @('images', '5'); Full = 3; Quick = 1 },
+  @{ Name = 'images'; Exe = 'bento'; Args = @('images', '9'); Full = 3; Quick = 1 },
   @{ Name = 'meshing'; Exe = 'kernel'; Args = @('quick'); Full = 3; Quick = 1 },
-  @{ Name = 'construction'; Exe = 'kernel'; Args = @('construction'); Full = 2; Quick = 1 },
+  @{ Name = 'construction'; Exe = 'kernel'; Args = @('construction'); Full = 3; Quick = 1 },
   @{ Name = 'features'; Exe = 'kernel'; Args = @('features'); Full = 3; Quick = 1 },
   @{ Name = 'booleans-simple'; Exe = 'kernel'; Args = @('booleans', 'simple'); Full = 2; Quick = 1 },
   @{ Name = 'booleans-complex'; Exe = 'kernel'; Args = @('booleans', 'complex'); Full = 2; Quick = 0 },
@@ -349,8 +360,8 @@ foreach ($key in $byKey.Keys) {
   }
   else {
     $numbers = @($values | ForEach-Object { Parse-Number $_ } | Sort-Object)
-    # The middle one, the upper of two, so that it's a figure that was measured
-    $median = $numbers[[int][Math]::Floor($numbers.Count / 2)]
+    # The middle one, the lower of two: a figure that was measured, and noise only ever adds to a time
+    $median = $numbers[[int][Math]::Floor(($numbers.Count - 1) / 2)]
     $value = $median.ToString('F3', $invariant)
     $spread = if ($median -ne 0) { (100 * ($numbers[-1] - $numbers[0]) / $median).ToString('F1', $invariant) } else { '0.0' }
   }
