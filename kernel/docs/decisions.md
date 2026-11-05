@@ -16150,8 +16150,8 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        `Occt`, by 10L5's method (decision 1563). The same script over both namespaces (`p10p1-internalise.py`) made
        72 declarations internal, and built Kerf.slnx and both benchmarks: the first round named only `Transient`, and the
        second was clean. The types decision 1563 put down to the modelling layer had been free since 10M1 moved that layer
-       to the public API, and the WebAssembly sample's since 17806. **What can't be internal:** `Transient` alone, because
-       `Geometry3D` and `Geometry2D` derive from it (17804). The collections themselves aren't converted
+       to the public API, and the WebAssembly sample's since decision 1598. **What can't be internal:** `Transient` alone, because
+       `Geometry3D` and `Geometry2D` derive from it (decision 1596). The collections themselves aren't converted
        (`collections-plan.md`).
 1596. **`Transient` has no public members (question 55).** `DynamicType`, `DynamicTypeName`, `IsKind`, `IsInstance`,
        `This`, `IsFrozen` and `CheckMutable` are internal, and its constructor is `private protected`, so only the kernel can
