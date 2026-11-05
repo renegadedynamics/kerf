@@ -528,7 +528,7 @@ public static partial class SolidExtensions
         var profileBox = profile.Bounds();
         var bounds = surfaces.Select(s => (Surface: s,
                                            Least: SolidExtensions.GapBetween(s.Bounds(), profileBox),
-                                           Most: s.Vertices().Min(v => v.DistanceTo(profile)))).ToList();
+                                           Most: s.Vertices().Select(v => v.DistanceTo(profile)).DefaultIfEmpty(double.PositiveInfinity).Min())).ToList();
         foreach (var candidate in bounds)
         {
             var clear = bounds.All(other => ReferenceEquals(other.Surface, candidate.Surface)
