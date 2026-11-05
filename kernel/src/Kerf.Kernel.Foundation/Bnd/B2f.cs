@@ -538,5 +538,5 @@ internal partial struct B2f : IEquatable<B2f>
     public static bool operator !=(in B2f left, in B2f right) => !left.Equals(right);
 
     /// <summary>The center and the half-diagonal.</summary>
-    public override readonly string ToString() => Constants.Format("Array2", _center[0], _center[1], _hSize[0], _hSize[1]);
+    public override readonly string ToString() => Constants.Format("B2f", _center[0], _center[1], _hSize[0], _hSize[1]);
 }

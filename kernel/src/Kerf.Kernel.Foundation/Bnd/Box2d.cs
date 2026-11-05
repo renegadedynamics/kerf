@@ -793,5 +793,5 @@ internal partial struct Box2d : IEquatable<Box2d>, ISpatialTreeBox<Box2d>
     public static bool operator !=(in Box2d left, in Box2d right) => !left.Equals(right);
 
     /// <summary>The raw fields: Xmin, Xmax, Ymin, Ymax, Gap and the flag bits.</summary>
-    public override readonly string ToString() => Constants.Format("Limits", _xmin, _xmax, _ymin, _ymax, _gap, _flags);
+    public override readonly string ToString() => Constants.Format("Box2d", _xmin, _xmax, _ymin, _ymax, _gap, _flags);
 }

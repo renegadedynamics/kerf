@@ -464,5 +464,5 @@ internal partial struct BoundRange : IEquatable<BoundRange>
 
     public static bool operator !=(in BoundRange left, in BoundRange right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("Bounds", _first, _last);
+    public override readonly string ToString() => Constants.Format("BoundRange", _first, _last);
 }

@@ -101,5 +101,5 @@ internal partial struct Pave : IEquatable<Pave>
 
     public static bool operator !=(Pave left, Pave right) => !left.IsEqual(right);
 
-    public override readonly string ToString() => Constants.Format("LessThan", _index, _parameter);
+    public override readonly string ToString() => Constants.Format("Pave", _index, _parameter);
 }

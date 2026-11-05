@@ -78,5 +78,5 @@ internal partial struct Pair : IEquatable<Pair>, IComparable<Pair>
 
     public static bool operator !=(Pair left, Pair right) => !left.IsEqual(right);
 
-    public override readonly string ToString() => Constants.Format("LessThan", _index1, _index2);
+    public override readonly string ToString() => Constants.Format("Pair", _index1, _index2);
 }
