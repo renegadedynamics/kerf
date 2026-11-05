@@ -1,7 +1,7 @@
 # Units 11L and 11N: what Bento sees change
 
 Units 11L and 11N change messages, STEP's header and one member's name, and add an option that's off by default (kernel
-decisions 18401 to 18407). Shapes, volumes and face counts are unchanged, and so are STEP's entities apart from the product's
+decisions 1662 to 1668). Shapes, volumes and face counts are unchanged, and so are STEP's entities apart from the product's
 name. This is every change a caller meets. **A member not listed keeps its name and meaning.**
 
 ## What Bento has to change

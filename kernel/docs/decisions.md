@@ -16486,7 +16486,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        borrows, since new arrays were zero.
 1661. **Proposal 5 isn't taken.** 225 MB was reached without an API change across `math`, so the work is left undone, with what
        remains in `performance.md`. Allocation work changed no result anywhere: where a saving might have, as with a reversed range
-       in 18203, the old route stays.
+       in 1657, the old route stays.
 
 ## Phase 11: units 11L and 11N, STEP's header, StepTidy and the API's sharp edges
 

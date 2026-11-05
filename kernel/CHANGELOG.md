@@ -7,7 +7,7 @@ version may break the API.
 
 - **Unifying (and so a simplified Boolean) no longer fails on two kinds of valid shape:** edges meeting where one has a
   zero-length tangent, as a B-spline with its end pole repeated, are left unmerged, and infinite lines, which have no
-  vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 18301 and 18302).
+  vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 1652 and 1653).
 ## 0.3.0 (unreleased)
 
 - **STEP's header names Kerf:** organisation `Kerf`, processor `Kerf STEP processor 0.3.0`, product `Kerf STEP translator N`, and
