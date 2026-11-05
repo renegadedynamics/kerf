@@ -294,6 +294,52 @@ public class GeomBndLib_SurfaceTest
     }
 
     // =========================================================================
+    // Torus: the optimal box of a patch is worked out, not searched for (unit 11E)
+    // =========================================================================
+
+    [Theory]
+    [InlineData(0.0, 6.283185307179586, 0.0, 6.283185307179586)]
+    [InlineData(0.3, 1.2, 0.1, 0.6)]
+    [InlineData(2.0, 5.5, 1.0, 4.0)]
+    [InlineData(-1.0, 1.0, -2.5, -0.5)]
+    [InlineData(5.0, 7.5, 3.0, 8.0)]
+    public void Torus_Patch_BoxOptimal_IsTheSurfacesExtent(double theU1, double theU2, double theV1, double theV2)
+    {
+        CoordinateSystem[] aFrames =
+        [
+            XOY3(),
+            new CoordinateSystem(new Point3D(4.0, -3.0, 7.0), new Direction3D(1.0, 2.0, 3.0), new Direction3D(3.0, 0.0, -1.0)),
+        ];
+        foreach (CoordinateSystem aFrame in aFrames)
+        {
+            ToroidalSurface aTorus = new(aFrame, 10.0, 3.0);
+            Box aBox = new();
+            new SurfaceBounds(aTorus).AddOptimal(theU1, theU2, theV1, theV2, 0.0, ref aBox);
+
+            Box aSamples = new();
+            const int aCount = 400;
+            for (int i = 0; i <= aCount; i++)
+            {
+                for (int j = 0; j <= aCount; j++)
+                {
+                    aSamples.Add(aTorus.Value(theU1 + (theU2 - theU1) * i / aCount, theV1 + (theV2 - theV1) * j / aCount));
+                }
+            }
+
+            // Every side holds the samples, and the samples come within a step's sag of it
+            var (aX1, aX2, aY1, aY2, aZ1, aZ2) = aBox.Get();
+            var (aSX1, aSX2, aSY1, aSY2, aSZ1, aSZ2) = aSamples.Get();
+            const double aSag = 1e-3;
+            Assert.InRange(aSX1 - aX1, 0.0, aSag);
+            Assert.InRange(aX2 - aSX2, 0.0, aSag);
+            Assert.InRange(aSY1 - aY1, 0.0, aSag);
+            Assert.InRange(aY2 - aSY2, 0.0, aSag);
+            Assert.InRange(aSZ1 - aZ1, 0.0, aSag);
+            Assert.InRange(aZ2 - aSZ2, 0.0, aSag);
+        }
+    }
+
+    // =========================================================================
     // Torus
     // =========================================================================
 
