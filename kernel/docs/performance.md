@@ -250,6 +250,70 @@ loaded machine lets more methods tier up during the first pass. The quiet run sh
 To profile again, take a trace as `tools/profile-report.cs` says and read it with `tools/alloc-report.cs`, which sorts the bytes
 by type and by the first frame that isn't a collection.
 
+## Unit 11E: the hot paths
+
+*5 November 2026, on a busy machine: the rig saw 84% total CPU before it started, so this unit reads profiles, counts of calls and runs back to back, and claims no timed figure. The
+quiet run comes after merging.*
+
+**Recalculation fell by about two thirds, past the target of 822 ms (1.2× native), with "extrude until" under native's own time.** No volume, face count or Bento triangle count
+changed. Expected on a quiet machine: **1,095 ms to about 400 to 500 ms** (0.6× to 0.7× native), and I'm confident of beating 822. "Extrude until" should go from 736 ms to about 150 to 200 (target 548; native 457). The bottle should go
+from 229 to about 110 to 130 (target 127): that's close, and the one figure that could still miss.
+
+### Before and after, back to back
+
+Three pairs in fresh processes, 12 passes, ReadyToRun, with other work on the machine throughout, so only the comparison means anything. The rig's own `-Quick -Force` run agrees: 857 ms under 84% CPU, with a settled time of 495 ms.
+
+| | Before | After | |
+|---|---:|---:|---:|
+| Recalculation, ms (pairs 1, 2, 3) | 1,669, 1,512, 1,538 | 629, 468, 524 | about −66% |
+| Opening (first pass), ms | 1,938, 1,939, 1,936 | 1,236, 788, 763 | about −55% in the two pairs without a spike |
+| 36 extrude until, ms | 1,061, 991, 973 | 268, 183, 235 | about −77% |
+| 29 bottle, ms | 374, 334, 358 | 158, 129, 123 | about −60% |
+| 10 select last, hole, ms | 67, 56, 61 | 46, 26, 32 | about −40% |
+| Allocated, MB (from the rig) | 217.1 | 207.6 | −4.4% |
+
+The optimal box alone, warm: the bottle 121 to 13.5 ms, "extrude until" 25 to 2.0 ms, example 10 11.7 to 2.1 ms. In the profile, distance went from 47.9% of thread time to 0.1%, and the optimal box from 12.0% to 7.0% of a much smaller total.
+
+### The mesh's tolerance box
+
+**Why it's optimal:** `MeshTolerances.For` is build123d's: 0.1% of the box's diagonal. It has to keep the optimal box, or the meshes change: the loose box is 2.5% longer on the bottle and 8.2% on "extrude until". The mesher is
+sensitive: a change of 3.4e-10 in the deflection moved `data/occ/bottle.brep` by 10 triangles. So the box got cheaper, and stayed the same box. Most of the time was in faces that could never affect the answer.
+
+| Commit | What changed |
+|---|---|
+| Torus patches | Worked out instead of searched for with PSO: about 10 ms a patch (decision 18501) |
+| `AddOptimal` | Faces that take their box from their edges come first, and a curved face already inside the box so far is skipped (decision 18502). Tori and spheres were all of the bottle's cost, and all of them lie inside its sides |
+| `GenExtSS` | Its 160,000 pairs of samples read from a flat array, as ahead-of-time code can't inline accessors from another assembly. The same pairs in the same order. This search is what's left of the box: 4.5% of thread time before this commit |
+
+**The check, over the 1,499 BRep files up to 500 kB in OCCT's data and the dataset:** 1,490 boxes are bit for bit the same, and 9 differ by at most 1e-7 absolute, 3.4e-10 of the diagonal at most on its length. Of those 9, one changes its
+triangle count at the default tolerances (decision 18504):
+
+| Shape | Triangles before | After | Deflection, relative change |
+|---|---:|---:|---:|
+| `data/occ/bottle.brep` | 12,862 | 12,872 | 3.4e-10 |
+| All eleven of Bento's examples | unchanged | unchanged | 0 |
+
+**Something to look at, separately:** on that file the worst triangle centroid is 0.350 from its face, before and after, against a stated deflection of 0.094. It's the same with or without this unit, and may be the mesher's own behaviour on a
+particular face; it wasn't looked into here.
+
+### "Extrude until"
+
+**Why so many distance searches:** the operation sorts the target's surfaces by exact distance from the profile, to pick the next one. Each surface there is bounded by intersection curves, so every profile edge against every bounding curve went through `GlobOptMin`
+and `NewtonMinimum`: 300 ms to choose between two surfaces 14 units apart. Now each surface has an interval, from its box to its nearest vertex, and the exact distances are taken only if the intervals don't settle it (decision 18503). Where they do settle it the answer must be the sort's, so the
+result can't change. A test with a thin hollow sphere checks the case they can't settle.
+
+### Booleans
+
+Not changed (decision 18505). The target's beaten, and nothing is cheap: the pave filler is now 21% of thread time, and 35% of its samples are threads stopped for a collection, with 11% in the parallel loop's spin wait, which is 11D's. By stage, as shares of the filler: edge/face 18%,
+face/face 17%, `Init` 11%, `DataIterator.Intersect` 7%, `MakeBlocks` 7%, `FillShrunkData` 6%. "Extrude until" (37%) and the bottle's offset (29%) are most of its samples. Meshing is now the largest operation, at 33% of thread time.
+
+### What's left
+
+- **`GenExtSS` in `IsModifySize`:** a face touching the shape's box still runs up to six of these searches, because the box's tolerance (1e-7) puts a touching face just outside. A closed form for spheres and tori would remove it, but
+  picking the same extremum where a whole circle touches is the difficulty.
+- **BSpline edges and other searched surfaces:** only B-spline faces have a cheap test first. Bezier, offset and swept faces still search, and a trimmed Bezier's cheap box is sampled so can't be trusted as a limit. Bento's examples have none of these, but imported STEP models will.
+- **The bottle:** its build is offset and fillet, with no hot site of its own.
+
 ## StepTidy (unit 11N)
 
 *5 November 2026, `Kerf.Kernel.Benchmarks -- step-tidy` over the 289 files `-- healing` exports, written by the plain STEP

@@ -10,6 +10,8 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 - **STEP's header names Kerf:** `Kerf.Modeling` as the originating system, and the kernel's other changes.
 - **Messages in Kerf's terms:** `Plane`'s and the shapes' messages no longer name OCCT's types.
 - **`StepExportOptions.CleanDuplicates`** merges exactly equal entities when writing STEP. Off by default.
+- **Faster recalculation:** `Extrude` until a surface no longer measures exact distances when bounds settle which surface it is, and
+  `MeshTolerances.For` is about ten times quicker on filleted parts. Results don't change.
 - What Bento has to change: [docs/11l-bento.md](docs/11l-bento.md).
 
 ## 0.2.0
