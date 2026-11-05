@@ -80,8 +80,8 @@ public class AssemblyTests
 
         Assert.Equal("box", box.Label);
         Assert.Equal(2, assembly.AssemblyChildren.Count);
-        Assert.Same(box, assembly.AssemblyChildren[0]);
-        Assert.Same(sphere, assembly.AssemblyChildren[1]);
+        Check.Same(box, assembly.AssemblyChildren[0]);
+        Check.Same(sphere, assembly.AssemblyChildren[1]);
     }
 
     [Fact]

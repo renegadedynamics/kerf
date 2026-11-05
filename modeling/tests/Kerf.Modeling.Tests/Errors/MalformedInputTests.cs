@@ -12,7 +12,7 @@ using Kerf.Modeling;
 /// </summary>
 public class MalformedInputTests
 {
-    private static byte[] Brep(Shape shape, bool withTriangles = false) => Extras.WriteBRep(shape.KernelShape, withTriangles);
+    private static byte[] Brep(Shape shape, bool withTriangles = false) => Extras.WriteBRep(shape, withTriangles);
 
     [Fact]
     public void ValidBRepStillReads()
@@ -22,7 +22,7 @@ public class MalformedInputTests
         {
             var read = Shape.Cast(Extras.ReadBRep(Brep(part, withTriangles)).Value);
             Assert.Equal(part.Volume, read.Volume, 6);
-            Assert.Equal(part.Faces().Count, read.Faces().Count);
+            Assert.Equal(part.Faces().Count, read.SelectFaces().Count);
         }
     }
 
@@ -80,7 +80,7 @@ public class MalformedInputTests
                 _ = shape.IsValid;
                 _ = shape.BoundingBox();
                 _ = shape.Volume;
-                _ = shape.Faces().Sum(f => f.Area);
+                _ = shape.SelectFaces().Sum(f => f.Area);
             }
             catch (Exception e) when (Failures.IsKernelFailure(e) || e is ArgumentException or InvalidOperationException)
             {
@@ -129,7 +129,7 @@ public class MalformedInputTests
         ["sweep along a point"] = () => Solid.Sweep(Wire.MakeCircle(1), Edge.MakeLine(new Vector(0, 0, 0), new Vector(0, 0, 1e-9))),
         ["cut by itself"] = () => (new Box(1, 1, 1) - new Box(1, 1, 1)).Volume,
         ["fuse with a huge fuzzy value"] = () => new Box(1, 1, 1).Fuse([new Box(1, 1, 1).Moved(new Location(new Vector(0.5, 0.0, 0.0)))], tolerance: 10),
-        ["triangulate a point"] = () => new Vertex(1, 2, 3).Triangulate(),
+        ["triangulate a point"] = () => Vertex.Make(1, 2, 3).Triangulate(),
         ["triangulate with zero deflection"] = () => new Box(1, 1, 1).Triangulate(0),
     };
 

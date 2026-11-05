@@ -26,18 +26,18 @@ public class ShapePlacementTests
     // same shape relocated to another
     static readonly (string Name, Func<Location, Shape> Make)[] Kinds =
     [
-        ("vertex", loc => new Vertex(1, 2, 3).Moved(loc)),
+        ("vertex", loc => Vertex.Make(1, 2, 3).Moved(loc)),
         ("vertex of a moved wire", loc =>
-            Wire.MakePolygon(new Vector[] { new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(1, 1, 0) }, close: false).Moved(loc).Vertices()[1]),
+            Wire.MakePolygon(new Vector[] { new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(1, 1, 0) }, close: false).Moved(loc).SelectVertices()[1]),
         ("edge", loc => Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0)).Moved(loc)),
-        ("edge of a moved face", loc => Face.MakeRect(2, 1).Moved(loc).Edges()[0]),
+        ("edge of a moved face", loc => Face.MakeRect(2, 1).Moved(loc).SelectEdges()[0]),
         ("wire", loc => Wire.MakePolygon(new Vector[] { new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(1, 1, 0) }).Moved(loc)),
         ("face", loc => Face.MakeRect(2, 1).Moved(loc)),
         ("face with a hole", loc => Face.MakeRect(4, 4).MakeHoles([Wire.MakeCircle(1)]).Moved(loc)),
-        ("shell", loc => Solid.MakeBox(1, 2, 3).Shells()[0].Moved(loc)),
+        ("shell", loc => Solid.MakeBox(1, 2, 3).SelectShells()[0].Moved(loc)),
         ("solid", loc => Solid.MakeBox(1, 2, 3).Moved(loc)),
         ("labelled solid", loc => Solid.MakeBox(1, 2, 3).Moved(loc).WithLabel("brick")),
-        ("compound", loc => new Compound([Solid.MakeBox(1, 1, 1), Solid.MakeSphere(0.5).Moved(new Pos(3, 0, 0))]).Moved(loc)),
+        ("compound", loc => Compound.Make([Solid.MakeBox(1, 1, 1), Solid.MakeSphere(0.5).Moved(new Pos(3, 0, 0))]).Moved(loc)),
         ("assembly", MakeAssembly),
         ("part", loc => loc * CompoundObjects.Box(1, 2, 3)),
         ("sketch", loc => loc * CompoundObjects.Rectangle(1, 2)),
@@ -48,7 +48,7 @@ public class ShapePlacementTests
 
     static string Rounded(Vector v) => $"({R4(v.X)}, {R4(v.Y)}, {R4(v.Z)})";
 
-    static IReadOnlyList<Shape> ChildrenOf(Shape shape) => shape is Compound c ? c.AssemblyChildren : [];
+    static IReadOnlyList<Shape> ChildrenOf(Shape shape) => shape.TryAs(out Compound c) ? c.AssemblyChildren : [];
 
     /// <summary>Everything about where a shape is: location, extent, vertices, children.</summary>
     sealed record Placement(Location Location, string Min, string Max, string Vertices, string Children);
@@ -56,7 +56,7 @@ public class ShapePlacementTests
     static Placement PlacementOf(Shape shape)
     {
         var bbox = shape.BoundingBox();
-        var vertices = shape.Vertices()
+        var vertices = shape.SelectVertices()
             .Select(v => (R4(v.X), R4(v.Y), R4(v.Z))).Order().Select(t => t.ToString());
         var children = ChildrenOf(shape).Select(c => Rounded((shape.Location * c.Location).Position));
         return new Placement(shape.Location, Rounded(bbox.Min), Rounded(bbox.Max),
@@ -73,9 +73,9 @@ public class ShapePlacementTests
         var originalChildren = ChildrenOf(original);
         if (originalChildren.Count > 0)
             foreach (var (child, source) in ChildrenOf(shape).Zip(originalChildren))
-                Assert.True(child.KernelShape.IsPartner(source.KernelShape));
+                Assert.True(child.IsPartner(source));
         else
-            Assert.True(shape.KernelShape.IsPartner(original.KernelShape));
+            Assert.True(shape.IsPartner(original));
     }
 
     /// <summary>Every kind reports the location it was built at.</summary>
@@ -129,7 +129,7 @@ public class ShapePlacementTests
         var solid = Solid.Extrude(cross, new Vector(0, 0, 2));   // extrude(cross, 2)
         foreach (var (name, relocated) in new[] { ("located", solid.Located(Elsewhere)), ("moved", solid.Moved(Elsewhere)) })
         {
-            var interior = relocated.Edges().Where(e => e.IsInterior).ToShapeList();
+            var interior = relocated.SelectEdges().Where(e => e.IsInterior).ToShapeList();
             Assert.True(interior.Count == 4, name);
         }
     }
@@ -157,7 +157,7 @@ public class ShapePlacementTests
             Assert.True(relocated.AssemblyChildren.Count == 2, name);
             foreach (var (child, source) in relocated.AssemblyChildren.Zip(original.AssemblyChildren))
             {
-                Assert.True(child.KernelShape.IsPartner(source.KernelShape), name);
+                Assert.True(child.IsPartner(source), name);
                 Assert.True(child.Location == source.Location, name);
             }
             // the copy's compound was rebuilt from its children at its location

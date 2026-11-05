@@ -29,7 +29,7 @@ public static partial class Operations
         var topoParents = faceList.Select(f => f.TopoParent).OfType<Shape>().Distinct().ToList();
         if (topoParents.Count != 1)
             throw new ArgumentException("All faces must share the same topological parent (a Solid)");
-        var parentSolids = topoParents[0].Solids();
+        var parentSolids = topoParents[0].SelectSolids();
         if (parentSolids.Count != 1)
             throw new ArgumentException("Topological parent must be a single Solid");
 
@@ -38,7 +38,7 @@ public static partial class Operations
         var newSolid = parentSolids[0].Draft(faceList, neutralPlane, angle);
 
         // Phase 5: in builder mode the drafted solid replaces the builder's part
-        return (Part)new Part([newSolid]).MadeBy(ShapeHistory.Of([newSolid]));
+        return (Part)new Part([newSolid]).MadeBy(ModelHistory.Of([newSolid]));
     }
 
     /// <inheritdoc cref="Draft(IEnumerable{Face}, Plane, double)"/>
@@ -64,7 +64,7 @@ public static partial class Operations
         // Phase 5: in builder mode the faces default to the pending faces (on their pending planes), and the result is
         // combined with mode
         ArgumentNullException.ThrowIfNull(toExtrude);
-        return ExtrudeCore(toExtrude.Faces(), amount, null, null, options ?? ExtrudeOptions.Default);
+        return ExtrudeCore(toExtrude.SelectFaces(), amount, null, null, options ?? ExtrudeOptions.Default);
     }
 
     /// <inheritdoc cref="Extrude(Shape, double, ExtrudeOptions?)"/>
@@ -97,7 +97,7 @@ public static partial class Operations
     {
         ArgumentNullException.ThrowIfNull(toExtrude);
         ArgumentNullException.ThrowIfNull(target);
-        return ExtrudeCore(toExtrude.Faces(), null, until, target, options ?? ExtrudeOptions.Default);
+        return ExtrudeCore(toExtrude.SelectFaces(), null, until, target, options ?? ExtrudeOptions.Default);
     }
 
     /// <inheritdoc cref="Extrude(Shape, Until, Shape, ExtrudeOptions?)"/>
@@ -200,11 +200,11 @@ public static partial class Operations
             return new Part();
 
         // Validate Vertex placement
-        if (inputSections.Any(s => s is Vertex))
+        if (inputSections.Any(s => s.TryAs<Vertex>(out _)))
         {
             if (inputSections[0] is not Vertex && inputSections[^1] is not Vertex)
                 throw new ArgumentException("Vertices must be the first, last, or first and last elements");
-            if (inputSections.Skip(1).SkipLast(1).Any(s => s is Vertex))
+            if (inputSections.Skip(1).SkipLast(1).Any(s => s.TryAs<Vertex>(out _)))
                 throw new ArgumentException("Vertices must be the first, last, or first and last elements");
         }
 
@@ -213,10 +213,10 @@ public static partial class Operations
         var faces = new List<Face>();
         foreach (var s in inputSections)
         {
-            if (s is Vertex)
+            if (s.TryAs<Vertex>(out _))
                 loftSections.Add(s);
             else
-                foreach (var face in s.Faces())
+                foreach (var face in s.SelectFaces())
                 {
                     loftSections.Add(face.OuterWire());
                     faces.Add(face);
@@ -263,8 +263,8 @@ public static partial class Operations
         {
             try
             {
-                var recoveryFaces = newSolid.Faces().Concat(loftSections.OfType<Wire>().Select(w => new Face(w)));
-                newSolid = new Solid(new Shell(recoveryFaces));
+                var recoveryFaces = newSolid.SelectFaces().Concat(loftSections.OfType<Wire>().Select(w => Face.Make(w)));
+                newSolid = Solid.Make(Shell.Make(recoveryFaces));
                 if (clean)
                     newSolid = newSolid.Clean();
                 if (!newSolid.IsValid)
@@ -280,7 +280,7 @@ public static partial class Operations
         if (clean)
             newSolid = newSolid.Clean();
 
-        return (Part)new Part([newSolid]).MadeBy(ShapeHistory.Of([newSolid]));
+        return (Part)new Part([newSolid]).MadeBy(ModelHistory.Of([newSolid]));
     }
 
     /// <summary>The permutations of 0 … n - 1 in lexicographic order, as Python's <c>itertools.permutations</c>.</summary>
@@ -421,7 +421,7 @@ public static partial class Operations
         // Phase 5: in builder mode the faces default to the pending faces, and the result is combined with mode.
         // Phase 7: a sheet Shell with SheetMetalParameters (and BuildSheet's pending sheets) is thickened as sheet material
         ArgumentNullException.ThrowIfNull(toThicken);
-        return ThickenCore(toThicken.Faces(), amount, options ?? ThickenOptions.Default);
+        return ThickenCore(toThicken.SelectFaces(), amount, options ?? ThickenOptions.Default);
     }
 
     /// <inheritdoc cref="Thicken(Shape, double, ThickenOptions?)"/>

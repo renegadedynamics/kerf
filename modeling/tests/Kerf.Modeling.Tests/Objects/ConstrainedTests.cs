@@ -20,14 +20,14 @@ public class ConstrainedArcsTests
     /// <summary>Whether every edge has a 3D curve (Python's <c>BRep_Tool.Curve_s(e.wrapped, ...)</c> check).</summary>
     internal static bool Have3DCurves(IEnumerable<Edge> edges) => edges.All(e =>
     {
-        return e.TopoEdge.TryGetCurve(out _, out _);
+        return e.TryGetCurve(out _, out _);
     });
 
     [Fact]
     public void EdgeToQualified2D()
     {
         var e = new Line(new Vector(0, 0), new Vector(1, 0)).Moved(new Location(new Vector(1, 1, 1)));
-        var arg = ConstrainedSolvers.EdgeToQualified2D(e.TopoEdge, Tangency.Unqualified);
+        var arg = ConstrainedSolvers.EdgeToQualified2D(e.Shape, Tangency.Unqualified);
         Assert.True(arg.First < arg.Last);
     }
 
@@ -44,7 +44,7 @@ public class ConstrainedArcsTests
     [Fact]
     public void AsGccArgEmptyEdge()
     {
-        var e = Assert.Throws<ArgumentException>(() => Edge.MakeConstrainedArcs(new Edge(), new Vector(1, 0), radius: 0.5));
+        var e = Assert.Throws<ArgumentException>(() => Edge.MakeConstrainedArcs(default(Edge), new Vector(1, 0), radius: 0.5));
         Assert.Contains("Can't create a qualified curve from empty edge", e.Message);
     }
 
@@ -82,7 +82,7 @@ public class ConstrainedArcsTests
     {
         // 2 points & radius
         Assert.Equal(2, Edge.MakeConstrainedArcs(new Vector(0, 0), new Vector(0, 0.5), radius: 0.5).Count);
-        Assert.Equal(2, Edge.MakeConstrainedArcs(new Vertex(0, 0, 0), new Vertex(0, 0.5, 0), radius: 0.5).Count);
+        Assert.Equal(2, Edge.MakeConstrainedArcs(Vertex.Make(0, 0, 0), Vertex.Make(0, 0.5, 0), radius: 0.5).Count);
         var edges = Edge.MakeConstrainedArcs(new Vector(0, 0), new Vector(0, 0.5), radius: 0.5);
         Assert.Equal(2, edges.Count);
         Assert.True(Have3DCurves(edges));
@@ -252,7 +252,7 @@ public class ConstrainedArcsTests
         Assert.True(pntCenter[0].IsClosed);
         Assert.True(Have3DCurves(pntCenter));
 
-        pntCenter = Edge.MakeConstrainedArcs(new Vector(-2.5, 1.5), center: new Vertex(-2, 1, 0).ToVector());
+        pntCenter = Edge.MakeConstrainedArcs(new Vector(-2.5, 1.5), center: Vertex.Make(-2, 1, 0).ToVector());
         Assert.Single(pntCenter);
         Assert.True(pntCenter[0].IsClosed);
     }
@@ -385,14 +385,14 @@ public class ConstrainedArcsTests
             .OrderBy(Axis.Y)[0];
         var eggTop = Edge.MakeConstrainedArcs(new Tangent(conCircleRight, Tangency.Enclosing), new Tangent(conCircleLeft, Tangency.Enclosing), radius: rTop)
             .OrderBy(Axis.Y)[^1];
-        var eggRight = new ThreePointArc(eggBottom.Vertices().OrderBy(Axis.X)[^1].ToVector(), conCircleRight.PositionAt(0),
-                                         eggTop.Vertices().OrderBy(Axis.X)[^1].ToVector());
-        var eggLeft = new ThreePointArc(eggBottom.Vertices().OrderBy(Axis.X)[0].ToVector(), conCircleLeft.PositionAt(0.5),
-                                        eggTop.Vertices().OrderBy(Axis.X)[0].ToVector());
+        var eggRight = new ThreePointArc(eggBottom.SelectVertices().OrderBy(Axis.X)[^1].ToVector(), conCircleRight.PositionAt(0),
+                                         eggTop.SelectVertices().OrderBy(Axis.X)[^1].ToVector());
+        var eggLeft = new ThreePointArc(eggBottom.SelectVertices().OrderBy(Axis.X)[0].ToVector(), conCircleLeft.PositionAt(0.5),
+                                        eggTop.SelectVertices().OrderBy(Axis.X)[0].ToVector());
 
-        var eggPlant = new Wire([eggLeft, eggTop, eggRight, eggBottom]);
+        var eggPlant = Wire.Make([eggLeft, eggTop, eggRight, eggBottom]);
         Assert.True(eggPlant.IsClosed);
-        var edges = eggPlant.Edges().OrderBy(eggPlant);
+        var edges = eggPlant.SelectEdges().OrderBy(eggPlant);
         Assert.Equal(4, Enumerable.Range(0, 4).Count(i => Vertex.CommonVertex(edges[i], edges[(i + 1) % 4]) is not null));
 
         // C1 continuity
@@ -426,7 +426,7 @@ public class ConstrainedLinesTests
     {
         var p0 = new Point2D(0, 0);
         var p1 = new Point2D(1, 0);
-        Assert.Equal(1, new Edge(ConstrainedSolvers.EdgeFromLine(p0, p1)).Length);
+        Assert.Equal(1, ConstrainedSolvers.EdgeFromLine(p0, p1).Length);
 
         var e = Assert.Throws<InvalidOperationException>(() => ConstrainedSolvers.EdgeFromLine(p0, p0));
         Assert.Contains("Failed to build edge from line contacts", e.Message);

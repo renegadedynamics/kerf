@@ -31,7 +31,7 @@ public partial class ExchangeTests
         Assert.True(Exporters3D.ExportBrep(block, stream).IsSuccess);
         stream.Position = 0;
         var read = Importers.ImportBrep(stream).Value;
-        Assert.IsType<Compound>(read);   // a Part's shape is a compound
+        Check.Is<Compound>(read);   // a Part's shape is a compound
         Check.AlmostEqual(block.Volume, read.Volume, 9);
 
         var path = Path.Combine(Path.GetTempPath(), $"b3d-{Guid.NewGuid():N}.brep");
@@ -49,10 +49,10 @@ public partial class ExchangeTests
     [Fact]
     public void NothingToExportSaysSo()
     {
-        var error = Exporters3D.ExportStep(new Compound(), new MemoryStream()).Error!;
+        var error = Exporters3D.ExportStep(default(Compound), new MemoryStream()).Error!;
         Assert.Equal("exchange.nothing-done", error.Code.Value);
         Assert.Equal("There is nothing to export: the Compound is empty", error.Message);
-        Assert.Equal("exchange.nothing-done", Exporters3D.ExportBrep(new Compound(), new MemoryStream()).Error!.Code.Value);
+        Assert.Equal("exchange.nothing-done", Exporters3D.ExportBrep(default(Compound), new MemoryStream()).Error!.Code.Value);
     }
 
     [Fact]
@@ -81,9 +81,9 @@ public partial class ExchangeTests
         Assert.True(Exporters3D.ExportStep(block, stream).IsSuccess);
         stream.Position = 0;
         var read = Importers.ImportStep(stream).Value;
-        Assert.IsType<Solid>(read);
+        Check.Is<Solid>(read);
         Check.AlmostEqual(block.Volume, read.Volume, 6);
-        Assert.Equal(block.Faces().Count, read.Faces().Count);
+        Assert.Equal(block.Faces().Count, read.SelectFaces().Count);
 
         var path = Path.Combine(Path.GetTempPath(), $"b3d-{Guid.NewGuid():N}.step");
         try
@@ -100,14 +100,14 @@ public partial class ExchangeTests
     [Fact]
     public void StepOfSeveralShapesIsACompound()
     {
-        var two = new Compound([new Box(1, 1, 1), new Box(1, 1, 1).Moved(new Location(new Vector(5.0, 0.0, 0.0)))]);
+        var two = Compound.Make([new Box(1, 1, 1), new Box(1, 1, 1).Moved(new Location(new Vector(5.0, 0.0, 0.0)))]);
         var stream = new MemoryStream();
         Exporters3D.ExportStep(two, stream);
         stream.Position = 0;
         var read = Importers.ImportStep(stream).Value;
-        Assert.IsType<Compound>(read);
-        Assert.Equal(2, read.Solids().Count);
-        Check.AlmostEqual(2.0, read.Solids().Sum(s => s.Volume), 9);
+        Check.Is<Compound>(read);
+        Assert.Equal(2, read.SelectSolids().Count);
+        Check.AlmostEqual(2.0, read.SelectSolids().Sum(s => s.Volume), 9);
     }
 
     [Fact]
@@ -278,7 +278,7 @@ public partial class ExchangeTests
             else
                 Assert.Contains("data:application/octet-stream;base64,", Encoding.UTF8.GetString(stream.ToArray()));
             stream.Position = 0;
-            var read = Assert.IsType<Compound>(Importers.ImportGltf(stream).Value);
+            var read = Check.Is<Compound>(Importers.ImportGltf(stream).Value);
             Assert.Equal("pair", read.Label);
             Assert.Equal(["box", "ball"], read.AssemblyChildren.Select(c => c.Label));
             Assert.Equal(new Color("red"), read.AssemblyChildren[0].Color);

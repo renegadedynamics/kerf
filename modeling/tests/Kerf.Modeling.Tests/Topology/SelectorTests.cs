@@ -15,15 +15,15 @@ public class SelectorTests
     public void ASelectorIsTheSelectionItDescribes()
     {
         var selector = new Selector(ShapeType.Face, [new Selector.OfGeomType(GeomType.Plane), new Selector.GroupByAxis(Axis.Z, -1)]);
-        Assert.Equal(Part.Faces().Where(GeomType.Plane).GroupBy(Axis.Z).Last().ToList<Shape>(), selector.Apply(Part).ToList());
+        Assert.Equal(Part.SelectFaces().Where(GeomType.Plane).GroupBy(Axis.Z).Last().ToList<Shape>(), selector.Apply(Part).ToList());
         Assert.Equal("Faces().Where(GeomType.Plane).GroupBy(Axis.Z).Last()", selector.ToString());
-        Assert.Equal(Part.Faces().Where(GeomType.Plane).GroupBy(Axis.Z)[^1].ToList<Shape>(), selector.Apply(Part).ToList());
+        Assert.Equal(Part.SelectFaces().Where(GeomType.Plane).GroupBy(Axis.Z)[^1].ToList<Shape>(), selector.Apply(Part).ToList());
     }
 
     [Fact]
     public void GroupsAreIndexedFromEitherEnd()
     {
-        var byX = Part.Faces().GroupBy(Axis.X);
+        var byX = Part.SelectFaces().GroupBy(Axis.X);
         Selector Group(int index) => new(ShapeType.Face, [new Selector.GroupByAxis(Axis.X, index)]);
         Assert.Equal(byX[2].ToList<Shape>(), Group(2).Apply(Part).ToList());
         Assert.Equal(byX[byX.Count - 2].ToList<Shape>(), Group(-2).Apply(Part).ToList());
@@ -39,7 +39,7 @@ public class SelectorTests
     {
         var holes = Enumerable.Range(0, 16).Select(k => (Shape)new Cylinder(1, 20).Moved(new Location(new Vector(-15.0 + 10 * (k % 4), -15.0 + 10 * (k / 4), 0.0))));
         var plate = new Box(40, 40, 2).Cut(holes);
-        var inner = plate.Faces().Where(GeomType.Cylinder).GroupBy(Axis.X)[1].GroupBy(Axis.Y)[2].Single();
+        var inner = plate.SelectFaces().Where(GeomType.Cylinder).GroupBy(Axis.X)[1].GroupBy(Axis.Y)[2].Single();
         var found = Selector.For(plate, inner);
         Assert.NotEmpty(found);
         // Among all the faces, the sides and the top and bottom also group along X, ahead of the second column
@@ -64,14 +64,14 @@ public class SelectorTests
         Assert.Equal(Make().GetHashCode(), Make().GetHashCode());
         Assert.NotEqual(Make(), new Selector(ShapeType.Edge, [new Selector.ParallelTo(Axis.Z)]));
         Assert.Equal("Edges().ParallelTo(Axis.Z).GroupBy(ShapeKey.Length).First()", Make().ToString());
-        Assert.Equal(Part.Edges().ParallelTo(Axis.Z).GroupBy(ShapeKey.Length).First().ToList<Shape>(), Make().Apply(Part).ToList());
+        Assert.Equal(Part.SelectEdges().ParallelTo(Axis.Z).GroupBy(ShapeKey.Length).First().ToList<Shape>(), Make().Apply(Part).ToList());
         Assert.Throws<ArgumentException>(() => new Selector(ShapeType.Solid, []));
     }
 
     [Fact]
     public void EveryFaceOfAPartHasASelector()
     {
-        var faces = Part.Faces();
+        var faces = Part.SelectFaces();
         foreach (var face in faces)
         {
             var found = Selector.For(Part, face);
@@ -79,7 +79,7 @@ public class SelectorTests
             foreach (var selector in found)
             {
                 var picked = Assert.Single(selector.Apply(Part));
-                Assert.True(picked.TopoShape.IsSame(face.TopoShape), $"{selector} picks another face");
+                Assert.True(picked.IsSame(face), $"{selector} picks another face");
             }
         }
     }
@@ -89,9 +89,9 @@ public class SelectorTests
     {
         var box = new Box(3, 2, 1);
         foreach (var edge in box.Edges())
-            Assert.True(Assert.Single(Selector.For(box, edge, count: 1)[0].Apply(box)).TopoShape.IsSame(edge.TopoShape));
+            Assert.True(Assert.Single(Selector.For(box, edge, count: 1)[0].Apply(box)).IsSame(edge));
         foreach (var vertex in box.Vertices())
-            Assert.True(Assert.Single(Selector.For(box, vertex, count: 1)[0].Apply(box)).TopoShape.IsSame(vertex.TopoShape));
+            Assert.True(Assert.Single(Selector.For(box, vertex, count: 1)[0].Apply(box)).IsSame(vertex));
     }
 
     [Fact]
@@ -111,17 +111,17 @@ public class SelectorTests
     public void AHoleIsPickedByWhatSetsItApart()
     {
         // The hole spans the part in Z, among the fillets' cylinders: told apart by a measure or a place
-        var hole = Part.Faces().Where(GeomType.Cylinder).WithValue(ShapeKey.Radius, 2).Single();
+        var hole = Part.SelectFaces().Where(GeomType.Cylinder).WithValue(ShapeKey.Radius, 2).Single();
         var found = Selector.For(Part, hole);
         Assert.NotEmpty(found);
-        Assert.All(found, s => Assert.True(Assert.Single(s.Apply(Part)).TopoShape.IsSame(hole.TopoShape)));
+        Assert.All(found, s => Assert.True(Assert.Single(s.Apply(Part)).IsSame(hole)));
     }
 
     [Fact]
     public void ASelectorSurvivesAChangeToTheModel()
     {
         // Found on one model, applied to a bigger one, it picks the corresponding face
-        var top = Part.Faces().Where(GeomType.Plane).GroupBy(Axis.Z).Last().Single();
+        var top = Part.SelectFaces().Where(GeomType.Plane).GroupBy(Axis.Z).Last().Single();
         var selector = Selector.For(Part, top)[0];
         var bigger = Ops.Fillet((new Box(30, 15, 6) - new Cylinder(3, 10)).Edges().GroupBy(Axis.Z).Last().Where(GeomType.Line), 1).Value;
         var picked = Assert.Single(selector.Apply(bigger));
@@ -140,7 +140,7 @@ public class SelectorTests
     {
         // Two coincident boxes side by side in a compound: either top face can't be told from the other by place alone
         var box = new Box(1, 1, 1);
-        var twins = new Compound([box, box.Moved(new Location(new Vector(0.0, 0.0, 0.0)))]);
-        Assert.Empty(Selector.For(twins, twins.Faces().GroupBy(Axis.Z).Last()[0]));
+        var twins = Compound.Make([box, box.Moved(new Location(new Vector(0.0, 0.0, 0.0)))]);
+        Assert.Empty(Selector.For(twins, twins.SelectFaces().GroupBy(Axis.Z).Last()[0]));
     }
 }

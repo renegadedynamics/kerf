@@ -32,7 +32,7 @@ internal static class CompoundObjects
     public static Sketch Rectangle(double w, double h) => new([Face.MakeRect(w, h)]);
 
     /// <summary>build123d's Circle(r): a Sketch of a disc.</summary>
-    public static Sketch Circle(double r) => new([new Face(Wire.MakeCircle(r))]);
+    public static Sketch Circle(double r) => new([Face.Make(Wire.MakeCircle(r))]);
 
     /// <summary>GridLocations(10, 10, 2, 2) * Circle(1) added to an empty Sketch.</summary>
     public static Shape GridOfCircles()
@@ -49,10 +49,10 @@ public class CompoundTests
     {
         var box1 = Solid.MakeBox(1, 1, 1);
         var box2 = Solid.MakeBox(1, 1, 1, new Plane(new Vector(1, 0, 0)));
-        var combined = new Compound([box1]).Fuse(new Shape[] { box2 }, glue: true);
+        var combined = Compound.Make([box1]).Fuse(new Shape[] { box2 }, glue: true);
         Assert.True(combined.IsValid);
         Check.AlmostEqual(2, combined.Volume, 5);
-        var fuzzy = new Compound([box1]).Fuse(new Shape[] { box2 }, tolerance: 1e-6);
+        var fuzzy = Compound.Make([box1]).Fuse(new Shape[] { box2 }, tolerance: 1e-6);
         Assert.True(fuzzy.IsValid);
         Check.AlmostEqual(2, fuzzy.Volume, 5);
     }
@@ -67,7 +67,7 @@ public class CompoundTests
     [Fact]
     public void Center()
     {
-        var testCompound = new Compound(
+        var testCompound = Compound.Make(
         [
             Solid.MakeBox(2, 2, 2).Located(new Location(new Vector(-1, -1, -1))),
             Solid.MakeBox(1, 1, 1).Located(new Location(new Vector(8.5, -0.5, -0.5))),
@@ -100,15 +100,15 @@ public class CompoundTests
     [Fact]
     public void Len()
     {
-        Assert.Equal(0, new Compound().Count);
-        var skt = Assert.IsAssignableFrom<Compound>(CompoundObjects.GridOfCircles());
+        Assert.Equal(0, default(Compound).Count);
+        var skt = Check.Is<Compound>(CompoundObjects.GridOfCircles());
         Assert.Equal(4, skt.Count);
     }
 
     [Fact]
     public void Iteration()
     {
-        var skt = Assert.IsAssignableFrom<Compound>(CompoundObjects.GridOfCircles());
+        var skt = Check.Is<Compound>(CompoundObjects.GridOfCircles());
         var children = skt.Children().ToList();
         for (int i = 0; i < children.Count; i++)
             for (int j = i + 1; j < children.Count; j++)
@@ -121,17 +121,17 @@ public class CompoundTests
         var skt = CompoundObjects.GridOfCircles();
         var skt2 = Compound.Assembly([skt]);
         Assert.Equal(1, skt2.Count);
-        var skt3 = Assert.IsAssignableFrom<Compound>(skt2.Unwrap(fully: false));
+        var skt3 = Check.Is<Compound>(skt2.Unwrap(fully: false));
         Assert.Equal(4, skt3.Count);
 
-        var comp1 = Assert.IsAssignableFrom<Compound>(new Compound().Unwrap());
+        var comp1 = Check.Is<Compound>(default(Compound).Unwrap());
         Assert.Equal(0, comp1.Count);
         var comp2 = Compound.Assembly([Face.MakeRect(1, 1)]);
         var comp3 = Compound.Assembly([comp2]);
         Assert.Equal(1, comp3.Count);
-        Assert.IsAssignableFrom<Compound>(comp3.Children().First());
+        Check.Is<Compound>(comp3.Children().First());
         var comp4 = comp3.Unwrap(fully: true);
-        Assert.IsAssignableFrom<Face>(comp4);
+        Check.Is<Face>(comp4);
     }
 
     [Fact]
@@ -148,7 +148,7 @@ public class CompoundTests
         var fls = baseShapes.GetTopLevelShapes();
         Assert.IsType<ShapeList<Shape>>(fls);
         Assert.Equal(20, fls.Count);
-        Assert.All(fls, s => Assert.IsAssignableFrom<Solid>(s));
+        Assert.All(fls, s => Check.Is<Solid>(s));
 
         var b1 = CompoundObjects.Box(1, 1, 1).SingleSolid();
         Assert.True(b1.GetTopLevelShapes()[0] == b1);
@@ -161,8 +161,8 @@ public class CompoundAlgebraTests
     [Fact]
     public void AddNoneReturnsSelf()
     {
-        var part = new Part(Solid.MakeBox(1, 1, 1).KernelShape);
-        Assert.Same(part, part + Array.Empty<Shape>());
+        var part = new Part(Solid.MakeBox(1, 1, 1));
+        Check.Same(part, part + Array.Empty<Shape>());
         Assert.Throws<ArgumentNullException>(() => part + (Shape)null!);
     }
 
@@ -170,30 +170,30 @@ public class CompoundAlgebraTests
     [Fact]
     public void Adding1dContentThatFusesToOneEdge()
     {
-        var collinear = new Compound([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))]);
+        var collinear = Compound.Make([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))]);
         var result = collinear + Edge.MakeLine(new Vector(1, 0), new Vector(2, 0));
 
-        Assert.IsAssignableFrom<Curve>(result);
-        Assert.Single(result.Edges());
-        Check.AlmostEqual(2, result.Edges()[0].Length, 5);
+        Check.Is<Compound>(result);
+        Assert.Single(result.SelectEdges());
+        Check.AlmostEqual(2, result.SelectEdges()[0].Length, 5);
     }
 
     [Fact]
     public void Adding1dContentThatStaysApart()
     {
-        var separate = new Compound([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))]);
+        var separate = Compound.Make([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))]);
         var result = separate + Edge.MakeLine(new Vector(5, 5), new Vector(6, 5));
-        Assert.Equal(2, result.Edges().Count);
+        Assert.Equal(2, result.SelectEdges().Count);
     }
 
     [Fact]
     public void IntersectionWithNoOverlapIsEmpty()
     {
-        var left = new Compound([Solid.MakeBox(1, 1, 1)]);
-        var right = new Compound([Solid.MakeBox(1, 1, 1, new Plane(new Vector(10, 0, 0)))]);
+        var left = Compound.Make([Solid.MakeBox(1, 1, 1)]);
+        var right = Compound.Make([Solid.MakeBox(1, 1, 1, new Plane(new Vector(10, 0, 0)))]);
         var result = left & right;
 
-        Assert.IsAssignableFrom<Compound>(result);
+        Check.Is<Compound>(result);
         Assert.True(result.IsEmpty);
     }
 }
@@ -203,16 +203,16 @@ public class CompoundAccessorsTests
     [Fact]
     public void CompoundAndCompounds()
     {
-        var wrapped = new Compound([Solid.MakeBox(1, 1, 1)]);
+        var wrapped = Compound.Make([Solid.MakeBox(1, 1, 1)]);
         Assert.Single(wrapped.Compounds());
-        Assert.IsAssignableFrom<Compound>(wrapped.SingleCompound());
+        Check.Is<Compound>(wrapped.SingleCompound());
     }
 
     /// <summary>A Part can wrap a bare Solid rather than a TopoDS_Compound.</summary>
     [Fact]
     public void NoCompoundsWhenNotWrappingOne()
     {
-        var part = new Part(Solid.MakeBox(1, 1, 1).KernelShape);
+        var part = new Part(Solid.MakeBox(1, 1, 1));
         Assert.Empty(part.Compounds());
         var error = Assert.Throws<InvalidOperationException>(() => part.SingleCompound());
         Assert.Contains("found 0", error.Message);

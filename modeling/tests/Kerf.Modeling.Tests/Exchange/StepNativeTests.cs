@@ -33,7 +33,7 @@ public partial class StepNativeTests
         yield return ("loft", () => Ops.Loft([new Circle(5), new Rectangle(6, 4).Moved(new Location(new Vector(0.0, 0.0, 10.0)))]).Value);
         yield return ("face", () => Face.MakeRect(10, 6));
         yield return ("wire", () => new Polyline(new Vector(0.0, 0.0), new Vector(10.0, 0.0), new Vector(10.0, 5.0), new Vector(3.0, 8.0)));
-        yield return ("compound", () => new Compound([new Box(1, 1, 1), new Sphere(1).Moved(new Location(new Vector(4.0, 0.0, 0.0)))]));
+        yield return ("compound", () => Compound.Make([new Box(1, 1, 1), new Sphere(1).Moved(new Location(new Vector(4.0, 0.0, 0.0)))]));
     }
 
     public static TheoryData<string> Names()
@@ -78,7 +78,7 @@ public partial class StepNativeTests
     {
         var read = Importers.ImportStep(Path.Combine(Folder, name + ".step")).Value;
         var expected = File.ReadAllText(Path.Combine(Folder, name + ".read.brep"));
-        Assert.Equal(expected, Encoding.ASCII.GetString(Extras.WriteBRep(read.KernelShape)));
+        Assert.Equal(expected, Encoding.ASCII.GetString(Extras.WriteBRep(read)));
     }
 
 }

@@ -65,7 +65,7 @@ public static class Importers
             return Result<Shape>.Failure(error with { Message = $"Could not import {name}: it isn't readable STEP data. {error.Message}" });
         }
         var root = read.Value;
-        return root.Shape is null && root.Children.IsEmpty ? new Compound() : Shape.Result(FromModel(root));
+        return root.Shape is null && root.Children.IsEmpty ? default(Compound) : (FromModel(root));
     }
 
     private static Shape FromModel(ModelNode node)
@@ -99,7 +99,7 @@ public static class Importers
             Unit = ExchangeUnits.LengthUnit(modelUnit, "model_scale"),
         };
         // The face holding the triangles read, with no surface
-        return Stl.Read(stream, options, cancellationToken).Map(mesh => new Face((global::Kerf.Topology.Face)mesh.TriangulatedShape));
+        return Stl.Read(stream, options, cancellationToken).Map(mesh => (Face)mesh.TriangulatedShape);
     }
 
     /// <summary>A face holding the triangles of an STL file.</summary>

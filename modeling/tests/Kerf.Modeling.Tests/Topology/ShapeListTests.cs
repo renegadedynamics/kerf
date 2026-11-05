@@ -12,7 +12,7 @@
 // - Part of test_equal (equality with AlwaysEqual): Python's __eq__ cooperation.
 // - iadd_*: the in-place identity check, as ShapeList is immutable (+= rebinds to a new list).
 // test_vertex, test_edge, … test_compound are Vertex_, Edge_, … Compound_, as a member can't share a type's name.
-// filter_by_value_radius_over_mixed_faces: the fillet() operation on a Part is translated to Shape3D.Fillet.
+// filter_by_value_radius_over_mixed_faces: the fillet() operation on a Part is translated to IShape3D.Fillet.
 // group_by's BuildPart with GridLocations/PolarLocations is replaced by the same boxes placed with Pos.
 namespace Build123d.Tests.Topology;
 
@@ -30,7 +30,7 @@ public class ShapeListTests
     [Fact]
     public void SortBy()
     {
-        var faces = Solid.MakeBox(1, 2, 3).Faces().OrderByDescending(ShapeKey.Area);
+        var faces = Solid.MakeBox(1, 2, 3).SelectFaces().OrderByDescending(ShapeKey.Area);
         Check.AlmostEqual(2, faces[^1].Area, 5);
     }
 
@@ -38,7 +38,7 @@ public class ShapeListTests
     public void SortByLambda()
     {
         var c = Solid.MakeCone(2, 1, 2);
-        var flatFaces = c.Faces().Where(GeomType.Plane);
+        var flatFaces = c.SelectFaces().Where(GeomType.Plane);
         var sortedFlatFaces = flatFaces.OrderBy(f => f.Area).ToShapeList();
         Check.AlmostEqual(Math.PI * 1, sortedFlatFaces[0].Area, 5);
         Check.AlmostEqual(Math.PI * 4, sortedFlatFaces[^1].Area, 5);
@@ -58,7 +58,7 @@ public class ShapeListTests
     [Fact]
     public void FilterByGeomtype()
     {
-        var nonPlanarFaces = Solid.MakeCylinder(1, 1).Faces().WhereNot(GeomType.Plane);
+        var nonPlanarFaces = Solid.MakeCylinder(1, 1).SelectFaces().WhereNot(GeomType.Plane);
         Assert.Single(nonPlanarFaces);
         Check.AlmostEqual(2 * Math.PI, nonPlanarFaces[0].Area, 5);
     }
@@ -67,9 +67,9 @@ public class ShapeListTests
     public void FilterByAxis()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        Assert.Equal(2, box.Faces().ParallelTo(Axis.X).Count);
-        Assert.Equal(4, box.Edges().ParallelTo(Axis.X).Count);
-        Assert.Empty(box.Vertices().ParallelTo(Axis.X));
+        Assert.Equal(2, box.SelectFaces().ParallelTo(Axis.X).Count);
+        Assert.Equal(4, box.SelectEdges().ParallelTo(Axis.X).Count);
+        Assert.Empty(box.SelectVertices().ParallelTo(Axis.X));
     }
 
     [Fact]
@@ -78,12 +78,12 @@ public class ShapeListTests
         var c1 = Cylinder(1, 3);
         var c2 = new Rotation(90, 0, 0) * Cylinder(1, 3);
 
-        Assert.Equal(2, c1.Faces().ParallelTo(Plane.XY).Count);
-        Assert.Equal(2, c1.Edges().ParallelTo(Plane.XY).Count);
-        Assert.Equal(2, c2.Faces().ParallelTo(Plane.XZ).Count);
-        Assert.Equal(2, c2.Edges().ParallelTo(Plane.XZ).Count);
-        Assert.Equal(2, c1.Wires().ParallelTo(Plane.XY).Count);
-        Assert.Equal(2, c2.Wires().ParallelTo(Plane.XZ).Count);
+        Assert.Equal(2, c1.SelectFaces().ParallelTo(Plane.XY).Count);
+        Assert.Equal(2, c1.SelectEdges().ParallelTo(Plane.XY).Count);
+        Assert.Equal(2, c2.SelectFaces().ParallelTo(Plane.XZ).Count);
+        Assert.Equal(2, c2.SelectEdges().ParallelTo(Plane.XZ).Count);
+        Assert.Equal(2, c1.SelectWires().ParallelTo(Plane.XY).Count);
+        Assert.Equal(2, c2.SelectWires().ParallelTo(Plane.XZ).Count);
     }
 
     [Fact]
@@ -104,21 +104,21 @@ public class ShapeListTests
     {
         var box1 = Box(2, 2, 2);
         var box2 = Box(2, 2, 2).Translate(new Vector(1, 1, 1));
-        Assert.Equal(6, (box1 + box2).Edges().Where(e => e.IsInterior).ToShapeList().Count);
-        Assert.Equal(3, (box1 - box2).Edges().Where(e => e.IsInterior).ToShapeList().Count);
+        Assert.Equal(6, (box1 + box2).SelectEdges().Where(e => e.IsInterior).ToShapeList().Count);
+        Assert.Equal(3, (box1 - box2).SelectEdges().Where(e => e.IsInterior).ToShapeList().Count);
     }
 
     [Fact]
     public void FilterByValueExactGeometry()
     {
         var box = Box(10, 20, 30);
-        var edges = box.Edges().WithValue(e => e.Length, 30);
+        var edges = box.SelectEdges().WithValue(e => e.Length, 30);
         Assert.IsType<ShapeList<Edge>>(edges);
         Assert.Equal(4, edges.Count);
         Assert.All(edges, e => Assert.True(Math.Abs(e.Length - 30) < 1e-9));
-        Assert.Equal(2, box.Faces().WithValue(f => f.Area, 600).Count);
-        Assert.Empty(box.Edges().WithValue(e => e.Length, 25));
-        var rest = box.Edges().WithoutValue(e => e.Length, 30);
+        Assert.Equal(2, box.SelectFaces().WithValue(f => f.Area, 600).Count);
+        Assert.Empty(box.SelectEdges().WithValue(e => e.Length, 25));
+        var rest = box.SelectEdges().WithoutValue(e => e.Length, 30);
         Assert.Equal([10, 10, 10, 10, 20, 20, 20, 20], rest.Select(e => Math.Round(e.Length)).Order());
     }
 
@@ -137,7 +137,7 @@ public class ShapeListTests
     [Fact]
     public void FilterByValueTolerance()
     {
-        var edges = Box(10, 20, 30.001).Edges();
+        var edges = Box(10, 20, 30.001).SelectEdges();
         Assert.Empty(edges.WithValue(e => e.Length, 30));
         Assert.Empty(edges.WithValue(e => e.Length, 30, tolerance: 1e-4));
         Assert.Equal(4, edges.WithValue(e => e.Length, 30, tolerance: 1e-2).Count);
@@ -149,7 +149,7 @@ public class ShapeListTests
     [Fact]
     public void FilterByValueCallable()
     {
-        var top = Box(10, 20, 30).Faces().WithValue(f => f.Center().Z, 15);
+        var top = Box(10, 20, 30).SelectFaces().WithValue(f => f.Center().Z, 15);
         Assert.Single(top);
         Check.AlmostEqual(15, top[0].Center().Z, 5);
         Check.AlmostEqual(200, top[0].Area, 5);
@@ -158,20 +158,20 @@ public class ShapeListTests
     [Fact]
     public void FilterByValueNonNumeric()
     {
-        var faces = Cylinder(1, 3).Faces();
+        var faces = Cylinder(1, 3).SelectFaces();
         Assert.Equal(2, faces.WithValue(f => f.GeomType, GeomType.Plane).Count);
         Assert.Single(faces.WithValue(f => f.GeomType, GeomType.Cylinder));
-        var concave = Pocket().Edges().WithValue(e => e.Convexity, Convexity.Concave);
+        var concave = Pocket().SelectEdges().WithValue(e => e.Convexity, Convexity.Concave);
         Assert.Equal(8, concave.Count);
     }
 
-    // build123d's fillet() operation on a Part is the Part's fillet, Shape3D.Fillet here
+    // build123d's fillet() operation on a Part is the Part's fillet, IShape3D.Fillet here
     [Fact]
     public void FilterByValueRadiusOverMixedFaces()
     {
         var box = Box(20, 20, 10);
-        var part = box.Fillet(2, box.Edges().ParallelTo(Axis.Z)) - Cylinder(3, 10);
-        var faces = part.Faces();
+        var part = box.Fillet(2, box.SelectEdges().ParallelTo(Axis.Z)) - Cylinder(3, 10);
+        var faces = part.SelectFaces();
         var fillets = faces.WithValue(f => f.Radius, 2);
         Assert.Equal(4, fillets.Count);
         Assert.All(fillets, f => Assert.Equal(GeomType.Cylinder, f.GeomType));
@@ -190,7 +190,7 @@ public class ShapeListTests
     [Fact]
     public void FirstLast()
     {
-        var vertices = Solid.MakeBox(1, 1, 1).Vertices().OrderBy(new Axis(new Vector(0, 0, 0), new Vector(1, 1, 1)));
+        var vertices = Solid.MakeBox(1, 1, 1).SelectVertices().OrderBy(new Axis(new Vector(0, 0, 0), new Vector(1, 1, 1)));
         Check.AlmostEqual(new Vector(1, 1, 1), new Vector(vertices.Last()), 5);
         Check.AlmostEqual(new Vector(0, 0, 0), new Vector(vertices.First()), 5);
     }
@@ -198,27 +198,27 @@ public class ShapeListTests
     [Fact]
     public void GroupBy()
     {
-        var vertices = Solid.MakeBox(1, 1, 1).Vertices().GroupBy(Axis.Z);
+        var vertices = Solid.MakeBox(1, 1, 1).SelectVertices().GroupBy(Axis.Z);
         Assert.Equal(4, vertices[0].Count);
 
-        var edges = Solid.MakeBox(1, 1, 1).Edges().GroupBy(ShapeKey.Length);
+        var edges = Solid.MakeBox(1, 1, 1).SelectEdges().GroupBy(ShapeKey.Length);
         Assert.Equal(12, edges[0].Count);
 
-        var circles = Solid.MakeCone(2, 1, 2).Edges().Where(GeomType.Circle).GroupBy(ShapeKey.Radius);
+        var circles = Solid.MakeCone(2, 1, 2).SelectEdges().Where(GeomType.Circle).GroupBy(ShapeKey.Radius);
         Assert.Single(circles[0]);
 
-        var smallest = Solid.MakeCone(2, 1, 2).Edges().Where(GeomType.Circle).GroupBy(ShapeKey.Radius).First();
+        var smallest = Solid.MakeCone(2, 1, 2).SelectEdges().Where(GeomType.Circle).GroupBy(ShapeKey.Radius).First();
         Check.AlmostEqual(2 * Math.PI, smallest[0].Length, 5);
 
-        var byDistance = Solid.MakeBox(1, 1, 1).Vertices().GroupBy(ShapeKey.Distance);
+        var byDistance = Solid.MakeBox(1, 1, 1).SelectVertices().GroupBy(ShapeKey.Distance);
         Check.AlmostEqual(new Vector(1, 1, 1), new Vector(byDistance[^1][0]), 5);
 
         var box = Solid.MakeBox(1, 1, 2);
-        Assert.Equal(2, box.Faces().GroupBy(ShapeKey.Area)[0].Count);
-        Assert.Equal(4, box.Faces().GroupBy(ShapeKey.Area)[1].Count);
+        Assert.Equal(2, box.SelectFaces().GroupBy(ShapeKey.Area)[0].Count);
+        Assert.Equal(4, box.SelectFaces().GroupBy(ShapeKey.Area)[1].Count);
 
         var line = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 1, 2));
-        var verticesByLine = box.Vertices().GroupBy(line);
+        var verticesByLine = box.SelectVertices().GroupBy(line);
         Assert.Single(verticesByLine[0]);
         Assert.Equal(2, verticesByLine[1].Count);
         Assert.Single(verticesByLine[2]);
@@ -238,7 +238,7 @@ public class ShapeListTests
             var angle = 36.0 * k * Math.PI / 180;
             solids.Add(new Location(new Vector(100 * Math.Cos(angle), 100 * Math.Sin(angle), 0), 36.0 * k) * Box(1, 1, 2));
         }
-        var boxes = (solids[0] + solids.Skip(1)).Solids();
+        var boxes = (solids[0] + solids.Skip(1)).SelectSolids();
         Assert.Equal(10, boxes.GroupBy(ShapeKey.Volume)[^1].Count);
         Assert.Equal(9, boxes.GroupBy(ShapeKey.Volume).First().Count);
     }
@@ -264,11 +264,11 @@ public class ShapeListTests
     {
         var box1 = Box(2, 2, 2);
         var box2 = Box(2, 2, 2).Translate(new Vector(1, 1, 1));
-        var g1 = (box1 + box2).Edges().GroupByValue(e => e.IsInterior);
+        var g1 = (box1 + box2).SelectEdges().GroupByValue(e => e.IsInterior);
         Assert.Equal(6, g1.Group(true).Count);
         Assert.Equal(24, g1.Group(false).Count);
 
-        var g2 = (box1 - box2).Edges().GroupByValue(e => e.IsInterior);
+        var g2 = (box1 - box2).SelectEdges().GroupByValue(e => e.IsInterior);
         Assert.Equal(3, g2.Group(true).Count);
         Assert.Equal(18, g2.Group(false).Count);
     }
@@ -293,8 +293,8 @@ public class ShapeListTests
     {
         var box = Box(1, 2, 3);
         var obj = new Vector(-0.2, 0.1, 0.5);
-        var edges = box.Edges().OrderByDistanceTo(obj);
-        var distances = edges.Select(e => new Vertex(obj).DistanceTo(e)).ToList();
+        var edges = box.SelectEdges().OrderByDistanceTo(obj);
+        var distances = edges.Select(e => Vertex.Make(obj).DistanceTo(e)).ToList();
         for (int i = 1; i < edges.Count; i++)
             Assert.True(distances[i] >= distances[i - 1]);
     }
@@ -304,20 +304,20 @@ public class ShapeListTests
     {
         var box = Box(1, 2, 3);
         var obj = new Vector(-0.2, 0.1, 0.5);
-        var edges = box.Edges().OrderByDescendingDistanceTo(obj);
-        var distances = edges.Select(e => new Vertex(obj).DistanceTo(e)).ToList();
+        var edges = box.SelectEdges().OrderByDescendingDistanceTo(obj);
+        var distances = edges.Select(e => Vertex.Make(obj).DistanceTo(e)).ToList();
         for (int i = 1; i < edges.Count; i++)
             Assert.True(distances[i] <= distances[i - 1]);
     }
 
     [Fact]
-    public void DistanceEqual() => Assert.Equal(12, Box(1, 1, 1).Edges().OrderByDistanceTo(new Vector(0, 0, 0)).Count);
+    public void DistanceEqual() => Assert.Equal(12, Box(1, 1, 1).SelectEdges().OrderByDistanceTo(new Vector(0, 0, 0)).Count);
 
     [Fact]
     public void TopologicalDistanceFaces()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        var faces = box.Faces();
+        var faces = box.SelectFaces();
         var topFace = faces.OrderBy(Axis.Z)[^1];
         var bottomFace = faces.OrderBy(Axis.Z)[0];
 
@@ -331,8 +331,8 @@ public class ShapeListTests
     [Fact]
     public void TopologicalDistanceEdges()
     {
-        var wire = Kerf.Modeling.Face.MakeRect(2, 1).OuterWire();
-        var edges = wire.Edges();
+        var wire = Face.MakeRect(2, 1).OuterWire();
+        var edges = wire.SelectEdges();
         var topEdge = edges.OrderBy(Axis.Y)[^1];
         var bottomEdge = edges.OrderBy(Axis.Y)[0];
 
@@ -347,7 +347,7 @@ public class ShapeListTests
     public void TopologicalDistanceVertices()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        var vertices = box.Vertices();
+        var vertices = box.SelectVertices();
         var referenceVertex = vertices.OrderBy(Axis.Z)[^1];
         var oppositeVertex = vertices.OrderByDescendingDistanceTo(referenceVertex)[0];
 
@@ -361,8 +361,8 @@ public class ShapeListTests
     [Fact]
     public void TopologicalDistanceWires()
     {
-        var face = Kerf.Modeling.Face.MakeRect(1, 1) - new Face(Kerf.Modeling.Wire.MakeCircle(0.2));
-        var wires = face.Wires();
+        var face = Face.MakeRect(1, 1) - Face.Make(Wire.MakeCircle(0.2));
+        var wires = face.SelectWires();
 
         var wireGroups = wires.GroupByValue(TopologyUtils.TopoDistanceTo(wires[0]));
 
@@ -375,7 +375,7 @@ public class ShapeListTests
     public void TopologicalDistanceMultipleSources()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        var faces = box.Faces();
+        var faces = box.SelectFaces();
         var topFace = faces.OrderBy(Axis.Z)[^1];
         var bottomFace = faces.OrderBy(Axis.Z)[0];
 
@@ -390,7 +390,7 @@ public class ShapeListTests
         // A moved copy keeps the unmoved container as topo_parent; peers are matched by TShape so the graph is still
         // reachable
         var movedBox = new Pos(x: 10) * new Part([Box(1, 1, 1)]).SingleSolid();
-        var edges = movedBox.Edges();
+        var edges = movedBox.SelectEdges();
         var edgeGroups = edges.GroupByValue(TopologyUtils.TopoDistanceTo(edges[0]));
 
         Assert.Equal([1, 4, 6, 1], edgeGroups.Select(g => g.Count));
@@ -407,15 +407,15 @@ public class ShapeListTests
     public void TopologicalDistanceRejectsMixedParentAndOrphanSources()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        var orphan = Kerf.Modeling.Face.MakeRect(1, 1);
-        Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo([box.Faces()[0], orphan]));
+        var orphan = Face.MakeRect(1, 1);
+        Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo([box.SelectFaces()[0], orphan]));
     }
 
     [Fact]
     public void TopologicalDistanceRequiresUniformShapeType()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        ShapeList<Shape> mixed = [box.Faces()[0], box.Edges()[0]];
+        ShapeList<Shape> mixed = [box.SelectFaces()[0], box.SelectEdges()[0]];
         Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo(mixed));
     }
 
@@ -428,10 +428,10 @@ public class ShapeListTests
         var e = Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo([]));
         Assert.Contains("empty object", e.Message);
 
-        e = Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo(new Compound([box1, box2])));
+        e = Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo(Compound.Make([box1, box2])));
         Assert.Contains("not supported", e.Message);
 
-        e = Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo([box1.Faces()[0], box2.Faces()[0]]));
+        e = Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo([box1.SelectFaces()[0], box2.SelectFaces()[0]]));
         Assert.Contains("the same parent shape", e.Message);
     }
 
@@ -440,15 +440,15 @@ public class ShapeListTests
     {
         var box1 = Solid.MakeBox(1, 1, 1);
         var box2 = Solid.MakeBox(1, 1, 1, new Plane(new Vector(2, 0, 0)));
-        var key = TopologyUtils.TopoDistanceTo(box1.Faces()[0]);
+        var key = TopologyUtils.TopoDistanceTo(box1.SelectFaces()[0]);
 
-        var e = Assert.Throws<ArgumentException>(() => key(box1.Edges()[0]));
+        var e = Assert.Throws<ArgumentException>(() => key(box1.SelectEdges()[0]));
         Assert.Contains("same type", e.Message);
 
-        e = Assert.Throws<ArgumentException>(() => key(Kerf.Modeling.Face.MakeRect(1, 1)));
+        e = Assert.Throws<ArgumentException>(() => key(Face.MakeRect(1, 1)));
         Assert.Contains("selected from a parent shape", e.Message);
 
-        e = Assert.Throws<ArgumentException>(() => key(box2.Faces()[0]));
+        e = Assert.Throws<ArgumentException>(() => key(box2.SelectFaces()[0]));
         Assert.Contains("the same parent shape", e.Message);
     }
 
@@ -456,12 +456,12 @@ public class ShapeListTests
     public void FilterByConvexity()
     {
         var box = Box(1, 1, 1);
-        Assert.Equal(12, box.Edges().Where(Convexity.Convex).Count);
-        Assert.Empty(box.Edges().WhereNot(Convexity.Convex));
+        Assert.Equal(12, box.SelectEdges().Where(Convexity.Convex).Count);
+        Assert.Empty(box.SelectEdges().WhereNot(Convexity.Convex));
         var pocket = Pocket();
-        Assert.Equal(8, pocket.Edges().Where(Convexity.Concave).Count);
-        Assert.Equal(11, pocket.Faces().Where(Convexity.Smooth).Count);
-        Assert.Equal(4, pocket.Vertices().Where(Convexity.Saddle).Count);
+        Assert.Equal(8, pocket.SelectEdges().Where(Convexity.Concave).Count);
+        Assert.Equal(11, pocket.SelectFaces().Where(Convexity.Smooth).Count);
+        Assert.Equal(4, pocket.SelectVertices().Where(Convexity.Saddle).Count);
     }
 
     [Fact]
@@ -474,7 +474,7 @@ public class ShapeListTests
     [Fact]
     public void GroupByConvexity()
     {
-        var groups = Pocket().Edges().GroupByConvexity();
+        var groups = Pocket().SelectEdges().GroupByConvexity();
         Assert.Equal([16, 8], groups.Select(g => g.Count));
         Assert.Equal(8, groups.Group(Convexity.Concave).Count);
         Assert.Equal(16, groups.Group(Convexity.Convex).Count);
@@ -492,20 +492,20 @@ public class ShapeListTests
         Check.AlmostEqual(new Vector(1, 0, 0), sl.SingleVertex().ToVector(), 5);
         var e = Assert.Throws<InvalidOperationException>(() => TwoRects().SingleVertex());
         Assert.Contains("Expected exactly one vertex", e.Message);
-        Assert.Empty(new Edge().Vertices());
+        Assert.Empty(default(Edge).SelectVertices());
     }
 
     [Fact]
     public void Edges()
     {
         Assert.Equal(8, TwoRects().Edges().Count);
-        Assert.Empty(new Edge().Edges());
+        Assert.Empty(default(Edge).SelectEdges());
     }
 
     [Fact]
     public void Edge_()
     {
-        ShapeList<Edge> sl = [Kerf.Modeling.Edge.MakeCircle(1)];
+        ShapeList<Edge> sl = [Edge.MakeCircle(1)];
         Check.AlmostEqual(2 * Math.PI, sl.SingleEdge().Length, 5);
         var e = Assert.Throws<InvalidOperationException>(() => TwoRects().SingleEdge());
         Assert.Contains("Expected exactly one edge", e.Message);
@@ -515,13 +515,13 @@ public class ShapeListTests
     public void Wires()
     {
         Assert.Equal(2, TwoRects().Wires().Count);
-        Assert.Empty(new Wire().Wires());
+        Assert.Empty(default(Wire).SelectWires());
     }
 
     [Fact]
     public void Wire_()
     {
-        ShapeList<Wire> sl = [Kerf.Modeling.Wire.MakeCircle(1)];
+        ShapeList<Wire> sl = [Wire.MakeCircle(1)];
         Check.AlmostEqual(2 * Math.PI, sl.SingleWire().Length, 5);
         var e = Assert.Throws<InvalidOperationException>(() => TwoRects().SingleWire());
         Assert.Contains("Expected exactly one wire", e.Message);
@@ -533,13 +533,13 @@ public class ShapeListTests
     public void Faces()
     {
         Assert.Equal(9, BoxAndCylinder().Faces().Count);
-        Assert.Empty(new Face().Faces());
+        Assert.Empty(default(Face).SelectFaces());
     }
 
     [Fact]
     public void Face_()
     {
-        ShapeList<Shape> sl = [new Vertex(1, 1, 1), Kerf.Modeling.Edge.MakeLine(new Vector(0, 0), new Vector(1, 1)), Kerf.Modeling.Face.MakeRect(2, 1)];
+        ShapeList<Shape> sl = [Vertex.Make(1, 1, 1), Edge.MakeLine(new Vector(0, 0), new Vector(1, 1)), Face.MakeRect(2, 1)];
         Check.AlmostEqual(2, sl.SingleFace().Area, 5);
         var e = Assert.Throws<InvalidOperationException>(() => BoxAndCylinder().SingleFace());
         Assert.Contains("Expected exactly one face", e.Message);
@@ -549,13 +549,13 @@ public class ShapeListTests
     public void Shells()
     {
         Assert.Equal(2, BoxAndCylinder().Shells().Count);
-        Assert.Empty(new Shell().Shells());
+        Assert.Empty(default(Shell).SelectShells());
     }
 
     [Fact]
     public void Shell_()
     {
-        ShapeList<Shape> sl = [new Vertex(1, 1, 1), Solid.MakeBox(1, 1, 1)];
+        ShapeList<Shape> sl = [Vertex.Make(1, 1, 1), Solid.MakeBox(1, 1, 1)];
         Check.AlmostEqual(6, sl.SingleShell().Area, 5);
         var e = Assert.Throws<InvalidOperationException>(() => BoxAndCylinder().SingleShell());
         Assert.Contains("Expected exactly one shell", e.Message);
@@ -565,7 +565,7 @@ public class ShapeListTests
     public void Solids()
     {
         Assert.Equal(2, BoxAndCylinder().Solids().Count);
-        Assert.Empty(new Solid().Solids());
+        Assert.Empty(default(Solid).SelectSolids());
     }
 
     [Fact]
@@ -573,7 +573,7 @@ public class ShapeListTests
     {
         var e = Assert.Throws<InvalidOperationException>(() => BoxAndCylinder().SingleSolid());
         Assert.Contains("Expected exactly one solid", e.Message);
-        ShapeList<Shape> sl = [Solid.MakeBox(1, 2, 3), new Vertex(1, 1, 1)];
+        ShapeList<Shape> sl = [Solid.MakeBox(1, 2, 3), Vertex.Make(1, 1, 1)];
         Check.AlmostEqual(6, sl.SingleSolid().Volume, 5);
     }
 
@@ -584,7 +584,7 @@ public class ShapeListTests
     public void Compounds()
     {
         Assert.Equal(2, BoxAndCylinderParts().Compounds().Count);
-        Assert.Empty(new Compound().Compounds());
+        Assert.Empty(default(Compound).Compounds());
     }
 
     [Fact]
@@ -592,7 +592,7 @@ public class ShapeListTests
     {
         var e = Assert.Throws<InvalidOperationException>(() => BoxAndCylinderParts().SingleCompound());
         Assert.Contains("Expected exactly one compound", e.Message);
-        ShapeList<Shape> sl = [new Part([Box(1, 2, 3)]), new Vertex(1, 1, 1)];
+        ShapeList<Shape> sl = [new Part([Box(1, 2, 3)]), Vertex.Make(1, 1, 1)];
         Check.AlmostEqual(6, sl.SingleCompound().Volume, 5);
     }
 
@@ -621,7 +621,7 @@ public class ShapeListTests
     {
         var empty = ShapeList<Shape>.Empty.Center();
         Assert.Equal((0.0, 0.0, 0.0), (empty.X, empty.Y, empty.Z));
-        var center = new ShapeList<Vertex>(Enumerable.Range(0, 3).Select(i => new Vertex(i, 0, 0))).Center();
+        var center = new ShapeList<Vertex>(Enumerable.Range(0, 3).Select(i => Vertex.Make(i, 0, 0))).Center();
         Assert.Equal((1.0, 0.0, 0.0), (center.X, center.Y, center.Z));
     }
 }
@@ -633,9 +633,9 @@ public class ShapeListAdditionTests
     public ShapeListAdditionTests()
     {
         static Solid Box() => Solid.MakeBox(1, 1, 1, new Plane(new Vector(-0.5, -0.5, -0.5)));
-        _face1 = Box().Faces().OrderBy(Axis.Z)[0];    // bottom face
-        _face2 = Box().Faces().OrderBy(Axis.Z)[^1];   // top face
-        _face3 = Box().Faces().OrderBy(Axis.X)[0];    // side face
+        _face1 = Box().SelectFaces().OrderBy(Axis.Z)[0];    // bottom face
+        _face2 = Box().SelectFaces().OrderBy(Axis.Z)[^1];   // top face
+        _face3 = Box().SelectFaces().OrderBy(Axis.X)[0];    // side face
     }
 
     [Fact]
@@ -682,7 +682,7 @@ public class ShapeListAdditionTests
     public void SetOperatorsPreserveOrder()
     {
         // Intersect and Except keep the order of the left operand (issue #1477)
-        var edges = Solid.MakeBox(10, 20, 30, new Plane(new Vector(-5, -10, -15))).Edges();
+        var edges = Solid.MakeBox(10, 20, 30, new Plane(new Vector(-5, -10, -15))).SelectEdges();
         Assert.Equal(12, edges.Count);
 
         var vertical = edges.ParallelTo(Axis.Z);
@@ -690,13 +690,13 @@ public class ShapeListAdditionTests
         var verticalSet = vertical.ToHashSet();
         var expectedAnd = edges.Where(verticalSet.Contains).ToList();
         Assert.Equal(expectedAnd.Count, intersection.Count);
-        Assert.All(intersection.Zip(expectedAnd), p => Assert.Same(p.Second, p.First));
+        Assert.All(intersection.Zip(expectedAnd), p => Check.Same(p.Second, p.First));
 
         ShapeList<Edge> removed = [edges[1], edges[4], edges[9]];
         var difference = edges.Except(removed);
         var removedSet = removed.ToHashSet();
         var expectedSub = edges.Where(e => !removedSet.Contains(e)).ToList();
         Assert.Equal(expectedSub.Count, difference.Count);
-        Assert.All(difference.Zip(expectedSub), p => Assert.Same(p.Second, p.First));
+        Assert.All(difference.Zip(expectedSub), p => Check.Same(p.Second, p.First));
     }
 }

@@ -1,114 +1,128 @@
-
 namespace Kerf.Modeling;
 
-public abstract partial class Shape
+public static partial class ShapeExtensions
 {
-    /// <summary>The distinct OCCT sub-shapes of a type.</summary>
-    public IReadOnlyList<global::Kerf.Topology.Shape> Entities(ShapeType type) =>
-        IsEmpty ? [] : TopoUtil.Entities(_wrapped, TopoUtil.ToTopAbs(type));
-
-    /// <summary>The sub-shapes of a type, each noting that it was taken out of this shape.</summary>
-    internal ShapeList<T> ShapeListOf<T>(ShapeType type) where T : Shape
+    extension<TSelf>(TSelf self) where TSelf : IShape
     {
-        if (IsEmpty)
-            return [];
-        return new ShapeList<T>(TopoUtil.Entities(_wrapped, TopoUtil.ToTopAbs(type))
-                                    .Select(e => (T)CastLike(e).ExtractedFrom(this)));
-    }
+        /// <summary>The distinct kernel sub-shapes of a type.</summary>
+        public IReadOnlyList<Shape> Entities(ShapeType type) =>
+            self.IsEmpty ? [] : TopoUtil.Entities(self.AsShape(), type);
 
-    /// <summary>The one sub-shape of a type.</summary>
-    /// <exception cref="InvalidOperationException">There isn't exactly one.</exception>
-    internal T SingleShapeOf<T>(ShapeType type) where T : Shape
-    {
-        var list = ShapeListOf<T>(type);
-        if (list.Count != 1)
-            throw new InvalidOperationException($"Expected exactly one {type.ToString().ToLowerInvariant()}, found {list.Count}");
-        return list[0];
-    }
-
-    /// <summary>All the vertices in this shape, or those <paramref name="select"/> picks.</summary>
-    public virtual ShapeList<Vertex> Vertices(Select select = Select.All) => SelectFrom(ShapeListOf<Vertex>(ShapeType.Vertex), select);
-
-    /// <summary>All the non-degenerate edges in this shape, or those <paramref name="select"/> picks.</summary>
-    public virtual ShapeList<Edge> Edges(Select select = Select.All) =>
-        SelectFrom(ShapeListOf<Edge>(ShapeType.Edge).Where(e => !e.TopoEdge.IsDegenerated).ToShapeList(), select);
-
-    /// <summary>All the wires in this shape, or those <paramref name="select"/> picks.</summary>
-    public virtual ShapeList<Wire> Wires(Select select = Select.All) => SelectFrom(ShapeListOf<Wire>(ShapeType.Wire), select);
-
-    /// <summary>All the faces in this shape, or those <paramref name="select"/> picks.</summary>
-    public virtual ShapeList<Face> Faces(Select select = Select.All) => SelectFrom(ShapeListOf<Face>(ShapeType.Face), select);
-
-    /// <summary>All the shells in this shape, or those <paramref name="select"/> picks.</summary>
-    public virtual ShapeList<Shell> Shells(Select select = Select.All) => SelectFrom(ShapeListOf<Shell>(ShapeType.Shell), select);
-
-    /// <summary>All the solids in this shape, or those <paramref name="select"/> picks.</summary>
-    public virtual ShapeList<Solid> Solids(Select select = Select.All) => SelectFrom(ShapeListOf<Solid>(ShapeType.Solid), select);
-
-    /// <summary>All the compounds in this shape (none, but for a compound).</summary>
-    public virtual ShapeList<Compound> Compounds() => [];
-
-    /// <summary>The one vertex in this shape (build123d's <c>vertex()</c>).</summary>
-    /// <exception cref="InvalidOperationException">The shape doesn't have exactly one.</exception>
-    public Vertex SingleVertex() => SingleShapeOf<Vertex>(ShapeType.Vertex);
-
-    /// <summary>The one edge in this shape (build123d's <c>edge()</c>).</summary>
-    public Edge SingleEdge() => SingleShapeOf<Edge>(ShapeType.Edge);
-
-    /// <summary>The one wire in this shape (build123d's <c>wire()</c>).</summary>
-    public Wire SingleWire() => SingleShapeOf<Wire>(ShapeType.Wire);
-
-    /// <summary>The one face in this shape (build123d's <c>face()</c>).</summary>
-    public Face SingleFace() => SingleShapeOf<Face>(ShapeType.Face);
-
-    /// <summary>The one shell in this shape (build123d's <c>shell()</c>).</summary>
-    public Shell SingleShell() => SingleShapeOf<Shell>(ShapeType.Shell);
-
-    /// <summary>The one solid in this shape (build123d's <c>solid()</c>).</summary>
-    public Solid SingleSolid() => SingleShapeOf<Solid>(ShapeType.Solid);
-
-    /// <summary>The one compound in this shape (build123d's <c>compound()</c>).</summary>
-    public Compound SingleCompound() => SingleShapeOf<Compound>(ShapeType.Compound);
-
-    /// <summary>
-    /// The non-compound shapes at this shape's first level: a compound's children, looking through nested compounds;
-    /// any other shape is its own first level.
-    /// </summary>
-    public ShapeList<Shape> GetTopLevelShapes() =>
-        IsEmpty ? [] : new ShapeList<Shape>(TopoUtil.TopLevelShapes(_wrapped).Select(CastLike));
-
-    /// <summary>Narrows a list of this shape's sub-shapes by what the last operation did.</summary>
-    private protected ShapeList<T> SelectFrom<T>(ShapeList<T> shapes, Select select) where T : Shape
-    {
-        if (select == Select.All)
-            return shapes;
-        var record = History ?? throw new InvalidOperationException(
-            $"Select.{select} needs a record of how this shape was made, and this one has none - "
-            + "it is the result of no recorded operation");
-        // The record names the sub-shapes where the shape was when it was recorded. If the shape has been
-        // relocated since, map each sub-shape back there to look it up.
-        var here = _wrapped.Placement;
-        Func<Shape, global::Kerf.Topology.Shape> key;
-        if (_historyAt is not { } at || TopoUtil.IsSamePlacement(at, here))
-            key = s => s.TopoShape;
-        else
+        /// <summary>The sub-shapes of a type, the list noting that they were taken out of this shape.</summary>
+        internal ShapeList<T> ShapeListOf<T>(ShapeType type) where T : struct, IShape<T>
         {
-            var back = at.Multiplied(here.Inverted());
-            key = s => s.TopoShape.Moved(back);
+            if (self.IsEmpty)
+                return ShapeList<T>.From(self);
+            return new ShapeList<T>(TopoUtil.Entities(self.AsShape(), type).Select(e => e.As<T>()), self);
         }
-        return select switch
-        {
-            Select.Last => new ShapeList<T>(shapes.Where(s => record.IsLast(key(s)))),
-            Select.New => new ShapeList<T>(shapes.Where(s => record.IsNew(key(s)))),
-            _ => throw new ArgumentOutOfRangeException(nameof(select)),
-        };
-    }
 
-    /// <summary>
-    /// How the shape this was selected from sits around it: defined for a Vertex, Edge or Face relative to the shape it
-    /// was taken out of (see <see cref="Kerf.Modeling.Convexity"/>).
-    /// </summary>
-    /// <exception cref="InvalidOperationException">The shape has no convexity.</exception>
-    public virtual Convexity Convexity => throw new InvalidOperationException(
-        $"a {GetType().Name} has no convexity - only a Vertex, Edge or Face selected from a larger shape does");
+        /// <summary>The one sub-shape of a type.</summary>
+        /// <exception cref="InvalidOperationException">There isn't exactly one.</exception>
+        internal T SingleShapeOf<T>(ShapeType type) where T : struct, IShape<T>
+        {
+            var list = self.ShapeListOf<T>(type);
+            if (list.Count != 1)
+                throw new InvalidOperationException($"Expected exactly one {type.ToString().ToLowerInvariant()}, found {list.Count}");
+            return list[0];
+        }
+
+        /// <summary>All the vertices in this shape, as a selection (a vertex holds itself).</summary>
+        public ShapeList<Vertex> SelectVertices() =>
+            self.AsShape() is { IsNull: false } s && s.IsVertex() ? new ShapeList<Vertex>([(Vertex)s], self) : self.ShapeListOf<Vertex>(ShapeType.Vertex);
+
+        /// <summary>All the non-degenerate edges in this shape, as a selection (a wire's in the order they connect).</summary>
+        public ShapeList<Edge> SelectEdges()
+        {
+            var shape = self.AsShape();
+            if (!shape.IsNull && shape.IsWire())
+                return ((Wire)shape).OrderedEdgeList(self);
+            var all = self.ShapeListOf<Edge>(ShapeType.Edge);
+            return all.Where(e => !e.IsDegenerated);
+        }
+
+        /// <summary>All the wires in this shape, as a selection.</summary>
+        public ShapeList<Wire> SelectWires() => self.ShapeListOf<Wire>(ShapeType.Wire);
+
+        /// <summary>All the faces in this shape, as a selection.</summary>
+        public ShapeList<Face> SelectFaces() => self.ShapeListOf<Face>(ShapeType.Face);
+
+        /// <summary>All the shells in this shape, as a selection.</summary>
+        public ShapeList<Shell> SelectShells() => self.ShapeListOf<Shell>(ShapeType.Shell);
+
+        /// <summary>All the solids in this shape, as a selection.</summary>
+        public ShapeList<Solid> SelectSolids() => self.ShapeListOf<Solid>(ShapeType.Solid);
+
+        /// <summary>The one vertex in this shape (build123d's <c>vertex()</c>).</summary>
+        /// <exception cref="InvalidOperationException">The shape doesn't have exactly one.</exception>
+        public Vertex SingleVertex() => self.SingleShapeOf<Vertex>(ShapeType.Vertex);
+
+        /// <summary>The one edge in this shape (build123d's <c>edge()</c>).</summary>
+        public Edge SingleEdge() => self.SingleShapeOf<Edge>(ShapeType.Edge);
+
+        /// <summary>The one wire in this shape (build123d's <c>wire()</c>).</summary>
+        public Wire SingleWire() => self.SingleShapeOf<Wire>(ShapeType.Wire);
+
+        /// <summary>The one face in this shape (build123d's <c>face()</c>).</summary>
+        public Face SingleFace() => self.SingleShapeOf<Face>(ShapeType.Face);
+
+        /// <summary>The one shell in this shape (build123d's <c>shell()</c>).</summary>
+        public Shell SingleShell() => self.SingleShapeOf<Shell>(ShapeType.Shell);
+
+        /// <summary>The one solid in this shape (build123d's <c>solid()</c>).</summary>
+        public Solid SingleSolid() => self.SingleShapeOf<Solid>(ShapeType.Solid);
+
+        /// <summary>The one compound in this shape (build123d's <c>compound()</c>).</summary>
+        public Compound SingleCompound() => self.SingleShapeOf<Compound>(ShapeType.Compound);
+
+        /// <summary>
+        /// The non-compound shapes at this shape's first level: a compound's children, looking through nested compounds;
+        /// any other shape is its own first level.
+        /// </summary>
+        public ShapeList<Shape> GetTopLevelShapes() =>
+            self.IsEmpty ? [] : new ShapeList<Shape>(TopoUtil.TopLevelShapes(self.AsShape()));
+
+        // ---- Convexity ----
+
+        /// <summary>
+        /// How this shape sits around a face, edge or vertex of it: Convex on the outer edge of a box, Concave at the inner
+        /// corner of a pocket, Smooth where a fillet meets the face it blends into. See <see cref="ConvexityOf(Edge)"/> and
+        /// <see cref="ConvexityOf(Vertex, Face?)"/>.
+        /// </summary>
+        public Convexity ConvexityOf(Face face) => FaceExtensions.ConvexityIn(face, self.AsShape());
+
+        /// <summary>
+        /// How this shape sits around an edge of it: Convex on the outer edge of a box, Concave at the inner corner of a
+        /// pocket, Smooth where a fillet meets the face it blends into, and Saddle for an edge that turns one way at one end
+        /// and the other way at the other. A seam edge is Smooth.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The edge lies on one face only, or more than two faces meet at it.</exception>
+        public Convexity ConvexityOf(Edge edge) => Shape1DExtensions.ConvexityIn(edge, self.AsShape());
+
+        /// <summary>
+        /// How this shape sits around a vertex of it. Through a face, the vertex is a corner of that face: Convex at the
+        /// corner of a plate, Concave at the corner of a slot or the step in an L, Smooth where two edges meet in line.
+        /// Without one, on a shape of faces alone it is a corner of the one face that holds it; on a solid or shell it is
+        /// classified by the edges meeting there, Convex where every crease is convex, Concave where every crease is
+        /// concave, and Saddle where both kinds meet.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The vertex's face or edges can't be classified.</exception>
+        public Convexity ConvexityOf(Vertex vertex, Face? through = null) => VertexExtensions.ConvexityIn(vertex, self.AsShape(), through);
+
+        /// <summary>The convexity of a face, edge or vertex of this shape, as its kind has one.</summary>
+        /// <exception cref="InvalidOperationException">The shape is of a kind that has none.</exception>
+        internal Convexity ConvexityOfAny(Shape sub, Face? through)
+        {
+            if (!sub.IsNull)
+            {
+                if (sub.TryAs(out Face face) && sub.IsFace())
+                    return self.ConvexityOf(face);
+                if (sub.TryAs(out Edge edge) && sub.IsEdge())
+                    return self.ConvexityOf(edge);
+                if (sub.TryAs(out Vertex vertex) && sub.IsVertex())
+                    return self.ConvexityOf(vertex, through);
+            }
+            throw new InvalidOperationException(
+                $"a {TopoUtil.KindName(sub)} has no convexity - only a Vertex, Edge or Face selected from a larger shape does");
+        }
+    }
 }

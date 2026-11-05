@@ -169,7 +169,7 @@ public class PublicMemberTests
         Assert.Equal(Plane.XY.Origin.Z, Plane.XY.ToCoordinateSystem().Location.Z, 9);
         Assert.Equal(5, Plane.XY.LocationBetween(Plane.XY.Offset(5)).Position.Length, 9);
 
-        var (x, y, z) = new Vertex(1, 2, 3);
+        var (x, y, z) = Vertex.Make(1, 2, 3);
         Assert.Equal((1.0, 2.0, 3.0), (x, y, z));
 
         Assert.Equal(["µm", "mm", "cm", "m", "in", "ft", "g", "kg", "lb"],
@@ -244,8 +244,8 @@ public class PublicMemberTests
         Assert.Equal(4 * 4, Sweep((Shape)new Rectangle(2, 2), path, new Kerf.Modeling.Operations.SweepOptions { IsFrenet = true }).Value.Volume, 3);
         Assert.Equal(2 * 4, Sweep(new Curve([Edge.MakeLine(new Vector(-1, 0), new Vector(1, 0))]), path).Value.Area, 3);
 
-        Assert.Equal(new Vector(1, 1, 0), ProjectPoints([new Vertex(1, 1, 5)], Plane.XY)[0]);
-        Plane projected = ProjectWorkplane(new Vertex(0, 0, 0), new Vertex(1, 0, 0), new Vector(0, 0, 1), 5);
+        Assert.Equal(new Vector(1, 1, 0), ProjectPoints([Vertex.Make(1, 1, 5)], Plane.XY)[0]);
+        Plane projected = ProjectWorkplane(Vertex.Make(0, 0, 0), Vertex.Make(1, 0, 0), new Vector(0, 0, 1), 5);
         Assert.Equal(5, projected.Origin.Z, 6);
         Assert.True(MakeHull(Edge.MakeCircle(2)).Area > 12);
 
@@ -256,7 +256,7 @@ public class PublicMemberTests
         var thicken = new Kerf.Modeling.Operations.ThickenOptions { Clean = true, NormalOverride = new Vector(0, 0, 1) };
         Assert.Equal(4, Thicken(square, 1, thicken).Value.Volume, 6);
 
-        Assert.Equal(4, Kerf.Measurement.MeasureOperations.Area(OneD.OffsetTopodsFace(square.TopoFace, 0.1)), 6);
+        Assert.Equal(4, Kerf.Measurement.MeasureOperations.Area(OneD.OffsetTopodsFace(square, 0.1)), 6);
     }
 
     [Fact]
@@ -272,7 +272,7 @@ public class PublicMemberTests
         Assert.Equal(side.Center(), side.Center(CenterOf.Mass));
         Assert.Empty(side.Touch(side.Moved(new Location(new Vector(100, 0, 0)))));
         // what the base class answers: no choice of centre, nothing touched
-        var vertex = new Vertex(1, 2, 3);
+        var vertex = Vertex.Make(1, 2, 3);
         Assert.Throws<NotSupportedException>(() => vertex.Center(CenterOf.Mass));
         Assert.Empty(vertex.Touch(box));
 
@@ -304,7 +304,7 @@ public class PublicMemberTests
         Face projected = Assert.Single(box.ProjectFaces([square], path));
         Assert.Equal(1, projected.Area, 3);
         Assert.Equal(5, projected.Center().X, 3);
-        Assert.Single(box.ProjectFaces(new Compound([square]), path));
+        Assert.Single(box.ProjectFaces(Compound.Make([square]), path));
     }
 
     [Fact]

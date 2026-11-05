@@ -76,15 +76,15 @@ public sealed class ShapeMesh
             Parallel = true,
             EdgeDeflection = tolerances.Relative ? MeshTolerances.For(shape).Linear : null,
         };
-        var mesh = Failures.Get(global::Kerf.Meshing.Mesher.Mesh(shape.TopoShape, options), () => "mesh");
+        var mesh = Failures.Get(global::Kerf.Meshing.Mesher.Mesh(shape, options), () => "mesh");
         var faceMeshes = mesh.Faces.Select(f => new FaceMesh(f.Positions, f.Normals, f.Triangles, GeomTypeOf(f.Kind))).ToArray();
         var edgeMeshes = mesh.Edges.Select(e => new EdgeMesh(e.Points, GeomTypeOf(e.Kind))).ToArray();
-        return new ShapeMesh(faceMeshes, edgeMeshes, [.. shape.Vertices().Select(v => v.ToVector())], tolerances);
+        return new ShapeMesh(faceMeshes, edgeMeshes, [.. shape.SelectVertices().Select(v => v.ToVector())], tolerances);
     }
 
-    private static GeomType GeomTypeOf(SurfaceKind type) => Shape.GeomTypeOf(type);
+    private static GeomType GeomTypeOf(SurfaceKind type) => ShapeExtensions.GeomTypeOf(type);
 
-    private static GeomType GeomTypeOf(CurveKind type) => Shape.GeomTypeOf(type);
+    private static GeomType GeomTypeOf(CurveKind type) => ShapeExtensions.GeomTypeOf(type);
 }
 
 /// <summary>
@@ -164,11 +164,11 @@ public sealed class MeshNode
     /// </summary>
     internal static MeshNode Of(Shape shape, MeshTolerances tolerances)
     {
-        var cache = new List<(global::Kerf.Topology.Shape Key, ShapeMesh Mesh)>();
+        var cache = new List<(Shape Key, ShapeMesh Mesh)>();
         return Build(shape, tolerances, cache);
     }
 
-    private static MeshNode Build(Shape shape, MeshTolerances tolerances, List<(global::Kerf.Topology.Shape Key, ShapeMesh Mesh)> cache)
+    private static MeshNode Build(Shape shape, MeshTolerances tolerances, List<(Shape Key, ShapeMesh Mesh)> cache)
     {
         var location = shape.IsEmpty ? new Location() : shape.Location;
         if (!shape.IsEmpty && shape is Compound { AssemblyChildren.Count: > 0 } assembly)
@@ -178,39 +178,43 @@ public sealed class MeshNode
     }
 
     /// <summary>The mesh of a part in its own coordinates, shared with any earlier part of the same geometry.</summary>
-    private static ShapeMesh Instance(Shape shape, MeshTolerances tolerances, List<(global::Kerf.Topology.Shape Key, ShapeMesh Mesh)> cache)
+    private static ShapeMesh Instance(Shape shape, MeshTolerances tolerances, List<(Shape Key, ShapeMesh Mesh)> cache)
     {
         if (shape.IsEmpty)
             return ShapeMesh.Empty;
         foreach (var (key, mesh) in cache)
-            if (key.IsPartner(shape.TopoShape) && key.Orientation == shape.TopoShape.Orientation)
+            if (key.IsPartner(shape) && key.Orientation == shape.Orientation)
                 return mesh;
         var identity = new Placement();
-        var unplaced = shape.Placed(shape.TopoShape.Located(identity));
+        var unplaced = shape.Placed(shape.Located(identity));
         var made = ShapeMesh.Of(unplaced, tolerances);
-        cache.Add((shape.TopoShape, made));
+        cache.Add((shape, made));
         return made;
     }
 }
 
-public abstract partial class Shape
+public static partial class ShapeExtensions
 {
-    /// <summary>
-    /// The shape's triangulation for display and picking (see <see cref="ShapeMesh"/>), with a linear deflection of
-    /// <paramref name="linearDeflection"/> (relative to each edge's size if <paramref name="relative"/>) and an angular
-    /// one of <paramref name="angularDeflection"/> radians. An empty shape gives an empty mesh. The shape isn't
-    /// changed, and the same shape and tolerances always give the same mesh.
-    /// </summary>
-    public ShapeMesh Triangulate(double linearDeflection, double angularDeflection = 0.2, bool relative = false) =>
-        ShapeMesh.Of(this, new MeshTolerances(linearDeflection, angularDeflection, relative));
+    extension<TSelf>(TSelf self) where TSelf : IShape
+    {
+        /// <summary>
+        /// The shape's triangulation for display and picking (see <see cref="ShapeMesh"/>), with a linear deflection of
+        /// <paramref name="linearDeflection"/> (relative to each edge's size if <paramref name="relative"/>) and an angular
+        /// one of <paramref name="angularDeflection"/> radians. An empty shape gives an empty mesh. The shape isn't
+        /// changed, and the same shape and tolerances always give the same mesh.
+        /// </summary>
+        public ShapeMesh Triangulate(double linearDeflection, double angularDeflection = 0.2, bool relative = false) =>
+            ShapeMesh.Of(self.AsShape(), new MeshTolerances(linearDeflection, angularDeflection, relative));
 
-    /// <summary>The shape's triangulation with the given tolerances, by default <see cref="MeshTolerances.For"/> it.</summary>
-    public ShapeMesh Triangulate(MeshTolerances? tolerances = null) => ShapeMesh.Of(this, tolerances ?? MeshTolerances.For(this));
+        /// <summary>The shape's triangulation with the given tolerances, by default <see cref="MeshTolerances.For"/> it.</summary>
+        public ShapeMesh Triangulate(MeshTolerances? tolerances = null) => ShapeMesh.Of(self.AsShape(), tolerances ?? MeshTolerances.For(self.AsShape()));
 
-    /// <summary>
-    /// The shape's assembly tree, triangulated (see <see cref="MeshNode"/>): labels, colours and locations, with each
-    /// geometry meshed once however many instances there are. By default the tolerances are
-    /// <see cref="MeshTolerances.For"/> the whole shape, so every part is meshed to the same quality.
-    /// </summary>
-    public MeshNode TriangulateTree(MeshTolerances? tolerances = null) => MeshNode.Of(this, tolerances ?? MeshTolerances.For(this));
+        /// <summary>
+        /// The shape's assembly tree, triangulated (see <see cref="MeshNode"/>): labels, colours and locations, with each
+        /// geometry meshed once however many instances there are. By default the tolerances are
+        /// <see cref="MeshTolerances.For"/> the whole shape, so every part is meshed to the same quality.
+        /// </summary>
+        public MeshNode TriangulateTree(MeshTolerances? tolerances = null) => MeshNode.Of(self.AsShape(), tolerances ?? MeshTolerances.For(self.AsShape()));
+    }
+
 }

@@ -39,9 +39,9 @@ public class StepAssemblyTests
     }
 
     // The shape as OCCT.NET holds it, from the same BRep text (shared sub-shapes stay shared)
-    private static global::Kerf.Topology.Shape Occt(Shape shape)
+    private static Shape Occt(Shape shape)
     {
-        var text = Encoding.ASCII.GetString(Extras.WriteBRep(shape.KernelShape));
+        var text = Encoding.ASCII.GetString(Extras.WriteBRep(shape));
         var reader = new StringReader(text);
         global::Kerf.Engine.Foundation.StreamUtilities.SetInputLength(reader, text.Length);
         global::Kerf.Engine.Topology.Tools.BrepTools.Read(out var read, reader);
@@ -68,9 +68,9 @@ public class StepAssemblyTests
             if (node.Label.Length > 0)
                 doc.SetName(label, node.Label);
             if (node.Color is { } c)
-                doc.SetColor(label, Linear(c), node.Faces().Count > 0 ? global::Kerf.Engine.Exchange.Documents.ColorType.ColorSurf : global::Kerf.Engine.Exchange.Documents.ColorType.ColorCurv);
+                doc.SetColor(label, Linear(c), node.SelectFaces().Count > 0 ? global::Kerf.Engine.Exchange.Documents.ColorType.ColorSurf : global::Kerf.Engine.Exchange.Documents.ColorType.ColorCurv);
         }
-        global::Kerf.Engine.Exchange.Documents.Label Assembly(Compound assembly, global::Kerf.Topology.Shape s)
+        global::Kerf.Engine.Exchange.Documents.Label Assembly(Compound assembly, Shape s)
         {
             var label = doc.NewShape();
             Attributes(assembly, label);
@@ -79,7 +79,7 @@ public class StepAssemblyTests
             {
                 var c = it.Value();
                 if (child is Compound { AssemblyChildren.Count: > 0 } sub)
-                    doc.AddComponent(label, Assembly(sub, c.Located(new global::Kerf.Topology.Placement())), c.Placement);
+                    doc.AddComponent(label, Assembly(sub, c.Located(new Placement())), c.Placement);
                 else
                 {
                     doc.AddComponent(label, c, false);
@@ -142,12 +142,12 @@ public class StepAssemblyTests
     public void AnAssemblyRoundTripsWithItsLabelsColoursAndPlaces()
     {
         var fixture = Fixture();
-        var read = Assert.IsType<Compound>(Importers.ImportStep(new MemoryStream(Export(fixture))).Value);
+        var read = Check.Is<Compound>(Importers.ImportStep(new MemoryStream(Export(fixture))).Value);
         Assert.Equal("fixture", read.Label);
         Assert.Equal(["plate", "bolts"], read.AssemblyChildren.Select(c => c.Label));
         var plate = read.AssemblyChildren[0];
         Assert.Equal(new Color("steelblue", 0.5), plate.Color);
-        var bolts = Assert.IsType<Compound>(read.AssemblyChildren[1]);
+        var bolts = Check.Is<Compound>(read.AssemblyChildren[1]);
         Assert.Equal(["bolt", "bolt"], bolts.AssemblyChildren.Select(c => c.Label));
         Assert.All(bolts.AssemblyChildren, b => Assert.Equal(new Color("silver"), b.Color));
         // Each part where it was, and the bolts still one shape placed twice
@@ -162,7 +162,7 @@ public class StepAssemblyTests
             Check.AlmostEqual(a.Y, b.Y, 6);
             Check.AlmostEqual(a.Z, b.Z, 6);
         }
-        Assert.True(bolts.AssemblyChildren[0].KernelShape.IsPartner(bolts.AssemblyChildren[1].KernelShape));
+        Assert.True(bolts.AssemblyChildren[0].IsPartner(bolts.AssemblyChildren[1]));
         Assert.True(read.IsValid);
     }
 
@@ -170,7 +170,7 @@ public class StepAssemblyTests
     public void OneNamedShapeComesBackAsItself()
     {
         var read = Importers.ImportStep(new MemoryStream(Export(new Box(1, 2, 3).WithLabel("brick").WithColor(new Color("red"))))).Value;
-        var solid = Assert.IsType<Solid>(read);
+        var solid = Check.Is<Solid>(read);
         Assert.Equal("brick", solid.Label);
         Assert.Equal(new Color("red"), solid.Color);
         Check.AlmostEqual(6, solid.Volume, 6);
@@ -182,7 +182,7 @@ public class StepAssemblyTests
         // STEP's writer maps shapes to products, so the second name needs a shape of its own
         var ball = new Sphere(2);
         var pair = Compound.Assembly([ball.WithLabel("left"), ball.Moved(new Location(new Vector(5.0, 0.0, 0.0))).WithLabel("right").WithColor(new Color("blue"))]);
-        var read = Assert.IsType<Compound>(Importers.ImportStep(new MemoryStream(Export(pair))).Value);
+        var read = Check.Is<Compound>(Importers.ImportStep(new MemoryStream(Export(pair))).Value);
         Assert.Equal(["left", "right"], read.AssemblyChildren.Select(c => c.Label));
         Assert.Null(read.AssemblyChildren[0].Color);
         Assert.Equal(new Color("blue"), read.AssemblyChildren[1].Color);
@@ -205,7 +205,7 @@ public class StepAssemblyTests
         Exporters3D.ExportStep(Fixture(), stream, new StepExportOptions { Unit = Unit.Inch });
         Assert.Contains("INCH", Encoding.Latin1.GetString(stream.ToArray()));
         stream.Position = 0;
-        var read = Assert.IsType<Compound>(Importers.ImportStep(stream).Value);
+        var read = Check.Is<Compound>(Importers.ImportStep(stream).Value);
         Check.AlmostEqual(Fixture().Parts()[0].Placed.Volume * Math.Pow(25.4, 3), read.Parts()[0].Placed.Volume, 1);
     }
 
@@ -218,16 +218,16 @@ public class StepAssemblyTests
         {
             // A two-part assembly written as three files: the assembly, referring to a file per part
             var doc = global::Kerf.Engine.Exchange.Documents.ExchangeDocument.FromTree(new global::Kerf.Engine.Exchange.Documents.Tree(global::Kerf.Engine.Exchange.Documents.DocumentProduct.Assembly("pair",
-                global::Kerf.Engine.Exchange.Documents.DocumentProduct.Part(Occt(new Box(1, 1, 1)), "a").Placed(new global::Kerf.Topology.Placement()),
-                global::Kerf.Engine.Exchange.Documents.DocumentProduct.Part(Occt(new Sphere(1)), "b").Placed(new global::Kerf.Topology.Placement()))
-                .Placed(new global::Kerf.Topology.Placement())));
+                global::Kerf.Engine.Exchange.Documents.DocumentProduct.Part(Occt(new Box(1, 1, 1)), "a").Placed(new Placement()),
+                global::Kerf.Engine.Exchange.Documents.DocumentProduct.Part(Occt(new Sphere(1)), "b").Placed(new Placement()))
+                .Placed(new Placement())));
             var writer = new global::Kerf.Engine.Exchange.Step.Caf.CafWriter();
             Assert.True(writer.Transfer(doc, global::Kerf.Engine.Exchange.Step.ModelType.AsIs, ""));
             var main = Path.Combine(folder, "pair.step");
             Assert.Equal(global::Kerf.Engine.Exchange.Framework.Selection.ReturnStatus.RetDone, writer.Write(main));
             Assert.True(Directory.GetFiles(folder).Length > 1);
 
-            var read = Assert.IsType<Compound>(Importers.ImportStep(main).Value);
+            var read = Check.Is<Compound>(Importers.ImportStep(main).Value);
             Assert.Equal(2, read.Parts().Count);
             using var stream = File.OpenRead(main);
             var refused = Importers.ImportStep(stream);

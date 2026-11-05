@@ -100,7 +100,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     {
         if (face.IsPlanar is null)
             throw new ArgumentException("Planes can only be created from planar faces");
-        var topoFace = face.TopoFace;
+        var topoFace = face;
         topoFace.TryGetSurface(out var surface);
         var origin = new Vector(topoFace.MassProperties(Dimension.Area).CentreOfMass);
         Vector faceXDir;
@@ -121,7 +121,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     }
 
     /// <summary>The normal of a face where it is nearest the global origin (build123d's <c>get_topods_face_normal</c>).</summary>
-    static Vector FaceNormal(global::Kerf.Topology.Face face, Surface? surface)
+    static Vector FaceNormal(Face face, Surface? surface)
     {
         if (surface is null || !surface.TryProjectNearest(Point3D.Origin, out var nearest))
             throw new InvalidOperationException("The face's surface has no point nearest the origin");
@@ -373,10 +373,10 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     public BoundBox FromLocalCoords(BoundBox box) => TransformBox(box, ReverseTransform);
 
     /// <summary>A copy of the shape repositioned relative to this plane: its global coordinates become local ones.</summary>
-    public T ToLocalCoords<T>(T shape) where T : Shape => (T)shape.TransformedBy(ForwardTransform);
+    public T ToLocalCoords<T>(T shape) where T : IShape => TopoUtil.Rewrap(shape, ShapeTransforms.TransformedBy(shape.AsShape(), ForwardTransform));
 
     /// <summary>A copy of the shape repositioned from this plane's local coordinates to global ones.</summary>
-    public T FromLocalCoords<T>(T shape) where T : Shape => (T)shape.TransformedBy(ReverseTransform);
+    public T FromLocalCoords<T>(T shape) where T : IShape => TopoUtil.Rewrap(shape, ShapeTransforms.TransformedBy(shape.AsShape(), ReverseTransform));
 
     static BoundBox TransformBox(BoundBox box, Matrix transform)
     {

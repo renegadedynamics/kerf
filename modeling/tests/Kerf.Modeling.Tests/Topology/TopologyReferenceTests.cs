@@ -20,8 +20,8 @@ public class TopologyReferenceTests
     {
         var block = Box(10, 10, 10);
         var rect = Face.MakeRect(4, 2);
-        var holed = new Face(Wire.MakeRect(6, 6), [Wire.MakeCircle(1)]);
-        var path = new Wire([Edge.MakeLine(new Vector(0, 0, 0), new Vector(0, 0, 5)), Edge.MakeThreePointArc(new Vector(0, 0, 5), new Vector(0.6, 0, 6.2), new Vector(2, 0, 7))]);
+        var holed = Face.Make(Wire.MakeRect(6, 6), [Wire.MakeCircle(1)]);
+        var path = Wire.Make([Edge.MakeLine(new Vector(0, 0, 0), new Vector(0, 0, 5)), Edge.MakeThreePointArc(new Vector(0, 0, 5), new Vector(0.6, 0, 6.2), new Vector(2, 0, 7))]);
         var square = Wire.MakeRect(4, 4);
         Vector[] splinePoints = [new Vector(0, 0, 0), new Vector(1, 2, 0), new Vector(3, 1, 1), new Vector(4, 3, 0)];
         return new()
@@ -42,10 +42,10 @@ public class TopologyReferenceTests
             ["disjoint_fuse"] = () => Box(1, 1, 1) + Box(1, 1, 1, new Vector(3, 0, 0)),
             ["pocket"] = () => Box(20, 20, 10) - Box(10, 10, 10, new Vector(5, 5, 5)),
             // Features
-            ["fillet_top"] = () => block.Fillet(1.5, block.Edges().GroupBy(Axis.Z).Last()),
-            ["chamfer_vertical"] = () => block.Chamfer(1, null, block.Edges().ParallelTo(Axis.Z)),
-            ["chamfer_asymmetric"] = () => block.Chamfer(2, 1, block.Edges().GroupBy(Axis.Z).Last()),
-            ["hollow"] = () => block.Hollow([block.Faces().OrderBy(Axis.Z).Last()], -1),
+            ["fillet_top"] = () => block.Fillet(1.5, block.SelectEdges().GroupBy(Axis.Z).Last()),
+            ["chamfer_vertical"] = () => block.Chamfer(1, null, block.SelectEdges().ParallelTo(Axis.Z)),
+            ["chamfer_asymmetric"] = () => block.Chamfer(2, 1, block.SelectEdges().GroupBy(Axis.Z).Last()),
+            ["hollow"] = () => block.Hollow([block.SelectFaces().OrderBy(Axis.Z).Last()], -1),
             ["offset_3d"] = () => block.Offset3D(null, 1),
             // Faces and extrusions
             ["rect_face"] = () => rect,
@@ -55,14 +55,14 @@ public class TopologyReferenceTests
             ["holed_face"] = () => holed,
             ["extrude_holed"] = () => Solid.Extrude(holed, new Vector(0, 0, 1)),
             ["thicken_face"] = () => Solid.Thicken(Face.MakeRect(3, 3), 0.5),
-            ["face_from_spline_wire"] = () => new Face(new Wire([Edge.MakeSpline([new Vector(0, 0), new Vector(2, 1), new Vector(4, 0)]), Edge.MakeLine(new Vector(4, 0), new Vector(0, 0))])),
+            ["face_from_spline_wire"] = () => Face.Make(Wire.Make([Edge.MakeSpline([new Vector(0, 0), new Vector(2, 1), new Vector(4, 0)]), Edge.MakeLine(new Vector(4, 0), new Vector(0, 0))])),
             // Lofts and sweeps
             ["loft"] = () => Solid.MakeLoft([Wire.MakeRect(4, 4), Wire.MakeCircle(1, Plane.XY.Offset(5))]),
             ["loft_ruled"] = () => Solid.MakeLoft([Wire.MakeRect(2, 2), Wire.MakeRect(1, 1, Plane.XY.Offset(3))], ruled: true),
-            ["loft_to_vertex"] = () => Solid.MakeLoft([Wire.MakeRect(2, 2), new Vertex(0, 0, 3)]),
+            ["loft_to_vertex"] = () => Solid.MakeLoft([Wire.MakeRect(2, 2), Vertex.Make(0, 0, 3)]),
             ["sweep_circle"] = () => Solid.Sweep(Wire.MakeCircle(0.5), path),
             ["sweep_helix"] = () => Solid.Sweep(Wire.MakeCircle(0.2, new Plane(new Vector(3, 0, 0), zDir: new Vector(0, 1, 0))),
-                                                new Wire([Edge.MakeHelix(2, 6, 3)]), isFrenet: true),
+                                                Wire.Make([Edge.MakeHelix(2, 6, 3)]), isFrenet: true),
             // Edges and wires
             ["line"] = () => Edge.MakeLine(new Vector(0, 0, 0), new Vector(3, 4, 0)),
             ["circle"] = () => Edge.MakeCircle(2),
@@ -85,7 +85,7 @@ public class TopologyReferenceTests
             ["offset_wire_intersection"] = () => Wire.MakeRect(4, 2).Offset2D(-0.5, kind: Kind.Intersection),
             ["offset_arc"] = () => Edge.MakeCircle(3, startAngle: 0, endAngle: 120).Offset2D(0.5),
             ["offset_arc_left"] = () => Edge.MakeCircle(3, startAngle: 0, endAngle: 120).Offset2D(0.5, side: Side.Left),
-            ["chamfer_wire"] = () => square.Chamfer2D(1, 0.5, square.Vertices()[..2]),
+            ["chamfer_wire"] = () => square.Chamfer2D(1, 0.5, square.SelectVertices()[..2]),
             // Transforms
             ["mirror_box"] = () => Box(1, 2, 3, new Vector(1, 1, 1)).Mirror(Plane.YZ),
             ["rotate_box"] = () => Box(1, 2, 3).Rotate(Axis.Z, 30),
@@ -126,10 +126,10 @@ public class TopologyReferenceTests
         var expected = Data.GetProperty(name);
         var shape = Cases()[name]();
         Assert.Equal(expected.GetProperty("type").GetString(), shape.GetType().Name);
-        Assert.Equal(expected.GetProperty("vertices").GetInt32(), shape.Vertices().Count);
-        Assert.Equal(expected.GetProperty("edges").GetInt32(), shape.Edges().Count);
-        Assert.Equal(expected.GetProperty("faces").GetInt32(), shape.Faces().Count);
-        Assert.Equal(expected.GetProperty("solids").GetInt32(), shape.Solids().Count);
+        Assert.Equal(expected.GetProperty("vertices").GetInt32(), shape.SelectVertices().Count);
+        Assert.Equal(expected.GetProperty("edges").GetInt32(), shape.SelectEdges().Count);
+        Assert.Equal(expected.GetProperty("faces").GetInt32(), shape.SelectFaces().Count);
+        Assert.Equal(expected.GetProperty("solids").GetInt32(), shape.SelectSolids().Count);
         Assert.Equal(expected.GetProperty("valid").GetBoolean(), shape.IsValid);
         // Mass properties and boxes come from the same OCCT algorithms, so they agree closely
         Close(expected.GetProperty("volume").GetDouble(), shape.Volume, "volume", 1e-7);
@@ -140,6 +140,6 @@ public class TopologyReferenceTests
         if (expected.TryGetProperty("center", out var center))
             CloseVector(center, shape.Center(), "center", 1e-7);
         if (expected.TryGetProperty("length", out var length))
-            Close(length.GetDouble(), ((Shape1D)shape).Length, "length", 1e-7);
+            Close(length.GetDouble(), ((IShape1D)shape).Length, "length", 1e-7);
     }
 }

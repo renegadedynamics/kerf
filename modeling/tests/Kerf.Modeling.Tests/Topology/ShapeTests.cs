@@ -56,7 +56,7 @@ public class ShapeTests
     }
 
     [Fact]
-    public void ShapeType() => Assert.Equal(Kerf.Modeling.ShapeType.Vertex, new Vertex().ShapeType);
+    public void ShapeType() => Assert.Equal(ShapeType.Vertex, default(Vertex).ShapeType);
 
     [Fact]
     public void Scale()
@@ -93,15 +93,15 @@ public class ShapeTests
     public void BooleanZeroCut()
     {
         var box = Solid.MakeBox(1, 2, 3);
-        var zero = new Solid();
+        var zero = default(Solid);
 
         var result = box.Cut(zero);
-        Assert.IsType<Solid>(result);
+        Check.Is<Solid>(result);
         Assert.True(result.IsValid);
         Check.AlmostEqual(box.Volume, result.Volume, 5);
 
         result = box - zero;
-        Assert.IsType<Solid>(result);
+        Check.Is<Solid>(result);
         Assert.True(result.IsValid);
         Check.AlmostEqual(box.Volume, result.Volume, 5);
     }
@@ -110,11 +110,11 @@ public class ShapeTests
     public void BooleanZeroFuse()
     {
         var box = Solid.MakeBox(1, 2, 3);
-        var zero = new Solid();
+        var zero = default(Solid);
 
         foreach (var result in new[] { box.Fuse(zero), zero.Fuse(box), box + zero, zero + box })
         {
-            Assert.IsType<Solid>(result);
+            Check.Is<Solid>(result);
             Assert.True(result.IsValid);
             Check.AlmostEqual(box.Volume, result.Volume, 5);
         }
@@ -125,8 +125,8 @@ public class ShapeTests
     {
         var box = Solid.MakeBox(1, 1, 1, new Plane(new Vector(0, 0, 1)));
         var intersectedFaces = box.FacesIntersectedByAxis(Axis.Z);
-        Assert.Contains(box.Faces().OrderBy(Axis.Z)[0], intersectedFaces);
-        Assert.Contains(box.Faces().OrderBy(Axis.Z).Last(), intersectedFaces);
+        Assert.Contains(box.SelectFaces().OrderBy(Axis.Z)[0], intersectedFaces);
+        Assert.Contains(box.SelectFaces().OrderBy(Axis.Z).Last(), intersectedFaces);
     }
 
     [Fact]
@@ -139,7 +139,7 @@ public class ShapeTests
         // build123d returns the single piece itself; here it is a list of one
         splitShape = shape.Split(Plane.XY, Keep.Top);
         Assert.Single(splitShape.Solids());
-        Assert.IsType<Solid>(Assert.Single(splitShape));
+        Check.Is<Solid>(Assert.Single(splitShape));
         Check.AlmostEqual(0.5, splitShape[0].Volume, 5);
 
         var s = Solid.MakeCone(1, 0.5, 2, Plane.YZ.Offset(10));
@@ -160,8 +160,8 @@ public class ShapeTests
             .Select(i => new Plane(spine.LocationAt(positions[i])) * new Rotation(0, 0, twists[i]) * Wire.MakeRect(sizes[i], sizes[i]))
             .ToList();
         var solid = Solid.MakeLoft(sections);
-        var edge = solid.Edges().GroupByValue(e => e.Length, digits: 6).Last().OrderBy(Axis.X)[^2..].OrderBy(Axis.Z).Last();
-        var faces = solid.Faces().Where(f => f.Edges().Any(e => edge == e)).ToList();
+        var edge = solid.SelectEdges().GroupByValue(e => e.Length, digits: 6).Last().OrderBy(Axis.X)[^2..].OrderBy(Axis.Z).Last();
+        var faces = solid.SelectFaces().Where(f => f.SelectEdges().Any(e => edge == e)).ToList();
         Assert.Equal(2, faces.Count);
 
         foreach (var uValue in new[] { 0.0, 0.4 })
@@ -170,10 +170,10 @@ public class ShapeTests
             foreach (var face in faces)
             {
                 var (tops, bottoms) = face.SplitBoth(plane);
-                var top = Assert.IsType<Face>(Assert.Single(tops));
-                var bottom = Assert.IsType<Face>(Assert.Single(bottoms));
+                var top = Check.Is<Face>(Assert.Single(tops));
+                var bottom = Check.Is<Face>(Assert.Single(bottoms));
                 Check.AlmostEqual(face.Area, top.Area + bottom.Area, 5);
-                IEnumerable<double> Heights(Shape piece) => piece.Vertices().Select(v => plane.ToLocalCoords(new Vector(v)).Z);
+                IEnumerable<double> Heights(Shape piece) => piece.SelectVertices().Select(v => plane.ToLocalCoords(new Vector(v)).Z);
                 Assert.True(Heights(top).Min() > -1e-6);
                 Assert.True(Heights(bottom).Max() < 1e-6);
             }
@@ -259,13 +259,13 @@ public class ShapeTests
         double[] maxValues = [0.96, 3.84];
         for (int i = 0; i < testSolids.Length; i++)
         {
-            var max = testSolids[i].MaxFillet(testSolids[i].Edges());
+            var max = testSolids[i].MaxFillet(testSolids[i].SelectEdges());
             Check.AlmostEqual(maxValues[i], max, 2);
         }
         Assert.Throws<InvalidOperationException>(
-            () => testSolids[0].MaxFillet(testSolids[0].Edges(), tolerance: 1e-6, maxIterations: 1));
+            () => testSolids[0].MaxFillet(testSolids[0].SelectEdges(), tolerance: 1e-6, maxIterations: 1));
         var box = Solid.MakeBox(1, 1, 1);
-        Assert.Equal(ModelingDiagnostics.FilletFailed, Failures.Try(() => box.Fillet(0.75, box.Edges())).Error!.Code);
+        Assert.Equal(ModelingDiagnostics.FilletFailed, Failures.Try(() => box.Fillet(0.75, box.SelectEdges())).Error!.Code);
     }
 
     [Fact]
@@ -285,10 +285,10 @@ public class ShapeTests
     public void LocatedVertex()
     {
         // Located() replaces a vertex's location rather than adding to it
-        var moved = new Vertex(0, 0, 0).Moved(new Pos(-2.5, 0, 0));
+        var moved = Vertex.Make(0, 0, 0).Moved(new Pos(-2.5, 0, 0));
         Check.AlmostEqual(1, moved.Located(new Pos(1, 0, 0)).X, 5);
 
-        var extracted = new Compound([moved]).Vertices()[0];
+        var extracted = Compound.Make([moved]).SelectVertices()[0];
         Check.AlmostEqual(1, extracted.Located(new Pos(1, 0, 0)).X, 5);
 
         var box = Solid.MakeBox(1, 1, 1).Moved(new Pos(-2.5, 0, 0));
@@ -306,7 +306,7 @@ public class ShapeTests
     public void Equal()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        Assert.Equal(box, box);
+        Check.Same(box, box);
     }
 
     [Fact]
@@ -314,7 +314,7 @@ public class ShapeTests
     {
         var box = Solid.MakeBox(1, 1, 1);
         var diff = Solid.MakeBox(1, 2, 3);
-        Assert.NotEqual(box, diff);
+        Check.NotSame(box, diff);
     }
 
     [Fact]
@@ -392,7 +392,7 @@ public class ShapeTests
     public void BooleanZeroIntersection()
     {
         var box = Solid.MakeBox(1, 2, 3);
-        var zero = new Solid();
+        var zero = default(Solid);
 
         Assert.Empty(box.Intersect(zero));
         Assert.Empty(zero.Intersect(box));
@@ -405,7 +405,7 @@ public class ShapeTests
         // in a sphere seems to be the cause of this.
         var sphere = Solid.MakeSphere(1);
         var divider = Solid.MakeBox(0.1, 3, 3, new Plane(new Vector(-0.05, -1.5, -1.5)));
-        var halves = sphere.Cut(divider).Solids().Select(s => s.Clean()).ToList();
+        var halves = sphere.Cut(divider).SelectSolids().Select(s => s.Clean()).ToList();
         Assert.Equal(2, halves.Count);
         Assert.True(Math.Abs(halves[0].Volume - halves[1].Volume) > 0);
     }
@@ -413,15 +413,15 @@ public class ShapeTests
     [Fact]
     public void CleanEmpty()
     {
-        var obj = new Solid();
-        Assert.Same(obj, obj.Clean());
+        var obj = default(Solid);
+        Check.Same(obj, obj.Clean());
     }
 
     [Fact]
     public void Vertex_()
     {
         var v = Edge.MakeCircle(1).SingleVertex();
-        Assert.IsType<Vertex>(v);
+        Check.Is<Vertex>(v);
         var e = Assert.Throws<InvalidOperationException>(() => Wire.MakeRect(1, 1).SingleVertex());
         Assert.Contains("Expected exactly one vertex", e.Message);
     }
@@ -430,7 +430,7 @@ public class ShapeTests
     public void Edge_()
     {
         var edge = Edge.MakeCircle(1).SingleEdge();
-        Assert.IsType<Edge>(edge);
+        Check.Is<Edge>(edge);
         var e = Assert.Throws<InvalidOperationException>(() => Wire.MakeRect(1, 1).SingleEdge());
         Assert.Contains("Expected exactly one edge", e.Message);
     }
@@ -439,7 +439,7 @@ public class ShapeTests
     public void Wire_()
     {
         var w = Wire.MakeCircle(1).SingleWire();
-        Assert.IsType<Wire>(w);
+        Check.Is<Wire>(w);
         var e = Assert.Throws<InvalidOperationException>(() => Solid.MakeBox(1, 1, 1).SingleWire());
         Assert.Contains("Expected exactly one wire", e.Message);
     }
@@ -448,7 +448,7 @@ public class ShapeTests
     public void Face_()
     {
         var f = Face.MakeRect(1, 1);
-        Assert.IsType<Face>(f);
+        Check.Is<Face>(f);
         var e = Assert.Throws<InvalidOperationException>(() => Solid.MakeBox(1, 1, 1).SingleFace());
         Assert.Contains("Expected exactly one face", e.Message);
     }
@@ -458,16 +458,16 @@ public class ShapeTests
     {
         // The error case extrudes text, which isn't ported yet
         var s = Solid.MakeSphere(1).SingleShell();
-        Assert.IsType<Shell>(s);
+        Check.Is<Shell>(s);
     }
 
     [Fact]
     public void Solid_()
     {
         var s = Solid.MakeSphere(1).SingleSolid();
-        Assert.IsType<Solid>(s);
+        Check.Is<Solid>(s);
         var (top, bottom) = Solid.MakeSphere(1).SplitBoth(Plane.XY);
-        var e = Assert.Throws<InvalidOperationException>(() => new Compound([.. top, .. bottom]).SingleSolid());
+        var e = Assert.Throws<InvalidOperationException>(() => Compound.Make([.. top, .. bottom]).SingleSolid());
         Assert.Contains("Expected exactly one solid", e.Message);
     }
 
@@ -487,7 +487,7 @@ public class ShapeTests
         var box = Solid.MakeBox(4, 4, 4);
         Assert.True(Solid.MakeSphere(1).IsManifold);
         Assert.True(Solid.MakeCone(2, 0, 3).IsManifold);
-        Assert.True(box.Fillet(0.5, box.Edges()).IsManifold);
+        Assert.True(box.Fillet(0.5, box.SelectEdges()).IsManifold);
         Check.AlmostEqual(Solid.MakeSphere(1).Volume, Solid.MakeSphere(1).SingleShell().Volume, 5);
     }
 
@@ -530,21 +530,21 @@ public class ShapeTests
     public void OcpSection()
     {
         // Vertex
-        var (verts, edges) = new Vertex(1, 2, 0).OcpSection(new Vertex(1, 2, 0));
+        var (verts, edges) = Vertex.Make(1, 2, 0).OcpSection(Vertex.Make(1, 2, 0));
         Assert.Single(verts);
         Assert.Empty(edges);
         Check.AlmostEqual(new Vector(1, 2, 0), new Vector(verts[0]), 5);
 
-        (verts, edges) = new Vertex(1, 2, 0).OcpSection(Edge.MakeLine(new Vector(0, 0), new Vector(2, 4)));
+        (verts, edges) = Vertex.Make(1, 2, 0).OcpSection(Edge.MakeLine(new Vector(0, 0), new Vector(2, 4)));
         Assert.Single(verts);
         Assert.Empty(edges);
         Check.AlmostEqual(new Vector(1, 2, 0), new Vector(verts[0]), 5);
 
-        (verts, edges) = new Vertex(1, 2, 0).OcpSection(Face.MakeRect(5, 5));
+        (verts, edges) = Vertex.Make(1, 2, 0).OcpSection(Face.MakeRect(5, 5));
         Check.AlmostEqual(new Vector(1, 2, 0), new Vector(verts[0]), 5);
         Assert.Empty(edges);
 
-        (verts, edges) = new Vertex(1, 2, 0).OcpSection(Face.FromPlane(Plane.XY));
+        (verts, edges) = Vertex.Make(1, 2, 0).OcpSection(Face.FromPlane(Plane.XY));
         Check.AlmostEqual(new Vector(1, 2, 0), new Vector(verts[0]), 5);
         Assert.Empty(edges);
 
@@ -584,25 +584,25 @@ public class ShapeTests
     [Fact]
     public void EmptyShape()
     {
-        var empty = new Solid();
+        var empty = default(Solid);
         var box = Solid.MakeBox(1, 1, 1);
         Assert.Throws<InvalidOperationException>(() => empty.Location);
         Assert.Throws<InvalidOperationException>(() => empty.Position);
         Assert.Throws<InvalidOperationException>(() => empty.Orientation);
         Assert.False(empty.IsManifold);
         Assert.Throws<InvalidOperationException>(() => empty.GeomType);
-        Assert.Same(empty, empty.Fix());
-        Assert.Equal(new Solid().GetHashCode(), empty.GetHashCode());
-        Assert.False(empty.IsSame(new Solid()));
-        Assert.False(empty.IsEqual(new Solid()));
+        Check.Same(empty, empty.Fix());
+        Assert.Equal(default(Solid).GetHashCode(), empty.GetHashCode());
+        Assert.False(empty.IsSame(default(Solid)));
+        Assert.False(empty.IsEqual(default(Solid)));
         Assert.True(empty.IsValid);
         var emptyBbox = empty.BoundingBox();
         Assert.Equal((0.0, 0.0, 0.0), (emptyBbox.Size.X, emptyBbox.Size.Y, emptyBbox.Size.Z));
-        Assert.Same(empty, empty.Mirror(Plane.XY));
+        Check.Same(empty, empty.Mirror(Plane.XY));
         Check.AlmostEqual(0, empty.ComputeVolume(), 5);
-        Assert.Empty(empty.Entities(Kerf.Modeling.ShapeType.Face));
+        Assert.Empty(empty.Entities(ShapeType.Face));
         Assert.Equal(0, empty.Area);
-        Assert.Same(empty, empty.Rotate(Axis.Z, 90));
+        Check.Same(empty, empty.Rotate(Axis.Z, 90));
         var translateMatrix = new Matrix(new double[,]
         {
             { 1.0, 0.0, 0.0, 1.0 },
@@ -610,44 +610,44 @@ public class ShapeTests
             { 0.0, 0.0, 1.0, 3.0 },
             { 0.0, 0.0, 0.0, 1.0 },
         });
-        Assert.Same(empty, empty.TransformShape(translateMatrix));
-        Assert.Same(empty, empty.TransformGeometry(translateMatrix));
+        Check.Same(empty, empty.TransformShape(translateMatrix));
+        Check.Same(empty, empty.TransformGeometry(translateMatrix));
         // Nothing is nothing wherever it is put
         Assert.True(empty.Located(new Location(new Vector(1, 2, 3))).IsEmpty);
         Assert.True(empty.Moved(new Location(new Vector(1, 2, 3))).IsEmpty);
         Assert.Throws<InvalidOperationException>(() => empty.DistanceTo(new Vector(1, 1, 1)));
         Assert.Throws<InvalidOperationException>(() => empty.DistanceToWithClosestPoints(new Vector(1, 1, 1)));
-        var (sectionVertices, sectionEdges) = empty.OcpSection(new Vertex(1, 1, 1));
+        var (sectionVertices, sectionEdges) = empty.OcpSection(Vertex.Make(1, 1, 1));
         Assert.Empty(sectionVertices);
         Assert.Empty(sectionEdges);
         Assert.Empty(empty.FacesIntersectedByAxis(Axis.Z));
-        Assert.Throws<InvalidOperationException>(() => empty.Distance(new Vertex(1, 1, 1)));
-        Assert.Throws<InvalidOperationException>(() => empty.Distances(new Vertex(0, 0, 0), new Vertex(1, 1, 1)).ToList());
-        Assert.Throws<InvalidOperationException>(() => box.Distances(empty, new Vertex(1, 1, 1)).ToList());
+        Assert.Throws<InvalidOperationException>(() => empty.Distance(Vertex.Make(1, 1, 1)));
+        Assert.Throws<InvalidOperationException>(() => empty.Distances(Vertex.Make(0, 0, 0), Vertex.Make(1, 1, 1)).ToList());
+        Assert.Throws<InvalidOperationException>(() => box.Distances(empty, Vertex.Make(1, 1, 1)).ToList());
         Assert.Throws<InvalidOperationException>(() => empty.Tessellate(0.001));
         Assert.Throws<InvalidOperationException>(() => empty.ToSplines());
-        var emptyWire = new Wire();
-        Assert.Throws<ArgumentException>(() => box.Vertices().GroupBy(emptyWire));
-        Assert.Throws<ArgumentException>(() => box.Vertices().OrderBy(emptyWire));
+        var emptyWire = default(Wire);
+        Assert.Throws<ArgumentException>(() => box.SelectVertices().GroupBy(emptyWire));
+        Assert.Throws<ArgumentException>(() => box.SelectVertices().OrderBy(emptyWire));
     }
 
     [Fact]
     public void EmptySelectors()
     {
-        Assert.Empty(new Vertex(1, 1, 1).Edges());
-        Assert.Empty(new Vertex(1, 1, 1).Wires());
-        Assert.Empty(new Vertex(1, 1, 1).Faces());
-        Assert.Empty(new Vertex(1, 1, 1).Shells());
-        Assert.Empty(new Vertex(1, 1, 1).Solids());
-        Assert.Empty(new Vertex(1, 1, 1).Compounds());
+        Assert.Empty(Vertex.Make(1, 1, 1).SelectEdges());
+        Assert.Empty(Vertex.Make(1, 1, 1).SelectWires());
+        Assert.Empty(Vertex.Make(1, 1, 1).SelectFaces());
+        Assert.Empty(Vertex.Make(1, 1, 1).SelectShells());
+        Assert.Empty(Vertex.Make(1, 1, 1).SelectSolids());
+        Assert.Empty(Vertex.Make(1, 1, 1).Compounds());
         (Func<Shape> Single, string Name)[] cases =
         [
-            (() => new Vertex(1, 1, 1).SingleEdge(), "edge"),
-            (() => new Vertex(1, 1, 1).SingleWire(), "wire"),
-            (() => new Vertex(1, 1, 1).SingleFace(), "face"),
-            (() => new Vertex(1, 1, 1).SingleShell(), "shell"),
-            (() => new Vertex(1, 1, 1).SingleSolid(), "solid"),
-            (() => new Vertex(1, 1, 1).SingleCompound(), "compound"),
+            (() => Vertex.Make(1, 1, 1).SingleEdge(), "edge"),
+            (() => Vertex.Make(1, 1, 1).SingleWire(), "wire"),
+            (() => Vertex.Make(1, 1, 1).SingleFace(), "face"),
+            (() => Vertex.Make(1, 1, 1).SingleShell(), "shell"),
+            (() => Vertex.Make(1, 1, 1).SingleSolid(), "solid"),
+            (() => Vertex.Make(1, 1, 1).SingleCompound(), "compound"),
         ];
         foreach (var (single, name) in cases)
         {
@@ -664,14 +664,14 @@ public class ShapeTests
         var root2O2 = Math.Sqrt(2) / 2;
         Check.AlmostEqual(new Vector(1 - root2O2, -root2O2, 0), rotatedLine.PositionAt(0));
         Check.AlmostEqual(new Vector(1, 0, 0), rotatedLine.PositionAt(1));
-        Assert.True(line.KernelShape.IsPartner(rotatedLine.KernelShape));
+        Assert.True(line.IsPartner(rotatedLine));
 
         rotatedLine = line.Rotate(new Axis(new Vector(1, 0, 0), new Vector(0, 0, 1)), 45, transform: true);
         Check.AlmostEqual(new Vector(1 - root2O2, -root2O2, 0), rotatedLine.PositionAt(0));
         Check.AlmostEqual(new Vector(1, 0, 0), rotatedLine.PositionAt(1));
-        Assert.False(line.KernelShape.IsPartner(rotatedLine.KernelShape));
+        Assert.False(line.IsPartner(rotatedLine));
 
-        var rotatedEmpty = new Edge().Rotate(new Axis(new Vector(1, 0, 0), new Vector(0, 0, 1)), 45);
+        var rotatedEmpty = default(Edge).Rotate(new Axis(new Vector(1, 0, 0), new Vector(0, 0, 1)), 45);
         Assert.True(rotatedEmpty.IsEmpty);
     }
 
@@ -682,14 +682,14 @@ public class ShapeTests
         var translatedLine = line.Translate(new Vector(0, 1, 0));
         Check.AlmostEqual(new Vector(0, 1, 0), translatedLine.PositionAt(0));
         Check.AlmostEqual(new Vector(1, 1, 0), translatedLine.PositionAt(1));
-        Assert.True(line.KernelShape.IsPartner(translatedLine.KernelShape));
+        Assert.True(line.IsPartner(translatedLine));
 
         translatedLine = line.Translate(new Vector(0, 1, 0), transform: true);
         Check.AlmostEqual(new Vector(0, 1, 0), translatedLine.PositionAt(0));
         Check.AlmostEqual(new Vector(1, 1, 0), translatedLine.PositionAt(1));
-        Assert.False(line.KernelShape.IsPartner(translatedLine.KernelShape));
+        Assert.False(line.IsPartner(translatedLine));
 
-        var translatedEmpty = new Edge().Translate(new Vector(0, 1, 0));
+        var translatedEmpty = default(Edge).Translate(new Vector(0, 1, 0));
         Assert.True(translatedEmpty.IsEmpty);
     }
 }
@@ -704,29 +704,29 @@ public class ShapeCastTests
     {
         (Type Expected, Shape Shape)[] samples =
         [
-            (typeof(Vertex), _box.Vertices()[0]),
-            (typeof(Edge), _box.Edges()[0]),
-            (typeof(Face), _box.Faces()[0]),
-            (typeof(Shell), _box.Shells()[0]),
-            (typeof(Solid), _box.Solids()[0]),
-            (typeof(Compound), new Compound([_box])),
+            (typeof(Vertex), _box.SelectVertices()[0]),
+            (typeof(Edge), _box.SelectEdges()[0]),
+            (typeof(Face), _box.SelectFaces()[0]),
+            (typeof(Shell), _box.SelectShells()[0]),
+            (typeof(Solid), _box.SelectSolids()[0]),
+            (typeof(Compound), Compound.Make([_box])),
         ];
         foreach (var (expected, shape) in samples)
-            Assert.IsType(expected, Shape.Cast(shape.KernelShape));
+            Assert.IsType(expected, Shape.Cast(shape));
     }
 
     [Fact]
     public void CastIsTheSameFromAnyClass()
     {
         // Cast is static on Shape, so it is the same through every class
-        var solid = _box.Solids()[0].KernelShape;
-        Assert.IsType<Solid>(Vertex.Cast(solid));
-        Assert.IsType<Solid>(Edge.Cast(solid));
-        Assert.IsType<Solid>(Face.Cast(solid));
-        Assert.IsType<Solid>(Shell.Cast(solid));
-        Assert.IsType<Solid>(Solid.Cast(solid));
-        Assert.IsType<Solid>(Compound.Cast(solid));
-        Assert.IsType<Solid>(Shape.Cast(solid));
+        var solid = _box.SelectSolids()[0];
+        Check.Is<Solid>(Shape.Cast(solid));
+        Check.Is<Solid>(Shape.Cast(solid));
+        Check.Is<Solid>(Shape.Cast(solid));
+        Check.Is<Solid>(Shape.Cast(solid));
+        Check.Is<Solid>(Shape.Cast(solid));
+        Check.Is<Solid>(Shape.Cast(solid));
+        Check.Is<Solid>(Shape.Cast(solid));
     }
 }
 
@@ -741,7 +741,7 @@ public class TransformShapeTests
         var matrix = new Matrix().Rotated(Axis.Z, 90);
         var rotated = box.TransformShape(matrix);
 
-        Assert.IsType<Solid>(rotated);
+        Check.Is<Solid>(rotated);
         Check.AlmostEqual(box.Volume, rotated.Volume, 6);
         Check.AlmostEqual(2, rotated.BoundingBox().Size.X, 6);
         Check.AlmostEqual(1, rotated.BoundingBox().Size.Y, 6);
@@ -754,7 +754,7 @@ public class TransformShapeTests
         var matrix = new Matrix().Rotated(Axis.Z, 90);
         var rotated = box.TransformShape(matrix);
 
-        Assert.NotSame(box, rotated);
+        Check.NotSame(box, rotated);
         Check.AlmostEqual(1, box.BoundingBox().Size.X, 6);
     }
 }
@@ -766,7 +766,7 @@ public class ShapeAlgebraEdgesTests
     {
         // Compound overrides Add, so exercise the Shape implementation with a shape that does not: a bare Solid
         var solid = Solid.MakeBox(1, 1, 1);
-        Assert.Same(solid, solid + Array.Empty<Shape>());
+        Check.Same(solid, solid + Array.Empty<Shape>());
         Assert.Throws<ArgumentNullException>(() => solid + (Shape)null!);
     }
 
@@ -781,7 +781,7 @@ public class ShapeAlgebraEdgesTests
         var bar = Objects.Box(20, 1, 1);
         var blocks = new Pos(-6, 0, 0) * Objects.Box(2, 2, 2) + new Pos(6, 0, 0) * Objects.Box(2, 2, 2);
         var result = bar & blocks;
-        Assert.Equal(2, result.Solids().Count);
+        Assert.Equal(2, result.SelectSolids().Count);
         Check.AlmostEqual(4, result.Volume, 5);
     }
 }
@@ -793,18 +793,18 @@ public class AsShapeTests
     [Fact]
     public void GeometryTypesConvert()
     {
-        Assert.IsType<Vertex>(Shape.AsShape(new Vector(1, 2, 3)));
-        Assert.IsType<Vertex>(Shape.AsShape(new Location(new Vector(1, 2, 3))));
-        Assert.IsType<Edge>(Shape.AsShape(Axis.X));
-        Assert.IsType<Face>(Shape.AsShape(Plane.XY));
+        Check.Is<Vertex>(Shape.AsShape(new Vector(1, 2, 3)));
+        Check.Is<Vertex>(Shape.AsShape(new Location(new Vector(1, 2, 3))));
+        Check.Is<Edge>(Shape.AsShape(Axis.X));
+        Check.Is<Face>(Shape.AsShape(Plane.XY));
     }
 
     [Fact]
     public void LocationSubclassesConvertLikeLocation()
     {
         // Pos and Rotation derive from Location, so an exact-type lookup would miss them
-        Assert.IsType<Vertex>(Shape.AsShape(new Pos(1, 2, 3)));
-        Assert.IsType<Vertex>(Shape.AsShape(new Rotation(0, 0, 45)));
+        Check.Is<Vertex>(Shape.AsShape(new Pos(1, 2, 3)));
+        Check.Is<Vertex>(Shape.AsShape(new Rotation(0, 0, 45)));
         var center = Shape.AsShape(new Pos(1, 2, 3)).Center();
         Assert.Equal((1.0, 2.0, 3.0), (center.X, center.Y, center.Z));
     }
@@ -813,6 +813,6 @@ public class AsShapeTests
     public void ShapesPassThroughUnchanged()
     {
         var edge = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0));
-        Assert.Same(edge, Shape.AsShape(edge));
+        Check.Same(edge, Shape.AsShape(edge));
     }
 }

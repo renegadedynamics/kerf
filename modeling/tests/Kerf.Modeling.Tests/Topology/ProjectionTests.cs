@@ -52,7 +52,7 @@ public class ProjectionTests
 
         var planarTipArc = Edge.MakeCircle(width / 2, startAngle: 270, endAngle: 450).Located(tipCenterLoc);
         var tipArc = planarTipArc.ProjectToShape(centerSurface, -normalAtTipCenter)[0];
-        Assert.IsAssignableFrom<Edge>(tipArc);
+        Check.Is<Edge>(tipArc);
         Check.AlmostEqual(planarTipArc.PositionAt(0), tipArc.PositionAt(0), 5);
         Check.AlmostEqual(planarTipArc.PositionAt(1), tipArc.PositionAt(1), 5);
     }

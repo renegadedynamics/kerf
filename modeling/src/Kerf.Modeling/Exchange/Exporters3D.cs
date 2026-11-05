@@ -109,7 +109,7 @@ public static class Exporters3D
         ArgumentNullException.ThrowIfNull(stream);
         return Export(toExport, () =>
         {
-            stream.Write(Extras.WriteBRep(toExport.TopoShape, withTriangles: true));
+            stream.Write(Extras.WriteBRep(toExport, withTriangles: true));
             return Result.Success();
         });
     }
@@ -157,7 +157,7 @@ public static class Exporters3D
         options ??= StlExportOptions.Default;
         return Export(toExport, () =>
         {
-            var mesh = Failures.Get(Mesher.Mesh(toExport.TopoShape, MeshOptions(options.Tolerance, options.AngularTolerance), cancellationToken: cancellationToken),
+            var mesh = Failures.Get(Mesher.Mesh(toExport, MeshOptions(options.Tolerance, options.AngularTolerance), cancellationToken: cancellationToken),
                                     () => "mesh");
             return Stl.Write(mesh, stream, new StlWriteOptions { Ascii = options.Ascii }, cancellationToken);
         });
@@ -282,9 +282,9 @@ public static class Exporters3D
         if (shape is Compound { AssemblyChildren.Count: > 0 } assembly)
         {
             var children = assembly.AssemblyChildren.Where(c => !c.IsEmpty).Select(StepTree).ToList();
-            return ModelNode.Assembly(children, name, assembly.TopoShape.Placement, color);
+            return ModelNode.Assembly(children, name, assembly.Placement, color);
         }
-        return ModelNode.Part(shape.TopoShape, name, color);
+        return ModelNode.Part(shape, name, color);
     }
 
     private static global::Kerf.Meshing.MeshOptions MeshOptions(double linearDeflection, double angularDeflection) =>

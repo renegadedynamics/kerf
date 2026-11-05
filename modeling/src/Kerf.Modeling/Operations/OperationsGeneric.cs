@@ -25,7 +25,7 @@ public static partial class Operations
     /// Part), vertices being skipped.
     /// </summary>
     /// <exception cref="ArgumentException">No objects are given.</exception>
-    public static Compound BoundingBox(IEnumerable<Shape> objects)
+    public static ModelShape BoundingBox(IEnumerable<Shape> objects)
     {
         // Phase 5: in builder mode the objects default to the builder's object and the boxes are combined with mode
         if (objects is null)
@@ -33,7 +33,7 @@ public static partial class Operations
         var objectList = objects.ToList();
 
         if (objectList.Count > 0 && objectList.All(o => o.IsEmpty))
-            return (Compound)Shape.MakeComposite([], objectList[0].Dim);
+            return NothingOf(objectList[0].Dim);
 
         if (objectList.All(o => o.Dim == 2))
         {
@@ -46,7 +46,7 @@ public static partial class Operations
                     new Vector(bbox.Min.X, bbox.Min.Y), new Vector(bbox.Min.X, bbox.Max.Y), new Vector(bbox.Max.X, bbox.Max.Y), new Vector(bbox.Max.X, bbox.Min.Y),
                     new Vector(bbox.Min.X, bbox.Min.Y),
                 ];
-                newFaces.Add(new Face(Wire.MakePolygon(vertices)));
+                newFaces.Add(Face.Make(Wire.MakePolygon(vertices)));
             }
             return new Sketch(newFaces);
         }
@@ -54,7 +54,7 @@ public static partial class Operations
         var newObjects = new List<Shape>();
         foreach (var obj in objectList)
         {
-            if (obj is Vertex)
+            if (obj.TryAs<Vertex>(out _))
                 continue;
             var bbox = obj.BoundingBox();
             newObjects.Add(Solid.MakeBox(bbox.Size.X, bbox.Size.Y, bbox.Size.Z, new Plane(bbox.Min)));
@@ -63,7 +63,7 @@ public static partial class Operations
     }
 
     /// <inheritdoc cref="BoundingBox(IEnumerable{Shape})"/>
-    public static Compound BoundingBox(Shape obj) => BoundingBox([obj]);
+    public static ModelShape BoundingBox(Shape obj) => BoundingBox([obj]);
 
     // ---- chamfer ----
 
@@ -77,11 +77,15 @@ public static partial class Operations
     /// are given, or <paramref name="reference"/> is given without either.
     /// </exception>
     public static Result<Part> Chamfer(IEnumerable<Edge> edges, double length, double? length2 = null, double? angle = null, Face? reference = null) =>
-        Failures.Try(() => (Part)ChamferCore(edges, length, length2, angle, reference));
+        Failures.Try(() => (Part)ChamferCore(TargetOf(edges, "chamfer"), edges.Select(e => (Shape)e), length, length2, angle, reference));
+
+    /// <summary>The edges of <paramref name="target"/> chamfered (see <see cref="Chamfer(IEnumerable{Edge}, double, double?, double?, Face?)"/>).</summary>
+    public static Result<Part> Chamfer(Shape target, IEnumerable<Edge> edges, double length, double? length2 = null, double? angle = null, Face? reference = null) =>
+        Failures.Try(() => (Part)ChamferCore(target, edges.Select(e => (Shape)e), length, length2, angle, reference));
 
     /// <inheritdoc cref="Chamfer(IEnumerable{Edge}, double, double?, double?, Face?)"/>
-    public static Result<Part> Chamfer(Edge edge, double length, double? length2 = null, double? angle = null, Face? reference = null) =>
-        Chamfer([edge], length, length2, angle, reference);
+    public static Result<Part> Chamfer(Shape target, Edge edge, double length, double? length2 = null, double? angle = null, Face? reference = null) =>
+        Chamfer(target, [edge], length, length2, angle, reference);
 
     /// <summary>
     /// The 2D object (a Sketch), sheet (a Shell) or 1D object (a Wire) the vertices were taken from, with the corners at
@@ -93,15 +97,20 @@ public static partial class Operations
     /// No vertices are given, they weren't taken from a 1D, 2D or sheet object, both <paramref name="length2"/> and
     /// <paramref name="angle"/> are given, or <paramref name="reference"/> is given without either.
     /// </exception>
-    public static Result<Shape> Chamfer(IEnumerable<Vertex> vertices, double length, double? length2 = null, double? angle = null, Edge? reference = null) =>
-        Failures.Try(() => ChamferCore(vertices, length, length2, angle, reference));
+    public static Result<ModelShape> Chamfer(IEnumerable<Vertex> vertices, double length, double? length2 = null, double? angle = null, Edge? reference = null) =>
+        Failures.Try(() => ChamferCore(TargetOf(vertices, "chamfer"), vertices.Select(v => (Shape)v), length, length2, angle, reference));
+
+    /// <summary>The vertices of <paramref name="target"/> chamfered (see <see cref="Chamfer(IEnumerable{Vertex}, double, double?, double?, Edge?)"/>).</summary>
+    public static Result<ModelShape> Chamfer(Shape target, IEnumerable<Vertex> vertices, double length, double? length2 = null, double? angle = null, Edge? reference = null) =>
+        Failures.Try(() => ChamferCore(target, vertices.Select(v => (Shape)v), length, length2, angle, reference));
 
     /// <inheritdoc cref="Chamfer(IEnumerable{Vertex}, double, double?, double?, Edge?)"/>
-    public static Result<Shape> Chamfer(Vertex vertex, double length, double? length2 = null, double? angle = null, Edge? reference = null) =>
-        Chamfer([vertex], length, length2, angle, reference);
+    public static Result<ModelShape> Chamfer(Shape target, Vertex vertex, double length, double? length2 = null, double? angle = null, Edge? reference = null) =>
+        Chamfer(target, [vertex], length, length2, angle, reference);
 
-    private static Shape ChamferCore(IEnumerable<Shape> objects, double length, double? length2, double? angle, Shape? reference)
+    private static ModelShape ChamferCore(Shape target, IEnumerable<Shape> objects, double length, double? length2, double? angle, Shape? reference)
     {
+        using var log = HistoryLog.Open();
         // Python's truthiness: a zero length2 or angle counts as not given
         bool hasLength2 = length2 is { } l2 && l2 != 0;
         bool hasAngle = angle is { } a && a != 0;
@@ -112,7 +121,7 @@ public static partial class Operations
             length2 = length * Math.Tan(angle!.Value * Constants.DegToRad);
             hasLength2 = length2 != 0;
         }
-        if (reference is not null && !(hasLength2 || hasAngle))
+        if (reference.HasValue && !(hasLength2 || hasAngle))
             throw new ArgumentException("reference can only be used in conjunction with length2 or angle");
         var distance2 = length2 ?? length;
 
@@ -120,44 +129,45 @@ public static partial class Operations
         if (objects is null)
             throw new ArgumentException("No objects provided");
         var objectList = objects.ToList();
-        var target = TargetOf(objectList, "chamfer");
+        Edge? referenceEdge = reference is { IsNull: false } re && re.IsEdge() ? (Edge)re : null;
+        Face? referenceFace = reference is { IsNull: false } rf && rf.IsFace() ? (Face)rf : null;
 
-        if (target is Shell)
+        if (target.IsShell())
         {
             var newFaces = EditSheetFaces(target, objectList, "chamfer",
-                                          (face, inFace) => face.Chamfer2D(length, distance2, inFace, reference as Edge));
-            return Shell.MakeSheet(newFaces);
+                                          (face, inFace) => face.Chamfer2D(length, distance2, inFace, referenceEdge));
+            var sheet = Shell.MakeSheet(newFaces);
+            return new Sketch((Shape)sheet).MadeBy(ModelHistory.Of([sheet]));
         }
 
         switch (target.Dim)
         {
             case 3:
             {
-                // A part object becomes a plain Part, so the result can be cast into one
-                var solidTarget = target is BasePartObject ? new Part(target.TopoShape) : (Shape3D)target;
-                if (!objectList.All(o => o is Edge))
+                if (!objectList.All(o => o.IsEdge()))
                     throw new ArgumentException("3D chamfer operation takes only Edges");
-                var newPart = solidTarget.Chamfer(length, distance2, objectList.Cast<Edge>(), reference as Face);
-                return new Part([newPart]).MadeBy(ShapeHistory.Of([newPart]));
+                var newPart = TopoUtil.As3D(target).Chamfer(length, distance2, objectList.Select(o => (Edge)o), referenceFace);
+                return new Part([newPart]).MadeBy(ModelHistory.Of([newPart]));
             }
             case 2:
             {
-                if (!objectList.All(o => o is Vertex))
+                if (!objectList.All(o => o.IsVertex()))
                     throw new ArgumentException("2D chamfer operation takes only Vertices");
                 var newFaces = new List<Face>();
-                foreach (var face in target.Faces())
+                foreach (var face in target.SelectFaces())
                 {
-                    var inFace = face.Vertices().Where(objectList.Contains).ToList();
-                    newFaces.Add(inFace.Count > 0 ? face.Chamfer2D(length, distance2, inFace, reference as Edge) : face);
+                    var inFace = face.SelectVertices().Where(v => objectList.Contains(v, ShapeComparer.Same)).ToList();
+                    newFaces.Add(inFace.Count > 0 ? face.Chamfer2D(length, distance2, inFace, referenceEdge) : face);
                 }
-                return new Sketch(newFaces).MadeBy(ShapeHistory.Of(newFaces));
+                return new Sketch(newFaces).MadeBy(ModelHistory.Of(newFaces));
             }
             case 1:
             {
                 var wire = WireTargetOf(target);
-                if (!objectList.All(o => o is Vertex))
+                if (!objectList.All(o => o.IsVertex()))
                     throw new ArgumentException("1D fillet operation takes only Vertices");
-                return wire.Chamfer2D(length, distance2, InnerVertices(wire, objectList), reference as Edge);
+                var made = wire.Chamfer2D(length, distance2, InnerVertices(wire, objectList), referenceEdge);
+                return new Curve((Shape)made).MadeBy(ModelHistory.Of([made]));
             }
             default:
                 throw new ArgumentException("Invalid object dimension");
@@ -173,60 +183,73 @@ public static partial class Operations
     /// that suits it.
     /// </remarks>
     /// <exception cref="ArgumentException">No edges are given, or they weren't taken from a 3D object.</exception>
-    public static Result<Part> Fillet(IEnumerable<Edge> edges, double radius) => Failures.Try(() => (Part)FilletCore(edges, radius));
+    public static Result<Part> Fillet(IEnumerable<Edge> edges, double radius) =>
+        Failures.Try(() => (Part)FilletCore(TargetOf(edges, "fillet"), edges.Select(e => (Shape)e), radius));
+
+    /// <summary>The edges of <paramref name="target"/> filleted (see <see cref="Fillet(IEnumerable{Edge}, double)"/>).</summary>
+    public static Result<Part> Fillet(Shape target, IEnumerable<Edge> edges, double radius) =>
+        Failures.Try(() => (Part)FilletCore(target, edges.Select(e => (Shape)e), radius));
 
     /// <inheritdoc cref="Fillet(IEnumerable{Edge}, double)"/>
-    public static Result<Part> Fillet(Edge edge, double radius) => Fillet([edge], radius);
+    public static Result<Part> Fillet(Shape target, Edge edge, double radius) => Fillet(target, [edge], radius);
 
     /// <summary>
     /// The 2D object (a Sketch), sheet (a Shell) or 1D object (a Wire) the vertices were taken from, with the corners at
     /// the vertices filleted. The vertices at the ends of an open wire are skipped.
     /// </summary>
     /// <exception cref="ArgumentException">No vertices are given, or they weren't taken from a 1D, 2D or sheet object.</exception>
-    public static Result<Shape> Fillet(IEnumerable<Vertex> vertices, double radius) => Failures.Try(() => FilletCore(vertices, radius));
+    public static Result<ModelShape> Fillet(IEnumerable<Vertex> vertices, double radius) =>
+        Failures.Try(() => FilletCore(TargetOf(vertices, "fillet"), vertices.Select(v => (Shape)v), radius));
+
+    /// <summary>The vertices of <paramref name="target"/> filleted (see <see cref="Fillet(IEnumerable{Vertex}, double)"/>).</summary>
+    public static Result<ModelShape> Fillet(Shape target, IEnumerable<Vertex> vertices, double radius) =>
+        Failures.Try(() => FilletCore(target, vertices.Select(v => (Shape)v), radius));
 
     /// <inheritdoc cref="Fillet(IEnumerable{Vertex}, double)"/>
-    public static Result<Shape> Fillet(Vertex vertex, double radius) => Fillet([vertex], radius);
+    public static Result<ModelShape> Fillet(Shape target, Vertex vertex, double radius) => Fillet(target, [vertex], radius);
 
-    private static Shape FilletCore(IEnumerable<Shape> objects, double radius)
+    private static ModelShape FilletCore(Shape target, IEnumerable<Shape> objects, double radius)
     {
+        using var log = HistoryLog.Open();
         // Phase 5: in builder mode the target is the builder's object, and the result replaces it
         if (objects is null)
             throw new ArgumentException("No objects provided");
         var objectList = objects.ToList();
-        var target = TargetOf(objectList, "fillet");
 
-        if (target is Shell)
-            return Shell.MakeSheet(EditSheetFaces(target, objectList, "fillet", (face, inFace) => face.Fillet2D(radius, inFace)));
+        if (target.IsShell())
+        {
+            var sheet = Shell.MakeSheet(EditSheetFaces(target, objectList, "fillet", (face, inFace) => face.Fillet2D(radius, inFace)));
+            return new Sketch((Shape)sheet).MadeBy(ModelHistory.Of([sheet]));
+        }
 
         switch (target.Dim)
         {
             case 3:
             {
-                var solidTarget = target is BasePartObject ? new Part(target.TopoShape) : (Shape3D)target;
-                if (!objectList.All(o => o is Edge))
+                if (!objectList.All(o => o.IsEdge()))
                     throw new ArgumentException("3D fillet operation takes only Edges");
-                var newPart = solidTarget.Fillet(radius, objectList.Cast<Edge>());
-                return new Part([newPart]).MadeBy(ShapeHistory.Of([newPart]));
+                var newPart = TopoUtil.As3D(target).Fillet(radius, objectList.Select(o => (Edge)o));
+                return new Part([newPart]).MadeBy(ModelHistory.Of([newPart]));
             }
             case 2:
             {
-                if (!objectList.All(o => o is Vertex))
+                if (!objectList.All(o => o.IsVertex()))
                     throw new ArgumentException("2D fillet operation takes only Vertices");
                 var newFaces = new List<Face>();
-                foreach (var face in target.Faces())
+                foreach (var face in target.SelectFaces())
                 {
-                    var inFace = face.Vertices().Where(objectList.Contains).ToList();
+                    var inFace = face.SelectVertices().Where(v => objectList.Contains(v, ShapeComparer.Same)).ToList();
                     newFaces.Add(inFace.Count > 0 ? face.Fillet2D(radius, inFace) : face);
                 }
-                return new Sketch(newFaces).MadeBy(ShapeHistory.Of(newFaces));
+                return new Sketch(newFaces).MadeBy(ModelHistory.Of(newFaces));
             }
             case 1:
             {
                 var wire = WireTargetOf(target);
-                if (!objectList.All(o => o is Vertex))
+                if (!objectList.All(o => o.IsVertex()))
                     throw new ArgumentException("1D fillet operation takes only Vertices");
-                return wire.Fillet2D(radius, InnerVertices(wire, objectList));
+                var made = wire.Fillet2D(radius, InnerVertices(wire, objectList));
+                return new Curve((Shape)made).MadeBy(ModelHistory.Of([made]));
             }
             default:
                 throw new ArgumentException("Invalid object dimension");
@@ -234,12 +257,12 @@ public static partial class Operations
     }
 
     /// <summary>The shape the first of the objects was taken out of, which a chamfer or fillet rebuilds.</summary>
-    private static Shape TargetOf(List<Shape> objectList, string operation)
+    /// <summary>The shape a selection was taken out of, which a chamfer or fillet rebuilds.</summary>
+    private static Shape TargetOf<T>(IEnumerable<T> objects, string operation) where T : IShape
     {
-        var target = objectList.Count > 0 ? objectList[0].TopoParent : null;
-        if (target is null || target.IsEmpty)
-            throw new ArgumentException($"Nothing to {operation}");
-        return target;
+        if (objects is ShapeList<T> { Origin: { IsEmpty: false } origin })
+            return origin.AsShape();
+        throw new ArgumentException($"Nothing to {operation}: select from a shape, or give the shape as the first argument");
     }
 
     /// <summary>
@@ -248,12 +271,12 @@ public static partial class Operations
     private static List<Face> EditSheetFaces(Shape target, List<Shape> objectList, string operation, Func<Face, List<Vertex>, Face> edit)
     {
         // build123d's messages name BuildSheet, which handles sheets in builder mode
-        if (!objectList.All(o => o is Vertex))
+        if (!objectList.All(o => o.IsVertex()))
             throw new ArgumentException($"A sheet's {operation} takes only vertices.");
-        var targetFaces = target.Faces();
+        var targetFaces = target.SelectFaces();
         foreach (var vertex in objectList)
         {
-            var supportingFaces = targetFaces.Where(f => f.Vertices().Any(v => v.Equals(vertex))).ToList();
+            var supportingFaces = targetFaces.Where(f => f.SelectVertices().Any(v => v.SameAs(vertex))).ToList();
             if (supportingFaces.Count != 1)
                 throw new ArgumentException($"A sheet's {operation} vertices must be on the free boundary of one face.");
             if (supportingFaces[0].GeomType != GeomType.Plane)
@@ -262,23 +285,23 @@ public static partial class Operations
         var newFaces = new List<Face>();
         foreach (var face in targetFaces)
         {
-            var inFace = face.Vertices().Where(objectList.Contains).ToList();
+            var inFace = face.SelectVertices().Where(v => objectList.Contains(v, ShapeComparer.Same)).ToList();
             newFaces.Add(inFace.Count > 0 ? edit(face, inFace) : face);
         }
         return newFaces;
     }
 
     /// <summary>The wire a 1D chamfer or fillet rebuilds: a line object as a plain wire, or the first wire of a curve.</summary>
-    private static Wire WireTargetOf(Shape target) => target is Wire wire ? new Wire(wire) : target.Wires()[0];
+    private static Wire WireTargetOf(Shape target) => target.IsWire() ? (Wire)target : target.SelectWires()[0];
 
     /// <summary>The vertices without those at the ends of an open wire, which can't be chamfered or filleted.</summary>
     private static List<Vertex> InnerVertices(Wire wire, List<Shape> vertices)
     {
         if (wire.IsClosed)
-            return [.. vertices.Cast<Vertex>()];
+            return [.. vertices.Select(v => (Vertex)v)];
         var start = wire.PositionAt(0);
         var end = wire.PositionAt(1);
-        return [.. vertices.Cast<Vertex>().Where(v =>
+        return [.. vertices.Select(v => (Vertex)v).Where(v =>
             !(TopologyUtils.IsCloseB((v.ToVector() - start).Length, 0.0) || TopologyUtils.IsCloseB((v.ToVector() - end).Length, 0.0)))];
     }
 
@@ -287,7 +310,7 @@ public static partial class Operations
     /// <summary>The objects mirrored about a plane (by default Plane.XZ).</summary>
     /// <returns>A Part, Sketch or Curve when the objects are all 3D, 2D or 1D; otherwise a Compound.</returns>
     /// <exception cref="ArgumentException">No objects are given.</exception>
-    public static Compound Mirror(IEnumerable<Shape> objects, Plane? about = null)
+    public static ModelShape Mirror(IEnumerable<Shape> objects, Plane? about = null)
     {
         // Phase 5: in builder mode the objects default to the builder's object and the result is combined with mode;
         // BuildSheet mirrors faces into its sheet
@@ -300,23 +323,32 @@ public static partial class Operations
     }
 
     /// <inheritdoc cref="Mirror(IEnumerable{Shape}, Plane?)"/>
-    public static Compound Mirror(Shape obj, Plane? about = null) => Mirror([obj], about);
+    public static ModelShape Mirror(Shape obj, Plane? about = null) => Mirror([obj], about);
 
     /// <summary>
     /// A compound of the results, as a Part, Sketch or Curve when the inputs are all of that dimension (build123d's
     /// <c>all(obj._dim == n for obj in object_list)</c>, true of no inputs).
     /// </summary>
-    private static Compound OfInputDimension(IReadOnlyList<Shape> inputs, IEnumerable<Shape> results)
+    private static ModelShape OfInputDimension(IReadOnlyList<Shape> inputs, IEnumerable<Shape> results)
     {
-        var compound = new Compound(results);
+        var compound = Compound.Make(results);
         if (inputs.All(o => o.Dim == 3))
-            return new Part(compound.TopoShape);
+            return new Part(compound);
         if (inputs.All(o => o.Dim == 2))
-            return new Sketch(compound.TopoShape);
+            return new Sketch(compound);
         if (inputs.All(o => o.Dim == 1))
-            return new Curve(compound.TopoShape);
-        return compound;
+            return new Curve(compound);
+        return new Assembly(compound);
     }
+
+    /// <summary>Nothing, as the object of a dimension.</summary>
+    private static ModelShape NothingOf(int? dimension) => dimension switch
+    {
+        1 => new Curve(),
+        2 => new Sketch(),
+        3 => new Part(),
+        _ => new Assembly(TopoUtil.EmptyCompound()),
+    };
 
     // ---- offset ----
 
@@ -332,10 +364,10 @@ public static partial class Operations
     /// <returns>A Part, Sketch or Curve when the objects are all 3D, 2D or 1D; otherwise a Compound.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="objects"/> is null.</exception>
     /// <exception cref="ArgumentException">One of the objects can't be offset.</exception>
-    public static Result<Compound> Offset(IEnumerable<Shape> objects, double amount, OffsetOptions? options = null) =>
+    public static Result<ModelShape> Offset(IEnumerable<Shape> objects, double amount, OffsetOptions? options = null) =>
         Failures.Try(() => OffsetOrThrow(objects, amount, options));
 
-    internal static Compound OffsetOrThrow(IEnumerable<Shape> objects, double amount, OffsetOptions? options)
+    internal static ModelShape OffsetOrThrow(IEnumerable<Shape> objects, double amount, OffsetOptions? options)
     {
         options ??= OffsetOptions.Default;
         var (openings, kind, side, closed, minEdgeLength) = ((IEnumerable<Face>)options.Openings, options.Kind, options.Side, options.Closed, options.MinEdgeLength);
@@ -349,7 +381,7 @@ public static partial class Operations
         var solids = new List<Solid>();
         foreach (var obj in objectList)
         {
-            switch (obj)
+            switch (TopoUtil.Typed(obj))
             {
                 case Compound compound:
                     edges.AddRange(compound.ElementsOfType<Edge>());
@@ -367,10 +399,10 @@ public static partial class Operations
                     edges.Add(edge);
                     break;
                 case Wire wire:
-                    edges.AddRange(wire.Edges());
+                    edges.AddRange(wire.SelectEdges());
                     break;
                 default:
-                    throw new ArgumentException($"Unsupported type {obj.GetType().Name} for {obj}");
+                    throw new ArgumentException($"Unsupported type {TopoUtil.KindName(obj)} for {obj.Describe()}");
             }
         }
 
@@ -395,16 +427,16 @@ public static partial class Operations
             }
 
             // Inner wires may go beyond the outer wire, so they're cut away as faces
-            var newFace = new Face(outerWire);
+            var newFace = Face.Make(outerWire);
             if ((newFace.NormalAt() - face.NormalAt()).Length > 0.001)
                 newFace = (Face)(-newFace);
             if (innerWires.Count > 0)
             {
-                var subtraction = newFace.Cut(innerWires.Select(w => new Face(w)));
+                var subtraction = newFace.Cut(innerWires.Select(w => Face.Make(w)));
                 // build123d would fail here on a cut into several pieces (it asks the face, not the result, to unwrap
                 // itself); the pieces are kept instead
-                if (subtraction is Compound)
-                    newFaces.AddRange(subtraction.Faces());
+                if (subtraction.IsCompound())
+                    newFaces.AddRange(subtraction.SelectFaces().Select(f => (Shape)f));
                 else
                     newFaces.Add(subtraction);
             }
@@ -412,22 +444,22 @@ public static partial class Operations
                 newFaces.Add(newFace);
         }
 
-        var newWires = new List<Shape1D>();
+        var newWires = new List<Shape>();
         if (edges.Count > 0)
         {
             // The line itself is offset, not a copy made from its ends: its location says which plane it was drawn on
             var offsetLine = edges.Count == 1 && edges[0].GeomType == GeomType.Line
                 ? edges[0].Offset2D(amount, kind, side, closed)
-                : new Wire(edges).Offset2D(amount, kind, side, closed);
-            newWires.Add(minEdgeLength is { } min ? AsWire(offsetLine).FixDegenerateEdges(min) : offsetLine);
+                : Wire.Make(edges).Offset2D(amount, kind, side, closed);
+            newWires.Add(minEdgeLength is { } min ? AsWire(offsetLine).FixDegenerateEdges(min) : offsetLine.AsShape());
         }
 
         var openingList = openings?.ToList() ?? [];
         var newSolids = new List<Shape>();
         foreach (var solid in solids)
         {
-            var solidFaces = solid.Faces();
-            var openingsInThisSolid = openingList.Where(solidFaces.Contains).ToList();
+            var solidFaces = solid.SelectFaces();
+            var openingsInThisSolid = openingList.Where(f => solidFaces.Contains(f, ShapeComparer<Face>.Same)).ToList();
             newSolids.Add(solid.Offset3D(openingsInThisSolid, amount, kind: kind).Fix());
         }
 
@@ -435,7 +467,7 @@ public static partial class Operations
     }
 
     /// <inheritdoc cref="Offset(IEnumerable{Shape}, double, OffsetOptions?)"/>
-    public static Result<Compound> Offset(Shape obj, double amount, OffsetOptions? options = null) => Offset([obj], amount, options);
+    public static Result<ModelShape> Offset(Shape obj, double amount, OffsetOptions? options = null) => Offset([obj], amount, options);
 
     /// <summary>The part offset: its solids, with <see cref="OffsetOptions.Openings"/> left open.</summary>
     public static Result<Part> Offset(Part obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).Map(c => c.As<Part>());
@@ -447,7 +479,7 @@ public static partial class Operations
     public static Result<Curve> Offset(Curve obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).Map(c => c.As<Curve>());
 
     /// <summary>A 2D offset as a wire: a single-edge offset comes back as its edge.</summary>
-    private static Wire AsWire(Shape1D offset) => offset as Wire ?? new Wire((Edge)offset);
+    private static Wire AsWire(IShape1D offset) => offset is Wire wire ? wire : Wire.Make((Edge)offset.AsShape());
 
     // ---- project ----
 
@@ -458,50 +490,50 @@ public static partial class Operations
     /// </summary>
     /// <returns>A Sketch or Curve when the objects are all 2D or 1D; otherwise a Compound.</returns>
     /// <exception cref="ArgumentException">No objects are given, or one of them is a vertex.</exception>
-    public static Compound Project(IEnumerable<Shape> objects, Plane workplane)
+    public static ModelShape Project(IEnumerable<Shape> objects, Plane workplane)
     {
         // Phase 5: in builder mode the workplane defaults to the builder's, BuildLine and BuildSketch keep the projection
         // in their local coordinates, and BuildPart projects its pending objects onto its part (a target)
         if (objects is null)
             throw new ArgumentException("No object to project");
         var objectList = objects.ToList();
-        if (objectList.OfType<Vertex>().Any())
+        if (objectList.Any(o => !o.IsNull && o.IsVertex()))
             throw new ArgumentException("Vertices are projected with ProjectPoints");
         if (objectList.Count > 0 && objectList.All(o => o.IsEmpty))
             // Nothing projects to nothing, of the same dimension
-            return (Compound)Shape.MakeComposite([], objectList[0].Dim);
+            return NothingOf(objectList[0].Dim);
 
         // The size of the object determines the size of the target projection screen, as the screen is normal to the
         // direction of parallel projection
-        var objectSize = new Compound(objectList).BoundingBox(optimal: false).Diagonal;
+        var objectSize = Compound.Make(objectList).BoundingBox(optimal: false).Diagonal;
         var target = Face.MakeRect(3 * objectSize, 3 * objectSize, workplane);
         if (target.IsEmpty)
             throw new ArgumentException("A target object could not be determined");
 
         var projectedShapes = new List<Shape>();
-        foreach (var obj in objectList.OfType<Face>().Concat<Shape>(objectList.Where(o => o is Edge or Wire)))
+        foreach (var obj in objectList.Where(o => o.IsFace()).Concat(objectList.Where(o => o.IsEdge() || o.IsWire())))
         {
             var objToScreen = (target.Center() - obj.Center()).Normalized();
             var direction = workplane.FromLocalCoords(objToScreen).Z < 0 ? -workplane.ZDir : workplane.ZDir;
-            ShapeList<Face> projection = obj switch
+            ShapeList<Face> projection = TopoUtil.Typed(obj) switch
             {
                 Face face => face.ProjectToShape(target, direction).Faces(),
                 Edge edge => edge.ProjectToShape(target, direction).Faces(),
                 _ => ((Wire)obj).ProjectToShape(target, direction).Faces(),
             };
-            projectedShapes.AddRange(projection);
+            projectedShapes.AddRange(projection.Select(f => (Shape)f));
         }
 
-        var result = new Compound(projectedShapes);
+        var result = Compound.Make(projectedShapes);
         if (objectList.All(o => o.Dim == 2))
-            return new Sketch(result.TopoShape);
+            return new Sketch(result);
         if (objectList.All(o => o.Dim == 1))
-            return new Curve(result.TopoShape);
-        return result;
+            return new Curve(result);
+        return new Assembly(result);
     }
 
     /// <inheritdoc cref="Project(IEnumerable{Shape}, Plane)"/>
-    public static Compound Project(Shape obj, Plane workplane) => Project([obj], workplane);
+    public static ModelShape Project(Shape obj, Plane workplane) => Project([obj], workplane);
 
     /// <summary>
     /// Points projected onto a workplane along its normal, in the workplane's local coordinates (build123d's
@@ -544,7 +576,7 @@ public static partial class Operations
     /// </summary>
     /// <returns>A Part, Sketch or Curve when the objects are all 3D, 2D or 1D; otherwise a Compound.</returns>
     /// <exception cref="ArgumentException">No objects are given.</exception>
-    public static Compound Scale(IEnumerable<Shape> objects, double by = 1, Vector? about = null) =>
+    public static ModelShape Scale(IEnumerable<Shape> objects, double by = 1, Vector? about = null) =>
         ScaleCore(objects, o => o.Scale(by, about));
 
     /// <summary>
@@ -552,22 +584,22 @@ public static partial class Operations
     /// location. Scaling unevenly may change the type of the geometry (a line or circle to a B-spline).
     /// </summary>
     /// <inheritdoc cref="Scale(IEnumerable{Shape}, double, Vector?)"/>
-    public static Compound Scale(IEnumerable<Shape> objects, Vector by, Vector? about = null) =>
+    public static ModelShape Scale(IEnumerable<Shape> objects, Vector by, Vector? about = null) =>
         ScaleCore(objects, o => o.Scale(by, about));
 
     /// <inheritdoc cref="Scale(IEnumerable{Shape}, double, Vector?)"/>
-    public static Compound Scale(Shape obj, double by = 1, Vector? about = null) => Scale([obj], by, about);
+    public static ModelShape Scale(Shape obj, double by = 1, Vector? about = null) => Scale([obj], by, about);
 
     /// <inheritdoc cref="Scale(IEnumerable{Shape}, Vector, Vector?)"/>
-    public static Compound Scale(Shape obj, Vector by, Vector? about = null) => Scale([obj], by, about);
+    public static ModelShape Scale(Shape obj, Vector by, Vector? about = null) => Scale([obj], by, about);
 
-    private static Compound ScaleCore(IEnumerable<Shape> objects, Func<Shape, Shape> scale)
+    private static ModelShape ScaleCore(IEnumerable<Shape> objects, Func<Shape, Shape> scale)
     {
         // Phase 5: in builder mode the objects default to the builder's object, and the result replaces it by default
         if (objects is null)
             throw new ArgumentNullException(nameof(objects));
         var objectList = objects.ToList();
-        return (Compound)OfInputDimension(objectList, objectList.Select(scale)).Unwrap(fully: false);
+        return OfInputDimension(objectList, objectList.Select(scale)).Unwrapped();
     }
 
     // ---- split ----
@@ -577,7 +609,7 @@ public static partial class Operations
     /// </summary>
     /// <returns>A Part, Sketch or Curve when the objects are all 3D, 2D or 1D; otherwise a Compound.</returns>
     /// <exception cref="ArgumentException">No objects are given.</exception>
-    public static Compound Split(IEnumerable<Shape> objects, Plane? bisectBy = null, Keep keep = Keep.Top)
+    public static ModelShape Split(IEnumerable<Shape> objects, Plane? bisectBy = null, Keep keep = Keep.Top)
     {
         var plane = bisectBy ?? Plane.XZ;
         return SplitCore(objects, keep, o => o.Split(plane, keep), o => o.SplitBoth(plane));
@@ -585,16 +617,16 @@ public static partial class Operations
 
     /// <summary>The objects split by a face or shell, keeping the pieces on top of it, beneath it, or both.</summary>
     /// <inheritdoc cref="Split(IEnumerable{Shape}, Plane?, Keep)"/>
-    public static Compound Split(IEnumerable<Shape> objects, Shape2D bisectBy, Keep keep = Keep.Top) =>
-        SplitCore(objects, keep, o => o.Split(bisectBy, keep), o => o.SplitBoth(bisectBy));
+    public static ModelShape Split(IEnumerable<Shape> objects, IShape2D bisectBy, Keep keep = Keep.Top) =>
+        SplitCore(objects, keep, o => o.Split(bisectBy.AsShape(), keep), o => o.SplitBoth(bisectBy.AsShape()));
 
     /// <inheritdoc cref="Split(IEnumerable{Shape}, Plane?, Keep)"/>
-    public static Compound Split(Shape obj, Plane? bisectBy = null, Keep keep = Keep.Top) => Split([obj], bisectBy, keep);
+    public static ModelShape Split(Shape obj, Plane? bisectBy = null, Keep keep = Keep.Top) => Split([obj], bisectBy, keep);
 
-    /// <inheritdoc cref="Split(IEnumerable{Shape}, Shape2D, Keep)"/>
-    public static Compound Split(Shape obj, Shape2D bisectBy, Keep keep = Keep.Top) => Split([obj], bisectBy, keep);
+    /// <inheritdoc cref="Split(IEnumerable{Shape}, IShape2D, Keep)"/>
+    public static ModelShape Split(Shape obj, IShape2D bisectBy, Keep keep = Keep.Top) => Split([obj], bisectBy, keep);
 
-    private static Compound SplitCore(IEnumerable<Shape> objects, Keep keep, Func<Shape, ShapeList<Shape>> split,
+    private static ModelShape SplitCore(IEnumerable<Shape> objects, Keep keep, Func<Shape, ShapeList<Shape>> split,
                                       Func<Shape, (ShapeList<Shape> Top, ShapeList<Shape> Bottom)> splitBoth)
     {
         // Phase 5: in builder mode the objects default to the builder's object and the result replaces it by default;
@@ -631,32 +663,31 @@ public static partial class Operations
     /// <returns>A Part for face sections, otherwise a Sketch.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="path"/> is null.</exception>
     /// <exception cref="ArgumentException">The path is empty, or there are no sections.</exception>
-    public static Result<Compound> Sweep(IEnumerable<Shape> sections, Shape path, SweepOptions? options = null) =>
+    public static Result<ModelShape> Sweep(IEnumerable<Shape> sections, Shape path, SweepOptions? options = null) =>
         Failures.Try(() => SweepOrThrow(sections, path, options));
 
-    internal static Compound SweepOrThrow(IEnumerable<Shape> sections, Shape path, SweepOptions? options)
+    internal static ModelShape SweepOrThrow(IEnumerable<Shape> sections, Shape path, SweepOptions? options)
     {
         // Phase 5: in builder mode the path defaults to the pending edges and the sections to the pending faces, and the
         // result is combined with mode
-        ArgumentNullException.ThrowIfNull(path);
         if (path.IsEmpty)
             throw new ArgumentException("Can't sweep along an empty path.", nameof(path));
-        var pathWire = path as Wire ?? new Wire(path.Edges());
+        var pathWire = path.IsWire() ? (Wire)path : Wire.Make(path.SelectEdges());
         return SweepCore(sections, pathWire, options ?? SweepOptions.Default);
     }
 
     /// <summary>Sections swept along a path of edges, which must join into a wire.</summary>
     /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, SweepOptions?)"/>
     /// <exception cref="ArgumentException">The edges don't join into a wire, or there are no sections.</exception>
-    public static Result<Compound> Sweep(IEnumerable<Shape> sections, IEnumerable<Edge> path, SweepOptions? options = null) =>
+    public static Result<ModelShape> Sweep(IEnumerable<Shape> sections, IEnumerable<Edge> path, SweepOptions? options = null) =>
         Failures.Try(() => SweepOrThrow(sections, path, options));
 
-    internal static Compound SweepOrThrow(IEnumerable<Shape> sections, IEnumerable<Edge> path, SweepOptions? options)
+    internal static ModelShape SweepOrThrow(IEnumerable<Shape> sections, IEnumerable<Edge> path, SweepOptions? options)
     {
         Wire pathWire;
         try
         {
-            pathWire = new Wire(path);
+            pathWire = Wire.Make(path);
         }
         catch (ArgumentException e) when (!Diagnostic.IsKernelFailure(e))
         {
@@ -666,37 +697,45 @@ public static partial class Operations
     }
 
     /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, SweepOptions?)"/>
-    public static Result<Compound> Sweep(Shape section, Shape path, SweepOptions? options = null) => Sweep([section], path, options);
+    public static Result<ModelShape> Sweep(Shape section, Shape path, SweepOptions? options = null) => Sweep([section], path, options);
 
     /// <inheritdoc cref="Sweep(IEnumerable{Shape}, IEnumerable{Edge}, SweepOptions?)"/>
-    public static Result<Compound> Sweep(Shape section, IEnumerable<Edge> path, SweepOptions? options = null) => Sweep([section], path, options);
+    public static Result<ModelShape> Sweep(Shape section, IEnumerable<Edge> path, SweepOptions? options = null) => Sweep([section], path, options);
 
     /// <summary>A face or sketch swept along a path into a Part.</summary>
     /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, SweepOptions?)"/>
-    public static Result<Part> Sweep(Shape2D section, Shape path, SweepOptions? options = null) =>
+    public static Result<Part> Sweep(Face section, Shape path, SweepOptions? options = null) =>
         Sweep([(Shape)section], path, options).Map(c => c.As<Part>());
 
-    /// <inheritdoc cref="Sweep(Shape2D, Shape, SweepOptions?)"/>
+    /// <summary>A shell swept along a path gives a <see cref="Part"/>.</summary>
+    public static Result<Part> Sweep(Shell section, Shape path, SweepOptions? options = null) =>
+        Sweep([(Shape)section], path, options).Map(c => c.As<Part>());
+
+    /// <inheritdoc cref="Sweep(IShape2D, Shape, SweepOptions?)"/>
     public static Result<Part> Sweep(Sketch section, Shape path, SweepOptions? options = null) =>
         Sweep([(Shape)section], path, options).Map(c => c.As<Part>());
 
     /// <summary>An edge, wire or curve swept along a path into a Sketch of faces.</summary>
     /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, SweepOptions?)"/>
-    public static Result<Sketch> Sweep(Shape1D section, Shape path, SweepOptions? options = null) =>
+    public static Result<Sketch> Sweep(Edge section, Shape path, SweepOptions? options = null) =>
         Sweep([(Shape)section], path, options).Map(c => c.As<Sketch>());
 
-    /// <inheritdoc cref="Sweep(Shape1D, Shape, SweepOptions?)"/>
+    /// <summary>A wire swept along a path gives a <see cref="Sketch"/>.</summary>
+    public static Result<Sketch> Sweep(Wire section, Shape path, SweepOptions? options = null) =>
+        Sweep([(Shape)section], path, options).Map(c => c.As<Sketch>());
+
+    /// <inheritdoc cref="Sweep(IShape1D, Shape, SweepOptions?)"/>
     public static Result<Sketch> Sweep(Curve section, Shape path, SweepOptions? options = null) =>
         Sweep([(Shape)section], path, options).Map(c => c.As<Sketch>());
 
-    private static Compound SweepCore(IEnumerable<Shape> sections, Wire pathWire, SweepOptions options)
+    private static ModelShape SweepCore(IEnumerable<Shape> sections, Wire pathWire, SweepOptions options)
     {
         var (multisection, isFrenet, transition, normal, binormal, clean) =
             (options.Multisection, options.IsFrenet, options.Transition, options.Normal, options.Binormal, options.Clean);
-        var sectionList = sections?.Where(s => s is not null).ToList() ?? [];
+        var sectionList = sections?.ToList() ?? [];
         if (sectionList.Count > 0 && sectionList.All(s => s.IsEmpty))
             // Nothing swept along anything is nothing, one dimension up
-            return (Compound)Shape.MakeComposite([], (sectionList[0].Dim ?? 0) + 1);
+            return NothingOf((sectionList[0].Dim ?? 0) + 1);
         if (sectionList.Count == 0)
             throw new ArgumentException("No sections provided");
 
@@ -704,10 +743,10 @@ public static partial class Operations
         var faceList = new List<Face>();
         foreach (var sec in sectionList)
         {
-            if (sec is Curve or Wire or Edge)
-                edgeList.AddRange(sec.Edges());
+            if (sec.Dim == 1)
+                edgeList.AddRange(sec.SelectEdges());
             else
-                faceList.AddRange(sec.Faces());
+                faceList.AddRange(sec.SelectFaces());
         }
 
         // Sweep to create solids
@@ -717,7 +756,7 @@ public static partial class Operations
             object? binormalMode = binormal switch
             {
                 null when normal is { } n => n,
-                Edge e => new Wire(e),
+                not null when binormal.AsShape().IsEdge() => Wire.Make((Edge)binormal.AsShape()),
                 _ => binormal,
             };
             if (multisection)

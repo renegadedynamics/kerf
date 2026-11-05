@@ -98,7 +98,7 @@ public class EmptyShapeMassPropertiesTests
     [Fact]
     public void MatrixOfInertia()
     {
-        var matrix = new Solid().MatrixOfInertia;
+        var matrix = default(Solid).MatrixOfInertia;
         Assert.Equal(3, matrix.Length);
         Assert.All(matrix, row => Assert.Equal([0.0, 0.0, 0.0], row));
     }
@@ -106,24 +106,24 @@ public class EmptyShapeMassPropertiesTests
     [Fact]
     public void PrincipalProperties()
     {
-        var error = Assert.Throws<InvalidOperationException>(() => new Solid().PrincipalProperties);
+        var error = Assert.Throws<InvalidOperationException>(() => default(Solid).PrincipalProperties);
         Assert.Contains("empty Solid has no principal axes", error.Message);
     }
 
     [Fact]
-    public void StaticMoments() => Assert.Equal((0.0, 0.0, 0.0), new Solid().StaticMoments);
+    public void StaticMoments() => Assert.Equal((0.0, 0.0, 0.0), default(Solid).StaticMoments);
 
     [Fact]
     public void RadiusOfGyration()
     {
-        var error = Assert.Throws<InvalidOperationException>(() => new Solid().RadiusOfGyration(Axis.Z));
+        var error = Assert.Throws<InvalidOperationException>(() => default(Solid).RadiusOfGyration(Axis.Z));
         Assert.Contains("empty Solid has no radius", error.Message);
     }
 
     [Fact]
     public void Orientation()
     {
-        var error = Assert.Throws<InvalidOperationException>(() => new Solid().Orientation);
+        var error = Assert.Throws<InvalidOperationException>(() => default(Solid).Orientation);
         Assert.Contains("empty Solid has no orientation", error.Message);
     }
 }

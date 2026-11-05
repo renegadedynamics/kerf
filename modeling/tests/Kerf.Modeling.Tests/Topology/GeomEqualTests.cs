@@ -13,9 +13,9 @@ using Kerf.Modeling;
 /// <summary>The direct-API equivalents of the sketch and curve objects the Python tests use.</summary>
 internal static class GeomEqualObjects
 {
-    public static Edge CircleEdge(double radius) => new Face(Wire.MakeCircle(radius)).SingleEdge();
+    public static Edge CircleEdge(double radius) => Face.Make(Wire.MakeCircle(radius)).SingleEdge();
 
-    public static Edge EllipseEdge(double xRadius, double yRadius) => new Face(Wire.MakeEllipse(xRadius, yRadius)).SingleEdge();
+    public static Edge EllipseEdge(double xRadius, double yRadius) => Face.Make(Wire.MakeEllipse(xRadius, yRadius)).SingleEdge();
 
     public static Wire RectangleWire(double width, double height) => Face.MakeRect(width, height).SingleWire();
 
@@ -30,7 +30,7 @@ internal static class GeomEqualObjects
         var curve = weights is null
             ? new BSplineCurve3D(poleArray, knots, mults, degree, false)
             : new BSplineCurve3D(poleArray, knots, mults, degree, false, weights);
-        return new Edge(global::Kerf.Construction.ShapeFactory.FromCurve(curve).Value);
+        return global::Kerf.Construction.ShapeFactory.FromCurve(curve).Value;
     }
 }
 
@@ -398,11 +398,11 @@ public class EdgeGeomEqualOffsetTests
         double first, last;
         var adaptor = spline.GeomAdaptor();
         (first, last) = (adaptor.Range.Min, adaptor.Range.Max);
-        var topoEdge = ((global::Kerf.Topology.Edge)spline.KernelShape);
+        var topoEdge = ((Edge)spline);
         Assert.True(topoEdge.TryGetCurve(out var basis, out _));
         var dir = (direction ?? new Vector(0, 0, 1)).ToDirection3D();
         var curve = new OffsetCurve3D(basis, distance, dir);
-        var edge = new Edge(global::Kerf.Construction.ShapeFactory.FromCurve(curve, new(first, last)).Value);
+        var edge = global::Kerf.Construction.ShapeFactory.FromCurve(curve, new(first, last)).Value;
         Assert.Equal(GeomType.Offset, edge.GeomType);
         return edge;
     }
@@ -566,8 +566,8 @@ public class WireGeomEqualTests
     public void SameSplineWire()
     {
         Vector[] v = [new Vector(0, 0), new Vector(1, 1), new Vector(2, 0), new Vector(3, 1)];
-        var w1 = new Wire([GeomEqualObjects.Spline(v)]);
-        var w2 = new Wire([GeomEqualObjects.Spline(v)]);
+        var w1 = Wire.Make([GeomEqualObjects.Spline(v)]);
+        var w2 = Wire.Make([GeomEqualObjects.Spline(v)]);
         Assert.True(w1.GeomEqual(w2));
     }
 
@@ -575,7 +575,7 @@ public class WireGeomEqualTests
     public void DifferentEdgeCount()
     {
         var w1 = GeomEqualObjects.RectangleWire(10, 5);
-        var w2 = new Wire([Edge.MakeLine(new Vector(0, 0), new Vector(10, 0))]);
+        var w2 = Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(10, 0))]);
         Assert.False(w1.GeomEqual(w2));
     }
 
@@ -586,13 +586,13 @@ public class WireGeomEqualTests
         var e1 = Edge.MakeLine(new Vector(0, 0), new Vector(1, 0));
         var e2 = Edge.MakeLine(new Vector(1, 0), new Vector(1, 1));
         var e3 = Edge.MakeLine(new Vector(1, 1), new Vector(0, 0));
-        var w1 = new Wire([e1, e2, e3]);
-        var w2 = new Wire([e1, e2, e3]);
+        var w1 = Wire.Make([e1, e2, e3]);
+        var w2 = Wire.Make([e1, e2, e3]);
         Assert.True(w1.GeomEqual(w2));
     }
 
     private static Wire Triangle() =>
-        new([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 0), new Vector(1, 1)), Edge.MakeLine(new Vector(1, 1), new Vector(0, 0))]);
+        Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 0), new Vector(1, 1)), Edge.MakeLine(new Vector(1, 1), new Vector(0, 0))]);
 
     [Fact]
     public void GeometricallyEqualEdges() => Assert.True(Triangle().GeomEqual(Triangle()));
@@ -602,7 +602,7 @@ public class WireGeomEqualTests
     {
         // Two closed wires with same geometry but different starting vertex are not equal
         var w1 = Triangle();
-        var w2 = new Wire([Edge.MakeLine(new Vector(1, 1), new Vector(0, 0)), Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 0), new Vector(1, 1))]);
+        var w2 = Wire.Make([Edge.MakeLine(new Vector(1, 1), new Vector(0, 0)), Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 0), new Vector(1, 1))]);
         Assert.False(w1.GeomEqual(w2));
     }
 
@@ -611,7 +611,7 @@ public class WireGeomEqualTests
     {
         var w1 = Triangle();
         // Middle edge is reversed (direction (1,1) -> (1,0) instead of (1,0) -> (1,1))
-        var w2 = new Wire([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 1), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 1), new Vector(0, 0))]);
+        var w2 = Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 1), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 1), new Vector(0, 0))]);
         // OrderEdges should correct the orientation
         Assert.True(w1.GeomEqual(w2));
     }
@@ -619,7 +619,7 @@ public class WireGeomEqualTests
     [Fact]
     public void ClosedWire()
     {
-        static Wire Square() => new(
+        static Wire Square() => Wire.Make(
             [
                 Edge.MakeLine(new Vector(0, 0), new Vector(2, 0)),
                 Edge.MakeLine(new Vector(2, 0), new Vector(2, 2)),
@@ -637,7 +637,7 @@ public class WireGeomEqualTests
     public void MixedEdgeTypes()
     {
         // Wire with line + arc + line
-        static Wire Make() => new(
+        static Wire Make() => Wire.Make(
             [
                 Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)),
                 Edge.MakeCircle(0.5, startAngle: 0, endAngle: 180).Located(new Location(new Vector(1.5, 0, 0))),
@@ -650,13 +650,13 @@ public class WireGeomEqualTests
     public void MixedEdgeTypesDifferent()
     {
         // Wire 1: line + arc
-        var w1 = new Wire(
+        var w1 = Wire.Make(
             [
                 Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)),
                 Edge.MakeCircle(0.5, startAngle: 0, endAngle: 180).Located(new Location(new Vector(1.5, 0, 0))),
             ]);
         // Wire 2: line + different arc (different radius)
-        var w2 = new Wire(
+        var w2 = Wire.Make(
             [
                 Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)),
                 Edge.MakeCircle(0.6, startAngle: 0, endAngle: 180).Located(new Location(new Vector(1.6, 0, 0))),
@@ -668,21 +668,21 @@ public class WireGeomEqualTests
     public void AllEdgesReversedNotEqual()
     {
         // Wire 1: (0,0) -> (3,0)
-        var w1 = new Wire([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 0), new Vector(2, 1)), Edge.MakeLine(new Vector(2, 1), new Vector(3, 0))]);
+        var w1 = Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 0), new Vector(2, 1)), Edge.MakeLine(new Vector(2, 1), new Vector(3, 0))]);
         // Wire 2: (3,0) -> (0,0) - same path but opposite direction
         var e1b = Edge.MakeLine(new Vector(1, 0), new Vector(0, 0));
         var e2b = Edge.MakeLine(new Vector(2, 1), new Vector(1, 0));
         var e3b = Edge.MakeLine(new Vector(3, 0), new Vector(2, 1));
-        var w2 = new Wire([e3b, e2b, e1b]);
+        var w2 = Wire.Make([e3b, e2b, e1b]);
         Assert.False(w1.GeomEqual(w2));
     }
 
     [Fact]
     public void OpenWireDifferentStart()
     {
-        var w1 = new Wire([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 0), new Vector(2, 1)), Edge.MakeLine(new Vector(2, 1), new Vector(3, 0))]);
+        var w1 = Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), Edge.MakeLine(new Vector(1, 0), new Vector(2, 1)), Edge.MakeLine(new Vector(2, 1), new Vector(3, 0))]);
         // Different edges entirely (shifted)
-        var w2 = new Wire([Edge.MakeLine(new Vector(1, 0), new Vector(2, 0)), Edge.MakeLine(new Vector(2, 0), new Vector(3, 1)), Edge.MakeLine(new Vector(3, 1), new Vector(4, 0))]);
+        var w2 = Wire.Make([Edge.MakeLine(new Vector(1, 0), new Vector(2, 0)), Edge.MakeLine(new Vector(2, 0), new Vector(3, 1)), Edge.MakeLine(new Vector(3, 1), new Vector(4, 0))]);
         Assert.False(w1.GeomEqual(w2));
     }
 
@@ -691,19 +691,19 @@ public class WireGeomEqualTests
     {
         Vector[] pts1 = [new Vector(0, 0), new Vector(1, 1), new Vector(2, 0), new Vector(3, 1), new Vector(4, 0)];
         Vector[] pts2 = [new Vector(4, 0), new Vector(5, 1), new Vector(6, 0)];
-        var w1 = new Wire([GeomEqualObjects.Spline(pts1), GeomEqualObjects.Spline(pts2)]);
-        var w2 = new Wire([GeomEqualObjects.Spline(pts1), GeomEqualObjects.Spline(pts2)]);
+        var w1 = Wire.Make([GeomEqualObjects.Spline(pts1), GeomEqualObjects.Spline(pts2)]);
+        var w2 = Wire.Make([GeomEqualObjects.Spline(pts1), GeomEqualObjects.Spline(pts2)]);
         Assert.True(w1.GeomEqual(w2));
     }
 
     [Fact]
     public void SingleEdgeWire() =>
-        Assert.True(new Wire([Edge.MakeLine(new Vector(0, 0), new Vector(5, 5))]).GeomEqual(new Wire([Edge.MakeLine(new Vector(0, 0), new Vector(5, 5))])));
+        Assert.True(Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(5, 5))]).GeomEqual(Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(5, 5))])));
 
     [Fact]
     public void SingleEdgeWireReversedNotEqual() =>
         // Opposite direction means not equal
-        Assert.False(new Wire([Edge.MakeLine(new Vector(0, 0), new Vector(5, 5))]).GeomEqual(new Wire([Edge.MakeLine(new Vector(5, 5), new Vector(0, 0))])));
+        Assert.False(Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(5, 5))]).GeomEqual(Wire.Make([Edge.MakeLine(new Vector(5, 5), new Vector(0, 0))])));
 }
 
 public class GeomEqualTypeMismatchTests

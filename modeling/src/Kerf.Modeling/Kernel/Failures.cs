@@ -145,7 +145,7 @@ internal static class Failures
     /// <paramref name="code"/> and <paramref name="message"/>, then the kernel's diagnostics that led to it, if any.
     /// </summary>
     internal static InvalidOperationException Expected(DiagnosticCode code, string message, ImmutableArray<Diagnostic> kernel = default,
-                                                       Exception? inner = null, params ReadOnlySpan<global::Kerf.Topology.Shape> shapes)
+                                                       Exception? inner = null, params ReadOnlySpan<Shape> shapes)
     {
         var error = Diagnostic.Error(code, message);
         if (!shapes.IsEmpty)

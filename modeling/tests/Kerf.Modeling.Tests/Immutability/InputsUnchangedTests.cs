@@ -79,14 +79,14 @@ public class InputsUnchangedTests
             C("loft", [Circle, Plate], () => Ops.Loft([Circle, Plate.Moved(new Location(new Vector(0.0, 0.0, 5.0)))])),
             C("sweep", [Circle, Path], () => Ops.Sweep(Circle.Moved(new Location(Path.LocationAt(0))), Path)),
             C("thicken", [Plate], () => Ops.Thicken(Plate, 1)),
-            C("make face", [RectWire], () => Ops.MakeFace(RectWire.Edges())),
+            C("make face", [RectWire], () => Ops.MakeFace(RectWire.SelectEdges())),
             C("make hull", [ArcEdge, LineEdge], () => Ops.MakeHull([ArcEdge, LineEdge])),
             C("trace", [Spline], () => Ops.Trace([Spline], 0.5)),
             C("full round", [Slot], () => Ops.FullRound(Slot.Edges().OrderBy(Axis.X)[0])),
             // 2D
-            C("face fillet 2d", [Plate], () => Plate.Fillet2D(1, Plate.Vertices())),
-            C("face chamfer 2d", [Plate], () => Plate.Chamfer2D(1, 1, Plate.Vertices())),
-            C("wire fillet 2d", [RectWire], () => RectWire.Fillet2D(1, RectWire.Vertices())),
+            C("face fillet 2d", [Plate], () => Plate.Fillet2D(1, Plate.SelectVertices())),
+            C("face chamfer 2d", [Plate], () => Plate.Chamfer2D(1, 1, Plate.SelectVertices())),
+            C("wire fillet 2d", [RectWire], () => RectWire.Fillet2D(1, RectWire.SelectVertices())),
             C("wire offset 2d", [RectWire], () => RectWire.Offset2D(1)),
             C("constrained arcs", [ArcEdge, LineEdge], () => Edge.MakeConstrainedArcs(ArcEdge, LineEdge, 1.0)),
             C("constrained lines", [ArcEdge], () => Edge.MakeConstrainedLines(ArcEdge, new Vector(6, 6))),
@@ -132,7 +132,7 @@ public class InputsUnchangedTests
     /// TShape's flags are left out, being OCCT's bookkeeping rather than the shape: Free, which OCCT clears on any shape
     /// put into another (every new compound does it), and Checked, a cache of a validity check.
     /// </summary>
-    private static byte[][] Snapshot(Shape[] inputs) => [.. inputs.Select(s => WithoutBookkeeping(Extras.WriteBRep(s.TopoShape, withTriangles: true)))];
+    private static byte[][] Snapshot(Shape[] inputs) => [.. inputs.Select(s => WithoutBookkeeping(Extras.WriteBRep(s, withTriangles: true)))];
 
     private static readonly System.Text.RegularExpressions.Regex Flags = new(@"^[01]([01])[01]([01]{4})\r?$", System.Text.RegularExpressions.RegexOptions.Multiline);
 
@@ -182,7 +182,7 @@ public class InputsUnchangedTests
     [Fact]
     public void NoParameterlessMemberChangesItsShape()
     {
-        Shape[] shapes = [Box, MovedBox, Fused, Plate, Circle, RectWire, Spline, ArcEdge, new Vertex(1, 2, 3), Box.Shells()[0], Slot];
+        Shape[] shapes = [Box, MovedBox, Fused, Plate, Circle, RectWire, Spline, ArcEdge, Vertex.Make(1, 2, 3), Box.Shells()[0], Slot];
         var failures = new List<string>();
         foreach (var shape in shapes)
         {
@@ -243,7 +243,7 @@ public class InputsUnchangedTests
             return run() switch
             {
                 Shape s when s.IsEmpty => "empty " + s.GetType().Name,
-                Shape s => $"{s.GetType().Name} V={s.Volume:G9} A={Area(s):G9} E={s.Edges().Count} F={s.Faces().Count}",
+                Shape s => $"{s.GetType().Name} V={s.Volume:G9} A={Area(s):G9} E={s.SelectEdges().Count} F={s.SelectFaces().Count}",
                 System.Collections.IEnumerable list and not string => $"{list.Cast<object>().Count()} items",
                 var value => value?.ToString() ?? "null",
             };
@@ -254,5 +254,5 @@ public class InputsUnchangedTests
         }
     }
 
-    private static double Area(Shape s) => s.Faces().Sum(f => f.Area);
+    private static double Area(Shape s) => s.SelectFaces().Sum(f => f.Area);
 }

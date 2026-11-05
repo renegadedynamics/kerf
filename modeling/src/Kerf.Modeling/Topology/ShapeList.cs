@@ -9,28 +9,49 @@ namespace Kerf.Modeling;
 public static class ShapeList
 {
     /// <summary>A list of the given shapes.</summary>
-    public static ShapeList<T> Create<T>(ReadOnlySpan<T> shapes) where T : Shape => new(ImmutableArray.Create(shapes));
+    public static ShapeList<T> Create<T>(ReadOnlySpan<T> shapes) where T : IShape => new(ImmutableArray.Create(shapes));
 }
 
 /// <summary>
-/// An immutable list of shapes. Edits return a new list.
+/// An immutable list of shapes. Edits return a new list. A list selected from a shape remembers it: see <see cref="Origin"/>.
 /// </summary>
 /// <remarks>
 /// The selections suited to CAD (by axis, geometry type or measure) are <see cref="ShapeSelection"/>'s extension
 /// methods on any sequence of shapes, beside LINQ's own: <c>part.Edges().Where(e =&gt; e.IsClosed).OrderBy(Axis.Z).Last()</c>.
 /// </remarks>
 [CollectionBuilder(typeof(ShapeList), nameof(ShapeList.Create))]
-public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> where T : Shape
+public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> where T : IShape
 {
     private readonly ImmutableArray<T> _items;
 
-    internal ShapeList(ImmutableArray<T> items) => _items = items;
+    internal ShapeList(ImmutableArray<T> items, IShape? origin = null)
+    {
+        _items = items;
+        Origin = origin;
+    }
 
     /// <summary>A list of the given shapes, in order.</summary>
     public ShapeList(IEnumerable<T> shapes) => _items = [.. shapes];
 
+    /// <summary>A list of the given shapes, in order, selected from <paramref name="origin"/>.</summary>
+    internal ShapeList(IEnumerable<T> shapes, IShape? origin)
+    {
+        _items = [.. shapes];
+        Origin = origin;
+    }
+
+    internal static ShapeList<T> From(IShape origin) => new(ImmutableArray<T>.Empty, origin);
+
     /// <summary>The empty list.</summary>
     public static ShapeList<T> Empty { get; } = new(ImmutableArray<T>.Empty);
+
+    /// <summary>
+    /// The shape this list was selected from, if it was: <c>part.Edges()</c>'s is the part, and every selection on the list
+    /// (<see cref="Where(Func{T, bool})"/>, <c>OrderBy</c>, <c>ParallelTo</c>…) keeps it. A selection through a shape's
+    /// sub-shape (<c>faces[0].SelectEdges()</c>) has that sub-shape. What needs the parent, such as a fillet or
+    /// <c>Where(Convexity)</c>, reads it here.
+    /// </summary>
+    public IShape? Origin { get; }
 
     /// <summary>The number of shapes.</summary>
     public int Count => _items.Length;
@@ -44,7 +65,7 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
         get
         {
             var (start, length) = range.GetOffsetAndLength(Count);
-            return new(_items.Slice(start, length));
+            return new(_items.Slice(start, length), Origin);
         }
     }
 
@@ -53,41 +74,43 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+    /// <summary>The shapes that pass a test, in order, keeping the list's <see cref="Origin"/>.</summary>
+    public ShapeList<T> Where(Func<T, bool> predicate) => new(Enumerable.Where(_items, predicate), Origin);
+
     /// <summary>This list with a shape added at the end.</summary>
-    public ShapeList<T> Add(T shape) => new(_items.Add(shape));
+    public ShapeList<T> Add(T shape) => new(_items.Add(shape), Origin);
 
     /// <summary>This list with shapes added at the end.</summary>
-    public ShapeList<T> AddRange(IEnumerable<T> shapes) => new(_items.AddRange(shapes));
+    public ShapeList<T> AddRange(IEnumerable<T> shapes) => new(_items.AddRange(shapes), Origin);
 
-    /// <summary>The list as a list of a base class of its shapes.</summary>
-    public ShapeList<TBase> Upcast<TBase>() where TBase : Shape
-    {
-        // Sharing the array where it is one of TBase already (arrays of classes are covariant, and this one is never written)
-        ImmutableArray<TBase> shared = _items.As<TBase>();
-        return new(shared.IsDefault ? [.. _items.Select(s => (TBase)(Shape)s)] : shared);
-    }
+    /// <summary>The list as a list of <see cref="Shape"/>.</summary>
+    public ShapeList<Shape> Upcast() => new(_items.Select(s => s.AsShape()), Origin);
 
-    /// <summary>The shapes of another class in the list.</summary>
-    public ShapeList<TOther> OfType<TOther>() where TOther : Shape => new(Enumerable.OfType<TOther>(this));
+    /// <summary>The shapes of another type in the list.</summary>
+    public ShapeList<TOther> OfType<TOther>() where TOther : struct, IShape<TOther> =>
+        new(_items.Select(s => s.AsShape()).Where(s => !s.IsNull && s.Type == TOther.Type).Select(s => s.As<TOther>()), Origin);
+
+    /// <summary>The list with each shape's sub-shape of the shape's own type picked out: what <paramref name="select"/> gives, in order.</summary>
+    internal ShapeList<TOut> Map<TOut>(Func<T, TOut> select) where TOut : IShape => new(_items.Select(select), Origin);
 
     // ---- Set operations ----
 
     /// <summary>The shapes of this list that are also in <paramref name="other"/>, once each, in this list's order.</summary>
     public ShapeList<T> Intersect(IEnumerable<T> other)
     {
-        var set = other.ToHashSet();
-        return new(Enumerable.Where(this, set.Contains).Distinct());
+        var set = other.ToHashSet(ShapeComparer<T>.Same);
+        return new(Enumerable.Where(this, set.Contains).Distinct(ShapeComparer<T>.Same), Origin);
     }
 
     /// <summary>The shapes of this list that aren't in <paramref name="other"/>, once each, in this list's order.</summary>
     public ShapeList<T> Except(IEnumerable<T> other)
     {
-        var set = other.ToHashSet();
-        return new(Enumerable.Where(this, s => !set.Contains(s)).Distinct());
+        var set = other.ToHashSet(ShapeComparer<T>.Same);
+        return new(Enumerable.Where(this, s => !set.Contains(s)).Distinct(ShapeComparer<T>.Same), Origin);
     }
 
     /// <summary>Whether two lists hold the same shapes, in any order and counting duplicates once.</summary>
-    public bool Equals(ShapeList<T>? other) => other is not null && this.ToHashSet().SetEquals(other);
+    public bool Equals(ShapeList<T>? other) => other is not null && this.ToHashSet(ShapeComparer<T>.Same).SetEquals(other);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => obj is ShapeList<T> l && Equals(l);
@@ -97,8 +120,8 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
     {
         // Order-independent, to agree with Equals
         int h = 0;
-        foreach (var s in this.Distinct())
-            h ^= s.GetHashCode();
+        foreach (var s in this.Distinct(ShapeComparer<T>.Same))
+            h ^= ShapeComparer<T>.Same.GetHashCode(s);
         return h;
     }
 
@@ -114,22 +137,24 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
     public ShapeList<Shape> Expand()
     {
         var expanded = new List<Shape>();
-        foreach (var shape in this)
+        foreach (var item in this)
         {
-            switch (shape.TopoShape.Type)
+            var shape = item.AsShape();
+            if (TopoUtil.IsNothing(shape))
+                continue;
+            switch (shape.Type)
             {
-                case global::Kerf.Topology.ShapeType.Compound:
-                    expanded.AddRange(new ShapeList<Shape>(shape is Compound c ? c.Children() : []).Expand());
+                case ShapeType.Compound:
+                    expanded.AddRange(new ShapeList<Shape>(shape.ChildShapes()).Expand());
                     break;
-                case global::Kerf.Topology.ShapeType.Shell:
-                    expanded.AddRange(shape.Faces());
+                case ShapeType.Shell:
+                    expanded.AddRange(shape.SelectFaces().Select(f => (Shape)f));
                     break;
-                case global::Kerf.Topology.ShapeType.Wire:
-                    expanded.AddRange(shape.Edges());
+                case ShapeType.Wire:
+                    expanded.AddRange(shape.SelectEdges().Select(e => (Shape)e));
                     break;
                 default:
-                    if (!shape.IsEmpty)
-                        expanded.Add(shape);
+                    expanded.Add(shape);
                     break;
             }
         }
@@ -141,27 +166,31 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
         Count == 0 ? new Vector(0, 0, 0) : this.Aggregate(new Vector(0, 0, 0), (sum, o) => sum + o.Center()) / Count;
 
     /// <summary>All the vertices of the shapes.</summary>
-    public ShapeList<Vertex> Vertices() => new(this.SelectMany(s => s.Vertices()));
+    public ShapeList<Vertex> Vertices() => new(this.SelectMany(s => s.SelectVertices()));
 
     /// <summary>All the edges of the shapes.</summary>
-    public ShapeList<Edge> Edges() => new(this.SelectMany(s => s.Edges()));
+    public ShapeList<Edge> Edges() => new(this.SelectMany(s => s.SelectEdges()));
 
     /// <summary>All the wires of the shapes.</summary>
-    public ShapeList<Wire> Wires() => new(this.SelectMany(s => s.Wires()));
+    public ShapeList<Wire> Wires() => new(this.SelectMany(s => s.SelectWires()));
 
     /// <summary>All the faces of the shapes.</summary>
-    public ShapeList<Face> Faces() => new(this.SelectMany(s => s.Faces()));
+    public ShapeList<Face> Faces() => new(this.SelectMany(s => s.SelectFaces()));
 
     /// <summary>All the shells of the shapes.</summary>
-    public ShapeList<Shell> Shells() => new(this.SelectMany(s => s.Shells()));
+    public ShapeList<Shell> Shells() => new(this.SelectMany(s => s.SelectShells()));
 
     /// <summary>All the solids of the shapes.</summary>
-    public ShapeList<Solid> Solids() => new(this.SelectMany(s => s.Solids()));
+    public ShapeList<Solid> Solids() => new(this.SelectMany(s => s.SelectSolids()));
 
     /// <summary>All the compounds of the shapes.</summary>
     public ShapeList<Compound> Compounds() => new(this.SelectMany(s => s.Compounds()));
 
-    private static TItem Single<TItem>(ShapeList<TItem> items, string kind) where TItem : Shape =>
+    // The shapes' sub-shapes, a selection from the one shape if there is one, else from what this list was selected from
+    private ShapeList<TSub> Through<TSub>(Func<T, ShapeList<TSub>> select) where TSub : IShape =>
+        new(this.SelectMany(select), Count == 1 ? _items[0] : Origin);
+
+    private static TItem Single<TItem>(ShapeList<TItem> items, string kind) where TItem : IShape =>
         items.Count == 1 ? items[0] : throw new InvalidOperationException($"Expected exactly one {kind}, found {items.Count}");
 
     /// <summary>The one vertex of the shapes.</summary>
@@ -186,14 +215,14 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
     public Compound SingleCompound() => Single(Compounds(), "compound");
 
     /// <inheritdoc/>
-    public override string ToString() => "[" + string.Join(", ", this) + "]";
+    public override string ToString() => "[" + string.Join(", ", this.Select(s => s is ModelShape ? s.ToString() : s.Describe())) + "]";
 }
 
 /// <summary>
 /// Shapes in groups of equal key, the groups in key order: what <see cref="ShapeSelection"/>'s <c>GroupBy</c> gives.
 /// A group is reached by index (<c>groups[0]</c>, <c>groups[^1]</c>, LINQ's <c>Last()</c>) or by key.
 /// </summary>
-public sealed class ShapeGroups<T, TKey> : IReadOnlyList<ShapeList<T>> where T : Shape
+public sealed class ShapeGroups<T, TKey> : IReadOnlyList<ShapeList<T>> where T : IShape
 {
     private readonly List<(TKey Key, ShapeList<T> Group)> _groups = [];
     private readonly Func<T, TKey> _key;
@@ -249,7 +278,7 @@ public sealed class ShapeGroups<T, TKey> : IReadOnlyList<ShapeList<T>> where T :
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     /// <inheritdoc/>
-    public override string ToString() => "[" + string.Join(", ", this) + "]";
+    public override string ToString() => "[" + string.Join(", ", this.Select(s => s is ModelShape ? s.ToString() : s.Describe())) + "]";
 }
 
 /// <summary>
@@ -295,14 +324,15 @@ internal sealed class KeyComparer<TKey> : IComparer<TKey>, IEqualityComparer<TKe
 /// <summary>The measures that only some kinds of shape have, for sorting and grouping by them.</summary>
 internal static class Measures
 {
-    internal static double Length(Shape s) => s switch
+    internal static double Length(Shape s)
     {
-        Shape1D one => one.Length,
-        Face face => face.Length ?? throw new InvalidOperationException($"{face} has no length"),
-        _ => throw new InvalidOperationException($"a {s.GetType().Name} has no length"),
-    };
+        if (s.TryAs(out Edge edge) && s.IsEdge()) return edge.Length;
+        if (s.TryAs(out Wire wire) && s.IsWire()) return wire.Length;
+        if (s.TryAs(out Face face) && s.IsFace()) return face.Length ?? throw new InvalidOperationException($"{face.Describe()} has no length");
+        throw new InvalidOperationException($"a {TopoUtil.KindName(s)} has no length");
+    }
 
-    internal static bool HasRadius(Shape s) => s is Shape1D or Face;
+    internal static bool HasRadius(Shape s) => s.IsEdge() || s.IsWire() || s.IsFace();
 
     /// <summary>A shape's length, radius, area, volume or distance from the origin, as sorting and grouping take it.</summary>
     internal static double Of(Shape o, ShapeKey measure) => measure switch
@@ -320,12 +350,7 @@ internal static class Measures
     {
         try
         {
-            return s switch
-            {
-                Shape1D one => one.Radius,
-                Face face => face.Radius,
-                _ => null,
-            };
+            return HasRadius(s) ? RadiusCore(s) : null;
         }
         catch (Exception e) when (Failures.IsKernelFailure(e) || e is InvalidOperationException or ArgumentException or NotImplementedException)
         {
@@ -333,10 +358,13 @@ internal static class Measures
         }
     }
 
-    internal static double Radius(Shape s) => s switch
+    private static double? RadiusCore(Shape s) =>
+        s.IsEdge() ? ((Edge)s).Radius : s.IsWire() ? ((Wire)s).Radius : ((Face)s).Radius;
+
+    internal static double Radius(Shape s)
     {
-        Shape1D one => one.Radius,
-        Face face => face.Radius ?? throw new InvalidOperationException($"{face} has no radius"),
-        _ => throw new InvalidOperationException($"a {s.GetType().Name} has no radius"),
-    };
+        if (!HasRadius(s))
+            throw new InvalidOperationException($"a {TopoUtil.KindName(s)} has no radius");
+        return RadiusCore(s) ?? throw new InvalidOperationException($"{s.Describe()} has no radius");
+    }
 }

@@ -35,9 +35,9 @@ public class CurveObjectTests
         var l7 = new Line(new Vector(0.0692, 0.7808), new Vector(0.0000, 0.9167));
         var a5 = new TangentArc(l6.PositionAt(1), l7.PositionAt(0), tangent: l6.TangentAt(1));
         Shape[] outline = [l1, l2, a1, l3, a2, l4, a3, l5, a4, l6, s1, l7, a5];
-        var edges = outline.SelectMany(s => s.Edges()).ToList();
+        var edges = outline.SelectMany(s => s.SelectEdges()).ToList();
         edges.AddRange(edges.Select(e => e.Mirror(Plane.YZ)).ToList());
-        var leaf = new Face(Wire.Combine(edges)[0]);
+        var leaf = Face.Make(Wire.Combine(edges)[0]);
         Check.AlmostEqual(0.2741600685288115, leaf.Area, 5);
     }
 
@@ -62,7 +62,7 @@ public class CurveObjectTests
         double[] wts = [1.0, 1.0, 2.0, 3.0, 4.0, 2.0, 1.0];
         var b1 = new Bezier(pts, weights: wts);
         Check.AlmostEqual(225.98661946375782, b1.Length, 5);
-        Assert.IsAssignableFrom<Edge>(b1);
+        Check.IsShape(b1);
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public class CurveObjectTests
         Vector[] controlPoints = [new Vector(0, 0), new Vector(1, 1), new Vector(2, 0)];
         double[] knots = [0.0, 0.0, 0.0, 1.0, 1.0, 1.0];
         var spline = new BSpline(controlPoints, knots, degree: 2);
-        Assert.IsAssignableFrom<Edge>(spline);
+        Check.IsShape(spline);
         Assert.Equal(GeomType.BSpline, spline.GeomType);
         Assert.Single(spline.Edges());
         Check.AlmostEqual(new Vector(0, 0, 0), spline.StartPoint(), 5);
@@ -115,7 +115,7 @@ public class CurveObjectTests
         Check.AlmostEqual(new Vector(-1.2360679775, -0.7888543819998, 0), a.ArcCenter, 5);
         // On BuildLine(Plane.XZ)
         Check.AlmostEqual(new Vector(-1.2360679775, 0, -0.7888543819998), (Plane.XZ * a).ArcCenter, 5);
-        Assert.IsAssignableFrom<Edge>(a);
+        Check.IsShape(a);
 
         var b = new EllipticalStartArc(new Vector(0, 1), new Vector(-1, 0), 5, 1, 180, startAngle: 90);
         Check.AlmostEqual(new Vector(0, 0, 0), b.ArcCenter, 5);
@@ -137,7 +137,7 @@ public class CurveObjectTests
         Assert.True(bbox.Min.Y >= 0);
         Assert.True(bbox.Max.X <= 10);
         Assert.True(bbox.Max.Y <= 5);
-        Assert.IsAssignableFrom<Edge>(e1);
+        Check.IsShape(e1);
     }
 
     [Fact]
@@ -196,7 +196,7 @@ public class CurveObjectTests
         Assert.True(bbox.Min.Y >= 0);
         Assert.True(bbox.Max.X <= 10);
         Assert.True(bbox.Max.Y <= 5);
-        Assert.IsAssignableFrom<Edge>(e1);
+        Check.IsShape(e1);
     }
 
     [Fact]
@@ -274,7 +274,7 @@ public class CurveObjectTests
         Assert.True(bbox.Min.Y >= 0);
         Assert.True(bbox.Max.X <= 10);
         Assert.True(bbox.Max.Y <= 5);
-        Assert.IsAssignableFrom<Edge>(e1);
+        Check.IsShape(e1);
     }
 
     [Fact]
@@ -352,7 +352,7 @@ public class CurveObjectTests
         Assert.Equal(8, p.Edges().Count);
         Assert.Equal(4, p.Edges().Where(GeomType.Circle).Count);
         Assert.Equal(4, p.Edges().Where(GeomType.Line).Count);
-        Assert.IsAssignableFrom<Wire>(p);
+        Check.IsShape(p);
 
         Assert.Throws<ArgumentException>(() => new FilletPolyline([new Vector(0, 0)], radius: 0.1));
         Assert.Throws<ArgumentException>(() => new FilletPolyline([new Vector(0, 0), new Vector(1, 0), new Vector(1, 1)], radius: -1));
@@ -367,7 +367,7 @@ public class CurveObjectTests
 
         // A polyline closed by the user
         var l1 = new FilletPolyline([new Vector(0, 0), new Vector(2, 6), new Vector(0, 5), new Vector(-2, 6), new Vector(0, 0)], radii: [0, 0.1, 0, 0]);
-        Assert.All(l1.Vertices(), v => Assert.Equal(2, l1.Edges().Count(e => e.Vertices().Contains(v))));
+        Assert.All(l1.Vertices(), v => Assert.Equal(2, l1.Edges().Count(e => e.SelectVertices().Contains(v))));
         Assert.Single(l1.Edges().Where(GeomType.Circle));
     }
 
@@ -381,7 +381,7 @@ public class CurveObjectTests
         var l3 = new Line(new Vector(0, 0), new Vector(10, 10));
         var l4 = new IntersectingLine(new Vector(0, 10), new Vector(1, -1), l3);
         Check.AlmostEqual(new Vector(5, 5, 0), l4.PositionAt(1), 5);
-        Assert.IsAssignableFrom<Edge>(l4);
+        Check.IsShape(l4);
 
         Assert.Throws<ArgumentException>(() => new IntersectingLine(new Vector(0, 10), new Vector(1, 1), l3));
     }
@@ -417,14 +417,14 @@ public class CurveObjectTests
         var partial = new JernArc(start: new Vector(0, 0, 0), tangent: new Vector(1, 0, 0), radius: 1, arcSize: 300);
         Assert.True(full.IsClosed);
         Assert.False(partial.IsClosed);
-        var circleFace = new Face(new Wire([full]));
+        var circleFace = Face.Make(Wire.Make([full]));
         Check.AlmostEqual(Math.PI, circleFace.Area, 5);
         Check.AlmostEqual(new Vector(0, 1, 0), circleFace.Center(), 5);
         Check.AlmostEqual(full.SingleVertex().ToVector(), partial.Start, 5);
 
         var l1 = new JernArc(new Vector(0, 0), new Vector(1, 0), 1, 90);
         Check.AlmostEqual(new Vector(1, 1, 0), l1.PositionAt(1), 5);
-        Assert.IsAssignableFrom<Edge>(l1);
+        Check.IsShape(l1);
 
         var vertical = new JernArc(new Vector(0, 0, 0), new Vector(0, 0, 1), 1, 90);
         Check.AlmostEqual(new Vector(0, 0, 1), vertical.TangentAt(0), 5);
@@ -461,8 +461,8 @@ public class CurveObjectTests
         var d1 = new PolarLine(new Vector(0, 0), Math.Sqrt(2), direction: new Vector(1, 1));
         Check.AlmostEqual(new Vector(1, 1, 0), a1.PositionAt(1), 5);
         Check.AlmostEqual(a1.PositionAt(1), d1.PositionAt(1), 5);
-        Assert.IsAssignableFrom<Edge>(a1);
-        Assert.IsAssignableFrom<Edge>(d1);
+        Check.IsShape(a1);
+        Check.IsShape(d1);
 
         var a2 = new PolarLine(new Vector(0, 0), 1, 30);
         var d2 = new PolarLine(new Vector(0, 0), 1, direction: new Vector(Math.Sqrt(3), 1));
@@ -525,7 +525,7 @@ public class CurveObjectTests
         // A spline with no tangents
         var s1 = new Spline(new Vector(0, 0), new Vector(1, 1), new Vector(2, 0));
         Check.AlmostEqual(new Vector(2, 0, 0), s1.PositionAt(1), 5);
-        Assert.IsAssignableFrom<Edge>(s1);
+        Check.IsShape(s1);
     }
 
     [Fact]
@@ -553,7 +553,7 @@ public class CurveObjectTests
         Check.AlmostEqual(2 * r * Math.PI * 0.6, arc4.Length, 6);
         Assert.True(arc4.BoundingBox().Max.X > c.BoundingBox().Max.X);
 
-        Assert.IsAssignableFrom<Edge>(arc1);
+        Check.IsShape(arc1);
     }
 
     [Fact]
@@ -561,7 +561,7 @@ public class CurveObjectTests
     {
         var l1 = new SagittaArc(new Vector(0, 0), new Vector(1, 0), 0.1);
         Check.AlmostEqual(0.1, l1.PositionAt(0.5).Y, 5);
-        Assert.IsAssignableFrom<Edge>(l1);
+        Check.IsShape(l1);
     }
 
     [Fact]
@@ -573,15 +573,15 @@ public class CurveObjectTests
         arc = new CenterArc(new Vector(0, 0), 10, 0, 360);
         Check.AlmostEqual(arc.PositionAt(0), arc.PositionAt(1), 5);
         // On BuildLine(Plane.XZ)
-        Assert.True(new Face(new Wire([Plane.XZ * arc])).IsCoplanar(Plane.XZ));
+        Assert.True(Face.Make(Wire.Make([Plane.XZ * arc])).IsCoplanar(Plane.XZ));
 
         arc = new CenterArc(new Vector(-100, 0), 100, -45, 90);
         Check.AlmostEqual(new Vector(0, 0, 0), (Plane.XZ * arc).PositionAt(0.5), 5);
 
         arc = new CenterArc(new Vector(-100, 0), 100, 0, 360);
-        Assert.True(new Face(new Wire([arc])).IsCoplanar(Plane.XY));
+        Assert.True(Face.Make(Wire.Make([arc])).IsCoplanar(Plane.XY));
         Check.AlmostEqual(new Vector(0, 100, 0), arc.BoundingBox().Max, 5);
-        Assert.IsAssignableFrom<Edge>(arc);
+        Check.IsShape(arc);
     }
 
     [Fact]
@@ -609,7 +609,7 @@ public class CurveObjectTests
         Check.AlmostEqual(0, (edges[0].PositionAt(0) - edges[^1].PositionAt(1)).Length, 5);
         Assert.Equal(4, edges.Count);
         Check.AlmostEqual(4, p1.Length);
-        Assert.IsAssignableFrom<Wire>(p1);
+        Check.IsShape(p1);
     }
 
     [Fact]
@@ -635,7 +635,7 @@ public class CurveObjectTests
     public void AlgebraLine()
     {
         var e = new Line(new Vector(1, 2), new Vector(4, 4));
-        Assert.IsAssignableFrom<Shape>(e);
+        Check.IsShape(e);
         Check.TupleAlmostEqual([2.5, 3.0, 0.0], Check.Of(e.Center()), 6);
         Check.TupleAlmostEqual([1.0, 2.0, 0.0], Check.Of(e.PositionAt(0)), 6);
         Check.TupleAlmostEqual([4.0, 4.0, 0.0], Check.Of(e.PositionAt(1)), 6);
@@ -647,7 +647,7 @@ public class CurveObjectTests
         var l1 = new Polyline(new Vector(0, 0), new Vector(1, 0), new Vector(1, 1));
         var l2 = new Line(new Vector(1, 1), new Vector(0, 0));
         var l = l1 + l2;
-        var wire = Assert.IsAssignableFrom<Wire>(l);
+        var wire = Check.Is<Wire>(l);
         Assert.True(wire.IsClosed);
         Check.TupleAlmostEqual([0.6464466094067263, 0.35355339059327373, 0.0], Check.Of(l.Center(CenterOf.Mass)), 6);
     }
@@ -658,7 +658,7 @@ public class CurveObjectTests
         var l1 = new Line(new Vector(0, 0), new Vector(1, 1));
         var l2 = new Line(new Vector(0.25, 0.25), new Vector(0.75, 0.75));
         var l = l1 - l2;
-        var vertices = l.Vertices().OrderBy(Axis.X);
+        var vertices = l.SelectVertices().OrderBy(Axis.X);
         Assert.Equal(4, vertices.Count);
         Check.TupleAlmostEqual([0.0, 0.0, 0.0], Check.Of(vertices[0].ToVector()), 6);
         Check.TupleAlmostEqual([0.25, 0.25, 0.0], Check.Of(vertices[1].ToVector()), 6);
@@ -672,7 +672,7 @@ public class CurveObjectTests
         var l1 = new Line(new Vector(0, 0), new Vector(1, 1));
         var l2 = new Line(new Vector(0.25, 0.25), new Vector(0.75, 0.75));
         var l = l1 & l2;
-        var vertices = l.Vertices().OrderBy(Axis.X);
+        var vertices = l.SelectVertices().OrderBy(Axis.X);
         Assert.Equal(2, vertices.Count);
         Check.TupleAlmostEqual(Check.Of(l2.PositionAt(0)), Check.Of(vertices[0].ToVector()), 6);
         Check.TupleAlmostEqual(Check.Of(l2.PositionAt(1)), Check.Of(vertices[1].ToVector()), 6);
@@ -695,7 +695,7 @@ public class CurveObjectTests
     {
         var line = new Line(new Vector(0, 0), new Vector(1, 1));
         var rectangle = new Rectangle(1, 1);
-        var vertices = (line - rectangle).Vertices();
+        var vertices = (line - rectangle).SelectVertices();
         Assert.Equal(2, vertices.Count);
         Check.TupleAlmostEqual([0.5, 0.5, 0.0], Check.Of(vertices[0].ToVector()), 6);
         Check.TupleAlmostEqual([1.0, 1.0, 0.0], Check.Of(vertices[1].ToVector()), 6);

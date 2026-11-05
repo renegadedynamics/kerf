@@ -120,7 +120,7 @@ public class ShapeMeshTests
     [Fact]
     public void AnEmptyShapeHasAnEmptyMesh()
     {
-        Assert.Same(ShapeMesh.Empty, new Compound([]).Triangulate(0.1));
+        Assert.Same(ShapeMesh.Empty, Compound.Make([]).Triangulate(0.1));
         Assert.Equal(0, new Part().Triangulate().TriangleCount);
     }
 
@@ -189,8 +189,8 @@ public class ShapeMeshTests
         // Meshing itself is OCCT's: what's timed is copying the mesh out, the part that is the library's
         var sphere = new Sphere(100);
         var meshed = sphere.Rewrapped(sphere.MeshedCopy(0.01, 0.2, relative: false));
-        var faces = meshed.Faces().Select(f => f.TopoShape).ToList();
-        var edges = meshed.Edges().Select(e => e.TopoShape).ToList();
+        var faces = meshed.SelectFaces().Select(f => f).ToList();
+        var edges = meshed.SelectEdges().Select(e => e).ToList();
         // Kerf (unit 10H6): one cold wall-clock sample (the first call, with its JIT) failed in merge gates on a loaded
         // machine (1,200 ms against about 12 ms warm), so the test checks what the copy allocates, which load doesn't
         // change, and the best of five runs. The copy writes the normals straight into its buffer: it computed them on a
@@ -202,7 +202,7 @@ public class ShapeMeshTests
         {
             long before = GC.GetAllocatedBytesForCurrentThread();
             var clock = Stopwatch.StartNew();
-            buffers = Kerf.Engine.Meshing.MeshExtraction.Extract(meshed.TopoShape, faces, edges, 0.01, 0.2);
+            buffers = Kerf.Engine.Meshing.MeshExtraction.Extract(meshed, faces, edges, 0.01, 0.2);
             clock.Stop();
             allocated = Math.Min(allocated, GC.GetAllocatedBytesForCurrentThread() - before);
             best = clock.Elapsed < best ? clock.Elapsed : best;

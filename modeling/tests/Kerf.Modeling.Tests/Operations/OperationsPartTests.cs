@@ -25,9 +25,9 @@ public class OperationsPartTests
 
     private readonly Solid _box = new Box(10, 10, 10).SingleSolid();
 
-    private ShapeList<Face> Sides => _box.Faces().NotParallelTo(Axis.Z);
+    private ShapeList<Face> Sides => _box.SelectFaces().NotParallelTo(Axis.Z);
 
-    private Plane NeutralPlane => new(_box.Faces().OrderBy(Axis.Z)[0]);
+    private Plane NeutralPlane => new(_box.SelectFaces().OrderBy(Axis.Z)[0]);
 
     [Fact]
     public void SuccessfulDraft()
@@ -46,7 +46,7 @@ public class OperationsPartTests
     public void DraftInvalidFaceType()
     {
         var torus = new Torus(5, 1).SingleSolid();
-        var e = Assert.Throws<ArgumentException>(() => Draft([torus.Faces()[0]], NeutralPlane, 5));
+        var e = Assert.Throws<ArgumentException>(() => Draft([torus.SelectFaces()[0]], NeutralPlane, 5));
         Assert.Equal("Draft not supported on face(s) with geometry: TORUS", e.Message);
     }
 
@@ -54,7 +54,7 @@ public class OperationsPartTests
     public void DraftFacesFromMultipleSolids()
     {
         var box2 = new Box(5, 5, 5).SingleSolid();
-        var e = Assert.Throws<ArgumentException>(() => Draft([Sides[0], box2.Faces()[0]], NeutralPlane, 5));
+        var e = Assert.Throws<ArgumentException>(() => Draft([Sides[0], box2.SelectFaces()[0]], NeutralPlane, 5));
         Assert.Contains("same topological parent", e.Message);
     }
 
@@ -70,10 +70,10 @@ public class OperationsPartTests
     [Fact]
     public void BadDraftFaces()
     {
-        var drafted = Draft(_box.Faces().OrderBy(Axis.Z)[0], NeutralPlane, 10);
+        var drafted = Draft(_box.SelectFaces().OrderBy(Axis.Z)[0], NeutralPlane, 10);
         Assert.Equal(ModelingDiagnostics.DraftFailed, drafted.Error!.Code);
         // The same failure from the faces' form
-        Assert.Equal(ModelingDiagnostics.DraftFailed, Draft([_box.Faces().OrderBy(Axis.Z)[0]], NeutralPlane, 10).Error!.Code);
+        Assert.Equal(ModelingDiagnostics.DraftFailed, Draft([_box.SelectFaces().OrderBy(Axis.Z)[0]], NeutralPlane, 10).Error!.Code);
     }
 
     // ---- TestExtrude ----
@@ -207,7 +207,7 @@ public class OperationsPartTests
         // Issue #451: a section edge drawn as two collinear lines lofts into two coplanar faces that clean merges
         Shape[] sections =
         [
-            new Face(Wire.MakePolygon([new Vector(0, 0), new Vector(1, 0), new Vector(2, 0), new Vector(2, 1), new Vector(0, 1)])),
+            Face.Make(Wire.MakePolygon([new Vector(0, 0), new Vector(1, 0), new Vector(2, 0), new Vector(2, 1), new Vector(0, 1)])),
             new Pos(0, 0, 1) * Face.MakeRect(2, 1, new Plane(new Vector(1, 0.5, 0))),
         ];
         Assert.Equal(6, Loft(sections).Value.Faces().Count);
@@ -219,7 +219,7 @@ public class OperationsPartTests
     {
         const int sliceCount = 10;
         var sections = Enumerable.Range(0, sliceCount + 1).Select(i =>
-            (Shape)new Face(new Wire([Edge.MakeCircle(10 * Math.Sin(i * Math.PI / sliceCount) + 5).Moved(new Location(new Vector(0, 0, i * 3)))])));
+            (Shape)Face.Make(Wire.Make([Edge.MakeCircle(10 * Math.Sin(i * Math.PI / sliceCount) + 5).Moved(new Location(new Vector(0, 0, i * 3)))])));
         var test = Loft(sections).Value;
         Assert.True(test.Volume < 225 * Math.PI * 30);
         Assert.True(test.Volume > 25 * Math.PI * 30);
@@ -229,14 +229,14 @@ public class OperationsPartTests
     [Fact]
     public void LoftVertex()
     {
-        Check.AlmostEqual(1, Loft([new Rectangle(1, 1), new Vertex(0, 0, 3)], ruled: true).Value.Volume, 5);
-        Check.AlmostEqual(1, Loft([new Rectangle(1, 1).SingleFace(), new Vertex(0, 0, 3)], ruled: true).Value.Volume, 5);
+        Check.AlmostEqual(1, Loft([new Rectangle(1, 1), Vertex.Make(0, 0, 3)], ruled: true).Value.Volume, 5);
+        Check.AlmostEqual(1, Loft([new Rectangle(1, 1).SingleFace(), Vertex.Make(0, 0, 3)], ruled: true).Value.Volume, 5);
     }
 
     [Fact]
     public void LoftVertices()
     {
-        var test = Loft([new Vertex(0, 0, -3), new Rectangle(1, 1), new Vertex(0, 0, 3)], ruled: true).Value;
+        var test = Loft([Vertex.Make(0, 0, -3), new Rectangle(1, 1), Vertex.Make(0, 0, 3)], ruled: true).Value;
         Check.AlmostEqual(2, test.Volume, 5);
     }
 
@@ -245,7 +245,7 @@ public class OperationsPartTests
     {
         var lowerSection = Face.MakeRect(10, 10) - Face.MakeRect(8, 8);
         var upperSection = new Pos(0, 0, 5) * lowerSection;
-        Assert.Throws<ArgumentException>(() => Loft([lowerSection, new Vertex(0, 0, 2.5), upperSection]));
+        Assert.Throws<ArgumentException>(() => Loft([lowerSection, Vertex.Make(0, 0, 2.5), upperSection]));
     }
 
     [Fact]
@@ -258,13 +258,13 @@ public class OperationsPartTests
     [Fact]
     public void LoftNothing()
     {
-        Assert.True(Loft([new Face()]).Value.IsEmpty);
+        Assert.True(Loft([default(Face)]).Value.IsEmpty);
     }
 
     [Fact]
     public void LoftVertexMiddle()
     {
-        Assert.Throws<ArgumentException>(() => Loft([new Vertex(0, 0, -1), new Vertex(0, 0, 2), new Circle(1)]));
+        Assert.Throws<ArgumentException>(() => Loft([Vertex.Make(0, 0, -1), Vertex.Make(0, 0, 2), new Circle(1)]));
     }
 
     [Fact]
@@ -311,7 +311,7 @@ public class OperationsPartTests
     public void RevolveReturnIsCleaned()
     {
         // Issue #451: a profile edge drawn as two collinear lines revolves into two faces that clean merges
-        var profile = new Pos(5, 0, 0) * new Face(Wire.MakePolygon([new Vector(0, 0), new Vector(1, 0), new Vector(2, 0), new Vector(2, 1), new Vector(0, 1)]));
+        var profile = new Pos(5, 0, 0) * Face.Make(Wire.MakePolygon([new Vector(0, 0), new Vector(1, 0), new Vector(2, 0), new Vector(2, 1), new Vector(0, 1)]));
         Assert.Equal(4, Revolve(profile, Axis.Y).Value.Faces().Count);
         Assert.Equal(5, Revolve(profile, Axis.Y, clean: false).Value.Faces().Count);
     }
@@ -464,7 +464,7 @@ public class OperationsPartTests
     [Fact]
     public void ThickenSweptSurface()
     {
-        var wire = (Shape1D)(new JernArc(new Vector(0, -2), new Vector(-1, 0), 1, -180) + new JernArc(new Vector(0, 0), new Vector(1, 0), 2, -90));
+        var wire = (IShape1D)(new JernArc(new Vector(0, -2), new Vector(-1, 0), 1, -180) + new JernArc(new Vector(0, 0), new Vector(1, 0), 2, -90));
 
         var surface = Sweep((wire.LocationAt(0)) * new RadiusArc(new Vector(0, 0), new Vector(0, -1), 1), wire).Value;
         var part = Thicken(surface, 0.4).Value;

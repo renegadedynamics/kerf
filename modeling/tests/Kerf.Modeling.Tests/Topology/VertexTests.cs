@@ -10,56 +10,56 @@ public class VertexTests
     [Fact]
     public void BasicVertex()
     {
-        var v = new Vertex(0, 0, 0);
+        var v = Vertex.Make(0, 0, 0);
         Assert.Equal(0, v.X);
-        Assert.True(new Vertex().IsEmpty);
+        Assert.True(default(Vertex).IsEmpty);
 
-        v = new Vertex(1, 1, 1);
+        v = Vertex.Make(1, 1, 1);
         Assert.Equal(1, v.X);
         Assert.IsType<Vector>(v.Center());
 
-        Check.AlmostEqual(new Vector(1, 2, 3), new Vector(new Vertex(new Vector(1, 2, 3))), 7);
-        Check.AlmostEqual(new Vector(4, 5, 6), new Vector(new Vertex(new Vector(4, 5, 6))), 7);
-        Check.AlmostEqual(new Vector(8, 9, 0), new Vector(new Vertex(8, 9)), 7);
+        Check.AlmostEqual(new Vector(1, 2, 3), new Vector(Vertex.Make(new Vector(1, 2, 3))), 7);
+        Check.AlmostEqual(new Vector(4, 5, 6), new Vector(Vertex.Make(new Vector(4, 5, 6))), 7);
+        Check.AlmostEqual(new Vector(8, 9, 0), new Vector(Vertex.Make(8, 9)), 7);
     }
 
     [Fact]
     public void CoordinatesIncludeLocation()
     {
-        var vertex = new Vertex(1, 0, 0).Moved(new Location(new Vector(1, 2, 3)));
+        var vertex = Vertex.Make(1, 0, 0).Moved(new Location(new Vector(1, 2, 3)));
         Assert.Equal((2.0, 2.0, 3.0), (vertex.X, vertex.Y, vertex.Z));
     }
 
     [Fact]
-    public void VertexVolume() => Check.AlmostEqual(0, new Vertex(1, 1, 1).Volume, 5);
+    public void VertexVolume() => Check.AlmostEqual(0, Vertex.Make(1, 1, 1).Volume, 5);
 
     [Fact]
     public void VertexAdd()
     {
-        var v = new Vertex(0, 0, 0);
+        var v = Vertex.Make(0, 0, 0);
         Check.AlmostEqual(new Vector(100, -40, 10), new Vector(v + new Vector(100, -40, 10)), 7);
-        Check.AlmostEqual(new Vector(100, -40, 10), new Vector(v + new Vertex(100, -40, 10)), 7);
+        Check.AlmostEqual(new Vector(100, -40, 10), new Vector(v + Vertex.Make(100, -40, 10)), 7);
     }
 
     [Fact]
     public void VertexSub()
     {
-        var v = new Vertex(0, 0, 0);
+        var v = Vertex.Make(0, 0, 0);
         Check.AlmostEqual(new Vector(-100, 40, -10), new Vector(v - new Vector(100, -40, 10)), 7);
-        Check.AlmostEqual(new Vector(-100, 40, -10), new Vector(v - new Vertex(100, -40, 10)), 7);
+        Check.AlmostEqual(new Vector(-100, 40, -10), new Vector(v - Vertex.Make(100, -40, 10)), 7);
     }
 
     [Fact]
-    public void VertexStr() => Assert.Equal("Vertex(0, 0, 0)", new Vertex(0, 0, 0).ToString());
+    public void VertexStr() => Assert.Equal("Vertex(0, 0, 0)", Vertex.Make(0, 0, 0).ToString());
 
     [Fact]
     public void NoIntersect() =>
-        Assert.Throws<NotSupportedException>(() => new Vertex(1, 2, 3) & new Vertex(5, 6, 7));
+        Assert.Throws<NotSupportedException>(() => Vertex.Make(1, 2, 3) & Vertex.Make(5, 6, 7));
 
     [Fact]
     public void ALoneVertexHasNothingToClassifyAgainst()
     {
-        var e = Assert.Throws<InvalidOperationException>(() => new Vertex(1, 2, 3).Convexity);
+        var e = Assert.Throws<InvalidOperationException>(() => Vertex.Make(1, 2, 3).Convexity);
         Assert.Contains("not selected from a shape", e.Message);
     }
 }
@@ -77,7 +77,7 @@ public class EdgeWireSmokeTests
         Check.AlmostEqual(new Vector(1.5, 2, 0), line.PositionAt(0.5));
         Check.AlmostEqual(new Vector(3, 4, 0).Normalized(), line.TangentAt(0.2));
         Assert.Equal(GeomType.Line, line.GeomType);
-        Assert.Equal(2, line.Vertices().Count);
+        Assert.Equal(2, line.SelectVertices().Count);
         Check.AlmostEqual(0.25, line.ParamAtPoint(new Vector(0.75, 1, 0)));
     }
 
@@ -98,14 +98,14 @@ public class EdgeWireSmokeTests
     public void RectangleWireHasFourEdgesInOrder()
     {
         var rect = Wire.MakeRect(4, 2);
-        var edges = rect.Edges();
+        var edges = rect.SelectEdges();
         Assert.Equal(4, edges.Count);
         Assert.True(rect.IsClosed);
         Check.AlmostEqual(12, rect.Length);
         for (int i = 0; i < 4; i++)
             Check.AlmostEqual(edges[i].EndPoint(), edges[(i + 1) % 4].StartPoint());
         // Each edge knows the wire it was taken from
-        Assert.All(edges, e => Assert.Same(rect, e.TopoParent));
+        Assert.All(edges, e => Check.Same(rect, e.TopoParent));
         Assert.Equal(2, edges.ParallelTo(Axis.X).Count);
         Check.AlmostEqual(-1, edges.OrderBy(Axis.Y)[0].Center().Y);
     }
@@ -116,8 +116,8 @@ public class EdgeWireSmokeTests
         var a = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0));
         var b = Edge.MakeLine(new Vector(1, 0, 0), new Vector(1, 1, 0));
         var joined = a + b;
-        var wire = Assert.IsType<Wire>(joined);
-        Assert.Equal(2, wire.Edges().Count);
+        var wire = Check.Is<Wire>(joined);
+        Assert.Equal(2, wire.SelectEdges().Count);
         Check.AlmostEqual(2, wire.Length);
     }
 
@@ -129,7 +129,7 @@ public class EdgeWireSmokeTests
         Assert.Equal("e", moved.Label);
         Check.AlmostEqual(5, moved.Center().Z);
         Check.AlmostEqual(0, edge.Center().Z);   // the original is unchanged
-        Assert.True(moved.TopoShape.IsPartner(edge.TopoShape));
+        Assert.True(moved.IsPartner(edge));
     }
 
     [Fact]
@@ -157,7 +157,7 @@ public class EdgeWireSmokeTests
         var a = Edge.MakeLine(new Vector(-1, 0, 0), new Vector(1, 0, 0));
         var b = Edge.MakeLine(new Vector(0, -1, 0), new Vector(0, 1, 0));
         var hit = a.Intersect(b);
-        var vertex = Assert.IsType<Vertex>(Assert.Single(hit));
+        var vertex = Check.Is<Vertex>(Assert.Single(hit));
         Check.AlmostEqual(new Vector(0, 0, 0), vertex.ToVector());
     }
 }

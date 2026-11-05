@@ -122,7 +122,7 @@ public class EdgeTests
     {
         var edge = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 1, 1));
         foreach (var end in new[] { 0, 1 })
-            Check.AlmostEqual(edge.PositionAt(end), new Wire(edge).PositionAt(end), 5);
+            Check.AlmostEqual(edge.PositionAt(end), Wire.Make(edge).PositionAt(end), 5);
     }
 
     [Fact]
@@ -159,7 +159,7 @@ public class EdgeTests
 
         Assert.Throws<ArgumentException>(() => line.FindIntersectionPoints(Plane.YZ));
 
-        circle = new Edge();
+        circle = default(Edge);
         Assert.Throws<InvalidOperationException>(() => circle.FindIntersectionPoints(line));
     }
 
@@ -183,7 +183,7 @@ public class EdgeTests
         Check.AlmostEqual(new Vector(0, 1, 0), l4.PositionAt(0), 5);
         Check.AlmostEqual(new Vector(-1, 0, 0), l4.PositionAt(1), 5);
 
-        var l5 = l1.Trim(0.5, new Vertex(-1, 0));
+        var l5 = l1.Trim(0.5, Vertex.Make(-1, 0));
         Check.AlmostEqual(new Vector(0, 1, 0), l5.PositionAt(0), 5);
         Check.AlmostEqual(new Vector(-1, 0, 0), l5.PositionAt(1), 5);
 
@@ -191,7 +191,7 @@ public class EdgeTests
         var l7 = spline.Trim(0, new Vector(20, 0));
         Check.AlmostEqual(new Vector(20, 0, 0), l7.PositionAt(1), 6);
 
-        line = new Edge();
+        line = default(Edge);
         Assert.Throws<InvalidOperationException>(() => line.Trim(0.1, 0.9));
     }
 
@@ -219,7 +219,7 @@ public class EdgeTests
         Check.AlmostEqual(new Vector(5, 5), e5.PositionAt(0), 5);
         Check.AlmostEqual(1, e5.Length, 5);
 
-        e1 = new Edge();
+        e1 = default(Edge);
         Assert.Throws<InvalidOperationException>(() => e1.TrimToLength(0.1, 2));
     }
 
@@ -261,7 +261,7 @@ public class EdgeTests
             CurveObjects.CenterArc(new Vector(0, 0), 1, 45, 90),
             Rect().Rotate(Axis.Z, -45).SingleWire(),
             Rect().Rotate(Axis.Z, -45),
-            new Curve(Rect().Rotate(Axis.Z, -45).Edges()),
+            new Curve(Rect().Rotate(Axis.Z, -45).SelectEdges()),
             Solid.MakeBox(1, 1, 1, new Plane(new Vector(-1, 0, -0.5))).Rotate(Axis.Z, -45),
             new Axis(new Vector(0, 0, 0), new Vector(1, 1, 0)),
             new Location(new Vector(Math.Sqrt(2) / 2, Math.Sqrt(2) / 2), new Vector(0, 0, 1)),
@@ -383,7 +383,7 @@ public class EdgeTests
 
         Assert.Throws<ArgumentException>(() => edge.ParamAtPoint(new Vector(-1, 1)));
 
-        ea = new Edge();
+        ea = default(Edge);
         Assert.Throws<InvalidOperationException>(() => ea.ParamAtPoint(new Vector(15, 5)));
     }
 
@@ -449,7 +449,7 @@ public class EdgeTests
         e2r = e2.Reversed(reconstruct: true);
         Check.AlmostEqual(e2.PositionAt(0.1).X, -e2r.PositionAt(0.1).X, 5);
 
-        e2 = new Edge();
+        e2 = default(Edge);
         Assert.Throws<InvalidOperationException>(() => e2.Reversed());
     }
 
@@ -472,7 +472,7 @@ public class EdgeTests
         // A moved copy of an extracted solid still names the unmoved container as its topo_parent; the faces have to
         // be found by TShape, not Location
         var moved = new Pos(10) * Extrude(Cross(), 2).Value.SingleSolid();
-        var insideEdges = moved.Edges().Where(e => e.IsInterior).ToShapeList();
+        var insideEdges = moved.SelectEdges().Where(e => e.IsInterior).ToShapeList();
         Assert.Equal(4, insideEdges.Count);
         Assert.All(insideEdges, e => Assert.True(e.Center().X > 5));
     }
@@ -501,9 +501,9 @@ public class EdgeTests
         Assert.DoesNotContain(rounded.Edges(), e => e.IsInterior);
         // a seam has the same face on both sides
         Solid Cylinder() => Solid.MakeCylinder(3, 5, new Plane(new Vector(0, 0, -2.5)));
-        var seam = Cylinder().Edges().Where(GeomType.Line)[0];
+        var seam = Cylinder().SelectEdges().Where(GeomType.Line)[0];
         Assert.Equal(Convexity.Smooth, seam.Convexity);
-        Assert.Equal(2, Cylinder().Edges().Where(Convexity.Convex).Count);
+        Assert.Equal(2, Cylinder().SelectEdges().Where(Convexity.Convex).Count);
     }
 
     [Fact]
@@ -516,8 +516,8 @@ public class EdgeTests
         var rim = Edge.MakeSpline([.. Enumerable.Range(0, 11).Select(i => -10 + 2 * i).Select(x =>
             new Vector(x, 5 * Math.Cos(Math.PI / 2 * x / 10), 5 * Math.Sin(Math.PI / 2 * x / 10)))]);
         var wall = Face.MakeSurfaceFromCurves(along, rim);
-        var shell = new Shell((global::Kerf.Topology.Shell)TopoUtil.SewFaces([plate.KernelShape, wall.KernelShape], 1e-6));
-        var shared = shell.Edges().Where(e => e.GeomType == GeomType.Line && Math.Abs(e.Center().Y) < 1e-6).ToList();
+        var shell = (Shell)TopoUtil.SewFaces([plate, wall], 1e-6);
+        var shared = shell.SelectEdges().Where(e => e.GeomType == GeomType.Line && Math.Abs(e.Center().Y) < 1e-6).ToList();
         Assert.Single(shared);
         Assert.Equal(Convexity.Saddle, shared[0].Convexity);
     }
@@ -527,7 +527,7 @@ public class EdgeTests
     {
         var e = Assert.Throws<InvalidOperationException>(() => Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)).Convexity);
         Assert.Contains("no valid parent", e.Message);
-        e = Assert.Throws<InvalidOperationException>(() => Face.MakeRect(1, 1).Edges()[0].IsInterior);
+        e = Assert.Throws<InvalidOperationException>(() => Face.MakeRect(1, 1).SelectEdges()[0].IsInterior);
         Assert.Contains("one face only", e.Message);
     }
 
@@ -582,7 +582,7 @@ public class EdgeTests
     [Fact]
     public void GeomAdaptor()
     {
-        var line = new Edge();
+        var line = default(Edge);
         Assert.Throws<InvalidOperationException>(() => line.GeomAdaptor());
     }
 }
@@ -670,7 +670,7 @@ public class EdgeParamAtTests
     public void ParamAtPointNormalizePreservesErrors()
     {
         // Empty-edge and off-curve errors in both modes
-        var edge = new Edge();
+        var edge = default(Edge);
         foreach (var normalize in new[] { true, false })
         {
             var e = Assert.Throws<InvalidOperationException>(() => edge.ParamAtPoint(new Vector(0, 0, 0), normalize));

@@ -20,7 +20,7 @@ public abstract class BaseSketchObject : Sketch
     {
         if (align is { } a)
             obj = obj.Moved(new Location(obj.BoundingBox().ToAlignOffset(TwoAxes(a))));
-        return rotation != 0 ? obj.Moved(new Rotation(0, 0, rotation)).Faces() : obj.Faces();
+        return rotation != 0 ? obj.Moved(new Rotation(0, 0, rotation)).SelectFaces() : obj.SelectFaces();
     }
 
     /// <summary>An alignment on X and Y only, as build123d's sketches take it.</summary>
@@ -44,7 +44,7 @@ public class Circle : BaseSketchObject
     }
 
     private static Face Make(double radius, double arcSize) =>
-        arcSize == 360.0 ? new Face(Wire.MakeCircle(radius)) : Face.Revolve(Edge.MakeLine(new Vector(radius, 0), new Vector(0, 0)), arcSize, Axis.Z);
+        arcSize == 360.0 ? Face.Make(Wire.MakeCircle(radius)) : Face.Revolve(Edge.MakeLine(new Vector(radius, 0), new Vector(0, 0)), arcSize, Axis.Z);
 
     /// <summary>The radius.</summary>
     public double Radius { get; }
@@ -61,7 +61,7 @@ public class Ellipse : BaseSketchObject
 {
     /// <summary>An ellipse, rotated by <paramref name="rotation"/> degrees.</summary>
     public Ellipse(double xRadius, double yRadius, double rotation = 0, Alignment? align = null)
-        : base(new Face(Wire.MakeEllipse(xRadius, yRadius)), rotation, align ?? Centered)
+        : base(Face.Make(Wire.MakeEllipse(xRadius, yRadius)), rotation, align ?? Centered)
     {
         (XRadius, YRadius, Align) = (xRadius, yRadius, TwoAxes(align ?? Centered));
     }
@@ -90,7 +90,7 @@ public class Polygon : BaseSketchObject
     public Polygon(params Vector[] pts) : this((IEnumerable<Vector>)pts) { }
 
     private Polygon(List<Vector> pts, double rotation, Alignment? align)
-        : base(new Face(Wire.MakePolygon(pts)), rotation, align ?? new Alignment(Kerf.Modeling.Align.None, Kerf.Modeling.Align.None))
+        : base(Face.Make(Wire.MakePolygon(pts)), rotation, align ?? new Alignment(Kerf.Modeling.Align.None, Kerf.Modeling.Align.None))
     {
         (Pts, Align) = (pts, TwoAxes(align ?? new Alignment(Kerf.Modeling.Align.None, Kerf.Modeling.Align.None)));
     }
@@ -138,7 +138,7 @@ public class RectangleRounded : BaseSketchObject
         if (width <= 2 * radius || height <= 2 * radius)
             throw new ArgumentException("width and height must be > 2*radius");
         var face = Face.MakeRect(width, height);
-        return face.Fillet2D(radius, face.Vertices());
+        return face.Fillet2D(radius, face.SelectVertices());
     }
 
     /// <summary>The size along X.</summary>
@@ -182,7 +182,7 @@ public class RegularPolygon : BaseSketchObject
         var byX = pts.OrderBy(p => p.X).ToList();
         var byY = pts.OrderBy(p => p.Y).ToList();
         var offset = align.Offset(new Vector(byX[0].X, byY[0].Y), new Vector(byX[^1].X, byY[^1].Y), new Vector(0, 0));
-        return new Face(Wire.MakePolygon(pts.Select(p => p + offset)));
+        return Face.Make(Wire.MakePolygon(pts.Select(p => p + offset)));
     }
 
     /// <summary>The radius of the circumscribed circle (the major radius).</summary>
@@ -202,14 +202,14 @@ public class RegularPolygon : BaseSketchObject
 public class SlotCurve : BaseSketchObject
 {
     /// <summary>A slot round a curve.</summary>
-    public SlotCurve(Shape1D curve, double height, double rotation = 0)
-        : base(new Face((Wire)(curve as Wire ?? new Wire((Edge)curve)).Offset2D(height / 2)), rotation, null)
+    public SlotCurve(IShape1D curve, double height, double rotation = 0)
+        : base(Face.Make((Wire)(curve as Wire ?? Wire.Make((Edge)curve)).Offset2D(height / 2)), rotation, null)
     {
         (Curve, SlotHeight) = (curve, height);
     }
 
     /// <summary>The centre line.</summary>
-    public Shape1D Curve { get; }
+    public IShape1D Curve { get; }
 
     /// <summary>The width across the slot.</summary>
     public double SlotHeight { get; }
@@ -220,10 +220,10 @@ public class SlotCurve : BaseSketchObject
 public class SlotArc : SlotCurve
 {
     /// <summary>A slot round a curve.</summary>
-    public SlotArc(Shape1D arc, double height, double rotation = 0) : base(arc, height, rotation) => Arc = arc;
+    public SlotArc(IShape1D arc, double height, double rotation = 0) : base(arc, height, rotation) => Arc = arc;
 
     /// <summary>The centre line.</summary>
-    public Shape1D Arc { get; }
+    public IShape1D Arc { get; }
 }
 
 /// <summary>A slot from its centre and the centre of one end arc, symmetric about the centre.</summary>
@@ -244,7 +244,7 @@ public class SlotCenterPoint : BaseSketchObject
             throw new ArgumentException(
                 $"Distance between center and point must be greater than 0 Got: distance = {Formatting.Number(halfLine.Length)} (computed)");
         var wires = Wire.Combine([Edge.MakeLine(point, center), Edge.MakeLine(center, center - halfLine)]);
-        return new Face((Wire)wires[0].Offset2D(height / 2));
+        return Face.Make((Wire)wires[0].Offset2D(height / 2));
     }
 
     /// <summary>The centre of the slot.</summary>
@@ -273,7 +273,7 @@ public class SlotCenterToCenter : BaseSketchObject
         if (separation < 0)
             throw new ArgumentException($"The centre separation must be positive, not {Formatting.Number(separation)}.");
         if (separation > 0)
-            return new Face((Wire)new Wire([Edge.MakeLine(new Vector(-separation / 2, 0, 0), new Vector(0, 0, 0)),
+            return Face.Make((Wire)Wire.Make([Edge.MakeLine(new Vector(-separation / 2, 0, 0), new Vector(0, 0, 0)),
                                             Edge.MakeLine(new Vector(0, 0, 0), new Vector(separation / 2, 0, 0))]).Offset2D(height / 2));
         return new Circle(height / 2).SingleFace();
     }
@@ -301,7 +301,7 @@ public class SlotOverall : BaseSketchObject
         if (width < height)
             throw new ArgumentException($"Slot requires that width > height. Got: width={Formatting.Number(width)}, height={Formatting.Number(height)}");
         if (width > height)
-            return new Face((Wire)new Wire([Edge.MakeLine(new Vector(-width / 2 + height / 2, 0, 0), new Vector(0, 0, 0)),
+            return Face.Make((Wire)Wire.Make([Edge.MakeLine(new Vector(-width / 2 + height / 2, 0, 0), new Vector(0, 0, 0)),
                                             Edge.MakeLine(new Vector(0, 0, 0), new Vector(width / 2 - height / 2, 0, 0))]).Offset2D(height / 2));
         return new Circle(width / 2).SingleFace();
     }
@@ -351,7 +351,7 @@ public class Superellipse : BaseSketchObject
             topRight = Edge.MakeSpline(points);
         }
         var topLeft = topRight.Mirror(Plane.YZ).Reversed();
-        return new Face(new Wire([topRight, topLeft, topLeft.Mirror(Plane.XZ).Reversed(), topRight.Mirror(Plane.XZ).Reversed()]));
+        return Face.Make(Wire.Make([topRight, topLeft, topLeft.Mirror(Plane.XZ).Reversed(), topRight.Mirror(Plane.XZ).Reversed()]));
     }
 
     /// <summary>The width.</summary>
@@ -404,7 +404,7 @@ public class Trapezoid : BaseSketchObject
         if (topLeft + topRight < 0)
             throw new ArgumentException("Trapezoid top invalid - change angles");
         Vector[] pts = [new(-botLeft, -height / 2), new(botRight, -height / 2), new(topRight, height / 2), new(-topLeft, height / 2), new(-botLeft, -height / 2)];
-        return new Face(Wire.MakePolygon(pts));
+        return Face.Make(Wire.MakePolygon(pts));
     }
 
     /// <summary>The major (bottom) width.</summary>
@@ -445,9 +445,9 @@ public class Triangle : BaseSketchObject
         EdgeA = edges.First(e => Math.Abs(e.Length - t.a) < Constants.Tolerance);
         EdgeB = edges.First(e => Math.Abs(e.Length - t.b) < Constants.Tolerance && e != EdgeA);
         EdgeC = edges.First(e => e != EdgeA && e != EdgeB);
-        VertexA = (Vertex)Vertex.CommonVertex(EdgeB, EdgeC).WithTopoPath([this]);
-        VertexB = (Vertex)Vertex.CommonVertex(EdgeA, EdgeC).WithTopoPath([this]);
-        VertexC = (Vertex)Vertex.CommonVertex(EdgeA, EdgeB).WithTopoPath([this]);
+        VertexA = (Vertex)Vertex.CommonVertex(EdgeB, EdgeC);
+        VertexB = (Vertex)Vertex.CommonVertex(EdgeA, EdgeC);
+        VertexC = (Vertex)Vertex.CommonVertex(EdgeA, EdgeB);
     }
 
     private static (double, double, double, double, double, double) Solve(double? a, double? b, double? c, double? A, double? B, double? C)
@@ -461,8 +461,8 @@ public class Triangle : BaseSketchObject
 
     private static Face Make((double a, double b, double c, double A, double B, double C) t)
     {
-        var triangle = new Face(Wire.MakePolygon([new Vector(0, 0), new Vector(t.a, 0), new Vector(t.c, 0).Rotate(Axis.Z, t.B * Constants.RadToDeg)]));
-        var center = triangle.Vertices().Aggregate(new Vector(0, 0, 0), (sum, v) => sum + v.ToVector()) / 3;
+        var triangle = Face.Make(Wire.MakePolygon([new Vector(0, 0), new Vector(t.a, 0), new Vector(t.c, 0).Rotate(Axis.Z, t.B * Constants.RadToDeg)]));
+        var center = triangle.SelectVertices().Aggregate(new Vector(0, 0, 0), (sum, v) => sum + v.ToVector()) / 3;
         return triangle.Moved(new Location(-center));
     }
 

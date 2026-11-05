@@ -18,18 +18,18 @@ internal static class EngineShapes
 {
     /// <summary>A copy of the shape carrying OCCT's triangulation (<c>BRepMesh_IncrementalMesh</c>), as the modelling
     /// layer's <c>MeshedCopy</c> made one before unit 10M1: meshing never writes into the public API's shapes.</summary>
-    public static global::Kerf.Topology.Shape MeshedCopy(this Shape shape, double tolerance, double angularTolerance, bool relative = true)
+    public static Shape MeshedCopy(this Shape shape, double tolerance, double angularTolerance, bool relative = true)
     {
         if (shape.IsEmpty)
             throw new InvalidOperationException("Cannot mesh an empty shape");
-        return new IncrementalMesh(shape.TopoShape, tolerance, relative, angularTolerance, true).Shape();
+        return new IncrementalMesh(shape, tolerance, relative, angularTolerance, true).Shape();
     }
 
     /// <summary>
     /// A rough estimate of the memory a shape holds, in bytes: its sub-shapes, curves, surfaces and triangulations,
     /// each counted once however often it's shared (the native shim's estimate, for the same shapes).
     /// </summary>
-    public static long EstimateMemory(global::Kerf.Topology.Shape shape)
+    public static long EstimateMemory(Shape shape)
     {
         try
         {
@@ -47,7 +47,7 @@ internal static class EngineShapes
         private readonly HashSet<object> _seen = new(ReferenceEqualityComparer.Instance);
         private long _bytes;
 
-        public long Of(global::Kerf.Topology.Shape shape)
+        public long Of(Shape shape)
         {
             if (!shape.IsNull)
                 Visit(shape);
@@ -56,7 +56,7 @@ internal static class EngineShapes
 
         private bool First(object? o) => o is not null && _seen.Add(o);
 
-        private void Visit(global::Kerf.Topology.Shape shape)
+        private void Visit(Shape shape)
         {
             var tshape = shape.TShape();
             if (!First(tshape))

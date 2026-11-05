@@ -33,9 +33,9 @@ public sealed class Selector : IEquatable<Selector>
     {
         var selected = Of switch
         {
-            ShapeType.Face => shape.Faces().Upcast<Shape>(),
-            ShapeType.Edge => shape.Edges().Upcast<Shape>(),
-            _ => shape.Vertices().Upcast<Shape>(),
+            ShapeType.Face => shape.SelectFaces().Upcast<Shape>(),
+            ShapeType.Edge => shape.SelectEdges().Upcast<Shape>(),
+            _ => shape.SelectVertices().Upcast<Shape>(),
         };
         foreach (var step in Steps)
             selected = step.Apply(selected);
@@ -146,7 +146,7 @@ public sealed class Selector : IEquatable<Selector>
         var all = new Selector(of, []).Apply(shape);
         int target = -1;
         for (int i = 0; i < all.Count && target < 0; i++)
-            if (all[i].TopoShape.IsSame(picked.TopoShape))
+            if (all[i].IsSame(picked))
                 target = i;
         if (target < 0)
             throw new ArgumentException($"The {of.ToString().ToLowerInvariant()} isn't one of the shape's", nameof(picked));
@@ -157,7 +157,7 @@ public sealed class Selector : IEquatable<Selector>
             var selector = new Selector(of, steps);
             // The search models the selectors; applying one is the proof
             var result = selector.Apply(shape);
-            if (result.Count == 1 && result[0].TopoShape.IsSame(picked.TopoShape))
+            if (result.Count == 1 && result[0].IsSame(picked))
                 found.Add(selector);
             if (found.Count == count)
                 break;

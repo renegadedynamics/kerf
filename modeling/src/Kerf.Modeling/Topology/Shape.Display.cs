@@ -6,46 +6,82 @@ using System.Text;
 
 namespace Kerf.Modeling;
 
-public abstract partial class Shape
+public static partial class ShapeExtensions
 {
     private sealed record DisplayNode(string Label, string Name, long Address, string Position, List<DisplayNode> Children)
     {
         public int Height => Children.Count == 0 ? 0 : 1 + Children.Max(c => c.Height);
     }
 
-    // Containers first, as build123d orders the shape types
-    private static readonly global::Kerf.Topology.ShapeType[] OrderedShapes =
-    [
-        global::Kerf.Topology.ShapeType.Compound, global::Kerf.Topology.ShapeType.CompSolid, global::Kerf.Topology.ShapeType.Solid,
-        global::Kerf.Topology.ShapeType.Shell, global::Kerf.Topology.ShapeType.Face, global::Kerf.Topology.ShapeType.Wire,
-        global::Kerf.Topology.ShapeType.Edge, global::Kerf.Topology.ShapeType.Vertex,
-    ];
-
-    /// <summary>
-    /// The internal structure of an assembly, or of a shape's topology down to <paramref name="limitClass"/>, as an
-    /// indented tree: each line the node's label and class, an identity, and its location (an assembly) or centre (a shape).
-    /// </summary>
-    /// <param name="limitClass">The kind of the leaf nodes of a shape's tree.</param>
-    /// <param name="showCenter">Show centres (true) or positions; by default locations for an assembly, centres for a shape.</param>
-    public string ShowTopology(ShapeType limitClass = ShapeType.Vertex, bool? showCenter = null)
+    extension<TSelf>(TSelf self) where TSelf : IShape
     {
-        if (!IsEmpty && this is Compound { AssemblyChildren.Count: > 0 })
+        /// <summary>
+        /// The internal structure of an assembly, or of a shape's topology down to <paramref name="limitClass"/>, as an
+        /// indented tree: each line the node's label and class, an identity, and its location (an assembly) or centre (a shape).
+        /// </summary>
+        /// <param name="limitClass">The kind of the leaf nodes of a shape's tree.</param>
+        /// <param name="showCenter">Show centres (true) or positions; by default locations for an assembly, centres for a shape.</param>
+        public string ShowTopology(ShapeType limitClass = ShapeType.Vertex, bool? showCenter = null)
         {
-            bool center = showCenter ?? false;
-            return ShowTree(AssemblyTree(this, center));
+            if (!self.IsEmpty && self is Assembly { Children.Count: > 0 } assembly)
+            {
+                bool center = showCenter ?? false;
+                return ShapeExtensions.ShowTree(ShapeExtensions.AssemblyTree(assembly, center));
+            }
+            bool centers = showCenter ?? true;
+            return ShapeExtensions.ShowTree(ShapeExtensions.BuildTree(self.AsShape(), (limitClass), centers, centers ? "Center" : "Position"));
         }
-        bool centers = showCenter ?? true;
-        return ShowTree(BuildTree(TopoShape, TopoUtil.ToTopAbs(limitClass), centers, centers ? "Center" : "Position"));
+
+        /// <summary>
+        /// Faces projected onto this shape along a path on it: each face is placed normal to the surface at its position
+        /// along the path (from <paramref name="start"/>, by its centre's x) and projected onto the surface, so faces may
+        /// distort where the surface curves.
+        /// </summary>
+        public ShapeList<Face> ProjectFaces(IEnumerable<Face> faces, IShape1D path, double start = 0)
+        {
+            var faceList = faces.ToList();
+            var pathLength = path.Length;
+            var shapeCenter = self.Center();
+            var firstMinX = faceList[0].BoundingBox().Min.X;
+            var projected = new List<Face>();
+            foreach (var face in faceList)
+            {
+                var box = face.BoundingBox();
+                var faceCenterX = (box.Min.X + box.Max.X) / 2;
+                var relative = start + (faceCenterX - firstMinX) / pathLength;
+                var pathPosition = path.PositionAt(relative);
+                var pathTangent = path.TangentAt(relative);
+                var projectionAxis = new Axis(pathPosition, shapeCenter - pathPosition);
+                var (surfacePoint, surfaceNormal) = SurfaceIntersection.FindPoints(self.AsShape(), projectionAxis, Constants.Tolerance)[0];
+                var normalPlane = new Plane(surfacePoint, pathTangent, surfaceNormal);
+                var placed = normalPlane.FromLocalCoords(face.Moved(new Location(new Vector(-faceCenterX, 0, 0))));
+                // Onto a curved surface the projection may come back as a shell of several faces
+                projected.AddRange(placed.ProjectToShape(self.AsShape(), surfaceNormal * -1)[0].SelectFaces());
+            }
+            return new ShapeList<Face>(projected);
+        }
+
+        /// <inheritdoc cref="ProjectFaces(IEnumerable{Face}, IShape1D, double)"/>
+        public ShapeList<Face> ProjectFaces(Compound faces, IShape1D path, double start = 0) => self.ProjectFaces(faces.SelectFaces(), path, start);
     }
+
+
+    // Containers first, as build123d orders the shape types
+    private static readonly ShapeType[] OrderedShapes =
+    [
+        ShapeType.Compound, ShapeType.CompSolid, ShapeType.Solid,
+        ShapeType.Shell, ShapeType.Face, ShapeType.Wire,
+        ShapeType.Edge, ShapeType.Vertex,
+    ];
 
     private static DisplayNode AssemblyTree(Shape node, bool showCenter) => new(
         node.Label, node.GetType().Name.PadRight(9), RuntimeHelpers.GetHashCode(node),
         showCenter ? "Center" + node.Center().ToString("G6") : $"Location({node.Location.Position.ToString("G6")}, {node.Location.Orientation.ToString("G6")})",
-        node is Compound c ? [.. c.AssemblyChildren.Select(ch => AssemblyTree(ch, showCenter))] : []);
+        node.TryAs(out Compound c) ? [.. c.AssemblyChildren.Select(ch => ShapeExtensions.AssemblyTree(ch, showCenter))] : []);
 
-    private static DisplayNode BuildTree(global::Kerf.Topology.Shape shape, global::Kerf.Topology.ShapeType limit, bool showCenter, string caption)
+    private static DisplayNode BuildTree(Shape shape, ShapeType limit, bool showCenter, string caption)
     {
-        var label = TopoUtil.FromTopAbs(shape.Type).ToString();
+        var label = (shape.Type).ToString();
         var position = caption + (showCenter
             ? BoundBox.FromTopoDS(shape).Center().ToString("G6")
             : new Location(shape.Placement).Position.ToString("G6"));
@@ -53,8 +89,8 @@ public abstract partial class Shape
         foreach (var child in shape.Children)
         {
             // As build123d's _build_tree, a child carries its centre whatever the root shows
-            if (Array.IndexOf(OrderedShapes, child.Type) <= Array.IndexOf(OrderedShapes, limit))
-                children.Add(BuildTree(child, limit, true, caption));
+            if (Array.IndexOf(ShapeExtensions.OrderedShapes, child.Type) <= Array.IndexOf(ShapeExtensions.OrderedShapes, limit))
+                children.Add(ShapeExtensions.BuildTree(child, limit, true, caption));
         }
         return new DisplayNode(label, "", (long)(shape.StdHash() & 0xffffffffffff), position, children);
     }
@@ -67,9 +103,9 @@ public abstract partial class Shape
         void Collect(DisplayNode n)
         {
             sizes.Add((n.Height, n.Label.Length));
-            n.Children.ForEach(Collect);
+            n.Children.ForEach(self.Collect);
         }
-        Collect(root);
+        self.Collect(root);
         var maxPerLevel = Enumerable.Range(0, root.Height + 1)
             .Select(h => Math.Max(4, sizes.Where(s => s.Height == h).Select(s => s.Length).DefaultIfEmpty(0).Max())).ToList();
         maxPerLevel.Reverse();
@@ -82,50 +118,23 @@ public abstract partial class Shape
             for (int i = 0; i < n.Children.Count; i++)
             {
                 bool last = i == n.Children.Count - 1;
-                Render(n.Children[i], childPrefix + (last ? "└── " : "├── "), childPrefix + (last ? "    " : "│   "));
+                self.Render(n.Children[i], childPrefix + (last ? "└── " : "├── "), childPrefix + (last ? "    " : "│   "));
             }
         }
-        Render(root, "", "");
+        self.Render(root, "", "");
         return sb.ToString();
     }
-
-    /// <summary>
-    /// Faces projected onto this shape along a path on it: each face is placed normal to the surface at its position
-    /// along the path (from <paramref name="start"/>, by its centre's x) and projected onto the surface, so faces may
-    /// distort where the surface curves.
-    /// </summary>
-    public ShapeList<Face> ProjectFaces(IEnumerable<Face> faces, Shape1D path, double start = 0)
-    {
-        var faceList = faces.ToList();
-        var pathLength = path.Length;
-        var shapeCenter = Center();
-        var firstMinX = faceList[0].BoundingBox().Min.X;
-        var projected = new List<Face>();
-        foreach (var face in faceList)
-        {
-            var box = face.BoundingBox();
-            var faceCenterX = (box.Min.X + box.Max.X) / 2;
-            var relative = start + (faceCenterX - firstMinX) / pathLength;
-            var pathPosition = path.PositionAt(relative);
-            var pathTangent = path.TangentAt(relative);
-            var projectionAxis = new Axis(pathPosition, shapeCenter - pathPosition);
-            var (surfacePoint, surfaceNormal) = SurfaceIntersection.FindPoints(this, projectionAxis, Constants.Tolerance)[0];
-            var normalPlane = new Plane(surfacePoint, pathTangent, surfaceNormal);
-            var placed = normalPlane.FromLocalCoords(face.Moved(new Location(new Vector(-faceCenterX, 0, 0))));
-            projected.Add((Face)placed.ProjectToShape(this, surfaceNormal * -1)[0]);
-        }
-        return new ShapeList<Face>(projected);
-    }
-
-    /// <inheritdoc cref="ProjectFaces(IEnumerable{Face}, Shape1D, double)"/>
-    public ShapeList<Face> ProjectFaces(Compound faces, Shape1D path, double start = 0) => ProjectFaces(faces.Faces(), path, start);
 }
 
-public abstract partial class Shape3D
+public static partial class Shape3DExtensions
 {
-    /// <summary>The points where an axis meets the shape's surface, nearest the axis's start first, each with the normal there.</summary>
-    public IReadOnlyList<(Vector Point, Vector Normal)> FindIntersectionPoints(Axis other, double tolerance = Constants.Tolerance) =>
-        SurfaceIntersection.FindPoints(this, other, tolerance);
+    extension<TSelf>(TSelf self) where TSelf : IShape3D
+    {
+        /// <summary>The points where an axis meets the shape's surface, nearest the axis's start first, each with the normal there.</summary>
+        public IReadOnlyList<(Vector Point, Vector Normal)> FindIntersectionPoints(Axis other, double tolerance = Constants.Tolerance) =>
+            SurfaceIntersection.FindPoints(self.AsShape(), other, tolerance);
+    }
+
 }
 
 /// <summary>The axis-surface intersection shared by faces, shells, solids and compounds (Mixin3D borrows Mixin2D's).</summary>
@@ -138,8 +147,8 @@ internal static class SurfaceIntersection
         var ax1 = axis.ToAxis3D();
         var line = new Line3D(ax1);
         var plane = new Plane(axis);
-        var found = new List<(global::Kerf.Topology.Face Face, Vector Point, double Distance)>();
-        foreach (var hit in shape.TopoShape.Intersect(line, tolerance))
+        var found = new List<(Face Face, Vector Point, double Distance)>();
+        foreach (var hit in shape.Intersect(line, tolerance))
         {
             var point = new Vector(hit.Point);
             found.Add((hit.Face, point, plane.ToLocalCoords(point).Z));
