@@ -3,6 +3,12 @@
 All notable changes to the Kerf.Kernel packages (until 0.2.0 the OCCT.NET packages). Versions follow [SemVer](https://semver.org); before 1.0 a minor
 version may break the API.
 
+## Unreleased
+
+- **Unifying (and so a simplified Boolean) no longer fails on two kinds of valid shape:** edges meeting where one has a
+  zero-length tangent, as a B-spline with its end pole repeated, are left unmerged, and infinite lines, which have no
+  vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 18301 and 18302).
+
 ## 0.2.0
 
 The first release as Kerf.Kernel, replacing `OcctNet.Foundation`, `OcctNet.ModelingData`, `OcctNet.ModelingAlgorithms`

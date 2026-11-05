@@ -2075,3 +2075,10 @@ classes.
 | Where | What | Effect | Triage |
 |---|---|---|---|
 | `Geom_TrimmedCurve.cxx`, `Geom2d_TrimmedCurve.cxx`, `Geom_RectangularTrimmedSurface.cxx` (`SetTrim`, `Reverse`) | With a NaN parameter on a basis that is not periodic, `U1 < U2` is false, so the sense is reversed, and `Reverse` calls `SetTrim` with NaN again | Unbounded recursion: the stack overflows | fixed: a NaN is refused (decision 1604) |
+
+## Phase 11: the healing benchmark's failures
+
+| Where | What | Effect | Triage |
+|---|---|---|---|
+| `ShapeUpgrade_UnifySameDomain.cxx`, `IsMergingPossible` | `Diff1.Angle(Diff2)` on two edges' end tangents, one of zero length (a B-spline with its end pole repeated) | `gp_VectorWithNullMagnitude` out of `Build`, where the checks are compiled in; where they aren't, a NaN angle passes the test and the edges can merge whatever the angle. bug28366_fuselage.stp, t4mec.stp | fixed (decision 18301) |
+| `ShapeUpgrade_UnifySameDomain.cxx`, `CheckSharedVertices` | Counts a second missing vertex as a shared vertex, then looks it up in a map that has no null key | `Standard_NoSuchObject` out of `Build` on any shape with two missing vertex ends (one infinite line). bug27333_simple.stp, OCC22459-TEST2.stp | fixed (decision 18302) |
