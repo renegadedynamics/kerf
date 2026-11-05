@@ -4,21 +4,43 @@ namespace Kerf.Modeling;
 public abstract class BaseCurveObject : Curve
 {
     /// <summary>A curve object of the given curve.</summary>
-    protected BaseCurveObject(Curve curve) : base(curve.TopoShape) { }
+    protected BaseCurveObject(Curve curve) : base(curve.Shape) { }
 }
 
 /// <summary>The base of the curve objects that make a wire (<see cref="Polyline"/>, <see cref="FilletPolyline"/>, …).</summary>
-public abstract class BaseLineObject : Wire
+public abstract class BaseLineObject : Curve
 {
     /// <summary>A line object of the given wire.</summary>
-    protected BaseLineObject(Wire curve) : base(curve.TopoWire) { }
+    protected BaseLineObject(Wire curve) : base((Shape)curve) { }
+
+    /// <summary>The wire this object holds.</summary>
+    public Wire Wire => (Wire)Shape;
+
+    /// <summary>The wire this object holds.</summary>
+    /// <exception cref="ArgumentNullException"><paramref name="line"/> is null.</exception>
+    public static implicit operator Wire(BaseLineObject line)
+    {
+        ArgumentNullException.ThrowIfNull(line);
+        return line.Wire;
+    }
 }
 
 /// <summary>The base of the curve objects that make one edge (<see cref="Line"/>, <see cref="CenterArc"/>, …).</summary>
-public abstract class BaseEdgeObject : Edge
+public abstract class BaseEdgeObject : Curve
 {
     /// <summary>An edge object of the given edge.</summary>
-    protected BaseEdgeObject(Edge curve) : base(curve.TopoEdge) { }
+    protected BaseEdgeObject(Edge curve) : base((Shape)curve) { }
+
+    /// <summary>The edge this object holds.</summary>
+    public Edge Edge => (Edge)Shape;
+
+    /// <summary>The edge this object holds.</summary>
+    /// <exception cref="ArgumentNullException"><paramref name="line"/> is null.</exception>
+    public static implicit operator Edge(BaseEdgeObject line)
+    {
+        ArgumentNullException.ThrowIfNull(line);
+        return line.Edge;
+    }
 }
 
 /// <summary>
@@ -34,6 +56,14 @@ public readonly struct CurveLimit
 
 #pragma warning disable CS1591 // Conversions from each kind of limit
     public static implicit operator CurveLimit(Shape shape) => new(shape);
+    public static implicit operator CurveLimit(Vertex shape) => new((Shape)shape);
+    public static implicit operator CurveLimit(Edge shape) => new((Shape)shape);
+    public static implicit operator CurveLimit(Wire shape) => new((Shape)shape);
+    public static implicit operator CurveLimit(Face shape) => new((Shape)shape);
+    public static implicit operator CurveLimit(Shell shape) => new((Shape)shape);
+    public static implicit operator CurveLimit(Solid shape) => new((Shape)shape);
+    public static implicit operator CurveLimit(Compound shape) => new((Shape)shape);
+    public static implicit operator CurveLimit(ModelShape shape) => new(shape.Shape);
     public static implicit operator CurveLimit(Axis axis) => new(axis);
     public static implicit operator CurveLimit(Location location) => new(location);
     public static implicit operator CurveLimit(Plane plane) => new(plane);
@@ -87,7 +117,7 @@ internal static class CurveObjects
         List<Vector> limitPoints;
         if (limit is Shape shape)
         {
-            var box = shape.BoundingBox();
+            var box = shape.BoundBox();
             limitPoints = [];
             foreach (var x in new[] { box.Min.X, box.Max.X })
                 foreach (var y in new[] { box.Min.Y, box.Max.Y })
@@ -206,7 +236,7 @@ public class Airfoil : BaseLineObject
         var lower = Enumerable.Range(0, n).Select(i => new Vector(x[i] + yt[i] * Math.Sin(theta[i]), yc[i] - yt[i] * Math.Cos(theta[i])));
         List<Vector> unique = [.. upper.Reverse().Concat(lower).Distinct()];
         var surface = Edge.MakeSpline(unique, periodic: !finiteTE);
-        return finiteTE ? new Wire([surface, Edge.MakeLine(surface.PositionAt(0), surface.PositionAt(1))]) : new Wire([surface]);
+        return finiteTE ? Wire.Make([surface, Edge.MakeLine(surface.PositionAt(0), surface.PositionAt(1))]) : Wire.Make([surface]);
     }
 }
 
@@ -245,7 +275,7 @@ public class BlendCurve : BaseEdgeObject
 
     private static (Vector, Vector) Closest(Edge curve0, Edge curve1)
     {
-        var (a, b) = curve0.Vertices().SelectMany(a => curve1.Vertices().Select(b => (a, b))).MinBy(pair => pair.a.DistanceTo(pair.b));
+        var (a, b) = curve0.SelectVertices().SelectMany(a => curve1.SelectVertices().Select(b => (a, b))).MinBy(pair => pair.a.DistanceTo(pair.b));
         return (a.ToVector(), b.ToVector());
     }
 
@@ -346,7 +376,7 @@ public class CenterArc : BaseEdgeObject
 }
 
 /// <summary>
-/// The planar circular arcs on XY constrained by other objects (see <see cref="Edge.MakeConstrainedArcs(Tangent, Tangent, double, Sagitta)"/>),
+/// The planar circular arcs on XY constrained by other objects (see <c>MakeConstrainedArcs</c>),
 /// as a curve of one or more edges, optionally narrowed by a selector.
 /// </summary>
 public class ConstrainedArcs : BaseCurveObject
@@ -394,7 +424,7 @@ public class ConstrainedArcs : BaseCurveObject
 }
 
 /// <summary>
-/// The planar lines on XY constrained by other objects (see <see cref="Edge.MakeConstrainedLines(Tangent, Tangent)"/>), as
+/// The planar lines on XY constrained by other objects (see <c>MakeConstrainedLines</c>), as
 /// a curve of one or more edges, optionally narrowed by a selector.
 /// </summary>
 public class ConstrainedLines : BaseCurveObject
@@ -427,22 +457,22 @@ public class DoubleTangentArc : BaseEdgeObject
     /// <summary>An arc from <paramref name="point"/> along <paramref name="tangent"/>, tangent to <paramref name="other"/>.</summary>
     /// <exception cref="ArgumentException">The keep isn't Top or Bottom, or the objects aren't in one plane.</exception>
     /// <exception cref="InvalidOperationException">No arc was found.</exception>
-    public DoubleTangentArc(Vector point, Vector tangent, Shape1D other, Keep keep = Keep.Top)
+    public DoubleTangentArc(Vector point, Vector tangent, IShape1D other, Keep keep = Keep.Top)
         : base(Make(point, tangent, other, keep))
     {
     }
 
-    private static Edge Make(Vector arcPoint, Vector tangent, Shape1D other, Keep keep)
+    private static Edge Make(Vector arcPoint, Vector tangent, IShape1D other, Keep keep)
     {
         if (keep is not (Keep.Top or Keep.Bottom))
             throw new ArgumentException($"Only the TOP or BOTTOM options are supported not {keep}");
         var arcTangent = tangent.Normalized();
-        var coplane = Edge.MakeLine(arcPoint, arcPoint + arcTangent).CommonPlane(other.Edges())
+        var coplane = Edge.MakeLine(arcPoint, arcPoint + arcTangent).CommonPlane(other.SelectEdges().Select(e => (IShape1D?)e))
                       ?? throw new ArgumentException("DoubleTangentArc only works on a single plane");
         var workplane = -coplane;   // flipped to help with TOP/BOTTOM
         var rotationAxis = new Axis(new Vector(0, 0, 0), workplane.ZDir);
         // Protect against massive circles that are effectively straight lines
-        var maxSize = 10 * other.BoundingBox().Add(arcPoint).Diagonal;
+        var maxSize = 10 * other.BoundBox().Add(arcPoint).Diagonal;
 
         var centers = new List<Vector>();
         foreach (var angle in new[] { 90.0, -90.0 })
@@ -682,18 +712,18 @@ public class FilletPolyline : BaseLineObject
         var edges = Enumerable.Range(0, points.Count - 1).Select(i => Edge.MakeLine(points[i], points[i + 1])).ToList();
         if (close && (edges[0].PositionAt(0) - edges[^1].PositionAt(1)).Length > 1e-5)
             edges.Add(Edge.MakeLine(edges[^1].PositionAt(1), edges[0].PositionAt(0)));
-        var wireOfLines = new Wire(edges);
+        var wireOfLines = Wire.Make(edges);
 
         // The wire's vertices in the order of the points, so the fillets are in order
-        var wireVertices = wireOfLines.Vertices();
+        var wireVertices = wireOfLines.SelectVertices();
         var orderedVertices = points.Select(p => wireVertices.MinBy(v => (p - v.ToVector()).Length)!).ToList();
 
         // A fillet edge for each corner, or null for a sharp one (keyed as build123d's dict, so a repeated vertex counts once)
-        var wireEdges = wireOfLines.Edges();
+        var wireEdges = wireOfLines.SelectEdges();
         var vertexToEdges = new List<(Vertex Vertex, List<Edge> Edges)>();
         foreach (var v in orderedVertices)
             if (!vertexToEdges.Any(entry => entry.Vertex == v))
-                vertexToEdges.Add((v, [.. wireEdges.Where(e => e.Vertices().Contains(v))]));
+                vertexToEdges.Add((v, [.. wireEdges.Where(e => e.SelectVertices().Contains(v, ShapeComparer<Vertex>.Same))]));
         var fillets = new List<Edge?>();
         for (int i = 0; i < vertexToEdges.Count; i++)
         {
@@ -706,10 +736,10 @@ public class FilletPolyline : BaseLineObject
                 fillets.Add(null);
                 continue;
             }
-            var others = corner.SelectMany(e => e.Vertices()).Where(ve => ve != vertex).Distinct().ToList();
+            var others = corner.SelectMany(e => e.SelectVertices()).Where(ve => !ve.IsSame(vertex)).Distinct(ShapeComparer<Vertex>.Same).ToList();
             var thirdEdge = Edge.MakeLine(others[0].ToVector(), others[1].ToVector());
-            var filletFace = new Face(new Wire([.. corner, thirdEdge])).Fillet2D(currentRadius, [vertex]);
-            fillets.Add(filletFace.Edges().Where(GeomType.Circle)[0]);
+            var filletFace = Face.Make(Wire.Make([.. corner, thirdEdge])).Fillet2D(currentRadius, [vertex]);
+            fillets.Add(filletFace.SelectEdges().Where(GeomType.Circle)[0]);
         }
 
         // The lines joining the fillets
@@ -721,8 +751,8 @@ public class FilletPolyline : BaseLineObject
             {
                 var previous = fillets[(i - 1 + fillets.Count) % fillets.Count];
                 var current = fillets[i];
-                var start = previous is null ? orderedVertices[(i - 1 + orderedVertices.Count) % orderedVertices.Count].ToVector() : previous.PositionAt(1);
-                var end = current is null ? orderedVertices[i].ToVector() : current.PositionAt(0);
+                var start = previous is not { } before ? orderedVertices[(i - 1 + orderedVertices.Count) % orderedVertices.Count].ToVector() : before.PositionAt(1);
+                var end = current is not { } arc ? orderedVertices[i].ToVector() : arc.PositionAt(0);
                 interior.Add(Edge.MakeLine(start, end));
             }
         }
@@ -733,8 +763,8 @@ public class FilletPolyline : BaseLineObject
                 var current = fillets[i];
                 var next = fillets[i + 1];
                 // + 1 as the first vertex has no fillet
-                var start = current is null ? orderedVertices[i + 1].ToVector() : current.PositionAt(1);
-                var end = next is null ? orderedVertices[i + 2].ToVector() : next.PositionAt(0);
+                var start = current is not { } arc ? orderedVertices[i + 1].ToVector() : arc.PositionAt(1);
+                var end = next is not { } after ? orderedVertices[i + 2].ToVector() : after.PositionAt(0);
                 interior.Add(Edge.MakeLine(start, end));
             }
             var startEdge = fillets[0] is { } first
@@ -745,7 +775,7 @@ public class FilletPolyline : BaseLineObject
                 : Edge.MakeLine(orderedVertices[^2].ToVector(), wireOfLines.PositionAt(1));
             endEdges = [startEdge, endEdge];
         }
-        return new Wire([.. endEdges, .. interior, .. fillets.OfType<Edge>()]);
+        return Wire.Make([.. endEdges, .. interior, .. fillets.OfType<Edge>()]);
     }
 }
 
@@ -844,7 +874,7 @@ public class IntersectingLine : BaseEdgeObject
     {
         direction = direction.Normalized();
         var axis = new Axis(start, direction);
-        var points = other.Edges().SelectMany(e => e.FindIntersectionPoints(axis)).ToList();
+        var points = other.SelectEdges().SelectMany(e => e.FindIntersectionPoints(axis)).ToList();
         if (points.Count == 0)
             throw new ArgumentException("No intersections found");
         var length = points.Min(p => (start - p.ToVector()).Length);
@@ -901,7 +931,7 @@ public class PolarLine : BaseEdgeObject
         var (dir, _) = Direction(angle, direction);
         if (limit.Target is Shape shape)
         {
-            var maxLength = shape.BoundingBox().Add(start).Diagonal;
+            var maxLength = shape.BoundBox().Add(start).Diagonal;
             var trimmed = Edge.MakeLine(start, start + dir * maxLength).TrimToOther(shape);
             return trimmed.IsEmpty ? throw new ArgumentException($"Polar line doesn't intersect length limit {limit}") : trimmed;
         }

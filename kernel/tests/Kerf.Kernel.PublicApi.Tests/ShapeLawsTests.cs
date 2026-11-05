@@ -61,7 +61,9 @@ public class ShapeLawsTests
         Assert.Equal(general.ChildCount, (int)Get(shape, "ChildCount"));
 
         // orientation
-        var reversed = (Shape)Call(shape, "Reversed");
+        var reversedTyped = Call(shape, "Reversed");
+        Assert.IsType(shape.GetType(), reversedTyped);   // a typed shape's Reversed keeps its type
+        var reversed = ((IShape)reversedTyped).AsShape();
         Assert.Equal(Orientation.Reversed, reversed.Orientation);
         Assert.Equal(Orientation.Reversed, ((Shape)Call(shape, "Complemented")).Orientation);
         Assert.Equal(Orientation.Reversed, ((Shape)Call(shape, "Composed", Orientation.Reversed)).Orientation);
@@ -145,5 +147,43 @@ public class ShapeLawsTests
         Assert.False(here.Equals((object)there));
         Assert.True(there.Equals((object)Moved));
         Assert.False(string.IsNullOrEmpty(there.ToString()));
+    }
+
+    [Fact]
+    public void TheDimensionInterfacesSayWhatEachShapeIs()
+    {
+        Solid box = Box();
+        Face face = box.Faces()[0];
+        Edge edge = box.Edges()[0];
+
+        Assert.True(((object)edge) is IShape1D);
+        Assert.True(((object)Wire.Create([edge])) is IShape1D);
+        Assert.True(((object)face) is IShape2D);
+        Assert.True(((object)box.Shells()[0]) is IShape2D);
+        Assert.True(((object)box) is IShape3D);
+        Assert.True(((object)MakeCompSolid()) is IShape3D);
+        Assert.True(((object)Compound.Create([box])) is IShape3D);
+        Assert.False(((object)box.Vertices()[0]) is IShape1D or IShape2D or IShape3D);
+        Assert.False(((object)(Shape)edge) is IShape1D);
+        // Non-generic, as modelling objects implement it
+        Assert.True(AsShapeOf<IShape>(face).IsSame(face));
+        Assert.True(AsShapeOf(edge).IsSame(edge));
+    }
+
+    private static Shape AsShapeOf<T>(T shape) where T : IShape => shape.AsShape();
+
+    [Fact]
+    public void ATypedComparerComparesAsShapeComparerDoes()
+    {
+        Edge edge = Box().Edges()[0];
+        Edge reversed = (Edge)edge.Reversed();
+
+        Assert.True(ShapeComparer<Edge>.Same.Equals(edge, reversed));
+        Assert.False(ShapeComparer<Edge>.Equal.Equals(edge, reversed));
+        Assert.Equal(ShapeComparer<Edge>.Same.GetHashCode(edge), ShapeComparer<Edge>.Same.GetHashCode(reversed));
+        Assert.Single(new[] { edge, reversed }.Distinct(ShapeComparer<Edge>.Same));
+        Assert.Equal(2, new[] { edge, reversed }.Distinct(ShapeComparer<Edge>.Equal).Count());
+        Assert.True(ShapeComparer<IShape>.Same.Equals(null, null));
+        Assert.False(ShapeComparer<IShape>.Same.Equals(edge, null));
     }
 }

@@ -12,20 +12,20 @@ public class ColorTests
 
     public static TheoryData<string, Color, double[]> Overloads => new()
     {
-        { "name", new Color("blue"), [0, 0, 1, 1] },
-        { "name + alpha", new Color("blue", 0.5), [0, 0, 1, 0.5] },
-        { "name + named alpha", new Color("blue", alpha: 0.5), [0, 0, 1, 0.5] },
-        { "rgb", new Color(0.0, 1.0, 0.0), [0, 1, 0, 1] },
-        { "rgba", new Color(1.0, 1.0, 0.0, 0.5), [1, 1, 0, 0.5] },
-        { "named rgba", new Color(red: 0.1, green: 0.2, blue: 0.3, alpha: 0.5), [0.1, 0.2, 0.3, 0.5] },
-        { "color_code", new Color(0x996692), [0x99 / 255.0, 0x66 / 255.0, 0x92 / 255.0, 1] },
-        { "color_code + alpha", new Color(0x006692, 0x80), [0, 0x66 / 255.0, 0x92 / 255.0, 0x80 / 255.0] },
-        { "named color_code + alpha", new Color(colorCode: 0x996692, alpha: 0xCC), [153 / 255.0, 102 / 255.0, 146 / 255.0, 204 / 255.0] },
-        { "r", new Color(0.1), [0.1, 1.0, 1.0, 1.0] },
-        { "rg", new Color(0.1, 0.2), [0.1, 0.2, 1.0, 1.0] },
-        { "empty", new Color(), [1, 1, 1, 1] },
-        { "r float", new Color(1.0), [1, 1, 1, 1] },
-        { "rg float", new Color(1.0, 0.0), [1, 0, 1, 1] },
+        { "name", Color.Parse("blue"), [0, 0, 1, 1] },
+        { "name + alpha", Color.Parse("blue", 0.5), [0, 0, 1, 0.5] },
+        { "name + named alpha", Color.Parse("blue", alpha: 0.5), [0, 0, 1, 0.5] },
+        { "rgb", Color.Rgb(0.0, 1.0, 0.0), [0, 1, 0, 1] },
+        { "rgba", Color.Rgb(1.0, 1.0, 0.0, 0.5), [1, 1, 0, 0.5] },
+        { "named rgba", Color.Rgb(red: 0.1, green: 0.2, blue: 0.3, alpha: 0.5), [0.1, 0.2, 0.3, 0.5] },
+        { "color_code", Color.FromCode(0x996692), [0x99 / 255.0, 0x66 / 255.0, 0x92 / 255.0, 1] },
+        { "color_code + alpha", Color.FromCode(0x006692, 0x80), [0, 0x66 / 255.0, 0x92 / 255.0, 0x80 / 255.0] },
+        { "named color_code + alpha", Color.FromCode(colorCode: 0x996692, alpha: 0xCC), [153 / 255.0, 102 / 255.0, 146 / 255.0, 204 / 255.0] },
+        { "r", Color.Rgb(0.1), [0.1, 1.0, 1.0, 1.0] },
+        { "rg", Color.Rgb(0.1, 0.2), [0.1, 0.2, 1.0, 1.0] },
+        { "empty", Color.White, [1, 1, 1, 1] },
+        { "r float", Color.Rgb(1.0), [1, 1, 1, 1] },
+        { "rg float", Color.Rgb(1.0, 0.0), [1, 0, 1, 1] },
     };
 
     [Theory]
@@ -40,29 +40,29 @@ public class ColorTests
     {
         get
         {
-            var rgba = global::Kerf.Color.FromLinear(1, 0, 0, 1);
+            var rgba = Color.FromLinear(1, 0, 0, 1);
             return new()
             {
-                { "Quantity_ColorRGBA", new Color(rgba) },
-                { "name", new Color("red") },
-                { "name whitespace", new Color("red ") },
-                { "name + alpha", new Color("red", 1) },
-                { "hex rgb 24bit", new Color("#ff0000") },
-                { "hex rgb 24bit whitespace", new Color(" #ff0000 ") },
-                { "hex rgb 24bit + alpha", new Color("#ff0000", 1) },
-                { "hex rgba 24bit", new Color("#ff0000ff") },
-                { "hex rgba 24bit whitespace", new Color(" #ff0000ff ") },
-                { "hex rgba 24bit + alpha (not used)", new Color("#ff0000ff", 0.6) },
-                { "hex rgb 12bit", new Color("#f00") },
-                { "hex rgb 12bit whitespace", new Color(" #f00 ") },
-                { "hex rgb 12bit + alpha", new Color("#f00", 1) },
-                { "hex rgba 12bit", new Color("#f00f") },
-                { "hex rgba 12bit whitespace", new Color(" #f00f ") },
-                { "hex rgba 12bit + alpha (not used)", new Color("#f00f", 0.6) },
-                { "hex int", new Color(0xFF0000) },
-                { "hex int + alpha", new Color(0xFF0000, 0xFF) },
-                { "rgb", new Color(1.0, 0.0, 0.0) },
-                { "rgba", new Color(1.0, 0.0, 0.0, 1.0) },
+                { "Quantity_ColorRGBA", rgba },
+                { "name", Color.Parse("red") },
+                { "name whitespace", Color.Parse("red ") },
+                { "name + alpha", Color.Parse("red", 1) },
+                { "hex rgb 24bit", Color.Parse("#ff0000") },
+                { "hex rgb 24bit whitespace", Color.Parse(" #ff0000 ") },
+                { "hex rgb 24bit + alpha", Color.Parse("#ff0000", 1) },
+                { "hex rgba 24bit", Color.Parse("#ff0000ff") },
+                { "hex rgba 24bit whitespace", Color.Parse(" #ff0000ff ") },
+                { "hex rgba 24bit + alpha (not used)", Color.Parse("#ff0000ff", 0.6) },
+                { "hex rgb 12bit", Color.Parse("#f00") },
+                { "hex rgb 12bit whitespace", Color.Parse(" #f00 ") },
+                { "hex rgb 12bit + alpha", Color.Parse("#f00", 1) },
+                { "hex rgba 12bit", Color.Parse("#f00f") },
+                { "hex rgba 12bit whitespace", Color.Parse(" #f00f ") },
+                { "hex rgba 12bit + alpha (not used)", Color.Parse("#f00f", 0.6) },
+                { "hex int", Color.FromCode(0xFF0000) },
+                { "hex int + alpha", Color.FromCode(0xFF0000, 0xFF) },
+                { "rgb", Color.Rgb(1.0, 0.0, 0.0) },
+                { "rgba", Color.Rgb(1.0, 0.0, 0.0, 1.0) },
             };
         }
     }
@@ -79,17 +79,17 @@ public class ColorTests
     {
         get
         {
-            var rgba = global::Kerf.Color.FromLinear(1, 0, 0, 0.6f);
+            var rgba = Color.FromLinear(1, 0, 0, 0.6f);
             return new()
             {
-                { "Quantity_ColorRGBA", new Color(rgba) },
-                { "name + alpha", new Color("red", 0.6) },
-                { "hex rgb 24bit + alpha", new Color("#ff0000", 0.6) },
-                { "hex rgba 24bit", new Color("#ff000099") },
-                { "hex rgb 12bit + alpha", new Color("#f00", 0.6) },
-                { "hex rgba 12bit", new Color("#f009") },
-                { "hex int + alpha", new Color(0xFF0000, 153) },
-                { "rgba", new Color(1.0, 0.0, 0.0, 0.6) },
+                { "Quantity_ColorRGBA", rgba },
+                { "name + alpha", Color.Parse("red", 0.6) },
+                { "hex rgb 24bit + alpha", Color.Parse("#ff0000", 0.6) },
+                { "hex rgba 24bit", Color.Parse("#ff000099") },
+                { "hex rgb 12bit + alpha", Color.Parse("#f00", 0.6) },
+                { "hex rgba 12bit", Color.Parse("#f009") },
+                { "hex int + alpha", Color.FromCode(0xFF0000, 153) },
+                { "rgba", Color.Rgb(1.0, 0.0, 0.0, 0.6) },
             };
         }
     }
@@ -112,12 +112,12 @@ public class ColorTests
     [InlineData("#fffff")]
     [InlineData("#fffffff")]
     [InlineData("#fffffffff")]
-    public void BadNamesThrow(string name) => Assert.Throws<ArgumentException>(() => new Color(name));
+    public void BadNamesThrow(string name) => Assert.Throws<ArgumentException>(() => Color.Parse(name));
 
     [Fact]
     public void ToOcct()
     {
-        var (r, g, b, a) = new Color(1.0, 1.0, 0.0, 0.5).ToKerfColor().ToLinear();
+        var (r, g, b, a) = Color.Rgb(1.0, 1.0, 0.0, 0.5).ToLinear();
         Assert.Equal(1.0, r);
         Assert.Equal(1.0, g);
         Assert.Equal(0.0, b);
@@ -126,17 +126,17 @@ public class ColorTests
 
     [Fact]
     public void ToStringNamesExactMatches() =>
-        Assert.Equal("Color: (1, 0, 0, 1) is 'RED'", new Color(1, 0, 0).ToString());
+        Assert.Equal("Color: (1, 0, 0, 1) is 'RED'", Color.Rgb(1, 0, 0).Describe());
 
     [Fact]
     public void ToStringNamesTheNearestOcctColor() =>
-        Assert.Equal("Color: (1, 0.5, 0, 1) near 'DARKORANGE1'", new Color(1, 0.5, 0).ToString());
+        Assert.Equal("Color: (1, 0.5, 0, 1) near 'DARKORANGE1'", Color.Rgb(1, 0.5, 0).Describe());
 
     [Fact]
     public void BlackByCodeIsBlack()
     {
         // build123d reads 0 as "no colour code" and gives white; the port gives black
-        Near([0, 0, 0, 1], new Color(0x000000));
+        Near([0, 0, 0, 1], Color.FromCode(0x000000));
     }
 
     // colorsys.rgb_to_hls's hue
@@ -170,7 +170,7 @@ public class ColorTests
         Assert.True(Math.Abs(Hue(Color.CategoricalSet(1, startingHue: 0.25)[0]) - 0.25) <= 0.05 * 0.25);
 
     [Fact]
-    public void CategoricalSetStartingColor() => Assert.Single(Color.CategoricalSet(1, new Color(0x0000FF)));
+    public void CategoricalSetStartingColor() => Assert.Single(Color.CategoricalSet(1, Color.FromCode(0x0000FF)));
 
     [Fact]
     public void CategoricalSetHueOutOfRange()

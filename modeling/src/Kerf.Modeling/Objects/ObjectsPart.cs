@@ -12,18 +12,18 @@ public abstract class BasePartObject : Part
     /// <param name="rotation">Angles to rotate it about X, Y and Z.</param>
     /// <param name="align">How to align the solid's bounding box with the origin; null for no alignment.</param>
     protected BasePartObject(Shape part, Rotation? rotation = null, Alignment? align = null)
-        : base(Prepare(part, rotation, align), part.Label)
+        : base(Prepare(part, rotation, align))
     {
         Rotation = rotation ?? new Rotation();
     }
 
-    private static global::Kerf.Topology.Shape Prepare(Shape part, Rotation? rotation, Alignment? align)
+    private static Shape Prepare(Shape part, Rotation? rotation, Alignment? align)
     {
         if (align is { } a)
-            part = part.Moved(new Location(part.BoundingBox().ToAlignOffset(a)));
+            part = part.Moved(new Location(part.BoundBox().ToAlignOffset(a)));
         var rotated = rotation is not null && rotation != new Rotation() ? part.Moved(rotation) : part;
         // Don't add extra layers of compound
-        return rotated is Compound ? rotated.TopoShape : TopoUtil.MakeCompound([rotated.TopoShape]);
+        return rotated.TryAs<Compound>(out _) ? rotated : TopoUtil.MakeCompound([rotated]);
     }
 
     /// <summary>The rotation applied to the object.</summary>
@@ -210,8 +210,8 @@ public class ConvexPolyhedron : BasePartObject
     private static Shape Make(IEnumerable<Vector> points)
     {
         var pts = points.ToList();
-        var faces = ConvexHull3D.Facets(pts).Select(f => new Face(Wire.MakePolygon(f.Select(i => pts[i])))).ToList();
-        return new Solid(new Shell(faces)).Clean();
+        var faces = ConvexHull3D.Facets(pts).Select(f => Face.Make(Wire.MakePolygon(f.Select(i => pts[i])))).ToList();
+        return Solid.Make(Shell.Make(faces)).Clean();
     }
 }
 

@@ -9,35 +9,90 @@ namespace Kerf.Modeling;
 /// <summary>Helpers over raw OCCT shapes, shared by the topology classes (shape_core's module functions).</summary>
 internal static partial class TopoUtil
 {
-    /// <summary>The OCCT shape type of a Shapes name ("Edge" → TopAbs_EDGE).</summary>
-    internal static global::Kerf.Topology.ShapeType ToTopAbs(ShapeType type) => type switch
+    /// <summary>Whether a shape has nothing in it: a null shape, or a compound without children.</summary>
+    internal static bool IsNothing(Shape shape) => shape.IsNull || IsEmptyCompound(shape);
+
+    /// <summary>A compound of the shapes that aren't empty.</summary>
+    internal static Compound MakeCompoundOf(IEnumerable<Shape> shapes) => MakeCompound(shapes.Where(s => !IsNothing(s)));
+
+    /// <summary>The name of a shape's kind, for messages.</summary>
+    internal static string KindName(Shape shape) => shape.IsNull ? "Shape" : shape.Type.ToString();
+
+    /// <summary>A result of the type of <paramref name="original"/>: an object keeps its class and attributes, without a history.</summary>
+    internal static T Rewrap<T>(T original, Shape result) where T : IShape
     {
-        Kerf.Modeling.ShapeType.Vertex => global::Kerf.Topology.ShapeType.Vertex,
-        Kerf.Modeling.ShapeType.Edge => global::Kerf.Topology.ShapeType.Edge,
-        Kerf.Modeling.ShapeType.Wire => global::Kerf.Topology.ShapeType.Wire,
-        Kerf.Modeling.ShapeType.Face => global::Kerf.Topology.ShapeType.Face,
-        Kerf.Modeling.ShapeType.Shell => global::Kerf.Topology.ShapeType.Shell,
-        Kerf.Modeling.ShapeType.Solid => global::Kerf.Topology.ShapeType.Solid,
-        Kerf.Modeling.ShapeType.CompSolid => global::Kerf.Topology.ShapeType.CompSolid,
-        Kerf.Modeling.ShapeType.Compound => global::Kerf.Topology.ShapeType.Compound,
+        if (original is ModelShape model)
+            return (T)(object)model.Rewrapped(result);
+        if (typeof(T) == typeof(Shape))
+            return (T)(object)result;
+        return (T)Typed(result);
+    }
+
+    /// <summary>An edge or wire as a wire.</summary>
+    internal static Wire AsWire(IShape1D curve)
+    {
+        var shape = curve.AsShape();
+        return shape.IsWire() ? (Wire)shape : shape.IsEdge() ? Wire.Make((Edge)shape) : Wire.Make(shape.SelectEdges());
+    }
+
+    /// <summary>The shape as its one-dimensional type.</summary>
+    internal static IShape1D As1D(Shape shape) => shape.IsWire() ? (Wire)shape : (Edge)shape;
+
+    /// <summary>The shape as its two-dimensional type.</summary>
+    internal static IShape2D As2D(Shape shape) => shape.IsShell() ? (Shell)shape : (Face)shape;
+
+    /// <summary>The shape as a solid or compound.</summary>
+    internal static IShape3D As3D(Shape shape) => shape.IsSolid() ? (Solid)shape : shape.IsCompound() ? (Compound)shape : (CompSolid)shape;
+
+    /// <summary>The shape boxed as its own type, for code that matches on it.</summary>
+    internal static object Typed(Shape shape)
+    {
+        if (shape.IsNull)
+            return shape;
+        // Not a switch expression: its natural type would be Shape, and every arm would box as one
+        switch (shape.Type)
+        {
+            case ShapeType.Vertex: return (Vertex)shape;
+            case ShapeType.Edge: return (Edge)shape;
+            case ShapeType.Wire: return (Wire)shape;
+            case ShapeType.Face: return (Face)shape;
+            case ShapeType.Shell: return (Shell)shape;
+            case ShapeType.Solid: return (Solid)shape;
+            case ShapeType.Compound: return (Compound)shape;
+            case ShapeType.CompSolid: return (CompSolid)shape;
+            default: return shape;
+        }
+    }
+
+    /// <summary>The OCCT shape type of a Shapes name ("Edge" → TopAbs_EDGE).</summary>
+    internal static ShapeType ToTopAbs(ShapeType type) => type switch
+    {
+        ShapeType.Vertex => ShapeType.Vertex,
+        ShapeType.Edge => ShapeType.Edge,
+        ShapeType.Wire => ShapeType.Wire,
+        ShapeType.Face => ShapeType.Face,
+        ShapeType.Shell => ShapeType.Shell,
+        ShapeType.Solid => ShapeType.Solid,
+        ShapeType.CompSolid => ShapeType.CompSolid,
+        ShapeType.Compound => ShapeType.Compound,
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 
-    internal static ShapeType FromTopAbs(global::Kerf.Topology.ShapeType type) => type switch
+    internal static ShapeType FromTopAbs(ShapeType type) => type switch
     {
-        global::Kerf.Topology.ShapeType.Vertex => Kerf.Modeling.ShapeType.Vertex,
-        global::Kerf.Topology.ShapeType.Edge => Kerf.Modeling.ShapeType.Edge,
-        global::Kerf.Topology.ShapeType.Wire => Kerf.Modeling.ShapeType.Wire,
-        global::Kerf.Topology.ShapeType.Face => Kerf.Modeling.ShapeType.Face,
-        global::Kerf.Topology.ShapeType.Shell => Kerf.Modeling.ShapeType.Shell,
-        global::Kerf.Topology.ShapeType.Solid => Kerf.Modeling.ShapeType.Solid,
-        global::Kerf.Topology.ShapeType.CompSolid => Kerf.Modeling.ShapeType.CompSolid,
-        global::Kerf.Topology.ShapeType.Compound => Kerf.Modeling.ShapeType.Compound,
+        ShapeType.Vertex => ShapeType.Vertex,
+        ShapeType.Edge => ShapeType.Edge,
+        ShapeType.Wire => ShapeType.Wire,
+        ShapeType.Face => ShapeType.Face,
+        ShapeType.Shell => ShapeType.Shell,
+        ShapeType.Solid => ShapeType.Solid,
+        ShapeType.CompSolid => ShapeType.CompSolid,
+        ShapeType.Compound => ShapeType.Compound,
         _ => throw new ArgumentException($"Unable to cast {type}"),
     };
 
     /// <summary>The shape's TopAbs type; a null shape has none.</summary>
-    internal static global::Kerf.Topology.ShapeType ShapeTypeOf(global::Kerf.Topology.Shape obj)
+    internal static ShapeType ShapeTypeOf(Shape obj)
     {
         if (obj.IsNull)
             throw new ArgumentException("Null TopoDS_Shape object");
@@ -47,16 +102,16 @@ internal static partial class TopoUtil
     /// <summary>
     /// The name of the native binding's wrapper class for a shape (<c>TopoDS_Edge</c> for an edge), as messages name it.
     /// </summary>
-    internal static string TypeName(global::Kerf.Topology.Shape obj) => obj.IsNull ? "TopoDS_Shape" : obj.Type switch
+    internal static string TypeName(Shape obj) => obj.IsNull ? "TopoDS_Shape" : obj.Type switch
     {
-        global::Kerf.Topology.ShapeType.Vertex => "TopoDS_Vertex",
-        global::Kerf.Topology.ShapeType.Edge => "TopoDS_Edge",
-        global::Kerf.Topology.ShapeType.Wire => "TopoDS_Wire",
-        global::Kerf.Topology.ShapeType.Face => "TopoDS_Face",
-        global::Kerf.Topology.ShapeType.Shell => "TopoDS_Shell",
-        global::Kerf.Topology.ShapeType.Solid => "TopoDS_Solid",
-        global::Kerf.Topology.ShapeType.CompSolid => "TopoDS_CompSolid",
-        global::Kerf.Topology.ShapeType.Compound => "TopoDS_Compound",
+        ShapeType.Vertex => "TopoDS_Vertex",
+        ShapeType.Edge => "TopoDS_Edge",
+        ShapeType.Wire => "TopoDS_Wire",
+        ShapeType.Face => "TopoDS_Face",
+        ShapeType.Shell => "TopoDS_Shell",
+        ShapeType.Solid => "TopoDS_Solid",
+        ShapeType.CompSolid => "TopoDS_CompSolid",
+        ShapeType.Compound => "TopoDS_Compound",
         _ => "TopoDS_Shape",
     };
 
@@ -64,41 +119,41 @@ internal static partial class TopoUtil
     /// The shape itself, checked to be one: the native binding's wrapper of its own type once (<c>TopoDS_Edge</c> for an
     /// edge), which the kernel's shape structs don't need.
     /// </summary>
-    internal static global::Kerf.Topology.Shape Downcast(global::Kerf.Topology.Shape obj)
+    internal static Shape Downcast(Shape obj)
     {
         _ = ShapeTypeOf(obj);
         return obj;
     }
 
     /// <summary>The sub-shapes of a type, in exploration order, with repeats (OCCT reaches a shared sub-shape more than once).</summary>
-    internal static List<global::Kerf.Topology.Shape> Explore(global::Kerf.Topology.Shape shape, global::Kerf.Topology.ShapeType type,
-                                                              global::Kerf.Topology.ShapeType? avoid = null) => type switch
+    internal static List<Shape> Explore(Shape shape, ShapeType type,
+                                                              ShapeType? avoid = null) => type switch
     {
-        global::Kerf.Topology.ShapeType.Vertex => [.. shape.Explore<global::Kerf.Topology.Vertex>(avoid).Select(s => s.AsShape())],
-        global::Kerf.Topology.ShapeType.Edge => [.. shape.Explore<global::Kerf.Topology.Edge>(avoid).Select(s => s.AsShape())],
-        global::Kerf.Topology.ShapeType.Wire => [.. shape.Explore<global::Kerf.Topology.Wire>(avoid).Select(s => s.AsShape())],
-        global::Kerf.Topology.ShapeType.Face => [.. shape.Explore<global::Kerf.Topology.Face>(avoid).Select(s => s.AsShape())],
-        global::Kerf.Topology.ShapeType.Shell => [.. shape.Explore<global::Kerf.Topology.Shell>(avoid).Select(s => s.AsShape())],
-        global::Kerf.Topology.ShapeType.Solid => [.. shape.Explore<global::Kerf.Topology.Solid>(avoid).Select(s => s.AsShape())],
-        global::Kerf.Topology.ShapeType.CompSolid => [.. shape.Explore<global::Kerf.Topology.CompSolid>(avoid).Select(s => s.AsShape())],
-        global::Kerf.Topology.ShapeType.Compound => [.. shape.Explore<global::Kerf.Topology.Compound>(avoid).Select(s => s.AsShape())],
+        ShapeType.Vertex => [.. shape.Explore<Vertex>(avoid).Select(s => s.AsShape())],
+        ShapeType.Edge => [.. shape.Explore<Edge>(avoid).Select(s => s.AsShape())],
+        ShapeType.Wire => [.. shape.Explore<Wire>(avoid).Select(s => s.AsShape())],
+        ShapeType.Face => [.. shape.Explore<Face>(avoid).Select(s => s.AsShape())],
+        ShapeType.Shell => [.. shape.Explore<Shell>(avoid).Select(s => s.AsShape())],
+        ShapeType.Solid => [.. shape.Explore<Solid>(avoid).Select(s => s.AsShape())],
+        ShapeType.CompSolid => [.. shape.Explore<CompSolid>(avoid).Select(s => s.AsShape())],
+        ShapeType.Compound => [.. shape.Explore<Compound>(avoid).Select(s => s.AsShape())],
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 
     /// <summary>The distinct sub-shapes of a type (by <c>IsSame</c>), in the order exploration first reaches them.</summary>
-    internal static List<global::Kerf.Topology.Shape> Unique(global::Kerf.Topology.Shape shape, global::Kerf.Topology.ShapeType type) => type switch
+    internal static List<Shape> Unique(Shape shape, ShapeType type) => type switch
     {
-        global::Kerf.Topology.ShapeType.Vertex => [.. shape.Vertices().Select(s => s.AsShape())],
-        global::Kerf.Topology.ShapeType.Edge => [.. shape.Edges().Select(s => s.AsShape())],
-        global::Kerf.Topology.ShapeType.Wire => [.. shape.Wires().Select(s => s.AsShape())],
-        global::Kerf.Topology.ShapeType.Face => [.. shape.Faces().Select(s => s.AsShape())],
-        global::Kerf.Topology.ShapeType.Shell => [.. shape.Shells().Select(s => s.AsShape())],
-        global::Kerf.Topology.ShapeType.Solid => [.. shape.Solids().Select(s => s.AsShape())],
+        ShapeType.Vertex => [.. shape.Vertices().Select(s => s.AsShape())],
+        ShapeType.Edge => [.. shape.Edges().Select(s => s.AsShape())],
+        ShapeType.Wire => [.. shape.Wires().Select(s => s.AsShape())],
+        ShapeType.Face => [.. shape.Faces().Select(s => s.AsShape())],
+        ShapeType.Shell => [.. shape.Shells().Select(s => s.AsShape())],
+        ShapeType.Solid => [.. shape.Solids().Select(s => s.AsShape())],
         _ => [.. Explore(shape, type).Distinct(ShapeComparer.Same)],
     };
 
     /// <summary>The shape fixed by ShapeFix_Shape, which leaves the shape it's given untouched.</summary>
-    internal static global::Kerf.Topology.Shape Fix(global::Kerf.Topology.Shape obj) =>
+    internal static Shape Fix(Shape obj) =>
         // ShapeFix edits in a working overlay (the kernel's unit 10H4): the result shares what it didn't change
         Failures.Get(obj.Fix(UncheckedFix), () => "fix").Shape;
 
@@ -106,22 +161,22 @@ internal static partial class TopoUtil
     internal static readonly FixOptions UncheckedFix = new() { CheckResult = false };
 
     /// <summary>A compound of the given shapes (the kernel's empty compound for none), frozen.</summary>
-    internal static global::Kerf.Topology.Compound MakeCompound(IEnumerable<global::Kerf.Topology.Shape> shapes) =>
-        global::Kerf.Topology.Compound.Create(shapes);
+    internal static Compound MakeCompound(IEnumerable<Shape> shapes) =>
+        Compound.Create(shapes);
 
-    internal static global::Kerf.Topology.Compound EmptyCompound() => MakeCompound([]);
+    internal static Compound EmptyCompound() => MakeCompound([]);
 
     /// <summary>True for a compound with nothing in it: the zero of every shape class.</summary>
-    internal static bool IsEmptyCompound(global::Kerf.Topology.Shape shape) => shape.IsCompound() && shape.ChildCount == 0;
+    internal static bool IsEmptyCompound(Shape shape) => shape.IsCompound() && shape.ChildCount == 0;
 
     /// <summary>
     /// The non-compound shapes at the first level of a shape: a compound's children, looking through nested
     /// compounds; any other shape is its own first level.
     /// </summary>
-    internal static List<global::Kerf.Topology.Shape> TopLevelShapes(global::Kerf.Topology.Shape shape)
+    internal static List<Shape> TopLevelShapes(Shape shape)
     {
-        var firstLevel = new List<global::Kerf.Topology.Shape>();
-        var stack = new Stack<global::Kerf.Topology.Shape>([shape]);
+        var firstLevel = new List<Shape>();
+        var stack = new Stack<Shape>([shape]);
         while (stack.Count > 0)
         {
             var current = stack.Pop();
@@ -142,35 +197,35 @@ internal static partial class TopoUtil
     }
 
     /// <summary>The dimension of a shape: 0 to 3, or null for a compound of mixed dimension.</summary>
-    internal static int? Dim(global::Kerf.Topology.Shape shape) => shape.IsNull ? null : shape.Type switch
+    internal static int? Dim(Shape shape) => shape.IsNull ? null : shape.Type switch
     {
-        global::Kerf.Topology.ShapeType.Vertex => 0,
-        global::Kerf.Topology.ShapeType.Edge or global::Kerf.Topology.ShapeType.Wire => 1,
-        global::Kerf.Topology.ShapeType.Face or global::Kerf.Topology.ShapeType.Shell => 2,
-        global::Kerf.Topology.ShapeType.Solid => 3,
-        global::Kerf.Topology.ShapeType.Compound => TopLevelShapes(shape).Select(Dim).Distinct().ToList() is [var d] ? d : null,
+        ShapeType.Vertex => 0,
+        ShapeType.Edge or ShapeType.Wire => 1,
+        ShapeType.Face or ShapeType.Shell => 2,
+        ShapeType.Solid => 3,
+        ShapeType.Compound => TopLevelShapes(shape).Select(Dim).Distinct().ToList() is [var d] ? d : null,
         _ => null,
     };
 
     /// <summary>Strips compounds holding a single shape; with <paramref name="fully"/> false one compound is kept.</summary>
-    internal static global::Kerf.Topology.Shape UnwrapCompound(global::Kerf.Topology.Compound compound, bool fully = true)
+    internal static Shape UnwrapCompound(Compound compound, bool fully = true)
     {
         if (compound.ChildCount == 1)
         {
             var single = compound.Children.First();
             if (single.IsCompound())
-                return UnwrapCompound((global::Kerf.Topology.Compound)single, fully);
+                return UnwrapCompound((Compound)single, fully);
             return fully ? single : compound;
         }
         return compound;
     }
 
     /// <summary>The distinct sub-shapes of a type, in exploration order (OCCT reaches a shared sub-shape more than once).</summary>
-    internal static List<global::Kerf.Topology.Shape> Entities(global::Kerf.Topology.Shape shape, global::Kerf.Topology.ShapeType type)
+    internal static List<Shape> Entities(Shape shape, ShapeType type)
     {
         // Keyed by hash, as build123d is, so orientations of one sub-shape count once; the last one found is kept
         var index = new Dictionary<ulong, int>();
-        var found = new List<global::Kerf.Topology.Shape>();
+        var found = new List<Shape>();
         foreach (var item in Explore(shape, type))
         {
             var hash = item.StdHash();
@@ -186,19 +241,19 @@ internal static partial class TopoUtil
     }
 
     /// <summary>The surface area of a shape's faces.</summary>
-    internal static double Area(global::Kerf.Topology.Shape shape) => shape.Area();
+    internal static double Area(Shape shape) => shape.Area();
 
     /// <summary>The faces sewn into a shell where they meet within <paramref name="tolerance"/>.</summary>
-    internal static global::Kerf.Topology.Shape SewFaces(IEnumerable<global::Kerf.Topology.Shape> faces, double tolerance = Constants.Tolerance) =>
+    internal static Shape SewFaces(IEnumerable<Shape> faces, double tolerance = Constants.Tolerance) =>
         Failures.Get(HealingOperations.Sew(faces, new SewOptions { Tolerance = tolerance }), () => "sew").Shape;
 
     /// <summary>A boolean (or split) of raw shapes, with any compound around a single result removed.</summary>
-    internal static global::Kerf.Topology.Shape BoolOp(IEnumerable<global::Kerf.Topology.Shape> args, IEnumerable<global::Kerf.Topology.Shape> tools,
+    internal static Shape BoolOp(IEnumerable<Shape> args, IEnumerable<Shape> tools,
                                                        BooleanKind operation, BooleanOptions? options = null)
     {
         var built = Failures.Get(Boolean(operation, [.. args], [.. tools], options), () => BooleanName(operation));
         var result = Downcast(built.Shape);
-        return result.IsCompound() ? UnwrapCompound((global::Kerf.Topology.Compound)result) : result;
+        return result.IsCompound() ? UnwrapCompound((Compound)result) : result;
     }
 
     /// <summary>
@@ -207,8 +262,8 @@ internal static partial class TopoUtil
     /// </summary>
     /// <remarks>A section is OCCT's plain one unless <paramref name="options"/> say otherwise: not approximated, its edges
     /// without curves on the faces.</remarks>
-    internal static Result<Built<global::Kerf.Topology.Shape>> Boolean(BooleanKind operation, IReadOnlyList<global::Kerf.Topology.Shape> args,
-                                                                      IReadOnlyList<global::Kerf.Topology.Shape> tools, BooleanOptions? options = null)
+    internal static Result<Built<Shape>> Boolean(BooleanKind operation, IReadOnlyList<Shape> args,
+                                                                      IReadOnlyList<Shape> tools, BooleanOptions? options = null)
     {
         var o = options is null ? Unsimplified : options with { Simplify = false };
         return operation switch
@@ -236,7 +291,7 @@ internal static partial class TopoUtil
     };
 
     /// <summary>The unit normal of a face at the point of it nearest <paramref name="surfacePoint"/>.</summary>
-    internal static Vector FaceNormalAt(global::Kerf.Topology.Face face, Point3D surfacePoint)
+    internal static Vector FaceNormalAt(Face face, Point3D surfacePoint)
     {
         face.TryGetSurface(out var surface);
         if (surface is null || !surface.TryProjectNearest(surfacePoint, out var nearest))
@@ -248,7 +303,7 @@ internal static partial class TopoUtil
     /// The normal of a face at (u, v), not normalised, as <c>BRepGProp_Face::Normal</c> gives it: the cross product of the
     /// surface's derivatives there, reversed for a reversed face.
     /// </summary>
-    internal static Vector FaceNormalVector(global::Kerf.Topology.Face face, double u, double v)
+    internal static Vector FaceNormalVector(Face face, double u, double v)
     {
         var d = face.ToSurface().Derivatives(u, v, 1);
         var normal = d.DU.Crossed(d.DV);
@@ -274,7 +329,7 @@ internal static partial class TopoUtil
     /// The candidate that is <paramref name="query"/>, allowing for a relocation: an exact IsSame match is preferred,
     /// failing that the first IsPartner one (the same TShape at another Location).
     /// </summary>
-    internal static global::Kerf.Topology.Shape? FindSame(global::Kerf.Topology.Shape query, IEnumerable<global::Kerf.Topology.Shape> candidates)
+    internal static Shape? FindSame(Shape query, IEnumerable<Shape> candidates)
     {
         var list = candidates.ToList();
         int i = list.FindIndex(c => c.IsSame(query));
@@ -284,7 +339,7 @@ internal static partial class TopoUtil
     }
 
     // A shape with no sub-shapes, to compare placements as the kernel compares shapes' (by identity, decision 1518)
-    private static readonly global::Kerf.Topology.Compound PlacementProbe = EmptyCompound();
+    private static readonly Compound PlacementProbe = EmptyCompound();
 
     /// <summary>
     /// Whether two placements are the same one, as OCCT compares shapes' locations (by identity: <c>TopLoc_Location::IsEqual</c>),
@@ -293,7 +348,7 @@ internal static partial class TopoUtil
     internal static bool IsSamePlacement(Placement a, Placement b) => PlacementProbe.Located(a).IsSame(PlacementProbe.Located(b));
 
     /// <summary>The Location that carries <paramref name="source"/>'s frame onto <paramref name="target"/>'s.</summary>
-    internal static Placement RelocationBetween(global::Kerf.Topology.Shape source, global::Kerf.Topology.Shape target)
+    internal static Placement RelocationBetween(Shape source, Shape target)
     {
         var s = source.Placement;
         var t = target.Placement;

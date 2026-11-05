@@ -11,8 +11,8 @@ public class CleanMethodTests
     public void CleanWithNoneWrapped()
     {
         // build123d sets wrapped to None; the port's equivalent is the empty shape, whose clean returns itself
-        var solid = new Solid();
+        var solid = default(Solid);
         var result = solid.Clean();
-        Assert.Same(solid, result);
+        Check.Same(solid, result);
     }
 }

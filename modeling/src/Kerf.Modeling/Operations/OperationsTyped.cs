@@ -42,11 +42,11 @@ public static partial class Operations
     public static Curve Split(Curve obj, Plane? bisectBy = null, Keep keep = Keep.Top) => Split([(Shape)obj], bisectBy, keep).As<Curve>();
 
     /// <summary>The part split by a face or shell, keeping the pieces <paramref name="keep"/> says.</summary>
-    public static Part Split(Part obj, Shape2D bisectBy, Keep keep = Keep.Top) => Split([(Shape)obj], bisectBy, keep).As<Part>();
+    public static Part Split(Part obj, IShape2D bisectBy, Keep keep = Keep.Top) => Split([(Shape)obj], bisectBy, keep).As<Part>();
 
     /// <summary>The sketch split by a face or shell, keeping the pieces <paramref name="keep"/> says.</summary>
-    public static Sketch Split(Sketch obj, Shape2D bisectBy, Keep keep = Keep.Top) => Split([(Shape)obj], bisectBy, keep).As<Sketch>();
+    public static Sketch Split(Sketch obj, IShape2D bisectBy, Keep keep = Keep.Top) => Split([(Shape)obj], bisectBy, keep).As<Sketch>();
 
     /// <summary>The curve split by a face or shell, keeping the pieces <paramref name="keep"/> says.</summary>
-    public static Curve Split(Curve obj, Shape2D bisectBy, Keep keep = Keep.Top) => Split([(Shape)obj], bisectBy, keep).As<Curve>();
+    public static Curve Split(Curve obj, IShape2D bisectBy, Keep keep = Keep.Top) => Split([(Shape)obj], bisectBy, keep).As<Curve>();
 }

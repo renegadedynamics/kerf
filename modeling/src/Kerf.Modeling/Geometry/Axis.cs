@@ -52,9 +52,9 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     /// <summary>The axis along an edge's curve where it starts (ignoring the edge's orientation), as build123d's <c>Axis(edge)</c>.</summary>
     public Axis(Edge edge)
     {
-        if (!edge.TopoEdge.TryGetCurve(out var curve, out _))
+        if (!edge.TryGetCurve(out var curve, out _))
             throw new ArgumentException($"Invalid edge argument: {edge}");
-        var start = curve.Derivatives(edge.TopoEdge.Range.Min, 1);
+        var start = curve.Derivatives(edge.Range.Min, 1);
         this = new Axis(new Vector(start.Point), new Vector(start.D1));
     }
 
@@ -167,7 +167,7 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     public static bool operator !=(Axis a, Axis b) => !a.Equals(b);
 
 
-    /// <summary>Where a shape meets this axis (the shape's <see cref="Shape.Intersect(object[])"/>), empty if nowhere.</summary>
+    /// <summary>Where a shape meets this axis (the shape's <c>Intersect</c>), empty if nowhere.</summary>
     public ShapeList<Shape> Intersect(Shape shape) => shape.Intersect(this);
 #pragma warning restore CS1591
 

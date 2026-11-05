@@ -80,10 +80,10 @@ public sealed class BoundBox
     /// STL and glTF are read).
     /// </summary>
     public static BoundBox FromShape(Shape shape, double? tolerance = null, bool optimal = true) =>
-        shape.IsEmpty ? Empty : FromTopoDS(shape.TopoShape, tolerance, optimal);
+        shape.IsEmpty ? Empty : FromTopoDS(shape, tolerance, optimal);
 
     /// <summary>The bounding box of an OCCT shape (see <see cref="FromShape"/>).</summary>
-    public static BoundBox FromTopoDS(global::Kerf.Topology.Shape shape, double? tolerance = null, bool optimal = true)
+    public static BoundBox FromTopoDS(Shape shape, double? tolerance = null, bool optimal = true)
     {
         _ = tolerance;   // accepted, as build123d accepts it, but unused
         // Ignoring a mesh gives the box build123d gets by removing it first, without changing the shape

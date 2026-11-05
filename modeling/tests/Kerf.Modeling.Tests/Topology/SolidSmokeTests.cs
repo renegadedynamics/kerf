@@ -13,33 +13,33 @@ public class SolidSmokeTests
     {
         var box = Solid.MakeBox(10, 10, 10, new Plane(new Vector(-5, -5, -5)));
         var cylinder = Solid.MakeCylinder(3, 10, new Plane(new Vector(0, 0, -5)));
-        var block = box - cylinder;
+        var block = new Part(box) - cylinder;
         Check.AlmostEqual(BlockVolume, block.Volume, 6);
-        Assert.IsType<Solid>(block);
-        Assert.Equal(7, block.Faces().Count);
-        Assert.Single(block.Faces().Where(GeomType.Cylinder));
+        Check.Is<Solid>(block.SingleSolid());
+        Assert.Equal(7, block.SelectFaces().Count);
+        Assert.Single(block.SelectFaces().Where(GeomType.Cylinder));
         // The face the cut brought in, from the tool; it isn't new, as it descends from the cylinder's face
         var last = block.Faces(Select.Last);
         Assert.Single(last);
         Assert.Equal(GeomType.Cylinder, last[0].GeomType);
         Assert.Empty(block.Faces(Select.New));
         // The top face is the last along Z
-        var top = block.Faces().OrderBy(Axis.Z).Last();
+        var top = block.SelectFaces().OrderBy(Axis.Z).Last();
         Check.AlmostEqual(5, top.Center().Z);
-        Assert.Equal(2, top.Wires().Count);
+        Assert.Equal(2, top.SelectWires().Count);
     }
 
     [Fact]
     public void FilletTheTopEdges()
     {
         var box = Solid.MakeBox(10, 10, 10);
-        var topEdges = box.Edges().GroupBy(Axis.Z).Last();
+        var topEdges = box.SelectEdges().GroupBy(Axis.Z).Last();
         Assert.Equal(4, topEdges.Count);
         var filleted = box.Fillet(1, topEdges);
         Assert.True(filleted.IsValid);
-        Assert.Equal(10, filleted.Faces().Count);
+        Assert.Equal(10, filleted.SelectFaces().Count);
         Assert.True(filleted.Volume < 1000);
-        Assert.All(box.Edges().Where(e => true).ToShapeList(), e => Assert.Equal(Convexity.Convex, e.Convexity));
+        Assert.All(box.SelectEdges().Where(e => true).ToShapeList(), e => Assert.Equal(Convexity.Convex, box.ConvexityOf(e)));
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class SolidSmokeTests
     {
         var pocket = Solid.MakeBox(20, 20, 10) - Solid.MakeBox(10, 10, 10, new Plane(new Vector(5, 5, 5)));
         // Four round the pocket's floor and four up its walls
-        var concave = pocket.Edges().Where(Convexity.Concave);
+        var concave = pocket.SelectEdges().Where(Convexity.Concave);
         Assert.Equal(8, concave.Count);
         Assert.Equal(4, concave.Count(e => Math.Abs(e.Center().Z - 5) < 1e-6));
     }
@@ -56,7 +56,7 @@ public class SolidSmokeTests
     public void BoundingBoxesAndCenters()
     {
         var box = Solid.MakeBox(1, 2, 3);
-        var bb = box.BoundingBox();
+        var bb = box.BoundBox();
         Check.AlmostEqual(new Vector(0, 0, 0), bb.Min, 5);
         Check.AlmostEqual(new Vector(1, 2, 3), bb.Max, 5);
         Check.AlmostEqual(new Vector(0.5, 1, 1.5), box.Center());
@@ -71,7 +71,7 @@ public class SolidSmokeTests
         var b = Solid.MakeBox(1, 1, 1, new Plane(new Vector(5, 0, 0)));
         var both = a + b;
         Check.AlmostEqual(2, both.Volume);
-        Assert.Equal(2, both.Solids().Count);
+        Assert.Equal(2, both.SelectSolids().Count);
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public class SolidSmokeTests
     [Fact]
     public void ForkingIsPlainAssignment()
     {
-        var base_ = Solid.MakeBox(10, 10, 10).WithLabel("base");
+        var base_ = new Part(Solid.MakeBox(10, 10, 10)).WithLabel("base");
         var forkA = base_ - Solid.MakeCylinder(2, 10);
         var forkB = base_.Moved(new Location(new Vector(20, 0, 0)));
         Check.AlmostEqual(1000, base_.Volume);
@@ -99,7 +99,7 @@ public class SolidSmokeTests
     [Fact]
     public void ShellAndFaceFromWires()
     {
-        var face = new Face(Wire.MakeRect(4, 2));
+        var face = Face.Make(Wire.MakeRect(4, 2));
         Check.AlmostEqual(8, face.Area);
         Assert.NotNull(face.IsPlanar);
         Check.AlmostEqual(4, face.Length!.Value);

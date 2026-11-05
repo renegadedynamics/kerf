@@ -22,7 +22,7 @@ public class PlainValueSelectorTests
     [InlineData(GeomType.Ellipse)]
     public void FilterByAGeomType(GeomType type)
     {
-        var edges = Part.Edges();
+        var edges = Part.SelectEdges();
         Assert.Equal(edges.Where(e => e.GeomType == type).ToShapeList(), edges.Where(type));
         Assert.Equal(edges.Where(e => e.GeomType != type).ToShapeList(), edges.WhereNot(type));
         Assert.Equal(edges.Count, edges.Where(type).Count + edges.WhereNot(type).Count);
@@ -31,18 +31,18 @@ public class PlainValueSelectorTests
     [Fact]
     public void AMeasureAShapeLacksSaysSo()
     {
-        var e = Assert.Throws<InvalidOperationException>(() => Part.Vertices().OrderBy(ShapeKey.Length));
+        var e = Assert.Throws<InvalidOperationException>(() => Part.SelectVertices().OrderBy(ShapeKey.Length));
         Assert.Contains("has no length", e.Message);
     }
 
     [Fact]
     public void AnUnknownKeyIsRefused() =>
-        Assert.Throws<ArgumentOutOfRangeException>(() => Part.Faces().OrderBy((ShapeKey)99));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Part.SelectFaces().OrderBy((ShapeKey)99));
 
     [Fact]
     public void FilterByValueOfAnEnum()
     {
-        var edges = Part.Edges();
+        var edges = Part.SelectEdges();
         var circles = edges.Where(GeomType.Circle);
         Assert.Equal(circles, edges.WithValue(o => o.GeomType, GeomType.Circle));
         Assert.Equal(edges.WithValue(o => o.GeomType, GeomType.Line), edges.Where(GeomType.Line));
@@ -58,7 +58,7 @@ public class PlainValueSelectorTests
     public void AMissingMeasureNeverMatches()
     {
         // A plane has no radius: never matched, so kept by WithoutValue
-        var faces = Part.Faces();
+        var faces = Part.SelectFaces();
         var cylinders = faces.WithValue(ShapeKey.Radius, 2.0);
         Assert.All(cylinders, f => Assert.Equal(GeomType.Cylinder, f.GeomType));
         Assert.Contains(faces.WithoutValue(ShapeKey.Radius, 2.0), f => f.GeomType == GeomType.Plane);
@@ -67,9 +67,9 @@ public class PlainValueSelectorTests
     [Fact]
     public void FilterByValueOfAMeasure()
     {
-        var edges = Part.Edges();
+        var edges = Part.SelectEdges();
         Assert.Equal(edges.WithValue(o => o.Length, 20.0), edges.WithValue(ShapeKey.Length, 20));
-        var faces = Part.Faces();
+        var faces = Part.SelectFaces();
         Assert.Equal(faces.WithValue(o => o.Radius, 2.0), faces.WithValue(ShapeKey.Radius, 2));
         Assert.Equal(faces.WithValue(o => o.Area, faces[0].Area), faces.WithValue(ShapeKey.Area, faces[0].Area));
     }
@@ -77,17 +77,17 @@ public class PlainValueSelectorTests
     [Fact]
     public void SortByAMeasure()
     {
-        var edges = Part.Edges();
+        var edges = Part.SelectEdges();
         Assert.Equal(edges.OrderBy(e => e.Length).ToList(), edges.OrderBy(ShapeKey.Length).ToList());
         Assert.Equal(edges.OrderByDescending(e => e.Length).ToList(), edges.OrderByDescending(ShapeKey.Length).ToList());
-        var faces = Part.Faces();
+        var faces = Part.SelectFaces();
         Assert.Equal(faces.OrderBy(f => f.Area).ToList(), faces.OrderBy(ShapeKey.Area).ToList());
     }
 
     [Fact]
     public void GroupByAMeasure()
     {
-        var faces = Part.Faces();
+        var faces = Part.SelectFaces();
         var byLambda = faces.GroupByValue(f => f.Area);
         var byKey = faces.GroupBy(ShapeKey.Area);
         Assert.Equal(byLambda.Count, byKey.Count);
@@ -104,7 +104,7 @@ public class PlainValueSelectorTests
     public void AMixedListAnswersPerClass()
     {
         // A mixed list: each shape's own class answers
-        var mixed = new ShapeList<Shape>([.. Part.Faces().Take(2), .. Part.Edges().Take(2)]);
+        var mixed = new ShapeList<Shape>([.. Part.SelectFaces().Take(2), .. Part.SelectEdges().Take(2)]);
         Assert.Equal(4, mixed.OrderBy(ShapeKey.Area).Count);
         Assert.Equal(mixed.Where(s => s.GeomType == GeomType.Line).ToList(), mixed.WithValue(s => s.GeomType, GeomType.Line).ToList());
     }
@@ -112,7 +112,7 @@ public class PlainValueSelectorTests
     [Fact]
     public void ManyThreadsSelectAtOnce()
     {
-        var edges = Part.Edges();
+        var edges = Part.SelectEdges();
         var expected = edges.OrderBy(e => e.Length).ToList();
         Parallel.For(0, 32, _ => Assert.Equal(expected, edges.OrderBy(ShapeKey.Length).ToList()));
     }

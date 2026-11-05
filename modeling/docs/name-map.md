@@ -60,17 +60,23 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `Color.categorical_set(n, starting_hue=0xff0000)` | `Color.CategoricalSet(n, new Color(0xff0000))` |
 | `GeomEncoder` (JSON) | Not yet ported |
 | `Vector(vertex)` | `new Vector(vertex)` or `vertex.ToVector()` |
-| `Plane(face)`, `BoundBox(shape)` | `new Plane(face)`, `shape.BoundingBox()` / `BoundBox.FromShape(shape)` |
+| `Plane(face)`, `BoundBox(shape)` | `new Plane(face)`, `shape.BoundBox()` / `BoundBox.FromShape(shape)` |
 | `plane.to_local_coords(shape)` | `plane.ToLocalCoords(shape)` (keeps the shape's class) |
 
 ## Topology
 
 | Python | .NET |
 |---|---|
-| `Mixin1D`, `Mixin2D`, `Mixin3D` | `Shape1D`, `Shape2D`, `Shape3D` (abstract base classes) |
-| `shape.wrapped` | `KernelShape` (the kernel's shape, sharing the geometry; nothing modifies it) |
+| `Shape`, `Vertex`, `Edge`, `Wire`, `Face`, `Shell`, `Solid`, `Compound` | The kernel's `Kerf.Topology` structs, with extension members; constructors are `Vertex.Make(…)`, `Wire.Make(…)`… (unit 10Q) |
+| `Mixin1D`, `Mixin2D`, `Mixin3D` | The kernel's `IShape1D`, `IShape2D`, `IShape3D` |
+| `Part`, `Sketch`, `Curve` | `Part`, `Sketch`, `Curve`, over `ModelShape` |
+| `Line`, `Polyline`… (an `Edge`, a `Wire`) | `Line`, `Polyline`… (a `Curve` holding one) |
+| `shape.wrapped` | `model.Shape`; a kernel shape is itself |
+| `shape.label`, `.color` on a topological shape | `shape.WithLabel(…)`, `.WithColor(…)` give the object of its dimension, which has them |
+| `shape.topo_parent` | `list.Origin`; what needs a parent takes it (`box.ConvexityOf(edge)`, `Fillet(box, edge, r)`) |
+| `edge.is_interior`, `shape.convexity` | `parent.ConvexityOf(edge) == Convexity.Concave`; `face.Convexity` |
 | `shape.is_null`, `bool(shape)` | `IsEmpty` |
-| `vertices()`, `edges()`, … `solids()` | `Vertices()`, `Edges()`, … `Solids()`, each taking `Select` |
+| `vertices()`, `edges()`, … `solids()` | On an object, `Vertices()`, `Edges()`, … `Solids()`, each taking `Select`; on a kernel shape, `SelectVertices()`, `SelectEdges()`, … |
 | `vertex()`, `edge()`, `wire()`, `face()`, `shell()`, `solid()`, `compound()` | `SingleVertex()`, `SingleEdge()`, … `SingleCompound()` (a method can't share its type's name) |
 | `locate(loc)`, `move(loc)`, `shape.location = …` | `Located(loc)`, `Moved(loc)`, `WithLocation(loc)`: copies |
 | `shape.label = …`, `.color = …` | `WithLabel(…)`, `WithColor(…)` |
@@ -85,7 +91,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `ShapeList.first`, `.last`, `shapes[-1]` | LINQ's `First()`, `Last()`; `shapes[^1]` |
 | `filter_by(lambda)`, `sort_by(lambda)` | LINQ's `Where(e => …)`, `OrderBy(e => …)` (then `ToShapeList()` for a list) |
 | `filter_by(GeomType.LINE)`, `filter_by(Axis.Z)`, `filter_by(Plane.XY)`, `reverse=True` | `Where(GeomType.Line)`, `ParallelTo(Axis.Z)`, `ParallelTo(Plane.XY)`; `WhereNot(…)`, `NotParallelTo(…)` |
-| `filter_by(Edge.is_closed)` (a `property`, or its name) | `Where(e => e.IsClosed)`; names aren't taken (unit 10M2) |
+| `filter_by(Edge.is_closed)` (a `property`, or its name) | `Where(e => e.CheckClosed())`; names aren't taken (unit 10M2) |
 | `filter_by_position(Axis.Z, min, max, inclusive=(a, b))` | `Between(Axis.Z, min, max, includeMinimum: a, includeMaximum: b)` |
 | `sort_by(Axis.Z)`, `sort_by(SortBy.AREA)`, `reverse=True` | `OrderBy(Axis.Z)`, `OrderBy(ShapeKey.Area)`; `OrderByDescending(…)` |
 | `sort_by_distance(other)` | `OrderByDistanceTo(other)`, `OrderByDescendingDistanceTo(other)` |
@@ -93,15 +99,15 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `list > Axis.Z`, `list < Axis.Z`, `list | GeomType.LINE`, `list >> Axis.Z`, `list << Axis.Z` | `OrderBy(Axis.Z)`, `OrderByDescending(Axis.Z)`, `Where(GeomType.Line)`, `GroupBy(Axis.Z).Last()`, `GroupBy(Axis.Z).First()` |
 | `list + list`, `list - list`, `list & list` | `AddRange`, `Except`, `Intersect` (a `ShapeList`) |
 | `compound.get_type(Solid)` | `ElementsOfType<Solid>()` |
-| `Compound(children=[…])` | `Compound.Assembly([…])`; children hold no parent link |
-| `Shape.cast(topods)` | `Shape.Cast(topods)` |
+| `Compound(children=[…])` | `new Assembly([…])`; children hold no parent link |
+| `Shape.cast(topods)` | Nothing: it is the kernel's shape; `ModelShape.For(shape)` for an object |
 | `SkipClean()` context | `using (new SkipClean()) { … }` |
 | `warnings.warn` | `using var w = Warnings.Capture();` then `w.Messages`: per operation, not global |
 | `topo_explore_connected_edges`, `edges_to_wires`, … | `OneD.ConnectedEdges`, `OneD.EdgesToWires`, …; `Vertex.CommonVertex` |
-| `topo_distance_to(shapes)` | `TopologyUtils.TopoDistanceTo(shapes)`, a `Func<Shape, double>` |
+| `topo_distance_to(shapes)` | `TopologyUtils.TopoDistanceTo(parent, shapes)`, a `Func<T, double>` |
 | `show_topology("Face")` | `ShowTopology(ShapeType.Face)` |
 | `filter_by_value(Edge.length, 3)` | `WithValue(e => e.Length, 3)` or `WithValue(ShapeKey.Length, 3)`; `WithoutValue(…)` for the rest |
-| `ShapeHistory.merge` (in place) | `Merge` returns a new record |
+| `ShapeHistory.merge` (in place), on `ModelHistory` | `Merge` returns a new record |
 | `shape.mesh(tol)` (in place) | Not ported: a shape holds no mesh; `Triangulate` gives one (unit 10M1) |
 | (ocp-tessellate, for viewers) | `Triangulate(…)` returns a `ShapeMesh` (faces, edges and vertices in the shape's order); `TriangulateTree()` a `MeshNode` tree for assemblies |
 | `make_constrained_arcs(a, b, radius=r)`, `(a, b, c)`, `(a, center=p)`, `(a, radius=r, center_on=c)` | `Edge.MakeConstrainedArcs(…)` overloads, each target a `Tangent` (from an `Edge`, `Axis`, `Vector` or `Vertex`, or `new Tangent(edge, Tangency.Enclosing)`) |
@@ -134,7 +140,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | A failure (`ValueError`, `RuntimeError` from fillet, chamfer, offset, loft, draft) | A failed `Result<T>` with a code (`ModelingDiagnostics`) from the operation (`Fillet`, `Extrude`, …; unit 10M3) |
 | `DraftAngleError` | A failed `Result<Part>`, code `modeling.draft-failed`, the face as the diagnostic's shape |
 | A union return (`Part \| Sketch \| Curve \| Compound`) | Typed for a Part, Sketch or Curve given (`Mirror(part)` is a `Part`); `Compound` for a mix, a `Part`, `Sketch` or `Curve` at run time by Python's dimension rule |
-| `chamfer`/`fillet` of edges, of vertices | `Part`, and `Shape` (a `Sketch`, `Wire` or `Shell`) |
+| `chamfer`/`fillet` of edges, of vertices | `Part`, and `ModelShape` (a `Sketch` or `Curve`) |
 | `project(points, workplane)` | `ProjectPoints(points, workplane)`, returning the points |
 | `full_round` (scipy's Voronoi) | `FullRound`, over a small Delaunay triangulation of its own |
 | `insert`, `add`, `make_brake_formed`, sheet-metal `thicken` | Not yet ported (builder mode; sheet metal in phase 7) |

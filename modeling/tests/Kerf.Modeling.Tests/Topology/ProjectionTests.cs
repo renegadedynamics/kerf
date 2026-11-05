@@ -15,10 +15,10 @@ public class ProjectionTests
         var target = CompoundObjects.Box(10, 10, 4) - new Pos(0, 0, 2) * CompoundObjects.Box(5, 5, 2);
         var circle = Wire.MakeCircle(3, Plane.XY.Offset(10));
         var projection = circle.ProjectToShape(target, new Vector(0, 0, -1));
-        var bbox = projection[0].BoundingBox();
+        var bbox = projection[0].BoundBox();
         Check.AlmostEqual(new Vector(-3, -3, 1), bbox.Min, 2);
         Check.AlmostEqual(new Vector(3, 3, 2), bbox.Max, 2);
-        bbox = projection[1].BoundingBox();
+        bbox = projection[1].BoundBox();
         Check.AlmostEqual(new Vector(-3, -3, -2), bbox.Min, 2);
         Check.AlmostEqual(new Vector(3, 3, -2), bbox.Max, 2);
     }
@@ -52,7 +52,7 @@ public class ProjectionTests
 
         var planarTipArc = Edge.MakeCircle(width / 2, startAngle: 270, endAngle: 450).Located(tipCenterLoc);
         var tipArc = planarTipArc.ProjectToShape(centerSurface, -normalAtTipCenter)[0];
-        Assert.IsAssignableFrom<Edge>(tipArc);
+        Check.Is<Edge>(tipArc);
         Check.AlmostEqual(planarTipArc.PositionAt(0), tipArc.PositionAt(0), 5);
         Check.AlmostEqual(planarTipArc.PositionAt(1), tipArc.PositionAt(1), 5);
     }

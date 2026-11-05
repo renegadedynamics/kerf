@@ -44,9 +44,9 @@ public class Locations : LocationList
     }
 
     private static IEnumerable<object> Flatten(object o) =>
-        o is IEnumerable e and not Shape ? e.Cast<object>().SelectMany(Flatten) : [o];
+        o is IEnumerable e and not IShape ? e.Cast<object>().SelectMany(Flatten) : [o];
 
-    private static Location ToLocation(object point) => point switch
+    private static Location ToLocation(object point) => (point is IShape held ? TopoUtil.Typed(held.AsShape()) : point) switch
     {
         Location l => l,
         Vector v => new Location(v),

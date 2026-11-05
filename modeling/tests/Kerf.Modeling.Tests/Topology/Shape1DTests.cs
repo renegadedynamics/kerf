@@ -25,13 +25,13 @@ public class Shape1DTests
         var point = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 1, 1)).PositionAt(0.5, PositionMode.Parameter);
         Assert.All(Check.Of(point), v => Assert.True(v > 0.0 && v < 1.0));
 
-        var wire = new Wire([Edge.MakeLine(new Vector(0, 0, 0), new Vector(10, 0, 0))]);
+        var wire = Wire.Make([Edge.MakeLine(new Vector(0, 0, 0), new Vector(10, 0, 0))]);
         Check.AlmostEqual(new Vector(3, 0, 0), wire.PositionAt(0.3), 5);
         Check.AlmostEqual(new Vector(3, 0, 0), wire.PositionAt(3, PositionMode.Length), 5);
         Check.AlmostEqual(new Vector(3, 0, 0), wire.SingleEdge().PositionAt(0.3), 5);
         Check.AlmostEqual(new Vector(3, 0, 0), wire.SingleEdge().PositionAt(3, PositionMode.Length), 5);
 
-        var circleWire = new Wire([
+        var circleWire = Wire.Make([
             Edge.MakeCircle(1, startAngle: 0, endAngle: 180),
             Edge.MakeCircle(1, startAngle: 180, endAngle: 360),
         ]);
@@ -48,7 +48,7 @@ public class Shape1DTests
         Check.AlmostEqual(new Vector(-1, 0, 0), p4, 14);
         Check.AlmostEqual(p3, p4, 14);
 
-        var circle = new Wire([
+        var circle = Wire.Make([
             Edge.MakeCircle(2, startAngle: 0, endAngle: 180),
             Edge.MakeCircle(2, startAngle: 180, endAngle: 360),
         ]);
@@ -133,7 +133,7 @@ public class Shape1DTests
     [Fact]
     public void TangentAtPoint()
     {
-        var circle = new Wire([
+        var circle = Wire.Make([
             Edge.MakeCircle(1, startAngle: 0, endAngle: 180),
             Edge.MakeCircle(1, startAngle: 180, endAngle: 360),
         ]);
@@ -162,7 +162,7 @@ public class Shape1DTests
                                           tangents: [new Vector(0, 1, 0), new Vector(-1, 0, 0)]).Normal(), 5);
         var line = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 1, 1));
         Assert.Throws<InvalidOperationException>(() => line.Normal());
-        line = new Edge();
+        line = default(Edge);
         Assert.Throws<InvalidOperationException>(() => line.Normal());
     }
 
@@ -173,7 +173,7 @@ public class Shape1DTests
         Check.AlmostEqual(new Vector(0, 1, 0), c.Center(), 5);
         Check.AlmostEqual(new Vector(0, 0.6366197723675814, 0), c.Center(CenterOf.Mass), 5);
         Check.AlmostEqual(new Vector(0, 0.5, 0), c.Center(CenterOf.BoundingBox), 5);
-        c = new Edge();
+        c = default(Edge);
         Assert.Throws<InvalidOperationException>(() => c.Center());
     }
 
@@ -252,7 +252,7 @@ public class Shape1DTests
         // A wire of many edges is located in one pass over its composite curve
         const double radius = 10;
         const int edgeCount = 64;
-        var wire = new Wire(Enumerable.Range(0, edgeCount)
+        var wire = Wire.Make(Enumerable.Range(0, edgeCount)
             .Select(i => CurveObjects.CenterArc(new Vector(0, 0), radius, 360.0 * i / edgeCount, 360.0 / edgeCount)));
         var locs = wire.Locations(deflection: 0.1);
         Assert.Equal(wire.Positions(deflection: 0.1).Count, locs.Count);
@@ -353,17 +353,17 @@ public class Shape1DTests
         var target = Face.MakeRect(10, 10, Plane.XY.Rotated(new Vector(0, 45, 0)));
         var circle = Edge.MakeCircle(1).Located(new Location(new Vector(0, 0, 10)));
         var ellipse = circle.Project(target, new Vector(0, 0, -1))[0];
-        var bbox = ellipse.BoundingBox();
+        var bbox = ellipse.BoundBox();
         Check.AlmostEqual(new Vector(-1, -1, -1), bbox.Min, 5);
         Check.AlmostEqual(new Vector(1, 1, 1), bbox.Max, 5);
-        circle = new Edge();
+        circle = default(Edge);
         Assert.Throws<InvalidOperationException>(() => circle.Project(target, new Vector(0, 0, -1)));
     }
 
     [Fact]
     public void Project2()
     {
-        var target = Solid.MakeCylinder(1, 10, new Plane(new Vector(0, 0, -5))).Faces().WhereNot(GeomType.Plane)[0];
+        var target = Solid.MakeCylinder(1, 10, new Plane(new Vector(0, 0, -5))).SelectFaces().WhereNot(GeomType.Plane)[0];
         var square = Wire.MakeRect(1, 1, Plane.YZ).Located(new Location(new Vector(10, 0, 0)));
         var projections = square.Project(target, direction: new Vector(-1, 0, 0), closest: false);
         Assert.Equal(2, projections.Count);
@@ -374,10 +374,10 @@ public class Shape1DTests
     {
         var plate = Solid.MakeBox(10, 10, 1, new Plane(new Vector(-5, -5, -0.5)))
                     - Solid.MakeCylinder(1, 1, new Plane(new Vector(0, 0, -0.5)));
-        var holeEdges = plate.Edges().Where(GeomType.Circle);
+        var holeEdges = plate.SelectEdges().Where(GeomType.Circle);
         Assert.True(holeEdges.OrderBy(Axis.Z).Last().IsForward);
         Assert.False(holeEdges.OrderBy(Axis.Z)[0].IsForward);
-        var e = new Edge();
+        var e = default(Edge);
         Assert.Throws<InvalidOperationException>(() => e.IsForward);
     }
 
@@ -385,14 +385,14 @@ public class Shape1DTests
     public void Offset2D()
     {
         var baseWire = Wire.MakePolygon([new Vector(0, 0), new Vector(1, 0), new Vector(1, 1)], close: false);
-        var corner = baseWire.Vertices().GroupBy(Axis.Y)[0].OrderBy(Axis.X)[^1];
+        var corner = baseWire.SelectVertices().GroupBy(Axis.Y)[0].OrderBy(Axis.X)[^1];
         baseWire = baseWire.Fillet2D(0.4, [corner]);
         var offsetWire = baseWire.Offset2D(0.1, side: Side.Left);
         Assert.True(offsetWire.IsClosed);
-        Assert.Equal(6, offsetWire.Edges().Where(GeomType.Line).Count);
-        Assert.Equal(2, offsetWire.Edges().Where(GeomType.Circle).Count);
+        Assert.Equal(6, offsetWire.SelectEdges().Where(GeomType.Line).Count);
+        Assert.Equal(2, offsetWire.SelectEdges().Where(GeomType.Circle).Count);
         var offsetWireRight = baseWire.Offset2D(0.1, side: Side.Right);
-        Check.AlmostEqual(0.5, offsetWireRight.Edges().Where(GeomType.Circle).OrderBy(ShapeKey.Radius)[^1].Radius, 4);
+        Check.AlmostEqual(0.5, offsetWireRight.SelectEdges().Where(GeomType.Circle).OrderBy(ShapeKey.Radius)[^1].Radius, 4);
     }
 
     [Fact]
@@ -400,13 +400,11 @@ public class Shape1DTests
     {
         var phoneCasePlan = Face.MakeRect(80, 150) - Face.MakeRect(25, 25, new Plane(new Vector(-20, 55)));
         var phoneCase = Ops.Extrude(phoneCasePlan, 2).Value;
-        var windowEdges = phoneCase.Faces().OrderBy(Axis.Z)[^1].InnerWires()[0].Edges();
-        Assert.All(windowEdges, e => Assert.Equal(phoneCase, e.TopoParent));
-        var phoneCaseF = Ops.Fillet(windowEdges, 1).Value;
+        var windowEdges = phoneCase.Faces().OrderBy(Axis.Z)[^1].InnerWires()[0].SelectEdges();
+        var phoneCaseF = Ops.Fillet(phoneCase, windowEdges, 1).Value;
         Assert.True(phoneCaseF.Volume < phoneCase.Volume);
-        var perimeter = phoneCaseF.Faces().OrderBy(Axis.Z)[^1].OuterWire().Edges();
-        Assert.All(perimeter, e => Assert.Equal(phoneCaseF, e.TopoParent));
-        var phoneCaseFF = Ops.Fillet(perimeter, 1).Value;
+        var perimeter = phoneCaseF.Faces().OrderBy(Axis.Z)[^1].OuterWire().SelectEdges();
+        var phoneCaseFF = Ops.Fillet(phoneCaseF, perimeter, 1).Value;
         Assert.True(phoneCaseFF.Volume < phoneCaseF.Volume);
     }
 
@@ -424,7 +422,7 @@ public class Shape1DTests
             Check.AlmostEqual(16, left.Length, 5);
             Check.AlmostEqual(16 + 2 + Math.PI / 2, right.Length, 5);
             foreach (var offsetWire in new[] { left, right })
-                foreach (var vertex in offsetWire.Vertices())
+                foreach (var vertex in offsetWire.SelectVertices())
                     Check.AlmostEqual(0, plane.ToLocalCoords(new Vector(vertex)).Z, 5);
         }
     }
@@ -464,7 +462,7 @@ public class Shape1DTests
         var onXz = Plane.XZ * Edge.MakeLine(new Vector(0, 0), new Vector(10, 10));
         var around = onXz.Offset2D(1);
         Check.AlmostEqual(2 * Math.Sqrt(200) + 2 * Math.PI, around.Length, 5);
-        Check.AlmostEqual(0, around.BoundingBox().Size.Y, 5);
+        Check.AlmostEqual(0, around.BoundBox().Size.Y, 5);
 
         var left = (Plane.XZ * Edge.MakeLine(new Vector(0, 0), new Vector(10, 0))).Offset2D(1, side: Side.Left, closed: false);
         Check.AlmostEqual(new Vector(5, 0, 1), left.PositionAt(0.5), 5);
@@ -472,7 +470,7 @@ public class Shape1DTests
         // a line with nothing to say which plane it is in takes one
         var inSpace = Edge.MakeLine(new Vector(0, 0, 0), new Vector(10, 0, 10));
         var given = inSpace.Offset2D(1, plane: Plane.XZ);
-        Check.AlmostEqual(0, given.BoundingBox().Size.Y, 5);
+        Check.AlmostEqual(0, given.BoundBox().Size.Y, 5);
         // without one the kernel picks the plane, as it always has
         var eitherSide = new[] { Side.Left, Side.Right }.Select(side => inSpace.Offset2D(1, side: side, closed: false)).ToList();
         foreach (var sideLine in eitherSide)
@@ -508,7 +506,7 @@ public class Shape1DTests
         Check.AlmostEqual(1, Math.Abs(common.ZDir.Z), 5);   // the direction isn't known
 
         // Many lines
-        var edges = Wire.MakeRect(10, 10).Edges();
+        var edges = Wire.MakeRect(10, 10).SelectEdges();
         common = edges[0].CommonPlane(edges[1..])!;
         Check.AlmostEqual(0, common.ZDir.X, 5);
         Check.AlmostEqual(0, common.ZDir.Y, 5);
@@ -516,7 +514,7 @@ public class Shape1DTests
 
         // Wire and Edges
         var circle = Wire.MakeCircle(1, Plane.YZ);
-        var lines = Wire.MakeRect(2, 2, Plane.YZ).Edges();
+        var lines = Wire.MakeRect(2, 2, Plane.YZ).SelectEdges();
         common = circle.CommonPlane(lines)!;
         Check.AlmostEqual(1, Math.Abs(common.ZDir.X), 5);   // the direction isn't known
         Check.AlmostEqual(0, common.ZDir.Y, 5);
@@ -541,9 +539,9 @@ public class Shape1DTests
     public void Edges()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        var topX = box.Faces().OrderBy(Axis.Z).Last().Edges().OrderBy(Axis.X).Last();
-        Assert.Equal(box, topX.TopoParent);
-        Assert.IsType<Edge>(topX);
+        var topX = box.SelectFaces().OrderBy(Axis.Z).Last().SelectEdges().OrderBy(Axis.X).Last();
+        Check.Same(box, box.SelectEdges().Origin!);
+        Check.Is<Edge>(topX);
         Check.AlmostEqual(new Vector(1, 0.5, 1), topX.Center(), 5);
     }
 
@@ -553,27 +551,22 @@ public class Shape1DTests
         // An extracted shape records the whole route it was selected by, so an edge knows the face it was picked off
         // as well as the solid
         var box = Solid.MakeBox(1, 1, 1);
-        var face = box.Faces().OrderBy(Axis.X).Last();
-        var edge = face.Edges().OrderBy(Axis.Y)[0];
-        Assert.Equal(2, edge.TopoPath.Count);
-        Assert.Equal(box, edge.TopoParent);
-        Assert.Equal(face, edge.TopoOwner);
-        Assert.Equal(box, face.TopoParent);
-        Assert.Equal(box, face.TopoOwner);
+        var face = box.SelectFaces().OrderBy(Axis.X).Last();
+        var edges = face.SelectEdges().OrderBy(Axis.Y);
+        Check.Same(face, edges.Origin!);
+        Check.Same(box, box.SelectFaces().OrderBy(Axis.X).Origin!);
+        Check.Same(edges[0], edges[0..1].SingleEdge());
 
-        var vertex = edge.Vertices()[0];
-        Assert.Equal([typeof(Solid), typeof(Face), typeof(Edge)], vertex.TopoPath.Select(s => s.GetType()));
-        Assert.Equal(box, vertex.TopoParent);
-        Assert.Equal(edge, vertex.TopoOwner);
+        Check.Same(edges[0], edges[0].SelectVertices().Origin!);
     }
 
     [Fact]
     public void IsClosed()
     {
-        Assert.True(Edge.MakeCircle(1).IsClosed);
-        Assert.True(Face.MakeRect(1, 1).OuterWire().IsClosed);
-        Assert.False(Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)).IsClosed);
-        var e = new Edge();
+        Assert.True(Edge.MakeCircle(1).CheckClosed());
+        Assert.True(Face.MakeRect(1, 1).OuterWire().CheckClosed());
+        Assert.False(Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)).CheckClosed());
+        var e = default(Edge);
         Assert.Throws<InvalidOperationException>(() => e.IsClosed);
     }
 
@@ -582,8 +575,8 @@ public class Shape1DTests
     {
         var e = Edge.MakeLine(new Vector(0, 0), new Vector(1, 0));
         var ePlus = e + Array.Empty<Shape>();
-        Assert.True(e.IsSame(ePlus.Edges()[0]));
-        Assert.Throws<ArgumentNullException>(() => e + (Shape)null!);
+        Assert.True(e.IsSame(ePlus.SelectEdges()[0]));
+        Assert.Throws<ArgumentNullException>(() => e + (ModelShape)null!);
     }
 
     [Fact]
@@ -594,18 +587,18 @@ public class Shape1DTests
     public void Split()
     {
         // nothing to split leaves nothing on either side
-        Assert.Empty(new Edge().Split(Plane.XZ.Offset(0.5)));
-        var (top, bottom) = new Edge().SplitBoth(Plane.XZ.Offset(0.5));
+        Assert.Empty(default(Edge).Split(Plane.XZ.Offset(0.5)));
+        var (top, bottom) = default(Edge).SplitBoth(Plane.XZ.Offset(0.5));
         Assert.True(top.Count == 0 && bottom.Count == 0);
-        Assert.Empty(new Edge().Split(Plane.XZ.Offset(0.5), Keep.All));
-        var e = Assert.Throws<ArgumentException>(() => Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)).Split(new Face()));
+        Assert.Empty(default(Edge).Split(Plane.XZ.Offset(0.5), Keep.All));
+        var e = Assert.Throws<ArgumentException>(() => Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)).Split(default(Face)));
         Assert.Contains("empty tool", e.Message);
     }
 
     [Fact]
     public void Extrude()
     {
-        var pnt = new Vertex();
+        var pnt = default(Vertex);
         Assert.Throws<ArgumentException>(() => Edge.Extrude(pnt, new Vector(0, 0, 1)));
     }
 }
@@ -622,7 +615,7 @@ public class CurvatureCombTests
     [Fact]
     public void EmptyCurve()
     {
-        var c = new Edge();
+        var c = default(Edge);
         Assert.Throws<InvalidOperationException>(() => c.CurvatureComb());
     }
 

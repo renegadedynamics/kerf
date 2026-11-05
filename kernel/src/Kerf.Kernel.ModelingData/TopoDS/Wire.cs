@@ -176,9 +176,9 @@ public partial struct Wire : IEquatable<Wire>
     internal void Reverse() => _orient = global::Kerf.Engine.Topology.TopAbs.Reverse(_orient);
 
     /// <summary>This shape with the orientation reversed (TopAbs::Reverse).</summary>
-    public readonly Shape Reversed()
+    public readonly Wire Reversed()
     {
-        Shape shape = this;
+        Wire shape = this;
         shape.Reverse();
         return shape;
     }

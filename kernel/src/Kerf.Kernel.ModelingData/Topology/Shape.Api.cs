@@ -59,7 +59,7 @@ public partial struct Vertex : IShape<Vertex>
     public static explicit operator Vertex(in Shape shape) => shape.As<Vertex>();
 }
 
-public partial struct Edge : IShape<Edge>
+public partial struct Edge : IShape<Edge>, IShape1D
 {
     static ShapeType IShape<Edge>.Type => ShapeType.Edge;
 
@@ -78,7 +78,7 @@ public partial struct Edge : IShape<Edge>
     public static explicit operator Edge(in Shape shape) => shape.As<Edge>();
 }
 
-public partial struct Wire : IShape<Wire>
+public partial struct Wire : IShape<Wire>, IShape1D
 {
     static ShapeType IShape<Wire>.Type => ShapeType.Wire;
 
@@ -97,7 +97,7 @@ public partial struct Wire : IShape<Wire>
     public static explicit operator Wire(in Shape shape) => shape.As<Wire>();
 }
 
-public partial struct Face : IShape<Face>
+public partial struct Face : IShape<Face>, IShape2D
 {
     static ShapeType IShape<Face>.Type => ShapeType.Face;
 
@@ -116,7 +116,7 @@ public partial struct Face : IShape<Face>
     public static explicit operator Face(in Shape shape) => shape.As<Face>();
 }
 
-public partial struct Shell : IShape<Shell>
+public partial struct Shell : IShape<Shell>, IShape2D
 {
     static ShapeType IShape<Shell>.Type => ShapeType.Shell;
 
@@ -135,7 +135,7 @@ public partial struct Shell : IShape<Shell>
     public static explicit operator Shell(in Shape shape) => shape.As<Shell>();
 }
 
-public partial struct Solid : IShape<Solid>
+public partial struct Solid : IShape<Solid>, IShape3D
 {
     static ShapeType IShape<Solid>.Type => ShapeType.Solid;
 
@@ -154,7 +154,7 @@ public partial struct Solid : IShape<Solid>
     public static explicit operator Solid(in Shape shape) => shape.As<Solid>();
 }
 
-public partial struct CompSolid : IShape<CompSolid>
+public partial struct CompSolid : IShape<CompSolid>, IShape3D
 {
     static ShapeType IShape<CompSolid>.Type => ShapeType.CompSolid;
 
@@ -173,7 +173,7 @@ public partial struct CompSolid : IShape<CompSolid>
     public static explicit operator CompSolid(in Shape shape) => shape.As<CompSolid>();
 }
 
-public partial struct Compound : IShape<Compound>
+public partial struct Compound : IShape<Compound>, IShape3D
 {
     static ShapeType IShape<Compound>.Type => ShapeType.Compound;
 

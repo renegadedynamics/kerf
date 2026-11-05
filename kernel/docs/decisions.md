@@ -16280,3 +16280,43 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 1616. **`Kerf.Modeling.Packaging.Tests`** stays out of the solution and passes (1 of 1): the layer loads in a collectible
        `AssemblyLoadContext`, loads no native library, and unloads. `OcctNetBackendTests` is `ExtensionLoadTests`, and
        `B3D_OCCTNET_LIB` is `KERF_MODELING_LIB`.
+
+## Phase 10: unit 10Q, one set of shapes
+
+1617. **The modelling layer uses the kernel's shapes (question 56).** `Kerf.Modeling` has no `Shape`, `Vertex`, `Edge`, `Wire`, `Face`,
+       `Shell`, `Solid`, `Compound` or `ShapeType`; its conveniences are C# 14 extension members on the kernel's structs. `modeling/docs/one-set-of-shapes.md` is
+       the design, with a line per type and per piece of state, and `modeling/docs/10q-bento.md` the change table.
+1618. **`ModelShape`.** `Part`, `Sketch`, `Curve` and the new `Assembly` derive from it. It holds a kernel shape and carries the label, colour,
+       construction flag and record. `Line`, `Polyline` and the other curve objects, which were an `Edge` or `Wire` by inheritance, are `Curve`s
+       holding one, converting implicitly. A `Compound` with children, which mixed a kernel idea with a modelling one, is an `Assembly`. An
+       object converts implicitly to `Shape`, and a kernel shape to the `ModelShape` of its dimension, which is what lets
+       `new Assembly([box, solid])` read as it did.
+1619. **Three interfaces in the kernel, and one more.** `IShape` (non-generic, `AsShape()`), under which `IShape<T>` now sits, with markers `IShape1D`,
+       `IShape2D` and `IShape3D`, which stand for build123d's mixins: `extension<T>(T s) where T : IShape1D` is on `Edge`, `Wire` and `Curve`, with no
+       boxing for the structs. `ShapeComparer<T>` is the typed comparer the layer's `Distinct` and `Contains` need, as equality on a kernel shape
+       includes orientation and the layer's didn't. A typed shape's `Reversed()` keeps its type (`Edge.Reversed()` is an `Edge`), which callers
+       had to cast. Nothing else in the kernel changed.
+1620. **Provenance belongs to the list.** `TopoPath`, `TopoParent` and `TopoOwner` go, as a struct can't hold them. `ShapeList<T>.Origin` is the
+       shape a list was selected from, and selections keep it. An operation that needs the parent reads it or takes it as an argument:
+       `box.ConvexityOf(edge)`, `Fillet(box, edge, r)`, `FullRound(edge, parent)`, `TopoDistanceTo(parent, faces)`. It is one level, not the route:
+       `box.Faces()[0].SelectEdges()`'s origin is the face. Code that asked for the route says the parent, which a caller has.
+1621. **The record, in an ambient log.** Operations note their record on a `HistoryLog` when one is open (`AsyncLocal`, internal), and a `ModelShape`'s
+       operation opens one and keeps what it finds. The alternative, a `(shape, record)` result through about thirty methods, is cleaner but touches
+       more than it says. `Warnings` and `SkipClean` are the same pattern. A struct's operation doesn't keep a record; `Select.Last` is asked of an
+       object.
+1622. **A struct's own member wins, so the layer's take other names where the meaning differs.** `SelectEdges` beside the kernel's `Edges()` (an
+       `ImmutableArray` with degenerate edges); `CheckClosed()` for `IsClosed` (a stored flag) on a struct; `IsUnbounded` for `IsInfinite`;
+       `OrientationAngles` for `Orientation`; `BoundBox()` for `BoundingBox()`. `ModelShape.Edges()` keeps its name, with `Select`.
+1623. **`Kerf.Color` is the colour (question 60).** The layer's `Color` goes. `ColorExtensions` adds `Color.Parse`, `FromCode`, `Rgb`, `White`,
+       `CategoricalSet` and `Describe`, since an extension can't add a constructor. `R`, `G`, `B` and `A` are no longer rounded to seven places.
+1624. **`Plane`, `Location` and `Axis` stay, as modelling ideas; `Vector`, `BoundBox` and `Matrix` were not reached.** The brief puts the shapes first.
+       `one-set-of-shapes.md` says why `Vector` isn't a mechanical rename, and the other two follow it. **The owner's answer on duplicates is not met for
+       those three.**
+1625. **`ShapeLog` and `tools/b3d-differential.ps1` go.** The log hooked every new wrapper, and there are no wrappers. Native OCCT went in 10B, so the
+       run compared against a frozen recording; `Build123dDifferentialTests` still checks that recording, and now compares nothing else. The
+       unit's own check of results is the suite, the benchmark and the STEP comparisons.
+1626. **`Shape.ProjectFaces`' `InvalidCastException` is fixed** (decision 1613's finding): a projection that is a shell gives its faces.
+1627. **What the tests lost.** A zero's class where it is a plain `Shape`; the selection route (`EdgesTopoPath`, now the origin at each level); `IsInterior` and
+       `Convexity` on a lone edge, now asked of the parent; a topological face's label across `Offset`; `CreatedOn`, which nothing read; null as an
+       operand's parameter name, which is `model` as a kernel shape can't be null. Each was a property of the classes that went, and none a result. Added: 11 tests
+       (`OneSetOfShapesTests`) and 2 cases where `Assembly` and `Compound` now differ, so the intersection matrix swaps them. 1,904 to 1,917.

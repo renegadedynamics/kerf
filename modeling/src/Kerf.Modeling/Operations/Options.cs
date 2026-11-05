@@ -51,7 +51,7 @@ public static partial class Operations
         public Vector? Normal { get; init; }
 
         /// <summary>An edge or wire guiding the rotation of the sections along the path.</summary>
-        public Shape1D? Binormal { get; init; }
+        public IShape1D? Binormal { get; init; }
 
         /// <summary>Remove extraneous internal structure.</summary>
         public bool Clean { get; init; } = true;

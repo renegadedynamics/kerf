@@ -176,9 +176,9 @@ public partial struct Solid : IEquatable<Solid>
     internal void Reverse() => _orient = global::Kerf.Engine.Topology.TopAbs.Reverse(_orient);
 
     /// <summary>This shape with the orientation reversed (TopAbs::Reverse).</summary>
-    public readonly Shape Reversed()
+    public readonly Solid Reversed()
     {
-        Shape shape = this;
+        Solid shape = this;
         shape.Reverse();
         return shape;
     }

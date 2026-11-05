@@ -4,6 +4,7 @@
 // TopoDS_Shape.cs (docs/phase3-design.md, section 2). C# structs can't inherit, so each subtype is a struct with
 // TopoDS_Shape's three fields and a copy of its members: the text between the "<generated-members>" and
 // "</generated-members>" markers of TopoDS_Shape.cs, verbatim, plus the type's own constructors, equality and the
+// (Since unit 10Q the checked-in subtypes' Reversed() returns the subtype: keep that if this tool is run again.)
 // implicit conversion to TopoDS_Shape. The members keep OCCT's types: Reversed() of an edge returns a TopoDS_Shape,
 // as in C++.
 //

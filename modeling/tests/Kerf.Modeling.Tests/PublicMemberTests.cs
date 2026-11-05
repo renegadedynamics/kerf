@@ -155,12 +155,12 @@ public class PublicMemberTests
     [Fact]
     public void Values_compare_and_take_apart()
     {
-        (double r, double g, double b, double a) = new Color(0.1, 0.2, 0.3, 0.4);
+        (double r, double g, double b, double a) = Color.Rgb(0.1, 0.2, 0.3, 0.4);
         Assert.Equal(0.3, b, 6);
         Assert.Equal((0.1, 0.2, 0.4), (Math.Round(r, 6), Math.Round(g, 6), Math.Round(a, 6)));
-        Assert.True(new Color(0.1, 0.2, 0.3) == new Color(0.1, 0.2, 0.3));
-        Assert.True(new Color(0.1, 0.2, 0.3) != new Color(0.3, 0.2, 0.1));
-        Assert.Equal(new Color(0.1, 0.2, 0.3).GetHashCode(), new Color(0.1, 0.2, 0.3).GetHashCode());
+        Assert.True(Color.Rgb(0.1, 0.2, 0.3) == Color.Rgb(0.1, 0.2, 0.3));
+        Assert.True(Color.Rgb(0.1, 0.2, 0.3) != Color.Rgb(0.3, 0.2, 0.1));
+        Assert.Equal(Color.Rgb(0.1, 0.2, 0.3).GetHashCode(), Color.Rgb(0.1, 0.2, 0.3).GetHashCode());
 
         Assert.True(Axis.X != Axis.Y);
         Assert.True(Plane.XY == new Plane(new Vector(0, 0, 0), new Vector(1, 0, 0), new Vector(0, 0, 1)));
@@ -169,7 +169,7 @@ public class PublicMemberTests
         Assert.Equal(Plane.XY.Origin.Z, Plane.XY.ToCoordinateSystem().Location.Z, 9);
         Assert.Equal(5, Plane.XY.LocationBetween(Plane.XY.Offset(5)).Position.Length, 9);
 
-        var (x, y, z) = new Vertex(1, 2, 3);
+        var (x, y, z) = Vertex.Make(1, 2, 3);
         Assert.Equal((1.0, 2.0, 3.0), (x, y, z));
 
         Assert.Equal(["µm", "mm", "cm", "m", "in", "ft", "g", "kg", "lb"],
@@ -178,7 +178,7 @@ public class PublicMemberTests
         Assert.Equal([1.0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], new Matrix().TransposedList());
         Assert.True(new MeshTolerances(0.1, 0.2) with { Relative = true, Linear = 0.3, Angular = 0.4 } is { Relative: true, Linear: 0.3, Angular: 0.4 });
 
-        BoundBox box = new Box(2, 2, 2).BoundingBox();
+        BoundBox box = new Box(2, 2, 2).BoundBox();
         Assert.Equal(1, box.ToBoundingBox().Max.X, 9);
 
         var selector = new Selector(ShapeType.Face, [new Selector.ParallelTo(Axis.X)]);
@@ -229,7 +229,7 @@ public class PublicMemberTests
         Assert.Equal(4 * 4.5, Extrude([square], Until.Next, target).Value.Volume, 3);
 
         var curve = new Curve([Edge.MakeLine(new Vector(1, 0), new Vector(3, 0))]);
-        Assert.Equal(-3, Mirror(curve, Plane.YZ).BoundingBox().Min.X, 6);
+        Assert.Equal(-3, Mirror(curve, Plane.YZ).BoundBox().Min.X, 6);
         Assert.Equal(2, Len(Split(curve, Plane.XZ.Offset(10), Keep.Bottom)), 6);
         Assert.True(Offset(curve, 1, new OffsetOptions { Closed = false }).IsSuccess);
 
@@ -244,19 +244,19 @@ public class PublicMemberTests
         Assert.Equal(4 * 4, Sweep((Shape)new Rectangle(2, 2), path, new Kerf.Modeling.Operations.SweepOptions { IsFrenet = true }).Value.Volume, 3);
         Assert.Equal(2 * 4, Sweep(new Curve([Edge.MakeLine(new Vector(-1, 0), new Vector(1, 0))]), path).Value.Area, 3);
 
-        Assert.Equal(new Vector(1, 1, 0), ProjectPoints([new Vertex(1, 1, 5)], Plane.XY)[0]);
-        Plane projected = ProjectWorkplane(new Vertex(0, 0, 0), new Vertex(1, 0, 0), new Vector(0, 0, 1), 5);
+        Assert.Equal(new Vector(1, 1, 0), ProjectPoints([Vertex.Make(1, 1, 5)], Plane.XY)[0]);
+        Plane projected = ProjectWorkplane(Vertex.Make(0, 0, 0), Vertex.Make(1, 0, 0), new Vector(0, 0, 1), 5);
         Assert.Equal(5, projected.Origin.Z, 6);
         Assert.True(MakeHull(Edge.MakeCircle(2)).Area > 12);
 
         Part flat = box;
-        Assert.True(Fillet(new Rectangle(2, 2).Vertices()[0], 0.2).IsSuccess);
+        Assert.True(Fillet(new Rectangle(2, 2), new Rectangle(2, 2).Vertices()[0], 0.2).IsSuccess);
         Assert.Equal(8, flat.Volume, 6);
 
         var thicken = new Kerf.Modeling.Operations.ThickenOptions { Clean = true, NormalOverride = new Vector(0, 0, 1) };
         Assert.Equal(4, Thicken(square, 1, thicken).Value.Volume, 6);
 
-        Assert.Equal(4, Kerf.Measurement.MeasureOperations.Area(OneD.OffsetTopodsFace(square.TopoFace, 0.1)), 6);
+        Assert.Equal(4, Kerf.Measurement.MeasureOperations.Area(OneD.OffsetTopodsFace(square, 0.1)), 6);
     }
 
     [Fact]
@@ -272,11 +272,10 @@ public class PublicMemberTests
         Assert.Equal(side.Center(), side.Center(CenterOf.Mass));
         Assert.Empty(side.Touch(side.Moved(new Location(new Vector(100, 0, 0)))));
         // what the base class answers: no choice of centre, nothing touched
-        var vertex = new Vertex(1, 2, 3);
+        var vertex = Vertex.Make(1, 2, 3);
         Assert.Throws<NotSupportedException>(() => vertex.Center(CenterOf.Mass));
         Assert.Empty(vertex.Touch(box));
 
-        Assert.Equal(new Vector(1, 2, 3), new Rectangle(1, 1).Faces()[0].WithCreatedOn(new Plane(new Vector(1, 2, 3))).CreatedOn!.Origin);
 
         Assert.Equal(new Box(1, 1, 1).Volume, Enumerable.Single(new[] { Plane.XY } * new Box(1, 1, 1)).Volume, 6);
         Assert.True(new Box(1, 1, 1).WithForConstruction().ForConstruction);
@@ -290,7 +289,7 @@ public class PublicMemberTests
         Assert.True(sheet.CutSheet([new Box(2, 2, 2)]).Area < 16);
 
         Assert.True(box.Triangulate(0.1).NodeCount >= 8);
-        Assert.NotNull(box.Fillet(0.1, box.Edges()).History?.ToHistory());
+        Assert.NotNull(Kerf.Modeling.Operations.Fillet(box.Edges(), 0.1).Value.History?.ToHistory());
     }
 
     [Fact]
@@ -304,7 +303,7 @@ public class PublicMemberTests
         Face projected = Assert.Single(box.ProjectFaces([square], path));
         Assert.Equal(1, projected.Area, 3);
         Assert.Equal(5, projected.Center().X, 3);
-        Assert.Single(box.ProjectFaces(new Compound([square]), path));
+        Assert.Single(box.ProjectFaces(Compound.Make([square]), path));
     }
 
     [Fact]
@@ -317,11 +316,11 @@ public class PublicMemberTests
             var box = new Box(2, 2, 2);
             string stl = Path.Combine(folder, "box.stl");
             Assert.True(Exporters3D.ExportStl(box, stl).IsSuccess);
-            Assert.Equal(2, Importers.ImportStl(stl).Value.BoundingBox().Size.X, 6);
+            Assert.Equal(2, Importers.ImportStl(stl).Value.BoundBox().Size.X, 6);
 
             string gltf = Path.Combine(folder, "box.glb");
             Assert.True(Exporters3D.ExportGltf(box, gltf, new GltfExportOptions { Binary = true }).IsSuccess);
-            Assert.Equal(2, Importers.ImportGltf(gltf).Value.BoundingBox().Size.X, 6);
+            Assert.Equal(2, Importers.ImportGltf(gltf).Value.BoundBox().Size.X, 6);
 
             string threeMf = Path.Combine(folder, "box.3mf");
             Assert.True(Exporters3D.Export3mf(box, threeMf).IsSuccess);

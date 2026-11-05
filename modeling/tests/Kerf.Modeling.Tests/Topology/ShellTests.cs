@@ -13,16 +13,16 @@ public class ShellTests
     [Fact]
     public void ShellInit()
     {
-        var boxFaces = Solid.MakeBox(1, 1, 1).Faces();
-        var boxShell = new Shell(boxFaces);
+        var boxFaces = Solid.MakeBox(1, 1, 1).SelectFaces();
+        var boxShell = Shell.Make(boxFaces);
         Assert.True(boxShell.IsValid);
     }
 
     [Fact]
     public void ShellInitSingleFace()
     {
-        var face = Solid.MakeCone(1, 0, 2).Faces().Where(GeomType.Cone).First();
-        var shell = new Shell(face);
+        var face = Solid.MakeCone(1, 0, 2).SelectFaces().Where(GeomType.Cone).First();
+        var shell = Shell.Make(face);
         Assert.True(shell.IsValid);
     }
 
@@ -30,35 +30,35 @@ public class ShellTests
     public void ShellInitTolerance()
     {
         // the lid sits 1e-5 above the box's sides: too far for the default tolerance, within reach of a larger one
-        var sorted = Solid.MakeBox(1, 1, 1).Faces().OrderBy(Axis.Z);
+        var sorted = Solid.MakeBox(1, 1, 1).SelectFaces().OrderBy(Axis.Z);
         Face[] faces = [.. sorted.Take(sorted.Count - 1), sorted.Last().Moved(new Pos(0, 0, 1e-5))];
-        Assert.Throws<ArgumentException>(() => new Shell(faces));
-        Assert.Throws<ArgumentException>(() => new Shell(faces, tolerance: 1e-6));
-        var sewn = new Shell(faces, tolerance: 1e-4);
+        Assert.Throws<ArgumentException>(() => Shell.Make(faces));
+        Assert.Throws<ArgumentException>(() => Shell.Make(faces, tolerance: 1e-6));
+        var sewn = Shell.Make(faces, tolerance: 1e-4);
         Assert.True(sewn.IsManifold);
-        Assert.True(new Solid(sewn).IsValid);
-        Assert.Throws<ArgumentException>(() => new Shell(faces, tolerance: 0));
+        Assert.True(Solid.Make(sewn).IsValid);
+        Assert.Throws<ArgumentException>(() => Shell.Make(faces, tolerance: 0));
     }
 
     [Fact]
     public void Center()
     {
-        var boxShell = new Shell(Solid.MakeBox(1, 1, 1).Faces());
+        var boxShell = Shell.Make(Solid.MakeBox(1, 1, 1).SelectFaces());
         Check.AlmostEqual(new Vector(0.5, 0.5, 0.5), boxShell.Center(), 5);
     }
 
     [Fact]
     public void ManifoldShellVolume()
     {
-        var boxShell = new Shell(Solid.MakeBox(1, 1, 1).Faces());
+        var boxShell = Shell.Make(Solid.MakeBox(1, 1, 1).SelectFaces());
         Check.AlmostEqual(1, boxShell.Volume, 5);
     }
 
     [Fact]
     public void NonmanifoldShellVolume()
     {
-        var nmShell = new Shell(Solid.MakeBox(1, 1, 1).Faces());
-        var opened = nmShell - nmShell.Faces()[0];
+        var nmShell = Shell.Make(Solid.MakeBox(1, 1, 1).SelectFaces());
+        var opened = nmShell - nmShell.SelectFaces()[0];
         Check.AlmostEqual(0, opened.Volume, 5);
     }
 
@@ -67,9 +67,9 @@ public class ShellTests
     {
         var xSection = new Rotation(90) * Edge.MakeSpline([new Vector(0, -5), new Vector(-3, -2), new Vector(-2, 0), new Vector(-3, 2), new Vector(0, 5)]);
         var surface = Shell.Sweep(xSection, Wire.MakeCircle(5));
-        var singleFace = new Shell(surface.SingleFace());
+        var singleFace = Shell.Make(surface.SingleFace());
         Assert.True(singleFace.IsValid);
-        singleFace = new Shell(surface.Faces());
+        singleFace = Shell.Make(surface.SelectFaces());
         Assert.True(singleFace.IsValid);
     }
 
@@ -83,7 +83,7 @@ public class ShellTests
         var pathC2 = new Curve([pathC1, Edge.MakeThreePointArc(new Vector(0, 0), new Vector(Math.Sqrt(2), -2 + Math.Sqrt(2)), new Vector(2, -2))]);
         var pathW = Assert.Single(pathC2.Wires());
         var sectionE = Edge.MakeCircle(0.5);
-        var sectionC2 = new Wire([Edge.MakeLine(new Vector(0, 0), new Vector(0.1, 0)), Edge.MakeLine(new Vector(0.1, 0), new Vector(0.2, 0.1))]);
+        var sectionC2 = Wire.Make([Edge.MakeLine(new Vector(0, 0), new Vector(0.1, 0)), Edge.MakeLine(new Vector(0.1, 0), new Vector(0.2, 0.1))]);
         var sectionW = sectionC2;
 
         var sweepEW = Shell.Sweep((pathW.LocationAt(0)) * sectionE, pathW);
@@ -92,11 +92,11 @@ public class ShellTests
         var sweepC2C1 = Shell.Sweep((pathC1.LocationAt(0)) * sectionC2, pathC1);
         var sweepC2C2 = Shell.Sweep((pathC2.LocationAt(0)) * sectionC2, pathC2);
 
-        Assert.Equal(2, sweepEW.Faces().Count);
-        Assert.Equal(2, sweepWE.Faces().Count);
-        Assert.Equal(2, sweepC2C1.Faces().Count);
-        Assert.Equal(3, sweepWW.Faces().Count);   // 3 with clean, 4 without
-        Assert.Equal(3, sweepC2C2.Faces().Count);   // 3 with clean, 4 without
+        Assert.Equal(2, sweepEW.SelectFaces().Count);
+        Assert.Equal(2, sweepWE.SelectFaces().Count);
+        Assert.Equal(2, sweepC2C1.SelectFaces().Count);
+        Assert.Equal(3, sweepWW.SelectFaces().Count);   // 3 with clean, 4 without
+        Assert.Equal(3, sweepC2C2.SelectFaces().Count);   // 3 with clean, 4 without
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public class ShellTests
         var shell = Shell.Extrude(rect, new Vector(0, 0, 3));
         var thick = Solid.Thicken(shell, 1);
 
-        Assert.IsType<Solid>(thick);
+        Check.Is<Solid>(thick);
         var innerVol = 3 * 10 * 5;
         var outerVol = 3 * 12 * 7;
         Check.AlmostEqual(outerVol - innerVol, thick.Volume);
@@ -138,18 +138,18 @@ public class ShellTests
         // A shell made of planes and cylinders splits into the two, which is how a sheet metal part reads: flats
         // joined by bends.
         var tube = Solid.MakeCylinder(5, 10);
-        var shell = new Shell(tube.Faces());
+        var shell = Shell.Make(tube.SelectFaces());
         Assert.Single(shell.Bends());
         Assert.Equal(2, shell.Flats().Count);
-        Assert.Equal(shell.Faces().Where(GeomType.Cylinder), shell.Bends());
-        Assert.Equal(shell.Faces().Where(GeomType.Plane), shell.Flats());
-        Assert.Equal(shell.Faces().Count, shell.Bends().Count + shell.Flats().Count);
+        Assert.Equal(shell.SelectFaces().Where(GeomType.Cylinder), shell.Bends());
+        Assert.Equal(shell.SelectFaces().Where(GeomType.Plane), shell.Flats());
+        Assert.Equal(shell.SelectFaces().Count, shell.Bends().Count + shell.Flats().Count);
     }
 
     [Fact]
     public void BendsAndFlatsIgnoreOtherSurfaces()
     {
-        var sphere = new Shell(Solid.MakeSphere(5).Faces());
+        var sphere = Shell.Make(Solid.MakeSphere(5).SelectFaces());
         Assert.Empty(sphere.Bends());
         Assert.Empty(sphere.Flats());
     }
@@ -171,46 +171,46 @@ public class ShellAddTests
     /// <summary>The result is one connected Shell with the expected faces.</summary>
     static void AssertSewn(Shape result, int faceCount)
     {
-        Assert.IsType<Shell>(result);
+        Check.Is<Shell>(result);
         Assert.True(result.IsValid);
-        Assert.Single(result.Shells());
-        Assert.Equal(faceCount, result.Faces().Count);
+        Assert.Single(result.SelectShells());
+        Assert.Equal(faceCount, result.SelectFaces().Count);
     }
 
     [Fact]
-    public void ShellPlusFace() => AssertSewn(new Shell([_base]) + _wall, 2);
+    public void ShellPlusFace() => AssertSewn(Shell.Make([_base]) + _wall, 2);
 
     [Fact]
-    public void FacePlusShell() => AssertSewn(_wall + new Shell([_base]), 2);
+    public void FacePlusShell() => AssertSewn(_wall + Shell.Make([_base]), 2);
 
     [Fact]
-    public void ShellPlusShell() => AssertSewn(new Shell([_base]) + new Shell([_wall]), 2);
+    public void ShellPlusShell() => AssertSewn(Shell.Make([_base]) + Shell.Make([_wall]), 2);
 
     [Fact]
-    public void ShellPlusSketch() => AssertSewn(new Shell([_base]) + SketchWall(), 2);
+    public void ShellPlusSketch() => AssertSewn(Shell.Make([_base]) + SketchWall(), 2);
 
     [Fact]
-    public void ShellPlusIterable() => AssertSewn(new Shell([_base]) + new Shape[] { _wall, FarWall() }, 3);
+    public void ShellPlusIterable() => AssertSewn(Shell.Make([_base]) + new Shape[] { _wall, FarWall() }, 3);
 
     [Fact]
     public void AugmentedAssignment()
     {
-        var shell = new Shell();
+        var shell = default(Shell);
         foreach (var face in new[] { _base, _wall })
-            shell += face;
+            shell = (Shell)(shell + face);
         AssertSewn(shell, 2);
     }
 
     [Fact]
     public void EmptyShellOperands()
     {
-        AssertSewn(new Shell() + _base, 1);
-        AssertSewn(new Shell([_base]) + null, 1);
-        AssertSewn(new[] { _base, _wall }.Aggregate(new Shell(), (sum, f) => sum + f), 2);
+        AssertSewn(default(Shell) + _base, 1);
+        AssertSewn(Shell.Make([_base]) + Array.Empty<Shape>(), 1);
+        AssertSewn(new[] { _base, _wall }.Aggregate(default(Shell), (sum, f) => (Shell)(sum + f)), 2);
     }
 
     [Fact]
-    public void AreaPreserved() => Check.AlmostEqual(600, (new Shell([_base]) + _wall).Area, 5);
+    public void AreaPreserved() => Check.AlmostEqual(600, (Shell.Make([_base]) + _wall).Area, 5);
 
     [Fact]
     public void CoplanarFacesMergeWhenCleaned()
@@ -218,9 +218,9 @@ public class ShellAddTests
         // clean() removes the seam between coplanar faces, as BuildSheet does
         var left = Face.MakeRect(10, 10);
         var right = new Pos(10, 0, 0) * Face.MakeRect(10, 10);
-        AssertSewn(new Shell([left]) + right, 1);
+        AssertSewn(Shell.Make([left]) + right, 1);
         using (new SkipClean())
-            AssertSewn(new Shell([left]) + right, 2);
+            AssertSewn(Shell.Make([left]) + right, 2);
     }
 
     [Fact]
@@ -229,8 +229,8 @@ public class ShellAddTests
         // Silently returning a Compound would make the result type depend on the geometry, so an unsewable operand is
         // an error
         var far = new Pos(80, 0, 0) * Face.MakeRect(5, 5);
-        Assert.Throws<ArgumentException>(() => new Shell([_base]) + far);
-        Assert.Throws<ArgumentException>(() => _base + new Shell([far]));
+        Assert.Throws<ArgumentException>(() => Shell.Make([_base]) + far);
+        Assert.Throws<ArgumentException>(() => _base + Shell.Make([far]));
     }
 
     [Fact]
@@ -238,21 +238,21 @@ public class ShellAddTests
     {
         // Three faces meeting on one edge can't sew
         var below = Face.Extrude(Edge.MakeLine(new Vector(10, -10, 0), new Vector(10, 10, 0)), new Vector(0, 0, -10));
-        Assert.Throws<ArgumentException>(() => new Shell([_base, _wall]) + below);
+        Assert.Throws<ArgumentException>(() => Shell.Make([_base, _wall]) + below);
     }
 
     [Fact]
     public void ResultIsAlwaysAShell()
     {
         // Adding to a Shell either yields a Shell or raises, never a Compound
-        var chained = new Shell([_base]) + _wall + FarWall();
+        var chained = Shell.Make([_base]) + _wall + FarWall();
         AssertSewn(chained, 3);
     }
 
     [Fact]
     public void AttributesCarriedToResult()
     {
-        var shell = new Shell([_base]).WithLabel("sheet").WithColor(new Color("red"));
+        var shell = new Sketch(Shell.Make([_base])).WithLabel("sheet").WithColor(Color.Parse("red"));
         var result = shell + _wall;
         Assert.Equal("sheet", result.Label);
         Assert.NotNull(result.Color);
@@ -261,8 +261,8 @@ public class ShellAddTests
     [Fact]
     public void MismatchedDimensionsRaise()
     {
-        Assert.Throws<ArgumentException>(() => new Shell([_base]) + Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0)));
-        Assert.Throws<ArgumentException>(() => new Shell([_base]) + Solid.MakeBox(1, 1, 1));
+        Assert.Throws<ArgumentException>(() => Shell.Make([_base]) + Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0)));
+        Assert.Throws<ArgumentException>(() => Shell.Make([_base]) + Solid.MakeBox(1, 1, 1));
     }
 
     [Fact]
@@ -271,7 +271,7 @@ public class ShellAddTests
         // Sketch algebra keeps fusing: no Shell operand means no sewing
         var left = Face.MakeRect(10, 10);
         var overlapping = new Pos(3, 0, 0) * Face.MakeRect(10, 10);
-        Assert.IsType<Face>(left + overlapping);
+        Check.Is<Face>(left + overlapping);
         Assert.IsNotType<Shell>(_base + _wall);
     }
 
@@ -279,8 +279,8 @@ public class ShellAddTests
     public void SketchOnTheLeftIsUnchanged()
     {
         // A Sketch keeps its own operator, so its type never changes
-        var result = SketchWall() + new Shell([_base]);
-        Assert.IsAssignableFrom<Compound>(result);
+        var result = SketchWall() + Shell.Make([_base]);
+        Check.IsShape(result);
         Assert.IsNotType<Shell>(result);
     }
 }

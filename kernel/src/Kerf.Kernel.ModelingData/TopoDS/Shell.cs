@@ -176,9 +176,9 @@ public partial struct Shell : IEquatable<Shell>
     internal void Reverse() => _orient = global::Kerf.Engine.Topology.TopAbs.Reverse(_orient);
 
     /// <summary>This shape with the orientation reversed (TopAbs::Reverse).</summary>
-    public readonly Shape Reversed()
+    public readonly Shell Reversed()
     {
-        Shape shape = this;
+        Shell shape = this;
         shape.Reverse();
         return shape;
     }

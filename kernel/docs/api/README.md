@@ -592,3 +592,9 @@ carry their own history. modeling/docs/design.md, "The .NET API (unit 10M2)", ha
   called on sample objects with awkward arguments, throws only what a caller can name.
 - **Operations** keep `EngineOperation.Run`, whose failures are diagnostics. `Primitives`, `Sweeps`, `ShapeFactory`,
   `ShapeTransforms`, `ShapeProjections`, `Surfaces` and `Mesher` keep their names (question 53; section 3 and section 11).
+
+## 18. Implemented: unit 10Q, one set of shapes
+
+**Question 56 is met for the shapes:** `Kerf.Modeling` uses `Kerf.Topology`'s `Shape`, `Vertex`, `Edge`, `Wire`, `Face`, `Shell`, `Solid` and `Compound`, with its conveniences as extension members, and a file can import both namespaces (`OneSetOfShapesTests`). It keeps `Part`, `Sketch`, `Curve` and `Assembly`, over `ModelShape`, as modelling ideas, and `Plane`, `Location` and `Axis` as placement types. **Question 60 is met:** `Kerf.Color` is the colour. **Not met:** `Vector`, `BoundBox` and `Matrix` still duplicate `Vector3D`, `BoundingBox` and `GeneralTransform3D`; `modeling/docs/one-set-of-shapes.md` says why, and the next step.
+
+What the kernel gained for it: `IShape` with the markers `IShape1D`, `IShape2D` and `IShape3D` ([topology.md](topology.md)), `ShapeComparer<T>`, and `Reversed()` on a typed shape keeping its type.

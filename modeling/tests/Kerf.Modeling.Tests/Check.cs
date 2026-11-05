@@ -37,7 +37,41 @@ internal static class Check
                     $"Expected ({string.Join(", ", expected)}) but got ({string.Join(", ", actual)}) (to {places} places)");
     }
 
+    /// <summary>The kernel's shape held is a <typeparamref name="T"/>: where a build123d test pins the class of a result. An empty shape counts as any type, as it holds nothing.</summary>
+    public static T Is<T>(IShape shape) where T : struct, IShape<T>
+    {
+        var held = shape.AsShape();
+        if (!shape.IsEmpty)
+            Assert.Equal(T.Type, held.Type);
+        else if (T.Type == ShapeType.Compound)
+            return default;
+        return shape.IsEmpty ? default : held.As<T>();
+    }
+
+    /// <summary>The kernel's shape held is an edge or wire.</summary>
+    public static void IsShape1D(IShape shape) => Assert.Equal(1, shape.IsEmpty ? 1 : shape.AsShape().Type is ShapeType.Edge or ShapeType.Wire ? 1 : 0);
+
+    /// <summary>The kernel's shape held is a face or shell.</summary>
+    public static void IsShape2D(IShape shape) => Assert.Equal(2, shape.IsEmpty ? 2 : shape.AsShape().Type is ShapeType.Face or ShapeType.Shell ? 2 : 0);
+
+    /// <summary>The kernel's shape held is a solid or compound.</summary>
+    public static void IsShape3D(IShape shape) => Assert.Equal(3, shape.IsEmpty ? 3 : shape.AsShape().Type is ShapeType.Solid or ShapeType.Compound or ShapeType.CompSolid ? 3 : 0);
+
+    /// <summary>A shape's location, through the interface: the kernel's internal <c>Location()</c> hides the extension on the struct here, as the tests see the kernel's internals.</summary>
+    public static Location LocationOf(IShape shape) => shape.Location;
+
+    /// <summary>It is a shape, or holds one.</summary>
+    public static void IsShape(IShape shape) => Assert.NotNull(shape);
+
+    /// <summary>The same shape: the same data at the same place, either orientation, as the layer's shapes compared before unit 10Q.</summary>
+    public static void Same<TA, TB>(TA expected, TB actual) where TA : IShape where TB : IShape =>
+        Assert.True(expected.SameAs(actual), $"Expected {expected.AsShape().Describe()} but got {actual.AsShape().Describe()}");
+
+    /// <summary>Not the same shape.</summary>
+    public static void NotSame<TA, TB>(TA expected, TB actual) where TA : IShape where TB : IShape =>
+        Assert.False(expected.SameAs(actual), $"Both are {actual.AsShape().Describe()}");
+
     public static double[] Of(Vector v) => [v.X, v.Y, v.Z];
 
-    public static double[] Of(Color c) => [c.R, c.G, c.B, c.A];
+    public static double[] Of(Color c) => [Math.Round(c.R, 7), Math.Round(c.G, 7), Math.Round(c.B, 7), Math.Round((double)(float)c.A, 7)];
 }

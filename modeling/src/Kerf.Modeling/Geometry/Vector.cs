@@ -78,7 +78,7 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
 
 
 
-    /// <summary>Where a shape meets this vector (the shape's <see cref="Shape.Intersect(object[])"/>), empty if nowhere.</summary>
+    /// <summary>Where a shape meets this vector (the shape's <c>Intersect</c>), empty if nowhere.</summary>
     public ShapeList<Shape> Intersect(Shape shape) => shape.Intersect(this);
 #pragma warning restore CS1591
 

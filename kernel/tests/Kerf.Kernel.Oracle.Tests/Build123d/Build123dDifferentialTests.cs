@@ -22,7 +22,7 @@ namespace Kerf.Kernel.Oracle.Tests;
 /// shape log on (<c>BUILD123D_SHAPE_LOG</c>), logs in BRep text every new shape a build123d <c>Shape</c> wraps, test by
 /// test and in order. This compares OCCT.NET's log with native OCCT's, entry by entry, as BRep text, then with the Free
 /// and the Checked flags masked, then canonically (<see cref="CanonicalShapeComparer"/>). The first divergence of a test
-/// is reported: later ones usually follow from it. <c>tools/b3d-differential.ps1</c> runs the suite and then this test.
+/// is reported: later ones usually follow from it. Retired in unit 10Q: the script that ran the suite and the log it read went, as the layer has no wrappers to log, so this test checks the recording.
 /// </summary>
 /// <remarks>
 /// Native's log is recorded (unit 10A, decision 1338): <c>Recordings/Build123dDifferential.native.gz</c> keeps, for each

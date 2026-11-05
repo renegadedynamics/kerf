@@ -2,21 +2,6 @@ using Kerf.Topology;
 
 namespace Kerf.Modeling;
 
-/// <summary>The kinds of topological shape (build123d's <c>Shapes</c> names).</summary>
-public enum ShapeType
-{
-#pragma warning disable CS1591 // Self-describing
-    Vertex,
-    Edge,
-    Wire,
-    Face,
-    Shell,
-    Solid,
-    CompSolid,
-    Compound,
-#pragma warning restore CS1591
-}
-
 /// <summary>
 /// The record of what an operation did to its inputs' sub-shapes.
 /// </summary>
@@ -39,26 +24,26 @@ public enum ShapeType
 /// share one can't see it change.
 /// </para>
 /// </remarks>
-public sealed class ShapeHistory
+public sealed class ModelHistory
 {
     // The kernel's record, immutable
-    private readonly global::Kerf.Topology.ShapeHistory _wrapped;
+    private readonly ShapeHistory _wrapped;
     private (ShapeTrace Before, ShapeTrace Brought)? _traces;
 
     /// <summary>The sub-shape types BRepTools_History records; wires, shells and compounds are containers.</summary>
-    internal static readonly global::Kerf.Topology.ShapeType[] TrackedTypes =
+    internal static readonly ShapeType[] TrackedTypes =
     [
-        global::Kerf.Topology.ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, global::Kerf.Topology.ShapeType.Face, global::Kerf.Topology.ShapeType.Solid,
+        ShapeType.Vertex, ShapeType.Edge, ShapeType.Face, ShapeType.Solid,
     ];
 
     /// <summary>The inputs that were already there.</summary>
-    public IReadOnlyList<global::Kerf.Topology.Shape> Before { get; }
+    public IReadOnlyList<Shape> Before { get; }
 
     /// <summary>The inputs the operation brought in.</summary>
-    public IReadOnlyList<global::Kerf.Topology.Shape> Brought { get; }
+    public IReadOnlyList<Shape> Brought { get; }
 
-    private ShapeHistory(global::Kerf.Topology.ShapeHistory history, IEnumerable<global::Kerf.Topology.Shape> before,
-                         IEnumerable<global::Kerf.Topology.Shape> brought)
+    private ModelHistory(ShapeHistory history, IEnumerable<Shape> before,
+                         IEnumerable<Shape> brought)
     {
         _wrapped = history;
         Before = before.ToArray();
@@ -66,16 +51,16 @@ public sealed class ShapeHistory
     }
 
     /// <summary>An empty record: everything came through untouched.</summary>
-    public ShapeHistory(IEnumerable<global::Kerf.Topology.Shape>? before = null, IEnumerable<global::Kerf.Topology.Shape>? brought = null)
-        : this(global::Kerf.Topology.ShapeHistory.Empty, before ?? [], brought ?? []) { }
+    public ModelHistory(IEnumerable<Shape>? before = null, IEnumerable<Shape>? brought = null)
+        : this(ShapeHistory.Empty, before ?? [], brought ?? []) { }
 
     /// <summary>A record of the kernel's history of an operation (immutable, so shared).</summary>
-    public static ShapeHistory FromHistory(global::Kerf.Topology.ShapeHistory? history, IEnumerable<global::Kerf.Topology.Shape>? before = null,
-                                           IEnumerable<global::Kerf.Topology.Shape>? brought = null) =>
-        new(history ?? global::Kerf.Topology.ShapeHistory.Empty, before ?? [], brought ?? []);
+    public static ModelHistory FromHistory(ShapeHistory? history, IEnumerable<Shape>? before = null,
+                                           IEnumerable<Shape>? brought = null) =>
+        new(history ?? ShapeHistory.Empty, before ?? [], brought ?? []);
 
     /// <summary>The kernel's history this record holds.</summary>
-    public global::Kerf.Topology.ShapeHistory ToHistory() => _wrapped;
+    public ShapeHistory ToHistory() => _wrapped;
 
     // ---- Constructors ----
 
@@ -88,13 +73,13 @@ public sealed class ShapeHistory
     /// modified into something that is. An algorithm that throws when asked about a kind it doesn't track
     /// (<c>BRepFilletAPI_MakeFillet2d</c> only answers for edges) is taken to have no answer for it.
     /// </remarks>
-    internal static ShapeHistory FromAlgorithm(Func<global::Kerf.Topology.Shape, IEnumerable<global::Kerf.Topology.Shape>> modified,
-                                               Func<global::Kerf.Topology.Shape, IEnumerable<global::Kerf.Topology.Shape>> generated,
-                                               IEnumerable<global::Kerf.Topology.Shape> inputs, global::Kerf.Topology.Shape result)
+    internal static ModelHistory FromAlgorithm(Func<Shape, IEnumerable<Shape>> modified,
+                                               Func<Shape, IEnumerable<Shape>> generated,
+                                               IEnumerable<Shape> inputs, Shape result)
     {
         var inputList = inputs.ToList();
         var entries = new List<ShapeHistoryEntry>();
-        var present = new HashSet<global::Kerf.Topology.Shape>(ShapeComparer.Same);
+        var present = new HashSet<Shape>(ShapeComparer.Same);
         foreach (var sub in TrackedSubshapes([result]))
             present.Add(sub);
         foreach (var sub in TrackedSubshapes(inputList))
@@ -108,7 +93,7 @@ public sealed class ShapeHistory
             if (mods.Length == 0 && !present.Contains(sub))
                 entries.Add(new(sub, ShapeHistoryKind.Removed, []));
         }
-        return new ShapeHistory(global::Kerf.Topology.ShapeHistory.Create(entries), inputList, []);
+        return new ModelHistory(ShapeHistory.Create(entries), inputList, []);
     }
 
     /// <summary>
@@ -116,12 +101,12 @@ public sealed class ShapeHistory
     /// and changes the root Location; each child is normalised by its root Location so repeated instances keep
     /// their relative placements. Sub-shapes whose Location didn't change are left untouched.
     /// </summary>
-    public static ShapeHistory FromRelocation(global::Kerf.Topology.Shape before, global::Kerf.Topology.Shape after)
+    public static ModelHistory FromRelocation(Shape before, Shape after)
     {
         var entries = new List<ShapeHistoryEntry>();
         var beforeToLocal = before.Placement.Inverted();
         var afterToLocal = after.Placement.Inverted();
-        var placed = new Dictionary<global::Kerf.Topology.Shape, global::Kerf.Topology.Shape>(ShapeComparer.Same);
+        var placed = new Dictionary<Shape, Shape>(ShapeComparer.Same);
         foreach (var sub in TrackedSubshapes([after]))
             placed[sub.Moved(afterToLocal)] = sub;
         foreach (var sub in TrackedSubshapes([before]))
@@ -130,21 +115,21 @@ public sealed class ShapeHistory
             if (placed.TryGetValue(key, out var moved) && !moved.IsSame(sub))
                 entries.Add(new(sub, ShapeHistoryKind.Modified, [moved]));
         }
-        return new ShapeHistory(global::Kerf.Topology.ShapeHistory.Create(entries), [before], []);
+        return new ModelHistory(ShapeHistory.Create(entries), [before], []);
     }
 
     /// <summary>
     /// The records the given shapes carry from the operations that made them, merged into one, or null if
     /// none of them carries one.
     /// </summary>
-    public static ShapeHistory? Of(IEnumerable<Shape?> shapes)
+    public static ModelHistory? Of<T>(IEnumerable<T> shapes) where T : IShape
     {
-        var found = shapes.Select(s => s?.History).OfType<ShapeHistory>().ToList();
+        var found = shapes.Select(s => s.AsShape().History).OfType<ModelHistory>().ToList();
         if (found.Count == 0)
             return null;
         if (found.Count == 1)
             return found[0];
-        var merged = new ShapeHistory(found.SelectMany(h => h.Before), found.SelectMany(h => h.Brought));
+        var merged = new ModelHistory(found.SelectMany(h => h.Before), found.SelectMany(h => h.Brought));
         foreach (var history in found)
             merged = merged.Merge(history);
         return merged;
@@ -156,24 +141,24 @@ public sealed class ShapeHistory
     /// This record extended with the knowledge that <paramref name="before"/> was rebuilt into
     /// <paramref name="after"/>: for what an algorithm did but doesn't say.
     /// </summary>
-    public ShapeHistory AddModified(global::Kerf.Topology.Shape before, global::Kerf.Topology.Shape after)
+    public ModelHistory AddModified(Shape before, Shape after)
     {
         if (!IsSupportedType(before))
             return this;
-        var history = global::Kerf.Topology.ShapeHistory.Create([.. _wrapped.Entries, new(before, ShapeHistoryKind.Modified, [after])]);
-        return new ShapeHistory(history, Before, Brought);
+        var history = ShapeHistory.Create([.. _wrapped.Entries, new(before, ShapeHistoryKind.Modified, [after])]);
+        return new ModelHistory(history, Before, Brought);
     }
 
     /// <summary>This record extended with the operation that came after it.</summary>
-    public ShapeHistory Merge(ShapeHistory? later)
+    public ModelHistory Merge(ModelHistory? later)
     {
         if (later is null)
             return this;
-        return new ShapeHistory(_wrapped.Then(later._wrapped), Before, Brought);
+        return new ModelHistory(_wrapped.Then(later._wrapped), Before, Brought);
     }
 
     /// <summary>This record, saying which inputs were already there and which were brought in.</summary>
-    public ShapeHistory WithInputs(IEnumerable<global::Kerf.Topology.Shape> before, IEnumerable<global::Kerf.Topology.Shape> brought) =>
+    public ModelHistory WithInputs(IEnumerable<Shape> before, IEnumerable<Shape> brought) =>
         new(_wrapped, before, brought);   // the kernel's history is immutable, so it is shared
 
     private (ShapeTrace Before, ShapeTrace Brought) Traces => _traces ??= (new ShapeTrace(this, Before), new ShapeTrace(this, Brought));
@@ -184,7 +169,7 @@ public sealed class ShapeHistory
     /// before. One that descends only from what was there before is not. One the record can't attribute to any
     /// input is new, and so last.
     /// </summary>
-    public bool IsLast(global::Kerf.Topology.Shape shape)
+    public bool IsLast(Shape shape)
     {
         var (before, brought) = Traces;
         if (brought.IsUntouched(shape) || brought.IsModified(shape))
@@ -193,7 +178,7 @@ public sealed class ShapeHistory
     }
 
     /// <summary>Did this sub-shape of the result exist in no input, in any form?</summary>
-    public bool IsNew(global::Kerf.Topology.Shape shape)
+    public bool IsNew(Shape shape)
     {
         var (before, brought) = Traces;
         foreach (var trace in new[] { brought, before })
@@ -203,7 +188,7 @@ public sealed class ShapeHistory
     }
 
     /// <summary>What an input sub-shape was rebuilt into, if anything.</summary>
-    public global::Kerf.Topology.Shape[] Modified(global::Kerf.Topology.Shape shape)
+    public Shape[] Modified(Shape shape)
     {
         if (!IsSupportedType(shape))
             return [];
@@ -211,7 +196,7 @@ public sealed class ShapeHistory
     }
 
     /// <summary>What was made from an input sub-shape, if anything.</summary>
-    public global::Kerf.Topology.Shape[] Generated(global::Kerf.Topology.Shape shape)
+    public Shape[] Generated(Shape shape)
     {
         if (!IsSupportedType(shape))
             return [];
@@ -219,19 +204,19 @@ public sealed class ShapeHistory
     }
 
     /// <summary>Was an input sub-shape removed by the operation?</summary>
-    public bool IsRemoved(global::Kerf.Topology.Shape shape) => IsSupportedType(shape) && _wrapped.IsRemoved(shape);
+    public bool IsRemoved(Shape shape) => IsSupportedType(shape) && _wrapped.IsRemoved(shape);
 
     /// <summary>The kinds of sub-shape a history records (OCCT's <c>BRepTools_History::IsSupportedType</c>).</summary>
-    internal static bool IsSupportedType(global::Kerf.Topology.Shape shape) => !shape.IsNull && TrackedTypes.Contains(shape.Type);
+    internal static bool IsSupportedType(Shape shape) => !shape.IsNull && TrackedTypes.Contains(shape.Type);
 
     /// <summary>The record indexed from the result's side for the given inputs.</summary>
-    public ShapeTrace TraceOf(IEnumerable<global::Kerf.Topology.Shape> inputs) => new(this, inputs);
+    public ShapeTrace TraceOf(IEnumerable<Shape> inputs) => new(this, inputs);
 
     /// <summary>Every distinct vertex, edge, face and solid of the given shapes.</summary>
-    internal static global::Kerf.Topology.Shape[] TrackedSubshapes(IEnumerable<global::Kerf.Topology.Shape> shapes)
+    internal static Shape[] TrackedSubshapes(IEnumerable<Shape> shapes)
     {
-        var seen = new HashSet<global::Kerf.Topology.Shape>(ShapeComparer.Same);
-        var found = new List<global::Kerf.Topology.Shape>();
+        var seen = new HashSet<Shape>(ShapeComparer.Same);
+        var found = new List<Shape>();
         foreach (var shape in shapes)
         {
             if (shape.IsNull)
@@ -245,7 +230,7 @@ public sealed class ShapeHistory
     }
 
     /// <summary>What an algorithm says about one sub-shape, or nothing if it won't say.</summary>
-    private static global::Kerf.Topology.Shape[] Answers(Func<global::Kerf.Topology.Shape, IEnumerable<global::Kerf.Topology.Shape>> query, global::Kerf.Topology.Shape shape)
+    private static Shape[] Answers(Func<Shape, IEnumerable<Shape>> query, Shape shape)
     {
         try
         {
@@ -259,19 +244,19 @@ public sealed class ShapeHistory
 }
 
 /// <summary>
-/// The record of a <see cref="ShapeHistory"/> read from the result's side. Built for a set of inputs, it answers
+/// The record of a <see cref="ModelHistory"/> read from the result's side. Built for a set of inputs, it answers
 /// for any sub-shape of the result whether it was one of those inputs' sub-shapes left untouched, was modified
 /// from one, or was generated from one.
 /// </summary>
 public sealed class ShapeTrace
 {
-    private readonly HashSet<global::Kerf.Topology.Shape> _untouched = new(ShapeComparer.Same);
-    private readonly Dictionary<global::Kerf.Topology.Shape, global::Kerf.Topology.Shape> _modifiedFrom = new(ShapeComparer.Same);
-    private readonly Dictionary<global::Kerf.Topology.Shape, global::Kerf.Topology.Shape> _generatedFrom = new(ShapeComparer.Same);
+    private readonly HashSet<Shape> _untouched = new(ShapeComparer.Same);
+    private readonly Dictionary<Shape, Shape> _modifiedFrom = new(ShapeComparer.Same);
+    private readonly Dictionary<Shape, Shape> _generatedFrom = new(ShapeComparer.Same);
 
-    internal ShapeTrace(ShapeHistory history, IEnumerable<global::Kerf.Topology.Shape> inputs)
+    internal ShapeTrace(ModelHistory history, IEnumerable<Shape> inputs)
     {
-        foreach (var sub in ShapeHistory.TrackedSubshapes(inputs))
+        foreach (var sub in ModelHistory.TrackedSubshapes(inputs))
         {
             _untouched.Add(sub);
             foreach (var shape in history.Modified(sub))
@@ -282,14 +267,14 @@ public sealed class ShapeTrace
     }
 
     /// <summary>Was this result sub-shape an input sub-shape, unchanged?</summary>
-    public bool IsUntouched(global::Kerf.Topology.Shape shape) => _untouched.Contains(shape);
+    public bool IsUntouched(Shape shape) => _untouched.Contains(shape);
 
     /// <summary>Was this result sub-shape rebuilt from an input sub-shape?</summary>
-    public bool IsModified(global::Kerf.Topology.Shape shape) => _modifiedFrom.ContainsKey(shape);
+    public bool IsModified(Shape shape) => _modifiedFrom.ContainsKey(shape);
 
     /// <summary>Was this result sub-shape made from an input sub-shape of another kind?</summary>
-    public bool IsGenerated(global::Kerf.Topology.Shape shape) => _generatedFrom.ContainsKey(shape);
+    public bool IsGenerated(Shape shape) => _generatedFrom.ContainsKey(shape);
 
     /// <summary>Did this result sub-shape come from the inputs in any way?</summary>
-    public bool IsDescendant(global::Kerf.Topology.Shape shape) => IsUntouched(shape) || IsModified(shape) || IsGenerated(shape);
+    public bool IsDescendant(Shape shape) => IsUntouched(shape) || IsModified(shape) || IsGenerated(shape);
 }

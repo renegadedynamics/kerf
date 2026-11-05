@@ -120,7 +120,7 @@ public class ShapeMeshTests
     [Fact]
     public void AnEmptyShapeHasAnEmptyMesh()
     {
-        Assert.Same(ShapeMesh.Empty, new Compound([]).Triangulate(0.1));
+        Assert.Same(ShapeMesh.Empty, Compound.Make([]).Triangulate(0.1));
         Assert.Equal(0, new Part().Triangulate().TriangleCount);
     }
 
@@ -130,7 +130,7 @@ public class ShapeMeshTests
         var box = new Box(2, 2, 2).Moved(new Location(new Vector(10.0, 20.0, 30.0), new Vector(0.0, 0.0, 45.0)));
         var mesh = box.Triangulate(0.1);
         var points = mesh.Faces.SelectMany(f => Enumerable.Range(0, f.NodeCount).Select(i => Node(f.Positions, i))).ToList();
-        var bounds = box.BoundingBox();
+        var bounds = box.BoundBox();
         Assert.All(points, p => Assert.True(p.X >= bounds.Min.X - 1e-4 && p.X <= bounds.Max.X + 1e-4 && p.Y >= bounds.Min.Y - 1e-4 && p.Y <= bounds.Max.Y + 1e-4 && p.Z >= bounds.Min.Z - 1e-4 && p.Z <= bounds.Max.Z + 1e-4));
         Check.AlmostEqual(box.Center(), points.Aggregate(new Vector(0, 0, 0), (s, p) => s + p) * (1.0 / points.Count), 4);
     }
@@ -188,9 +188,9 @@ public class ShapeMeshTests
     {
         // Meshing itself is OCCT's: what's timed is copying the mesh out, the part that is the library's
         var sphere = new Sphere(100);
-        var meshed = sphere.Rewrapped(sphere.MeshedCopy(0.01, 0.2, relative: false));
-        var faces = meshed.Faces().Select(f => f.TopoShape).ToList();
-        var edges = meshed.Edges().Select(e => e.TopoShape).ToList();
+        var meshed = sphere.Shape.MeshedCopy(0.01, 0.2, relative: false);
+        var faces = meshed.SelectFaces().Select(f => (Shape)f).ToList();
+        var edges = meshed.SelectEdges().Select(e => (Shape)e).ToList();
         // Kerf (unit 10H6): one cold wall-clock sample (the first call, with its JIT) failed in merge gates on a loaded
         // machine (1,200 ms against about 12 ms warm), so the test checks what the copy allocates, which load doesn't
         // change, and the best of five runs. The copy writes the normals straight into its buffer: it computed them on a
@@ -202,7 +202,7 @@ public class ShapeMeshTests
         {
             long before = GC.GetAllocatedBytesForCurrentThread();
             var clock = Stopwatch.StartNew();
-            buffers = Kerf.Engine.Meshing.MeshExtraction.Extract(meshed.TopoShape, faces, edges, 0.01, 0.2);
+            buffers = Kerf.Engine.Meshing.MeshExtraction.Extract(meshed, faces, edges, 0.01, 0.2);
             clock.Stop();
             allocated = Math.Min(allocated, GC.GetAllocatedBytesForCurrentThread() - before);
             best = clock.Elapsed < best ? clock.Elapsed : best;
@@ -217,9 +217,9 @@ public class ShapeMeshTests
     [Fact]
     public void AnAssemblyTreeSharesTheMeshOfInstances()
     {
-        var bolt = new Cylinder(1, 10).WithLabel("bolt").WithColor(new Color(0.5, 0.5, 0.5, 0.8));
+        var bolt = new Cylinder(1, 10).WithLabel("bolt").WithColor(Color.Rgb(0.5, 0.5, 0.5, 0.8));
         var plate = new Box(20, 20, 2).WithLabel("plate");
-        var assembly = Compound.Assembly(
+        var assembly = new Assembly(
             [plate, bolt.Moved(new Location(new Vector(-5.0, 0.0, 0.0))), bolt.Moved(new Location(new Vector(5.0, 0.0, 0.0)))], label: "joint");
 
         var tree = assembly.TriangulateTree();

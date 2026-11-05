@@ -78,7 +78,10 @@ public class ExtensionLoadTests
             const BindingFlags invoke = BindingFlags.Public | BindingFlags.Instance | BindingFlags.OptionalParamBinding;
             var boxType = assembly.GetType("Kerf.Modeling.Box", throwOnError: true)!;
             var box = boxType.InvokeMember("", invoke | BindingFlags.CreateInstance, null, null, [80.0, 60.0, 10.0])!;
-            var mesh = boxType.InvokeMember("Triangulate", invoke | BindingFlags.InvokeMethod, null, box, [0.1])!;
+            // An extension member: a static method of the extensions' class, generic in the receiver
+            var triangulate = assembly.GetType("Kerf.Modeling.ShapeExtensions", throwOnError: true)!.GetMethods()
+                .First(m => m.Name == "Triangulate" && m.GetParameters().Length == 4).MakeGenericMethod(boxType);
+            var mesh = triangulate.Invoke(null, [box, 0.1, 0.2, false])!;
             return (int)mesh.GetType().GetProperty("TriangleCount")!.GetValue(mesh)!;
         }).GetAwaiter().GetResult();
         var loads = context.NativeLoads.ToList();

@@ -6,7 +6,7 @@ namespace Kerf.Modeling;
 /// </summary>
 /// <remarks>
 /// It keeps the order of CPython's <c>list(set(points))</c> (its float and tuple hashes, its set table and resizing),
-/// because build123d takes the first points of that list: <see cref="Shape1D.CommonPlane(IEnumerable{Shape1D?}, double)"/>
+/// because build123d takes the first points of that list: <c>CommonPlane</c>
 /// picks its plane on a tie by it, and the Python-reference tests pin the plane. A <see cref="HashSet{T}"/> keeps no
 /// such order.
 /// </remarks>

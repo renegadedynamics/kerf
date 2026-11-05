@@ -16,11 +16,11 @@ internal static class Extras
     /// Whether the edge's own 3D curve, unplaced, lies in a plane normal to <paramref name="normal"/>
     /// (<c>ShapeAnalysis_Curve::IsPlanar</c> on the edge's curve), or null if it has none.
     /// </summary>
-    public static bool? EdgeCurve3DIsPlanar(global::Kerf.Topology.Edge edge, Direction3D normal, double tolerance) =>
+    public static bool? EdgeCurve3DIsPlanar(Edge edge, Direction3D normal, double tolerance) =>
         edge.TryGetLocalCurve(out var curve, out _, out _) ? curve.IsPlanar(normal, tolerance) : null;
 
     /// <summary>A shape in OCCT's BRep text format, with its triangulations if <paramref name="withTriangles"/>.</summary>
-    public static byte[] WriteBRep(global::Kerf.Topology.Shape shape, bool withTriangles = false)
+    public static byte[] WriteBRep(Shape shape, bool withTriangles = false)
     {
         using var stream = new MemoryStream();
         Failures.Check(Brep.Write(shape, stream, new BrepWriteOptions { WithTriangles = withTriangles }), () => "write BRep");
@@ -31,7 +31,7 @@ internal static class Extras
     /// The shape of BRep text, refused (a failure, <c>exchange.malformed</c>) if it holds NULs or a word too long to be
     /// BRep, or if <see cref="Brep.Read"/> finds it truncated or malformed.
     /// </summary>
-    public static Result<global::Kerf.Topology.Shape> ReadBRep(ReadOnlySpan<byte> data)
+    public static Result<Shape> ReadBRep(ReadOnlySpan<byte> data)
     {
         // The native reader overran on long words and looped at the end of truncated data, so the native binding checked
         // first; the kernel's reader is safe, but the same input is refused the same way
@@ -49,6 +49,6 @@ internal static class Extras
         return Brep.Read(stream);
     }
 
-    private static Result<global::Kerf.Topology.Shape> Refused(string message) =>
-        Result<global::Kerf.Topology.Shape>.Failure(Diagnostic.Error(Malformed, message));
+    private static Result<Shape> Refused(string message) =>
+        Result<Shape>.Failure(Diagnostic.Error(Malformed, message));
 }

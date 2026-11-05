@@ -13,10 +13,15 @@ public static partial class Operations
     /// </exception>
     /// <returns>The drafted part, or the failure (<see cref="ModelingDiagnostics.DraftFailed"/>) if the draft can't be made.</returns>
     public static Result<Part> Draft(IEnumerable<Face> faces, Plane neutralPlane, double angle) =>
-        Failures.Try(() => DraftOrThrow(faces, neutralPlane, angle));
+        Failures.Try(() => DraftOrThrow(TargetOf(faces, "draft"), faces, neutralPlane, angle));
 
-    internal static Part DraftOrThrow(IEnumerable<Face> faces, Plane neutralPlane, double angle)
+    /// <summary>The faces of <paramref name="target"/> drafted (see <see cref="Draft(IEnumerable{Face}, Plane, double)"/>).</summary>
+    public static Result<Part> Draft(Shape target, IEnumerable<Face> faces, Plane neutralPlane, double angle) =>
+        Failures.Try(() => DraftOrThrow(target, faces, neutralPlane, angle));
+
+    internal static Part DraftOrThrow(Shape target, IEnumerable<Face> faces, Plane neutralPlane, double angle)
     {
+        using var log = HistoryLog.Open();
         var faceList = faces.ToList();
 
         GeomType[] validGeomTypes = [GeomType.Plane, GeomType.Cylinder, GeomType.Cone];
@@ -25,11 +30,11 @@ public static partial class Operations
             throw new ArgumentException("Draft not supported on face(s) with geometry: "
                                         + string.Join(", ", unsupported.Select(f => f.GeomType.ToString().ToUpperInvariant()).Distinct()));
 
-        // Check that all the faces are associated with the same Solid
-        var topoParents = faceList.Select(f => f.TopoParent).OfType<Shape>().Distinct().ToList();
-        if (topoParents.Count != 1)
+        // Check that all the faces are of the one Solid
+        var targetFaces = target.SelectFaces();
+        if (faceList.Any(f => !targetFaces.Contains(f, ShapeComparer<Face>.Same)))
             throw new ArgumentException("All faces must share the same topological parent (a Solid)");
-        var parentSolids = topoParents[0].Solids();
+        var parentSolids = target.SelectSolids();
         if (parentSolids.Count != 1)
             throw new ArgumentException("Topological parent must be a single Solid");
 
@@ -38,11 +43,11 @@ public static partial class Operations
         var newSolid = parentSolids[0].Draft(faceList, neutralPlane, angle);
 
         // Phase 5: in builder mode the drafted solid replaces the builder's part
-        return (Part)new Part([newSolid]).MadeBy(ShapeHistory.Of([newSolid]));
+        return (Part)new Part([newSolid]).MadeBy(ModelHistory.Of([newSolid]));
     }
 
     /// <inheritdoc cref="Draft(IEnumerable{Face}, Plane, double)"/>
-    public static Result<Part> Draft(Face face, Plane neutralPlane, double angle) => Draft([face], neutralPlane, angle);
+    public static Result<Part> Draft(Shape target, Face face, Plane neutralPlane, double angle) => Draft(target, [face], neutralPlane, angle);
 
     // ---- extrude ----
 
@@ -63,8 +68,7 @@ public static partial class Operations
     {
         // Phase 5: in builder mode the faces default to the pending faces (on their pending planes), and the result is
         // combined with mode
-        ArgumentNullException.ThrowIfNull(toExtrude);
-        return ExtrudeCore(toExtrude.Faces(), amount, null, null, options ?? ExtrudeOptions.Default);
+        return ExtrudeCore(toExtrude.SelectFaces(), amount, null, null, options ?? ExtrudeOptions.Default);
     }
 
     /// <inheritdoc cref="Extrude(Shape, double, ExtrudeOptions?)"/>
@@ -95,9 +99,7 @@ public static partial class Operations
 
     internal static Part ExtrudeOrThrow(Shape toExtrude, Until until, Shape target, ExtrudeOptions? options)
     {
-        ArgumentNullException.ThrowIfNull(toExtrude);
-        ArgumentNullException.ThrowIfNull(target);
-        return ExtrudeCore(toExtrude.Faces(), null, until, target, options ?? ExtrudeOptions.Default);
+        return ExtrudeCore(toExtrude.SelectFaces(), null, until, target, options ?? ExtrudeOptions.Default);
     }
 
     /// <inheritdoc cref="Extrude(Shape, Until, Shape, ExtrudeOptions?)"/>
@@ -107,7 +109,6 @@ public static partial class Operations
     internal static Part ExtrudeOrThrow(IEnumerable<Face> toExtrude, Until until, Shape target, ExtrudeOptions? options)
     {
         ArgumentNullException.ThrowIfNull(toExtrude);
-        ArgumentNullException.ThrowIfNull(target);
         return ExtrudeCore([.. toExtrude], null, until, target, options ?? ExtrudeOptions.Default);
     }
 
@@ -147,9 +148,9 @@ public static partial class Operations
                 }
                 else
                 {
-                    if (target!.IsEmpty)
+                    if (target!.Value.IsEmpty)
                         throw new ArgumentException("The target to extrude up to is empty.", nameof(target));
-                    newSolids.Add(Solid.ExtrudeUntil(face, target, plane.ZDir * sign, until!.Value));
+                    newSolids.Add(Solid.ExtrudeUntil(face, target.Value, plane.ZDir * sign, until!.Value));
                 }
             }
         }
@@ -190,21 +191,22 @@ public static partial class Operations
 
     internal static Part LoftOrThrow(IEnumerable<Shape> sections, bool ruled, bool clean)
     {
+        using var log = HistoryLog.Open();
         // Phase 5: in builder mode the sections default to the pending faces, and the result is combined with mode
         var sectionList = sections?.ToList() ?? [];
-        if (sectionList.All(s => s is null))
+        if (sectionList.Count == 0)
             throw new ArgumentException("No sections provided");
         // An empty section is no section; a loft through nothing is nothing
-        var inputSections = sectionList.Where(s => s is { IsEmpty: false }).ToList();
+        var inputSections = sectionList.Where(s => !s.IsEmpty).ToList();
         if (inputSections.Count == 0)
             return new Part();
 
         // Validate Vertex placement
-        if (inputSections.Any(s => s is Vertex))
+        if (inputSections.Any(s => s.IsVertex()))
         {
-            if (inputSections[0] is not Vertex && inputSections[^1] is not Vertex)
+            if (!inputSections[0].IsVertex() && !inputSections[^1].IsVertex())
                 throw new ArgumentException("Vertices must be the first, last, or first and last elements");
-            if (inputSections.Skip(1).SkipLast(1).Any(s => s is Vertex))
+            if (inputSections.Skip(1).SkipLast(1).Any(s => s.IsVertex()))
                 throw new ArgumentException("Vertices must be the first, last, or first and last elements");
         }
 
@@ -213,10 +215,10 @@ public static partial class Operations
         var faces = new List<Face>();
         foreach (var s in inputSections)
         {
-            if (s is Vertex)
+            if (s.TryAs<Vertex>(out _))
                 loftSections.Add(s);
             else
-                foreach (var face in s.Faces())
+                foreach (var face in s.SelectFaces())
                 {
                     loftSections.Add(face.OuterWire());
                     faces.Add(face);
@@ -254,17 +256,17 @@ public static partial class Operations
         }
 
         // Perform lofts
-        Shape newSolid = Solid.MakeLoft(loftSections, ruled);
+        Shape newSolid = SolidExtensions.MakeLoft(loftSections, ruled);
         if (holeSections.Count > 0)
-            newSolid = newSolid.Cut(holeSections.Select(holes => (Shape)Solid.MakeLoft(holes, ruled)));
+            newSolid = newSolid.Cut(holeSections.Select(holes => (Shape)SolidExtensions.MakeLoft(holes.Select(w => (Shape)w), ruled)));
 
         // Try to recover an invalid loft
         if (!newSolid.IsValid)
         {
             try
             {
-                var recoveryFaces = newSolid.Faces().Concat(loftSections.OfType<Wire>().Select(w => new Face(w)));
-                newSolid = new Solid(new Shell(recoveryFaces));
+                var recoveryFaces = newSolid.SelectFaces().Concat(loftSections.Where(w => w.IsWire()).Select(w => Face.Make((Wire)w)));
+                newSolid = Solid.Make(Shell.Make(recoveryFaces));
                 if (clean)
                     newSolid = newSolid.Clean();
                 if (!newSolid.IsValid)
@@ -280,7 +282,7 @@ public static partial class Operations
         if (clean)
             newSolid = newSolid.Clean();
 
-        return (Part)new Part([newSolid]).MadeBy(ShapeHistory.Of([newSolid]));
+        return (Part)new Part([newSolid]).MadeBy(ModelHistory.Of([newSolid]));
     }
 
     /// <summary>The permutations of 0 … n - 1 in lexicographic order, as Python's <c>itertools.permutations</c>.</summary>
@@ -358,9 +360,9 @@ public static partial class Operations
         var angle = Numerics.FloorMod(revolutionArc, sign * 360.0);
         angle = angle == 0 ? sign * 360.0 : angle;
 
-        if (profileList.All(s => s is null))
+        if (profileList.Count == 0)
             throw new ArgumentException("No profiles provided");
-        var profileFaces = new ShapeList<Shape>(profileList.OfType<Shape>()).Faces();
+        var profileFaces = new ShapeList<Shape>(profileList).Faces();
 
         var revolveAxis = axis ?? Axis.Z;
         var newSolids = profileFaces.Select(p => (Shape)Solid.Revolve(p, angle, revolveAxis)).ToList();
@@ -383,10 +385,8 @@ public static partial class Operations
     public static Sketch Section(Shape obj, IEnumerable<Plane> sectionBy, double height = 0.0, bool clean = true)
     {
         // Phase 5: in builder mode the object defaults to the builder's part and the planes to its workplanes
-        if (obj is null)
-            throw new ArgumentException("No object to section");
 
-        var bbox = obj.BoundingBox(optimal: false);
+        var bbox = obj.BoundBox(optimal: false);
         var maxSize = new[] { bbox.Min.X, bbox.Min.Y, bbox.Min.Z, bbox.Max.X, bbox.Max.Y, bbox.Max.Z }.Max(Math.Abs) + bbox.Diagonal;
 
         var planes = sectionBy.Select(plane =>
@@ -420,8 +420,7 @@ public static partial class Operations
     {
         // Phase 5: in builder mode the faces default to the pending faces, and the result is combined with mode.
         // Phase 7: a sheet Shell with SheetMetalParameters (and BuildSheet's pending sheets) is thickened as sheet material
-        ArgumentNullException.ThrowIfNull(toThicken);
-        return ThickenCore(toThicken.Faces(), amount, options ?? ThickenOptions.Default);
+        return ThickenCore(toThicken.SelectFaces(), amount, options ?? ThickenOptions.Default);
     }
 
     /// <inheritdoc cref="Thicken(Shape, double, ThickenOptions?)"/>

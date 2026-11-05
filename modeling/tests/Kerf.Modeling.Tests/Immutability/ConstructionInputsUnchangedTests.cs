@@ -14,18 +14,18 @@ public class ConstructionInputsUnchangedTests
 {
     private static Box Part() => new(10, 6, 4);
 
-    private static Face Top(Shape part) => part.Faces().OrderBy(Axis.Z).Last();
+    private static Face Top(Shape part) => part.SelectFaces().OrderBy(Axis.Z).Last();
 
-    private static Face Side(Shape part) => part.Faces().OrderBy(Axis.X).Last();
+    private static Face Side(Shape part) => part.SelectFaces().OrderBy(Axis.X).Last();
 
-    private static byte[] Text(Shape shape) => Extras.WriteBRep(shape.KernelShape);
+    private static byte[] Text(Shape shape) => Extras.WriteBRep(shape);
 
     private static bool Holds(Shape result, Shape sub) =>
-        sub switch
+        TopoUtil.Typed(sub) switch
         {
-            Face => result.Faces().Any(f => f.KernelShape.IsSame(sub.KernelShape)),
-            Vertex => result.Vertices().Any(v => v.KernelShape.IsSame(sub.KernelShape)),
-            _ => result.Edges().Any(e => e.KernelShape.IsSame(sub.KernelShape)),
+            Face => result.SelectFaces().Any(f => f.IsSame(sub)),
+            Vertex => result.SelectVertices().Any(v => v.IsSame(sub)),
+            _ => result.SelectEdges().Any(e => e.IsSame(sub)),
         };
 
     private static Shape Untouched(Shape part, Func<Shape> construction)
@@ -44,7 +44,7 @@ public class ConstructionInputsUnchangedTests
         Face top = Top(part);
         Shape result = Untouched(part, () => Ops.Extrude(top, 3, new Ops.ExtrudeOptions { Clean = false }).Value);
         Assert.True(Holds(result, top));
-        Assert.All(top.Edges(), e => Assert.True(Holds(result, e)));
+        Assert.All(top.SelectEdges(), e => Assert.True(Holds(result, e)));
         Shape solid = Untouched(part, () => Solid.Extrude(top, new Vector(0, 0, 3)));
         Assert.True(Holds(solid, top));
     }

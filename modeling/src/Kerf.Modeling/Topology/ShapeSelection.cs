@@ -16,7 +16,7 @@ namespace Kerf.Modeling;
 /// </remarks>
 public static class ShapeSelection
 {
-    extension<T>(IEnumerable<T> shapes) where T : Shape
+    extension<T>(IEnumerable<T> shapes) where T : IShape
     {
         /// <summary>The shapes as a <see cref="ShapeList{T}"/>, in order.</summary>
         public ShapeList<T> ToShapeList() => shapes as ShapeList<T> ?? new ShapeList<T>(shapes);
@@ -24,38 +24,48 @@ public static class ShapeSelection
         // ---- Filtering ----
 
         /// <summary>The shapes of a geometry type: <c>faces.Where(GeomType.Plane)</c>.</summary>
-        public ShapeList<T> Where(GeomType geomType) => Keep(shapes, s => s.GeomType == geomType);
+        public ShapeList<T> Where(GeomType geomType) => Keep(shapes, s => s.AsShape().GeomType == geomType);
 
         /// <summary>The shapes not of a geometry type.</summary>
-        public ShapeList<T> WhereNot(GeomType geomType) => Keep(shapes, s => s.GeomType != geomType);
+        public ShapeList<T> WhereNot(GeomType geomType) => Keep(shapes, s => s.AsShape().GeomType != geomType);
 
-        /// <summary>The shapes of a convexity relative to the shape each was selected from.</summary>
-        public ShapeList<T> Where(Convexity convexity) => Keep(shapes, s => s.Convexity == convexity);
+        /// <summary>The shapes of a convexity relative to the shape the list was selected from (its <see cref="ShapeList{T}.Origin"/>).</summary>
+        /// <exception cref="InvalidOperationException">The list wasn't selected from a shape.</exception>
+        public ShapeList<T> Where(Convexity convexity)
+        {
+            var of = ConvexityKey(shapes);
+            return Keep(shapes, s => of(s) == convexity);
+        }
 
-        /// <summary>The shapes not of a convexity relative to the shape each was selected from.</summary>
-        public ShapeList<T> WhereNot(Convexity convexity) => Keep(shapes, s => s.Convexity != convexity);
+        /// <summary>The shapes not of a convexity relative to the shape the list was selected from (its <see cref="ShapeList{T}.Origin"/>).</summary>
+        /// <exception cref="InvalidOperationException">The list wasn't selected from a shape.</exception>
+        public ShapeList<T> WhereNot(Convexity convexity)
+        {
+            var of = ConvexityKey(shapes);
+            return Keep(shapes, s => of(s) != convexity);
+        }
 
         /// <summary>
         /// The planar faces whose normal, and the linear edges whose direction, is parallel to <paramref name="axis"/>
         /// within <paramref name="tolerance"/> radians.
         /// </summary>
-        public ShapeList<T> ParallelTo(Axis axis, double tolerance = 1e-5) => Keep(shapes, s => IsParallelTo(s, axis, tolerance));
+        public ShapeList<T> ParallelTo(Axis axis, double tolerance = 1e-5) => Keep(shapes, s => IsParallelTo(s.AsShape(), axis, tolerance));
 
         /// <summary>The shapes that <c>ParallelTo(axis)</c> leaves out.</summary>
-        public ShapeList<T> NotParallelTo(Axis axis, double tolerance = 1e-5) => Keep(shapes, s => !IsParallelTo(s, axis, tolerance));
+        public ShapeList<T> NotParallelTo(Axis axis, double tolerance = 1e-5) => Keep(shapes, s => !IsParallelTo(s.AsShape(), axis, tolerance));
 
         /// <summary>The faces, wires and edges parallel to <paramref name="plane"/> within <paramref name="tolerance"/>.</summary>
         public ShapeList<T> ParallelTo(Plane plane, double tolerance = 1e-5)
         {
             var planeAxis = new Axis(plane.Origin, plane.ZDir);
-            return Keep(shapes, s => IsParallelTo(s, plane, planeAxis, tolerance));
+            return Keep(shapes, s => IsParallelTo(s.AsShape(), plane, planeAxis, tolerance));
         }
 
         /// <summary>The shapes that <c>ParallelTo(plane)</c> leaves out.</summary>
         public ShapeList<T> NotParallelTo(Plane plane, double tolerance = 1e-5)
         {
             var planeAxis = new Axis(plane.Origin, plane.ZDir);
-            return Keep(shapes, s => !IsParallelTo(s, plane, planeAxis, tolerance));
+            return Keep(shapes, s => !IsParallelTo(s.AsShape(), plane, planeAxis, tolerance));
         }
 
         /// <summary>
@@ -67,7 +77,7 @@ public static class ShapeSelection
             var plane = new Plane(axis);
             return Keep(shapes, o =>
             {
-                var z = plane.ToLocalCoords(o).Center().Z;
+                var z = plane.ToLocalCoords(o.AsShape()).Center().Z;
                 return (includeMinimum ? minimum <= z : minimum < z) && (includeMaximum ? z <= maximum : z < maximum);
             }).OrderBy(axis);
         }
@@ -78,7 +88,7 @@ public static class ShapeSelection
         /// radius of a planar face) doesn't match.
         /// </summary>
         public ShapeList<T> WithValue(ShapeKey key, double value, double tolerance = Constants.Tolerance) =>
-            Keep(shapes, o => HasValue(o, key, value, tolerance));
+            Keep(shapes, o => HasValue(o.AsShape(), key, value, tolerance));
 
         /// <summary>
         /// The shapes whose <paramref name="measure"/> is <paramref name="value"/>: within <paramref name="tolerance"/>
@@ -89,7 +99,7 @@ public static class ShapeSelection
 
         /// <summary>The shapes that <c>WithValue(key, value)</c> leaves out, those without the measure among them.</summary>
         public ShapeList<T> WithoutValue(ShapeKey key, double value, double tolerance = Constants.Tolerance) =>
-            Keep(shapes, o => !HasValue(o, key, value, tolerance));
+            Keep(shapes, o => !HasValue(o.AsShape(), key, value, tolerance));
 
         /// <summary>The shapes that <c>WithValue(measure, value)</c> leaves out, those whose measure is null among them.</summary>
         public ShapeList<T> WithoutValue<TValue>(Func<T, TValue> measure, TValue value, double tolerance = Constants.Tolerance) =>
@@ -98,10 +108,10 @@ public static class ShapeSelection
         // ---- Sorting ----
 
         /// <summary>The shapes sorted by the position of their centres along <paramref name="axis"/>.</summary>
-        public ShapeList<T> OrderBy(Axis axis) => Sorted<T>(shapes, AlongAxis(axis), descending: false);
+        public ShapeList<T> OrderBy(Axis axis) => Sorted(shapes, AlongAxis<T>(axis), descending: false);
 
         /// <summary>The shapes sorted along <paramref name="axis"/>, the furthest first.</summary>
-        public ShapeList<T> OrderByDescending(Axis axis) => Sorted<T>(shapes, AlongAxis(axis), descending: true);
+        public ShapeList<T> OrderByDescending(Axis axis) => Sorted(shapes, AlongAxis<T>(axis), descending: true);
 
         /// <summary>
         /// The shapes sorted by a measure, the smallest first. Shapes without it (a vertex has no radius) are left out of
@@ -114,10 +124,10 @@ public static class ShapeSelection
 
         /// <summary>The shapes sorted by where along an edge or wire the point closest to each one's centre lies.</summary>
         /// <exception cref="ArgumentException"><paramref name="path"/> is empty.</exception>
-        public ShapeList<T> OrderBy(Shape1D path) => Sorted<T>(shapes, AlongPath(path, "sort"), descending: false);
+        public ShapeList<T> OrderBy(IShape1D path) => Sorted(shapes, AlongPath<T>(path, "sort"), descending: false);
 
         /// <summary>The shapes sorted along <paramref name="path"/>, the furthest along first.</summary>
-        public ShapeList<T> OrderByDescending(Shape1D path) => Sorted<T>(shapes, AlongPath(path, "sort"), descending: true);
+        public ShapeList<T> OrderByDescending(IShape1D path) => Sorted(shapes, AlongPath<T>(path, "sort"), descending: true);
 
         /// <summary>The shapes sorted by their minimal distance to <paramref name="other"/>, the nearest first.</summary>
         public ShapeList<T> OrderByDistanceTo(Shape other) => Sorted(shapes, o => o.DistanceTo(other), descending: false);
@@ -140,7 +150,7 @@ public static class ShapeSelection
         /// </summary>
         public ShapeGroups<T, double> GroupBy(Axis axis, int digits = 6)
         {
-            var along = AlongAxis(axis);
+            var along = AlongAxis<T>(axis);
             return new(o => Math.Round(along(o), digits), shapes);
         }
 
@@ -148,20 +158,20 @@ public static class ShapeSelection
         public ShapeGroups<T, double> GroupBy(ShapeKey key, int digits = 6) => key switch
         {
             ShapeKey.Length or ShapeKey.Radius or ShapeKey.Distance or ShapeKey.Area or ShapeKey.Volume =>
-                new(o => Math.Round(Measures.Of(o, key), digits), shapes),
+                new(o => Math.Round(Measures.Of(o.AsShape(), key), digits), shapes),
             _ => throw new ArgumentOutOfRangeException(nameof(key)),
         };
 
         /// <summary>The shapes grouped by where along an edge or wire the point closest to each one's centre lies.</summary>
         /// <exception cref="ArgumentException"><paramref name="path"/> is empty.</exception>
-        public ShapeGroups<T, double> GroupBy(Shape1D path, int digits = 6)
+        public ShapeGroups<T, double> GroupBy(IShape1D path, int digits = 6)
         {
-            var along = AlongPath(path, "group");
+            var along = AlongPath<T>(path, "group");
             return new(o => Math.Round(along(o), digits), shapes);
         }
 
-        /// <summary>The shapes grouped by their convexity, in the enum's order.</summary>
-        public ShapeGroups<T, Convexity> GroupByConvexity() => new(o => o.Convexity, shapes);
+        /// <summary>The shapes grouped by their convexity relative to the shape the list was selected from, in the enum's order.</summary>
+        public ShapeGroups<T, Convexity> GroupByConvexity() => new(ConvexityKey(shapes), shapes);
 
         /// <summary>
         /// The shapes grouped by a numeric key rounded to <paramref name="digits"/> decimal places, the groups in key
@@ -176,28 +186,39 @@ public static class ShapeSelection
         public ShapeGroups<T, TKey> GroupByValue<TKey>(Func<T, TKey> key, IComparer<TKey>? comparer = null) => new(key, shapes, comparer);
     }
 
-    private static ShapeList<T> Keep<T>(IEnumerable<T> shapes, Func<T, bool> keep) where T : Shape =>
-        new(Enumerable.Where(shapes, keep));
+    // A selection keeps the list's origin
+    private static IShape? OriginOf<T>(IEnumerable<T> shapes) where T : IShape => (shapes as ShapeList<T>)?.Origin;
 
-    private static ShapeList<T> Sorted<T>(IEnumerable<T> shapes, Func<T, double> key, bool descending) where T : Shape =>
-        new(descending ? Enumerable.OrderByDescending(shapes, key) : Enumerable.OrderBy(shapes, key));
-
-    private static ShapeList<T> SortedByKey<T>(IEnumerable<T> shapes, ShapeKey key, bool descending) where T : Shape => key switch
+    private static Func<T, Convexity> ConvexityKey<T>(IEnumerable<T> shapes) where T : IShape
     {
-        ShapeKey.Radius => Sorted(Enumerable.Where(shapes, Measures.HasRadius), o => Measures.Radius(o), descending),
-        ShapeKey.Length or ShapeKey.Distance or ShapeKey.Area or ShapeKey.Volume => Sorted(shapes, o => Measures.Of(o, key), descending),
+        var origin = OriginOf(shapes) ?? throw new InvalidOperationException(
+            "this selection was not taken from a shape, so there is nothing to classify it against - select from the shape, or ask it: shape.ConvexityOf(edge)");
+        return s => origin.ConvexityOfAny(s.AsShape(), origin.AsShape().TryAs(out Face f) && origin.AsShape().IsFace() ? f : null);
+    }
+
+    private static ShapeList<T> Keep<T>(IEnumerable<T> shapes, Func<T, bool> keep) where T : IShape =>
+        new(Enumerable.Where(shapes, keep), OriginOf(shapes));
+
+    private static ShapeList<T> Sorted<T>(IEnumerable<T> shapes, Func<T, double> key, bool descending) where T : IShape =>
+        new(descending ? Enumerable.OrderByDescending(shapes, key) : Enumerable.OrderBy(shapes, key), OriginOf(shapes));
+
+    private static ShapeList<T> SortedByKey<T>(IEnumerable<T> shapes, ShapeKey key, bool descending) where T : IShape => key switch
+    {
+        ShapeKey.Radius => Sorted(Keep(shapes, o => Measures.HasRadius(o.AsShape())), o => Measures.Radius(o.AsShape()), descending),
+        ShapeKey.Length or ShapeKey.Distance or ShapeKey.Area or ShapeKey.Volume => Sorted(shapes, o => Measures.Of(o.AsShape(), key), descending),
         _ => throw new ArgumentOutOfRangeException(nameof(key)),
     };
 
-    private static Func<Shape, double> AlongAxis(Axis axis)
+    private static Func<T, double> AlongAxis<T>(Axis axis) where T : IShape
     {
         var axisAsLocation = axis.Location.Inverse();
         return o => (axisAsLocation * new Location(o.Center())).Position.Z;
     }
 
-    private static Func<Shape, double> AlongPath(Shape1D path, string verb)
+    private static Func<T, double> AlongPath<T>(IShape1D path, string verb) where T : IShape
     {
-        ArgumentNullException.ThrowIfNull(path);
+        if (path is null)
+            throw new ArgumentNullException(nameof(path));
         if (path.IsEmpty)
             throw new ArgumentException($"Can't {verb} along an empty path.", nameof(path));
         return o => path.ParamAtPoint(path.ClosestPoints(o.Center()).OnThis);
@@ -227,12 +248,12 @@ public static class ShapeSelection
     private static bool IsParallelTo(Shape shape, Axis axis, double tolerance)
     {
         Axis shapeAxis;
-        if (shape is Face face && face.IsPlanarSurface())
+        if (shape.IsFace() && shape.TryAs(out Face face) && face.IsPlanarSurface())
         {
             var (u0, _, v0, _) = face.UVBounds();
             shapeAxis = new Axis(shape.Center(), face.NormalAtParameters(u0, v0));
         }
-        else if (shape is Edge edge && shape.GeomType == GeomType.Line)
+        else if (shape.IsEdge() && shape.TryAs(out Edge edge) && shape.GeomType == GeomType.Line)
         {
             var curve = edge.GeomAdaptor();
             var d = curve.Derivatives(curve.Range.Min, 1);
@@ -246,20 +267,24 @@ public static class ShapeSelection
 
     private static bool IsParallelTo(Shape shape, Plane plane, Axis planeAxis, double tolerance)
     {
-        switch (shape)
+        if (shape.IsNull)
+            return false;
+        switch (shape.Type)
         {
-            case Face face when face.IsPlanarSurface():
+            case ShapeType.Face when ((Face)shape).IsPlanarSurface():
             {
+                var face = (Face)shape;
                 var (u0, _, v0, _) = face.UVBounds();
                 return planeAxis.IsParallel(new Axis(shape.Center(), face.NormalAtParameters(u0, v0)), tolerance);
             }
-            case Wire wire:
-                return wire.Edges().All(e => IsParallelTo(e, plane, planeAxis, tolerance));
-            case Edge edge:
+            case ShapeType.Wire:
+                return shape.SelectEdges().All(e => IsParallelTo(e, plane, planeAxis, tolerance));
+            case ShapeType.Edge:
             {
+                var edge = (Edge)shape;
                 var local = edge.Location.Inverse() * plane;
                 var normal = new Direction3D(local.ZDir.X, local.ZDir.Y, local.ZDir.Z);
-                return Extras.EdgeCurve3DIsPlanar(edge.TopoEdge, normal, tolerance) ?? false;
+                return Extras.EdgeCurve3DIsPlanar(edge, normal, tolerance) ?? false;
             }
             default:
                 return false;

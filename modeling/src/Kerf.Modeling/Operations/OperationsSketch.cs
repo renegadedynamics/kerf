@@ -10,18 +10,16 @@ public static partial class Operations
     /// hollowed out).
     /// </summary>
     /// <param name="edge">The edge to replace, taken from a face or sketch.</param>
+    /// <param name="parent">The shape the edge is an edge of, which is rebuilt.</param>
     /// <param name="invert">Make the arc concave instead of convex.</param>
     /// <param name="voronoiPointCount">
     /// The number of points along each edge used to find the Voronoi vertices, the candidates for the centre of the
     /// largest empty circle.
     /// </param>
     /// <exception cref="ArgumentException">The edge wasn't taken from a shape, or the geometry is unsuitable.</exception>
-    public static Sketch FullRound(Edge edge, bool invert = false, int voronoiPointCount = 100)
+    public static Sketch FullRound(Edge edge, Shape parent, bool invert = false, int voronoiPointCount = 100)
     {
         // Phase 5: in builder mode the result is combined with mode (replacing the builder's sketch by default)
-        if (edge is null)
-            throw new ArgumentException("Give a single edge.");
-        var parent = edge.TopoParent ?? throw new ArgumentException("edge must be extracted from shape");
 
         // Generate a set of evenly spaced points along the given edge and the edges connected to it and use them to
         // generate the Voronoi vertices as possible locations for the center of the largest empty circle. Note:
@@ -90,14 +88,14 @@ public static partial class Operations
         var newArc = Edge.MakeThreePointArc(connectedEdgesEndPoints[0], middleEdgeArcPoint, connectedEdgesEndPoints[1]);
 
         // Recover other edges
-        var otherEdges = parent.Edges().Except(OneD.ConnectedEdges(edge)).Except([edge]);
+        var otherEdges = parent.SelectEdges().Except(OneD.ConnectedEdges(edge, parent)).Except([edge]);
 
         // Rebuild the face. Note that the longest wire must be the perimeter and others holes
         var faceWires = Wire.Combine([.. trimmedConnectedEdges, newArc, .. otherEdges]).OrderByDescending(ShapeKey.Length);
-        var pendingFace = new Face(faceWires[0], faceWires.Skip(1));
+        var pendingFace = Face.Make(faceWires[0], faceWires.Skip(1));
 
         // Flip the face to match the original parent
-        if (parent.Faces()[0].NormalAt() != pendingFace.NormalAt())
+        if (parent.SelectFaces()[0].NormalAt() != pendingFace.NormalAt())
             pendingFace = (Face)(-pendingFace);
 
         return new Sketch([pendingFace]);
@@ -206,15 +204,15 @@ public static partial class Operations
         var outerEdges = new List<Edge>();
         foreach (var item in edges)
         {
-            if (item is Wire or Curve)
-                outerEdges.AddRange(item.Edges());
+            if (item.IsWire() || item.IsCompound())
+                outerEdges.AddRange(item.SelectEdges());
             else
-                outerEdges.Add(item as Edge ?? throw new ArgumentException($"Unable to make a face from a {item.GetType().Name}"));
+                outerEdges.Add(item.IsEdge() ? (Edge)item : throw new ArgumentException($"Unable to make a face from a {TopoUtil.KindName(item)}"));
         }
         if (outerEdges.Count == 0)
             return new Sketch();   // a face of no edges is nothing
 
-        var pendingFace = new Face(Wire.Combine(outerEdges)[0]);
+        var pendingFace = Face.Make(Wire.Combine(outerEdges)[0]);
         if (pendingFace.NormalAt().Z < 0)   // flip up-side-down faces
             pendingFace = (Face)(-pendingFace);
         return new Sketch([pendingFace]);
@@ -236,7 +234,7 @@ public static partial class Operations
         if (hullEdges.Count == 0)
             return new Sketch();   // a hull of no edges is nothing
 
-        var pendingFace = new Face(Wire.MakeConvexHull(hullEdges));
+        var pendingFace = Face.Make(Wire.MakeConvexHull(hullEdges));
         if (pendingFace.NormalAt().Z < 0)   // flip up-side-down faces
             pendingFace = (Face)(-pendingFace);
         return new Sketch([pendingFace]);
@@ -256,7 +254,7 @@ public static partial class Operations
         // Phase 5: in builder mode the lines default to the pending edges, and the faces are combined with mode
         if (lines is null)
             throw new ArgumentException("No objects to trace");
-        var traceEdges = lines.SelectMany(l => l.Edges()).ToList();
+        var traceEdges = lines.SelectMany(l => l.SelectEdges()).ToList();
         if (traceEdges.Count == 0)
             return new Sketch();   // tracing nothing is nothing
 
@@ -267,11 +265,11 @@ public static partial class Operations
         foreach (var toTrace in traceWires)
         {
             var tracePen = toTrace.PerpendicularLine(lineWidth, 0);
-            newFaces.AddRange(Shell.Sweep(tracePen, toTrace, Transition.Right).Faces());
+            newFaces.AddRange(Shell.Sweep(tracePen, toTrace, Transition.Right).SelectFaces());
         }
 
         var combinedFaces = newFaces.Count > 1 ? newFaces[0].Fuse(newFaces.Skip(1)) : newFaces[0];
-        return new Sketch(combinedFaces.TopoShape);
+        return new Sketch(combinedFaces);
     }
 
     /// <inheritdoc cref="Trace(IEnumerable{Shape}, double)"/>

@@ -15,10 +15,10 @@ public class FeatureInputsUnchangedTests
     // A part made by another operation: a box with a boss fused on its top
     private static Part Fused() => (Part)(new Box(10, 6, 4) + new Box(2, 2, 6));
 
-    private static byte[] Text(Shape shape) => Extras.WriteBRep(shape.KernelShape);
+    private static byte[] Text(Shape shape) => Extras.WriteBRep(shape);
 
     private static int SharedFaces(Shape result, Shape part) =>
-        part.Faces().Count(f => result.Faces().Any(r => r.KernelShape.IsSame(f.KernelShape)));
+        part.SelectFaces().Count(f => result.SelectFaces().Any(r => r.IsSame(f)));
 
     private static Shape Untouched(Shape part, Func<Shape> operation)
     {
@@ -34,8 +34,8 @@ public class FeatureInputsUnchangedTests
     {
         Part part = Fused();
         Edge edge = part.Edges().GroupBy(Axis.Z)[0][0];
-        Shape fillet = Untouched(part, () => Ops.Fillet([edge], 0.5).Value);
-        Shape chamfer = Untouched(part, () => Ops.Chamfer([edge], 0.5).Value);
+        Shape fillet = Untouched(part, () => Ops.Fillet(part, [edge], 0.5).Value);
+        Shape chamfer = Untouched(part, () => Ops.Chamfer(part, [edge], 0.5).Value);
         int faces = part.Faces().Count;
         Assert.True(SharedFaces(fillet, part) >= faces - 4);
         Assert.True(SharedFaces(chamfer, part) >= faces - 4);
@@ -49,7 +49,7 @@ public class FeatureInputsUnchangedTests
         Shape shell = Untouched(part, () => Ops.Offset(part, -0.5, new Ops.OffsetOptions { Openings = [part.Faces().OrderBy(Axis.Z).Last()] }).Value);
         // the bottom face, away from the opening, is the part's own
         Face bottom = part.Faces().OrderBy(Axis.Z)[0];
-        Assert.Contains(shell.Faces(), f => f.KernelShape.IsSame(bottom.KernelShape));
+        Assert.Contains(shell.SelectFaces(), f => f.IsSame(bottom));
     }
 
     [Fact]

@@ -4,189 +4,70 @@ using Kerf.Healing;
 
 namespace Kerf.Modeling;
 
-public abstract partial class Shape
+/// <summary>The transformations both forms of a shape's operations share.</summary>
+internal static class ShapeTransforms
 {
-    // The class-preserving operations. Each is reached through ShapeOperations, which casts the result back to the
-    // caller's type; a subclass that must adjust its own state overrides the core method.
-
-    internal Shape LocatedCore(Location location)
-    {
-        // Nothing is nothing wherever it is put
-        if (IsEmpty)
-            return Placed(TopoUtil.EmptyCompound());
-        return Placed(TopoUtil.Downcast(_wrapped.Located(location.Wrapped)));
-    }
-
-    internal Shape MovedCore(Location location)
-    {
-        if (IsEmpty)
-            return Placed(TopoUtil.EmptyCompound());
-        return Placed(TopoUtil.Downcast(_wrapped.Moved(location.Wrapped)));
-    }
-
-    /// <summary>A copy with the transformation applied to the geometry (not just the location), and the history carried through.</summary>
-    internal Shape ApplyTransform(Transform3D transformation)
-    {
-        if (IsEmpty)
-            return this;
-        var built = Failures.Get(_wrapped.Transformed(transformation, copyGeometry: true), () => "transform");
-        var transformed = built.Shape;
-        var copy = Rewrapped(transformed);
-        if (History is not null)
-        {
-            var history = new ShapeHistory(History.Before, History.Brought)
-                .Merge(History)
-                .Merge(ShapeHistory.FromAlgorithm(s => built.History.Modified(s), s => built.History.Generated(s), [_wrapped], transformed));
-            copy = copy.MadeBy(history);
-        }
-        return copy;
-    }
-
-    /// <summary>A copy with the matrix applied by <c>BRepBuilderAPI_Transform</c>, as Plane repositions shapes.</summary>
-    internal Shape TransformedBy(Matrix matrix)
-    {
-        if (IsEmpty)
-            return this;
-        var trsf = matrix.GTrsf.ToTransform();
-        return Rewrapped(Failures.Get(_wrapped.Transformed(trsf), () => "transform").Shape);
-    }
-
-    internal Shape CleanCore()
-    {
-        if (IsEmpty)
-            return this;
-        // Cleaning is best effort: on failure the uncleaned shape is still usable
-        if (!_wrapped.Unify(CleanOptions).TryGetValue(out var built))
-        {
-            Warnings.Warn($"Unable to clean {this}");
-            return this;
-        }
-        var record = HistoryHere();
-        var unified = ShapeHistory.FromHistory(built.History);
-        return Placed(TopoUtil.Downcast(built.Shape)).MadeBy(record is null ? unified : record.Merge(unified));
-    }
-
-    internal Shape FixCore()
-    {
-        if (IsEmpty || IsValid)
-            return this;
-        return Rewrapped(TopoUtil.Fix(_wrapped));
-    }
-
-    internal Shape MirrorCore(Plane? mirrorPlane)
+    internal static Transform3D Mirror(Plane? mirrorPlane)
     {
         mirrorPlane ??= Plane.XY;
-        if (IsEmpty)
-            return this;
-        var trsf = new Transform3D();
-        var origin = mirrorPlane.Origin.ToPoint3D();
-        var normal = mirrorPlane.ZDir.ToDirection3D();
-        var ax2 = new Frame3D(origin, normal);
-        trsf = trsf.WithMirror(ax2);
-        return ApplyTransform(trsf);
+        var ax2 = new Frame3D(mirrorPlane.Origin.ToPoint3D(), mirrorPlane.ZDir.ToDirection3D());
+        return new Transform3D().WithMirror(ax2);
     }
 
-    internal Shape RotateCore(Axis axis, double angle, bool transform)
+    internal static Transform3D Rotation(Axis axis, double angle) =>
+        new Transform3D().WithRotation(axis.ToAxis3D(), angle * Constants.DegToRad);
+
+    internal static Transform3D Translation(Vector vector) => new Transform3D().WithTranslation(vector.ToVector3D());
+
+    internal static Transform3D ScaleAbout(Vector point, double factor) => new Transform3D().WithScale(point.ToPoint3D(), factor);
+
+    internal static Matrix ScaleMatrix(Vector factors, Vector p) => new(new double[,]
     {
-        if (IsEmpty)
-            return this;
-        var trsf = new Transform3D();
-        var ax1 = axis.ToAxis3D();
-        trsf = trsf.WithRotation(ax1, angle * Constants.DegToRad);
-        return transform ? ApplyTransform(trsf) : MovedCore(new Location(trsf));
-    }
+        { factors.X, 0, 0, p.X * (1 - factors.X) },
+        { 0, factors.Y, 0, p.Y * (1 - factors.Y) },
+        { 0, 0, factors.Z, p.Z * (1 - factors.Z) },
+        { 0, 0, 0, 1 },
+    });
 
-    internal Shape TranslateCore(Vector vector, bool transform)
-    {
-        if (IsEmpty)
-            return this;
-        var trsf = new Transform3D();
-        var vec = vector.ToVector3D();
-        trsf = trsf.WithTranslation(vec);
-        return transform ? ApplyTransform(trsf) : MovedCore(new Location(trsf));
-    }
-
-    internal Shape ScaleCore(double factor, Vector? about)
-    {
-        if (IsEmpty)
-            return this;
-        var point = about ?? Location.Position;
-        var trsf = new Transform3D();
-        var pnt = point.ToPoint3D();
-        trsf = trsf.WithScale(pnt, factor);
-        return ApplyTransform(trsf);
-    }
-
-    internal Shape ScaleCore(Vector factors, Vector? about)
-    {
-        if (IsEmpty)
-            return this;
-        var p = about ?? Location.Position;
-        var matrix = new Matrix(new double[,]
-        {
-            { factors.X, 0, 0, p.X * (1 - factors.X) },
-            { 0, factors.Y, 0, p.Y * (1 - factors.Y) },
-            { 0, 0, factors.Z, p.Z * (1 - factors.Z) },
-            { 0, 0, 0, 1 },
-        });
-        return TransformGeometryCore(matrix);
-    }
-
-    internal Shape TransformGeometryCore(Matrix matrix)
-    {
-        if (IsEmpty)
-            return this;
-        global::Kerf.Topology.Shape result;
-        if (matrix.GTrsf.Form == TransformForm.Other)
-        {
-            // A general affine transform (stretch, shear): only GTransform can apply it, converting geometry to splines
-            result = Failures.Get(_wrapped.Transformed(matrix.GTrsf, copyGeometry: true), () => "transform").Shape;
-        }
-        else
-        {
-            // A similarity: Transform applies it exactly and keeps the geometry types; GTransform would drop its
-            // scale factor, which a gp_GTrsf of any recognised form keeps apart from its matrix
-            var trsf = matrix.GTrsf.ToTransform();
-            result = Failures.Get(_wrapped.Transformed(trsf, copyGeometry: true), () => "transform").Shape;
-        }
-        return Rewrapped(result);
-    }
-
-    internal virtual Shape TransformShapeCore(Matrix matrix)
-    {
-        if (IsEmpty)
-            return this;
-        var trsf = matrix.GTrsf.ToTransform();
-        return Rewrapped(Failures.Get(_wrapped.Transformed(trsf), () => "transform").Shape);
-    }
-
-    internal Shape TransformedCore(Vector rotate, Vector offset)
+    /// <summary>The rotation in degrees about X, Y then Z, and then the move by <paramref name="offset"/>.</summary>
+    internal static Transform3D Euler(Vector rotate, Vector offset)
     {
         var radians = rotate * Constants.DegToRad;
         var origin = new Point3D(0, 0, 0);
-        Transform3D About(double x, double y, double z, double angle)
-        {
-            var t = new Transform3D();
-            var dir = new Direction3D(x, y, z);
-            var ax1 = new Axis3D(origin, dir);
-            t = t.WithRotation(ax1, angle);
-            return t;
-        }
-        var rx = About(1, 0, 0, radians.X);
-        var ry = About(0, 1, 0, radians.Y);
-        var rz = About(0, 0, 1, radians.Z);
-        var to = new Transform3D();
-        var vec = offset.ToVector3D();
-        to = to.WithTranslation(vec);
-        var a = to.Multiplied(rx);
-        var b = a.Multiplied(ry);
-        var c = b.Multiplied(rz);
-        return ApplyTransform(c);
+        Transform3D About(double x, double y, double z, double angle) =>
+            new Transform3D().WithRotation(new Axis3D(origin, new Direction3D(x, y, z)), angle);
+        var to = new Transform3D().WithTranslation(offset.ToVector3D());
+        return to.Multiplied(About(1, 0, 0, radians.X)).Multiplied(About(0, 1, 0, radians.Y)).Multiplied(About(0, 0, 1, radians.Z));
     }
 
-    internal Shape ToSplinesCore(int degree, double tolerance, bool nurbs)
+    /// <summary>The geometry itself transformed (not just the location).</summary>
+    internal static Built<Shape> Apply(Shape shape, Transform3D transformation) =>
+        Failures.Get(shape.Transformed(transformation, copyGeometry: true), () => "transform");
+
+    /// <summary>The shape with the matrix applied as its affine transform.</summary>
+    internal static Shape TransformGeometry(Shape shape, Matrix matrix)
     {
-        if (IsEmpty)
+        if (matrix.GTrsf.Form == TransformForm.Other)
+            // A general affine transform (stretch, shear): only GTransform can apply it, converting geometry to splines
+            return Failures.Get(shape.Transformed(matrix.GTrsf, copyGeometry: true), () => "transform").Shape;
+        // A similarity: Transform applies it exactly and keeps the geometry types; GTransform would drop its
+        // scale factor, which a gp_GTrsf of any recognised form keeps apart from its matrix
+        return Failures.Get(shape.Transformed(matrix.GTrsf.ToTransform(), copyGeometry: true), () => "transform").Shape;
+    }
+
+    /// <summary>The shape with the matrix applied by the kernel's <c>Transformed</c>, as a plane repositions shapes.</summary>
+    internal static Shape TransformedBy(Shape shape, Matrix matrix) =>
+        TopoUtil.IsNothing(shape) ? shape : Failures.Get(shape.Transformed(matrix.GTrsf.ToTransform()), () => "transform").Shape;
+
+    /// <summary>The shape with the matrix applied keeping every geometry type.</summary>
+    internal static Shape TransformShape(Shape shape, Matrix matrix) =>
+        shape.TryAs(out Vertex vertex) && shape.IsVertex()
+            ? Vertex.Make(matrix.Multiply(vertex.ToVector()))
+            : Failures.Get(shape.Transformed(matrix.GTrsf.ToTransform()), () => "transform").Shape;
+
+    internal static Shape ToSplines(Shape shape, int degree, double tolerance, bool nurbs)
+    {
+        if (TopoUtil.IsNothing(shape))
             throw new InvalidOperationException("Cannot approximate an empty shape");
         var options = new BSplineApproximationOptions
         {
@@ -199,91 +80,260 @@ public abstract partial class Shape
             PreferDegree = true,
             Polynomial = !nurbs,
         };
-        return CastLike(Failures.Get(_wrapped.ApproximateBSplines(options), () => "approximate as splines").Shape);
+        return Failures.Get(shape.ApproximateBSplines(options), () => "approximate as splines").Shape;
     }
 
-    internal Shape WithLocationCore(Location location)
+    /// <summary>The shape cleaned (best effort: on failure the uncleaned shape is still usable), and the kernel's record.</summary>
+    internal static (Shape Shape, ModelHistory? Record) Clean(Shape shape)
     {
-        if (IsEmpty)
-            return this;
-        return Placed(TopoUtil.Downcast(_wrapped.Located(location.Wrapped)));
+        if (!shape.Unify(ShapeExtensions.CleanOptions).TryGetValue(out var built))
+        {
+            Warnings.Warn($"Unable to clean {shape.Describe()}");
+            return (shape, null);
+        }
+        return (TopoUtil.Downcast(built.Shape), ModelHistory.FromHistory(built.History));
     }
+
+    /// <summary>The record after a transformation: the one before, then what the transformation did.</summary>
+    internal static ModelHistory ThroughTransform(ModelHistory record, Shape before, Built<Shape> built) =>
+        new ModelHistory(record.Before, record.Brought)
+            .Merge(record)
+            .Merge(ModelHistory.FromAlgorithm(s => built.History.Modified(s), s => built.History.Generated(s), [before], built.Shape));
 }
 
 /// <summary>
-/// The operations on shapes that return a shape of the caller's own class: <c>box.Moved(loc)</c> is a Box. They
-/// stand for build123d's methods returning <c>Self</c>, and for its mutators (<c>locate</c>, <c>move</c>, setters),
-/// which here return a changed copy instead.
+/// The operations on the kernel's shapes that return a shape of the same type: <c>edge.Moved(loc)</c> is an
+/// <see cref="Edge"/>. They stand for build123d's methods returning <c>Self</c>, and for its mutators (<c>locate</c>,
+/// <c>move</c>, setters), which here return a changed copy instead.
 /// </summary>
 public static class ShapeOperations
 {
-    extension<T>(T shape) where T : Shape
+    extension<T>(T shape) where T : struct, IShape<T>
     {
+        private T Narrowed(Shape result) => TopoUtil.IsNothing(result) ? default : result.As<T>();
+
         /// <summary>A copy placed at <paramref name="location"/> in the absolute sense, sharing this shape's geometry.</summary>
-        public T Located(Location location) => (T)shape.LocatedCore(location);
+        public T Located(Location location) => shape.IsEmpty ? shape : shape.Narrowed(shape.AsShape().Located(location.Wrapped));
 
         /// <summary>A copy moved by <paramref name="location"/> relative to where it is now, sharing this shape's geometry.</summary>
-        public T Moved(Location location) => (T)shape.MovedCore(location);
+        public T Moved(Location location) => shape.IsEmpty ? shape : shape.Narrowed(shape.AsShape().Moved(location.Wrapped));
 
         /// <summary>A copy moved onto <paramref name="plane"/>, relative to where it is now.</summary>
-        public T Moved(Plane plane) => (T)shape.MovedCore(plane.Location);
+        public T Moved(Plane plane) => shape.Moved(plane.Location);
 
-        /// <summary>A copy with extraneous internal edges removed (<c>ShapeUpgrade_UnifySameDomain</c>).</summary>
-        public T Clean() => (T)shape.CleanCore();
+        /// <summary>A copy with extraneous internal edges removed (the kernel's <c>Unify</c>).</summary>
+        public T Clean()
+        {
+            if (shape.IsEmpty)
+                return shape;
+            var before = HistoryLog.Current?.Find(shape.AsShape());
+            var (result, unified) = ShapeTransforms.Clean(shape.AsShape());
+            if (unified is not null)
+                result.MadeBy(before is null ? unified : before.Merge(unified));
+            return shape.Narrowed(result);
+        }
 
-        /// <summary>The shape fixed by <c>ShapeFix_Shape</c> if it isn't valid, else this shape.</summary>
-        public T Fix() => (T)shape.FixCore();
-
+        /// <summary>The shape fixed by the kernel's healing if it isn't valid, else this shape.</summary>
+        public T Fix() => shape.IsEmpty || shape.IsValid ? shape : shape.Narrowed(TopoUtil.Fix(shape.AsShape()));
 
         /// <summary>A copy mirrored about <paramref name="mirrorPlane"/> (default <see cref="Plane.XY"/>), without the original.</summary>
-        public T Mirror(Plane? mirrorPlane = null) => (T)shape.MirrorCore(mirrorPlane);
+        public T Mirror(Plane? mirrorPlane = null) => shape.IsEmpty ? shape : shape.Narrowed(ShapeTransforms.Apply(shape.AsShape(), ShapeTransforms.Mirror(mirrorPlane)).Shape);
 
         /// <summary>
         /// A copy rotated about <paramref name="axis"/> by <paramref name="angle"/> degrees. With <paramref name="transform"/>
         /// the geometry is regenerated instead of just changing the location.
         /// </summary>
-        public T Rotate(Axis axis, double angle, bool transform = false) => (T)shape.RotateCore(axis, angle, transform);
+        public T Rotate(Axis axis, double angle, bool transform = false)
+        {
+            if (shape.IsEmpty)
+                return shape;
+            var t = ShapeTransforms.Rotation(axis, angle);
+            return transform ? shape.Narrowed(ShapeTransforms.Apply(shape.AsShape(), t).Shape) : shape.Moved(new Location(t));
+        }
 
         /// <summary>
         /// A copy moved by <paramref name="vector"/>. With <paramref name="transform"/> the geometry is regenerated instead
         /// of just changing the location.
         /// </summary>
-        public T Translate(Vector vector, bool transform = false) => (T)shape.TranslateCore(vector, transform);
+        public T Translate(Vector vector, bool transform = false)
+        {
+            if (shape.IsEmpty)
+                return shape;
+            var t = ShapeTransforms.Translation(vector);
+            return transform ? shape.Narrowed(ShapeTransforms.Apply(shape.AsShape(), t).Shape) : shape.Moved(new Location(t));
+        }
 
         /// <summary>A copy scaled uniformly about <paramref name="about"/> (default the shape's position).</summary>
-        public T Scale(double factor, Vector? about = null) => (T)shape.ScaleCore(factor, about);
+        public T Scale(double factor, Vector? about = null) =>
+            shape.IsEmpty ? shape : shape.Narrowed(ShapeTransforms.Apply(shape.AsShape(), ShapeTransforms.ScaleAbout(about ?? shape.Location.Position, factor)).Shape);
 
         /// <summary>
         /// A copy scaled by separate factors in X, Y and Z about <paramref name="about"/> (default the shape's position).
         /// Non-uniform scaling may turn the geometry into splines.
         /// </summary>
-        public T Scale(Vector factors, Vector? about = null) => (T)shape.ScaleCore(factors, about);
+        public T Scale(Vector factors, Vector? about = null) =>
+            shape.IsEmpty ? shape : shape.Narrowed(ShapeTransforms.TransformGeometry(shape.AsShape(), ShapeTransforms.ScaleMatrix(factors, about ?? shape.Location.Position)));
 
         /// <summary>
         /// A copy with an affine transform applied to its geometry. Handles stretch and skew, at the cost of sometimes
         /// turning lines and circles into splines; <see cref="TransformShape"/> keeps the geometry types.
         /// </summary>
-        public T TransformGeometry(Matrix matrix) => (T)shape.TransformGeometryCore(matrix);
+        public T TransformGeometry(Matrix matrix) => shape.IsEmpty ? shape : shape.Narrowed(ShapeTransforms.TransformGeometry(shape.AsShape(), matrix));
 
         /// <summary>A copy transformed (translation and rotation, chiefly) keeping every geometry type.</summary>
-        public T TransformShape(Matrix matrix) => (T)shape.TransformShapeCore(matrix);
+        public T TransformShape(Matrix matrix) => shape.IsEmpty ? shape : shape.Narrowed(ShapeTransforms.TransformShape(shape.AsShape(), matrix));
 
         /// <summary>A copy rotated by the angles in degrees about X, Y then Z, and then moved by <paramref name="offset"/>.</summary>
         public T Transformed(Vector? rotate = null, Vector? offset = null) =>
-            (T)shape.TransformedCore(rotate ?? new Vector(0, 0, 0), offset ?? new Vector(0, 0, 0));
+            shape.IsEmpty ? shape : shape.Narrowed(ShapeTransforms.Apply(shape.AsShape(), ShapeTransforms.Euler(rotate ?? new Vector(0, 0, 0), offset ?? new Vector(0, 0, 0))).Shape);
 
         /// <summary>A copy with all geometry converted to B-splines of at most <paramref name="degree"/>.</summary>
-        public T ToSplines(int degree = 3, double tolerance = 1e-3, bool nurbs = false) => (T)shape.ToSplinesCore(degree, tolerance, nurbs);
+        public T ToSplines(int degree = 3, double tolerance = 1e-3, bool nurbs = false) => shape.Narrowed(ShapeTransforms.ToSplines(shape.AsShape(), degree, tolerance, nurbs));
 
         /// <summary>A copy at <paramref name="location"/> (build123d's <c>location</c> setter).</summary>
-        public T WithLocation(Location location) => (T)shape.WithLocationCore(location);
+        public T WithLocation(Location location) => shape.Located(location);
 
         /// <summary>A copy with its Location's position replaced (build123d's <c>position</c> setter).</summary>
         public T WithPosition(Vector position) => shape.IsEmpty ? shape : shape.WithLocation(shape.Location.WithPosition(position));
 
         /// <summary>A copy with its Location's orientation replaced (build123d's <c>orientation</c> setter).</summary>
-        public T WithOrientation(Vector orientation) =>
-            shape.IsEmpty ? shape : shape.WithLocation(shape.Location.WithOrientation(orientation));
+        public T WithOrientation(Vector orientation) => shape.IsEmpty ? shape : shape.WithLocation(shape.Location.WithOrientation(orientation));
+
+        /// <summary>This shape as the object of its dimension (<see cref="ModelShape.For"/>), with a label: a kernel shape can't hold one.</summary>
+        public ModelShape WithLabel(string label) => ModelShape.For(shape.AsShape()).WithLabel(label);
+
+        /// <summary>This shape as the object of its dimension (<see cref="ModelShape.For"/>), with a colour.</summary>
+        public ModelShape WithColor(Color? color) => ModelShape.For(shape.AsShape()).WithColor(color);
+
+        /// <summary>This shape as the object of its dimension (<see cref="ModelShape.For"/>), marked (or not) as construction geometry.</summary>
+        public ModelShape WithForConstruction(bool forConstruction = true) => ModelShape.For(shape.AsShape()).WithForConstruction(forConstruction);
+
+        /// <summary>The shape moved by a location (build123d's <c>location * shape</c>).</summary>
+        public static T operator *(Location location, T s) => s.Moved(location);
+
+        /// <summary>The shape moved onto a plane (build123d's <c>plane * shape</c>).</summary>
+        public static T operator *(Plane plane, T s) => s.Moved(plane);
+
+        /// <summary>A copy of the shape moved by each location.</summary>
+        public static IReadOnlyList<T> operator *(IEnumerable<Location> locations, T s) => [.. locations.Select(l => s.Moved(l))];
+
+        /// <summary>A copy of the shape moved onto each plane.</summary>
+        public static IReadOnlyList<T> operator *(IEnumerable<Plane> planes, T s) => [.. planes.Select(p => s.Moved(p))];
+    }
+}
+
+/// <summary>
+/// The operations on the modelling layer's objects that return an object of the caller's own class: <c>box.Moved(loc)</c>
+/// is a Box, with its label, colour and history.
+/// </summary>
+public static class ModelShapeOperations
+{
+    extension<T>(T shape) where T : ModelShape
+    {
+        private T PlacedAs(Shape result) => (T)shape.Placed(result);
+
+        // The geometry itself transformed, and the history carried through
+        private T Applied(Transform3D transformation)
+        {
+            if (shape.IsEmpty)
+                return shape;
+            var built = ShapeTransforms.Apply(shape.Shape, transformation);
+            var copy = shape.Rewrapped(built.Shape);
+            if (shape.History is { } record)
+                copy = copy.MadeBy(ShapeTransforms.ThroughTransform(record, shape.Shape, built));
+            return (T)copy;
+        }
+
+        /// <summary>A copy placed at <paramref name="location"/> in the absolute sense, sharing this object's geometry.</summary>
+        public T Located(Location location) =>
+            // Nothing is nothing wherever it is put
+            shape.PlacedAs(shape.IsEmpty ? TopoUtil.EmptyCompound() : shape.Shape.Located(location.Wrapped));
+
+        /// <summary>A copy moved by <paramref name="location"/> relative to where it is now, sharing this object's geometry.</summary>
+        public T Moved(Location location) =>
+            shape.PlacedAs(shape.IsEmpty ? TopoUtil.EmptyCompound() : shape.Shape.Moved(location.Wrapped));
+
+        /// <summary>A copy moved onto <paramref name="plane"/>, relative to where it is now.</summary>
+        public T Moved(Plane plane) => shape.Moved(plane.Location);
+
+        /// <summary>A copy with extraneous internal edges removed (the kernel's <c>Unify</c>).</summary>
+        public T Clean()
+        {
+            if (shape.IsEmpty)
+                return shape;
+            var (cleaned, unified) = ShapeTransforms.Clean(shape.Shape);
+            if (unified is null)
+                return shape;
+            var record = shape.HistoryHere();
+            return (T)shape.Placed(cleaned).MadeBy(record is null ? unified : record.Merge(unified));
+        }
+
+        /// <summary>The object fixed by the kernel's healing if it isn't valid, else this object.</summary>
+        public T Fix() => shape.IsEmpty || shape.IsValid ? shape : (T)shape.Rewrapped(TopoUtil.Fix(shape.Shape));
+
+        /// <summary>A copy mirrored about <paramref name="mirrorPlane"/> (default <see cref="Plane.XY"/>), without the original.</summary>
+        public T Mirror(Plane? mirrorPlane = null) => shape.Applied(ShapeTransforms.Mirror(mirrorPlane));
+
+        /// <summary>
+        /// A copy rotated about <paramref name="axis"/> by <paramref name="angle"/> degrees. With <paramref name="transform"/>
+        /// the geometry is regenerated instead of just changing the location.
+        /// </summary>
+        public T Rotate(Axis axis, double angle, bool transform = false)
+        {
+            if (shape.IsEmpty)
+                return shape;
+            var t = ShapeTransforms.Rotation(axis, angle);
+            return transform ? shape.Applied(t) : shape.Moved(new Location(t));
+        }
+
+        /// <summary>
+        /// A copy moved by <paramref name="vector"/>. With <paramref name="transform"/> the geometry is regenerated instead
+        /// of just changing the location.
+        /// </summary>
+        public T Translate(Vector vector, bool transform = false)
+        {
+            if (shape.IsEmpty)
+                return shape;
+            var t = ShapeTransforms.Translation(vector);
+            return transform ? shape.Applied(t) : shape.Moved(new Location(t));
+        }
+
+        /// <summary>A copy scaled uniformly about <paramref name="about"/> (default the object's position).</summary>
+        public T Scale(double factor, Vector? about = null) =>
+            shape.IsEmpty ? shape : shape.Applied(ShapeTransforms.ScaleAbout(about ?? shape.Location.Position, factor));
+
+        /// <summary>
+        /// A copy scaled by separate factors in X, Y and Z about <paramref name="about"/> (default the object's position).
+        /// Non-uniform scaling may turn the geometry into splines.
+        /// </summary>
+        public T Scale(Vector factors, Vector? about = null) =>
+            shape.IsEmpty ? shape : shape.TransformGeometry(ShapeTransforms.ScaleMatrix(factors, about ?? shape.Location.Position));
+
+        /// <summary>
+        /// A copy with an affine transform applied to its geometry. Handles stretch and skew, at the cost of sometimes
+        /// turning lines and circles into splines; <see cref="TransformShape"/> keeps the geometry types.
+        /// </summary>
+        public T TransformGeometry(Matrix matrix) => shape.IsEmpty ? shape : (T)shape.Rewrapped(ShapeTransforms.TransformGeometry(shape.Shape, matrix));
+
+        /// <summary>A copy transformed (translation and rotation, chiefly) keeping every geometry type.</summary>
+        public T TransformShape(Matrix matrix) => shape.IsEmpty ? shape : (T)shape.Rewrapped(ShapeTransforms.TransformShape(shape.Shape, matrix));
+
+        /// <summary>A copy rotated by the angles in degrees about X, Y then Z, and then moved by <paramref name="offset"/>.</summary>
+        public T Transformed(Vector? rotate = null, Vector? offset = null) =>
+            shape.Applied(ShapeTransforms.Euler(rotate ?? new Vector(0, 0, 0), offset ?? new Vector(0, 0, 0)));
+
+        /// <summary>A copy with all geometry converted to B-splines of at most <paramref name="degree"/>.</summary>
+        public T ToSplines(int degree = 3, double tolerance = 1e-3, bool nurbs = false) =>
+            (T)shape.Placed(ShapeTransforms.ToSplines(shape.Shape, degree, tolerance, nurbs));
+
+        /// <summary>A copy at <paramref name="location"/> (build123d's <c>location</c> setter).</summary>
+        public T WithLocation(Location location) => shape.IsEmpty ? shape : shape.PlacedAs(shape.Shape.Located(location.Wrapped));
+
+        /// <summary>A copy with its Location's position replaced (build123d's <c>position</c> setter).</summary>
+        public T WithPosition(Vector position) => shape.IsEmpty ? shape : shape.WithLocation(shape.Location.WithPosition(position));
+
+        /// <summary>A copy with its Location's orientation replaced (build123d's <c>orientation</c> setter).</summary>
+        public T WithOrientation(Vector orientation) => shape.IsEmpty ? shape : shape.WithLocation(shape.Location.WithOrientation(orientation));
 
         /// <summary>A copy with another label.</summary>
         public T WithLabel(string label) => (T)shape.WithLabelCore(label);
@@ -294,16 +344,16 @@ public static class ShapeOperations
         /// <summary>A copy marked (or not) as construction geometry.</summary>
         public T WithForConstruction(bool forConstruction = true) => (T)shape.WithForConstructionCore(forConstruction);
 
-        /// <summary>The shape moved by a location (build123d's <c>location * shape</c>).</summary>
+        /// <summary>The object moved by a location (build123d's <c>location * shape</c>).</summary>
         public static T operator *(Location location, T s) => s.Moved(location);
 
-        /// <summary>The shape moved onto a plane (build123d's <c>plane * shape</c>).</summary>
+        /// <summary>The object moved onto a plane (build123d's <c>plane * shape</c>).</summary>
         public static T operator *(Plane plane, T s) => s.Moved(plane);
 
-        /// <summary>A copy of the shape moved by each location.</summary>
-        public static IReadOnlyList<T> operator *(IEnumerable<Location> locations, T s) => [.. locations.Select(s.Moved)];
+        /// <summary>A copy of the object moved by each location.</summary>
+        public static IReadOnlyList<T> operator *(IEnumerable<Location> locations, T s) => [.. locations.Select(l => s.Moved(l))];
 
-        /// <summary>A copy of the shape moved onto each plane.</summary>
+        /// <summary>A copy of the object moved onto each plane.</summary>
         public static IReadOnlyList<T> operator *(IEnumerable<Plane> planes, T s) => [.. planes.Select(p => s.Moved(p))];
     }
 }

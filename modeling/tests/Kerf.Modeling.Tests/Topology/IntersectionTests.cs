@@ -22,7 +22,7 @@ file static class B
     public static Solid Cylinder(double r, double h) => Solid.MakeCylinder(r, h, new Plane(new Vector(0, 0, -h / 2)));
     public static Solid Sphere(double r) => Solid.MakeSphere(r);
     public static Face Rectangle(double w, double h) => Face.MakeRect(w, h);
-    public static Face Circle(double r) => new(Wire.MakeCircle(r));
+    public static Face Circle(double r) => Face.Make(Wire.MakeCircle(r));
     public static Edge Line(Vector a, Vector b) => Edge.MakeLine(a, b);
 
     /// <summary>CenterArc(center, radius, start_angle, arc_size) for a positive arc size.</summary>
@@ -57,7 +57,7 @@ file static class B
     /// <summary>GridLocations(spacing, 0, 2, 1) * shape: two copies along X.</summary>
     public static Shape[] Grid2(double spacing, Shape shape) => [new Pos(-spacing / 2) * shape, new Pos(spacing / 2) * shape];
 
-    public static Wire WireOf(params Shape[] pieces) => Assert.IsType<Wire>(new Wire() + pieces);
+    public static Wire WireOf(params Shape[] pieces) => Check.Is<Wire>(default(Wire) + pieces);
 }
 
 
@@ -68,7 +68,7 @@ public class IntersectionTests
 
     // ---- The helpers ----
 
-    static bool IsShape(object o) => o is Shape;
+    static bool IsShape(object o) => o is IShape;
 
     static object? GeometryIntersect(object a, object b) => (a, b) switch
     {
@@ -88,22 +88,22 @@ public class IntersectionTests
         (Location x, Plane y) => x.Intersect(y),
         (Location x, Vector y) => x.Intersect(y),
         (Location x, Location y) => x.Intersect(y),
-        (Axis x, Shape y) => x.Intersect(y),
-        (Plane x, Shape y) => x.Intersect(y),
-        (Vector x, Shape y) => x.Intersect(y),
-        (Location x, Shape y) => x.Intersect(y),
+        (Axis x, IShape y) => x.Intersect(y.AsShape()),
+        (Plane x, IShape y) => x.Intersect(y.AsShape()),
+        (Vector x, IShape y) => x.Intersect(y.AsShape()),
+        (Location x, IShape y) => x.Intersect(y.AsShape()),
         _ => throw new XunitException($"No geometry intersection of {a.GetType().Name} and {b.GetType().Name}"),
     };
 
     static void RunTest(object obj, object target, object? expected, bool includeTouched)
     {
         var targets = target as object[] ?? [target];
-        object? result = obj is Shape shape
-            ? shape.Intersect(targets, includeTouched: includeTouched)
+        object? result = obj is IShape shape
+            ? shape.AsShape().Intersect(targets, includeTouched: includeTouched)
             : GeometryIntersect(obj, targets.Single());
         if (expected is null)
         {
-            if (obj is Shape || targets.Any(IsShape))
+            if (obj is IShape || targets.Any(IsShape))
             {
                 // A shape finds nothing as an empty list; geometry finds null
                 var list = Assert.IsType<ShapeList<Shape>>(result);
@@ -120,10 +120,10 @@ public class IntersectionTests
         }
         var expectedTypes = (Type[])expected;
         var shapes = Assert.IsType<ShapeList<Shape>>(result);
-        var actual = string.Join(", ", shapes.Select(s => s.GetType().Name));
+        var actual = string.Join(", ", shapes.Select(s => TopoUtil.KindName(s)));
         Assert.True(shapes.Count == expectedTypes.Length, $"Expected {expectedTypes.Length} objects, but got {shapes.Count}: [{actual}]");
         foreach (var group in expectedTypes.GroupBy(t => t))
-            Assert.True(shapes.Count(s => s.GetType() == group.Key) >= group.Count(),
+            Assert.True(shapes.Count(s => TopoUtil.Typed(s).GetType() == group.Key) >= group.Count(),
                         $"Expected [{string.Join(", ", expectedTypes.Select(t => t.Name))}], but got [{actual}]");
     }
 
@@ -226,8 +226,8 @@ public class IntersectionTests
 
     // ---- 0D shapes ----
 
-    static readonly Vertex Vt1 = new(2, 0, 0);
-    static readonly Vertex Vt2 = new(2, 0, 5);
+    static readonly Vertex Vt1 = Vertex.Make(2, 0, 0);
+    static readonly Vertex Vt2 = Vertex.Make(2, 0, 5);
 
     static readonly Case[] Shape0dMatrix =
     [
@@ -265,10 +265,10 @@ public class IntersectionTests
     static readonly Edge Ed8 = Edge.MakeLine(new Vector(0, 0), new Vector(2, 0));
 
     static readonly Wire Wi1 = B.WireOf(B.Line(new Vector(0, 0), new Vector(1, 0)), B.RadiusArc(new Vector(1, 0), new Vector(3, 1.5), 2));
-    static readonly Wire Wi2 = Assert.IsType<Wire>(Wi1 + B.Line(new Vector(3, 1.5), new Vector(3, -1)));
+    static readonly Wire Wi2 = Check.Is<Wire>(Wi1 + B.Line(new Vector(3, 1.5), new Vector(3, -1)));
     static readonly Wire Wi3 = B.WireOf(B.Line(new Vector(0, 0), new Vector(1, 0)), B.RadiusArc(new Vector(1, 0), new Vector(3, 0), 2), B.Line(new Vector(3, 0), new Vector(5, 0)));
     static readonly Wire Wi4 = B.WireOf(B.Line(new Vector(0, 1), new Vector(2, -1)), B.Line(new Vector(2, -1), new Vector(3, -1)));
-    static readonly Wire Wi5 = Assert.IsType<Wire>(Wi4 + B.Line(new Vector(3, -1), new Vector(4, 1)));
+    static readonly Wire Wi5 = Check.Is<Wire>(Wi4 + B.Line(new Vector(3, -1), new Vector(4, 1)));
     static readonly Wire Wi6 = B.WireOf(B.Line(new Vector(0, 1, 1), new Vector(2, -1, 1)), B.Line(new Vector(2, -1, 1), new Vector(4, 1, 1)));
 
     static readonly Case[] Shape1dMatrix =
@@ -324,25 +324,25 @@ public class IntersectionTests
     static readonly Face Fc4 = new Rotation(z: 45) * B.Rectangle(5, 5);
     static readonly Face Fc5 = new Pos(2.5, 2.5, 2.5) * new Rotation(0, 90) * B.Rectangle(5, 5);
     static readonly Face Fc6 = new Pos(2.5, 2.5) * new Rotation(0, 90, 45, Extrinsic.XYZ) * B.Rectangle(5, 5);
-    static readonly Face Fc7 = (new Rotation(90) * B.Cylinder(2, 4)).Faces().Where(GeomType.Cylinder)[0];
-    static readonly Face Fc8 = new(Wire.MakePolygon(
+    static readonly Face Fc7 = (new Rotation(90) * B.Cylinder(2, 4)).SelectFaces().Where(GeomType.Cylinder)[0];
+    static readonly Face Fc8 = Face.Make(Wire.MakePolygon(
         [new Vector(-1.5, 1, 1), new Vector(-1.5, -1, 1), new Vector(3.5, -1, -1), new Vector(3.5, 1, -1), new Vector(-1.5, 1, 1)], close: false));   // make_face(Polyline(…))
     static readonly Face Fc9 = new Pos(-2) * Fc8.Mirror(Plane.XY);
 
     static readonly Face Fc11 = B.Rectangle(4, 4);
     // sweep(Rot(90) * CenterArc((0, 0), 2, 0, 180), Line((0, 2), (0, -2))): the faces of the swept shell, cleaned
-    static readonly Shell Fc22 = Shell.Sweep(new Rotation(90) * B.CenterArc(new Vector(0, 0), 2, 0, 180), new Wire(B.Line(new Vector(0, 2), new Vector(0, -2)))).Clean();
-    static readonly Shell Sh1 = new([new Pos(-4) * Fc11, .. Fc22.Faces()]);
+    static readonly Shell Fc22 = Shell.Sweep(new Rotation(90) * B.CenterArc(new Vector(0, 0), 2, 0, 180), Wire.Make(B.Line(new Vector(0, 2), new Vector(0, -2)))).Clean();
+    static readonly Shell Sh1 = Shell.Make([new Pos(-4) * Fc11, .. Fc22.SelectFaces()]);
     static readonly Shell Sh2 = new Pos(z: 1) * Sh1;
-    static readonly Shell Sh3 = new([new Pos(-4) * Fc11, .. Fc22.Faces(), new Pos(2, 0, -2) * new Rotation(0, 90) * Fc11]);
-    static readonly Shell Sh4 = new([new Pos(-4) * Fc11, .. Fc22.Faces(), new Pos(4) * Fc11]);
-    static readonly Shell Sh5 = new Pos(z: 1) * new Shell(
-        [new Pos(-2, 0, -2) * new Rotation(0, -90) * Fc11, .. Fc22.Faces(), new Pos(2, 0, -2) * new Rotation(0, 90) * Fc11]);
+    static readonly Shell Sh3 = Shell.Make([new Pos(-4) * Fc11, .. Fc22.SelectFaces(), new Pos(2, 0, -2) * new Rotation(0, 90) * Fc11]);
+    static readonly Shell Sh4 = Shell.Make([new Pos(-4) * Fc11, .. Fc22.SelectFaces(), new Pos(4) * Fc11]);
+    static readonly Shell Sh5 = new Pos(z: 1) * Shell.Make(
+        [new Pos(-2, 0, -2) * new Rotation(0, -90) * Fc11, .. Fc22.SelectFaces(), new Pos(2, 0, -2) * new Rotation(0, 90) * Fc11]);
     static readonly Shell Sh6 = B.Box(2, 2, 2).SingleShell();
 
     // Shell tangent touch objects (half spheres)
     static readonly Shape HalfSphereSolid = B.Sphere(1) & new Pos(0, 0, 0.5) * B.Box(3, 3, 2);
-    static readonly Shell Sh7 = new(HalfSphereSolid.Faces());
+    static readonly Shell Sh7 = Shell.Make(HalfSphereSolid.SelectFaces());
     static readonly Shell Sh8 = new Pos(2, 0, 0) * Sh7;   // tangent at (1, 0, 0)
     static readonly Face Fc10 = new Pos(1, 0, 0) * (new Rotation(0, 90, 0) * B.Rectangle(2, 2));   // tangent to the sphere at x=1
 
@@ -408,7 +408,7 @@ public class IntersectionTests
 
     static readonly Solid Sl1 = B.Box(2, 2, 2);
     static readonly Solid Sl2 = new Pos(z: 5) * B.Box(2, 2, 2);
-    static readonly Solid Sl3 = Assert.IsType<Solid>(B.Cylinder(2, 1) - B.Cylinder(1.5, 1));
+    static readonly Solid Sl3 = Check.Is<Solid>(B.Cylinder(2, 1) - B.Cylinder(1.5, 1));
     static readonly Solid Sl4 = B.Box(3, 1, 1);
     // T-shaped solid (box + thin plate) for coplanar face touches
     // A Part, as in build123d, where Box + Box is a Part
@@ -420,9 +420,9 @@ public class IntersectionTests
     // Extended T-shaped solid for coplanar edge touches
     static readonly Part Sl9 = new([B.Box(2, 2, 2) + Sl5]);
 
-    static readonly Edge L1 = Sl3.Faces().OrderBy(Axis.Z).Last().Edges()[0].Trim(0.3, 0.4);
+    static readonly Edge L1 = Sl3.SelectFaces().OrderBy(Axis.Z).Last().SelectEdges()[0].Trim(0.3, 0.4);
     static readonly Edge L2 = L1.Trim(2, 3);
-    static readonly Wire Wi7 = new([L1, L2, B.RadiusArc(L1.PositionAt(1), L2.PositionAt(0), 1, shortSagitta: false)]);
+    static readonly Wire Wi7 = Wire.Make([L1, L2, B.RadiusArc(L1.PositionAt(1), L2.PositionAt(0), 1, shortSagitta: false)]);
 
     static readonly Case[] Shape3dMatrix =
     [
@@ -511,12 +511,12 @@ public class IntersectionTests
 
     // ---- Compounds ----
 
-    static readonly Compound Cp1 = new(B.Grid2(5, new Vertex(0, 0, 0)));
-    static readonly Compound Cp2 = new(B.Grid2(5, B.Line(new Vector(0, -1), new Vector(0, 1))));
-    static readonly Compound Cp3 = new(B.Grid2(5, B.Rectangle(2, 2)));
-    static readonly Compound Cp4 = new(B.Grid2(5, B.Box(2, 2, 2)));
-    static readonly Compound Cp5 = new([Fc8, Fc9]);
-    static readonly Compound Cp6 = new(B.Grid2(4, B.Rectangle(2, 2)));
+    static readonly Compound Cp1 = Compound.Make(B.Grid2(5, Vertex.Make(0, 0, 0)));
+    static readonly Compound Cp2 = Compound.Make(B.Grid2(5, B.Line(new Vector(0, -1), new Vector(0, 1))));
+    static readonly Compound Cp3 = Compound.Make(B.Grid2(5, B.Rectangle(2, 2)));
+    static readonly Compound Cp4 = Compound.Make(B.Grid2(5, B.Box(2, 2, 2)));
+    static readonly Compound Cp5 = Compound.Make([Fc8, Fc9]);
+    static readonly Compound Cp6 = Compound.Make(B.Grid2(4, B.Rectangle(2, 2)));
 
     static readonly Shape Cv1 = new Curve() + new Shape[] { Ed1, Ed2, Ed3 };
     static readonly Shape Sk1 = new Sketch() + new Shape[] { Fc1, Fc2, Fc3 };
@@ -555,8 +555,8 @@ public class IntersectionTests
         new(Cp3, Cp4, FF, "intersecting"),
         new(Cp5, Cp4, FF, "intersecting"),
         new(Cp5, Cp4, new[] { typeof(Face), typeof(Face), typeof(Edge), typeof(Edge) }, "intersecting", true),
-        new(Cp1, Compound.Assembly(Cp1.ElementsOfType<Vertex>()), VV, "mixed child type"),
-        new(Cp4, Compound.Assembly(Cp3.ElementsOfType<Face>()), FF, "mixed child type"),
+        new(Cp1, new Assembly(Cp1.ElementsOfType<Vertex>().Select(v => (ModelShape)v)), VV, "mixed child type"),
+        new(Cp4, new Assembly(Cp3.ElementsOfType<Face>().Select(f => (ModelShape)f)), FF, "mixed child type"),
         new(Cp2, new object[] { Cp3, Cp4 }, EE, "multi to_intersect, intersecting"),
         new(Cv1, Cp3, new[] { typeof(Edge), typeof(Edge), typeof(Edge), typeof(Edge) }, "intersecting"),
         new(Sk1, Cp3, FF, "intersecting"),
@@ -576,24 +576,24 @@ public class IntersectionTests
     public void CompoundIntersectionWithLocatedVertexChildren()
     {
         // Intersection must not apply an extracted vertex's location twice
-        var vertex = new Vertex(0, 0, 0);
-        var extractedVertex = new Compound(B.Grid2(5, vertex)).ElementsOfType<Vertex>()[0];
+        var vertex = Vertex.Make(0, 0, 0);
+        var extractedVertex = Compound.Make(B.Grid2(5, vertex)).ElementsOfType<Vertex>()[0];
         Assert.Equal(-2.5, extractedVertex.X);
-        Assert.Equal(-2.5, extractedVertex.Location.Position.X);
+        Assert.Equal(-2.5, Check.LocationOf(extractedVertex).Position.X);
 
-        var result = Compound.Assembly([Solid.MakeBox(1, 1, 1).Moved(new Pos(-2.5, 0, 0))])
-            .Intersect(Compound.Assembly([extractedVertex]));
-        Assert.IsType<Vertex>(Assert.Single(result));
+        var result = new Assembly([Solid.MakeBox(1, 1, 1).Moved(new Pos(-2.5, 0, 0))])
+            .Intersect(new Assembly([extractedVertex]));
+        Check.Is<Vertex>(Assert.Single(result));
     }
 
     [Fact]
     public void CompoundIntersectionAfterMovingParent()
     {
         // Intersection uses a compound child's pose after moving its parent
-        var assembly = Compound.Assembly([Solid.MakeBox(1, 1, 1)]);
+        var assembly = new Assembly([Solid.MakeBox(1, 1, 1)]);
         var movedAssembly = assembly.Moved(new Location(new Vector(10, 0, 0)));
-        Assert.Equal(10, movedAssembly.BoundingBox().Min.X);
-        Assert.Equal(0, movedAssembly.AssemblyChildren[0].BoundingBox().Min.X);
+        Assert.Equal(10, movedAssembly.BoundBox().Min.X);
+        Assert.Equal(0, movedAssembly.Children[0].BoundBox().Min.X);
 
         var probe = Solid.MakeBox(1, 1, 1).Moved(new Location(new Vector(10, 0, 0)));
         Assert.NotEmpty(movedAssembly.Intersect(probe));
@@ -604,8 +604,8 @@ public class IntersectionTests
     public void CompoundIntersectionWithRotatedParent()
     {
         // A child is placed by its parent's location alone
-        var assembly = new Rotation(0, 0, 90) * Compound.Assembly([new Pos(10, 0, 0) * B.Box(2, 2, 2)]);
-        Check.AlmostEqual(10, assembly.BoundingBox().Center().Y, 6);
+        var assembly = new Rotation(0, 0, 90) * new Assembly([new Pos(10, 0, 0) * B.Box(2, 2, 2)]);
+        Check.AlmostEqual(10, assembly.BoundBox().Center().Y, 6);
 
         var overlapping = new Pos(0, 10, 0) * B.Box(2, 2, 2);
         var common = assembly.Intersect(overlapping);
@@ -620,9 +620,9 @@ public class IntersectionTests
     public void NestedCompoundIntersectionAppliesEachLocationOnce()
     {
         // Nesting must not reapply the locations of an element's ancestors
-        var nested = Compound.Assembly([new Pos(10, 0, 0) * B.Box(2, 2, 2)]);
-        var assembly = new Rotation(0, 0, 90) * Compound.Assembly([nested]);
-        Check.AlmostEqual(10, assembly.BoundingBox().Center().Y, 6);
+        var nested = new Assembly([new Pos(10, 0, 0) * B.Box(2, 2, 2)]);
+        var assembly = new Rotation(0, 0, 90) * new Assembly([nested]);
+        Check.AlmostEqual(10, assembly.BoundBox().Center().Y, 6);
 
         var overlapping = new Pos(0, 10, 0) * B.Box(2, 2, 2);
         var common = assembly.Intersect(overlapping);
@@ -677,7 +677,7 @@ public class IntersectionTests
     static readonly Face Fb = Plane.XZ * Fa;
     static readonly Edge Ie1 = Edge.MakeLine(new Vector(-1, 0), new Vector(1, 0));
     static readonly Wire Iw1 = Wire.MakeCircle(0.5);
-    static readonly Face If1 = new(Wire.MakeCircle(0.5));
+    static readonly Face If1 = Face.Make(Wire.MakeCircle(0.5));
 
     static readonly Case[] IssuesMatrix =
     [
@@ -710,7 +710,7 @@ public class IntersectionTests
 
     [Theory]
     [MemberData(nameof(ExceptionCases))]
-    public void Exceptions(string id) => Assert.Throws<ArgumentException>(() => ExceptionObjects[id].Intersect(new Color()));
+    public void Exceptions(string id) => Assert.Throws<ArgumentException>(() => ExceptionObjects[id].Intersect(Color.White));
 }
 
 /// <summary>Direct Touch() calls, for specific code paths.</summary>
@@ -719,34 +719,34 @@ public class TouchMethodTests
     [Fact]
     public void SolidVertexTouchOnFace()
     {
-        var result = B.Box(2, 2, 2).Touch(new Vertex(0, 0, 1));
-        Assert.IsType<Vertex>(Assert.Single(result));
+        var result = B.Box(2, 2, 2).Touch(Vertex.Make(0, 0, 1));
+        Check.Is<Vertex>(Assert.Single(result));
     }
 
     [Fact]
     public void SolidVertexTouchOnEdge()
     {
-        var result = B.Box(2, 2, 2).Touch(new Vertex(1, 0, 1));
-        Assert.IsType<Vertex>(Assert.Single(result));
+        var result = B.Box(2, 2, 2).Touch(Vertex.Make(1, 0, 1));
+        Check.Is<Vertex>(Assert.Single(result));
     }
 
     [Fact]
     public void SolidVertexTouchOnCorner()
     {
-        var result = B.Box(2, 2, 2).Touch(new Vertex(1, 1, 1));
-        Assert.IsType<Vertex>(Assert.Single(result));
+        var result = B.Box(2, 2, 2).Touch(Vertex.Make(1, 1, 1));
+        Check.Is<Vertex>(Assert.Single(result));
     }
 
     [Fact]
-    public void SolidVertexTouchNotTouching() => Assert.Empty(B.Box(2, 2, 2).Touch(new Vertex(5, 5, 5)));
+    public void SolidVertexTouchNotTouching() => Assert.Empty(B.Box(2, 2, 2).Touch(Vertex.Make(5, 5, 5)));
 
     [Fact]
-    public void SolidVertexTouchInside() => Assert.Empty(B.Box(2, 2, 2).Touch(new Vertex(0, 0, 0)));   // inside isn't a touch
+    public void SolidVertexTouchInside() => Assert.Empty(B.Box(2, 2, 2).Touch(Vertex.Make(0, 0, 0)));   // inside isn't a touch
 
     [Fact]
     public void ShellTangentTouch()
     {
-        var shell = new Shell([B.Sphere(1).Faces()[0]]);
+        var shell = Shell.Make([B.Sphere(1).SelectFaces()[0]]);
         var tangentFace = Face.FromPlane(Plane.XY.Offset(-1));
         var result = shell.Touch(tangentFace);
         Assert.NotEmpty(result);
@@ -766,10 +766,10 @@ public class TouchMethodTests
     [Fact]
     public void CompoundTouchPlacesChildren()
     {
-        var assembly = new Rotation(0, 0, 90) * Compound.Assembly([new Pos(10, 0, 0) * B.Box(2, 2, 2)]);
+        var assembly = new Rotation(0, 0, 90) * new Assembly([new Pos(10, 0, 0) * B.Box(2, 2, 2)]);
         var toucher = new Pos(0, 12, 0) * B.Box(2, 2, 2);   // shares the face at y == 11
         Assert.NotEmpty(assembly.Touch(toucher));
-        Assert.NotEmpty(toucher.Solids()[0].Touch(assembly));
+        Assert.NotEmpty(toucher.SelectSolids()[0].Touch(assembly));
         // A box against the child's unplaced position touches nothing
         Assert.Empty(assembly.Touch(new Pos(12, 0, 0) * B.Box(2, 2, 2)));
     }
@@ -780,8 +780,8 @@ public class ShapeListExpandTests
     [Fact]
     public void ExpandNestedCompound()
     {
-        var inner = new Compound([B.Box(1, 1, 1), new Pos(3, 0, 0) * B.Box(1, 1, 1)]);
-        var outer = new Compound([inner, new Pos(0, 3, 0) * B.Box(1, 1, 1)]);
+        var inner = Compound.Make([B.Box(1, 1, 1), new Pos(3, 0, 0) * B.Box(1, 1, 1)]);
+        var outer = Compound.Make([inner, new Pos(0, 3, 0) * B.Box(1, 1, 1)]);
         var expanded = new ShapeList<Shape>([outer]).Expand();
         Assert.Equal(3, expanded.OfType<Solid>().Count());
     }
@@ -789,7 +789,7 @@ public class ShapeListExpandTests
     [Fact]
     public void ExpandShellToFaces()
     {
-        var shells = B.Box(1, 1, 1).Shells();
+        var shells = B.Box(1, 1, 1).SelectShells();
         if (shells.Count > 0)
         {
             var expanded = new ShapeList<Shape>([shells[0]]).Expand();
@@ -811,7 +811,7 @@ public class ShapeListExpandTests
         // Without Python's Vector: a ShapeList holds only shapes
         var wire = B.Rectangle(2, 2).SingleWire();
         var solid = B.Box(1, 1, 1);
-        var compound = new Compound([new Pos(5, 0, 0) * B.Box(1, 1, 1)]);
+        var compound = Compound.Make([new Pos(5, 0, 0) * B.Box(1, 1, 1)]);
         var expanded = new ShapeList<Shape>([wire, solid, compound]).Expand();
         Assert.Equal(4, expanded.OfType<Edge>().Count());
         Assert.Equal(2, expanded.OfType<Solid>().Count());   // the original and the one from the compound
@@ -821,7 +821,7 @@ public class ShapeListExpandTests
 /// <summary>Shell tangent touches, which find the face of a shell holding the contact point.</summary>
 public class ShellTangentTouchCoverageTests
 {
-    static Shell HalfSphere() => new((B.Sphere(1) & new Pos(0, 0, 0.5) * B.Box(3, 3, 2)).Faces());
+    static Shell HalfSphere() => Shell.Make((B.Sphere(1) & new Pos(0, 0, 0.5) * B.Box(3, 3, 2)).SelectFaces());
 
     [Fact]
     public void ShellSelfTangentTouchMultipleFaces()
@@ -845,7 +845,7 @@ public class ShellTangentTouchCoverageTests
     public void ShellShellTangentTouchMultipleFaces()
     {
         var shell1 = HalfSphere();
-        var shell2 = new Shell((new Pos(2, 0, 0) * (B.Sphere(1) & new Pos(0, 0, 0.5) * B.Box(3, 3, 2))).Faces());
+        var shell2 = Shell.Make((new Pos(2, 0, 0) * (B.Sphere(1) & new Pos(0, 0, 0.5) * B.Box(3, 3, 2))).SelectFaces());
         var result = shell1.Touch(shell2);
         Assert.NotEmpty(result);
         Assert.NotEmpty(result.OfType<Vertex>());
@@ -864,7 +864,7 @@ public class ShellTangentTouchCoverageTests
     [Fact]
     public void InteriorTangentContactShellFace()
     {
-        var shell = new Shell(B.Sphere(2).Faces());
+        var shell = Shell.Make(B.Sphere(2).SelectFaces());
         var result = shell.Touch(SmallTangentFace());
         Assert.NotEmpty(result);
         Assert.NotEmpty(result.OfType<Vertex>());
@@ -873,7 +873,7 @@ public class ShellTangentTouchCoverageTests
     [Fact]
     public void InteriorTangentContactFaceShell()
     {
-        var shell = new Shell(B.Sphere(2).Faces());
+        var shell = Shell.Make(B.Sphere(2).SelectFaces());
         var result = SmallTangentFace().Touch(shell);
         Assert.NotEmpty(result);
         Assert.NotEmpty(result.OfType<Vertex>());
@@ -902,21 +902,21 @@ public class SolidEdgeTangentTouchTests
 public class ConvertToShapesTests
 {
     [Fact]
-    public void VectorIntersection() => Assert.IsType<Vertex>(Assert.Single(B.Box(2, 2, 2).Intersect(new Vector(0, 0, 0))));
+    public void VectorIntersection() => Check.Is<Vertex>(Assert.Single(B.Box(2, 2, 2).Intersect(new Vector(0, 0, 0))));
 
     [Fact]
-    public void LocationIntersection() => Assert.IsType<Vertex>(Assert.Single(B.Box(2, 2, 2).Intersect(new Location(new Vector(0, 0, 0)))));
+    public void LocationIntersection() => Check.Is<Vertex>(Assert.Single(B.Box(2, 2, 2).Intersect(new Location(new Vector(0, 0, 0)))));
 
     [Fact]
     public void LocationIntersectionWithRotation() =>
-        Assert.IsType<Vertex>(Assert.Single(B.Box(2, 2, 2).Intersect(new Location(new Vector(0, 0, 0), new Vector(45, 45, 45)))));
+        Check.Is<Vertex>(Assert.Single(B.Box(2, 2, 2).Intersect(new Location(new Vector(0, 0, 0), new Vector(45, 45, 45)))));
 }
 
 public class EmptyCompoundIntersectTests
 {
     static Compound EmptyCompound()
     {
-        return new Compound(global::Kerf.Topology.Compound.Create([]));
+        return Compound.Create([]);
     }
 
     [Fact]
