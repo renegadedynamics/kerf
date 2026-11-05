@@ -23,7 +23,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Construction.Filling.TransitionStyle;
 using static Kerf.Engine.Construction.Library.LibraryFaceError;
 using static Kerf.Geometry.CurveKind;

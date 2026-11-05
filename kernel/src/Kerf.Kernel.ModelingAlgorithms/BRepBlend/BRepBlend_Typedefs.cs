@@ -21,4 +21,4 @@
 // is BlendFunc_CSCircular, ...). C# cannot publish a type alias, so ported code writes the BlendFunc names out
 // (decision 1059); their provenance lines are here.
 
-namespace Occt;
+namespace Kerf.Engine;

@@ -4,7 +4,7 @@
 
 using Kerf.Engine.Foundation.Std;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using System.Runtime.CompilerServices;
 
 namespace Kerf.Engine.Numerics.Systems;

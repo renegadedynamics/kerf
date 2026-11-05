@@ -6,7 +6,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Build;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Healing.Upgrade;
 

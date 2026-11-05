@@ -6,7 +6,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Booleans.CheckStatus;
 using static Kerf.Engine.Booleans.Operation;
 

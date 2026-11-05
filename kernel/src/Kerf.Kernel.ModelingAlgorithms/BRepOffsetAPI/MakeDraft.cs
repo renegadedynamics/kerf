@@ -8,7 +8,7 @@ using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Construction.TransitionMode;
 using static Kerf.Engine.Construction.Filling.TransitionStyle;
 

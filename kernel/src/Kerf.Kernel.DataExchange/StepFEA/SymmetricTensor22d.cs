@@ -8,7 +8,7 @@
 
 using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Step.Fea;
 

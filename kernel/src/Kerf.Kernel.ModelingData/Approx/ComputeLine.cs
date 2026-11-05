@@ -5,7 +5,7 @@
 using Kerf.Engine.Approximation.Interfaces;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Approximation.Constraint;
 using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Engine.Approximation.Status;

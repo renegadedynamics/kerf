@@ -4,7 +4,7 @@
 
 using Kerf.Engine.Foundation.Std;
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Numerics.Systems;
 

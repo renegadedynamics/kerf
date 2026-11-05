@@ -8,7 +8,7 @@ using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Fillets.Blend;
 

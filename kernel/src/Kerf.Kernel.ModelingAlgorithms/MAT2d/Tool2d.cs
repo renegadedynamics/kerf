@@ -11,7 +11,7 @@ using Kerf.Engine.Geometry.Objects;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Offsets.Bisectors;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.JoinKind;
 using static Kerf.Engine.Offsets.MedialAxis.MedialSide;

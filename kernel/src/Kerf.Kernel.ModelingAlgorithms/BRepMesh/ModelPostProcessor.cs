@@ -12,7 +12,7 @@ using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Meshing.Model.StatusModel;
 
 namespace Kerf.Engine.Meshing;

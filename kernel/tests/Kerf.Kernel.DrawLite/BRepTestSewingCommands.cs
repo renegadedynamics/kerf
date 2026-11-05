@@ -3,7 +3,7 @@
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Kernel.DrawLite;
 

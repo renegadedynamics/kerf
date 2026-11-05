@@ -9,7 +9,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection;
 

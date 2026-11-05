@@ -8,7 +8,7 @@ using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using System.Globalization;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Kernel.DrawLite;
 

@@ -9,7 +9,7 @@ using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Construction.Api.PipeError;
 using static Kerf.Construction.TransitionMode;
 using static Kerf.Engine.Construction.Filling.TypeOfContact;

@@ -8,9 +8,9 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Geometry.Bvh;
 using Kerf.Geometry;
-using Occt;
-using BVH_Vec3d = Occt.NCollection_Vec3<double>;
-using IntPolyh_BoxBndTree = Kerf.Engine.Geometry.Bvh.BoxSet<double, Occt.NCollection_Vec3<double>, int>;
+using Kerf.Engine;
+using BVH_Vec3d = Kerf.Engine.NCollection_Vec3<double>;
+using IntPolyh_BoxBndTree = Kerf.Engine.Geometry.Bvh.BoxSet<double, Kerf.Engine.NCollection_Vec3<double>, int>;
 
 namespace Kerf.Engine.Intersection.Polyhedra;
 

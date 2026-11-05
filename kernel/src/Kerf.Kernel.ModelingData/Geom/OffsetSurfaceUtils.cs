@@ -5,7 +5,7 @@
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.NormalStatus;
 
 namespace Kerf.Geometry;

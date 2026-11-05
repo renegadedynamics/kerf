@@ -4,7 +4,7 @@
 
 using Kerf.Engine.Intersection.Polygons;
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Patches;
 

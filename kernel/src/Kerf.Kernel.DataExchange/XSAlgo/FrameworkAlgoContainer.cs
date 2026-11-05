@@ -15,7 +15,7 @@ using Kerf.Engine.Healing.Process;
 using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Exchange.Framework;

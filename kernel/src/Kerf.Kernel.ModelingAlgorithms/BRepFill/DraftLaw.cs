@@ -6,7 +6,7 @@
 using Kerf.Engine.Construction.Surfaces;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Filling;
 

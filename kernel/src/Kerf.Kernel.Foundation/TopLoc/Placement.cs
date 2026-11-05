@@ -7,7 +7,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using System.Runtime.CompilerServices;
 
 namespace Kerf.Topology;

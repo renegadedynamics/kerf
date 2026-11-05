@@ -16,7 +16,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Collections.Frozen;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Engine.Healing.Extend.ExtendStatus;

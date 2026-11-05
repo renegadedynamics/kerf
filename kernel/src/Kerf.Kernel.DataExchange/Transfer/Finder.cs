@@ -7,7 +7,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Objects;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Exchange.Framework.ParamType;
 
 namespace Kerf.Engine.Exchange.Framework.Transfer;

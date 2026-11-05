@@ -7,7 +7,7 @@ using Kerf.Engine.Approximation.FiniteElements;
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Numerics;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Approximation;
 

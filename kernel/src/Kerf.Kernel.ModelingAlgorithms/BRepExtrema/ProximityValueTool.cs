@@ -13,8 +13,8 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
-using BVH_Vec3d = Occt.NCollection_Vec3<double>;
+using Kerf.Engine;
+using BVH_Vec3d = Kerf.Engine.NCollection_Vec3<double>;
 using ProxPnt_Status = Kerf.Engine.Measurement.Distance.ProximityDistTool.ProxPnt_Status;
 using static Kerf.Topology.ShapeType;
 

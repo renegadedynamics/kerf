@@ -4,7 +4,7 @@
 
 using Kerf.Engine.Construction.Surfaces;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Engine.Construction.Surfaces.Trihedron;
 

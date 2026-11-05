@@ -14,7 +14,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Extrema.ExtFlag;
 using static Kerf.Engine.Intersection.CurveSurface.TransitionOnCurve;
 using static Kerf.Topology.Orientation;

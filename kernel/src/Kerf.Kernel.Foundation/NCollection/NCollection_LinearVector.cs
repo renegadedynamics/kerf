@@ -6,7 +6,7 @@ using Kerf.Engine.Collections;
 
 using Kerf.Engine.Foundation;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>
 /// OCCT's contiguous growable array indexed from 0 (like <c>std::vector</c>), over a .NET array. Reimplemented, not

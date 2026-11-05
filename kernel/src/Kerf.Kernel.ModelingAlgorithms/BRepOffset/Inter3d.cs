@@ -18,7 +18,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Data.TypeOfConcavity;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;

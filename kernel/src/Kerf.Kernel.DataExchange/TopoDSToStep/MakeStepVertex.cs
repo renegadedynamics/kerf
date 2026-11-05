@@ -14,7 +14,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Exchange.Step.Export.MakeVertexError;
 
 namespace Kerf.Engine.Exchange.Step.Export;

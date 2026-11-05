@@ -7,7 +7,7 @@
 
 using Kerf.Engine.Exchange.Framework.Graph;
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Framework.Selection;
 

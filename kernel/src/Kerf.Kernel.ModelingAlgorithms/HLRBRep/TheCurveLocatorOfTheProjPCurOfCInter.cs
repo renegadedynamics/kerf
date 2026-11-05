@@ -7,7 +7,7 @@ using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.HiddenLines;
 

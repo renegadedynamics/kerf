@@ -7,7 +7,7 @@ using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using System.Collections;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>
 /// OCCT's <c>NCollection_Map&lt;int&gt;</c> with OCCT's buckets, so that it iterates in OCCT's order

@@ -7,7 +7,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Splines;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.BSplKnotDistribution;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Engine.Geometry.Splines.KnotDistribution;

@@ -10,7 +10,7 @@ using Kerf.Engine.Exchange.Framework.Selection;
 using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Exchange.Step.Parser;
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Step.Selections;
 

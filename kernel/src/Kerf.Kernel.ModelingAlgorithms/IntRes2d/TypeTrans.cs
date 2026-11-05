@@ -2,12 +2,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.TwoD;
 
 /// <summary>The type of a transition at an intersection point: In, Out, Touch, or Undecided (the curves are superposed).</summary>
-/// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.IntRes2d_TypeTrans;</c>.</remarks>
 internal enum TypeTrans
 {
     In,

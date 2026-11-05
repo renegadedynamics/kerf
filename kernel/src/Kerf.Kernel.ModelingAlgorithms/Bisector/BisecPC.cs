@@ -8,7 +8,7 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Offsets.Bisectors;

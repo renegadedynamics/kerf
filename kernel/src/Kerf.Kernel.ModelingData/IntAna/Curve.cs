@@ -24,7 +24,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.SurfaceKind;
 
 namespace Kerf.Engine.Intersection;

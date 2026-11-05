@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Intersection;
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.HiddenLines.Algorithm;
 

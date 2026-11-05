@@ -4,7 +4,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
-using Occt;
+using Kerf.Engine;
 using System.Diagnostics.CodeAnalysis;
 using static Kerf.Geometry.TransformForm;
 

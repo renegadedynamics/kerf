@@ -6,7 +6,7 @@ using Kerf.Engine.Construction.Values;
 using Kerf.Engine.Intersection;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Intersection.ResultType;
 using static Kerf.Engine.Intersection.Patches.PatchLineType;
 using static Kerf.Engine.Intersection.Walking.WalkingSituation;

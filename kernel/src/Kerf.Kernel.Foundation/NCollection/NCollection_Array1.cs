@@ -8,7 +8,7 @@ using Kerf.Engine.Foundation;
 using System.Collections;
 using System.Runtime.CompilerServices;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>
 /// OCCT's array with arbitrary bounds (1-based by convention). A mutable container for ported algorithms and

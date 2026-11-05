@@ -7,7 +7,7 @@ using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Offsets.Error;
 using static Kerf.Offsets.OffsetMode;
 using static Kerf.Geometry.JoinKind;

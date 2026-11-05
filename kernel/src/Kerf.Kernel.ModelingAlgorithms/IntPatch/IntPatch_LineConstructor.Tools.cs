@@ -8,7 +8,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Engine.Intersection.Patches.PatchLineType;
 using static Kerf.Engine.Intersection.Walking.WalkingSituation;

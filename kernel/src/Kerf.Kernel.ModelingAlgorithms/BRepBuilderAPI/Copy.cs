@@ -6,7 +6,7 @@
 using Kerf.Engine.Topology.Tools;
 
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Api;
 

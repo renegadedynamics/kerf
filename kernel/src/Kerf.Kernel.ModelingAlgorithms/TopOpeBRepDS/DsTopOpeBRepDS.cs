@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Globalization;
 using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;

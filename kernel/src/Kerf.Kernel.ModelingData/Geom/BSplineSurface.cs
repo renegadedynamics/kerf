@@ -10,7 +10,7 @@ using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Engine.Geometry.Splines;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.BSplKnotDistribution;
 using static Kerf.Geometry.Continuity;
 

@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Foundation.Gravity;
 
 namespace Kerf.Engine.Topology;

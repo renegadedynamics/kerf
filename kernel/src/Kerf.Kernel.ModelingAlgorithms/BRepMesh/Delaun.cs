@@ -8,7 +8,7 @@ using Kerf.Engine.Foundation.Std;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using System.Runtime.InteropServices;
 using static Kerf.Engine.Meshing.DegreeOfFreedom;
 using static Kerf.Engine.Meshing.GeomTool.IntFlag;

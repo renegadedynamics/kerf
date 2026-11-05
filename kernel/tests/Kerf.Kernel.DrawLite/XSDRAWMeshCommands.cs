@@ -7,7 +7,7 @@ using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Exchange.Gltf;
 using Kerf.Engine.Exchange.Obj;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Kernel.DrawLite;
 

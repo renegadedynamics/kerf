@@ -9,7 +9,7 @@ using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Meshing.Model.StatusModel;
 
 namespace Kerf.Engine.Meshing;

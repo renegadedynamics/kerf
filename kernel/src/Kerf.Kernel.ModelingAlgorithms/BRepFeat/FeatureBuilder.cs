@@ -13,7 +13,7 @@ using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Booleans.Operation;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;

@@ -5,7 +5,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Meshing.DegreeOfFreedom;
 
 namespace Kerf.Engine.Meshing;

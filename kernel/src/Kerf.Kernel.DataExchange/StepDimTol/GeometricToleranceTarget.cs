@@ -10,7 +10,7 @@ using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Exchange.Step.Representation;
 using Kerf.Engine.Exchange.Step.Shapes;
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Step.Tolerances;
 

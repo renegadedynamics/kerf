@@ -11,7 +11,7 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Fillets.FilletShape;
 using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;

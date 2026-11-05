@@ -7,7 +7,7 @@ using Kerf.Engine.Approximation.Advanced;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using System.Globalization;
 using static Kerf.Engine.Geometry.IsoType;
 using static Kerf.Geometry.Continuity;

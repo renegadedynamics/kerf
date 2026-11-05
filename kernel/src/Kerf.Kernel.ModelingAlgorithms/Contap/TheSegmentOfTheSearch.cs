@@ -6,7 +6,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Walking;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.HiddenLines.Contours;
 

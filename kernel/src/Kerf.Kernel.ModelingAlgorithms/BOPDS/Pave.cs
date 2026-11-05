@@ -6,7 +6,7 @@
 
 using Kerf.Engine.Foundation.Std;
 using Kerf.Engine.Geometry;
-using Occt;
+using Kerf.Engine;
 using System.Globalization;
 
 namespace Kerf.Engine.Booleans.Data;

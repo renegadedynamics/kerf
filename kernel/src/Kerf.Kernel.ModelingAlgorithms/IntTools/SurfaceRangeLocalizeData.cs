@@ -11,7 +11,7 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
 
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Tools;
 

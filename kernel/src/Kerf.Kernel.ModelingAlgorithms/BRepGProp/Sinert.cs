@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Measurement.MeasurementGauss.BRepGProp_GaussType;
 
 namespace Kerf.Engine.Measurement;

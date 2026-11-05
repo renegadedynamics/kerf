@@ -6,7 +6,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Walking;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Intersection.Walking.WalkingSituation;
 using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 

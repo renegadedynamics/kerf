@@ -2,7 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2005-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>Boolean operations on packed maps of integers.</summary>
 /// <remarks>Only <see cref="Unite"/>, which Message_Algorithm uses, is ported so far.</remarks>

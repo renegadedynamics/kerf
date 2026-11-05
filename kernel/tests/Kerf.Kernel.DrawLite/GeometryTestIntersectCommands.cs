@@ -4,7 +4,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Intersection.Surfaces;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Kernel.DrawLite;
 

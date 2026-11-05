@@ -6,7 +6,7 @@
 using Kerf.Engine.Meshing.Model;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Meshing.Data;
 

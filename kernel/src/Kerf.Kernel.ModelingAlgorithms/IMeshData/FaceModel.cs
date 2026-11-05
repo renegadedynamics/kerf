@@ -6,7 +6,7 @@
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Meshing.Model.StatusModel;
 
 namespace Kerf.Engine.Meshing.Model;

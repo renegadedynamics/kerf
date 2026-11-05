@@ -10,7 +10,7 @@ using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Constraints;
 

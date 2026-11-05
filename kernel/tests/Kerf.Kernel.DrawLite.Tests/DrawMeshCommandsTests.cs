@@ -3,7 +3,7 @@
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using Kerf.Kernel.DrawLite;
 
 namespace Kerf.Kernel.DrawLite.Tests;

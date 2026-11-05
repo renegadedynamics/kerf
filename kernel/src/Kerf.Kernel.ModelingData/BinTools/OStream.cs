@@ -7,7 +7,7 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Buffers.Binary;
 
 namespace Kerf.Engine.Exchange.Brep.Binary;

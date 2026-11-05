@@ -13,7 +13,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Approximation.Constraint;
 using static Kerf.Engine.Numerics.Recipes;
 

@@ -15,7 +15,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Data.TypeOfConcavity;
 using static Kerf.Engine.Fillets.Builder_0;
 using static Kerf.Geometry.Continuity;

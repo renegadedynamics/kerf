@@ -9,7 +9,7 @@ using Kerf.Engine.Geometry.Projection;
 using Kerf.Engine.Meshing;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Engine.Meshing.MeshPurpose;
 using static Kerf.Topology.Orientation;

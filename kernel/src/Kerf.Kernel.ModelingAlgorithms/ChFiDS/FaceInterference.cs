@@ -7,7 +7,7 @@
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Diagnostics.CodeAnalysis;
 using static Kerf.Topology.Orientation;
 

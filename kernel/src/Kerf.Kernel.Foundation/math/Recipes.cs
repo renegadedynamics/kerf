@@ -5,13 +5,13 @@
 
 using Kerf.Engine.Foundation;
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Numerics;
 
 /// <summary>
 /// The free functions of math_Recipes.hxx (LU, SVD, DACTCL and Jacobi decompositions, after Numerical Recipes).
-/// Ported code imports them with <c>using static Occt.math_Recipes;</c> and calls them unqualified, as in C++.
+/// Ported code imports them with <c>using static Kerf.Engine.math_Recipes;</c> and calls them unqualified, as in C++.
 /// </summary>
 /// <remarks>The matrices and vectors are indexed from 1, as OCCT requires.</remarks>
 internal static class Recipes

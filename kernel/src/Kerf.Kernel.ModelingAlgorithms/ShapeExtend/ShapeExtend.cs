@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Messages;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Healing.Extend.ExtendStatus;
 
 namespace Kerf.Engine.Healing.Extend;

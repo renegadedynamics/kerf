@@ -12,7 +12,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Data.ChamfMode;
 using static Kerf.Engine.Fillets.Data.ErrorStatus;
 using static Kerf.Engine.Fillets.Data.State;

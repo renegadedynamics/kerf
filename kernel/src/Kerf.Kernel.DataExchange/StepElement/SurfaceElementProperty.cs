@@ -7,7 +7,7 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Step.Elements;
 

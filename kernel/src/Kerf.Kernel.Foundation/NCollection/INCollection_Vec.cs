@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>
 /// What NCollection_Vec2, NCollection_Vec3 and NCollection_Vec4 have in common, so that code OCCT templates over

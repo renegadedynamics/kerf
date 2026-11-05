@@ -6,7 +6,7 @@
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Healing.Extend;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Topology.Orientation;
 
 namespace Kerf.Engine.Healing.Fixes;

@@ -13,7 +13,7 @@ using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Splines;
 
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Surfaces;
 

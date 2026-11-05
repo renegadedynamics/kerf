@@ -7,7 +7,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Construction.Library.LibraryShapeModification;
 using static Kerf.Topology.ShapeType;
 

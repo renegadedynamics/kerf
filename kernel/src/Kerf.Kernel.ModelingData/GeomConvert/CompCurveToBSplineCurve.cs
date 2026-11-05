@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 
 namespace Kerf.Engine.Geometry.Conversion;

@@ -6,7 +6,7 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Numerics.Polynomials;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Approximation.FiniteElements;
 

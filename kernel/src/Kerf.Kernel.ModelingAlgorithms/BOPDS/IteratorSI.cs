@@ -8,7 +8,7 @@ using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Booleans.Data;
 

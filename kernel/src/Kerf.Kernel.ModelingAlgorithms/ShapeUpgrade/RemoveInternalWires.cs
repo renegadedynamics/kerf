@@ -10,7 +10,7 @@ using Kerf.Engine.Healing.Build;
 using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.ShapeType;
 

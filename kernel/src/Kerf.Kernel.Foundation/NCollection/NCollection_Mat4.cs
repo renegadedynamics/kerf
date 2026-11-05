@@ -6,7 +6,7 @@ using Kerf.Engine.Foundation;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>A 4x4 matrix of numbers (float, double or int), stored column by column as OCCT stores it.</summary>
 /// <remarks>

@@ -8,7 +8,7 @@ namespace Kerf.Kernel.PublicApi.Tests;
 
 /// <summary>
 /// The public surface shows no engine (docs/api/README.md, section 1.1; decision 1519): no public or protected member of
-/// a public type outside <c>Kerf.Engine.*</c> and <c>Occt</c> names a type of those namespaces, except the transient base
+/// a public type outside <c>Kerf.Engine.*</c> names a type of those namespaces, except the transient base
 /// (question 55); and nothing is public in those namespaces but what <see cref="PublicEngineTypes"/> lists, with its reason.
 /// </summary>
 public class PublicSurfaceTests
@@ -34,7 +34,7 @@ public class PublicSurfaceTests
             .SelectMany(a => a.GetExportedTypes());
 
     private static bool IsEngineNamespace(string? ns)
-        => ns is not null && (ns == "Occt" || ns.StartsWith("Occt.", StringComparison.Ordinal) || ns.StartsWith("Kerf.Engine", StringComparison.Ordinal));
+        => ns is not null && ns.StartsWith("Kerf.Engine", StringComparison.Ordinal);
 
     private static IEnumerable<Type> PublicTypes() => ExportedTypes().Where(t => !IsEngineNamespace(t.Namespace));
 

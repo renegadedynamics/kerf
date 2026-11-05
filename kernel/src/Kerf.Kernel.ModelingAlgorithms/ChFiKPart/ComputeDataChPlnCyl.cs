@@ -8,7 +8,7 @@ using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Data.ChamfMode;
 using static Kerf.Engine.Fillets.Analytic.ComputeDataFcts;
 using static Kerf.Topology.Orientation;

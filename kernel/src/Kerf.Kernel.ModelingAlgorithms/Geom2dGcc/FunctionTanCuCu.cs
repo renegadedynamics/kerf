@@ -6,7 +6,7 @@
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Construction.Constraints.Type3;
 
 namespace Kerf.Engine.Construction.Constraints;

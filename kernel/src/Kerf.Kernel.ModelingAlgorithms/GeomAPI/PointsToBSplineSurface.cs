@@ -7,7 +7,7 @@ using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Approximation.Constraint;
 using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Geometry.Continuity;

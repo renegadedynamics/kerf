@@ -5,7 +5,7 @@
 using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Geometry.Bounds;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.HiddenLines.Presentation;
 

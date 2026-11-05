@@ -7,7 +7,7 @@ using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Kernel.DrawLite;
 

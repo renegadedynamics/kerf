@@ -11,7 +11,7 @@ using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Extrema;
 

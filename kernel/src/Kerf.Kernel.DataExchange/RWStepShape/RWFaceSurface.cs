@@ -12,7 +12,7 @@ using Kerf.Engine.Exchange.Step.Data;
 
 using Kerf.Engine.Exchange.Step.Geometry;
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Step.Shapes.ReadWrite;
 

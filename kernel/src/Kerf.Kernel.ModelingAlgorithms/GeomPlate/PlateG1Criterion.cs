@@ -6,7 +6,7 @@
 using Kerf.Engine.Approximation.Advanced;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Approximation.Advanced.CriterionRepartition;
 using static Kerf.Engine.Approximation.Advanced.CriterionType;
 

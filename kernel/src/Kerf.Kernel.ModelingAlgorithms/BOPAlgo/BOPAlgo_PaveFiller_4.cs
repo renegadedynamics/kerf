@@ -9,7 +9,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Booleans.GlueMode;
 using static Kerf.Topology.ShapeType;
 

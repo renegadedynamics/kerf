@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Extrema;
 

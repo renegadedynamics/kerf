@@ -4,7 +4,7 @@ using Kerf.Engine.Booleans;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Kernel.DrawLite;
 

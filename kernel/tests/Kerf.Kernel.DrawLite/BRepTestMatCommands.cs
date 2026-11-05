@@ -6,7 +6,7 @@ using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.JoinKind;
 using static Kerf.Engine.Offsets.MedialAxis.MedialSide;
 using static Kerf.Topology.ShapeType;

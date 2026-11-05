@@ -6,7 +6,7 @@
 using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Planar.ConstructionError;
 
 namespace Kerf.Engine.Fillets.Planar;

@@ -7,7 +7,7 @@
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Measurement.PropertyValueType;
 
 namespace Kerf.Engine.Measurement;

@@ -10,7 +10,7 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Approximation.Constraint;
 using static Kerf.Engine.Extrema.ExtFlag;
 using static Kerf.Geometry.CurveKind;

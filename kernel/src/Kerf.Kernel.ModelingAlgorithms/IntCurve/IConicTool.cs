@@ -6,7 +6,7 @@
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Intersection.Implicit;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 
 namespace Kerf.Engine.Intersection.Curves;

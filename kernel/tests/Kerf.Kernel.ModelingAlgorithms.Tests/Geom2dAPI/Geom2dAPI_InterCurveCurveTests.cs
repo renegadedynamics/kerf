@@ -7,7 +7,7 @@ using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using Xunit;
 
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;

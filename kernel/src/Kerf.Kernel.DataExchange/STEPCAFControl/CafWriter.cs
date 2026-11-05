@@ -22,7 +22,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Exchange.Framework.Selection.ReturnStatus;
 using static Kerf.Engine.Foundation.NameOfColor;
 using static Kerf.Engine.Exchange.Step.ModelType;

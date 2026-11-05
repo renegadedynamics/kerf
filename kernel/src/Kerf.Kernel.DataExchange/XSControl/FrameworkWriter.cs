@@ -8,7 +8,7 @@
 using Kerf.Engine.Exchange.Framework.Selection;
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Framework;
 

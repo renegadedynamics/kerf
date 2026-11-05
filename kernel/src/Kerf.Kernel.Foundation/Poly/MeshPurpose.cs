@@ -2,14 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Meshing;
 
 /// <summary>
 /// What a triangulation is used for: bit flags. OCCT's <c>typedef unsigned int</c> with an anonymous enum of its
 /// values; here a flags enum over <c>uint</c>, so application-defined bits (from <see cref="MeshPurpose_USER"/>
-/// up) are values of the enum too. Files that use it write <c>using static Occt.Poly_MeshPurpose;</c>.
+/// up) are values of the enum too. Files that use it write <c>using static Kerf.Engine.Poly_MeshPurpose;</c>.
 /// </summary>
 [Flags]
 internal enum MeshPurpose : uint

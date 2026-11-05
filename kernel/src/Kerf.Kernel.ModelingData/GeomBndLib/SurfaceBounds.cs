@@ -6,7 +6,7 @@
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.SurfaceKind;
 
 namespace Kerf.Engine.Geometry.Bounds.Computation;

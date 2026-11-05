@@ -5,7 +5,7 @@ using Kerf.Engine.Foundation;
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Kernel.Benchmarks;
 

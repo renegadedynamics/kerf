@@ -8,7 +8,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Intersection.Patches.PatchLineType;
 
 namespace Kerf.Engine.Intersection.Patches;

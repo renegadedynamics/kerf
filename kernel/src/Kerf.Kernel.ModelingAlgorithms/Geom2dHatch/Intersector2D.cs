@@ -9,7 +9,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Properties;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Classification.Hatching;
 

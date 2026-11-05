@@ -9,7 +9,7 @@ using Kerf.Engine.Intersection;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Intersection.ResultType;
 using static Kerf.Engine.Intersection.Walking.WalkingSituation;
 using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;

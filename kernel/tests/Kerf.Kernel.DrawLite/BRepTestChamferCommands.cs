@@ -4,7 +4,7 @@ using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Data.ChamfMode;
 using static Kerf.Topology.ShapeType;
 

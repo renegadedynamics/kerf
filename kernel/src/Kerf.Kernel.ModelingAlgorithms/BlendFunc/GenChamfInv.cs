@@ -6,7 +6,7 @@
 using Kerf.Engine.Fillets.Blend;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Fillets.BlendFunctions;
 

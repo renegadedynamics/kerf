@@ -3,7 +3,7 @@
 using Kerf.Engine.Construction.Fairing;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Foundation.Standard;
 
 namespace Kerf.Kernel.DrawLite;

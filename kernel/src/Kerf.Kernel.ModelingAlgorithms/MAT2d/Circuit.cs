@@ -9,7 +9,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.JoinKind;
 
 namespace Kerf.Engine.Offsets.MedialAxis;

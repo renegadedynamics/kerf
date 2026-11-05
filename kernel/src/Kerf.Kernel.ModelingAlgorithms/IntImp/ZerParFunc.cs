@@ -6,7 +6,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Intersection.Implicit.ConstIsoparametric;
 
 namespace Kerf.Engine.Intersection.Implicit;

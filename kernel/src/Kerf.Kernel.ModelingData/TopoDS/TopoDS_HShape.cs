@@ -7,7 +7,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>A shape held by reference (OCCT's handle to a shape), as a working object.</summary>
 internal class TopoDS_HShape : Transient

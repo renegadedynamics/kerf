@@ -5,7 +5,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 
 /// <summary>A 3-component vector of numbers (float, double or int): an XYZ point or an RGB colour.</summary>

@@ -6,7 +6,7 @@
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Extrema.PointCurve;
 

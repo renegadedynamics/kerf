@@ -8,7 +8,7 @@ using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Intersection.Polyhedra;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 
 namespace Kerf.Engine.Intersection.Patches;

@@ -3,7 +3,7 @@
 using Kerf.Engine.Construction.Constraints;
 using Kerf.Engine.Construction.Constraints.Analytic;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Construction.Constraints.ConstraintCurveType;
 
 namespace Kerf.Kernel.DrawLite;

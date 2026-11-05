@@ -9,7 +9,7 @@ using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Geometry;
 

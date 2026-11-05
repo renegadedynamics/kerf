@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Intersection.Tools;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Booleans.Data;
 

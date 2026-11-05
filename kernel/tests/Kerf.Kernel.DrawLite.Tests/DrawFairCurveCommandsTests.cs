@@ -2,7 +2,7 @@
 
 using Kerf.Engine.Construction.Fairing;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using Kerf.Kernel.DrawLite;
 using Xunit.Abstractions;
 

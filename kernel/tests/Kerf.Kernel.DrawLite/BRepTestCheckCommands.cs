@@ -9,7 +9,7 @@ using Kerf.Topology;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Topology.ShapeType;
 

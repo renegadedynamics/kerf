@@ -8,7 +8,7 @@ using Kerf.Engine.Intersection.Implicit;
 using Kerf.Engine.Intersection.Polygons;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Intersection.TwoD.Position2D;
 
 namespace Kerf.Engine.Intersection.Curves;

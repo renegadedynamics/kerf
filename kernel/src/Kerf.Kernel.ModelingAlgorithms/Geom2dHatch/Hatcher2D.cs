@@ -10,7 +10,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Classification.Hatching.HatchingErrorStatus;
 using static Kerf.Engine.Classification.Hatching.IntersectionType;
 using static Kerf.Engine.Intersection.TwoD.Position2D;

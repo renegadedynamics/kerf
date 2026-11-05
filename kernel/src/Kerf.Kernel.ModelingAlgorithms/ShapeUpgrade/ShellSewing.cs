@@ -9,7 +9,7 @@ using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Healing.Build;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 

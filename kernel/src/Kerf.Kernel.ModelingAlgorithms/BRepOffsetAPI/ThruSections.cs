@@ -17,7 +17,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Engine.Construction.Filling.ThruSectionErrorStatus;
 using static Kerf.Geometry.Continuity;

@@ -6,7 +6,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Numerics.Polynomials;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using System.Globalization;
 using static Kerf.Geometry.Continuity;
 

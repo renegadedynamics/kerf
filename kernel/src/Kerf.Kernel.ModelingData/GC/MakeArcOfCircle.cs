@@ -7,7 +7,7 @@ using Kerf.Engine.Construction.Values;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Construction.Values.ErrorType;
 
 namespace Kerf.Engine.Construction.Curves;

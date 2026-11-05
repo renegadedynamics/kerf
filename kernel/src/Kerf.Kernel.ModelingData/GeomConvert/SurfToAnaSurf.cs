@@ -11,7 +11,7 @@ using Kerf.Engine.Geometry.Properties;
 using Kerf.Engine.Intersection;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Engine.Geometry.Conversion.ConvType;

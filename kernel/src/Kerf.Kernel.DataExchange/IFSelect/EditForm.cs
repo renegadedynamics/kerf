@@ -6,7 +6,7 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Exchange.Framework.Selection.EditValue;
 using static Kerf.Engine.Exchange.Framework.ParamType;
 

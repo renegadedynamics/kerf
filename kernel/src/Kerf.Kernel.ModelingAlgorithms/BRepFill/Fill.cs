@@ -15,7 +15,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Measurement.Distance.SupportType;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;

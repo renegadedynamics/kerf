@@ -17,7 +17,7 @@ using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Builder_0;
 using static Kerf.Engine.Fillets.FilBuilder_C3;
 using static Kerf.Engine.Fillets.Data.ErrorStatus;

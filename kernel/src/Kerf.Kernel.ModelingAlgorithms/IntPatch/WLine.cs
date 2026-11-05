@@ -9,7 +9,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Approximation;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using System.Globalization;
 using static Kerf.Engine.Intersection.Patches.PatchLineType;
 

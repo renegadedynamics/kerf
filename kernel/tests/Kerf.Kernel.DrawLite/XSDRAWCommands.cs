@@ -13,7 +13,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Exchange.Framework.Selection.ReturnStatus;
 
 namespace Kerf.Kernel.DrawLite;

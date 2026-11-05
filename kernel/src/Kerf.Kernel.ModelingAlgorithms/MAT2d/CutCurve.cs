@@ -7,7 +7,7 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry.Properties;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Offsets.MedialAxis;
 

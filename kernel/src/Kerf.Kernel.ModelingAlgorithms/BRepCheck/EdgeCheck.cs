@@ -15,7 +15,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Geometry.TransformForm;
 using static Kerf.Topology.ShapeType;

@@ -4,7 +4,7 @@
 
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.Splines.CurveComputation;
 
 namespace Kerf.Engine.Geometry.Splines;

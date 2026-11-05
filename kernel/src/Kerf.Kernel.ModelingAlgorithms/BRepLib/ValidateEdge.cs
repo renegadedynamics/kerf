@@ -8,7 +8,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Library;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Library;
 

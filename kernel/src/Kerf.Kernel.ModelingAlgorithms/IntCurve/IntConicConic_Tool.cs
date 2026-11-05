@@ -6,7 +6,7 @@
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Intersection.TwoD.Situation;
 using static Kerf.Engine.Intersection.TwoD.TypeTrans;
 

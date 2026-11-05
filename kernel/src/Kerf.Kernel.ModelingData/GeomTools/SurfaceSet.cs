@@ -6,7 +6,7 @@
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using System.Globalization;
 
 namespace Kerf.Engine.Exchange.Brep;

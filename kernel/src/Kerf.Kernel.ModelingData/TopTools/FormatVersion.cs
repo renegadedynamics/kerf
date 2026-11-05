@@ -2,13 +2,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Brep;
 
 /// <summary>The versions of the TopTools (text BRep) format.</summary>
 /// <remarks>
-/// An unscoped enum in C++; ported code imports it with <c>using static Occt.TopTools_FormatVersion;</c>. OCCT's
+/// An unscoped enum in C++; ported code imports it with <c>using static Kerf.Engine.TopTools_FormatVersion;</c>. OCCT's
 /// anonymous enum of bounds is <see cref="FormatVersionBounds"/>.
 /// </remarks>
 internal enum FormatVersion

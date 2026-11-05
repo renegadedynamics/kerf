@@ -5,7 +5,7 @@ using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Globalization;
 
 namespace Kerf.Engine.Fillets.Api;

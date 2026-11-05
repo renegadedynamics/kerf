@@ -12,7 +12,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Measurement.Distance.SupportType;
 using static Kerf.Engine.Extrema.ExtAlgo;
 using static Kerf.Engine.Extrema.ExtFlag;

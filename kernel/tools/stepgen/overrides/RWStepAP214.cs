@@ -4,7 +4,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Written by hand (tools/stepgen/overrides/RWStepAP214.cs, decision 1216): the generator copies this file.
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>The RWStepAP214 package: the initialisation of the libraries.</summary>
 internal static class RWStepAP214

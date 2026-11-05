@@ -5,7 +5,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Intersection.TwoD;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Classification.Hatching.IntersectionType;
 using static Kerf.Engine.Intersection.TwoD.Position2D;
 using static Kerf.Engine.Intersection.TwoD.Situation;

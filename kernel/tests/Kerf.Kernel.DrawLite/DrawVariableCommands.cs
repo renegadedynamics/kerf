@@ -5,7 +5,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Text;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Kernel.DrawLite;
 

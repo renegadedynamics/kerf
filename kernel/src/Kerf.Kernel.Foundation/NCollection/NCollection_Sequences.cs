@@ -11,7 +11,7 @@ using Kerf.Engine.Foundation;
 using System.Collections;
 using System.Runtime.InteropServices;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>
 /// OCCT's sequence: a list indexed from 1. Not OCCT's linked implementation but a .NET list with OCCT's API;

@@ -8,7 +8,7 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Extrema.ExtFlag;
 
 namespace Kerf.Engine.Geometry.Library;

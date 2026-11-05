@@ -6,7 +6,7 @@
 using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Intersection.Implicit;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.HiddenLines;
 

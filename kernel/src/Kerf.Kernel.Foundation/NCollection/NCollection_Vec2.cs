@@ -5,7 +5,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 
 /// <summary>A 2D vector of numbers (float, double or int), for low-level arrays and BVH.</summary>

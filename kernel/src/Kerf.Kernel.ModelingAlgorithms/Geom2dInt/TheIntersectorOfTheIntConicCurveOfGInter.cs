@@ -7,7 +7,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Curves;
 using Kerf.Engine.Intersection.Implicit;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.TwoD;
 

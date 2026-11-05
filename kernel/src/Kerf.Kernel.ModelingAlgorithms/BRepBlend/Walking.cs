@@ -13,7 +13,7 @@ using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Blend.BlendStatus;
 using static Kerf.Engine.Geometry.NormalStatus;
 using static Kerf.Engine.Extrema.ExtFlag;

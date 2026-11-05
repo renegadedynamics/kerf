@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Fillets.Blend;
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Surfaces;
 

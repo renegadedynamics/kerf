@@ -6,7 +6,7 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry.Bounds;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.HiddenLines.Algorithm;
 

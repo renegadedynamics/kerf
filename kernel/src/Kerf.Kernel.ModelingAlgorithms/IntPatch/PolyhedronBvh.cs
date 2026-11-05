@@ -6,9 +6,9 @@
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Geometry.Bvh;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.Bvh.Constants;
-using BVH_Vec3d = Occt.NCollection_Vec3<double>;
+using BVH_Vec3d = Kerf.Engine.NCollection_Vec3<double>;
 
 namespace Kerf.Engine.Intersection.Patches;
 

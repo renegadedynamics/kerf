@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Intersection.Patches.PatchLineType;
 
 namespace Kerf.Engine.Intersection.Patches;

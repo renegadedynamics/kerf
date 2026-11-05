@@ -19,7 +19,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Properties;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Builder_0;
 using static Kerf.Engine.Fillets.FilBuilder_C2;
 using static Kerf.Engine.Fillets.Data.ErrorStatus;

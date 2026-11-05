@@ -8,7 +8,7 @@ using Kerf.Engine.Construction.Constraints.Analytic;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Construction.Constraints.Qualifier;
 using static Kerf.Geometry.CurveKind;
 

@@ -9,7 +9,7 @@ using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Meshing.Delaunay;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Meshing.DegreeOfFreedom;
 using static Kerf.Engine.Foundation.Gravity;
 

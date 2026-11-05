@@ -4,7 +4,7 @@
 
 using Kerf.Engine.Geometry.Bvh;
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Geometry.Bounds;
 

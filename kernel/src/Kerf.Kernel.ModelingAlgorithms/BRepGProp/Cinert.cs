@@ -8,7 +8,7 @@ using Kerf.Engine.Measurement;
 using Kerf.Engine.Numerics;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Measurement;

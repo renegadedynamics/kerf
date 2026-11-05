@@ -6,7 +6,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Polygons;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Intersection.Patches.PatchLineType;
 using static Kerf.Engine.Intersection.Polygons.PIType;
 

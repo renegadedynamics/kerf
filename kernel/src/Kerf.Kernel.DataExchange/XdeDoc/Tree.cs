@@ -9,7 +9,7 @@ using Kerf.Engine.Meshing;
 using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Collections.Immutable;
 
 namespace Kerf.Engine.Exchange.Documents;

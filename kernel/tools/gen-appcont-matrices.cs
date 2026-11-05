@@ -60,7 +60,7 @@ foreach (var aTable in aTables)
         // copied as written (decision 77). Properties returning a ReadOnlySpan over a constant array are stored in the
         // assembly's data section: reading them allocates nothing. Don't edit: regenerate.
 
-        namespace Occt;
+        namespace Kerf.Engine;
 
         internal static partial class AppCont_ContMatrices
         {

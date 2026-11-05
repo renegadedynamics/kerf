@@ -6,7 +6,7 @@
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Approximation;
 using Kerf.Engine.Intersection.CurveSurface;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Surfaces;
 

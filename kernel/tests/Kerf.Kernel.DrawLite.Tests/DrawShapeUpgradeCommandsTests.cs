@@ -6,7 +6,7 @@ using Kerf.Engine.Healing;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using Kerf.Kernel.DrawLite;
 using Xunit.Abstractions;
 

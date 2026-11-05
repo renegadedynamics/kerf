@@ -9,7 +9,7 @@ using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Meshing;
 

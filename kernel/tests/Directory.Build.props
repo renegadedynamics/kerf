@@ -10,7 +10,7 @@
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
     <Using Include="Xunit" />
-    <Using Include="Occt" />
+    <Using Include="Kerf.Engine" />
     <Using Include="Kerf.Engine.Numerics.VectorBase&lt;double&gt;" Alias="math_Vector" />
     <Using Include="Kerf.Engine.Numerics.VectorBase&lt;int&gt;" Alias="math_IntegerVector" />
   </ItemGroup>

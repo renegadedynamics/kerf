@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Geometry.Properties;

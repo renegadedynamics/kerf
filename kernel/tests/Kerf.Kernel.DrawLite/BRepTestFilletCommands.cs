@@ -9,7 +9,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Fillets.FilletShape;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Topology.ShapeType;

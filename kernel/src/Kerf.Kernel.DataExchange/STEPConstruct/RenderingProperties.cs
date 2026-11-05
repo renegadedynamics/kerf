@@ -7,7 +7,7 @@
 
 using Kerf.Engine.Exchange.Step.Visual;
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Foundation.NameOfColor;
 using static Kerf.Engine.Exchange.Step.Visual.ShadingSurfaceMethod;
 

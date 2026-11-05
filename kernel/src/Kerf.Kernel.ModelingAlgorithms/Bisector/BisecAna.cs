@@ -8,7 +8,7 @@ using Kerf.Engine.Construction.Constraints.Analytic;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Construction.Constraints.ConstraintCurveType;
 using static Kerf.Geometry.JoinKind;
 

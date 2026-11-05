@@ -10,7 +10,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.HiddenLines.Contours.ContourTFunction;
 
 namespace Kerf.Engine.HiddenLines.Contours;

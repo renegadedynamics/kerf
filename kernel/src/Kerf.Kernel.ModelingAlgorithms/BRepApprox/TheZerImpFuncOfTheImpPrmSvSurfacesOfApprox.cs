@@ -6,7 +6,7 @@
 using Kerf.Engine.Intersection.Implicit;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Topology.Adaptors;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Approximation;
 

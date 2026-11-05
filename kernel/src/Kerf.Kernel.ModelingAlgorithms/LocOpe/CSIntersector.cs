@@ -10,7 +10,7 @@ using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Intersection.CurveSurface.TransitionOnCurve;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;

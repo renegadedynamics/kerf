@@ -10,7 +10,7 @@ using Kerf.Engine.Meshing.Model;
 using Kerf.Engine.Meshing.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Meshing.DegreeOfFreedom;
 using static Kerf.Engine.Meshing.Model.StatusModel;
 using static Kerf.Topology.Orientation;

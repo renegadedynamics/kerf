@@ -9,7 +9,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans;

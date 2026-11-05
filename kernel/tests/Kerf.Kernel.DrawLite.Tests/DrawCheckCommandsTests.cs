@@ -3,7 +3,7 @@
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using System.Text.RegularExpressions;
-using Occt;
+using Kerf.Engine;
 using Kerf.Kernel.DrawLite;
 
 namespace Kerf.Kernel.DrawLite.Tests;

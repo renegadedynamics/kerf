@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.DerivativeStatus;
 using static Kerf.Engine.Geometry.NormalStatus;
 

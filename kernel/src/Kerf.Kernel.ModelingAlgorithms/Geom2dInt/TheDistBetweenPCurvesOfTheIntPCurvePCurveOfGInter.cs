@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Curves;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.TwoD;
 

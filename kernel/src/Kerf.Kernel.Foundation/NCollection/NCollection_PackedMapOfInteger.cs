@@ -5,7 +5,7 @@
 using Kerf.Engine.Collections;
 using System.Numerics;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>
 /// OCCT's packed set of integers (<c>NCollection_PackedMap&lt;int&gt;</c>, also known as
@@ -293,7 +293,7 @@ internal sealed class NCollection_PackedMapOfInteger
         }
 
         uint keyInt = PackedKeyIndex(key);
-        long hashCode = global::Occt.NCollection_PackedMapOfInteger.HashCode(keyInt, _nbBuckets);
+        long hashCode = global::Kerf.Engine.NCollection_PackedMapOfInteger.HashCode(keyInt, _nbBuckets);
         PackedMapNode? bucketHead = _data1![hashCode];
         for (PackedMapNode? p = bucketHead; p is not null; p = p.Next())
         {
@@ -323,7 +323,7 @@ internal sealed class NCollection_PackedMapOfInteger
         }
 
         uint keyInt = PackedKeyIndex(key);
-        for (PackedMapNode? p = _data1![global::Occt.NCollection_PackedMapOfInteger.HashCode(keyInt, _nbBuckets)]; p is not null;)
+        for (PackedMapNode? p = _data1![global::Kerf.Engine.NCollection_PackedMapOfInteger.HashCode(keyInt, _nbBuckets)]; p is not null;)
         {
             if (p.IsEqual(keyInt))
             {
@@ -345,7 +345,7 @@ internal sealed class NCollection_PackedMapOfInteger
         }
 
         uint keyInt = PackedKeyIndex(key);
-        long bucket = global::Occt.NCollection_PackedMapOfInteger.HashCode(keyInt, _nbBuckets);
+        long bucket = global::Kerf.Engine.NCollection_PackedMapOfInteger.HashCode(keyInt, _nbBuckets);
         PackedMapNode? p = _data1![bucket];
         PackedMapNode? q = null;
         while (p is not null)

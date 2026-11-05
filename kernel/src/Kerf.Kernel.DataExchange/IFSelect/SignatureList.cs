@@ -7,7 +7,7 @@
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Exchange.Framework.Selection.PrintCount;
 
 namespace Kerf.Engine.Exchange.Framework.Selection;

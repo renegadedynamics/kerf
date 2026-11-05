@@ -4,7 +4,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Written by hand (tools/stepgen/overrides/StepAP214.cs, decision 1216): the generator copies this file.
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
 

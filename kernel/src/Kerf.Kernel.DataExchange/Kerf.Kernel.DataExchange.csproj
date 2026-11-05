@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>Occt</RootNamespace>
+    <RootNamespace>Kerf.Engine</RootNamespace>
     <Description>Kerf.Kernel data exchange, derived from Open CASCADE Technology 8.0.1 (Open Cascade SAS), ported to C# and redesigned: a port of OCCT's TKXSBase, TKDESTEP and TKDESTL (the exchange framework, STEP, STL), with an immutable assembly tree in place of XCAF.</Description>
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -12,7 +12,7 @@
   <ItemGroup>
     <!-- Where .NET's encodings differ from OCCT's code tables (Resource_Unicode), OCCT's values: made by
          StepDataNativeTests from tools/stepdatarec's table dump (unit 8B, decision 1191) -->
-    <EmbeddedResource Include="Resource\Resource_UnicodeTables.diff.gz" LogicalName="Occt.Resource.Resource_UnicodeTables.diff.gz" />
+    <EmbeddedResource Include="Resource\Resource_UnicodeTables.diff.gz" LogicalName="Kerf.Engine.Resource.Resource_UnicodeTables.diff.gz" />
   </ItemGroup>
 
   <ItemGroup>

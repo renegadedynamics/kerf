@@ -6,7 +6,7 @@ using Kerf.Engine.Foundation;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>
 /// An array of fixed-size elements whose type is chosen at run time by the element size (the stride): the storage of

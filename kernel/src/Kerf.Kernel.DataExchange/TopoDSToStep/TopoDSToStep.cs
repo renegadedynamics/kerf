@@ -6,7 +6,7 @@
 using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Exchange.Step.Export.ExportBuilderError;
 using static Kerf.Engine.Exchange.Step.Export.MakeEdgeError;
 using static Kerf.Engine.Exchange.Step.Export.MakeFaceError;

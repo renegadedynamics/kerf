@@ -6,7 +6,7 @@
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Intersection.TwoD.Position2D;
 using static Kerf.Engine.Intersection.TwoD.Situation;
 using static Kerf.Engine.Intersection.TwoD.TypeTrans;
@@ -15,7 +15,7 @@ namespace Kerf.Engine.Intersection.Implicit;
 
 /// <summary>
 /// The free functions of IntImpParGen_Tool.hxx (used by IntCurve_IntConicConic): older variants of the
-/// <see cref="IntImpParGen"/> statics. Ported code imports them with <c>using static Occt.IntImpParGen_Tool;</c>.
+/// <see cref="IntImpParGen"/> statics. Ported code imports them with <c>using static Kerf.Engine.IntImpParGen_Tool;</c>.
 /// </summary>
 internal static class ImplicitTool
 {

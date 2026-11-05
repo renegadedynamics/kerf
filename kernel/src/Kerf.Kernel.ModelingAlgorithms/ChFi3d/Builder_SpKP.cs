@@ -13,7 +13,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Builder_0;
 using static Kerf.Engine.Fillets.Builder_SpKP;
 using static Kerf.Engine.Fillets.Data.ErrorStatus;

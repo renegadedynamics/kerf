@@ -4,8 +4,8 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bvh;
-using Occt;
-using BVH_Vec3d = Occt.NCollection_Vec3<double>;
+using Kerf.Engine;
+using BVH_Vec3d = Kerf.Engine.NCollection_Vec3<double>;
 
 namespace Kerf.Engine.Intersection.Patches;
 

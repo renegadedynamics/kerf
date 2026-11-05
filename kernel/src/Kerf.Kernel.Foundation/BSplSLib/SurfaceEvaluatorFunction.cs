@@ -5,7 +5,7 @@
 // History - C function pointer converted to a virtual class
 // in order to get rid of usage of static functions and static data
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Geometry.Splines;
 

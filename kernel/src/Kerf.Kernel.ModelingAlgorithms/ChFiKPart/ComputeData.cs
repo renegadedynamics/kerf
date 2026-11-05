@@ -11,7 +11,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Data.ChamfMethod;
 using static Kerf.Engine.Fillets.Analytic.ComputeDataChAsymPlnCon;
 using static Kerf.Engine.Fillets.Analytic.ComputeDataChAsymPlnCyl;

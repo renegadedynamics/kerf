@@ -38,7 +38,7 @@ public class PublicImmutabilityAnalyzerTests
 
     [Theory]
     [InlineData("Kerf.Engine.Booleans")]
-    [InlineData("Occt")]
+    [InlineData("Other")]
     public void Leaves_the_engine_and_other_namespaces_alone(string ns)
         => Assert.Empty(Analyze(ns, "public sealed class C { public int X { get; set; } }"));
 

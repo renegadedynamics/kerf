@@ -6,7 +6,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Tools;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Topology.Brep;
 

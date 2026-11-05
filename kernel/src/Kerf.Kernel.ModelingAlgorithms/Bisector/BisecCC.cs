@@ -11,7 +11,7 @@ using Kerf.Engine.Geometry.Objects;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Offsets.Bisectors;

@@ -8,7 +8,7 @@ using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Blend.AppBlendDebug;
 using static Kerf.Engine.Approximation.Constraint;
 using static Kerf.Geometry.ParametrizationType;

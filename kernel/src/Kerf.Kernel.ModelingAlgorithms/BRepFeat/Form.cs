@@ -13,7 +13,7 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Features.PerfSelection;
 using static Kerf.Engine.Features.StatusError;
 using static Kerf.Engine.Features.Local.FeatureOperation;

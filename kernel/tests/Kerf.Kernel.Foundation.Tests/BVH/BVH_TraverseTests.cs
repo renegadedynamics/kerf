@@ -3,8 +3,8 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bvh;
-using Box3d = Kerf.Engine.Geometry.Bvh.Box<double, Occt.NCollection_Vec3<double>>;
-using Tree3d = Kerf.Engine.Geometry.Bvh.Tree<double, Occt.NCollection_Vec3<double>>;
+using Box3d = Kerf.Engine.Geometry.Bvh.Box<double, Kerf.Engine.NCollection_Vec3<double>>;
+using Tree3d = Kerf.Engine.Geometry.Bvh.Tree<double, Kerf.Engine.NCollection_Vec3<double>>;
 
 namespace Kerf.Kernel.Foundation.Tests;
 

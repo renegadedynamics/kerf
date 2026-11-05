@@ -10,7 +10,7 @@ using Kerf.Engine.Exchange.Framework.Selection;
 using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Collections.Immutable;
 using static Kerf.Engine.Exchange.Framework.Selection.ReturnStatus;
 

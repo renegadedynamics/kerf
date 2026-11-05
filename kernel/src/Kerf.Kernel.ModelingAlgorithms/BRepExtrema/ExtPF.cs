@@ -10,7 +10,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Extrema.ExtAlgo;
 using static Kerf.Engine.Extrema.ExtFlag;
 using static Kerf.Geometry.SurfaceKind;

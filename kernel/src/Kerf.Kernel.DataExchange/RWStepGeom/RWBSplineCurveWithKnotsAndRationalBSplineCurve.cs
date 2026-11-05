@@ -8,7 +8,7 @@
 
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Step.Data;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Exchange.Framework.ParamType;
 using static Kerf.Engine.Exchange.Step.Geometry.StepBSplineCurveForm;
 using static Kerf.Engine.Exchange.Step.Geometry.StepKnotType;

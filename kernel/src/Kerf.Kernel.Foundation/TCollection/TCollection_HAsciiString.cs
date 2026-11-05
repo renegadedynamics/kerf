@@ -6,7 +6,7 @@
 using Kerf.Engine.Foundation;
 using System.Text;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>
 /// A string held by handle (<c>occ::handle&lt;TCollection_HAsciiString&gt;</c>), which several objects can share:

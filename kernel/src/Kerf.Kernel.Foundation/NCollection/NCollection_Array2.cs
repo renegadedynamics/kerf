@@ -7,7 +7,7 @@ using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using System.Runtime.CompilerServices;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>
 /// OCCT's two-dimensional array with arbitrary row and column bounds, stored row by row as in OCCT. The same

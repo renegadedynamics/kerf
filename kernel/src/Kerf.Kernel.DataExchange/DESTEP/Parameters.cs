@@ -7,7 +7,7 @@
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Foundation.Resources;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Foundation.Resources.FormatType;
 using static Kerf.Engine.Exchange.Framework.FrameworkLengthUnit;
 

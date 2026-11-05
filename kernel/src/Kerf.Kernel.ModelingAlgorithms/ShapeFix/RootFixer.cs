@@ -8,7 +8,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Build;
 using Kerf.Engine.Healing.Extend;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Foundation.Gravity;
 
 namespace Kerf.Engine.Healing.Fixes;

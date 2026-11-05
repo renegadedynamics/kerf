@@ -11,7 +11,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using math_Vector = Kerf.Engine.Numerics.VectorBase<double>;
 
 namespace Kerf.Kernel.DrawLite;

@@ -9,7 +9,7 @@ using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Healing.Extend.ExtendStatus;
 
 namespace Kerf.Engine.Healing.Upgrade;

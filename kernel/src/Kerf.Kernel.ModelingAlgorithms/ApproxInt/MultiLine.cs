@@ -5,7 +5,7 @@
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using System.Globalization;
 
 namespace Kerf.Engine.Intersection.Approximation;

@@ -6,7 +6,7 @@
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Intersection.Approximation;
 using Kerf.Engine.Intersection.Patches;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.ParametrizationType;
 
 namespace Kerf.Engine.Intersection.Surfaces;

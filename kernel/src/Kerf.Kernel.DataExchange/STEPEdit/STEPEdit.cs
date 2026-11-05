@@ -17,7 +17,7 @@ using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Exchange.Step.Selections;
 using Kerf.Engine.Exchange.Step.Shapes;
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Exchange.Framework.Selection.EditValue;
 using static Kerf.Engine.Exchange.Framework.ParamType;
 

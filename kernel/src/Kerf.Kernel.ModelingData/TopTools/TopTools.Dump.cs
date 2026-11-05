@@ -5,7 +5,7 @@
 
 using Kerf.Topology;
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Brep;
 

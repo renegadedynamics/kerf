@@ -5,7 +5,7 @@
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Measurement.Distance.SupportType;
 
 namespace Kerf.Engine.Measurement.Distance;

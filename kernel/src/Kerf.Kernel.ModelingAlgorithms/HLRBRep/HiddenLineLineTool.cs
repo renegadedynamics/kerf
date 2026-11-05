@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 

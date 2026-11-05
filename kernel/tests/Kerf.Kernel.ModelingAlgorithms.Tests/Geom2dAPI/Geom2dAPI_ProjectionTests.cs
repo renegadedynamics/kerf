@@ -3,7 +3,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using Xunit;
 
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;

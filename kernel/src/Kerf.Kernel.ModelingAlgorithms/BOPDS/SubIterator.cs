@@ -8,7 +8,7 @@ using Kerf.Engine.Foundation.Std;
 
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Runtime.InteropServices;
 
 namespace Kerf.Engine.Booleans.Data;

@@ -6,7 +6,7 @@
 using Kerf.Engine.Collections;
 
 using Kerf.Engine.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Api;
 

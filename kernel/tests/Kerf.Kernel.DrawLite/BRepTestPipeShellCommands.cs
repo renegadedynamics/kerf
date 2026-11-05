@@ -13,7 +13,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Construction.Api.PipeError;
 using static Kerf.Construction.TransitionMode;
 using static Kerf.Engine.Construction.Filling.ThruSectionErrorStatus;

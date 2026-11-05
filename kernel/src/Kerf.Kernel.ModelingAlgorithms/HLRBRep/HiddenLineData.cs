@@ -14,7 +14,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using System.Runtime.CompilerServices;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;

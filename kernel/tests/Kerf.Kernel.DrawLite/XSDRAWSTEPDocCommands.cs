@@ -10,7 +10,7 @@ using Kerf.Engine.Exchange.Step.Caf;
 using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Exchange.Step.Documents;
 using Kerf.Engine.Exchange.Step.Header;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Exchange.Framework.Selection.ReturnStatus;
 using static Kerf.Engine.Exchange.Step.ModelType;
 

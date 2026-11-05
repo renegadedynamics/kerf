@@ -7,7 +7,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Construction.Primitives.PrimitiveDirection;
 
 namespace Kerf.Engine.Construction.Primitives;

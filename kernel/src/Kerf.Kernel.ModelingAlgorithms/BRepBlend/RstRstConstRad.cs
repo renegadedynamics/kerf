@@ -9,7 +9,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Blend.DecrochStatus;
 using static Kerf.Engine.Fillets.BlendFunctions.SectionShape;
 

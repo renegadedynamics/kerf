@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Remove="Occt" />
+    <Using Remove="Kerf.Engine" />
     <Using Remove="Kerf.Engine.Numerics.VectorBase&lt;double&gt;" />
     <Using Remove="Kerf.Engine.Numerics.VectorBase&lt;int&gt;" />
   </ItemGroup>

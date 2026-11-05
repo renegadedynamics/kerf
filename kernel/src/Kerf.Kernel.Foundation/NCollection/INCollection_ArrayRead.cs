@@ -2,7 +2,7 @@
 // Not a port of an OCCT file.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>
 /// What a C++ template over "an array of values" calls: <c>Lower()</c>, <c>Upper()</c> and <c>Value(i)</c>. C# generics

@@ -26,7 +26,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Builder_0;
 using static Kerf.Engine.Fillets.Builder_CnCrn.ChFi3d_SurfType;
 using static Kerf.Engine.Fillets.Analytic.ComputeDataFcts;

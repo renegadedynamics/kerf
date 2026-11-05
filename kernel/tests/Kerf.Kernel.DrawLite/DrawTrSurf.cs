@@ -2,7 +2,7 @@
 
 using Kerf.Engine.Meshing;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Kernel.DrawLite;
 

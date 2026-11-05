@@ -16,7 +16,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Features.FeatureStatus;
 using static Kerf.Engine.Geometry.NormalStatus;
 using static Kerf.Topology.Orientation;

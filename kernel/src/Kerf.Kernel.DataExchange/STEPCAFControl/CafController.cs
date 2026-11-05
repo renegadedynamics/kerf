@@ -7,7 +7,7 @@
 
 using Kerf.Engine.Exchange.Framework;
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Step.Documents;
 

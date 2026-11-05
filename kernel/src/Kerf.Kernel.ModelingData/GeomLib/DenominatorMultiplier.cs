@@ -9,7 +9,7 @@ using Kerf.Engine.Geometry.Splines;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Geometry.Library;
 

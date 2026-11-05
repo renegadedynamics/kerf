@@ -18,7 +18,7 @@ using Kerf.Engine.Exchange.Step.Representation;
 using Kerf.Engine.Exchange.Step.Selections;
 using Kerf.Engine.Exchange.Step.Shapes;
 using Kerf.Engine.Foundation;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Exchange.Framework.Selection.ReturnStatus;
 using static Kerf.Engine.Exchange.Step.Basic.SiPrefix;
 using static Kerf.Engine.Exchange.Step.Basic.SiUnitName;

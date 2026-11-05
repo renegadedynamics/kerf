@@ -21,7 +21,7 @@ using Kerf.Engine.Topology.Properties;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Builder_0;
 using static Kerf.Engine.Fillets.Builder_1;
 using static Kerf.Engine.Fillets.Data.ErrorStatus;

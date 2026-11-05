@@ -15,7 +15,7 @@ using Kerf.Engine.Intersection.Patches;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using System.Runtime.InteropServices;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;

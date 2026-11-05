@@ -6,7 +6,7 @@
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Construction.Api.WireError;
 using static Kerf.Engine.Construction.Library.LibraryWireError;
 

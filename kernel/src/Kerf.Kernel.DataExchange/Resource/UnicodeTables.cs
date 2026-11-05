@@ -1,6 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Occt;
+using Kerf.Engine;
 using System.IO.Compression;
 using System.Text;
 
@@ -182,7 +182,7 @@ internal static class UnicodeTables
         {
             result[i] = [];
         }
-        using Stream? stream = typeof(UnicodeTables).Assembly.GetManifestResourceStream("Occt.Resource.Resource_UnicodeTables.diff.gz");
+        using Stream? stream = typeof(UnicodeTables).Assembly.GetManifestResourceStream("Kerf.Engine.Resource.Resource_UnicodeTables.diff.gz");
         if (stream is null)
         {
             return result;

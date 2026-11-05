@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Intersection.Walking.WalkingSituation;
 using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 

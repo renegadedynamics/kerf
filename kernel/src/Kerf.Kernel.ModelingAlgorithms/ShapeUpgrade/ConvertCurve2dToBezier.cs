@@ -7,7 +7,7 @@ using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Healing.Custom;
 using Kerf.Engine.Healing.Extend;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Engine.Healing.Extend.ExtendStatus;

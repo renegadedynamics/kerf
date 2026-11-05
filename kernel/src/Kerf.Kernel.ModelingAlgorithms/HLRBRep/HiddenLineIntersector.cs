@@ -6,7 +6,7 @@
 using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Engine.Intersection.TwoD.Position2D;
 

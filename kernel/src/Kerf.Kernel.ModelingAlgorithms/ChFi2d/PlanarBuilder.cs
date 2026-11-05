@@ -15,7 +15,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Fillets.Planar.ConstructionError;
 using static Kerf.Engine.Construction.Constraints.Qualifier;
 using static Kerf.Topology.Orientation;

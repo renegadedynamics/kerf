@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 
 namespace Kerf.Engine.Measurement;

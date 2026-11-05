@@ -7,7 +7,7 @@
 
 using Kerf.Engine.Geometry.Properties;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Geometry.Properties.Status;
 
 namespace Kerf.Engine.HiddenLines;

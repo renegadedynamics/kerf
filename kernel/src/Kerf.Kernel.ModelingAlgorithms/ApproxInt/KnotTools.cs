@@ -8,7 +8,7 @@ using Kerf.Engine.Collections;
 using Kerf.Engine.Intersection.Patches;
 using Kerf.Engine.Intersection.Surfaces;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.ParametrizationType;
 
 namespace Kerf.Engine.Intersection.Approximation;

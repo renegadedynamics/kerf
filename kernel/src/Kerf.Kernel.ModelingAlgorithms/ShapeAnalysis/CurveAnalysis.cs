@@ -11,7 +11,7 @@ using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 

@@ -3,7 +3,7 @@
 using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>Makes the <see cref="ImmutableArray{T}"/>s that the kernel returns as <see cref="IReadOnlyList{T}"/>s.</summary>
 internal static class ImmutableArrays

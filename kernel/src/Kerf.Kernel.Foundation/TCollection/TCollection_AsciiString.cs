@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
-namespace Occt;
+namespace Kerf.Engine;
 
 /// <summary>
 /// The parts of OCCT's <c>TCollection_AsciiString</c> that ported code reads values with, on .NET strings (translation

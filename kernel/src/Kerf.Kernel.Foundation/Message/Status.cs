@@ -2,7 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2003-2026 OPEN CASCADE SAS. Original implementation copyright (c) RINA S.p.A.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Foundation;
 
@@ -10,7 +10,7 @@ namespace Kerf.Engine.Foundation;
 /// Every execution status of <see cref="ExecStatus"/>: 32 per type (Done, Warn, Alarm, Fail). The value is the
 /// type (<see cref="StatusType"/>) plus the index in the type, from 0.
 /// </summary>
-/// <remarks>Unscoped in OCCT: files that use it write <c>using static Occt.Message_Status;</c>.</remarks>
+/// <remarks>Unscoped in OCCT: files that use it write <c>using static Kerf.Engine.Message_Status;</c>.</remarks>
 internal enum Status
 {
     /// <summary>Empty status.</summary>

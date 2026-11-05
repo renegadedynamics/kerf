@@ -12,7 +12,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Features.PerfSelection;
 using static Kerf.Topology.ShapeType;
 

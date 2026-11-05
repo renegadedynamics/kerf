@@ -8,9 +8,9 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Foundation.Std;
 using Kerf.Engine.Geometry.Bvh;
-using Box3d = Kerf.Engine.Geometry.Bvh.Box<double, Occt.NCollection_Vec3<double>>;
-using BoxSet3d = Kerf.Engine.Geometry.Bvh.BoxSet<double, Occt.NCollection_Vec3<double>>;
-using Tree3d = Kerf.Engine.Geometry.Bvh.Tree<double, Occt.NCollection_Vec3<double>>;
+using Box3d = Kerf.Engine.Geometry.Bvh.Box<double, Kerf.Engine.NCollection_Vec3<double>>;
+using BoxSet3d = Kerf.Engine.Geometry.Bvh.BoxSet<double, Kerf.Engine.NCollection_Vec3<double>>;
+using Tree3d = Kerf.Engine.Geometry.Bvh.Tree<double, Kerf.Engine.NCollection_Vec3<double>>;
 
 namespace Kerf.Kernel.Foundation.Tests;
 

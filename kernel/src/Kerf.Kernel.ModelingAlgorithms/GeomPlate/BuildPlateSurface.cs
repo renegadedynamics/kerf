@@ -14,7 +14,7 @@ using Kerf.Engine.Geometry.Properties;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Construction.Plate;

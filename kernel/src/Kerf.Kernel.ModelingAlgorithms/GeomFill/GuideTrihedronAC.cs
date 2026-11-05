@@ -6,7 +6,7 @@
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Surfaces;
 

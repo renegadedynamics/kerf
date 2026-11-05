@@ -7,7 +7,7 @@
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Occt;
+using Kerf.Engine;
 using static Kerf.Engine.Extrema.ExtAlgo;
 
 namespace Kerf.Engine.Geometry.Api;

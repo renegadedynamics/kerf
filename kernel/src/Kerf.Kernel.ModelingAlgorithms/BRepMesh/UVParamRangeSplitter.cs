@@ -7,7 +7,7 @@ using Kerf.Engine.Meshing.Model;
 
 using Kerf.Engine.Meshing.Tools;
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Meshing;
 

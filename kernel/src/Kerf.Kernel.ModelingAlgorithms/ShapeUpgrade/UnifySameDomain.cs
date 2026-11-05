@@ -20,7 +20,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Occt;
+using Kerf.Engine;
 using DataMapOfFacePlane = System.Collections.Generic.Dictionary<Kerf.Topology.Shape, Kerf.Geometry.PlaneSurface>;
 using DataMapOfShapeMapOfShape = System.Collections.Generic.Dictionary<Kerf.Topology.Shape, System.Collections.Generic.HashSet<Kerf.Topology.Shape>>;
 using static Kerf.Topology.Orientation;

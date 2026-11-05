@@ -7,7 +7,7 @@ using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using System.Reflection;
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Kernel.Benchmarks;
 

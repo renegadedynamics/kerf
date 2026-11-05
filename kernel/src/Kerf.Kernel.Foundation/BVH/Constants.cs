@@ -2,11 +2,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Occt;
+using Kerf.Engine;
 
 namespace Kerf.Engine.Geometry.Bvh;
 
-/// <summary>OCCT's unnamed enumeration of BVH constants. Files that use them write <c>using static Occt.BVH_Constants;</c>.</summary>
+/// <summary>OCCT's unnamed enumeration of BVH constants. Files that use them write <c>using static Kerf.Engine.BVH_Constants;</c>.</summary>
 internal static class Constants
 {
     /// <summary>
