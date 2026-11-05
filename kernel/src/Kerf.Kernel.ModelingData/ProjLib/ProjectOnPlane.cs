@@ -458,6 +458,23 @@ internal class ProjectOnPlane : CurveAdaptorBase
     }
 
     /// <summary>
+    /// The line that <see cref="Load"/> finds for a line with the parameters kept (<paramref name="l"/>'s direction projects
+    /// to a unit vector), without an adaptor or a curve (unit 11B). False if it doesn't: then the projection is a B-spline.
+    /// </summary>
+    internal static bool TryProjectLineKeepingParameters(in CoordinateSystem pl, in Direction3D d, in Line3D l, out Line3D projected)
+    {
+        Vector3D xc = ProjectVec(pl, d, new Vector3D(l.Direction));
+        if (xc.Magnitude < global::Kerf.Engine.Foundation.Precision.Confusion() || !(Math.Abs(xc.Magnitude - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion()))
+        {
+            projected = default;
+            return false;
+        }
+
+        projected = new Line3D(ProjectPnt(pl, d, l.Location), new Direction3D(xc));
+        return true;
+    }
+
+    /// <summary>
     /// Projects <paramref name="c"/>. With <paramref name="keepParametrization"/>, the projection keeps the curve's
     /// parameters (lines become degree-1 B-splines, conics that don't stay orthogonal are approximated); Bezier and
     /// B-spline curves always keep them.

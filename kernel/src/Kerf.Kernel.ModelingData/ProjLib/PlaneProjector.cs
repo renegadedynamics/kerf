@@ -80,10 +80,13 @@ internal class PlaneProjector : Projector
         return new Direction2D(d.Dot(pl.Position.XDirection), d.Dot(pl.Position.YDirection));
     }
 
+    /// <summary>What <see cref="Project(in Line3D)"/> finds, without a projector (unit 11B).</summary>
+    internal static Line2D ProjectLine(in Plane3D pl, in Line3D l) => new(EvalPnt2d(l.Location, pl), EvalDir2d(l.Direction, pl));
+
     public override void Project(in Line3D l)
     {
         _type = global::Kerf.Geometry.CurveKind.Line;
-        _lin = new Line2D(EvalPnt2d(l.Location, _plane), EvalDir2d(l.Direction, _plane));
+        _lin = ProjectLine(_plane, l);
         _isDone = true;
     }
 
