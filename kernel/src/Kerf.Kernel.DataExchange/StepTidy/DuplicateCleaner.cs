@@ -10,8 +10,8 @@ using Kerf.Engine.Foundation;
 namespace Kerf.Engine.Exchange.Step.Tidy;
 
 /// <summary>
-/// Merges equal STEP entities in a work session and removes the duplicates. 'Equal' means equal names and values within
-/// 1e-12. The reducers merge, each for its type of entity, and the cleaner then removes what they replaced, and any
+/// Merges equal STEP entities in a work session and removes the duplicates. 'Equal' means equal names and exactly equal
+/// values (<see cref="TidyHash"/>). The reducers merge, each for its type of entity, and the cleaner then removes what they replaced, and any
 /// entity left with nothing referring to it and nothing it refers to.
 /// </summary>
 internal sealed class DuplicateCleaner(ExchangeWorkSession workSession)
@@ -93,13 +93,18 @@ internal sealed class DuplicateCleaner(ExchangeWorkSession workSession)
         workSession.ComputeGraph();
     }
 
-    // OCCT's new models leave the parameters at their defaults, so a file written after cleaning names the default
-    // schema whichever was asked for. The parameters go across (occt-issues.md, unit 11N).
+    // OCCT's new models leave the parameters and header behind. The parameters name the schema, so its file names the default
+    // whichever was asked for; its Write makes a new header, but a stream written after this had none. Both go across
+    // (occt-issues.md, unit 11N).
     private static StepModel NewModelLike(StepModel model)
     {
         var like = new StepModel { InternalParameters = model.InternalParameters };
         like.SetProtocol(model.Protocol());
         like.SetGTool(model.GTool());
+        for (EntityIterator header = model.Header(); header.More(); header.Next())
+        {
+            like.AddHeaderEntity(header.Value()!);
+        }
         return like;
     }
 }

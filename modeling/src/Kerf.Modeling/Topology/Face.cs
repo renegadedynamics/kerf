@@ -394,7 +394,7 @@ public static partial class FaceExtensions
             if (centerOf == CenterOf.Mass || (centerOf == CenterOf.Geometry && self.IsPlanar is not null))
                 return TopoUtil.FaceCenter(self);
             if (centerOf == CenterOf.BoundingBox)
-                return self.BoundBox().Center();
+                return self.Bounds().Center();
             return TopoUtil.FacePosition(self, 0.5, 0.5);
         }
 

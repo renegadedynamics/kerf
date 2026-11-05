@@ -11,9 +11,8 @@ public static partial class ShapeExtensions
 {
     // Any mesh on the shape is ignored, as it can affect the box, unless the shape has nothing else (faces holding only
     // triangles, as STL and glTF are read). The tolerance is accepted, as build123d accepts it, but unused.
-    private static BoundingBox BoxOf(Shape shape, double? tolerance, bool optimal)
+    private static BoundingBox BoxOf(Shape shape, bool optimal)
     {
-        _ = tolerance;
         if (shape.IsEmpty)
             return BoundingBox.Empty;
         var box = shape.BoundingBox(optimal);
@@ -189,8 +188,12 @@ public static partial class ShapeExtensions
 
         // ---- Bounding boxes ----
 
-        /// <summary>A box aligned with the axes containing this shape (tight when <paramref name="optimal"/>).</summary>
-        public BoundingBox BoundBox(double? tolerance = null, bool optimal = true) => BoxOf(self.AsShape(), tolerance, optimal);
+        /// <summary>
+        /// A box aligned with the axes containing this shape: tight unless <paramref name="optimal"/> is false, falling back
+        /// on a mesh for a shape with no geometry to bound, and empty for an empty shape. The kernel's <c>BoundingBox()</c>
+        /// is the fast, loose one, and doesn't fall back.
+        /// </summary>
+        public BoundingBox Bounds(bool optimal = true) => BoxOf(self.AsShape(), optimal);
 
         /// <summary>The smallest box in any orientation containing this shape.</summary>
         public OrientedBoundBox OrientedBoundingBox()
@@ -335,7 +338,7 @@ public static partial class ShapeExtensions
                 }
                 case CenterOf.BoundingBox:
                 {
-                    var sum = list.Select(o => o.BoundBox().Center().ToVector()).Aggregate((a, b) => a + b);
+                    var sum = list.Select(o => o.Bounds().Center().ToVector()).Aggregate((a, b) => a + b);
                     return (sum * (1.0 / list.Count)).ToPoint();
                 }
                 default:

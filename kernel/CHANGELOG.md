@@ -3,6 +3,14 @@
 All notable changes to the Kerf.Kernel packages (until 0.2.0 the OCCT.NET packages). Versions follow [SemVer](https://semver.org); before 1.0 a minor
 version may break the API.
 
+## 0.3.0 (unreleased)
+
+- **STEP's header names Kerf:** organisation `Kerf`, processor `Kerf STEP processor 8.0`, product `Kerf STEP translator 8.0 N`, and
+  a description saying Kerf derives from Open CASCADE Technology. Files naming Open CASCADE read as before.
+- **Messages in Kerf's terms:** exceptions and diagnostics no longer name OCCT's types (`gp_Dir`, `TopoDS_Face`). Codes don't change.
+- **StepTidy:** `StepWriteOptions.CleanDuplicates` merges exactly equal entities when writing STEP, 17.9% smaller over the
+  dataset's files. Off by default.
+
 ## 0.2.0
 
 The first release as Kerf.Kernel, replacing `OcctNet.Foundation`, `OcctNet.ModelingData`, `OcctNet.ModelingAlgorithms`

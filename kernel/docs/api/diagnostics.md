@@ -37,7 +37,8 @@ for them, and list them here.
 
 An OCCT exception's code is `engine.` and its class name without the package, in lower case with hyphens between
 words (`StdFail_NotDone` is `engine.not-done`); the Booleans' own failure is `boolean.failed`. The message is the kind
-of failure, then OCCT's message if it has one: `the algorithm couldn't complete: BRep_API: command not done`. A
+of failure, then OCCT's message if it has one, without the OCCT names: `the algorithm couldn't complete: command not done`
+(decision 18401). A
 Boolean's failure (`BRepAlgoAPI_Failure`) carries its report, and `OperationDiagnostics.FromException` gives the
 report's alerts in its place (next section). Several of OCCT's classes share a code where they mean the same
 (`Geom_UndefinedValue`, `Geom2d_UndefinedValue` and `StdFail_UndefinedValue`).

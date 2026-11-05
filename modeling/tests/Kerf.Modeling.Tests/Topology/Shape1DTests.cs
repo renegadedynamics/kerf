@@ -352,7 +352,7 @@ public class Shape1DTests
         var target = Face.MakeRect(10, 10, Plane.XY.Rotated(new Vector3D(0, 45, 0)));
         var circle = Edge.MakeCircle(1).Located(new Location(new Point3D(0, 0, 10)));
         var ellipse = circle.Project(target, new Vector3D(0, 0, -1))[0];
-        var bbox = ellipse.BoundBox();
+        var bbox = ellipse.Bounds();
         Check.AlmostEqual(new Point3D(-1, -1, -1), bbox.Min, 5);
         Check.AlmostEqual(new Point3D(1, 1, 1), bbox.Max, 5);
         circle = default(Edge);
@@ -461,7 +461,7 @@ public class Shape1DTests
         var onXz = Plane.XZ * Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(10, 10, 0));
         var around = onXz.Offset2D(1);
         Check.AlmostEqual(2 * Math.Sqrt(200) + 2 * Math.PI, around.Length, 5);
-        Check.AlmostEqual(0, around.BoundBox().Size.Y, 5);
+        Check.AlmostEqual(0, around.Bounds().Size.Y, 5);
 
         var left = (Plane.XZ * Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(10, 0, 0))).Offset2D(1, side: Side.Left, closed: false);
         Check.AlmostEqual(new Point3D(5, 0, 1), left.PositionAt(0.5), 5);
@@ -469,7 +469,7 @@ public class Shape1DTests
         // a line with nothing to say which plane it is in takes one
         var inSpace = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(10, 0, 10));
         var given = inSpace.Offset2D(1, plane: Plane.XZ);
-        Check.AlmostEqual(0, given.BoundBox().Size.Y, 5);
+        Check.AlmostEqual(0, given.Bounds().Size.Y, 5);
         // without one the kernel picks the plane, as it always has
         var eitherSide = new[] { Side.Left, Side.Right }.Select(side => inSpace.Offset2D(1, side: side, closed: false)).ToList();
         foreach (var sideLine in eitherSide)

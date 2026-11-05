@@ -146,6 +146,24 @@ its own was still going.
 So allocation and the totals are a real check, and one short operation's time only catches something large: single rows
 are bimodal, depending on when the runtime tiers up. Don't read a 20% move on one row as a finding without running it again.
 
+## StepTidy (unit 11N)
+
+*5 November 2026, `Kerf.Kernel.Benchmarks -- step-tidy` over the 289 files `-- healing` exports, written by the plain STEP
+writer with `CleanDuplicates` off and on. Whether it's on by default is the owner's decision (decision 18406).*
+
+| | Off | On | Change |
+|---|---:|---:|---:|
+| Total file size | 49,067,067 bytes | 40,272,582 bytes | 17.9% less |
+| Allocation, all files | 3,023 MB | 3,347 MB | 10.7% more |
+
+- **Per file:** the median reduction is 18.9%, and the largest 55.6% (`pr1db.stp`, 177,965 to 79,010 bytes). Some small files
+  have nothing to merge: 0.0%.
+- **Read back:** all 289 files, both ways. Volumes (to a part in 10^9) and face counts match on every file, and none failed.
+- **Writing time isn't measured yet:** the machine was running a coverage run. Taken there, the total was 3,068 ms off and
+  3,983 ms on, which only says the order of it. It belongs in a quiet run of the same command.
+- **Merging within OCCT's 1e-12 isn't worth it:** 20.7% where exact merging gives 17.9%, and one file read back differently
+  (decision 18404).
+
 ## How unit 9E measured it
 
 - **Machine:** 24 logical cores, Windows 11, .NET 10, Release builds. Other helpers were running tests on the same

@@ -134,7 +134,7 @@ public static partial class Shape2DExtensions
             // Trim infinite edges before OCCT operations
             if (TopoUtil.Typed(shape) is Edge { IsInfinite: true } infinite)
             {
-                var box = self.BoundBox(optimal: false);
+                var box = self.Bounds(optimal: false);
                 shape = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Magnitude);
             }
             switch (TopoUtil.Typed(shape))
@@ -153,10 +153,10 @@ public static partial class Shape2DExtensions
                     else
                     {
                         // Leave out edges on the boundary of the overlap, which aren't crossings
-                        var commonEdges = commonFaces.SelectMany(f => f.Edges()).Select(ce => (Edge: ce, Box: ce.BoundBox(optimal: false))).ToList();
+                        var commonEdges = commonFaces.SelectMany(f => f.Edges()).Select(ce => (Edge: ce, Box: ce.Bounds(optimal: false))).ToList();
                         foreach (var edge in sectionEdges)
                         {
-                            var box = edge.BoundBox(optimal: false);
+                            var box = edge.Bounds(optimal: false);
                             if (!commonEdges.Any(ce => box.IntersectsNear(ce.Box, tolerance) && edge.DistanceTo(ce.Edge) <= tolerance))
                                 results.Add(edge);
                         }

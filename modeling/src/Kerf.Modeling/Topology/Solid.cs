@@ -75,7 +75,7 @@ public static partial class SolidExtensions
             // Faces are equal geometrically, not as the same OCCT object: compare a grid of positions and normals
             bool FacesEqual(Face f1, Face f2, int gridSize = 4)
             {
-                if (!f1.BoundBox(optimal: false).IntersectsNear(f2.BoundBox(optimal: false), tolerance))
+                if (!f1.Bounds(optimal: false).IntersectsNear(f2.Bounds(optimal: false), tolerance))
                     return false;
                 for (int i = 0; i < gridSize; i++)
                     for (int j = 0; j < gridSize; j++)
@@ -108,8 +108,8 @@ public static partial class SolidExtensions
                         foundSolids ??= [.. ShapeExtensions.IntersectOne(self.AsShape(), other, tolerance, includeTouched: false) ?? []];
                         intersectFaces = foundSolids.SelectMany(s => s.Faces()).ToList();
                     }
-                    var selfFaces = self.Faces().Select(f => (Face: f, Box: f.BoundBox(optimal: false))).ToList();
-                    var otherFaces = other.Faces().Select(f => (Face: f, Box: f.BoundBox(optimal: false))).ToList();
+                    var selfFaces = self.Faces().Select(f => (Face: f, Box: f.Bounds(optimal: false))).ToList();
+                    var otherFaces = other.Faces().Select(f => (Face: f, Box: f.Bounds(optimal: false))).ToList();
                     var raw = new List<Shape>();
                     foreach (var (sf, sfBox) in selfFaces)
                         foreach (var (of, ofBox) in otherFaces)
@@ -139,8 +139,8 @@ public static partial class SolidExtensions
                 }
                 case Edge or Wire:
                 {
-                    var selfFaces = self.Faces().Select(f => (Face: f, Box: f.BoundBox(optimal: false))).ToList();
-                    var otherBox = other.BoundBox(optimal: false);
+                    var selfFaces = self.Faces().Select(f => (Face: f, Box: f.Bounds(optimal: false))).ToList();
+                    var otherBox = other.Bounds(optimal: false);
                     // The edge's ends on the boundary
                     foreach (var ov in other.Vertices())
                         if (selfFaces.Any(sf => VertexOnFace(ov, sf.Face)))

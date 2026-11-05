@@ -348,7 +348,7 @@ public class CompoundTreeLocationTests
         Assert.Equal(Placed, Check.LocationOf(assembly));
         Assert.Contains(assembly.Children, c => ReferenceEquals(c, marker));
         Check.AlmostEqual(new Point3D(10, 4, 0), (Check.LocationOf(assembly) * Check.LocationOf(marker)).Position, 5);
-        Check.AlmostEqual(4.5, assembly.BoundBox().Max.Y, 5);
+        Check.AlmostEqual(4.5, assembly.Bounds().Max.Y, 5);
     }
 
     [Fact]

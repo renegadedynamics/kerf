@@ -55,7 +55,7 @@ public class SolidSmokeTests
     public void BoundingBoxesAndCenters()
     {
         var box = Solid.MakeBox(1, 2, 3);
-        var bb = box.BoundBox();
+        var bb = box.Bounds();
         Check.AlmostEqual(new Point3D(0, 0, 0), bb.Min, 5);
         Check.AlmostEqual(new Point3D(1, 2, 3), bb.Max, 5);
         Check.AlmostEqual(new Point3D(0.5, 1, 1.5), box.Center());

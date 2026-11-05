@@ -26,7 +26,7 @@ broken down by package.
 | DataExchange | TKDEIGES | 0 / 927 | 0 / 141,411 | 0.0 |
 | DataExchange | TKDEOBJ | 0 / 24 | 0 / 4,206 | 0.0 |
 | DataExchange | TKDEPLY | 0 / 8 | 0 / 1,546 | 0.0 |
-| DataExchange | TKDESTEP | 3517 / 3566 | 332,480 / 342,125 | 97.2 |
+| DataExchange | TKDESTEP | 3542 / 3566 | 335,135 / 342,125 | 98.0 |
 | DataExchange | TKDESTL | 10 / 14 | 1,655 / 2,687 | 61.6 |
 | DataExchange | TKDEVRML | 0 / 170 | 0 / 22,851 | 0.0 |
 | DataExchange | TKRWMesh | 0 / 23 | 0 / 3,424 | 0.0 |
@@ -58,7 +58,7 @@ broken down by package.
 | FoundationClasses | TKMath | 434 / 435 | 137,416 / 137,575 | 99.9 |
 | FoundationClasses | TKernel | 101 / 470 | 32,228 / 132,410 | 24.3 |
 | ModelingAlgorithms | TKBO | 196 / 201 | 71,137 / 71,242 | 99.9 |
-| ModelingAlgorithms | TKBool | 200 / 464 | 64,190 / 152,788 | 42.0 |
+| ModelingAlgorithms | TKBool | 198 / 464 | 64,070 / 152,788 | 41.9 |
 | ModelingAlgorithms | TKExpress | 0 / 137 | 0 / 15,888 | 0.0 |
 | ModelingAlgorithms | TKFeat | 95 / 96 | 32,495 / 32,591 | 99.7 |
 | ModelingAlgorithms | TKFillet | 260 / 261 | 96,717 / 97,078 | 99.6 |
@@ -71,7 +71,7 @@ broken down by package.
 | ModelingAlgorithms | TKShHealing | 257 / 258 | 88,011 / 88,297 | 99.7 |
 | ModelingAlgorithms | TKTopAlgo | 338 / 340 | 84,044 / 84,336 | 99.7 |
 | ModelingAlgorithms | TKXMesh | 2 / 2 | 100 / 100 | 100.0 |
-| ModelingData | TKBRep | 173 / 277 | 34,131 / 90,279 | 37.8 |
+| ModelingData | TKBRep | 171 / 277 | 34,057 / 90,279 | 37.7 |
 | ModelingData | TKG2d | 102 / 102 | 23,488 / 23,488 | 100.0 |
 | ModelingData | TKG3d | 237 / 237 | 70,301 / 70,301 | 100.0 |
 | ModelingData | TKGeomBase | 719 / 720 | 317,319 / 317,408 | 100.0 |
@@ -82,7 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 1 / 380 | 28 / 69,480 | 0.0 |
 | Visualization | TKV3d | 5 / 493 | 2,282 / 112,071 | 2.0 |
-| **All** |  | 8407 | 1,796,086 / 2,897,781 | 62.0 |
+| **All** |  | 8430 | 1,798,547 / 2,897,781 | 62.1 |
 
 ## TKDE
 
@@ -131,7 +131,7 @@ broken down by package.
 | StepRepr | 170 / 170 | 8,319 / 8,319 | 100.0 |
 | StepSelect | 8 / 12 | 701 / 1,157 | 60.6 |
 | StepShape | 208 / 208 | 10,436 / 10,436 | 100.0 |
-| StepTidy | 0 / 25 | 0 / 2,655 | 0.0 |
+| StepTidy | 25 / 25 | 2,655 / 2,655 | 100.0 |
 | StepToGeom | 2 / 2 | 3,124 / 3,124 | 100.0 |
 | StepToTopoDS | 48 / 48 | 7,909 / 7,909 | 100.0 |
 | StepVisual | 280 / 280 | 14,152 / 14,152 | 100.0 |
@@ -228,7 +228,7 @@ broken down by package.
 | TopOpeBRep | 0 / 81 | 0 / 23,561 | 0.0 |
 | TopOpeBRepBuild | 33 / 112 | 8,646 / 42,632 | 20.3 |
 | TopOpeBRepDS | 60 / 114 | 9,264 / 25,098 | 36.9 |
-| TopOpeBRepTool | 23 / 73 | 7,395 / 22,612 | 32.7 |
+| TopOpeBRepTool | 21 / 73 | 7,275 / 22,612 | 32.2 |
 
 ## TKFeat
 
@@ -393,7 +393,7 @@ broken down by package.
 | BinTools | 24 / 25 | 7,308 / 7,330 | 99.7 |
 | TopExp | 4 / 4 | 883 / 883 | 100.0 |
 | TopTools | 8 / 9 | 1,699 / 1,722 | 98.7 |
-| TopoDS | 44 / 44 | 2,777 / 2,777 | 100.0 |
+| TopoDS | 42 / 44 | 2,703 / 2,777 | 97.3 |
 
 ## TKG2d
 

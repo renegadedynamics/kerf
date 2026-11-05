@@ -289,7 +289,7 @@ public class EdgeTests
         Assert.Throws<ArgumentException>(() => Edge.MakeBezier([new Point3D(0, 0, 0), new Point3D(1, 1, 1)], weights: [1.0]));
 
         var bezier = Edge.MakeBezier(new Point3D(0, 0, 0), new Point3D(0, 1, 0), new Point3D(1, 1, 0), new Point3D(1, 0, 0));
-        var bbox = bezier.BoundBox();
+        var bbox = bezier.Bounds();
         Check.AlmostEqual(new Point3D(0, 0, 0), bbox.Min, 5);
         Check.AlmostEqual(new Point3D(1, 0.75, 0), bbox.Max, 5);
     }
@@ -431,7 +431,7 @@ public class EdgeTests
     public void ConicalHelix()
     {
         var helix = Edge.MakeHelix(1, 4, 1, normal: new Vector3D(-1, 0, 0), angle: 10, lefthand: true);
-        Check.AlmostEqual(-4, helix.BoundBox().Min.X, 5);
+        Check.AlmostEqual(-4, helix.Bounds().Min.X, 5);
     }
 
     [Fact]

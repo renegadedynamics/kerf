@@ -63,7 +63,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `Color.categorical_set(n, starting_hue=0xff0000)` | `Color.CategoricalSet(n, new Color(0xff0000))` |
 | `GeomEncoder` (JSON) | Not yet ported |
 | `Vector(vertex)` | `vertex.Point` |
-| `Plane(face)`, `BoundBox(shape)` | `new Plane(face)`, `shape.BoundBox()` |
+| `Plane(face)`, `BoundBox(shape)` | `new Plane(face)`, `shape.Bounds()` |
 | `plane.to_local_coords(shape)` | `plane.ToLocalCoords(shape)` (keeps the shape's class) |
 
 ## Topology

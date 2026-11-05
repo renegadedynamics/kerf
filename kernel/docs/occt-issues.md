@@ -2075,3 +2075,15 @@ classes.
 | Where | What | Effect | Triage |
 |---|---|---|---|
 | `Geom_TrimmedCurve.cxx`, `Geom2d_TrimmedCurve.cxx`, `Geom_RectangularTrimmedSurface.cxx` (`SetTrim`, `Reverse`) | With a NaN parameter on a basis that is not periodic, `U1 < U2` is false, so the sense is reversed, and `Reverse` calls `SetTrim` with NaN again | Unbounded recursion: the stack overflows | fixed: a NaN is refused (decision 1604) |
+
+## Found by unit 11N's port of StepTidy
+
+| Where | What | Effect | Triage |
+|---|---|---|---|
+| `StepTidy_CartesianPointHasher`, `StepTidy_DirectionHasher` | `hashBytes(aCoords.data(), size)` passes the 3 coordinates as 3 bytes | Only low bytes of the first coordinate are hashed: values within the documented 1e-12 rarely merge, and round first coordinates share a bucket | settled (decision 18404: exact merging, with a proper hash) |
+| `StepTidy_VectorHasher`, `StepTidy_CircleHasher` | Hash the magnitude and radius by their integer parts | Vectors and circles under 1 share a bucket | settled (decision 18404) |
+| `StepTidy_*Hasher` comparisons | `Name()->IsSameString` is called when both names are null | A null dereference | settled (decision 18405) |
+| `StepTidy_Axis2Placement3dReducer::replaceCircle`, `replaceEllipse` | `SetValue` on a copy of the conic's position, and returns true | The conic keeps the duplicate, and `AddWithRefs` brings it back | settled (decision 18405) |
+| `StepTidy_DirectionReducer::replaceAxis2Placement3d` | Returns after the axis | A duplicate that's also the reference direction stays | settled (decision 18405) |
+| `StepTidy_DuplicateCleaner::removeEntities` | The new models have no parameters and no header | The written file names the default schema, whichever was asked for | settled (decision 18405) |
+| `STEPCAFControl_Writer` stream write | Only `Write(file)` cleans duplicates | `SetCleanDuplicates` is ignored when writing to a stream | settled (decision 18405) |

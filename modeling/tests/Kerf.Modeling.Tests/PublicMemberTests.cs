@@ -177,7 +177,7 @@ public class PublicMemberTests
         Assert.Equal([1.0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], new GeneralTransform3D().TransposedList());
         Assert.True(new MeshTolerances(0.1, 0.2) with { Relative = true, Linear = 0.3, Angular = 0.4 } is { Relative: true, Linear: 0.3, Angular: 0.4 });
 
-        BoundingBox box = new Box(2, 2, 2).BoundBox();
+        BoundingBox box = new Box(2, 2, 2).Bounds();
         Assert.Equal(1, box.Max.X, 9);
 
         var selector = new Selector(ShapeType.Face, [new Selector.ParallelTo(Axis.X)]);
@@ -228,7 +228,7 @@ public class PublicMemberTests
         Assert.Equal(4 * 4.5, Extrude([square], Until.Next, target).Value.Volume, 3);
 
         var curve = new Curve([Edge.MakeLine(new Point3D(1, 0, 0), new Point3D(3, 0, 0))]);
-        Assert.Equal(-3, Mirror(curve, Plane.YZ).BoundBox().Min.X, 6);
+        Assert.Equal(-3, Mirror(curve, Plane.YZ).Bounds().Min.X, 6);
         Assert.Equal(2, Len(Split(curve, Plane.XZ.Offset(10), Keep.Bottom)), 6);
         Assert.True(Offset(curve, 1, new OffsetOptions { Closed = false }).IsSuccess);
 
@@ -315,11 +315,11 @@ public class PublicMemberTests
             var box = new Box(2, 2, 2);
             string stl = Path.Combine(folder, "box.stl");
             Assert.True(Exporters3D.ExportStl(box, stl).IsSuccess);
-            Assert.Equal(2, Importers.ImportStl(stl).Value.BoundBox().Size.X, 6);
+            Assert.Equal(2, Importers.ImportStl(stl).Value.Bounds().Size.X, 6);
 
             string gltf = Path.Combine(folder, "box.glb");
             Assert.True(Exporters3D.ExportGltf(box, gltf, new GltfExportOptions { Binary = true }).IsSuccess);
-            Assert.Equal(2, Importers.ImportGltf(gltf).Value.BoundBox().Size.X, 6);
+            Assert.Equal(2, Importers.ImportGltf(gltf).Value.Bounds().Size.X, 6);
 
             string threeMf = Path.Combine(folder, "box.3mf");
             Assert.True(Exporters3D.Export3mf(box, threeMf).IsSuccess);

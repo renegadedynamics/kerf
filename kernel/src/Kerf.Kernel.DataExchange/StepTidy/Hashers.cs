@@ -17,16 +17,11 @@ namespace Kerf.Engine.Exchange.Step.Tidy;
 /// <summary>What the hashers share: how names and values compare, and how they hash.</summary>
 internal static class TidyHash
 {
-    /// <summary>How far apart two values can be and still be equal.</summary>
-    public const double Tolerance = 1e-12;
-
-    // A hash has to agree on values within the tolerance, so it reads them rounded, well above it. OCCT hashes the array
-    // of three doubles with a length of 3 taken as bytes, so only the low bytes of the first coordinate, and the magnitude
-    // and radius by their integer part. So entities within the tolerance rarely meet, and all those with round first
-    // coordinates share a bucket (occt-issues.md, unit 11N).
-    private const double HashScale = 1e9;
-
-    public static int Of(double value) => ((long)Math.Round(value * HashScale)).GetHashCode();
+    // Values merge when they're exactly equal (0 and -0 are). OCCT's hashers compare within 1e-12, but its hash reads the
+    // array of three doubles with a length of 3 taken as bytes: only low bytes of the first coordinate. So what it merges is
+    // in effect what's exactly equal, and all round first coordinates share a bucket. Hashing properly and keeping 1e-12
+    // gave 20.7% over the dataset, not 17.9%, and changed what one file read back as (decision 18404).
+    public static int Of(double value) => value.GetHashCode();
 
     public static int Of(ReadOnlySpan<double> values)
     {
@@ -44,7 +39,7 @@ internal static class TidyHash
     public static bool SameName(TCollection_HAsciiString? name1, TCollection_HAsciiString? name2)
         => name1 is null || name2 is null ? name1 is null && name2 is null : name1.IsSameString(name2);
 
-    public static bool Same(double value1, double value2) => Math.Abs(value1 - value2) <= Tolerance;
+    public static bool Same(double value1, double value2) => value1 == value2;
 
     public static bool Same(ReadOnlySpan<double> values1, ReadOnlySpan<double> values2)
     {
@@ -68,10 +63,13 @@ internal sealed class CartesianPointHasher : IEqualityComparer<StepCartesianPoin
 {
     public static CartesianPointHasher Instance { get; } = new();
 
-    public int GetHashCode(StepCartesianPoint point) => TidyHash.WithName(TidyHash.Of(point.Coordinates()), point.Name());
+    public int GetHashCode(StepCartesianPoint point) => TidyHash.WithName(TidyHash.Of(Values(point)), point.Name());
 
     public bool Equals(StepCartesianPoint? point1, StepCartesianPoint? point2)
-        => TidyHash.SameName(point1!.Name(), point2!.Name()) && TidyHash.Same(point1.Coordinates(), point2.Coordinates());
+        => TidyHash.SameName(point1!.Name(), point2!.Name()) && TidyHash.Same(Values(point1), Values(point2));
+
+    // The coordinates it has: a 2D point has room for three, and isn't the 3D point with a zero Z
+    private static ReadOnlySpan<double> Values(StepCartesianPoint point) => point.Coordinates()[..point.CoordinateCount];
 }
 
 /// <summary>Directions: their names and ratios.</summary>
@@ -79,11 +77,14 @@ internal sealed class DirectionHasher : IEqualityComparer<StepDirection>
 {
     public static DirectionHasher Instance { get; } = new();
 
-    public int GetHashCode(StepDirection direction) => TidyHash.WithName(TidyHash.Of(direction.DirectionRatios()), direction.Name());
+    public int GetHashCode(StepDirection direction) => TidyHash.WithName(TidyHash.Of(Values(direction)), direction.Name());
 
     public bool Equals(StepDirection? direction1, StepDirection? direction2)
         => TidyHash.SameName(direction1!.Name(), direction2!.Name())
-           && TidyHash.Same(direction1.DirectionRatios(), direction2.DirectionRatios());
+           && TidyHash.Same(Values(direction1), Values(direction2));
+
+    // The ratios it has, as for a point
+    private static ReadOnlySpan<double> Values(StepDirection direction) => direction.DirectionRatios()[..direction.DirectionRatioCount];
 }
 
 /// <summary>Vectors: their names, magnitudes and orientations.</summary>

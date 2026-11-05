@@ -70,7 +70,7 @@ public class SolidTests
         var b = a + 2 * offsetAmt;
         var v = h * (a * a + b * b + a * b) / 3;
         Check.AlmostEqual(v, taperSolid.Volume, 5);
-        var bbox = taperSolid.BoundBox();
+        var bbox = taperSolid.Bounds();
         var size = Math.Max(1, b) / 2;
         if (direction.Z > 0)
         {
@@ -94,7 +94,7 @@ public class SolidTests
         var recess = cross.Fillet2D(5.3 / 3, inner);
         var tapered = Solid.ExtrudeTaper(recess, new Vector3D(0, 0, -3.27), 20);
         Assert.True(tapered.IsValid);
-        Check.AlmostEqual(-3.27, tapered.BoundBox().Min.Z, 5);
+        Check.AlmostEqual(-3.27, tapered.Bounds().Min.Z, 5);
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public class SolidTests
             var profile = Face.Make(Wire.MakePolygon(outline));
             foreach (var direction in new Vector3D[] { new Vector3D(0, 0, 5), new Vector3D(0, 0, -5) })
             {
-                var box = Solid.ExtrudeTaper(profile, direction, 1).BoundBox();
+                var box = Solid.ExtrudeTaper(profile, direction, 1).Bounds();
                 Check.AlmostEqual(5, box.Max.Z - box.Min.Z, 5);
                 Check.AlmostEqual(direction.Z / 2, box.Center().Z, 5);
             }
@@ -187,7 +187,7 @@ public class SolidTests
         var tapered = Solid.ExtrudeTaper(ellipse, new Vector3D(0, 0, 5), 10);
         Assert.True(tapered.IsValid);
         Assert.True(tapered.Volume < ellipse.Area * 5);
-        Check.AlmostEqual(5, tapered.BoundBox().Max.Z, 5);
+        Check.AlmostEqual(5, tapered.Bounds().Max.Z, 5);
 
         var holed = ellipse.MakeHoles([Wire.MakeCircle(1)]);
         var taperedHoled = Solid.ExtrudeTaper(holed, new Vector3D(0, 0, 5), 10);
@@ -334,7 +334,7 @@ public class SolidTests
         var cyl = Solid.MakeCylinder(0.001, 10).Located(new Location(Plane.Isometric));
         var cyl2 = Solid.MakeCylinder(1, 10).Located(new Location(Plane.Isometric));
 
-        var rbb = Solid.FromBoundingBox(cyl.BoundBox());
+        var rbb = Solid.FromBoundingBox(cyl.Bounds());
         var obb = Solid.FromBoundingBox(cyl.OrientedBoundingBox());
         var obb2 = Solid.FromBoundingBox(cyl2.OrientedBoundingBox());
 
