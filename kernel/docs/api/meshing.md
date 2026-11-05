@@ -23,6 +23,7 @@ public sealed record MeshOptions
     public bool Parallel { get; init; } = true;
     public double MinSize { get; init; }
     public bool InternalVertices { get; init; } = true;
+    public bool ControlAllSurfaces { get; init; }
 }
 
 /// <summary>A shape's mesh in flat buffers: what viewers and exporters read.</summary>

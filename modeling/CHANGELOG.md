@@ -5,6 +5,8 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## 0.3.0 (unreleased)
 
+- **`MeshTolerances.ControlAllSurfaces`,** off by default, and its documentation no longer promises a maximum deflection: a long fillet can stray from it.
+
 - **`shape.BoundBox()` is now `shape.Bounds()`,** beside the kernel's `BoundingBox()`, which has a different default. Its `tolerance`
   argument, which did nothing, has gone.
 - **STEP's header names Kerf:** `Kerf.Modeling` as the originating system, and the kernel's other changes.
