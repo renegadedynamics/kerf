@@ -218,7 +218,7 @@ loaded machine lets more methods tier up during the first pass. The quiet run sh
 - **The adaptors' boxed elementary curves and surfaces** (`Line3D`, `Plane3D` and so on in `_curveData`, about 1%). Reading them
   from the curve instead would see a curve changed after loading, which the copy doesn't, so they stay.
 - **`Matrix` has three objects over its array** (`DoubleTab`, `NCollection_Array2`). After the above that's little; not done.
-- **Left, each under about 2% of what remains, for a later look:**
+- **Left, each about 4% of what remains or less, for a later look:**
   - `CurveOnPlane` for circles, which still takes the whole projection;
   - `LinkedListOfInteger`'s nodes in the mesher, about 8 MB a recalculation. A removed node has to keep its link, so they can't
     simply be reused;

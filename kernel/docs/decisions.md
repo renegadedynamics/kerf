@@ -16447,8 +16447,8 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        a new one. This was 17% of the bytes.
 18202. **`NCollection_CellFilter` holds its lists in one array, with no objects per cell.** Targets in a cell are still visited
        newest first, and the cells in the same order, so nothing can tell. Nothing enumerates the cells, so the new key's hash can't
-       reach a result. It's no longer re-entrant: it keeps its working indexes, and no inspector calls its own filter, and no filter
-       is used from two threads.
+       reach a result. It's no longer re-entrant: it keeps its working indexes. No inspector calls its own filter, and no filter is
+       used from two threads.
 18203. **`BRep_Tool::CurveOnPlane` takes a short cut for a line in the plane.** The same arithmetic in the same order as OCCT's
        route through `GeomProjLib::ProjectOnPlane`, `ProjLib_ProjectedCurve` and `Geom2dAdaptor::MakeCurve`, by the same two
        functions, without a dozen objects. A line that doesn't project to a unit vector goes the old way (it becomes a B-spline), and
