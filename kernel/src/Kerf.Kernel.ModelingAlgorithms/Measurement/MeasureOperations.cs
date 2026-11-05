@@ -15,7 +15,7 @@ namespace Kerf.Measurement;
 /// <summary>
 /// Properties and measurement (docs/api/measurement.md): mass properties, bounding boxes, distances, classification and
 /// where a line meets a shape. Each is a C# 14 extension member too, so <c>MeasureOperations.IntegrateVolume(part)</c> and
-/// <c>part.Volume()</c> both work.
+/// <c>part.IntegrateVolume()</c> both work.
 /// </summary>
 /// <remarks>
 /// Volume, area and length are numbers, not results: OCCT's integration can't fail on a valid shape, and on an invalid

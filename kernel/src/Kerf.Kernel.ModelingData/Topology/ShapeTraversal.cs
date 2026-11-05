@@ -10,8 +10,8 @@ using Occt;
 namespace Kerf.Topology;
 
 /// <summary>
-/// Traversal and raw assembly, for all nine shape types (C# 14 extension members, so <c>solid.Faces()</c> and
-/// <c>shape.Faces()</c> both work): OCCT's <c>TopoDS_Iterator</c>, <c>TopExp_Explorer</c>, <c>TopExp::MapShapes</c> and
+/// Traversal and raw assembly, for all nine shape types (C# 14 extension members, so <c>solid.AllFaces()</c> and
+/// <c>shape.AllFaces()</c> both work): OCCT's <c>TopoDS_Iterator</c>, <c>TopExp_Explorer</c>, <c>TopExp::MapShapes</c> and
 /// <c>TopoDS_Builder</c>.
 /// </summary>
 public static class ShapeTraversal
