@@ -356,7 +356,7 @@ public class OffsetOrientationTests
     public void OffsetCupCanBeFilleted()
     {
         var cone = Solid.MakeCone(22.5, 33.75, 40);
-        var cup = (IShape3D)cone.Offset3D(cone.SelectFaces().OrderBy(Axis.Z)[^1..], 3, kind: Kind.Intersection);
+        var cup = TopoUtil.As3D(cone.Offset3D(cone.SelectFaces().OrderBy(Axis.Z)[^1..], 3, kind: Kind.Intersection));
         Assert.Equal(Orientation.Forward, cup.AsShape().Orientation);
         Assert.True(cup.Volume > 0);
         var rim = cup.SelectEdges().Where(GeomType.Circle).OrderBy(Axis.Z)[0];
@@ -375,7 +375,7 @@ public class OffsetOrientationTests
     {
         var box = Solid.MakeBox(30, 20, 10);
         var top = box.SelectFaces().OrderBy(Axis.Z)[^1..];
-        var shelled = (IShape3D)box.Offset3D(top, amount, kind: kind);
+        var shelled = TopoUtil.As3D(box.Offset3D(top, amount, kind: kind));
         Assert.Equal(Orientation.Forward, shelled.AsShape().Orientation);
         Assert.True(shelled.Volume > 0);
         // The sharp edges around the opening fillet on every variant

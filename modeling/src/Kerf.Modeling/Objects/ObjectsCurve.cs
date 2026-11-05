@@ -56,6 +56,14 @@ public readonly struct CurveLimit
 
 #pragma warning disable CS1591 // Conversions from each kind of limit
     public static implicit operator CurveLimit(Shape shape) => new(shape);
+    public static implicit operator CurveLimit(Vertex shape) => new((Shape)shape);
+    public static implicit operator CurveLimit(Edge shape) => new((Shape)shape);
+    public static implicit operator CurveLimit(Wire shape) => new((Shape)shape);
+    public static implicit operator CurveLimit(Face shape) => new((Shape)shape);
+    public static implicit operator CurveLimit(Shell shape) => new((Shape)shape);
+    public static implicit operator CurveLimit(Solid shape) => new((Shape)shape);
+    public static implicit operator CurveLimit(Compound shape) => new((Shape)shape);
+    public static implicit operator CurveLimit(ModelShape shape) => new(shape.Shape);
     public static implicit operator CurveLimit(Axis axis) => new(axis);
     public static implicit operator CurveLimit(Location location) => new(location);
     public static implicit operator CurveLimit(Plane plane) => new(plane);

@@ -291,7 +291,9 @@ public class FaceTests
         // (otherwise the original Rectangle would be the topo_parent)
         var flipped = (Face)(-Obj.Rectangle(34, 10));
         var leftEdge = flipped.SelectEdges().OrderBy(Axis.X)[0];
-        var parentFace = (Face)leftEdge.TopoParent!;
+        // The edge's list knows the face it was selected from: the flipped one
+        var parentFace = (Face)flipped.SelectEdges().Origin!.AsShape();
+        Check.Same(leftEdge, flipped.SelectEdges().OrderBy(Axis.X).First());
         Check.AlmostEqual(parentFace.NormalAt(), flipped.NormalAt(), 5);
     }
 
@@ -1071,8 +1073,9 @@ public class SurfaceOffsetTests
     [Fact]
     public void AttributesAreCarriedOver()
     {
-        var face = Face.MakeRect(10, 10).WithLabel("plate");
-        Assert.Equal("plate", face.Offset(1).Label);
+        // A kernel face has no attributes; an object placed or offset keeps its own
+        var plate = new Sketch(Face.MakeRect(10, 10)).WithLabel("plate");
+        Assert.Equal("plate", plate.Moved(new Location(new Vector(1, 0, 0))).Label);
     }
 }
 

@@ -191,7 +191,7 @@ public partial class ExchangeTests
     [Fact]
     public void StepKeepsLabelsColoursAndAssembliesOnOcctNetOnly()
     {
-        var pair = Compound.Assembly([new Box(1, 1, 1).WithLabel("a").WithColor(new Color("red")),
+        var pair = new Assembly([new Box(1, 1, 1).WithLabel("a").WithColor(new Color("red")),
                                       new Sphere(1).Moved(new Location(new Vector(3.0, 0.0, 0.0))).WithLabel("b")], "pair");
         var stream = new MemoryStream();
         Exporters3D.ExportStep(pair, stream);
@@ -199,8 +199,8 @@ public partial class ExchangeTests
         var read = Importers.ImportStep(stream).Value;
         Check.AlmostEqual(pair.Volume, read.Volume, 6);
         Assert.Equal("pair", read.Label);
-        Assert.Equal(["a", "b"], ((Compound)read).AssemblyChildren.Select(c => c.Label));
-        Assert.Equal(new Color("red"), ((Compound)read).AssemblyChildren[0].Color);
+        Assert.Equal(["a", "b"], ((Assembly)read).Children.Select(c => c.Label));
+        Assert.Equal(new Color("red"), ((Assembly)read).Children[0].Color);
     }
 
     [Fact]
@@ -264,7 +264,7 @@ public partial class ExchangeTests
     [Fact]
     public void GltfRoundTripsAnAssemblyWithLabelsAndColours()
     {
-        var assembly = Compound.Assembly(
+        var assembly = new Assembly(
         [
             new Box(10, 10, 10).WithLabel("box").WithColor(new Color("red")),
             new Sphere(4).Moved(new Location(new Vector(20.0, 0.0, 0.0))).WithLabel("ball").WithColor(new Color(0.0, 0.5, 1.0)),
@@ -278,10 +278,10 @@ public partial class ExchangeTests
             else
                 Assert.Contains("data:application/octet-stream;base64,", Encoding.UTF8.GetString(stream.ToArray()));
             stream.Position = 0;
-            var read = Check.Is<Compound>(Importers.ImportGltf(stream).Value);
+            var read = Assert.IsType<Assembly>(Importers.ImportGltf(stream).Value);
             Assert.Equal("pair", read.Label);
-            Assert.Equal(["box", "ball"], read.AssemblyChildren.Select(c => c.Label));
-            Assert.Equal(new Color("red"), read.AssemblyChildren[0].Color);
+            Assert.Equal(["box", "ball"], read.Children.Select(c => c.Label));
+            Assert.Equal(new Color("red"), read.Children[0].Color);
             var (min, max) = Extent(read);
             Check.AlmostEqual(-5, min.X, 4);
             Check.AlmostEqual(24, max.X, 2);
@@ -311,7 +311,7 @@ public partial class ExchangeTests
     public void ThreeMfHoldsAModel()
     {
         var stream = new MemoryStream();
-        Assert.True(Exporters3D.Export3mf(Compound.Assembly([Block(), new Sphere(3).WithColor(new Color("blue"))]), stream).IsSuccess);
+        Assert.True(Exporters3D.Export3mf(new Assembly([Block(), new Sphere(3).WithColor(new Color("blue"))]), stream).IsSuccess);
         stream.Position = 0;
         var zip = new ZipArchive(stream, ZipArchiveMode.Read);
         using var model = new StreamReader(zip.GetEntry("3D/3dmodel.model")!.Open());

@@ -237,7 +237,16 @@ public static partial class TopologyUtils
     /// <exception cref="ArgumentException">
     /// No references, mixed or unsupported kinds, or shapes without one shared <c>TopoParent</c>.
     /// </exception>
-    public static Func<Shape, double> TopoDistanceTo(Shape parent, params IEnumerable<Shape> other)
+    public static Func<T, double> TopoDistanceTo<T>(Shape parent, params IEnumerable<T> other) where T : IShape
+    {
+        var distance = TopoDistanceTo(parent, other.Select(s => s.AsShape()));
+        return s => distance(s.AsShape());
+    }
+
+    /// <summary>
+    /// A key function giving each shape's topological distance from <paramref name="other"/> (see the other form).
+    /// </summary>
+    public static Func<Shape, double> TopoDistanceTo(Shape parent, IEnumerable<Shape> other)
     {
         var sources = other.ToList();
         if (sources.Count == 0)
@@ -332,7 +341,9 @@ public static partial class TopologyUtils
         {
             if (obj.Type != peerType)
                 throw new ArgumentException("Topological distance requires shapes of the same type");
-            return PeerOf(obj) is { } peer && distances.TryGetValue(peer, out var d) ? d : double.PositiveInfinity;
+            if (PeerOf(obj) is not { } peer)
+                throw new ArgumentException("Topological distance needs shapes selected from the parent shape.");
+            return distances.TryGetValue(peer, out var d) ? d : double.PositiveInfinity;
         };
     }
 }

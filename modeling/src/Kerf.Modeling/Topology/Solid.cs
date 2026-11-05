@@ -257,6 +257,9 @@ public static partial class SolidExtensions
             });
 
         /// <summary>A loft through wires, optionally starting or ending with a vertex; ruled (stepped) or smooth.</summary>
+        public static Solid MakeLoft<T>(IEnumerable<T> objs, bool ruled = false) where T : IShape => Solid.MakeLoft(objs.Select(o => o.AsShape()), ruled);
+
+        /// <inheritdoc cref="MakeLoft{T}(IEnumerable{T}, bool)"/>
         public static Solid MakeLoft(IEnumerable<Shape> objs, bool ruled = false) =>
             Failures.Doing(() => "loft", () => ((Solid)TopoUtil.MakeLoft(objs, true, ruled)));
 
@@ -341,10 +344,10 @@ public static partial class SolidExtensions
             SolidExtensions.SweepCore(section, innerWires?.ToList() ?? [], path, makeSolid, isFrenet, mode, transition);
 
         /// <summary>A sweep through a sequence of profiles (wires or faces' outer wires) along a path.</summary>
-        public static Solid SweepMulti(IEnumerable<IShape2D> profiles, IShape1D path, bool makeSolid = true, bool isFrenet = false, object? binormal = null) =>
-            Solid.SweepMulti(profiles.Select(p => ((Face)p).OuterWire()), path, makeSolid, isFrenet, binormal);
+        public static Solid SweepMulti(IEnumerable<Face> profiles, IShape1D path, bool makeSolid = true, bool isFrenet = false, object? binormal = null) =>
+            Solid.SweepMulti(profiles.Select(p => p.OuterWire()), path, makeSolid, isFrenet, binormal);
 
-        /// <inheritdoc cref="SweepMulti(IEnumerable{IShape2D}, IShape1D, bool, bool, object?)"/>
+        /// <inheritdoc cref="SweepMulti(IEnumerable{Face}, IShape1D, bool, bool, object?)"/>
         public static Solid SweepMulti(IEnumerable<Wire> profiles, IShape1D path, bool makeSolid = true, bool isFrenet = false, object? binormal = null) =>
             Failures.Doing(() => "multi-section sweep", () => SolidExtensions.SweepMultiCore(profiles, path, makeSolid, isFrenet, binormal));
 

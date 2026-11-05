@@ -92,7 +92,7 @@ public class EmptyShapeDefinitionTests
         Assert.True((empty).IsEmpty);
         Check.Is<Solid>((empty));
         Assert.True((empty).IsEmpty);
-        Check.Is<Compound>(Shape.Cast(empty));
+        Check.Is<Compound>((empty));
     }
 }
 
@@ -159,7 +159,7 @@ public class EmptyShapePlacementTests
     {
         foreach (var (_, make, _) in Zeros.Classes)
         {
-            Assert.Contains("no location", Assert.Throws<InvalidOperationException>(() => make().Location).Message);
+            Assert.Contains("no location", Assert.Throws<InvalidOperationException>(() => new Location(make().AsShape().Placement)).Message);
             Assert.Contains("no position", Assert.Throws<InvalidOperationException>(() => make().Position).Message);
             Assert.Contains("no orientation", Assert.Throws<InvalidOperationException>(() => make().Orientation).Message);
             Assert.Contains("no center", Assert.Throws<InvalidOperationException>(() => make().Center()).Message);
@@ -501,7 +501,7 @@ public class EmptyShapeContainersTests
     {
         Assert.True(Compound.Make([]).IsEmpty);
         Assert.True(Compound.Make([default(Solid), default(Face)]).IsEmpty);
-        Assert.True(Compound.Assembly([]).IsEmpty);
+        Assert.True(new Assembly([]).IsEmpty);
     }
 
     [Fact]

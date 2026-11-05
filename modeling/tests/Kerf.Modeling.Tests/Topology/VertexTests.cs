@@ -59,7 +59,7 @@ public class VertexTests
     [Fact]
     public void ALoneVertexHasNothingToClassifyAgainst()
     {
-        var e = Assert.Throws<InvalidOperationException>(() => Vertex.Make(1, 2, 3).Convexity);
+        var e = Assert.Throws<InvalidOperationException>(() => default(Compound).ConvexityOf(Vertex.Make(1, 2, 3)));
         Assert.Contains("not selected from a shape", e.Message);
     }
 }
@@ -105,7 +105,7 @@ public class EdgeWireSmokeTests
         for (int i = 0; i < 4; i++)
             Check.AlmostEqual(edges[i].EndPoint(), edges[(i + 1) % 4].StartPoint());
         // Each edge knows the wire it was taken from
-        Assert.All(edges, e => Check.Same(rect, e.TopoParent));
+        Check.Same(rect, edges.Origin!);
         Assert.Equal(2, edges.ParallelTo(Axis.X).Count);
         Check.AlmostEqual(-1, edges.OrderBy(Axis.Y)[0].Center().Y);
     }
@@ -124,12 +124,12 @@ public class EdgeWireSmokeTests
     [Fact]
     public void MovedSharesGeometryAndKeepsClass()
     {
-        var edge = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0)).WithLabel("e");
-        Edge moved = new Location(new Vector(0, 0, 5)) * edge;
+        var edge = new Curve((Shape)Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0))).WithLabel("e");
+        var moved = new Location(new Vector(0, 0, 5)) * edge;
         Assert.Equal("e", moved.Label);
         Check.AlmostEqual(5, moved.Center().Z);
         Check.AlmostEqual(0, edge.Center().Z);   // the original is unchanged
-        Assert.True(moved.IsPartner(edge));
+        Assert.True(moved.Shape.IsPartner(edge.Shape));
     }
 
     [Fact]

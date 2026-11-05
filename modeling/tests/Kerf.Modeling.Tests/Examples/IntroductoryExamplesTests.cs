@@ -171,7 +171,7 @@ public class IntroductoryExamplesTests
         ex11 = Fillet(ex11.SelectEdges().ParallelTo(Axis.Z), 5).Value;
         var last = ex11.SelectEdges();
         ex11 -= new Hole(Width / 4, depth: Thickness);
-        ex11 = Fillet(ex11.SelectEdges().Except(last).OrderBy(Axis.Z).Last(), 2).Value;
+        ex11 = Fillet(ex11, ex11.SelectEdges().Except(last).OrderBy(Axis.Z).Last(), 2).Value;
         var plane = new Plane(ex11.SelectFaces().OrderBy(Axis.Z).Last());
         var polygons = new Sketch().Add(new GridLocations(Length / 2, Width / 2, 2, 2)
             .Select(loc => (Shape)(plane * loc * new RegularPolygon(5, 5)))).Value;

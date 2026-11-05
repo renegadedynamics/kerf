@@ -41,6 +41,15 @@ public partial class Part
         return Failures.Try(() => Run(() => ShapeAlgebra.CommonOfCompound(Shape, operands)));
     }
 
+    /// <inheritdoc cref="Add(IEnumerable{Shape})"/>
+    public Result<Part> Add<T>(IEnumerable<T> others) where T : IShape => Add(others.Select(o => o.AsShape()));
+
+    /// <inheritdoc cref="Subtract(IEnumerable{Shape})"/>
+    public Result<Part> Subtract<T>(IEnumerable<T> others) where T : IShape => Subtract(others.Select(o => o.AsShape()));
+
+    /// <inheritdoc cref="Common(IEnumerable{Shape})"/>
+    public Result<Part> Common<T>(IEnumerable<T> others) where T : IShape => Common(others.Select(o => o.AsShape()));
+
     /// <summary>The part fused with a shape (see <see cref="Add"/>).</summary>
     public static Part operator +(Part a, Shape b) => a.Run(() => ShapeAlgebra.AddToCompound(a.Shape, 3, [b]));
 
@@ -61,6 +70,9 @@ public partial class Part
 
     /// <summary>What the part has in common with a shape (see <see cref="Common"/>).</summary>
     public static Part operator &(Part a, Shape b) => a.Run(() => ShapeAlgebra.CommonOfCompound(a.Shape, [b]));
+
+    /// <summary>What the part has in common with shapes (see <see cref="Common"/>).</summary>
+    public static Part operator &(Part a, IEnumerable<Shape> b) { var c = Checked(b); return a.Run(() => ShapeAlgebra.CommonOfCompound(a.Shape, c)); }
 }
 
 public partial class Sketch
@@ -92,6 +104,15 @@ public partial class Sketch
         return Failures.Try(() => Run(() => ShapeAlgebra.CommonOfCompound(Shape, operands)));
     }
 
+    /// <inheritdoc cref="Add(IEnumerable{Shape})"/>
+    public Result<Sketch> Add<T>(IEnumerable<T> others) where T : IShape => Add(others.Select(o => o.AsShape()));
+
+    /// <inheritdoc cref="Subtract(IEnumerable{Shape})"/>
+    public Result<Sketch> Subtract<T>(IEnumerable<T> others) where T : IShape => Subtract(others.Select(o => o.AsShape()));
+
+    /// <inheritdoc cref="Common(IEnumerable{Shape})"/>
+    public Result<Sketch> Common<T>(IEnumerable<T> others) where T : IShape => Common(others.Select(o => o.AsShape()));
+
     /// <summary>The sketch fused with a shape (see <see cref="Add"/>).</summary>
     public static Sketch operator +(Sketch a, Shape b) => a.Run(() => ShapeAlgebra.AddToCompound(a.Shape, 2, [b]));
 
@@ -112,6 +133,9 @@ public partial class Sketch
 
     /// <summary>What the sketch has in common with a shape (see <see cref="Common"/>).</summary>
     public static Sketch operator &(Sketch a, Shape b) => a.Run(() => ShapeAlgebra.CommonOfCompound(a.Shape, [b]));
+
+    /// <summary>What the sketch has in common with shapes (see <see cref="Common"/>).</summary>
+    public static Sketch operator &(Sketch a, IEnumerable<Shape> b) { var c = Checked(b); return a.Run(() => ShapeAlgebra.CommonOfCompound(a.Shape, c)); }
 }
 
 public partial class Curve
@@ -142,6 +166,15 @@ public partial class Curve
         var operands = Checked(others);
         return Failures.Try(() => Run(() => ShapeAlgebra.CommonOfCompound(Shape, operands)));
     }
+
+    /// <inheritdoc cref="Add(IEnumerable{Shape})"/>
+    public Result<Curve> Add<T>(IEnumerable<T> others) where T : IShape => Add(others.Select(o => o.AsShape()));
+
+    /// <inheritdoc cref="Subtract(IEnumerable{Shape})"/>
+    public Result<Curve> Subtract<T>(IEnumerable<T> others) where T : IShape => Subtract(others.Select(o => o.AsShape()));
+
+    /// <inheritdoc cref="Common(IEnumerable{Shape})"/>
+    public Result<Curve> Common<T>(IEnumerable<T> others) where T : IShape => Common(others.Select(o => o.AsShape()));
 
     /// <summary>The curve joined with a shape (see <see cref="Add"/>).</summary>
     public static Curve operator +(Curve a, Shape b) => a.Run(() => OneD.Add1D(a.Shape, [b]));
@@ -212,17 +245,42 @@ public static class ShapeOperators
         /// <summary>This shape fused with others.</summary>
         public static Shape operator +(T a, IEnumerable<Shape> b) => ShapeAlgebra.Add(a.AsShape(), b);
 
+        /// <summary>This shape fused with others of its type.</summary>
+        public static Shape operator +(T a, IEnumerable<T> b) => ShapeAlgebra.Add(a.AsShape(), b.Select(s => s.AsShape()));
+
         /// <summary>This shape with another cut away: only shapes of an equal or greater dimension can be subtracted.</summary>
         public static Shape operator -(T a, Shape b) => ShapeAlgebra.Subtract(a.AsShape(), [b]);
 
         /// <summary>This shape with others cut away.</summary>
         public static Shape operator -(T a, IEnumerable<Shape> b) => ShapeAlgebra.Subtract(a.AsShape(), b);
 
+        /// <summary>This shape with others of its type cut away.</summary>
+        public static Shape operator -(T a, IEnumerable<T> b) => ShapeAlgebra.Subtract(a.AsShape(), b.Select(s => s.AsShape()));
+
         /// <summary>What this shape has in common with another: one shape, a compound of several, or nothing.</summary>
         public static Shape operator &(T a, Shape b) => ShapeAlgebra.Common(a.AsShape(), [b]);
 
         /// <summary>What this shape has in common with others.</summary>
         public static Shape operator &(T a, IEnumerable<Shape> b) => ShapeAlgebra.Common(a.AsShape(), b);
+    }
+}
+
+/// <summary>A vertex's coordinates add and subtract (build123d's <c>Vertex</c> operators).</summary>
+public static class VertexOperators
+{
+    extension(Vertex)
+    {
+        /// <summary>A vertex at the sum of two vertices' coordinates.</summary>
+        public static Vertex operator +(Vertex a, Vertex b) => Vertex.Make(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
+
+        /// <summary>A vertex moved by a vector.</summary>
+        public static Vertex operator +(Vertex a, Vector b) => Vertex.Make(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
+
+        /// <summary>A vertex at the difference of two vertices' coordinates.</summary>
+        public static Vertex operator -(Vertex a, Vertex b) => Vertex.Make(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
+
+        /// <summary>A vertex moved back by a vector.</summary>
+        public static Vertex operator -(Vertex a, Vector b) => Vertex.Make(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
     }
 }
 

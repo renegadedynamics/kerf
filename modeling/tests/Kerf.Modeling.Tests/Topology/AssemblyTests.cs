@@ -11,11 +11,11 @@ using Kerf.Modeling;
 
 public class AssemblyTests
 {
-    static Compound CreateTestAssembly()
+    static Assembly CreateTestAssembly()
     {
         var box = Solid.MakeBox(1, 1, 1).WithOrientation(new Vector(45, 45, 0)).WithLabel("box");
         var sphere = Solid.MakeSphere(1).WithLabel("sphere").WithPosition(new Vector(1, 2, 3));
-        return Compound.Assembly([box, sphere], label: "assembly");
+        return new Assembly([box, sphere], label: "assembly");
     }
 
     /// <summary>Each line matches apart from the address, as Python's assertTopoEqual.</summary>
@@ -55,7 +55,7 @@ public class AssemblyTests
             "└── Shell    at 0x7f3754501a70, Position(1, 2, 3)",
             "    └── Face at 0x7f3754501030, Position(1, 2, 3)",
         ];
-        AssertTopoEqual(assembly.AssemblyChildren[1].ShowTopology(ShapeType.Face, showCenter: false), expected);
+        AssertTopoEqual(assembly.Children[1].ShowTopology(ShapeType.Face, showCenter: false), expected);
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public class AssemblyTests
             "└── Shell    at 0x7f62790438f0, Center(1, 2, 3)",
             "    └── Face at 0x7f62790439f0, Center(1, 2, 3)",
         ];
-        AssertTopoEqual(assembly.AssemblyChildren[1].ShowTopology(ShapeType.Face), expected);
+        AssertTopoEqual(assembly.Children[1].ShowTopology(ShapeType.Face), expected);
     }
 
     [Fact]
@@ -76,21 +76,21 @@ public class AssemblyTests
     {
         var box = Solid.MakeBox(1, 1, 1).WithLabel("box");
         var sphere = Solid.MakeSphere(1).WithLabel("sphere");
-        var assembly = Compound.Assembly([box, sphere], label: "assembly");
+        var assembly = new Assembly([box, sphere], label: "assembly");
 
         Assert.Equal("box", box.Label);
-        Assert.Equal(2, assembly.AssemblyChildren.Count);
-        Check.Same(box, assembly.AssemblyChildren[0]);
-        Check.Same(sphere, assembly.AssemblyChildren[1]);
+        Assert.Equal(2, assembly.Children.Count);
+        Check.Same(box, assembly.Children[0]);
+        Check.Same(sphere, assembly.Children[1]);
     }
 
     [Fact]
     public void RemoveChild()
     {
         var assembly = CreateTestAssembly();
-        Assert.Equal(2, assembly.AssemblyChildren.Count);
-        assembly = assembly.WithAssemblyChildren(assembly.AssemblyChildren.Skip(1));
-        Assert.Single(assembly.AssemblyChildren);
+        Assert.Equal(2, assembly.Children.Count);
+        assembly = assembly.WithChildren(assembly.Children.Skip(1));
+        Assert.Single(assembly.Children);
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public class AssemblyTests
         Assert.False(overlap);
         var box = Solid.MakeBox(1, 1, 1).WithOrientation(new Vector(45, 45, 0)).WithLabel("box");
         var sphere = Solid.MakeSphere(1).WithLabel("sphere").WithPosition(new Vector(0, 0, 0));
-        var assembly = Compound.Assembly([box, sphere], label: "assembly");
+        var assembly = new Assembly([box, sphere], label: "assembly");
         (overlap, _, _) = assembly.DoChildrenIntersect();
         Assert.True(overlap);
     }

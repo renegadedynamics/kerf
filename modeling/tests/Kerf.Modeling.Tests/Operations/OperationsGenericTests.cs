@@ -130,7 +130,7 @@ public class OperationsGenericTests
     {
         var box = new Box(10, 10, 10);
         var face = box.Faces().OrderBy(Axis.Z)[^1];
-        var test = Chamfer(face.SelectEdges()[0], length: 1, length2: Math.Sqrt(3), reference: face).Value;
+        var test = Chamfer(box, face.SelectEdges()[0], length: 1, length2: Math.Sqrt(3), reference: face).Value;
         Check.AlmostEqual(1000 - 1 * 0.5 * 10 * Math.Sqrt(3), test.Volume, 5);
     }
 
@@ -139,7 +139,7 @@ public class OperationsGenericTests
     {
         var box = new Box(10, 10, 10);
         var face = box.Faces().OrderBy(Axis.Z)[^1];
-        var test = Chamfer(face.SelectEdges()[0], length: 1, angle: 60, reference: face).Value;
+        var test = Chamfer(box, face.SelectEdges()[0], length: 1, angle: 60, reference: face).Value;
         Check.AlmostEqual(1000 - 1 * 0.5 * 10 * Math.Sqrt(3), test.Volume, 5);
     }
 
@@ -193,7 +193,7 @@ public class OperationsGenericTests
         var rect = new Rectangle(10, 10);
         var edge = rect.Edges().OrderBy(Axis.Y)[0];
         var vertex = edge.SelectVertices()[0];
-        var test = Chamfer(vertex, length: 1, angle: 60, reference: edge).Value;
+        var test = Chamfer(rect, vertex, length: 1, angle: 60, reference: edge).Value;
         Check.AlmostEqual(100 - 0.5 * Math.Sqrt(3), test.Area, 5);
     }
 
@@ -203,7 +203,7 @@ public class OperationsGenericTests
         var rect = new Rectangle(10, 10);
         var edge = rect.Edges().OrderBy(Axis.Y)[0];
         var vertex = edge.SelectVertices()[0];
-        var test = Chamfer(vertex, length: 1, length2: Math.Sqrt(3), reference: edge).Value;
+        var test = Chamfer(rect, vertex, length: 1, length2: Math.Sqrt(3), reference: edge).Value;
         Check.AlmostEqual(100 - 0.5 * Math.Sqrt(3), test.Area, 5);
         Check.AlmostEqual(9, test.SelectEdges().OrderBy(Axis.Y)[0].Length);
     }
@@ -251,15 +251,15 @@ public class OperationsGenericTests
 
         var box10 = new Box(10, 10, 10);
         var face = box10.Faces().OrderBy(Axis.Z)[^1];
-        Assert.Throws<ArgumentException>(() => Chamfer(face.SelectEdges()[0], length: 1, reference: face));
+        Assert.Throws<ArgumentException>(() => Chamfer(box10, face.SelectEdges()[0], length: 1, reference: face));
 
-        Assert.Throws<ArgumentException>(() => Chamfer(Corner().SelectEdges()[0], length: 1));
+        Assert.Throws<ArgumentException>(() => Chamfer(Corner(), Corner().SelectEdges()[0], length: 1));
     }
 
     [Fact]
     public void NothingToChamfer()
     {
-        var e = Assert.Throws<ArgumentException>(() => Chamfer(Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), length: 0.1));
+        var e = Assert.Throws<ArgumentException>(() => Chamfer([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))], length: 0.1));
         Assert.Contains("Nothing to chamfer", e.Message);
     }
 
@@ -268,7 +268,7 @@ public class OperationsGenericTests
     {
         // A parent compound of mixed dimension has no dimension to dispatch on
         var mixed = Compound.Make([new Box(1, 1, 1).SingleSolid(), Edge.MakeLine(new Vector(5, 0), new Vector(6, 0))]);
-        var e = Assert.Throws<ArgumentException>(() => Chamfer(mixed.SelectEdges()[0], length: 0.1));
+        var e = Assert.Throws<ArgumentException>(() => Chamfer(mixed, mixed.SelectEdges()[0], length: 0.1));
         Assert.Contains("Invalid object dimension", e.Message);
     }
 
@@ -278,7 +278,7 @@ public class OperationsGenericTests
         // A vertex on the free boundary of a planar face of a sheet
         var sheet = Shell.Make([Face.MakeRect(10, 10)]);
         var vertex = sheet.SelectVertices()[0];
-        var test = Chamfer(vertex, length: 1).Value;
+        var test = Chamfer(sheet, vertex, length: 1).Value;
         Check.Is<Shell>(test);
         Check.AlmostEqual(100 - 0.5, test.Area, 5);
     }
@@ -330,7 +330,7 @@ public class OperationsGenericTests
     [Fact]
     public void NothingToFillet()
     {
-        var e = Assert.Throws<ArgumentException>(() => Fillet(Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)), radius: 0.1));
+        var e = Assert.Throws<ArgumentException>(() => Fillet([Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))], radius: 0.1));
         Assert.Contains("Nothing to fillet", e.Message);
     }
 
@@ -355,7 +355,7 @@ public class OperationsGenericTests
     public void FilletInvalidDimension()
     {
         var mixed = Compound.Make([new Box(1, 1, 1).SingleSolid(), Edge.MakeLine(new Vector(5, 0), new Vector(6, 0))]);
-        var e = Assert.Throws<ArgumentException>(() => Fillet(mixed.SelectEdges()[0], radius: 0.1));
+        var e = Assert.Throws<ArgumentException>(() => Fillet(mixed, mixed.SelectEdges()[0], radius: 0.1));
         Assert.Contains("Invalid object dimension", e.Message);
     }
 
@@ -824,7 +824,7 @@ public class OperationsGenericTests
     [Fact]
     public void SweepNoPath()
     {
-        Assert.Throws<ArgumentNullException>(() => Sweep(new PolarLine(new Vector(1, 0), 2, 135), (Shape)null!));
+        Assert.Throws<ArgumentNullException>(() => Sweep(new PolarLine(new Vector(1, 0), 2, 135), (ModelShape)null!));
     }
 
     [Fact]

@@ -315,9 +315,9 @@ public class Fillet2DTests
     private static string Record(Shape original, Shape result)
     {
         var h = result.History!;
-        var inputs = original.SelectVertices().Cast<Shape>().Concat(original.SelectEdges()).Select(s =>
+        var inputs = original.SelectVertices().Upcast().Concat(original.SelectEdges().Upcast()).Select(s =>
             $"{h.Modified(s).Length}{h.Generated(s).Length}{(h.IsRemoved(s) ? 1 : 0)}");
-        var news = result.SelectVertices().Cast<Shape>().Concat(result.SelectEdges()).Select(s => h.IsNew(s) ? "1" : "0");
+        var news = result.SelectVertices().Upcast().Concat(result.SelectEdges().Upcast()).Select(s => h.IsNew(s) ? "1" : "0");
         return $"{string.Join(" ", inputs)} new {string.Concat(news)}";
     }
 

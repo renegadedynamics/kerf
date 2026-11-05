@@ -197,7 +197,7 @@ public class ShellAddTests
     {
         var shell = default(Shell);
         foreach (var face in new[] { _base, _wall })
-            shell += face;
+            shell = (Shell)(shell + face);
         AssertSewn(shell, 2);
     }
 
@@ -205,8 +205,8 @@ public class ShellAddTests
     public void EmptyShellOperands()
     {
         AssertSewn(default(Shell) + _base, 1);
-        AssertSewn(Shell.Make([_base]) + null, 1);
-        AssertSewn(new[] { _base, _wall }.Aggregate(default(Shell), (sum, f) => sum + f), 2);
+        AssertSewn(Shell.Make([_base]) + Array.Empty<Shape>(), 1);
+        AssertSewn(new[] { _base, _wall }.Aggregate(default(Shell), (sum, f) => (Shell)(sum + f)), 2);
     }
 
     [Fact]
@@ -252,7 +252,7 @@ public class ShellAddTests
     [Fact]
     public void AttributesCarriedToResult()
     {
-        var shell = Shell.Make([_base]).WithLabel("sheet").WithColor(new Color("red"));
+        var shell = new Sketch(Shell.Make([_base])).WithLabel("sheet").WithColor(new Color("red"));
         var result = shell + _wall;
         Assert.Equal("sheet", result.Label);
         Assert.NotNull(result.Color);

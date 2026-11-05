@@ -20,7 +20,7 @@ public class MalformedInputTests
         var part = Ops.Fillet(new Box(4, 4, 4).Edges(), 1).Value - new Cylinder(1, 10);
         foreach (var withTriangles in new[] { false, true })
         {
-            var read = Shape.Cast(Extras.ReadBRep(Brep(part, withTriangles)).Value);
+            var read = (Extras.ReadBRep(Brep(part, withTriangles)).Value);
             Assert.Equal(part.Volume, read.Volume, 6);
             Assert.Equal(part.Faces().Count, read.SelectFaces().Count);
         }
@@ -72,7 +72,7 @@ public class MalformedInputTests
                 refused++;
                 continue;
             }
-            var shape = Shape.Cast(result.Value);
+            var shape = (result.Value);
             read++;
             // A shape read from broken data may itself be broken: asking about it fails cleanly or not at all
             try

@@ -459,7 +459,7 @@ public class EdgeTests
         var path = new RegularPolygon(5, 5).SingleFace().OuterWire();
         var profile = path.LocationAt(0) * (new Circle(0.6) & new Rectangle(2, 1));
         var target = Sweep(profile, path, new SweepOptions { Transition = Transition.Right }).Value;
-        var insideEdges = target.Edges().Where(e => e.IsInterior).ToShapeList();
+        var insideEdges = target.Edges().Where(Convexity.Concave);
         Assert.Equal(5, insideEdges.Count);
         Assert.All(insideEdges, e => Assert.Equal(GeomType.Ellipse, e.GeomType));
     }
@@ -472,7 +472,7 @@ public class EdgeTests
         // A moved copy of an extracted solid still names the unmoved container as its topo_parent; the faces have to
         // be found by TShape, not Location
         var moved = new Pos(10) * Extrude(Cross(), 2).Value.SingleSolid();
-        var insideEdges = moved.SelectEdges().Where(e => e.IsInterior).ToShapeList();
+        var insideEdges = moved.SelectEdges().Where(Convexity.Concave);
         Assert.Equal(4, insideEdges.Count);
         Assert.All(insideEdges, e => Assert.True(e.Center().X > 5));
     }
@@ -481,12 +481,12 @@ public class EdgeTests
     public void ConvexityOfCreases()
     {
         var box = new Box(10, 10, 10);
-        Assert.All(box.Edges(), e => Assert.Equal(Convexity.Convex, e.Convexity));
+        Assert.All(box.Edges(), e => Assert.Equal(Convexity.Convex, box.ConvexityOf(e)));
 
         var cross = Extrude(Cross(), 2).Value;
         var concave = cross.Edges().Where(Convexity.Concave);
         Assert.Equal(4, concave.Count);
-        Assert.All(concave, e => Assert.True(e.IsInterior));
+        Assert.All(concave, e => Assert.Equal(Convexity.Concave, cross.ConvexityOf(e)));
         Assert.Equal(32, cross.Edges().Where(Convexity.Convex).Count);
         // the re-entrant edges are the vertical ones nearest the axis
         Assert.All(concave, e => Assert.True(Math.Abs(e.Center().X) == 1 && Math.Abs(e.Center().Y) == 1));
@@ -497,12 +497,12 @@ public class EdgeTests
     {
         // a fillet meets the faces it blends into without a crease
         var rounded = Fillet(new Box(10, 10, 10).Edges(), 2).Value;
-        Assert.All(rounded.Edges(), e => Assert.Equal(Convexity.Smooth, e.Convexity));
-        Assert.DoesNotContain(rounded.Edges(), e => e.IsInterior);
+        Assert.All(rounded.Edges(), e => Assert.Equal(Convexity.Smooth, rounded.ConvexityOf(e)));
+        Assert.DoesNotContain(rounded.Edges(), e => rounded.ConvexityOf(e) == Convexity.Concave);
         // a seam has the same face on both sides
         Solid Cylinder() => Solid.MakeCylinder(3, 5, new Plane(new Vector(0, 0, -2.5)));
         var seam = Cylinder().SelectEdges().Where(GeomType.Line)[0];
-        Assert.Equal(Convexity.Smooth, seam.Convexity);
+        Assert.Equal(Convexity.Smooth, Cylinder().ConvexityOf(seam));
         Assert.Equal(2, Cylinder().SelectEdges().Where(Convexity.Convex).Count);
     }
 
@@ -519,15 +519,15 @@ public class EdgeTests
         var shell = (Shell)TopoUtil.SewFaces([plate, wall], 1e-6);
         var shared = shell.SelectEdges().Where(e => e.GeomType == GeomType.Line && Math.Abs(e.Center().Y) < 1e-6).ToList();
         Assert.Single(shared);
-        Assert.Equal(Convexity.Saddle, shared[0].Convexity);
+        Assert.Equal(Convexity.Saddle, shell.ConvexityOf(shared[0]));
     }
 
     [Fact]
     public void ConvexityErrors()
     {
-        var e = Assert.Throws<InvalidOperationException>(() => Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)).Convexity);
+        var e = Assert.Throws<InvalidOperationException>(() => default(Compound).ConvexityOf(Edge.MakeLine(new Vector(0, 0), new Vector(1, 0))));
         Assert.Contains("no valid parent", e.Message);
-        e = Assert.Throws<InvalidOperationException>(() => Face.MakeRect(1, 1).SelectEdges()[0].IsInterior);
+        e = Assert.Throws<InvalidOperationException>(() => Face.MakeRect(1, 1).ConvexityOf(Face.MakeRect(1, 1).SelectEdges()[0]));
         Assert.Contains("one face only", e.Message);
     }
 

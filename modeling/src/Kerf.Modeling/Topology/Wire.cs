@@ -516,6 +516,12 @@ public static partial class WireExtensions
     extension(Wire)
     {
         /// <summary>A wire of a curve's edges.</summary>
+        public static Wire Make(BaseEdgeObject curve) => Wire.Make(curve.Edge);
+
+        /// <inheritdoc cref="Make(Edge)"/>
+        public static Wire Make(BaseLineObject curve) => curve.Wire;
+
+        /// <inheritdoc cref="Make(Edge)"/>
         public static Wire Make(Curve curve) => (Wire)TopoUtil.Downcast(WireExtensions.MakeWire(curve.Edges())!);
     }
 

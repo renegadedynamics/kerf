@@ -15,9 +15,9 @@ public class SelectorTests
     public void ASelectorIsTheSelectionItDescribes()
     {
         var selector = new Selector(ShapeType.Face, [new Selector.OfGeomType(GeomType.Plane), new Selector.GroupByAxis(Axis.Z, -1)]);
-        Assert.Equal(Part.SelectFaces().Where(GeomType.Plane).GroupBy(Axis.Z).Last().ToList<Shape>(), selector.Apply(Part).ToList());
+        Assert.Equal(Part.SelectFaces().Where(GeomType.Plane).GroupBy(Axis.Z).Last().Upcast().ToList(), selector.Apply(Part).ToList());
         Assert.Equal("Faces().Where(GeomType.Plane).GroupBy(Axis.Z).Last()", selector.ToString());
-        Assert.Equal(Part.SelectFaces().Where(GeomType.Plane).GroupBy(Axis.Z)[^1].ToList<Shape>(), selector.Apply(Part).ToList());
+        Assert.Equal(Part.SelectFaces().Where(GeomType.Plane).GroupBy(Axis.Z)[^1].Upcast().ToList(), selector.Apply(Part).ToList());
     }
 
     [Fact]
@@ -25,8 +25,8 @@ public class SelectorTests
     {
         var byX = Part.SelectFaces().GroupBy(Axis.X);
         Selector Group(int index) => new(ShapeType.Face, [new Selector.GroupByAxis(Axis.X, index)]);
-        Assert.Equal(byX[2].ToList<Shape>(), Group(2).Apply(Part).ToList());
-        Assert.Equal(byX[byX.Count - 2].ToList<Shape>(), Group(-2).Apply(Part).ToList());
+        Assert.Equal(byX[2].Upcast().ToList(), Group(2).Apply(Part).ToList());
+        Assert.Equal(byX[byX.Count - 2].Upcast().ToList(), Group(-2).Apply(Part).ToList());
         Assert.Equal("Faces().GroupBy(Axis.X)[2]", Group(2).ToString());
         Assert.Equal("Faces().GroupBy(Axis.X)[^2]", Group(-2).ToString());
         Assert.Equal("Faces().GroupBy(Axis.X).First()", Group(0).ToString());
@@ -64,7 +64,7 @@ public class SelectorTests
         Assert.Equal(Make().GetHashCode(), Make().GetHashCode());
         Assert.NotEqual(Make(), new Selector(ShapeType.Edge, [new Selector.ParallelTo(Axis.Z)]));
         Assert.Equal("Edges().ParallelTo(Axis.Z).GroupBy(ShapeKey.Length).First()", Make().ToString());
-        Assert.Equal(Part.SelectEdges().ParallelTo(Axis.Z).GroupBy(ShapeKey.Length).First().ToList<Shape>(), Make().Apply(Part).ToList());
+        Assert.Equal(Part.SelectEdges().ParallelTo(Axis.Z).GroupBy(ShapeKey.Length).First().Upcast().ToList(), Make().Apply(Part).ToList());
         Assert.Throws<ArgumentException>(() => new Selector(ShapeType.Solid, []));
     }
 

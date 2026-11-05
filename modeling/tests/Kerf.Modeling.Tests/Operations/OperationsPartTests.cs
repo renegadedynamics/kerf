@@ -70,7 +70,7 @@ public class OperationsPartTests
     [Fact]
     public void BadDraftFaces()
     {
-        var drafted = Draft(_box.SelectFaces().OrderBy(Axis.Z)[0], NeutralPlane, 10);
+        var drafted = Draft(_box, _box.SelectFaces().OrderBy(Axis.Z)[0], NeutralPlane, 10);
         Assert.Equal(ModelingDiagnostics.DraftFailed, drafted.Error!.Code);
         // The same failure from the faces' form
         Assert.Equal(ModelingDiagnostics.DraftFailed, Draft([_box.SelectFaces().OrderBy(Axis.Z)[0]], NeutralPlane, 10).Error!.Code);
@@ -181,14 +181,14 @@ public class OperationsPartTests
     public void NoAmountOrUntil()
     {
         // An extrusion takes an amount or an Until and a target by its overload (unit 10M2); nothing to extrude is refused
-        var e = Assert.Throws<ArgumentNullException>(() => Extrude((Shape)null!, 1));
+        var e = Assert.Throws<ArgumentNullException>(() => Extrude((ModelShape)null!, 1));
         Assert.Equal("toExtrude", e.ParamName);
     }
 
     [Fact]
     public void UntilWithoutTarget()
     {
-        var e = Assert.Throws<ArgumentNullException>(() => Extrude(new Rectangle(1, 1).SingleFace(), Until.Next, null!));
+        var e = Assert.Throws<ArgumentNullException>(() => Extrude(new Rectangle(1, 1).SingleFace(), Until.Next, (ModelShape)null!));
         Assert.Equal("target", e.ParamName);
     }
 
@@ -251,7 +251,7 @@ public class OperationsPartTests
     [Fact]
     public void LoftNoSections()
     {
-        Assert.Throws<ArgumentException>(() => Loft([null!]));
+        Assert.ThrowsAny<ArgumentException>(() => Loft([(ModelShape)null!]));
         Assert.Throws<ArgumentException>(() => Loft([]));
     }
 
@@ -418,7 +418,7 @@ public class OperationsPartTests
     [Fact]
     public void SectionNoObject()
     {
-        var e = Assert.Throws<ArgumentException>(() => Section(null!));
+        var e = Assert.ThrowsAny<ArgumentException>(() => Section((ModelShape)null!));
         Assert.Contains("No object to section", e.Message);
     }
 
@@ -466,11 +466,11 @@ public class OperationsPartTests
     {
         var wire = (IShape1D)(new JernArc(new Vector(0, -2), new Vector(-1, 0), 1, -180) + new JernArc(new Vector(0, 0), new Vector(1, 0), 2, -90));
 
-        var surface = Sweep((wire.LocationAt(0)) * new RadiusArc(new Vector(0, 0), new Vector(0, -1), 1), wire).Value;
+        var surface = Sweep((wire.LocationAt(0)) * new RadiusArc(new Vector(0, 0), new Vector(0, -1), 1), wire.AsShape()).Value;
         var part = Thicken(surface, 0.4).Value;
         Check.AlmostEqual(2.241583787221904, part.Volume, 5);
 
-        part = Thicken(Sweep((wire.LocationAt(0)) * new RadiusArc(new Vector(0, 0), new Vector(0, -1), 1), wire).Value, 0.4, new ThickenOptions { Both = true }).Value;
+        part = Thicken(Sweep((wire.LocationAt(0)) * new RadiusArc(new Vector(0, 0), new Vector(0, -1), 1), wire.AsShape()).Value, 0.4, new ThickenOptions { Both = true }).Value;
         Check.AlmostEqual(4.711747154435256, part.Volume, 5);
     }
 
@@ -493,7 +493,7 @@ public class OperationsPartTests
     [Fact]
     public void ThickenNoFace()
     {
-        var e = Assert.Throws<ArgumentNullException>(() => Thicken((Shape)null!, 1));
+        var e = Assert.Throws<ArgumentNullException>(() => Thicken((ModelShape)null!, 1));
         Assert.Equal("toThicken", e.ParamName);
     }
 }

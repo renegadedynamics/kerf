@@ -82,7 +82,7 @@ public class InputsUnchangedTests
             C("make face", [RectWire], () => Ops.MakeFace(RectWire.SelectEdges())),
             C("make hull", [ArcEdge, LineEdge], () => Ops.MakeHull([ArcEdge, LineEdge])),
             C("trace", [Spline], () => Ops.Trace([Spline], 0.5)),
-            C("full round", [Slot], () => Ops.FullRound(Slot.Edges().OrderBy(Axis.X)[0])),
+            C("full round", [Slot], () => Ops.FullRound(Slot.Edges().OrderBy(Axis.X)[0], Slot)),
             // 2D
             C("face fillet 2d", [Plate], () => Plate.Fillet2D(1, Plate.SelectVertices())),
             C("face chamfer 2d", [Plate], () => Plate.Chamfer2D(1, 1, Plate.SelectVertices())),
@@ -103,7 +103,7 @@ public class InputsUnchangedTests
             C("tessellate moved", [MovedBox], () => MovedBox.Tessellate(0.01)),
             C("triangulate", [Fused], () => Fused.Triangulate(0.01)),
             C("triangulate free edge", [Spline], () => Spline.Triangulate(0.01)),
-            C("triangulate tree", [Box, MovedBox], () => Compound.Assembly([Box, MovedBox]).TriangulateTree()),
+            C("triangulate tree", [Box, MovedBox], () => new Assembly([Box, MovedBox]).TriangulateTree()),
             C("selectors by value", [Fused], () => Fused.Faces().OrderBy(ShapeKey.Area).GroupByValue(f => f.GeomType).Count + Fused.Edges().Count(e => e.IsClosed)),
             C("selector for a pick", [Fused], () => Selector.For(Fused, Fused.Faces()[0])),
             C("distance", [Box, Sphere], () => Box.DistanceToWithClosestPoints(Sphere.Moved(new Location(new Vector(20.0, 0.0, 0.0))))),
@@ -115,14 +115,14 @@ public class InputsUnchangedTests
             C("is inside", [Sphere], () => ((Solid)Sphere.Solids()[0]).IsInside(new Vector(1, 1, 1))),
             // Import and export
             C("export brep", [Fused], () => Exporters3D.ExportBrep(Fused, new MemoryStream())),
-            C("export step", [Fused, MovedBox], () => Exporters3D.ExportStep(Compound.Assembly([Fused, MovedBox]), new MemoryStream())),
+            C("export step", [Fused, MovedBox], () => Exporters3D.ExportStep(new Assembly([Fused, MovedBox]), new MemoryStream())),
         };
         // The mesh formats are OCCT.NET's (the native binding doesn't bind them)
         cases.AddRange(
         [
             C("export stl", [Fused], () => Exporters3D.ExportStl(Fused, new MemoryStream())),
-            C("export gltf", [Fused, MovedBox], () => Exporters3D.ExportGltf(Compound.Assembly([Fused, MovedBox.WithColor(new Color("red"))]), new MemoryStream(), new GltfExportOptions { Binary = true })),
-            C("export 3mf", [Fused, Sphere], () => Exporters3D.Export3mf(Compound.Assembly([Fused, Sphere]), new MemoryStream())),
+            C("export gltf", [Fused, MovedBox], () => Exporters3D.ExportGltf(new Assembly([Fused, MovedBox.WithColor(new Color("red"))]), new MemoryStream(), new GltfExportOptions { Binary = true })),
+            C("export 3mf", [Fused, Sphere], () => Exporters3D.Export3mf(new Assembly([Fused, Sphere]), new MemoryStream())),
         ]);
         return cases;
     }

@@ -27,6 +27,7 @@ public readonly record struct Tangent
 
 #pragma warning disable CS1591 // Conversions from each kind of target
     public static implicit operator Tangent(Edge edge) => new(edge, null, null, Tangency.Unqualified);
+    public static implicit operator Tangent(BaseEdgeObject edge) => new(edge.Edge, null, null, Tangency.Unqualified);
     public static implicit operator Tangent(Axis axis) => new(null, axis, null, Tangency.Unqualified);
     public static implicit operator Tangent(Vector point) => new(null, null, point, Tangency.Unqualified);
     public static implicit operator Tangent(Vertex vertex) => new(null, null, vertex.ToVector(), Tangency.Unqualified);

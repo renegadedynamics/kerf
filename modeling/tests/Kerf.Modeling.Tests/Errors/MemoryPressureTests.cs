@@ -35,7 +35,7 @@ public class MemoryPressureTests
         var plain = EngineShapes.EstimateMemory(new Box(10, 10, 10).Shape);
         var filleted = EngineShapes.EstimateMemory(Ops.Fillet(new Box(10, 10, 10).Edges(), 1).Value.Shape);
         var sphere = new Sphere(10);
-        var meshed = EngineShapes.EstimateMemory(sphere.MeshedCopy(0.001, 0.1, relative: false));
+        var meshed = EngineShapes.EstimateMemory(sphere.Shape.MeshedCopy(0.001, 0.1, relative: false));
         Assert.True(filleted > 3 * plain, $"{filleted} vs {plain}");
         Assert.True(meshed > 1_000_000, $"a fine mesh is {meshed} bytes");
     }

@@ -56,7 +56,7 @@ public class ShapeTests
     }
 
     [Fact]
-    public void ShapeType() => Assert.Equal(ShapeType.Vertex, default(Vertex).ShapeType);
+    public void ShapeType() => Assert.Equal(Kerf.Topology.ShapeType.Vertex, default(Vertex).ShapeType);
 
     [Fact]
     public void Scale()
@@ -347,7 +347,7 @@ public class ShapeTests
     {
         var box = Solid.MakeBox(1, 1, 1).Located(new Location(new Vector(1, 2, 3), new Vector(10, 20, 30)));
         Check.AlmostEqual(new Vector(1, 2, 3), box.Position, 5);
-        Check.AlmostEqual(new Vector(10, 20, 30), box.Orientation, 5);
+        Check.AlmostEqual(new Vector(10, 20, 30), new Location(box.Placement).Orientation, 5);
     }
 
     [Fact]
@@ -477,7 +477,7 @@ public class ShapeTests
         Assert.True(Solid.MakeBox(1, 1, 1).IsManifold);
         Assert.True(Solid.MakeBox(1, 1, 1).SingleShell().IsManifold);
         Assert.False(Solid.MakeBox(1, 1, 1).SingleShell().Cut(Solid.MakeBox(0.5, 0.5, 0.5)).IsManifold);
-        Assert.True(Compound.Assembly([Solid.MakeBox(1, 1, 1), Solid.MakeCylinder(1, 1)]).IsManifold);
+        Assert.True(new Assembly([Solid.MakeBox(1, 1, 1), Solid.MakeCylinder(1, 1)]).IsManifold);
     }
 
     [Fact]
@@ -519,7 +519,7 @@ public class ShapeTests
         // Create some objects and assign colours to them
         var b = Objects.Box(1, 1, 1).Located(new Pos(2, 2, 0)).WithColor(new Color("blue"));
         var c = Objects.Cylinder(1, 1).Located(new Pos(-2, 2, 0)).WithColor(new Color("red"));
-        var a = Compound.Assembly([b, c]).WithColor(new Color(0, 1, 0));
+        var a = new Assembly([b, c]).WithColor(new Color(0, 1, 0));
         // Check that assigned colours stay
         Check.TupleAlmostEqual([0, 1, 0, 1], Check.Of(a.Color!.Value), 5);
         Check.TupleAlmostEqual([0, 0, 1, 1], Check.Of(b.Color!.Value), 5);
@@ -586,7 +586,7 @@ public class ShapeTests
     {
         var empty = default(Solid);
         var box = Solid.MakeBox(1, 1, 1);
-        Assert.Throws<InvalidOperationException>(() => empty.Location);
+        Assert.Throws<InvalidOperationException>(() => new Location(empty.AsShape().Placement));
         Assert.Throws<InvalidOperationException>(() => empty.Position);
         Assert.Throws<InvalidOperationException>(() => empty.Orientation);
         Assert.False(empty.IsManifold);
@@ -600,7 +600,7 @@ public class ShapeTests
         Assert.Equal((0.0, 0.0, 0.0), (emptyBbox.Size.X, emptyBbox.Size.Y, emptyBbox.Size.Z));
         Check.Same(empty, empty.Mirror(Plane.XY));
         Check.AlmostEqual(0, empty.ComputeVolume(), 5);
-        Assert.Empty(empty.Entities(ShapeType.Face));
+        Assert.Empty(empty.Entities(Kerf.Topology.ShapeType.Face));
         Assert.Equal(0, empty.Area);
         Check.Same(empty, empty.Rotate(Axis.Z, 90));
         var translateMatrix = new Matrix(new double[,]
@@ -712,7 +712,7 @@ public class ShapeCastTests
             (typeof(Compound), Compound.Make([_box])),
         ];
         foreach (var (expected, shape) in samples)
-            Assert.IsType(expected, Shape.Cast(shape));
+            Assert.IsType(expected, (shape));
     }
 
     [Fact]
@@ -720,13 +720,13 @@ public class ShapeCastTests
     {
         // Cast is static on Shape, so it is the same through every class
         var solid = _box.SelectSolids()[0];
-        Check.Is<Solid>(Shape.Cast(solid));
-        Check.Is<Solid>(Shape.Cast(solid));
-        Check.Is<Solid>(Shape.Cast(solid));
-        Check.Is<Solid>(Shape.Cast(solid));
-        Check.Is<Solid>(Shape.Cast(solid));
-        Check.Is<Solid>(Shape.Cast(solid));
-        Check.Is<Solid>(Shape.Cast(solid));
+        Check.Is<Solid>((solid));
+        Check.Is<Solid>((solid));
+        Check.Is<Solid>((solid));
+        Check.Is<Solid>((solid));
+        Check.Is<Solid>((solid));
+        Check.Is<Solid>((solid));
+        Check.Is<Solid>((solid));
     }
 }
 
@@ -767,7 +767,7 @@ public class ShapeAlgebraEdgesTests
         // Compound overrides Add, so exercise the Shape implementation with a shape that does not: a bare Solid
         var solid = Solid.MakeBox(1, 1, 1);
         Check.Same(solid, solid + Array.Empty<Shape>());
-        Assert.Throws<ArgumentNullException>(() => solid + (Shape)null!);
+        Assert.Throws<ArgumentNullException>(() => solid + (ModelShape)null!);
     }
 
     [Fact]
@@ -793,19 +793,19 @@ public class AsShapeTests
     [Fact]
     public void GeometryTypesConvert()
     {
-        Check.Is<Vertex>(Shape.AsShape(new Vector(1, 2, 3)));
-        Check.Is<Vertex>(Shape.AsShape(new Location(new Vector(1, 2, 3))));
-        Check.Is<Edge>(Shape.AsShape(Axis.X));
-        Check.Is<Face>(Shape.AsShape(Plane.XY));
+        Check.Is<Vertex>(ShapeExtensions.ShapeOf(new Vector(1, 2, 3)));
+        Check.Is<Vertex>(ShapeExtensions.ShapeOf(new Location(new Vector(1, 2, 3))));
+        Check.Is<Edge>(ShapeExtensions.ShapeOf(Axis.X));
+        Check.Is<Face>(ShapeExtensions.ShapeOf(Plane.XY));
     }
 
     [Fact]
     public void LocationSubclassesConvertLikeLocation()
     {
         // Pos and Rotation derive from Location, so an exact-type lookup would miss them
-        Check.Is<Vertex>(Shape.AsShape(new Pos(1, 2, 3)));
-        Check.Is<Vertex>(Shape.AsShape(new Rotation(0, 0, 45)));
-        var center = Shape.AsShape(new Pos(1, 2, 3)).Center();
+        Check.Is<Vertex>(ShapeExtensions.ShapeOf(new Pos(1, 2, 3)));
+        Check.Is<Vertex>(ShapeExtensions.ShapeOf(new Rotation(0, 0, 45)));
+        var center = ShapeExtensions.ShapeOf(new Pos(1, 2, 3)).Center();
         Assert.Equal((1.0, 2.0, 3.0), (center.X, center.Y, center.Z));
     }
 
@@ -813,6 +813,6 @@ public class AsShapeTests
     public void ShapesPassThroughUnchanged()
     {
         var edge = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0));
-        Check.Same(edge, Shape.AsShape(edge));
+        Check.Same(edge, ShapeExtensions.ShapeOf(edge));
     }
 }

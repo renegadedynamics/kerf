@@ -21,7 +21,7 @@ public class ConstructionInputsUnchangedTests
     private static byte[] Text(Shape shape) => Extras.WriteBRep(shape);
 
     private static bool Holds(Shape result, Shape sub) =>
-        sub switch
+        TopoUtil.Typed(sub) switch
         {
             Face => result.SelectFaces().Any(f => f.IsSame(sub)),
             Vertex => result.SelectVertices().Any(v => v.IsSame(sub)),

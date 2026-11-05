@@ -112,13 +112,13 @@ public class CurveObjectTests
     public void EllipticalStartArc()
     {
         var a = new EllipticalStartArc(new Vector(1, 1), new Vector(0, 1), 3, 1, 90, majorAxisDir: new Vector(1, 1));
-        Check.AlmostEqual(new Vector(-1.2360679775, -0.7888543819998, 0), a.ArcCenter, 5);
+        Check.AlmostEqual(new Vector(-1.2360679775, -0.7888543819998, 0), a.Edge.ArcCenter, 5);
         // On BuildLine(Plane.XZ)
-        Check.AlmostEqual(new Vector(-1.2360679775, 0, -0.7888543819998), (Plane.XZ * a).ArcCenter, 5);
+        Check.AlmostEqual(new Vector(-1.2360679775, 0, -0.7888543819998), (Plane.XZ * a).Edge.ArcCenter, 5);
         Check.IsShape(a);
 
         var b = new EllipticalStartArc(new Vector(0, 1), new Vector(-1, 0), 5, 1, 180, startAngle: 90);
-        Check.AlmostEqual(new Vector(0, 0, 0), b.ArcCenter, 5);
+        Check.AlmostEqual(new Vector(0, 0, 0), b.Edge.ArcCenter, 5);
         Check.AlmostEqual(new Vector(0, -1, 0), b.PositionAt(1), 5);
 
         var e = Assert.Throws<ArgumentException>(() => new EllipticalStartArc(new Vector(0, 0), new Vector(1, 0), 5, 3, 90));
@@ -683,7 +683,7 @@ public class CurveObjectTests
     {
         var l1 = new CenterArc(new Vector(0, 0), 1, 0, 180);
         var l2 = new CenterArc(new Vector(2, 0), 1, 0, -180);
-        var l = (new Curve() + [l1, l2]).SingleWire();   // joined into a wire
+        var l = (new Curve() + new Shape[] { l1, l2 }).SingleWire();   // joined into a wire
         Check.TupleAlmostEqual([2.0, -1.0, 0.0], Check.Of(l.PositionAt(0.25)), 6);
         Check.TupleAlmostEqual([-1.0, 0.0, 0.0], Check.Of(l.TangentAt(0.25)), 6);
         Check.TupleAlmostEqual(Check.Of(l.PositionAt(0.25)), Check.Of((l.LocationAt(0.25)).Position), 6);

@@ -89,7 +89,7 @@ public class ShapeListTests
     [Fact]
     public void FilterByCallablePredicate()
     {
-        var shapelist = new ShapeList<Solid>(
+        var shapelist = new ShapeList<ModelShape>(
         [
             Solid.MakeBox(1, 1, 1).WithLabel("A"),
             Solid.MakeBox(1, 1, 1).WithLabel("A"),
@@ -104,8 +104,8 @@ public class ShapeListTests
     {
         var box1 = Box(2, 2, 2);
         var box2 = Box(2, 2, 2).Translate(new Vector(1, 1, 1));
-        Assert.Equal(6, (box1 + box2).SelectEdges().Where(e => e.IsInterior).ToShapeList().Count);
-        Assert.Equal(3, (box1 - box2).SelectEdges().Where(e => e.IsInterior).ToShapeList().Count);
+        Assert.Equal(6, (box1 + box2).SelectEdges().Where(Convexity.Concave).Count);
+        Assert.Equal(3, (box1 - box2).SelectEdges().Where(Convexity.Concave).Count);
     }
 
     [Fact]
@@ -161,7 +161,8 @@ public class ShapeListTests
         var faces = Cylinder(1, 3).SelectFaces();
         Assert.Equal(2, faces.WithValue(f => f.GeomType, GeomType.Plane).Count);
         Assert.Single(faces.WithValue(f => f.GeomType, GeomType.Cylinder));
-        var concave = Pocket().SelectEdges().WithValue(e => e.Convexity, Convexity.Concave);
+        var pocket = Pocket();
+        var concave = pocket.SelectEdges().WithValue(e => pocket.ConvexityOf(e), Convexity.Concave);
         Assert.Equal(8, concave.Count);
     }
 
@@ -243,13 +244,13 @@ public class ShapeListTests
         Assert.Equal(9, boxes.GroupBy(ShapeKey.Volume).First().Count);
     }
 
-    static ShapeList<Solid> LabelledBoxes(out Solid a0, out Solid b0)
+    static ShapeList<ModelShape> LabelledBoxes(out ModelShape a0, out ModelShape b0)
     {
         var boxesA = Enumerable.Range(0, 3).Select(_ => Solid.MakeBox(1, 1, 1).WithLabel("A")).ToList();
         var boxesB = Enumerable.Range(0, 2).Select(_ => Solid.MakeBox(1, 1, 1).WithLabel("B")).ToList();
         var boxNoLabel = Solid.MakeBox(1, 1, 1);
         (a0, b0) = (boxesA[0], boxesB[0]);
-        return new ShapeList<Solid>([.. boxesA, .. boxesB, boxNoLabel]);
+        return new ShapeList<ModelShape>([.. boxesA, .. boxesB, boxNoLabel]);
     }
 
     [Fact]
@@ -264,11 +265,13 @@ public class ShapeListTests
     {
         var box1 = Box(2, 2, 2);
         var box2 = Box(2, 2, 2).Translate(new Vector(1, 1, 1));
-        var g1 = (box1 + box2).SelectEdges().GroupByValue(e => e.IsInterior);
+        var fused = box1 + box2;
+        var g1 = fused.SelectEdges().GroupByValue(e => fused.ConvexityOf(e) == Convexity.Concave);
         Assert.Equal(6, g1.Group(true).Count);
         Assert.Equal(24, g1.Group(false).Count);
 
-        var g2 = (box1 - box2).SelectEdges().GroupByValue(e => e.IsInterior);
+        var cut = box1 - box2;
+        var g2 = cut.SelectEdges().GroupByValue(e => cut.ConvexityOf(e) == Convexity.Concave);
         Assert.Equal(3, g2.Group(true).Count);
         Assert.Equal(18, g2.Group(false).Count);
     }
@@ -321,7 +324,7 @@ public class ShapeListTests
         var topFace = faces.OrderBy(Axis.Z)[^1];
         var bottomFace = faces.OrderBy(Axis.Z)[0];
 
-        var faceGroups = faces.GroupByValue(TopologyUtils.TopoDistanceTo(topFace));
+        var faceGroups = faces.GroupByValue(TopologyUtils.TopoDistanceTo(box, topFace));
 
         Assert.Equal([1, 4, 1], faceGroups.Select(g => g.Count));
         Assert.Contains(topFace, faceGroups[0]);
@@ -336,7 +339,7 @@ public class ShapeListTests
         var topEdge = edges.OrderBy(Axis.Y)[^1];
         var bottomEdge = edges.OrderBy(Axis.Y)[0];
 
-        var edgeGroups = edges.GroupByValue(TopologyUtils.TopoDistanceTo(topEdge));
+        var edgeGroups = edges.GroupByValue(TopologyUtils.TopoDistanceTo(wire, topEdge));
 
         Assert.Equal([1, 2, 1], edgeGroups.Select(g => g.Count));
         Assert.Contains(topEdge, edgeGroups[0]);
@@ -351,7 +354,7 @@ public class ShapeListTests
         var referenceVertex = vertices.OrderBy(Axis.Z)[^1];
         var oppositeVertex = vertices.OrderByDescendingDistanceTo(referenceVertex)[0];
 
-        var vertexGroups = vertices.GroupByValue(TopologyUtils.TopoDistanceTo(referenceVertex));
+        var vertexGroups = vertices.GroupByValue(TopologyUtils.TopoDistanceTo(box, referenceVertex));
 
         Assert.Equal([1, 3, 3, 1], vertexGroups.Select(g => g.Count));
         Assert.Contains(referenceVertex, vertexGroups[0]);
@@ -364,11 +367,11 @@ public class ShapeListTests
         var face = Face.MakeRect(1, 1) - Face.Make(Wire.MakeCircle(0.2));
         var wires = face.SelectWires();
 
-        var wireGroups = wires.GroupByValue(TopologyUtils.TopoDistanceTo(wires[0]));
+        var wireGroups = wires.GroupByValue(TopologyUtils.TopoDistanceTo(face, wires[0]));
 
         Assert.Equal([1, 1], wireGroups.Select(g => g.Count));
-        Assert.Equal(0, TopologyUtils.TopoDistanceTo(wires[0])(wires[0]));
-        Assert.Equal(double.PositiveInfinity, TopologyUtils.TopoDistanceTo(wires[0])(wires[1]));
+        Assert.Equal(0, TopologyUtils.TopoDistanceTo(face, wires[0])(wires[0]));
+        Assert.Equal(double.PositiveInfinity, TopologyUtils.TopoDistanceTo(face, wires[0])(wires[1]));
     }
 
     [Fact]
@@ -379,7 +382,7 @@ public class ShapeListTests
         var topFace = faces.OrderBy(Axis.Z)[^1];
         var bottomFace = faces.OrderBy(Axis.Z)[0];
 
-        var faceGroups = faces.GroupByValue(TopologyUtils.TopoDistanceTo([topFace, bottomFace]));
+        var faceGroups = faces.GroupByValue(TopologyUtils.TopoDistanceTo(box, [topFace, bottomFace]));
 
         Assert.Equal([2, 4], faceGroups.Select(g => g.Count));
     }
@@ -391,7 +394,7 @@ public class ShapeListTests
         // reachable
         var movedBox = new Pos(x: 10) * new Part([Box(1, 1, 1)]).SingleSolid();
         var edges = movedBox.SelectEdges();
-        var edgeGroups = edges.GroupByValue(TopologyUtils.TopoDistanceTo(edges[0]));
+        var edgeGroups = edges.GroupByValue(TopologyUtils.TopoDistanceTo(movedBox, edges[0]));
 
         Assert.Equal([1, 4, 6, 1], edgeGroups.Select(g => g.Count));
     }
@@ -400,7 +403,7 @@ public class ShapeListTests
     public void TopologicalDistanceRequiresTopoParent()
     {
         var faces = TwoRects();
-        Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo(faces[0]));
+        Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo(default(Compound), faces[0]));
     }
 
     [Fact]
@@ -408,7 +411,7 @@ public class ShapeListTests
     {
         var box = Solid.MakeBox(1, 1, 1);
         var orphan = Face.MakeRect(1, 1);
-        Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo([box.SelectFaces()[0], orphan]));
+        Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo(box, [box.SelectFaces()[0], orphan]));
     }
 
     [Fact]
@@ -416,7 +419,7 @@ public class ShapeListTests
     {
         var box = Solid.MakeBox(1, 1, 1);
         ShapeList<Shape> mixed = [box.SelectFaces()[0], box.SelectEdges()[0]];
-        Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo(mixed));
+        Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo(box, mixed));
     }
 
     [Fact]
@@ -425,14 +428,14 @@ public class ShapeListTests
         var box1 = Solid.MakeBox(1, 1, 1);
         var box2 = Solid.MakeBox(1, 1, 1, new Plane(new Vector(2, 0, 0)));
 
-        var e = Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo([]));
+        var e = Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo(box1, Array.Empty<Face>()));
         Assert.Contains("empty object", e.Message);
 
-        e = Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo(Compound.Make([box1, box2])));
+        e = Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo(box1, Compound.Make([box1, box2])));
         Assert.Contains("not supported", e.Message);
 
-        e = Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo([box1.SelectFaces()[0], box2.SelectFaces()[0]]));
-        Assert.Contains("the same parent shape", e.Message);
+        e = Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo(box1, [box1.SelectFaces()[0], box2.SelectFaces()[0]]));
+        Assert.Contains("the parent shape", e.Message);
     }
 
     [Fact]
@@ -440,16 +443,16 @@ public class ShapeListTests
     {
         var box1 = Solid.MakeBox(1, 1, 1);
         var box2 = Solid.MakeBox(1, 1, 1, new Plane(new Vector(2, 0, 0)));
-        var key = TopologyUtils.TopoDistanceTo(box1.SelectFaces()[0]);
+        var key = TopologyUtils.TopoDistanceTo(box1, [(Shape)box1.SelectFaces()[0]]);
 
         var e = Assert.Throws<ArgumentException>(() => key(box1.SelectEdges()[0]));
         Assert.Contains("same type", e.Message);
 
         e = Assert.Throws<ArgumentException>(() => key(Face.MakeRect(1, 1)));
-        Assert.Contains("selected from a parent shape", e.Message);
+        Assert.Contains("the parent shape", e.Message);
 
         e = Assert.Throws<ArgumentException>(() => key(box2.SelectFaces()[0]));
-        Assert.Contains("the same parent shape", e.Message);
+        Assert.Contains("the parent shape", e.Message);
     }
 
     [Fact]

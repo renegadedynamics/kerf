@@ -461,7 +461,7 @@ public class WireTests
         Assert.True(w4.IsValid);
         var w5 = ((Wire)w0);
         Assert.True(w5.IsValid);
-        var w6 = Wire.Make(wire: ((Wire)w0), label: "w6", color: new Color("red"));
+        var w6 = new Curve((Shape)(Wire)w0, "w6", new Color("red"));
         Assert.True(w6.IsValid);
         Assert.Equal("w6", w6.Label);
         Assert.NotNull(w6.Color);

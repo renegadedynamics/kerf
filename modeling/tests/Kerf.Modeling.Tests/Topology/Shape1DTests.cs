@@ -401,12 +401,10 @@ public class Shape1DTests
         var phoneCasePlan = Face.MakeRect(80, 150) - Face.MakeRect(25, 25, new Plane(new Vector(-20, 55)));
         var phoneCase = Ops.Extrude(phoneCasePlan, 2).Value;
         var windowEdges = phoneCase.Faces().OrderBy(Axis.Z)[^1].InnerWires()[0].SelectEdges();
-        Assert.All(windowEdges, e => Check.Same(phoneCase, e.TopoParent));
-        var phoneCaseF = Ops.Fillet(windowEdges, 1).Value;
+        var phoneCaseF = Ops.Fillet(phoneCase, windowEdges, 1).Value;
         Assert.True(phoneCaseF.Volume < phoneCase.Volume);
         var perimeter = phoneCaseF.Faces().OrderBy(Axis.Z)[^1].OuterWire().SelectEdges();
-        Assert.All(perimeter, e => Check.Same(phoneCaseF, e.TopoParent));
-        var phoneCaseFF = Ops.Fillet(perimeter, 1).Value;
+        var phoneCaseFF = Ops.Fillet(phoneCaseF, perimeter, 1).Value;
         Assert.True(phoneCaseFF.Volume < phoneCaseF.Volume);
     }
 
@@ -542,7 +540,7 @@ public class Shape1DTests
     {
         var box = Solid.MakeBox(1, 1, 1);
         var topX = box.SelectFaces().OrderBy(Axis.Z).Last().SelectEdges().OrderBy(Axis.X).Last();
-        Check.Same(box, topX.TopoParent);
+        Check.Same(box, box.SelectEdges().Origin!);
         Check.Is<Edge>(topX);
         Check.AlmostEqual(new Vector(1, 0.5, 1), topX.Center(), 5);
     }
@@ -554,17 +552,12 @@ public class Shape1DTests
         // as well as the solid
         var box = Solid.MakeBox(1, 1, 1);
         var face = box.SelectFaces().OrderBy(Axis.X).Last();
-        var edge = face.SelectEdges().OrderBy(Axis.Y)[0];
-        Assert.Equal(2, edge.TopoPath.Count);
-        Check.Same(box, edge.TopoParent);
-        Check.Same(face, edge.TopoOwner);
-        Check.Same(box, face.TopoParent);
-        Check.Same(box, face.TopoOwner);
+        var edges = face.SelectEdges().OrderBy(Axis.Y);
+        Check.Same(face, edges.Origin!);
+        Check.Same(box, box.SelectFaces().OrderBy(Axis.X).Origin!);
+        Check.Same(edges[0], edges[0..1].SingleEdge());
 
-        var vertex = edge.SelectVertices()[0];
-        Assert.Equal([typeof(Solid), typeof(Face), typeof(Edge)], vertex.TopoPath.Select(s => s.GetType()));
-        Check.Same(box, vertex.TopoParent);
-        Check.Same(edge, vertex.TopoOwner);
+        Check.Same(edges[0], edges[0].SelectVertices().Origin!);
     }
 
     [Fact]
@@ -583,7 +576,7 @@ public class Shape1DTests
         var e = Edge.MakeLine(new Vector(0, 0), new Vector(1, 0));
         var ePlus = e + Array.Empty<Shape>();
         Assert.True(e.IsSame(ePlus.SelectEdges()[0]));
-        Assert.Throws<ArgumentNullException>(() => e + (Shape)null!);
+        Assert.Throws<ArgumentNullException>(() => e + (ModelShape)null!);
     }
 
     [Fact]

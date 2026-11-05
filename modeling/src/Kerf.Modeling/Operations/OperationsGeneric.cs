@@ -65,6 +65,58 @@ public static partial class Operations
     /// <inheritdoc cref="BoundingBox(IEnumerable{Shape})"/>
     public static ModelShape BoundingBox(Shape obj) => BoundingBox([obj]);
 
+    /// <inheritdoc cref="BoundingBox(IEnumerable{Shape})"/>
+    public static ModelShape BoundingBox<T>(IEnumerable<T> objects) where T : IShape => BoundingBox(Shapes(objects));
+
+    /// <inheritdoc cref="Mirror(IEnumerable{Shape}, Plane?)"/>
+    public static ModelShape Mirror<T>(IEnumerable<T> objects, Plane? about = null) where T : IShape => Mirror(Shapes(objects), about);
+
+    /// <inheritdoc cref="Offset(IEnumerable{Shape}, double, OffsetOptions?)"/>
+    public static Result<ModelShape> Offset<T>(IEnumerable<T> objects, double amount, OffsetOptions? options = null) where T : IShape =>
+        Offset(Shapes(objects), amount, options);
+
+    /// <inheritdoc cref="Project(IEnumerable{Shape}, Plane)"/>
+    public static ModelShape Project<T>(IEnumerable<T> objects, Plane workplane) where T : IShape => Project(Shapes(objects), workplane);
+
+    /// <inheritdoc cref="Scale(IEnumerable{Shape}, double, Vector?)"/>
+    public static ModelShape Scale<T>(IEnumerable<T> objects, double by = 1, Vector? about = null) where T : IShape => Scale(Shapes(objects), by, about);
+
+    /// <inheritdoc cref="Scale(IEnumerable{Shape}, Vector, Vector?)"/>
+    public static ModelShape Scale<T>(IEnumerable<T> objects, Vector by, Vector? about = null) where T : IShape => Scale(Shapes(objects), by, about);
+
+    /// <inheritdoc cref="Split(IEnumerable{Shape}, Plane?, Keep)"/>
+    public static ModelShape Split<T>(IEnumerable<T> objects, Plane? bisectBy = null, Keep keep = Keep.Top) where T : IShape => Split(Shapes(objects), bisectBy, keep);
+
+    /// <inheritdoc cref="Split(IEnumerable{Shape}, IShape2D, Keep)"/>
+    public static ModelShape Split<T>(IEnumerable<T> objects, IShape2D bisectBy, Keep keep = Keep.Top) where T : IShape => Split(Shapes(objects), bisectBy, keep);
+
+    /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, SweepOptions?)"/>
+    public static Result<ModelShape> Sweep<T>(IEnumerable<T> sections, Shape path, SweepOptions? options = null) where T : IShape =>
+        Sweep(Shapes(sections), path, options);
+
+    /// <inheritdoc cref="Sweep(IEnumerable{Shape}, IEnumerable{Edge}, SweepOptions?)"/>
+    public static Result<ModelShape> Sweep<T>(IEnumerable<T> sections, IEnumerable<Edge> path, SweepOptions? options = null) where T : IShape =>
+        Sweep(Shapes(sections), path, options);
+
+    /// <inheritdoc cref="Loft(IEnumerable{Shape}, bool, bool)"/>
+    public static Result<Part> Loft<T>(IEnumerable<T> sections, bool ruled = false, bool clean = true) where T : IShape => Loft(Shapes(sections), ruled, clean);
+
+    /// <inheritdoc cref="Revolve(IEnumerable{Shape}, Axis?, double, bool)"/>
+    public static Result<Part> Revolve<T>(IEnumerable<T> profiles, Axis? axis = null, double revolutionArc = 360.0, bool clean = true) where T : IShape =>
+        Revolve(Shapes(profiles), axis, revolutionArc, clean);
+
+    /// <inheritdoc cref="MakeFace(IEnumerable{Shape})"/>
+    public static Sketch MakeFace<T>(IEnumerable<T> edges) where T : IShape => MakeFace(Shapes(edges));
+
+    /// <inheritdoc cref="Trace(IEnumerable{Shape}, double)"/>
+    public static Sketch Trace<T>(IEnumerable<T> lines, double lineWidth = 1) where T : IShape => Trace(Shapes(lines), lineWidth);
+
+    private static IEnumerable<Shape> Shapes<T>(IEnumerable<T> shapes) where T : IShape
+    {
+        ArgumentNullException.ThrowIfNull(shapes);
+        return shapes.Select(s => s.AsShape());
+    }
+
     // ---- chamfer ----
 
     /// <summary>
@@ -409,7 +461,7 @@ public static partial class Operations
         var newFaces = new List<Shape>();
         foreach (var face in faces)
         {
-            var outerWire = AsWire(face.OuterWire().Offset2D(amount, kind));
+            var outerWire = AsWire(face.OuterWire().Offset2D(amount, kind).AsShape());
             if (minEdgeLength is { } outerMin)
                 outerWire = outerWire.FixDegenerateEdges(outerMin);
             var innerWires = new List<Wire>();
@@ -417,7 +469,7 @@ public static partial class Operations
             {
                 try
                 {
-                    var offsetWire = AsWire(innerWire.Offset2D(-amount, kind));
+                    var offsetWire = AsWire(innerWire.Offset2D(-amount, kind).AsShape());
                     innerWires.Add(minEdgeLength is { } innerMin ? offsetWire.FixDegenerateEdges(innerMin) : offsetWire);
                 }
                 catch (Exception e) when (Failures.IsKernelFailure(e) || e is InvalidOperationException)
@@ -451,7 +503,7 @@ public static partial class Operations
             var offsetLine = edges.Count == 1 && edges[0].GeomType == GeomType.Line
                 ? edges[0].Offset2D(amount, kind, side, closed)
                 : Wire.Make(edges).Offset2D(amount, kind, side, closed);
-            newWires.Add(minEdgeLength is { } min ? AsWire(offsetLine).FixDegenerateEdges(min) : offsetLine.AsShape());
+            newWires.Add(minEdgeLength is { } min ? AsWire(offsetLine.AsShape()).FixDegenerateEdges(min) : offsetLine.AsShape());
         }
 
         var openingList = openings?.ToList() ?? [];
@@ -479,7 +531,7 @@ public static partial class Operations
     public static Result<Curve> Offset(Curve obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).Map(c => c.As<Curve>());
 
     /// <summary>A 2D offset as a wire: a single-edge offset comes back as its edge.</summary>
-    private static Wire AsWire(IShape1D offset) => offset is Wire wire ? wire : Wire.Make((Edge)offset.AsShape());
+    private static Wire AsWire(Shape offset) => offset.IsWire() ? (Wire)offset : Wire.Make((Edge)offset);
 
     // ---- project ----
 
@@ -725,6 +777,12 @@ public static partial class Operations
         Sweep([(Shape)section], path, options).Map(c => c.As<Sketch>());
 
     /// <summary>As the other forms of <c>Sweep</c>.</summary>
+    public static Result<Sketch> Sweep(BaseEdgeObject section, Shape path, SweepOptions? options = null) => Sweep((Curve)section, path, options);
+
+    /// <summary>A line object swept along a path gives a <see cref="Sketch"/>.</summary>
+    public static Result<Sketch> Sweep(BaseLineObject section, Shape path, SweepOptions? options = null) => Sweep((Curve)section, path, options);
+
+    /// <summary>A curve swept along a path gives a <see cref="Sketch"/>.</summary>
     public static Result<Sketch> Sweep(Curve section, Shape path, SweepOptions? options = null) =>
         Sweep([(Shape)section], path, options).Map(c => c.As<Sketch>());
 

@@ -555,8 +555,8 @@ public class IntersectionTests
         new(Cp3, Cp4, FF, "intersecting"),
         new(Cp5, Cp4, FF, "intersecting"),
         new(Cp5, Cp4, new[] { typeof(Face), typeof(Face), typeof(Edge), typeof(Edge) }, "intersecting", true),
-        new(Cp1, Compound.Assembly(Cp1.ElementsOfType<Vertex>()), VV, "mixed child type"),
-        new(Cp4, Compound.Assembly(Cp3.ElementsOfType<Face>()), FF, "mixed child type"),
+        new(Cp1, new Assembly(Cp1.ElementsOfType<Vertex>().Select(v => (ModelShape)v)), VV, "mixed child type"),
+        new(Cp4, new Assembly(Cp3.ElementsOfType<Face>().Select(f => (ModelShape)f)), FF, "mixed child type"),
         new(Cp2, new object[] { Cp3, Cp4 }, EE, "multi to_intersect, intersecting"),
         new(Cv1, Cp3, new[] { typeof(Edge), typeof(Edge), typeof(Edge), typeof(Edge) }, "intersecting"),
         new(Sk1, Cp3, FF, "intersecting"),
@@ -579,10 +579,10 @@ public class IntersectionTests
         var vertex = Vertex.Make(0, 0, 0);
         var extractedVertex = Compound.Make(B.Grid2(5, vertex)).ElementsOfType<Vertex>()[0];
         Assert.Equal(-2.5, extractedVertex.X);
-        Assert.Equal(-2.5, extractedVertex.Location.Position.X);
+        Assert.Equal(-2.5, new Location(extractedVertex.AsShape().Placement).Position.X);
 
-        var result = Compound.Assembly([Solid.MakeBox(1, 1, 1).Moved(new Pos(-2.5, 0, 0))])
-            .Intersect(Compound.Assembly([extractedVertex]));
+        var result = new Assembly([Solid.MakeBox(1, 1, 1).Moved(new Pos(-2.5, 0, 0))])
+            .Intersect(new Assembly([extractedVertex]));
         Check.Is<Vertex>(Assert.Single(result));
     }
 
@@ -590,10 +590,10 @@ public class IntersectionTests
     public void CompoundIntersectionAfterMovingParent()
     {
         // Intersection uses a compound child's pose after moving its parent
-        var assembly = Compound.Assembly([Solid.MakeBox(1, 1, 1)]);
+        var assembly = new Assembly([Solid.MakeBox(1, 1, 1)]);
         var movedAssembly = assembly.Moved(new Location(new Vector(10, 0, 0)));
         Assert.Equal(10, movedAssembly.BoundingBox().Min.X);
-        Assert.Equal(0, movedAssembly.AssemblyChildren[0].BoundingBox().Min.X);
+        Assert.Equal(0, movedAssembly.Children[0].BoundingBox().Min.X);
 
         var probe = Solid.MakeBox(1, 1, 1).Moved(new Location(new Vector(10, 0, 0)));
         Assert.NotEmpty(movedAssembly.Intersect(probe));
@@ -604,7 +604,7 @@ public class IntersectionTests
     public void CompoundIntersectionWithRotatedParent()
     {
         // A child is placed by its parent's location alone
-        var assembly = new Rotation(0, 0, 90) * Compound.Assembly([new Pos(10, 0, 0) * B.Box(2, 2, 2)]);
+        var assembly = new Rotation(0, 0, 90) * new Assembly([new Pos(10, 0, 0) * B.Box(2, 2, 2)]);
         Check.AlmostEqual(10, assembly.BoundingBox().Center().Y, 6);
 
         var overlapping = new Pos(0, 10, 0) * B.Box(2, 2, 2);
@@ -620,8 +620,8 @@ public class IntersectionTests
     public void NestedCompoundIntersectionAppliesEachLocationOnce()
     {
         // Nesting must not reapply the locations of an element's ancestors
-        var nested = Compound.Assembly([new Pos(10, 0, 0) * B.Box(2, 2, 2)]);
-        var assembly = new Rotation(0, 0, 90) * Compound.Assembly([nested]);
+        var nested = new Assembly([new Pos(10, 0, 0) * B.Box(2, 2, 2)]);
+        var assembly = new Rotation(0, 0, 90) * new Assembly([nested]);
         Check.AlmostEqual(10, assembly.BoundingBox().Center().Y, 6);
 
         var overlapping = new Pos(0, 10, 0) * B.Box(2, 2, 2);
@@ -766,7 +766,7 @@ public class TouchMethodTests
     [Fact]
     public void CompoundTouchPlacesChildren()
     {
-        var assembly = new Rotation(0, 0, 90) * Compound.Assembly([new Pos(10, 0, 0) * B.Box(2, 2, 2)]);
+        var assembly = new Rotation(0, 0, 90) * new Assembly([new Pos(10, 0, 0) * B.Box(2, 2, 2)]);
         var toucher = new Pos(0, 12, 0) * B.Box(2, 2, 2);   // shares the face at y == 11
         Assert.NotEmpty(assembly.Touch(toucher));
         Assert.NotEmpty(toucher.SelectSolids()[0].Touch(assembly));

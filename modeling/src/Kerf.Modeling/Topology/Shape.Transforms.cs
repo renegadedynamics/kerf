@@ -199,6 +199,15 @@ public static class ShapeOperations
         /// <summary>A copy with its Location's orientation replaced (build123d's <c>orientation</c> setter).</summary>
         public T WithOrientation(Vector orientation) => shape.IsEmpty ? shape : shape.WithLocation(shape.Location.WithOrientation(orientation));
 
+        /// <summary>This shape as the object of its dimension (<see cref="ModelShape.For"/>), with a label: a kernel shape can't hold one.</summary>
+        public ModelShape WithLabel(string label) => ModelShape.For(shape.AsShape()).WithLabel(label);
+
+        /// <summary>This shape as the object of its dimension (<see cref="ModelShape.For"/>), with a colour.</summary>
+        public ModelShape WithColor(Color? color) => ModelShape.For(shape.AsShape()).WithColor(color);
+
+        /// <summary>This shape as the object of its dimension (<see cref="ModelShape.For"/>), marked (or not) as construction geometry.</summary>
+        public ModelShape WithForConstruction(bool forConstruction = true) => ModelShape.For(shape.AsShape()).WithForConstruction(forConstruction);
+
         /// <summary>The shape moved by a location (build123d's <c>location * shape</c>).</summary>
         public static T operator *(Location location, T s) => s.Moved(location);
 

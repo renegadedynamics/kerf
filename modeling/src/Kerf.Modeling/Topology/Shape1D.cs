@@ -327,6 +327,13 @@ public static partial class Shape1DExtensions
         /// The plane containing this and the other edges or wires, or null if there is none. Coaxial lines lie in infinitely
         /// many planes, of which one is chosen.
         /// </summary>
+        public Plane? CommonPlane<T>(IEnumerable<T> lines, double tolerance = Constants.Tolerance) where T : IShape1D =>
+            self.CommonPlane(lines.Select(l => (IShape1D?)l), tolerance);
+
+        /// <summary>
+        /// The plane containing this and the other edges or wires, or null if there is none. Coaxial lines lie in infinitely
+        /// many planes, of which one is chosen.
+        /// </summary>
         public Plane? CommonPlane(IEnumerable<IShape1D?> lines, double tolerance = Constants.Tolerance)
         {
             var allLines = lines.OfType<IShape1D>().Prepend(self).ToList();

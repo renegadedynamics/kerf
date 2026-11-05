@@ -59,27 +59,27 @@ public class StepAssemblyTests
     /// (not as an assembly, so parts of one shape share their label) and placed with <c>AddComponent</c>, an assembly
     /// made with <c>NewShape</c>; each node's label and colour set on its shape's label.
     /// </summary>
-    private static byte[] AsXcafWrites(Shape shape)
+    private static byte[] AsXcafWrites(ModelShape shape)
     {
         var doc = new global::Kerf.Engine.Exchange.Documents.ExchangeDocument();   // AutoNaming off, as build123d sets it
         doc.SetLengthUnit(new global::Kerf.Engine.Exchange.Documents.DocumentLengthUnit("MM", 0.001));
-        void Attributes(Shape node, global::Kerf.Engine.Exchange.Documents.Label label)
+        void Attributes(ModelShape node, global::Kerf.Engine.Exchange.Documents.Label label)
         {
             if (node.Label.Length > 0)
                 doc.SetName(label, node.Label);
             if (node.Color is { } c)
                 doc.SetColor(label, Linear(c), node.SelectFaces().Count > 0 ? global::Kerf.Engine.Exchange.Documents.ColorType.ColorSurf : global::Kerf.Engine.Exchange.Documents.ColorType.ColorCurv);
         }
-        global::Kerf.Engine.Exchange.Documents.Label Assembly(Compound assembly, Shape s)
+        global::Kerf.Engine.Exchange.Documents.Label AssemblyLabel(Assembly assembly, Shape s)
         {
             var label = doc.NewShape();
             Attributes(assembly, label);
             var it = new global::Kerf.Engine.Topology.Iterator(s);
-            foreach (var child in assembly.AssemblyChildren)
+            foreach (var child in assembly.Children)
             {
                 var c = it.Value();
-                if (child is Compound { AssemblyChildren.Count: > 0 } sub)
-                    doc.AddComponent(label, Assembly(sub, c.Located(new Placement())), c.Placement);
+                if (child is Assembly { Children.Count: > 0 } sub)
+                    doc.AddComponent(label, AssemblyLabel(sub, c.Located(new Placement())), c.Placement);
                 else
                 {
                     doc.AddComponent(label, c, false);
@@ -90,8 +90,8 @@ public class StepAssemblyTests
             return label;
         }
         var occt = Occt(shape);
-        if (shape is Compound { AssemblyChildren.Count: > 0 } root)
-            Assembly(root, occt);
+        if (shape is Assembly { Children.Count: > 0 } root)
+            AssemblyLabel(root, occt);
         else
         {
             doc.AddShape(occt, false);
@@ -106,12 +106,12 @@ public class StepAssemblyTests
     }
 
     /// <summary>A plate and a sub-assembly of the same bolt placed twice, the sub-assembly itself placed.</summary>
-    private static Compound Fixture()
+    private static Assembly Fixture()
     {
         var bolt = new Cylinder(1, 10).WithLabel("bolt").WithColor(new Color("silver"));
         var plate = new Box(20, 20, 2).WithLabel("plate").WithColor(new Color("steelblue", 0.5));
-        var bolts = Compound.Assembly([bolt.Moved(new Location(new Vector(5.0, 5.0, 0.0))), bolt.Moved(new Location(new Vector(-5.0, 5.0, 0.0)))], "bolts");
-        return Compound.Assembly([plate, bolts.Moved(new Location(new Vector(0.0, 0.0, 6.0), new Vector(0.0, 0.0, 90.0)))], "fixture");
+        var bolts = new Assembly([bolt.Moved(new Location(new Vector(5.0, 5.0, 0.0))), bolt.Moved(new Location(new Vector(-5.0, 5.0, 0.0)))], "bolts");
+        return new Assembly([plate, bolts.Moved(new Location(new Vector(0.0, 0.0, 6.0), new Vector(0.0, 0.0, 90.0)))], "fixture");
     }
 
     public static TheoryData<string> Names() => StepNativeTests.Names();
@@ -142,14 +142,14 @@ public class StepAssemblyTests
     public void AnAssemblyRoundTripsWithItsLabelsColoursAndPlaces()
     {
         var fixture = Fixture();
-        var read = Check.Is<Compound>(Importers.ImportStep(new MemoryStream(Export(fixture))).Value);
+        var read = Assert.IsType<Assembly>(Importers.ImportStep(new MemoryStream(Export(fixture))).Value);
         Assert.Equal("fixture", read.Label);
-        Assert.Equal(["plate", "bolts"], read.AssemblyChildren.Select(c => c.Label));
-        var plate = read.AssemblyChildren[0];
+        Assert.Equal(["plate", "bolts"], read.Children.Select(c => c.Label));
+        var plate = read.Children[0];
         Assert.Equal(new Color("steelblue", 0.5), plate.Color);
-        var bolts = Check.Is<Compound>(read.AssemblyChildren[1]);
-        Assert.Equal(["bolt", "bolt"], bolts.AssemblyChildren.Select(c => c.Label));
-        Assert.All(bolts.AssemblyChildren, b => Assert.Equal(new Color("silver"), b.Color));
+        var bolts = Assert.IsType<Assembly>(read.Children[1]);
+        Assert.Equal(["bolt", "bolt"], bolts.Children.Select(c => c.Label));
+        Assert.All(bolts.Children, b => Assert.Equal(new Color("silver"), b.Color));
         // Each part where it was, and the bolts still one shape placed twice
         var expected = fixture.Parts();
         var parts = read.Parts();
@@ -162,7 +162,7 @@ public class StepAssemblyTests
             Check.AlmostEqual(a.Y, b.Y, 6);
             Check.AlmostEqual(a.Z, b.Z, 6);
         }
-        Assert.True(bolts.AssemblyChildren[0].IsPartner(bolts.AssemblyChildren[1]));
+        Assert.True(bolts.Children[0].Shape.IsPartner(bolts.Children[1].Shape));
         Assert.True(read.IsValid);
     }
 
@@ -170,7 +170,8 @@ public class StepAssemblyTests
     public void OneNamedShapeComesBackAsItself()
     {
         var read = Importers.ImportStep(new MemoryStream(Export(new Box(1, 2, 3).WithLabel("brick").WithColor(new Color("red"))))).Value;
-        var solid = Check.Is<Solid>(read);
+        var solid = read;
+        Check.Is<Solid>(read);
         Assert.Equal("brick", solid.Label);
         Assert.Equal(new Color("red"), solid.Color);
         Check.AlmostEqual(6, solid.Volume, 6);
@@ -181,12 +182,12 @@ public class StepAssemblyTests
     {
         // STEP's writer maps shapes to products, so the second name needs a shape of its own
         var ball = new Sphere(2);
-        var pair = Compound.Assembly([ball.WithLabel("left"), ball.Moved(new Location(new Vector(5.0, 0.0, 0.0))).WithLabel("right").WithColor(new Color("blue"))]);
-        var read = Check.Is<Compound>(Importers.ImportStep(new MemoryStream(Export(pair))).Value);
-        Assert.Equal(["left", "right"], read.AssemblyChildren.Select(c => c.Label));
-        Assert.Null(read.AssemblyChildren[0].Color);
-        Assert.Equal(new Color("blue"), read.AssemblyChildren[1].Color);
-        Check.AlmostEqual(5, read.AssemblyChildren[1].Center().X, 6);
+        var pair = new Assembly([ball.WithLabel("left"), ball.Moved(new Location(new Vector(5.0, 0.0, 0.0))).WithLabel("right").WithColor(new Color("blue"))]);
+        var read = Assert.IsType<Assembly>(Importers.ImportStep(new MemoryStream(Export(pair))).Value);
+        Assert.Equal(["left", "right"], read.Children.Select(c => c.Label));
+        Assert.Null(read.Children[0].Color);
+        Assert.Equal(new Color("blue"), read.Children[1].Color);
+        Check.AlmostEqual(5, read.Children[1].Center().X, 6);
     }
 
     [Fact]
@@ -205,7 +206,7 @@ public class StepAssemblyTests
         Exporters3D.ExportStep(Fixture(), stream, new StepExportOptions { Unit = Unit.Inch });
         Assert.Contains("INCH", Encoding.Latin1.GetString(stream.ToArray()));
         stream.Position = 0;
-        var read = Check.Is<Compound>(Importers.ImportStep(stream).Value);
+        var read = Assert.IsType<Assembly>(Importers.ImportStep(stream).Value);
         Check.AlmostEqual(Fixture().Parts()[0].Placed.Volume * Math.Pow(25.4, 3), read.Parts()[0].Placed.Volume, 1);
     }
 
@@ -227,7 +228,7 @@ public class StepAssemblyTests
             Assert.Equal(global::Kerf.Engine.Exchange.Framework.Selection.ReturnStatus.RetDone, writer.Write(main));
             Assert.True(Directory.GetFiles(folder).Length > 1);
 
-            var read = Check.Is<Compound>(Importers.ImportStep(main).Value);
+            var read = Assert.IsType<Assembly>(Importers.ImportStep(main).Value);
             Assert.Equal(2, read.Parts().Count);
             using var stream = File.OpenRead(main);
             var refused = Importers.ImportStep(stream);

@@ -81,10 +81,10 @@ public class TopologyReferenceTests
             ["trimmed_spline"] = () => Edge.MakeSpline(splinePoints).Trim(0.2, 0.7),
             ["polygon"] = () => Wire.MakePolygon([new Vector(0, 0), new Vector(3, 0), new Vector(3, 2), new Vector(1, 3)]),
             ["rect_wire"] = () => Wire.MakeRect(5, 3, Plane.XZ),
-            ["offset_wire"] = () => Wire.MakeRect(4, 2).Offset2D(0.5),
-            ["offset_wire_intersection"] = () => Wire.MakeRect(4, 2).Offset2D(-0.5, kind: Kind.Intersection),
-            ["offset_arc"] = () => Edge.MakeCircle(3, startAngle: 0, endAngle: 120).Offset2D(0.5),
-            ["offset_arc_left"] = () => Edge.MakeCircle(3, startAngle: 0, endAngle: 120).Offset2D(0.5, side: Side.Left),
+            ["offset_wire"] = () => Wire.MakeRect(4, 2).Offset2D(0.5).AsShape(),
+            ["offset_wire_intersection"] = () => Wire.MakeRect(4, 2).Offset2D(-0.5, kind: Kind.Intersection).AsShape(),
+            ["offset_arc"] = () => Edge.MakeCircle(3, startAngle: 0, endAngle: 120).Offset2D(0.5).AsShape(),
+            ["offset_arc_left"] = () => Edge.MakeCircle(3, startAngle: 0, endAngle: 120).Offset2D(0.5, side: Side.Left).AsShape(),
             ["chamfer_wire"] = () => square.Chamfer2D(1, 0.5, square.SelectVertices()[..2]),
             // Transforms
             ["mirror_box"] = () => Box(1, 2, 3, new Vector(1, 1, 1)).Mirror(Plane.YZ),
@@ -140,6 +140,6 @@ public class TopologyReferenceTests
         if (expected.TryGetProperty("center", out var center))
             CloseVector(center, shape.Center(), "center", 1e-7);
         if (expected.TryGetProperty("length", out var length))
-            Close(length.GetDouble(), ((IShape1D)shape).Length, "length", 1e-7);
+            Close(length.GetDouble(), TopoUtil.As1D(shape).Length, "length", 1e-7);
     }
 }

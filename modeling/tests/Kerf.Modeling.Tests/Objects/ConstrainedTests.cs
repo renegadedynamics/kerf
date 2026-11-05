@@ -27,7 +27,7 @@ public class ConstrainedArcsTests
     public void EdgeToQualified2D()
     {
         var e = new Line(new Vector(0, 0), new Vector(1, 0)).Moved(new Location(new Vector(1, 1, 1)));
-        var arg = ConstrainedSolvers.EdgeToQualified2D(e.Shape, Tangency.Unqualified);
+        var arg = ConstrainedSolvers.EdgeToQualified2D(e.Edge, Tangency.Unqualified);
         Assert.True(arg.First < arg.Last);
     }
 
@@ -393,7 +393,7 @@ public class ConstrainedArcsTests
         var eggPlant = Wire.Make([eggLeft, eggTop, eggRight, eggBottom]);
         Assert.True(eggPlant.IsClosed);
         var edges = eggPlant.SelectEdges().OrderBy(eggPlant);
-        Assert.Equal(4, Enumerable.Range(0, 4).Count(i => Vertex.CommonVertex(edges[i], edges[(i + 1) % 4]) is not null));
+        Assert.Equal(4, Enumerable.Range(0, 4).Count(i => !Vertex.CommonVertex(edges[i], edges[(i + 1) % 4]).IsEmpty));
 
         // C1 continuity
         Assert.All(Enumerable.Range(0, 4), i => Assert.True(((edges[i]).TangentAt(1) - (edges[(i + 1) % 4]).TangentAt(0)).Length < Constants.Tolerance));

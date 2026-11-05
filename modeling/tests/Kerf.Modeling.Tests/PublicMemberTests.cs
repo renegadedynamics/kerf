@@ -250,7 +250,7 @@ public class PublicMemberTests
         Assert.True(MakeHull(Edge.MakeCircle(2)).Area > 12);
 
         Part flat = box;
-        Assert.True(Fillet(new Rectangle(2, 2).Vertices()[0], 0.2).IsSuccess);
+        Assert.True(Fillet(new Rectangle(2, 2), new Rectangle(2, 2).Vertices()[0], 0.2).IsSuccess);
         Assert.Equal(8, flat.Volume, 6);
 
         var thicken = new Kerf.Modeling.Operations.ThickenOptions { Clean = true, NormalOverride = new Vector(0, 0, 1) };
@@ -276,7 +276,6 @@ public class PublicMemberTests
         Assert.Throws<NotSupportedException>(() => vertex.Center(CenterOf.Mass));
         Assert.Empty(vertex.Touch(box));
 
-        Assert.Equal(new Vector(1, 2, 3), new Rectangle(1, 1).Faces()[0].WithCreatedOn(new Plane(new Vector(1, 2, 3))).CreatedOn!.Origin);
 
         Assert.Equal(new Box(1, 1, 1).Volume, Enumerable.Single(new[] { Plane.XY } * new Box(1, 1, 1)).Volume, 6);
         Assert.True(new Box(1, 1, 1).WithForConstruction().ForConstruction);

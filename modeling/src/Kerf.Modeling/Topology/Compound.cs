@@ -30,9 +30,10 @@ public static partial class CompoundExtensions
         public int Count => self.IsEmpty ? 0 : self.AsShape().ChildCount;
 
         /// <summary>
-        /// The compound without unnecessary compound wrappers: a compound of one shape becomes that shape.
+        /// The compound without unnecessary compound wrappers: a compound of one shape becomes that shape (or, without
+        /// <paramref name="fully"/>, the innermost compound around it).
         /// </summary>
-        public Shape Unwrap() => UnwrapCore(self.AsShape());
+        public Shape Unwrap(bool fully = true) => UnwrapCore(self.AsShape(), fully);
     }
 
     extension<TSelf>(TSelf self) where TSelf : IShape
@@ -60,12 +61,17 @@ public static partial class CompoundExtensions
         }
     }
 
-    private static Shape UnwrapCore(Shape shape)
+    private static Shape UnwrapCore(Shape shape, bool fully)
     {
         if (shape.IsNull || !shape.IsCompound())
             return shape;
         var children = shape.ChildShapes();
-        return children.Count == 1 ? UnwrapCore(children[0]) : shape;
+        if (children.Count != 1)
+            return shape;
+        var single = children[0];
+        if (!single.IsCompound())
+            return fully ? single : shape;
+        return UnwrapCore(single, fully);
     }
 
     /// <summary>The volume of the solids and shells directly in the compound.</summary>

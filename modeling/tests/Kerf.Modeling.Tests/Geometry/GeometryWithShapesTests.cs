@@ -97,8 +97,8 @@ public class PlaneWithShapesTests
             Check.AlmostEqual(new Vector(R2, 0.5, 0.5), p.XDir, 6);
             Check.AlmostEqual(new Vector(-R2, 0.5, 0.5), p.YDir, 6);
             Check.AlmostEqual(new Vector(0, -R2, R2), p.ZDir, 6);
-            Check.AlmostEqual(f.Location.Position, p.Location.Position, 6);
-            Check.AlmostEqual(f.Location.Orientation, p.Location.Orientation, 6);
+            Check.AlmostEqual(new Location(f.AsShape().Placement).Position, p.Location.Position, 6);
+            Check.AlmostEqual(new Location(f.AsShape().Placement).Orientation, p.Location.Orientation, 6);
         }
 
         // From a face with an x direction

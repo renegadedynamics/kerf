@@ -68,11 +68,11 @@ public class FunctionsTests
         // unwrap fully
         var c0 = Compound.Make([b1]);
         c1 = Compound.Make([c0]);
-        var result = Shape.Cast(TopoUtil.UnwrapCompound(((Compound)c1), true));
+        var result = (TopoUtil.UnwrapCompound(((Compound)c1), true));
         Check.Is<Solid>(result);
 
         // unwrap not fully
-        result = Shape.Cast(TopoUtil.UnwrapCompound(((Compound)c1), false));
+        result = (TopoUtil.UnwrapCompound(((Compound)c1), false));
         Check.Is<Compound>(result);
     }
 }

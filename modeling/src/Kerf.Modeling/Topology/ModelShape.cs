@@ -41,6 +41,33 @@ public abstract partial class ModelShape : IShape3D, IEquatable<ModelShape>
         return model._shape;
     }
 
+#pragma warning disable CS1591 // The object for a kernel shape: of its dimension, or a leaf of an assembly
+    public static implicit operator ModelShape(Shape shape) => For(shape);
+    public static implicit operator ModelShape(Vertex shape) => For(shape);
+    public static implicit operator ModelShape(Edge shape) => For(shape);
+    public static implicit operator ModelShape(Wire shape) => For(shape);
+    public static implicit operator ModelShape(Face shape) => For(shape);
+    public static implicit operator ModelShape(Shell shape) => For(shape);
+    public static implicit operator ModelShape(Solid shape) => For(shape);
+    public static implicit operator ModelShape(Compound shape) => For(shape);
+    public static explicit operator Vertex(ModelShape model) => model.Shape.As<Vertex>();
+    public static explicit operator Edge(ModelShape model) => model.Shape.As<Edge>();
+    public static explicit operator Wire(ModelShape model) => model.Shape.As<Wire>();
+    public static explicit operator Face(ModelShape model) => model.Shape.As<Face>();
+    public static explicit operator Shell(ModelShape model) => model.Shape.As<Shell>();
+    public static explicit operator Solid(ModelShape model) => model.Shape.As<Solid>();
+    public static explicit operator Compound(ModelShape model) => model.Shape.As<Compound>();
+#pragma warning restore CS1591
+
+    /// <summary>The object for a kernel shape: a <see cref="Part"/> of solids, a <see cref="Sketch"/> of faces, a <see cref="Curve"/> of edges, or else an <see cref="Assembly"/> leaf.</summary>
+    public static ModelShape For(Shape shape) => shape.Dim switch
+    {
+        3 => new Part(shape),
+        2 => new Sketch(shape),
+        1 => new Curve(shape),
+        _ => new Assembly(shape),
+    };
+
     /// <summary>The user-assigned label.</summary>
     public string Label { get; private set; }
 
@@ -55,6 +82,9 @@ public abstract partial class ModelShape : IShape3D, IEquatable<ModelShape>
     /// (booleans, clean, fillets and chamfers). Used by <see cref="Select.Last"/> and <see cref="Select.New"/>.
     /// </summary>
     public ModelHistory? History { get; private set; }
+
+    /// <summary>The kind of shape held: a compound for an empty object.</summary>
+    public ShapeType ShapeType => TopoUtil.IsNothing(_shape) ? ShapeType.Compound : _shape.Type;
 
     /// <summary>The dimension of the object's contents: 3 for a part, 2 for a sketch, 1 for a curve, or null if mixed.</summary>
     internal virtual int? Dimension => TopoUtil.Dim(_shape);
@@ -349,7 +379,7 @@ public class Assembly : ModelShape
     /// <summary>The children: empty for a leaf.</summary>
     public IReadOnlyList<ModelShape> Children { get; private set; }
 
-    internal override ModelShape MakeZero() => new Assembly([], "", null);
+    internal override ModelShape MakeZero() => new Assembly(TopoUtil.EmptyCompound());
 
     /// <summary>A copy of this assembly with other children, rebuilt from them at this assembly's location.</summary>
     public Assembly WithChildren(IEnumerable<ModelShape> children)
