@@ -123,7 +123,7 @@ Run `kernel/tools/bench.ps1`, on Windows PowerShell 5.1 or later. It takes about
 `docs/benchmarks/<date>-<commit>.md` and `.tsv`. For a unit's before-and-after, on each commit:
 
 ```powershell
-kernel/tools/bench.ps1 -Quick -Compare kernel/docs/benchmarks/2026-11-05-0198121ae.tsv
+kernel/tools/bench.ps1 -Quick -Compare kernel/docs/benchmarks/2026-11-05-fdaa7a7f6.tsv
 ```
 
 It exits with 1 on a regression and 2 on a busy machine; `-Result <tsv>` compares without running. Each row is the median
@@ -145,6 +145,22 @@ its own was still going.
 
 So allocation and the totals are a real check, and one short operation's time only catches something large: single rows
 are bimodal, depending on when the runtime tiers up. Don't read a 20% move on one row as a finding without running it again.
+
+## Where it stands (the timed run after 11E)
+
+*[benchmarks/2026-11-05-fdaa7a7f6.md](benchmarks/2026-11-05-fdaa7a7f6.md), on a quiet machine, 5 November. Compare with this run from here on.*
+
+| | Native (frozen) | 0.2.0 | Now | Now / native |
+|---|---:|---:|---:|---:|
+| Recalculation, ms | 685 | 1,211 | **363** | 0.53× |
+| Settled recalculation, ms | | 969 | 354 | |
+| Opening, ms | 921 | 1,764 | **709** | 0.77× |
+| Allocated per recalculation, MB | 3 | 450 | 208 | |
+| A parallel round, 24 copies on 24 processors, ms | | 5,238 | 2,763 | |
+
+- **The targets are met:** recalculation was to be within 1.2× of native, and it's nearly twice as fast. Eight of the eleven examples are ahead of or within 1.2× of native. "Point lists" (1.82×, 6 ms over) and "select last" (1.49×, 5 ms over) are small in absolute terms.
+- **Native stops being the yardstick from here** (decision 1681): the work moves to what's slow, unit 11Q.
+- **The parallel speed-up fell from 8.33× to 3.11×, and that's the next thing to look at.** The round itself got quicker, so nothing regressed: the serial work fell by two-thirds while allocation barely moved (4.9 GB a round), which leaves the collector dominant, at 4.9 s of pauses. The rig flags this and the pauses as regressions against the run after 11B. That's unit 11D's.
 
 ## Unit 11B: allocation
 

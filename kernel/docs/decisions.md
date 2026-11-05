@@ -16605,3 +16605,5 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 1681. **The rest of phase 11, and 0.3.0's scope** (the owner's direction, 5 November 2026). Nothing specific is targeted for 0.3.0 and there's no rush: "We might target a release on
        Saturday afternoon." Until then the work is cleaning up the code, public and private; investigating and ideally fixing bugs, including flaky tests (unit 11P); and improving performance. Once
        Kerf is close to native in most or all cases, the focus moves from comparing with native to improving slow use cases (unit 11Q), which can go on before or after the release.
+1682. **The rig compares from here on against `docs/benchmarks/2026-11-05-fdaa7a7f6.tsv`,** the run after 11E and 11I. Recalculation is 363 ms against native's 685 and opening 709 ms against 921, so decision 1644's
+       targets are met, and decision 1681's shift to slow use cases applies. Its two flagged regressions, the parallel speed-up and the collector's pauses, follow from the serial work falling while allocation didn't; the round itself is 12% quicker.
