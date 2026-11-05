@@ -185,6 +185,9 @@ internal class NCollection_List<T> : IEnumerable<T>
 
     public int Extent() => _items.Count;
 
+    /// <summary>The item at a 0-based position.</summary>
+    internal T ItemAt(int position) => _items[position];
+
     public int Size() => _items.Count;
 
     public bool IsEmpty() => _items.Count == 0;

@@ -405,7 +405,56 @@ internal class FunctionSetRoot
     }
 
     //------------------------------------------------------
-    private static void SearchDirection(Matrix df, math_Vector gh, math_Vector ff, bool changeDirection,
+    // The solvers and the right-hand side, kept from one iteration to the next (unit 11B). Each is written before it's read,
+    // and a sub-problem at a bound has a different size, so each is checked for size
+    private sealed class SearchWork
+    {
+        private Gauss? _gauss;
+        private Svd? _svd;
+        private math_Vector? _minusF;
+
+        public Gauss GaussFor(Matrix a, double minPivot)
+        {
+            if (_gauss is null || _gauss.Size != a.RowNumber())
+            {
+                _gauss = new Gauss(a.RowNumber());
+            }
+
+            _gauss.Perform(a, minPivot);
+            return _gauss;
+        }
+
+        public Svd SvdFor(Matrix a)
+        {
+            if (_svd is null || !_svd.Fits(a))
+            {
+                _svd = new Svd(a.RowNumber(), a.ColNumber());
+            }
+
+            _svd.Perform(a);
+            return _svd;
+        }
+
+        // OCCT: -1 * ff
+        public math_Vector MinusF(math_Vector ff)
+        {
+            if (_minusF is null || _minusF.Length() != ff.Length())
+            {
+                _minusF = new math_Vector(1, ff.Length());
+            }
+
+            for (int i = 0; i < ff.Length(); i++)
+            {
+                _minusF[i + 1] = ff[ff.Lower() + i] * -1.0;
+            }
+
+            return _minusF;
+        }
+    }
+
+    private readonly SearchWork _searchWork = new();
+
+    private static void SearchDirection(SearchWork work, Matrix df, math_Vector gh, math_Vector ff, bool changeDirection,
                                         math_Vector invLengthMax, math_Vector direction, out double dy)
     {
         int ninc = df.ColNumber(), neq = df.RowNumber();
@@ -419,17 +468,17 @@ internal class FunctionSetRoot
                     direction[i0] = -ff[i0];
                 }
 
-                Gauss solut = new(df, 1.0e-9);
+                Gauss solut = work.GaussFor(df, 1.0e-9);
                 if (solut.IsDone)
                 {
                     solut.Solve(direction);
                 }
                 else
                 { // we have to "forget" singular directions.
-                    Svd solvebySVD = new(df);
+                    Svd solvebySVD = work.SvdFor(df);
                     if (solvebySVD.IsDone)
                     {
-                        solvebySVD.Solve(-1 * ff, direction);
+                        solvebySVD.Solve(work.MinusF(ff), direction);
                     }
                     else
                     {
@@ -439,10 +488,10 @@ internal class FunctionSetRoot
             }
             else if (ninc > neq)
             {
-                Svd solut = new(df);
+                Svd solut = work.SvdFor(df);
                 if (solut.IsDone)
                 {
-                    solut.Solve(-1 * ff, direction);
+                    solut.Solve(work.MinusF(ff), direction);
                 }
                 else
                 {
@@ -501,7 +550,7 @@ internal class FunctionSetRoot
     // Purpose : Recherche une direction (et un pas si Newton Fonctionne) le long
     //           d'une frontiere
     //=====================================================================
-    private static void SearchDirection(Matrix df, math_Vector gh, math_Vector ff, math_IntegerVector constraints,
+    private static void SearchDirection(SearchWork work, Matrix df, math_Vector gh, math_Vector ff, math_IntegerVector constraints,
                                         math_Vector x, // Le point d'init
                                         bool changeDirection, math_Vector invLengthMax, math_Vector direction,
                                         out double dy)
@@ -522,7 +571,7 @@ internal class FunctionSetRoot
 
         if (cons == 0)
         {
-            SearchDirection(df, gh, ff, changeDirection, invLengthMax, direction, out dy);
+            SearchDirection(work, df, gh, ff, changeDirection, invLengthMax, direction, out dy);
         }
         else if (cons == ninc)
         { // il n'y a plus rien a faire...
@@ -557,7 +606,7 @@ internal class FunctionSetRoot
             }
 
             //(2) On le resoud
-            SearchDirection(df2, myGH, ff, changeDirection, myInvLengthMax, myDirection, out dy);
+            SearchDirection(work, df2, myGH, ff, changeDirection, myInvLengthMax, myDirection, out dy);
 
             // (3) On l'interprete...
             // Reconstruction de Direction:
@@ -845,7 +894,7 @@ internal class FunctionSetRoot
             _previousSolution.Initialized(_sol);
             _solSave.Initialized(_sol);
 
-            SearchDirection(_df, _gh, _ff, changeDirection, invLengthMax, _dh, out dy);
+            SearchDirection(_searchWork, _df, _gh, _ff, changeDirection, invLengthMax, _dh, out dy);
             if (Math.Abs(dy) <= eps)
             {
                 _done = false;
@@ -1073,7 +1122,7 @@ internal class FunctionSetRoot
                         // On essaye de progresser sur le bord
                         _solSave.Initialized(_sol);
                         oldF = f2;
-                        SearchDirection(_df, _gh, _ff, constraints, _sol, changeDirection, invLengthMax, _dh, out dy);
+                        SearchDirection(_searchWork, _df, _gh, _ff, constraints, _sol, changeDirection, invLengthMax, _dh, out dy);
                         if (dy < -eps)
                         { // Pour eviter des calculs inutiles et des /0...
                             if (changeDirection)

@@ -217,6 +217,7 @@ internal sealed class BezierSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
         }
 
         // Adjust minmax using PSO + Powell optimization.
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSwarm keptSwarm = new();
         double eps = Max(tol, global::Kerf.Engine.Foundation.Precision.Confusion());
         for (int k = 0; k < 3; ++k)
         {
@@ -237,7 +238,7 @@ internal sealed class BezierSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
                         double anUMax = uMin + Min(nbUSamples - 1, i) * du;
                         double aVMin = vMin + Max(0, j - 2) * dv;
                         double aVMax = vMin + Min(nbVSamples - 1, j) * dv;
-                        double locMin = OptimizationHelpers.AdjustExtrSurf(aGASurf, anUMin, anUMax, aVMin, aVMax, cMin, k + 1, eps, true);
+                        double locMin = OptimizationHelpers.AdjustExtrSurf(aGASurf, anUMin, anUMax, aVMin, aVMax, cMin, k + 1, eps, true, keptSwarm);
                         if (locMin < cMin)
                         {
                             cMin = locMin;
@@ -249,7 +250,7 @@ internal sealed class BezierSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
                         double anUMax = uMin + Min(nbUSamples - 1, i) * du;
                         double aVMin = vMin + Max(0, j - 2) * dv;
                         double aVMax = vMin + Min(nbVSamples - 1, j) * dv;
-                        double locMax = OptimizationHelpers.AdjustExtrSurf(aGASurf, anUMin, anUMax, aVMin, aVMax, cMax, k + 1, eps, false);
+                        double locMax = OptimizationHelpers.AdjustExtrSurf(aGASurf, anUMin, anUMax, aVMin, aVMax, cMax, k + 1, eps, false, keptSwarm);
                         if (locMax > cMax)
                         {
                             cMax = locMax;

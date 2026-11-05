@@ -416,7 +416,8 @@ internal static class OptimizationHelpers
                                           double extr0,
                                           int coordIdx,
                                           double tol,
-                                          bool isMin)
+                                          bool isMin,
+                                          global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSwarm? keptSwarm = null)
     {
         double sign = isMin ? 1.0 : -1.0;
         double extr = sign * extr0;
@@ -441,7 +442,7 @@ internal static class OptimizationHelpers
 
         SurfCoordFunc func = new(surf, uMin, uMax, vMin, vMax, coordIdx, sign);
         global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig psoCfg = new(nbParticles);
-        VectorResult psoRes = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(func, lowBorder, uppBorder, psoCfg);
+        VectorResult psoRes = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(func, lowBorder, uppBorder, psoCfg, keptSwarm);
 
         math_Vector t = new(1, 2);
         if (psoRes.Status == Status.OK || psoRes.Status == Status.MaxIterations)

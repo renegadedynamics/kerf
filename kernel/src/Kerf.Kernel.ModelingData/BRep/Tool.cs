@@ -375,6 +375,23 @@ internal static class Tool
             return null;
         }
 
+        // A line in the plane, nearly every edge asking this (unit 11B): the same arithmetic as the projection below, in
+        // the same order, without its dozen objects. A line that isn't in the plane is left to the projection, which makes
+        // it a B-spline; so is a reversed range, for which the trimmed curve reverses the line.
+        if (f < l && c3D is LineCurve3D lineCurve
+            && global::Kerf.Engine.Geometry.Projection.ProjectOnPlane.TryProjectLineKeepingParameters(gp.Position, gp.Position.Direction, lineCurve.Line, out Line3D lineOnPlane))
+        {
+            var lineCurve2D = new LineCurve2D(global::Kerf.Engine.Geometry.Projection.PlaneProjector.ProjectLine(gp.Plane, lineOnPlane));
+            lineCurve2D.Freeze();
+            return lineCurve2D;
+        }
+
+        return CurveOnPlaneByProjection(c3D, f, l, gp);
+    }
+
+    // OCCT's route, for any curve on a plane; f and l have been checked by IsValidTrimRange
+    internal static Curve2D CurveOnPlaneByProjection(Curve3D c3D, double f, double l, PlaneSurface gp)
+    {
         var trimmedCurve = new TrimmedCurve3D(c3D, f, l, true, false);
 
         // Perform projection

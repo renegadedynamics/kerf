@@ -46,6 +46,7 @@ internal sealed class DataStructureOfDelaun : Transient
     private readonly List<Triangle> _elements;
     private readonly NCollection_PackedMapOfInteger _elementsOfDomain;
     private readonly NCollection_PackedMapOfInteger _linksOfDomain;
+    private readonly LinkedListOfInteger.Iterator _cleanLinkIterator = new(); // Kept: a link is cleaned twice for each triangle (unit 11B)
 
     /// <summary>An empty structure reserving room for about <paramref name="reservedNodeSize"/> nodes.</summary>
     public DataStructureOfDelaun(int reservedNodeSize = 100)
@@ -521,8 +522,8 @@ internal sealed class DataStructureOfDelaun : Transient
             int nodeId = (i == 0) ? link.FirstNode() : link.LastNode();
 
             LinkedListOfInteger linkList = LinksConnectedToCore(nodeId);
-            LinkedListOfInteger.Iterator linkIt = new(linkList);
-            for (; linkIt.More(); linkIt.Next())
+            LinkedListOfInteger.Iterator linkIt = _cleanLinkIterator;
+            for (linkIt.Init(linkList); linkIt.More(); linkIt.Next())
             {
                 if (linkIt.Value() == index)
                 {

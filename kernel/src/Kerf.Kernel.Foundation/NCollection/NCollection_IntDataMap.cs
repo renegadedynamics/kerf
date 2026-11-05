@@ -24,7 +24,7 @@ internal sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<
 {
     private sealed class Node(int theKey, TValue theValue, Node? theNext)
     {
-        public readonly int Key = theKey;
+        public int Key = theKey;
         public TValue Value = theValue;
         public Node? Next = theNext;
     }
@@ -32,6 +32,9 @@ internal sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<
     private Node?[]? _data1;
     private long _nbBuckets;
     private int _size;
+    private Node? _freeNodes;
+    private bool _keepsNodes;
+    private List<Node?[]>? _keptBuckets;
 
     /// <summary>An empty map with the given initial number of buckets (OCCT's default 1).</summary>
     public NCollection_IntDataMap(int nbBuckets = 1)
@@ -68,7 +71,7 @@ internal sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<
             }
         }
 
-        Node?[] newdata = new Node?[newBuck + 1];
+        Node?[] newdata = TakeBuckets(newBuck + 1);
         if (_data1 is not null)
         {
             for (long i = 0; i <= _nbBuckets; ++i)
@@ -85,8 +88,37 @@ internal sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<
             }
         }
 
+        if (_keepsNodes && _data1 is not null)
+        {
+            KeepBuckets(_data1);
+        }
+
         _nbBuckets = newBuck;
         _data1 = newdata;
+    }
+
+    private Node?[] TakeBuckets(long length)
+    {
+        if (_keptBuckets is not null)
+        {
+            for (int i = 0; i < _keptBuckets.Count; i++)
+            {
+                if (_keptBuckets[i].Length == length)
+                {
+                    Node?[] buckets = _keptBuckets[i];
+                    _keptBuckets.RemoveAt(i);
+                    return buckets;
+                }
+            }
+        }
+
+        return new Node?[length];
+    }
+
+    private void KeepBuckets(Node?[] buckets)
+    {
+        Array.Clear(buckets);
+        (_keptBuckets ??= []).Add(buckets);
     }
 
     private Node? Lookup(int key)
@@ -123,7 +155,7 @@ internal sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<
         }
 
         long hash = HashCode(key, _nbBuckets);
-        _data1![hash] = new Node(key, item, _data1[hash]);
+        _data1![hash] = NewNode(key, item, _data1[hash]);
         _size++;
         return true;
     }
@@ -142,7 +174,7 @@ internal sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<
         }
 
         long hash = HashCode(key, _nbBuckets);
-        _data1![hash] = new Node(key, item, _data1[hash]);
+        _data1![hash] = NewNode(key, item, _data1[hash]);
         _size++;
         return true;
     }
@@ -188,6 +220,12 @@ internal sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<
                 else
                 {
                     _data1[k] = p.Next;
+                }
+
+                if (_keepsNodes)
+                {
+                    p.Next = _freeNodes;
+                    _freeNodes = p;
                 }
 
                 return true;
@@ -236,11 +274,65 @@ internal sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<
     /// <summary>OCCT's <c>operator()</c>.</summary>
     public ref TValue this[int key] => ref ChangeFind(key);
 
+    private Node NewNode(int key, TValue item, Node? next)
+    {
+        Node? node = _freeNodes;
+        if (node is null)
+        {
+            return new Node(key, item, next);
+        }
+
+        _freeNodes = node.Next;
+        node.Key = key;
+        node.Value = item;
+        node.Next = next;
+        return node;
+    }
+
+    /// <summary>
+    /// From now on this map keeps the nodes of the keys it loses and uses them again (unit 11B: the mesher fills one for each
+    /// vertex). So an iterator must not stand on a key that goes: the mesher's don't.
+    /// </summary>
+    internal void KeepNodes() => _keepsNodes = true;
+
+    /// <summary>
+    /// As a new map with <paramref name="nbBuckets"/> buckets, keeping the storage where that's the same. A map's iteration
+    /// order depends on its buckets, so buckets it has grown can't be kept.
+    /// </summary>
+    internal void Renew(int nbBuckets)
+    {
+        Clear();
+        if (_nbBuckets != nbBuckets)
+        {
+            if (_keepsNodes && _data1 is not null)
+            {
+                KeepBuckets(_data1);
+            }
+
+            _data1 = null;
+            _nbBuckets = nbBuckets;
+        }
+    }
+
     /// <summary>Removes every key; the buckets are kept (OCCT's <c>Clear(false)</c>).</summary>
     public void Clear()
     {
         if (!IsEmpty())
         {
+            if (_keepsNodes)
+            {
+                foreach (Node? head in _data1!)
+                {
+                    for (Node? node = head; node is not null;)
+                    {
+                        Node? next = node.Next;
+                        node.Next = _freeNodes;
+                        _freeNodes = node;
+                        node = next;
+                    }
+                }
+            }
+
             Array.Clear(_data1!);
             _size = 0;
         }

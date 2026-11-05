@@ -173,6 +173,7 @@ internal sealed class OtherSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
         }
 
         // Adjust minmax using PSO + Powell optimization.
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSwarm keptSwarm = new();
         double eps = Max(tol, global::Kerf.Engine.Foundation.Precision.Confusion());
         for (int k = 0; k < 3; ++k)
         {
@@ -193,7 +194,7 @@ internal sealed class OtherSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
                         double umax = uMin + Min(nu - 1, i) * du;
                         double vmin = vMin + Max(0, j - 2) * dv;
                         double vmax = vMin + Min(nv - 1, j) * dv;
-                        double cmin = OptimizationHelpers.AdjustExtrSurf(surf, umin, umax, vmin, vmax, cMin, k + 1, eps, true);
+                        double cmin = OptimizationHelpers.AdjustExtrSurf(surf, umin, umax, vmin, vmax, cMin, k + 1, eps, true, keptSwarm);
                         if (cmin < cMin)
                         {
                             cMin = cmin;
@@ -205,7 +206,7 @@ internal sealed class OtherSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
                         double umax = uMin + Min(nu - 1, i) * du;
                         double vmin = vMin + Max(0, j - 2) * dv;
                         double vmax = vMin + Min(nv - 1, j) * dv;
-                        double cmax = OptimizationHelpers.AdjustExtrSurf(surf, umin, umax, vmin, vmax, cMax, k + 1, eps, false);
+                        double cmax = OptimizationHelpers.AdjustExtrSurf(surf, umin, umax, vmin, vmax, cMax, k + 1, eps, false, keptSwarm);
                         if (cmax > cMax)
                         {
                             cMax = cmax;

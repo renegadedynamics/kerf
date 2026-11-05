@@ -102,9 +102,9 @@ Each step is one type, one commit, measured with 9E's benchmarks, every suite ke
 7. **`math_Vector`/`math_Matrix`** in inner loops: span-based scratch over `stackalloc` (at most 32 elements, OCCT's
    inline buffer) in the hot ones of 9E's profile and the Booleans' (`math_FunctionSetRoot` built per
    `Extrema_GenLocateExtPS.Perform`: 18 vectors each, 2% of the Booleans' bytes; `math_Recipes`'s `LU_Decompose` and
-   `Jacobi` work vectors; `AppParCurves`' matrices). `math_VectorBase` could also hold its array directly rather than
-   through an `NCollection_Array1` (one object fewer per vector), once `Array1()`'s callers no longer rely on the
-   shared view.
+   `Jacobi` work vectors; `AppParCurves`' matrices). *Unit 11B did what its profile asked:* `math_VectorBase` holds its array directly, and
+   `Array1()` makes a view over it; `math_GlobOptMin` and `math_FunctionSetRoot` keep their work objects
+   (performance.md, decisions 1655 and 1658). Spans over `stackalloc` weren't needed for its target.
 
 Also left: the static empty lists handed out by `BOPDS_DS`, `BRepFill`, `ChFi3d`, `TopOpeBRepDS` and
 `TopoDS_Iterator` (shared mutable instances: they become `[]` returned as read-only, with their callers); the Bézier

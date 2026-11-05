@@ -782,13 +782,16 @@ internal static class Recipes
     /// right-hand side and x(1..n) the solution.
     /// </summary>
     public static void SVD_Solve(Matrix u, math_Vector w, Matrix v, math_Vector b, math_Vector x)
+        => SVD_Solve(u, w, v, b, x, new math_Vector(1, u.ColNumber()));
+
+    /// <summary>As <see cref="SVD_Solve(Matrix, math_Vector, Matrix, math_Vector, math_Vector)"/>, with tmp as scratch.</summary>
+    public static void SVD_Solve(Matrix u, math_Vector w, Matrix v, math_Vector b, math_Vector x, math_Vector tmp)
     {
         int jj, j, i;
         double s;
 
         int m = u.RowNumber();
         int n = u.ColNumber();
-        math_Vector tmp = new(1, n);
 
         for (j = 1; j <= n; j++)
         {

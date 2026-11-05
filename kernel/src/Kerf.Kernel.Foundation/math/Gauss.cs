@@ -65,6 +65,9 @@ internal class Gauss
         _done = error == 0;
     }
 
+    /// <summary>The n of the n x n decompositions this has the storage for.</summary>
+    internal int Size => _lu.RowNumber();
+
     public bool IsDone => _done;
 
     /// <summary>Solves A . X = B. Throws <see cref="NotDoneException"/> if the decomposition failed.</summary>

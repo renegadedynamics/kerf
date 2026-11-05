@@ -365,9 +365,30 @@ internal sealed class SameParameter
         // 2.2) Compute parameters in 2d space if not same parameter.
         // 3) Loop over poles number and try to interpolate 2d curve.
         // 4) If loop is failed build 2d curve forcibly or use original pcurve.
-        double[] qpcons = new double[MaxArraySize], qnewpcons = new double[MaxArraySize],
-                 qpc3d = new double[MaxArraySize], qnewpc3d = new double[MaxArraySize];
+        // Four arrays of 8 kB for every edge, for its working parameters: borrowed (unit 11B), and zeroed as new ones are
+        double[] qpcons = RentZeroed(), qnewpcons = RentZeroed(), qpc3d = RentZeroed(), qnewpc3d = RentZeroed();
+        try
+        {
+            Build(tolerance, qpcons, qnewpcons, qpc3d, qnewpc3d);
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<double>.Shared.Return(qpcons);
+            System.Buffers.ArrayPool<double>.Shared.Return(qnewpcons);
+            System.Buffers.ArrayPool<double>.Shared.Return(qpc3d);
+            System.Buffers.ArrayPool<double>.Shared.Return(qnewpc3d);
+        }
+    }
 
+    private static double[] RentZeroed()
+    {
+        double[] array = System.Buffers.ArrayPool<double>.Shared.Rent(MaxArraySize);
+        Array.Clear(array, 0, MaxArraySize);
+        return array;
+    }
+
+    private void Build(double tolerance, double[] qpcons, double[] qnewpcons, double[] qpc3d, double[] qnewpc3d)
+    {
         // Create and fill data structure.
         Approx_SameParameter_Data data = new();
         data.COnS = new CurveOnSurface(_hCurve2d, _surf);

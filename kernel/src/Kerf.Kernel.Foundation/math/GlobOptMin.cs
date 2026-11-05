@@ -29,6 +29,7 @@ internal class GlobOptMin
         public NCollection_CellFilter_Inspector(int dim, double tol)
         {
             _current = new math_Vector(1, dim);
+            _difference = new math_Vector(1, dim);
             _tol = tol * tol;
             _isFind = false;
             _dimension = dim;
@@ -58,7 +59,9 @@ internal class GlobOptMin
         // Implementation of inspection method
         public CellFilterAction Inspect(math_Vector theObject)
         {
-            double sqDist = (_current - theObject).Norm2();
+            // OCCT: (myCurrent - theObject).SquareModulus(), without the temporary (unit 11B)
+            _difference.Subtract(_current, theObject);
+            double sqDist = _difference.Norm2();
 
             if (sqDist < _tol)
             {
@@ -70,6 +73,7 @@ internal class GlobOptMin
 
         private double _tol;
         private math_Vector _current;
+        private math_Vector _difference;
         private bool _isFind;
         private int _dimension;
     }
@@ -107,6 +111,15 @@ internal class GlobOptMin
     private math_Vector _v; // Steps array.
     private math_Vector _maxV; // Max Steps array.
     private double _lastStep; // Last step.
+
+    // Storage kept from one local search or step to the next (unit 11B): OCCT has all of these on the stack, where they
+    // cost nothing. Each is written before it's read.
+    private NewtonMinimum? _newton;
+    private readonly math_Vector _stepBestPoint;
+    private readonly math_Vector _storedTol;
+    private NCollection_CellFilter_Inspector? _inspector;
+    private math_Vector? _low;
+    private math_Vector? _up;
 
     private NCollection_Array1<double> _cellSize;
     private int _minCellFilterSol;
@@ -148,6 +161,8 @@ internal class GlobOptMin
         _isConstLocked = false;
         _x = new math_Vector(1, _n);
         _tmp = new math_Vector(1, _n);
+        _stepBestPoint = new math_Vector(1, _n);
+        _storedTol = new math_Vector(1, _n);
         _v = new math_Vector(1, _n);
         _maxV = new math_Vector(1, _n);
         _cellSize = new NCollection_Array1<double>(0, _n - 1);
@@ -343,7 +358,18 @@ internal class GlobOptMin
         if (_cont >= 2 && _func is MultipleVarFunctionWithHessian)
         {
             MultipleVarFunctionWithHessian tmp = (MultipleVarFunctionWithHessian)_func;
-            NewtonMinimum newtonMinimum = new(tmp);
+            NewtonMinimum newtonMinimum;
+            if (_newton is not null && tmp.VariableCount == _n)
+            {
+                newtonMinimum = _newton;
+                newtonMinimum.Reset();
+            }
+            else
+            {
+                newtonMinimum = new NewtonMinimum(tmp);
+                _newton = tmp.VariableCount == _n ? newtonMinimum : null;
+            }
+
             newtonMinimum.SetBoundary(_globA, _globB);
             newtonMinimum.Perform(tmp, pnt);
 
@@ -461,7 +487,7 @@ internal class GlobOptMin
         double d = RealLast(), prevVal; // Functional in original and moved points.
         double val = RealLast(); // Local extrema computed in moved point.
         double stepBestValue = RealLast();
-        math_Vector stepBestPoint = new(1, _n);
+        math_Vector stepBestPoint = _stepBestPoint; // Only used at j == 1, and not across the recursion
         bool isInside = false, isReached = false;
 
         double r1, r2, r;
@@ -575,8 +601,11 @@ internal class GlobOptMin
     {
         int i, j;
         bool isSame = true;
-        math_Vector tol = new(1, _n);
-        tol.Initialized((_b - _a) * _sameTol);
+        math_Vector tol = _storedTol;
+        for (i = 1; i <= _n; i++)
+        {
+            tol[i] = (_b[i] - _a[i]) * _sameTol; // OCCT: (myB - myA) * mySameTol, without the temporaries (unit 11B)
+        }
 
         // C1 * n^2 = C2 * 3^dim * n
         if (_solCount < _minCellFilterSol)
@@ -601,7 +630,7 @@ internal class GlobOptMin
         }
         else
         {
-            NCollection_CellFilter_Inspector inspector = new(_n, global::Kerf.Engine.Foundation.Precision.PConfusion());
+            NCollection_CellFilter_Inspector inspector = _inspector ??= new(_n, global::Kerf.Engine.Foundation.Precision.PConfusion());
             if (_isFirstCellFilterInvoke)
             {
                 _filter.Reset(_cellSize);
@@ -621,7 +650,7 @@ internal class GlobOptMin
 
             _isFirstCellFilterInvoke = false;
 
-            math_Vector low = new(1, _n), up = new(1, _n);
+            math_Vector low = _low ??= new(1, _n), up = _up ??= new(1, _n);
             inspector.Shift(pnt, _cellSize, low, up);
 
             inspector.ClearFind();

@@ -21,7 +21,9 @@ internal sealed class Iterator
     private static readonly NCollection_List<Shape> EmptyList = new();
 
     private Shape _shape;
-    private readonly NCollection_List<Shape>.Iterator _iterator = new();
+    // The list and the place in it, not a list iterator: an object more for each of these (unit 11B)
+    private NCollection_List<Shape> _children = EmptyList;
+    private int _position;
     private Orientation _orientation;
     private Placement _location;
 
@@ -31,7 +33,6 @@ internal sealed class Iterator
         _shape = new Shape();
         _orientation = Orientation.Forward;
         _location = new Placement();
-        _iterator.Initialize(EmptyList);
     }
 
     /// <summary>An iterator on the sub-shapes of <paramref name="s"/>.</summary>
@@ -70,14 +71,8 @@ internal sealed class Iterator
             _orientation = Orientation.Forward;
         }
 
-        if (s.IsNull)
-        {
-            _iterator.Initialize(EmptyList);
-        }
-        else
-        {
-            _iterator.Initialize(WorkingOverlay.View(s.TShape()!)._shapes);
-        }
+        _children = s.IsNull ? EmptyList : WorkingOverlay.View(s.TShape()!)._shapes;
+        _position = 0;
 
         if (More())
         {
@@ -86,12 +81,12 @@ internal sealed class Iterator
     }
 
     /// <summary>True if there is a current sub-shape.</summary>
-    public bool More() => _iterator.More();
+    public bool More() => _position < _children.Extent();
 
     /// <summary>Moves to the next sub-shape.</summary>
     public void Next()
     {
-        _iterator.Next();
+        _position++;
         if (More())
         {
             UpdateCurrentShape();
@@ -109,7 +104,7 @@ internal sealed class Iterator
     // Updates myShape from the current iterator position.
     private void UpdateCurrentShape()
     {
-        _shape = _iterator.Value();
+        _shape = _children.ItemAt(_position);
         _shape.Orient(global::Kerf.Engine.Topology.TopAbs.Compose(_orientation, _shape.Orientation));
         if (!_location.IsIdentity)
         {
