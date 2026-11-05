@@ -273,7 +273,7 @@ public partial class Curve : ModelShape, IShape1D
 
     /// <summary>The wires made from the curve's edges.</summary>
     public override ShapeList<Wire> Wires(Select select = Select.All) =>
-        Shape.Type == ShapeType.Wire && select == Select.All ? base.Wires(select) : WireExtensions.Combine(Edges(select));
+        Shape.Type == ShapeType.Wire && select == Select.All ? base.Wires(select) : Wire.Combine(Edges(select));
 
     private Wire AsWire() => Shape.TryAs(out Wire wire) && !Shape.IsNull ? wire : Wire.Make(Edges());
 

@@ -19,7 +19,7 @@ public static partial class Shape3DExtensions
         /// <summary>The centre of mass (by default) or of the bounding box; the geometric centre isn't supported.</summary>
         internal Vector Center_Shape3D() => self.Center(CenterOf.Mass);
 
-        /// <inheritdoc cref="Center()"/>
+        /// <summary>As the other forms of <c>Center</c>.</summary>
         internal Vector Center_Shape3D(CenterOf centerOf)
         {
             self.NeedsGeometry("center");
@@ -46,10 +46,10 @@ public static partial class Shape3DExtensions
         public Shape Chamfer(double length, double? length2, IEnumerable<Edge> edgeList, Face? face = null)
         {
             var edges = edgeList.ToList();
-            if (face is not null)
+            if (face is { } onFace)
             {
-                var faceEdges = face.SelectEdges();
-                if (edges.Any(e => !faceEdges.Contains(e)))
+                var faceEdges = onFace.SelectEdges();
+                if (edges.Any(e => !faceEdges.Contains(e, ShapeComparer<Edge>.Same)))
                     throw new ArgumentException("Some edges are not part of the face");
             }
             var graph = ShapeGraph.Build(self.AsShape());
@@ -58,8 +58,8 @@ public static partial class Shape3DExtensions
             foreach (var edge in edges)
             {
                 Face topoFace;
-                if (face is not null)
-                    topoFace = face;
+                if (face is { } given)
+                    topoFace = given;
                 else
                     topoFace = (Face)graph.Ancestors(edge, ShapeType.Face).First();
                 // BRepFilletAPI_MakeChamfer's Add of two distances on the face
@@ -82,7 +82,7 @@ public static partial class Shape3DExtensions
                             bool thruAll = true, bool additive = true) =>
             self.DPrismCore(basis, bounds.SelectMany(b => b.SelectFaces()), depth, taper, upToFace, thruAll, additive);
 
-        /// <inheritdoc cref="DPrism(Face?, IReadOnlyList{IShape2D}, double?, double, Face?, bool, bool)"/>
+        /// <summary>As the other forms of <c>DPrism</c>.</summary>
         public Shape DPrism(Face? basis, IReadOnlyList<Wire> bounds, double? depth = null, double taper = 0, Face? upToFace = null,
                             bool thruAll = true, bool additive = true) =>
             self.DPrismCore(basis, TwoD.SortWiresByBuildOrder(bounds).Select(p => Face.Make(p[0], p.Skip(1))), depth, taper, upToFace, thruAll, additive);
@@ -116,7 +116,7 @@ public static partial class Shape3DExtensions
         {
             var edges = edgeList.Select(e => e).ToList();
             var filleted = self.AsShape().Fillet(edges, radius);
-            Shape? result = null;
+            Shape result = default;
             Exception? failure = null;
             if (filleted.TryGetValue(out var built))
             {
@@ -141,8 +141,8 @@ public static partial class Shape3DExtensions
                     $"The fillet with a radius of {Formatting.Number(radius)}{details} failed; try a smaller radius, or MaxFillet "
                     + "to find the largest that works.", filleted.IsFailure ? filleted.Diagnostics : default, failure);
             }
-            return result!.MadeBy(ModelHistory.FromAlgorithm(s => built!.History.Modified(s), s => built!.History.Generated(s),
-                                                             [self.AsShape()], result!));
+            return result.MadeBy(ModelHistory.FromAlgorithm(s => built!.History.Modified(s), s => built!.History.Generated(s),
+                                                             [self.AsShape()], result));
         }
 
         /// <summary>
@@ -162,11 +162,11 @@ public static partial class Shape3DExtensions
                     throw new InvalidOperationException($"Failed to find the max value within {Formatting.Number(tolerance)} in {maxIterations}");
                 // Do these numbers work? If not, try the smaller window
                 if (!self.AsShape().Fillet(edges, windowMid).TryGetValue(out var built) || !Shape3DExtensions.Make3DResult(built.Shape).IsValid)
-                    return self.Search(windowMin, windowMid, iteration + 1);
+                    return Search(windowMin, windowMid, iteration + 1);
                 // They work: close enough, or try the larger window
-                return windowMid - windowMin <= tolerance ? windowMid : self.Search(windowMid, windowMax, iteration + 1);
+                return windowMid - windowMin <= tolerance ? windowMid : Search(windowMid, windowMax, iteration + 1);
             }
-            return self.Search(0.0, 2 * self.BoundingBox().Diagonal, 0);
+            return Search(0.0, 2 * self.BoundingBox().Diagonal, 0);
         }
 
         /// <summary>
@@ -241,19 +241,19 @@ public static partial class Shape3DExtensions
 
         internal ShapeList<Shape>? IntersectCore_Shape3D(object other, double tolerance, bool includeTouched)
         {
-            var shape = Shape.AsShape(other);
+            var shape = ShapeExtensions.ShapeOf(other);
             var results = new List<Shape>();
             // Trim infinite edges before OCCT operations
-            if (shape is Edge { IsInfinite: true } infinite)
+            if (TopoUtil.Typed(shape) is Edge { IsInfinite: true } infinite)
             {
                 var box = self.BoundingBox(optimal: false);
                 shape = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Length);
             }
-            switch (shape)
+            switch (TopoUtil.Typed(shape))
             {
                 case Solid or Face or Shell or Edge or Wire:
                 {
-                    results.AddRange(self.BoolOpList([self.AsShape()], [shape], BooleanKind.Common).Expand());
+                    results.AddRange(ShapeExtensions.BoolOpList([self.AsShape()], [shape], BooleanKind.Common).Expand());
                     break;
                 }
                 case Vertex vertex:
@@ -262,7 +262,7 @@ public static partial class Shape3DExtensions
                     break;
                 default:
                     // Delegate to higher-order shapes (a compound); the outer caller handles touches
-                    if (shape.IntersectCore(self.AsShape(), tolerance, includeTouched: false) is { } found)
+                    if (ShapeExtensions.IntersectOne(shape.AsShape(), self.AsShape(), tolerance, includeTouched: false) is { } found)
                         results.AddRange(found);
                     break;
             }
@@ -275,10 +275,6 @@ public static partial class Shape3DExtensions
         }
     }
 
-    extension(IShape3D)
-    {
-        public static IShape3D Make(Shape? obj) => (IShape3D)TopoUtil.Downcast(obj!);
-    }
 
 
     /// <summary>A 3D operation's result as topology rather than as the source's class: a Solid, or a Part of several.</summary>
@@ -288,7 +284,7 @@ public static partial class Shape3DExtensions
         if (result.IsCompound())
             result = TopoUtil.Downcast(TopoUtil.UnwrapCompound((Compound)result));
         if (result.IsCompound())
-            return ShapeExtensions.MakeComposite(TopoUtil.TopLevelShapes(result).Select(s => (Solid)s), 3);
+            return ShapeExtensions.MakeComposite(TopoUtil.TopLevelShapes(result));
         return (Solid)result;
     }
 
@@ -311,7 +307,7 @@ public static partial class Shape3DExtensions
             };
             if (!faulty.TryGetValue(reason, out var set))
             {
-                faulty[reason] = set = [];
+                faulty[reason] = set = new(ShapeComparer<Edge>.Same);
                 order.Add(reason);
             }
             foreach (var edge in contour.Shapes)
@@ -343,9 +339,9 @@ public static partial class Shape3DExtensions
     /// <summary>The results without vertices and edges that lie on higher-dimensional ones.</summary>
     private static List<Shape> FilterRedundantTouches(List<Shape> items, double tolerance)
     {
-        var edges = items.OfType<Edge>().ToList();
-        var faces = items.OfType<Face>().ToList();
-        var solids = items.OfType<Solid>().ToList();
+        var edges = items.OfKind<Edge>().ToList();
+        var faces = items.OfKind<Face>().ToList();
+        var solids = items.OfKind<Solid>().ToList();
         return items.Where(r =>
             !(r.TryAs(out Vertex v) && (edges.Any(e => e.DistanceTo(v) <= tolerance) || faces.Any(f => f.DistanceTo(v) <= tolerance)
                                 || solids.SelectMany(s => s.SelectFaces()).Any(sf => sf.DistanceTo(v) <= tolerance)))

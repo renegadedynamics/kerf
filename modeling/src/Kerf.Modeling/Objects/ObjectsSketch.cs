@@ -203,7 +203,7 @@ public class SlotCurve : BaseSketchObject
 {
     /// <summary>A slot round a curve.</summary>
     public SlotCurve(IShape1D curve, double height, double rotation = 0)
-        : base(Face.Make((Wire)(curve as Wire ?? Wire.Make((Edge)curve)).Offset2D(height / 2)), rotation, null)
+        : base(Face.Make((Wire)TopoUtil.AsWire(curve).Offset2D(height / 2).AsShape()), rotation, null)
     {
         (Curve, SlotHeight) = (curve, height);
     }

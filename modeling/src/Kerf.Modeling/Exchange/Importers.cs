@@ -20,7 +20,7 @@ public static class Importers
         var maxBytes = (limits ?? ImportLimits.Default).MaxBytes;
         if (ReadAll(stream, maxBytes, cancellationToken) is not { } bytes)
             return Result<Shape>.Failure(Diagnostic.Error(LimitExceeded, $"The BREP data is larger than the limit of {maxBytes} bytes"));
-        return Extras.ReadBRep(bytes).Map(Shape.Cast);
+        return Extras.ReadBRep(bytes);
     }
 
     /// <summary>A shape from a BREP file.</summary>
@@ -32,12 +32,12 @@ public static class Importers
 
     /// <summary>
     /// The model of STEP data, as build123d's <c>import_step</c>: the file's assembly tree as compounds whose
-    /// <see cref="Compound.AssemblyChildren"/> are its components, each placed by its location, with the product names
+    /// <see cref="Assembly.Children"/> are its components, each placed by its location, with the product names
     /// as labels and the colours (a shape's own, else its product's); one free shape is returned as it is, several in a
     /// compound of them. <paramref name="name"/> names the data in OCCT's messages. Data that refers to
     /// other STEP files is refused, as there is no folder to read them from.
     /// </summary>
-    public static Result<Shape> ImportStep(Stream stream, ImportLimits? limits = null, CancellationToken cancellationToken = default,
+    public static Result<ModelShape> ImportStep(Stream stream, ImportLimits? limits = null, CancellationToken cancellationToken = default,
                                    string name = "STEP data")
         => ImportStep(stream, limits, cancellationToken, name, externalFiles: false);
 
@@ -45,13 +45,13 @@ public static class Importers
     /// The model of a STEP file (see the stream form). Other STEP files it refers to are read from its folder, as OCCT
     /// reads them.
     /// </summary>
-    public static Result<Shape> ImportStep(string fileName, ImportLimits? limits = null, CancellationToken cancellationToken = default)
+    public static Result<ModelShape> ImportStep(string fileName, ImportLimits? limits = null, CancellationToken cancellationToken = default)
     {
         using var file = OpenRead(fileName);
         return ImportStep(file, limits, cancellationToken, Path.GetFullPath(fileName), externalFiles: true);
     }
 
-    private static Result<Shape> ImportStep(Stream stream, ImportLimits? limits, CancellationToken cancellationToken, string name, bool externalFiles)
+    private static Result<ModelShape> ImportStep(Stream stream, ImportLimits? limits, CancellationToken cancellationToken, string name, bool externalFiles)
     {
         ArgumentNullException.ThrowIfNull(stream);
         var options = new StepReadOptions { Limits = (limits ?? ImportLimits.Default).ToReadLimits(), ExternalReferences = externalFiles };
@@ -61,28 +61,37 @@ public static class Importers
         {
             // Data refused for its references says so; other data that can't be read says which and why
             if (error.Code.Value is "exchange.external-references")
-                return Result<Shape>.Failure(read.Diagnostics);
-            return Result<Shape>.Failure(error with { Message = $"Could not import {name}: it isn't readable STEP data. {error.Message}" });
+                return Result<ModelShape>.Failure(read.Diagnostics);
+            return Result<ModelShape>.Failure(error with { Message = $"Could not import {name}: it isn't readable STEP data. {error.Message}" });
         }
         var root = read.Value;
-        return root.Shape is null && root.Children.IsEmpty ? default(Compound) : (FromModel(root));
+        return root.Shape is null && root.Children.IsEmpty ? new Assembly(TopoUtil.EmptyCompound()) : FromModel(root);
     }
 
-    private static Shape FromModel(ModelNode node)
+    private static ModelShape FromModel(ModelNode node)
     {
         var label = node.Name ?? "";
         Color? color = null;
         if (node.Color is { } c)
             color = new Color(c);
         if (node.Shape is { } shape)
-            return Shape.Cast(shape).WithLabel(label).WithColor(color);
+            return Leaf(shape, label, color);
         // A mesh read (glTF): the faces holding only its triangles, as they were read
         if (node.Mesh is { } mesh)
-            return Shape.Cast(mesh.TriangulatedShape).WithLabel(label).WithColor(color);
+            return Leaf(mesh.TriangulatedShape, label, color);
         var children = node.Children.Select(FromModel).ToList();
-        var assembly = Compound.Assembly(children, label, color);
+        var assembly = new Assembly(children, label, color);
         return node.Placement.IsIdentity ? assembly : assembly.Located(new Location(node.Placement));
     }
+
+    // The object for a part of the tree: a kernel shape can't hold a label or a colour
+    private static ModelShape Leaf(Shape shape, string label, Color? color) => shape.Dim switch
+    {
+        3 => new Part(shape, label, color),
+        2 => new Sketch(shape, label, color),
+        1 => new Curve(shape, label, color),
+        _ => new Assembly(shape, label, color),
+    };
 
     /// <summary>
     /// A face holding the triangles of STL data (binary or ASCII), with no surface: fast to read and to show, as
@@ -113,10 +122,10 @@ public static class Importers
     /// <summary>
     /// The model of glTF 2.0 data (<c>.glb</c>, or <c>.gltf</c> with its buffers embedded), Y-up turned Z-up, in
     /// <paramref name="modelUnit"/>: a part is a compound of faces holding only triangles, with the mesh's name and
-    /// colour; a scene of several parts or a node hierarchy is an assembly (<see cref="Compound.AssemblyChildren"/>).
+    /// colour; a scene of several parts or a node hierarchy is an assembly (<see cref="Assembly.Children"/>).
     /// Not in build123d.
     /// </summary>
-    public static Result<Shape> ImportGltf(Stream stream, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
+    public static Result<ModelShape> ImportGltf(Stream stream, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
                                    CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(stream);
@@ -129,7 +138,7 @@ public static class Importers
     }
 
     /// <summary>The model of a glTF 2.0 file. External buffers aren't read.</summary>
-    public static Result<Shape> ImportGltf(string fileName, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
+    public static Result<ModelShape> ImportGltf(string fileName, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
                                    CancellationToken cancellationToken = default)
     {
         using var file = OpenRead(fileName);

@@ -4,7 +4,7 @@ using Kerf.Meshing;
 
 namespace Kerf.Modeling;
 
-/// <summary>How <see cref="Exporters3D.ExportStep(Shape, Stream, StepExportOptions?, CancellationToken)"/> writes STEP.</summary>
+/// <summary>How <c>ExportStep</c> writes STEP.</summary>
 public sealed record StepExportOptions
 {
     /// <summary>The options by default: millimetres, with pcurves, at the average precision, stamped with the time of writing.</summary>
@@ -23,7 +23,7 @@ public sealed record StepExportOptions
     public string? Timestamp { get; init; }
 }
 
-/// <summary>How <see cref="Exporters3D.ExportStl(Shape, Stream, StlExportOptions?, CancellationToken)"/> meshes and writes STL.</summary>
+/// <summary>How <c>ExportStl</c> meshes and writes STL.</summary>
 public sealed record StlExportOptions
 {
     /// <summary>The options by default: binary, at a linear deflection of 0.001 and an angular one of 0.1.</summary>
@@ -39,7 +39,7 @@ public sealed record StlExportOptions
     public bool Ascii { get; init; }
 }
 
-/// <summary>How <see cref="Exporters3D.ExportGltf(Shape, Stream, GltfExportOptions?, CancellationToken)"/> meshes and writes glTF.</summary>
+/// <summary>How <c>ExportGltf</c> meshes and writes glTF.</summary>
 public sealed record GltfExportOptions
 {
     /// <summary>The options by default: JSON, from millimetres, at a linear deflection of 0.001 and an angular one of 0.1.</summary>
@@ -58,7 +58,7 @@ public sealed record GltfExportOptions
     public double AngularDeflection { get; init; } = 0.1;
 }
 
-/// <summary>How <see cref="Exporters3D.Export3mf(Shape, Stream, ThreeMfExportOptions?, CancellationToken)"/> meshes and writes 3MF.</summary>
+/// <summary>How <c>Export3mf</c> meshes and writes 3MF.</summary>
 public sealed record ThreeMfExportOptions
 {
     /// <summary>The options by default: millimetres, at a linear deflection of 0.001 and an angular one of 0.1.</summary>
@@ -77,7 +77,7 @@ public sealed record ThreeMfExportOptions
 /// <summary>
 /// build123d's 3D exporters (<c>exporters3d.py</c>): BREP, STEP, STL and glTF, and 3MF (build123d's <c>Mesher</c>).
 /// Each writes a stream, with cancellation; the file forms write a file. None changes the shape it's given: the mesh
-/// formats mesh private copies, as <see cref="Shape.Tessellate"/> does.
+/// formats mesh private copies, as <c>Tessellate</c> does.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -103,29 +103,27 @@ public static class Exporters3D
     private static readonly DiagnosticCode WriteFailed = new("exchange.write-failed");
 
     /// <summary>Writes a shape as BREP (OCCT's text format, with any triangulations).</summary>
-    public static Result ExportBrep(Shape toExport, Stream stream)
+    public static Result ExportBrep(IShape toExport, Stream stream)
     {
-        ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(stream);
-        return Export(toExport, () =>
+        return Export(toExport.AsShape(), () =>
         {
-            stream.Write(Extras.WriteBRep(toExport, withTriangles: true));
+            stream.Write(Extras.WriteBRep(toExport.AsShape(), withTriangles: true));
             return Result.Success();
         });
     }
 
     /// <summary>Writes a shape to a BREP file.</summary>
-    public static Result ExportBrep(Shape toExport, string filePath) => ToFile(filePath, s => ExportBrep(toExport, s));
+    public static Result ExportBrep(IShape toExport, string filePath) => ToFile(filePath, s => ExportBrep(toExport, s));
 
     /// <summary>
     /// Writes a shape or assembly as STEP (AP214, as OCCT writes by default). As build123d's <c>export_step</c>: an
-    /// assembly (a compound with <see cref="Compound.AssemblyChildren"/>) is written as one, each child a component at
+    /// assembly (a compound with <see cref="Assembly.Children"/>) is written as one, each child a component at
     /// its location, children of one shape, label and colour written once; labels name the products and colours colour
     /// them.
     /// </summary>
-    public static Result ExportStep(Shape toExport, Stream stream, StepExportOptions? options = null, CancellationToken cancellationToken = default)
+    public static Result ExportStep(IShape toExport, Stream stream, StepExportOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(stream);
         options ??= StepExportOptions.Default;
         var writeOptions = new StepWriteOptions
@@ -134,37 +132,36 @@ public static class Exporters3D
             WritePcurves = options.WritePcurves,
             Precision = (StepPrecision)(int)options.PrecisionMode,
         };
-        return Export(toExport, () =>
+        return Export(toExport.AsShape(), () =>
         {
             using var text = new MemoryStream();
             var written = Step.Write(StepTree(toExport), text, writeOptions, cancellationToken: cancellationToken);
             if (written.IsFailure)
                 return written;
-            stream.Write(StepHeader.WithFileName(text.ToArray(), toExport.Label.Length > 0 ? toExport.Label : null, options.Timestamp, "build123d"));
+            stream.Write(StepHeader.WithFileName(text.ToArray(), toExport is ModelShape { Label.Length: > 0 } labelled ? labelled.Label : null, options.Timestamp, "build123d"));
             return written;
         });
     }
 
     /// <summary>Writes a shape to a STEP file.</summary>
-    public static Result ExportStep(Shape toExport, string filePath, StepExportOptions? options = null, CancellationToken cancellationToken = default)
+    public static Result ExportStep(IShape toExport, string filePath, StepExportOptions? options = null, CancellationToken cancellationToken = default)
         => ToFile(filePath, s => ExportStep(toExport, s, options, cancellationToken));
 
     /// <summary>Writes a shape's mesh as STL, binary or ASCII.</summary>
-    public static Result ExportStl(Shape toExport, Stream stream, StlExportOptions? options = null, CancellationToken cancellationToken = default)
+    public static Result ExportStl(IShape toExport, Stream stream, StlExportOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(stream);
         options ??= StlExportOptions.Default;
-        return Export(toExport, () =>
+        return Export(toExport.AsShape(), () =>
         {
-            var mesh = Failures.Get(Mesher.Mesh(toExport, MeshOptions(options.Tolerance, options.AngularTolerance), cancellationToken: cancellationToken),
+            var mesh = Failures.Get(Mesher.Mesh(toExport.AsShape(), MeshOptions(options.Tolerance, options.AngularTolerance), cancellationToken: cancellationToken),
                                     () => "mesh");
             return Stl.Write(mesh, stream, new StlWriteOptions { Ascii = options.Ascii }, cancellationToken);
         });
     }
 
     /// <summary>Writes a shape's mesh to an STL file, whose folder must exist.</summary>
-    public static Result ExportStl(Shape toExport, string filePath, StlExportOptions? options = null, CancellationToken cancellationToken = default)
+    public static Result ExportStl(IShape toExport, string filePath, StlExportOptions? options = null, CancellationToken cancellationToken = default)
         => ToFile(filePath, s => ExportStl(toExport, s, options, cancellationToken));
 
     /// <summary>
@@ -172,21 +169,19 @@ public static class Exporters3D
     /// as a <c>data:</c> URI, since one stream can't carry the <c>.bin</c> file beside it. Z-up turned Y-up, and the
     /// unit into metres, as glTF wants; a material per colour; a node per assembly child, named by its label.
     /// </summary>
-    public static Result ExportGltf(Shape toExport, Stream stream, GltfExportOptions? options = null, CancellationToken cancellationToken = default)
+    public static Result ExportGltf(IShape toExport, Stream stream, GltfExportOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(stream);
         var writeOptions = GltfOptions(options ?? GltfExportOptions.Default);
-        return Export(toExport, () => Gltf.Write(MeshTree(toExport), stream, writeOptions, cancellationToken));
+        return Export(toExport.AsShape(), () => Gltf.Write(MeshTree(toExport), stream, writeOptions, cancellationToken));
     }
 
     /// <summary>
     /// Writes a shape or assembly to a glTF 2.0 file: binary, or JSON with its buffer in a <c>.bin</c> file of the
     /// same name beside it, as build123d's.
     /// </summary>
-    public static Result ExportGltf(Shape toExport, string filePath, GltfExportOptions? options = null, CancellationToken cancellationToken = default)
+    public static Result ExportGltf(IShape toExport, string filePath, GltfExportOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(filePath);
         options ??= GltfExportOptions.Default;
         if (options.Binary)
@@ -194,7 +189,7 @@ public static class Exporters3D
         var writeOptions = GltfOptions(options);
         var binPath = Path.ChangeExtension(filePath, ".bin");
         using var bin = new MemoryStream();
-        var done = ToFile(filePath, s => Export(toExport, () => Gltf.Write(MeshTree(toExport), s, bin, Path.GetFileName(binPath), writeOptions, cancellationToken)));
+        var done = ToFile(filePath, s => Export(toExport.AsShape(), () => Gltf.Write(MeshTree(toExport), s, bin, Path.GetFileName(binPath), writeOptions, cancellationToken)));
         if (done.IsFailure || bin.Length == 0)
             return done;
         try
@@ -213,17 +208,16 @@ public static class Exporters3D
     /// material per colour). build123d writes 3MF through its <c>Mesher</c> (lib3mf); this is its <c>add_shape</c> and
     /// <c>write</c> in one, with <c>add_shape</c>'s deflections.
     /// </summary>
-    public static Result Export3mf(Shape toExport, Stream stream, ThreeMfExportOptions? options = null, CancellationToken cancellationToken = default)
+    public static Result Export3mf(IShape toExport, Stream stream, ThreeMfExportOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(stream);
         options ??= ThreeMfExportOptions.Default;
         var writeOptions = new ThreeMfWriteOptions { Unit = ExchangeUnits.LengthUnit(options.Unit, "unit"), Mesh = MeshOptions(options.LinearDeflection, options.AngularDeflection) };
-        return Export(toExport, () => ThreeMf.Write(MeshTree(toExport), stream, writeOptions, cancellationToken));
+        return Export(toExport.AsShape(), () => ThreeMf.Write(MeshTree(toExport), stream, writeOptions, cancellationToken));
     }
 
     /// <summary>Writes a shape or assembly to a 3MF file.</summary>
-    public static Result Export3mf(Shape toExport, string filePath, ThreeMfExportOptions? options = null, CancellationToken cancellationToken = default)
+    public static Result Export3mf(IShape toExport, string filePath, ThreeMfExportOptions? options = null, CancellationToken cancellationToken = default)
         => ToFile(filePath, s => Export3mf(toExport, s, options, cancellationToken));
 
     // An export's failures as its result: nothing to write, a failure carried up from the kernel, or a stream or
@@ -271,20 +265,21 @@ public static class Exporters3D
 
     // The tree the mesh writers take (they mesh each part with the options' deflections, relative to each edge's size,
     // as build123d meshes): the tree STEP is written from
-    private static ModelNode MeshTree(Shape shape) => StepTree(shape);
+    private static ModelNode MeshTree(IShape shape) => StepTree(shape);
 
     // The tree STEP is written from, as build123d's _create_xde: an assembly per compound with children, the other
     // shapes as parts, labels and colours as they are (the writers resolve a part's inherited colour)
-    private static ModelNode StepTree(Shape shape)
+    private static ModelNode StepTree(IShape shape)
     {
-        string? name = shape.Label.Length > 0 ? shape.Label : null;
-        var color = Linear(shape.Color);
-        if (shape is Compound { AssemblyChildren.Count: > 0 } assembly)
+        var model = shape as ModelShape;
+        string? name = model is { Label.Length: > 0 } ? model.Label : null;
+        var color = Linear(model?.Color);
+        if (model is Assembly { Children.Count: > 0 } assembly)
         {
-            var children = assembly.AssemblyChildren.Where(c => !c.IsEmpty).Select(StepTree).ToList();
-            return ModelNode.Assembly(children, name, assembly.Placement, color);
+            var children = assembly.Children.Where(c => !c.IsEmpty).Select(c => StepTree(c)).ToList();
+            return ModelNode.Assembly(children, name, assembly.Shape.Placement, color);
         }
-        return ModelNode.Part(shape, name, color);
+        return ModelNode.Part(shape.AsShape(), name, color);
     }
 
     private static global::Kerf.Meshing.MeshOptions MeshOptions(double linearDeflection, double angularDeflection) =>

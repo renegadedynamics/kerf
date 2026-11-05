@@ -443,7 +443,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     public static bool operator !=(Plane? a, Plane? b) => !(a == b);
 
 
-    /// <summary>Where a shape meets this plane (the shape's <see cref="Shape.Intersect(object[])"/>), empty if nowhere.</summary>
+    /// <summary>Where a shape meets this plane (the shape's <c>Intersect</c>), empty if nowhere.</summary>
     public ShapeList<Shape> Intersect(Shape shape) => shape.Intersect(this);
 #pragma warning restore CS1591
 

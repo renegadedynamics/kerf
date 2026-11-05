@@ -27,10 +27,10 @@ public static partial class WireExtensions
         /// The edges in the order they connect (as <c>BRepTools_WireExplorer</c> walks them), then any edges at branches of a
         /// non-manifold wire, which the explorer skips.
         /// </summary>
-        internal ShapeList<Edge> Edges_Wire(Select select = Select.All)
+        internal ShapeList<Edge> OrderedEdgeList(IShape origin)
         {
             if (self.IsEmpty)
-                return [];
+                return new ShapeList<Edge>([], origin);
             var edges = new List<Edge>();
             var explored = new HashSet<Shape>(ShapeComparer.Same);
             foreach (var edge in self.OrderedEdges())
@@ -43,7 +43,7 @@ public static partial class WireExtensions
                 if (explored.Add(edge))
                     edges.Add((Edge)edge);
             }
-            return self.SelectFrom(new ShapeList<Edge>(edges), select);
+            return new ShapeList<Edge>(edges, origin);
         }
 
         /// <summary>The edges sorted along the wire, each turned to run the way the wire does.</summary>
@@ -95,7 +95,7 @@ public static partial class WireExtensions
             var separation = self.DistanceTo(point);
             if (!TopologyUtils.IsCloseB(separation, 0, absTol: Constants.Tolerance))
                 throw new ArgumentException($"point ({point}) is {separation} from wire");
-            var distance = vertex.Distance(self);
+            var distance = MeasureOperations.Distance(vertex, self);
             if (!distance.TryGetValue(out var extrema) || extrema.Solutions.IsEmpty)
                 throw new ArgumentException("point is not on Wire");
 
@@ -380,6 +380,9 @@ public static partial class WireExtensions
         // ---- Factories ----
 
         /// <summary>The wires made by connecting the edges of the given wires and edges.</summary>
+        public static ShapeList<Wire> Combine(IEnumerable<Edge> edges, double tolerance = 1e-9) => Wire.Combine(edges.Select(e => (IShape1D)e), tolerance);
+
+        /// <inheritdoc cref="Combine(IEnumerable{IShape1D}, double)"/>
         public static ShapeList<Wire> Combine(IEnumerable<IShape1D> wires, double tolerance = 1e-9) =>
             OneD.EdgesToWires(wires.SelectMany(w => w.SelectEdges()), tolerance);
 
@@ -451,15 +454,15 @@ public static partial class WireExtensions
                 if (edge0 != edge1)
                 {
                     // A line joining two edges
-                    self.AddTrim(edge0, s0);
-                    self.AddTrim(edge1, s1);
+                    AddTrim(edge0, s0);
+                    AddTrim(edge1, s1);
                     connecting.Add((lookup[s0], lookup[s1]));
                 }
                 else if (Math.Abs(s0 - s1) != 1)
                 {
                     // A line across one edge
                     int start = Math.Min(s0, s1), end = Math.Max(s0, s1);
-                    self.AddTrim(edge0, start, end);
+                    AddTrim(edge0, start, end);
                     connecting.Add((lookup[start], lookup[end]));
                 }
             }
@@ -523,7 +526,7 @@ public static partial class WireExtensions
         /// A wire of edges. With <paramref name="sequenced"/> the edges are first put in order, the end of each at the start
         /// of the next (which is slow).
         /// </summary>
-        public static Wire Make(IEnumerable<Edge> edges, bool sequenced = false) => (Wire)TopoUtil.Downcast(WireExtensions.MakeWireOrNull(edges, sequenced)!);
+        public static Wire Make(IEnumerable<Edge> edges, bool sequenced = false) => WireExtensions.MakeWireOrNull(edges, sequenced) ?? default;
     }
 
 

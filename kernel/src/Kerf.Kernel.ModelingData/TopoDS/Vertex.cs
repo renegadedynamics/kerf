@@ -176,9 +176,9 @@ public partial struct Vertex : IEquatable<Vertex>
     internal void Reverse() => _orient = global::Kerf.Engine.Topology.TopAbs.Reverse(_orient);
 
     /// <summary>This shape with the orientation reversed (TopAbs::Reverse).</summary>
-    public readonly Shape Reversed()
+    public readonly Vertex Reversed()
     {
-        Shape shape = this;
+        Vertex shape = this;
         shape.Reverse();
         return shape;
     }

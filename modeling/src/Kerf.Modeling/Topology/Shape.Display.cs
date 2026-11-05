@@ -61,7 +61,7 @@ public static partial class ShapeExtensions
             return new ShapeList<Face>(projected);
         }
 
-        /// <inheritdoc cref="ProjectFaces(IEnumerable{Face}, IShape1D, double)"/>
+        /// <summary>As the other forms of <c>ProjectFaces</c>.</summary>
         public ShapeList<Face> ProjectFaces(Compound faces, IShape1D path, double start = 0) => self.ProjectFaces(faces.SelectFaces(), path, start);
     }
 
@@ -74,10 +74,10 @@ public static partial class ShapeExtensions
         ShapeType.Edge, ShapeType.Vertex,
     ];
 
-    private static DisplayNode AssemblyTree(Shape node, bool showCenter) => new(
+    private static DisplayNode AssemblyTree(ModelShape node, bool showCenter) => new(
         node.Label, node.GetType().Name.PadRight(9), RuntimeHelpers.GetHashCode(node),
         showCenter ? "Center" + node.Center().ToString("G6") : $"Location({node.Location.Position.ToString("G6")}, {node.Location.Orientation.ToString("G6")})",
-        node.TryAs(out Compound c) ? [.. c.AssemblyChildren.Select(ch => ShapeExtensions.AssemblyTree(ch, showCenter))] : []);
+        node is Assembly assembly ? [.. assembly.Children.Select(ch => AssemblyTree(ch, showCenter))] : []);
 
     private static DisplayNode BuildTree(Shape shape, ShapeType limit, bool showCenter, string caption)
     {
@@ -103,9 +103,9 @@ public static partial class ShapeExtensions
         void Collect(DisplayNode n)
         {
             sizes.Add((n.Height, n.Label.Length));
-            n.Children.ForEach(self.Collect);
+            n.Children.ForEach(Collect);
         }
-        self.Collect(root);
+        Collect(root);
         var maxPerLevel = Enumerable.Range(0, root.Height + 1)
             .Select(h => Math.Max(4, sizes.Where(s => s.Height == h).Select(s => s.Length).DefaultIfEmpty(0).Max())).ToList();
         maxPerLevel.Reverse();
@@ -118,10 +118,10 @@ public static partial class ShapeExtensions
             for (int i = 0; i < n.Children.Count; i++)
             {
                 bool last = i == n.Children.Count - 1;
-                self.Render(n.Children[i], childPrefix + (last ? "└── " : "├── "), childPrefix + (last ? "    " : "│   "));
+                Render(n.Children[i], childPrefix + (last ? "└── " : "├── "), childPrefix + (last ? "    " : "│   "));
             }
         }
-        self.Render(root, "", "");
+        Render(root, "", "");
         return sb.ToString();
     }
 }
@@ -148,7 +148,7 @@ internal static class SurfaceIntersection
         var line = new Line3D(ax1);
         var plane = new Plane(axis);
         var found = new List<(Face Face, Vector Point, double Distance)>();
-        foreach (var hit in shape.Intersect(line, tolerance))
+        foreach (var hit in MeasureOperations.Intersect(shape, in line, tolerance))
         {
             var point = new Vector(hit.Point);
             found.Add((hit.Face, point, plane.ToLocalCoords(point).Z));

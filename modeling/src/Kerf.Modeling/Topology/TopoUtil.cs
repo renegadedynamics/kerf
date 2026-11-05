@@ -28,6 +28,13 @@ internal static partial class TopoUtil
         return (T)Typed(result);
     }
 
+    /// <summary>An edge or wire as a wire.</summary>
+    internal static Wire AsWire(IShape1D curve)
+    {
+        var shape = curve.AsShape();
+        return shape.IsWire() ? (Wire)shape : shape.IsEdge() ? Wire.Make((Edge)shape) : Wire.Make(shape.SelectEdges());
+    }
+
     /// <summary>The shape as its one-dimensional type.</summary>
     internal static IShape1D As1D(Shape shape) => shape.IsWire() ? (Wire)shape : (Edge)shape;
 

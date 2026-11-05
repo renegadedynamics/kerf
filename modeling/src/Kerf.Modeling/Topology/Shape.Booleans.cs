@@ -127,6 +127,13 @@ public static partial class ShapeExtensions
         /// <summary>This shape with <paramref name="toCut"/> removed. The result may be of another type.</summary>
         public Shape Cut(params IEnumerable<Shape> toCut) => BoolOp([self.AsShape()], toCut, BooleanKind.Cut);
 
+        /// <summary>As the other forms of <c>Cut</c>.</summary>
+        public Shape Cut<T>(IEnumerable<T> toCut) where T : IShape => BoolOp([self.AsShape()], toCut.Select(s => s.AsShape()), BooleanKind.Cut);
+
+        /// <summary>As the other forms of <c>Fuse</c>.</summary>
+        public Shape Fuse<T>(IEnumerable<T> toFuse, bool glue = false, double? tolerance = null) where T : IShape =>
+            self.Fuse(toFuse.Select(s => s.AsShape()), glue, tolerance);
+
         /// <summary>
         /// This shape fused with <paramref name="toFuse"/>. <paramref name="glue"/> speeds up shapes that only touch;
         /// <paramref name="tolerance"/> sets a fuzzy value. The result may be of another type.
@@ -141,7 +148,7 @@ public static partial class ShapeExtensions
             return BoolOp([self.AsShape()], toFuse, BooleanKind.Fuse, options);
         }
 
-        /// <inheritdoc cref="Fuse(IEnumerable{Shape}, bool, double?)"/>
+        /// <summary>As the other forms of <c>Fuse</c>.</summary>
         public Shape Fuse(params Shape[] toFuse) => self.Fuse((IEnumerable<Shape>)toFuse);
 
         /// <summary>
@@ -178,7 +185,7 @@ public static partial class ShapeExtensions
             return new ShapeList<Shape>(commonSet);
         }
 
-        /// <inheritdoc cref="Intersect(IEnumerable{object}, double, bool)"/>
+        /// <summary>As the other forms of <c>Intersect</c>.</summary>
         public ShapeList<Shape> Intersect(params object[] toIntersect) => self.Intersect((IEnumerable<object>)toIntersect);
 
         /// <summary>
@@ -201,7 +208,7 @@ public static partial class ShapeExtensions
             return (new ShapeList<Vertex>(vertices.Distinct(ShapeComparer<Vertex>.Same)), new ShapeList<Edge>(edges));
         }
 
-        /// <summary>Splits this shape with a plane, keeping the pieces <paramref name="keep"/> says (not Both: see <see cref="SplitBoth(Plane)"/>).</summary>
+        /// <summary>Splits this shape with a plane, keeping the pieces <paramref name="keep"/> says (not Both: see <c>SplitBoth</c>).</summary>
         public ShapeList<Shape> Split(Plane tool, Keep keep = Keep.Top) => self.SplitCore(tool, keep).Kept;
 
         /// <summary>Splits this shape with a face or shell, keeping the pieces <paramref name="keep"/> says.</summary>
@@ -214,7 +221,7 @@ public static partial class ShapeExtensions
             return (top, bottom);
         }
 
-        /// <inheritdoc cref="SplitBoth(Plane)"/>
+        /// <summary>As the other forms of <c>SplitBoth</c>.</summary>
         public (ShapeList<Shape> Top, ShapeList<Shape> Bottom) SplitBoth(Shape tool)
         {
             var (_, top, bottom) = self.SplitCore(tool, Keep.Both);
@@ -244,7 +251,7 @@ public static partial class ShapeExtensions
             var pieces = TopoUtil.TopLevelShapes(splitResult);
 
             if (keep == Keep.All)
-                return (new ShapeList<Shape>(pieces.Select(self.CastLike)), [], []);
+                return (new ShapeList<Shape>(pieces), [], []);
 
             Shape? toolSolid = null;
             if (tool is not Plane)

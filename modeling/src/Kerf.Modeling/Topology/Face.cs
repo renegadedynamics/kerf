@@ -189,7 +189,7 @@ public static partial class FaceExtensions
         /// where it curves into it (a hole), Smooth where it doesn't curve (a plane), and Saddle where the curvatures disagree.
         /// </summary>
         /// <exception cref="InvalidOperationException">The surface is degenerate everywhere it was sampled.</exception>
-        internal Convexity Convexity_Face
+        public Convexity Convexity
         {
             get
             {
@@ -394,7 +394,7 @@ public static partial class FaceExtensions
         /// </summary>
         internal Vector Center_Face() => self.Center(CenterOf.Geometry);
 
-        /// <inheritdoc cref="Center()"/>
+        /// <summary>As the other forms of <c>Center</c>.</summary>
         internal Vector Center_Face(CenterOf centerOf)
         {
             self.NeedsGeometry("center");
@@ -662,13 +662,13 @@ public static partial class FaceExtensions
             {
                 var shape = TopoUtil.BoolOp([extruded], [face], BooleanKind.Common);
                 if (!shape.IsNull)
-                    intersected.AddRange(TopoUtil.TopLevelShapes(shape).Select(f => (Face)f));
+                    intersected.AddRange(TopoUtil.TopLevelShapes(shape).Select(f => (IShape2D)(Face)f));
             }
             else
                 foreach (var shell in targetObject.SelectShells())
                 {
                     var shape = TopoUtil.BoolOp([extruded], [shell], BooleanKind.Common);
-                    intersected.AddRange(TopoUtil.TopLevelShapes(shape).Select(s => (Shell)s));
+                    intersected.AddRange(TopoUtil.TopLevelShapes(shape).Select(s => (IShape2D)(Shell)s));
                 }
             var sorted = new ShapeList<IShape2D>(intersected).OrderBy(new Axis(self.Center(), direction));
             return new ShapeList<IShape2D>(sorted.Select(s => s.SelectFaces().Count == 1 ? (IShape2D)s.SingleFace() : s));
@@ -786,7 +786,7 @@ public static partial class FaceExtensions
             };
             var boundaries = new List<FillBoundary>();
             foreach (var (edge, face, continuity) in edgeFaceConstraints ?? [])
-                boundaries.Add(new FillBoundary(edge, FaceExtensions.Continuity(continuity)) { Support = face });
+                boundaries.Add(new FillBoundary(edge, Continuity(continuity)) { Support = face });
             foreach (var edge in edgeConstraints ?? [])
                 boundaries.Add(new FillBoundary(edge, global::Kerf.Geometry.Continuity.C0));
             var options = FillOptions.Default with { Points = [.. (pointConstraints ?? []).Select(p => p.ToPoint3D())] };
@@ -808,14 +808,14 @@ public static partial class FaceExtensions
         /// <summary>The faces sewn together, as groups of contiguous faces.</summary>
         public static IReadOnlyList<ShapeList<Face>> SewFaces(IEnumerable<Face> faces)
         {
-            var sewn = TopoUtil.SewFaces(faces.Select(f => f));
+            var sewn = TopoUtil.SewFaces(faces.Select(f => (Shape)f));
             var groups = new List<ShapeList<Face>>();
             foreach (var top in TopoUtil.TopLevelShapes(sewn))
             {
                 groups.Add(top.Type switch
                 {
                     ShapeType.Face => [(Face)top],
-                    ShapeType.Shell => (Shell)top.SelectFaces(),
+                    ShapeType.Shell => top.SelectFaces(),
                     ShapeType.Solid => new ShapeList<Face>(TopoUtil.Entities(top, ShapeType.Face).Select(f => (Face)f)),
                     _ => throw new InvalidOperationException($"SewedShape returned a {TopoUtil.TypeName(top)} which was unexpected"),
                 });
@@ -823,10 +823,7 @@ public static partial class FaceExtensions
             return groups;
         }
 
-        /// <summary>A one-edge profile swept along a one-edge path (see <see cref="Shell.Sweep"/> for more edges).</summary>
-        public static Face Sweep(IShape1D profile, IShape1D path, Transition transition = Transition.Transformed) => Face.Sweep((Shape)profile, path, transition);
-
-        /// <inheritdoc cref="Sweep(IShape1D, IShape1D, Transition)"/>
+        /// <summary>A one-edge profile swept along a one-edge path (see <c>Shell.Sweep</c> for more edges).</summary>
         public static Face Sweep(Shape profile, Shape path, Transition transition = Transition.Transformed)
         {
             if (profile.SelectEdges().Count != 1 || path.SelectEdges().Count != 1)
@@ -872,9 +869,9 @@ public static partial class FaceExtensions
             throw new ArgumentException("Face can only be created with closed wires");
         if (surface is null)
             return TopoUtil.MakeFaceFromWires(outerWire, inner);
-        if (surface.IsEmpty)
+        if (surface.Value.IsEmpty)
             throw new ArgumentException("Can't build a face on an empty surface");
-        return TopoUtil.MakeFaceOnSurface(surface, outerWire, inner);
+        return TopoUtil.MakeFaceOnSurface(surface.Value, outerWire, inner);
     }
 
     internal static Face FromTopoFace(Face face) => face;

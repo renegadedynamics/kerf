@@ -168,7 +168,7 @@ internal static partial class TopoUtil
     {
         if (obj.IsCompound() && obj.TryAs(out Compound compound))
         {
-            var types = compound.Children().Select(c => ShapeTypeOf(c)).Distinct().ToList();
+            var types = compound.ChildShapes().Select(c => ShapeTypeOf(c)).Distinct().ToList();
             if (types.Count == 1)
                 return types[0];
         }
@@ -213,8 +213,8 @@ public static partial class TopologyUtils
             return [];
         // Non-destructive, as all the modelling layer's Booleans: the inputs' tolerances are left alone
         var result = originalEdges.Count == 0
-            ? TopoUtil.MakeCompound(combinedEdges)
-            : Failures.Get(TopoUtil.Boolean(BooleanKind.Cut, combinedEdges, originalEdges), () => "cut").Shape;
+            ? TopoUtil.MakeCompound(combinedEdges.Select(e => (Shape)e))
+            : Failures.Get(TopoUtil.Boolean(BooleanKind.Cut, [.. combinedEdges.Select(e => (Shape)e)], [.. originalEdges.Select(e => (Shape)e)]), () => "cut").Shape;
         var edges = new List<Edge>();
         foreach (var edge in TopoUtil.Explore(result, ShapeType.Edge))
             edges.Add((Edge)(edge));
@@ -227,7 +227,7 @@ public static partial class TopologyUtils
     /// <summary>
     /// A key function giving each shape's topological distance from <paramref name="other"/>, for
     /// <c>OrderBy</c> and <c>GroupBy</c>. Distances are measured over the
-    /// whole topology of the reference shapes' shared <see cref="Shape.TopoParent"/>: the references are 0, shapes
+    /// whole topology of <paramref name="parent"/>: the references are 0, shapes
     /// connected to them 1, and so on; unreachable shapes are infinitely far.
     /// </summary>
     /// <remarks>
@@ -235,15 +235,15 @@ public static partial class TopologyUtils
     /// or shells or solids (by faces).
     /// </remarks>
     /// <exception cref="ArgumentException">
-    /// No references, mixed or unsupported kinds, or shapes without one shared <see cref="Shape.TopoParent"/>.
+    /// No references, mixed or unsupported kinds, or shapes without one shared <c>TopoParent</c>.
     /// </exception>
-    public static Func<Shape, double> TopoDistanceTo(params IEnumerable<Shape> other)
+    public static Func<Shape, double> TopoDistanceTo(Shape parent, params IEnumerable<Shape> other)
     {
         var sources = other.ToList();
         if (sources.Count == 0)
             throw new ArgumentException("Cannot measure topological distance to an empty object");
-        var peerType = sources[0].ShapeType;
-        if (sources.Any(s => s.ShapeType != peerType))
+        var peerType = sources[0].Type;
+        if (sources.Any(s => s.Type != peerType))
             throw new ArgumentException("Topological distance requires shapes of the same type");
         ShapeType? connector = peerType switch
         {
@@ -253,28 +253,23 @@ public static partial class TopologyUtils
             ShapeType.Shell or ShapeType.Solid => ShapeType.Face,
             _ => throw new ArgumentException($"Topological distance is not supported for {peerType}"),
         };
-        var parents = sources.Select(s => s.TopoParent).ToList();
-        if (parents.Any(p => p is null))
-            throw new ArgumentException("Topological distance needs shapes selected from a parent shape.");
-        var parent = parents[0]!;
-        if (parents.Skip(1).Any(p => !parent.IsSame(p!)))
-            throw new ArgumentException("Topological distance needs shapes selected from the same parent shape.");
-
         IEnumerable<Shape> peers = peerType switch
         {
-            ShapeType.Vertex => parent.SelectVertices(),
-            ShapeType.Edge => parent.SelectEdges(),
-            ShapeType.Wire => parent.SelectWires(),
-            ShapeType.Face => parent.SelectFaces(),
-            ShapeType.Shell => parent.SelectShells(),
-            _ => parent.SelectSolids(),
+            ShapeType.Vertex => parent.SelectVertices().Upcast(),
+            ShapeType.Edge => parent.SelectEdges().Upcast(),
+            ShapeType.Wire => parent.SelectWires().Upcast(),
+            ShapeType.Face => parent.SelectFaces().Upcast(),
+            ShapeType.Shell => parent.SelectShells().Upcast(),
+            _ => parent.SelectSolids().Upcast(),
         };
         var peerList = peers.Where(p => !p.IsEmpty).ToList();
         // Shapes are equal (and hash) by IsSame, as build123d's hasher lookup is
-        var lookup = new Dictionary<Shape, Shape>();
+        var lookup = new Dictionary<Shape, Shape>(ShapeComparer.Same);
         foreach (var p in peerList)
             lookup.TryAdd(p, p);
         var peerTopo = peerList.Select(p => p).ToList();
+        if (sources.Any(s => !lookup.ContainsKey(s) && TopoUtil.FindSame(s, peerTopo) is null))
+            throw new ArgumentException("Topological distance needs shapes selected from the parent shape.");
         Shape? PeerOf(Shape shape)
         {
             if (shape.IsEmpty)
@@ -282,10 +277,10 @@ public static partial class TopologyUtils
             if (lookup.TryGetValue(shape, out var peer))
                 return peer;
             // Allow for the shape having been moved
-            return TopoUtil.FindSame(shape, peerTopo) is { } match ? lookup[Shape.Cast(match)] : null;
+            return TopoUtil.FindSame(shape, peerTopo) is { } match ? lookup[(match)] : null;
         }
 
-        var neighbours = peerList.Distinct().ToDictionary(p => p, _ => new HashSet<Shape>());
+        var neighbours = peerList.Distinct(ShapeComparer.Same).ToDictionary(p => p, _ => new HashSet<Shape>(ShapeComparer.Same), ShapeComparer.Same);
         {
             var graph = ShapeGraph.Build(parent);
             if (connector is null)
@@ -293,13 +288,13 @@ public static partial class TopologyUtils
                 // Vertices are neighbours across an edge
                 foreach (var key in graph.All(ShapeType.Vertex))
                 {
-                    if (!lookup.TryGetValue(Shape.Cast(key), out var vertexPeer))
+                    if (!lookup.TryGetValue((key), out var vertexPeer))
                         continue;
                     foreach (var e in graph.Ancestors(key, ShapeType.Edge))
                     {
                         var edge = (Edge)e;
                         foreach (var end in new[] { edge.FirstVertex, edge.LastVertex })
-                            if (lookup.TryGetValue(Shape.Cast(end), out var n) && n != vertexPeer)
+                            if (lookup.TryGetValue((end), out var n) && n != vertexPeer)
                                 neighbours[vertexPeer].Add(n);
                     }
                 }
@@ -310,7 +305,7 @@ public static partial class TopologyUtils
                 foreach (var key in graph.All(connector.Value))
                 {
                     var list = graph.Ancestors(key, (peerType));
-                    var connected = list.Select(s => lookup.GetValueOrDefault(Shape.Cast(s))).OfType<Shape>().ToList();
+                    var connected = list.Select(s => lookup.GetValueOrDefault((s))).OfType<Shape>().ToList();
                     foreach (var a in connected)
                         foreach (var b in connected)
                             if (a != b)
@@ -320,7 +315,7 @@ public static partial class TopologyUtils
         }
 
         // Breadth-first from the references
-        var distances = new Dictionary<Shape, int>();
+        var distances = new Dictionary<Shape, int>(ShapeComparer.Same);
         var frontier = new Queue<Shape>();
         foreach (var source in sources)
             if (PeerOf(source) is { } peer && distances.TryAdd(peer, 0))
@@ -335,12 +330,8 @@ public static partial class TopologyUtils
 
         return obj =>
         {
-            if (obj.ShapeType != peerType)
+            if (obj.Type != peerType)
                 throw new ArgumentException("Topological distance requires shapes of the same type");
-            if (obj.TopoParent is null)
-                throw new ArgumentException("Topological distance needs shapes selected from a parent shape.");
-            if (!parent.IsSame(obj.TopoParent))
-                throw new ArgumentException("Topological distance needs shapes selected from the same parent shape.");
             return PeerOf(obj) is { } peer && distances.TryGetValue(peer, out var d) ? d : double.PositiveInfinity;
         };
     }

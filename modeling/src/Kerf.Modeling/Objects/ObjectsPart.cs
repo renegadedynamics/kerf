@@ -12,7 +12,7 @@ public abstract class BasePartObject : Part
     /// <param name="rotation">Angles to rotate it about X, Y and Z.</param>
     /// <param name="align">How to align the solid's bounding box with the origin; null for no alignment.</param>
     protected BasePartObject(Shape part, Rotation? rotation = null, Alignment? align = null)
-        : base(Prepare(part, rotation, align), part.Label)
+        : base(Prepare(part, rotation, align))
     {
         Rotation = rotation ?? new Rotation();
     }

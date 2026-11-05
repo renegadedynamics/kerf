@@ -14,17 +14,8 @@ public static partial class CompoundExtensions
         /// <summary>A compound of shapes; empty shapes add nothing, so a compound of only those is empty.</summary>
         public static Compound Make(IEnumerable<Shape> shapes) => TopoUtil.MakeCompoundOf(shapes);
 
-        /// <summary>A compound of edges.</summary>
-        public static Compound Make(IEnumerable<Edge> shapes) => TopoUtil.MakeCompoundOf(shapes.Select(s => (Shape)s));
-
-        /// <summary>A compound of wires.</summary>
-        public static Compound Make(IEnumerable<Wire> shapes) => TopoUtil.MakeCompoundOf(shapes.Select(s => (Shape)s));
-
-        /// <summary>A compound of faces.</summary>
-        public static Compound Make(IEnumerable<Face> shapes) => TopoUtil.MakeCompoundOf(shapes.Select(s => (Shape)s));
-
-        /// <summary>A compound of solids.</summary>
-        public static Compound Make(IEnumerable<Solid> shapes) => TopoUtil.MakeCompoundOf(shapes.Select(s => (Shape)s));
+        /// <summary>A compound of shapes of one type or objects; empty ones add nothing.</summary>
+        public static Compound Make<T>(IEnumerable<T> shapes) where T : IShape => TopoUtil.MakeCompoundOf(shapes.Select(s => s.AsShape()));
 
         /// <summary>A shell extruded into a compound of solids.</summary>
         public static Compound Extrude(Shell obj, Vector direction) => (Compound)TopoUtil.Extrude(obj, direction);
@@ -42,22 +33,6 @@ public static partial class CompoundExtensions
         /// The compound without unnecessary compound wrappers: a compound of one shape becomes that shape.
         /// </summary>
         public Shape Unwrap() => UnwrapCore(self.AsShape());
-
-        /// <summary>
-        /// The shapes of one kind directly inside this compound and the compounds directly inside it (build123d's
-        /// <c>get_type</c>): not, as <c>SelectFaces</c> does, the faces of its solids.
-        /// </summary>
-        public List<T> ElementsOfType<T>() where T : struct, IShape<T>
-        {
-            if (T.Type == ShapeType.Shape)
-                throw new ArgumentException($"Can't extract {typeof(T).Name}s from a compound");
-            var results = new List<T>();
-            foreach (var comp in self.Compounds())
-                foreach (var child in ((Shape)comp).Children)
-                    if (child.Type == T.Type)
-                        results.Add(child.As<T>());
-            return results;
-        }
     }
 
     extension<TSelf>(TSelf self) where TSelf : IShape
@@ -97,8 +72,16 @@ public static partial class CompoundExtensions
     internal static double VolumeOf(Shape compound) =>
         compound.ElementsOfTypeOf<Solid>().Sum(s => s.Volume) + compound.ElementsOfTypeOf<Shell>().Sum(s => s.Volume);
 
+    /// <summary>
+    /// The shapes of one kind directly inside this compound and the compounds directly inside it (build123d's
+    /// <c>get_type</c>): not, as <c>SelectFaces</c> does, the faces of its solids.
+    /// </summary>
+    public static List<T> ElementsOfType<T>(this IShape3D self) where T : struct, IShape<T> => ElementsOfTypeOf<T>(self.AsShape());
+
     private static List<T> ElementsOfTypeOf<T>(this Shape self) where T : struct, IShape<T>
     {
+        if (T.Type == ShapeType.Shape)
+            throw new ArgumentException($"Can't extract {typeof(T).Name}s from a compound");
         var results = new List<T>();
         foreach (var comp in self.Compounds())
             foreach (var child in ((Shape)comp).Children)

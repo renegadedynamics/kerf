@@ -39,7 +39,7 @@ public readonly record struct Tangent
     public Tangent(Axis axis, Tangency tangency) : this(null, axis, null, tangency) { }
 
     /// <summary>The target with an axis made into an edge.</summary>
-    internal Tangent Resolved() => Axis is { } a ? new Tangent(Edge.FromAxis(a), null, null, Tangency) : this;
+    internal Tangent Resolved() => Axis is { } a ? new Tangent(Kerf.Topology.Edge.FromAxis(a), null, null, Tangency) : this;
 
     internal bool IsPoint => Point is not null;
 }

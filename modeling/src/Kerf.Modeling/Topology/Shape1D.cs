@@ -36,6 +36,22 @@ public readonly record struct CurvePosition
 /// </summary>
 public static partial class Shape1DExtensions
 {
+    /// <summary>How <paramref name="parent"/> sits around an edge of it (see <c>ConvexityOf</c>).</summary>
+    internal static Convexity ConvexityIn(IShape1D edge, Shape parent)
+    {
+        var faces = OneD.ConnectedFaces(edge, parent);
+        if (faces.Count == 1)
+        {
+            if (OneD.IsSeamOf((Edge)edge.AsShape(), faces[0]))
+                return Convexity.Smooth;
+            throw new InvalidOperationException(
+                "this edge lies on one face only, so there is no crease to classify - convexity needs an edge shared by two faces");
+        }
+        if (faces.Count != 2)
+            throw new InvalidOperationException($"{faces.Count} faces meet at this edge - convexity needs exactly two");
+        return OneD.DihedralConvexity((Edge)edge.AsShape(), faces[0], faces[1]);
+    }
+
     extension<TSelf>(TSelf self) where TSelf : IShape1D
     {
 
@@ -90,35 +106,6 @@ public static partial class Shape1DExtensions
             }
         }
 
-        /// <summary>
-        /// How the shape this edge was selected from sits around it: Convex on the outer edge of a box, Concave at the inner
-        /// corner of a pocket, Smooth where a fillet meets the face it blends into, and Saddle for an edge that turns one way
-        /// at one end and the other way at the other. A seam edge is Smooth.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">
-        /// The edge has no <see cref="Shape.TopoParent"/>, lies on one face only, or more than two faces meet at it.
-        /// </exception>
-        internal Convexity Convexity_Shape1D
-        {
-            get
-            {
-                var faces = OneD.ConnectedFaces(self.AsShape());
-                if (faces.Count == 1)
-                {
-                    if (OneD.IsSeamOf((Edge)self.AsShape(), faces[0]))
-                        return Convexity.Smooth;
-                    throw new InvalidOperationException(
-                        "this edge lies on one face only, so there is no crease to classify - convexity needs an edge shared by two faces");
-                }
-                if (faces.Count != 2)
-                    throw new InvalidOperationException($"{faces.Count} faces meet at this edge - convexity needs exactly two");
-                return OneD.DihedralConvexity((Edge)self.AsShape(), faces[0], faces[1]);
-            }
-        }
-
-        /// <summary>Whether this is a concave edge of the shape it was selected from (<c>Convexity == Concave</c>).</summary>
-        public bool IsInterior => self.Convexity == Convexity.Concave;
-
         /// <summary>The point at a position along the curve.</summary>
         /// <remarks>
         /// Positions are normally within the shape: [0, 1] as a parameter or [0, length] as a length. Beyond that an edge
@@ -159,7 +146,7 @@ public static partial class Shape1DExtensions
             EdgeCurve curve;
             double param;
             bool closestForward;
-            IShape1D closest = self.AsShape();
+            IShape1D closest = self;
             if (position.Value is { } value)
                 (curve, param, closestForward) = self.OcctParamAt(value, mode);
             else
@@ -221,7 +208,7 @@ public static partial class Shape1DExtensions
         /// <summary>The centre: the point half way along (by default), the centre of mass, or of the bounding box.</summary>
         internal Vector Center_Shape1D() => self.Center(CenterOf.Geometry);
 
-        /// <inheritdoc cref="Center()"/>
+        /// <summary>As the other forms of <c>Center</c>.</summary>
         internal Vector Center_Shape1D(CenterOf centerOf)
         {
             self.NeedsGeometry("center");
@@ -342,7 +329,7 @@ public static partial class Shape1DExtensions
         /// </summary>
         public Plane? CommonPlane(IEnumerable<IShape1D?> lines, double tolerance = Constants.Tolerance)
         {
-            var allLines = lines.OfType<IShape1D>().Prepend(self.AsShape()).ToList();
+            var allLines = lines.OfType<IShape1D>().Prepend(self).ToList();
             if (allLines.Any(l => l.IsEmpty))
                 return null;   // nothing lies in no plane
             Plane? result = null;
@@ -364,7 +351,7 @@ public static partial class Shape1DExtensions
             {
                 // Shorten infinite lines (from axes)
                 var normalLines = allLines.Where(l => l.Length <= 1e50);
-                var shortened = allLines.Where(l => l.Length > 1e50).Select(l => (IShape1D)((Edge)l).TrimToLength(0.5, 10));
+                var shortened = allLines.Where(l => l.Length > 1e50).Select(l => (IShape1D)((Edge)l.AsShape()).TrimToLength(0.5, 10));
                 allLines = [.. normalLines, .. shortened];
                 var points = new List<Vector>();
                 foreach (var line in allLines)
@@ -406,7 +393,7 @@ public static partial class Shape1DExtensions
             return result.ShiftOrigin(origin);
         }
 
-        /// <inheritdoc cref="CommonPlane(IEnumerable{IShape1D?}, double)"/>
+        /// <summary>As the other forms of <c>CommonPlane</c>.</summary>
         public Plane? CommonPlane(params IShape1D?[] lines) => self.CommonPlane((IEnumerable<IShape1D?>)lines);
 
         /// <summary>The normal of a planar curve.</summary>
@@ -509,14 +496,14 @@ public static partial class Shape1DExtensions
             // A projection that meets nothing is no pieces
             var pieces = projected.TryGetValue(out var wires) ? wires.Select(w => w.AsShape()).ToList() : [];
             if (!closest)
-                return new ShapeList<IShape1D>(pieces.Select(p => (IShape1D)Shape.Cast(p)));
+                return new ShapeList<IShape1D>(pieces.Select(p => TopoUtil.As1D(p)));
             IShape1D? best = null;
             double minDist = double.PositiveInfinity;
             foreach (var piece in pieces)
             {
-                var d = Failures.Get(self.AsShape().Distance(piece), () => "distance").Value;
+                var d = Failures.Get(MeasureOperations.Distance(self.AsShape(), piece), () => "distance").Value;
                 if (d < minDist)
-                    (minDist, best) = (d, (IShape1D)Shape.Cast(piece));
+                    (minDist, best) = (d, TopoUtil.As1D(piece));
             }
             return best is null ? [] : [best];
         }
@@ -551,14 +538,14 @@ public static partial class Shape1DExtensions
                 {
                     // 1D + plane: a section with the plane's face
                     var face = FaceExtensions.FromTopoFace(ShapeExtensions.MakePlaneFace(plane));
-                    results.AddRange(self.BoolOpList([self.AsShape()], [face], BooleanKind.Section).Expand());
+                    results.AddRange(ShapeExtensions.BoolOpList([self.AsShape()], [face], BooleanKind.Section).Expand());
                     break;
                 }
                 case IShape1D line:
                 {
                     // 1D + 1D: the common part (collinear overlap) and the section (crossings)
-                    results.AddRange(self.BoolOpList([self.AsShape()], [line], BooleanKind.Common).Expand());
-                    results.AddRange(self.BoolOpList([self.AsShape()], [line], BooleanKind.Section).OfType<Vertex>().Where(v => !v.IsEmpty));
+                    results.AddRange(ShapeExtensions.BoolOpList([self.AsShape()], [line.AsShape()], BooleanKind.Common).Expand());
+                    results.AddRange(ShapeExtensions.BoolOpList([self.AsShape()], [line.AsShape()], BooleanKind.Section).OfType<Vertex>().Where(v => !v.IsEmpty).Upcast());
                     break;
                 }
                 case Vertex vertex:
@@ -567,7 +554,7 @@ public static partial class Shape1DExtensions
                     break;
                 case Shape shape:
                     // Delegate to higher-order shapes
-                    if (shape.IntersectCore(self.AsShape(), tolerance, includeTouched) is { } found)
+                    if (ShapeExtensions.IntersectOne(shape.AsShape(), self.AsShape(), tolerance, includeTouched) is { } found)
                         results.AddRange(found);
                     break;
             }
@@ -575,10 +562,6 @@ public static partial class Shape1DExtensions
         }
     }
 
-    extension(IShape1D)
-    {
-        public static IShape1D Make(Shape? obj) => (IShape1D)TopoUtil.Downcast(obj!);
-    }
 
 
     private static FrameLaw Law(FrameMethod method) => method == FrameMethod.Frenet ? FrameLaw.Frenet : FrameLaw.CorrectedFrenet;

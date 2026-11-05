@@ -63,10 +63,7 @@ public static partial class VertexExtensions
             return self.ToVector();
         }
 
-        /// <summary>This vertex.</summary>
-        internal ShapeList<Vertex> Vertices_Vertex(Select select = Select.All) =>
-            self.SelectFrom<Vertex>(self.IsEmpty ? [] : [self], select);
-
+        
         /// <summary>Vertices can't be intersected with <c>&amp;</c>.</summary>
         internal Shape CommonCore_Vertex(IEnumerable<object> others) =>
             throw new NotSupportedException("Vertices can't be intersected");
@@ -91,54 +88,15 @@ public static partial class VertexExtensions
             if (other is Vertex vertex)
                 return self.DistanceTo(vertex) <= tolerance ? [self] : null;
             // Delegate to the higher-dimensional shape (including a compound)
-            return ((Shape)other).IntersectCore(self, tolerance, includeTouched);
+            return ShapeExtensions.IntersectOne(((IShape)other).AsShape(), self, tolerance, includeTouched);
         }
 
         // ---- Convexity ----
 
-        /// <summary>
-        /// How the shape this vertex was selected from sits around it.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// Selected through a face (<c>face.Vertices()</c>, or <c>face.Edges()[0].Vertices()</c>) the vertex is a corner of
-        /// that face: Convex at the corner of a plate, Concave at the corner of a slot or the step in an L, Smooth where two
-        /// edges meet in line. The corner is read in the face's own parameters, so a corner of a curved face classifies the
-        /// same way as one of a flat face. Selected straight off a sketch or another shape of faces alone, the vertex is a
-        /// corner of the one face that holds it.
-        /// </para>
-        /// <para>
-        /// Selected straight off a solid or shell, the vertex is classified by the edges meeting there: Convex where every
-        /// crease is convex (the corner of a box), Concave where every crease is concave (the bottom corner of a pocket), and
-        /// Saddle where both kinds meet (the inner corner of a step). Smooth edges don't count.
-        /// </para>
-        /// </remarks>
-        /// <exception cref="InvalidOperationException">
-        /// The vertex has no <see cref="Shape.TopoParent"/>, or its face or edges can't be classified.
-        /// </exception>
-        internal Convexity Convexity_Vertex
-        {
-            get
-            {
-                var face = self.OwningFace() ?? self.OnlyFace();
-                return face is { } f ? self.CornerConvexity(f) : self.CreaseConvexity();
-            }
-        }
-
-        /// <summary>The innermost face this vertex was selected through, if any.</summary>
-        private Face? OwningFace()
-        {
-            for (int i = self.TopoPath.Count - 1; i >= 0; i--)
-                if (!self.TopoPath[i].IsEmpty && self.TopoPath[i].Type == ShapeType.Face)
-                    return (Face)self.TopoPath[i];
-            return null;
-        }
-
         /// <summary>The one face of a sketch-like parent (no solids or shells) that holds this vertex.</summary>
-        private Face? OnlyFace()
+        private Face? OnlyFace(Shape parent)
         {
-            var parent = self.TopoParent;
-            if (parent is null || parent.IsEmpty || parent.SelectSolids().Count > 0 || parent.SelectShells().Count > 0)
+            if (parent.IsEmpty || parent.SelectSolids().Count > 0 || parent.SelectShells().Count > 0)
                 return null;
             var holding = new List<Face>();
             foreach (var face in parent.Explore<Face>())
@@ -152,7 +110,7 @@ public static partial class VertexExtensions
             }
             if (holding.Count > 1)
                 throw new InvalidOperationException(
-                    $"this vertex is a corner of {holding.Count} faces of the {parent.GetType().Name} it was selected from, "
+                    $"this vertex is a corner of {holding.Count} faces of the {TopoUtil.KindName(parent)} it was selected from, "
                     + "and classifies differently in each - select it through the face meant");
             return holding.Count == 1 ? holding[0] : null;
         }
@@ -207,10 +165,9 @@ public static partial class VertexExtensions
         }
 
         /// <summary>Classifies by the creases meeting at this vertex of a solid or shell.</summary>
-        private Convexity CreaseConvexity()
+        private Convexity CreaseConvexity(Shape parent)
         {
-            var parent = self.TopoParent;
-            if (parent is null || parent.IsEmpty)
+            if (parent.IsEmpty)
                 throw new InvalidOperationException(
                     "this vertex was not selected from a shape, so there is nothing to classify it against - take it from a face or solid");
             var graph = ShapeGraph.Build(parent);
@@ -219,7 +176,7 @@ public static partial class VertexExtensions
             var kinds = new HashSet<Convexity>();
             var edges = graph.Ancestors(own, ShapeType.Edge);
             foreach (var topoEdge in edges)
-                kinds.Add(((Edge)Shape.Cast(topoEdge)).Convexity);
+                kinds.Add(Shape1DExtensions.ConvexityIn((Edge)topoEdge, parent));
             kinds.Remove(Convexity.Smooth);
             return kinds.Count switch
             {
@@ -267,4 +224,13 @@ public static partial class VertexExtensions
 
 
 
+    /// <summary>How <paramref name="parent"/> sits around a vertex of it (see <c>ConvexityOf</c>).</summary>
+    internal static Convexity ConvexityIn(Vertex vertex, Shape parent, Face? through)
+    {
+        if (TopoUtil.IsNothing(parent))
+            throw new InvalidOperationException(
+                "this vertex was not selected from a shape, so there is nothing to classify it against - take it from a face or solid");
+        var face = through ?? (parent.IsFace() ? (Face)parent : vertex.OnlyFace(parent));
+        return face is { } f ? vertex.CornerConvexity(f) : vertex.CreaseConvexity(parent);
+    }
 }

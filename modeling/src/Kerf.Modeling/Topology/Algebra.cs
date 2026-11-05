@@ -207,22 +207,22 @@ public static class ShapeOperators
         /// of the same dimension can be added. A <see cref="Part"/>, <see cref="Sketch"/> or <see cref="Curve"/> has its own
         /// typed operator.
         /// </summary>
-        public static Shape operator +(T a, Shape b) => ShapeAlgebra.Add(a, [b]);
+        public static Shape operator +(T a, Shape b) => ShapeAlgebra.Add(a.AsShape(), [b]);
 
         /// <summary>This shape fused with others.</summary>
-        public static Shape operator +(T a, IEnumerable<Shape> b) => ShapeAlgebra.Add(a, b);
+        public static Shape operator +(T a, IEnumerable<Shape> b) => ShapeAlgebra.Add(a.AsShape(), b);
 
         /// <summary>This shape with another cut away: only shapes of an equal or greater dimension can be subtracted.</summary>
-        public static Shape operator -(T a, Shape b) => ShapeAlgebra.Subtract(a, [b]);
+        public static Shape operator -(T a, Shape b) => ShapeAlgebra.Subtract(a.AsShape(), [b]);
 
         /// <summary>This shape with others cut away.</summary>
-        public static Shape operator -(T a, IEnumerable<Shape> b) => ShapeAlgebra.Subtract(a, b);
+        public static Shape operator -(T a, IEnumerable<Shape> b) => ShapeAlgebra.Subtract(a.AsShape(), b);
 
         /// <summary>What this shape has in common with another: one shape, a compound of several, or nothing.</summary>
-        public static Shape operator &(T a, Shape b) => ShapeAlgebra.Common(a, [b]);
+        public static Shape operator &(T a, Shape b) => ShapeAlgebra.Common(a.AsShape(), [b]);
 
         /// <summary>What this shape has in common with others.</summary>
-        public static Shape operator &(T a, IEnumerable<Shape> b) => ShapeAlgebra.Common(a, b);
+        public static Shape operator &(T a, IEnumerable<Shape> b) => ShapeAlgebra.Common(a.AsShape(), b);
     }
 }
 

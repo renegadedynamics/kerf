@@ -24,9 +24,9 @@ public static class OneD
             return self;
         if (topoSummands.Any(s => TopoUtil.Dim(s) != 1))
             throw new ArgumentException("Only shapes with the same dimension can be added");
-        var summands = topoSummands.Select(s => (IShape1D)Shape.Cast(s)).ToList();
+        var summands = topoSummands;
         var summandEdges = summands.SelectMany(s => s.SelectEdges()).ToList();
-        var brought = summands.Select(s => s.AsShape()).ToList();
+        var brought = summands;
 
         Shape sum;
         if (self.IsEmpty)
@@ -42,8 +42,8 @@ public static class OneD
                 catch (Exception e) when (e is ArgumentException or InvalidOperationException || Failures.IsKernelFailure(e))
                 {
                     sum = summands[0].Fuse(summands.Skip(1));
-                    if (sum.History is not null)
-                        sum = sum.MadeBy(sum.History.WithInputs([], brought));
+                    if (sum.History is { } record)
+                        sum = sum.MadeBy(record.WithInputs([], brought));
                 }
             }
         }
@@ -61,7 +61,7 @@ public static class OneD
         if (SkipClean.Clean)
             sum = sum.Clean();
         // A single edge is returned as an Edge, with the record of how it was made
-        return sum.SelectEdges().Count == 1 ? sum.SingleEdge().MadeBy(sum.History) : sum;
+        return sum.SelectEdges().Count == 1 ? (Shape)sum.SingleEdge().MadeBy(sum.History) : sum;
     }
 
     /// <summary>A face offset by <paramref name="amount"/> (<c>BRepOffset_MakeOffset</c>).</summary>
@@ -72,16 +72,17 @@ public static class OneD
     }
 
     /// <summary>
-    /// The edges of <paramref name="parent"/> (default the edge's <see cref="Shape.TopoParent"/>) connected to
+    /// The edges of <paramref name="parent"/> connected to
     /// <paramref name="edge"/> with at least the given continuity. A moved copy of one of the parent's edges gets its
     /// neighbours in its own frame.
     /// </summary>
-    public static ShapeList<Edge> ConnectedEdges(Edge edge, Shape? parent = null, ContinuityLevel continuity = ContinuityLevel.C0)
+    public static ShapeList<Edge> ConnectedEdges(Edge edge, Shape parent, ContinuityLevel continuity = ContinuityLevel.C0)
     {
-        parent ??= edge.TopoParent ?? throw new ArgumentException("edge has no valid parent");
+        if (parent.IsEmpty)
+            throw new ArgumentException("edge has no valid parent");
         if (edge.IsEmpty)
             throw new ArgumentException("edge is empty");
-        var topoEdges = parent.SelectEdges().Where(e => !e.IsEmpty).Select(e => e).ToList();
+        var topoEdges = parent.SelectEdges().Where(e => !e.IsEmpty).Select(e => (Shape)e).ToList();
         // Work with the parent's own copy of the edge so vertices match
         var parentEdge = TopoUtil.FindSame(edge, topoEdges);
         if (parentEdge is null)
@@ -115,17 +116,16 @@ public static class OneD
     }
 
     /// <summary>
-    /// The faces of <paramref name="parent"/> (default the edge's <see cref="Shape.TopoParent"/>) that meet at an edge.
+    /// The faces of <paramref name="parent"/> that meet at an edge.
     /// A moved copy of one of the parent's edges gets the faces in its own frame; an edge the parent doesn't contain has none.
     /// </summary>
-    public static List<Face> ConnectedFaces(Edge edge, Shape? parent = null) => ConnectedFaces((IShape1D)edge, parent);
+    public static List<Face> ConnectedFaces(Edge edge, Shape parent) => ConnectedFaces((IShape1D)edge, parent);
 
-    internal static List<Face> ConnectedFaces(IShape1D edge, Shape? parent = null)
+    internal static List<Face> ConnectedFaces(IShape1D edge, Shape parent)
     {
         if (edge.IsEmpty)
             throw new ArgumentException("Can't explore from an empty edge");
-        parent ??= edge.TopoParent;
-        if (parent is null || parent.IsEmpty)
+        if (parent.IsEmpty)
             throw new InvalidOperationException("edge has no valid parent");
         var graph = ShapeGraph.Build(parent);
         // The graph keys on TShape and Location, so a moved edge isn't found by Contains
@@ -328,7 +328,7 @@ public static partial class Shape1DExtensions
                 Kind.Intersection => JoinKind.Intersection,
                 _ => JoinKind.Tangent,
             };
-            var line = self.AsShape() as Wire ?? Wire.Make([(Edge)self.AsShape()]);
+            var line = TopoUtil.AsWire(self);
             var lineEdges = line.SelectEdges();
             var start = line.PositionAt(0);
             var tangent = line.TangentAt(0);

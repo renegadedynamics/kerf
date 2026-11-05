@@ -711,7 +711,7 @@ public static partial class Operations
     public static Result<Part> Sweep(Shell section, Shape path, SweepOptions? options = null) =>
         Sweep([(Shape)section], path, options).Map(c => c.As<Part>());
 
-    /// <inheritdoc cref="Sweep(IShape2D, Shape, SweepOptions?)"/>
+    /// <summary>As the other forms of <c>Sweep</c>.</summary>
     public static Result<Part> Sweep(Sketch section, Shape path, SweepOptions? options = null) =>
         Sweep([(Shape)section], path, options).Map(c => c.As<Part>());
 
@@ -724,7 +724,7 @@ public static partial class Operations
     public static Result<Sketch> Sweep(Wire section, Shape path, SweepOptions? options = null) =>
         Sweep([(Shape)section], path, options).Map(c => c.As<Sketch>());
 
-    /// <inheritdoc cref="Sweep(IShape1D, Shape, SweepOptions?)"/>
+    /// <summary>As the other forms of <c>Sweep</c>.</summary>
     public static Result<Sketch> Sweep(Curve section, Shape path, SweepOptions? options = null) =>
         Sweep([(Shape)section], path, options).Map(c => c.As<Sketch>());
 

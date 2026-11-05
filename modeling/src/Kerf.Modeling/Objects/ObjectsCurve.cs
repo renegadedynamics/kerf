@@ -368,7 +368,7 @@ public class CenterArc : BaseEdgeObject
 }
 
 /// <summary>
-/// The planar circular arcs on XY constrained by other objects (see <see cref="Edge.MakeConstrainedArcs(Tangent, Tangent, double, Sagitta)"/>),
+/// The planar circular arcs on XY constrained by other objects (see <c>MakeConstrainedArcs</c>),
 /// as a curve of one or more edges, optionally narrowed by a selector.
 /// </summary>
 public class ConstrainedArcs : BaseCurveObject
@@ -416,7 +416,7 @@ public class ConstrainedArcs : BaseCurveObject
 }
 
 /// <summary>
-/// The planar lines on XY constrained by other objects (see <see cref="Edge.MakeConstrainedLines(Tangent, Tangent)"/>), as
+/// The planar lines on XY constrained by other objects (see <c>MakeConstrainedLines</c>), as
 /// a curve of one or more edges, optionally narrowed by a selector.
 /// </summary>
 public class ConstrainedLines : BaseCurveObject
@@ -459,7 +459,7 @@ public class DoubleTangentArc : BaseEdgeObject
         if (keep is not (Keep.Top or Keep.Bottom))
             throw new ArgumentException($"Only the TOP or BOTTOM options are supported not {keep}");
         var arcTangent = tangent.Normalized();
-        var coplane = Edge.MakeLine(arcPoint, arcPoint + arcTangent).CommonPlane(other.SelectEdges())
+        var coplane = Edge.MakeLine(arcPoint, arcPoint + arcTangent).CommonPlane(other.SelectEdges().Select(e => (IShape1D?)e))
                       ?? throw new ArgumentException("DoubleTangentArc only works on a single plane");
         var workplane = -coplane;   // flipped to help with TOP/BOTTOM
         var rotationAxis = new Axis(new Vector(0, 0, 0), workplane.ZDir);
@@ -743,8 +743,8 @@ public class FilletPolyline : BaseLineObject
             {
                 var previous = fillets[(i - 1 + fillets.Count) % fillets.Count];
                 var current = fillets[i];
-                var start = previous is null ? orderedVertices[(i - 1 + orderedVertices.Count) % orderedVertices.Count].ToVector() : previous.PositionAt(1);
-                var end = current is null ? orderedVertices[i].ToVector() : current.PositionAt(0);
+                var start = previous is not { } before ? orderedVertices[(i - 1 + orderedVertices.Count) % orderedVertices.Count].ToVector() : before.PositionAt(1);
+                var end = current is not { } arc ? orderedVertices[i].ToVector() : arc.PositionAt(0);
                 interior.Add(Edge.MakeLine(start, end));
             }
         }
@@ -755,8 +755,8 @@ public class FilletPolyline : BaseLineObject
                 var current = fillets[i];
                 var next = fillets[i + 1];
                 // + 1 as the first vertex has no fillet
-                var start = current is null ? orderedVertices[i + 1].ToVector() : current.PositionAt(1);
-                var end = next is null ? orderedVertices[i + 2].ToVector() : next.PositionAt(0);
+                var start = current is not { } arc ? orderedVertices[i + 1].ToVector() : arc.PositionAt(1);
+                var end = next is not { } after ? orderedVertices[i + 2].ToVector() : after.PositionAt(0);
                 interior.Add(Edge.MakeLine(start, end));
             }
             var startEdge = fillets[0] is { } first

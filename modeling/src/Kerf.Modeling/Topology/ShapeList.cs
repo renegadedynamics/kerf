@@ -163,7 +163,7 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
 
     /// <summary>The average of the centres of the shapes.</summary>
     public Vector Center() =>
-        Count == 0 ? new Vector(0, 0, 0) : this.Aggregate(new Vector(0, 0, 0), (sum, o) => sum + o.Center()) / Count;
+        Count == 0 ? new Vector(0, 0, 0) : Enumerable.Aggregate(this, new Vector(0, 0, 0), (sum, o) => sum + o.Center()) / Count;
 
     /// <summary>All the vertices of the shapes.</summary>
     public ShapeList<Vertex> Vertices() => new(this.SelectMany(s => s.SelectVertices()));
@@ -215,7 +215,9 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
     public Compound SingleCompound() => Single(Compounds(), "compound");
 
     /// <inheritdoc/>
-    public override string ToString() => "[" + string.Join(", ", this.Select(s => s is ModelShape ? s.ToString() : s.Describe())) + "]";
+    public override string ToString() => "[" + string.Join(", ", _items.Select(Text)) + "]";
+
+    private static string Text(T shape) => shape is ModelShape ? shape.ToString()! : shape.AsShape().Describe();
 }
 
 /// <summary>
@@ -278,7 +280,7 @@ public sealed class ShapeGroups<T, TKey> : IReadOnlyList<ShapeList<T>> where T :
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     /// <inheritdoc/>
-    public override string ToString() => "[" + string.Join(", ", this.Select(s => s is ModelShape ? s.ToString() : s.Describe())) + "]";
+    public override string ToString() => "[" + string.Join(", ", _groups.Select(g => g.Group)) + "]";
 }
 
 /// <summary>

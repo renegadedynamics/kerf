@@ -26,8 +26,8 @@ public static partial class Shape2DExtensions
             if (summands.Count == 0)
                 return self.AsShape();
             // Only sew when a shell is being built up
-            if (self.AsShape() is not Shell && !summands.Any(s => s.TryAs<Shell>(out _)))
-                return base.AddCore(other);
+            if (!self.AsShape().IsShell() && !summands.Any(s => s.IsShell()))
+                return ShapeAlgebra.AddPlain(self.AsShape(), null, other);
             if (summands.Any(s => s.Dim != 2))
                 throw new ArgumentException("Only shapes with the same dimension can be added");
             var faces = self.SelectFaces().Concat(summands.SelectMany(s => s.SelectFaces())).ToList();
@@ -44,7 +44,7 @@ public static partial class Shape2DExtensions
             }
             if (SkipClean.Clean)
                 sum = sum.Clean();
-            return self.CopyAttributesTo(sum);
+            return sum;
         }
 
         /// <summary>
@@ -112,8 +112,8 @@ public static partial class Shape2DExtensions
             var constructor = Failures.Get(FeatureOperations.SplitAlong(self.AsShape(), perimeterEdges), () => "split");
             List<Shape> Sides(IEnumerable<Face> list) => [.. list.Where(s => !s.IsNull).Select(s => (s))];
             Shape left, right;
-            left = self.ProcessSides(self.Sides(constructor.Left));
-            right = self.ProcessSides(self.Sides(constructor.Right));
+            left = ProcessSides(Sides(constructor.Left));
+            right = ProcessSides(Sides(constructor.Right));
 
             // Is the left or the right the inside?
             var perimeterLength = perimeter.Length;
@@ -129,25 +129,25 @@ public static partial class Shape2DExtensions
 
         internal ShapeList<Shape>? IntersectCore_Shape2D(object other, double tolerance, bool includeTouched)
         {
-            var shape = Shape.AsShape(other);
+            var shape = ShapeExtensions.ShapeOf(other);
             var results = new List<Shape>();
             // Trim infinite edges before OCCT operations
-            if (shape is Edge { IsInfinite: true } infinite)
+            if (TopoUtil.Typed(shape) is Edge { IsInfinite: true } infinite)
             {
                 var box = self.BoundingBox(optimal: false);
                 shape = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Length);
             }
-            switch (shape)
+            switch (TopoUtil.Typed(shape))
             {
                 case IShape2D surface:
                 {
                     // The common part (coplanar overlap) and the section (crossing curves)
                     ShapeList<Shape> commonFaces;
-                    commonFaces = self.BoolOpList([self.AsShape()], [surface], BooleanKind.Common).Expand();
+                    commonFaces = ShapeExtensions.BoolOpList([self.AsShape()], [surface.AsShape()], BooleanKind.Common).Expand();
                     results.AddRange(commonFaces);
                     ShapeList<Shape> sectionEdges;
                     // The section's vertices are boundary contacts (touches), not intersections
-                    sectionEdges = new ShapeList<Shape>(self.BoolOpList([self.AsShape()], [surface], BooleanKind.Section).OfType<Edge>()).Expand();
+                    sectionEdges = new ShapeList<Shape>(ShapeExtensions.BoolOpList([self.AsShape()], [surface.AsShape()], BooleanKind.Section).OfType<Edge>().Upcast()).Expand();
                     if (commonFaces.Count == 0)
                         results.AddRange(sectionEdges);
                     else
@@ -165,7 +165,7 @@ public static partial class Shape2DExtensions
                 }
                 case IShape1D line:
                 {
-                    results.AddRange(self.BoolOpList([self.AsShape()], [line], BooleanKind.Section));
+                    results.AddRange(ShapeExtensions.BoolOpList([self.AsShape()], [line.AsShape()], BooleanKind.Section));
                     break;
                 }
                 case Vertex vertex:
@@ -174,12 +174,12 @@ public static partial class Shape2DExtensions
                     break;
                 default:
                     // Delegate to higher-order shapes
-                    if (shape.IntersectCore(self.AsShape(), tolerance, includeTouched) is { } found)
+                    if (ShapeExtensions.IntersectOne(shape.AsShape(), self.AsShape(), tolerance, includeTouched) is { } found)
                         results.AddRange(found);
                     break;
             }
-            if (includeTouched && shape is IShape2D)
-                results.AddRange(self.TouchCore(shape, tolerance, results.OfType<Face>().ToList(), results.OfType<Edge>().ToList()));
+            if (includeTouched && shape.Dim == 2)
+                results.AddRange(self.TouchCore(shape, tolerance, results.OfKind<Face>().ToList(), results.OfKind<Edge>().ToList()));
             return results.Count > 0 ? new ShapeList<Shape>(results) : null;
         }
 
@@ -191,7 +191,7 @@ public static partial class Shape2DExtensions
 
         internal ShapeList<Shape> TouchCore(Shape other, double tolerance, List<Face>? foundFaces, List<Edge>? foundEdges)
         {
-            if (other is not IShape2D)
+            if (other.Dim != 2)
                 // Face + edge or vertex: no touch (the intersection already covers them); a compound iterates
                 return other.Touch(self.AsShape(), tolerance);
 
@@ -207,7 +207,7 @@ public static partial class Shape2DExtensions
             {
                 foundFaces = [];
                 foundEdges = [];
-                if (self.IntersectCore(other, tolerance, includeTouched: false) is { } found)
+                if (ShapeExtensions.IntersectOne(self.AsShape(), other, tolerance, includeTouched: false) is { } found)
                 {
                     foundFaces.AddRange(found.OfType<Face>());
                     foundEdges.AddRange(found.OfType<Edge>());
@@ -231,14 +231,14 @@ public static partial class Shape2DExtensions
                     if (p1.DistanceTo(p2) > tolerance)
                         continue;
                     var vertex = Vertex.Make(p1.X, p1.Y, p1.Z);
-                    if (Shape2DExtensions.IsDuplicate(vertex, foundVertices))
+                    if (IsDuplicate(vertex, foundVertices))
                         continue;
                     // Skip edge-edge crossings, but keep corner touches
-                    if (self.OnEdges(vertex, selfEdges) && self.OnEdges(vertex, otherEdges)
-                        && !Shape2DExtensions.IsDuplicate(vertex, selfVertices) && !Shape2DExtensions.IsDuplicate(vertex, otherVertices))
+                    if (OnEdges(vertex, selfEdges) && OnEdges(vertex, otherEdges)
+                        && !IsDuplicate(vertex, selfVertices) && !IsDuplicate(vertex, otherVertices))
                         continue;
                     // Keep only vertices that aren't boundaries of higher-dimensional contacts
-                    if (!self.OnFaces(vertex, foundFaces) && !self.OnEdges(vertex, foundEdges))
+                    if (!OnFaces(vertex, foundFaces) && !OnEdges(vertex, foundEdges))
                     {
                         results.Add(vertex);
                         foundVertices.Add(vertex);
@@ -273,23 +273,19 @@ public static partial class Shape2DExtensions
             };
             var offsetResult = self.AsShape().Offset(amount, options);
             if (!offsetResult.TryGetValue(out var built) || built.Shape.IsNull)
-                throw Failures.Expected(ModelingDiagnostics.OffsetFailed, $"The offset of the {GetType().Name} by {Formatting.Number(amount)} failed.",
+                throw Failures.Expected(ModelingDiagnostics.OffsetFailed, $"The offset of the {typeof(TSelf).Name} by {Formatting.Number(amount)} failed.",
                                         offsetResult.IsFailure ? offsetResult.Diagnostics : default);
             var offset = built.Shape;
-            var result = Shape.Cast(offset);
+            var result = (offset);
             // The builder always returns a shell; a face offsets to a single face
             if (self.AsShape().TryAs<Face>(out _) && result.SelectFaces().Count == 1)
                 result = result.SelectFaces()[0];
             if (result.Area <= Constants.Tolerance)
-                throw new InvalidOperationException($"Offsetting by {amount} collapsed the {GetType().Name} onto itself");
-            return self.CopyAttributesTo(result);
+                throw new InvalidOperationException($"Offsetting by {amount} collapsed the {typeof(TSelf).Name} onto itself");
+            return result;
         }
     }
 
-    extension(IShape2D)
-    {
-        public static IShape2D Make(Shape? obj) => (IShape2D)TopoUtil.Downcast(obj!);
-    }
 
 
     /// <summary>An edge split at all the given interior vertices.</summary>
@@ -315,6 +311,21 @@ public static partial class Shape2DExtensions
     }
 }
 
+/// <summary>A face or shell with its normal reversed.</summary>
+public static class Shape2DOperators
+{
+    extension<T>(T) where T : struct, IShape<T>, IShape2D
+    {
+        /// <summary>This face or shell with its normal reversed (build123d's unary <c>-</c>).</summary>
+        public static T operator -(T shape)
+        {
+            if (shape.IsEmpty)
+                throw new InvalidOperationException("Invalid Shape");
+            return shape.AsShape().Complemented().As<T>();
+        }
+    }
+}
+
 /// <summary>The offset of faces and shells, keeping the caller's class.</summary>
 public static class Shape2DOperations
 {
@@ -323,6 +334,6 @@ public static class Shape2DOperations
         /// <summary>
         /// The face or shell offset along its own normals (see <see cref="IShape2D"/>): a positive amount follows the normal.
         /// </summary>
-        public T Offset(double amount) => (T)shape.OffsetCore(amount);
+        public T Offset(double amount) => TopoUtil.Rewrap(shape, shape.OffsetCore(amount));
     }
 }

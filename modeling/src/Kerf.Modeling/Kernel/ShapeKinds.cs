@@ -28,5 +28,9 @@ internal static class ShapeKinds
 
     public static bool IsSolid(this Shape shape) => shape.Is(ShapeType.Solid);
 
+    /// <summary>The shapes of a type among others (LINQ's <c>OfType</c> looks at the static type, here always <see cref="Shape"/>).</summary>
+    public static IEnumerable<T> OfKind<T>(this IEnumerable<Shape> shapes) where T : struct, IShape<T> =>
+        shapes.Where(s => !s.IsNull && s.Type == T.Type).Select(s => s.As<T>());
+
     public static bool IsCompound(this Shape shape) => shape.Is(ShapeType.Compound);
 }

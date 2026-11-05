@@ -33,9 +33,9 @@ public sealed class Selector : IEquatable<Selector>
     {
         var selected = Of switch
         {
-            ShapeType.Face => shape.SelectFaces().Upcast<Shape>(),
-            ShapeType.Edge => shape.SelectEdges().Upcast<Shape>(),
-            _ => shape.SelectVertices().Upcast<Shape>(),
+            ShapeType.Face => shape.SelectFaces().Upcast(),
+            ShapeType.Edge => shape.SelectEdges().Upcast(),
+            _ => shape.SelectVertices().Upcast(),
         };
         foreach (var step in Steps)
             selected = step.Apply(selected);
@@ -136,13 +136,9 @@ public sealed class Selector : IEquatable<Selector>
     /// <exception cref="ArgumentException"><paramref name="picked"/> isn't a face, edge or vertex of the shape.</exception>
     public static IReadOnlyList<Selector> For(Shape shape, Shape picked, int count = 3, int maxSteps = 3)
     {
-        var of = picked switch
-        {
-            Face => ShapeType.Face,
-            Edge => ShapeType.Edge,
-            Vertex => ShapeType.Vertex,
-            _ => throw new ArgumentException($"Only a face, edge or vertex can be picked, not a {picked.GetType().Name}", nameof(picked)),
-        };
+        var of = !picked.IsNull && picked.Type is ShapeType.Face or ShapeType.Edge or ShapeType.Vertex
+            ? picked.Type
+            : throw new ArgumentException($"Only a face, edge or vertex can be picked, not a {TopoUtil.KindName(picked)}", nameof(picked));
         var all = new Selector(of, []).Apply(shape);
         int target = -1;
         for (int i = 0; i < all.Count && target < 0; i++)
@@ -196,7 +192,7 @@ public sealed class Selector : IEquatable<Selector>
                 _moves.Add(set => Filter(set, i => types[i] == type, new OfGeomType(type), 1));
             foreach (var axis in Axes)
             {
-                var parallel = all.ParallelTo(axis).ToHashSet(ReferenceEqualityComparer.Instance);
+                var parallel = all.ParallelTo(axis).ToHashSet(ShapeComparer.Same);
                 if (parallel.Contains(all[target]))
                 {
                     var flags = all.Select(o => parallel.Contains(o)).ToArray();

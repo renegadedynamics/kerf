@@ -27,7 +27,7 @@ public readonly record struct MeshTolerances(double Linear, double Angular, bool
 
 /// <summary>
 /// A shape's triangulation, for display and picking: its faces' meshes, its edges' polylines and its vertices, each in
-/// the order of the shape's <see cref="Shape.Faces"/>, <see cref="Shape.Edges"/> and <see cref="Shape.Vertices"/>, so
+/// the order of the shape's <c>Faces</c>, <c>Edges</c> and <c>Vertices</c>, so
 /// an index picked in a viewer is the index of the face, edge or vertex. Coordinates are global (locations applied).
 /// </summary>
 /// <remarks>The buffers are shared, read-only slices of a few large arrays; the mesh never changes.</remarks>
@@ -39,13 +39,13 @@ public sealed class ShapeMesh
     /// <summary>The mesh of an empty shape: no faces, edges or vertices.</summary>
     public static ShapeMesh Empty { get; } = new([], [], [], default);
 
-    /// <summary>The faces' meshes, in the order of <see cref="Shape.Faces"/>.</summary>
+    /// <summary>The faces' meshes, in the order of <c>Faces</c>.</summary>
     public IReadOnlyList<FaceMesh> Faces { get; }
 
-    /// <summary>The edges' polylines, in the order of <see cref="Shape.Edges"/>: each topological edge once.</summary>
+    /// <summary>The edges' polylines, in the order of <c>Edges</c>: each topological edge once.</summary>
     public IReadOnlyList<EdgeMesh> Edges { get; }
 
-    /// <summary>The vertices' positions, in the order of <see cref="Shape.Vertices"/>.</summary>
+    /// <summary>The vertices' positions, in the order of <c>Vertices</c>.</summary>
     public IReadOnlyList<Vector> Vertices { get; }
 
     /// <summary>The tolerances the mesh was made with.</summary>
@@ -159,22 +159,23 @@ public sealed class MeshNode
     public IReadOnlyList<MeshNode> Children { get; }
 
     /// <summary>
-    /// The tree of a shape: an assembly (a compound with <see cref="Compound.AssemblyChildren"/>) gives a node per
+    /// The tree of a shape: an assembly (a compound with <see cref="Assembly.Children"/>) gives a node per
     /// child, any other shape a part.
     /// </summary>
-    internal static MeshNode Of(Shape shape, MeshTolerances tolerances)
+    internal static MeshNode Of(IShape shape, MeshTolerances tolerances)
     {
         var cache = new List<(Shape Key, ShapeMesh Mesh)>();
         return Build(shape, tolerances, cache);
     }
 
-    private static MeshNode Build(Shape shape, MeshTolerances tolerances, List<(Shape Key, ShapeMesh Mesh)> cache)
+    private static MeshNode Build(IShape shape, MeshTolerances tolerances, List<(Shape Key, ShapeMesh Mesh)> cache)
     {
         var location = shape.IsEmpty ? new Location() : shape.Location;
-        if (!shape.IsEmpty && shape is Compound { AssemblyChildren.Count: > 0 } assembly)
-            return new MeshNode(shape.Label, shape.Color, location, null,
-                                [.. assembly.AssemblyChildren.Select(child => Build(child, tolerances, cache))]);
-        return new MeshNode(shape.Label, shape.Color, location, Instance(shape, tolerances, cache), []);
+        var model = shape as ModelShape;
+        if (!shape.IsEmpty && model is Assembly { Children.Count: > 0 } assembly)
+            return new MeshNode(assembly.Label, assembly.Color, location, null,
+                                [.. assembly.Children.Select(child => Build(child, tolerances, cache))]);
+        return new MeshNode(model?.Label ?? "", model?.Color, location, Instance(shape.AsShape(), tolerances, cache), []);
     }
 
     /// <summary>The mesh of a part in its own coordinates, shared with any earlier part of the same geometry.</summary>
@@ -185,8 +186,7 @@ public sealed class MeshNode
         foreach (var (key, mesh) in cache)
             if (key.IsPartner(shape) && key.Orientation == shape.Orientation)
                 return mesh;
-        var identity = new Placement();
-        var unplaced = shape.Placed(shape.Located(identity));
+        var unplaced = shape.Located(new Placement());
         var made = ShapeMesh.Of(unplaced, tolerances);
         cache.Add((shape, made));
         return made;

@@ -31,7 +31,7 @@ public static partial class WireExtensions
                     throw new ArgumentException($"Could not find fillet vertex on wire: {vertex}");
                 var beforeCorner = filleted;
                 filleted = WireFillet.FilletCorner(filleted, current, radius);
-                if (!ReferenceEquals(filleted, beforeCorner))
+                if (!filleted.IsEqual(beforeCorner))
                     record = record.Merge(filleted.History);
             }
 

@@ -69,10 +69,10 @@ public static partial class SolidExtensions
         {
             bool VertexOnEdges(Vertex v, IEnumerable<Edge> edges) => edges.Any(e => v.DistanceTo(e) <= tolerance);
             bool VertexOnFace(Vertex v, Face f) => v.DistanceTo(f) <= tolerance;
-            bool VertexOnFaces(Vertex v, IEnumerable<Face> faces) => faces.Any(f => self.VertexOnFace(v, f));
+            bool VertexOnFaces(Vertex v, IEnumerable<Face> faces) => faces.Any(f => VertexOnFace(v, f));
             // Distance can't tell an edge on a face from one crossing it, so ask for the common part
-            bool OnFaces(Shape s, IEnumerable<Face> faces) => faces.Any(f => self.BoolOpList([s], [f], BooleanKind.Common).Count > 0);
-            bool EdgeOnFaces(Edge e, IEnumerable<Face> faces) => self.OnFaces(e, faces);
+            bool OnFaces(Shape s, IEnumerable<Face> faces) => faces.Any(f => ShapeExtensions.BoolOpList([s], [f], BooleanKind.Common).Count > 0);
+            bool EdgeOnFaces(Edge e, IEnumerable<Face> faces) => OnFaces(e, faces);
             (Vector, Vector) PointNormal(Face face, double u, double v)
             {
                 var (u0, u1, v0, v1) = face.UVBounds();
@@ -88,23 +88,23 @@ public static partial class SolidExtensions
                     for (int j = 0; j < gridSize; j++)
                     {
                         double u = i / (double)(gridSize - 1), v = j / (double)(gridSize - 1);
-                        var (p1, n1) = self.PointNormal(f1, u, v);
-                        var (p2, n2) = self.PointNormal(f2, u, v);
+                        var (p1, n1) = PointNormal(f1, u, v);
+                        var (p2, n2) = PointNormal(f2, u, v);
                         if ((p1 - p2).Length > tolerance || Math.Abs(n1.Dot(n2)) < 0.99)
                             return false;
                     }
                 return true;
             }
-            bool IsDuplicate(Shape shape, IEnumerable<Shape> existing) => shape switch
+            bool IsDuplicate(Shape shape, IEnumerable<Shape> existing) => TopoUtil.Typed(shape) switch
             {
-                Vertex v => existing.OfType<Vertex>().Any(o => v.ToVector() == o.ToVector()),
-                Edge e => existing.OfType<Edge>().Any(o => e.GeomEqual(o, tolerance)),
-                Face f => existing.OfType<Face>().Any(o => self.FacesEqual(f, o)),
+                Vertex v => existing.OfKind<Vertex>().Any(o => v.ToVector() == o.ToVector()),
+                Edge e => existing.OfKind<Edge>().Any(o => e.GeomEqual(o, tolerance)),
+                Face f => existing.OfKind<Face>().Any(o => FacesEqual(f, o)),
                 _ => false,
             };
 
             var results = new List<Shape>();
-            switch (other)
+            switch (TopoUtil.Typed(other))
             {
                 case Solid or Face or Shell:
                 {
@@ -112,7 +112,7 @@ public static partial class SolidExtensions
                     var intersectFaces = new List<Face>();
                     if (other.TryAs<Solid>(out _))
                     {
-                        foundSolids ??= [.. self.IntersectCore(other, tolerance, includeTouched: false) ?? []];
+                        foundSolids ??= [.. ShapeExtensions.IntersectOne(self.AsShape(), other, tolerance, includeTouched: false) ?? []];
                         intersectFaces = foundSolids.SelectMany(s => s.SelectFaces()).ToList();
                     }
                     var selfFaces = self.SelectFaces().Select(f => (Face: f, Box: f.BoundingBox(optimal: false))).ToList();
@@ -125,21 +125,21 @@ public static partial class SolidExtensions
                                 continue;
                             // Touches first (cheap): tangent vertices
                             foreach (var r in sf.Touch(of, tolerance))
-                                if (!self.IsDuplicate(r, raw) && !(r.TryAs(out Vertex rv) && self.VertexOnFaces(rv, intersectFaces)))
+                                if (!IsDuplicate(r, raw) && !(r.TryAs(out Vertex rv) && VertexOnFaces(rv, intersectFaces)))
                                     raw.Add(r);
                             // Then the intersection (expensive): shared faces and edges
                             foreach (var r in sf.Intersect([of], tolerance))
-                                if (!self.IsDuplicate(r, raw) && !self.OnFaces(r, intersectFaces))
+                                if (!IsDuplicate(r, raw) && !OnFaces(r, intersectFaces))
                                     raw.Add(r);
                         }
                     // Keep only what no higher-dimensional result contains
-                    var allFaces = raw.OfType<Face>().ToList();
-                    var allEdges = raw.OfType<Edge>().ToList();
-                    results.AddRange(raw.Where(r => r switch
+                    var allFaces = raw.OfKind<Face>().ToList();
+                    var allEdges = raw.OfKind<Edge>().ToList();
+                    results.AddRange(raw.Where(r => TopoUtil.Typed(r) switch
                     {
                         Face => true,
-                        Edge e => !self.EdgeOnFaces(e, allFaces),
-                        Vertex v => !self.VertexOnFaces(v, allFaces) && !self.VertexOnEdges(v, allEdges),
+                        Edge e => !EdgeOnFaces(e, allFaces),
+                        Vertex v => !VertexOnFaces(v, allFaces) && !VertexOnEdges(v, allEdges),
                         _ => false,
                     }));
                     break;
@@ -150,14 +150,14 @@ public static partial class SolidExtensions
                     var otherBox = other.BoundingBox(optimal: false);
                     // The edge's ends on the boundary
                     foreach (var ov in other.SelectVertices())
-                        if (selfFaces.Any(sf => self.VertexOnFace(ov, sf.Face)))
+                        if (selfFaces.Any(sf => VertexOnFace(ov, sf.Face)))
                             results.Add(ov);
                     // And where it is tangent to the surface
                     foreach (var (sf, sfBox) in selfFaces)
                     {
                         if (!sfBox.Intersects(otherBox, tolerance))
                             continue;
-                        var distance = sf.Distance(other);
+                        var distance = MeasureOperations.Distance(sf, other);
                         if (!distance.TryGetValue(out var extrema) || extrema.Value > tolerance)
                             continue;
                         foreach (var solution in extrema.Solutions)
@@ -167,14 +167,14 @@ public static partial class SolidExtensions
                             if (p1.DistanceTo(p2) > tolerance)
                                 continue;
                             var vertex = Vertex.Make(p1.X, p1.Y, p1.Z);
-                            if (!self.IsDuplicate(vertex, results))
+                            if (!IsDuplicate(vertex, results))
                                 results.Add(vertex);
                         }
                     }
                     break;
                 }
                 case Vertex vertex:
-                    if (self.SelectFaces().Any(sf => self.VertexOnFace(vertex, sf)))
+                    if (self.SelectFaces().Any(sf => VertexOnFace(vertex, sf)))
                         results.Add(vertex);
                     break;
                 default:
@@ -389,8 +389,8 @@ public static partial class SolidExtensions
         var straightSpine = Wire.Combine([Edge.MakeLine(center, center + normal)])[0];
         var pitch = 360.0 / angle * normal.Length;
         var auxSpine = Wire.Make([Edge.MakeHelix(pitch, normal.Length, 1, center, normal)]);
-        var outer = SolidExtensions.ExtrudeAuxSpine(section, straightSpine, auxSpine);
-        var inner = (innerWires ?? []).Select(w => SolidExtensions.ExtrudeAuxSpine(w, straightSpine, auxSpine)).ToList();
+        var outer = ExtrudeAuxSpine(section, straightSpine, auxSpine);
+        var inner = (innerWires ?? []).Select(w => ExtrudeAuxSpine(w, straightSpine, auxSpine)).ToList();
         var innerComp = TopoUtil.MakeCompound(inner);
         var difference = Failures.Get(TopoUtil.Boolean(BooleanKind.Cut, [outer], [innerComp]), () => "cut").Shape;
         // The result may be wrapped in a compound
@@ -440,12 +440,12 @@ public static partial class SolidExtensions
                 result = (Solid)built.Shape;
             }
             // The draft can build sides that run into each other, as when a hole widens through a wall
-            if (result is not null && !result.IsValid)
+            if (result is { IsValid: false })
                 result = null;
-            if (result is not null)
-                result = (Solid)result.MadeBy(
-                    ModelHistory.FromAlgorithm(s => prismBuilt.History.Modified(s), s => prismBuilt.History.Generated(s), [profile], prism)
-                    .Merge(ModelHistory.FromAlgorithm(s => draft!.History.Modified(s), s => draft!.History.Generated(s), [prism], result)));
+            if (result is { } madeBy)
+                result = madeBy.MadeBy(
+                    ModelHistory.FromAlgorithm(s => prismBuilt.History.Modified(s), s => prismBuilt.History.Generated(s), [(Shape)profile], prism)
+                    .Merge(ModelHistory.FromAlgorithm(s => draft!.History.Modified(s), s => draft!.History.Generated(s), [prism], result.Value)));
         }
         if (result is null)
         {
@@ -473,7 +473,7 @@ public static partial class SolidExtensions
             }
             result = solids.Count > 1 ? (Solid)solids[0].Cut(solids.Skip(1)) : solids[0];
         }
-        return result;
+        return result.Value;
     }
 
     private static Solid ExtrudeUntilCore(Face profile, Shape target, Vector direction, Until until)
@@ -507,7 +507,7 @@ public static partial class SolidExtensions
         var limit = surfaces[until == Until.Next ? 0 : surfaces.Count - 1];
 
         // 4: split the extrusion by that surface
-        var pieces = extrusion.Split(limit, Keep.All);
+        var pieces = extrusion.Split(limit.AsShape(), Keep.All);
         if (pieces.Count < 2)
             throw new ArgumentException("the surface reached does not cut the extrusion - the profile lies in it, or only touches it");
 
@@ -533,11 +533,11 @@ public static partial class SolidExtensions
                                      object? mode, Transition transition)
     {
         var shapes = new List<Shape>();
-        var pathWire = path as Wire ?? Wire.Make((Edge)path);
+        var pathWire = TopoUtil.AsWire(path);
         foreach (var wire in innerWires.Prepend(outerWire))
         {
             var options = SolidExtensions.SweepMode(path, mode, isFrenet) with { Transition = FaceExtensions.TransitionMode(transition), MakeSolid = makeSolid };
-            shapes.Add(Shape.Cast(Failures.Get(Sweeps.Sweep(wire, pathWire, options), () => "sweep").Shape));
+            shapes.Add((Failures.Get(Sweeps.Sweep(wire, pathWire, options), () => "sweep").Shape));
         }
         var outer = shapes[0];
         if (shapes.Count > 1)
@@ -579,7 +579,7 @@ public static partial class SolidExtensions
 
     private static Solid SweepMultiCore(IEnumerable<Wire> profiles, IShape1D path, bool makeSolid, bool isFrenet, object? binormal)
     {
-        var pathWire = path as Wire ?? Wire.Make((Edge)path);
+        var pathWire = TopoUtil.AsWire(path);
         var options = SolidExtensions.SweepMode(path, binormal, isFrenet) with { MakeSolid = makeSolid };
         var built = Failures.Get(Sweeps.Sweep([.. profiles.Select(p => p)], pathWire, options), () => "sweep");
         var swept = ((Solid)built.Shape);

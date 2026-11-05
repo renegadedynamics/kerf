@@ -76,8 +76,8 @@ public static partial class ShapeExtensions
         var name = shape.IsNull || TopoUtil.IsNothing(shape) ? (type == typeof(Shape) ? "Shape" : type.Name) : shape.Type.ToString();
         if (TopoUtil.IsNothing(shape))
             return $"{name}()";
-        if (shape.TryAs(out Vertex vertex))
-            return vertex.VertexText();
+        if (shape.IsVertex() && shape.TryAs(out Vertex vertex))
+            return $"Vertex({Formatting.Number(vertex.X)}, {Formatting.Number(vertex.Y)}, {Formatting.Number(vertex.Z)})";
         return $"{name} at {new Location(shape.Placement)}";
     }
 
@@ -103,18 +103,18 @@ public static partial class ShapeExtensions
         return records.Count == 1 ? ((Shape)composite).MadeBy(records[0]) : composite;
     }
 
-    extension(Shape self)
+    extension<TSelf>(TSelf self) where TSelf : struct, IShape<TSelf>
     {
         /// <summary>
         /// The record of the operation that made this shape, while a <see cref="HistoryLog"/> is open; a struct holds none
         /// of its own. A <see cref="ModelShape"/> keeps it for good.
         /// </summary>
-        internal ModelHistory? History => HistoryLog.Current?.Find(self);
+        internal ModelHistory? History => HistoryLog.Current?.Find(self.AsShape());
 
         /// <summary>This shape, noting in the open <see cref="HistoryLog"/> how it was made.</summary>
-        internal Shape MadeBy(ModelHistory? history)
+        internal TSelf MadeBy(ModelHistory? history)
         {
-            HistoryLog.Current?.Note(self, history);
+            HistoryLog.Current?.Note(self.AsShape(), history);
             return self;
         }
     }

@@ -105,7 +105,7 @@ public static partial class EdgeExtensions
 
             // Method 1: the point is a vertex of the edge (on a closed edge, either end)
             var nearest = self.SelectVertices().MinBy(v => (v.ToVector() - point).Length);
-            if (nearest is not null && !nearest.IsEmpty && (nearest.ToVector() - point).Length <= Constants.Tolerance)
+            if (!nearest.IsEmpty && (nearest.ToVector() - point).Length <= Constants.Tolerance)
             {
                 var param = self.ParameterOf(nearest);
                 var adaptor = self.ToCurve();
@@ -165,12 +165,12 @@ public static partial class EdgeExtensions
         /// A copy with the opposite orientation. With <paramref name="reconstruct"/> the curve itself is rebuilt reversed,
         /// rather than the orientation flag being set.
         /// </summary>
-        public Edge Reversed(bool reconstruct = false)
+        public Edge Reversed(bool reconstruct)
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("An empty edge can't be reversed");
             if (!reconstruct)
-                return (Edge)(self.Reversed());
+                return self.Reversed();
             self.TryGetCurve(out var curve, out var range);
             var rFirst = curve!.ReversedParameter(range.Min);
             var rLast = curve.ReversedParameter(range.Max);
@@ -252,14 +252,14 @@ public static partial class EdgeExtensions
                 null => null,
                 Edge e => e,
                 // An axis becomes an edge at least as large as this edge and the axis's start
-                Axis axis => self.AxisEdge(axis),
+                Axis axis => AxisEdge(axis),
                 _ => throw new ArgumentException($"Can't intersect with a {other.GetType().Name}"),
             };
             var plane = self.CommonPlane(otherEdge) ?? throw new ArgumentException("All objects must be on the same plane");
             var pln = plane.ToPlane3D();
             var selfCurve = EdgeExtensions.CurveOnPlane(self, pln);
             var intersected = otherEdge is { IsEmpty: false }
-                ? selfCurve.Intersect(EdgeExtensions.CurveOnPlane(otherEdge, pln), tolerance)
+                ? selfCurve.Intersect(EdgeExtensions.CurveOnPlane(otherEdge!.Value, pln), tolerance)
                 : selfCurve.SelfIntersections(tolerance);
             var crosses = new List<Vector>();
             foreach (var hit in Failures.Get(intersected, () => "intersect"))
@@ -270,7 +270,7 @@ public static partial class EdgeExtensions
             {
                 try
                 {
-                    if (self.DistanceTo(pnt) <= Constants.Tolerance && (otherEdge is null || otherEdge.DistanceTo(pnt) <= Constants.Tolerance))
+                    if (self.DistanceTo(pnt) <= Constants.Tolerance && (otherEdge is not { } oe || oe.DistanceTo(pnt) <= Constants.Tolerance))
                         valid.Add(pnt);
                 }
                 catch (InvalidOperationException e) when (!Failures.IsFailure(e) && !Diagnostic.IsKernelFailure(e)) { }
@@ -342,8 +342,8 @@ public static partial class EdgeExtensions
                 {
                     ga1.TryGetCircle(out var c1);
                     ga2.TryGetCircle(out var c2);
-                    return Math.Abs(c1.Radius - c2.Radius) < tolerance && EdgeExtensions.V(c1.Location) == EdgeExtensions.V(c2.Location)
-                           && EdgeExtensions.D(c1.Axis) == EdgeExtensions.D(c2.Axis);
+                    return Math.Abs(c1.Radius - c2.Radius) < tolerance && V(c1.Location) == V(c2.Location)
+                           && D(c1.Axis) == D(c2.Axis);
                 }
                 case GeomType.Ellipse:
                 {
@@ -351,7 +351,7 @@ public static partial class EdgeExtensions
                     ga2.TryGetEllipse(out var e2);
                     return Math.Abs(e1.MajorRadius - e2.MajorRadius) < tolerance
                            && Math.Abs(e1.MinorRadius - e2.MinorRadius) < tolerance
-                           && EdgeExtensions.V(e1.Location) == EdgeExtensions.V(e2.Location) && EdgeExtensions.D(e1.Axis) == EdgeExtensions.D(e2.Axis);
+                           && V(e1.Location) == V(e2.Location) && D(e1.Axis) == D(e2.Axis);
                 }
                 case GeomType.Hyperbola:
                 {
@@ -359,14 +359,14 @@ public static partial class EdgeExtensions
                     ga2.TryGetHyperbola(out var h2);
                     return Math.Abs(h1.MajorRadius - h2.MajorRadius) < tolerance
                            && Math.Abs(h1.MinorRadius - h2.MinorRadius) < tolerance
-                           && EdgeExtensions.V(h1.Location) == EdgeExtensions.V(h2.Location) && EdgeExtensions.D(h1.Axis) == EdgeExtensions.D(h2.Axis);
+                           && V(h1.Location) == V(h2.Location) && D(h1.Axis) == D(h2.Axis);
                 }
                 case GeomType.Parabola:
                 {
                     ga1.TryGetParabola(out var p1);
                     ga2.TryGetParabola(out var p2);
-                    return Math.Abs(p1.Focal - p2.Focal) < tolerance && EdgeExtensions.V(p1.Location) == EdgeExtensions.V(p2.Location)
-                           && EdgeExtensions.D(p1.Axis) == EdgeExtensions.D(p2.Axis);
+                    return Math.Abs(p1.Focal - p2.Focal) < tolerance && V(p1.Location) == V(p2.Location)
+                           && D(p1.Axis) == D(p2.Axis);
                 }
                 case GeomType.Bezier:
                 {
@@ -376,7 +376,7 @@ public static partial class EdgeExtensions
                         return false;
                     for (int i = 0; i < b1.PoleCount; i++)
                     {
-                        if (EdgeExtensions.V(b1.Poles[i]) != EdgeExtensions.V(b2.Poles[i]))
+                        if (V(b1.Poles[i]) != V(b2.Poles[i]))
                             return false;
                         if (b1.IsRational && Math.Abs(b1.Weights[i] - b2.Weights[i]) >= tolerance)
                             return false;
@@ -392,7 +392,7 @@ public static partial class EdgeExtensions
                         return false;
                     for (int i = 0; i < s1.PoleCount; i++)
                     {
-                        if (EdgeExtensions.V(s1.Poles[i]) != EdgeExtensions.V(s2.Poles[i]))
+                        if (V(s1.Poles[i]) != V(s2.Poles[i]))
                             return false;
                         if (s1.IsRational && Math.Abs(s1.Weights[i] - s2.Weights[i]) >= tolerance)
                             return false;

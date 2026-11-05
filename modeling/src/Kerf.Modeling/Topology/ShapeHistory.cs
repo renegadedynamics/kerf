@@ -122,9 +122,9 @@ public sealed class ModelHistory
     /// The records the given shapes carry from the operations that made them, merged into one, or null if
     /// none of them carries one.
     /// </summary>
-    public static ModelHistory? Of(IEnumerable<Shape> shapes)
+    public static ModelHistory? Of<T>(IEnumerable<T> shapes) where T : IShape
     {
-        var found = shapes.Select(s => s?.History).OfType<ModelHistory>().ToList();
+        var found = shapes.Select(s => s.AsShape().History).OfType<ModelHistory>().ToList();
         if (found.Count == 0)
             return null;
         if (found.Count == 1)

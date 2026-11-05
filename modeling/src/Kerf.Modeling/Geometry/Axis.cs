@@ -167,7 +167,7 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     public static bool operator !=(Axis a, Axis b) => !a.Equals(b);
 
 
-    /// <summary>Where a shape meets this axis (the shape's <see cref="Shape.Intersect(object[])"/>), empty if nowhere.</summary>
+    /// <summary>Where a shape meets this axis (the shape's <c>Intersect</c>), empty if nowhere.</summary>
     public ShapeList<Shape> Intersect(Shape shape) => shape.Intersect(this);
 #pragma warning restore CS1591
 

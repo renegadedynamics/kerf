@@ -66,7 +66,7 @@ public static partial class ShellExtensions
             var remaining = self.SelectFaces().ToList();
             var records = new List<ModelHistory>();
             var solids = cutterList.Where(c => c.Dim == 3).ToList();
-            var planes = cutterList.OfType<Face>().ToList();
+            var planes = cutterList.OfKind<Face>().ToList();
             if (solids.Count > 0)
             {
                 var trimmed = new List<Face>();
@@ -82,7 +82,7 @@ public static partial class ShellExtensions
             if (planes.Count > 0)
             {
                 var trimmed = new List<Face>();
-                var used = new HashSet<Face>(ReferenceEqualityComparer.Instance);
+                var used = new HashSet<Face>(ShapeComparer<Face>.Same);
                 foreach (var face in remaining)
                 {
                     var matching = planes.Where(c => face.GeomType == GeomType.Plane && c.GeomType == GeomType.Plane
@@ -98,7 +98,7 @@ public static partial class ShellExtensions
                     if (ModelHistory.Of([result]) is { } record)
                         records.Add(record);
                 }
-                if (used.Count != planes.Distinct(ReferenceEqualityComparer.Instance).Count())
+                if (used.Count != planes.Distinct(ShapeComparer<Face>.Same).Count())
                     throw new ArgumentException(
                         "A Face cutter must be coplanar with a planar sheet face - use a Solid to cut across bends or curved faces");
                 remaining = trimmed;
@@ -219,7 +219,7 @@ public static partial class ShellExtensions
         }
         // BRepBuilderAPI_Sewing's defaults; its history records the faces it rebuilt, the edges and vertices it merged, and
         // the faces it dropped
-        var sewing = Failures.Get(HealingOperations.Sew(faces.Select(f => f)), () => "sew");
+        var sewing = Failures.Get(HealingOperations.Sew(faces.Select(f => (Shape)f)), () => "sew");
         var sewn = TopoUtil.Downcast(sewing.Shape);
         var shell = sewn.IsFace() ? Shell.Make((Face)sewn)   // one face is a sheet of one face
             : sewn.IsShell() ? (Shell)sewn
@@ -229,7 +229,7 @@ public static partial class ShellExtensions
         if (shell.SelectEdges().Any(e => OneD.ConnectedFaces(e, shell).Count > 2))
             throw new ArgumentException("Sheet faces produced non-manifold topology");
         var record = records.Aggregate(new ModelHistory(), (r, earlier) => r.Merge(earlier))
-            .Merge(ModelHistory.FromHistory(sewing.History, faces.Select(f => f)));
+            .Merge(ModelHistory.FromHistory(sewing.History, faces.Select(f => (Shape)f)));
         return (Shell)shell.MadeBy(record);
     }
 }
@@ -309,8 +309,8 @@ public static class TwoD
                         movable[i] = true;
                         merged.RemoveAt(j);
                         movable.RemoveAt(j);
-                        if (fused.History is not null)
-                            records.Add(fused.History);
+                        if (fused.History is { } record)
+                            records.Add(record);
                         changed = true;
                         break;
                     }

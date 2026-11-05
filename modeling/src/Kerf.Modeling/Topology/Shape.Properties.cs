@@ -133,7 +133,7 @@ public static partial class ShapeExtensions
         /// <summary>The centre of the shape by a chosen calculation.</summary>
         /// <exception cref="NotSupportedException">The class doesn't offer a choice.</exception>
         internal Vector Center_Shape(CenterOf centerOf) =>
-            throw new NotSupportedException($"{GetType().Name}.Center doesn't take a CenterOf");
+            throw new NotSupportedException($"{typeof(TSelf).Name}.Center doesn't take a CenterOf");
 
         // ---- Checks ----
 
@@ -150,7 +150,7 @@ public static partial class ShapeExtensions
 
         /// <summary>
         /// True if each non-degenerate edge belongs to exactly two faces and the faces are consistently oriented: the shape
-        /// is watertight. Faces that overlap or cross each other in space aren't detected; use <see cref="IsValid"/> for that.
+        /// is watertight. Faces that overlap or cross each other in space aren't detected; use <c>IsValid</c> for that.
         /// </summary>
         public bool IsManifold
         {
@@ -200,7 +200,7 @@ public static partial class ShapeExtensions
         {
             if (self.IsEmpty || other.IsEmpty)
                 throw new InvalidOperationException("Cannot calculate distance to or from an empty shape");
-            return Failures.Get(self.AsShape().Distance(other), () => "distance").Value;
+            return Failures.Get(MeasureOperations.Distance(self.AsShape(), other), () => "distance").Value;
         }
 
         /// <summary>The minimal distance between this shape and another shape.</summary>
@@ -242,7 +242,7 @@ public static partial class ShapeExtensions
 
         private (double, Vector, Vector) DistanceToTopo(Shape other)
         {
-            var distance = Failures.Get(self.AsShape().Distance(other), () => "distance");
+            var distance = Failures.Get(MeasureOperations.Distance(self.AsShape(), other), () => "distance");
             var nearest = distance.Solutions[0];
             return (distance.Value, new Vector(nearest.OnA), new Vector(nearest.OnB));
         }
@@ -256,7 +256,7 @@ public static partial class ShapeExtensions
             {
                 if (other.IsEmpty)
                     throw new InvalidOperationException("Cannot calculate distance to or from an empty shape");
-                yield return Failures.Get(self.AsShape().Distance(other), () => "distance").Value;
+                yield return Failures.Get(MeasureOperations.Distance(self.AsShape(), other), () => "distance").Value;
             }
         }
 
@@ -269,7 +269,7 @@ public static partial class ShapeExtensions
             var line = new Line3D(ax1);
             var origin = axis.Position.ToPoint3D();
             var found = new List<(Face Face, double Distance)>();
-            foreach (var hit in self.AsShape().Intersect(line, tolerance))
+            foreach (var hit in MeasureOperations.Intersect(self.AsShape(), in line, tolerance))
                 found.Add((hit.Face, Math.Abs(origin.SquareDistanceTo(hit.Point))));
             return new ShapeList<Face>(found.OrderBy(f => f.Distance).Select(f => (Face)(f.Face)));
         }
@@ -316,7 +316,7 @@ public static partial class ShapeExtensions
 
         /// <summary>The centre of several shapes, weighted by their volume (mass) or by their bounding boxes.</summary>
         /// <exception cref="ArgumentException"><see cref="CenterOf.Geometry"/> isn't implemented.</exception>
-        public static Vector CombinedCenter(IEnumerable<Shape> objects, CenterOf centerOf = CenterOf.Mass)
+        public static Vector CombinedCenter<T>(IEnumerable<T> objects, CenterOf centerOf = CenterOf.Mass) where T : IShape
         {
             var list = objects.ToList();
             switch (centerOf)
