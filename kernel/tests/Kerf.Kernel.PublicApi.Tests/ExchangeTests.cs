@@ -22,7 +22,7 @@ public class ExchangeTests
             stream.Position = 0;
             Result<Shape> read = Brep.Read(stream);
             Assert.True(read.IsSuccess, read.Error?.Message);
-            Assert.Equal(6000, read.Value.Volume(), 1e-6);
+            Assert.Equal(6000, read.Value.IntegrateVolume(), 1e-6);
         }
 
         // The text written is the text read
@@ -55,7 +55,7 @@ public class ExchangeTests
                 stream.Position = 0;
                 Result<ModelNode> read = Step.Read(stream, new StepReadOptions { Heal = heal });
                 Assert.True(read.IsSuccess, read.Error?.Message);
-                Assert.Equal(6000, read.Value.Shape!.Value.Volume(), 1e-6);
+                Assert.Equal(6000, read.Value.Shape!.Value.IntegrateVolume(), 1e-6);
             }
         }
     }
@@ -77,8 +77,8 @@ public class ExchangeTests
         Assert.Equal(2, root.Children.Length);
         ModelNode body = root.Children.Single(c => c.Name == "Body");
         Assert.Equal(orange, body.Color);
-        Assert.Equal(6000, body.Shape!.Value.Volume(), 1e-3);
-        Assert.Equal(6000 + Math.PI * 250, root.ToShape().Volume(), 1e-3);
+        Assert.Equal(6000, body.Shape!.Value.IntegrateVolume(), 1e-3);
+        Assert.Equal(6000 + Math.PI * 250, root.ToShape().IntegrateVolume(), 1e-3);
     }
 
     [Fact]
@@ -187,12 +187,12 @@ public class ExchangeTests
     {
         ModelNode part = ModelNode.Part(Fixtures.Box(), "Body");
         Assert.True(part.IsPart);
-        Assert.Equal(6000, part.ToShape().Volume(), 1e-6);
+        Assert.Equal(6000, part.ToShape().IntegrateVolume(), 1e-6);
         var placement = new Placement(Kerf.Geometry.Transform3D.Translation(new Kerf.Geometry.Vector3D(100, 0, 0)));
         ModelNode assembly = ModelNode.Assembly([part, part], "Pair", placement);
         Assert.False(assembly.IsPart);
         Shape all = assembly.ToShape();
-        Assert.Equal(12000, all.Volume(), 1e-6);
+        Assert.Equal(12000, all.IntegrateVolume(), 1e-6);
         Assert.Equal(100, all.BoundingBox(optimal: true).Min.X, 1e-6);
         Assert.Throws<ArgumentException>(() => ModelNode.Part(default(Shape)));
         Assert.Equal(1L << 30, ReadLimits.Default.MaxBytes);

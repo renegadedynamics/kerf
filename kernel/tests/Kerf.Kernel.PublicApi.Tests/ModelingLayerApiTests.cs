@@ -238,10 +238,10 @@ public class ModelingLayerApiTests
 
         Wire hole = Wire.Polygon([new(4, 4, 0), new(6, 4, 0), new(6, 6, 0), new(4, 6, 0)], closed: true).Value;
         Face holed = Face.FromWires(Square(), [(Wire)hole.Reversed()]).Value;
-        Assert.Equal(96, holed.Area(), 9);
-        Assert.Equal(96, SquareFace().WithHoles([(Wire)hole.Reversed()]).Value.Area(), 9);
+        Assert.Equal(96, holed.IntegrateArea(), 9);
+        Assert.Equal(96, SquareFace().WithHoles([(Wire)hole.Reversed()]).Value.IntegrateArea(), 9);
         Face onSurface = Face.FromSurface(new PlaneSurface(new Plane3D()), boundary: Square(), holes: [(Wire)hole.Reversed()]).Value;
-        Assert.Equal(96, onSurface.Area(), 9);
+        Assert.Equal(96, onSurface.IntegrateArea(), 9);
     }
 
     [Fact]
@@ -261,13 +261,13 @@ public class ModelingLayerApiTests
     {
         Solid box = Box();
         Shape copy = box.Transformed(Transform3D.Translation(new Vector3D(1, 0, 0)), copyGeometry: true).Value.Shape;
-        Assert.Equal(1000, copy.Volume(), 9);
+        Assert.Equal(1000, copy.IntegrateVolume(), 9);
         Shape stretched = box.Transformed(GeneralTransform3D.Affinity(Axis3D.ZAxis, 2), copyGeometry: true).Value.Shape;
-        Assert.Equal(4000, stretched.Volume(), 6);
+        Assert.Equal(4000, stretched.IntegrateVolume(), 6);
 
         Face profile = (Face)SquareFace(1).Moved(new Placement(Transform3D.Translation(new Vector3D(5, 0, 0))));
         Built<Shape> revolved = profile.Revolve(Axis3D.YAxis, Math.PI, copyProfile: true).Value;
-        Assert.Equal(Math.PI * 5.5, revolved.Shape.Volume(), 6);
+        Assert.Equal(Math.PI * 5.5, revolved.Shape.IntegrateVolume(), 6);
         Assert.DoesNotContain(revolved.Shape.AllFaces(), f => f.IsSame(profile));
     }
 
@@ -305,13 +305,13 @@ public class ModelingLayerApiTests
     public void Healing_fixes_faces_wireframes_and_approximates()
     {
         Face face = SquareFace();
-        Assert.Equal(100, face.FixFace().Value.Shape.Area(), 9);
+        Assert.Equal(100, face.FixFace().Value.Shape.IntegrateArea(), 9);
         Assert.Empty(Box().MisorientedEdges());
         Shape wire = Square().FixWireframe(1e-3, new WireframeFixOptions { SmallEdgesFirst = true, MaxTolerance = 1e-2 }).Value.Shape;
         Assert.Equal(4, wire.AllEdges().Length);
         Shape splines = Solid.Cylinder(1, 2).Value.Shape.ApproximateBSplines(BSplineApproximationOptions.Default).Value.Shape;
         Assert.Equal(3, splines.AllFaces().Length);
-        Assert.Equal(Math.PI * 2, splines.Volume(), 4);
+        Assert.Equal(Math.PI * 2, splines.IntegrateVolume(), 4);
         Assert.True(Box().Fix(new FixOptions { CheckResult = false }).IsSuccess);
     }
 
@@ -349,12 +349,12 @@ public class ModelingLayerApiTests
         Face face = SquareFace();
         Edge[] edges = [.. face.AllEdges()];
         Face chamfered = face.Chamfer2D([(edges[0], edges[1])], 1).Value.Shape;
-        Assert.Equal(99.5, chamfered.Area(), 9);
+        Assert.Equal(99.5, chamfered.IntegrateArea(), 9);
 
         Solid box = Box();
         Face[] sides = [.. box.AllFaces().Where(f => Math.Abs(f.ToSurface().Normal(0.5, 0.5).Z) < 0.5)];
         Shape drafted = box.Draft(sides.Select(f => (f, 0.05)), Direction3D.UnitZ, new Plane3D()).Value.Shape;
-        Assert.True(drafted.Volume() < 1000);
+        Assert.True(drafted.IntegrateVolume() < 1000);
 
         Edge cut = Edge.Line(new(5, 0, 0), new(5, 10, 0)).Value;
         SplitFacesResult split = FeatureOperations.SplitAlong(face, [cut]).Value;
@@ -370,7 +370,7 @@ public class ModelingLayerApiTests
         Solid box = Box();
         Face top = box.AllFaces().First(f => f.ToSurface().Evaluate(0, 0).Z > 9);
         Shape hollow = ((Shape)box).ThickSolid([top], -1).Value.Shape;
-        Assert.Equal(1000 - 8 * 8 * 9, hollow.Volume(), 6);
+        Assert.Equal(1000 - 8 * 8 * 9, hollow.IntegrateVolume(), 6);
         Shape grown = Square().Offset2D(1, SquareFace()).Value.Shape;
         Assert.True(grown.AllEdges().Length >= 4);
     }

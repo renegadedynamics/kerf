@@ -15,13 +15,13 @@ public class MeasurementTests
     public void A_box_has_its_volume_area_and_length()
     {
         Solid box = Fixtures.Box();
-        Assert.Equal(6000, box.Volume(), Tol);
-        Assert.Equal(2200, box.Area(), Tol);
+        Assert.Equal(6000, box.IntegrateVolume(), Tol);
+        Assert.Equal(2200, box.IntegrateArea(), Tol);
         // Each edge once per face it bounds, as OCCT counts; once with SkipShared
-        Assert.Equal(480, box.Length(), Tol);
-        Assert.Equal(240, box.Length(new MassOptions { SkipShared = true }), Tol);
-        Assert.Equal(6000, MeasureOperations.Volume(box), Tol);
-        Assert.Equal(Math.PI * 25 * 10, Fixtures.Cylinder().Volume(), 1e-6);
+        Assert.Equal(480, box.IntegrateLength(), Tol);
+        Assert.Equal(240, box.IntegrateLength(new MassOptions { SkipShared = true }), Tol);
+        Assert.Equal(6000, MeasureOperations.IntegrateVolume(box), Tol);
+        Assert.Equal(Math.PI * 25 * 10, Fixtures.Cylinder().IntegrateVolume(), 1e-6);
     }
 
     [Fact]
@@ -50,10 +50,10 @@ public class MeasurementTests
         Solid box = Fixtures.Box();
         Assert.Equal(2200, box.MassProperties(Dimension.Area).Mass, Tol);
         Assert.Equal(480, box.MassProperties(Dimension.Length).Mass, Tol);
-        Assert.Equal(6000, box.Volume(new MassOptions { Tolerance = 1e-9 }), 1e-4);
+        Assert.Equal(6000, box.IntegrateVolume(new MassOptions { Tolerance = 1e-9 }), 1e-4);
         Compound twice = Compound.Create([box, box]);
-        Assert.Equal(12000, twice.Volume(), 1e-6);
-        Assert.Equal(6000, twice.Volume(new MassOptions { SkipShared = true }), 1e-6);
+        Assert.Equal(12000, twice.IntegrateVolume(), 1e-6);
+        Assert.Equal(6000, twice.IntegrateVolume(new MassOptions { SkipShared = true }), 1e-6);
         Assert.Throws<ArgumentOutOfRangeException>(() => new MassOptions { Tolerance = -1 });
         Assert.Throws<ArgumentOutOfRangeException>(() => box.MassProperties((Dimension)7));
     }
@@ -128,7 +128,7 @@ public class MeasurementTests
     [Fact]
     public void A_null_shape_is_misuse()
     {
-        Assert.Throws<ArgumentException>(() => default(Shape).Volume());
+        Assert.Throws<ArgumentException>(() => default(Shape).IntegrateVolume());
         Assert.Throws<ArgumentException>(() => default(Shape).BoundingBox());
         Assert.Throws<ArgumentException>(() => Fixtures.Box().Distance(default(Shape)));
     }

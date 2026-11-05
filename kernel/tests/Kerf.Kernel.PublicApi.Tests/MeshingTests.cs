@@ -69,7 +69,7 @@ public class MeshingTests
         foreach (Solid solid in new[] { Fixtures.Box(), Fixtures.Cylinder() })
         {
             ShapeMesh mesh = solid.Mesh(new MeshOptions { LinearDeflection = 0.01, AngularDeflection = 0.1 }).Value;
-            Assert.Equal(solid.Area(), MeshArea(mesh), 1e-2 * solid.Area());
+            Assert.Equal(solid.IntegrateArea(), MeshArea(mesh), 1e-2 * solid.IntegrateArea());
         }
     }
 

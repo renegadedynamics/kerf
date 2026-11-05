@@ -89,9 +89,9 @@ public static partial class ShapeExtensions
                 return 0.0;
             return TopoUtil.ShapeTypeOf(self.AsShape()) switch
             {
-                ShapeType.Edge or ShapeType.Wire => self.AsShape().Length(),
-                ShapeType.Face or ShapeType.Shell => self.AsShape().Area(),
-                _ => self.AsShape().Volume(),
+                ShapeType.Edge or ShapeType.Wire => self.AsShape().IntegrateLength(),
+                ShapeType.Face or ShapeType.Shell => self.AsShape().IntegrateArea(),
+                _ => self.AsShape().IntegrateVolume(),
             };
         }
 

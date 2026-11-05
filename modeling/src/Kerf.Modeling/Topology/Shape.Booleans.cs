@@ -289,7 +289,7 @@ public static partial class ShapeExtensions
                     // Intersect the piece and the thickened tool
                     var isUpObj = TopoUtil.BoolOp([part], [toolSolid!.Value], BooleanKind.Common);
                     // Mass is the total length for linear properties
-                    isUp = isUpObj.Length() >= Constants.Tolerance;
+                    isUp = isUpObj.IntegrateLength() >= Constants.Tolerance;
                 }
                 (isUp ? tops : bottoms).Add(subShape);
             }

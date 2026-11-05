@@ -256,7 +256,7 @@ public class PublicMemberTests
         var thicken = new Kerf.Modeling.Operations.ThickenOptions { Clean = true, NormalOverride = new Vector3D(0, 0, 1) };
         Assert.Equal(4, Thicken(square, 1, thicken).Value.Volume, 6);
 
-        Assert.Equal(4, Kerf.Measurement.MeasureOperations.Area(OneD.OffsetTopodsFace(square, 0.1)), 6);
+        Assert.Equal(4, Kerf.Measurement.MeasureOperations.IntegrateArea(OneD.OffsetTopodsFace(square, 0.1)), 6);
     }
 
     [Fact]

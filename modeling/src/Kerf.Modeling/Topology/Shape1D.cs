@@ -67,7 +67,7 @@ public static partial class Shape1DExtensions
         }
 
         /// <summary>The length.</summary>
-        public double Length => self.IsEmpty ? 0.0 : self.AsShape().Length();
+        public double Length => self.IsEmpty ? 0.0 : self.AsShape().IntegrateLength();
 
         /// <summary>The radius of the circle the edge lies on; for a wire, that of its first edge.</summary>
         /// <exception cref="InvalidOperationException">The curve isn't a circle.</exception>

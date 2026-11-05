@@ -241,7 +241,7 @@ internal static partial class TopoUtil
     }
 
     /// <summary>The surface area of a shape's faces.</summary>
-    internal static double Area(Shape shape) => shape.Area();
+    internal static double Area(Shape shape) => shape.IntegrateArea();
 
     /// <summary>The faces sewn into a shell where they meet within <paramref name="tolerance"/>.</summary>
     internal static Shape SewFaces(IEnumerable<Shape> faces, double tolerance = Constants.Tolerance) =>

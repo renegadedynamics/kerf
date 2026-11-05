@@ -132,7 +132,7 @@ public class ShapeLawsTests
         Assert.Equal(2, box.AllEdges()[0].ChildCount);
         Assert.Throws<InvalidCastException>(() => (CompSolid)(Shape)box);
         Assert.Equal(ShapeType.CompSolid, ((CompSolid)(Shape)MakeCompSolid()).Type);
-        Assert.Equal(1000, box.Oriented(Orientation.Forward).Volume(), 6);
+        Assert.Equal(1000, box.Oriented(Orientation.Forward).IntegrateVolume(), 6);
     }
 
     [Fact]

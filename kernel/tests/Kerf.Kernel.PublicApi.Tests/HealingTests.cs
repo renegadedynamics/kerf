@@ -36,7 +36,7 @@ public class HealingTests
         Solid box = Fixtures.Box();
         Result<Built<Shape>> fixedBox = box.Fix();
         Assert.True(fixedBox.IsSuccess);
-        Assert.Equal(6000, fixedBox.Value.Shape.Volume(), 1e-6);
+        Assert.Equal(6000, fixedBox.Value.Shape.IntegrateVolume(), 1e-6);
         Assert.True(fixedBox.Value.Shape.Validate().IsValid);
         Assert.True(HealingOperations.Fix(box, new FixOptions { MaxTolerance = 1e-3, FixSolids = true }).IsSuccess);
     }
@@ -62,7 +62,7 @@ public class HealingTests
         Assert.True(unified.IsSuccess);
         Shape result = unified.Value;
         Assert.Equal(6, result.AllFaces().Length);
-        Assert.Equal(2000, result.Volume(), 1e-6);
+        Assert.Equal(2000, result.IntegrateVolume(), 1e-6);
         Assert.Contains(fused.AllFaces(), f => unified.Value.History.Modified(f).Count > 0);
         Assert.Equal(10, fused.AllFaces().Length);   // the input is unchanged
     }
@@ -76,7 +76,7 @@ public class HealingTests
         Assert.True(sewn.Value.Shape.TryAs(out Shell shell));
         Result<Built<Solid>> solid = shell.MakeSolid();
         Assert.True(solid.IsSuccess);
-        Assert.Equal(6000, Math.Abs(solid.Value.Shape.Volume()), 1e-6);
+        Assert.Equal(6000, Math.Abs(solid.Value.Shape.IntegrateVolume()), 1e-6);
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public class HealingTests
         Solid cylinder = Fixtures.Cylinder();
         Result<Built<Shape>> converted = cylinder.ConvertToBSpline(new BSplineConversionOptions { Planes = true });
         Assert.True(converted.IsSuccess);
-        Assert.Equal(cylinder.Volume(), converted.Value.Shape.Volume(), 1e-3);
+        Assert.Equal(cylinder.IntegrateVolume(), converted.Value.Shape.IntegrateVolume(), 1e-3);
 
         Result<Built<Shape>> wireframe = Fixtures.Box().FixWireframe(1e-4);
         Assert.True(wireframe.IsSuccess);
