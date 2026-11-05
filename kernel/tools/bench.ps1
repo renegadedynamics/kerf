@@ -133,7 +133,7 @@ function Read-Results([string] $path) {
     }
     elseif ($line -and -not $line.StartsWith("group`t")) {
       $p = $line.Split("`t")
-      [void] $rows.Add([pscustomobject]@{ Group = $p[0]; Name = $p[1]; Metric = $p[2]; Value = $p[3]; Runs = $p[4]; Spread = $p[5] })
+      [void] $rows.Add([pscustomobject]@{ Group = "$($suite.Prefix)$($p[0])"; Name = $p[1]; Metric = $p[2]; Value = $p[3]; Runs = $p[4]; Spread = $p[5] })
     }
   }
   @{ Header = $header; Rows = $rows }
@@ -302,6 +302,9 @@ $buildSeconds = [int] $overallClock.Elapsed.TotalSeconds
 $suites = @(
   @{ Name = 'bento'; Exe = 'bento'; Args = @('20', '0'); Full = 5; Quick = 3 },
   @{ Name = 'parallel'; Exe = 'bento'; Args = @('9', "$([Environment]::ProcessorCount)"); Full = 3; Quick = 1 },
+  # The same under the settings a host should use (docs/performance.md, unit 11D): its rows' groups start with "host "
+  @{ Name = 'parallel-host'; Exe = 'bento'; Args = @('9', "$([Environment]::ProcessorCount)"); Full = 3; Quick = 1; Prefix = 'host '
+    Env = @{ DOTNET_gcServer = '1'; DOTNET_TieredPGO = '0'; DOTNET_TC_CallCountingDelayMs = '0' } },
   @{ Name = 'images'; Exe = 'bento'; Args = @('images', '9'); Full = 3; Quick = 1 },
   @{ Name = 'meshing'; Exe = 'kernel'; Args = @('quick'); Full = 3; Quick = 1 },
   @{ Name = 'construction'; Exe = 'kernel'; Args = @('construction'); Full = 3; Quick = 1 },
@@ -332,9 +335,11 @@ foreach ($suite in $suites) {
     $rowFile = Join-Path $logs "$($suite.Name)-$i.tsv"
     if (Test-Path $rowFile) { Remove-Item $rowFile }
     $env:KERF_BENCH_ROWS = $rowFile
+    if ($suite.Env) { foreach ($k in $suite.Env.Keys) { Set-Item "Env:\$k" $suite.Env[$k] } }
     $process = Start-Process -FilePath $exes[$suite.Exe] -ArgumentList $suite.Args -Wait -PassThru -NoNewWindow `
       -RedirectStandardOutput (Join-Path $logs "$($suite.Name)-$i.out") -RedirectStandardError (Join-Path $logs "$($suite.Name)-$i.err")
     Remove-Item Env:\KERF_BENCH_ROWS
+    if ($suite.Env) { foreach ($k in $suite.Env.Keys) { Remove-Item "Env:\$k" } }
     if ($process.ExitCode) { throw "$($suite.Name) failed with exit code $($process.ExitCode): see $logs" }
     foreach ($line in [IO.File]::ReadAllLines($rowFile)) {
       $p = $line.Split("`t")
