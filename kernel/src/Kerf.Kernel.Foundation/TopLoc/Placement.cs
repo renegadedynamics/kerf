@@ -104,6 +104,14 @@ public readonly partial struct Placement : IEquatable<Placement>
         // the inverse of a Location is a chain in revert order
         // with opposite powers and same Local
         //
+        SListNodeOfItemLocation head = _items._node!;
+        SListNodeOfItemLocation? known = Volatile.Read(ref head._inverse);
+        if (known is not null)
+        {
+            SListOfItemLocation inverse = new SListOfItemLocation { _node = known };
+            return new Placement(inverse);
+        }
+
         SListOfItemLocation result = new SListOfItemLocation();
         SListOfItemLocation items = _items;
         while (items.More())
@@ -112,6 +120,7 @@ public readonly partial struct Placement : IEquatable<Placement>
             items.Next();
         }
 
+        Volatile.Write(ref head._inverse, result._node);
         return new Placement(result);
     }
 
