@@ -187,7 +187,7 @@ public static class ShapeOperations
         public T Transformed(Vector3D? rotate = null, Vector3D? offset = null) =>
             shape.IsEmpty ? shape : shape.Narrowed(ShapeTransforms.Apply(shape.AsShape(), ShapeTransforms.Euler(rotate ?? Vector3D.Zero, offset ?? Vector3D.Zero)).Shape);
 
-        /// <summary>A copy with all geometry converted to B-splines of at most <paramref name="degree"/>.</summary>
+        /// <summary>A copy with its free-form geometry made B-splines of at most <paramref name="degree"/>; planes and elementary surfaces stay as they are, by ShapeCustom's defaults.</summary>
         public T ToSplines(int degree = 3, double tolerance = 1e-3, bool nurbs = false) => shape.Narrowed(ShapeTransforms.ToSplines(shape.AsShape(), degree, tolerance, nurbs));
 
         /// <summary>A copy at <paramref name="location"/> (build123d's <c>location</c> setter).</summary>
@@ -322,7 +322,7 @@ public static class ModelShapeOperations
         public T Transformed(Vector3D? rotate = null, Vector3D? offset = null) =>
             shape.Applied(ShapeTransforms.Euler(rotate ?? Vector3D.Zero, offset ?? Vector3D.Zero));
 
-        /// <summary>A copy with all geometry converted to B-splines of at most <paramref name="degree"/>.</summary>
+        /// <summary>A copy with its free-form geometry made B-splines of at most <paramref name="degree"/>; planes and elementary surfaces stay as they are, by ShapeCustom's defaults.</summary>
         public T ToSplines(int degree = 3, double tolerance = 1e-3, bool nurbs = false) =>
             (T)shape.Placed(ShapeTransforms.ToSplines(shape.Shape, degree, tolerance, nurbs));
 

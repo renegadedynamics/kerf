@@ -146,10 +146,14 @@ public class PublicMemberCheckedTests
         Assert.All(alongX.Faces(), f => Assert.Equal(GeomType.Plane, f.GeomType));
         Assert.Throws<InvalidOperationException>(() => box.TransformShape(doubled));
 
-        // as splines, the same box
-        ModelShape splines = box.ToSplines();
-        Assert.Equal(8.0, splines.Volume, 3);
-        Assert.All(splines.Faces(), f => Assert.Equal(GeomType.BSpline, f.GeomType));
+        // ShapeCustom_RestrictionParameters's defaults: an extrusion becomes a spline; planes and spheres stay what they are
+        ModelShape extruded = Face.Extrude(Edge.MakeSpline([new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)]), new Vector3D(0, 0, 3));
+        Assert.Equal(GeomType.Extrusion, extruded.Faces()[0].GeomType);
+        ModelShape splines = extruded.ToSplines(degree: 5, tolerance: 1e-4);
+        Assert.Equal(GeomType.BSpline, splines.Faces()[0].GeomType);
+        Assert.Equal(extruded.Area, splines.Area, 3);
+        Assert.All(box.ToSplines().Faces(), f => Assert.Equal(GeomType.Plane, f.GeomType));
+        Assert.All(new Sphere(2).ToSplines().Faces(), f => Assert.Equal(GeomType.Sphere, f.GeomType));
     }
 
     [Fact]
