@@ -96,6 +96,9 @@ internal static partial class MathLin
             l[i, i] = 1.0;
         }
 
+        // The result's L is this one: OCCT copies it after inverting it in place, so its L is L's inverse (decision 18603)
+        Matrix factorL = new(l);
+
         // Compute inverse of L
         l[1, 1] = 1.0 / l[1, 1];
         for (int i = 2; i <= n; ++i)
@@ -140,7 +143,7 @@ internal static partial class MathLin
         {
             for (int j = 1; j <= i; ++j)
             {
-                result.L[i + rowLower - 1, j + colLower - 1] = l[i, j];
+                result.L[i + rowLower - 1, j + colLower - 1] = factorL[i, j];
             }
         }
 
