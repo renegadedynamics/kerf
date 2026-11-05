@@ -220,7 +220,7 @@ public class MatrixTests
         var swap = GeneralTransform3D.FromValues(new double[,] { { 0, 1, 0, 0 }, { 1, 0, 0, 0 }, { 0, 0, 1, 0 } });
         foreach (var (left, right) in new[] { (mirror, general), (general, mirror), (scale, general), (swap, general), (swap, scale) })
         {
-            var product = left * right;
+            var product = left.Compose(right);
             for (int row = 0; row < 3; row++)
             {
                 for (int col = 0; col < 4; col++)
