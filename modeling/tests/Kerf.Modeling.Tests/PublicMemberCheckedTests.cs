@@ -98,6 +98,25 @@ public class PublicMemberCheckedTests
     }
 
     [Fact]
+    public void Cleaning_duplicates_from_a_step_export_shrinks_the_file_and_keeps_the_shape()
+    {
+        static (long Size, double Volume) Write(bool theClean)
+        {
+            using var stream = new MemoryStream();
+            Assert.True(Exporters3D.ExportStep(new Box(1, 2, 3), stream, new StepExportOptions { CleanDuplicates = theClean }).IsSuccess);
+            long size = stream.Length;
+            stream.Position = 0;
+            return (size, Importers.ImportStep(stream).Value.Volume);
+        }
+
+        var plain = Write(false);
+        var cleaned = Write(true);
+        Assert.True(cleaned.Size < plain.Size, $"{cleaned.Size} against {plain.Size}");
+        Assert.Equal(6.0, plain.Volume, 6);
+        Assert.Equal(6.0, cleaned.Volume, 6);
+    }
+
+    [Fact]
     public void A_model_shape_compares_by_its_shape()
     {
         ModelShape a = new Box(1, 1, 1), sameShape = ModelShape.For(a.Shape), other = new Box(2, 2, 2);
@@ -204,6 +223,11 @@ public class PublicMemberCheckedTests
         Line section = new(new Point3D(0, 0, 0), new Point3D(2, 0, 0));
         Assert.Equal(10.0, Sweep(section, path).Value.Area, 6);
         Assert.Equal(10.0, Sweep(Wire.Make(section), path).Value.Area, 6);
+
+        // a line object of two straight parts, as such and as a wire: its length 2 + 2, times 5
+        Polyline corner = new(new Point3D(0, 0, 0), new Point3D(2, 0, 0), new Point3D(2, 2, 0));
+        Assert.Equal(4.0, Wire.Make(corner).Edges().Sum(e => e.Length), 6);
+        Assert.Equal(20.0, Sweep(corner, path).Value.Area, 6);
     }
 
     [Fact]
