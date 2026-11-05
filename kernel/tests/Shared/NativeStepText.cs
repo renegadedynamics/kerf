@@ -28,6 +28,6 @@ internal static partial class NativeStepText
     [GeneratedRegex(@"FILE_NAME\(.*?\);", RegexOptions.Singleline)]
     private static partial Regex FileName();
 
-    [GeneratedRegex(@"PRODUCT\(\s*'Kerf STEP translator( [0-9.]+)?',\s*'Kerf STEP translator\1',\s*'',\s*\((#\d+)\)\);")]
+    [GeneratedRegex(@"PRODUCT\(\s*'Kerf STEP translator( [0-9.]+)?'\s*,\s*'Kerf STEP translator\1'\s*,\s*''\s*,\s*\(\s*(#\d+)\s*\)\s*\)\s*;")]
     private static partial Regex KerfProduct();
 }

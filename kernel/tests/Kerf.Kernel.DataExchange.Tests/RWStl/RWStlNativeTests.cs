@@ -80,6 +80,19 @@ public class RWStlNativeTests(ITestOutputHelper output)
 
     private static string Bytes(byte[] theData) => theData.Length.ToString(CultureInfo.InvariantCulture) + " " + Sha256(theData);
 
+    // Binary STL as native wrote it, for its frozen hashes: Kerf's 80-byte header names Kerf (unit 11L), native's named OCCT
+    private static string BinaryBytes(byte[] theData)
+    {
+        if (theData.Length < 80) // nothing was written
+        {
+            return Bytes(theData);
+        }
+        byte[] aNative = (byte[])theData.Clone();
+        aNative.AsSpan(0, 80).Clear();
+        Encoding.ASCII.GetBytes("STL Exported by Open CASCADE Technology [dev.opencascade.org]", aNative);
+        return Bytes(aNative);
+    }
+
     private static string Hex(double theValue) => BitConverter.DoubleToInt64Bits(theValue).ToString("x16", CultureInfo.InvariantCulture);
 
     /// <summary>"nodes triangles sha" of the triangulation's dump (stlrec's), or NULL.</summary>
@@ -285,7 +298,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
                     aWriter.SetASCIIMode(false);
                     aWriter.Write(aMeshed, aStream);
                     aBinary = aStream.ToArray();
-                    return Bytes(aBinary);
+                    return BinaryBytes(aBinary);
                 }));
                 aLines.Add(Line("BACKA", () => Tri(global::Kerf.Engine.Exchange.Stl.RWStl.ReadStream(new MemoryStream(anAscii)))));
                 aLines.Add(Line("BACKB", () => Tri(global::Kerf.Engine.Exchange.Stl.RWStl.ReadStream(new MemoryStream(aBinary)))));
@@ -304,7 +317,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
                 {
                     var aStream = new MemoryStream();
                     global::Kerf.Engine.Exchange.Stl.RWStl.WriteBinary(aMesh, aStream);
-                    return Bytes(aStream.ToArray());
+                    return BinaryBytes(aStream.ToArray());
                 }));
                 return aLines;
             }
