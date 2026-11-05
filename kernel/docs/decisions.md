@@ -16591,3 +16591,14 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        instrumentation costs 2.4 times when quiet and 1.9 times under load, and the limits were set for uninstrumented runs under
        load. 3 is 2.4 with a margin; the guess of 5 would only make a hung case take longer to stop, at 75 minutes against 45.
        A wrong value in `KERF_CORPUS_TIME_SCALE` is refused rather than ignored.
+
+## Phase 11: the mesh's deflection
+
+1680. **A long fillet can miss the mesh's deflection, and `ControlAllSurfaces` narrows it, off by default** (the owner's decision, 5 November 2026). Meshing `data/occ/bottle.brep` at the
+       default tolerances, the worst triangle's centroid is 0.350 from its surface, against 0.094; OCCT's own `UpdateDeflection` records 0.397. 336 triangles (2.6%) are over,
+       all on eight long fillet tori. It's OCCT's design: elementary surfaces get no check of surface deflection unless `EnableControlSurfaceDeflectionAllSurfaces` is set, so Delaunay runs on the grid of nodes in 3D-scaled
+       parameters, and columns 5 apart cross a fillet 3 wide. 2 of `data/occ`'s 26 files go over (the bottle 3.7×, `Ball.brep` 1.7×), and none of Bento's eleven examples. No recording holds this face, so the port's match with native
+       here is indirect: the parameters pass correctly, `TorusRangeSplitter` reads the same as OCCT's, a recorded sphere matching native reaches 1.68×, and SciPy finds the triangles Delaunay.
+       - **The flag is public, off by default,** as `MeshOptions.ControlAllSurfaces` and `MeshTolerances.ControlAllSurfaces`: the bottle 0.65× with 39% more triangles, `data/occ` 9% more, Bento's examples unchanged, `Ball.brep` still 1.36×.
+       - **`MeshTolerances` no longer promises a maximum,** which it never delivered.
+       - **The owner wants to come back to this:** "it feels like we should be able to do better here and (ideally) remove the flag altogether". Unit 11O.

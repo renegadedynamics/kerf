@@ -14,6 +14,7 @@ version may break the API.
   a description saying Kerf derives from Open CASCADE Technology. Files naming Open CASCADE read as before. STL's default
   header is `STL Exported by Kerf`.
 - **Messages in Kerf's terms:** exceptions and diagnostics no longer name OCCT's types (`gp_Dir`, `TopoDS_Face`). Codes don't change.
+- **`MeshOptions.ControlAllSurfaces`,** off by default: also checks surface deflection on elementary surfaces, for long fillets that otherwise stray from it.
 - **StepTidy:** `StepWriteOptions.CleanDuplicates` merges exactly equal entities when writing STEP, 17.9% smaller over the
   dataset's files. Off by default.
 - **Faster optimal boxes:** a torus patch's is worked out rather than searched for, and `AddOptimal` skips faces that can't enlarge the box.
