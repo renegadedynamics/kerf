@@ -79,7 +79,7 @@ internal static class WireFillet
                        ?? throw Failures.Expected(ModelingDiagnostics.FilletFailed,
                                                   $"The corner at {vertex} can't be filleted with a radius of {Formatting.Number(radius)}.");
         var result = Splice(corner, solution);
-        if (!wire.IsClosed || result.IsClosed)
+        if (!wire.CheckClosed() || result.CheckClosed())
             return result;
         throw Failures.Expected(ModelingDiagnostics.FilletFailed, "The filleted wire isn't closed.");
     }

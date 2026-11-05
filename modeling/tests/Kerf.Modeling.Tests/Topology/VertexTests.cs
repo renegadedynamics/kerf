@@ -88,7 +88,7 @@ public class EdgeWireSmokeTests
         Check.AlmostEqual(2, circle.Radius);
         Check.AlmostEqual(4 * Math.PI, circle.Length);
         Check.AlmostEqual(new Vector(0, 0, 0), circle.ArcCenter);
-        Assert.True(circle.IsClosed);
+        Assert.True(circle.CheckClosed());
         var arc = Edge.MakeCircle(1, startAngle: 0, endAngle: 90);
         Check.AlmostEqual(new Vector(1, 0, 0), arc.StartPoint());
         Check.AlmostEqual(new Vector(0, 1, 0), arc.EndPoint());
@@ -100,7 +100,7 @@ public class EdgeWireSmokeTests
         var rect = Wire.MakeRect(4, 2);
         var edges = rect.SelectEdges();
         Assert.Equal(4, edges.Count);
-        Assert.True(rect.IsClosed);
+        Assert.True(rect.CheckClosed());
         Check.AlmostEqual(12, rect.Length);
         for (int i = 0; i < 4; i++)
             Check.AlmostEqual(edges[i].EndPoint(), edges[(i + 1) % 4].StartPoint());

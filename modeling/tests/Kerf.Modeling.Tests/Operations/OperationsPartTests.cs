@@ -73,7 +73,7 @@ public class OperationsPartTests
         var drafted = Draft(_box, _box.SelectFaces().OrderBy(Axis.Z)[0], NeutralPlane, 10);
         Assert.Equal(ModelingDiagnostics.DraftFailed, drafted.Error!.Code);
         // The same failure from the faces' form
-        Assert.Equal(ModelingDiagnostics.DraftFailed, Draft([_box.SelectFaces().OrderBy(Axis.Z)[0]], NeutralPlane, 10).Error!.Code);
+        Assert.Equal(ModelingDiagnostics.DraftFailed, Draft(_box, [_box.SelectFaces().OrderBy(Axis.Z)[0]], NeutralPlane, 10).Error!.Code);
     }
 
     // ---- TestExtrude ----

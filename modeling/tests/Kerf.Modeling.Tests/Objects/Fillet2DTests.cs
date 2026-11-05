@@ -214,7 +214,7 @@ public class Fillet2DTests
         Assert.Equal(3, baseWire.SelectEdges().Count);
         Assert.Single(baseWire.SelectEdges().Where(GeomType.Circle));
         var offsetWire = (Wire)baseWire.Offset2D(0.1, side: Side.Left);
-        Assert.True(offsetWire.IsClosed);
+        Assert.True(offsetWire.CheckClosed());
         Assert.Equal(6, offsetWire.SelectEdges().Where(GeomType.Line).Count);
         Assert.Equal(2, offsetWire.SelectEdges().Where(GeomType.Circle).Count);
     }

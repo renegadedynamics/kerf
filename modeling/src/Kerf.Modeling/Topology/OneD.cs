@@ -363,7 +363,7 @@ public static partial class Shape1DExtensions
             }
 
             var signedDistance = distance;
-            if (side != Side.Both && line.IsClosed && normal is { } n)
+            if (side != Side.Both && line.CheckClosed() && normal is { } n)
             {
                 // OCCT offsets a closed wire outwards for a positive distance; which side is outside depends on the winding
                 int steps = Math.Max(16, 8 * lineEdges.Count);
@@ -397,7 +397,7 @@ public static partial class Shape1DExtensions
             if (asBSpline)
                 offsetWire = OneD.OffsetCurvesToBSplines(offsetWire);
 
-            if (side != Side.Both && !line.IsClosed)
+            if (side != Side.Both && !line.CheckClosed())
             {
                 // Remove the end arcs
                 Vector[] endpoints = [line.PositionAt(0), line.PositionAt(1)];

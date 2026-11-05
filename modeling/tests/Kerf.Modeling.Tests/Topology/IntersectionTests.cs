@@ -68,7 +68,7 @@ public class IntersectionTests
 
     // ---- The helpers ----
 
-    static bool IsShape(object o) => o is Shape;
+    static bool IsShape(object o) => o is IShape;
 
     static object? GeometryIntersect(object a, object b) => (a, b) switch
     {
@@ -88,22 +88,22 @@ public class IntersectionTests
         (Location x, Plane y) => x.Intersect(y),
         (Location x, Vector y) => x.Intersect(y),
         (Location x, Location y) => x.Intersect(y),
-        (Axis x, Shape y) => x.Intersect(y),
-        (Plane x, Shape y) => x.Intersect(y),
-        (Vector x, Shape y) => x.Intersect(y),
-        (Location x, Shape y) => x.Intersect(y),
+        (Axis x, IShape y) => x.Intersect(y.AsShape()),
+        (Plane x, IShape y) => x.Intersect(y.AsShape()),
+        (Vector x, IShape y) => x.Intersect(y.AsShape()),
+        (Location x, IShape y) => x.Intersect(y.AsShape()),
         _ => throw new XunitException($"No geometry intersection of {a.GetType().Name} and {b.GetType().Name}"),
     };
 
     static void RunTest(object obj, object target, object? expected, bool includeTouched)
     {
         var targets = target as object[] ?? [target];
-        object? result = obj is Shape shape
-            ? shape.Intersect(targets, includeTouched: includeTouched)
+        object? result = obj is IShape shape
+            ? shape.AsShape().Intersect(targets, includeTouched: includeTouched)
             : GeometryIntersect(obj, targets.Single());
         if (expected is null)
         {
-            if (obj is Shape || targets.Any(IsShape))
+            if (obj is IShape || targets.Any(IsShape))
             {
                 // A shape finds nothing as an empty list; geometry finds null
                 var list = Assert.IsType<ShapeList<Shape>>(result);
@@ -120,10 +120,10 @@ public class IntersectionTests
         }
         var expectedTypes = (Type[])expected;
         var shapes = Assert.IsType<ShapeList<Shape>>(result);
-        var actual = string.Join(", ", shapes.Select(s => s.GetType().Name));
+        var actual = string.Join(", ", shapes.Select(s => TopoUtil.KindName(s)));
         Assert.True(shapes.Count == expectedTypes.Length, $"Expected {expectedTypes.Length} objects, but got {shapes.Count}: [{actual}]");
         foreach (var group in expectedTypes.GroupBy(t => t))
-            Assert.True(shapes.Count(s => s.GetType() == group.Key) >= group.Count(),
+            Assert.True(shapes.Count(s => TopoUtil.Typed(s).GetType() == group.Key) >= group.Count(),
                         $"Expected [{string.Join(", ", expectedTypes.Select(t => t.Name))}], but got [{actual}]");
     }
 

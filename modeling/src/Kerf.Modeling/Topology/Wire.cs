@@ -187,7 +187,7 @@ public static partial class WireExtensions
         /// <summary>This wire if closed, else this wire closed with a line from its end to its start.</summary>
         public Wire Close()
         {
-            if (self.IsClosed)
+            if (self.CheckClosed())
                 return self;
             return Wire.Combine([self, Edge.MakeLine(self.EndPoint(), self.StartPoint())])[0];
         }

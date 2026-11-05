@@ -593,8 +593,9 @@ public class ShapeTests
         Assert.Throws<InvalidOperationException>(() => empty.GeomType);
         Check.Same(empty, empty.Fix());
         Assert.Equal(default(Solid).GetHashCode(), empty.GetHashCode());
-        Assert.False(empty.IsSame(default(Solid)));
-        Assert.False(empty.IsEqual(default(Solid)));
+        // The kernel's null shapes are the same and equal (the layer's old empty shapes weren't)
+        Assert.True(empty.IsSame(default(Solid)));
+        Assert.True(empty.IsEqual(default(Solid)));
         Assert.True(empty.IsValid);
         var emptyBbox = empty.BoundingBox();
         Assert.Equal((0.0, 0.0, 0.0), (emptyBbox.Size.X, emptyBbox.Size.Y, emptyBbox.Size.Z));

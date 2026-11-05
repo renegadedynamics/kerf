@@ -563,9 +563,9 @@ public class Shape1DTests
     [Fact]
     public void IsClosed()
     {
-        Assert.True(Edge.MakeCircle(1).IsClosed);
-        Assert.True(Face.MakeRect(1, 1).OuterWire().IsClosed);
-        Assert.False(Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)).IsClosed);
+        Assert.True(Edge.MakeCircle(1).CheckClosed());
+        Assert.True(Face.MakeRect(1, 1).OuterWire().CheckClosed());
+        Assert.False(Edge.MakeLine(new Vector(0, 0), new Vector(1, 0)).CheckClosed());
         var e = default(Edge);
         Assert.Throws<InvalidOperationException>(() => e.IsClosed);
     }

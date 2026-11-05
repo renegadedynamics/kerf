@@ -244,7 +244,7 @@ public static partial class Shape3DExtensions
             var shape = ShapeExtensions.ShapeOf(other);
             var results = new List<Shape>();
             // Trim infinite edges before OCCT operations
-            if (TopoUtil.Typed(shape) is Edge { IsInfinite: true } infinite)
+            if (TopoUtil.Typed(shape) is Edge { IsUnbounded: true } infinite)
             {
                 var box = self.BoundingBox(optimal: false);
                 shape = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Length);

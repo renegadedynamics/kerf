@@ -33,15 +33,15 @@ var examples = new (string Name, Func<Shape> Build)[]
     // A1 =CAD_PT_BOX(80, 60, 10); A4 =CAD_PT_CHAMFER(A1, A1.Edges().GroupBy("Z")[-1], 4); A5 =CAD_PT_FILLET(A4, A4.Edges().FilterBy("Z"), 5)
     ("9 chamfer, fillet", () =>
     {
-        Shape a1 = new Box(Length, Width, Thickness);
-        Shape a4 = Chamfer(a1.Edges().GroupBy(Axis.Z)[^1], length: 4).Value;
+        Part a1 = new Box(Length, Width, Thickness);
+        Part a4 = Chamfer(a1.Edges().GroupBy(Axis.Z)[^1], length: 4).Value;
         return Fillet(a4.Edges().ParallelTo(Axis.Z), radius: 5).Value;
     }),
     // A1 =CAD_PT_BOX(80, 60, 10); A2 =CAD_CUT(A1, CAD_PT_HOLE(60 / 4, 10)); A3 =CAD_PT_FILLET(A2, CAD_SEL_LAST(CAD_SEL_GROUP(CAD_SEL_NEW(A2, A1, {type: "edge"}), "Z")), 2)
     ("10 select last, hole", () =>
     {
-        Shape a1 = new Box(Length, Width, Thickness);
-        Shape a2 = a1 - new Hole(Width / 4, depth: Thickness);
+        Part a1 = new Box(Length, Width, Thickness);
+        Part a2 = a1 - new Hole(Width / 4, depth: Thickness);
         return Fillet(a2.Edges().Except(a1.Edges()).GroupBy(Axis.Z)[^1], 2).Value;
     }),
     // The classic OCC bottle (section 13): a profile, extruded, filleted, a neck added, and hollowed with offset
@@ -51,9 +51,9 @@ var examples = new (string Name, Func<Shape> Build)[]
         var l1 = new Line(new Vector(0, 0), new Vector(0, w / 2));
         var l2 = new ThreePointArc(l1.PositionAt(1), new Vector(l / 2.0, w / 2.0 + t), new Vector(l, w / 2.0));
         var l3 = new Line(l2.PositionAt(1), new Vector(l2.PositionAt(1).X, 0, 0));
-        Shape profile = l1 + l2 + l3;
+        Curve profile = l1 + l2 + l3;
         profile += Mirror(profile);
-        Shape body = Extrude(MakeFace(profile), -(h + b)).Value;
+        Part body = Extrude(MakeFace(profile), -(h + b)).Value;
         body = Fillet(body.Edges(), radius: w / 6).Value;
         body += Extrude(new Plane(body.Faces().OrderBy(Axis.Z).Last()) * new Circle(t), n).Value;
         return Offset(body, -b, new OffsetOptions { Openings = [body.Faces().OrderBy(Axis.Z).Last()] }).Value;
@@ -61,7 +61,7 @@ var examples = new (string Name, Func<Shape> Build)[]
     // Nested locations: CAD_LOC_COMBINE of a polar and a grid placement, fused and extruded (164 faces)
     ("31 nesting locations", () =>
     {
-        Shape sk = new Rotation(z: 30) * new RegularPolygon(15, 6);
+        Sketch sk = new Rotation(z: 30) * new RegularPolygon(15, 6);
         var cell = new RegularPolygon(5, 4) + new GridLocations(15, 15, 2, 2).Select(loc => (Shape)(loc * new RegularPolygon(5, 3)));
         sk += new PolarLocations(40, 6).Select(loc => (Shape)(loc * cell));
         return Extrude(sk, 3).Value;
@@ -70,7 +70,7 @@ var examples = new (string Name, Func<Shape> Build)[]
     // A2 =LET(faces, A1.Faces(), CAD_FUSE(MAP(SEQUENCE(LIST_COUNT(faces)), LAMBDA(i, CAD_PT_EXTRUDE(faces[i], 1 + 3 * (i - 1))))))
     ("32 for-loop", () =>
     {
-        Shape a1 = new RegularPolygon(20, 6, rotation: 30);
+        Sketch a1 = new RegularPolygon(20, 6, rotation: 30);
         a1 += new PolarLocations(40, 6).Select(loc => (Shape)(loc * new RegularPolygon(10, 4)));
         return new Part().Add(a1.Faces().Select((face, i) => (Shape)Extrude(face, 1 + 3 * i).Value)).Value;
     }),

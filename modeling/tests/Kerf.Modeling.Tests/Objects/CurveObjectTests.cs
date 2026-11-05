@@ -648,7 +648,7 @@ public class CurveObjectTests
         var l2 = new Line(new Vector(1, 1), new Vector(0, 0));
         var l = l1 + l2;
         var wire = Check.Is<Wire>(l);
-        Assert.True(wire.IsClosed);
+        Assert.True(wire.CheckClosed());
         Check.TupleAlmostEqual([0.6464466094067263, 0.35355339059327373, 0.0], Check.Of(l.Center(CenterOf.Mass)), 6);
     }
 

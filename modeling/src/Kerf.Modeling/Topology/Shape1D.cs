@@ -528,7 +528,7 @@ public static partial class Shape1DExtensions
             };
             var results = new List<Shape>();
             // Trim infinite edges before OCCT operations
-            if (other is Edge { IsInfinite: true } infinite)
+            if (other is Edge { IsUnbounded: true } infinite)
             {
                 var box = self.BoundingBox(optimal: false);
                 other = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Length);

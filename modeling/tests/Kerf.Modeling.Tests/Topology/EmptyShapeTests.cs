@@ -110,8 +110,8 @@ public class EmptyShapeEqualityTests
     [Fact]
     public void ZerosOfDifferentClassesAreNot()
     {
-        Check.NotSame(default(Solid), default(Face));
-        Check.NotSame(new Part(), default(Compound));
+        // Objects' classes differ; kernel shapes' zeros are all the one nothing, which has no type
+        Assert.False(new Part().Equals(new Sketch()));
     }
 
     [Fact]
@@ -300,13 +300,14 @@ public class EmptyShapeAlgebraTests
     {
         var box = Zeros.BoxPart(1, 1, 1);
         var apart = new Pos(5, 0, 0) * Zeros.BoxPart(1, 1, 1);
-        (Shape Result, Type Class, int Dim)[] cases =
+        // An object's zero keeps its class; a kernel shape's zero is the default shape, which has none
+        (IShape Result, Type Class, int? Dim)[] cases =
         [
             (box - box, typeof(Part), 3),
             (box & apart, typeof(Part), 3),
-            (Solid.MakeBox(1, 1, 1) - Solid.MakeBox(1, 1, 1), typeof(Part), 3),
+            (Solid.MakeBox(1, 1, 1) - Solid.MakeBox(1, 1, 1), typeof(Shape), null),
             (Zeros.Rectangle(1, 1) - Zeros.Rectangle(1, 1), typeof(Sketch), 2),
-            (Face.MakeRect(1, 1) & new Pos(5, 0, 0) * Face.MakeRect(1, 1), typeof(Face), 2),
+            (Face.MakeRect(1, 1) & new Pos(5, 0, 0) * Face.MakeRect(1, 1), typeof(Shape), null),
         ];
         foreach (var (result, cls, dim) in cases)
         {
@@ -413,7 +414,7 @@ public class EmptyShapeOperationsTests
     public void OperationsOnAZero()
     {
         var line = Edge.MakeLine(new Vector(0, 0, 0), new Vector(1, 0, 0));
-        (string Name, Func<Shape> Operation, Type Class)[] cases =
+        (string Name, Func<IShape> Operation, Type Class)[] cases =
         [
             ("extrude", () => Ops.Extrude(new Sketch(), 1).Value, typeof(Part)),
             ("revolve", () => Ops.Revolve(new Sketch(), Axis.X).Value, typeof(Part)),
@@ -422,7 +423,7 @@ public class EmptyShapeOperationsTests
             ("mirror", () => Ops.Mirror(new Part(), Plane.XY), typeof(Part)),
             ("scale", () => Ops.Scale(new Part(), 2), typeof(Part)),
             ("split", () => Ops.Split(new Part(), Plane.XY), typeof(Part)),
-            ("project", () => Ops.Project(default(Face), Plane.XY), typeof(Sketch)),
+            ("project", () => Ops.Project(default(Face), Plane.XY), typeof(Assembly)),   // a null shape has no dimension
             ("section", () => Ops.Section(new Part(), Plane.XY), typeof(Sketch)),
             ("thicken", () => Ops.Thicken(new Sketch(), 1).Value, typeof(Part)),
             ("sweep", () => Ops.Sweep(new Sketch(), line).Value, typeof(Part)),

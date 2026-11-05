@@ -65,6 +65,9 @@ public static partial class Operations
     /// <inheritdoc cref="BoundingBox(IEnumerable{Shape})"/>
     public static ModelShape BoundingBox(Shape obj) => BoundingBox([obj]);
 
+    /// <inheritdoc cref="BoundingBox(Shape)"/>
+    public static ModelShape BoundingBox(ModelShape obj) => obj.IsEmpty ? NothingOf(obj.Dim) : BoundingBox([obj.Shape]);
+
     /// <inheritdoc cref="BoundingBox(IEnumerable{Shape})"/>
     public static ModelShape BoundingBox<T>(IEnumerable<T> objects) where T : IShape => BoundingBox(Shapes(objects));
 
@@ -351,7 +354,7 @@ public static partial class Operations
     /// <summary>The vertices without those at the ends of an open wire, which can't be chamfered or filleted.</summary>
     private static List<Vertex> InnerVertices(Wire wire, List<Shape> vertices)
     {
-        if (wire.IsClosed)
+        if (wire.CheckClosed())
             return [.. vertices.Select(v => (Vertex)v)];
         var start = wire.PositionAt(0);
         var end = wire.PositionAt(1);
