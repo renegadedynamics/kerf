@@ -315,5 +315,5 @@ internal partial struct IntersectionInterval : IEquatable<IntersectionInterval>
 
     public static bool operator !=(in IntersectionInterval left, in IntersectionInterval right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("Intrv_Interval", _start, _tolStart, _end, _tolEnd);
+    public override readonly string ToString() => Constants.Format("IntersectionInterval", _start, _tolStart, _end, _tolEnd);
 }

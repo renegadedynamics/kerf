@@ -421,5 +421,5 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
 
     public static bool operator !=(in Frame3D left, in Frame3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Ax2({_axis.Location}, {_axis.Direction}, {_vxdir})";
+    public override readonly string ToString() => $"Frame3D({_axis.Location}, {_axis.Direction}, {_vxdir})";
 }

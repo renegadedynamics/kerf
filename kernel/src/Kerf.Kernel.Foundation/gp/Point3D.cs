@@ -172,5 +172,5 @@ public readonly partial struct Point3D : IEquatable<Point3D>
 
     public static bool operator !=(in Point3D left, in Point3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("gp_Pnt", _coord.X(), _coord.Y(), _coord.Z());
+    public override readonly string ToString() => Constants.Format("Point3D", _coord.X(), _coord.Y(), _coord.Z());
 }

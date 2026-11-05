@@ -301,5 +301,5 @@ public readonly partial struct Plane3D : IEquatable<Plane3D>
 
     public static bool operator !=(in Plane3D left, in Plane3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Pln({_position})";
+    public override readonly string ToString() => $"Plane3D({_position})";
 }

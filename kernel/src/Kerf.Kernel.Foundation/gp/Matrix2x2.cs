@@ -449,5 +449,5 @@ internal struct Matrix2x2 : IEquatable<Matrix2x2>
 
     public static bool operator !=(in Matrix2x2 left, in Matrix2x2 right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("gp_Mat2d", _m00, _m01, _m10, _m11);
+    public override readonly string ToString() => Constants.Format("Matrix2x2", _m00, _m01, _m10, _m11);
 }

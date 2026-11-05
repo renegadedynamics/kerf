@@ -389,5 +389,5 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
 
     public static bool operator !=(in GeneralTransform2D left, in GeneralTransform2D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_GTrsf2d({_shape}, scale {_scale}, {_matrix}, {_loc})";
+    public override readonly string ToString() => $"GeneralTransform2D({_shape}, scale {_scale}, {_matrix}, {_loc})";
 }

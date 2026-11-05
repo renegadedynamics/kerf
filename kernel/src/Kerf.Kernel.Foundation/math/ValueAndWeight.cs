@@ -43,5 +43,5 @@ internal struct ValueAndWeight : IEquatable<ValueAndWeight>, IComparable<ValueAn
 
     public static bool operator !=(ValueAndWeight left, ValueAndWeight right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("math_ValueAndWeight", _value, _weight);
+    public override readonly string ToString() => Constants.Format("ValueAndWeight", _value, _weight);
 }

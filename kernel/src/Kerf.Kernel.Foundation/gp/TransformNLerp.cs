@@ -104,5 +104,5 @@ internal partial struct TransformNLerp : IEquatable<TransformNLerp>
 
     public static bool operator !=(in TransformNLerp left, in TransformNLerp right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_TrsfNLerp({_trsfStart}, {_trsfEnd})";
+    public override readonly string ToString() => $"TransformNLerp({_trsfStart}, {_trsfEnd})";
 }

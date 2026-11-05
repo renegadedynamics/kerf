@@ -617,5 +617,5 @@ internal partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
 
     public static bool operator !=(in SurfaceQuadric left, in SurfaceQuadric right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"{_typ} {Constants.Format("IntSurf_Quadric", _prm1, _prm2, _prm3, _prm4)} {_ax3}";
+    public override readonly string ToString() => $"{_typ} {Constants.Format("SurfaceQuadric", _prm1, _prm2, _prm3, _prm4)} {_ax3}";
 }

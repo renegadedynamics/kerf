@@ -1128,5 +1128,5 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
 
     public static bool operator !=(in Transform3D left, in Transform3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Trsf({_shape}, scale {_scale}, {_matrix}, {_loc})";
+    public override readonly string ToString() => $"Transform3D({_shape}, scale {_scale}, {_matrix}, {_loc})";
 }

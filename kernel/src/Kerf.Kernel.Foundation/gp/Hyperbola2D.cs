@@ -380,5 +380,5 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
 
     public static bool operator !=(in Hyperbola2D left, in Hyperbola2D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Hypr2d({_pos}, major {_majorRadius}, minor {_minorRadius})";
+    public override readonly string ToString() => $"Hyperbola2D({_pos}, major {_majorRadius}, minor {_minorRadius})";
 }

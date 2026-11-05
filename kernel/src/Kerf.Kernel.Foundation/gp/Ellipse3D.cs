@@ -291,5 +291,5 @@ public readonly partial struct Ellipse3D : IEquatable<Ellipse3D>
 
     public static bool operator !=(in Ellipse3D left, in Ellipse3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => FormattableString.Invariant($"gp_Elips({_pos}, {_majorRadius:R}, {_minorRadius:R})");
+    public override readonly string ToString() => FormattableString.Invariant($"Ellipse3D({_pos}, {_majorRadius:R}, {_minorRadius:R})");
 }

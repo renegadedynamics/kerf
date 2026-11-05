@@ -211,5 +211,5 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
 
     public static bool operator !=(in Cylinder3D left, in Cylinder3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => FormattableString.Invariant($"gp_Cylinder({_pos}, {_radius:R})");
+    public override readonly string ToString() => FormattableString.Invariant($"Cylinder3D({_pos}, {_radius:R})");
 }

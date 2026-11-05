@@ -78,5 +78,5 @@ internal partial struct PointOnRst : IEquatable<PointOnRst>
     public static bool operator !=(in PointOnRst left, in PointOnRst right)
         => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("BRepBlend_PointOnRst", _prm);
+    public override readonly string ToString() => Constants.Format("PointOnRst", _prm);
 }

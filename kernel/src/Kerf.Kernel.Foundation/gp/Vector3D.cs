@@ -364,5 +364,5 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
 
     public static bool operator !=(in Vector3D left, in Vector3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("gp_Vec", _coord.X(), _coord.Y(), _coord.Z());
+    public override readonly string ToString() => Constants.Format("Vector3D", _coord.X(), _coord.Y(), _coord.Z());
 }

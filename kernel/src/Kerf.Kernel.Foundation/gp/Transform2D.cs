@@ -1011,5 +1011,5 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
 
     public static bool operator !=(in Transform2D left, in Transform2D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Trsf2d({_shape}, scale {_scale}, {_matrix}, {_loc})";
+    public override readonly string ToString() => $"Transform2D({_shape}, scale {_scale}, {_matrix}, {_loc})";
 }

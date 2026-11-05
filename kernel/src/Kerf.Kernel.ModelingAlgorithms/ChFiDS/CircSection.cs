@@ -82,5 +82,5 @@ internal partial struct CircSection : IEquatable<CircSection>
 
     public static bool operator !=(in CircSection left, in CircSection right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("ChFiDS_CircSection", _f, _l);
+    public override readonly string ToString() => Constants.Format("CircSection", _f, _l);
 }

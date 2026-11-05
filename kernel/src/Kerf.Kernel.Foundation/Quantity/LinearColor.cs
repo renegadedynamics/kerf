@@ -903,5 +903,5 @@ internal partial struct LinearColor : IEquatable<LinearColor>
 
     public static bool operator !=(in LinearColor left, in LinearColor right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("Quantity_Color", _rgb.R(), _rgb.G(), _rgb.B());
+    public override readonly string ToString() => Constants.Format("LinearColor", _rgb.R(), _rgb.G(), _rgb.B());
 }

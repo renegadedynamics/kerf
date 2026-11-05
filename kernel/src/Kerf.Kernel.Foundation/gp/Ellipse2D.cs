@@ -342,5 +342,5 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
 
     public static bool operator !=(in Ellipse2D left, in Ellipse2D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Elips2d({_pos}, major {_majorRadius}, minor {_minorRadius})";
+    public override readonly string ToString() => $"Ellipse2D({_pos}, major {_majorRadius}, minor {_minorRadius})";
 }

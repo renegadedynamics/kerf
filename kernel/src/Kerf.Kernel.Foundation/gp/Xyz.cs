@@ -346,5 +346,5 @@ internal struct Xyz : IEquatable<Xyz>
 
     public static bool operator !=(in Xyz left, in Xyz right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("gp_XYZ", _x, _y, _z);
+    public override readonly string ToString() => Constants.Format("Xyz", _x, _y, _z);
 }

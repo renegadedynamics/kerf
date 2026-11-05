@@ -67,5 +67,5 @@ internal partial struct OffsetInterval : IEquatable<OffsetInterval>
     public static bool operator !=(OffsetInterval left, OffsetInterval right) => !left.Equals(right);
 
     /// <inheritdoc/>
-    public override readonly string ToString() => Constants.Format("BRepOffset_Interval", _f, _l)[..^1] + ", " + _type + ")";
+    public override readonly string ToString() => Constants.Format("OffsetInterval", _f, _l)[..^1] + ", " + _type + ")";
 }

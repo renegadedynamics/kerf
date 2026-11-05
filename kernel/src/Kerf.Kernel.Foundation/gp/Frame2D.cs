@@ -281,5 +281,5 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
 
     public static bool operator !=(in Frame2D left, in Frame2D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Ax22d({_point}, {_vxdir}, {_vydir})";
+    public override readonly string ToString() => $"Frame2D({_point}, {_vxdir}, {_vydir})";
 }

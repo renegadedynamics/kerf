@@ -1431,5 +1431,5 @@ internal partial struct Box : IEquatable<Box>, ISpatialTreeBox<Box>
     public static bool operator !=(in Box left, in Box right) => !left.Equals(right);
 
     /// <summary>The raw fields: Xmin, Xmax, Ymin, Ymax, Zmin, Zmax, Gap and the flag bits.</summary>
-    public override readonly string ToString() => Constants.Format("Bnd_Box", _xmin, _xmax, _ymin, _ymax, _zmin, _zmax, _gap, _flags);
+    public override readonly string ToString() => Constants.Format("Limits", _xmin, _xmax, _ymin, _ymax, _zmin, _zmax, _gap, _flags);
 }

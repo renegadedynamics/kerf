@@ -49,5 +49,5 @@ internal partial struct MeshCircle : IEquatable<MeshCircle>
 
     public static bool operator !=(in MeshCircle left, in MeshCircle right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("BRepMesh_Circle", _location.X(), _location.Y(), _radius);
+    public override readonly string ToString() => Constants.Format("MeshCircle", _location.X(), _location.Y(), _radius);
 }

@@ -183,5 +183,5 @@ public readonly partial struct Circle3D : IEquatable<Circle3D>
 
     public static bool operator !=(in Circle3D left, in Circle3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => FormattableString.Invariant($"gp_Circ({_pos}, {_radius:R})");
+    public override readonly string ToString() => FormattableString.Invariant($"Circle3D({_pos}, {_radius:R})");
 }

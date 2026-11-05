@@ -125,5 +125,5 @@ internal partial struct Conic : IEquatable<Conic>
 
     public static bool operator !=(in Conic left, in Conic right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("IntAna2d_Conic", _a, _b, _c, _d, _e, _f);
+    public override readonly string ToString() => Constants.Format("Conic", _a, _b, _c, _d, _e, _f);
 }

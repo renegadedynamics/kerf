@@ -236,5 +236,5 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
 
     public static bool operator !=(in Parabola2D left, in Parabola2D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Parab2d({_pos}, focal {_focalLength})";
+    public override readonly string ToString() => $"Parabola2D({_pos}, focal {_focalLength})";
 }

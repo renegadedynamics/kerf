@@ -254,5 +254,5 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
 
     public static bool operator !=(in Cone3D left, in Cone3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => FormattableString.Invariant($"gp_Cone({_pos}, {_semiAngle:R}, {_radius:R})");
+    public override readonly string ToString() => FormattableString.Invariant($"Cone3D({_pos}, {_semiAngle:R}, {_radius:R})");
 }

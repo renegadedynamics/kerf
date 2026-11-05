@@ -68,5 +68,5 @@ internal partial struct ParameterRange : IEquatable<ParameterRange>
 
     public static bool operator !=(ParameterRange left, ParameterRange right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("IntTools_Range", _first, _last);
+    public override readonly string ToString() => Constants.Format("ParameterRange", _first, _last);
 }

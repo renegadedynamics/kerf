@@ -514,5 +514,5 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
 
     public static bool operator !=(in GeneralTransform3D left, in GeneralTransform3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_GTrsf({_shape}, scale {_scale}, {_matrix}, {_loc})";
+    public override readonly string ToString() => $"GeneralTransform3D({_shape}, scale {_scale}, {_matrix}, {_loc})";
 }

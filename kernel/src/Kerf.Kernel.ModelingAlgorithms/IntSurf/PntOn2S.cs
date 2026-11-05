@@ -203,5 +203,5 @@ internal partial struct PntOn2S : IEquatable<PntOn2S>
 
     public static bool operator !=(in PntOn2S left, in PntOn2S right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("IntSurf_PntOn2S", _pt.X, _pt.Y, _pt.Z, _u1, _v1, _u2, _v2);
+    public override readonly string ToString() => Constants.Format("PntOn2S", _pt.X, _pt.Y, _pt.Z, _u1, _v1, _u2, _v2);
 }

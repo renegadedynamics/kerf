@@ -320,5 +320,5 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
 
     public static bool operator !=(in Vector2D left, in Vector2D right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("gp_Vec2d", _coord.X(), _coord.Y());
+    public override readonly string ToString() => Constants.Format("Vector2D", _coord.X(), _coord.Y());
 }

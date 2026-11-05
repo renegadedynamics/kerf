@@ -327,5 +327,5 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
 
     public static bool operator !=(in Hyperbola3D left, in Hyperbola3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => FormattableString.Invariant($"gp_Hypr({_pos}, {_majorRadius:R}, {_minorRadius:R})");
+    public override readonly string ToString() => FormattableString.Invariant($"Hyperbola3D({_pos}, {_majorRadius:R}, {_minorRadius:R})");
 }

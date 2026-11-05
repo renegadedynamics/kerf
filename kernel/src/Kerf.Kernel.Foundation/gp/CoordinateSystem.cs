@@ -408,5 +408,5 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
 
     public static bool operator !=(in CoordinateSystem left, in CoordinateSystem right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Ax3({_axis.Location}, {_axis.Direction}, {_vxdir}, {_vydir})";
+    public override readonly string ToString() => $"CoordinateSystem({_axis.Location}, {_axis.Direction}, {_vxdir}, {_vydir})";
 }

@@ -68,5 +68,5 @@ internal partial struct IndexRange : IEquatable<IndexRange>
 
     public static bool operator !=(IndexRange left, IndexRange right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("BOPDS_IndexRange", _first, _last);
+    public override readonly string ToString() => Constants.Format("IndexRange", _first, _last);
 }

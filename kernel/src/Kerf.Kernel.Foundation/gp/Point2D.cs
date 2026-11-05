@@ -156,5 +156,5 @@ public readonly partial struct Point2D : IEquatable<Point2D>
 
     public static bool operator !=(in Point2D left, in Point2D right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("gp_Pnt2d", _coord.X(), _coord.Y());
+    public override readonly string ToString() => Constants.Format("Point2D", _coord.X(), _coord.Y());
 }

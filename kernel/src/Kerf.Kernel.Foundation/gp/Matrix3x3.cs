@@ -610,5 +610,5 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
 
     public static bool operator !=(in Matrix3x3 left, in Matrix3x3 right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("gp_Mat", _m00, _m01, _m02, _m10, _m11, _m12, _m20, _m21, _m22);
+    public override readonly string ToString() => Constants.Format("Matrix3x3", _m00, _m01, _m02, _m10, _m11, _m12, _m20, _m21, _m22);
 }

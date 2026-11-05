@@ -295,5 +295,5 @@ internal partial struct PolyhedronPoint : IEquatable<PolyhedronPoint>, IPolyhedr
 
     public static bool operator !=(in PolyhedronPoint left, in PolyhedronPoint right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("IntPolyh_Point", _x, _y, _z, _u, _v);
+    public override readonly string ToString() => Constants.Format("PolyhedronPoint", _x, _y, _z, _u, _v);
 }

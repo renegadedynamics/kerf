@@ -314,5 +314,5 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
 
     public static bool operator !=(in Direction3D left, in Direction3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("gp_Dir", _coord.X(), _coord.Y(), _coord.Z());
+    public override readonly string ToString() => Constants.Format("Direction3D", _coord.X(), _coord.Y(), _coord.Z());
 }

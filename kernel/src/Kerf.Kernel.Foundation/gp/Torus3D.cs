@@ -350,5 +350,5 @@ public readonly partial struct Torus3D : IEquatable<Torus3D>
 
     public static bool operator !=(in Torus3D left, in Torus3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => FormattableString.Invariant($"gp_Torus({_pos}, {_majorRadius:R}, {_minorRadius:R})");
+    public override readonly string ToString() => FormattableString.Invariant($"Torus3D({_pos}, {_majorRadius:R}, {_minorRadius:R})");
 }

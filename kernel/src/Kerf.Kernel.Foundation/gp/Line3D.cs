@@ -173,5 +173,5 @@ public readonly partial struct Line3D : IEquatable<Line3D>
 
     public static bool operator !=(in Line3D left, in Line3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Lin({_pos.Location}, {_pos.Direction})";
+    public override readonly string ToString() => $"Line3D({_pos.Location}, {_pos.Direction})";
 }

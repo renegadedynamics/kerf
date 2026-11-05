@@ -227,5 +227,5 @@ public readonly partial struct Circle2D : IEquatable<Circle2D>
 
     public static bool operator !=(in Circle2D left, in Circle2D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Circ2d({_pos}, radius {_radius})";
+    public override readonly string ToString() => $"Circle2D({_pos}, radius {_radius})";
 }

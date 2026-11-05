@@ -287,5 +287,5 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
 
     public static bool operator !=(in Direction2D left, in Direction2D right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("gp_Dir2d", _coord.X(), _coord.Y());
+    public override readonly string ToString() => Constants.Format("Direction2D", _coord.X(), _coord.Y());
 }

@@ -119,5 +119,5 @@ internal partial struct Regul : IEquatable<Regul>
 
     public static bool operator !=(in Regul left, in Regul right) => !left.Equals(right);
 
-    public override readonly string ToString() => Constants.Format("ChFiDS_Regul", _icurv, _is1, _is2);
+    public override readonly string ToString() => Constants.Format("Regul", _icurv, _is1, _is2);
 }

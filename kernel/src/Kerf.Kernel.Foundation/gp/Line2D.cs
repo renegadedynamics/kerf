@@ -181,5 +181,5 @@ public readonly partial struct Line2D : IEquatable<Line2D>
 
     public static bool operator !=(in Line2D left, in Line2D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Lin2d({_pos.Location}, {_pos.Direction})";
+    public override readonly string ToString() => $"Line2D({_pos.Location}, {_pos.Direction})";
 }

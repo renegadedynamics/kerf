@@ -211,5 +211,5 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
 
     public static bool operator !=(in Parabola3D left, in Parabola3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => FormattableString.Invariant($"gp_Parab({_pos}, {_focalLength:R})");
+    public override readonly string ToString() => FormattableString.Invariant($"Parabola3D({_pos}, {_focalLength:R})");
 }

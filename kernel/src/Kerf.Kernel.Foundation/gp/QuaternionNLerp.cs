@@ -79,5 +79,5 @@ internal partial struct QuaternionNLerp : IEquatable<QuaternionNLerp>
 
     public static bool operator !=(in QuaternionNLerp left, in QuaternionNLerp right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_QuaternionNLerp({_qStart}, {_qEnd})";
+    public override readonly string ToString() => $"QuaternionNLerp({_qStart}, {_qEnd})";
 }

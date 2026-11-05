@@ -158,5 +158,5 @@ public readonly partial struct Axis2D : IEquatable<Axis2D>
 
     public static bool operator !=(in Axis2D left, in Axis2D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Ax2d({_loc}, {_vdir})";
+    public override readonly string ToString() => $"Axis2D({_loc}, {_vdir})";
 }
