@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKG2d/Geom2d/Geom2d_OffsetCurve.hxx
 // Port of: src/ModelingData/TKG2d/Geom2d/Geom2d_OffsetCurve.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -78,7 +78,7 @@ public sealed class OffsetCurve2D : Curve2D
         // Deep copy basis curve without validation
     }
 
-    // OCCT.NET: the basis curve is shared (frozen); copy it before changing it.
+    // Kerf: the basis curve is shared (frozen); copy it before changing it.
     private void OwnBasisCurve()
     {
         if (_basisCurve.IsFrozen)
@@ -153,7 +153,7 @@ public sealed class OffsetCurve2D : Curve2D
         }
         else
         {
-            // OCCT.NET: shared with the caller, so frozen (decision 132).
+            // Kerf: shared with the caller, so frozen (decision 132).
             checkingCurve.Freeze();
             _basisCurve = checkingCurve;
         }
@@ -416,7 +416,7 @@ public sealed class OffsetCurve2D : Curve2D
     /// <summary>The continuity of the basis curve (G1 for a C0 B-spline accepted as G1).</summary>
     internal Continuity GetBasisCurveContinuity() => _basisCurveContinuity;
 
-    // Non-mutating twins of the mutators (OCCT.NET)
+    // Non-mutating twins of the mutators (Kerf)
 
     /// <summary>A copy on the basis curve C (see the constructor; the offsets of an offset C add up).</summary>
     public OffsetCurve2D WithBasisCurve(Curve2D c, bool isNotCheckC0 = false)

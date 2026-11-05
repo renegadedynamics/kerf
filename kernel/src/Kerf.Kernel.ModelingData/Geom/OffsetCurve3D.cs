@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKG3d/Geom/Geom_OffsetCurve.hxx
 // Port of: src/ModelingData/TKG3d/Geom/Geom_OffsetCurve.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -82,7 +82,7 @@ public sealed class OffsetCurve3D : Curve3D
         SetBasisCurve(curve, isTheNotCheckC0);
     }
 
-    // OCCT.NET: the basis curve may have been handed out (and frozen) by BasisCurve(); copy it before changing it.
+    // Kerf: the basis curve may have been handed out (and frozen) by BasisCurve(); copy it before changing it.
     private void OwnBasisCurve()
     {
         if (_basisCurve.IsFrozen)
@@ -440,7 +440,7 @@ public sealed class OffsetCurve3D : Curve3D
     /// <summary>The continuity of the basis curve (G1 for a G1 C0 B-spline).</summary>
     internal Continuity GetBasisCurveContinuity() => _basisCurveContinuity;
 
-    // Non-mutating twins (OCCT.NET)
+    // Non-mutating twins (Kerf)
 
     public OffsetCurve3D WithDirection(in Direction3D v)
     {

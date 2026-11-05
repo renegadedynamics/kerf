@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.hxx
 // Port of: src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
@@ -810,7 +810,7 @@ internal class CurveSet
         int i = 0, degree = 0;
         StreamUtilities.Read(IS, ref degree);
 
-        // OCCT.NET: untrusted input: counts checked against the input before allocating (a pole takes at least 6
+        // Kerf: untrusted input: counts checked against the input before allocating (a pole takes at least 6
         // characters, a knot 4)
         StreamUtilities.CheckCount(IS, Math.Max(degree + 1L, 0), 6, "Bezier poles");
         var poles = new NCollection_Array1<Point3D>(1, degree + 1);
@@ -845,7 +845,7 @@ internal class CurveSet
         StreamUtilities.Read(IS, ref nbpoles);
         StreamUtilities.Read(IS, ref nbknots);
 
-        // OCCT.NET: untrusted input: counts checked against the input before allocating (a pole takes at least 6
+        // Kerf: untrusted input: counts checked against the input before allocating (a pole takes at least 6
         // characters, a knot 4)
         StreamUtilities.CheckCount(IS, Math.Max(nbpoles, 0), 6, "B-spline poles");
         StreamUtilities.CheckCount(IS, Math.Max(nbknots, 0), 4, "B-spline knots");
@@ -909,7 +909,7 @@ internal class CurveSet
         int ctype = 0;
 
         Curve3D? c = null;
-        // OCCT.NET: untrusted input: trimmed, offset and swept geometry recurse; the nesting is capped
+        // Kerf: untrusted input: trimmed, offset and swept geometry recurse; the nesting is capped
         using var nesting = global::Kerf.Engine.Exchange.Brep.GeomTools.Nesting();
         try
         {
@@ -980,7 +980,7 @@ internal class CurveSet
     /// </summary>
     public void Read(TextReader IS, ProgressRange progress = default)
     {
-        // OCCT reads into char[255]: a longer word is an error (OCCT.NET: untrusted input)
+        // OCCT reads into char[255]: a longer word is an error (Kerf: untrusted input)
         char[] buffer = new char[255];
         bool isRead = StreamUtilities.ReadWord(IS, buffer);
         if (!isRead || StreamUtilities.CString(buffer) != "Curves")
@@ -992,7 +992,7 @@ internal class CurveSet
         // OCCT's nbcurve is uninitialised if the count can't be read
         int i, nbcurve = 0;
         StreamUtilities.Read(IS, ref nbcurve);
-        // OCCT.NET: untrusted input: an object takes at least 2 characters
+        // Kerf: untrusted input: an object takes at least 2 characters
         StreamUtilities.CheckCount(IS, Math.Max(nbcurve, 0), 2, "curves");
         using var ps = new ProgressScope(progress, "3D Curves", nbcurve);
         for (i = 1; i <= nbcurve && ps.More(); i++, ps.Next())

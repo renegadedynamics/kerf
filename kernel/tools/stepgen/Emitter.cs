@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
 // Writes one C# file per OCCT class (its header and source merged), per enum, and per RW enum tool, following
 // docs/translation-rules.md.
@@ -91,7 +91,7 @@ internal sealed class Emitter
         var sb = new StringBuilder();
         sb.Append("// Port of: ").Append(theHeader).Append('\n');
         sb.Append(Copyright(theHeader)).Append('\n');
-        sb.Append("// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).\n");
+        sb.Append("// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).\n");
         sb.Append(GeneratedLine).Append("\n\nnamespace Occt;\n\n");
         Doc(sb, theEnum.Doc, "");
         sb.Append("/// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.").Append(theEnum.Name).Append(";</c>.</remarks>\n");
@@ -352,7 +352,7 @@ internal sealed class Emitter
         }
 
         sb.Append(Copyright(cls.Header)).Append('\n');
-        sb.Append("// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).\n");
+        sb.Append("// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).\n");
         sb.Append(GeneratedLine).Append("\n\n");
         sb.Append("#nullable disable warnings\n");
         if (r.UnusedLocals)

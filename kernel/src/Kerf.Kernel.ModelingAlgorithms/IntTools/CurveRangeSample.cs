@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKBO/IntTools/IntTools_CurveRangeSample.hxx
 // Port of: src/ModelingAlgorithms/TKBO/IntTools/IntTools_CurveRangeSample.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2005-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Occt;
 
@@ -78,7 +78,7 @@ internal partial struct CurveRangeSample : IEquatable<CurveRangeSample>
     /// <summary>The index of the first sub-range one level deeper.</summary>
     public readonly int GetRangeIndexDeeper(int nbSample) => _index * nbSample;
 
-    // ---- OCCT.NET additions
+    // ---- Kerf additions
 
     public readonly CurveRangeSample WithDepth(int depth)
     {

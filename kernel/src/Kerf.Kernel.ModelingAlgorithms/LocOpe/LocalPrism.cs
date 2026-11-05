@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKFeat/LocOpe/LocOpe_Prism.hxx
 // Port of: src/ModelingAlgorithms/TKFeat/LocOpe/LocOpe_Prism.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Sweeping;
@@ -104,7 +104,7 @@ internal sealed class LocalPrism
             theBase = modif.InternalModifiedShape(theBase);
         }
 
-        // OCCT.NET: the sweep writes into the base it shares (decision 1014): in the working overlay (unit 10H5)
+        // Kerf: the sweep writes into the base it shares (decision 1014): in the working overlay (unit 10H5)
         _work = new WorkingShapes();
         using WorkingOverlay.Scope scope = _work.Enter();
 

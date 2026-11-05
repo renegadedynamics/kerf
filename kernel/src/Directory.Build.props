@@ -14,7 +14,7 @@
     <!-- Checks ported code for mutating calls that would land on a defensive copy (docs/translation-rules.md) -->
     <ProjectReference Include="$(MSBuildThisFileDirectory)Kerf.Analyzers/Kerf.Analyzers.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    <!-- Every OCCT.NET assembly may use the internal mutators of the others -->
+    <!-- Every Kerf assembly may use the internal mutators of the others -->
     <InternalsVisibleTo Include="Kerf.Kernel.ModelingData" />
     <InternalsVisibleTo Include="Kerf.Kernel.ModelingAlgorithms" />
     <InternalsVisibleTo Include="Kerf.Kernel.DataExchange" />

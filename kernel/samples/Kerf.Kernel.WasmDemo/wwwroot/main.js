@@ -1,5 +1,5 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
-// The page of the WebAssembly spike: starts .NET, meshes a .brep with OCCT.NET and draws the buffers with WebGL 2.
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// The page of the WebAssembly spike: starts .NET, meshes a .brep with Kerf and draws the buffers with WebGL 2.
 // With ?auto=1 it meshes every file the server lists (twice for the smaller ones, to time a warm run) and posts the
 // results to /report.
 import { dotnet } from './_framework/dotnet.js';

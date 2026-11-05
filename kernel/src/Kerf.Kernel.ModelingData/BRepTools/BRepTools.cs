@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKBRep/BRepTools/BRepTools.hxx
 // Port of: src/ModelingData/TKBRep/BRepTools/BRepTools.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
@@ -29,7 +29,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// <para>
 /// The statics that change the shape they are given (Update, UpdateFaceUVPoints, Clean, CleanGeometry,
 /// RemoveUnusedPCurves, the triangulation loaders, RemoveInternals, EvalAndUpdateTol) are internal: they work on
-/// unfrozen shapes inside OCCT.NET, and throw on frozen ones as BRep_Builder does. Their public functional twins,
+/// unfrozen shapes inside Kerf, and throw on frozen ones as BRep_Builder does. Their public functional twins,
 /// which return a changed copy (<see cref="Cleaned(in Shape, bool)"/>, <see cref="Updated(in Shape)"/>,
 /// ...), are in BRepTools.Twins.cs (docs/phase3-design.md, section 4.6).
 /// </para>
@@ -363,7 +363,7 @@ internal static partial class BrepTools
     /// <summary>Updates the UV points of the face's edges, unless the face is checked, and marks it checked.</summary>
     internal static void Update(in Face f)
     {
-        // OCCT.NET: frozen: a frozen face can't have changed since it was frozen, and can't be marked (but inside a working
+        // Kerf: frozen: a frozen face can't have changed since it was frozen, and can't be marked (but inside a working
         // overlay it is written, as OCCT's)
         if (WorkingOverlay.IsReadOnly(f.TShape()!))
         {

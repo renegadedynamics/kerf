@@ -2,7 +2,7 @@
 // Port of: src/ModelingData/TKG3d/Geom/Geom_BSplineSurface.cxx
 // Port of: src/ModelingData/TKG3d/Geom/Geom_BSplineSurface_1.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -28,7 +28,7 @@ namespace Kerf.Geometry;
 /// <see cref="VMultiplicities"/>, <see cref="UKnotSequence"/> and <see cref="VKnotSequence"/> return
 /// immutable <see cref="IReadOnlyList{T}"/>s (index 0 is OCCT's index 1); <see cref="Poles"/>,
 /// <see cref="WeightsOrNull()"/> and <see cref="Weights"/> return new copies of the two-dimensional arrays (OCCT
-/// returns references to the surface's arrays). Code inside OCCT.NET uses the internal <c>Internal*</c>
+/// returns references to the surface's arrays). Code inside Kerf uses the internal <c>Internal*</c>
 /// accessors, which return the stored arrays (shared: don't modify).
 /// </para>
 /// <para>
@@ -3343,7 +3343,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     }
 
     //=============================================================================================
-    // Internal access to the stored arrays (OCCT.NET)
+    // Internal access to the stored arrays (Kerf)
     //=============================================================================================
 
     /// <summary>The stored poles: shared, don't modify (OCCT's <c>Poles()</c> const reference).</summary>
@@ -3374,7 +3374,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     internal NCollection_Array1<double> InternalVKnotSequence() => _vFlatKnots;
 
     //=============================================================================================
-    // Non-mutating twins (OCCT.NET)
+    // Non-mutating twins (Kerf)
     //=============================================================================================
 
     private BSplineSurface CopyBSpline() => (BSplineSurface)Copy();

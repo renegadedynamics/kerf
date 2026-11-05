@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/STEPConstruct/STEPConstruct_ExternRefs.hxx
 // Port of: src/DataExchange/TKDESTEP/STEPConstruct/STEPConstruct_ExternRefs.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -24,7 +24,7 @@ namespace Kerf.Engine.Exchange.Step.Construct;
 /// convenient API, or load from existing model and investigate
 /// </summary>
 /// <remarks>
-/// A C++ value class, a C# class here (decision 1185). OCCT.NET: <see cref="FileName"/> looks for the external file
+/// A C++ value class, a C# class here (decision 1185). Kerf: <see cref="FileName"/> looks for the external file
 /// on the disk, beside the session's loaded file, as OCCT does (<c>OSD_File::Exists</c>), with
 /// <see cref="Path.GetFullPath(string, string)"/> in place of <c>OSD_Path::AbsolutePath</c> (decision 1277).
 /// </remarks>
@@ -292,7 +292,7 @@ internal class ExternRefs : ConstructTool
     }
 
     /// <summary>
-    /// OCCT.NET (unit 8Z): when set, tells <see cref="FileName"/> whether an external file exists (its name as the
+    /// Kerf (unit 8Z): when set, tells <see cref="FileName"/> whether an external file exists (its name as the
     /// file gives it, the session's loaded file), in place of OCCT's look on the disk beside the loaded file.
     /// STEPCAFControl_Reader sets it from its resolver, or to false when it reads no external files.
     /// </summary>

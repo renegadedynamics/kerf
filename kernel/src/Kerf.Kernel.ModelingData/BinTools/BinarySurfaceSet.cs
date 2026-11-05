@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKBRep/BinTools/BinTools_SurfaceSet.hxx
 // Port of: src/ModelingData/TKBRep/BinTools/BinTools_SurfaceSet.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
@@ -396,7 +396,7 @@ internal class BinarySurfaceSet
         udegree = val;
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetExtChar(IS, out val);
         vdegree = val;
-        // OCCT.NET: untrusted input
+        // Kerf: untrusted input
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, (udegree + 1L) * (vdegree + 1L), urational || vrational ? 32 : 24, "poles");
 
         var poles = new NCollection_Array2<Point3D>(1, udegree + 1, 1, vdegree + 1);
@@ -440,7 +440,7 @@ internal class BinarySurfaceSet
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out nbvpoles);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out nbuknots);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out nbvknots);
-        // OCCT.NET: untrusted input
+        // Kerf: untrusted input
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, nbupoles, 1, "poles");
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, nbvpoles, 1, "poles");
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, (long)nbupoles * nbvpoles, urational || vrational ? 32 : 24, "poles");
@@ -531,7 +531,7 @@ internal class BinarySurfaceSet
         {
             if (depth > global::Kerf.Engine.Exchange.Brep.Binary.BinTools.MaxGeometryNesting)
             {
-                // OCCT.NET: untrusted input: OCCT recurses without limit
+                // Kerf: untrusted input: OCCT recurses without limit
                 throw new StreamFormatErrorException("BinTools_SurfaceSet: surfaces nested too deeply");
             }
 
@@ -612,7 +612,7 @@ internal class BinarySurfaceSet
         nbsurf = global::Kerf.Engine.Exchange.Brep.Binary.BinTools.ReadFormattedInteger(IS);
         using var ps = new ProgressScope(range, "Reading surfaces", nbsurf);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.Get(IS); // remove <lf>
-        // OCCT.NET: untrusted input: a surface takes at least 31 bytes (a Bezier surface of degree 0)
+        // Kerf: untrusted input: a surface takes at least 31 bytes (a Bezier surface of degree 0)
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, nbsurf, 31, "surfaces");
         for (i = 1; i <= nbsurf && ps.More(); i++, ps.Next())
         {

@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKPrim/BRepPrimAPI/BRepPrimAPI_MakeBox.hxx
 // Port of: src/ModelingAlgorithms/TKPrim/BRepPrimAPI/BRepPrimAPI_MakeBox.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Primitives;
 using Kerf.Engine.Foundation;
@@ -164,7 +164,7 @@ internal class MakeBox : MakeShape
     internal Solid InternalSolid()
     {
         var b = new BrepBuilder();
-        // OCCT.NET: a new solid in a new variable (OCCT remakes the one in myShape, decision 414).
+        // Kerf: a new solid in a new variable (OCCT remakes the one in myShape, decision 414).
         Solid solid = new();
         b.MakeSolid(ref solid);
         b.Add(solid, _wedge.Shell());
@@ -197,7 +197,7 @@ internal class MakeBox : MakeShape
     /// <summary>The ZMax face (frozen).</summary>
     public Face TopFace() => PublishedFace(PrimitiveDirection.BRepPrim_ZMax);
 
-    // OCCT.NET: the face is published once every face of the box is built (decision 467): the other faces add pcurves
+    // Kerf: the face is published once every face of the box is built (decision 467): the other faces add pcurves
     // to its edges, which OCCT does in place after handing the face out. A degenerated box has no shell (Shell()
     // throws), so all six of its faces are built first, the six the accessors give (a face that fails to build is
     // left for its own accessor to throw).

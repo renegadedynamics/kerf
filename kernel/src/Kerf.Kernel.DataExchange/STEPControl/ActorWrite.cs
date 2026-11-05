@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/STEPControl/STEPControl_ActorWrite.hxx
 // Port of: src/DataExchange/TKDESTEP/STEPControl/STEPControl_ActorWrite.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -33,7 +33,7 @@ namespace Kerf.Engine.Exchange.Step;
 
 /// <summary>This class performs the transfer of a Shape from TopoDS to AP203 or AP214 (CD2 or DIS)</summary>
 /// <remarks>
-/// OCCT.NET (plan 2.7, decisions 1266, 1269): the writer never changes the shape it is given. OCCT marks the shells
+/// Kerf (plan 2.7, decisions 1266, 1269): the writer never changes the shape it is given. OCCT marks the shells
 /// of a non-manifold solid closed in place (<c>Closed(true)</c>); the port marks a copy of a shell that isn't closed
 /// (the same faces). The writer numbers its assembly occurrences from its context's counter
 /// (<see cref="ContextTool.NauoId"/>), where OCCT uses a process-wide one. <see cref="ContextTool"/>
@@ -144,7 +144,7 @@ internal class ActorWrite : ActorOfFinderProcess
         return result;
     }
 
-    // OCCT.NET: OCCT marks a non-manifold solid's shell closed in place (aSubShell.Closed(true)), changing the caller's
+    // Kerf: OCCT marks a non-manifold solid's shell closed in place (aSubShell.Closed(true)), changing the caller's
     // shape; the port gives a shell that isn't closed as a copy (the same faces) marked closed (decision 1269)
     private static Shell ClosedShell(Shell shell)
     {
@@ -353,7 +353,7 @@ internal class ActorWrite : ActorOfFinderProcess
         _mytoler = tol;
     }
 
-    /// <summary>The writing context (OCCT.NET: OCCT keeps it private).</summary>
+    /// <summary>The writing context (Kerf: OCCT keeps it private).</summary>
     public ContextTool ContextTool()
     {
         return _context;

@@ -1,6 +1,6 @@
 // Port of: src/FoundationClasses/TKMath/GTests/MathRoot_Test.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 // C++ reaches MathUtils' names through MathRoot:: (MathRoot::ScalarResult, MathRoot::Config) by its
 // `using namespace MathUtils`; C# names them MathUtils.ScalarResult and so on.

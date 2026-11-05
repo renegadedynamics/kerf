@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeBuild/ShapeBuild_Edge.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeBuild/ShapeBuild_Edge.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
@@ -190,7 +190,7 @@ internal sealed partial class BuildEdgeBuilder
     /// <remarks>Internal: it writes into <paramref name="toedge"/>, which throws if it is frozen.</remarks>
     internal void CopyRanges(in Edge toedge, in Edge fromedge, double alpha = 0, double beta = 1)
     {
-        // OCCT.NET: frozen: fromedge's list is only read (OCCT takes it with ChangeCurves)
+        // Kerf: frozen: fromedge's list is only read (OCCT takes it with ChangeCurves)
         for (var fromitcr = new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)fromedge.TShape()!).Curves());
              fromitcr.More();
              fromitcr.Next())
@@ -326,7 +326,7 @@ internal sealed partial class BuildEdgeBuilder
     {
         Placement fromLoc = fromedge.Placement;
         Placement toLoc = toedge.Placement;
-        // OCCT.NET: frozen: fromedge's list is only read (OCCT takes it with ChangeCurves)
+        // Kerf: frozen: fromedge's list is only read (OCCT takes it with ChangeCurves)
         for (var fromitcr = new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)fromedge.TShape()!).Curves());
              fromitcr.More();
              fromitcr.Next())
@@ -482,7 +482,7 @@ internal sealed partial class BuildEdgeBuilder
         Surface? s = Tool.Surface(face, out Placement L);
         Placement l = L.Predivided(edge.Placement);
 
-        // OCCT.NET: frozen: the list is only read (OCCT takes it with ChangeCurves)
+        // Kerf: frozen: the list is only read (OCCT takes it with ChangeCurves)
         for (var itcr = new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)edge.TShape()!).Curves());
              itcr.More();
              itcr.Next())
@@ -586,7 +586,7 @@ internal sealed partial class BuildEdgeBuilder
 
         if (result is TrimmedCurve2D thecurve)
         {
-            // OCCT.NET: frozen: BasisCurve() freezes the basis it hands out; OCCT changes the basis of its own discarded
+            // Kerf: frozen: BasisCurve() freezes the basis it hands out; OCCT changes the basis of its own discarded
             // copy, so the port changes a copy of it
             result = (Curve2D)thecurve.BasisCurve.Copy();
         }

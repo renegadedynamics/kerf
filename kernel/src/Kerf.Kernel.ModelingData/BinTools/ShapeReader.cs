@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.hxx
 // Port of: src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
@@ -38,7 +38,7 @@ internal class ShapeReader : ShapeSetBase
     private readonly Dictionary<ulong, PolygonOnTriangulation> _polygonPos = new();
     private readonly Dictionary<ulong, Triangulation> _triangulationPos = new();
 
-    // OCCT.NET: untrusted input: the positions of the shapes and locations being read, and the depth of the recursion
+    // Kerf: untrusted input: the positions of the shapes and locations being read, and the depth of the recursion
     private readonly HashSet<ulong> _shapesInProgress = [];
     private readonly HashSet<ulong> _locationsInProgress = [];
     private int _depth;
@@ -77,7 +77,7 @@ internal class ShapeReader : ShapeSetBase
         }
         catch (Exception exception) when (global::Kerf.Engine.Exchange.Brep.Binary.BinTools.IsSignal(exception))
         {
-            // OCCT.NET: untrusted input: a malformed stream raised an exception that OCCT doesn't catch here
+            // Kerf: untrusted input: a malformed stream raised an exception that OCCT doesn't catch here
             throw new StreamFormatErrorException("BinTools_ShapeReader::Read: " + Refusal.Unwrapped(exception).Message, exception);
         }
         finally
@@ -94,7 +94,7 @@ internal class ShapeReader : ShapeSetBase
         }
     }
 
-    // OCCT.NET: untrusted input: bounds the recursion through nested shapes, locations and references
+    // Kerf: untrusted input: bounds the recursion through nested shapes, locations and references
     private void Enter()
     {
         if (!System.Runtime.CompilerServices.RuntimeHelpers.TryEnsureSufficientExecutionStack())
@@ -144,7 +144,7 @@ internal class ShapeReader : ShapeSetBase
             {
                 if (_shapesInProgress.Contains(aRef))
                 {
-                    // OCCT.NET: untrusted input: OCCT reads the shape again, forever
+                    // Kerf: untrusted input: OCCT reads the shape again, forever
                     throw new StreamFormatErrorException("BinTools_ShapeReader: a shape contains itself");
                 }
 
@@ -155,7 +155,7 @@ internal class ShapeReader : ShapeSetBase
             }
 
             result.Location(ReadLocation(stream), false);
-            // OCCT.NET: untrusted input: OCCT casts any byte
+            // Kerf: untrusted input: OCCT casts any byte
             result.Orient(global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckOrientation(stream.ReadByte()));
             return result;
         }
@@ -165,7 +165,7 @@ internal class ShapeReader : ShapeSetBase
         Orientation shapeOrientation = stream.ShapeOrientation();
         Placement shapeLocation = ReadLocation(stream);
         _shapesInProgress.Add(position);
-        // OCCT.NET: the geometry is read by a separate method (a smaller frame for the recursion)
+        // Kerf: the geometry is read by a separate method (a smaller frame for the recursion)
         result = ReadShapeGeometry(stream, shapeType);
 
         // read flags and subs
@@ -519,7 +519,7 @@ internal class ShapeReader : ShapeSetBase
 
             if (_locationsInProgress.Contains(aRef))
             {
-                // OCCT.NET: untrusted input: OCCT reads the location again, forever
+                // Kerf: untrusted input: OCCT reads the location again, forever
                 throw new StreamFormatErrorException("BinTools_ShapeReader: a location contains itself");
             }
 
@@ -543,7 +543,7 @@ internal class ShapeReader : ShapeSetBase
             for (Placement nextLoc = ReadLocation(stream); !nextLoc.IsIdentity;
                  nextLoc = ReadLocation(stream))
             {
-                // OCCT.NET: untrusted input: bounds the recursion of Powered and Multiplied
+                // Kerf: untrusted input: bounds the recursion of Powered and Multiplied
                 loc = global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PoweredTimes(nextLoc, stream.ReadInteger(), loc);
             }
 
@@ -699,7 +699,7 @@ internal class ShapeReader : ShapeSetBase
                 // read from the stream
                 int nbNodes = stream.ReadInteger();
                 bool hasParameters = stream.ReadBool();
-                // OCCT.NET: untrusted input
+                // Kerf: untrusted input
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(stream.Stream(), nbNodes, hasParameters ? 32 : 24, "nodes");
                 result = new Polygon3D(nbNodes, hasParameters);
                 result.Deflection(stream.ReadReal());
@@ -756,7 +756,7 @@ internal class ShapeReader : ShapeSetBase
             {
                 // read from the stream
                 int nbNodes = stream.ReadInteger();
-                // OCCT.NET: untrusted input
+                // Kerf: untrusted input
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(stream.Stream(), nbNodes, 4, "nodes");
                 result = new PolygonOnTriangulation(nbNodes, false);
                 for (int nodeIter = 1; nodeIter <= nbNodes; ++nodeIter)
@@ -767,7 +767,7 @@ internal class ShapeReader : ShapeSetBase
                 result.Deflection(stream.ReadReal());
                 if (stream.ReadBool())
                 {
-                    // OCCT.NET: untrusted input
+                    // Kerf: untrusted input
                     global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(stream.Stream(), nbNodes, 8, "parameters");
                     NCollection_HArray1<double> aParams = new(1, nbNodes);
                     for (int nodeIter = 1; nodeIter <= nbNodes; ++nodeIter)
@@ -819,7 +819,7 @@ internal class ShapeReader : ShapeSetBase
                 int nbTriangles = stream.ReadInteger();
                 bool hasUV = stream.ReadBool();
                 bool hasNormals = stream.ReadBool();
-                // OCCT.NET: untrusted input
+                // Kerf: untrusted input
                 int nodeBytes = 24 + (hasUV ? 16 : 0) + (hasNormals ? 12 : 0);
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(stream.Stream(), nbNodes, nodeBytes, "nodes");
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(stream.Stream(), nbTriangles, 12, "triangles");

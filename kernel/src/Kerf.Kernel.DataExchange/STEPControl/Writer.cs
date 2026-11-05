@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/STEPControl/STEPControl_Writer.hxx
 // Port of: src/DataExchange/TKDESTEP/STEPControl/STEPControl_Writer.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -24,7 +24,7 @@ namespace Kerf.Engine.Exchange.Step;
 /// outputs a distinct root entity in the STEP file.
 /// </summary>
 /// <remarks>
-/// <para>A C++ value class, a C# class here (decision 1185). OCCT.NET (plan 2.7, decisions 1264, 1265, 1267):</para>
+/// <para>A C++ value class, a C# class here (decision 1185). Kerf (plan 2.7, decisions 1264, 1265, 1267):</para>
 /// <list type="bullet">
 /// <item>the writer never changes the shape it is given;</item>
 /// <item>the parameters come from the session's parameter set (<see cref="WorkSession.Statics"/>), or from
@@ -184,7 +184,7 @@ internal class Writer
     }
 
     /// <summary>Writes a STEP model in the std::ostream.</summary>
-    /// <remarks>OCCT.NET: a .NET stream; the model's text is written as bytes (decision 1192).</remarks>
+    /// <remarks>Kerf: a .NET stream; the model's text is written as bytes (decision 1192).</remarks>
     public ReturnStatus WriteStream(Stream oStream)
     {
         StepModel model = Model();

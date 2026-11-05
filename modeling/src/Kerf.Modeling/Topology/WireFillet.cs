@@ -212,7 +212,7 @@ internal static class WireFillet
         // BRepBuilderAPI_MakeWire, the edges added one by one
         var made = Failures.Get(Wire.FromEdges(edges.Select(e => e!.Value)), () => "wire");
         // The edges as the finished wire holds them, in the order added: a later merge may have moved or enlarged an
-        // earlier edge's vertex, which native OCCT does in place and OCCT.NET in a copy of the wire built so far
+        // earlier edge's vertex, which native OCCT does in place and Kerf in a copy of the wire built so far
         var placedEdges = made.Children.ToList();
         for (int i = 0; i < edges.Count; i++)
         {

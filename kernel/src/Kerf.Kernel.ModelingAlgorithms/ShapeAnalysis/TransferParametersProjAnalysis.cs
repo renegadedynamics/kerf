@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeAnalysis/ShapeAnalysis_TransferParametersProj.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeAnalysis/ShapeAnalysis_TransferParametersProj.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Healing.Build;
@@ -336,7 +336,7 @@ internal class TransferParametersProjAnalysis : TransferParametersAnalysis
         Placement     edgeLoc        = _edge.Placement;
         CurveAnalysis sac            = new CurveAnalysis();
         double              ppar1, ppar2;
-        // OCCT.NET: frozen: ChangeCurves() throws on a frozen edge, as BRep_Builder does
+        // Kerf: frozen: ChangeCurves() throws on a frozen edge, as BRep_Builder does
         NCollection_List<CurveRepresentation> tolist = ((BrepTEdge)newEdge.TShape()!).ChangeCurves();
         GCurve? toGC;
         for (NCollection_List<CurveRepresentation>.Iterator toitcr = new NCollection_List<CurveRepresentation>.Iterator(tolist);
@@ -617,7 +617,7 @@ internal class TransferParametersProjAnalysis : TransferParametersAnalysis
             else if (pr.IsPointOnCurveOnSurface())
             {
                 bool found = false;
-                // OCCT.NET: frozen: OCCT iterates fromedge's ChangeCurves(); it only reads them
+                // Kerf: frozen: OCCT iterates fromedge's ChangeCurves(); it only reads them
                 NCollection_List<CurveRepresentation>.Iterator fromitcr =
                     new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)fromedge.TShape()!).Curves());
                 for (; fromitcr.More() && !found; fromitcr.Next())
@@ -679,7 +679,7 @@ internal class TransferParametersProjAnalysis : TransferParametersAnalysis
         bool            needUpdate = false;
         Point3D          pv        = ((BrepTVertex)anewV.TShape()!).Pnt();
         Placement toLoc      = toedge.Placement;
-        // OCCT.NET: frozen: OCCT iterates toedge's ChangeCurves(); it only reads them
+        // Kerf: frozen: OCCT iterates toedge's ChangeCurves(); it only reads them
         NCollection_List<CurveRepresentation>.Iterator toitcr =
             new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)toedge.TShape()!).Curves());
         for (; toitcr.More(); toitcr.Next())

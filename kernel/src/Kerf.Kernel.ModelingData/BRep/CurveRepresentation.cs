@@ -2,7 +2,7 @@
 // Port of: src/ModelingData/TKBRep/BRep/BRep_CurveRepresentation.lxx
 // Port of: src/ModelingData/TKBRep/BRep/BRep_CurveRepresentation.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 
@@ -20,7 +20,7 @@ namespace Kerf.Engine.Topology.Brep;
 /// polygons). Holds a location.
 /// </summary>
 /// <remarks>
-/// The queries are public. The setters are internal to OCCT.NET and throw <see cref="ImmutableObjectException"/> once
+/// The queries are public. The setters are internal to Kerf and throw <see cref="ImmutableObjectException"/> once
 /// the representation is frozen, which happens with its edge (docs/phase3-design.md, section 4). The geometry and
 /// meshes a representation holds are frozen as soon as it takes them (section 4.1). OCCT's virtual accessors throw
 /// <see cref="DomainErrorException"/> where a representation has no such data.
@@ -75,7 +75,7 @@ internal abstract class CurveRepresentation : Transient
     public Placement Location() => _location;
 
     /// <summary>
-    /// Freezes the meshes the representation holds (OCCT.NET). Representations freeze what they take when they take
+    /// Freezes the meshes the representation holds (Kerf). Representations freeze what they take when they take
     /// it, except the mesher's, which attaches its triangulations and polygons unfrozen (decision 488); freezing the
     /// edge's graph (<c>BRep_TEdge.FreezeRepresentations</c>) freezes them through this.
     /// </summary>

@@ -1,7 +1,7 @@
-// OCCT.NET: the seam between the fillet builder (ChFi3d_Builder, unit 7N2) and the topological reconstruction that
+// Kerf: the seam between the fillet builder (ChFi3d_Builder, unit 7N2) and the topological reconstruction that
 // replaces TopOpeBRepBuild_HBuilder (unit 7R, option C of docs/phase7-plan.md 2.1, decision 992). Not a port of an
 // OCCT file: its members are exactly the HBuilder members TKFillet calls.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Data;
 using Kerf.Topology;
@@ -18,7 +18,7 @@ namespace Kerf.Engine.Fillets;
 /// OCCT's fillets never build a face themselves: <c>ChFi3d_Builder::Compute</c> fills a
 /// <see cref="DsHDataStructure"/> (surfaces, curves, points and their interferences with the input's
 /// shapes) and hands it to <c>myCoup->Perform(myDS)</c>, which splits the faces and edges, builds the fillet faces and
-/// assembles the shells and solids. OCCT.NET does not port TopOpeBRepBuild (decision 992): unit 7R implements this
+/// assembles the shells and solids. Kerf does not port TopOpeBRepBuild (decision 992): unit 7R implements this
 /// interface on the Boolean engine. The call sites, in OCCT's order:
 /// </para>
 /// <list type="bullet">

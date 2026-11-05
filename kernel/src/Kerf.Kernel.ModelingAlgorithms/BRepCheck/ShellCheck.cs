@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepCheck/BRepCheck_Shell.hxx
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepCheck/BRepCheck_Shell.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
@@ -933,7 +933,7 @@ internal class ShellCheck : ResultCheck
                             curShell.Closed(Tool.IsClosed(curShell));
                             if (toFreeze)
                             {
-                                // OCCT.NET: the shell is published to the caller (phase3-design.md 4.2)
+                                // Kerf: the shell is published to the caller (phase3-design.md 4.2)
                                 curShell.TShape()!.FreezeGraph();
                             }
 

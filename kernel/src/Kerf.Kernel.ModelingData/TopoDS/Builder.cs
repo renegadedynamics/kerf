@@ -2,7 +2,7 @@
 // Port of: src/ModelingData/TKBRep/TopoDS/TopoDS_Builder.lxx
 // Port of: src/ModelingData/TKBRep/TopoDS/TopoDS_Builder.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1990-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Tools;
@@ -41,7 +41,7 @@ internal class Builder
     }
 
     /// <summary>
-    /// A frozen compound of the given shapes (OCCT.NET addition, the public way to group shapes). The shapes' Free
+    /// A frozen compound of the given shapes (Kerf addition, the public way to group shapes). The shapes' Free
     /// flags don't change (docs/phase3-design.md, section 4.4).
     /// </summary>
     /// <exception cref="NullObjectException">A shape is null.</exception>
@@ -49,7 +49,7 @@ internal class Builder
         => MakeCompound((IEnumerable<Shape>)shapes);
 
     /// <summary>
-    /// A frozen compound of the given shapes (OCCT.NET addition, the public way to group shapes). The shapes' Free
+    /// A frozen compound of the given shapes (Kerf addition, the public way to group shapes). The shapes' Free
     /// flags don't change (docs/phase3-design.md, section 4.4).
     /// </summary>
     /// <exception cref="NullObjectException">A shape is null.</exception>
@@ -69,7 +69,7 @@ internal class Builder
     }
 
     /// <summary>
-    /// A frozen wire of the given edges, as OCCT's <c>MakeWire</c> and <c>Add</c> make it (OCCT.NET addition, decision
+    /// A frozen wire of the given edges, as OCCT's <c>MakeWire</c> and <c>Add</c> make it (Kerf addition, decision
     /// 10404): no flag is set and no geometry is checked.
     /// </summary>
     /// <exception cref="NullObjectException">A shape is null.</exception>
@@ -83,7 +83,7 @@ internal class Builder
     }
 
     /// <summary>
-    /// A frozen shell of the given faces, as OCCT's <c>MakeShell</c> and <c>Add</c> make it (OCCT.NET addition,
+    /// A frozen shell of the given faces, as OCCT's <c>MakeShell</c> and <c>Add</c> make it (Kerf addition,
     /// decision 1104): no flag is set (it isn't marked closed) and no geometry is checked.
     /// </summary>
     /// <exception cref="NullObjectException">A shape is null.</exception>
@@ -98,7 +98,7 @@ internal class Builder
 
     /// <summary>
     /// A frozen solid of the given shells (or edges and vertices), as OCCT's <c>MakeSolid</c> and <c>Add</c> make it
-    /// (OCCT.NET addition, decision 1104): the shells are taken as they are oriented, nothing is checked.
+    /// (Kerf addition, decision 1104): the shells are taken as they are oriented, nothing is checked.
     /// </summary>
     /// <exception cref="NullObjectException">A shape is null.</exception>
     /// <exception cref="IncompatibleShapesException">A shape isn't a shell, an edge or a vertex.</exception>
@@ -111,7 +111,7 @@ internal class Builder
     }
 
     /// <summary>
-    /// A frozen composite solid of the given solids, as OCCT's <c>MakeCompSolid</c> and <c>Add</c> make it (OCCT.NET
+    /// A frozen composite solid of the given solids, as OCCT's <c>MakeCompSolid</c> and <c>Add</c> make it (Kerf
     /// addition, decision 1104).
     /// </summary>
     /// <exception cref="NullObjectException">A shape is null.</exception>
@@ -182,7 +182,7 @@ internal class Builder
     public void Add(in Shape aShape, in Shape aComponent)
     {
         // From now the Component cannot be edited
-        // OCCT.NET: frozen: a frozen component keeps the Free flag it was frozen with, so its BRep text never
+        // Kerf: frozen: a frozen component keeps the Free flag it was frozen with, so its BRep text never
         // changes (docs/phase3-design.md, section 4.4; OCCT clears it).
         TShape componentTShape = aComponent.TShape()
                                          ?? throw new NullObjectException("TopoDS_Builder::Add: the component is null");
@@ -217,7 +217,7 @@ internal class Builder
                 // Add to the subshapes list
                 // Kerf: a frozen shape takes the child in the working overlay's copy of it, if one is open
                 TShape tShape = WorkingOverlay.ForWrite(aShape.TShape()!);
-                tShape.CheckMutable(); // OCCT.NET: frozen
+                tShape.CheckMutable(); // Kerf: frozen
                 tShape._shapes.Append(child);
                 tShape.Modified(true);
             }
@@ -287,7 +287,7 @@ internal class Builder
         {
             if (iter.Value() == s)
             {
-                tShape.CheckMutable(); // OCCT.NET: frozen
+                tShape.CheckMutable(); // Kerf: frozen
                 list.Remove(iter);
                 tShape.Modified(true);
                 return;

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
@@ -1114,7 +1114,7 @@ internal static class MeshTestCommands
             theDI.Output.Write(" *Meshing not done\n");
         }
 
-        // OCCT.NET: the meshed copy (decision 489), seen by every variable that shares its sub-shapes
+        // Kerf: the meshed copy (decision 489), seen by every variable that shares its sub-shapes
         DrawShapeRebind.Rebind(theDI, aS, aMeshAlgo.Shape());
         return 0;
     }

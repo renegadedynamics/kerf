@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKBO/BOPDS/BOPDS_IndexRange.lxx
 // Port of: src/ModelingAlgorithms/TKBO/BOPDS/BOPDS_IndexRange.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
 using Occt;
@@ -54,7 +54,7 @@ internal partial struct IndexRange : IEquatable<IndexRange>
     /// <summary>Writes the range as OCCT's <c>Dump</c> prints it.</summary>
     public readonly void Dump(TextWriter os) => os.Write(" range: " + _first + " " + _last);
 
-    // ---- OCCT.NET additions
+    // ---- Kerf additions
 
     public readonly IndexRange WithIndices(int i1, int i2) => new(i1, i2);
 

@@ -1,6 +1,6 @@
-// OCCT.NET: the duck-typed array interface of C++ templates over "an array" (Lower, Upper, Value), for generics.
+// Kerf: the duck-typed array interface of C++ templates over "an array" (Lower, Upper, Value), for generics.
 // Not a port of an OCCT file.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 namespace Occt;
 

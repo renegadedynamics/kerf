@@ -1,5 +1,5 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
-// OCCT.NET addition (unit 7L): not a port of an OCCT class. tools/dsrec/main.cpp writes native OCCT's data structure in
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Kerf addition (unit 7L): not a port of an OCCT class. tools/dsrec/main.cpp writes native OCCT's data structure in
 // the same format; keep the two in step.
 
 using Kerf.Engine.Collections;

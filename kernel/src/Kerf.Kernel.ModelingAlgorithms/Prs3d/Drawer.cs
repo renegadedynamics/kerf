@@ -1,7 +1,7 @@
 // Port of: src/Visualization/TKV3d/Prs3d/Prs3d_Drawer.hxx (the deflection settings only)
 // Port of: src/Visualization/TKV3d/Prs3d/Prs3d_Drawer.cxx (the deflection settings only)
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Occt;
@@ -14,7 +14,7 @@ namespace Kerf.Engine.HiddenLines.Presentation;
 /// triangulation. A drawer without its own value of a setting takes its link's, else OCCT's default.
 /// </summary>
 /// <remarks>
-/// OCCT.NET ports only Prs3d_Drawer's deflection settings (unit 4L2), which <see cref="PresentationToolTriangulatedShape"/>
+/// Kerf ports only Prs3d_Drawer's deflection settings (unit 4L2), which <see cref="PresentationToolTriangulatedShape"/>
 /// reads: the aspects, isolines, display units and shaders draw presentations, and the port has no viewer. A working
 /// object (decision 21), as OCCT's: <see cref="PresentationToolTriangulatedShape.GetDeflection"/> stores the absolute
 /// deflection it computes into the drawer.

@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKBRep/BinTools/BinTools_IStream.hxx
 // Port of: src/ModelingData/TKBRep/BinTools/BinTools_IStream.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
@@ -77,7 +77,7 @@ internal sealed class IStream
     {
         if (position > (ulong)_stream.Length)
         {
-            // OCCT.NET: untrusted input: OCCT seeks past the end and reads garbage
+            // Kerf: untrusted input: OCCT seeks past the end and reads garbage
             throw new StreamFormatErrorException("BinTools_IStream: a position past the end of the stream");
         }
 
@@ -138,7 +138,7 @@ internal sealed class IStream
 
         if (delta >= currentPos)
         {
-            // OCCT.NET: untrusted input: the reference would point before the start of the stream
+            // Kerf: untrusted input: the reference would point before the start of the stream
             throw new StreamFormatErrorException("BinTools_IStream::ReadReference: a reference before the stream");
         }
 

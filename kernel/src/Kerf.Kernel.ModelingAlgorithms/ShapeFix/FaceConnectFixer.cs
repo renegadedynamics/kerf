@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_FaceConnect.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_FaceConnect.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
@@ -340,7 +340,7 @@ internal sealed class FaceConnectFixer
                                 }
                                 if (sewing_ok)
                                 {
-                                    // OCCT.NET: the internal forms (decision 606): the shapes sewn are the ones being built
+                                    // Kerf: the internal forms (decision 606): the shapes sewn are the ones being built
                                     if (theSewer.InternalSewedShape().IsNull)
                                     {
                                         sewing_ok = false;
@@ -625,7 +625,7 @@ internal sealed class FaceConnectFixer
                             sfw.SetMaxTolerance(sewtoler);
                             sfw.FixEdgeCurves();
                             sfw.FixSelfIntersection();
-                            theWire = sfw.InternalWire(); // OCCT.NET: the wire of the shell being built
+                            theWire = sfw.InternalWire(); // Kerf: the wire of the shell being built
                             theBuilder.Add(empFace, theWire);
                         }
 
@@ -637,7 +637,7 @@ internal sealed class FaceConnectFixer
                         mapWires.Clear();
                         if (sff.FixOrientation(mapWires))
                         {
-                            empFace = sff.InternalFace(); // OCCT.NET: the face of the shell being built
+                            empFace = sff.InternalFace(); // Kerf: the face of the shell being built
                         }
                         theBuilder.Add(theShell, empFace);
                     }

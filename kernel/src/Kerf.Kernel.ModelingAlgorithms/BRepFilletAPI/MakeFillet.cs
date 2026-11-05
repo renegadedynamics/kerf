@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.hxx
 // Port of: src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Laws;
@@ -404,14 +404,14 @@ internal class MakeFillet : LocalOperation
 
     /// <summary>
     /// OCCT's <c>TopOpeBRepBuild_HBuilder</c>, here the reconstruction's seam (decision 1137): internal, its type
-    /// being OCCT.NET's. <see cref="SurfaceCount"/> and <see cref="NewFaces"/> give what OCCT's callers read from it.
+    /// being Kerf's. <see cref="SurfaceCount"/> and <see cref="NewFaces"/> give what OCCT's callers read from it.
     /// </summary>
     internal Reconstruction Builder()
     {
         return _builder.Builder();
     }
 
-    /// <summary>The fillet builder (OCCT.NET, for ported callers and tests).</summary>
+    /// <summary>The fillet builder (Kerf, for ported callers and tests).</summary>
     internal FilBuilder InternalBuilder() => _builder;
 
     //=================================================================================================

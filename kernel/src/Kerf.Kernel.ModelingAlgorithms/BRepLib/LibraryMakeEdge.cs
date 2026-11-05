@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepLib/BRepLib_MakeEdge.hxx
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepLib/BRepLib_MakeEdge.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry;
@@ -500,7 +500,7 @@ internal class LibraryMakeEdge : LibraryMakeShape
         _vertex1 = v1;
         _vertex2 = v2;
 
-        // OCCT.NET: OCCT remakes the edge in myShape (TopoDS::Edge(myShape)); the port makes it in a new variable,
+        // Kerf: OCCT remakes the edge in myShape (TopoDS::Edge(myShape)); the port makes it in a new variable,
         // so that Init after a public (freezing) read of the edge doesn't throw ImmutableObjectException. The result is
         // the same: MakeEdge gives a new TShape with the identity location, FORWARD.
         Edge e = new();
@@ -766,7 +766,7 @@ internal class LibraryMakeEdge : LibraryMakeShape
         _vertex1 = v1;
         _vertex2 = v2;
 
-        // OCCT.NET: a new variable, as in the 3D Init.
+        // Kerf: a new variable, as in the 3D Init.
         Edge e = new();
         b.MakeEdge(ref e);
         b.UpdateEdge(e, c, s, new Placement(), preci);

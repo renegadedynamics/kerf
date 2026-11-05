@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 
@@ -7,7 +7,7 @@ using Kerf.Geometry;
 namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
-/// OCCT.NET's own tests of GeomAdaptor (which has no GTests for these): the surfaces of revolution and extrusion
+/// Kerf's own tests of GeomAdaptor (which has no GTests for these): the surfaces of revolution and extrusion
 /// over curve adaptors, GeomAdaptor's MakeCurve and MakeSurface, Adaptor3d_HSurfaceTool, and the adaptors as
 /// working objects (shallow copies with their own caches, reloading).
 /// </summary>

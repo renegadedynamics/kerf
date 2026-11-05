@@ -1,7 +1,7 @@
-// OCCT.NET: the fillets' topological reconstruction on the Boolean engine (unit 7R, option C of
-// docs/phase7-plan.md 2.1, decision 992). Not a port: it answers for TopOpeBRepBuild_HBuilder, which OCCT.NET does
+// Kerf: the fillets' topological reconstruction on the Boolean engine (unit 7R, option C of
+// docs/phase7-plan.md 2.1, decision 992). Not a port: it answers for TopOpeBRepBuild_HBuilder, which Kerf does
 // not port, what ChFi3d_Builder asks of it (ChFi3d_Reconstruction), reading the same data structure.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Legacy.Data;

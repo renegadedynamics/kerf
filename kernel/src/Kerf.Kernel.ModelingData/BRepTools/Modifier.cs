@@ -2,7 +2,7 @@
 // Port of: src/ModelingData/TKBRep/BRepTools/BRepTools_Modifier.lxx
 // Port of: src/ModelingData/TKBRep/BRepTools/BRepTools_Modifier.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
@@ -181,7 +181,7 @@ internal sealed class Modifier
                     Face newf1 = ShapeCasts.Face(_map.GetValue(f1));
                     Face newf2 = ShapeCasts.Face(_map.GetValue(f2));
                     Continuity newcont = m.Continuity(curE, f1, f2, newE, newf1, newf2);
-                    // OCCT.NET: frozen: an edge rebuilt by an earlier Perform (Init keeps the images, occt-issues.md)
+                    // Kerf: frozen: an edge rebuilt by an earlier Perform (Init keeps the images, occt-issues.md)
                     // may have been published since; OCCT sets its continuity again, which changes nothing when it
                     // already has it
                     if (newcont > C0
@@ -241,7 +241,7 @@ internal sealed class Modifier
     private bool Rebuild(in Shape s, Modification m, out bool newGeom, ProgressRange progress)
     {
         ShapeType ts = s.Type;
-        // OCCT.NET: a reference into the map, as OCCT's TopoDS_Shape& result = myMap(S). The map gains no keys while
+        // Kerf: a reference into the map, as OCCT's TopoDS_Shape& result = myMap(S). The map gains no keys while
         // rebuilding (Put bound every sub-shape), so the reference stays valid through the recursion.
         ref Shape result = ref _map.GetValueRef(s);
         if (!result.IsNull)
@@ -666,7 +666,7 @@ internal sealed class Modifier
         // Set flag of the shape.
         result.Orient(resOr);
 
-        // OCCT.NET: frozen: an unrebuilt shape is the input itself, whose flags SetShapeFlags copies onto themselves;
+        // Kerf: frozen: an unrebuilt shape is the input itself, whose flags SetShapeFlags copies onto themselves;
         // a frozen one can't be written, and keeps them.
         if (!(ReferenceEquals(result.TShape(), s.TShape()) && s.TShape()!.IsFrozen))
         {

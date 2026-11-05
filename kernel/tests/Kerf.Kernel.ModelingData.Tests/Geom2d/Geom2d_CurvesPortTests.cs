@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
-/// OCCT.NET's own tests of the Geom2d curves: freezing and the non-mutating twins, the shared basis curves of
+/// Kerf's own tests of the Geom2d curves: freezing and the non-mutating twins, the shared basis curves of
 /// trimmed and offset curves (decision 132), the read-only list accessors (decision 131), reproductions of OCCT
 /// issues the port keeps (occt-issues.md), and finite-difference checks of the Bezier and B-spline derivatives.
 /// </summary>

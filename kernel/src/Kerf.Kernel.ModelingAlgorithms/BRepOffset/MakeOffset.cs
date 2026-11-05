@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_MakeOffset.hxx
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_MakeOffset.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 //  Modified by skv - Tue Mar 15 16:20:43 2005
 // Add methods for supporting history.
@@ -1914,7 +1914,7 @@ internal sealed partial class MakeOffset
         {
             rt = TypeOfConcavity.Convex;
         }
-        // OCCT.NET: OCCT iterates MapSF by its shapes' addresses; the port in insertion order (decision 1032).
+        // Kerf: OCCT iterates MapSF by its shapes' addresses; the port in insertion order (decision 1032).
         using ProgressScope ps3 = new(psOuter.Next(), null, mapSF.Count);
         foreach (KeyValuePair<Shape, Offset> It in mapSF)
         {
@@ -2113,7 +2113,7 @@ internal sealed partial class MakeOffset
         //------------------
         // MAJ free borders
         //------------------
-        // OCCT.NET: OCCT iterates Created by its edges' addresses; the port in insertion order (decision 1032).
+        // Kerf: OCCT iterates Created by its edges' addresses; the port in insertion order (decision 1032).
         foreach (KeyValuePair<Shape, Shape> itc in created)
         {
             oe = itc.Key;
@@ -2149,7 +2149,7 @@ internal sealed partial class MakeOffset
             rt = TypeOfConcavity.Concave;
         }
 
-        // OCCT.NET: OCCT iterates the map by its faces' addresses; the port in insertion order (decision 1032).
+        // Kerf: OCCT iterates the map by its faces' addresses; the port in insertion order (decision 1032).
         foreach (KeyValuePair<Shape, double> it in copiedMap)
         {
             Face f = ShapeCasts.Face(it.Key);
@@ -2265,7 +2265,7 @@ internal sealed partial class MakeOffset
         BrepBuilder bb = new();
         Placement L = new();
         bool isModified = false;
-        // OCCT.NET: OCCT iterates the apexes by their addresses; the port in insertion order (decision 1032).
+        // Kerf: OCCT iterates the apexes by their addresses; the port in insertion order (decision 1032).
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> cone in facesOfCone)
         {
             Sphere3D theSphere = new();
@@ -3914,7 +3914,7 @@ internal sealed partial class MakeOffset
 
     //=================================================================================================
 
-    // OCCT.NET: Locked(false) acts on the offset's own shapes: the result's new edges and vertices, and, in the
+    // Kerf: Locked(false) acts on the offset's own shapes: the result's new edges and vertices, and, in the
     // thickening mode, the caller's shape in the run's working overlay (unit 10H5).
     private static void UpdateTolerance(ref Shape s, IndexedSet<Shape> faces,
                                         in Shape initShape)

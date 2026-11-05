@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/StepData/StepData_Field.hxx
 // Port of: src/DataExchange/TKDESTEP/StepData/StepData_Field.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -121,7 +121,7 @@ internal sealed class Field
                 {
                     sn2.SetName(sn2.Name()); // OCCT: names the copy with its own (empty) name
                 }
-                // OCCT.NET: OCCT copies *this (whose value is still sn) into sn2's field, which copies sn again into
+                // Kerf: OCCT copies *this (whose value is still sn) into sn2's field, which copies sn again into
                 // a new member, without end: a stack overflow. The port copies sn's own field (occt-issues.md, 8B).
                 sn2.CField().CopyFrom(sn.Field());
                 _theany = sn2;

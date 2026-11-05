@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_Inter2d.hxx
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_Inter2d.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 //  Modified by skv - Wed Dec 24 18:08:39 2003 OCC4455
 
@@ -1746,7 +1746,7 @@ internal static class Inter2d
         // Extension of edges.
         //---------------------
         Edge ne;
-        // OCCT.NET: MVE is keyed by shape and iterates in insertion order (OCCT's in hash order); the order only
+        // Kerf: MVE is keyed by shape and iterates in insertion order (OCCT's in hash order); the order only
         // decides the order in which the edges are extended and bound in MES
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> it in mve)
         {

@@ -1,7 +1,7 @@
-// New in OCCT.NET (unit 8T): the mesh writers' common part, written fresh over the assembly tree (decision 1232).
+// New in Kerf (unit 8T): the mesh writers' common part, written fresh over the assembly tree (decision 1232).
 // Its rules follow OCCT's RWMesh_FaceIterator (src/DataExchange/TKDE/RWMesh): each face's triangulation in the part's
 // coordinates, the winding swapped for a reversed face or a mirroring location, normals reversed for a reversed face.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Exchange.Documents;

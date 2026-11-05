@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKBool/TopOpeBRepDS/TopOpeBRepDS_BuildTool.hxx
 // Port of: src/ModelingAlgorithms/TKBool/TopOpeBRepDS/TopOpeBRepDS_BuildTool.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Build;
 using Kerf.Engine.Booleans.Legacy.Tools;
@@ -64,7 +64,7 @@ internal sealed class DsBuildTool
         _translate = true;
     }
 
-    /// <summary>OCCT.NET: a copy of <paramref name="other"/> (OCCT copies the class by value).</summary>
+    /// <summary>Kerf: a copy of <paramref name="other"/> (OCCT copies the class by value).</summary>
     public DsBuildTool(DsBuildTool other)
     {
         _curveTool = new ToolCurveTool(other._curveTool);

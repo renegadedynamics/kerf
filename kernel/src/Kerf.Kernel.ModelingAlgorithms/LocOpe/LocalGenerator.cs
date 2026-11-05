@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKFeat/LocOpe/LocOpe_Generator.lxx
 // Port of: src/ModelingAlgorithms/TKFeat/LocOpe/LocOpe_Generator.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Algo;
 using Kerf.Engine.Collections;
@@ -1196,7 +1196,7 @@ internal sealed class LocalGenerator
         return _modShapes.GetValue(f);
     }
 
-    // OCCT.NET: OCCT translates the projected pcurve in place; a frozen one (shared) is translated on a copy
+    // Kerf: OCCT translates the projected pcurve in place; a frozen one (shared) is translated on a copy
     private static Curve2D Translatable(Curve2D curve) =>
         curve.IsFrozen ? (Curve2D)curve.Copy() : curve;
 

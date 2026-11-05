@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // A static server for the WebAssembly demo (Node 18 or later, no packages):
 //   node serve.mjs -root <published wwwroot> -data <folder of .brep files> [-port 8642] [-out report.json] [-exit]
 //                  [-exclude a.brep,b.brep]

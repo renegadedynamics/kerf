@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/StepToGeom/StepToGeom.hxx
 // Port of: src/DataExchange/TKDESTEP/StepToGeom/StepToGeom.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -2574,7 +2574,7 @@ internal static class StepToGeom
     /// Converts a spatial rotation (a ypr_rotation, or a rotation_about_direction in the plane angle unit of the
     /// context) into yaw, pitch and roll angles; null when it can't.
     /// </summary>
-    /// <remarks>OCCT.NET: ported by unit 8F, with STEPConstruct_UnitContext (decision 1238).</remarks>
+    /// <remarks>Kerf: ported by unit 8F, with STEPConstruct_UnitContext (decision 1238).</remarks>
     public static NCollection_HArray1<double>? MakeYprRotation(SpatialRotation sr, GlobalUnitAssignedContext? cntxt)
     {
         // If rotation is already a ypr_rotation, return it immediately

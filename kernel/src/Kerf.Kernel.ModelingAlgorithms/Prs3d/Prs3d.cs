@@ -1,6 +1,6 @@
 // Port of: src/Visualization/TKV3d/Prs3d/Prs3d.hxx (GetDeflection only)
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
 
@@ -14,7 +14,7 @@ namespace Kerf.Engine.HiddenLines.Presentation;
 /// coefficient gives a bounding box.
 /// </summary>
 /// <remarks>
-/// OCCT.NET ports only the deflection functions of Prs3d (unit 4L2): the rest builds graphic primitives, and the port
+/// Kerf ports only the deflection functions of Prs3d (unit 4L2): the rest builds graphic primitives, and the port
 /// has no viewer.
 /// </remarks>
 internal static class Prs3d

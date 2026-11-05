@@ -1,7 +1,7 @@
 // Port of: src/Visualization/TKV3d/StdPrs/StdPrs_ToolTriangulatedShape.hxx
 // Port of: src/Visualization/TKV3d/StdPrs/StdPrs_ToolTriangulatedShape.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Measurement;
@@ -127,7 +127,7 @@ internal static class PresentationToolTriangulatedShape
             meshAlgo.Perform();
             wasRecomputed = true;
 
-            // OCCT.NET: the meshed copy (decision 489)
+            // Kerf: the meshed copy (decision 489)
             meshed = meshAlgo.Shape();
             if (meshAlgo is IncrementalMesh incMesh)
             {

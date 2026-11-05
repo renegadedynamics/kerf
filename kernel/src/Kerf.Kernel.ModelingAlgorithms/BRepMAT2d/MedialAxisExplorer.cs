@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepMAT2d/BRepMAT2d_Explorer.hxx
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepMAT2d/BRepMAT2d_Explorer.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
@@ -64,7 +64,7 @@ internal sealed class MedialAxisExplorer
         f.Orient(Forward);
         Explorer exp = new(f, ShapeType.Wire);
         Surface surf = Tool.Surface(f)!;
-        // OCCT.NET: InternalFace, unfrozen: the wires are added to it.
+        // Kerf: InternalFace, unfrozen: the wires are added to it.
         Face newF = new MakeFace(surf, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalFace();
 
         while (exp.More())

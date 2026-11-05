@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKBool/BRepAlgo/BRepAlgo_Image.hxx
 // Port of: src/ModelingAlgorithms/TKBool/BRepAlgo/BRepAlgo_Image.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
@@ -36,7 +36,7 @@ internal sealed class ShapeImage
     {
     }
 
-    /// <summary>OCCT.NET: makes this a copy of <paramref name="other"/> (OCCT's assignment).</summary>
+    /// <summary>Kerf: makes this a copy of <paramref name="other"/> (OCCT's assignment).</summary>
     public void Assign(ShapeImage other)
     {
         if (ReferenceEquals(this, other))

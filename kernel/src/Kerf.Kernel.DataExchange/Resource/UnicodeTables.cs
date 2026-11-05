@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Occt;
 using System.IO.Compression;
@@ -7,7 +7,7 @@ using System.Text;
 namespace Kerf.Engine.Foundation.Resources;
 
 /// <summary>
-/// OCCT.NET's stand-in for Resource_Unicode's code tables (Resource_CodePages.pxx, Resource_Shiftjis.pxx,
+/// Kerf's stand-in for Resource_Unicode's code tables (Resource_CodePages.pxx, Resource_Shiftjis.pxx,
 /// Resource_GB2312.pxx, Resource_GBK.pxx, Resource_Big5.pxx): each lookup asks .NET's encodings
 /// (<see cref="CodePagesEncodingProvider"/>), then applies the corrections recorded where .NET differs from OCCT's
 /// table (the embedded <c>Resource_UnicodeTables.diff.gz</c>, made by tools/stepdatarec's table dump; decision 1191).

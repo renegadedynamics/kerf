@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeCustom/ShapeCustom_DirectModification.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeCustom/ShapeCustom_DirectModification.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 
@@ -87,7 +87,7 @@ internal class DirectModification : CustomModification
         tol = 0.0;
         revWires = revFace = false;
         s = Tool.Surface(f, out l);
-        // OCCT.NET: OCCT dereferences the surface of a face without one; the port finds it not indirect
+        // Kerf: OCCT dereferences the surface of a face without one; the port finds it not indirect
         Surface aS = s!;
 
         switch (IsIndirectSurface(ref aS, l))
@@ -241,7 +241,7 @@ internal class DirectModification : CustomModification
                 {
                     tmp = Tool.CurveOnSurface(e, F, out f, out l);
                     BrepBuilder b = new BrepBuilder();
-                    // OCCT.NET: NewE is the modifier's new edge here, never the caller's (decision 973)
+                    // Kerf: NewE is the modifier's new edge here, never the caller's (decision 973)
                     b.UpdateEdge(newE, tmp, c, newF, tol);
                     b.Range(newE, newF, f, l);
                     // anyway, tmp will be removed later by BRepTools_Modifier

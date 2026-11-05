@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_Tool.hxx
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_Tool.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Algo;
@@ -254,7 +254,7 @@ internal static class OffsetTool
         }
     }
 
-    // OCCT.NET: OCCT translates the 2D curve it is given in place; it may be frozen (an intersector's result, or a
+    // Kerf: OCCT translates the 2D curve it is given in place; it may be frozen (an intersector's result, or a
     // pcurve of a shape), so the port translates a copy, which the caller receives as OCCT's caller receives its own.
     private static void OwnCurve(ref Curve2D c2d)
     {
@@ -2840,7 +2840,7 @@ internal static class OffsetTool
                                             lenAfterUlast,
                                             lenBeforeVfirst,
                                             lenAfterVlast);
-            // OCCT.NET: OCCT sets the basis surface of S in place, and S is the face's own (frozen) surface: the port
+            // Kerf: OCCT sets the basis surface of S in place, and S is the face's own (frozen) surface: the port
             // sets it on a copy, which S becomes (the face keeps its surface). Where the basis surface is unchanged,
             // OCCT's call changes nothing, and the port keeps S.
             if (!ReferenceEquals(Surf, ((global::Kerf.Geometry.OffsetSurface)s).BasisSurface))
@@ -3015,7 +3015,7 @@ internal static class OffsetTool
                 }
             }
 
-            // OCCT.NET: OCCT's ExtendSurfByLength changes a B-spline surface (here the face's own) in place; the
+            // Kerf: OCCT's ExtendSurfByLength changes a B-spline surface (here the face's own) in place; the
             // port's changes a copy (decision 245), so the face keeps its surface.
             BoundedSurface surf = (BoundedSurface)s;
             if (enlargeU)
@@ -3266,7 +3266,7 @@ internal static class OffsetTool
 
     //=================================================================================================
 
-    // OCCT.NET: stands for OCCT's change in place of the surface theOld of the face F into theNew (see EnLargeFace):
+    // Kerf: stands for OCCT's change in place of the surface theOld of the face F into theNew (see EnLargeFace):
     // F and the pcurves of its edges on theOld are put on theNew. Nothing is done where F or one of its edges is locked
     // (decision 1101): frozen with no working overlay here to take the write (a caller's face outside an operation
     // keeps its surface). Inside the offset's overlay a caller's face is changed as OCCT changes it, on its working
@@ -3387,7 +3387,7 @@ internal static class OffsetTool
                                             lenAfterUlast,
                                             lenBeforeVfirst,
                                             lenAfterVlast);
-            // OCCT.NET: on an offset surface OCCT sets the enlarged basis on the face's own surface in place, so F lies
+            // Kerf: on an offset surface OCCT sets the enlarged basis on the face's own surface in place, so F lies
             // on the enlarged surface from then on (its bounds grow; ExtentEdge and the callers read them). The port's
             // EnlargeGeometry gives a copy: on a working face it is put on F and its pcurves (decision 1101).
             if (faceSurface is global::Kerf.Geometry.OffsetSurface && s is global::Kerf.Geometry.OffsetSurface && !ReferenceEquals(s, faceSurface))

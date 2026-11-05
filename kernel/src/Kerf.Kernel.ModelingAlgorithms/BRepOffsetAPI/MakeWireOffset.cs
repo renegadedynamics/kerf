@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_MakeOffset.hxx
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_MakeOffset.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Algo;
 using Kerf.Engine.Construction.Api;
@@ -92,7 +92,7 @@ internal class MakeWireOffset : MakeShape
             {
                 Orientation orOfWire = wire.Orientation;
                 wire.Orient(Forward);
-                // OCCT.NET: the converted wire is new; BuildCurves3d writes into it (decision 915)
+                // Kerf: the converted wire is new; BuildCurves3d writes into it (decision 915)
                 wire = global::Kerf.Engine.Booleans.Algo.BRepAlgo.InternalConvertWire(wire, angleTolerance, aFace);
                 BrepLibrary.BuildCurves3d(wire);
                 wire.Orient(orOfWire);
@@ -238,7 +238,7 @@ internal class MakeWireOffset : MakeShape
                 low.Append(w);
             }
         }
-        // OCCT.NET: the restrictor copies frozen wires at the entry and gives the caller's back; its faces stay
+        // Kerf: the restrictor copies frozen wires at the entry and gives the caller's back; its faces stay
         // unfrozen, as the open wires are added to them (decision 914)
         fr.Perform();
         if (!fr.IsDone)

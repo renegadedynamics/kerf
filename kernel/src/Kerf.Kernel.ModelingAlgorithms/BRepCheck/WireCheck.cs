@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepCheck/BRepCheck_Wire.hxx
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepCheck/BRepCheck_Wire.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
@@ -341,7 +341,7 @@ internal class WireCheck : ResultCheck
         // Checks the number of occurrence of an edge : maximum 2, and in this
         // case, one time FORWARD and one time REVERSED
 
-        // OCCT.NET: the map iterates in another order than OCCT's; the result doesn't depend on it
+        // Kerf: the map iterates in another order than OCCT's; the result doesn't depend on it
         bool yabug = false;
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> itdm in cradoc)
         {

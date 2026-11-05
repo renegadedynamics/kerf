@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKBool/TopOpeBRepBuild/TopOpeBRepBuild_BlockIterator.lxx
 // Port of: src/ModelingAlgorithms/TKBool/TopOpeBRepBuild/TopOpeBRepBuild_BlockIterator.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Occt;
 
@@ -64,7 +64,7 @@ internal partial struct BlockIterator : IEquatable<BlockIterator>
         return 0;
     }
 
-    // OCCT.NET: value equality
+    // Kerf: value equality
 
     public readonly bool Equals(BlockIterator other)
         => _lower == other._lower && _upper == other._upper && _value == other._value;

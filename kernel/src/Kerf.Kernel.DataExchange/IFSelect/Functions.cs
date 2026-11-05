@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKXSBase/IFSelect/IFSelect_Functions.hxx
 // Port of: src/DataExchange/TKXSBase/IFSelect/IFSelect_Functions.cxx (its complementary functions)
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// method Init.
 /// </summary>
 /// <remarks>
-/// OCCT.NET ports the complementary functions the commands use (<see cref="GiveEntity"/>,
+/// Kerf ports the complementary functions the commands use (<see cref="GiveEntity"/>,
 /// <see cref="GiveEntityNumber"/>, <see cref="GiveList"/>, <see cref="GiveDispatch"/>). The command table
 /// (<c>Init</c>, which registers some hundred functions in IFSelect_Act's process-wide dictionary, and their bodies)
 /// is left out with IFSelect_Act and IFSelect_SessionPilot: Draw-lite ports the commands it needs directly
@@ -163,7 +163,7 @@ internal static class Functions
         return disp;
     }
 
-    // A C string held in a char array from an index: up to the first '\0' (OCCT.NET).
+    // A C string held in a char array from an index: up to the first '\0' (Kerf).
     private static string CString(char[] buffer, int theFrom)
     {
         int end = theFrom;

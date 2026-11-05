@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepLib/BRepLib.hxx
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepLib/BRepLib.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Classification;
@@ -80,7 +80,7 @@ internal static partial class BrepLibrary
         double tolerance = confusion;
         bool isSameRange = true, first_time_in = true;
 
-        // OCCT.NET: frozen. OCCT iterates ChangeCurves() to read them; Curves() is the same list.
+        // Kerf: frozen. OCCT iterates ChangeCurves() to read them; Curves() is the same list.
         var an_Iterator = new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)anEdge.TShape()!).Curves());
 
         double first, last;
@@ -1134,7 +1134,7 @@ internal static partial class BrepLibrary
 
     // OCCT copies the edge's list of representations (`theCList = aTE->ChangeCurves()`); the representations are the
     // edge's own either way, and the loop that follows changes them, not the list, so the port returns the list.
-    // It is read through Curves() (OCCT.NET: frozen): the ReShape form calls this on the caller's edge. Kerf (unit
+    // It is read through Curves() (Kerf: frozen): the ReShape form calls this on the caller's edge. Kerf (unit
     // 10H4): when the representations are to be changed (forWrite) and a working overlay takes writes into the edge,
     // they are its working copy's, through ChangeCurves(), as OCCT's are the edge's own.
     private static void GetCurve3d(in Edge edge,
@@ -1178,7 +1178,7 @@ internal static partial class BrepLibrary
         }
     }
 
-    // OCCT.NET: frozen. UpdateVertex(V, Tol) only raises the tolerance, so on a frozen vertex already at least as
+    // Kerf: frozen. UpdateVertex(V, Tol) only raises the tolerance, so on a frozen vertex already at least as
     // tolerant it would change nothing but the Modified cache bit: skipped, rather than throwing.
     private static bool IsUnchangedFrozen(in Vertex v, double tol)
     {
@@ -2473,7 +2473,7 @@ internal static partial class BrepLibrary
                 }
             }
         }
-        catch (Exception exception) when (Refusal.IsFailure(exception) && (exception is not ImmutableObjectException)) // OCCT.NET: frozen
+        catch (Exception exception) when (Refusal.IsFailure(exception) && (exception is not ImmutableObjectException)) // Kerf: frozen
         {
         }
     }
@@ -2524,7 +2524,7 @@ internal static partial class BrepLibrary
                 Continuity cont = ContinuityOfFaces(e, f1, f2, tolAng);
                 b.Continuity(e, f1, f2, cont);
             }
-            // OCCT.NET: frozen. OCCT swallows the ImmutableObjectException of a locked edge; a frozen one is a write into a
+            // Kerf: frozen. OCCT swallows the ImmutableObjectException of a locked edge; a frozen one is a write into a
             // shape the caller holds, which must not pass silently.
             catch (Exception caught) when (Refusal.IsFailure(caught) && (!e.TShape()!.IsFrozen))
             {
@@ -2536,7 +2536,7 @@ internal static partial class BrepLibrary
     /// The writable copies of the frozen triangulations an in-place static changes, attached once it is done.
     /// </summary>
     /// <remarks>
-    /// OCCT.NET: frozen. OCCT writes normals and deflections into the triangulations attached to the faces, which the
+    /// Kerf: frozen. OCCT writes normals and deflections into the triangulations attached to the faces, which the
     /// port freezes when they are attached (design 4.1). The port writes into a copy of each (one copy per
     /// triangulation, so faces sharing one share its copy, as they would see OCCT's change) and, at the end, puts the
     /// copy in place of the original on each face of the shape that has it active (keeping the face's list of
@@ -2622,7 +2622,7 @@ internal static partial class BrepLibrary
         double thresDot = Math.Cos(angTol);
 
         bool retVal = false, isNormalsFound = false;
-        var writable = new WritableTriangulations(); // OCCT.NET: frozen
+        var writable = new WritableTriangulations(); // Kerf: frozen
 
         // compute normals if they are absent
         var expFace = new Explorer(shape, ShapeType.Face);
@@ -2794,7 +2794,7 @@ internal static partial class BrepLibrary
     /// </summary>
     internal static void UpdateDeflection(in Shape shape)
     {
-        var writable = new WritableTriangulations(); // OCCT.NET: frozen
+        var writable = new WritableTriangulations(); // Kerf: frozen
         var expFace = new Explorer(shape, ShapeType.Face);
         for (; expFace.More(); expFace.Next())
         {

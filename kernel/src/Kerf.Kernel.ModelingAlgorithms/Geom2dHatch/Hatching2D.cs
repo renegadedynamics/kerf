@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKGeomAlgo/Geom2dHatch/Geom2dHatch_Hatching.hxx
 // Port of: src/ModelingAlgorithms/TKGeomAlgo/Geom2dHatch/Geom2dHatch_Hatching.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
@@ -189,7 +189,7 @@ internal sealed class Hatching2D
     /// <exception cref="OutOfRangeException"><paramref name="index"/> is out of range.</exception>
     public HatchingDomain Domain(int index) => _domains.Value(index);
 
-    /// <summary>The <paramref name="index"/>-th domain, for writing (OCCT.NET: ChFi3d_Builder_SpKP's <c>Tri</c> casts the
+    /// <summary>The <paramref name="index"/>-th domain, for writing (Kerf: ChFi3d_Builder_SpKP's <c>Tri</c> casts the
     /// constness of <c>Domain</c> away and edits the hatcher's domain in place).</summary>
     internal ref HatchingDomain ChangeDomain(int index) => ref _domains.ChangeValue(index);
 

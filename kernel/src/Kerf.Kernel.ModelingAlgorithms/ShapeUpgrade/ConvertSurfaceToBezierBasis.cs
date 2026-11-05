@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeUpgrade/ShapeUpgrade_ConvertSurfaceToBezierBasis.lxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeUpgrade/ShapeUpgrade_ConvertSurfaceToBezierBasis.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Healing.Extend;
@@ -521,7 +521,7 @@ internal class ConvertSurfaceToBezierBasis : SplitSurface
             }
             if (basis is BezierCurve3D bezierBasis)
             {
-                // OCCT.NET: OCCT segments the copy's basis curve in place; the port's basis curves are shared and
+                // Kerf: OCCT segments the copy's basis curve in place; the port's basis curves are shared and
                 // frozen once handed out (decision 159), so the segment is made on a copy, rebuilt into the offset
                 // curve if there is one and set as the copy's basis (decision 998)
                 var segment = (BezierCurve3D)bezierBasis.Copy();

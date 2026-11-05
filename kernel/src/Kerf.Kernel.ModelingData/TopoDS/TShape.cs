@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKBRep/TopoDS/TopoDS_TShape.hxx
 // Port of: src/ModelingData/TKBRep/TopoDS/TopoDS_TShape.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1990-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Tools;
@@ -18,10 +18,10 @@ namespace Kerf.Engine.Topology;
 /// <remarks>
 /// <para>
 /// The flags are Free, Modified, Checked, Orientable, Closed, Infinite, Convex and Locked. Their getters are public;
-/// their setters and the child list are internal to OCCT.NET.
+/// their setters and the child list are internal to Kerf.
 /// </para>
 /// <para>
-/// A TShape freezes when the shape that holds it is handed to code outside OCCT.NET: when a public algorithm returns
+/// A TShape freezes when the shape that holds it is handed to code outside Kerf: when a public algorithm returns
 /// it, or when it is read from a file (docs/phase3-design.md, section 4.2). A frozen TShape, its children and its
 /// geometry never change again, and it is <see cref="Locked()"/>: OCCT's own guards then refuse to modify it.
 /// </para>
@@ -86,7 +86,7 @@ internal abstract class TShape : Transient
 
     /// <summary>
     /// The stored locked bit, without the frozen state: what the shape sets write to files, so files carry OCCT's
-    /// flags (OCCT.NET addition).
+    /// flags (Kerf addition).
     /// </summary>
     internal bool LockedFlag() => (State & (ushort)BitLayout.Bit_Locked) != 0;
 
@@ -225,7 +225,7 @@ internal abstract class TShape : Transient
         }
     }
 
-    // Freezing (OCCT.NET, docs/phase3-design.md, section 4.2).
+    // Freezing (Kerf, docs/phase3-design.md, section 4.2).
 
     /// <summary>
     /// Freezes this TShape and every TShape reachable from it, with their representations, in post-order: the

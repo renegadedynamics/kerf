@@ -1,6 +1,6 @@
 // Port of: src/ModelingAlgorithms/TKGeomAlgo/GTests/GeomAPI_PointsToBSplineSurface_Test.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Geometry.Api;
@@ -36,7 +36,7 @@ public class GeomAPI_PointsToBSplineSurface_Test
     }
 }
 
-/// <summary>GeomAPI_PointsToBSplineSurface's methods on smooth grids (OCCT.NET's own tests).</summary>
+/// <summary>GeomAPI_PointsToBSplineSurface's methods on smooth grids (Kerf's own tests).</summary>
 public class GeomAPI_PointsToBSplineSurfaceTests
 {
     private static double Height(double x, double y) => 0.3 * Math.Sin(x) + 0.2 * Math.Cos(1.5 * y) + 0.05 * x * y;

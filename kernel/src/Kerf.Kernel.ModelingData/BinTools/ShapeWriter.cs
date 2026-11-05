@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKBRep/BinTools/BinTools_ShapeWriter.hxx
 // Port of: src/ModelingData/TKBRep/BinTools/BinTools_ShapeWriter.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
@@ -113,7 +113,7 @@ internal class ShapeWriter : ShapeSetBase
     // Writes the shape (type, orientation, location, geometry, flags, sub-shapes), or a reference to it
     private void WriteShape(OStream stream, in Shape shape)
     {
-        // OCCT.NET: a shape nested too deeply for the stack throws InsufficientExecutionStackException
+        // Kerf: a shape nested too deeply for the stack throws InsufficientExecutionStackException
         System.Runtime.CompilerServices.RuntimeHelpers.EnsureSufficientExecutionStack();
 
         if (shape.IsNull)
@@ -137,7 +137,7 @@ internal class ShapeWriter : ShapeSetBase
         stream.WriteShape(aShape.Type, aShape.Orientation);
         WriteLocation(stream, shape.Placement);
 
-        // OCCT.NET: the geometry is written by a separate method (a smaller frame for the recursion)
+        // Kerf: the geometry is written by a separate method (a smaller frame for the recursion)
         WriteShapeGeometry(stream, aShape);
 
         stream.PutBools(aShape.Free(),

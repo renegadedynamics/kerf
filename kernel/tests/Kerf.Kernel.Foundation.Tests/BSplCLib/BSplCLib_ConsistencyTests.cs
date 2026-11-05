@@ -1,6 +1,6 @@
-// OCCT.NET's own tests (not a port of an OCCT GTest): BSplCLib's operations checked against each other on random
+// Kerf's own tests (not a port of an OCCT GTest): BSplCLib's operations checked against each other on random
 // curves, since OCCT's GTests cover little of BSplCLib and TKMath has no oracle (docs/decisions.md, decision 23).
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Numerics;

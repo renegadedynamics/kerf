@@ -68,7 +68,7 @@ CHECKS = [
     ("Locked() tests", r"\.Locked\(\s*\)"),
     ("catch of LockedShape/ImmutableObject", r"catch\s*\(\s*(?:LockedShapeException|ImmutableObjectException|FrozenShapeException)"),
 ]
-MARKERS = [("'OCCT.NET: frozen' markers", r"OCCT\.NET:\s*frozen")]
+MARKERS = [("'Kerf: frozen' markers", r"OCCT\.NET:\s*frozen")]
 
 # --- in-place edits: kinds, and the members they reach ---
 EDITS = [

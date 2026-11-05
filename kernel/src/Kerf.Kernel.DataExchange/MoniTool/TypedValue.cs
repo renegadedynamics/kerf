@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKXSBase/MoniTool/MoniTool_TypedValue.hxx
 // Port of: src/DataExchange/TKXSBase/MoniTool/MoniTool_TypedValue.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -167,7 +167,7 @@ internal class TypedValue : Transient
     }
 
     /// <summary>
-    /// An exact copy of another typed value (OCCT.NET): every field as it is, the enforced definition included (where
+    /// An exact copy of another typed value (Kerf): every field as it is, the enforced definition included (where
     /// OCCT's copy constructor enforces the computed definition), the value in a new string. For
     /// <see cref="StaticSet"/>'s copies, which must behave as the original under later definitions.
     /// </summary>
@@ -292,7 +292,7 @@ internal class TypedValue : Transient
                 if (_theeadds.Count != 0)
                 {
                     def += " , alpha: ";
-                    // OCCT.NET: the map iterates in insertion order where OCCT's iterates in hash order (decision 1181)
+                    // Kerf: the map iterates in insertion order where OCCT's iterates in hash order (decision 1181)
                     foreach (KeyValuePair<string, int> listadd in _theeadds)
                     {
                         string name = listadd.Key;
@@ -1319,7 +1319,7 @@ internal class TypedValue : Transient
         return _theoval.DynamicTypeName();
     }
 
-    // OCCT.NET: AddLib (which adds a typed value to the process-wide library) is left out (decision 1181).
+    // Kerf: AddLib (which adds a typed value to the process-wide library) is left out (decision 1181).
 
     /// <summary>
     /// Returns the TypedValue bound with a given Name Null Handle if none recorded Warning: it is the original,
@@ -1358,7 +1358,7 @@ internal class TypedValue : Transient
         return list;
     }
 
-    // OCCT.NET: StaticValue and Stats (the process-wide dictionary of static values) are left out: static values are
+    // Kerf: StaticValue and Stats (the process-wide dictionary of static values) are left out: static values are
     // an Interface_StaticSet's, passed explicitly (decision 1181).
 
     private string _thename;

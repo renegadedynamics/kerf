@@ -1,6 +1,6 @@
-// OCCT.NET: the functional twins of BRepLib's in-place statics (docs/phase3-design.md, section 4.6); in a working
+// Kerf: the functional twins of BRepLib's in-place statics (docs/phase3-design.md, section 4.6); in a working
 // overlay since unit 10H3. Not a port of an OCCT file.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;

@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKBool/BRepFill/BRepFill_Draft.hxx
 // Port of: src/ModelingAlgorithms/TKBool/BRepFill/BRepFill_Draft.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Api;
@@ -266,7 +266,7 @@ internal sealed class Draft
             Exploration.Vertices(_wire, out Vertex vf, out Vertex vl);
             if (vf.IsSame(vl))
             {
-                // OCCT.NET: OCCT sets the flag on the caller's wire; a frozen one is replaced by a new wire with the same
+                // Kerf: OCCT sets the flag on the caller's wire; a frozen one is replaced by a new wire with the same
                 // edges (decision 1045).
                 if (_wire.TShape()!.IsFrozen)
                 {

@@ -3,13 +3,13 @@ namespace Build123d.Tests;
 // The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
 using Kerf.Modeling;
 
-/// <summary>The kernel under build123d.NET: OCCT.NET, the managed port, with no native code.</summary>
+/// <summary>The kernel under build123d.NET: Kerf, the managed port, with no native code.</summary>
 public class KernelTests
 {
     [Fact]
     public void FilletsAndChamfersRun()
     {
-        // Phase 7 of OCCT.NET: 3D fillets and chamfers, offsets and drafts
+        // Phase 7 of Kerf: 3D fillets and chamfers, offsets and drafts
         var filleted = Kerf.Modeling.Operations.Fillet(new Box(10, 10, 10).Edges(), 1).Value;
         Assert.True(filleted.IsValid);
         Assert.Equal(26, filleted.Faces().Count);

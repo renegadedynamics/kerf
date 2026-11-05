@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepCheck/BRepCheck_Face.hxx
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepCheck/BRepCheck_Face.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
@@ -205,7 +205,7 @@ internal class FaceCheck : ResultCheck
         {
             if (!_mapImb.ContainsKey(exp1.Current()))
             {
-                // OCCT.NET: OCCT binds a copy of one empty list; each wire gets its own
+                // Kerf: OCCT binds a copy of one empty list; each wire gets its own
                 _mapImb[exp1.Current()] = new NCollection_List<Shape>();
             }
             else
@@ -378,7 +378,7 @@ internal class FaceCheck : ResultCheck
         for (exp1.Init(forwardFace, ShapeType.Wire); exp1.More(); exp1.Next())
         {
             Wire wir1 = ShapeCasts.Wire(exp1.Current());
-            // OCCT.NET: an unfrozen copy of the TShape, sharing the surface, never handed out
+            // Kerf: an unfrozen copy of the TShape, sharing the surface, never handed out
             Shape localShape = _shape.EmptyCopied();
             Face newFace = ShapeCasts.Face(localShape);
 
@@ -572,7 +572,7 @@ internal class FaceCheck : ResultCheck
                 }
 
                 // No control on More()
-                // OCCT.NET: OCCT reads the key of an exhausted iterator; every wire of the face is a key, so the
+                // Kerf: OCCT reads the key of an exhausted iterator; every wire of the face is a key, so the
                 // port throws if one isn't
                 if (itm == keys.Length)
                 {

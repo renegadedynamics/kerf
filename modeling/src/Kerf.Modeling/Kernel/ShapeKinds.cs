@@ -2,7 +2,7 @@
 namespace Kerf.Modeling;
 
 /// <summary>
-/// What the native binding's wrapper classes gave a shape, for OCCT.NET's shape structs: its kind (the wrappers were
+/// What the native binding's wrapper classes gave a shape, for Kerf's shape structs: its kind (the wrappers were
 /// subclasses, TopoDS_Edge for an edge) and OCCT's <c>std::hash</c>.
 /// </summary>
 internal static class ShapeKinds

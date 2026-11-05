@@ -2,7 +2,7 @@
 // Port of: src/ModelingData/TKBRep/BRep/BRep_TEdge.lxx
 // Port of: src/ModelingData/TKBRep/BRep/BRep_TEdge.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Tools;
@@ -15,7 +15,7 @@ namespace Kerf.Engine.Topology.Brep;
 /// representations.
 /// </summary>
 /// <remarks>
-/// The setters and the list of representations are internal to OCCT.NET and throw
+/// The setters and the list of representations are internal to Kerf and throw
 /// <see cref="ImmutableObjectException"/> once the edge is frozen, unless a working overlay is open: then they write
 /// into its working copy of the edge, which the getters read while it is open (<see cref="WorkingOverlay"/>, Kerf unit
 /// 10H1). <see cref="CurveRepresentations"/> is the public, read-only view of the list.
@@ -150,7 +150,7 @@ internal class BrepTEdge : TEdge
         return _curves;
     }
 
-    /// <summary>The curve representations, as a new read-only list (OCCT.NET addition).</summary>
+    /// <summary>The curve representations, as a new read-only list (Kerf addition).</summary>
     public IReadOnlyList<CurveRepresentation> CurveRepresentations() => ImmutableArrays.Own([.. View()._curves]);
 
     /// <summary>

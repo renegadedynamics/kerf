@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKBO/IntTools/IntTools_Context.hxx
 // Port of: src/ModelingAlgorithms/TKBO/IntTools/IntTools_Context.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Classification;
@@ -58,7 +58,7 @@ internal class IntersectionContext : Transient
     private readonly Dictionary<Curve3D, ProjectPointOnCurve> _projPTMap = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<Shape, Hatcher2D> _hatcherMap = new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, SurfaceRangeLocalizeData> _projSDataMap = new(ShapeHasher.Instance);
-    // OCCT.NET (decision 753): the localisation data keyed by face and by what the intersector's boxes depend on
+    // Kerf (decision 753): the localisation data keyed by face and by what the intersector's boxes depend on
     private readonly Dictionary<Shape, Dictionary<SurfaceDataKey, SurfaceRangeLocalizeData>> _sDataKeyedMap = new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, Box> _bndBoxDataMap = new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, FaceSurfaceAdaptor> _surfAdaptorMap = new(ShapeHasher.Instance);
@@ -286,7 +286,7 @@ internal class IntersectionContext : Transient
     }
 
     /// <summary>
-    /// OCCT.NET (decision 753): the surface localisation data of the face for one set of box parameters (the
+    /// Kerf (decision 753): the surface localisation data of the face for one set of box parameters (the
     /// intersector's criteria, the face's tolerance and the surface's parameter ranges), made as
     /// <see cref="SurfaceData(in Face)"/> on the first call with these values. The boxes
     /// IntTools_BeanFaceIntersector caches in it are then the boxes it would compute, whichever edge computed them.

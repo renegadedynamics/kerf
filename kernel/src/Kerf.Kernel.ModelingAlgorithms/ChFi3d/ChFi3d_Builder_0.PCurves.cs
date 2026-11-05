@@ -1,6 +1,6 @@
 // Port of: src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.cxx (ChFi3d_IntTraces to ChFi3d_BuildPCurve)
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Construction.Surfaces;
@@ -260,7 +260,7 @@ internal static partial class Builder_0
         if (Math.Abs(upcf - pc.FirstParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion()
             || Math.Abs(upcl - pc.LastParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
-            pc = Writable(pc); // OCCT.NET: OCCT segments in place; a frozen curve is segmented on a copy (10204)
+            pc = Writable(pc); // Kerf: OCCT segments in place; a frozen curve is segmented on a copy (10204)
             pc.Segment(upcf, upcl);
         }
         if (Math.Abs(uf - pc.FirstParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion()
@@ -711,7 +711,7 @@ internal static partial class Builder_0
         return ChFi3d_BuildPCurve(surf, p1, vv1, p2, vv2, false);
     }
 
-    // OCCT.NET: OCCT changes these curves in place; one frozen elsewhere (a projection's or an intersection's
+    // Kerf: OCCT changes these curves in place; one frozen elsewhere (a projection's or an intersection's
     // result) is changed on a copy (decisions 974 and 1088).
     private static T Writable<T>(T curve) where T : Geometry2D =>
         curve.IsFrozen ? (T)curve.Copy() : curve;

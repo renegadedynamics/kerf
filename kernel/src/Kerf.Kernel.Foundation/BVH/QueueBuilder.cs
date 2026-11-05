@@ -1,6 +1,6 @@
 // Port of: src/FoundationClasses/TKMath/BVH/BVH_QueueBuilder.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2013-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Occt;
@@ -198,7 +198,7 @@ internal abstract class QueueBuilder<T, TVec> : Builder<T, TVec>
 
         BVH_TypedBuildTool buildTool = new(set, bvh, buildQueue, this);
 
-        // OCCT.NET: a runtime without threads (single-threaded WebAssembly) builds in the calling thread (decision 487)
+        // Kerf: a runtime without threads (single-threaded WebAssembly) builds in the calling thread (decision 487)
         if (_numOfThreads > 1 && !OsdParallel.IsSerial)
         {
             // Reserve the maximum possible number of nodes in the BVH

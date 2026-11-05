@@ -2,7 +2,7 @@
 // Port of: src/DataExchange/TKDESTEP/STEPCAFControl/STEPCAFControl_ExternFile.cxx
 // Port of: src/DataExchange/TKDESTEP/STEPCAFControl/STEPCAFControl_ExternFile.lxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Documents;
 /// <summary>
 /// Auxiliary class serving as container for data resulting from translation of external file
 /// </summary>
-/// <remarks>OCCT.NET: the label is an <see cref="Label"/> in place of a <c>TDF_Label</c> (decision 1231).</remarks>
+/// <remarks>Kerf: the label is an <see cref="Label"/> in place of a <c>TDF_Label</c> (decision 1231).</remarks>
 internal class ExternFile : Transient
 {
     /// <summary>Creates an empty structure</summary>

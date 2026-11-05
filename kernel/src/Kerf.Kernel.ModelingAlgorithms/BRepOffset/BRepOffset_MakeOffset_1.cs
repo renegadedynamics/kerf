@@ -1,6 +1,6 @@
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_MakeOffset_1.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 // This is the implementation of the extension of the 3D offset algorithm
 // to work in mode Complete and Join Type Intersection.
@@ -54,7 +54,7 @@ internal sealed class BuildOffsetFaces
     // function : AddToContainer
     // purpose  : Set of methods to add a shape into container
     //=======================================================================
-    // OCCT.NET: the overloads of OCCT's templates (TakeModified) dispatch on the container's type at run time.
+    // Kerf: the overloads of OCCT's templates (TakeModified) dispatch on the container's type at run time.
     private static bool AddToContainer(in Shape s, object container)
     {
         switch (container)
@@ -2040,7 +2040,7 @@ internal sealed class BuildOffsetFaces
                 locInvEdges.TryGetValue(fClassified, out IndexedSet<Shape>? pMEInvalid);
                 bool isInvalid = pMEInvalid is not null && pMEInvalid.Contains(e);
 
-                // OCCT.NET: OCCT iterates the map by its faces' addresses; the port in insertion order (decision 1032).
+                // Kerf: OCCT iterates the map by its faces' addresses; the port in insertion order (decision 1032).
                 foreach (Shape fUnclassified in mfUnclassified)
                 {
                     ToolSet edgeSetUnclass = new();
@@ -3275,7 +3275,7 @@ internal sealed class BuildOffsetFaces
                 pList.Append(fcb);
             }
 
-            // OCCT.NET: OCCT iterates the map by its faces' addresses; the port in insertion order (decision 1032).
+            // Kerf: OCCT iterates the map by its faces' addresses; the port in insertion order (decision 1032).
             foreach (KeyValuePair<Shape, NCollection_List<Shape>> itM in dmff)
             {
                 Shape f = itM.Key;
@@ -4541,7 +4541,7 @@ internal sealed class BuildOffsetFaces
         Exploration.MapShapes(s, ShapeType.Edge, me);
         //
         _oeOrigins.Clear();
-        // OCCT.NET: OCCT iterates the map by its edges' addresses; the port in insertion order (decision 1032).
+        // Kerf: OCCT iterates the map by its edges' addresses; the port in insertion order (decision 1032).
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> itDM in _oeImages)
         {
             Shape e = itDM.Key;
@@ -5207,7 +5207,7 @@ internal sealed class BuildOffsetFaces
         Dictionary<Shape, Shape> dmfImF = new(ShapeHasher.Instance);
         Compound cfArt = new();
         new BrepBuilder().MakeCompound(ref cfArt);
-        // OCCT.NET: OCCT iterates the map by its faces' addresses; the port in insertion order (decision 1032).
+        // Kerf: OCCT iterates the map by its faces' addresses; the port in insertion order (decision 1032).
         foreach (KeyValuePair<Shape, IndexedSet<Shape>> itM in _artInvalidFaces)
         {
             Shape f = itM.Key;
@@ -6721,7 +6721,7 @@ internal sealed class BuildOffsetFaces
                 continue;
             }
             //
-            // OCCT.NET: OCCT iterates the map by its vertices' addresses; the port in insertion order (decision 1032).
+            // Kerf: OCCT iterates the map by its vertices' addresses; the port in insertion order (decision 1032).
             bool bFound = false;
             foreach (Shape itM in vertsToAvoid)
             {
@@ -7821,7 +7821,7 @@ internal sealed class BuildOffsetFaces
         // Add for check also the edges created from common between splits
         // of offset faces edges not connected to any invalidity.
         // These edges may also accidentally fill some part.
-        // OCCT.NET: OCCT iterates the map by its edges' addresses; the port in insertion order (decision 1032).
+        // Kerf: OCCT iterates the map by its edges' addresses; the port in insertion order (decision 1032).
         foreach (Shape e in meCheckExt)
         {
             //

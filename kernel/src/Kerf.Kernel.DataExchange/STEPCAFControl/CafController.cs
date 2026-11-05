@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/STEPCAFControl/STEPCAFControl_Controller.hxx
 // Port of: src/DataExchange/TKDESTEP/STEPCAFControl/STEPCAFControl_Controller.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Documents;
 /// </summary>
 /// <remarks>
 /// <para>
-/// OCCT.NET: as STEPControl_Controller (decision 1264), <see cref="Init"/> records a controller under "STEP" and
+/// Kerf: as STEPControl_Controller (decision 1264), <see cref="Init"/> records a controller under "STEP" and
 /// "step" once per process (it replaces STEPControl's there, as in OCCT), and STEPCAFControl_Reader and
 /// STEPCAFControl_Writer give their sessions a controller of their own (<see cref="SelectFor"/>). The statics
 /// <c>write.stepcaf.subshapes.name</c> and <c>read.stepcaf.subshapes.name</c>, which OCCT's <c>Init</c> declares
@@ -49,7 +49,7 @@ internal class CafController : StepController
 
     /// <summary>
     /// Declares STEP's statics and STEPCAFControl's (OCCT's <c>Init</c>'s <c>Interface_Static::Init</c> calls) in a
-    /// parameter set, once per set (OCCT.NET, decision 1181).
+    /// parameter set, once per set (Kerf, decision 1181).
     /// </summary>
     public override void InitStatics(StaticSet statics)
     {
@@ -84,7 +84,7 @@ internal class CafController : StepController
     /// Standard Initialisation. It creates a Controller for STEP-XCAF and records it to various names, available to
     /// select it later Returns True when done, False if could not be done
     /// </summary>
-    /// <remarks>OCCT.NET: once per process, thread-safe (decision 1264).</remarks>
+    /// <remarks>Kerf: once per process, thread-safe (decision 1264).</remarks>
     public new static bool Init()
     {
         StepController.Init();
@@ -95,7 +95,7 @@ internal class CafController : StepController
     /// <summary>
     /// Selects STEP in a session as STEPCAFControl_Reader and STEPCAFControl_Writer do (OCCT: <c>SelectNorm("STEP")</c>,
     /// the controller recorded process-wide, which <see cref="Init"/> made a STEPCAFControl_Controller): a session
-    /// already working with a STEPCAFControl_Controller keeps it; another gets a controller of its own (OCCT.NET,
+    /// already working with a STEPCAFControl_Controller keeps it; another gets a controller of its own (Kerf,
     /// decision 1264). As SelectNorm, it clears the session's transfer reader first.
     /// </summary>
     public new static bool SelectFor(ExchangeWorkSession session)

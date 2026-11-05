@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKBRep/BRepTools/BRepTools_NurbsConvertModification.hxx
 // Port of: src/ModelingData/TKBRep/BRepTools/BRepTools_NurbsConvertModification.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Extrema;
@@ -747,7 +747,7 @@ internal class NurbsConvertModification : CopyModification
                     {
                         curve2d = (Curve2D)c2d.Copy();
 
-                        // OCCT.NET: OCCT's S, renamed: C# can't shadow the S declared below
+                        // Kerf: OCCT's S, renamed: C# can't shadow the S declared below
                         Surface? aS;
                         if (newF.IsNull)
                         {

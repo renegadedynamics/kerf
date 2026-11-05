@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
 using Kerf.Engine.Collections;
@@ -187,7 +187,7 @@ internal static class SWDRAWShapeToolCommands
         if (!Shape.Free())
         {
             di.Append("Shape non Free -> Freeing\n");
-            // OCCT.NET: a frozen shell keeps its flag, and BRep_Builder adds it all the same (see the class)
+            // Kerf: a frozen shell keeps its flag, and BRep_Builder adds it all the same (see the class)
             if (!Shape.TShape()!.IsFrozen)
             {
                 Shape.Free(true);

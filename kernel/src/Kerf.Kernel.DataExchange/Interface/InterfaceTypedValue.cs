@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKXSBase/Interface/Interface_TypedValue.hxx
 // Port of: src/DataExchange/TKXSBase/Interface/Interface_TypedValue.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Exchange.Framework.Monitoring;
 using Occt;
@@ -25,7 +25,7 @@ internal class InterfaceTypedValue : TypedValue
     {
     }
 
-    /// <summary>An exact copy of another typed value (OCCT.NET, for <see cref="StaticSet"/>'s copies).</summary>
+    /// <summary>An exact copy of another typed value (Kerf, for <see cref="StaticSet"/>'s copies).</summary>
     internal InterfaceTypedValue(InterfaceTypedValue other, bool exact) : base(other, exact)
     {
     }

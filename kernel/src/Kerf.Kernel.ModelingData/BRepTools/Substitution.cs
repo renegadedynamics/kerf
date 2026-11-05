@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKBRep/BRepTools/BRepTools_Substitution.hxx
 // Port of: src/ModelingData/TKBRep/BRepTools/BRepTools_Substitution.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
@@ -44,7 +44,7 @@ internal sealed class Substitution
     public void Substitute(in Shape os, NCollection_List<Shape> ns)
     {
         Standard_ConstructionError_Raise_if(IsCopied(os), "BRepTools_CutClue::Substitute");
-        // OCCT.NET: OCCT's map stores a copy of the list
+        // Kerf: OCCT's map stores a copy of the list
         _map[os] = new NCollection_List<Shape>(ns);
     }
 

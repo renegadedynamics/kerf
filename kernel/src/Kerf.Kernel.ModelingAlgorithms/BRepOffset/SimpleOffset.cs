@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_SimpleOffset.hxx
 // Port of: src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_SimpleOffset.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
@@ -106,7 +106,7 @@ internal sealed class SimpleOffset : Modification
     {
         if (!_faceInfo.ContainsKey(f))
         {
-            // OCCT.NET: OCCT leaves the outputs unset
+            // Kerf: OCCT leaves the outputs unset
             s = null;
             l = new Placement();
             tol = 0.0;
@@ -132,7 +132,7 @@ internal sealed class SimpleOffset : Modification
     {
         if (!_edgeInfo.ContainsKey(e))
         {
-            // OCCT.NET: OCCT leaves the outputs unset
+            // Kerf: OCCT leaves the outputs unset
             c = null;
             l = new Placement();
             tol = 0.0;
@@ -155,7 +155,7 @@ internal sealed class SimpleOffset : Modification
     {
         if (!_vertexInfo.ContainsKey(v))
         {
-            // OCCT.NET: OCCT leaves the outputs unset
+            // Kerf: OCCT leaves the outputs unset
             p = new Point3D();
             tol = 0.0;
             return false;

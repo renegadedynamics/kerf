@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -9,7 +9,7 @@ using static Kerf.Geometry.Continuity;
 namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
-/// OCCT.NET's own tests of GeomLib's statics (GeomLib.cxx), GeomLib_LogSample, GeomLib_PolyFunc,
+/// Kerf's own tests of GeomLib's statics (GeomLib.cxx), GeomLib_LogSample, GeomLib_PolyFunc,
 /// GeomLib_DenominatorMultiplier and GeomLib_MakeCurvefromApprox. BuildCurve3d, To3d and SameRange are also compared
 /// with native OCCT (the oracle tests); these tests check known answers and that the caller's geometry is never
 /// changed.

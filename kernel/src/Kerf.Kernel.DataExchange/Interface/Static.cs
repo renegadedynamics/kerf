@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKXSBase/Interface/Interface_Static.hxx
 // Port of: src/DataExchange/TKXSBase/Interface/Interface_Static.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Occt;
 using static Kerf.Engine.Exchange.Framework.ParamType;
@@ -101,7 +101,7 @@ internal class Static : InterfaceTypedValue
     }
 
     /// <summary>
-    /// An exact copy of another static (OCCT.NET, for <see cref="StaticSet"/>'s copies): definition, value,
+    /// An exact copy of another static (Kerf, for <see cref="StaticSet"/>'s copies): definition, value,
     /// family and status; the wild-card is set by the set, which maps it to its own copy.
     /// </summary>
     internal Static(Static other, bool exact) : base(other, exact)

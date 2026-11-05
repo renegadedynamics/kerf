@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKXSBase/XSAlgo/XSAlgo_ShapeProcessor.hxx
 // Port of: src/DataExchange/TKXSBase/XSAlgo/XSAlgo_ShapeProcessor.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2024-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -89,7 +89,7 @@ internal class ShapeProcessor
     }
 
     /// <summary>
-    /// As <see cref="ProcessShape"/>, without freezing the result (OCCT.NET, for STEPControl_ActorRead, decision 1273):
+    /// As <see cref="ProcessShape"/>, without freezing the result (Kerf, for STEPControl_ActorRead, decision 1273):
     /// a reader's working shapes are processed in place, as OCCT's, so that the items sharing them keep sharing them.
     /// </summary>
     internal Shape InternalProcessShape(in Shape shape, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags operations,
@@ -103,7 +103,7 @@ internal class ShapeProcessor
         return global::Kerf.Engine.Healing.Process.ShapeProcess.Perform(_context, operations, progress) ? _context.InternalResult() : shape;
     }
 
-    /// <summary>As <see cref="MergeTransferInfo(TransientProcess, int)"/>, without freezing the history's shapes (OCCT.NET, decision 1273).</summary>
+    /// <summary>As <see cref="MergeTransferInfo(TransientProcess, int)"/>, without freezing the history's shapes (Kerf, decision 1273).</summary>
     internal void InternalMergeTransferInfo(TransientProcess transientProcess, int firstTPItemIndex)
     {
         if (_context is null)
@@ -359,7 +359,7 @@ internal class ShapeProcessor
         => CheckPCurve(edge, face, precision, isSeam, statics.IVal("read.stdsameparameter.mode") != 0);
 
     /// <summary>
-    /// As the form with statics, given the value of <c>read.stdsameparameter.mode</c> (OCCT.NET addition: StepToTopoDS
+    /// As the form with statics, given the value of <c>read.stdsameparameter.mode</c> (Kerf addition: StepToTopoDS
     /// takes it from its model's parameters, decision 1246).
     /// </summary>
     internal static bool CheckPCurve(in Edge edge, in Face face, double precision, bool isSeam,

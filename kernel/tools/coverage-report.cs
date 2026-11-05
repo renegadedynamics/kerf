@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
 // Merges the Cobertura files of a coverage run (tools/coverage.ps1) and writes line coverage per OCCT package (the
 // folder under each kernel assembly) and per folder of the modeling layer, with the packages under the floor listed

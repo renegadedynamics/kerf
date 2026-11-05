@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepLib/BRepLib_MakeShape.hxx
 // Port of: src/ModelingAlgorithms/TKTopAlgo/BRepLib/BRepLib_MakeShape.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
@@ -68,7 +68,7 @@ internal abstract class LibraryMakeShape : LibraryCommand
 
     /// <summary>
     /// Kerf: opens, before a maker changes its result again (MakePolygon's, MakeSolid's and MakeFace's Add, Close), a
-    /// working overlay when a public accessor has frozen the result (unit 10H3, in place of OCCT.NET's
+    /// working overlay when a public accessor has frozen the result (unit 10H3, in place of Kerf's
     /// UnfreezeResult): the change goes to a working copy, and <see cref="EndResultChange"/> gives the maker the new
     /// TShape, so the shape handed out never changes. OCCT changes the one shape in place. Null when the result isn't
     /// frozen: the maker changes its own shape in place, as OCCT.

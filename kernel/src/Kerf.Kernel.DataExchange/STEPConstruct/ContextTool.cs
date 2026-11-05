@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/STEPConstruct/STEPConstruct_ContextTool.hxx
 // Port of: src/DataExchange/TKDESTEP/STEPConstruct/STEPConstruct_ContextTool.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Step.Construct;
 /// provides set of methods to work with various STEP constructs as required by Actor
 /// </summary>
 /// <remarks>
-/// A C++ value class, a C# class here (decision 1185). OCCT.NET: it also holds the writer's counter of
+/// A C++ value class, a C# class here (decision 1185). Kerf: it also holds the writer's counter of
 /// NEXT_ASSEMBLY_USAGE_OCCURRENCE identifiers (<see cref="NauoId"/>, decision 1266).
 /// </remarks>
 internal class ContextTool
@@ -419,7 +419,7 @@ internal class ContextTool
     }
 
     /// <summary>
-    /// The last identifier given to a NEXT_ASSEMBLY_USAGE_OCCURRENCE by this writer (OCCT.NET: OCCT numbers them
+    /// The last identifier given to a NEXT_ASSEMBLY_USAGE_OCCURRENCE by this writer (Kerf: OCCT numbers them
     /// from a process-wide counter, decision 1266).
     /// </summary>
     public ref int NauoId() => ref _nauoId;

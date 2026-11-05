@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
 // Translates C++ function bodies to C# by docs/translation-rules.md: statements re-laid out one per line with
 // OCCT's comments kept, expressions parsed and printed with the C++ types known (handles become references, a

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
 // Decision 581, step 1: Boolean (and healing, sewing) results are first compared as BRep bytes, with the Free flag
 // masked and counted (plan section 2.3: an unsplit argument face shared into the result keeps the Free flag it was

@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKBRep/BinTools/BinTools_LocationSet.hxx
 // Port of: src/ModelingData/TKBRep/BinTools/BinTools_LocationSet.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
@@ -190,7 +190,7 @@ internal class BinaryLocationSet
         int i, nbLoc;
         nbLoc = global::Kerf.Engine.Exchange.Brep.Binary.BinTools.ReadFormattedInteger(IS);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.Get(IS); // remove lf
-        // OCCT.NET: untrusted input: a location takes at least 1 + 4 bytes
+        // Kerf: untrusted input: a location takes at least 1 + 4 bytes
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, nbLoc, 5, "locations");
 
         Placement l = new();
@@ -213,7 +213,7 @@ internal class BinaryLocationSet
                     while (l1 != 0)
                     {
                         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out p);
-                        // OCCT.NET: untrusted input: OCCT reads outside its map
+                        // Kerf: untrusted input: OCCT reads outside its map
                         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(l1, 1, _map.Count, "location");
                         Placement L1 = _map[l1 - 1];
                         l = global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PoweredTimes(L1, p, l);

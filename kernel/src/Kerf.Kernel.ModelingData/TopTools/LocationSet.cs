@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.hxx
 // Port of: src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
@@ -301,7 +301,7 @@ internal class LocationSet
         // OCCT's nbLoc is uninitialised if the count can't be read
         int i, nbLoc = 0;
         StreamUtilities.Read(IS, ref nbLoc);
-        // OCCT.NET: untrusted input: an elementary location takes at least 25 characters
+        // Kerf: untrusted input: an elementary location takes at least 25 characters
         StreamUtilities.CheckCount(IS, Math.Max(nbLoc, 0), 4, "locations");
 
         Placement l = new();
@@ -327,10 +327,10 @@ internal class LocationSet
                 StreamUtilities.Read(IS, ref l1);
                 while (l1 != 0)
                 {
-                    // OCCT.NET: untrusted input: OCCT loops for ever on a stream that has failed
+                    // Kerf: untrusted input: OCCT loops for ever on a stream that has failed
                     StreamUtilities.CheckNotFailed(IS, "TopTools_LocationSet::Read");
                     StreamUtilities.Read(IS, ref p);
-                    // OCCT.NET: untrusted input: OCCT reads outside its map
+                    // Kerf: untrusted input: OCCT reads outside its map
                     if (l1 < 1 || l1 > _map.Count)
                     {
                         throw new StreamFormatErrorException("TopTools_LocationSet::Read: no location " + Str(l1));
@@ -353,7 +353,7 @@ internal class LocationSet
     // power, and the product once per item of its right operand
     internal static Placement PoweredTimes(in Placement l1, int p, in Placement l)
     {
-        // OCCT.NET: untrusted input
+        // Kerf: untrusted input
         long nbItems = NbItems(l1);
         if (nbItems > 1 && (p == int.MinValue || nbItems * Math.Abs((long)p) > MaxLocationItems))
         {

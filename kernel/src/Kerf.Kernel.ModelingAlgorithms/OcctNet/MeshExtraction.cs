@@ -1,5 +1,5 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
-// An OCCT.NET addition, not a port: the managed equivalent of build123d.NET's native mesh extraction
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// An Kerf addition, not a port: the managed equivalent of build123d.NET's native mesh extraction
 // (native/shim/src/b3d_mesh.cpp, b3d_mesh_extract), which fills Bento's viewer's buffers. Open question 12.
 
 using Kerf.Engine.Collections;

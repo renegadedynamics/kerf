@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.hxx
 // Port of: src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
@@ -48,7 +48,7 @@ internal class BinaryShapeSet : ShapeSetBase
     private readonly IndexedMap<Triangulation, bool> _triangulations = new(ReferenceEqualityComparer.Instance);
     private readonly IndexedSet<PolygonOnTriangulation> _nodes = new(ReferenceEqualityComparer.Instance);
 
-    // OCCT.NET: untrusted input: the nesting depth of each shape read, by index - 1
+    // Kerf: untrusted input: the nesting depth of each shape read, by index - 1
     private readonly List<int> _depths = [];
 
     /// <summary>An empty set, in the current format version, without triangulations.</summary>
@@ -81,7 +81,7 @@ internal class BinaryShapeSet : ShapeSetBase
             return 0;
         }
 
-        // OCCT.NET: a shape nested too deeply for the stack throws InsufficientExecutionStackException
+        // Kerf: a shape nested too deeply for the stack throws InsufficientExecutionStackException
         System.Runtime.CompilerServices.RuntimeHelpers.EnsureSufficientExecutionStack();
 
         _locations.Add(shape.Placement);
@@ -225,7 +225,7 @@ internal class BinaryShapeSet : ShapeSetBase
                     else if (cr.IsPolygonOnSurface())
                     {
                         _surfaces.Add(cr.Surface());
-                        // OCCT.NET: the 2D polygons are never written; the port's map can't hold a null one
+                        // Kerf: the 2D polygons are never written; the port's map can't hold a null one
                         if (cr.Polygon() is not null)
                         {
                             _polygons2D.Add(cr.Polygon()!);
@@ -390,7 +390,7 @@ internal class BinaryShapeSet : ShapeSetBase
         }
         catch (Exception exception) when (global::Kerf.Engine.Exchange.Brep.Binary.BinTools.IsSignal(exception))
         {
-            // OCCT.NET: untrusted input: a malformed stream raised an exception that OCCT doesn't catch here
+            // Kerf: untrusted input: a malformed stream raised an exception that OCCT doesn't catch here
             throw new StreamFormatErrorException("BinTools_ShapeSet::Read: " + Refusal.Unwrapped(exception).Message, exception);
         }
         finally
@@ -485,7 +485,7 @@ internal class BinaryShapeSet : ShapeSetBase
 
         int nbShapes = global::Kerf.Engine.Exchange.Brep.Binary.BinTools.ReadFormattedInteger(IS);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.Get(IS); // remove lf
-        // OCCT.NET: untrusted input: a shape takes at least 9 bytes (its type, 7 flags and the end of its sub-shapes)
+        // Kerf: untrusted input: a shape takes at least 9 bytes (its type, 7 flags and the end of its sub-shapes)
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, nbShapes, 9, "shapes");
         using var pSinner = new ProgressScope(pSouter.Next(), "Reading Shapes", nbShapes);
         for (int i = 1; i <= nbShapes && pSinner.More(); i++, pSinner.Next())
@@ -496,7 +496,7 @@ internal class BinaryShapeSet : ShapeSetBase
             ReadFlagsAndSubs(ref s, t, IS, nbShapes);
             _shapes.Add(s);
 
-            // OCCT.NET: untrusted input: cap the nesting, which recursive writers and explorers follow
+            // Kerf: untrusted input: cap the nesting, which recursive writers and explorers follow
             int depth = 1;
             for (var its = new Iterator(s, false, false); its.More(); its.Next())
             {
@@ -590,11 +590,11 @@ internal class BinaryShapeSet : ShapeSetBase
         else
         {
             Orientation orient;
-            // OCCT.NET: untrusted input: OCCT casts any character
+            // Kerf: untrusted input: OCCT casts any character
             orient = global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckOrientation(aChar);
             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out int indx);
             long shapeIndex = (long)nbshapes - indx + 1;
-            // OCCT.NET: untrusted input: OCCT reads outside its map
+            // Kerf: untrusted input: OCCT reads outside its map
             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(shapeIndex is >= int.MinValue and <= int.MaxValue ? (int)shapeIndex : 0,
                                 1,
                                 _shapes.Count,
@@ -603,7 +603,7 @@ internal class BinaryShapeSet : ShapeSetBase
             s.Orient(orient);
 
             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out int l);
-            // OCCT.NET: untrusted input
+            // Kerf: untrusted input
             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(l, 0, _locations.LocationCount, "location");
             s.Location(_locations.Location(l), false);
         }
@@ -936,7 +936,7 @@ internal class BinaryShapeSet : ShapeSetBase
                             case 1:
                             {
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out c);
-                                // OCCT.NET: untrusted input
+                                // Kerf: untrusted input
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(c, 0, _curves.CurveCount, "curve");
                                 if (_curves.Curve(c) is null)
                                 {
@@ -952,7 +952,7 @@ internal class BinaryShapeSet : ShapeSetBase
                             {
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out pc);
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out s);
-                                // OCCT.NET: untrusted input
+                                // Kerf: untrusted input
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(pc, 1, _curves2d.CurveCount, "2D curve");
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(s, 1, _surfaces.SurfaceCount, "surface");
                                 if (_curves2d.Curve2d(pc) is null || _surfaces.Surface(s) is null)
@@ -969,7 +969,7 @@ internal class BinaryShapeSet : ShapeSetBase
                             {
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetReal(IS, out p2);
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out s);
-                                // OCCT.NET: untrusted input
+                                // Kerf: untrusted input
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(s, 1, _surfaces.SurfaceCount, "surface");
                                 if (_surfaces.Surface(s) is null)
                                 {
@@ -992,7 +992,7 @@ internal class BinaryShapeSet : ShapeSetBase
                         if (val > 0)
                         {
                             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out l); // Locations index
-                            // OCCT.NET: untrusted input
+                            // Kerf: untrusted input
                             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(l, 0, _locations.LocationCount, "location");
 
                             if (pr is not null)
@@ -1046,7 +1046,7 @@ internal class BinaryShapeSet : ShapeSetBase
                             case 1: // -1- Curve 3D
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out c);
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out l);
-                                // OCCT.NET: untrusted input
+                                // Kerf: untrusted input
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(c, 0, _curves.CurveCount, "curve");
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(l, 0, _locations.LocationCount, "location");
                                 if (_curves.Curve(c) is not null)
@@ -1094,7 +1094,7 @@ internal class BinaryShapeSet : ShapeSetBase
                                     pl = new Point2D(plX, plY);
                                 }
 
-                                // OCCT.NET: untrusted input
+                                // Kerf: untrusted input
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(pc, 1, _curves2d.CurveCount, "2D curve");
                                 if (closed)
                                 {
@@ -1173,7 +1173,7 @@ internal class BinaryShapeSet : ShapeSetBase
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out l);
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out s2);
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out l2);
-                                // OCCT.NET: untrusted input
+                                // Kerf: untrusted input
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(s, 1, _surfaces.SurfaceCount, "surface");
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(l, 0, _locations.LocationCount, "location");
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(s2, 1, _surfaces.SurfaceCount, "surface");
@@ -1194,7 +1194,7 @@ internal class BinaryShapeSet : ShapeSetBase
                             case 5: // -5- Polygon3D
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out c);
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out l);
-                                // OCCT.NET: untrusted input
+                                // Kerf: untrusted input
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(c, 1, _polygons3D.Count, "3D polygon");
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(l, 0, _locations.LocationCount, "location");
                                 //??? Bug?  myBuilder.UpdateEdge(E,myPolygons3D(c));
@@ -1212,7 +1212,7 @@ internal class BinaryShapeSet : ShapeSetBase
 
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out t);
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out l);
-                                // OCCT.NET: untrusted input
+                                // Kerf: untrusted input
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(pt, 1, _nodes.Count, "polygon on triangulation");
                                 if (closed)
                                 {
@@ -1273,7 +1273,7 @@ internal class BinaryShapeSet : ShapeSetBase
                     global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetReal(IS, out tol);
                     global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out s); // surface indx
                     global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out l); // location indx
-                    // OCCT.NET: untrusted input
+                    // Kerf: untrusted input
                     if (s > 0)
                     {
                         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(s, 1, _surfaces.SurfaceCount, "surface");
@@ -1288,7 +1288,7 @@ internal class BinaryShapeSet : ShapeSetBase
                     if (aByte == 2)
                     {
                         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out s);
-                        // OCCT.NET: untrusted input
+                        // Kerf: untrusted input
                         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(s, 1, _triangulations.Count, "triangulation");
                         _builder.UpdateFace(f, _triangulations.KeyAt(s - 1));
                     }
@@ -1412,7 +1412,7 @@ internal class BinaryShapeSet : ShapeSetBase
 
         int nbPol = global::Kerf.Engine.Exchange.Brep.Binary.BinTools.ReadFormattedInteger(IS);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.Get(IS); // remove LF
-        // OCCT.NET: untrusted input: a polygon takes at least 13 bytes
+        // Kerf: untrusted input: a polygon takes at least 13 bytes
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, nbPol, 13, "polygons on triangulation");
         try
         {
@@ -1420,7 +1420,7 @@ internal class BinaryShapeSet : ShapeSetBase
             for (int polIter = 1; polIter <= nbPol && ps.More(); ++polIter, ps.Next())
             {
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out int nbNodes);
-                // OCCT.NET: untrusted input
+                // Kerf: untrusted input
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, nbNodes, 4, "nodes");
                 PolygonOnTriangulation poly = new(nbNodes, false);
                 for (int nodeIter = 1; nodeIter <= nbNodes; ++nodeIter)
@@ -1435,7 +1435,7 @@ internal class BinaryShapeSet : ShapeSetBase
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetBool(IS, out bool hasParameters);
                 if (hasParameters)
                 {
-                    // OCCT.NET: untrusted input
+                    // Kerf: untrusted input
                     global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, nbNodes, 8, "parameters");
                     NCollection_HArray1<double> aParams = new(1, nbNodes);
                     for (int nodeIter = 1; nodeIter <= nbNodes; ++nodeIter)
@@ -1512,7 +1512,7 @@ internal class BinaryShapeSet : ShapeSetBase
 
         int nbPol = global::Kerf.Engine.Exchange.Brep.Binary.BinTools.ReadFormattedInteger(IS);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.Get(IS); // remove LF
-        // OCCT.NET: untrusted input: a polygon takes at least 13 bytes
+        // Kerf: untrusted input: a polygon takes at least 13 bytes
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, nbPol, 13, "3D polygons");
         try
         {
@@ -1522,7 +1522,7 @@ internal class BinaryShapeSet : ShapeSetBase
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out int nbNodes);
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetBool(IS, out bool hasParameters);
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetReal(IS, out double defl);
-                // OCCT.NET: untrusted input
+                // Kerf: untrusted input
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, nbNodes, hasParameters ? 32 : 24, "nodes");
                 Polygon3D poly = new(nbNodes, hasParameters);
                 poly.Deflection(defl);
@@ -1642,7 +1642,7 @@ internal class BinaryShapeSet : ShapeSetBase
 
         int nbTriangulations = global::Kerf.Engine.Exchange.Brep.Binary.BinTools.ReadFormattedInteger(IS);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.Get(IS); // remove LF
-        // OCCT.NET: untrusted input: a triangulation takes at least 17 bytes
+        // Kerf: untrusted input: a triangulation takes at least 17 bytes
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, nbTriangulations, 17, "triangulations");
 
         try
@@ -1661,7 +1661,7 @@ internal class BinaryShapeSet : ShapeSetBase
                 }
 
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetReal(IS, out double defl); // deflection
-                // OCCT.NET: untrusted input
+                // Kerf: untrusted input
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, nbNodes, 24 + (hasUV ? 16 : 0) + (hasNormals ? 12 : 0), "nodes");
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS, nbTriangles, 12, "triangles");
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckCount(IS,

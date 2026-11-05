@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKFeat/BRepFeat/BRepFeat.hxx
 // Port of: src/ModelingAlgorithms/TKFeat/BRepFeat/BRepFeat.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Extrema;
@@ -401,7 +401,7 @@ internal static class BRepFeat
         }
     }
 
-    // OCCT.NET: OCCT translates the projected curve in place; a frozen one is translated on a copy (decision 974).
+    // Kerf: OCCT translates the projected curve in place; a frozen one is translated on a copy (decision 974).
     private static Curve2D Writable(Curve2D curve) =>
         curve.IsFrozen ? (Curve2D)curve.Copy() : curve;
 
@@ -654,7 +654,7 @@ internal static class BRepFeat
         return s;
     }
 
-    /// <summary>The description <see cref="Print"/> writes (OCCT.NET: the switch of OCCT's Print).</summary>
+    /// <summary>The description <see cref="Print"/> writes (Kerf: the switch of OCCT's Print).</summary>
     public static string Description(StatusError se) => se switch
     {
         StatusError.OK => "No error",

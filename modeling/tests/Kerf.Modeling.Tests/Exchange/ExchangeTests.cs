@@ -153,7 +153,7 @@ public partial class ExchangeTests
     [Fact]
     public void StepPastTheRecordLimitIsRefused()
     {
-        // OCCT.NET's parser counts records; native OCCT reads from a temporary file, with no such limit
+        // Kerf's parser counts records; native OCCT reads from a temporary file, with no such limit
         var stream = new MemoryStream();
         Exporters3D.ExportStep(Block(), stream);
         stream.Position = 0;

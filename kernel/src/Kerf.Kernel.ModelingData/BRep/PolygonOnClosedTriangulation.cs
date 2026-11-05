@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKBRep/BRep/BRep_PolygonOnClosedTriangulation.hxx
 // Port of: src/ModelingData/TKBRep/BRep/BRep_PolygonOnClosedTriangulation.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Meshing;
 
@@ -37,7 +37,7 @@ internal class PolygonOnClosedTriangulation : PolygonOnTriangulationRepresentati
     {
         if (toFreeze)
         {
-            p2?.Freeze(); // OCCT.NET: attached meshes are frozen
+            p2?.Freeze(); // Kerf: attached meshes are frozen
         }
         _polygon2 = p2;
     }
@@ -54,7 +54,7 @@ internal class PolygonOnClosedTriangulation : PolygonOnTriangulationRepresentati
     internal override void PolygonOnTriangulation2(PolygonOnTriangulation? p2)
     {
         CheckMutable();
-        p2?.Freeze(); // OCCT.NET: attached meshes are frozen
+        p2?.Freeze(); // Kerf: attached meshes are frozen
         _polygon2 = p2;
     }
 

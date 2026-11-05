@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeProcess/ShapeProcess_UOperator.cxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeProcess/ShapeProcess_OperFunc.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Occt;
@@ -30,7 +30,7 @@ internal class UOperator : Operator
     /// <summary>Performs the operation on the context.</summary>
     public override bool Perform(ProcessContext context, ProgressRange progress = default)
     {
-        // OCCT.NET: an operator run on its own works on the context's copy as well (decision 1022)
+        // Kerf: an operator run on its own works on the context's copy as well (decision 1022)
         if (context is ShapeContext shapeContext)
         {
             shapeContext.InternalBeginWrite();

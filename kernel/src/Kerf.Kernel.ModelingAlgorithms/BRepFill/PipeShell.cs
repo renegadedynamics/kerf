@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKBool/BRepFill/BRepFill_PipeShell.hxx
 // Port of: src/ModelingAlgorithms/TKBool/BRepFill/BRepFill_PipeShell.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
 using Kerf.Engine.Collections;
@@ -229,7 +229,7 @@ internal sealed class PipeShell : Transient
             {
                 if (_spine.TShape()!.IsFrozen)
                 {
-                    // OCCT.NET: OCCT sets the flag on the caller's wire; the port on a new wire of the same edges
+                    // Kerf: OCCT sets the flag on the caller's wire; the port on a new wire of the same edges
                     // (decision 926)
                     BrepBuilder b = new();
                     Wire wire = new();
@@ -881,7 +881,7 @@ internal sealed class PipeShell : Transient
                     {
                         if (_shape.TShape()!.IsFrozen)
                         {
-                            // OCCT.NET: OCCT adds the end faces to the shell the caller may already hold (Shape()); a
+                            // Kerf: OCCT adds the end faces to the shell the caller may already hold (Shape()); a
                             // published shell is frozen, so the port adds them to a new shell of the same faces
                             // (decision 926)
                             Shape shell = _shape.EmptyCopied();

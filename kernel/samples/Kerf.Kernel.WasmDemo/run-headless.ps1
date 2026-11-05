@@ -1,4 +1,4 @@
-# Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+# Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 # Publishes the WebAssembly demo, serves it, runs it in a headless Chrome (or Edge) with ?auto=1 over a folder of .brep
 # files, waits for its report, then compares the buffers with win-x64's (the benchmark project's wasm-compare mode).
 #   pwsh samples/Kerf.Kernel.WasmDemo/run-headless.ps1 -Data <folder of .brep files> [-Out <folder>] [-Root]

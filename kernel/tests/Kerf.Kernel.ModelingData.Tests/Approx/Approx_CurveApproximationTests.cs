@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
@@ -11,7 +11,7 @@ using static Kerf.Geometry.Continuity;
 namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
-/// OCCT.NET's own tests of Approx_Curve2d, Approx_Curve3d, Approx_CurveOnSurface and Approx_SameParameter (OCCT has no
+/// Kerf's own tests of Approx_Curve2d, Approx_Curve3d, Approx_CurveOnSurface and Approx_SameParameter (OCCT has no
 /// GTests of them): known answers on conics, planes and cylinders.
 /// </summary>
 public class Approx_CurveApproximationTests

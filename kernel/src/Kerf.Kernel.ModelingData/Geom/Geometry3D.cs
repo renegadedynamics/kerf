@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKG3d/Geom/Geom_Geometry.hxx
 // Port of: src/ModelingData/TKG3d/Geom/Geom_Geometry.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 
@@ -18,7 +18,7 @@ namespace Kerf.Geometry;
 /// <remarks>
 /// Geom objects are immutable to callers: <see cref="Transformed"/>, <see cref="Mirrored(in Point3D)"/>,
 /// <see cref="Rotated"/>, ... and the <c>With</c> methods of the derived classes return changed copies. Inside
-/// OCCT.NET the in-place mutators remain (internal), and throw <see cref="ImmutableObjectException"/> once the
+/// Kerf the in-place mutators remain (internal), and throw <see cref="ImmutableObjectException"/> once the
 /// object is frozen (shared, for instance by topology). <see cref="Copy"/> always returns an unfrozen object.
 /// </remarks>
 public abstract class Geometry3D : Transient

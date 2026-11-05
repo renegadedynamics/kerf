@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
 // What tools/stepgen knows of OCCT's classes: every class and enum of the packages it reads (the ones it generates,
 // and the ones the generated code calls: StepData, Interface, TCollection_HAsciiString...), and how their C++ types
@@ -232,7 +232,7 @@ internal sealed class Db
             return true;
         }
 
-        // a struct in OCCT.NET (gp)
+        // a struct in Kerf (gp)
         if (t.Name.StartsWith("gp_", StringComparison.Ordinal))
         {
             return true;

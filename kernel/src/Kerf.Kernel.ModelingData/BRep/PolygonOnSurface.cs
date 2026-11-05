@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKBRep/BRep/BRep_PolygonOnSurface.hxx
 // Port of: src/ModelingData/TKBRep/BRep/BRep_PolygonOnSurface.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Meshing;
 
@@ -20,7 +20,7 @@ internal class PolygonOnSurface : CurveRepresentation
     /// <summary>The polygon <paramref name="p"/> on <paramref name="s"/> (both frozen here).</summary>
     public PolygonOnSurface(Polygon2D? p, Surface? s, in Placement l) : base(l)
     {
-        p?.Freeze(); // OCCT.NET: attached meshes and geometry are frozen
+        p?.Freeze(); // Kerf: attached meshes and geometry are frozen
         s?.Freeze();
         _polygon2D = p;
         _surface = s;
@@ -40,7 +40,7 @@ internal class PolygonOnSurface : CurveRepresentation
     internal override void Polygon(Polygon2D? p)
     {
         CheckMutable();
-        p?.Freeze(); // OCCT.NET: attached meshes are frozen
+        p?.Freeze(); // Kerf: attached meshes are frozen
         _polygon2D = p;
     }
 

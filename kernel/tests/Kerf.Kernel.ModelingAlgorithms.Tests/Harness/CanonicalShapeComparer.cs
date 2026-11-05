@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
 // Decision 581, step 2: where native's own output varies from run to run (address-ordered maps, plan section 2.4)
 // or the BRep bytes differ, a result is compared canonically: the same number of each shape type; every sub-shape

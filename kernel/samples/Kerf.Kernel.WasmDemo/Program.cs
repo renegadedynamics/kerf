@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Meshing;
 using System.Runtime.InteropServices;
@@ -7,7 +7,7 @@ using System.Runtime.Versioning;
 
 [assembly: SupportedOSPlatform("browser")]
 
-Console.WriteLine("OCCT.NET WebAssembly demo ready.");
+Console.WriteLine("Kerf WebAssembly demo ready.");
 
 namespace Kerf.Kernel.WasmDemo
 {

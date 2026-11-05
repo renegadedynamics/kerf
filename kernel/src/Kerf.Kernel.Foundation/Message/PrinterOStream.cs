@@ -1,7 +1,7 @@
 // Port of: src/FoundationClasses/TKernel/Message/Message_PrinterOStream.hxx
 // Port of: src/FoundationClasses/TKernel/Message/Message_PrinterOStream.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2001-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Occt;
 using static Kerf.Engine.Foundation.MessageConsoleColor;
@@ -11,7 +11,7 @@ namespace Kerf.Engine.Foundation;
 
 /// <summary>
 /// A printer writing each message, followed by a new line, to a <see cref="TextWriter"/>: the console's standard
-/// output by default, a file, or (an OCCT.NET addition) any writer.
+/// output by default, a file, or (an Kerf addition) any writer.
 /// </summary>
 /// <remarks>
 /// Colours: OCCT colours console output by gravity (Windows console attributes or ANSI codes). The port does it through
@@ -68,7 +68,7 @@ internal class PrinterOStream : Printer
         }
     }
 
-    /// <summary>A printer to the writer, without colours (an OCCT.NET addition: a C++ caller passes a stream).</summary>
+    /// <summary>A printer to the writer, without colours (an Kerf addition: a C++ caller passes a stream).</summary>
     public PrinterOStream(TextWriter stream, Gravity traceLevel = Info)
     {
         _stream = stream;

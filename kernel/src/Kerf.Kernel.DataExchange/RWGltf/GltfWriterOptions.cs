@@ -1,5 +1,5 @@
-// New in OCCT.NET (unit 8T): glTF written fresh over the assembly tree (decisions 1166, 1233). Not a port.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// New in Kerf (unit 8T): glTF written fresh over the assembly tree (decisions 1166, 1233). Not a port.
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Meshing.Tools;
@@ -41,5 +41,5 @@ internal sealed record GltfWriterOptions
     public ToolParameters? MeshParameters { get; init; }
 
     /// <summary>The asset's generator.</summary>
-    public string Generator { get; init; } = "OCCT.NET";
+    public string Generator { get; init; } = "Kerf";
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation.Std;
 
@@ -13,7 +13,7 @@ namespace Kerf.Kernel.Foundation.Tests;
 /// x64) running this program, which sorts the indices 0..n-1 by their keys (ties everywhere) and prints the
 /// permutation after <c>make_heap</c> and after <c>sort_heap</c>:
 /// <code>
-/// // Records MSVC's std::make_heap + std::sort_heap order on keys with ties (OCCT.NET unit 4B, decision 491).
+/// // Records MSVC's std::make_heap + std::sort_heap order on keys with ties (Kerf unit 4B, decision 491).
 /// #include &lt;algorithm&gt;
 /// #include &lt;cstdio&gt;
 /// #include &lt;vector&gt;

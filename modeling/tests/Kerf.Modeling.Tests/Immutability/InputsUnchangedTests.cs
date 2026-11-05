@@ -117,7 +117,7 @@ public class InputsUnchangedTests
             C("export brep", [Fused], () => Exporters3D.ExportBrep(Fused, new MemoryStream())),
             C("export step", [Fused, MovedBox], () => Exporters3D.ExportStep(new Assembly([Fused, MovedBox]), new MemoryStream())),
         };
-        // The mesh formats are OCCT.NET's (the native binding doesn't bind them)
+        // The mesh formats are Kerf's (the native binding doesn't bind them)
         cases.AddRange(
         [
             C("export stl", [Fused], () => Exporters3D.ExportStl(Fused, new MemoryStream())),

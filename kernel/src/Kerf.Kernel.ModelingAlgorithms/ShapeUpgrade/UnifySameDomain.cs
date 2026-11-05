@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeUpgrade/ShapeUpgrade_UnifySameDomain.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeUpgrade/ShapeUpgrade_UnifySameDomain.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2012-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 // The .cxx is split by subject: this file holds the class, the unification of faces (UnifyFaces, IntUnifyFaces),
 // UnifyEdges, Build and FillHistory; ShapeUpgrade_UnifySameDomain.Faces.cs the file-static functions of the faces;
@@ -75,7 +75,7 @@ internal partial class UnifySameDomain : Transient
 
     private History? _history; //!< The history.
 
-    // OCCT.NET: the history FillHistory made over the shape worked on, merged into myHistory by Build once its working
+    // Kerf: the history FillHistory made over the shape worked on, merged into myHistory by Build once its working
     // overlay is finished (composed with the changes made in place).
     private History? _usdHistory;
 
@@ -795,7 +795,7 @@ internal partial class UnifySameDomain : Transient
                         else if (bSplineSurface.IsFrozen)
                         {
                             // OCCT: makes the face's own surface periodic in place.
-                            // OCCT.NET: frozen. OCCT makes the face's own surface periodic in place, so every shape
+                            // Kerf: frozen. OCCT makes the face's own surface periodic in place, so every shape
                             // sharing it sees a periodic surface, the input's faces included (occt-issues.md). The
                             // port makes a periodic copy and puts it in the original's place in the shape it works on
                             // (its copy of the input, see Build), which is what OCCT's edit does to that shape.
@@ -1740,7 +1740,7 @@ internal partial class UnifySameDomain : Transient
         }
 
         // Merge the history of the operation into global history
-        // OCCT.NET: Build merges it once its working overlay is finished, composed with the changes made in place
+        // Kerf: Build merges it once its working overlay is finished, composed with the changes made in place
         // (WorkingOverlay.Composed); inside another operation's overlay that is OCCT's merge.
         _usdHistory = usdHistory;
     }

@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeUpgrade/ShapeUpgrade_ShapeConvertToBezier.lxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeUpgrade/ShapeUpgrade_ShapeConvertToBezier.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Analysis;
@@ -283,7 +283,7 @@ internal class ShapeConvertToBezier : ShapeDivide
                         Edge edgenext = sewd.Edge((i == sewd.EdgeCount ? 1 : i + 1));
                         Curve2D? newRevCurve = null, newCurve = null, newnextCurve = null;
 
-                        // OCCT.NET: OCCT changes the pcurves in place, so a curve held by several of these variables (a seam
+                        // Kerf: OCCT changes the pcurves in place, so a curve held by several of these variables (a seam
                         // whose two pcurves are one curve, a wire of one edge) takes every change; the port changes copies
                         // (decision 998), carried over to each variable that held the curve changed
                         BezierCurve2D change(in Edge theEdge, BezierCurve2D curve,
@@ -495,12 +495,12 @@ internal class ShapeConvertToBezier : ShapeDivide
         return res;
     }
 
-    // OCCT.NET: a 3D Bezier curve OCCT changes in place: the curve itself if ported code owns it, else a copy (the
+    // Kerf: a 3D Bezier curve OCCT changes in place: the curve itself if ported code owns it, else a copy (the
     // edge's curve is frozen once attached); OCCT's following UpdateEdge attaches it.
     private static BezierCurve3D Mutable3d(BezierCurve3D curve) =>
         curve.IsFrozen ? (BezierCurve3D)curve.Copy() : curve;
 
-    // OCCT.NET: changes a pcurve as OCCT does in place. A frozen curve (attached to the edge) is changed on a copy,
+    // Kerf: changes a pcurve as OCCT does in place. A frozen curve (attached to the edge) is changed on a copy,
     // which then replaces the curve in the edge's representations, where OCCT's change would show; a curve that isn't
     // the edge's (a planar face's computed pcurve) is changed alone, as in OCCT.
     private static BezierCurve2D Changed2d(in Edge edge, in Edge other, BezierCurve2D curve,

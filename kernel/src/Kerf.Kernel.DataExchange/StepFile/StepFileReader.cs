@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/StepFile/StepFile_Read.hxx
 // Port of: src/DataExchange/TKDESTEP/StepFile/StepFile_Read.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -110,7 +110,7 @@ internal static class StepFileReader
 
         sout.Append("      ...    STEP File   Read    ...\n");
 
-        // OCCT.NET: OCCT locks a global mutex here (decision 1177)
+        // Kerf: OCCT locks a global mutex here (decision 1177)
         fileDataModel.GetFileNbR(out int nbhead, out int nbrec, out int nbpar); // renvoi par lex/yacc
         StepReaderData undirec = new StepReaderData(nbhead, nbrec, nbpar, stepModel.SourceCodePage()); // creation tableau de records
         for (int nr = 1; nr <= nbrec; nr++)

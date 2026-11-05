@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKXSBase/XSControl/XSControl_WorkSession.hxx
 // Port of: src/DataExchange/TKXSBase/XSControl/XSControl_WorkSession.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -36,7 +36,7 @@ internal class ExchangeWorkSession : WorkSession
     }
 
     /// <summary>
-    /// Creates a session working with a given parameter set (OCCT.NET: for instance an interpreter's, or a
+    /// Creates a session working with a given parameter set (Kerf: for instance an interpreter's, or a
     /// reader's copy; decision 1181).
     /// </summary>
     public ExchangeWorkSession(StaticSet statics) : this()
@@ -45,7 +45,7 @@ internal class ExchangeWorkSession : WorkSession
     }
 
     /// <summary>
-    /// Gives the session a parameter set (OCCT.NET): its transfer reader reads it too, and the controller's
+    /// Gives the session a parameter set (Kerf): its transfer reader reads it too, and the controller's
     /// statics are declared in it.
     /// </summary>
     public override void SetStatics(StaticSet statics)
@@ -123,7 +123,7 @@ internal class ExchangeWorkSession : WorkSession
     {
         _controller = ctl;
 
-        // OCCT.NET: the controller declares its statics in the session's parameter set (OCCT: in the process-wide
+        // Kerf: the controller declares its statics in the session's parameter set (OCCT: in the process-wide
         // statics, when it is built)
         _controller.InitStatics(Statics());
 
@@ -445,7 +445,7 @@ internal class ExchangeWorkSession : WorkSession
             return;
         }
         tr.SetController(_controller);
-        tr.SetStatics(Statics()); // OCCT.NET
+        tr.SetStatics(Statics()); // Kerf
         tr.SetGraph(HGraph());
         if (tr.TransientProcess() is not null)
         {

@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Solid.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Solid.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
 using Kerf.Engine.Collections;
@@ -605,7 +605,7 @@ internal class SolidFixer : RootFixer
     internal Solid InternalSolidFromShell(in Shell shell)
     {
         Shell sh = shell;
-        if (!sh.Free() && !WorkingOverlay.IsReadOnly(sh.TShape()!)) // OCCT.NET: frozen: a frozen shell keeps its Free flag outside an overlay
+        if (!sh.Free() && !WorkingOverlay.IsReadOnly(sh.TShape()!)) // Kerf: frozen: a frozen shell keeps its Free flag outside an overlay
         {
             sh.Free(true);
         }
@@ -625,7 +625,7 @@ internal class SolidFixer : RootFixer
                 //         Ensuite, inverser C-A-D REPRENDRE LES SHELLS
                 //         (l inversion du solide n est pas bien prise en compte)
                 sh = shell;
-                if (!sh.Free() && !WorkingOverlay.IsReadOnly(sh.TShape()!)) // OCCT.NET: frozen
+                if (!sh.Free() && !WorkingOverlay.IsReadOnly(sh.TShape()!)) // Kerf: frozen
                 {
                     sh.Free(true);
                 }

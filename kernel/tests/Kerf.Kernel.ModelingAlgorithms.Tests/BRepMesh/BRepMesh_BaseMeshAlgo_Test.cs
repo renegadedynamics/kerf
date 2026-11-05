@@ -1,6 +1,6 @@
 // Port of: src/ModelingAlgorithms/TKMesh/GTests/BRepMesh_BaseMeshAlgo_Test.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
@@ -30,7 +30,7 @@ public class BRepMesh_BaseMeshAlgoTest
     // Projects the vertex onto the face surface and adds it with proper UV parameters.
     private static Vertex addInternalVertexToFace(ref Face theFace, in Point3D thePoint)
     {
-        // OCCT.NET: the maker's face is frozen; the vertices are added to an exact copy for write
+        // Kerf: the maker's face is frozen; the vertices are added to an exact copy for write
         if (theFace.TShape()!.IsFrozen)
         {
             theFace = ShapeCasts.Face(TestCopies.ExactCopyForWrite(theFace, out _));
@@ -45,7 +45,7 @@ public class BRepMesh_BaseMeshAlgoTest
 
         aProjection.Parameters(1, out double aU, out double aV);
 
-        // OCCT.NET: BRepBuilderAPI_MakeVertex's vertex is frozen, so the vertex is made unfrozen by BRep_Builder
+        // Kerf: BRepBuilderAPI_MakeVertex's vertex is frozen, so the vertex is made unfrozen by BRep_Builder
         BrepBuilder aBuilder = new();
         Vertex aVertex = new();
         aBuilder.MakeVertex(ref aVertex, aProjection.Point(1), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -131,7 +131,7 @@ public class BRepMesh_BaseMeshAlgoTest
 
         IncrementalMesh aMesher = new(aFace, aParams);
         Assert.True(aMesher.IsDone, "Meshing should succeed");
-        aFace = ShapeCasts.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
+        aFace = ShapeCasts.Face(aMesher.Shape()); // Kerf: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
 
         // Get triangulation
         Triangulation? aTri = Tool.Triangulation(aFace, out Placement aLoc);
@@ -181,7 +181,7 @@ public class BRepMesh_BaseMeshAlgoTest
 
         IncrementalMesh aMesher = new(aFace, aParams);
         Assert.True(aMesher.IsDone, "Meshing should succeed");
-        aFace = ShapeCasts.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
+        aFace = ShapeCasts.Face(aMesher.Shape()); // Kerf: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
 
         Triangulation? aTri = Tool.Triangulation(aFace, out Placement aLoc);
         Assert.NotNull(aTri);
@@ -219,7 +219,7 @@ public class BRepMesh_BaseMeshAlgoTest
 
         IncrementalMesh aMesher = new(aFace, aParams);
         Assert.True(aMesher.IsDone, "Meshing should succeed");
-        aFace = ShapeCasts.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
+        aFace = ShapeCasts.Face(aMesher.Shape()); // Kerf: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
 
         Triangulation? aTri = Tool.Triangulation(aFace, out Placement aLoc);
         Assert.NotNull(aTri);

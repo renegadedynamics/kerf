@@ -2,7 +2,7 @@
 //          IsPresent, CDef, IDef, IsSet, CVal, IVal, RVal, SetCVal, SetIVal, SetRVal, Update, IsUpdated, Items, FillMap)
 // Port of: src/DataExchange/TKXSBase/Interface/Interface_StaticStandards.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Messages;
@@ -665,7 +665,7 @@ internal sealed class StaticSet
 
     private static readonly Lazy<bool> MessagesLoaded = new(() =>
     {
-        // OCCT.NET: OCCT's Message_MsgFile::LoadFromEnv("CSF_XSMessage", "XSTEP") left out (decision 1181)
+        // Kerf: OCCT's Message_MsgFile::LoadFromEnv("CSF_XSMessage", "XSTEP") left out (decision 1181)
         MsgFile.AddDefaults(XstepMessages.Text);
         if (!MsgFile.HasMsg("XSTEP_1"))
         {

@@ -1,5 +1,5 @@
 // Port of: src/DataExchange/TKDESTEP/GTests/StepToTopoDS_TranslateFace_Test.cxx
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 

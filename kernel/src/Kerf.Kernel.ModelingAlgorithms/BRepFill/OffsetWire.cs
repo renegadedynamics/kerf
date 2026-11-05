@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKBool/BRepFill/BRepFill_OffsetWire.hxx
 // Port of: src/ModelingAlgorithms/TKBool/BRepFill/BRepFill_OffsetWire.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
@@ -605,12 +605,12 @@ internal sealed class OffsetWire
         //                 parameters on E of vertices contained in MapBis(E);
         //---------------------------------------------------------------------
 
-        // OCCT.NET: keyed by the node's identity, as OCCT's handle; only looked up
+        // Kerf: keyed by the node's identity, as OCCT's handle; only looked up
         Dictionary<MedialNode, Shape> mapNodeVertex = new(ReferenceEqualityComparer.Instance);
         Dictionary<Shape, NCollection_Sequence<Shape>> mapBis = new(ShapeHasher.Instance);
         Dictionary<Shape, NCollection_Sequence<double>> mapVerPar = new(ShapeHasher.Instance);
 
-        // OCCT.NET: OCCT down-casts (a null plane on another surface, dereferenced below: an access violation natively)
+        // Kerf: OCCT down-casts (a null plane on another surface, dereferenced below: an access violation natively)
         PlaneSurface refPlane = (Tool.Surface(_workSpine) as PlaneSurface)!;
         if (Math.Abs(alt) > Constants.Resolution())
         {

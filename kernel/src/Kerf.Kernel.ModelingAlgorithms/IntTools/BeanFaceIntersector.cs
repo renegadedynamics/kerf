@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKBO/IntTools/IntTools_BeanFaceIntersector.hxx
 // Port of: src/ModelingAlgorithms/TKBO/IntTools/IntTools_BeanFaceIntersector.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Extrema;
@@ -1432,7 +1432,7 @@ internal class BeanFaceIntersector
                 }
                 else
                 {
-                    // OCCT.NET (decision 753): a box cached by an earlier run is checked against this run's curve box as
+                    // Kerf (decision 753): a box cached by an earlier run is checked against this run's curve box as
                     // a fresh box is, so the run gives the result of a fresh context. OCCT skips the check here.
                     if (!bMainBoxFoundC && curveData.FindBox(rootRangeC, ref mainBoxC))
                     {
@@ -1701,7 +1701,7 @@ internal class BeanFaceIntersector
         double dMinV = dMinU;
         // (OCCT builds an unused IntTools_SurfaceRangeLocalizeData aSurfaceDataInit(3, 3, dMinU, dMinV) here.)
         //
-        // OCCT.NET (decision 753): the face's data keyed by what its boxes are computed from (OCCT: by the face only).
+        // Kerf (decision 753): the face's data keyed by what its boxes are computed from (OCCT: by the face only).
         SurfaceRangeLocalizeData surfaceData =
           _context!.SurfaceData(_surface.Face(), _criteria, _faceTolerance, _uMinParameter, _uMaxParameter,
                                  _vMinParameter, _vMaxParameter);

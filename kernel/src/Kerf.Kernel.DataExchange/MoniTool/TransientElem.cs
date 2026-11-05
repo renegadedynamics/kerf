@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKXSBase/MoniTool/MoniTool_TransientElem.hxx
 // Port of: src/DataExchange/TKXSBase/MoniTool/MoniTool_TransientElem.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -26,7 +26,7 @@ internal class TransientElem : Element
     public TransientElem(Transient? akey)
     {
         _theval = akey;
-        // OCCT.NET: std::hash of the handle (its address) is the object's identity hash
+        // Kerf: std::hash of the handle (its address) is the object's identity hash
         SetHashCode(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(akey));
     }
 

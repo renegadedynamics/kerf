@@ -9,8 +9,8 @@ using Kerf.Modeling;
 /// <summary>
 /// build123d's introductory examples (https://build123d.readthedocs.io/en/latest/introductory_examples.html), their
 /// algebra-mode forms (docs/general_examples_algebra.py) in C#: all but 34, which needs text. Each result's volume and
-/// face count are native OCCT's, recorded here, so the same test checks the OCCT.NET backend against native. The seven
-/// that need OCCT.NET's phase 7 (3D fillets and chamfers, offsets, extrusion until: 9, 10, 11, 18, 26, 29, 36) were
+/// face count are native OCCT's, recorded here, so the same test checks the Kerf backend against native. The seven
+/// that need Kerf's phase 7 (3D fillets and chamfers, offsets, extrusion until: 9, 10, 11, 18, 26, 29, 36) were
 /// added with it.
 /// </summary>
 public class IntroductoryExamplesTests

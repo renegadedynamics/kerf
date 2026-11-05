@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKTopAlgo/Bisector/Bisector_Inter.hxx
 // Port of: src/ModelingAlgorithms/TKTopAlgo/Bisector/Bisector_Inter.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.TwoD;
@@ -56,7 +56,7 @@ internal sealed class Inter : Intersection2D
     public void Perform(Bisec c1, in TwoDDomain d1, Bisec c2, in TwoDDomain d2,
                         double tolConf, double tol, bool comunElement)
     {
-        // OCCT.NET: the bisectors are read without freezing them (MAT2d re-trims them in place afterwards).
+        // Kerf: the bisectors are read without freezing them (MAT2d re-trims them in place afterwards).
         BisectorCurve bis1 = (BisectorCurve)c1.Value().ChangeBasisCurve();
         BisectorCurve bis2 = (BisectorCurve)c2.Value().ChangeBasisCurve();
 

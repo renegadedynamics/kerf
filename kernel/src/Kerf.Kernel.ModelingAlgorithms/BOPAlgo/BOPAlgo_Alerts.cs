@@ -1,6 +1,6 @@
 // Port of: src/ModelingAlgorithms/TKBO/BOPAlgo/BOPAlgo_Alerts.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 // The alerts of the Boolean component, one class per DEFINE_SIMPLE_ALERT (a Message_Alert without data) or
 // DEFINE_ALERT_WITH_SHAPE (a TopoDS_AlertWithShape), so callers can check them by type (decision 584):

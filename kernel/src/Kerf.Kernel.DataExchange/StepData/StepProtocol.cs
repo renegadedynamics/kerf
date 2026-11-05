@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/StepData/StepData_Protocol.hxx
 // Port of: src/DataExchange/TKDESTEP/StepData/StepData_Protocol.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -215,7 +215,7 @@ internal class StepProtocol : Protocol
     {
         int i, nb = names.Length();
         ECDescr cd;
-        foreach (KeyValuePair<Transient, int> iter in _thedscnum) // OCCT.NET: insertion order (decision 1194)
+        foreach (KeyValuePair<Transient, int> iter in _thedscnum) // Kerf: insertion order (decision 1194)
         {
             cd = iter.Key as ECDescr;
             if (cd is null)

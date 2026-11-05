@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.hxx
 // Port of: src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -110,7 +110,7 @@ internal class WorkSession : Transient
     }
 
     /// <summary>
-    /// The parameter set of the session (OCCT.NET: OCCT's process-wide statics, decision 1181). A new session has
+    /// The parameter set of the session (Kerf: OCCT's process-wide statics, decision 1181). A new session has
     /// its own set with the standard statics; the controllers declare theirs in it (XSControl_WorkSession).
     /// </summary>
     public StaticSet Statics()
@@ -120,7 +120,7 @@ internal class WorkSession : Transient
 
     /// <summary>
     /// Gives the session a parameter set (for instance an interpreter's, or a reader's copy), in place of its own
-    /// (OCCT.NET). The standard statics are declared in it if they are not.
+    /// (Kerf). The standard statics are declared in it if they are not.
     /// </summary>
     public virtual void SetStatics(StaticSet statics)
     {
@@ -311,7 +311,7 @@ internal class WorkSession : Transient
     /// RetDone if OK, RetVoid if no Protocol not defined, RetError for file not found, RetFail if fail during
     /// read
     /// </summary>
-    /// <remarks>OCCT.NET: <paramref name="progress"/> (not in OCCT) is given to the library (plan 2.7).</remarks>
+    /// <remarks>Kerf: <paramref name="progress"/> (not in OCCT) is given to the library (plan 2.7).</remarks>
     public ReturnStatus ReadFile(string filename, ProgressRange progress = default)
     {
         if (_thelibrary is null)
@@ -365,7 +365,7 @@ internal class WorkSession : Transient
     /// during read
     /// </summary>
     /// <remarks>
-    /// OCCT.NET: the stream is a .NET <see cref="Stream"/>; <paramref name="progress"/> (not in OCCT) is given to
+    /// Kerf: the stream is a .NET <see cref="Stream"/>; <paramref name="progress"/> (not in OCCT) is given to
     /// the library (plan 2.7).
     /// </remarks>
     public ReturnStatus ReadStream(string name, Stream iStream, ProgressRange progress = default)
@@ -2368,7 +2368,7 @@ internal class WorkSession : Transient
     /// space or disk, file is write protected Fills LastRunCheckList
     /// </summary>
     /// <remarks>
-    /// OCCT.NET: <paramref name="stream"/>, when given, is where the work library writes, in place of the file
+    /// Kerf: <paramref name="stream"/>, when given, is where the work library writes, in place of the file
     /// (decision 1225).
     /// </remarks>
     public ReturnStatus SendAll(string filename, bool computegraph = false, Stream? stream = null)
@@ -2436,7 +2436,7 @@ internal class WorkSession : Transient
     /// empty Fills LastRunCheckList
     /// </summary>
     /// <remarks>
-    /// OCCT.NET: <paramref name="stream"/>, when given, is where the work library writes, in place of the file
+    /// Kerf: <paramref name="stream"/>, when given, is where the work library writes, in place of the file
     /// (decision 1225).
     /// </remarks>
     public ReturnStatus SendSelected(string filename, AbstractSelection? sel, bool computegraph = false, Stream? stream = null)
@@ -2763,7 +2763,7 @@ internal class WorkSession : Transient
         return sel;
     }
 
-    // A C string held in a char array from an index: up to the first '\0' (OCCT.NET).
+    // A C string held in a char array from an index: up to the first '\0' (Kerf).
     private static string CString(char[] buffer, int theFrom)
     {
         int end = theFrom;

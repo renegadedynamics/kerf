@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKBRep/BRepTools/BRepTools_PurgeLocations.hxx
 // Port of: src/ModelingData/TKBRep/BRepTools/BRepTools_PurgeLocations.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Brep;
@@ -105,7 +105,7 @@ internal sealed class PurgeLocations
         {
             _reShape.Clear();
         }
-        // OCCT.NET: the map's order isn't OCCT's (decision 18); the replacements are of distinct shapes, so the
+        // Kerf: the map's order isn't OCCT's (decision 18); the replacements are of distinct shapes, so the
         // order doesn't change the result.
         foreach (KeyValuePair<Shape, Shape> iter in _mapNewShapes)
         {

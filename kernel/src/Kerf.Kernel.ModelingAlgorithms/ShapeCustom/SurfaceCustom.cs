@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeCustom/ShapeCustom_Surface.lxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeCustom/ShapeCustom_Surface.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
@@ -525,7 +525,7 @@ internal sealed class SurfaceCustom
             }
             if (set)
             {
-                // OCCT.NET: OCCT makes the caller's surface periodic in place; a frozen surface is copied first
+                // Kerf: OCCT makes the caller's surface periodic in place; a frozen surface is copied first
                 // (decision 974)
                 if (bSpl.IsFrozen)
                 {
@@ -584,7 +584,7 @@ internal sealed class SurfaceCustom
             }
             if (set)
             {
-                // OCCT.NET: as above (decision 974)
+                // Kerf: as above (decision 974)
                 if (bSpl.IsFrozen)
                 {
                     bSpl = (global::Kerf.Geometry.BSplineSurface)bSpl.Copy();

@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_EdgeProjAux.hxx
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_EdgeProjAux.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 //: r5 abv 06.04.99: ec_turbine-A.stp, #4313: protect against null curve
 //    abv 09.04.99  S4136: add parameter preci (to eliminate BRepAPI::Precision)
@@ -569,7 +569,7 @@ internal class EdgeProjAuxFixer : Transient
         }
     }
 
-    // OCCT.NET: frozen (decision 1263). OCCT reverses theCurve2d in place: the edge's own pcurve (unless Init2d copied
+    // Kerf: frozen (decision 1263). OCCT reverses theCurve2d in place: the edge's own pcurve (unless Init2d copied
     // it to reparametrize it), seen reversed by the edge, by the caller (who sets the edge's range on it to the
     // reversed parameters) and by every other shape sharing the curve. The port reverses a copy and puts it in place
     // of the curve in the edge's representations (both pcurves of a seam), unless the edge is frozen; other edges

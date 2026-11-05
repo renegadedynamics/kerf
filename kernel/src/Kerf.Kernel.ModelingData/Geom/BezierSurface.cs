@@ -1,7 +1,7 @@
 // Port of: src/ModelingData/TKG3d/Geom/Geom_BezierSurface.hxx
 // Port of: src/ModelingData/TKG3d/Geom/Geom_BezierSurface.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -23,7 +23,7 @@ namespace Kerf.Geometry;
 /// <para>
 /// Arrays: <see cref="Poles"/>, <see cref="WeightsOrNull()"/> and <see cref="Weights"/> return new copies (OCCT
 /// returns references to the surface's arrays); the knots, multiplicities and knot sequences of the equivalent
-/// B-spline are immutable <see cref="IReadOnlyList{T}"/>s. Code inside OCCT.NET uses the internal <c>Internal*</c>
+/// B-spline are immutable <see cref="IReadOnlyList{T}"/>s. Code inside Kerf uses the internal <c>Internal*</c>
 /// accessors, which return the stored (or shared static) arrays: don't modify them.
 /// </para>
 /// <para>
@@ -2082,7 +2082,7 @@ public sealed partial class BezierSurface : BoundedSurface
     public IReadOnlyList<double> VKnotSequence => InternalVKnotSequence().ToImmutableArray();
 
     //=============================================================================================
-    // Internal access to the stored arrays and non-mutating twins (OCCT.NET)
+    // Internal access to the stored arrays and non-mutating twins (Kerf)
     //=============================================================================================
 
     /// <summary>The stored poles: shared, don't modify (OCCT's <c>Poles()</c> const reference).</summary>

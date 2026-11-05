@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
 // Decision 581's last step (plan section 2.5, item 3): for every argument sub-shape, Modified, Generated and
 // IsDeleted on both sides, compared through the canonical match of the results.

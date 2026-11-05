@@ -1,6 +1,6 @@
 // Port of: src/Draw/TKDraw/Draw/Draw_BasicCommands.cxx (dversion, meminfo)
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -29,7 +29,7 @@ internal static class DrawBasicCommands
     {
         // print OCCT version and OCCTY-specific macros used
         di.Append("Open CASCADE Technology 8.0.1\n");
-        // OCCT.NET: no "Debug mode" line in either configuration. The port leaves out OCCT_DEBUG code, so it is always
+        // Kerf: no "Debug mode" line in either configuration. The port leaves out OCCT_DEBUG code, so it is always
         // OCCT's release build, and the corpus scripts that read the line run the same in Debug and Release builds
         di.Append("Tk disabled\n");
         if (!OperatingSystem.IsWindows())

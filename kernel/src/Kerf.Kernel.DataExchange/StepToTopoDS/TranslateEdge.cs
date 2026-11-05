@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/StepToTopoDS/StepToTopoDS_TranslateEdge.hxx
 // Port of: src/DataExchange/TKDESTEP/StepToTopoDS/StepToTopoDS_TranslateEdge.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -70,7 +70,7 @@ internal sealed class TranslateEdge : ImportRoot
                 tp.AddFail(orig, " Point with infinite Parameter");
                 break;
             case LibraryEdgeError.DifferentsPointAndParameter:
-                // OCCT.NET: the curve an earlier edge took is frozen; adjusted in a copy (decision 1248)
+                // Kerf: the curve an earlier edge took is frozen; adjusted in a copy (decision 1248)
                 if (myCurve.IsFrozen)
                 {
                     myCurve = (Curve3D)myCurve.Copy();
@@ -377,7 +377,7 @@ internal sealed class TranslateEdge : ImportRoot
         temp1 = sac.Project(c1, pnt1, preci, out pproj, out u1, false);
         temp2 = sac.Project(c1, pnt2, preci, out pproj, out u2, false);
 
-        // OCCT.NET: the curve an earlier edge took is frozen; reversed in a copy (decision 1248)
+        // Kerf: the curve an earlier edge took is frozen; reversed in a copy (decision 1248)
         if (!GeometricTool.UpdateParam3d(ref c1, ref u1, ref u2, preci, true))
         {
             tp.AddWarning(c3D, "Update of 3D-Parameters has failed");

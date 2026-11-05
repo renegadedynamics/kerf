@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
 // Decision 580 (decision 490's rule for Booleans): a parallel run gives the serial run's result, bit for bit, at
 // every degree of parallelism and on every repeat.

@@ -1,7 +1,7 @@
 // Port of: src/ModelingAlgorithms/TKBool/BRepFill/BRepFill_Sweep.hxx
 // Port of: src/ModelingAlgorithms/TKBool/BRepFill/BRepFill_Sweep.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Booleans.Tools;
@@ -481,7 +481,7 @@ internal sealed class Sweep
         }
     }
 
-    // OCCT.NET: BuildFace's three repeated blocks. Adds E to the wire maker, then binds E to the edge actually added
+    // Kerf: BuildFace's three repeated blocks. Adds E to the wire maker, then binds E to the edge actually added
     // (the last of the wire) when the maker replaced it.
     private static void AddAndBind(MakeWire b,
                                    in Edge e,
@@ -637,7 +637,7 @@ internal sealed class Sweep
             {
                 if (thePlane.IsFrozen)
                 {
-                    // OCCT.NET: BRepLib_FindSurface can return the plane of a face already built (the edges' pcurves
+                    // Kerf: BRepLib_FindSurface can return the plane of a face already built (the edges' pcurves
                     // lie on it), and OCCT reverses that shared plane in place, changing the other face too
                     // (occt-issues.md). The port reverses a copy (decision 929).
                     thePlane = (PlaneSurface)thePlane.Copy();

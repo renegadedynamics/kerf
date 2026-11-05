@@ -1,6 +1,6 @@
 // Port of: src/ModelingAlgorithms/TKMesh/IMeshTools/IMeshTools_Parameters.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Occt;
 using System.Globalization;
@@ -97,7 +97,7 @@ internal struct ToolParameters : IEquatable<ToolParameters>
     /// <summary>Allows the quality of the generated mesh to decrease below the existing one's.</summary>
     public bool AllowQualityDecrease;
 
-    // OCCT.NET additions: equality (translation-rules section 3)
+    // Kerf additions: equality (translation-rules section 3)
 
     public readonly bool Equals(ToolParameters other) =>
         MeshAlgo == other.MeshAlgo

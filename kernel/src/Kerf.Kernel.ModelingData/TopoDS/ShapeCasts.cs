@@ -1,6 +1,6 @@
 // Port of: src/ModelingData/TKBRep/TopoDS/TopoDS.hxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1990-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
@@ -87,7 +87,7 @@ internal static class ShapeCasts
         return new Compound(shape.TShape(), shape.Placement, shape.Orientation);
     }
 
-    // OCCT.NET: C++ passes a derived variable to a non-const TopoDS_Shape& and sees the change in it. C# can't pass
+    // Kerf: C++ passes a derived variable to a non-const TopoDS_Shape& and sees the change in it. C# can't pass
     // a ref through the implicit conversion, so ported code writes TopoDS.AsShapeRef(ref e) there. The subtypes have
     // TopoDS_Shape's exact fields, so the reinterpretation is safe (docs/phase3-design.md, section 2).
 

@@ -1,6 +1,6 @@
 // Port of: src/ModelingAlgorithms/TKMesh/GTests/BRepMesh_IncrementalMesh_Test.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
@@ -85,7 +85,7 @@ public class BRepMesh_IncrementalMeshTest
 
         IncrementalMesh aMesher = new(aFace, THE_DEFLECTION);
         Assert.True(aMesher.IsDone);
-        aFace = ShapeCasts.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
+        aFace = ShapeCasts.Face(aMesher.Shape()); // Kerf: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
 
         Triangulation? aTriangulation = Tool.Triangulation(aFace, out Placement aLocation);
         Assert.NotNull(aTriangulation);
@@ -137,7 +137,7 @@ public class BRepMesh_IncrementalMeshTest
 
         IncrementalMesh aMesher = new(aCylinder, 0.1);
         Assert.True(aMesher.IsDone);
-        // OCCT.NET: a maker's result may hold frozen sub-shapes; the meshed shape is Shape() (decision 489)
+        // Kerf: a maker's result may hold frozen sub-shapes; the meshed shape is Shape() (decision 489)
         aCylinder = aMesher.Shape();
 
         int aSeamEdges = 0;

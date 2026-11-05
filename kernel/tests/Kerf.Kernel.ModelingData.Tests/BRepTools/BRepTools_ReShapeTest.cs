@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Port of: src/ModelingData/TKBRep/GTests/BRepTools_ReShape_Test.cxx (OCCT V8_0_1)
 
 using Kerf.Engine.Construction.Api;
@@ -12,7 +12,7 @@ namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
 /// OCCT's BRepTools_ReShape GTests, with BRepBuilderAPI_MakeVertex and MakeEdge (whose results are frozen). The compounds the GTests build with BRep_Builder are
-/// frozen too once built: a caller outside OCCT.NET makes them with <c>TopoDS_Builder.MakeCompound</c>, which freezes.
+/// frozen too once built: a caller outside Kerf makes them with <c>TopoDS_Builder.MakeCompound</c>, which freezes.
 /// </summary>
 public class BRepTools_ReShapeTest
 {

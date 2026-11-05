@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKDESTEP/STEPControl/STEPControl_Reader.hxx
 // Port of: src/DataExchange/TKDESTEP/STEPControl/STEPControl_Reader.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -43,7 +43,7 @@ namespace Kerf.Engine.Exchange.Step;
 /// WS-&gt;TransferReader()-&gt;ShapeResult(ent);
 /// </summary>
 /// <remarks>
-/// <para>OCCT.NET (plan 2.7, decisions 1225, 1265):</para>
+/// <para>Kerf (plan 2.7, decisions 1225, 1265):</para>
 /// <list type="bullet">
 /// <item>the parameters come from the session's parameter set (<see cref="WorkSession.Statics"/>), where
 /// OCCT reads the process-wide statics; or from a <see cref="Parameters"/> given to the read;</item>
@@ -103,7 +103,7 @@ internal class StepReader : FrameworkReader
         return ReadFile(filename, progress, null);
     }
 
-    /// <summary>As <see cref="ReadFile(string, ProgressRange)"/>, with the parser's limits (OCCT.NET).</summary>
+    /// <summary>As <see cref="ReadFile(string, ProgressRange)"/>, with the parser's limits (Kerf).</summary>
     public ReturnStatus ReadFile(string filename, ProgressRange progress, ParserReadLimits limits)
     {
         return ReadInto(filename, null, ModelParameters(), progress, limits);
@@ -115,7 +115,7 @@ internal class StepReader : FrameworkReader
         return ReadStream(name, iStream, progress, null);
     }
 
-    /// <summary>As <see cref="ReadStream(string, Stream, ProgressRange)"/>, with the parser's limits (OCCT.NET).</summary>
+    /// <summary>As <see cref="ReadStream(string, Stream, ProgressRange)"/>, with the parser's limits (Kerf).</summary>
     public ReturnStatus ReadStream(string name, Stream iStream, ProgressRange progress,
                                             ParserReadLimits limits)
     {
@@ -205,7 +205,7 @@ internal class StepReader : FrameworkReader
         {
             return status;
         }
-        // OCCT.NET: the length unit, from the session's statics (decision 1265)
+        // Kerf: the length unit, from the session's statics (decision 1265)
         if (!stepModel.IsInitializedUnit)
         {
             stepModel.SetLocalLengthUnit(global::Kerf.Engine.Exchange.Framework.UnitsMethods.GetCasCadeLengthUnit(WS().Statics()));

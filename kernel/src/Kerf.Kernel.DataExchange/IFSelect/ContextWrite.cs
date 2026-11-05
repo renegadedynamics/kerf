@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKXSBase/IFSelect/IFSelect_ContextWrite.hxx
 // Port of: src/DataExchange/TKXSBase/IFSelect/IFSelect_ContextWrite.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -25,7 +25,7 @@ internal class ContextWrite
     /// for each one it can give a restricted list of entities (in the model), else all the model is considered
     /// </summary>
     /// <remarks>
-    /// OCCT.NET: <paramref name="stream"/> (not in OCCT), when given, is where the work library writes, in place
+    /// Kerf: <paramref name="stream"/> (not in OCCT), when given, is where the work library writes, in place
     /// of the file <paramref name="filename"/> (decision 1225).
     /// </remarks>
     public ContextWrite(InterfaceModel? model, Protocol? proto, AppliedModifiers? applieds, string filename,
@@ -45,7 +45,7 @@ internal class ContextWrite
     /// Same as above but with an already computed Graph
     /// </summary>
     /// <remarks>
-    /// OCCT.NET: <paramref name="stream"/> (not in OCCT), when given, is where the work library writes, in place
+    /// Kerf: <paramref name="stream"/> (not in OCCT), when given, is where the work library writes, in place
     /// of the file <paramref name="filename"/> (decision 1225).
     /// </remarks>
     public ContextWrite(HGraph? hgraph, Protocol? proto, AppliedModifiers? applieds, string filename,
@@ -87,7 +87,7 @@ internal class ContextWrite
     }
 
     /// <summary>
-    /// Returns the stream to write to, null if the library writes the file FileName (OCCT.NET, decision 1225)
+    /// Returns the stream to write to, null if the library writes the file FileName (Kerf, decision 1225)
     /// </summary>
     public Stream? OStream()
     {

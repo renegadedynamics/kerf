@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKXSBase/XSControl/XSControl_Controller.hxx
 // Port of: src/DataExchange/TKXSBase/XSControl/XSControl_Controller.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -108,7 +108,7 @@ internal abstract class Controller : Transient
     /// one
     /// </summary>
     /// <remarks>
-    /// OCCT.NET: the dictionary is process-wide, as OCCT's: a norm records its controller once, in its
+    /// Kerf: the dictionary is process-wide, as OCCT's: a norm records its controller once, in its
     /// initialisation, before sessions select it (decision 1222). Recording is thread-safe without a lock (the
     /// dictionary is replaced whole); recording again the same controller, or one of a type it derives from, changes
     /// nothing.
@@ -393,7 +393,7 @@ internal abstract class Controller : Transient
     /// Customises a WorkSession, by adding to it the recorded items (by AddSessionItem)
     /// </summary>
     /// <remarks>
-    /// OCCT.NET: OCCT's <c>occ::handle&lt;XSControl_WorkSession&gt;&amp;</c> is never reassigned: the session is
+    /// Kerf: OCCT's <c>occ::handle&lt;XSControl_WorkSession&gt;&amp;</c> is never reassigned: the session is
     /// passed by value. The traced statics and the static editors are the session's parameter set's
     /// (<see cref="WorkSession.Statics"/>); the controller's own statics are declared in it before
     /// (<see cref="InitStatics"/>, called by XSControl_WorkSession.SetController). The recorded items are added in
@@ -545,7 +545,7 @@ internal abstract class Controller : Transient
     /// Records the name of a Static to be traced for a given use
     /// </summary>
     /// <remarks>
-    /// OCCT.NET: the name is kept; the static is looked up in the session's parameter set when the controller
+    /// Kerf: the name is kept; the static is looked up in the session's parameter set when the controller
     /// customises it (OCCT keeps the process-wide static, if it exists when the controller is built).
     /// </remarks>
     protected void TraceStatic(string name, int use)
@@ -555,7 +555,7 @@ internal abstract class Controller : Transient
     }
 
     /// <summary>
-    /// Declares the statics of the norm in a parameter set (OCCT.NET: OCCT's controllers declare them in the
+    /// Declares the statics of the norm in a parameter set (Kerf: OCCT's controllers declare them in the
     /// process-wide statics when they are built). The base declares the standard ones
     /// (<see cref="StaticSet.Standards"/>); a norm's controller adds its own, once per set
     /// (<see cref="StaticSet.StartInit"/>). Called by XSControl_WorkSession.SetController before

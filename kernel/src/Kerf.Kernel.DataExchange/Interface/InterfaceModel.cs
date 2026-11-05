@@ -1,7 +1,7 @@
 // Port of: src/DataExchange/TKXSBase/Interface/Interface_InterfaceModel.hxx
 // Port of: src/DataExchange/TKXSBase/Interface/Interface_InterfaceModel.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
 
@@ -34,7 +34,7 @@ internal abstract class InterfaceModel : Transient
     // efficient Maps, to provide a numerical identifier
     // It is able to be used in Graph processing
 
-    // OCCT.NET: OCCT's templates (HasTemplate, Template, SetTemplate, ListTemplates: a process-wide dictionary of
+    // Kerf: OCCT's templates (HasTemplate, Template, SetTemplate, ListTemplates: a process-wide dictionary of
     // models by name, which only IGES uses) are left out (decision 1183).
 
     // OCCT's nulch(): a static empty check; a new one here, so that a caller can't change a shared one (decision 1183)
@@ -598,7 +598,7 @@ internal abstract class InterfaceModel : Transient
     /// </summary>
     public virtual void Reservate(int nbent)
     {
-        // OCCT.NET: the entities' indexed map needs no reservation
+        // Kerf: the entities' indexed map needs no reservation
         if (nbent < 0 && (long)(-nbent) > _thereports.NbBuckets())
         {
             _thereports.ReSize((long)(-nbent));

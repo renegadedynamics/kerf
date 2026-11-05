@@ -1,6 +1,6 @@
 // Port of: src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Wire_1.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 // szv 19.08.99: new methods for fixing gaps between edges (3d curves and pcurves)
 
@@ -293,7 +293,7 @@ internal partial class WireFixer
                 BSplineCurve3D? bsp = null;
 
                 // Convert curve to bspline
-                // OCCT.NET: frozen: every B-spline here is the caller's (an unfrozen copy, a split, a conversion or the
+                // Kerf: frozen: every B-spline here is the caller's (an unfrozen copy, a split, a conversion or the
                 // approximation's own curve, read through InternalCurve), so the pole edits below need no copy.
                 if (c is BSplineCurve3D)
                 {
@@ -325,7 +325,7 @@ internal partial class WireFixer
                                                   1000);
                     if (conv.IsDone || conv.HasResult)
                     {
-                        bsp = conv.InternalCurve(); // OCCT.NET: frozen: Curve() freezes; the poles are edited below
+                        bsp = conv.InternalCurve(); // Kerf: frozen: Curve() freezes; the poles are edited below
                     }
                 }
                 else
@@ -988,7 +988,7 @@ internal partial class WireFixer
                 } // skl
 
                 // Convert pcurve to bspline
-                // OCCT.NET: frozen: every B-spline here is the caller's (an unfrozen copy, a split, a conversion or the
+                // Kerf: frozen: every B-spline here is the caller's (an unfrozen copy, a split, a conversion or the
                 // approximation's own curve, read through InternalCurve), so the pole edits below need no copy.
                 if (pc is BSplineCurve2D)
                 {
@@ -1026,7 +1026,7 @@ internal partial class WireFixer
                                                   1000);
                     if (conv.IsDone || conv.HasResult)
                     {
-                        bsp = conv.InternalCurve(); // OCCT.NET: frozen: Curve() freezes; the poles are edited below
+                        bsp = conv.InternalCurve(); // Kerf: frozen: Curve() freezes; the poles are edited below
                     }
                 }
                 else

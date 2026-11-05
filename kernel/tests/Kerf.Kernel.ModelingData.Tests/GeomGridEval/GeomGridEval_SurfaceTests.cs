@@ -1,5 +1,5 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomGridEval_Surface_Test.cxx (V8_0_1).
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 // The file holds the suites GeomGridEval_PlaneTest, GeomGridEval_OtherSurfaceTest and GeomGridEval_SurfaceTest,
 // and parts of GeomGridEval_SphereTest, GeomGridEval_CylinderTest, GeomGridEval_ConeTest and

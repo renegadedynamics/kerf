@@ -1,5 +1,5 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/GeomBndLib_OffsetCurve2d_Test.cxx (V8_0_1).
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;

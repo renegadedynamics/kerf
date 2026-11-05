@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Data;
 using Kerf.Engine.Collections;
@@ -40,7 +40,7 @@ public class ChFi3dBuilderNativeTests
             Text = TextDump.Write(HDS.DS(), myInput);
         }
 
-        /// <summary>The queries the builder made after Perform, by member (OCCT.NET: unit 7R's measurements).</summary>
+        /// <summary>The queries the builder made after Perform, by member (Kerf: unit 7R's measurements).</summary>
         internal Dictionary<string, int> Calls { get; } = new();
 
         private void count(string theMember) => Calls[theMember] = Calls.GetValueOrDefault(theMember) + 1;

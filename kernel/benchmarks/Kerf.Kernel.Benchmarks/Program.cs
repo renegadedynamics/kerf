@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 // Phase 4's benchmarks (phase4-plan 2.5), of the port alone: they compared it with native OCCT through build123d.NET's
 // native backend until unit 10B retired it, and the native columns now repeat the port's. In Release:

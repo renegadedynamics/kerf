@@ -10,7 +10,7 @@ namespace Kerf.Modeling;
 /// for data past a limit, <c>exchange.external-references</c> for STEP data that refers to other files. A missing file
 /// throws <see cref="FileNotFoundException"/>, and a unit that isn't a length <see cref="ArgumentException"/>.
 /// </summary>
-/// <remarks>STEP keeps its names, colours and assemblies (OCCT.NET's STEPCAFControl).</remarks>
+/// <remarks>STEP keeps its names, colours and assemblies (Kerf's STEPCAFControl).</remarks>
 public static class Importers
 {
     /// <summary>A shape from BREP data (OCCT's text format).</summary>

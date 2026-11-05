@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
 // A development aid: C# stubs (signatures only) of StepData's classes, mapped by the generator's own rules, so the
 // generated code can be compiled before StepData is ported (--stubs <dir>). Never committed as source.

@@ -1,6 +1,6 @@
 // Port of: src/ModelingData/TKGeomBase/GTests/GProp_PEquation_Test.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
@@ -77,7 +77,7 @@ public class GProp_PEquationTest
         Assert.True(aV3.Magnitude > Conf);
     }
 
-    // OCCT.NET additions.
+    // Kerf additions.
 
     [Fact]
     public void WrongAccessorThrows()

@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKMesh/BRepMesh/delabella.cpp
 // Open CASCADE Technology V8_0_1 (b8f597c6). Delabella is third-party code inside OCCT, under the MIT licence below.
 // Copyright (C) 2018 GUMIX - Marcin Sokalski.
-// Copyright (c) 2026 The OCCT.NET Contributors. This file, a port of MIT-licensed code, stays under the MIT licence
+// Copyright (c) 2026 The Kerf Contributors. This file, a port of MIT-licensed code, stays under the MIT licence
 // below (decision 497; see THIRD-PARTY-NOTICES.md).
 /*
 

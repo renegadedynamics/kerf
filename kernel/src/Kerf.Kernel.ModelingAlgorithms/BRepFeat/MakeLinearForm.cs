@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKFeat/BRepFeat/BRepFeat_MakeLinearForm.lxx
 // Port of: src/ModelingAlgorithms/TKFeat/BRepFeat/BRepFeat_MakeLinearForm.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
-// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Collections;
@@ -156,7 +156,7 @@ internal sealed class MakeLinearForm : RibSlot
             _wire = ShapeCasts.Wire(trf.InternalShape());
             _dir = direc - dirTranslation;
             _dir1 = direc1 - dirTranslation;
-            // OCCT.NET: OCCT translates the caller's plane; a frozen one is translated on a copy (decision 974)
+            // Kerf: OCCT translates the caller's plane; a frozen one is translated on a copy (decision 974)
             if (_pln.IsFrozen)
             {
                 _pln = (PlaneSurface)_pln.Copy();
