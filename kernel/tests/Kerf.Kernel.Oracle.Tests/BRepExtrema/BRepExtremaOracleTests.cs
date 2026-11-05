@@ -183,7 +183,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         }
 
         theOracle.Same(aN.Value(), aP.Value(), aWhat + " Value");
-        if (Environment.GetEnvironmentVariable("OCCTNET_DEBUG") == "1")
+        if (Environment.GetEnvironmentVariable("KERF_DEBUG") == "1")
         {
             output.WriteLine($"{aWhat}: value {aN.Value():R} / {aP.Value():R}");
             for (int i = 1; i <= aP.SolutionCount; i++)

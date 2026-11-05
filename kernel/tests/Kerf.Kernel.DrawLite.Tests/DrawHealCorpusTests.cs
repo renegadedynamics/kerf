@@ -83,7 +83,7 @@ public class DrawHealCorpusTests(ITestOutputHelper output)
                                                            || l.Contains("xception", StringComparison.Ordinal)
                                                            || l.Contains("Faulty", StringComparison.Ordinal));
                 output.WriteLine($"      {aLine ?? aLines.Reverse().Skip(1).FirstOrDefault()}");
-                if (Environment.GetEnvironmentVariable("OCCTNET_HEAL_LOG") is not null)
+                if (Environment.GetEnvironmentVariable("KERF_HEAL_LOG") is not null)
                 {
                     output.WriteLine(aRun.Log);
                 }

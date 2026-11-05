@@ -318,7 +318,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
             Assert.True(BrepTools.Read(out Shape aNP, aFile));
             File.Delete(aFile);
             CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aNP, aPRes, new CanonicalOptions { CheckValidity = false });
-            if (Environment.GetEnvironmentVariable("OCCTNET_SFF_DUMP") is string aDump && !aCanon.IsIdentical)
+            if (Environment.GetEnvironmentVariable("KERF_SFF_DUMP") is string aDump && !aCanon.IsIdentical)
             {
                 Directory.CreateDirectory(aDump);
                 File.WriteAllText(Path.Combine(aDump, $"{myCompared}_native.brep"), aNT);

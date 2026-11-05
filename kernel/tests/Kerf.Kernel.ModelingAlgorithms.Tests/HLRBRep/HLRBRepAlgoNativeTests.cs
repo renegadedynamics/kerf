@@ -122,7 +122,7 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
             theTally.Canonical++;
             return;
         }
-        if (Environment.GetEnvironmentVariable("OCCTNET_HLRALGO_DUMP") is string aDir && theTally.Differences.Count == 0)
+        if (Environment.GetEnvironmentVariable("KERF_HLRALGO_DUMP") is string aDir && theTally.Differences.Count == 0)
         {
             File.WriteAllText(Path.Combine(aDir, "native.brep"), theNative);
             File.WriteAllText(Path.Combine(aDir, "port.brep"), aPort);

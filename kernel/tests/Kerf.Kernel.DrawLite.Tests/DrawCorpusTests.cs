@@ -273,9 +273,9 @@ public class DrawCorpusTests(ITestOutputHelper output)
         // The runs only report (the per-area corpus tests check their cases): about 25 minutes of a gate for every
         // runnable case twice, so they run only when asked for (decision 1020)
         Assert.True(aRunnable.Count > aRunnableBefore.Count);
-        if (Environment.GetEnvironmentVariable("OCCTNET_CORPUS_FULL") != "1")
+        if (Environment.GetEnvironmentVariable("KERF_CORPUS_FULL") != "1")
         {
-            output.WriteLine("runs skipped: OCCTNET_CORPUS_FULL=1 runs every runnable case and reports the statuses");
+            output.WriteLine("runs skipped: KERF_CORPUS_FULL=1 runs every runnable case and reports the statuses");
             return;
         }
 

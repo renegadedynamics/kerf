@@ -100,7 +100,7 @@ public class DrawFillingCorpusTests(ITestOutputHelper output)
                                                            || l.Contains("xception", StringComparison.Ordinal)
                                                            || l.Contains("Faulty", StringComparison.Ordinal));
                 output.WriteLine($"      {aLine ?? aLines.Reverse().Skip(1).FirstOrDefault()}");
-                if (Environment.GetEnvironmentVariable("OCCTNET_FILL_LOG") is not null)
+                if (Environment.GetEnvironmentVariable("KERF_FILL_LOG") is not null)
                 {
                     output.WriteLine(aRun.Log);
                 }

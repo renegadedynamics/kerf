@@ -149,11 +149,11 @@ public class ShapeUpgradeNativeTests(ITestOutputHelper output)
         }
     }
 
-    // OCCTNET_SHUPGRADE_TRACE: a file the runs are logged to, inputs one at a time (to find a slow one)
-    private static readonly string? s_trace = Environment.GetEnvironmentVariable("OCCTNET_SHUPGRADE_TRACE");
+    // KERF_SHUPGRADE_TRACE: a file the runs are logged to, inputs one at a time (to find a slow one)
+    private static readonly string? s_trace = Environment.GetEnvironmentVariable("KERF_SHUPGRADE_TRACE");
 
-    // OCCTNET_SHUPGRADE_DUMP (with the trace): a directory the results' texts are written to, as the recorder's
-    private static readonly string? s_dump = Environment.GetEnvironmentVariable("OCCTNET_SHUPGRADE_DUMP");
+    // KERF_SHUPGRADE_DUMP (with the trace): a directory the results' texts are written to, as the recorder's
+    private static readonly string? s_dump = Environment.GetEnvironmentVariable("KERF_SHUPGRADE_DUMP");
 
     [ThreadStatic]
     private static string? s_name;

@@ -439,7 +439,7 @@ public sealed partial class DrawLiteMeshOracleTests(ITestOutputHelper output) : 
         else
         {
             Disagree($"{theWhat}: the BRep texts differ");
-            string? aKeep = Environment.GetEnvironmentVariable("OCCTNET_KEEP_DIFFS");
+            string? aKeep = Environment.GetEnvironmentVariable("KERF_KEEP_DIFFS");
             if (aKeep is not null && myDisagreements.Count <= 5)
             {
                 File.Copy(aNFile, Path.Combine(aKeep, $"diff{myDisagreements.Count}_native.brep"), true);

@@ -159,7 +159,7 @@ The three tables the plan names (decision 1388):
 | ModelingAlgorithms/IntPatch/Polygo.cs (`s_dumpNum`) | numbers `Dump`'s output (Draw's), `Interlocked` |
 | Foundation/OSD/OsdParallel.cs (`ForceSerial`, `MaxDegree`) | `AsyncLocal` test scopes (decision 619): per flow already |
 | ModelingData/BRepTools/WorkingOverlay.cs (`s_openCount`, `s_current`, `t_current`) | 10H1's overlay: per operation already (`Interlocked` counter, `AsyncLocal`) |
-| modeling/…/Topology/ShapeLog.cs | the differential run's shape log, on only with `BUILD123D_SHAPE_LOG`; its lock orders writes to one file |
+| modeling/…/Topology/ShapeLog.cs | the differential run's shape log, on only with `KERF_SHAPE_LOG`; its lock orders writes to one file |
 | modeling/…/Topology/Shape.Booleans.cs (`Depth`), Warnings.cs (`Current`) | the modelling layer's `AsyncLocal` scopes: per flow already |
 
 ## Locks
@@ -203,7 +203,7 @@ instance state (plan 2.7, the audit's question). None changes a result.
 | ModelingData/AdvApp2Var/MathBase.cs `t_mmcmher` (`[ThreadStatic]`) | cache | `mmherm0_`'s Hermite coefficients, read by `mmherm1_` | f2c-translated static functions with no instance to hold it; per thread it is safe (decision 113), and each computation refills what it reads |
 | ModelingAlgorithms/IntWalk/IWalking.cs, PWalking.cs `s_threadStepTrace` (`[ThreadStatic]`, 2) | test hook | the walking's step trace for recorded comparisons (decision 687) | null in a library's use; a test sets it on its own thread |
 | ModelingAlgorithms/IntPatch/Polygo.cs `s_dumpNum` | debug | numbers the polygons `Dump` prints | `Interlocked`, read only by Draw's `Dump`; OCCT's printed text |
-| modeling/…/Topology/ShapeLog.cs `s_test`, `s_seq` | test tooling | the differential run's current test and sequence number | only with `BUILD123D_SHAPE_LOG`, under its lock; off in a library's use |
+| modeling/…/Topology/ShapeLog.cs `s_test`, `s_seq` | test tooling | the differential run's current test and sequence number | only with `KERF_SHAPE_LOG`, under its lock; off in a library's use |
 
 ## Measurements
 

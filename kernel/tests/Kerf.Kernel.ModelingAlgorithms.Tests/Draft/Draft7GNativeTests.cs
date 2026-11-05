@@ -123,7 +123,7 @@ public class Draft7GNativeTests(ITestOutputHelper output)
             theTally.Canonical++;
             return;
         }
-        if (Environment.GetEnvironmentVariable("OCCTNET_DRAFTREC_DUMP") is string aDir && theTally.Differences.Count == 0)
+        if (Environment.GetEnvironmentVariable("KERF_DRAFTREC_DUMP") is string aDir && theTally.Differences.Count == 0)
         {
             File.WriteAllText(Path.Combine(aDir, "native.brep"), theNative);
             File.WriteAllText(Path.Combine(aDir, "port.brep"), aPort);

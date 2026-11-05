@@ -140,7 +140,7 @@ public partial class DrawDataExchangeCorpusTests
     /// The milestone: the data-exchange cases (the groups de, de_mesh, de_wrapper, xcaf, gdt and metadata, and every
     /// case naming a command of XSDRAW's plugins, XDEDRAW or XSBase's functions), how many are runnable and why the
     /// others aren't. The runs (about 2,700 cases; a few minutes) are made when asked for, with
-    /// <c>OCCTNET_CORPUS_FULL=1</c> or <c>OCCTNET_DE_MILESTONE=1</c> (decision 1020): their statuses, with every failure
+    /// <c>KERF_CORPUS_FULL=1</c> or <c>KERF_DE_MILESTONE=1</c> (decision 1020): their statuses, with every failure
     /// attributed by one of the corpus tests. The cases that measure memory run one at a time after the others.
     /// </summary>
     [Fact]
@@ -190,9 +190,9 @@ public partial class DrawDataExchangeCorpusTests
                      },
                      Enum.GetValues<OutOfScope>().ToDictionary(w => w, w => aBlocked.GetValueOrDefault(w)?.Count ?? 0));
 
-        if (Environment.GetEnvironmentVariable("OCCTNET_CORPUS_FULL") != "1" && Environment.GetEnvironmentVariable("OCCTNET_DE_MILESTONE") != "1")
+        if (Environment.GetEnvironmentVariable("KERF_CORPUS_FULL") != "1" && Environment.GetEnvironmentVariable("KERF_DE_MILESTONE") != "1")
         {
-            output.WriteLine("runs skipped: OCCTNET_DE_MILESTONE=1 (or OCCTNET_CORPUS_FULL=1) runs the runnable cases");
+            output.WriteLine("runs skipped: KERF_DE_MILESTONE=1 (or KERF_CORPUS_FULL=1) runs the runnable cases");
             return;
         }
 

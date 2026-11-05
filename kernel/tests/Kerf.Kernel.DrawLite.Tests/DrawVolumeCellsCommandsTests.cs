@@ -12,7 +12,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// <summary>
 /// Unit 6G's <c>mkvolume</c> (BOPAlgo_MakerVolume) and cells commands (<c>bcbuild</c>, <c>bcadd</c>, ...,
 /// BOPAlgo_CellsBuilder), and the corpus cases they make runnable, before and after them. With the environment
-/// variable OCCTNET_BOREC_CAPTURE naming a directory, the corpus calls are captured there for tools/borec
+/// variable KERF_BOREC_CAPTURE naming a directory, the corpus calls are captured there for tools/borec
 /// (volume.capture.txt).
 /// </summary>
 public class DrawVolumeCellsCommandsTests(ITestOutputHelper output)
@@ -130,11 +130,11 @@ public class DrawVolumeCellsCommandsTests(ITestOutputHelper output)
     /// <summary>Cases that fail with an attributed cause (see the unit's decisions).</summary>
     private static readonly HashSet<string> KnownFailures = new(StringComparer.Ordinal);
 
-    /// <summary>Writes the capture of the corpus calls for tools/borec when OCCTNET_BOREC_CAPTURE is set.</summary>
+    /// <summary>Writes the capture of the corpus calls for tools/borec when KERF_BOREC_CAPTURE is set.</summary>
     [Fact]
     public void Capture_for_borec()
     {
-        string? aDir = Environment.GetEnvironmentVariable("OCCTNET_BOREC_CAPTURE");
+        string? aDir = Environment.GetEnvironmentVariable("KERF_BOREC_CAPTURE");
         if (string.IsNullOrEmpty(aDir))
         {
             return;

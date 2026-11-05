@@ -40,7 +40,7 @@ namespace Kerf.Kernel.Oracle.Tests;
 public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output) : IDisposable
 {
     private readonly string myDirectory = Directory.CreateTempSubdirectory("occtnet-brepmesh4d-").FullName;
-    private readonly bool myKeepFiles = Environment.GetEnvironmentVariable("OCCTNET_KEEP_MESH_FILES") == "1";
+    private readonly bool myKeepFiles = Environment.GetEnvironmentVariable("KERF_KEEP_MESH_FILES") == "1";
     private int myFileNumber;
 
     public void Dispose()

@@ -235,7 +235,7 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                         continue;
                     }
                     aDifferences.Add($"{aName} '{aCase}': '{aNH}' natively, '{aPH}' in the port");
-                    string? aDump = Environment.GetEnvironmentVariable("OCCTNET_OFFSETREC_DUMP");
+                    string? aDump = Environment.GetEnvironmentVariable("KERF_OFFSETREC_DUMP");
                     if (!string.IsNullOrEmpty(aDump))
                     {
                         string aBase = Path.Combine(aDump, $"{aName}-{aDifferences.Count}");

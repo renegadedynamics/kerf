@@ -72,7 +72,7 @@ aText.Append("""
     package, lower where the Draw-lite corpus covers a package and the gap is listed. Written by `tools/coverage.ps1`
     (`tools/coverage-report.cs`): line coverage of the kernel's and the modeling layer's assemblies, merged (a line is
     covered if any run covered it): the kernel's unit tests, the public API's tests, the Draw-lite tests as they run by
-    default (the corpus classes on their samples, `OCCTNET_CORPUS_FULL` unset), the modeling layer's suite, and the
+    default (the corpus classes on their samples, `KERF_CORPUS_FULL` unset), the modeling layer's suite, and the
     oracle tests' replays with `-WithOracle`. A package is the folder under the assembly (OCCT's package for the kernel).
     Lines are the coverable lines Microsoft's code coverage counts. The public members no test calls are in
     [public-members.md](public-members.md).

@@ -126,7 +126,7 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
                    + $"port {thePort.Status}/{thePort.NbRoots}/{thePort.NbTransferred}/{thePort.NbShapes}";
         }
         BRepTextDiff aDiff = BRepTextComparison.Compare(theNative.BRep, thePort.BRep);
-        if (!aDiff.IsIdenticalMaskingFree && Environment.GetEnvironmentVariable("OCCTNET_STEP_DUMP") is { } aDump)
+        if (!aDiff.IsIdenticalMaskingFree && Environment.GetEnvironmentVariable("KERF_STEP_DUMP") is { } aDump)
         {
             int aNumber = Interlocked.Increment(ref theDumpNumber);
             File.WriteAllText(Path.Combine(aDump, $"d{aNumber}-native.brep"), theNative.BRep);

@@ -127,12 +127,12 @@ public class DrawBopCheckCommandsTests(ITestOutputHelper output)
     /// <summary>
     /// Captures the check commands' calls over the corpus cases that use them (runnable or not: a case's calls up to
     /// its first missing command are captured), for tools/borec (unit 6G), when
-    /// OCCTNET_BOREC_CAPTURE names a directory: writes check.capture.txt there.
+    /// KERF_BOREC_CAPTURE names a directory: writes check.capture.txt there.
     /// </summary>
     [Fact]
     public void Capture_for_borec()
     {
-        string? aDir = Environment.GetEnvironmentVariable("OCCTNET_BOREC_CAPTURE");
+        string? aDir = Environment.GetEnvironmentVariable("KERF_BOREC_CAPTURE");
         if (string.IsNullOrEmpty(aDir))
         {
             return;

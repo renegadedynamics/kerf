@@ -6,7 +6,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 
 /// <summary>
 /// <see cref="DrawCapture"/>, and the captures tools/borec records from (unit 6G), written when the environment
-/// variable OCCTNET_BOREC_CAPTURE names a directory.
+/// variable KERF_BOREC_CAPTURE names a directory.
 /// </summary>
 public class DrawCaptureTests
 {

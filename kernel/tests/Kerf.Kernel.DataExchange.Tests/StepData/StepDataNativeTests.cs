@@ -233,8 +233,8 @@ public class StepDataNativeTests(ITestOutputHelper output)
         }
 
         // The corrections file (src/Kerf.Kernel.DataExchange/Resource/Resource_UnicodeTables.diff.gz) is regenerated with
-        // OCCTNET_WRITE_UNICODE_DIFF=<path>
-        if (Environment.GetEnvironmentVariable("OCCTNET_WRITE_UNICODE_DIFF") is { Length: > 0 } aPath)
+        // KERF_WRITE_UNICODE_DIFF=<path>
+        if (Environment.GetEnvironmentVariable("KERF_WRITE_UNICODE_DIFF") is { Length: > 0 } aPath)
         {
             using FileStream aFile = File.Create(aPath);
             using var aGz = new GZipStream(aFile, CompressionLevel.SmallestSize);

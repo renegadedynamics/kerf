@@ -160,9 +160,9 @@ internal sealed class IntersectionComparison : IDisposable
             IdenticalLines++;
             return true;
         }
-        if (Environment.GetEnvironmentVariable("OCCTNET_DUMP_INTSS") != null)
+        if (Environment.GetEnvironmentVariable("KERF_DUMP_INTSS") != null)
         {
-            File.AppendAllText(Environment.GetEnvironmentVariable("OCCTNET_DUMP_INTSS")!,
+            File.AppendAllText(Environment.GetEnvironmentVariable("KERF_DUMP_INTSS")!,
                                $"{theWhat}\nN: {theNative}\nP: {thePort}\n");
         }
         return false;

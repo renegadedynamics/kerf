@@ -17,7 +17,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// <summary>
 /// Unit 6G's <c>removefeatures</c> (BOPTest_RemoveFeaturesCommands.cxx), its history through <c>savehistory</c>, and
 /// the corpus cases it makes runnable: the cases that use it, before and after it. The captures tools/borec records
-/// from are written when OCCTNET_BOREC_CAPTURE names a directory.
+/// from are written when KERF_BOREC_CAPTURE names a directory.
 /// </summary>
 public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output)
 {
@@ -98,7 +98,7 @@ public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// Writes the capture of the corpus's removefeatures calls for tools/borec (when OCCTNET_BOREC_CAPTURE names a
+    /// Writes the capture of the corpus's removefeatures calls for tools/borec (when KERF_BOREC_CAPTURE names a
     /// directory): each call's words, the input's BRep text and, as the extra word "#faces i j ...", the indices of the
     /// faces to remove in the input's TopExp.MapShapes(FACE) numbering (shapes read from separate texts share no
     /// TShape, so native finds the faces by these indices).
@@ -106,7 +106,7 @@ public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output)
     [Fact]
     public void Capture_for_borec()
     {
-        string? aDir = Environment.GetEnvironmentVariable("OCCTNET_BOREC_CAPTURE");
+        string? aDir = Environment.GetEnvironmentVariable("KERF_BOREC_CAPTURE");
         if (string.IsNullOrEmpty(aDir))
         {
             return;

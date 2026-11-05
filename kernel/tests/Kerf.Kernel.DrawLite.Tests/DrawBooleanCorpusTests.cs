@@ -14,8 +14,8 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// The corpus has about 4,400 runnable cases using these commands (3.9 minutes in a Debug build on 12 workers), and
 /// <see cref="DrawCorpusTests"/> already runs every runnable case, so the default run here takes every
 /// <see cref="SampleStep"/>-th of them (by case id, so the sample is the same on every machine) and asserts that none
-/// fails unattributed; <c>OCCTNET_CORPUS_FULL=1</c> runs them all.
-/// <c>OCCTNET_CORPUS_LOGS=dir</c> writes the log of every case that doesn't pass into that directory.
+/// fails unattributed; <c>KERF_CORPUS_FULL=1</c> runs them all.
+/// <c>KERF_CORPUS_LOGS=dir</c> writes the log of every case that doesn't pass into that directory.
 /// </remarks>
 [Collection(MeshDefaultsCollection.Name)]
 public class DrawBooleanCorpusTests(ITestOutputHelper output)
@@ -72,14 +72,14 @@ public class DrawBooleanCorpusTests(ITestOutputHelper output)
         List<DrawTestCase> aRunnableBefore = aScans.Select(s => s.Case).Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
         output.WriteLine($"{aScans.Count} cases use the Boolean commands; runnable before 6L: {aRunnableBefore.Count}, after: {aRunnable.Count}");
 
-        bool isFull = Environment.GetEnvironmentVariable("OCCTNET_CORPUS_FULL") == "1";
+        bool isFull = Environment.GetEnvironmentVariable("KERF_CORPUS_FULL") == "1";
         List<DrawTestCase> aToRun = isFull
             ? aRunnable
             : aRunnable.OrderBy(c => c.Id, StringComparer.Ordinal).Where((_, i) => i % SampleStep == 0).ToList();
         // The cases that measure memory run one at a time, in DrawCheapGapsCorpusTests only (left out after sampling,
         // so the sample stays the same)
         aToRun = aToRun.Where(c => !DrawCheapGapsCorpusTests.MeasuresMemory(aScans.First(s => s.Case == c))).ToList();
-        output.WriteLine(isFull ? "running all of them" : $"running every {SampleStep}th: {aToRun.Count} (OCCTNET_CORPUS_FULL=1 runs all)");
+        output.WriteLine(isFull ? "running all of them" : $"running every {SampleStep}th: {aToRun.Count} (KERF_CORPUS_FULL=1 runs all)");
 
         var aRuns = aToRun.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
                           .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
@@ -89,7 +89,7 @@ public class DrawBooleanCorpusTests(ITestOutputHelper output)
         output.WriteLine("after 6L: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])
                                                               .OrderBy(g => g.Key, StringComparer.Ordinal)
                                                               .Select(g => $"{g.Key} {g.Count()}")));
-        string? aLogs = Environment.GetEnvironmentVariable("OCCTNET_CORPUS_LOGS");
+        string? aLogs = Environment.GetEnvironmentVariable("KERF_CORPUS_LOGS");
         foreach (DrawCaseRun aRun in aRuns)
         {
             if (aRun.Status == "OK")
