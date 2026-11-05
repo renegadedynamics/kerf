@@ -40,7 +40,7 @@ public static partial class Operations
             var newFaces = new List<Shape>();
             foreach (var obj in objectList)
             {
-                var bbox = obj.BoundingBox();
+                var bbox = obj.BoundBox();
                 Vector[] vertices =
                 [
                     new Vector(bbox.Min.X, bbox.Min.Y), new Vector(bbox.Min.X, bbox.Max.Y), new Vector(bbox.Max.X, bbox.Max.Y), new Vector(bbox.Max.X, bbox.Min.Y),
@@ -56,7 +56,7 @@ public static partial class Operations
         {
             if (obj.TryAs<Vertex>(out _))
                 continue;
-            var bbox = obj.BoundingBox();
+            var bbox = obj.BoundBox();
             newObjects.Add(Solid.MakeBox(bbox.Size.X, bbox.Size.Y, bbox.Size.Z, new Plane(bbox.Min)));
         }
         return new Part(newObjects);
@@ -565,7 +565,7 @@ public static partial class Operations
 
         // The size of the object determines the size of the target projection screen, as the screen is normal to the
         // direction of parallel projection
-        var objectSize = Compound.Make(objectList).BoundingBox(optimal: false).Diagonal;
+        var objectSize = Compound.Make(objectList).BoundBox(optimal: false).Diagonal;
         var target = Face.MakeRect(3 * objectSize, 3 * objectSize, workplane);
         if (target.IsEmpty)
             throw new ArgumentException("A target object could not be determined");

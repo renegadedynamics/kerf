@@ -100,7 +100,7 @@ public static class ColorExtensions
         public string Describe()
         {
             var key = ((int)Math.Round(color.R * 255), (int)Math.Round(color.G * 255), (int)Math.Round(color.B * 255));
-            string tuple = $"({Formatting.Number(Math.Round(color.R, 7))}, {Formatting.Number(Math.Round(color.G, 7))}, {Formatting.Number(Math.Round(color.B, 7))}, {Formatting.Number(Math.Round(color.A, 7))})";
+            string tuple = $"({Formatting.Number(Math.Round(color.R, 7))}, {Formatting.Number(Math.Round(color.G, 7))}, {Formatting.Number(Math.Round(color.B, 7))}, {Formatting.Number(Math.Round((double)(float)color.A, 7))})";
             if (CssColors.ByRgb.TryGetValue(key, out var css))
                 return $"Color: {tuple} is '{css.ToUpperInvariant()}'";
             return $"Color: {tuple} near '{color.NearestName().ToUpperInvariant()}'";

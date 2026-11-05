@@ -33,13 +33,13 @@ public class ShapeTests
     [Fact]
     public void Mirror()
     {
-        var boxBb = Solid.MakeBox(1, 1, 1).Mirror(Plane.XZ).BoundingBox();
+        var boxBb = Solid.MakeBox(1, 1, 1).Mirror(Plane.XZ).BoundBox();
         Check.AlmostEqual(0, boxBb.Min.X, 5);
         Check.AlmostEqual(1, boxBb.Max.X, 5);
         Check.AlmostEqual(-1, boxBb.Min.Y, 5);
         Check.AlmostEqual(0, boxBb.Max.Y, 5);
 
-        boxBb = Solid.MakeBox(1, 1, 1).Mirror().BoundingBox();
+        boxBb = Solid.MakeBox(1, 1, 1).Mirror().BoundBox();
         Check.AlmostEqual(-1, boxBb.Min.Z, 5);
         Check.AlmostEqual(0, boxBb.Max.Z, 5);
     }
@@ -271,7 +271,7 @@ public class ShapeTests
     [Fact]
     public void LocateBb()
     {
-        var boundingBox = Solid.MakeCone(1, 2, 1).BoundingBox();
+        var boundingBox = Solid.MakeCone(1, 2, 1).BoundBox();
         var relocatedBoundingBox = Plane.XZ.FromLocalCoords(boundingBox);
         Check.AlmostEqual(-2, relocatedBoundingBox.Min.X, 5);
         Check.AlmostEqual(2, relocatedBoundingBox.Max.X, 5);
@@ -292,7 +292,7 @@ public class ShapeTests
         Check.AlmostEqual(1, extracted.Located(new Pos(1, 0, 0)).X, 5);
 
         var box = Solid.MakeBox(1, 1, 1).Moved(new Pos(-2.5, 0, 0));
-        Check.AlmostEqual(1, box.Located(new Pos(1, 0, 0)).BoundingBox().Min.X, 5);
+        Check.AlmostEqual(1, box.Located(new Pos(1, 0, 0)).BoundBox().Min.X, 5);
     }
 
     [Fact]
@@ -597,7 +597,7 @@ public class ShapeTests
         Assert.True(empty.IsSame(default(Solid)));
         Assert.True(empty.IsEqual(default(Solid)));
         Assert.True(empty.IsValid);
-        var emptyBbox = empty.BoundingBox();
+        var emptyBbox = empty.BoundBox();
         Assert.Equal((0.0, 0.0, 0.0), (emptyBbox.Size.X, emptyBbox.Size.Y, emptyBbox.Size.Z));
         Check.Same(empty, empty.Mirror(Plane.XY));
         Check.AlmostEqual(0, empty.ComputeVolume(), 5);
@@ -744,8 +744,8 @@ public class TransformShapeTests
 
         Check.Is<Solid>(rotated);
         Check.AlmostEqual(box.Volume, rotated.Volume, 6);
-        Check.AlmostEqual(2, rotated.BoundingBox().Size.X, 6);
-        Check.AlmostEqual(1, rotated.BoundingBox().Size.Y, 6);
+        Check.AlmostEqual(2, rotated.BoundBox().Size.X, 6);
+        Check.AlmostEqual(1, rotated.BoundBox().Size.Y, 6);
     }
 
     [Fact]
@@ -756,7 +756,7 @@ public class TransformShapeTests
         var rotated = box.TransformShape(matrix);
 
         Check.NotSame(box, rotated);
-        Check.AlmostEqual(1, box.BoundingBox().Size.X, 6);
+        Check.AlmostEqual(1, box.BoundBox().Size.X, 6);
     }
 }
 

@@ -42,11 +42,11 @@ public static partial class ShapeExtensions
             var faceList = faces.ToList();
             var pathLength = path.Length;
             var shapeCenter = self.Center();
-            var firstMinX = faceList[0].BoundingBox().Min.X;
+            var firstMinX = faceList[0].BoundBox().Min.X;
             var projected = new List<Face>();
             foreach (var face in faceList)
             {
-                var box = face.BoundingBox();
+                var box = face.BoundBox();
                 var faceCenterX = (box.Min.X + box.Max.X) / 2;
                 var relative = start + (faceCenterX - firstMinX) / pathLength;
                 var pathPosition = path.PositionAt(relative);
@@ -83,7 +83,7 @@ public static partial class ShapeExtensions
     {
         var label = (shape.Type).ToString();
         var position = caption + (showCenter
-            ? BoundBox.FromTopoDS(shape).Center().ToString("G6")
+            ? Kerf.Modeling.BoundBox.FromTopoDS(shape).Center().ToString("G6")
             : new Location(shape.Placement).Position.ToString("G6"));
         var children = new List<DisplayNode>();
         foreach (var child in shape.Children)

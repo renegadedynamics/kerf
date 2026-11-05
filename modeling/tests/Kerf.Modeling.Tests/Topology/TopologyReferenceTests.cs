@@ -136,7 +136,7 @@ public class TopologyReferenceTests
         // Mass properties and boxes come from the same OCCT algorithms, so they agree closely
         Close(expected.GetProperty("volume").GetDouble(), shape.Volume, "volume", 1e-7);
         Close(expected.GetProperty("area").GetDouble(), shape.Area, "area", 1e-7);
-        var box = shape.BoundingBox();
+        var box = shape.BoundBox();
         CloseVector(expected.GetProperty("bbox_min"), box.Min, "bbox min", 1e-7);
         CloseVector(expected.GetProperty("bbox_max"), box.Max, "bbox max", 1e-7);
         if (expected.TryGetProperty("center", out var center))

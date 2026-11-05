@@ -179,7 +179,7 @@ public static partial class ShapeExtensions
         // ---- Bounding boxes ----
 
         /// <summary>A box aligned with the axes containing this shape (tight when <paramref name="optimal"/>).</summary>
-        public BoundBox BoundingBox(double? tolerance = null, bool optimal = true) => Kerf.Modeling.BoundBox.FromShape(self.AsShape(), tolerance, optimal);
+        public BoundBox BoundBox(double? tolerance = null, bool optimal = true) => Kerf.Modeling.BoundBox.FromShape(self.AsShape(), tolerance, optimal);
 
         /// <summary>The smallest box in any orientation containing this shape.</summary>
         public OrientedBoundBox OrientedBoundingBox()
@@ -324,7 +324,7 @@ public static partial class ShapeExtensions
                 }
                 case CenterOf.BoundingBox:
                 {
-                    var sum = list.Select(o => o.BoundingBox().Center()).Aggregate((a, b) => a + b);
+                    var sum = list.Select(o => o.BoundBox().Center()).Aggregate((a, b) => a + b);
                     return sum * (1.0 / list.Count);
                 }
                 default:

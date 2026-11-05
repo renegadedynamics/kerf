@@ -19,7 +19,7 @@ public abstract class BaseSketchObject : Sketch
     private static ShapeList<Face> Prepare(Shape obj, double rotation, Alignment? align)
     {
         if (align is { } a)
-            obj = obj.Moved(new Location(obj.BoundingBox().ToAlignOffset(TwoAxes(a))));
+            obj = obj.Moved(new Location(obj.BoundBox().ToAlignOffset(TwoAxes(a))));
         return rotation != 0 ? obj.Moved(new Rotation(0, 0, rotation)).SelectFaces() : obj.SelectFaces();
     }
 

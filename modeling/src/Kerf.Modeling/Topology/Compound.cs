@@ -117,7 +117,7 @@ public static partial class CompoundExtensions
                 return new Vector(self.MassProperties(dimension).CentreOfMass);
             }
             default:
-                return self.BoundingBox().Center();
+                return self.BoundBox().Center();
         }
     }
 

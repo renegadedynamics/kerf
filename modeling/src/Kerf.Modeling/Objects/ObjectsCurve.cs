@@ -117,7 +117,7 @@ internal static class CurveObjects
         List<Vector> limitPoints;
         if (limit is Shape shape)
         {
-            var box = shape.BoundingBox();
+            var box = shape.BoundBox();
             limitPoints = [];
             foreach (var x in new[] { box.Min.X, box.Max.X })
                 foreach (var y in new[] { box.Min.Y, box.Max.Y })
@@ -472,7 +472,7 @@ public class DoubleTangentArc : BaseEdgeObject
         var workplane = -coplane;   // flipped to help with TOP/BOTTOM
         var rotationAxis = new Axis(new Vector(0, 0, 0), workplane.ZDir);
         // Protect against massive circles that are effectively straight lines
-        var maxSize = 10 * other.BoundingBox().Add(arcPoint).Diagonal;
+        var maxSize = 10 * other.BoundBox().Add(arcPoint).Diagonal;
 
         var centers = new List<Vector>();
         foreach (var angle in new[] { 90.0, -90.0 })
@@ -931,7 +931,7 @@ public class PolarLine : BaseEdgeObject
         var (dir, _) = Direction(angle, direction);
         if (limit.Target is Shape shape)
         {
-            var maxLength = shape.BoundingBox().Add(start).Diagonal;
+            var maxLength = shape.BoundBox().Add(start).Diagonal;
             var trimmed = Edge.MakeLine(start, start + dir * maxLength).TrimToOther(shape);
             return trimmed.IsEmpty ? throw new ArgumentException($"Polar line doesn't intersect length limit {limit}") : trimmed;
         }

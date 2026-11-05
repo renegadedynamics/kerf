@@ -115,7 +115,7 @@ public class OperationsPartTests
         var pln = new Plane(new Vector(7, 0, 7), zDir: new Vector(-1, 0, -1));
         var profile = (pln * new Circle(1)).SingleFace();
         var extrusion = Extrude(profile, Until.Next, target, new ExtrudeOptions { Direction = pln.ZDir }).Value;
-        Assert.True(extrusion.BoundingBox().Min.Z < 2.5);
+        Assert.True(extrusion.BoundBox().Min.Z < 2.5);
     }
 
     [Fact]
@@ -139,8 +139,8 @@ public class OperationsPartTests
         var cross = new RectangleRounded(10, 3, 1, rotation: 0) + new RectangleRounded(10, 3, 1, rotation: 90);
         var rib = Extrude(cross, Until.Last, body).Value;
         Assert.True(rib.IsValid);
-        Check.AlmostEqual(0, rib.BoundingBox().Min.Z, 6);
-        Check.AlmostEqual(7 - Math.Sqrt(36 - 25), rib.BoundingBox().Max.Z, 4);
+        Check.AlmostEqual(0, rib.BoundBox().Min.Z, 6);
+        Check.AlmostEqual(7 - Math.Sqrt(36 - 25), rib.BoundBox().Max.Z, 4);
         Check.AlmostEqual(72.302, rib.Volume, 2);
         var e = Assert.Throws<ArgumentException>(() => Extrude(cross, Until.Next, body).Value);
         Assert.Contains("does not cut the extrusion", e.Message);
@@ -454,7 +454,7 @@ public class OperationsPartTests
     public void ThickenFaces()
     {
         var part = Thicken(new RectangleRounded(10, 10, 1), 1).Value;
-        Check.AlmostEqual(1, part.BoundingBox().Max.Z, 5);
+        Check.AlmostEqual(1, part.BoundBox().Max.Z, 5);
 
         var nonPlanar = new Sphere(1).Faces()[0];
         var outerSphere = Thicken(nonPlanar, 0.1).Value;
@@ -479,7 +479,7 @@ public class OperationsPartTests
     {
         var part = Thicken(Face.MakeRect(2, 2), 1, new ThickenOptions { Both = true }).Value;
         Check.AlmostEqual(8, part.Volume, 5);
-        Check.AlmostEqual(2, part.BoundingBox().Size.Z, 5);
+        Check.AlmostEqual(2, part.BoundBox().Size.Z, 5);
     }
 
     [Fact]

@@ -317,7 +317,7 @@ public class FaceTests
     [Fact]
     public void Offset()
     {
-        var bbox = Face.MakeRect(2, 2, Plane.XY).Offset(5).BoundingBox();
+        var bbox = Face.MakeRect(2, 2, Plane.XY).Offset(5).BoundBox();
         Check.AlmostEqual(new Vector(-1, -1, 5), bbox.Min, 5);
         Check.AlmostEqual(new Vector(1, 1, 5), bbox.Max, 5);
     }
@@ -369,7 +369,7 @@ public class FaceTests
     public void SurfaceFromArrayOfPoints()
     {
         var surface = Face.MakeSurfaceFromArrayOfPoints(WavePoints());
-        var bbox = surface.BoundingBox();
+        var bbox = surface.BoundBox();
         Check.AlmostEqual(new Vector(0, 0, -1), bbox.Min, 3);
         Check.AlmostEqual(new Vector(10, 10, 2), bbox.Max, 2);
     }
@@ -382,7 +382,7 @@ public class FaceTests
                 .Select(x => new Vector(x, y, x == 0 && y == 0 ? 2 : x == 0 || y == 0 ? 1 : 0)).ToArray())];
         var points = Grid(-1, 2);
         var surface = Face.MakeBezierSurface(points);
-        var bbox = surface.BoundingBox();
+        var bbox = surface.BoundBox();
         Check.AlmostEqual(new Vector(-1, -1, 0), bbox.Min, 3);
         Check.AlmostEqual(new Vector(1, 1, 1), bbox.Max, 1);
         Assert.True(bbox.Max.Z < 1.0);
@@ -390,7 +390,7 @@ public class FaceTests
         double[][] weights =
         [.. Enumerable.Range(-1, 3).Select(y => Enumerable.Range(-1, 3).Select(x => x == 0 || y == 0 ? 2.0 : 1.0).ToArray())];
         surface = Face.MakeBezierSurface(points, weights);
-        bbox = surface.BoundingBox();
+        bbox = surface.BoundBox();
         Check.AlmostEqual(new Vector(-1, -1, 0), bbox.Min, 3);
         Assert.True(bbox.Max.Z > 1.0);
 
@@ -408,7 +408,7 @@ public class FaceTests
         Check.AlmostEqual(101.59, solid.Volume, 2);
 
         var square = Face.MakeRect(10, 10);
-        var bbox = Solid.Thicken(square, 1, normalOverride: new Vector(0, 0, -1)).BoundingBox();
+        var bbox = Solid.Thicken(square, 1, normalOverride: new Vector(0, 0, -1)).BoundBox();
         Check.AlmostEqual(new Vector(-5, -5, -1), bbox.Min, 5);
         Check.AlmostEqual(new Vector(5, 5, 0), bbox.Max, 5);
     }
@@ -442,7 +442,7 @@ public class FaceTests
         // the surface's placement is applied
         var shift = new Pos(10, 0, 0);
         var shifted = Face.Make(top.Moved(shift), [bottom.Moved(shift)], surface: wall.Moved(shift));
-        Check.AlmostEqual(10, shifted.BoundingBox().Center().X, 5);
+        Check.AlmostEqual(10, shifted.BoundBox().Center().X, 5);
         Check.AlmostEqual(band.Area, shifted.Area, 5);
 
         Assert.Throws<ArgumentException>(() => Face.Make(top, [bottom], surface: default(Face)));
@@ -596,19 +596,19 @@ public class FaceTests
         surface = Face.MakeSurface(netExterior, surfacePoints: [new Vector(0, 0, -5)], interiorWires: [hole]);
         Assert.True(surface.IsValid);
         Assert.Equal(GeomType.BSpline, surface.GeomType);
-        var bbox = surface.BoundingBox();
+        var bbox = surface.BoundBox();
         Check.AlmostEqual(new Vector(-50.5, -24.5, -5.113393280136395), bbox.Min, 5);
         Check.AlmostEqual(new Vector(50.5, 24.5, 0), bbox.Max, 5);
 
         // With no surface point
         surface = Face.MakeSurface(netExterior);
-        bbox = surface.BoundingBox();
+        bbox = surface.BoundBox();
         Check.AlmostEqual(new Vector(-50.5, -24.5, -3), bbox.Min, 5);
         Check.AlmostEqual(new Vector(50.5, 24.5, 0), bbox.Max, 5);
 
         // Exterior Edge
         surface = Face.MakeSurface([Edge.MakeCircle(50)], surfacePoints: [new Vector(0, 0, -5)]);
-        bbox = surface.BoundingBox();
+        bbox = surface.BoundBox();
         Check.AlmostEqual(new Vector(-50, -50, -5), bbox.Min, 5);
         Check.AlmostEqual(new Vector(50, 50, 0), bbox.Max, 5);
     }

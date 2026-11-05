@@ -55,7 +55,7 @@ public class ShapePlacementTests
 
     static Placement PlacementOf(Shape shape)
     {
-        var bbox = shape.BoundingBox();
+        var bbox = shape.BoundBox();
         var vertices = shape.SelectVertices()
             .Select(v => (R4(v.X), R4(v.Y), R4(v.Z))).Order().Select(t => t.ToString());
         var children = ChildrenOf(shape).Select(c => Rounded((Check.LocationOf(shape) * Check.LocationOf(c)).Position));
@@ -161,7 +161,7 @@ public class ShapePlacementTests
                 Assert.True(child.Location == source.Location, name);
             }
             // the copy's compound was rebuilt from its children at its location
-            Assert.Equal(Rounded(MakeAssembly(Check.LocationOf(relocated)).BoundingBox().Max), Rounded(relocated.BoundingBox().Max));
+            Assert.Equal(Rounded(MakeAssembly(Check.LocationOf(relocated)).BoundBox().Max), Rounded(relocated.BoundBox().Max));
         }
     }
 }

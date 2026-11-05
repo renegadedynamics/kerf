@@ -235,7 +235,7 @@ public static partial class TopologyUtils
     /// or shells or solids (by faces).
     /// </remarks>
     /// <exception cref="ArgumentException">
-    /// No references, mixed or unsupported kinds, or shapes without one shared <c>TopoParent</c>.
+    /// No references, mixed or unsupported kinds, or sources not in <paramref name="parent"/>.
     /// </exception>
     public static Func<T, double> TopoDistanceTo<T>(Shape parent, params IEnumerable<T> other) where T : IShape
     {

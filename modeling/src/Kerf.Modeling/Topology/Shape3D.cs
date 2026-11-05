@@ -28,7 +28,7 @@ public static partial class Shape3DExtensions
                 case CenterOf.Mass:
                     return new Vector(ShapeExtensions.MassPropertiesOf(self.AsShape())!.CentreOfMass);
                 default:
-                    return self.BoundingBox().Center();
+                    return self.BoundBox().Center();
             }
         }
 
@@ -164,7 +164,7 @@ public static partial class Shape3DExtensions
                 // They work: close enough, or try the larger window
                 return windowMid - windowMin <= tolerance ? windowMid : Search(windowMid, windowMax, iteration + 1);
             }
-            return Search(0.0, 2 * self.BoundingBox().Diagonal, 0);
+            return Search(0.0, 2 * self.BoundBox().Diagonal, 0);
         }
 
         /// <summary>
@@ -244,7 +244,7 @@ public static partial class Shape3DExtensions
             // Trim infinite edges before OCCT operations
             if (TopoUtil.Typed(shape) is Edge { IsUnbounded: true } infinite)
             {
-                var box = self.BoundingBox(optimal: false);
+                var box = self.BoundBox(optimal: false);
                 shape = infinite.TrimInfinite(box.Diagonal + (infinite.Center() - box.Center()).Length);
             }
             switch (TopoUtil.Typed(shape))

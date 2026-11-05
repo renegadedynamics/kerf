@@ -132,7 +132,7 @@ public class CurveObjectTests
     public void EllipticalCenterArc()
     {
         var e1 = new EllipticalCenterArc(new Vector(0, 0), 10, 5, 0, arcSize: 180);
-        var bbox = e1.BoundingBox();
+        var bbox = e1.BoundBox();
         Assert.True(bbox.Min.X >= -10);
         Assert.True(bbox.Min.Y >= 0);
         Assert.True(bbox.Max.X <= 10);
@@ -191,7 +191,7 @@ public class CurveObjectTests
         // General conic section equation: (1+K)x^2-2Rx+y^2=0; parabola (K = -1) => -2Rx+y^2=0
         const double C = 1, R = 1 / C, focalLength = R / 2;
         var e1 = new ParabolicCenterArc(new Vector(0, 0), focalLength, 0, arcSize: 90, rotation: 0);
-        var bbox = e1.BoundingBox();
+        var bbox = e1.BoundBox();
         Assert.True(bbox.Min.X >= -10);
         Assert.True(bbox.Min.Y >= 0);
         Assert.True(bbox.Max.X <= 10);
@@ -269,7 +269,7 @@ public class CurveObjectTests
         const double C = 1, R = 1 / C, K = -2;
         double a = R / (-K - 1), b = R / Math.Sqrt(-K - 1);
         var e1 = new HyperbolicCenterArc(new Vector(0, 0), b, a, 0, arcSize: 90, rotation: 0);
-        var bbox = e1.BoundingBox();
+        var bbox = e1.BoundBox();
         Assert.True(bbox.Min.X >= -10);
         Assert.True(bbox.Min.Y >= 0);
         Assert.True(bbox.Max.X <= 10);
@@ -538,20 +538,20 @@ public class CurveObjectTests
 
         var arc1 = new RadiusArc(p1, p2, r);
         Check.AlmostEqual(2 * r * Math.PI * 0.4, arc1.Length, 6);
-        Check.AlmostEqual(c.BoundingBox().Max.X, arc1.BoundingBox().Max.X);
+        Check.AlmostEqual(c.BoundBox().Max.X, arc1.BoundBox().Max.X);
 
         var arc2 = new RadiusArc(p1, p2, r, shortSagitta: false);
         Check.AlmostEqual(2 * r * Math.PI * 0.6, arc2.Length, 6);
-        Check.AlmostEqual(c.BoundingBox().Min.X, arc2.BoundingBox().Min.X);
+        Check.AlmostEqual(c.BoundBox().Min.X, arc2.BoundBox().Min.X);
 
         var arc3 = new RadiusArc(p1, p2, -r);
         Check.AlmostEqual(2 * r * Math.PI * 0.4, arc3.Length, 6);
-        Assert.True(arc3.BoundingBox().Min.X > c.BoundingBox().Min.X);
-        Assert.True(arc3.BoundingBox().Min.X < c.BoundingBox().Max.X);
+        Assert.True(arc3.BoundBox().Min.X > c.BoundBox().Min.X);
+        Assert.True(arc3.BoundBox().Min.X < c.BoundBox().Max.X);
 
         var arc4 = new RadiusArc(p1, p2, -r, shortSagitta: false);
         Check.AlmostEqual(2 * r * Math.PI * 0.6, arc4.Length, 6);
-        Assert.True(arc4.BoundingBox().Max.X > c.BoundingBox().Max.X);
+        Assert.True(arc4.BoundBox().Max.X > c.BoundBox().Max.X);
 
         Check.IsShape(arc1);
     }
@@ -580,7 +580,7 @@ public class CurveObjectTests
 
         arc = new CenterArc(new Vector(-100, 0), 100, 0, 360);
         Assert.True(Face.Make(Wire.Make([arc])).IsCoplanar(Plane.XY));
-        Check.AlmostEqual(new Vector(0, 100, 0), arc.BoundingBox().Max, 5);
+        Check.AlmostEqual(new Vector(0, 100, 0), arc.BoundBox().Max, 5);
         Check.IsShape(arc);
     }
 

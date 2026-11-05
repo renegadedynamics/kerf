@@ -275,7 +275,7 @@ public static partial class EdgeExtensions
 
             Edge AxisEdge(Axis axis)
             {
-                var diagonal = self.BoundingBox().Add(Vertex.Make(axis.Position).BoundingBox()).Diagonal;
+                var diagonal = self.BoundBox().Add(Vertex.Make(axis.Position).BoundBox()).Diagonal;
                 return Edge.MakeLine(axis.Position - axis.Direction * diagonal, axis.Position + axis.Direction * diagonal);
             }
         }
@@ -304,7 +304,7 @@ public static partial class EdgeExtensions
                 points.Add(new Vector(i / 100.0, tangent));
             }
             var tanCurve = Edge.MakeSpline(points);
-            var box = tanCurve.BoundingBox();
+            var box = tanCurve.BoundBox();
             int minRange = 360 * (int)Math.Floor(box.Min.Y / 360);
             int maxRange = 360 * (int)Math.Ceiling(box.Max.Y / 360);
             var intercepts = new List<Vector>();

@@ -19,7 +19,7 @@ public readonly record struct MeshTolerances(double Linear, double Angular, bool
     /// <param name="angular">The angular deflection, in radians.</param>
     public static MeshTolerances For(Shape shape, double deviation = 0.1, double angular = 0.2)
     {
-        var diagonal = shape.IsEmpty ? 0 : shape.BoundingBox().Diagonal;
+        var diagonal = shape.IsEmpty ? 0 : shape.BoundBox().Diagonal;
         // A point or an empty shape has no size: any small value does
         return new MeshTolerances(diagonal > Constants.Tolerance ? diagonal * deviation / 100 : 1e-3, angular);
     }

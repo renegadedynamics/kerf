@@ -97,8 +97,8 @@ public class InputsUnchangedTests
             C("project to shape", [ArcEdge, Box], () => ArcEdge.Moved(new Location(new Vector(5.0, 5.0, 20.0))).ProjectToShape(Box, new Vector(0, 0, -1))),
             C("find intersections", [Spline, LineEdge], () => Spline.FindIntersectionPoints(LineEdge)),
             // Measures, meshes and the rest
-            C("bounding box", [Box], () => Box.BoundingBox()),
-            C("bounding box loose", [Sphere], () => Sphere.BoundingBox(optimal: false)),
+            C("bounding box", [Box], () => Box.BoundBox()),
+            C("bounding box loose", [Sphere], () => Sphere.BoundBox(optimal: false)),
             C("tessellate", [Box], () => Box.Tessellate(0.1)),
             C("tessellate moved", [MovedBox], () => MovedBox.Tessellate(0.01)),
             C("triangulate", [Fused], () => Fused.Triangulate(0.01)),

@@ -592,8 +592,8 @@ public class IntersectionTests
         // Intersection uses a compound child's pose after moving its parent
         var assembly = new Assembly([Solid.MakeBox(1, 1, 1)]);
         var movedAssembly = assembly.Moved(new Location(new Vector(10, 0, 0)));
-        Assert.Equal(10, movedAssembly.BoundingBox().Min.X);
-        Assert.Equal(0, movedAssembly.Children[0].BoundingBox().Min.X);
+        Assert.Equal(10, movedAssembly.BoundBox().Min.X);
+        Assert.Equal(0, movedAssembly.Children[0].BoundBox().Min.X);
 
         var probe = Solid.MakeBox(1, 1, 1).Moved(new Location(new Vector(10, 0, 0)));
         Assert.NotEmpty(movedAssembly.Intersect(probe));
@@ -605,7 +605,7 @@ public class IntersectionTests
     {
         // A child is placed by its parent's location alone
         var assembly = new Rotation(0, 0, 90) * new Assembly([new Pos(10, 0, 0) * B.Box(2, 2, 2)]);
-        Check.AlmostEqual(10, assembly.BoundingBox().Center().Y, 6);
+        Check.AlmostEqual(10, assembly.BoundBox().Center().Y, 6);
 
         var overlapping = new Pos(0, 10, 0) * B.Box(2, 2, 2);
         var common = assembly.Intersect(overlapping);
@@ -622,7 +622,7 @@ public class IntersectionTests
         // Nesting must not reapply the locations of an element's ancestors
         var nested = new Assembly([new Pos(10, 0, 0) * B.Box(2, 2, 2)]);
         var assembly = new Rotation(0, 0, 90) * new Assembly([nested]);
-        Check.AlmostEqual(10, assembly.BoundingBox().Center().Y, 6);
+        Check.AlmostEqual(10, assembly.BoundBox().Center().Y, 6);
 
         var overlapping = new Pos(0, 10, 0) * B.Box(2, 2, 2);
         var common = assembly.Intersect(overlapping);

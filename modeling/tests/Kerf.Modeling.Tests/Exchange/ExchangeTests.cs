@@ -233,7 +233,7 @@ public partial class ExchangeTests
         var stream = new MemoryStream();
         Exporters3D.ExportStl(new Box(10, 20, 30), stream);
         stream.Position = 0;
-        var box = Importers.ImportStl(stream).Value.BoundingBox();
+        var box = Importers.ImportStl(stream).Value.BoundBox();
         Assert.False(box.IsEmpty);
         Check.AlmostEqual(20, box.Size.Y, 6);
         Check.AlmostEqual(-15, box.Min.Z, 6);
