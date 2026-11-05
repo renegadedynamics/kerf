@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Buffers;
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry.Adaptors;
@@ -229,7 +230,7 @@ internal class GenExtSS
         _myv1sup = v1sup;
         _mytol1 = tol1;
 
-        double u1, v1, u2, v2;
+        double u1, v1;
         int noU1, noV1, noU2, noV2;
         Point3D p1, p2;
 
@@ -308,37 +309,54 @@ internal class GenExtSS
         int n1Umax = 0, n1Vmax = 0, n2Umax = 0, n2Vmax = 0;
         // OCCT also keeps the points of both pairs (PP1min, PP2min, PP1max, PP2max), never read; left out
 
-        for (noU1 = 1, u1 = u10; noU1 <= _myusample; noU1++, u1 += pasU1)
+        // Every pair of samples: 160,000 at the default 20 x 20, the cost of the whole search. So S2's samples are read once
+        // into a flat array (unit 11E): the accessors live in other assemblies, which ahead-of-time code can't inline
+        int count2 = _myusample * _myvsample;
+        double[] flat2 = ArrayPool<double>.Shared.Rent(3 * count2);
+        int at = 0;
+        for (noU2 = 1; noU2 <= _myusample; noU2++)
         {
-            for (noV1 = 1, v1 = v10; noV1 <= _myvsample; noV1++, v1 += pasV1)
+            for (noV2 = 1; noV2 <= _myvsample; noV2++)
+            {
+                p2 = _mypoints2!.Value(noU2, noV2);
+                flat2[at++] = p2.X;
+                flat2[at++] = p2.Y;
+                flat2[at++] = p2.Z;
+            }
+        }
+
+        ReadOnlySpan<double> samples2 = flat2.AsSpan(0, 3 * count2);
+        for (noU1 = 1; noU1 <= _myusample; noU1++)
+        {
+            for (noV1 = 1; noV1 <= _myvsample; noV1++)
             {
                 p1 = _mypoints1!.Value(noU1, noV1);
-                for (noU2 = 1, u2 = u20; noU2 <= _myusample; noU2++, u2 += pasU2)
+                double x1 = p1.X, y1 = p1.Y, z1 = p1.Z;
+                for (int k = 0; k < count2; k++)
                 {
-                    for (noV2 = 1, v2 = v20; noV2 <= _myvsample; noV2++, v2 += pasV2)
+                    double dx = samples2[3 * k] - x1, dy = samples2[3 * k + 1] - y1, dz = samples2[3 * k + 2] - z1;
+                    theDist = dx * dx + dy * dy + dz * dz;
+                    if (theDist < distmin)
                     {
-                        p2 = _mypoints2!.Value(noU2, noV2);
-                        theDist = p1.SquareDistanceTo(p2);
-                        if (theDist < distmin)
-                        {
-                            distmin = theDist;
-                            n1Umin = noU1;
-                            n1Vmin = noV1;
-                            n2Umin = noU2;
-                            n2Vmin = noV2;
-                        }
-                        if (theDist > distmax)
-                        {
-                            distmax = theDist;
-                            n1Umax = noU1;
-                            n1Vmax = noV1;
-                            n2Umax = noU2;
-                            n2Vmax = noV2;
-                        }
+                        distmin = theDist;
+                        n1Umin = noU1;
+                        n1Vmin = noV1;
+                        n2Umin = k / _myvsample + 1;
+                        n2Vmin = k % _myvsample + 1;
+                    }
+                    if (theDist > distmax)
+                    {
+                        distmax = theDist;
+                        n1Umax = noU1;
+                        n1Vmax = noV1;
+                        n2Umax = k / _myvsample + 1;
+                        n2Vmax = k % _myvsample + 1;
                     }
                 }
             }
         }
+
+        ArrayPool<double>.Shared.Return(flat2);
 
         uv[1] = u10 + (n1Umin - 1) * pasU1;
         uv[2] = v10 + (n1Vmin - 1) * pasV1;

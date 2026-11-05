@@ -172,6 +172,23 @@ public class ShapeMeshTests
     }
 
     [Fact]
+    public void TheOptimalBoxIsItsFacesTogether()
+    {
+        // The tolerance's box leaves out faces that can't enlarge it (unit 11E): planes, cylinders, spheres and tori here
+        Part filleted = Ops.Fillet(new Box(30, 20, 10).Edges(), radius: 2).Value;
+        Part disc = Ops.Fillet(new Cylinder(8, 6).Edges(), radius: 1).Value;
+        Shape shape = filleted + new Pos(0, 0, 7) * disc;
+        var whole = shape.Bounds();
+        var faces = shape.Faces().Select(f => f.Bounds()).Aggregate((a, b) => a.Union(b));
+        Assert.Equal(faces.Min.X, whole.Min.X, 1e-12);
+        Assert.Equal(faces.Min.Y, whole.Min.Y, 1e-12);
+        Assert.Equal(faces.Min.Z, whole.Min.Z, 1e-12);
+        Assert.Equal(faces.Max.X, whole.Max.X, 1e-12);
+        Assert.Equal(faces.Max.Y, whole.Max.Y, 1e-12);
+        Assert.Equal(faces.Max.Z, whole.Max.Z, 1e-12);
+    }
+
+    [Fact]
     public void AWireTriangulates()
     {
         // It threw until unit 10B: the binding wrapped the meshed copy as a plain shape, which a wire's edges couldn't cast

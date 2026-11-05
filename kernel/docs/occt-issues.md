@@ -2093,3 +2093,10 @@ classes.
 | `StepTidy_DirectionReducer::replaceAxis2Placement3d` | Returns after the axis | A duplicate that's also the reference direction stays | settled (decision 1666) |
 | `StepTidy_DuplicateCleaner::removeEntities` | The new models have no parameters and no header | The written file names the default schema, whichever was asked for | settled (decision 1666) |
 | `STEPCAFControl_Writer` stream write | Only `Write(file)` cleans duplicates | `SetCleanDuplicates` is ignored when writing to a stream | settled (decision 1666) |
+
+## Found by unit 11E
+
+| Where | What | Effect | Status |
+|---|---|---|---|
+| `BRepBndLib.cxx`, `IsModifySize` and `AdjustFaceBox` | The search for whether a side of a surface's box is reached inside the face uses a plane patch set by the sides cut back before it, and takes one extremum where a whole curve may touch | A box larger than the face: on `shading_172.brep` the offset face's top is 301.6 where its mesh reaches 288.6, and the whole shape's box is 10 units too tall. It still holds the shape. Skipping the sides that couldn't matter made it right by chance, so the port keeps the order | kept, as OCCT (decision 1672) |
+| `GeomBndLib_Torus::BoxOptimal` | Searches a surface whose extremes have a closed form, and starts from a coarse grid | About 10 ms a patch, most of a filleted part's optimal box | fixed (decision 1671) |

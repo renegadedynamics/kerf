@@ -490,11 +490,11 @@ public static partial class SolidExtensions
 
         // 3: sewn into one shell per surface passed through, sorted by distance from the profile
         var sewn = TopoUtil.SewFaces(modifiedTargetFaces);
-        var surfaces = new ShapeList<IShape2D>(TopoUtil.TopLevelShapes(sewn).Select(s =>
+        var surfaces = TopoUtil.TopLevelShapes(sewn).Select(s =>
             s.IsFace() ? (IShape2D)(Face)s
             : s.IsShell() ? (Shell)s
-            : throw new InvalidOperationException($"Invalid sewn shape {TopoUtil.TypeName(s)}"))).OrderBy(s => s.DistanceTo(profile)).ToShapeList();
-        var limit = surfaces[until == Until.Next ? 0 : surfaces.Count - 1];
+            : throw new InvalidOperationException($"Invalid sewn shape {TopoUtil.TypeName(s)}")).ToList();
+        var limit = SolidExtensions.SurfaceReached(surfaces, profile, until == Until.Next);
 
         // 4: split the extrusion by that surface
         var pieces = extrusion.Split(limit.AsShape(), Keep.All);
@@ -513,6 +513,40 @@ public static partial class SolidExtensions
                                        && (f.Center() - center).Magnitude <= Constants.Tolerance))
                 return (Solid)piece;
         throw new InvalidOperationException("The extrusion is empty.");
+    }
+
+    /// <summary>
+    /// The surface nearest the profile, or the one farthest. An exact distance to a surface bounded by intersection curves
+    /// is costly (300 ms in Bento's example), and usually the surfaces are clearly apart along the extrusion, so the exact
+    /// distances are only taken if bounds can't settle it: a surface is at least as far as its box, and at most as far as
+    /// its nearest vertex.
+    /// </summary>
+    private static IShape2D SurfaceReached(List<IShape2D> surfaces, Face profile, bool nearest)
+    {
+        if (surfaces.Count == 1)
+            return surfaces[0];
+        var profileBox = profile.Bounds();
+        var bounds = surfaces.Select(s => (Surface: s,
+                                           Least: SolidExtensions.GapBetween(s.Bounds(), profileBox),
+                                           Most: s.Vertices().Select(v => v.DistanceTo(profile)).DefaultIfEmpty(double.PositiveInfinity).Min())).ToList();
+        foreach (var candidate in bounds)
+        {
+            var clear = bounds.All(other => ReferenceEquals(other.Surface, candidate.Surface)
+                                            || (nearest ? candidate.Most + Constants.Tolerance < other.Least
+                                                        : other.Most + Constants.Tolerance < candidate.Least));
+            if (clear)
+                return candidate.Surface;
+        }
+        var sorted = surfaces.OrderBy(s => s.DistanceTo(profile)).ToList();
+        return nearest ? sorted[0] : sorted[^1];
+    }
+
+    private static double GapBetween(in BoundingBox a, in BoundingBox b)
+    {
+        double x = Math.Max(0, Math.Max(a.Min.X - b.Max.X, b.Min.X - a.Max.X));
+        double y = Math.Max(0, Math.Max(a.Min.Y - b.Max.Y, b.Min.Y - a.Max.Y));
+        double z = Math.Max(0, Math.Max(a.Min.Z - b.Max.Z, b.Min.Z - a.Max.Z));
+        return Math.Sqrt(x * x + y * y + z * z);
     }
 
     private static Shape SweepCore(Wire outerWire, IReadOnlyList<Wire> innerWires, IShape1D path, bool makeSolid, bool isFrenet,

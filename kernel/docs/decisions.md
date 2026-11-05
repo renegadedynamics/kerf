@@ -16549,3 +16549,30 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        is above 1. Unit 11I does this first.
 1670. **The rig compares from here on against `docs/benchmarks/2026-11-05-0198121ae.tsv`,** the run after 11B, the healing fix, 11L
        and 11N. The targets stay as decision 1644 and 11A's baseline set them: recalculation 822 ms, and allocation 225 MB, which is met.
+
+## Phase 11: unit 11E, the hot paths
+
+1671. **A torus patch's optimal box is worked out, not searched for.** OCCT runs PSO and Powell on a torus through
+       `GeomBndLib_OtherSurface`, about 10 ms a patch. On each coordinate the function is a sinusoid in u and in v, so its extremes
+       are at the patch's sides and at known peaks, a few microseconds' work. The box still grows by the tolerance, at least
+       `Precision::Confusion`, as OCCT's does. It differs from the search's by under 1e-7, because the search stops short.
+1672. **`Bounds.AddOptimal` leaves out curved faces that can't enlarge the box.** The result is the union of the faces' boxes, whatever the
+       order, so faces that take their box from their edges now come first, then spheres and tori, then the surfaces it has to
+       search. A surface's box holds the face's, because cutting back to the edges only shrinks it, so a surface's box inside the
+       union so far ends that face; a B-spline's poles settle it before any search. A face with any side outside runs all of
+       `AdjustFaceBox`'s sides as OCCT does: each side's search plane depends on the sides cut back before it, and taking only the
+       sides outside gave `shading_172.brep` a different box. Over 1,499 BRep files, 1,490 boxes are bit for bit the same and the other 9
+       differ by 1e-7 or less, from decision 1671; decision 1674 has the one triangle count that moves.
+1673. **Extrude until picks its surface by bounds first.** Sorting the surfaces by exact distance took 48% of the recalculation's thread time,
+       nearly all of it `DistanceShapeShape` between the profile's edges and the intersection curves bounding the surfaces. A surface is
+       at least as far as its box and at most as far as its nearest vertex, so when those intervals don't overlap by more than the
+       tolerance the answer is certain and is the sort's. Otherwise the exact distances are taken as before. One surface needs no distance at all.
+1674. **`MeshTolerances.For` keeps its optimal box, and one triangle count moves, which is accepted.** A cheaper box would move the deflection:
+       the loose box's diagonal is 2.5% longer on the bottle and 8.2% on "extrude until", and the mesher reacts to far less. So the optimal box was made
+       cheap instead. All eleven of Bento's examples keep their diagonals bit for bit, and their triangle counts. Of the 1,499 BRep files, one of the 9 whose box moved
+       changes its count at the default tolerances: `data/occ/bottle.brep`, 12,862 to 12,872 triangles, for a deflection 3.4e-10 of itself smaller. No fixture holds it. Its
+       worst triangle centroid is 0.350 from its face before and after, against a stated deflection of 0.094, so it's no worse; why that exceeds the deflection at all isn't this
+       unit's, and is noted in [performance.md](performance.md).
+1675. **Booleans are left alone in 11E.** With the first two the target is beaten by far, and the profile names no single site: the pave
+       filler's time is spread between its stages, the largest part of it is threads stopped for a collection, and the wait
+       in its parallel loop is 11D's. [performance.md](performance.md) has the shares, for whoever comes back to it.

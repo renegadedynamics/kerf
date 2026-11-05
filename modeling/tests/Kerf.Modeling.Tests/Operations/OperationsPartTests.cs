@@ -107,6 +107,39 @@ public class OperationsPartTests
         Check.AlmostEqual(10 * 10 * 10 - 8 * 8 * 8 + 1 * 1 * 8, (target + rib).Volume, 5);
     }
 
+    [Theory]
+    [InlineData(Until.Next, 19)]
+    [InlineData(Until.Last, 21)]
+    public void ExtrudeUntilASurfaceClearOfTheOther(Until until, double height)
+    {
+        // A plate over the profile: its faces are apart along the extrusion, so bounds pick the surface
+        var plate = new Pos(0, 0, 20) * new Box(100, 100, 2);
+        Check.AlmostEqual(10 * 10 * height, Extrude(new Rectangle(10, 10), until, plate).Value.Volume, 5);
+    }
+
+    [Theory]
+    [InlineData(Until.Next, -1)]
+    [InlineData(Until.Last, 1)]
+    public void ExtrudeUntilASteepSurface(Until until, double side)
+    {
+        // A steep plate: its faces overlap in height over the profile, but each one's nearest vertex still settles it
+        var plate = new Pos(0, 0, 20) * (new Rotation(y: 45) * new Box(100, 100, 2));
+        var height = 20 + side * Math.Sqrt(2);
+        Check.AlmostEqual(10 * 10 * height, Extrude(new Rectangle(10, 10), until, plate).Value.Volume, 5);
+    }
+
+    [Theory]
+    [InlineData(Until.Next, 20 - 7.0710678118654755)]
+    [InlineData(Until.Last, 30)]
+    public void ExtrudeUntilSurfacesTheBoundsCantSettle(Until until, double top)
+    {
+        // A thin hollow sphere: the outer lower cap's nearest vertex, at a corner of the profile, is farther than the box of
+        // the inner cap, so only the exact distance can pick the surface
+        Shape shell = new Pos(0, 0, 20) * ((Shape)new Sphere(10) - new Sphere(9.5));
+        var rib = Extrude(new Rectangle(10, 10), until, shell).Value;
+        Assert.Equal(top, rib.Bounds().Max.Z, 1e-5);
+    }
+
     [Fact]
     public void ExtrudeUntil2()
     {
