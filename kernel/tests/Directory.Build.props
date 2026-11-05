@@ -17,5 +17,6 @@
   <!-- The engine's failures, thrown or held by the exception a public member refuses with (unit 10P2) -->
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Kerf.Kernel.Foundation.Tests' Or '$(MSBuildProjectName)' == 'Kerf.Kernel.ModelingData.Tests' Or '$(MSBuildProjectName)' == 'Kerf.Kernel.ModelingAlgorithms.Tests' Or '$(MSBuildProjectName)' == 'Kerf.Kernel.DataExchange.Tests' Or '$(MSBuildProjectName)' == 'Kerf.Kernel.Oracle.Tests' Or '$(MSBuildProjectName)' == 'Kerf.Kernel.DrawLite.Tests'">
     <Compile Include="$(MSBuildThisFileDirectory)Shared/EngineAssert.cs" Link="Shared/EngineAssert.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Shared/NativeStepText.cs" Link="Shared/NativeStepText.cs" />
   </ItemGroup>
 </Project>

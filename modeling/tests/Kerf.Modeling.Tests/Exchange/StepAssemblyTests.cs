@@ -25,7 +25,7 @@ public class StepAssemblyTests
     // writes a placement's -0 as 0
     private static string Masked(byte[] step)
     {
-        var text = Regex.Replace(Encoding.Latin1.GetString(step), @"(Open CASCADE STEP translator [0-9.]+) \d+", "$1 #");
+        var text = Regex.Replace(NativeStepText.Of(Encoding.Latin1.GetString(step)), @"(Open CASCADE STEP translator [0-9.]+) \d+", "$1 #");
         text = Regex.Replace(text, @"-0\.(?=[,)])", "0.");
         return Regex.Replace(text, @"NEXT_ASSEMBLY_USAGE_OCCURRENCE\('\d+'", "NEXT_ASSEMBLY_USAGE_OCCURRENCE('#'");
     }

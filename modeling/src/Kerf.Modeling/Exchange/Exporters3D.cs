@@ -91,7 +91,7 @@ public sealed record ThreeMfExportOptions
 /// <para>
 /// STEP is written as build123d writes it: through an assembly document (Kerf's STEPCAFControl over its XdeDoc
 /// tree), a product per part and assembly, named by its label and coloured by its colour. The FILE_NAME header carries
-/// the shape's label, the time stamp given and "build123d" as the originating system, as build123d's.
+/// the shape's label, the time stamp given and "Kerf.Modeling" as the originating system, where build123d names itself.
 /// </para>
 /// <para>
 /// STL, glTF and 3MF are written by Kerf's writers. glTF and 3MF keep the assembly tree, its labels and colours.
@@ -138,7 +138,7 @@ public static class Exporters3D
             var written = Step.Write(StepTree(toExport), text, writeOptions, cancellationToken: cancellationToken);
             if (written.IsFailure)
                 return written;
-            stream.Write(StepHeader.WithFileName(text.ToArray(), toExport is ModelShape { Label.Length: > 0 } labelled ? labelled.Label : null, options.Timestamp, "build123d"));
+            stream.Write(StepHeader.WithFileName(text.ToArray(), toExport is ModelShape { Label.Length: > 0 } labelled ? labelled.Label : null, options.Timestamp, "Kerf.Modeling"));
             return written;
         });
     }

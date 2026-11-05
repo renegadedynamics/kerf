@@ -88,10 +88,10 @@ public class FailureDiagnosticsTests
     [Fact]
     public void TheMessageSaysTheKindThenOcctsMessage()
     {
-        var diagnostic = FailureDiagnostics.ToDiagnostic(new NotDoneException("BRepAlgoAPI_BuilderAlgo::Shape"));
+        var diagnostic = FailureDiagnostics.ToDiagnostic(new NotDoneException("BRepAlgoAPI_BuilderAlgo::Shape: not built"));
         Assert.True(diagnostic.IsError);
         Assert.Equal("engine.not-done", diagnostic.Code.Value);
-        Assert.Equal("the algorithm couldn't complete: BRepAlgoAPI_BuilderAlgo::Shape", diagnostic.Message);
+        Assert.Equal("the algorithm couldn't complete: not built", diagnostic.Message);
     }
 
     [Fact]

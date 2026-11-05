@@ -187,8 +187,8 @@ public class StepDataTests
     {
         var aMake = new MakeHeader(4);
         aMake.AddSchemaIdentifier(new TCollection_HAsciiString("AP242"));
-        Assert.Equal("Open CASCADE Manifold Solid Brep Model", aMake.Name()!.ToCString());
-        Assert.Equal("Open CASCADE STEP processor 8.0", aMake.PreprocessorVersion()!.ToCString());
+        Assert.Equal("Kerf Manifold Solid Brep Model", aMake.Name()!.ToCString());
+        Assert.Equal("Kerf STEP processor 8.0", aMake.PreprocessorVersion()!.ToCString());
         Assert.Equal(2, aMake.SchemaIdentifierCount);
         StepModel aModel = aMake.NewModel(StepDataDump.HeaderOnlyProtocol());
         Assert.Equal(3, aModel.Header().NbEntities());
@@ -198,7 +198,7 @@ public class StepDataTests
         var aDump = new StringWriter();
         aModel.DumpHeader(aDump);
         Assert.Contains(" --   Dumped with Protocol : HeaderSection_Protocol   --", aDump.ToString());
-        Assert.Contains("FILE_NAME('Open CASCADE Manifold Solid Brep Model',", aDump.ToString());
+        Assert.Contains("FILE_NAME('Kerf Manifold Solid Brep Model',", aDump.ToString());
 
         var aCopy = new StepModel();
         aCopy.GetFromAnother(aModel);
