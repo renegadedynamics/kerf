@@ -1,26 +1,23 @@
 # Kerf.Kernel
 
 A managed .NET CAD kernel derived from [Open CASCADE Technology](https://github.com/Open-Cascade-SAS/OCCT) (OCCT) 8.0.1,
-ported to C# class for class and now being redesigned for .NET (phase 10: [docs/phase10-plan.md](docs/phase10-plan.md)).
-See [docs/design.md](docs/design.md) for the design and [docs/port-status.md](docs/port-status.md) for what has been
-ported.
+ported to C# and redesigned for .NET. See [docs/api](docs/api/README.md) for the public API,
+[docs/design.md](docs/design.md) for the design and [docs/port-status.md](docs/port-status.md) for what has been ported.
 
 - **Pure managed code**: no native libraries, no P/Invoke.
-- **.NET names** (unit 10E): types are in namespaces by area (`Kerf.Geometry`, `Kerf.Topology` for the public API,
-  `Kerf.Engine.<Area>` for the algorithms), without OCCT's package prefixes, and members follow .NET's naming.
+- **.NET names:** the public API is in namespaces by area (`Kerf.Geometry`, `Kerf.Topology`, `Kerf.Booleans`…), without
+  OCCT's package prefixes, and members follow .NET's naming. The algorithms are internal, in `Kerf.Engine.<Area>`.
   [docs/api/kerf.map](docs/api/kerf.map) says what each OCCT name became, so OCCT's documentation can still be found;
   each derived file names its OCCT source in a `// Port of:` header.
-- **Immutable to callers**: every value you get back is immutable.
+- **Immutable**: every value you get back is immutable.
+- **Results**: an operation that can fail for an expected reason returns a `Result`, with diagnostics.
 
 ```csharp
-using Kerf.Engine.Geometry;
 using Kerf.Geometry;
 
-Transform3D rotation = Transform3D.Rotation(Constants.OZ(), Math.PI / 2);
+Transform3D rotation = Transform3D.Rotation(Axis3D.ZAxis, Math.PI / 2);
 Point3D point = new Point3D(1, 0, 0).Transformed(rotation);   // (0, 1, 0); the original is unchanged
 ```
-
-The public API is still OCCT's classes renamed; units 10F to 10L reshape it as [docs/api](docs/api/README.md) designs.
 
 ## Assemblies
 

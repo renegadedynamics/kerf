@@ -3,7 +3,428 @@
 All notable changes to the Kerf.Kernel packages (until 0.2.0 the OCCT.NET packages). Versions follow [SemVer](https://semver.org); before 1.0 a minor
 version may break the API.
 
-## 0.1.0 (unreleased)
+## 0.2.0
+
+The first release as Kerf.Kernel, replacing `OcctNet.Foundation`, `OcctNet.ModelingData`, `OcctNet.ModelingAlgorithms`
+and `OcctNet.DataExchange`. Every name and most signatures changed from the `OcctNet.*` and `Build123d` packages, and there's no compatibility
+layer. Before 1.0 a minor version may break the API again.
+
+- **A public API for .NET** (`docs/api`): namespaces by area (`Kerf.Geometry`, `Kerf.Topology`, `Kerf.Booleans`,
+  `Kerf.Exchange`…), .NET names and 0-based indexing. The engine is internal, in `Kerf.Engine.*`.
+- **Immutable, with no copy at entry:** public values never change, and algorithms never write into their inputs, so
+  results share the faces they don't change.
+- **Results:** expected failures come back as `Result` and `Result<T>` with diagnostics. No engine exception reaches a
+  public caller; misuse throws .NET's own exceptions.
+- **OCCT's bugs:** triaged, and the ones on the fix list fixed; each is recorded in `docs/occt-issues.md`.
+- **Images:** hidden-line drawings as SVG, and shaded pictures as PNG, in managed code.
+- **No dependencies beyond .NET:** Schematiq.Collections and native OCCT are gone. Native OCCT's results stay as frozen
+  recordings for the tests.
+- **Files say who wrote them:** glTF, 3MF and OBJ files name Kerf as their generator. STEP output is unchanged, so its
+  header still says Open CASCADE.
+- **Not done yet:** the coverage floor, and the rest of `docs/phase11-plan.md`.
+
+The units, oldest first:
+
+Phase 10 (part): one repository, Kerf (unit 10R).
+- OCCT.NET and build123d.NET move, with their histories, into one repository: `kernel/` and `modeling/`. The packages
+  keep their names until 0.2.0, when they become Kerf.Kernel and Kerf.Modeling.
+
+Phase 10 (part): conventions and tooling (unit 10C).
+- `tools/kerf-rename`: the renamer that unit 10E uses to move the kernel and the modelling layer to .NET names, from a
+  reviewed name map (types and namespaces, members, methods that become properties, and the systematic rules for
+  parameters, fields, locals and methods), reporting every rename it drops rather than guessing. It drafts the
+  systematic part of a map from the code, and applies a map to another repository (Bento) as well.
+- `docs/design-rules.md`: the rules for new and redesigned code (names, values and references, immutability,
+  operations, results and errors, collections, spans, nullability, modern C#, state); translation-rules.md stays as the
+  rules the port followed.
+- A root `.editorconfig` with .NET's naming rules, inert until 10E turns them on folder by folder.
+- No change to the libraries: the pilot rename of gp and math stays on an unmerged branch.
+
+Phase 10 (part): OCCT's bugs triaged (unit 10K's first half).
+- Every bug in docs/occt-issues.md that the port reproduced to match native OCCT now has a verdict: 134 to fix, 572 to
+  fix when their code is next rewritten, 313 to leave, 135 already settled by the port. The ones to fix are those a
+  user would see: wrong Boolean or bounding-box results, hangs and failures in healing, sweeps, lofts, 2D offsets,
+  drafts and fillets, wrong 2D fillets and chamfers, the 2D tangent-circle solvers, wrong properties and continuity,
+  and STEP and STL files read or written wrong. docs/occt-issues-triage.md lists them in eight batches by impact,
+  with each bug's site and the tests that will change. No change to the libraries yet.
+Phase 10 (part): the public API design (unit 10D).
+- `docs/api`: the design of Kerf.Kernel's public API, for review: an overview of results and diagnostics, options,
+  cancellation, values, shapes and collections, and an API review for each area (geometry, topology, construction,
+  Booleans, fillets, offsets and features, healing, measurement, meshing, exchange), each mapped from today's types.
+- Every public type classified as public API, engine or removed (`docs/api/classification.tsv`, from rules by package
+  with `tools/api-classify.cs`), and the draft name map for the rename (`docs/api/kerf.map`).
+- No change to the libraries.
+Phase 10 (part): test independence (unit 10A).
+- The oracle tests no longer need native OCCT: native's results are recorded (`tests/OcctNet.Oracle.Tests/Recordings`,
+  109 MB) and replayed through a generated facade, the port compared with them exactly as before; they can be recorded
+  again while native OCCT exists. They join Kerf.slnx. The largest corpora and random runs are sampled in the
+  recordings (run in full live).
+- The differential run compares build123d.NET's suite on OCCT.NET with native's log as recorded (digests, properties,
+  and the texts that differed).
+- `tools/coverage.ps1` measures line coverage per OCCT package (`docs/coverage.md`).
+Phase 10 (part): build123d.NET on OCCT.NET alone (unit 10B).
+- Native OCCT is gone from the repository: build123d.NET's native backend (its bindings, shim, generator and native
+  build), and with it the oracle tests' recording and live modes. The oracle replays native's results as recorded in
+  unit 10A, frozen; `tools/oracle-facade.cs` and `b3d-differential.ps1 -Record` went. The benchmarks time the port
+  alone, and build without native OCCT again.
+- Public for the modelling layer, which reached them with `UnsafeAccessor`: `TopoDS_Builder`'s constructor, `Make*`,
+  `Add` and `Remove`; `BRep_Builder` and its `MakeFace` of a triangulation; `TopoDS_TShape.FreezeGraph`. Engine API,
+  internal again once 10L's public API replaces them.
+- `tools/pack-nuget.ps1` packs `Build123d` from the repository, without `Build123d.OcctNet`, which is gone.
+Phase 10 (part): the rename (unit 10E). **Breaking: every name changes.**
+- The packages are `Kerf.Kernel.Foundation`, `Kerf.Kernel.ModelingData`, `Kerf.Kernel.ModelingAlgorithms` and
+  `Kerf.Kernel.DataExchange`, at 0.2.0 (the `OcctNet.*` packages end at 0.1.0).
+- Types are in namespaces by area without OCCT's package prefixes: the public values and curves in `Kerf.Geometry`
+  (`gp_Pnt` is `Point3D`, `gp_Cylinder` is `Cylinder`, `Geom_BSplineCurve` is `BSplineCurve3D`), the shapes in
+  `Kerf.Topology` (`TopoDS_Edge` is `Edge`, `TopLoc_Location` is `Placement`), everything else in `Kerf.Engine.<Area>`
+  (`BOPAlgo_PaveFiller` is `Kerf.Engine.Booleans.PaveFiller`). Members, parameters and fields follow .NET's naming
+  (`theX` is `x`, `myX` is `_x`; `NbPoles()` is the property `PoleCount`). `docs/api/kerf.map` says what each OCCT name
+  became; the types 10J replaces (NCollection, TCollection) keep their names in `Occt`.
+- Exceptions end in `Exception` (`Standard_DomainError` is `DomainErrorException`); their `OcctType`, messages, STEP's
+  signatures and every other text OCCT prints keep OCCT's names (`OcctTypeNames`).
+- The analyzers are `Kerf.Analyzers`, with ids `KERF0001` and `KERF0002`; .NET naming (IDE1006) is an error in the
+  build where the code obeys it.
+- No behaviour changes: every test passes as before.
+Phase 10 (part): the working overlay (unit 10H1).
+- An operation can now run OCCT's in-place code on a caller's frozen shape without copying it: its writes go to working
+  copies of the TShapes it changes, which it reads back, and its result shares every sub-shape it didn't change, with a
+  direct history (`WorkingOverlay`, internal; docs/overlay-survey.md lists the 110 copy-at-entry sites 10H2 to 10H6
+  convert). Without an open overlay nothing changes.
+- ShapeFix_Edge's and ShapeFix_ShapeTolerance's twins (`AddPCurveFixed`, `VertexToleranceFixed`, `ToleranceLimited`, …)
+  run on it instead of a copy of their input: the same results, faster.
+
+Phase 10 (part): errors (unit 10F).
+- `Kerf.Result<T>`, `Result`, `Diagnostic` (a severity, a stable string code, a plain message and, from ModelingData,
+  the sub-shapes concerned), `DiagnosticCode`, `Severity` and `KerfException`, in Foundation; `Built<T>` in
+  ModelingData. Nothing public returns them yet: unit 10L's operations will.
+- Bridges from OCCT's error models to diagnostics: `FailureDiagnostics` (exceptions), `AlertDiagnostics` (a report's
+  alerts), `StatusDiagnostics` and `OperationDiagnostics` (the status enums; a failed operation), `ExchangeDiagnostics`
+  (`IFSelect_ReturnStatus`). docs/api/diagnostics.md lists the codes.
+- `Resource_Manager.TryGetInteger`; ShapeProcess reads its parameters without catching an exception for each one that
+  isn't set (results unchanged).
+Phase 10 (part): immutability (unit 10G). **Breaking for code that changed values in place.**
+- gp's values are `readonly struct`s: `Point3D`, `Vector3D`, `Direction3D`, `Axis3D`, `Frame3D`, `CoordinateSystem`,
+  `Transform3D`, `GeneralTransform3D`, `Matrix3x3`, the conics and quadrics and their 2D twins, and `Placement`. Their
+  in-place mutators (internal since phase 5) are gone; `Transformed`, `WithX`, `Normalized` and the other returning forms
+  give changed values. New: `Vector3D.LinearForm`, `Vector2D.LinearForm`, `Matrix3x3.PreMultiplied`.
+- The B-spline and Bézier curves' and surfaces' `Poles()`, `Knots()`, `Weights()` and the like return
+  `IReadOnlyList<T>` in place of `PackedList<T>`.
+- KERF0003, a build error: a public type of Kerf's public namespaces can't gain a setter, a mutable field or an in-place
+  method.
+- No behaviour changes: every result is the same to the bit, and every test passes as before.
+Phase 10 (part): no copy at entry in the Booleans (unit 10H2).
+- The Booleans no longer copy their inputs anywhere: the self-check (`BOPAlgo_CheckerSI`, `BRepAlgoAPI_Check`,
+  `bopargcheck`), the wire tools (`BOPAlgo_Tools::WiresToFaces`, `BRepAlgo::ConcatenateWireC0`,
+  `BRepAlgo_FaceRestrictor`, `TopOpeBRepBuild_WireToFace`), the cells builder, defeaturing's removal of internal wires,
+  and the periodicity's trim and repetitions (`BOPAlgo_MakePeriodic`, `BOPAlgo_MakeConnected`) run OCCT's in-place code
+  in a working overlay. Results are as before; the periodic and connected shapes' histories now record a sub-shape as
+  modified only when it changed.
+- The general fuse and `BRepAlgoAPI_*` keep OCCT's non-destructive mode on frozen arguments; a Boolean run inside
+  another operation's overlay is destructive, as OCCT's on an unlocked shape.
+
+Phase 10 (part): state (unit 10I).
+- No process-wide settings: what OCCT kept in statics (the message table's additions, ShapeProcess's registered
+  operators, the parallel defaults of the Booleans and the mesher, the meshing algorithm's name, BRepLib's precision and
+  plane, `Quantity_Color`'s epsilon, the default messenger and report, GeomTools' handler, ShapeAlgo's container, debug
+  flags) are settings of `OperationContext` (Foundation): immutable defaults, overridden for a scope
+  (`OperationContext.Begin`) or a flow of execution, which flow into the tasks an operation starts and never reach
+  another operation, thread or test. OCCT's setters now change the current flow only.
+- `ProcessContext.ResourceOverridesSetting`: an operation can run shape processing (the STEP and IGES readers' too)
+  with its own resources beside others on the defaults. The resource files compiled in are parsed once; OCCT's cache of
+  the last file goes, and `ClearResourceCache` with it.
+- `MsgFile.Msg` of an unknown keyword no longer stores the surrogate text, so `HasMsg` stays false for it.
+- Removed: `STEPConstruct_Assembly.MakeRelationship()`, which numbered occurrences from a process-wide counter (the form
+  taking the caller's counter stays).
+- 32 locks go: the registries are built once and published whole, the caches publish without locks, and
+  `XSControl_WorkSession`'s process-wide mutex is its controller's, so STEP readers and writers no longer wait for each
+  other. docs/state.md lists every static, thread static and lock that remains, and why.
+- Concurrency tests run Booleans, fillets, offsets, healing, shape processing, STEP reading and writing, meshing and
+  the modelling layer's parts on many threads, each giving its serial BRep text.
+
+Phase 10 (part): no copy at entry in healing (unit 10H4).
+- ShapeFix (every fixer and the statics' twins), ShapeBuild's and ShapeConstruct's twins, ShapeUpgrade's dividers and
+  `UnifySameDomain`, ShapeProcess's operators and sewing no longer copy a frozen input: they run OCCT's in-place code on
+  the caller's shape in a working overlay, and a tool called by another (ShapeFix_Wire by ShapeFix_Face, ShapeFix by
+  ShapeProcess) writes into the outer one's, as in OCCT. Results are as before and share more of the input; the input is
+  never written, and a twin no longer writes into a caller's unfrozen compound either.
+- Tools fixed over several calls (ShapeFix_Face, _Wire, _WireVertex, _Wireframe, _FixSmallFace, _ComposeShell) keep
+  their overlay between calls without leaving it open: the shapes they hold show the fixes only in their result.
+- The overlay maps its input before assembling the result, which corrects the history of an operation on an unfrozen
+  input whose sub-shapes it changed (a Boolean's simplified result). BRepLib's SameParameter and the frozen-shape checks
+  write where OCCT does inside an overlay.
+- `HealingInputsUnchangedTests` and a STEP import healing test check the inputs untouched; the benchmarks gain
+  `healing` (STEP import, ShapeFix_Shape and UnifySameDomain on the dataset's STEP files).
+
+
+Phase 10 (part): heap and collections (unit 10J).
+- `Grid<T>` (`Kerf.Geometry`): a read-only 2D grid, 0-based. `BSplineSurface` and `BezierSurface` return their poles
+  and weights as grids (`Poles()`, `Weights()`, `WeightsArray()`); the copy-into overloads `Poles(array)` and
+  `Weights(array)` are internal.
+- `NCollection_Map` is gone: the engine uses `HashSet<T>` (with the same comparers, and the same iteration order).
+- Faster without changing results: a shape's hash is drawn once when its TShape is made; the mesher no longer moves
+  its candidate circles when it deletes one; the elementary extrema hold their solutions in fixed-size fields;
+  `math_NewtonMinimum` reuses its eigenvalue and LU solvers between iterations; STEP AP214's type tables and MoniTool's
+  typed-value library are frozen dictionaries.
+- KERF0002 (a map of shapes needs an explicit comparer) works again on Kerf's shape types.
+- docs/collections-plan.md: what is left of plan 2.6's collections, type by type.
+
+Phase 10 (part): no copy at entry in construction (unit 10H3).
+- Prisms, revolutions, pipes, lofts (`BRepOffsetAPI_ThruSections`, `BRepFill_Generator`), ruled faces and shells,
+  evolved shapes, BRepLib's functional twins, the face of a planar wire and the wire maker's merges no longer copy their
+  inputs: they run OCCT's in-place code on the caller's shapes in a working overlay, which copies only what they write
+  into. Results, and what they share with their inputs, are as before: the prism of a polygon face holds the caller's
+  face, its edges and vertices; of a circle face, a new face (the circle takes the cylinder's pcurve, decision 1102).
+- Histories answer for the caller's sub-shapes directly. `BRepLib_MakeWire`'s `Modified` records only the edges and
+  vertices a merge changed (it recorded every sub-shape of the wire built so far). `BRepPrimAPI_MakeRevol.Degenerated()`
+  gives a generating shape's degenerated edge as it stands in the result.
+- An algorithm another operation runs (a sweep inside an evolved shape, a loft's generator) writes into that
+  operation's overlay, as OCCT writes in place (`WorkingOverlay.BeginUnlessInside`).
+- Removed (internal): `BRep_Builder.UpdateVertexOfFrozen`, BRepLib's `UnfreezeResult`, MakeWire's copies for write.
+- A construction benchmark (`Kerf.Kernel.Benchmarks -- construction`): allocation falls by up to a third where an input
+  was copied whole; Bento's benchmark is unchanged.
+- Seven oracle replays whose wires MakeWire builds compare at plan 3.2's second level (`Tape.AcceptOtherArguments`): the
+  wires differ from the recordings' only in the Free flag of the caller's edges they now keep.
+Phase 10 (part): no copy at entry in offsets, fillets and features (unit 10H5).
+- The 3D offset and the thick solid, BRepOffset_Offset's pipes and spheres, BiTgte's rolling ball, the fillet and
+  chamfer builder (and FilletSurf's), the 2D fillet, the draft angle, BRepFeat's features and LocOpe's local operations
+  no longer copy a frozen input: they run OCCT's in-place code on the caller's shape in a working overlay, and the
+  result holds new TShapes only for what changed. Their histories answer for the caller's shapes directly.
+- Builders called over several calls (the fillet builder, LocOpe's split and wires on a shape, BRepFeat's makers) keep
+  a detached overlay, entered by each call that writes, so nothing stays open between the calls; a second computation
+  on one fillet builder starts again from the caller's shape.
+- OC5805's thick solid, whose offset surface OCCT enlarges in place, is built as before, the caller's face keeping its
+  surface. A second `BRepOffset_MakeOffset` run after `Initialize` no longer fails on the same shapes (OCCT's analysis
+  kept the last run's data).
+- The simple offset's solid and the offset's thickening mode stay on their copies until construction runs in an overlay:
+  their walls are made by BRepLib_MakeFace, which copies frozen edges itself.
+- `OffsetInputsUnchangedTests`, `FilletInputsUnchangedTests` and `FeatureInputsUnchangedTests` check the inputs
+  untouched; the benchmarks gain `features` (offsets, thick solids, fillets, chamfers, drafts and a boss on frozen
+  parts).
+Phase 10 (part): OCCT's bugs in Booleans, boxes and distances, and hangs and spurious failures (unit 10K1, batches K1
+and K2 of the triage).
+- Booleans, boxes, distances: a fuse merges solids whose only shared face OCCT never checked; the boxes of parabola
+  and hyperbola arcs contain the arc (they could miss its coordinate extrema, so Booleans and distances could skip a
+  touching pair); a distance between a short edge and a face reports the point on the edge, not the origin.
+- Hangs: healing's overlap check on a zero-length edge, the B-spline conversion of a surface whose approximation
+  always fails, and the corrected Frenet trihedron on offset curves (seconds to minutes; now well under a second) all
+  return.
+- Spurious failures: a fillet whose radius follows a law (`MakeFillet.Add(law, edge)`); MakeFilling with G2 or C2
+  constraints, and C1 now meaning G1 rather than G2; a pipe of a vertex's history; a pipe between two sections on a
+  3D path; SweptToElementary on shapes with degenerated edges (most revolved shapes); a loft through closed B-spline
+  sections with different knots. The medial axis of a single closed edge reports failure instead of crashing.
+- Left for later, with reasons (decision 1441): the 2D offset's two medial-axis failures and some multi-face drafts.
+- Recordings these fixes move compare at plan 3.2's third level, each with its reason; occt-issues.md marks the rows
+  fixed.
+
+Phase 10 (part): the end of copy at entry (unit 10H6).
+- No algorithm copies its input at the entry any more. The offset's thickening mode and the simple offset's solid run
+  in working overlays, their walls sharing the caller's edges; the mesher meshes a frozen shape in an overlay of its own
+  and returns a result sharing every face it left alone; HLR's outliner works on the caller's shape, so
+  `HLRBRep_HLRToShape` finds a caller's sub-shapes in its data as themselves; the reflect lines' SameParameter no
+  longer writes into the caller's vertices.
+- `BRepTools_CopyAtEntry`, `ExactCopyForWrite`, `HoldsFrozen`, `KeepUnchanged`, `KeepUnchangedIn` and
+  `CopyFrozenForWrite` are gone (about 1,000 lines). `CopyData`, `CopyFlags` and `IsSameData` stay for the overlay.
+  BRep_Builder's mesher forms `UpdateFaceUnfrozen`/`UpdateEdgeUnfrozen` are `UpdateFaceMesh`/`UpdateEdgeMesh`.
+- `WorkingOverlay` has one way to join an operation's overlay, `BeginUnlessWriting` (`BeginUnlessInside` was the same
+  rule), and one rule protecting published shapes, `IsReadOnly`, which BRep_Builder's refusals ask through `IsLocked`.
+- Copying a mesh out (`MeshExtraction`) writes the normals straight into its buffer instead of computing them on a copy
+  of each triangulation: 2.7 MB allocated for a 100,000-triangle sphere instead of 6.5 MB. Its timing test, which failed
+  on loaded machines, measures allocation and the best of five runs.
+
+Phase 10 (part): heap and collections, the rest (unit 10J2).
+- `NCollection_DataMap` is gone: the engine uses `Dictionary<TKey, TValue>`, with `DictionaryExtensions` (in
+  `Kerf.Engine.Collections`) for what the wrapper added: `GetValue` and `GetValueRef` fail with OCCT's
+  `NoSuchObjectException` for a missing key, and `SetValueRef`/`GetOrAddValueRef` return the stored value by reference.
+- `NCollection_DynamicArray` and `NCollection_Vector` are gone: `List<T>`, with `ListExtensions.SetAt` for OCCT's
+  growing `SetValue`.
+- `NCollection_IndexedMap` and `NCollection_IndexedDataMap` are gone: `IndexedSet<T>` and `IndexedMap<TKey, TValue>`
+  (in `Kerf.Engine.Collections`), numbered from 0; removing an item moves the last one into its place, as in OCCT.
+- KERF0002 checks the two indexed collections.
+- `tools/collections-rewrite`: the Roslyn rewrite that made these changes, for the types still to go
+  (docs/collections-plan.md). Results are unchanged.
+
+Phase 10 (part): OCCT's bugs in construction, properties, extrema and projection (unit 10K2, batches K3, K5 and K6 of
+the triage).
+- Projection: the pcurve of a helix of more than a turn on a cylinder (a thread), a spiral on a cone or a coil on a
+  torus follows the curve (it was off by up to the diameter); a projection's free part after an isoparametric one gets
+  its own pcurve; a parabola projected on a plane gets the right focal.
+- Extrema: curve-curve extrema run twice report the second run's solutions only; GeomAPI's total curve-curve distance
+  keeps the nearest end pair and, on ranges, stays on the ranges; 2D circle intersections give an indirect circle's
+  own parameters.
+- Properties: BRepGProp's volume by a plane (Vinert) reports its volume and centre; natural faces' adaptive
+  integration splits V at the V bounds; curvatures asked before IsCurvatureDefined are the point's; GeomLProp's
+  continuity at a B-spline knot is the knot's; a continuous approximation with free ends is done; GProp's elementary
+  curves, surfaces and solids (lines, circles, cylinders, cones, spheres, tori) have right centres and inertia.
+- Construction: 2D fillets and chamfers keep a face's holes as their own wires, fillet a moved arc the right way and
+  trim a reversed neighbour correctly; a distance-angle chamfer between a plane and a cylinder no longer depends on the
+  axis direction; NurbsConvert and GTransform keep a meshed face's surface; rational Coons fillings keep their
+  boundaries; a revolved feature up to a face at an angle chooses as Perform(Until) does; the sweep section generator
+  moves its sections along the path; ExtendFace no longer extends an infinite side.
+- Left, with reasons: AdvApp2Var's error estimate (decision 1482), and the row about ExtendFace losing a location,
+  which wasn't a bug (1477).
+- Recordings these fixes move compare at plan 3.2's third level, each with its reason; occt-issues.md marks the rows.
+Phase 10 (part): OCCT's bugs, curve and surface evaluation, conversion, gp and data exchange (unit 10K3, batches K7
+and K8).
+- Raising the degree of a periodic B-spline keeps the curve (lofts' and fillets' periodic sections and spines).
+- Offset curves' third derivatives are right, through the curves and their adaptors, and so the Frenet and corrected
+  Frenet frames' derivatives on offset spines; a curve on a surface has the chain rule's third derivative; a torus's
+  mixed derivatives have the right signs; a rational bilinear patch's cached second derivatives are right.
+- gp: a direction mirrored about an axis, 2D and 3D transformation powers, 2D rotation products, 2D hyperbolas'
+  asymptotes and second directrix, and affinities' negative powers are right.
+- An offset surface transforms its parameters once; a B-spline surface split in V is reversed in V; a surface's knot
+  splitting keeps its U splits when V needs none; canonical recognition finds ellipses at any angle; a cone's implicit
+  equation holds away from the origin; an indirect 2D parabola's grid follows its frame; an extrusion adaptor trims
+  the direction it is asked to.
+- STL: a stream is recognised as a file is (binary files whose header starts "solid" read), and every domain of a
+  multi-domain ASCII file is read.
+- STEP: rendering methods read as written; styled representations, two complex record kinds and booleans written
+  validly; two reflectance styles and TESSELLATED_ITEM read and written; XSControl_Reader reads STEP; 2D trimmed
+  curves and rational 2D Bezier curves written; angles written in the file's unit; strings of any length read, and a
+  tab ends a string as a space does.
+- Binary BRep: a point on a surface keeps its parameters; the files are unchanged, and old ones read right.
+- Two rows reclassified to leave (decisions 1493, 1509). The oracle and native comparisons these fixes move compare
+  at plan 3.2's third level, each with its reason; occt-issues.md marks the rows fixed.
+
+Phase 10 (part): the public API, part 1: the shared types, geometry and topology (unit 10L1).
+- Kerf.Geometry's values read as .NET: `X`, `Y`, `Z`, `Direction`, `Location`, `Radius`… are properties;
+  `DistanceTo`, `SquareDistanceTo` and `AngleTo` replace `Distance`, `SquareDistance` and `Angle`; gp's constants are
+  static properties (`Point3D.Origin`, `Direction3D.UnitZ`, `Axis3D.ZAxis`, `Frame3D.World`, `Transform3D.Identity`);
+  points, vectors and transforms combine with operators (`b - a`, `p + v`, `t * p`); `ToVector3()` and `ToMatrix4x4()`
+  convert to System.Numerics.
+- Curves and surfaces: `Evaluate`, `Derivatives(u, order)`, `Range`, `Kind` and the surface's `Bounds` replace OCCT's
+  `D0`…`DN`, `Value` and out-parameter bounds; `Poles`, `Knots`, `Weights` and the other getters are properties indexed
+  from 0; the B-splines and Béziers are built from spans and grids. The concrete classes are sealed.
+- Kerf.Topology: `Type`, `Placement` and `Orientation` properties; `IShape<T>`, `TryAs`, `As` and explicit casts;
+  `Explore<T>()`, `Children`, `Faces()`, `Edges()`… for every shape type; raw assembly (`Compound.Create`,
+  `Wire.Create`…, `WithChildren`, `WithoutChild`); vertices', edges' and faces' data (`Vertex.Point`, `Edge.Range`,
+  `TryGetCurve`, `Face.TryGetSurface`, `OuterWire`…); `EdgeCurve` and `FaceSurface`; `ShapeComparer`; `ShapeGraph`.
+- New shared types: `Interval`, `Tolerances`, `BoundingBox`, `CurveDerivatives`, `SurfaceDerivatives`, `CurvePoint`,
+  `SurfacePoint`, and `ShapeHistory`, which `Built<T>` now carries.
+- `Placement` compares by value (its transformation); shapes still compare their placements by identity, as OCCT.
+- OCCT-shaped members (`D1(u, out …)`, 1-based `Pole(i)`, members taking `Xyz`) and 277 geometry and topology engine
+  types are internal; the kernel's assemblies, its tests, Draw-lite, the benchmarks and, until unit 10M, the modelling
+  layer still reach them. `BRepOffset_Interval` is `OffsetInterval`.
+- `docs/api/kerf-10l1.map` holds the renames, for kerf-rename to apply to other code (Bento).
+
+Phase 10 (part): the public API, part 2: geometry's operations, construction, Booleans, fillets, offsets and features
+(unit 10L2).
+- `Kerf.Geometry.GeometryOperations`: arcs and segments (`TrimmedCurve3D.ArcThrough`, `Arc`, `Segment`), fitting
+  (`BSplineCurve3D.Interpolate`, `Approximate`, `Join`; `BSplineSurface.Approximate`), conversion (`ToBSpline`,
+  `ToCurve2D`, `ToCurve3D`), projection (`Project`, `TryProjectNearest`), intersection (`Intersect`) and
+  `surface.TryGetPlane`, each returning a `Result` where it can fail. The splines' `WithPole`, `WithWeight` and
+  `WithKnot` are indexed from 0.
+- `Kerf.Construction`: `Solid.Box`, `Cylinder`, `Cone`, `Sphere`, `Torus`, `Wedge`, `HalfSpace`; `shape.Extrude`,
+  `Revolve`, `Sweeps.Sweep`, `Loft`, `Ruled`; `Edge.Line`, `Wire.FromEdges`, `Wire.Polygon`, `Face.FromWire` and the
+  other shapes from geometry; `Transformed`, `Mirrored`, `Scaled`; `ShapeProjections.Project`.
+- `Kerf.Booleans`: `a.Fuse(b)`, `Cut`, `Common`, `Section`, and `BooleanOperations.FuseAll`, `Split`, `Partition`, with
+  `BooleanOptions`; never changing their inputs, simplified by default.
+- `Kerf.Fillets`: `Fillet`, `Chamfer`, `Fillet2D`, `Chamfer2D`; a failure names the edges that failed.
+- `Kerf.Offsets` and `Kerf.Features`: `Offset`, `Thicken`, `Offset2D`, `solid.Hollow`; `Draft`, `ExtrudeUntil`,
+  `SplitFaces`.
+- Every operation returns its shape with its history (`Built<T>`), the engine's statuses and alerts as diagnostics, and
+  throws `OperationCanceledException` when cancelled.
+- `GlueMode` (members `Off`, `Shift`, `Full`), `FilletShape`, `OffsetMode`, `TransitionMode` and `ParametrizationType`
+  moved into the public namespaces; 686 more engine types (construction, Booleans, fillets, offsets, features) are
+  internal. `docs/api/kerf-10l2.map` holds the renames.
+Phase 10 (part): the public API, part 3: measurement, healing, meshing and exchange (unit 10L3).
+- `Kerf.Measurement`: `part.Volume()`, `Area()`, `Length()`, `MassProperties(Dimension)`, `BoundingBox()`,
+  `OrientedBox()`, `Distance(other)` (a `Result` with the closest points and their supports), `Intersect(line)` and
+  `solid.Classify(point)`. `Kerf.Geometry.OrientedBox` is a value.
+- `Kerf.Healing`: `Validate()` (a report of every fault, coded `check.not-closed`…), `Fix()`, `Unify()`, `Sew(faces)`,
+  `shell.MakeSolid()`, `FixWireframe`, `ConvertToBSpline`, `ConnectEdges`, `FreeBoundaries`, with options records.
+- `Kerf.Meshing`: `part.Mesh(options)` gives a `ShapeMesh` of flat buffers (positions, normals, triangles per face,
+  edge polylines) and leaves the shape alone: no triangles are stored on its faces. A big mesh copies out with little
+  more than its buffers.
+- `Kerf.Exchange`: `Step`, `Stl`, `Gltf`, `ThreeMf`, `Obj` and `Brep` read and write streams with `ReadLimits` and
+  cancellation, and return `Result`s; assemblies, names and colours travel as `ModelNode`; `Kerf.Color` is sRGB. Files
+  are byte for byte what the engine wrote before. Meshes read from STL and glTF are `ShapeMesh`es.
+- Engine types renamed so the public names are free: `LinearColor` (Quantity_Color), `Obb` (Bnd_OBB),
+  `GltfReadLimits`, `GltfWriterOptions`, `ObjWriterOptions`, `StepLengthUnit`. 1,229 engine types of these areas are
+  internal; the kernel, its tests, Draw-lite, the benchmarks and, until 10M, the modelling layer still reach them.
+
+Phase 10 (part): OCCT's bugs in the 2D constraint solvers (unit 10K4, batch K4).
+- GccAna's circle solvers (three tangents; two tangents centred on a line or circle; two tangents and a radius; a
+  tangent, a centre locus and a radius) return only circles tangent to their arguments with the qualifiers asked,
+  find the ones OCCT lost, report the qualifiers the solutions have, the points where they touch, and the centre as
+  CenterOn3; none throws where OCCT's range checks did.
+- GccAna's line solvers: tangents oriented from tangency to tangency, each pair of qualifiers picking one; each
+  solution's own intersection, IsParallel for a parallel one; lines perpendicular to a circle pass through its centre.
+- Geom2dGcc: a free-form curve and a point with a centre locus solve instead of throwing; the iterative solvers give
+  their parameters, centres and third tangency; a free-form curve centred on a free-form curve finds its circles; a
+  line at an angle parallel to the reference no longer throws.
+Phase 10 (part): images, line drawings in SVG and shaded pictures in PNG (unit 10L4).
+- `Kerf.Drawing`: `part.ProjectLines(camera)` removes hidden lines (OCCT's exact algorithm, or its polygonal one on a
+  mesh) and gives a `LineDrawing`: 2D curves (lines, arcs, ellipses, splines, polylines), visible or hidden, sharp,
+  smooth, sewn, outline or isoline, each with the edge or face it comes from. `Camera` is orthographic or perspective.
+- `Svg.Write` writes a drawing: visible and hidden layers, true arcs and Bézier curves, page size, margins, scale or fit,
+  stroke styles; the same drawing gives the same bytes.
+- `Renderer.Render` (and `part.Render`, `mesh.Render`, `ModelNode.ToScene`) draws meshes in managed code: depth buffer,
+  flat or smooth shading, colours per part or face, feature edges, supersampling, transparent backgrounds. `Png.Encode`
+  writes the picture with Kerf's own deflate, so the bytes are the same on every machine. A part at 800 × 600 takes
+  under 100 ms, meshing included.
+Phase 10 (part): the public API's leftovers (unit 10L5).
+- `Kerf.Geometry.Tangents2D`: lines and circles tangent to 2D curves and through points (`Lines`, `Circles`,
+  `CirclesCentredAt`), with each solution's points of contact; `Tangency` is a public enum.
+- `Kerf.Construction`: `Surfaces.Fill` (an n-sided filling through boundary edges and points) and `Sweeps.Helix`.
+  `Revolve` no longer copies its profile: its result shares the profile, as `Extrude`'s does, and its history answers
+  for every edge. Both sweeps' histories now hold their caps: the top one generated, the bottom one modified where
+  the sweep rebuilt the profile.
+- `Kerf.Exchange`: `StepReadOptions.Heal` and `StepWriteOptions.Schema` (AP214, AP203, AP242). `Kerf.Meshing.Triangle`,
+  with `GetTriangles()` on a mesh and its faces. `Fix` warns `healing.not-fixed` when its result is still invalid.
+- The mesher finishes each triangulation before attaching it, so meshes are frozen as soon as they are attached; the
+  results are unchanged.
+- 1,161 more engine types are internal: 184 remain public, all but 26 shown by the modelling layer's public API.
+Phase 10 (part): the modelling layer on the public API (unit 10M1).
+- The modelling layer calls the public API alone, and `Kerf.Modeling` no longer has `InternalsVisibleTo`. What it
+  needed was added where it belongs: `Tangents2D.CirclesCentredOn` (two targets or a radius, centre on a locus) and
+  `LinesAtAngle`, a target's range; `Curve2D.Project`, `Curve3D.IsPlanar`, `LengthBetween` and `ParameterAtLength`;
+  `WireCurve` (a wire as one curve), and on `EdgeCurve` lengths, discretisation, continuity with another edge, frames
+  (`Frames`, Frenet or corrected Frenet); `FaceSurface.TryGetCurvature`; `Wire.Connect`, `Face.FromWires`, holes on
+  `FromSurface` and `WithHoles`, `WithCurves3D`, `Solid.HalfSpace` of a shell, `Transformed` with copied geometry,
+  `Revolve` with a copied profile, edges projected onto shapes; `Face.Classify`, `ParametersOf`, `IsOnFace`,
+  `ClassifyPoint` for any shape; `FixFace`, `FixWireframe`, `MisorientedEdges`, `ApproximateBSplines`; `Chamfer2D` by
+  corner, `Draft` with an angle per face, `SplitAlong`, `ThickSolid` of any shape, `Offset2D` in a face;
+  `Color.TryFromName` and `NearestName`, `OrientedBox.Contains` and `Diagonal`, a transform's quaternion and rotation,
+  `Diagnostic.FromException` and `IsKernelFailure`.
+- Options where the modelling layer's calls differed from a public default: `BooleanOptions.SectionCurvesOnFaces`,
+  `FixOptions.CheckResult`, `WireframeFixOptions`, `ExtrudeUntilOptions.ModifySketchFace`,
+  `SweepOptions.CurvilinearEquivalence`, `ConversionOptions.ForceApproximation`, `ApproximationOptions.Smoothing`,
+  periodic interpolation's closing parameter and free tangents, and `Edge.FromCurve(curve2d, surface, computeCurve3D:
+  false)`. `Sew`'s history records the edges and vertices it merges. A face's `WithHoles` adds its holes (it failed).
+- A mesh read from STL or glTF keeps the shape read, faces holding only triangles (`ShapeMesh.TriangulatedShape`).
+- The engine types public only for the modelling layer are internal, but for 17 the WebAssembly sample also shows: 44
+  public engine types remain (by reflection, top-level), none for the modelling layer.
+
+Phase 10 (part): Kerf.Modeling's .NET API (unit 10M2). No kernel change.
+- The modelling layer's public API is redesigned for .NET (decisions 1575 to 1585): LINQ-friendly typed selections,
+  typed results for Part, Sketch and Curve, options records, `Try` forms returning `Result<T>` with modelling codes
+  beside the kernel's (`modeling.fillet-failed`…; api/diagnostics.md), no `Mode`, tuple conversions or Python operators,
+  Python's emulation rewritten as .NET with the same results. Bento's benchmark builds on the new API.
+Phase 10 (part): expected failures are results (unit 10M3).
+- `KerfException` is gone, with `Result<T>.GetValueOrThrow` and `Result.ThrowIfFailed`: Kerf has no exception type of
+  its own. Reading `Value` of a failed result is a programmer's error and throws `InvalidOperationException`, naming the
+  first error's code and message. `Match` gives one value either way, and `Select` and `SelectMany` let a chain of
+  operations read as a LINQ query that stops at the first failure.
+
+Phase 10 (part): no Schematiq.Collections; the engine internal (unit 10P1).
+- The kernel no longer depends on Schematiq.Collections: lists are returned as `IReadOnlyList<T>`, over `ImmutableArray<T>`,
+  and `PackedList<T>` is gone. Bento's benchmark and the Booleans are unchanged.
+- Every public type of `Occt` and `Kerf.Engine.*` is internal but `Transient`, which stays public as the base of the public
+  geometry, with no public or protected members.
+- `PublicSurfaceTests` read every public type, and fail on a public type left in the engine that isn't listed with its reason.
+- The WebAssembly sample is on the public API alone. `Kerf.Kernel.Bento.Benchmarks` no longer sees the kernel's internals.
+- Kerf's unit 10P2: no exception of the engine reaches a public caller. The public values, geometry and shapes refuse
+  misuse with `ArgumentException`, `ArgumentOutOfRangeException`, `InvalidOperationException` or `NotSupportedException`,
+  with messages free of OCCT's names; the engine still reads each as the failure it was, so results, codes and recordings
+  are unchanged. `LockedShapeException` and `FrozenShapeException` went. A trimmed curve or surface given a NaN
+  parameter is refused, where it overflowed the stack and killed the process. KERF0003 covers `Kerf.Modeling`.
+**State and the coverage floor (unit 10P3).** BlendFunc's scratch is per instance, Contap's and the legacy classifier's per-thread state is gone, the Booleans' vertices lock is per operation: 5 `[ThreadStatic]`s remain, from 19, each justified in `docs/state.md`. `docs/coverage.md` is measured again, with a reason for each of the 81 packages under the floor; `tools/public-members.cs` writes `docs/public-members.md`, and every public member now runs in a test.
+
+**One set of shapes (unit 10Q).** `IShape`, the non-generic base of `IShape<T>`, and the markers `IShape1D`, `IShape2D` and `IShape3D`, for extension members over kinds of shape, as the modelling layer's now are. `ShapeComparer<T>`. A typed shape's `Reversed()` keeps its type. `tools/b3d-differential.ps1` went, with the modelling layer's log it read.
+
+**One set of values (unit 10Q2).** `Direction3D` converts implicitly to `Vector3D` and scales to one; `IGeometry` is new, and `Point3D` implements it. `IsClosed` means closed, on any shape, replacing `CheckClosed()`; OCCT's stored flags are internal (`ClosedFlag`, `InfiniteFlag`, `OrientableFlag`, `ConvexFlag`). The traversal is `AllVertices()` to `AllSolids()`, the measurements `IntegrateVolume()`, `IntegrateArea()` and `IntegrateLength()`, and the analytic surfaces `Cylinder3D`, `Cone3D`, `Sphere3D` and `Torus3D`, so that the modelling layer's plain names mean one thing in a file importing both. Results are unchanged.
+
+## 0.1.0
 
 Phase 0: groundwork, ported from OCCT V8_0_1 (b8f597c6).
 
@@ -1641,402 +2062,3 @@ Phase 9 complete (2 November 2026): the switch-over.
   attributed.
 - Two port bugs fixed (sweeps' histories, the filling's edges); a performance review halving build123d.NET's time on
   OCCT.NET (docs/performance.md).
-
-Phase 10 (part): one repository, Kerf (unit 10R).
-- OCCT.NET and build123d.NET move, with their histories, into one repository: `kernel/` and `modeling/`. The packages
-  keep their names until 0.2.0, when they become Kerf.Kernel and Kerf.Modeling.
-
-Phase 10 (part): conventions and tooling (unit 10C).
-- `tools/kerf-rename`: the renamer that unit 10E uses to move the kernel and the modelling layer to .NET names, from a
-  reviewed name map (types and namespaces, members, methods that become properties, and the systematic rules for
-  parameters, fields, locals and methods), reporting every rename it drops rather than guessing. It drafts the
-  systematic part of a map from the code, and applies a map to another repository (Bento) as well.
-- `docs/design-rules.md`: the rules for new and redesigned code (names, values and references, immutability,
-  operations, results and errors, collections, spans, nullability, modern C#, state); translation-rules.md stays as the
-  rules the port followed.
-- A root `.editorconfig` with .NET's naming rules, inert until 10E turns them on folder by folder.
-- No change to the libraries: the pilot rename of gp and math stays on an unmerged branch.
-
-Phase 10 (part): OCCT's bugs triaged (unit 10K's first half).
-- Every bug in docs/occt-issues.md that the port reproduced to match native OCCT now has a verdict: 134 to fix, 572 to
-  fix when their code is next rewritten, 313 to leave, 135 already settled by the port. The ones to fix are those a
-  user would see: wrong Boolean or bounding-box results, hangs and failures in healing, sweeps, lofts, 2D offsets,
-  drafts and fillets, wrong 2D fillets and chamfers, the 2D tangent-circle solvers, wrong properties and continuity,
-  and STEP and STL files read or written wrong. docs/occt-issues-triage.md lists them in eight batches by impact,
-  with each bug's site and the tests that will change. No change to the libraries yet.
-Phase 10 (part): the public API design (unit 10D).
-- `docs/api`: the design of Kerf.Kernel's public API, for review: an overview of results and diagnostics, options,
-  cancellation, values, shapes and collections, and an API review for each area (geometry, topology, construction,
-  Booleans, fillets, offsets and features, healing, measurement, meshing, exchange), each mapped from today's types.
-- Every public type classified as public API, engine or removed (`docs/api/classification.tsv`, from rules by package
-  with `tools/api-classify.cs`), and the draft name map for the rename (`docs/api/kerf.map`).
-- No change to the libraries.
-Phase 10 (part): test independence (unit 10A).
-- The oracle tests no longer need native OCCT: native's results are recorded (`tests/OcctNet.Oracle.Tests/Recordings`,
-  109 MB) and replayed through a generated facade, the port compared with them exactly as before; they can be recorded
-  again while native OCCT exists. They join Kerf.slnx. The largest corpora and random runs are sampled in the
-  recordings (run in full live).
-- The differential run compares build123d.NET's suite on OCCT.NET with native's log as recorded (digests, properties,
-  and the texts that differed).
-- `tools/coverage.ps1` measures line coverage per OCCT package (`docs/coverage.md`).
-Phase 10 (part): build123d.NET on OCCT.NET alone (unit 10B).
-- Native OCCT is gone from the repository: build123d.NET's native backend (its bindings, shim, generator and native
-  build), and with it the oracle tests' recording and live modes. The oracle replays native's results as recorded in
-  unit 10A, frozen; `tools/oracle-facade.cs` and `b3d-differential.ps1 -Record` went. The benchmarks time the port
-  alone, and build without native OCCT again.
-- Public for the modelling layer, which reached them with `UnsafeAccessor`: `TopoDS_Builder`'s constructor, `Make*`,
-  `Add` and `Remove`; `BRep_Builder` and its `MakeFace` of a triangulation; `TopoDS_TShape.FreezeGraph`. Engine API,
-  internal again once 10L's public API replaces them.
-- `tools/pack-nuget.ps1` packs `Build123d` from the repository, without `Build123d.OcctNet`, which is gone.
-Phase 10 (part): the rename (unit 10E). **Breaking: every name changes.**
-- The packages are `Kerf.Kernel.Foundation`, `Kerf.Kernel.ModelingData`, `Kerf.Kernel.ModelingAlgorithms` and
-  `Kerf.Kernel.DataExchange`, at 0.2.0 (the `OcctNet.*` packages end at 0.1.0).
-- Types are in namespaces by area without OCCT's package prefixes: the public values and curves in `Kerf.Geometry`
-  (`gp_Pnt` is `Point3D`, `gp_Cylinder` is `Cylinder`, `Geom_BSplineCurve` is `BSplineCurve3D`), the shapes in
-  `Kerf.Topology` (`TopoDS_Edge` is `Edge`, `TopLoc_Location` is `Placement`), everything else in `Kerf.Engine.<Area>`
-  (`BOPAlgo_PaveFiller` is `Kerf.Engine.Booleans.PaveFiller`). Members, parameters and fields follow .NET's naming
-  (`theX` is `x`, `myX` is `_x`; `NbPoles()` is the property `PoleCount`). `docs/api/kerf.map` says what each OCCT name
-  became; the types 10J replaces (NCollection, TCollection) keep their names in `Occt`.
-- Exceptions end in `Exception` (`Standard_DomainError` is `DomainErrorException`); their `OcctType`, messages, STEP's
-  signatures and every other text OCCT prints keep OCCT's names (`OcctTypeNames`).
-- The analyzers are `Kerf.Analyzers`, with ids `KERF0001` and `KERF0002`; .NET naming (IDE1006) is an error in the
-  build where the code obeys it.
-- No behaviour changes: every test passes as before.
-Phase 10 (part): the working overlay (unit 10H1).
-- An operation can now run OCCT's in-place code on a caller's frozen shape without copying it: its writes go to working
-  copies of the TShapes it changes, which it reads back, and its result shares every sub-shape it didn't change, with a
-  direct history (`WorkingOverlay`, internal; docs/overlay-survey.md lists the 110 copy-at-entry sites 10H2 to 10H6
-  convert). Without an open overlay nothing changes.
-- ShapeFix_Edge's and ShapeFix_ShapeTolerance's twins (`AddPCurveFixed`, `VertexToleranceFixed`, `ToleranceLimited`, …)
-  run on it instead of a copy of their input: the same results, faster.
-
-Phase 10 (part): errors (unit 10F).
-- `Kerf.Result<T>`, `Result`, `Diagnostic` (a severity, a stable string code, a plain message and, from ModelingData,
-  the sub-shapes concerned), `DiagnosticCode`, `Severity` and `KerfException`, in Foundation; `Built<T>` in
-  ModelingData. Nothing public returns them yet: unit 10L's operations will.
-- Bridges from OCCT's error models to diagnostics: `FailureDiagnostics` (exceptions), `AlertDiagnostics` (a report's
-  alerts), `StatusDiagnostics` and `OperationDiagnostics` (the status enums; a failed operation), `ExchangeDiagnostics`
-  (`IFSelect_ReturnStatus`). docs/api/diagnostics.md lists the codes.
-- `Resource_Manager.TryGetInteger`; ShapeProcess reads its parameters without catching an exception for each one that
-  isn't set (results unchanged).
-Phase 10 (part): immutability (unit 10G). **Breaking for code that changed values in place.**
-- gp's values are `readonly struct`s: `Point3D`, `Vector3D`, `Direction3D`, `Axis3D`, `Frame3D`, `CoordinateSystem`,
-  `Transform3D`, `GeneralTransform3D`, `Matrix3x3`, the conics and quadrics and their 2D twins, and `Placement`. Their
-  in-place mutators (internal since phase 5) are gone; `Transformed`, `WithX`, `Normalized` and the other returning forms
-  give changed values. New: `Vector3D.LinearForm`, `Vector2D.LinearForm`, `Matrix3x3.PreMultiplied`.
-- The B-spline and Bézier curves' and surfaces' `Poles()`, `Knots()`, `Weights()` and the like return
-  `IReadOnlyList<T>` in place of `PackedList<T>`.
-- KERF0003, a build error: a public type of Kerf's public namespaces can't gain a setter, a mutable field or an in-place
-  method.
-- No behaviour changes: every result is the same to the bit, and every test passes as before.
-Phase 10 (part): no copy at entry in the Booleans (unit 10H2).
-- The Booleans no longer copy their inputs anywhere: the self-check (`BOPAlgo_CheckerSI`, `BRepAlgoAPI_Check`,
-  `bopargcheck`), the wire tools (`BOPAlgo_Tools::WiresToFaces`, `BRepAlgo::ConcatenateWireC0`,
-  `BRepAlgo_FaceRestrictor`, `TopOpeBRepBuild_WireToFace`), the cells builder, defeaturing's removal of internal wires,
-  and the periodicity's trim and repetitions (`BOPAlgo_MakePeriodic`, `BOPAlgo_MakeConnected`) run OCCT's in-place code
-  in a working overlay. Results are as before; the periodic and connected shapes' histories now record a sub-shape as
-  modified only when it changed.
-- The general fuse and `BRepAlgoAPI_*` keep OCCT's non-destructive mode on frozen arguments; a Boolean run inside
-  another operation's overlay is destructive, as OCCT's on an unlocked shape.
-
-Phase 10 (part): state (unit 10I).
-- No process-wide settings: what OCCT kept in statics (the message table's additions, ShapeProcess's registered
-  operators, the parallel defaults of the Booleans and the mesher, the meshing algorithm's name, BRepLib's precision and
-  plane, `Quantity_Color`'s epsilon, the default messenger and report, GeomTools' handler, ShapeAlgo's container, debug
-  flags) are settings of `OperationContext` (Foundation): immutable defaults, overridden for a scope
-  (`OperationContext.Begin`) or a flow of execution, which flow into the tasks an operation starts and never reach
-  another operation, thread or test. OCCT's setters now change the current flow only.
-- `ProcessContext.ResourceOverridesSetting`: an operation can run shape processing (the STEP and IGES readers' too)
-  with its own resources beside others on the defaults. The resource files compiled in are parsed once; OCCT's cache of
-  the last file goes, and `ClearResourceCache` with it.
-- `MsgFile.Msg` of an unknown keyword no longer stores the surrogate text, so `HasMsg` stays false for it.
-- Removed: `STEPConstruct_Assembly.MakeRelationship()`, which numbered occurrences from a process-wide counter (the form
-  taking the caller's counter stays).
-- 32 locks go: the registries are built once and published whole, the caches publish without locks, and
-  `XSControl_WorkSession`'s process-wide mutex is its controller's, so STEP readers and writers no longer wait for each
-  other. docs/state.md lists every static, thread static and lock that remains, and why.
-- Concurrency tests run Booleans, fillets, offsets, healing, shape processing, STEP reading and writing, meshing and
-  the modelling layer's parts on many threads, each giving its serial BRep text.
-
-Phase 10 (part): no copy at entry in healing (unit 10H4).
-- ShapeFix (every fixer and the statics' twins), ShapeBuild's and ShapeConstruct's twins, ShapeUpgrade's dividers and
-  `UnifySameDomain`, ShapeProcess's operators and sewing no longer copy a frozen input: they run OCCT's in-place code on
-  the caller's shape in a working overlay, and a tool called by another (ShapeFix_Wire by ShapeFix_Face, ShapeFix by
-  ShapeProcess) writes into the outer one's, as in OCCT. Results are as before and share more of the input; the input is
-  never written, and a twin no longer writes into a caller's unfrozen compound either.
-- Tools fixed over several calls (ShapeFix_Face, _Wire, _WireVertex, _Wireframe, _FixSmallFace, _ComposeShell) keep
-  their overlay between calls without leaving it open: the shapes they hold show the fixes only in their result.
-- The overlay maps its input before assembling the result, which corrects the history of an operation on an unfrozen
-  input whose sub-shapes it changed (a Boolean's simplified result). BRepLib's SameParameter and the frozen-shape checks
-  write where OCCT does inside an overlay.
-- `HealingInputsUnchangedTests` and a STEP import healing test check the inputs untouched; the benchmarks gain
-  `healing` (STEP import, ShapeFix_Shape and UnifySameDomain on the dataset's STEP files).
-
-
-Phase 10 (part): heap and collections (unit 10J).
-- `Grid<T>` (`Kerf.Geometry`): a read-only 2D grid, 0-based. `BSplineSurface` and `BezierSurface` return their poles
-  and weights as grids (`Poles()`, `Weights()`, `WeightsArray()`); the copy-into overloads `Poles(array)` and
-  `Weights(array)` are internal.
-- `NCollection_Map` is gone: the engine uses `HashSet<T>` (with the same comparers, and the same iteration order).
-- Faster without changing results: a shape's hash is drawn once when its TShape is made; the mesher no longer moves
-  its candidate circles when it deletes one; the elementary extrema hold their solutions in fixed-size fields;
-  `math_NewtonMinimum` reuses its eigenvalue and LU solvers between iterations; STEP AP214's type tables and MoniTool's
-  typed-value library are frozen dictionaries.
-- KERF0002 (a map of shapes needs an explicit comparer) works again on Kerf's shape types.
-- docs/collections-plan.md: what is left of plan 2.6's collections, type by type.
-
-Phase 10 (part): no copy at entry in construction (unit 10H3).
-- Prisms, revolutions, pipes, lofts (`BRepOffsetAPI_ThruSections`, `BRepFill_Generator`), ruled faces and shells,
-  evolved shapes, BRepLib's functional twins, the face of a planar wire and the wire maker's merges no longer copy their
-  inputs: they run OCCT's in-place code on the caller's shapes in a working overlay, which copies only what they write
-  into. Results, and what they share with their inputs, are as before: the prism of a polygon face holds the caller's
-  face, its edges and vertices; of a circle face, a new face (the circle takes the cylinder's pcurve, decision 1102).
-- Histories answer for the caller's sub-shapes directly. `BRepLib_MakeWire`'s `Modified` records only the edges and
-  vertices a merge changed (it recorded every sub-shape of the wire built so far). `BRepPrimAPI_MakeRevol.Degenerated()`
-  gives a generating shape's degenerated edge as it stands in the result.
-- An algorithm another operation runs (a sweep inside an evolved shape, a loft's generator) writes into that
-  operation's overlay, as OCCT writes in place (`WorkingOverlay.BeginUnlessInside`).
-- Removed (internal): `BRep_Builder.UpdateVertexOfFrozen`, BRepLib's `UnfreezeResult`, MakeWire's copies for write.
-- A construction benchmark (`Kerf.Kernel.Benchmarks -- construction`): allocation falls by up to a third where an input
-  was copied whole; Bento's benchmark is unchanged.
-- Seven oracle replays whose wires MakeWire builds compare at plan 3.2's second level (`Tape.AcceptOtherArguments`): the
-  wires differ from the recordings' only in the Free flag of the caller's edges they now keep.
-Phase 10 (part): no copy at entry in offsets, fillets and features (unit 10H5).
-- The 3D offset and the thick solid, BRepOffset_Offset's pipes and spheres, BiTgte's rolling ball, the fillet and
-  chamfer builder (and FilletSurf's), the 2D fillet, the draft angle, BRepFeat's features and LocOpe's local operations
-  no longer copy a frozen input: they run OCCT's in-place code on the caller's shape in a working overlay, and the
-  result holds new TShapes only for what changed. Their histories answer for the caller's shapes directly.
-- Builders called over several calls (the fillet builder, LocOpe's split and wires on a shape, BRepFeat's makers) keep
-  a detached overlay, entered by each call that writes, so nothing stays open between the calls; a second computation
-  on one fillet builder starts again from the caller's shape.
-- OC5805's thick solid, whose offset surface OCCT enlarges in place, is built as before, the caller's face keeping its
-  surface. A second `BRepOffset_MakeOffset` run after `Initialize` no longer fails on the same shapes (OCCT's analysis
-  kept the last run's data).
-- The simple offset's solid and the offset's thickening mode stay on their copies until construction runs in an overlay:
-  their walls are made by BRepLib_MakeFace, which copies frozen edges itself.
-- `OffsetInputsUnchangedTests`, `FilletInputsUnchangedTests` and `FeatureInputsUnchangedTests` check the inputs
-  untouched; the benchmarks gain `features` (offsets, thick solids, fillets, chamfers, drafts and a boss on frozen
-  parts).
-Phase 10 (part): OCCT's bugs in Booleans, boxes and distances, and hangs and spurious failures (unit 10K1, batches K1
-and K2 of the triage).
-- Booleans, boxes, distances: a fuse merges solids whose only shared face OCCT never checked; the boxes of parabola
-  and hyperbola arcs contain the arc (they could miss its coordinate extrema, so Booleans and distances could skip a
-  touching pair); a distance between a short edge and a face reports the point on the edge, not the origin.
-- Hangs: healing's overlap check on a zero-length edge, the B-spline conversion of a surface whose approximation
-  always fails, and the corrected Frenet trihedron on offset curves (seconds to minutes; now well under a second) all
-  return.
-- Spurious failures: a fillet whose radius follows a law (`MakeFillet.Add(law, edge)`); MakeFilling with G2 or C2
-  constraints, and C1 now meaning G1 rather than G2; a pipe of a vertex's history; a pipe between two sections on a
-  3D path; SweptToElementary on shapes with degenerated edges (most revolved shapes); a loft through closed B-spline
-  sections with different knots. The medial axis of a single closed edge reports failure instead of crashing.
-- Left for later, with reasons (decision 1441): the 2D offset's two medial-axis failures and some multi-face drafts.
-- Recordings these fixes move compare at plan 3.2's third level, each with its reason; occt-issues.md marks the rows
-  fixed.
-
-Phase 10 (part): the end of copy at entry (unit 10H6).
-- No algorithm copies its input at the entry any more. The offset's thickening mode and the simple offset's solid run
-  in working overlays, their walls sharing the caller's edges; the mesher meshes a frozen shape in an overlay of its own
-  and returns a result sharing every face it left alone; HLR's outliner works on the caller's shape, so
-  `HLRBRep_HLRToShape` finds a caller's sub-shapes in its data as themselves; the reflect lines' SameParameter no
-  longer writes into the caller's vertices.
-- `BRepTools_CopyAtEntry`, `ExactCopyForWrite`, `HoldsFrozen`, `KeepUnchanged`, `KeepUnchangedIn` and
-  `CopyFrozenForWrite` are gone (about 1,000 lines). `CopyData`, `CopyFlags` and `IsSameData` stay for the overlay.
-  BRep_Builder's mesher forms `UpdateFaceUnfrozen`/`UpdateEdgeUnfrozen` are `UpdateFaceMesh`/`UpdateEdgeMesh`.
-- `WorkingOverlay` has one way to join an operation's overlay, `BeginUnlessWriting` (`BeginUnlessInside` was the same
-  rule), and one rule protecting published shapes, `IsReadOnly`, which BRep_Builder's refusals ask through `IsLocked`.
-- Copying a mesh out (`MeshExtraction`) writes the normals straight into its buffer instead of computing them on a copy
-  of each triangulation: 2.7 MB allocated for a 100,000-triangle sphere instead of 6.5 MB. Its timing test, which failed
-  on loaded machines, measures allocation and the best of five runs.
-
-Phase 10 (part): heap and collections, the rest (unit 10J2).
-- `NCollection_DataMap` is gone: the engine uses `Dictionary<TKey, TValue>`, with `DictionaryExtensions` (in
-  `Kerf.Engine.Collections`) for what the wrapper added: `GetValue` and `GetValueRef` fail with OCCT's
-  `NoSuchObjectException` for a missing key, and `SetValueRef`/`GetOrAddValueRef` return the stored value by reference.
-- `NCollection_DynamicArray` and `NCollection_Vector` are gone: `List<T>`, with `ListExtensions.SetAt` for OCCT's
-  growing `SetValue`.
-- `NCollection_IndexedMap` and `NCollection_IndexedDataMap` are gone: `IndexedSet<T>` and `IndexedMap<TKey, TValue>`
-  (in `Kerf.Engine.Collections`), numbered from 0; removing an item moves the last one into its place, as in OCCT.
-- KERF0002 checks the two indexed collections.
-- `tools/collections-rewrite`: the Roslyn rewrite that made these changes, for the types still to go
-  (docs/collections-plan.md). Results are unchanged.
-
-Phase 10 (part): OCCT's bugs in construction, properties, extrema and projection (unit 10K2, batches K3, K5 and K6 of
-the triage).
-- Projection: the pcurve of a helix of more than a turn on a cylinder (a thread), a spiral on a cone or a coil on a
-  torus follows the curve (it was off by up to the diameter); a projection's free part after an isoparametric one gets
-  its own pcurve; a parabola projected on a plane gets the right focal.
-- Extrema: curve-curve extrema run twice report the second run's solutions only; GeomAPI's total curve-curve distance
-  keeps the nearest end pair and, on ranges, stays on the ranges; 2D circle intersections give an indirect circle's
-  own parameters.
-- Properties: BRepGProp's volume by a plane (Vinert) reports its volume and centre; natural faces' adaptive
-  integration splits V at the V bounds; curvatures asked before IsCurvatureDefined are the point's; GeomLProp's
-  continuity at a B-spline knot is the knot's; a continuous approximation with free ends is done; GProp's elementary
-  curves, surfaces and solids (lines, circles, cylinders, cones, spheres, tori) have right centres and inertia.
-- Construction: 2D fillets and chamfers keep a face's holes as their own wires, fillet a moved arc the right way and
-  trim a reversed neighbour correctly; a distance-angle chamfer between a plane and a cylinder no longer depends on the
-  axis direction; NurbsConvert and GTransform keep a meshed face's surface; rational Coons fillings keep their
-  boundaries; a revolved feature up to a face at an angle chooses as Perform(Until) does; the sweep section generator
-  moves its sections along the path; ExtendFace no longer extends an infinite side.
-- Left, with reasons: AdvApp2Var's error estimate (decision 1482), and the row about ExtendFace losing a location,
-  which wasn't a bug (1477).
-- Recordings these fixes move compare at plan 3.2's third level, each with its reason; occt-issues.md marks the rows.
-Phase 10 (part): OCCT's bugs, curve and surface evaluation, conversion, gp and data exchange (unit 10K3, batches K7
-and K8).
-- Raising the degree of a periodic B-spline keeps the curve (lofts' and fillets' periodic sections and spines).
-- Offset curves' third derivatives are right, through the curves and their adaptors, and so the Frenet and corrected
-  Frenet frames' derivatives on offset spines; a curve on a surface has the chain rule's third derivative; a torus's
-  mixed derivatives have the right signs; a rational bilinear patch's cached second derivatives are right.
-- gp: a direction mirrored about an axis, 2D and 3D transformation powers, 2D rotation products, 2D hyperbolas'
-  asymptotes and second directrix, and affinities' negative powers are right.
-- An offset surface transforms its parameters once; a B-spline surface split in V is reversed in V; a surface's knot
-  splitting keeps its U splits when V needs none; canonical recognition finds ellipses at any angle; a cone's implicit
-  equation holds away from the origin; an indirect 2D parabola's grid follows its frame; an extrusion adaptor trims
-  the direction it is asked to.
-- STL: a stream is recognised as a file is (binary files whose header starts "solid" read), and every domain of a
-  multi-domain ASCII file is read.
-- STEP: rendering methods read as written; styled representations, two complex record kinds and booleans written
-  validly; two reflectance styles and TESSELLATED_ITEM read and written; XSControl_Reader reads STEP; 2D trimmed
-  curves and rational 2D Bezier curves written; angles written in the file's unit; strings of any length read, and a
-  tab ends a string as a space does.
-- Binary BRep: a point on a surface keeps its parameters; the files are unchanged, and old ones read right.
-- Two rows reclassified to leave (decisions 1493, 1509). The oracle and native comparisons these fixes move compare
-  at plan 3.2's third level, each with its reason; occt-issues.md marks the rows fixed.
-
-Phase 10 (part): the public API, part 1: the shared types, geometry and topology (unit 10L1).
-- Kerf.Geometry's values read as .NET: `X`, `Y`, `Z`, `Direction`, `Location`, `Radius`… are properties;
-  `DistanceTo`, `SquareDistanceTo` and `AngleTo` replace `Distance`, `SquareDistance` and `Angle`; gp's constants are
-  static properties (`Point3D.Origin`, `Direction3D.UnitZ`, `Axis3D.ZAxis`, `Frame3D.World`, `Transform3D.Identity`);
-  points, vectors and transforms combine with operators (`b - a`, `p + v`, `t * p`); `ToVector3()` and `ToMatrix4x4()`
-  convert to System.Numerics.
-- Curves and surfaces: `Evaluate`, `Derivatives(u, order)`, `Range`, `Kind` and the surface's `Bounds` replace OCCT's
-  `D0`…`DN`, `Value` and out-parameter bounds; `Poles`, `Knots`, `Weights` and the other getters are properties indexed
-  from 0; the B-splines and Béziers are built from spans and grids. The concrete classes are sealed.
-- Kerf.Topology: `Type`, `Placement` and `Orientation` properties; `IShape<T>`, `TryAs`, `As` and explicit casts;
-  `Explore<T>()`, `Children`, `Faces()`, `Edges()`… for every shape type; raw assembly (`Compound.Create`,
-  `Wire.Create`…, `WithChildren`, `WithoutChild`); vertices', edges' and faces' data (`Vertex.Point`, `Edge.Range`,
-  `TryGetCurve`, `Face.TryGetSurface`, `OuterWire`…); `EdgeCurve` and `FaceSurface`; `ShapeComparer`; `ShapeGraph`.
-- New shared types: `Interval`, `Tolerances`, `BoundingBox`, `CurveDerivatives`, `SurfaceDerivatives`, `CurvePoint`,
-  `SurfacePoint`, and `ShapeHistory`, which `Built<T>` now carries.
-- `Placement` compares by value (its transformation); shapes still compare their placements by identity, as OCCT.
-- OCCT-shaped members (`D1(u, out …)`, 1-based `Pole(i)`, members taking `Xyz`) and 277 geometry and topology engine
-  types are internal; the kernel's assemblies, its tests, Draw-lite, the benchmarks and, until unit 10M, the modelling
-  layer still reach them. `BRepOffset_Interval` is `OffsetInterval`.
-- `docs/api/kerf-10l1.map` holds the renames, for kerf-rename to apply to other code (Bento).
-
-Phase 10 (part): the public API, part 2: geometry's operations, construction, Booleans, fillets, offsets and features
-(unit 10L2).
-- `Kerf.Geometry.GeometryOperations`: arcs and segments (`TrimmedCurve3D.ArcThrough`, `Arc`, `Segment`), fitting
-  (`BSplineCurve3D.Interpolate`, `Approximate`, `Join`; `BSplineSurface.Approximate`), conversion (`ToBSpline`,
-  `ToCurve2D`, `ToCurve3D`), projection (`Project`, `TryProjectNearest`), intersection (`Intersect`) and
-  `surface.TryGetPlane`, each returning a `Result` where it can fail. The splines' `WithPole`, `WithWeight` and
-  `WithKnot` are indexed from 0.
-- `Kerf.Construction`: `Solid.Box`, `Cylinder`, `Cone`, `Sphere`, `Torus`, `Wedge`, `HalfSpace`; `shape.Extrude`,
-  `Revolve`, `Sweeps.Sweep`, `Loft`, `Ruled`; `Edge.Line`, `Wire.FromEdges`, `Wire.Polygon`, `Face.FromWire` and the
-  other shapes from geometry; `Transformed`, `Mirrored`, `Scaled`; `ShapeProjections.Project`.
-- `Kerf.Booleans`: `a.Fuse(b)`, `Cut`, `Common`, `Section`, and `BooleanOperations.FuseAll`, `Split`, `Partition`, with
-  `BooleanOptions`; never changing their inputs, simplified by default.
-- `Kerf.Fillets`: `Fillet`, `Chamfer`, `Fillet2D`, `Chamfer2D`; a failure names the edges that failed.
-- `Kerf.Offsets` and `Kerf.Features`: `Offset`, `Thicken`, `Offset2D`, `solid.Hollow`; `Draft`, `ExtrudeUntil`,
-  `SplitFaces`.
-- Every operation returns its shape with its history (`Built<T>`), the engine's statuses and alerts as diagnostics, and
-  throws `OperationCanceledException` when cancelled.
-- `GlueMode` (members `Off`, `Shift`, `Full`), `FilletShape`, `OffsetMode`, `TransitionMode` and `ParametrizationType`
-  moved into the public namespaces; 686 more engine types (construction, Booleans, fillets, offsets, features) are
-  internal. `docs/api/kerf-10l2.map` holds the renames.
-Phase 10 (part): the public API, part 3: measurement, healing, meshing and exchange (unit 10L3).
-- `Kerf.Measurement`: `part.Volume()`, `Area()`, `Length()`, `MassProperties(Dimension)`, `BoundingBox()`,
-  `OrientedBox()`, `Distance(other)` (a `Result` with the closest points and their supports), `Intersect(line)` and
-  `solid.Classify(point)`. `Kerf.Geometry.OrientedBox` is a value.
-- `Kerf.Healing`: `Validate()` (a report of every fault, coded `check.not-closed`…), `Fix()`, `Unify()`, `Sew(faces)`,
-  `shell.MakeSolid()`, `FixWireframe`, `ConvertToBSpline`, `ConnectEdges`, `FreeBoundaries`, with options records.
-- `Kerf.Meshing`: `part.Mesh(options)` gives a `ShapeMesh` of flat buffers (positions, normals, triangles per face,
-  edge polylines) and leaves the shape alone: no triangles are stored on its faces. A big mesh copies out with little
-  more than its buffers.
-- `Kerf.Exchange`: `Step`, `Stl`, `Gltf`, `ThreeMf`, `Obj` and `Brep` read and write streams with `ReadLimits` and
-  cancellation, and return `Result`s; assemblies, names and colours travel as `ModelNode`; `Kerf.Color` is sRGB. Files
-  are byte for byte what the engine wrote before. Meshes read from STL and glTF are `ShapeMesh`es.
-- Engine types renamed so the public names are free: `LinearColor` (Quantity_Color), `Obb` (Bnd_OBB),
-  `GltfReadLimits`, `GltfWriterOptions`, `ObjWriterOptions`, `StepLengthUnit`. 1,229 engine types of these areas are
-  internal; the kernel, its tests, Draw-lite, the benchmarks and, until 10M, the modelling layer still reach them.
-
-Phase 10 (part): OCCT's bugs in the 2D constraint solvers (unit 10K4, batch K4).
-- GccAna's circle solvers (three tangents; two tangents centred on a line or circle; two tangents and a radius; a
-  tangent, a centre locus and a radius) return only circles tangent to their arguments with the qualifiers asked,
-  find the ones OCCT lost, report the qualifiers the solutions have, the points where they touch, and the centre as
-  CenterOn3; none throws where OCCT's range checks did.
-- GccAna's line solvers: tangents oriented from tangency to tangency, each pair of qualifiers picking one; each
-  solution's own intersection, IsParallel for a parallel one; lines perpendicular to a circle pass through its centre.
-- Geom2dGcc: a free-form curve and a point with a centre locus solve instead of throwing; the iterative solvers give
-  their parameters, centres and third tangency; a free-form curve centred on a free-form curve finds its circles; a
-  line at an angle parallel to the reference no longer throws.
-Phase 10 (part): images, line drawings in SVG and shaded pictures in PNG (unit 10L4).
-- `Kerf.Drawing`: `part.ProjectLines(camera)` removes hidden lines (OCCT's exact algorithm, or its polygonal one on a
-  mesh) and gives a `LineDrawing`: 2D curves (lines, arcs, ellipses, splines, polylines), visible or hidden, sharp,
-  smooth, sewn, outline or isoline, each with the edge or face it comes from. `Camera` is orthographic or perspective.
-- `Svg.Write` writes a drawing: visible and hidden layers, true arcs and Bézier curves, page size, margins, scale or fit,
-  stroke styles; the same drawing gives the same bytes.
-- `Renderer.Render` (and `part.Render`, `mesh.Render`, `ModelNode.ToScene`) draws meshes in managed code: depth buffer,
-  flat or smooth shading, colours per part or face, feature edges, supersampling, transparent backgrounds. `Png.Encode`
-  writes the picture with Kerf's own deflate, so the bytes are the same on every machine. A part at 800 × 600 takes
-  under 100 ms, meshing included.
-Phase 10 (part): the public API's leftovers (unit 10L5).
-- `Kerf.Geometry.Tangents2D`: lines and circles tangent to 2D curves and through points (`Lines`, `Circles`,
-  `CirclesCentredAt`), with each solution's points of contact; `Tangency` is a public enum.
-- `Kerf.Construction`: `Surfaces.Fill` (an n-sided filling through boundary edges and points) and `Sweeps.Helix`.
-  `Revolve` no longer copies its profile: its result shares the profile, as `Extrude`'s does, and its history answers
-  for every edge. Both sweeps' histories now hold their caps: the top one generated, the bottom one modified where
-  the sweep rebuilt the profile.
-- `Kerf.Exchange`: `StepReadOptions.Heal` and `StepWriteOptions.Schema` (AP214, AP203, AP242). `Kerf.Meshing.Triangle`,
-  with `GetTriangles()` on a mesh and its faces. `Fix` warns `healing.not-fixed` when its result is still invalid.
-- The mesher finishes each triangulation before attaching it, so meshes are frozen as soon as they are attached; the
-  results are unchanged.
-- 1,161 more engine types are internal: 184 remain public, all but 26 shown by the modelling layer's public API.
-Phase 10 (part): the modelling layer on the public API (unit 10M1).
-- The modelling layer calls the public API alone, and `Kerf.Modeling` no longer has `InternalsVisibleTo`. What it
-  needed was added where it belongs: `Tangents2D.CirclesCentredOn` (two targets or a radius, centre on a locus) and
-  `LinesAtAngle`, a target's range; `Curve2D.Project`, `Curve3D.IsPlanar`, `LengthBetween` and `ParameterAtLength`;
-  `WireCurve` (a wire as one curve), and on `EdgeCurve` lengths, discretisation, continuity with another edge, frames
-  (`Frames`, Frenet or corrected Frenet); `FaceSurface.TryGetCurvature`; `Wire.Connect`, `Face.FromWires`, holes on
-  `FromSurface` and `WithHoles`, `WithCurves3D`, `Solid.HalfSpace` of a shell, `Transformed` with copied geometry,
-  `Revolve` with a copied profile, edges projected onto shapes; `Face.Classify`, `ParametersOf`, `IsOnFace`,
-  `ClassifyPoint` for any shape; `FixFace`, `FixWireframe`, `MisorientedEdges`, `ApproximateBSplines`; `Chamfer2D` by
-  corner, `Draft` with an angle per face, `SplitAlong`, `ThickSolid` of any shape, `Offset2D` in a face;
-  `Color.TryFromName` and `NearestName`, `OrientedBox.Contains` and `Diagonal`, a transform's quaternion and rotation,
-  `Diagnostic.FromException` and `IsKernelFailure`.
-- Options where the modelling layer's calls differed from a public default: `BooleanOptions.SectionCurvesOnFaces`,
-  `FixOptions.CheckResult`, `WireframeFixOptions`, `ExtrudeUntilOptions.ModifySketchFace`,
-  `SweepOptions.CurvilinearEquivalence`, `ConversionOptions.ForceApproximation`, `ApproximationOptions.Smoothing`,
-  periodic interpolation's closing parameter and free tangents, and `Edge.FromCurve(curve2d, surface, computeCurve3D:
-  false)`. `Sew`'s history records the edges and vertices it merges. A face's `WithHoles` adds its holes (it failed).
-- A mesh read from STL or glTF keeps the shape read, faces holding only triangles (`ShapeMesh.TriangulatedShape`).
-- The engine types public only for the modelling layer are internal, but for 17 the WebAssembly sample also shows: 44
-  public engine types remain (by reflection, top-level), none for the modelling layer.
-
-Phase 10 (part): Kerf.Modeling's .NET API (unit 10M2). No kernel change.
-- The modelling layer's public API is redesigned for .NET (decisions 1575 to 1585): LINQ-friendly typed selections,
-  typed results for Part, Sketch and Curve, options records, `Try` forms returning `Result<T>` with modelling codes
-  beside the kernel's (`modeling.fillet-failed`…; api/diagnostics.md), no `Mode`, tuple conversions or Python operators,
-  Python's emulation rewritten as .NET with the same results. Bento's benchmark builds on the new API.
-Phase 10 (part): expected failures are results (unit 10M3).
-- `KerfException` is gone, with `Result<T>.GetValueOrThrow` and `Result.ThrowIfFailed`: Kerf has no exception type of
-  its own. Reading `Value` of a failed result is a programmer's error and throws `InvalidOperationException`, naming the
-  first error's code and message. `Match` gives one value either way, and `Select` and `SelectMany` let a chain of
-  operations read as a LINQ query that stops at the first failure.
-
-Phase 10 (part): no Schematiq.Collections; the engine internal (unit 10P1).
-- The kernel no longer depends on Schematiq.Collections: lists are returned as `IReadOnlyList<T>`, over `ImmutableArray<T>`,
-  and `PackedList<T>` is gone. Bento's benchmark and the Booleans are unchanged.
-- Every public type of `Occt` and `Kerf.Engine.*` is internal but `Transient`, which stays public as the base of the public
-  geometry, with no public or protected members.
-- `PublicSurfaceTests` read every public type, and fail on a public type left in the engine that isn't listed with its reason.
-- The WebAssembly sample is on the public API alone. `Kerf.Kernel.Bento.Benchmarks` no longer sees the kernel's internals.
-- Kerf's unit 10P2: no exception of the engine reaches a public caller. The public values, geometry and shapes refuse
-  misuse with `ArgumentException`, `ArgumentOutOfRangeException`, `InvalidOperationException` or `NotSupportedException`,
-  with messages free of OCCT's names; the engine still reads each as the failure it was, so results, codes and recordings
-  are unchanged. `LockedShapeException` and `FrozenShapeException` went. A trimmed curve or surface given a NaN
-  parameter is refused, where it overflowed the stack and killed the process. KERF0003 covers `Kerf.Modeling`.
-**State and the coverage floor (unit 10P3).** BlendFunc's scratch is per instance, Contap's and the legacy classifier's per-thread state is gone, the Booleans' vertices lock is per operation: 5 `[ThreadStatic]`s remain, from 19, each justified in `docs/state.md`. `docs/coverage.md` is measured again, with a reason for each of the 81 packages under the floor; `tools/public-members.cs` writes `docs/public-members.md`, and every public member now runs in a test.
-
-**One set of shapes (unit 10Q).** `IShape`, the non-generic base of `IShape<T>`, and the markers `IShape1D`, `IShape2D` and `IShape3D`, for extension members over kinds of shape, as the modelling layer's now are. `ShapeComparer<T>`. A typed shape's `Reversed()` keeps its type. `tools/b3d-differential.ps1` went, with the modelling layer's log it read.
-
-**One set of values (unit 10Q2).** `Direction3D` converts implicitly to `Vector3D` and scales to one; `IGeometry` is new, and `Point3D` implements it. `IsClosed` means closed, on any shape, replacing `CheckClosed()`; OCCT's stored flags are internal (`ClosedFlag`, `InfiniteFlag`, `OrientableFlag`, `ConvexFlag`). The traversal is `AllVertices()` to `AllSolids()`, the measurements `IntegrateVolume()`, `IntegrateArea()` and `IntegrateLength()`, and the analytic surfaces `Cylinder3D`, `Cone3D`, `Sphere3D` and `Torus3D`, so that the modelling layer's plain names mean one thing in a file importing both. Results are unchanged.

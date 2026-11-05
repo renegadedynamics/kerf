@@ -16,7 +16,7 @@
   folder (and nuget.org), into a package folder of its own so no cached copy stands in, and runs a smoke test: a
   filleted, drilled box written to STEP and glTF and read back, with no native library in its output.
 .PARAMETER Suffix
-  The prerelease label after the projects' VersionPrefix (0.2.0): preview.1 gives 0.2.0-preview.1.
+  A prerelease label after the projects' VersionPrefix (0.2.0): preview.1 gives 0.2.0-preview.1. Without it, the release.
 .PARAMETER Out
   The folder for the packages.
 .PARAMETER Work
@@ -27,8 +27,8 @@
   Pack the assemblies as built (IL only).
 #>
 param(
-  [Parameter(Mandatory)] [string] $Suffix,
-  [string] $Out = (Join-Path $PSScriptRoot "..\..\..\nuget-release\0.2.0-$Suffix"),
+  [string] $Suffix = '',
+  [string] $Out = (Join-Path $PSScriptRoot "..\..\..\nuget-release\0.2.0$(if ($Suffix) { "-$Suffix" })"),
   [string] $Work = (Join-Path ([IO.Path]::GetTempPath()) ('occtnet-pack-' + [guid]::NewGuid().ToString('N'))),
   [switch] $SkipVerify,
   [switch] $NoReadyToRun
@@ -74,7 +74,9 @@ function Test-ReadyToRun([string] $assembly) {
   $false
 }
 
-$properties = @('-c', 'Release', '-nologo', "-p:VersionSuffix=$Suffix", '-p:ContinuousIntegrationBuild=true')
+$version = "0.2.0$(if ($Suffix) { "-$Suffix" })"
+$commit = (git -C $PSScriptRoot rev-parse HEAD).Trim()
+$properties = @('-c', 'Release', '-nologo', "-p:VersionSuffix=$Suffix", '-p:ContinuousIntegrationBuild=true', "-p:RepositoryCommit=$commit")
 $b3dProperties = @("-p:KerfKernelRoot=$occt/")
 $projects = @(
   foreach ($p in 'Kerf.Kernel.Foundation', 'Kerf.Kernel.ModelingData', 'Kerf.Kernel.ModelingAlgorithms', 'Kerf.Kernel.DataExchange') {
@@ -130,23 +132,24 @@ if (-not $SkipVerify) {
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Kerf.Modeling" Version="0.2.0-$Suffix" />
+    <PackageReference Include="Kerf.Modeling" Version="$version" />
   </ItemGroup>
 </Project>
 "@ | Set-Content -Encoding utf8 (Join-Path $smoke 'smoke.csproj')
   @'
 using Kerf.Modeling;
 
-var part = Operations.Fillet(new Box(10, 10, 10).Edges(), 1) - new Cylinder(2, 20);
+Part rounded = Operations.Fillet(new Box(10, 10, 10).Edges(), 1).Value;
+Part part = rounded - new Cylinder(2, 20);
 var step = new MemoryStream();
-if (!Exporters3D.ExportStep(part, step)) throw new Exception("STEP export failed");
+if (!Exporters3D.ExportStep(part, step).IsSuccess) throw new Exception("STEP export failed");
 step.Position = 0;
-var fromStep = Importers.ImportStep(step);
+var fromStep = Importers.ImportStep(step).Value;
 if (Math.Abs(fromStep.Volume - part.Volume) > 1e-6 * part.Volume) throw new Exception($"STEP volume {fromStep.Volume} for {part.Volume}");
 var gltf = new MemoryStream();
-if (!Exporters3D.ExportGltf(part, gltf, binary: true)) throw new Exception("glTF export failed");
+if (!Exporters3D.ExportGltf(part, gltf, new GltfExportOptions { Binary = true }).IsSuccess) throw new Exception("glTF export failed");
 gltf.Position = 0;
-var fromGltf = Importers.ImportGltf(gltf);
+var fromGltf = Importers.ImportGltf(gltf).Value;
 if (fromGltf.Faces().Count == 0) throw new Exception("glTF read back no faces");
 Console.WriteLine($"Smoke test passed: volume {part.Volume:F6}, STEP {step.Length} bytes, glTF {gltf.Length} bytes");
 '@ | Set-Content -Encoding utf8 (Join-Path $smoke 'Program.cs')

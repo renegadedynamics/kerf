@@ -26,6 +26,9 @@
     <!-- LGPL 2.1 with the Open CASCADE exception, as OCCT itself; the SPDX expression isn't known to NuGet -->
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Copyright>Copyright (c) 2026 The Kerf contributors; derived from Open CASCADE Technology 8.0.1, copyright (c) 1999-2026 OPEN CASCADE SAS</Copyright>
+    <PackageProjectUrl>https://github.com/renegadedynamics/kerf</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/renegadedynamics/kerf</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>

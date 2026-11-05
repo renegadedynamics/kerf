@@ -20,7 +20,7 @@ implementation) build. It follows phase10-plan.md 2.1, 2.2, 2.5 and 2.6 and [des
 | [exchange.md](exchange.md) | `Kerf.Exchange`: STEP, STL, glTF, 3MF, OBJ, BREP |
 | [drawing.md](drawing.md) | `Kerf.Drawing`: hidden-line drawings and SVG, the mesh renderer and PNG (unit 10L4) |
 | [diagnostics.md](diagnostics.md) | The diagnostic codes, and the bridges from OCCT's exceptions, alerts and statuses (unit 10F) |
-| [classification.tsv](classification.tsv) | Every public type today: public API, engine or removed, with its new name |
+| [classification.tsv](classification.tsv) | The record of unit 10D's split: every public type then, as public API, engine or removed, with its new name. Historical: `PublicSurfaceTests` now checks the surface |
 | [classification-rules.txt](classification-rules.txt) | The rules that table comes from: by package, with exceptions by type |
 | [kerf.map](kerf.map) | The name map unit 10E applied, in kerf-rename's format (decision 1349 settled the draft) |
 | [kerf-10l1.map](kerf-10l1.map) | The maps unit 10L1 applied: the public types' getters as properties, and its renames (section 10) |

@@ -1,7 +1,16 @@
 # Kerf.Modeling
 
 A .NET 10 modelling library derived from [build123d](https://github.com/gumyr/build123d), the Python CAD library, over
-Kerf's kernel. Work in progress: see [docs/design.md](docs/design.md) for the design and the phase plan.
+Kerf's kernel. See [docs/design.md](docs/design.md) for the design and
+[docs/one-set-of-shapes.md](docs/one-set-of-shapes.md) for how it sits on the kernel's shapes.
+
+```csharp
+using Kerf.Modeling;
+
+Part plate = new Box(80, 60, 10);
+plate -= new GridLocations(60, 40, 2, 2) * new Cylinder(5, 10);
+Exporters3D.ExportStep(plate, "plate.step");
+```
 
 ## Building and testing
 
@@ -15,8 +24,7 @@ dotnet test
 
 Its shapes are the kernel's (`Kerf.Topology.Shape`, `Edge`, `Face`…), with build123d's conveniences as extension members; it
 adds modelling objects, `Part`, `Sketch`, `Curve` and `Assembly`, which hold a shape and carry a label, colour and history
-([docs/one-set-of-shapes.md](docs/one-set-of-shapes.md)). The native backend
-and the forwarding layer to OCCT.NET went in unit 10B.
+([docs/one-set-of-shapes.md](docs/one-set-of-shapes.md)).
 
 ## Packages
 

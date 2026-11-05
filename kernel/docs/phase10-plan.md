@@ -3,7 +3,11 @@
 > **Agreed, 2 November 2026** (decision 1317). The project becomes **Kerf**, in Renegade Dynamics' organisation:
 > `Kerf.Kernel` from OCCT and `Kerf.Modeling` from build123d, in one repository. Questions 46 to 52 are settled
 > (section 6): Bento's spreadsheet names follow Kerf's, and collections cross into Bento as standard .NET read-only types.
-> Phase 9 closed at `0.1.0-preview.3`. Not started.
+> Phase 9 closed at `0.1.0-preview.3`.
+>
+> **Done, 5 November 2026** (decision 1642), at 0.2.0. Every unit is merged; what the plan asked for and didn't get is
+> listed in that decision, and carried into [phase11-plan.md](phase11-plan.md). Bento's unit, 10N, is on a Bento branch
+> for the owner to merge.
 
 ## The goal
 

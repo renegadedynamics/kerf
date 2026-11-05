@@ -27,6 +27,9 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <Copyright>Copyright (c) 2026 The Kerf contributors; derived from build123d, copyright (c) 2022–2025 The build123d Contributors</Copyright>
+    <PackageProjectUrl>https://github.com/renegadedynamics/kerf</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/renegadedynamics/kerf</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>

@@ -16355,3 +16355,33 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 1639. **Bento's benchmark didn't build after 10Q**, as it isn't in `Kerf.slnx` and 10Q's last edits missed it. Fixed first, so that before and after are the same examples.
 1640. **What the tests changed.** Added: 4 tests (`OneSetOfShapesTests`). 1,917 to 1,921. `PublicApi`'s laws no longer read the three flags or `IsInfinite`, as they are internal: 4 assertions gone,
        none on a result. An empty box's `Min` and `Max` were compared with themselves; that test now pins that they throw. `Vector`'s own tests moved to the three types; its constructor from a span went, and its arithmetic on positions is now on vectors. A comparison that used the tolerance says `Check.Near`. No Python-reference value changed.
+
+## Phase 10: the close
+
+1641. **The rebrand's reach.** In code, tests, tools and living documents, OCCT.NET becomes Kerf and build123d.NET becomes
+       Kerf.Modeling, including the 5,552 file headers (`The Kerf Contributors`), the test assembly (`Kerf.Modeling.Tests`)
+       and the environment variables (`KERF_*`). The internal namespace `Occt`, which had no public type left, becomes
+       `Kerf.Engine`.
+       - **Output changes on purpose:** glTF, 3MF and OBJ files name `Kerf` as their generator.
+       - **STEP doesn't change, for now:** its header still says OCCT's strings (organisation `Open CASCADE`, the processor,
+         and the product name `Open CASCADE STEP translator`), since phase 10 kept STEP's bytes identical. Whether a modified
+         version should say that is the owner's call: phase 11's plan raises it.
+       - **History keeps its names:** decisions, phase plans, the triage, the CHANGELOGs' earlier entries and the API
+         reviews' "From OCCT.NET" sections. So do the recordings' tests and benchmarks where they name build123d.NET's
+         native binding, which is what actually ran, and tools written for the old tree (`kerf-rename`, `api-classify`,
+         `collections-rewrite`).
+       - `classification.tsv` stays as the record of 10D's split, marked historical.
+1642. **Phase 10 closes at 0.2.0.** Every unit in the plan's table is merged, with 10P1 to 10P3, 10Q and 10Q2 added when an
+       audit found commitments unmet (question 50, the public failure surface, question 56).
+       - **Met:** 2.1 and 2.2 (the public API; `PublicSurfaceTests` read the surface); 2.3 (the rename); 2.4 (no copy at
+         entry, 10H6); 2.5 (results, with decisions 1586 and 1592); 2.8 (the triage and its fix list); 2.9 and question 56
+         (one set of shapes and values); 2.10 and 2.11 (one repository, the name, the credits); section 3's freezing of the
+         oracle; question 50 (no Schematiq.Collections); question 64 (SVG and PNG).
+       - **Not met, carried to phase 11:** question 49's coverage floor (81.6%, with 81 of 272 packages under 80%); plan
+         3.2's "a test of its own" for each public member (0 of 4,417 uncalled, but "called" includes indirect calls); 2.7's
+         "only one-time locks" (23 locks, each justified in `state.md`); 2.6's remaining collections
+         (`collections-plan.md`); the operators', constructors' and shapes' own exceptions (decision 1592, the owner's
+         choice).
+       - **Corrects decision 1599:** its "class hasn't passed" was resolved by a merge gate on a quiet machine.
+       - **The coverage figures predate 10Q and 10Q2:** the re-measure takes about four hours, and is phase 11's.
+       - **Bento:** unit 10N is on Bento's branch `kerf/0.2.0`, for the owner to merge.

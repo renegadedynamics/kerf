@@ -35,7 +35,8 @@ Build and test with `dotnet test OcctNet.slnx`. In a worktree outside the repo, 
 
 ## State
 
-- `main`: phases 0–9 (phase 7 merged on 1 November 2026 from `phase7/finishing`, phases 8 and 9 on 2 November 2026,
+- `main`: phases 0–10 (phase 10 closed on 5 November 2026 at Kerf 0.2.0: [phase10-plan.md](phase10-plan.md), and next
+  [phase11-plan.md](phase11-plan.md); phase 7 merged on 1 November 2026 from `phase7/finishing`, phases 8 and 9 on 2 November 2026,
   phase 9 from `phase9/switch`; phase 8 from
   `phase8/exchange`; see each plan's banner).
 - `phase5/construction`: the integration branch for phases 5 and 6. Merged so far:
