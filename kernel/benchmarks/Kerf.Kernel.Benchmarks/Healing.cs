@@ -13,8 +13,8 @@ namespace Kerf.Kernel.Benchmarks;
 
 /// <summary>
 /// Healing (Kerf unit 10H4): on the dataset's STEP files up to a size, the STEP import with its shape processing, then
-/// ShapeFix_Shape and ShapeUpgrade_UnifySameDomain on the imported (frozen) shape: per operation the total of each
-/// file's fastest of three runs, and the bytes allocated by that run, serially.
+/// ShapeFix_Shape, ShapeUpgrade_UnifySameDomain and the STEP export on the imported (frozen) shape: per operation the
+/// total of each file's fastest of three runs, and the bytes allocated by that run, serially.
 /// </summary>
 internal static class Healing
 {
@@ -38,8 +38,8 @@ internal static class Healing
             }
         }
 
-        double aReadMs = 0, aFixMs = 0, aUnifyMs = 0;
-        long aReadBytes = 0, aFixBytes = 0, aUnifyBytes = 0;
+        double aReadMs = 0, aFixMs = 0, aUnifyMs = 0, aWriteMs = 0;
+        long aReadBytes = 0, aFixBytes = 0, aUnifyBytes = 0, aWriteBytes = 0;
         int aCount = 0;
         foreach ((string aName, string aPath) in aFiles)
         {
@@ -69,6 +69,12 @@ internal static class Healing
                 anUnifier.Build();
                 anUnifier.Shape();
             });
+            (double, long) aWrite = Best(() =>
+            {
+                var aWriter = new Writer();
+                aWriter.Transfer(anInputShape, global::Kerf.Engine.Exchange.Step.ModelType.AsIs);
+                aWriter.WriteStream(new MemoryStream());
+            });
             aCount++;
             aReadMs += aRead.Item1;
             aReadBytes += aRead.Item2;
@@ -76,6 +82,8 @@ internal static class Healing
             aFixBytes += aFix.Item2;
             aUnifyMs += anUnify.Item1;
             aUnifyBytes += anUnify.Item2;
+            aWriteMs += aWrite.Item1;
+            aWriteBytes += aWrite.Item2;
         }
 
         Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
@@ -86,6 +94,18 @@ internal static class Healing
             $"  ShapeFix_Shape            {aFixMs,9:F0} ms  {aFixBytes / 1048576.0,9:F1} MB"));
         Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
             $"  UnifySameDomain           {aUnifyMs,9:F0} ms  {aUnifyBytes / 1048576.0,9:F1} MB"));
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+            $"  STEP export               {aWriteMs,9:F0} ms  {aWriteBytes / 1048576.0,9:F1} MB"));
+        string aGroup = $"step, {aCount} files";
+        foreach ((string aRow, double aMs, long aRowBytes) in new[]
+                 {
+                     ("import with healing", aReadMs, aReadBytes), ("ShapeFixer", aFixMs, aFixBytes),
+                     ("UnifySameDomain", aUnifyMs, aUnifyBytes), ("export", aWriteMs, aWriteBytes),
+                 })
+        {
+            BenchRows.Add(aGroup, aRow, "ms", aMs);
+            BenchRows.Add(aGroup, aRow, "alloc MB", aRowBytes / 1048576.0);
+        }
     }
 
     // The fastest of the runs, with the bytes the thread allocated in it (failures count as runs)

@@ -1,10 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Phase 4's benchmarks (phase4-plan section 2.5): meshing and the viewer's extraction, and phase 6's Booleans (unit
-    6M). They timed the port against native OCCT until unit 10B retired it; now the port alone is timed. Run it in
-    Release with the argument "quick" (a Stopwatch table) or "bdn" (BenchmarkDotNet, in process, with its own arguments
-    after it); see Program.cs.
+    The engine's benchmarks: meshing and the viewer's extraction, Booleans, construction, features, STEP and healing.
+    In Kerf.slnx since unit 11A, so the merge gate builds them. tools/bench.ps1 runs the fixed set; to run one suite by
+    hand, Program.cs has the command line.
   -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -15,6 +14,7 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
     <ProjectReference Include="..\..\src\Kerf.Kernel.ModelingAlgorithms\Kerf.Kernel.ModelingAlgorithms.csproj" />
+    <Compile Include="..\BenchRows.cs" Link="BenchRows.cs" />
     <!-- The STEP parser's suite (unit 8P) -->
     <ProjectReference Include="..\..\src\Kerf.Kernel.DataExchange\Kerf.Kernel.DataExchange.csproj" />
     <!-- The WebAssembly demo's work, to compare its buffers with win-x64's -->

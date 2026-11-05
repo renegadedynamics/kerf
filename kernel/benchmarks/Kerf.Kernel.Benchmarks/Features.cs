@@ -153,6 +153,8 @@ internal static class Features
             }
             Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
                 $"  {name,-22} {ms,9:F1} ms  {bytes / 1048576.0,9:F1} MB"));
+            BenchRows.Add("features", name, "ms", ms);
+            BenchRows.Add("features", name, "alloc MB", bytes / 1048576.0);
         }
     }
 
