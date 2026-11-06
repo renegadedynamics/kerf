@@ -183,13 +183,18 @@ internal sealed partial class BuildEdgeBuilder
     /// <summary>
     /// Sets the ranges of the 3D curve and pcurves of <paramref name="toedge"/> to the part [alpha, beta] (as
     /// fractions) of the ranges of the matching curves of <paramref name="fromedge"/> (same surface and location for
-    /// pcurves). If a range is outside its periodic curve's period, all the curves move by the same whole number of
-    /// periods, which keeps SameRange and SameParameter true; if some curve can't move with them, none does (#1340).
+    /// pcurves). On periodic curves the range is shifted into the period, and the edge loses SameRange and SameParameter;
+    /// but with <paramref name="keepCurvesTogether"/>, if a curve of the edge isn't periodic, none is shifted and the flags
+    /// stay (#1340).
     /// </summary>
-    /// <remarks>Internal: it writes into <paramref name="toedge"/>, which throws if it is frozen.</remarks>
-    internal void CopyRanges(in Edge toedge, in Edge fromedge, double alpha = 0, double beta = 1)
+    /// <remarks>
+    /// Internal: it writes into <paramref name="toedge"/>, which throws if it is frozen. Unify's <c>ReShapeBuilder</c> asks to keep the
+    /// curves together, where Kerf differs from OCCT (decision 20901): it rebuilds an edge that was already right, and OCCT's
+    /// shift clears its flags with nothing to set them again, which leaves an invalid shape.
+    /// </remarks>
+    internal void CopyRanges(in Edge toedge, in Edge fromedge, double alpha = 0, double beta = 1, bool keepCurvesTogether = false)
     {
-        double shift = ShiftOfRanges(toedge, fromedge, alpha);
+        bool canShift = !keepCurvesTogether || AllCurvesPeriodic(toedge, fromedge);
 
         // Kerf: frozen: fromedge's list is only read (OCCT takes it with ChangeCurves)
         for (var fromitcr = new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)fromedge.TShape()!).Curves());
@@ -204,61 +209,54 @@ internal sealed partial class BuildEdgeBuilder
             var fromGC = (GCurve)fromitcr.Value();
             double first = fromGC.First();
             double len = fromGC.Last() - first;
-            toGC.SetRange(first + alpha * len + shift, first + beta * len + shift);
+            double newF = first + alpha * len;
+            double newL = first + beta * len;
+
+            // PTV: 22.03.2002 fix for edge range.
+            // file test-m020306-v2.step Shell #665 (Faces #40110. #40239).
+            if (canShift && PeriodOf(toGC) is { } periodic
+                && ((Math.Abs(newF - periodic.First) > global::Kerf.Engine.Foundation.Precision.PConfusion() && newF < periodic.First) || newF >= periodic.Last))
+            {
+                double shift = AdjustByPeriod(newF, 0.5 * (periodic.First + periodic.Last), periodic.Period);
+                newF += shift;
+                newL += shift;
+                new BrepBuilder().SameRange(toedge, false);
+                new BrepBuilder().SameParameter(toedge, false);
+            }
+
+            toGC.SetRange(newF, newL);
         }
     }
 
-    /// <summary>
-    /// The whole number of periods every curve of <paramref name="toedge"/> moves by: what brings the first range
-    /// outside its period back in, or 0 if nothing is outside or not every curve is periodic with the same period.
-    /// </summary>
-    /// <remarks>
-    /// Kerf differs from OCCT (decision NNN): OCCT moves each periodic curve alone and clears the edge's flags, so an
-    /// edge with a non-periodic curve as well ends with its curves apart, and an invalid shape.
-    /// </remarks>
-    private static double ShiftOfRanges(in Edge toedge, in Edge fromedge, double alpha)
+    // The curve's period and bounds, if it's periodic (15.11.2002 PTV OCC966)
+    private static (double Period, double First, double Last)? PeriodOf(GCurve curve)
     {
-        double shift = 0.0, period = 0.0;
+        if (curve is Curve3DRepresentation toC3d && toC3d.Curve3D() is { } crv3d && IsPeriodic(crv3d))
+        {
+            return (crv3d.Period, crv3d.FirstParameter, crv3d.LastParameter);
+        }
+
+        if (curve is CurveOnSurfaceRepresentation toCOS && toCOS.PCurve() is { } crv2d && IsPeriodic(crv2d))
+        {
+            return (crv2d.Period, crv2d.FirstParameter, crv2d.LastParameter);
+        }
+
+        return null;
+    }
+
+    private static bool AllCurvesPeriodic(in Edge toedge, in Edge fromedge)
+    {
         for (var fromitcr = new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)fromedge.TShape()!).Curves());
              fromitcr.More();
              fromitcr.Next())
         {
-            if (MatchingCurve(toedge, fromitcr.Value()) is not { } toGC)
+            if (MatchingCurve(toedge, fromitcr.Value()) is { } toGC && PeriodOf(toGC) is null)
             {
-                continue;
-            }
-
-            // PTV: 22.03.2002 fix for edge range.
-            // file test-m020306-v2.step Shell #665 (Faces #40110. #40239).
-            double curvePeriod, crvF, crvL;
-            if (toGC is Curve3DRepresentation { } toC3d && toC3d.Curve3D() is { } crv3d && IsPeriodic(crv3d))
-            {
-                (curvePeriod, crvF, crvL) = (crv3d.Period, crv3d.FirstParameter, crv3d.LastParameter);
-            }
-            else if (toGC is CurveOnSurfaceRepresentation { } toCOS && toCOS.PCurve() is { } crv2d && IsPeriodic(crv2d))
-            {
-                (curvePeriod, crvF, crvL) = (crv2d.Period, crv2d.FirstParameter, crv2d.LastParameter);
-            }
-            else
-            {
-                return 0.0;
-            }
-
-            if (period != 0.0 && Math.Abs(curvePeriod - period) > global::Kerf.Engine.Foundation.Precision.PConfusion())
-            {
-                return 0.0;
-            }
-
-            period = curvePeriod;
-            var fromGC = (GCurve)fromitcr.Value();
-            double newF = fromGC.First() + alpha * (fromGC.Last() - fromGC.First());
-            if (shift == 0.0 && ((Math.Abs(newF - crvF) > global::Kerf.Engine.Foundation.Precision.PConfusion() && newF < crvF) || newF >= crvL))
-            {
-                shift = AdjustByPeriod(newF, 0.5 * (crvF + crvL), period);
+                return false;
             }
         }
 
-        return shift;
+        return true;
     }
 
     /// <summary>The curve of <paramref name="toedge"/> matching a 3D curve or a pcurve of another edge, if any.</summary>

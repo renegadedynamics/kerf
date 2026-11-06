@@ -33,6 +33,12 @@ namespace Kerf.Engine.Healing.Build;
 /// </remarks>
 internal class ReShapeBuilder : ReShape
 {
+    /// <summary>
+    /// Whether an edge it rebuilds keeps its ranges and flags if some curve of it isn't periodic, where OCCT shifts the
+    /// periodic ones and clears the flags (#1340; decision 20901). Unify asks for it.
+    /// </summary>
+    internal bool KeepCurvesTogether { get; init; }
+
     /// <summary>An empty reshaper.</summary>
     public ReShapeBuilder()
     {
@@ -345,7 +351,7 @@ internal class ReShapeBuilder : ReShape
         if (st == ShapeType.Edge)
         {
             BuildEdgeBuilder sbe = new();
-            sbe.CopyRanges(ShapeCasts.Edge(result), ShapeCasts.Edge(shape));
+            sbe.CopyRanges(ShapeCasts.Edge(result), ShapeCasts.Edge(shape), keepCurvesTogether: KeepCurvesTogether);
         }
         else if (st == ShapeType.Wire || st == ShapeType.Shell)
         {

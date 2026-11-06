@@ -270,8 +270,10 @@ public class ShapeBuildTests
         aB.UpdateEdge(aFrom, aPCurve, aF, Conf);
         aB.Range(aFrom, aF, 7, 8);
 
-        var sbe = new BuildEdgeBuilder();
-        Edge aTo = sbe.RangesCopied(sbe.Copy(aFrom), aFrom);
+        Edge aTo = TestShapes.Edge(aCircle, 0, 1);
+        aB.UpdateEdge(aTo, aPCurve, aF, Conf);
+        aB.Range(aTo, aF, 0, 1);
+        new BuildEdgeBuilder().CopyRanges(aTo, aFrom, keepCurvesTogether: true);
 
         Tool.Range(aTo, out double f, out double l);
         Assert.Equal((7.0, 8.0), (f, l));
@@ -293,9 +295,8 @@ public class ShapeBuildTests
         Assert.Equal(7 - 2 * Math.PI, f, 1e-15);
         Assert.Equal(8 - 2 * Math.PI, l, 1e-15);
 
-        // moving by whole periods keeps the curves together, so the flags stay (decision 20901; OCCT clears them)
-        Assert.True(Tool.SameRange(aTo));
-        Assert.True(Tool.SameParameter(aTo));
+        Assert.False(Tool.SameRange(aTo));
+        Assert.False(Tool.SameParameter(aTo));
 
         // within the period: copied as it is
         Edge aTo2 = TestShapes.Edge(aCircle, 0, 1);
