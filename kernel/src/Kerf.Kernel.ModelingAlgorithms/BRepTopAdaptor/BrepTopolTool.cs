@@ -27,7 +27,7 @@ internal class BrepTopolTool : TopolTool
 {
     private Explorer _vIterator = new();
     private Face _face = new();
-    private FClass2d? _fClass2d;
+    private Classifiers? _classifiers;
     private EdgeCurve2DAdaptor? _curve;
     private readonly NCollection_List<EdgeCurve2DAdaptor> _curves = new();
     private bool _areCurvesLoaded;
@@ -40,7 +40,7 @@ internal class BrepTopolTool : TopolTool
     /// <summary>An empty tool.</summary>
     public BrepTopolTool()
     {
-        _fClass2d = null;
+        _classifiers = null;
         _u0 = 0.0;
         _v0 = 0.0;
         _du = 0.0;
@@ -51,7 +51,7 @@ internal class BrepTopolTool : TopolTool
     /// <summary>The tool of the face of <paramref name="s"/> (a BRepAdaptor_Surface).</summary>
     public BrepTopolTool(SurfaceAdaptorBase s)
     {
-        _fClass2d = null;
+        _classifiers = null;
         Initialize(s);
         // myS = S;
     }
@@ -74,7 +74,7 @@ internal class BrepTopolTool : TopolTool
         Shape s_wnt = brhs.Face();
         s_wnt.Orient(Forward);
         _face = ShapeCasts.Face(s_wnt);
-        _fClass2d = null;
+        _classifiers = null;
         _nbSamplesU = -1;
         _s = s;
         _curves.Clear();
@@ -143,7 +143,7 @@ internal class BrepTopolTool : TopolTool
 
     /// <summary>
     /// The state of the point <paramref name="p"/> in the face (UNKNOWN if no face is loaded). The 2D classifier is
-    /// built at the first call, with its tolerance <paramref name="tol"/>.
+    /// built for the tolerance <paramref name="tol"/>, and kept for the next call with it.
     /// </summary>
     public override Containment Classify(in Point2D p, double tol, bool recadreOnPeriodic = true)
     {
@@ -152,21 +152,39 @@ internal class BrepTopolTool : TopolTool
             return Unknown;
         }
 
-        _fClass2d ??= new FClass2d(_face, tol);
-
-        return (_fClass2d.Perform(p, recadreOnPeriodic));
+        return ClassifierFor(tol).Perform(p, recadreOnPeriodic);
     }
 
     /// <summary>True if the point <paramref name="p"/> is on the face's boundary within <paramref name="tol"/>.</summary>
     public override bool IsThePointOn(in Point2D p, double tol, bool recadreOnPeriodic = true)
     {
-        _fClass2d ??= new FClass2d(_face, tol);
-
-        return (On == _fClass2d.TestOnRestriction(p, tol, recadreOnPeriodic));
+        return On == ClassifierFor(tol).TestOnRestriction(p, tol, recadreOnPeriodic);
     }
 
     /// <summary>Drops the 2D classifier (OCCT's Destroy, also called by its destructor).</summary>
-    public void Destroy() => _fClass2d = null;
+    public void Destroy() => _classifiers = null;
+
+    // The classifier for a tolerance. OCCT keeps the first one built whatever tolerance later calls pass, so a reused solid
+    // classifier's answer depends on the points it saw before, and in parallel on the scheduling (#1692; decision 20906). In
+    // practice two tolerances reach here. Each entry is immutable and replaced whole, so a tool shared between threads at
+    // worst builds one twice, and never reads one for another tolerance.
+    private FClass2d ClassifierFor(double tol)
+    {
+        Classifiers? first = _classifiers;
+        for (Classifiers? entry = first; entry is not null; entry = entry.Next)
+        {
+            if (entry.Tolerance == tol)
+            {
+                return entry.Classifier;
+            }
+        }
+
+        var made = new FClass2d(_face, tol);
+        _classifiers = new Classifiers(tol, made, first);
+        return made;
+    }
+
+    private sealed record Classifiers(double Tolerance, FClass2d Classifier, Classifiers? Next);
 
     /// <summary>The orientation of the edge of the arc <paramref name="c"/> (a BRepAdaptor_Curve2d).</summary>
     public override Orientation Orientation(Curve2DAdaptorBase c)
