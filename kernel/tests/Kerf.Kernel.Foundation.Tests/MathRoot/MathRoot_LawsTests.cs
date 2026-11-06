@@ -10,7 +10,7 @@ using static Kerf.Engine.Numerics.Utilities.MathUtils;
 namespace Kerf.Kernel.Foundation.Tests;
 
 /// <summary>
-/// The root finders on functions that misbehave (decision 19801): one that fails to evaluate at some points is reported
+/// The root finders on functions that misbehave (decision 19805): one that fails to evaluate at some points is reported
 /// and not hidden, every root returned must make the function vanish, and every sign change between samples holds a root.
 /// </summary>
 public class MathRoot_LawsTests

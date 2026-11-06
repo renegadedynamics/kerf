@@ -8,7 +8,7 @@ using Kerf.Geometry;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// Curves against surfaces (decision 19801). Every point found must lie on the curve at its parameter and on the surface
+/// Curves against surfaces (decision 19805). Every point found must lie on the curve at its parameter and on the surface
 /// at its parameters, and the number of points is the geometry's: this holds for lines against infinite surfaces, and for
 /// conics against every kind of surface.
 /// </summary>

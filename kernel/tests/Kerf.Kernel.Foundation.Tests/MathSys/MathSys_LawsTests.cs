@@ -11,7 +11,7 @@ using static Kerf.Engine.Numerics.Utilities.MathUtils;
 namespace Kerf.Kernel.Foundation.Tests;
 
 /// <summary>
-/// The system solvers on systems that misbehave (decision 19801): a function that can't be evaluated or a singular
+/// The system solvers on systems that misbehave (decision 19805): a function that can't be evaluated or a singular
 /// Jacobian is reported, never returned as a root; a bounded root stays in its bounds; a root found makes the residual vanish.
 /// </summary>
 public class MathSys_LawsTests

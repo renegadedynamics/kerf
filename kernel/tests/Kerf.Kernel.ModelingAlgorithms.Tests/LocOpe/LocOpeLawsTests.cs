@@ -17,7 +17,7 @@ using static Kerf.Topology.Orientation;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// LocOpe's parts by what they must satisfy (decision 19801): the intersectors' points along a line, in order, in and out
+/// LocOpe's parts by what they must satisfy (decision 19805): the intersectors' points along a line, in order, in and out
 /// of the material; the sweeps by area times path; the splits by the area they keep.
 /// </summary>
 public class LocOpeLawsTests

@@ -9,7 +9,7 @@ using static Kerf.Topology.Orientation;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// The hatcher by what a hatch must do (decision 19801): its domains are the stretches of the hatching line inside the
+/// The hatcher by what a hatch must do (decision 19805): its domains are the stretches of the hatching line inside the
 /// polygon, whichever way the line meets the boundary, and with segments kept a run along an edge belongs to them.
 /// </summary>
 public class Geom2dHatch_LawsTests

@@ -18,7 +18,7 @@ using Kerf.Topology;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// BRepFeat's makers by their limits (decision 19801): every way of ending a prism, a draft prism, a revolution and a
+/// BRepFeat's makers by their limits (decision 19805): every way of ending a prism, a draft prism, a revolution and a
 /// pipe, and every way of drilling a hole. The expected volumes are geometry's, not recordings: a prism is area times
 /// height, a revolution or a pipe along an arc is Pappus's area times centroid path.
 /// </summary>

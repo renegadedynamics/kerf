@@ -16,7 +16,7 @@ using Kerf.Topology;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// Hidden lines by what they measure (decision 19801): what a solid shows from a given direction is known exactly: a
+/// Hidden lines by what they measure (decision 19805): what a solid shows from a given direction is known exactly: a
 /// sphere's outline is its great circle, a cylinder from the side its two rulings, and a box in front of another hides what
 /// lies behind it. The exact and the meshed algorithms must both come to those lengths.
 /// </summary>

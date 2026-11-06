@@ -10,7 +10,7 @@ using Kerf.Geometry;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// The plate's derivatives and its free tangency (decision 19801): every derivative a plate can give is the rate of
+/// The plate's derivatives and its free tangency (decision 19805): every derivative a plate can give is the rate of
 /// change of the one below it, whatever the order of the solve and the anisotropy, and a solved plate meets the normal
 /// part of what its constraints ask for at each order.
 /// </summary>

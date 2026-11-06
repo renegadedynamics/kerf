@@ -14,7 +14,7 @@ using Kerf.Topology;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// The fillet surfaces by what they must be (decision 19801): the curve a fillet leaves on a face lies on it, in space and
+/// The fillet surfaces by what they must be (decision 19805): the curve a fillet leaves on a face lies on it, in space and
 /// by its pcurve; on the fillet both boundaries are where they say; sections are arcs of the radius, between those curves.
 /// </summary>
 public class FilletSurf_LawsTests

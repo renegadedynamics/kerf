@@ -17,7 +17,7 @@ using Kerf.Topology;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// Draft angles by their volumes (decision 19801): a plane tilted about the line where it meets the neutral plane adds or
+/// Draft angles by their volumes (decision 19805): a plane tilted about the line where it meets the neutral plane adds or
 /// removes a wedge, a cylinder becomes the frustum of a cone, and what's tangent to a drafted face follows it.
 /// </summary>
 public class Draft_LawsTests

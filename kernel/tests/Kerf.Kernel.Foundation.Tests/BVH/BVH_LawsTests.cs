@@ -8,7 +8,7 @@ using Tri3d = Kerf.Engine.Geometry.Bvh.Triangulation<double, Kerf.Engine.NCollec
 namespace Kerf.Kernel.Foundation.Tests;
 
 /// <summary>
-/// The BVH classes the kernel doesn't reach (decision 19801), by what they must give: the distance field of a closed
+/// The BVH classes the kernel doesn't reach (decision 19805), by what they must give: the distance field of a closed
 /// mesh is the distance to the solid it bounds, whichever triangle is nearest and however the nearest point lies on it;
 /// a quad tree holds the same leaves as the binary tree it collapses.
 /// </summary>

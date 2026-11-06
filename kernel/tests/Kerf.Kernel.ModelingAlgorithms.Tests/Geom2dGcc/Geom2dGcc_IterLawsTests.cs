@@ -9,7 +9,7 @@ using Kerf.Geometry;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// The iterative solvers, one test for each kind of argument (decision 19801). The answer is known: everything is built
+/// The iterative solvers, one test for each kind of argument (decision 19805). The answer is known: everything is built
 /// tangent to the circle of radius 2 about the origin, or through it. Started at that answer, the solver must keep it,
 /// give its tangency points, and refuse a qualifier the answer doesn't satisfy; started near it, it must come back.
 /// </summary>
