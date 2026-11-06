@@ -2132,3 +2132,11 @@ classes.
 | Where | What | Effect | Status |
 |---|---|---|---|
 | tests/bugs/modalg_7/bug31120 | `set ratio (${memval}-{$memval1})/${memval1}` makes a text, not a number, so `if { ${ratio} > 0.05}` compares strings, and `(` sorts before `0` | The check can't fail: run with the heap five times larger it stays silent, so the script doesn't test the leak it names | leave: a test script's. `DrawCaseProcessTests.Repeating_an_offset_keeps_nothing` asks the question (decision 1703) |
+
+## Found by unit 11R, checking every result
+| Where | What | Effect | Status |
+|---|---|---|---|
+| `ShapeUpgrade_UnifySameDomain`, after a good Boolean (bopfuse_simple ZL7, ZL8, ZL8-fuzzy, ZL9; bfuse_complex H8, I5, N1; bcut_complex B2) | The Boolean is valid and its cleaned result isn't: 8 of 600 cases of the Boolean suites, and a ninth, bcut_complex O5, is invalid before it too | Not compared with native, so whether it's OCCT's or the port's isn't known | **`Kerf.Modeling` leaves the clean out, with a warning, and keeps the good result** (decision 20104). `Unify` and a simplified Boolean in the kernel fail with `result.invalid`. Worth a look from unit 11S |
+| `ShapeCustom_BSplineRestriction` (`ApproximateBSplines`), a cylinder with its defaults; a sphere through `ToSplines` | Invalid: an edge's curve on its surface, its same-parameter flag and the face's orientation | Inferred from the check's messages: approximating the surface leaves edges off it. Not compared with native | **Now a failure carrying the shape** (decision 20105). A question for the owner, as such an approximation is rarely usable as a success |
+| `BRepFilletAPI_MakeFillet2d` (`Chamfer2D`), distance past half a side of the face | Done, with an invalid face | Not compared with native | **Now a failure** |
+| `BRepBuilderAPI_MakeFace` on crossing wires; prism and ThruSections on them | Done, with an invalid shape | Found on the port. OCCT doesn't check here either, by its documentation | **Now a failure** |

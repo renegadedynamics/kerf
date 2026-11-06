@@ -10,6 +10,11 @@ version may break the API.
   vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 1652 and 1653).
 ## 0.3.0 (unreleased)
 
+- **No operation reports success for an invalid result (breaking).** Booleans, fillets, chamfers, offsets, sweeps, lofts, features and healing now
+  check what they made and fail with `result.invalid`, saying what's wrong and naming the sub-shapes. `Result<T>.TryGetInvalid` gives the shape to a
+  caller who wants to look at it; `Value` still throws. `CheckResult = false` on the options, or `checkResult: false`, leaves the check out. `Fix`'s
+  warning `healing.not-fixed` is gone: it's this failure. `Validate` runs serially on small shapes. See `docs/api/README.md`, section 2.2 (decisions
+  1742, 20101 to 20106).
 - **STEP export uses about a third less CPU and half the memory, and import with healing about 10% to 15% less CPU,** with the same output (measured on a loaded machine; decisions 1727 to 1731).
 - **Fillets and chamfers, three fixes that change results:** the edges between a fillet and its faces are coded tangent,
   as in OCCT, so a draft can follow a fillet, and saved BRep files gain those lines. A fillet that runs past a Bezier or
