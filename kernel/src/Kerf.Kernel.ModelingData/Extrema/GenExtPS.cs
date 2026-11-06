@@ -163,7 +163,6 @@ internal class GenExtPS
     private NCollection_Array2<POnSurfParams> _uEdgePntParams = s_noGrid;
     private NCollection_Array2<POnSurfParams> _vEdgePntParams = s_noGrid;
     private WorkGrids? _workGrids;
-    private POnSurfParams _gridParam = new();
 
     /*-----------------------------------------------------------------------------
     Function:
@@ -402,15 +401,17 @@ internal class GenExtPS
 
     // Computes the point on surface parameters on an edge. If it coincides with theParam0 or theParam1, that one is
     // returned. (OCCT returns a reference to theParam0, theParam1 or myGridParam; the callers copy it.)
-    private POnSurfParams ComputeEdgeParameters(bool isUEdge, in POnSurfParams param0,
-        in POnSurfParams param1, in Point3D point, double diffTol)
+    // Writes into the grid's element directly: these elements are 64 bytes, and copying them was most of a search's
+    // time (decision 1730)
+    private void ComputeEdgeParameters(bool isUEdge, in POnSurfParams param0,
+        in POnSurfParams param1, in Point3D point, double diffTol, out POnSurfParams result)
     {
         double sqrDist01 = param0.Value().SquareDistanceTo(param1.Value());
 
         if (sqrDist01 <= diffTol)
         {
             // The points are confused. Get the first point and change its type.
-            return param0;
+            result = param0;
         }
         else
         {
@@ -422,12 +423,12 @@ internal class GenExtPS
                 if (param0.GetSqrDistance() > param1.GetSqrDistance())
                 {
                     // The shortest distance is the point 1.
-                    return param1;
+                    result = param1;
                 }
                 else
                 {
                     // The shortest distance is the point 0.
-                    return param0;
+                    result = param0;
                 }
             }
             else
@@ -436,32 +437,27 @@ internal class GenExtPS
                 Xyz poP = point.XYZ().Subtracted(param0.Value().XYZ());
                 Xyz poP1 = param1.Value().XYZ().Subtracted(param0.Value().XYZ());
                 double ratio = poP.Dot(poP1) / sqrDist01;
-                Span<double> u = stackalloc double[2];
-                Span<double> v = stackalloc double[2];
 
-                param0.Parameter(out u[0], out v[0]);
-                param1.Parameter(out u[1], out v[1]);
+                param0.Parameter(out double u0, out double v0);
+                param1.Parameter(out double u1, out double v1);
 
-                double uPar = u[0];
-                double vPar = v[0];
+                double uPar = u0;
+                double vPar = v0;
 
                 if (isUEdge)
                 {
-                    uPar += ratio * (u[1] - u[0]);
+                    uPar += ratio * (u1 - u0);
                 }
                 else
                 {
-                    vPar += ratio * (v[1] - v[0]);
+                    vPar += ratio * (v1 - v0);
                 }
 
-                _gridParam.SetParameters(uPar, vPar, _s!.Value(uPar, vPar));
-                Span<int> indices = stackalloc int[2];
-
-                param0.GetIndices(out indices[0], out indices[1]);
-                _gridParam.SetElementType(isUEdge ? UIsoEdge : VIsoEdge);
-                _gridParam.SetSqrDistance(point.SquareDistanceTo(_gridParam.Value()));
-                _gridParam.SetIndices(indices[0], indices[1]);
-                return _gridParam;
+                param0.GetIndices(out int indexU, out int indexV);
+                result = new POnSurfParams(uPar, vPar, _s!.Value(uPar, vPar));
+                result.SetElementType(isUEdge ? UIsoEdge : VIsoEdge);
+                result.SetSqrDistance(point.SquareDistanceTo(result.Value()));
+                result.SetIndices(indexU, indexV);
             }
         }
     }
@@ -548,11 +544,15 @@ internal class GenExtPS
 
         // Compute distances to mesh.
         // Step 1. Compute distances to nodes.
+        // Kerf: each grid as one span and a row's length, for the loops below (decision 1730). _points' rows and columns
+        // start at 0, and it has a border on each side.
+        Span<POnSurfParams> nodes = _points.AsSpan();
+        int nodeRow = _myvsample + 2;
         for (int noU = 1; noU <= _myusample; noU++)
         {
             for (int noV = 1; noV <= _myvsample; noV++)
             {
-                ref POnSurfParams param = ref _points.ChangeValue(noU, noV);
+                ref POnSurfParams param = ref nodes[noU * nodeRow + noV];
 
                 param.SetSqrDistance(point.SquareDistanceTo(param.Value()));
             }
@@ -573,30 +573,29 @@ internal class GenExtPS
             // Step 2. Compute distances to edges.
             // Assume UEdge(i, j) = { Point(i, j); Point(i + 1, j    ) }
             // Assume VEdge(i, j) = { Point(i, j); Point(i,     j + 1) }
+            // UEdge's rows and columns start at 1, as VEdge's do; VEdge has one column fewer
+            Span<POnSurfParams> uEdges = _uEdgePntParams.AsSpan();
+            Span<POnSurfParams> vEdges = _vEdgePntParams.AsSpan();
+            int uEdgeRow = _myvsample;
+            int vEdgeRow = _myvsample - 1;
             for (int noU = 1; noU <= _myusample; noU++)
             {
                 for (int noV = 1; noV <= _myvsample; noV++)
                 {
-                    POnSurfParams param0 = _points.Value(noU, noV);
+                    ref readonly POnSurfParams param0 = ref nodes[noU * nodeRow + noV];
 
                     if (noU < _myusample)
                     {
                         // Compute parameters to UEdge.
-                        POnSurfParams param1 = _points.Value(noU + 1, noV);
-                        POnSurfParams edgeParam =
-                            ComputeEdgeParameters(true, param0, param1, point, diffTol);
-
-                        _uEdgePntParams.SetValue(noU, noV, edgeParam);
+                        ComputeEdgeParameters(true, param0, nodes[(noU + 1) * nodeRow + noV], point, diffTol,
+                            out uEdges[(noU - 1) * uEdgeRow + noV - 1]);
                     }
 
                     if (noV < _myvsample)
                     {
                         // Compute parameters to VEdge.
-                        POnSurfParams param1 = _points.Value(noU, noV + 1);
-                        POnSurfParams edgeParam =
-                            ComputeEdgeParameters(false, param0, param1, point, diffTol);
-
-                        _vEdgePntParams.SetValue(noU, noV, edgeParam);
+                        ComputeEdgeParameters(false, param0, nodes[noU * nodeRow + noV + 1], point, diffTol,
+                            out vEdges[(noU - 1) * vEdgeRow + noV - 1]);
                     }
                 }
             }
@@ -609,17 +608,18 @@ internal class GenExtPS
             double sqrDist01;
             double diffDist;
             bool isOut;
-            Span<double> u = stackalloc double[2]; // declared in the loop in OCCT
-            Span<double> v = stackalloc double[2];
+            // Faces' rows and columns start at 0
+            Span<POnSurfParams> faces = _facePntParams.AsSpan();
+            int faceRow = _myvsample + 1;
 
             for (int noU = 1; noU < _myusample; noU++)
             {
                 for (int noV = 1; noV < _myvsample; noV++)
                 {
-                    POnSurfParams ue0 = _uEdgePntParams.Value(noU, noV);
-                    POnSurfParams ue1 = _uEdgePntParams.Value(noU, noV + 1);
-                    POnSurfParams ve0 = _vEdgePntParams.Value(noU, noV);
-                    POnSurfParams ve1 = _vEdgePntParams.Value(noU + 1, noV);
+                    ref readonly POnSurfParams ue0 = ref uEdges[(noU - 1) * uEdgeRow + noV - 1];
+                    ref readonly POnSurfParams ue1 = ref uEdges[(noU - 1) * uEdgeRow + noV];
+                    ref readonly POnSurfParams ve0 = ref vEdges[(noU - 1) * vEdgeRow + noV - 1];
+                    ref readonly POnSurfParams ve1 = ref vEdges[noU * vEdgeRow + noV - 1];
 
                     sqrDist01 = ue0.Value().SquareDistanceTo(ue1.Value());
                     diffDist = Math.Abs(ue0.GetSqrDistance() - ue1.GetSqrDistance());
@@ -645,12 +645,10 @@ internal class GenExtPS
                     if (isOut)
                     {
                         // Get the closest point on an edge.
-                        POnSurfParams ueMin = ue0.GetSqrDistance() < ue1.GetSqrDistance() ? ue0 : ue1;
-                        POnSurfParams veMin = ve0.GetSqrDistance() < ve1.GetSqrDistance() ? ve0 : ve1;
-                        POnSurfParams eMin =
-                            ueMin.GetSqrDistance() < veMin.GetSqrDistance() ? ueMin : veMin;
+                        ref readonly POnSurfParams ueMin = ref (ue0.GetSqrDistance() < ue1.GetSqrDistance() ? ref ue0 : ref ue1);
+                        ref readonly POnSurfParams veMin = ref (ve0.GetSqrDistance() < ve1.GetSqrDistance() ? ref ve0 : ref ve1);
 
-                        _facePntParams.SetValue(noU, noV, eMin);
+                        faces[noU * faceRow + noV] = ueMin.GetSqrDistance() < veMin.GetSqrDistance() ? ueMin : veMin;
                     }
                     else
                     {
@@ -659,20 +657,20 @@ internal class GenExtPS
                         double vPar;
 
                         // Compute U parameter.
-                        ue0.Parameter(out u[0], out v[0]);
-                        ue1.Parameter(out u[1], out v[1]);
-                        uPar = 0.5 * (u[0] + u[1]);
+                        ue0.Parameter(out double u0, out _);
+                        ue1.Parameter(out double u1, out _);
+                        uPar = 0.5 * (u0 + u1);
                         // Compute V parameter.
-                        ve0.Parameter(out u[0], out v[0]);
-                        ve1.Parameter(out u[1], out v[1]);
-                        vPar = 0.5 * (v[0] + v[1]);
+                        ve0.Parameter(out _, out double v0);
+                        ve1.Parameter(out _, out double v1);
+                        vPar = 0.5 * (v0 + v1);
 
-                        POnSurfParams param = new(uPar, vPar, _s!.Value(uPar, vPar));
+                        ref POnSurfParams param = ref faces[noU * faceRow + noV];
 
+                        param = new POnSurfParams(uPar, vPar, _s!.Value(uPar, vPar));
                         param.SetElementType(Face);
                         param.SetSqrDistance(point.SquareDistanceTo(param.Value()));
                         param.SetIndices(noU, noV);
-                        _facePntParams.SetValue(noU, noV, param);
                     }
                 }
             }
@@ -680,14 +678,14 @@ internal class GenExtPS
             // Fill boundary with RealLast square distance.
             for (int noV = 0; noV <= _myvsample; noV++)
             {
-                _facePntParams.ChangeValue(0, noV).SetSqrDistance(RealLast());
-                _facePntParams.ChangeValue(_myusample, noV).SetSqrDistance(RealLast());
+                faces[noV].SetSqrDistance(RealLast());
+                faces[_myusample * faceRow + noV].SetSqrDistance(RealLast());
             }
 
             for (int noU = 1; noU < _myusample; noU++)
             {
-                _facePntParams.ChangeValue(noU, 0).SetSqrDistance(RealLast());
-                _facePntParams.ChangeValue(noU, _myvsample).SetSqrDistance(RealLast());
+                faces[noU * faceRow].SetSqrDistance(RealLast());
+                faces[noU * faceRow + _myvsample].SetSqrDistance(RealLast());
             }
         }
     }
@@ -913,12 +911,18 @@ internal class GenExtPS
                 int iV2;
                 bool isMin;
                 int i;
+                ReadOnlySpan<POnSurfParams> faces = _facePntParams.AsSpan();
+                int faceRow = _myvsample + 1;
+                if (faces.IsEmpty)
+                {
+                    throw new OutOfRangeException("NCollection_Array2::Value");
+                }
 
                 for (noU = 1; noU < _myusample; noU++)
                 {
                     for (noV = 1; noV < _myvsample; noV++)
                     {
-                        POnSurfParams param = _facePntParams.Value(noU, noV);
+                        ref readonly POnSurfParams param = ref faces[noU * faceRow + noV];
 
                         isMin = false;
                         elemType = param.GetElementType();
@@ -952,7 +956,7 @@ internal class GenExtPS
                                     || (elemType == Node && (iU == 1 || iU == _myusample)))
                                 {
                                     // Check the down face.
-                                    POnSurfParams downParam = _facePntParams.Value(noU, noV - 1);
+                                    ref readonly POnSurfParams downParam = ref faces[noU * faceRow + noV - 1];
 
                                     if (downParam.GetElementType() == elemType)
                                     {
@@ -964,7 +968,7 @@ internal class GenExtPS
                                          || (elemType == Node && (iV == 1 || iV == _myvsample)))
                                 {
                                     // Check the right face.
-                                    POnSurfParams rightParam = _facePntParams.Value(noU - 1, noV);
+                                    ref readonly POnSurfParams rightParam = ref faces[(noU - 1) * faceRow + noV];
 
                                     if (rightParam.GetElementType() == elemType)
                                     {
@@ -978,18 +982,15 @@ internal class GenExtPS
                                     // to check lower-left, lower and left faces.
                                     isMin = true;
 
-                                    Span<POnSurfParams> otherParam =
-                                    [
-                                        _facePntParams.Value(noU, noV - 1), // Down
-                                        _facePntParams.Value(noU - 1, noV - 1), // Lower-left
-                                        _facePntParams.Value(noU - 1, noV), // Left
-                                    ];
-
                                     for (i = 0; i < 3 && isMin; i++)
                                     {
-                                        if (otherParam[i].GetElementType() == Node)
+                                        // Down, lower-left, left
+                                        ref readonly POnSurfParams otherParam =
+                                            ref faces[(i == 0 ? noU : noU - 1) * faceRow + (i == 2 ? noV : noV - 1)];
+
+                                        if (otherParam.GetElementType() == Node)
                                         {
-                                            otherParam[i].GetIndices(out iU2, out iV2);
+                                            otherParam.GetIndices(out iU2, out iV2);
                                             isMin = (iU == iU2 && iV == iV2);
                                         }
                                         else
@@ -1014,30 +1015,23 @@ internal class GenExtPS
             if (_flag == ExtFlag_MAX || _flag == ExtFlag_MINMAX)
             {
                 double dist;
+                ReadOnlySpan<POnSurfParams> nodes = _points.AsSpan();
+                int row = _myvsample + 2;
 
                 for (noU = 1; noU <= _myusample; noU++)
                 {
                     for (noV = 1; noV <= _myvsample; noV++)
                     {
-                        POnSurfParams paramMain = _points.Value(noU, noV);
-                        POnSurfParams param1 = _points.Value(noU - 1, noV - 1);
-                        POnSurfParams param2 = _points.Value(noU - 1, noV);
-                        POnSurfParams param3 = _points.Value(noU - 1, noV + 1);
-                        POnSurfParams param4 = _points.Value(noU, noV - 1);
-                        POnSurfParams param5 = _points.Value(noU, noV + 1);
-                        POnSurfParams param6 = _points.Value(noU + 1, noV - 1);
-                        POnSurfParams param7 = _points.Value(noU + 1, noV);
-                        POnSurfParams param8 = _points.Value(noU + 1, noV + 1);
+                        int at = noU * row + noV;
+                        dist = nodes[at].GetSqrDistance();
 
-                        dist = paramMain.GetSqrDistance();
-
-                        if ((param1.GetSqrDistance() <= dist) && (param2.GetSqrDistance() <= dist)
-                            && (param3.GetSqrDistance() <= dist) && (param4.GetSqrDistance() <= dist)
-                            && (param5.GetSqrDistance() <= dist) && (param6.GetSqrDistance() <= dist)
-                            && (param7.GetSqrDistance() <= dist) && (param8.GetSqrDistance() <= dist))
+                        if ((nodes[at - row - 1].GetSqrDistance() <= dist) && (nodes[at - row].GetSqrDistance() <= dist)
+                            && (nodes[at - row + 1].GetSqrDistance() <= dist) && (nodes[at - 1].GetSqrDistance() <= dist)
+                            && (nodes[at + 1].GetSqrDistance() <= dist) && (nodes[at + row - 1].GetSqrDistance() <= dist)
+                            && (nodes[at + row].GetSqrDistance() <= dist) && (nodes[at + row + 1].GetSqrDistance() <= dist))
                         {
                             // Find maximum.
-                            FindSolution(p, _points.Value(noU, noV));
+                            FindSolution(p, nodes[at]);
                         }
                     }
                 }

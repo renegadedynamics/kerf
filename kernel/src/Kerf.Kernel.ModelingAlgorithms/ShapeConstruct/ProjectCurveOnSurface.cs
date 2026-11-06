@@ -149,19 +149,28 @@ internal class ProjectCurveOnSurface : Transient
         }
 
         // Handle problematic B-spline curves with uneven parameterization
+        bool byKnotSpans = false;
         if (IsBSplineCurveInvalid(c3D, first, last, out _))
         {
             // Use ProjLib for curves with highly uneven parameterization speed
             if (PerformByProjLib(c3D, first, last, out c2D))
             {
-                return Status(ExtendStatus.Done);
+                if (FollowsCurve(c3D, c2D!, first, last))
+                {
+                    return Status(ExtendStatus.Done);
+                }
+                // the standard projector's approximation doesn't follow a stretch far faster than the rest (decision 1737)
+                c2D = null;
+                _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
+                byKnotSpans = true;
             }
         }
 
         // Generate curve points
         NCollection_Array1<Point3D> points = new();
         NCollection_Array1<double> aParams = new();
-        int nbPnt = GenerateCurvePoints(c3D, first, last, THE_NCONTROL, points, aParams);
+        int nbPnt = byKnotSpans ? GenerateKnotSpanPoints(ExtractBSplineCurve(c3D)!, c3D, first, last, points, aParams)
+                                : GenerateCurvePoints(c3D, first, last, THE_NCONTROL, points, aParams);
 
         // Approximate pcurve
         NCollection_Array1<Point2D> points2d = new(1, nbPnt);
@@ -181,6 +190,11 @@ internal class ProjectCurveOnSurface : Transient
 
         // Interpolate the result
         c2D = InterpolatePCurve(nbPini, points2d, aParams);
+        if (byKnotSpans && c2D is not null && !FollowsCurve(c3D, c2D, first, last))
+        {
+            // better no pcurve than one that says it's done and isn't on the curve (decision 1737)
+            c2D = null;
+        }
 
         _status |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(c2D is null ? ExtendStatus.FAIL1 : ExtendStatus.DONE2);
         return Status(ExtendStatus.Done);
@@ -2458,6 +2472,73 @@ internal class ProjectCurveOnSurface : Transient
 
         const double maxQuotientCoeff = 1500.0;
         return (evenlyCoeff > maxQuotientCoeff && minParSpeed > global::Kerf.Engine.Foundation.Precision.Confusion());
+    }
+
+    // Whether the pcurve is on the curve wherever it's sampled, each knot span having samples of its own however short: the
+    // point of the surface is no further from the curve than the curve is from the surface, within a margin.
+    private bool FollowsCurve(Curve3D c3D, Curve2D c2D, double first, double last)
+    {
+        BSplineCurve3D? aBSpline = ExtractBSplineCurve(c3D);
+        Surface? aSurface = _surf!.Surface();
+        if (aBSpline is null || aSurface is null)
+        {
+            return true;
+        }
+        NCollection_Array1<Point3D> aPoints = new();
+        NCollection_Array1<double> aParams = new();
+        int aNb = GenerateKnotSpanPoints(aBSpline, c3D, first, last, aPoints, aParams);
+        for (int i = 1; i <= aNb; i++)
+        {
+            Point2D aUV = c2D.Value(aParams[i]);
+            double aGap = aSurface.Value(aUV.X, aUV.Y).DistanceTo(aPoints[i]);
+            if (aGap > THE_FOLLOW_MARGIN)
+            {
+                _surf.ValueOfUV(aPoints[i], global::Kerf.Engine.Foundation.Precision.Confusion());
+                if (aGap > _surf.Gap() + THE_FOLLOW_MARGIN)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    // How far, in model units, a pcurve from the standard projector may stray beyond the curve's own distance from the surface.
+    private const double THE_FOLLOW_MARGIN = 1.0e-2;
+
+    // The discretization points of a B-spline with the same number on each knot span in [first, last].
+    private static int GenerateKnotSpanPoints(BSplineCurve3D bSpline, Curve3D curve, double first, double last,
+                                              NCollection_Array1<Point3D> points, NCollection_Array1<double> theParams)
+    {
+        const int aPerSpan = 8;
+        List<double> aParams = [first];
+        for (int i = 1; i <= bSpline.KnotCount; i++)
+        {
+            double aKnot = bSpline.Knot(i);
+            if (aKnot <= aParams[^1] || aKnot >= last)
+            {
+                continue;
+            }
+            double aFrom = aParams[^1];
+            for (int j = 1; j <= aPerSpan; j++)
+            {
+                aParams.Add(aFrom + j * (aKnot - aFrom) / aPerSpan);
+            }
+        }
+        double aEnd = aParams[^1];
+        for (int j = 1; j <= aPerSpan; j++)
+        {
+            aParams.Add(j == aPerSpan ? last : aEnd + j * (last - aEnd) / aPerSpan);
+        }
+        points.Resize(1, aParams.Count, false);
+        theParams.Resize(1, aParams.Count, false);
+        for (int i = 0; i < aParams.Count; i++)
+        {
+            curve.D0(aParams[i], out Point3D aPoint);
+            points.SetValue(i + 1, aPoint);
+            theParams.SetValue(i + 1, aParams[i]);
+        }
+        return aParams.Count;
     }
 
     // Generates the discretization points of a curve: uniform, at least theNbControlPoints, more for B-splines with

@@ -38,6 +38,20 @@ public class FilletFailuresTests
         }
     }
 
+    /// <summary>
+    /// Radius 11 on a 20 mm box: the engine gives what OCCT gives, an invalid shape, and the shorthand refuses it, so a
+    /// cell shows the reason and not a shape that can't be used (decision 1740).
+    /// </summary>
+    [Fact]
+    public void A_radius_past_half_the_box_is_refused()
+    {
+        var box = Box(20, 20, 20);
+        var failed = Failures.Try(() => box.Fillet(11, box.Edges()));
+        Assert.Equal(ModelingDiagnostics.FilletFailed, failed.Error!.Code);
+        Assert.Contains("try a smaller radius", failed.Error.Message, StringComparison.Ordinal);
+        Assert.True(box.Fillet(9.99, box.Edges()).IsValid);
+    }
+
     [Fact]
     public void Operation()
     {
