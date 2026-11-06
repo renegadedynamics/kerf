@@ -1583,6 +1583,20 @@ internal class LeastSquare<MultiLine, ToolLine>
     public math_IntegerVector KIndex() => _myindex;
 
     /// <summary>Builds the tangency system (packed for DACTCL) and its second member.</summary>
+    // MakeTAA's work vectors, kept between calls: a minimisation calls it for each value of its function
+    private math_Vector? _taaB, _taaV1, _taaV2, _taaW1, _taaW2;
+
+    private static math_Vector Zeros(ref math_Vector? kept, int lower, int upper)
+    {
+        if (kept is null || kept.Lower() != lower || kept.Upper() != upper)
+        {
+            return kept = new math_Vector(lower, upper, 0.0);
+        }
+
+        kept.Init(0.0);
+        return kept;
+    }
+
     protected void MakeTAA(math_Vector theA, math_Vector myTAB)
     {
         int i, j, k, ci, i2, i21, i22;
@@ -1612,8 +1626,8 @@ internal class LeastSquare<MultiLine, ToolLine>
         int na1 = _na - 1;
         double v1 = 0, v2 = 0, b;
         double ai2, aid, akj;
-        math_Vector myB = new(myfirst, mylast, 0.0), myV1 = new(myfirst, mylast, 0.0), myV2 = new(myfirst, mylast, 0.0);
-        math_Vector theV1 = new(1, _ninc, 0.0), theV2 = new(1, _ninc, 0.0);
+        math_Vector myB = Zeros(ref _taaB, myfirst, mylast), myV1 = Zeros(ref _taaV1, myfirst, mylast), myV2 = Zeros(ref _taaV2, myfirst, mylast);
+        math_Vector theV1 = Zeros(ref _taaW1, 1, _ninc), theV2 = Zeros(ref _taaW2, 1, _ninc);
 
         for (i = _firstP; i <= _lastP; i++)
         {
