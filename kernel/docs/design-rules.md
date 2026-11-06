@@ -220,6 +220,30 @@ Use them where they make the code simpler or faster; don't convert working code 
   transforms, round trips.
 - Recorded comparisons say their level: identical, geometrically equal, or an intended difference with its reason.
 
+### Corpus cases that read their own process
+
+OCCT's harness runs each case in a new DRAWEXE, and some scripts read that process's figures. Draw-lite runs most cases
+side by side in one process, where those figures would mean nothing, so `DrawCorpus.RunAndCheck` sends such a case to a
+process of its own (`DrawCaseProcess`, decisions 19101 to 19104):
+
+| What the script reads | Which cases | What its process does |
+|---|---|---|
+| `meminfo h`, the live heap | `bug7287_*`, `bug24863_1`, `bug31075`, `bug31120` and any others that come to run | Runs the case twice and judges the second; parses every time rather than caching; gives the log its room at the start; takes one reading before the script. The reading is two full collections about the finalizers, to a multiple of 1 kB |
+| `bbuild -t` against a fixed figure | `bug24157_*` | Reports the process's processor time, which other work on the machine doesn't add to |
+| Other `meminfo` counters, or a section timed against a figure | `bug26980`, `bug83` and the like | Only starts afresh |
+
+**How sensitive a trend is.** `checktrend` fails when the mean step passes the tolerance plus two standard deviations.
+The process's own growth is the list of readings, 64 to 250 bytes a cycle, and with a 1 kB reading that can't fail. A
+retained box is about 15 kB a cycle and a Boolean's result the same. Keeping 1.4 kB a cycle failed 40 runs of 40 on its
+own. A step of up to 10 kB, which comes and goes in some runs, can't fail a case but can hide a leak in one short run.
+Under about 1 kB a cycle may or may not be seen. `DrawCaseProcessTests` holds on to objects deliberately to keep
+this true. Anything to do with a heap reading belongs in that process: a reading taken in the tests' process can't be
+trusted, so a case run with a `theSetup` action (the "before unit X" reports, which assert nothing about statuses) stays
+in-process and can still flip there.
+
+**Time.** Don't assert elapsed time where another measure says the same thing. A limit that stays in a test (the elapsed
+limits, `HangGuard`) has to be there to catch a hang, far above what the work takes.
+
 ## 14. Enforcement
 
 ### Naming: .editorconfig and IDE1006

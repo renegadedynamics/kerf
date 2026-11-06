@@ -2111,3 +2111,9 @@ classes.
 | `gce_MakeLin2d(Lin, Dist)` | The header says a positive distance is to the right of the line; the code adds `Dist * (-dy, dx)`, to the left | Only the comment is wrong, as far as callers go; the port follows the code | leave |
 | `BndLib::Add(gp_Cone, ...)` with an infinite V bound | Opens the box along the axis only, though the cone widens without limit | The box doesn't hold the cone. Open for the owner: the port still does this | leave |
 | `BndLib::Add(gp_Cylinder, ...)` and `gp_Cone`, both V bounds infinite | Adds nothing but the open sides | The box is still void, so `Get` throws and `IsOut` says yes, though the surface is everywhere along its axis. Open for the owner: the port still does this | leave |
+
+## Found by unit 11P's flaky tests
+
+| Where | What | Effect | Status |
+|---|---|---|---|
+| tests/bugs/modalg_7/bug31120 | `set ratio (${memval}-{$memval1})/${memval1}` makes a text, not a number, so `if { ${ratio} > 0.05}` compares strings, and `(` sorts before `0` | The check can't fail: run with the heap five times larger it stays silent, so the script doesn't test the leak it names | leave: a test script's. `DrawCaseProcessTests.Repeating_an_offset_keeps_nothing` asks the question (decision 19105) |
