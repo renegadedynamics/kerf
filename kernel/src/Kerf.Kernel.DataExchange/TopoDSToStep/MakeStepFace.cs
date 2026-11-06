@@ -169,7 +169,9 @@ internal sealed class MakeStepFace : ExportRoot
 
                     double R = ts.MajorRadius;
                     double r = ts.MinorRadius;
-                    if (R < r) // if torus is degenerate or base surface is degenerate, make revolution instead
+                    // if torus is degenerate or base surface is degenerate, make revolution instead. Within tolerance of a
+                    // horn torus the choice isn't noise, as OCCT 8.0.1's bare R < r makes it (#1461; decision 20611)
+                    if (R < r - global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         CoordinateSystem ax3 = ts.Position;
                         Point3D pos = ax3.Location;
