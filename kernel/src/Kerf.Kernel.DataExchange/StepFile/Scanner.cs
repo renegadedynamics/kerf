@@ -89,9 +89,52 @@ internal sealed class Scanner
     /// <summary>Raised when the input passes <see cref="ParserReadLimits.MaxFileSize"/>.</summary>
     internal sealed class FileTooLarge : Exception { }
 
+    // A file says the same few things over and over (references, 0., .T., $), and each is a parameter's text until the entities
+    // are made, which is what holds an import's peak up. So a short token that was seen recently shares its string: the last
+    // one for each hash, in a table that goes with the scanner.
+    private const int LongestSharedToken = 24;
+    private readonly string?[] _tokens = new string?[1 << 14];
+
+    private string TokenText(int theFrom, int to)
+    {
+        int length = to - theFrom;
+        if (length > LongestSharedToken)
+        {
+            return Encoding.Latin1.GetString(_buf, theFrom, length);
+        }
+
+        ReadOnlySpan<byte> bytes = _buf.AsSpan(theFrom, length);
+        uint hash = 2166136261;
+        foreach (byte b in bytes)
+        {
+            hash = (hash ^ b) * 16777619;
+        }
+
+        ref string? slot = ref _tokens[(hash ^ (hash >> 15)) & (uint)(_tokens.Length - 1)];
+        if (slot is { } known && known.Length == length)
+        {
+            bool same = true;
+            for (int i = 0; i < length; i++)
+            {
+                if (known[i] != bytes[i])
+                {
+                    same = false;
+                    break;
+                }
+            }
+
+            if (same)
+            {
+                return known;
+            }
+        }
+
+        return slot = Encoding.Latin1.GetString(bytes);
+    }
+
     private void CreateNewText(int theFrom, int to)
     {
-        _dataModel.CreateNewText(Encoding.Latin1.GetString(_buf, theFrom, to - theFrom), to - theFrom);
+        _dataModel.CreateNewText(TokenText(theFrom, to), to - theFrom);
     }
 
     private void SetTypeArg(ParamType type) => _dataModel.SetTypeArg(type);
