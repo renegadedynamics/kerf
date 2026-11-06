@@ -913,7 +913,7 @@ Three runs of each, alternating, on a loaded machine.
 | Parallel round of Bento's examples, 24 copies | 3,684 to 3,669 MB | | **275 to 244 MB** (two runs each) | 420, 452 to 372, 427 MB (two runs each) |
 | Import and mesh `bug30790`, about 6.7 million triangles | 9,743 MB | 816 MB | | 1,637 MB, before: not touched, unit 11O's |
 
-The last parallel round's 212 to 251 MB was the load, not a change: 251 sits among these "before" and "after" runs, whose difference is real because they alternate under one load. The clean run will say what the figure is now. Nearly all of a parallel round's peak is the collector's budget and 18.7 MB of threads' sets (4.6 MB live besides), as a round keeps nothing.
+The last parallel round's 212 to 251 MB was the load, not a change: 251 sits among these "before" and "after" runs, whose difference is real because they alternate under one load. The clean run will say what the figure is now. After a round, 23 MB is live, 18.7 MB of it threads' sets, and a round keeps nothing, so the rest of its peak is what the collector lets build up (inferred from those two figures).
 
 **What holds an import's peak up, walked at each stage of `bug30790`, a 21 MB file:**
 
@@ -935,17 +935,17 @@ So **the live peak is the file's text, parsed twice over, then its entities: fiv
 
 #### Back to speed: the list again
 
-From one more pass of the corpus on this build (`KERF_CORPUS_TIMES`, six at a time, 5,144 s of case time, loaded; the base's pass took 7,906 s under a heavier load, so the two say nothing about each other). The list above still stands. Its order moves little, the validity check's cost has fallen by half on small shapes since it was measured, and the precise path shows up nowhere near the top. **New names at the top, each profiled:**
+From one more pass of the corpus on this build (`KERF_CORPUS_TIMES`, six at a time, 5,144 s of case time, loaded; the base's pass took 7,906 s under a heavier load, so the two say nothing about each other). The list above still stands. Its order moves little, and neither the validity check (21% of `A6`, the most seen here) nor the precise path puts a new case at the top by itself: inferred for the precise path, which I didn't profile apart. **New names at the top, each profiled:**
 
 | Case | Time in the pass | What's there | Verdict |
 |---|---:|---|---|
-| `bugs/modalg_5/bug24157_5` | 48 s | **Mostly this harness:** 3/4 of its thread time is Tcl making a list of 8,100 edges, one `lappend` at a time, and the Boolean about a quarter. 20 s alone | Not Kerf |
-| `boolean/splitter/A6`, `B6` | 26 s, 23 s | Spread: the check 21% of active time, fills 16%, solids 9%, threads stopped for collections about a third. About 6 s alone | Spread out |
+| `bugs/modalg_5/bug24157_5` | 48 s | **Half this harness:** 42% of its active time is Tcl making a list of 8,100 edges, one `lappend` at a time, and the Boolean 44%. 20 s alone | Not Kerf |
+| `boolean/splitter/A6`, `B6` | 26 s, 23 s | Spread: of active time, the filler 33%, the check 21%, solids 18%, and threads stopped for collections about a third of it overall. About 6 s alone | Spread out |
 | `boolean/volumemaker/H1`, `C6` | 21 s, 17 s | `CheckerSI`, the corpus's own self-intersection check, 55%: real face-face work | Hard |
 | `bugs/modalg_4/bug77_1`, `_2` | 19 s, 17 s | `CheckerSI` again: walking between B-spline surfaces | Hard |
-| `bugs/modalg_5/bug25614_section` | 19 s | Booleans of many tools, item 3: no site over 10% of active time | Spread out |
+| `bugs/modalg_5/bug25614_section` | 19 s | Booleans of many tools, item 3: the filler 81% of active time, among face-face 27%, blocks 25%, edge-edge 16% | Spread out |
 
-**Nothing here is wasteful:** as the fifth slice said, the next slices should expect less. Most of these take a quarter or less of their time here when they run alone, so load and the collector are what a corpus pass ranks. The slowest kernel cases otherwise are as listed: `bug32444` 35 s, `bug26701` 34 s, `boolean/simplify/A3` 29 s, `bug28119_1` 29 s, `bug25232_9` 24 s.
+**Nothing here is wasteful:** as the fifth slice said, the next slices should expect less. `A6` takes about a quarter of its time here when it runs alone, and `bug24157_5` about 40%, so load and the collector are much of what a corpus pass ranks. The slowest kernel cases otherwise are as listed: `bug32444` 35 s, `bug26701` 34 s, `boolean/simplify/A3` 29 s, `bug28119_1` 29 s, `bug25232_9` 24 s.
 
 #### For the owner
 
