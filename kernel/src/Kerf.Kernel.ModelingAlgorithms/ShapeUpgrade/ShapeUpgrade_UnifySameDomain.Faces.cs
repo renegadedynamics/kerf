@@ -1147,6 +1147,61 @@ internal partial class UnifySameDomain
         }
     }
 
+    // An edge's pcurves on the reference surface and its range, before a merge writes on them.
+    private readonly record struct SavedPCurves(Edge Edge, Curve2D? PCurve1, Curve2D? PCurve2, double First, double Last);
+
+    private static List<SavedPCurves> SavePCurves(NCollection_Sequence<Shape> faces, in Face refFace)
+    {
+        List<SavedPCurves> saved = [];
+        var seen = new HashSet<Shape>(ShapeHasher.Instance);
+        for (int i = 1; i <= faces.Length(); i++)
+        {
+            for (var ex = new Explorer(faces[i], ShapeType.Edge); ex.More(); ex.Next())
+            {
+                if (!seen.Add(ex.Current()))
+                {
+                    continue;
+                }
+
+                Edge edge = ShapeCasts.Edge(ex.Current());
+                edge.Orient(Forward);
+                Curve2D? pc1 = Tool.CurveOnSurface(edge, refFace, out _, out _);
+                edge.Reverse();
+                Curve2D? pc2 = Tool.CurveOnSurface(edge, refFace, out _, out _);
+                edge.Orient(Forward);
+                Tool.Range(edge, out double first, out double last);
+                saved.Add(new SavedPCurves(edge, pc1, pc2, first, last));
+            }
+        }
+
+        return saved;
+    }
+
+    private static void RestorePCurves(List<SavedPCurves>? saved, in Face refFace)
+    {
+        if (saved is null)
+        {
+            return;
+        }
+
+        var bb = new BrepBuilder();
+        Curve2D? nullPCurve = null;
+        foreach (SavedPCurves s in saved)
+        {
+            bb.UpdateEdge(s.Edge, nullPCurve, refFace, 0.0);
+            if (s.PCurve1 is not null && ReferenceEquals(s.PCurve1, s.PCurve2))
+            {
+                bb.UpdateEdge(s.Edge, s.PCurve1, refFace, 0.0);
+            }
+            else if (s.PCurve1 is not null)
+            {
+                bb.UpdateEdge(s.Edge, s.PCurve1, s.PCurve2, refFace, 0.0);
+            }
+
+            bb.Range(s.Edge, s.First, s.Last);
+        }
+    }
+
     private static void AddPCurves(NCollection_Sequence<Shape> faces,
                                    in Face                     refFace,
                                    HashSet<Shape>      mapEdgesWithTemporaryPCurves)
