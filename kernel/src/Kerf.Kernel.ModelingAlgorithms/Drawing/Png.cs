@@ -3,6 +3,7 @@
 using Kerf.Engine.Foundation;
 using System.Buffers.Binary;
 using System.IO.Compression;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Kerf.Drawing;
@@ -111,42 +112,114 @@ public static class Png
         int stride = 4 * image.Width;
         ReadOnlySpan<byte> pixels = image.Pixels.Span;
         byte[] output = new byte[(stride + 1) * image.Height];
-        byte[] candidate = new byte[stride];
         byte[] zero = new byte[stride];
         for (int y = 0; y < image.Height; y++)
         {
             ReadOnlySpan<byte> row = pixels.Slice(y * stride, stride), up = y > 0 ? pixels.Slice((y - 1) * stride, stride) : zero;
-            Span<byte> target = output.AsSpan(y * (stride + 1) + 1, stride);
-            long best = long.MaxValue;
-            for (int filter = 0; filter < 5; filter++)
+            // The first filter of the lowest cost; a cost only grows along the row, so a filter stops once it can't win
+            int chosen = 0;
+            long best = CostOfNone(row);
+            for (int filter = 1; filter < 5 && best > 0; filter++)
             {
-                long cost = 0;
-                for (int i = 0; i < stride; i++)
+                long cost = filter switch
                 {
-                    int a = i >= 4 ? row[i - 4] : 0, b = up[i], c = i >= 4 ? up[i - 4] : 0;
-                    int predictor = filter switch
-                    {
-                        0 => 0,
-                        1 => a,
-                        2 => b,
-                        3 => (a + b) >> 1,
-                        _ => Paeth(a, b, c),
-                    };
-                    byte value = (byte)(row[i] - predictor);
-                    candidate[i] = value;
-                    cost += value < 128 ? value : 256 - value;
-                }
-
+                    1 => CostOfSub(row, best),
+                    2 => CostOfUp(row, up, best),
+                    3 => CostOfAverage(row, up, best),
+                    _ => CostOfPaeth(row, up, best),
+                };
                 if (cost < best)
                 {
                     best = cost;
-                    output[y * (stride + 1)] = (byte)filter;
-                    candidate.CopyTo(target);
+                    chosen = filter;
                 }
             }
+
+            output[y * (stride + 1)] = (byte)chosen;
+            Apply(chosen, row, up, output.AsSpan(y * (stride + 1) + 1, stride));
         }
 
         return output;
+    }
+
+    // What a filtered byte counts for: its distance from zero, modulo 256
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int Cost(int value)
+    {
+        value &= 0xFF;
+        return value < 128 ? value : 256 - value;
+    }
+
+    private static long CostOfNone(ReadOnlySpan<byte> row)
+    {
+        long cost = 0;
+        foreach (byte value in row)
+        {
+            cost += Cost(value);
+        }
+
+        return cost;
+    }
+
+    private static long CostOfSub(ReadOnlySpan<byte> row, long limit)
+    {
+        long cost = 0;
+        for (int i = 0; i < row.Length && cost < limit; i++)
+        {
+            cost += Cost(row[i] - (i >= 4 ? row[i - 4] : 0));
+        }
+
+        return cost;
+    }
+
+    private static long CostOfUp(ReadOnlySpan<byte> row, ReadOnlySpan<byte> up, long limit)
+    {
+        long cost = 0;
+        for (int i = 0; i < row.Length && cost < limit; i++)
+        {
+            cost += Cost(row[i] - up[i]);
+        }
+
+        return cost;
+    }
+
+    private static long CostOfAverage(ReadOnlySpan<byte> row, ReadOnlySpan<byte> up, long limit)
+    {
+        long cost = 0;
+        for (int i = 0; i < row.Length && cost < limit; i++)
+        {
+            cost += Cost(row[i] - (((i >= 4 ? row[i - 4] : 0) + up[i]) >> 1));
+        }
+
+        return cost;
+    }
+
+    private static long CostOfPaeth(ReadOnlySpan<byte> row, ReadOnlySpan<byte> up, long limit)
+    {
+        long cost = 0;
+        for (int i = 0; i < row.Length && cost < limit; i++)
+        {
+            cost += Cost(row[i] - (i >= 4 ? Paeth(row[i - 4], up[i], up[i - 4]) : Paeth(0, up[i], 0)));
+        }
+
+        return cost;
+    }
+
+    private static void Apply(int filter, ReadOnlySpan<byte> row, ReadOnlySpan<byte> up, Span<byte> target)
+    {
+        for (int i = 0; i < row.Length; i++)
+        {
+            int a = i >= 4 ? row[i - 4] : 0, b = up[i], c = i >= 4 ? up[i - 4] : 0;
+            int predictor = filter switch
+            {
+                0 => 0,
+                1 => a,
+                2 => b,
+                3 => (a + b) >> 1,
+                _ => Paeth(a, b, c),
+            };
+            target[i] = (byte)(row[i] - predictor);
+        }
     }
 
     private static int Paeth(int a, int b, int c)
