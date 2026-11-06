@@ -27,9 +27,9 @@ fillet2d grids and the fillet cases elsewhere were rerun after the fixes. The wh
 
 | Cases | Cause | Decision |
 |---|---|---|
-| draft/angle A2, B5, C3, C4, C5, F1 | A fillet's edges weren't coded tangent. Native's draft fails on the port's fillet, and the port's draft works on native's | 19301 |
-| blend/tolblend_buildvol/A9 | A closed edge with no radius at its one vertex stayed as a second face in a second shell | 19302 |
-| blend/simple/V7, blend/tolblend_simple/C5, chamfer/dist_angle_sequence B8 and B9, chamfer/dist_dist_sequence/B8, chamfer/equal_dist_sequence/B8 | The surface the fillet extended was ignored. Two of these, dist_angle B9 and dist_dist B8, are now BAD: OCCT's TODOs | 19303 |
+| draft/angle A2, B5, C3, C4, C5, F1 | A fillet's edges weren't coded tangent. Native's draft fails on the port's fillet, and the port's draft works on native's | 1719 |
+| blend/tolblend_buildvol/A9 | A closed edge with no radius at its one vertex stayed as a second face in a second shell | 1720 |
+| blend/simple/V7, blend/tolblend_simple/C5, chamfer/dist_angle_sequence B8 and B9, chamfer/dist_dist_sequence/B8, chamfer/equal_dist_sequence/B8 | The surface the fillet extended was ignored. Two of these, dist_angle B9 and dist_dist B8, are now BAD: OCCT's TODOs | 1721 |
 
 ### Reconstruction gaps, not fixed
 

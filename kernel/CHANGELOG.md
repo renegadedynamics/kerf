@@ -14,7 +14,7 @@ version may break the API.
   as in OCCT, so a draft can follow a fillet, and saved BRep files gain those lines. A fillet that runs past a Bezier or
   B-spline face puts the face on the surface it extended, where the result used to be invalid. A closed edge filleted
   with no radius at its one vertex no longer leaves the old face behind as well (`docs/corpus-failures.md`; decisions
-  19301 to 19303).
+  1719 to 1721).
 
 - **Names, cleaned up (no results change):** the geometry's `With…` methods that kept OCCT's abbreviations now say what they set
   (`WithCirc`, `WithCirc2d` → `WithCircle`; `WithElips` → `WithEllipse`; `WithHypr` → `WithHyperbola`; `WithLin` → `WithLine`; `WithParab` →
