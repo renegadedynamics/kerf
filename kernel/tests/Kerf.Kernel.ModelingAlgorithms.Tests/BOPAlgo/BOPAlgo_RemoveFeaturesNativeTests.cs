@@ -270,6 +270,33 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
         return aB.ToString();
     }
 
+    // The same text, each number within 1e-11.
+    private static bool SameButForRounding(string theNative, string thePort)
+    {
+        string[] aN = theNative.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        string[] aP = thePort.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        if (aN.Length != aP.Length)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < aN.Length; i++)
+        {
+            if (aN[i] == aP[i])
+            {
+                continue;
+            }
+            if (!double.TryParse(aN[i], System.Globalization.CultureInfo.InvariantCulture, out double aNValue)
+                || !double.TryParse(aP[i], System.Globalization.CultureInfo.InvariantCulture, out double aPValue)
+                || Math.Abs(aNValue - aPValue) > 1e-11)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     [Fact]
     public void Defeaturing_as_native()
     {
@@ -296,6 +323,7 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
                 continue;
             }
             BRepTextDiff aDiff = BRepTextComparison.Compare(aCase.NativeResult, aResult!);
+            bool isRounded = false;
             if (aDiff.IsIdentical)
             {
                 ++aBytes;
@@ -314,6 +342,14 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
                     ++aCanonical;
                     output.WriteLine($"{aCase.Id} {aCase.Name}: canonically identical ({aDiff})");
                 }
+                else if (SameButForRounding(aCase.NativeResult, aResult!))
+                {
+                    // Decision 20606: native keeps the pcurves of a merge that failed, and builds later edges from them. The
+                    // port puts them back, so the same shape's numbers differ in their last digits.
+                    ++aCanonical;
+                    isRounded = true;
+                    output.WriteLine($"{aCase.Id} {aCase.Name}: the same but for rounding ({aDiff})");
+                }
                 else
                 {
                     aFailures.Add($"{aCase.Id} {aCase.Name}: result {aDiff}; {aCanon}");
@@ -330,6 +366,12 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
                     ++aHistNativeOther;
                     anOther = anOther2;
                 }
+            }
+            if (anOther.Count > 0 && isRounded)
+            {
+                // the same decision: native's history of those edges follows the edges it wrote on
+                output.WriteLine($"{aCase.Id} {aCase.Name}: history {anOther[0]} ({anOther.Count} lines)");
+                continue;
             }
             if (anOther.Count > 0)
             {

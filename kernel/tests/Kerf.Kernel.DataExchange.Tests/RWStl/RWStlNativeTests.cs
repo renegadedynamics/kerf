@@ -450,6 +450,12 @@ public class RWStlNativeTests(ITestOutputHelper output)
                         anIntendedStream++;
                         continue;
                     }
+                    // decision 20610: both refuse a file of NaN and infinite numbers, the port as soon as a direction has none
+                    if (aNative[i] == "THROW class StdFail_NotDone" && aPort[i] == "THROW class Standard_ConstructionError")
+                    {
+                        anAttributed++;
+                        continue;
+                    }
                     aDifferent.Add($"{aHead}: port '{aPort[i]}', native '{aNative[i]}'");
                 }
             }
@@ -465,7 +471,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
             {
                 Assert.Equal(0, anAbsent);
                 // the second of decision 1170's two lines is in ws OMF6391_box.stl, a block with more domains now
-                Assert.Equal(1, anAttributed);
+                Assert.Equal(2, anAttributed);
                 Assert.Equal(8, anIntendedStream);
                 Assert.Equal(5, anIntendedDomains);
             }
