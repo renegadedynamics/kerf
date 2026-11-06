@@ -264,3 +264,7 @@ reworks those operations anyway could thread it then.
 ## The clean-up
 
 The clean-up after decision 1681 deleted fields that were written and never read (78), none of them shared state that anything read, and changed no ambient state. The second pass (decisions 1744 to 1748) changed names, docs and private signatures only. See [clean-up.md](clean-up.md).
+
+## Unit 11S
+
+The fixes for OCCT's defects (decisions 20201 to 20214) add no shared state: all are local to a call. `SamplingHelpers`' two new methods and the offset's concentric case work on their arguments alone. `StepGenTests` writes to a temporary folder of its own.

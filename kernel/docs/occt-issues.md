@@ -2132,3 +2132,25 @@ classes.
 | Where | What | Effect | Status |
 |---|---|---|---|
 | tests/bugs/modalg_7/bug31120 | `set ratio (${memval}-{$memval1})/${memval1}` makes a text, not a number, so `if { ${ratio} > 0.05}` compares strings, and `(` sorts before `0` | The check can't fail: run with the heap five times larger it stays silent, so the script doesn't test the leak it names | leave: a test script's. `DrawCaseProcessTests.Repeating_an_offset_keeps_nothing` asks the question (decision 1703) |
+
+## Found or fixed by unit 11S
+
+The list and its ranking are in [occt-defects.md](occt-defects.md).
+
+| Where | What | Effect | State |
+|---|---|---|---|
+| `GeomGridEval_BSplineSurface`, the cache | Built from a parameter that can locate to the next span | A wrong point just below a knot (#1577) | fixed (decision 20201) |
+| `GeomFill_GuideTrihedronAC::D2` | `TN2` for `\|DTN\|^2` | A sweep with a guide distorted (#1681) | fixed (decision 20202) |
+| `GeomBndLib_*Surface::BoxOptimal` | Cell centres aren't seen, and the search's gate reads the corners only | A box smaller than the surface (#1604, #1679) | fixed (decision 20203) |
+| `gp_Trsf::Invert`, `gp_Trsf2d::Invert`, `Geom_OffsetSurface::Surface` | A point mirror's translation negated; an indirect plane's offset direction | Wrong inverse; a plane on the wrong side | fixed from upstream (decision 20204) |
+| `BRepBndLib::AddOptimal` | Adds the face's tolerance whatever the flag | (#1698) | fixed (decision 20205) |
+| `GeomAdaptor_SurfaceOfRevolution::GetType` | `major > r` with no tolerance | An invalid solid (#1566) | fixed (decision 20206) |
+| `ElCLib::ParabolaParameter`, `Extrema_ExtPElC` | Focal 0 isn't the line evaluation makes it | (#1617) | fixed (decision 20207) |
+| `gp`, `Geom`, `Geom2d` constructors | NaN passes `r < 0` | (#1618) | fixed for radii, angles, directions (decision 20208) |
+| `IntPatch` cylinder/cylinder walk | Status stays "absent" after a step in and out over both V bounds | Empty Boolean (#1633) | fixed (decision 20209) |
+| `BRepGProp_Gauss::Compute` | U isn't refined, and its error isn't counted | Wrong precise properties (#1675) | fixed (decision 20210) |
+| `GeomBndLib_BSplineCurve2d::Box` | Trims a periodic arc to the first period | A face's area short (#1685) | fixed (decision 20211) |
+| `BRepFill_OffsetWire` | Concentric circles reach the medial axis; a collapsed circle falls through | A crash natively (#1606, #1452) | fixed (decision 20214) |
+| `BRepFill_OffsetWire`, a positive offset of a face with a hole | Treats each wire alone, so the hole grows | An outward offset's hole is larger, not smaller. The same whether the hole is concentric or not | **open**: to be checked with what a user expects |
+| Default sweep (`GeomFill_CorrectedFrenet`) on some planar splines | The sweep's approximation fails where Frenet and discrete succeed: #1630's spine | No pipe; natively a crash | **open**: occt-defects.md |
+| OCCT's corpus references for `checkprops -s` | From the path with #1675's bug | blend/simple/J6 expects 79953.8 for a true 77932 | see decision 20210 |
