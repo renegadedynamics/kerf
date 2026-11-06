@@ -1,9 +1,11 @@
 # The corpus's failures, and the fillet survey
 
-*Unit 11G, 6 November 2026. Decisions 1719 to 1724.*
+*Unit 11G, 6 November 2026. Decisions 1719 to 1724. Corrected by the known defects unit the same day, decisions 19601 to 19607: where a figure below was 11G's and has moved, the text says so.*
 
 The last whole corpus run before this unit had 69 FAILED cases of 17,872. This unit fixed 13, all in the fillets. The 56 left
-are below, by cause. Of those, only the three reconstruction gaps are the port getting a result wrong.
+are below, by cause. Of those, only the three reconstruction gaps were the port getting a result wrong.
+
+**Since then:** J5 is fixed (decision 19602). G8 and bug27711_3 are left: only their edge numbers differ (decision 19604). Four cases that wrongly read IMPROVEMENT now read FAILED, as the port refuses what native makes invalid (decision 19601), so there are 59 FAILED: 2 gaps in the numbering, 12 OCCT's own, and the rest as below.
 
 **How this was checked.** Native OCCT 8.0.1 still runs on this machine: a scratch build of build123d.NET's wrappers survives
 in the scratchpad, though the repository's oracle tests now only replay recordings. So every fillet and chamfer step below
@@ -16,7 +18,7 @@ fillet2d grids and the fillet cases elsewhere were rerun after the fixes. The wh
 | Cause | Cases | Evidence |
 |---|---:|---|
 | **Port bug, fixed** | 13 | Below |
-| **Reconstruction gap, not fixed** | 3 | Native is right on the same input |
+| **Reconstruction gap, not fixed** | 3 | Native is right on the same input. J5 since fixed (decision 19602) |
 | **OCCT's own** | 8 | Native fails or is invalid at the same point |
 | **Draw-lite's limit** | 38 | A command, or a check of something Draw-lite doesn't do |
 | **Left out or different on purpose** | 6 | Earlier decisions |
@@ -35,8 +37,8 @@ fillet2d grids and the fillet cases elsewhere were rerun after the fixes. The wh
 
 | Case | What happens | Evidence |
 |---|---|---|
-| blend/buildevol/J5 | Shell not closed: one edge where a varying radius reaches past a neighbouring edge isn't shared. 36 edges against 35; every face's area matches | Native on the same input is valid |
-| blend/complex/G8, bugs/modalg_7/bug27711_3 | The script names an edge by its explode number in an earlier result, and the reconstruction's edges come in another order, so it picks another edge | Given native's edge (found by position), native succeeds on the port's result, with the same area and volume as on its own |
+| blend/buildevol/J5 | **Fixed (decision 19602).** Shell not closed: one edge where a varying radius reaches past a neighbouring edge isn't shared. 36 edges against 35; every face's area matches | Native on the same input is valid |
+| blend/complex/G8, bugs/modalg_7/bug27711_3 | The script names an edge by its explode number in an earlier result, and the reconstruction's edges come in another order, so it picks another edge | Given native's edge (found by position), native succeeds on the port's result, with the same area and volume as on its own, and so does the port (a test; decision 19604). Not fixed: matching the numbers means following much of what decision 992 chose not to port |
 
 ### OCCT's own
 
@@ -46,8 +48,9 @@ fillet2d grids and the fillet cases elsewhere were rerun after the fixes. The wh
 | lowalgos/extss/bug29712_44 | The script's mistake; native gives 0 too (decision 1309) |
 | bugs/heal/bug29382_3 | Native gives the same 6 vertices (occt-issues.md) |
 | bugs/modalg_7/bug26034 | Native, with exceptions compiled in, gives the same warning (unit 7W) |
-| chamfer/dist_angle_sequence/A5, chamfer/equal_dist_sequence/A5 | Native's result is invalid at step 15 too. The port fails differently from OCCT's TODO: see "Faces lost silently" |
+| chamfer/dist_angle_sequence/A5, chamfer/equal_dist_sequence/A5 | Native's result is invalid at step 15 too. The port's is invalid with far fewer faces: see "Faces lost silently" |
 | chamfer/dist_dist_sequence/B9, chamfer/equal_dist_sequence/B9 | Native's result is invalid at step 2 too, and the same |
+| chamfer/dist_angle_sequence/B6, chamfer/dist_dist_sequence/B7, chamfer/equal_dist_sequence B5 and B7 | Native's result is invalid at step 2 too. The port refuses, where OCCT's TODO expects the invalid shape (decision 19601) |
 
 ### Draw-lite's limits
 
@@ -89,6 +92,8 @@ with native's first round 18 ms and 60 ms. So the 6× gap recorded in occt-issue
 866 cases use the fillet and chamfer commands: OK 744, BAD 30, IMPROVEMENT 9, SKIPPED 76 (no data), FAILED 7. It was OK 733,
 BAD 28, FAILED 20 (draft cases included) before this unit.
 
+After the known defects unit: OK 745, BAD 30, IMPROVEMENT 5, SKIPPED 76, FAILED 10. See decisions 19601 and 19602.
+
 The 37 failing or BAD cases, sorted:
 
 | | Cases | Examples |
@@ -109,7 +114,7 @@ and natively on the same input:**
 | Both valid, same faces, area within 0.1% | 1,023 |
 | Both fail | 31 |
 | Both invalid | 6 |
-| **Port invalid, native valid** | **1** (J5; it was 21 before decision 1721) |
+| **Port invalid, native valid** | **1** (J5; it was 21 before decision 1721). None since decision 19602 |
 | Port valid, native invalid | 9 |
 | Both valid, but different; or the port succeeds and native fails | 4 |
 
@@ -117,11 +122,15 @@ The last four (blend/simple C8, H5, H4, blend/buildevol/D6) are this comparison'
 edge by its centre, which can pick the wrong one, and the port's results pass OCCT's own reference figures. "Same" means
 validity, face count and area, not the geometry point by point.
 
+(After the known defects unit: 1,044 steps, as a sequence that's refused stops sooner. Both valid and the same 995, both fail 31, both invalid 5, port invalid and native valid **0**, port valid and native invalid 3, the port refuses and native is invalid 6, and this comparison's four unchanged.)
+
 Of the nine, two are the port doing better: blend/simple/H8 and blend/buildevol/D8, with native's area but passing the check
-native fails (decision 1113). bugs/modalg_7/bug25979 is unclear: the port is valid with 64 faces and area 7926, native invalid
-with 65 and 8006, and the case's data is named for a missing face, so the port may have lost one. The other six are below.
+native fails (decision 1113). bugs/modalg_7/bug25979 looks real too (decision 19607): the port is valid and mirror-symmetric with 64 faces and area 7926, native invalid
+with 65 and 8006, keeping one of the input's two mirrored slivers. The other six are below.
 
 ### Faces lost silently
+
+**Fixed so that it fails honestly (decision 19601).** On an open shape the port now refuses these steps, and the four statuses read FAILED. The A5 steps are on a closed shape, where the result stays invalid, so a check says so. As 11G found it:
 
 In six steps of chamfer sequences on open shells, native's result is invalid and the port's is "valid" but has lost faces:
 chamfer/equal_dist_sequence/B5 step 2 gives 3 faces and area 0.93, where native gives 6 and 1.67, and the input has 1.63. A
@@ -130,7 +139,7 @@ that isn't closed. On an open shell nothing shows. **So four of the nine IMPROVE
 dist_angle_sequence/B6, dist_dist_sequence/B7, equal_dist_sequence B5 and B7, where OCCT's TODO expects a bad shape and the
 port's has merely lost the evidence. The other two steps are the B9 cases above. Steps 15 of
 the A5 sequences are the same, with 4 faces against 38. It only appears after an earlier step on the same shape, and only on
-open shells, in the corpus. Not fixed.
+open shells, in the corpus. Why: ChFi3d's curves don't close a loop on the face, natively as well, so native's face has an open wire. The chamfer itself isn't fixed, on either side.
 
 ### Ordinary shapes, through the modelling layer
 
@@ -141,7 +150,7 @@ rim, a shelled box (rim, outer edges, every edge, chamfered rim), a cone, a fill
 on a plate, a rectangular pocket.
 
 - **27 were valid, with native's area and face count.** Radius 11 on a 20 mm box is refused with a useful message. Native
-  returns an invalid shape there.
+  returns an invalid shape there, and so does the port's engine (decision 19606).
 - Chamfers by two lengths and by an angle ran and were valid, but weren't compared with native.
 
 **Variable radii:** `Kerf.Modeling` has no variable radius. Through Draw on the same shapes, each edge tapered from 0.3 to 0.8

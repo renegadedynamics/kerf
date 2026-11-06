@@ -2118,7 +2118,14 @@ classes.
 |---|---|---|---|
 | `ShapeConstruct_Curve::ConvertToBSpline`, both forms | A Bezier is trimmed to [first, last] before converting, which reparametrises it over [0, 1], and the converted curve is then segmented to [first, last] as well | Part of a Bezier comes back as a part of that part, on the wrong parameters, in anything joining edges (`JoinCurves`, `JoinPCurves`) | fixed (decision 1713) |
 | `ShapeFix_Wire::FixGap3d`, by conversion, on one edge | With a single edge there's no second curve, so "take the curve's end if it couldn't be converted" always applies | The curve closes at its own start, not at the vertex as with two edges. Harmless, as the vertex's tolerance is then set; the port keeps it | kept, with a test |
-| `ShapeConstruct_ProjectCurveOnSurface`, a spline with very uneven parameter speed | On an interval 10^5 times as fast as the next, the standard projector's approximation doesn't follow the curve | The pcurve at t = 0 was 1.4 from the curve's start on a cylinder of radius 5, with the status "done"; `SameParameter` raises the tolerance later. Measured on the port only: native has gone, so it isn't compared | open |
+| `ShapeConstruct_ProjectCurveOnSurface`, a spline with very uneven parameter speed | On an interval 10^5 times as fast as the next, the standard projector's approximation doesn't follow the curve | The pcurve at t = 0 was 1.4 from the curve's start on a cylinder of radius 5, with the status "done"; `SameParameter` raises the tolerance later. Native 8.0.1 gives the same to the digits, 1.413 at t = 0 and 10.04 at t = 0.001 | **improved in the port** (decision 19603): the projector's result is checked on every knot span, and otherwise the sampled path runs, or the projection fails |
+
+## Found by the known defects unit
+
+| Where | What | Effect | State |
+|---|---|---|---|
+| `ChFi3d_Builder`, a chamfer's corner, equal_dist_sequence/B5 step 2 and five other steps | The curves in the data structure don't close a loop on a face | Natively a face with an open wire: invalid, as OCCT's TODOs expect | **the port refuses** (decision 19601); the chamfer itself isn't fixed |
+| `BRepFilletAPI_MakeFillet`, radius 11 on all edges of a 20 mm box | Done, with an invalid shape: native 26 faces and an area of 1.7e47 | The port's engine is invalid too (29 faces, 3686). `Kerf.Modeling` refuses (decision 19606). `FilletOperations.Fillet` still returns it as a success: **for the owner**, whether the kernel's operation should check too | open |
 
 ## Found by unit 11P's flaky tests
 
