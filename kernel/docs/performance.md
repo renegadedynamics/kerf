@@ -836,6 +836,8 @@ So the rig's 1.23× and 1.47× are near the limit for these inputs. A typical Bo
 
 **Large meshes and `Analyzer` were left alone,** as the brief asked. **Nothing here moved processor time past the noise,** and the bytes are what changed: the time on these cases is real work, or spread thinly. Decision 1734's measure is time first, so that's the finding: the next slices should expect less.
 
+**The rig, quick, `-Force`, against [the last clean run](benchmarks/2026-11-06-b21606ad7.md), so including the fourth slice; times aren't comparable.** Every result is the same. Bento 160.1 to 145.3 MB, a parallel round 3,825 to 3,500 MB, simple Booleans 1,967 to 1,951 MB. Peak working set in the parallel rounds 212 to 251 MB, taken under load with more threads, so it needs the clean run to read.
+
 **For the owner.**
 
 - **A tree of pave blocks for each face rather than each pair of faces.** Expected gain: most of a tenth of `bug25232_9`'s Boolean, inferred from samples, and less on most others. Hits would come out of the tree in another order, so which of two equally close blocks is found could differ, unless hits are sorted, which is OCCT's order only by accident. A moderate change that gives up "identical", so I wouldn't, unless identical goes anyway for the mesher's question above.
