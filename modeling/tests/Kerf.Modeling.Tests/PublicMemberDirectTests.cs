@@ -84,11 +84,11 @@ public class PublicMemberDirectTests
         var aBox = new Box(1, 2, 3);
         Edge anEdge = aBox.Edges().First();
         // each end meets two others
-        Assert.Equal(4, OneD.ConnectedEdges(anEdge, aBox.Shape).Count);
+        Assert.Equal(4, anEdge.ConnectedEdges(aBox.Shape).Count);
         // and two faces meet along it
-        Assert.Equal(2, OneD.ConnectedFaces(anEdge, aBox.Shape).Count);
+        Assert.Equal(2, anEdge.ConnectedFaces(aBox.Shape).Count);
         // an edge of something else meets nothing there
-        Assert.Empty(OneD.ConnectedFaces(Segment(50, 50, 60, 60), aBox.Shape));
+        Assert.Empty(Segment(50, 50, 60, 60).ConnectedFaces(aBox.Shape));
     }
 
     [Fact]

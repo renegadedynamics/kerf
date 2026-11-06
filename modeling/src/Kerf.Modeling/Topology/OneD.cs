@@ -4,11 +4,11 @@ using Kerf.Offsets;
 
 namespace Kerf.Modeling;
 
-/// <summary>The module-level functions of build123d's topology/one_d.py.</summary>
-public static class OneD
+/// <summary>What edges and wires share internally, from build123d's topology/one_d.py; what a user calls is on <see cref="Edge"/> and <see cref="Wire"/>.</summary>
+internal static class OneD
 {
     /// <summary>The wires made by connecting edges end to end within <paramref name="tolerance"/>.</summary>
-    public static ShapeList<Wire> EdgesToWires(IEnumerable<Edge> edges, double tolerance = 1e-6)
+    internal static ShapeList<Wire> EdgesToWires(IEnumerable<Edge> edges, double tolerance = 1e-6)
     {
         var wiresOut = HealingOperations.ConnectEdges(edges.Where(e => !e.IsEmpty).Select(e => e), tolerance, shared: false);
         return new ShapeList<Wire>(wiresOut.Select(w => w));
@@ -69,12 +69,8 @@ public static class OneD
         return Failures.Get(face.Offset(amount, new OffsetOptions { Tolerance = Constants.Tolerance }), () => "offset").Shape;
     }
 
-    /// <summary>
-    /// The edges of <paramref name="parent"/> connected to
-    /// <paramref name="edge"/> with at least the given continuity. A moved copy of one of the parent's edges gets its
-    /// neighbours in its own frame.
-    /// </summary>
-    public static ShapeList<Edge> ConnectedEdges(Edge edge, Shape parent, ContinuityLevel continuity = ContinuityLevel.C0)
+    /// <summary>See <c>Edge.ConnectedEdges</c>.</summary>
+    internal static ShapeList<Edge> ConnectedEdges(Edge edge, Shape parent, ContinuityLevel continuity = ContinuityLevel.C0)
     {
         if (parent.IsEmpty)
             throw new ArgumentException("edge has no valid parent");
@@ -113,11 +109,7 @@ public static class OneD
             : new ShapeList<Edge>(connected.Select(e => (Edge)e.Moved(relocation)));
     }
 
-    /// <summary>
-    /// The faces of <paramref name="parent"/> that meet at an edge.
-    /// A moved copy of one of the parent's edges gets the faces in its own frame; an edge the parent doesn't contain has none.
-    /// </summary>
-    public static List<Face> ConnectedFaces(Edge edge, Shape parent) => ConnectedFaces((IShape1D)edge, parent);
+    internal static List<Face> ConnectedFaces(Edge edge, Shape parent) => ConnectedFaces((IShape1D)edge, parent);
 
     internal static List<Face> ConnectedFaces(IShape1D edge, Shape parent)
     {

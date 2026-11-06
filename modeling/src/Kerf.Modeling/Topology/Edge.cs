@@ -13,6 +13,22 @@ public static partial class EdgeExtensions
 
         internal Edge TopoEdge => (Edge)self;
 
+        /// <summary>
+        /// The edges of <paramref name="parent"/> that meet this edge with at least the given continuity. A moved copy of one
+        /// of the parent's edges gets its neighbours in its own frame; an edge the parent doesn't contain has none.
+        /// </summary>
+        /// <exception cref="ArgumentException">The edge or the parent is empty.</exception>
+        public ShapeList<Edge> ConnectedEdges(Shape parent, ContinuityLevel continuity = ContinuityLevel.C0) =>
+            OneD.ConnectedEdges(self, parent, continuity);
+
+        /// <summary>
+        /// The faces of <paramref name="parent"/> that meet at this edge. A moved copy of one of the parent's edges gets the
+        /// faces in its own frame; an edge the parent doesn't contain has none.
+        /// </summary>
+        /// <exception cref="ArgumentException">The edge is empty.</exception>
+        /// <exception cref="InvalidOperationException">The parent is empty.</exception>
+        public List<Face> ConnectedFaces(Shape parent) => OneD.ConnectedFaces(self, parent);
+
         /// <summary>The centre of the circle or ellipse the edge lies on.</summary>
         /// <exception cref="InvalidOperationException">The edge is neither.</exception>
         public Point3D ArcCenter

@@ -224,14 +224,14 @@ public static partial class ShellExtensions
     }
 }
 
-/// <summary>The module-level functions of build123d's topology/two_d.py.</summary>
-public static class TwoD
+/// <summary>What faces and shells share internally, from build123d's topology/two_d.py.</summary>
+internal static class TwoD
 {
     /// <summary>
     /// The wires grouped into faces: each group the outer wire then its holes, assuming outer wires come before inner ones
     /// and there are no islands within holes.
     /// </summary>
-    public static IReadOnlyList<IReadOnlyList<Wire>> SortWiresByBuildOrder(IReadOnlyList<Wire> wires)
+    internal static IReadOnlyList<IReadOnlyList<Wire>> SortWiresByBuildOrder(IReadOnlyList<Wire> wires)
     {
         if (wires.Count < 2)
             return [wires];
