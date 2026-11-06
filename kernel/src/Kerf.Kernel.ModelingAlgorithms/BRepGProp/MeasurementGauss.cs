@@ -268,8 +268,9 @@ internal sealed class MeasurementGauss
     {
         private static readonly int NbGaussPoint = RealToInt(Math.Ceiling(ERROR_ALGEBR_RATIO * Gpm));
 
+        // Only held weakly, as it's used rarely and is large: a thread never pins it for its life
         [ThreadStatic]
-        private static GaussWork? t_spare;
+        private static WeakReference<GaussWork>? t_spare;
 
         public readonly NCollection_Array1<Inertia> InertiaL = new(1, Sm), InertiaU = new(1, Sm);
         public readonly math_Vector[] LGaussP = Pair(), LGaussW = Pair(), UGaussP = Pair(), UGaussW = Pair();
@@ -280,12 +281,12 @@ internal sealed class MeasurementGauss
 
         public static GaussWork Rent()
         {
-            GaussWork? work = t_spare;
-            t_spare = null; // A computation inside a computation takes its own
-            if (work is null)
+            GaussWork? work = null;
+            if (t_spare is null || !t_spare.TryGetTarget(out work))
             {
                 return new GaussWork();
             }
+            t_spare.SetTarget(null!); // A computation inside a computation takes its own
 
             work.InertiaL.AsSpan().Clear();
             work.InertiaU.AsSpan().Clear();
@@ -297,7 +298,17 @@ internal sealed class MeasurementGauss
             return work;
         }
 
-        public static void Return(GaussWork work) => t_spare = work;
+        public static void Return(GaussWork work)
+        {
+            if (t_spare is null)
+            {
+                t_spare = new WeakReference<GaussWork>(work);
+            }
+            else
+            {
+                t_spare.SetTarget(work);
+            }
+        }
     }
 
     private static int FillIntervalBounds(double a,

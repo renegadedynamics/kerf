@@ -36,7 +36,7 @@ internal sealed class CircleTool
     }
 
     /// <summary>An empty tool reserving room for <paramref name="reservedSize"/> circles.</summary>
-    public CircleTool(int reservedSize, List<MeshCircle>? circles = null)
+    public CircleTool(int reservedSize, MeshWorkList<MeshCircle>? circles = null)
     {
         _tolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
         _cellFilter = new CellFilter<CircleInspector, int, Xy>(10.0);

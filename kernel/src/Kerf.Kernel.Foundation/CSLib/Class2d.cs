@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry;
 /// </summary>
 internal static class Class2dPoints
 {
-    private const int LargestKept = 16384;
+    private const int LargestKept = 4096;
 
     [ThreadStatic]
     private static NCollection_Sequence<Point2D>? s_tSpare;

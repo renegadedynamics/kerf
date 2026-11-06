@@ -10,6 +10,46 @@ public class math_GaussLeastSquareTest
 {
     private const double TOLERANCE = 1.0e-6;
 
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(0, 3)]
+    public void Perform_gives_exactly_what_the_constructor_does(int rowLower, int colLower)
+    {
+        var random = new Random(11);
+        GaussLeastSquare kept = new(5, 3);
+        for (int round = 0; round < 50; round++)
+        {
+            Matrix a = new(rowLower, rowLower + 4, colLower, colLower + 2);
+            for (int i = a.LowerRow(); i <= a.UpperRow(); i++)
+            {
+                for (int j = a.LowerCol(); j <= a.UpperCol(); j++)
+                {
+                    a[i, j] = round % 10 == 9 ? 0.0 : random.NextDouble() - 0.5; // Some are singular
+                }
+            }
+
+            Assert.True(kept.Fits(a));
+            kept.Perform(a);
+            GaussLeastSquare fresh = new(a);
+            Assert.Equal(fresh.IsDone, kept.IsDone);
+            if (fresh.IsDone)
+            {
+                math_Vector b = new(1, 5);
+                for (int i = 1; i <= 5; i++)
+                {
+                    b[i] = random.NextDouble();
+                }
+                math_Vector x1 = new(1, 3), x2 = new(1, 3);
+                fresh.Solve(b, x1);
+                kept.Solve(b, x2);
+                for (int i = 1; i <= 3; i++)
+                {
+                    Assert.Equal(x1[i], x2[i]);
+                }
+            }
+        }
+    }
+
     [Fact]
     public void SimpleLinearSystem()
     {

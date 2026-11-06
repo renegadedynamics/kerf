@@ -20,6 +20,7 @@ internal class InterferencePolygon2d : PolygonInterference
     private bool _oClos;
     private bool _tClos;
     private int _nbso;
+    private NCollection_Sequence<SectionPoint>? _sectionWork; // Intersect's, as most pairs of segments it's asked about give no point
 
     /// <summary>Constructs an empty interference of polygons.</summary>
     public InterferencePolygon2d()
@@ -122,7 +123,19 @@ internal class InterferencePolygon2d : PolygonInterference
         int iObje1, iObje2, n1 = _nbso, n2 = obje2.SegmentCount;
         double d1 = obje1.DeflectionOverEstimation(), d2 = obje2.DeflectionOverEstimation();
 
+        // As for one polygon, below: most pairs are far apart, and the extents answer them. Its margin only ever leaves a pair to the exact test
+        double[] extents = ArrayPool<double>.Shared.Rent(4 * (n2 + 1));
         Point2D p1b, p1e, p2b, p2e;
+        for (iObje2 = 1; iObje2 <= n2; iObje2++)
+        {
+            obje2.Segment(iObje2, out p2b, out p2e);
+            extents[4 * iObje2] = Math.Min(p2b.X, p2e.X);
+            extents[4 * iObje2 + 1] = Math.Max(p2b.X, p2e.X);
+            extents[4 * iObje2 + 2] = Math.Min(p2b.Y, p2e.Y);
+            extents[4 * iObje2 + 3] = Math.Max(p2b.Y, p2e.Y);
+        }
+
+        double farApart = (Math.Abs(d1) + Math.Abs(d2)) * (1 + 1e-9) + 1e-9;
         for (iObje1 = 1; iObje1 <= n1; iObje1++)
         {
             bSO.SetVoid();
@@ -132,8 +145,16 @@ internal class InterferencePolygon2d : PolygonInterference
             bSO.Enlarge(d1);
             if (!obje2.Bounding().IsOut(bSO))
             {
+                double xMin = Math.Min(p1b.X, p1e.X) - farApart, xMax = Math.Max(p1b.X, p1e.X) + farApart;
+                double yMin = Math.Min(p1b.Y, p1e.Y) - farApart, yMax = Math.Max(p1b.Y, p1e.Y) + farApart;
                 for (iObje2 = 1; iObje2 <= n2; iObje2++)
                 {
+                    int at = 4 * iObje2;
+                    if (extents[at] > xMax || extents[at + 1] < xMin || extents[at + 2] > yMax || extents[at + 3] < yMin)
+                    {
+                        continue;
+                    }
+
                     bST.SetVoid();
                     obje2.Segment(iObje2, out p2b, out p2e);
                     bST.Add(p2b);
@@ -146,6 +167,8 @@ internal class InterferencePolygon2d : PolygonInterference
                 }
             }
         }
+
+        ArrayPool<double>.Shared.Return(extents);
     }
 
     private void Interference(Polygon2d obje)
@@ -315,7 +338,8 @@ internal class InterferencePolygon2d : PolygonInterference
         int nbpi = 0;
         Span<double> parO = stackalloc double[8];
         Span<double> parT = stackalloc double[8];
-        NCollection_Sequence<SectionPoint> thePi = new();
+        NCollection_Sequence<SectionPoint> thePi = _sectionWork ??= new();
+        thePi.Clear();
         Xy segT = endT.XY() - begT.XY();
         Xy segO = endO.XY() - begO.XY();
 

@@ -795,6 +795,53 @@ So the rig's 1.23× and 1.47× are near the limit for these inputs. A typical Bo
 - **Find a node's circles by another route, or on a finer grid, in the mesher.** Expected gain: most of what's left in `CreateTrianglesOnNewVertices`, which was 48% of the samples of meshing 284 STEP files (about 85 s of CPU, base); perhaps a quarter off large meshes, little on small ones (inferred from those samples, which decision 1706 says to read with care). Meshes would stay valid but wouldn't be identical to today's or OCCT's: triangle order and possibly some triangles change. A large change, and the only thing on this list that gives up "identical".
 - **A polygon of each curve for 2D offsets** is now done, so last slice's question has gone.
 
+### The fifth slice: what threads keep, and down the list
+
+*6 November 2026, on the same shared machine. Bytes, collections and retained memory are exact. Every time here is from a loaded machine: processor time of one process, alternating builds, so a range is what it is worth. The clean run comes after merging.*
+
+#### What the per-thread sets hold
+
+`Kerf.Kernel.Bento.Benchmarks -- thread-sets` runs three parallel rounds of Bento's eleven examples, 24 copies of each on 24 processors, then has every thread set each `[ThreadStatic]` reference to null, one field at a time, with a full collection after each, and reads what that lets go. So this is what a build without the sets would hold, measured in one process. The machine's load makes the pool grow past 24 threads, 37 to 52 here, so a figure a thread is the one to carry to another machine.
+
+| Set | Limit before | Held after the rounds, before | Limit now | Held now |
+|---|---:|---:|---:|---:|
+| The mesher's lists | 65,536 values, about 2.9 MB (the code's 4 MB was too high) | **1,280 kB a thread** | 8,192, about 360 kB; larger arrays weakly | **352 kB a thread** |
+| `ApproxAFunction`'s coefficients | 1 MB | 187 kB, on threads that used it | 64 kB; larger weakly | 0 (all are larger, and weakly held) |
+| `CurveOnPlane`'s 64 answers | 64 | 18 to 23 kB | 64 | the same |
+| `Class2dPoints` | 16,384 points, 260 kB | 8 kB | 4,096, 65 kB | 8 kB |
+| `BSplCLib`'s matrices | one for each shape | 6.5 kB | the same | the same |
+| `FunctionSetRoot`, `Bfgs` | 16 unknowns; 512 unknowns, about 2 MB | 1.8 kB, 1 kB | the same; 64, about 36 kB, larger weakly | the same |
+| `GenExtPS`'s grids | 4,096 cells, 800 kB | none here | 1,024 cells, 200 kB; larger weakly | none here |
+| `MeasurementGauss` | about 500 kB | none here | only weakly | none |
+| `QuasiAngularConvertor` (new, below) | | | about 1 kB | none here |
+| **All, measured** | | **72.4 MB of 76.7 MB live (51 threads); 54.2 MB with 37; 58.6 MB under the server collector with 46** | | ****20.0 MB of 24.5 MB live (53 threads); 14.0 MB with 37; 17.8 MB under the server collector with 47**** |
+
+- **So the owner's estimate was about right, and nearly all of it was the mesher,** which bytes alone had hidden: decision 1759's limit was reached by doubling on one large face, and then stayed for the thread's life. Nothing else passed 7 MB.
+- **What a thread can hold at most is now about 760 kB** by adding the limits (360 + 200 + 65 + 64 + 36 + 8 + 7 + 1 kB, and `CurveOnPlane`'s 64 answers): 18 MB on 24 threads, against about 7 MB a thread before. That's inferred from the limits; Bento's examples don't reach most of them. **`CurveOnPlane` is the exception to a fixed limit:** its answers keep their curves and planes alive, so a large B-spline there counts in full. That's 64 at most, and they aren't shapes.
+- **The pool's own threads let go:** 40 s after the rounds the pool had **no threads, and only 0.37 MB was left in sets,** as it lets an idle thread go after about 20 s, its sets with it. Bento's calculation thread and its what-if workers are its own (`CalcEngine`, `VariantPlan`), and a calculation thread lives as long as the workbook: for those the figure a thread above stands.
+- **Why a weak reference to the array, not to the list.** `WeakReference<MeshWorkStorage>`, as `GenExtPS` holds its grids, took Bento's generation 2 collections over 30 passes from about 22 to about 48: the young list object dies in the next generation 0 collection, while its arrays wait on the large object heap, so most large faces found nothing and each grew its own. An array on the large object heap only goes in a generation 2 collection, so a weak reference to the array itself holds for as long as it can, which needed the small `MeshWorkList` in place of `List<T>`. A limit of 4,096 was too low (35 to 41 collections, +2.4% in bytes); 8,192 costs about 1%.
+- **What the lower limits cost, each against what the set was added for:** Bento 143.8 to 144.8 MB before and 144.3 to 147.0 after, about 1%, with 17 to 24 generation 2 collections before and 23 to 29 after; meshing 284 STEP files 6,703 to 6,699 MB, 12 to 11, **the same triangles by digest**; `bug25232_9` 10,269 to 10,230 MB; `buc60555_3` 953 MB; `bug24905` 952 MB; max fillet 420 MB and the same radii; import with healing 3,110 to 3,117 MB. Processor time showed no difference in alternating runs.
+- **Left as it is:** `GenExtPS`'s larger grids and `Bfgs`'s larger set are weak references to small young objects, so they die sooner than the arrays would. They still do their job, as above; holding the arrays instead is only worth it if a case shows it.
+
+#### Down the list
+
+| Case | What's there | Verdict | Before and after |
+|---|---|---|---|
+| **`GaussLeastSquare`'s bytes** (`buc60463`) | `FunctionSetRoot`'s over-determined branch built a new solver, and a transposed copy to copy from, for each direction, where its `Gauss` and `Svd` branches reuse theirs (decision 1764) | **Wasteful in bytes** | **1,540 to 1,154 MB (−25%)**, generation 0 collections 93 to 67, processor time 10.3 s either way |
+| **`bug26701`'s contexts** | Worker contexts kept for a filler's life, across its loops, tried on the case decision 1718 didn't: 2,387 to about 2,320 MB (−3%), and processor time no better in alternating runs (19.8, 19.1 s against 21.7, 19.1 s). So the 21% in `ComputeVF` is mostly classifiers that one context needs once anyway (`FClass2d`), and the rest of its bytes are validity checks | **Not the contexts; spread out.** Not in (decision 1767) | |
+| **STEP import** (`de/step_2/S9`, `de/step_4/E4`) | S9: `WireAnalysis.CheckIntersectingEdges` was 40% of its active samples and 36% of its bytes, polygon against polygon. A new sequence of section points for each pair of segments with close boxes, which nearly always stays empty, and a box for every pair however far apart, which one polygon's search stopped doing in the first slice (decision 1765). E4: projecting points (`EdgeProjAuxFixer` 14%, `CurveAnalysis.Project` 15% of active samples), reading 23% | **S9 wasteful in part; E4 hard** | S9 **913 to 812 MB (−11%)**, `Interference` 4.2 to 2.3 share points; 6.1 to 6.8 s to 6.0 to 6.6 s of processor time, so no more than a few per cent |
+| **Many tools** (`bug25614_genfuse`, `boolean/simplify/A3`, `bug25232_9`) | No site over 3% to 5% of the bytes in the first two. By active samples: edge/edge, edge/face, face/face, the builder, each 15% to 20%; `FClass2d`'s init about 10% of A3, walking real wires. In `bug25232_9`, **26% of its wall time is the collector's** (7 of 26.6 s, a large live heap), and a tenth of the Boolean is `IsExistingPaveBlock`, 90% of that building a tree of pave blocks for each pair of faces, as in OCCT | **Spread out.** The tree needs a larger change: below | |
+| **Edge against free-form** (`bug32944`, `bug29182_1`) | `bug32944`: `GlobMinConicS` is 83% of the Boolean, the swarm's evaluations. 52% of its bytes are a new `PsoParticlesPool` for each conic, but with 0.03 s of pauses that's no time. `GetWorstParticle`, a scan for each accepted grid point, is about 7% of the case. `bug29182_1`: spread over edge/face and edge/edge | **Hard.** A pool for each thread would be one more set for no time, so it isn't in | |
+| **Free-form face-face** (`bug30760`, `bug28119_1`) | `bug28119_1`, in fact a fillet: **31% of its bytes were `new QuasiAngularConvertor()`** for each circle of each section, a matrix and six vectors, when the class is made to be initialised once. Its time is in fitting (decision 1766). `bug30760`: face/face and edge/face over real surfaces, and `CheckerSI` | **The convertor wasteful in bytes; the rest hard** | `bug28119_1` **3,632 to 2,420 MB (−33%)**, generation 0 collections 153 to 78, processor time 9.9 to 10.5 s against 10.0 to 10.1 s |
+
+**Large meshes and `Analyzer` were left alone,** as the brief asked. **Nothing here moved processor time past the noise,** and the bytes are what changed: the time on these cases is real work, or spread thinly. Decision 1734's measure is time first, so that's the finding: the next slices should expect less.
+
+**The rig, quick, `-Force`, against [the last clean run](benchmarks/2026-11-06-b21606ad7.md), so including the fourth slice; times aren't comparable.** Every result is the same. Bento 160.1 to 145.3 MB, a parallel round 3,825 to 3,500 MB, simple Booleans 1,967 to 1,951 MB. Peak working set in the parallel rounds 212 to 251 MB, taken under load with more threads, so it needs the clean run to read.
+
+**For the owner.**
+
+- **A tree of pave blocks for each face rather than each pair of faces.** Expected gain: most of a tenth of `bug25232_9`'s Boolean, inferred from samples, and less on most others. Hits would come out of the tree in another order, so which of two equally close blocks is found could differ, unless hits are sorted, which is OCCT's order only by accident. A moderate change that gives up "identical", so I wouldn't, unless identical goes anyway for the mesher's question above.
+
 ## StepTidy (unit 11N)
 
 *5 November 2026, `Kerf.Kernel.Benchmarks -- step-tidy` over the 289 files `-- healing` exports, written by the plain STEP
