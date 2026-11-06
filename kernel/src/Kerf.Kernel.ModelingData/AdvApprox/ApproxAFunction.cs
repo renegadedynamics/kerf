@@ -555,7 +555,9 @@ internal class ApproxAFunction
         int errorCode = 0, numCurves, size = _maxSegments * numMaxCoeffs * totalDimension;
         NCollection_HArray1<int> numCoeffPerCurvePtr = new(1, _maxSegments);
 
-        NCollection_HArray1<double> localCoefficientsPtr = new(1, size);
+        // At most segments x coefficients x dimension, so usually far over what's used and over the large object threshold
+        double[] coefficientsWork = CoefficientsWork.Rent(size);
+        NCollection_Array1<double> localCoefficients = new(coefficientsWork, 0, 1, size);
 
         NCollection_HArray1<double> intervalsPtr = new(1, _maxSegments + 1);
 
@@ -567,7 +569,7 @@ internal class ApproxAFunction
                       continuityOrder, numMaxCoeffs, _maxSegments, localTolerances, code_precis,
                       out numCurves,                        // Number of output curves
                       numCoeffPerCurvePtr.ChangeArray1(),   // Number of coefficients per curve
-                      localCoefficientsPtr.ChangeArray1(),  // Solution coefficients
+                      localCoefficients,  // Solution coefficients
                       intervalsPtr.ChangeArray1(),          // Table of cutting points
                       errorMax,                             // Maximum error bound
                       averageError,                         // Observed average error
@@ -590,11 +592,11 @@ internal class ApproxAFunction
             }
 
             PrepareConvert(numCurves, _maxDegree, continuityOrder, num1DSS, num2DSS, num3DSS,
-                           numCoeffPerCurvePtr.Array1(), localCoefficientsPtr.ChangeArray1(), polynomialIntervalsPtr,
+                           numCoeffPerCurvePtr.Array1(), localCoefficients, polynomialIntervalsPtr,
                            intervalsPtr.Array1(), localTolerances, errorMax, tabContinuity);
 
             CompPolynomialToPoles aConverter = new(numCurves, totalDimension, _maxDegree, tabContinuity,
-                                                           numCoeffPerCurvePtr.Array1(), localCoefficientsPtr.Array1(),
+                                                           numCoeffPerCurvePtr.Array1(), localCoefficients,
                                                            polynomialIntervalsPtr, intervalsPtr.Array1());
 
             if (aConverter.IsDone)
@@ -739,6 +741,37 @@ internal class ApproxAFunction
                 {
                     _hasResult = true;
                 }
+            }
+        }
+        CoefficientsWork.Return(coefficientsWork);
+    }
+
+    // The polynomial coefficients of one approximation: a thread's array, out of the static while in use, so a nested
+    // approximation makes its own, and zeroed as a new one is. Nothing crosses threads. About 1 MB a thread at most
+    private static class CoefficientsWork
+    {
+        private const int LargestKept = 1 << 17;
+
+        [ThreadStatic]
+        private static double[]? t_spare;
+
+        public static double[] Rent(int size)
+        {
+            double[]? work = t_spare;
+            t_spare = null;
+            if (work is null || work.Length < size)
+            {
+                return new double[size];
+            }
+            Array.Clear(work, 0, size);
+            return work;
+        }
+
+        public static void Return(double[] work)
+        {
+            if (work.Length <= LargestKept)
+            {
+                t_spare = work;
             }
         }
     }
