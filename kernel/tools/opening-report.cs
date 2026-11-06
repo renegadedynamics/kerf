@@ -14,6 +14,11 @@
 //   dotnet run kernel/tools/opening-report.cs -- opening.nettrace [how many of each list to print]
 // Tracing at this level makes the process about half as slow again, so read the shares, not the times: JitInfo's figures in
 // the rig are the untraced ones.
+//
+// With "samples" as the third argument, on a trace taken with the sample profiler as well (add
+// 'Microsoft-DotNETCore-SampleProfiler:0:5' and the runtime's 4c14fccbd keywords, so methods have names), it instead sorts the
+// working thread's samples in the first pass by the static constructor on the stack, the outermost one. Time in native code
+// shows under the managed frame that called it, so a type's constructor includes what it took to load what it uses.
 #:package Microsoft.Diagnostics.Tracing.TraceEvent@3.1.21
 #:property TreatWarningsAsErrors=false
 #:property EnforceCodeStyleInBuild=false
@@ -21,10 +26,17 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.Diagnostics.Tracing;
+using Microsoft.Diagnostics.Tracing.Etlx;
 using Microsoft.Diagnostics.Tracing.Parsers.Clr;
 
 string file = args[0];
 int top = args.Length > 1 ? int.Parse(args[1], CultureInfo.InvariantCulture) : 40;
+
+if (args.Length > 2 && args[2] == "samples")
+{
+    Samples(file, top);
+    return;
+}
 
 var marks = new List<(double Time, string Name)>();
 var jits = new List<Jit>();
@@ -108,6 +120,11 @@ Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"On other threads
 Console.WriteLine($"ReadyToRun entry points used in the trace: {r2rEntryPoints}");
 Console.WriteLine($"Assemblies loaded: {assemblies.Count}, {assemblies.Count(a => a.Time >= passStart && a.Time < passEnd)} in the pass");
 
+foreach (var a in assemblies)
+{
+    Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"  {a.Time - passStart,8:F1} ms  {a.Name.Split(',')[0]}"));
+}
+
 Console.WriteLine();
 Console.WriteLine("By example                    wall ms  JIT ms  methods  types out of JIT ms  rest ms");
 for (int m = 0; m + 1 < marks.Count; m++)
@@ -172,6 +189,70 @@ Console.WriteLine($"The {top} types taking longest to load, on the working threa
 foreach (var t in typeOnWork.GroupBy(t => t.Name).Select(g => (Name: g.Key, Ms: g.Max(x => x.End - x.Start))).OrderByDescending(t => t.Ms).Take(top))
 {
     Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"  {t.Ms,7:F2} ms  {Short(t.Name)}"));
+}
+
+static void Samples(string file, int top)
+{
+    string etlx = TraceLog.CreateFromEventPipeDataFile(file);
+    using var log = new TraceLog(etlx);
+    double start = 0, end = double.MaxValue;
+    int workThread = -1;
+    foreach (var ev in log.Events)
+    {
+        if (ev.ProviderName == "Kerf-Bench" && ev.EventName.StartsWith("Mark", StringComparison.Ordinal))
+        {
+            workThread = ev.ThreadID;
+            start = start == 0 ? ev.TimeStampRelativeMSec : start;
+            if ((string)ev.PayloadByName("name") == "end of first pass")
+            {
+                end = ev.TimeStampRelativeMSec;
+            }
+        }
+    }
+
+    var inConstructor = new Dictionary<string, int>();
+    var leaves = new Dictionary<string, int>();
+    int total = 0, underConstructors = 0;
+    foreach (var ev in log.Events)
+    {
+        if (ev.ProviderName != "Microsoft-DotNETCore-SampleProfiler" || ev.ThreadID != workThread || ev.TimeStampRelativeMSec < start || ev.TimeStampRelativeMSec >= end)
+        {
+            continue;
+        }
+        var stack = ev.CallStack();
+        if (stack is null)
+        {
+            continue;
+        }
+        total++;
+        string? outermost = null;
+        string leaf = stack.CodeAddress.Method?.FullMethodName ?? "?";
+        for (var c = stack; c is not null; c = c.Caller)
+        {
+            string name = c.CodeAddress.Method?.FullMethodName ?? "";
+            if (name.Contains(".cctor", StringComparison.Ordinal))
+            {
+                outermost = name;
+            }
+        }
+        leaves[leaf] = leaves.GetValueOrDefault(leaf) + 1;
+        if (outermost is not null)
+        {
+            underConstructors++;
+            inConstructor[outermost] = inConstructor.GetValueOrDefault(outermost) + 1;
+        }
+    }
+
+    Console.WriteLine($"{total} samples on the working thread in the first pass, {underConstructors} under a static constructor");
+    foreach (var kv in inConstructor.OrderByDescending(kv => kv.Value).Take(top))
+    {
+        Console.WriteLine($"  {kv.Value,5}  {Short(kv.Key)}");
+    }
+    Console.WriteLine("Leaves");
+    foreach (var kv in leaves.OrderByDescending(kv => kv.Value).Take(top))
+    {
+        Console.WriteLine($"  {kv.Value,5}  {Short(kv.Key)}");
+    }
 }
 
 static string Short(string s) => s.Length > 170 ? s[..170] + "..." : s;
