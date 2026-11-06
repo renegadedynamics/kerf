@@ -2112,6 +2112,14 @@ classes.
 | `BndLib::Add(gp_Cone, ...)` with an infinite V bound | Opens the box along the axis only, though the cone widens without limit | The box doesn't hold the cone. Open for the owner: the port still does this | leave |
 | `BndLib::Add(gp_Cylinder, ...)` and `gp_Cone`, both V bounds infinite | Adds nothing but the open sides | The box is still void, so `Get` throws and `IsOut` says yes, though the surface is everywhere along its axis. Open for the owner: the port still does this | leave |
 
+## Found by unit 11I's healing tests
+
+| Where | What | Effect | State |
+|---|---|---|---|
+| `ShapeConstruct_Curve::ConvertToBSpline`, both forms | A Bezier is trimmed to [first, last] before converting, which reparametrises it over [0, 1], and the converted curve is then segmented to [first, last] as well | Part of a Bezier comes back as a part of that part, on the wrong parameters, in anything joining edges (`JoinCurves`, `JoinPCurves`) | fixed (decision 19401) |
+| `ShapeFix_Wire::FixGap3d`, by conversion, on one edge | With a single edge there's no second curve, so "take the curve's end if it couldn't be converted" always applies | The curve closes at its own start, not at the vertex as with two edges. Harmless, as the vertex's tolerance is then set; the port keeps it | kept, with a test |
+| `ShapeConstruct_ProjectCurveOnSurface`, a spline with very uneven parameter speed | On an interval 10^5 times as fast as the next, the standard projector's approximation doesn't follow the curve | The pcurve at t = 0 was 1.4 from the curve's start on a cylinder of radius 5, with the status "done"; `SameParameter` raises the tolerance later. Measured on the port only: native has gone, so it isn't compared | open |
+
 ## Found by unit 11P's flaky tests
 
 | Where | What | Effect | Status |
