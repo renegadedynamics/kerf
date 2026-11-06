@@ -10,6 +10,7 @@ version may break the API.
   vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 1652 and 1653).
 ## 0.3.0 (unreleased)
 
+- **Large meshes are quicker, and meshing makes less garbage,** with the same triangles: about a tenth less processor time on large meshes, and 8% fewer bytes on Bento's examples with three quarters fewer full collections (decisions 20003, 20004 and 20006). `MaxFillet` takes about 20% less, and 2D offsets of B-splines about 8% (decisions 20002 and 20005).
 - **STEP export uses about a third less CPU and half the memory, and import with healing about 10% to 15% less CPU,** with the same output (measured on a loaded machine; decisions 1727 to 1731).
 - **Fillets and chamfers, three fixes that change results:** the edges between a fillet and its faces are coded tangent,
   as in OCCT, so a draft can follow a fillet, and saved BRep files gain those lines. A fillet that runs past a Bezier or

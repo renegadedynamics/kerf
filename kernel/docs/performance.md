@@ -626,24 +626,24 @@ That comes to **about 50% to 70% of Kerf's bytes, or 100 to 145 MB for a recalcu
 
 ### The list
 
-Ranked by what a user would plausibly meet, not by raw time: a common operation that takes long goes above an obscure one that takes longer. The corpus's times are one pass, six cases at a time (`KERF_CORPUS_TIMES` writes them: 17,872 cases, 8,710 s of case time). "Hard" means the time goes on the geometry itself, and nothing was found that barely needed to run.
+Re-ranked by the fourth slice from a new pass of the corpus; the figures are that pass's, or the rig's. Ranked by what a user would plausibly meet, not by raw time: a common operation that takes long goes above an obscure one that takes longer. "Hard" means the time goes on the geometry itself, and nothing was found that barely needed to run.
 
 | # | What | How long (loaded) | Why | State |
 |---:|---|---:|---|---|
-| 1 | **STEP import with healing** | 6.0 s for 289 files up to 400 kB; `de/step_4/E9` 12 s | Half is `ShapeFixer`. Wasteful in part: reshape copies (fixed). Hard in part: projecting curves point by point (`GenExtPS`, 12% of samples) | Better, not done |
-| 2 | **STEP export** | 2.0 s for the same files | Strings for every parameter, and the graph and checks after a transfer | Better: about a third less ("The third slice") |
-| 3 | **Booleans of many tools, general fuses** | `bug25614_fuse` 27 s, `boolean/simplify/A3` 22 s, `bug25232_9` (mkvolume) 58 s | Repeated searches (one fixed), otherwise many small intersections | Better, not done |
-| 4 | **Edges against free-form faces** | `buc60555_3` 52 s | A polyhedron of the whole surface for each edge | **Fixed** |
-| 5 | **Face-face on free-form surfaces** | `bug24905` 24 s, `bug28119_1` 34 s | Fitting curves. Allocation fixed; the fit itself (`Bfgs`, its matrix) is hard | Hard, better |
-| 6 | **Area and volume to a precision** | most of `bug25232_9`'s checks | 500 kB for each face, and a scan of 1,953 values at each step | **Fixed** |
-| 7 | **PNG pictures** | 30 to 58 ms each | Five full passes over each row; rasterising a triangle's whole box | **Fixed** |
-| 8 | **Validity checks on big shapes** (`checkshape`, `IsValid`) | about a quarter of `bug25232_9`'s active time | Maps and classifiers for each face. The profile can't be trusted here (see below) | Looked at: spread out ("The third slice") |
-| 9 | **Fine meshes** | `bug29715` 14 s, Axis_of_bearing 156 ms | The deflection loop's own work | Hard |
-| 10 | **Max fillet** | 500 ms on a box, warm | A search over real fillets | Hard, by design |
-| 11 | **Fillets, offsets on every edge** | 60 to 95 ms for 16 parts | No single cost | Hard |
-| 12 | **Pipe shells with corners** | `bug32444` 46 s | Booleans in each corner | Hard |
-| 13 | **2D offsets** | `bug6768` 44 s | Bisector and polygon intersection on B-splines | Hard |
-| 14 | **Hidden lines** | the bottle's SVG 31 ms | Contours and walking | Hard |
+| 1 | **Large and fine meshes** (every shape is meshed) | `bug29715` 16 s, `bug25503_1` 13 s, `bug27453` 13 s; Axis_of_bearing about 200 ms | Half is finding each node's circles: long cell lists, as in OCCT | **Better** (fourth slice); what's left needs a question |
+| 2 | **STEP import with healing** | 5.3 s for 289 files up to 400 kB; `de/step_4/E4` 12 s, `de/step_2/S9` 10 s | Half is `ShapeFixer`: projecting curves point by point | Better, not done |
+| 3 | **Booleans of many tools, general fuses** | `bug25232_9` 59 s, `boolean/simplify/A3` 23 s, `boolean/bsection/P4` 19 s, `boolean/periodicity/A4` 17 s, `bug25614_genfuse` 14 s | Many small intersections | Better, not done |
+| 4 | **Edges against free-form faces** | `buc60463` 25 s, `bug32944` 21 s, `bug29182_1` 16 s, `buc60555_3` 16 s | Exact intersections, a particle swarm for conics. Polyhedra and grids taken out | **Hard** now |
+| 5 | **Face-face on free-form surfaces** | `bug28119_1` 45 s, `bug30760` 17 s, `bug24905` 12 s | Fitting curves | Hard, better |
+| 6 | **STEP export** | 1.3 to 1.9 s for the same files | Strings for every parameter | Better (third slice) |
+| 7 | **Validity checks on big shapes** | a quarter of `bug25232_9`'s active time; half of `bug26701`'s bytes | Real 2D work, and `Placement` | Spread out |
+| 8 | **Boolean with many small faces, in parallel** | `bug26701` 29 s | A new context for each thread in each loop rebuilds classifiers and bounds | Decision 1718's limit: larger change |
+| 9 | **Pipe shells with corners** | `bug32444` 40 s | Booleans in each corner | Hard |
+| 10 | **Max fillet** | about 400 ms for two searches on a box (was 500) | A search over real fillets | **Hard by design, better** (fourth slice) |
+| 11 | **Fillets, offsets on every edge** | 56 to 186 ms for 16 parts; `offset/.../B7` 7 s | Booleans inside offsets | Hard |
+| 12 | **2D offsets** | `bug6768` 9 s | Bisector and polygon intersection on B-splines | **Better** (fourth slice) |
+| 13 | **Hidden lines** | the bottle's SVG 29 ms | Contours and hiding | **Hard** (fourth slice) |
+| – | **PNG pictures, area and volume to a precision** | | | Fixed (first slice) |
 
 **Not Kerf:** the corpus's slowest cases are the test harness. `lowalgos/extcs/circ_sph_*` (1,212 s, 14% of the corpus) and the `chamfer/*_sequence` cases spend about 99% of their allocation (106 GB in one case) and nearly all their time in Draw-lite's `lappend`, which copies a growing string each time. Only 0.75% of a chamfer case's samples are chamfering. A fix needs Tcl values that aren't strings, so it wasn't done, but it would take perhaps a fifth off a full corpus run.
 
@@ -758,6 +758,42 @@ So the rig's 1.23× and 1.47× are near the limit for these inputs. A typical Bo
 **For the owner.** Nothing here needed a large restructuring. The one that might pay is below; none of the items above is a question that blocks anything.
 
 - **A curve's polygon kept across `IntCurveCurve` calls,** for 2D offsets (item 13). Expected gain: most of half the bytes of those cases, and some of their time; only 2D offsets would notice. A moderate change, not a large one.
+
+### The fourth slice: re-ranked, and the mesher's own time
+
+*6 November 2026, on the same shared machine. Bytes, collection counts and call counts are exact. Every time here is from a loaded machine: processor time of one process, alternating base and new builds, so a range is what it is worth. The clean run comes after merging.*
+
+**The list above is re-ranked from one new pass of the corpus** (`KERF_CORPUS_TIMES`, 17,872 cases, 8,435 s of case time, six at a time, at the head before this slice). The detailed log of the last full corpus has statuses but no case times, so it couldn't rank anything. The harness is still the largest thing in it: `lowalgos/extcs/circ_sph_*` are 918 s, the chamfer sequences 183 s, and `bug24157_5` (51 s) spends 0.3 s of processor time on its one thread that shows, nearly all in Draw-lite (decision 1710). The `hlr/exact_hlr` and `pipe/specific` grids mostly skip for missing data, so their times say nothing. **Bytes per case in that file are of no use:** a case runs on another thread than the one that reads the count.
+
+| Change | Verdict | Evidence |
+|---|---|---|
+| **The mesher's circles keep their cells in a flat array** (decision 20003). Binding a circle looks up each cell it covers, and a circle can cover thousands | **Wasteful** | `IterateAdd` was 53% of `CreateTrianglesOnNewVertices`' samples on `bug27453`. Time: the row below |
+| **The insertion loop goes back only as far as a deleted triangle's neighbours,** not to the first circle, and `CircleInspector` is a struct (decision 20004) | **Wasteful, and in OCCT too** | `bug27453`: 23,217 nodes had 3.8 million circles between them, 164 each, and the restarts made 126 million steps, half of them over circles already removed. Those scans are gone. **With the row above, first and last builds alternating: `bug27453` 7.7, 8.9 s to 7.1, 8.2 s, about 8% of the whole case including its import; meshing 284 STEP files 77 to 98 s to 77 to 84 s, too noisy for more than "about a tenth"; `bug25503_1` and Bento's examples no visible change.** Runs of single builds looked better (15% and 10% for `bug27453`), but the machine's load moved between them, so those aren't claims |
+| **A thread's lists of triangles and circles, kept between faces** (decision 20006: the time-boxed experiment) | **Worth having** | Bento 155.8 to 143.7 MB (−8%), generation 2 collections over a 30-pass run **60 to 14**, CPU no different (30.4, 27.7, 28.7 s against 29.8, 27.9, 28.6). The rig's meshing rows about −20%: Motor-c 114.6 to 91.4 MB, bottle 32.8 to 26.2. The triangles of 284 shapes are the same, by digest. A very large face gains a little: `bug25503_1` 295 to 303 MB, as its list of triangles starts small |
+| **`ApproxAFunction`'s coefficients and `BSplCLib`'s basis matrix, one for each thread** (decision 20005) | **Wasteful** | Max fillet on a box: **577 to 419 MB, generation 2 collections 30 to 7, about 20% less CPU** (1.6 to 1.9 s, 1.3 to 1.4 s), the same radii. Each same-parameter made 96 kB on the large object heap: 1,000 segments × 12 coefficients, of which few are used. No effect on the rig's fillets, which don't reach it often |
+| **`GenExtPS` holds a larger set of grids weakly** (decision 20001) | **Wasteful in bytes; little time** | `buc60555_3` 1,546 to 952 MB (−38%), generation 2 collections 81 to 18, CPU 7.7 to 8.3 s against 7.4 to 8.1 s. Its work grids took about 2% of samples, so the time was never there |
+| **A 2D offset shares each curve's first polygon** (decision 20002) | **Wasteful in part** | `bug6768`: 64,512 polygons were 14,616 different ones, and 4.76 million points 1.74 million. 649 to 487 MB (−25%), collections 31 to 6, CPU 5.3 to 5.8 s against 5.1 to 5.3 s: about 8% less. Bisector and intersection work is the rest |
+
+**Max fillet and hidden lines, traced at last.**
+
+| Case | What's there | Verdict |
+|---|---|---|
+| **Max fillet** | A binary search of about ten real fillets and validity checks, each costing what a fillet costs: `ThreeCorner`'s plate surfaces 35% of samples, `SameParameter` 22% (47% of the bytes), validity checks 20%. The search can't start narrower without changing its answers | **Hard by design,** with the wasteful part above taken out |
+| **Hidden lines** (`images`, 30 passes) | Of `ProjectLines`: contours 32%, hiding 24%, the rest spread. Nothing above 10% that barely needed to run. `MapShapesAndAncestors` 3.5% | **Hard,** spread out |
+
+**Other cases traced from the new list.** `bug26701` (29 s): 21% of samples in `ComputeVF`, of which `FClass2d` 14 points and `UVBounds` 9, because a parallel loop's new context for each thread rebuilds them, as decision 1718 found on other cases; and 53% of its bytes in validity checks, mostly `Placement`. `bug32944` (21 s): a particle swarm for each conic against each surface (`GlobMinConicS`, 83% of the Boolean). `buc60463` (25 s) and `bug32444`: `FunctionSetRoot` over and over; a third of `buc60463`'s bytes are `GaussLeastSquare` and its transposes, in OCCT too. `offset/shape_type_i_c_multi/B7`: Booleans inside the offset. All hard, or need a larger change.
+
+**What was tried and left out.**
+
+- **The mesher's link map as chunks of structs** (decision 20007). Bento 160 to 156 MB, the mesh harness 7,259 to 7,122 MB, but CPU in three alternating pairs was as likely worse (29.8, 28.2, 26.7 s against 31.1, 28.9, 29.6). Not plainly no slower, so it isn't in. The same digests.
+- **`FunctionSetRoot`'s solvers for each thread.** `buc60463` 1,539 to 1,532 MB and nothing in time: the bytes are the least-squares branch, which makes its own.
+
+**The mesher's cost that's left** is in the cell lists: on `bug29715`, 142,518 nodes inspected 174 million circles, 1,222 a node, for 4.8 hits each. OCCT has the same grid. A finer grid, or a walk from a neighbouring triangle, would change the order circles are found in, and with it the order of triangles and perhaps the mesh, so that's a question below and wasn't tried.
+
+**For the owner.**
+
+- **Find a node's circles by another route, or on a finer grid, in the mesher.** Expected gain: most of what's left in `CreateTrianglesOnNewVertices`, which was 48% of the samples of meshing 284 STEP files (about 85 s of CPU, base); perhaps a quarter off large meshes, little on small ones (inferred from those samples, which decision 1706 says to read with care). Meshes would stay valid but wouldn't be identical to today's or OCCT's: triangle order and possibly some triangles change. A large change, and the only thing on this list that gives up "identical".
+- **A polygon of each curve for 2D offsets** is now done, so last slice's question has gone.
 
 ## StepTidy (unit 11N)
 
