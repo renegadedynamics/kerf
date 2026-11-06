@@ -75,6 +75,9 @@ internal class ReShape : Transient
     // If a shape is not bound to the map then the shape is replaced by itself.
     private readonly Dictionary<Shape, TReplacement> _shapeToReplacement = new(ShapeHasher.Instance);
 
+    /// <summary>True if nothing has been asked to be replaced or removed.</summary>
+    protected bool HasNoRequests => _shapeToReplacement.Count == 0;
+
     /// <summary>The shapes recorded as replacements.</summary>
     protected readonly HashSet<Shape> _newShapes = new(ShapeHasher.Instance);
 
@@ -386,6 +389,13 @@ internal class ReShape : Transient
     /// <summary>Applies the substitution requests, as <see cref="Apply"/>, without freezing the result (ported code).</summary>
     internal virtual Shape InternalApply(in Shape shape, ShapeType until = ShapeType.Shape)
     {
+        // With no requests the walk below changes nothing, and ends with this status
+        if (HasNoRequests)
+        {
+            _status = EncodeStatus(0);
+            return shape;
+        }
+
         var inFlight = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
         return ApplyImpl(shape, until, inFlight);
     }
