@@ -296,7 +296,9 @@ internal sealed class KeyComparer<TKey> : IComparer<TKey>, IEqualityComparer<TKe
 {
     internal static readonly KeyComparer<TKey> Instance = new();
 
-    public int Compare(TKey? x, TKey? y) => CompareObjects(x, y);
+    // Doubles, the usual key, compare as they would through CompareObjects, without boxing them or starting the culture's
+    // collation for the non-generic comparer it reaches (unit 11C)
+    public int Compare(TKey? x, TKey? y) => typeof(TKey) == typeof(double) ? Comparer<TKey>.Default.Compare(x!, y!) : CompareObjects(x, y);
 
     public bool Equals(TKey? x, TKey? y) => CompareObjects(x, y) == 0;
 

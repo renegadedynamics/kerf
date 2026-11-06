@@ -156,6 +156,7 @@ for (int pass = 0; pass < passes; pass++)
     for (int i = 0; i < examples.Length; i++)
     {
         long before = GC.GetTotalAllocatedBytes(true);
+        Marks.Log?.Mark(pass == 0 ? examples[i].Name : $"pass {pass + 1}: {examples[i].Name}");
         var clock = Stopwatch.StartNew();
         Shape shape = examples[i].Build();
         ShapeMesh mesh = shape.Triangulate();
@@ -170,6 +171,7 @@ for (int pass = 0; pass < passes; pass++)
     passCpu[pass] = (Process.GetCurrentProcess().TotalProcessorTime - passCpuBefore).TotalMilliseconds;
     if (pass == 0)
     {
+        Marks.Log?.Mark("end of first pass");
         // Opening: from the process's start, so with the runtime's own start-up, and how much of it the JIT was
         double sinceStart = (DateTime.Now - Process.GetCurrentProcess().StartTime).TotalMilliseconds;
         BenchRows.Add("opening", "from the process's start to the end of the first pass", "ms", sinceStart);
@@ -279,4 +281,16 @@ BenchRows.Add("process", copies > 0 ? "with the parallel rounds" : "the serial p
 BenchRows.Add("process", copies > 0 ? "with the parallel rounds" : "the serial passes", "generation 2 count", GC.CollectionCount(2));
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
     $"GC: {GC.CollectionCount(0)}/{GC.CollectionCount(1)}/{GC.CollectionCount(2)} collections, pause {GC.GetTotalPauseDuration().TotalMilliseconds:F0} ms; JIT {System.Runtime.JitInfo.GetCompilationTime().TotalMilliseconds:F0} ms"));
+Marks.Log?.Mark("end");
 return 0;
+
+// Marks in an EventPipe trace, so tools/opening-report.cs can cut it at each example. Created only when asked for, so the rig's
+// runs don't pay for it.
+[System.Diagnostics.Tracing.EventSource(Name = "Kerf-Bench")]
+internal sealed class Marks : System.Diagnostics.Tracing.EventSource
+{
+    public static readonly Marks? Log = Environment.GetEnvironmentVariable("KERF_BENCH_MARKS") is null ? null : new Marks();
+
+    [System.Diagnostics.Tracing.Event(1)]
+    public void Mark(string name) => WriteEvent(1, name);
+}

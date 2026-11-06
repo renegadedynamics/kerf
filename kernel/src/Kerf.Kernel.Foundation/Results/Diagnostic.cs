@@ -29,7 +29,7 @@ public readonly partial record struct DiagnosticCode
     public DiagnosticCode(string value)
     {
         ArgumentNullException.ThrowIfNull(value);
-        if (!Format().IsMatch(value))
+        if (!IsPlainlyWellFormed(value) && !Format().IsMatch(value))
             throw new ArgumentException($"'{value}' isn't a diagnostic code: lower-case words of letters, digits and hyphens, separated by dots", nameof(value));
         Value = value;
     }
@@ -54,6 +54,23 @@ public readonly partial record struct DiagnosticCode
 
     [GeneratedRegex("^[a-z0-9]+(-[a-z0-9]+)*(\\.[a-z0-9]+(-[a-z0-9]+)*)*$")]
     private static partial Regex Format();
+
+    // What that pattern accepts, short of its '$' allowing a final newline. The well-known codes are made when this type is
+    // first touched, so this keeps regular expressions out of opening a workbook (unit 11C).
+    private static bool IsPlainlyWellFormed(string value)
+    {
+        char previous = '.';
+        foreach (char c in value)
+        {
+            bool isWordCharacter = c is (>= 'a' and <= 'z') or (>= '0' and <= '9');
+            if (!isWordCharacter && (c is not ('.' or '-') || previous is '.' or '-'))
+            {
+                return false;
+            }
+            previous = c;
+        }
+        return previous is not ('.' or '-');
+    }
 }
 
 /// <summary>

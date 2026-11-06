@@ -45,6 +45,8 @@ These belong to the application, not the library. For work on many threads, such
 
 Measured on 24 logical processors, a round of 24 copies of Bento's examples takes 620 ms against 2,700 ms with the runtime's defaults, and a single recalculation 180 ms against 360, at a peak of about 400 MB against 200. Leave the server collector's dynamic adaptation (DATAS) on: turning it off gains little and takes about 700 MB. Without PGO, code that has settled for minutes is about 6% slower, so a long batch job may prefer to leave it on. See [docs/performance.md](docs/performance.md), "Unit 11D".
 
+No tiering setting beyond these helps opening (unit 11C tried quick JIT, quick JIT for loops, on-stack replacement and the background worker's timeout). An application that ships its own runtime can go further by publishing self-contained with `PublishReadyToRunComposite`: opening 419 ms against 509 on Bento's examples, at 169 MB for the whole application, measured on assemblies built from source rather than from the packages. If it publishes ReadyToRun at all, setting `PublishReadyToRunCrossgen2ExtraArgs` to `--non-local-generics-module:*;--opt-cross-module:*;--Ot`, as Kerf's packages do, should help its own generics over Kerf's types (not measured).
+
 ## Building
 
 Requirements: the .NET 10 SDK and git.

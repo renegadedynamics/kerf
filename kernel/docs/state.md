@@ -152,6 +152,8 @@ The three tables the plan names (decision 1388):
 | DataExchange/STEPConstruct/ConstructAssembly.cs (`s_processNauoId`) | **removed** with the overload that used it (decision 1389): it numbered assembly occurrences from a process-wide counter, so an output depended on what the process wrote before; the writer already passed its own (decision 1266) |
 | the shared empty values (`BOPDS_DS`'s pave blocks and face information, `TopoDS_Iterator`'s, BRepFill's, ChFi3d's, TopOpeBRepDS's lists) | constants: read-only for callers, as OCCT's; 10J returns read-only types |
 
+**Unit 11C looked at what one-time initialisation costs on opening a workbook:** 2 to 5 of about 255 samples on the first pass's working thread, spread over dozens of small types. So nothing was made lazy, and this list is unchanged (decision 1693).
+
 ## Test and debug hooks: stay
 
 | Where | Why |

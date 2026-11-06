@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## 0.3.0 (unreleased)
 
+- **Quicker to open:** the first use in a process takes about a third less time (745 ms to 509 on Bento's examples), for packages about 20% larger. Results don't change. Grouping by a measure no longer boxes its keys.
 - **`MeshTolerances.ControlAllSurfaces`,** off by default, and its documentation no longer promises a maximum deflection: a long fillet can stray from it.
 
 - **`shape.BoundBox()` is now `shape.Bounds()`,** beside the kernel's `BoundingBox()`, which has a different default. Its `tolerance`

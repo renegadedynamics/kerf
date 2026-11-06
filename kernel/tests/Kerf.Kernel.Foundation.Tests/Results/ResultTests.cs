@@ -30,6 +30,11 @@ public class DiagnosticCodeTests
     [InlineData("input.")]
     [InlineData("input invalid")]
     [InlineData("input.-invalid")]
+    [InlineData("-input")]
+    [InlineData("input-")]
+    [InlineData("input--invalid")]
+    [InlineData("input-.invalid")]
+    [InlineData("é")]
     [InlineData("input_invalid")]
     public void MalformedCodesThrow(string text)
     {

@@ -9,7 +9,7 @@
 
   Each assembly is compiled ahead of time (ReadyToRun) for win-x64, as Bento runs, keeping its IL: elsewhere .NET ignores
   the precompiled code and compiles the IL as usual. It cut the opening of Bento's example workbook by about a third
-  (unit 9E, docs/performance.md). Each project is built, published with PublishReadyToRun,
+  (unit 9E, docs/performance.md); Directory.Build.props says what else it compiles in (unit 11C). Each project is built, published with PublishReadyToRun,
   and packed without building again from its build output with the ReadyToRun assembly in place of its own.
 
   Then the packages are checked as a consumer gets them: a new console project restores Kerf.Modeling from the output
