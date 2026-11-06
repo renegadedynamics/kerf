@@ -102,7 +102,7 @@ public class DrawStepCorpusTests(ITestOutputHelper output)
                                            .Where(s => Unit8FCommands.Any(s.Commands.Contains))
                                            // the de group's STEP cases read with ReadStep: unit 8G2's class runs them
                                            .Where(s => !DrawStepCafCorpusTests.IsDeStepCase(s.Case))
-                                           // the cases that measure memory run alone (DrawCheapGapsCorpusTests)
+                                           // the cases that measure memory are DrawCheapGapsCorpusTests'
                                            .Where(s => !DrawCheapGapsCorpusTests.MeasuresMemory(s))
                                            .ToList();
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();

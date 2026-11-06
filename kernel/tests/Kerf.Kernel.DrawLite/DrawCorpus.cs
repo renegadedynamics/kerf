@@ -224,6 +224,9 @@ public sealed class DrawCorpus(string theTestsDirectory)
         theInterpreter.Eval(aScript.ToString());
     }
 
+    // characters, far more than the cases that read the heap print
+    private const int MeasuredLogCapacity = 1 << 22;
+
     /// <summary>
     /// What every case's time limit is multiplied by: <c>KERF_CORPUS_TIME_SCALE</c>, which tools/coverage.ps1 sets
     /// because instrumented code runs slower (decision 1669), or 1 when it's unset. Above 1 the <c>bug24157</c> cases'
@@ -268,7 +271,14 @@ public sealed class DrawCorpus(string theTestsDirectory)
     public DrawCaseRun RunAndCheck(DrawTestCase theCase, string theResourcesDirectory, string? theDataPath, TimeSpan theTimeLimit,
                                    Action<DrawInterpreter>? theSetup = null)
     {
-        var aLog = new StringWriter { NewLine = "\n" };
+        if (theSetup is null && DrawCaseProcess.Own == DrawCaseProcess.Reading.None
+            && DrawCaseProcess.ReadingOf(File.ReadAllText(theCase.Path)) is var aReading and not DrawCaseProcess.Reading.None)
+        {
+            return DrawCaseProcess.Run(this, theCase, aReading, theResourcesDirectory, theDataPath, theTimeLimit);
+        }
+
+        // with room for all a case prints where the heap is read: a log that grows would be the case's own growth
+        var aLog = new StringWriter(new System.Text.StringBuilder(DrawCaseProcess.Own == DrawCaseProcess.Reading.Heap ? MeasuredLogCapacity : 16)) { NewLine = "\n" };
         var anInterpreter = new DrawInterpreter(aLog);
         anInterpreter.LoadDrawResources(theResourcesDirectory);
         if (theDataPath is not null)
@@ -293,6 +303,13 @@ public sealed class DrawCorpus(string theTestsDirectory)
         anInterpreter.Deadline = DateTime.UtcNow + theTimeLimit * TimeScale;
         try
         {
+            if (DrawCaseProcess.Own == DrawCaseProcess.Reading.Heap)
+            {
+                // a first reading stands kilobytes above the next whatever comes between them, which would count as
+                // the script's own trend (decision 19101)
+                anInterpreter.Eval("meminfo h");
+            }
+
             Run(theCase, anInterpreter, anImages);
         }
         catch (DrawException anError)

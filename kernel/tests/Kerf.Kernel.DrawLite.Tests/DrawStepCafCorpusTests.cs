@@ -71,7 +71,7 @@ public class DrawStepCafCorpusTests(ITestOutputHelper output)
         List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
                                            .Select(c => aCorpus.Scan(c, anInterpreter))
                                            .Where(s => Unit8G2Commands.Any(s.Commands.Contains))
-                                           // the cases that measure memory run alone (DrawCheapGapsCorpusTests)
+                                           // the cases that measure memory are DrawCheapGapsCorpusTests'
                                            .Where(s => !DrawCheapGapsCorpusTests.MeasuresMemory(s))
                                            .ToList();
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();

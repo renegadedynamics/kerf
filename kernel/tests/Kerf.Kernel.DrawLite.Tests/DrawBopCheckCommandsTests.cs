@@ -92,7 +92,7 @@ public class DrawBopCheckCommandsTests(ITestOutputHelper output)
 
         List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered().Select(c => aCorpus.Scan(c, anAfter))
                                            .Where(s => Commands.Any(s.Commands.Contains)).ToList();
-        // The cases that measure memory run one at a time, in DrawCheapGapsCorpusTests only
+        // The cases that measure memory are DrawCheapGapsCorpusTests'
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable && !DrawCheapGapsCorpusTests.MeasuresMemory(s)).Select(s => s.Case).ToList();
         int aRunnableBefore = aScans.Count(s => aCorpus.Scan(s.Case, aBefore).IsRunnable);
         output.WriteLine($"{aScans.Count} cases use the check commands: {aRunnableBefore} runnable before, {aRunnable.Count} after");
