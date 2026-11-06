@@ -1061,3 +1061,63 @@ A check after the Boolean as well as the clean would be 17.1% and 12.3%. Nine of
 2. **As built, with a way to turn it off in `Kerf.Modeling`:** a scope like `SkipClean`, or a setting Bento reads. Cost when on is the same; when off, a shape nothing can use is back.
 3. **A cheaper check by default, the full one on request:** new faces only (above), or leaving 2D Booleans unchecked. Needs more measuring, and a fault can go unseen for a few steps.
 4. **Check fillets, chamfers, offsets, sweeps and lofts only, not Booleans.** Inferred at about 2 to 4%. The Booleans' 9 of 600 go back to reporting success, so it doesn't meet the decision as worded.
+
+## What a check can remember
+
+*6 November 2026, on a shared machine: every timing here is from a loaded machine, and bytes don't depend on the load. Decisions 1798 to 1801. The code is on `phase11/valid-cache` (8a05c7c1f) and isn't merged.*
+
+**The answer is no: it's safe, as far as reading and comparison can show, but it gains too little.** It removes about a fifth of the check's cost on Bento's examples and nothing on the Boolean suites, against an aim of most of it. Most of the faces a check sees are being seen for the first time.
+
+**The idea:** a frozen face found valid stays valid, so remember that on its `TShape` and skip it next time. Reading each sub-check shows what that depends on:
+
+| Sub-check | Depends on | Can it be remembered? |
+|---|---|---|
+| Edge's own flags, range and polygons; vertex on an edge | The edge's `TShape`, and the placement it's reached at | Yes, under its face |
+| Edge against a face's surface; vertex on a face; wire in a face; wires' intersection, nesting and orientation | Both shapes, all reached from the face, the face's placement, and its orientation (`WireCheck` reads it for closure in 2D) | Yes, under its face, with that placement and orientation |
+| Shell closed and oriented; solid's shells | Every face of the shell: shell and solid checks read the shapes directly, not the faces' results | No: nearly always a new `TShape`, so it wasn't tried |
+| The same at another placement | Every distance is measured after moving the geometry, so rounding differs, and at large coordinates reaches the tolerances | No: not proved |
+| `Geometry = false`, or `Exact` | A different check | No: only the default geometric check by sampling is remembered and read. Parallel doesn't change it: sampling doesn't use the flag, and which thread checks doesn't change what's found |
+
+**What makes the skip safe:**
+
+- A face is remembered only after a check in which *every* status of *every* sub-shape, in every context, is no fault. `IsValid` reads only some of them (`ValidSub` stops at a seam's second occurrence), so this is stronger, and whichever of them a later check would read, none is a fault.
+- Only a frozen face, whose whole sub-graph is frozen with its geometry. Never with a working overlay open on the thread, whose working copies stand in for frozen `TShape`s. The key is the `TFace`, the placement by the identity of its datums (`IsEqual`) and the orientation.
+- A check that isn't clean is repeated in full by its caller, so reports don't change.
+- **Threads:** the one field holds an immutable record, replaced whole by `Volatile.Write`, after the check has finished. Two threads that check one face write true things, and the last wins. It holds a placement and no shape.
+
+**The comparison mode** (`KERF_CHECK_MEMORY=compare=file`) does each check in full as well, and records any difference in the verdict, or a clean remembered result where the full check isn't clean. No differences:
+
+| Run | Checks compared | Invalid | Faces skipped | Differences |
+|---|---:|---:|---:|---:|
+| Corpus, cases using the Boolean commands (4,654 run of 7,100) | 5,753 | 51 | 6,635 | 0 |
+| Corpus, fillets and chamfers (800 run of 884) | 832 | 5 | 72 | 0 |
+| Corpus, healing (1,326 run of 2,107) | 1,210 | 43 | 3,991 | 0 |
+| `Kerf.Modeling.Tests` (2,074 tests) | 5,573 | 208 | 2,042 | 0 |
+| `Kerf.Kernel.PublicApi.Tests` (383 tests) | 264 | 73 | 191 | 0 |
+| Bento's eleven examples, 5 passes | 500 | 0 | 360 | 0 |
+
+The corpus's groups overlap, and each case compares only the checks its script asks for. Volumes, face and triangle counts of the eleven are the same in every run.
+
+**What it gains on Bento's eleven examples** (the same build with the check left out, in full and with the memory; 6 alternating rounds of 30 passes, medians of the settled recalculation):
+
+| | No check | Full check | With the memory |
+|---|---:|---:|---:|
+| Recalculation | 222 ms | 248 ms (+11.7%) | 243 ms (+9.5%) |
+| Bytes | 140.5 MB | 160.6 MB (+14.3%) | 157.9 MB (+12.4%) |
+| "for-loop" | 9.75 ms | 14.7 ms (+51%) | 12.7 ms (+30%) |
+| "for-loop" bytes | 9.0 MB | 12.9 MB | 12.4 MB |
+
+Processor time was no use here: under this load it put no check above the full check. Three runs of bytes give 13% to 19% of the check's bytes saved, and the times about 19%; "for-loop" saves more time than bytes, but only 13% of bytes, and is 2 ms.
+
+**Why so little:** counted over three passes, 17% of the faces a check meets were remembered, 48% were new, 31% were known at another placement and 4% the other way round. An example like "for-loop" extrudes new solids and fuses them once, so its one check sees only new faces. Even allowing any placement, which isn't proved, removes only 44% of the check's bytes.
+
+**The Boolean suites** (one check after the clean, serial, 407 simple and 193 complex cases):
+
+| Suite | Faces | A full check | With the memory, as `Kerf.Modeling` checks | If each input had been checked first |
+|---|---:|---:|---:|---:|
+| Simple | 3,566 | 199.6 MB, 258 ms | **0 skipped**, 200.5 MB, 242 ms | 767 skipped (22%), 172.6 MB, 223 ms |
+| Complex | 1,465 | 103.3 MB, 148 ms | **0 skipped**, 103.6 MB, 151 ms | 411 skipped (28%), 80.6 MB, 133 ms |
+
+Nothing checks a Boolean's inputs, so nothing is known. Even if each input came from a checked operation, a little over a quarter of the faces at most go unchecked, as these cases cut and fuse what they touch.
+
+**What would help more is a different question:** trusting a face without having checked it, such as a primitive's or an extrusion's, which is what decision 1793 infers for extrusions. That isn't proved, so it wasn't tried. The owner's options in "Unit 11R" stand.

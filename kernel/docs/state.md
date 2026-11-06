@@ -293,3 +293,7 @@ The clean-up after decision 1681 deleted fields that were written and never read
 ## Unit 11S
 
 The fixes for OCCT's defects (decisions 1775 to 1788) add no shared state: all are local to a call. `SamplingHelpers`' two new methods and the offset's concentric case work on their arguments alone. `StepGenTests` writes to a temporary folder of its own.
+
+## A check's memory
+
+Not merged (decision 1798), so nothing changes here. On `phase11/valid-cache`: one field on `BrepTFace`, an immutable record replaced whole by `Volatile.Write`, and in `ValidMemory` a setting read once from the environment and counters that only the comparison mode touches.
