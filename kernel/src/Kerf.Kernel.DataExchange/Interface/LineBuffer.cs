@@ -155,7 +155,11 @@ internal class LineBuffer
     public void Add(string text, int lntext)
     {
         int lnt = (lntext > (_max - _len - _init) ? (_max - _len - _init) : lntext);
-        text.AsSpan(0, lnt).CopyTo(_line.AsSpan(_len));
+        // A line already past the maximum gives a negative count, which shortens it, as OCCT's loop does
+        if (lnt > 0)
+        {
+            text.AsSpan(0, lnt).CopyTo(_line.AsSpan(_len));
+        }
         _len += lnt;
         _line[_len] = '\0';
     }
@@ -190,7 +194,7 @@ internal class LineBuffer
                 return;
             }
 
-            Array.Copy(_line, 0, _line, _init, _len + 1);
+            Array.Copy(_line, 0, _line, _init, Math.Max(_len + 1, 0));
             _line.AsSpan(0, _init).Fill(' ');
         }
 
@@ -220,7 +224,7 @@ internal class LineBuffer
         if (_keep > 0)
         {
             _line[0] = _kept;
-            Array.Copy(_line, _keep, _line, 1, _len + _init + 1 - _keep);
+            Array.Copy(_line, _keep, _line, 1, Math.Max(_len + _init + 1 - _keep, 0));
             _len = _len + _init - _keep + 1;
         }
         else
