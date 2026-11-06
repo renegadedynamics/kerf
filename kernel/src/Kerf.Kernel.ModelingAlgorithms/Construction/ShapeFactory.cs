@@ -213,16 +213,16 @@ public static class ShapeFactory
     {
         /// <summary>The face bounded by <paramref name="wire"/>, on the surface it lies on (a plane if it can be;
         /// only a plane if <paramref name="onlyPlane"/>).</summary>
-        public static Result<Face> FromWire(Wire wire, bool onlyPlane = false)
+        public static Result<Face> FromWire(Wire wire, bool onlyPlane = false, bool checkResult = true)
         {
             MakerOutcome.NotNull(wire, nameof(wire));
-            return BuildFace(() => new MakeFace(wire, onlyPlane));
+            return Validity.Checked(BuildFace(() => new MakeFace(wire, onlyPlane)), checkResult, "The face");
         }
 
         /// <summary>The face bounded by <paramref name="outer"/> with <paramref name="holes"/> cut from it. The holes must
         /// lie inside the outer wire and run the opposite way round, as OCCT requires. The face is on the surface the outer
         /// wire lies on (a plane if it can be; only a plane if <paramref name="onlyPlane"/>).</summary>
-        public static Result<Face> FromWires(Wire outer, IEnumerable<Wire> holes, bool onlyPlane = false)
+        public static Result<Face> FromWires(Wire outer, IEnumerable<Wire> holes, bool onlyPlane = false, bool checkResult = true)
         {
             MakerOutcome.NotNull(outer, nameof(outer));
             ArgumentNullException.ThrowIfNull(holes);
@@ -231,7 +231,7 @@ public static class ShapeFactory
             {
                 MakerOutcome.NotNull(hole, nameof(holes));
             }
-            return BuildFace(() =>
+            return Validity.Checked(BuildFace(() =>
             {
                 var face = new MakeFace(outer, onlyPlane);
                 if (face.IsDone)
@@ -242,14 +242,14 @@ public static class ShapeFactory
                     }
                 }
                 return face;
-            });
+            }), checkResult, "The face");
         }
 
         /// <summary>A face on <paramref name="surface"/>: its natural bounds, <paramref name="bounds"/> of its parameters, or
         /// inside <paramref name="boundary"/>, a wire lying on it, with <paramref name="holes"/> (wires lying on it too) cut
         /// from it.</summary>
         public static Result<Face> FromSurface(Surface surface, (Interval U, Interval V)? bounds = null, Wire? boundary = null,
-                                               IEnumerable<Wire>? holes = null)
+                                               IEnumerable<Wire>? holes = null, bool checkResult = true)
         {
             ArgumentNullException.ThrowIfNull(surface);
             if (bounds is not null && boundary is not null)
@@ -265,18 +265,20 @@ public static class ShapeFactory
             {
                 MakerOutcome.NotNull(hole, nameof(holes));
             }
-            return BuildFace(() => boundary is { } w
+            Result<Face> made = BuildFace(() => boundary is { } w
                 ? WithHoles(new MakeFace(surface, w), inner)
                 : bounds is { } b
                     ? new MakeFace(surface, b.U.Min, b.U.Max, b.V.Min, b.V.Max, Tolerances.Confusion)
                     : new MakeFace(surface, Tolerances.Confusion));
+            // A surface's own bounds make a good face; wires may not bound one
+            return Validity.Checked(made, checkResult && boundary is not null, "The face");
         }
 
         /// <summary>A face on <paramref name="plane"/>: infinite, or inside <paramref name="boundary"/>.</summary>
         public static Result<Face> FromPlane(in Plane3D plane, Wire? boundary = null)
         {
             Plane3D p = plane;
-            return BuildFace(() => boundary is { } w ? new MakeFace(p, w) : new MakeFace(p));
+            return Validity.Checked(BuildFace(() => boundary is { } w ? new MakeFace(p, w) : new MakeFace(p)), boundary is not null, "The face");
         }
     }
 
@@ -288,7 +290,7 @@ public static class ShapeFactory
         /// The face isn't changed.
         /// </summary>
         /// <exception cref="ArgumentException">The face or a hole is null.</exception>
-        public Result<Face> WithHoles(IEnumerable<Wire> holes)
+        public Result<Face> WithHoles(IEnumerable<Wire> holes, bool checkResult = true)
         {
             ArgumentNullException.ThrowIfNull(holes);
             Face f = face;
@@ -299,7 +301,7 @@ public static class ShapeFactory
                 MakerOutcome.NotNull(hole, nameof(holes));
             }
             // BRepBuilderAPI_MakeFace of a face copies it without being done; each wire added makes it done
-            return Guarded<Face>(() =>
+            return Validity.Checked(Guarded<Face>(() =>
             {
                 var maker = new MakeFace(f);
                 foreach (Wire hole in inner)
@@ -308,7 +310,7 @@ public static class ShapeFactory
                 }
 
                 return maker.Face();
-            });
+            }), checkResult, "The face");
         }
     }
 
@@ -330,7 +332,7 @@ public static class ShapeFactory
     {
         /// <summary>The solid bounded by <paramref name="shells"/> (the first the outer, the others cavities).</summary>
         /// <exception cref="ArgumentException">No shells, or a null one.</exception>
-        public static Result<Solid> FromShells(IEnumerable<Shell> shells)
+        public static Result<Solid> FromShells(IEnumerable<Shell> shells, bool checkResult = true)
         {
             ArgumentNullException.ThrowIfNull(shells);
             Shell[] list = [.. shells];
@@ -342,7 +344,7 @@ public static class ShapeFactory
             {
                 MakerOutcome.NotNull(s, nameof(shells));
             }
-            return Guarded(() =>
+            return Validity.Checked(Guarded(() =>
             {
                 var solid = new MakeSolid();
                 foreach (Shell s in list)
@@ -350,7 +352,7 @@ public static class ShapeFactory
                     solid.Add(s);
                 }
                 return solid.IsDone ? solid.Solid() : Result<Solid>.Failure(Failed("solid"));
-            });
+            }), checkResult, "The solid");
         }
     }
 

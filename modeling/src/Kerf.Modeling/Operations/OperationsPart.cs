@@ -1,3 +1,5 @@
+using Kerf.Healing;
+
 namespace Kerf.Modeling;
 
 public static partial class Operations
@@ -263,6 +265,7 @@ public static partial class Operations
         // Try to recover an invalid loft
         if (!newSolid.IsValid)
         {
+            Shape unrecovered = newSolid;
             try
             {
                 var recoveryFaces = newSolid.Faces().Concat(loftSections.Where(w => w.IsWire()).Select(w => Face.Make((Wire)w)));
@@ -274,8 +277,7 @@ public static partial class Operations
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
-                throw Failures.Expected(ModelingDiagnostics.LoftFailed, "The loft is invalid and couldn't be recovered.",
-                                        Failures.DiagnosticsOf(e), e);
+                throw Failures.Invalid(unrecovered, unrecovered.Validate(), "The loft's result", "It couldn't be recovered.");
             }
         }
 

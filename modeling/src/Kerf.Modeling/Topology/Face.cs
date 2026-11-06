@@ -83,7 +83,7 @@ public static partial class FaceExtensions
                 List<Vector3D> crossDirs;
                 if (innerWires.Count > 0)
                 {
-                    var holeFaces = innerWires.Select(w => Face.Make(w)).ToList();
+                    var holeFaces = innerWires.Select(w => TopoUtil.MakeFaceFromWires(w, checkResult: false)).ToList();
                     var holesCentroid = Shape.CombinedCenter(holeFaces);
                     // If the holes aren't centred on the centre of gravity, the axis must pass through both
                     crossDirs = (holesCentroid - cog).Magnitude > Constants.Tolerance
@@ -555,11 +555,11 @@ public static partial class FaceExtensions
         /// </summary>
         public Face MakeHoles(IEnumerable<Wire> interiorWires)
         {
-            var made = self.WithHoles(interiorWires.Select(w => w));
+            var made = self.WithHoles(interiorWires.Select(w => w), checkResult: false);
             if (!made.TryGetValue(out var holed))
                 throw new InvalidOperationException("The inner wires can't be added as holes to the non-planar face.",
                                                     Failures.Failed(made.Diagnostics));
-            return holed.Fix();
+            return Failures.Valid(holed.Fix(), "The face with holes");
         }
 
         /// <summary>This face with its holes filled in.</summary>
@@ -596,8 +596,8 @@ public static partial class FaceExtensions
                 if (!edge1.IsEmpty && !edge2.IsEmpty)
                     corners.Add((edge1, edge2));
             }
-            var built = Failures.Get(self.Chamfer2D(corners, distance, distance2), () => "2D chamfer");
-            var face = built.Shape.Fix();
+            var built = Failures.Get(self.Chamfer2D(corners, distance, distance2, checkResult: false), () => "2D chamfer");
+            var face = Failures.Valid(built.Shape.Fix(), "The 2D chamfer's result", "Try a smaller length.");
             if (!self.NormalAt().IsNear(face.NormalAt()))
                 face = (Face)(-face);
             // The edges the chamfers trimmed are modified (OCCT's DescendantEdge); the builder answers nothing as generated
@@ -877,7 +877,8 @@ public static partial class FaceExtensions
         // OCCT's filling of no boundary isn't done; the kernel's refuses the argument
         if (boundaries.Count == 0)
             throw new InvalidOperationException(error);
-        var filled = Surfaces.Fill(boundaries, options);
+        // The callers fix the face and check it
+        var filled = Surfaces.Fill(boundaries, options with { CheckResult = false });
         if (!filled.TryGetValue(out var face))
             throw new InvalidOperationException(error, Failures.Failed(filled.Diagnostics));
         return face.Shape;
@@ -892,7 +893,8 @@ public static partial class FaceExtensions
                 throw new ArgumentException("An inner wire is empty.");
             holes.Add(wire);
         }
-        var made = surfaceFace.WithHoles(holes);
+        // The caller fixes the face and checks it
+        var made = surfaceFace.WithHoles(holes, checkResult: false);
         if (!made.TryGetValue(out var face))
             throw new InvalidOperationException("The inner wires can't be added as holes to the non-planar face.",
                                                 Failures.Failed(made.Diagnostics));

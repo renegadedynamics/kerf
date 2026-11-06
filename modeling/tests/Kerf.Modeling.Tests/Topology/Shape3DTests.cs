@@ -47,8 +47,14 @@ public class FilletFailuresTests
     {
         var box = Box(20, 20, 20);
         var failed = Failures.Try(() => box.Fillet(11, box.Edges()));
-        Assert.Equal(ModelingDiagnostics.FilletFailed, failed.Error!.Code);
-        Assert.Contains("try a smaller radius", failed.Error.Message, StringComparison.Ordinal);
+        Assert.Equal(DiagnosticCode.InvalidResult, failed.Error!.Code);
+        Assert.Contains("Try a smaller radius", failed.Error.Message, StringComparison.Ordinal);
+        Assert.True(failed.TryGetInvalid(out var invalid));
+        Assert.False(invalid.IsValid);
+        Assert.Throws<InvalidOperationException>(() => failed.Value);
+        Assert.True(ModelingDiagnostics.TryGetInvalid(Assert.Throws<InvalidOperationException>(() => box.Fillet(11, box.Edges())), out var thrown));
+        Assert.False(thrown.IsValid);
+        Assert.False(ModelingDiagnostics.TryGetInvalid(new InvalidOperationException(), out _));
         Assert.True(box.Fillet(9.99, box.Edges()).IsValid);
     }
 
@@ -97,7 +103,17 @@ public class FilletFailuresTests
             ? (notched, 0.5, notched.Edges().Where((_, i) => i % 2 == 0).ToList(), "0.5")
             : ((IShape3D)cube, 6.0, cube.Edges().ToList(), "6");
         var failed = Failures.Try(() => shape.Fillet(radius, edges));
-        Assert.Equal($"The fillet with a radius of {text}" + Advice, failed.Error!.Message);
+        if (notchedCase)
+            Assert.Equal($"The fillet with a radius of {text}" + Advice, failed.Error!.Message);
+        else
+        {
+            // What the engine made on the cube, a radius past half its side, isn't valid: a failure that carries it
+            Assert.Equal(DiagnosticCode.InvalidResult, failed.Error!.Code);
+            Assert.StartsWith($"The fillet with a radius of {text} isn't valid: ", failed.Error.Message, StringComparison.Ordinal);
+            Assert.EndsWith("Try a smaller radius, or MaxFillet to find the largest that works.", failed.Error.Message, StringComparison.Ordinal);
+            Assert.True(failed.TryGetInvalid(out var invalid));
+            Assert.False(invalid.IsValid);
+        }
     }
 
     [Fact]

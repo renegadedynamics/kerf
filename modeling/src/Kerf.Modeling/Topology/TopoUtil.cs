@@ -145,6 +145,18 @@ internal static partial class TopoUtil
     /// <summary>ShapeFix_Shape's defaults, without the check of the result the kernel adds (its warning isn't read here).</summary>
     internal static readonly FixOptions UncheckedFix = new() { CheckResult = false };
 
+    /// <summary>
+    /// A kernel result that failed only because what it made isn't valid, with that fixed if fixing makes it valid: the
+    /// offsets, which ShapeFix can often put right. Any other result is left as it is.
+    /// </summary>
+    internal static Result<Built<Shape>> Repaired(Result<Built<Shape>> made)
+    {
+        if (!made.TryGetInvalid(out var invalid))
+            return made;
+        var repaired = Fix(invalid.Shape);
+        return repaired.IsValid ? Result<Built<Shape>>.Success(new Built<Shape>(repaired, invalid.History)) : made;
+    }
+
     /// <summary>A compound of the given shapes (the kernel's empty compound for none), frozen.</summary>
     internal static Compound MakeCompound(IEnumerable<Shape> shapes) =>
         Compound.Create(shapes);
@@ -250,7 +262,8 @@ internal static partial class TopoUtil
     internal static Result<Built<Shape>> Boolean(BooleanKind operation, IReadOnlyList<Shape> args,
                                                                       IReadOnlyList<Shape> tools, BooleanOptions? options = null)
     {
-        var o = options is null ? Unsimplified : options with { Simplify = false };
+        // BoolOp checks what comes out of the clean, once
+        var o = options is null ? Unsimplified : options with { Simplify = false, CheckResult = false };
         return operation switch
         {
             BooleanKind.Fuse => BooleanOperations.Fuse(args, tools, o),
@@ -262,7 +275,7 @@ internal static partial class TopoUtil
         };
     }
 
-    private static readonly BooleanOptions Unsimplified = new() { Simplify = false, SectionCurvesOnFaces = false };
+    private static readonly BooleanOptions Unsimplified = new() { Simplify = false, SectionCurvesOnFaces = false, CheckResult = false };
 
     /// <summary>What a boolean is called in an error message.</summary>
     internal static string BooleanName(BooleanKind operation) => operation switch

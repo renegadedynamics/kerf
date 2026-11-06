@@ -358,4 +358,42 @@ public class ResultCombinatorTests
         var mapped = from a in Result<int>.Success(4) select a * 2;
         Assert.Equal(8, mapped.Value);
     }
+
+    [Fact]
+    public void A_failure_can_carry_what_was_made()
+    {
+        var invalid = Result<int>.Invalid(7, Bad, [Careful]);
+        Assert.True(invalid.IsFailure);
+        Assert.Same(Bad, invalid.Error);
+        Assert.Equal<Diagnostic>([Careful, Bad], invalid.Diagnostics);
+        Assert.Throws<InvalidOperationException>(() => invalid.Value);
+        Assert.False(invalid.TryGetValue(out int value));
+        Assert.Equal(0, value);
+        Assert.Equal(3, invalid.GetValueOrDefault(3));
+        Assert.True(invalid.TryGetInvalid(out int carried));
+        Assert.Equal(7, carried);
+        Assert.Throws<ArgumentException>(() => Result<int>.Invalid(7, Careful));
+
+        Assert.True(Result<int>.Invalid(7, [Careful, Bad]).TryGetInvalid(out carried));
+        Assert.Equal(7, carried);
+        Assert.Throws<ArgumentException>(() => Result<int>.Invalid(7, [Careful]));
+    }
+
+    [Fact]
+    public void Only_a_failure_that_says_so_carries_anything()
+    {
+        Assert.False(Result<int>.Success(4).TryGetInvalid(out _));
+        Assert.False(Result<int>.Failure(Bad).TryGetInvalid(out _));
+        Assert.False(default(Result<int>).TryGetInvalid(out _));
+    }
+
+    [Fact]
+    public void The_combinators_do_not_pass_on_what_a_failure_carries()
+    {
+        var invalid = Result<int>.Invalid(7, Bad);
+        Assert.False(invalid.Map(x => x + 1).TryGetInvalid(out _));
+        Assert.False(invalid.Bind(x => Result<int>.Success(x)).TryGetInvalid(out _));
+        Assert.Same(Bad, invalid.Map(x => x + 1).Error);
+        Assert.Equal("result.invalid", DiagnosticCode.InvalidResult.Value);
+    }
 }

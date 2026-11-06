@@ -50,7 +50,9 @@ public sealed record UnifyOptions
 - **No copy before fixing.** The modelling layer copies a shape (`PrivateCopy(obj, copyGeometry: true)`) before
   `ShapeFix_Shape` today, because ShapeFix writes into its input; the public `Fix` never does (plan 2.4, unit 10H4).
 - `Validate` returns a report, not a `Result`: an invalid shape is a finding, not a failed operation.
-- **Diagnostics:** `healing.not-fixed` (a warning, with the shapes left invalid), `healing.sewing-failed`,
+- **What `Fix` can't fix is a failure** (decision 1742): `result.invalid`, with the shapes left invalid, carrying what fixing
+  did for `TryGetInvalid`, as it may be as good as the shape can be made. `FixOptions.CheckResult = false` leaves the check out.
+- **Diagnostics:** `result.invalid`, `healing.sewing-failed`,
   `healing.not-a-closed-shell`; `ShapeProblem` codes from `BRepCheck_Status` by name (`check.not-closed`,
   `check.self-intersecting-wire`, `check.bad-orientation`…).
 
