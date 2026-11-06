@@ -39,8 +39,6 @@ namespace Kerf.Engine.Features;
 /// </remarks>
 internal sealed class MakeLinearForm : RibSlot
 {
-#pragma warning disable CS0169 // declared, never used: as in OCCT
-    private Curve3D? _crv;
 #pragma warning restore CS0169
     private Vector3D _dir = new();
     private Vector3D _dir1 = new();

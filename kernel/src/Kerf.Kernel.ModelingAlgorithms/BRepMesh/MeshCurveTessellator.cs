@@ -211,15 +211,6 @@ internal class MeshCurveTessellator : CurveTessellator
         }
     }
 
-    // Checks whether the given point lies within tolerance of the vertex (unused, as in OCCT).
-    private static bool IsInToleranceOfVertex(in Point3D point, in Vertex vertex)
-    {
-        Point3D aPoint = Tool.Pnt(vertex);
-        double tolerance = Tool.Tolerance(vertex);
-
-        return (point.SquareDistanceTo(aPoint) < tolerance * tolerance);
-    }
-
     /// <inheritdoc/>
     /// <remarks>
     /// On a B-spline, Bezier or other non-periodic surface, a point whose UV lies outside the surface's range is

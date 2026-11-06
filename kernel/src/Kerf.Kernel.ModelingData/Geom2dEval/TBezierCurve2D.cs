@@ -375,34 +375,6 @@ internal sealed class TBezierCurve2D : BoundedCurve2D
         }
     }
 
-    // Evaluate point on a non-rational curve: sum(P_i * B_i(t)). Unused, as in OCCT.
-    private Point2D EvalNonRationalPoint(NCollection_Array1<double> basis)
-    {
-        Xy sum = new(0.0, 0.0);
-        int nbPoles = _poles.Length();
-        ReadOnlySpan<Point2D> polesData = _poles.AsSpan();
-        ReadOnlySpan<double> basisData = basis.AsSpan();
-        for (int i = 0; i < nbPoles; ++i)
-        {
-            sum += basisData[i] * polesData[i].XY();
-        }
-        return new Point2D(sum);
-    }
-
-    // Evaluate derivative vector on a non-rational curve: sum(P_i * B_i'(t)). Unused, as in OCCT.
-    private Vector2D EvalNonRationalDeriv(NCollection_Array1<double> basisDeriv)
-    {
-        Xy sum = new(0.0, 0.0);
-        int nbPoles = _poles.Length();
-        ReadOnlySpan<Point2D> polesData = _poles.AsSpan();
-        ReadOnlySpan<double> basisData = basisDeriv.AsSpan();
-        for (int i = 0; i < nbPoles; ++i)
-        {
-            sum += basisData[i] * polesData[i].XY();
-        }
-        return new Vector2D(sum);
-    }
-
     internal override Point2D EvalD0(double u)
     {
         CurveBasisEval data;

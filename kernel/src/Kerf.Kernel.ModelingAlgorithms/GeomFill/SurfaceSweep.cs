@@ -334,56 +334,6 @@ internal sealed class SurfaceSweep
         return ok;
     }
 
-    // OCCT: BuildProduct is never called (Build's call is commented out); kept as OCCT has it.
-    private bool BuildProduct(Continuity continuity, int degmax, int segmax)
-    {
-        bool ok = false;
-
-        BSplineSurface? bSurf = _sec!.BSplineSurface()?.Copy() as BSplineSurface;
-        if (bSurf is null)
-        {
-            return ok; // Ce mode de construction est impossible
-        }
-
-        int nbIntervalC2, nbIntervalC3;
-        LocFunction func = new LocFunction(_loc);
-
-        nbIntervalC2 = _loc.NbIntervals(C2);
-        nbIntervalC3 = _loc.NbIntervals(C3);
-        NCollection_Array1<double> Param_de_decoupeC2 = new(1, nbIntervalC2 + 1);
-        _loc.Intervals(Param_de_decoupeC2, C2);
-        NCollection_Array1<double> Param_de_decoupeC3 = new(1, nbIntervalC3 + 1);
-        _loc.Intervals(Param_de_decoupeC3, C3);
-
-        PrefAndRec preferentiel = new PrefAndRec(Param_de_decoupeC2, Param_de_decoupeC3);
-
-        NCollection_HArray1<double> threeDTol = new NCollection_HArray1<double>(1, 4);
-        threeDTol.Init(_tol3d); // A Affiner...
-
-        GeomFill_Sweep_Eval eval = new GeomFill_Sweep_Eval(func);
-        ApproxAFunction approx = new ApproxAFunction(0,
-                                                                         0,
-                                                                         4,
-                                                                         threeDTol,
-                                                                         threeDTol,
-                                                                         threeDTol,
-                                                                         _first,
-                                                                         _last,
-                                                                         continuity,
-                                                                         degmax,
-                                                                         segmax,
-                                                                         eval,
-                                                                         preferentiel);
-
-        ok = approx.HasResult;
-        if (ok)
-        {
-            // OCCT: the tensorial product is commented out; the section's surface is kept as it is.
-            _surface = bSurf;
-        }
-        return ok;
-    }
-
     //  Modified by skv - Thu Feb  5 18:05:03 2004 OCC5073 Begin
     //  Conditions:
     //     * theSec should be constant

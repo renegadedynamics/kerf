@@ -18,10 +18,7 @@ namespace Kerf.Engine.Numerics;
 internal class FunctionRoots
 {
     private const int Itmax = 100;
-    private const double Eps = 1e-14;
     private const double Epseps = 2e-14;
-    private const int Maxbis = 100;
-
     private bool _done;
     private bool _allNull;
     private readonly NCollection_Sequence<double> _sol = new();

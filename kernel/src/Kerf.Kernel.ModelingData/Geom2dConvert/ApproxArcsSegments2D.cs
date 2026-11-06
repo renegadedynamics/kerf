@@ -705,44 +705,6 @@ internal sealed class ApproxArcsSegments2D
         return false;
     }
 
-    // Method for calculation of a linear interpolation. (Unused by OCCT, ported for completeness.)
-    private bool CalculateLines(ref PPoint2D firstParam, in PPoint2D lastParam)
-    {
-        ref PPoint2D prevParam = ref firstParam;
-        for (int i = 1; i <= _seqParams.Length(); i++)
-        {
-            ref PPoint2D curParam = ref _seqParams.ChangeValue(i);
-            if (curParam.Parameter() < prevParam.Parameter())
-            {
-                continue;
-            }
-
-            if (curParam.Parameter() > lastParam.Parameter())
-            {
-                break;
-            }
-
-            // build line segment
-            if (curParam.IsNotEqual(prevParam))
-            {
-                double distance = (curParam.Point() - prevParam.Point()).Modulus();
-                if (distance > _tolerance)
-                {
-                    Curve2D? curve = MakeLine(ref prevParam, ref curParam, false);
-                    if (curve is null)
-                    {
-                        return false;
-                    }
-
-                    _seqCurves.Append(curve);
-                    prevParam = ref _seqParams[i];
-                }
-            }
-        }
-
-        return true;
-    }
-
     // Checking max deflection Geom curve from Adaptor Curve
     private bool CheckCurve(Curve2D? aCurve, double firstParam, double lastParam)
     {

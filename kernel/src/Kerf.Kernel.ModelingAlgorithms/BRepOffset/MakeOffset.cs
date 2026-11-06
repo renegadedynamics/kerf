@@ -1975,15 +1975,6 @@ internal sealed partial class MakeOffset
 
     //=================================================================================================
 
-    private void SelfInter(HashSet<Shape> modif)
-    {
-        // OCCT_DEBUG: the chronometer is left out.
-
-        throw new MethodNotImplementedException();
-    }
-
-    //=================================================================================================
-
     private void ToContext(Dictionary<Shape, Offset> mapSF)
     {
         Dictionary<Shape, Shape> created = new(ShapeHasher.Instance);
