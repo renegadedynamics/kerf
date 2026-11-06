@@ -551,6 +551,139 @@ In Release, each run twice: as built, and with the five assemblies as the packag
 - Bento's own assemblies aren't Kerf's to compile. If Bento publishes ReadyToRun, the same property applies to its own generics over Kerf's types. Nothing here was measured in Bento.
 - About 115 ms of first calls, inferred. A native profiler would time them directly; this machine's account can't take a kernel trace without elevation.
 
+## What allocation is made of
+
+*Unit 11Q, 6 November 2026, on a shared machine; bytes don't depend on the load. One trace of Bento's eleven examples, passes 2 to 20, ReadyToRun: 3,737 MB in 35,688 allocation ticks, about one for each 100 kB, so a group of 1% is good to about ±0.05 of a point. A recalculation is 204.6 MB. To repeat it: `tools/alloc-report.cs ... ticks`, then `tools/alloc-groups.py`.*
+
+**Is the high allocation caused by making most types immutable? No. Immutability's own costs are 3.5% of the bytes, and only 0.9% has no counterpart in OCCT. The most a sceptic could lay at its door is about 12%.** About 93% is temporary working objects from the port: arrays, maps, iterators and adaptors that the algorithms make and drop. What a caller ends up keeping is 0.64%.
+
+| Group | Share of the bytes | MB per recalculation |
+|---|---:|---:|
+| **Immutability's own costs** | **3.5%** | 7.2 |
+| `ReShapeBuilder`, all it calls (OCCT has `ShapeBuild_ReShape`, doing the same copies) | 2.24% | |
+| Working overlay: `WorkingOverlay` and the working copies it makes | 0.73% | |
+| `Placement` (OCCT's `TopLoc_Location` also allocates these nodes) | 0.39% | |
+| Freezing a result | 0.12% | |
+| `with` copies, `ImmutableArray` | 0.01% | |
+| **Temporaries from the port** | **92.9%** | 190 |
+| Collections and arrays, mesher: triangles, circles, links, cell filter | 26.2% | |
+| Collections and arrays, everything else: `double[]` 6.7%, shape lists and maps, points | 30.9% | |
+| Adaptors and projectors | 10.3% | |
+| Iterators and explorers: `Iterator` alone 4.0%, `Explorer` 1.4% | 8.7% | |
+| Helper objects: `SLProps` 1.4%, extrema's point-on-curve objects, `SurfaceContinuity` | 7.4% | |
+| Elementary geometry values boxed in adaptors (`Plane3D`, `Circle3D`, `Line3D`) | 3.4% | |
+| Curves and surfaces made to be read once, as by `CurveOnPlane`'s projection | 3.0% | |
+| Math objects: `VectorBase`, `Matrix`, solvers | 2.5% | |
+| Closures and delegates | 0.5% | |
+| **Results** | **2.7%** | 5.5 |
+| Meshes: triangulations, and reading them into `ShapeMesh` | 1.84% | |
+| Topology and geometry built | 0.84% | |
+| **Other:** tasks, threads, strings | **0.9%** | 1.8 |
+
+**How the lines were drawn.** A tick takes the first group that matches, and immutability goes first. So anything with `WorkingOverlay`, `ReShapeBuilder`, `Placement`, freezing or an immutable collection *anywhere on its stack* counts as immutability, including whatever those call. That leans towards immutability. Results come next, by type and where they were made. A curve made under an adaptor, projection or box is a temporary; a curve made anywhere else is a result. The rest is temporaries, divided by type, unless the stack holds no Kerf code or the type is the runtime's. `tools/alloc-groups.py` has the exact rules.
+
+**Results are checked a second way.** `Kerf.Kernel.Bento.Benchmarks -- retained` holds eight copies of each example's shape and mesh, and reads what the collector can't free: **1.3 MB of 204.8 MB allocated, or 0.64%** (0.28% to 1.61% by example). So the 2.7% above is, if anything, generous. The difference is mostly each step's result, which the next step drops.
+
+**The sceptic's bound.** Grant every doubtful case to immutability, even those where the C++ does the same:
+
+| Added to the group above | Share |
+|---|---:|
+| Immutability's own costs | 3.5% |
+| All boxed elementary geometry values, though the box comes from standing in for a C++ variant | 3.41% |
+| Reading meshes into `ShapeMesh`, and the triangulations they're read from | 1.84% |
+| Any copy, reversal or transform within six frames of the allocation (OCCT's `BRep_Tool` and `GeomProjLib` copy too) | 1.52% |
+| Everything the public layers allocate directly, `Kerf.Modeling` included | 1.07% |
+| Every other shape and curve built | 0.61% |
+| **Upper bound** | **12.0%** |
+
+Even that leaves 88% with no link to immutability. What remains ambiguous is whether an algorithm builds a list because it can't edit in place, which a stack can't show. None of the largest sites does: they're the mesher's own structures, `MapShapes`, the numerics' work arrays, and adaptors. Immutable *structs* such as `Point3D` cost nothing here unless they're boxed. They're values, and a `with` is a copy on the stack.
+
+**OCCT for the same work is an estimate, not a measurement.** Native's "3 MB" only ever counted the managed wrappers. OCCT's own heap was outside .NET's count, and native can't be measured again. So the comparison with 204 MB was never like for like. Reading what the C++ does group by group:
+
+| Group | Share here | Share OCCT would also put on its heap (estimate) | Why |
+|---|---:|---:|---|
+| Mesher's collections | 26.2% | a half to four fifths | Bump allocators and segmented vectors, the same data, but no copies from growing a list |
+| Other collections, arrays | 30.9% | 70% to all | `NCollection_Array1`, maps and lists are on the heap there too |
+| Adaptors, projectors | 10.3% | 30% to 50% | Often on the stack, though with handles inside |
+| Iterators, explorers | 8.7% | up to 10% | `TopoDS_Iterator` is on the stack, and `TopExp_Explorer` holds its stack inline |
+| Helpers | 7.4% | 10% to 30% | `BRepLProp_SLProps` and extrema objects are mostly on the stack |
+| Boxed geometry values, closures | 3.9% | none | |
+| Math objects | 2.5% | 20% to 50% | `math_Vector` keeps up to 32 values inline |
+| Geometry read once, results, `ReShape`, `Placement` | 8.3% | all | The same objects |
+| Overlay, freezing, other | 1.8% | none | |
+
+That comes to **about 50% to 70% of Kerf's bytes, or 100 to 145 MB for a recalculation, so Kerf allocates perhaps 1.4 to 2 times what the C++ would.** The excess is the port's stack objects that became heap objects in .NET, and growing lists. It's a real target, and it isn't immutability. C++ also pays for its heap differently, with `malloc` on each object and no collector.
+
+**What this says to do.** Don't touch the immutable design for allocation's sake. If more allocation is to go, the largest single groups are the mesher's collections, then iterators and explorers (8.7%, stack objects in OCCT) and adaptors with their boxed values (13.7%). Unit 11D's point stands that allocation is what limits parallel rounds.
+
+## Slow use cases (unit 11Q)
+
+*6 November 2026, on a machine shared with up to three other helpers, so every time here comes from a loaded machine. Allocation is exact, and shares and counts are good. The clean timed run comes after merging. Decision 1681: no more comparing with native, just improving what's slow.*
+
+### The list
+
+Ranked by what a user would plausibly meet, not by raw time: a common operation that takes long goes above an obscure one that takes longer. The corpus's times are one pass, six cases at a time (`KERF_CORPUS_TIMES` writes them: 17,872 cases, 8,710 s of case time). "Hard" means the time goes on the geometry itself, and nothing was found that barely needed to run.
+
+| # | What | How long (loaded) | Why | State |
+|---:|---|---:|---|---|
+| 1 | **STEP import with healing** | 6.0 s for 289 files up to 400 kB; `de/step_4/E9` 12 s | Half is `ShapeFixer`. Wasteful in part: reshape copies (fixed). Hard in part: projecting curves point by point (`GenExtPS`, 12% of samples) | Better, not done |
+| 2 | **STEP export** | 2.0 s for the same files | Strings for every parameter, and the graph and checks after a transfer | Reals fixed |
+| 3 | **Booleans of many tools, general fuses** | `bug25614_fuse` 27 s, `boolean/simplify/A3` 22 s, `bug25232_9` (mkvolume) 58 s | Repeated searches (one fixed), otherwise many small intersections | Better, not done |
+| 4 | **Edges against free-form faces** | `buc60555_3` 52 s | A polyhedron of the whole surface for each edge | **Fixed** |
+| 5 | **Face-face on free-form surfaces** | `bug24905` 24 s, `bug28119_1` 34 s | Fitting curves. Allocation fixed; the fit itself (`Bfgs`, its matrix) is hard | Hard, better |
+| 6 | **Area and volume to a precision** | most of `bug25232_9`'s checks | 500 kB for each face, and a scan of 1,953 values at each step | **Fixed** |
+| 7 | **PNG pictures** | 30 to 58 ms each | Five full passes over each row; rasterising a triangle's whole box | **Fixed** |
+| 8 | **Validity checks on big shapes** (`checkshape`, `IsValid`) | about a quarter of `bug25232_9`'s active time | Maps and classifiers for each face. The profile can't be trusted here (see below) | Not looked into further |
+| 9 | **Fine meshes** | `bug29715` 14 s, Axis_of_bearing 156 ms | The deflection loop's own work | Hard |
+| 10 | **Max fillet** | 500 ms on a box, warm | A search over real fillets | Hard, by design |
+| 11 | **Fillets, offsets on every edge** | 60 to 95 ms for 16 parts | No single cost | Hard |
+| 12 | **Pipe shells with corners** | `bug32444` 46 s | Booleans in each corner | Hard |
+| 13 | **2D offsets** | `bug6768` 44 s | Bisector and polygon intersection on B-splines | Hard |
+| 14 | **Hidden lines** | the bottle's SVG 31 ms | Contours and walking | Hard |
+
+**Not Kerf:** the corpus's slowest cases are the test harness. `lowalgos/extcs/circ_sph_*` (1,212 s, 14% of the corpus) and the `chamfer/*_sequence` cases spend about 99% of their allocation (106 GB in one case) and nearly all their time in Draw-lite's `lappend`, which copies a growing string each time. Only 0.75% of a chamfer case's samples are chamfering. A fix needs Tcl values that aren't strings, so it wasn't done, but it would take perhaps a fifth off a full corpus run.
+
+Bento's examples aren't on the list. At 269 ms for all eleven they're no longer slow, and what's left there is meshing and small Booleans.
+
+### What changed
+
+Every result is unchanged, and each commit can be dropped alone.
+
+| Change | Evidence |
+|---|---|
+| **A polyhedron for each face, not each edge** (decision 1707) | `buc60555_3` **5,192 MB to 1,143 MB**, about half the time alone. It was 71% of the case's active samples and 88% of its allocation. Booleans on planes and quadrics don't take this path |
+| **Precise area and volume reuse their work vectors,** and scan only what's been written (decision 1708) | `bug25232_9` **37.3 GB to 13.3 GB**, generation 2 collections 224 to 18, 59.5 s to 29.2 s run alone back to back |
+| **Fitting curves reuses its vectors and matrix** (decision 1708) | `bug24905` **2,508 MB to 1,000 MB** |
+| **Reshape copies a shape only if a sub-shape changes,** and skips the walk with no requests (decision 1709) | On the 289 STEP files: ShapeFixer **3,605 to 2,455 MB**, UnifySameDomain 922 to 649, import 5,371 to 4,564 |
+| **Stick vertices from an index,** not a scan of all interferences for each pair of faces | `bug25614_fuse`: 5.6 share points of its Boolean's 45.8 to about 0.15. No effect on small Booleans |
+| **STEP's reals written in place** | Export 2,954 to 2,319 MB. A test compares 1.2 million conversions with the general path |
+| **A polygon's self-intersection skips far pairs from their extents** | `Interference` 5.5% of healing's samples to 0.7% |
+| **PNG's filter stops a filter once it can't win** | `Png.Filter` about 1,440 samples to about 295 on the same work; the known-bytes test and sizes unchanged |
+| **The rasteriser visits only each row's span** | `Triangle`'s own samples about 1,080 to 740. PNG hashes of all eleven of Bento's match with and without |
+
+Bento's allocation went from 204.6 to 198.7 MB a recalculation, with the same volumes, faces and triangles.
+
+### The profiler's blind spot
+
+**The sampling profile overstates anything that polls, and collector pauses most of all.** EventPipe's sampler has to suspend each thread, which stops at its next safe point. Ahead-of-time and tiered code in a tight loop often has none, so the whole stretch is credited to the next call that polls: `Array.Copy`, `BulkMoveWithWriteBarrier`, a `Dictionary` resize. That's inferred from what follows, not measured directly. Measured from the collector's own events on the same trace:
+
+| Trace | `PollGC` samples | Time really in collections |
+|---|---:|---:|
+| Bento's recalculation | 24.7% | 2.5% |
+| Healing suite | 33.5% | 14.2% |
+
+So 11A's "the collector, 16.5% of thread time" and 11E's "35% of its samples are threads stopped for a collection" are mostly this, not pauses. `BSplineCurveGrid.ExtractCurveData` had 24% of one case's samples, 99.6% of them in `PollGC` under a struct copy. `Png.Filter`'s `Memmove`, at 25%, was really the filter's loops. `RuntimeHelpers.GetHashCodeWorker` at 13% to 15% looks misleading too, as it shows under methods with no hashing in them; that's unexplained. Trust inclusive shares of high-level operations, allocation and call counts, and don't trust leaves. Earlier sections keep their words, as they were written.
+
+### What didn't help, and what's left
+
+- **The Booleans suites hardly moved** (56.8 to 56.5 GB over the profile's rounds). Their cost is spread over many small intersections, and the polyhedra aren't on their path.
+- **The large object heap:** `GenExtPS`'s grids are 1.3 of healing's 2.2 GB of large objects, and each can provoke a generation 2 collection. An extrema object has no end of life to pool them at. A host setting does the job under the workstation collector: `DOTNET_GCLOHThreshold=0x400000` took healing's generation 2 collections from 656 to 163 and time in collections from 18.5% to 12.1%, and Bento's serial passes from 44 to 8. Under the server collector, which Bento uses, a parallel run's count didn't change (36 and 35). So there's no recommendation yet.
+- **The write session's graph and check** after a transfer are about 13% of a plain `Writer`'s export. The public path, `CafWriter`, uses the graph afterwards, so it stays.
+- **`Iterator` and `Explorer`** are 8.7% of Bento's bytes and 6.5% of healing's. Each explorer has an iterator object for each level, where OCCT's are inline. Making them one array of structs is the next allocation step. It wasn't done, as `Iterator` is used everywhere.
+- **`CurveOnPlane` for circles, `FClass2d`, `WireExplorer`:** not looked at further.
+- **The full corpus at this head, on a loaded machine:** every status is as before but for time and memory checks. `bug24639` (parallel must beat serial by 20%) and `bug83` (a section under 0.1 s) now fail their time limits, and `bug24639` passes alone or 12 at once; the memory trends `bug31075` and `bug7287_*` flipped to OK. They need the clean run to confirm, and they're for 11P.
+- **Corpus times are noisy under load:** the runs differ by up to a factor of two on single cases, either way, so only the large changes above are claims.
+
 ## StepTidy (unit 11N)
 
 *5 November 2026, `Kerf.Kernel.Benchmarks -- step-tidy` over the 289 files `-- healing` exports, written by the plain STEP

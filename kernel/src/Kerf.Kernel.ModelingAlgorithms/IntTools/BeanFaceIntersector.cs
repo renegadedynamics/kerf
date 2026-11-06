@@ -486,6 +486,7 @@ internal class BeanFaceIntersector
         CurveAdaptorBase curve = _curve.ShallowCopy();
         SurfaceAdaptorBase surface = _surface.ShallowCopy();
 
+        exactIntersector.Polyhedra = _context!.Polyhedra(_surface.Face());
         exactIntersector.Perform(curve, surface);
 
         if (exactIntersector.IsDone)

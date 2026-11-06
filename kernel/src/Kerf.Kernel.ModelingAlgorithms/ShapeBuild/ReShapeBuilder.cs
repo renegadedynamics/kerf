@@ -204,6 +204,13 @@ internal class ReShapeBuilder : ReShape
     /// </summary>
     internal override Shape InternalApply(in Shape shape, ShapeType until = ShapeType.Shape)
     {
+        // With no requests the walk below changes nothing, and ends with this status
+        if (HasNoRequests)
+        {
+            _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
+            return shape;
+        }
+
         var inFlight = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
         return ApplyImplCore(shape, until, inFlight);
     }
@@ -258,13 +265,14 @@ internal class ReShapeBuilder : ReShape
             return shape;
         }
 
-        BrepBuilder builder = new();
-
-        Shape result = shape.EmptyCopied();
+        // The copy waits for the first sub-shape that changes: usually none does, and then the shape itself is the answer.
+        // Applying to the sub-shapes writes nothing into this shape, so a later copy is the same copy
+        BrepBuilder? builder = null;
+        Shape result = new();
         Orientation orient = shape.Orientation;
-        result.Orient(Forward); // protect against INTERNAL or EXTERNAL shapes
         bool modif = false;
         int locStatus = _status;
+        int unchanged = 0;
 
         // Apply recorded modifications to subshapes
         inFlight.Add(shape.TShape()!);
@@ -278,7 +286,24 @@ internal class ReShapeBuilder : ReShape
                 {
                     locStatus |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE4);
                 }
-                modif = true;
+                if (!modif)
+                {
+                    modif = true;
+                    builder = new BrepBuilder();
+                    result = shape.EmptyCopied();
+                    result.Orient(Forward); // protect against INTERNAL or EXTERNAL shapes
+                    var before = new Iterator(shape, false);
+                    for (int i = 0; i < unchanged; i++, before.Next())
+                    {
+                        builder.Add(result, before.Value());
+                    }
+                }
+            }
+            else if (!modif)
+            {
+                unchanged++;
+                locStatus |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE3);
+                continue;
             }
             if (newShape.IsNull)
             {
@@ -289,7 +314,7 @@ internal class ReShapeBuilder : ReShape
             if (st == ShapeType.Compound || newShape.Type == sh.Type)
             {
                 // Fix for SAMTECH bug OCC322 about absence internal vertices after sewing
-                builder.Add(result, newShape);
+                builder!.Add(result, newShape);
                 continue;
             }
             int nbItems = 0;
@@ -298,7 +323,7 @@ internal class ReShapeBuilder : ReShape
                 Shape subSh = subIt.Value();
                 if (subSh.Type == sh.Type)
                 {
-                    builder.Add(result, subSh);
+                    builder!.Add(result, subSh);
                 }
                 else
                 {

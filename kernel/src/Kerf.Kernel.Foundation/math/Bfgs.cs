@@ -329,19 +329,83 @@ internal class Bfgs
     public void Perform(MultipleVarFunctionWithGradient f, math_Vector startingPoint)
     {
         int n = _theLocation.Length();
+        Work work = Work.Rent(n);
+        try
+        {
+            PerformWith(work, f, startingPoint);
+        }
+        finally
+        {
+            Work.Return(work);
+        }
+    }
+
+    // The search's vectors and its n by n matrix: one set kept by each thread for the size it last used, as an approximation runs
+    // a minimisation for each fit of the same size. Each search starts from zeros, as with new ones
+    private sealed class Work
+    {
+        private const int LargestKept = 512;
+
+        [ThreadStatic]
+        private static Work? t_spare;
+
+        public readonly int Size;
+        public readonly math_Vector Xi, Dg, Hdg, Temp1, Temp2, Temp3, Temp4;
+        public readonly Matrix Hessin;
+
+        private Work(int n)
+        {
+            Size = n;
+            Xi = new(1, n);
+            Dg = new(1, n);
+            Hdg = new(1, n);
+            Temp1 = new(1, n);
+            Temp2 = new(1, n);
+            Temp3 = new(1, n);
+            Temp4 = new(1, n);
+            Hessin = new(1, n, 1, n);
+        }
+
+        public static Work Rent(int n)
+        {
+            Work? work = t_spare;
+            t_spare = null; // A search inside a search takes its own
+            if (work is null || work.Size != n)
+            {
+                return new Work(n);
+            }
+
+            work.Xi.Init(0.0);
+            work.Dg.Init(0.0);
+            work.Hdg.Init(0.0);
+            work.Temp1.Init(0.0);
+            work.Temp2.Init(0.0);
+            work.Temp3.Init(0.0);
+            work.Temp4.Init(0.0);
+            return work;
+        }
+
+        public static void Return(Work work)
+        {
+            if (work.Size <= LargestKept)
+            {
+                t_spare = work;
+            }
+        }
+    }
+
+    private void PerformWith(Work work, MultipleVarFunctionWithGradient f, math_Vector startingPoint)
+    {
+        int n = work.Size;
         bool good = true;
         int j, i;
         double fae, fad, fac;
 
-        math_Vector xi = new(1, n), dg = new(1, n), hdg = new(1, n);
-        Matrix hessin = new(1, n, 1, n);
+        math_Vector xi = work.Xi, dg = work.Dg, hdg = work.Hdg;
+        Matrix hessin = work.Hessin;
         hessin.Init(0.0);
 
-        math_Vector temp1 = new(1, n);
-        math_Vector temp2 = new(1, n);
-        math_Vector temp3 = new(1, n);
-        math_Vector temp4 = new(1, n);
-        DirFunction F_Dir = new(temp1, temp2, temp3, temp4, f);
+        DirFunction F_Dir = new(work.Temp1, work.Temp2, work.Temp3, work.Temp4, f);
 
         _theLocation.Initialized(startingPoint);
         good = f.Values(_theLocation, out _previousMinimum, _theGradient);

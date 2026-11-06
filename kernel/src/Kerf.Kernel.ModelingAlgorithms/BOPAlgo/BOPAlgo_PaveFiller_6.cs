@@ -2738,57 +2738,91 @@ internal partial class PaveFiller
 
     //=================================================================================================
 
+    private const int StickTypeShift = 28;
+    private readonly Dictionary<int, List<int>> _stickIndex = [];
+    private readonly List<int> _stickCandidates = [];
+    private readonly int[] _stickIndexed = new int[5];
+    private DS? _stickIndexOf;
+
+    // The interference of a kind (VV, VE, EE, VF, EF) and position
+    private Interf StickInterf(int typeInt, int i) => typeInt switch
+    {
+        0 => _ds!.InterfVV()[i],
+        1 => _ds!.InterfVE()[i],
+        2 => _ds!.InterfEE()[i],
+        3 => _ds!.InterfVF()[i],
+        _ => _ds!.InterfEF()[i],
+    };
+
+    // Brings the index of interferences by their first shape up to date: the lists only grow during a run, and a shape's
+    // indices don't change. Whether one has a new vertex can, so that's read each time
+    private void UpdateStickIndex()
+    {
+        // A run starts with a new data structure
+        if (!ReferenceEquals(_stickIndexOf, _ds))
+        {
+            _stickIndexOf = _ds;
+            _stickIndex.Clear();
+            Array.Clear(_stickIndexed);
+        }
+
+        Span<int> counts = [_ds!.InterfVV().Count, _ds.InterfVE().Count, _ds.InterfEE().Count, _ds.InterfVF().Count, _ds.InterfEF().Count];
+
+        for (int typeInt = 0; typeInt < counts.Length; typeInt++)
+        {
+            for (int i = _stickIndexed[typeInt]; i < counts[typeInt]; i++)
+            {
+                StickInterf(typeInt, i).Indices(out int nS1, out _);
+                if (!_stickIndex.TryGetValue(nS1, out List<int>? starting))
+                {
+                    starting = [];
+                    _stickIndex.Add(nS1, starting);
+                }
+
+                starting.Add((typeInt << StickTypeShift) | i);
+            }
+
+            _stickIndexed[typeInt] = counts[typeInt];
+        }
+    }
+
     protected void GetStickVertices(int nF1, int nF2, NCollection_IntMap aMVStick, NCollection_IntMap aMVEF, NCollection_IntMap aMI)
     {
-        int nS1, nS2, nVNew, typeInt, i;
-        //
-        List<InterfVV> vVs = _ds!.InterfVV();
-        List<InterfVE> vEs = _ds.InterfVE();
-        List<InterfEE> eEs = _ds.InterfEE();
-        List<InterfVF> vFs = _ds.InterfVF();
-        List<InterfEF> eFs = _ds.InterfEF();
-        //
-        Span<int> nbLines = [vVs.Count, vEs.Count, eEs.Count, vFs.Count, eFs.Count];
         // collect indices of all shapes from nF1 and nF2.
         aMI.Clear();
         GetFullShapeMap(nF1, aMI);
         GetFullShapeMap(nF2, aMI);
         //
-        // collect VV, VE, EE, VF interferences
-        for (typeInt = 0; typeInt < 4; ++typeInt)
+        // Only the interferences that start from one of those shapes can pass, and with a model's thousands of interferences and
+        // pairs of faces it's worth finding them directly. They're taken in the order of a scan of the five lists, which orders the maps
+        UpdateStickIndex();
+        _stickCandidates.Clear();
+        foreach (int nS in aMI)
         {
-            for (i = 0; i < nbLines[typeInt]; ++i)
+            if (_stickIndex.TryGetValue(nS, out List<int>? starting))
             {
-                Interf aInt = (typeInt == 0)
-                                        ? vVs[i]
-                                        : ((typeInt == 1) ? vEs[i]
-                                                           : ((typeInt == 2) ? eEs[i]
-                                                                              : vFs[i]));
-                if (aInt.HasIndexNew())
-                {
-                    aInt.Indices(out nS1, out nS2);
-                    if (aMI.Contains(nS1) && aMI.Contains(nS2))
-                    {
-                        nVNew = aInt.IndexNew();
-                        _ds.HasShapeSD(nVNew, ref nVNew);
-                        aMVStick.Add(nVNew);
-                    }
-                }
+                _stickCandidates.AddRange(starting);
             }
         }
-        // collect EF interferences
-        for (i = 0; i < nbLines[4]; ++i)
+
+        _stickCandidates.Sort();
+        foreach (int candidate in _stickCandidates)
         {
-            InterfEF aInt = eFs[i];
+            int typeInt = candidate >> StickTypeShift;
+            Interf aInt = StickInterf(typeInt, candidate & ((1 << StickTypeShift) - 1));
             if (aInt.HasIndexNew())
             {
-                aInt.Indices(out nS1, out nS2);
+                aInt.Indices(out int nS1, out int nS2);
                 if (aMI.Contains(nS1) && aMI.Contains(nS2))
                 {
-                    nVNew = aInt.IndexNew();
-                    _ds.HasShapeSD(nVNew, ref nVNew);
+                    int nVNew = aInt.IndexNew();
+                    _ds!.HasShapeSD(nVNew, ref nVNew);
                     aMVStick.Add(nVNew);
-                    aMVEF.Add(nVNew);
+                    if (typeInt == 4)
+                    {
+                        // collect EF interferences
+                        aMVEF.Add(nVNew);
+                    }
                 }
             }
         }

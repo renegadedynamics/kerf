@@ -279,6 +279,19 @@ public class DrawCorpusTests(ITestOutputHelper output)
             return;
         }
 
+        // Unit 11Q's list of slow cases: each case's time, in one pass, written to the file this names
+        if (Environment.GetEnvironmentVariable("KERF_CORPUS_TIMES") is { Length: > 0 } aTimesFile)
+        {
+            File.WriteAllLines(aTimesFile, aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 4)).Select(c =>
+            {
+                long aBytes = GC.GetAllocatedBytesForCurrentThread();
+                var aClock = System.Diagnostics.Stopwatch.StartNew();
+                DrawCaseRun aRun = aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DataPath, TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds));
+                return $"{aClock.ElapsedMilliseconds}	{(GC.GetAllocatedBytesForCurrentThread() - aBytes) >> 20}	{c.Id}	{aRun.Status.Split(' ')[0]}";
+            }).ToList());
+            return;
+        }
+
         Statuses("before 4L2", Run(aRunnableBefore, Before4L2));
         List<DrawCaseRun> aRuns = Run(aRunnable, null);
         Statuses("now", aRuns);

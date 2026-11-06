@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Runtime.CompilerServices;
 using Kerf.Geometry;
 using Kerf.Meshing;
 using Kerf.Topology;
@@ -545,11 +546,31 @@ public static class Renderer
             }
 
             double inverse = 1 / area;
+            // A sliver's weights are mostly rounding, so which pixels pass is only known by asking each one
+            bool useSpans = Math.Abs(area) >= 1;
             for (int y = yMin; y <= yMax; y++)
             {
                 double py = y + 0.5;
                 int row = y * _width;
-                for (int x = xMin; x <= xMax; x++)
+                int xFrom = xMin, xTo = xMax;
+                if (useSpans)
+                {
+                    // Only the pixels the triangle crosses on this row, and one either side so that rounding can't lose any.
+                    // A long thin triangle's box is nearly all misses
+                    double left = double.PositiveInfinity, right = double.NegativeInfinity;
+                    Crossing(ax, ay, bx, by, py, ref left, ref right);
+                    Crossing(bx, by, cx, cy, py, ref left, ref right);
+                    Crossing(cx, cy, ax, ay, py, ref left, ref right);
+                    if (left > right)
+                    {
+                        continue;
+                    }
+
+                    xFrom = Math.Max(xMin, (int)Math.Floor(left) - 1);
+                    xTo = Math.Min(xMax, (int)Math.Ceiling(right) + 1);
+                }
+
+                for (int x = xFrom; x <= xTo; x++)
                 {
                     double px = x + 0.5;
                     double w0 = ((bx - px) * (cy - py) - (by - py) * (cx - px)) * inverse;
@@ -590,6 +611,24 @@ public static class Renderer
                     }
                 }
             }
+        }
+
+        // Where an edge crosses a row, widening what's known of the row's span
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void Crossing(double x0, double y0, double x1, double y1, double y, ref double left, ref double right)
+        {
+            const double margin = 1e-6;
+            if (y < Math.Min(y0, y1) - margin || y > Math.Max(y0, y1) + margin)
+            {
+                return;
+            }
+
+            double dy = y1 - y0;
+            double t = Math.Abs(dy) > margin ? Math.Clamp((y - y0) / dy, 0, 1) : 0;
+            double xa = Math.Abs(dy) > margin ? x0 + t * (x1 - x0) : Math.Min(x0, x1);
+            double xb = Math.Abs(dy) > margin ? xa : Math.Max(x0, x1);
+            left = Math.Min(left, xa);
+            right = Math.Max(right, xb);
         }
 
         private void Segment(int s, int y0, int y1, double radius, uint packed, uint[] color, float[] depth)

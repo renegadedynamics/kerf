@@ -73,6 +73,9 @@ internal class ReShape : Transient
     // If a shape is not bound to the map then the shape is replaced by itself.
     private readonly Dictionary<Shape, TReplacement> _shapeToReplacement = new(ShapeHasher.Instance);
 
+    /// <summary>True if nothing has been asked to be replaced or removed.</summary>
+    protected bool HasNoRequests => _shapeToReplacement.Count == 0;
+
     /// <summary>The shapes recorded as replacements.</summary>
     protected readonly HashSet<Shape> _newShapes = new(ShapeHasher.Instance);
 
@@ -384,6 +387,13 @@ internal class ReShape : Transient
     /// <summary>Applies the substitution requests, as <see cref="Apply"/>, without freezing the result (ported code).</summary>
     internal virtual Shape InternalApply(in Shape shape, ShapeType until = ShapeType.Shape)
     {
+        // With no requests the walk below changes nothing, and ends with this status
+        if (HasNoRequests)
+        {
+            _status = EncodeStatus(0);
+            return shape;
+        }
+
         var inFlight = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
         return ApplyImpl(shape, until, inFlight);
     }
@@ -442,11 +452,13 @@ internal class ReShape : Transient
         // fix for SAMTECH bug OCC322 about absent internal vertices after sewing.
         BrepBuilder B = new();
 
-        Shape result = shape.EmptyCopied();
+        // The copy waits for the first sub-shape that changes: usually none does, and then the shape itself is the answer.
+        // Applying to the sub-shapes writes nothing into this shape, so a later copy is the same copy
+        Shape result = new();
         Orientation orien = shape.Orientation;
-        result.Orient(Forward); // protect against INTERNAL or EXTERNAL shapes
         bool modif = false;
         int locStatus = _status;
+        int unchanged = 0;
 
         // apply recorded modifications to subshapes
         bool isEmpty = true;
@@ -461,7 +473,24 @@ internal class ReShape : Transient
                 { // ShapeExtend::DecodeStatus ( myStatus, ShapeExtend_DONE4 ) )
                     locStatus |= EncodeStatus(4); //|= ShapeExtend::EncodeStatus ( ShapeExtend_DONE4 );
                 }
-                modif = true;
+                if (!modif)
+                {
+                    modif = true;
+                    result = shape.EmptyCopied();
+                    result.Orient(Forward); // protect against INTERNAL or EXTERNAL shapes
+                    var before = new Iterator(shape, false);
+                    for (int i = 0; i < unchanged; i++, before.Next())
+                    {
+                        B.Add(result, before.Value());
+                    }
+                }
+            }
+            else if (!modif)
+            {
+                unchanged++;
+                isEmpty = false;
+                locStatus |= EncodeStatus(3); // ShapeExtend::EncodeStatus ( ShapeExtend_DONE3 );
+                continue;
             }
             if (newsh.IsNull)
             {

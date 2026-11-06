@@ -243,6 +243,63 @@ internal sealed class MeasurementGauss
         }
     }
 
+    // The index of the first largest value, as math_Vector.Max gives it (1,953 values for each subdivision), from the part written
+    // so far. What's after it is all zeros, so can't change the answer unless everything here is negative
+    private static int MaxOfWritten(math_Vector values, int written)
+    {
+        int largest = 0;
+        double x = double.MinValue;
+        for (int index = values.Lower(), last = Min(written, values.Upper()); index <= last; index++)
+        {
+            double value = values.Value(index);
+            if (value > x)
+            {
+                x = value;
+                largest = index;
+            }
+        }
+
+        return x >= 0.0 ? largest : values.Max();
+    }
+
+    // Compute's work vectors, of about 500 kB and two of them large objects: one set a thread is reused for every face. Each
+    // computation starts from zeros, as with new ones
+    private sealed class GaussWork
+    {
+        private static readonly int NbGaussPoint = RealToInt(Math.Ceiling(ERROR_ALGEBR_RATIO * Gpm));
+
+        [ThreadStatic]
+        private static GaussWork? t_spare;
+
+        public readonly NCollection_Array1<Inertia> InertiaL = new(1, Sm), InertiaU = new(1, Sm);
+        public readonly math_Vector[] LGaussP = Pair(), LGaussW = Pair(), UGaussP = Pair(), UGaussW = Pair();
+        public readonly math_Vector L1 = new(1, Sm), L2 = new(1, Sm), U1 = new(1, Sm), U2 = new(1, Sm);
+        public readonly math_Vector ErrL = new(1, Sm, 0.0), ErrU = new(1, Sm, 0.0), ErrUL = new(1, Sm, 0.0);
+
+        private static math_Vector[] Pair() => [new math_Vector(1, Gpm), new math_Vector(1, NbGaussPoint)];
+
+        public static GaussWork Rent()
+        {
+            GaussWork? work = t_spare;
+            t_spare = null; // A computation inside a computation takes its own
+            if (work is null)
+            {
+                return new GaussWork();
+            }
+
+            work.InertiaL.AsSpan().Clear();
+            work.InertiaU.AsSpan().Clear();
+            foreach (math_Vector vector in (ReadOnlySpan<math_Vector>)[work.LGaussP[0], work.LGaussP[1], work.LGaussW[0], work.LGaussW[1], work.UGaussP[0], work.UGaussP[1], work.UGaussW[0], work.UGaussW[1], work.L1, work.L2, work.U1, work.U2, work.ErrL, work.ErrU, work.ErrUL])
+            {
+                vector.Init(0.0);
+            }
+
+            return work;
+        }
+
+        public static void Return(GaussWork work) => t_spare = work;
+    }
+
     private static int FillIntervalBounds(double a,
                                           double b,
                                           NCollection_Array1<double> knots,
@@ -526,41 +583,47 @@ internal sealed class MeasurementGauss
                           ref Point3D outGravityCenter,
                           ref Matrix3x3 outInertia)
     {
+        GaussWork work = GaussWork.Rent();
+        try
+        {
+            return ComputeWith(work, surface, domain, location, eps, coeff, isByPoint, ref outMass, ref outGravityCenter, ref outInertia);
+        }
+        finally
+        {
+            GaussWork.Return(work);
+        }
+    }
+
+    private double ComputeWith(GaussWork work,
+                               FaceIntegrand surface,
+                               Domain domain,
+                               in Point3D location,
+                               double eps,
+                               ReadOnlySpan<double> coeff,
+                               bool isByPoint,
+                               ref double outMass,
+                               ref Point3D outGravityCenter,
+                               ref Matrix3x3 outInertia)
+    {
         bool isErrorCalculation = 0.0 > eps || eps < 0.001;
         bool isVerifyComputation = 0.0 < eps && eps < 0.001;
 
         double epsilon = Math.Abs(eps);
 
         Inertia inertia = new();
-        NCollection_Array1<Inertia> inertiaL = new(1, Sm);
-        NCollection_Array1<Inertia> inertiaU = new(1, Sm);
+        NCollection_Array1<Inertia> inertiaL = work.InertiaL;
+        NCollection_Array1<Inertia> inertiaU = work.InertiaU;
 
         // Prepare Gauss points and weights
-        var lGaussP = new math_Vector[2];
-        var lGaussW = new math_Vector[2];
-        var uGaussP = new math_Vector[2];
-        var uGaussW = new math_Vector[2];
+        math_Vector[] lGaussP = work.LGaussP, lGaussW = work.LGaussW, uGaussP = work.UGaussP, uGaussW = work.UGaussW;
 
-        int nbGaussPoint = RealToInt(Math.Ceiling(ERROR_ALGEBR_RATIO * Gpm));
+        math_Vector L1 = work.L1, L2 = work.L2, U1 = work.U1, U2 = work.U2;
 
-        lGaussP[0] = new math_Vector(1, Gpm);
-        lGaussP[1] = new math_Vector(1, nbGaussPoint);
-        lGaussW[0] = new math_Vector(1, Gpm);
-        lGaussW[1] = new math_Vector(1, nbGaussPoint);
+        math_Vector errL = work.ErrL, errU = work.ErrU;
+        math_Vector? errUL = work.ErrUL;
 
-        uGaussP[0] = new math_Vector(1, Gpm);
-        uGaussP[1] = new math_Vector(1, nbGaussPoint);
-        uGaussW[0] = new math_Vector(1, Gpm);
-        uGaussW[1] = new math_Vector(1, nbGaussPoint);
-
-        var L1 = new math_Vector(1, Sm);
-        var L2 = new math_Vector(1, Sm);
-        var U1 = new math_Vector(1, Sm);
-        var U2 = new math_Vector(1, Sm);
-
-        var errL = new math_Vector(1, Sm, 0.0);
-        var errU = new math_Vector(1, Sm, 0.0);
-        math_Vector? errUL = new math_Vector(1, Sm, 0.0);
+        // How far each error vector has been written: past that it holds its initial zeros
+        int writtenL = 0, writtenU = 0;
 
         // Face parametrization in U and V direction
         double bv1, bv2, bu1, bu2;
@@ -670,9 +733,10 @@ internal sealed class MeasurementGauss
 
                 do // while: L
                 {
+                    writtenL = Max(writtenL, jl + 1);
                     if (++jl > iLSubEnd)
                     {
-                        lRange[0] = il = errL.Max();
+                        lRange[0] = il = MaxOfWritten(errL, writtenL);
                         lRange[1] = jl;
                         L1.Value(jl) = (L1.Value(il) + L2.Value(il)) * 0.5;
                         L2.Value(jl) = L2.Value(il);
@@ -779,9 +843,10 @@ internal sealed class MeasurementGauss
 
                                     do
                                     { // while: U
+                                        writtenU = Max(writtenU, ju + 1);
                                         if (++ju > iUSubEnd)
                                         {
-                                            uRange[0] = IU = errU.Max();
+                                            uRange[0] = IU = MaxOfWritten(errU, writtenU);
                                             uRange[1] = ju;
 
                                             U1.Value(ju) = (U1.Value(IU) + U2.Value(IU)) * 0.5;
@@ -914,7 +979,7 @@ internal sealed class MeasurementGauss
                                         if (ju == iUSubEnd)
                                         {
                                             kUEnd = 2;
-                                            errorU = errU.Value(errU.Max());
+                                            errorU = errU.Value(MaxOfWritten(errU, writtenU));
                                         }
                                     } while ((errorU - epsU > 0.0 && epsU != 0.0) || kUEnd == 1);
 
@@ -1010,7 +1075,7 @@ internal sealed class MeasurementGauss
 
                     if (kLEnd == 2)
                     {
-                        errorL = errL.Value(errL.Max());
+                        errorL = errL.Value(MaxOfWritten(errL, writtenL));
                     }
                 } while ((errorL - epsL > 0.0 && isVerifyComputation) || kLEnd == 1);
 
