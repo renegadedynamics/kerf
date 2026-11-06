@@ -62,8 +62,8 @@ internal readonly struct Geom2dCurveTool : ICurveCurveTool<Curve2DAdaptorBase>
     /// <summary>The tolerance used to determine the intersections (1e-10).</summary>
     public static double EpsX(in Curve2DAdaptorBase c) => (1.0e-10);
 
-    /// <summary>The parametric resolution of the 2D tolerance <paramref name="Eps_XYZ"/>.</summary>
-    public static double EpsX(in Curve2DAdaptorBase c, double Eps_XYZ) => (c.Resolution(Eps_XYZ));
+    /// <summary>The parametric resolution of the 2D tolerance <paramref name="epsXyz"/>.</summary>
+    public static double EpsX(in Curve2DAdaptorBase c, double epsXyz) => (c.Resolution(epsXyz));
 
     public static void Intervals(in Curve2DAdaptorBase c, NCollection_Array1<double> tab)
     {

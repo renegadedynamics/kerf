@@ -291,13 +291,13 @@ internal static partial class ExtremaPC
     /// Adds the curve endpoints to a result when the domain is finite, the endpoint is a true local extremum
     /// (checked against a neighbouring point) and it doesn't duplicate an existing extremum.
     /// </summary>
-    internal static void AddEndpointExtrema<CurveEvaluator>(Result result,
+    internal static void AddEndpointExtrema<TCurveEvaluator>(Result result,
                                                             in Point3D p,
                                                             in global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D domain,
-                                                            CurveEvaluator eval,
+                                                            TCurveEvaluator eval,
                                                             double tol,
                                                             SearchMode mode)
-        where CurveEvaluator : ICurveEvaluator
+        where TCurveEvaluator : ICurveEvaluator
     {
         // Check for infinite bounds
         if (!domain.IsFinite())

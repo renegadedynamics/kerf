@@ -269,11 +269,11 @@ internal sealed class Circuit : Transient
         return false;
     }
 
-    private static void SubSequence(NCollection_Sequence<Geometry2D> s1, int IF, int il,
+    private static void SubSequence(NCollection_Sequence<Geometry2D> s1, int iFirst, int il,
         NCollection_Sequence<Geometry2D> s2)
     {
         s2.Clear();
-        for (int i = IF; i <= il; i++)
+        for (int i = iFirst; i <= il; i++)
         {
             s2.Append(s1.Value(i));
         }

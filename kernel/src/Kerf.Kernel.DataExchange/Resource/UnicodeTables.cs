@@ -27,27 +27,27 @@ internal static class UnicodeTables
     private const int NbCodePages = (int)FormatType.FormatType_CP850 - (int)FormatType.FormatType_CP1250 + 1;
 
     private static readonly Lazy<Dictionary<int, uint>[]> Corrections = new(LoadCorrections);
-    private static readonly Lazy<char[][]> S_codePages = new(BuildCodePages);
-    private static readonly Lazy<uint[]> S_sjis = new(() => BuildTable(Table.Sjis, 65536, 932, SjisBytes));
-    private static readonly Lazy<uint[]> S_gb = new(() => BuildTable(Table.Gb, 65536, 936, GbBytes));
-    private static readonly Lazy<uint[]> S_gbk = new(() => BuildTable(Table.Gbk, 23940, 936, GbkBytes));
-    private static readonly Lazy<uint[]> S_big5 = new(() => BuildTable(Table.Big5, 19782, 950, Big5Bytes));
+    private static readonly Lazy<char[][]> CodePagesTable = new(BuildCodePages);
+    private static readonly Lazy<uint[]> SjisTable = new(() => BuildTable(Table.Sjis, 65536, 932, SjisBytes));
+    private static readonly Lazy<uint[]> GbTable = new(() => BuildTable(Table.Gb, 65536, 936, GbBytes));
+    private static readonly Lazy<uint[]> GbkTable = new(() => BuildTable(Table.Gbk, 23940, 936, GbkBytes));
+    private static readonly Lazy<uint[]> Big5Table = new(() => BuildTable(Table.Big5, 19782, 950, Big5Bytes));
 
     /// <summary>The 128 upper characters of an 8-bit code page (THE_CODEPAGES_ANSI[page]); 0 where undefined.</summary>
     internal static char[] CodePage(FormatType format) =>
-        S_codePages.Value[(int)format - (int)FormatType.FormatType_CP1250];
+        CodePagesTable.Value[(int)format - (int)FormatType.FormatType_CP1250];
 
     /// <summary>sjisuni[theSjis].</summary>
-    internal static uint SjisUni(int sjis) => S_sjis.Value[sjis];
+    internal static uint SjisUni(int sjis) => SjisTable.Value[sjis];
 
     /// <summary>gbuni[theGb].</summary>
-    internal static uint GbUni(int gb) => S_gb.Value[gb];
+    internal static uint GbUni(int gb) => GbTable.Value[gb];
 
     /// <summary>gbkuni[thePointer].</summary>
-    internal static uint GbkUni(int pointer) => S_gbk.Value[pointer];
+    internal static uint GbkUni(int pointer) => GbkTable.Value[pointer];
 
     /// <summary>big5uni[thePointer].</summary>
-    internal static uint Big5Uni(int pointer) => S_big5.Value[pointer];
+    internal static uint Big5Uni(int pointer) => Big5Table.Value[pointer];
 
     /// <summary>The .NET code page of an 8-bit format, in OCCT's order of THE_CODEPAGES_ANSI.</summary>
     internal static int WindowsCodePage(int page) => page switch

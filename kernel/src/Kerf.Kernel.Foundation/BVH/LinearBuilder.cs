@@ -34,7 +34,7 @@ internal class LinearBuilder<T, TVec> : Builder<T, TVec>
         while (nbPrims > 0)
         {
             int step = nbPrims / 2;
-            if ((encodedLinks.Value(start + step).first & bit) != 0)
+            if ((encodedLinks.Value(start + step).First & bit) != 0)
             {
                 nbPrims = step;
             }
@@ -179,11 +179,11 @@ internal static partial class BvhTools
         where T : unmanaged, INumber<T>, IMinMaxValue<T>
         where TVec : unmanaged, INCollection_Vec<T, TVec>
     {
-        public readonly global::Kerf.Engine.Geometry.Bvh.ISet<T, TVec> mySet = theSet;        //!< Set of geometric objects
-        public readonly Tree<T, TVec> myBVH = theBVH;       //!< BVH tree built over the set
+        public readonly global::Kerf.Engine.Geometry.Bvh.ISet<T, TVec> Set = theSet;        //!< Set of geometric objects
+        public readonly Tree<T, TVec> BVH = theBVH;       //!< BVH tree built over the set
         public readonly int Node = theNode;                   //!< BVH node to update bounding box
-        public readonly int myLevel = theLevel;                 //!< Level of the processed BVH node
-        public readonly StrongBox<int> myHeight = theHeight;    //!< Height of the processed BVH node
+        public readonly int Level = theLevel;                 //!< Level of the processed BVH node
+        public readonly StrongBox<int> Height = theHeight;    //!< Height of the processed BVH node
     }
 
     /// <summary>A task for updating bounds, in parallel for the top levels when allowed.</summary>
@@ -196,36 +196,36 @@ internal static partial class BvhTools
         /// <summary>Executes the task (OCCT's <c>operator()</c>).</summary>
         public void Invoke(BoundData<T, TVec> data)
         {
-            if (data.myBVH.IsOuter(data.Node) || data.myLevel > 2)
+            if (data.BVH.IsOuter(data.Node) || data.Level > 2)
             {
-                data.myHeight.Value = UpdateBounds(data.mySet, data.myBVH, data.Node);
+                data.Height.Value = UpdateBounds(data.Set, data.BVH, data.Node);
             }
             else
             {
                 StrongBox<int> lftHeight = new(0);
                 StrongBox<int> rghHeight = new(0);
 
-                int lftChild = data.myBVH.NodeInfoBuffer()[data.Node].Y();
-                int rghChild = data.myBVH.NodeInfoBuffer()[data.Node].Z();
+                int lftChild = data.BVH.NodeInfoBuffer()[data.Node].Y();
+                int rghChild = data.BVH.NodeInfoBuffer()[data.Node].Z();
 
                 List<BoundData<T, TVec>> list = new(2);
 
-                if (!data.myBVH.IsOuter(lftChild))
+                if (!data.BVH.IsOuter(lftChild))
                 {
-                    list.Add(new BoundData<T, TVec>(data.mySet, data.myBVH, lftChild, data.myLevel + 1, lftHeight));
+                    list.Add(new BoundData<T, TVec>(data.Set, data.BVH, lftChild, data.Level + 1, lftHeight));
                 }
                 else
                 {
-                    lftHeight.Value = UpdateBounds(data.mySet, data.myBVH, lftChild);
+                    lftHeight.Value = UpdateBounds(data.Set, data.BVH, lftChild);
                 }
 
-                if (!data.myBVH.IsOuter(rghChild))
+                if (!data.BVH.IsOuter(rghChild))
                 {
-                    list.Add(new BoundData<T, TVec>(data.mySet, data.myBVH, rghChild, data.myLevel + 1, rghHeight));
+                    list.Add(new BoundData<T, TVec>(data.Set, data.BVH, rghChild, data.Level + 1, rghHeight));
                 }
                 else
                 {
-                    rghHeight.Value = UpdateBounds(data.mySet, data.myBVH, rghChild);
+                    rghHeight.Value = UpdateBounds(data.Set, data.BVH, rghChild);
                 }
 
                 if (list.Count > 0)
@@ -235,18 +235,18 @@ internal static partial class BvhTools
                     OsdParallel.ForEach(list, task.Invoke, !_isParallel);
                 }
 
-                TVec lftMinPoint = data.myBVH.MinPointBuffer()[lftChild];
-                TVec lftMaxPoint = data.myBVH.MaxPointBuffer()[lftChild];
-                TVec rghMinPoint = data.myBVH.MinPointBuffer()[rghChild];
-                TVec rghMaxPoint = data.myBVH.MaxPointBuffer()[rghChild];
+                TVec lftMinPoint = data.BVH.MinPointBuffer()[lftChild];
+                TVec lftMaxPoint = data.BVH.MaxPointBuffer()[lftChild];
+                TVec rghMinPoint = data.BVH.MinPointBuffer()[rghChild];
+                TVec rghMaxPoint = data.BVH.MaxPointBuffer()[rghChild];
 
                 CwiseMin<T, TVec>(ref lftMinPoint, rghMinPoint);
                 CwiseMax<T, TVec>(ref lftMaxPoint, rghMaxPoint);
 
-                data.myBVH.MinPointBuffer()[data.Node] = lftMinPoint;
-                data.myBVH.MaxPointBuffer()[data.Node] = lftMaxPoint;
+                data.BVH.MinPointBuffer()[data.Node] = lftMinPoint;
+                data.BVH.MaxPointBuffer()[data.Node] = lftMaxPoint;
 
-                data.myHeight.Value = Math.Max(lftHeight.Value, rghHeight.Value) + 1;
+                data.Height.Value = Math.Max(lftHeight.Value, rghHeight.Value) + 1;
             }
         }
     }

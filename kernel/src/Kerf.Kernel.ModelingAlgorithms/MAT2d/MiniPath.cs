@@ -223,7 +223,7 @@ internal sealed class MiniPath
     {
         POnCurv2d pointOnCurv1, pointOnCurv2;
         int ic1, ic2, iMinC1 = 0, iMinC2 = 0, i;
-        double DistL1L2_2, DistP1P2_2;
+        double distL1L22, distP1P22;
         double parameterOnC1 = 0.0, parameterOnC2 = 0.0;
         NCollection_Sequence<Geometry2D> l1, l2;
         Point2D point1 = new(), point2 = new(), p1 = new(), p2 = new();
@@ -233,7 +233,7 @@ internal sealed class MiniPath
         l1 = figure.Value(il1);
         l2 = figure.Value(il2);
 
-        DistL1L2_2 = RealLast();
+        distL1L22 = RealLast();
 
         // The extrema of distance between the components of L1 and L2.
         for (ic1 = 1; ic1 <= l1.Length(); ic1++)
@@ -262,10 +262,10 @@ internal sealed class MiniPath
 
                 if (type1 == typeof(CartesianPoint2) && type2 == typeof(CartesianPoint2))
                 {
-                    DistP1P2_2 = p1.SquareDistanceTo(p2);
-                    if (DistP1P2_2 <= DistL1L2_2)
+                    distP1P22 = p1.SquareDistanceTo(p2);
+                    if (distP1P22 <= distL1L22)
                     {
-                        DistL1L2_2 = DistP1P2_2;
+                        distL1L22 = distP1P22;
                         iMinC1 = ic1;
                         iMinC2 = ic2;
                         point1 = p1;
@@ -282,9 +282,9 @@ internal sealed class MiniPath
                     {
                         for (i = 1; i <= extremas.ExtCount; i++)
                         {
-                            if (extremas.SquareDistance(i) < DistL1L2_2)
+                            if (extremas.SquareDistance(i) < distL1L22)
                             {
-                                DistL1L2_2 = extremas.SquareDistance(i);
+                                distL1L22 = extremas.SquareDistance(i);
                                 iMinC1 = ic1;
                                 iMinC2 = ic2;
                                 pointOnCurv2 = extremas.Point(i);
@@ -304,9 +304,9 @@ internal sealed class MiniPath
                     {
                         for (i = 1; i <= extremas.ExtCount; i++)
                         {
-                            if (extremas.SquareDistance(i) < DistL1L2_2)
+                            if (extremas.SquareDistance(i) < distL1L22)
                             {
-                                DistL1L2_2 = extremas.SquareDistance(i);
+                                distL1L22 = extremas.SquareDistance(i);
                                 iMinC1 = ic1;
                                 iMinC2 = ic2;
                                 pointOnCurv1 = extremas.Point(i);
@@ -327,9 +327,9 @@ internal sealed class MiniPath
                     {
                         for (i = 1; i <= extremas.ExtCount; i++)
                         {
-                            if (extremas.SquareDistance(i) < DistL1L2_2)
+                            if (extremas.SquareDistance(i) < distL1L22)
                             {
-                                DistL1L2_2 = extremas.SquareDistance(i);
+                                distL1L22 = extremas.SquareDistance(i);
                                 iMinC1 = ic1;
                                 iMinC2 = ic2;
                                 extremas.Points(i, out pointOnCurv1, out pointOnCurv2);
@@ -344,7 +344,7 @@ internal sealed class MiniPath
             }
         }
 
-        Connexion connexionL1L2 = new(il1, il2, iMinC1, iMinC2, Math.Sqrt(DistL1L2_2), parameterOnC1,
+        Connexion connexionL1L2 = new(il1, il2, iMinC1, iMinC2, Math.Sqrt(distL1L22), parameterOnC1,
             parameterOnC2, point1, point2);
 
         return connexionL1L2;

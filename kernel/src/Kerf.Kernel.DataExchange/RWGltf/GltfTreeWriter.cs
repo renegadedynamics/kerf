@@ -394,7 +394,7 @@ internal sealed class GltfTreeWriter
         using var partsPS = new ProgressScope(ps.Next(), "Meshes", Math.Max(1, nbParts));
         bool isCancelled = false;
 
-        int materialOf(ColorWithAlpha? color)
+        int MaterialOf(ColorWithAlpha? color)
         {
             if (color is not ColorWithAlpha aColor)
             {
@@ -450,7 +450,7 @@ internal sealed class GltfTreeWriter
             {
                 (int pos, int normal, int indices) = accessors.Groups[i];
                 ColorWithAlpha? aColor = accessors.Mesh.Groups[i].Color ?? nodeColor;
-                primitives.Add(new Primitive(pos, normal, indices, materialOf(aColor)));
+                primitives.Add(new Primitive(pos, normal, indices, MaterialOf(aColor)));
             }
             model.Meshes.Add(new Mesh(part.Name, primitives));
             int index = model.Meshes.Count - 1;
@@ -458,7 +458,7 @@ internal sealed class GltfTreeWriter
             return index;
         }
 
-        int visit(Instance instance, Style parentStyle)
+        int Visit(Instance instance, Style parentStyle)
         {
             DocumentProduct product = instance.Product;
             Style aStyle = parentStyle.Merged(product.Attributes).Merged(instance.Attributes);
@@ -481,7 +481,7 @@ internal sealed class GltfTreeWriter
             {
                 foreach (Instance component in product.Components)
                 {
-                    int child = visit(component, aStyle);
+                    int child = Visit(component, aStyle);
                     if (isCancelled)
                     {
                         return -1;
@@ -501,7 +501,7 @@ internal sealed class GltfTreeWriter
 
         foreach (Instance root in aTree.Roots)
         {
-            int node = visit(root, Style.Default);
+            int node = Visit(root, Style.Default);
             if (isCancelled)
             {
                 return null;

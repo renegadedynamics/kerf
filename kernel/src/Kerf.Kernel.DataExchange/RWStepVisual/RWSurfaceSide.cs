@@ -9,9 +9,9 @@ namespace Kerf.Engine.Exchange.Step.Visual.ReadWrite;
 
 internal static class RWSurfaceSide
 {
-    public const string ssNegative = ".NEGATIVE.";
-    public const string ssPositive = ".POSITIVE.";
-    public const string ssBoth = ".BOTH.";
+    public const string SsNegative = ".NEGATIVE.";
+    public const string SsPositive = ".POSITIVE.";
+    public const string SsBoth = ".BOTH.";
 
     /// <summary>
     /// Convert StepVisual_SurfaceSide to string
@@ -23,11 +23,11 @@ internal static class RWSurfaceSide
         switch (sourceEnum)
         {
             case SurfaceSide.SsNegative:
-                return ssNegative;
+                return SsNegative;
             case SurfaceSide.SsPositive:
-                return ssPositive;
+                return SsPositive;
             case SurfaceSide.SsBoth:
-                return ssBoth;
+                return SsBoth;
         }
         return null;
     }
@@ -40,15 +40,15 @@ internal static class RWSurfaceSide
     /// </summary>
     public static bool ConvertToEnum(string sideStr, ref SurfaceSide resultEnum)
     {
-        if (sideStr == ssNegative)
+        if (sideStr == SsNegative)
         {
             resultEnum = SurfaceSide.SsNegative;
         }
-        else if (sideStr == ssPositive)
+        else if (sideStr == SsPositive)
         {
             resultEnum = SurfaceSide.SsPositive;
         }
-        else if (sideStr == ssBoth)
+        else if (sideStr == SsBoth)
         {
             resultEnum = SurfaceSide.SsBoth;
         }

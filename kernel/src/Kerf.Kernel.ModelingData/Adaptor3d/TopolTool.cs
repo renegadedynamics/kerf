@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// <remarks>A working object (decision 101): <c>Initialize</c> and the iterators are public, as in OCCT.</remarks>
 internal class TopolTool : Transient
 {
-    private static double myInfinite => global::Kerf.Engine.Foundation.Precision.Infinite();
+    private static double Infinite => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     // Absolute possible minimum of sample points (restriction of IntPolyh).
     private const int MinPnts = 4;
@@ -88,21 +88,21 @@ internal class TopolTool : Transient
 
         if (!vinfinfinite)
         {
-            deltap = Min(_usup - _uinf, 2.0 * myInfinite);
-            if (_uinf >= -myInfinite)
+            deltap = Min(_usup - _uinf, 2.0 * Infinite);
+            if (_uinf >= -Infinite)
             {
                 pinf = _uinf;
                 psup = pinf + deltap;
             }
-            else if (_usup <= myInfinite)
+            else if (_usup <= Infinite)
             {
                 psup = _usup;
                 pinf = psup - deltap;
             }
             else
             {
-                pinf = -myInfinite;
-                psup = myInfinite;
+                pinf = -Infinite;
+                psup = Infinite;
             }
 
             _restr[_nbRestr] = new Line2d(new Point2D(0.0, _vinf), new Direction2D(Direction2D.D.X), pinf, psup);
@@ -111,21 +111,21 @@ internal class TopolTool : Transient
 
         if (!usupinfinite)
         {
-            deltap = Min(_vsup - _vinf, 2.0 * myInfinite);
-            if (_vinf >= -myInfinite)
+            deltap = Min(_vsup - _vinf, 2.0 * Infinite);
+            if (_vinf >= -Infinite)
             {
                 pinf = _vinf;
                 psup = pinf + deltap;
             }
-            else if (_vsup <= myInfinite)
+            else if (_vsup <= Infinite)
             {
                 psup = _vsup;
                 pinf = psup - deltap;
             }
             else
             {
-                pinf = -myInfinite;
-                psup = myInfinite;
+                pinf = -Infinite;
+                psup = Infinite;
             }
 
             _restr[_nbRestr] = new Line2d(new Point2D(_usup, 0.0), new Direction2D(Direction2D.D.Y), pinf, psup);
@@ -134,21 +134,21 @@ internal class TopolTool : Transient
 
         if (!vsupinfinite)
         {
-            deltap = Min(_usup - _uinf, 2.0 * myInfinite);
-            if (-_usup >= -myInfinite)
+            deltap = Min(_usup - _uinf, 2.0 * Infinite);
+            if (-_usup >= -Infinite)
             {
                 pinf = -_usup;
                 psup = pinf + deltap;
             }
-            else if (-_uinf <= myInfinite)
+            else if (-_uinf <= Infinite)
             {
                 psup = -_uinf;
                 pinf = psup - deltap;
             }
             else
             {
-                pinf = -myInfinite;
-                psup = myInfinite;
+                pinf = -Infinite;
+                psup = Infinite;
             }
 
             _restr[_nbRestr] = new Line2d(new Point2D(0.0, _vsup), new Direction2D(Direction2D.D.NX), pinf, psup);
@@ -157,21 +157,21 @@ internal class TopolTool : Transient
 
         if (!uinfinfinite)
         {
-            deltap = Min(_vsup - _vinf, 2.0 * myInfinite);
-            if (-_vsup >= -myInfinite)
+            deltap = Min(_vsup - _vinf, 2.0 * Infinite);
+            if (-_vsup >= -Infinite)
             {
                 pinf = -_vsup;
                 psup = pinf + deltap;
             }
-            else if (-_vinf <= myInfinite)
+            else if (-_vinf <= Infinite)
             {
                 psup = -_vinf;
                 pinf = psup - deltap;
             }
             else
             {
-                pinf = -myInfinite;
-                psup = myInfinite;
+                pinf = -Infinite;
+                psup = Infinite;
             }
 
             _restr[_nbRestr] = new Line2d(new Point2D(_uinf, 0.0), new Direction2D(Direction2D.D.NY), pinf, psup);
@@ -185,21 +185,21 @@ internal class TopolTool : Transient
             double u = 0.0, v = 0.0;
             GetConeApexParam(s.Cone(), out u, out v);
 
-            deltap = Min(_usup - _uinf, 2.0 * myInfinite);
-            if (_uinf >= -myInfinite)
+            deltap = Min(_usup - _uinf, 2.0 * Infinite);
+            if (_uinf >= -Infinite)
             {
                 pinf = _uinf;
                 psup = pinf + deltap;
             }
-            else if (_usup <= myInfinite)
+            else if (_usup <= Infinite)
             {
                 psup = _usup;
                 pinf = psup - deltap;
             }
             else
             {
-                pinf = -myInfinite;
-                psup = myInfinite;
+                pinf = -Infinite;
+                psup = Infinite;
             }
 
             _restr[_nbRestr] = new Line2d(new Point2D(u, v), new Direction2D(Direction2D.D.X), pinf, psup);
@@ -216,13 +216,13 @@ internal class TopolTool : Transient
         theUinf = curve.FirstParameter();
         theUsup = curve.LastParameter();
         //  if (!Precision::IsNegativeInfinite(theUinf)) {
-        if (theUinf > -myInfinite)
+        if (theUinf > -Infinite)
         {
             _vtx[_nbVtx] = new HVertex(curve.Value(theUinf), Forward, 1.0e-8);
             _nbVtx++;
         }
         //  if (!Precision::IsPositiveInfinite(theUsup)) {
-        if (theUsup < myInfinite)
+        if (theUsup < Infinite)
         {
             _vtx[_nbVtx] = new HVertex(curve.Value(theUsup), Reversed, 1.0e-8);
             _nbVtx++;
