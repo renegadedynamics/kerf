@@ -20,7 +20,7 @@ public static partial class ShellExtensions
                 if (!self.IsManifold)
                     return 0.0;
                 var solid = Failures.Get(self.MakeSolid(), () => "solid from shell").Shape;
-                return ShapeExtensions.MassPropertiesOf(solid)!.Mass;
+                return solid.IntegrateVolume(TopoUtil.Measured);
             }
         }
 
@@ -133,7 +133,7 @@ public static partial class ShellExtensions
             var pathWire = Wire.Make(Wire.Make(path.Edges()).OrderEdges());
             // BRepOffsetAPI_MakePipeShell's defaults (corrected Frenet), not closed into a solid
             var options = new SweepOptions { MakeSolid = false, Transition = FaceExtensions.TransitionMode(transition) };
-            var built = Failures.Get(Sweeps.Sweep(profileWire, pathWire, options), () => "sweep");
+            var built = Failures.GetWarned(Sweeps.Sweep(profileWire, pathWire, options), () => "sweep");
             var result = (Shell)built.Shape;
             return SkipClean.Clean ? result.Clean() : result;
         }
@@ -224,14 +224,14 @@ public static partial class ShellExtensions
     }
 }
 
-/// <summary>The module-level functions of build123d's topology/two_d.py.</summary>
-public static class TwoD
+/// <summary>What faces and shells share internally, from build123d's topology/two_d.py.</summary>
+internal static class TwoD
 {
     /// <summary>
     /// The wires grouped into faces: each group the outer wire then its holes, assuming outer wires come before inner ones
     /// and there are no islands within holes.
     /// </summary>
-    public static IReadOnlyList<IReadOnlyList<Wire>> SortWiresByBuildOrder(IReadOnlyList<Wire> wires)
+    internal static IReadOnlyList<IReadOnlyList<Wire>> SortWiresByBuildOrder(IReadOnlyList<Wire> wires)
     {
         if (wires.Count < 2)
             return [wires];

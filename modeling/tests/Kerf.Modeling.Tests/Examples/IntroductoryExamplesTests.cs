@@ -15,6 +15,8 @@ using Kerf.Modeling;
 public class IntroductoryExamplesTests
 {
     // Native OCCT's results (Build123dBackend=Native): volume and face count
+    // Native OCCT's volumes with its default integration, except 12, 28, 30 and 36, where that default is off and a fine mesh
+    // sides with the precise path (14627.106, 251188.196, 64463.381 and 30298.935241 natively; decision 1802)
     private static readonly Dictionary<int, (double Volume, int Faces)> Native = new()
     {
         [1] = (48000, 6),
@@ -28,7 +30,7 @@ public class IntroductoryExamplesTests
         [9] = (45706.9022894405, 14),
         [10] = (40848.10405858136, 8),
         [11] = (36177.365057283976, 36),
-        [12] = (14627.106295339287, 6),
+        [12] = (14628.060398053225, 6),
         [13] = (70872.25969468076, 23),
         [14] = (91398.2236861551, 10),
         [15] = (79999.99999999999, 10),
@@ -44,14 +46,14 @@ public class IntroductoryExamplesTests
         [25] = (24387.59273282052, 26),
         [26] = (13952, 11),
         [27] = (20465.708264711477, 8),
-        [28] = (251188.19571967638, 7),
+        [28] = (251187.91917067088, 7),
         [29] = (15893.314536718122, 56),
-        [30] = (64463.381199800904, 9),
+        [30] = (64463.371359647979, 9),
         [31] = (4991.970032881474, 164),
         [32] = (14839.230484541327, 44),
         [33] = (10840, 36),
         [35] = (49219.02754903829, 18),
-        [36] = (30298.935241110394, 8),
+        [36] = (30298.935391416093, 8),
         [37] = (5.53429173528852, 8),
         [38] = (2304, 18),
     };

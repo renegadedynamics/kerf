@@ -171,23 +171,20 @@ public static partial class ShapeExtensions
 
         /// <summary>
         /// Where this shape's body meets (overlaps or crosses) <paramref name="toIntersect"/>: shapes or geometry objects
-        /// (<see cref="Point3D"/>, <see cref="Location"/>, <see cref="Axis"/>, <see cref="Plane"/>).
+        /// (<see cref="Point3D"/>, <see cref="Location"/>, <see cref="Axis"/>, <see cref="Plane"/>), each of which converts to a <see cref="CurveLimit"/>.
         /// </summary>
         /// <remarks>
         /// Several arguments are chained: <c>c.Intersect(s1, s2)</c> is c ∩ s1 ∩ s2. A compound argument distributes:
         /// <c>c.Intersect(Compound([s1, s2]))</c> is (c ∩ s1) ∪ (c ∩ s2). <paramref name="includeTouched"/> adds contacts at the
         /// boundary without interior overlap (only where solids are involved).
         /// </remarks>
-        public ShapeList<Shape> Intersect(IEnumerable<object> toIntersect, double tolerance = 1e-6, bool includeTouched = false)
+        public ShapeList<Shape> Intersect(IEnumerable<CurveLimit> toIntersect, double tolerance = 1e-6, bool includeTouched = false)
         {
-            var list = toIntersect.ToList();
+            var list = toIntersect.Select(o => o.Target).ToList();
             if (list.Count == 0 || self.IsEmpty)
                 return [];
             if (list.Any(o => o is IShape { IsEmpty: true }))
                 return [];
-            foreach (var obj in list)
-                if (obj is not (IShape or Point3D or Location or Axis or Plane))
-                    throw new ArgumentException($"Unsupported type for intersect: {obj.GetType().Name}");
 
             var commonSet = new List<Shape> { self.AsShape() };
             foreach (var other in list)
@@ -204,7 +201,11 @@ public static partial class ShapeExtensions
         }
 
         /// <summary>As the other forms of <c>Intersect</c>.</summary>
-        public ShapeList<Shape> Intersect(params object[] toIntersect) => self.Intersect((IEnumerable<object>)toIntersect);
+        public ShapeList<Shape> Intersect(params CurveLimit[] toIntersect) => self.Intersect((IEnumerable<CurveLimit>)toIntersect);
+
+        /// <summary>As the other forms of <c>Intersect</c>, with shapes alone.</summary>
+        public ShapeList<Shape> Intersect(IEnumerable<Shape> toIntersect, double tolerance = 1e-6, bool includeTouched = false) =>
+            self.Intersect(toIntersect.Select(s => (CurveLimit)s), tolerance, includeTouched);
 
         /// <summary>
         /// The vertices and edges where this shape and <paramref name="other"/> cross (<c>BRepAlgoAPI_Section</c>).

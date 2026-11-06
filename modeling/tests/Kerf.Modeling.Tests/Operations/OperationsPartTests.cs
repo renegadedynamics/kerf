@@ -370,7 +370,7 @@ public class OperationsPartTests
             expected = expected == 0 ? sign * 360 : expected;
             var result = edge.Length / edge.Radius / Math.PI * 180 * sign;
 
-            Check.AlmostEqual(fullVolume * Math.Abs(expected) / 360, solid.Volume);
+            Check.AlmostEqual(fullVolume * Math.Abs(expected) / 360, solid.Volume, 5);
             Check.AlmostEqual(expected, result);
         }
     }

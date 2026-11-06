@@ -238,7 +238,22 @@ internal static partial class TopoUtil
     }
 
     /// <summary>The surface area of a shape's faces.</summary>
-    internal static double Area(Shape shape) => shape.IntegrateArea();
+    internal static double Area(Shape shape) => shape.IntegrateArea(Measured);
+
+    /// <summary>
+    /// How areas and volumes are integrated: adaptively, to a millionth of each face's contribution. OCCT's default of a
+    /// fixed number of points can be several per cent out on swept and B-spline faces (docs/occt-defects.md). The precision
+    /// is relative, so it suits a part of any size; 1e-7 is no closer on the parts measured, and up to three times the cost
+    /// (decision 1802).
+    /// </summary>
+    internal static readonly MassOptions Measured = new() { Tolerance = 1e-6 };
+
+    /// <summary>
+    /// How centres of mass and moments of inertia are integrated. The precision applies to each face's mass, and a moment
+    /// follows it less closely: on a cylinder, 4e-6 out at 1e-6 and at 1e-7, and exact from 1e-8; a symmetric part's centre
+    /// 1.6e-6 off its plane of symmetry at the same two.
+    /// </summary>
+    internal static readonly MassOptions MeasuredMoments = new() { Tolerance = 1e-9 };
 
     /// <summary>The faces sewn into a shell where they meet within <paramref name="tolerance"/>.</summary>
     internal static Shape SewFaces(IEnumerable<Shape> faces, double tolerance = Constants.Tolerance) =>

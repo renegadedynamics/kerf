@@ -26,7 +26,7 @@ public static class Primitives
     public static Result<Built<Solid>> Cylinder(double radius, double height, in Frame3D frame = default, double angle = 2 * Math.PI);
     public static Result<Built<Solid>> Cone(double radius1, double radius2, double height, in Frame3D frame = default, double angle = 2 * Math.PI);
     public static Result<Built<Solid>> Sphere(double radius, in Frame3D frame = default, SphereOptions? options = null);  // angles
-    public static Result<Built<Solid>> Torus(double majorRadius, double minorRadius, in Frame3D frame = default, TorusOptions? options = null);
+    public static Result<Built<Solid>> Torus(double majorRadius, double minorRadius, in Frame3D frame = default, TorusOptions? options = null);   // part of the minor circle: a slice of the tube, not OCCT's solid under the arc
     public static Result<Built<Solid>> Wedge(double dx, double dy, double dz, WedgeOptions options, in Frame3D frame = default);
     public static Result<Solid> HalfSpace(Face boundary, Point3D inside);
 }
@@ -48,6 +48,7 @@ public sealed record SweepOptions
     public bool MakeSolid { get; init; } = true;
     public Transition Transition { get; init; } = Transition.Transformed;
     public SweepFrame Frame { get; init; } = SweepFrame.CorrectedFrenet;
+    public bool TryOtherFrames { get; init; } = true;           // on failure, Frenet then discrete, with a warning (SweptWithFrenet, SweptWithDiscrete)
     public Direction3D? Binormal { get; init; }                 // SweepFrame.Binormal
     public Shape? AuxiliarySpine { get; init; }                 // SweepFrame.Auxiliary
     public bool WithContact { get; init; }  public bool WithCorrection { get; init; }

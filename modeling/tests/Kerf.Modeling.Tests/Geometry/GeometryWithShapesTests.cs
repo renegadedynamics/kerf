@@ -581,7 +581,5 @@ public class LocationWithShapesTests
         Assert.Equal(2, found.Vertices().Count);
         Assert.Single(found.Edges());
         Check.AlmostEqual(2, found.SingleEdge().Length, 5);
-
-        Assert.Throws<ArgumentException>(() => e1.Intersect("line"));
     }
 }

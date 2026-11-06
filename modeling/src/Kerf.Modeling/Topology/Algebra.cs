@@ -412,7 +412,7 @@ internal static class ShapeAlgebra
         var list = others.ToList();
         if (TopoUtil.IsNothing(self) || list.Any(TopoUtil.IsNothing))
             return default;
-        var found = self.Intersect(list.Select(o => (object)o));
+        var found = self.Intersect(list.Select(o => (CurveLimit)o));
         if (found.Count == 0)
             return default;
         var result = found.Count == 1 ? found[0] : ShapeExtensions.MakeComposite(found);
