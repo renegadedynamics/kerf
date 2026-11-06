@@ -22,7 +22,7 @@ version may break the API.
   check what they made and fail with `result.invalid`, saying what's wrong and naming the sub-shapes. `Result<T>.TryGetInvalid` gives the shape to a
   caller who wants to look at it; `Value` still throws. `CheckResult = false` on the options, or `checkResult: false`, leaves the check out. `Fix`'s
   warning `healing.not-fixed` is gone: it's this failure. `Validate` runs serially on small shapes. See `docs/api/README.md`, section 2.2 (decisions
-  1742, 20101 to 20106).
+  1742, 1791 to 1796).
 - **STEP export uses about a third less CPU and half the memory, and import with healing about 10% to 15% less CPU,** with the same output (measured on a loaded machine; decisions 1727 to 1731).
 - **Every public member of the kernel has XML docs,** including `Kerf.Geometry`'s value types, saying units, handedness and what
   throws; a new one without docs fails the build (CS1591). The docs of `Kerf.Geometry` name the exception you actually catch.

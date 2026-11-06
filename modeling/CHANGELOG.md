@@ -10,7 +10,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 - **No operation reports success for an invalid result (breaking).** A Boolean, sweep, loft, offset, fillet or chamfer whose result isn't valid fails
   with `result.invalid`, and the message says why; a sweep's "invalid solid" warning and `modeling.fillet-failed` for an invalid fillet are now this.
   `TryGetInvalid` on a result, or `ModelingDiagnostics.TryGetInvalid` on what a shorthand threw, gives the shape. A clean that would spoil a good Boolean is
-  left out, with a warning. `docs/11r-bento.md` says what this means for a cell (decisions 1742, 20101 to 20106).
+  left out, with a warning. `docs/11r-bento.md` says what this means for a cell (decisions 1742, 1791 to 1796).
 - **Names, cleaned up (no results change; `docs/clean-up-bento.md` lists what Bento changes):** every object's height is `Height` (was `BoxHeight`,
   `RectangleHeight`, `ConeHeight`, `CylinderHeight`, `TrapezoidHeight`, `SlotHeight`). `Polygon.Pts` is `Points`. `StlExportOptions` says
   `LinearDeflection` and `AngularDeflection`, as the glTF and 3MF options do. `DPrism` is `DraftPrism`. `GeomAdaptor()` is `AsCurve()` on edges and
