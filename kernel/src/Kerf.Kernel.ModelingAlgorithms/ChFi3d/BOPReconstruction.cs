@@ -1008,6 +1008,32 @@ internal sealed partial class BOPReconstruction : Reconstruction
             result.Append(aModifier.InternalModifiedShape(m));
             HashSet<Shape> aSubShapes = new(ShapeHasher.Instance);
             Exploration.MapShapes(m, aSubShapes);
+            // a face left whole that had to be copied, because an edge it shares moved: its history is the copy, since
+            // the input's face is no longer in the result (OCCT writes into the edge and keeps the face)
+            HashSet<Shape> aPieces = new(ShapeHasher.Instance);
+            foreach (NCollection_List<Shape> l in _splitIN.Values)
+            {
+                foreach (Shape x in l)
+                {
+                    aPieces.Add(x);
+                }
+            }
+            foreach (NCollection_List<Shape> l in _newFaces.Values)
+            {
+                foreach (Shape x in l)
+                {
+                    aPieces.Add(x);
+                }
+            }
+            List<(Shape Old, Shape New)> aCopied = [];
+            for (Explorer exp = new(m, ShapeType.Face); exp.More(); exp.Next())
+            {
+                Shape aNew = aModifier.InternalModifiedShape(exp.Current());
+                if (!aPieces.Contains(exp.Current()) && !aNew.IsSame(exp.Current()))
+                {
+                    aCopied.Add((exp.Current(), aNew));
+                }
+            }
             void Replace(NCollection_List<Shape> l)
             {
                 NCollection_List<Shape> aNew = new();
@@ -1032,6 +1058,12 @@ internal sealed partial class BOPReconstruction : Reconstruction
             foreach (NCollection_List<Shape> l in _newEdges.Values)
             {
                 Replace(l);
+            }
+            foreach ((Shape anOld, Shape aNew) in aCopied)
+            {
+                NCollection_List<Shape> aCopy = new();
+                aCopy.Append(aNew);
+                _splitIN[anOld] = aCopy;
             }
         }
         merged.Clear();

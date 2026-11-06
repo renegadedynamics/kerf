@@ -26,10 +26,11 @@ public class ReconstructionNativeTests
         // a radius larger than the cube: native says done, but its result is degenerate (negative volume, an area of
         // -6e29, B-spline faces of 30 units on a cube of 10); Kerf.Modeling rejects it. Nothing to compare.
         ["fail_cube_radius_6"] = ("native's result is degenerate", null),
-        // a Bezier face cut: TopOpeBRepBuild's pieces are on a B-spline copy of its surface, the reconstruction's on
-        // the face's Bezier surface itself. Same geometry.
-        ["complex_A2"] = ("native's pieces of a Bezier face are B-splines",
-                          ["Modified(F5) [BSplineSurface 1431.33] | [BezierSurface 1431.33]"]),
+        // the faces left whole beside a Bezier face on its extended surface: OCCT writes into the shared edges and keeps
+        // these faces; here the input is frozen, so they are copies, and their history says so (decision 19303)
+        ["complex_A2"] = ("faces beside an extended surface are copies, so they have a history",
+                          ["Modified(F1) [] | [BezierSurface 1430.38]", "Modified(F2) [] | [BezierSurface 1325.39]",
+                           "Modified(F3) [] | [BezierSurface 258.325]", "Modified(F6) [] | [BezierSurface 258.325]"]),
         // the data structure holds faces ChFi3d made, not in the input: TopOpeBRepDS_TextDump cannot read it back.
         // 7N2's end-to-end run reaches this case.
         ["complex_G1"] = ("the dump holds faces not in the input", null),
@@ -49,20 +50,6 @@ public class ReconstructionNativeTests
         // 0.04 lower than its own face (its surface's bounds), the rest is equal
         ["corpus_simple_W4"] = ("native's box of a degenerate fillet face",
                                 ["box (-1E-07 -0.071733 -0.0410123 2.98586 1 1) | (-1E-07 -0.071733 -1E-07 2.98586 1 1)"]),
-        // a Bezier face the fillet runs past (its curve's pcurve leaves [0, 1]): native's piece is a B-spline (the
-        // surface extended), the reconstruction's keeps the Bezier surface with the pcurve outside its domain:
-        // UnorientableShape (decision 1162). Not fixed: it needs the face's surface extended.
-        ["corpus_simple_V7"] = ("a Bezier face the fillet runs past",
-        [
-            "volume -19024699.5 | -19024861.2", "area 1645676.11 | 1645677.82", "valid True | False {FACE:UnorientableShape}",
-            "Modified(F3) [BSplineSurface 417684] | [BezierSurface 417685]",
-        ]),
-        ["corpus_tolblend_simple_C5"] = ("a Bezier face the fillet runs past",
-        [
-            "volume 288412.413 | 288387.989", "area 43290.4608 | 43288.8488", "valid True | False {FACE:UnorientableShape}",
-            "Modified(F1) [BSplineSurface 10426.6] | [BezierSurface 10426.1]",
-            "Modified(F3) [BSplineSurface 9319.44] | [BezierSurface 9318.24]",
-        ]),
         ["corpus_bug32929"] = ("the dump holds shapes not in the input", null),
     };
 
