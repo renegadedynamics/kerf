@@ -1,6 +1,6 @@
 # Unit 11D: runtime settings for Bento's branch
 
-Unit 11D measured what limits parallel recalculation (kernel `docs/performance.md`, "Unit 11D"; decisions 18801 to 18806). Most of it is two
+Unit 11D measured what limits parallel recalculation (kernel `docs/performance.md`, "Unit 11D"; decisions 1683 to 1688). Most of it is two
 runtime settings, which belong to the host. No Kerf API changes, and shapes, volumes and face counts are unchanged.
 
 ## What Bento has to change
