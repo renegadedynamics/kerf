@@ -11,6 +11,7 @@ using Kerf.Engine.Topology;
 using Kerf.Topology;
 using static Kerf.Engine.Healing.Checks.StatusCheck;
 
+using static Kerf.Engine.Foundation.Standard;
 namespace Kerf.Engine.Healing.Checks.Full;
 
 /// <summary>

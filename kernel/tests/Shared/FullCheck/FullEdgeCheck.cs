@@ -19,6 +19,7 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.TransformForm;
 
+using static Kerf.Engine.Foundation.Standard;
 namespace Kerf.Engine.Healing.Checks.Full;
 
 /// <summary>

@@ -13,6 +13,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
+using static Kerf.Engine.Foundation.Standard;
 namespace Kerf.Engine.Healing.Checks.Full;
 
 /// <summary>

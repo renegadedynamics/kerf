@@ -21,6 +21,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
+using static Kerf.Engine.Foundation.Standard;
 namespace Kerf.Engine.Healing.Checks.Full;
 
 /// <summary>

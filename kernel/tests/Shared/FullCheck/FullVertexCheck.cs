@@ -13,6 +13,7 @@ using Kerf.Topology;
 using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Topology.Orientation;
 
+using static Kerf.Engine.Foundation.Standard;
 namespace Kerf.Engine.Healing.Checks.Full;
 
 /// <summary>

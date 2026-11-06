@@ -20,6 +20,7 @@ using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Topology.Orientation;
 
+using static Kerf.Engine.Foundation.Standard;
 namespace Kerf.Engine.Healing.Checks.Full;
 
 /// <summary>

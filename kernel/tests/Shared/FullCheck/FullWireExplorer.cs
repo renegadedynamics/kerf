@@ -17,6 +17,7 @@ using static Kerf.Topology.Orientation;
 
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
+using static Kerf.Engine.Foundation.Standard;
 namespace Kerf.Engine.Healing.Checks.Full;
 
 /// <summary>
