@@ -715,21 +715,17 @@ internal class EntityGraph
         // Allocator is used to reuse memory for the lists of shared entities.
         NCollection_HSequence<Transient> listOfEntities =
             new NCollection_HSequence<Transient>();
+        EntityIterator iter = new EntityIterator(listOfEntities);
         for (int i = 1; i <= entityNumber; i++)
         {
             listOfEntities.Clear();
             Transient entity = _themodel.Value(i);
-            EntityIterator iter = new EntityIterator(listOfEntities);
-            int number = EntityNumber(entity);
-            if (number == 0)
-            {
-                continue;
-            }
 
+            // Kerf: the model's i-th entity is its number i, as they are an indexed set
             Transient curEnt = entity;
-            if (_themodel.IsRedefinedContent(number))
+            if (_themodel.IsRedefinedContent(i))
             {
-                curEnt = _themodel.ReportEntity(number).Content();
+                curEnt = _themodel.ReportEntity(i).Content();
             }
 
             GeneralModule module = null;

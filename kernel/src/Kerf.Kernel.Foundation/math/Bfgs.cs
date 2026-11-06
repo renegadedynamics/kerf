@@ -454,50 +454,64 @@ internal class Bfgs
                 return;
             }
 
-            for (i = 1; i <= n; i++)
+            // Kerf: spans and rows (decision 1731). The same arithmetic in the same order, as this is the hot part of a
+            // fit: with n unknowns, each iteration is 3 n squared steps here
+            Span<double> dgs = dg.AsSpan();
+            Span<double> xis = xi.AsSpan();
+            Span<double> hdgs = hdg.AsSpan();
+            ReadOnlySpan<double> gradient = _theGradient.AsSpan();
+            Span<double> hessian = hessin.AsSpan();
+
+            for (i = 0; i < n; i++)
             {
-                dg[i] = _theGradient[i] - dg[i];
+                dgs[i] = gradient[i] - dgs[i];
             }
 
-            for (i = 1; i <= n; i++)
+            for (i = 0; i < n; i++)
             {
-                hdg[i] = 0.0;
-                for (j = 1; j <= n; j++)
+                ReadOnlySpan<double> row = hessian.Slice(i * n, n);
+                double sum = 0.0;
+                for (j = 0; j < n; j++)
                 {
-                    hdg[i] += hessin[i, j] * dg[j];
+                    sum += row[j] * dgs[j];
                 }
+                hdgs[i] = sum;
             }
 
             fac = fae = 0.0;
-            for (i = 1; i <= n; i++)
+            for (i = 0; i < n; i++)
             {
-                fac += dg[i] * xi[i];
-                fae += dg[i] * hdg[i];
+                fac += dgs[i] * xis[i];
+                fae += dgs[i] * hdgs[i];
             }
 
             fac = 1.0 / fac;
             fad = 1.0 / fae;
 
-            for (i = 1; i <= n; i++)
+            for (i = 0; i < n; i++)
             {
-                dg[i] = fac * xi[i] - fad * hdg[i];
+                dgs[i] = fac * xis[i] - fad * hdgs[i];
             }
 
-            for (i = 1; i <= n; i++)
+            for (i = 0; i < n; i++)
             {
-                for (j = 1; j <= n; j++)
+                Span<double> row = hessian.Slice(i * n, n);
+                double facXi = fac * xis[i], fadHdg = fad * hdgs[i], faeDg = fae * dgs[i];
+                for (j = 0; j < n; j++)
                 {
-                    hessin[i, j] += fac * xi[i] * xi[j] - fad * hdg[i] * hdg[j] + fae * dg[i] * dg[j];
+                    row[j] += facXi * xis[j] - fadHdg * hdgs[j] + faeDg * dgs[j];
                 }
             }
 
-            for (i = 1; i <= n; i++)
+            for (i = 0; i < n; i++)
             {
-                xi[i] = 0.0;
-                for (j = 1; j <= n; j++)
+                ReadOnlySpan<double> row = hessian.Slice(i * n, n);
+                double sum = 0.0;
+                for (j = 0; j < n; j++)
                 {
-                    xi[i] -= hessin[i, j] * _theGradient[j];
+                    sum -= row[j] * gradient[j];
                 }
+                xis[i] = sum;
             }
         }
 
