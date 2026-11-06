@@ -9,6 +9,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Properties;
+using Kerf.Engine.Intersection.Curves;
 using Kerf.Engine.Offsets.Bisectors;
 using Kerf.Engine.Offsets.MedialAxis;
 using Kerf.Engine.Topology;
@@ -688,6 +689,8 @@ internal sealed class OffsetWire
         Edge[] e = [new(), new()];
         int j, k;
 
+        // Each edge meets all its bisectors, and each bisector its two edges, so their polygons repeat
+        SampledPolygons polygons = new();
         for (int i = 1; i <= locus.Graph().NumberOfArcs(); i++)
         {
             currentArc = locus.Graph().Arc(i);
@@ -764,7 +767,10 @@ internal sealed class OffsetWire
             // Construction of vertices on edges parallel to the spine.
             //-----------------------------------------------------------
 
-            trim.IntersectWith(e[0], e[1], S[0], S[1], ends[0], ends[1], _joinType, _isOpenResult, Params);
+            using (polygons.Use())
+            {
+                trim.IntersectWith(e[0], e[1], S[0], S[1], ends[0], ends[1], _joinType, _isOpenResult, Params);
+            }
 
             for (int s = 1; s <= Params.Length(); s++)
             {
