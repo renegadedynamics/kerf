@@ -21,15 +21,16 @@ public sealed record SphereOptions
     public double Angle { get; init; } = 2 * Math.PI;
 }
 
-/// <summary>A torus's angles, for a part of one (OCCT's <c>BRepPrimAPI_MakeTorus</c>), in radians.</summary>
+/// <summary>A torus's angles, for a part of one, in radians.</summary>
 public sealed record TorusOptions
 {
     /// <summary>The whole torus.</summary>
     public static TorusOptions Default { get; } = new();
 
     /// <summary>
-    /// Where the minor circle starts. As in OCCT, part of a minor circle isn't a slice of the tube: it is the solid under
-    /// that arc, closed by flat discs from each end of it to the axis.
+    /// Where the minor circle starts, about its centre from the side away from the axis. Part of a minor circle makes a
+    /// slice of the tube: the section is that arc closed by a straight line across its ends. (OCCT's
+    /// <c>BRepPrimAPI_MakeTorus</c> makes the solid under the arc instead, closed by flat discs to the axis.)
     /// </summary>
     public double MinorStart { get; init; }
 

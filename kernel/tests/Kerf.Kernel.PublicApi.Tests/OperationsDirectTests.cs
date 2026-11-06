@@ -100,10 +100,49 @@ public class OperationsDirectTests
         double whole = 2 * Math.PI * Math.PI * big * small * small;
         Assert.Equal(whole, Solid.Torus(big, small, Up, new TorusOptions()).Value.Shape.IntegrateVolume(), 5);
         Assert.Equal(whole / 2, Solid.Torus(big, small, Up, d with { Angle = Math.PI }).Value.Shape.IntegrateVolume(), 5);
-        // the outer arc: the solid under it, closed by discs to the axis, by slices pi (R + sqrt(r^2 - z^2))^2
-        Solid outer = Solid.Torus(big, small, Up, d with { MinorStart = -Math.PI / 2, MinorEnd = Math.PI / 2 }).Value;
-        Assert.Equal(Math.PI * (2 * big * big * small + big * Math.PI * small * small + 4.0 / 3 * small * small * small), outer.IntegrateVolume(), 5);
-        Assert.True(outer.Validate().IsValid);
+    }
+
+    // A slice's volume by Pappus: the section's area, times the way its centroid travels
+    private static double SliceVolume(double big, double small, double start, double end, double angle)
+    {
+        double span = end - start;
+        double area = small * small / 2 * (span - Math.Sin(span));
+        // The segment's centroid lies from the circle's centre towards the arc's middle
+        double reach = 4 * small * Math.Pow(Math.Sin(span / 2), 3) / (3 * (span - Math.Sin(span)));
+        return area * angle * (big + reach * Math.Cos((start + end) / 2));
+    }
+
+    [Theory]
+    [InlineData(-Math.PI / 2, Math.PI / 2, 2 * Math.PI)]    // the outer half
+    [InlineData(Math.PI / 2, 3 * Math.PI / 2, 2 * Math.PI)] // the inner half
+    [InlineData(0, Math.PI, 2 * Math.PI)]                   // the upper half
+    [InlineData(-0.5, 0.5, 2 * Math.PI)]
+    [InlineData(1, 5, 2 * Math.PI)]
+    [InlineData(-Math.PI / 2, Math.PI / 2, Math.PI / 3)]    // and part of the way round
+    [InlineData(1, 5, 4)]
+    public void Part_of_the_minor_circle_is_a_slice_of_the_tube(double start, double end, double angle)
+    {
+        const double big = 5, small = 1;
+        var options = new TorusOptions { MinorStart = start, MinorEnd = end, Angle = angle };
+        Solid slice = Solid.Torus(big, small, Up, options).Value;
+        Assert.Equal(SliceVolume(big, small, start, end, angle), slice.IntegrateVolume(new MassOptions { Tolerance = 1e-9 }), 6);
+        Assert.True(slice.Validate().IsValid);
+        // Inside the tube and within the arc's side of the chord
+        double middle = (start + end) / 2;
+        double reach = big + small * 0.9 * Math.Cos(middle);
+        var inside = new Point3D(1 + reach * Math.Cos(angle / 2), 2 + reach * Math.Sin(angle / 2), 3 + small * 0.9 * Math.Sin(middle));
+        Assert.Equal(Containment.In, slice.Classify(inside));
+    }
+
+    [Fact]
+    public void The_outer_half_of_a_tube_is_the_figure_that_was_asked_about()
+    {
+        var options = new TorusOptions { MinorStart = -Math.PI / 2, MinorEnd = Math.PI / 2 };
+        // Pappus: 2 pi (R + 4 r / 3 pi) pi r^2 / 2, and not the 210.6 of the solid under the arc
+        Assert.Equal(53.54, Solid.Torus(5, 1, options).Value.Shape.IntegrateVolume(), 2);
+        // A whole circle, however it's asked for, is the torus
+        double whole = 2 * Math.PI * Math.PI * 5;
+        Assert.Equal(whole, Solid.Torus(5, 1, new TorusOptions { MinorStart = -Math.PI, MinorEnd = Math.PI }).Value.Shape.IntegrateVolume(), 5);
     }
 
     [Fact]
