@@ -20,9 +20,7 @@ internal class Householder
     private Matrix _q;
     private bool _done;
     private int _mylowerArow;
-    private int _myupperArow;
     private int _mylowerAcol;
-    private int _myupperAcol;
 
     // Cette classe decrit la methode de Householder qui transforme A en un
     // produit de matrice orthogonale par une triangulaire superieure. Les seconds
@@ -48,8 +46,6 @@ internal class Householder
 
         _mylowerArow = a.LowerRow();
         _mylowerAcol = a.LowerCol();
-        _myupperArow = a.UpperRow();
-        _myupperAcol = a.UpperCol();
         Matrix b1 = new(1, b.Length(), 1, 1);
         b1.SetCol(1, b);
         Perform(a, b1, eps);
@@ -70,8 +66,6 @@ internal class Householder
 
         _mylowerArow = a.LowerRow();
         _mylowerAcol = a.LowerCol();
-        _myupperArow = a.UpperRow();
-        _myupperAcol = a.UpperCol();
         Perform(a, b, eps);
     }
 
@@ -86,9 +80,7 @@ internal class Householder
         _done = false;
 
         _mylowerArow = lowerArow;
-        _myupperArow = upperArow;
         _mylowerAcol = lowerAcol;
-        _myupperAcol = upperAcol;
         Perform(a, b, eps);
     }
 

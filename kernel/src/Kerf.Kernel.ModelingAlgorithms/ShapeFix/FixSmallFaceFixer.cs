@@ -48,7 +48,6 @@ internal class FixSmallFaceFixer : RootFixer
     // OCCT declares its own private myShape, hiding ShapeFix_Root's (which the messages are attached to).
     private new Shape _shape;
     private Shape _result;
-    private int _status;
     private readonly CheckSmallFaceAnalysis _analyzer;
 
     // Kerf: the working overlay, from the first fix to the public result (unit 10H4): this tool's own (detached) or the
@@ -64,7 +63,6 @@ internal class FixSmallFaceFixer : RootFixer
         _shape    = new Shape();
         _result   = new Shape();
         _analyzer = new CheckSmallFaceAnalysis();
-        _status   = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         SetPrecision(Kerf.Engine.Foundation.Precision.Confusion());
     }
 
@@ -116,7 +114,6 @@ internal class FixSmallFaceFixer : RootFixer
                 {
                     ReplaceVerticesInCaseOfSpot(ref f, Precision());
                     RemoveFacesInCaseOfSpot(f);
-                    _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE1);
                     done = true;
                 }
             }
@@ -283,7 +280,6 @@ internal class FixSmallFaceFixer : RootFixer
                     {
                         RemoveFacesInCaseOfStrip(f);
                     }
-                    _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE2);
                     done = true;
                 }
             }
@@ -677,7 +673,6 @@ internal class FixSmallFaceFixer : RootFixer
         }
         if (done)
         {
-            _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE3);
         }
         _shape = Context()!.InternalApply(_shape);
         _result = _shape;

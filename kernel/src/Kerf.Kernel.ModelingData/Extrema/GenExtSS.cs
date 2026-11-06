@@ -80,9 +80,6 @@ internal class GenExtSS
     }
 
     private bool _done;
-#pragma warning disable CS0414 // set and never read in OCCT; kept (decision 221)
-    private bool _init;
-#pragma warning restore CS0414
     private double _myu1min;
     private double _myu1sup;
     private double _myv1min;
@@ -118,7 +115,6 @@ internal class GenExtSS
         _mytol2 = 0.0;
         _s2 = null;
         _done = false;
-        _init = false;
     }
 
     /// <summary>

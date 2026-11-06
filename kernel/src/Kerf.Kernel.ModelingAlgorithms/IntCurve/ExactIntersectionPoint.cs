@@ -20,9 +20,6 @@ internal class ExactIntersectionPoint<TheCurve, TheCurveTool>
     where TheCurveTool : ICurveCurveTool<TheCurve>
 {
     // OCCT sets done and never reads it.
-#pragma warning disable CS0414
-    private bool _done;
-#pragma warning restore CS0414
     private int _nbroots;
     private readonly double _tol;
     private readonly DistBetweenPCurvesGen<TheCurve, TheCurveTool> _fctDist;
@@ -35,7 +32,6 @@ internal class ExactIntersectionPoint<TheCurve, TheCurveTool>
 
     public ExactIntersectionPoint(in TheCurve c1, in TheCurve c2, double tol)
     {
-        _done = false;
         _nbroots = 0;
         _tol = tol * tol;
         _fctDist = new DistBetweenPCurvesGen<TheCurve, TheCurveTool>(c1, c2);
@@ -245,7 +241,6 @@ internal class ExactIntersectionPoint<TheCurve, TheCurveTool>
     /// <summary>Searches the root from (Uo, Vo) inside the given bounds.</summary>
     public void Perform(double uo, double vo, double uInf, double vInf, double uSup, double vSup)
     {
-        _done = true;
 
         _bInfVector.Value(1) = uInf;
         _bInfVector.Value(2) = vInf;

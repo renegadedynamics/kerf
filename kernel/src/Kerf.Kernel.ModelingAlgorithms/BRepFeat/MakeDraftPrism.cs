@@ -44,9 +44,6 @@ internal sealed class MakeDraftPrism : Form
     private NCollection_List<Shape> _topEdges = new();
     private NCollection_List<Shape> _latEdges = new();
     // OCCT: the class declares its own myStatusError, hiding BRepFeat_Form's; CurrentStatusError reads the form's
-#pragma warning disable CS0414 // written, never read: as in OCCT
-    private StatusError _statusError;
-#pragma warning restore CS0414
 
     /// <summary>
     /// A draft prism of the planar face <paramref name="pbase"/> on <paramref name="sbase"/>, with the taper
@@ -63,7 +60,6 @@ internal sealed class MakeDraftPrism : Form
     public MakeDraftPrism()
     {
         _angle = RealLast();
-        _statusError = StatusError.OK;
     }
 
     /// <summary>Initializes the draft prism (see the constructor).</summary>
@@ -190,7 +186,6 @@ internal sealed class MakeDraftPrism : Form
         if (exp.More())
         {
             NotDone();
-            _statusError = StatusError.InvFirstShape;
             return;
         }
 
@@ -267,7 +262,6 @@ internal sealed class MakeDraftPrism : Form
             if (exp.More())
             {
                 NotDone();
-                _statusError = StatusError.InvFirstShape;
                 return;
             }
 
@@ -402,7 +396,6 @@ internal sealed class MakeDraftPrism : Form
         if (trfu != trff)
         {
             NotDone();
-            _statusError = StatusError.IncTypes;
             return;
         }
         Curve3D? C = TestCurve(_pbase);
@@ -472,7 +465,6 @@ internal sealed class MakeDraftPrism : Form
             else
             {
                 NotDone();
-                _statusError = StatusError.NoIntersectU;
                 return;
             }
             if (asi2.IsDone && asi2.NbPoints(1) >= 1)
@@ -484,7 +476,6 @@ internal sealed class MakeDraftPrism : Form
             else
             {
                 NotDone();
-                _statusError = StatusError.NoIntersectF;
                 return;
             }
             Compound comp = new();
@@ -498,7 +489,6 @@ internal sealed class MakeDraftPrism : Form
             else
             {
                 NotDone();
-                _statusError = StatusError.NullToolU;
                 return;
             }
             Solid ss = global::Kerf.Engine.Features.BRepFeat.Tool(_sFrom, fFrom, orF);
@@ -509,7 +499,6 @@ internal sealed class MakeDraftPrism : Form
             else
             {
                 NotDone();
-                _statusError = StatusError.NullToolF;
                 return;
             }
 
@@ -591,7 +580,6 @@ internal sealed class MakeDraftPrism : Form
         if (vraiDPrism.IsNull)
         {
             NotDone();
-            _statusError = StatusError.NullRealTool;
             return;
         }
 
@@ -676,7 +664,6 @@ internal sealed class MakeDraftPrism : Form
             else
             {
                 NotDone();
-                _statusError = StatusError.NullToolU;
                 return;
             }
 
@@ -688,7 +675,6 @@ internal sealed class MakeDraftPrism : Form
             else
             {
                 NotDone();
-                _statusError = StatusError.NullToolF;
                 return;
             }
 
@@ -801,7 +787,6 @@ internal sealed class MakeDraftPrism : Form
             if (exp.More())
             {
                 NotDone();
-                _statusError = StatusError.InvFirstShape;
                 return;
             }
 

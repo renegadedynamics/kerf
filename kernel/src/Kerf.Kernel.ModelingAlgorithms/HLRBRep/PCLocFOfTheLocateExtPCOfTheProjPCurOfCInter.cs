@@ -41,9 +41,6 @@ internal class PCLocFOfTheLocateExtPCOfTheProjPCurOfCInter : FunctionWithDerivat
     private readonly NCollection_Sequence<POnCurv2d> _point = new();
     private bool _pinit;
     private bool _cinit;
-#pragma warning disable CS0414 // OCCT sets myD1Init and never reads it
-    private bool _d1Init;
-#pragma warning restore CS0414
     private double _tol;
     private int _maxDerivOrder;
     private double _uinfium;
@@ -56,7 +53,6 @@ internal class PCLocFOfTheLocateExtPCOfTheProjPCurOfCInter : FunctionWithDerivat
         _d1f = 0.0;
         _pinit = false;
         _cinit = false;
-        _d1Init = false;
         _tol = MinTol;
         _maxDerivOrder = 0;
         _uinfium = 0.0;
@@ -72,7 +68,6 @@ internal class PCLocFOfTheLocateExtPCOfTheProjPCurOfCInter : FunctionWithDerivat
         _d1f = 0.0;
         _pinit = true;
         _cinit = true;
-        _d1Init = false;
 
         SubIntervalInitialize(HiddenLineCurveTool.FirstParameter(c), HiddenLineCurveTool.LastParameter(c));
 
@@ -281,7 +276,6 @@ internal class PCLocFOfTheLocateExtPCOfTheProjPCurOfCInter : FunctionWithDerivat
 
         if (Value(u, out f) == false)
         {
-            _d1Init = false;
             df = 0.0;
             return false;
         }
@@ -319,7 +313,6 @@ internal class PCLocFOfTheLocateExtPCOfTheProjPCurOfCInter : FunctionWithDerivat
 
                 if (!((Value(u2, out f2)) && (Value(u3, out f3))))
                 {
-                    _d1Init = false;
                     df = 0.0;
                     return false;
                 }
@@ -334,7 +327,6 @@ internal class PCLocFOfTheLocateExtPCOfTheProjPCurOfCInter : FunctionWithDerivat
 
                 if (!((Value(u2, out f2)) && (Value(u1, out f1))))
                 {
-                    _d1Init = false;
                     df = 0.0;
                     return false;
                 }
@@ -353,7 +345,6 @@ internal class PCLocFOfTheLocateExtPCOfTheProjPCurOfCInter : FunctionWithDerivat
 
         _d1f = df;
 
-        _d1Init = true;
         return true;
     }
 
@@ -368,7 +359,6 @@ internal class PCLocFOfTheLocateExtPCOfTheProjPCurOfCInter : FunctionWithDerivat
         _sqDist.Append(_pc.SquareDistanceTo(_p));
 
         // It is necessary to always compute myD1f.
-        _d1Init = true;
         Values(_u, out _, out _);
 
         int intVal = 0;

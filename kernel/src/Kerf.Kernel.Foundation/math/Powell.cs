@@ -25,7 +25,6 @@ internal class Powell
     private int _iter;
     private NumericStatus _theStatus;
     private Matrix _theDirections;
-    private int _state;
     private int _itermax;
 
     private static double SQR(double a) => a * a;
@@ -101,7 +100,6 @@ internal class Powell
         _iter = 0;
         _theStatus = NotBracketed;
         _theDirections = new Matrix(1, function.VariableCount, 1, function.VariableCount);
-        _state = 0;
         _itermax = nbIterations;
     }
 
@@ -160,7 +158,7 @@ internal class Powell
             if (IsSolutionReached(f))
             {
                 // Termination criterion
-                _state = f.GetStateNumber();
+                f.GetStateNumber();
                 _done = true;
                 _theStatus = OK;
                 return;

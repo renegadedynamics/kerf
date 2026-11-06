@@ -41,7 +41,6 @@ internal class PsoParticlesPool
     private NCollection_Array1<Particle> _particlesPool;
     private NCollection_Array1<double> _memory; // Stores particles vector data.
     private int _particlesCount;
-    private int _dimensionCount;
 
     public PsoParticlesPool(int particlesCount, int dimensionCount)
     {
@@ -51,7 +50,6 @@ internal class PsoParticlesPool
                                                                          + dimensionCount) // BestPosition
                                                          - 1);
         _particlesCount = particlesCount;
-        _dimensionCount = dimensionCount;
 
         _memory.Init(0.0);
 

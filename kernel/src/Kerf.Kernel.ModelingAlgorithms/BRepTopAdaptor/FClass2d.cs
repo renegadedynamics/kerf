@@ -36,12 +36,6 @@ internal sealed class FClass2d
     private double _toluv;
     private Face _face;
     // The period of the surface, set in U1..U2, V1..V2 and never read (as decision 221's fields)
-#pragma warning disable CS0414
-    private double _u1;
-    private double _v1;
-    private double _u2;
-    private double _v2;
-#pragma warning restore CS0414
     private double _umin;
     private double _umax;
     private double _vmin;
@@ -100,10 +94,6 @@ internal sealed class FClass2d
     {
         _toluv = tolUV;
         _face = aFace;
-        _u1 = 0.0;
-        _v1 = 0.0;
-        _u2 = 0.0;
-        _v2 = 0.0;
 
         //-- dead end on surfaces defined on more than one period
 
@@ -505,22 +495,16 @@ internal sealed class FClass2d
                 || surf.GetType() == SurfaceKind.Torus || surf.GetType() == SurfaceKind.Sphere
                 || surf.GetType() == SurfaceOfRevolution)
             {
-                _u1 = 0.0; // modified by NIZHNY-OFV  Thu May 31 14:24:10 2001 ---> //Umin-uuu*0.5;
-                _u2 = 2 * M_PI; // modified by NIZHNY-OFV  Thu May 31 14:24:35 2001 ---> //U1+M_PI+M_PI;
             }
             else
             {
-                _u1 = _u2 = 0.0;
             }
 
             if (surf.GetType() == SurfaceKind.Torus)
             {
-                _v1 = 0.0; // modified by NIZHNY-OFV  Thu May 31 14:24:55 2001 ---> //Vmin-uuu*0.5;
-                _v2 = 2 * M_PI; // modified by NIZHNY-OFV  Thu May 31 14:24:59 2001 ---> //V1+M_PI+M_PI;
             }
             else
             {
-                _v1 = _v2 = 0.0;
             }
         }
     }

@@ -109,7 +109,6 @@ internal class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
     private readonly ComputeLine<global::Kerf.Engine.Intersection.Approximation.MultiLine<TheWLine>, MultiLineTool<TheWLine>>
         _computeLineBezier;
     private readonly MCurvesToBSpCurve _bezToBSpl;
-    private bool _withTangency;
     private double _tol3d;
     private double _tol2d;
     private int _degMin;
@@ -268,7 +267,6 @@ internal class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
         _computeLine = new(4, 8, 0.001, 0.001, 5);
         _computeLineBezier = new(4, 8, 0.001, 0.001, 5);
         _bezToBSpl = new();
-        _withTangency = true;
         _tol3d = 0.001;
         _tol2d = 0.001;
         _degMin = 4;
@@ -487,7 +485,6 @@ internal class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
                               global::Kerf.Geometry.ParametrizationType parametrization = ChordLength)
     {
         _data.NbPntMax = nbPntMax;
-        _withTangency = approxWithTangency;
         _tol3d = tol3d / RatioTol;
         _tol2d = tol2d / RatioTol;
         _degMin = degMin;

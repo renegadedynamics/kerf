@@ -40,12 +40,6 @@ internal sealed class Polyhedron : IPolyhedron
     private Point3D[]? C_MyPnts;
     private double[]? C_MyU;
     private double[]? C_MyV;
-#pragma warning disable CS0414 // OCCT sets them; only its undefined Has... getters would read them (see the remarks)
-    private readonly bool _uMinSingular;
-    private readonly bool _uMaxSingular;
-    private readonly bool _vMinSingular;
-    private readonly bool _vMaxSingular;
-#pragma warning restore CS0414
 
     //================================================================================
     private static int NbPOnU(SurfaceAdaptorBase s)
@@ -81,10 +75,6 @@ internal sealed class Polyhedron : IPolyhedron
         _theDeflection = Epsilon(100.0);
         _nbdeltaU = NbPOnU(surface);
         _nbdeltaV = NbPOnV(surface);
-        _uMinSingular = HInterTool.SingularOnUMin(surface);
-        _uMaxSingular = HInterTool.SingularOnUMax(surface);
-        _vMinSingular = HInterTool.SingularOnVMin(surface);
-        _vMaxSingular = HInterTool.SingularOnVMax(surface);
         Init(surface);
     }
 
@@ -94,10 +84,6 @@ internal sealed class Polyhedron : IPolyhedron
         _theDeflection = Epsilon(100.0);
         _nbdeltaU = (nbu < 1 ? 1 : nbu);
         _nbdeltaV = (nbv < 1 ? 1 : nbv);
-        _uMinSingular = HInterTool.SingularOnUMin(surface);
-        _uMaxSingular = HInterTool.SingularOnUMax(surface);
-        _vMinSingular = HInterTool.SingularOnVMin(surface);
-        _vMaxSingular = HInterTool.SingularOnVMax(surface);
         Init(surface);
     }
 

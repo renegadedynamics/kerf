@@ -35,7 +35,6 @@ namespace Kerf.Engine.Healing.Fixes;
 internal sealed class IntersectionToolFixer
 {
     private readonly ReShapeBuilder? _context;
-    private readonly double              _preci;
     private readonly double              _maxTol;
 
     // gka 06.09.04 BUG 6555 shape is modified always independently either intersection was fixed or not
@@ -44,7 +43,6 @@ internal sealed class IntersectionToolFixer
     public IntersectionToolFixer(ReShapeBuilder? context, double preci, double maxtol = 1.0)
     {
         _context = context;
-        _preci   = preci;
         _maxTol  = maxtol;
     }
 

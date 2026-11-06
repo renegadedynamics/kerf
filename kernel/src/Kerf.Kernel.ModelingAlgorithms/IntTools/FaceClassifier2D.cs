@@ -46,8 +46,6 @@ internal sealed class FaceClassifier2D
 #pragma warning disable CS0414
     private double _u1;
     private double _v1;
-    private double _u2;
-    private double _v2;
 #pragma warning restore CS0414
     private double _umin;
     private double _umax;
@@ -583,11 +581,10 @@ internal sealed class FaceClassifier2D
                     uuu = 0;
                 }
                 _u1 = _umin - uuu * 0.5;
-                _u2 = _u1 + M_PI + M_PI;
             }
             else
             {
-                _u1 = _u2 = 0.0;
+                _u1 = 0.0;
             }
 
             if (surf.GetType() == SurfaceKind.Torus)
@@ -599,11 +596,10 @@ internal sealed class FaceClassifier2D
                 }
 
                 _v1 = _vmin - uuu * 0.5;
-                _v2 = _v1 + M_PI + M_PI;
             }
             else
             {
-                _v1 = _v2 = 0.0;
+                _v1 = 0.0;
             }
         }
     }

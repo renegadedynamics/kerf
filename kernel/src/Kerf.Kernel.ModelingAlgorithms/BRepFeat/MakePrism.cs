@@ -43,14 +43,10 @@ internal sealed class MakePrism : Form
     private readonly NCollection_Sequence<Curve3D> _curves = new();
     private Curve3D? _bCurve;
     // OCCT: the class declares its own myStatusError, hiding BRepFeat_Form's; CurrentStatusError reads the form's
-#pragma warning disable CS0414 // written, never read: as in OCCT
-    private StatusError _statusError;
-#pragma warning restore CS0414
 
     /// <summary>Builds a prism by projecting a wire along the face of a shape.</summary>
     public MakePrism()
     {
-        _statusError = StatusError.OK;
     }
 
     /// <summary>
@@ -427,7 +423,6 @@ internal sealed class MakePrism : Form
         if (trfu != trff)
         {
             NotDone();
-            _statusError = StatusError.IncTypes;
             return;
         }
 
@@ -503,7 +498,6 @@ internal sealed class MakePrism : Form
             else
             {
                 NotDone();
-                _statusError = StatusError.NoIntersectU;
                 return;
             }
             if (asi2.IsDone && asi2.NbPoints(1) >= 1)
@@ -519,7 +513,6 @@ internal sealed class MakePrism : Form
             else
             {
                 NotDone();
-                _statusError = StatusError.NoIntersectF;
                 return;
             }
             if (tran > 0 && (Math.Abs(parU) < Math.Abs(parF)))
@@ -539,7 +532,6 @@ internal sealed class MakePrism : Form
             else
             {
                 NotDone();
-                _statusError = StatusError.NullToolU;
                 return;
             }
             Solid ss = global::Kerf.Engine.Features.BRepFeat.Tool(_sFrom, fFrom, orF);
@@ -550,7 +542,6 @@ internal sealed class MakePrism : Form
             else
             {
                 NotDone();
-                _statusError = StatusError.NullToolF;
                 return;
             }
             //
@@ -717,7 +708,6 @@ internal sealed class MakePrism : Form
             else
             {
                 NotDone();
-                _statusError = StatusError.NullToolU;
                 return;
             }
 
@@ -729,7 +719,6 @@ internal sealed class MakePrism : Form
             else
             {
                 NotDone();
-                _statusError = StatusError.NullToolF;
                 return;
             }
             //

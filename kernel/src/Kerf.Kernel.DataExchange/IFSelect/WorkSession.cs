@@ -3976,7 +3976,6 @@ internal class WorkSession : Transient
     private string _theloaded = "";
     private GTool? _thegtool;
     private bool _thecheckdone;
-    private CheckIterator _thechecklist = new CheckIterator(); // unused (OCCT)
     private string _thecheckana = "";
     private ModelCopier? _thecopier;
     // theoldel (the model before SetRemaining or SetModelContent) is left out with them (IFSelect's cut)

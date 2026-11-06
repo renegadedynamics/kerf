@@ -38,8 +38,6 @@ internal class MeshCurveTessellator : CurveTessellator
     private readonly EdgeCurveAdaptor _curve;
     private readonly int _minPointsNb;
     private readonly TangentialDeflection _discretTool = new();
-    private Vertex _firstVertex;
-    private Vertex _lastVertex;
     private double _squareEdgeDef;
     private double _squareMinSize;
     private double _edgeSqTol;
@@ -83,8 +81,6 @@ internal class MeshCurveTessellator : CurveTessellator
         {
             throw new FailureException("The structure \"myParameters\" is not initialized");
         }
-
-        Exploration.Vertices(_edge, out _firstVertex, out _lastVertex);
 
         double preciseAngDef = 0.5 * _dEdge.GetAngularDeflection();
         double preciseLinDef = 0.5 * _dEdge.GetDeflection();

@@ -26,7 +26,6 @@ internal class Frpr
 
     private bool _done;
     private int _iter;
-    private int _state;
     private NumericStatus _theStatus;
     private int _itermax;
 
@@ -102,7 +101,6 @@ internal class Frpr
         _epsz = zeps;
         _done = false;
         _iter = 0;
-        _state = 0;
         _theStatus = NotBracketed;
         _itermax = nbIterations;
     }
@@ -146,7 +144,7 @@ internal class Frpr
             if (IsSolutionReached(f))
             {
                 _done = true;
-                _state = f.GetStateNumber();
+                f.GetStateNumber();
                 _theStatus = OK;
                 return;
             }

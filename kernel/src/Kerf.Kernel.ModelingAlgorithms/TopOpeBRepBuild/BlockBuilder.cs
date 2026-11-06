@@ -24,21 +24,16 @@ internal sealed class BlockBuilder
     private readonly IndexedSet<Shape> _orientedShapeMap = new(EqualityComparer<Shape>.Default);
     private readonly NCollection_Sequence<int> _blocks = new();
     private int _blockIndex;
-#pragma warning disable CS0414 // OCCT sets the flag and never reads it
-    private bool _isDone;
-#pragma warning restore CS0414
     private readonly NCollection_Sequence<int> _blocksIsRegular = new();
 
     /// <summary>An empty block builder.</summary>
     public BlockBuilder()
     {
-        _isDone = false;
     }
 
     /// <summary>The blocks of <paramref name="ss"/>.</summary>
     public BlockBuilder(BuildShapeSet ss)
     {
-        _isDone = false;
         MakeBlock(ss);
     }
 
@@ -130,7 +125,6 @@ internal sealed class BlockBuilder
         // The real number of connexity blocks is myBlocks.Length() - 1
         mextent = _orientedShapeMap.Count;
         _blocks.Append(mextent + 1);
-        _isDone = true;
     }
 
     /// <summary>Starts the iteration on the blocks.</summary>

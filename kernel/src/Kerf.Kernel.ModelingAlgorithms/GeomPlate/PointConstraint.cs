@@ -25,7 +25,6 @@ internal class PointConstraint : Transient
     private readonly SLProps _lProp;
     private readonly Point3D _point;
     private Point2D _pt2d;
-    private readonly Surface? _surf;
     private readonly Vector3D _d11;
     private readonly Vector3D _d12;
     private readonly Vector3D _d21;
@@ -63,7 +62,6 @@ internal class PointConstraint : Transient
     {
         _order = order;
         _lProp = new SLProps(2, tolDist);
-        _surf = surf;
         _pt2d = new Point2D();
         _u = u;
         _v = v;

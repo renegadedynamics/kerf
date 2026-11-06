@@ -18,7 +18,6 @@ internal class Jacobi
 {
     private bool _done;
     private Matrix _aa;
-    private int _nbRotations;
     private math_Vector _eigenValues;
     private Matrix _eigenVectors;
     private readonly math_Vector _work1;
@@ -41,7 +40,6 @@ internal class Jacobi
     {
         _done = false;
         _aa = new Matrix(1, n, 1, n);
-        _nbRotations = 0;
         _eigenValues = new math_Vector(1, n);
         _eigenVectors = new Matrix(1, n, 1, n);
         _work1 = new math_Vector(1, n);
@@ -54,7 +52,7 @@ internal class Jacobi
         _done = false;
         math_NotSquare_Raise_if(a.RowNumber() != a.ColNumber(), " ");
         _aa.Initialized(a);
-        int error = Jacobi(_aa, _eigenValues, _eigenVectors, out _nbRotations, _work1, _work2);
+        int error = Jacobi(_aa, _eigenValues, _eigenVectors, out _, _work1, _work2);
         _done = error == 0;
     }
 

@@ -45,9 +45,6 @@ internal class RstRstLineBuilder
     private double _fleche;
     private double _param;
     private BlendPoint _previousP = new();
-#pragma warning disable CS0414 // set and never read, as in OCCT
-    private bool _rebrou;
-#pragma warning restore CS0414
     private bool _iscomplete;
     private bool _comptra;
     private double _sens;
@@ -70,7 +67,6 @@ internal class RstRstLineBuilder
         _pasmax = 0.0;
         _fleche = 0.0;
         _param = 0.0;
-        _rebrou = false;
         _iscomplete = false;
         _comptra = false;
         _sens = 0.0;
@@ -94,7 +90,6 @@ internal class RstRstLineBuilder
         _tolpoint3d = tol3d;
         _tolgui = Math.Abs(tolGuide);
         _fleche = Math.Abs(fleche);
-        _rebrou = false;
         _pasmax = Math.Abs(maxStep);
 
         if (pmax - pdep >= 0.0)
@@ -185,7 +180,6 @@ internal class RstRstLineBuilder
         _line = new Line();
         _tolpoint3d = tol3d;
         _tolgui = Math.Abs(tolGuide);
-        _rebrou = false;
 
         if (pmax - pdep >= 0.0)
         {
@@ -1579,12 +1573,10 @@ internal class RstRstLineBuilder
             if (stateRst1 == BlendStatus.Backward)
             {
                 stateRst1 = BlendStatus.StepTooLarge;
-                _rebrou = true;
             }
             if (stateRst2 == BlendStatus.Backward)
             {
                 stateRst2 = BlendStatus.StepTooLarge;
-                _rebrou = true;
             }
             if (stateRst1 == BlendStatus.StepTooLarge || stateRst2 == BlendStatus.StepTooLarge)
             {

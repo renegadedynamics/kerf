@@ -401,7 +401,6 @@ internal class VinertGK : Properties
                         continue;
                     }
 
-                    tFunc.SetNbKronrodPoints(nbPnts);
                     tFunc.Init();
                     tFunc.SetTolerance(crvTol / (t2 - t1));
                     integral.Perform(tFunc, t1, t2, nbPnts, tolSpan, nbMaxIter);

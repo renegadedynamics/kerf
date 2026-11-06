@@ -26,7 +26,6 @@ internal class GuideTrihedronAC : TrihedronWithGuide
     private double _l;
     private new CurveAdaptorBase? _curve;
     private readonly double _uTol;
-    private readonly double _sTol;
     private double _orig1;
     private double _orig2;
 
@@ -37,7 +36,7 @@ internal class GuideTrihedronAC : TrihedronWithGuide
         _trimG = guide;
         _guideAC = new CurvlinFunc(_guide, 1.0e-7);
         _lguide = _guideAC.GetLength();
-        _uTol = _sTol = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        _uTol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         _orig1 = 0; // origines pour le cas path multi-edges
         _orig2 = 1;
     }

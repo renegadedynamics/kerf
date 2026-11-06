@@ -59,7 +59,6 @@ internal sealed class Offset
     private Shape _shape = new();
     private OffsetStatus _status = OffsetStatus.Unknown;
     private Face _face = new();
-    private readonly Dictionary<Shape, Shape> _map = new(ShapeHasher.Instance);
 
     // OCCT_DEBUG statics (Affich, NbOFFSET) and their blocks are left out.
 

@@ -43,9 +43,6 @@ namespace Kerf.Engine.Construction.Filling;
 /// </remarks>
 internal sealed class CompatibleWires
 {
-#pragma warning disable CS0414 // set and never read, as in OCCT
-    private NCollection_Sequence<Shape> _init = new();
-#pragma warning restore CS0414
     private NCollection_Sequence<Shape> _work = new();
     private double _percent;
     private bool _degen1;
@@ -703,7 +700,6 @@ internal sealed class CompatibleWires
     /// <summary>Sets the sections (wires, in order) and resets the algorithm.</summary>
     public void Init(NCollection_Sequence<Shape> sections)
     {
-        _init = new NCollection_Sequence<Shape>(sections);
         _work = new NCollection_Sequence<Shape>(sections);
         _percent = 0.1;
         _status = ThruSectionErrorStatus.ThruSectionErrorStatus_NotDone;

@@ -34,17 +34,11 @@ internal class SplitCommonVertexFixer : RootFixer
     // OCCT declares its own private myShape, hiding ShapeFix_Root's (which the messages are attached to, and which
     // stays null here).
     private new Shape _shape;
-#pragma warning disable CS0414 // set and never read, as in OCCT
-    private Shape _result;
-    private int          _status;
-#pragma warning restore CS0414
 
     /// <summary>Empty constructor.</summary>
     public SplitCommonVertexFixer()
     {
         _shape  = new Shape();
-        _result = new Shape();
-        _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         SetPrecision(Kerf.Engine.Foundation.Precision.Confusion());
     }
 
@@ -56,7 +50,6 @@ internal class SplitCommonVertexFixer : RootFixer
         {
             SetContext(new ReShapeBuilder());
         }
-        _result = _shape;
         Context()!.InternalApply(_shape);
     }
 

@@ -40,9 +40,6 @@ internal class CSWalking
     private double _firstparam;
     private NCollection_HArray1<double>? _firstsol;
     private BlendPoint _previousP = new();
-#pragma warning disable CS0414 // set and never read, as in OCCT
-    private bool _rebrou;
-#pragma warning restore CS0414
     private bool _iscomplete;
     private bool _comptra;
     private double _sens;
@@ -70,7 +67,6 @@ internal class CSWalking
         _tolpoint3d = tol3d;
         _tolgui = Math.Abs(tolGuide);
         _fleche = Math.Abs(fleche);
-        _rebrou = false;
         _pasmax = Math.Abs(maxStep);
         math_Vector sol = new(1, nbvar);
 
@@ -227,13 +223,11 @@ internal class CSWalking
             if (state1 == BlendStatus.Backward)
             {
                 state1 = BlendStatus.StepTooLarge;
-                _rebrou = true;
             }
 
             if (state2 == BlendStatus.Backward)
             {
                 state2 = BlendStatus.StepTooLarge;
-                _rebrou = true;
             }
 
             if (state1 == BlendStatus.StepTooLarge || state2 == BlendStatus.StepTooLarge)

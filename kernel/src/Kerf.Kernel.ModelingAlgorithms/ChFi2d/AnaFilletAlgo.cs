@@ -45,8 +45,6 @@ internal sealed class AnaFilletAlgo
     // Right neighbour.
     private Edge _e2 = new();
     private bool _segment2;
-    private double _x21;
-    private double _y21;
     private double _x22;
     private double _y22;
     private double _xc2;
@@ -115,8 +113,6 @@ internal sealed class AnaFilletAlgo
         _radius1 = 0.0;
         _cw1 = false;
         _segment2 = false;
-        _x21 = 0.0;
-        _y21 = 0.0;
         _x22 = 0.0;
         _y22 = 0.0;
         _xc2 = 0.0;
@@ -220,7 +216,6 @@ internal sealed class AnaFilletAlgo
         P2 = Tool.Pnt(v2);
         p1 = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(plane, P1);
         p2 = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(plane, P2);
-        p1.Coord(out _x21, out _y21);
         p2.Coord(out _x22, out _y22);
 
         _segment2 = true;
@@ -1067,8 +1062,6 @@ internal sealed class AnaFilletAlgo
 
                     Point2D p2d = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(plane, p);
                     p2d.Coord(out _x12, out _y12);
-                    _x21 = _x12;
-                    _y21 = _y12;
                     return true;
                 }
             }

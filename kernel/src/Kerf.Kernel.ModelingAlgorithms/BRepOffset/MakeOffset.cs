@@ -77,10 +77,8 @@ internal sealed partial class MakeOffset
     private Shape _initialShape = new();
     private Shape _shape = new();
     private Compound _faceComp = new();
-    private global::Kerf.Offsets.OffsetMode _mode;
     private bool _isLinearizationAllowed;
     private bool _inter;
-    private bool _selfInter;
     private global::Kerf.Geometry.JoinKind _join;
     private bool _thickening;
     private bool _removeIntEdges;
@@ -435,9 +433,7 @@ internal sealed partial class MakeOffset
         _tol = tol;
         _initialShape = s;
         _shape = s;
-        _mode = mode;
         _inter = inter;
-        _selfInter = selfInter;
         _join = Join;
         _thickening = thickening;
         _removeIntEdges = removeIntEdges;
@@ -459,9 +455,7 @@ internal sealed partial class MakeOffset
         _initialShape = s;
         _shape = s;
         _tol = tol;
-        _mode = mode;
         _inter = inter;
-        _selfInter = selfInter;
         _join = Join;
         _thickening = thickening;
         _removeIntEdges = removeIntEdges;

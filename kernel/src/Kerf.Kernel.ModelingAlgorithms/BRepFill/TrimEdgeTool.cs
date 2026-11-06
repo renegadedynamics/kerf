@@ -36,7 +36,6 @@ internal sealed class TrimEdgeTool
     private readonly Point2D _p1;
     private readonly Point2D _p2;
     private readonly Curve2D? _c1;
-    private readonly Curve2D? _c2;
     private readonly double _offset;
     private readonly Bisec? _bisec;
     private readonly CurveAdaptor2D _bis = new();
@@ -92,7 +91,6 @@ internal sealed class TrimEdgeTool
         }
         else
         {
-            _c2 = s2 as Curve2D;
         }
         // return the simple expression of the bissectrice
         SimpleExpression(_bisec, out Curve2D bis);

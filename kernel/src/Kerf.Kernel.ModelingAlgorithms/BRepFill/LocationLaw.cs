@@ -37,9 +37,6 @@ internal abstract class LocationLaw : Transient
     protected NCollection_HArray1<Shape>? _edges;
     protected NCollection_HArray1<int>? _disc;
     // Set by TangentIsMain, NormalIsMain and BiNormalIsMain and never read, as in OCCT.
-#pragma warning disable CS0414
-    private int _type;
-#pragma warning restore CS0414
 
     //=================================================================================================
 
@@ -127,7 +124,6 @@ internal abstract class LocationLaw : Transient
     /// <summary>To preserve if possible the tangent in transformations (the default mode).</summary>
     protected void TangentIsMain()
     {
-        _type = 1;
     }
 
     //=================================================================================================
@@ -135,7 +131,6 @@ internal abstract class LocationLaw : Transient
     /// <summary>To preserve if possible the normal in transformations.</summary>
     protected void NormalIsMain()
     {
-        _type = 2;
     }
 
     //=================================================================================================
@@ -143,7 +138,6 @@ internal abstract class LocationLaw : Transient
     /// <summary>To preserve if possible the binormal in transformations.</summary>
     protected void BiNormalIsMain()
     {
-        _type = 3;
     }
 
     //=================================================================================================
