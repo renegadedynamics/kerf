@@ -66,8 +66,7 @@ public class DrawXdeCorpusTests(ITestOutputHelper output)
                                            .ToList();
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
         string? aFilter = Environment.GetEnvironmentVariable("OCCTNET_8G1_FILTER");
-        // the cases that measure memory run alone (DrawCheapGapsCorpusTests, which attributes bug31075's trend): run
-        // here beside the others, bug31075 passed or failed by the load (unit 8W)
+        // the cases that measure memory are DrawCheapGapsCorpusTests'
         HashSet<DrawTestCase> aMemoryCases = aScans.Where(DrawCheapGapsCorpusTests.MeasuresMemory).Select(s => s.Case).ToHashSet();
         List<DrawTestCase> aRunnableBefore = aScans.Select(s => s.Case).Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
         output.WriteLine($"{aScans.Count} cases use the XDE commands; runnable before 8G1: {aRunnableBefore.Count}, after: {aRunnable.Count}");

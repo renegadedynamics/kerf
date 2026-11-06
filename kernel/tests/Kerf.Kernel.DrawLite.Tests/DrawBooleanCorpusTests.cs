@@ -76,8 +76,7 @@ public class DrawBooleanCorpusTests(ITestOutputHelper output)
         List<DrawTestCase> aToRun = isFull
             ? aRunnable
             : aRunnable.OrderBy(c => c.Id, StringComparer.Ordinal).Where((_, i) => i % SampleStep == 0).ToList();
-        // The cases that measure memory run one at a time, in DrawCheapGapsCorpusTests only (left out after sampling,
-        // so the sample stays the same)
+        // The cases that measure memory are DrawCheapGapsCorpusTests' (left out after sampling, so the sample stays the same)
         aToRun = aToRun.Where(c => !DrawCheapGapsCorpusTests.MeasuresMemory(aScans.First(s => s.Case == c))).ToList();
         output.WriteLine(isFull ? "running all of them" : $"running every {SampleStep}th: {aToRun.Count} (KERF_CORPUS_FULL=1 runs all)");
 

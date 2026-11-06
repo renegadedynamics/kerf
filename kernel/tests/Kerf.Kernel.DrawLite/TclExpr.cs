@@ -73,6 +73,11 @@ internal static class TclExpr
 
     public static TclValue Eval(DrawInterpreter theInterpreter, string theExpression)
     {
+        if (!DrawCaseProcess.KeepsParsedText)
+        {
+            return new ExprParser(theExpression).ParseAll().Eval(theInterpreter);
+        }
+
         if (!s_cache.TryGetValue(theExpression, out Node? aNode))
         {
             aNode = new ExprParser(theExpression).ParseAll();

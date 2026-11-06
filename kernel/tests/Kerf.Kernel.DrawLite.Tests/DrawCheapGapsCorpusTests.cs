@@ -10,10 +10,6 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// (Draw's core commands, the geometry and topology commands over ported packages), run as OCCT's harness runs them and
 /// judged by OCCT's log check.
 /// </summary>
-/// <remarks>
-/// The cases that measure memory (<c>meminfo</c>) run one at a time after the others: Draw-lite runs cases side by side
-/// in one process, and the managed heap is the process's, where DRAWEXE runs each case in its own process.
-/// </remarks>
 [Collection(MeshDefaultsCollection.Name)]
 public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
 {
@@ -58,10 +54,6 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
         ["lowalgos/progress/A4"] = "progress",
         // the triangulation DRAWEXE's `checkview -display` makes (the viewer); Draw-lite's checkview is a no-op
         ["bugs/mesh/bug32241"] = "viewer",
-        // runnable since unit 8G1's documents: `meminfo h` (the managed heap) grows by about 400 bytes a cycle, the
-        // lines each cycle prints, which Draw-lite keeps in its log and DRAWEXE writes to the console; the documents
-        // themselves are let go (DDocStdCommands.NewDocument drops those no longer bound)
-        ["bugs/caf/bug31075"] = "memory trend of the interpreter's log",
         // OCCT's script (decision 1309): `extrema s1 s1` and `extrema s2 s2` measure each plane against itself
         // (distance 0, native OCCT too) where the test expects 10, the distance between s1 and s2
         ["lowalgos/extss/bug29712_44"] = "OCCT's script: a plane's extrema with itself",
@@ -70,23 +62,10 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
     };
 
     /// <summary>
-    /// The cases that measure memory (<c>meminfo</c>): they pass only run one at a time, so this test alone runs them,
-    /// and the other corpus tests leave them out.
+    /// The cases that measure memory (<c>meminfo</c>), each in a process of its own (DrawCaseProcess, decision 1699):
+    /// this test and DrawCaseProcessTests run them, so the corpus tests with an overlapping list leave them out.
     /// </summary>
     internal static bool MeasuresMemory(DrawCaseScan theScan) => theScan.Commands.Contains("meminfo");
-
-    /// <summary>
-    /// Runs a case that measures memory, once more if it fails (decision 1107): `meminfo h` is the managed heap's live
-    /// bytes, and the interpreter's own log grows by a few kilobytes a cycle, so bug7287_1's trend (mean about 5 kB a
-    /// step against a sigma of about 7 kB) passes on the noise and failed once alone.
-    /// </summary>
-    internal static DrawCaseRun RunMemoryCase(DrawCorpus theCorpus, DrawTestCase theCase)
-    {
-        DrawCaseRun RunOnce() => theCorpus.RunAndCheck(theCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                       TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null);
-        DrawCaseRun aRun = RunOnce();
-        return aRun.Passed ? aRun : RunOnce();
-    }
 
     [Fact]
     public void Corpus_cases_the_cheap_gaps_make_runnable_run_and_pass()
@@ -106,12 +85,9 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
         List<DrawTestCase> aNew = aRunnable.Except(aRunnableBefore).ToList();
         output.WriteLine($"{aScans.Count} cases use 7W's commands; runnable {aRunnable.Count}, of which {aNew.Count} only with 7W's commands");
 
-        bool UsesMemory(DrawTestCase theCase) => MeasuresMemory(aScans.First(s => s.Case == theCase));
         DrawCaseRun RunOne(DrawTestCase theCase)
             => aCorpus.RunAndCheck(theCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath, TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null);
-        List<DrawCaseRun> aRuns = [.. aNew.Where(c => !UsesMemory(c)).AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                                          .Select(RunOne),
-                                   .. aNew.Where(UsesMemory).Select(c => RunMemoryCase(aCorpus, c))];
+        List<DrawCaseRun> aRuns = [.. aNew.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2)).Select(RunOne)];
         aRuns.Sort((x, y) => StringComparer.Ordinal.Compare(x.Case.Id, y.Case.Id));
         output.WriteLine("after 7W: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])
                                                                .OrderBy(g => g.Key, StringComparer.Ordinal)

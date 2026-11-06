@@ -2,6 +2,10 @@
 
   <PropertyGroup>
     <IsTestProject>false</IsTestProject>
+    <!-- Each case that reads its process's own figures runs in a process of its own (DrawCaseProcess) -->
+    <OutputType>Exe</OutputType>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
     <Description>Draw-lite: runs OCCT's Draw test scripts against the port.</Description>
   </PropertyGroup>
 

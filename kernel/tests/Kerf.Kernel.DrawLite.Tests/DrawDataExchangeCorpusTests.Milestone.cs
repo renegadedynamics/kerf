@@ -199,9 +199,7 @@ public partial class DrawDataExchangeCorpusTests
         DrawCaseRun RunOne(DrawTestCase theCase)
             => aCorpus.RunAndCheck(theCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
                                    TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null);
-        List<DrawCaseRun> aRuns = [.. aRunnable.Where(s => !DrawCheapGapsCorpusTests.MeasuresMemory(s)).Select(s => s.Case)
-                                               .AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2)).Select(RunOne),
-                                   .. aRunnable.Where(DrawCheapGapsCorpusTests.MeasuresMemory).Select(s => DrawCheapGapsCorpusTests.RunMemoryCase(aCorpus, s.Case))];
+        List<DrawCaseRun> aRuns = [.. aRunnable.Select(s => s.Case).AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2)).Select(RunOne)];
         aRuns.Sort((x, y) => StringComparer.Ordinal.Compare(x.Case.Id, y.Case.Id));
         HashSet<string> aKnown = AllKnownFailures();
         output.WriteLine("statuses: " + Counts(aRuns));
