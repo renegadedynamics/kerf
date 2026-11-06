@@ -145,21 +145,6 @@ internal class PolygonOnTriangulation : Transient
 
     /// <summary>The curve parameters, or null; check <see cref="HasParameters"/>.</summary>
     public NCollection_HArray1<double>? Parameters() => _parameters;
-
-    [Obsolete("Deprecated method, SetNode() should be used instead")]
-    public NCollection_Array1<int> ChangeNodes()
-    {
-        CheckMutable();
-        return _nodes;
-    }
-
-    [Obsolete("Deprecated method, SetParameter() should be used instead")]
-    public NCollection_Array1<double> ChangeParameters()
-    {
-        CheckMutable();
-        return _parameters!.ChangeArray1();
-    }
-
     public override string ToString()
         => string.Create(CultureInfo.InvariantCulture, $"Poly_PolygonOnTriangulation({NodeCount} nodes, deflection {_deflection:R})");
 }

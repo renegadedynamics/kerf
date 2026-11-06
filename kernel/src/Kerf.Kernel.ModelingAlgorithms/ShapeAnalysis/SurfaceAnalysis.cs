@@ -120,7 +120,7 @@ internal class SurfaceAnalysis : Transient
         // Bug 33895: Prevent crash when surface is null
         if (_surf is null)
         {
-            // TODO(4A): Message.SendWarning("ShapeAnalysis_Surface: Cannot create with null surface");
+            // OCCT warns here: "Cannot create with null surface"
             return;
         }
 
@@ -139,7 +139,7 @@ internal class SurfaceAnalysis : Transient
         // Bug 33895: Prevent crash when surface is null
         if (surface is null)
         {
-            // TODO(4A): Message.SendWarning("ShapeAnalysis_Surface: Cannot initialize with null surface");
+            // OCCT warns here: "Cannot initialize with null surface"
             return;
         }
 

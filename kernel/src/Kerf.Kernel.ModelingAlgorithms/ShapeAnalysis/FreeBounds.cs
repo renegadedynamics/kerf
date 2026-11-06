@@ -216,15 +216,6 @@ internal sealed class FreeBounds
 
         return wires;
     }
-
-    /// <summary>Connects the edges into wires (deprecated form of the function returning the sequence).</summary>
-    [Obsolete("Use ConnectEdgesToWires() returning the sequence instead")]
-    public static void ConnectEdgesToWires(NCollection_HSequence<Shape> edges, double toler, bool shared,
-                                           out NCollection_HSequence<Shape> wires)
-    {
-        wires = ConnectEdgesToWires(edges, toler, shared);
-    }
-
     /// <summary>
     /// Connects the unsorted wires into wires of maximal length, as
     /// <see cref="ConnectEdgesToWires(NCollection_HSequence{Shape}, double, bool)"/>. A wire's orientation can
@@ -242,15 +233,6 @@ internal sealed class FreeBounds
         var map = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         return InternalConnectWiresToWires(iwires, toler, shared, map);
     }
-
-    /// <summary>Connects the wires into wires (deprecated form of the function returning the sequence).</summary>
-    [Obsolete("Use ConnectWiresToWires() returning the sequence instead")]
-    public static void ConnectWiresToWires(NCollection_HSequence<Shape>? iwires, double toler, bool shared,
-                                           out NCollection_HSequence<Shape> owires)
-    {
-        owires = ConnectWiresToWires(iwires, toler, shared);
-    }
-
     /// <summary>
     /// Connects the wires, as <see cref="ConnectWiresToWires(NCollection_HSequence{Shape}, double, bool)"/>,
     /// and fills <paramref name="vertices"/> with the correspondence between the wires' original end vertices and the
@@ -266,16 +248,6 @@ internal sealed class FreeBounds
         }
         return PublishedAll(owires);
     }
-
-    /// <summary>Connects the wires and fills the vertex map (deprecated form of the function returning the sequence).</summary>
-    [Obsolete("Use ConnectWiresToWires() returning the sequence instead")]
-    public static void ConnectWiresToWires(NCollection_HSequence<Shape>? iwires, double toler, bool shared,
-                                           out NCollection_HSequence<Shape> owires,
-                                           Dictionary<Shape, Shape> vertices)
-    {
-        owires = ConnectWiresToWires(iwires, toler, shared, vertices);
-    }
-
     /// <summary>The connection with the vertex map, unfrozen (ported code).</summary>
     internal static NCollection_HSequence<Shape> InternalConnectWiresToWires(NCollection_HSequence<Shape>? iwires, double toler, bool shared,
                                                                                     Dictionary<Shape, Shape> vertices)

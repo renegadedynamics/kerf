@@ -56,7 +56,7 @@ internal class GuideTrihedronAC : TrihedronWithGuide
 
         Vector3D n = new Vector3D(p, pg); // vecteur definissant la normale
 
-        // OCCT TODO: finding #8 - no zero-magnitude guard before Normalized()/Magnitude().
+        // As in OCCT, no zero-magnitude guard before Normalized()/Magnitude().
         normal = n.Normalized();
         b = to.Crossed(normal);
         biNormal = b / b.Magnitude;
@@ -92,7 +92,7 @@ internal class GuideTrihedronAC : TrihedronWithGuide
         }
         n /= norm;
 
-        // OCCT TODO: finding #8 - no zero-magnitude guard before TG.Magnitude()/L division.
+        // As in OCCT, no zero-magnitude guard before TG.Magnitude()/L division.
         dtg = (_orig2 - _orig1) * (to.Magnitude / tg.Magnitude) * (_lguide / _l);
         dn = Vector3D.LinearForm(dtg, tg, -1, to);
         dn /= norm;

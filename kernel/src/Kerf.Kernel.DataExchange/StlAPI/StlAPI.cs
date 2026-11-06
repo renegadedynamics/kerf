@@ -18,15 +18,4 @@ internal static class StlApi
         writer.SetASCIIMode(asciiMode);
         return writer.Write(shape, file);
     }
-
-    /// <summary>
-    /// Legacy interface: reads an STL file into a shape of one face per facet (very slow for large files; see
-    /// <see cref="RWStl"/>).
-    /// </summary>
-    [Obsolete("This method is very inefficient; see RWStl class for better alternative")]
-    public static bool Read(ref Shape shape, string aFile)
-    {
-        var reader = new StlApiReader();
-        return reader.Read(ref shape, aFile);
-    }
 }

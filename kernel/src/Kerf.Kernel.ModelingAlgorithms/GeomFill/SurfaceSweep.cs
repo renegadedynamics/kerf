@@ -681,7 +681,7 @@ internal sealed class SurfaceSweep
                 Transform3D tf2 = new Transform3D();
                 tf = tf.WithVectorialPart(m);
                 tf = tf.WithTranslationPart(v.XYZ());
-                // TODO: finding #9 - exception handling is commented out unlike the translation
+                // Exception handling is commented out here in OCCT, unlike the translation
                 // branch (~600-619). Restoring try/catch caused blend regressions. Needs
                 // investigation to understand why the catch was intentionally disabled.
                 tf2 = tf2.WithValues(tf[1, 1],

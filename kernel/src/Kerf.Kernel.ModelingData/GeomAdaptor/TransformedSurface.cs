@@ -101,11 +101,6 @@ internal class TransformedSurface : SurfaceAdaptorBase
 
     /// <summary>The transformation.</summary>
     public Transform3D Trsf() => _trsf;
-
-    /// <summary>The adaptor of the original surface (the adaptor itself: a working object).</summary>
-    [Obsolete("Use AdaptorSurfaceOriginal() instead to get the original surface without transformation")]
-    public SurfaceAdaptor Surface() => _surf;
-
     /// <summary>The adaptor of the original surface, without transformation.</summary>
     public SurfaceAdaptor AdaptorSurfaceOriginal() => _surf;
 
@@ -125,11 +120,6 @@ internal class TransformedSurface : SurfaceAdaptorBase
         EnsureTransformedCache();
         return _transformedAdaptor!.Surface();
     }
-
-    /// <summary>The original Geom surface.</summary>
-    [Obsolete("Use GeomSurfaceOriginal() or GeomSurfaceTransformed() instead")]
-    public Surface? GeomSurface() => GeomSurfaceOriginal();
-
     public override double FirstUParameter() => _surf.FirstUParameter();
 
     public override double LastUParameter() => _surf.LastUParameter();

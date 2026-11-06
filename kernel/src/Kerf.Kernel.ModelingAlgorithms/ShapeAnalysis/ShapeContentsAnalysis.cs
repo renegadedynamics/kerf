@@ -397,11 +397,6 @@ internal sealed class ShapeContentsAnalysis
 
     /// <summary>The flag to store the faces with trimmed pcurves (modifiable).</summary>
     public ref bool ModifyTrimmed2dMode() => ref _trimmed2dMode;
-
-    /// <summary>OCCT's misspelt, deprecated form of <see cref="ModifyOffsetSurfaceMode"/>.</summary>
-    [Obsolete("ModifyOffsetSurfaceMode() should be used instead")]
-    public ref bool ModifyOffestSurfaceMode() => ref _offsetSurfaceMode;
-
     public int SolidCount => _nbSolids;
     public int ShellCount => _nbShells;
     public int FaceCount => _nbFaces;
