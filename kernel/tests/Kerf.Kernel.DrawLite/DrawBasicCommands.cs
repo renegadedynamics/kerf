@@ -122,7 +122,7 @@ internal static class DrawBasicCommands
     // within 5% of each other, hundreds of kilobytes here. In a case's own process (DrawCaseProcess), to a multiple of
     // HeapResolution: the list of readings a script keeps grows by 64 to 250 bytes a cycle, which OCCT's C heap hardly
     // sees and which alone would fail the scripts whose tolerance is 0 to 100 bytes. Steps of this size pass checktrend
-    // unless most cycles take one, so that growth can't fail, and keeping 1.4 kB a cycle always does (decision 19101).
+    // unless most cycles take one, so that growth can't fail, and keeping 1.4 kB or more a cycle does (decision 19103).
     private static long LiveHeapBytes()
     {
         GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);

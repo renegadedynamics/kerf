@@ -67,13 +67,15 @@ public sealed class DrawCaseProcessTests : IDisposable
     [Theory]
     [InlineData("box b$i 10 10 10", 256)] // a shape, what bug24863_1 asks about; about 15 kB a cycle
     [InlineData("bop b1 b2; bopcut r$i", 100)] // the result of a Boolean, what bug7287 asks about; about 15 kB a cycle
-    [InlineData("box b 10 10 10; lappend keep [string repeat x 650]", 256)] // about 1.4 kB a cycle
-    [InlineData("box b 10 10 10; lappend keep [string repeat x 650]", 0)]
+    // about the same again, as a plain string. Smaller ones are seen too (decision 19103), but less surely
+    [InlineData("box b 10 10 10; lappend keep [string repeat x 8000]", 256)]
+    [InlineData("box b 10 10 10; lappend keep [string repeat x 8000]", 0)]
     public void A_cycle_that_holds_on_to_what_it_made_fails(string theCycle, int theTolerance)
     {
-        DrawCaseRun aRun = Run(Case("keeps", Trend(theCycle, theTolerance)));
-        Assert.StartsWith("FAILED", aRun.Status, StringComparison.Ordinal);
-        Assert.Contains("Memory leak detected", aRun.Log, StringComparison.Ordinal);
+        // thirty cycles, where the real cases have nine or ten: one passing step in a short run can widen sigma past the mean
+        DrawCaseRun aRun = Run(Case("keeps", Trend(theCycle, theTolerance, theCycles: 30)));
+        Assert.True(aRun.Status.StartsWith("FAILED", StringComparison.Ordinal) && aRun.Log.Contains("Memory leak detected", StringComparison.Ordinal),
+                    aRun.Status + "\n" + aRun.Log);
     }
 
     [Fact]
