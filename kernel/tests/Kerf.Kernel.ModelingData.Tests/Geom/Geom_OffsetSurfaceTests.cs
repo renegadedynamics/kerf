@@ -706,6 +706,55 @@ public class Geom_OffsetSurface_ThreeWay
         }
     }
 
+    private static CoordinateSystem IndirectFrame() =>
+        new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)).YReversed();
+
+    // The law: an offset surface is S + d (DU ^ DV) / |DU ^ DV|. OCCT 8.0.1 reduced an indirect plane's offset along the
+    // frame's Z, the other way from that normal (upstream 71658f6c8f; decision 20601).
+    [Fact]
+    public void Plane_Indirect_IsOnTheSideOfTheNormal()
+    {
+        PlaneSurface aPlane = new(IndirectFrame());
+        Assert.False(aPlane.Position.IsDirect);
+        OffsetSurface anOffset = new(aPlane, 2.0);
+        Assert.NotNull(anOffset.Surface());
+        foreach ((double u, double v) in new[] { (0.0, 0.0), (1.5, -2.0), (-3.0, 4.0) })
+        {
+            aPlane.D1(u, v, out Point3D aP, out Vector3D aDU, out Vector3D aDV);
+            Point3D anExpected = aP.Translated(aDU.Crossed(aDV).Normalized() * 2.0);
+            Assert.True(anExpected.DistanceTo(anOffset.Value(u, v)) < 1.0e-12);
+            Assert.True(anExpected.DistanceTo(anOffset.Surface()!.Value(u, v)) < 1.0e-12);
+            new SurfaceAdaptor(anOffset).D0(u, v, out Point3D anAdapted);
+            Assert.True(anExpected.DistanceTo(anAdapted) < 1.0e-12);
+        }
+        Assert.Equal(1.0, anOffset.Value(0, 0).Z, 12); // the frame's Z is up, and its normal down
+    }
+
+    // Reversing a parameter makes the plane indirect and negates the offset: the same surface in space.
+    [Fact]
+    public void Plane_Reversed_ThenCopied_StaysWhereItWas()
+    {
+        OffsetSurface anOffset = new(new PlaneSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))), 2.0);
+        var aReversed = (OffsetSurface)anOffset.UReversed();
+        var aCopy = new OffsetSurface(aReversed);
+        Assert.False(((PlaneSurface)aCopy.BasisSurface).Position.IsDirect);
+        Assert.Equal(2.0, aReversed.Value(0.5, 0.5).Z, 12);
+        Assert.Equal(2.0, aCopy.Value(0.5, 0.5).Z, 12);
+        Assert.Equal(2.0, aCopy.Surface()!.Value(0.5, 0.5).Z, 12);
+    }
+
+    // A mirror of the surface is the surface of the mirror, copied or not.
+    [Fact]
+    public void Plane_Mirrored_ThenCopied_IsTheMirrorOfItsPoints()
+    {
+        OffsetSurface anOffset = new(new PlaneSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))), 2.0);
+        Transform3D aMirror = Transform3D.Mirror(new Frame3D(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)));
+        var aMirrored = new OffsetSurface((OffsetSurface)anOffset.Transformed(aMirror));
+        Assert.Equal(8.0, aMirrored.Value(0.5, 0.5).Z, 12);
+        new SurfaceAdaptor(aMirrored).D0(0.5, 0.5, out Point3D anAdapted);
+        Assert.Equal(8.0, anAdapted.Z, 12);
+    }
+
     [Fact]
     public void Cone_D0D1_ThreeWayConsistency()
     {

@@ -176,7 +176,10 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
                 using var aFace = new N.TopoDS_Face();
                 aBuilder.MakeFace(aFace, aNative, 1e-7);
                 string anExpected = SurfacesSection(NativeWrite(aFace));
-                string anActual = PortWrite(aPort);
+                // the file holds the number given: RandomOffsetSurface gave the port the opposite one on an indirect
+                // plane, for evaluation's sake (PortOffset, decision 20601)
+                var anOffsetSurface = (OffsetSurface)aPort;
+                string anActual = PortWrite(IsOnIndirectPlane(anOffsetSurface.BasisSurface) ? anOffsetSurface.WithOffsetValue(-anOffsetSurface.Offset) : aPort);
                 Assert.Equal(anExpected, anActual);
                 aCounter.Add("offset", anActual);
             }
