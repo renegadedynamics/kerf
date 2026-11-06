@@ -489,6 +489,12 @@ internal sealed partial class BOPReconstruction : Reconstruction
                 states[^1] = c.After;
                 continue;
             }
+            // the part before this point is kept only if this point agrees: where a fillet's boundary runs along the edge,
+            // ChFi3d gives each point there the transition OUT to IN, and the edge's part under it goes (decision 19602)
+            if (c.Before == Out)
+            {
+                states[^1] = Out;
+            }
             paves.Add((c.T, c.V));
             states.Add(c.After);
         }
