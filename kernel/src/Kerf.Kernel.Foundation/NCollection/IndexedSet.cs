@@ -13,25 +13,34 @@ namespace Kerf.Engine.Collections;
 /// A set that numbers its items from 0 in the order added (OCCT's <c>NCollection_IndexedMap</c>, which numbers them
 /// from 1). Removing an item moves the last one into its place, as OCCT does, so the others keep their indices.
 /// </summary>
+/// <remarks>
+/// Most sets of shapes in a model are small: a wire's vertices, a face's edges. Up to <see cref="LargestScanned"/> items it
+/// compares them in turn, and only then makes a dictionary: which it does doesn't change what's found, as a comparer's
+/// hash agrees with its equality. As before, several threads may read one set that nothing is changing.
+/// </remarks>
 internal sealed class IndexedSet<T> : IReadOnlyList<T> where T : notnull
 {
-    private readonly Dictionary<T, int> _indices;
+    private const int LargestScanned = 8;
+
+    private readonly IEqualityComparer<T> _comparer;
+    private Dictionary<T, int>? _indices;
     private readonly List<T> _items;
 
     public IndexedSet(IEqualityComparer<T>? comparer = null)
     {
-        _indices = new Dictionary<T, int>(comparer);
+        _comparer = comparer ?? EqualityComparer<T>.Default;
         _items = [];
     }
 
     /// <summary>A copy, with the same comparer.</summary>
     public IndexedSet(IndexedSet<T> other)
     {
-        _indices = new Dictionary<T, int>(other._indices, other._indices.Comparer);
+        _comparer = other._comparer;
+        _indices = other._indices is null ? null : new Dictionary<T, int>(other._indices, _comparer);
         _items = [.. other._items];
     }
 
-    public IEqualityComparer<T> Comparer => _indices.Comparer;
+    public IEqualityComparer<T> Comparer => _comparer;
 
     public int Count => _items.Count;
 
@@ -47,33 +56,79 @@ internal sealed class IndexedSet<T> : IReadOnlyList<T> where T : notnull
 
     public void Clear()
     {
-        _indices.Clear();
+        _indices?.Clear();
         _items.Clear();
     }
 
     /// <summary>Adds the item if new, and returns its index either way.</summary>
     public int Add(T item)
     {
-        ref int index = ref CollectionsMarshal.GetValueRefOrAddDefault(_indices, item, out bool exists);
-        if (!exists)
+        if (_indices is not null)
         {
-            index = _items.Count;
-            _items.Add(item);
+            ref int index = ref CollectionsMarshal.GetValueRefOrAddDefault(_indices, item, out bool exists);
+            if (!exists)
+            {
+                index = _items.Count;
+                _items.Add(item);
+            }
+
+            return index;
         }
 
-        return index;
+        int found = IndexOf(item);
+        if (found >= 0)
+        {
+            return found;
+        }
+
+        _items.Add(item);
+        if (_items.Count > LargestScanned)
+        {
+            // It stays once made, for a set used again
+            _indices = new Dictionary<T, int>(2 * LargestScanned, _comparer);
+            for (int i = 0; i < _items.Count; ++i)
+            {
+                _indices.Add(_items[i], i);
+            }
+        }
+
+        return _items.Count - 1;
     }
 
-    public bool Contains(T item) => _indices.ContainsKey(item);
+    /// <summary>Adds the item if new, and says whether it was.</summary>
+    public bool TryAdd(T item)
+    {
+        int count = _items.Count;
+        return Add(item) == count;
+    }
+
+    public bool Contains(T item) => IndexOf(item) >= 0;
 
     /// <summary>The item's index, or −1 if it isn't there.</summary>
-    public int IndexOf(T item) => _indices.TryGetValue(item, out int index) ? index : -1;
+    public int IndexOf(T item)
+    {
+        if (_indices is not null)
+        {
+            return _indices.TryGetValue(item, out int index) ? index : -1;
+        }
+
+        ReadOnlySpan<T> items = CollectionsMarshal.AsSpan(_items);
+        for (int i = 0; i < items.Length; ++i)
+        {
+            if (_comparer.Equals(items[i], item))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
 
     /// <summary>Removes the last item.</summary>
     public void RemoveLast()
     {
         Standard_OutOfRange_Raise_if(_items.Count == 0, "NCollection_IndexedMap::RemoveLast");
-        _indices.Remove(_items[^1]);
+        _indices?.Remove(_items[^1]);
         _items.RemoveAt(_items.Count - 1);
     }
 
@@ -109,30 +164,34 @@ internal sealed class IndexedSet<T> : IReadOnlyList<T> where T : notnull
     public void Substitute(int index, T item)
     {
         Standard_OutOfRange_Raise_if((uint)index >= (uint)_items.Count, "NCollection_IndexedMap::Substitute : Index is out of range");
-        if (_indices.TryGetValue(item, out int existing))
+        int existing = IndexOf(item);
+        if (existing >= 0)
         {
             if (existing != index)
             {
                 throw new DomainErrorException("NCollection_IndexedMap::Substitute : Attempt to substitute existing key");
             }
 
-            _indices.Remove(item);
+            _indices?.Remove(item);
         }
         else
         {
-            _indices.Remove(_items[index]);
+            _indices?.Remove(_items[index]);
         }
 
         _items[index] = item;
-        _indices.Add(item, index);
+        _indices?.Add(item, index);
     }
 
     public void Swap(int index1, int index2)
     {
         Standard_OutOfRange_Raise_if((uint)index1 >= (uint)_items.Count || (uint)index2 >= (uint)_items.Count, "NCollection_IndexedMap::Swap");
         (_items[index1], _items[index2]) = (_items[index2], _items[index1]);
-        _indices[_items[index1]] = index1;
-        _indices[_items[index2]] = index2;
+        if (_indices is not null)
+        {
+            _indices[_items[index1]] = index1;
+            _indices[_items[index2]] = index2;
+        }
     }
 
     public List<T>.Enumerator GetEnumerator() => _items.GetEnumerator();
