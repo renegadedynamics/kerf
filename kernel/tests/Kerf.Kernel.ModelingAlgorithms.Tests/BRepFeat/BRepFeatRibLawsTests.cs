@@ -236,4 +236,77 @@ public class BRepFeatRibLawsTests
         Assert.Equal(StatusError.OK, aRib.CurrentStatusError());
         Assert.NotEmpty(aRib.NewEdges());
     }
+
+    // ---- the package's helpers ----
+
+    private static Curve3D Plumb() => new LineCurve3D(new Line3D(new Point3D(5, 10, -10), new Direction3D(0, 0, 1)));
+
+    [Fact]
+    public void The_barycentre_of_a_box_is_its_centre()
+    {
+        Kerf.Engine.Features.BRepFeat.Barycenter(LocOpeTests.Box(), out Point3D aCentre);
+        Assert.True(aCentre.DistanceTo(new Point3D(5, 10, 15)) < 1e-6, aCentre.ToString());
+        // along a line up through it the centre is at 25, but OCCT counts the 8 vertices among its 128 samples without
+        // adding their parameters (occt-issues.md), so the mean is short by that share
+        Assert.Equal(25.0 * 120 / 128, Kerf.Engine.Features.BRepFeat.ParametricBarycenter(LocOpeTests.Box(), Plumb()), 6);
+    }
+
+    [Fact]
+    public void The_parametric_range_of_a_box_along_a_line_spans_its_height()
+    {
+        Kerf.Engine.Features.BRepFeat.ParametricMinMax(LocOpeTests.Box(), Plumb(), out double aMin, out double aMax, out double aBaryMin, out double aBaryMax, out bool aFlag);
+        Assert.Equal(10, aMin, 6);
+        Assert.Equal(40, aMax, 6);
+        Assert.InRange(aBaryMin, aMin, aMax);
+        Assert.InRange(aBaryMax, aMin, aMax);
+        Assert.True(aMin <= aMax);
+        _ = aFlag;
+    }
+
+    [Fact]
+    public void The_parametric_range_along_a_circle_stays_within_a_turn()
+    {
+        Curve3D aCircle = new CircleCurve3D(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20));
+        Shape aFar = new MakeBox(new Point3D(15, -2, -1), 10, 4, 2).Shape(); // straddling angle 0
+        Kerf.Engine.Features.BRepFeat.ParametricMinMax(aFar, aCircle, out double aMin, out double aMax, out _, out _, out _, true);
+        Assert.True(aMin <= aMax);
+        Assert.True(aMax - aMin <= (2 * Math.PI) + 1e-9, $"{aMin} to {aMax}");
+    }
+
+    [Fact]
+    public void A_rectangle_is_inside_a_face_that_holds_it_and_not_the_other_way()
+    {
+        Shape aBox = LocOpeTests.Box();
+        Face aTop = LocOpeTests.TopFace(aBox);
+        Face aRect = BRepFeatTests.Rect(3, 7, 7, 13, 30);
+        Assert.True(Kerf.Engine.Features.BRepFeat.IsInside(aRect, aTop));
+        Assert.False(Kerf.Engine.Features.BRepFeat.IsInside(aTop, aRect));
+        Assert.False(Kerf.Engine.Features.BRepFeat.IsInside(BRepFeatTests.Rect(30, 37, 7, 13, 30), aTop));
+    }
+
+    [Fact]
+    public void A_face_until_is_widened_past_the_shape_it_limits()
+    {
+        Shape aBox = LocOpeTests.Box();
+        Face aSmall = BRepFeatTests.Rect(3, 7, 7, 13, 40);
+        Face aWide = aSmall;
+        Kerf.Engine.Features.BRepFeat.FaceUntil(aBox, ref aWide);
+        Assert.False(aWide.IsSame(aSmall));
+        Assert.True(LocOpeTests.Area(aWide) > 200);
+        var aProps = new Kerf.Engine.Measurement.Properties();
+        Kerf.Engine.Measurement.MassPropertiesBuilder.SurfaceProperties(aWide, aProps);
+        Assert.Equal(40, aProps.CentreOfMass().Z, 6);
+    }
+
+    [Fact]
+    public void Every_status_has_a_description()
+    {
+        foreach (StatusError aStatus in Enum.GetValues<StatusError>())
+        {
+            Assert.False(string.IsNullOrEmpty(Kerf.Engine.Features.BRepFeat.Description(aStatus)), aStatus.ToString());
+            var aWriter = new StringWriter();
+            Kerf.Engine.Features.BRepFeat.Print(aStatus, aWriter);
+            Assert.Equal(Kerf.Engine.Features.BRepFeat.Description(aStatus), aWriter.ToString());
+        }
+    }
 }
