@@ -43,6 +43,20 @@ public class gp_TrsfTest
     }
 
     [Fact]
+    public void A_direction_refuses_what_has_no_direction()
+    {
+        // OCCT #1618, decision 1820: NaN passed the test for a null vector, and an infinite length normalises to NaN
+        foreach (double aBad in new[] { double.NaN, double.PositiveInfinity, double.NegativeInfinity })
+        {
+            Assert.Throws<ArgumentException>(() => new Direction3D(aBad, 0.0, 0.0));
+            Assert.Throws<ArgumentException>(() => new Direction3D(0.0, 0.0, aBad));
+            Assert.Throws<ArgumentException>(() => new Direction2D(aBad, 0.0));
+            Assert.Throws<ArgumentException>(() => new Direction2D(0.0, aBad));
+        }
+        Assert.Equal(1.0, new Direction3D(1e150, 0.0, 0.0).X);
+    }
+
+    [Fact]
     public void Elementary_geometry_refuses_a_NaN_radius_or_angle()
     {
         // OCCT #1618: every comparison with NaN is false, so the old guards let it through

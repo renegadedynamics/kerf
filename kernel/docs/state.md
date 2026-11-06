@@ -300,3 +300,4 @@ Not merged (decision 1798), so nothing changes here. On `phase11/valid-cache`: o
 ## The owner's answers
 
 Decisions 1802 to 1810 add one piece of shared state: `TopoUtil.Measured` and `TopoUtil.MeasuredMoments`, immutable `MassOptions` held in statics and only read. The retry in `Sweeps.Sweep` and the slice in `Solid.Torus` work on their arguments alone. `SweepMode` is immutable. `Failures.TryWarned` uses `Warnings.Capture`, whose scope is an `AsyncLocal`, so it belongs to the call that opened it.
+The second pass (decisions 1811 to 1822) adds no static, thread static or lock, and removes one: `GuideTrihedronAC.ReplayNative`, an `AsyncLocal`. `UnifySameDomain`'s saved pcurves are local to one merge.

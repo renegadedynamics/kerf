@@ -22,9 +22,9 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
 {
     private static readonly int Cases = Tape.Cases(150, 10);
 
-    private static void SameProperties(Oracle theO, N.Geom_OffsetSurface theN, OffsetSurface theP, string theWhat)
+    private static void SameProperties(Oracle theO, N.Geom_OffsetSurface theN, OffsetSurface theP, string theWhat, bool theIsDirectAsGiven = false)
     {
-        theO.Same(theN.Offset(), theP.Offset, theWhat + " Offset");
+        theO.Same(theN.Offset(), theIsDirectAsGiven ? theP.Offset : PortOffset(theP.BasisSurface, theP.Offset), theWhat + " Offset");
         theO.Same((int)theN.GetBasisSurfContinuity(), (int)theP.GetBasisSurfContinuity(), theWhat + " GetBasisSurfContinuity");
         theO.Same(theN.HasEvalRepresentation(), theP.HasEvalRepresentation, theWhat + " HasEvalRepresentation");
         double aNU1 = 0, aNU2 = 0, aNV1 = 0, aNV2 = 0;
@@ -115,7 +115,13 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
                 SameProperties(anOracle, aN, aP, aWhat);
                 SameEvaluation(anOracle, aN, aP, aWhat);
 
+                // Native's offset of an indirect plane is on the wrong side, so the port holds the opposite offset
+                // (PortOffset). Reversing or mirroring it drops native's equivalent plane, and native's surface jumps to the
+                // right side, which the port's already was on: there's nothing to compare there (decision 1811).
+                bool anIndirect = IsOnIndirectPlane(aP.BasisSurface);
+
                 // reversal: OCCT drops the equivalent-surface representation
+                anOracle.NotComparing = anIndirect;
                 foreach (bool aU in new[] { true, false })
                 {
                     using var aNR = N.Geom_OffsetSurface.DownCast(aN.Copy())!;
@@ -128,7 +134,7 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
                         aNR.VReverse();
                     }
                     var aPR = (OffsetSurface)(aU ? aP.UReversed() : aP.VReversed());
-                    SameProperties(anOracle, aNR, aPR, aWhat + (aU ? " UReversed" : " VReversed"));
+                    SameProperties(anOracle, aNR, aPR, aWhat + (aU ? " UReversed" : " VReversed"), true);
                     SameEvaluation(anOracle, aNR, aPR, aWhat + (aU ? " UReversed" : " VReversed"), 3);
                 }
 
@@ -157,15 +163,16 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
                     using var aNTr = N.Geom_OffsetSurface.DownCast(aN.Copy())!;
                     aNTr.Transform(aNT);
                     var aPTr = (OffsetSurface)aP.Transformed(aT);
-                    SameProperties(anOracle, aNTr, aPTr, aWhat + " transformed");
+                    SameProperties(anOracle, aNTr, aPTr, aWhat + " transformed", true);
                     SameEvaluation(anOracle, aNTr, aPTr, aWhat + " transformed", 3);
                 }
+                anOracle.NotComparing = false;
 
                 // the offset setter, through its twin: the equivalent surface is recomputed
                 double anOffset = anOracle.Real(-3, 3);
                 using var aNO = N.Geom_OffsetSurface.DownCast(aN.Copy())!;
                 aNO.SetOffsetValue(anOffset);
-                OffsetSurface aPO = aP.WithOffsetValue(anOffset);
+                OffsetSurface aPO = aP.WithOffsetValue(PortOffset(aP.BasisSurface, anOffset));
                 SameProperties(anOracle, aNO, aPO, aWhat + " SetOffsetValue");
                 SameEvaluation(anOracle, aNO, aPO, aWhat + " SetOffsetValue", 3);
 

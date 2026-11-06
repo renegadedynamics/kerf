@@ -129,7 +129,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
     /// repeats itself.
     /// </summary>
     private void Compare(string theAlgo, string theName, string theOperands, Func<List<N.TopoDS_Shape>, N.TopoDS_Shape> theNative,
-                         Func<List<Shape>, Shape> thePort, string? theAttribution = null)
+                         Func<List<Shape>, Shape> thePort, string? theAttribution = null, bool theIsGuided = false)
     {
         Tally aTally = TallyOf(theAlgo);
         aTally.Cases++;
@@ -172,6 +172,12 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         if (aDiff.IsIdenticalMaskingFree)
         {
             aTally.FreeMasked++;
+            return;
+        }
+        // Native's GeomFill_GuideTrihedronAC::D2 is wrong (OCCT #1681, decision 1776), so a sweep along a guide can differ
+        if (theIsGuided)
+        {
+            aTally.Intended++;
             return;
         }
         // native again, five times on operands read at other heap addresses (native iterates some maps in address order)
@@ -477,13 +483,12 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
                 aB.MakeSolid();
             }
             return aB.Shape();
-        });
+        }, theIsGuided: theCall.Mode == 3);
     }
 
     [Fact]
     public void Sweeps_of_build123d_tests_as_native()
     {
-        global::Kerf.Engine.Construction.Surfaces.GuideTrihedronAC.ReplayNative.Value = true; // decision 1776
         Cases();
         Report();
     }

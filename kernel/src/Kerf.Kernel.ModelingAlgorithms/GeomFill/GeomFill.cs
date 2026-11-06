@@ -745,8 +745,8 @@ internal static class GeomFill
                 {
                     np2 = nplan.Crossed(ns1);
                     dnp2 = dnplan.Crossed(ns1).Added(nplan.Crossed(dn1w));
-                    // OCCT: nplan ^ dn2w where the second derivative of nplan ^ ns1 needs nplan ^ d2n1w (occt-issues.md).
-                    d2np2 = d2nplan.Crossed(ns1).Added(nplan.Crossed(dn2w));
+                    // OCCT 8.0.1 has nplan ^ dn2w where the second derivative of nplan ^ ns1 needs nplan ^ d2n1w (decision 1815)
+                    d2np2 = d2nplan.Crossed(ns1).Added(nplan.Crossed(d2n1w));
                     d2np2 += 2 * dnplan.Crossed(dn1w);
 
                     alpha = angle / ((double)(nbSpan));
@@ -769,7 +769,8 @@ internal static class GeomFill
                         dPoles[jj] += rayon * dtemp;
 
                         d2Poles[jj] = Vector3D.LinearForm(d2Rayon, temp, 2 * dRayon, dtemp, dtang1);
-                        temp = Vector3D.LinearForm(cosa - 1, dn2w, sina, d2np2);
+                        // OCCT 8.0.1: dn2w again where (cos a - 1) ns1 needs d2n1w (decision 1815)
+                        temp = Vector3D.LinearForm(cosa - 1, d2n1w, sina, d2np2);
                         dtemp = Vector3D.LinearForm(-sina, ns1, cosa, np2);
                         temp += (aux * aux * d2Angle) * dtemp;
                         dtemp = Vector3D.LinearForm(-sina, dn1w + np2, cosa, dnp2, -cosa, ns1);

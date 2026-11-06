@@ -410,6 +410,7 @@ internal partial class UnifySameDomain : Transient
             refFace.Orient(refFaceOrientation);
             // map of edges not lying on RefFace; these edges may be updated by temporary pcurves
             var mapEdgesWithTemporaryPCurves = new HashSet<Shape>(ShapeHasher.Instance);
+            List<SavedPCurves>? refFacePCurves = null;
 
             double uperiod = (baseSurface.IsUPeriodic) ? baseSurface.UPeriod : 0.0;
             double vperiod = (baseSurface.IsVPeriodic) ? baseSurface.VPeriod : 0.0;
@@ -526,6 +527,7 @@ internal partial class UnifySameDomain : Transient
                 // Add correct pcurves for the reference surface to the edges of other faces
                 Face F_RefFace0 = refFace;
                 F_RefFace0.Orient(Forward);
+                refFacePCurves = SavePCurves(faces, F_RefFace0);
                 AddPCurves(faces, F_RefFace0, mapEdgesWithTemporaryPCurves);
 
                 // fill in the connectivity map for selected faces
@@ -1376,6 +1378,9 @@ internal partial class UnifySameDomain : Transient
 
                 if (isWireBuildingFailed)
                 {
+                    // OCCT 8.0.1 leaves these faces as they were, and their edges with pcurves for the merge that didn't
+                    // happen: a good shape turns invalid, and its volume wrong (decision 1816)
+                    RestorePCurves(refFacePCurves, F_RefFace);
                     continue;
                 }
 
@@ -1469,6 +1474,14 @@ internal partial class UnifySameDomain : Transient
                     {
                         bb.Add(newFace, internalWires[ii]);
                     }
+                    // Seams at different places can't be one face without moving one, which this doesn't do: OCCT 8.0.1
+                    // gives an invalid face whose area is off. They stay as they were (decision 1816).
+                    if (seamFound && !new Kerf.Engine.Healing.Checks.Analyzer(newFaces[1]).IsValid())
+                    {
+                        RestorePCurves(refFacePCurves, F_RefFace);
+                        continue;
+                    }
+
                     _context.Merge(faces, newFaces[1]);
                     // Update the map Face-NewFace
                     for (int jj = 1; jj <= faces.Length(); jj++)

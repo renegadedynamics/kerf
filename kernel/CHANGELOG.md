@@ -20,6 +20,10 @@ version may break the API.
   with a parallel guide stays exact. Areas and volumes asked for with a precision are right on periodic and swept faces, so a
   few differ from before. A ring of concentric circles can be offset inward. Mirroring through a point now inverts correctly.
   NaN is refused as a radius or an angle.
+- **More of OCCT's defects fixed (a bug fix; results change where it was wrong):** `Unify` and a simplified Boolean no longer spoil a good result, where OCCT's clean gives an
+  invalid shape up to 17% out in volume. A sphere touching a torus along a circle fuses, cuts and commons correctly, where OCCT's fuse was empty; a fuse that comes out empty from
+  shapes with something in them fails. An offset surface on a mirrored plane is on the right side. `ApproximateBSplines` keeps a cylinder and a sphere valid. A direction refuses NaN and
+  infinity. A torus within tolerance of horn is written to STEP as a torus.
 - **No operation reports success for an invalid result (breaking).** Booleans, fillets, chamfers, offsets, sweeps, lofts, features and healing now
   check what they made and fail with `result.invalid`, saying what's wrong and naming the sub-shapes. `Result<T>.TryGetInvalid` gives the shape to a
   caller who wants to look at it; `Value` still throws. `CheckResult = false` on the options, or `checkResult: false`, leaves the check out. `Fix`'s

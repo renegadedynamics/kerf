@@ -123,12 +123,12 @@ public class GeomFill_FunctionsTests
         }
 
         var DTX = new Matrix(1, 3, 1, 3);
-        Assert.True(E.DerivTX(new Vector3D(1, 2, 3), 0.5, DTX));
-        Assert.Equal(2 * Math.Sin(0.5), DTX[2, 1]);
+        Assert.True(E.DerivTX(new Vector3D(1, 2, 3), new Vector3D(0, 1, 0), 0.5, DTX));
+        Assert.Equal(2 * Math.Sin(0.5) + Math.Cos(0.5), DTX[2, 1]);
         Assert.Equal(0.0, DTX[2, 2]);
 
         var F = new math_Vector(1, 3);
-        Assert.True(E.DerivT(aGen, 0.3, 2.0, new Vector3D(1, 0, 0), 0.5, F));
+        Assert.True(E.DerivT(aGen, 0.3, 2.0, new Vector3D(1, 0, 0), new Vector3D(), 0.5, F));
         Assert.Equal(1 / Math.Sqrt(3) + 2 * Math.Sin(0.5), F[1], 1e-15);
     }
 

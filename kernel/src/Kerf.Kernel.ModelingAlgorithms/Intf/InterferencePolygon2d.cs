@@ -178,6 +178,7 @@ internal class InterferencePolygon2d : PolygonInterference
 
         int iObje1, iObje2, n = obje.SegmentCount;
         double d = obje.DeflectionOverEstimation();
+        _nbso = n;
 
         // Most pairs of a polygon's segments are far apart, and each one's box is only built for the exact test below: this
         // answers them from the extents of the segments alone. Its margin only ever leaves a pair to the exact test
@@ -742,7 +743,9 @@ internal class InterferencePolygon2d : PolygonInterference
                     _sPoins.Append(thePi[1]);
                 }
             }
-            else if (iObje2 - iObje1 != 1 && (!_oClos || (iObje1 != 1 && iObje2 != _nbso)))
+            // Only the first and last segments of a closed polygon are neighbours; OCCT 8.0.1 skips every pair with either
+            // (from upstream 53706f78a8; decision 1822)
+            else if (iObje2 - iObje1 != 1 && (!_oClos || iObje1 != 1 || iObje2 != _nbso))
             {
                 _sPoins.Append(thePi[1]);
             }

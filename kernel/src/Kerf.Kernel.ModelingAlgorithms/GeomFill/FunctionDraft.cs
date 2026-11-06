@@ -78,38 +78,38 @@ internal sealed class FunctionDraft : FunctionSetWithDerivatives
     }
 
     /// <summary>The first derivative in t.</summary>
-    public bool DerivT(CurveAdaptorBase c, double param, double w, in Vector3D dN, double teta, math_Vector f)
+    public bool DerivT(CurveAdaptorBase c, double param, double w, in Vector3D dN, in Vector3D dB, double teta, math_Vector f)
     {
         c.D1(param, out _, out Vector3D dp); // derivee de la section
 
-        // OCCT: the term W cos(teta) B' (the turning binormal) is missing, so LocationDraft's trace derivatives are
-        // wrong wherever the binormal turns.
-        f[1] = dp.Coord(1) + w * dN.Coord(1) * Math.Sin(teta);
-        f[2] = dp.Coord(2) + w * dN.Coord(2) * Math.Sin(teta);
-        f[3] = dp.Coord(3) + w * dN.Coord(3) * Math.Sin(teta);
+        // The generatrix is P + w (cos(teta) B + sin(teta) N). OCCT 8.0.1 leaves out B', here and in the two below, so
+        // LocationDraft's trace derivatives are wrong wherever the binormal turns (decision 1815).
+        f[1] = dp.Coord(1) + w * (dN.Coord(1) * Math.Sin(teta) + dB.Coord(1) * Math.Cos(teta));
+        f[2] = dp.Coord(2) + w * (dN.Coord(2) * Math.Sin(teta) + dB.Coord(2) * Math.Cos(teta));
+        f[3] = dp.Coord(3) + w * (dN.Coord(3) * Math.Sin(teta) + dB.Coord(3) * Math.Cos(teta));
 
         return true;
     }
 
     /// <summary>The second derivative in t.</summary>
-    public bool Deriv2T(CurveAdaptorBase c, double param, double w, in Vector3D d2N, double teta, math_Vector f)
+    public bool Deriv2T(CurveAdaptorBase c, double param, double w, in Vector3D d2N, in Vector3D d2B, double teta, math_Vector f)
     {
         c.D2(param, out _, out _, out Vector3D d2P); // derivee de la section
 
-        f[1] = d2P.Coord(1) + w * d2N.Coord(1) * Math.Sin(teta);
-        f[2] = d2P.Coord(2) + w * d2N.Coord(2) * Math.Sin(teta);
-        f[3] = d2P.Coord(3) + w * d2N.Coord(3) * Math.Sin(teta);
+        f[1] = d2P.Coord(1) + w * (d2N.Coord(1) * Math.Sin(teta) + d2B.Coord(1) * Math.Cos(teta));
+        f[2] = d2P.Coord(2) + w * (d2N.Coord(2) * Math.Sin(teta) + d2B.Coord(2) * Math.Cos(teta));
+        f[3] = d2P.Coord(3) + w * (d2N.Coord(3) * Math.Sin(teta) + d2B.Coord(3) * Math.Cos(teta));
 
         return true;
     }
 
     /// <summary>The second derivative in t and X.</summary>
-    public bool DerivTX(in Vector3D dN, double teta, Matrix d)
+    public bool DerivTX(in Vector3D dN, in Vector3D dB, double teta, Matrix d)
     {
         int i;
         for (i = 1; i <= 3; i++)
         {
-            d[i, 1] = dN.Coord(i) * Math.Sin(teta); // derivee / W
+            d[i, 1] = dN.Coord(i) * Math.Sin(teta) + dB.Coord(i) * Math.Cos(teta); // derivee / W
             d[i, 2] = 0.0;                          // derivee / U
             d[i, 3] = 0.0;                          // derivee / V
         }
