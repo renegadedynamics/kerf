@@ -115,6 +115,7 @@ internal class BrepTVertex : TVertex
 
     internal override void FreezeRepresentations()
     {
+        _points.TrimExcess();
         foreach (PointRepresentation pr in _points)
         {
             pr.Freeze();

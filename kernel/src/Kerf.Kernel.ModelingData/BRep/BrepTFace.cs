@@ -307,6 +307,7 @@ internal class BrepTFace : TFace
 
     internal override void FreezeRepresentations()
     {
+        _triangulations.TrimExcess();
         _surface?.Freeze();
         foreach (Triangulation triangulation in _triangulations)
         {

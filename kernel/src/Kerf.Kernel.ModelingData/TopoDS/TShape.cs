@@ -254,8 +254,7 @@ internal abstract class TShape : Transient
         }
         if (!isWalkNeeded)
         {
-            FreezeRepresentations();
-            Freeze();
+            FreezeOne();
             return;
         }
 
@@ -278,12 +277,18 @@ internal abstract class TShape : Transient
             }
             else
             {
-                TShape tShape = top.TShape;
-                tShape.FreezeRepresentations();
-                tShape.Freeze();
+                top.TShape.FreezeOne();
                 stack.RemoveAt(stack.Count - 1);
             }
         }
+    }
+
+    // Its lists won't grow now, and a kept shape holds them for hours, so they let go of the room they had for growing
+    private void FreezeOne()
+    {
+        _shapes.TrimExcess();
+        FreezeRepresentations();
+        Freeze();
     }
 
     /// <summary>
@@ -297,6 +302,6 @@ internal abstract class TShape : Transient
     private struct FreezeFrame(TShape theTShape)
     {
         public readonly TShape TShape = theTShape;
-        public List<Shape>.Enumerator Children = theTShape._shapes.GetEnumerator();
+        public NCollection_List<Shape>.Enumerator Children = theTShape._shapes.GetEnumerator();
     }
 }

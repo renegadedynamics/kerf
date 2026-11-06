@@ -188,6 +188,7 @@ internal class BrepTEdge : TEdge
 
     internal override void FreezeRepresentations()
     {
+        _curves.TrimExcess();
         foreach (CurveRepresentation cr in _curves)
         {
             cr.FreezeContents(); // the meshes the mesher attached unfrozen (decision 488)
