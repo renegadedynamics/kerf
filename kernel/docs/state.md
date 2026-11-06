@@ -157,7 +157,28 @@ The three tables the plan names (decision 1388):
 | ModelingAlgorithms/IntCurve/SampledPolygons.cs (`t_current`) | **new** (11Q, decision 1755): the table of a 2D offset's trimming, set only around `IntersectWith`. Nothing crosses threads |
 | ModelingData/AdvApprox/ApproxAFunction.cs (`CoefficientsWork.t_spare`), Foundation/BSplCLib/BSplCLib.cs (`t_localMatrices`) | **new** (11Q, decision 1758): a thread's work, zeroed before use. Nothing crosses threads |
 | ModelingAlgorithms/BRepMesh/MeshWorkStorage.cs (`t_spare`) | **new** (11Q, decision 1759): a thread's lists for meshing a face, out of the static while in use. Nothing crosses threads |
+| ModelingAlgorithms/GeomFill/QuasiAngularConvertor.cs (`t_ofThread`) | **new** (11Q, decision 20306): a thread's convertor, initialised, for one `Section` at a time, which writes every vector it reads. Nothing crosses threads |
+| Foundation/math/Bfgs.cs (`Work.t_largeSpare`), ModelingData/AdvApprox/ApproxAFunction.cs (`CoefficientsWork.t_largeSpare`) | **new** (11Q, decision 20303): a thread's larger work, held weakly. `MeasurementGauss`'s `t_spare` is weak now too, and the mesher's larger arrays (decision 20302). Nothing crosses threads |
 | the shared empty values (`BOPDS_DS`'s pave blocks and face information, `TopoDS_Iterator`'s, BRepFill's, ChFi3d's, TopOpeBRepDS's lists) | constants: read-only for callers, as OCCT's; 10J returns read-only types |
+
+**What each thread keeps, all together** (decision 20301; measured in performance.md, "The fifth slice"). These hold memory for as long as their thread lives; the thread pool lets its idle threads go after about 20 s, a host's own threads don't. Limits are strong references; anything larger is weak or not kept.
+
+| Set | Most a thread keeps | Typical, Bento's examples |
+|---|---:|---:|
+| `MeshWorkStorage` | 8,192 triangles and circles, 360 kB | 352 kB |
+| `GenExtPS.WorkGrids` | 1,024 cells, 200 kB | none |
+| `Class2dPoints` | 4,096 points, 65 kB | 8 kB |
+| `ApproxAFunction.CoefficientsWork` | 8,192 values, 64 kB | none |
+| `Bfgs.Work` | 64 unknowns, 36 kB | 1 kB |
+| `Tool.PlaneCurves` | 64 answers, with their curves and planes | 20 kB |
+| `FunctionSetRoot.Work` | 16 unknowns, 1,024 iterations, about 9 kB | 2 kB |
+| `BSplCLib.t_localMatrices` | one small matrix for each shape | 6.5 kB |
+| `QuasiAngularConvertor` | about 1 kB | none |
+| `MeasurementGauss.GaussWork` | nothing strongly; about 500 kB weakly | none |
+| `MathBase.t_mmcmher` | one small record, fillet approximations only | none |
+| `GeomTools.s_nesting`, `WorkingOverlay.t_current`, `SampledPolygons.t_current`, the walkings' step traces | a number, or null outside an operation | none |
+
+The limits add up to about 760 kB a thread: 18 MB on 24 threads.
 
 **Unit 11C looked at what one-time initialisation costs on opening a workbook:** 2 to 5 of about 255 samples on the first pass's working thread, spread over dozens of small types. So nothing was made lazy, and this list is unchanged (decision 1693).
 

@@ -10,6 +10,7 @@ version may break the API.
   vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 1652 and 1653).
 ## 0.3.0 (unreleased)
 
+- **Threads keep less memory between operations:** after Bento's examples in parallel, 72 MB on 51 threads became 20 MB on 53 threads, by lower limits on each thread's work sets and weak references for anything larger (decisions 20301 to 20303). Fillet sections, over-determined root searches and intersecting edges in healing allocate up to a third less on the cases that use them (decisions 20304 to 20306). Results are unchanged.
 - **Large meshes are quicker, and meshing makes less garbage,** with the same triangles: about a tenth less processor time on large meshes, and 8% fewer bytes on Bento's examples with three quarters fewer full collections (decisions 1756, 1757 and 1759). `MaxFillet` takes about 20% less, and 2D offsets of B-splines about 8% (decisions 1755 and 1758).
 - **STEP export uses about a third less CPU and half the memory, and import with healing about 10% to 15% less CPU,** with the same output (measured on a loaded machine; decisions 1727 to 1731).
 - **Every public member of the kernel has XML docs,** including `Kerf.Geometry`'s value types, saying units, handedness and what

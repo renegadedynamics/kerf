@@ -1097,7 +1097,7 @@ internal class GenExtPS
         [ThreadStatic]
         private static WorkGrids? t_spare;
 
-        // A larger set is only held weakly, so a thread never pins megabytes for its life: a generation 2 collection frees it
+        // A larger set is only held weakly, so a thread never pins megabytes for its life: a collection of its generation frees it
         [ThreadStatic]
         private static WeakReference<WorkGrids>? t_largeSpare;
 
