@@ -107,7 +107,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `SkipClean()` context | `using (new SkipClean()) { … }` |
 | `warnings.warn` | `using var w = Warnings.Capture();` then `w.Messages`: per operation, not global |
 | `topo_explore_connected_edges`, `edges_to_wires`, … | `OneD.ConnectedEdges`, `OneD.EdgesToWires`, …; `Vertex.CommonVertex` |
-| `topo_distance_to(shapes)` | `TopologyUtils.TopoDistanceTo(parent, shapes)`, a `Func<T, double>` |
+| `topo_distance_to(shapes)` | Internal |
 | `show_topology("Face")` | `ShowTopology(ShapeType.Face)` |
 | `filter_by_value(Edge.length, 3)` | `WithValue(e => e.Length, 3)` or `WithValue(ShapeKey.Length, 3)`; `WithoutValue(…)` for the rest |
 | `ShapeHistory.merge` (in place), on `ModelHistory` | `Merge` returns a new record |

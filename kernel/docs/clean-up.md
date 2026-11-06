@@ -32,7 +32,7 @@ branch point, by building with extra analysers on, by reflection over the built 
 | What | Found | Done | Left |
 |---|---|---|---|
 | Private members nothing uses (IDE0051, CA1823) | 22 members | All deleted (578 lines); the analysers now fail the build | |
-| Fields written and never read (IDE0052) | 78 | All deleted; each was checked against OCCT, where they are also dead | |
+| Fields written and never read (IDE0052) | 78, and 3 more once dead members went | All deleted. The likely ones were compared with OCCT, where they are also dead | |
 | `Obsolete` engine members | 16 | All deleted | |
 | Unused `using`s (IDE0005) | 4,964 | All, by `dotnet format`; the build now fails on one in `src` | Tests not looked at |
 | Suppressions those made needless (`CS0414`) | 54 lines | Those of the deleted fields | |
