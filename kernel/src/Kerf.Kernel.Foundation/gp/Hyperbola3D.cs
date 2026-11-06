@@ -39,7 +39,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         _pos = frame;
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < 0.0, FailureKind.ConstructionError, "gp_Hypr() - invalid construction parameters");
+        Refusal.ArgumentIf(!(minorRadius >= 0.0) || !(majorRadius >= 0.0), FailureKind.ConstructionError, "gp_Hypr() - invalid construction parameters");
     }
 
     // Copies

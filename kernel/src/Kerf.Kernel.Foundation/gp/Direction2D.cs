@@ -60,7 +60,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
             return;
         }
 
-        Refusal.ArgumentIf(sqMod <= Constants.Resolution() * Constants.Resolution(), FailureKind.ConstructionError, "gp_Dir2d() - input vector has zero norm");
+        Refusal.ArgumentIf(!(sqMod > Constants.Resolution() * Constants.Resolution()) || double.IsInfinity(sqMod), FailureKind.ConstructionError, "gp_Dir2d() - input vector has zero norm");
         double d = Math.Sqrt(sqMod);
         _coord.SetCoord(x / d, y / d);
     }
@@ -83,7 +83,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
             return new Direction2D(coord, isUnit: true);
         }
 
-        Refusal.ArgumentIf(sqMod <= Constants.Resolution() * Constants.Resolution(), FailureKind.ConstructionError, "gp_Dir2d::SetCoord() - result vector has zero norm");
+        Refusal.ArgumentIf(!(sqMod > Constants.Resolution() * Constants.Resolution()) || double.IsInfinity(sqMod), FailureKind.ConstructionError, "gp_Dir2d::SetCoord() - result vector has zero norm");
         double d = Math.Sqrt(sqMod);
         coord.SetCoord(xv / d, yv / d);
         return new Direction2D(coord, isUnit: true);

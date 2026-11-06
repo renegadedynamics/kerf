@@ -29,7 +29,7 @@ public sealed class ToroidalSurface : ElementarySurface
     {
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        if (minorRadius < 0.0 || majorRadius < 0.0)
+        if (!(minorRadius >= 0.0) || majorRadius < 0.0)
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -97,7 +97,7 @@ public sealed class ToroidalSurface : ElementarySurface
     internal void SetMinorRadius(double minorRadius)
     {
         CheckMutable();
-        if (minorRadius < 0.0 || _majorRadius - minorRadius <= Constants.Resolution())
+        if (!(minorRadius >= 0.0) || _majorRadius - minorRadius <= Constants.Resolution())
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }

@@ -30,7 +30,7 @@ public sealed class ParabolaCurve3D : ConicCurve3D
     public ParabolaCurve3D(in Frame3D frame, double focal)
     {
         _focalLength = focal;
-        if (focal < 0.0)
+        if (!(focal >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -81,7 +81,7 @@ public sealed class ParabolaCurve3D : ConicCurve3D
     internal void SetFocal(double focal)
     {
         CheckMutable();
-        if (focal < 0.0)
+        if (!(focal >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }

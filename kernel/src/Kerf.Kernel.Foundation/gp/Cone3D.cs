@@ -41,7 +41,7 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         _radius = radius;
         _semiAngle = angle;
         double absAng = angle < 0.0 ? -angle : angle;
-        Refusal.ArgumentIf(radius < 0.0 || absAng <= Constants.Resolution()
+        Refusal.ArgumentIf(!(radius >= 0.0) || double.IsNaN(absAng) || absAng <= Constants.Resolution()
                                             || M_PI * 0.5 - absAng <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Cone() - invalid construction parameters");
     }
 
@@ -76,7 +76,7 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
     public readonly Cone3D WithRadius(double r)
     {
         double newRadius = _radius;
-        Refusal.ArgumentIf(r < 0.0, FailureKind.ConstructionError, "gp_Cone::SetRadius() - radius should be positive number");
+        Refusal.ArgumentIf(!(r >= 0.0), FailureKind.ConstructionError, "gp_Cone::SetRadius() - radius should be positive number");
         newRadius = r;
         return new Cone3D(_pos, _semiAngle, newRadius);
     }

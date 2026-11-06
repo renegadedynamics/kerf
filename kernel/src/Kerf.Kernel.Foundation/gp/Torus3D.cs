@@ -39,7 +39,7 @@ public readonly partial struct Torus3D : IEquatable<Torus3D>
         _pos = position;
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < 0.0, FailureKind.ConstructionError, "gp_Torus() - invalid construction parameters");
+        Refusal.ArgumentIf(!(minorRadius >= 0.0) || !(majorRadius >= 0.0), FailureKind.ConstructionError, "gp_Torus() - invalid construction parameters");
     }
 
     // Copies
@@ -75,7 +75,7 @@ public readonly partial struct Torus3D : IEquatable<Torus3D>
     public readonly Torus3D WithMinorRadius(double minorRadius)
     {
         double newMinorRadius = _minorRadius;
-        Refusal.ArgumentIf(minorRadius < 0.0
+        Refusal.ArgumentIf(!(minorRadius >= 0.0)
                                             || _majorRadius - minorRadius <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Torus::SetMinorRadius() - invalid input parameters");
         newMinorRadius = minorRadius;
         return new Torus3D(_pos, _majorRadius, newMinorRadius);

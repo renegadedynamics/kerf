@@ -41,4 +41,26 @@ public class gp_TrsfTest
         Point2D aBack2d = new Point2D(4, -5).Transformed(aMirror2d).Transformed(aMirror2d.Inverted());
         Assert.True(aBack2d.DistanceTo(new Point2D(4, -5)) < 1.0e-12);
     }
+
+    [Fact]
+    public void Elementary_geometry_refuses_NaN_and_infinite_directions()
+    {
+        // OCCT #1618: every comparison with NaN is false, so the old guards let it through
+        Frame3D aFrame = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
+        CoordinateSystem aSystem = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
+        double aNaN = double.NaN;
+        Assert.Throws<ArgumentException>(() => new Direction3D(aNaN, 0, 1));
+        Assert.Throws<ArgumentException>(() => new Direction3D(double.PositiveInfinity, 0, 0));
+        Assert.Throws<ArgumentException>(() => new Direction2D(aNaN, 1));
+        Assert.Throws<ArgumentException>(() => new Circle3D(aFrame, aNaN));
+        Assert.Throws<ArgumentException>(() => new Ellipse3D(aFrame, aNaN, 1.0));
+        Assert.Throws<ArgumentException>(() => new Ellipse3D(aFrame, 2.0, aNaN));
+        Assert.Throws<ArgumentException>(() => new Hyperbola3D(aFrame, aNaN, 1.0));
+        Assert.Throws<ArgumentException>(() => new Parabola3D(aFrame, aNaN));
+        Assert.Throws<ArgumentException>(() => new Sphere3D(aSystem, aNaN));
+        Assert.Throws<ArgumentException>(() => new Cylinder3D(aSystem, aNaN));
+        Assert.Throws<ArgumentException>(() => new Cone3D(aSystem, aNaN, 1.0));
+        Assert.Throws<ArgumentException>(() => new Cone3D(aSystem, 0.5, aNaN));
+        Assert.Throws<ArgumentException>(() => new Torus3D(aSystem, aNaN, 1.0));
+    }
 }

@@ -33,7 +33,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
     {
         _pos = new Frame2D(mirrorAxis, sense);
         _focalLength = focalLength;
-        Refusal.ArgumentIf(focalLength < 0.0, FailureKind.ConstructionError, "gp_Parab2d() - focal length should be >= 0");
+        Refusal.ArgumentIf(!(focalLength >= 0.0), FailureKind.ConstructionError, "gp_Parab2d() - focal length should be >= 0");
     }
 
     /// <exception cref="ArgumentException">The focal length is negative.</exception>
@@ -41,7 +41,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
     {
         _pos = axes;
         _focalLength = focalLength;
-        Refusal.ArgumentIf(focalLength < 0.0, FailureKind.ConstructionError, "gp_Parab2d() - focal length should be >= 0");
+        Refusal.ArgumentIf(!(focalLength >= 0.0), FailureKind.ConstructionError, "gp_Parab2d() - focal length should be >= 0");
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
     public readonly Parabola2D WithFocal(double focal)
     {
         double focalLength = _focalLength;
-        Refusal.ArgumentIf(focal < 0.0, FailureKind.ConstructionError, "gp_Parab2d::SetFocal() - focal length should be >= 0");
+        Refusal.ArgumentIf(!(focal >= 0.0), FailureKind.ConstructionError, "gp_Parab2d::SetFocal() - focal length should be >= 0");
         focalLength = focal;
         return new Parabola2D(_pos, focalLength);
     }

@@ -38,7 +38,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         _pos = new Frame2D(majorAxis, sense);
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < 0.0, FailureKind.ConstructionError, "gp_Hypr2d() - invalid construction parameters");
+        Refusal.ArgumentIf(!(minorRadius >= 0.0) || !(majorRadius >= 0.0), FailureKind.ConstructionError, "gp_Hypr2d() - invalid construction parameters");
     }
 
     /// <exception cref="ArgumentException">A radius is negative.</exception>
@@ -47,7 +47,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         _pos = frame;
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < 0.0, FailureKind.ConstructionError, "gp_Hypr2d() - invalid construction parameters");
+        Refusal.ArgumentIf(!(minorRadius >= 0.0) || !(majorRadius >= 0.0), FailureKind.ConstructionError, "gp_Hypr2d() - invalid construction parameters");
     }
 
     // Copies
@@ -65,7 +65,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     public readonly Hyperbola2D WithMajorRadius(double majorRadius)
     {
         double newMajorRadius = _majorRadius;
-        Refusal.ArgumentIf(majorRadius < 0.0, FailureKind.ConstructionError, "gp_Hypr2d::SetMajorRadius() - major radius should be greater or equal zero");
+        Refusal.ArgumentIf(!(majorRadius >= 0.0), FailureKind.ConstructionError, "gp_Hypr2d::SetMajorRadius() - major radius should be greater or equal zero");
         newMajorRadius = majorRadius;
         return new Hyperbola2D(_pos, newMajorRadius, _minorRadius);
     }
@@ -75,7 +75,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     public readonly Hyperbola2D WithMinorRadius(double minorRadius)
     {
         double newMinorRadius = _minorRadius;
-        Refusal.ArgumentIf(minorRadius < 0.0, FailureKind.ConstructionError, "gp_Hypr2d::SetMinorRadius() - minor radius should be greater or equal zero");
+        Refusal.ArgumentIf(!(minorRadius >= 0.0), FailureKind.ConstructionError, "gp_Hypr2d::SetMinorRadius() - minor radius should be greater or equal zero");
         newMinorRadius = minorRadius;
         return new Hyperbola2D(_pos, _majorRadius, newMinorRadius);
     }

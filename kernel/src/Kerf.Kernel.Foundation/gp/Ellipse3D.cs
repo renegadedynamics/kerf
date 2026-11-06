@@ -40,7 +40,7 @@ public readonly partial struct Ellipse3D : IEquatable<Ellipse3D>
         _pos = frame;
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < minorRadius, FailureKind.ConstructionError, "gp_Elips() - invalid construction parameters");
+        Refusal.ArgumentIf(!(minorRadius >= 0.0) || !(majorRadius >= minorRadius), FailureKind.ConstructionError, "gp_Elips() - invalid construction parameters");
     }
 
     // Copies
@@ -77,7 +77,7 @@ public readonly partial struct Ellipse3D : IEquatable<Ellipse3D>
     public readonly Ellipse3D WithMinorRadius(double minorRadius)
     {
         double newMinorRadius = _minorRadius;
-        Refusal.ArgumentIf(minorRadius < 0.0 || _majorRadius < minorRadius, FailureKind.ConstructionError, "gp_Elips::SetMinorRadius() - minor radius should be a "
+        Refusal.ArgumentIf(!(minorRadius >= 0.0) || !(_majorRadius >= minorRadius), FailureKind.ConstructionError, "gp_Elips::SetMinorRadius() - minor radius should be a "
                                             + "positive number lesser or equal to major radius");
         newMinorRadius = minorRadius;
         return new Ellipse3D(_pos, _majorRadius, newMinorRadius);
