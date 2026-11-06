@@ -379,8 +379,7 @@ internal static class GeomFill
         {
             case QuasiAngular:
                 {
-                    QuasiAngularConvertor qConvertor = new QuasiAngularConvertor();
-                    qConvertor.Init();
+                    QuasiAngularConvertor qConvertor = QuasiAngularConvertor.OfThread();
                     qConvertor.Section(pts1, center, nplan, angle, poles, weights);
                     break;
                 }
@@ -511,8 +510,7 @@ internal static class GeomFill
         {
             case QuasiAngular:
                 {
-                    QuasiAngularConvertor qConvertor = new QuasiAngularConvertor();
-                    qConvertor.Init();
+                    QuasiAngularConvertor qConvertor = QuasiAngularConvertor.OfThread();
                     qConvertor.Section(pts1,
                                        tang1,
                                        center,
@@ -697,8 +695,7 @@ internal static class GeomFill
         {
             case QuasiAngular:
                 {
-                    QuasiAngularConvertor qConvertor = new QuasiAngularConvertor();
-                    qConvertor.Init();
+                    QuasiAngularConvertor qConvertor = QuasiAngularConvertor.OfThread();
                     qConvertor.Section(pts1,
                                        tang1,
                                        dtang1,
