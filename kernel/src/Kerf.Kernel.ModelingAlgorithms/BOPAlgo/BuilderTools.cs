@@ -1184,8 +1184,8 @@ internal static partial class BuilderTools
         private BoxTree? _bbTree;                                     //! BVH tree of bounding boxes
         private List<BOPAlgo_ShapeBox>? _vShapeBox;        //! ShapeBoxMap
 
-        private readonly Iterator _itF = new();                         //! Iterators
-        private readonly Iterator _itW = new();
+        private Iterator _itF = new();                         //! Iterators
+        private Iterator _itW = new();
 
         private IntersectionContext? _context;                                    //! Context
 

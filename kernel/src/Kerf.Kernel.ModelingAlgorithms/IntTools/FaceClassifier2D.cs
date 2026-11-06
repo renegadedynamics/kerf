@@ -89,7 +89,7 @@ internal sealed class FaceClassifier2D
         Explorer expF = new(), exp = new();
         Curve2D? c2D;
         Point3D ancienpnt3d = new();
-        NCollection_Sequence<Point2D> seqPnt2d = new();
+        NCollection_Sequence<Point2D> seqPnt2d = Class2dPoints.Rent();
         Dictionary<int, int> indexMap = new();
         NCollection_Sequence<Vector2D> d1Prev = new();
         NCollection_Sequence<Vector2D> d1Next = new();
@@ -566,6 +566,7 @@ internal sealed class FaceClassifier2D
                 _tabOrien[1] = -1;
             }
         }
+        Class2dPoints.Return(seqPnt2d);
     }
 
     /// <summary>The state of a point far outside the face's UV box (IN if the face has no box).</summary>

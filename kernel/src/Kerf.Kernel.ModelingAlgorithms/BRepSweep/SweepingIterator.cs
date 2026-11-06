@@ -13,7 +13,7 @@ namespace Kerf.Engine.Construction.Sweeping;
 /// <summary>Iterates on the direct sub-shapes of a generating shape (a TopoDS_Iterator).</summary>
 internal sealed class SweepingIterator
 {
-    private readonly Iterator _iterator = new();
+    private Iterator _iterator = new();
 
     public SweepingIterator()
     {

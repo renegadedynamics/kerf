@@ -228,4 +228,100 @@ public class TopExpTests
         Assert.True(aFirst.IsSame(aA));
         Assert.True(aLast.IsSame(aC));
     }
+
+    // Every face of the shape, in the order a recursive walk over Iterator visits them
+    private static void WalkFaces(in Shape theShape, List<Shape> theFaces)
+    {
+        for (var anIt = new Iterator(theShape); anIt.More(); anIt.Next())
+        {
+            Shape aChild = anIt.Value();
+            if (aChild.Type == ShapeType.Face)
+            {
+                theFaces.Add(aChild);
+            }
+            else
+            {
+                WalkFaces(aChild, theFaces);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(12)]
+    [InlineData(40)]
+    public void Explorer_NestedDeeperThanItsInlineLevels_VisitsInOrder(int theCompounds)
+    {
+        Shape aNested = MakeBox().Reversed();
+        for (int i = 0; i < theCompounds; i++)
+        {
+            aNested = Builder.MakeCompound([MakeBox(), aNested, MakeBox().Reversed()]);
+        }
+        var anExpected = new List<Shape>();
+        WalkFaces(aNested, anExpected);
+        var aFound = new List<Shape>();
+        for (var anExp = new Explorer(aNested, ShapeType.Face); anExp.More(); anExp.Next())
+        {
+            aFound.Add(anExp.Current());
+        }
+        Assert.Equal(6 + 12 * theCompounds, aFound.Count);
+        Assert.Equal(anExpected.Count, aFound.Count);
+        for (int i = 0; i < aFound.Count; i++)
+        {
+            Assert.True(anExpected[i].IsEqual(aFound[i]), $"face {i}");
+        }
+    }
+
+    [Fact]
+    public void Explorer_InitAgain_RestartsAtAnyDepth()
+    {
+        Shape aBox = MakeBox();
+        var anExp = new Explorer(aBox, ShapeType.Vertex);
+        anExp.Next();
+        Assert.True(anExp.Depth() > 0);
+        anExp.ReInit();
+        int aCount = 0;
+        for (; anExp.More(); anExp.Next())
+        {
+            aCount++;
+        }
+        Assert.Equal(48, aCount);
+        Assert.Equal(0, anExp.Depth());
+        Assert.False(anExp.More());
+        Assert.True(anExp.Current().IsSame(aBox));
+    }
+
+    [Fact]
+    public void Explorer_AShapeOfTheTypeToFind_IsItself()
+    {
+        Shape aBox = MakeBox();
+        var anExp = new Explorer(aBox, ShapeType.Solid);
+        Assert.True(anExp.More());
+        Assert.True(anExp.Current().IsEqual(aBox));
+        anExp.Next();
+        Assert.False(anExp.More());
+    }
+
+    [Fact]
+    public void Explorer_AndIterator_AllocateNothing_OnAPlainShape()
+    {
+        Shape aBox = MakeBox();
+        var anUnused = new Explorer(aBox, ShapeType.Vertex);
+        anUnused.Next();
+        long aBefore = GC.GetAllocatedBytesForCurrentThread();
+        int aCount = 0;
+        for (var anExp = new Explorer(aBox, ShapeType.Vertex); anExp.More(); anExp.Next())
+        {
+            aCount++;
+        }
+        for (var anIt = new Iterator(aBox); anIt.More(); anIt.Next())
+        {
+            aCount++;
+        }
+        long anAllocated = GC.GetAllocatedBytesForCurrentThread() - aBefore;
+        Assert.Equal(49, aCount);
+        Assert.Equal(0, anAllocated);
+    }
 }

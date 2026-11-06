@@ -13,14 +13,15 @@ namespace Kerf.Engine.Topology;
 /// Iterates on the direct sub-shapes (children) of a shape. Each child is returned with its orientation composed with
 /// the shape's and its location multiplied by the shape's, unless asked otherwise.
 /// </summary>
-/// <remarks>A class (a working object), where OCCT's is used by value. OCCT's range-for support is left out.</remarks>
-internal sealed class Iterator
+/// <remarks>
+/// A value on the stack, as OCCT's is: a copy moves on its own, so hold one in a variable or a field that isn't
+/// <c>readonly</c>, and pass it by <c>ref</c>. OCCT's range-for support is left out.
+/// </remarks>
+internal struct Iterator
 {
-    private static readonly NCollection_List<Shape> EmptyList = new();
-
     private Shape _shape;
     // The list and the place in it, not a list iterator: an object more for each of these (unit 11B)
-    private NCollection_List<Shape> _children = EmptyList;
+    private NCollection_List<Shape>? _children;
     private int _position;
     private Orientation _orientation;
     private Placement _location;
@@ -69,7 +70,7 @@ internal sealed class Iterator
             _orientation = Orientation.Forward;
         }
 
-        _children = s.IsNull ? EmptyList : WorkingOverlay.View(s.TShape()!)._shapes;
+        _children = s.IsNull ? null : WorkingOverlay.View(s.TShape()!)._shapes;
         _position = 0;
 
         if (More())
@@ -79,7 +80,7 @@ internal sealed class Iterator
     }
 
     /// <summary>True if there is a current sub-shape.</summary>
-    public bool More() => _position < _children.Extent();
+    public readonly bool More() => _children is not null && _position < _children.Extent();
 
     /// <summary>Moves to the next sub-shape.</summary>
     public void Next()
@@ -93,7 +94,7 @@ internal sealed class Iterator
 
     /// <summary>The current sub-shape.</summary>
     /// <exception cref="NoSuchObjectException">There is no current sub-shape.</exception>
-    public Shape Value()
+    public readonly Shape Value()
     {
         Standard_NoSuchObject_Raise_if(!More(), "TopoDS_Iterator::Value");
         return _shape;
@@ -102,11 +103,18 @@ internal sealed class Iterator
     // Updates myShape from the current iterator position.
     private void UpdateCurrentShape()
     {
-        _shape = _children.ItemAt(_position);
-        _shape.Orient(global::Kerf.Engine.Topology.TopAbs.Compose(_orientation, _shape.Orientation));
-        if (!_location.IsIdentity)
+        _shape = Child(_children!, _position, _orientation, _location);
+    }
+
+    /// <summary>A child of a shape, with the shape's orientation and location applied.</summary>
+    internal static Shape Child(NCollection_List<Shape> children, int position, Orientation orientation, in Placement location)
+    {
+        Shape child = children.ItemAt(position);
+        child.Orient(global::Kerf.Engine.Topology.TopAbs.Compose(orientation, child.Orientation));
+        if (!location.IsIdentity)
         {
-            _shape.Move(_location, false);
+            child.Move(location, false);
         }
+        return child;
     }
 }

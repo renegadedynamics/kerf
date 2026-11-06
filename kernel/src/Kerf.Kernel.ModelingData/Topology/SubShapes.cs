@@ -42,8 +42,10 @@ public readonly struct SubShapes<TShape> : IEnumerable<TShape> where TShape : st
     /// <summary>Enumerates the sub-shapes.</summary>
     public struct Enumerator : IEnumerator<TShape>
     {
-        private readonly Explorer? _explorer;
-        private readonly Engine.Topology.Iterator? _iterator;
+        // Values, moved in place: one of the two is in use, or neither for a null shape
+        private Explorer _explorer;
+        private Engine.Topology.Iterator _iterator;
+        private readonly bool _usesExplorer;
         private bool _started;
         private TShape _current;
 
@@ -61,6 +63,7 @@ public readonly struct SubShapes<TShape> : IEnumerable<TShape> where TShape : st
             else
             {
                 _explorer = new Explorer(root, toFind, toAvoid);
+                _usesExplorer = true;
             }
         }
 
@@ -72,23 +75,33 @@ public readonly struct SubShapes<TShape> : IEnumerable<TShape> where TShape : st
         /// <inheritdoc/>
         public bool MoveNext()
         {
-            if (_started)
+            if (_usesExplorer)
             {
-                _explorer?.Next();
-                _iterator?.Next();
-            }
+                if (_started && _explorer.More())
+                {
+                    _explorer.Next();
+                }
 
-            _started = true;
-            if (_explorer is { } explorer && explorer.More())
-            {
-                _current = ShapeConversions.Narrow<TShape>(explorer.Current());
-                return true;
+                _started = true;
+                if (_explorer.More())
+                {
+                    _current = ShapeConversions.Narrow<TShape>(_explorer.Current());
+                    return true;
+                }
             }
-
-            if (_iterator is { } iterator && iterator.More())
+            else
             {
-                _current = ShapeConversions.Narrow<TShape>(iterator.Value());
-                return true;
+                if (_started && _iterator.More())
+                {
+                    _iterator.Next();
+                }
+
+                _started = true;
+                if (_iterator.More())
+                {
+                    _current = ShapeConversions.Narrow<TShape>(_iterator.Value());
+                    return true;
+                }
             }
 
             _current = default;

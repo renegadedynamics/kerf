@@ -8,6 +8,34 @@ using Kerf.Geometry;
 namespace Kerf.Engine.Geometry;
 
 /// <summary>
+/// A sequence for the points of a wire on their way to a <see cref="Class2d"/>, which copies them: one kept by each thread, so
+/// each classifier built doesn't grow its own from nothing. Taken out while in use, so a nested use makes its own.
+/// </summary>
+internal static class Class2dPoints
+{
+    private const int LargestKept = 16384;
+
+    [ThreadStatic]
+    private static NCollection_Sequence<Point2D>? t_spare;
+
+    public static NCollection_Sequence<Point2D> Rent()
+    {
+        NCollection_Sequence<Point2D> points = t_spare ?? new NCollection_Sequence<Point2D>();
+        t_spare = null;
+        points.Clear();
+        return points;
+    }
+
+    public static void Return(NCollection_Sequence<Point2D> points)
+    {
+        if (points.Length() <= LargestKept)
+        {
+            t_spare = points;
+        }
+    }
+}
+
+/// <summary>
 /// Low-level algorithm for 2D point-in-polygon classification, by ray casting: a horizontal ray from the test
 /// point is extended to infinity and the number of polygon edge crossings determines the classification.
 /// The polygon is normalized internally to the [0,1] x [0,1] domain for numerical stability.

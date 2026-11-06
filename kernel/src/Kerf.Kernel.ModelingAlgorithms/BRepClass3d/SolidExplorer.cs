@@ -37,8 +37,8 @@ internal class SolidExplorer
     private bool _reject;
     private int _firstFace;
     private double _paramOnEdge;
-    private readonly Explorer _shellExplorer = new();
-    private readonly Explorer _faceExplorer = new();
+    private Explorer _shellExplorer = new();
+    private Explorer _faceExplorer = new();
     private readonly Dictionary<Shape, CurveSurfaceIntersector?> _mapOfInter =
         new(ShapeHasher.Instance);
     private readonly SpatialTree<int, Box> _tree = new();

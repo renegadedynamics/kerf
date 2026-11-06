@@ -25,7 +25,7 @@ namespace Kerf.Engine.Topology.Adaptors;
 /// </remarks>
 internal class BrepTopolTool : TopolTool
 {
-    private readonly Explorer _vIterator = new();
+    private Explorer _vIterator = new();
     private Face _face = new();
     private FClass2d? _fClass2d;
     private EdgeCurve2DAdaptor? _curve;

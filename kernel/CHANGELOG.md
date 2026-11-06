@@ -23,6 +23,8 @@ version may break the API.
   take them are gone from the API: use `UnitX` and the like. About 750 parameters of public members have full names (`a1` → `axis`, `ang` →
   `angle`, `p` → `point`, `raiseExc` → `throwOnInvalid`), which matters only to a call that names its arguments.
 - **The corpus's memory and time checks give one answer:** cases that read their process's own figures run in a process of their own, and a heap reading holds only what the case keeps, so they no longer pass or fail by what else is running. Nothing in the library changed.
+- **Much less memory churned:** exploring a shape allocates nothing, and a curve on a plane is no longer projected again for each question. A
+  recalculation of Bento's examples allocates 17% less, STEP import with healing 29%, and `ShapeFix` 39%. Results are unchanged.
 - **Some long operations are far lighter:** edges against free-form faces in a Boolean, area and volume to a precision, curve fitting in face-face intersections, and healing allocate half or less on the cases measured (one Boolean 5.2 GB to 1.1 GB; a volume maker with its checks 37 GB to 13 GB; ShapeFixer on 289 STEP files by a third). STEP export allocates a fifth less, and PNG's filter takes a fifth of the time. Every result is the same.
 - **Quicker to open:** the first use of Kerf in a process, as a workbook opening, takes about a third less time (745 ms to 509 on Bento's examples), and early recalculations about a quarter less. The packages are compiled with more of the framework's code and generics in them, and are about 20% larger (19.5 MB to 23.4 MB). Results don't change, and there's nothing to set.
 - **Runtime settings for a host, measured:** the README lists them. A parallel round of Bento's examples takes 620 ms against 2,700 ms under the runtime's defaults, and a recalculation 180 ms against 360. `Placement.Inverted` keeps its result, for 2% less allocation. All of the kernel's locks stay, because a trace found no time lost on any of them.
@@ -33,6 +35,7 @@ version may break the API.
 - **`MeshOptions.ControlAllSurfaces`,** off by default: also checks surface deflection on elementary surfaces, for long fillets that otherwise stray from it.
 - **StepTidy:** `StepWriteOptions.CleanDuplicates` merges exactly equal entities when writing STEP, 17.9% smaller over the
   dataset's files. Off by default.
+- **Joining edges on part of a Bezier curve:** the joined curve now follows that part. OCCT trimmed it twice, so it came back shorter and on the wrong parameters.
 - **Faster optimal boxes:** a torus patch's is worked out rather than searched for, and `AddOptimal` skips faces that can't enlarge the box.
   The results differ by 1e-7 at most.
 

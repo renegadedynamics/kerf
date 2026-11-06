@@ -157,9 +157,12 @@ internal class GenExtPS
     private ExtAlgo _algo;
     private NCollection_HArray1<double>? _uParams;
     private NCollection_HArray1<double>? _vParams;
-    private readonly NCollection_Array2<POnSurfParams> _facePntParams = new();
-    private readonly NCollection_Array2<POnSurfParams> _uEdgePntParams = new();
-    private readonly NCollection_Array2<POnSurfParams> _vEdgePntParams = new();
+    private static readonly NCollection_Array2<POnSurfParams> s_noGrid = new();
+    // Filled again by each search, and only read in it: a thread's set while a search runs (WorkGrids), or none
+    private NCollection_Array2<POnSurfParams> _facePntParams = s_noGrid;
+    private NCollection_Array2<POnSurfParams> _uEdgePntParams = s_noGrid;
+    private NCollection_Array2<POnSurfParams> _vEdgePntParams = s_noGrid;
+    private WorkGrids? _workGrids;
     private POnSurfParams _gridParam = new();
 
     /*-----------------------------------------------------------------------------
@@ -526,10 +529,6 @@ internal class GenExtPS
                 }
             }
 
-            _facePntParams.Resize(0, _myusample, 0, _myvsample, false);
-            _uEdgePntParams.Resize(1, _myusample - 1, 1, _myvsample, false);
-            _vEdgePntParams.Resize(1, _myusample, 1, _myvsample - 1, false);
-
             // Fill boundary with negative square distance.
             // It is used for computation of Maximum.
             for (int noV = 0; noV <= _myvsample + 1; noV++)
@@ -562,6 +561,11 @@ internal class GenExtPS
         // For search of minimum compute distances to mesh.
         if (_flag == ExtFlag_MIN || _flag == ExtFlag_MINMAX)
         {
+            _workGrids = WorkGrids.Rent(_myusample, _myvsample);
+            _facePntParams = _workGrids.Face;
+            _uEdgePntParams = _workGrids.UEdge;
+            _vEdgePntParams = _workGrids.VEdge;
+
             // This is the tolerance of difference of squared values.
             // No need to set it too small.
             double diffTol = _mytolu + _mytolv;
@@ -1005,6 +1009,8 @@ internal class GenExtPS
                 }
             }
 
+            ReturnWorkGrids();
+
             if (_flag == ExtFlag_MAX || _flag == ExtFlag_MINMAX)
             {
                 double dist;
@@ -1073,6 +1079,60 @@ internal class GenExtPS
                 aParams.SetIndices(sph.U(), sph.V());
 
                 FindSolution(p, aParams);
+            }
+        }
+    }
+
+    private void ReturnWorkGrids()
+    {
+        if (_workGrids is not null)
+        {
+            WorkGrids.Return(_workGrids);
+            _workGrids = null;
+            _facePntParams = _uEdgePntParams = _vEdgePntParams = s_noGrid;
+        }
+    }
+
+    // The distances to the grid's faces and edges: one set kept by each thread for the size it last used, as an extrema
+    // object has no end of life to give them back at, and a large grid can reach the large object heap. Each search writes
+    // every element it reads, but the faces' border, which holds new elements and has only its distances set.
+    private sealed class WorkGrids
+    {
+        private const int LargestKept = 4096;
+
+        [ThreadStatic]
+        private static WorkGrids? t_spare;
+
+        public readonly int NbU;
+        public readonly int NbV;
+        public readonly NCollection_Array2<POnSurfParams> Face;
+        public readonly NCollection_Array2<POnSurfParams> UEdge;
+        public readonly NCollection_Array2<POnSurfParams> VEdge;
+
+        private WorkGrids(int nbU, int nbV)
+        {
+            NbU = nbU;
+            NbV = nbV;
+            Face = new();
+            UEdge = new();
+            VEdge = new();
+            Face.Resize(0, nbU, 0, nbV, false);
+            UEdge.Resize(1, nbU - 1, 1, nbV, false);
+            VEdge.Resize(1, nbU, 1, nbV - 1, false);
+        }
+
+        public static WorkGrids Rent(int nbU, int nbV)
+        {
+            WorkGrids? work = t_spare;
+            t_spare = null; // A search inside a search takes its own
+            return work is not null && work.NbU == nbU && work.NbV == nbV ? work : new WorkGrids(nbU, nbV);
+        }
+
+        public static void Return(WorkGrids work)
+        {
+            if (work.NbU * work.NbV <= LargestKept)
+            {
+                t_spare = work;
             }
         }
     }
