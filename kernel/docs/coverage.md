@@ -10,18 +10,19 @@ Lines are the coverable lines Microsoft's code coverage counts. The public membe
 [public-members.md](public-members.md).
 
 Measured on 6 November 2026.
-Test projects merged: `Kerf.Kernel.DataExchange.Tests`, `Kerf.Kernel.DrawLite.Tests`, `Kerf.Kernel.Foundation.Tests`, `Kerf.Kernel.ModelingAlgorithms.Tests`, `Kerf.Kernel.ModelingData.Tests`, `Kerf.Kernel.Oracle.Tests`, `Kerf.Kernel.PublicApi.Tests`, `Kerf.Modeling.Tests`.
+The runs are the whole run at main's head (86344c5e4) with unit 11I's new tests and a fresh Foundation run added: the lines of only two files moved (`MathRoot_Bisection.cs`, `BVH/DistanceField.cs`), and those come from the fresh run alone.
+Test projects merged: `Kerf.Kernel.DataExchange.Tests`, `Kerf.Kernel.DrawLite.Tests`, `Kerf.Kernel.Foundation.Tests`, `Kerf.Kernel.ModelingAlgorithms.Laws`, `Kerf.Kernel.ModelingAlgorithms.Tests`, `Kerf.Kernel.ModelingData.Tests`, `Kerf.Kernel.Oracle.Tests`, `Kerf.Kernel.PublicApi.Tests`, `Kerf.Modeling.Direct`, `Kerf.Modeling.Tests`.
 
 ## By assembly
 
 | Assembly | Packages | Lines | Covered | % | Packages under 80% |
 |---|---:|---:|---:|---:|---:|
 | Kerf.Kernel.DataExchange | 62 | 85,586 | 49,939 | 58.3 | 41 |
-| Kerf.Kernel.Foundation | 33 | 61,777 | 56,223 | 91.0 | 3 |
-| Kerf.Kernel.ModelingAlgorithms | 119 | 259,115 | 220,423 | 85.1 | 17 |
+| Kerf.Kernel.Foundation | 33 | 61,793 | 56,613 | 91.6 | 0 |
+| Kerf.Kernel.ModelingAlgorithms | 119 | 259,115 | 223,738 | 86.3 | 13 |
 | Kerf.Kernel.ModelingData | 50 | 143,926 | 131,357 | 91.3 | 3 |
-| Kerf.Modeling | 8 | 8,153 | 7,505 | 92.1 | 0 |
-| **Total** | 272 | 558,557 | 465,447 | 83.3 | 64 |
+| Kerf.Modeling | 8 | 8,153 | 7,507 | 92.1 | 0 |
+| **Total** | 272 | 558,573 | 469,154 | 84.0 | 57 |
 
 ## The gaps
 
@@ -73,24 +74,17 @@ for a package the corpus covers doesn't apply, and these stay open gaps for the 
 | Kerf.Kernel.DataExchange | StepAP242 | 144 | 70 | 51.4 | 51.4 | STEP's entity classes: the fields of entities in no STEP file we test with, as the RWStep packages |
 | Kerf.Kernel.DataExchange | RWStepAP242 | 150 | 46 | 69.3 | 69.3 | One read and write tool per STEP entity; the rest are for entities in no STEP file we test with. Real tests need STEP files holding them (kinematics, FEA, tolerances): owner's call |
 | Kerf.Kernel.DataExchange | UnitsMethods | 82 | 29 | 64.6 | 64.6 | Conversions for units no test file uses |
-| Kerf.Kernel.Foundation | BVH | 1,436 | 397 | 72.4 | 72.4 | The tree builders and traversals are tested. DistanceField, Properties, the transforms, PairDistance, QuadTree and ObjectSet have no caller in the kernel: OCCT's visualisation uses them. Tests would judge nothing the kernel does |
-| Kerf.Kernel.Foundation | MathRoot | 1,183 | 272 | 77.0 | 77.0 | 11I's tests reach the solvers, their failures and the common forms. Left: rediscretising in FindAllRoots near tangent points, and trigonometric branches for coefficients within rounding of nil |
-| Kerf.Kernel.Foundation | MathSys | 940 | 210 | 77.7 | 77.7 | 11I's tests reach the solvers, their failures and bounds. Left: the SVD fallback for a Jacobian within rounding of singular, and line-search back-offs |
-| Kerf.Kernel.ModelingAlgorithms | LocOpe | 5,970 | 2,028 | 66.0 | 66.0 | Feature forms (prisms and pipes from and until faces, ribs) past what the corpus's feature cases use |
-| Kerf.Kernel.ModelingAlgorithms | Geom2dGcc | 6,253 | 1,997 | 68.1 | 68.1 | Tangent-circle solvers by qualifier and curve type: many combinations, few tested |
-| Kerf.Kernel.ModelingAlgorithms | HLRBRep | 6,844 | 1,682 | 75.4 | 75.4 | Hidden-line paths past the few hlr cases |
-| Kerf.Kernel.ModelingAlgorithms | BRepFeat | 6,582 | 1,597 | 75.7 | 75.7 | Feature forms (prisms and pipes from and until faces, ribs) past what the corpus's feature cases use |
+| Kerf.Kernel.ModelingAlgorithms | HLRBRep | 6,844 | 1,592 | 76.7 | 76.7 | Hidden-line paths past the few hlr cases |
 | Kerf.Kernel.ModelingAlgorithms | TopOpeBRepBuild | 1,302 | 921 | 29.3 | 29.3 | The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests |
 | Kerf.Kernel.ModelingAlgorithms | TopOpeBRepTool | 988 | 719 | 27.2 | 27.2 | The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests |
-| Kerf.Kernel.ModelingAlgorithms | IntCurveSurface | 1,949 | 654 | 66.4 | 66.4 | Intersection forms by curve and surface type the tests don't reach |
+| Kerf.Kernel.ModelingAlgorithms | IntCurveSurface | 1,949 | 597 | 69.4 | 69.4 | About 400 lines are dead in OCCT too: the limits for infinite surfaces, cut off by its clamp to 1e50, and two helpers nothing calls (occt-issues.md); the floor is out of reach by honest tests |
 | Kerf.Kernel.ModelingAlgorithms | TopOpeBRepDS | 2,009 | 536 | 73.3 | 73.3 | The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests |
-| Kerf.Kernel.ModelingAlgorithms | Plate | 1,888 | 396 | 79.0 | 79.0 | Constraint kinds the fill tests and cases don't reach |
 | Kerf.Kernel.ModelingAlgorithms | BiTgte | 1,131 | 382 | 66.2 | 66.2 | Forms past the corpus's few cases; both are small OCCT features |
-| Kerf.Kernel.ModelingAlgorithms | Draft | 1,429 | 376 | 73.7 | 73.7 | Forms past the corpus's few cases; both are small OCCT features |
-| Kerf.Kernel.ModelingAlgorithms | Geom2dHatch | 994 | 270 | 72.8 | 72.8 | Intersection forms by curve and surface type the tests don't reach |
-| Kerf.Kernel.ModelingAlgorithms | FilletSurf | 374 | 104 | 72.2 | 72.2 | Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run |
+| Kerf.Kernel.ModelingAlgorithms | Draft | 1,429 | 351 | 75.4 | 75.4 | Forms past the corpus's few cases; both are small OCCT features |
+| Kerf.Kernel.ModelingAlgorithms | Geom2dHatch | 994 | 220 | 77.9 | 77.9 | Intersection forms by curve and surface type the tests don't reach |
 | Kerf.Kernel.ModelingAlgorithms | TopTrans | 400 | 102 | 74.5 | 74.5 | The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests |
 | Kerf.Kernel.ModelingAlgorithms | BRepApprox | 135 | 90 | 33.3 | 33.3 | A small approximation wrapper, partly run |
+| Kerf.Kernel.ModelingAlgorithms | FilletSurf | 374 | 80 | 78.6 | 78.6 | Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run |
 | Kerf.Kernel.ModelingAlgorithms | Geom2dInt | 183 | 53 | 71.0 | 71.0 | Intersection forms by curve and surface type the tests don't reach |
 | Kerf.Kernel.ModelingAlgorithms | TopBas | 41 | 41 | 0.0 | 0.0 | A single value type nothing calls (HLR's interference): a candidate for removal, not tests |
 | Kerf.Kernel.ModelingData | AppParCurves | 2,688 | 727 | 73.0 | 73.0 | Least-squares forms the tests' approximations don't reach |
@@ -172,24 +166,24 @@ Packages under 80%, least covered first (uncovered lines in brackets); the rest 
 
 | Package | Files | Lines | Covered | % |
 |---|---:|---:|---:|---:|
-| **BVH** | 31 | 1,436 | 1,039 (397) | 72.4 |
-| **MathRoot** | 8 | 1,183 | 911 (272) | 77.0 |
-| **MathSys** | 6 | 940 | 730 (210) | 77.7 |
+| MathSys | 6 | 940 | 760 (180) | 80.9 |
 | MathUtils | 14 | 1,331 | 1,081 (250) | 81.2 |
 | MathPoly | 4 | 341 | 278 (63) | 81.5 |
 | MathOpt | 8 | 1,793 | 1,474 (319) | 82.2 |
+| MathRoot | 8 | 1,196 | 984 (212) | 82.3 |
 | TCollection | 2 | 186 | 155 (31) | 83.3 |
-| NCollection | 27 | 2,503 | 2,089 (414) | 83.5 |
+| NCollection | 27 | 2,503 | 2,090 (413) | 83.5 |
 | MathInteg | 5 | 616 | 522 (94) | 84.7 |
 | Standard | 12 | 893 | 758 (135) | 84.9 |
 | Message | 19 | 1,205 | 1,028 (177) | 85.3 |
 | BSplCLib | 8 | 4,642 | 3,972 (670) | 85.6 |
-| MathLin | 7 | 862 | 746 (116) | 86.5 |
 | Resource | 1 | 189 | 164 (25) | 86.8 |
+| MathLin | 7 | 862 | 748 (114) | 86.8 |
 | gp | 44 | 5,996 | 5,287 (709) | 88.2 |
 | Poly | 17 | 2,280 | 2,049 (231) | 89.9 |
 | TopLoc | 5 | 175 | 158 (17) | 90.3 |
 | Bnd | 11 | 3,205 | 2,943 (262) | 91.8 |
+| BVH | 31 | 1,439 | 1,323 (116) | 91.9 |
 | math | 48 | 10,849 | 10,022 (827) | 92.4 |
 | CSLib | 3 | 422 | 393 (29) | 93.1 |
 | Convert | 16 | 1,675 | 1,565 (110) | 93.4 |
@@ -216,34 +210,32 @@ Packages under 80%, least covered first (uncovered lines in brackets); the rest 
 | **TopOpeBRepTool** | 10 | 988 | 269 (719) | 27.2 |
 | **TopOpeBRepBuild** | 14 | 1,302 | 381 (921) | 29.3 |
 | **BRepApprox** | 25 | 135 | 45 (90) | 33.3 |
-| **LocOpe** | 23 | 5,970 | 3,942 (2,028) | 66.0 |
 | **BiTgte** | 3 | 1,131 | 749 (382) | 66.2 |
-| **IntCurveSurface** | 20 | 1,949 | 1,295 (654) | 66.4 |
-| **Geom2dGcc** | 26 | 6,253 | 4,256 (1,997) | 68.1 |
+| **IntCurveSurface** | 20 | 1,949 | 1,352 (597) | 69.4 |
 | **Geom2dInt** | 12 | 183 | 130 (53) | 71.0 |
-| **FilletSurf** | 2 | 374 | 270 (104) | 72.2 |
-| **Geom2dHatch** | 7 | 994 | 724 (270) | 72.8 |
 | **TopOpeBRepDS** | 30 | 2,009 | 1,473 (536) | 73.3 |
-| **Draft** | 6 | 1,429 | 1,053 (376) | 73.7 |
 | **TopTrans** | 2 | 400 | 298 (102) | 74.5 |
-| **HLRBRep** | 54 | 6,844 | 5,162 (1,682) | 75.4 |
-| **BRepFeat** | 13 | 6,582 | 4,985 (1,597) | 75.7 |
-| **Plate** | 13 | 1,888 | 1,492 (396) | 79.0 |
+| **Draft** | 6 | 1,429 | 1,078 (351) | 75.4 |
+| **HLRBRep** | 54 | 6,844 | 5,252 (1,592) | 76.7 |
+| **Geom2dHatch** | 7 | 994 | 774 (220) | 77.9 |
+| **FilletSurf** | 2 | 374 | 294 (80) | 78.6 |
 | Intrv | 2 | 234 | 188 (46) | 80.3 |
 | HatchGen | 4 | 297 | 239 (58) | 80.5 |
 | LocalAnalysis | 3 | 590 | 476 (114) | 80.7 |
-| Intf | 9 | 2,158 | 1,743 (415) | 80.8 |
+| Intf | 9 | 2,158 | 1,745 (413) | 80.9 |
 | GeomInt | 29 | 1,708 | 1,386 (322) | 81.1 |
 | BRepPrim | 10 | 1,456 | 1,184 (272) | 81.3 |
 | BRepBuilderAPI | 23 | 4,230 | 3,446 (784) | 81.5 |
+| BRepFeat | 13 | 6,582 | 5,365 (1,217) | 81.5 |
 | ShapeCustom | 12 | 1,916 | 1,562 (354) | 81.5 |
 | ChFi3d | 29 | 16,770 | 13,745 (3,025) | 82.0 |
 | IntCurve | 16 | 4,341 | 3,564 (777) | 82.1 |
 | Prs3d | 2 | 68 | 56 (12) | 82.4 |
 | ShapeExtend | 7 | 879 | 725 (154) | 82.5 |
 | ShapeConstruct | 4 | 1,924 | 1,592 (332) | 82.7 |
-| Contap | 13 | 2,170 | 1,804 (366) | 83.1 |
+| LocOpe | 23 | 5,970 | 4,945 (1,025) | 82.8 |
 | NLPlate | 9 | 258 | 215 (43) | 83.3 |
+| Contap | 13 | 2,170 | 1,809 (361) | 83.4 |
 | IntRes2d | 5 | 464 | 388 (76) | 83.6 |
 | BRepBlend | 25 | 6,074 | 5,086 (988) | 83.7 |
 | IntStart | 2 | 628 | 526 (102) | 83.8 |
@@ -252,6 +244,7 @@ Packages under 80%, least covered first (uncovered lines in brackets); the rest 
 | BRepFilletAPI | 5 | 350 | 297 (53) | 84.9 |
 | BRepClass3d | 7 | 1,005 | 853 (152) | 84.9 |
 | BRepAlgoAPI | 12 | 552 | 469 (83) | 85.0 |
+| Plate | 13 | 1,888 | 1,606 (282) | 85.1 |
 | HelixBRep | 1 | 298 | 255 (43) | 85.6 |
 | AppBlend | 2 | 599 | 514 (85) | 85.8 |
 | IntWalk | 7 | 3,464 | 2,973 (491) | 85.8 |
@@ -277,7 +270,7 @@ Packages under 80%, least covered first (uncovered lines in brackets); the rest 
 | GeomPlate | 9 | 2,130 | 1,890 (240) | 88.7 |
 | ShapeAnalysis | 19 | 6,474 | 5,770 (704) | 89.1 |
 | IntSurf | 11 | 651 | 581 (70) | 89.2 |
-| BRepOffsetAPI | 13 | 2,353 | 2,101 (252) | 89.3 |
+| BRepOffsetAPI | 13 | 2,353 | 2,106 (247) | 89.5 |
 | Bisector | 10 | 2,079 | 1,863 (216) | 89.6 |
 | ChFi2d | 7 | 2,022 | 1,816 (206) | 89.8 |
 | BRepGProp | 13 | 2,257 | 2,030 (227) | 89.9 |
@@ -291,18 +284,19 @@ Packages under 80%, least covered first (uncovered lines in brackets); the rest 
 | StdPrs | 1 | 34 | 31 (3) | 91.2 |
 | GeomFill | 58 | 10,349 | 9,458 (891) | 91.4 |
 | IntTools | 25 | 6,401 | 5,857 (544) | 91.5 |
-| HLRTopoBRep | 6 | 804 | 737 (67) | 91.7 |
 | Drawing | 9 | 1,289 | 1,183 (106) | 91.8 |
 | ApproxInt | 7 | 1,547 | 1,421 (126) | 91.9 |
 | MAT2d | 7 | 1,570 | 1,443 (127) | 91.9 |
+| HLRTopoBRep | 6 | 804 | 740 (64) | 92.0 |
 | IMeshTools | 10 | 189 | 174 (15) | 92.1 |
 | IntCurvesFace | 2 | 378 | 349 (29) | 92.3 |
 | BRepClass | 7 | 554 | 512 (42) | 92.4 |
 | GccAna | 47 | 4,008 | 3,712 (296) | 92.6 |
-| BRepFill | 31 | 12,927 | 11,975 (952) | 92.6 |
+| BRepFill | 31 | 12,927 | 11,984 (943) | 92.7 |
+| Geom2dGcc | 26 | 6,253 | 5,800 (453) | 92.8 |
 | IMeshData | 10 | 87 | 81 (6) | 93.1 |
 | TopClass | 2 | 146 | 136 (10) | 93.2 |
-| BOPAlgo | 44 | 12,685 | 11,859 (826) | 93.5 |
+| BOPAlgo | 44 | 12,685 | 11,863 (822) | 93.5 |
 | Features | 1 | 124 | 116 (8) | 93.5 |
 | BOPDS | 17 | 1,623 | 1,524 (99) | 93.9 |
 | IntImp | 6 | 706 | 665 (41) | 94.2 |
@@ -400,6 +394,6 @@ Packages under 80%, least covered first (uncovered lines in brackets); the rest 
 | Exchange | 3 | 277 | 250 (27) | 90.3 |
 | Geometry | 14 | 1,242 | 1,141 (101) | 91.9 |
 | Kernel | 4 | 99 | 91 (8) | 91.9 |
-| Topology | 31 | 4,911 | 4,542 (369) | 92.5 |
+| Topology | 31 | 4,911 | 4,544 (367) | 92.5 |
 | Operations | 5 | 709 | 669 (40) | 94.4 |
 | (root) | 1 | 13 | 13 (0) | 100.0 |
