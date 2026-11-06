@@ -301,20 +301,23 @@ public class SolidTests
     }
 
     [Fact]
-    public void SweepWarnsWhenInvalid()
+    public void SweepFailsWhenInvalid()
     {
-        var warnings = Warnings.Capture();
-        // The kernel reports success for a sweep that folds over itself
+        // A sweep that folds over itself isn't a success, but the shape can still be looked at (decision 1742)
         var path = Wire.MakePolygon([new Point3D(0, 20, 0), new Point3D(20, 20, 0), new Point3D(20, 0, 0)], close: false);
         var section = new Plane(new Point3D(0, 20, 0), zDir: new Vector3D(1, 0, 0)) * Face.MakeRect(10, 10);
-        var folded = Solid.Sweep(section, path);
-        Assert.Contains(warnings.Messages, w => w.Contains("sweep created an invalid solid"));
+        var failed = Failures.Try(() => Solid.Sweep(section, path));
+        Assert.Equal(DiagnosticCode.InvalidResult, failed.Error!.Code);
+        Assert.Contains("A path with a sharp corner needs", failed.Error.Message, StringComparison.Ordinal);
+        Assert.True(failed.TryGetInvalid(out var folded));
         Assert.False(folded.IsValid);
+        Assert.Throws<InvalidOperationException>(() => failed.Value);
 
         var arc = Edge.MakeCircle(5, startAngle: 0, endAngle: 180);
         var profiles = new[] { 0.0, 1.0 }.Select(u => new Plane(arc.PositionAt(u), zDir: arc.TangentAt(u)) * Face.MakeRect(30, 30));
-        Solid.SweepMulti(profiles, arc);
-        Assert.Contains(warnings.Messages, w => w.Contains("sweep_multi created an invalid"));
+        var multi = Failures.Try(() => Solid.SweepMulti(profiles, arc));
+        Assert.Equal(DiagnosticCode.InvalidResult, multi.Error!.Code);
+        Assert.Contains("too large for the curvature", multi.Error.Message, StringComparison.Ordinal);
     }
 
     [Fact]

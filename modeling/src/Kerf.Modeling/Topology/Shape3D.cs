@@ -1,6 +1,7 @@
 using Kerf.Construction;
 using Kerf.Features;
 using Kerf.Fillets;
+using Kerf.Healing;
 using Kerf.Measurement;
 using Kerf.Offsets;
 
@@ -63,10 +64,8 @@ public static partial class Shape3DExtensions
             }
             var chamfered = self.AsShape().Chamfer(specs);
             if (!chamfered.TryGetValue(out var built))
-                throw Failures.Expected(ModelingDiagnostics.ChamferFailed, "The chamfer failed; try a smaller length.", chamfered.Diagnostics);
+                throw Failures.Expected(ModelingDiagnostics.ChamferFailed, "The chamfer failed; try a smaller length.", chamfered);
             var result = Shape3DExtensions.Make3DResult(built.Shape);
-            if (!result.IsValid)
-                throw Failures.Expected(ModelingDiagnostics.ChamferFailed, "The chamfer's result isn't valid; try a smaller length.");
             return result.MadeBy(ModelHistory.FromAlgorithm(s => built.History.Modified(s), s => built.History.Generated(s), [self.AsShape()], result));
         }
 
@@ -112,31 +111,25 @@ public static partial class Shape3DExtensions
         {
             var edges = edgeList.Select(e => e).ToList();
             var filleted = self.AsShape().Fillet(edges, radius);
-            Shape result = default;
-            Exception? failure = null;
-            if (filleted.TryGetValue(out var built))
-            {
-                result = Shape3DExtensions.Make3DResult(built.Shape);
-                if (!result.IsValid)
-                    failure = new InvalidOperationException();
-            }
-            else
-                failure = Failures.Failed(filleted.Diagnostics);
-            if (failure is not null)
+            if (!filleted.TryGetValue(out var built))
             {
                 string details = "";
                 try
                 {
-                    details = filleted.IsFailure ? Shape3DExtensions.FilletFailureDetails(filleted.Diagnostics, edges) : "";
+                    details = Shape3DExtensions.FilletFailureDetails(filleted.Diagnostics, edges);
                 }
                 catch (Exception)
                 {
                     // Diagnostics mustn't mask the kernel's failure
                 }
-                throw Failures.Expected(ModelingDiagnostics.FilletFailed,
-                    $"The fillet with a radius of {Formatting.Number(radius)}{details} failed; try a smaller radius, or MaxFillet "
-                    + "to find the largest that works.", filleted.IsFailure ? filleted.Diagnostics : default, failure);
+                string message = $"The fillet with a radius of {Formatting.Number(radius)}{details} failed; try a smaller radius, or MaxFillet "
+                                 + "to find the largest that works.";
+                throw filleted.TryGetInvalid(out var invalid)
+                    ? Failures.Invalid(invalid.Shape, invalid.Shape.Validate(), $"The fillet with a radius of {Formatting.Number(radius)}",
+                                       "Try a smaller radius, or MaxFillet to find the largest that works.")
+                    : Failures.Expected(ModelingDiagnostics.FilletFailed, message, filleted.Diagnostics, Failures.Failed(filleted.Diagnostics));
             }
+            var result = Shape3DExtensions.Make3DResult(built.Shape);
             return result.MadeBy(ModelHistory.FromAlgorithm(s => built!.History.Modified(s), s => built!.History.Generated(s),
                                                              [self.AsShape()], result));
         }
@@ -157,7 +150,7 @@ public static partial class Shape3DExtensions
                 if (iteration == maxIterations)
                     throw new InvalidOperationException($"Failed to find the max value within {Formatting.Number(tolerance)} in {maxIterations}");
                 // Do these numbers work? If not, try the smaller window
-                if (!self.AsShape().Fillet(edges, windowMid).TryGetValue(out var built) || !Shape3DExtensions.Make3DResult(built.Shape).IsValid)
+                if (self.AsShape().Fillet(edges, windowMid).IsFailure)
                     return Search(windowMin, windowMid, iteration + 1);
                 // They work: close enough, or try the larger window
                 return windowMid - windowMin <= tolerance ? windowMid : Search(windowMid, windowMax, iteration + 1);
@@ -179,7 +172,9 @@ public static partial class Shape3DExtensions
             var join = kind == Kind.Arc ? JoinKind.Arc : JoinKind.Intersection;
             // BRepOffsetAPI_MakeThickSolid by join, in skin mode, with intersections
             var options = new OffsetOptions { Tolerance = tolerance, Mode = OffsetMode.Skin, Intersection = true, SelfIntersection = false, Join = join };
-            var made = self.AsShape().ThickSolid(faceList.Select(f => f), thickness, options);
+            var made = TopoUtil.Repaired(self.AsShape().ThickSolid(faceList.Select(f => f), thickness, options));
+            if (made.TryGetInvalid(out _))
+                throw Failures.Expected(ModelingDiagnostics.OffsetFailed, "An alternative kind may resolve this error.", made);
             // OCCT can report success and still hand back a null shape
             if (!made.TryGetValue(out var thick) || thick.Shape.IsNull)
                 throw new InvalidOperationException("hollow Error, an alternative kind may resolve this error");
@@ -190,8 +185,8 @@ public static partial class Shape3DExtensions
             var shell1 = (shellShape).Shells()[0];
             var shell2 = self.Shells()[0];
             // The first can be the outer or inner shell depending on the thickness's sign
-            var solid = Failures.Get(Solid.FromShells(thickness > 0 ? [shell1, shell2] : [shell2, shell1]), () => "solid");
-            return (solid).Fix();
+            var solid = Failures.Get(Solid.FromShells(thickness > 0 ? [shell1, shell2] : [shell2, shell1], checkResult: false), () => "solid");
+            return Failures.Valid(solid.Fix(), "The hollow solid", "An alternative kind may resolve this error.");
         }
 
         /// <summary>Whether a point is inside the solid (or on its surface) within a tolerance.</summary>
@@ -222,9 +217,9 @@ public static partial class Shape3DExtensions
                 Join = join,
                 RemoveInternalEdges = true,
             };
-            var made = self.AsShape().ThickSolid(faceList.Select(f => f), thickness, options);
+            var made = TopoUtil.Repaired(self.AsShape().ThickSolid(faceList.Select(f => f), thickness, options));
             if (!made.TryGetValue(out var thick))
-                throw Failures.Expected(ModelingDiagnostics.OffsetFailed, "The offset failed; another kind of join may work.", made.Diagnostics);
+                throw Failures.Expected(ModelingDiagnostics.OffsetFailed, "The offset failed; another kind of join may work.", made);
             var solid = thick.Shape;
             if (solid.IsNull)
                 throw new InvalidOperationException("offset Error, an alternative kind may resolve this error");

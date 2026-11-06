@@ -114,12 +114,16 @@ internal static partial class TopoUtil
         }
         // The loft no longer writes pcurves into the sections' edges (the kernel's unit 10H3), so they aren't copied
         var sections = list.Where(o => o.IsVertex() || o.IsWire()).Select(o => o).ToList();
-        return Failures.Get(Sweeps.Loft(sections, new LoftOptions { MakeSolid = filled, Ruled = ruled }), () => "loft").Shape;
+        return Failures.Get(Sweeps.Loft(sections, new LoftOptions { MakeSolid = filled, Ruled = ruled, CheckResult = false }), () => "loft").Shape;
     }
 
     /// <summary>A planar face from an outer wire and holes.</summary>
     /// <exception cref="ArgumentException">A wire isn't closed, the wires aren't coplanar, or OCCT can't build the face.</exception>
-    internal static Face MakeFaceFromWires(Wire outerWire, IEnumerable<Wire>? innerWires = null)
+    /// <param name="outerWire">The outer wire.</param>
+    /// <param name="innerWires">The holes.</param>
+    /// <param name="checkResult">Whether a face that isn't valid fails: not for a face only used to reach the wire's corners or
+    /// its area, which may be a hole's wire, or open.</param>
+    internal static Face MakeFaceFromWires(Wire outerWire, IEnumerable<Wire>? innerWires = null, bool checkResult = true)
     {
         var inner = innerWires?.ToList() ?? [];
         if (inner.Count > 0 && !outerWire.IsClosed)
@@ -136,10 +140,11 @@ internal static partial class TopoUtil
                 throw new ArgumentException("Cannot build face(s): inner wire is not closed");
             holes.Add((Wire)Fix(innerWire));
         }
-        var made = Face.FromWires(topoWire, holes, onlyPlane: true);
+        // The fix below checks the face
+        var made = Face.FromWires(topoWire, holes, onlyPlane: true, checkResult: false);
         if (!made.TryGetValue(out var face))
             throw new ArgumentException($"Cannot build face(s): {made.Error!.Code.Value}");
-        return (Face)Failures.Get(face.FixFace(), () => "fix face").Shape;
+        return (Face)Failures.Get(face.FixFace(checkResult), () => "fix face").Shape;
     }
 
     /// <summary>
@@ -149,7 +154,7 @@ internal static partial class TopoUtil
     internal static Face MakeFaceOnSurface(Face surfaceFace, Wire outerWire, IEnumerable<Wire>? innerWires = null)
     {
         surfaceFace.TryGetSurface(out var surface);
-        var made = Face.FromSurface(surface!, boundary: outerWire, holes: innerWires ?? []);
+        var made = Face.FromSurface(surface!, boundary: outerWire, holes: innerWires ?? [], checkResult: false);
         if (!made.TryGetValue(out var built))
             throw new ArgumentException($"Cannot build face(s): {made.Error!.Code.Value}");
         var fixedShape = Fix(built);

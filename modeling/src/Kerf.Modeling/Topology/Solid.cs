@@ -423,14 +423,12 @@ public static partial class SolidExtensions
             // The draft can't build every taper a loft can: a failure falls back to the loft
             var drafted = prism.Draft(sideFaces.Select(s => (s.Face, s.Angle * Constants.DegToRad)), pullDir, neutral);
             Built<Shape>? draft = null;
+            // Not if the draft's sides run into each other, as when a hole widens through a wall: that fails, as not valid
             if (drafted.TryGetValue(out var built) && built.Shape.IsSolid())
             {
                 draft = built;
                 result = (Solid)built.Shape;
             }
-            // The draft can build sides that run into each other, as when a hole widens through a wall
-            if (result is { IsValid: false })
-                result = null;
             if (result is { } madeBy)
                 result = madeBy.MadeBy(
                     ModelHistory.FromAlgorithm(s => prismBuilt.History.Modified(s), s => prismBuilt.History.Generated(s), [(Shape)profile], prism)
@@ -560,15 +558,16 @@ public static partial class SolidExtensions
         foreach (var wire in innerWires.Prepend(outerWire))
         {
             var options = SolidExtensions.SweepMode(path, mode, isFrenet) with { Transition = FaceExtensions.TransitionMode(transition), MakeSolid = makeSolid };
-            shapes.Add((Failures.Get(Sweeps.Sweep(wire, pathWire, options), () => "sweep").Shape));
+            // A sweep that folds over itself is done, but not valid
+            var swept = Sweeps.Sweep(wire, pathWire, makeSolid ? options : options with { CheckResult = false });
+            shapes.Add(swept.TryGetInvalid(out _)
+                ? throw Failures.Expected(Sweeps.SweepFailed, "A path with a sharp corner needs transition=Transition.RIGHT or "
+                                          + "Transition.ROUND, or a filleted path, and the section must be small enough to turn each corner.", swept)
+                : Failures.Get(swept, () => "sweep").Shape);
         }
         var outer = shapes[0];
         if (shapes.Count > 1)
             outer = outer.Cut(shapes.Skip(1));
-        // OCCT reports success for a sweep that folds over itself
-        if (makeSolid && !outer.IsValid)
-            Warnings.Warn("sweep created an invalid solid. A path with a sharp corner needs transition=Transition.RIGHT or "
-                          + "Transition.ROUND, or a filleted path, and the section must be small enough to turn each corner.");
         return (outer);
     }
 
@@ -605,12 +604,11 @@ public static partial class SolidExtensions
     {
         var pathWire = TopoUtil.AsWire(path);
         var options = SolidExtensions.SweepMode(path, binormal, isFrenet) with { MakeSolid = makeSolid };
-        var built = Failures.Get(Sweeps.Sweep([.. profiles.Select(p => p)], pathWire, options), () => "sweep");
-        var swept = ((Solid)built.Shape);
-        if (makeSolid && !swept.IsValid)
-            Warnings.Warn("sweep_multi created an invalid solid. The profiles may be too large for the curvature of the path "
-                          + "or cross each other along it.");
-        return swept;
+        var made = Sweeps.Sweep([.. profiles.Select(p => p)], pathWire, makeSolid ? options : options with { CheckResult = false });
+        if (made.TryGetInvalid(out _))
+            throw Failures.Expected(Sweeps.SweepFailed, "The profiles may be too large for the curvature of the path "
+                                    + "or cross each other along it.", made);
+        return ((Solid)Failures.Get(made, () => "sweep").Shape);
     }
 
     private static Solid ThickenCore(IShape2D surface, double depth, Vector3D? normalOverride)
@@ -633,7 +631,7 @@ public static partial class SolidExtensions
         };
         var thickened = surface.AsShape().Thicken(adjusted, options);
         if (!thickened.TryGetValue(out var solid))
-            throw Failures.Expected(ModelingDiagnostics.ThickenFailed, "The surface can't be thickened.", thickened.Diagnostics);
+            throw Failures.Expected(ModelingDiagnostics.ThickenFailed, "The surface can't be thickened.", thickened);
         return (solid.Shape);
     }
 }
