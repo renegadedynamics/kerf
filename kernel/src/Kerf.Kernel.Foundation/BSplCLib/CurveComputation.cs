@@ -5,7 +5,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using System.Runtime.InteropServices;
 
 namespace Kerf.Engine.Geometry.Splines;

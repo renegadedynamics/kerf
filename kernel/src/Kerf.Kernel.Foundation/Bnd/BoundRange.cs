@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Foundation;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Geometry.Bounds;
 
 /// <summary>A range in 1D space bounded by two reals. A range can be void (contain no point).</summary>

@@ -4,8 +4,6 @@
 
 using Kerf.Engine.Geometry;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Numerics;
 
 /// <summary>A value and its weight, ordered by value.</summary>

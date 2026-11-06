@@ -7,8 +7,6 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
-using Kerf.Engine;
-
 namespace Kerf.Geometry;
 
 /// <summary>An infinite line in 2D space, positioned by an axis (a location and a direction).</summary>

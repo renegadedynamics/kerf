@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.TransformForm;
 
 namespace Kerf.Geometry;

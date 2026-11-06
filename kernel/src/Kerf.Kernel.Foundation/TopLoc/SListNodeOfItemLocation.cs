@@ -6,8 +6,6 @@
 
 using Kerf.Engine.Foundation;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Topology;
 
 /// <summary>A node of a <see cref="SListOfItemLocation"/>: a value and the rest of the list.</summary>

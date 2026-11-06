@@ -4,8 +4,6 @@
 
 using Kerf.Engine.Foundation.Std;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Numerics.Systems;
 
 // The C++ function contract `bool operator()(double u, double v, double f[2], double j[2][2]) const` is the

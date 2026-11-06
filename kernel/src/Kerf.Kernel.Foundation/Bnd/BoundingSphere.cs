@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Collections;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Geometry.Bounds;
 
 /// <summary>A bounding sphere of a geometric entity (triangle, line segment, ...), with the entity's U and V indices.</summary>

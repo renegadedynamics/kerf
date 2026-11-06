@@ -4,8 +4,6 @@
 
 using Kerf.Engine.Foundation;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Numerics.Polynomials;
 
 // Pre-computed Jacobi polynomial coefficients, generated from OCCT's PLib_JacobiPolynomial_Coeffs.pxx with every

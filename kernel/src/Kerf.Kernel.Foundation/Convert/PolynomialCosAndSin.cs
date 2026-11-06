@@ -5,8 +5,6 @@
 
 using Kerf.Geometry;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Geometry.Conversion;
 
 /// <summary>The free function of Convert_PolynomialCosAndSin.hxx (not exported by OCCT).</summary>

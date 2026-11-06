@@ -4,8 +4,6 @@
 
 using Kerf.Engine.Foundation;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Collections;
 
 /// <summary>Auxiliary enumeration serving as response from method Inspect.</summary>

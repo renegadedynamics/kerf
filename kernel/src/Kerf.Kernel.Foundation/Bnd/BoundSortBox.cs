@@ -5,8 +5,6 @@
 
 using Kerf.Geometry;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Geometry.Bounds;
 
 /// <summary>

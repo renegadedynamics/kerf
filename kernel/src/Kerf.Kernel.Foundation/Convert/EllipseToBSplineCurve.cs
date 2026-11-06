@@ -13,7 +13,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 
 namespace Kerf.Engine.Geometry.Conversion;

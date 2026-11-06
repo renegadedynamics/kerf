@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Foundation;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Numerics;
 
 /// <summary>Computes the points and weights of the Gauss-Legendre quadrature of a given order, points in increasing order.</summary>

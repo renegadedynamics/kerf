@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Geometry;
 
-using Kerf.Engine;
-
 namespace Kerf.Geometry;
 
 /// <summary>An axis in 3D space: a location and a direction.</summary>

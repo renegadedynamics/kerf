@@ -4,8 +4,6 @@
 
 using Kerf.Engine.Foundation.Std;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Numerics.Systems;
 
 // NewtonResultN<N> and NewtonBoundsN<N> are templates on an int, which C# generics can't express. OCCT
