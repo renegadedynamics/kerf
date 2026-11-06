@@ -57,7 +57,7 @@ internal sealed class Inter3d
 
     //=================================================================================================
 
-    private static void ExtentEdge(in Face F, in Edge e, out Edge ne)
+    private static void ExtentEdge(in Edge e, out Edge ne)
     {
         Shape localShape = e.EmptyCopied();
         ne = ShapeCasts.Edge(localShape);
@@ -1118,7 +1118,7 @@ internal sealed class Inter3d
                                 double f, l, tol;
                                 Tool.Range(E, out f, out l);
                                 tol = Tool.Tolerance(E);
-                                ExtentEdge(cf, E, out Edge NE);
+                                ExtentEdge(E, out Edge NE);
                                 Exploration.Vertices(E, out Vertex v1, out Vertex v2);
                                 NE.Orient(Forward);
                                 _asDes.Add(NE, v1.Oriented(Reversed));
@@ -1301,7 +1301,7 @@ internal sealed class Inter3d
                             double f, l, tol;
                             Tool.Range(e, out f, out l);
                             tol = Tool.Tolerance(e);
-                            ExtentEdge(cf, e, out ne);
+                            ExtentEdge(e, out ne);
                             Exploration.Vertices(e, out Vertex v1, out Vertex v2);
                             ne.Orient(Forward);
                             _asDes.Add(ne, v1.Oriented(Reversed));

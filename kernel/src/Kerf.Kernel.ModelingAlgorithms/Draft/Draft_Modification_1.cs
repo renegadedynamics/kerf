@@ -271,7 +271,7 @@ internal sealed partial class DraftModification
                     }
                     else
                     {
-                        newC = NewCurve(c, s, oris, direction, angle, neutralPlane, flag);
+                        newC = NewCurve(c, s, oris, direction, angle, neutralPlane);
                         if (newC is null)
                         {
                             _badShape = edg;
@@ -1782,8 +1782,7 @@ internal sealed partial class DraftModification
                                  Orientation oris,
                                  in Direction3D direction,
                                  double angle,
-                                 in Plane3D neutralPlane,
-                                 bool flag = true)
+                                 in Plane3D neutralPlane)
     {
         Curve3D? newC = null;
 
