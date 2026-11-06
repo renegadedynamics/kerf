@@ -102,6 +102,13 @@ public sealed record SweepOptions
     /// <summary>How the profile's orientation follows the spine.</summary>
     public SweepFrame Frame { get; init; } = SweepFrame.CorrectedFrenet;
 
+    /// <summary>
+    /// If a sweep with the corrected Frenet frame fails, try the Frenet frame and then the discrete one, and take the first
+    /// valid result, with a warning saying which (<see cref="Sweeps.SweptWithFrenet"/>, <see cref="Sweeps.SweptWithDiscrete"/>).
+    /// Otherwise, or if none works, the first failure is the result. The other frames are left as they are.
+    /// </summary>
+    public bool TryOtherFrames { get; init; } = true;
+
     /// <summary>The binormal, for <see cref="SweepFrame.Binormal"/>.</summary>
     public Direction3D? Binormal { get; init; }
 

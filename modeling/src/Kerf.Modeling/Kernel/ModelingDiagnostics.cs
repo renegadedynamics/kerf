@@ -19,6 +19,9 @@ public static class ModelingDiagnostics
     /// <summary>A chamfer couldn't be built, or was invalid: <c>modeling.chamfer-failed</c>.</summary>
     public static DiagnosticCode ChamferFailed { get; } = new("modeling.chamfer-failed");
 
+    /// <summary>A warning from a sweep, such as which frame it fell back on: <c>modeling.sweep-warning</c>.</summary>
+    public static DiagnosticCode SweepWarning { get; } = new("modeling.sweep-warning");
+
     /// <summary>An offset couldn't be built: <c>modeling.offset-failed</c>.</summary>
     public static DiagnosticCode OffsetFailed { get; } = new("modeling.offset-failed");
 

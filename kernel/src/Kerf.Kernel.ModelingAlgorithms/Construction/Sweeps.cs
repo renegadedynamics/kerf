@@ -4,6 +4,7 @@ using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Construction.Helix;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -22,6 +23,12 @@ public static class Sweeps
 {
     /// <summary>An extrusion or revolution the engine couldn't build: <c>construction.sweep-failed</c>.</summary>
     public static DiagnosticCode SweepFailed { get; } = new("construction.sweep-failed");
+
+    /// <summary>A warning: the corrected Frenet frame failed, and the sweep used the Frenet frame: <c>construction.swept-with-frenet</c>.</summary>
+    public static DiagnosticCode SweptWithFrenet { get; } = new("construction.swept-with-frenet");
+
+    /// <summary>A warning: the corrected Frenet and Frenet frames failed, and the sweep used the discrete frame: <c>construction.swept-with-discrete</c>.</summary>
+    public static DiagnosticCode SweptWithDiscrete { get; } = new("construction.swept-with-discrete");
 
     /// <summary>The profiles are closed but the sweep couldn't be closed into a solid: <c>construction.not-solid</c>.</summary>
     public static DiagnosticCode NotSolid { get; } = new("construction.not-solid");
@@ -146,13 +153,47 @@ public static class Sweeps
         Sweep([profile], spine, options, progress, cancellationToken);
 
     /// <summary>A sweep through several profiles (wires or vertices) placed along <paramref name="spine"/>.</summary>
+    /// <remarks>
+    /// The corrected Frenet frame can fail where others work (OCCT #1630, cause not found), so by default the others are
+    /// tried: see <see cref="SweepOptions.TryOtherFrames"/>.
+    /// </remarks>
     /// <exception cref="ArgumentException">No profiles, a profile that isn't a wire or a vertex, or a frame option
     /// missing its value.</exception>
     public static Result<Built<Shape>> Sweep(IReadOnlyList<Shape> profiles, Wire spine, SweepOptions? options = null,
                                              IProgress<double>? progress = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(profiles);
         options ??= SweepOptions.Default;
+        Result<Built<Shape>> first = SweepInFrame(profiles, spine, options, progress, cancellationToken);
+        if (first.IsSuccess || !options.TryOtherFrames || options.Frame != SweepFrame.CorrectedFrenet)
+        {
+            return first;
+        }
+
+        foreach ((SweepFrame frame, DiagnosticCode code, string name) in OtherFrames)
+        {
+            Result<Built<Shape>> other = SweepInFrame(profiles, spine, options with { Frame = frame }, null, cancellationToken);
+            // A retry is only worth having if it's right
+            if (other.TryGetValue(out var built) && new Analyzer(built.Shape, true, true).IsValid())
+            {
+                string why = first.Error?.Message ?? "it failed";
+                return Result<Built<Shape>>.Success(built, [.. other.Diagnostics, Diagnostic.Warning(code,
+                    $"The sweep used the {name} frame, as the corrected Frenet frame couldn't make it: {why}")]);
+            }
+        }
+
+        return first;
+    }
+
+    private static readonly (SweepFrame Frame, DiagnosticCode Code, string Name)[] OtherFrames =
+    [
+        (SweepFrame.Frenet, SweptWithFrenet, "Frenet"),
+        (SweepFrame.Discrete, SweptWithDiscrete, "discrete"),
+    ];
+
+    private static Result<Built<Shape>> SweepInFrame(IReadOnlyList<Shape> profiles, Wire spine, SweepOptions options,
+                                                     IProgress<double>? progress, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(profiles);
         MakerOutcome.NotNull(spine, nameof(spine));
         Shape[] sections = Sections(profiles, nameof(profiles));
         Shape[] inputs = [.. sections, spine];

@@ -823,7 +823,7 @@ public static partial class FaceExtensions
             var pathWire = Wire.Make([path.SingleEdge()]);
             // BRepOffsetAPI_MakePipeShell's defaults (corrected Frenet), not closed into a solid
             var options = new SweepOptions { MakeSolid = false, Transition = FaceExtensions.TransitionMode(transition) };
-            var built = Failures.Get(Sweeps.Sweep(profileWire, pathWire, options), () => "sweep");
+            var built = Failures.GetWarned(Sweeps.Sweep(profileWire, pathWire, options), () => "sweep");
             // The pipe builds a shell holding the one face
             var swept = TopoUtil.Downcast(built.Shape);
             var result = swept.IsFace() ? (Face)swept

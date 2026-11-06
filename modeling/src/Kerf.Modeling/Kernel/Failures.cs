@@ -131,6 +131,16 @@ internal static class Failures
     internal static T Get<T>(Result<T> result, Func<string> what) =>
         result.TryGetValue(out var value) ? value : throw In(what(), Failed(result.Diagnostics));
 
+    /// <summary>As <see cref="Get{T}"/>, raising the operation's warnings (<see cref="Warnings"/>).</summary>
+    internal static T GetWarned<T>(Result<T> result, Func<string> what)
+    {
+        var value = Get(result, what);
+        foreach (var diagnostic in result.Diagnostics)
+            if (!diagnostic.IsError)
+                Warnings.Warn(diagnostic.Message);
+        return value;
+    }
+
     /// <summary>A kernel operation that returns no value: done, or a failure as <see cref="Get{T}"/>.</summary>
     internal static void Check(Result result, Func<string> what)
     {
@@ -170,6 +180,16 @@ internal static class Failures
         {
             return Result<T>.Failure(DiagnosticsOf(In("operation", e)));
         }
+    }
+
+    /// <summary>As <see cref="Try{T}"/>, with the warnings raised meanwhile (<see cref="Warnings"/>) on a successful result.</summary>
+    internal static Result<T> TryWarned<T>(DiagnosticCode code, Func<T> operation)
+    {
+        using var warnings = Warnings.Capture();
+        var result = Try(operation);
+        return result.TryGetValue(out var value) && warnings.Messages.Count > 0
+            ? Result<T>.Success(value, [.. warnings.Messages.Select(m => Diagnostic.Warning(code, m))])
+            : result;
     }
 
     /// <summary>The failure for a kernel failure met while doing <paramref name="what"/>.</summary>

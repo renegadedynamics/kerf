@@ -557,10 +557,19 @@ public static partial class SolidExtensions
     {
         var shapes = new List<Shape>();
         var pathWire = TopoUtil.AsWire(path);
+        var options = SolidExtensions.SweepFrameOf(path, mode, isFrenet) with { Transition = FaceExtensions.TransitionMode(transition), MakeSolid = makeSolid };
         foreach (var wire in innerWires.Prepend(outerWire))
         {
-            var options = SolidExtensions.SweepFrameOf(path, mode, isFrenet) with { Transition = FaceExtensions.TransitionMode(transition), MakeSolid = makeSolid };
-            shapes.Add((Failures.Get(Sweeps.Sweep(wire, pathWire, options), () => "sweep").Shape));
+            var swept = Sweeps.Sweep(wire, pathWire, options);
+            shapes.Add(Failures.GetWarned(swept, () => "sweep").Shape);
+            // The holes turn as the outside does, in the frame it ended up in
+            options = options with
+            {
+                TryOtherFrames = false,
+                Frame = swept.Diagnostics.Any(d => d.Code == Sweeps.SweptWithFrenet) ? SweepFrame.Frenet
+                      : swept.Diagnostics.Any(d => d.Code == Sweeps.SweptWithDiscrete) ? SweepFrame.Discrete
+                      : options.Frame,
+            };
         }
         var outer = shapes[0];
         if (shapes.Count > 1)
@@ -596,7 +605,7 @@ public static partial class SolidExtensions
     {
         var pathWire = TopoUtil.AsWire(path);
         var options = SolidExtensions.SweepFrameOf(path, binormal, isFrenet) with { MakeSolid = makeSolid };
-        var built = Failures.Get(Sweeps.Sweep([.. profiles.Select(p => p)], pathWire, options), () => "sweep");
+        var built = Failures.GetWarned(Sweeps.Sweep([.. profiles.Select(p => p)], pathWire, options), () => "sweep");
         var swept = ((Solid)built.Shape);
         if (makeSolid && !swept.IsValid)
             Warnings.Warn("sweep_multi created an invalid solid. The profiles may be too large for the curvature of the path "

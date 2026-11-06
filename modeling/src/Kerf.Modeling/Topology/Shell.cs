@@ -133,7 +133,7 @@ public static partial class ShellExtensions
             var pathWire = Wire.Make(Wire.Make(path.Edges()).OrderEdges());
             // BRepOffsetAPI_MakePipeShell's defaults (corrected Frenet), not closed into a solid
             var options = new SweepOptions { MakeSolid = false, Transition = FaceExtensions.TransitionMode(transition) };
-            var built = Failures.Get(Sweeps.Sweep(profileWire, pathWire, options), () => "sweep");
+            var built = Failures.GetWarned(Sweeps.Sweep(profileWire, pathWire, options), () => "sweep");
             var result = (Shell)built.Shape;
             return SkipClean.Clean ? result.Clean() : result;
         }
