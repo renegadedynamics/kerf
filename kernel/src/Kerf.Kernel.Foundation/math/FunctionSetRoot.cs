@@ -52,17 +52,18 @@ internal class FunctionSetRoot
     private int _itermax;
     private math_Vector _infBound;
     private math_Vector _supBound;
-    private math_Vector _solSave;
-    private math_Vector _gh;
-    private math_Vector _dh;
-    private math_Vector _dhSave;
+    // The search's own vectors, each written before it's read: a thread's set, for the length of a search
+    private math_Vector _solSave = null!;
+    private math_Vector _gh = null!;
+    private math_Vector _dh = null!;
+    private math_Vector _dhSave = null!;
     private math_Vector _ff;
-    private math_Vector _previousSolution;
-    private math_Vector _save;
-    private math_Vector _temp1;
-    private math_Vector _temp2;
-    private math_Vector _temp3;
-    private math_Vector _temp4;
+    private math_Vector _previousSolution = null!;
+    private math_Vector _save = null!;
+    private math_Vector _temp1 = null!;
+    private math_Vector _temp2 = null!;
+    private math_Vector _temp3 = null!;
+    private math_Vector _temp4 = null!;
     private bool _isDivergent;
 
     /// <summary>The function along a direction: x -> 0.5 * |F(P0 + x * Dir)|^2.</summary>
@@ -738,17 +739,7 @@ internal class FunctionSetRoot
         _itermax = nbIterations;
         _infBound = new math_Vector(1, function.NbVariables(), RealFirst());
         _supBound = new math_Vector(1, function.NbVariables(), RealLast());
-        _solSave = new math_Vector(1, function.NbVariables());
-        _gh = new math_Vector(1, function.NbVariables());
-        _dh = new math_Vector(1, function.NbVariables());
-        _dhSave = new math_Vector(1, function.NbVariables());
         _ff = new math_Vector(1, function.NbEquations());
-        _previousSolution = new math_Vector(1, function.NbVariables());
-        _save = new math_Vector(0, nbIterations);
-        _temp1 = new math_Vector(1, function.NbVariables());
-        _temp2 = new math_Vector(1, function.NbVariables());
-        _temp3 = new math_Vector(1, function.NbVariables());
-        _temp4 = new math_Vector(1, function.NbEquations());
         _isDivergent = false;
     }
 
@@ -803,6 +794,72 @@ internal class FunctionSetRoot
         {
             throw new DimensionErrorException();
         }
+
+        Work work = Work.Rent(ninc, neq, _itermax);
+        _solSave = work.SolSave;
+        _gh = work.Gh;
+        _dh = work.Dh;
+        _dhSave = work.DhSave;
+        _previousSolution = work.PreviousSolution;
+        _save = work.Save;
+        _temp1 = work.Temp1;
+        _temp2 = work.Temp2;
+        _temp3 = work.Temp3;
+        _temp4 = work.Temp4;
+        Search(f, startingPoint, infBound, supBound, stopOnDivergent, ninc, neq);
+        Work.Return(work);
+    }
+
+    // One set kept by each thread for the sizes it last used, as a root finder has no end of life to give them back at, and
+    // nearly all the searches of a run have the same sizes. Taken out while in use, so a search inside a search makes its own.
+    private sealed class Work
+    {
+        [ThreadStatic]
+        private static Work? t_spare;
+
+        private readonly int _ninc;
+        private readonly int _neq;
+        private readonly int _nbIterations;
+        public readonly math_Vector SolSave, Gh, Dh, DhSave, PreviousSolution, Save, Temp1, Temp2, Temp3, Temp4;
+
+        private Work(int ninc, int neq, int nbIterations)
+        {
+            _ninc = ninc;
+            _neq = neq;
+            _nbIterations = nbIterations;
+            SolSave = new(1, ninc);
+            Gh = new(1, ninc);
+            Dh = new(1, ninc);
+            DhSave = new(1, ninc);
+            PreviousSolution = new(1, ninc);
+            Save = new(0, nbIterations);
+            Temp1 = new(1, ninc);
+            Temp2 = new(1, ninc);
+            Temp3 = new(1, ninc);
+            Temp4 = new(1, neq);
+        }
+
+        public static Work Rent(int ninc, int neq, int nbIterations)
+        {
+            Work? work = t_spare;
+            t_spare = null;
+            return work is not null && work._ninc == ninc && work._neq == neq && work._nbIterations == nbIterations
+                ? work
+                : new Work(ninc, neq, nbIterations);
+        }
+
+        public static void Return(Work work)
+        {
+            if (work._ninc <= 16 && work._neq <= 16 && work._nbIterations <= 1024)
+            {
+                t_spare = work;
+            }
+        }
+    }
+
+    private void Search(FunctionSetWithDerivatives f, math_Vector startingPoint, math_Vector infBound, math_Vector supBound,
+                        bool stopOnDivergent, int ninc, int neq)
+    {
 
         int i;
         bool changeDirection = false, sort = false, isNewSol = false;

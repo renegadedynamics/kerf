@@ -12,6 +12,8 @@ using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Engine.Meshing.MeshPurpose;
 using static Kerf.Topology.Orientation;
+using System.Runtime.CompilerServices;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Kerf.Engine.Topology.Brep;
 
@@ -359,6 +361,21 @@ internal static class Tool
         first = f;
         last = l;
 
+        // The same question again: asked repeatedly of each edge of a plane, as most edges read from a STEP file have no curve
+        // on their plane
+        bool canKeep = c3D.IsFrozen && gp.IsFrozen;
+        if (canKeep && PlaneCurves.TryGet(c3D, gp, curveLocation, f, l, out Curve2D? kept))
+        {
+            // A new object each time, as a caller may store it on an edge, and a shape's writers count curves by identity
+            var copy = (Curve2D)kept.Copy();
+            copy.Freeze();
+            return copy;
+        }
+
+        Curve3D sourceCurve = c3D;
+        double sourceFirst = f;
+        double sourceLast = l;
+
         // Transform curve and update parameters in account of scale factor
         if (!curveLocation.IsIdentity)
         {
@@ -381,10 +398,71 @@ internal static class Tool
         {
             var lineCurve2D = new LineCurve2D(global::Kerf.Engine.Geometry.Projection.PlaneProjector.ProjectLine(gp.Plane, lineOnPlane));
             lineCurve2D.Freeze();
+            if (canKeep)
+            {
+                PlaneCurves.Add(sourceCurve, gp, curveLocation, sourceFirst, sourceLast, lineCurve2D);
+            }
             return lineCurve2D;
         }
 
-        return CurveOnPlaneByProjection(c3D, f, l, gp);
+        Curve2D projected = CurveOnPlaneByProjection(c3D, f, l, gp);
+        if (canKeep)
+        {
+            projected.Freeze();
+            PlaneCurves.Add(sourceCurve, gp, curveLocation, sourceFirst, sourceLast, projected);
+        }
+        return projected;
+    }
+
+    // The latest curves on planes, for each thread. The answer is a pure function of the key, as the curve and the plane are
+    // frozen. A fixed table, so a thread keeps at most this many curves.
+    private static class PlaneCurves
+    {
+        private const int Size = 64;
+
+        private struct Entry
+        {
+            public Curve3D? Curve;
+            public PlaneSurface? Plane;
+            public Placement Location;
+            public double First;
+            public double Last;
+            public Curve2D? Result;
+        }
+
+        [ThreadStatic]
+        private static Entry[]? t_entries;
+
+        private static int Slot(Curve3D curve, PlaneSurface plane, double first)
+            => (RuntimeHelpers.GetHashCode(curve) ^ (31 * RuntimeHelpers.GetHashCode(plane)) ^ first.GetHashCode()) & (Size - 1);
+
+        public static bool TryGet(Curve3D curve, PlaneSurface plane, in Placement location, double first, double last,
+                                  [NotNullWhen(true)] out Curve2D? result)
+        {
+            Entry[]? entries = t_entries;
+            if (entries is not null)
+            {
+                ref Entry entry = ref entries[Slot(curve, plane, first)];
+                if (ReferenceEquals(entry.Curve, curve) && ReferenceEquals(entry.Plane, plane) && entry.First == first
+                    && entry.Last == last && entry.Location.IsEqual(location))
+                {
+                    result = entry.Result!;
+                    return true;
+                }
+            }
+
+            result = null;
+            return false;
+        }
+
+        public static void Add(Curve3D curve, PlaneSurface plane, in Placement location, double first, double last, Curve2D result)
+        {
+            Entry[] entries = t_entries ??= new Entry[Size];
+            entries[Slot(curve, plane, first)] = new Entry
+            {
+                Curve = curve, Plane = plane, Location = location, First = first, Last = last, Result = result,
+            };
+        }
     }
 
     // OCCT's route, for any curve on a plane; f and l have been checked by IsValidTrimRange

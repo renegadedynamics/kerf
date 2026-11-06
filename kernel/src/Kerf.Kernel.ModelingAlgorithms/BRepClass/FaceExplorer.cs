@@ -27,8 +27,8 @@ internal class FaceExplorer : IFaceExplorer<ClassifierEdge>
     private const double Probing_Step = 0.2111;
 
     private Face _face;
-    private readonly Explorer _wExplorer = new();
-    private readonly Explorer _eExplorer = new();
+    private Explorer _wExplorer = new();
+    private Explorer _eExplorer = new();
     private int _curEdgeInd;
     private double _curEdgePar;
     private double _maxTolerance;

@@ -106,11 +106,12 @@ internal sealed class FClass2d
         int nbE = 0;
         const double eps = 1.0e-10;
         bool isBadWire = false;
+        NCollection_Sequence<Point2D> seqPnt2d = Class2dPoints.Rent();
         for (var faceExplorer = new Explorer(_face, ShapeType.Wire); (faceExplorer.More() && !isBadWire);
              faceExplorer.Next())
         {
             int nbpnts = 0;
-            var seqPnt2d = new NCollection_Sequence<Point2D>();
+            seqPnt2d.Clear();
             int firstpoint = 1;
             double flecheU = 0.0;
             double flecheV = 0.0;
@@ -503,6 +504,7 @@ internal sealed class FClass2d
             {
             }
         }
+        Class2dPoints.Return(seqPnt2d);
     }
 
     /// <summary>The state of a point far outside the face's UV box (IN if the face has no box).</summary>

@@ -398,7 +398,7 @@ internal sealed class TreeReader
             {
                 throw new FormatError($"The node hierarchy is deeper than the limit ({Math.Min(_limits.MaxDepth, HARD_MAX_DEPTH)})");
             }
-            if (_ps is not null && !_ps.More())
+            if (_ps is not null && !_ps.Value.More())
             {
                 return null;
             }

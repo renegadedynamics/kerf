@@ -14,7 +14,7 @@ namespace Kerf.Engine.Booleans.Legacy.Tools;
 /// </remarks>
 internal sealed class ToolShapeExplorer
 {
-    private readonly Explorer _explorer = new();
+    private Explorer _explorer = new();
     private int _index;
 
     /// <summary>An empty explorer, useful after <see cref="Init"/>.</summary>

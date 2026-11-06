@@ -680,10 +680,46 @@ So 11A's "the collector, 16.5% of thread time" and 11E's "35% of its samples are
 - **The Booleans suites hardly moved** (56.8 to 56.5 GB over the profile's rounds). Their cost is spread over many small intersections, and the polyhedra aren't on their path.
 - **The large object heap:** `GenExtPS`'s grids are 1.3 of healing's 2.2 GB of large objects, and each can provoke a generation 2 collection. An extrema object has no end of life to pool them at. A host setting does the job under the workstation collector: `DOTNET_GCLOHThreshold=0x400000` took healing's generation 2 collections from 656 to 163 and time in collections from 18.5% to 12.1%, and Bento's serial passes from 44 to 8. Under the server collector, which Bento uses, a parallel run's count didn't change (36 and 35). So there's no recommendation yet.
 - **The write session's graph and check** after a transfer are about 13% of a plain `Writer`'s export. The public path, `CafWriter`, uses the graph afterwards, so it stays.
-- **`Iterator` and `Explorer`** are 8.7% of Bento's bytes and 6.5% of healing's. Each explorer has an iterator object for each level, where OCCT's are inline. Making them one array of structs is the next allocation step. It wasn't done, as `Iterator` is used everywhere.
+- **`Iterator` and `Explorer`** are 8.7% of Bento's bytes and 6.5% of healing's. Each explorer has an iterator object for each level, where OCCT's are inline. Making them one array of structs is the next allocation step. It wasn't done, as `Iterator` is used everywhere. The second slice did it, below.
 - **`CurveOnPlane` for circles, `FClass2d`, `WireExplorer`:** not looked at further.
 - **The full corpus at this head, on a loaded machine:** every status is as before but for time and memory checks. `bug24639` (parallel must beat serial by 20%) and `bug83` (a section under 0.1 s) now fail their time limits, and `bug24639` passes alone or 12 at once; the memory trends `bug31075` and `bug7287_*` flipped to OK. They need the clean run to confirm, and they're for 11P.
 - **Corpus times are noisy under load:** the runs differ by up to a factor of two on single cases, either way, so only the large changes above are claims.
+
+### The second slice: what limits the Booleans' parallel option, and the next cuts
+
+*6 November 2026, the same shared machine: bytes and counts are exact, every time is from a loaded machine, and the clean run comes after merging. `-- booleans many` is new: a plate with 100 holes, and `bug25614_fuse`'s 121 boxes and 100 cylinders.*
+
+**The Booleans' parallel option isn't held back by serial phases, as 11D inferred from its 1.26×. It's held back by the largest item of each loop.** A temporary timer around every loop of `BooleanParallel` and every phase, serially:
+
+| Serial, ms a pass (loaded) | Whole | In the loops | Outside them | Largest item of each loop, added up | Best possible with endless processors |
+|---|---:|---:|---:|---:|---:|
+| Simple, 407 cases | 2,674 | 2,104 (79%) | 570 | 1,245 (face/face 763) | **1.47×** |
+| Complex, 193 cases | 3,038 | 2,644 (87%) | 394 | 1,549 (face/face 1,060) | **1.56×** |
+| Plate with 100 holes | 997 | 803 (81%) | 194 | 239 (solid 79, face 70) | 2.3× |
+| 121 boxes and 100 cylinders | 5,420 | 3,336 (62%) | 2,084, with 1,222 of the collector's pauses | 341 | 2.2× |
+
+So the rig's 1.23× and 1.47× are near the limit for these inputs. A typical Boolean in those suites has about ten face pairs, with one taking most of the time, and a loop can't finish before its largest item. Outside the loops there's no large phase: 13% to 21%, spread over the filler's bookkeeping, `FillImagesSolids`' maps and building the result. Only a Boolean with many similar pairs gains much, and there the collector's pauses come first. Splitting a single face/face intersection would be the way past this, which is a large change, and a question for the owner (decision 1718).
+
+**The two cheap things that looked promising don't show.** Each loop gives every other thread a new `IntersectionContext`, as OCCT does, and edge/face items took about three times as long in a parallel pass as in a serial one (22 to 69 µs). Each `Parallel.For` also cost about 0.2 to 0.3 ms, even for loops of items under 1 µs. Keeping a filler's worker contexts across its loops saved under 1% of the bytes, and running cheap loops serially, by a cost for each solver type, about 1%. A pass stayed within the noise, alternating on the loaded machine: 2,491 and 3,968 ms for the base, 2,521 and 2,574 with the contexts, 2,615 and 3,191 with the cheap loops. So neither went in. That the contexts cause the items' slowness is an inference, and not all of it: face/face items, which have no context, took 1.7 times as long too.
+
+| Change | Evidence |
+|---|---|
+| **`Iterator` and `Explorer` are structs, as in OCCT** (decision 1714). An explorer holds six levels inline, and an array beyond that. A level is four fields, since only the top needs its current shape | Bento **198.4 to 185.5 MB**; simple Booleans 2,461 to 2,206; complex 1,534 to 1,438; STEP import 4,556 to 4,281. An exploration allocates nothing, which a test checks |
+| **`Tool.CurveOnPlane` keeps each thread's latest answers** for frozen curves and planes, and returns a copy (decision 1715). Most edges from STEP have no curve on their plane, and each question projected it again | Bento **185.1 to 165.3 MB**; ShapeFixer 2,245 to 1,562; import 4,278 to about 3,700; UnifySameDomain 542 to 455 |
+| **`GenExtPS`'s three grids of distances** come from one set for each thread, as each search writes them again (decision 1716); **`TotCross2D`** samples a wire into one sequence | Import about 3,700 to 3,362: mostly `ShapeAnalysis_Surface`'s `ValueOfUV`, which makes a new extrema for each analysis |
+| **A wire's points on their way to a 2D classifier,** one sequence for each thread (decision 1716) | Import 3,362 to 3,314 |
+| **`FunctionSetRoot`'s search vectors** come from one set for each thread (decision 1716) | Import 3,314 to 3,224. Its 101-element history is most of those bytes |
+| **`ProgressScope` is a struct,** with an object only when a range is active (decision 1717). Almost none is, and `DistanceShapeShape` made several for each pair | 1.2% of the many-tool case's bytes; Bento 185.5 to 185.1 |
+
+**Altogether, in bytes:** Bento's recalculation 198.4 to about 165 MB (−17%). Import with healing 4,556 to 3,224 MB (−29%). ShapeFixer 2,448 to 1,502 (−39%). UnifySameDomain 647 to 455 (−30%). Export 2,316 to 2,195 (−5%). The many-tool pair 2,465 to 1,933 (−22%; its first figure is from the build with the temporary timers). Simple Booleans 2,461 to 1,970 (−20%), complex 1,534 to 1,280 (−17%), and the clean after them 204 to 134 and 69 to 46. Every shape's volume, faces and triangles in Bento's run are unchanged.
+
+**What the copy is for.** The first version of `CurveOnPlane`'s table returned the kept curve itself. Ten tests failed, oracle comparisons with native OCCT among them: a caller stored the same object on two edges, and a shape's writers number curves by identity, so the written shape differed. Geometry was the same, but "results stay identical" includes that. A copy costs far less than a projection.
+
+**Where a validity check goes** (a temporary benchmark: the 1,586 faces of the fuse above, 381 ms and 120 MB a check, loaded; only 135 samples, so rough). `FaceCheck.OrientationOfWires` is about a third of its inclusive samples and `FClass2d`, which builds a classifier for each wire, a fifth, and 17% of the bytes. `Analyzer.Put` is about a seventh. The rest is spread over `WireCheck`. Nothing else looked wasteful enough to take, and the sequence above has already helped `FClass2d`.
+
+**`GenExtPS`'s last grid** stays: its `_points` holds positions evaluated once for each object, so it would have to be kept by surface and range, which needs a cache of extrema objects with a hit rate I didn't measure. That's the first thing to try next for healing: about 1.3% of its bytes, and more of its time, as it would save evaluating each grid.
+
+**What's left:** `CurveAdaptor.LoadCore`'s boxed elementary values (3.4% of Bento's bytes; a struct or a variant in the adaptor is a large change), `EdgeCurveAdaptor`, the mesher's collections, and STEP's writer (6% of healing's bytes by `StepWriter.Print` and `SendEntity`). Face/face on free-form surfaces wasn't looked at again.
 
 ## StepTidy (unit 11N)
 

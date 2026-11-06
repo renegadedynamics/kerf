@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Kerf.Engine.Topology;
 
@@ -18,15 +21,36 @@ namespace Kerf.Engine.Topology;
 ///     ProcessFace(TopoDS.Face(Ex.Current()));
 /// }
 /// </code>
-/// A type to avoid that is the same as, or simpler than, the type to find has no effect. A class (a working object),
-/// where OCCT's is used by value; its stack of iterators is reused across <see cref="Init"/>. OCCT's range-for support
-/// is left out.
+/// A type to avoid that is the same as, or simpler than, the type to find has no effect. A value on the stack, with its
+/// levels inline, as OCCT's is, so an exploration allocates nothing unless the shape is nested very deeply. A copy moves on
+/// its own, so hold one in a variable or a field that isn't <c>readonly</c>, and pass it by <c>ref</c>. OCCT's range-for
+/// support is left out.
 /// </remarks>
-internal sealed class Explorer
+internal struct Explorer
 {
-    // The DFS stack: iterators are kept when popped and reused when pushed again
-    private readonly List<Iterator> _stack = [];
-    private int _stackTop = -1;
+    // Solid, shell, face, wire, edge and one compound: deeper compounds go on to _deeperLevels
+    private const int InlineLevels = 6;
+
+    // One level of the depth-first walk: what an iterator holds, but for its current shape, which only the top needs
+    private struct Level
+    {
+        public NCollection_List<Shape> Children;
+        public int Position;
+        public Orientation Orientation;
+        public Placement Location;
+    }
+
+    [InlineArray(InlineLevels)]
+    private struct Levels
+    {
+        private Level _first;
+    }
+
+    private Levels _levels;
+    private Level[]? _deeperLevels;
+    private int _depth;
+    // The top level's current child
+    private Shape _current;
     private Shape _shape;
     private ShapeType _toFind;
     private ShapeType _toAvoid;
@@ -97,12 +121,12 @@ internal sealed class Explorer
     }
 
     /// <summary>True if there is a current shape.</summary>
-    public bool More() => _hasMore;
+    public readonly bool More() => _hasMore;
 
     /// <summary>Moves to the next shape.</summary>
     public void Next()
     {
-        if (_stackTop < 0)
+        if (_depth == 0)
         {
             ShapeType ty = _shape.Type;
             if (IsSameType(ty, _toFind))
@@ -122,16 +146,14 @@ internal sealed class Explorer
         }
         else
         {
-            _stack[_stackTop].Next();
+            AdvanceTop();
         }
 
         for (;;)
         {
-            Iterator topIter = _stack[_stackTop];
-            if (topIter.More())
+            if (TopHasMore())
             {
-                Shape shapTop = topIter.Value();
-                ShapeType ty = shapTop.Type;
+                ShapeType ty = _current.Type;
                 if (IsSameType(ty, _toFind))
                 {
                     _hasMore = true;
@@ -139,22 +161,22 @@ internal sealed class Explorer
                 }
                 else if (IsMoreComplex(ty, _toFind) && !ShouldAvoid(ty, _toAvoid))
                 {
-                    PushIterator(shapTop);
+                    PushIterator(_current);
                 }
                 else
                 {
-                    topIter.Next();
+                    AdvanceTop();
                 }
             }
             else
             {
                 PopIterator();
-                if (_stackTop < 0)
+                if (_depth == 0)
                 {
                     break;
                 }
 
-                _stack[_stackTop].Next();
+                AdvanceTop();
             }
         }
 
@@ -162,52 +184,97 @@ internal sealed class Explorer
     }
 
     /// <summary>The current shape.</summary>
-    public Shape Value() => Current();
+    public readonly Shape Value() => Current();
 
     /// <summary>The current shape.</summary>
-    public Shape Current() => _stackTop < 0 ? _shape : _stack[_stackTop].Value();
+    public readonly Shape Current() => _depth == 0 ? _shape : _current;
 
     /// <summary>Restarts the exploration with the same arguments.</summary>
     public void ReInit() => Init(_shape, _toFind, _toAvoid);
 
     /// <summary>The explored shape.</summary>
-    public Shape ExploredShape() => _shape;
+    public readonly Shape ExploredShape() => _shape;
 
     /// <summary>The current depth of the exploration: 0 is the explored shape itself.</summary>
-    public int Depth() => _stackTop + 1;
+    public readonly int Depth() => _depth;
 
     /// <summary>Clears the explorer.</summary>
     public void Clear()
     {
-        // Reset live iterators to release shape references, keeping them for reuse
-        for (int i = _stackTop; i >= 0; --i)
+        // Release the levels' references, in case this explorer is a field that outlives its shape
+        while (_depth > 0)
         {
-            _stack[i].Initialize(new Shape());
+            PopIterator();
         }
 
-        _stackTop = -1;
         _hasMore = false;
     }
 
-    // Pushes an iterator on the shape onto the stack, reusing a popped one.
-    private void PushIterator(in Shape shape)
+    [UnscopedRef]
+    private ref Level LevelAt(int index)
     {
-        ++_stackTop;
-        if (_stackTop >= _stack.Count)
+        if (index < InlineLevels)
         {
-            _stack.Add(new Iterator(shape));
+            return ref _levels[index];
         }
-        else
+
+        return ref _deeperLevels![index - InlineLevels];
+    }
+
+    private bool TopHasMore()
+    {
+        ref Level top = ref LevelAt(_depth - 1);
+        return top.Position < top.Children.Extent();
+    }
+
+    // Moves the top level on, and its current child with it
+    private void AdvanceTop()
+    {
+        ref Level top = ref LevelAt(_depth - 1);
+        top.Position++;
+        if (top.Position < top.Children.Extent())
         {
-            _stack[_stackTop].Initialize(shape);
+            _current = Iterator.Child(top.Children, top.Position, top.Orientation, top.Location);
         }
     }
 
-    // Pops the top iterator, resetting it to release its shape references.
+    // Starts a level on the shape's children.
+    private void PushIterator(in Shape shape)
+    {
+        // The argument can be _current, which the first child overwrites
+        Placement location = shape.Placement;
+        Orientation orientation = shape.Orientation;
+        NCollection_List<Shape> children = WorkingOverlay.View(shape.TShape()!)._shapes;
+        if (_depth >= InlineLevels)
+        {
+            int deeper = _depth - InlineLevels;
+            if (_deeperLevels is null)
+            {
+                _deeperLevels = new Level[InlineLevels];
+            }
+            else if (deeper >= _deeperLevels.Length)
+            {
+                Array.Resize(ref _deeperLevels, 2 * _deeperLevels.Length);
+            }
+        }
+
+        ++_depth;
+        ref Level top = ref LevelAt(_depth - 1);
+        top.Children = children;
+        top.Position = 0;
+        top.Orientation = orientation;
+        top.Location = location;
+        if (children.Extent() > 0)
+        {
+            _current = Iterator.Child(children, 0, orientation, location);
+        }
+    }
+
+    // Ends the top level, releasing its references.
     private void PopIterator()
     {
-        _stack[_stackTop].Initialize(new Shape());
-        --_stackTop;
+        LevelAt(_depth - 1) = default;
+        --_depth;
     }
 
     // Returns true if the given type matches the type to find.

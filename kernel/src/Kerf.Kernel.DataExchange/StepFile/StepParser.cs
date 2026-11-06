@@ -81,7 +81,7 @@ internal sealed class StepParser
     private readonly Scanner _scanner;
     private readonly ParserReadLimits _limits;
     private readonly ProgressRange _range;
-    private ProgressScope? _scope;
+    private ProgressScope _scope;
     private long _inputLength;
     private long _reported;
     private int _tokens;
@@ -762,7 +762,7 @@ internal sealed class StepParser
     /// <summary>Reports the bytes read, and stops the parse when the range is cancelled.</summary>
     private void Progress()
     {
-        if (_scope!.UserBreak())
+        if (_scope.UserBreak())
         {
             IsUserBreak = true;
             StepData.AddError(string.Create(CultureInfo.InvariantCulture, $"Undefined Parsing: Line {_scanner.Lineno() + 1}: Reading cancelled"));
