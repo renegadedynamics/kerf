@@ -226,18 +226,16 @@ public class ShapeConstruct_CurveTests
     }
 
     [Fact]
-    public void JoinCurves_OfCurvesThatDontMeet_MeetAtTheirEndsAnyway_OrFail()
+    public void JoinCurves_OfCurvesThatDontMeet_BridgesThem()
     {
-        // far apart: the result is no B-spline made of them both unless the curves connect
+        // far apart: both ends move to the point between them, and it's one curve from end to end
         var aC1 = new BSplineCurve3D(new[] { new Point3D(0, 0, 0), new Point3D(1, 0, 0) }, [0.0, 1.0], [2, 2], 1);
         var aC2 = new BSplineCurve3D(new[] { new Point3D(5, 0, 0), new Point3D(6, 0, 0) }, [0.0, 1.0], [2, 2], 1);
         double aF1 = 0, aL1 = 1, aF2 = 0, aL2 = 1;
         bool aDone = ShapeConstruct.JoinCurves(aC1, aC2, Forward, Forward, ref aF1, ref aL1, ref aF2, ref aL2, out Curve3D? aJoined, out _, out _);
-        if (aDone)
-        {
-            Assert.True(aJoined!.Value(aJoined.FirstParameter).DistanceTo(new Point3D(0, 0, 0)) < 1e-7);
-            Assert.True(aJoined.Value(aJoined.LastParameter).DistanceTo(new Point3D(6, 0, 0)) < 1e-7);
-        }
+        Assert.True(aDone);
+        Assert.True(aJoined!.Value(aJoined.FirstParameter).DistanceTo(new Point3D(0, 0, 0)) < 1e-7);
+        Assert.True(aJoined.Value(aJoined.LastParameter).DistanceTo(new Point3D(6, 0, 0)) < 1e-7);
     }
 
     [Fact]

@@ -109,9 +109,10 @@ public class ShapeFix_RepairsOfSolidsTests
 
     [Theory]
     [MemberData(nameof(SmallEdgeProfiles))]
-    public void FixSmallEdges_OnAPrism_MergesAcrossTheFacesSharingThem(string theCase, Point3D[] theProfile)
+    public void FixSmallEdges_OnAPrism_LeavesEdgesWhoseFacesDifferFromTheirNeighbours(string theCase, Point3D[] theProfile)
     {
-        // the prism's small edges are in the caps and its short strip's sides
+        // each small edge has a cap and its short strip for faces, and its neighbours a cap and a long side: the sets
+        // differ, so without the drop mode nothing is merged, and the solid is as it was
         Shape aPrism = Prism(theProfile);
         double aVolume = Volume(aPrism);
         var aSnap = ShapeSnapshot.Of(aPrism);
@@ -121,6 +122,7 @@ public class ShapeFix_RepairsOfSolidsTests
         Shape aResult = aFix.Shape();
         aSnap.AssertUnchanged(aPrism);
         Assert.True(Math.Abs(aVolume - Volume(aResult)) < 1e-2 * aVolume, theCase);
+        Assert.Equal(ShortestEdge(aPrism), ShortestEdge(aResult), 12);
     }
 
     [Fact]
@@ -335,7 +337,7 @@ public class ShapeFix_RepairsOfSolidsTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void FixSmallEdges_AFreeWireOfNothingButSmallEdges_HasNoneLeft(bool theDrop)
+    public void FixSmallEdges_AFreeWireOfNothingButSmallEdges_EndsAsOneEdge_OrNothingWithTheDropMode(bool theDrop)
     {
         Wire aWire = TestShapes.Frozen(ShapeFixPolylines.Polyline(true, P(5, 5), P(5, 5.0001), P(5.0001, 5.0001)));
         var aFix = new WireframeFixer(aWire);
@@ -343,16 +345,17 @@ public class ShapeFix_RepairsOfSolidsTests
         aFix.ModeDropSmallEdges() = theDrop;
         aFix.FixSmallEdges();
         Shape aResult = aFix.Shape();
+        int aEdges = 0;
         if (!aResult.IsNull)
         {
-            // one edge left at most, or none: nothing can be merged with an edge that's still there
-            int aEdges = 0;
             for (var anExp = new Explorer(aResult, ShapeType.Edge); anExp.More(); anExp.Next())
             {
                 aEdges++;
             }
-            Assert.True(aEdges <= 3);
         }
+        // merged down to one edge, which only the drop mode then takes away, with its wire
+        Assert.Equal(theDrop, aResult.IsNull);
+        Assert.Equal(theDrop ? 0 : 1, aEdges);
     }
 
     [Theory]
