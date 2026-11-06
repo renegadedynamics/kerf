@@ -126,7 +126,10 @@ public static class Primitives
             Angle(options.Angle, nameof(options));
             MakerOutcome.Valid(frame, nameof(frame));
             Frame3D f = frame;
-            return Run(() => new MakeTorus(f, majorRadius, minorRadius, options.MinorStart, options.MinorEnd, options.Angle));
+            double span = options.MinorEnd - options.MinorStart;
+            return span > 0 && span < 2 * Math.PI - Tolerances.Angular
+                ? Run(() => TubeSlice(f, majorRadius, minorRadius, options.MinorStart, options.MinorEnd, options.Angle))
+                : Run(() => new MakeTorus(f, majorRadius, minorRadius, options.MinorStart, options.MinorEnd, options.Angle));
         }
 
         /// <summary>A wedge: a box of the given sizes whose face at Y = dy is narrowed as <paramref name="options"/> says.</summary>
@@ -176,6 +179,24 @@ public static class Primitives
         {
             throw new ArgumentOutOfRangeException(name, angle, "The angle must be more than 0 and at most 2π.");
         }
+    }
+
+    /// <summary>
+    /// A slice of a torus's tube: the arc of the minor circle from <paramref name="start"/> to <paramref name="end"/>, closed
+    /// by the chord across its ends, revolved about the frame's axis.
+    /// </summary>
+    private static ApiMakeRevol TubeSlice(in Frame3D frame, double major, double minor, double start, double end, double angle)
+    {
+        Direction3D x = frame.XDirection, y = frame.YDirection, z = frame.Direction;
+        Point3D centre = frame.Location.Translated(new Vector3D(x) * major);
+        // In the plane of X and Z, angles running from X towards Z as a torus's V does; the plane faces the way it's revolved
+        var circle = new Circle3D(new Frame3D(centre, y.Reversed(), x), minor);
+        Edge arc = new MakeEdge(circle, start, end).Edge();
+        Point3D from = centre.Translated(new Vector3D(x) * (minor * Math.Cos(start)) + new Vector3D(z) * (minor * Math.Sin(start)));
+        Point3D to = centre.Translated(new Vector3D(x) * (minor * Math.Cos(end)) + new Vector3D(z) * (minor * Math.Sin(end)));
+        var section = new MakeWire(arc, new MakeEdge(to, from).Edge()).Wire();
+        Face face = new MakeFace(new Plane3D(new CoordinateSystem(new Frame3D(centre, y, x))), section).Face();
+        return new ApiMakeRevol(face, new Axis3D(frame.Location, z), angle);
     }
 
     private static Result<Built<Solid>> Run(Func<MakeShape> make, Shape input = default) =>

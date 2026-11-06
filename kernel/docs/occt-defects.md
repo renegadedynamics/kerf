@@ -48,10 +48,14 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 
 ## Questions for the owner
 
-1. **Should `Kerf.Modeling`'s area and volume use the precise path?** The default integrates at a fixed number of points, and was 3.7% off on the worst corpus case. The precise path now matches a fine mesh, at a measured 1.85 times the cost on the issue's set (not measured here). I recommend yes, with a time check first.
+1. **Should `Kerf.Modeling`'s area and volume use the precise path?** The default integrates at a fixed number of points, and was 3.7% off on the worst corpus case. The precise path now matches a fine mesh, at a measured 1.85 times the cost on the issue's set (not measured here). I recommend yes, with a time check first. **Answered yes, done: decision 1802; it costs no more here.**
 2. **Fillets to the opposite edge (#1177, #172, upstream `f713b1305f`).** Porting needs 27 upstream files in the fillet code. I recommend it before any rolling-ball rewrite, as it's the most common request in the fillet list.
 3. **The 2D offset's failures (77 corpus cases).** Fixing them means a new way of making offsets, not a patch: I recommend a survey of what Bento needs first.
-4. **A default sweep that fails (#1630).** Should a sweep with the default trihedron retry with another when its approximation fails? I recommend yes until the cause is found; Frenet and discrete both work on the case.
+4. **A default sweep that fails (#1630).** Should a sweep with the default trihedron retry with another when its approximation fails? I recommend yes until the cause is found; Frenet and discrete both work on the case. **Answered yes, done: decision 1805.**
+
+## For unit 11S: results of no volume reported as success
+
+From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's plane (volume 0, invalid, and no failure); a `Solid.MakeLoft` of two sections in one plane (0, "valid"); the kernel's `Sweeps.Sweep` with `SweepFrame.Fixed` and `WithCorrection`, or along the section's plane.
 
 ## Fixed so far
 
@@ -59,6 +63,8 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 |---|---|---|
 | #1633 | Booleans of cylinders about 1° from parallel: Common empty, Cut removes nothing, no error | 1783 |
 | #1604, #1679 | An optimal box smaller than the shape | 1777 |
+| Found by #1675 | `Kerf.Modeling`'s area and volume up to 3.7% off on swept and B-spline faces | 20501 |
+| #1630 | A default sweep with no result where other frames work | 20504 |
 | #1685 | An area up to 2.7% short, with an estimate of 1e-10, depending on where an edge starts | 1785 |
 | #1675 | Precise mass properties never refined along U | 1784 |
 | #1681, #1682 | A sweep with a guide distorted, volume 1072.3 for 1080 | 1776 |

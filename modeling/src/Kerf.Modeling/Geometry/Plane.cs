@@ -101,7 +101,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
             throw new ArgumentException("Planes can only be created from planar faces");
         var topoFace = face;
         topoFace.TryGetSurface(out var surface);
-        var origin = topoFace.MassProperties(Dimension.Area).CentreOfMass;
+        var origin = topoFace.MassProperties(Dimension.Area, TopoUtil.MeasuredMoments).CentreOfMass;
         Vector3D faceXDir;
         if (surface is BoundedSurface bounded)
         {

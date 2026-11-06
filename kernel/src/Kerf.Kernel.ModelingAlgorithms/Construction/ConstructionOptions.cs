@@ -21,15 +21,16 @@ public sealed record SphereOptions
     public double Angle { get; init; } = 2 * Math.PI;
 }
 
-/// <summary>A torus's angles, for a part of one (OCCT's <c>BRepPrimAPI_MakeTorus</c>), in radians.</summary>
+/// <summary>A torus's angles, for a part of one, in radians.</summary>
 public sealed record TorusOptions
 {
     /// <summary>The whole torus.</summary>
     public static TorusOptions Default { get; } = new();
 
     /// <summary>
-    /// Where the minor circle starts. As in OCCT, part of a minor circle isn't a slice of the tube: it is the solid under
-    /// that arc, closed by flat discs from each end of it to the axis.
+    /// Where the minor circle starts, about its centre from the side away from the axis. Part of a minor circle makes a
+    /// slice of the tube: the section is that arc closed by a straight line across its ends. (OCCT's
+    /// <c>BRepPrimAPI_MakeTorus</c> makes the solid under the arc instead, closed by flat discs to the axis.)
     /// </summary>
     public double MinorStart { get; init; }
 
@@ -106,6 +107,13 @@ public sealed record SweepOptions
 
     /// <summary>How the profile's orientation follows the spine.</summary>
     public SweepFrame Frame { get; init; } = SweepFrame.CorrectedFrenet;
+
+    /// <summary>
+    /// If a sweep with the corrected Frenet frame fails, try the Frenet frame and then the discrete one, and take the first
+    /// valid result, with a warning saying which (<see cref="Sweeps.SweptWithFrenet"/>, <see cref="Sweeps.SweptWithDiscrete"/>).
+    /// Otherwise, or if none works, the first failure is the result. The other frames are left as they are.
+    /// </summary>
+    public bool TryOtherFrames { get; init; } = true;
 
     /// <summary>The binormal, for <see cref="SweepFrame.Binormal"/>.</summary>
     public Direction3D? Binormal { get; init; }

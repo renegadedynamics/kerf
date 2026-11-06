@@ -81,15 +81,30 @@ public static partial class ShapeExtensions
         return $"{name} at {new Location(shape.Placement)}";
     }
 
-    /// <summary>The shape equivalent of a geometry object: a Vertex for a point or Location, an Edge for an Axis, a Face for a Plane.</summary>
-    /// <exception cref="ArgumentException">The object has no shape equivalent.</exception>
-    public static Shape ShapeOf(object obj) => obj switch
+    /// <summary>The shape itself, as the other forms of <c>ShapeOf</c> make one from geometry.</summary>
+    public static Shape ShapeOf(IShape shape) => shape.AsShape();
+
+    /// <summary>A vertex at the point.</summary>
+    public static Shape ShapeOf(Point3D point) => Vertex.Make(point);
+
+    /// <summary>A vertex at the location's position.</summary>
+    public static Shape ShapeOf(Location location) => Vertex.Make(location.Position);
+
+    /// <summary>An edge along the axis.</summary>
+    public static Shape ShapeOf(Axis axis) => Edge.FromAxis(axis);
+
+    /// <summary>A face on the plane.</summary>
+    public static Shape ShapeOf(Plane plane) => Face.FromPlane(plane);
+
+    /// <summary>The shape equivalent of what <c>Intersect</c> was given: one of the forms of <c>ShapeOf</c>.</summary>
+    /// <exception cref="ArgumentException">It has no shape equivalent.</exception>
+    internal static Shape ShapeOfAny(object obj) => obj switch
     {
-        IShape s => s.AsShape(),
-        Point3D v => Vertex.Make(v),
-        Location l => Vertex.Make(l.Position),
-        Axis a => Edge.FromAxis(a),
-        Plane p => Face.FromPlane(p),
+        IShape s => ShapeOf(s),
+        Point3D v => ShapeOf(v),
+        Location l => ShapeOf(l),
+        Axis a => ShapeOf(a),
+        Plane p => ShapeOf(p),
         _ => throw new ArgumentException($"{obj.GetType().Name} has no shape equivalent"),
     };
 

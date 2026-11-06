@@ -7,7 +7,7 @@
 // tools/bench.ps1 runs it in fresh processes, ReadyToRun, and keeps the figures (docs/performance.md). By hand, from the
 // kernel folder:
 //   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks [-- passes [copies]]
-//   (or [-- images [passes]] for the SVG drawings and PNG pictures of unit 10L4; or [-- retained] for what a caller keeps; or [-- thread-sets [copies [seconds idle]]] for what each thread keeps)
+//   (or [-- measures [passes]] for what a volume and an area cost by each integration; or [-- images [passes]] for the SVG drawings and PNG pictures of unit 10L4; or [-- retained] for what a caller keeps; or [-- thread-sets [copies [seconds idle]]] for what each thread keeps)
 // (copies: how many of each example the parallel rounds run at once; 0 skips them; the default is a processor's worth)
 // tools/parallel-curve.ps1 varies the processors it has, and the collector's settings
 // The first pass is a workbook opening (it includes the JIT's work on Kerf); passes 2 to 9 are recalculations, of which
@@ -19,6 +19,7 @@ using System.Globalization;
 using System.Reflection;
 using Kerf.Geometry;
 using Kerf.Kernel.Benchmarks;
+using Kerf.Measurement;
 using Kerf.Modeling;
 using Kerf.Topology;
 using static Kerf.Modeling.Operations;
@@ -196,6 +197,69 @@ if (args.Length > 0 && args[0] == "thread-sets")
         Thread.Sleep(TimeSpan.FromSeconds(int.Parse(args[2], CultureInfo.InvariantCulture)));
     }
     ThreadSets.Report(liveAtStart);
+    return 0;
+}
+
+// What a measure costs (the owner's answers, item 1): `-- measures [passes]` builds each example once, then times, by
+// processor time, its volume and area by fixed Gauss integration and adaptively to several precisions, beside one
+// build and mesh of it. A shape's volume is what a cell reads, so its share of a recalculation is the ratio here.
+if (args.Length > 0 && args[0] == "measures")
+{
+    int measurePasses = args.Length > 1 ? int.Parse(args[1], CultureInfo.InvariantCulture) : 200;
+    double[] precisions = [0, 1e-4, 1e-5, 1e-6, 1e-7, 1e-9];
+    static double Cpu(Action act, int repeats)
+    {
+        TimeSpan before = Process.GetCurrentProcess().TotalProcessorTime;
+        for (int r = 0; r < repeats; r++)
+        {
+            act();
+        }
+
+        return (Process.GetCurrentProcess().TotalProcessorTime - before).TotalMilliseconds / repeats;
+    }
+
+    // Besides the examples, faces the default is known to get wrong (OCCT #1675) and parts of other sizes
+    Shape Swept(double size) => Sweep(new Plane(new Point3D(size, 0, 0), zDir: new Vector3D(0, 1, 0)) * new Circle(size / 10),
+                                      new Helix(size / 2, size * 2, size), new SweepOptions { IsFrenet = true }).Value;
+    Shape Lofted() => Loft(new Shape[]
+    {
+        new Plane(new Point3D(0, 0, 0)) * new Rectangle(20, 10),
+        new Plane(new Point3D(2, 3, 20)) * new Ellipse(12, 6),
+        new Plane(new Point3D(-3, 0, 40)) * new Rectangle(8, 16),
+    }).Value;
+    (string Name, Func<Shape> Build)[] others =
+    [
+        ("helical sweep, size 10", () => Swept(10)),
+        ("helical sweep, size 0.01", () => Swept(0.01)),
+        ("helical sweep, size 10000", () => Swept(10000)),
+        ("loft", Lofted),
+    ];
+    // Files named after the passes: a free-form part, say, from a STEP file
+    foreach (string file in args.Skip(2))
+    {
+        others = [.. others, (Path.GetFileName(file), () => Importers.ImportStep(file).Value.Shape)];
+    }
+
+    foreach (var (name, build) in examples.Concat(others))
+    {
+        build();
+        double buildMs = Cpu(() => build().Triangulate(), 5);
+        Shape shape = build();
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{name}: build and mesh {buildMs:F2} ms, {shape.Faces().Count} faces"));
+        foreach (double eps in precisions)
+        {
+            var options = new MassOptions { Tolerance = eps };
+            double volume = 0, area = 0;
+            // Warmed first, so the order of the precisions doesn't favour one with the JIT's work
+            Cpu(() => shape.IntegrateVolume(options), 50);
+            Cpu(() => shape.IntegrateArea(options), 50);
+            double volumeMs = Cpu(() => volume = shape.IntegrateVolume(options), measurePasses);
+            double areaMs = Cpu(() => area = shape.IntegrateArea(options), measurePasses);
+            Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+                $"  eps {eps:G3}: volume {volume:F6} in {volumeMs:F3} ms, area {area:F6} in {areaMs:F3} ms"));
+        }
+    }
+
     return 0;
 }
 

@@ -716,7 +716,7 @@ public static partial class Operations
     /// <exception cref="ArgumentNullException"><paramref name="path"/> is null.</exception>
     /// <exception cref="ArgumentException">The path is empty, or there are no sections.</exception>
     public static Result<ModelShape> Sweep(IEnumerable<Shape> sections, Shape path, SweepOptions? options = null) =>
-        Failures.Try(() => SweepOrThrow(sections, path, options));
+        Failures.TryWarned(ModelingDiagnostics.SweepWarning, () => SweepOrThrow(sections, path, options));
 
     internal static ModelShape SweepOrThrow(IEnumerable<Shape> sections, Shape path, SweepOptions? options)
     {
@@ -732,7 +732,7 @@ public static partial class Operations
     /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, SweepOptions?)"/>
     /// <exception cref="ArgumentException">The edges don't join into a wire, or there are no sections.</exception>
     public static Result<ModelShape> Sweep(IEnumerable<Shape> sections, IEnumerable<Edge> path, SweepOptions? options = null) =>
-        Failures.Try(() => SweepOrThrow(sections, path, options));
+        Failures.TryWarned(ModelingDiagnostics.SweepWarning, () => SweepOrThrow(sections, path, options));
 
     internal static ModelShape SweepOrThrow(IEnumerable<Shape> sections, IEnumerable<Edge> path, SweepOptions? options)
     {
@@ -811,12 +811,9 @@ public static partial class Operations
         var newSolids = new List<Shape>();
         if (faceList.Count > 0)
         {
-            object? binormalMode = binormal switch
-            {
-                null when normal is { } n => n,
-                not null when binormal.AsShape().IsEdge() => Wire.Make((Edge)binormal.AsShape()),
-                _ => binormal,
-            };
+            SweepMode? binormalMode = binormal is not null
+                ? binormal.AsShape().IsEdge() ? (Edge)binormal.AsShape() : (Wire)binormal.AsShape()
+                : normal is { } n ? n : null;
             if (multisection)
                 newSolids.Add(Solid.SweepMulti(faceList.Select(f => f.OuterWire()), pathWire, true, isFrenet, binormalMode));
             else
