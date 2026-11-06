@@ -24,6 +24,7 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
     private readonly double _radius;
     private readonly double _semiAngle;
 
+    /// <summary>An indefinite cone: a reference radius of <c>double.MaxValue</c> and a semi-angle of PI/4.</summary>
     public Cone3D()
     {
         _pos = new CoordinateSystem();
@@ -46,6 +47,7 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
 
     // Copies
 
+    /// <summary>A copy whose main axis is <paramref name="axis"/>. The old X direction is projected on to the new XY plane; if it is parallel to the axis, the old directions swap roles instead.</summary>
     public readonly Cone3D WithAxis(in Axis3D axis)
     {
         CoordinateSystem pos = _pos;
@@ -53,6 +55,7 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
+    /// <summary>A copy moved so that its origin is <paramref name="location"/>; its directions stay.</summary>
     public readonly Cone3D WithLocation(in Point3D location)
     {
         CoordinateSystem pos = _pos;
@@ -60,6 +63,7 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
+    /// <summary>A copy positioned by <paramref name="position"/>, keeping its size.</summary>
     public readonly Cone3D WithPosition(in CoordinateSystem position)
     {
         CoordinateSystem pos = _pos;
@@ -67,6 +71,8 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
+    /// <summary>A copy with this reference radius.</summary>
+    /// <exception cref="ArgumentException"><paramref name="r"/> is negative.</exception>
     public readonly Cone3D WithRadius(double r)
     {
         double newRadius = _radius;
@@ -75,6 +81,8 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(_pos, _semiAngle, newRadius);
     }
 
+    /// <summary>A copy with this semi-angle, in radians.</summary>
+    /// <exception cref="ArgumentException">|<paramref name="angle"/>| is not between the resolution and PI/2.</exception>
     public readonly Cone3D WithSemiAngle(double angle)
     {
         double semiAngle = _semiAngle;
@@ -84,6 +92,7 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(_pos, semiAngle, _radius);
     }
 
+    /// <summary>The same surface with U running the other way: the Y direction reverses, which flips the coordinate system's handedness.</summary>
     public readonly Cone3D UReversed()
     {
         CoordinateSystem pos = _pos;
@@ -91,6 +100,7 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
+    /// <summary>The same surface with V running the other way: the main direction reverses and the semi-angle changes sign.</summary>
     public readonly Cone3D VReversed()
     {
         CoordinateSystem pos = _pos;
@@ -157,8 +167,10 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         d = t14 * t14 + t24 * t24 - _radius * _radius - t34 * t34 - 2.0 * _radius * t34;
     }
 
+    /// <summary>The origin, the centre of the circle of reference radius.</summary>
     public readonly Point3D Location => _pos.Location;
 
+    /// <summary>The coordinate system the surface is positioned by.</summary>
     public readonly CoordinateSystem Position => _pos;
 
     /// <summary>The radius of the cone in the plane of its coordinate system.</summary>
@@ -167,10 +179,13 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
     /// <summary>The half-angle at the apex, in (-PI/2, PI/2), never 0.</summary>
     public readonly double SemiAngle => _semiAngle;
 
+    /// <summary>The axis through the origin along the X direction: where the angular parameter is 0.</summary>
     public readonly Axis3D XAxis => new(_pos.Location, _pos.XDirection);
 
+    /// <summary>The axis through the origin along the Y direction: where the angular parameter is PI/2.</summary>
     public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
+    /// <summary>The central symmetry through <paramref name="point"/>.</summary>
     public readonly Cone3D Mirrored(in Point3D point)
     {
         CoordinateSystem pos = _pos;
@@ -178,6 +193,7 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
+    /// <summary>The half-turn about <paramref name="axis"/>.</summary>
     public readonly Cone3D Mirrored(in Axis3D axis)
     {
         CoordinateSystem pos = _pos;
@@ -185,6 +201,7 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
+    /// <summary>The reflection in the XY plane of <paramref name="frame"/>.</summary>
     public readonly Cone3D Mirrored(in Frame3D frame)
     {
         CoordinateSystem pos = _pos;
@@ -192,6 +209,7 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
+    /// <summary>Rotated about <paramref name="axis"/> by <paramref name="angle"/> radians, anticlockwise looking against the axis's direction.</summary>
     public readonly Cone3D Rotated(in Axis3D axis, double angle)
     {
         CoordinateSystem pos = _pos;
@@ -199,6 +217,7 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
+    /// <summary>Scaled about <paramref name="point"/> by <paramref name="factor"/>: the reference radius is multiplied by |factor|, and the semi-angle stays.</summary>
     public readonly Cone3D Scaled(in Point3D point, double factor)
     {
         CoordinateSystem pos = _pos;
@@ -213,6 +232,7 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(pos, _semiAngle, radius);
     }
 
+    /// <summary>The image under <paramref name="transform"/>: the reference radius is multiplied by |ScaleFactor|, and the semi-angle stays.</summary>
     public readonly Cone3D Transformed(in Transform3D transform)
     {
         CoordinateSystem pos = _pos;
@@ -227,6 +247,7 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(pos, _semiAngle, radius);
     }
 
+    /// <summary>Moved by <paramref name="vector"/>.</summary>
     public readonly Cone3D Translated(in Vector3D vector)
     {
         CoordinateSystem pos = _pos;
@@ -234,6 +255,7 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
+    /// <summary>Moved by the vector from <paramref name="point1"/> to <paramref name="point2"/>.</summary>
     public readonly Cone3D Translated(in Point3D point1, in Point3D point2)
     {
         CoordinateSystem pos = _pos;
@@ -241,16 +263,22 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(Cone3D other)
         => _pos.Equals(other._pos) && _radius.Equals(other._radius) && _semiAngle.Equals(other._semiAngle);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="Cone3D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is Cone3D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => HashCode.Combine(_pos, _radius, _semiAngle);
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in Cone3D left, in Cone3D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in Cone3D left, in Cone3D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => FormattableString.Invariant($"Cone3D({_pos}, {_semiAngle:R}, {_radius:R})");
 }

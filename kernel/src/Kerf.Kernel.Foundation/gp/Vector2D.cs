@@ -14,10 +14,12 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
 {
     private readonly Xy _coord;
 
+    /// <summary>The unit vector along <paramref name="direction"/>.</summary>
     public Vector2D(in Direction2D direction) => _coord = direction.XY();
 
     internal Vector2D(in Xy coord) => _coord = coord;
 
+    /// <summary>The vector with these components.</summary>
     public Vector2D(double x, double y) => _coord = new Xy(x, y);
 
     /// <summary>The vector from <paramref name="point1"/> to <paramref name="point2"/>.</summary>
@@ -66,8 +68,10 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
 
     internal readonly Vector2D WithCoord(double xv, double yv) => new(xv, yv);
 
+    /// <summary>A copy with its X component replaced.</summary>
     public readonly Vector2D WithX(double x) => new(x, _coord.Y());
 
+    /// <summary>A copy with its Y component replaced.</summary>
     public readonly Vector2D WithY(double y) => new(_coord.X(), y);
 
     internal readonly Vector2D WithXY(in Xy coord) => new(coord);
@@ -78,8 +82,10 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
 
     internal readonly void Coord(out double xv, out double yv) => _coord.Coord(out xv, out yv);
 
+    /// <summary>The X component.</summary>
     public readonly double X => _coord.X();
 
+    /// <summary>The Y component.</summary>
     public readonly double Y => _coord.Y();
 
     internal readonly Xy XY() => _coord;
@@ -102,18 +108,24 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         return isEqualLength;
     }
 
+    /// <summary>True when at right angles to <paramref name="other"/>, within <paramref name="angularTolerance"/> radians.</summary>
+    /// <exception cref="InvalidOperationException">Either vector is shorter than the resolution.</exception>
     public readonly bool IsNormal(in Vector2D other, double angularTolerance)
     {
         double ang = Math.Abs(M_PI_2 - Math.Abs(AngleTo(other)));
         return !(ang > angularTolerance);
     }
 
+    /// <summary>True when pointing the opposite way to <paramref name="other"/>, within <paramref name="angularTolerance"/> radians.</summary>
+    /// <exception cref="InvalidOperationException">Either vector is shorter than the resolution.</exception>
     public readonly bool IsOpposite(in Vector2D other, double angularTolerance)
     {
         double ang = Math.Abs(AngleTo(other));
         return M_PI - ang <= angularTolerance;
     }
 
+    /// <summary>True when parallel to <paramref name="other"/>, in either sense, within <paramref name="angularTolerance"/> radians.</summary>
+    /// <exception cref="InvalidOperationException">Either vector is shorter than the resolution.</exception>
     public readonly bool IsParallel(in Vector2D other, double angularTolerance)
     {
         double ang = Math.Abs(AngleTo(other));
@@ -154,10 +166,13 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         }
     }
 
+    /// <summary>The length.</summary>
     public readonly double Magnitude => _coord.Modulus();
 
+    /// <summary>The square of the length, without the square root: the cheaper one to compare.</summary>
     public readonly double SquareMagnitude => _coord.SquareModulus();
 
+    /// <summary>The sum.</summary>
     public readonly Vector2D Added(in Vector2D other)
     {
         Xy coord = _coord;
@@ -168,10 +183,13 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
     /// <summary>The scalar cross product.</summary>
     public readonly double Crossed(in Vector2D right) => _coord.Crossed(right._coord);
 
+    /// <summary>The magnitude of the cross product: |this| |<paramref name="right"/>| sin(angle).</summary>
     public readonly double CrossMagnitude(in Vector2D right) => _coord.CrossMagnitude(right._coord);
 
+    /// <summary>The square of <see cref="CrossMagnitude"/>, without its square root.</summary>
     public readonly double CrossSquareMagnitude(in Vector2D right) => _coord.CrossSquareMagnitude(right._coord);
 
+    /// <summary>Each component divided by <paramref name="scalar"/>, which isn't checked for zero.</summary>
     public readonly Vector2D Divided(double scalar)
     {
         Xy coord = _coord;
@@ -179,11 +197,13 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         return new Vector2D(coord);
     }
 
+    /// <summary>The dot product.</summary>
     public readonly double Dot(in Vector2D other) => _coord.Dot(other._coord);
 
     /// <summary>The vector (Y, -X): this vector turned by -PI/2.</summary>
     public readonly Vector2D GetNormal() => new(this.Y, (-1) * this.X);
 
+    /// <summary>Each component multiplied by <paramref name="scalar"/>.</summary>
     public readonly Vector2D Multiplied(double scalar)
     {
         Xy coord = _coord;
@@ -191,6 +211,8 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         return new Vector2D(coord);
     }
 
+    /// <summary>The unit vector with this direction.</summary>
+    /// <exception cref="InvalidOperationException">The vector is no longer than the resolution.</exception>
     public readonly Vector2D Normalized()
     {
         double d = _coord.Modulus();
@@ -200,6 +222,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         return new Vector2D(coord);
     }
 
+    /// <summary>The opposite.</summary>
     public readonly Vector2D Reversed()
     {
         Xy coord = _coord;
@@ -207,6 +230,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         return new Vector2D(coord);
     }
 
+    /// <summary>This vector minus <paramref name="right"/>.</summary>
     public readonly Vector2D Subtracted(in Vector2D right)
     {
         Xy coord = _coord;
@@ -214,6 +238,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         return new Vector2D(coord);
     }
 
+    /// <summary>The reflection in the line along <paramref name="vector"/>: the part along it is kept and the part across it reversed. A zero-length mirror leaves it unchanged.</summary>
     public readonly Vector2D Mirrored(in Vector2D vector)
     {
         Xy coord = _coord;
@@ -237,6 +262,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         return new Vector2D(coord);
     }
 
+    /// <summary>The reflection in the direction of <paramref name="axis"/>; a vector has no position, so the axis's location doesn't matter.</summary>
     public readonly Vector2D Mirrored(in Axis2D axis)
     {
         Xy coord = _coord;
@@ -255,6 +281,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         return new Vector2D(coord);
     }
 
+    /// <summary>Rotated by <paramref name="angle"/> radians, anticlockwise.</summary>
     public readonly Vector2D Rotated(double angle)
     {
         Xy coord = _coord;
@@ -263,6 +290,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         return new Vector2D(coord);
     }
 
+    /// <summary>Each component multiplied by <paramref name="factor"/>.</summary>
     public readonly Vector2D Scaled(double factor)
     {
         Xy coord = _coord;
@@ -270,6 +298,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         return new Vector2D(coord);
     }
 
+    /// <summary>The image under <paramref name="transform"/>'s rotation and scale: translation has no effect on a vector.</summary>
     public readonly Vector2D Transformed(in Transform2D transform)
     {
         Xy coord = _coord;
@@ -291,10 +320,13 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         return new Vector2D(coord);
     }
 
+    /// <summary>The sum.</summary>
     public static Vector2D operator +(in Vector2D left, in Vector2D right) => left.Added(right);
 
+    /// <summary>The difference.</summary>
     public static Vector2D operator -(in Vector2D left, in Vector2D right) => left.Subtracted(right);
 
+    /// <summary>The opposite.</summary>
     public static Vector2D operator -(in Vector2D v) => v.Reversed();
 
     /// <summary>The dot product, as OCCT's <c>operator*</c>.</summary>
@@ -303,21 +335,30 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
     /// <summary>The scalar cross product, as OCCT's <c>operator^</c>.</summary>
     public static double operator ^(in Vector2D left, in Vector2D right) => left.Crossed(right);
 
+    /// <summary>Each component multiplied by the scalar.</summary>
     public static Vector2D operator *(in Vector2D v, double scalar) => v.Multiplied(scalar);
 
+    /// <summary>Each component multiplied by the scalar.</summary>
     public static Vector2D operator *(double scalar, in Vector2D v) => v.Multiplied(scalar);
 
+    /// <summary>Each component divided by the scalar, which isn't checked for zero.</summary>
     public static Vector2D operator /(in Vector2D v, double scalar) => v.Divided(scalar);
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(Vector2D other) => _coord.Equals(other._coord);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="Vector2D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is Vector2D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => _coord.GetHashCode();
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in Vector2D left, in Vector2D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in Vector2D left, in Vector2D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => Constants.Format("Vector2D", _coord.X(), _coord.Y());
 }

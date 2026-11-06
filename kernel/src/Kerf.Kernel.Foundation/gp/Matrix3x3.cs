@@ -33,6 +33,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         m22 = _m22;
     }
 
+    /// <summary>The matrix with these elements, given row by row: <c>a12</c> is row 1, column 2.</summary>
     public Matrix3x3(double a11, double a12, double a13,
                   double a21, double a22, double a23,
                   double a31, double a32, double a33)
@@ -127,6 +128,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
+    /// <summary>A copy with its diagonal replaced, and the other elements kept.</summary>
     public readonly Matrix3x3 WithDiagonal(double x1, double x2, double x3)
     {
         double m00 = _m00;
@@ -164,6 +166,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
+    /// <summary>The identity, whatever this matrix holds.</summary>
     public readonly Matrix3x3 WithIdentity() => Identity;
 
     internal readonly Matrix3x3 WithRotation(in Xyz axis, double ang)
@@ -258,6 +261,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
+    /// <summary><paramref name="factor"/> times the identity, whatever this matrix holds.</summary>
     public readonly Matrix3x3 WithScale(double factor)
     {
         double m00 = _m00;
@@ -300,6 +304,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Xyz(_m02, _m12, _m22);
     }
 
+    /// <summary>The determinant.</summary>
     public readonly double Determinant
     {
         get
@@ -338,6 +343,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
     /// <summary>The element at a row and column numbered from 1, as OCCT's <c>operator()</c>.</summary>
     internal readonly double this[int row, int col] => Value(row, col);
 
+    /// <summary>True when the determinant is within the resolution of zero.</summary>
     public readonly bool IsSingular
     {
         get
@@ -347,6 +353,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         }
     }
 
+    /// <summary>The sum, element by element.</summary>
     public readonly Matrix3x3 Added(in Matrix3x3 other)
     {
         double m00 = _m00;
@@ -370,6 +377,8 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
+    /// <summary>Each element divided by <paramref name="scalar"/>.</summary>
+    /// <exception cref="ArgumentException"><paramref name="scalar"/> is within the resolution of zero.</exception>
     public readonly Matrix3x3 Divided(double scalar)
     {
         double m00 = _m00;
@@ -387,6 +396,8 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
+    /// <summary>The inverse.</summary>
+    /// <exception cref="InvalidOperationException">The matrix is singular.</exception>
     public readonly Matrix3x3 Inverted()
     {
         double m00 = _m00;
@@ -428,6 +439,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
+    /// <summary>The matrix product: this matrix times <paramref name="other"/>.</summary>
     public readonly Matrix3x3 Multiplied(in Matrix3x3 other)
     {
         double m00 = _m00;
@@ -460,6 +472,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
+    /// <summary>The matrix product the other way round: <paramref name="other"/> times this matrix.</summary>
     public readonly Matrix3x3 PreMultiplied(in Matrix3x3 other)
     {
         double m00 = _m00;
@@ -492,6 +505,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
+    /// <summary>Each element multiplied by <paramref name="scalar"/>.</summary>
     public readonly Matrix3x3 Multiplied(double scalar)
     {
         double m00 = _m00;
@@ -515,6 +529,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
+    /// <summary>The matrix multiplied by itself <paramref name="n"/> times: the identity for 0, and the inverse's powers for a negative <paramref name="n"/>.</summary>
     public readonly Matrix3x3 Powered(int n)
     {
         if (n == 0)
@@ -550,6 +565,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return result;
     }
 
+    /// <summary>This matrix minus <paramref name="other"/>, element by element.</summary>
     public readonly Matrix3x3 Subtracted(in Matrix3x3 other)
     {
         double m00 = _m00;
@@ -573,6 +589,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
+    /// <summary>The transpose.</summary>
     public readonly Matrix3x3 Transposed()
     {
         return new Matrix3x3(_m00, _m10, _m20, _m01, _m11, _m21, _m02, _m12, _m22);
@@ -582,31 +599,44 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
     public readonly void CopyTo(Span<double> destination)
         => MemoryMarshal.CreateReadOnlySpan(ref Unsafe.AsRef(in _m00), 9).CopyTo(destination);
 
+    /// <summary>The sum, element by element.</summary>
     public static Matrix3x3 operator +(in Matrix3x3 left, in Matrix3x3 right) => left.Added(right);
 
+    /// <summary>The difference, element by element.</summary>
     public static Matrix3x3 operator -(in Matrix3x3 left, in Matrix3x3 right) => left.Subtracted(right);
 
+    /// <summary>The matrix product.</summary>
     public static Matrix3x3 operator *(in Matrix3x3 left, in Matrix3x3 right) => left.Multiplied(right);
 
+    /// <summary>Each element multiplied by the scalar.</summary>
     public static Matrix3x3 operator *(in Matrix3x3 mat, double scalar) => mat.Multiplied(scalar);
 
+    /// <summary>Each element multiplied by the scalar.</summary>
     public static Matrix3x3 operator *(double scalar, in Matrix3x3 mat) => mat.Multiplied(scalar);
 
+    /// <summary>Each element divided by the scalar.</summary>
+    /// <exception cref="ArgumentException">The scalar is within the resolution of zero.</exception>
     public static Matrix3x3 operator /(in Matrix3x3 mat, double scalar) => mat.Divided(scalar);
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(Matrix3x3 other)
         => _m00.Equals(other._m00) && _m01.Equals(other._m01) && _m02.Equals(other._m02)
            && _m10.Equals(other._m10) && _m11.Equals(other._m11) && _m12.Equals(other._m12)
            && _m20.Equals(other._m20) && _m21.Equals(other._m21) && _m22.Equals(other._m22);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="Matrix3x3"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is Matrix3x3 other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode()
         => HashCode.Combine(HashCode.Combine(_m00, _m01, _m02), HashCode.Combine(_m10, _m11, _m12), HashCode.Combine(_m20, _m21, _m22));
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in Matrix3x3 left, in Matrix3x3 right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in Matrix3x3 left, in Matrix3x3 right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => Constants.Format("Matrix3x3", _m00, _m01, _m02, _m10, _m11, _m12, _m20, _m21, _m22);
 }

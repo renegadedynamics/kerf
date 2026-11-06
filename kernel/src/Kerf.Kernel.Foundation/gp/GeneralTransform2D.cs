@@ -39,6 +39,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         scale = _scale;
     }
 
+    /// <summary>The identity.</summary>
     public GeneralTransform2D()
     {
         _matrix = new Matrix2x2();
@@ -48,6 +49,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         _matrix.SetScale(1.0);
     }
 
+    /// <summary>The same transformation as <paramref name="transform"/>.</summary>
     public GeneralTransform2D(in Transform2D transform)
     {
         _shape = transform._shape;
@@ -72,6 +74,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
 
     // Copies
 
+    /// <summary>The affinity that multiplies distances from the axis by <paramref name="ratio"/>, not a uniform scale. It replaces this value rather than composing with it.</summary>
     public readonly GeneralTransform2D WithAffinity(in Axis2D A, double ratio)
     {
         Matrix2x2 matrix = _matrix;
@@ -131,6 +134,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         return new GeneralTransform2D(_matrix, loc, shape, _scale);
     }
 
+    /// <summary>The same transformation as <paramref name="transform"/>. It replaces this value rather than composing with it.</summary>
     public readonly GeneralTransform2D WithTransform(in Transform2D transform) => new(transform);
 
     internal readonly GeneralTransform2D WithVectorialPart(in Matrix2x2 matrix)
@@ -146,10 +150,13 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
 
     // Queries
 
+    /// <summary>True when the 2 by 2 part's determinant is negative: the transformation mirrors.</summary>
     public readonly bool IsNegative => _matrix.Determinant() < 0.0;
 
+    /// <summary>True when the 2 by 2 part is singular, so the transformation can't be inverted.</summary>
     public readonly bool IsSingular => _matrix.IsSingular();
 
+    /// <summary><see cref="TransformForm.Other"/> unless this is really a <see cref="Transform2D"/>, as the kind of that.</summary>
     public readonly TransformForm Form => _shape;
 
     internal readonly Xy TranslationXy() => _loc;
@@ -176,6 +183,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
     /// <summary>The coefficient at a row and column numbered from 1, as OCCT's <c>operator()</c>.</summary>
     public readonly double this[int row, int col] => Value(row, col);
 
+    /// <summary>The transformation that undoes this one. A singular 2 by 2 part is refused.</summary>
     public readonly GeneralTransform2D Inverted()
     {
         Matrix2x2 matrix = _matrix;
@@ -250,6 +258,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         return new GeneralTransform2D(matrix, loc, shape, scale);
     }
 
+    /// <summary>This transformation composed with itself <paramref name="n"/> times: the identity for 0, and the inverse's powers for a negative <paramref name="n"/>.</summary>
     public readonly GeneralTransform2D Powered(int n)
     {
         Matrix2x2 matrix = _matrix;
@@ -375,18 +384,25 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         return new Transform2D(_scale, _shape, _matrix, _loc);
     }
 
+    /// <summary>The composition: <paramref name="right"/> is applied first, then <paramref name="left"/>.</summary>
     public static GeneralTransform2D operator *(in GeneralTransform2D left, in GeneralTransform2D right) => left.Multiplied(right);
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(GeneralTransform2D other)
         => _matrix.Equals(other._matrix) && _loc.Equals(other._loc) && _shape == other._shape && _scale.Equals(other._scale);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="GeneralTransform2D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is GeneralTransform2D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => HashCode.Combine(_matrix, _loc, _shape, _scale);
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in GeneralTransform2D left, in GeneralTransform2D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in GeneralTransform2D left, in GeneralTransform2D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => $"GeneralTransform2D({_shape}, scale {_scale}, {_matrix}, {_loc})";
 }

@@ -43,6 +43,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         loc = _loc;
     }
 
+    /// <summary>The identity.</summary>
     public Transform3D()
     {
         _scale = 1.0;
@@ -62,26 +63,36 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
     /// <summary>The reflection in a plane.</summary>
     public static Transform3D Mirror(in Frame3D frame) => new Transform3D().WithMirror(frame);
 
+    /// <summary>The rotation about <paramref name="axis"/> by <paramref name="angle"/> radians, anticlockwise looking against the axis's direction.</summary>
     public static Transform3D Rotation(in Axis3D axis, double angle) => new Transform3D().WithRotation(axis, angle);
 
     internal static Transform3D Rotation(in Quaternion3 r) => new Transform3D().WithRotation(r);
 
+    /// <summary>The uniform scale about <paramref name="point"/>.</summary>
+    /// <exception cref="ArgumentException"><paramref name="factor"/> is within the resolution of zero.</exception>
     public static Transform3D Scale(in Point3D point, double factor) => new Transform3D().WithScale(point, factor);
 
+    /// <summary>The rigid motion that carries <paramref name="from"/> on to <paramref name="to"/>: it moves geometry. <see cref="Transformation(in CoordinateSystem, in CoordinateSystem)"/> re-expresses coordinates instead.</summary>
     public static Transform3D Displacement(in CoordinateSystem from, in CoordinateSystem to)
         => new Transform3D().WithDisplacement(from, to);
 
+    /// <summary>What re-expresses coordinates given in <paramref name="from"/> as coordinates in <paramref name="to"/>: geometry stays where it is. <see cref="Displacement"/> moves it instead.</summary>
     public static Transform3D Transformation(in CoordinateSystem from, in CoordinateSystem to)
         => new Transform3D().WithTransformation(from, to);
 
+    /// <summary>What re-expresses absolute coordinates as coordinates in <paramref name="toSystem"/>.</summary>
     public static Transform3D Transformation(in CoordinateSystem toSystem) => new Transform3D().WithTransformation(toSystem);
 
     internal static Transform3D Transformation(in Quaternion3 r, in Vector3D t) => new Transform3D().WithTransformation(r, t);
 
+    /// <summary>The translation by <paramref name="vector"/>.</summary>
     public static Transform3D Translation(in Vector3D vector) => new Transform3D().WithTranslation(vector);
 
+    /// <summary>The translation by the vector from <paramref name="point1"/> to <paramref name="point2"/>.</summary>
     public static Transform3D Translation(in Point3D point1, in Point3D point2) => new Transform3D().WithTranslation(point1, point2);
 
+    /// <summary>The transformation from a 3 by 4 matrix given row by row, the last column being the translation: as <see cref="WithValues"/>.</summary>
+    /// <exception cref="ArgumentException">The 3 by 3 part is singular or not a similarity.</exception>
     public static Transform3D Values(double a11, double a12, double a13, double a14,
                                  double a21, double a22, double a23, double a24,
                                  double a31, double a32, double a33, double a34)
@@ -89,6 +100,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
 
     // Copies
 
+    /// <summary>The central symmetry through <paramref name="point"/>. It replaces this value rather than composing with it.</summary>
     public readonly Transform3D WithMirror(in Point3D point)
     {
         double scale = _scale;
@@ -103,6 +115,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(scale, shape, matrix, loc);
     }
 
+    /// <summary>The half-turn about <paramref name="axis"/>, with a scale factor of 1. It replaces this value rather than composing with it.</summary>
     public readonly Transform3D WithMirror(in Axis3D axis)
     {
         double scale = _scale;
@@ -121,6 +134,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(scale, shape, matrix, loc);
     }
 
+    /// <summary>The reflection in the XY plane of <paramref name="frame"/>, with a scale factor of -1. It replaces this value rather than composing with it.</summary>
     public readonly Transform3D WithMirror(in Frame3D frame)
     {
         double scale = _scale;
@@ -138,6 +152,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(scale, shape, matrix, loc);
     }
 
+    /// <summary>The rotation about <paramref name="axis"/> by <paramref name="angle"/> radians, anticlockwise looking against the axis's direction. It replaces this value rather than composing with it.</summary>
     public readonly Transform3D WithRotation(in Axis3D axis, double angle)
     {
         double scale = _scale;
@@ -214,6 +229,8 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(_scale, shape, matrix, _loc);
     }
 
+    /// <summary>The uniform scale about <paramref name="point"/>. It replaces this value rather than composing with it.</summary>
+    /// <exception cref="ArgumentException"><paramref name="factor"/> is within the resolution of zero.</exception>
     public readonly Transform3D WithScale(in Point3D point, double factor)
     {
         double scale = _scale;
@@ -229,6 +246,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(scale, shape, matrix, loc);
     }
 
+    /// <summary>The rigid motion that carries <paramref name="from"/> on to <paramref name="to"/>. It replaces this value rather than composing with it.</summary>
     public readonly Transform3D WithDisplacement(in CoordinateSystem from, in CoordinateSystem to)
     {
         double scale = _scale;
@@ -261,6 +279,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(scale, shape, newMatrix, loc);
     }
 
+    /// <summary>What re-expresses coordinates given in <paramref name="from"/> as coordinates in <paramref name="to"/>. It replaces this value rather than composing with it.</summary>
     public readonly Transform3D WithTransformation(in CoordinateSystem from, in CoordinateSystem to)
     {
         double scale = _scale;
@@ -290,6 +309,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(scale, shape, newMatrix, loc);
     }
 
+    /// <summary>What re-expresses absolute coordinates as coordinates in <paramref name="position"/>. It replaces this value rather than composing with it.</summary>
     public readonly Transform3D WithTransformation(in CoordinateSystem position)
     {
         double scale = _scale;
@@ -318,6 +338,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(scale, shape, matrix, loc);
     }
 
+    /// <summary>The translation by <paramref name="vector"/>. It replaces this value rather than composing with it.</summary>
     public readonly Transform3D WithTranslation(in Vector3D vector)
     {
         double scale = _scale;
@@ -331,6 +352,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(scale, shape, matrix, loc);
     }
 
+    /// <summary>The translation by the vector from <paramref name="point1"/> to <paramref name="point2"/>. It replaces this value rather than composing with it.</summary>
     public readonly Transform3D WithTranslation(in Point3D point1, in Point3D point2)
     {
         double scale = _scale;
@@ -344,6 +366,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(scale, shape, matrix, loc);
     }
 
+    /// <summary>A copy with this translation part, keeping the rotation and scale. <see cref="Form"/> changes to match.</summary>
     public readonly Transform3D WithTranslationPart(in Vector3D vector)
     {
         TransformForm shape = _shape;
@@ -384,6 +407,8 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(_scale, shape, _matrix, loc);
     }
 
+    /// <summary>A copy with this scale factor, keeping the rest. <see cref="Form"/> changes to match.</summary>
+    /// <exception cref="ArgumentException"><paramref name="factor"/> is within the resolution of zero.</exception>
     public readonly Transform3D WithScaleFactor(double factor)
     {
         double scale = _scale;
@@ -457,6 +482,8 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(_scale, shape, _matrix, _loc);
     }
 
+    /// <summary>The transformation from a 3 by 4 matrix given row by row, the last column being the translation. The scale is the cube root of the 3 by 3 part's determinant, and that part is orthogonalised after dividing by it. It replaces this value rather than composing with it.</summary>
+    /// <exception cref="ArgumentException">The 3 by 3 part is singular or not a similarity.</exception>
     public readonly Transform3D WithValues(double a11, double a12, double a13, double a14,
                                        double a21, double a22, double a23, double a24,
                                        double a31, double a32, double a33, double a34)
@@ -531,8 +558,10 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
     /// <summary>True when the determinant of the vectorial part is negative (the transformation mirrors).</summary>
     public readonly bool IsNegative => _scale < 0.0;
 
+    /// <summary>The kind of transformation this is, which some algorithms use as a shortcut.</summary>
     public readonly TransformForm Form => _shape;
 
+    /// <summary>The uniform scale: 1 for a rigid motion, and negative for a point or plane mirror.</summary>
     public readonly double ScaleFactor => _scale;
 
     internal readonly Xyz TranslationXyz() => _loc;
@@ -589,6 +618,8 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         }
     }
 
+    /// <summary>The transformation that undoes this one.</summary>
+    /// <exception cref="InvalidOperationException">The scale factor is within the resolution of zero.</exception>
     public readonly Transform3D Inverted()
     {
         double newScale = _scale;
@@ -887,6 +918,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(scale, shape, matrix, loc);
     }
 
+    /// <summary>This transformation composed with itself <paramref name="n"/> times: the identity for 0, and the inverse's powers for a negative <paramref name="n"/>.</summary>
     public readonly Transform3D Powered(int n)
     {
         double scale = _scale;
@@ -1114,18 +1146,25 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         mat[15] = 1.0;
     }
 
+    /// <summary>The composition: <paramref name="right"/> is applied first, then <paramref name="left"/>.</summary>
     public static Transform3D operator *(in Transform3D left, in Transform3D right) => left.Multiplied(right);
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(Transform3D other)
         => _scale.Equals(other._scale) && _shape == other._shape && _matrix.Equals(other._matrix) && _loc.Equals(other._loc);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="Transform3D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is Transform3D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => HashCode.Combine(_scale, _shape, _matrix, _loc);
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in Transform3D left, in Transform3D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in Transform3D left, in Transform3D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => $"Transform3D({_shape}, scale {_scale}, {_matrix}, {_loc})";
 }

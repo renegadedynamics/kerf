@@ -24,6 +24,7 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
         _vxdir = vxdir;
     }
 
+    /// <summary>The absolute frame: the origin, with the X and Y axes.</summary>
     public Frame2D()
     {
         _point = new Point2D();
@@ -85,6 +86,7 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
 
     // Copies
 
+    /// <summary>A value equal to <paramref name="frame"/>.</summary>
     public readonly Frame2D WithAxis(in Frame2D frame)
     {
         Point2D point = _point;
@@ -96,6 +98,7 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
         return new Frame2D(vydir, vxdir, point);
     }
 
+    /// <summary>A copy whose location and X direction come from <paramref name="axis"/>; the Y direction is recomputed normal to it, keeping the handedness.</summary>
     public readonly Frame2D WithXAxis(in Axis2D axis)
     {
         Point2D point = _point;
@@ -115,6 +118,7 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
         return new Frame2D(vydir, vxdir, point);
     }
 
+    /// <summary>A copy whose location and Y direction come from <paramref name="axis"/>; the X direction is recomputed normal to it, keeping the handedness.</summary>
     public readonly Frame2D WithYAxis(in Axis2D axis)
     {
         Point2D point = _point;
@@ -134,6 +138,7 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
         return new Frame2D(vydir, vxdir, point);
     }
 
+    /// <summary>A copy moved so that its origin is <paramref name="point"/>; its directions stay.</summary>
     public readonly Frame2D WithLocation(in Point2D point)
     {
         Point2D newPoint = _point;
@@ -141,6 +146,7 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
         return new Frame2D(_vydir, _vxdir, newPoint);
     }
 
+    /// <summary>A copy with this X direction; the Y direction is recomputed normal to it, keeping the handedness.</summary>
     public readonly Frame2D WithXDirection(in Direction2D xDirection)
     {
         Direction2D vydir = _vydir;
@@ -158,6 +164,7 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
         return new Frame2D(vydir, vxdir, _point);
     }
 
+    /// <summary>A copy with this Y direction; the X direction is recomputed normal to it, keeping the handedness.</summary>
     public readonly Frame2D WithYDirection(in Direction2D yDirection)
     {
         Direction2D vydir = _vydir;
@@ -177,16 +184,22 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
 
     // Queries
 
+    /// <summary>The axis through the location along the X direction.</summary>
     public readonly Axis2D XAxis => new(_point, _vxdir);
 
+    /// <summary>The axis through the location along the Y direction.</summary>
     public readonly Axis2D YAxis => new(_point, _vydir);
 
+    /// <summary>The origin.</summary>
     public readonly Point2D Location => _point;
 
+    /// <summary>The X direction, a unit vector.</summary>
     public readonly Direction2D XDirection => _vxdir;
 
+    /// <summary>The Y direction, a unit vector: normal to the X direction, on the side set by the handedness.</summary>
     public readonly Direction2D YDirection => _vydir;
 
+    /// <summary>The central symmetry through <paramref name="point"/>, which keeps the handedness.</summary>
     public readonly Frame2D Mirrored(in Point2D point)
     {
         Point2D newPoint = _point;
@@ -200,6 +213,7 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
         return new Frame2D(vydir, vxdir, newPoint);
     }
 
+    /// <summary>The reflection in the line <paramref name="axis"/>, which flips the handedness.</summary>
     public readonly Frame2D Mirrored(in Axis2D axis)
     {
         Point2D point = _point;
@@ -213,6 +227,7 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
         return new Frame2D(vydir, vxdir, point);
     }
 
+    /// <summary>Rotated about <paramref name="point"/> by <paramref name="angle"/> radians, anticlockwise.</summary>
     public readonly Frame2D Rotated(in Point2D point, double angle)
     {
         Point2D newPoint = _point;
@@ -226,6 +241,7 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
         return new Frame2D(vydir, vxdir, newPoint);
     }
 
+    /// <summary>The location scaled about <paramref name="point"/> by <paramref name="factor"/>. A negative factor reverses both directions.</summary>
     public readonly Frame2D Scaled(in Point2D point, double factor)
     {
         Point2D newPoint = _point;
@@ -242,6 +258,7 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
         return new Frame2D(vydir, vxdir, newPoint);
     }
 
+    /// <summary>The image under <paramref name="transform"/>, each direction transformed on its own.</summary>
     public readonly Frame2D Transformed(in Transform2D transform)
     {
         Point2D point = _point;
@@ -255,6 +272,7 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
         return new Frame2D(vydir, vxdir, point);
     }
 
+    /// <summary>Moved by <paramref name="vector"/>.</summary>
     public readonly Frame2D Translated(in Vector2D vector)
     {
         Point2D point = _point;
@@ -262,6 +280,7 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
         return new Frame2D(_vydir, _vxdir, point);
     }
 
+    /// <summary>Moved by the vector from <paramref name="point1"/> to <paramref name="point2"/>.</summary>
     public readonly Frame2D Translated(in Point2D point1, in Point2D point2)
     {
         Point2D point = _point;
@@ -269,15 +288,21 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
         return new Frame2D(_vydir, _vxdir, point);
     }
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(Frame2D other) => _point.Equals(other._point) && _vydir.Equals(other._vydir) && _vxdir.Equals(other._vxdir);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="Frame2D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is Frame2D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => HashCode.Combine(_point, _vydir, _vxdir);
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in Frame2D left, in Frame2D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in Frame2D left, in Frame2D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => $"Frame2D({_point}, {_vxdir}, {_vydir})";
 }

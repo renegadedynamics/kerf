@@ -23,6 +23,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     private readonly double _majorRadius;
     private readonly double _minorRadius;
 
+    /// <summary>An indefinite hyperbola, with both radii <c>double.MaxValue</c>, not a useful value until given real ones.</summary>
     public Hyperbola2D()
     {
         _pos = new Frame2D();
@@ -51,6 +52,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
 
     // Copies
 
+    /// <summary>A copy moved so that its centre is <paramref name="point"/>; its directions stay.</summary>
     public readonly Hyperbola2D WithLocation(in Point2D point)
     {
         Frame2D pos = _pos;
@@ -58,6 +60,8 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>A copy with this major radius.</summary>
+    /// <exception cref="ArgumentException"><paramref name="majorRadius"/> is negative.</exception>
     public readonly Hyperbola2D WithMajorRadius(double majorRadius)
     {
         double newMajorRadius = _majorRadius;
@@ -66,6 +70,8 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         return new Hyperbola2D(_pos, newMajorRadius, _minorRadius);
     }
 
+    /// <summary>A copy with this minor radius.</summary>
+    /// <exception cref="ArgumentException"><paramref name="minorRadius"/> is negative.</exception>
     public readonly Hyperbola2D WithMinorRadius(double minorRadius)
     {
         double newMinorRadius = _minorRadius;
@@ -74,6 +80,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         return new Hyperbola2D(_pos, _majorRadius, newMinorRadius);
     }
 
+    /// <summary>A copy positioned by <paramref name="frame"/>, which replaces the whole frame.</summary>
     public readonly Hyperbola2D WithAxis(in Frame2D frame)
     {
         Frame2D pos = _pos;
@@ -81,6 +88,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>A copy whose location and X direction come from <paramref name="axis"/>; the Y direction is recomputed normal to it, keeping the handedness.</summary>
     public readonly Hyperbola2D WithXAxis(in Axis2D axis)
     {
         Frame2D pos = _pos;
@@ -88,6 +96,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>A copy whose location and Y direction come from <paramref name="axis"/>; the X direction is recomputed normal to it, keeping the handedness.</summary>
     public readonly Hyperbola2D WithYAxis(in Axis2D axis)
     {
         Frame2D pos = _pos;
@@ -228,6 +237,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     /// <summary>The distance between the foci.</summary>
     public readonly double Focal => 2.0 * Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
 
+    /// <summary>The focus on the positive side of the X axis.</summary>
     public readonly Point2D Focus1
     {
         get
@@ -238,6 +248,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         }
     }
 
+    /// <summary>The focus on the negative side of the X axis.</summary>
     public readonly Point2D Focus2
     {
         get
@@ -248,10 +259,13 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         }
     }
 
+    /// <summary>The centre.</summary>
     public readonly Point2D Location => _pos.Location;
 
+    /// <summary>The distance from the centre to the apex of the branch, along the X axis.</summary>
     public readonly double MajorRadius => _majorRadius;
 
+    /// <summary>The semi-axis along the Y axis, which sets the slope of the asymptotes.</summary>
     public readonly double MinorRadius => _minorRadius;
 
     /// <summary>The branch on the negative side of the X axis.</summary>
@@ -272,15 +286,19 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         }
     }
 
+    /// <summary>The frame the curve is positioned by, whose X direction is parameter 0's and whose handedness is the sense it runs in.</summary>
     public readonly Frame2D Axis => _pos;
 
+    /// <summary>The major axis, through the centre and the apex.</summary>
     public readonly Axis2D XAxis => _pos.XAxis;
 
+    /// <summary>The minor axis, through the centre.</summary>
     public readonly Axis2D YAxis => _pos.YAxis;
 
     /// <summary>True when the hyperbola's system is direct (counterclockwise).</summary>
     public readonly bool IsDirect => (_pos.XDirection.Crossed(_pos.YDirection)) >= 0.0;
 
+    /// <summary>The same curve, running the other way: the Y direction reverses, which flips the frame's handedness.</summary>
     public readonly Hyperbola2D Reversed()
     {
         Frame2D pos = _pos;
@@ -290,6 +308,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>The central symmetry through <paramref name="point"/>.</summary>
     public readonly Hyperbola2D Mirrored(in Point2D point)
     {
         Frame2D pos = _pos;
@@ -297,6 +316,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>The reflection in the line <paramref name="axis"/>.</summary>
     public readonly Hyperbola2D Mirrored(in Axis2D axis)
     {
         Frame2D pos = _pos;
@@ -304,6 +324,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>Rotated about <paramref name="point"/> by <paramref name="angle"/> radians, anticlockwise.</summary>
     public readonly Hyperbola2D Rotated(in Point2D point, double angle)
     {
         Frame2D pos = _pos;
@@ -311,6 +332,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>Scaled about <paramref name="point"/> by <paramref name="factor"/>: both radii are multiplied by |factor|.</summary>
     public readonly Hyperbola2D Scaled(in Point2D point, double factor)
     {
         Frame2D pos = _pos;
@@ -332,6 +354,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         return new Hyperbola2D(pos, majorRadius, minorRadius);
     }
 
+    /// <summary>The image under <paramref name="transform"/>: both radii are multiplied by |ScaleFactor|.</summary>
     public readonly Hyperbola2D Transformed(in Transform2D transform)
     {
         Frame2D pos = _pos;
@@ -353,6 +376,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         return new Hyperbola2D(pos, majorRadius, minorRadius);
     }
 
+    /// <summary>Moved by <paramref name="vector"/>.</summary>
     public readonly Hyperbola2D Translated(in Vector2D vector)
     {
         Frame2D pos = _pos;
@@ -360,6 +384,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>Moved by the vector from <paramref name="point1"/> to <paramref name="point2"/>.</summary>
     public readonly Hyperbola2D Translated(in Point2D point1, in Point2D point2)
     {
         Frame2D pos = _pos;
@@ -367,16 +392,22 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(Hyperbola2D other)
         => _pos.Equals(other._pos) && _majorRadius.Equals(other._majorRadius) && _minorRadius.Equals(other._minorRadius);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="Hyperbola2D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is Hyperbola2D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => HashCode.Combine(_pos, _majorRadius, _minorRadius);
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in Hyperbola2D left, in Hyperbola2D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in Hyperbola2D left, in Hyperbola2D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => $"Hyperbola2D({_pos}, major {_majorRadius}, minor {_minorRadius})";
 }

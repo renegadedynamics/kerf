@@ -9,7 +9,9 @@ public enum TransformForm
 {
     /// <summary>No transformation (the matrix is the identity).</summary>
     Identity,
+    /// <summary>A rotation about a point in 2D, or an axis in 3D.</summary>
     Rotation,
+    /// <summary>A translation.</summary>
     Translation,
     /// <summary>Central symmetry.</summary>
     PointMirror,
@@ -17,6 +19,7 @@ public enum TransformForm
     AxisMirror,
     /// <summary>Bilateral symmetry.</summary>
     PlaneMirror,
+    /// <summary>A uniform scale about a point.</summary>
     Scale,
     /// <summary>A combination of the above.</summary>
     Composite,
