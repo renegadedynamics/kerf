@@ -349,7 +349,9 @@ internal class RevolutionSurfaceAdaptor : SurfaceAdaptor
                 else
                 {
                     majorRadius = lin.DistanceTo(lc);
-                    if (majorRadius > r)
+                    // OCCT's bare comparison makes a torus of a circle that touches the axis to within the tolerance, whose
+                    // end vertex is then taken as on the axis too: an invalid solid (OCCT #1566, decision 20206)
+                    if (majorRadius > r + tolConf)
                     {
                         return global::Kerf.Geometry.SurfaceKind.Torus;
                     }

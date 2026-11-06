@@ -555,4 +555,28 @@ public class BRepBuilderAPITests
         Assert.True(aFC.Plane()!.Plane.Axis.Direction.IsParallel(new Direction3D(1, 0, 0), 1e-12));
         Assert.False(new FindPlane().Found());
     }
+
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(1.0e-16)]
+    [InlineData(1.0e-12)]
+    [InlineData(1.0e-8)]
+    [InlineData(1.0e-6)]
+    public void Revolving_an_arc_that_ends_at_the_axis_is_valid(double theGap)
+    {
+        // OCCT #1566: a quarter disk whose arc is tangent to the axis, ending theGap from it, as an arc through three
+        // points usually does. Natively, invalid with volume 0.5655 for any gap up to 1e-7.
+        double r = 1 - theGap;
+        Circle3D aCircle = new(new Frame3D(new Point3D(1, 0, 1), new Direction3D(0, -1, 0), new Direction3D(-1, 0, 0)), r);
+        Point3D aStart = new(theGap, 0, 1), anEnd = new(1, 0, theGap), aCorner = new(1, 0, 1);
+        var aWire = new MakeWire();
+        aWire.Add(new MakeEdge(aCircle, aStart, anEnd).Edge());
+        aWire.Add(new MakeEdge(anEnd, aCorner).Edge());
+        aWire.Add(new MakeEdge(aCorner, aStart).Edge());
+        Face aFace = new MakeFace(aWire.Wire(), true).Face();
+        Shape aSolid = new ApiMakeRevol(aFace, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), M_PI / 2).Shape();
+        Assert.True(new Analyzer(aSolid).IsValid());
+        double anExpected = M_PI * r * r / 4 * (1 - 4 * r / (3 * M_PI)) * (M_PI / 2);
+        Assert.Equal(anExpected, MassPropertiesBuilder.VolumeProperties(aSolid).Mass(), 1.0e-5);
+    }
 }
