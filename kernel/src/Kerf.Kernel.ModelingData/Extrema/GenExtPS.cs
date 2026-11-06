@@ -1092,10 +1092,14 @@ internal class GenExtPS
     // every element it reads, but the faces' border, which holds new elements and has only its distances set.
     private sealed class WorkGrids
     {
-        private const int LargestKept = 4096;
+        private const int LargestHeld = 4096;
 
         [ThreadStatic]
         private static WorkGrids? t_spare;
+
+        // A larger set is only held weakly, so a thread never pins megabytes for its life: a generation 2 collection frees it
+        [ThreadStatic]
+        private static WeakReference<WorkGrids>? t_largeSpare;
 
         public readonly int NbU;
         public readonly int NbV;
@@ -1117,16 +1121,36 @@ internal class GenExtPS
 
         public static WorkGrids Rent(int nbU, int nbV)
         {
-            WorkGrids? work = t_spare;
-            t_spare = null; // A search inside a search takes its own
+            WorkGrids? work;
+            if (nbU * nbV <= LargestHeld)
+            {
+                work = t_spare;
+                t_spare = null; // A search inside a search takes its own
+            }
+            else
+            {
+                work = null;
+                if (t_largeSpare is not null && t_largeSpare.TryGetTarget(out work))
+                {
+                    t_largeSpare.SetTarget(null!);
+                }
+            }
             return work is not null && work.NbU == nbU && work.NbV == nbV ? work : new WorkGrids(nbU, nbV);
         }
 
         public static void Return(WorkGrids work)
         {
-            if (work.NbU * work.NbV <= LargestKept)
+            if (work.NbU * work.NbV <= LargestHeld)
             {
                 t_spare = work;
+            }
+            else if (t_largeSpare is null)
+            {
+                t_largeSpare = new WeakReference<WorkGrids>(work);
+            }
+            else
+            {
+                t_largeSpare.SetTarget(work);
             }
         }
     }

@@ -153,6 +153,10 @@ The three tables the plan names (decision 1388):
 | ModelingAlgorithms/BRepGProp/MeasurementGauss.cs (`GaussWork.t_spare`), Foundation/math/Bfgs.cs (`Work.t_spare`) | **new** (11Q, decision 1708): a thread's spare work vectors, out of the static while in use and zeroed on the way back in. Nothing crosses threads |
 | ModelingData/BRep/Tool.cs (`PlaneCurves.t_entries`) | **new** (11Q, decision 1715): a thread's latest curves on planes, at most 64, for frozen geometry only, and a hit hands out a copy. Nothing crosses threads |
 | ModelingData/Extrema/GenExtPS.cs (`WorkGrids.t_spare`), Foundation/math/FunctionSetRoot.cs (`Work.t_spare`), Foundation/CSLib/Class2d.cs (`Class2dPoints.t_spare`) | **new** (11Q, decision 1716): a thread's spare work, out of the static while in use. Each is written before it's read. Nothing crosses threads |
+| ModelingData/Extrema/GenExtPS.cs (`WorkGrids.t_largeSpare`) | **new** (11Q, decision 1754): a thread's larger grids, held weakly. Nothing crosses threads |
+| ModelingAlgorithms/IntCurve/SampledPolygons.cs (`t_current`) | **new** (11Q, decision 1755): the table of a 2D offset's trimming, set only around `IntersectWith`. Nothing crosses threads |
+| ModelingData/AdvApprox/ApproxAFunction.cs (`CoefficientsWork.t_spare`), Foundation/BSplCLib/BSplCLib.cs (`t_localMatrices`) | **new** (11Q, decision 1758): a thread's work, zeroed before use. Nothing crosses threads |
+| ModelingAlgorithms/BRepMesh/MeshWorkStorage.cs (`t_spare`) | **new** (11Q, decision 1759): a thread's lists for meshing a face, out of the static while in use. Nothing crosses threads |
 | the shared empty values (`BOPDS_DS`'s pave blocks and face information, `TopoDS_Iterator`'s, BRepFill's, ChFi3d's, TopOpeBRepDS's lists) | constants: read-only for callers, as OCCT's; 10J returns read-only types |
 
 **Unit 11C looked at what one-time initialisation costs on opening a workbook:** 2 to 5 of about 255 samples on the first pass's working thread, spread over dozens of small types. So nothing was made lazy, and this list is unchanged (decision 1693).

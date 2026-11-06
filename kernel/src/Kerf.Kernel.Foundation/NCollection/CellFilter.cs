@@ -98,6 +98,11 @@ internal class CellFilter<TInspector, TTarget, TPoint>
     private ListNode[] _nodes = [];
     private int _nodeCount;
     private int _firstFree = -1;
+    // Optional: the cells of a known 2D window in one array, each the position of its first node plus one, 0 for no cell. A
+    // circle of the mesher can cover thousands of cells, and looking each up in the dictionary was most of the cost of adding it
+    private const int LargestWindow = 1 << 22;
+    private int[]? _window;
+    private int _windowMinX, _windowMinY, _windowNbX, _windowNbY;
     // The indexes of the cells being worked on (not re-entrant: no inspector calls its own filter)
     private readonly int[] _indexMin, _indexMax, _index;
     protected NCollection_Array1<double> _cellSize;
@@ -159,8 +164,49 @@ internal class CellFilter<TInspector, TTarget, TPoint>
         ComputeIndex(pntMin, _indexMin);
         ComputeIndex(pntMax, _indexMax);
         _indexMin.CopyTo(_index, 0);
+        if (_window is not null && WindowCell(_indexMin[0], _indexMin[1]) >= 0 && WindowCell(_indexMax[0], _indexMax[1]) >= 0)
+        {
+            // In the order of IterateAdd
+            for (int y = _indexMin[1]; y <= _indexMax[1]; ++y)
+            {
+                int cell = WindowCell(_indexMin[0], y);
+                for (int x = _indexMin[0]; x <= _indexMax[0]; ++x, ++cell)
+                {
+                    _window[cell] = NewNode(target, _window[cell] - 1) + 1;
+                }
+            }
+            return;
+        }
         // add object recursively into all cells in range
         IterateAdd(_dim - 1, target);
+    }
+
+    /// <summary>
+    /// Keeps the cells between two points in a flat array, for a 2D filter whose targets mostly fall there, until the next
+    /// <c>Reset</c>. The filter behaves as without it: cells elsewhere are still kept, and a window too large is ignored.
+    /// </summary>
+    public void UseWindow(TPoint pntMin, TPoint pntMax)
+    {
+        _window = null;
+        if (_dim != 2 || _cells.Count != 0 || _nodeCount != 0)
+        {
+            return;
+        }
+        ComputeIndex(pntMin, _indexMin);
+        ComputeIndex(pntMax, _indexMax);
+        long nbX = (long)_indexMax[0] - _indexMin[0] + 1, nbY = (long)_indexMax[1] - _indexMin[1] + 1;
+        if (nbX > 0 && nbY > 0 && nbX * nbY <= LargestWindow)
+        {
+            (_windowMinX, _windowMinY, _windowNbX, _windowNbY) = (_indexMin[0], _indexMin[1], (int)nbX, (int)nbY);
+            _window = new int[nbX * nbY];
+        }
+    }
+
+    // The position in the window of a cell, or -1
+    private int WindowCell(int x, int y)
+    {
+        int column = x - _windowMinX, row = y - _windowMinY;
+        return (uint)column < (uint)_windowNbX && (uint)row < (uint)_windowNbY ? row * _windowNbX + column : -1;
     }
 
     /// <summary>Finds a target at a point and removes it (the inspector's <c>IsEqual</c> identifies it).</summary>
@@ -223,6 +269,7 @@ internal class CellFilter<TInspector, TTarget, TPoint>
     private void ResetAllocator()
     {
         _cells.Clear();
+        _window = null;
         if (System.Runtime.CompilerServices.RuntimeHelpers.IsReferenceOrContainsReferences<TTarget>())
         {
             Array.Clear(_nodes, 0, _nodeCount);
@@ -264,6 +311,12 @@ internal class CellFilter<TInspector, TTarget, TPoint>
     // Adds a new target into the specified cell.
     private void Add(int[] index, TTarget target)
     {
+        if (_window is not null && WindowCell(index[0], index[1]) is >= 0 and int cell)
+        {
+            _window[cell] = NewNode(target, _window[cell] - 1) + 1;
+            return;
+        }
+
         // add a new cell or get reference to existing one, and add a new list node to the beginning of the list
         ref int first = ref System.Runtime.InteropServices.CollectionsMarshal.GetValueRefOrAddDefault(_cells, new CellKey(index), out bool exists);
         first = NewNode(target, exists ? first : -1);
@@ -292,10 +345,24 @@ internal class CellFilter<TInspector, TTarget, TPoint>
     // Removes the target from the specified cell.
     private void Remove(int[] index, TTarget target)
     {
-        CellKey key = new(index);
-        if (!_cells.TryGetValue(key, out int first))
+        int cell = _window is not null ? WindowCell(index[0], index[1]) : -1;
+        CellKey key = default;
+        int first;
+        if (cell >= 0)
         {
-            return;
+            first = _window![cell] - 1;
+            if (first < 0)
+            {
+                return;
+            }
+        }
+        else
+        {
+            key = new CellKey(index);
+            if (!_cells.TryGetValue(key, out first))
+            {
+                return;
+            }
         }
 
         // iterate by objects in the cell and check each
@@ -323,6 +390,12 @@ internal class CellFilter<TInspector, TTarget, TPoint>
             }
 
             node = next;
+        }
+
+        if (cell >= 0)
+        {
+            _window![cell] = first + 1;
+            return;
         }
 
         // cleanup empty cell to prevent dead cell accumulation
@@ -359,10 +432,24 @@ internal class CellFilter<TInspector, TTarget, TPoint>
     // Inspects the targets in the specified cell.
     private void Inspect(int[] index, ref TInspector inspector)
     {
-        CellKey key = new(index);
-        if (!_cells.TryGetValue(key, out int first))
+        int cell = _window is not null ? WindowCell(index[0], index[1]) : -1;
+        CellKey key = default;
+        int first;
+        if (cell >= 0)
         {
-            return;
+            first = _window![cell] - 1;
+            if (first < 0)
+            {
+                return;
+            }
+        }
+        else
+        {
+            key = new CellKey(index);
+            if (!_cells.TryGetValue(key, out first))
+            {
+                return;
+            }
         }
 
         // iterate by objects in the cell and check each
@@ -393,6 +480,12 @@ internal class CellFilter<TInspector, TTarget, TPoint>
             }
 
             node = next;
+        }
+
+        if (cell >= 0)
+        {
+            _window![cell] = first + 1;
+            return;
         }
 
         // cleanup empty cell to prevent dead cell accumulation

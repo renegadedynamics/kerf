@@ -14,7 +14,7 @@ namespace Kerf.Engine.Meshing;
 /// point within a tolerance.
 /// </summary>
 /// <remarks>A working object, as OCCT's (the allocator argument is dropped).</remarks>
-internal sealed class CircleInspector : ICellFilterInspector<int, Xy>
+internal struct CircleInspector : ICellFilterInspector<int, Xy>
 {
     private readonly double _sqTolerance;
     private readonly List<int> _resIndices;
@@ -31,11 +31,12 @@ internal sealed class CircleInspector : ICellFilterInspector<int, Xy>
 
     /// <summary>An inspector with the given linear tolerance, reserving room for <paramref name="reservedSize"/>
     /// circles.</summary>
-    public CircleInspector(double tolerance, int reservedSize)
+    public CircleInspector(double tolerance, int reservedSize, List<MeshCircle>? circles = null)
     {
         _sqTolerance = tolerance * tolerance;
         _resIndices = [];
-        _circles = new List<MeshCircle>(reservedSize);
+        _circles = circles ?? new List<MeshCircle>(reservedSize);
+        _circles.EnsureCapacity(reservedSize);
     }
 
     /// <summary>Binds the circle to the index.</summary>
