@@ -60,6 +60,7 @@ internal sealed class CircleTool
         cellSize[1] = sizeX;
         cellSize[2] = sizeY;
         _cellFilter.Reset(cellSize);
+        _cellFilter.UseWindow(_faceMin, _faceMax);
     }
 
     /// <summary>Sets the limits of the face, to which the circles' extents are clipped.</summary>
