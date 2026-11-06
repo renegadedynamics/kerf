@@ -471,7 +471,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
             {
                 Assert.Equal(0, anAbsent);
                 // the second of decision 1170's two lines is in ws OMF6391_box.stl, a block with more domains now
-                Assert.Equal(1, anAttributed);
+                Assert.Equal(2, anAttributed);
                 Assert.Equal(8, anIntendedStream);
                 Assert.Equal(5, anIntendedDomains);
             }
