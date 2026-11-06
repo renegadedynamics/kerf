@@ -56,7 +56,7 @@ internal sealed partial class ImpImpIntersection
     //
     // It is important to remark that equation (5) (in general) has two solutions: U2=FI2 +/- f(U1).
     // Therefore, we are getting here two intersection lines.
-    private static class ComputationMethods
+    internal static class ComputationMethods
     {
         // Stores equations coefficients
         internal sealed class StCoeffsValue
@@ -485,7 +485,7 @@ internal sealed partial class ImpImpIntersection
     // CylCylComputeParameters evaluators used downstream.
     // OCCT keeps const references to the quadrics, coefficients and boxes; the port keeps copies of the structs
     // (never changed while the object lives) and the coefficients by reference.
-    private sealed class WorkWithBoundaries
+    internal sealed class WorkWithBoundaries
     {
         internal enum SearchBoundType
         {
@@ -995,8 +995,9 @@ internal sealed partial class ImpImpIntersection
                     uRange[1].Add(period - dAngle + coeffs._mFI1);
                     uRange[1].Add(period + coeffs._mFI1);
                 }
-                // OCCT: -mB - 1 where the comment's bound is -mC - 1
-                else if ((coeffs._mC - 1 <= coeffs._mB) && (coeffs._mB <= -coeffs._mB - 1))
+                // OCCT 8.0.1 has -mB - 1 where the comment's bound is -mC - 1, losing this range for small |B|. No Boolean
+                // can show it, as StCoeffsValue's B is an amplitude over an amplitude, never negative (decision 20604)
+                else if ((coeffs._mC - 1 <= coeffs._mB) && (coeffs._mB <= -coeffs._mC - 1))
                 {
                     //  -(1+C)/B <= 1 and (1-C)/B <= -1 ==> U=[aDAngle;2*PI-aDAngle]+aFI1,
                     // where aDAngle = acos(-(myCoeffs.mC + 1) / myCoeffs.mB).

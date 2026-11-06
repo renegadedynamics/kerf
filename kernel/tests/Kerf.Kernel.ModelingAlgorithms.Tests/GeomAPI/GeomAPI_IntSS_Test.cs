@@ -74,6 +74,37 @@ public class GeomAPI_IntSS_Test
         aS1 = new BSplineSurface(aPoles, aWeights, aUKnots, aVKnots, aUMult, aVMult, aUDegree, aVDegree);
     }
 
+    // A thin cylinder crossing the wall of a thicker one, whatever the frames, where the range of U1 is one interval
+    // (decision 20604 looked for its bug here: B comes out positive for all of these).
+    [Theory]
+    [InlineData(1, 1, 1)]
+    [InlineData(1, 1, -1)]
+    [InlineData(1, -1, 1)]
+    [InlineData(1, -1, -1)]
+    [InlineData(-1, 1, 1)]
+    [InlineData(-1, 1, -1)]
+    [InlineData(-1, -1, 1)]
+    [InlineData(-1, -1, -1)]
+    public void Cylinders_A_thin_one_through_the_wall_of_a_thick_one(int theSide, int theZ, int theX)
+    {
+        CylindricalSurface aThin = new(new CoordinateSystem(new Point3D(0, 0.9 * theSide, 0), new Direction3D(0, 0, theZ), new Direction3D(1, 0, 0)), 0.3);
+        CylindricalSurface aThick = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(theX, 0, 0), new Direction3D(0, 1, 0)), 1.0);
+        foreach ((Surface aS1, Surface aS2) in new[] { ((Surface)aThin, (Surface)aThick), (aThick, aThin) })
+        {
+            SurfaceSurfaceIntersection anIntersection = new(aS1, aS2, 1.0e-7);
+            Assert.True(anIntersection.IsDone);
+            Assert.True(anIntersection.LineCount >= 1, "no curves");
+            for (int i = 1; i <= anIntersection.LineCount; i++)
+            {
+                Curve3D aCurve = anIntersection.Line(i);
+                double aMid = 0.5 * (aCurve.FirstParameter + aCurve.LastParameter);
+                Point3D aP = aCurve.Value(aMid);
+                Assert.Equal(0.3, Math.Sqrt(aP.X * aP.X + (aP.Y - 0.9 * theSide) * (aP.Y - 0.9 * theSide)), 1.0e-5);
+                Assert.Equal(1.0, Math.Sqrt(aP.Y * aP.Y + aP.Z * aP.Z), 1.0e-5);
+            }
+        }
+    }
+
     //! Verifies that GeomAPI_IntSS finds exactly one intersection curve.
     [Fact]
     public void OCC26675_IntersectionCurveCount()
