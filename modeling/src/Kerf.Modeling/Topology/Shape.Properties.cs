@@ -381,7 +381,7 @@ public static partial class ShapeExtensions
     {
         ShapeType.Vertex => null,
         ShapeType.Edge or ShapeType.Wire => shape.MassProperties(Dimension.Length),
-        ShapeType.Face or ShapeType.Shell => shape.MassProperties(Dimension.Area),
-        _ => shape.MassProperties(Dimension.Volume),
+        ShapeType.Face or ShapeType.Shell => shape.MassProperties(Dimension.Area, TopoUtil.MeasuredMoments),
+        _ => shape.MassProperties(Dimension.Volume, TopoUtil.MeasuredMoments),
     };
 }

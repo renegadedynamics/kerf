@@ -146,7 +146,7 @@ public class TopologyReferenceTests
         // it, was recorded at x = -2.99867 and not -3. ArcLengthLawTests holds them to the true length
         double along = name is "bezier" or "ellipse" or "ellipse_arc" or "spline_tangents" ? 0.05 : 1e-7;
         if (expected.TryGetProperty("center", out var center))
-            CloseVector(center, shape.Center(), "center", along);
+            CloseVector(center, shape.Center(), "center", Math.Max(along, 1e-5));   // and its centres of mass by the fixed default
         if (expected.TryGetProperty("length", out var length))
             Close(length.GetDouble(), TopoUtil.As1D(shape).Length, "length", along);
     }

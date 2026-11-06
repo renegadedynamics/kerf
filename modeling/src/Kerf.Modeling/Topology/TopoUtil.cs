@@ -249,8 +249,9 @@ internal static partial class TopoUtil
     internal static readonly MassOptions Measured = new() { Tolerance = 1e-6 };
 
     /// <summary>
-    /// How moments of inertia are integrated. The precision applies to each face's mass, and a moment follows it less
-    /// closely: on a cylinder, 4e-6 out at 1e-6 and at 1e-7, and exact from 1e-8.
+    /// How centres of mass and moments of inertia are integrated. The precision applies to each face's mass, and a moment
+    /// follows it less closely: on a cylinder, 4e-6 out at 1e-6 and at 1e-7, and exact from 1e-8; a symmetric part's centre
+    /// 1.6e-6 off its plane of symmetry at the same two.
     /// </summary>
     internal static readonly MassOptions MeasuredMoments = new() { Tolerance = 1e-9 };
 

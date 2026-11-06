@@ -113,7 +113,7 @@ public static partial class CompoundExtensions
                     ShapeType.Face or ShapeType.Shell => Dimension.Area,
                     _ => Dimension.Volume,
                 };
-                return self.MassProperties(dimension).CentreOfMass;
+                return self.MassProperties(dimension, TopoUtil.MeasuredMoments).CentreOfMass;
             }
             default:
                 return self.Bounds().Center();
