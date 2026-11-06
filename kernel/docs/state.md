@@ -151,6 +151,8 @@ The three tables the plan names (decision 1388):
 | ModelingData/AdvApp2Var/SysBase.cs (`mblank__`) | **removed**: written by `macinit_`, read by nothing |
 | DataExchange/STEPConstruct/ConstructAssembly.cs (`s_processNauoId`) | **removed** with the overload that used it (decision 1389): it numbered assembly occurrences from a process-wide counter, so an output depended on what the process wrote before; the writer already passed its own (decision 1266) |
 | ModelingAlgorithms/BRepGProp/MeasurementGauss.cs (`GaussWork.t_spare`), Foundation/math/Bfgs.cs (`Work.t_spare`) | **new** (11Q, decision 1708): a thread's spare work vectors, out of the static while in use and zeroed on the way back in. Nothing crosses threads |
+| ModelingData/BRep/Tool.cs (`PlaneCurves.t_entries`) | **new** (11Q, decision 19502): a thread's latest curves on planes, at most 64, for frozen geometry only, and a hit hands out a copy. Nothing crosses threads |
+| ModelingData/Extrema/GenExtPS.cs (`WorkGrids.t_spare`), Foundation/math/FunctionSetRoot.cs (`Work.t_spare`), Foundation/CSLib/Class2d.cs (`Class2dPoints.t_spare`) | **new** (11Q, decision 19503): a thread's spare work, out of the static while in use. Each is written before it's read. Nothing crosses threads |
 | the shared empty values (`BOPDS_DS`'s pave blocks and face information, `TopoDS_Iterator`'s, BRepFill's, ChFi3d's, TopOpeBRepDS's lists) | constants: read-only for callers, as OCCT's; 10J returns read-only types |
 
 **Unit 11C looked at what one-time initialisation costs on opening a workbook:** 2 to 5 of about 255 samples on the first pass's working thread, spread over dozens of small types. So nothing was made lazy, and this list is unchanged (decision 1693).
