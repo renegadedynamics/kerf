@@ -300,3 +300,7 @@ Not merged (decision 1798), so nothing changes here. On `phase11/valid-cache`: o
 ## The owner's answers
 
 Decisions 1802 to 1810 add one piece of shared state: `TopoUtil.Measured` and `TopoUtil.MeasuredMoments`, immutable `MassOptions` held in statics and only read. The retry in `Sweeps.Sweep` and the slice in `Solid.Torus` work on their arguments alone. `SweepMode` is immutable. `Failures.TryWarned` uses `Warnings.Capture`, whose scope is an `AsyncLocal`, so it belongs to the call that opened it.
+
+## The check on small shapes
+
+Decisions 20801 to 20806 add one static, `Analyzer.Finished`: a delegate for tests, set once at a test process's start before any check when `KERF_CHECK_COMPARE` is set, and otherwise always null. A result's `ContextMap` is under the same lock as the dictionary it replaces when on the pool, and that lock is made before the pool starts; the `IndexedSet` for sub-shapes in the analyzer is one for each chunk, so each thread has its own. `_line` on an edge's check is written while the map is built, on one thread, and only read after. A wire's map kept from `Minimum` is no longer written by `Closed`, so there's less to race than before. The comparison's counters in `tests/Shared/FullCheck` are `Interlocked`, and in tests only.
