@@ -25,13 +25,8 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 
 | Kind | Where | What | How confirmed | Size |
 |---|---|---|---|---|
-| Silent wrong answer | Upstream `71658f6c8f` | An offset surface on an indirect plane reduces to a plane on the wrong side, and evaluates through it | Tried: the fix works, and 13 oracle tests replay the wrong values | S, and those tests |
 | Silent wrong answer | Found by #1675 | Area and volume without a precision, which `Kerf.Modeling` uses, can be up to 3.7% off on swept and B-spline faces: bug5805_21 gives 253.49 where a mesh gives 244.17. The precise path now gives 244.195 | Reproduced | S to change the call; **for the owner**: precise is slower |
 | Silent wrong answer | #1567 | Fuse of a torus sector and a tangent sphere is empty, and Cut removes nothing, with no failure. The torus/sphere intersection gives five curves of tolerance up to 0.93 where the answer is one tangent circle on the boundary | Reproduced | M to L: an analytic torus/sphere tangent case, or rejecting such curves |
-| Silent wrong answer | occt-issues.md 758 | `ApproxInt` caches return without writing on a hit; upstream `71658f6c8f` restores state | Read; upstream fix | S |
-| Silent wrong answer | occt-issues.md 1082, 1081 | `Law_BSpline.Segment` and `IncreaseMultiplicity` give a wrong law: pinned by tests, upstream `71658f6c8f` fixes them | Read; upstream fix | S |
-| Silent wrong answer | occt-issues.md 744 | Cylinder/cylinder range for negative B reads the wrong bound (`mB <= -mB - 1`). Tried against #1633: not its cause | Read | S |
-| Silent wrong answer | occt-issues.md 1176, 1097, 1159, 1160 | Wrong values in `CoonsAlgPatch.Value`, `FunctionDraft.DerivT`, quasi-angular second derivatives, `GetCircle` second derivatives | Read | S each; a recording may need an intended difference |
 | Silent wrong answer | #1461 | A nearly horn torus is written as a surface of revolution or a torus by noise | Read; related fix 1780 | S |
 | Silent wrong answer | Upstream `53706f78a8` | Final endpoint curvature in least squares; closed polygon self-intersections; rational section weights in `GeomFill_Profiler` | Upstream fix, not checked here | M |
 | Silent wrong answer | Upstream `8f817f5da5` | Curve-on-surface deviation, narrow extrema, face self-intersection within trimmed domains | Upstream fix, not checked here | L: 346 files |
@@ -69,6 +64,9 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 | #1698 | A meshed shape's optimal box included the tolerance when told not to | 1779 |
 | #1606, #1452 | A ring of concentric circles couldn't be offset inward; a collapsing circle went to the general algorithm | 1788 |
 | `3270746444` | A point mirror's inverse | 1778 |
+| `71658f6c8f` | An offset surface on an indirect plane on the wrong side | 20601 |
+| `71658f6c8f`, `8f817f5da5` | `ApproxInt`'s caches returning without writing | 20602 |
+| occt-issues.md | `Law.BSpline`'s multiplicities and `Segment`; the cylinder range for negative B; `CoonsAlgPatch.Value`, `FunctionDraft`, quasi-angular and `GetCircle` second derivatives | 20603 to 20605 |
 
 ## The corpus's 502 BAD cases, by group
 
@@ -359,7 +357,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 |---|---|---|---|
 | `53706f78a8` | Modeling - Fix intersection, fitting and profile regressions (#1653) | applies | Ranked above; not ported |
 | `8f95c78c7c` | Data Exchange - Support companion streams and improve STEP PMI handling (#1647) | applies | STEP PMI units and references; companion streams are a feature. Small pieces |
-| `71658f6c8f` | Modeling - Fix geometry evaluation and data exchange regressions (#1644) | applies | The offset surface on an indirect plane was tried, and is ranked above; rest to read |
+| `71658f6c8f` | Modeling - Fix geometry evaluation and data exchange regressions (#1644) | applies | The offset surface and `ApproxInt` are ported (decisions 20601, 20602); rest to read |
 | `8f817f5da5` | Modeling - Fix numerical accuracy and geometry differences (#1640) | applies | Ranked above; large |
 | `09b2da2c16` | Coding - Fix MSVC warnings (#1636) | not relevant | Compiler warnings |
 | `ec0167b409` | Modelling - Fix geometry regressions and reduce repeated evaluations (#1634) | can't tell | Regressions, repeated evaluations: to read piece by piece; the blending index change is for pointers Kerf doesn't have |
