@@ -13,6 +13,10 @@ Measured on 6 November 2026.
 The runs are the whole run at main's head (86344c5e4) with unit 11I's new tests and a fresh Foundation run added: the lines of only two files moved (`MathRoot_Bisection.cs`, `BVH/DistanceField.cs`), and those come from the fresh run alone.
 Test projects merged: `Kerf.Kernel.DataExchange.Tests`, `Kerf.Kernel.DrawLite.Tests`, `Kerf.Kernel.Foundation.Tests`, `Kerf.Kernel.ModelingAlgorithms.Laws`, `Kerf.Kernel.ModelingAlgorithms.Tests`, `Kerf.Kernel.ModelingData.Tests`, `Kerf.Kernel.Oracle.Tests`, `Kerf.Kernel.PublicApi.Tests`, `Kerf.Modeling.Direct`, `Kerf.Modeling.Tests`.
 
+## Public members with a direct test
+
+Measured: 4,463 members; called directly 3,470; of them checked 3,465; no direct test 993. From 11,476 test methods. Not measured: 32 abstract, 814 compiler-written, 23 overrides of `object`'s members on classes (the IL can't show them). The list: [direct-members.md](direct-members.md).
+
 ## By assembly
 
 | Assembly | Packages | Lines | Covered | % | Packages under 80% |
