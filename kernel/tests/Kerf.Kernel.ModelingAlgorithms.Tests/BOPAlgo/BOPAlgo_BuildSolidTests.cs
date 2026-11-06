@@ -6,6 +6,7 @@ using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 
@@ -34,6 +35,29 @@ public class BOPAlgo_BuildSolidTests
     {
         Explorer anExp = new(theSolid, ShapeType.Shell);
         return anExp.Current();
+    }
+
+    /// <summary>
+    /// #1613: a reversed solid whose shell is reversed too is the ordinary solid. In a compound, OCCT turned its splits
+    /// inside out, and a fuse dropped it with no error (decision 20903).
+    /// </summary>
+    [Fact]
+    public void A_reversed_solid_in_a_compound_fuses_as_it_does_alone()
+    {
+        Shape aBox = new MakeBox(new Point3D(5, 5, 5), 10, 10, 10).Shape();
+        Shape aReversed = Builder.MakeSolid([ShellOf(aBox).Reversed()]).Reversed();
+        Assert.Equal(1000.0, Volume(aReversed), 1e-6);
+        Shape anOther = new MakeBox(new Point3D(30, 30, 30), 1, 1, 1).Shape();
+        var aBuilder = new BrepBuilder();
+        Compound aCompound = new();
+        aBuilder.MakeCompound(ref aCompound);
+        aBuilder.Add(aCompound, aReversed);
+        aBuilder.Add(aCompound, anOther);
+
+        Shape aBase = new MakeBox(10, 10, 10).Shape();
+        Assert.Equal(1875.0, Volume(new Fuse(aBase, aReversed).Shape()), 1e-6);
+        Assert.Equal(1876.0, Volume(new Fuse(aBase, aCompound).Shape()), 1e-6);
+        Assert.Equal(1876.0, Volume(new Fuse(aCompound, aBase).Shape()), 1e-6);
     }
 
     /// <summary>
