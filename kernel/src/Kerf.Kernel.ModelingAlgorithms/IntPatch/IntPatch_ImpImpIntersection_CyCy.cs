@@ -3035,6 +3035,13 @@ internal sealed partial class ImpImpIntersection
                             {
                                 wlFindStatus[i] = WLFStatus.WLFStatus_Broken;
                             }
+                            // One step went in over one V bound and out over another, as a nearly parallel axis gives:
+                            // the line is whole. OCCT goes on and joins it to the next line through what's outside the
+                            // domain, which then trims away to nothing (OCCT #1633, decision 20209)
+                            else if (wlFindStatus[i] == WLFStatus.WLFStatus_Absent && (isFound1 || isFound2) && wLine[i].NbPnts() >= 2)
+                            {
+                                wlFindStatus[i] = WLFStatus.WLFStatus_Broken;
+                            }
                         }
 
                         if (wlFindStatus[i] == WLFStatus.WLFStatus_Broken)
