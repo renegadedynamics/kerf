@@ -64,7 +64,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
             return;
         }
 
-        Refusal.ArgumentIf(sqMod <= Constants.Resolution() * Constants.Resolution(), FailureKind.ConstructionError, "gp_Dir::SetCoord() - input vector has zero norm");
+        Refusal.ArgumentIf(!(sqMod > Constants.Resolution() * Constants.Resolution()) || double.IsInfinity(sqMod), FailureKind.ConstructionError, "gp_Dir::SetCoord() - input vector has zero norm");
         double d = Math.Sqrt(sqMod);
         _coord = new Xyz(x / d, y / d, z / d);
     }

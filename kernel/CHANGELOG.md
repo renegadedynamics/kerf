@@ -10,6 +10,7 @@ version may break the API.
   vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 1652 and 1653).
 ## 0.3.0 (unreleased)
 
+- **The validity check is cheaper on small shapes:** about half the bytes and a third less time on a box, a prism or many small solids (from a loaded machine), and about 8% fewer bytes over a recalculation of Bento's examples. No verdict or status changes: compared with the old check, on every sub-shape, over the corpus's Boolean, blend, chamfer and healing groups.
 - A fuse with a compound of reversed solids no longer drops them (#1613), and a cut by a helical tube no longer removes nothing depending on where it leaves (#1543).
 - A fillet or chamfer whose tolerance passes its size fails with `result.invalid`, carrying the shape, rather than succeeding with a wrong volume (#1639).
 - `BooleanOptions.ApproximateSection` is true by default: without it a section can lose most of a curve (#1124).
@@ -27,6 +28,10 @@ version may break the API.
   with a parallel guide stays exact. Areas and volumes asked for with a precision are right on periodic and swept faces, so a
   few differ from before. A ring of concentric circles can be offset inward. Mirroring through a point now inverts correctly.
   NaN is refused as a radius or an angle.
+- **More of OCCT's defects fixed (a bug fix; results change where it was wrong):** `Unify` and a simplified Boolean no longer spoil a good result, where OCCT's clean gives an
+  invalid shape up to 17% out in volume. A sphere touching a torus along a circle fuses, cuts and commons correctly, where OCCT's fuse was empty; a fuse that comes out empty from
+  shapes with something in them fails. An offset surface on a mirrored plane is on the right side. `ApproximateBSplines` keeps a cylinder and a sphere valid. A direction refuses NaN and
+  infinity. A torus within tolerance of horn is written to STEP as a torus.
 - **No operation reports success for an invalid result (breaking).** Booleans, fillets, chamfers, offsets, sweeps, lofts, features and healing now
   check what they made and fail with `result.invalid`, saying what's wrong and naming the sub-shapes. `Result<T>.TryGetInvalid` gives the shape to a
   caller who wants to look at it; `Value` still throws. `CheckResult = false` on the options, or `checkResult: false`, leaves the check out. `Fix`'s

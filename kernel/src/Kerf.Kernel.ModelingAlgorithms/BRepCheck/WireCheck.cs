@@ -35,6 +35,9 @@ internal class WireCheck : ResultCheck
 
     private bool _gctrl;
 
+    // Minimum left its map for Closed: with everything oriented, it's the one Closed would make
+    private bool _mapVEIsWhole;
+
     /// <summary>Checks the wire on its own (<see cref="Minimum"/>).</summary>
     public WireCheck(in Wire w)
     {
@@ -83,14 +86,17 @@ internal class WireCheck : ResultCheck
             var exp = new Explorer(_shape, ShapeType.Edge);
             int nbedge = 0;
             _mapVE.Clear();
+            bool allOriented = true;
             // fill myMapVE
             for (; exp.More(); exp.Next())
             {
                 nbedge++;
+                allOriented = allOriented && IsOriented(exp.Current());
                 var expv = new Explorer();
                 for (expv.Init(exp.Current(), ShapeType.Vertex); expv.More(); expv.Next())
                 {
                     Shape vtx = expv.Current();
+                    allOriented = allOriented && IsOriented(vtx);
                     int index = _mapVE.IndexOf(vtx) + 1;
                     if (index == 0)
                     {
@@ -110,7 +116,7 @@ internal class WireCheck : ResultCheck
             // check if all edges are connected through vertices
             else if (nbedge >= 2)
             {
-                var mapE = new HashSet<Shape>(ShapeHasher.Instance);
+                var mapE = new IndexedSet<Shape>(ShapeHasher.Instance);
                 exp.ReInit();
                 Propagate(_mapVE, exp.Current(), mapE);
                 for (exp.ReInit(); exp.More(); exp.Next())
@@ -128,7 +134,12 @@ internal class WireCheck : ResultCheck
                 lst.Append(StatusCheck.NoError);
             }
 
-            _mapVE.Clear();
+            _mapVEIsWhole = allOriented && lst.First() == StatusCheck.NoError;
+            if (!_mapVEIsWhole)
+            {
+                _mapVE.Clear();
+            }
+
             _min = true;
         }
     }
@@ -137,7 +148,7 @@ internal class WireCheck : ResultCheck
     /// Checks the wire in a shape that contains it: in a face, <see cref="SelfIntersect"/> (with the geometric
     /// controls), <see cref="Closed"/>, <see cref="Orientation"/> and <see cref="Closed2d"/>, until one fails.
     /// </summary>
-    public override void InContext(in Shape s)
+    public override void InContext(in Shape s, bool isFoundThere = false)
     {
         NCollection_List<StatusCheck> hList;
         {
@@ -169,19 +180,22 @@ internal class WireCheck : ResultCheck
         NCollection_List<StatusCheck> lst = hList;
 
         // check if my wire is in <S>
-        var exp = new Explorer(s, ShapeType.Wire);
-        for (; exp.More(); exp.Next())
+        if (!isFoundThere)
         {
-            if (exp.Current().IsSame(_shape))
+            var exp = new Explorer(s, ShapeType.Wire);
+            for (; exp.More(); exp.Next())
             {
-                break;
+                if (exp.Current().IsSame(_shape))
+                {
+                    break;
+                }
             }
-        }
 
-        if (!exp.More())
-        {
-            BRepCheckCheck.Add(lst, StatusCheck.SubshapeNotInShape);
-            return;
+            if (!exp.More())
+            {
+                BRepCheckCheck.Add(lst, StatusCheck.SubshapeNotInShape);
+                return;
+            }
         }
 
         StatusCheck st = StatusCheck.NoError;
@@ -274,24 +288,39 @@ internal class WireCheck : ResultCheck
 
         var exp = new Explorer();
         var expv = new Explorer();
-        var mapS = new HashSet<Shape>(ShapeHasher.Instance);
-        var cradoc = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-        _mapVE.Clear();
+        var mapS = new IndexedSet<Shape>(ShapeHasher.Instance);
+        // How many times each edge is met, and its first and last orientations
+        var cradoc = new IndexedMap<Shape, (int Count, Orientation First, Orientation Last)>(ShapeHasher.Instance);
+        if (!_mapVEIsWhole)
+        {
+            _mapVE.Clear();
+        }
+
         // Checks if the oriented edges of the wire give a "closed" wire,
         // i-e if each oriented vertex on oriented edges is found 2 times...
         for (exp.Init(_shape, ShapeType.Edge); exp.More(); exp.Next())
         {
             if (IsOriented(exp.Current()))
             {
-                if (!cradoc.ContainsKey(exp.Current()))
+                Orientation edgeOrientation = exp.Current().Orientation;
+                int seen = cradoc.IndexOf(exp.Current());
+                if (seen < 0)
                 {
-                    var theListOfShape = new NCollection_List<Shape>();
-                    cradoc[exp.Current()] = theListOfShape;
+                    cradoc.Add(exp.Current(), (1, edgeOrientation, edgeOrientation));
+                }
+                else
+                {
+                    ref (int Count, Orientation First, Orientation Last) met = ref cradoc.ValueAt(seen);
+                    met.Count++;
+                    met.Last = edgeOrientation;
                 }
 
-                cradoc.GetValue(exp.Current()).Append(exp.Current());
-
                 mapS.Add(exp.Current());
+                if (_mapVEIsWhole)
+                {
+                    continue;
+                }
+
                 for (expv.Init(exp.Current(), ShapeType.Vertex); expv.More(); expv.Next())
                 {
                     if (IsOriented(expv.Current()))
@@ -309,8 +338,9 @@ internal class WireCheck : ResultCheck
             }
         }
 
+        // With everything oriented, Minimum has found each edge from the first through the same map, or the status above says not
         int theNbori = mapS.Count;
-        if (theNbori >= 2)
+        if (theNbori >= 2 && !_mapVEIsWhole)
         {
             mapS.Clear();
             for (exp.ReInit(); exp.More(); exp.Next())
@@ -340,15 +370,16 @@ internal class WireCheck : ResultCheck
 
         // Kerf: the map iterates in another order than OCCT's; the result doesn't depend on it
         bool yabug = false;
-        foreach (KeyValuePair<Shape, NCollection_List<Shape>> itdm in cradoc)
+        for (int i = 0; i < cradoc.Count; i++)
         {
-            if (itdm.Value.Extent() >= 3)
+            ref (int Count, Orientation First, Orientation Last) met = ref cradoc.ValueAt(i);
+            if (met.Count >= 3)
             {
                 yabug = true;
             }
-            else if (itdm.Value.Extent() == 2)
+            else if (met.Count == 2)
             {
-                if (itdm.Value.First().Orientation == itdm.Value.Last().Orientation)
+                if (met.First == met.Last)
                 {
                     yabug = true;
                 }
@@ -636,7 +667,8 @@ internal class WireCheck : ResultCheck
         var listOfPassedEdge = new NCollection_List<Shape>();
         var exp = new Explorer();
         var vte = new Explorer();
-        var mapS = new HashSet<Shape>(ShapeHasher.Instance);
+        var mapS = new IndexedSet<Shape>(ShapeHasher.Instance);
+        FaceSurfaceAdaptor? faceSurface = null;
         Edge theEdge = new(), theRef = new();
 
         // Checks the orientation of the edges
@@ -829,7 +861,7 @@ internal class WireCheck : ResultCheck
                         pivot = vf;
                     }
 
-                    ChoixUV(pivot, theEdge, f, ledge);
+                    ChoixUV(pivot, theEdge, f, ledge, ref faceSurface);
                     nbconnex = ledge.Extent();
                     // 20/03/02 akm (OCC234) - The 2d exploration of wire with necessary
                     // checks is performed in Closed2d, here it's useless
@@ -933,7 +965,7 @@ internal class WireCheck : ResultCheck
                         }
                     }
 
-                    ChoixUV(vRef, theRef, f, ledge);
+                    ChoixUV(vRef, theRef, f, ledge, ref faceSurface);
                     if (ledge.Extent() == 0)
                     {
                         theOstat = StatusCheck.NotClosed;
@@ -1197,27 +1229,9 @@ internal class WireCheck : ResultCheck
                     int nbp, nbs;
                     double IP_ParamOnFirst, IP_ParamOnSecond;
                     Transition tr1, tr2;
-                    var commonVertices = new NCollection_List<Shape>();
+                    // Kerf: found when an intersection first needs them; two edges of a sound wire only meet at their ends
+                    NCollection_List<Shape>? commonVertices = null;
                     var itl = new NCollection_List<Shape>.Iterator();
-                    var vmap = new HashSet<Shape>(ShapeHasher.Instance);
-                    //
-                    var it = new Iterator(e1);
-                    for (; it.More(); it.Next())
-                    {
-                        vmap.Add(it.Value());
-                    }
-
-                    //
-                    it.Initialize(e2);
-                    for (; it.More(); it.Next())
-                    {
-                        Shape v = it.Value();
-                        if (vmap.Contains(v))
-                        {
-                            commonVertices.Append(v);
-                        }
-                    }
-
                     //
                     nbp = inter.PointCount;
                     nbs = inter.SegmentCount;
@@ -1274,6 +1288,7 @@ internal class WireCheck : ResultCheck
                                 p3d2 = hs.Value(p2d.X, p2d.Y);
                             }
 
+                            commonVertices ??= CommonVertices(e1, e2);
                             itl.Initialize(commonVertices);
                             for (; itl.More(); itl.Next())
                             {
@@ -1542,6 +1557,7 @@ internal class WireCheck : ResultCheck
                                     p3d2 = hs.Value(p2d.X, p2d.Y);
                                 }
 
+                                commonVertices ??= CommonVertices(e1, e2);
                                 itl.Initialize(commonVertices);
                                 for (; itl.More(); itl.Next())
                                 {
@@ -1620,75 +1636,66 @@ internal class WireCheck : ResultCheck
     /// <summary>Whether <see cref="InContext"/> checks <see cref="SelfIntersect"/>.</summary>
     public bool GeometricControls() => _gctrl;
 
-    // fill <mapE> with edges connected to <edg> through vertices contained in <mapVE>
-    private static void Propagate(IndexedMap<Shape, NCollection_List<Shape>> mapVE,
-                                  in Shape edg,
-                                  HashSet<Shape> mapE)
+    // The vertices of <e2> (in its order, as the iterator gives them) that are also vertices of <e1>
+    private static NCollection_List<Shape> CommonVertices(in Edge e1, in Edge e2)
     {
-        var currentEdges = new NCollection_List<Shape>();
-        currentEdges.Append(edg);
-
-        do
+        var commonVertices = new NCollection_List<Shape>();
+        var it2 = new Iterator(e2);
+        for (; it2.More(); it2.Next())
         {
-            var nextEdges = new NCollection_List<Shape>();
-            var itrc = new NCollection_List<Shape>.Iterator(currentEdges);
-            for (; itrc.More(); itrc.Next())
+            Shape v = it2.Value();
+            var it1 = new Iterator(e1);
+            for (; it1.More(); it1.Next())
             {
-                Shape edge = itrc.Value();
-                if (!mapE.Contains(edge))
+                if (it1.Value().IsSame(v))
                 {
-                    mapE.Add(edge);
+                    commonVertices.Append(v);
+                    break;
                 }
-
-                var ex = new Explorer(edge, ShapeType.Vertex);
-                for (; ex.More(); ex.Next())
-                {
-                    Vertex vtx = ShapeCasts.Vertex(ex.Current());
-                    int indv = mapVE.IndexOf(vtx) + 1;
-                    if (indv != 0)
-                    {
-                        NCollection_List<Shape> edges = mapVE.ValueAt(indv - 1);
-
-                        var itl = new NCollection_List<Shape>.Iterator(edges);
-                        for (; itl.More(); itl.Next())
-                        {
-                            Shape e = itl.Value();
-                            if (!edge.IsSame(e) && !mapE.Contains(e))
-                            {
-                                mapE.Add(e);
-                                nextEdges.Append(e);
-                            }
-                        }
-                    }
-                }
-            }
-
-            currentEdges = nextEdges;
-        } while (!currentEdges.IsEmpty());
-    }
-
-    // The orientation of the key of <mapE> that is the same edge as <edg>. The map compares with IsSame, so it
-    // holds one such key and OCCT's map order doesn't matter.
-    private static Orientation GetOrientation(HashSet<Shape> mapE, in Edge edg)
-    {
-        Shape key = new();
-        foreach (Shape itm in mapE)
-        {
-            key = itm;
-            if (itm.IsSame(edg))
-            {
-                break;
             }
         }
 
-        return key.Orientation;
+        return commonVertices;
+    }
+
+    // fill <mapE> with edges connected to <edg> through vertices contained in <mapVE>
+    private static void Propagate(IndexedMap<Shape, NCollection_List<Shape>> mapVE,
+                                  in Shape edg,
+                                  IndexedSet<Shape> mapE)
+    {
+        // Kerf: the set is its own queue: what's new goes at its end. Only what it ends up holding is read, not its order
+        mapE.Add(edg);
+        for (int done = 0; done < mapE.Count; ++done)
+        {
+            var ex = new Explorer(mapE[done], ShapeType.Vertex);
+            for (; ex.More(); ex.Next())
+            {
+                int indv = mapVE.IndexOf(ex.Current());
+                if (indv >= 0)
+                {
+                    NCollection_List<Shape> edges = mapVE.ValueAt(indv);
+                    for (int i = 0; i < edges.Extent(); ++i)
+                    {
+                        mapE.Add(edges.ItemAt(i));
+                    }
+                }
+            }
+        }
+    }
+
+    // The orientation of the key of <mapE> that is the same edge as <edg>, which is there. The map compares with IsSame,
+    // so it holds one such key and OCCT's map order doesn't matter.
+    private static Orientation GetOrientation(IndexedSet<Shape> mapE, in Edge edg)
+    {
+        return mapE[mapE.IndexOf(edg)].Orientation;
     }
 
     // For vertex theVertex given function find an edge along that we should go further.
     private static void ChoixUV(in Vertex vertex,
                                 in Edge edge,
                                 in Face face,
-                                NCollection_List<Shape> lOfShape)
+                                NCollection_List<Shape> lOfShape,
+                                ref FaceSurfaceAdaptor? faceSurfaceOfWire)
     {
         var it = new NCollection_List<Shape>.Iterator(lOfShape);
         while (it.More())
@@ -1713,7 +1720,7 @@ internal class WireCheck : ResultCheck
         double a_gpResolution = Constants.Resolution();
         Orientation vOrientation, edgOrientation;
         double param = 0.0, firstParam, lastParam, parPiv;
-        var faceSurface = new FaceSurfaceAdaptor(face, false); // no restriction
+        FaceSurfaceAdaptor faceSurface = faceSurfaceOfWire ??= new FaceSurfaceAdaptor(face, false); // no restriction
 
         Curve2D? c2d = Tool.CurveOnSurface(edge, face, out firstParam, out lastParam);
         if (c2d is null)
@@ -1911,8 +1918,8 @@ internal class WireCheck : ResultCheck
         // Check 2d distance for periodic faces with seam edge.
         // Searching for seam edges
         var seamEdges = new NCollection_List<Shape>();
-        var notSeams = new HashSet<Shape>(ShapeHasher.Instance);
-        var closedEdges = new HashSet<Shape>(ShapeHasher.Instance);
+        var notSeams = new IndexedSet<Shape>(ShapeHasher.Instance);
+        var closedEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
         var exp = new Explorer(face, ShapeType.Edge);
 
         for (; exp.More(); exp.Next())
@@ -1930,7 +1937,7 @@ internal class WireCheck : ResultCheck
                 continue;
             }
 
-            if (!closedEdges.Add(edge))
+            if (!closedEdges.TryAdd(edge))
             {
                 seamEdges.Append(edge);
             }

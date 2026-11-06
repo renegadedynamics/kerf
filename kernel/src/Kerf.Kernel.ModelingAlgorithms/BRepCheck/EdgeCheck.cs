@@ -3,7 +3,6 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
@@ -30,6 +29,8 @@ internal class EdgeCheck : ResultCheck
 
     private CurveRepresentation? _cref;
     private CurveAdaptorBase? _hCurve;
+    // The reference curve in position, when it's a whole line (what LineIsWithinTolerance can read)
+    private Line3D? _line;
     private bool _gctrl;
     private bool _isExactMethod;
 
@@ -140,7 +141,8 @@ internal class EdgeCheck : ResultCheck
                         // better transform C3d instead of transforming Surf upto C3d initial location,
                         // on transformed BSpline surface 'same parameter' may seem wrong
                         Placement L = _shape.Placement * _cref.Location();
-                        var c3d = (Curve3D)_cref.Curve3D()!.Transformed(L.Transformation);
+                        // Kerf: nothing here changes the curve, so with no placement it needs no copy
+                        Curve3D c3d = L.IsIdentity ? _cref.Curve3D()! : (Curve3D)_cref.Curve3D()!.Transformed(L.Transformation);
                         bool isPeriodic = c3d.IsPeriodic;
                         double period = RealLast();
                         if (isPeriodic)
@@ -177,6 +179,7 @@ internal class EdgeCheck : ResultCheck
                                                               c3d.TransformedParameter(first, L.Transformation),
                                                               c3d.TransformedParameter(last, L.Transformation));
                             _hCurve = gac3d;
+                            _line = c3d is LineCurve3D lineCurve ? lineCurve.Line : null;
                         }
                     }
                     else
@@ -239,7 +242,7 @@ internal class EdgeCheck : ResultCheck
     /// Checks the edge in a wire (nothing), a face (flags, range and the distance between the reference curve and
     /// the pcurves on the face, or the projection on a plane without pcurve) or a solid (bounds two faces).
     /// </summary>
-    public override void InContext(in Shape s)
+    public override void InContext(in Shape s, bool isFoundThere = false)
     {
         NCollection_List<StatusCheck> hList;
         {
@@ -274,19 +277,23 @@ internal class EdgeCheck : ResultCheck
         double tol = Tool.Tolerance(ShapeCasts.Edge(_shape));
 
         ShapeType styp = s.Type;
-        var exp = new Explorer(s, ShapeType.Edge);
-        for (; exp.More(); exp.Next())
+        var exp = new Explorer();
+        if (!isFoundThere)
         {
-            if (exp.Current().IsSame(_shape))
+            exp.Init(s, ShapeType.Edge);
+            for (; exp.More(); exp.Next())
             {
-                break;
+                if (exp.Current().IsSame(_shape))
+                {
+                    break;
+                }
             }
-        }
 
-        if (!exp.More())
-        {
-            BRepCheckCheck.Add(lst, StatusCheck.SubshapeNotInShape);
-            return;
+            if (!exp.More())
+            {
+                BRepCheckCheck.Add(lst, StatusCheck.SubshapeNotInShape);
+                return;
+            }
         }
 
         switch (styp)
@@ -396,7 +403,7 @@ internal class EdgeCheck : ResultCheck
                                 return;
                             }
 
-                            if (_gctrl)
+                            if (_gctrl && !LineOnPCurveIsWithinTolerance(cr, su, floc * tFloc, f, l, first, last, tol))
                             {
                                 var sb = (Surface)su!.Transformed((floc * tFloc).Transformation);
                                 Curve2D PC = cr.PCurve()!;
@@ -475,7 +482,7 @@ internal class EdgeCheck : ResultCheck
                         {
                             // on fait la projection a la volee, comme BRep_Tool
                             // plan en position
-                            if (_gctrl)
+                            if (_gctrl && !LineIsWithinToleranceOfPlane(p, floc * tFloc, first, last, tol))
                             {
                                 p = (PlaneSurface)p.Transformed((floc * tFloc).Transformation); // eap occ332
                                 // on projette Cref sur ce plan
@@ -555,6 +562,89 @@ internal class EdgeCheck : ResultCheck
         {
             lst.Append(StatusCheck.NoError);
         }
+    }
+
+    // The shortcuts for a straight edge on a plane (docs/performance.md, "The check on small shapes"). Each is one way only:
+    // true means the full measurement below would find the edge within its tolerance; false says nothing, and the measurement is
+    // made. The measurement samples, among others, both ends of the range, and its bound is the tolerance plus a precision.
+    //
+    // Between the two ends, a point on the line and the point it's compared with both move linearly with the parameter, so
+    // the square of their distance is convex and its largest value is at an end. Everything else that the measurement could
+    // see is rounding, of about 1e-16 of the coordinates: so an end must be within half the tolerance, and 1e-12 of the coordinates
+    // must be within a quarter of it.
+    private const double RelativeRounding = 1.0e-12;
+
+    private static double Largest(in Point3D p) => Max(Max(Math.Abs(p.X), Math.Abs(p.Y)), Math.Abs(p.Z));
+
+    private static bool EndIsClear(in Point3D onLine, in Point3D other, double tol)
+    {
+        double rounding = RelativeRounding * Max(Largest(onLine), Largest(other));
+        return rounding <= 0.25 * tol && onLine.DistanceTo(other) + rounding <= 0.5 * tol;
+    }
+
+    // The reference line and a line in the parameters of a plane, over the same range and parameters as ValidateEdge's samples
+    private bool LineOnPCurveIsWithinTolerance(CurveRepresentation cr, Surface? su, in Placement facePlacement,
+                                               double f, double l, double first, double last, double tol)
+    {
+        double eps = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        if (_line is not { } line || !(tol > 0.0) || cr.IsCurveOnClosedSurface
+            || su is not PlaneSurface plane || cr.PCurve() is not LineCurve2D pcurve
+            || Math.Abs(f - first) > eps || Math.Abs(l - last) > eps)
+        {
+            return false;
+        }
+
+        Transform3D trsf = facePlacement.Transformation;
+        if (trsf.ScaleFactor != 1.0)
+        {
+            return false;
+        }
+
+        Plane3D placed = plane.Plane.Transformed(trsf);
+        Line2D line2d = pcurve.Line;
+        Point2D uvFirst = global::Kerf.Engine.Geometry.ElCLib.Value(first, line2d);
+        Point2D uvLast = global::Kerf.Engine.Geometry.ElCLib.Value(last, line2d);
+        return EndIsClear(global::Kerf.Engine.Geometry.ElCLib.Value(first, line),
+                          global::Kerf.Engine.Geometry.ElSLib.Value(uvFirst.X, uvFirst.Y, placed),
+                          tol)
+               && EndIsClear(global::Kerf.Engine.Geometry.ElCLib.Value(last, line),
+                             global::Kerf.Engine.Geometry.ElSLib.Value(uvLast.X, uvLast.Y, placed),
+                             tol);
+    }
+
+    // The reference line and its own projection on a plane: the distance is how far the line is from the plane. What the
+    // projection needs is that the line isn't across the plane, isn't a stub it can't trim, and isn't sloped enough for the
+    // parameters of the projected line to differ (it may be given a unit direction: by the parameter times the slope's square, halved)
+    private bool LineIsWithinToleranceOfPlane(PlaneSurface plane, in Placement facePlacement, double first, double last, double tol)
+    {
+        const double LargestSlope = 1.0e-3;
+        const double ShortestRange = 1.0e-5;
+        if (_line is not { } line || !(tol > 0.0) || !(last - first > ShortestRange))
+        {
+            return false;
+        }
+
+        Transform3D trsf = facePlacement.Transformation;
+        if (trsf.ScaleFactor != 1.0)
+        {
+            return false;
+        }
+
+        Plane3D placed = plane.Plane.Transformed(trsf);
+        Direction3D normal = placed.Axis.Direction;
+        double slope = Math.Abs(line.Direction.Dot(normal));
+        if (slope > LargestSlope || Max(Math.Abs(first), Math.Abs(last)) * slope * slope > 0.1 * tol)
+        {
+            return false;
+        }
+
+        Point3D atFirst = global::Kerf.Engine.Geometry.ElCLib.Value(first, line);
+        Point3D atLast = global::Kerf.Engine.Geometry.ElCLib.Value(last, line);
+        Point3D origin = placed.Location;
+        double rounding = RelativeRounding * Max(Largest(origin), Max(Largest(atFirst), Largest(atLast)));
+        return rounding <= 0.25 * tol
+               && Math.Abs(new Vector3D(origin, atFirst).Dot(new Vector3D(normal))) + rounding <= 0.5 * tol
+               && Math.Abs(new Vector3D(origin, atLast).Dot(new Vector3D(normal))) + rounding <= 0.5 * tol;
     }
 
     /// <summary>Nothing more than the minimum (OCCT removed the body).</summary>

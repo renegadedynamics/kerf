@@ -48,6 +48,12 @@ internal class Analyzer
     private bool _isExact;
 
     /// <summary>
+    /// For tests only (tests/Shared/FullCheck): told of each check as it finishes, with the shape and whether geometry was
+    /// checked, to compare it with the check as it was. Never set in a package.
+    /// </summary>
+    internal static Action<Analyzer, Shape, bool>? Finished;
+
+    /// <summary>
     /// Checks <paramref name="s"/>; with <paramref name="geomControls"/> false only topological information is
     /// checked. <paramref name="isParallel"/> checks the sub-shapes on several threads;
     /// <paramref name="isExact"/> measures edges on faces exactly (see <see cref="SetExactMethod"/>).
@@ -76,8 +82,17 @@ internal class Analyzer
 
         _shape = shape;
         _map.Clear();
+        // About ten sub-shapes, each way round, for each face: fewer times to grow the map
+        int nbFaces = 0;
+        for (var exp = new Explorer(shape, ShapeType.Face); exp.More(); exp.Next())
+        {
+            ++nbFaces;
+        }
+
+        _map.EnsureCapacity(10 * nbFaces);
         Put(shape, b);
         Perform();
+        Finished?.Invoke(this, shape, b);
     }
 
     /// <summary>
@@ -105,9 +120,7 @@ internal class Analyzer
     {
         if (_map.GetValue(s) is { } result)
         {
-            var itl = new NCollection_List<StatusCheck>.Iterator();
-            itl.Initialize(result.Status());
-            if (itl.Value() != StatusCheck.NoError)
+            if (result.Status().ItemAt(0) != StatusCheck.NoError)
             {
                 // a voir
                 return false;
@@ -223,8 +236,6 @@ internal class Analyzer
                 break;
         }
 
-        hr?.SetParallel(_isParallel);
-
         _map.Add(shape, hr);
 
         for (var theIterator = new Iterator(shape); theIterator.More(); theIterator.Next())
@@ -239,6 +250,23 @@ internal class Analyzer
     private void Perform()
     {
         int mapSize = _map.Count;
+        // Handing a small shape to the pool costs more than it saves, and the result is the same on any number of threads (unit 11R).
+        // So a small check has no locks and no copies of the adaptors either. The exact method is asked of the edges as it was: it has its own parallel loop.
+        bool onPool = _isParallel && mapSize >= MinParallelSize;
+        if (onPool || (_isParallel && _isExact))
+        {
+            for (int i = 0; i < mapSize; ++i)
+            {
+                _map.ValueAt(i)?.SetParallel(true);
+            }
+        }
+
+        if (!onPool)
+        {
+            new BRepCheck_ParallelAnalyzer(_map).Perform(0, mapSize);
+            return;
+        }
+
         const int minTaskSize = 10;
         // OSD_ThreadPool::DefaultPool()->NbThreads() is the number of logical processors
         int nbThreads = OsdParallel.LogicalProcessorCount;
@@ -276,9 +304,10 @@ internal class Analyzer
             arrayOfArray[vectIndex][shapeIndex] = _map.KeyAt(i - 1);
         }
 
-        var parallelAnalyzer = new BRepCheck_ParallelAnalyzer(arrayOfArray, _map);
-        // Handing a small shape to the pool costs more than it saves, and the result is the same on any number of threads (unit 11R)
-        OsdParallel.For(0, arrayOfArray.Length(), parallelAnalyzer.Perform, !_isParallel || mapSize < MinParallelSize);
+        var parallelAnalyzer = new BRepCheck_ParallelAnalyzer(_map);
+        OsdParallel.For(0,
+                        arrayOfArray.Length(),
+                        vectorIndex => parallelAnalyzer.Perform(arrayOfArray[vectorIndex]));
     }
 
     private bool ValidSub(in Shape s, ShapeType subType)
@@ -316,13 +345,10 @@ internal class Analyzer
     /// <summary>OCCT's functor for multi-threaded execution: checks one chunk of the sub-shapes in their contexts.</summary>
     private sealed class BRepCheck_ParallelAnalyzer
     {
-        private readonly NCollection_Array1<Shape[]> _array;
         private readonly IndexedMap<Shape, ResultCheck?> _map;
 
-        public BRepCheck_ParallelAnalyzer(NCollection_Array1<Shape[]> array,
-                                          IndexedMap<Shape, ResultCheck?> map)
+        public BRepCheck_ParallelAnalyzer(IndexedMap<Shape, ResultCheck?> map)
         {
-            _array = array;
             _map = map;
         }
 
@@ -361,15 +387,32 @@ internal class Analyzer
             }
         }
 
-        public void Perform(int vectorIndex)
+        /// <summary>The sub-shapes from <paramref name="first"/> up to <paramref name="end"/>, in the map's order, here on this thread.</summary>
+        public void Perform(int first, int end)
+        {
+            var mapS = new IndexedSet<Shape>(ShapeHasher.Instance);
+            for (int i = first; i < end; ++i)
+            {
+                Perform(_map.KeyAt(i), _map.ValueAt(i), mapS);
+            }
+        }
+
+        /// <summary>The given sub-shapes, here on this thread.</summary>
+        public void Perform(Shape[] shapes)
+        {
+            var mapS = new IndexedSet<Shape>(ShapeHasher.Instance);
+            for (int i = 0; i < shapes.Length; ++i)
+            {
+                Perform(shapes[i], _map.GetValue(shapes[i]), mapS);
+            }
+        }
+
+        // mapS: scratch, kept from one sub-shape to the next
+        private void Perform(in Shape shape, ResultCheck? result, IndexedSet<Shape> mapS)
         {
             var exp = new Explorer();
-            Shape[] vector = _array[vectorIndex];
-            for (int shapeIter = 0; shapeIter < vector.Length; ++shapeIter)
+            ShapeType type = shape.Type;
             {
-                Shape shape = vector[shapeIter];
-                ShapeType type = shape.Type;
-                ResultCheck? result = _map.GetValue(shape);
                 switch (type)
                 {
                     case ShapeType.Vertex:
@@ -393,16 +436,16 @@ internal class Analyzer
                             result?.SetFailStatus(shape);
                         }
 
-                        var mapS = new HashSet<Shape>(ShapeHasher.Instance);
+                        mapS.Clear();
                         for (exp.Init(shape, ShapeType.Vertex); exp.More(); exp.Next())
                         {
                             Shape vertex = exp.Current();
                             ResultCheck? resOfVertex = _map.GetValue(vertex);
                             try
                             {
-                                if (mapS.Add(vertex))
+                                if (mapS.TryAdd(vertex))
                                 {
-                                    resOfVertex!.InContext(shape);
+                                    resOfVertex!.InContext(shape, isFoundThere: true);
                                 }
                             }
                             catch (Exception exception) when (IsCaught(exception))
@@ -425,15 +468,15 @@ internal class Analyzer
                     }
                     case ShapeType.Face:
                     {
-                        var mapS = new HashSet<Shape>(ShapeHasher.Instance);
+                        mapS.Clear();
                         for (exp.Init(shape, ShapeType.Vertex); exp.More(); exp.Next())
                         {
                             ResultCheck? faceVertexRes = _map.GetValue(exp.Current());
                             try
                             {
-                                if (mapS.Add(exp.Current()))
+                                if (mapS.TryAdd(exp.Current()))
                                 {
-                                    faceVertexRes!.InContext(shape);
+                                    faceVertexRes!.InContext(shape, isFoundThere: true);
                                 }
                             }
                             catch (Exception exception) when (IsCaught(exception))
@@ -456,9 +499,9 @@ internal class Analyzer
                             ResultCheck? faceEdgeRes = _map.GetValue(exp.Current());
                             try
                             {
-                                if (mapS.Add(exp.Current()))
+                                if (mapS.TryAdd(exp.Current()))
                                 {
-                                    faceEdgeRes!.InContext(shape);
+                                    faceEdgeRes!.InContext(shape, isFoundThere: true);
 
                                     if (performwire)
                                     {
@@ -492,7 +535,7 @@ internal class Analyzer
                             ResultCheck? faceWireRes = _map.GetValue(exp.Current());
                             try
                             {
-                                faceWireRes!.InContext(shape);
+                                faceWireRes!.InContext(shape, isFoundThere: true);
 
                                 if (orientofwires)
                                 {
@@ -568,7 +611,7 @@ internal class Analyzer
                             ResultCheck? solidRes = _map.GetValue(shell);
                             try
                             {
-                                solidRes!.InContext(shape);
+                                solidRes!.InContext(shape, isFoundThere: true);
                             }
                             catch (Exception exception) when (IsCaught(exception))
                             {

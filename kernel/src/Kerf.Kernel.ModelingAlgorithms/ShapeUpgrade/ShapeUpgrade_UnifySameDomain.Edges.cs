@@ -586,6 +586,14 @@ internal partial class UnifySameDomain
                     return false;
                 }
 
+                // Two pole edges with a seam between them don't touch on the surface: merging them, as OCCT 8.0.1 does,
+                // gives one that crosses the face the wrong way (decision 1816)
+                double aTouching = global::Kerf.Engine.Foundation.Precision.Confusion();
+                if (minSqDist > aTouching * aTouching)
+                {
+                    return false;
+                }
+
                 // Define indices corresponding to extremities of future edge
                 indOnE1 = 1 - indOnE1;
                 indOnE2 = 1 - indOnE2;
@@ -615,6 +623,13 @@ internal partial class UnifySameDomain
                 b.Add(newEdge, startVertex);
                 b.Add(newEdge, endVertex);
                 b.Degenerated(newEdge, true);
+                // The new edge runs as the first did on the face taken forward. The chain holds that edge as the shape
+                // does, so on a reversed face OCCT 8.0.1's goes the other way round the wire (decision 1816).
+                if (edgeFirst.Orientation != orOfE1OnFace)
+                {
+                    newEdge.Reverse();
+                }
+
                 outEdge = newEdge;
                 return true;
             }

@@ -379,6 +379,11 @@ public sealed class DrawCorpus(string theTestsDirectory)
                                                             theLog => theLog.Contains("is equal to the second argument", StringComparison.Ordinal)
                                                                       && theLog.Contains("The length tan1_2 is 376.991118543385", StringComparison.Ordinal)
                                                                       && !theLog.Contains("circle: tan1_3", StringComparison.Ordinal)),
+            // OCCT's script holds the 1.5e-7 of a walked tangency (it's about big tolerances): a sphere of a pipe's minor
+            // radius is analytic now, and its curve exact (decision 1818)
+            ["lowalgos/intss/bug26684_1"] = ("a sphere touching a torus along a circle is analytic (decision 1818)",
+                                             theLog => theLog.Contains("Reached tolerance = 4.96", StringComparison.Ordinal)
+                                                       && theLog.Contains("e-15 is not equal to expected 1.4915699300398263e-07", StringComparison.Ordinal)),
         });
 
     private static Dictionary<string, (string, Func<string, bool>)> WithMassReferences(Dictionary<string, (string, Func<string, bool>)> theCases)

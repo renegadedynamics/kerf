@@ -458,6 +458,22 @@ internal static class AdaptorOracleInputs
     /// negative offsets, degenerate radii), of a swept, Bezier or B-spline surface, of a trimmed one, of an offset;
     /// built with isNotCheckC0 now and then. Construction is retried while it throws on both sides (a C0 basis).
     /// </summary>
+    /// <summary>
+    /// The offset to give the port for native's <paramref name="theOffset"/>, so that the frozen recordings can still be
+    /// compared. Native's offset of an indirect plane reduces to a plane on the wrong side (upstream 71658f6c8f, decision
+    /// 20601), which Kerf's doesn't, so the same geometry as native's is the opposite offset on the port's side.
+    /// <c>Geom_OffsetSurface_ThreeWay</c> holds the right answer by law.
+    /// </summary>
+    internal static double PortOffset(Surface theBasis, double theOffset) => IsOnIndirectPlane(theBasis) ? -theOffset : theOffset;
+
+    internal static bool IsOnIndirectPlane(Surface theSurface) => theSurface switch
+    {
+        PlaneSurface aPlane => !aPlane.Position.IsDirect,
+        TrimmedSurface aTrimmed => IsOnIndirectPlane(aTrimmed.BasisSurface),
+        OffsetSurface anOffset => IsOnIndirectPlane(anOffset.BasisSurface),
+        _ => false,
+    };
+
     internal static (N.Geom_Surface Native, Surface Port) RandomOffsetSurface(Oracle theO)
     {
         while (true)
@@ -498,7 +514,7 @@ internal static class AdaptorOracleInputs
                 N.Geom_Surface? aN = null;
                 Surface? aP = null;
                 Exception? aNErr = Catch(() => aN = new N.Geom_OffsetSurface(aNB, anOffset, aNotCheck));
-                Exception? aPErr = Catch(() => aP = new OffsetSurface(aPB, anOffset, aNotCheck));
+                Exception? aPErr = Catch(() => aP = new OffsetSurface(aPB, PortOffset(aPB, anOffset), aNotCheck));
                 if (SameOutcome(aNErr, aPErr, "Geom_OffsetSurface construction"))
                 {
                     return (aN!, aP!);
@@ -518,7 +534,7 @@ internal static class AdaptorOracleInputs
                 N.Geom_Surface? aN = null;
                 Surface? aP = null;
                 Exception? aNErr = Catch(() => aN = new N.Geom_OffsetSurface(aNB, anOffset, true));
-                Exception? aPErr = Catch(() => aP = new OffsetSurface(aPB, anOffset, true));
+                Exception? aPErr = Catch(() => aP = new OffsetSurface(aPB, PortOffset(aPB, anOffset), true));
                 if (SameOutcome(aNErr, aPErr, "inner Geom_OffsetSurface construction"))
                 {
                     return (aN!, aP!);

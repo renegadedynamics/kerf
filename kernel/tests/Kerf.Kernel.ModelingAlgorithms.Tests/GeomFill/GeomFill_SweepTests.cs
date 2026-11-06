@@ -425,6 +425,36 @@ public class GeomFill_SweepTests
             Assert.Equal((aWp[i] - aWm[i]) / (2 * h), aDW[i], 1e-4);
         }
 
+        // The second derivatives against differences of the first (decision 1815: OCCT 8.0.1's were wrong in the
+        // quasi-angular weights, and in the interior poles of arcs of more than one span). The normals turn at unit speed.
+        if (aConv != Polynomial)
+        {
+            Vector3D aZ = new Vector3D(0, 0, 0);
+            void First(double t, NCollection_Array1<Point3D> theP, NCollection_Array1<Vector3D> theD, NCollection_Array1<double> theW, NCollection_Array1<double> theDW)
+            {
+                Arc(t, out Vector3D s1, out Vector3D s2, out Point3D a1, out Point3D a2);
+                Arc(t + M_PI / 2, out Vector3D d1, out _, out _, out _);
+                Arc(t + M_PI / 2 + theAngle, out Vector3D d2, out _, out _, out _);
+                Assert.True(global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(aConv, s1, s2, d1, d2, new Vector3D(aN), aZ, a1, a2, d1 * aR, d2 * aR, aR,
+                                               0, aC, aZ, theP, theD, theW, theDW));
+            }
+            const double h2 = 1e-4;
+            NCollection_Array1<Vector3D> aDm = new(1, aNbP), aDp = new(1, aNbP), aD1 = new(1, aNbP), aD2 = new(1, aNbP);
+            NCollection_Array1<double> aDWm = new(1, aNbP), aDWp = new(1, aNbP), aDW1 = new(1, aNbP), aD2W = new(1, aNbP);
+            First(t0 - h2, aPm, aDm, aWm, aDWm);
+            First(t0 + h2, aPp, aDp, aWp, aDWp);
+            Arc(t0, out Vector3D s10, out Vector3D s20, out Point3D a10, out Point3D a20);
+            Arc(t0 + M_PI / 2, out Vector3D d10, out _, out _, out _);
+            Arc(t0 + M_PI / 2 + theAngle, out Vector3D d20, out _, out _, out _);
+            Assert.True(global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(aConv, s10, s20, d10, d20, s10 * -1, s20 * -1, new Vector3D(aN), aZ, aZ, a10, a20,
+                                           d10 * aR, d20 * aR, s10 * -aR, s20 * -aR, aR, 0, 0, aC, aZ, aZ, aP, aD1, aD2, aW, aDW1, aD2W));
+            for (int i = 1; i <= aNbP; i++)
+            {
+                Assert.True((aDp[i] - aDm[i]).Divided(2 * h2).Subtracted(aD2[i]).Magnitude < 1e-5, $"pole {i}");
+                Assert.Equal((aDWp[i] - aDWm[i]) / (2 * h2), aD2W[i], 1e-5);
+            }
+        }
+
         Assert.True(global::Kerf.Engine.Construction.Surfaces.GeomFill.GetTolerance(aConv, 0.5, aR, 0.01, 1e-4) > 0);
         NCollection_Array1<double> aMinW = new(1, aNbP);
         if (aConv != TgtThetaOver2_3 || aNbP == 7)

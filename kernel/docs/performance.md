@@ -1121,3 +1121,66 @@ Processor time was no use here: under this load it put no check above the full c
 Nothing checks a Boolean's inputs, so nothing is known. Even if each input came from a checked operation, a little over a quarter of the faces at most go unchecked, as these cases cut and fuse what they touch.
 
 **What would help more is a different question:** trusting a face without having checked it, such as a primitive's or an extrusion's, which is what decision 1793 infers for extrusions. That isn't proved, so it wasn't tried. The owner's options in "Unit 11R" stand.
+
+## The check on small shapes
+
+*6 November 2026, on a shared machine with its owner using it: every time here is rough, and bytes and counts don't depend on the load. Decisions 1823 to 1828.*
+
+**The answer is that about half of a small shape's check was bookkeeping, and it's gone, with the verdict unchanged.** Bytes of one check, from `GC.GetTotalAllocatedBytes`, and the smallest time for a batch of checks over 3 alternating rounds of 1,000:
+
+| Shape | Sub-shapes | Bytes before | After | | Time before | After | |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Box | 55 | 321,856 | 169,008 | **-47%** | 214 µs | 168 µs | -22% |
+| One square face | 15 | 52,464 | 29,400 | -44% | 30 µs | 24 µs | -22% |
+| One hexagonal face | 21 | 86,936 | 44,552 | -49% | 52 µs | 39 µs | -26% |
+| Hexagonal prism | 79 | 561,704 | 265,647 | **-53%** | 241 µs | 153 µs | -36% |
+| Plate with a hole | 69 | 431,584 | 258,136 | -40% | 234 µs | 168 µs | -28% |
+| "for-loop"'s result | 403 | 2,878,392 | 1,357,368 | **-53%** | 1,563 µs | 945 µs | -40% |
+| "function, for-loop"'s result | 325 | 2,332,488 | 1,092,312 | -53% | 1,305 µs | 758 µs | -42% |
+| "nesting locations"' result | 1,411 | 9,944,047 | 4,962,928 | -50% | 3,210 µs | 2,040 µs | -36% |
+
+**Bento's eleven examples,** 8 alternating rounds of 30 passes, bytes per recalculation; results the same in all eleven:
+
+| | Before | After | |
+|---|---:|---:|---:|
+| Recalculation | 165.2 MB | 152.5 MB | **-7.7%** |
+| "for-loop" | 13.5 MB | 10.9 MB | -19% |
+| "function, for-loop" | 9.9 MB | 8.1 MB | -18% |
+| "nesting locations" | 20.4 MB | 17.9 MB | -12% |
+
+Against "What a check can remember", this is more than remembering gave (about a fifth of the check's bytes) and it applies to new faces too. The bytes also include what `IndexedSet` and `WireExplorer` save outside the check, which wasn't separated out.
+
+**The recalculation's times here are no use.** The same build differed by up to 23% on one row from one run to the next, and the medians went both ways: 553 ms against 564, then 497 against 525 by the smallest round, with "for-loop" at 23.6 against 27.4 in one run and 22.2 in the next for the same code. So the gain in a recalculation is inferred from the check's own time and bytes, and needs the quiet timed run.
+
+**Where a small shape's check went** (allocation ticks' inclusive shares on a box and "for-loop", decision 1706: the leaves of a CPU profile aren't read, and here `PollGC` is 95% of them). No site was above 5.4%:
+
+| What | Before | What was done |
+|---|---:|---|
+| A dictionary, a lock and a snapshot for each sub-shape's contexts | About 15% | `ContextMap`, a small array with an index past 16; no snapshot; no lock unless on the pool |
+| Sets and maps of a few shapes, in the wire's checks and `WireExplorer` | About 25%, with a dictionary and growing arrays for four edges | `IndexedSet` compares in turn up to 8 items, and the check uses it everywhere; `Propagate` is its own queue; `Closed` counts instead of keeping lists |
+| The wire's map built twice | 4% | With everything oriented, `Minimum`'s map is the one `Closed` would build, and its connection is the one it would find |
+| Measuring a line on a plane, and projecting it when it has no pcurve | 7% on a box, 17% on "for-loop" | Decision 1825 |
+| Boxes and bounds to compare the wires of a face with one wire | 5% | Still measured, as a curve that can't be measured is a failure; no longer kept |
+| Common vertices of two edges that only meet at their ends | 2% | Found when an intersection first needs them |
+| Searching a context for a shape found by exploring it | No bytes; quadratic in a face's edges | Decision 1826 |
+| The face's adaptor for each step of a wire; `FClass2d`'s adaptors for each edge; a copy of an unplaced curve | 5% | One each, loaded again |
+
+**What wasn't shortcut, and why.** A wire's self-intersection is done by `GInter`, whose line against itself is already nothing, and two straight edges need the same intersection the check is for. The 2D classifier for one wire is the orientation's verdict. Both still run in full.
+
+**How it's known that nothing changed.** `tests/Shared/FullCheck` is the check as it was, generated from the commit before this work: its classes and `FClass2d`, `WireExplorer`, `EdgeCurveAdaptor`, `IndexedSet` and `IndexedMap`, with only the namespace changed. With `KERF_CHECK_COMPARE=file`, each check any test makes is made both ways, comparing the verdict and every status of every sub-shape in every context, and their order unless on the pool. Its counts:
+
+| Run | Cases or tests | Checks compared | Invalid | Sub-shapes | Differences |
+|---|---:|---:|---:|---:|---:|
+| Corpus, `boolean` | 4,091 of 4,093 | 3,499 | 15 | 378,299 | 0 |
+| Corpus, `blend` | 475 of 475 | 436 | 2 | 40,257 | 0 |
+| Corpus, `chamfer` | 279 of 279 | 261 | 3 | 29,127 | 0 |
+| Corpus, `heal` | 2,739 of 2,741 | 665 | 34 | 59,986 | 0 |
+| `Kerf.Kernel.ModelingAlgorithms.Tests`, with the check's own invalid shapes and those of `BRepCheckComparisonTests` (3,000 random small faces and each shortcut's limits, on either side) | 5,709 | 15,491 | 6,747 | 350,960 | 0 |
+| `Kerf.Modeling.Tests` | 2,093 | 5,570 | 123 | 135,553 | 0 |
+| **All** | | **25,922** | **6,924** | **994,182** | **0** |
+
+Each group ran on its own, four cases at a time. Each case compares only the checks its script asks for, and the cases weren't judged: they are there to make shapes, and their limits were stretched fourfold. `Kerf.Kernel.PublicApi.Tests` passes but doesn't hold the comparison.
+
+Then, deliberately wrong shortcuts, to see the comparison fail: an end allowed 100 tolerances fails 5 and 4 of its tests, and the slope limit left out fails 1 (`A_slope_whose_ends_are_within_tolerance_but_whose_parameters_are_large`: a false "valid" without the limit). **One guard wasn't shown to matter:** leaving out the shortest range fails nothing, including in a test of stubs made for it. It stays, as nothing is lost by measuring a stub.
+
+**What's left:** an `NCollection_List` is three objects (itself, a `List<T>` and an array), so each status list is about 100 bytes: dropping the `List<T>` would help everywhere in the kernel, but is a change of its own. `FClass2d` is now the largest single part of a small shape's check, about a quarter, and what's in it is its answer. Beyond that the rest is spread: the top site is 3%.

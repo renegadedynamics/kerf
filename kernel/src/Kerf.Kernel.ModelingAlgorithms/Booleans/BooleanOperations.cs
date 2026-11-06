@@ -153,7 +153,17 @@ public static class BooleanOperations
     {
         ArgumentNullException.ThrowIfNull(tools);
         operation.SetTools(List(tools, nameof(tools)));
-        return Run((BuilderAlgo)operation, arguments, options, progress, cancellationToken);
+        Result<Built<Shape>> result = Run((BuilderAlgo)operation, arguments, options, progress, cancellationToken);
+
+        // A fuse holds all of what it was given, so an empty one is wrong whatever the check says of it: OCCT #1567, where a
+        // sphere touches a torus along a circle, reports success with nothing (decision 1818)
+        if (operation is EngineFuse && result.TryGetValue(out Built<Shape>? built) && !built.Shape.Children.Any()
+            && arguments.Concat(tools).Any(s => s.Children.Any()))
+        {
+            return Result<Built<Shape>>.Invalid(built, Diagnostic.Error(DiagnosticCode.InvalidResult, "The fuse of these shapes came out empty."),
+                                                result.Diagnostics);
+        }
+        return result;
     }
 
     private static Result<Built<Shape>> Run(BuilderAlgo operation, IReadOnlyList<Shape> arguments, BooleanOptions? options,

@@ -423,6 +423,31 @@ public class GeomFill_FillingTests
         Assert.True(V.Subtracted(aFd).Magnitude < theTol, $"{V} {aFd}");
     }
 
+    // Decision 1815: OCCT 8.0.1's CoonsAlgPatch.Value evaluates the U boundaries at V, so the patch misses its own edges.
+    [Fact]
+    public void CoonsAlgPatch_Value_is_on_its_boundaries_and_agrees_with_its_derivatives()
+    {
+        static Boundary Side(Point3D theA, Point3D theB)
+        {
+            double aLength = theA.DistanceTo(theB);
+            return new SimpleBound(new CurveAdaptor(new LineCurve3D(theA, new Direction3D(new Vector3D(theA, theB))), 0, aLength), 1e-4, 1e-2);
+        }
+        Point3D a = new(0, 0, 0), b = new(4, 0, 0), c = new(4, 3, 0), d = new(0, 3, 0);
+        CoonsAlgPatch aPatch = new(Side(a, b), Side(b, c), Side(d, c), Side(a, d));
+        aPatch.Bound(0).Bounds(out double aU0, out double aU1);
+        aPatch.Bound(1).Bounds(out double aV0, out double aV1);
+        for (int i = 0; i <= 8; i++)
+        {
+            double u = aU0 + (aU1 - aU0) * i / 8.0;
+            Assert.True(aPatch.Value(u, aV0).DistanceTo(aPatch.Bound(0).Value(u)) < 1e-12, $"bottom at {u}");
+            Assert.True(aPatch.Value(u, aV1).DistanceTo(aPatch.Bound(2).Value(u)) < 1e-12, $"top at {u}");
+        }
+
+        const double h = 1e-6, U = 1.3, V = 0.7;
+        Vector3D aFD = new Vector3D(aPatch.Value(U - h, V), aPatch.Value(U + h, V)).Divided(2 * h);
+        Assert.True(aFD.Subtracted(aPatch.D1U(U, V)).Magnitude < 1e-6, $"{aFD}");
+    }
+
     [Fact]
     public void SimpleBound_evaluates_its_curve_and_its_reparametrisation()
     {
@@ -510,7 +535,7 @@ public class GeomFill_FillingTests
         Assert.Equal(1.0, f1.Value(0.0), 15);
         Assert.Equal(1.0, f2.Value(1.0), 15);
 
-        // the patch S(u,v) of D1U, D1V: integrate along v = 0.4 from the boundary u = 0 (Value is wrong, see below)
+        // the patch S(u,v) of D1U, D1V: integrate along v = 0.4 from the boundary u = 0
         const double h = 1e-6;
         foreach (double u in new[] { 0.2, 0.6 })
         {
@@ -526,15 +551,16 @@ public class GeomFill_FillingTests
         B[0].D1(0.4, out _, out Vector3D aT);
         Assert.True(K.D1U(0.4, 0.0).Subtracted(aT).Magnitude < 1e-12);
 
-        // OCCT evaluates bounds 0 and 2 at V in Value (occt-issues.md): the value at (u, v) depends on u only
-        // through the blending of bounds 1 and 3
-        Point3D aBug = K.Value(0.25, 0.5);
+        // Decision 1815: bounds 0 and 2 at U, where OCCT 8.0.1's Value evaluates them at V
+        Point3D aValue = K.Value(0.25, 0.5);
         double a0 = K.Func(0).Value(0.5), a1 = K.Func(1).Value(0.25);
-        Xyz anExpected = B[0].Value(0.5).XYZ() * a0 + B[1].Value(0.5).XYZ() * a1 + B[2].Value(0.5).XYZ() * (1 - a0)
+        Xyz anExpected = B[0].Value(0.25).XYZ() * a0 + B[1].Value(0.5).XYZ() * a1 + B[2].Value(0.25).XYZ() * (1 - a0)
                             + B[3].Value(0.5).XYZ() * (1 - a1) - K.Corner(0).XYZ() * (a0 * (1 - a1))
                             - K.Corner(1).XYZ() * (a0 * a1) - K.Corner(2).XYZ() * (a1 * (1 - a0))
                             - K.Corner(3).XYZ() * ((1 - a0) * (1 - a1));
-        Assert.True(aBug.DistanceTo(new Point3D(anExpected)) < 1e-12);
+        Assert.True(aValue.DistanceTo(new Point3D(anExpected)) < 1e-12);
+        Vector3D aDuFd = new Vector3D(K.Value(0.4 - h, 0.3), K.Value(0.4 + h, 0.3)).Divided(2 * h);
+        Assert.True(aDuFd.Subtracted(K.D1U(0.4, 0.3)).Magnitude < 1e-6);
     }
 
     [Fact]

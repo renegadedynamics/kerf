@@ -291,6 +291,18 @@ public class BooleanOracleTests(ITestOutputHelper output)
             theTally.ByOp[theCase.Op] = aByOp;
             return;
         }
+        else if (theCase.Simplify && !new global::Kerf.Engine.Healing.Checks.Analyzer(aNResP).IsValid() && new global::Kerf.Engine.Healing.Checks.Analyzer(aPResP).IsValid())
+        {
+            // Decision 1816: native's clean spoilt a good result, and the port's doesn't. Native's history is still read,
+            // to keep the replay in step. The port's is tested in DrawUnifySpoilsNothingTests.
+            output.WriteLine($"{aWhat}: native's clean is invalid, the port's isn't");
+            theTally.ByOp[theCase.Op] = aByOp;
+            if (aNHist is not null)
+            {
+                _ = NativeHistory(aNHist, aNArgs, aNRes!, aPArgs, aNResP, out _);
+            }
+            return;
+        }
         else
         {
             CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aNResP, aPResP, new CanonicalOptions { CheckValidity = false });

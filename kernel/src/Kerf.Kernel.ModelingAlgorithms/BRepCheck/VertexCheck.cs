@@ -3,7 +3,6 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -42,7 +41,7 @@ internal class VertexCheck : ResultCheck
     /// Checks the vertex in an edge (its point on each curve representation of the edge) or a face (its point on the
     /// surface), within the larger of the two tolerances.
     /// </summary>
-    public override void InContext(in Shape s)
+    public override void InContext(in Shape s, bool isFoundThere = false)
     {
         NCollection_List<StatusCheck> hList;
         {
@@ -73,19 +72,22 @@ internal class VertexCheck : ResultCheck
 
         NCollection_List<StatusCheck> lst = hList;
 
-        var exp = new Explorer(s, ShapeType.Vertex);
-        for (; exp.More(); exp.Next())
+        if (!isFoundThere)
         {
-            if (exp.Current().IsSame(_shape))
+            var exp = new Explorer(s, ShapeType.Vertex);
+            for (; exp.More(); exp.Next())
             {
-                break;
+                if (exp.Current().IsSame(_shape))
+                {
+                    break;
+                }
             }
-        }
 
-        if (!exp.More())
-        {
-            BRepCheckCheck.Add(lst, StatusCheck.SubshapeNotInShape);
-            return; // leaves
+            if (!exp.More())
+            {
+                BRepCheckCheck.Add(lst, StatusCheck.SubshapeNotInShape);
+                return; // leaves
+            }
         }
 
         var tv = (BrepTVertex)_shape.TShape()!;
@@ -141,14 +143,14 @@ internal class VertexCheck : ResultCheck
                 tol *= tol;
 
                 var te = (BrepTEdge)e.TShape()!;
-                var itcr = new NCollection_List<CurveRepresentation>.Iterator(te.Curves());
+                NCollection_List<CurveRepresentation> curves = te.Curves();
+                NCollection_List<PointRepresentation> points = tv.Points();
                 Placement eloc = e.Placement;
 
-                var itpr = new NCollection_List<PointRepresentation>.Iterator();
-                while (itcr.More())
+                for (int icr = 0; icr < curves.Extent(); ++icr)
                 {
                     // For each CurveRepresentation, the provided parameter is checked
-                    CurveRepresentation cr = itcr.Value();
+                    CurveRepresentation cr = curves.ItemAt(icr);
                     Placement loc = cr.Location();
                     Placement l = (eloc * loc).Predivided(_shape.Placement);
 
@@ -157,10 +159,9 @@ internal class VertexCheck : ResultCheck
                         Curve3D? c = cr.Curve3D();
                         if (c is not null) // edge non degenerated
                         {
-                            itpr.Initialize(tv.Points());
-                            while (itpr.More())
+                            for (int ipr = 0; ipr < points.Extent(); ++ipr)
                             {
-                                PointRepresentation pr = itpr.Value();
+                                PointRepresentation pr = points.ItemAt(ipr);
                                 if (pr.IsPointOnCurve(c, l))
                                 {
                                     controlp = c.Value(pr.Parameter());
@@ -170,8 +171,6 @@ internal class VertexCheck : ResultCheck
                                         BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnCurve);
                                     }
                                 }
-
-                                itpr.Next();
                             }
 
                             if (orv == Forward || orv == Reversed)
@@ -209,10 +208,9 @@ internal class VertexCheck : ResultCheck
                             pc2 = cr.PCurve2();
                         }
 
-                        itpr.Initialize(tv.Points());
-                        while (itpr.More())
+                        for (int ipr = 0; ipr < points.Extent(); ++ipr)
                         {
-                            PointRepresentation pr = itpr.Value();
+                            PointRepresentation pr = points.ItemAt(ipr);
                             if (pr.IsPointOnCurveOnSurface(pc, su, l))
                             {
                                 Point2D p2d = pc.Value(pr.Parameter());
@@ -234,12 +232,8 @@ internal class VertexCheck : ResultCheck
                                     BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnCurveOnSurface);
                                 }
                             }
-
-                            itpr.Next();
                         }
                     }
-
-                    itcr.Next();
                 }
 
                 if (lst.IsEmpty())
@@ -261,10 +255,10 @@ internal class VertexCheck : ResultCheck
                 tol = Max(tol, Tool.Tolerance(ShapeCasts.Face(s))); // to check
                 tol *= tol;
 
-                var itpr = new NCollection_List<PointRepresentation>.Iterator(tv.Points());
-                while (itpr.More())
+                NCollection_List<PointRepresentation> points = tv.Points();
+                for (int ipr = 0; ipr < points.Extent(); ++ipr)
                 {
-                    PointRepresentation pr = itpr.Value();
+                    PointRepresentation pr = points.ItemAt(ipr);
                     if (pr.IsPointOnSurface(su, l))
                     {
                         controlp = su!.Value(pr.Parameter(), pr.Parameter2());
@@ -274,8 +268,6 @@ internal class VertexCheck : ResultCheck
                             BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnSurface);
                         }
                     }
-
-                    itpr.Next();
                 }
 
                 if (lst.IsEmpty())

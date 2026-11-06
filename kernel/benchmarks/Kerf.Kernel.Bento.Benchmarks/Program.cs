@@ -272,6 +272,7 @@ for (int i = 0; i < examples.Length; i++)
 }
 
 string[] results = new string[examples.Length];
+using var pauseLog = new PauseLog();
 var total = Stopwatch.StartNew();
 var passCpu = new double[passes];
 for (int pass = 0; pass < passes; pass++)
@@ -353,6 +354,7 @@ if (copies > 0)
     var roundContentions = new long[3];
     long roundBytes = 0;
     int mismatches = 0;
+    long slowestTicks = 0;
     using Process self = Process.GetCurrentProcess();
     for (int round = 0; round < rounds.Length; round++)
     {
@@ -365,6 +367,7 @@ if (copies > 0)
         Parallel.For(0, copies * examples.Length, k =>
         {
             int i = k % examples.Length;
+            long started = Stopwatch.GetTimestamp();
             Shape shape = examples[i].Build();
             ShapeMesh mesh = shape.Triangulate();
             string result = string.Create(CultureInfo.InvariantCulture,
@@ -372,6 +375,16 @@ if (copies > 0)
             if (result != results[i])
             {
                 Interlocked.Increment(ref mismatches);
+            }
+
+            // What a user would feel as a hitch: the slowest any one model took
+            long took = Stopwatch.GetTimestamp() - started;
+            for (long seen = Volatile.Read(ref slowestTicks); took > seen; seen = Volatile.Read(ref slowestTicks))
+            {
+                if (Interlocked.CompareExchange(ref slowestTicks, took, seen) == seen)
+                {
+                    break;
+                }
             }
         });
         rounds[round] = clock.Elapsed.TotalMilliseconds;
@@ -395,16 +408,18 @@ if (copies > 0)
     BenchRows.Add("parallel", roundName, "speed-up x", medianSum * copies / medianRound);
     BenchRows.Add("parallel", roundName, "alloc MB", roundBytes / 1048576.0);
     BenchRows.Add("parallel", roundName, "collector's pause in a round ms", roundPauses.Order().ElementAt(1));
+    BenchRows.Add("parallel", roundName, "slowest one model in any round ms", slowestTicks * 1000.0 / Stopwatch.Frequency);
     BenchRows.Add("parallel", roundName, "processor time in a round ms", roundCpu.Order().ElementAt(1));
     BenchRows.Add("parallel", roundName, "contended locks in a round count", roundContentions.Order().ElementAt(1));
     BenchRows.Add("parallel", roundName, "peak working set in MB, count", peakMB);
     BenchRows.Add("parallel", roundName, "result", $"{mismatches} differing from the serial run");
 }
+BenchRows.Add("process", copies > 0 ? "with the parallel rounds" : "the serial passes", "longest collector's pause ms", pauseLog.LongestMilliseconds);
 BenchRows.Add("process", copies > 0 ? "with the parallel rounds" : "the serial passes", "collector's pause ms", GC.GetTotalPauseDuration().TotalMilliseconds);
 BenchRows.Add("process", copies > 0 ? "with the parallel rounds" : "the serial passes", "generation 0 count", GC.CollectionCount(0));
 BenchRows.Add("process", copies > 0 ? "with the parallel rounds" : "the serial passes", "generation 2 count", GC.CollectionCount(2));
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
-    $"GC: {GC.CollectionCount(0)}/{GC.CollectionCount(1)}/{GC.CollectionCount(2)} collections, pause {GC.GetTotalPauseDuration().TotalMilliseconds:F0} ms; JIT {System.Runtime.JitInfo.GetCompilationTime().TotalMilliseconds:F0} ms"));
+    $"GC: {GC.CollectionCount(0)}/{GC.CollectionCount(1)}/{GC.CollectionCount(2)} collections, pause {GC.GetTotalPauseDuration().TotalMilliseconds:F0} ms, longest {pauseLog.LongestMilliseconds:F1} ms; JIT {System.Runtime.JitInfo.GetCompilationTime().TotalMilliseconds:F0} ms"));
 Marks.Log?.Mark("end");
 return 0;
 
@@ -479,4 +494,39 @@ internal sealed class Marks : System.Diagnostics.Tracing.EventSource
 
     [System.Diagnostics.Tracing.Event(1)]
     public void Mark(string name) => WriteEvent(1, name);
+}
+
+/// <summary>The longest time the collector stopped the threads, from the runtime's own events: what a user feels as a hitch, which a total hides.</summary>
+internal sealed class PauseLog : System.Diagnostics.Tracing.EventListener
+{
+    private DateTime _suspended;
+    private double _longest;
+
+    public double LongestMilliseconds => Volatile.Read(ref _longest);
+
+    protected override void OnEventSourceCreated(System.Diagnostics.Tracing.EventSource source)
+    {
+        if (source.Name == "Microsoft-Windows-DotNETRuntime")
+        {
+            EnableEvents(source, System.Diagnostics.Tracing.EventLevel.Informational, (System.Diagnostics.Tracing.EventKeywords)1);
+        }
+    }
+
+    protected override void OnEventWritten(System.Diagnostics.Tracing.EventWrittenEventArgs e)
+    {
+        if (e.EventName is null)
+        {
+            return;
+        }
+
+        if (e.EventName.StartsWith("GCSuspendEEBegin", StringComparison.Ordinal))
+        {
+            _suspended = e.TimeStamp;
+        }
+        else if (e.EventName.StartsWith("GCRestartEEEnd", StringComparison.Ordinal) && _suspended != default)
+        {
+            Volatile.Write(ref _longest, Math.Max(_longest, (e.TimeStamp - _suspended).TotalMilliseconds));
+            _suspended = default;
+        }
+    }
 }

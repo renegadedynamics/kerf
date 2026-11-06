@@ -794,9 +794,9 @@ public sealed class OffsetSurface : Surface
         if (theType == typeof(PlaneSurface))
         {
             PlaneSurface p = (PlaneSurface)Base;
-            // OCCT: goes the wrong way on an indirect frame; 71658f6c8f fixes it upstream, which isn't ported yet (occt-defects.md)
+            // The UV normal changes sign when one in-plane axis is reversed (from upstream 71658f6c8f; decision 1811)
             Vector3D t = new Vector3D(p.Position.Direction);
-            t *= _offsetValue;
+            t *= p.Position.IsDirect ? _offsetValue : -_offsetValue;
             result = (PlaneSurface)p.Translated(t);
         }
         else if (theType == typeof(CylindricalSurface))
