@@ -2,9 +2,11 @@
 
 using Kerf.Booleans;
 using Kerf.Construction;
+using Kerf.Features;
 using Kerf.Fillets;
 using Kerf.Geometry;
 using Kerf.Healing;
+using Kerf.Measurement;
 using Kerf.Topology;
 
 namespace Kerf.Kernel.PublicApi.Tests;
@@ -53,6 +55,47 @@ public class InvalidResultTests
         Assert.NotEmpty(result.Error!.Shapes);
         Assert.True(result.TryGetInvalid(out Built<Shape>? invalid));
         Assert.NotNull(invalid.History);
+    }
+
+    [Fact]
+    public void A_fillet_whose_tolerance_passes_its_radius_is_not_a_success()
+    {
+        // #1639: a drafted plate; a radius 2 fillet on the top arc and the straight edge meeting it. The engine reports
+        // success and the check passes, with an edge's tolerance of 190 and a volume of 10,596 for a true 29,800.
+        var arc = new Circle3D(new Frame3D(new Point3D(0, 22.5, 0), Direction3D.UnitZ), 50);
+        Wire profile = Wire.FromEdges(
+        [
+            Edge.Line(new(0, 0, 0), new(0, 72.5, 0)).Value,
+            Edge.Arc(arc, 0.5 * Math.PI, Math.PI).Value,
+            Edge.Line(new(-50, 22.5, 0), new(-50, 0, 0)).Value,
+            Edge.Line(new(-50, 0, 0), new(0, 0, 0)).Value,
+        ]).Value;
+        Shape prism = Face.FromWire(profile).Value.Extrude(new Vector3D(0, 0, 10)).Value.Shape;
+        Face[] walls = [.. prism.AllFaces().Where(f => !IsCap(f))];
+        Shape plate = prism.Draft(walls.Select(f => (f, 5 * Math.PI / 180)), Direction3D.UnitZ, new Plane3D(Point3D.Origin, Direction3D.UnitZ)).Value.Shape;
+        Edge[] edges = [.. plate.AllEdges().Where(IsArcOrStraightOnTop)];
+        Assert.Equal(2, edges.Length);
+
+        Result<Built<Shape>> result = plate.Fillet(edges, 2);
+
+        if (result.IsSuccess)
+        {
+            Assert.Equal(29799.87, result.Value.Shape.IntegrateVolume(), 1);
+        }
+        else
+        {
+            Assert.Equal(DiagnosticCode.InvalidResult, result.Error!.Code);
+            Assert.Contains("tolerance", result.Error.Message, StringComparison.Ordinal);
+            Assert.True(result.TryGetInvalid(out _));
+        }
+
+        static bool IsCap(Face face) => face.AllVertices().Select(v => v.Point.Z).Distinct().Count() == 1;
+
+        static bool IsArcOrStraightOnTop(Edge edge)
+        {
+            Point3D[] ends = [.. edge.AllVertices().Select(v => v.Point)];
+            return ends.All(p => p.Z > 9.9) && ends.Any(p => p.Y > 70);
+        }
     }
 
     [Fact]
