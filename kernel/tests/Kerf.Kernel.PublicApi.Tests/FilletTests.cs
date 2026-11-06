@@ -40,6 +40,32 @@ public class FilletTests
     }
 
     [Fact]
+    public void A_radius_equal_to_a_faces_width_is_built_and_one_above_says_what_fits()
+    {
+        Solid box = Solid.Box(10, 10, 10).Value;
+        Edge edge = box.AllEdges()[0];
+        Assert.Equal(10, box.FilletLimit([edge]));
+        Built<Shape> rounded = box.Fillet([edge], 10).Value;
+        Assert.Equal(5, rounded.Shape.AllFaces().Length);
+        Assert.Single(rounded.History.Generated(edge));
+        Assert.True(rounded.History.IsRemoved(edge));
+
+        var tooLarge = box.Fillet([edge], 11);
+        Assert.Equal(FilletOperations.TooLarge, tooLarge.Error!.Code);
+        Assert.Contains("the most that fits is 10", tooLarge.Error.Message, StringComparison.Ordinal);
+        Assert.Equal(FilletOperations.TooLarge, box.Chamfer([edge], 11).Error!.Code);
+        Assert.Equal(5, box.Chamfer([edge], 10).Value.Shape.AllFaces().Length);
+        Assert.Contains("10 wide", box.Chamfer([new ChamferSpec(edge, 11, Distance2: 2)]).Error!.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_fillet_limit_says_nothing_of_a_curved_edge()
+    {
+        Solid cylinder = Solid.Cylinder(5, 20).Value;
+        Assert.Null(cylinder.FilletLimit([cylinder.AllEdges()[0]]));
+    }
+
+    [Fact]
     public void A_fillets_misuse_throws()
     {
         Solid box = Solid.Box(2, 2, 2).Value;
