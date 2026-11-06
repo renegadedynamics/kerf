@@ -4,7 +4,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using System.Text;
 
 namespace Kerf.Engine;
 
@@ -26,38 +25,40 @@ namespace Kerf.Engine;
 /// </remarks>
 internal sealed class TCollection_HAsciiString : Transient
 {
-    private readonly StringBuilder _string;
+    // A string, not a builder: nearly all of these are an entity's name, read and never changed, and reading one is
+    // on the STEP writer's hot path (decision 19701). A mutator makes a new string.
+    private string _string;
 
     /// <summary>An empty string.</summary>
-    public TCollection_HAsciiString() => _string = new StringBuilder();
+    public TCollection_HAsciiString() => _string = "";
 
     /// <summary>A copy of the text (a null text is empty, as OCCT's null <c>const char*</c> is refused earlier).</summary>
-    public TCollection_HAsciiString(string? message) => _string = new StringBuilder(message ?? "");
+    public TCollection_HAsciiString(string? message) => _string = message ?? "";
 
     /// <summary>A one-character string (empty for the null character).</summary>
-    public TCollection_HAsciiString(char aChar) => _string = new StringBuilder(aChar == '\0' ? "" : aChar.ToString());
+    public TCollection_HAsciiString(char aChar) => _string = aChar == '\0' ? "" : aChar.ToString();
 
     /// <summary>A string of <paramref name="length"/> copies of <paramref name="filler"/>.</summary>
-    public TCollection_HAsciiString(int length, char filler) => _string = new StringBuilder(new string(filler, length));
+    public TCollection_HAsciiString(int length, char filler) => _string = new string(filler, length);
 
     /// <summary>The integer in decimal (C's <c>%d</c>).</summary>
     public TCollection_HAsciiString(int value) =>
-        _string = new StringBuilder(value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        _string = value.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>The real as C's <c>%g</c> writes it (six significant digits).</summary>
-    public TCollection_HAsciiString(double value) => _string = new StringBuilder(StreamUtilities.FormatReal(value, 6));
+    public TCollection_HAsciiString(double value) => _string = StreamUtilities.FormatReal(value, 6);
 
     /// <summary>A copy of another handled string.</summary>
-    public TCollection_HAsciiString(TCollection_HAsciiString aString) => _string = new StringBuilder(aString.ToCString());
+    public TCollection_HAsciiString(TCollection_HAsciiString aString) => _string = aString._string;
 
     /// <summary>The text, as OCCT's <c>ToCString</c>.</summary>
-    public string ToCString() => _string.ToString();
+    public string ToCString() => _string;
 
     /// <summary>The text, as OCCT's <c>String</c> (a <c>TCollection_AsciiString</c>, a string in the port).</summary>
-    public string String() => _string.ToString();
+    public string String() => _string;
 
     /// <summary>The text.</summary>
-    public override string ToString() => _string.ToString();
+    public override string ToString() => _string;
 
     /// <summary>The number of characters.</summary>
     public int Length() => _string.Length;
@@ -77,10 +78,10 @@ internal sealed class TCollection_HAsciiString : Transient
     }
 
     /// <summary>Appends a text.</summary>
-    internal void AssignCat(string other) => _string.Append(other);
+    internal void AssignCat(string other) => _string += other;
 
     /// <summary>Appends another string.</summary>
-    internal void AssignCat(TCollection_HAsciiString other) => _string.Append(other.ToCString());
+    internal void AssignCat(TCollection_HAsciiString other) => _string += other._string;
 
     /// <summary>A new string: this one followed by <paramref name="other"/>.</summary>
     public TCollection_HAsciiString Cat(string other) => new(ToCString() + other);
@@ -89,7 +90,7 @@ internal sealed class TCollection_HAsciiString : Transient
     public TCollection_HAsciiString Cat(TCollection_HAsciiString other) => new(ToCString() + other.ToCString());
 
     /// <summary>Empties the string.</summary>
-    internal void Clear() => _string.Clear();
+    internal void Clear() => _string = "";
 
     /// <summary>Replaces the character at <paramref name="where"/> (1-based).</summary>
     internal void SetValue(int where, char what)
@@ -98,7 +99,7 @@ internal sealed class TCollection_HAsciiString : Transient
         {
             throw new OutOfRangeException("TCollection_AsciiString::SetValue(): out of range location");
         }
-        _string[where - 1] = what;
+        _string = string.Concat(_string.AsSpan(0, where - 1), new ReadOnlySpan<char>(in what), _string.AsSpan(where));
     }
 
     /// <summary>Inserts a character at <paramref name="where"/> (1-based; Length + 1 appends).</summary>
@@ -108,7 +109,7 @@ internal sealed class TCollection_HAsciiString : Transient
         {
             throw new OutOfRangeException("TCollection_AsciiString::Insert : Parameter where is out of range");
         }
-        _string.Insert(where - 1, what);
+        _string = string.Concat(_string.AsSpan(0, where - 1), new ReadOnlySpan<char>(in what), _string.AsSpan(where - 1));
     }
 
     /// <summary>Inserts a text at <paramref name="where"/> (1-based; Length + 1 appends).</summary>
@@ -118,18 +119,18 @@ internal sealed class TCollection_HAsciiString : Transient
         {
             throw new OutOfRangeException("TCollection_AsciiString::Insert : Parameter where is out of range");
         }
-        _string.Insert(where - 1, what);
+        _string = _string.Insert(where - 1, what);
     }
 
     /// <summary>Puts another string in front of this one.</summary>
-    internal void Prepend(TCollection_HAsciiString other) => _string.Insert(0, other.ToCString());
+    internal void Prepend(TCollection_HAsciiString other) => _string = other._string + _string;
 
     /// <summary>Removes <paramref name="ahowmany"/> characters from <paramref name="where"/> (1-based).</summary>
     internal void Remove(int where, int ahowmany = 1)
     {
         if (where + ahowmany <= _string.Length + 1)
         {
-            _string.Remove(where - 1, ahowmany);
+            _string = _string.Remove(where - 1, ahowmany);
         }
         else
         {
@@ -140,8 +141,7 @@ internal sealed class TCollection_HAsciiString : Transient
     /// <summary>Removes every occurrence of the character.</summary>
     internal void RemoveAll(char what)
     {
-        string text = _string.ToString().Replace(what.ToString(), "", StringComparison.Ordinal);
-        _string.Clear().Append(text);
+        _string = _string.Replace(what.ToString(), "", StringComparison.Ordinal);
     }
 
     /// <summary>Keeps the first <paramref name="ahowmany"/> characters.</summary>
@@ -151,7 +151,7 @@ internal sealed class TCollection_HAsciiString : Transient
         {
             throw new OutOfRangeException("TCollection_AsciiString::Trunc : parameter 'theHowMany'");
         }
-        _string.Length = ahowmany;
+        _string = _string[..ahowmany];
     }
 
     /// <summary>Removes the leading white space (C's <c>isspace</c>).</summary>
@@ -164,7 +164,7 @@ internal sealed class TCollection_HAsciiString : Transient
         }
         if (i > 0)
         {
-            _string.Remove(0, i);
+            _string = _string[i..];
         }
     }
 
@@ -176,31 +176,31 @@ internal sealed class TCollection_HAsciiString : Transient
         {
             i--;
         }
-        _string.Length = i + 1;
+        _string = _string[..(i + 1)];
     }
 
     /// <summary>Converts to upper case (ASCII letters only, as C's <c>toupper</c> in the C locale).</summary>
     internal void UpperCase()
     {
-        for (int i = 0; i < _string.Length; i++)
+        _string = string.Create(_string.Length, _string, static (theChars, theText) =>
         {
-            if (_string[i] is >= 'a' and <= 'z')
+            for (int i = 0; i < theChars.Length; i++)
             {
-                _string[i] = (char)(_string[i] - 32);
+                theChars[i] = theText[i] is >= 'a' and <= 'z' ? (char)(theText[i] - 32) : theText[i];
             }
-        }
+        });
     }
 
     /// <summary>Converts to lower case (ASCII letters only, as C's <c>tolower</c> in the C locale).</summary>
     internal void LowerCase()
     {
-        for (int i = 0; i < _string.Length; i++)
+        _string = string.Create(_string.Length, _string, static (theChars, theText) =>
         {
-            if (_string[i] is >= 'A' and <= 'Z')
+            for (int i = 0; i < theChars.Length; i++)
             {
-                _string[i] = (char)(_string[i] + 32);
+                theChars[i] = theText[i] is >= 'A' and <= 'Z' ? (char)(theText[i] + 32) : theText[i];
             }
-        }
+        });
     }
 
     /// <summary>True if both have the same characters (case-sensitive).</summary>
@@ -338,7 +338,7 @@ internal sealed class TCollection_HAsciiString : Transient
         {
             throw new OutOfRangeException("TCollection_AsciiString::SubString : parameters out of range");
         }
-        return new TCollection_HAsciiString(_string.ToString(fromIndex - 1, toIndex - fromIndex + 1));
+        return new TCollection_HAsciiString(_string.Substring(fromIndex - 1, toIndex - fromIndex + 1));
     }
 
     /// <summary>The <paramref name="whichone"/>-th token between the separators (empty if none).</summary>
