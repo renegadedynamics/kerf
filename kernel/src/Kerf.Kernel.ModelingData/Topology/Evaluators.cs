@@ -309,14 +309,19 @@ public sealed class WireCurve
 /// <summary>Lengths along curves and their discretisation: OCCT's GCPnts, shared by the curve evaluators.</summary>
 internal static class CurveMeasures
 {
-    public static double Length(Engine.Geometry.Adaptors.CurveAdaptorBase curve) => Engine.Measurement.AbscissaPoint.Length(curve);
+    // OCCT's forms without a tolerance use a few Gauss points over the whole range: 1.5% out on an ellipse of ten to one,
+    // and a parameter at half the length that isn't halfway along a symmetric curve (decision 20401). What the public API
+    // promises is a length, so it halves the range until the answer settles
+    private const double Settled = 1e-9;
+
+    public static double Length(Engine.Geometry.Adaptors.CurveAdaptorBase curve) => Engine.Measurement.AbscissaPoint.Length(curve, Settled);
 
     public static double Length(Engine.Geometry.Adaptors.CurveAdaptorBase curve, double u1, double u2) =>
-        Engine.Measurement.AbscissaPoint.Length(curve, u1, u2);
+        Engine.Measurement.AbscissaPoint.Length(curve, u1, u2, Settled);
 
     public static double ParameterAtLength(Engine.Geometry.Adaptors.CurveAdaptorBase curve, double length, double from)
     {
-        var abscissa = new Engine.Measurement.AbscissaPoint(curve, length, from);
+        var abscissa = new Engine.Measurement.AbscissaPoint(Settled, curve, length, from);
         return abscissa.IsDone ? abscissa.Parameter() : throw new InvalidOperationException("The point at that length couldn't be found.");
     }
 

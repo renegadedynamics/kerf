@@ -50,8 +50,8 @@ public class CurveObjectTests
         var s1 = new Spline([corner.PositionAt(1), screw.PositionAt(0)], tangents: [corner.TangentAt(1), screw.TangentAt(0)]);
         var s2 = new Spline([screw.PositionAt(1), new Point3D(-100, 30, 10), powerup.PositionAt(0)], tangents: [screw.TangentAt(1), powerup.TangentAt(0)]);
         var rollerCoaster = Wire.Combine([powerup, corner, screw, s1, s2])[0];
-        // Python's 678.9785865257071 is of the objects built in a BuildLine; built directly, as here, Python gives this too
-        Check.AlmostEqual(678.9910830001916, rollerCoaster.Length, 5);
+        // Python's 678.9785865257071 is of the objects built in a BuildLine, and agrees; built directly, Python gave 678.99108, too few Gauss points (decision 20401)
+        Check.AlmostEqual(678.9785864926869, rollerCoaster.Length, 5);
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public class CurveObjectTests
         Point3D[] pts = [new Point3D(0, 0, 0), new Point3D(20, 20, 0), new Point3D(40, 0, 0), new Point3D(0, -40, 0), new Point3D(-60, 0, 0), new Point3D(0, 100, 0), new Point3D(100, 0, 0)];
         double[] wts = [1.0, 1.0, 2.0, 3.0, 4.0, 2.0, 1.0];
         var b1 = new Bezier(pts, weights: wts);
-        Check.AlmostEqual(225.98661946375782, b1.Length, 5);
+        Check.AlmostEqual(225.98213358906875, b1.Length, 5); // native said 225.98662: too few Gauss points (decision 20401)
         Check.IsShape(b1);
     }
 

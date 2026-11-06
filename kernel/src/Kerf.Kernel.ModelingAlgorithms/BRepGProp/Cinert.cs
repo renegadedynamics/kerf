@@ -23,11 +23,16 @@ internal class Cinert : Properties
     }
 
     /// <summary>The global properties of <paramref name="c"/>, inertia at <paramref name="cLocation"/>.</summary>
-    public Cinert(EdgeCurveAdaptor c, in Point3D cLocation)
+    public Cinert(EdgeCurveAdaptor c, in Point3D cLocation, bool settled = false)
     {
+        _settled = settled;
         SetLocation(cLocation);
         Perform(c);
     }
+
+    // Halve the spans until the length settles (decision 20401). The engine's own callers keep OCCT's fixed points, so
+    // that what they decide from a wire's centre doesn't move
+    private readonly bool _settled;
 
     /// <summary>Sets the reference point.</summary>
     public void SetLocation(in Point3D cLocation) => _loc = cLocation;
@@ -70,6 +75,9 @@ internal class Cinert : Properties
             nbIntervals = 1;
         }
 
+        // the speed along these is constant, so that their first Gauss points are exact
+        bool constantSpeed = c.GetType() is Kerf.Geometry.CurveKind.Line or Kerf.Geometry.CurveKind.Circle;
+
         int nIndex = 0;
         double uu1 = Min(lower, upper);
         double uu2 = Max(lower, upper);
@@ -96,11 +104,15 @@ internal class Cinert : Properties
             int i;
 
             // Calcul des integrales aux points de gauss :
-            um = 0.5 * (upper + lower);
-            ur = 0.5 * (upper - lower);
+            // OCCT stops at one span of a few points: 1.5% out on the length of an ellipse of ten to one
+            int pieces = constantSpeed || !_settled ? 1 : PiecesForLength(c, lower, upper, order, gaussP, gaussW);
+            double piece = (upper - lower) / pieces;
+            ur = 0.5 * piece;
 
+            for (int j = 0; j < pieces; j++)
             for (i = 1; i <= order; i++)
             {
+                um = pieces == 1 ? 0.5 * (upper + lower) : lower + (j + 0.5) * piece;
                 u = um + ur * gaussP[i];
                 EdgeTool.D1(c, u, out p, out v1);
                 ds = v1.Magnitude;
@@ -159,5 +171,40 @@ internal class Cinert : Properties
         {
             _g = _g.WithCoord(ix / _dim, iy / _dim, iz / _dim);
         }
+    }
+
+    // How many equal pieces of [lower, upper] give the length to one part in 1e9: one if it has already settled
+    private static int PiecesForLength(EdgeCurveAdaptor c, double lower, double upper, int order, math_Vector gaussP, math_Vector gaussW)
+    {
+        const int mostPieces = 1 << 12;
+        double length = LengthOver(c, lower, upper, 1, order, gaussP, gaussW);
+        for (int pieces = 2; pieces <= mostPieces; pieces *= 2)
+        {
+            double finer = LengthOver(c, lower, upper, pieces, order, gaussP, gaussW);
+            if (Math.Abs(finer - length) <= 1e-9 * Math.Abs(finer))
+            {
+                return pieces / 2;
+            }
+
+            length = finer;
+        }
+
+        return mostPieces;
+    }
+
+    private static double LengthOver(EdgeCurveAdaptor c, double lower, double upper, int pieces, int order, math_Vector gaussP, math_Vector gaussW)
+    {
+        double ur = 0.5 * (upper - lower) / pieces, length = 0;
+        for (int j = 0; j < pieces; j++)
+        {
+            double um = lower + (j + 0.5) * (upper - lower) / pieces;
+            for (int i = 1; i <= order; i++)
+            {
+                EdgeTool.D1(c, um + ur * gaussP[i], out _, out Vector3D v1);
+                length += v1.Magnitude * gaussW[i];
+            }
+        }
+
+        return length * ur;
     }
 }

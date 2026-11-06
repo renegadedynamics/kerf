@@ -18,7 +18,7 @@ using static Kerf.Topology.Orientation;
 namespace Kerf.Engine.Measurement;
 
 /// <summary>
-/// The global properties of a shape: of its edges (length, <see cref="LinearProperties(in Shape, Properties, bool, bool)"/>),
+/// The global properties of a shape: of its edges (length, <see cref="LinearProperties(in Shape, Properties, bool, bool, bool)"/>),
 /// of its faces (area, <see cref="SurfaceProperties(in Shape, Properties, bool, bool)"/>) or of the volume
 /// they bound (<see cref="VolumeProperties(in Shape, Properties, bool, bool, bool)"/>): mass, centre of mass
 /// and inertia, at density 1.
@@ -121,10 +121,12 @@ internal static class MassPropertiesBuilder
     /// <param name="lProps">The system to fill; reset first, its reference point at the shape's location.</param>
     /// <param name="skipShared">Count an edge met again (IsSame) once.</param>
     /// <param name="useTriangulation">Measure edges with a polygon on the polygon.</param>
+    /// <param name="settled">Halve each curve's spans until its length settles, rather than OCCT's fixed Gauss points (decision 20401).</param>
     public static void LinearProperties(in Shape s,
                                         Properties lProps,
                                         bool skipShared = false,
-                                        bool useTriangulation = false)
+                                        bool useTriangulation = false,
+                                        bool settled = false)
     {
         // find the origin
         Point3D p = new(0, 0, 0);
@@ -161,7 +163,7 @@ internal static class MassPropertiesBuilder
                 if (isGeom)
                 {
                     bac.Initialize(e);
-                    var cg = new Cinert(bac, p);
+                    var cg = new Cinert(bac, p, settled);
                     lProps.Add(cg);
                 }
             }
