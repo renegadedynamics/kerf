@@ -184,6 +184,12 @@ internal abstract class InterfaceModel : Transient
     }
 
     /// <summary>
+    /// False if no text object (<see cref="TCollection_HAsciiString"/>) was ever an entity of this model, so that a text
+    /// has no number in it. STEP's models never hold one (Kerf, for the writer: decision 19702).
+    /// </summary>
+    internal bool HoldsStrings => _holdsStrings;
+
+    /// <summary>
     /// Returns the Number of an Entity in the Model if it contains it. Else returns 0. For a ReportEntity, looks
     /// at Concerned Entity. Returns the Directory entry Number of an Entity in the Model if it contains it. Else
     /// returns 0. For a ReportEntity, looks at Concerned Entity.
@@ -615,6 +621,7 @@ internal abstract class InterfaceModel : Transient
         if (!anentity.IsKind(typeof(ReportEntity)))
         {
             _theentities.Add(anentity);
+            _holdsStrings |= anentity is TCollection_HAsciiString;
             //  Report : Add Concerned, but note presence Report and its value
         }
         else
@@ -721,6 +728,7 @@ internal abstract class InterfaceModel : Transient
     public void ReplaceEntity(int nument, Transient? anent)
     {
         _theentities.Substitute(nument - 1, anent);
+        _holdsStrings |= anent is TCollection_HAsciiString;
     }
 
     /// <summary>
@@ -1176,6 +1184,7 @@ internal abstract class InterfaceModel : Transient
     // Entities by reference, numbered in insertion order (OCCT's map of handles); the reports in OCCT's order of
     // integer maps, which Reports() and Redefineds() follow (decision 784's rule)
     private readonly IndexedSet<Transient> _theentities = new(ReferenceEqualityComparer.Instance);
+    private bool _holdsStrings;
     private readonly NCollection_IntDataMap<Transient> _thereports = new();
     private readonly NCollection_IntDataMap<Transient> _therepch = new();
     private FrameworkCheck? _thecheckstx;

@@ -7,6 +7,7 @@
 
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Foundation;
+using System.Globalization;
 using System.Text;
 
 namespace Kerf.Engine.Exchange.Step.Data;
@@ -29,6 +30,8 @@ namespace Kerf.Engine.Exchange.Step.Data;
 internal class StepWriter
 {
     private const int StepLong = 72;
+    // Enough for "#", an int and " = "
+    private const int IdentSize = 16;
     // StepLong: maximum length of a Step file line
 
     // Literal constants (useful for performance AND MEMORY)
@@ -341,16 +344,21 @@ internal class StepWriter
         }
         if (_thelabmode < 2 || idnum == idtrue)
         {
-            lident = global::Kerf.Engine.Foundation.Standard.Sprintf("#%d = ", idnum); // skl 29.01.2003
+            //  skl 29.01.2003. Kerf: written in place, not through Sprintf (decision 19702)
+            _thecurr.Clear();
+            Span<char> aText = stackalloc char[IdentSize];
+            aText[0] = '#';
+            idnum.TryFormat(aText[1..], out int aLength, default, CultureInfo.InvariantCulture);
+            " = ".CopyTo(aText[(1 + aLength)..]);
+            _thecurr.Add(aText[..(1 + aLength + 3)]);
         }
         else
         {
             lident = global::Kerf.Engine.Foundation.Standard.Sprintf("%d:#%d = ", idnum, idtrue); // skl 29.01.2003
+            //  SendIdent reused, lident has just been calculated
+            _thecurr.Clear();
+            _thecurr.Add(lident);
         }
-
-        //  SendIdent reused, lident has just been calculated
-        _thecurr.Clear();
-        _thecurr.Add(lident);
         _themult = false;
 
         //  ....        Processing of Potential Scope
@@ -895,8 +903,9 @@ internal class StepWriter
     public void Send(int val)
     {
         AddParam();
-        string lval = global::Kerf.Engine.Foundation.Standard.Sprintf("%d", val);
-        AddCString(lval, lval.Length);
+        Span<char> aText = stackalloc char[IdentSize];
+        val.TryFormat(aText, out int aLength, default, CultureInfo.InvariantCulture);
+        AddShort(aText[..aLength]);
     }
 
     /// <summary>Sends a real parameter (works with FloatWriter).</summary>
@@ -919,7 +928,7 @@ internal class StepWriter
         string aVal = ToFileText(CleanTextForSend(val));
         int nn = aVal.Length;
         // Add surrounding quotes
-        aVal = "'" + aVal + "'";
+        aVal = nn == 0 ? "''" : "'" + aVal + "'";
         nn += 2;
 
         //: i2 abv 31 Aug 98: ProSTEP TR9: avoid wrapping text or do it at spaces
@@ -1011,6 +1020,13 @@ internal class StepWriter
             Comment(false);
             return;
         }
+        // Kerf: nearly every entity starts with a name, and asking the model about each gives each its first hash code,
+        // which is slow in .NET. A model that never held a string can't have this one (decision 19702)
+        if (val is TCollection_HAsciiString aName && !_themodel.HoldsStrings)
+        {
+            Send(aName.ToCString());
+            return;
+        }
         int num = _themodel.Number(val);
         //  String? (if not listed in the Model)
         if (num == 0)
@@ -1056,7 +1072,12 @@ internal class StepWriter
             }
             if (_thelabmode < 2 || idnum == idtrue)
             {
-                lident = global::Kerf.Engine.Foundation.Standard.Sprintf("#%d", idnum);
+                AddParam();
+                Span<char> aRef = stackalloc char[IdentSize];
+                aRef[0] = '#';
+                idnum.TryFormat(aRef[1..], out int aLength, default, CultureInfo.InvariantCulture);
+                AddShort(aRef[..(1 + aLength)]);
+                return;
             }
             else
             {
@@ -1198,6 +1219,22 @@ internal class StepWriter
         AddCString(astr, astr.Length, more);
     }
 
+    // AddCString's short case, for a text that is never cut (an identifier, an integer)
+    private void AddShort(ReadOnlySpan<char> text)
+    {
+        while (!_thecurr.CanGet(text.Length))
+        {
+            _thefile.Append(_thecurr.Moved());
+            int indst = _thelevel * 2;
+            if (_theindent)
+            {
+                indst += _theindval;
+            }
+            _thecurr.SetInitial(indst < StepLong && indst + text.Length <= StepLong ? indst : 0);
+        }
+        _thecurr.Add(text);
+    }
+
     /// <summary>Same as above, but the string is given by CString + Length (OCCT's overload on <c>const char*</c>).</summary>
     private void AddCString(string astr, int lnstr, int more = 0)
     {
@@ -1285,16 +1322,20 @@ internal class StepWriter
         try
         {
             int nb = _thefile.Length();
+            var bytes = new byte[256];
             for (int i = 1; i <= nb; i++)
             {
                 string line = _thefile.Value(i).ToCString();
-                var bytes = new byte[line.Length + 1];
+                if (bytes.Length <= line.Length)
+                {
+                    bytes = new byte[line.Length + 1];
+                }
                 for (int j = 0; j < line.Length; j++)
                 {
                     bytes[j] = unchecked((byte)line[j]);
                 }
                 bytes[line.Length] = (byte)'\n';
-                s.Write(bytes, 0, bytes.Length);
+                s.Write(bytes, 0, line.Length + 1);
             }
             s.Flush();
             return true;
@@ -1333,6 +1374,11 @@ internal class StepWriter
     /// </summary>
     public static string CleanTextForSend(string text)
     {
+        // Kerf: nothing to clean in nearly all of them
+        if (text.AsSpan().IndexOfAny("'\\\n\t") < 0)
+        {
+            return text;
+        }
         var result = new StringBuilder();
         int nb = text.Length;
         // Process characters from beginning to end

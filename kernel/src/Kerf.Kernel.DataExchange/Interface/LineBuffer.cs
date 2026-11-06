@@ -12,16 +12,15 @@ namespace Kerf.Engine.Exchange.Framework;
 /// a maximum size, initial blanks, and a "keep" mark to carry the end of a line to the next one.
 /// </summary>
 /// <remarks>
-/// The buffer is OCCT's array of characters, 1-based, with its null terminators, so the line cutting is the same
-/// character for character.
+/// The buffer is OCCT's array of characters with its null terminators, so the line cutting is the same character
+/// for character.
 /// </remarks>
 internal class LineBuffer
 {
     /// <summary>Creates a line buffer with an absolute maximum size (the default only satisfies the compiler).</summary>
     public LineBuffer(int size = 10)
     {
-        _line = new NCollection_Array1<char>(1, size + 1);
-        _line.SetValue(1, '\0');
+        _line = new char[size + 1];
         _max = size;
         _init = _len = _get = _keep = _friz = 0;
     }
@@ -30,13 +29,13 @@ internal class LineBuffer
     /// <exception cref="OutOfRangeException">More than the initial size.</exception>
     public void SetMax(int max)
     {
-        if (max > _line.Length())
+        if (max > _line.Length)
         {
             throw new OutOfRangeException("Interface LineBuffer : SetMax");
         }
         if (max <= 0)
         {
-            _max = _line.Length();
+            _max = _line.Length;
         }
         else
         {
@@ -96,12 +95,8 @@ internal class LineBuffer
     /// <summary>The content of the line buffer (up to its first null character).</summary>
     public string Content()
     {
-        int length = 0;
-        while (length < _line.Length() && _line.Value(length + 1) != '\0')
-        {
-            length++;
-        }
-        return new string(_line.AsSpan().Slice(0, length));
+        int length = Array.IndexOf(_line, '\0');
+        return new string(_line, 0, length < 0 ? _line.Length : length);
     }
 
     /// <summary>The length of the line buffer (with the initial blanks).</summary>
@@ -111,7 +106,7 @@ internal class LineBuffer
     public void Clear()
     {
         _get = _keep = _len = _friz = 0;
-        _line.SetValue(1, '\0');
+        _line[0] = '\0';
     }
 
     /// <summary>
@@ -160,20 +155,25 @@ internal class LineBuffer
     public void Add(string text, int lntext)
     {
         int lnt = (lntext > (_max - _len - _init) ? (_max - _len - _init) : lntext);
-        for (int i = 1; i <= lnt; ++i)
-        {
-            _line.SetValue(_len + i, text[i - 1]);
-        }
+        text.AsSpan(0, lnt).CopyTo(_line.AsSpan(_len));
         _len += lnt;
-        _line.SetValue(_len + 1, '\0');
+        _line[_len] = '\0';
+    }
+
+    /// <summary>Adds all of a text that is known to fit.</summary>
+    public void Add(ReadOnlySpan<char> text)
+    {
+        text.CopyTo(_line.AsSpan(_len));
+        _len += text.Length;
+        _line[_len] = '\0';
     }
 
     /// <summary>Adds one character (not checked against the maximum size).</summary>
     public void Add(char text)
     {
-        _line.SetValue(_len + 1, text);
+        _line[_len] = text;
         ++_len;
-        _line.SetValue(_len + 1, '\0');
+        _line[_len] = '\0';
     }
 
     /// <summary>
@@ -190,14 +190,8 @@ internal class LineBuffer
                 return;
             }
 
-            for (int i = _len + 1; i > 0; --i)
-            {
-                _line.SetValue(i + _init, _line.Value(i));
-            }
-            for (int i = 1; i <= _init; ++i)
-            {
-                _line.SetValue(i, ' ');
-            }
+            Array.Copy(_line, 0, _line, _init, _len + 1);
+            _line.AsSpan(0, _init).Fill(' ');
         }
 
         //  MANAGE KEEP: is it playable? otherwise, cancel. if yes, note the junction
@@ -214,8 +208,8 @@ internal class LineBuffer
         }
         if (_keep > 0)
         {
-            _kept = _line.Value(_keep);
-            _line.SetValue(_keep, '\0');
+            _kept = _line[_keep - 1];
+            _line[_keep - 1] = '\0';
         }
     }
 
@@ -225,11 +219,8 @@ internal class LineBuffer
         //  If Keep, save from myKeep + 1 to myLen (+1 for final 0)
         if (_keep > 0)
         {
-            _line.SetValue(1, _kept);
-            for (int i = _keep + 1; i <= _len + _init + 1; ++i)
-            {
-                _line.SetValue(i - _keep + 1, _line.Value(i));
-            }
+            _line[0] = _kept;
+            Array.Copy(_line, _keep, _line, 1, _len + _init + 1 - _keep);
             _len = _len + _init - _keep + 1;
         }
         else
@@ -244,7 +235,8 @@ internal class LineBuffer
         }
     }
 
-    private readonly NCollection_Array1<char> _line;
+    // OCCT's 1-based array, here 0-based
+    private readonly char[] _line;
     private int _max;
     private int _init;
     private int _keep;
