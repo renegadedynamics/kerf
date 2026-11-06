@@ -463,6 +463,43 @@ public class BRepFilletAPI_MakeFilletTests
     }
 
     /// <summary>
+    /// blend/tolblend_buildvol/A9 at a small size (decision 19302): a cone's closed top edge filleted with no radius at
+    /// its one vertex. The new loop on the top face replaces the edge, so the face isn't kept whole as well. The figures
+    /// are native OCCT 8.0.1's.
+    /// </summary>
+    [Fact]
+    public void A_closed_edge_with_no_radius_at_its_vertex_leaves_only_the_new_loop()
+    {
+        Shape aCone = new ApiMakeCone(10.0, 5.0, 20.0).Shape();
+        Edge aTop = default;
+        for (Explorer anExp = new(aCone, ShapeType.Edge); anExp.More(); anExp.Next())
+        {
+            Properties aLine = new();
+            MassPropertiesBuilder.LinearProperties(anExp.Current(), aLine);
+            if (aLine.CentreOfMass().DistanceTo(new Point3D(0, 0, 20)) < 1e-6)
+            {
+                aTop = ShapeCasts.Edge(anExp.Current());
+            }
+        }
+        NCollection_Array1<Point2D> aRadii = new(1, 3);
+        aRadii.SetValue(1, new Point2D(0.0, 0.0));
+        aRadii.SetValue(2, new Point2D(1.0, 1.5));
+        aRadii.SetValue(3, new Point2D(2.0, 0.0));
+        MakeFillet aFillet = new(aCone);
+        aFillet.Add(aRadii, aTop);
+        Shape aResult = aFillet.Shape();
+        Assert.True(aFillet.IsDone);
+        Assert.True(new Analyzer(aResult).IsValid());
+        int aFaces = 0;
+        for (Explorer anExp = new(aResult, ShapeType.Face); anExp.More(); anExp.Next())
+        {
+            aFaces++;
+        }
+        Assert.Equal(4, aFaces);
+        Assert.Equal(1358.38537, Area(aResult), 1e-3);
+    }
+
+    /// <summary>
     /// draft/angle/A2 without Draw (decision 19301): the edges between a fillet and the faces it meets are coded G1, as
     /// natively (four on this box, read from native OCCT 8.0.1's BRep text), which is what lets a draft follow a
     /// fillet. Without them native's draft and the port's both stop with "impossible edge recomputation". The area and

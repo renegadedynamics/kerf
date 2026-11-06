@@ -172,7 +172,6 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
     {
         ["blend/buildevol/J5"] = "reconstruction: shell not closed",
         ["blend/simple/V7"] = "reconstruction (7R3, decision 1162): a Bezier face the fillet runs past keeps its surface; native extends it as a B-spline",
-        ["blend/tolblend_buildvol/A9"] = "reconstruction: shell not closed; area 35767 for 33798.1",
         ["blend/tolblend_simple/C5"] = "reconstruction (7R3, decision 1162): a Bezier face the fillet runs past keeps its surface; native extends it as a B-spline",
         ["chamfer/dist_angle_sequence/A5"] = "reconstruction: shell not closed after a step; then faces not found by position",
         ["chamfer/dist_angle_sequence/B8"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",

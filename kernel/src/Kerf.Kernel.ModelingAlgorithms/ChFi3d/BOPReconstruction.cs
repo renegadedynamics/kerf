@@ -843,6 +843,11 @@ internal sealed partial class BOPReconstruction : Reconstruction
             }
         }
         bool hasCurves = !le.IsEmpty();
+        HashSet<Shape> fromCurves = new(ShapeHasher.Instance);
+        foreach (Shape e in le)
+        {
+            fromCurves.Add(e);
+        }
 
         // the face's edges: the kept parts of the cut ones, the others whole
         bool hasCuts = false;
@@ -925,7 +930,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
             le.Append(e);
         }
 
-        NCollection_List<Shape> pieces = BuildAreas(ff, le);
+        NCollection_List<Shape> pieces = WithoutLoopsReplaced(BuildAreas(ff, le), fromCurves);
         if (outerIsolated is not null)
         {
             // the outer wire, not touched: it bounds what the face keeps when the fillet's loops are holes (a hole's
@@ -966,6 +971,52 @@ internal sealed partial class BOPReconstruction : Reconstruction
         }
         _splitIN[f] = pieces;
         return pieces;
+    }
+
+    /// <summary>
+    /// The pieces without those with no edge of the fillet's curves that touch, at a vertex, a piece with one: a closed
+    /// edge filleted with no radius at its one vertex stays whole, and the fillet's new loop, which meets it there and
+    /// replaces it, doesn't leave it dangling (decision 19302).
+    /// </summary>
+    private static NCollection_List<Shape> WithoutLoopsReplaced(NCollection_List<Shape> pieces, HashSet<Shape> fromCurves)
+    {
+        if (pieces.Size() < 2)
+        {
+            return pieces;
+        }
+        bool OnlyOld(Shape piece)
+        {
+            for (Explorer exp = new(piece, ShapeType.Edge); exp.More(); exp.Next())
+            {
+                if (fromCurves.Contains(exp.Current()))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        HashSet<Shape> newVertices = new(ShapeHasher.Instance);
+        foreach (Shape piece in pieces)
+        {
+            if (!OnlyOld(piece))
+            {
+                AddVertices(piece, newVertices);
+            }
+        }
+        NCollection_List<Shape> kept = new();
+        foreach (Shape piece in pieces)
+        {
+            bool touches = false;
+            for (Explorer exv = new(piece, ShapeType.Vertex); exv.More() && !touches; exv.Next())
+            {
+                touches = newVertices.Contains(exv.Current());
+            }
+            if (!OnlyOld(piece) || !touches)
+            {
+                kept.Append(piece);
+            }
+        }
+        return kept;
     }
 
     /// <summary>
