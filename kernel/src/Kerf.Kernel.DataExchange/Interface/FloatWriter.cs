@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Globalization;
 using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Framework;
@@ -126,17 +127,15 @@ internal class FloatWriter
 
         // OCCT writes into the caller's buffer (20 to 30 characters); a buffer of the formatted length plus the
         // zero suppression's reach stands for it here
-        string formatted;
-        if ((val >= r1 && val < r2) || (val <= -r1 && val > -r2))
+        string form = (val >= r1 && val < r2) || (val <= -r1 && val > -r2) ? rangeform : mainform;
+        Span<char> pText = stackalloc char[StepBuffer];
+        pText.Clear();
+        if (!TryFormatForStep(val, form, pText))
         {
-            formatted = Sprintf(rangeform, val);
+            string formatted = Sprintf(form, val);
+            pText = new char[Math.Max(formatted.Length, 16) + 8];
+            formatted.CopyTo(pText);
         }
-        else
-        {
-            formatted = Sprintf(mainform, val);
-        }
-        char[] pText = new char[Math.Max(formatted.Length, 16) + 8];
-        formatted.CopyTo(0, pText, 0, formatted.Length);
 
         if (zsup)
         {
@@ -180,9 +179,58 @@ internal class FloatWriter
             pText[j0 + 5] = lxp[4];
             pText[j0 + 6] = '\0';
         }
-        int length = Array.IndexOf(pText, '\0');
-        text = new string(pText, 0, length < 0 ? pText.Length : length);
+        int length = pText.IndexOf('\0');
+        text = new string(pText[..(length < 0 ? pText.Length : length)]);
         return text.Length; // strlen(text)
+    }
+
+    private const int StepBuffer = 64;
+
+    // The two forms every real in a STEP file goes through (new FloatWriter(12)), without C's format being interpreted for each
+    // number: what Sprintf gives for them, written in place. Anything else, or a real too long for the buffer, is left to Sprintf.
+    private static bool TryFormatForStep(double val, string form, Span<char> target)
+    {
+        bool isFixed = form == "%14.12f";
+        if ((!isFixed && form != "%14.12E") || !double.IsFinite(val))
+        {
+            return false;
+        }
+
+        int at = 0;
+        if (double.IsNegative(val))
+        {
+            target[at++] = '-';
+        }
+
+        Span<char> digits = target[at..^8];
+        double abs = Math.Abs(val);
+        if (!abs.TryFormat(digits, out int written, isFixed ? "F12" : "e12", CultureInfo.InvariantCulture))
+        {
+            return false;
+        }
+
+        if (isFixed)
+        {
+            at += written;
+        }
+        else
+        {
+            // C's exponent has at least two digits, and .NET's "e12" always three: "1.5e+003" becomes "1.5E+03"
+            int e = written - 5;
+            digits[e] = 'E';
+            if (digits[e + 2] == '0')
+            {
+                digits[e + 2] = digits[e + 3];
+                digits[e + 3] = digits[e + 4];
+                digits[e + 4] = '\0';
+                written--;
+            }
+
+            at += written;
+        }
+
+        // Pads on the left to the width of 14; a value of 12 decimals and its point is never narrower, but the form says so
+        return at >= 14;
     }
 
     // OCCT keeps the formats in char[12] buffers, copied with strcpy (no check of the length)

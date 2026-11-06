@@ -291,6 +291,34 @@ public class InterfaceTests
     }
 
     [Fact]
+    public void FloatWriter_writes_STEPs_reals_as_the_general_formats_do()
+    {
+        // "%14.12lf" means the same as "%14.12f" and goes through Sprintf, so every real is compared with C's rules as ported
+        var aRandom = new Random(11);
+        var aValues = new List<double>
+        {
+            0.0, -0.0, 1.0, -1.0, 0.1, -0.1, 1000.0, -1000.0, 999.9999999999999, 0.09999999999999999, 1e-7, 1.5e-7, 1e100, -1e100, 1e-100, 1e300, 1.7976931348623157e308,
+            5e-324, 2.2250738585072014e-308, double.NaN, double.PositiveInfinity, double.NegativeInfinity, 123456.789, 0.5, 10.0, 100.0, 1e15, 1e16,
+        };
+        for (int i = 0; i < 200000; i++)
+        {
+            aValues.Add(BitConverter.Int64BitsToDouble(aRandom.NextInt64()));
+            aValues.Add((aRandom.NextDouble() - 0.5) * Math.Pow(10, aRandom.Next(-20, 20)));
+            aValues.Add(aRandom.Next(-5000, 5000) / 8.0);
+        }
+
+        foreach (bool aSuppress in new[] { true, false })
+        {
+            foreach (double aValue in aValues)
+            {
+                FloatWriter.Convert(aValue, out string aQuick, aSuppress, 0.1, 1000.0, "%14.12E", "%14.12f");
+                FloatWriter.Convert(aValue, out string aGeneral, aSuppress, 0.1, 1000.0, "%14.12lE", "%14.12lf");
+                Assert.Equal(aGeneral, aQuick);
+            }
+        }
+    }
+
+    [Fact]
     public void FloatWriter_and_LineBuffer_write_as_STEP_does()
     {
         var aWriter = new FloatWriter(12); // StepData_StepWriter's
