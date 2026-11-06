@@ -227,4 +227,61 @@ public class BRepBndLibTests
         Bounds.AddOptimal(aShape, ref aBox, false, false);
         AssertBox(aBox, -30, -30, 0, 30, 30, 40);
     }
+
+    [Theory]
+    [InlineData(5.0)]
+    [InlineData(8.428571428571429)]
+    [InlineData(9.0)]
+    public void Area_inside_a_periodic_spline_does_not_depend_on_where_the_edge_starts(double theStart)
+    {
+        // OCCT #1685: the box of a pcurve's arc past the first period was trimmed to the period, so the face's bounds
+        // lost part of it, and the precise area was up to 2.7% short with an estimate of 1e-10.
+        int[,] aXY = { { 2, 0 }, { 4, 0 }, { 6, 2 }, { 6, 4 }, { 4, 6 }, { 2, 6 }, { 0, 4 }, { 0, 2 } };
+        var aPoles = new NCollection_Array1<Point3D>(1, 8);
+        for (int i = 1; i <= 8; ++i)
+        {
+            aPoles[i] = new Point3D(aXY[i - 1, 0], aXY[i - 1, 1], 0);
+        }
+
+        var aKnots = new NCollection_Array1<double>(1, 9);
+        var aMults = new NCollection_Array1<int>(1, 9);
+        for (int i = 1; i <= 9; ++i)
+        {
+            aKnots[i] = i - 1;
+            aMults[i] = 1;
+        }
+
+        var aCurve = new BSplineCurve3D(aPoles, aKnots, aMults, 5, true);
+        var aWire = new MakeWire();
+        aWire.Add(new MakeEdge(aCurve, theStart, theStart + 8).Edge());
+        Face aFace = new MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aWire.Wire()).Face();
+        var aProps = new Properties();
+        double anError = MassPropertiesBuilder.SurfaceProperties(aFace, aProps, 1.0e-10);
+        Assert.True(anError < 1.0e-9);
+        Assert.Equal(2596859.0 / 113400.0, aProps.Mass(), 1.0e-7);
+    }
+
+    [Fact]
+    public void Precise_volume_of_an_extruded_spline_refines_along_U()
+    {
+        // OCCT #1675: the precise path never refined along U, and left U's error out of its estimate of about 1e-16
+        Point3D[] aPts = [new(0, 4, 0), new(1, 5, 0), new(2, 4, 0), new(3, 5, 0), new(4, 4, 0)];
+        var aPoles = new NCollection_Array1<Point3D>(1, 5);
+        for (int i = 1; i <= 5; ++i)
+        {
+            aPoles[i] = aPts[i - 1];
+        }
+
+        NCollection_Array1<double> aKnots = NCollection_Array1<double>.From([0.0, 0.5, 1.0]);
+        NCollection_Array1<int> aMults = NCollection_Array1<int>.From([4, 1, 4]);
+        var aCurve = new BSplineCurve3D(aPoles, aKnots, aMults, 3);
+        var aWire = new MakeWire();
+        aWire.Add(new MakeEdge(aCurve).Edge());
+        aWire.Add(new MakeEdge(aPts[4], aPts[0]).Edge());
+        Face aFace = new MakeFace(aWire.Wire(), true).Face();
+        Shape aPrism = new ApiMakePrism(aFace, new Vector3D(0, 0, 2)).Shape();
+        var aProps = new Properties();
+        MassPropertiesBuilder.VolumeProperties(aPrism, aProps, 1.0e-9);
+        Assert.Equal(3.8, Math.Abs(aProps.Mass()), 1.0e-8);
+    }
 }
