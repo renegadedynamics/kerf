@@ -444,11 +444,13 @@ internal class ReShape : Transient
         // fix for SAMTECH bug OCC322 about absent internal vertices after sewing.
         BrepBuilder B = new();
 
-        Shape result = shape.EmptyCopied();
+        // The copy waits for the first sub-shape that changes: usually none does, and then the shape itself is the answer.
+        // Applying to the sub-shapes writes nothing into this shape, so a later copy is the same copy
+        Shape result = new();
         Orientation orien = shape.Orientation;
-        result.Orient(Forward); // protect against INTERNAL or EXTERNAL shapes
         bool modif = false;
         int locStatus = _status;
+        int unchanged = 0;
 
         // apply recorded modifications to subshapes
         bool isEmpty = true;
@@ -463,7 +465,24 @@ internal class ReShape : Transient
                 { // ShapeExtend::DecodeStatus ( myStatus, ShapeExtend_DONE4 ) )
                     locStatus |= EncodeStatus(4); //|= ShapeExtend::EncodeStatus ( ShapeExtend_DONE4 );
                 }
-                modif = true;
+                if (!modif)
+                {
+                    modif = true;
+                    result = shape.EmptyCopied();
+                    result.Orient(Forward); // protect against INTERNAL or EXTERNAL shapes
+                    var before = new Iterator(shape, false);
+                    for (int i = 0; i < unchanged; i++, before.Next())
+                    {
+                        B.Add(result, before.Value());
+                    }
+                }
+            }
+            else if (!modif)
+            {
+                unchanged++;
+                isEmpty = false;
+                locStatus |= EncodeStatus(3); // ShapeExtend::EncodeStatus ( ShapeExtend_DONE3 );
+                continue;
             }
             if (newsh.IsNull)
             {

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Buffers;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
@@ -157,7 +158,20 @@ internal class InterferencePolygon2d : PolygonInterference
         int iObje1, iObje2, n = obje.SegmentCount;
         double d = obje.DeflectionOverEstimation();
 
+        // Most pairs of a polygon's segments are far apart, and each one's box is only built for the exact test below: this
+        // answers them from the extents of the segments alone. Its margin only ever leaves a pair to the exact test
+        double[] extents = ArrayPool<double>.Shared.Rent(4 * (n + 1));
         Point2D p1b, p1e, p2b, p2e;
+        for (iObje1 = 1; iObje1 <= n; iObje1++)
+        {
+            obje.Segment(iObje1, out p1b, out p1e);
+            extents[4 * iObje1] = Math.Min(p1b.X, p1e.X);
+            extents[4 * iObje1 + 1] = Math.Max(p1b.X, p1e.X);
+            extents[4 * iObje1 + 2] = Math.Min(p1b.Y, p1e.Y);
+            extents[4 * iObje1 + 3] = Math.Max(p1b.Y, p1e.Y);
+        }
+
+        double farApart = 2 * Math.Abs(d) * (1 + 1e-9) + 1e-9;
         for (iObje1 = 1; iObje1 <= n; iObje1++)
         {
             bSO.SetVoid();
@@ -167,8 +181,16 @@ internal class InterferencePolygon2d : PolygonInterference
             bSO.Enlarge(d);
             if (!obje.Bounding().IsOut(bSO))
             {
+                double xMin = extents[4 * iObje1] - farApart, xMax = extents[4 * iObje1 + 1] + farApart;
+                double yMin = extents[4 * iObje1 + 2] - farApart, yMax = extents[4 * iObje1 + 3] + farApart;
                 for (iObje2 = iObje1 + 1; iObje2 <= n; iObje2++)
                 {
+                    int at = 4 * iObje2;
+                    if (extents[at] > xMax || extents[at + 1] < xMin || extents[at + 2] > yMax || extents[at + 3] < yMin)
+                    {
+                        continue;
+                    }
+
                     bST.SetVoid();
                     obje.Segment(iObje2, out p2b, out p2e);
                     bST.Add(p2b);
@@ -181,6 +203,8 @@ internal class InterferencePolygon2d : PolygonInterference
                 }
             }
         }
+
+        ArrayPool<double>.Shared.Return(extents);
     }
 
     private void Clean()

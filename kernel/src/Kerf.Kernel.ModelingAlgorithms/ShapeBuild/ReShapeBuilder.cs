@@ -262,13 +262,14 @@ internal class ReShapeBuilder : ReShape
             return shape;
         }
 
+        // The copy waits for the first sub-shape that changes: usually none does, and then the shape itself is the answer.
+        // Applying to the sub-shapes writes nothing into this shape, so a later copy is the same copy
         BrepBuilder builder = new();
-
-        Shape result = shape.EmptyCopied();
+        Shape result = new();
         Orientation orient = shape.Orientation;
-        result.Orient(Forward); // protect against INTERNAL or EXTERNAL shapes
         bool modif = false;
         int locStatus = _status;
+        int unchanged = 0;
 
         // Apply recorded modifications to subshapes
         inFlight.Add(shape.TShape()!);
@@ -282,7 +283,23 @@ internal class ReShapeBuilder : ReShape
                 {
                     locStatus |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE4);
                 }
-                modif = true;
+                if (!modif)
+                {
+                    modif = true;
+                    result = shape.EmptyCopied();
+                    result.Orient(Forward); // protect against INTERNAL or EXTERNAL shapes
+                    var before = new Iterator(shape, false);
+                    for (int i = 0; i < unchanged; i++, before.Next())
+                    {
+                        builder.Add(result, before.Value());
+                    }
+                }
+            }
+            else if (!modif)
+            {
+                unchanged++;
+                locStatus |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE3);
+                continue;
             }
             if (newShape.IsNull)
             {
