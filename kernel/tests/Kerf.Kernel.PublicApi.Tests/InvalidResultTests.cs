@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Measurement;
 using Kerf.Booleans;
 using Kerf.Construction;
 using Kerf.Fillets;
@@ -140,10 +141,13 @@ public class InvalidResultTests
     }
 
     [Fact]
-    public void Approximating_what_it_cannot_keep_valid_fails()
+    public void Approximating_keeps_a_valid_shape_valid()
     {
-        Result<Built<Shape>> result = Fixtures.Cylinder().ApproximateBSplines();
-        Carries(result, "The approximated shape isn't valid: ");
-        Assert.True(Fixtures.Cylinder().ApproximateBSplines(new BSplineApproximationOptions { CheckResult = false }).IsSuccess);
+        // Decision 20607: native's are invalid, as its edges keep their tolerance when their faces move
+        Solid cylinder = Fixtures.Cylinder();
+        Result<Built<Shape>> result = cylinder.ApproximateBSplines();
+        Assert.True(result.IsSuccess);
+        Assert.Equal(cylinder.IntegrateVolume(), result.Value.Shape.IntegrateVolume(), 1e-3 * cylinder.IntegrateVolume());
+        Assert.All(result.Value.Shape.AllEdges(), e => Assert.True(e.Tolerance < 0.02));
     }
 }
