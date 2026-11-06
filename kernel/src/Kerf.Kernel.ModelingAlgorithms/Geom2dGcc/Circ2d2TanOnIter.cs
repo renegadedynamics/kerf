@@ -1184,11 +1184,11 @@ internal sealed class Circ2d2TanOnIter
         math_Vector         ufirst = new(1, 3);
         math_Vector         tol = new(1, 3);
         umin[1]         = ConstraintCurveTool.FirstParameter(cu1);
-        umin[2]         = RealFirst();
-        umin[3]         = ConstraintCurveTool.FirstParameter(onCurv);
+        umin[2]         = ConstraintCurveTool.FirstParameter(onCurv); // Kerf: OCCT swaps these with the radius's (decision 19802)
+        umin[3]         = 0.0;
         umax[1]         = ConstraintCurveTool.LastParameter(cu1);
-        umax[2]         = RealLast();
-        umax[3]         = ConstraintCurveTool.LastParameter(onCurv);
+        umax[2]         = ConstraintCurveTool.LastParameter(onCurv);
+        umax[3]         = RealLast();
         ufirst[1]       = param1;
         ufirst[2]       = paramOn;
         tol[1]          = ConstraintCurveTool.EpsX(cu1, Math.Abs(tolerance));
@@ -1207,7 +1207,7 @@ internal sealed class Circ2d2TanOnIter
             //    gp_Vec2d Tan1,Tan2,Tan3;
             Vector2D tan1, tan3;
             ConstraintCurveTool.D1(cu1, ufirst[1], out point1, out tan1);
-            ConstraintCurveTool.D1(onCurv, ufirst[3], out point3, out tan3);
+            ConstraintCurveTool.D1(onCurv, ufirst[2], out point3, out tan3); // Kerf: OCCT reads the radius as the parameter (decision 19802)
             double dist1 = point3.DistanceTo(point1);
             double dist2 = point3.DistanceTo(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)

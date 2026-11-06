@@ -232,7 +232,7 @@ internal sealed class FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         _curv2 = c2;
         _circon = onCi;
         _firstRad = rad;
-        _theType = Type2.CuCuOnCi; // OCCT: should be Geom2dGcc_CiCuOnCi; InitDerivative then evaluates the unset Curv1
+        _theType = Type2.CiCuOnCi; // Kerf: OCCT says CuCuOnCi, and then evaluates a null first curve (decision 19801)
     }
 
     public FunctionTanCuCuOnCu(in Line2D l1, CurveAdaptor2D c2, in Circle2D onCi, double rad)
