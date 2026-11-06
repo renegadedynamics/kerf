@@ -14,7 +14,7 @@ public class CurveDifferentialTests
         Check.AlmostEqual(length, curve.Length, 7);
         Check.AlmostEqual(start, curve.PositionAt(0), 7);
         Check.AlmostEqual(end, curve.PositionAt(1), 7);
-        // Python's point is by too few Gauss points where the speed along the curve varies (decision 20401):
+        // Python's point is by too few Gauss points where the speed along the curve varies (decision 1768):
         // ArcLengthLawTests holds these to the true length
         bool constantSpeed = curve.Edges().All(e => e.GeomType is GeomType.Line or GeomType.Circle);
         Check.AlmostEqual(at37, curve.PositionAt(0.37), constantSpeed ? 7 : 3);

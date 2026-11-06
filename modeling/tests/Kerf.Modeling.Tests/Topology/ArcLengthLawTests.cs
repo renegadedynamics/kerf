@@ -1,4 +1,4 @@
-// Unit 11J (decision 20401): an edge's length, and a position along it, are what they say: the limit of the lengths of
+// Unit 11J (decision 1768): an edge's length, and a position along it, are what they say: the limit of the lengths of
 // inscribed polygons, against which OCCT's few Gauss points were up to 1.5% out on an ellipse of ten to one.
 namespace Kerf.Modeling.Tests.Topology;
 
