@@ -118,6 +118,24 @@ public class NCollection_ListTests
     }
 
     [Fact]
+    public void A_finished_empty_list_is_shared_and_refuses_to_grow()
+    {
+        NCollection_List<int> shared = new NCollection_List<int>().Finished();
+        Assert.Same(shared, new NCollection_List<int>().Finished());
+        Assert.Empty(shared);
+        Assert.Throws<ImmutableObjectException>(() => shared.Append(1));
+        Assert.Throws<ImmutableObjectException>(() => shared.Prepend(1));
+        shared.Clear();
+        shared.Reverse();
+        Assert.False(shared.Remove(1));
+        Assert.Empty(shared);
+
+        var full = new NCollection_List<int>([1]);
+        Assert.Same(full, full.Finished());
+        Assert.Throws<ImmutableObjectException>(() => shared.Assign(full));
+    }
+
+    [Fact]
     public void An_empty_list_has_no_first_or_last_and_a_trimmed_one_keeps_its_items()
     {
         var list = new NCollection_List<int>();

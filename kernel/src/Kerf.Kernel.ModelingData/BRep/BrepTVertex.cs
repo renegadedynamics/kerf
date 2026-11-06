@@ -20,7 +20,7 @@ internal class BrepTVertex : TVertex
 {
     private Point3D _pnt;
     private double _tolerance;
-    private readonly NCollection_List<PointRepresentation> _points = new();
+    private NCollection_List<PointRepresentation> _points = new();
 
     /// <summary>An empty vertex at the origin, with a tolerance of RealEpsilon().</summary>
     public BrepTVertex()
@@ -115,7 +115,7 @@ internal class BrepTVertex : TVertex
 
     internal override void FreezeRepresentations()
     {
-        _points.TrimExcess();
+        _points = _points.Finished();
         foreach (PointRepresentation pr in _points)
         {
             pr.Freeze();

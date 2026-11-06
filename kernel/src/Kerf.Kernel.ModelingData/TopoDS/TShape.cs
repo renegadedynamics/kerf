@@ -47,7 +47,7 @@ internal abstract class TShape : Transient
     }
 
     /// <summary>The child shapes (OCCT: private, read by its friends TopoDS_Iterator and TopoDS_Builder).</summary>
-    internal readonly NCollection_List<Shape> _shapes = new();
+    internal NCollection_List<Shape> _shapes = new();
 
     private ushort _state;
 
@@ -286,7 +286,7 @@ internal abstract class TShape : Transient
     // Its lists won't grow now, and a kept shape holds them for hours, so they let go of the room they had for growing
     private void FreezeOne()
     {
-        _shapes.TrimExcess();
+        _shapes = _shapes.Finished();
         FreezeRepresentations();
         Freeze();
     }

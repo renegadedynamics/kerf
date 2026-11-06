@@ -178,6 +178,8 @@ internal class NCollection_HSequence<T> : NCollection_Sequence<T>
 /// </summary>
 internal class NCollection_List<T> : IEnumerable<T>
 {
+    private static readonly NCollection_List<T> s_sharedEmpty = new();
+
     private T[] _items;
     private int _count;
     private int _version;
@@ -215,6 +217,11 @@ internal class NCollection_List<T> : IEnumerable<T>
 
     public void Clear()
     {
+        if (_items.Length == 0)
+        {
+            return; // Nothing to clear, and the shared empty list stays as it is
+        }
+
         _version++;
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
@@ -345,9 +352,8 @@ internal class NCollection_List<T> : IEnumerable<T>
         if (_count > 1)
         {
             Array.Reverse(_items, 0, _count);
+            _version++;
         }
-
-        _version++;
     }
 
     public void Exchange(NCollection_List<T> other)
@@ -359,6 +365,21 @@ internal class NCollection_List<T> : IEnumerable<T>
     }
 
     public bool Contains(T theObject) => _count != 0 && Array.IndexOf(_items, theObject, 0, _count) >= 0;
+
+    /// <summary>
+    /// The list to hold from now on, for a holder being frozen, which won't change it: this one without any room beyond
+    /// its items, or if it's empty one list that every holder shares (a vertex has no children, and most faces no meshes).
+    /// </summary>
+    internal NCollection_List<T> Finished()
+    {
+        if (_count == 0)
+        {
+            return s_sharedEmpty;
+        }
+
+        TrimExcess();
+        return this;
+    }
 
     /// <summary>Lets go of any room beyond the items: for a list that's finished and will be kept.</summary>
     internal void TrimExcess()
@@ -437,6 +458,11 @@ internal class NCollection_List<T> : IEnumerable<T>
     {
         if (capacity > _items.Length)
         {
+            if (ReferenceEquals(this, s_sharedEmpty))
+            {
+                throw new ImmutableObjectException("A frozen object's empty list is shared: it can't change.");
+            }
+
             T[] items = new T[Math.Max(capacity, _items.Length == 0 ? 4 : 2 * _items.Length)];
             Array.Copy(_items, items, _count);
             _items = items;
