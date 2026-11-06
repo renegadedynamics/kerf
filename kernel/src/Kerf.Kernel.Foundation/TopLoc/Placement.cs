@@ -139,8 +139,55 @@ public readonly partial struct Placement : IEquatable<Placement>
             return this;
         }
 
+        return MultipliedAt(other, 0);
+    }
+
+    // Kerf: OCCT recurses once for each item of Other, and a shape moved a few thousand times overflows the stack, which
+    // ends the process (decision 21101). Short chains, nearly all of them, stay on the stack; a long one goes in an array.
+    private const int MaxChainRecursion = 64;
+
+    private readonly Placement MultipliedAt(in Placement other, int depth)
+    {
+        if (other.IsIdentity)
+        {
+            return this;
+        }
+
         // prepend the queue of Other
-        Placement head = Multiplied(other.NextLocation());
+        Placement head = depth < MaxChainRecursion ? MultipliedAt(other.NextLocation(), depth + 1) : MultipliedAlong(other.NextLocation());
+        return Joined(head, other);
+    }
+
+    // Kerf: from this length a chain is folded into one datum of the same transformation. Each move of a shape copies the
+    // whole of its chain, so 30,000 moves took 54 s, and 1,024 keeps it linear (decision 21101). Shapes' identity reads
+    // the chain, so a shape moved further than this is no longer the same as one moved back; nothing real gets here.
+    private const int MaxChain = 1024;
+
+    private readonly Placement MultipliedAlong(in Placement other)
+    {
+        var chain = new List<Placement>();
+        for (Placement item = other; !item.IsIdentity; item = item.NextLocation())
+        {
+            chain.Add(item);
+            if (chain.Count + MaxChainRecursion > MaxChain)
+            {
+                chain.Clear();
+                chain.Add(new Placement(other.Transformation));
+                break;
+            }
+        }
+
+        Placement head = this;
+        for (int i = chain.Count - 1; i >= 0; i--)
+        {
+            head = Joined(head, chain[i]);
+        }
+
+        return head;
+    }
+
+    private static Placement Joined(in Placement head, in Placement other)
+    {
         SListOfItemLocation result = head._items;
         // does the head of Other cancel the head of result
 
@@ -222,7 +269,14 @@ public readonly partial struct Placement : IEquatable<Placement>
 
         if (power > 0)
         {
-            return Multiplied(Powered(power - 1));
+            // Kerf: a loop, where OCCT recurses once for each power
+            Placement result = this;
+            for (int i = 1; i < power; i++)
+            {
+                result = Multiplied(result);
+            }
+
+            return result;
         }
         else
         {
