@@ -53,6 +53,40 @@ public class SweepFramesTests
         Assert.True(swept.IsValid);
     }
 
+    [Theory]
+    [InlineData(1, 0, 0)]
+    [InlineData(0, 1, 0)]
+    public void A_direction_square_to_the_path_fails_and_says_why(double x, double y, double z)
+    {
+        var straight = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(0, 0, 10));
+        var direction = new Vector3D(x, y, z);
+        var e = Assert.Throws<InvalidOperationException>(() => Solid.Sweep(Disc(), straight, mode: direction));
+        Assert.Contains("encloses no volume", e.Message);
+        Assert.Contains("square to the path", e.Message);
+        Assert.Throws<InvalidOperationException>(() => Solid.SweepMulti([Disc(), new Pos(0, 0, 10) * Disc()], straight, binormal: direction));
+        // And as an operation's result, with the same words
+        var result = Sweep((Shape)Disc(), (Shape)straight, new SweepOptions { Normal = direction });
+        Assert.True(result.IsFailure);
+        Assert.Contains("encloses no volume", result.Error!.Message);
+    }
+
+    [Fact]
+    public void A_path_in_the_section_s_plane_fails_too()
+    {
+        var along = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(10, 0, 0));
+        var e = Assert.Throws<InvalidOperationException>(() => Solid.Sweep(Disc(), along));
+        Assert.Contains("in the section's plane", e.Message);
+    }
+
+    [Theory]
+    [InlineData(1e-6, 3.1415926e-5)]   // nearly square: a sliver, but a real one
+    [InlineData(1, 22.2144147)]        // the section stays square to the direction, so cos 45
+    public void A_slanting_direction_is_what_it_was(double z, double volume)
+    {
+        var straight = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(0, 0, 10));
+        Assert.Equal(volume, Solid.Sweep(Disc(), straight, mode: new Vector3D(1, 0, z)).Volume, volume * 1e-6);
+    }
+
     [Fact]
     public void A_mode_is_a_direction_or_a_spine()
     {

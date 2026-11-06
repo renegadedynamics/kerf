@@ -576,7 +576,23 @@ public static partial class SolidExtensions
         var outer = shapes[0];
         if (shapes.Count > 1)
             outer = outer.Cut(shapes.Skip(1));
-        return (outer);
+        return makeSolid ? SolidExtensions.EnclosingSomething(outer, mode) : outer;
+    }
+
+    /// <summary>
+    /// <paramref name="swept"/>, or a failure if it encloses no volume, which is "valid" to the checks: a section keeps square
+    /// to a sweep's direction, so one square to the path, or a path in the section's plane, leaves it edge-on (decision 1742).
+    /// The test is against its area, so it holds at any size, and a sliver at 1e-6 of a right angle still passes.
+    /// </summary>
+    private static TShape EnclosingSomething<TShape>(TShape swept, SweepMode? mode) where TShape : struct, IShape<TShape>
+    {
+        if (Math.Abs(swept.Volume) > 1e-10 * Math.Pow(swept.Area, 1.5))
+            return swept;
+        throw Failures.Expected(Sweeps.SweepFailed, mode?.Direction is { } direction
+            ? $"The sweep encloses no volume: the direction ({Formatting.Number(direction.X)}, {Formatting.Number(direction.Y)}, {Formatting.Number(direction.Z)}) "
+              + "is square to the path, which leaves the section edge-on. Give a direction along the path, or none."
+            : "The sweep encloses no volume: the path lies in the section's plane, which leaves the section edge-on.",
+            shapes: swept.AsShape());
     }
 
     /// <summary>
@@ -607,7 +623,8 @@ public static partial class SolidExtensions
         if (made.TryGetInvalid(out _))
             throw Failures.Expected(Sweeps.SweepFailed, "The profiles may be too large for the curvature of the path "
                                     + "or cross each other along it.", made);
-        return ((Solid)Failures.GetWarned(made, () => "sweep").Shape);
+        var swept = (Solid)Failures.GetWarned(made, () => "sweep").Shape;
+        return makeSolid ? SolidExtensions.EnclosingSomething(swept, binormal) : swept;
     }
 
     private static Solid ThickenCore(IShape2D surface, double depth, Vector3D? normalOverride)
