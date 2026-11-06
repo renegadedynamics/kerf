@@ -29,20 +29,16 @@ public abstract partial class Curve3D
     /// <summary>The point at parameter <paramref name="u"/>.</summary>
     public Point3D Evaluate(double u) => EvalD0(u);
 
-    /// <summary>The length of the curve between two parameters: negative when <paramref name="u2"/> is before
-    /// <paramref name="u1"/> (OCCT's <c>GCPnts_AbscissaPoint::Length</c>).</summary>
-    public double LengthBetween(double u1, double u2) => Engine.Measurement.AbscissaPoint.Length(new Engine.Geometry.Adaptors.CurveAdaptor(this), u1, u2);
+    /// <summary>The length of the curve between two parameters: never negative, whichever of <paramref name="u1"/> and
+    /// <paramref name="u2"/> comes first (OCCT's <c>GCPnts_AbscissaPoint::Length</c>).</summary>
+    public double LengthBetween(double u1, double u2) => Topology.CurveMeasures.Length(new Engine.Geometry.Adaptors.CurveAdaptor(this), u1, u2);
 
     /// <summary>
     /// The parameter <paramref name="length"/> along the curve from the parameter <paramref name="from"/> (backwards for a
     /// negative length; OCCT's <c>GCPnts_AbscissaPoint</c>).
     /// </summary>
     /// <exception cref="InvalidOperationException">The point couldn't be found.</exception>
-    public double ParameterAtLength(double length, double from)
-    {
-        var abscissa = new Engine.Measurement.AbscissaPoint(new Engine.Geometry.Adaptors.CurveAdaptor(this), length, from);
-        return abscissa.IsDone ? abscissa.Parameter() : throw new InvalidOperationException("The point at that length couldn't be found.");
-    }
+    public double ParameterAtLength(double length, double from) => Topology.CurveMeasures.ParameterAtLength(new Engine.Geometry.Adaptors.CurveAdaptor(this), length, from);
 
     /// <summary>The point and the derivatives up to <paramref name="order"/> (0 to 3) at parameter <paramref name="u"/>.</summary>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="order"/> is not 0 to 3.</exception>

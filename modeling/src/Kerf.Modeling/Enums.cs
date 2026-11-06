@@ -239,9 +239,9 @@ public enum PageSize
 /// <summary>Position along a curve mode.</summary>
 public enum PositionMode
 {
-    /// <summary>A fraction of the curve's length.</summary>
+    /// <summary>A distance along the curve, from 0 to its length.</summary>
     Length,
-    /// <summary>A fraction of the curve's parameter range.</summary>
+    /// <summary>A fraction of the curve's length, from 0 to 1.</summary>
     Parameter,
 }
 

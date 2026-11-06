@@ -19,6 +19,10 @@ public static class Primitives
 
     private static readonly Diagnostic PrimitiveFailed = Diagnostic.Error(Failed, "The primitive couldn't be built.");
 
+    // The least cosine over an angle range: -1 if it passes through an odd multiple of pi
+    private static double LeastCosine(double from, double to) =>
+        Math.Floor((to - Math.PI) / (2 * Math.PI)) >= Math.Ceiling((from - Math.PI) / (2 * Math.PI)) ? -1 : Math.Min(Math.Cos(from), Math.Cos(to));
+
     extension(Solid)
     {
         /// <summary>A box of the given sizes with a corner at the origin, along the world axes.</summary>
@@ -108,11 +112,17 @@ public static class Primitives
             Torus(majorRadius, minorRadius, Frame3D.World, options);
 
         /// <summary>A torus about <paramref name="frame"/>'s axis.</summary>
+        /// <exception cref="ArgumentException">The minor circle reaches the axis: the solid would pass through itself.</exception>
         public static Result<Built<Solid>> Torus(double majorRadius, double minorRadius, in Frame3D frame, TorusOptions? options = null)
         {
             options ??= TorusOptions.Default;
             MakerOutcome.Positive(majorRadius, nameof(majorRadius));
             MakerOutcome.Positive(minorRadius, nameof(minorRadius));
+            if (majorRadius + minorRadius * LeastCosine(options.MinorStart, options.MinorEnd) <= Tolerances.Confusion)
+            {
+                throw new ArgumentException("The torus's minor circle reaches its axis, so the solid would pass through itself.", nameof(minorRadius));
+            }
+
             Angle(options.Angle, nameof(options));
             MakerOutcome.Valid(frame, nameof(frame));
             Frame3D f = frame;

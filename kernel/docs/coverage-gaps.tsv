@@ -54,7 +54,7 @@ Kerf.Kernel.ModelingAlgorithms	TopOpeBRepBuild	The legacy Booleans' remains: onl
 Kerf.Kernel.ModelingAlgorithms	TopOpeBRepTool	The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests
 Kerf.Kernel.ModelingAlgorithms	TopOpeBRepDS	The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests
 Kerf.Kernel.ModelingAlgorithms	TopTrans	The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests
-Kerf.Kernel.ModelingAlgorithms	IntCurveSurface	Intersection forms by curve and surface type the tests don't reach
+Kerf.Kernel.ModelingAlgorithms	IntCurveSurface	About 400 lines are dead in OCCT too: the limits for infinite surfaces, cut off by its clamp to 1e50, and two helpers nothing calls (occt-issues.md); the floor is out of reach by honest tests
 Kerf.Kernel.ModelingAlgorithms	Geom2dInt	Intersection forms by curve and surface type the tests don't reach
 Kerf.Kernel.ModelingAlgorithms	Geom2dHatch	Intersection forms by curve and surface type the tests don't reach
 Kerf.Kernel.ModelingAlgorithms	Plate	Constraint kinds the fill tests and cases don't reach

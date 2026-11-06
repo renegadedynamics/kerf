@@ -24,6 +24,9 @@ internal class GaussLeastSquare
 
     private bool _done;
 
+    // LU_Decompose's work vector, for Perform
+    private readonly math_Vector? _work;
+
     /// <summary>
     /// Performs the LU decomposition with partial pivoting of A.Transposed() * A. If the largest pivot found is less
     /// than <paramref name="minPivot"/>, A is considered singular.
@@ -39,6 +42,38 @@ internal class GaussLeastSquare
         int error = LU_Decompose(_lu, _index, out _d, minPivot);
         _done = error == 0;
     }
+
+    /// <summary>
+    /// The storage for decompositions of matrices of <paramref name="rows"/> by <paramref name="columns"/>, without one:
+    /// <see cref="Perform"/> decomposes, as often as needed (as <see cref="Gauss"/>'s, unit 11Q).
+    /// </summary>
+    internal GaussLeastSquare(int rows, int columns)
+    {
+        _lu = new Matrix(1, columns, 1, columns);
+        _a2 = new Matrix(1, columns, 1, rows);
+        _index = new math_IntegerVector(1, columns);
+        _work = new math_Vector(1, columns);
+    }
+
+    /// <summary>The decomposition of <paramref name="a"/>, of the size given at construction, as the constructor's.</summary>
+    internal void Perform(Matrix a, double minPivot = 1.0e-20)
+    {
+        int rowLower = a.LowerRow(), colLower = a.LowerCol();
+        for (int i = 1; i <= _a2.RowNumber(); i++)
+        {
+            for (int j = 1; j <= _a2.ColNumber(); j++)
+            {
+                _a2[i, j] = a[rowLower + j - 1, colLower + i - 1];
+            }
+        }
+        _lu.Multiply(_a2, a);
+        _d = 0.0;
+        int error = LU_Decompose(_lu, _index, out _d, _work!, minPivot);
+        _done = error == 0;
+    }
+
+    /// <summary>Whether this has the storage for <paramref name="a"/>.</summary>
+    internal bool Fits(Matrix a) => _a2.ColNumber() == a.RowNumber() && _a2.RowNumber() == a.ColNumber();
 
     public bool IsDone => _done;
 

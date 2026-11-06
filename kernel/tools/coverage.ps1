@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
   Line coverage of the kernel's and the modeling layer's assemblies under their tests (phase10-plan.md 3.2), written
-  to docs/coverage.md, and the public members no test calls, written to docs/public-members.md.
+  to docs/coverage.md, the public members no test calls, written to docs/public-members.md, and those no test
+  names directly, written to docs/direct-members.md.
 .DESCRIPTION
   Runs, each with Microsoft's code coverage (part of Microsoft.NET.Test.Sdk) writing Cobertura: the kernel's unit tests
   (Foundation, ModelingData, ModelingAlgorithms, DataExchange), the public API's tests, the Draw-lite tests in their default form (the corpus
@@ -76,5 +77,6 @@ if ($FullCorpus) {
   if ($LASTEXITCODE) { Write-Warning "the whole corpus had failures: its coverage is still counted" }
 }
 $env:KERF_CORPUS_TIME_SCALE = $timeScaleBefore
+dotnet run (Join-Path $kernel 'tools/direct-members.cs') -- $root (Join-Path (Split-Path $Report) 'direct-members.md')
 dotnet run (Join-Path $kernel 'tools/coverage-report.cs') -- $Results $Report 80 $corpus
 dotnet run (Join-Path $kernel 'tools/public-members.cs') -- $Results (Join-Path $root 'modeling/tests/Kerf.Modeling.Tests/bin/Release/net10.0') $PublicMembers

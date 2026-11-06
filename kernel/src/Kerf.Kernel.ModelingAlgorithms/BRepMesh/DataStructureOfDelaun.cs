@@ -12,7 +12,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Collections;
-using System.Runtime.InteropServices;
 
 namespace Kerf.Engine.Meshing;
 
@@ -41,21 +40,47 @@ internal sealed class DataStructureOfDelaun : Transient
     // OCCT's NCollection_List<int>, used only as a first-in first-out queue: a .NET queue, whose RemoveFirst
     // doesn't move the rest (unit 9E)
     private readonly Queue<int> _delLinks;
-    private readonly List<Triangle> _elements;
+    private readonly MeshWorkList<Triangle> _elements;
+    private MeshWorkStorage? _storage;
     private readonly NCollection_PackedMapOfInteger _elementsOfDomain;
     private readonly NCollection_PackedMapOfInteger _linksOfDomain;
     private readonly LinkedListOfInteger.Iterator _cleanLinkIterator = new(); // Kept: a link is cleaned twice for each triangle (unit 11B)
 
-    /// <summary>An empty structure reserving room for about <paramref name="reservedNodeSize"/> nodes.</summary>
-    public DataStructureOfDelaun(int reservedNodeSize = 100)
+    /// <summary>
+    /// An empty structure reserving room for about <paramref name="reservedNodeSize"/> nodes. With
+    /// <paramref name="storage"/>, its lists come from there, until <see cref="ReleaseStorage"/>.
+    /// </summary>
+    public DataStructureOfDelaun(int reservedNodeSize = 100, MeshWorkStorage? storage = null)
     {
         _nodes = new VertexTool();
         _nodeLinks = new Dictionary<int, LinkedListOfInteger>();
         _links = new LinkMap(reservedNodeSize * 3);
         _delLinks = new Queue<int>();
-        _elements = new List<Triangle>(reservedNodeSize * 2);
+        _storage = storage;
+        _elements = storage?.Elements ?? new MeshWorkList<Triangle>(reservedNodeSize * 2);
         _elementsOfDomain = new NCollection_PackedMapOfInteger();
         _linksOfDomain = new NCollection_PackedMapOfInteger();
+    }
+
+    /// <summary>The list of circles for this structure's first Delaunay if it has storage, or null.</summary>
+    internal MeshWorkList<MeshCircle>? TakeCircles()
+    {
+        if (_storage is null || _storage.CirclesTaken)
+        {
+            return null;
+        }
+        _storage.CirclesTaken = true;
+        return _storage.Circles;
+    }
+
+    /// <summary>Gives the storage back to the thread. Neither the structure nor a Delaunay over it may be used from here on.</summary>
+    internal void ReleaseStorage()
+    {
+        if (_storage is not null)
+        {
+            MeshWorkStorage.Return(_storage);
+            _storage = null;
+        }
     }
 
     // Nodes
@@ -242,7 +267,7 @@ internal sealed class DataStructureOfDelaun : Transient
     public Triangle GetElement(int index) => _elements[index - 1];
 
     /// <summary>The triangle of the given index, for writing in place (valid until the next <see cref="AddElement"/>).</summary>
-    internal ref Triangle ChangeElement(int index) => ref CollectionsMarshal.AsSpan(_elements)[index - 1];
+    internal ref Triangle ChangeElement(int index) => ref _elements[index - 1];
 
     /// <summary>The indices of the triangles of the domain.</summary>
     public NCollection_PackedMapOfInteger ElementsOfDomain() => _elementsOfDomain;
@@ -275,7 +300,7 @@ internal sealed class DataStructureOfDelaun : Transient
     /// <summary>Removes the triangle of the given index: it is marked deleted and leaves the domain.</summary>
     public void RemoveElement(int index)
     {
-        ref Triangle element = ref CollectionsMarshal.AsSpan(_elements)[index - 1];
+        ref Triangle element = ref _elements[index - 1];
         if (element.Movability() == DegreeOfFreedom.Deleted)
         {
             return;
@@ -334,7 +359,7 @@ internal sealed class DataStructureOfDelaun : Transient
         for (; elementIt.More(); elementIt.Next())
         {
             int elementId = elementIt.Key();
-            ref Triangle element = ref CollectionsMarshal.AsSpan(_elements)[elementId - 1];
+            ref Triangle element = ref _elements[elementId - 1];
 
             Triangle.Int3 e = element._edges;
 

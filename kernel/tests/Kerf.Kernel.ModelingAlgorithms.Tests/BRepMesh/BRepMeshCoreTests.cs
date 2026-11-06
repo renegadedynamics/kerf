@@ -5,6 +5,8 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
 using Kerf.Geometry;
 using Kerf.Topology;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using static Kerf.Engine.Meshing.DegreeOfFreedom;
 
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
@@ -15,6 +17,89 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepMeshCoreTests
 {
+    // ---- A thread's lists
+
+    [Fact]
+    public void MeshWorkList_behaves_as_a_list()
+    {
+        MeshWorkList<int> aList = new(2);
+        aList.Add(1);
+        aList.Add(2);
+        aList.Add(3);
+        Assert.Equal(3, aList.Count);
+        aList[1] = 20;
+        Assert.Equal(20, aList[1]);
+        Assert.Throws<ArgumentOutOfRangeException>(() => aList[3]);
+        Assert.Throws<ArgumentOutOfRangeException>(() => aList[-1]);
+    }
+
+    [Fact]
+    public void MeshWorkList_SetAt_past_the_end_fills_with_defaults_even_over_an_earlier_use()
+    {
+        MeshWorkList<int> aList = new(8);
+        for (int i = 0; i < 8; i++)
+        {
+            aList.Add(7);
+        }
+        aList.Empty();
+        Assert.Equal(0, aList.Count);
+        aList.SetAt(3, 5);
+        Assert.Equal(4, aList.Count);
+        Assert.Equal([0, 0, 0, 5], [aList[0], aList[1], aList[2], aList[3]]);
+    }
+
+    [Fact]
+    public void MeshWorkList_holds_a_large_array_only_until_a_full_collection()
+    {
+        MeshWorkList<long> aList = new(256);
+        WeakReference anArray = UseALargeArrayTwice(aList);
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        Assert.False(anArray.IsAlive);
+        aList.TakeHeldArray();
+        Assert.True(ArrayOf(aList).Target is long[] { Length: <= 8192 });
+
+        // In a method of its own, so no temporary on this frame's stack holds the array
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static WeakReference UseALargeArrayTwice(MeshWorkList<long> theList)
+        {
+            for (int i = 0; i < 20_000; i++)
+            {
+                theList.Add(i);
+            }
+            WeakReference anArray = ArrayOf(theList);
+            theList.Empty();
+            Assert.Equal(0, theList.Count);
+            Assert.True(ArrayOf(theList).Target is long[] { Length: <= 8192 }); // Back on the array that stays
+
+            theList.TakeHeldArray();
+            Assert.Same(anArray.Target, ArrayOf(theList).Target); // The next large face takes it
+            theList.Empty();
+            return anArray;
+        }
+
+        static WeakReference ArrayOf(MeshWorkList<long> theList) => new(
+            typeof(MeshWorkList<long>).GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(theList));
+    }
+
+    [Fact]
+    public void MeshWorkStorage_gives_empty_lists_each_time()
+    {
+        MeshWorkStorage aStorage = MeshWorkStorage.Rent();
+        aStorage.Elements.Add(new Triangle());
+        aStorage.Circles.Add(new MeshCircle());
+        aStorage.CirclesTaken = true;
+        MeshWorkStorage.Return(aStorage);
+        MeshWorkStorage aNext = MeshWorkStorage.Rent();
+        Assert.Same(aStorage, aNext);
+        Assert.Equal(0, aNext.Elements.Count);
+        Assert.Equal(0, aNext.Circles.Count);
+        Assert.False(aNext.CirclesTaken);
+        Assert.NotSame(aNext, MeshWorkStorage.Rent()); // In use: a nested use makes its own
+        MeshWorkStorage.Return(aNext);
+    }
+
     // ---- Plain types
 
     [Fact]

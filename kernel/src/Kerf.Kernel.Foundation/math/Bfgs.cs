@@ -344,10 +344,15 @@ internal class Bfgs
     // a minimisation for each fit of the same size. Each search starts from zeros, as with new ones
     private sealed class Work
     {
-        private const int LargestKept = 512;
+        private const int LargestKept = 64;
+        private const int LargestHeld = 512;
 
         [ThreadStatic]
         private static Work? t_spare;
+
+        // A larger set is only held weakly, so a thread never pins megabytes for its life
+        [ThreadStatic]
+        private static WeakReference<Work>? t_largeSpare;
 
         public readonly int Size;
         public readonly math_Vector Xi, Dg, Hdg, Temp1, Temp2, Temp3, Temp4;
@@ -368,8 +373,20 @@ internal class Bfgs
 
         public static Work Rent(int n)
         {
-            Work? work = t_spare;
-            t_spare = null; // A search inside a search takes its own
+            Work? work;
+            if (n <= LargestKept)
+            {
+                work = t_spare;
+                t_spare = null; // A search inside a search takes its own
+            }
+            else
+            {
+                work = null;
+                if (t_largeSpare is not null && t_largeSpare.TryGetTarget(out work))
+                {
+                    t_largeSpare.SetTarget(null!);
+                }
+            }
             if (work is null || work.Size != n)
             {
                 return new Work(n);
@@ -390,6 +407,17 @@ internal class Bfgs
             if (work.Size <= LargestKept)
             {
                 t_spare = work;
+            }
+            else if (work.Size <= LargestHeld)
+            {
+                if (t_largeSpare is null)
+                {
+                    t_largeSpare = new WeakReference<Work>(work);
+                }
+                else
+                {
+                    t_largeSpare.SetTarget(work);
+                }
             }
         }
     }

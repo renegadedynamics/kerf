@@ -181,9 +181,13 @@ public class Airfoil : BaseLineObject
     public Edge CamberLine => Edge.MakeSpline(_camberPoints);
 
     /// <summary>The maximum camber, its position and the thickness of a NACA 4-digit (or fractional) code.</summary>
+    /// <exception cref="ArgumentException">The value isn't four digits, with or without a fraction and "NACA" before them: a five-digit code means something else.</exception>
     public static (double MaxCamber, double CamberPos, double Thickness) ParseNaca4(string value)
     {
-        var s = value.Replace("NACA", "").Trim();
+        var s = value.Replace("NACA", "", StringComparison.OrdinalIgnoreCase).Trim();
+        if (s.Split('.', 2)[0] is not { Length: 4 } digits || !digits.All(char.IsAsciiDigit)
+            || s.Contains('.') && (s.Split('.', 2)[1] is not { Length: > 0 } fraction || !fraction.All(char.IsAsciiDigit)))
+            throw new ArgumentException($"\"{value}\" isn't a NACA 4-digit code, such as 2412 or 2412.5.", nameof(value));
         var inv = System.Globalization.CultureInfo.InvariantCulture;
         if (s.Contains('.'))
         {
