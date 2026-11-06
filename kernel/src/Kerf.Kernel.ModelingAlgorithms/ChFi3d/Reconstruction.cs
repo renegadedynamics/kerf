@@ -69,6 +69,12 @@ internal abstract class Reconstruction
     /// <summary><c>DataStructure()</c>: the data structure given to <see cref="Perform"/> (null before).</summary>
     public abstract DsHDataStructure? DataStructure();
 
+    /// <summary>
+    /// Whether <see cref="MergeSolid"/> lost faces it should have kept: Kerf's own, as the HBuilder has no such answer. The
+    /// fillet then fails, where OCCT would give an invalid shape (decision 19601).
+    /// </summary>
+    public bool LostFaces { get; protected set; }
+
     // Where unit 7R plugs in.
 
     /// <summary>

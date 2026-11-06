@@ -160,6 +160,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
 
     private void Clear()
     {
+        LostFaces = false;
         _hds = null;
         _context = new IntersectionContext();
         _pointVertices.Clear();
@@ -511,8 +512,11 @@ internal sealed partial class BOPReconstruction : Reconstruction
         {
             AlgoTools.MakeSplitEdge(e, paves[k].V, paves[k].T, paves[k + 1].V, paves[k + 1].T,
                                              out Edge part);
-            parts.Add((part, states[k]));
-            if (states[k] != Out)
+            // a point at an edge's end vertex, at another parameter on its curve, leaves a stub from that vertex back to
+            // itself, which the HBuilder doesn't keep (decision 19601)
+            Containment state = paves[k].V.IsSame(paves[k + 1].V) && !v1.IsSame(v2) ? Out : states[k];
+            parts.Add((part, state));
+            if (state != Out)
             {
                 aIN.Append(part);
             }
@@ -645,6 +649,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
         {
             faces.Append(f);
         }
+        LostFaces |= HasLostFace(s, faces);
 
         // the shells: the faces connected by their edges (a solid's outer shell and its voids' apart)
         List<Shell> shells = [];
@@ -726,6 +731,71 @@ internal sealed partial class BOPReconstruction : Reconstruction
             }
         }
         return kept;
+    }
+
+    /// <summary>
+    /// Whether an edge between two of the input's faces, or a part of one kept, or a new edge on two faces, bounds just one
+    /// face of what's left. A fillet replaces both sides of what it removes, so that edge's other face is gone though nothing replaced it: the
+    /// data structure's curves don't close a loop on it (decision 19601). Asked only of an open shape, where nothing else
+    /// shows it, as the new free edge looks like the shape's boundary. On a closed one the shell is left open, a check
+    /// finds it, and the engine gives that invalid shape as OCCT does.
+    /// </summary>
+    private bool HasLostFace(Shape s, NCollection_List<Shape> kept)
+    {
+        Dictionary<Shape, int> before = new(ShapeHasher.Instance);
+        for (Explorer exp = new(s, ShapeType.Edge); exp.More(); exp.Next())
+        {
+            before[exp.Current()] = before.GetValueOrDefault(exp.Current()) + 1; // a seam counts twice
+        }
+        if (!before.ContainsValue(1))
+        {
+            return false;
+        }
+        Dictionary<Shape, int> now = new(ShapeHasher.Instance);
+        foreach (Shape f in kept)
+        {
+            for (Explorer exp = new(f, ShapeType.Edge); exp.More(); exp.Next())
+            {
+                now[exp.Current()] = now.GetValueOrDefault(exp.Current()) + 1;
+            }
+        }
+        // the fillet's own edges: one with a curve on a face and on a fillet surface bounds both
+        foreach ((int iC, NCollection_List<Shape> edges) in _newEdges)
+        {
+            if (_curveSupports.TryGetValue(iC, out List<CurveSupport>? supports)
+                && supports.Skip(1).Any(x => !SameSupport(supports[0], x)))
+            {
+                foreach (Shape e in edges)
+                {
+                    if (now.GetValueOrDefault(e) == 1)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        foreach ((Shape e, int n) in before)
+        {
+            if (n < 2 || Tool.Degenerated(ShapeCasts.Edge(e)))
+            {
+                continue;
+            }
+            if (_edgeParts.TryGetValue(e, out List<(Edge Part, Containment State)>? parts))
+            {
+                foreach ((Edge part, Containment _) in parts)
+                {
+                    if (now.GetValueOrDefault(part) == 1)
+                    {
+                        return true;
+                    }
+                }
+            }
+            else if (now.GetValueOrDefault(e) == 1)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /// <summary>How many faces of the shapes each edge bounds (a seam counts once).</summary>
