@@ -772,7 +772,6 @@ internal sealed class Delaun
         double sqTol = tolU * tolU + tolV * tolV;
 
         // Insertion of nodes :
-        bool isModify = true;
 
         int index = 0;
         int upper = vertexIndexes.Count - 1;
@@ -831,30 +830,46 @@ internal sealed class Delaun
             {
                 DeleteTriangle(triangleId, loopEdges);
 
-                isModify = true;
-                while (isModify && circlesLeft > 0)
+                // OCCT goes back to the first circle after each deletion, and deletes the first with a free edge. No circle
+                // before this cursor has one, and a deletion only changes the deleted triangle's own edges, so the only one
+                // that can gain a free edge is a neighbour of that triangle: go back no further than the earliest neighbour.
+                // The same circles go in the same order, without the scans (with 164 circles a node, they were most of the time).
+                int cursor = 0;
+                while (circlesLeft > 0 && cursor < circlesList.Count)
                 {
-                    isModify = false;
-                    for (int circleIt1 = 0; circleIt1 < circlesList.Count; circleIt1++)
+                    int circle = circlesList[cursor];
+                    if (circle == RemovedCircle)
                     {
-                        int circle = circlesList[circleIt1];
-                        if (circle == RemovedCircle)
-                        {
-                            continue;
-                        }
+                        cursor++;
+                        continue;
+                    }
 
-                        Triangle element = GetTriangle(circle);
-                        Triangle.Int3 e = element._edges;
+                    Triangle.Int3 e = GetTriangle(circle)._edges;
+                    if (!loopEdges.IsBound(e[0]) && !loopEdges.IsBound(e[1]) && !loopEdges.IsBound(e[2]))
+                    {
+                        cursor++;
+                        continue;
+                    }
 
-                        if (loopEdges.IsBound(e[0]) || loopEdges.IsBound(e[1]) || loopEdges.IsBound(e[2]))
+                    int next = cursor + 1;
+                    ReadOnlySpan<int> before = CollectionsMarshal.AsSpan(circlesList)[..cursor];
+                    for (int i = 0; i < 3; ++i)
+                    {
+                        ref readonly PairOfIndex neighbours = ref _meshData.ElementsConnectedTo(e[i]);
+                        for (int j = 1; j <= neighbours.Extent(); ++j)
                         {
-                            isModify = true;
-                            DeleteTriangle(circle, loopEdges);
-                            circlesList[circleIt1] = RemovedCircle;
-                            circlesLeft--;
-                            break;
+                            int position = before.IndexOf(neighbours.Index(j));
+                            if (position >= 0 && position < next)
+                            {
+                                next = position;
+                            }
                         }
                     }
+
+                    DeleteTriangle(circle, loopEdges);
+                    circlesList[cursor] = RemovedCircle;
+                    circlesLeft--;
+                    cursor = next;
                 }
 
                 // Creation of triangles with the current node and free edges

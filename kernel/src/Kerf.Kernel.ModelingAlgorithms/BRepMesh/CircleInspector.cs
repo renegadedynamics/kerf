@@ -14,7 +14,7 @@ namespace Kerf.Engine.Meshing;
 /// point within a tolerance.
 /// </summary>
 /// <remarks>A working object, as OCCT's (the allocator argument is dropped).</remarks>
-internal sealed class CircleInspector : ICellFilterInspector<int, Xy>
+internal struct CircleInspector : ICellFilterInspector<int, Xy>
 {
     private readonly double _sqTolerance;
     private readonly List<int> _resIndices;
