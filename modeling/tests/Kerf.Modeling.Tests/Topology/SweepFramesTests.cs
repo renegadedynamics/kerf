@@ -52,4 +52,16 @@ public class SweepFramesTests
         Assert.Empty(warnings.Messages);
         Assert.True(swept.IsValid);
     }
+
+    [Fact]
+    public void A_mode_is_a_direction_or_a_spine()
+    {
+        var straight = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(0, 0, 10));
+        var beside = Edge.MakeLine(new Point3D(5, 0, 0), new Point3D(5, 0, 10));
+        SweepMode[] modes = [new Vector3D(0, 0, 1), new Direction3D(0, 0, 1), beside, Wire.Make(beside)];
+        foreach (var mode in modes)
+            Assert.Equal(Math.PI * 10, Solid.Sweep(Disc(), straight, mode: mode).Volume, 5);
+        foreach (var mode in modes)
+            Assert.Equal(Math.PI * 10, Solid.SweepMulti([Disc(), new Pos(0, 0, 10) * Disc()], straight, binormal: mode).Volume, 5);
+    }
 }

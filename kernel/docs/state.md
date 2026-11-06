@@ -293,3 +293,7 @@ The clean-up after decision 1681 deleted fields that were written and never read
 ## Unit 11S
 
 The fixes for OCCT's defects (decisions 1775 to 1788) add no shared state: all are local to a call. `SamplingHelpers`' two new methods and the offset's concentric case work on their arguments alone. `StepGenTests` writes to a temporary folder of its own.
+
+## The owner's answers
+
+Decisions 20501 to 20506 add one piece of shared state: `TopoUtil.Measured` and `TopoUtil.MeasuredMoments`, immutable `MassOptions` held in statics and only read. The retry in `Sweeps.Sweep` and the slice in `Solid.Torus` work on their arguments alone. `SweepMode` is immutable. `Failures.TryWarned` uses `Warnings.Capture`, whose scope is an `AsyncLocal`, so it belongs to the call that opened it.

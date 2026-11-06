@@ -2178,5 +2178,6 @@ The list and its ranking are in [occt-defects.md](occt-defects.md).
 | `GeomBndLib_BSplineCurve2d::Box` | Trims a periodic arc to the first period | A face's area short (#1685) | fixed (decision 1785) |
 | `BRepFill_OffsetWire` | Concentric circles reach the medial axis; a collapsed circle falls through | A crash natively (#1606, #1452) | fixed (decision 1788) |
 | `BRepFill_OffsetWire`, a positive offset of a face with a hole | Treats each wire alone, so the hole grows | An outward offset's hole is larger, not smaller. The same whether the hole is concentric or not | **open**: to be checked with what a user expects |
-| Default sweep (`GeomFill_CorrectedFrenet`) on some planar splines | The sweep's approximation fails where Frenet and discrete succeed: #1630's spine | No pipe; natively a crash | **open**: occt-defects.md |
+| Default sweep (`GeomFill_CorrectedFrenet`) on some planar splines | The sweep's approximation fails where Frenet and discrete succeed: #1630's spine | No pipe; natively a crash | **open**, worked round: the public sweep tries Frenet, then discrete, and warns (decision 20504) |
+| `BRepPrimAPI_MakeTorus`, part of the minor circle | Makes the solid under the arc, closed by flat discs to the axis, and not a slice of the tube | 210.6 and not 53.5 on the outer half with R = 5, r = 1 | **kept in the engine for the corpus; the public `Solid.Torus` makes the slice** (decision 20503) |
 | OCCT's corpus references for `checkprops -s` | From the path with #1675's bug | blend/simple/J6 expects 79953.8 for a true 77932 | see decision 1784 |
