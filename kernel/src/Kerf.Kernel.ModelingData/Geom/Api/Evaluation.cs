@@ -29,8 +29,8 @@ public abstract partial class Curve3D
     /// <summary>The point at parameter <paramref name="u"/>.</summary>
     public Point3D Evaluate(double u) => EvalD0(u);
 
-    /// <summary>The length of the curve between two parameters: negative when <paramref name="u2"/> is before
-    /// <paramref name="u1"/> (OCCT's <c>GCPnts_AbscissaPoint::Length</c>).</summary>
+    /// <summary>The length of the curve between two parameters: never negative, whichever of <paramref name="u1"/> and
+    /// <paramref name="u2"/> comes first (OCCT's <c>GCPnts_AbscissaPoint::Length</c>).</summary>
     public double LengthBetween(double u1, double u2) => Topology.CurveMeasures.Length(new Engine.Geometry.Adaptors.CurveAdaptor(this), u1, u2);
 
     /// <summary>

@@ -93,8 +93,8 @@ public sealed class EdgeCurve
     /// <summary>The length of the edge's curve over its range (OCCT's <c>GCPnts_AbscissaPoint::Length</c>).</summary>
     public double Length => CurveMeasures.Length(_curve);
 
-    /// <summary>The length of the curve between two parameters: negative when <paramref name="u2"/> is before
-    /// <paramref name="u1"/>.</summary>
+    /// <summary>The length of the curve between two parameters: never negative, whichever of <paramref name="u1"/> and
+    /// <paramref name="u2"/> comes first.</summary>
     public double LengthBetween(double u1, double u2) => CurveMeasures.Length(_curve, u1, u2);
 
     /// <summary>
@@ -268,8 +268,8 @@ public sealed class WireCurve
     /// <summary>The length of the wire's curve (OCCT's <c>GCPnts_AbscissaPoint::Length</c>).</summary>
     public double Length => CurveMeasures.Length(_curve);
 
-    /// <summary>The length of the curve between two parameters: negative when <paramref name="u2"/> is before
-    /// <paramref name="u1"/>.</summary>
+    /// <summary>The length of the curve between two parameters: never negative, whichever of <paramref name="u1"/> and
+    /// <paramref name="u2"/> comes first.</summary>
     public double LengthBetween(double u1, double u2) => CurveMeasures.Length(_curve, u1, u2);
 
     /// <summary>The parameter <paramref name="length"/> along the curve from the parameter <paramref name="from"/>.</summary>

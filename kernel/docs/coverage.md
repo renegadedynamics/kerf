@@ -15,7 +15,7 @@ Test projects merged: `Kerf.Kernel.DataExchange.Tests`, `Kerf.Kernel.DrawLite.Te
 
 ## Public members with a direct test
 
-Measured: 4,463 members; called directly 3,470; of them checked 3,465; no direct test 993. From 11,476 test methods. Not measured: 32 abstract, 814 compiler-written, 23 overrides of `object`'s members on classes (the IL can't show them). The list: [direct-members.md](direct-members.md).
+Measured: 4,463 members; called directly 4,213; of them checked 4,208; no direct test 250. From 11,612 test methods. Not measured: 32 abstract, 814 compiler-written, 23 overrides of `object`'s members on classes (the IL can't show them). The list: [direct-members.md](direct-members.md). Before this slice, no direct test: 993.
 
 ## By assembly
 
