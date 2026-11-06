@@ -20,6 +20,7 @@ internal class InterferencePolygon2d : PolygonInterference
     private bool _oClos;
     private bool _tClos;
     private int _nbso;
+    private NCollection_Sequence<SectionPoint>? _sectionWork; // Intersect's, as most pairs of segments it's asked about give no point
 
     /// <summary>Constructs an empty interference of polygons.</summary>
     public InterferencePolygon2d()
@@ -315,7 +316,8 @@ internal class InterferencePolygon2d : PolygonInterference
         int nbpi = 0;
         Span<double> parO = stackalloc double[8];
         Span<double> parT = stackalloc double[8];
-        NCollection_Sequence<SectionPoint> thePi = new();
+        NCollection_Sequence<SectionPoint> thePi = _sectionWork ??= new();
+        thePi.Clear();
         Xy segT = endT.XY() - begT.XY();
         Xy segO = endO.XY() - begO.XY();
 
