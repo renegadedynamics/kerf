@@ -27,4 +27,18 @@ public class gp_TrsfTest
         // Points must be equal: equivalent transformations should produce equal points
         Assert.True(aP2.IsEqual(aP3, global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
+
+    [Fact]
+    public void PointMirror_IsItsOwnInverse()
+    {
+        // OCCT 3270746444: 8.0.1 negated the translation part, which is right for a translation only
+        Point3D aCentre = new(1, 2, 3), aP = new(4, -5, 6);
+        Transform3D aMirror = Transform3D.Mirror(aCentre);
+        Point3D aBack = aP.Transformed(aMirror).Transformed(aMirror.Inverted());
+        Assert.True(aBack.DistanceTo(aP) < 1.0e-12);
+
+        Transform2D aMirror2d = Transform2D.Mirror(new Point2D(1, 2));
+        Point2D aBack2d = new Point2D(4, -5).Transformed(aMirror2d).Transformed(aMirror2d.Inverted());
+        Assert.True(aBack2d.DistanceTo(new Point2D(4, -5)) < 1.0e-12);
+    }
 }

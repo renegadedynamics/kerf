@@ -794,9 +794,9 @@ public sealed class OffsetSurface : Surface
         if (theType == typeof(PlaneSurface))
         {
             PlaneSurface p = (PlaneSurface)Base;
-            // Plane normal is already available as Position().Direction().
+            // The UV normal changes sign when one in-plane axis is reversed (OCCT 71658f6c8f, after 8.0.1; decision 20204)
             Vector3D t = new Vector3D(p.Position.Direction);
-            t *= _offsetValue;
+            t *= p.Position.IsDirect ? _offsetValue : -_offsetValue;
             result = (PlaneSurface)p.Translated(t);
         }
         else if (theType == typeof(CylindricalSurface))
