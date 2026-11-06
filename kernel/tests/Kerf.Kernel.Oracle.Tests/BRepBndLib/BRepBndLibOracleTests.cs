@@ -77,7 +77,11 @@ public class BRepBndLibOracleTests(ITestOutputHelper output)
                     {
                         N.BRepBndLib.AddOptimal(aShape.N, aNB, aUseTri, aUseTol);
                         Bounds.AddOptimal(aShape.P, ref aPB, aUseTri, aUseTol);
+                        // Not compared: native's can be smaller than the shape, and adds the tolerance it was told not to
+                        // (decisions 20203, 20205). BRepBndLibTests checks the port's against what it should be.
+                        anOracle.NotComparing = true;
                         SameBox(anOracle, aNB, aPB, $"{aWhat} AddOptimal({aUseTri}, {aUseTol})");
+                        anOracle.NotComparing = false;
                         aCalls++;
                     }
                 }
@@ -110,7 +114,9 @@ public class BRepBndLibOracleTests(ITestOutputHelper output)
                         {
                             N.BRepBndLib.AddOBB(aShape.N, aNO, aUseTri, anOptimal, aUseTol);
                             Bounds.AddOBB(aShape.P, ref aPO, aUseTri, anOptimal, aUseTol);
+                            anOracle.NotComparing = anOptimal; // an optimal box inside: decisions 20203 and 20205
                             SameOBB(anOracle, aNO, aPO, $"{aWhat} AddOBB({aUseTri}, {anOptimal}, {aUseTol})");
+                            anOracle.NotComparing = false;
                             aCalls++;
                         }
                     }

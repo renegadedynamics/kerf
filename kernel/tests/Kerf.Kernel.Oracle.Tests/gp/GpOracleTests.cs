@@ -121,10 +121,13 @@ public class GpOracleTests(ITestOutputHelper output)
                 anOracle.Same(aNPre, aT1.PreMultiplied(aT2), $"{aKind2} * {aKind1} (PreMultiply)");
 
                 using var aNInv = aN1.Inverted();
+                anOracle.NotComparing = aKind1 == "point mirror"; // native's inverse of a point mirror is wrong (decision 20204)
                 anOracle.Same(aNInv, aT1.Inverted(), $"{aKind1} inverted");
+                anOracle.NotComparing = false;
 
                 int aPower = anOracle.Int(-4, 5);
                 using var aNPow = aN1.Powered(aPower);
+                anOracle.NotComparing = aKind1 == "point mirror" && aPower < 0; // through the same inverse
                 if (aT1.Form == TransformForm.Composite && aT1.ScaleFactor != 1.0 && Math.Abs(aPower) >= 3)
                 {
                     SamePowerOfScaled(anOracle, aNPow, aT1, aPower, $"{aKind1} to the power {aPower}");
@@ -133,6 +136,7 @@ public class GpOracleTests(ITestOutputHelper output)
                 {
                     anOracle.Same(aNPow, aT1.Powered(aPower), $"{aKind1} to the power {aPower}", 1e-10);
                 }
+                anOracle.NotComparing = false;
             }
         }
 

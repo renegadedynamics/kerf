@@ -64,7 +64,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
             return;
         }
 
-        Refusal.ArgumentIf(!(sqMod > Constants.Resolution() * Constants.Resolution()) || double.IsInfinity(sqMod), FailureKind.ConstructionError, "gp_Dir::SetCoord() - input vector has zero norm");
+        Refusal.ArgumentIf(sqMod <= Constants.Resolution() * Constants.Resolution(), FailureKind.ConstructionError, "gp_Dir::SetCoord() - input vector has zero norm");
         double d = Math.Sqrt(sqMod);
         _coord = new Xyz(x / d, y / d, z / d);
     }
@@ -202,7 +202,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
             return new Direction3D(coord, isUnit: true);
         }
 
-        Refusal.ArgumentIf(!(sqMod > Constants.Resolution() * Constants.Resolution()) || double.IsInfinity(sqMod), FailureKind.ConstructionError, "gp_Dir::Cross() - result vector has zero norm");
+        Refusal.ArgumentIf(sqMod <= Constants.Resolution() * Constants.Resolution(), FailureKind.ConstructionError, "gp_Dir::Cross() - result vector has zero norm");
         coord.Divide(Math.Sqrt(sqMod));
         return new Direction3D(coord, isUnit: true);
     }
@@ -219,7 +219,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
             return new Direction3D(coord, isUnit: true);
         }
 
-        Refusal.ArgumentIf(!(sqMod > Constants.Resolution() * Constants.Resolution()) || double.IsInfinity(sqMod), FailureKind.ConstructionError, "gp_Dir::CrossCross() - result vector has zero norm");
+        Refusal.ArgumentIf(sqMod <= Constants.Resolution() * Constants.Resolution(), FailureKind.ConstructionError, "gp_Dir::CrossCross() - result vector has zero norm");
         coord.Divide(Math.Sqrt(sqMod));
         return new Direction3D(coord, isUnit: true);
     }

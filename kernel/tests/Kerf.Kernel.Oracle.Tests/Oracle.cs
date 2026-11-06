@@ -336,6 +336,9 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         return new N.Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, theDegree, thePeriodic);
     }
 
+    /// <summary>While set, a comparison still reads native's values, so a replay keeps its order, but compares nothing: where Kerf differs from native on purpose.</summary>
+    public bool NotComparing { get; set; }
+
     /// <summary>A native 2D B-spline curve; non-rational when theWeights is null.</summary>
     public static N.Geom2d_BSplineCurve ToNativeCurve(NCollection_Array1<Point2D> thePoles, NCollection_Array1<double>? theWeights,
                                                       NCollection_Array1<double> theKnots, NCollection_Array1<int> theMults,
@@ -419,6 +422,11 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
 
     public void Same(int theNative, int thePort, string theWhat)
     {
+        if (NotComparing)
+        {
+            return;
+        }
+
         myValues++;
         Assert.True(theNative == thePort, $"{theWhat}: native {theNative}, port {thePort}");
         myExact++;
@@ -426,6 +434,11 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
 
     private void Compare(double theNative, double thePort, string theWhat, double theTolerance, double theScale)
     {
+        if (NotComparing)
+        {
+            return;
+        }
+
         myValues++;
         if (BitConverter.DoubleToInt64Bits(theNative) == BitConverter.DoubleToInt64Bits(thePort))
         {
@@ -492,6 +505,11 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
 
     public void Same(bool theNative, bool thePort, string theWhat)
     {
+        if (NotComparing)
+        {
+            return;
+        }
+
         myValues++;
         Assert.True(theNative == thePort, $"{theWhat}: native {theNative}, port {thePort}");
         myExact++;

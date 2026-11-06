@@ -445,12 +445,6 @@ public class RWStlNativeTests(ITestOutputHelper output)
                         anAttributed++;
                         continue;
                     }
-                    // decision 20208: a file with NaN or infinite numbers fails at the direction, not later: a read fails either way
-                    if (aHead == "R numbers.stl" && aNative[i] == "THROW class StdFail_NotDone" && aPort[i] == "THROW class Standard_ConstructionError")
-                    {
-                        anAttributed++;
-                        continue;
-                    }
                     if (StreamRecognised(aPort[i], aNative[i], aNative))
                     {
                         anIntendedStream++;
@@ -471,7 +465,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
             {
                 Assert.Equal(0, anAbsent);
                 // the second of decision 1170's two lines is in ws OMF6391_box.stl, a block with more domains now
-                Assert.Equal(2, anAttributed);
+                Assert.Equal(1, anAttributed);
                 Assert.Equal(8, anIntendedStream);
                 Assert.Equal(5, anIntendedDomains);
             }

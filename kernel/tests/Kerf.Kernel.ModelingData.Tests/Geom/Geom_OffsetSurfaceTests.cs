@@ -721,16 +721,4 @@ public class Geom_OffsetSurface_ThreeWay
             }
         }
     }
-
-    [Fact]
-    public void Surface_OfAnIndirectPlane_IsOnTheSameSideAsTheOffset()
-    {
-        // OCCT 71658f6c8f: the equivalent plane went the other way from the offset surface's own evaluation
-        CoordinateSystem aFrame = new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)).YReversed();
-        Assert.False(aFrame.IsDirect);
-        OffsetSurface anOffset = new(new PlaneSurface(aFrame), 2.0);
-        Surface? aPlane = anOffset.Surface();
-        Assert.NotNull(aPlane);
-        Assert.True(aPlane!.Value(1.0, 1.0).DistanceTo(anOffset.Value(1.0, 1.0)) < 1.0e-9);
-    }
 }
