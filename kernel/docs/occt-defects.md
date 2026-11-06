@@ -26,18 +26,15 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 | Kind | Where | What | How confirmed | Size |
 |---|---|---|---|---|
 | Silent wrong answer | Found by #1675 | Area and volume without a precision, which `Kerf.Modeling` uses, can be up to 3.7% off on swept and B-spline faces: bug5805_21 gives 253.49 where a mesh gives 244.17. The precise path now gives 244.195 | Reproduced | S to change the call; **for the owner**: precise is slower |
-| Silent wrong answer | #1567 | Fuse of a torus sector and a tangent sphere is empty, and Cut removes nothing, with no failure. The torus/sphere intersection gives five curves of tolerance up to 0.93 where the answer is one tangent circle on the boundary | Reproduced | M to L: an analytic torus/sphere tangent case, or rejecting such curves |
-| Silent wrong answer | #1461 | A nearly horn torus is written as a surface of revolution or a torus by noise | Read; related fix 1780 | S |
-| Silent wrong answer | Upstream `53706f78a8` | Final endpoint curvature in least squares; closed polygon self-intersections; rational section weights in `GeomFill_Profiler` | Upstream fix, not checked here | M |
+| Silent wrong answer | Upstream `53706f78a8` | Rational section weights in `GeomFill_Profiler`; Newton backtracking; the other two parts are ported (decision 20612) | Upstream fix, not checked here | M |
 | Silent wrong answer | Upstream `8f817f5da5` | Curve-on-surface deviation, narrow extrema, face self-intersection within trimmed domains | Upstream fix, not checked here | L: 346 files |
 | Invalid result | #1711 | `FuseEdges` can leave an edge range outside its curve | Read | S to M |
 | Failure on an ordinary shape | #1630 | A pipe of a circle along a planar cubic: no crash, but no pipe, with the default corrected Frenet trihedron, also through `Sweeps.Sweep`. Frenet and discrete both work on it, area 217.81. Why the sweep's approximation fails is not found | Reproduced | M; **for the owner** if the fix is to fall back on another trihedron |
 | Failure on an ordinary shape | #1177, #172 | A fillet that should reach the opposite edge fails; upstream `f713b1305f` and `cbca11e975` do it | Upstream fix | L: 27 files. **For the owner** |
 | Failure on an ordinary shape | corpus: offset/wire_* | 77 BAD: the medial axis gives up on wires, many with circles | Corpus | L. See below |
-| Unintuitive API | #1355 | `WithVectorialPart` sets the scale to 0, so `Inverted` refuses | Read | S |
 | Unintuitive API | #1632 | MakeChamfer doesn't report which contours failed | Read | S |
 | Unintuitive API | #1036 | History differs from maker to maker | Read | M |
-| Unintuitive API | #1618, the rest | `Direction3D`, `Point3D` and `MakeBox` take NaN. Refusing it in `Direction3D` breaks `ExtPElS` on a cone, which reaches a NaN direction, so that goes first | Reproduced | M |
+| Unintuitive API | #1618, the rest | `Point3D` and `MakeBox` take NaN. Directions refuse it (decision 20610) | Reproduced | S to M |
 | Costs time only | #1622, #1697 | Lipschitz estimate on `GlobOptFuncCCC2` too large; a mesh's stated deflection too large, which inflates a box from it | Read | For 11Q |
 | Costs time only | #1495 | `StoreData`'s walk could spin | Read | S |
 
@@ -67,6 +64,12 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 | `71658f6c8f` | An offset surface on an indirect plane on the wrong side | 20601 |
 | `71658f6c8f`, `8f817f5da5` | `ApproxInt`'s caches returning without writing | 20602 |
 | occt-issues.md | `Law.BSpline`'s multiplicities and `Segment`; the cylinder range for negative B; `CoonsAlgPatch.Value`, `FunctionDraft`, quasi-angular and `GetCircle` second derivatives | 20603 to 20605 |
+| Unit 11R's list | A clean that turned a good Boolean invalid, up to 17% out in volume | 20606 |
+| occt-issues.md | `ApproximateBSplines` on a cylinder, and `ToSplines` on a sphere, invalid | 20607 |
+| #1567 | A sphere touching a torus along a circle: an empty fuse, with no failure | 20608 |
+| #1618 | NaN and infinite directions accepted | 20610 |
+| #1461 | A nearly horn torus written as a torus or a revolution by noise | 20611 |
+| `53706f78a8` | A closed polygon's self-intersections lost | 20612 |
 
 ## The corpus's 502 BAD cases, by group
 
@@ -171,7 +174,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1570 | Faulty shape with fillet beyond a radius | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
 | 1569 | Faulty shape with fillet on simple shape | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
 | 1568 | Crash on fillet meeting opposite edge | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
-| 1567 | `BRepAlgoAPI_Fuse` of a partial torus and a tangent sphere gives an invalid, empty or wrong-volume result | applies | Reproduced: Fuse is empty, 0 solids, valid, with no failure; true volume 26.77. Cause not found in this pass |
+| 1567 | `BRepAlgoAPI_Fuse` of a partial torus and a tangent sphere gives an invalid, empty or wrong-volume result | already fixed | Decision 20608; reproduced (empty) and fixed: 26.7684 |
 | 1566 | `BRepPrimAPI_MakeRevol` gives an invalid or wrong-volume solid for a circular profile edge | already fixed | Decision 1780; reproduced (0.5655 for 0.7101) and fixed |
 | 1564 | License header of 8 TKGeomBase files says 'commercial software', contradicting LGPL-2.1 | not relevant | OCCT's licence header on 8 files: for the kept header, see NOTICE; nothing to change in behaviour |
 | 1561 | HLRBRep_Algo returns no outline for B-spline surfaces with many more U than V knots — Contap_HContTool::SamplePoint swaps its grid indices | can't tell | Read: `Contap_HContTool.SamplePoint` is the same code; hidden lines, not tried |

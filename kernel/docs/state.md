@@ -293,3 +293,5 @@ The clean-up after decision 1681 deleted fields that were written and never read
 ## Unit 11S
 
 The fixes for OCCT's defects (decisions 1775 to 1788) add no shared state: all are local to a call. `SamplingHelpers`' two new methods and the offset's concentric case work on their arguments alone. `StepGenTests` writes to a temporary folder of its own.
+
+The second pass (decisions 20601 to 20612) adds no static, thread static or lock, and removes one: `GuideTrihedronAC.ReplayNative`, an `AsyncLocal`. `UnifySameDomain`'s saved pcurves are local to one merge.
