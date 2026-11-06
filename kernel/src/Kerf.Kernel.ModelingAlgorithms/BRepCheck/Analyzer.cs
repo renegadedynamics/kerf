@@ -233,6 +233,9 @@ internal class Analyzer
         }
     }
 
+    // Sub-shapes, each counted once for each way round it's met: about 40 faces
+    private const int MinParallelSize = 500;
+
     private void Perform()
     {
         int mapSize = _map.Count;
@@ -274,7 +277,8 @@ internal class Analyzer
         }
 
         var parallelAnalyzer = new BRepCheck_ParallelAnalyzer(arrayOfArray, _map);
-        OsdParallel.For(0, arrayOfArray.Length(), parallelAnalyzer.Perform, !_isParallel);
+        // Handing a small shape to the pool costs more than it saves, and the result is the same on any number of threads (unit 11R)
+        OsdParallel.For(0, arrayOfArray.Length(), parallelAnalyzer.Perform, !_isParallel || mapSize < MinParallelSize);
     }
 
     private bool ValidSub(in Shape s, ShapeType subType)

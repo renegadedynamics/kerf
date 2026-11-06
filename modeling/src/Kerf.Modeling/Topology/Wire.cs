@@ -194,7 +194,7 @@ public static partial class WireExtensions
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("Can't chamfer empty wire");
-            var unchamfered = TopoUtil.MakeFaceFromWires(self);
+            var unchamfered = TopoUtil.MakeFaceFromWires(self, checkResult: false);
             var graph = ShapeGraph.Build(unchamfered);
             var corners = new List<(Edge, Edge)>();
             foreach (var v in vertices)
@@ -207,7 +207,7 @@ public static partial class WireExtensions
                 if (!edge1.IsEmpty && !edge2.IsEmpty)
                     corners.Add((edge1, edge2));
             }
-            var built = Failures.Get(unchamfered.Chamfer2D(corners, distance, distance2), () => "2D chamfer");
+            var built = Failures.Get(unchamfered.Chamfer2D(corners, distance, distance2, checkResult: false), () => "2D chamfer");
             var chamfered = built.Shape;
             // The chamfered face shares the wire's other edges, which ShapeFix leaves untouched (it edits in a working
             // overlay)

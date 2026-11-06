@@ -209,7 +209,7 @@ public static partial class ShellExtensions
         }
         // BRepBuilderAPI_Sewing's defaults; its history records the faces it rebuilt, the edges and vertices it merged, and
         // the faces it dropped
-        var sewing = Failures.Get(HealingOperations.Sew(faces.Select(f => (Shape)f)), () => "sew");
+        var sewing = Failures.Get(HealingOperations.Sew(faces.Select(f => (Shape)f), new SewOptions { CheckResult = false }), () => "sew");
         var sewn = TopoUtil.Downcast(sewing.Shape);
         var shell = sewn.IsFace() ? Shell.Make((Face)sewn)   // one face is a sheet of one face
             : sewn.IsShell() ? (Shell)sewn

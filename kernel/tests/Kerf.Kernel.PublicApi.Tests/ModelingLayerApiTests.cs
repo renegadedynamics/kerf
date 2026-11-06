@@ -309,7 +309,7 @@ public class ModelingLayerApiTests
         Assert.Empty(Box().MisorientedEdges());
         Shape wire = Square().FixWireframe(1e-3, new WireframeFixOptions { SmallEdgesFirst = true, MaxTolerance = 1e-2 }).Value.Shape;
         Assert.Equal(4, wire.AllEdges().Length);
-        Shape splines = Solid.Cylinder(1, 2).Value.Shape.ApproximateBSplines(BSplineApproximationOptions.Default).Value.Shape;
+        Shape splines = Solid.Cylinder(1, 2).Value.Shape.ApproximateBSplines(BSplineApproximationOptions.Default with { CheckResult = false }).Value.Shape;
         Assert.Equal(3, splines.AllFaces().Length);
         Assert.Equal(Math.PI * 2, splines.IntegrateVolume(), 4);
         Assert.True(Box().Fix(new FixOptions { CheckResult = false }).IsSuccess);

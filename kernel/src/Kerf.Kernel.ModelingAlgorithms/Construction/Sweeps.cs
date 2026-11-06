@@ -49,8 +49,10 @@ public static class Sweeps
                 throw new ArgumentException("The extrusion's direction is zero.", nameof(direction));
             }
             Shape p = profile.AsShape();
+            // A prism is as good as its profile, so only the profile is checked unless it's found wanting
+            string? check = options.CheckResult && Validity.Problem(p, "The profile") is not null ? "The extrusion" : null;
             return EngineOperation.Run<Shape>(range => SweepOutcome(new ApiMakePrism(p, direction, false, options.Canonize), range, p),
-                                              Failure, progress, cancellationToken);
+                                              Failure, progress, cancellationToken, check);
         }
 
         /// <summary>The profile revolved about <paramref name="axis"/> by <paramref name="angle"/> (radians, at most 2π).</summary>
@@ -76,7 +78,7 @@ public static class Sweeps
             Axis3D a = axis;
             // Without copy, as the other sweeps, unless asked: the result shares the profile's sub-shapes (decision 1558)
             return EngineOperation.Run<Shape>(range => SweepOutcome(new ApiMakeRevol(p, a, angle, copyProfile), range, p),
-                                              Failure, progress, cancellationToken);
+                                              Failure, progress, cancellationToken, "The revolved shape");
         }
     }
 
@@ -216,7 +218,7 @@ public static class Sweeps
                                          Failure: Diagnostic.Error(NotSolid, "The sweep couldn't be closed into a solid."));
             }
             return MakerOutcome.Done(pipe, inputs, () => StatusDiagnostics.ToDiagnostic(pipe.GetStatus()));
-        }, Failure, progress, cancellationToken);
+        }, Failure, progress, cancellationToken, options.CheckResult ? "The sweep's result" : null);
     }
 
     /// <summary>A loft: a surface (or solid) through <paramref name="sections"/> in order, each a wire, or a vertex at
@@ -252,7 +254,7 @@ public static class Sweeps
             loft.SetMaxDegree(options.MaxDegree);
             loft.SetSmoothing(options.Smoothing);
             return MakerOutcome.Of(loft, range, inputs, () => StatusDiagnostics.ToDiagnostic(loft.GetStatus()));
-        }, Failure, progress, cancellationToken);
+        }, Failure, progress, cancellationToken, options.CheckResult ? "The loft's result" : null);
     }
 
     /// <summary>The ruled face between two edges (OCCT's <c>BRepFill::Face</c>).</summary>
@@ -260,7 +262,7 @@ public static class Sweeps
     {
         MakerOutcome.NotNull(first, nameof(first));
         MakerOutcome.NotNull(second, nameof(second));
-        return EngineOperation.Run<Face>(_ => MakerOutcome.Made(Fill.Face(first, second)), Failure);
+        return EngineOperation.Run<Face>(_ => MakerOutcome.Made(Fill.Face(first, second)), Failure, checkedAs: "The ruled face");
     }
 
     /// <summary>The ruled shell between two wires of as many edges (OCCT's <c>BRepFill::Shell</c>).</summary>
@@ -268,7 +270,7 @@ public static class Sweeps
     {
         MakerOutcome.NotNull(first, nameof(first));
         MakerOutcome.NotNull(second, nameof(second));
-        return EngineOperation.Run<Shell>(_ => MakerOutcome.Made(Fill.Shell(first, second)), Failure);
+        return EngineOperation.Run<Shell>(_ => MakerOutcome.Made(Fill.Shell(first, second)), Failure, checkedAs: "The ruled shell");
     }
 
     private static Shape[] Sections(IReadOnlyList<Shape> sections, string name)

@@ -75,7 +75,7 @@ public static class Surfaces
                 filling.Add(point);
             }
             return MakerOutcome.Of(filling, range, [.. inputs]);
-        }, Failure, progress, cancellationToken);
+        }, Failure, progress, cancellationToken, options.CheckResult ? "The filling's face" : null);
     }
 }
 
@@ -97,6 +97,9 @@ public sealed record FillBoundary(Edge Edge, Continuity Continuity = Continuity.
 /// <summary>How <see cref="Surfaces.Fill"/> builds its plate surface (OCCT's <c>BRepOffsetAPI_MakeFilling</c>; its defaults).</summary>
 public sealed record FillOptions
 {
+    /// <summary>Check the result, and fail with <c>result.invalid</c>, carrying it, if it isn't valid: true by default.</summary>
+    public bool CheckResult { get; init; } = true;
+
     /// <summary>The defaults.</summary>
     public static FillOptions Default { get; } = new();
 

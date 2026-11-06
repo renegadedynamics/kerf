@@ -273,7 +273,7 @@ public static partial class Shape2DExtensions
             var offsetResult = self.AsShape().Offset(amount, options);
             if (!offsetResult.TryGetValue(out var built) || built.Shape.IsNull)
                 throw Failures.Expected(ModelingDiagnostics.OffsetFailed, $"The offset of the {typeof(TSelf).Name} by {Formatting.Number(amount)} failed.",
-                                        offsetResult.IsFailure ? offsetResult.Diagnostics : default);
+                                        offsetResult);
             var offset = built.Shape;
             var result = (offset);
             // The builder always returns a shell; a face offsets to a single face

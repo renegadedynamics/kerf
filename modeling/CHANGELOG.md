@@ -13,6 +13,10 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 - What Bento has to change: [docs/answers-bento.md](docs/answers-bento.md).
 - **Lengths are true (a bug fix; results change):** `Length`, `PositionAt` and the kernel's `LengthBetween` and `ParameterAtLength` were up to 1.5% out on uneven curves, as OCCT's are: an ellipse of 10 by 1 measured 41.24 for 40.64, and half way along a symmetric curve wasn't its middle (decision 1768).
 - **Bugs that tests of their own found (unit 11J):** `BoundingBox` of a sketch off XY stays where the sketch is; `ProjectPoints` accepts a plane's own origin; `ParseNaca4` refuses five-digit and malformed codes; `(Solid)new Box(...)` works. **These now throw `ArgumentException`:** a scale by zero, unless the shape has no extent on that axis (was a collapsed shape); `Revolve` with an arc of 0 (was a full turn); `Torus` with a minor circle reaching its axis (was a solid through itself). Decisions 1769 to 1774.
+- **No operation reports success for an invalid result (breaking).** A Boolean, sweep, loft, offset, fillet or chamfer whose result isn't valid fails
+  with `result.invalid`, and the message says why; a sweep's "invalid solid" warning and `modeling.fillet-failed` for an invalid fillet are now this.
+  `TryGetInvalid` on a result, or `ModelingDiagnostics.TryGetInvalid` on what a shorthand threw, gives the shape. A clean that would spoil a good Boolean is
+  left out, with a warning. `docs/11r-bento.md` says what this means for a cell (decisions 1742, 1791 to 1796).
 - **Names, cleaned up (no results change; `docs/clean-up-bento.md` lists what Bento changes):** every object's height is `Height` (was `BoxHeight`,
   `RectangleHeight`, `ConeHeight`, `CylinderHeight`, `TrapezoidHeight`, `SlotHeight`). `Polygon.Pts` is `Points`. `StlExportOptions` says
   `LinearDeflection` and `AngularDeflection`, as the glTF and 3MF options do. `DPrism` is `DraftPrism`. `GeomAdaptor()` is `AsCurve()` on edges and

@@ -31,6 +31,7 @@ for them, and list them here.
 | `numerics.not-converged` | An iterative computation didn't converge (`DiagnosticCode.NotConverged`) |
 | `operation.cancelled` | The operation was cancelled (`DiagnosticCode.Cancelled`; cancellation itself throws `OperationCanceledException`) |
 | `result.default` | A `default(Result<T>)`, never given a value or an error (`DiagnosticCode.DefaultResult`) |
+| `result.invalid` | What the operation made isn't valid (`DiagnosticCode.InvalidResult`). The failure names the sub-shapes, and usually carries the shape for `TryGetInvalid` (README, section 2.2; decision 1742) |
 | `engine.fault` | An exception from inside the engine that isn't one of OCCT's (an index out of range, a null reference), or a status value outside its enum: a fault in the port |
 
 ## Exceptions from the engine

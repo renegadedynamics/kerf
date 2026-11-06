@@ -77,16 +77,36 @@ public static partial class ShapeExtensions
             history = ModelHistory.FromHistory(built.History, arg, tool);
         }
 
+        // A shortcut above made nothing, so has nothing new to check
+        bool made = topoResult is null;
+        string what = $"The {TopoUtil.BooleanName(operation)}'s result";
         if (SkipClean.Clean)
         {
             if (result.Unify(CleanOptions).TryGetValue(out var unified))
             {
-                result = TopoUtil.Downcast(unified.Shape);
-                history = history.Merge(ModelHistory.FromHistory(unified.History));
+                var cleaned = TopoUtil.Downcast(unified.Shape);
+                var report = made ? cleaned.Validate() : null;
+                // Cleaning is only tidying, so a clean that spoils a good result is left out (unit 11R: 8 of the 600 cases
+                // of the Boolean suites)
+                if (report is { IsValid: false } && result.Validate().IsValid)
+                    Warnings.Warn("Boolean operation unable to clean: that would make its result invalid");
+                else
+                {
+                    if (report is { IsValid: false })
+                        throw Failures.Invalid(cleaned, report, what);
+                    result = cleaned;
+                    history = history.Merge(ModelHistory.FromHistory(unified.History));
+                }
             }
             else
+            {
                 Warnings.Warn("Boolean operation unable to clean");
+                if (made)
+                    result = Failures.Valid(result, what);
+            }
         }
+        else if (made)
+            result = Failures.Valid(result, what);
 
         // Remove an unnecessary compound around a single shape
         if (result.IsCompound())
@@ -330,7 +350,7 @@ public static partial class ShapeExtensions
     private static readonly BooleanOptions ApproximatedSection = new() { ApproximateSection = true, SectionCurvesOnFaces = true };
 
     /// <summary>The clean after a Boolean: UnifySameDomain on edges and faces, B-splines concatenated, no internal edges.</summary>
-    internal static readonly UnifyOptions CleanOptions = new() { Edges = true, Faces = true, ConcatBSplines = true, AllowInternalEdges = false };
+    internal static readonly UnifyOptions CleanOptions = new() { Edges = true, Faces = true, ConcatBSplines = true, AllowInternalEdges = false, CheckResult = false };
 
     /// <summary>The centre of mass of a shape by its dimension: its length, area or volume.</summary>
     internal static Point3D CentreOfMass(Shape shape) =>

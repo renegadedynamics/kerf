@@ -39,4 +39,16 @@ public static class ModelingDiagnostics
 
     /// <summary>An argument the kernel refused, said in context: <c>kernel.invalid-argument</c>.</summary>
     public static DiagnosticCode KernelInvalidArgument { get; } = new("kernel.invalid-argument");
+
+    /// <summary>
+    /// What an operation made that isn't valid, from the exception a shorthand threw for it (<c>result.invalid</c>): the
+    /// operators and constructors can't return a <see cref="Result{T}"/>, whose <c>TryGetInvalid</c> gives the same. To look at
+    /// or to draw, not to build on (decision 1742).
+    /// </summary>
+    public static bool TryGetInvalid(Exception failure, out Shape invalid)
+    {
+        ArgumentNullException.ThrowIfNull(failure);
+        invalid = Failures.InvalidOf(failure) ?? default;
+        return Failures.InvalidOf(failure) is not null;
+    }
 }

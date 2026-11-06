@@ -42,7 +42,7 @@ public static class ShapeTransforms
             MakerOutcome.NotNull(shape.AsShape(), nameof(shape));
             Shape s = shape.AsShape();
             GeneralTransform3D t = transform;
-            return EngineOperation.Run<Shape>(range => MakerOutcome.Of(new GTransform(s, t, copyGeometry), range, [s]), Failure);
+            return EngineOperation.Run<Shape>(range => MakerOutcome.Of(new GTransform(s, t, copyGeometry), range, [s]), Failure, checkedAs: "The transformed shape");
         }
 
         /// <summary>The shape mirrored in the plane of <paramref name="plane"/> (its origin and its normal, the main

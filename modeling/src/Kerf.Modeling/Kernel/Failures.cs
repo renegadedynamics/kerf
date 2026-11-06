@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Kerf.Healing;
 
 namespace Kerf.Modeling;
 
@@ -32,6 +33,7 @@ internal static class Failures
     private const string DiagnosticsKey = "Kerf.Modeling.Diagnostics";
     private const string OperationKey = "Kerf.Modeling.Operation";
     private const string CauseKey = "Kerf.Modeling.Cause";
+    private const string InvalidKey = "Kerf.Modeling.Invalid";
 
     /// <summary>
     /// Runs <paramref name="operation"/>, turning a kernel failure into a failure (<see cref="Failed"/>) that says what
@@ -129,7 +131,7 @@ internal static class Failures
     /// (<paramref name="what"/>, only formatted on failure). Its warnings aren't read.
     /// </summary>
     internal static T Get<T>(Result<T> result, Func<string> what) =>
-        result.TryGetValue(out var value) ? value : throw In(what(), Failed(result.Diagnostics));
+        result.TryGetValue(out var value) ? value : throw In(what(), Failed(result.Diagnostics).Carrying(result));
 
     /// <summary>As <see cref="Get{T}"/>, raising the operation's warnings (<see cref="Warnings"/>).</summary>
     internal static T GetWarned<T>(Result<T> result, Func<string> what)
@@ -162,6 +164,98 @@ internal static class Failures
     }
 
     /// <summary>
+    /// A failure the modelling layer detects from a kernel result: as <see cref="Expected(DiagnosticCode, string, ImmutableArray{Diagnostic}, Exception?, ReadOnlySpan{Shape})"/>,
+    /// or, if the kernel made something invalid, the kernel's <c>result.invalid</c> with this advice after it, carrying the shape
+    /// (decision 1742).
+    /// </summary>
+    internal static InvalidOperationException Expected<T>(DiagnosticCode code, string message, Result<T> kernel)
+    {
+        if (!kernel.TryGetInvalid(out _))
+            return Expected(code, message, kernel.Diagnostics);
+        var diagnostics = kernel.Diagnostics;
+        var error = diagnostics.First(d => d.IsError);
+        return Failed(diagnostics.Replace(error, error with { Message = $"{error.Message} {message}" })).Carrying(kernel);
+    }
+
+    /// <summary>
+    /// The failure for <paramref name="shape"/>, which isn't valid: <c>result.invalid</c>, saying what's wrong with what
+    /// the operation made (<paramref name="what"/>), carrying it (decision 1742).
+    /// </summary>
+    internal static InvalidOperationException Invalid(Shape shape, ValidationReport report, string what, string? advice = null)
+    {
+        var error = report.ToDiagnostic(what);
+        if (advice is not null)
+            error = error with { Message = $"{error.Message} {advice}" };
+        var failure = Failed([error]);
+        failure.Data[InvalidKey] = shape;
+        return failure;
+    }
+
+    /// <summary><paramref name="shape"/> if it's valid, or the failure of <see cref="Invalid"/>.</summary>
+    internal static T Valid<T>(T shape, string what, string? advice = null) where T : struct, IShape<T>
+    {
+        var report = shape.Validate();
+        return report.IsValid ? shape : throw Invalid(shape.AsShape(), report, what, advice);
+    }
+
+    /// <summary>The shape a failure carries, if it does.</summary>
+    internal static Shape? InvalidOf(Exception e) => e.Data[InvalidKey] is Shape shape ? shape : null;
+
+    // This failure with the invalid shape the kernel's result carries, if it does
+    private static InvalidOperationException Carrying<T>(this InvalidOperationException failure, Result<T> kernel)
+    {
+        if (kernel.TryGetInvalid(out var invalid) && ShapeOf(invalid) is { } shape)
+            failure.Data[InvalidKey] = shape;
+        return failure;
+    }
+
+    private static Shape? ShapeOf<T>(T value) => value switch
+    {
+        Built<Shape> built => built.Shape,
+        Built<Solid> built => built.Shape,
+        Built<Shell> built => built.Shape,
+        Built<Face> built => built.Shape,
+        Kerf.Features.SplitFacesResult split => split.Shape,
+        Shape shape => shape,
+        Solid solid => solid,
+        Shell shell => shell,
+        Face face => face,
+        _ => null,
+    };
+
+    /// <summary>A failure's value as the type a public operation returns, for <see cref="Result{T}.TryGetInvalid"/>.</summary>
+    private static bool TryWrap<T>(Shape shape, out T value)
+    {
+        object? wrapped = default(T) switch
+        {
+            Shape => shape,
+            Solid when shape.TryAs(out Solid solid) => solid,
+            Shell when shape.TryAs(out Shell shell) => shell,
+            Face when shape.TryAs(out Face face) => face,
+            _ => null,
+        };
+        if (wrapped is null && !typeof(T).IsValueType)
+        {
+            if (typeof(T) == typeof(Part) || (typeof(T) == typeof(ModelShape) && TopoUtil.Dim(shape) == 3))
+                wrapped = new Part(shape);
+            else if (typeof(T) == typeof(Sketch) || (typeof(T) == typeof(ModelShape) && TopoUtil.Dim(shape) == 2))
+                wrapped = new Sketch(shape);
+            else if (typeof(T) == typeof(Curve) || typeof(T) == typeof(ModelShape))
+                wrapped = new Curve(shape);
+        }
+        value = wrapped is T typed ? typed : default!;
+        return wrapped is T;
+    }
+
+    /// <summary>
+    /// A result of an object narrowed to its class, keeping the shape a failure carries: <c>Map</c> doesn't pass that on.
+    /// </summary>
+    internal static Result<T> Narrowed<T>(this Result<ModelShape> result) where T : ModelShape =>
+        result.TryGetInvalid(out var invalid) && TryWrap(invalid.Shape, out T narrowed)
+            ? Result<T>.Invalid(narrowed, result.Diagnostics)
+            : result.Map(c => c.As<T>());
+
+    /// <summary>
     /// Runs an operation, giving its value, or its failure as a result: a failure's diagnostics (<see cref="Failed"/>),
     /// or a kernel failure that escaped as another exception. Misuse (the modelling layer's own argument checks) and
     /// cancellation still throw.
@@ -174,7 +268,9 @@ internal static class Failures
         }
         catch (Exception e) when (IsFailure(e))
         {
-            return Result<T>.Failure(DiagnosticsOf(e));
+            return InvalidOf(e) is { } invalid && TryWrap(invalid, out T carried)
+                ? Result<T>.Invalid(carried, DiagnosticsOf(e))
+                : Result<T>.Failure(DiagnosticsOf(e));
         }
         catch (Exception e) when (e is not OperationCanceledException && IsKernelFailure(e))
         {
@@ -213,6 +309,8 @@ internal static class Failures
         }
         var diagnostics = cause.Select(d => d.IsError ? d with { Message = $"{operation} failed: {d.Message}" } : d).ToImmutableArray();
         var exception = Failed(diagnostics, kernel);
+        if (InvalidOf(failure) is { } invalid)
+            exception.Data[InvalidKey] = invalid;
         exception.Data[OperationKey] = operation;
         exception.Data[CauseKey] = cause;
         return exception;

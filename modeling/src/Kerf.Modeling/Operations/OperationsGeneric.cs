@@ -520,7 +520,7 @@ public static partial class Operations
         {
             var solidFaces = solid.Faces();
             var openingsInThisSolid = openingList.Where(f => solidFaces.Contains(f, ShapeComparer<Face>.Same)).ToList();
-            newSolids.Add(solid.Offset3D(openingsInThisSolid, amount, kind: kind).Fix());
+            newSolids.Add(solid.Offset3D(openingsInThisSolid, amount, kind: kind));
         }
 
         return OfInputDimension(objectList, [.. newWires, .. newFaces, .. newSolids]);
@@ -530,13 +530,13 @@ public static partial class Operations
     public static Result<ModelShape> Offset(Shape obj, double amount, OffsetOptions? options = null) => Offset([obj], amount, options);
 
     /// <summary>The part offset: its solids, with <see cref="OffsetOptions.Openings"/> left open.</summary>
-    public static Result<Part> Offset(Part obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).Map(c => c.As<Part>());
+    public static Result<Part> Offset(Part obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).Narrowed<Part>();
 
     /// <summary>The sketch offset: its faces' outer wires out and their holes in.</summary>
-    public static Result<Sketch> Offset(Sketch obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).Map(c => c.As<Sketch>());
+    public static Result<Sketch> Offset(Sketch obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).Narrowed<Sketch>();
 
     /// <summary>The curve offset in its plane.</summary>
-    public static Result<Curve> Offset(Curve obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).Map(c => c.As<Curve>());
+    public static Result<Curve> Offset(Curve obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).Narrowed<Curve>();
 
     /// <summary>A 2D offset as a wire: a single-edge offset comes back as its edge.</summary>
     private static Wire AsWire(Shape offset) => offset.IsWire() ? (Wire)offset : Wire.Make((Edge)offset);
@@ -757,24 +757,24 @@ public static partial class Operations
     /// <summary>A face or sketch swept along a path into a Part.</summary>
     /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, SweepOptions?)"/>
     public static Result<Part> Sweep(Face section, Shape path, SweepOptions? options = null) =>
-        Sweep([(Shape)section], path, options).Map(c => c.As<Part>());
+        Sweep([(Shape)section], path, options).Narrowed<Part>();
 
     /// <summary>A shell swept along a path gives a <see cref="Part"/>.</summary>
     public static Result<Part> Sweep(Shell section, Shape path, SweepOptions? options = null) =>
-        Sweep([(Shape)section], path, options).Map(c => c.As<Part>());
+        Sweep([(Shape)section], path, options).Narrowed<Part>();
 
     /// <summary>As the other forms of <c>Sweep</c>.</summary>
     public static Result<Part> Sweep(Sketch section, Shape path, SweepOptions? options = null) =>
-        Sweep([(Shape)section], path, options).Map(c => c.As<Part>());
+        Sweep([(Shape)section], path, options).Narrowed<Part>();
 
     /// <summary>An edge, wire or curve swept along a path into a Sketch of faces.</summary>
     /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, SweepOptions?)"/>
     public static Result<Sketch> Sweep(Edge section, Shape path, SweepOptions? options = null) =>
-        Sweep([(Shape)section], path, options).Map(c => c.As<Sketch>());
+        Sweep([(Shape)section], path, options).Narrowed<Sketch>();
 
     /// <summary>A wire swept along a path gives a <see cref="Sketch"/>.</summary>
     public static Result<Sketch> Sweep(Wire section, Shape path, SweepOptions? options = null) =>
-        Sweep([(Shape)section], path, options).Map(c => c.As<Sketch>());
+        Sweep([(Shape)section], path, options).Narrowed<Sketch>();
 
     /// <summary>As the other forms of <c>Sweep</c>.</summary>
     public static Result<Sketch> Sweep(BaseEdgeObject section, Shape path, SweepOptions? options = null) => Sweep((Curve)section, path, options);
@@ -784,7 +784,7 @@ public static partial class Operations
 
     /// <summary>A curve swept along a path gives a <see cref="Sketch"/>.</summary>
     public static Result<Sketch> Sweep(Curve section, Shape path, SweepOptions? options = null) =>
-        Sweep([(Shape)section], path, options).Map(c => c.As<Sketch>());
+        Sweep([(Shape)section], path, options).Narrowed<Sketch>();
 
     private static ModelShape SweepCore(IEnumerable<Shape> sections, Wire pathWire, SweepOptions options)
     {
