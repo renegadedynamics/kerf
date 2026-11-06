@@ -6,7 +6,7 @@ namespace Kerf.Engine.Meshing;
 /// A thread's lists of triangles and circles for meshing one face, kept for the next face, as OCCT's face algorithm gets its
 /// memory from one allocator rather than growing a new array each time. The set is out of the static while a face uses it, so
 /// a nested use makes its own and nothing crosses threads. A list is empty when it's rented, and reads go by its count, so a
-/// face can't see the last one's values. A thread keeps about 180 kB for its life; anything larger is only held weakly
+/// face can't see the last one's values. A thread keeps about 360 kB for its life; anything larger is only held weakly
 /// (<see cref="MeshWorkList{T}"/>).
 /// </summary>
 internal sealed class MeshWorkStorage
@@ -44,7 +44,7 @@ internal sealed class MeshWorkStorage
 }
 
 /// <summary>
-/// A growing list of values, as a <see cref="List{T}"/> but for what it does with its array when kept: an array of up to 4,096
+/// A growing list of values, as a <see cref="List{T}"/> but for what it does with its array when kept: an array of up to 8,192
 /// values stays, and a larger one is held by a weak reference to the array itself. Those are on the large object heap, so only a
 /// generation 2 collection frees them, however young the array, where a weak reference to a young list object would die in the
 /// next generation 0 collection. So a thread can't pin megabytes because it once met a large face, while the next large face

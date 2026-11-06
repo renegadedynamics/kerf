@@ -5,6 +5,8 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
 using Kerf.Geometry;
 using Kerf.Topology;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using static Kerf.Engine.Meshing.DegreeOfFreedom;
 
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
@@ -50,32 +52,35 @@ public class BRepMeshCoreTests
     public void MeshWorkList_holds_a_large_array_only_until_a_full_collection()
     {
         MeshWorkList<long> aList = new(256);
-        Fill(aList, 20_000);
-        WeakReference anArray = ArrayOf(aList);
-        aList.Empty();
-        Assert.Equal(0, aList.Count);
-        Assert.True(ArrayOf(aList).Target is long[] { Length: <= 4096 }); // Back on the array that stays
-
-        aList.TakeHeldArray();
-        Assert.Same(anArray.Target, ArrayOf(aList).Target); // The next large face takes it
-        aList.Empty();
+        WeakReference anArray = UseALargeArrayTwice(aList);
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
         Assert.False(anArray.IsAlive);
         aList.TakeHeldArray();
-        Assert.True(ArrayOf(aList).Target is long[] { Length: <= 4096 });
+        Assert.True(ArrayOf(aList).Target is long[] { Length: <= 8192 });
 
-        static void Fill(MeshWorkList<long> theList, int theCount)
+        // In a method of its own, so no temporary on this frame's stack holds the array
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static WeakReference UseALargeArrayTwice(MeshWorkList<long> theList)
         {
-            for (int i = 0; i < theCount; i++)
+            for (int i = 0; i < 20_000; i++)
             {
                 theList.Add(i);
             }
+            WeakReference anArray = ArrayOf(theList);
+            theList.Empty();
+            Assert.Equal(0, theList.Count);
+            Assert.True(ArrayOf(theList).Target is long[] { Length: <= 8192 }); // Back on the array that stays
+
+            theList.TakeHeldArray();
+            Assert.Same(anArray.Target, ArrayOf(theList).Target); // The next large face takes it
+            theList.Empty();
+            return anArray;
         }
 
         static WeakReference ArrayOf(MeshWorkList<long> theList) => new(
-            typeof(MeshWorkList<long>).GetField("_items", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(theList));
+            typeof(MeshWorkList<long>).GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(theList));
     }
 
     [Fact]
