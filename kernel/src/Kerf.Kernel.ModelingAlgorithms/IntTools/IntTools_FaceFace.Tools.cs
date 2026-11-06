@@ -996,6 +996,12 @@ internal partial class FaceFace
         Point3D p;
         //
         c.D0(aT, out p);
+        // Far along a hyperbola a cosh overflows, and inf - inf is NaN. OCCT 8.0.1 projects that point, reaching a NaN
+        // direction. There's no distance there, and the search above goes on as it did: NaN compares false (decision 20610).
+        if (double.IsNaN(p.X) || double.IsNaN(p.Y) || double.IsNaN(p.Z))
+        {
+            return double.NaN;
+        }
         projPS.Perform(p);
         d = projPS.NbPoints() != 0 ? projPS.LowerDistance() : 0.0;
         //
