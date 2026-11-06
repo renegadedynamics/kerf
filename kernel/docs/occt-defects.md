@@ -63,8 +63,8 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 |---|---|---|
 | #1633 | Booleans of cylinders about 1° from parallel: Common empty, Cut removes nothing, no error | 1783 |
 | #1604, #1679 | An optimal box smaller than the shape | 1777 |
-| Found by #1675 | `Kerf.Modeling`'s area and volume up to 3.7% off on swept and B-spline faces | 20501 |
-| #1630 | A default sweep with no result where other frames work | 20504 |
+| Found by #1675 | `Kerf.Modeling`'s area and volume up to 3.7% off on swept and B-spline faces | 1802 |
+| #1630 | A default sweep with no result where other frames work | 1805 |
 | #1685 | An area up to 2.7% short, with an estimate of 1e-10, depending on where an edge starts | 1785 |
 | #1675 | Precise mass properties never refined along U | 1784 |
 | #1681, #1682 | A sweep with a guide distorted, volume 1072.3 for 1080 | 1776 |

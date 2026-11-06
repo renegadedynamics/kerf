@@ -244,7 +244,7 @@ internal static partial class TopoUtil
     /// How areas and volumes are integrated: adaptively, to a millionth of each face's contribution. OCCT's default of a
     /// fixed number of points can be several per cent out on swept and B-spline faces (docs/occt-defects.md). The precision
     /// is relative, so it suits a part of any size; 1e-7 is no closer on the parts measured, and up to three times the cost
-    /// (decision 20501).
+    /// (decision 1802).
     /// </summary>
     internal static readonly MassOptions Measured = new() { Tolerance = 1e-6 };
 

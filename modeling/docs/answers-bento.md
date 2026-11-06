@@ -1,6 +1,6 @@
 # The owner's answers: what Bento sees change
 
-The answers recorded in kernel decision 1790, as built in kernel decisions 20501 to 20509. This note was checked against Bento's `kerf/0.2.0` branch. **A member not listed keeps its name and meaning.**
+The answers recorded in kernel decision 1790, as built in kernel decisions 1802 to 1810. This note was checked against Bento's `kerf/0.2.0` branch. **A member not listed keeps its name and meaning.**
 
 ## What Bento has to change
 
@@ -14,9 +14,9 @@ Nothing in `ModelArguments.cs` or `ModelFunctions.cs` calls the members that mov
 ## What changes without a change in Bento
 
 - **`A1.Volume`, `A1.Area` and ordering or grouping by them** are integrated adaptively, to a millionth of each face's contribution. 33 of the 37 introductory examples move by less than 1e-9; swept and B-spline faces move most (example 12, 6.5e-5). A workbook's cells may show different digits.
-- **Time:** those calls don't get dearer. See decision 20501 for the figures; over the eleven examples, a volume went from 20.5 to 9.9 ms in all and an area from 13.4 to 10.3 ms, on a loaded machine.
+- **Time:** those calls don't get dearer. See decision 1802 for the figures; over the eleven examples, a volume went from 20.5 to 9.9 ms in all and an area from 13.4 to 10.3 ms, on a loaded machine.
 - **A default sweep that used to fail** can now succeed in another frame (`CAD_PT_SWEEP` without `isFrenet`). A formula showing `#VALUE!` may start giving a shape.
-- **`A1.Center()`, and a plane made from a face,** are on the precise path too, at 1e-9 (decision 20507). Bento's tests of centres are on boxes and don't move. `IntroductoryExamples.cs` line 156 builds a plane at a centre, so a part built from it can move by as much as that centre did.
+- **`A1.Center()`, and a plane made from a face,** are on the precise path too, at 1e-9 (decision 1808). Bento's tests of centres are on boxes and don't move. `IntroductoryExamples.cs` line 156 builds a plane at a centre, so a part built from it can move by as much as that centre did.
 - **A sweep that encloses no volume** is now a failure, so a formula that gave a zero-volume shape shows `#VALUE!`.
 
 ## The rest of the public changes

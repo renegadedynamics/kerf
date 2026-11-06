@@ -6,7 +6,7 @@ using Kerf.Modeling;
 using Kerf.Modeling.Tests.Examples;
 using static Kerf.Modeling.Operations;
 
-/// <summary>Area and volume are on the precise path: OCCT's default is off on swept and B-spline faces (decision 20501).</summary>
+/// <summary>Area and volume are on the precise path: OCCT's default is off on swept and B-spline faces (decision 1802).</summary>
 public class PreciseMeasureTests
 {
     private static (double Volume, double Area) OfMesh(Shape shape, double deflection)
