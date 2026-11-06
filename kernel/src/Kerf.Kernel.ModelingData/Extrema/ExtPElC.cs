@@ -390,7 +390,8 @@ internal class ExtPElC
         Vector3D oPp = new(o, pp);
         double x = oPp.Dot(new Vector3D(c.XAxis.Direction));
         double y = oPp.Dot(new Vector3D(c.YAxis.Direction));
-        DirectPolynomialRoots sol = new(1.0 / (4.0 * f), 0.0, 2.0 * f - x, -2.0 * f * y);
+        // Focal 0 evaluates as the line along X: its foot is at u = x, where 1 / 4f has no meaning (OCCT #1617, decision 20207)
+        DirectPolynomialRoots sol = f > Constants.Resolution() ? new(1.0 / (4.0 * f), 0.0, 2.0 * f - x, -2.0 * f * y) : new(1.0, -x);
         if (!sol.IsDone)
         {
             return;

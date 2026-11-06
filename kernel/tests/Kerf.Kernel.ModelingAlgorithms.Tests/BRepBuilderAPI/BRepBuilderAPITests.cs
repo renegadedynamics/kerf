@@ -579,4 +579,17 @@ public class BRepBuilderAPITests
         double anExpected = M_PI * r * r / 4 * (1 - 4 * r / (3 * M_PI)) * (M_PI / 2);
         Assert.Equal(anExpected, MassPropertiesBuilder.VolumeProperties(aSolid).Mass(), 1.0e-5);
     }
+
+    [Fact]
+    public void A_parabola_of_focal_zero_projects_and_inverts_as_the_line_it_evaluates_as()
+    {
+        // OCCT #1617: natively the parameter is 0 whatever the point, and the projection of (1, 2, 0) is u = 0 at 2.236
+        Frame3D aFrame = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
+        Parabola3D aParabola = new(aFrame, 0.0);
+        Assert.Equal(2.0, Kerf.Engine.Geometry.ElCLib.Parameter(aParabola, Kerf.Engine.Geometry.ElCLib.Value(2.0, aParabola)), 1.0e-12);
+        var aProjection = new ProjectPointOnCurve(new Point3D(1, 2, 0), new ParabolaCurve3D(aParabola));
+        Assert.Equal(1, aProjection.NbPoints());
+        Assert.Equal(1.0, aProjection.LowerDistanceParameter(), 1.0e-9);
+        Assert.Equal(2.0, aProjection.LowerDistance(), 1.0e-9);
+    }
 }

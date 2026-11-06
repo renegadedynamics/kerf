@@ -237,7 +237,8 @@ internal class ExtPElC2d
         double x = oPp.Dot(new Vector2D(c.MirrorAxis.Direction));
         double y = oPp.Dot(new Vector2D(c.Axis.YAxis.Direction));
 
-        DirectPolynomialRoots sol = new(1.0 / (4.0 * f), 0.0, 2.0 * f - x, -2.0 * f * y);
+        // Focal 0 evaluates as the line along X: its foot is at u = x (OCCT #1617, decision 20207)
+        DirectPolynomialRoots sol = f > global::Kerf.Engine.Geometry.Constants.Resolution() ? new(1.0 / (4.0 * f), 0.0, 2.0 * f - x, -2.0 * f * y) : new(1.0, -x);
         if (!sol.IsDone)
         {
             return;
