@@ -40,7 +40,7 @@ public class FilletFailuresTests
 
     /// <summary>
     /// Radius 11 on a 20 mm box: the engine gives what OCCT gives, an invalid shape, and the shorthand refuses it, so a
-    /// cell shows the reason and not a shape that can't be used (decision 19606).
+    /// cell shows the reason and not a shape that can't be used (decision 1740).
     /// </summary>
     [Fact]
     public void A_radius_past_half_the_box_is_refused()

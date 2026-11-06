@@ -19,9 +19,9 @@ version may break the API.
 - **A fillet or chamfer that would silently lose a face of an open shell now fails:** a chamfer whose curves don't close on a face used to
   drop that face and the one beside it and look valid. OCCT gives an invalid shape there. Two other results change, to OCCT's: a
   fillet's boundary running along an edge no longer leaves that edge in the face beside it, and a stub of an edge is no longer kept
-  (decisions 19601, 19602).
+  (decisions 1735, 1736).
 - **A projected pcurve is checked on a spline with very uneven speed:** where OCCT's standard projector misses a fast stretch, by 10
-  on a cylinder of radius 5 with the status "done", the projection uses points spread by knot span, or fails (decision 19603).
+  on a cylinder of radius 5 with the status "done", the projection uses points spread by knot span, or fails (decision 1737).
 
 - **Names, cleaned up (no results change):** the geometry's `With…` methods that kept OCCT's abbreviations now say what they set
   (`WithCirc`, `WithCirc2d` → `WithCircle`; `WithElips` → `WithEllipse`; `WithHypr` → `WithHyperbola`; `WithLin` → `WithLine`; `WithParab` →
