@@ -1891,13 +1891,13 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     public bool IsRational => _rational;
 
     /// <summary>Applies T to the poles.</summary>
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
         ClearEvalRepresentation();
         for (int i = 1; i <= _poles.Length(); i++)
         {
-            _poles.ChangeValue(i) = _poles.ChangeValue(i).Transformed(t);
+            _poles.ChangeValue(i) = _poles.ChangeValue(i).Transformed(transform);
         }
         _maxDerivInvOk = false;
     }
@@ -2015,7 +2015,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// True if theOther has the same degree, rationality, knots (within Precision::Parametric(thePreci)),
     /// multiplicities, poles (each coordinate within thePreci) and weights (within Epsilon).
     /// </summary>
-    public bool IsEqual(BSplineCurve3D other, double preci)
+    public bool IsEqual(BSplineCurve3D other, double tolerance)
     {
         if (_knots.IsEmpty() || _poles.IsEmpty() || _mults.IsEmpty() || _deg != other.Degree
             || _rational != other.IsRational || _knots.Length() != other.KnotCount
@@ -2028,8 +2028,8 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
         {
             Point3D pole1 = _poles[poleIter];
             Point3D pole2 = other.Pole(poleIter);
-            if (Math.Abs(pole1.X - pole2.X) > preci || Math.Abs(pole1.Y - pole2.Y) > preci
-                || Math.Abs(pole1.Z - pole2.Z) > preci)
+            if (Math.Abs(pole1.X - pole2.X) > tolerance || Math.Abs(pole1.Y - pole2.Y) > tolerance
+                || Math.Abs(pole1.Z - pole2.Z) > tolerance)
             {
                 return false;
             }
@@ -2037,7 +2037,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
 
         for (int knotIter = 1; knotIter <= _knots.Length(); ++knotIter)
         {
-            if (Math.Abs(_knots[knotIter] - other.Knot(knotIter)) > global::Kerf.Engine.Foundation.Precision.Parametric(preci))
+            if (Math.Abs(_knots[knotIter] - other.Knot(knotIter)) > global::Kerf.Engine.Foundation.Precision.Parametric(tolerance))
             {
                 return false;
             }

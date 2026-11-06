@@ -13,7 +13,7 @@ namespace Kerf.Engine.Booleans.Api;
 /// </summary>
 /// <remarks>
 /// <para>
-/// An Kerf addition (OCCT sets the options on the algorithm object), as <see cref="ToolParameters"/>
+/// A Kerf addition (OCCT sets the options on the algorithm object), as <see cref="ToolParameters"/>
 /// (decision 528): a struct with public fields, written
 /// <c>new BRepAlgoAPI_Options { FuzzyValue = 1e-5, RunParallel = true }</c>. It is a value, equatable field by field
 /// (doubles as <c>double.Equals</c> does, so NaN equals itself), so <c>(arguments, tools, options)</c> can key a

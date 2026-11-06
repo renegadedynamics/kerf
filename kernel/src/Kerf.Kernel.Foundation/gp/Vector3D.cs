@@ -15,14 +15,14 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
 {
     private readonly Xyz _coord;
 
-    public Vector3D(in Direction3D v) => _coord = v.XYZ();
+    public Vector3D(in Direction3D direction) => _coord = direction.XYZ();
 
     internal Vector3D(in Xyz coord) => _coord = coord;
 
-    public Vector3D(double xv, double yv, double zv) => _coord = new Xyz(xv, yv, zv);
+    public Vector3D(double x, double y, double z) => _coord = new Xyz(x, y, z);
 
-    /// <summary>The vector from <paramref name="p1"/> to <paramref name="p2"/>.</summary>
-    public Vector3D(in Point3D p1, in Point3D p2) => _coord = p2.XYZ().Subtracted(p1.XYZ());
+    /// <summary>The vector from <paramref name="point1"/> to <paramref name="point2"/>.</summary>
+    public Vector3D(in Point3D point1, in Point3D point2) => _coord = point2.XYZ().Subtracted(point1.XYZ());
 
     // Copies
 
@@ -150,12 +150,12 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Direction3D(_coord).AngleTo(new Direction3D(other._coord));
     }
 
-    public readonly double AngleWithRef(in Vector3D other, in Vector3D vRef)
+    public readonly double AngleWithRef(in Vector3D other, in Vector3D reference)
     {
         Refusal.StateIf(_coord.Modulus() <= Constants.Resolution()
-                                            || vRef._coord.Modulus() <= Constants.Resolution()
+                                            || reference._coord.Modulus() <= Constants.Resolution()
                                             || other._coord.Modulus() <= Constants.Resolution(), FailureKind.NullVector, " ");
-        return new Direction3D(_coord).AngleWithRef(new Direction3D(other._coord), new Direction3D(vRef._coord));
+        return new Direction3D(_coord).AngleWithRef(new Direction3D(other._coord), new Direction3D(reference._coord));
     }
 
     public readonly double Magnitude => _coord.Modulus();
@@ -228,13 +228,13 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
-    public readonly Vector3D Mirrored(in Vector3D vec)
+    public readonly Vector3D Mirrored(in Vector3D vector)
     {
         Xyz coord = _coord;
-        double magnitude = vec._coord.Modulus();
+        double magnitude = vector._coord.Modulus();
         if (magnitude > Constants.Resolution())
         {
-            Xyz mirrorVecXYZ = vec._coord;
+            Xyz mirrorVecXYZ = vector._coord;
             double origX = coord.X();
             double origY = coord.Y();
             double origZ = coord.Z();
@@ -300,18 +300,18 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
-    public readonly Vector3D Rotated(in Axis3D a1, double ang)
+    public readonly Vector3D Rotated(in Axis3D axis, double angle)
     {
         Xyz coord = _coord;
-        Transform3D t = new Transform3D().WithRotation(a1, ang);
+        Transform3D t = new Transform3D().WithRotation(axis, angle);
         coord.Multiply(t.VectorialPart);
         return new Vector3D(coord);
     }
 
-    public readonly Vector3D Scaled(double s)
+    public readonly Vector3D Scaled(double factor)
     {
         Xyz coord = _coord;
-        coord.Multiply(s);
+        coord.Multiply(factor);
         return new Vector3D(coord);
     }
 
@@ -321,7 +321,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         if (transformation.Form == Identity || transformation.Form == Translation)
         {
         }
-        else if (transformation.Form == PntMirror)
+        else if (transformation.Form == PointMirror)
         {
             coord.Reverse();
         }

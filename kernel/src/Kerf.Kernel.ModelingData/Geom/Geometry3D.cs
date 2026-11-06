@@ -23,7 +23,7 @@ namespace Kerf.Geometry;
 /// </remarks>
 public abstract class Geometry3D : Transient
 {
-    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    /// <summary>Only the kernel derives from it.</summary>
     private protected Geometry3D()
     {
     }
@@ -88,69 +88,69 @@ public abstract class Geometry3D : Transient
     /// Transforms this geometry in place. Every concrete class implements it, starting with
     /// <see cref="Transient.CheckMutable"/>; the other transformations go through it.
     /// </summary>
-    protected internal abstract void Transform(in Transform3D t);
+    protected internal abstract void Transform(in Transform3D transform);
 
     /// <summary>A copy mirrored about the point P.</summary>
-    public Geometry3D Mirrored(in Point3D p)
+    public Geometry3D Mirrored(in Point3D point)
     {
         Geometry3D g = Copy();
-        g.Mirror(p);
+        g.Mirror(point);
         return g;
     }
 
     /// <summary>A copy mirrored about the axis A1.</summary>
-    public Geometry3D Mirrored(in Axis3D a1)
+    public Geometry3D Mirrored(in Axis3D axis)
     {
         Geometry3D g = Copy();
-        g.Mirror(a1);
+        g.Mirror(axis);
         return g;
     }
 
     /// <summary>A copy mirrored about the plane of A2.</summary>
-    public Geometry3D Mirrored(in Frame3D a2)
+    public Geometry3D Mirrored(in Frame3D frame)
     {
         Geometry3D g = Copy();
-        g.Mirror(a2);
+        g.Mirror(frame);
         return g;
     }
 
     /// <summary>A copy rotated by Ang radians about A1.</summary>
-    public Geometry3D Rotated(in Axis3D a1, double ang)
+    public Geometry3D Rotated(in Axis3D axis, double angle)
     {
         Geometry3D g = Copy();
-        g.Rotate(a1, ang);
+        g.Rotate(axis, angle);
         return g;
     }
 
     /// <summary>A copy scaled by S about P.</summary>
-    public Geometry3D Scaled(in Point3D p, double s)
+    public Geometry3D Scaled(in Point3D point, double factor)
     {
         Geometry3D g = Copy();
-        g.Scale(p, s);
+        g.Scale(point, factor);
         return g;
     }
 
     /// <summary>A copy transformed by T.</summary>
-    public Geometry3D Transformed(in Transform3D t)
+    public Geometry3D Transformed(in Transform3D transform)
     {
         Geometry3D g = Copy();
-        g.Transform(t);
+        g.Transform(transform);
         return g;
     }
 
     /// <summary>A copy translated by V.</summary>
-    public Geometry3D Translated(in Vector3D v)
+    public Geometry3D Translated(in Vector3D vector)
     {
         Geometry3D g = Copy();
-        g.Translate(v);
+        g.Translate(vector);
         return g;
     }
 
     /// <summary>A copy translated from P1 to P2.</summary>
-    public Geometry3D Translated(in Point3D p1, in Point3D p2)
+    public Geometry3D Translated(in Point3D point1, in Point3D point2)
     {
         Geometry3D g = Copy();
-        g.Translate(p1, p2);
+        g.Translate(point1, point2);
         return g;
     }
 

@@ -1576,15 +1576,15 @@ public sealed partial class BSplineSurface : BoundedSurface
 
     /// <summary>The derivative of order Nu in U and Nv in V at (U, V).</summary>
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int uOrder, int vOrder)
     {
-        if (nu + nv < 1 || nu < 0 || nv < 0)
+        if (uOrder + vOrder < 1 || uOrder < 0 || vOrder < 0)
         {
             throw Refusal.State(new UndefinedDerivative3DException());
         }
 
         Vector3D evalRepResult;
-        if (RepUtils.TryEvalSurfaceDN(_evalRep, u, v, nu, nv, out evalRepResult))
+        if (RepUtils.TryEvalSurfaceDN(_evalRep, u, v, uOrder, vOrder, out evalRepResult))
         {
             return evalRepResult;
         }
@@ -1592,8 +1592,8 @@ public sealed partial class BSplineSurface : BoundedSurface
         Vector3D vn;
         SurfaceBSplSLib.DN(u,
                     v,
-                    nu,
-                    nv,
+                    uOrder,
+                    vOrder,
                     0,
                     0,
                     _poles,
@@ -2086,7 +2086,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     public Grid<double> Weights => _weights.ToGrid();
 
     /// <summary>Transforms the poles by T.</summary>
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
         ClearEvalRepresentation();
@@ -2094,7 +2094,7 @@ public sealed partial class BSplineSurface : BoundedSurface
         {
             for (int i = _poles.LowerRow(); i <= _poles.UpperRow(); i++)
             {
-                _poles[i, j] = _poles[i, j].Transformed(t);
+                _poles[i, j] = _poles[i, j].Transformed(transform);
             }
         }
         _maxDerivInvOk = false;

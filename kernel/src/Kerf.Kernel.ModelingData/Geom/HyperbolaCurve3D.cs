@@ -22,16 +22,16 @@ public sealed class HyperbolaCurve3D : ConicCurve3D
     private double _minorRadius;
 
     /// <summary>A hyperbola equal to H.</summary>
-    public HyperbolaCurve3D(in Hyperbola3D h)
+    public HyperbolaCurve3D(in Hyperbola3D hyperbola)
     {
-        _majorRadius = h.MajorRadius;
-        _minorRadius = h.MinorRadius;
-        _pos = h.Position;
+        _majorRadius = hyperbola.MajorRadius;
+        _minorRadius = hyperbola.MinorRadius;
+        _pos = hyperbola.Position;
     }
 
     /// <summary>A hyperbola placed by A with the given radii.</summary>
     /// <exception cref="ConstructionErrorException">A radius is negative.</exception>
-    public HyperbolaCurve3D(in Frame3D a, double majorRadius, double minorRadius)
+    public HyperbolaCurve3D(in Frame3D frame, double majorRadius, double minorRadius)
     {
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
@@ -39,7 +39,7 @@ public sealed class HyperbolaCurve3D : ConicCurve3D
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
-        _pos = a;
+        _pos = frame;
     }
 
     /// <summary>A new, unfrozen hyperbola equal to this one.</summary>
@@ -259,20 +259,20 @@ public sealed class HyperbolaCurve3D : ConicCurve3D
     }
 
     /// <summary>Applies T to this hyperbola (the radii are scaled by |T.ScaleFactor()|).</summary>
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
-        _majorRadius = _majorRadius * Math.Abs(t.ScaleFactor);
-        _minorRadius = _minorRadius * Math.Abs(t.ScaleFactor);
-        _pos = _pos.Transformed(t);
+        _majorRadius = _majorRadius * Math.Abs(transform.ScaleFactor);
+        _minorRadius = _minorRadius * Math.Abs(transform.ScaleFactor);
+        _pos = _pos.Transformed(transform);
     }
 
     // Non-mutating twins of the Set methods (Kerf)
 
-    public HyperbolaCurve3D WithHypr(in Hyperbola3D h)
+    public HyperbolaCurve3D WithHyperbola(in Hyperbola3D hyperbola)
     {
         HyperbolaCurve3D copy = (HyperbolaCurve3D)Copy();
-        copy.SetHypr(h);
+        copy.SetHypr(hyperbola);
         return copy;
     }
 

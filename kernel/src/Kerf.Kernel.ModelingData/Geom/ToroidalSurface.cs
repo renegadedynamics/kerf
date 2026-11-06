@@ -26,7 +26,7 @@ public sealed class ToroidalSurface : ElementarySurface
 
     /// <summary>A torus of radii MajorRadius and MinorRadius whose local coordinate system is A3.</summary>
     /// <exception cref="ConstructionErrorException">MinorRadius &lt; 0 or MajorRadius &lt; 0.</exception>
-    public ToroidalSurface(in CoordinateSystem a3, double majorRadius, double minorRadius)
+    public ToroidalSurface(in CoordinateSystem position, double majorRadius, double minorRadius)
     {
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
@@ -36,16 +36,16 @@ public sealed class ToroidalSurface : ElementarySurface
         }
         else
         {
-            _pos = a3;
+            _pos = position;
         }
     }
 
     /// <summary>A torus from a gp torus.</summary>
-    public ToroidalSurface(in Torus3D t)
+    public ToroidalSurface(in Torus3D torus)
     {
-        _majorRadius = t.MajorRadius;
-        _minorRadius = t.MinorRadius;
-        _pos = t.Position;
+        _majorRadius = torus.MajorRadius;
+        _minorRadius = torus.MinorRadius;
+        _pos = torus.Position;
     }
 
     public sealed override Geometry3D Copy()
@@ -134,10 +134,10 @@ public sealed class ToroidalSurface : ElementarySurface
     }
 
     /// <summary>A copy that is the torus T.</summary>
-    public ToroidalSurface WithTorus(in Torus3D t)
+    public ToroidalSurface WithTorus(in Torus3D torus)
     {
         ToroidalSurface copy = (ToroidalSurface)Copy();
-        copy.SetTorus(t);
+        copy.SetTorus(torus);
         return copy;
     }
 
@@ -216,13 +216,13 @@ public sealed class ToroidalSurface : ElementarySurface
     }
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int uOrder, int vOrder)
     {
-        if (nu + nv < 1 || nu < 0 || nv < 0)
+        if (uOrder + vOrder < 1 || uOrder < 0 || vOrder < 0)
         {
             throw Refusal.State(new UndefinedDerivative3DException());
         }
-        return global::Kerf.Engine.Geometry.ElSLib.TorusDN(u, v, _pos, _majorRadius, _minorRadius, nu, nv);
+        return global::Kerf.Engine.Geometry.ElSLib.TorusDN(u, v, _pos, _majorRadius, _minorRadius, uOrder, vOrder);
     }
 
     /// <summary>The non-persistent gp torus with the same geometry.</summary>
@@ -245,11 +245,11 @@ public sealed class ToroidalSurface : ElementarySurface
     /// <summary>The volume, PI * R2**2 * 2 * PI * R1.</summary>
     public double Volume => (M_PI * _minorRadius * _minorRadius) * (2.0 * M_PI * _majorRadius);
 
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
-        _majorRadius = _majorRadius * Math.Abs(t.ScaleFactor);
-        _minorRadius = _minorRadius * Math.Abs(t.ScaleFactor);
-        _pos = _pos.Transformed(t);
+        _majorRadius = _majorRadius * Math.Abs(transform.ScaleFactor);
+        _minorRadius = _minorRadius * Math.Abs(transform.ScaleFactor);
+        _pos = _pos.Transformed(transform);
     }
 }

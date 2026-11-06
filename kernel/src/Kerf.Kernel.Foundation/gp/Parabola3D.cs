@@ -30,35 +30,35 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
     }
 
     /// <exception cref="ConstructionErrorException"><paramref name="focal"/> is negative.</exception>
-    public Parabola3D(in Frame3D a2, double focal)
+    public Parabola3D(in Frame3D frame, double focal)
     {
-        _pos = a2;
+        _pos = frame;
         _focalLength = focal;
         Refusal.ArgumentIf(focal < 0.0, FailureKind.ConstructionError, "gp_Parab() - focal length should be >= 0");
     }
 
-    /// <summary>The parabola with directrix <paramref name="d"/> and focus <paramref name="f"/>.</summary>
-    /// <exception cref="ConstructionErrorException"><paramref name="f"/> is on <paramref name="d"/>.</exception>
-    public Parabola3D(in Axis3D d, in Point3D f)
+    /// <summary>The parabola with directrix <paramref name="directrix"/> and focus <paramref name="focus"/>.</summary>
+    /// <exception cref="ConstructionErrorException"><paramref name="focus"/> is on <paramref name="directrix"/>.</exception>
+    public Parabola3D(in Axis3D directrix, in Point3D focus)
     {
-        Line3D droite = new(d);
-        _focalLength = droite.DistanceTo(f) / 2.0;
-        Axis3D ax = droite.Normal(f).Position;
+        Line3D droite = new(directrix);
+        _focalLength = droite.DistanceTo(focus) / 2.0;
+        Axis3D ax = droite.Normal(focus).Position;
         Axis3D ay = droite.Position;
         Direction3D dd = ax.Direction;
-        _pos = new Frame3D(new Point3D(f.X - _focalLength * dd.X,
-                                    f.Y - _focalLength * dd.Y,
-                                    f.Z - _focalLength * dd.Z),
+        _pos = new Frame3D(new Point3D(focus.X - _focalLength * dd.X,
+                                    focus.Y - _focalLength * dd.Y,
+                                    focus.Z - _focalLength * dd.Z),
                          ax.Direction.Crossed(ay.Direction),
                          ax.Direction);
     }
 
     // Copies
 
-    public readonly Parabola3D WithAxis(in Axis3D a1)
+    public readonly Parabola3D WithAxis(in Axis3D axis)
     {
         Frame3D pos = _pos;
-        pos = pos.WithAxis(a1);
+        pos = pos.WithAxis(axis);
         return new Parabola3D(pos, _focalLength);
     }
 
@@ -70,17 +70,17 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
         return new Parabola3D(_pos, focalLength);
     }
 
-    public readonly Parabola3D WithLocation(in Point3D p)
+    public readonly Parabola3D WithLocation(in Point3D point)
     {
         Frame3D pos = _pos;
-        pos = pos.WithLocation(p);
+        pos = pos.WithLocation(point);
         return new Parabola3D(pos, _focalLength);
     }
 
-    public readonly Parabola3D WithPosition(in Frame3D a2)
+    public readonly Parabola3D WithPosition(in Frame3D frame)
     {
         Frame3D pos = _pos;
-        pos = a2;
+        pos = frame;
         return new Parabola3D(pos, _focalLength);
     }
 
@@ -131,73 +131,73 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
 
     public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
-    public readonly Parabola3D Mirrored(in Point3D p)
+    public readonly Parabola3D Mirrored(in Point3D point)
     {
         Frame3D pos = _pos;
-        pos = pos.Mirrored(p);
+        pos = pos.Mirrored(point);
         return new Parabola3D(pos, _focalLength);
     }
 
-    public readonly Parabola3D Mirrored(in Axis3D a1)
+    public readonly Parabola3D Mirrored(in Axis3D axis)
     {
         Frame3D pos = _pos;
-        pos = pos.Mirrored(a1);
+        pos = pos.Mirrored(axis);
         return new Parabola3D(pos, _focalLength);
     }
 
-    public readonly Parabola3D Mirrored(in Frame3D a2)
+    public readonly Parabola3D Mirrored(in Frame3D frame)
     {
         Frame3D pos = _pos;
-        pos = pos.Mirrored(a2);
+        pos = pos.Mirrored(frame);
         return new Parabola3D(pos, _focalLength);
     }
 
-    public readonly Parabola3D Rotated(in Axis3D a1, double ang)
+    public readonly Parabola3D Rotated(in Axis3D axis, double angle)
     {
         Frame3D pos = _pos;
-        pos = pos.Rotated(a1, ang);
+        pos = pos.Rotated(axis, angle);
         return new Parabola3D(pos, _focalLength);
     }
 
-    public readonly Parabola3D Scaled(in Point3D p, double s)
+    public readonly Parabola3D Scaled(in Point3D point, double factor)
     {
         Frame3D pos = _pos;
         double focalLength = _focalLength;
-        focalLength *= s;
+        focalLength *= factor;
         if (focalLength < 0)
         {
             focalLength = -focalLength;
         }
 
-        pos = pos.Scaled(p, s);
+        pos = pos.Scaled(point, factor);
         return new Parabola3D(pos, focalLength);
     }
 
-    public readonly Parabola3D Transformed(in Transform3D t)
+    public readonly Parabola3D Transformed(in Transform3D transform)
     {
         Frame3D pos = _pos;
         double focalLength = _focalLength;
-        focalLength *= t.ScaleFactor;
+        focalLength *= transform.ScaleFactor;
         if (focalLength < 0)
         {
             focalLength = -focalLength;
         }
 
-        pos = pos.Transformed(t);
+        pos = pos.Transformed(transform);
         return new Parabola3D(pos, focalLength);
     }
 
-    public readonly Parabola3D Translated(in Vector3D v)
+    public readonly Parabola3D Translated(in Vector3D vector)
     {
         Frame3D pos = _pos;
-        pos = pos.Translated(v);
+        pos = pos.Translated(vector);
         return new Parabola3D(pos, _focalLength);
     }
 
-    public readonly Parabola3D Translated(in Point3D p1, in Point3D p2)
+    public readonly Parabola3D Translated(in Point3D point1, in Point3D point2)
     {
         Frame3D pos = _pos;
-        pos = pos.Translated(p1, p2);
+        pos = pos.Translated(point1, point2);
         return new Parabola3D(pos, _focalLength);
     }
 

@@ -19,9 +19,9 @@ public readonly partial struct Line2D : IEquatable<Line2D>
 
     public Line2D() => _pos = new Axis2D();
 
-    public Line2D(in Axis2D a) => _pos = a;
+    public Line2D(in Axis2D axis) => _pos = axis;
 
-    public Line2D(in Point2D p, in Direction2D v) => _pos = new Axis2D(p, v);
+    public Line2D(in Point2D point, in Direction2D direction) => _pos = new Axis2D(point, direction);
 
     /// <summary>The line of equation <c>A * X + B * Y + C = 0</c>.</summary>
     /// <exception cref="ConstructionErrorException">A * A + B * B is at most <see cref="Constants.Resolution"/>.</exception>
@@ -36,21 +36,21 @@ public readonly partial struct Line2D : IEquatable<Line2D>
 
     // Copies
 
-    public readonly Line2D WithDirection(in Direction2D v)
+    public readonly Line2D WithDirection(in Direction2D direction)
     {
         Axis2D pos = _pos;
-        pos = pos.WithDirection(v);
+        pos = pos.WithDirection(direction);
         return new Line2D(pos);
     }
 
-    public readonly Line2D WithLocation(in Point2D p)
+    public readonly Line2D WithLocation(in Point2D point)
     {
         Axis2D pos = _pos;
-        pos = pos.WithLocation(p);
+        pos = pos.WithLocation(point);
         return new Line2D(pos);
     }
 
-    public readonly Line2D WithPosition(in Axis2D a) => new(a);
+    public readonly Line2D WithPosition(in Axis2D axis) => new(axis);
 
     // Queries
 
@@ -71,11 +71,11 @@ public readonly partial struct Line2D : IEquatable<Line2D>
     /// <summary>The signed angle between the directions of the two lines, in ]-PI, PI].</summary>
     public readonly double AngleTo(in Line2D other) => _pos.Direction.AngleTo(other._pos.Direction);
 
-    public readonly bool Contains(in Point2D p, double linearTolerance) => DistanceTo(p) <= linearTolerance;
+    public readonly bool Contains(in Point2D point, double linearTolerance) => DistanceTo(point) <= linearTolerance;
 
-    public readonly double DistanceTo(in Point2D p)
+    public readonly double DistanceTo(in Point2D point)
     {
-        Xy coord = p.XY();
+        Xy coord = point.XY();
         coord.Subtract((_pos.Location).XY());
         return Math.Abs(coord.Crossed(_pos.Direction.XY()));
     }
@@ -92,9 +92,9 @@ public readonly partial struct Line2D : IEquatable<Line2D>
         return d;
     }
 
-    public readonly double SquareDistanceTo(in Point2D p)
+    public readonly double SquareDistanceTo(in Point2D point)
     {
-        Xy coord = p.XY();
+        Xy coord = point.XY();
         coord.Subtract((_pos.Location).XY());
         double d = coord.Crossed(_pos.Direction.XY());
         return d * d;
@@ -111,9 +111,9 @@ public readonly partial struct Line2D : IEquatable<Line2D>
         return d;
     }
 
-    /// <summary>The line through <paramref name="p"/> normal to this one.</summary>
-    public readonly Line2D Normal(in Point2D p)
-        => new(new Axis2D(p, new Direction2D(-(_pos.Direction.Y), _pos.Direction.X)));
+    /// <summary>The line through <paramref name="point"/> normal to this one.</summary>
+    public readonly Line2D Normal(in Point2D point)
+        => new(new Axis2D(point, new Direction2D(-(_pos.Direction.Y), _pos.Direction.X)));
 
     public readonly Line2D Reversed()
     {
@@ -122,52 +122,52 @@ public readonly partial struct Line2D : IEquatable<Line2D>
         return new Line2D(pos);
     }
 
-    public readonly Line2D Mirrored(in Point2D p)
+    public readonly Line2D Mirrored(in Point2D point)
     {
         Axis2D pos = _pos;
-        pos = pos.Mirrored(p);
+        pos = pos.Mirrored(point);
         return new Line2D(pos);
     }
 
-    public readonly Line2D Mirrored(in Axis2D a)
+    public readonly Line2D Mirrored(in Axis2D axis)
     {
         Axis2D pos = _pos;
-        pos = pos.Mirrored(a);
+        pos = pos.Mirrored(axis);
         return new Line2D(pos);
     }
 
-    public readonly Line2D Rotated(in Point2D p, double ang)
+    public readonly Line2D Rotated(in Point2D point, double angle)
     {
         Axis2D pos = _pos;
-        pos = pos.Rotated(p, ang);
+        pos = pos.Rotated(point, angle);
         return new Line2D(pos);
     }
 
-    public readonly Line2D Scaled(in Point2D p, double s)
+    public readonly Line2D Scaled(in Point2D point, double factor)
     {
         Axis2D pos = _pos;
-        pos = pos.Scaled(p, s);
+        pos = pos.Scaled(point, factor);
         return new Line2D(pos);
     }
 
-    public readonly Line2D Transformed(in Transform2D t)
+    public readonly Line2D Transformed(in Transform2D transform)
     {
         Axis2D pos = _pos;
-        pos = pos.Transformed(t);
+        pos = pos.Transformed(transform);
         return new Line2D(pos);
     }
 
-    public readonly Line2D Translated(in Vector2D v)
+    public readonly Line2D Translated(in Vector2D vector)
     {
         Axis2D pos = _pos;
-        pos = pos.Translated(v);
+        pos = pos.Translated(vector);
         return new Line2D(pos);
     }
 
-    public readonly Line2D Translated(in Point2D p1, in Point2D p2)
+    public readonly Line2D Translated(in Point2D point1, in Point2D point2)
     {
         Axis2D pos = _pos;
-        pos = pos.Translated(new Vector2D(p1, p2));
+        pos = pos.Translated(new Vector2D(point1, point2));
         return new Line2D(pos);
     }
 

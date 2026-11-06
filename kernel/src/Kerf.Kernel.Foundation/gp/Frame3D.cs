@@ -30,32 +30,32 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         _vxdir = new Direction3D(Direction3D.D.X);
     }
 
-    /// <summary>A system at <paramref name="p"/> with main direction <paramref name="n"/>, and X direction from <paramref name="vx"/> projected onto the plane normal to N.</summary>
-    public Frame3D(in Point3D p, in Direction3D n, in Direction3D vx)
+    /// <summary>A system at <paramref name="point"/> with main direction <paramref name="normal"/>, and X direction from <paramref name="xDirection"/> projected onto the plane normal to N.</summary>
+    public Frame3D(in Point3D point, in Direction3D normal, in Direction3D xDirection)
     {
-        _axis = new Axis3D(p, n);
-        _vydir = n;
-        _vxdir = n;
-        _vxdir = _vxdir.CrossCrossed(vx, n);
+        _axis = new Axis3D(point, normal);
+        _vydir = normal;
+        _vxdir = normal;
+        _vxdir = _vxdir.CrossCrossed(xDirection, normal);
         _vydir = _vydir.Crossed(_vxdir);
     }
 
-    public Frame3D(in Point3D p, Direction3D.D n, Direction3D.D vx)
+    internal Frame3D(in Point3D p, Direction3D.D n, Direction3D.D vx)
     {
         _axis = new Axis3D(p, n);
         _vydir = new Direction3D(CrossStandardDir(n, vx));
         _vxdir = new Direction3D(vx);
     }
 
-    /// <summary>A system at <paramref name="p"/> with main direction <paramref name="v"/>, and X and Y directions chosen by OCCT's rule.</summary>
-    public Frame3D(in Point3D p, in Direction3D v)
+    /// <summary>A system at <paramref name="point"/> with main direction <paramref name="direction"/>, and X and Y directions chosen by OCCT's rule.</summary>
+    public Frame3D(in Point3D point, in Direction3D direction)
     {
-        _axis = new Axis3D(p, v);
+        _axis = new Axis3D(point, direction);
         _vydir = new Direction3D();
         _vxdir = new Direction3D();
-        double a = v.X;
-        double b = v.Y;
-        double c = v.Z;
+        double a = direction.X;
+        double b = direction.Y;
+        double c = direction.Z;
         double aabs = Math.Abs(a);
         double babs = Math.Abs(b);
         double cabs = Math.Abs(c);
@@ -99,96 +99,96 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         this = WithXDirection(d);
     }
 
-    public Frame3D(in Point3D p, Direction3D.D v)
+    internal Frame3D(in Point3D p, Direction3D.D v)
     {
         _axis = new Axis3D(p, v);
         _vydir = new Direction3D(GetPerpendicularYDir(v));
         _vxdir = new Direction3D(GetPerpendicularXDir(v));
     }
 
-    public Frame3D(Direction3D.D v) : this(new Point3D(0.0, 0.0, 0.0), v) { }
+    internal Frame3D(Direction3D.D v) : this(new Point3D(0.0, 0.0, 0.0), v) { }
 
     // Copies
 
-    public readonly Frame3D WithAxis(in Axis3D a1)
+    public readonly Frame3D WithAxis(in Axis3D axis)
+    {
+        Axis3D newAxis = _axis;
+        Direction3D vydir = _vydir;
+        Direction3D vxdir = _vxdir;
+        double a = axis.Direction * vxdir;
+        if (Math.Abs(Math.Abs(a) - 1.0) <= global::Kerf.Engine.Foundation.Precision.Angular())
+        {
+            if (a > 0.0)
+            {
+                vxdir = vydir;
+                vydir = newAxis.Direction;
+                newAxis = axis;
+            }
+            else
+            {
+                vxdir = newAxis.Direction;
+                newAxis = axis;
+            }
+        }
+        else
+        {
+            newAxis = axis;
+            vxdir = newAxis.Direction.CrossCrossed(vxdir, newAxis.Direction);
+            vydir = newAxis.Direction.Crossed(vxdir);
+        }
+        return new Frame3D(newAxis, vydir, vxdir);
+    }
+
+    public readonly Frame3D WithDirection(in Direction3D direction)
     {
         Axis3D axis = _axis;
         Direction3D vydir = _vydir;
         Direction3D vxdir = _vxdir;
-        double a = a1.Direction * vxdir;
+        double a = direction * vxdir;
         if (Math.Abs(Math.Abs(a) - 1.0) <= global::Kerf.Engine.Foundation.Precision.Angular())
         {
             if (a > 0.0)
             {
                 vxdir = vydir;
                 vydir = axis.Direction;
-                axis = a1;
+                axis = axis.WithDirection(direction);
             }
             else
             {
                 vxdir = axis.Direction;
-                axis = a1;
+                axis = axis.WithDirection(direction);
             }
         }
         else
         {
-            axis = a1;
-            vxdir = axis.Direction.CrossCrossed(vxdir, axis.Direction);
-            vydir = axis.Direction.Crossed(vxdir);
+            axis = axis.WithDirection(direction);
+            vxdir = direction.CrossCrossed(vxdir, direction);
+            vydir = direction.Crossed(vxdir);
         }
         return new Frame3D(axis, vydir, vxdir);
     }
 
-    public readonly Frame3D WithDirection(in Direction3D v)
+    public readonly Frame3D WithLocation(in Point3D point)
     {
         Axis3D axis = _axis;
-        Direction3D vydir = _vydir;
-        Direction3D vxdir = _vxdir;
-        double a = v * vxdir;
-        if (Math.Abs(Math.Abs(a) - 1.0) <= global::Kerf.Engine.Foundation.Precision.Angular())
-        {
-            if (a > 0.0)
-            {
-                vxdir = vydir;
-                vydir = axis.Direction;
-                axis = axis.WithDirection(v);
-            }
-            else
-            {
-                vxdir = axis.Direction;
-                axis = axis.WithDirection(v);
-            }
-        }
-        else
-        {
-            axis = axis.WithDirection(v);
-            vxdir = v.CrossCrossed(vxdir, v);
-            vydir = v.Crossed(vxdir);
-        }
-        return new Frame3D(axis, vydir, vxdir);
-    }
-
-    public readonly Frame3D WithLocation(in Point3D p)
-    {
-        Axis3D axis = _axis;
-        axis = axis.WithLocation(p);
+        axis = axis.WithLocation(point);
         return new Frame3D(axis, _vydir, _vxdir);
     }
 
-    public readonly Frame3D WithXDirection(in Direction3D vx)
+    public readonly Frame3D WithXDirection(in Direction3D xDirection)
     {
         Direction3D vydir = _vydir;
         Direction3D vxdir = _vxdir;
-        vxdir = _axis.Direction.CrossCrossed(vx, _axis.Direction);
+        vxdir = _axis.Direction.CrossCrossed(xDirection, _axis.Direction);
         vydir = _axis.Direction.Crossed(vxdir);
         return new Frame3D(_axis, vydir, vxdir);
     }
 
-    public readonly Frame3D WithYDirection(in Direction3D vy)
+    public readonly Frame3D WithYDirection(in Direction3D yDirection)
     {
         Direction3D vydir = _vydir;
         Direction3D vxdir = _vxdir;
-        vxdir = vy.Crossed(_axis.Direction);
+        vxdir = yDirection.Crossed(_axis.Direction);
         vydir = _axis.Direction.Crossed(vxdir);
         return new Frame3D(_axis, vydir, vxdir);
     }
@@ -221,84 +221,84 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         return d1 <= linearTolerance && _axis.IsParallel(other._axis, angularTolerance);
     }
 
-    public readonly bool IsCoplanar(in Axis3D a, double linearTolerance, double angularTolerance)
+    public readonly bool IsCoplanar(in Axis3D axis, double linearTolerance, double angularTolerance)
     {
         Direction3D dd = _axis.Direction;
         Point3D pp = _axis.Location;
-        Point3D ap = a.Location;
+        Point3D ap = axis.Location;
         double d1 = dd.X * (ap.X - pp.X) + dd.Y * (ap.Y - pp.Y) + dd.Z * (ap.Z - pp.Z);
         if (d1 < 0)
         {
             d1 = -d1;
         }
 
-        return d1 <= linearTolerance && _axis.IsNormal(a, angularTolerance);
+        return d1 <= linearTolerance && _axis.IsNormal(axis, angularTolerance);
     }
 
-    public readonly Frame3D Mirrored(in Point3D p)
+    public readonly Frame3D Mirrored(in Point3D point)
     {
         Axis3D axis = _axis;
         Direction3D vydir = _vydir;
         Direction3D vxdir = _vxdir;
         Point3D temp = axis.Location;
-        temp = temp.Mirrored(p);
+        temp = temp.Mirrored(point);
         axis = axis.WithLocation(temp);
         vxdir = vxdir.Reversed();
         vydir = vydir.Reversed();
         return new Frame3D(axis, vydir, vxdir);
     }
 
-    public readonly Frame3D Mirrored(in Axis3D a1)
+    public readonly Frame3D Mirrored(in Axis3D axis)
+    {
+        Axis3D newAxis = _axis;
+        Direction3D vydir = _vydir;
+        Direction3D vxdir = _vxdir;
+        vydir = vydir.Mirrored(axis);
+        vxdir = vxdir.Mirrored(axis);
+        Point3D temp = newAxis.Location;
+        temp = temp.Mirrored(axis);
+        newAxis = newAxis.WithLocation(temp);
+        newAxis = newAxis.WithDirection(vxdir.Crossed(vydir));
+        return new Frame3D(newAxis, vydir, vxdir);
+    }
+
+    public readonly Frame3D Mirrored(in Frame3D frame)
     {
         Axis3D axis = _axis;
         Direction3D vydir = _vydir;
         Direction3D vxdir = _vxdir;
-        vydir = vydir.Mirrored(a1);
-        vxdir = vxdir.Mirrored(a1);
+        vydir = vydir.Mirrored(frame);
+        vxdir = vxdir.Mirrored(frame);
         Point3D temp = axis.Location;
-        temp = temp.Mirrored(a1);
+        temp = temp.Mirrored(frame);
         axis = axis.WithLocation(temp);
         axis = axis.WithDirection(vxdir.Crossed(vydir));
         return new Frame3D(axis, vydir, vxdir);
     }
 
-    public readonly Frame3D Mirrored(in Frame3D a2)
+    public readonly Frame3D Rotated(in Axis3D axis, double angle)
     {
-        Axis3D axis = _axis;
+        Axis3D newAxis = _axis;
         Direction3D vydir = _vydir;
         Direction3D vxdir = _vxdir;
-        vydir = vydir.Mirrored(a2);
-        vxdir = vxdir.Mirrored(a2);
-        Point3D temp = axis.Location;
-        temp = temp.Mirrored(a2);
-        axis = axis.WithLocation(temp);
-        axis = axis.WithDirection(vxdir.Crossed(vydir));
-        return new Frame3D(axis, vydir, vxdir);
+        Point3D temp = newAxis.Location;
+        temp = temp.Rotated(axis, angle);
+        newAxis = newAxis.WithLocation(temp);
+        vxdir = vxdir.Rotated(axis, angle);
+        vydir = vydir.Rotated(axis, angle);
+        newAxis = newAxis.WithDirection(vxdir.Crossed(vydir));
+        return new Frame3D(newAxis, vydir, vxdir);
     }
 
-    public readonly Frame3D Rotated(in Axis3D a1, double ang)
+    public readonly Frame3D Scaled(in Point3D point, double factor)
     {
         Axis3D axis = _axis;
         Direction3D vydir = _vydir;
         Direction3D vxdir = _vxdir;
         Point3D temp = axis.Location;
-        temp = temp.Rotated(a1, ang);
+        temp = temp.Scaled(point, factor);
         axis = axis.WithLocation(temp);
-        vxdir = vxdir.Rotated(a1, ang);
-        vydir = vydir.Rotated(a1, ang);
-        axis = axis.WithDirection(vxdir.Crossed(vydir));
-        return new Frame3D(axis, vydir, vxdir);
-    }
-
-    public readonly Frame3D Scaled(in Point3D p, double s)
-    {
-        Axis3D axis = _axis;
-        Direction3D vydir = _vydir;
-        Direction3D vxdir = _vxdir;
-        Point3D temp = axis.Location;
-        temp = temp.Scaled(p, s);
-        axis = axis.WithLocation(temp);
-        if (s < 0.0)
+        if (factor < 0.0)
         {
             vxdir = vxdir.Reversed();
             vydir = vydir.Reversed();
@@ -306,31 +306,31 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         return new Frame3D(axis, vydir, vxdir);
     }
 
-    public readonly Frame3D Transformed(in Transform3D t)
+    public readonly Frame3D Transformed(in Transform3D transform)
     {
         Axis3D axis = _axis;
         Direction3D vydir = _vydir;
         Direction3D vxdir = _vxdir;
         Point3D temp = axis.Location;
-        temp = temp.Transformed(t);
+        temp = temp.Transformed(transform);
         axis = axis.WithLocation(temp);
-        vxdir = vxdir.Transformed(t);
-        vydir = vydir.Transformed(t);
+        vxdir = vxdir.Transformed(transform);
+        vydir = vydir.Transformed(transform);
         axis = axis.WithDirection(vxdir.Crossed(vydir));
         return new Frame3D(axis, vydir, vxdir);
     }
 
-    public readonly Frame3D Translated(in Vector3D v)
+    public readonly Frame3D Translated(in Vector3D vector)
     {
         Axis3D axis = _axis;
-        axis = axis.Translated(v);
+        axis = axis.Translated(vector);
         return new Frame3D(axis, _vydir, _vxdir);
     }
 
-    public readonly Frame3D Translated(in Point3D p1, in Point3D p2)
+    public readonly Frame3D Translated(in Point3D point1, in Point3D point2)
     {
         Axis3D axis = _axis;
-        axis = axis.Translated(p1, p2);
+        axis = axis.Translated(point1, point2);
         return new Frame3D(axis, _vydir, _vxdir);
     }
 

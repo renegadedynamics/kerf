@@ -263,7 +263,7 @@ public class GeometryValueLawsTests
         Assert.Equal(-1, c.ConjugateBranch2().Position.XDirection.Y, 9);
         Assert.Equal(6, c.WithMajorRadius(6).MajorRadius, 9);
         Assert.Equal(7, c.WithMinorRadius(7).MinorRadius, 9);
-        Assert.Equal(new Hyperbola3D(Other, 3, 4), c.WithHypr(new Hyperbola3D(Other, 3, 4)).Hyperbola);
+        Assert.Equal(new Hyperbola3D(Other, 3, 4), c.WithHyperbola(new Hyperbola3D(Other, 3, 4)).Hyperbola);
 
         var flat = new Hyperbola2D(Frame2D.World, 3, 4);
         Assert.Equal(10, flat.Focal, 9);
@@ -286,7 +286,7 @@ public class GeometryValueLawsTests
         Assert.Equal(-1, flatCurve.ConjugateBranch2().XAxis.Direction.Y, 9);
         Assert.Equal(6, flatCurve.WithMajorRadius(6).MajorRadius, 9);
         Assert.Equal(7, flatCurve.WithMinorRadius(7).MinorRadius, 9);
-        Assert.Equal(new Hyperbola2D(Other2, 3, 4), flatCurve.WithHypr2d(new Hyperbola2D(Other2, 3, 4)).Hyperbola);
+        Assert.Equal(new Hyperbola2D(Other2, 3, 4), flatCurve.WithHyperbola(new Hyperbola2D(Other2, 3, 4)).Hyperbola);
     }
 
     [Fact]
@@ -309,7 +309,7 @@ public class GeometryValueLawsTests
         Assert.Equal(1, curve.Eccentricity, 9);
         Assert.Equal(4, curve.Parameter, 9);
         Assert.Equal(7, curve.WithFocal(7).Focal, 9);
-        Assert.Equal(new Parabola3D(Other, 2), curve.WithParab(new Parabola3D(Other, 2)).Parabola);
+        Assert.Equal(new Parabola3D(Other, 2), curve.WithParabola(new Parabola3D(Other, 2)).Parabola);
 
         var flat = new Parabola2D(Frame2D.World, 2);
         Assert.Equal(5, flat.WithFocal(5).Focal, 9);
@@ -321,7 +321,7 @@ public class GeometryValueLawsTests
 
         var flatCurve = new ParabolaCurve2D(new Axis2D(Point2D.Origin, new Direction2D(0, 1)), new Point2D(4, 0));
         Assert.Equal(2, flatCurve.Focal, 9);
-        Assert.Equal(new Parabola2D(Other2, 2), flatCurve.WithParab2d(new Parabola2D(Other2, 2)).Parabola);
+        Assert.Equal(new Parabola2D(Other2, 2), flatCurve.WithParabola(new Parabola2D(Other2, 2)).Parabola);
     }
 
     [Fact]
@@ -347,8 +347,8 @@ public class GeometryValueLawsTests
         var curve = new CircleCurve3D(Frame3D.World, 2);
         Assert.Equal(0, curve.Eccentricity, 9);
         Assert.Equal(5, curve.WithRadius(5).Radius, 9);
-        Assert.Equal(new Circle3D(Other, 2), curve.WithCirc(new Circle3D(Other, 2)).Circle);
-        Assert.Equal(new Circle2D(Other2, 2), new CircleCurve2D(Frame2D.World, 2).WithCirc2d(new Circle2D(Other2, 2)).Circle);
+        Assert.Equal(new Circle3D(Other, 2), curve.WithCircle(new Circle3D(Other, 2)).Circle);
+        Assert.Equal(new Circle2D(Other2, 2), new CircleCurve2D(Frame2D.World, 2).WithCircle(new Circle2D(Other2, 2)).Circle);
     }
 
     [Fact]
@@ -367,8 +367,8 @@ public class GeometryValueLawsTests
         var curve = new EllipseCurve3D(Frame3D.World, 3, 2);
         Assert.Equal(4, curve.WithMajorRadius(4).MajorRadius, 9);
         Assert.Equal(1, curve.WithMinorRadius(1).MinorRadius, 9);
-        Assert.Equal(new Ellipse3D(Other, 3, 2), curve.WithElips(new Ellipse3D(Other, 3, 2)).Ellipse);
-        Assert.Equal(new Ellipse2D(Other2, 3, 2), new EllipseCurve2D(Frame2D.World, 3, 2).WithElips2d(new Ellipse2D(Other2, 3, 2)).Ellipse);
+        Assert.Equal(new Ellipse3D(Other, 3, 2), curve.WithEllipse(new Ellipse3D(Other, 3, 2)).Ellipse);
+        Assert.Equal(new Ellipse2D(Other2, 3, 2), new EllipseCurve2D(Frame2D.World, 3, 2).WithEllipse(new Ellipse2D(Other2, 3, 2)).Ellipse);
 
         var h = new Hyperbola3D(Frame3D.World, 3, 4);
         Same(P, h.WithLocation(P).Location);
@@ -476,11 +476,6 @@ public class GeometryValueLawsTests
         Assert.True(CoordinateSystem.World.IsCoplanar(new Axis3D(new Point3D(5, 5, 0), new Direction3D(1, 1, 0)), 1e-9, 1e-9));
         Assert.False(CoordinateSystem.World.IsCoplanar(new Axis3D(new Point3D(5, 5, 1), new Direction3D(1, 1, 0)), 1e-9, 1e-9));
 
-        // by a named axis
-        Assert.Equal(1, new CoordinateSystem(Direction3D.D.Y).Direction.Y, 12);
-        Assert.Equal(P, new CoordinateSystem(P, Direction3D.D.Y).Location);
-        Assert.Equal(P, new Frame3D(P, Direction3D.D.Z, Direction3D.D.X).Location);
-
         var frame2 = Frame2D.World;
         Assert.Equal(1, frame2.WithXAxis(new Axis2D(Point2D.Origin, new Direction2D(0, 1))).XDirection.Y, 9);
         Assert.Equal(1, frame2.WithYAxis(new Axis2D(Point2D.Origin, new Direction2D(1, 0))).YDirection.X, 9);
@@ -518,7 +513,7 @@ public class GeometryValueLawsTests
         Assert.False(general.IsSingular);
         Assert.Equal(2, (general * general).TranslationPart.X, 9);
         Assert.Equal(2, general.PreMultiplied(general).TranslationPart.X, 9);
-        Assert.Equal(5, general.WithTrsf(Transform3D.Translation(new Vector3D(5, 0, 0))).TranslationPart.X, 9);
+        Assert.Equal(5, general.WithTransform(Transform3D.Translation(new Vector3D(5, 0, 0))).TranslationPart.X, 9);
         Same(new Point3D(1, 2, 6), GeneralTransform3D.Affinity(Frame3D.World, 2) * new Point3D(1, 2, 3));
         Span<double> matrix = stackalloc double[16];
         general.GetMat4(matrix);

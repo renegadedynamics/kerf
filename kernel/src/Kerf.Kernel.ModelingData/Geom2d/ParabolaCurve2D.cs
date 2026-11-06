@@ -31,10 +31,10 @@ public sealed class ParabolaCurve2D : ConicCurve2D
     }
 
     /// <summary>The parabola equal to Prb.</summary>
-    public ParabolaCurve2D(in Parabola2D prb)
+    public ParabolaCurve2D(in Parabola2D parabola)
     {
-        _focalLength = prb.Focal;
-        _pos = prb.Axis;
+        _focalLength = parabola.Focal;
+        _pos = parabola.Axis;
     }
 
     /// <summary>The parabola whose axis of symmetry is MirrorAxis; Sense gives the orientation.</summary>
@@ -62,9 +62,9 @@ public sealed class ParabolaCurve2D : ConicCurve2D
     }
 
     /// <summary>The parabola of directrix D and focus F.</summary>
-    public ParabolaCurve2D(in Axis2D d, in Point2D f)
+    public ParabolaCurve2D(in Axis2D directrix, in Point2D focus)
     {
-        Parabola2D prb = new Parabola2D(d, f);
+        Parabola2D prb = new Parabola2D(directrix, focus);
         _pos = prb.Axis;
         _focalLength = prb.Focal;
     }
@@ -170,25 +170,25 @@ public sealed class ParabolaCurve2D : ConicCurve2D
     }
 
     /// <summary>Applies T to the parabola: the focal length is multiplied by |T.ScaleFactor()|.</summary>
-    protected internal sealed override void Transform(in Transform2D t)
+    protected internal sealed override void Transform(in Transform2D transform)
     {
         CheckMutable();
-        _focalLength *= Math.Abs(t.ScaleFactor);
-        _pos = _pos.Transformed(t);
+        _focalLength *= Math.Abs(transform.ScaleFactor);
+        _pos = _pos.Transformed(transform);
     }
 
     /// <summary>U * |T.ScaleFactor()|; an infinite U is returned unchanged.</summary>
-    internal sealed override double TransformedParameter(double u, in Transform2D t)
+    internal sealed override double TransformedParameter(double u, in Transform2D transform)
     {
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u))
         {
             return u;
         }
-        return u * Math.Abs(t.ScaleFactor);
+        return u * Math.Abs(transform.ScaleFactor);
     }
 
     /// <summary>|T.ScaleFactor()|.</summary>
-    internal sealed override double ParametricTransformation(in Transform2D t) => Math.Abs(t.ScaleFactor);
+    internal sealed override double ParametricTransformation(in Transform2D transform) => Math.Abs(transform.ScaleFactor);
 
     // Non-mutating twins of the Set methods (Kerf)
 
@@ -202,10 +202,10 @@ public sealed class ParabolaCurve2D : ConicCurve2D
     }
 
     /// <summary>A copy equal to Prb.</summary>
-    public ParabolaCurve2D WithParab2d(in Parabola2D prb)
+    public ParabolaCurve2D WithParabola(in Parabola2D parabola)
     {
         ParabolaCurve2D copy = (ParabolaCurve2D)Copy();
-        copy.SetParab2d(prb);
+        copy.SetParab2d(parabola);
         return copy;
     }
 }

@@ -262,7 +262,7 @@ internal class GeometryTransformation : Transient
         return copy;
     }
 
-    public GeometryTransformation WithTrsf(in Transform3D trsf)
+    public GeometryTransformation WithTransform(in Transform3D trsf)
     {
         GeometryTransformation copy = Copy();
         copy.SetTrsf(trsf);

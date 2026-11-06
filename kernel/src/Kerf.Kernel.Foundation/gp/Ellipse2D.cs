@@ -32,20 +32,20 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
         _minorRadius = RealSmall();
     }
 
-    /// <summary>An ellipse whose major axis is <paramref name="majorAxis"/>, direct when <paramref name="isSense"/> is true.</summary>
+    /// <summary>An ellipse whose major axis is <paramref name="majorAxis"/>, direct when <paramref name="sense"/> is true.</summary>
     /// <exception cref="ConstructionErrorException">The minor radius is negative or greater than the major radius.</exception>
-    public Ellipse2D(in Axis2D majorAxis, double majorRadius, double minorRadius, bool isSense = true)
+    public Ellipse2D(in Axis2D majorAxis, double majorRadius, double minorRadius, bool sense = true)
     {
-        _pos = new Frame2D(majorAxis, isSense);
+        _pos = new Frame2D(majorAxis, sense);
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
         Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < minorRadius, FailureKind.ConstructionError, "gp_Elips2d() - invalid construction parameters");
     }
 
     /// <exception cref="ConstructionErrorException">The minor radius is negative or greater than the major radius.</exception>
-    public Ellipse2D(in Frame2D a, double majorRadius, double minorRadius)
+    public Ellipse2D(in Frame2D frame, double majorRadius, double minorRadius)
     {
-        _pos = a;
+        _pos = frame;
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
         Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < minorRadius, FailureKind.ConstructionError, "gp_Elips2d() - invalid construction parameters");
@@ -53,10 +53,10 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
 
     // Copies
 
-    public readonly Ellipse2D WithLocation(in Point2D p)
+    public readonly Ellipse2D WithLocation(in Point2D point)
     {
         Frame2D pos = _pos;
-        pos = pos.WithLocation(p);
+        pos = pos.WithLocation(point);
         return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
@@ -77,24 +77,24 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
         return new Ellipse2D(_pos, _majorRadius, newMinorRadius);
     }
 
-    public readonly Ellipse2D WithAxis(in Frame2D a)
+    public readonly Ellipse2D WithAxis(in Frame2D frame)
     {
         Frame2D pos = _pos;
-        pos = pos.WithAxis(a);
+        pos = pos.WithAxis(frame);
         return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Ellipse2D WithXAxis(in Axis2D a)
+    public readonly Ellipse2D WithXAxis(in Axis2D axis)
     {
         Frame2D pos = _pos;
-        pos = pos.WithXAxis(a);
+        pos = pos.WithXAxis(axis);
         return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Ellipse2D WithYAxis(in Axis2D a)
+    public readonly Ellipse2D WithYAxis(in Axis2D axis)
     {
         Frame2D pos = _pos;
-        pos = pos.WithYAxis(a);
+        pos = pos.WithYAxis(axis);
         return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
@@ -254,80 +254,80 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
         return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Ellipse2D Mirrored(in Point2D p)
+    public readonly Ellipse2D Mirrored(in Point2D point)
     {
         Frame2D pos = _pos;
-        pos = pos.Mirrored(p);
+        pos = pos.Mirrored(point);
         return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Ellipse2D Mirrored(in Axis2D a)
+    public readonly Ellipse2D Mirrored(in Axis2D axis)
     {
         Frame2D pos = _pos;
-        pos = pos.Mirrored(a);
+        pos = pos.Mirrored(axis);
         return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Ellipse2D Rotated(in Point2D p, double ang)
+    public readonly Ellipse2D Rotated(in Point2D point, double angle)
     {
         Frame2D pos = _pos;
-        pos = pos.Rotated(p, ang);
+        pos = pos.Rotated(point, angle);
         return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Ellipse2D Scaled(in Point2D p, double s)
+    public readonly Ellipse2D Scaled(in Point2D point, double factor)
     {
         Frame2D pos = _pos;
         double majorRadius = _majorRadius;
         double minorRadius = _minorRadius;
-        majorRadius *= s;
+        majorRadius *= factor;
         if (majorRadius < 0)
         {
             majorRadius = -majorRadius;
         }
 
-        minorRadius *= s;
+        minorRadius *= factor;
         if (minorRadius < 0)
         {
             minorRadius = -minorRadius;
         }
 
-        pos = pos.Scaled(p, s);
+        pos = pos.Scaled(point, factor);
         return new Ellipse2D(pos, majorRadius, minorRadius);
     }
 
-    public readonly Ellipse2D Transformed(in Transform2D t)
+    public readonly Ellipse2D Transformed(in Transform2D transform)
     {
         Frame2D pos = _pos;
         double majorRadius = _majorRadius;
         double minorRadius = _minorRadius;
-        majorRadius *= t.ScaleFactor;
+        majorRadius *= transform.ScaleFactor;
         if (majorRadius < 0)
         {
             majorRadius = -majorRadius;
         }
 
-        minorRadius *= t.ScaleFactor;
+        minorRadius *= transform.ScaleFactor;
         if (minorRadius < 0)
         {
             minorRadius = -minorRadius;
         }
 
-        pos = pos.Transformed(t);
+        pos = pos.Transformed(transform);
         return new Ellipse2D(pos, majorRadius, minorRadius);
     }
 
-    public readonly Ellipse2D Translated(in Vector2D v)
+    public readonly Ellipse2D Translated(in Vector2D vector)
     {
         Frame2D pos = _pos;
-        pos = pos.Translated(v);
+        pos = pos.Translated(vector);
         return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Ellipse2D Translated(in Point2D p1, in Point2D p2)
+    public readonly Ellipse2D Translated(in Point2D point1, in Point2D point2)
     {
         Frame2D pos = _pos;
-        pos = pos.Translated(p1, p2);
+        pos = pos.Translated(point1, point2);
         return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 

@@ -17,7 +17,7 @@ namespace Kerf.Geometry;
 /// </summary>
 public abstract partial class Surface : Geometry3D
 {
-    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    /// <summary>Only the kernel derives from it.</summary>
     private protected Surface()
     {
     }

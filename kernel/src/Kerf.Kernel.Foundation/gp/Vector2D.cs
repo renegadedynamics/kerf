@@ -15,14 +15,14 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
 {
     private readonly Xy _coord;
 
-    public Vector2D(in Direction2D v) => _coord = v.XY();
+    public Vector2D(in Direction2D direction) => _coord = direction.XY();
 
     internal Vector2D(in Xy coord) => _coord = coord;
 
-    public Vector2D(double xv, double yv) => _coord = new Xy(xv, yv);
+    public Vector2D(double x, double y) => _coord = new Xy(x, y);
 
-    /// <summary>The vector from <paramref name="p1"/> to <paramref name="p2"/>.</summary>
-    public Vector2D(in Point2D p1, in Point2D p2) => _coord = p2.XY().Subtracted(p1.XY());
+    /// <summary>The vector from <paramref name="point1"/> to <paramref name="point2"/>.</summary>
+    public Vector2D(in Point2D point1, in Point2D point2) => _coord = point2.XY().Subtracted(point1.XY());
 
     // Copies
 
@@ -215,13 +215,13 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         return new Vector2D(coord);
     }
 
-    public readonly Vector2D Mirrored(in Vector2D v)
+    public readonly Vector2D Mirrored(in Vector2D vector)
     {
         Xy coord = _coord;
-        double magnitude = v._coord.Modulus();
+        double magnitude = vector._coord.Modulus();
         if (magnitude > Constants.Resolution())
         {
-            Xy mirrorVecXY = v._coord;
+            Xy mirrorVecXY = vector._coord;
             double origX = coord.X();
             double origY = coord.Y();
 
@@ -238,10 +238,10 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         return new Vector2D(coord);
     }
 
-    public readonly Vector2D Mirrored(in Axis2D a1)
+    public readonly Vector2D Mirrored(in Axis2D axis)
     {
         Xy coord = _coord;
-        Xy directionXY = a1.Direction.XY();
+        Xy directionXY = axis.Direction.XY();
         double origX = coord.X();
         double origY = coord.Y();
         double dirX = directionXY.X();
@@ -256,37 +256,37 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         return new Vector2D(coord);
     }
 
-    public readonly Vector2D Rotated(double ang)
+    public readonly Vector2D Rotated(double angle)
     {
         Xy coord = _coord;
-        Transform2D t = new Transform2D().WithRotation(new Point2D(0.0, 0.0), ang);
+        Transform2D t = new Transform2D().WithRotation(new Point2D(0.0, 0.0), angle);
         coord.Multiply(t.VectorialPart);
         return new Vector2D(coord);
     }
 
-    public readonly Vector2D Scaled(double s)
+    public readonly Vector2D Scaled(double factor)
     {
         Xy coord = _coord;
-        coord.Multiply(s);
+        coord.Multiply(factor);
         return new Vector2D(coord);
     }
 
-    public readonly Vector2D Transformed(in Transform2D t)
+    public readonly Vector2D Transformed(in Transform2D transform)
     {
         Xy coord = _coord;
-        switch (t.Form)
+        switch (transform.Form)
         {
             case Identity:
             case Translation:
                 break;
-            case PntMirror:
+            case PointMirror:
                 coord.Reverse();
                 break;
             case global::Kerf.Geometry.TransformForm.Scale:
-                coord.Multiply(t.ScaleFactor);
+                coord.Multiply(transform.ScaleFactor);
                 break;
             default:
-                coord.Multiply(t.VectorialPart);
+                coord.Multiply(transform.VectorialPart);
                 break;
         }
         return new Vector2D(coord);

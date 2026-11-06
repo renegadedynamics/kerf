@@ -149,12 +149,12 @@ public class CurveEditTests
         var line = new LineCurve3D(Point3D.Origin, Direction3D.UnitX);
         Assert.Equal(new Point3D(0, 2, 0), line.WithDirection(Direction3D.UnitY).Evaluate(2));
         Assert.Equal(new Point3D(0, 0, 2), line.WithPosition(Axis3D.ZAxis).Evaluate(2));
-        Assert.Equal(new Point3D(0, 2, 0), line.WithLin(new Line3D(Axis3D.YAxis)).Evaluate(2));
+        Assert.Equal(new Point3D(0, 2, 0), line.WithLine(new Line3D(Axis3D.YAxis)).Evaluate(2));
 
         var flat = new LineCurve2D(Point2D.Origin, new Direction2D(1, 0));
         Assert.Equal(new Point2D(0, 2), flat.WithDirection(new Direction2D(0, 1)).Evaluate(2));
         Assert.Equal(new Point2D(0, 2), flat.WithPosition(Axis2D.YAxis).Evaluate(2));
-        Assert.Equal(new Point2D(0, 2), flat.WithLin2d(new Line2D(Axis2D.YAxis)).Evaluate(2));
+        Assert.Equal(new Point2D(0, 2), flat.WithLine(new Line2D(Axis2D.YAxis)).Evaluate(2));
     }
 
     [Fact]

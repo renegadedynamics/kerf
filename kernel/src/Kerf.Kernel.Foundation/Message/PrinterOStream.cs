@@ -11,7 +11,7 @@ namespace Kerf.Engine.Foundation;
 
 /// <summary>
 /// A printer writing each message, followed by a new line, to a <see cref="TextWriter"/>: the console's standard
-/// output by default, a file, or (an Kerf addition) any writer.
+/// output by default, a file, or (a Kerf addition) any writer.
 /// </summary>
 /// <remarks>
 /// Colours: OCCT colours console output by gravity (Windows console attributes or ANSI codes). The port does it through
@@ -68,7 +68,7 @@ internal class PrinterOStream : Printer
         }
     }
 
-    /// <summary>A printer to the writer, without colours (an Kerf addition: a C++ caller passes a stream).</summary>
+    /// <summary>A printer to the writer, without colours (a Kerf addition: a C++ caller passes a stream).</summary>
     public PrinterOStream(TextWriter stream, Gravity traceLevel = Info)
     {
         _stream = stream;

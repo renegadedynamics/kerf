@@ -30,33 +30,33 @@ public readonly partial struct Circle3D : IEquatable<Circle3D>
     }
 
     /// <exception cref="ConstructionErrorException"><paramref name="radius"/> is negative.</exception>
-    public Circle3D(in Frame3D a2, double radius)
+    public Circle3D(in Frame3D frame, double radius)
     {
-        _pos = a2;
+        _pos = frame;
         _radius = radius;
         Refusal.ArgumentIf(radius < 0.0, FailureKind.ConstructionError, "gp_Circ() - radius should be positive number");
     }
 
     // Copies
 
-    public readonly Circle3D WithAxis(in Axis3D a1)
+    public readonly Circle3D WithAxis(in Axis3D axis)
     {
         Frame3D pos = _pos;
-        pos = pos.WithAxis(a1);
+        pos = pos.WithAxis(axis);
         return new Circle3D(pos, _radius);
     }
 
-    public readonly Circle3D WithLocation(in Point3D p)
+    public readonly Circle3D WithLocation(in Point3D point)
     {
         Frame3D pos = _pos;
-        pos = pos.WithLocation(p);
+        pos = pos.WithLocation(point);
         return new Circle3D(pos, _radius);
     }
 
-    public readonly Circle3D WithPosition(in Frame3D a2)
+    public readonly Circle3D WithPosition(in Frame3D frame)
     {
         Frame3D pos = _pos;
-        pos = a2;
+        pos = frame;
         return new Circle3D(pos, _radius);
     }
 
@@ -89,11 +89,11 @@ public readonly partial struct Circle3D : IEquatable<Circle3D>
 
     public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
-    public readonly double DistanceTo(in Point3D p) => Math.Sqrt(SquareDistanceTo(p));
+    public readonly double DistanceTo(in Point3D point) => Math.Sqrt(SquareDistanceTo(point));
 
-    public readonly double SquareDistanceTo(in Point3D p)
+    public readonly double SquareDistanceTo(in Point3D point)
     {
-        Vector3D v = new(Location, p);
+        Vector3D v = new(Location, point);
         double x = v.Dot(new Vector3D(_pos.XDirection));
         double y = v.Dot(new Vector3D(_pos.YDirection));
         double z = v.Dot(new Vector3D(_pos.Direction));
@@ -101,75 +101,75 @@ public readonly partial struct Circle3D : IEquatable<Circle3D>
         return (t * t + z * z);
     }
 
-    public readonly bool Contains(in Point3D p, double linearTolerance) => DistanceTo(p) <= linearTolerance;
+    public readonly bool Contains(in Point3D point, double linearTolerance) => DistanceTo(point) <= linearTolerance;
 
-    public readonly Circle3D Mirrored(in Point3D p)
+    public readonly Circle3D Mirrored(in Point3D point)
     {
         Frame3D pos = _pos;
-        pos = pos.Mirrored(p);
+        pos = pos.Mirrored(point);
         return new Circle3D(pos, _radius);
     }
 
-    public readonly Circle3D Mirrored(in Axis3D a1)
+    public readonly Circle3D Mirrored(in Axis3D axis)
     {
         Frame3D pos = _pos;
-        pos = pos.Mirrored(a1);
+        pos = pos.Mirrored(axis);
         return new Circle3D(pos, _radius);
     }
 
-    public readonly Circle3D Mirrored(in Frame3D a2)
+    public readonly Circle3D Mirrored(in Frame3D frame)
     {
         Frame3D pos = _pos;
-        pos = pos.Mirrored(a2);
+        pos = pos.Mirrored(frame);
         return new Circle3D(pos, _radius);
     }
 
-    public readonly Circle3D Rotated(in Axis3D a1, double ang)
+    public readonly Circle3D Rotated(in Axis3D axis, double angle)
     {
         Frame3D pos = _pos;
-        pos = pos.Rotated(a1, ang);
+        pos = pos.Rotated(axis, angle);
         return new Circle3D(pos, _radius);
     }
 
-    public readonly Circle3D Scaled(in Point3D p, double s)
+    public readonly Circle3D Scaled(in Point3D point, double factor)
     {
         Frame3D pos = _pos;
         double radius = _radius;
-        radius *= s;
+        radius *= factor;
         if (radius < 0)
         {
             radius = -radius;
         }
 
-        pos = pos.Scaled(p, s);
+        pos = pos.Scaled(point, factor);
         return new Circle3D(pos, radius);
     }
 
-    public readonly Circle3D Transformed(in Transform3D t)
+    public readonly Circle3D Transformed(in Transform3D transform)
     {
         Frame3D pos = _pos;
         double radius = _radius;
-        radius *= t.ScaleFactor;
+        radius *= transform.ScaleFactor;
         if (radius < 0)
         {
             radius = -radius;
         }
 
-        pos = pos.Transformed(t);
+        pos = pos.Transformed(transform);
         return new Circle3D(pos, radius);
     }
 
-    public readonly Circle3D Translated(in Vector3D v)
+    public readonly Circle3D Translated(in Vector3D vector)
     {
         Frame3D pos = _pos;
-        pos = pos.Translated(v);
+        pos = pos.Translated(vector);
         return new Circle3D(pos, _radius);
     }
 
-    public readonly Circle3D Translated(in Point3D p1, in Point3D p2)
+    public readonly Circle3D Translated(in Point3D point1, in Point3D point2)
     {
         Frame3D pos = _pos;
-        pos = pos.Translated(p1, p2);
+        pos = pos.Translated(point1, point2);
         return new Circle3D(pos, _radius);
     }
 

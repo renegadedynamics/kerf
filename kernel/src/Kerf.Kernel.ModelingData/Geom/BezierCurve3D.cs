@@ -667,14 +667,14 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
     public IReadOnlyList<double> Weights => _weights.ToImmutableArray();
 
     /// <summary>Applies T to the poles.</summary>
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
         int nbpoles = PoleCount;
 
         for (int i = 1; i <= nbpoles; i++)
         {
-            _poles[i] = _poles[i].Transformed(t);
+            _poles[i] = _poles[i].Transformed(transform);
         }
         ClearEvalRepresentation();
         _maxDerivInvOk = false;
@@ -808,10 +808,10 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
     // Non-mutating twins (Kerf)
 
     /// <summary>A copy with the degree raised to Deg.</summary>
-    public BezierCurve3D Increased(int deg)
+    public BezierCurve3D Increased(int degree)
     {
         BezierCurve3D copy = (BezierCurve3D)Copy();
-        copy.Increase(deg);
+        copy.Increase(degree);
         return copy;
     }
 

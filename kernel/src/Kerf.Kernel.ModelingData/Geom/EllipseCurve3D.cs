@@ -22,16 +22,16 @@ public sealed class EllipseCurve3D : ConicCurve3D
     private double _minorRadius;
 
     /// <summary>An ellipse equal to E.</summary>
-    public EllipseCurve3D(in Ellipse3D e)
+    public EllipseCurve3D(in Ellipse3D ellipse)
     {
-        _majorRadius = e.MajorRadius;
-        _minorRadius = e.MinorRadius;
-        _pos = e.Position;
+        _majorRadius = ellipse.MajorRadius;
+        _minorRadius = ellipse.MinorRadius;
+        _pos = ellipse.Position;
     }
 
     /// <summary>An ellipse placed by A with the given radii.</summary>
     /// <exception cref="ConstructionErrorException">MajorRadius &lt; MinorRadius, or MinorRadius &lt; 0.</exception>
-    public EllipseCurve3D(in Frame3D a, double majorRadius, double minorRadius)
+    public EllipseCurve3D(in Frame3D frame, double majorRadius, double minorRadius)
     {
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
@@ -39,7 +39,7 @@ public sealed class EllipseCurve3D : ConicCurve3D
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
-        _pos = a;
+        _pos = frame;
     }
 
     /// <summary>A new, unfrozen ellipse equal to this one.</summary>
@@ -228,20 +228,20 @@ public sealed class EllipseCurve3D : ConicCurve3D
     }
 
     /// <summary>Applies T to this ellipse (the radii are scaled by |T.ScaleFactor()|).</summary>
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
-        _majorRadius = _majorRadius * Math.Abs(t.ScaleFactor);
-        _minorRadius = _minorRadius * Math.Abs(t.ScaleFactor);
-        _pos = _pos.Transformed(t);
+        _majorRadius = _majorRadius * Math.Abs(transform.ScaleFactor);
+        _minorRadius = _minorRadius * Math.Abs(transform.ScaleFactor);
+        _pos = _pos.Transformed(transform);
     }
 
     // Non-mutating twins of the Set methods (Kerf)
 
-    public EllipseCurve3D WithElips(in Ellipse3D e)
+    public EllipseCurve3D WithEllipse(in Ellipse3D ellipse)
     {
         EllipseCurve3D copy = (EllipseCurve3D)Copy();
-        copy.SetElips(e);
+        copy.SetElips(ellipse);
         return copy;
     }
 

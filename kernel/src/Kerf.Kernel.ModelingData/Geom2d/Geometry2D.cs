@@ -22,7 +22,7 @@ namespace Kerf.Geometry;
 /// </remarks>
 public abstract class Geometry2D : Transient
 {
-    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    /// <summary>Only the kernel derives from it.</summary>
     private protected Geometry2D()
     {
     }
@@ -79,61 +79,61 @@ public abstract class Geometry2D : Transient
     /// Transforms this geometry in place. Every concrete class implements it, starting with
     /// <see cref="Transient.CheckMutable"/>; the other transformations go through it.
     /// </summary>
-    protected internal abstract void Transform(in Transform2D t);
+    protected internal abstract void Transform(in Transform2D transform);
 
     /// <summary>A copy mirrored about the point P.</summary>
-    public Geometry2D Mirrored(in Point2D p)
+    public Geometry2D Mirrored(in Point2D point)
     {
         Geometry2D g = Copy();
-        g.Mirror(p);
+        g.Mirror(point);
         return g;
     }
 
     /// <summary>A copy mirrored about the axis A.</summary>
-    public Geometry2D Mirrored(in Axis2D a)
+    public Geometry2D Mirrored(in Axis2D axis)
     {
         Geometry2D g = Copy();
-        g.Mirror(a);
+        g.Mirror(axis);
         return g;
     }
 
     /// <summary>A copy rotated by Ang radians about P.</summary>
-    public Geometry2D Rotated(in Point2D p, double ang)
+    public Geometry2D Rotated(in Point2D point, double angle)
     {
         Geometry2D g = Copy();
-        g.Rotate(p, ang);
+        g.Rotate(point, angle);
         return g;
     }
 
     /// <summary>A copy scaled by S about P.</summary>
-    public Geometry2D Scaled(in Point2D p, double s)
+    public Geometry2D Scaled(in Point2D point, double factor)
     {
         Geometry2D g = Copy();
-        g.Scale(p, s);
+        g.Scale(point, factor);
         return g;
     }
 
     /// <summary>A copy transformed by T.</summary>
-    public Geometry2D Transformed(in Transform2D t)
+    public Geometry2D Transformed(in Transform2D transform)
     {
         Geometry2D g = Copy();
-        g.Transform(t);
+        g.Transform(transform);
         return g;
     }
 
     /// <summary>A copy translated by V.</summary>
-    public Geometry2D Translated(in Vector2D v)
+    public Geometry2D Translated(in Vector2D vector)
     {
         Geometry2D g = Copy();
-        g.Translate(v);
+        g.Translate(vector);
         return g;
     }
 
     /// <summary>A copy translated from P1 to P2.</summary>
-    public Geometry2D Translated(in Point2D p1, in Point2D p2)
+    public Geometry2D Translated(in Point2D point1, in Point2D point2)
     {
         Geometry2D g = Copy();
-        g.Translate(p1, p2);
+        g.Translate(point1, point2);
         return g;
     }
 

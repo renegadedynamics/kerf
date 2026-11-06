@@ -29,10 +29,10 @@ public sealed class CircleCurve2D : ConicCurve2D
     }
 
     /// <summary>The circle equal to C.</summary>
-    public CircleCurve2D(in Circle2D c)
+    public CircleCurve2D(in Circle2D circle)
     {
-        _radius = c.Radius;
-        _pos = c.Axis;
+        _radius = circle.Radius;
+        _pos = circle.Axis;
     }
 
     /// <summary>
@@ -40,26 +40,26 @@ public sealed class CircleCurve2D : ConicCurve2D
     /// counterclockwise).
     /// </summary>
     /// <exception cref="ConstructionErrorException">Radius &lt; 0.</exception>
-    public CircleCurve2D(in Axis2D a, double radius, bool sense = true)
+    public CircleCurve2D(in Axis2D axis, double radius, bool sense = true)
     {
         _radius = radius;
         if (radius < 0.0)
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
-        _pos = new Frame2D(a, sense);
+        _pos = new Frame2D(axis, sense);
     }
 
     /// <summary>The circle of radius Radius in the coordinate system A.</summary>
     /// <exception cref="ConstructionErrorException">Radius &lt; 0.</exception>
-    public CircleCurve2D(in Frame2D a, double radius)
+    public CircleCurve2D(in Frame2D frame, double radius)
     {
         _radius = radius;
         if (radius < 0.0)
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
-        _pos = a;
+        _pos = frame;
     }
 
     internal void SetCirc2d(in Circle2D c)
@@ -137,20 +137,20 @@ public sealed class CircleCurve2D : ConicCurve2D
     }
 
     /// <summary>Applies T to the circle: the radius is multiplied by |T.ScaleFactor()|.</summary>
-    protected internal sealed override void Transform(in Transform2D t)
+    protected internal sealed override void Transform(in Transform2D transform)
     {
         CheckMutable();
-        _radius = _radius * Math.Abs(t.ScaleFactor);
-        _pos = _pos.Transformed(t);
+        _radius = _radius * Math.Abs(transform.ScaleFactor);
+        _pos = _pos.Transformed(transform);
     }
 
     // Non-mutating twins of the Set methods (Kerf)
 
     /// <summary>A copy equal to C.</summary>
-    public CircleCurve2D WithCirc2d(in Circle2D c)
+    public CircleCurve2D WithCircle(in Circle2D circle)
     {
         CircleCurve2D copy = (CircleCurve2D)Copy();
-        copy.SetCirc2d(c);
+        copy.SetCirc2d(circle);
         return copy;
     }
 

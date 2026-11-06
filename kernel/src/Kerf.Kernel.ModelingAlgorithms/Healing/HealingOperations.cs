@@ -19,7 +19,7 @@ namespace Kerf.Healing;
 /// <summary>
 /// Checking, fixing, sewing and unifying (docs/api/healing.md). Each is a C# 14 extension member too, so
 /// <c>HealingOperations.Fix(shape)</c> and <c>shape.Fix()</c> both work. None writes into its input: the fixes run in
-/// working overlays (unit 10H4), and their results share what they didn't change.
+/// working overlays, and their results share what they didn't change.
 /// </summary>
 public static class HealingOperations
 {

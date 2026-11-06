@@ -14,14 +14,14 @@ public enum TransformForm
     Rotation,
     Translation,
     /// <summary>Central symmetry.</summary>
-    PntMirror,
+    PointMirror,
     /// <summary>Rotational symmetry.</summary>
-    Ax1Mirror,
+    AxisMirror,
     /// <summary>Bilateral symmetry.</summary>
-    Ax2Mirror,
+    PlaneMirror,
     Scale,
     /// <summary>A combination of the above.</summary>
-    CompoundTrsf,
+    Composite,
     /// <summary>A transformation with a non-orthogonal matrix.</summary>
     Other,
 }

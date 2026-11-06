@@ -24,7 +24,7 @@ namespace Kerf.Geometry;
 /// <para>
 /// OCCT returns its pole, weight and knot arrays by const reference. The port returns them to callers as
 /// <see cref="IReadOnlyList{T}"/> copies (<see cref="Poles"/>, <see cref="Knots"/>, ...), and gives ported code
-/// the arrays themselves through internal <c>Internal...()</c> accessors, which must not be modified (decision 131).
+/// the arrays themselves through internal <c>Internal...()</c> accessors, which must not be modified.
 /// The arrays are indexed from 1.
 /// </para>
 /// <para>
@@ -51,7 +51,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     /// <summary>True if an evaluation representation is attached.</summary>
     internal bool HasEvalRepresentation => _evalRep is not null;
 
-    /// <summary>The attached evaluation representation, or null. Internal: descriptors are mutable (decision 507).</summary>
+    /// <summary>The attached evaluation representation, or null. Internal: descriptors are mutable.</summary>
     internal RepCurveDesc2D.Base? EvalRepresentation() => _evalRep;
 
     /// <summary>Attaches an evaluation representation (null detaches it).</summary>
@@ -1711,7 +1711,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     /// <summary>The knots (a copy; OCCT returns a reference to its array).</summary>
     public IReadOnlyList<double> Knots => _knots.ToImmutableArray();
 
-    /// <summary>The knot array itself, indexed from 1, for ported code: don't modify it (decision 131).</summary>
+    /// <summary>The knot array itself, indexed from 1, for ported code: don't modify it.</summary>
     internal NCollection_Array1<double> InternalKnots() => _knots;
 
     /// <summary>Copies the flat knots of K's index range into K.</summary>
@@ -1728,7 +1728,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     /// <summary>The flat knots, each knot repeated by its multiplicity (a copy).</summary>
     public IReadOnlyList<double> KnotSequence => _flatKnots.ToImmutableArray();
 
-    /// <summary>The flat knot array itself, for ported code: don't modify it (decision 131).</summary>
+    /// <summary>The flat knot array itself, for ported code: don't modify it.</summary>
     internal NCollection_Array1<double> InternalKnotSequence() => _flatKnots;
 
     /// <summary>The index of the knot giving LastParameter() (NbKnots() for a periodic curve).</summary>
@@ -1902,7 +1902,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     /// <summary>The multiplicities (a copy).</summary>
     public IReadOnlyList<int> Multiplicities => _mults.ToImmutableArray();
 
-    /// <summary>The multiplicity array itself, for ported code: don't modify it (decision 131).</summary>
+    /// <summary>The multiplicity array itself, for ported code: don't modify it.</summary>
     internal NCollection_Array1<int> InternalMultiplicities() => _mults;
 
     /// <summary>The number of knots.</summary>
@@ -1930,7 +1930,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     /// <summary>The poles (a copy; OCCT returns a reference to its array).</summary>
     public IReadOnlyList<Point2D> Poles => _poles.ToImmutableArray();
 
-    /// <summary>The pole array itself, indexed from 1, for ported code: don't modify it (decision 131).</summary>
+    /// <summary>The pole array itself, indexed from 1, for ported code: don't modify it.</summary>
     internal NCollection_Array1<Point2D> InternalPoles() => _poles;
 
     /// <summary>The first pole if the first knot has multiplicity Degree() + 1, the point at FirstParameter() otherwise.</summary>
@@ -2007,12 +2007,12 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     public bool IsRational => _rational;
 
     /// <summary>Applies T to the poles.</summary>
-    protected internal sealed override void Transform(in Transform2D t)
+    protected internal sealed override void Transform(in Transform2D transform)
     {
         CheckMutable();
         for (int i = 1; i <= _poles.Length(); i++)
         {
-            _poles[i] = _poles[i].Transformed(t);
+            _poles[i] = _poles[i].Transformed(transform);
         }
         _maxDerivInvOk = false;
         // OCCT: the evaluation representation is kept (Geom_BSplineCurve clears it), so the transformed curve still

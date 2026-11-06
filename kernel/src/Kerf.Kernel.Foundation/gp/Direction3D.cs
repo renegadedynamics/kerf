@@ -15,7 +15,7 @@ namespace Kerf.Geometry;
 public readonly partial struct Direction3D : IEquatable<Direction3D>
 {
     /// <summary>The six directions along the axes of the global system.</summary>
-    public enum D
+    internal enum D
     {
         /// <summary>(1, 0, 0)</summary>
         X,
@@ -42,27 +42,27 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
 
     public Direction3D() => _coord = new Xyz(1.0, 0.0, 0.0);
 
-    public Direction3D(D dir)
+    internal Direction3D(D dir)
         => _coord = new Xyz(dir == D.X ? 1.0 : dir == D.NX ? -1.0 : 0.0,
                               dir == D.Y ? 1.0 : dir == D.NY ? -1.0 : 0.0,
                               dir == D.Z ? 1.0 : dir == D.NZ ? -1.0 : 0.0);
 
-    public Direction3D(in Vector3D v) : this(v.XYZ()) { }
+    public Direction3D(in Vector3D vector) : this(vector.XYZ()) { }
 
     internal Direction3D(in Xyz xyz) : this(xyz.X(), xyz.Y(), xyz.Z()) { }
 
-    public Direction3D(double xv, double yv, double zv)
+    public Direction3D(double x, double y, double z)
     {
-        double sqMod = xv * xv + yv * yv + zv * zv;
+        double sqMod = x * x + y * y + z * z;
         if (sqMod >= (1.0 - Constants.Resolution()) && sqMod <= (1.0 + Constants.Resolution()))
         {
-            _coord = new Xyz(xv, yv, zv);
+            _coord = new Xyz(x, y, z);
             return;
         }
 
         Refusal.ArgumentIf(sqMod <= Constants.Resolution() * Constants.Resolution(), FailureKind.ConstructionError, "gp_Dir::SetCoord() - input vector has zero norm");
         double d = Math.Sqrt(sqMod);
-        _coord = new Xyz(xv / d, yv / d, zv / d);
+        _coord = new Xyz(x / d, y / d, z / d);
     }
 
     // Copies
@@ -139,7 +139,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         }
     }
 
-    public readonly double AngleWithRef(in Direction3D other, in Direction3D vref)
+    public readonly double AngleWithRef(in Direction3D other, in Direction3D reference)
     {
         double ang;
         Xyz xyz = _coord.Crossed(other._coord);
@@ -161,7 +161,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
             }
         }
 
-        if (xyz.Dot(vref._coord) >= 0.0)
+        if (xyz.Dot(reference._coord) >= 0.0)
         {
             return ang;
         }
@@ -212,10 +212,10 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         return new Direction3D(coord, isUnit: true);
     }
 
-    public readonly Direction3D Mirrored(in Direction3D v)
+    public readonly Direction3D Mirrored(in Direction3D direction)
     {
         Xyz coord = _coord;
-        Xyz xyz = v._coord;
+        Xyz xyz = direction._coord;
         double a = xyz.X();
         double b = xyz.Y();
         double c = xyz.Z();
@@ -232,10 +232,10 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         return new Direction3D(coord, isUnit: true);
     }
 
-    public readonly Direction3D Mirrored(in Axis3D a1)
+    public readonly Direction3D Mirrored(in Axis3D axis)
     {
         Xyz coord = _coord;
-        Xyz xyz = a1.Direction._coord;
+        Xyz xyz = axis.Direction._coord;
         double a = xyz.X();
         double b = xyz.Y();
         double c = xyz.Z();
@@ -252,43 +252,43 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         return new Direction3D(coord, isUnit: true);
     }
 
-    public readonly Direction3D Mirrored(in Frame3D a2)
+    public readonly Direction3D Mirrored(in Frame3D frame)
     {
-        Direction3D vz = a2.Direction;
+        Direction3D vz = frame.Direction;
         return Mirrored(vz).Reversed();
     }
 
-    public readonly Direction3D Rotated(in Axis3D a1, double ang)
+    public readonly Direction3D Rotated(in Axis3D axis, double angle)
     {
         Xyz coord = _coord;
-        Transform3D t = new Transform3D().WithRotation(a1, ang);
+        Transform3D t = new Transform3D().WithRotation(axis, angle);
         coord.Multiply(t.RotationPart);
         return new Direction3D(coord, isUnit: true);
     }
 
-    public readonly Direction3D Transformed(in Transform3D t)
+    public readonly Direction3D Transformed(in Transform3D transform)
     {
         Xyz coord = _coord;
-        if (t.Form == Identity || t.Form == Translation)
+        if (transform.Form == Identity || transform.Form == Translation)
         {
         }
-        else if (t.Form == PntMirror)
+        else if (transform.Form == PointMirror)
         {
             coord.Reverse();
         }
-        else if (t.Form == Scale)
+        else if (transform.Form == Scale)
         {
-            if (t.ScaleFactor < 0.0)
+            if (transform.ScaleFactor < 0.0)
             {
                 coord.Reverse();
             }
         }
         else
         {
-            coord.Multiply(t.RotationPart);
+            coord.Multiply(transform.RotationPart);
             double d = coord.Modulus();
             coord.Divide(d);
-            if (t.ScaleFactor < 0.0)
+            if (transform.ScaleFactor < 0.0)
             {
                 coord.Reverse();
             }

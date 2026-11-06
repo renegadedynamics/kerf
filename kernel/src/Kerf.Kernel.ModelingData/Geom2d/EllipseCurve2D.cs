@@ -30,11 +30,11 @@ public sealed class EllipseCurve2D : ConicCurve2D
     }
 
     /// <summary>The ellipse equal to E.</summary>
-    public EllipseCurve2D(in Ellipse2D e)
+    public EllipseCurve2D(in Ellipse2D ellipse)
     {
-        _majorRadius = e.MajorRadius;
-        _minorRadius = e.MinorRadius;
-        _pos = e.Axis;
+        _majorRadius = ellipse.MajorRadius;
+        _minorRadius = ellipse.MinorRadius;
+        _pos = ellipse.Axis;
     }
 
     /// <summary>The ellipse whose major axis is MajorAxis; Sense gives the orientation (true: counterclockwise).</summary>
@@ -241,21 +241,21 @@ public sealed class EllipseCurve2D : ConicCurve2D
     }
 
     /// <summary>Applies T to the ellipse: the radii are multiplied by |T.ScaleFactor()|.</summary>
-    protected internal sealed override void Transform(in Transform2D t)
+    protected internal sealed override void Transform(in Transform2D transform)
     {
         CheckMutable();
-        _majorRadius = _majorRadius * Math.Abs(t.ScaleFactor);
-        _minorRadius = _minorRadius * Math.Abs(t.ScaleFactor);
-        _pos = _pos.Transformed(t);
+        _majorRadius = _majorRadius * Math.Abs(transform.ScaleFactor);
+        _minorRadius = _minorRadius * Math.Abs(transform.ScaleFactor);
+        _pos = _pos.Transformed(transform);
     }
 
     // Non-mutating twins of the Set methods (Kerf)
 
     /// <summary>A copy equal to E.</summary>
-    public EllipseCurve2D WithElips2d(in Ellipse2D e)
+    public EllipseCurve2D WithEllipse(in Ellipse2D ellipse)
     {
         EllipseCurve2D copy = (EllipseCurve2D)Copy();
-        copy.SetElips2d(e);
+        copy.SetElips2d(ellipse);
         return copy;
     }
 

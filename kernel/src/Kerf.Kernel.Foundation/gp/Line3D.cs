@@ -19,27 +19,27 @@ public readonly partial struct Line3D : IEquatable<Line3D>
 
     public Line3D() => _pos = new Axis3D();
 
-    public Line3D(in Axis3D a1) => _pos = a1;
+    public Line3D(in Axis3D axis) => _pos = axis;
 
-    public Line3D(in Point3D p, in Direction3D v) => _pos = new Axis3D(p, v);
+    public Line3D(in Point3D point, in Direction3D direction) => _pos = new Axis3D(point, direction);
 
     // Copies
 
-    public readonly Line3D WithDirection(in Direction3D v)
+    public readonly Line3D WithDirection(in Direction3D direction)
     {
         Axis3D pos = _pos;
-        pos = pos.WithDirection(v);
+        pos = pos.WithDirection(direction);
         return new Line3D(pos);
     }
 
-    public readonly Line3D WithLocation(in Point3D p)
+    public readonly Line3D WithLocation(in Point3D point)
     {
         Axis3D pos = _pos;
-        pos = pos.WithLocation(p);
+        pos = pos.WithLocation(point);
         return new Line3D(pos);
     }
 
-    public readonly Line3D WithPosition(in Axis3D a1) => new(a1);
+    public readonly Line3D WithPosition(in Axis3D axis) => new(axis);
 
     // Queries
 
@@ -59,11 +59,11 @@ public readonly partial struct Line3D : IEquatable<Line3D>
     /// <summary>The angle between the directions of the two lines, in [0, PI].</summary>
     public readonly double AngleTo(in Line3D other) => _pos.Direction.AngleTo(other._pos.Direction);
 
-    public readonly bool Contains(in Point3D p, double linearTolerance) => DistanceTo(p) <= linearTolerance;
+    public readonly bool Contains(in Point3D point, double linearTolerance) => DistanceTo(point) <= linearTolerance;
 
-    public readonly double DistanceTo(in Point3D p)
+    public readonly double DistanceTo(in Point3D point)
     {
-        Xyz coord = p.XYZ();
+        Xyz coord = point.XYZ();
         coord.Subtract((_pos.Location).XYZ());
         coord.Cross((_pos.Direction).XYZ());
         return coord.Modulus();
@@ -83,10 +83,10 @@ public readonly partial struct Line3D : IEquatable<Line3D>
         }
     }
 
-    public readonly double SquareDistanceTo(in Point3D p)
+    public readonly double SquareDistanceTo(in Point3D point)
     {
         Point3D loc = _pos.Location;
-        Vector3D v = new(p.X - loc.X, p.Y - loc.Y, p.Z - loc.Z);
+        Vector3D v = new(point.X - loc.X, point.Y - loc.Y, point.Z - loc.Z);
         v = v.Crossed(new Vector3D(_pos.Direction));
         return v.SquareMagnitude;
     }
@@ -97,69 +97,69 @@ public readonly partial struct Line3D : IEquatable<Line3D>
         return d * d;
     }
 
-    /// <summary>The line through <paramref name="p"/> normal to this line and intersecting it.</summary>
-    /// <exception cref="ConstructionErrorException"><paramref name="p"/> is on this line.</exception>
-    public readonly Line3D Normal(in Point3D p)
+    /// <summary>The line through <paramref name="point"/> normal to this line and intersecting it.</summary>
+    /// <exception cref="ConstructionErrorException"><paramref name="point"/> is on this line.</exception>
+    public readonly Line3D Normal(in Point3D point)
     {
         Point3D loc = _pos.Location;
-        Direction3D v = new(p.X - loc.X, p.Y - loc.Y, p.Z - loc.Z);
+        Direction3D v = new(point.X - loc.X, point.Y - loc.Y, point.Z - loc.Z);
         v = _pos.Direction.CrossCrossed(v, _pos.Direction);
-        return new Line3D(p, v);
+        return new Line3D(point, v);
     }
 
-    public readonly Line3D Mirrored(in Point3D p)
+    public readonly Line3D Mirrored(in Point3D point)
     {
         Axis3D pos = _pos;
-        pos = pos.Mirrored(p);
+        pos = pos.Mirrored(point);
         return new Line3D(pos);
     }
 
-    public readonly Line3D Mirrored(in Axis3D a1)
+    public readonly Line3D Mirrored(in Axis3D axis)
     {
         Axis3D pos = _pos;
-        pos = pos.Mirrored(a1);
+        pos = pos.Mirrored(axis);
         return new Line3D(pos);
     }
 
-    public readonly Line3D Mirrored(in Frame3D a2)
+    public readonly Line3D Mirrored(in Frame3D frame)
     {
         Axis3D pos = _pos;
-        pos = pos.Mirrored(a2);
+        pos = pos.Mirrored(frame);
         return new Line3D(pos);
     }
 
-    public readonly Line3D Rotated(in Axis3D a1, double ang)
+    public readonly Line3D Rotated(in Axis3D axis, double angle)
     {
         Axis3D pos = _pos;
-        pos = pos.Rotated(a1, ang);
+        pos = pos.Rotated(axis, angle);
         return new Line3D(pos);
     }
 
-    public readonly Line3D Scaled(in Point3D p, double s)
+    public readonly Line3D Scaled(in Point3D point, double factor)
     {
         Axis3D pos = _pos;
-        pos = pos.Scaled(p, s);
+        pos = pos.Scaled(point, factor);
         return new Line3D(pos);
     }
 
-    public readonly Line3D Transformed(in Transform3D t)
+    public readonly Line3D Transformed(in Transform3D transform)
     {
         Axis3D pos = _pos;
-        pos = pos.Transformed(t);
+        pos = pos.Transformed(transform);
         return new Line3D(pos);
     }
 
-    public readonly Line3D Translated(in Vector3D v)
+    public readonly Line3D Translated(in Vector3D vector)
     {
         Axis3D pos = _pos;
-        pos = pos.Translated(v);
+        pos = pos.Translated(vector);
         return new Line3D(pos);
     }
 
-    public readonly Line3D Translated(in Point3D p1, in Point3D p2)
+    public readonly Line3D Translated(in Point3D point1, in Point3D point2)
     {
         Axis3D pos = _pos;
-        pos = pos.Translated(new Vector3D(p1, p2));
+        pos = pos.Translated(new Vector3D(point1, point2));
         return new Line3D(pos);
     }
 

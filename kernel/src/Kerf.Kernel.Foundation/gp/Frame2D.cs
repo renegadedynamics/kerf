@@ -34,15 +34,15 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
     }
 
     /// <summary>
-    /// A system at <paramref name="p"/> with X direction <paramref name="vx"/>; the Y direction is normal to it,
-    /// on the side of <paramref name="vy"/>.
+    /// A system at <paramref name="point"/> with X direction <paramref name="xDirection"/>; the Y direction is normal to it,
+    /// on the side of <paramref name="yDirection"/>.
     /// </summary>
-    public Frame2D(in Point2D p, in Direction2D vx, in Direction2D vy)
+    public Frame2D(in Point2D point, in Direction2D xDirection, in Direction2D yDirection)
     {
-        _point = p;
-        _vydir = vy;
-        _vxdir = vx;
-        double value = vx.Crossed(vy);
+        _point = point;
+        _vydir = yDirection;
+        _vxdir = xDirection;
+        double value = xDirection.Crossed(yDirection);
         if (value >= 0.0)
         {
             _vydir = _vydir.WithCoord(-_vxdir.Y, _vxdir.X);
@@ -53,29 +53,29 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
         }
     }
 
-    /// <summary>A system at <paramref name="p"/> with X direction <paramref name="v"/>, right-handed when <paramref name="isSense"/> is true.</summary>
-    public Frame2D(in Point2D p, in Direction2D v, bool isSense = true)
+    /// <summary>A system at <paramref name="point"/> with X direction <paramref name="direction"/>, right-handed when <paramref name="sense"/> is true.</summary>
+    public Frame2D(in Point2D point, in Direction2D direction, bool sense = true)
     {
-        _point = p;
+        _point = point;
         _vydir = new Direction2D();
-        _vxdir = v;
-        if (isSense)
+        _vxdir = direction;
+        if (sense)
         {
-            _vydir = _vydir.WithCoord(-v.Y, v.X);
+            _vydir = _vydir.WithCoord(-direction.Y, direction.X);
         }
         else
         {
-            _vydir = _vydir.WithCoord(v.Y, -v.X);
+            _vydir = _vydir.WithCoord(direction.Y, -direction.X);
         }
     }
 
-    /// <summary>A system on the axis <paramref name="a"/> (its X axis), right-handed when <paramref name="isSense"/> is true.</summary>
-    public Frame2D(in Axis2D a, bool isSense = true)
+    /// <summary>A system on the axis <paramref name="axis"/> (its X axis), right-handed when <paramref name="sense"/> is true.</summary>
+    public Frame2D(in Axis2D axis, bool sense = true)
     {
-        _point = a.Location;
+        _point = axis.Location;
         _vydir = new Direction2D();
-        _vxdir = a.Direction;
-        if (isSense)
+        _vxdir = axis.Direction;
+        if (sense)
         {
             _vydir = _vydir.WithCoord(-_vxdir.Y, _vxdir.X);
         }
@@ -87,25 +87,25 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
 
     // Copies
 
-    public readonly Frame2D WithAxis(in Frame2D a1)
+    public readonly Frame2D WithAxis(in Frame2D frame)
     {
         Point2D point = _point;
         Direction2D vydir = _vydir;
         Direction2D vxdir = _vxdir;
-        point = a1.Location;
-        vxdir = a1.XDirection;
-        vydir = a1.YDirection;
+        point = frame.Location;
+        vxdir = frame.XDirection;
+        vydir = frame.YDirection;
         return new Frame2D(vydir, vxdir, point);
     }
 
-    public readonly Frame2D WithXAxis(in Axis2D a1)
+    public readonly Frame2D WithXAxis(in Axis2D axis)
     {
         Point2D point = _point;
         Direction2D vydir = _vydir;
         Direction2D vxdir = _vxdir;
         bool isSign = (vxdir.Crossed(vydir)) >= 0.0;
-        point = a1.Location;
-        vxdir = a1.Direction;
+        point = axis.Location;
+        vxdir = axis.Direction;
         if (isSign)
         {
             vydir = vydir.WithCoord(-vxdir.Y, vxdir.X);
@@ -117,14 +117,14 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
         return new Frame2D(vydir, vxdir, point);
     }
 
-    public readonly Frame2D WithYAxis(in Axis2D a1)
+    public readonly Frame2D WithYAxis(in Axis2D axis)
     {
         Point2D point = _point;
         Direction2D vydir = _vydir;
         Direction2D vxdir = _vxdir;
         bool isSign = (vxdir.Crossed(vydir)) >= 0.0;
-        point = a1.Location;
-        vydir = a1.Direction;
+        point = axis.Location;
+        vydir = axis.Direction;
         if (isSign)
         {
             vxdir = vxdir.WithCoord(vydir.Y, -vydir.X);
@@ -136,43 +136,43 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
         return new Frame2D(vydir, vxdir, point);
     }
 
-    public readonly Frame2D WithLocation(in Point2D p)
+    public readonly Frame2D WithLocation(in Point2D point)
     {
-        Point2D point = _point;
-        point = p;
-        return new Frame2D(_vydir, _vxdir, point);
+        Point2D newPoint = _point;
+        newPoint = point;
+        return new Frame2D(_vydir, _vxdir, newPoint);
     }
 
-    public readonly Frame2D WithXDirection(in Direction2D vx)
+    public readonly Frame2D WithXDirection(in Direction2D xDirection)
     {
         Direction2D vydir = _vydir;
         Direction2D vxdir = _vxdir;
         bool isSign = (vxdir.Crossed(vydir)) >= 0.0;
-        vxdir = vx;
+        vxdir = xDirection;
         if (isSign)
         {
-            vydir = vydir.WithCoord(-vx.Y, vx.X);
+            vydir = vydir.WithCoord(-xDirection.Y, xDirection.X);
         }
         else
         {
-            vydir = vydir.WithCoord(vx.Y, -vx.X);
+            vydir = vydir.WithCoord(xDirection.Y, -xDirection.X);
         }
         return new Frame2D(vydir, vxdir, _point);
     }
 
-    public readonly Frame2D WithYDirection(in Direction2D vy)
+    public readonly Frame2D WithYDirection(in Direction2D yDirection)
     {
         Direction2D vydir = _vydir;
         Direction2D vxdir = _vxdir;
         bool isSign = (vxdir.Crossed(vydir)) >= 0.0;
-        vydir = vy;
+        vydir = yDirection;
         if (isSign)
         {
-            vxdir = vxdir.WithCoord(vy.Y, -vy.X);
+            vxdir = vxdir.WithCoord(yDirection.Y, -yDirection.X);
         }
         else
         {
-            vxdir = vxdir.WithCoord(-vy.Y, vy.X);
+            vxdir = vxdir.WithCoord(-yDirection.Y, yDirection.X);
         }
         return new Frame2D(vydir, vxdir, _point);
     }
@@ -189,85 +189,85 @@ public readonly partial struct Frame2D : IEquatable<Frame2D>
 
     public readonly Direction2D YDirection => _vydir;
 
-    public readonly Frame2D Mirrored(in Point2D p)
+    public readonly Frame2D Mirrored(in Point2D point)
     {
-        Point2D point = _point;
+        Point2D newPoint = _point;
         Direction2D vydir = _vydir;
         Direction2D vxdir = _vxdir;
-        Point2D temp = point;
-        temp = temp.Mirrored(p);
-        point = temp;
+        Point2D temp = newPoint;
+        temp = temp.Mirrored(point);
+        newPoint = temp;
         vxdir = vxdir.Reversed();
         vydir = vydir.Reversed();
-        return new Frame2D(vydir, vxdir, point);
+        return new Frame2D(vydir, vxdir, newPoint);
     }
 
-    public readonly Frame2D Mirrored(in Axis2D a1)
+    public readonly Frame2D Mirrored(in Axis2D axis)
     {
         Point2D point = _point;
         Direction2D vydir = _vydir;
         Direction2D vxdir = _vxdir;
-        vydir = vydir.Mirrored(a1);
-        vxdir = vxdir.Mirrored(a1);
+        vydir = vydir.Mirrored(axis);
+        vxdir = vxdir.Mirrored(axis);
         Point2D temp = point;
-        temp = temp.Mirrored(a1);
+        temp = temp.Mirrored(axis);
         point = temp;
         return new Frame2D(vydir, vxdir, point);
     }
 
-    public readonly Frame2D Rotated(in Point2D p, double ang)
+    public readonly Frame2D Rotated(in Point2D point, double angle)
     {
-        Point2D point = _point;
+        Point2D newPoint = _point;
         Direction2D vydir = _vydir;
         Direction2D vxdir = _vxdir;
-        Point2D temp = point;
-        temp = temp.Rotated(p, ang);
-        point = temp;
-        vxdir = vxdir.Rotated(ang);
-        vydir = vydir.Rotated(ang);
-        return new Frame2D(vydir, vxdir, point);
+        Point2D temp = newPoint;
+        temp = temp.Rotated(point, angle);
+        newPoint = temp;
+        vxdir = vxdir.Rotated(angle);
+        vydir = vydir.Rotated(angle);
+        return new Frame2D(vydir, vxdir, newPoint);
     }
 
-    public readonly Frame2D Scaled(in Point2D p, double s)
+    public readonly Frame2D Scaled(in Point2D point, double factor)
     {
-        Point2D point = _point;
+        Point2D newPoint = _point;
         Direction2D vydir = _vydir;
         Direction2D vxdir = _vxdir;
-        Point2D temp = point;
-        temp = temp.Scaled(p, s);
-        point = temp;
-        if (s < 0.0)
+        Point2D temp = newPoint;
+        temp = temp.Scaled(point, factor);
+        newPoint = temp;
+        if (factor < 0.0)
         {
             vxdir = vxdir.Reversed();
             vydir = vydir.Reversed();
         }
-        return new Frame2D(vydir, vxdir, point);
+        return new Frame2D(vydir, vxdir, newPoint);
     }
 
-    public readonly Frame2D Transformed(in Transform2D t)
+    public readonly Frame2D Transformed(in Transform2D transform)
     {
         Point2D point = _point;
         Direction2D vydir = _vydir;
         Direction2D vxdir = _vxdir;
         Point2D temp = point;
-        temp = temp.Transformed(t);
+        temp = temp.Transformed(transform);
         point = temp;
-        vxdir = vxdir.Transformed(t);
-        vydir = vydir.Transformed(t);
+        vxdir = vxdir.Transformed(transform);
+        vydir = vydir.Transformed(transform);
         return new Frame2D(vydir, vxdir, point);
     }
 
-    public readonly Frame2D Translated(in Vector2D v)
+    public readonly Frame2D Translated(in Vector2D vector)
     {
         Point2D point = _point;
-        point = point.Translated(v);
+        point = point.Translated(vector);
         return new Frame2D(_vydir, _vxdir, point);
     }
 
-    public readonly Frame2D Translated(in Point2D p1, in Point2D p2)
+    public readonly Frame2D Translated(in Point2D point1, in Point2D point2)
     {
         Point2D point = _point;
-        point = point.Translated(p1, p2);
+        point = point.Translated(point1, point2);
         return new Frame2D(_vydir, _vxdir, point);
     }
 

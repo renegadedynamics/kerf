@@ -15,7 +15,7 @@ namespace Kerf.Geometry;
 public readonly partial struct Direction2D : IEquatable<Direction2D>
 {
     /// <summary>The four directions along the axes of the global system.</summary>
-    public enum D
+    internal enum D
     {
         /// <summary>(1, 0)</summary>
         X,
@@ -38,27 +38,27 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
 
     public Direction2D() => _coord = new Xy(1.0, 0.0);
 
-    public Direction2D(D dir)
+    internal Direction2D(D dir)
         => _coord = new Xy(dir == D.X ? 1.0 : dir == D.NX ? -1.0 : 0.0,
                              dir == D.Y ? 1.0 : dir == D.NY ? -1.0 : 0.0);
 
-    public Direction2D(in Vector2D v) : this(v.XY()) { }
+    public Direction2D(in Vector2D vector) : this(vector.XY()) { }
 
     internal Direction2D(in Xy xy) : this(xy.X(), xy.Y()) { }
 
-    public Direction2D(double xv, double yv)
+    public Direction2D(double x, double y)
     {
         _coord = default;
-        double sqMod = xv * xv + yv * yv;
+        double sqMod = x * x + y * y;
         if (sqMod >= (1.0 - Constants.Resolution()) && sqMod <= (1.0 + Constants.Resolution()))
         {
-            _coord.SetCoord(xv, yv);
+            _coord.SetCoord(x, y);
             return;
         }
 
         Refusal.ArgumentIf(sqMod <= Constants.Resolution() * Constants.Resolution(), FailureKind.ConstructionError, "gp_Dir2d() - input vector has zero norm");
         double d = Math.Sqrt(sqMod);
-        _coord.SetCoord(xv / d, yv / d);
+        _coord.SetCoord(x / d, y / d);
     }
 
     // Copies
@@ -201,10 +201,10 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
         return new Direction2D(coord, isUnit: true);
     }
 
-    public readonly Direction2D Mirrored(in Direction2D v)
+    public readonly Direction2D Mirrored(in Direction2D direction)
     {
         Xy coord = _coord;
-        Xy xy = v._coord;
+        Xy xy = direction._coord;
         double a = xy.X();
         double b = xy.Y();
         double x = coord.X();
@@ -216,10 +216,10 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
         return new Direction2D(coord, isUnit: true);
     }
 
-    public readonly Direction2D Mirrored(in Axis2D a2)
+    public readonly Direction2D Mirrored(in Axis2D axis)
     {
         Xy coord = _coord;
-        Xy xy = a2.Direction.XY();
+        Xy xy = axis.Direction.XY();
         double a = xy.X();
         double b = xy.Y();
         double x = coord.X();
@@ -231,37 +231,37 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
         return new Direction2D(coord, isUnit: true);
     }
 
-    public readonly Direction2D Rotated(double ang)
+    public readonly Direction2D Rotated(double angle)
     {
         Xy coord = _coord;
-        Transform2D t = new Transform2D().WithRotation(new Point2D(0.0, 0.0), ang);
+        Transform2D t = new Transform2D().WithRotation(new Point2D(0.0, 0.0), angle);
         coord.Multiply(t.RotationPart);
         return new Direction2D(coord, isUnit: true);
     }
 
-    public readonly Direction2D Transformed(in Transform2D t)
+    public readonly Direction2D Transformed(in Transform2D transform)
     {
         Xy coord = _coord;
-        if (t.Form == Identity || t.Form == Translation)
+        if (transform.Form == Identity || transform.Form == Translation)
         {
         }
-        else if (t.Form == PntMirror)
+        else if (transform.Form == PointMirror)
         {
             coord.Reverse();
         }
-        else if (t.Form == Scale)
+        else if (transform.Form == Scale)
         {
-            if (t.ScaleFactor < 0.0)
+            if (transform.ScaleFactor < 0.0)
             {
                 coord.Reverse();
             }
         }
         else
         {
-            coord.Multiply(t.RotationPart);
+            coord.Multiply(transform.RotationPart);
             double d = coord.Modulus();
             coord.Divide(d);
-            if (t.ScaleFactor < 0.0)
+            if (transform.ScaleFactor < 0.0)
             {
                 coord.Reverse();
             }

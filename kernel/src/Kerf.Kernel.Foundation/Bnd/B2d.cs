@@ -284,7 +284,7 @@ internal partial struct B2d : IEquatable<B2d>
         {
             result = this;
         }
-        else if (form == Translation || form == PntMirror || form == Scale)
+        else if (form == Translation || form == PointMirror || form == Scale)
         {
             result._center[0] = (RealType)(_center[0] * scale + trsf.TranslationXy().X());
             result._center[1] = (RealType)(_center[1] * scale + trsf.TranslationXy().Y());
@@ -386,7 +386,7 @@ internal partial struct B2d : IEquatable<B2d>
         TransformForm form = trsf.Form;
         double scale = trsf.ScaleFactor;
         double scaleAbs = Math.Abs(scale);
-        if (form == Translation || form == Identity || form == PntMirror || form == Scale)
+        if (form == Translation || form == Identity || form == PointMirror || form == Scale)
         {
             result =
                 (Math.Abs((RealType)(box._center[0] * scale + trsf.TranslationXy().X()) - _center[0])
@@ -488,7 +488,7 @@ internal partial struct B2d : IEquatable<B2d>
         TransformForm form = trsf.Form;
         double scale = trsf.ScaleFactor;
         double scaleAbs = Math.Abs(scale);
-        if (form == Translation || form == Identity || form == PntMirror || form == Scale)
+        if (form == Translation || form == Identity || form == PointMirror || form == Scale)
         {
             result =
                 (Math.Abs((RealType)(box._center[0] * scale + trsf.TranslationXy().X()) - _center[0])

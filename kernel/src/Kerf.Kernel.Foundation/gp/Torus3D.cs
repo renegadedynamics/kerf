@@ -35,9 +35,9 @@ public readonly partial struct Torus3D : IEquatable<Torus3D>
 
     /// <remarks>A torus with both radii 0 is allowed.</remarks>
     /// <exception cref="ConstructionErrorException">A radius is negative.</exception>
-    public Torus3D(in CoordinateSystem a3, double majorRadius, double minorRadius)
+    public Torus3D(in CoordinateSystem position, double majorRadius, double minorRadius)
     {
-        _pos = a3;
+        _pos = position;
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
         Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < 0.0, FailureKind.ConstructionError, "gp_Torus() - invalid construction parameters");
@@ -45,17 +45,17 @@ public readonly partial struct Torus3D : IEquatable<Torus3D>
 
     // Copies
 
-    public readonly Torus3D WithAxis(in Axis3D a1)
+    public readonly Torus3D WithAxis(in Axis3D axis)
     {
         CoordinateSystem pos = _pos;
-        pos = pos.WithAxis(a1);
+        pos = pos.WithAxis(axis);
         return new Torus3D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Torus3D WithLocation(in Point3D loc)
+    public readonly Torus3D WithLocation(in Point3D location)
     {
         CoordinateSystem pos = _pos;
-        pos = pos.WithLocation(loc);
+        pos = pos.WithLocation(location);
         return new Torus3D(pos, _majorRadius, _minorRadius);
     }
 
@@ -76,10 +76,10 @@ public readonly partial struct Torus3D : IEquatable<Torus3D>
         return new Torus3D(_pos, _majorRadius, newMinorRadius);
     }
 
-    public readonly Torus3D WithPosition(in CoordinateSystem a3)
+    public readonly Torus3D WithPosition(in CoordinateSystem position)
     {
         CoordinateSystem pos = _pos;
-        pos = a3;
+        pos = position;
         return new Torus3D(pos, _majorRadius, _minorRadius);
     }
 
@@ -254,48 +254,48 @@ public readonly partial struct Torus3D : IEquatable<Torus3D>
 
     public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
-    public readonly Torus3D Mirrored(in Point3D p)
+    public readonly Torus3D Mirrored(in Point3D point)
     {
         CoordinateSystem pos = _pos;
-        pos = pos.Mirrored(p);
+        pos = pos.Mirrored(point);
         return new Torus3D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Torus3D Mirrored(in Axis3D a1)
+    public readonly Torus3D Mirrored(in Axis3D axis)
     {
         CoordinateSystem pos = _pos;
-        pos = pos.Mirrored(a1);
+        pos = pos.Mirrored(axis);
         return new Torus3D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Torus3D Mirrored(in Frame3D a2)
+    public readonly Torus3D Mirrored(in Frame3D frame)
     {
         CoordinateSystem pos = _pos;
-        pos = pos.Mirrored(a2);
+        pos = pos.Mirrored(frame);
         return new Torus3D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Torus3D Rotated(in Axis3D a1, double ang)
+    public readonly Torus3D Rotated(in Axis3D axis, double angle)
     {
         CoordinateSystem pos = _pos;
-        pos = pos.Rotated(a1, ang);
+        pos = pos.Rotated(axis, angle);
         return new Torus3D(pos, _majorRadius, _minorRadius);
     }
 
-    /// <summary>The torus scaled by |<paramref name="s"/>| about <paramref name="p"/>.</summary>
-    public readonly Torus3D Scaled(in Point3D p, double s)
+    /// <summary>The torus scaled by |<paramref name="factor"/>| about <paramref name="point"/>.</summary>
+    public readonly Torus3D Scaled(in Point3D point, double factor)
     {
         CoordinateSystem pos = _pos;
         double majorRadius = _majorRadius;
         double minorRadius = _minorRadius;
-        pos = pos.Scaled(p, s);
-        majorRadius *= s;
+        pos = pos.Scaled(point, factor);
+        majorRadius *= factor;
         if (majorRadius < 0)
         {
             majorRadius = -majorRadius;
         }
 
-        minorRadius *= s;
+        minorRadius *= factor;
         if (minorRadius < 0)
         {
             minorRadius = -minorRadius;
@@ -304,19 +304,19 @@ public readonly partial struct Torus3D : IEquatable<Torus3D>
         return new Torus3D(pos, majorRadius, minorRadius);
     }
 
-    public readonly Torus3D Transformed(in Transform3D t)
+    public readonly Torus3D Transformed(in Transform3D transform)
     {
         CoordinateSystem pos = _pos;
         double majorRadius = _majorRadius;
         double minorRadius = _minorRadius;
-        pos = pos.Transformed(t);
-        majorRadius *= t.ScaleFactor;
+        pos = pos.Transformed(transform);
+        majorRadius *= transform.ScaleFactor;
         if (majorRadius < 0)
         {
             majorRadius = -majorRadius;
         }
 
-        minorRadius *= t.ScaleFactor;
+        minorRadius *= transform.ScaleFactor;
         if (minorRadius < 0)
         {
             minorRadius = -minorRadius;
@@ -325,17 +325,17 @@ public readonly partial struct Torus3D : IEquatable<Torus3D>
         return new Torus3D(pos, majorRadius, minorRadius);
     }
 
-    public readonly Torus3D Translated(in Vector3D v)
+    public readonly Torus3D Translated(in Vector3D vector)
     {
         CoordinateSystem pos = _pos;
-        pos = pos.Translated(v);
+        pos = pos.Translated(vector);
         return new Torus3D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Torus3D Translated(in Point3D p1, in Point3D p2)
+    public readonly Torus3D Translated(in Point3D point1, in Point3D point2)
     {
         CoordinateSystem pos = _pos;
-        pos = pos.Translated(p1, p2);
+        pos = pos.Translated(point1, point2);
         return new Torus3D(pos, _majorRadius, _minorRadius);
     }
 

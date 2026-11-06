@@ -22,19 +22,19 @@ public readonly partial struct Axis2D : IEquatable<Axis2D>
         _vdir = new Direction2D();
     }
 
-    public Axis2D(in Point2D p, in Direction2D v)
+    public Axis2D(in Point2D point, in Direction2D direction)
     {
-        _loc = p;
-        _vdir = v;
+        _loc = point;
+        _vdir = direction;
     }
 
-    public Axis2D(in Point2D p, Direction2D.D dir)
+    internal Axis2D(in Point2D p, Direction2D.D dir)
     {
         _loc = p;
         _vdir = new Direction2D(dir);
     }
 
-    public Axis2D(Direction2D.D dir)
+    internal Axis2D(Direction2D.D dir)
     {
         _loc = new Point2D(0.0, 0.0);
         _vdir = new Direction2D(dir);
@@ -42,9 +42,9 @@ public readonly partial struct Axis2D : IEquatable<Axis2D>
 
     // Copies
 
-    public readonly Axis2D WithLocation(in Point2D p) => new(p, _vdir);
+    public readonly Axis2D WithLocation(in Point2D point) => new(point, _vdir);
 
-    public readonly Axis2D WithDirection(in Direction2D v) => new(_loc, v);
+    public readonly Axis2D WithDirection(in Direction2D direction) => new(_loc, direction);
 
     // Queries
 
@@ -90,62 +90,62 @@ public readonly partial struct Axis2D : IEquatable<Axis2D>
         return new Axis2D(_loc, vdir);
     }
 
-    public readonly Axis2D Mirrored(in Point2D p)
+    public readonly Axis2D Mirrored(in Point2D point)
     {
         Point2D loc = _loc;
         Direction2D vdir = _vdir;
-        loc = loc.Mirrored(p);
+        loc = loc.Mirrored(point);
         vdir = vdir.Reversed();
         return new Axis2D(loc, vdir);
     }
 
-    public readonly Axis2D Mirrored(in Axis2D a)
+    public readonly Axis2D Mirrored(in Axis2D axis)
     {
         Point2D loc = _loc;
         Direction2D vdir = _vdir;
-        loc = loc.Mirrored(a);
-        vdir = vdir.Mirrored(a._vdir);
+        loc = loc.Mirrored(axis);
+        vdir = vdir.Mirrored(axis._vdir);
         return new Axis2D(loc, vdir);
     }
 
-    public readonly Axis2D Rotated(in Point2D p, double ang)
+    public readonly Axis2D Rotated(in Point2D point, double angle)
     {
         Point2D loc = _loc;
         Direction2D vdir = _vdir;
-        loc = loc.Rotated(p, ang);
-        vdir = vdir.Rotated(ang);
+        loc = loc.Rotated(point, angle);
+        vdir = vdir.Rotated(angle);
         return new Axis2D(loc, vdir);
     }
 
-    public readonly Axis2D Scaled(in Point2D p, double s)
+    public readonly Axis2D Scaled(in Point2D point, double factor)
     {
         Point2D loc = _loc;
         Direction2D vdir = _vdir;
-        loc = loc.Scaled(p, s);
-        if (s < 0.0)
+        loc = loc.Scaled(point, factor);
+        if (factor < 0.0)
         {
             vdir = vdir.Reversed();
         }
         return new Axis2D(loc, vdir);
     }
 
-    public readonly Axis2D Transformed(in Transform2D t)
+    public readonly Axis2D Transformed(in Transform2D transform)
     {
         Point2D loc = _loc;
         Direction2D vdir = _vdir;
-        loc = loc.Transformed(t);
-        vdir = vdir.Transformed(t);
+        loc = loc.Transformed(transform);
+        vdir = vdir.Transformed(transform);
         return new Axis2D(loc, vdir);
     }
 
-    public readonly Axis2D Translated(in Vector2D v)
+    public readonly Axis2D Translated(in Vector2D vector)
     {
-        return new Axis2D(_loc.Translated(v), _vdir);
+        return new Axis2D(_loc.Translated(vector), _vdir);
     }
 
-    public readonly Axis2D Translated(in Point2D p1, in Point2D p2)
+    public readonly Axis2D Translated(in Point2D point1, in Point2D point2)
     {
-        return new Axis2D(_loc.Translated(p1, p2), _vdir);
+        return new Axis2D(_loc.Translated(point1, point2), _vdir);
     }
 
     public readonly bool Equals(Axis2D other) => _loc.Equals(other._loc) && _vdir.Equals(other._vdir);

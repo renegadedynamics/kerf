@@ -203,18 +203,18 @@ public abstract partial class Surface
         }
     }
 
-    /// <summary>The derivative of order <paramref name="nu"/> in U and <paramref name="nv"/> in V at (<paramref name="u"/>,
+    /// <summary>The derivative of order <paramref name="uOrder"/> in U and <paramref name="vOrder"/> in V at (<paramref name="u"/>,
     /// <paramref name="v"/>).</summary>
     /// <exception cref="ArgumentOutOfRangeException">An order is negative, or both are zero.</exception>
-    public Vector3D DerivativeN(double u, double v, int nu, int nv)
+    public Vector3D DerivativeN(double u, double v, int uOrder, int vOrder)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(nu);
-        ArgumentOutOfRangeException.ThrowIfNegative(nv);
-        if (nu + nv < 1)
+        ArgumentOutOfRangeException.ThrowIfNegative(uOrder);
+        ArgumentOutOfRangeException.ThrowIfNegative(vOrder);
+        if (uOrder + vOrder < 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(nu), "The derivative's order must be 1 or more.");
+            throw new ArgumentOutOfRangeException(nameof(uOrder), "The derivative's order must be 1 or more.");
         }
 
-        return EvalDN(u, v, nu, nv);
+        return EvalDN(u, v, uOrder, vOrder);
     }
 }

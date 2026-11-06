@@ -23,14 +23,14 @@ public readonly partial struct Plane3D : IEquatable<Plane3D>
 
     public Plane3D() => _position = new CoordinateSystem();
 
-    public Plane3D(in CoordinateSystem a3) => _position = a3;
+    public Plane3D(in CoordinateSystem position) => _position = position;
 
-    /// <summary>The plane through <paramref name="p"/> with normal <paramref name="v"/>; the X direction is chosen.</summary>
-    public Plane3D(in Point3D p, in Direction3D v)
+    /// <summary>The plane through <paramref name="point"/> with normal <paramref name="direction"/>; the X direction is chosen.</summary>
+    public Plane3D(in Point3D point, in Direction3D direction)
     {
-        double a = v.X;
-        double b = v.Y;
-        double c = v.Z;
+        double a = direction.X;
+        double b = direction.Y;
+        double c = direction.Z;
         double absA = Math.Abs(a);
         double absB = Math.Abs(b);
         double absC = Math.Abs(c);
@@ -42,33 +42,33 @@ public readonly partial struct Plane3D : IEquatable<Plane3D>
         {
             if (absA > absC)
             {
-                _position = new CoordinateSystem(p, v, new Direction3D(-c, 0.0, a));
+                _position = new CoordinateSystem(point, direction, new Direction3D(-c, 0.0, a));
             }
             else
             {
-                _position = new CoordinateSystem(p, v, new Direction3D(c, 0.0, -a));
+                _position = new CoordinateSystem(point, direction, new Direction3D(c, 0.0, -a));
             }
         }
         else if (absA <= absB && absA <= absC)
         {
             if (absB > absC)
             {
-                _position = new CoordinateSystem(p, v, new Direction3D(0.0, -c, b));
+                _position = new CoordinateSystem(point, direction, new Direction3D(0.0, -c, b));
             }
             else
             {
-                _position = new CoordinateSystem(p, v, new Direction3D(0.0, c, -b));
+                _position = new CoordinateSystem(point, direction, new Direction3D(0.0, c, -b));
             }
         }
         else
         {
             if (absA > absB)
             {
-                _position = new CoordinateSystem(p, v, new Direction3D(-b, a, 0.0));
+                _position = new CoordinateSystem(point, direction, new Direction3D(-b, a, 0.0));
             }
             else
             {
-                _position = new CoordinateSystem(p, v, new Direction3D(b, -a, 0.0));
+                _position = new CoordinateSystem(point, direction, new Direction3D(b, -a, 0.0));
             }
         }
     }
@@ -117,21 +117,21 @@ public readonly partial struct Plane3D : IEquatable<Plane3D>
 
     // Copies
 
-    public readonly Plane3D WithAxis(in Axis3D a1)
+    public readonly Plane3D WithAxis(in Axis3D axis)
     {
         CoordinateSystem position = _position;
-        position = position.WithAxis(a1);
+        position = position.WithAxis(axis);
         return new Plane3D(position);
     }
 
-    public readonly Plane3D WithLocation(in Point3D loc)
+    public readonly Plane3D WithLocation(in Point3D location)
     {
         CoordinateSystem position = _position;
-        position = position.WithLocation(loc);
+        position = position.WithLocation(location);
         return new Plane3D(position);
     }
 
-    public readonly Plane3D WithPosition(in CoordinateSystem a3) => new(a3);
+    public readonly Plane3D WithPosition(in CoordinateSystem position) => new(position);
 
     public readonly Plane3D UReversed()
     {
@@ -183,31 +183,31 @@ public readonly partial struct Plane3D : IEquatable<Plane3D>
 
     public readonly CoordinateSystem Position => _position;
 
-    public readonly double DistanceTo(in Point3D p) => Math.Abs(SignedDistance(p));
+    public readonly double DistanceTo(in Point3D point) => Math.Abs(SignedDistance(point));
 
     /// <summary>The distance to a line parallel to the plane; 0 when the line is not parallel.</summary>
-    public readonly double DistanceTo(in Line3D l) => Math.Abs(SignedDistance(l));
+    public readonly double DistanceTo(in Line3D line) => Math.Abs(SignedDistance(line));
 
     /// <summary>The distance to a parallel plane; 0 when the planes are not parallel.</summary>
     public readonly double DistanceTo(in Plane3D other) => Math.Abs(SignedDistance(other));
 
     /// <summary>The signed distance, positive on the side the normal points to.</summary>
-    public readonly double SignedDistance(in Point3D p)
+    public readonly double SignedDistance(in Point3D point)
     {
         Point3D loc = _position.Location;
         Direction3D dir = _position.Direction;
-        return (dir.X * (p.X - loc.X) + dir.Y * (p.Y - loc.Y)
-                + dir.Z * (p.Z - loc.Z));
+        return (dir.X * (point.X - loc.X) + dir.Y * (point.Y - loc.Y)
+                + dir.Z * (point.Z - loc.Z));
     }
 
-    public readonly double SignedDistance(in Line3D l)
+    public readonly double SignedDistance(in Line3D line)
     {
-        if (!_position.Direction.IsNormal(l.Direction, Constants.Resolution()))
+        if (!_position.Direction.IsNormal(line.Direction, Constants.Resolution()))
         {
             return 0.0;
         }
 
-        return SignedDistance(l.Location);
+        return SignedDistance(line.Location);
     }
 
     public readonly double SignedDistance(in Plane3D other)
@@ -220,15 +220,15 @@ public readonly partial struct Plane3D : IEquatable<Plane3D>
         return SignedDistance(other._position.Location);
     }
 
-    public readonly double SquareDistanceTo(in Point3D p)
+    public readonly double SquareDistanceTo(in Point3D point)
     {
-        double d = DistanceTo(p);
+        double d = DistanceTo(point);
         return d * d;
     }
 
-    public readonly double SquareDistanceTo(in Line3D l)
+    public readonly double SquareDistanceTo(in Line3D line)
     {
-        double d = DistanceTo(l);
+        double d = DistanceTo(line);
         return d * d;
     }
 
@@ -244,50 +244,50 @@ public readonly partial struct Plane3D : IEquatable<Plane3D>
     /// <summary>The Y axis: the V parameter direction through the origin.</summary>
     public readonly Axis3D YAxis => new(_position.Location, _position.YDirection);
 
-    public readonly bool Contains(in Point3D p, double linearTolerance) => DistanceTo(p) <= linearTolerance;
+    public readonly bool Contains(in Point3D point, double linearTolerance) => DistanceTo(point) <= linearTolerance;
 
-    public readonly bool Contains(in Line3D l, double linearTolerance, double angularTolerance)
-        => Contains(l.Location, linearTolerance)
-           && _position.Direction.IsNormal(l.Direction, angularTolerance);
+    public readonly bool Contains(in Line3D line, double linearTolerance, double angularTolerance)
+        => Contains(line.Location, linearTolerance)
+           && _position.Direction.IsNormal(line.Direction, angularTolerance);
 
-    public readonly Plane3D Mirrored(in Point3D p) => new(_position.Mirrored(p));
+    public readonly Plane3D Mirrored(in Point3D point) => new(_position.Mirrored(point));
 
-    public readonly Plane3D Mirrored(in Axis3D a1) => new(_position.Mirrored(a1));
+    public readonly Plane3D Mirrored(in Axis3D axis) => new(_position.Mirrored(axis));
 
-    public readonly Plane3D Mirrored(in Frame3D a2) => new(_position.Mirrored(a2));
+    public readonly Plane3D Mirrored(in Frame3D frame) => new(_position.Mirrored(frame));
 
-    public readonly Plane3D Rotated(in Axis3D a1, double ang)
+    public readonly Plane3D Rotated(in Axis3D axis, double angle)
     {
         CoordinateSystem position = _position;
-        position = position.Rotated(a1, ang);
+        position = position.Rotated(axis, angle);
         return new Plane3D(position);
     }
 
-    public readonly Plane3D Scaled(in Point3D p, double s)
+    public readonly Plane3D Scaled(in Point3D point, double factor)
     {
         CoordinateSystem position = _position;
-        position = position.Scaled(p, s);
+        position = position.Scaled(point, factor);
         return new Plane3D(position);
     }
 
-    public readonly Plane3D Transformed(in Transform3D t)
+    public readonly Plane3D Transformed(in Transform3D transform)
     {
         CoordinateSystem position = _position;
-        position = position.Transformed(t);
+        position = position.Transformed(transform);
         return new Plane3D(position);
     }
 
-    public readonly Plane3D Translated(in Vector3D v)
+    public readonly Plane3D Translated(in Vector3D vector)
     {
         CoordinateSystem position = _position;
-        position = position.Translated(v);
+        position = position.Translated(vector);
         return new Plane3D(position);
     }
 
-    public readonly Plane3D Translated(in Point3D p1, in Point3D p2)
+    public readonly Plane3D Translated(in Point3D point1, in Point3D point2)
     {
         CoordinateSystem position = _position;
-        position = position.Translated(p1, p2);
+        position = position.Translated(point1, point2);
         return new Plane3D(position);
     }
 

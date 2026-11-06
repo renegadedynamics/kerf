@@ -14,7 +14,7 @@ namespace Kerf.Geometry;
 /// </summary>
 public abstract class BoundedCurve2D : Curve2D
 {
-    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    /// <summary>Only the kernel derives from it.</summary>
     private protected BoundedCurve2D()
     {
     }

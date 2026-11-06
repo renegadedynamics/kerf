@@ -29,11 +29,11 @@ public sealed class ExtrusionSurface : SweptSurface
     private RepSurfaceDesc.Base? _evalRep;
 
     /// <summary>The extrusion of a copy of C along V. Nothing is checked (C may be a line parallel to V).</summary>
-    public ExtrusionSurface(Curve3D c, in Direction3D v)
+    public ExtrusionSurface(Curve3D curve, in Direction3D direction)
     {
-        _basisCurve = (Curve3D)c.Copy();
-        _direction = v;
-        _smooth = c.Continuity;
+        _basisCurve = (Curve3D)curve.Copy();
+        _direction = direction;
+        _smooth = curve.Continuity;
     }
 
     /// <summary>True if an evaluation representation is attached.</summary>
@@ -84,18 +84,18 @@ public sealed class ExtrusionSurface : SweptSurface
     }
 
     /// <summary>A copy extruded along V.</summary>
-    public ExtrusionSurface WithDirection(in Direction3D v)
+    public ExtrusionSurface WithDirection(in Direction3D direction)
     {
         ExtrusionSurface copy = (ExtrusionSurface)Copy();
-        copy.SetDirection(v);
+        copy.SetDirection(direction);
         return copy;
     }
 
     /// <summary>A copy extruding (a copy of) C.</summary>
-    public ExtrusionSurface WithBasisCurve(Curve3D c)
+    public ExtrusionSurface WithBasisCurve(Curve3D curve)
     {
         ExtrusionSurface copy = (ExtrusionSurface)Copy();
-        copy.SetBasisCurve(c);
+        copy.SetBasisCurve(curve);
         return copy;
     }
 
@@ -219,25 +219,25 @@ public sealed class ExtrusionSurface : SweptSurface
     }
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int uOrder, int vOrder)
     {
-        if (nu + nv < 1 || nu < 0 || nv < 0)
+        if (uOrder + vOrder < 1 || uOrder < 0 || vOrder < 0)
         {
             throw Refusal.State(new UndefinedDerivative3DException());
         }
 
         Vector3D evalRepResult;
-        if (RepUtils.TryEvalSurfaceDN(_evalRep, u, v, nu, nv, out evalRepResult))
+        if (RepUtils.TryEvalSurfaceDN(_evalRep, u, v, uOrder, vOrder, out evalRepResult))
         {
             return evalRepResult;
         }
 
-        if (nv == 0)
+        if (vOrder == 0)
         {
-            Vector3D dn = _basisCurve!.EvalDN(u, nu);
-            return ExtrusionUtils.CalculateDN(dn, _direction.XYZ(), nu, nv);
+            Vector3D dn = _basisCurve!.EvalDN(u, uOrder);
+            return ExtrusionUtils.CalculateDN(dn, _direction.XYZ(), uOrder, vOrder);
         }
-        else if (nu == 0 && nv == 1)
+        else if (uOrder == 0 && vOrder == 1)
         {
             return new Vector3D(_direction.XYZ());
         }
@@ -274,13 +274,13 @@ public sealed class ExtrusionSurface : SweptSurface
     internal sealed override bool IsCNv(int n) => true;
 
     /// <summary>Transforms the direction and the basis curve.</summary>
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
         ClearEvalRepresentation();
-        _direction = _direction.Transformed(t);
+        _direction = _direction.Transformed(transform);
         OwnBasisCurve();
-        _basisCurve!.Transform(t);
+        _basisCurve!.Transform(transform);
     }
 
     /// <summary>True if the basis curve is closed.</summary>
@@ -296,26 +296,26 @@ public sealed class ExtrusionSurface : SweptSurface
     public sealed override bool IsVPeriodic => false;
 
     /// <summary>U changed into the transformed parameter of the basis curve; V scaled by |T.ScaleFactor()| unless infinite.</summary>
-    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
+    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D transform)
     {
-        u = _basisCurve!.TransformedParameter(u, t);
+        u = _basisCurve!.TransformedParameter(u, transform);
         if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(v))
         {
-            v *= Math.Abs(t.ScaleFactor);
+            v *= Math.Abs(transform.ScaleFactor);
         }
     }
 
     /// <summary>The product of an affinity along U (the basis curve's) and one along V (the scale factor).</summary>
-    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D t)
+    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D transform)
     {
         // transformation in the V Direction
         GeneralTransform2D tv = new GeneralTransform2D();
         Axis2D axis = new Axis2D(Constants.Origin2d(), Constants.DX2d());
-        tv = tv.WithAffinity(axis, Math.Abs(t.ScaleFactor));
+        tv = tv.WithAffinity(axis, Math.Abs(transform.ScaleFactor));
         // transformation in the U Direction
         GeneralTransform2D tu = new GeneralTransform2D();
         axis = new Axis2D(Constants.Origin2d(), Constants.DY2d());
-        tu = tu.WithAffinity(axis, _basisCurve!.ParametricTransformation(t));
+        tu = tu.WithAffinity(axis, _basisCurve!.ParametricTransformation(transform));
         return tu * tv;
     }
 

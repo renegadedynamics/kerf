@@ -25,24 +25,24 @@ public sealed class ConicalSurface : ElementarySurface
 
     /// <summary>A cone of semi-angle Ang and reference radius Radius in the local coordinate system A3.</summary>
     /// <exception cref="ConstructionErrorException">Radius &lt; 0, or |Ang| &lt;= Resolution, or |Ang| &gt;= PI/2 - Resolution.</exception>
-    public ConicalSurface(in CoordinateSystem a3, double ang, double radius)
+    public ConicalSurface(in CoordinateSystem position, double angle, double radius)
     {
         _radius = radius;
-        _semiAngle = ang;
-        if (radius < 0.0 || Math.Abs(ang) <= Constants.Resolution()
-            || Math.Abs(ang) >= M_PI / 2.0 - Constants.Resolution())
+        _semiAngle = angle;
+        if (radius < 0.0 || Math.Abs(angle) <= Constants.Resolution()
+            || Math.Abs(angle) >= M_PI / 2.0 - Constants.Resolution())
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
-        _pos = a3;
+        _pos = position;
     }
 
     /// <summary>A cone from a gp cone.</summary>
-    public ConicalSurface(in Cone3D c)
+    public ConicalSurface(in Cone3D cone)
     {
-        _radius = c.RefRadius;
-        _semiAngle = c.SemiAngle;
-        _pos = c.Position;
+        _radius = cone.RefRadius;
+        _semiAngle = cone.SemiAngle;
+        _pos = cone.Position;
     }
 
     public sealed override Geometry3D Copy()
@@ -118,10 +118,10 @@ public sealed class ConicalSurface : ElementarySurface
     }
 
     /// <summary>A copy that is the cone C.</summary>
-    public ConicalSurface WithCone(in Cone3D c)
+    public ConicalSurface WithCone(in Cone3D cone)
     {
         ConicalSurface copy = (ConicalSurface)Copy();
-        copy.SetCone(c);
+        copy.SetCone(cone);
         return copy;
     }
 
@@ -136,10 +136,10 @@ public sealed class ConicalSurface : ElementarySurface
 
     /// <summary>A copy of semi-angle Ang.</summary>
     /// <exception cref="ConstructionErrorException">|Ang| &lt;= Resolution or |Ang| &gt;= PI/2 - Resolution.</exception>
-    public ConicalSurface WithSemiAngle(double ang)
+    public ConicalSurface WithSemiAngle(double angle)
     {
         ConicalSurface copy = (ConicalSurface)Copy();
-        copy.SetSemiAngle(ang);
+        copy.SetSemiAngle(angle);
         return copy;
     }
 
@@ -254,19 +254,19 @@ public sealed class ConicalSurface : ElementarySurface
     }
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int uOrder, int vOrder)
     {
-        if (nu + nv < 1 || nu < 0 || nv < 0)
+        if (uOrder + vOrder < 1 || uOrder < 0 || vOrder < 0)
         {
             throw Refusal.State(new UndefinedDerivative3DException());
         }
-        if (nv > 1)
+        if (vOrder > 1)
         {
             return new Vector3D(0.0, 0.0, 0.0);
         }
         else
         {
-            return global::Kerf.Engine.Geometry.ElSLib.ConeDN(u, v, _pos, _radius, _semiAngle, nu, nv);
+            return global::Kerf.Engine.Geometry.ElSLib.ConeDN(u, v, _pos, _radius, _semiAngle, uOrder, vOrder);
         }
     }
 
@@ -284,28 +284,28 @@ public sealed class ConicalSurface : ElementarySurface
         return gc;
     }
 
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
-        _radius = _radius * Math.Abs(t.ScaleFactor);
-        _pos = _pos.Transformed(t);
+        _radius = _radius * Math.Abs(transform.ScaleFactor);
+        _pos = _pos.Transformed(transform);
     }
 
     /// <summary>V scaled by |T.ScaleFactor()| (unless infinite); U unchanged.</summary>
-    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
+    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D transform)
     {
         if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(v))
         {
-            v *= Math.Abs(t.ScaleFactor);
+            v *= Math.Abs(transform.ScaleFactor);
         }
     }
 
     /// <summary>An affinity of ratio |T.ScaleFactor()| along V.</summary>
-    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D t)
+    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D transform)
     {
         GeneralTransform2D t2 = new GeneralTransform2D();
         Axis2D axis = new Axis2D(Constants.Origin2d(), Constants.DX2d());
-        t2 = t2.WithAffinity(axis, Math.Abs(t.ScaleFactor));
+        t2 = t2.WithAffinity(axis, Math.Abs(transform.ScaleFactor));
         return t2;
     }
 }

@@ -78,24 +78,24 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
         return new Parabola2D(_pos, focalLength);
     }
 
-    public readonly Parabola2D WithLocation(in Point2D p)
+    public readonly Parabola2D WithLocation(in Point2D point)
     {
         Frame2D pos = _pos;
-        pos = pos.WithLocation(p);
+        pos = pos.WithLocation(point);
         return new Parabola2D(pos, _focalLength);
     }
 
-    public readonly Parabola2D WithMirrorAxis(in Axis2D a)
+    public readonly Parabola2D WithMirrorAxis(in Axis2D axis)
     {
         Frame2D pos = _pos;
-        pos = pos.WithXAxis(a);
+        pos = pos.WithXAxis(axis);
         return new Parabola2D(pos, _focalLength);
     }
 
-    public readonly Parabola2D WithAxis(in Frame2D a)
+    public readonly Parabola2D WithAxis(in Frame2D frame)
     {
         Frame2D pos = _pos;
-        pos = pos.WithAxis(a);
+        pos = pos.WithAxis(frame);
         return new Parabola2D(pos, _focalLength);
     }
 
@@ -163,66 +163,66 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
         return new Parabola2D(pos, _focalLength);
     }
 
-    public readonly Parabola2D Mirrored(in Point2D p)
+    public readonly Parabola2D Mirrored(in Point2D point)
     {
         Frame2D pos = _pos;
-        pos = pos.Mirrored(p);
+        pos = pos.Mirrored(point);
         return new Parabola2D(pos, _focalLength);
     }
 
-    public readonly Parabola2D Mirrored(in Axis2D a)
+    public readonly Parabola2D Mirrored(in Axis2D axis)
     {
         Frame2D pos = _pos;
-        pos = pos.Mirrored(a);
+        pos = pos.Mirrored(axis);
         return new Parabola2D(pos, _focalLength);
     }
 
-    public readonly Parabola2D Rotated(in Point2D p, double ang)
+    public readonly Parabola2D Rotated(in Point2D point, double angle)
     {
         Frame2D pos = _pos;
-        pos = pos.Rotated(p, ang);
+        pos = pos.Rotated(point, angle);
         return new Parabola2D(pos, _focalLength);
     }
 
-    public readonly Parabola2D Scaled(in Point2D p, double s)
+    public readonly Parabola2D Scaled(in Point2D point, double factor)
     {
         Frame2D pos = _pos;
         double focalLength = _focalLength;
-        focalLength *= s;
+        focalLength *= factor;
         if (focalLength < 0)
         {
             focalLength = -focalLength;
         }
 
-        pos = pos.Scaled(p, s);
+        pos = pos.Scaled(point, factor);
         return new Parabola2D(pos, focalLength);
     }
 
-    public readonly Parabola2D Transformed(in Transform2D t)
+    public readonly Parabola2D Transformed(in Transform2D transform)
     {
         Frame2D pos = _pos;
         double focalLength = _focalLength;
-        focalLength *= t.ScaleFactor;
+        focalLength *= transform.ScaleFactor;
         if (focalLength < 0)
         {
             focalLength = -focalLength;
         }
 
-        pos = pos.Transformed(t);
+        pos = pos.Transformed(transform);
         return new Parabola2D(pos, focalLength);
     }
 
-    public readonly Parabola2D Translated(in Vector2D v)
+    public readonly Parabola2D Translated(in Vector2D vector)
     {
         Frame2D pos = _pos;
-        pos = pos.Translated(v);
+        pos = pos.Translated(vector);
         return new Parabola2D(pos, _focalLength);
     }
 
-    public readonly Parabola2D Translated(in Point2D p1, in Point2D p2)
+    public readonly Parabola2D Translated(in Point2D point1, in Point2D point2)
     {
         Frame2D pos = _pos;
-        pos = pos.Translated(p1, p2);
+        pos = pos.Translated(point1, point2);
         return new Parabola2D(pos, _focalLength);
     }
 

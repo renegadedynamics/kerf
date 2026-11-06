@@ -21,21 +21,21 @@ namespace Kerf.Geometry;
 public sealed class PlaneSurface : ElementarySurface
 {
     /// <summary>A plane located by A3: its origin, XDirection and YDirection, and normal.</summary>
-    public PlaneSurface(in CoordinateSystem a3)
+    public PlaneSurface(in CoordinateSystem position)
     {
-        _pos = a3;
+        _pos = position;
     }
 
     /// <summary>A plane from a gp plane.</summary>
-    public PlaneSurface(in Plane3D pl)
+    public PlaneSurface(in Plane3D plane)
     {
-        _pos = pl.Position;
+        _pos = plane.Position;
     }
 
     /// <summary>A plane through P, normal to V; X and Y directions computed as by gp_Pln.</summary>
-    public PlaneSurface(in Point3D p, in Direction3D v)
+    public PlaneSurface(in Point3D point, in Direction3D direction)
     {
-        Plane3D pl = new Plane3D(p, v);
+        Plane3D pl = new Plane3D(point, direction);
         _pos = pl.Position;
     }
 
@@ -54,10 +54,10 @@ public sealed class PlaneSurface : ElementarySurface
     }
 
     /// <summary>A copy that is the plane Pl.</summary>
-    public PlaneSurface WithPln(in Plane3D pl)
+    public PlaneSurface WithPlane(in Plane3D plane)
     {
         PlaneSurface copy = (PlaneSurface)Copy();
-        copy.SetPln(pl);
+        copy.SetPln(plane);
         return copy;
     }
 
@@ -84,10 +84,10 @@ public sealed class PlaneSurface : ElementarySurface
     /// <summary>-V.</summary>
     public sealed override double VReversedParameter(double v) => (-v);
 
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
-        _pos = _pos.Transformed(t);
+        _pos = _pos.Transformed(transform);
     }
 
     /// <summary>False.</summary>
@@ -152,17 +152,17 @@ public sealed class PlaneSurface : ElementarySurface
     }
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int uOrder, int vOrder)
     {
-        if (nu + nv < 1 || nu < 0 || nv < 0)
+        if (uOrder + vOrder < 1 || uOrder < 0 || vOrder < 0)
         {
             throw Refusal.State(new UndefinedDerivative3DException());
         }
-        if (nu == 0 && nv == 1)
+        if (uOrder == 0 && vOrder == 1)
         {
             return new Vector3D(_pos.YDirection);
         }
-        else if (nu == 1 && nv == 0)
+        else if (uOrder == 1 && vOrder == 0)
         {
             return new Vector3D(_pos.XDirection);
         }
@@ -184,22 +184,22 @@ public sealed class PlaneSurface : ElementarySurface
     }
 
     /// <summary>(U, V) scaled by |T.ScaleFactor()| (infinite values unchanged).</summary>
-    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
+    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D transform)
     {
         if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(u))
         {
-            u *= Math.Abs(t.ScaleFactor);
+            u *= Math.Abs(transform.ScaleFactor);
         }
         if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(v))
         {
-            v *= Math.Abs(t.ScaleFactor);
+            v *= Math.Abs(transform.ScaleFactor);
         }
     }
 
     /// <summary>A scale of |T.ScaleFactor()| about the parametric origin.</summary>
-    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D t)
+    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D transform)
     {
-        Transform2D t2 = new Transform2D().WithScale(Constants.Origin2d(), Math.Abs(t.ScaleFactor));
+        Transform2D t2 = new Transform2D().WithScale(Constants.Origin2d(), Math.Abs(transform.ScaleFactor));
         return new GeneralTransform2D(t2);
     }
 

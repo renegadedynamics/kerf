@@ -17,7 +17,7 @@ public readonly partial struct Point2D : IEquatable<Point2D>
 
     internal Point2D(in Xy coord) => _coord = coord;
 
-    public Point2D(double xp, double yp) => _coord = new Xy(xp, yp);
+    public Point2D(double x, double y) => _coord = new Xy(x, y);
 
     // Copies
 
@@ -68,81 +68,81 @@ public readonly partial struct Point2D : IEquatable<Point2D>
         return (x * x + y * y);
     }
 
-    public readonly Point2D Mirrored(in Point2D p)
+    public readonly Point2D Mirrored(in Point2D point)
     {
         Xy coord = _coord;
         coord.Reverse();
-        Xy xy = p._coord;
+        Xy xy = point._coord;
         xy.Multiply(2.0);
         coord.Add(xy);
         return new Point2D(coord);
     }
 
-    public readonly Point2D Mirrored(in Axis2D a)
+    public readonly Point2D Mirrored(in Axis2D axis)
     {
         Xy coord = _coord;
-        Transform2D t = new Transform2D().WithMirror(a);
+        Transform2D t = new Transform2D().WithMirror(axis);
         t.Transforms(ref coord);
         return new Point2D(coord);
     }
 
-    public readonly Point2D Rotated(in Point2D p, double ang)
+    public readonly Point2D Rotated(in Point2D point, double angle)
     {
         Xy coord = _coord;
-        Transform2D t = new Transform2D().WithRotation(p, ang);
+        Transform2D t = new Transform2D().WithRotation(point, angle);
         t.Transforms(ref coord);
         return new Point2D(coord);
     }
 
-    public readonly Point2D Scaled(in Point2D p, double s)
+    public readonly Point2D Scaled(in Point2D point, double factor)
     {
         Xy coord = _coord;
-        Xy xy = p._coord;
-        xy.Multiply(1.0 - s);
-        coord.Multiply(s);
+        Xy xy = point._coord;
+        xy.Multiply(1.0 - factor);
+        coord.Multiply(factor);
         coord.Add(xy);
         return new Point2D(coord);
     }
 
-    public readonly Point2D Transformed(in Transform2D t)
+    public readonly Point2D Transformed(in Transform2D transform)
     {
         Xy coord = _coord;
-        if (t.Form == Identity)
+        if (transform.Form == Identity)
         {
         }
-        else if (t.Form == Translation)
+        else if (transform.Form == Translation)
         {
-            coord.Add(t.TranslationXy());
+            coord.Add(transform.TranslationXy());
         }
-        else if (t.Form == global::Kerf.Geometry.TransformForm.Scale)
+        else if (transform.Form == global::Kerf.Geometry.TransformForm.Scale)
         {
-            coord.Multiply(t.ScaleFactor);
-            coord.Add(t.TranslationXy());
+            coord.Multiply(transform.ScaleFactor);
+            coord.Add(transform.TranslationXy());
         }
-        else if (t.Form == PntMirror)
+        else if (transform.Form == PointMirror)
         {
             coord.Reverse();
-            coord.Add(t.TranslationXy());
+            coord.Add(transform.TranslationXy());
         }
         else
         {
-            t.Transforms(ref coord);
+            transform.Transforms(ref coord);
         }
         return new Point2D(coord);
     }
 
-    public readonly Point2D Translated(in Vector2D v)
+    public readonly Point2D Translated(in Vector2D vector)
     {
         Xy coord = _coord;
-        coord.Add(v.XY());
+        coord.Add(vector.XY());
         return new Point2D(coord);
     }
 
-    public readonly Point2D Translated(in Point2D p1, in Point2D p2)
+    public readonly Point2D Translated(in Point2D point1, in Point2D point2)
     {
         Xy coord = _coord;
-        coord.Add(p2._coord);
-        coord.Subtract(p1._coord);
+        coord.Add(point2._coord);
+        coord.Subtract(point1._coord);
         return new Point2D(coord);
     }
 

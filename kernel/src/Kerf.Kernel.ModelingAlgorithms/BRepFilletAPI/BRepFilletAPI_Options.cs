@@ -15,7 +15,7 @@ namespace Kerf.Engine.Fillets.Api;
 /// (decision 1139): BRepFilletAPI_MakeFillet's options under OCCT's names, with OCCT's defaults.
 /// </summary>
 /// <remarks>
-/// An Kerf addition, as <see cref="AlgoApiOptions"/> (decision 579): a struct with public fields, equatable
+/// A Kerf addition, as <see cref="AlgoApiOptions"/> (decision 579): a struct with public fields, equatable
 /// field by field (doubles as <c>double.Equals</c>). <c>new BRepFilletAPI_FilletOptions()</c> has OCCT's defaults
 /// (those of the MakeFillet constructor); <c>default</c> doesn't (all zero).
 /// </remarks>
