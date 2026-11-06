@@ -32,13 +32,13 @@ namespace Kerf.Engine.Topology.Tools;
 /// </remarks>
 internal sealed class WireExplorer
 {
-    private readonly Dictionary<Shape, NCollection_List<Shape>> _map =
+    private readonly IndexedMap<Shape, NCollection_List<Shape>> _map =
         new(ShapeHasher.Instance);
 
     private Edge _edge = new();
     private Vertex _vertex = new();
     private Face _face = new();
-    private readonly HashSet<Shape> _doubles = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _doubles = new(ShapeHasher.Instance);
     private double _tolU;
     private double _tolV;
 
@@ -201,7 +201,7 @@ internal sealed class WireExplorer
         // map of vertices to know if the wire is open
         var vmap = new IndexedSet<Shape>(ShapeHasher.Instance);
         //  map of infinite edges
-        var infEmap = new HashSet<Shape>(ShapeHasher.Instance);
+        var infEmap = new IndexedSet<Shape>(ShapeHasher.Instance);
 
         // list the vertices
         Vertex v1 = new Vertex(), v2 = new Vertex();
@@ -223,7 +223,7 @@ internal sealed class WireExplorer
                 if (!_map.ContainsKey(v1))
                 {
                     // OCCT binds a copy of one empty list; the port's lists are classes, so each vertex gets its own
-                    _map[v1] = new NCollection_List<Shape>();
+                    _map.Add(v1, new NCollection_List<Shape>());
                 }
                 _map.GetValue(v1).Append(e);
 
@@ -270,10 +270,10 @@ internal sealed class WireExplorer
 
         // Construction of the set of double edges.
         var it2 = new Iterator(w);
-        var emap = new HashSet<Shape>(ShapeHasher.Instance);
+        var emap = new IndexedSet<Shape>(ShapeHasher.Instance);
         while (it2.More())
         {
-            if (!emap.Add(it2.Value()))
+            if (!emap.TryAdd(it2.Value()))
             {
                 _doubles.Add(it2.Value());
             }
@@ -694,7 +694,7 @@ internal sealed class WireExplorer
         _vertex = new Vertex();
     }
 
-    private static bool SelectDouble(HashSet<Shape> doubles, NCollection_List<Shape> l, ref Edge e)
+    private static bool SelectDouble(IndexedSet<Shape> doubles, NCollection_List<Shape> l, ref Edge e)
     {
         var it = new NCollection_List<Shape>.Iterator(l);
 

@@ -223,6 +223,9 @@ internal class FaceCheck : ResultCheck
 
         var c = new CurveAdaptor2D();
         double first, last;
+        // Kerf: the boxes are read to compare wires, so one wire keeps none (but they are still made: a curve that can't
+        // be measured is still a failure here)
+        bool keepBoxes = _mapImb.Count > 1;
         Dictionary<Shape, Box2d> mapShapeBox2d = NewDataMapOfShapeBox2d();
         for (exp1.Init(_shape, ShapeType.Wire); exp1.More(); exp1.Next())
         {
@@ -246,11 +249,17 @@ internal class FaceCheck : ResultCheck
 
                 var boxE = new Box2d();
                 Add2dCurve.Add(c, first, last, 0.0, ref boxE);
-                mapShapeBox2d[edge] = boxE;
-                boxW.Add(boxE);
+                if (keepBoxes)
+                {
+                    mapShapeBox2d[edge] = boxE;
+                    boxW.Add(boxE);
+                }
             }
 
-            mapShapeBox2d[wire] = boxW;
+            if (keepBoxes)
+            {
+                mapShapeBox2d[wire] = boxW;
+            }
         }
 
         int nbwire, index, indexbis;
@@ -363,13 +372,17 @@ internal class FaceCheck : ResultCheck
         Face forwardFace = ShapeCasts.Face(_shape.Oriented(Forward));
         Dictionary<Shape, Box2d> wireBoxMap = NewDataMapOfShapeBox2d();
         // Precompute reliable UV bounds for cheap rejection of disjoint wire pairs.
-        for (exp1.Init(forwardFace, ShapeType.Wire); exp1.More(); exp1.Next())
+        // Kerf: one wire has no pair, and IntersectWires has just measured the same curves without a failure
+        if (nbwire > 1)
         {
-            Wire wire = ShapeCasts.Wire(exp1.Current());
-            var box = new Box2d();
-            if (ComputeWireUVBounds(forwardFace, wire, ref box))
+            for (exp1.Init(forwardFace, ShapeType.Wire); exp1.More(); exp1.Next())
             {
-                wireBoxMap[wire] = box;
+                Wire wire = ShapeCasts.Wire(exp1.Current());
+                var box = new Box2d();
+                if (ComputeWireUVBounds(forwardFace, wire, ref box))
+                {
+                    wireBoxMap[wire] = box;
+                }
             }
         }
 
@@ -501,7 +514,7 @@ internal class FaceCheck : ResultCheck
         int nbwire = _mapImb.Count;
         Wire wext = new();
         // OCCT's map iterator: the keys in the map's order (at most one wire contains others, ClassifyWires checked)
-        Shape[] keys = [.. _mapImb.Select(p => p.Key)];
+        Shape[] keys = [.. _mapImb.Keys];
         int itm = 0;
         if (nbwire == 1)
         {
