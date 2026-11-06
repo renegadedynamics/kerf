@@ -36,6 +36,7 @@ internal struct CircleInspector : ICellFilterInspector<int, Xy>
         _sqTolerance = tolerance * tolerance;
         _resIndices = [];
         _circles = circles ?? new List<MeshCircle>(reservedSize);
+        _circles.EnsureCapacity(reservedSize);
     }
 
     /// <summary>Binds the circle to the index.</summary>
