@@ -67,15 +67,15 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 | #1698 | A meshed shape's optimal box included the tolerance when told not to | 1779 |
 | #1606, #1452 | A ring of concentric circles couldn't be offset inward; a collapsing circle went to the general algorithm | 1788 |
 | `3270746444` | A point mirror's inverse | 1778 |
-| `71658f6c8f` | An offset surface on an indirect plane on the wrong side | 20601 |
-| `71658f6c8f`, `8f817f5da5` | `ApproxInt`'s caches returning without writing | 20602 |
-| occt-issues.md | `Law.BSpline`'s multiplicities and `Segment`; the cylinder range for negative B; `CoonsAlgPatch.Value`, `FunctionDraft`, quasi-angular and `GetCircle` second derivatives | 20603 to 20605 |
-| Unit 11R's list | A clean that turned a good Boolean invalid, up to 17% out in volume | 20606 |
-| occt-issues.md | `ApproximateBSplines` on a cylinder, and `ToSplines` on a sphere, invalid | 20607 |
-| #1567 | A sphere touching a torus along a circle: an empty fuse, with no failure | 20608 |
-| #1618 | NaN and infinite directions accepted | 20610 |
-| #1461 | A nearly horn torus written as a torus or a revolution by noise | 20611 |
-| `53706f78a8` | A closed polygon's self-intersections lost | 20612 |
+| `71658f6c8f` | An offset surface on an indirect plane on the wrong side | 1811 |
+| `71658f6c8f`, `8f817f5da5` | `ApproxInt`'s caches returning without writing | 1812 |
+| occt-issues.md | `Law.BSpline`'s multiplicities and `Segment`; the cylinder range for negative B; `CoonsAlgPatch.Value`, `FunctionDraft`, quasi-angular and `GetCircle` second derivatives | 1813 to 1815 |
+| Unit 11R's list | A clean that turned a good Boolean invalid, up to 17% out in volume | 1816 |
+| occt-issues.md | `ApproximateBSplines` on a cylinder, and `ToSplines` on a sphere, invalid | 1817 |
+| #1567 | A sphere touching a torus along a circle: an empty fuse, with no failure | 1818 |
+| #1618 | NaN and infinite directions accepted | 1820 |
+| #1461 | A nearly horn torus written as a torus or a revolution by noise | 1821 |
+| `53706f78a8` | A closed polygon's self-intersections lost | 1822 |
 
 ## The corpus's 502 BAD cases, by group
 

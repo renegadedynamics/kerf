@@ -172,7 +172,7 @@ public class PublicMemberCheckedTests
         Assert.Equal(GeomType.BSpline, splines.Faces()[0].GeomType);
         Assert.Equal(extruded.Area, splines.Area, 3);
         Assert.All(box.ToSplines().Faces(), f => Assert.Equal(GeomType.Plane, f.GeomType));
-        // A sphere stays one, and its edges are made to fit it (decision 20607; native's aren't, and it's invalid)
+        // A sphere stays one, and its edges are made to fit it (decision 1817; native's aren't, and it's invalid)
         ModelShape approximated = new Sphere(2).ToSplines();
         Assert.All(approximated.Faces(), f => Assert.Equal(GeomType.Sphere, f.GeomType));
         Assert.Equal(new Sphere(2).Volume, ((Part)approximated).Volume, 1);
