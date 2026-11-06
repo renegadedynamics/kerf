@@ -631,13 +631,13 @@ Ranked by what a user would plausibly meet, not by raw time: a common operation 
 | # | What | How long (loaded) | Why | State |
 |---:|---|---:|---|---|
 | 1 | **STEP import with healing** | 6.0 s for 289 files up to 400 kB; `de/step_4/E9` 12 s | Half is `ShapeFixer`. Wasteful in part: reshape copies (fixed). Hard in part: projecting curves point by point (`GenExtPS`, 12% of samples) | Better, not done |
-| 2 | **STEP export** | 2.0 s for the same files | Strings for every parameter, and the graph and checks after a transfer | Reals fixed |
+| 2 | **STEP export** | 2.0 s for the same files | Strings for every parameter, and the graph and checks after a transfer | Better: about a third less ("The third slice") |
 | 3 | **Booleans of many tools, general fuses** | `bug25614_fuse` 27 s, `boolean/simplify/A3` 22 s, `bug25232_9` (mkvolume) 58 s | Repeated searches (one fixed), otherwise many small intersections | Better, not done |
 | 4 | **Edges against free-form faces** | `buc60555_3` 52 s | A polyhedron of the whole surface for each edge | **Fixed** |
 | 5 | **Face-face on free-form surfaces** | `bug24905` 24 s, `bug28119_1` 34 s | Fitting curves. Allocation fixed; the fit itself (`Bfgs`, its matrix) is hard | Hard, better |
 | 6 | **Area and volume to a precision** | most of `bug25232_9`'s checks | 500 kB for each face, and a scan of 1,953 values at each step | **Fixed** |
 | 7 | **PNG pictures** | 30 to 58 ms each | Five full passes over each row; rasterising a triangle's whole box | **Fixed** |
-| 8 | **Validity checks on big shapes** (`checkshape`, `IsValid`) | about a quarter of `bug25232_9`'s active time | Maps and classifiers for each face. The profile can't be trusted here (see below) | Not looked into further |
+| 8 | **Validity checks on big shapes** (`checkshape`, `IsValid`) | about a quarter of `bug25232_9`'s active time | Maps and classifiers for each face. The profile can't be trusted here (see below) | Looked at: spread out ("The third slice") |
 | 9 | **Fine meshes** | `bug29715` 14 s, Axis_of_bearing 156 ms | The deflection loop's own work | Hard |
 | 10 | **Max fillet** | 500 ms on a box, warm | A search over real fillets | Hard, by design |
 | 11 | **Fillets, offsets on every edge** | 60 to 95 ms for 16 parts | No single cost | Hard |
@@ -723,6 +723,41 @@ So the rig's 1.23× and 1.47× are near the limit for these inputs. A typical Bo
 **`GenExtPS`'s last grid** stays: its `_points` holds positions evaluated once for each object, so it would have to be kept by surface and range, which needs a cache of extrema objects with a hit rate I didn't measure. That's the first thing to try next for healing: about 1.3% of its bytes, and more of its time, as it would save evaluating each grid.
 
 **What's left:** `CurveAdaptor.LoadCore`'s boxed elementary values (3.4% of Bento's bytes; a struct or a variant in the adaptor is a large change), `EdgeCurveAdaptor`, the mesher's collections, and STEP's writer (6% of healing's bytes by `StepWriter.Print` and `SendEntity`). Face/face on free-form surfaces wasn't looked at again.
+
+### The third slice: time, not bytes
+
+*6 November 2026, on a machine at up to 98% total CPU. Bytes and output are exact. Every time here is from a loaded machine: CPU time of one process, alternating base and new builds three times (not ReadyToRun), so a range is what it is worth. The rig's run under that load, with `-Force`, isn't comparable in time, and isn't committed. The clean run comes after merging.*
+
+| Change | Evidence |
+|---|---|
+| **`TCollection_HAsciiString` holds a string, not a builder** (decision 19701), and **STEP's writer** stops going through `Sprintf` for identifiers and integers, looking up each name in the model, rebuilding text with nothing to clean, and making a byte array for each line; the line buffer is an array (decision 19702). `EntityGraph.Evaluate` keeps one iterator, and `FreezeGraph` skips its walk when the children are frozen (decision 19703) | **Export 2,212 to 1,148 MB** (the rig; −48%). CPU a round 3.0 to 3.5 s before, 1.85 to 2.4 s after: **about a third less**. Each of the 289 files' output is the same, by digest with the header's time removed |
+| **`GenExtPS`'s search reads its grids by reference** (decision 19704). Its elements are 64 bytes, copied several times for each cell; OCCT's are references | **Import with healing 6.4 to 7.6 s to 5.3 to 7.0 s of CPU: about 10% to 15% less.** `BuildGrid`'s inclusive share 18.9% to 9.8%. 3,220 to 3,127 MB (the rig). The commit message's 4.75 s was one lucky pair of runs; this table is the figure |
+| **`BrepTopolTool` loads its restrictions when first asked** (decision 19707) | **Fillet every edge 85.5 to 73.4 MB, chamfer 86.9 to 75.0** (the features suite; −14%). Times too noisy to read here (fillet 170 to 95 and 152 ms) |
+| **`Bfgs`'s matrix update over spans** (decision 19705): the same arithmetic in the same order | `bug24905` 8.7 to 8.2 s of CPU in the whole case, including its other changes and start-up, so small |
+
+**The export row's 5% rise in the last run** (1,801 to 1,894 ms): noise, most likely. It's within the 10% this kind of row moves between runs, the row's own two runs differed by 7%, and that run's bytes fell. That's inferred; it wasn't timed again on a quiet machine.
+
+**Why a name was slow, as far as I can tell.** `RWCartesianPoint.WriteStep` showed 21% of export's samples, 77% of them in `GetHashCodeWorker`, where the code asks the model for the number of an entity's name. Each name is a new object, so each lookup gives it its first hash code, which leaves managed code. Decision 1706 says not to trust leaves, and this looks like the "unexplained" hash code samples of the earlier slices, so it isn't proof. But the case's share fell to 4.7% once the lookup went, so this one was at least partly real. Other work asking for first hash codes may be paying the same.
+
+**What the rest of the list came to:**
+
+| Item | What's there | Verdict |
+|---|---|---|
+| **Import, what's left** | Of import's samples, 67% is shape processing, 24% adding pcurves (`FixAddPCurve`), of which `ValueOfUV` and `NextValueOfUV` are most; `FixSelfIntersection` 12%; parsing and graph 19% | Hard in the main: points projected one by one |
+| **Face/face, free-form** (`bug24905`) | Of `FaceFace.Perform`: fitting 73% (`Bfgs`, then least squares, each iteration a new solve), `ComputeTolReached3d` 15% (a particle swarm along each curve), the surfaces' intersection 11% | **Hard: the geometry.** The swarm's evaluations are the work |
+| **Edge against free-form face** (`buc60555_3`) | `BeanFaceIntersector` 10% of samples, face/face 12%. **47% of the bytes are `GenExtPS`'s work grids,** 151 sets, the largest 41 by 1,641 and about 13 MB, as anything over 4,096 cells isn't kept (decision 1716) | Bytes only; time not measured. A larger or weakly held spare could take most of it |
+| **`GenExtPS._points`** | Evaluating the grid is now about 2% of import's samples, and the array 5.6% of its bytes | **Not worth a cache of extrema objects** (decision 19706), though the second slice put it first |
+| **Boxed adaptor values** | 3.4% of Bento's bytes, unchanged | Left: allocation only, and a large change |
+| **Validity checks** (`Analyzer`, 289 shapes, 2.1 s of CPU, 1,174 MB) | `WireCheck.SelfIntersect` 26%, `FClass2d` 19%, each doing real 2D work. Curve caches rebuilt 7% | **Spread out; nothing to take.** Unchanged by this slice |
+| **9, fine meshes** (`bug29715`) | Nearly all in `OptimizeMesh`, the deflection loop: Delaunay insertions and splits | Hard, confirmed |
+| **12, pipes with corners** (`bug32444`) | All in the corners' pave filler, as listed; 46 s on the list, 25 s here. `FunctionSetRoot.SearchDirection` is 17% of its bytes | Hard, confirmed; a small allocation cut is there |
+| **13, 2D offsets** (`bug6768`) | **Not entirely hard:** 54% of the bytes are `Polygon2dGen`, a polygon of each curve for each pair in `TrimEdgeTool.IntersectWith`, and evaluating curves is 13.5% of samples. 5.7 s here, 44 s on the list | The same shape as decision 1707's polyhedra. A polygon per curve might save a good part. Not tried: `IntCurveCurve`'s interface would have to change |
+| **11, every edge** (the features suite) | **Not entirely hard:** `ChFi3d.IsTangentFaces` was 10% of the suite's samples and 21% of its bytes, four fifths of that in `BrepTopolTool`'s constructor, which built an adaptor for each edge of the face when only a number of samples was wanted. Offsets: `ConnexIntByArc`, 29%, is intersections, and `InitSphere` 12%, with no single waste | Fixed for the fillets (below). Offsets hard |
+| **10, 14: max fillet, hidden lines** | Not traced in this slice's time box | Still marked hard on the earlier evidence only |
+
+**For the owner.** Nothing here needed a large restructuring. The one that might pay is below; none of the items above is a question that blocks anything.
+
+- **A curve's polygon kept across `IntCurveCurve` calls,** for 2D offsets (item 13). Expected gain: most of half the bytes of those cases, and some of their time; only 2D offsets would notice. A moderate change, not a large one.
 
 ## StepTidy (unit 11N)
 
