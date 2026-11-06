@@ -551,6 +551,71 @@ In Release, each run twice: as built, and with the five assemblies as the packag
 - Bento's own assemblies aren't Kerf's to compile. If Bento publishes ReadyToRun, the same property applies to its own generics over Kerf's types. Nothing here was measured in Bento.
 - About 115 ms of first calls, inferred. A native profiler would time them directly; this machine's account can't take a kernel trace without elevation.
 
+## What allocation is made of
+
+*Unit 11Q, 6 November 2026, on a shared machine; bytes don't depend on the load. One trace of Bento's eleven examples, passes 2 to 20, ReadyToRun: 3,737 MB in 35,688 allocation ticks, about one for each 100 kB, so a group of 1% is good to about ±0.05 of a point. A recalculation is 204.6 MB. To repeat it: `tools/alloc-report.cs ... ticks`, then `tools/alloc-groups.py`.*
+
+**Is the high allocation caused by making most types immutable? No. Immutability's own costs are 3.5% of the bytes, and only 0.9% has no counterpart in OCCT. The most a sceptic could lay at its door is about 12%.** About 93% is temporary working objects from the port: arrays, maps, iterators and adaptors that the algorithms make and drop. What a caller ends up keeping is 0.64%.
+
+| Group | Share of the bytes | MB per recalculation |
+|---|---:|---:|
+| **Immutability's own costs** | **3.5%** | 7.2 |
+| `ReShapeBuilder`, all it calls (OCCT has `ShapeBuild_ReShape`, doing the same copies) | 2.24% | |
+| Working overlay: `WorkingOverlay` and the working copies it makes | 0.73% | |
+| `Placement` (OCCT's `TopLoc_Location` also allocates these nodes) | 0.39% | |
+| Freezing a result | 0.12% | |
+| `with` copies, `ImmutableArray` | 0.01% | |
+| **Temporaries from the port** | **92.9%** | 190 |
+| Collections and arrays, mesher: triangles, circles, links, cell filter | 26.2% | |
+| Collections and arrays, everything else: `double[]` 6.7%, shape lists and maps, points | 30.9% | |
+| Adaptors and projectors | 10.3% | |
+| Iterators and explorers: `Iterator` alone 4.0%, `Explorer` 1.4% | 8.7% | |
+| Helper objects: `SLProps` 1.4%, extrema's point-on-curve objects, `SurfaceContinuity` | 7.4% | |
+| Elementary geometry values boxed in adaptors (`Plane3D`, `Circle3D`, `Line3D`) | 3.4% | |
+| Curves and surfaces made to be read once, as by `CurveOnPlane`'s projection | 3.0% | |
+| Math objects: `VectorBase`, `Matrix`, solvers | 2.5% | |
+| Closures and delegates | 0.5% | |
+| **Results** | **2.7%** | 5.5 |
+| Meshes: triangulations, and reading them into `ShapeMesh` | 1.84% | |
+| Topology and geometry built | 0.84% | |
+| **Other:** tasks, threads, strings | **0.9%** | 1.8 |
+
+**How the lines were drawn.** A tick takes the first group that matches, and immutability goes first. So anything with `WorkingOverlay`, `ReShapeBuilder`, `Placement`, freezing or an immutable collection *anywhere on its stack* counts as immutability, including whatever those call. That leans towards immutability. Results come next, by type and where they were made. A curve made under an adaptor, projection or box is a temporary; a curve made anywhere else is a result. The rest is temporaries, divided by type, unless the stack holds no Kerf code or the type is the runtime's. `tools/alloc-groups.py` has the exact rules.
+
+**Results are checked a second way.** `Kerf.Kernel.Bento.Benchmarks -- retained` holds eight copies of each example's shape and mesh, and reads what the collector can't free: **1.3 MB of 204.8 MB allocated, or 0.64%** (0.28% to 1.61% by example). So the 2.7% above is, if anything, generous. The difference is mostly each step's result, which the next step drops.
+
+**The sceptic's bound.** Grant every doubtful case to immutability, even those where the C++ does the same:
+
+| Added to the group above | Share |
+|---|---:|
+| Immutability's own costs | 3.5% |
+| All boxed elementary geometry values, though the box comes from standing in for a C++ variant | 3.41% |
+| Reading meshes into `ShapeMesh`, and the triangulations they're read from | 1.84% |
+| Any copy, reversal or transform within six frames of the allocation (OCCT's `BRep_Tool` and `GeomProjLib` copy too) | 1.52% |
+| Everything the public layers allocate directly, `Kerf.Modeling` included | 1.07% |
+| Every other shape and curve built | 0.61% |
+| **Upper bound** | **12.0%** |
+
+Even that leaves 88% with no link to immutability. What remains ambiguous is whether an algorithm builds a list because it can't edit in place, which a stack can't show. None of the largest sites does: they're the mesher's own structures, `MapShapes`, `NewtonMinimum`'s kind of arrays, and adaptors. Immutable *structs* such as `Point3D` and `Placement` cost nothing here unless they're boxed. They're values, and a `with` is a copy on the stack.
+
+**OCCT for the same work is an estimate, not a measurement.** Native's "3 MB" only ever counted the managed wrappers. OCCT's own heap was outside .NET's count, and native can't be measured again. So the comparison with 204 MB was never like for like. Reading what the C++ does group by group:
+
+| Group | Share here | Share OCCT would also put on its heap (estimate) | Why |
+|---|---:|---:|---|
+| Mesher's collections | 26.2% | a half to four fifths | Bump allocators and segmented vectors, the same data, but no copies from growing a list |
+| Other collections, arrays | 30.9% | 70% to all | `NCollection_Array1`, maps and lists are on the heap there too |
+| Adaptors, projectors | 10.3% | 30% to 50% | Often on the stack, though with handles inside |
+| Iterators, explorers | 8.7% | up to 10% | `TopoDS_Iterator` is on the stack, and `TopExp_Explorer` holds its stack inline |
+| Helpers | 7.4% | 10% to 30% | `BRepLProp_SLProps` and extrema objects are mostly on the stack |
+| Boxed geometry values, closures | 3.9% | none | |
+| Math objects | 2.5% | 20% to 50% | `math_Vector` keeps up to 32 values inline |
+| Geometry read once, results, `ReShape`, `Placement` | 8.3% | all | The same objects |
+| Overlay, freezing, other | 1.8% | none | |
+
+That comes to **about 50% to 70% of Kerf's bytes, or 100 to 145 MB for a recalculation, so Kerf allocates perhaps 1.4 to 2 times what the C++ would.** The excess is the port's stack objects that became heap objects in .NET, and growing lists. It's a real target, and it isn't immutability. C++ also pays for its heap differently, with `malloc` on each object and no collector.
+
+**What this says to do.** Don't touch the immutable design for allocation's sake. If more allocation is to go, the largest single groups are the mesher's collections, then iterators and explorers (8.7%, stack objects in OCCT) and adaptors with their boxed values (13.7%). Unit 11D's point stands that allocation is what limits parallel rounds.
+
 ## StepTidy (unit 11N)
 
 *5 November 2026, `Kerf.Kernel.Benchmarks -- step-tidy` over the 289 files `-- healing` exports, written by the plain STEP

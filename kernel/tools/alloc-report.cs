@@ -4,6 +4,7 @@
 // and sorts its allocation ticks by type, by the first frame that isn't a collection, and by a chain of four frames from there.
 // Unit 11B's sites in docs/performance.md come from it. A tick stands for about 100 kB, so small sites are rough.
 //   dotnet run kernel/tools/alloc-report.cs -- bento.nettrace <ms to skip> [rows] [only stacks with this frame]
+//   dotnet run kernel/tools/alloc-report.cs -- bento.nettrace <ms to skip> ticks ticks.tsv (every tick's type and stack, for tools/alloc-groups.py)
 #:package Microsoft.Diagnostics.Tracing.TraceEvent@3.1.21
 #:property TreatWarningsAsErrors=false
 #:property EnforceCodeStyleInBuild=false
@@ -14,10 +15,34 @@ using Microsoft.Diagnostics.Tracing.Parsers.Clr;
 
 string file = args[0];
 double skipMs = args.Length > 1 ? double.Parse(args[1], System.Globalization.CultureInfo.InvariantCulture) : 0;
-int top = args.Length > 2 ? int.Parse(args[2]) : 45;
-string? filter = args.Length > 3 ? args[3] : null;
+bool dump = args.Length > 3 && args[2] == "ticks";
+int top = args.Length > 2 && !dump ? int.Parse(args[2]) : 45;
+string? filter = args.Length > 3 && !dump ? args[3] : null;
 string etlx = TraceLog.CreateFromEventPipeDataFile(file);
 using var log = new TraceLog(etlx);
+if (dump)
+{
+    var ticks = new Dictionary<string, (long Bytes, int Count)>();
+    foreach (var ev in log.Events)
+    {
+        if (ev.TimeStampRelativeMSec < skipMs || ev is not GCAllocationTickTraceData tick)
+        {
+            continue;
+        }
+        var stack = new List<string>();
+        for (var c = ev.CallStack(); c is not null; c = c.Caller)
+        {
+            string n = c.CodeAddress.Method?.FullMethodName ?? (c.CodeAddress.ModuleName ?? "?") + "!?";
+            int p = n.IndexOf('(');
+            stack.Add(p > 0 ? n[..p] : n);
+        }
+        string key = (tick.TypeName ?? "?") + "	" + string.Join("|", stack);
+        var had = ticks.GetValueOrDefault(key);
+        ticks[key] = (had.Bytes + tick.AllocationAmount64, had.Count + 1);
+    }
+    File.WriteAllLines(args[3], ticks.OrderByDescending(k => k.Value.Bytes).Select(k => $"{k.Value.Bytes}	{k.Value.Count}	{k.Key}"));
+    return;
+}
 var byType = new Dictionary<string, long>();
 var byLeaf = new Dictionary<string, long>();
 var bySite = new Dictionary<string, long>();

@@ -7,7 +7,7 @@
 // tools/bench.ps1 runs it in fresh processes, ReadyToRun, and keeps the figures (docs/performance.md). By hand, from the
 // kernel folder:
 //   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks [-- passes [copies]]
-//   (or [-- images [passes]] for the SVG drawings and PNG pictures of unit 10L4)
+//   (or [-- images [passes]] for the SVG drawings and PNG pictures of unit 10L4; or [-- retained] for what a caller keeps)
 // (copies: how many of each example the parallel rounds run at once; 0 skips them; the default is a processor's worth)
 // tools/parallel-curve.ps1 varies the processors it has, and the collector's settings
 // The first pass is a workbook opening (it includes the JIT's work on Kerf); passes 2 to 9 are recalculations, of which
@@ -136,6 +136,40 @@ if (args.Length > 0 && args[0] == "images")
         BenchRows.Add("images", name, "result", $"{edges} edges, {svgLength} characters of SVG, {pngLength} bytes of PNG");
     }
 
+    return 0;
+}
+
+// What a caller keeps (unit 11Q): `-- retained` holds each example's shape and mesh, and reads how much the collector can't free,
+// against what building them allocated. The difference is everything the work threw away (performance.md, "What allocation is made of").
+if (args.Length > 0 && args[0] == "retained")
+{
+    const int held = 8;
+    Console.WriteLine("example                  allocated MB  kept KB  kept %");
+    double allocatedSum = 0, keptSum = 0;
+    foreach (var (name, build) in examples)
+    {
+        for (int warm = 0; warm < 3; warm++)
+        {
+            GC.KeepAlive(build().Triangulate());
+        }
+        var keep = new (Shape Shape, ShapeMesh Mesh, double Volume)[held];
+        long live = GC.GetTotalMemory(true);
+        long start = GC.GetTotalAllocatedBytes(true);
+        for (int i = 0; i < held; i++)
+        {
+            Shape shape = build();
+            keep[i] = (shape, shape.Triangulate(), shape.Volume);
+        }
+        double allocated = (GC.GetTotalAllocatedBytes(true) - start) / (double)held;
+        double kept = (GC.GetTotalMemory(true) - live) / (double)held;
+        GC.KeepAlive(keep);
+        allocatedSum += allocated;
+        keptSum += kept;
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+            $"{name,-24} {allocated / 1048576.0,12:F1} {kept / 1024.0,8:F0} {100.0 * kept / allocated,7:F2}"));
+    }
+    Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+        $"{"total",-24} {allocatedSum / 1048576.0,12:F1} {keptSum / 1024.0,8:F0} {100.0 * keptSum / allocatedSum,7:F2}"));
     return 0;
 }
 
