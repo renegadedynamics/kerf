@@ -141,6 +141,39 @@ public class InvalidResultTests
     }
 
     [Fact]
+    public void A_sphere_touching_a_torus_along_a_circle_fuses_cuts_and_commons()
+    {
+        // OCCT #1567 (decision 20608): a sphere of the minor radius, centred on the centre circle where a torus sector ends,
+        // touches it along that end's circle. Native reports success with an empty fuse, and a cut that removes nothing.
+        Solid torus = Solid.Torus(5, 1, new TorusOptions { Angle = Math.PI / 2 }).Value.Shape;
+        Solid sphere = Solid.Sphere(1, new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))).Value.Shape;
+        double sector = Math.PI * 5 * (Math.PI / 2), half = 2.0 / 3.0 * Math.PI;
+        Assert.Equal(sector + half, torus.Fuse(sphere).Value.Shape.IntegrateVolume(), 1e-6);
+        Assert.Equal(sector - half, torus.Cut(sphere).Value.Shape.IntegrateVolume(), 1e-6);
+        Assert.Equal(half, torus.Common(sphere).Value.Shape.IntegrateVolume(), 1e-6);
+    }
+
+    [Theory]
+    [InlineData(1.0 + 1e-6)]
+    [InlineData(1.0 - 1e-6)]
+    [InlineData(1.0 + 1e-9)]
+    public void A_fuse_is_never_empty_and_a_success(double theRadius)
+    {
+        // Just off that tangency the intersection is still walked, and a fuse holds all of what it was given
+        Solid torus = Solid.Torus(5, 1, new TorusOptions { Angle = Math.PI / 2 }).Value.Shape;
+        Solid sphere = Solid.Sphere(theRadius, new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))).Value.Shape;
+        Result<Built<Shape>> result = torus.Fuse(sphere, new BooleanOptions { CheckResult = false });
+        if (result.IsSuccess)
+        {
+            Assert.NotEmpty(result.Value.Shape.Children);
+        }
+        else
+        {
+            Assert.Equal(DiagnosticCode.InvalidResult, result.Error!.Code);
+        }
+    }
+
+    [Fact]
     public void Approximating_keeps_a_valid_shape_valid()
     {
         // Decision 20607: native's are invalid, as its edges keep their tolerance when their faces move

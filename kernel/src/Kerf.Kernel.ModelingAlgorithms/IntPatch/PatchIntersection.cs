@@ -546,6 +546,25 @@ internal partial class PatchIntersection
 
     // The common tail of OCCT's two Performs above, written out in each: the switch on the type of the surface
     // that isn't the cone or the torus, then the coaxial test (decision 671's pattern for verbatim repeats).
+    // A sphere of a torus's minor radius centred on its centre circle: QuadQuadGeo has the circle where they touch, and the
+    // walk doesn't find it (OCCT #1567; decision 20608).
+    private static bool IsTubeTangentSphere(SurfaceKind aCTType, SurfaceAdaptorBase aCTSurf, SurfaceAdaptorBase aGeomSurf)
+    {
+        if (aCTType != global::Kerf.Geometry.SurfaceKind.Torus)
+        {
+            return false;
+        }
+
+        Torus3D torus = aCTSurf.Torus();
+        Sphere3D sphere = aGeomSurf.Sphere();
+        double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
+        Vector3D fromAxis = new(torus.Axis.Location, sphere.Location);
+        double along = fromAxis.Dot(new Vector3D(torus.Axis.Direction));
+        double radial = Math.Sqrt(Math.Max(0.0, fromAxis.SquareMagnitude - along * along));
+        return torus.MajorRadius > torus.MinorRadius && Math.Abs(along) <= tol && Math.Abs(radial - torus.MajorRadius) <= tol
+               && Math.Abs(sphere.Radius - torus.MinorRadius) <= tol;
+    }
+
     private static void CheckGeomGeom(ref bool bToCheck, ref int bGeomGeom, ref bool treatAsBiParametric,
                                       in Axis3D aCTAx, ref Axis3D aGeomAx, SurfaceKind aCTType,
                                       SurfaceAdaptorBase aCTSurf, SurfaceAdaptorBase aGeomSurf)
@@ -585,7 +604,7 @@ internal partial class PatchIntersection
                 }
                 case global::Kerf.Geometry.SurfaceKind.Sphere:
                 {
-                    if (l1.DistanceTo(aGeomSurf.Sphere().Location) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                    if (IsTubeTangentSphere(aCTType, aCTSurf, aGeomSurf) || l1.DistanceTo(aGeomSurf.Sphere().Location) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         bGeomGeom = 1;
                     }

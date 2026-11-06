@@ -2248,6 +2248,22 @@ internal class QuadQuadGeo
         Line3D lin = new(torAx);
         Point3D sphLoc = sph.Location;
         //
+        // A sphere of the minor radius centred on the centre circle sits inside the tube, and touches it along that
+        // circle of the tube. OCCT 8.0.1 walks this tangency, and gets curves far off (#1567; decision 20608).
+        Vector3D fromAxis = new(torAx.Location, sphLoc);
+        Vector3D alongAxis = new Vector3D(torAx.Direction) * fromAxis.Dot(new Vector3D(torAx.Direction));
+        Vector3D radial = fromAxis - alongAxis;
+        if (alongAxis.Magnitude <= _epsilonDistance && Math.Abs(radial.Magnitude - rMaj) <= _epsilonDistance
+            && Math.Abs(sph.Radius - rMin) <= _epsilonDistance)
+        {
+            _typeres = global::Kerf.Engine.Intersection.ResultType.Circle;
+            _pt1 = sphLoc;
+            _param1 = rMin;
+            _dir1 = new Direction3D(radial.Crossed(new Vector3D(torAx.Direction)));
+            _nbint = 1;
+            return;
+        }
+        //
         if (lin.DistanceTo(sphLoc) > _epsilonDistance)
         {
             _typeres = NoGeometricSolution;
