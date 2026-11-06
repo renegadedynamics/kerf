@@ -1,7 +1,5 @@
 using Kerf.Construction;
 using Kerf.Measurement;
-using Kerf.Geometry;
-using Kerf.Topology;
 
 namespace Kerf.Modeling;
 
@@ -14,15 +12,6 @@ public static partial class VertexExtensions
     {
 
         internal Vertex TopoVertex => (Vertex)self;
-
-        private Point3D Point
-        {
-            get
-            {
-                self.NeedsGeometry("position");
-                return self.Point;
-            }
-        }
 
         /// <summary>The X coordinate, including the vertex's Location.</summary>
         public double X { get { self.NeedsGeometry("position"); return self.Point.X; } }

@@ -3,8 +3,6 @@ using Kerf.Features;
 using Kerf.Fillets;
 using Kerf.Measurement;
 using Kerf.Offsets;
-using Kerf.Geometry;
-using Kerf.Topology;
 
 namespace Kerf.Modeling;
 

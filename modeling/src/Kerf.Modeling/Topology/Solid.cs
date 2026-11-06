@@ -3,7 +3,6 @@ using Kerf.Features;
 using Kerf.Healing;
 using Kerf.Measurement;
 using Kerf.Offsets;
-using Kerf.Geometry;
 
 namespace Kerf.Modeling;
 

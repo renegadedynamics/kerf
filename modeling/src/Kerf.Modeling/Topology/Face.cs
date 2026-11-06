@@ -1,8 +1,6 @@
 using Kerf.Construction;
 using Kerf.Fillets;
 using Kerf.Measurement;
-using Kerf.Geometry;
-using Kerf.Topology;
 
 namespace Kerf.Modeling;
 

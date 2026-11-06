@@ -1,5 +1,3 @@
-using Kerf.Geometry;
-
 namespace Kerf.Modeling;
 
 /// <summary>An immutable axis: a position and a unit direction.</summary>

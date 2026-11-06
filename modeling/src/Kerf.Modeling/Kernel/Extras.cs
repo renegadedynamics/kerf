@@ -1,5 +1,4 @@
 using Kerf.Exchange;
-using Kerf.Geometry;
 
 namespace Kerf.Modeling;
 

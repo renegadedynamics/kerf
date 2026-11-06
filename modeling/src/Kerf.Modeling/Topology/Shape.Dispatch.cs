@@ -1,5 +1,3 @@
-using Kerf.Geometry;
-
 namespace Kerf.Modeling;
 
 // What was virtual on the old shape classes: the one member, deciding by the kind of shape held. An object (a Part, a Line)

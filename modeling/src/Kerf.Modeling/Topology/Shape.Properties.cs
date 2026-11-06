@@ -1,9 +1,7 @@
 using Kerf.Construction;
-using Kerf.Geometry;
 using Kerf.Healing;
 using Kerf.Measurement;
 using Kerf.Meshing;
-using Kerf.Topology;
 
 namespace Kerf.Modeling;
 

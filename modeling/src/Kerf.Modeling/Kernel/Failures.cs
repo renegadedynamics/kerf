@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using Kerf.Topology;
 
 namespace Kerf.Modeling;
 

@@ -1,4 +1,3 @@
-using Kerf.Booleans;
 using Kerf.Measurement;
 
 namespace Kerf.Modeling;

@@ -1,4 +1,3 @@
-using Kerf.Geometry;
 using System.Diagnostics;
 using Kerf.Measurement;
 

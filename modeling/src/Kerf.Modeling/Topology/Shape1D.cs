@@ -1,7 +1,5 @@
 using Kerf.Construction;
-using Kerf.Geometry;
 using Kerf.Measurement;
-using Kerf.Topology;
 
 namespace Kerf.Modeling;
 
