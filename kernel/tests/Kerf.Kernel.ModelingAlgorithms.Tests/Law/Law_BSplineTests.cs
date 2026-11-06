@@ -157,7 +157,6 @@ public class Law_BSplineTests
     public void KnotOperations_KeepTheFunction()
     {
         var aRnd = new Random(4321);
-        int aDropped = 0;
         for (int aCase = 0; aCase < 200; aCase++)
         {
             Pair p = RandomPair(aRnd);
@@ -212,21 +211,11 @@ public class Law_BSplineTests
             BSpline aSeg = aLaw.Segmented(u1, u2);
             Assert.False(aSeg.IsPeriodic);
             Assert.Equal(u1, aSeg.FirstParameter(), 1.0e-12);
-            // OCCT locates the end at NewU1 + (U2 - U1), which can round below U2 and then keep the poles of a span
-            // that doesn't end at a knot of multiplicity Degree: a wrong curve (occt-issues.md;
-            // Segment_CanDropTheLastSpan). Only the segments that end at U2 are checked.
-            if (Math.Abs(aSeg.LastParameter() - u2) > 1.0e-12)
+            Assert.Equal(u2, aSeg.LastParameter(), 1.0e-12);
+            for (int k = 0; k <= 10; k++)
             {
-                Assert.True(aSeg.LastParameter() < u2);
-                aDropped++;
-            }
-            else
-            {
-                for (int k = 0; k <= 10; k++)
-                {
-                    double v = u1 + (u2 - u1) * k / 10.0;
-                    Assert.Equal(aLaw.Value(v), aSeg.Value(v), 1.0e-9);
-                }
+                double v = u1 + (u2 - u1) * k / 10.0;
+                Assert.Equal(aLaw.Value(v), aSeg.Value(v), 1.0e-9);
             }
 
             // reverse
@@ -241,22 +230,22 @@ public class Law_BSplineTests
             if (aLaw.KnotCount > 2)
             {
                 BSpline aMult = aLaw.MultiplicityIncreased(2, aLaw.Degree());
-                // OCCT inserts M - old with Add = false (occt-issues.md): the multiplicity becomes Max(old, M - old)
+                // decision 20603: OCCT 8.0.1 inserted M - old with Add = false, giving Max(old, M - old)
                 int anOld = aLaw.Multiplicity(2);
-                Assert.Equal(Math.Max(anOld, aLaw.Degree() - anOld), aMult.Multiplicity(2));
+                Assert.Equal(Math.Max(anOld, aLaw.Degree()), aMult.Multiplicity(2));
                 AssertSameFunction(aMult, p.Curve, "IncreaseMultiplicity");
                 BSpline aMult2 = aLaw.MultiplicityIncremented(2, aLaw.KnotCount - 1, 1);
+                Assert.Equal(Math.Min(aLaw.Multiplicity(2) + 1, aLaw.Degree()), aMult2.Multiplicity(2));
                 AssertSameFunction(aMult2, p.Curve, "IncrementMultiplicity");
             }
         }
-        Assert.True(aDropped < 20, $"{aDropped} segments dropped their last span");
     }
 
     [Fact]
-    public void Segment_CanDropTheLastSpan()
+    public void Segment_KeepsTheLastSpan()
     {
-        // OCCT: U1 + (U2 - U1) is one ulp below the knot U2 inserted, and the strict test against
-        // Epsilon(max(|U1|, |U2|)) misses it, so the segment ends at the previous knot
+        // Decision 20603: U1 + (U2 - U1) is one ulp below the knot U2 inserted, and OCCT 8.0.1's strict test against
+        // Epsilon(max(|U1|, |U2|)) missed it, so the segment ended at the previous knot
         var aKnots = new NCollection_Array1<double>(1, 3);
         aKnots[1] = -1.193340764936684;
         aKnots[2] = -0.10065871756554523;
@@ -269,7 +258,8 @@ public class Law_BSplineTests
         var aLaw = new BSpline(aPoles, aKnots, aMults, 1, true);
         BSpline aSeg = aLaw.Segmented(-0.8366561267389194, 0.18337401436557388);
         Assert.Equal(-0.8366561267389194, aSeg.FirstParameter());
-        Assert.Equal(-0.10065871756554523, aSeg.LastParameter());
+        Assert.Equal(0.18337401436557388, aSeg.LastParameter(), 1.0e-15);
+        Assert.Equal(aLaw.Value(0.1), aSeg.Value(0.1), 1.0e-12);
         // a range whose end rounds exactly is kept whole
         BSpline aSeg2 = aLaw.Segmented(-0.75, 0.25);
         Assert.Equal(0.25, aSeg2.LastParameter());
@@ -384,11 +374,11 @@ public class Law_BSplineTests
         Assert.Equal(BSplKnotDistribution.NonUniform, aK.KnotDistribution());
         EngineAssert.Throws<ConstructionErrorException>(() => aLaw.WithKnot(2, 2.0));
         BSpline aKM = aLaw.WithKnot(2, 1.25, 3);
-        // OCCT's IncreaseMultiplicity inserts 3 - 1 with Add = false (occt-issues.md): multiplicity 2, not 3
-        Assert.Equal(2, aKM.Multiplicity(2));
+        // decision 20603: OCCT 8.0.1 inserted 3 - 1 with Add = false, giving 2
+        Assert.Equal(3, aKM.Multiplicity(2));
         Assert.Equal(1.25, aKM.Knot(2));
-        Assert.Equal(Continuity.C1, aKM.Continuity());
-        Assert.Equal(1, aLaw.MultiplicityIncremented(2, 2, 1).Multiplicity(2)); // Max(1, 1), not 2
+        Assert.Equal(Continuity.C0, aKM.Continuity());
+        Assert.Equal(2, aLaw.MultiplicityIncremented(2, 2, 1).Multiplicity(2));
         var aNewKnots = new NCollection_Array1<double>(1, 3);
         aNewKnots[1] = -1;
         aNewKnots[2] = 0.5;

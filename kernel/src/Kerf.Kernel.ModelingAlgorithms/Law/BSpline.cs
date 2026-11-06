@@ -337,9 +337,8 @@ internal sealed class BSpline : Transient
         k[1] = _knots.Value(index);
         NCollection_Array1<int> m = new NCollection_Array1<int>(1, 1);
         m[1] = M - _mults.Value(index);
-        // OCCT inserts with Add = false (Geom's IncreaseMultiplicity passes true): the multiplicity becomes
-        // Max(old, M - old), not M
-        InsertKnots(k, m, Epsilon(1.0));
+        // OCCT 8.0.1 inserts with Add = false, as Geom's doesn't: the multiplicity came out Max(old, M - old) (decision 20603)
+        InsertKnots(k, m, Epsilon(1.0), true);
     }
 
     /// <summary>Raises the multiplicities of the knots I1 to I2 to M.</summary>
@@ -353,8 +352,8 @@ internal sealed class BSpline : Transient
         {
             m[i] = M - _mults.Value(i);
         }
-        // OCCT inserts with Add = false (Geom passes true): the multiplicities become Max(old, M - old), not M
-        InsertKnots(k, m, Epsilon(1.0));
+        // OCCT 8.0.1 inserts with Add = false, as Geom's doesn't (decision 20603)
+        InsertKnots(k, m, Epsilon(1.0), true);
     }
 
     /// <summary>Increments the multiplicities of the knots I1 to I2 by Step.</summary>
@@ -364,8 +363,8 @@ internal sealed class BSpline : Transient
         NCollection_Array1<double> k = new NCollection_Array1<double>(_knots.Array1(), i1, i1, i2);
         NCollection_Array1<int> m = new NCollection_Array1<int>(i1, i2);
         m.Init(step);
-        // OCCT inserts with Add = false (Geom passes true): the multiplicities become Max(old, Step), not old + Step
-        InsertKnots(k, m, Epsilon(1.0));
+        // OCCT 8.0.1 inserts with Add = false, as Geom's doesn't: Max(old, Step), not old + Step (decision 20603)
+        InsertKnots(k, m, Epsilon(1.0), true);
     }
 
     /// <summary>Inserts the knot U with multiplicity M (adding to an existing knot's multiplicity if Add).</summary>
@@ -573,11 +572,11 @@ internal sealed class BSpline : Transient
         int fromU1 = _knots.Lower();
         int toU2 = _knots.Upper();
         global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(_deg, _knots.Array1(), _mults.Array1(), newU1, _periodic, fromU1, toU2, out index1, out u);
-        // OCCT: NewU1 + delta can round one ulp below the knot inserted at U2, and the strict test against Eps
-        // (Epsilon(max(|U1|, |U2|))) then misses it, so the segment ends at the previous knot
+        // NewU1 + delta can round an ulp below the knot inserted at U2, which OCCT 8.0.1's strict test missed, ending the
+        // segment at the previous knot with the poles of a span more (decision 20603)
         global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(_deg, _knots.Array1(), _mults.Array1(), newU1 + delta, _periodic, fromU1, toU2,
                                  out index2, out u);
-        if (Math.Abs(_knots.Value(index2 + 1) - u) < eps)
+        if (Math.Abs(_knots.Value(index2 + 1) - u) <= eps)
         {
             index2++;
         }
