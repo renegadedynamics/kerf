@@ -62,6 +62,20 @@ public class FillRecordingsTests(ITestOutputHelper output)
         static string Key(string theToken) => theToken[..Math.Max(0, theToken.IndexOf(':'))];
         return thePort.Count == theNative.Length
                && Enumerable.Range(0, thePort.Count).All(i => thePort[i] == theNative[i]
-                                                             || (Key(thePort[i]) == Key(theNative[i]) && Key(thePort[i]) is "wt" or "swt" or "sd1"));
+                                                             || (Key(thePort[i]) == Key(theNative[i]) && Key(thePort[i]) is "wt" or "swt" or "sd1")
+                                                             || IsCoonsValue(thePort[i], theNative[i]));
+    }
+
+    // Decision 20605: native's CoonsAlgPatch.Value evaluates two boundaries at the wrong parameter. A "pv" token holds, per
+    // point, the value, D1U, D1V and DUV, three numbers each: only the values may differ.
+    private static bool IsCoonsValue(string thePort, string theNative)
+    {
+        if (!thePort.StartsWith("pv:", StringComparison.Ordinal) || !theNative.StartsWith("pv:", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        string[] aP = thePort[3..].Split(','), aN = theNative[3..].Split(',');
+        return aP.Length == aN.Length && Enumerable.Range(0, aP.Length).All(i => aP[i] == aN[i] || i % 12 < 3);
     }
 }

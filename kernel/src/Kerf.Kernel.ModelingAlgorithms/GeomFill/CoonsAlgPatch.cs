@@ -82,15 +82,15 @@ internal class CoonsAlgPatch : Transient
         a3 = 1.0 - a1;
         Xyz cor, cortemp;
 
-        // OCCT: bounds 0 and 2 (the U boundaries) are evaluated at V, not U (occt-issues.md)
-        cor = _bound[0].Value(v).XYZ();
+        // OCCT 8.0.1 evaluates bounds 0 and 2, the U boundaries, at V (decision 20605)
+        cor = _bound[0].Value(u).XYZ();
         cor.Multiply(a0);
 
         cortemp = _bound[1].Value(v).XYZ();
         cortemp.Multiply(a1);
         cor.Add(cortemp);
 
-        cortemp = _bound[2].Value(v).XYZ();
+        cortemp = _bound[2].Value(u).XYZ();
         cortemp.Multiply(a2);
         cor.Add(cortemp);
 

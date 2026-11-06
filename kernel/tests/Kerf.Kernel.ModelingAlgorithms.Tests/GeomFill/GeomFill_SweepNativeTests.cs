@@ -35,6 +35,32 @@ public class GeomFill_SweepNativeTests(ITestOutputHelper output)
                && BitConverter.Int64BitsToDouble(Convert.ToInt64(aP[3], 16)) < BitConverter.Int64BitsToDouble(Convert.ToInt64(aN[3], 16));
     }
 
+    // Decision 20605: native's second derivatives of the quasi-angular conversion and of GetCircle are wrong. Where they're
+    // printed, only those lines differ (differences of first derivatives hold the right answer, GeomFill_SweepTests); a
+    // pipe along an edge approximates with them, so comes out a different B-spline, its error within the same tolerance.
+    private static bool IsSecondDerivativeFixed(string theKind, string theNative, string thePort)
+    {
+        string[] aN = theNative.Split('\n'), aP = thePort.Split('\n');
+        if (theKind is "package" or "blendfunc")
+        {
+            return aN.Length == aP.Length && Enumerable.Range(0, aN.Length).All(i => aN[i] == aP[i] || (aN[i].Split(' ')[0] == aP[i].Split(' ')[0]
+                                                                                                         && aN[i].Split(' ')[0] is "C2W" or "D2V" or "D2W"));
+        }
+        if (theKind != "pipe-edge")
+        {
+            return false;
+        }
+
+        int k = 0;
+        while (k < aN.Length && k < aP.Length && aN[k] == aP[k])
+        {
+            ++k;
+        }
+        string[] aNWords = aN[k].Split(' '), aPWords = aP[k].Split(' ');
+        return aNWords[0] == "PIPE" && aPWords[0] == "PIPE" && aNWords[1] == aPWords[1] && aNWords[2] == aPWords[2]
+               && BitConverter.Int64BitsToDouble(Convert.ToInt64(aPWords[3], 16)) < 1.0e-4;
+    }
+
     [Theory]
     [MemberData(nameof(KindNames))]
     public void Port_matches_native_bit_for_bit(string theKind)
@@ -50,7 +76,7 @@ public class GeomFill_SweepNativeTests(ITestOutputHelper output)
             {
                 return;
             }
-            if (IsPipeBetweenTwoSections(theKind, aNative, aPort) || IsSectionMoved(theKind, aNative, aPort) || IsGuideTrihedronFixed(theKind, aNative, aPort))
+            if (IsPipeBetweenTwoSections(theKind, aNative, aPort) || IsSectionMoved(theKind, aNative, aPort) || IsGuideTrihedronFixed(theKind, aNative, aPort) || IsSecondDerivativeFixed(theKind, aNative, aPort))
             {
                 Interlocked.Increment(ref anIntended);
             }
