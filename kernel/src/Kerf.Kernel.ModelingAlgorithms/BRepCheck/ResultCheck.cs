@@ -225,7 +225,8 @@ internal abstract class ResultCheck : Transient
 
             if (_entries is null)
             {
-                _entries = new Entry[4];
+                // The shape itself and one context is the commonest
+                _entries = new Entry[2];
             }
             else if (Count == _entries.Length)
             {

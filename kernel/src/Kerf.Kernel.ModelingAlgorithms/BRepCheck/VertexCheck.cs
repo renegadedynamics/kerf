@@ -143,14 +143,14 @@ internal class VertexCheck : ResultCheck
                 tol *= tol;
 
                 var te = (BrepTEdge)e.TShape()!;
-                var itcr = new NCollection_List<CurveRepresentation>.Iterator(te.Curves());
+                NCollection_List<CurveRepresentation> curves = te.Curves();
+                NCollection_List<PointRepresentation> points = tv.Points();
                 Placement eloc = e.Placement;
 
-                var itpr = new NCollection_List<PointRepresentation>.Iterator();
-                while (itcr.More())
+                for (int icr = 0; icr < curves.Extent(); ++icr)
                 {
                     // For each CurveRepresentation, the provided parameter is checked
-                    CurveRepresentation cr = itcr.Value();
+                    CurveRepresentation cr = curves.ItemAt(icr);
                     Placement loc = cr.Location();
                     Placement l = (eloc * loc).Predivided(_shape.Placement);
 
@@ -159,10 +159,9 @@ internal class VertexCheck : ResultCheck
                         Curve3D? c = cr.Curve3D();
                         if (c is not null) // edge non degenerated
                         {
-                            itpr.Initialize(tv.Points());
-                            while (itpr.More())
+                            for (int ipr = 0; ipr < points.Extent(); ++ipr)
                             {
-                                PointRepresentation pr = itpr.Value();
+                                PointRepresentation pr = points.ItemAt(ipr);
                                 if (pr.IsPointOnCurve(c, l))
                                 {
                                     controlp = c.Value(pr.Parameter());
@@ -172,8 +171,6 @@ internal class VertexCheck : ResultCheck
                                         BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnCurve);
                                     }
                                 }
-
-                                itpr.Next();
                             }
 
                             if (orv == Forward || orv == Reversed)
@@ -211,10 +208,9 @@ internal class VertexCheck : ResultCheck
                             pc2 = cr.PCurve2();
                         }
 
-                        itpr.Initialize(tv.Points());
-                        while (itpr.More())
+                        for (int ipr = 0; ipr < points.Extent(); ++ipr)
                         {
-                            PointRepresentation pr = itpr.Value();
+                            PointRepresentation pr = points.ItemAt(ipr);
                             if (pr.IsPointOnCurveOnSurface(pc, su, l))
                             {
                                 Point2D p2d = pc.Value(pr.Parameter());
@@ -236,12 +232,8 @@ internal class VertexCheck : ResultCheck
                                     BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnCurveOnSurface);
                                 }
                             }
-
-                            itpr.Next();
                         }
                     }
-
-                    itcr.Next();
                 }
 
                 if (lst.IsEmpty())
@@ -263,10 +255,10 @@ internal class VertexCheck : ResultCheck
                 tol = Max(tol, Tool.Tolerance(ShapeCasts.Face(s))); // to check
                 tol *= tol;
 
-                var itpr = new NCollection_List<PointRepresentation>.Iterator(tv.Points());
-                while (itpr.More())
+                NCollection_List<PointRepresentation> points = tv.Points();
+                for (int ipr = 0; ipr < points.Extent(); ++ipr)
                 {
-                    PointRepresentation pr = itpr.Value();
+                    PointRepresentation pr = points.ItemAt(ipr);
                     if (pr.IsPointOnSurface(su, l))
                     {
                         controlp = su!.Value(pr.Parameter(), pr.Parameter2());
@@ -276,8 +268,6 @@ internal class VertexCheck : ResultCheck
                             BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnSurface);
                         }
                     }
-
-                    itpr.Next();
                 }
 
                 if (lst.IsEmpty())

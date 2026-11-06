@@ -82,6 +82,14 @@ internal class Analyzer
 
         _shape = shape;
         _map.Clear();
+        // About ten sub-shapes, each way round, for each face: fewer times to grow the map
+        int nbFaces = 0;
+        for (var exp = new Explorer(shape, ShapeType.Face); exp.More(); exp.Next())
+        {
+            ++nbFaces;
+        }
+
+        _map.EnsureCapacity(10 * nbFaces);
         Put(shape, b);
         Perform();
         Finished?.Invoke(this, shape, b);
@@ -112,9 +120,7 @@ internal class Analyzer
     {
         if (_map.GetValue(s) is { } result)
         {
-            var itl = new NCollection_List<StatusCheck>.Iterator();
-            itl.Initialize(result.Status());
-            if (itl.Value() != StatusCheck.NoError)
+            if (result.Status().ItemAt(0) != StatusCheck.NoError)
             {
                 // a voir
                 return false;

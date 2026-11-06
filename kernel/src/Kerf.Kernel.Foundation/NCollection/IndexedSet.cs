@@ -60,6 +60,24 @@ internal sealed class IndexedSet<T> : IReadOnlyList<T> where T : notnull
         _items.Clear();
     }
 
+    /// <summary>Makes room for as many items, as there's less to do when told beforehand.</summary>
+    public void EnsureCapacity(int capacity)
+    {
+        _items.EnsureCapacity(capacity);
+        if (_indices is null && capacity > LargestScanned && _items.Count <= LargestScanned)
+        {
+            _indices = new Dictionary<T, int>(capacity, _comparer);
+            for (int i = 0; i < _items.Count; ++i)
+            {
+                _indices.Add(_items[i], i);
+            }
+        }
+        else
+        {
+            _indices?.EnsureCapacity(capacity);
+        }
+    }
+
     /// <summary>Adds the item if new, and returns its index either way.</summary>
     public int Add(T item)
     {

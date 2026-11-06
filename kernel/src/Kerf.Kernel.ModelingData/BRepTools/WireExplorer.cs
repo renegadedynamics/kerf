@@ -201,7 +201,7 @@ internal sealed class WireExplorer
         // map of vertices to know if the wire is open
         var vmap = new IndexedSet<Shape>(ShapeHasher.Instance);
         //  map of infinite edges
-        var infEmap = new IndexedSet<Shape>(ShapeHasher.Instance);
+        IndexedSet<Shape>? infEmap = null;
 
         // list the vertices
         Vertex v1 = new Vertex(), v2 = new Vertex();
@@ -254,14 +254,14 @@ internal sealed class WireExplorer
                 {
                     if (aF == -global::Kerf.Engine.Foundation.Precision.Infinite())
                     {
-                        infEmap.Add(e);
+                        (infEmap ??= new IndexedSet<Shape>(ShapeHasher.Instance)).Add(e);
                     }
                 }
                 else
                 { // Eori == TopAbs_REVERSED
                     if (aL == global::Kerf.Engine.Foundation.Precision.Infinite())
                     {
-                        infEmap.Add(e);
+                        (infEmap ??= new IndexedSet<Shape>(ShapeHasher.Instance)).Add(e);
                     }
                 }
             }
@@ -296,7 +296,7 @@ internal sealed class WireExplorer
         else
         {
             //   The wire is infinite Try to find the first vertex. It may be NULL.
-            if (infEmap.Count != 0)
+            if (infEmap is not null)
             {
                 foreach (Shape key in infEmap)
                 {

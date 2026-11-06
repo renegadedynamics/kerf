@@ -99,6 +99,9 @@ internal sealed class FClass2d
         Edge edge;
         Orientation or;
         var wireExplorer = new WireExplorer();
+        // Loaded again for each edge
+        EdgeCurve2DAdaptor? curveAdaptor2D = null;
+        EdgeCurveAdaptor? curveAdaptor3D = null;
 
         _umin = _vmin = 0.0; // RealLast();
         _umax = _vmax = -_umin;
@@ -167,12 +170,20 @@ internal sealed class FClass2d
                         degenerated = true;
                     }
 
-                    var curveAdaptor2D = new EdgeCurve2DAdaptor(edge, _face);
-                    var curveAdaptor3D = new EdgeCurveAdaptor(edge, _face);
+                    if (curveAdaptor2D is null)
+                    {
+                        curveAdaptor2D = new EdgeCurve2DAdaptor(edge, _face);
+                        curveAdaptor3D = new EdgeCurveAdaptor(edge, _face);
+                    }
+                    else
+                    {
+                        curveAdaptor2D.Initialize(edge, _face);
+                        curveAdaptor3D!.Initialize(edge, _face);
+                    }
                     //-- Check cases when it was forgotten to code degenerated :  PRO17410 (janv 99)
                     if (!degenerated)
                     {
-                        degenerated = IsDegenerated(curveAdaptor3D, pfbid, plbid);
+                        degenerated = IsDegenerated(curveAdaptor3D!, pfbid, plbid);
                     }
 
                     //-- ----------------------------------------
@@ -235,7 +246,7 @@ internal sealed class FClass2d
                         Point3D p3d = new();
                         if (!degenerated)
                         {
-                            p3d = curveAdaptor3D.Value(u);
+                            p3d = curveAdaptor3D!.Value(u);
                             if (nbpnts > 1 && ancienpnt3dinitialise)
                             {
                                 dist3dptcourant_ancienpnt = p3d.DistanceTo(ancienpnt3d);
@@ -245,7 +256,7 @@ internal sealed class FClass2d
                         bool isRealCurve3d = true; // patch
                         if (dist3dptcourant_ancienpnt < global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
-                            Point3D midP3d = curveAdaptor3D.Value(u - du / 2.0);
+                            Point3D midP3d = curveAdaptor3D!.Value(u - du / 2.0);
                             if (p3d.DistanceTo(midP3d) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 isRealCurve3d = false;

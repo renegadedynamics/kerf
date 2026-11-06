@@ -35,6 +35,9 @@ internal class WireCheck : ResultCheck
 
     private bool _gctrl;
 
+    // Minimum left its map for Closed: with everything oriented, it's the one Closed would make
+    private bool _mapVEIsWhole;
+
     /// <summary>Checks the wire on its own (<see cref="Minimum"/>).</summary>
     public WireCheck(in Wire w)
     {
@@ -83,14 +86,17 @@ internal class WireCheck : ResultCheck
             var exp = new Explorer(_shape, ShapeType.Edge);
             int nbedge = 0;
             _mapVE.Clear();
+            bool allOriented = true;
             // fill myMapVE
             for (; exp.More(); exp.Next())
             {
                 nbedge++;
+                allOriented = allOriented && IsOriented(exp.Current());
                 var expv = new Explorer();
                 for (expv.Init(exp.Current(), ShapeType.Vertex); expv.More(); expv.Next())
                 {
                     Shape vtx = expv.Current();
+                    allOriented = allOriented && IsOriented(vtx);
                     int index = _mapVE.IndexOf(vtx) + 1;
                     if (index == 0)
                     {
@@ -128,7 +134,12 @@ internal class WireCheck : ResultCheck
                 lst.Append(StatusCheck.NoError);
             }
 
-            _mapVE.Clear();
+            _mapVEIsWhole = allOriented && lst.First() == StatusCheck.NoError;
+            if (!_mapVEIsWhole)
+            {
+                _mapVE.Clear();
+            }
+
             _min = true;
         }
     }
@@ -280,7 +291,11 @@ internal class WireCheck : ResultCheck
         var mapS = new IndexedSet<Shape>(ShapeHasher.Instance);
         // How many times each edge is met, and its first and last orientations
         var cradoc = new IndexedMap<Shape, (int Count, Orientation First, Orientation Last)>(ShapeHasher.Instance);
-        _mapVE.Clear();
+        if (!_mapVEIsWhole)
+        {
+            _mapVE.Clear();
+        }
+
         // Checks if the oriented edges of the wire give a "closed" wire,
         // i-e if each oriented vertex on oriented edges is found 2 times...
         for (exp.Init(_shape, ShapeType.Edge); exp.More(); exp.Next())
@@ -301,6 +316,11 @@ internal class WireCheck : ResultCheck
                 }
 
                 mapS.Add(exp.Current());
+                if (_mapVEIsWhole)
+                {
+                    continue;
+                }
+
                 for (expv.Init(exp.Current(), ShapeType.Vertex); expv.More(); expv.Next())
                 {
                     if (IsOriented(expv.Current()))
@@ -318,8 +338,9 @@ internal class WireCheck : ResultCheck
             }
         }
 
+        // With everything oriented, Minimum has found each edge from the first through the same map, or the status above says not
         int theNbori = mapS.Count;
-        if (theNbori >= 2)
+        if (theNbori >= 2 && !_mapVEIsWhole)
         {
             mapS.Clear();
             for (exp.ReInit(); exp.More(); exp.Next())
