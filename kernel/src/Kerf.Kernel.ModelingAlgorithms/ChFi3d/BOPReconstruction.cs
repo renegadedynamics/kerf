@@ -84,6 +84,9 @@ internal sealed partial class BOPReconstruction : Reconstruction
     /// <summary>The SCIs of each curve, on faces (support kind SURFACE, a shape index) and surfaces.</summary>
     private readonly Dictionary<int, List<CurveSupport>> _curveSupports = new();
 
+    /// <summary>The pieces of the faces whose surface the fillet extended, with that surface.</summary>
+    private readonly Dictionary<Shape, Surface> _onNewSurface = new(ShapeHasher.Instance);
+
     private static readonly NCollection_List<Shape> EmptyList = new();
 
     /// <summary>A curve's SCI: on a face of the input (<see cref="Face"/> not null) or on a fillet surface.</summary>
@@ -117,6 +120,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
         }
         NCollection_List<Shape> merged = new();
         MergeShape(s, merged);
+        OnNewSurfaces(merged);
         _mergedIN[s] = merged;
     }
 
@@ -130,7 +134,11 @@ internal sealed partial class BOPReconstruction : Reconstruction
 
     /// <inheritdoc/>
     public override NCollection_List<Shape> Merged(in Shape s, Containment toBuild) =>
-        toBuild == In && _mergedIN.TryGetValue(s, out NCollection_List<Shape>? l) ? l : EmptyList;
+        toBuild != In ? EmptyList
+        : _mergedIN.TryGetValue(s, out NCollection_List<Shape>? l) ? l
+        // a face: its pieces, as TopOpeBRepBuild's GMergeFaces records them. SetRegul reads this to code the fillet's edges
+        : s.Type == ShapeType.Face && _splitIN.TryGetValue(s, out l) ? l
+        : EmptyList;
 
     /// <inheritdoc/>
     public override NCollection_List<Shape> NewFaces(int i) =>
@@ -160,6 +168,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
         _edgeParts.Clear();
         _splitIN.Clear();
         _mergedIN.Clear();
+        _onNewSurface.Clear();
         _curveSupports.Clear();
     }
 
@@ -839,6 +848,11 @@ internal sealed partial class BOPReconstruction : Reconstruction
             }
         }
         bool hasCurves = !le.IsEmpty();
+        HashSet<Shape> fromCurves = new(ShapeHasher.Instance);
+        foreach (Shape e in le)
+        {
+            fromCurves.Add(e);
+        }
 
         // the face's edges: the kept parts of the cut ones, the others whole
         bool hasCuts = false;
@@ -921,7 +935,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
             le.Append(e);
         }
 
-        NCollection_List<Shape> pieces = BuildAreas(ff, le);
+        NCollection_List<Shape> pieces = WithoutLoopsReplaced(BuildAreas(ff, le), fromCurves);
         if (outerIsolated is not null)
         {
             // the outer wire, not touched: it bounds what the face keeps when the fillet's loops are holes (a hole's
@@ -960,8 +974,150 @@ internal sealed partial class BOPReconstruction : Reconstruction
                 pieces = BuildAreas(ff, le);
             }
         }
+        if (ds.HasNewSurface(f))
+        {
+            foreach (Shape p in pieces)
+            {
+                _onNewSurface[p] = ds.NewSurface(f)!;
+            }
+        }
         _splitIN[f] = pieces;
         return pieces;
+    }
+
+    /// <summary>
+    /// Puts the pieces of a face whose surface the fillet extended on that surface, in what <paramref name="merged"/> holds
+    /// and in the answers that name those shapes (<see cref="NewSurfaceModification"/>).
+    /// </summary>
+    private void OnNewSurfaces(NCollection_List<Shape> merged)
+    {
+        if (_onNewSurface.Count == 0)
+        {
+            return;
+        }
+        NCollection_List<Shape> result = new();
+        foreach (Shape m in merged)
+        {
+            Modifier aModifier = new(m);
+            aModifier.Perform(new NewSurfaceModification(_onNewSurface));
+            if (!aModifier.IsDone)
+            {
+                result.Append(m);
+                continue;
+            }
+            result.Append(aModifier.InternalModifiedShape(m));
+            HashSet<Shape> aSubShapes = new(ShapeHasher.Instance);
+            Exploration.MapShapes(m, aSubShapes);
+            // a face left whole that had to be copied, because an edge it shares moved: its history is the copy, since
+            // the input's face is no longer in the result (OCCT writes into the edge and keeps the face)
+            HashSet<Shape> aPieces = new(ShapeHasher.Instance);
+            foreach (NCollection_List<Shape> l in _splitIN.Values)
+            {
+                foreach (Shape x in l)
+                {
+                    aPieces.Add(x);
+                }
+            }
+            foreach (NCollection_List<Shape> l in _newFaces.Values)
+            {
+                foreach (Shape x in l)
+                {
+                    aPieces.Add(x);
+                }
+            }
+            List<(Shape Old, Shape New)> aCopied = [];
+            for (Explorer exp = new(m, ShapeType.Face); exp.More(); exp.Next())
+            {
+                Shape aNew = aModifier.InternalModifiedShape(exp.Current());
+                if (!aPieces.Contains(exp.Current()) && !aNew.IsSame(exp.Current()))
+                {
+                    aCopied.Add((exp.Current(), aNew));
+                }
+            }
+            void Replace(NCollection_List<Shape> l)
+            {
+                NCollection_List<Shape> aNew = new();
+                foreach (Shape x in l)
+                {
+                    aNew.Append(aSubShapes.Contains(x) ? aModifier.InternalModifiedShape(x).Oriented(x.Orientation) : x);
+                }
+                l.Clear();
+                foreach (Shape x in aNew)
+                {
+                    l.Append(x);
+                }
+            }
+            foreach (NCollection_List<Shape> l in _splitIN.Values)
+            {
+                Replace(l);
+            }
+            foreach (NCollection_List<Shape> l in _newFaces.Values)
+            {
+                Replace(l);
+            }
+            foreach (NCollection_List<Shape> l in _newEdges.Values)
+            {
+                Replace(l);
+            }
+            foreach ((Shape anOld, Shape aNew) in aCopied)
+            {
+                NCollection_List<Shape> aCopy = new();
+                aCopy.Append(aNew);
+                _splitIN[anOld] = aCopy;
+            }
+        }
+        merged.Clear();
+        foreach (Shape r in result)
+        {
+            merged.Append(r);
+        }
+        _onNewSurface.Clear();
+    }
+
+    /// <summary>
+    /// The pieces without those with no edge of the fillet's curves that touch, at a vertex, a piece with one: a closed
+    /// edge filleted with no radius at its one vertex stays whole, and the fillet's new loop, which meets it there and
+    /// replaces it, doesn't leave it dangling (decision 1720).
+    /// </summary>
+    private static NCollection_List<Shape> WithoutLoopsReplaced(NCollection_List<Shape> pieces, HashSet<Shape> fromCurves)
+    {
+        if (pieces.Size() < 2)
+        {
+            return pieces;
+        }
+        bool OnlyOld(Shape piece)
+        {
+            for (Explorer exp = new(piece, ShapeType.Edge); exp.More(); exp.Next())
+            {
+                if (fromCurves.Contains(exp.Current()))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        HashSet<Shape> newVertices = new(ShapeHasher.Instance);
+        foreach (Shape piece in pieces)
+        {
+            if (!OnlyOld(piece))
+            {
+                AddVertices(piece, newVertices);
+            }
+        }
+        NCollection_List<Shape> kept = new();
+        foreach (Shape piece in pieces)
+        {
+            bool touches = false;
+            for (Explorer exv = new(piece, ShapeType.Vertex); exv.More() && !touches; exv.Next())
+            {
+                touches = newVertices.Contains(exv.Current());
+            }
+            if (!OnlyOld(piece) || !touches)
+            {
+                kept.Append(piece);
+            }
+        }
+        return kept;
     }
 
     /// <summary>

@@ -5,6 +5,7 @@ using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Features.Api;
 using Kerf.Engine.Fillets;
 using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Foundation;
@@ -459,5 +460,112 @@ public class BRepFilletAPI_MakeFilletTests
         }
         Assert.True(new Analyzer(aResult).IsValid(), "Result shape must be valid " + ReconComparison.Faults(aResult) + " area " + Area(aResult));
         Assert.Equal(7507.61, Area(aResult), 7507.61 * 0.001);
+    }
+
+    /// <summary>
+    /// blend/tolblend_buildvol/A9 at a small size (decision 1720): a cone's closed top edge filleted with no radius at
+    /// its one vertex. The new loop on the top face replaces the edge, so the face isn't kept whole as well. The figures
+    /// are native OCCT 8.0.1's.
+    /// </summary>
+    [Fact]
+    public void A_closed_edge_with_no_radius_at_its_vertex_leaves_only_the_new_loop()
+    {
+        Shape aCone = new ApiMakeCone(10.0, 5.0, 20.0).Shape();
+        Edge aTop = default;
+        for (Explorer anExp = new(aCone, ShapeType.Edge); anExp.More(); anExp.Next())
+        {
+            Properties aLine = new();
+            MassPropertiesBuilder.LinearProperties(anExp.Current(), aLine);
+            if (aLine.CentreOfMass().DistanceTo(new Point3D(0, 0, 20)) < 1e-6)
+            {
+                aTop = ShapeCasts.Edge(anExp.Current());
+            }
+        }
+        NCollection_Array1<Point2D> aRadii = new(1, 3);
+        aRadii.SetValue(1, new Point2D(0.0, 0.0));
+        aRadii.SetValue(2, new Point2D(1.0, 1.5));
+        aRadii.SetValue(3, new Point2D(2.0, 0.0));
+        MakeFillet aFillet = new(aCone);
+        aFillet.Add(aRadii, aTop);
+        Shape aResult = aFillet.Shape();
+        Assert.True(aFillet.IsDone);
+        Assert.True(new Analyzer(aResult).IsValid());
+        int aFaces = 0;
+        for (Explorer anExp = new(aResult, ShapeType.Face); anExp.More(); anExp.Next())
+        {
+            aFaces++;
+        }
+        Assert.Equal(4, aFaces);
+        Assert.Equal(1358.38537, Area(aResult), 1e-3);
+    }
+
+    /// <summary>
+    /// draft/angle/A2 without Draw (decision 1719): the edges between a fillet and the faces it meets are coded G1, as
+    /// natively (four on this box, read from native OCCT 8.0.1's BRep text), which is what lets a draft follow a
+    /// fillet. Without them native's draft and the port's both stop with "impossible edge recomputation". The area and
+    /// volume are native's own, on its own fillet.
+    /// </summary>
+    [Fact]
+    public void A_fillets_edges_are_coded_tangent_and_a_draft_can_follow_it()
+    {
+        Shape aBox = new MakeBox(10.0, 20.0, 30.0).Shape();
+        MakeFillet aFillet = new(aBox);
+        for (Explorer anExp = new(aBox, ShapeType.Edge); anExp.More(); anExp.Next())
+        {
+            Edge anEdge = ShapeCasts.Edge(anExp.Current());
+            Properties aLine = new();
+            MassPropertiesBuilder.LinearProperties(anEdge, aLine);
+            Point3D aMid = aLine.CentreOfMass();
+            if (aMid.DistanceTo(new Point3D(5, 0, 30)) < 1e-6)
+            {
+                aFillet.Add(2.0, anEdge);
+            }
+            else if (aMid.DistanceTo(new Point3D(5, 20, 0)) < 1e-6)
+            {
+                aFillet.Add(3.0, anEdge);
+            }
+        }
+        Shape aResult = aFillet.Shape();
+        Assert.True(aFillet.IsDone);
+
+        List<Face> aFaces = [];
+        for (Explorer anExp = new(aResult, ShapeType.Face); anExp.More(); anExp.Next())
+        {
+            aFaces.Add(ShapeCasts.Face(anExp.Current()));
+        }
+        Face aSmall = aFaces.Single(f => Math.Abs(Area(f) - Math.PI * 10.0) < 1e-6);
+        Face aLarge = aFaces.Single(f => Math.Abs(Area(f) - Math.PI * 15.0) < 1e-6);
+
+        int aTangent = 0;
+        foreach (Face aRound in new[] { aSmall, aLarge })
+        {
+            for (Explorer anExp = new(aRound, ShapeType.Edge); anExp.More(); anExp.Next())
+            {
+                Edge anEdge = ShapeCasts.Edge(anExp.Current());
+                foreach (Face anOther in aFaces.Where(f => !f.IsSame(aRound)))
+                {
+                    for (Explorer anOn = new(anOther, ShapeType.Edge); anOn.More(); anOn.Next())
+                    {
+                        if (anOn.Current().IsSame(anEdge) && Tool.Continuity(anEdge, aRound, anOther) == G1)
+                        {
+                            aTangent++;
+                        }
+                    }
+                }
+            }
+        }
+        Assert.Equal(4, aTangent);
+
+        Plane3D aNeutral = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        DraftAngle aDraft = new(aResult);
+        aDraft.Add(aSmall, new Direction3D(1, 0, 0), 10.0 * Math.PI / 180.0, aNeutral);
+        Assert.True(aDraft.AddDone());
+        aDraft.Add(aLarge, new Direction3D(1, 0, 0), 5.0 * Math.PI / 180.0, aNeutral);
+        Assert.True(aDraft.AddDone());
+        aDraft.Build();
+        Assert.True(aDraft.IsDone);
+        Shape aDrafted = aDraft.Shape();
+        Assert.True(new Analyzer(aDrafted).IsValid());
+        Assert.Equal(2011.71866, Area(aDrafted), 1e-3);
     }
 }

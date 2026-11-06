@@ -114,8 +114,8 @@ public class ReconstructionTests
                 Assert.Single(aRun.Builder.Splits(F, In));
                 Assert.False(aResultFaces.Contains(F));
                 Assert.True(aResultFaces.Contains(aRun.Builder.Splits(F, In).First()));
-                // HBuilder's Merged binds only solids and shells for the fillets (FilBuilder::SetRegul reads it)
-                Assert.Empty(aRun.Builder.Merged(F, In));
+                // GMergeFaces binds a face's pieces too, and FilBuilder::SetRegul reads them to code the fillet's edges (decision 1719)
+                Assert.Equal(aRun.Builder.Splits(F, In), aRun.Builder.Merged(F, In));
             }
             else
             {

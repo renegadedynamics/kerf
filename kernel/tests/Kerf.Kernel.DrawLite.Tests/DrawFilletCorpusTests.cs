@@ -81,6 +81,22 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
         Assert.Matches(@"Mass :\s+99\d\.", aDI.Eval("vprops rf"));
     }
 
+    /// <summary>
+    /// A fillet that runs past a Bezier face (decision 1721): the face goes on the B-spline surface the fillet extended,
+    /// as natively. The input is OCCT's file, so these cases are the test: before, the result was unorientable.
+    /// </summary>
+    [Theory]
+    [InlineData("blend/simple/V7")]
+    [InlineData("blend/tolblend_simple/C5")]
+    [InlineData("chamfer/equal_dist_sequence/B8")]
+    public void A_face_goes_on_the_surface_the_fillet_extended(string theId)
+    {
+        var aCorpus = new DrawCorpus(TestsDirectory);
+        DrawTestCase aCase = aCorpus.Cases().Single(c => c.Id == theId);
+        DrawCaseRun aRun = aCorpus.RunAndCheck(aCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath, TimeSpan.FromSeconds(120));
+        Assert.Equal("OK", aRun.Status);
+    }
+
     [Fact]
     public void Corpus_cases_using_the_fillet_and_chamfer_commands_of_7N3_run()
     {
@@ -171,25 +187,12 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
     internal static readonly Dictionary<string, string> KnownFailures = new(StringComparer.Ordinal)
     {
         ["blend/buildevol/J5"] = "reconstruction: shell not closed",
-        ["blend/simple/V7"] = "reconstruction (7R3, decision 1162): a Bezier face the fillet runs past keeps its surface; native extends it as a B-spline",
-        ["blend/tolblend_buildvol/A9"] = "reconstruction: shell not closed; area 35767 for 33798.1",
-        ["blend/tolblend_simple/C5"] = "reconstruction (7R3, decision 1162): a Bezier face the fillet runs past keeps its surface; native extends it as a B-spline",
-        ["chamfer/dist_angle_sequence/A5"] = "reconstruction: shell not closed after a step; then faces not found by position",
-        ["chamfer/dist_angle_sequence/B8"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
-        ["chamfer/dist_angle_sequence/B9"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
-        ["chamfer/dist_dist_sequence/B8"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
-        ["chamfer/dist_dist_sequence/B9"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
-        ["chamfer/equal_dist_sequence/A5"] = "reconstruction: invalid faces after the sequential chamfers (OCCT's TODO expects 10 faulty shapes)",
-        ["chamfer/equal_dist_sequence/B8"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
-        ["chamfer/equal_dist_sequence/B9"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
+        ["chamfer/dist_angle_sequence/A5"] = "native invalid at step 15 too (decision 1722); the port then loses faces instead",
+        ["chamfer/dist_dist_sequence/B9"] = "native invalid at step 2 too (decision 1722); the port then loses faces, and a later step finds no edge",
+        ["chamfer/equal_dist_sequence/A5"] = "native invalid at step 15 too (decision 1722); the port then loses faces instead of OCCT's TODO's 10 faulty shapes",
+        ["chamfer/equal_dist_sequence/B9"] = "native invalid at step 2 too (decision 1722); the port then loses faces, and a later step finds no edge",
         ["blend/complex/G8"] = "reconstruction order: the third blend names an edge by explode index of the second result, another edge here; blend fails",
         ["bugs/modalg_7/bug27711_3"] = "reconstruction order: the second blend names edges by explode index of the first result, other edges here; blend fails",
-        ["draft/angle/A2"] = "reconstruction: depouille on the blended box fails (Impossible edge recomputation): the fillet result's edges differ from HBuilder's",
-        ["draft/angle/B5"] = "reconstruction: depouille on the blended box fails (Impossible edge recomputation)",
-        ["draft/angle/C3"] = "reconstruction: depouille on the blended box fails (Impossible edge recomputation)",
-        ["draft/angle/C4"] = "reconstruction: depouille on the blended box fails (Impossible edge recomputation)",
-        ["draft/angle/C5"] = "reconstruction: depouille on the blended box fails (Impossible edge recomputation)",
-        ["draft/angle/F1"] = "reconstruction: depouille on the blended fuse gives invalid faces; area 3926.6 for 4827.83",
         // OCCT's sample, not the port (decision 1310): its second weld names _model_28, an edge the first blend
         // replaced, and native OCCT fails the same way on the same Booleans; the sample then needs the viewer
         ["demo/samples/anc101"] = "OCCT's sample: blend of _model_28, an edge the first blend replaced (native fails too); viewer commands",

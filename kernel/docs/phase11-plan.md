@@ -59,7 +59,7 @@ otherwise and records why: the corpus, the recordings and the Python-reference v
 
 **A separate question: fillets.** A rolling-ball rewrite (beyond-compatibility.md item 5) only makes sense with a list of
 real failures in hand. **11G** sorts the fillet corpus's failures into reconstruction gaps, port bugs and OCCT's own, then
-reports. Any rewrite is a decision after that, not part of this plan.
+reports. Any rewrite is a decision after that, not part of this plan. **Done, 6 November (decisions 1719 to 1724):** [corpus-failures.md](corpus-failures.md). Three small reconstruction bugs fixed, 13 corpus cases with them. Of the 37 fillet cases still FAILED or BAD: 3 reconstruction gaps, 34 OCCT's own, no known port bug. Of 1,074 steps run against native, one is invalid only on the port. **Recommended: no rewrite now; the owner decides.**
 
 ## 3. What phase 10 left
 
