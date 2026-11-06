@@ -172,7 +172,8 @@ internal sealed class ConstructCurve
         }
         else if (c is BezierCurve3D || c is LineCurve3D)
         {
-            Curve3D tc = new TrimmedCurve3D(c, first, last);
+            // OCCT trims a Bezier here too, which reparametrises it over [0, 1]; the segment below then cuts that part again
+            Curve3D tc = c is BezierCurve3D ? c : new TrimmedCurve3D(c, first, last);
             try
             {
                 bspl = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(tc);
@@ -255,7 +256,8 @@ internal sealed class ConstructCurve
         }
         else if (c is BezierCurve2D || c is LineCurve2D)
         {
-            Curve2D tc = new TrimmedCurve2D(c, first, last);
+            // OCCT trims a Bezier here too, which reparametrises it over [0, 1]; the segment below then cuts that part again
+            Curve2D tc = c is BezierCurve2D ? c : new TrimmedCurve2D(c, first, last);
             try
             {
                 bspl = Geom2dConvert2D.CurveToBSplineCurve(tc);

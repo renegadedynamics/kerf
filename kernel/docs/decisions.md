@@ -16641,3 +16641,8 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 1710. **Draw-lite's `lappend` isn't fixed** (unit 11Q). It takes 14% of a corpus run's case time or more, copying a growing string, but a fix needs Tcl values that aren't strings, and no user meets it.
 1711. **No large object heap setting is recommended yet** (unit 11Q). `GCLOHThreshold` at 4 MB helps the workstation collector (healing's generation 2 collections 656 to 163) but not visibly the server collector's parallel run, which is what Bento uses. For the owner to decide with a clean run.
 1712. **The rig compares from here on against `docs/benchmarks/2026-11-06-bd7045018.tsv`,** the run after 11C, 11D, 11P, 11Q's first slice and the clean-up: recalculation 279 ms, opening 470 ms, 198 MB. Its default parallel speed-up (2.61×) stays low because the serial work keeps falling; a host's settings give 6.9× (decisions 1683 to 1685). A rerun cleared its four flagged regressions as noise, and the full corpus shows only the changes unit 11P intended.
+
+1713. **`ShapeConstruct_Curve::ConvertToBSpline` trims part of a Bezier once.** OCCT makes a trimmed curve first, whose conversion
+       is reparametrised over [0, 1], and then segments that to [first, last], so it cuts the part again and gives it
+       the wrong parameters. A Bezier is now converted whole and only segmented: the result is the part asked for, with
+       the curve's own parameters. A whole Bezier and a line come out as before. Found by unit 11I.
