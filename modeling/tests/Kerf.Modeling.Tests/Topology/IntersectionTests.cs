@@ -94,11 +94,21 @@ public class IntersectionTests
         _ => throw new XunitException($"No geometry intersection of {a.GetType().Name} and {b.GetType().Name}"),
     };
 
+    static CurveLimit Limit(object target) => target switch
+    {
+        IShape s => s.AsShape(),
+        Axis a => a,
+        Plane p => p,
+        Point3D q => q,
+        Location l => l,
+        _ => throw new XunitException($"Can't intersect with a {target.GetType().Name}"),
+    };
+
     static void RunTest(object obj, object target, object? expected, bool includeTouched)
     {
         var targets = target as object[] ?? [target];
         object? result = obj is IShape shape
-            ? shape.AsShape().Intersect(targets, includeTouched: includeTouched)
+            ? shape.AsShape().Intersect(targets.Select(Limit), includeTouched: includeTouched)
             : GeometryIntersect(obj, targets.Single());
         if (expected is null)
         {
@@ -695,21 +705,6 @@ public class IntersectionTests
     public void Issues(string id) => Run(IssuesParams, id);
 
     // ---- Exceptions ----
-
-    static readonly Dictionary<string, Shape> ExceptionObjects = new()
-    {
-        ["0 Vertex, Color, Unsupported type"] = Vt1,
-        ["1 Edge, Color, Unsupported type"] = Ed1,
-        ["2 Face, Color, Unsupported type"] = Fc1,
-        ["3 Solid, Color, Unsupported type"] = Sl1,
-        ["4 Compound, Color, Unsupported type"] = Cp1,
-    };
-
-    public static TheoryData<string> ExceptionCases => Ids(ExceptionObjects.Keys);
-
-    [Theory]
-    [MemberData(nameof(ExceptionCases))]
-    public void Exceptions(string id) => Assert.Throws<ArgumentException>(() => ExceptionObjects[id].Intersect(Color.White));
 }
 
 /// <summary>Direct Touch() calls, for specific code paths.</summary>

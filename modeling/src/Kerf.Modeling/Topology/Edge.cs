@@ -226,7 +226,7 @@ public static partial class EdgeExtensions
         /// <summary>The shortest piece of this edge from its start up to where it meets <paramref name="other"/>, or the empty Edge if they don't meet.</summary>
         public Edge TrimToOther(CurveLimit other)
         {
-            var intersections = self.Intersect(other.Target);
+            var intersections = self.Intersect(other);
             if (intersections.Count == 0)
                 return default(Edge);
             var trims = new ShapeList<Edge>(intersections.Vertices().Select(p => self.Trim(0, p.Point)));

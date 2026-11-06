@@ -44,8 +44,8 @@ public abstract class BaseEdgeObject : Curve
 }
 
 /// <summary>
-/// What an arc or line is trimmed to instead of being given a size: a shape, axis, location, plane or point. The curve
-/// ends at its first intersection with the limit.
+/// What an arc or line is trimmed to instead of being given a size, or a shape is intersected with: a shape, axis, location,
+/// plane or point. A curve ends at its first intersection with the limit.
 /// </summary>
 public readonly struct CurveLimit
 {
