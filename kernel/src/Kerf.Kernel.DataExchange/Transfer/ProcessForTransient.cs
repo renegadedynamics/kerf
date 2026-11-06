@@ -34,7 +34,7 @@ internal class ProcessForTransient : Transient
     /// </summary>
     public ProcessForTransient(int nb = 10000)
     {
-        _themap = NewMap(nb);
+        _themap = NewMap();
         _theerrh = true;
         _therootm = false;
         _thelevel = 0;
@@ -50,7 +50,7 @@ internal class ProcessForTransient : Transient
     /// </summary>
     public ProcessForTransient(Messenger? messenger, int nb = 10000)
     {
-        _themap = NewMap(nb);
+        _themap = NewMap();
         _theerrh = true;
         _therootm = false;
         _thelevel = 0;
@@ -61,7 +61,7 @@ internal class ProcessForTransient : Transient
     }
 
     // The initial size is indicative only: the port's map grows as needed
-    private static IndexedMap<Transient, Binder?> NewMap(int nb)
+    private static IndexedMap<Transient, Binder?> NewMap()
     {
         return new IndexedMap<Transient, Binder?>(ReferenceEqualityComparer.Instance);
     }
@@ -101,7 +101,7 @@ internal class ProcessForTransient : Transient
         // Redo the map -> offsets
         var unbs = new NCollection_Array1<int>(1, nb);
         unbs.Init(0);
-        IndexedMap<Transient, Binder?> newmap = NewMap(nb * 2);
+        IndexedMap<Transient, Binder?> newmap = NewMap();
         for (i = 1; i <= nb; i++)
         {
             Transient? ent = Mapped(i);

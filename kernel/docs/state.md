@@ -163,6 +163,8 @@ The three tables the plan names (decision 1388):
 
 **Unit 11G adds no static, thread static or lock:** `NewSurfaceModification` and the reconstruction's `_onNewSurface` belong to one fillet's builder (decision 1721).
 
+**The known defects unit adds no static, thread static or lock:** `Reconstruction.LostFaces` belongs to one fillet's builder, and `FollowsCurve` asks the projector's own `SurfaceAnalysis`, as the rest of that class does (decisions 1735, 1737).
+
 **Unit 11P's `DrawCaseProcess.Own` is Draw-lite's, not the library's:** set once in that process's `Main`, before anything else runs, and only read from then on. In the tests' process it stays `None`.
 
 ## Test and debug hooks: stay
@@ -265,4 +267,4 @@ reworks those operations anyway could thread it then.
 
 ## The clean-up
 
-The clean-up after decision 1681 deleted fields that were written and never read (78), none of them shared state that anything read, and changed no ambient state. See [clean-up.md](clean-up.md).
+The clean-up after decision 1681 deleted fields that were written and never read (78), none of them shared state that anything read, and changed no ambient state. The second pass (decisions 1744 to 1748) changed names, docs and private signatures only. See [clean-up.md](clean-up.md).

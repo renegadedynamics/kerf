@@ -10,7 +10,7 @@ using static Kerf.Geometry.TransformForm;
 namespace Kerf.Geometry;
 
 /// <summary>A unit vector in 3D space.</summary>
-/// <remarks><c>new gp_Dir()</c> is (1, 0, 0), as in OCCT; <c>default(gp_Dir)</c> is all zeros and not a valid direction.</remarks>
+/// <remarks><c>new Direction3D()</c> is (1, 0, 0), as in OCCT; <c>default(Direction3D)</c> is all zeros and not a valid direction.</remarks>
 public readonly partial struct Direction3D : IEquatable<Direction3D>
 {
     /// <summary>The six directions along the axes of the global system.</summary>
@@ -39,6 +39,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         _coord = coord;
     }
 
+    /// <summary>The X direction, (1, 0, 0). <c>default(Direction3D)</c> is all zeros, and not a valid direction.</summary>
     public Direction3D() => _coord = new Xyz(1.0, 0.0, 0.0);
 
     internal Direction3D(D dir)
@@ -46,10 +47,14 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
                               dir == D.Y ? 1.0 : dir == D.NY ? -1.0 : 0.0,
                               dir == D.Z ? 1.0 : dir == D.NZ ? -1.0 : 0.0);
 
+    /// <summary>The direction of <paramref name="vector"/>, normalised.</summary>
+    /// <exception cref="ArgumentException">The vector has no length.</exception>
     public Direction3D(in Vector3D vector) : this(vector.XYZ()) { }
 
     internal Direction3D(in Xyz xyz) : this(xyz.X(), xyz.Y(), xyz.Z()) { }
 
+    /// <summary>The direction of these components, normalised.</summary>
+    /// <exception cref="ArgumentException">They have no length.</exception>
     public Direction3D(double x, double y, double z)
     {
         double sqMod = x * x + y * y + z * z;
@@ -74,10 +79,16 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
 
     internal readonly Direction3D WithCoord(double xv, double yv, double zv) => new(xv, yv, zv);
 
+    /// <summary>The direction with this X component replaced, then normalised, so the other components change too.</summary>
+    /// <exception cref="ArgumentException">The result has no length.</exception>
     public readonly Direction3D WithX(double x) => new(x, _coord.Y(), _coord.Z());
 
+    /// <summary>The direction with this Y component replaced, then normalised, so the other components change too.</summary>
+    /// <exception cref="ArgumentException">The result has no length.</exception>
     public readonly Direction3D WithY(double y) => new(_coord.X(), y, _coord.Z());
 
+    /// <summary>The direction with this Z component replaced, then normalised, so the other components change too.</summary>
+    /// <exception cref="ArgumentException">The result has no length.</exception>
     public readonly Direction3D WithZ(double z) => new(_coord.X(), _coord.Y(), z);
 
     internal readonly Direction3D WithXYZ(in Xyz xyz) => new(xyz);
@@ -88,16 +99,21 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
 
     internal readonly void Coord(out double xv, out double yv, out double zv) => _coord.Coord(out xv, out yv, out zv);
 
+    /// <summary>The X component.</summary>
     public readonly double X => _coord.X();
 
+    /// <summary>The Y component.</summary>
     public readonly double Y => _coord.Y();
 
+    /// <summary>The Z component.</summary>
     public readonly double Z => _coord.Z();
 
     internal readonly Xyz XYZ() => _coord;
 
+    /// <summary>True when the angle to <paramref name="other"/> is at most <paramref name="angularTolerance"/> radians.</summary>
     public readonly bool IsEqual(in Direction3D other, double angularTolerance) => AngleTo(other) <= angularTolerance;
 
+    /// <summary>True when at right angles to <paramref name="other"/>, within <paramref name="angularTolerance"/> radians.</summary>
     public readonly bool IsNormal(in Direction3D other, double angularTolerance)
     {
         double ang = M_PI / 2.0 - AngleTo(other);
@@ -109,14 +125,17 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         return ang <= angularTolerance;
     }
 
+    /// <summary>True when pointing the opposite way to <paramref name="other"/>, within <paramref name="angularTolerance"/> radians.</summary>
     public readonly bool IsOpposite(in Direction3D other, double angularTolerance) => M_PI - AngleTo(other) <= angularTolerance;
 
+    /// <summary>True when parallel to <paramref name="other"/>, in either sense, within <paramref name="angularTolerance"/> radians.</summary>
     public readonly bool IsParallel(in Direction3D other, double angularTolerance)
     {
         double ang = AngleTo(other);
         return ang <= angularTolerance || M_PI - ang <= angularTolerance;
     }
 
+    /// <summary>The angle between them, in [0, PI] radians, with no sign.</summary>
     public readonly double AngleTo(in Direction3D other)
     {
         double cosinus = _coord.Dot(other._coord);
@@ -138,6 +157,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         }
     }
 
+    /// <summary>The angle to <paramref name="other"/>, in [-PI, PI] radians: positive when this cross <paramref name="other"/> points to the same side as <paramref name="reference"/>.</summary>
     public readonly double AngleWithRef(in Direction3D other, in Direction3D reference)
     {
         double ang;
@@ -170,6 +190,8 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         }
     }
 
+    /// <summary>The unit vector along this cross <paramref name="right"/>.</summary>
+    /// <exception cref="ArgumentException">The two are parallel, so the cross product has no length.</exception>
     public readonly Direction3D Crossed(in Direction3D right)
     {
         Xyz coord = _coord;
@@ -185,6 +207,8 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         return new Direction3D(coord, isUnit: true);
     }
 
+    /// <summary>The unit vector along this cross (<paramref name="v1"/> cross <paramref name="v2"/>).</summary>
+    /// <exception cref="ArgumentException">The triple product has no length.</exception>
     public readonly Direction3D CrossCrossed(in Direction3D v1, in Direction3D v2)
     {
         Xyz coord = _coord;
@@ -200,10 +224,13 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         return new Direction3D(coord, isUnit: true);
     }
 
+    /// <summary>The dot product.</summary>
     public readonly double Dot(in Direction3D other) => _coord.Dot(other._coord);
 
+    /// <summary>The scalar triple product: this dot (<paramref name="v1"/> cross <paramref name="v2"/>).</summary>
     public readonly double DotCross(in Direction3D v1, in Direction3D v2) => _coord.Dot(v1._coord.Crossed(v2._coord));
 
+    /// <summary>The opposite direction.</summary>
     public readonly Direction3D Reversed()
     {
         Xyz coord = _coord;
@@ -211,6 +238,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         return new Direction3D(coord, isUnit: true);
     }
 
+    /// <summary>The half-turn about <paramref name="direction"/>: the part along it is kept and the part across it reversed.</summary>
     public readonly Direction3D Mirrored(in Direction3D direction)
     {
         Xyz coord = _coord;
@@ -231,6 +259,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         return new Direction3D(coord, isUnit: true);
     }
 
+    /// <summary>The half-turn about the direction of <paramref name="axis"/>; a direction has no position, so the axis's location doesn't matter.</summary>
     public readonly Direction3D Mirrored(in Axis3D axis)
     {
         Xyz coord = _coord;
@@ -251,12 +280,14 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         return new Direction3D(coord, isUnit: true);
     }
 
+    /// <summary>The reflection in a plane normal to the main direction of <paramref name="frame"/>; a direction has no position, so the frame's location doesn't matter.</summary>
     public readonly Direction3D Mirrored(in Frame3D frame)
     {
         Direction3D vz = frame.Direction;
         return Mirrored(vz).Reversed();
     }
 
+    /// <summary>Rotated about <paramref name="axis"/> by <paramref name="angle"/> radians, anticlockwise looking against the axis's direction. Only the axis's direction matters: a direction has no position.</summary>
     public readonly Direction3D Rotated(in Axis3D axis, double angle)
     {
         Xyz coord = _coord;
@@ -265,6 +296,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         return new Direction3D(coord, isUnit: true);
     }
 
+    /// <summary>The direction <paramref name="transform"/> gives: translation has no effect, and scale only by its sign. The result stays a unit vector.</summary>
     public readonly Direction3D Transformed(in Transform3D transform)
     {
         Xyz coord = _coord;
@@ -295,6 +327,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         return new Direction3D(coord, isUnit: true);
     }
 
+    /// <summary>The opposite direction.</summary>
     public static Direction3D operator -(in Direction3D v) => v.Reversed();
 
     /// <summary>The dot product, as OCCT's <c>operator*</c>.</summary>
@@ -303,15 +336,21 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
     /// <summary>The cross product, as OCCT's <c>operator^</c>.</summary>
     public static Direction3D operator ^(in Direction3D left, in Direction3D right) => left.Crossed(right);
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(Direction3D other) => _coord.Equals(other._coord);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="Direction3D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is Direction3D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => _coord.GetHashCode();
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in Direction3D left, in Direction3D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in Direction3D left, in Direction3D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => Constants.Format("Direction3D", _coord.X(), _coord.Y(), _coord.Z());
 }

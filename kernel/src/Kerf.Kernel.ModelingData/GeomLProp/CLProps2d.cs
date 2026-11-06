@@ -260,8 +260,8 @@ internal class CLProps2d
             return;
         }
 
-        const double THE_DIVISION_FACTOR = 1.0e-3;
-        const double THE_MIN_STEP = 1.0e-7;
+        const double divisionFactor = 1.0e-3;
+        const double minStep = 1.0e-7;
 
         double usupremum = _curve!.LastParameter;
         double uinfimum = _curve.FirstParameter;
@@ -276,7 +276,7 @@ internal class CLProps2d
             du = usupremum - uinfimum;
         }
 
-        double delta = Max(du * THE_DIVISION_FACTOR, THE_MIN_STEP);
+        double delta = Max(du * divisionFactor, minStep);
 
         Vector2D v = _derivArr[theSigOrder - 1];
 

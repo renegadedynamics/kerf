@@ -48,16 +48,22 @@ public sealed class EllipseCurve3D : ConicCurve3D
         return e;
     }
 
+    /// <summary>Always true.</summary>
     public sealed override bool IsClosed => true;
 
+    /// <summary>Always true, with a period of 2 PI.</summary>
     public sealed override bool IsPeriodic => true;
 
+    /// <summary>Always 0.</summary>
     public sealed override double FirstParameter => 0.0;
 
+    /// <summary>Always 2 PI.</summary>
     public sealed override double LastParameter => 2.0 * M_PI;
 
+    /// <summary>The longer semi-axis.</summary>
     public double MajorRadius => _majorRadius;
 
+    /// <summary>The shorter semi-axis.</summary>
     public double MinorRadius => _minorRadius;
 
     internal void SetElips(in Ellipse3D e)
@@ -236,6 +242,7 @@ public sealed class EllipseCurve3D : ConicCurve3D
 
     // Non-mutating twins of the Set methods (Kerf)
 
+    /// <summary>A copy that takes its placement and radii from <paramref name="ellipse"/>; this curve is unchanged.</summary>
     public EllipseCurve3D WithEllipse(in Ellipse3D ellipse)
     {
         EllipseCurve3D copy = (EllipseCurve3D)Copy();
@@ -243,6 +250,8 @@ public sealed class EllipseCurve3D : ConicCurve3D
         return copy;
     }
 
+    /// <summary>A copy with this major radius; this curve is unchanged.</summary>
+    /// <exception cref="ArgumentException"><paramref name="majorRadius"/> is less than the minor radius.</exception>
     public EllipseCurve3D WithMajorRadius(double majorRadius)
     {
         EllipseCurve3D copy = (EllipseCurve3D)Copy();
@@ -250,6 +259,8 @@ public sealed class EllipseCurve3D : ConicCurve3D
         return copy;
     }
 
+    /// <summary>A copy with this minor radius; this curve is unchanged.</summary>
+    /// <exception cref="ArgumentException"><paramref name="minorRadius"/> is negative, or greater than the major radius.</exception>
     public EllipseCurve3D WithMinorRadius(double minorRadius)
     {
         EllipseCurve3D copy = (EllipseCurve3D)Copy();

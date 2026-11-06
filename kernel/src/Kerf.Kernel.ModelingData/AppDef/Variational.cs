@@ -489,7 +489,7 @@ internal class Variational
 
         //---------------------------------------------------------------------
 
-        TheMotor(_smoothCriterion, wQuadratic, wQuality, ref theCurve!, ecarts);
+        TheMotor(_smoothCriterion, wQuality, ref theCurve!, ecarts);
 
         if (_withMinMax && _tolerance < _maxError)
         {
@@ -966,7 +966,7 @@ internal class Variational
 
     //====================== Private Methodes =============================//
 
-    private void TheMotor(SmoothCriterion j, double wQuadratic, double wQuality, ref Curve theCurve,
+    private void TheMotor(SmoothCriterion j, double wQuality, ref Curve theCurve,
                           NCollection_Array1<double> ecarts)
     {
         const double bigValue = 1.0e37, smallValue = 1.0e-6, smallestValue = 1.0e-9;
@@ -2598,7 +2598,7 @@ internal class Variational
 
             /*     (5) Relissage */
 
-            TheMotor(jNew, wQuadratic, wQuality, ref cNew, ecarts);
+            TheMotor(jNew, wQuality, ref cNew, ecarts);
 
             /*     (6) Tests de rejet */
 

@@ -211,10 +211,11 @@ public class ShapeConstruct_ProjectionLawTests
     }
 
     [Fact]
-    public void ASplineWithVeryUnevenParameterSpeed_GoesByTheStandardProjector()
+    public void ASplineWithVeryUnevenParameterSpeed_FollowsTheCurveOnItsFastStretch()
     {
         // on one knot interval the curve moves a hundred thousand times as fast as on the next; the poles aren't quite
-        // on the cylinder, which is why the tolerance is wide
+        // on the cylinder, which is why the tolerance is wide. OCCT's standard projector, the same in native 8.0.1 to the
+        // digits, is 1.413 away at t = 0 and 10 at t = 0.001, with the status "done": decision 1737
         var aCylinder = new CylindricalSurface(Z(), 5);
         var aPoles = new[]
         {
@@ -226,9 +227,11 @@ public class ShapeConstruct_ProjectionLawTests
         var aProj = new ProjectCurveOnSurface();
         aProj.Init(aSas, 1e-3);
         Assert.True(aProj.Perform(aCurve, 0, 3, out Curve2D? aPCurve));
-        Assert.True(aProj.Status(DONE1), "the standard projector's status");
-        // past the fast stretch it follows the curve; on it, the approximation doesn't (occt-issues.md, 11I)
-        AssertOnCurve(aCylinder, aCurve, aPCurve!, 0.05, 3, 0.1);
+        Assert.True(aProj.Status(DONE2), "not the standard projector's result");
+        AssertOnCurve(aCylinder, aCurve, aPCurve!, 0, 3, 0.1);
+        AssertOnCurve(aCylinder, aCurve, aPCurve!, 0, 0.00001, 0.1);
+        AssertOnCurve(aCylinder, aCurve, aPCurve!, 0, 0.01, 0.1);
+        Assert.Equal(0, aCylinder.Value(aPCurve!.Value(0).X, aPCurve.Value(0).Y).DistanceTo(aCurve.Value(0)), 6);
     }
 
     [Fact]

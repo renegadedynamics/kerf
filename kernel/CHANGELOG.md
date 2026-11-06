@@ -12,11 +12,23 @@ version may break the API.
 
 - **Large meshes are quicker, and meshing makes less garbage,** with the same triangles: about a tenth less processor time on large meshes, and 8% fewer bytes on Bento's examples with three quarters fewer full collections (decisions 20003, 20004 and 20006). `MaxFillet` takes about 20% less, and 2D offsets of B-splines about 8% (decisions 20002 and 20005).
 - **STEP export uses about a third less CPU and half the memory, and import with healing about 10% to 15% less CPU,** with the same output (measured on a loaded machine; decisions 1727 to 1731).
+- **Every public member of the kernel has XML docs,** including `Kerf.Geometry`'s value types, saying units, handedness and what
+  throws; a new one without docs fails the build (CS1591). The docs of `Kerf.Geometry` name the exception you actually catch.
+- **Tangent circles and root finders, fixes that change results:** a circle tangent to a curve through a point, with its
+  centre on a curve, is now solved rather than failing by chance, and one tangent to a circle and a curve with its centre
+  on a circle no longer throws. Bisection takes an end of its bracket that is already a root, where it returned the other
+  end. A distance field built in parallel gives the serial result (decisions 1749 to 1752).
 - **Fillets and chamfers, three fixes that change results:** the edges between a fillet and its faces are coded tangent,
   as in OCCT, so a draft can follow a fillet, and saved BRep files gain those lines. A fillet that runs past a Bezier or
   B-spline face puts the face on the surface it extended, where the result used to be invalid. A closed edge filleted
   with no radius at its one vertex no longer leaves the old face behind as well (`docs/corpus-failures.md`; decisions
   1719 to 1721).
+- **A fillet or chamfer that would silently lose a face of an open shell now fails:** a chamfer whose curves don't close on a face used to
+  drop that face and the one beside it and look valid. OCCT gives an invalid shape there. Two other results change, to OCCT's: a
+  fillet's boundary running along an edge no longer leaves that edge in the face beside it, and a stub of an edge is no longer kept
+  (decisions 1735, 1736).
+- **A projected pcurve is checked on a spline with very uneven speed:** where OCCT's standard projector misses a fast stretch, by 10
+  on a cylinder of radius 5 with the status "done", the projection uses points spread by knot span, or fails (decision 1737).
 
 - **Names, cleaned up (no results change):** the geometry's `With…` methods that kept OCCT's abbreviations now say what they set
   (`WithCirc`, `WithCirc2d` → `WithCircle`; `WithElips` → `WithEllipse`; `WithHypr` → `WithHyperbola`; `WithLin` → `WithLine`; `WithParab` →

@@ -79,7 +79,7 @@ internal sealed class CircleInvoluteCurve2D : Curve2D
     /// <summary>0.</summary>
     public override double FirstParameter => 0.0;
 
-    /// <summary>Precision::Infinite().</summary>
+    /// <summary>Effectively infinity: 2e100, the curve having no end.</summary>
     public override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     public override bool IsClosed => false;

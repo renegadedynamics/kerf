@@ -60,7 +60,7 @@ namespace Kerf.Engine.Exchange.Step.Parser;
 internal sealed class StepParser
 {
     /// <summary>The token kinds the scanner returns (bison's token::...; the characters are themselves).</summary>
-    public static class token
+    public static class Token
     {
         public const int YYEOF = 0;
         public const int STEP = 258;
@@ -143,7 +143,7 @@ internal sealed class StepParser
     private void Stepf()
     {
         // S0
-        if (Lookahead() != token.STEP)
+        if (Lookahead() != Token.STEP)
         {
             Error(Step);
             throw new Return(1);
@@ -151,7 +151,7 @@ internal sealed class StepParser
 
         Shift();
         // S1
-        if (Lookahead() != token.HEADER)
+        if (Lookahead() != Token.HEADER)
         {
             Error(Header);
             throw new Return(1);
@@ -192,11 +192,11 @@ internal sealed class StepParser
     {
         isDone = false;
         int tok = Lookahead();
-        if (tok == token.ENDSEC)
+        if (tok == Token.ENDSEC)
         {
             Shift();
             // S9, S16
-            if (Lookahead() != token.DATA)
+            if (Lookahead() != Token.DATA)
             {
                 return Error(Data);
             }
@@ -208,7 +208,7 @@ internal sealed class StepParser
             return true;
         }
 
-        if (tok == token.TYPE)
+        if (tok == Token.TYPE)
         {
             Shift();
             Enttype();
@@ -244,7 +244,7 @@ internal sealed class StepParser
         for (;;)
         {
             int tok = Lookahead();
-            if (tok == token.ENTITY)
+            if (tok == Token.ENTITY)
             {
                 Shift();
                 if (Bloc())
@@ -253,15 +253,15 @@ internal sealed class StepParser
                     continue;
                 }
             }
-            else if (tok == token.ENDSEC && !isEmpty)
+            else if (tok == Token.ENDSEC && !isEmpty)
             {
                 Shift();
                 // S39, S52
-                if (Lookahead() == token.ENDSTEP)
+                if (Lookahead() == Token.ENDSTEP)
                 {
                     Shift();
                     // S46 (stepf2) or S61 (stepf1, which looks ahead for the ' ' bison's finvide expects); S5
-                    if (Lookahead() == token.YYEOF)
+                    if (Lookahead() == Token.YYEOF)
                     {
                         // S7: accepted
                         return;
@@ -279,7 +279,7 @@ internal sealed class StepParser
             }
 
             // The error token, shifted in S15, S26, S42 (S21: bloc : error) or S23 (S38)
-            if (isEmptyHead && !isEmpty && Lookahead() == token.YYEOF)
+            if (isEmptyHead && !isEmpty && Lookahead() == Token.YYEOF)
             {
                 // stepf3 : STEP HEADER ENDSEC endhead model error  { return(0); }
                 throw new Return(0);
@@ -303,7 +303,7 @@ internal sealed class StepParser
         Shift();
         // S41
         int tok = Lookahead();
-        if (tok == token.SCOPE)
+        if (tok == Token.SCOPE)
         {
             Shift();
             // debscop : SCOPE
@@ -312,7 +312,7 @@ internal sealed class StepParser
             return true;
         }
 
-        if (tok != token.TYPE && tok != '(')
+        if (tok != Token.TYPE && tok != '(')
         {
             return Error(ScopEorTYPEorParen);
         }
@@ -335,7 +335,7 @@ internal sealed class StepParser
     /// <summary>unent : enttype listarg | '(' plex ')', its first token being TYPE or '('.</summary>
     private bool Unent()
     {
-        if (Lookahead() == token.TYPE)
+        if (Lookahead() == Token.TYPE)
         {
             Shift();
             Enttype();
@@ -352,7 +352,7 @@ internal sealed class StepParser
 
         Shift();
         // S48
-        if (Lookahead() != token.TYPE)
+        if (Lookahead() != Token.TYPE)
         {
             return Error(global::Kerf.Engine.Exchange.Step.Parser.StepParser.Type);
         }
@@ -377,7 +377,7 @@ internal sealed class StepParser
                 return true;
             }
 
-            if (tok != token.TYPE)
+            if (tok != Token.TYPE)
             {
                 return Error(TypEorParenClose);
             }
@@ -408,14 +408,14 @@ internal sealed class StepParser
     private bool ScopeStep()
     {
         int tok = Lookahead();
-        if (tok == token.ENTITY)
+        if (tok == Token.ENTITY)
         {
             Shift();
             Bloc();
             return false;
         }
 
-        if (tok != token.ENDSCOPE)
+        if (tok != Token.ENDSCOPE)
         {
             Error(EndscopEorENTITY);
             return false;
@@ -431,7 +431,7 @@ internal sealed class StepParser
             for (;;)
             {
                 // S67, S79
-                if (Lookahead() != token.IDENT)
+                if (Lookahead() != Token.IDENT)
                 {
                     Error(Ident);
                     return false;
@@ -469,7 +469,7 @@ internal sealed class StepParser
 
         // S59, S68
         tok = Lookahead();
-        if (tok != token.TYPE && tok != '(')
+        if (tok != Token.TYPE && tok != '(')
         {
             Error(TypEorParen);
             return false;
@@ -501,7 +501,7 @@ internal sealed class StepParser
             if (state != afterArg)
             {
                 // S19 (after '('), S44 (after ',')
-                if (tok == token.TYPE)
+                if (tok == Token.TYPE)
                 {
                     Shift();
                     // listype : TYPE
@@ -522,7 +522,7 @@ internal sealed class StepParser
                     continue;
                 }
 
-                if (tok == token.IDENT)
+                if (tok == Token.IDENT)
                 {
                     Shift();
                     // unarg : IDENT
@@ -532,7 +532,7 @@ internal sealed class StepParser
                     continue;
                 }
 
-                if (tok == token.QUID)
+                if (tok == Token.QUID)
                 {
                     Shift();
                     // unarg : QUID (deja fait par lex)
@@ -655,7 +655,7 @@ internal sealed class StepParser
         if (_yyerrstatus == 3)
         {
             // If just tried and failed to reuse lookahead token after an error, discard it
-            if (_yyla == token.YYEOF)
+            if (_yyla == Token.YYEOF)
             {
                 throw new Return(1);
             }
@@ -692,18 +692,18 @@ internal sealed class StepParser
     /// <summary>The token's name in bison's messages (yytname_, quotes stripped as yytnamerr_ does).</summary>
     private static string TokenName(int theToken) => theToken switch
     {
-        token.YYEOF => "end of file",
-        token.STEP => "STEP",
-        token.HEADER => "HEADER",
-        token.ENDSEC => "ENDSEC",
-        token.DATA => "DATA",
-        token.ENDSTEP => "ENDSTEP",
-        token.SCOPE => "SCOPE",
-        token.ENDSCOPE => "ENDSCOPE",
-        token.ENTITY => "ENTITY",
-        token.TYPE => "TYPE",
-        token.IDENT => "IDENT",
-        token.QUID => "QUID",
+        Token.YYEOF => "end of file",
+        Token.STEP => "STEP",
+        Token.HEADER => "HEADER",
+        Token.ENDSEC => "ENDSEC",
+        Token.DATA => "DATA",
+        Token.ENDSTEP => "ENDSTEP",
+        Token.SCOPE => "SCOPE",
+        Token.ENDSCOPE => "ENDSCOPE",
+        Token.ENTITY => "ENTITY",
+        Token.TYPE => "TYPE",
+        Token.IDENT => "IDENT",
+        Token.QUID => "QUID",
         _ => "'" + (char)theToken + "'",
     };
 

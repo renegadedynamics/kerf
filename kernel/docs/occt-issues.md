@@ -2118,10 +2118,40 @@ classes.
 |---|---|---|---|
 | `ShapeConstruct_Curve::ConvertToBSpline`, both forms | A Bezier is trimmed to [first, last] before converting, which reparametrises it over [0, 1], and the converted curve is then segmented to [first, last] as well | Part of a Bezier comes back as a part of that part, on the wrong parameters, in anything joining edges (`JoinCurves`, `JoinPCurves`) | fixed (decision 1713) |
 | `ShapeFix_Wire::FixGap3d`, by conversion, on one edge | With a single edge there's no second curve, so "take the curve's end if it couldn't be converted" always applies | The curve closes at its own start, not at the vertex as with two edges. Harmless, as the vertex's tolerance is then set; the port keeps it | kept, with a test |
-| `ShapeConstruct_ProjectCurveOnSurface`, a spline with very uneven parameter speed | On an interval 10^5 times as fast as the next, the standard projector's approximation doesn't follow the curve | The pcurve at t = 0 was 1.4 from the curve's start on a cylinder of radius 5, with the status "done"; `SameParameter` raises the tolerance later. Measured on the port only: native has gone, so it isn't compared | open |
+| `ShapeConstruct_ProjectCurveOnSurface`, a spline with very uneven parameter speed | On an interval 10^5 times as fast as the next, the standard projector's approximation doesn't follow the curve | The pcurve at t = 0 was 1.4 from the curve's start on a cylinder of radius 5, with the status "done"; `SameParameter` raises the tolerance later. Native 8.0.1 gives the same to the digits, 1.413 at t = 0 and 10.04 at t = 0.001 | **improved in the port** (decision 1737): the projector's result is checked on every knot span, and otherwise the sampled path runs, or the projection fails |
+
+## Found by the known defects unit
+
+| Where | What | Effect | State |
+|---|---|---|---|
+| `ChFi3d_Builder`, a chamfer's corner, equal_dist_sequence/B5 step 2 and five other steps | The curves in the data structure don't close a loop on a face | Natively a face with an open wire: invalid, as OCCT's TODOs expect | **the port refuses** (decision 1735); the chamfer itself isn't fixed |
+| `BRepFilletAPI_MakeFillet`, radius 11 on all edges of a 20 mm box | Done, with an invalid shape: native 26 faces and an area of 1.7e47 | The port's engine is invalid too (29 faces, 3686). `Kerf.Modeling` refuses (decision 1740). `FilletOperations.Fillet` still returns it as a success: **for the owner**, whether the kernel's operation should check too | open |
 
 ## Found by unit 11P's flaky tests
 
 | Where | What | Effect | Status |
 |---|---|---|---|
 | tests/bugs/modalg_7/bug31120 | `set ratio (${memval}-{$memval1})/${memval1}` makes a text, not a number, so `if { ${ratio} > 0.05}` compares strings, and `(` sorts before `0` | The check can't fail: run with the heap five times larger it stays silent, so the script doesn't test the leak it names | leave: a test script's. `DrawCaseProcessTests.Repeating_an_offset_keeps_nothing` asks the question (decision 1703) |
+
+## Found by unit 11I's tests of features, intersectors and solvers
+
+Native has gone, so "as OCCT" here comes from reading OCCT's source beside the port's.
+
+| Where | What | Effect | State |
+|---|---|---|---|
+| `Geom2dGcc_FunctionTanCuCuOnCu`, circle, curve, centre on a circle | The constructor sets `CuCuOnCi`, so `InitDerivative` evaluates the unset first curve | That form of the iterative solver can't run | fixed (decision 1749) |
+| `Geom2dGcc_Circ2d2TanOnIter`, curve, point, centre on a curve | Bounds of the centre's parameter and the radius swapped, and the radius read as the centre's parameter after solving | Done only by chance | fixed (decision 1750) |
+| `MathRoot::Bisection`, `BisectionNewton` | No check of the ends: with `f(a) = 0`, every midpoint counts as a's sign | Returns the far end as a root, with status OK | fixed (decision 1751) |
+| `BVH_DistanceField::Build`, parallel | The trees are built lazily by whichever slice asks first, and building reorders the elements | Wrong distances or an exception on another thread | fixed (decision 1752) |
+| `IntCurveSurface_InterImpl::PerformBounds` (bug26525) | Clamps the surface's parameters to 1e50 before `PerformConicSurf` asks `Precision::IsInfinite`, which needs 1e100 | The estimates for infinite surfaces (`EstLimForInfExtr`, `Revl`, `Offs`, `Surf`, `ProjectIntersectAndEstLim`) are dead code. A line parallel to the rulings of an infinite extrusion, which the estimate would have refused, is sampled out to 1e50, and rounding puts spurious points on it with \|W\| from 1e32 up (48 in the test). Harmless below 1e30, and left for the owner: fixing it would change the limits every line against an infinite surface uses | leave |
+| `IntCurveSurface_InterUtils`, `DoSurface`, `DoNewBounds` | Called by nothing in OCCT: they served a method of `IntCurveSurface_HInter` that's never called | Dead code | leave |
+| `Geom2dGcc_Circ2d3TanIter`, the forms with a point | The point is a circle of radius 0, whose parameter stays at pi since nothing depends on it, and the solution is then checked with the tangent there, (0, -1), against the way from the point to the centre | A correct solution is refused unless the point lies below its centre (with the plane's y up) | leave |
+| `Geom2dGcc_Lin2d2TanIter`, circle and curve | `par2sol` is the distance from the first tangency to the second, unsigned, and the line can run the other way | `Tangency2`'s parameter can be on the wrong side of the line's origin; the point is right | leave |
+| `LocOpe_Pipe::Curves`, `BarycCurve`, a spine with a line | `GeomConvert` has no form for a whole line, and the swept edges carry one | `BRepFeat_MakePipe::Perform(Until)` and `Perform(From, Until)` throw along any spine with a line in it; the unlimited pipe doesn't ask for the curves | leave |
+| `BRepFill_Pipe::PipeLine`, along a circle | Seen on the port only, the same code by reading: the sweep of a point gives no edge, where a Bezier spine gives one | `LocOpe_Pipe::BarycCurve` then reads the first of no curves, so a limited `MakePipe` along an arc throws | leave |
+| `BRepFeat::ParametricBarycenter` | The loop over the vertices counts each one in `nbp` without adding its parameter | The mean is biased towards 0: 23.44 for 25 on a box. Features only compare it, so the port keeps it, for the owner | leave |
+| `FilletSurf_InternalBuilder::Perform`, `Simulate` | No catch round the fillet's start | A radius too large for its faces throws "StartSol echec", though the class has `IsDone` and `StatusError` for failures | leave |
+| `HLRBRep_Algo`, a sphere in perspective | Seen on the port only: its outline is walked rather than analytic | Up to 0.9% short of the circle it should be, and shortest at great focal distances (31.15 against 31.42 at a focus of 10,000) | leave |
+| `BRepFeat_MakeCylindricalHole`, `PerformThruNext` on a compound of two solids | Seen on the port only: the drilled solid is cut, and the plug stays in the result as a third solid | The volume doesn't change. On a single solid the same hole is right. Not attributed | open |
+| `BRepFeat_MakeRevol::Perform(From, Until)` with plane faces | Seen on the port only: `InvShape` whichever planes were tried | Its 55 lines after the check weren't reached. Not attributed | open |
+| `BRepFeat_MakePrism`, `MakeDraftPrism`, mode 2 (the feature alone), with an Until | Seen on the port only: `GlobalPerform` leaves no shape | Only `Perform(length)` gives the feature alone. Not attributed | open |

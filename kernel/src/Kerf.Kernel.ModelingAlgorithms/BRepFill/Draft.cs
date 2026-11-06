@@ -316,7 +316,7 @@ internal sealed class Draft
         Transform3D trsf = new();
 
         ComputeTrsf(_wire, _dir, ref wBox, ref trsf);
-        Init(s, lengthMax, wBox);
+        Init(lengthMax, wBox);
         BuildShell(s);
         Sewing();
     }
@@ -348,7 +348,7 @@ internal sealed class Draft
         l /= Math.Abs(Math.Cos(_angle));
 
         // Construction
-        Init(surface, l, wBox);
+        Init(l, wBox);
         BuildShell(surface, !keepInsideSurface);
         Sewing();
     }
@@ -404,7 +404,7 @@ internal sealed class Draft
         surf = new TrimmedSurface(plan, -l, l, -l, l);
 
         // Sweeping and restriction
-        Init(plan, l * 1.01, wBox);
+        Init(l * 1.01, wBox);
         BuildShell(surf, false);
         Fuse(stopShape, keepOutSide);
         Sewing();
@@ -412,7 +412,7 @@ internal sealed class Draft
 
     //=================================================================================================
 
-    private void Init(Surface? surf, double length, in Box box)
+    private void Init(double length, in Box box)
     {
         bool b;
 

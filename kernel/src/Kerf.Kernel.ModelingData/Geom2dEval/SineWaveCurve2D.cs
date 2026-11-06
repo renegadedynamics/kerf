@@ -90,10 +90,10 @@ internal sealed class SineWaveCurve2D : Curve2D
         throw new MethodNotImplementedException("Geom2dEval_SineWaveCurve::ReversedParameter");
     }
 
-    /// <summary>-Precision::Infinite().</summary>
+    /// <summary>Effectively minus infinity: -2e100, the curve having no start.</summary>
     public override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
-    /// <summary>Precision::Infinite().</summary>
+    /// <summary>Effectively infinity: 2e100, the curve having no end.</summary>
     public override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     public override bool IsClosed => false;

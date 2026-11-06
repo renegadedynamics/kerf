@@ -76,7 +76,7 @@ public class Cone : BasePartObject
     /// <summary>The angular size in degrees.</summary>
     public double ArcSize { get; }
 
-    /// <summary>The alignment.</summary>
+    /// <summary>How it is placed relative to its bounding box on each axis, as it was built.</summary>
     public Alignment Align { get; }
 }
 
@@ -99,7 +99,7 @@ public class Cylinder : BasePartObject
     /// <summary>The angular size in degrees.</summary>
     public double ArcSize { get; }
 
-    /// <summary>The alignment.</summary>
+    /// <summary>How it is placed relative to its bounding box on each axis, as it was built.</summary>
     public Alignment Align { get; }
 }
 
@@ -126,7 +126,7 @@ public class Sphere : BasePartObject
     /// <summary>The angle revolved about the pole.</summary>
     public double ArcSize3 { get; }
 
-    /// <summary>The alignment.</summary>
+    /// <summary>How it is placed relative to its bounding box on each axis, as it was built.</summary>
     public Alignment Align { get; }
 }
 
@@ -158,7 +158,7 @@ public class Torus : BasePartObject
     /// <summary>The angle the minor arc is revolved through.</summary>
     public double MajorAngle { get; }
 
-    /// <summary>The alignment.</summary>
+    /// <summary>How it is placed relative to its bounding box on each axis, as it was built.</summary>
     public Alignment Align { get; }
 }
 
@@ -194,7 +194,7 @@ public class Wedge : BasePartObject
     public double ZMax { get; }
 #pragma warning restore CS1591
 
-    /// <summary>The alignment.</summary>
+    /// <summary>How it is placed relative to its bounding box on each axis, as it was built.</summary>
     public Alignment Align { get; }
 }
 

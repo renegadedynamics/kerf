@@ -439,19 +439,6 @@ internal sealed class OffsetBlend
         return c;
     }
 
-    //=======================================================================
-    // function : Touched
-    // purpose  : Only the faces connected with caps are given
-    //=======================================================================
-
-    private static void Touched(Analyse analyse,
-                                HashSet<Shape> stopFaces,
-                                in Shape shape,
-                                HashSet<Shape> touchedByCork)
-    {
-        // currently nothing is done !!
-    }
-
     //=================================================================================================
 
     private static Vertex FindVertex(in Point3D p, HashSet<Shape> map, double tol)
@@ -1229,7 +1216,6 @@ internal sealed class OffsetBlend
         // calculate faces touched by caps
         // ------------------------------------------
         HashSet<Shape> touchedByCork = new(ShapeHasher.Instance);
-        Touched(_analyse, _stopFaces, _shape, touchedByCork);
 
         // -----------------------
         // init of the intersector

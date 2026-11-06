@@ -44,7 +44,7 @@ public sealed record DrawingOptions
     /// <summary>The exact algorithm, hidden lines kept, no isolines.</summary>
     public static DrawingOptions Default { get; } = new();
 
-    /// <summary>The algorithm.</summary>
+    /// <summary>The hidden-line algorithm, exact by default.</summary>
     public HiddenLineMethod Method { get; init; } = HiddenLineMethod.Exact;
 
     /// <summary>Whether the hidden lines are in the drawing as well as the visible ones.</summary>

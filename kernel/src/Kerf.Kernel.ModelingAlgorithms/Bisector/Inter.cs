@@ -41,7 +41,7 @@ internal sealed class Inter : Intersection2D
     //===================================================================================
     // Construction of a segment of line from PMin to PMax, parameterised from UMin.
     //===================================================================================
-    private static LineCurve2D ConstructSegment(in Point2D pMin, in Point2D pMax, double uMin, double uMax)
+    private static LineCurve2D ConstructSegment(in Point2D pMin, in Point2D pMax, double uMin)
     {
         Direction2D dir = new(pMax.X - pMin.X, pMax.Y - pMin.Y);
         LineCurve2D l = new(new Point2D(pMin.X - uMin * dir.X, pMin.Y - uMin * dir.Y), dir);
@@ -121,7 +121,7 @@ internal sealed class Inter : Intersection2D
                     //--------------------------------------------------------
                     // Part corresponding to an extension is a segment.
                     //--------------------------------------------------------
-                    sBis1[ib1] = ConstructSegment(pMin, pMax, uMin, uMax);
+                    sBis1[ib1] = ConstructSegment(pMin, pMax, uMin);
                 }
                 else
                 {
@@ -175,7 +175,7 @@ internal sealed class Inter : Intersection2D
                     //--------------------------------------------------------
                     // Part corresponding to an extension is a segment.
                     //--------------------------------------------------------
-                    sBis2[ib2] = ConstructSegment(pMin, pMax, uMin, uMax);
+                    sBis2[ib2] = ConstructSegment(pMin, pMax, uMin);
                 }
                 else
                 {

@@ -45,7 +45,7 @@ internal static partial class MathPoly
         public static bool operator false(GeneralPolyResult result) => !result.IsDone;
     }
 
-    internal static partial class detail
+    internal static partial class Detail
     {
         /// <summary>Evaluate polynomial (c[0] = constant term) and its first two derivatives at complex x.</summary>
         internal static void EvaluatePolynomialWithDerivatives(ReadOnlySpan<double> coeffs,
@@ -179,11 +179,11 @@ internal static partial class MathPoly
         /// <summary>Refine a real root using Newton-Raphson on the original polynomial.</summary>
         internal static double RefineRealRoot(ReadOnlySpan<double> origCoeffs, int origDegree, double root)
         {
-            const int THE_MAX_ITER = 10;
-            const double THE_TOL = 1.0e-14;
+            const int maxIter = 10;
+            const double tol = 1.0e-14;
 
             double x = root;
-            for (int iter = 0; iter < THE_MAX_ITER; ++iter)
+            for (int iter = 0; iter < maxIter; ++iter)
             {
                 // Evaluate P and P' using Horner
                 double p = origCoeffs[origDegree];
@@ -202,7 +202,7 @@ internal static partial class MathPoly
                 double delta = p / dp;
                 x -= delta;
 
-                if (Math.Abs(delta) < THE_TOL * (1.0 + Math.Abs(x)))
+                if (Math.Abs(delta) < tol * (1.0 + Math.Abs(x)))
                 {
                     break;
                 }
@@ -264,7 +264,7 @@ internal static partial class MathPoly
             ++startIdx;
 
             // Use Laguerre iteration
-            Complex root = detail.LaguerreIteration(workCoeffs, deg, x0, tol, 100);
+            Complex root = Detail.LaguerreIteration(workCoeffs, deg, x0, tol, 100);
 
             // Determine if root is real or complex
             double imagPart = Math.Abs(root.Imaginary);
@@ -277,12 +277,12 @@ internal static partial class MathPoly
                 double realRoot = root.Real;
 
                 // Refine using Newton on original polynomial
-                realRoot = detail.RefineRealRoot(origCoeffs, degree, realRoot);
+                realRoot = Detail.RefineRealRoot(origCoeffs, degree, realRoot);
 
                 result.Roots[result.NbRoots++] = realRoot;
 
                 // Deflate
-                detail.DeflateReal(workCoeffs, ref deg, realRoot);
+                Detail.DeflateReal(workCoeffs, ref deg, realRoot);
             }
             else
             {
@@ -291,7 +291,7 @@ internal static partial class MathPoly
                 result.ComplexRoots[result.NbComplexRoots++] = Complex.Conjugate(root);
 
                 // Deflate by quadratic
-                detail.DeflateComplex(workCoeffs, ref deg, root);
+                Detail.DeflateComplex(workCoeffs, ref deg, root);
             }
         }
 

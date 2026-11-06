@@ -52,8 +52,8 @@ internal sealed class CurveAbscissaPoint
     }
 
     // The delegates, allocated once (OCCT passes function pointers).
-    private static readonly RealFunction S_f3d = F3d;
-    private static readonly RealFunction S_f2d = F2d;
+    private static readonly RealFunction F3dDelegate = F3d;
+    private static readonly RealFunction F2dDelegate = F2d;
 
     private static int Order(CurveAdaptorBase c)
     {
@@ -126,7 +126,7 @@ internal sealed class CurveAbscissaPoint
     public static double Length(CurveAdaptorBase c, double u1, double u2)
     {
         MyGaussFunction fg = new();
-        RealFunction rf = S_f3d;
+        RealFunction rf = F3dDelegate;
         fg.Init(rf, c);
         GaussSingleIntegration theLength = new(fg, u1, u2, Order(c));
         if (!theLength.IsDone)
@@ -141,7 +141,7 @@ internal sealed class CurveAbscissaPoint
     public static double Length(Curve2DAdaptorBase c, double u1, double u2)
     {
         MyGaussFunction fg = new();
-        RealFunction rf = S_f2d;
+        RealFunction rf = F2dDelegate;
         fg.Init(rf, c);
         GaussSingleIntegration theLength = new(fg, u1, u2, Order(c));
         if (!theLength.IsDone)
@@ -156,7 +156,7 @@ internal sealed class CurveAbscissaPoint
     public static double Length(CurveAdaptorBase c, double u1, double u2, double tol)
     {
         MyGaussFunction fg = new();
-        RealFunction rf = S_f3d;
+        RealFunction rf = F3dDelegate;
         fg.Init(rf, c);
         GaussSingleIntegration theLength = new(fg, u1, u2, Order(c), tol);
         if (!theLength.IsDone)
@@ -171,7 +171,7 @@ internal sealed class CurveAbscissaPoint
     public static double Length(Curve2DAdaptorBase c, double u1, double u2, double tol)
     {
         MyGaussFunction fg = new();
-        RealFunction rf = S_f2d;
+        RealFunction rf = F2dDelegate;
         fg.Init(rf, c);
         GaussSingleIntegration theLength = new(fg, u1, u2, Order(c), tol);
         if (!theLength.IsDone)
@@ -247,7 +247,7 @@ internal sealed class CurveAbscissaPoint
     /// <summary>Initializes the algorithm on the curve between U1 and U2.</summary>
     public void Init(CurveAdaptorBase c, double u1, double u2)
     {
-        RealFunction rf = S_f3d;
+        RealFunction rf = F3dDelegate;
         _f.Init(rf, c, Order(c));
         _l = CurveAbscissaPoint.Length(c, u1, u2);
         _uMin = Min(u1, u2);
@@ -260,7 +260,7 @@ internal sealed class CurveAbscissaPoint
     /// <summary>Initializes the algorithm on the curve between U1 and U2.</summary>
     public void Init(Curve2DAdaptorBase c, double u1, double u2)
     {
-        RealFunction rf = S_f2d;
+        RealFunction rf = F2dDelegate;
         _f.Init(rf, c, Order(c));
         _l = CurveAbscissaPoint.Length(c, u1, u2);
         _uMin = Min(u1, u2);
@@ -273,7 +273,7 @@ internal sealed class CurveAbscissaPoint
     /// <summary>Initializes the algorithm on the curve between U1 and U2 with the given tolerance (rbv).</summary>
     public void Init(CurveAdaptorBase c, double u1, double u2, double tol)
     {
-        RealFunction rf = S_f3d;
+        RealFunction rf = F3dDelegate;
         _f.Init(rf, c, Order(c));
         _l = CurveAbscissaPoint.Length(c, u1, u2, tol);
         _uMin = Min(u1, u2);
@@ -286,7 +286,7 @@ internal sealed class CurveAbscissaPoint
     /// <summary>Initializes the algorithm on the curve between U1 and U2 with the given tolerance.</summary>
     public void Init(Curve2DAdaptorBase c, double u1, double u2, double tol)
     {
-        RealFunction rf = S_f2d;
+        RealFunction rf = F2dDelegate;
         _f.Init(rf, c, Order(c));
         _l = CurveAbscissaPoint.Length(c, u1, u2, tol);
         _uMin = Min(u1, u2);

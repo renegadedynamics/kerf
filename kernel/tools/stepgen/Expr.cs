@@ -30,8 +30,6 @@ internal sealed class CallExpr : Expr
 {
     public Expr Fn = null!;
     public List<Expr> Args = [];
-    /// <summary>A braced call: T{...}.</summary>
-    public bool Braced;
 }
 
 internal sealed class IndexExpr : Expr

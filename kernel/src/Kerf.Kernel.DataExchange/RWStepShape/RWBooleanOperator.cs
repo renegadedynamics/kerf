@@ -9,9 +9,9 @@ namespace Kerf.Engine.Exchange.Step.Shapes.ReadWrite;
 
 internal static class RWBooleanOperator
 {
-    public const string boDifference = ".DIFFERENCE.";
-    public const string boIntersection = ".INTERSECTION.";
-    public const string boUnion = ".UNION.";
+    public const string BoDifference = ".DIFFERENCE.";
+    public const string BoIntersection = ".INTERSECTION.";
+    public const string BoUnion = ".UNION.";
 
     /// <summary>
     /// Convert StepShape_BooleanOperator to string
@@ -23,11 +23,11 @@ internal static class RWBooleanOperator
         switch (sourceEnum)
         {
             case StepBooleanOperator.BoDifference:
-                return boDifference;
+                return BoDifference;
             case StepBooleanOperator.BoIntersection:
-                return boIntersection;
+                return BoIntersection;
             case StepBooleanOperator.BoUnion:
-                return boUnion;
+                return BoUnion;
         }
         return null;
     }
@@ -40,15 +40,15 @@ internal static class RWBooleanOperator
     /// </summary>
     public static bool ConvertToEnum(string operatorStr, ref StepBooleanOperator resultEnum)
     {
-        if (operatorStr == boDifference)
+        if (operatorStr == BoDifference)
         {
             resultEnum = StepBooleanOperator.BoDifference;
         }
-        else if (operatorStr == boIntersection)
+        else if (operatorStr == BoIntersection)
         {
             resultEnum = StepBooleanOperator.BoIntersection;
         }
-        else if (operatorStr == boUnion)
+        else if (operatorStr == BoUnion)
         {
             resultEnum = StepBooleanOperator.BoUnion;
         }

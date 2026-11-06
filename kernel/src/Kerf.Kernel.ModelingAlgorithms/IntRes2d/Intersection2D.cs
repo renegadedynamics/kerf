@@ -200,8 +200,8 @@ internal abstract class Intersection2D
             //-- (a segment has always a FirstPoint and a LastPoint)
             //--------------------------------------------------
             n = other._lseg.Length();
-            double SegModif_P1First = 0, SegModif_P1Second = 0;
-            double SegModif_P2First = 0, SegModif_P2Second = 0;
+            double segModifP1First = 0, segModifP1Second = 0;
+            double segModifP2First = 0, segModifP2Second = 0;
 
             for (i = 1; i <= n; i++)
             {
@@ -267,10 +267,10 @@ internal abstract class Intersection2D
                         {
                             notYetModified = false;
                             _lseg[j] = new IntersectionSegment2D(anP1, p2, opposite, false);
-                            SegModif_P1First = anP1PParamOnFirst;
-                            SegModif_P1Second = anP1PParamOnSecond;
-                            SegModif_P2First = p2PParamOnFirst;
-                            SegModif_P2Second = p2PParamOnSecond;
+                            segModifP1First = anP1PParamOnFirst;
+                            segModifP1Second = anP1PParamOnSecond;
+                            segModifP2First = p2PParamOnFirst;
+                            segModifP2Second = p2PParamOnSecond;
                         }
                         //---------------------------------------------------------------
                         //--                                AnP1---------AnP2
@@ -281,10 +281,10 @@ internal abstract class Intersection2D
                         {
                             notYetModified = false;
                             _lseg[j] = new IntersectionSegment2D(p1, anP2, opposite, false);
-                            SegModif_P1First = p1PParamOnFirst;
-                            SegModif_P1Second = p1PParamOnSecond;
-                            SegModif_P2First = anP2PParamOnFirst;
-                            SegModif_P2Second = anP2PParamOnSecond;
+                            segModifP1First = p1PParamOnFirst;
+                            segModifP1Second = p1PParamOnSecond;
+                            segModifP2First = anP2PParamOnFirst;
+                            segModifP2Second = anP2PParamOnSecond;
                         }
 
                         //---------------------------------------------------------------
@@ -296,10 +296,10 @@ internal abstract class Intersection2D
                         {
                             notYetModified = false;
                             _lseg[j] = new IntersectionSegment2D(anP2, p2, opposite, false);
-                            SegModif_P1First = p2PParamOnFirst;
-                            SegModif_P1Second = p2PParamOnSecond;
-                            SegModif_P2First = anP2PParamOnFirst;
-                            SegModif_P2Second = anP2PParamOnSecond;
+                            segModifP1First = p2PParamOnFirst;
+                            segModifP1Second = p2PParamOnSecond;
+                            segModifP2First = anP2PParamOnFirst;
+                            segModifP2Second = anP2PParamOnSecond;
                         }
                         //---------------------------------------------------------------
                         //--                                AnP2---------AnP1
@@ -310,10 +310,10 @@ internal abstract class Intersection2D
                         {
                             notYetModified = false;
                             _lseg[j] = new IntersectionSegment2D(p1, anP1, opposite, false);
-                            SegModif_P1First = p1PParamOnFirst;
-                            SegModif_P1Second = p1PParamOnSecond;
-                            SegModif_P2First = anP1PParamOnFirst;
-                            SegModif_P2Second = anP1PParamOnSecond;
+                            segModifP1First = p1PParamOnFirst;
+                            segModifP1Second = p1PParamOnSecond;
+                            segModifP2First = anP1PParamOnFirst;
+                            segModifP2Second = anP1PParamOnSecond;
                         }
                     }
                 }
@@ -337,10 +337,10 @@ internal abstract class Intersection2D
                         double ponFirst = _lpnt[rp].ParamOnFirst();
                         double ponSecond = _lpnt[rp].ParamOnSecond();
 
-                        if (((ponFirst >= SegModif_P1First && ponFirst <= SegModif_P2First)
-                             || (ponFirst <= SegModif_P1First && ponFirst >= SegModif_P2First))
-                            && ((ponSecond >= SegModif_P1Second && ponSecond <= SegModif_P2Second)
-                                || (ponSecond <= SegModif_P1Second && ponSecond >= SegModif_P2Second)))
+                        if (((ponFirst >= segModifP1First && ponFirst <= segModifP2First)
+                             || (ponFirst <= segModifP1First && ponFirst >= segModifP2First))
+                            && ((ponSecond >= segModifP1Second && ponSecond <= segModifP2Second)
+                                || (ponSecond <= segModifP1Second && ponSecond >= segModifP2Second)))
                         {
                             _lpnt.Remove(rp);
                             rp--;

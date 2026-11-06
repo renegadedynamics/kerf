@@ -27,9 +27,9 @@ internal readonly struct CoordinateConverter
     public bool IsIdentity => _scale == 1.0 && !_zUpToYUp;
 
     /// <summary>The inverse change.</summary>
-    public CoordinateConverter Inverse() => new(1.0 / _scale, _zUpToYUp) { myInverse = !myInverse };
+    public CoordinateConverter Inverse() => new(1.0 / _scale, _zUpToYUp) { IsInverse = !IsInverse };
 
-    private bool myInverse { get; init; }
+    private bool IsInverse { get; init; }
 
     /// <summary>A point (or a vector, with <paramref name="isVector"/>: not scaled) mapped.</summary>
     public void Map(ref double x, ref double y, ref double z, bool isVector = false)
@@ -43,7 +43,7 @@ internal readonly struct CoordinateConverter
             return;
         }
         double aX = x, aY = y, aZ = z;
-        if (!myInverse)
+        if (!IsInverse)
         {
             // R: (x, y, z) -> (x, z, -y)
             x = s * aX;

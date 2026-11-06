@@ -42,11 +42,11 @@ internal sealed class MyImpParToolOfTheIntersectorOfTheIntConicCurveOfGInter
         return (true);
     }
 
-    public override bool Derivative(double param, out double D_ApproxDistance_DV)
+    public override bool Derivative(double param, out double dApproxDistanceDv)
     {
         Vector2D grad = _theImpTool.GradDistance(Geom2dCurveTool.Value(_theParCurve, param));
         Geom2dCurveTool.D1(_theParCurve, param, out _, out Vector2D tanParCurve);
-        D_ApproxDistance_DV = grad.Dot(tanParCurve);
+        dApproxDistanceDv = grad.Dot(tanParCurve);
         return (true);
     }
 

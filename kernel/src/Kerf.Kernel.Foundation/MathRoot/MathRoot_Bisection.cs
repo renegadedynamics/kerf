@@ -35,6 +35,15 @@ internal static partial class MathRoot
             return result;
         }
 
+        // Kerf: an end that is already a root; OCCT goes on, and with fa = 0 walks to the other end (decision 1751)
+        if (Math.Abs(fa) < config.FTolerance || Math.Abs(fb) < config.FTolerance)
+        {
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+            result.Root = Math.Abs(fa) <= Math.Abs(fb) ? a : b;
+            result.Value = Math.Abs(fa) <= Math.Abs(fb) ? fa : fb;
+            return result;
+        }
+
         // Ensure a < b
         if (a > b)
         {
@@ -129,6 +138,18 @@ internal static partial class MathRoot
         if (fa * fb > 0.0)
         {
             result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput;
+            return result;
+        }
+
+        // Kerf: an end that is already a root, as in Bisection above (decision 1751)
+        if (Math.Abs(fa) < config.FTolerance || Math.Abs(fb) < config.FTolerance)
+        {
+            bool isFirst = Math.Abs(fa) <= Math.Abs(fb);
+            func.Values(isFirst ? a : b, out double fEnd, out double dfEnd);
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+            result.Root = isFirst ? a : b;
+            result.Value = fEnd;
+            result.Derivative = dfEnd;
             return result;
         }
 

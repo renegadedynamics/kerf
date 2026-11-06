@@ -43,6 +43,7 @@ public sealed class ConicalSurface : ElementarySurface
         _pos = cone.Position;
     }
 
+    /// <summary>A new surface with the same values, which can be changed independently of this one.</summary>
     public sealed override Geometry3D Copy()
     {
         ConicalSurface cs;
@@ -282,6 +283,7 @@ public sealed class ConicalSurface : ElementarySurface
         return gc;
     }
 
+    /// <inheritdoc/>
     protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();

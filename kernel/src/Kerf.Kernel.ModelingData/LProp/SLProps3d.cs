@@ -422,8 +422,8 @@ internal class SLProps3d
             return;
         }
 
-        const double THE_DIVISION_FACTOR = 1.0e-3;
-        const double THE_MIN_STEP = 1.0e-7;
+        const double divisionFactor = 1.0e-3;
+        const double minStep = 1.0e-7;
 
         GetSurfBounds(out double uinfimum, out double vinfimum, out double usupremum, out double vsupremum);
 
@@ -439,7 +439,7 @@ internal class SLProps3d
                 du = usupremum - uinfimum;
             }
 
-            double delta = Max(du * THE_DIVISION_FACTOR, THE_MIN_STEP);
+            double delta = Max(du * divisionFactor, minStep);
 
             Vector3D v = secDeriv;
 
@@ -476,7 +476,7 @@ internal class SLProps3d
                 dv = vsupremum - vinfimum;
             }
 
-            double delta = Max(dv * THE_DIVISION_FACTOR, THE_MIN_STEP);
+            double delta = Max(dv * divisionFactor, minStep);
 
             Vector3D v = secDeriv;
 

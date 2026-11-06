@@ -21,13 +21,13 @@ internal sealed class TheZerImpFuncOfTheImpPrmSvSurfacesOfApprox
     {
     }
 
-    public TheZerImpFuncOfTheImpPrmSvSurfacesOfApprox(FaceSurfaceAdaptor ps, in SurfaceQuadric IS)
-        : base(ps, IS)
+    public TheZerImpFuncOfTheImpPrmSvSurfacesOfApprox(FaceSurfaceAdaptor ps, in SurfaceQuadric quadric)
+        : base(ps, quadric)
     {
     }
 
-    public TheZerImpFuncOfTheImpPrmSvSurfacesOfApprox(in SurfaceQuadric IS)
-        : base(IS)
+    public TheZerImpFuncOfTheImpPrmSvSurfacesOfApprox(in SurfaceQuadric quadric)
+        : base(quadric)
     {
     }
 }

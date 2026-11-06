@@ -177,7 +177,7 @@ internal sealed class SurfaceSweep
         if (isKPart || isProduct)
         {
             // Approx du 2d
-            _done = Build2d(continuity, degmax, segmax);
+            _done = Build2d();
         }
         else
         {
@@ -186,7 +186,7 @@ internal sealed class SurfaceSweep
         }
     }
 
-    private bool Build2d(Continuity continuity, int degmax, int segmax)
+    private bool Build2d()
     {
         bool ok = false;
         if (_loc.Nb2dCurves() == 0)

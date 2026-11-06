@@ -16,12 +16,12 @@ internal static class Class2dPoints
     private const int LargestKept = 16384;
 
     [ThreadStatic]
-    private static NCollection_Sequence<Point2D>? t_spare;
+    private static NCollection_Sequence<Point2D>? s_tSpare;
 
     public static NCollection_Sequence<Point2D> Rent()
     {
-        NCollection_Sequence<Point2D> points = t_spare ?? new NCollection_Sequence<Point2D>();
-        t_spare = null;
+        NCollection_Sequence<Point2D> points = s_tSpare ?? new NCollection_Sequence<Point2D>();
+        s_tSpare = null;
         points.Clear();
         return points;
     }
@@ -30,7 +30,7 @@ internal static class Class2dPoints
     {
         if (points.Length() <= LargestKept)
         {
-            t_spare = points;
+            s_tSpare = points;
         }
     }
 }
@@ -98,8 +98,8 @@ internal sealed class Class2d
     // or returns the original value if the range is too small.
     private static double TransformToNormalized(double u, double uMin, double uRange)
     {
-        const double THE_MIN_RANGE = 1e-10;
-        if (uRange > THE_MIN_RANGE)
+        const double minRange = 1e-10;
+        if (uRange > minRange)
         {
             return (u - uMin) / uRange;
         }
@@ -146,12 +146,12 @@ internal sealed class Class2d
         _pnts2dY.ChangeLast() = _pnts2dY.First();
 
         // Normalize tolerances.
-        const double THE_MIN_RANGE = 1e-10;
-        if (du > THE_MIN_RANGE)
+        const double minRange = 1e-10;
+        if (du > minRange)
         {
             _tolU /= du;
         }
-        if (dv > THE_MIN_RANGE)
+        if (dv > minRange)
         {
             _tolV /= dv;
         }

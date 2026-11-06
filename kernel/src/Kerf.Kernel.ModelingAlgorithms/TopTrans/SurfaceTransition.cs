@@ -322,7 +322,7 @@ internal class SurfaceTransition
 
         // we take the state before of before orientations
         Containment before = FUN_getstate(_ang, _ori, Before, Before);
-        if (M_UNKNOWN(before))
+        if (IsUnknown(before))
         {
             // looking back in before for defined states
             // we take the state before of after orientations
@@ -356,7 +356,7 @@ internal class SurfaceTransition
         }
 
         Containment after = FUN_getstate(_ang, _ori, After, After);
-        if (M_UNKNOWN(after))
+        if (IsUnknown(after))
         {
             // looking back in before for defined states
             after = FUN_getstate(_ang, _ori, Before, After);
@@ -415,7 +415,7 @@ internal class SurfaceTransition
 
     private static bool MInternal(Orientation st) => st == Internal;
 
-    private static bool M_UNKNOWN(Containment st) => st == Unknown;
+    private static bool IsUnknown(Containment st) => st == Unknown;
 
     // Modified: eap Mar 25 2002 (occ102,occ227), touch case
     private static Direction3D FUN_nCinsideS(in Direction3D tgC, in Direction3D ngS)

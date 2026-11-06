@@ -550,7 +550,7 @@ internal abstract partial class FilletBuilderBase
                         }
                     }
                 }
-                if (!_hasresult)
+                if (!_hasresult && !_coup.LostFaces)
                 {
                     Compound result = new();
                     b1.MakeCompound(ref result);

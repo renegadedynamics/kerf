@@ -7,7 +7,10 @@ namespace Kerf.Geometry;
 /// <summary>The type of join between two consecutive arcs of a contour parallel to a given contour.</summary>
 public enum JoinKind
 {
+    /// <summary>A circular arc between the two parallel arcs: a rounded corner.</summary>
     Arc,
+    /// <summary>The two parallel arcs are joined along their tangents.</summary>
     Tangent,
+    /// <summary>The two parallel arcs are extended until they meet: a sharp corner.</summary>
     Intersection,
 }
