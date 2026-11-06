@@ -11,9 +11,9 @@ namespace Kerf.Geometry;
 
 /// <summary>
 /// A general (affine) transformation in 2D space: <c>matrix * P + loc</c>, where the matrix need not be
-/// orthogonal. Its form is gp_Other unless it was built from a <see cref="Transform2D"/>.
+/// orthogonal. Its form is <see cref="TransformForm.Other"/> unless it was built from a <see cref="Transform2D"/>.
 /// </summary>
-/// <remarks><c>new gp_GTrsf2d()</c> is the identity, as in OCCT; <c>default(gp_GTrsf2d)</c> is not valid.</remarks>
+/// <remarks><c>new GeneralTransform2D()</c> is the identity, as in OCCT; <c>default(GeneralTransform2D)</c> is not valid.</remarks>
 public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2D>
 {
     private readonly Matrix2x2 _matrix;
@@ -351,7 +351,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
     }
 
     /// <summary>This transformation as a <see cref="Transform2D"/>.</summary>
-    /// <exception cref="ConstructionErrorException">The form is gp_Other, or the matrix is not orthogonal.</exception>
+    /// <exception cref="InvalidOperationException">The form is <see cref="TransformForm.Other"/>, or the matrix is not orthogonal.</exception>
     public readonly Transform2D ToTransform()
     {
         // Test of orthogonality

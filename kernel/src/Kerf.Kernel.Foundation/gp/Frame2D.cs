@@ -9,7 +9,7 @@ namespace Kerf.Geometry;
 /// A coordinate system in 2D space: a location and orthonormal X and Y directions. It is right-handed when
 /// X ^ Y is positive, left-handed otherwise.
 /// </summary>
-/// <remarks><c>new gp_Ax22d()</c> is the global system, as in OCCT; <c>default(gp_Ax22d)</c> is not valid.</remarks>
+/// <remarks><c>new Frame2D()</c> is the global system, as in OCCT; <c>default(Frame2D)</c> is not valid.</remarks>
 public readonly partial struct Frame2D : IEquatable<Frame2D>
 {
     private readonly Point2D _point;

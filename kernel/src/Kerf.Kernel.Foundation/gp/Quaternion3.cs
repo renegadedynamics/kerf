@@ -9,7 +9,7 @@ using static Kerf.Geometry.EulerSequence;
 namespace Kerf.Engine.Geometry;
 
 /// <summary>A quaternion, mostly used to represent a rotation in 3D space.</summary>
-/// <remarks><c>new gp_Quaternion()</c> is the identity (0, 0, 0, 1), as in OCCT; <c>default(gp_Quaternion)</c> is zero.</remarks>
+/// <remarks><c>new Quaternion3()</c> is the identity (0, 0, 0, 1), as in OCCT; <c>default(Quaternion3)</c> is zero.</remarks>
 internal partial struct Quaternion3 : IEquatable<Quaternion3>
 {
     private double _x;
@@ -300,7 +300,7 @@ internal partial struct Quaternion3 : IEquatable<Quaternion3>
 
     // Queries
 
-    /// <summary>True when every component differs by at most <see cref="Constants.Resolution"/>.</summary>
+    /// <summary>True when every component differs by at most the resolution.</summary>
     public readonly bool IsEqual(in Quaternion3 other)
         => Math.Abs(_x - other._x) <= Constants.Resolution()
            && Math.Abs(_y - other._y) <= Constants.Resolution()

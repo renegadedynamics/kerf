@@ -12,8 +12,8 @@ namespace Kerf.Geometry;
 /// axis of symmetry. In it the parabola is <c>Y^2 = (2 * P) * X</c>, where P = 2 * focal length.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Parab2d()</c> is OCCT's indefinite parabola (focal length <see cref="Standard.RealLast"/>);
-/// <c>default(gp_Parab2d)</c> is not valid.
+/// <c>new Parabola2D()</c> is OCCT's indefinite parabola (focal length <c>double.MaxValue</c>);
+/// <c>default(Parabola2D)</c> is not valid.
 /// </remarks>
 public readonly partial struct Parabola2D : IEquatable<Parabola2D>
 {
@@ -28,7 +28,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
     }
 
     /// <summary>A parabola with the given axis of symmetry and focal length, direct when <paramref name="sense"/> is true.</summary>
-    /// <exception cref="ConstructionErrorException">The focal length is negative.</exception>
+    /// <exception cref="ArgumentException">The focal length is negative.</exception>
     public Parabola2D(in Axis2D mirrorAxis, double focalLength, bool sense = true)
     {
         _pos = new Frame2D(mirrorAxis, sense);
@@ -36,7 +36,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
         Refusal.ArgumentIf(focalLength < 0.0, FailureKind.ConstructionError, "gp_Parab2d() - focal length should be >= 0");
     }
 
-    /// <exception cref="ConstructionErrorException">The focal length is negative.</exception>
+    /// <exception cref="ArgumentException">The focal length is negative.</exception>
     public Parabola2D(in Frame2D axes, double focalLength)
     {
         _pos = axes;

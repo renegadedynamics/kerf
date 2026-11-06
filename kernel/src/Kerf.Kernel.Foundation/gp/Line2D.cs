@@ -10,7 +10,7 @@ using Kerf.Engine.Geometry;
 namespace Kerf.Geometry;
 
 /// <summary>An infinite line in 2D space, positioned by an axis (a location and a direction).</summary>
-/// <remarks><c>new gp_Lin2d()</c> is the X axis, as in OCCT; <c>default(gp_Lin2d)</c> is not valid.</remarks>
+/// <remarks><c>new Line2D()</c> is the X axis, as in OCCT; <c>default(Line2D)</c> is not valid.</remarks>
 public readonly partial struct Line2D : IEquatable<Line2D>
 {
     private readonly Axis2D _pos;
@@ -25,7 +25,7 @@ public readonly partial struct Line2D : IEquatable<Line2D>
     public Line2D(in Point2D point, in Direction2D direction) => _pos = new Axis2D(point, direction);
 
     /// <summary>The line of equation <c>A * X + B * Y + C = 0</c>.</summary>
-    /// <exception cref="ConstructionErrorException">A * A + B * B is at most <see cref="Constants.Resolution"/>.</exception>
+    /// <exception cref="ArgumentException">A * A + B * B is at most the resolution.</exception>
     public Line2D(double a, double b, double c)
     {
         double norm2 = a * a + b * b;

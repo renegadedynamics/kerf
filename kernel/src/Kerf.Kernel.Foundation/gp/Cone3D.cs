@@ -15,8 +15,8 @@ namespace Kerf.Geometry;
 /// parameterised by <c>P(U, V) = O + (R + V * sin(Ang)) * (cos(U) * XDir + sin(U) * YDir) + V * cos(Ang) * ZDir</c>.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Cone()</c> is OCCT's indefinite cone (reference radius <see cref="Standard.RealLast"/>, semi-angle
-/// PI/4); <c>default(gp_Cone)</c> is not valid.
+/// <c>new Cone3D()</c> is OCCT's indefinite cone (reference radius <c>double.MaxValue</c>, semi-angle
+/// PI/4); <c>default(Cone3D)</c> is not valid.
 /// </remarks>
 public readonly partial struct Cone3D : IEquatable<Cone3D>
 {
@@ -32,7 +32,7 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         _semiAngle = M_PI * 0.25;
     }
 
-    /// <exception cref="ConstructionErrorException">
+    /// <exception cref="ArgumentException">
     /// <paramref name="radius"/> is negative, or |<paramref name="angle"/>| is not in (Resolution, PI/2 - Resolution).
     /// </exception>
     public Cone3D(in CoordinateSystem position, double angle, double radius)

@@ -10,7 +10,7 @@ using static Kerf.Geometry.TransformForm;
 namespace Kerf.Geometry;
 
 /// <summary>A unit vector in 2D space.</summary>
-/// <remarks><c>new gp_Dir2d()</c> is (1, 0), as in OCCT; <c>default(gp_Dir2d)</c> is all zeros and not a valid direction.</remarks>
+/// <remarks><c>new Direction2D()</c> is (1, 0), as in OCCT; <c>default(Direction2D)</c> is all zeros and not a valid direction.</remarks>
 public readonly partial struct Direction2D : IEquatable<Direction2D>
 {
     /// <summary>The four directions along the axes of the global system.</summary>

@@ -13,7 +13,7 @@ namespace Kerf.Geometry;
 /// angle from the X direction: <c>P(U) = O + R * (cos(U) * XDir + sin(U) * YDir)</c>.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Circ()</c> is OCCT's indefinite circle (radius <see cref="Standard.RealLast"/>); <c>default(gp_Circ)</c>
+/// <c>new Circle3D()</c> is OCCT's indefinite circle (radius <c>double.MaxValue</c>); <c>default(Circle3D)</c>
 /// is not valid.
 /// </remarks>
 public readonly partial struct Circle3D : IEquatable<Circle3D>
@@ -28,7 +28,7 @@ public readonly partial struct Circle3D : IEquatable<Circle3D>
         _radius = RealLast();
     }
 
-    /// <exception cref="ConstructionErrorException"><paramref name="radius"/> is negative.</exception>
+    /// <exception cref="ArgumentException"><paramref name="radius"/> is negative.</exception>
     public Circle3D(in Frame3D frame, double radius)
     {
         _pos = frame;

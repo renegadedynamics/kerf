@@ -14,8 +14,8 @@ namespace Kerf.Geometry;
 /// from the X axis, counterclockwise when the system is direct.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Circ2d()</c> is OCCT's indefinite circle (radius <see cref="Standard.RealLast"/>);
-/// <c>default(gp_Circ2d)</c> is not valid.
+/// <c>new Circle2D()</c> is OCCT's indefinite circle (radius <c>double.MaxValue</c>);
+/// <c>default(Circle2D)</c> is not valid.
 /// </remarks>
 public readonly partial struct Circle2D : IEquatable<Circle2D>
 {
@@ -30,7 +30,7 @@ public readonly partial struct Circle2D : IEquatable<Circle2D>
     }
 
     /// <summary>A circle centred on the location of <paramref name="xAxis"/>, direct when <paramref name="sense"/> is true.</summary>
-    /// <exception cref="ConstructionErrorException">The radius is negative.</exception>
+    /// <exception cref="ArgumentException">The radius is negative.</exception>
     public Circle2D(in Axis2D xAxis, double radius, bool sense = true)
     {
         _pos = new Frame2D(xAxis, sense);
@@ -38,7 +38,7 @@ public readonly partial struct Circle2D : IEquatable<Circle2D>
         Refusal.ArgumentIf(radius < 0.0, FailureKind.ConstructionError, "gp_Circ2d() - radius should be positive number");
     }
 
-    /// <exception cref="ConstructionErrorException">The radius is negative.</exception>
+    /// <exception cref="ArgumentException">The radius is negative.</exception>
     public Circle2D(in Frame2D axis, double radius)
     {
         _pos = axis;

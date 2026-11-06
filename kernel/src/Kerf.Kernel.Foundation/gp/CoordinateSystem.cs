@@ -6,7 +6,7 @@
 namespace Kerf.Geometry;
 
 /// <summary>A coordinate system in 3D space, right- or left-handed ("direct" or "indirect").</summary>
-/// <remarks><c>new gp_Ax3()</c> is the global system, as in OCCT; <c>default(gp_Ax3)</c> is not valid.</remarks>
+/// <remarks><c>new CoordinateSystem()</c> is the global system, as in OCCT; <c>default(CoordinateSystem)</c> is not valid.</remarks>
 public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
 {
     private readonly Axis3D _axis;

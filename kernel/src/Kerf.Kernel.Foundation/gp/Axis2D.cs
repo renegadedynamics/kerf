@@ -8,7 +8,7 @@ using Kerf.Engine.Geometry;
 namespace Kerf.Geometry;
 
 /// <summary>An axis in 2D space: a location and a direction.</summary>
-/// <remarks><c>new gp_Ax2d()</c> is the X axis at the origin, as in OCCT; <c>default(gp_Ax2d)</c> is not valid.</remarks>
+/// <remarks><c>new Axis2D()</c> is the X axis at the origin, as in OCCT; <c>default(Axis2D)</c> is not valid.</remarks>
 public readonly partial struct Axis2D : IEquatable<Axis2D>
 {
     private readonly Point2D _loc;

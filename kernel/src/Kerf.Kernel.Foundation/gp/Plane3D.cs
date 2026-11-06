@@ -3,7 +3,6 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
@@ -14,7 +13,7 @@ namespace Kerf.Geometry;
 /// directions span it and the main direction is its normal. It is parameterised by
 /// <c>P(U, V) = O + U * XDir + V * YDir</c>.
 /// </summary>
-/// <remarks><c>new gp_Pln()</c> is the XOY plane, as in OCCT; <c>default(gp_Pln)</c> is not valid.</remarks>
+/// <remarks><c>new Plane3D()</c> is the XOY plane, as in OCCT; <c>default(Plane3D)</c> is not valid.</remarks>
 public readonly partial struct Plane3D : IEquatable<Plane3D>
 {
     private readonly CoordinateSystem _position;
@@ -74,7 +73,7 @@ public readonly partial struct Plane3D : IEquatable<Plane3D>
     }
 
     /// <summary>The plane <c>A * X + B * Y + C * Z + D = 0</c>.</summary>
-    /// <exception cref="ConstructionErrorException">A, B and C are all zero.</exception>
+    /// <exception cref="ArgumentException">A, B and C are all zero.</exception>
     public Plane3D(double a, double b, double c, double d)
     {
         double absA = Math.Abs(a);

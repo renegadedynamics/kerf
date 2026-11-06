@@ -15,8 +15,8 @@ namespace Kerf.Geometry;
 /// direction) and centred on the X axis at the major radius, rotating about the main direction.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Torus()</c> is OCCT's indefinite torus (major radius <see cref="Standard.RealLast"/>, minor radius
-/// <see cref="Standard.RealSmall"/>); <c>default(gp_Torus)</c> is not valid.
+/// <c>new Torus3D()</c> is OCCT's indefinite torus (major radius <c>double.MaxValue</c>, minor radius
+/// <c>2.2e-308</c>); <c>default(Torus3D)</c> is not valid.
 /// </remarks>
 public readonly partial struct Torus3D : IEquatable<Torus3D>
 {
@@ -33,7 +33,7 @@ public readonly partial struct Torus3D : IEquatable<Torus3D>
     }
 
     /// <remarks>A torus with both radii 0 is allowed.</remarks>
-    /// <exception cref="ConstructionErrorException">A radius is negative.</exception>
+    /// <exception cref="ArgumentException">A radius is negative.</exception>
     public Torus3D(in CoordinateSystem position, double majorRadius, double minorRadius)
     {
         _pos = position;
@@ -126,7 +126,7 @@ public readonly partial struct Torus3D : IEquatable<Torus3D>
     /// OCCT fills an <c>NCollection_Array1</c> from its lower bound; the port fills a span from index 0, so
     /// OCCT's <c>Coef(Lower() + i)</c> is <c>theCoef[i]</c>.
     /// </remarks>
-    /// <exception cref="DimensionErrorException"><paramref name="coef"/> has fewer than 35 elements.</exception>
+    /// <exception cref="ArgumentException"><paramref name="coef"/> has fewer than 35 elements.</exception>
     public readonly void Coefficients(Span<double> coef)
     {
         //  R = majorRadius;

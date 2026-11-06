@@ -3,14 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
 namespace Kerf.Geometry;
 
 /// <summary>An infinite line in 3D space, positioned by an axis (a location and a unit direction).</summary>
-/// <remarks><c>new gp_Lin()</c> is the Z axis, as in OCCT; <c>default(gp_Lin)</c> is not valid.</remarks>
+/// <remarks><c>new Line3D()</c> is the Z axis, as in OCCT; <c>default(Line3D)</c> is not valid.</remarks>
 public readonly partial struct Line3D : IEquatable<Line3D>
 {
     private readonly Axis3D _pos;
@@ -110,7 +109,7 @@ public readonly partial struct Line3D : IEquatable<Line3D>
     }
 
     /// <summary>The line through <paramref name="point"/> normal to this line and intersecting it.</summary>
-    /// <exception cref="ConstructionErrorException"><paramref name="point"/> is on this line.</exception>
+    /// <exception cref="ArgumentException"><paramref name="point"/> is on this line.</exception>
     public readonly Line3D Normal(in Point3D point)
     {
         Point3D loc = _pos.Location;

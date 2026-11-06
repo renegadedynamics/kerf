@@ -16,8 +16,8 @@ namespace Kerf.Geometry;
 /// <c>P(U) = O + MajRad * cosh(U) * XDir + MinRad * sinh(U) * YDir</c>.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Hypr()</c> is OCCT's indefinite hyperbola (major radius <see cref="Standard.RealLast"/>, minor radius
-/// <see cref="Standard.RealFirst"/>); <c>default(gp_Hypr)</c> is not valid.
+/// <c>new Hyperbola3D()</c> is OCCT's indefinite hyperbola (major radius <c>double.MaxValue</c>, minor radius
+/// <c>double.MinValue</c>); <c>default(Hyperbola3D)</c> is not valid.
 /// </remarks>
 public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
 {
@@ -33,7 +33,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         _minorRadius = RealFirst(); // OCCT: a negative minor radius, which no Set method or constructor accepts
     }
 
-    /// <exception cref="ConstructionErrorException">A radius is negative.</exception>
+    /// <exception cref="ArgumentException">A radius is negative.</exception>
     public Hyperbola3D(in Frame3D frame, double majorRadius, double minorRadius)
     {
         _pos = frame;
@@ -93,7 +93,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     // Queries
 
     /// <summary>The first asymptote, of direction <c>XDir + (Minor / Major) * YDir</c>.</summary>
-    /// <exception cref="ConstructionErrorException">The major radius is zero.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is zero.</exception>
     public readonly Axis3D Asymptote1
     {
         get
@@ -108,7 +108,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     }
 
     /// <summary>The second asymptote, of direction <c>XDir - (Minor / Major) * YDir</c>.</summary>
-    /// <exception cref="ConstructionErrorException">The major radius is zero.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is zero.</exception>
     public readonly Axis3D Asymptote2
     {
         get
@@ -139,7 +139,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     }
 
     /// <summary>The first directrix, on the positive side of the major axis, parallel to the minor axis.</summary>
-    /// <exception cref="DomainErrorException">The major radius is zero.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is zero.</exception>
     public readonly Axis3D Directrix1
     {
         get
@@ -153,7 +153,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     }
 
     /// <summary>The second directrix, symmetric to the first about the minor axis.</summary>
-    /// <exception cref="DomainErrorException">The major radius is zero.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is zero.</exception>
     public readonly Axis3D Directrix2
     {
         get
@@ -167,7 +167,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     }
 
     /// <summary>sqrt(Major^2 + Minor^2) / Major, greater than 1.</summary>
-    /// <exception cref="DomainErrorException">The major radius is zero.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is zero.</exception>
     public readonly double Eccentricity
     {
         get
@@ -222,7 +222,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     }
 
     /// <summary>The focal parameter, Minor^2 / Major.</summary>
-    /// <exception cref="DomainErrorException">The major radius is zero.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is zero.</exception>
     public readonly double Parameter
     {
         get

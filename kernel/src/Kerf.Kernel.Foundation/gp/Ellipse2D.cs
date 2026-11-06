@@ -14,8 +14,8 @@ namespace Kerf.Geometry;
 /// the major axis. It is parametrized from the X axis, counterclockwise when the system is direct.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Elips2d()</c> is OCCT's indefinite ellipse (major radius <see cref="Standard.RealLast"/>, minor
-/// radius <see cref="Standard.RealSmall"/>); <c>default(gp_Elips2d)</c> is not valid.
+/// <c>new Ellipse2D()</c> is OCCT's indefinite ellipse (major radius <c>double.MaxValue</c>, minor
+/// radius <c>2.2e-308</c>); <c>default(Ellipse2D)</c> is not valid.
 /// </remarks>
 public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
 {
@@ -32,7 +32,7 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
     }
 
     /// <summary>An ellipse whose major axis is <paramref name="majorAxis"/>, direct when <paramref name="sense"/> is true.</summary>
-    /// <exception cref="ConstructionErrorException">The minor radius is negative or greater than the major radius.</exception>
+    /// <exception cref="ArgumentException">The minor radius is negative or greater than the major radius.</exception>
     public Ellipse2D(in Axis2D majorAxis, double majorRadius, double minorRadius, bool sense = true)
     {
         _pos = new Frame2D(majorAxis, sense);
@@ -41,7 +41,7 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
         Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < minorRadius, FailureKind.ConstructionError, "gp_Elips2d() - invalid construction parameters");
     }
 
-    /// <exception cref="ConstructionErrorException">The minor radius is negative or greater than the major radius.</exception>
+    /// <exception cref="ArgumentException">The minor radius is negative or greater than the major radius.</exception>
     public Ellipse2D(in Frame2D frame, double majorRadius, double minorRadius)
     {
         _pos = frame;
@@ -153,7 +153,7 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
     }
 
     /// <summary>The directrix on the positive side of the major axis, at distance MajorRadius / e from the centre.</summary>
-    /// <exception cref="ConstructionErrorException">The eccentricity is zero (a circle).</exception>
+    /// <exception cref="InvalidOperationException">The eccentricity is zero (a circle).</exception>
     public readonly Axis2D Directrix1
     {
         get
@@ -168,7 +168,7 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
     }
 
     /// <summary>The directrix on the negative side of the major axis.</summary>
-    /// <exception cref="ConstructionErrorException">The eccentricity is zero (a circle).</exception>
+    /// <exception cref="InvalidOperationException">The eccentricity is zero (a circle).</exception>
     public readonly Axis2D Directrix2
     {
         get

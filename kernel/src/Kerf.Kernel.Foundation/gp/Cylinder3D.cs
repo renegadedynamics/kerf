@@ -12,8 +12,8 @@ namespace Kerf.Geometry;
 /// is the cylinder's axis. It is parameterised by <c>P(U, V) = O + R * (cos(U) * XDir + sin(U) * YDir) + V * ZDir</c>.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Cylinder()</c> is OCCT's indefinite cylinder (radius <see cref="Standard.RealLast"/>);
-/// <c>default(gp_Cylinder)</c> is not valid.
+/// <c>new Cylinder3D()</c> is OCCT's indefinite cylinder (radius <c>double.MaxValue</c>);
+/// <c>default(Cylinder3D)</c> is not valid.
 /// </remarks>
 public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
 {
@@ -27,7 +27,7 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
         _radius = RealLast();
     }
 
-    /// <exception cref="ConstructionErrorException"><paramref name="radius"/> is negative.</exception>
+    /// <exception cref="ArgumentException"><paramref name="radius"/> is negative.</exception>
     public Cylinder3D(in CoordinateSystem position, double radius)
     {
         _pos = position;

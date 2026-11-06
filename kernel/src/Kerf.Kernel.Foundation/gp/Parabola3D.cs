@@ -13,8 +13,8 @@ namespace Kerf.Geometry;
 /// parameterised by <c>P(U) = O + U^2 / (4 * F) * XDir + U * YDir</c>.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Parab()</c> is OCCT's indefinite parabola (focal length <see cref="Standard.RealLast"/>);
-/// <c>default(gp_Parab)</c> is not valid.
+/// <c>new Parabola3D()</c> is OCCT's indefinite parabola (focal length <c>double.MaxValue</c>);
+/// <c>default(Parabola3D)</c> is not valid.
 /// </remarks>
 public readonly partial struct Parabola3D : IEquatable<Parabola3D>
 {
@@ -28,7 +28,7 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
         _focalLength = RealLast();
     }
 
-    /// <exception cref="ConstructionErrorException"><paramref name="focal"/> is negative.</exception>
+    /// <exception cref="ArgumentException"><paramref name="focal"/> is negative.</exception>
     public Parabola3D(in Frame3D frame, double focal)
     {
         _pos = frame;
@@ -37,7 +37,7 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
     }
 
     /// <summary>The parabola with directrix <paramref name="directrix"/> and focus <paramref name="focus"/>.</summary>
-    /// <exception cref="ConstructionErrorException"><paramref name="focus"/> is on <paramref name="directrix"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="focus"/> is on <paramref name="directrix"/>.</exception>
     public Parabola3D(in Axis3D directrix, in Point3D focus)
     {
         Line3D droite = new(directrix);

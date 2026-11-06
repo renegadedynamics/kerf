@@ -14,8 +14,8 @@ namespace Kerf.Geometry;
 /// whose X axis is the major axis. The branch lies on the positive side of the X axis.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Hypr2d()</c> is OCCT's indefinite hyperbola (both radii <see cref="Standard.RealLast"/>);
-/// <c>default(gp_Hypr2d)</c> is not valid.
+/// <c>new Hyperbola2D()</c> is OCCT's indefinite hyperbola (both radii <c>double.MaxValue</c>);
+/// <c>default(Hyperbola2D)</c> is not valid.
 /// </remarks>
 public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
 {
@@ -32,7 +32,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     }
 
     /// <summary>A hyperbola whose major axis is <paramref name="majorAxis"/>, direct when <paramref name="sense"/> is true.</summary>
-    /// <exception cref="ConstructionErrorException">A radius is negative.</exception>
+    /// <exception cref="ArgumentException">A radius is negative.</exception>
     public Hyperbola2D(in Axis2D majorAxis, double majorRadius, double minorRadius, bool sense = true)
     {
         _pos = new Frame2D(majorAxis, sense);
@@ -41,7 +41,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < 0.0, FailureKind.ConstructionError, "gp_Hypr2d() - invalid construction parameters");
     }
 
-    /// <exception cref="ConstructionErrorException">A radius is negative.</exception>
+    /// <exception cref="ArgumentException">A radius is negative.</exception>
     public Hyperbola2D(in Frame2D frame, double majorRadius, double minorRadius)
     {
         _pos = frame;
@@ -107,7 +107,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     // Queries
 
     /// <summary>The first asymptote, of direction X + (MinorRadius / MajorRadius) * Y.</summary>
-    /// <exception cref="ConstructionErrorException">The major radius is at most <see cref="Constants.Resolution"/>.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is at most the resolution.</exception>
     public readonly Axis2D Asymptote1
     {
         get
@@ -123,7 +123,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     }
 
     /// <summary>The second asymptote, of direction X - (MinorRadius / MajorRadius) * Y.</summary>
-    /// <exception cref="ConstructionErrorException">The major radius is at most <see cref="Constants.Resolution"/>.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is at most the resolution.</exception>
     public readonly Axis2D Asymptote2
     {
         get
@@ -197,7 +197,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     }
 
     /// <summary>The directrix on the positive side of the major axis, at distance MajorRadius / e from the centre.</summary>
-    /// <exception cref="DomainErrorException">The major radius is at most <see cref="Constants.Resolution"/>.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is at most the resolution.</exception>
     public readonly Axis2D Directrix1
     {
         get
@@ -211,7 +211,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     }
 
     /// <summary>The directrix on the negative side of the major axis, at distance MajorRadius / e from the centre.</summary>
-    /// <exception cref="DomainErrorException">The major radius is at most <see cref="Constants.Resolution"/>.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is at most the resolution.</exception>
     public readonly Axis2D Directrix2
     {
         get
@@ -224,7 +224,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         }
     }
 
-    /// <exception cref="DomainErrorException">The major radius is at most <see cref="Constants.Resolution"/>.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is at most the resolution.</exception>
     public readonly double Eccentricity
     {
         get
@@ -276,7 +276,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     }
 
     /// <summary>The parameter (semi-latus rectum) of the hyperbola: MinorRadius^2 / MajorRadius.</summary>
-    /// <exception cref="DomainErrorException">The major radius is at most <see cref="Constants.Resolution"/>.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is at most the resolution.</exception>
     public readonly double Parameter
     {
         get

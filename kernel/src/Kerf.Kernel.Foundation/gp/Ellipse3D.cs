@@ -15,8 +15,8 @@ namespace Kerf.Geometry;
 /// plane. It is parameterised by <c>P(U) = O + MajorRad * cos(U) * XDir + MinorRad * sin(U) * YDir</c>.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Elips()</c> is OCCT's indefinite ellipse (major radius <see cref="Standard.RealLast"/>, minor radius
-/// <see cref="Standard.RealSmall"/>); <c>default(gp_Elips)</c> is not valid.
+/// <c>new Ellipse3D()</c> is OCCT's indefinite ellipse (major radius <c>double.MaxValue</c>, minor radius
+/// <c>2.2e-308</c>); <c>default(Ellipse3D)</c> is not valid.
 /// </remarks>
 public readonly partial struct Ellipse3D : IEquatable<Ellipse3D>
 {
@@ -32,7 +32,7 @@ public readonly partial struct Ellipse3D : IEquatable<Ellipse3D>
         _minorRadius = RealSmall();
     }
 
-    /// <exception cref="ConstructionErrorException">
+    /// <exception cref="ArgumentException">
     /// <paramref name="minorRadius"/> is negative or greater than <paramref name="majorRadius"/>.
     /// </exception>
     public Ellipse3D(in Frame3D frame, double majorRadius, double minorRadius)
@@ -100,7 +100,7 @@ public readonly partial struct Ellipse3D : IEquatable<Ellipse3D>
     public readonly Axis3D Axis => _pos.Axis;
 
     /// <summary>The first directrix, on the positive side of the major axis, parallel to the minor axis.</summary>
-    /// <exception cref="ConstructionErrorException">The eccentricity is zero (a circle).</exception>
+    /// <exception cref="InvalidOperationException">The eccentricity is zero (a circle).</exception>
     public readonly Axis3D Directrix1
     {
         get
@@ -115,7 +115,7 @@ public readonly partial struct Ellipse3D : IEquatable<Ellipse3D>
     }
 
     /// <summary>The second directrix, symmetric to the first about the minor axis.</summary>
-    /// <exception cref="ConstructionErrorException">The eccentricity is zero (a circle).</exception>
+    /// <exception cref="InvalidOperationException">The eccentricity is zero (a circle).</exception>
     public readonly Axis3D Directrix2
     {
         get

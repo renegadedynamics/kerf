@@ -8,7 +8,7 @@ using Kerf.Engine.Geometry;
 namespace Kerf.Geometry;
 
 /// <summary>An axis in 3D space: a location and a direction.</summary>
-/// <remarks><c>new gp_Ax1()</c> is the Z axis at the origin, as in OCCT; <c>default(gp_Ax1)</c> is not valid.</remarks>
+/// <remarks><c>new Axis3D()</c> is the Z axis at the origin, as in OCCT; <c>default(Axis3D)</c> is not valid.</remarks>
 public readonly partial struct Axis3D : IEquatable<Axis3D>
 {
     private readonly Point3D _loc;

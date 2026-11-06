@@ -14,7 +14,7 @@ namespace Kerf.Geometry;
 /// It maps P to <c>scale * matrix * P + loc</c>.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Trsf2d()</c> is the identity, as in OCCT; <c>default(gp_Trsf2d)</c> is not valid. Build one with the
+/// <c>new Transform2D()</c> is the identity, as in OCCT; <c>default(Transform2D)</c> is not valid. Build one with the
 /// static factories (<see cref="Rotation(in Point2D, double)"/>, <see cref="Translation(in Vector2D)"/>, ...) or the
 /// <c>With</c> methods, which mirror OCCT's <c>Set</c> methods.
 /// </remarks>

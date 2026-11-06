@@ -13,8 +13,8 @@ namespace Kerf.Geometry;
 /// with U in [0, 2*PI] and V in [-PI/2, PI/2].
 /// </summary>
 /// <remarks>
-/// <c>new gp_Sphere()</c> is OCCT's indefinite sphere (radius <see cref="Standard.RealLast"/>);
-/// <c>default(gp_Sphere)</c> is not valid.
+/// <c>new Sphere3D()</c> is OCCT's indefinite sphere (radius <c>double.MaxValue</c>);
+/// <c>default(Sphere3D)</c> is not valid.
 /// </remarks>
 public readonly partial struct Sphere3D : IEquatable<Sphere3D>
 {
@@ -28,7 +28,7 @@ public readonly partial struct Sphere3D : IEquatable<Sphere3D>
         _radius = RealLast();
     }
 
-    /// <exception cref="ConstructionErrorException"><paramref name="radius"/> is negative.</exception>
+    /// <exception cref="ArgumentException"><paramref name="radius"/> is negative.</exception>
     public Sphere3D(in CoordinateSystem position, double radius)
     {
         _pos = position;

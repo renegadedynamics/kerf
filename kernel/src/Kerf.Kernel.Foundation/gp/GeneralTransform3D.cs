@@ -11,10 +11,10 @@ namespace Kerf.Geometry;
 
 /// <summary>
 /// A general transformation in 3D space: an affine map <c>P' = matrix * P + loc</c> whose vectorial part may be
-/// any 3x3 matrix (affinities, non-uniform scales, ...). When <see cref="Form"/> is not <c>gp_Other</c>, the
+/// any 3x3 matrix (affinities, non-uniform scales, ...). When <see cref="Form"/> is not <see cref="TransformForm.Other"/>, the
 /// transformation is a <see cref="Transform3D"/> and its scale factor is kept apart from the matrix.
 /// </summary>
-/// <remarks><c>new gp_GTrsf()</c> is the identity, as in OCCT; <c>default(gp_GTrsf)</c> is not valid.</remarks>
+/// <remarks><c>new GeneralTransform3D()</c> is the identity, as in OCCT; <c>default(GeneralTransform3D)</c> is not valid.</remarks>
 public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
 {
     private readonly Matrix3x3 _matrix;
@@ -280,7 +280,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
 
     internal readonly Xyz TranslationXyz() => _loc;
 
-    /// <summary>The 3x3 vectorial part, without the scale factor of a non-<c>gp_Other</c> form.</summary>
+    /// <summary>The 3x3 vectorial part, without the scale factor of a non-<see cref="TransformForm.Other"/> form.</summary>
     public readonly Matrix3x3 VectorialPart => _matrix;
 
     /// <summary>The coefficient at a row (1 to 3) and column (1 to 4) of the 3x4 matrix, scale included.</summary>
@@ -474,7 +474,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
     }
 
     /// <summary>This transformation as a <see cref="Transform3D"/>.</summary>
-    /// <exception cref="ConstructionErrorException">The form is <c>gp_Other</c>.</exception>
+    /// <exception cref="InvalidOperationException">The form is <see cref="TransformForm.Other"/>.</exception>
     public readonly Transform3D ToTransform()
     {
         if (Form == Other)

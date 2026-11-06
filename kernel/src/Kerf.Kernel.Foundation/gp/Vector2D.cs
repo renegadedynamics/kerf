@@ -133,7 +133,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
     }
 
     /// <summary>The signed angle from this vector to <paramref name="other"/>, in ]-PI, PI].</summary>
-    /// <exception cref="NullVectorException">Either vector's magnitude is at most <see cref="Constants.Resolution"/>.</exception>
+    /// <exception cref="InvalidOperationException">Either vector's magnitude is at most the resolution.</exception>
     public readonly double AngleTo(in Vector2D other)
     {
         double norm = Magnitude;
