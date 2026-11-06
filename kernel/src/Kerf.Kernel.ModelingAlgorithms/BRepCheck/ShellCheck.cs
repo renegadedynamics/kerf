@@ -156,7 +156,7 @@ internal class ShellCheck : ResultCheck
     /// Checks the shell in a shape that contains it: in a solid, that it is closed and, unless it is unorientable,
     /// coherently oriented.
     /// </summary>
-    public override void InContext(in Shape s)
+    public override void InContext(in Shape s, bool isFoundThere = false)
     {
         NCollection_List<StatusCheck> hList;
         {
@@ -187,19 +187,22 @@ internal class ShellCheck : ResultCheck
 
         NCollection_List<StatusCheck> lst = hList;
 
-        Explorer exp = new(s, ShapeType.Shell);
-        for (; exp.More(); exp.Next())
+        if (!isFoundThere)
         {
-            if (exp.Current().IsSame(_shape))
+            Explorer exp = new(s, ShapeType.Shell);
+            for (; exp.More(); exp.Next())
             {
-                break;
+                if (exp.Current().IsSame(_shape))
+                {
+                    break;
+                }
             }
-        }
 
-        if (!exp.More())
-        {
-            BRepCheckCheck.Add(lst, StatusCheck.SubshapeNotInShape);
-            return;
+            if (!exp.More())
+            {
+                BRepCheckCheck.Add(lst, StatusCheck.SubshapeNotInShape);
+                return;
+            }
         }
 
         ShapeType styp = s.Type;

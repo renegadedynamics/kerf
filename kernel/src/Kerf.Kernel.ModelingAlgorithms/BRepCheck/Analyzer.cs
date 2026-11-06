@@ -48,6 +48,12 @@ internal class Analyzer
     private bool _isExact;
 
     /// <summary>
+    /// For tests only (tests/Shared/FullCheck): told of each check as it finishes, with the shape and whether geometry was
+    /// checked, to compare it with the check as it was. Never set in a package.
+    /// </summary>
+    internal static Action<Analyzer, Shape, bool>? Finished;
+
+    /// <summary>
     /// Checks <paramref name="s"/>; with <paramref name="geomControls"/> false only topological information is
     /// checked. <paramref name="isParallel"/> checks the sub-shapes on several threads;
     /// <paramref name="isExact"/> measures edges on faces exactly (see <see cref="SetExactMethod"/>).
@@ -78,6 +84,7 @@ internal class Analyzer
         _map.Clear();
         Put(shape, b);
         Perform();
+        Finished?.Invoke(this, shape, b);
     }
 
     /// <summary>
@@ -432,7 +439,7 @@ internal class Analyzer
                             {
                                 if (mapS.TryAdd(vertex))
                                 {
-                                    resOfVertex!.InContext(shape);
+                                    resOfVertex!.InContext(shape, isFoundThere: true);
                                 }
                             }
                             catch (Exception exception) when (IsCaught(exception))
@@ -463,7 +470,7 @@ internal class Analyzer
                             {
                                 if (mapS.TryAdd(exp.Current()))
                                 {
-                                    faceVertexRes!.InContext(shape);
+                                    faceVertexRes!.InContext(shape, isFoundThere: true);
                                 }
                             }
                             catch (Exception exception) when (IsCaught(exception))
@@ -488,7 +495,7 @@ internal class Analyzer
                             {
                                 if (mapS.TryAdd(exp.Current()))
                                 {
-                                    faceEdgeRes!.InContext(shape);
+                                    faceEdgeRes!.InContext(shape, isFoundThere: true);
 
                                     if (performwire)
                                     {
@@ -522,7 +529,7 @@ internal class Analyzer
                             ResultCheck? faceWireRes = _map.GetValue(exp.Current());
                             try
                             {
-                                faceWireRes!.InContext(shape);
+                                faceWireRes!.InContext(shape, isFoundThere: true);
 
                                 if (orientofwires)
                                 {
@@ -598,7 +605,7 @@ internal class Analyzer
                             ResultCheck? solidRes = _map.GetValue(shell);
                             try
                             {
-                                solidRes!.InContext(shape);
+                                solidRes!.InContext(shape, isFoundThere: true);
                             }
                             catch (Exception exception) when (IsCaught(exception))
                             {

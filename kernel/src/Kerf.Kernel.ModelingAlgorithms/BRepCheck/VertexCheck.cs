@@ -41,7 +41,7 @@ internal class VertexCheck : ResultCheck
     /// Checks the vertex in an edge (its point on each curve representation of the edge) or a face (its point on the
     /// surface), within the larger of the two tolerances.
     /// </summary>
-    public override void InContext(in Shape s)
+    public override void InContext(in Shape s, bool isFoundThere = false)
     {
         NCollection_List<StatusCheck> hList;
         {
@@ -72,19 +72,22 @@ internal class VertexCheck : ResultCheck
 
         NCollection_List<StatusCheck> lst = hList;
 
-        var exp = new Explorer(s, ShapeType.Vertex);
-        for (; exp.More(); exp.Next())
+        if (!isFoundThere)
         {
-            if (exp.Current().IsSame(_shape))
+            var exp = new Explorer(s, ShapeType.Vertex);
+            for (; exp.More(); exp.Next())
             {
-                break;
+                if (exp.Current().IsSame(_shape))
+                {
+                    break;
+                }
             }
-        }
 
-        if (!exp.More())
-        {
-            BRepCheckCheck.Add(lst, StatusCheck.SubshapeNotInShape);
-            return; // leaves
+            if (!exp.More())
+            {
+                BRepCheckCheck.Add(lst, StatusCheck.SubshapeNotInShape);
+                return; // leaves
+            }
         }
 
         var tv = (BrepTVertex)_shape.TShape()!;

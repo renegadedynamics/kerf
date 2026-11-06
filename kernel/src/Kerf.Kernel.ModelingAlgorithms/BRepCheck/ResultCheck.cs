@@ -55,8 +55,11 @@ internal abstract class ResultCheck : Transient
         Minimum();
     }
 
-    /// <summary>Checks the shape in the context of <paramref name="contextShape"/>, which contains it.</summary>
-    public abstract void InContext(in Shape contextShape);
+    /// <summary>
+    /// Checks the shape in the context of <paramref name="contextShape"/>, which should contain it: that's checked, unless
+    /// <paramref name="isFoundThere"/> says the caller found this shape by exploring the context for this type of shape.
+    /// </summary>
+    public abstract void InContext(in Shape contextShape, bool isFoundThere = false);
 
     /// <summary>The checks of the shape on its own.</summary>
     public abstract void Minimum();

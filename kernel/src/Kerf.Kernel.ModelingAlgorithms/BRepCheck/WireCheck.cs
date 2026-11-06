@@ -137,7 +137,7 @@ internal class WireCheck : ResultCheck
     /// Checks the wire in a shape that contains it: in a face, <see cref="SelfIntersect"/> (with the geometric
     /// controls), <see cref="Closed"/>, <see cref="Orientation"/> and <see cref="Closed2d"/>, until one fails.
     /// </summary>
-    public override void InContext(in Shape s)
+    public override void InContext(in Shape s, bool isFoundThere = false)
     {
         NCollection_List<StatusCheck> hList;
         {
@@ -169,19 +169,22 @@ internal class WireCheck : ResultCheck
         NCollection_List<StatusCheck> lst = hList;
 
         // check if my wire is in <S>
-        var exp = new Explorer(s, ShapeType.Wire);
-        for (; exp.More(); exp.Next())
+        if (!isFoundThere)
         {
-            if (exp.Current().IsSame(_shape))
+            var exp = new Explorer(s, ShapeType.Wire);
+            for (; exp.More(); exp.Next())
             {
-                break;
+                if (exp.Current().IsSame(_shape))
+                {
+                    break;
+                }
             }
-        }
 
-        if (!exp.More())
-        {
-            BRepCheckCheck.Add(lst, StatusCheck.SubshapeNotInShape);
-            return;
+            if (!exp.More())
+            {
+                BRepCheckCheck.Add(lst, StatusCheck.SubshapeNotInShape);
+                return;
+            }
         }
 
         StatusCheck st = StatusCheck.NoError;
@@ -644,6 +647,7 @@ internal class WireCheck : ResultCheck
         var exp = new Explorer();
         var vte = new Explorer();
         var mapS = new IndexedSet<Shape>(ShapeHasher.Instance);
+        FaceSurfaceAdaptor? faceSurface = null;
         Edge theEdge = new(), theRef = new();
 
         // Checks the orientation of the edges
@@ -836,7 +840,7 @@ internal class WireCheck : ResultCheck
                         pivot = vf;
                     }
 
-                    ChoixUV(pivot, theEdge, f, ledge);
+                    ChoixUV(pivot, theEdge, f, ledge, ref faceSurface);
                     nbconnex = ledge.Extent();
                     // 20/03/02 akm (OCC234) - The 2d exploration of wire with necessary
                     // checks is performed in Closed2d, here it's useless
@@ -940,7 +944,7 @@ internal class WireCheck : ResultCheck
                         }
                     }
 
-                    ChoixUV(vRef, theRef, f, ledge);
+                    ChoixUV(vRef, theRef, f, ledge, ref faceSurface);
                     if (ledge.Extent() == 0)
                     {
                         theOstat = StatusCheck.NotClosed;
@@ -1669,7 +1673,8 @@ internal class WireCheck : ResultCheck
     private static void ChoixUV(in Vertex vertex,
                                 in Edge edge,
                                 in Face face,
-                                NCollection_List<Shape> lOfShape)
+                                NCollection_List<Shape> lOfShape,
+                                ref FaceSurfaceAdaptor? faceSurfaceOfWire)
     {
         var it = new NCollection_List<Shape>.Iterator(lOfShape);
         while (it.More())
@@ -1694,7 +1699,7 @@ internal class WireCheck : ResultCheck
         double a_gpResolution = Constants.Resolution();
         Orientation vOrientation, edgOrientation;
         double param = 0.0, firstParam, lastParam, parPiv;
-        var faceSurface = new FaceSurfaceAdaptor(face, false); // no restriction
+        FaceSurfaceAdaptor faceSurface = faceSurfaceOfWire ??= new FaceSurfaceAdaptor(face, false); // no restriction
 
         Curve2D? c2d = Tool.CurveOnSurface(edge, face, out firstParam, out lastParam);
         if (c2d is null)

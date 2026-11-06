@@ -120,7 +120,7 @@ internal class SolidCheck : ResultCheck
     }
 
     /// <summary>Nothing: a solid has no checks in a context.</summary>
-    public override void InContext(in Shape s)
+    public override void InContext(in Shape s, bool isFoundThere = false)
     {
     }
 
