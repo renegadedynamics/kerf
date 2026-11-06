@@ -1431,6 +1431,20 @@ internal partial class ImpPrmIntersection
         _slin.Clear();
         for (int i = 1; i <= dslin.Length(); i++)
         {
+            // The pieces carry only their end vertices, so one that crosses a face's bound must find it again, or it is
+            // judged whole by its middle and can go out with what's in the face (#1543; decision 20905). OCCT doesn't.
+            if (dslin.Value(i) is WLine piece)
+            {
+                if (!reversed)
+                {
+                    RstInt.PutVertexOnLine(piece, surf1, d1, surf2, true, tolTang);
+                }
+                else
+                {
+                    RstInt.PutVertexOnLine(piece, surf2, d2, surf1, false, tolTang);
+                }
+            }
+
             _slin.Append(dslin.Value(i));
         }
     }
