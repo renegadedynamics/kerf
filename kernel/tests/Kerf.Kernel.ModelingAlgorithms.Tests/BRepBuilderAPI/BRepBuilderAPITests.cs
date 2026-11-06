@@ -592,4 +592,41 @@ public class BRepBuilderAPITests
         Assert.Equal(1.0, aProjection.LowerDistanceParameter(), 1.0e-9);
         Assert.Equal(2.0, aProjection.LowerDistance(), 1.0e-9);
     }
+
+    private static Shape RingOffset(double theHoleOffCentre, double theOffset)
+    {
+        var anOuter = new MakeWire();
+        anOuter.Add(new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5)).Edge());
+        var aHole = new MakeWire();
+        aHole.Add(new MakeEdge(new Circle3D(new Frame3D(new Point3D(theHoleOffCentre, 0, 0), new Direction3D(0, 0, -1)), 2)).Edge());
+        var aFace = new MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), anOuter.Wire(), true);
+        aFace.Add(aHole.Wire());
+        var anOffset = new Kerf.Engine.Offsets.Api.MakeWireOffset(aFace.Face());
+        anOffset.Perform(theOffset);
+        Assert.True(anOffset.IsDone);
+        return anOffset.Shape();
+    }
+
+    [Theory]
+    [InlineData(-0.2)]
+    [InlineData(-1.0)]
+    [InlineData(-2.0)]
+    [InlineData(0.2)]
+    public void Offsetting_a_ring_of_concentric_circles_matches_a_hole_a_hair_off_centre(double theOffset)
+    {
+        // OCCT #1606: natively an inward offset of concentric circles crashes, and only a hole 1e-7 or more off centre works
+        Shape aRing = RingOffset(0.0, theOffset), aNear = RingOffset(1.0e-5, theOffset);
+        Assert.Equal(MassPropertiesBuilder.LinearProperties(aNear).Mass(), MassPropertiesBuilder.LinearProperties(aRing).Mass(), 1.0e-3);
+    }
+
+    [Fact]
+    public void Offsetting_a_circle_until_it_collapses_fails_without_the_general_algorithm()
+    {
+        // OCCT e177d7e68c: the case is settled once the circle is recognised
+        var aWire = new MakeWire();
+        aWire.Add(new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1)).Edge());
+        var anOffset = new Kerf.Engine.Offsets.Api.MakeWireOffset(new MakeFace(aWire.Wire(), true).Face());
+        anOffset.Perform(-2.0);
+        Assert.False(anOffset.IsDone);
+    }
 }

@@ -66,6 +66,79 @@ internal sealed class OffsetWire
     }
 
     // A face bounded by one closed circle (or any single edge for an open result): its parallel is computed directly.
+    // Kerf: a face between two concentric circles. The general algorithm can't work on it, as the medial axis of two
+    // concentric circles is a circle every point of which is equally far from a whole circle of each, and natively it crashes
+    // (OCCT #1606, decision 20214). An offset here, positive to the left of the wires, moves both circles into the material.
+    // As with a hole a hair off centre, passing the middle leaves nothing, and is done.
+    private static bool KPartConcentricCircles(in Face spine,
+                                               double offset,
+                                               double alt,
+                                               ref Shape result,
+                                               IndexedMap<Shape, NCollection_List<Shape>> map,
+                                               ref bool isDone)
+    {
+        var circles = new List<(Edge Edge, Circle2D Circle, double First, double Last)>();
+        for (Explorer wires = new(spine, ShapeType.Wire); wires.More(); wires.Next())
+        {
+            int count = 0;
+            for (Explorer edges = new(wires.Current(), ShapeType.Edge); edges.More(); edges.Next())
+            {
+                Edge e = ShapeCasts.Edge(edges.Current());
+                if (++count > 1 || !Tool.IsClosed(e) || Tool.CurveOnSurface(e, spine, out double f, out double l) is not { } pCurve)
+                {
+                    return false;
+                }
+
+                CurveAdaptor2D adaptor = new(pCurve, f, l);
+                if (adaptor.GetType() != Circle || Math.Abs(l - f - 2.0 * Math.PI) > global::Kerf.Engine.Foundation.Precision.PConfusion())
+                {
+                    return false;
+                }
+
+                circles.Add((e, adaptor.Circle(), f, l));
+            }
+        }
+
+        if (circles.Count != 2 || Tool.Surface(spine) is not PlaneSurface plane
+            || !circles[0].Circle.Location.IsEqual(circles[1].Circle.Location, global::Kerf.Engine.Foundation.Precision.Confusion()))
+        {
+            return false;
+        }
+
+        int outer = circles[0].Circle.Radius > circles[1].Circle.Radius ? 0 : 1;
+        double newOuter = circles[outer].Circle.Radius - offset, newHole = circles[1 - outer].Circle.Radius + offset;
+        var builder = new BrepBuilder();
+        Compound compound = new();
+        builder.MakeCompound(ref compound);
+        result = compound;
+        isDone = true;
+        if (newOuter <= newHole)
+        {
+            return true;
+        }
+
+        foreach (int i in new[] { outer, 1 - outer })
+        {
+            double radius = i == outer ? newOuter : newHole;
+            Edge edge = new LibraryMakeEdge(new CircleCurve2D(circles[i].Circle.Position, radius), plane, circles[i].First, circles[i].Last).InternalEdge();
+            BrepLibrary.BuildCurve3d(edge);
+            edge.Orient(circles[i].Edge.Orientation);
+            edge.Location(circles[i].Edge.Placement);
+            if (Math.Abs(alt) > Constants.Resolution())
+            {
+                Vector3D trans = alt * new Vector3D(new FaceSurfaceAdaptor(spine, false).Plane().Axis.Direction);
+                edge.Move(new Placement(new Transform3D().WithTranslation(trans)));
+            }
+
+            NCollection_List<Shape> images = new();
+            images.Append(edge);
+            map.Add(circles[i].Edge, images);
+            builder.Add(compound, new LibraryMakeWire(edge).InternalWire());
+        }
+
+        return true;
+    }
+
     private static bool KPartCircle(in Face mySpine,
                                     double myOffset,
                                     bool isOpenResult,
@@ -133,8 +206,10 @@ internal sealed class OffsetWire
                 }
                 else
                 {
+                    // The circle collapses: the offset fails here, and the general algorithm mustn't try it
+                    // (OCCT e177d7e68c, after 8.0.1; decision 20214)
                     myIsDone = false;
-                    return false;
+                    return true;
                 }
             }
             else
@@ -220,7 +295,8 @@ internal sealed class OffsetWire
         Shape shape = new();
         IndexedMap<Shape, NCollection_List<Shape>> map = new(EqualityComparer<Shape>.Default);
         bool done = false;
-        if (KPartCircle(_workSpine, 1.0, _isOpenResult, 0.0, ref shape, map, ref done))
+        if (KPartCircle(_workSpine, 1.0, _isOpenResult, 0.0, ref shape, map, ref done)
+            || KPartConcentricCircles(_workSpine, 1.0, 0.0, ref shape, map, ref done))
         {
             return;
         }
@@ -350,6 +426,11 @@ internal sealed class OffsetWire
         {
             _callGen = false;
             if (KPartCircle(_workSpine, offset, _isOpenResult, alt, ref _shape, _map, ref _isDone))
+            {
+                return;
+            }
+
+            if (KPartConcentricCircles(_workSpine, offset, alt, ref _shape, _map, ref _isDone))
             {
                 return;
             }
@@ -585,7 +666,8 @@ internal sealed class OffsetWire
         //********************************
         // Calculate for a non null offset
         //********************************
-        if (KPartCircle(_workSpine, offset, _isOpenResult, alt, ref _shape, _map, ref _isDone))
+        if (KPartCircle(_workSpine, offset, _isOpenResult, alt, ref _shape, _map, ref _isDone)
+            || KPartConcentricCircles(_workSpine, offset, alt, ref _shape, _map, ref _isDone))
         {
             return;
         }
