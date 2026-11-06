@@ -81,6 +81,22 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
         Assert.Matches(@"Mass :\s+99\d\.", aDI.Eval("vprops rf"));
     }
 
+    /// <summary>
+    /// A fillet that runs past a Bezier face (decision 19303): the face goes on the B-spline surface the fillet extended,
+    /// as natively. The input is OCCT's file, so these cases are the test: before, the result was unorientable.
+    /// </summary>
+    [Theory]
+    [InlineData("blend/simple/V7")]
+    [InlineData("blend/tolblend_simple/C5")]
+    [InlineData("chamfer/equal_dist_sequence/B8")]
+    public void A_face_goes_on_the_surface_the_fillet_extended(string theId)
+    {
+        var aCorpus = new DrawCorpus(TestsDirectory);
+        DrawTestCase aCase = aCorpus.Cases().Single(c => c.Id == theId);
+        DrawCaseRun aRun = aCorpus.RunAndCheck(aCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath, TimeSpan.FromSeconds(120));
+        Assert.Equal("OK", aRun.Status);
+    }
+
     [Fact]
     public void Corpus_cases_using_the_fillet_and_chamfer_commands_of_7N3_run()
     {
@@ -171,15 +187,9 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
     internal static readonly Dictionary<string, string> KnownFailures = new(StringComparer.Ordinal)
     {
         ["blend/buildevol/J5"] = "reconstruction: shell not closed",
-        ["blend/simple/V7"] = "reconstruction (7R3, decision 1162): a Bezier face the fillet runs past keeps its surface; native extends it as a B-spline",
-        ["blend/tolblend_simple/C5"] = "reconstruction (7R3, decision 1162): a Bezier face the fillet runs past keeps its surface; native extends it as a B-spline",
         ["chamfer/dist_angle_sequence/A5"] = "reconstruction: shell not closed after a step; then faces not found by position",
-        ["chamfer/dist_angle_sequence/B8"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
-        ["chamfer/dist_angle_sequence/B9"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
-        ["chamfer/dist_dist_sequence/B8"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
         ["chamfer/dist_dist_sequence/B9"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
         ["chamfer/equal_dist_sequence/A5"] = "reconstruction: invalid faces after the sequential chamfers (OCCT's TODO expects 10 faulty shapes)",
-        ["chamfer/equal_dist_sequence/B8"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
         ["chamfer/equal_dist_sequence/B9"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
         ["blend/complex/G8"] = "reconstruction order: the third blend names an edge by explode index of the second result, another edge here; blend fails",
         ["bugs/modalg_7/bug27711_3"] = "reconstruction order: the second blend names edges by explode index of the first result, other edges here; blend fails",

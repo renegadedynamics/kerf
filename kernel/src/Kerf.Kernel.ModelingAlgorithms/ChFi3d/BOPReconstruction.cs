@@ -84,6 +84,9 @@ internal sealed partial class BOPReconstruction : Reconstruction
     /// <summary>The SCIs of each curve, on faces (support kind SURFACE, a shape index) and surfaces.</summary>
     private readonly Dictionary<int, List<CurveSupport>> _curveSupports = new();
 
+    /// <summary>The pieces of the faces whose surface the fillet extended, with that surface.</summary>
+    private readonly Dictionary<Shape, Surface> _onNewSurface = new(ShapeHasher.Instance);
+
     private static readonly NCollection_List<Shape> EmptyList = new();
 
     /// <summary>A curve's SCI: on a face of the input (<see cref="Face"/> not null) or on a fillet surface.</summary>
@@ -117,6 +120,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
         }
         NCollection_List<Shape> merged = new();
         MergeShape(s, merged);
+        OnNewSurfaces(merged);
         _mergedIN[s] = merged;
     }
 
@@ -164,6 +168,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
         _edgeParts.Clear();
         _splitIN.Clear();
         _mergedIN.Clear();
+        _onNewSurface.Clear();
         _curveSupports.Clear();
     }
 
@@ -969,8 +974,72 @@ internal sealed partial class BOPReconstruction : Reconstruction
                 pieces = BuildAreas(ff, le);
             }
         }
+        if (ds.HasNewSurface(f))
+        {
+            foreach (Shape p in pieces)
+            {
+                _onNewSurface[p] = ds.NewSurface(f)!;
+            }
+        }
         _splitIN[f] = pieces;
         return pieces;
+    }
+
+    /// <summary>
+    /// Puts the pieces of a face whose surface the fillet extended on that surface, in what <paramref name="merged"/> holds
+    /// and in the answers that name those shapes (<see cref="NewSurfaceModification"/>).
+    /// </summary>
+    private void OnNewSurfaces(NCollection_List<Shape> merged)
+    {
+        if (_onNewSurface.Count == 0)
+        {
+            return;
+        }
+        NCollection_List<Shape> result = new();
+        foreach (Shape m in merged)
+        {
+            Modifier aModifier = new(m);
+            aModifier.Perform(new NewSurfaceModification(_onNewSurface));
+            if (!aModifier.IsDone)
+            {
+                result.Append(m);
+                continue;
+            }
+            result.Append(aModifier.InternalModifiedShape(m));
+            HashSet<Shape> aSubShapes = new(ShapeHasher.Instance);
+            Exploration.MapShapes(m, aSubShapes);
+            void Replace(NCollection_List<Shape> l)
+            {
+                NCollection_List<Shape> aNew = new();
+                foreach (Shape x in l)
+                {
+                    aNew.Append(aSubShapes.Contains(x) ? aModifier.InternalModifiedShape(x).Oriented(x.Orientation) : x);
+                }
+                l.Clear();
+                foreach (Shape x in aNew)
+                {
+                    l.Append(x);
+                }
+            }
+            foreach (NCollection_List<Shape> l in _splitIN.Values)
+            {
+                Replace(l);
+            }
+            foreach (NCollection_List<Shape> l in _newFaces.Values)
+            {
+                Replace(l);
+            }
+            foreach (NCollection_List<Shape> l in _newEdges.Values)
+            {
+                Replace(l);
+            }
+        }
+        merged.Clear();
+        foreach (Shape r in result)
+        {
+            merged.Append(r);
+        }
+        _onNewSurface.Clear();
     }
 
     /// <summary>
