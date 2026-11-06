@@ -363,3 +363,26 @@ It follows your sketch, with these differences:
   - **No selector:** the list is empty if three steps can't tell the pick apart, for example from an
     identical coincident twin.
   - **Speed:** it takes 5 to 20 ms on a plate of 78 faces and 192 edges.
+
+### Runtime settings for a host (unit 11D)
+
+Kerf can't choose these, because they belong to the application. For parallel recalculation, the application's project should have:
+
+```xml
+<PropertyGroup>
+  <ServerGarbageCollection>true</ServerGarbageCollection>
+  <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+  <TieredPGO>false</TieredPGO>
+</PropertyGroup>
+<ItemGroup>
+  <RuntimeHostConfigurationOption Include="System.Runtime.TieredCompilation.CallCountingDelayMs" Value="0" />
+</ItemGroup>
+```
+
+| Setting | Why | What it costs |
+|---|---|---|
+| The server collector, with DATAS left on | The workstation collector stops every thread on one heap: 1,600 of a round's 2,700 ms. The server collector's pauses are about 170 ms | A peak of about 400 MB against 200 under full load; about the same (141 MB against 119) when calculating serially |
+| `TieredPGO` off | Instrumented code is what the runtime runs for the first minute or so, and it's slower still on many threads. A round halves | Code that has fully settled is about 6% slower, after about two minutes of continuous recalculation |
+| `CallCountingDelayMs` 0 | Hot code reaches its final form sooner: recalculation 260 ms to 180 ms, opening 660 ms to 615 ms | More JIT work early, on a background thread. Check the application's own start-up, which the benchmark doesn't have |
+
+Leave out `GCHeapCount`, `GCgen0size` (no effect in `runtimeconfig.json`, and 1.6 GB at 64 MB under the server collector), `GCConserveMemory` (no measurable effect here) and a fixed heap count (`GCDynamicAdaptationMode` 0: about 700 MB, and at most 5 to 10% quicker). Bento's list is in [11d-bento.md](11d-bento.md), and the figures are in the kernel's `docs/performance.md`, "Unit 11D".

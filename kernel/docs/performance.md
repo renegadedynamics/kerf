@@ -160,7 +160,7 @@ are bimodal, depending on when the runtime tiers up. Don't read a 20% move on on
 
 - **The targets are met:** recalculation was to be within 1.2× of native, and it's nearly twice as fast. Eight of the eleven examples are ahead of or within 1.2× of native. "Point lists" (1.82×, 6 ms over) and "select last" (1.49×, 5 ms over) are small in absolute terms.
 - **Native stops being the yardstick from here** (decision 1681): the work moves to what's slow, unit 11Q.
-- **The parallel speed-up fell from 8.33× to 3.11×, and that's the next thing to look at.** The round itself got quicker, so nothing regressed: the serial work fell by two-thirds while allocation barely moved (4.9 GB a round), which leaves the collector dominant, at 4.9 s of pauses. The rig flags this and the pauses as regressions against the run after 11B. That's unit 11D's.
+- **The parallel speed-up fell from 8.33× to 3.11×, and that's the next thing to look at.** The round itself got quicker, so nothing regressed: the serial work fell by two-thirds while allocation barely moved (4.9 GB a round), which leaves the collector dominant, at 4.9 s of pauses. The rig flags this and the pauses as regressions against the run after 11B. That's unit 11D's, which found the figure mostly misleading: see below.
 
 ## Unit 11B: allocation
 
@@ -330,6 +330,105 @@ face/face 17%, `Init` 11%, `DataIterator.Intersect` 7%, `MakeBlocks` 7%, `FillSh
 - **BSpline edges and other searched surfaces:** only B-spline faces have a cheap test first. Bezier, offset and swept faces still search, and a trimmed Bezier's cheap box is sampled so can't be trusted as a limit. Bento's examples have none of these, but imported STEP models will.
 - **The bottle:** its build is offset and fillet, with no hot site of its own.
 
+## Unit 11D: parallel throughput
+
+*5 November 2026, overnight on a quiet machine. [benchmarks/2026-11-05-ad0d0c424.md](benchmarks/2026-11-05-ad0d0c424.md); its header says "with uncommitted changes", which were these documents. Curves from `tools/parallel-curve.ps1`.*
+
+**A round of 24 copies on 24 logical processors fell from 2,763 ms to 618 ms, and nearly all of that is two runtime settings and the collector, which belong to the host.** No result changed: 0 differing in every round of every run below, and the examples' volumes, faces and triangles are the same under the new settings as under the old. The rig has no regressions against the run after 11E. No lock costs anything, so all 23 stay.
+
+| 24 copies on 24 processors | Round, ms | Pauses in it, ms | Recalculation, ms | Opening, ms | Peak, MB |
+|---|---:|---:|---:|---:|---:|
+| The runtime's defaults (what the rig has always measured) | 2,802 | 1,611 | 364 | 710 | 235 |
+| Server collector (what Bento uses today) | 1,270 | 197 | 370 | 730 | 390 |
+| ... and `TieredPGO` off | 670 | 165 | 260 | 660 | 420 |
+| ... and `CallCountingDelayMs` 0 (the recommendation) | 618 | 169 | 182 | 615 | 355 |
+
+### What limits the speed-up
+
+**The rig's speed-up figure (3.11×) misleads, twice over.** Its "serial work" is 24 times a recalculation, but that recalculation isn't serial: the mesher's and others' inner loops use every core, and it burns about 1,000 ms of processor time in 363 ms of wall time. Nor has its code settled: the first nine passes run while the runtime is still tiering up. Against one processor, with the whole process limited by an affinity mask, the default's speed-up is 4.5×, and the recommendation's 9.6×. The rig keeps the row so runs stay comparable; don't read it as a speed-up.
+
+**The physical limit is about 13×.** The processor has 12 cores, with 24 logical processors. Separate processes pinned to one logical processor each, without PGO, share nothing but the machine:
+
+| Processes | 1 | 2 | 4 | 8 | 12 | 16 | 24 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Settled recalculation, each, ms | 235 | 238 | 246 | 253 | 264 | 375 | 427 |
+| Throughput against one | 1.0 | 2.0 | 3.8 | 7.4 | 10.7 | 10.0 | 13.2 |
+
+Memory bandwidth and the shared cache cost at most 12% across all 12 cores. The other halves of the cores add only 23% more. Where those start being used (16), throughput dips, because some threads share a core and a round waits for its slowest.
+
+**So, from 2,763 ms:**
+
+| Cause | Evidence | Size |
+|---|---|---|
+| Workstation collector's pauses | One collector thread, every other thread stopped: 1,611 ms of a round, against 197 with the server collector. It doesn't scale, and gets slower past 8 processors | 1,500 ms |
+| PGO's instrumented code | With `TieredPGO` off a round halves. Serial work is only 1.4× slower with it, and a round 1.9×, which fits every thread writing the same shared counters; that cause is inferred, not measured | 600 ms |
+| Waiting to tier up | The default 100 ms delay keeps restarting while new methods are being called | 50 ms in a round; a recalculation 260 ms to 182 |
+| Pauses still there | 169 of 618 ms, 27%, though with allocation at 4.8 GB a round | see "Allocation" |
+| Everything else: shared state, false sharing, inner loops, the JIT | Leaving out the pauses, the recommendation gets 11.9× against the physical 13.2×, so all of these share about 10% | small |
+| Lock contention | 0.35 ms in 46 s of processor time | none |
+
+### The curve
+
+A round's time in ms, with the whole process on that many logical processors, cores first. The last columns are the speed-up against the same settings on one processor, and the peak working set at 24.
+
+| Settings | 1 | 2 | 4 | 8 | 12 | 16 | 24 | Speed-up | Peak, MB |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Workstation, concurrent (the default) | 11,994 | 5,725 | 2,925 | 2,776 | 2,240 | 2,625 | 2,665 | 4.5× | 196 |
+| Workstation, not concurrent | 12,568 | 6,138 | 3,391 | 2,570 | 2,117 | 1,985 | 2,099 | 6.0× | 320 |
+| Server, concurrent, DATAS (Bento today) | 13,148 | 5,052 | 2,816 | 1,861 | 1,415 | 1,260 | 1,272 | 10.3× | 391 |
+| Server, not concurrent, DATAS | 12,660 | 6,021 | 3,030 | 1,856 | 1,344 | 1,391 | 1,182 | 10.7× | 298 |
+| Server, concurrent, fixed heaps | 13,534 | 5,852 | 2,995 | 1,779 | 1,329 | 1,249 | 1,053 | 12.9× | 735 |
+| Server, not concurrent, fixed heaps | 12,980 | 5,954 | 2,850 | 1,886 | 1,412 | 1,472 | 1,158 | 11.2× | 704 |
+| **The recommendation** | 5,928 | 3,344 | 1,794 | 971 | 702 | 696 | 617 | 9.6× | 415 |
+| The recommendation's tiering, workstation collector | 5,940 | 3,266 | 2,146 | 1,788 | 1,803 | 2,061 | 2,174 | 2.7× | 263 |
+
+A speed-up isn't comparable between rows with different tiering: the recommendation's lower figure is from its far better single processor. Compare the times. Each cell is one process, with rounds varying by about 10%, so a difference of a few per cent between server rows means little.
+
+### What a host should use
+
+The recommendation is in [the kernel's README](../README.md) and [bento-integration.md](../../modeling/docs/bento-integration.md), and Bento's list in [11d-bento.md](../../modeling/docs/11d-bento.md). Each setting was checked in `runtimeconfig.json`, as a host would set it, and the rig's new `parallel-host` suite (groups starting "host ") keeps measuring them.
+
+- **Memory:** under full load, about 355 to 415 MB against 196 to 235 on the workstation collector. Calculating serially, 141 MB against 119, because DATAS keeps one heap until the load needs more. Turning DATAS off costs 668 MB serially and 735 MB in a round, for at most 5 to 10% of the round, so leave it on.
+- **What PGO off costs:** code that has fully settled is about 6% slower (the last half of 120 passes, 164 ms against 154; a round 585 ms against 520), and a minute of Booleans 11% (1,992 ms against 1,771). Nine passes take 2.7 s against 3.8 s, and 80 passes 15.4 s against 21.0 s, so at those rates PGO would pay for its start after about two minutes of continuous recalculation. A spreadsheet should turn it off; a long batch job might not.
+- **`CallCountingDelayMs` 0** is the one to check in a real application: it starts counting calls in every assembly at once, and the benchmark has no UI to start.
+- **No help:** `GCConserveMemory` 5 (404 to 426 MB, within the noise; an early reading of about 340 didn't repeat). `GCgen0size` under the server collector: a little quicker at 1.6 GB, and it has no effect from `runtimeconfig.json` as `System.GC.Gen0Size`. `GCgen0size` under the workstation collector: pauses stay at about 1 s, because generation 1 and 2 collections replace generation 0's. `GCHeapCount` with fixed heaps: 12 heaps give 670 ms at 730 MB and 4 give 830 ms at 640 to 880 MB, worse than DATAS on both counts.
+- **The benchmarks' projects had the property's name wrong** (`ServerGarbageCollector`, which does nothing). They asked for the default, so nothing changed; they now name it correctly. Proposal 1 below had the same slip.
+
+### Allocation
+
+**The bytes are spread thinly, and the largest site is 5%.** A round is still 4.8 GB. Now that pauses are 27% of a round, 1% of the bytes is worth about 0.25% of a round, so I took one site and left the rest.
+
+| Site | Share of a round's bytes | What happened |
+|---|---:|---|
+| `Placement.Inverted`, mostly from `ReShapeBuilder` through `Builder.Add` | 2.3% | **Done:** the chain's head keeps its inverse. Recalculation 207.8 to 203.5 MB, a round 4,940 to 4,856 MB (the rig's 4,853) |
+| `CircleTool.BindCore`'s `MeshCircle[]` and cell-filter nodes | 5.0% | Left: arrays growing, and reserving them saves about half at best, so 2.5% of the bytes |
+| `LinkedListOfInteger.Append` | 3.3% | Left, for 11B's reason: a removed node has to keep its link |
+| `Triangle[]` in `AddElement` | 2.8% | Left, as `CircleTool` |
+| `Explorer`'s iterators | 6.7% over several sites | Left: already reused within an explorer, and what's left is one explorer for each exploration. Pooling needs a dispose at each of a great many sites |
+| `CurveOnPlane` for circles | about 4.5% | Left: not cheap, since the projection's arithmetic has to be matched exactly |
+
+To repeat: take a trace as `tools/profile-report.cs` says, and read it with `tools/alloc-report.cs`.
+
+### The locks: plan 2.7 settled
+
+A trace of three rounds under the server collector with PGO off (`tools/contention-report.cs`) found **12 contentions and 0.35 ms of waiting, all in the runtime's own `Parallel.For`, and none on a lock of Kerf's.** The rig's new row counts 3 to 5 in a round, of any lock in the process. So all 23 stay (decision 1686, [state.md](state.md)): removing one would swap a lock nobody waits for for something harder to check.
+
+### Inner loops and the Booleans' own loop
+
+- **Inner loops when the pool is already full:** every recalculation's own `Parallel.For` queues work no thread is free to take. Forcing them all serial gives 625 ms against 660 under the recommendation's collector and PGO setting. A switch that goes serial when the pool is busy (`ThreadPool.GetAvailableThreads`, tried at 4, 12 and 24 busy threads) gave about 655 against 675, inside the noise, and nothing with PGO on. Not taken (decision 1687): it would make the choice depend on timing, for perhaps 3%. A single recalculation keeps the loops, which give 22% (175 ms settled, against 225 serial).
+- **The Booleans' 1.26× and 1.38×** aren't down to the collector, PGO or the loops' overhead. The same under the server collector, with PGO on or off. Going serial below 4 items gains nothing (1.22×, 1.38×), and below 16 loses most of the gain (1.05×, 1.22×), so the big loops are what earns it and small loops aren't costing it. That reading says most of a Boolean is outside the parallel loops: 1.26× on many cores means about 80% is serial. I didn't get to which phases those are, nor whether a wait seen in 11E's profile is more than idle time. For 11Q, if it matters: **independent workbooks are the case that scales, and they don't use this option.**
+
+### BRepGraph
+
+I didn't read its design closely. Its aim is fast traversal and parallel work on one shape's topology, and this unit found neither shared topology nor locks limiting anything, so it wouldn't help here. Whether it would help serial time and allocation is a question for later.
+
+### What's left
+
+- **The last pauses,** 27% of a round: only fewer bytes helps, and there's no large site left.
+- **Bento's own start-up** under `CallCountingDelayMs` 0, which only Bento can measure.
+- **The cause of PGO's cost on many threads** is inferred. `DOTNET_TieredPGO_InstrumentOnlyHotCode` and similar settings weren't tried.
+- **Workbooks in Bento:** this all ran on the benchmark, with no UI thread, and every copy the same size.
+
 ## StepTidy (unit 11N)
 
 *5 November 2026, `Kerf.Kernel.Benchmarks -- step-tidy` over the 289 files `-- healing` exports, written by the plain STEP
@@ -477,7 +576,7 @@ Ranked by expected gain against cost. None changes results unless it says so.
 
 | # | Proposal | Expected gain | Cost | Risk |
 |---|---|---|---|---|
-| 1 | **Server GC (or a larger gen-0 budget) in hosts that compute in parallel.** A setting in Bento's and build123d.NET's test projects (`<ServerGarbageCollector>true</ServerGarbageCollector>`, or `<ConcurrentGarbageCollection>` with `GCgen0size`). Measured: the suite in parallel from 21 s to 10 s; a 64 MB gen-0 budget alone gave 16 s. | 2× on parallel workloads | A line per host | Memory: server GC keeps larger heaps; check Bento's working set |
+| 1 | **Server GC (or a larger gen-0 budget) in hosts that compute in parallel.** A setting in Bento's and build123d.NET's test projects (`<ServerGarbageCollection>true</ServerGarbageCollection>`, or `<ConcurrentGarbageCollection>` with `GCgen0size`). Measured: the suite in parallel from 21 s to 10 s; a 64 MB gen-0 budget alone gave 16 s. | 2× on parallel workloads | A line per host | Memory: server GC keeps larger heaps; check Bento's working set |
 | 2 | **ReadyToRun for the four OcctNet packages** (crossgen when packing, or `PublishReadyToRun` in Bento's publish). Measured: opening Bento's workbook 37% faster. A composite or "input bubble" build across the four assemblies would precompile the generic collections each uses from Foundation, which plain ReadyToRun leaves to the JIT. | 30–50% off the first evaluation of each function | Small: build settings; packages grow about 3× | None to results; R2R code is rejitted when hot |
 | 3 | **`NCollection_List` as a linked list**, as OCCT's is: O(1) `Remove(Iterator)`, `RemoveFirst`, `Prepend` and `InsertBefore`. Removes the mesher's hot spot (7% of the suite, 7% of Bento's recalculation) and the other `RemoveFirst` queues. Its enumerator type is public (`List<T>.Enumerator`), so it changes the API. | 5–10% | Moderate: one class, but used everywhere; run the whole oracle and corpus | Low for results (the order is the same), moderate for API users |
 | 4 | **Reuse `math_NewtonMinimum`'s work arrays** (`math_Jacobi`, `math_Gauss`, the Hessian's copies) across its iterations and calls, with re-entrant `Perform` methods on those classes. 60% of the bytes Bento's recalculation allocates, so most of its collections. | 10–20% on extrema-heavy operations (extrude until, distances) | Moderate: changes to ported classes' shape, kept beside OCCT's API | Low; the arithmetic is unchanged |

@@ -20,6 +20,10 @@ internal class SListNodeOfItemLocation : Transient
     private SListOfItemLocation _tail;
     private ItemLocation _value;
 
+    // The head of the inverse of the chain starting here, kept by Placement.Inverted (unit 11D). Published with a release
+    // write and never changed in meaning: threads racing make equal chains and either may stay.
+    internal SListNodeOfItemLocation? _inverse;
+
     internal SListNodeOfItemLocation(in ItemLocation i, in SListOfItemLocation t)
     {
         _tail = t;
