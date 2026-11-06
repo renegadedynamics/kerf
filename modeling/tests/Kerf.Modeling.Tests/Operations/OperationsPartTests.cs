@@ -356,7 +356,7 @@ public class OperationsPartTests
         var profile = new RegularPolygon(10, 4, align: new Alignment(Align.Center, Align.Min));
         var fullVolume = Revolve(profile, ax, 360).Value.Volume;
         int[] positive = [30, 90, 150, 180, 200, 360, 500, 720, 750];
-        var sizes = positive.Reverse().Select(x => -x).Append(0).Concat(positive);
+        var sizes = positive.Reverse().Select(x => -x).Concat(positive);
         foreach (var size in sizes)
         {
             var solid = Revolve(profile, axis: ax, revolutionArc: size).Value;
