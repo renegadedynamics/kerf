@@ -141,9 +141,16 @@ public static class Gltf
             return Result<ModelNode>.Failure(Diagnostic.Error(ExchangeTree.Malformed, $"The glTF data couldn't be read: {reader.Error}"));
         }
 
-        return ExchangeTree.FromTree(tree, productNames: false, meshes: true) is { } model
-            ? model
-            : Result<ModelNode>.Failure(Diagnostic.Error(ExchangeTree.Malformed, "The glTF data holds no mesh."));
+        try
+        {
+            return ExchangeTree.FromTree(tree, productNames: false, meshes: true) is { } model
+                ? model
+                : Result<ModelNode>.Failure(Diagnostic.Error(ExchangeTree.Malformed, "The glTF data holds no mesh."));
+        }
+        catch (InvalidDataException e)
+        {
+            return Result<ModelNode>.Failure(ExchangeTree.BadData(e, "glTF"));
+        }
     }
 
     /// <summary>

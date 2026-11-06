@@ -52,6 +52,14 @@ internal abstract class TShape : Transient
     private ushort _state;
 
     /// <summary>
+    /// How many levels of compound lie inside this one, or a compsolid: 0 for every other shape and for a compound of
+    /// them (decision 21102). <see cref="Builder.Add"/> keeps it, and refuses more than
+    /// <see cref="Builder.MaxCompoundNesting"/>, as most walks of a shape recurse once a level. It only grows, so after
+    /// a <c>Remove</c> it can overstate, which can't matter at such a depth.
+    /// </summary>
+    internal ushort _compoundNesting;
+
+    /// <summary>
     /// The identity hash of shape maps (unit 10J; performance.md's proposal 7): drawn once at creation, in place of
     /// <see cref="System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(object)"/>, which took 2 to 5% of the
     /// Booleans' time. The maps iterate in insertion order whatever the hash, so no result depends on its value.

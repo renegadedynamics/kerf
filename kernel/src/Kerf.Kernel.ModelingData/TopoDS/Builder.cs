@@ -34,6 +34,12 @@ namespace Kerf.Engine.Topology;
 /// </remarks>
 internal class Builder
 {
+    /// <summary>
+    /// The most levels of compound inside a compound (decision 21102). Most walks of a shape recurse once a level, and on a
+    /// 1 MB stack the most costly fails at about 200 levels, and on 512 kB at about 100. No real model comes near it: assemblies nest a few levels.
+    /// </summary>
+    internal const int MaxCompoundNesting = 64;
+
     public Builder()
     {
     }
@@ -216,6 +222,21 @@ internal class Builder
                 // Kerf: a frozen shape takes the child in the working overlay's copy of it, if one is open
                 TShape tShape = WorkingOverlay.ForWrite(aShape.TShape()!);
                 tShape.CheckMutable(); // Kerf: frozen
+                // Kerf: a depth every walk of a shape can afford, or a stack overflow would end the process (decision 21102)
+                if (iC == (uint)ShapeType.Compound)
+                {
+                    int nesting = componentTShape._compoundNesting + 1;
+                    if (nesting > MaxCompoundNesting)
+                    {
+                        throw new ConstructionErrorException($"Compounds are nested more than {MaxCompoundNesting} deep.");
+                    }
+
+                    if (nesting > tShape._compoundNesting)
+                    {
+                        tShape._compoundNesting = (ushort)nesting;
+                    }
+                }
+
                 tShape._shapes.Append(child);
                 tShape.Modified(true);
             }

@@ -659,8 +659,32 @@ internal class ActorRead : ActorOfTransientProcess, IActorRead
     }
 
     /// <summary>Transfers next assembly usage occurrence entity</summary>
+    /// <exception cref="InvalidDataException">Kerf: the assemblies are nested too deep (decision 21102): each level takes
+    /// about 1 kB of stack here, and a stack overflow ends the process.</exception>
     protected ShapeBinder TransferEntity(NextAssemblyUsageOccurrence nauo, TransientProcess tp,
                                                       in Factors localFactors, ProgressRange progress = default)
+    {
+        if (_assemblyDepth >= global::Kerf.Exchange.ModelNode.MaxNesting)
+        {
+            throw new InvalidDataException("Its assemblies are nested more than " + global::Kerf.Exchange.ModelNode.MaxNesting + " deep.");
+        }
+
+        _assemblyDepth++;
+        try
+        {
+            return TransferAssemblyUsage(nauo, tp, localFactors, progress);
+        }
+        finally
+        {
+            _assemblyDepth--;
+        }
+    }
+
+    // Kerf: how many assembly levels the transfer is inside
+    private int _assemblyDepth;
+
+    private ShapeBinder TransferAssemblyUsage(NextAssemblyUsageOccurrence nauo, TransientProcess tp,
+                                              in Factors localFactors, ProgressRange progress)
     {
         ShapeBinder shbinder = null;
         ProductDefinition pd = null;

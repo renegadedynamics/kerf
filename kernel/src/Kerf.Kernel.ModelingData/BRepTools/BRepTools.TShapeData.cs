@@ -86,6 +86,7 @@ internal static partial class BrepTools
         to.Closed(theFrom.Closed());
         to.Infinite(theFrom.Infinite());
         to.Convex(theFrom.Convex());
+        to._compoundNesting = theFrom._compoundNesting;
     }
 
     // The same type, flags (but the cache bits) and BRep data, the geometry by identity.
