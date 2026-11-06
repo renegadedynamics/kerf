@@ -78,7 +78,7 @@ public readonly struct CurveLimit
 internal static class CurveObjects
 {
     /// <summary>The shorter of two arcs trimmed to a limit, or null if neither reaches it.</summary>
-    internal static Edge? ShortestTrimmed(object limit, params Edge[] arcs)
+    internal static Edge? ShortestTrimmed(CurveLimit limit, params Edge[] arcs)
     {
         var reaching = new ShapeList<Edge>(arcs.Select(a => a.TrimToOther(limit)).Where(a => !a.IsEmpty));
         return reaching.Count == 0 ? null : reaching.OrderBy(e => e.Length).First();
@@ -96,18 +96,18 @@ internal static class CurveObjects
     /// <param name="startAngle">Where the arc starts.</param>
     /// <param name="limit">What to trim to.</param>
     internal static Edge? OpenConicToLimit(Func<double, double, Edge> makeArc, Func<double, (double Low, double High)> angleRange,
-                                           Point3D origin, double size, double startAngle, object limit)
+                                           Point3D origin, double size, double startAngle, CurveLimit limit)
     {
-        if (limit is Axis or Plane)
+        if (limit.Target is Axis or Plane)
         {
             // Neither has an extent, so stand-ins of growing size are searched
-            var anchor = limit is Axis a ? a.Position : ((Plane)limit).Origin;
+            var anchor = limit.Target is Axis a ? a.Position : ((Plane)limit.Target).Origin;
             var baseExtent = 10 * ((anchor - origin).Magnitude + size);
             foreach (var extent in new[] { baseExtent, 100 * baseExtent })
             {
-                Shape standIn = limit is Axis axis
+                Shape standIn = limit.Target is Axis axis
                     ? Edge.MakeLine(anchor - axis.Direction * extent, anchor + axis.Direction * extent)
-                    : Face.MakeRect(2 * extent, 2 * extent, (Plane)limit);
+                    : Face.MakeRect(2 * extent, 2 * extent, (Plane)limit.Target);
                 if (OpenConicToLimit(makeArc, angleRange, origin, size, startAngle, standIn) is { } trimmed)
                     return trimmed;
             }
@@ -115,7 +115,7 @@ internal static class CurveObjects
         }
 
         List<Point3D> limitPoints;
-        if (limit is Shape shape)
+        if (limit.Target is Shape shape)
         {
             var box = shape.Bounds();
             limitPoints = [];
@@ -125,7 +125,7 @@ internal static class CurveObjects
                         limitPoints.Add(new Point3D(x, y, z));
         }
         else
-            limitPoints = [limit is Location l ? l.Position : (Point3D)limit];
+            limitPoints = [limit.Target is Location l ? l.Position : (Point3D)limit.Target];
 
         // No part of the limit is further than this from the origin of the curve
         var reach = limitPoints.Max(p => (p - origin).Magnitude) + size;
@@ -374,7 +374,7 @@ public class CenterArc : BaseEdgeObject
     {
         var startRadius = new Vector3D(1, 0, 0).Rotate(Axis.Z, startAngle) * radius;
         var arc = Edge.MakeCircle(radius, new Plane(center, startRadius, new Vector3D(0, 0, 1)));
-        return CurveObjects.ShortestTrimmed(limit.Target, arc, arc.Reversed(reconstruct: true))
+        return CurveObjects.ShortestTrimmed(limit, arc, arc.Reversed(reconstruct: true))
                ?? throw new ArgumentException($"CenterArc doesn't intersect arc limit {limit}");
     }
 }
@@ -529,7 +529,7 @@ public class EllipticalCenterArc : BaseEdgeObject
         // The whole ellipse, beginning and ending at the start of the arc
         var curve = Edge.MakeEllipse(xRadius, yRadius, startAngle: startAngle, endAngle: startAngle + 360.0)
             .Rotate(Axis.Z, rotation).Translate(center.ToVector());
-        return CurveObjects.ShortestTrimmed(limit.Target, curve, curve.Reversed(reconstruct: true))
+        return CurveObjects.ShortestTrimmed(limit, curve, curve.Reversed(reconstruct: true))
                ?? throw new ArgumentException($"EllipticalCenterArc doesn't intersect arc limit {limit}");
     }
 }
@@ -614,7 +614,7 @@ public class ParabolicCenterArc : BaseEdgeObject
                        .Rotate(Axis.Z, rotation).Translate(vertex.ToVector()),
                    // The angle is the distance along the directrix, so a point of the parabola is at least that far from the vertex
                    reach => (-reach * Constants.RadToDeg, reach * Constants.RadToDeg),
-                   vertex, focalLength, startAngle, arcLimit.Target)
+                   vertex, focalLength, startAngle, arcLimit)
                ?? throw new ArgumentException($"ParabolicCenterArc doesn't intersect arc limit {arcLimit}"))
     {
     }
@@ -654,7 +654,7 @@ public class HyperbolicCenterArc : BaseEdgeObject
             return (axisAngle - halfRange, axisAngle + halfRange);
         }
 
-        return CurveObjects.OpenConicToLimit(Hyperbola, Within, center, xRadius + yRadius, startAngle, limit.Target)
+        return CurveObjects.OpenConicToLimit(Hyperbola, Within, center, xRadius + yRadius, startAngle, limit)
                ?? throw new ArgumentException($"HyperbolicCenterArc doesn't intersect arc limit {limit}");
     }
 }
@@ -842,7 +842,7 @@ public class JernArc : BaseEdgeObject
         var arc2 = Edge.MakeCircle(radius, new Plane(centerPoint2, start - centerPoint2, arcNormal));
         if (arc2.TangentAt(0).Dot(startTangent) < 0)
             arc2 = arc2.Reversed(reconstruct: true);
-        return CurveObjects.ShortestTrimmed(l.Target, arc, arc2) ?? throw new ArgumentException($"JernArc doesn't intersect arc limit {l}");
+        return CurveObjects.ShortestTrimmed(l, arc, arc2) ?? throw new ArgumentException($"JernArc doesn't intersect arc limit {l}");
     }
 }
 

@@ -324,23 +324,23 @@ public static partial class SolidExtensions
         /// makes it creep round; with it, the orientation follows the path's curvature, which keeps a helical sweep steady but
         /// can twist oddly along other paths. <paramref name="mode"/> gives a fixed binormal direction or an auxiliary spine.
         /// </remarks>
-        public static Shape Sweep(IShape2D section, IShape1D path, bool makeSolid = true, bool isFrenet = false, object? mode = null,
+        public static Shape Sweep(IShape2D section, IShape1D path, bool makeSolid = true, bool isFrenet = false, SweepMode? mode = null,
                                   Transition transition = Transition.Transformed) =>
             section.AsShape().TryAs(out Face face)
                 ? SolidExtensions.SweepCore(face.OuterWire(), face.InnerWires(), path, makeSolid, isFrenet, mode, transition)
                 : throw new ArgumentException("section must be a Face or a Wire");
 
-        /// <inheritdoc cref="Sweep(IShape2D, IShape1D, bool, bool, object?, Transition)"/>
+        /// <inheritdoc cref="Sweep(IShape2D, IShape1D, bool, bool, SweepMode?, Transition)"/>
         public static Shape Sweep(Wire section, IShape1D path, IEnumerable<Wire>? innerWires = null, bool makeSolid = true, bool isFrenet = false,
-                                  object? mode = null, Transition transition = Transition.Transformed) =>
+                                  SweepMode? mode = null, Transition transition = Transition.Transformed) =>
             SolidExtensions.SweepCore(section, innerWires?.ToList() ?? [], path, makeSolid, isFrenet, mode, transition);
 
         /// <summary>A sweep through a sequence of profiles (wires or faces' outer wires) along a path.</summary>
-        public static Solid SweepMulti(IEnumerable<Face> profiles, IShape1D path, bool makeSolid = true, bool isFrenet = false, object? binormal = null) =>
+        public static Solid SweepMulti(IEnumerable<Face> profiles, IShape1D path, bool makeSolid = true, bool isFrenet = false, SweepMode? binormal = null) =>
             Solid.SweepMulti(profiles.Select(p => p.OuterWire()), path, makeSolid, isFrenet, binormal);
 
-        /// <inheritdoc cref="SweepMulti(IEnumerable{Face}, IShape1D, bool, bool, object?)"/>
-        public static Solid SweepMulti(IEnumerable<Wire> profiles, IShape1D path, bool makeSolid = true, bool isFrenet = false, object? binormal = null) =>
+        /// <inheritdoc cref="SweepMulti(IEnumerable{Face}, IShape1D, bool, bool, SweepMode?)"/>
+        public static Solid SweepMulti(IEnumerable<Wire> profiles, IShape1D path, bool makeSolid = true, bool isFrenet = false, SweepMode? binormal = null) =>
             Failures.Doing(() => "multi-section sweep", () => SolidExtensions.SweepMultiCore(profiles, path, makeSolid, isFrenet, binormal));
 
         /// <summary>
@@ -549,17 +549,17 @@ public static partial class SolidExtensions
     }
 
     private static Shape SweepCore(Wire outerWire, IReadOnlyList<Wire> innerWires, IShape1D path, bool makeSolid, bool isFrenet,
-                                   object? mode, Transition transition) =>
+                                   SweepMode? mode, Transition transition) =>
         Failures.Doing(() => "sweep", () => SolidExtensions.SweepShapes(outerWire, innerWires, path, makeSolid, isFrenet, mode, transition));
 
     private static Shape SweepShapes(Wire outerWire, IReadOnlyList<Wire> innerWires, IShape1D path, bool makeSolid, bool isFrenet,
-                                     object? mode, Transition transition)
+                                     SweepMode? mode, Transition transition)
     {
         var shapes = new List<Shape>();
         var pathWire = TopoUtil.AsWire(path);
         foreach (var wire in innerWires.Prepend(outerWire))
         {
-            var options = SolidExtensions.SweepMode(path, mode, isFrenet) with { Transition = FaceExtensions.TransitionMode(transition), MakeSolid = makeSolid };
+            var options = SolidExtensions.SweepFrameOf(path, mode, isFrenet) with { Transition = FaceExtensions.TransitionMode(transition), MakeSolid = makeSolid };
             shapes.Add((Failures.Get(Sweeps.Sweep(wire, pathWire, options), () => "sweep").Shape));
         }
         var outer = shapes[0];
@@ -576,35 +576,26 @@ public static partial class SolidExtensions
     /// The sweep's frame: fixed (a binormal vector, the profiles turned to the path), along an auxiliary spine (a wire or
     /// edge, by curvilinear equivalence), or Frenet or corrected Frenet.
     /// </summary>
-    private static SweepOptions SweepMode(IShape1D path, object? binormal, bool isFrenet)
+    private static SweepOptions SweepFrameOf(IShape1D path, SweepMode? mode, bool isFrenet)
     {
-        switch (binormal)
+        if (mode?.Direction is { } v)
         {
-            case null:
-                return new SweepOptions { Frame = isFrenet ? SweepFrame.Frenet : SweepFrame.CorrectedFrenet };
-            case Direction3D or Vector3D:
-            {
-                Vector3D v = binormal is Direction3D d ? d : (Vector3D)binormal;
-                var system = new Frame3D();
-                var start = path.StartPoint();
-                var dir = v.ToDirection();
-                system = system.WithLocation(start);
-                system = system.WithDirection(dir);
-                return new SweepOptions { Frame = SweepFrame.Fixed, FixedFrame = system, WithCorrection = true };
-            }
-            case Wire w:
-                return new SweepOptions { Frame = SweepFrame.Auxiliary, AuxiliarySpine = w, CurvilinearEquivalence = true };
-            case Edge e:
-                return new SweepOptions { Frame = SweepFrame.Auxiliary, AuxiliarySpine = Wire.Make(e), CurvilinearEquivalence = true };
-            default:
-                throw new ArgumentException($"A sweep mode is a vector, direction, Wire or Edge, not a {binormal.GetType().Name}");
+            var system = new Frame3D();
+            var start = path.StartPoint();
+            var dir = v.ToDirection();
+            system = system.WithLocation(start);
+            system = system.WithDirection(dir);
+            return new SweepOptions { Frame = SweepFrame.Fixed, FixedFrame = system, WithCorrection = true };
         }
+        if (mode?.Spine is { } spine)
+            return new SweepOptions { Frame = SweepFrame.Auxiliary, AuxiliarySpine = spine, CurvilinearEquivalence = true };
+        return new SweepOptions { Frame = isFrenet ? SweepFrame.Frenet : SweepFrame.CorrectedFrenet };
     }
 
-    private static Solid SweepMultiCore(IEnumerable<Wire> profiles, IShape1D path, bool makeSolid, bool isFrenet, object? binormal)
+    private static Solid SweepMultiCore(IEnumerable<Wire> profiles, IShape1D path, bool makeSolid, bool isFrenet, SweepMode? binormal)
     {
         var pathWire = TopoUtil.AsWire(path);
-        var options = SolidExtensions.SweepMode(path, binormal, isFrenet) with { MakeSolid = makeSolid };
+        var options = SolidExtensions.SweepFrameOf(path, binormal, isFrenet) with { MakeSolid = makeSolid };
         var built = Failures.Get(Sweeps.Sweep([.. profiles.Select(p => p)], pathWire, options), () => "sweep");
         var swept = ((Solid)built.Shape);
         if (makeSolid && !swept.IsValid)
@@ -638,3 +629,27 @@ public static partial class SolidExtensions
     }
 }
 
+/// <summary>
+/// What turns a sweep's sections along the path, in place of its own frames: a fixed binormal direction, or an auxiliary
+/// spine they follow. A <see cref="Vector3D"/>, <see cref="Direction3D"/>, <see cref="Wire"/> or <see cref="Edge"/> converts to one.
+/// </summary>
+public sealed class SweepMode
+{
+    private SweepMode(Vector3D? direction, Wire? spine) => (Direction, Spine) = (direction, spine);
+
+    internal Vector3D? Direction { get; }
+
+    internal Wire? Spine { get; }
+
+    /// <summary>The sections keep a fixed binormal direction.</summary>
+    public static implicit operator SweepMode(Vector3D direction) => new(direction, null);
+
+    /// <inheritdoc cref="op_Implicit(Vector3D)"/>
+    public static implicit operator SweepMode(Direction3D direction) => new((Vector3D)direction, null);
+
+    /// <summary>The sections follow an auxiliary spine, point for point by the fraction of its length.</summary>
+    public static implicit operator SweepMode(Wire spine) => new(null, spine);
+
+    /// <inheritdoc cref="op_Implicit(Wire)"/>
+    public static implicit operator SweepMode(Edge spine) => new(null, Wire.Make(spine));
+}

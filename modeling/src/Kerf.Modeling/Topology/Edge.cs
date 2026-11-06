@@ -224,9 +224,9 @@ public static partial class EdgeExtensions
         }
 
         /// <summary>The shortest piece of this edge from its start up to where it meets <paramref name="other"/>, or the empty Edge if they don't meet.</summary>
-        public Edge TrimToOther(object other)
+        public Edge TrimToOther(CurveLimit other)
         {
-            var intersections = self.Intersect(other);
+            var intersections = self.Intersect(other.Target);
             if (intersections.Count == 0)
                 return default(Edge);
             var trims = new ShapeList<Edge>(intersections.Vertices().Select(p => self.Trim(0, p.Point)));
@@ -248,51 +248,36 @@ public static partial class EdgeExtensions
 
         // ---- Queries ----
 
-        /// <summary>The points where this planar edge crosses itself, or another edge or an axis in its plane.</summary>
-        public ShapeList<Vertex> FindIntersectionPoints(object? other = null, double tolerance = Constants.Tolerance) =>
+        /// <summary>The points where this planar edge crosses itself.</summary>
+        public ShapeList<Vertex> FindIntersectionPoints(double tolerance = Constants.Tolerance) =>
+            new(self.FindIntersections(tolerance).Select(p => Vertex.Make(p)));
+
+        /// <summary>The points where this planar edge crosses another in its plane.</summary>
+        public ShapeList<Vertex> FindIntersectionPoints(Edge other, double tolerance = Constants.Tolerance) =>
             new(self.FindIntersections(other, tolerance).Select(p => Vertex.Make(p)));
 
-        /// <inheritdoc cref="FindIntersectionPoints"/>
-        public IReadOnlyList<Point3D> FindIntersections(object? other = null, double tolerance = Constants.Tolerance)
+        /// <summary>The points where this planar edge crosses an axis in its plane.</summary>
+        public ShapeList<Vertex> FindIntersectionPoints(Axis other, double tolerance = Constants.Tolerance) =>
+            new(self.FindIntersections(other, tolerance).Select(p => Vertex.Make(p)));
+
+        /// <summary>The points where this planar edge crosses itself.</summary>
+        public IReadOnlyList<Point3D> FindIntersections(double tolerance = Constants.Tolerance) =>
+            EdgeExtensions.CrossingsOf(self, null, tolerance);
+
+        /// <summary>The points where this planar edge crosses another in its plane.</summary>
+        public IReadOnlyList<Point3D> FindIntersections(Edge other, double tolerance = Constants.Tolerance) =>
+            EdgeExtensions.CrossingsOf(self, other, tolerance);
+
+        /// <summary>The points where this planar edge crosses an axis in its plane.</summary>
+        public IReadOnlyList<Point3D> FindIntersections(Axis other, double tolerance = Constants.Tolerance)
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("Can't find intersections of empty edge");
-            Edge? otherEdge = (other is IShape held ? TopoUtil.Typed(held.AsShape()) : other) switch
-            {
-                null => null,
-                Edge e => e,
-                // An axis becomes an edge at least as large as this edge and the axis's start
-                Axis axis => AxisEdge(axis),
-                _ => throw new ArgumentException($"Can't intersect with a {other!.GetType().Name}"),
-            };
-            var plane = self.CommonPlane(otherEdge) ?? throw new ArgumentException("All objects must be on the same plane");
-            var pln = plane.ToPlane3D();
-            var selfCurve = EdgeExtensions.CurveOnPlane(self, pln);
-            var intersected = otherEdge is { IsEmpty: false }
-                ? selfCurve.Intersect(EdgeExtensions.CurveOnPlane(otherEdge!.Value, pln), tolerance)
-                : selfCurve.SelfIntersections(tolerance);
-            var crosses = new List<Point3D>();
-            foreach (var hit in Failures.Get(intersected, () => "intersect"))
-                crosses.Add(plane.FromLocalCoords(new Point3D(hit.Point.X, hit.Point.Y, 0)));
-            // The crossings may lie beyond the ends of the edges
-            var valid = new List<Point3D>();
-            foreach (var pnt in crosses)
-            {
-                try
-                {
-                    if (self.DistanceTo(pnt) <= Constants.Tolerance && (otherEdge is not { } oe || oe.DistanceTo(pnt) <= Constants.Tolerance))
-                        valid.Add(pnt);
-                }
-                catch (InvalidOperationException e) when (!Failures.IsFailure(e) && !Diagnostic.IsKernelFailure(e)) { }
-            }
-            return valid;
-
-            Edge AxisEdge(Axis axis)
-            {
-                var diagonal = self.Bounds().Union(Vertex.Make(axis.Position).Bounds()).Diagonal;
-                return Edge.MakeLine(axis.Position - axis.Direction * diagonal, axis.Position + axis.Direction * diagonal);
-            }
+            // The axis becomes an edge at least as large as this edge and the axis's start
+            var diagonal = self.Bounds().Union(Vertex.Make(other.Position).Bounds()).Diagonal;
+            return EdgeExtensions.CrossingsOf(self, Edge.MakeLine(other.Position - other.Direction * diagonal, other.Position + other.Direction * diagonal), tolerance);
         }
+
 
         /// <summary>The parameters (0 to 1) where the tangent of this planar edge is at <paramref name="angle"/> degrees.</summary>
         public IReadOnlyList<double> FindTangent(double angle)
@@ -770,5 +755,32 @@ public static partial class EdgeExtensions
     {
         edge.TryGetCurveOnPlane(plane, out var curve, out _);
         return curve!;
+    }
+
+    private static IReadOnlyList<Point3D> CrossingsOf(Edge self, Edge? otherEdge, double tolerance)
+    {
+        if (self.IsEmpty)
+            throw new InvalidOperationException("Can't find intersections of empty edge");
+        var plane = self.CommonPlane(otherEdge) ?? throw new ArgumentException("All objects must be on the same plane");
+        var pln = plane.ToPlane3D();
+        var selfCurve = EdgeExtensions.CurveOnPlane(self, pln);
+        var intersected = otherEdge is { IsEmpty: false }
+            ? selfCurve.Intersect(EdgeExtensions.CurveOnPlane(otherEdge!.Value, pln), tolerance)
+            : selfCurve.SelfIntersections(tolerance);
+        var crosses = new List<Point3D>();
+        foreach (var hit in Failures.Get(intersected, () => "intersect"))
+            crosses.Add(plane.FromLocalCoords(new Point3D(hit.Point.X, hit.Point.Y, 0)));
+        // The crossings may lie beyond the ends of the edges
+        var valid = new List<Point3D>();
+        foreach (var pnt in crosses)
+        {
+            try
+            {
+                if (self.DistanceTo(pnt) <= Constants.Tolerance && (otherEdge is not { } oe || oe.DistanceTo(pnt) <= Constants.Tolerance))
+                    valid.Add(pnt);
+            }
+            catch (InvalidOperationException e) when (!Failures.IsFailure(e) && !Diagnostic.IsKernelFailure(e)) { }
+        }
+        return valid;
     }
 }

@@ -237,7 +237,7 @@ public static partial class Shape3DExtensions
 
         internal ShapeList<Shape>? IntersectCoreOfShape3D(object other, double tolerance, bool includeTouched)
         {
-            var shape = ShapeExtensions.ShapeOf(other);
+            var shape = ShapeExtensions.ShapeOfAny(other);
             var results = new List<Shape>();
             // Trim infinite edges before OCCT operations
             if (TopoUtil.Typed(shape) is Edge { IsInfinite: true } infinite)

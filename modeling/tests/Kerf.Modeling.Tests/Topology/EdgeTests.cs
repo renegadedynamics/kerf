@@ -156,7 +156,6 @@ public class EdgeTests
         var axisCrosses = line.FindIntersectionPoints(Axis.X);
         Check.AlmostEqual(new Point3D(1, 0, 0), axisCrosses[0].Point, 5);
 
-        Assert.Throws<ArgumentException>(() => line.FindIntersectionPoints(Plane.YZ));
 
         circle = default(Edge);
         Assert.Throws<InvalidOperationException>(() => circle.FindIntersectionPoints(line));
@@ -254,7 +253,7 @@ public class EdgeTests
         ];
         // Rectangle(1, 1, align=(Align.MAX, Align.MIN)) and Box(1, 1, 1, align=(Align.MAX, Align.MIN, Align.CENTER))
         Face Rect() => Face.MakeRect(1, 1, new Plane(new Point3D(-0.5, 0.5, 0)));
-        object[] others =
+        CurveLimit[] others =
         [
             Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(1, 1, 0)),
             CurveObjects.CenterArc(new Point3D(0, 0, 0), 1, 45, 90),

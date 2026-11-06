@@ -811,12 +811,9 @@ public static partial class Operations
         var newSolids = new List<Shape>();
         if (faceList.Count > 0)
         {
-            object? binormalMode = binormal switch
-            {
-                null when normal is { } n => n,
-                not null when binormal.AsShape().IsEdge() => Wire.Make((Edge)binormal.AsShape()),
-                _ => binormal,
-            };
+            SweepMode? binormalMode = binormal is not null
+                ? binormal.AsShape().IsEdge() ? (Edge)binormal.AsShape() : (Wire)binormal.AsShape()
+                : normal is { } n ? n : null;
             if (multisection)
                 newSolids.Add(Solid.SweepMulti(faceList.Select(f => f.OuterWire()), pathWire, true, isFrenet, binormalMode));
             else

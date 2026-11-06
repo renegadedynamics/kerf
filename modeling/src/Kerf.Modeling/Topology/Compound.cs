@@ -123,7 +123,7 @@ public static partial class CompoundExtensions
     internal static ShapeList<Shape>? IntersectCore(Shape self, object other, double tolerance, bool includeTouched)
     {
         // Distributed over the elements: Compound([a, b]) ∩ s = (a ∩ s) ∪ (b ∩ s)
-        var shape = ShapeExtensions.ShapeOf(other);
+        var shape = ShapeExtensions.ShapeOfAny(other);
         var selfElements = self.ChildShapes();
         if (selfElements.Count == 0)
             return null;
