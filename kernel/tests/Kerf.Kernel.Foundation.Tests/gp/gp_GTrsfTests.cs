@@ -57,4 +57,15 @@ public class gp_GTrsfTest
         Assert.Equal("Placement(Identity)", new Kerf.Topology.Placement().ToString());
         Assert.StartsWith("Placement(", new Kerf.Topology.Placement(Transform3D.Translation(new Vector3D(1, 2, 3))).ToString(), StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Hyperbola_Default_IsAValidIndefiniteHyperbola()
+    {
+        // OCCT #1341: the empty constructor's minor radius is negative, which any later copy with new radii refuses
+        Hyperbola3D aHyperbola = new();
+        Assert.True(aHyperbola.MinorRadius >= 0.0);
+        Assert.Equal(3.0, aHyperbola.WithMajorRadius(3.0).MajorRadius);
+        Hyperbola2D aHyperbola2d = new();
+        Assert.True(aHyperbola2d.MinorRadius >= 0.0);
+    }
 }

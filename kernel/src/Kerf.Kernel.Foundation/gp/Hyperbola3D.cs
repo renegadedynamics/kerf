@@ -17,7 +17,7 @@ namespace Kerf.Geometry;
 /// </summary>
 /// <remarks>
 /// <c>new Hyperbola3D()</c> is OCCT's indefinite hyperbola (major radius <c>double.MaxValue</c>, minor radius
-/// <c>double.MinValue</c>); <c>default(Hyperbola3D)</c> is not valid.
+/// the smallest positive number, where OCCT has a negative one that fails: #1341); <c>default(Hyperbola3D)</c> is not valid.
 /// </remarks>
 public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
 {
@@ -25,12 +25,12 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     private readonly double _majorRadius;
     private readonly double _minorRadius;
 
-    /// <summary>An indefinite hyperbola, major radius <c>double.MaxValue</c> and minor radius <c>double.MinValue</c>: a value nothing else can build, so give it real ones.</summary>
+    /// <summary>An indefinite hyperbola, major radius <c>double.MaxValue</c> and minor radius the smallest positive number: a value nothing else can build, so give it real ones.</summary>
     public Hyperbola3D()
     {
         _pos = new Frame3D();
         _majorRadius = RealLast();
-        _minorRadius = RealFirst(); // OCCT: a negative minor radius, which no Set method or constructor accepts
+        _minorRadius = RealSmall(); // OCCT has a negative minor radius here, which later fails (#1341, decision 20215)
     }
 
     /// <exception cref="ArgumentException">A radius is negative.</exception>

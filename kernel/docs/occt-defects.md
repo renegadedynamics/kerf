@@ -14,7 +14,7 @@ file lists what OCCT knows to be wrong and whether Kerf has it. It's a working l
   from the code.
 - **can't tell:** Most of these need a model attached to the issue that this pass didn't fetch. Nothing from an issue was run.
 
-**Counts.** OCCT's 224 open issues: 19 already fixed, 79 not relevant, 14 applies, 112 can't tell. The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 2 already fixed, 57 not relevant, 11 applies, 6 can't tell.
+**Counts.** OCCT's 224 open issues: 20 already fixed, 79 not relevant, 13 applies, 112 can't tell. The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 2 already fixed, 57 not relevant, 11 applies, 6 can't tell.
 The other two sources are sorted by group below: the corpus's 502 BAD cases, and the rows of [occt-issues.md](occt-issues.md)
 kept only for compatibility.
 
@@ -38,7 +38,6 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 | Failure on an ordinary shape | #1177, #172 | A fillet that should reach the opposite edge fails; upstream `f713b1305f` and `cbca11e975` do it | Upstream fix | L: 27 files. **For the owner** |
 | Failure on an ordinary shape | corpus: offset/wire_* | 60 BAD: the medial axis gives up on wires, many with circles | Corpus | L. See below |
 | Unintuitive API | #1355 | `WithVectorialPart` sets the scale to 0, so `Inverted` refuses | Read | S |
-| Unintuitive API | #1341 | `Hyperbola3D()` holds a minor radius that later fails | Read | S |
 | Unintuitive API | #1632 | MakeChamfer doesn't report which contours failed | Read | S |
 | Unintuitive API | #1036 | History differs from maker to maker | Read | M |
 | Unintuitive API | #1618, the rest | `Point3D` takes NaN, and `MakeBox` too | Reproduced | M: a question of where to check |
@@ -237,7 +236,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1344 | Documentation -  compgraph parameter of STEPControl_Writer::Transfer () is missing | not relevant | OCCT's documentation or tests only |
 | 1343 | Modeling - LProp_SLProps::IsNormalDefined() uses unapproptiate method of CSLib to calculate normal | can't tell | Read: same `CSLib.Normal` call; effect is on a tolerance only |
 | 1342 | Data Exchange - Regression in DEBUG mode in test case de iges_2 B1 | not relevant | IGES: not ported (unported.md) |
-| 1341 | Foundation - gp_Hyper empty constructor raise exception | applies | Read: `Hyperbola3D()`'s default has RealFirst as a minor radius, which then fails. Small |
+| 1341 | Foundation - gp_Hyper empty constructor raise exception | already fixed | Decision 20215; read and fixed |
 | 1340 | Modeling - SameParameter & SameRange flags are set incorrectly in ShapeBuild_Edge::CopyRanges | can't tell | Read: same code; effect on flags only |
 | 1339 | STEP Export - Exception is raised during writing with ExternalReferences mode in STEP  XDE  document. | not relevant | OCAF or CDF documents: not ported; Kerf has an immutable assembly tree (unported.md) |
 | 1328 | OpenGl_PBREnvironment::bake() — mismatched texture unit in Bind/Unbind pair for environment map | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
