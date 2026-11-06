@@ -10,7 +10,7 @@ version may break the API.
   vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 1652 and 1653).
 ## 0.3.0 (unreleased)
 
-- **STEP export uses about a third less CPU and half the memory, and import with healing about 10% to 15% less CPU,** with the same output (measured on a loaded machine; decisions 19701 to 19705).
+- **STEP export uses about a third less CPU and half the memory, and import with healing about 10% to 15% less CPU,** with the same output (measured on a loaded machine; decisions 1727 to 1731).
 - **Fillets and chamfers, three fixes that change results:** the edges between a fillet and its faces are coded tangent,
   as in OCCT, so a draft can follow a fillet, and saved BRep files gain those lines. A fillet that runs past a Bezier or
   B-spline face puts the face on the surface it extended, where the result used to be invalid. A closed edge filleted
