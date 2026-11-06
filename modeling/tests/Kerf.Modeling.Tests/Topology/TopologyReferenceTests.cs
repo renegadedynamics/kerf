@@ -136,9 +136,9 @@ public class TopologyReferenceTests
         Assert.Equal(expected.GetProperty("faces").GetInt32(), shape.Faces().Count);
         Assert.Equal(expected.GetProperty("solids").GetInt32(), shape.Solids().Count);
         Assert.Equal(expected.GetProperty("valid").GetBoolean(), shape.IsValid);
-        // Mass properties and boxes come from the same OCCT algorithms, so they agree closely
-        Close(expected.GetProperty("volume").GetDouble(), shape.Volume, "volume", 1e-7);
-        Close(expected.GetProperty("area").GetDouble(), shape.Area, "area", 1e-7);
+        // Boxes come from the same OCCT algorithms, so they agree closely; areas and volumes to the precision asked for, as build123d integrates by the fixed default
+        Close(expected.GetProperty("volume").GetDouble(), shape.Volume, "volume", 1e-6);
+        Close(expected.GetProperty("area").GetDouble(), shape.Area, "area", 1e-6);
         var box = shape.Bounds();
         CloseVector(expected.GetProperty("bbox_min"), box.Min, "bbox min", 1e-7);
         CloseVector(expected.GetProperty("bbox_max"), box.Max, "bbox max", 1e-7);

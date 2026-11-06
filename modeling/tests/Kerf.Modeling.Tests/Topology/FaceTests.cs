@@ -675,7 +675,7 @@ public class FaceTests
 
         var point = patch.PositionAt(0.5, 0.5) + new Vector3D(0.5, 0.5, 0);
         var patch4 = -Face.MakeSurfacePatch(edgeConstraints: [m1, m2, m3], pointConstraints: [point]);
-        Check.AlmostEqual(164.618, patch4.Area, 3);
+        Check.AlmostEqual(164.6186, patch4.Area, 3);
     }
 
     [Fact]

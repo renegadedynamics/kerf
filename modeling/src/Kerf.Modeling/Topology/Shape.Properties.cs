@@ -87,8 +87,8 @@ public static partial class ShapeExtensions
             return TopoUtil.ShapeTypeOf(self.AsShape()) switch
             {
                 ShapeType.Edge or ShapeType.Wire => self.AsShape().IntegrateLength(),
-                ShapeType.Face or ShapeType.Shell => self.AsShape().IntegrateArea(),
-                _ => self.AsShape().IntegrateVolume(),
+                ShapeType.Face or ShapeType.Shell => self.AsShape().IntegrateArea(TopoUtil.Measured),
+                _ => self.AsShape().IntegrateVolume(TopoUtil.Measured),
             };
         }
 
@@ -100,7 +100,7 @@ public static partial class ShapeExtensions
                 if (self.IsEmpty)
                     return [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
                 Span<double> m = stackalloc double[9];
-                self.AsShape().MassProperties(Dimension.Volume).Inertia.CopyTo(m);
+                self.AsShape().MassProperties(Dimension.Volume, TopoUtil.MeasuredMoments).Inertia.CopyTo(m);
                 return [[m[0], m[1], m[2]], [m[3], m[4], m[5]], [m[6], m[7], m[8]]];
             }
         }
@@ -111,7 +111,7 @@ public static partial class ShapeExtensions
             get
             {
                 self.NeedsGeometry("principal axes");
-                var props = self.AsShape().MassProperties(Dimension.Volume);
+                var props = self.AsShape().MassProperties(Dimension.Volume, TopoUtil.MeasuredMoments);
                 var (m1, m2, m3) = props.PrincipalMoments;
                 var (a1, a2, a3) = props.PrincipalAxes;
                 return [(a1, m1), (a2, m2), (a3, m3)];
@@ -125,7 +125,7 @@ public static partial class ShapeExtensions
             {
                 if (self.IsEmpty)
                     return (0, 0, 0);
-                var moments = self.AsShape().MassProperties(Dimension.Volume).StaticMoments;
+                var moments = self.AsShape().MassProperties(Dimension.Volume, TopoUtil.MeasuredMoments).StaticMoments;
                 return (moments.X, moments.Y, moments.Z);
             }
         }
@@ -135,7 +135,7 @@ public static partial class ShapeExtensions
         {
             self.NeedsGeometry("radius of gyration");
             var ax1 = axis.ToAxis3D();
-            return self.AsShape().MassProperties(Dimension.Volume).RadiusOfGyration(ax1);
+            return self.AsShape().MassProperties(Dimension.Volume, TopoUtil.MeasuredMoments).RadiusOfGyration(ax1);
         }
 
         // ---- Checks ----

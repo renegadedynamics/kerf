@@ -20,7 +20,7 @@ public static partial class ShellExtensions
                 if (!self.IsManifold)
                     return 0.0;
                 var solid = Failures.Get(self.MakeSolid(), () => "solid from shell").Shape;
-                return ShapeExtensions.MassPropertiesOf(solid)!.Mass;
+                return solid.IntegrateVolume(TopoUtil.Measured);
             }
         }
 
