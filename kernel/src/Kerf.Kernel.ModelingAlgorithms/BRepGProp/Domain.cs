@@ -17,7 +17,7 @@ namespace Kerf.Engine.Measurement;
 /// <remarks>A working object, as OCCT's (an explorer): its iteration methods change it.</remarks>
 internal sealed class Domain
 {
-    private readonly Explorer _explorer;
+    private Explorer _explorer;
 
     /// <summary>An empty domain.</summary>
     public Domain() => _explorer = new Explorer();
