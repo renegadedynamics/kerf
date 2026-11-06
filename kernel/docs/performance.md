@@ -123,7 +123,7 @@ Run `kernel/tools/bench.ps1`, on Windows PowerShell 5.1 or later. It takes about
 `docs/benchmarks/<date>-<commit>.md` and `.tsv`. For a unit's before-and-after, on each commit:
 
 ```powershell
-kernel/tools/bench.ps1 -Quick -Compare kernel/docs/benchmarks/2026-11-06-bd7045018.tsv
+kernel/tools/bench.ps1 -Quick -Compare kernel/docs/benchmarks/2026-11-06-b21606ad7.tsv
 ```
 
 It exits with 1 on a regression and 2 on a busy machine; `-Result <tsv>` compares without running. Each row is the median
@@ -161,6 +161,9 @@ are bimodal, depending on when the runtime tiers up. Don't read a 20% move on on
 - **The targets are met:** recalculation was to be within 1.2× of native, and it's nearly twice as fast. Eight of the eleven examples are ahead of or within 1.2× of native. "Point lists" (1.82×, 6 ms over) and "select last" (1.49×, 5 ms over) are small in absolute terms.
 - **Native stops being the yardstick from here** (decision 1681): the work moves to what's slow, unit 11Q.
 - **Since this table:** [the run after 11C, 11D, 11P, 11Q's first slice and the clean-up](benchmarks/2026-11-06-bd7045018.md), on a quiet machine on 6 November, is the one to compare with now. Recalculation 279 ms (0.41× native), opening 470 ms (0.51×), 198 MB allocated per recalculation. Under a host's settings (unit 11D): recalculation 175 ms, a round 610 ms.
+- **Since then:** [the run after 11Q's second slice and 11G](benchmarks/2026-11-06-b21606ad7.md), quiet, 6 November, is the one to compare with now. Recalculation 275 ms (0.40× native), opening 457 ms (0.50×), 160 MB allocated per recalculation; under a host's settings 168 ms and a round of 575 ms. **Allocation fell 19% and recalculation only 1.6%:** on one thread those bytes weren't costing much, as decision 1705 suggests. It's a host's parallel round (down 5.8%), healing (ShapeFixer down 7%) and memory that gain. A default parallel round didn't move (2,564 ms), and the serial passes' collector pauses read 16% higher on less allocation, which the collector's own budgeting may explain (not investigated).
+- **That run's three result flags are 11G's:** on the three examples with fillets, SVG grew by 8, 4 and 26 characters, with the same edges and the same PNG. The images suite at the commit before 11G matches the old figures. A fillet's edges are now coded tangent (decision 1719), so hidden-line removal classes them as smooth rather than sharp (`DrawingOperations`, `reg1`); that the difference is only this class is inferred from the code.
+
 - **Its four flags were noise.** A rerun of those suites, against that run, gave 0 regressions: PNG on two examples 49 and 46 ms, then 21 and 18 (the others had fallen by about 27%); a host's processor time 609 then 453 ms; and "fillet every edge" 106 MB then 102, so that row's allocation moves by about 4% between runs, more than the rig's 2%. The full corpus against the run after 11I: 7 of 17,872 cases differ, six memory checks now passing (unit 11P) and `bug83`, which now always fails its known time check (decision 1702).
 - **The parallel speed-up fell from 8.33× to 3.11×, and that's the next thing to look at.** The round itself got quicker, so nothing regressed: the serial work fell by two-thirds while allocation barely moved (4.9 GB a round), which leaves the collector dominant, at 4.9 s of pauses. The rig flags this and the pauses as regressions against the run after 11B. That's unit 11D's, which found the figure mostly misleading: see below.
 
