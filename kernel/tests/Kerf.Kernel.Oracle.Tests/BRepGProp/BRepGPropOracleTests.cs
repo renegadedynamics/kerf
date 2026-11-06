@@ -303,6 +303,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                     var aP = new Properties();
                     double aNE = N.BRepGProp.VolumeProperties(aNS, aN, anEps, aClosed, aSkip);
                     double aPE = MassPropertiesBuilder.VolumeProperties(aPS, aP, anEps, aClosed, aSkip);
+                    // Not compared, for the same reason: decision 1784
                     theOracle.NotComparing = true;
                     theOracle.Same(aNE, aPE, aWhat + $" volume error closed {aClosed}");
                     SameProps(theOracle, aN, aP, aWhat + $" volume closed {aClosed}");

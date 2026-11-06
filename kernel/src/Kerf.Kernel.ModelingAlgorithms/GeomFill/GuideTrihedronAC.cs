@@ -197,7 +197,7 @@ internal class GuideTrihedronAC : TrihedronWithGuide
         d2TN /= norma;
 
         // OCCT uses |TN|^2 (1) here; the second derivative of the unit vector needs |DTN|^2 (OCCT #1681, decision 1776)
-        double tnSquare = ReplayNative.Value ? tn.SquareMagnitude : dtn.SquareMagnitude;
+        double tnSquare = dtn.SquareMagnitude;
         d2BiNormal = Vector3D.LinearForm(-2 * tndtn, dtn, 3 * tndtn * tndtn - (tnSquare + tn.Dot(d2TN)), tn, d2TN);
 
         d2Tangent = Vector3D.LinearForm(1, d2Normal.Crossed(biNormal), 2, dNormal.Crossed(dBiNormal),
@@ -205,12 +205,6 @@ internal class GuideTrihedronAC : TrihedronWithGuide
 
         return true;
     }
-
-    /// <summary>
-    /// For the oracle's frozen recordings of native sweeps alone: native's wrong second derivatives, in this flow of
-    /// execution, so that everything else about those sweeps can still be compared (decision 1776).
-    /// </summary>
-    internal static readonly AsyncLocal<bool> ReplayNative = new();
 
     public override TrihedronLaw Copy()
     {
