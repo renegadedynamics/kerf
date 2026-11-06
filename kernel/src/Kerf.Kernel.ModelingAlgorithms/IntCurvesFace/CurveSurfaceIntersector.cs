@@ -14,12 +14,9 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
-using static Kerf.Engine.Intersection.CurveSurface.TransitionOnCurve;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Intersection.CurveSurface;

@@ -10,7 +10,6 @@ using Kerf.Engine.Intersection.Patches;
 using Kerf.Engine.Intersection.Surfaces;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Engine.Intersection.ResultType;
 

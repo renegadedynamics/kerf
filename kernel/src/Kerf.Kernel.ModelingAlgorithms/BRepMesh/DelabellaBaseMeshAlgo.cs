@@ -7,10 +7,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Meshing.Delaunay;
-using Kerf.Engine.Topology;
 using Kerf.Geometry;
-using Kerf.Engine;
-using static Kerf.Engine.Meshing.DegreeOfFreedom;
 using static Kerf.Engine.Foundation.Gravity;
 
 namespace Kerf.Engine.Meshing;

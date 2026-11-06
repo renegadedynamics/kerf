@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Intersection.Implicit;
 using Kerf.Engine.Topology.Adaptors;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Approximation;
 

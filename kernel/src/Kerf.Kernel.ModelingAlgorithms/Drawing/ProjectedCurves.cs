@@ -2,7 +2,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.HiddenLines;
-using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;

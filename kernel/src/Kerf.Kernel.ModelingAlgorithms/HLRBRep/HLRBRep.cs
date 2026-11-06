@@ -10,7 +10,6 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Topology.Orientation;
 

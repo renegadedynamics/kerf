@@ -10,8 +10,6 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Construction.Library.LibraryEdgeError;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Topology.Orientation;
 

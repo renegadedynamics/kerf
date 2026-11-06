@@ -13,7 +13,6 @@ using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Tools;
 

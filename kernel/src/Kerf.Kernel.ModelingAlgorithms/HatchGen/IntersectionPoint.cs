@@ -4,7 +4,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Globalization;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.Containment;

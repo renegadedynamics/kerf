@@ -7,7 +7,6 @@
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Walking;
 

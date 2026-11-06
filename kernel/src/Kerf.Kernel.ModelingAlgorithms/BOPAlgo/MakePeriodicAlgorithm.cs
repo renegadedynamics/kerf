@@ -14,9 +14,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Runtime.CompilerServices;
-using static Kerf.Booleans.GlueMode;
 
 namespace Kerf.Engine.Booleans;
 

@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Booleans.Api;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Booleans;
 

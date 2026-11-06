@@ -6,8 +6,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Walking;
-using Kerf.Engine;
-using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 
 namespace Kerf.Engine.Fillets.Blend;
 

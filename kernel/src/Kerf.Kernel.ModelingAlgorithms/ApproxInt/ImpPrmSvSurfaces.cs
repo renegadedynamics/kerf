@@ -6,7 +6,6 @@ using Kerf.Engine.Intersection.Implicit;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.SurfaceKind;
 
 namespace Kerf.Engine.Intersection.Approximation;

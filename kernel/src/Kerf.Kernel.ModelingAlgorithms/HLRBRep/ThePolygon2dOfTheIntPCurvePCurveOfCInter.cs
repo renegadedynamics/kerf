@@ -7,8 +7,6 @@ using Kerf.Engine.Intersection.Curves;
 
 using Kerf.Engine.Intersection.TwoD;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.HiddenLines;
 
 /// <summary>A polygon sampling a 2D curve on a domain, for the 2D curve intersections.</summary>

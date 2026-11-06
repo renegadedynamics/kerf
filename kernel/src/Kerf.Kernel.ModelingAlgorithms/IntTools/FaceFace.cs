@@ -4,7 +4,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
-using Kerf.Engine.Intersection;
 using Kerf.Engine.Intersection.Patches;
 using Kerf.Engine.Intersection.Surfaces;
 using Kerf.Engine.Intersection.Walking;
@@ -12,10 +11,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.SurfaceKind;
-using static Kerf.Engine.Intersection.Patches.PatchLineType;
-using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Intersection.Tools;
 

@@ -31,17 +31,11 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Offsets.Error;
-using static Kerf.Offsets.OffsetMode;
-using static Kerf.Engine.Offsets.OffsetStatus;
-using static Kerf.Engine.Fillets.Data.TypeOfConcavity;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.JoinKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Offsets;

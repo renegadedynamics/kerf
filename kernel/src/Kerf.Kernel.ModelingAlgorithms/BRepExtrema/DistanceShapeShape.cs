@@ -5,18 +5,12 @@
 
 using Kerf.Engine.Classification;
 using Kerf.Engine.Collections;
-using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Measurement.Distance.SupportType;
-using static Kerf.Engine.Extrema.ExtAlgo;
-using static Kerf.Engine.Extrema.ExtFlag;
-using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Measurement.Distance;

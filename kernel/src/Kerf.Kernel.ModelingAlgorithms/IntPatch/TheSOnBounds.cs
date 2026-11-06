@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Intersection.Walking;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Intersection.Patches;
 
 /// <summary>

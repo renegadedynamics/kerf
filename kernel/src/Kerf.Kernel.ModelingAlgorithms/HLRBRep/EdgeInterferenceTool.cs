@@ -7,7 +7,6 @@
 using Kerf.Engine.HiddenLines.Algorithm;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Orientation;
 
 namespace Kerf.Engine.HiddenLines;

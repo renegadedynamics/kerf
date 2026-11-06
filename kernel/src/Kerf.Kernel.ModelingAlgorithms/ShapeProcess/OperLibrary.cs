@@ -16,12 +16,9 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Collections.Frozen;
 using static Kerf.Geometry.Continuity;
-using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Healing.Process;
 

@@ -8,7 +8,6 @@ using Kerf.Engine.Classification.Topological;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Classification;

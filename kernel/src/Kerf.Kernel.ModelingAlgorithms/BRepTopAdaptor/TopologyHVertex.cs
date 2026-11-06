@@ -4,11 +4,9 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
-using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Orientation;
 
 namespace Kerf.Engine.Topology.Adaptors;

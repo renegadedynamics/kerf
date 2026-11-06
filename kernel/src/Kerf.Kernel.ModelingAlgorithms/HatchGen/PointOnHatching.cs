@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.TwoD;
-using Kerf.Engine;
-using static Kerf.Engine.Intersection.TwoD.Position2D;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.Containment;
 

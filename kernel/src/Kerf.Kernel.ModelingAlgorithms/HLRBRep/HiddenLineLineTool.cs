@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Geometry;
-using Kerf.Engine;
-using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.HiddenLines;

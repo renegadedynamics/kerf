@@ -10,8 +10,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
-using static Kerf.Engine.Construction.Surfaces.SurfacePipeError;
 
 namespace Kerf.Engine.Construction.Surfaces;
 

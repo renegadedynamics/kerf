@@ -4,7 +4,6 @@
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
-using Kerf.Engine;
 using System.Runtime.InteropServices;
 using static Kerf.Engine.Collections.CellFilterAction;
 

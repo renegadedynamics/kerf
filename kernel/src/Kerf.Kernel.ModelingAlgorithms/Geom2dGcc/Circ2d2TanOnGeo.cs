@@ -9,9 +9,6 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Kerf.Engine;
-using static Kerf.Engine.Construction.Constraints.Qualifier;
-using static Kerf.Engine.Construction.Constraints.ConstraintCurveType;
 
 namespace Kerf.Engine.Construction.Constraints;
 

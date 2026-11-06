@@ -11,7 +11,6 @@ using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Measurement;
 

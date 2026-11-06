@@ -10,11 +10,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Classification.Hatching.HatchingErrorStatus;
-using static Kerf.Engine.Classification.Hatching.IntersectionType;
-using static Kerf.Engine.Intersection.TwoD.Position2D;
-using static Kerf.Engine.Intersection.TwoD.TypeTrans;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.Containment;
 

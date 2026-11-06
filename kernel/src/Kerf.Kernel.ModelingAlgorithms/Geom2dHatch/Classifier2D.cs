@@ -10,7 +10,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Classification.Hatching;
 

@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry.Bvh;
-using Kerf.Engine;
 using BVH_Vec2d = Kerf.Engine.NCollection_Vec2<double>;
 using BVH_Vec3d = Kerf.Engine.NCollection_Vec3<double>;
 

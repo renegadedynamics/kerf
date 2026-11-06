@@ -7,7 +7,6 @@
 using Kerf.Engine.Topology.Brep;
 
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Sweeping;
 

@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Intersection.Curves;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.HiddenLines;
 
 /// <summary>

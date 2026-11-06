@@ -7,7 +7,6 @@ using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Intersection.Implicit;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Approximation.Constraint;
 using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Geometry.SurfaceKind;

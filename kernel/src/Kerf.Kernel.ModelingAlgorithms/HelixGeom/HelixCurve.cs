@@ -7,7 +7,6 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Helix.Geometry;
 

@@ -6,9 +6,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Properties;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
-using static Kerf.Engine.Measurement.StatusErrorType;
 
 namespace Kerf.Engine.Measurement;
 

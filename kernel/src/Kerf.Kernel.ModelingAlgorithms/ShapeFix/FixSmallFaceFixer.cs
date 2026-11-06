@@ -7,16 +7,12 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Healing.Build;
-using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Healing.Fixes;
 

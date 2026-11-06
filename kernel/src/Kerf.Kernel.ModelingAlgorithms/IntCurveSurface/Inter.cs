@@ -4,13 +4,11 @@
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
-using Kerf.Engine.Intersection;
 using Kerf.Engine.Intersection.Implicit;
 using Kerf.Engine.Intersection.Polygons;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;

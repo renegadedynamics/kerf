@@ -6,7 +6,6 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Library;
 

@@ -6,9 +6,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Kerf.Engine;
 using BVH_Vec3d = Kerf.Engine.NCollection_Vec3<double>;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Measurement.Distance;
 

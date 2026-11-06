@@ -9,9 +9,7 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.JoinKind;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Construction.Api;
 

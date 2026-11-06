@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Intersection.Walking;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.HiddenLines.Contours;
 
 /// <summary>A line of the contour walking, Contap_TheIWalking's (decision 686).</summary>

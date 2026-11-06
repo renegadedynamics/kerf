@@ -6,7 +6,6 @@
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Booleans.Api;
 

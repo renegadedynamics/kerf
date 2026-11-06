@@ -6,12 +6,9 @@
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.HiddenLines.Algorithm;
-using Kerf.Engine.HiddenLines.Topology;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.HiddenLines;
 

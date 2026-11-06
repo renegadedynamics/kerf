@@ -16,18 +16,9 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Engine.Fillets.Builder_0;
 using static Kerf.Engine.Fillets.Builder_C2;
-using static Kerf.Engine.Fillets.Data.ErrorStatus;
-using static Kerf.Engine.Fillets.Data.State;
-using static Kerf.Geometry.CurveKind;
-using static Kerf.Geometry.Continuity;
-using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
-using static Kerf.Topology.Containment;
-using static Kerf.Engine.Booleans.Legacy.Data.DsKind;
 
 namespace Kerf.Engine.Fillets;
 internal partial class FilletBuilderBase

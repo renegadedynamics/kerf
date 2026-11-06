@@ -4,15 +4,12 @@
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Measurement;
-using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Meshing;
 

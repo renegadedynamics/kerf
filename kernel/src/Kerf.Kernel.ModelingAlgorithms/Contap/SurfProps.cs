@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.SurfaceKind;
 
 namespace Kerf.Engine.HiddenLines.Contours;

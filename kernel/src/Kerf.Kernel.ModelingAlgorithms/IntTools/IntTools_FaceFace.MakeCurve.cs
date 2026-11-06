@@ -11,10 +11,8 @@ using Kerf.Engine.Intersection.Patches;
 using Kerf.Engine.Intersection.Surfaces;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using Kerf.Engine;
 using System.Runtime.InteropServices;
 using static Kerf.Geometry.SurfaceKind;
-using static Kerf.Engine.Intersection.Patches.PatchLineType;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Intersection.Tools;

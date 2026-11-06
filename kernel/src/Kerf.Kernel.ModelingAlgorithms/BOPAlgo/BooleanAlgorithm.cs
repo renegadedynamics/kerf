@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Foundation;
-using Kerf.Engine;
 using static Kerf.Engine.Foundation.Gravity;
 
 namespace Kerf.Engine.Booleans;

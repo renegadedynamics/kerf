@@ -2,7 +2,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing.Tools;
-using Kerf.Engine;
 using System.Globalization;
 
 namespace Kerf.Engine.Booleans.Api;

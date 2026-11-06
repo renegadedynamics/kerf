@@ -10,9 +10,6 @@ using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Fillets.Blend.BlendStatus;
-using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.Containment;
 

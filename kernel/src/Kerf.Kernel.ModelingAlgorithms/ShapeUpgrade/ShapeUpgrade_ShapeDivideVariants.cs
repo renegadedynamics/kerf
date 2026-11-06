@@ -14,7 +14,6 @@
 
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Healing.Upgrade;

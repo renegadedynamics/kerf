@@ -5,7 +5,6 @@
 using Kerf.Engine.Geometry.Bounds;
 
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.CurveSurface;
 

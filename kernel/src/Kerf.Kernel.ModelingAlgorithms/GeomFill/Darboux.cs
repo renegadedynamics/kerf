@@ -7,7 +7,6 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Geometry.NormalStatus;
 using static Kerf.Geometry.Continuity;
 

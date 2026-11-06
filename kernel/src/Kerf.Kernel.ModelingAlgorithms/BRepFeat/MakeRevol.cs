@@ -13,10 +13,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Features.PerfSelection;
-using static Kerf.Engine.Features.StatusError;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Features;
 

@@ -9,7 +9,6 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Healing.Build;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Healing.Analysis;
 

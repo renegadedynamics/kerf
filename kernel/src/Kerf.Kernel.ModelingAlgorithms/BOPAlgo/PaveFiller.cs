@@ -8,9 +8,6 @@ using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Booleans.GlueMode;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans;
 

@@ -14,13 +14,9 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Runtime.CompilerServices;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
-using static Kerf.Engine.Intersection.TwoD.Position2D;
-using static Kerf.Engine.Intersection.TwoD.Situation;
-using static Kerf.Engine.Intersection.TwoD.TypeTrans;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.Containment;
 

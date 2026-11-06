@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Intersection.Walking;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Intersection.Patches;
 
 /// <summary>A line of the implicit/parametric walking, IntPatch_TheIWalking's (decision 686).</summary>
