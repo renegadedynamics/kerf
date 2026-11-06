@@ -100,7 +100,7 @@ internal sealed class TreeReader
     {
         string folder = Path.GetFullPath(Path.GetDirectoryName(Path.GetFullPath(filePath)) ?? ".");
         string prefix = folder.EndsWith(Path.DirectorySeparatorChar) ? folder : folder + Path.DirectorySeparatorChar;
-        Stream? resolve(string uri)
+        Stream? Resolve(string uri)
         {
             if (Path.IsPathRooted(uri) || uri.Contains(':', StringComparison.Ordinal))
             {
@@ -110,7 +110,7 @@ internal sealed class TreeReader
             return path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && File.Exists(path) ? File.OpenRead(path) : null;
         }
         using FileStream file = File.OpenRead(filePath);
-        return Read(file, resolve, progress);
+        return Read(file, Resolve, progress);
     }
 
     private sealed class FormatError(string theMessage) : Exception(theMessage);
@@ -619,8 +619,8 @@ internal sealed class TreeReader
             {
                 factor = Numbers(specGloss, "diffuseFactor", 4) ?? factor;
             }
-            float clamp(double v) => (float)Math.Clamp(v, 0.0, 1.0);
-            return new ColorWithAlpha(clamp(factor[0]), clamp(factor[1]), clamp(factor[2]), clamp(factor[3]));
+            float Clamp(double v) => (float)Math.Clamp(v, 0.0, 1.0);
+            return new ColorWithAlpha(Clamp(factor[0]), Clamp(factor[1]), Clamp(factor[2]), Clamp(factor[3]));
         }
 
         private Triangulation? Triangulation(int mesh, int prim, JsonElement primitive, double[]? bake)

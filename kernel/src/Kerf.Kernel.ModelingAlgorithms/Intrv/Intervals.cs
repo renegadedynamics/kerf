@@ -24,11 +24,11 @@ internal sealed class Intervals
         _inter = new NCollection_Sequence<IntersectionInterval>();
     }
 
-    /// <summary>The single interval <paramref name="Int"/>.</summary>
-    public Intervals(in IntersectionInterval Int)
+    /// <summary>The single interval <paramref name="interval"/>.</summary>
+    public Intervals(in IntersectionInterval interval)
     {
         _inter = new NCollection_Sequence<IntersectionInterval>();
-        _inter.Append(Int);
+        _inter.Append(interval);
     }
 
     /// <summary>A copy of <paramref name="other"/> (OCCT's copy constructor).</summary>

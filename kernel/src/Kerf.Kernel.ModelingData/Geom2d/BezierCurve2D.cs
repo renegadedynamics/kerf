@@ -482,7 +482,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
     /// <summary>True if the weights are not all equal.</summary>
     public bool IsRational => _rational;
 
-    /// <summary>CN.</summary>
+    /// <summary><c>CN</c>: infinitely differentiable.</summary>
     public sealed override Continuity Continuity => CN;
 
     /// <summary>The degree: NbPoles() - 1.</summary>

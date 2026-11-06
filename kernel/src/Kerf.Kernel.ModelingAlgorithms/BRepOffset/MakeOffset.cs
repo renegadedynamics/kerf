@@ -864,7 +864,7 @@ internal sealed partial class MakeOffset
         //------------------------------------------------------
         if (modif.Count != 0)
         {
-            MakeFaces(modif, psInter.Next(2));
+            MakeFaces(psInter.Next(2));
             if (_error != global::Kerf.Engine.Offsets.Error.NoError)
             {
                 return;
@@ -2758,7 +2758,7 @@ internal sealed partial class MakeOffset
     // purpose  : Reconstruction of topologically unchanged faces that
     //           share edges that were reconstructed.
     //=======================================================================
-    private void MakeFaces(IndexedSet<Shape> modif, ProgressRange range)
+    private void MakeFaces(ProgressRange range)
     {
         // OCCT_DEBUG: the chronometer is left out.
         NCollection_List<Shape>.Iterator itr = new();

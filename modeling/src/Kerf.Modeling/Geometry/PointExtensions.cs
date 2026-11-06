@@ -173,7 +173,7 @@ public static class PointExtensions
 /// <summary>Points compared as <c>IsNear</c> does, for sets: components rounded to five decimal places.</summary>
 public sealed class PointComparer : IEqualityComparer<Point3D>
 {
-    /// <summary>The comparer.</summary>
+    /// <summary>The one instance: it holds no state.</summary>
     public static PointComparer Near { get; } = new();
 
     /// <inheritdoc/>

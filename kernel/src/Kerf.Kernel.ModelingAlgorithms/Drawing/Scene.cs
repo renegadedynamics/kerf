@@ -20,7 +20,7 @@ public enum Shading
 /// <summary>Which of the meshes' edges <see cref="Renderer"/> draws over the faces.</summary>
 public enum EdgeDisplay
 {
-    /// <summary>None.</summary>
+    /// <summary>No edges: the faces alone.</summary>
     None,
 
     /// <summary>The shape's edges where its faces meet at more than <see cref="RenderOptions.FeatureAngle"/>, and free

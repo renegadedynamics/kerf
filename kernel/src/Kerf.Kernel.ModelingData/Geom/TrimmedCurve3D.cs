@@ -183,6 +183,7 @@ public sealed class TrimmedCurve3D : BoundedCurve3D
     /// <exception cref="NoSuchObjectException">The basis curve is not periodic.</exception>
     public sealed override double Period => _basisCurve.Period;
 
+    /// <summary>The basis curve's continuity, whatever part of it this keeps.</summary>
     public sealed override Continuity Continuity => _basisCurve.Continuity;
 
     /// <summary>The basis curve, frozen (it is shared with this trimmed curve; decision 127).</summary>
@@ -205,12 +206,16 @@ public sealed class TrimmedCurve3D : BoundedCurve3D
 
     internal sealed override Vector3D EvalDN(double u, int n) => _basisCurve.EvalDN(u, n);
 
+    /// <summary>The point at the second trim.</summary>
     public sealed override Point3D EndPoint => _basisCurve.Value(_uTrim2);
 
+    /// <summary>The first trim's parameter on the basis curve.</summary>
     public sealed override double FirstParameter => _uTrim1;
 
+    /// <summary>The second trim's parameter on the basis curve.</summary>
     public sealed override double LastParameter => _uTrim2;
 
+    /// <summary>The point at the first trim.</summary>
     public sealed override Point3D StartPoint => _basisCurve.Value(_uTrim1);
 
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>

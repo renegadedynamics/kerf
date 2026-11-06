@@ -133,46 +133,46 @@ dotnet_diagnostic.IDE1006.severity = none
 # left as they were because the .NET name was taken in the same body (thePoint beside a local point; decision 15304),
 # then type parameters (TheCurve), fields whose name was taken, local functions and constants. Each later unit that
 # touches a folder renames them and removes it here.
-[kernel/src/Kerf.Kernel.DataExchange/{RW3mf/**,RWGltf/**,RWHeaderSection/**,RWMesh/**,RWStepAP214/**,RWStepBasic/**,RWStepGeom/**,RWStepShape/**,RWStepVisual/**,RWStl/**,Resource/**,STEPCAFControl/**}]
+[kernel/src/Kerf.Kernel.DataExchange/{RWStepBasic/**,RWStepGeom/**,STEPCAFControl/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
-[kernel/src/Kerf.Kernel.DataExchange/{STEPConstruct/**,STEPControl/**,STEPSelections/**,StepFile/**,StepToTopoDS/**,TopoDSToStep/**,XdeDoc/**}]
+[kernel/src/Kerf.Kernel.DataExchange/{STEPConstruct/**,STEPControl/**,STEPSelections/**,StepToTopoDS/**,TopoDSToStep/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
-[kernel/src/Kerf.Kernel.Foundation/{BSplCLib/**,BSplSLib/**,BVH/**,Bnd/**,CSLib/**,Convert/**,ElSLib/**,MathInteg/**,MathOpt/**,MathPoly/**,MathRoot/**,MathSys/**}]
+[kernel/src/Kerf.Kernel.Foundation/{BSplCLib/**,BSplSLib/**,Bnd/**,Convert/**,ElSLib/**,MathInteg/**,MathOpt/**,MathRoot/**,MathSys/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
-[kernel/src/Kerf.Kernel.Foundation/{MathUtils/**,PLib/**,Poly/**,Quantity/**,Standard/**,gp/**,math/**}]
+[kernel/src/Kerf.Kernel.Foundation/{MathUtils/**,PLib/**,Poly/**,Standard/**,gp/**,math/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
-[kernel/src/Kerf.Kernel.ModelingAlgorithms/{AppBlend/**,ApproxInt/**,BOPAlgo/**,BOPTools/**,BRepAlgo/**,BRepApprox/**,BRepBlend/**,BRepBuilderAPI/**,BRepCheck/**,BRepClass3d/**,BRepExtrema/**}]
+[kernel/src/Kerf.Kernel.ModelingAlgorithms/{AppBlend/**,ApproxInt/**,BOPAlgo/**,BOPTools/**,BRepAlgo/**,BRepBlend/**,BRepBuilderAPI/**,BRepCheck/**,BRepClass3d/**,BRepExtrema/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
 [kernel/src/Kerf.Kernel.ModelingAlgorithms/{BRepFeat/**,BRepFill/**,BRepFilletAPI/**,BRepGProp/**,BRepLib/**,BRepMesh/**,BRepOffset/**,BRepOffsetAPI/**,BRepPrimAPI/**,BRepSweep/**,BRepTopAdaptor/**,BiTgte/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
-[kernel/src/Kerf.Kernel.ModelingAlgorithms/{Bisector/**,BlendFunc/**,ChFi2d/**,ChFi3d/**,ChFiDS/**,ChFiKPart/**,Contap/**,Draft/**,FairCurve/**,FilletSurf/**,GccAna/**,Geom2dAPI/**}]
+[kernel/src/Kerf.Kernel.ModelingAlgorithms/{BlendFunc/**,ChFi2d/**,ChFi3d/**,ChFiDS/**,ChFiKPart/**,Contap/**,Draft/**,FairCurve/**,FilletSurf/**,GccAna/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
-[kernel/src/Kerf.Kernel.ModelingAlgorithms/{Geom2dGcc/**,Geom2dHatch/**,Geom2dInt/**,GeomAPI/**,GeomFill/**,GeomInt/**,GeomPlate/**,HLRAlgo/**,HLRBRep/**,HLRTopoBRep/**,IntCurve/**,IntCurveSurface/**}]
+[kernel/src/Kerf.Kernel.ModelingAlgorithms/{Geom2dGcc/**,Geom2dHatch/**,GeomFill/**,GeomInt/**,GeomPlate/**,HLRBRep/**,HLRTopoBRep/**,IntCurve/**,IntCurveSurface/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
-[kernel/src/Kerf.Kernel.ModelingAlgorithms/{IntImp/**,IntImpParGen/**,IntPatch/**,IntPolyh/**,IntRes2d/**,IntStart/**,IntSurf/**,IntTools/**,IntWalk/**,Intf/**,Intrv/**,Law/**}]
+[kernel/src/Kerf.Kernel.ModelingAlgorithms/{IntImp/**,IntImpParGen/**,IntPatch/**,IntPolyh/**,IntStart/**,IntSurf/**,IntTools/**,IntWalk/**,Intf/**,Law/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
-[kernel/src/Kerf.Kernel.ModelingAlgorithms/{LocOpe/**,MAT2d/**,Plate/**,ShapeAnalysis/**,ShapeBuild/**,ShapeConstruct/**,ShapeCustom/**,ShapeExtend/**,ShapeFix/**,ShapeProcess/**,ShapeUpgrade/**}]
+[kernel/src/Kerf.Kernel.ModelingAlgorithms/{LocOpe/**,Plate/**,ShapeAnalysis/**,ShapeBuild/**,ShapeConstruct/**,ShapeCustom/**,ShapeExtend/**,ShapeFix/**,ShapeProcess/**,ShapeUpgrade/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
-[kernel/src/Kerf.Kernel.ModelingAlgorithms/{TopClass/**,TopOpeBRepBuild/**,TopOpeBRepDS/**,TopOpeBRepTool/**,TopTrans/**}]
+[kernel/src/Kerf.Kernel.ModelingAlgorithms/{TopClass/**,TopOpeBRepBuild/**,TopOpeBRepDS/**,TopOpeBRepTool/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
-[kernel/src/Kerf.Kernel.ModelingData/{Adaptor3d/**,AdvApprox/**,AppCont/**,AppDef/**,AppParCurves/**,Approx/**,BRep/**,BRepAdaptor/**,BRepLProp/**,BRepTools/**,BinTools/**,BndLib/**}]
+[kernel/src/Kerf.Kernel.ModelingData/{AdvApprox/**,AppDef/**,AppParCurves/**,Approx/**,BRep/**,BRepAdaptor/**,BRepLProp/**,BRepTools/**,BinTools/**,BndLib/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
-[kernel/src/Kerf.Kernel.ModelingData/{CPnts/**,Extrema/**,ExtremaPC/**,FEmTool/**,GC/**,GProp/**,Geom/**,Geom2d/**,Geom2dAdaptor/**,Geom2dConvert/**,GeomAdaptor/**,GeomBndLib/**}]
+[kernel/src/Kerf.Kernel.ModelingData/{Extrema/**,FEmTool/**,GC/**,GProp/**,Geom/**,Geom2d/**,Geom2dAdaptor/**,Geom2dConvert/**,GeomAdaptor/**,GeomBndLib/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
-[kernel/src/Kerf.Kernel.ModelingData/{GeomConvert/**,GeomGridEval/**,GeomLProp/**,GeomLib/**,GeomProjLib/**,GeomTools/**,Hermit/**,IntAna/**,IntAna2d/**,LProp/**,ProjLib/**,TopTools/**}]
+[kernel/src/Kerf.Kernel.ModelingData/{GeomConvert/**,GeomGridEval/**,GeomLib/**,GeomTools/**,Hermit/**,IntAna/**,IntAna2d/**,ProjLib/**,TopTools/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
 [kernel/src/Kerf.Kernel.ModelingData/gce/**]

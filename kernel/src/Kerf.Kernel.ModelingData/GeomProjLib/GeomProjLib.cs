@@ -195,13 +195,13 @@ internal static class GeomProjLib
     public static Curve3D? Project(Curve3D c, Surface s)
     {
         CurveAdaptor ac = new(c);
-        SurfaceAdaptor AS = new(s);
+        SurfaceAdaptor surfaceAdaptor = new(s);
 
         Curve3D? gc = null;
 
-        if (AS.GetType() == Plane)
+        if (surfaceAdaptor.GetType() == Plane)
         {
-            ProjectOnPlane proj = new(AS.Plane().Position);
+            ProjectOnPlane proj = new(surfaceAdaptor.Plane().Position);
             // OCCT copies AC into a handle: AC itself is used.
             CurveAdaptor hc = ac;
             proj.Load(hc, global::Kerf.Engine.Foundation.Precision.PApproximation());
@@ -251,7 +251,7 @@ internal static class GeomProjLib
         else
         {
             // OCCT copies AS and AC into handles: they are used themselves.
-            SurfaceAdaptor hs = AS;
+            SurfaceAdaptor hs = surfaceAdaptor;
             CurveAdaptor hc = ac;
             //    double Tol  = Precision::Approximation();
             //    double TolU = Precision::PApproximation();

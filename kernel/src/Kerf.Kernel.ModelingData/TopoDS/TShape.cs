@@ -240,6 +240,25 @@ internal abstract class TShape : Transient
             return;
         }
 
+        // Nearly always every child is already frozen: a new wire of frozen edges, an edge of frozen vertices. The walk
+        // below would visit only this one, so it isn't set up
+        bool isWalkNeeded = false;
+        foreach (Shape aChild in _shapes)
+        {
+            TShape? aChildT = aChild.TShape();
+            if (aChildT is not null && !aChildT.IsFrozen)
+            {
+                isWalkNeeded = true;
+                break;
+            }
+        }
+        if (!isWalkNeeded)
+        {
+            FreezeRepresentations();
+            Freeze();
+            return;
+        }
+
         // Iterative, so deep nesting can't overflow the stack. The set guards against cycles, which OCCT's Free
         // flag prevents but Free(true) could still create.
         var stack = new List<FreezeFrame>();

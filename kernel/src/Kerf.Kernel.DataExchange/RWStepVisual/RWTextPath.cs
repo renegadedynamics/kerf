@@ -9,10 +9,10 @@ namespace Kerf.Engine.Exchange.Step.Visual.ReadWrite;
 
 internal static class RWTextPath
 {
-    public const string tpUp = ".UP.";
-    public const string tpRight = ".RIGHT.";
-    public const string tpDown = ".DOWN.";
-    public const string tpLeft = ".LEFT.";
+    public const string TpUp = ".UP.";
+    public const string TpRight = ".RIGHT.";
+    public const string TpDown = ".DOWN.";
+    public const string TpLeft = ".LEFT.";
 
     /// <summary>
     /// Convert StepVisual_TextPath to string
@@ -24,13 +24,13 @@ internal static class RWTextPath
         switch (sourceEnum)
         {
             case TextPath.TpUp:
-                return tpUp;
+                return TpUp;
             case TextPath.TpRight:
-                return tpRight;
+                return TpRight;
             case TextPath.TpDown:
-                return tpDown;
+                return TpDown;
             case TextPath.TpLeft:
-                return tpLeft;
+                return TpLeft;
         }
         return null;
     }
@@ -43,19 +43,19 @@ internal static class RWTextPath
     /// </summary>
     public static bool ConvertToEnum(string pathStr, ref TextPath resultEnum)
     {
-        if (pathStr == tpUp)
+        if (pathStr == TpUp)
         {
             resultEnum = TextPath.TpUp;
         }
-        else if (pathStr == tpRight)
+        else if (pathStr == TpRight)
         {
             resultEnum = TextPath.TpRight;
         }
-        else if (pathStr == tpDown)
+        else if (pathStr == TpDown)
         {
             resultEnum = TextPath.TpDown;
         }
-        else if (pathStr == tpLeft)
+        else if (pathStr == TpLeft)
         {
             resultEnum = TextPath.TpLeft;
         }

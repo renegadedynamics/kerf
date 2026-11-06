@@ -11,10 +11,10 @@ namespace Kerf.Geometry;
 
 /// <summary>
 /// A general transformation in 3D space: an affine map <c>P' = matrix * P + loc</c> whose vectorial part may be
-/// any 3x3 matrix (affinities, non-uniform scales, ...). When <see cref="Form"/> is not <c>gp_Other</c>, the
+/// any 3x3 matrix (affinities, non-uniform scales, ...). When <see cref="Form"/> is not <see cref="TransformForm.Other"/>, the
 /// transformation is a <see cref="Transform3D"/> and its scale factor is kept apart from the matrix.
 /// </summary>
-/// <remarks><c>new gp_GTrsf()</c> is the identity, as in OCCT; <c>default(gp_GTrsf)</c> is not valid.</remarks>
+/// <remarks><c>new GeneralTransform3D()</c> is the identity, as in OCCT; <c>default(GeneralTransform3D)</c> is not valid.</remarks>
 public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
 {
     private readonly Matrix3x3 _matrix;
@@ -40,6 +40,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         scale = _scale;
     }
 
+    /// <summary>The identity.</summary>
     public GeneralTransform3D()
     {
         _loc = new Xyz(0.0, 0.0, 0.0);
@@ -49,6 +50,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         _matrix = _matrix.WithScale(1.0);
     }
 
+    /// <summary>The same transformation as <paramref name="transform"/>.</summary>
     public GeneralTransform3D(in Transform3D transform)
     {
         _shape = transform.Form;
@@ -79,6 +81,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
 
     // Copies
 
+    /// <summary>The affinity that multiplies distances from <paramref name="axis"/> by <paramref name="ratio"/>, not a uniform scale. It replaces this value rather than composing with it.</summary>
     public readonly GeneralTransform3D WithAffinity(in Axis3D axis, double ratio)
     {
         Matrix3x3 matrix = _matrix;
@@ -99,6 +102,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         return new GeneralTransform3D(matrix, loc, shape, scale);
     }
 
+    /// <summary>The affinity that multiplies distances from the XY plane of <paramref name="frame"/> by <paramref name="ratio"/>, not a uniform scale. It replaces this value rather than composing with it.</summary>
     public readonly GeneralTransform3D WithAffinity(in Frame3D frame, double ratio)
     {
         Matrix3x3 matrix = _matrix;
@@ -148,6 +152,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         }
     }
 
+    /// <summary>A copy with this 3 by 3 part, keeping the translation. <see cref="Form"/> becomes <see cref="TransformForm.Other"/>.</summary>
     public readonly GeneralTransform3D WithVectorialPart(in Matrix3x3 matrix)
     {
         Matrix3x3 newMatrix = _matrix;
@@ -178,6 +183,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         return new GeneralTransform3D(_matrix, loc, shape, _scale);
     }
 
+    /// <summary>The same transformation as <paramref name="transform"/>. It replaces this value rather than composing with it.</summary>
     public readonly GeneralTransform3D WithTransform(in Transform3D transform) => new(transform);
 
     /// <summary>A copy whose form is recomputed from its matrix (OCCT's <c>SetForm</c>).</summary>
@@ -233,6 +239,8 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         return new GeneralTransform3D(_matrix, _loc, shape, _scale);
     }
 
+    /// <summary>The transformation from a 4 by 4 matrix given row by row: the last row is ignored. It replaces this value rather than composing with it.</summary>
+    /// <exception cref="ArgumentException"><paramref name="matrix"/> has fewer than 16 values.</exception>
     public readonly GeneralTransform3D WithMat4(ReadOnlySpan<double> matrix)
     {
         Matrix3x3 newMatrix = _matrix;
@@ -267,11 +275,12 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
     /// <summary>True when the vectorial part is singular, so the transformation cannot be inverted.</summary>
     public readonly bool IsSingular => _matrix.IsSingular;
 
+    /// <summary><see cref="TransformForm.Other"/> unless this is really a <see cref="Transform3D"/>, as the kind of that.</summary>
     public readonly TransformForm Form => _shape;
 
     internal readonly Xyz TranslationXyz() => _loc;
 
-    /// <summary>The 3x3 vectorial part, without the scale factor of a non-<c>gp_Other</c> form.</summary>
+    /// <summary>The 3x3 vectorial part, without the scale factor of a non-<see cref="TransformForm.Other"/> form.</summary>
     public readonly Matrix3x3 VectorialPart => _matrix;
 
     /// <summary>The coefficient at a row (1 to 3) and column (1 to 4) of the 3x4 matrix, scale included.</summary>
@@ -291,8 +300,12 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         return _scale * _matrix.Value(row, col);
     }
 
+    /// <summary>An element of the 3 by 4 matrix, scale included: rows run from 1 to 3 and columns from 1 to 4, the fourth being the translation.</summary>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="row"/> or <paramref name="col"/> is out of range.</exception>
     public readonly double this[int row, int col] => Value(row, col);
 
+    /// <summary>The transformation that undoes this one.</summary>
+    /// <exception cref="InvalidOperationException">The 3 by 3 part is singular.</exception>
     public readonly GeneralTransform3D Inverted()
     {
         Matrix3x3 matrix = _matrix;
@@ -367,6 +380,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         return new GeneralTransform3D(matrix, loc, shape, scale);
     }
 
+    /// <summary>This transformation composed with itself <paramref name="n"/> times: the identity for 0, and the inverse's powers for a negative <paramref name="n"/>.</summary>
     public readonly GeneralTransform3D Powered(int n)
     {
         Matrix3x3 matrix = _matrix;
@@ -460,7 +474,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
     }
 
     /// <summary>This transformation as a <see cref="Transform3D"/>.</summary>
-    /// <exception cref="ConstructionErrorException">The form is <c>gp_Other</c>.</exception>
+    /// <exception cref="InvalidOperationException">The form is <see cref="TransformForm.Other"/>.</exception>
     public readonly Transform3D ToTransform()
     {
         if (Form == Other)
@@ -500,18 +514,25 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         matrix[15] = 1.0;
     }
 
+    /// <summary>The composition: <paramref name="right"/> is applied first, then <paramref name="left"/>.</summary>
     public static GeneralTransform3D operator *(in GeneralTransform3D left, in GeneralTransform3D right) => left.Multiplied(right);
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(GeneralTransform3D other)
         => _matrix.Equals(other._matrix) && _loc.Equals(other._loc) && _shape == other._shape && _scale.Equals(other._scale);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="GeneralTransform3D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is GeneralTransform3D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => HashCode.Combine(_matrix, _loc, _shape, _scale);
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in GeneralTransform3D left, in GeneralTransform3D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in GeneralTransform3D left, in GeneralTransform3D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => $"GeneralTransform3D({_shape}, scale {_scale}, {_matrix}, {_loc})";
 }

@@ -262,8 +262,10 @@ public partial struct CompSolid : IEquatable<CompSolid>
     /// <summary>As <see cref="Shape.GetHashCode"/>: the same value as the TopoDS_Shape it converts to.</summary>
     public override readonly int GetHashCode() => Shape.HashCodeOf(_tShape, _location);
 
+    /// <summary>The same underlying shape, with the same location and orientation: <see cref="IsEqual"/>, not geometric equality.</summary>
     public static bool operator ==(in CompSolid left, in CompSolid right) => left.IsEqual(right);
 
+    /// <summary>The negation of <see cref="IsEqual"/>.</summary>
     public static bool operator !=(in CompSolid left, in CompSolid right) => !left.IsEqual(right);
 
     /// <summary>The type and orientation, or "NULL".</summary>

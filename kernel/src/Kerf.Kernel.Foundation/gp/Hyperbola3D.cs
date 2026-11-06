@@ -16,8 +16,8 @@ namespace Kerf.Geometry;
 /// <c>P(U) = O + MajRad * cosh(U) * XDir + MinRad * sinh(U) * YDir</c>.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Hypr()</c> is OCCT's indefinite hyperbola (major radius <see cref="Standard.RealLast"/>, minor radius
-/// <see cref="Standard.RealFirst"/>); <c>default(gp_Hypr)</c> is not valid.
+/// <c>new Hyperbola3D()</c> is OCCT's indefinite hyperbola (major radius <c>double.MaxValue</c>, minor radius
+/// <c>double.MinValue</c>); <c>default(Hyperbola3D)</c> is not valid.
 /// </remarks>
 public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
 {
@@ -25,6 +25,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     private readonly double _majorRadius;
     private readonly double _minorRadius;
 
+    /// <summary>An indefinite hyperbola, major radius <c>double.MaxValue</c> and minor radius <c>double.MinValue</c>: a value nothing else can build, so give it real ones.</summary>
     public Hyperbola3D()
     {
         _pos = new Frame3D();
@@ -32,7 +33,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         _minorRadius = RealFirst(); // OCCT: a negative minor radius, which no Set method or constructor accepts
     }
 
-    /// <exception cref="ConstructionErrorException">A radius is negative.</exception>
+    /// <exception cref="ArgumentException">A radius is negative.</exception>
     public Hyperbola3D(in Frame3D frame, double majorRadius, double minorRadius)
     {
         _pos = frame;
@@ -43,6 +44,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
 
     // Copies
 
+    /// <summary>A copy whose main axis is <paramref name="axis"/>. The old X direction is projected on to the new XY plane; if it is parallel to the axis, the old directions swap roles instead.</summary>
     public readonly Hyperbola3D WithAxis(in Axis3D axis)
     {
         Frame3D pos = _pos;
@@ -50,6 +52,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>A copy moved so that its centre is <paramref name="point"/>; its directions stay.</summary>
     public readonly Hyperbola3D WithLocation(in Point3D point)
     {
         Frame3D pos = _pos;
@@ -57,6 +60,8 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>A copy with this major radius.</summary>
+    /// <exception cref="ArgumentException"><paramref name="majorRadius"/> is negative.</exception>
     public readonly Hyperbola3D WithMajorRadius(double majorRadius)
     {
         double newMajorRadius = _majorRadius;
@@ -66,6 +71,8 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         return new Hyperbola3D(_pos, newMajorRadius, _minorRadius);
     }
 
+    /// <summary>A copy with this minor radius.</summary>
+    /// <exception cref="ArgumentException"><paramref name="minorRadius"/> is negative.</exception>
     public readonly Hyperbola3D WithMinorRadius(double minorRadius)
     {
         double newMinorRadius = _minorRadius;
@@ -75,6 +82,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         return new Hyperbola3D(_pos, _majorRadius, newMinorRadius);
     }
 
+    /// <summary>A copy positioned by <paramref name="frame"/>, keeping its size.</summary>
     public readonly Hyperbola3D WithPosition(in Frame3D frame)
     {
         Frame3D pos = _pos;
@@ -85,7 +93,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     // Queries
 
     /// <summary>The first asymptote, of direction <c>XDir + (Minor / Major) * YDir</c>.</summary>
-    /// <exception cref="ConstructionErrorException">The major radius is zero.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is zero.</exception>
     public readonly Axis3D Asymptote1
     {
         get
@@ -100,7 +108,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     }
 
     /// <summary>The second asymptote, of direction <c>XDir - (Minor / Major) * YDir</c>.</summary>
-    /// <exception cref="ConstructionErrorException">The major radius is zero.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is zero.</exception>
     public readonly Axis3D Asymptote2
     {
         get
@@ -131,7 +139,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     }
 
     /// <summary>The first directrix, on the positive side of the major axis, parallel to the minor axis.</summary>
-    /// <exception cref="DomainErrorException">The major radius is zero.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is zero.</exception>
     public readonly Axis3D Directrix1
     {
         get
@@ -145,7 +153,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     }
 
     /// <summary>The second directrix, symmetric to the first about the minor axis.</summary>
-    /// <exception cref="DomainErrorException">The major radius is zero.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is zero.</exception>
     public readonly Axis3D Directrix2
     {
         get
@@ -159,7 +167,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     }
 
     /// <summary>sqrt(Major^2 + Minor^2) / Major, greater than 1.</summary>
-    /// <exception cref="DomainErrorException">The major radius is zero.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is zero.</exception>
     public readonly double Eccentricity
     {
         get
@@ -199,8 +207,10 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     /// <summary>The centre of the hyperbola.</summary>
     public readonly Point3D Location => _pos.Location;
 
+    /// <summary>The distance from the centre to the apex of the branch, along the X axis.</summary>
     public readonly double MajorRadius => _majorRadius;
 
+    /// <summary>The semi-axis along the Y axis, which sets the slope of the asymptotes.</summary>
     public readonly double MinorRadius => _minorRadius;
 
     /// <summary>The other branch, on the negative side of the major axis.</summary>
@@ -212,7 +222,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     }
 
     /// <summary>The focal parameter, Minor^2 / Major.</summary>
-    /// <exception cref="DomainErrorException">The major radius is zero.</exception>
+    /// <exception cref="InvalidOperationException">The major radius is zero.</exception>
     public readonly double Parameter
     {
         get
@@ -222,6 +232,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         }
     }
 
+    /// <summary>The frame the curve lies in: its main direction is the plane's normal, and its X direction is parameter 0's.</summary>
     public readonly Frame3D Position => _pos;
 
     /// <summary>The major axis.</summary>
@@ -230,6 +241,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     /// <summary>The minor axis.</summary>
     public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
+    /// <summary>The central symmetry through <paramref name="point"/>.</summary>
     public readonly Hyperbola3D Mirrored(in Point3D point)
     {
         Frame3D pos = _pos;
@@ -237,6 +249,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>The half-turn about <paramref name="axis"/>.</summary>
     public readonly Hyperbola3D Mirrored(in Axis3D axis)
     {
         Frame3D pos = _pos;
@@ -244,6 +257,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>The reflection in the XY plane of <paramref name="frame"/>.</summary>
     public readonly Hyperbola3D Mirrored(in Frame3D frame)
     {
         Frame3D pos = _pos;
@@ -251,6 +265,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>Rotated about <paramref name="axis"/> by <paramref name="angle"/> radians, anticlockwise looking against the axis's direction.</summary>
     public readonly Hyperbola3D Rotated(in Axis3D axis, double angle)
     {
         Frame3D pos = _pos;
@@ -258,6 +273,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>Scaled about <paramref name="point"/> by <paramref name="factor"/>: both radii are multiplied by |factor|.</summary>
     public readonly Hyperbola3D Scaled(in Point3D point, double factor)
     {
         Frame3D pos = _pos;
@@ -279,6 +295,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         return new Hyperbola3D(pos, majorRadius, minorRadius);
     }
 
+    /// <summary>The image under <paramref name="transform"/>: both radii are multiplied by |ScaleFactor|.</summary>
     public readonly Hyperbola3D Transformed(in Transform3D transform)
     {
         Frame3D pos = _pos;
@@ -300,6 +317,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         return new Hyperbola3D(pos, majorRadius, minorRadius);
     }
 
+    /// <summary>Moved by <paramref name="vector"/>.</summary>
     public readonly Hyperbola3D Translated(in Vector3D vector)
     {
         Frame3D pos = _pos;
@@ -307,6 +325,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>Moved by the vector from <paramref name="point1"/> to <paramref name="point2"/>.</summary>
     public readonly Hyperbola3D Translated(in Point3D point1, in Point3D point2)
     {
         Frame3D pos = _pos;
@@ -314,16 +333,22 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(Hyperbola3D other)
         => _pos.Equals(other._pos) && _majorRadius.Equals(other._majorRadius) && _minorRadius.Equals(other._minorRadius);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="Hyperbola3D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is Hyperbola3D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => HashCode.Combine(_pos, _majorRadius, _minorRadius);
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in Hyperbola3D left, in Hyperbola3D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in Hyperbola3D left, in Hyperbola3D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => FormattableString.Invariant($"Hyperbola3D({_pos}, {_majorRadius:R}, {_minorRadius:R})");
 }

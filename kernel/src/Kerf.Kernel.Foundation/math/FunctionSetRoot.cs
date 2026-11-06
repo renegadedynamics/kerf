@@ -550,7 +550,6 @@ internal class FunctionSetRoot
     //           d'une frontiere
     //=====================================================================
     private static void SearchDirection(SearchWork work, Matrix df, math_Vector gh, math_Vector ff, math_IntegerVector constraints,
-                                        math_Vector x, // Le point d'init
                                         bool changeDirection, math_Vector invLengthMax, math_Vector direction,
                                         out double dy)
     {
@@ -806,7 +805,7 @@ internal class FunctionSetRoot
         _temp2 = work.Temp2;
         _temp3 = work.Temp3;
         _temp4 = work.Temp4;
-        Search(f, startingPoint, infBound, supBound, stopOnDivergent, ninc, neq);
+        Search(f, startingPoint, infBound, supBound, stopOnDivergent, ninc);
         Work.Return(work);
     }
 
@@ -858,7 +857,7 @@ internal class FunctionSetRoot
     }
 
     private void Search(FunctionSetWithDerivatives f, math_Vector startingPoint, math_Vector infBound, math_Vector supBound,
-                        bool stopOnDivergent, int ninc, int neq)
+                        bool stopOnDivergent, int ninc)
     {
 
         int i;
@@ -1176,7 +1175,7 @@ internal class FunctionSetRoot
                         // On essaye de progresser sur le bord
                         _solSave.Initialized(_sol);
                         oldF = f2;
-                        SearchDirection(_searchWork, _df, _gh, _ff, constraints, _sol, changeDirection, invLengthMax, _dh, out dy);
+                        SearchDirection(_searchWork, _df, _gh, _ff, constraints, changeDirection, invLengthMax, _dh, out dy);
                         if (dy < -eps)
                         { // Pour eviter des calculs inutiles et des /0...
                             if (changeDirection)

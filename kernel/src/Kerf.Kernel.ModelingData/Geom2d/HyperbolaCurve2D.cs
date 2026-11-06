@@ -103,10 +103,10 @@ public sealed class HyperbolaCurve2D : ConicCurve2D
     /// <summary>-U.</summary>
     public sealed override double ReversedParameter(double u) => (-u);
 
-    /// <summary>-Precision::Infinite().</summary>
+    /// <summary>Effectively minus infinity: -2e100, the curve having no start.</summary>
     public sealed override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
-    /// <summary>Precision::Infinite().</summary>
+    /// <summary>Effectively infinity: 2e100, the curve having no end.</summary>
     public sealed override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>False.</summary>

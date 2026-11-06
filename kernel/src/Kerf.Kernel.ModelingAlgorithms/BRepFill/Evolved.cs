@@ -330,7 +330,7 @@ internal sealed class Evolved
                 Evolved vevo = new();
                 if (cSide == 1)
                 {
-                    vevo.ElementaryPerform(workSpine, sp, locus, link, Join);
+                    vevo.ElementaryPerform(workSpine, sp, locus, link);
                 }
                 else if (cSide == 2)
                 {
@@ -376,7 +376,7 @@ internal sealed class Evolved
                     Evolved vevo = new();
                     if (cSide == 4)
                     {
-                        vevo.ElementaryPerform(face, sp, locus, link, Join);
+                        vevo.ElementaryPerform(face, sp, locus, link);
                     }
                     else if (cSide == 5)
                     {
@@ -400,7 +400,7 @@ internal sealed class Evolved
         // Gluing of regularites on parallel edges generate4d by vertices of the
         // cut of the profile.
         //-------------------------------------------------------------------------
-        cutVevo.ContinuityOnOffsetEdge(workProf);
+        cutVevo.ContinuityOnOffsetEdge();
 
         //-----------------------------------------------------------------
         // construction of the shape via the quilt, ie:
@@ -519,8 +519,7 @@ internal sealed class Evolved
         return false;
     }
 
-    private void ElementaryPerform(in Face sp, in Wire pr, BisectingLocus locus, LinkTopoBilo link,
-                                   global::Kerf.Geometry.JoinKind Join)
+    private void ElementaryPerform(in Face sp, in Wire pr, BisectingLocus locus, LinkTopoBilo link)
     {
         Shape localShape = sp.Oriented(Forward);
         _spine = ShapeCasts.Face(localShape);
@@ -2148,7 +2147,7 @@ internal sealed class Evolved
     }
 
     // Coding of regularities on edges parallel to CutVevo common to left and right parts of volevo.
-    private void ContinuityOnOffsetEdge(NCollection_List<Shape> workProf)
+    private void ContinuityOnOffsetEdge()
     {
         WireExplorer wExp = new();
         Vertex vf, vl, v;

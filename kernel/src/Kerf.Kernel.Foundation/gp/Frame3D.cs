@@ -6,7 +6,7 @@
 namespace Kerf.Geometry;
 
 /// <summary>A right-handed coordinate system in 3D space: a location, a main direction, and X and Y directions.</summary>
-/// <remarks><c>new gp_Ax2()</c> is the global system, as in OCCT; <c>default(gp_Ax2)</c> is not valid.</remarks>
+/// <remarks><c>new Frame3D()</c> is the global system, as in OCCT; <c>default(Frame3D)</c> is not valid.</remarks>
 public readonly partial struct Frame3D : IEquatable<Frame3D>
 {
     private readonly Axis3D _axis;
@@ -21,6 +21,7 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         _vxdir = vxdir;
     }
 
+    /// <summary>The absolute frame: the origin, with the X, Y and Z axes.</summary>
     public Frame3D()
     {
         _axis = new Axis3D();
@@ -108,6 +109,7 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
 
     // Copies
 
+    /// <summary>A copy whose main axis is <paramref name="axis"/>. The old X direction is projected on to the new XY plane; if it is parallel to the axis, the old directions swap roles instead.</summary>
     public readonly Frame3D WithAxis(in Axis3D axis)
     {
         Axis3D newAxis = _axis;
@@ -137,6 +139,7 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         return new Frame3D(newAxis, vydir, vxdir);
     }
 
+    /// <summary>A copy with this main direction. The old X direction is projected on to the new XY plane; if it is parallel to <paramref name="direction"/>, the old directions swap roles instead.</summary>
     public readonly Frame3D WithDirection(in Direction3D direction)
     {
         Axis3D axis = _axis;
@@ -166,6 +169,7 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         return new Frame3D(axis, vydir, vxdir);
     }
 
+    /// <summary>A copy moved so that its origin is <paramref name="point"/>; its directions stay.</summary>
     public readonly Frame3D WithLocation(in Point3D point)
     {
         Axis3D axis = _axis;
@@ -173,6 +177,8 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         return new Frame3D(axis, _vydir, _vxdir);
     }
 
+    /// <summary>A copy whose X direction is <paramref name="xDirection"/> projected on to the XY plane; the Y direction is recomputed.</summary>
+    /// <exception cref="ArgumentException"><paramref name="xDirection"/> is parallel to the main direction.</exception>
     public readonly Frame3D WithXDirection(in Direction3D xDirection)
     {
         Direction3D vydir = _vydir;
@@ -182,6 +188,8 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         return new Frame3D(_axis, vydir, vxdir);
     }
 
+    /// <summary>A copy whose Y direction is <paramref name="yDirection"/> projected on to the XY plane; the X direction is recomputed.</summary>
+    /// <exception cref="ArgumentException"><paramref name="yDirection"/> is parallel to the main direction.</exception>
     public readonly Frame3D WithYDirection(in Direction3D yDirection)
     {
         Direction3D vydir = _vydir;
@@ -193,18 +201,25 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
 
     // Queries
 
+    /// <summary>The angle between the main directions, in [0, PI] radians, with no sign.</summary>
     public readonly double AngleTo(in Frame3D other) => _axis.AngleTo(other._axis);
 
+    /// <summary>The main axis: the location and the main direction.</summary>
     public readonly Axis3D Axis => _axis;
 
+    /// <summary>The main direction, normal to the XY plane.</summary>
     public readonly Direction3D Direction => _axis.Direction;
 
+    /// <summary>The origin.</summary>
     public readonly Point3D Location => _axis.Location;
 
+    /// <summary>The X direction, a unit vector.</summary>
     public readonly Direction3D XDirection => _vxdir;
 
+    /// <summary>The Y direction: the main direction cross the X direction.</summary>
     public readonly Direction3D YDirection => _vydir;
 
+    /// <summary>True when the main directions are parallel within <paramref name="angularTolerance"/> radians and the other's location is within <paramref name="linearTolerance"/> of this XY plane.</summary>
     public readonly bool IsCoplanar(in Frame3D other, double linearTolerance, double angularTolerance)
     {
         Direction3D dd = _axis.Direction;
@@ -219,6 +234,7 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         return d1 <= linearTolerance && _axis.IsParallel(other._axis, angularTolerance);
     }
 
+    /// <summary>True when <paramref name="axis"/> is normal to the main direction within <paramref name="angularTolerance"/> radians and its location is within <paramref name="linearTolerance"/> of this XY plane.</summary>
     public readonly bool IsCoplanar(in Axis3D axis, double linearTolerance, double angularTolerance)
     {
         Direction3D dd = _axis.Direction;
@@ -233,6 +249,7 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         return d1 <= linearTolerance && _axis.IsNormal(axis, angularTolerance);
     }
 
+    /// <summary>Moved through <paramref name="point"/>, with the X and Y directions reversed and the main direction kept, so it stays right-handed.</summary>
     public readonly Frame3D Mirrored(in Point3D point)
     {
         Axis3D axis = _axis;
@@ -246,6 +263,7 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         return new Frame3D(axis, vydir, vxdir);
     }
 
+    /// <summary>The half-turn about <paramref name="axis"/>: the X and Y directions are turned and the main direction recomputed.</summary>
     public readonly Frame3D Mirrored(in Axis3D axis)
     {
         Axis3D newAxis = _axis;
@@ -260,6 +278,7 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         return new Frame3D(newAxis, vydir, vxdir);
     }
 
+    /// <summary>The reflection in the XY plane of <paramref name="frame"/>: the X and Y directions are reflected and the main direction recomputed, so it stays right-handed.</summary>
     public readonly Frame3D Mirrored(in Frame3D frame)
     {
         Axis3D axis = _axis;
@@ -274,6 +293,7 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         return new Frame3D(axis, vydir, vxdir);
     }
 
+    /// <summary>Rotated about <paramref name="axis"/> by <paramref name="angle"/> radians, anticlockwise looking against the axis's direction.</summary>
     public readonly Frame3D Rotated(in Axis3D axis, double angle)
     {
         Axis3D newAxis = _axis;
@@ -288,6 +308,7 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         return new Frame3D(newAxis, vydir, vxdir);
     }
 
+    /// <summary>The location scaled about <paramref name="point"/> by <paramref name="factor"/>. A negative factor reverses the X and Y directions, keeping the main one and the handedness.</summary>
     public readonly Frame3D Scaled(in Point3D point, double factor)
     {
         Axis3D axis = _axis;
@@ -304,6 +325,7 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         return new Frame3D(axis, vydir, vxdir);
     }
 
+    /// <summary>The image under <paramref name="transform"/>: the X and Y directions are transformed and the main direction recomputed, so it stays right-handed.</summary>
     public readonly Frame3D Transformed(in Transform3D transform)
     {
         Axis3D axis = _axis;
@@ -318,6 +340,7 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         return new Frame3D(axis, vydir, vxdir);
     }
 
+    /// <summary>Moved by <paramref name="vector"/>.</summary>
     public readonly Frame3D Translated(in Vector3D vector)
     {
         Axis3D axis = _axis;
@@ -325,6 +348,7 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         return new Frame3D(axis, _vydir, _vxdir);
     }
 
+    /// <summary>Moved by the vector from <paramref name="point1"/> to <paramref name="point2"/>.</summary>
     public readonly Frame3D Translated(in Point3D point1, in Point3D point2)
     {
         Axis3D axis = _axis;
@@ -409,15 +433,21 @@ public readonly partial struct Frame3D : IEquatable<Frame3D>
         }
     }
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(Frame3D other) => _axis.Equals(other._axis) && _vxdir.Equals(other._vxdir) && _vydir.Equals(other._vydir);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="Frame3D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is Frame3D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => HashCode.Combine(_axis, _vxdir, _vydir);
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in Frame3D left, in Frame3D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in Frame3D left, in Frame3D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => $"Frame3D({_axis.Location}, {_axis.Direction}, {_vxdir})";
 }

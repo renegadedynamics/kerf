@@ -9,8 +9,8 @@ namespace Kerf.Engine.Exchange.Step.Visual.ReadWrite;
 
 internal static class RWCentralOrParallel
 {
-    public const string copCentral = ".CENTRAL.";
-    public const string copParallel = ".PARALLEL.";
+    public const string CopCentral = ".CENTRAL.";
+    public const string CopParallel = ".PARALLEL.";
 
     /// <summary>
     /// Convert StepVisual_CentralOrParallel to string
@@ -22,9 +22,9 @@ internal static class RWCentralOrParallel
         switch (sourceEnum)
         {
             case CentralOrParallel.CopCentral:
-                return copCentral;
+                return CopCentral;
             case CentralOrParallel.CopParallel:
-                return copParallel;
+                return CopParallel;
         }
         return null;
     }
@@ -37,11 +37,11 @@ internal static class RWCentralOrParallel
     /// </summary>
     public static bool ConvertToEnum(string centralOrParallelStr, ref CentralOrParallel resultEnum)
     {
-        if (centralOrParallelStr == copCentral)
+        if (centralOrParallelStr == CopCentral)
         {
             resultEnum = CentralOrParallel.CopCentral;
         }
-        else if (centralOrParallelStr == copParallel)
+        else if (centralOrParallelStr == CopParallel)
         {
             resultEnum = CentralOrParallel.CopParallel;
         }

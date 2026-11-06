@@ -66,13 +66,13 @@ internal class PointsToBSpline2D
         Init(points, parType, degMin, degMax, continuity, tol2D);
     }
 
-    /// <summary>Approximates <paramref name="points"/> at the parameters <paramref name="Params"/>.</summary>
-    public PointsToBSpline2D(NCollection_Array1<Point2D> points, NCollection_Array1<double> Params,
+    /// <summary>Approximates <paramref name="points"/> at the parameters <paramref name="parameters"/>.</summary>
+    public PointsToBSpline2D(NCollection_Array1<Point2D> points, NCollection_Array1<double> parameters,
                                      int degMin = 3, int degMax = 8, Continuity continuity = C2,
                                      double tol2D = 1.0e-3)
     {
         _isDone = false;
-        Init(points, Params, degMin, degMax, continuity, tol2D);
+        Init(points, parameters, degMin, degMax, continuity, tol2D);
     }
 
     /// <summary>
@@ -210,24 +210,24 @@ internal class PointsToBSpline2D
         Init(points, ChordLength, degMin, degMax, continuity, tol2D);
     }
 
-    /// <summary>Approximates <paramref name="points"/> at the parameters <paramref name="Params"/>.</summary>
-    public void Init(NCollection_Array1<Point2D> points, NCollection_Array1<double> Params, int degMin = 3,
+    /// <summary>Approximates <paramref name="points"/> at the parameters <paramref name="parameters"/>.</summary>
+    public void Init(NCollection_Array1<Point2D> points, NCollection_Array1<double> parameters, int degMin = 3,
                      int degMax = 8, Continuity continuity = C2, double tol2D = 1.0e-3)
     {
         _isDone = false;
-        if (Params.Length() != points.Length())
+        if (parameters.Length() != points.Length())
         {
             throw new OutOfRangeException("Geom2dAPI_PointsToBSpline::Init() - invalid input");
         }
 
         double tol3D = 0.0; // dummy argument for BSplineCompute.
-        int nbp = Params.Length();
+        int nbp = parameters.Length();
         math_Vector theParams = new(1, nbp);
         theParams[1] = 0.0;
         theParams[nbp] = 1.0;
 
-        double uf = Params[Params.Lower()];
-        double ul = Params[Params.Upper()] - uf;
+        double uf = parameters[parameters.Lower()];
+        double ul = parameters[parameters.Upper()] - uf;
         if (!HasMeaningfulSpan(ul))
         {
             return;
@@ -236,7 +236,7 @@ internal class PointsToBSpline2D
         for (int i = 2; i < nbp; i++)
         {
             // OCCT reads Params(i), right only for parameters indexed from 1
-            theParams[i] = (Params[i] - uf) / ul;
+            theParams[i] = (parameters[i] - uf) / ul;
         }
 
         BSplineCompute theComputer = new(degMin, degMax, tol3D, tol2D, 0, true, IsoParametric, true);

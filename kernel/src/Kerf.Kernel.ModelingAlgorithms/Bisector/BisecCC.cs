@@ -1573,12 +1573,12 @@ internal sealed class BisecCC : BisectorCurve
         return true;
     }
 
-    private static bool TestExtension(Curve2D c1, Curve2D c2, int Start_End)
+    private static bool TestExtension(Curve2D c1, Curve2D c2, int startEnd)
     {
         Point2D p1, p2;
         Vector2D t1, t2;
         bool test = false;
-        if (Start_End == 1)
+        if (startEnd == 1)
         {
             c1.D1(c1.FirstParameter, out p1, out t1);
         }

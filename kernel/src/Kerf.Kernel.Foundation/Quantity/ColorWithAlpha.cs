@@ -227,9 +227,9 @@ internal partial struct ColorWithAlpha : IEquatable<ColorWithAlpha>
             return false;
         }
 
-        const uint THE_HEX_COLOR_COMPONENT_BASE = 1u << HEX_BITS_PER_COMPONENT;
-        const uint THE_HEX_COLOR_COMPONENT_SHORT_BASE = 1u << HEX_BITS_PER_COMPONENT_SHORT;
-        uint colorComponentBase = isShort ? THE_HEX_COLOR_COMPONENT_SHORT_BASE : THE_HEX_COLOR_COMPONENT_BASE;
+        const uint hexColorComponentBase = 1u << HEX_BITS_PER_COMPONENT;
+        const uint hexColorComponentShortBase = 1u << HEX_BITS_PER_COMPONENT_SHORT;
+        uint colorComponentBase = isShort ? hexColorComponentShortBase : hexColorComponentBase;
         return ConvertIntegerToColorRGBA(hexColorInteger, colorComponentBase, hasAlphaComponent, ref color);
     }
 

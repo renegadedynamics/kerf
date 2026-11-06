@@ -2414,7 +2414,6 @@ internal sealed partial class IntConicConic
 
     private static void LineEllipseGeometricIntersection(in Line2D line,
                                                          in Ellipse2D ellipse,
-                                                         double tol,
                                                          double tolTang,
                                                          ref PeriodicInterval eInt1,
                                                          ref PeriodicInterval eInt2,
@@ -2620,7 +2619,7 @@ internal sealed partial class IntConicConic
         int nbsol = 0;
         PeriodicInterval eInt1 = new(), eInt2 = new();
 
-        LineEllipseGeometricIntersection(l, e, tolConf, tol, ref eInt1, ref eInt2, out nbsol);
+        LineEllipseGeometricIntersection(l, e, tol, ref eInt1, ref eInt2, out nbsol);
         _done = true;
         if (nbsol == 0)
         {

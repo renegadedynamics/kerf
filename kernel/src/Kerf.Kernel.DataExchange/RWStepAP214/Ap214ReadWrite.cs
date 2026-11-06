@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Ap214.ReadWrite;
 internal static class Ap214ReadWrite
 {
     // OCCT's flag THE_RWStepAP214_init: the whole initialisation done once per process (decisions 1182, 1215)
-    private static readonly Lazy<bool> S_init = new(DoInit);
+    private static readonly Lazy<bool> Initialisation = new(DoInit);
 
     /// <summary>
     /// Enforces the initialisation of the libraries: the header section's, then StepAP214's protocol with its general
@@ -22,7 +22,7 @@ internal static class Ap214ReadWrite
     /// </summary>
     public static void Init()
     {
-        _ = S_init.Value;
+        _ = Initialisation.Value;
     }
 
     private static bool DoInit()
