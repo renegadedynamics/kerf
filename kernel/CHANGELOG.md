@@ -29,6 +29,7 @@ version may break the API.
 - **`MeshOptions.ControlAllSurfaces`,** off by default: also checks surface deflection on elementary surfaces, for long fillets that otherwise stray from it.
 - **StepTidy:** `StepWriteOptions.CleanDuplicates` merges exactly equal entities when writing STEP, 17.9% smaller over the
   dataset's files. Off by default.
+- **Joining edges on part of a Bezier curve:** the joined curve now follows that part. OCCT trimmed it twice, so it came back shorter and on the wrong parameters.
 - **Faster optimal boxes:** a torus patch's is worked out rather than searched for, and `AddOptimal` skips faces that can't enlarge the box.
   The results differ by 1e-7 at most.
 
