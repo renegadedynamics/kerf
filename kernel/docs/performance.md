@@ -681,6 +681,7 @@ So 11A's "the collector, 16.5% of thread time" and 11E's "35% of its samples are
 - **The write session's graph and check** after a transfer are about 13% of a plain `Writer`'s export. The public path, `CafWriter`, uses the graph afterwards, so it stays.
 - **`Iterator` and `Explorer`** are 8.7% of Bento's bytes and 6.5% of healing's. Each explorer has an iterator object for each level, where OCCT's are inline. Making them one array of structs is the next allocation step. It wasn't done, as `Iterator` is used everywhere.
 - **`CurveOnPlane` for circles, `FClass2d`, `WireExplorer`:** not looked at further.
+- **The full corpus at this head, on a loaded machine:** every status is as before but for time and memory checks. `bug24639` (parallel must beat serial by 20%) and `bug83` (a section under 0.1 s) now fail their time limits, and `bug24639` passes alone or 12 at once; the memory trends `bug31075` and `bug7287_*` flipped to OK. They need the clean run to confirm, and they're for 11P.
 - **Corpus times are noisy under load:** the runs differ by up to a factor of two on single cases, either way, so only the large changes above are claims.
 
 ## StepTidy (unit 11N)
