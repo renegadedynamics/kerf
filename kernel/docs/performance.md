@@ -845,7 +845,7 @@ So the rig's 1.23× and 1.47× are near the limit for these inputs. A typical Bo
 ## StepTidy (unit 11N)
 
 *5 November 2026, `Kerf.Kernel.Benchmarks -- step-tidy` over the 289 files `-- healing` exports, written by the plain STEP
-writer with `CleanDuplicates` off and on. Whether it's on by default is the owner's decision (decision 1667).*
+writer with `CleanDuplicates` off and on. It stays off by default (decision 1790).*
 
 | | Off | On | Change |
 |---|---:|---:|---:|
@@ -855,7 +855,7 @@ writer with `CleanDuplicates` off and on. Whether it's on by default is the owne
 - **Per file:** the median reduction is 18.9%, and the largest 55.6% (`pr1db.stp`, 177,965 to 79,010 bytes). Some small files
   have nothing to merge: 0.0%.
 - **Read back:** all 289 files, both ways. Volumes (to a part in 10^9) and face counts match on every file, and none failed.
-- **Writing time, on a quiet machine (the night of 5 November):** 1,708 ms off and 2,263 ms on, 32% slower. The same quiet run read 49.05 to 40.26 MB and 2,939 to 3,263 MB allocated, which is 17.9% and 11%, as above. That cost is the case for leaving the option off by default; the owner's decision (decision 1667) is still open.
+- **Writing time, on a quiet machine (the night of 5 November):** 1,708 ms off and 2,263 ms on, 32% slower. The same quiet run read 49.05 to 40.26 MB and 2,939 to 3,263 MB allocated, which is 17.9% and 11%, as above. So it stays off by default (decision 1790).
 - **Merging within OCCT's 1e-12 isn't worth it:** 20.7% where exact merging gives 17.9%, and one file read back differently
   (decision 1665).
 
