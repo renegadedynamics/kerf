@@ -9,9 +9,6 @@ using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Fillets.Blend.BlendStatus;
-using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Fillets.Blend;
@@ -30,7 +27,6 @@ internal class CSWalking
     private bool _done;
     private Line? _line;
     private readonly SurfaceAdaptorBase _surf;
-    private readonly CurveAdaptorBase _curv;
     private TopolTool _domain;
     private double _tolpoint3d;
     private double _tolgui;
@@ -48,7 +44,6 @@ internal class CSWalking
     {
         _done = false;
         _surf = surf;
-        _curv = curv;
         _domain = domain;
     }
 
