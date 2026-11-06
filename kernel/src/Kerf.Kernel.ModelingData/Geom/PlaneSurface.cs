@@ -82,6 +82,7 @@ public sealed class PlaneSurface : ElementarySurface
     /// <summary>-V.</summary>
     public sealed override double VReversedParameter(double v) => (-v);
 
+    /// <inheritdoc/>
     protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
@@ -201,6 +202,7 @@ public sealed class PlaneSurface : ElementarySurface
         return new GeneralTransform2D(t2);
     }
 
+    /// <summary>A new surface with the same values, which can be changed independently of this one.</summary>
     public sealed override Geometry3D Copy()
     {
         PlaneSurface pl = new PlaneSurface(_pos);

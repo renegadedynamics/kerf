@@ -71,10 +71,13 @@ public sealed class LineCurve3D : Curve3D
     /// <summary>The axis of the line.</summary>
     public Axis3D Position => _pos;
 
+    /// <summary>Always false.</summary>
     public sealed override bool IsClosed => false;
 
+    /// <summary>Always false.</summary>
     public sealed override bool IsPeriodic => false;
 
+    /// <summary><c>CN</c>: a line is infinitely differentiable.</summary>
     public sealed override Continuity Continuity => CN;
 
     /// <summary>-Precision::Infinite().</summary>
@@ -153,6 +156,7 @@ public sealed class LineCurve3D : Curve3D
 
     // Non-mutating twins of the Set methods (Kerf)
 
+    /// <summary>A copy with this direction, through the same point; this curve is unchanged.</summary>
     public LineCurve3D WithDirection(in Direction3D direction)
     {
         LineCurve3D copy = (LineCurve3D)Copy();
@@ -160,6 +164,7 @@ public sealed class LineCurve3D : Curve3D
         return copy;
     }
 
+    /// <summary>A copy along <paramref name="line"/>; this curve is unchanged.</summary>
     public LineCurve3D WithLine(in Line3D line)
     {
         LineCurve3D copy = (LineCurve3D)Copy();
@@ -167,6 +172,7 @@ public sealed class LineCurve3D : Curve3D
         return copy;
     }
 
+    /// <summary>A copy through <paramref name="point"/> with the same direction; this curve is unchanged.</summary>
     public LineCurve3D WithLocation(in Point3D point)
     {
         LineCurve3D copy = (LineCurve3D)Copy();
@@ -174,6 +180,7 @@ public sealed class LineCurve3D : Curve3D
         return copy;
     }
 
+    /// <summary>A copy along <paramref name="axis"/>; this curve is unchanged.</summary>
     public LineCurve3D WithPosition(in Axis3D axis)
     {
         LineCurve3D copy = (LineCurve3D)Copy();

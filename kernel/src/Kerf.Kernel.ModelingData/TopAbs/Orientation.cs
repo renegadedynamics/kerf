@@ -10,8 +10,12 @@ namespace Kerf.Topology;
 /// </summary>
 public enum Orientation
 {
+    /// <summary>The same sense as the underlying geometry.</summary>
     Forward,
+    /// <summary>The opposite sense to the underlying geometry.</summary>
     Reversed,
+    /// <summary>Inside the region, with material on both sides, such as an edge embedded in a face.</summary>
     Internal,
+    /// <summary>Outside the region, with no material on either side.</summary>
     External,
 }

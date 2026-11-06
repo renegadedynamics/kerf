@@ -44,8 +44,10 @@ public sealed class CircleCurve3D : ConicCurve3D
         return c;
     }
 
+    /// <summary>Always true.</summary>
     public sealed override bool IsClosed => true;
 
+    /// <summary>Always true, with a period of 2 PI.</summary>
     public sealed override bool IsPeriodic => true;
 
     /// <summary>2 * PI - U.</summary>
@@ -54,8 +56,10 @@ public sealed class CircleCurve3D : ConicCurve3D
     /// <summary>0.</summary>
     public sealed override double Eccentricity => 0.0;
 
+    /// <summary>Always 0.</summary>
     public sealed override double FirstParameter => 0.0;
 
+    /// <summary>Always 2 PI.</summary>
     public sealed override double LastParameter => 2.0 * M_PI;
 
     /// <summary>The non-persistent circle equal to this one.</summary>
@@ -79,6 +83,7 @@ public sealed class CircleCurve3D : ConicCurve3D
         _radius = r;
     }
 
+    /// <summary>The radius.</summary>
     public double Radius => _radius;
 
     internal sealed override Point3D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.CircleValue(u, _pos, _radius);
@@ -124,6 +129,7 @@ public sealed class CircleCurve3D : ConicCurve3D
 
     // Non-mutating twins of the Set methods (Kerf)
 
+    /// <summary>A copy that takes its placement and radius from <paramref name="circle"/>; this curve is unchanged.</summary>
     public CircleCurve3D WithCircle(in Circle3D circle)
     {
         CircleCurve3D copy = (CircleCurve3D)Copy();
@@ -131,6 +137,8 @@ public sealed class CircleCurve3D : ConicCurve3D
         return copy;
     }
 
+    /// <summary>A copy with this radius; this curve is unchanged.</summary>
+    /// <exception cref="ArgumentException"><paramref name="r"/> is negative.</exception>
     public CircleCurve3D WithRadius(double r)
     {
         CircleCurve3D copy = (CircleCurve3D)Copy();
