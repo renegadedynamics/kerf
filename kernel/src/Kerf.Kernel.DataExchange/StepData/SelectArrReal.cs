@@ -5,8 +5,6 @@
 
 #nullable disable warnings
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Step.Data;
 
 /// <summary>A named select member holding an array of reals.</summary>

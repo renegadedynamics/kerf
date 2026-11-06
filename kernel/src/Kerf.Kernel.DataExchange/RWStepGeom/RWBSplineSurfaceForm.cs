@@ -5,9 +5,6 @@
 
 #nullable disable warnings
 
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Step.Geometry.StepBSplineSurfaceForm;
-
 namespace Kerf.Engine.Exchange.Step.Geometry.ReadWrite;
 
 internal static class RWBSplineSurfaceForm

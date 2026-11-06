@@ -13,8 +13,6 @@ using Kerf.Engine.Exchange.Step.Visual;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Exchange.Step.Export;
 

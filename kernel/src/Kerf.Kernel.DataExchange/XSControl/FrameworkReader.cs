@@ -10,8 +10,6 @@ using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Framework.FrameworkCheckStatus;
 
 namespace Kerf.Engine.Exchange.Framework;
 

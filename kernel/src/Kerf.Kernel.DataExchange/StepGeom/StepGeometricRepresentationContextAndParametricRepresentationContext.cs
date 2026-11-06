@@ -8,8 +8,6 @@
 
 using Kerf.Engine.Exchange.Step.Representation;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
 internal class StepGeometricRepresentationContextAndParametricRepresentationContext : RepresentationContext

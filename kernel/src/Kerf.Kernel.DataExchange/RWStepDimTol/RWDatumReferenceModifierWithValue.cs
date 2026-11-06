@@ -9,9 +9,6 @@
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Step.Basic;
 using Kerf.Engine.Exchange.Step.Data;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Framework.ParamType;
-using static Kerf.Engine.Exchange.Step.Tolerances.DatumReferenceModifierType;
 
 namespace Kerf.Engine.Exchange.Step.Tolerances.ReadWrite;
 

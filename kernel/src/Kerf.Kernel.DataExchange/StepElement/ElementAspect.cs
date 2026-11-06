@@ -8,9 +8,6 @@
 
 using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Foundation;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Step.Elements.CurveEdge;
-using static Kerf.Engine.Exchange.Step.Elements.ElementVolume;
 
 namespace Kerf.Engine.Exchange.Step.Elements;
 

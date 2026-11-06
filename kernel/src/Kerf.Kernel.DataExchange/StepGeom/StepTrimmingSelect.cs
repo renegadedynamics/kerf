@@ -9,8 +9,6 @@
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Foundation;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Framework.ParamType;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 

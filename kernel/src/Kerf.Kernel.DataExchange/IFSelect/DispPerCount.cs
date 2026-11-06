@@ -7,8 +7,6 @@
 
 using Kerf.Engine.Exchange.Framework.Graph;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Framework.Selection;
 
 /// <summary>

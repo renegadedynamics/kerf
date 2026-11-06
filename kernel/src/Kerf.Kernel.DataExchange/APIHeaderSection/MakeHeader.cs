@@ -9,8 +9,6 @@ using Kerf.Engine.Exchange.Framework;
 
 using Kerf.Engine.Exchange.Step.Data;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Step.Header;
 
 /// <summary>This class allows to consult and prepare/edit data stored in a Step Model Header.</summary>

@@ -5,8 +5,6 @@
 
 #nullable disable warnings
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Framework.Monitoring;
 
 /// <summary>

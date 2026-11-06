@@ -8,7 +8,6 @@
 using Kerf.Engine.Exchange.Step.Geometry;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 

@@ -5,9 +5,6 @@
 
 #nullable disable warnings
 
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Step.Shapes.StepBooleanOperator;
-
 namespace Kerf.Engine.Exchange.Step.Shapes.ReadWrite;
 
 internal static class RWBooleanOperator

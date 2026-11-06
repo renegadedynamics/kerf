@@ -8,8 +8,6 @@
 
 using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Foundation;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Step.Fea.EnumeratedDegreeOfFreedom;
 
 namespace Kerf.Engine.Exchange.Step.Fea;
 

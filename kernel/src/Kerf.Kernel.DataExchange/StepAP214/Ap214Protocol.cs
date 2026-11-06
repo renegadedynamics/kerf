@@ -31,8 +31,6 @@ using Kerf.Engine.Exchange.Step.Shapes;
 using Kerf.Engine.Exchange.Step.Tolerances;
 
 using Kerf.Engine.Exchange.Step.Visual;
-
-using Kerf.Engine;
 using System.Collections.Frozen;
 
 namespace Kerf.Engine.Exchange.Step.Ap214;
