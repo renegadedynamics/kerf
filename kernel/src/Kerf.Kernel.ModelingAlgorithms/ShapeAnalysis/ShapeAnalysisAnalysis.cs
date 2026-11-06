@@ -79,6 +79,8 @@ internal static class ShapeAnalysisAnalysis
         int      i, nbc = 0;
         Point2D fuv = new Point2D(), luv, uv0 = new Point2D();
         double   totcross = 0;
+        // One sequence for all the edges, so its storage only grows once
+        NCollection_Sequence<Point2D> seqPnt = new NCollection_Sequence<Point2D>();
         for (i = 1; i <= sewd.EdgeCount; i++)
         {
             Edge   edge = sewd.Edge(i);
@@ -86,7 +88,7 @@ internal static class ShapeAnalysisAnalysis
             if (c2d is not null)
             {
                 nbc++;
-                NCollection_Sequence<Point2D> seqPnt = new NCollection_Sequence<Point2D>();
+                seqPnt.Clear();
                 CurveAnalysis.GetSamplePoints(c2d, f2d, l2d, seqPnt);
                 if (edge.Orientation == Reversed)
                 {
