@@ -1,4 +1,4 @@
-﻿using Kerf.Fillets;
+using Kerf.Fillets;
 using Kerf.Modeling;
 using Kerf.Topology;
 using static Kerf.Modeling.Operations;
@@ -205,6 +205,24 @@ public class FilletLimitTests
         var cylinder = new Cylinder(5, 20);
         var rim = cylinder.Edges().Where(e => Math.Abs(e.Center().Z - 10) < 1e-9 && e.GeomType == GeomType.Circle);
         Assert.InRange(cylinder.MaxFillet(rim), 4.9, 5);
+    }
+
+    [Fact]
+    public void A_result_that_differs_from_the_geometrys_answer_is_refused()
+    {
+        // A hole in the face being cut back: the cut would run into it, so the section isn't what's taken away. ChFi3d's failure stands
+        Part holed = (Part)(new Box(10, 20, 30) - new Pos(3, 0, 12) * new Rotation(90, 0, 0) * new Cylinder(1, 40));
+        var failed = Fillet(holed, At(holed, 5, 10, 0), 10);
+        Assert.True(failed.IsFailure);
+    }
+
+    [Fact]
+    public void A_slanted_end_stays_with_the_fillet_algorithm()
+    {
+        // A prism cut on the slant: the third face at the edge's end isn't square to it
+        Part cut = (Part)(new Box(10, 10, 40) - new Pos(0, 0, 30) * new Rotation(30, 0, 0) * new Box(40, 40, 20));
+        Edge longest = cut.Edges().OrderByDescending(e => e.Length).First();
+        Assert.True(Fillet(cut, longest, 10).IsFailure);
     }
 
     [Fact]
