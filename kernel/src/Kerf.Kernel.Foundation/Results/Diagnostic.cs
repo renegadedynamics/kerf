@@ -48,6 +48,11 @@ public readonly partial record struct DiagnosticCode
     /// <summary>A result that was never set (a default <see cref="Result{T}"/>): <c>result.default</c>.</summary>
     public static DiagnosticCode DefaultResult { get; } = new("result.default");
 
+    /// <summary>
+    /// What the operation made isn't valid: <c>result.invalid</c>. The failure may carry it (<see cref="Result{T}.TryGetInvalid"/>).
+    /// </summary>
+    public static DiagnosticCode InvalidResult { get; } = new("result.invalid");
+
     /// <summary>The code's text.</summary>
     public override string ToString() => Value ?? "";
 

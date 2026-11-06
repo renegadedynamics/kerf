@@ -22,17 +22,25 @@ namespace Kerf;
 /// through untouched. Reading <see cref="Value"/> of a failure is a programmer's error, as reading a null
 /// <see cref="Nullable{T}"/>'s is: it throws <see cref="InvalidOperationException"/> (unit 10M3).
 /// </para>
+/// <para>
+/// A failure may carry what the operation made when that isn't valid (<see cref="Invalid(T, Diagnostic, ImmutableArray{Diagnostic})"/>,
+/// <c>result.invalid</c>): no operation reports success for an invalid result, and a caller who wants to look at it asks
+/// for it with <see cref="TryGetInvalid"/>. It stays a failure in every other way: <see cref="Value"/> throws, and the
+/// combinators don't pass it on.
+/// </para>
 /// </remarks>
 public readonly struct Result<T>
 {
     private readonly T _value;
     private readonly ImmutableArray<Diagnostic> _diagnostics;
+    private readonly bool _carriesInvalid;
 
-    private Result(bool isSuccess, T value, ImmutableArray<Diagnostic> diagnostics)
+    private Result(bool isSuccess, T value, ImmutableArray<Diagnostic> diagnostics, bool carriesInvalid = false)
     {
         IsSuccess = isSuccess;
         _value = value;
         _diagnostics = diagnostics;
+        _carriesInvalid = carriesInvalid;
     }
 
     /// <summary>Whether the operation succeeded.</summary>
@@ -59,8 +67,18 @@ public readonly struct Result<T>
     /// <summary>The value, if the operation succeeded.</summary>
     public bool TryGetValue([MaybeNullWhen(false)] out T value)
     {
-        value = _value;
+        value = IsSuccess ? _value : default;
         return IsSuccess;
+    }
+
+    /// <summary>
+    /// What a failed operation made that isn't valid, if it kept it (<see cref="Invalid(T, Diagnostic, ImmutableArray{Diagnostic})"/>):
+    /// to look at, to draw or to repair, not to build on. <see cref="Error"/> says what's wrong with it.
+    /// </summary>
+    public bool TryGetInvalid([MaybeNullWhen(false)] out T invalid)
+    {
+        invalid = _carriesInvalid ? _value : default;
+        return _carriesInvalid;
     }
 
     /// <summary>The value, or <paramref name="fallback"/> if the operation failed.</summary>
@@ -131,6 +149,24 @@ public readonly struct Result<T>
     public static Result<T> Failure(ImmutableArray<Diagnostic> diagnostics) =>
         new(false, default!, Diagnostic.Check(diagnostics, success: false));
 
+    /// <summary>
+    /// A failure that carries what the operation made, which isn't valid, for <see cref="TryGetInvalid"/>, with any
+    /// warnings met before it.
+    /// </summary>
+    /// <exception cref="ArgumentException"><paramref name="error"/> isn't an error.</exception>
+    public static Result<T> Invalid(T invalid, Diagnostic error, ImmutableArray<Diagnostic> warnings = default)
+    {
+        ArgumentNullException.ThrowIfNull(error);
+        if (!error.IsError)
+            throw new ArgumentException($"A failure needs an error, not a {error.Severity}", nameof(error));
+        return new(false, invalid, [.. Diagnostic.Check(warnings, success: true), error], carriesInvalid: true);
+    }
+
+    /// <summary>A failure with several diagnostics, at least one of them an error, that carries what the operation made.</summary>
+    /// <exception cref="ArgumentException">None of <paramref name="diagnostics"/> is an error.</exception>
+    public static Result<T> Invalid(T invalid, ImmutableArray<Diagnostic> diagnostics) =>
+        new(false, invalid, Diagnostic.Check(diagnostics, success: false), carriesInvalid: true);
+
     /// <summary>A success.</summary>
     public static implicit operator Result<T>(T value) => new(true, value, []);
 
@@ -141,7 +177,7 @@ public readonly struct Result<T>
     internal static Result<T> Carry(ImmutableArray<Diagnostic> diagnostics) => new(false, default!, diagnostics);
 
     // This result with earlier warnings before its own diagnostics
-    private Result<T> After(ImmutableArray<Diagnostic> warnings) => new(IsSuccess, _value, [.. warnings, .. Diagnostics]);
+    private Result<T> After(ImmutableArray<Diagnostic> warnings) => new(IsSuccess, _value, [.. warnings, .. Diagnostics], _carriesInvalid);
 }
 
 /// <summary>
