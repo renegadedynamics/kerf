@@ -237,6 +237,8 @@ internal static class KeptMemory
             long tfaces = all.ByType.Where(t => t.Key is "BrepTFace").Sum(t => t.Value.Count);
             Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
                 $"{name,-22} {cells,5} | {all.Bytes / 1048576.0,9:F2} {noMesh / 1048576.0,8:F2} {alone / 1048576.0,8:F2} {noHistory.Bytes / 1048576.0,8:F2} |               {lastAdds / 1024.0,7:F1} {lastAlone / 1024.0,7:F1} {(lastAdds - lastHistoryAdds) / 1024.0,7:F1} |        {lastFaces,5} {faceSum,6} {tfaces,6} {100.0 * (1 - (double)tfaces / faceSum),6:F1}  (GC {gc:F2} MB; meshes {(all.Bytes - noMesh) / 1048576.0:F2} MB)"));
+            // A record names the inputs of its own step only, so what the last cell holds with it says whether a chain's steps stay alive through it
+            Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"  the last cell alone, with its record: {new HeapWalk().Add(models[^1], "model") / 1024.0:F1} KB, against the whole chain's {noMesh / 1024.0:F1} KB"));
             Print(all, 24);
             PrintSame(all, 10);
             GC.KeepAlive(models);

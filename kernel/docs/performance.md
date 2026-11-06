@@ -842,6 +842,116 @@ So the rig's 1.23× and 1.47× are near the limit for these inputs. A typical Bo
 
 - **A tree of pave blocks for each face rather than each pair of faces.** Expected gain: most of a tenth of `bug25232_9`'s Boolean, inferred from samples, and less on most others. Hits would come out of the tree in another order, so which of two equally close blocks is found could differ, unless hits are sorted, which is OCCT's order only by accident. A moderate change that gives up "identical", so I wouldn't, unless identical goes anyway for the mesher's question above.
 
+### The sixth slice: what stays in memory, and the peak
+
+*6 November 2026, on the same shared machine. Bytes kept are exact: they're each object's size from its method table, walked from the result, and the collector's own count agrees (below). Peaks and every time here are from a loaded machine, so a range is what it is worth. To repeat it: `Kerf.Kernel.Bento.Benchmarks -- kept`, `kept-types [name]`, `chain [cells]`, `step files... [same]`, `peak file [mesh]`, `statics file` and `digest files...`, and `Kerf.Kernel.Benchmarks -- step-phases file`.*
+
+Earlier slices counted bytes allocated in passing. A workbook is different: it keeps a shape and perhaps a mesh in every cell, for hours, so what limits it is what stays alive and the peak.
+
+#### What a kept result costs
+
+| Kept | Faces | Before: shape, KB | Now | Per face now | Mesh, KB | Per triangle |
+|---|---:|---:|---:|---:|---:|---:|
+| 3 prismatic solid | 7 | 16.2 | **11.4** | 1,663 B | 13.3 | 51 B |
+| 2 plate with hole | 7 | 28.6 | **22.3** | 3,265 B | 13.4 | 51 B |
+| 9 chamfer, fillet | 14 | 91.0 | **75.8** | 5,547 B | 19.4 | 57 B |
+| 29 bottle | 56 | 146.3 | **117.1** | 2,141 B | 282.5 | 30 B |
+| 31 nesting locations | 164 | 343.3 | **154.5** | 965 B | 58.3 | 210 B |
+| 32 for-loop | 44 | 93.6 | **52.1** | 1,214 B | 16.9 | 187 B |
+| 33 function, for-loop | 36 | 81.3 | **43.3** | 1,231 B | 13.9 | 197 B |
+| STEP `bug30790` (21 MB file, 2,086 B-spline surfaces) | 2,337 | 19,333 | **12,281** | 5,381 B | | |
+| STEP `bug32239` (14 MB) | 2,004 | 15,532 | **12,943** | 6,614 B | | |
+| STEP `tr9_r1001-ec` (7 MB) | 918 | 5,008 | **3,649** | 4,071 B | | |
+| STEP `bug33261` (4 MB) | 4,050 | 8,487 | **6,315** | 1,597 B | | |
+
+**What it's made of now,** `bug33261` and the bottle: topology 32% and 39% (`TShape`s, their child lists, `Shape`s), representations 24% and 37% (curves on surfaces, each with its 2D curve), geometry 41% and 23%, and placements, the rest, under 3% unless the shape is patterned (31% of "31 nesting locations"). In `bug30790` geometry is 71%, mostly poles: real data. A mesh is 26 to 57 bytes a triangle, tight floats and indices with nothing spare; with few triangles the small `FaceMesh` and `EdgeMesh` objects dominate, hence 210 B.
+
+**The books close.** The walk follows instance fields only, so if something else held on to a result, the collector's count would show more than the walk. `bug30790`: 12,281 KB walked, 13,027 KB by the collector on the first import and within 0.3% on later ones. Bento's examples agree within what the thread's sets grow by, and the gap shrinks with more copies (the bottle: 605 KB a copy with 16 copies, 479 KB with 64, against 429 KB walked).
+
+**Looked for, and not found (measured):**
+
+- **What only the operation needed:** no overlay, map, adaptor, context or cache of any kind is in what a result holds. The types kept are topology, representations, geometry, placements, the mesh's own, and the record.
+- **The validity check's results:** nothing keeps them. No type of unit 11R's is reachable from a kept result, and on success its report is dropped.
+- **Mesh data held twice:** it isn't. The mesher works in an overlay, so a kept shape holds no triangulation of its own, only (until now) an empty list for one.
+- **A STEP import's entity model:** gone after the transfer. Import and drop `bug30790` in a method of its own: **0.74 MB left** for good, tables made once. A later import leaves 2 to 55 KB. An early reading of 26 MB was this harness's own: an unoptimised method's stack slot holding the last result.
+- **A record holding a chain:** it doesn't. A record names the inputs of its own step, not their records: the last of 30 cells holds 146.7 KB with its record and 131.0 KB without, against 473.6 KB for the whole chain.
+
+**Chains of cells:** a chain of 30 features where each cell keeps its step.
+
+| Chain | Shapes held, before | Now | Without the records | Each alone would be | A cell adds | Faces shared with earlier cells | Meshes, if every cell's is kept |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A hole in a plate | 0.64 MB | **0.46** | 0.29 | 2.16 | 19.8 KB, 5.7 of it the record | 71% | 4.96 MB |
+| A boss on a plate | 1.10 MB | **0.88** | 0.55 | 6.06 | 34.3 KB, 11.3 the record | 87% | 1.09 MB |
+| Fillet each new hole | 0.81 MB | **0.58** | 0.37 | 3.16 | 26.8 KB, 9.8 the record | 83% | 27.8 MB |
+
+So **unchanged faces are already shared: a chain holds a fifth to a seventh of what its cells would alone.** A record is about a third of what a cell adds, and callers can ask for it (`Select.New`, `Select.Last`), so it stays. **What a chain doesn't share is its meshes:** they're 55% to 98% of everything held once every cell has been shown, though most of their faces are the same faces.
+
+#### What was wasteful, and what changed
+
+| Case | Verdict | Before and after |
+|---|---|---|
+| **Identical knots and multiplicities on every B-spline** (decision 21003). `bug30790` held 24,873 arrays of knots with 459 different contents, and 11,080 of multiplicities with 11: 38% of all it kept | **Wasteful** | Frozen splines take a shared array from a fixed table. **`bug30790` 18,357 to 12,483 KB (−32%),** `bug33261` 7,398 to 6,603 (−11%), on top of the changes below; with them, `bug30790` −36%, `tr9_r1001-ec` −27%, `bug33261` −26%, `bug32239` −17% |
+| **A list inside a list** (decision 21001). Each `NCollection_List` was two objects and an array, and each TShape and representation has one or more: 9% of `bug33261` | **Wasteful** | An array and a count. `bug33261` 8,487 to 7,914 KB, and in passing: every list in the kernel is one object fewer |
+| **Room for growing, and empty lists, on frozen shapes** (decisions 21001, 21002). A list starts with room for four; a face has one wire and an edge two vertices. A vertex has an empty child list, and a face an empty list of meshes | **Wasteful** | Trimmed as a TShape freezes, and an empty one is one shared list. `bug33261` 7,914 to 7,398 KB for the trimming, with the placements; about 4% more on it for the empty lists. No more allocated: Bento 155.1 to 154.8 MB |
+| **The same placement chain built over and over** (decision 21004). Placing a sub-shape multiplies two chains, a node of about 170 bytes each time, so siblings each had their own: 1,158 nodes for 137 distinct chains in "31 nesting locations", 47% of what it held | **Wasteful** | A thread remembers its last four products. **"31 nesting locations" 343 to 154 KB (−55%), the for-loops −44% and −47%** |
+| **A STEP parse's parameters** (decision 21005): an object for each of 1.3 million, in a list grown by doubling though the count was known, each with its own string, while the parser's records stayed until the end | **Wasteful** | Values in one array of the right size; a record goes as soon as it's been read; a short token seen recently shares its string. **Largest live data in an import 178 to 110 MB;** peak below |
+
+**Results are identical, measured, twice:** one pass of the corpus on each build, all 17,872 cases: every status is the same (OK 10,478, BAD 502, FAILED 59, IMPROVEMENT 8, skipped 6,825). And the BREP text and every byte of the mesh, hashed, for all 336 STEP files of the dataset and Bento's eleven examples, before and after (`digest`): no differences, and the same 4 files stop with the same exception in both. **No history or lazily built data was dropped:** nothing was removed from any result. What changed is whether equal, immutable data is one object or several, and each of those was compared bit for bit or is a pure function of what it's built from. So a caller can ask for everything it could before, and `History` is untouched.
+
+**What's shared between threads, and how that's known to be safe.** The table of arrays (`SharedArrays`) holds only arrays of objects being frozen, which are never written again. The guard on writing is the one every frozen object has: `CheckMutable` is the first line of every mutator, and a test has a copy of a frozen spline changed with the original's knots unmoved. A view of another array's storage can take a shared array but isn't offered, unless it's the unit weights, which nobody writes. A slot is one reference, read and written whole, so a race loses an entry and no more. The shared empty list refuses to grow, by a check on its one path to growing, and has a test. `ProductMemo` is per thread.
+
+**What they can keep alive:** the table, 1,024 arrays of up to 32 values for each of two types, about 300 kB of doubles and 180 kB of integers at most. `ProductMemo`, four chains a thread, a few kB unless a chain is very long. Both are in [state.md](state.md).
+
+#### The peak
+
+Three runs of each, alternating, on a loaded machine.
+
+| | Allocated | Largest live | Peak, workstation collector | Peak, server collector as Bento has it |
+|---|---:|---:|---:|---:|
+| Import `bug30790` | 2,350 to 2,213 MB | 178 to 110 MB | **415 to 291 MB** | **401 to 320 to 376 MB** |
+| Import `bug32239` | 1,476 to 1,379 MB | 95 to 96 MB | 260 to 214 MB (one run each) | 342 to 319 to 367 MB: no change to read |
+| Parallel round of Bento's examples, 24 copies | 3,684 to 3,669 MB | | **275 to 244 MB** (two runs each) | 420, 452 to 372, 427 MB (two runs each) |
+| Import and mesh `bug30790`, about 6.7 million triangles | 9,743 MB | 816 MB | | 1,637 MB, before: not touched, unit 11O's |
+
+The last parallel round's 212 to 251 MB was the load, not a change: 251 sits among these "before" and "after" runs, whose difference is real because they alternate under one load. The clean run will say what the figure is now. Nearly all of a parallel round's peak is the collector's budget and 18.7 MB of threads' sets (4.6 MB live besides), as a round keeps nothing.
+
+**What holds an import's peak up, walked at each stage of `bug30790`, a 21 MB file:**
+
+| Stage | Live | What it is |
+|---|---:|---|
+| The parser's records | 109 MB | 1.3 million `Argument`s 49 MB, strings 37 MB, 420,000 `Record`s 22 MB |
+| The reader's parameters | 57 MB | Strings 29 MB, one array of values 20 MB, tables 8 MB |
+| The entities, with the parameters still held | 111 MB, adding the two walks | Entities 54 MB: the graph's lists 15 MB, points' coordinates 7 MB and the points 7 MB, names 6 MB |
+| After the transfer, the reader still held | 87 MB | Entities and binders, and the shape |
+| After | 12 MB | The shape |
+
+So **the live peak is the file's text, parsed twice over, then its entities: five times the file.** Above that, the collector: the workstation collector's peak is about 2.6 times the largest live data, and the server collector's about 3 to 3.5 times, set by its budgets rather than by live data, which is why its peak moved so much less and so unevenly. **The large object heap is 34 to 64 MB at the peak, a fifth,** and it's garbage: `POnSurfParams[]` (`GenExtPS`'s grids) 256 to 287 MB over the import, of up to 0.47 MB each. **The largest single allocations:** the parameters' one array (19.7 MB, from two arrays of 8 and 16 MB of references), the entity table's `Entry` arrays (7.4 MB), and the meshed case's `Int32[]`, 80.6 MB, the whole mesh's triangles.
+
+**The host's settings stay as they are.** Nothing here says otherwise: the server collector's 320 to 376 MB against the workstation's 291 is the price already agreed in `bento-integration.md`, for a one-off import.
+
+#### Tried, and not in
+
+- **`GenExtPS`'s larger grids held by their arrays, of any size large enough** (the fifth slice's "only if a case shows it"; this looked like the case): 287 to 256 MB of them and no fewer collections. Most of those arrays are `_points`, the search's own grid, which lives as long as its object, and an extrema object has no end of life to give it back at. Not in.
+
+#### Back to speed: the list again
+
+From one more pass of the corpus on this build (`KERF_CORPUS_TIMES`, six at a time, 5,144 s of case time, loaded; the base's pass took 7,906 s under a heavier load, so the two say nothing about each other). The list above still stands. Its order moves little, the validity check's cost has fallen by half on small shapes since it was measured, and the precise path shows up nowhere near the top. **New names at the top, each profiled:**
+
+| Case | Time in the pass | What's there | Verdict |
+|---|---:|---|---|
+| `bugs/modalg_5/bug24157_5` | 48 s | **Mostly this harness:** 3/4 of its thread time is Tcl making a list of 8,100 edges, one `lappend` at a time, and the Boolean about a quarter. 20 s alone | Not Kerf |
+| `boolean/splitter/A6`, `B6` | 26 s, 23 s | Spread: the check 21% of active time, fills 16%, solids 9%, threads stopped for collections about a third. About 6 s alone | Spread out |
+| `boolean/volumemaker/H1`, `C6` | 21 s, 17 s | `CheckerSI`, the corpus's own self-intersection check, 55%: real face-face work | Hard |
+| `bugs/modalg_4/bug77_1`, `_2` | 19 s, 17 s | `CheckerSI` again: walking between B-spline surfaces | Hard |
+| `bugs/modalg_5/bug25614_section` | 19 s | Booleans of many tools, item 3: no site over 10% of active time | Spread out |
+
+**Nothing here is wasteful:** as the fifth slice said, the next slices should expect less. Most of these take a quarter or less of their time here when they run alone, so load and the collector are what a corpus pass ranks. The slowest kernel cases otherwise are as listed: `bug32444` 35 s, `bug26701` 34 s, `boolean/simplify/A3` 29 s, `bug28119_1` 29 s, `bug25232_9` 24 s.
+
+#### For the owner
+
+- **Share meshes between cells, by the face.** Expected gain: most of a chain's meshes, which are 55% to 98% of what it holds, 71% to 87% of whose faces are unchanged, and the time to mesh them: in a chain, only new faces would be meshed. It's a larger change: a mesh would have to be the same whichever shape a face is in, and today a face's mesh depends on the whole shape's tolerance and on edges shared with its neighbours. Bento can already get much of the memory by not keeping models off screen ([11q-bento.md](../../modeling/docs/11q-bento.md)), and unit 11O may change the mesh's storage anyway, so I'd take this up there.
+- **One pass from the parser into the reader's data.** The parser's records are copied into the reader's parameters, and the first stage above is the import's largest. A moderate rewrite of `StepFileReader` and `ReadData`, where the sizes the reader needs are the only reason for two passes. Expected gain: the first stage goes, but the third stays, so live data falls only if the entities shrink too (the graph's lists, a point's coordinates, names): together perhaps 110 to 80 MB, inferred, and the peak in proportion on the workstation collector. Only for large imports, so I wouldn't yet.
+
 ## StepTidy (unit 11N)
 
 *5 November 2026, `Kerf.Kernel.Benchmarks -- step-tidy` over the 289 files `-- healing` exports, written by the plain STEP
