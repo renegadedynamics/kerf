@@ -747,18 +747,34 @@ internal class ApproxAFunction
     }
 
     // The polynomial coefficients of one approximation: a thread's array, out of the static while in use, so a nested
-    // approximation makes its own, and zeroed as a new one is. Nothing crosses threads. About 1 MB a thread at most
+    // approximation makes its own, and zeroed as a new one is. Nothing crosses threads. At most 64 kB a thread for its life
     private static class CoefficientsWork
     {
-        private const int LargestKept = 1 << 17;
+        private const int LargestKept = 1 << 13;
 
         [ThreadStatic]
         private static double[]? t_spare;
 
+        // A larger array is on the large object heap, and held weakly so that a generation 2 collection frees it
+        [ThreadStatic]
+        private static WeakReference<double[]>? t_largeSpare;
+
         public static double[] Rent(int size)
         {
-            double[]? work = t_spare;
-            t_spare = null;
+            double[]? work;
+            if (size <= LargestKept)
+            {
+                work = t_spare;
+                t_spare = null;
+            }
+            else
+            {
+                work = null;
+                if (t_largeSpare is not null && t_largeSpare.TryGetTarget(out work))
+                {
+                    t_largeSpare.SetTarget(null!);
+                }
+            }
             if (work is null || work.Length < size)
             {
                 return new double[size];
@@ -772,6 +788,14 @@ internal class ApproxAFunction
             if (work.Length <= LargestKept)
             {
                 t_spare = work;
+            }
+            else if (t_largeSpare is null)
+            {
+                t_largeSpare = new WeakReference<double[]>(work);
+            }
+            else
+            {
+                t_largeSpare.SetTarget(work);
             }
         }
     }

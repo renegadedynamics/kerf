@@ -7,7 +7,7 @@
 // tools/bench.ps1 runs it in fresh processes, ReadyToRun, and keeps the figures (docs/performance.md). By hand, from the
 // kernel folder:
 //   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks [-- passes [copies]]
-//   (or [-- images [passes]] for the SVG drawings and PNG pictures of unit 10L4; or [-- retained] for what a caller keeps)
+//   (or [-- images [passes]] for the SVG drawings and PNG pictures of unit 10L4; or [-- retained] for what a caller keeps; or [-- thread-sets [copies [seconds idle]]] for what each thread keeps)
 // (copies: how many of each example the parallel rounds run at once; 0 skips them; the default is a processor's worth)
 // tools/parallel-curve.ps1 varies the processors it has, and the collector's settings
 // The first pass is a workbook opening (it includes the JIT's work on Kerf); passes 2 to 9 are recalculations, of which
@@ -16,6 +16,7 @@
 
 using System.Diagnostics;
 using System.Globalization;
+using System.Reflection;
 using Kerf.Geometry;
 using Kerf.Kernel.Benchmarks;
 using Kerf.Modeling;
@@ -173,6 +174,31 @@ if (args.Length > 0 && args[0] == "retained")
     return 0;
 }
 
+// What each thread keeps (unit 11Q): `-- thread-sets [copies]` runs the parallel round, then drops every thread's sets one field at a
+// time, and reads what each lets the collector free (performance.md, "What the per-thread sets hold").
+if (args.Length > 0 && args[0] == "thread-sets")
+{
+    int setCopies = args.Length > 1 ? int.Parse(args[1], CultureInfo.InvariantCulture) : Environment.ProcessorCount;
+    long liveAtStart = GC.GetTotalMemory(true);
+    for (int round = 0; round < 3; round++)
+    {
+        Parallel.For(0, setCopies * examples.Length, k =>
+        {
+            Shape shape = examples[k % examples.Length].Build();
+            GC.KeepAlive(shape.Triangulate());
+            GC.KeepAlive(shape.Volume);
+        });
+    }
+    if (args.Length > 2)
+    {
+        // The pool lets an idle thread go after about 20 s, and its sets with it
+        Console.WriteLine($"{ThreadPool.ThreadCount} pool threads after the rounds");
+        Thread.Sleep(TimeSpan.FromSeconds(int.Parse(args[2], CultureInfo.InvariantCulture)));
+    }
+    ThreadSets.Report(liveAtStart);
+    return 0;
+}
+
 int passes = args.Length > 0 ? int.Parse(args[0], CultureInfo.InvariantCulture) : 9;
 var times = new double[examples.Length][];
 var bytes = new long[examples.Length];
@@ -317,6 +343,68 @@ Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
     $"GC: {GC.CollectionCount(0)}/{GC.CollectionCount(1)}/{GC.CollectionCount(2)} collections, pause {GC.GetTotalPauseDuration().TotalMilliseconds:F0} ms; JIT {System.Runtime.JitInfo.GetCompilationTime().TotalMilliseconds:F0} ms"));
 Marks.Log?.Mark("end");
 return 0;
+
+// Every [ThreadStatic] reference in Kerf's assemblies, dropped on every thread that could hold it: the pool's, and the caller's, which
+// takes part in a Parallel.For.
+internal static class ThreadSets
+{
+    public static void Report(long liveAtStart)
+    {
+        var fields = (from assembly in AppDomain.CurrentDomain.GetAssemblies()
+                      where assembly.GetName().Name!.StartsWith("Kerf.", StringComparison.Ordinal)
+                      from type in assembly.GetTypes()
+                      where !type.ContainsGenericParameters
+                      from field in type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                      where field.IsDefined(typeof(ThreadStaticAttribute), false) && !field.FieldType.IsValueType
+                      select field).ToArray();
+        long liveBefore = GC.GetTotalMemory(true);
+        var info = GC.GetGCMemoryInfo(GCKind.FullBlocking);
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+            $"{ThreadPool.ThreadCount} pool threads and the caller; live {liveAtStart / 1048576.0:F2} MB at the start, {liveBefore / 1048576.0:F2} MB after the rounds; committed {info.TotalCommittedBytes / 1048576.0:F1} MB; peak working set {Process.GetCurrentProcess().PeakWorkingSet64 / 1048576.0:F0} MB"));
+        Console.WriteLine("field                                                   threads holding  MB in all  KB a thread");
+        long previous = liveBefore;
+        foreach (FieldInfo field in fields)
+        {
+            int holding = OnEveryThread(() =>
+            {
+                bool held = field.GetValue(null) is not null;
+                field.SetValue(null, null);
+                return held;
+            });
+            long now = GC.GetTotalMemory(true);
+            double freed = previous - now;
+            previous = now;
+            Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+                $"{field.DeclaringType!.FullName + "." + field.Name,-55} {holding,15} {freed / 1048576.0,10:F2} {(holding > 0 ? freed / 1024.0 / holding : 0.0),12:F1}"));
+        }
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+            $"{fields.Length} fields; all of them {(liveBefore - previous) / 1048576.0:F2} MB; {previous / 1048576.0:F2} MB live without them"));
+    }
+
+    // Each work item waits at the barrier for all the others, so each runs on a thread of its own; a Task could be inlined in the caller
+    private static int OnEveryThread(Func<bool> action)
+    {
+        int threads = ThreadPool.ThreadCount;
+        ThreadPool.SetMinThreads(threads, threads);
+        using var barrier = new Barrier(threads);
+        using var finished = new CountdownEvent(threads);
+        int holding = action() ? 1 : 0;
+        for (int i = 0; i < threads; i++)
+        {
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                barrier.SignalAndWait();
+                if (action())
+                {
+                    Interlocked.Increment(ref holding);
+                }
+                finished.Signal();
+            });
+        }
+        finished.Wait();
+        return holding;
+    }
+}
 
 // Marks in an EventPipe trace, so tools/opening-report.cs can cut it at each example. Created only when asked for, so the rig's
 // runs don't pay for it.
