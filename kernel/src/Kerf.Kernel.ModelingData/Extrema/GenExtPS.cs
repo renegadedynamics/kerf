@@ -1092,7 +1092,7 @@ internal class GenExtPS
     // every element it reads, but the faces' border, which holds new elements and has only its distances set.
     private sealed class WorkGrids
     {
-        private const int LargestHeld = 4096;
+        private const int LargestHeld = 1024;
 
         [ThreadStatic]
         private static WorkGrids? t_spare;

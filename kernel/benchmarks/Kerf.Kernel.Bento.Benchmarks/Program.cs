@@ -7,7 +7,7 @@
 // tools/bench.ps1 runs it in fresh processes, ReadyToRun, and keeps the figures (docs/performance.md). By hand, from the
 // kernel folder:
 //   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks [-- passes [copies]]
-//   (or [-- images [passes]] for the SVG drawings and PNG pictures of unit 10L4; or [-- retained] for what a caller keeps; or [-- thread-sets [copies]] for what each thread keeps)
+//   (or [-- images [passes]] for the SVG drawings and PNG pictures of unit 10L4; or [-- retained] for what a caller keeps; or [-- thread-sets [copies [seconds idle]]] for what each thread keeps)
 // (copies: how many of each example the parallel rounds run at once; 0 skips them; the default is a processor's worth)
 // tools/parallel-curve.ps1 varies the processors it has, and the collector's settings
 // The first pass is a workbook opening (it includes the JIT's work on Kerf); passes 2 to 9 are recalculations, of which
@@ -188,6 +188,12 @@ if (args.Length > 0 && args[0] == "thread-sets")
             GC.KeepAlive(shape.Triangulate());
             GC.KeepAlive(shape.Volume);
         });
+    }
+    if (args.Length > 2)
+    {
+        // The pool lets an idle thread go after about 20 s, and its sets with it
+        Console.WriteLine($"{ThreadPool.ThreadCount} pool threads after the rounds");
+        Thread.Sleep(TimeSpan.FromSeconds(int.Parse(args[2], CultureInfo.InvariantCulture)));
     }
     ThreadSets.Report(liveAtStart);
     return 0;
