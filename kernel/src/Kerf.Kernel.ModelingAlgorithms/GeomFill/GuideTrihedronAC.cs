@@ -190,22 +190,27 @@ internal class GuideTrihedronAC : TrihedronWithGuide
         dTangent = Vector3D.LinearForm(normal.Crossed(dBiNormal), dNormal.Crossed(biNormal));
 
         // derivee seconde du triedre
-        double tn2 = tn.SquareMagnitude;
 
         d2Normal = Vector3D.LinearForm(-2 * ndn, dn, 3 * ndn * ndn - (dn.SquareMagnitude + n.Dot(d2n)), n, d2n);
 
         d2TN = Vector3D.LinearForm(1, d2To.Crossed(normal), 2, dTo.Crossed(dNormal), to.Crossed(d2Normal));
         d2TN /= norma;
 
-        // OCCT: TN2 is |TN|^2 (1); the second derivative of the unit vector needs |DTN|^2, so D2BiNormal (and
-        // D2Tangent) are off by (|DTN|^2 - 1) * TN
-        d2BiNormal = Vector3D.LinearForm(-2 * tndtn, dtn, 3 * tndtn * tndtn - (tn2 + tn.Dot(d2TN)), tn, d2TN);
+        // OCCT uses |TN|^2 (1) here; the second derivative of the unit vector needs |DTN|^2 (OCCT #1681, decision 1776)
+        double tnSquare = ReplayNative.Value ? tn.SquareMagnitude : dtn.SquareMagnitude;
+        d2BiNormal = Vector3D.LinearForm(-2 * tndtn, dtn, 3 * tndtn * tndtn - (tnSquare + tn.Dot(d2TN)), tn, d2TN);
 
         d2Tangent = Vector3D.LinearForm(1, d2Normal.Crossed(biNormal), 2, dNormal.Crossed(dBiNormal),
                                 normal.Crossed(d2BiNormal));
 
         return true;
     }
+
+    /// <summary>
+    /// For the oracle's frozen recordings of native sweeps alone: native's wrong second derivatives, in this flow of
+    /// execution, so that everything else about those sweeps can still be compared (decision 1776).
+    /// </summary>
+    internal static readonly AsyncLocal<bool> ReplayNative = new();
 
     public override TrihedronLaw Copy()
     {

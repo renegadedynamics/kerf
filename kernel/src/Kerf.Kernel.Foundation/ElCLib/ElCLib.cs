@@ -259,9 +259,12 @@ internal static class ElCLib
     public static double Parameter(in Hyperbola2D h, in Point2D p)
         => HyperbolaParameter(h.Axis, h.MajorRadius, h.MinorRadius, p);
 
-    public static double Parameter(in Parabola3D prb, in Point3D p) => ParabolaParameter(prb.Position, p);
+    // A parabola of focal 0 evaluates as the line along its X direction, so its parameter is measured along it (OCCT #1617, decision 1781)
+    public static double Parameter(in Parabola3D prb, in Point3D p)
+        => prb.Focal > Constants.Resolution() ? ParabolaParameter(prb.Position, p) : new Vector3D(prb.Location, p).Dot(new Vector3D(prb.Position.XDirection));
 
-    public static double Parameter(in Parabola2D prb, in Point2D p) => ParabolaParameter(prb.Axis, p);
+    public static double Parameter(in Parabola2D prb, in Point2D p)
+        => prb.Focal > Constants.Resolution() ? ParabolaParameter(prb.Axis, p) : new Vector2D(prb.Location, p).Dot(new Vector2D(prb.Axis.XAxis.Direction));
 
     // ElCLib.cxx: curves given by their geometric characteristics
 

@@ -29,7 +29,7 @@ public sealed class CircleCurve3D : ConicCurve3D
     public CircleCurve3D(in Frame3D frame, double r)
     {
         _radius = r;
-        if (r < 0.0)
+        if (!(r >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -76,7 +76,7 @@ public sealed class CircleCurve3D : ConicCurve3D
     internal void SetRadius(double r)
     {
         CheckMutable();
-        if (r < 0.0)
+        if (!(r >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }

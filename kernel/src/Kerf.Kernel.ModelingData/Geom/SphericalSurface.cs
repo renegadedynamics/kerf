@@ -23,7 +23,7 @@ public sealed class SphericalSurface : ElementarySurface
     public SphericalSurface(in CoordinateSystem position, double radius)
     {
         _radius = radius;
-        if (radius < 0.0)
+        if (!(radius >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -73,7 +73,7 @@ public sealed class SphericalSurface : ElementarySurface
     internal void SetRadius(double r)
     {
         CheckMutable();
-        if (r < 0.0)
+        if (!(r >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }

@@ -38,7 +38,7 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
         _pos = new Frame2D(majorAxis, sense);
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < minorRadius, FailureKind.ConstructionError, "gp_Elips2d() - invalid construction parameters");
+        Refusal.ArgumentIf(!(minorRadius >= 0.0) || !(majorRadius >= minorRadius), FailureKind.ConstructionError, "gp_Elips2d() - invalid construction parameters");
     }
 
     /// <exception cref="ArgumentException">The minor radius is negative or greater than the major radius.</exception>
@@ -47,7 +47,7 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
         _pos = frame;
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < minorRadius, FailureKind.ConstructionError, "gp_Elips2d() - invalid construction parameters");
+        Refusal.ArgumentIf(!(minorRadius >= 0.0) || !(majorRadius >= minorRadius), FailureKind.ConstructionError, "gp_Elips2d() - invalid construction parameters");
     }
 
     // Copies
@@ -65,7 +65,7 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
     public readonly Ellipse2D WithMajorRadius(double majorRadius)
     {
         double newMajorRadius = _majorRadius;
-        Refusal.ArgumentIf(majorRadius < _minorRadius, FailureKind.ConstructionError, "gp_Elips2d::SetMajorRadius() - major radius should be greater or equal to minor radius");
+        Refusal.ArgumentIf(!(majorRadius >= _minorRadius), FailureKind.ConstructionError, "gp_Elips2d::SetMajorRadius() - major radius should be greater or equal to minor radius");
         newMajorRadius = majorRadius;
         return new Ellipse2D(_pos, newMajorRadius, _minorRadius);
     }
@@ -75,7 +75,7 @@ public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
     public readonly Ellipse2D WithMinorRadius(double minorRadius)
     {
         double newMinorRadius = _minorRadius;
-        Refusal.ArgumentIf(minorRadius < 0.0 || _majorRadius < minorRadius, FailureKind.ConstructionError, "gp_Elips2d::SetMinorRadius() - minor radius should be a "
+        Refusal.ArgumentIf(!(minorRadius >= 0.0) || !(_majorRadius >= minorRadius), FailureKind.ConstructionError, "gp_Elips2d::SetMinorRadius() - minor radius should be a "
                                             + "positive number lesser or equal to major radius");
         newMinorRadius = minorRadius;
         return new Ellipse2D(_pos, _majorRadius, newMinorRadius);

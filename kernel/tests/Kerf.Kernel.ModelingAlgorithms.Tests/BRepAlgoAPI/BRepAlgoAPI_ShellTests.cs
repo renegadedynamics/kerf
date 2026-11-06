@@ -451,4 +451,28 @@ public class BRepAlgoAPI_ShellTests
         aBuilder.SetArguments(List(a, b));
         Assert.Equal(0, aBuilder.Arguments().Extent());
     }
+
+    [Theory]
+    [InlineData(0.05)]
+    [InlineData(0.5)]
+    [InlineData(1.0)]
+    [InlineData(1.2)]
+    [InlineData(2.0)]
+    public void Cylinders_whose_axes_are_nearly_parallel_are_cut(double theDegrees)
+    {
+        // OCCT #1633: natively Common is empty and Cut removes nothing from about 0.05 to 1.1 degrees, with no error.
+        Shape anA = new ApiMakeCylinder(new Frame3D(new Point3D(0, -20, 0), new Direction3D(0, 1, 0)), 15.0, 40.0).Shape();
+        double t = theDegrees * Math.PI / 180;
+        Shape aB = new ApiMakeCylinder(new Frame3D(new Point3D(-13.0, -5.5 * Math.Cos(t), -15.0 - 5.5 * Math.Sin(t)),
+                                                   new Direction3D(0, Math.Cos(t), Math.Sin(t))), 7.0, 11.0).Shape();
+        double aVolume = MassPropertiesBuilder.VolumeProperties(aB).Mass();
+        var aCommon = new Common(anA, aB);
+        var aCut = new Cut(aB, anA);
+        double aCommonVolume = MassPropertiesBuilder.VolumeProperties(aCommon.Shape()).Mass();
+        double aCutVolume = MassPropertiesBuilder.VolumeProperties(aCut.Shape()).Mass();
+        Assert.True(new Kerf.Engine.Healing.Checks.Analyzer(aCommon.Shape()).IsValid());
+        Assert.True(new Kerf.Engine.Healing.Checks.Analyzer(aCut.Shape()).IsValid());
+        Assert.True(aCommonVolume > 130.0 && aCommonVolume < 150.0, $"common {aCommonVolume}");
+        Assert.Equal(aVolume, aCommonVolume + aCutVolume, 1.0e-3);
+    }
 }

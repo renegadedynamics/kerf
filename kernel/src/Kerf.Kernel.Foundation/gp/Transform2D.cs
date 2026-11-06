@@ -506,10 +506,11 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         Xy loc = _loc;
         //                                    -1
         //  X' = scale * R * X + T  =>  X = (R  / scale)  * ( X' - T)
-        if (_shape == TransformForm.Identity)
+        // A mirror through a point is its own inverse (OCCT 3270746444, after 8.0.1; decision 1778)
+        if (_shape == TransformForm.Identity || _shape == PointMirror)
         {
         }
-        else if (_shape == global::Kerf.Geometry.TransformForm.Translation || _shape == PointMirror)
+        else if (_shape == global::Kerf.Geometry.TransformForm.Translation)
         {
             loc.Reverse();
         }

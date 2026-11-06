@@ -338,7 +338,7 @@ public readonly partial struct Placement : IEquatable<Placement>
 
     /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString()
-        => IsIdentity ? "TopLoc_Location(Identity)" : $"TopLoc_Location({Transformation})";
+        => IsIdentity ? "Placement(Identity)" : $"Placement({Transformation})";
 }
 
 /// <summary>

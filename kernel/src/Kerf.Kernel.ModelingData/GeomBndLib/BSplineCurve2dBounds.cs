@@ -42,6 +42,23 @@ internal sealed class BSplineCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
             trim2 = aU2;
         }
         double eps = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        if (curve.IsPeriodic)
+        {
+            // An arc past the first period is taken as it is. OCCT trims it to the period, which loses part of the curve
+            // and so part of a face bounded by it: the area of OCCT #1685 (decision 1785)
+            trim1 = u1;
+            trim2 = u2;
+            if (trim2 - trim1 >= aU2 - aU1 - eps)
+            {
+                trim1 = aU1;
+                trim2 = aU2;
+            }
+            else
+            {
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(aU1, aU2, eps, ref trim1, ref trim2);
+            }
+        }
+
         if (Math.Abs(aU1 - trim1) > eps || Math.Abs(aU2 - trim2) > eps)
         {
             Geometry2D copy = curve.Copy();

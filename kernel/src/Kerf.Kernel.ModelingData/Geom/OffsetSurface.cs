@@ -794,7 +794,7 @@ public sealed class OffsetSurface : Surface
         if (theType == typeof(PlaneSurface))
         {
             PlaneSurface p = (PlaneSurface)Base;
-            // Plane normal is already available as Position().Direction().
+            // OCCT: goes the wrong way on an indirect frame; 71658f6c8f fixes it upstream, which isn't ported yet (occt-defects.md)
             Vector3D t = new Vector3D(p.Position.Direction);
             t *= _offsetValue;
             result = (PlaneSurface)p.Translated(t);

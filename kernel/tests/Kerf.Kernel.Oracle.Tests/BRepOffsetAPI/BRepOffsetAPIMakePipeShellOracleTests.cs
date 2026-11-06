@@ -718,6 +718,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
     [Fact]
     public void Auxiliary_spines_with_and_without_contact()
     {
+        global::Kerf.Engine.Construction.Surfaces.GuideTrihedronAC.ReplayNative.Value = true; // decision 1776
         var anOracle = new Oracle(output, 20261102);
         int aCase = 0;
         foreach (int i in Tape.Budget(30))
@@ -865,6 +866,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
     [Fact]
     public void Build123d_sweeps()
     {
+        global::Kerf.Engine.Construction.Surfaces.GuideTrihedronAC.ReplayNative.Value = true; // decision 1776
         // build123d.NET's sweep (SetMode(isFrenet), SetTransitionMode, Add(wire, false, rotate), Build, MakeSolid), its
         // sweep with a binormal (a fixed frame at the path's start: SetMode(gp_Ax2)), with an auxiliary wire
         // (SetMode(wire, true)), and its twisted extrusion (SetMode(auxSpine, false)).

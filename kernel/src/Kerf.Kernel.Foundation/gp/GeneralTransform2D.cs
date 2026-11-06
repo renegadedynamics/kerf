@@ -75,7 +75,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
     // Copies
 
     /// <summary>The affinity that multiplies distances from the axis by <paramref name="ratio"/>, not a uniform scale. It replaces this value rather than composing with it.</summary>
-    public readonly GeneralTransform2D WithAffinity(in Axis2D A, double ratio)
+    public readonly GeneralTransform2D WithAffinity(in Axis2D axis, double ratio)
     {
         Matrix2x2 matrix = _matrix;
         Xy loc = _loc;
@@ -83,16 +83,16 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         double scale = _scale;
         shape = Other;
         scale = 0.0;
-        double a = A.Direction.X;
-        double b = A.Direction.Y;
+        double a = axis.Direction.X;
+        double b = axis.Direction.Y;
         matrix.SetValue(1, 1, (1.0 - ratio) * a * a + ratio);
         matrix.SetValue(2, 2, (1.0 - ratio) * b * b + ratio);
         matrix.SetValue(1, 2, (1.0 - ratio) * a * b);
         matrix.SetValue(2, 1, matrix.Value(1, 2));
-        loc = A.Location.XY();
+        loc = axis.Location.XY();
         loc.Reverse();
         loc.Multiply(matrix);
-        loc.Add(A.Location.XY());
+        loc.Add(axis.Location.XY());
         return new GeneralTransform2D(matrix, loc, shape, scale);
     }
 

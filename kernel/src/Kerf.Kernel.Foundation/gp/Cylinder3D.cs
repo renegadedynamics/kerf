@@ -32,7 +32,7 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
     {
         _pos = position;
         _radius = radius;
-        Refusal.ArgumentIf(radius < 0.0, FailureKind.ConstructionError, "gp_Cylinder() - radius should be positive number");
+        Refusal.ArgumentIf(!(radius >= 0.0), FailureKind.ConstructionError, "gp_Cylinder() - radius should be positive number");
     }
 
     // Copies
@@ -66,7 +66,7 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
     public readonly Cylinder3D WithRadius(double r)
     {
         double newRadius = _radius;
-        Refusal.ArgumentIf(r < 0.0, FailureKind.ConstructionError, "gp_Cylinder::SetRadius() - radius should be positive number");
+        Refusal.ArgumentIf(!(r >= 0.0), FailureKind.ConstructionError, "gp_Cylinder::SetRadius() - radius should be positive number");
         newRadius = r;
         return new Cylinder3D(_pos, newRadius);
     }

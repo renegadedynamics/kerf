@@ -27,7 +27,7 @@ public sealed class ConicalSurface : ElementarySurface
     {
         _radius = radius;
         _semiAngle = angle;
-        if (radius < 0.0 || Math.Abs(angle) <= Constants.Resolution()
+        if (!(radius >= 0.0) || double.IsNaN(angle) || Math.Abs(angle) <= Constants.Resolution()
             || Math.Abs(angle) >= M_PI / 2.0 - Constants.Resolution())
         {
             throw Refusal.Argument(new ConstructionErrorException());
@@ -98,7 +98,7 @@ public sealed class ConicalSurface : ElementarySurface
     internal void SetRadius(double r)
     {
         CheckMutable();
-        if (r < 0.0)
+        if (!(r >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -109,7 +109,7 @@ public sealed class ConicalSurface : ElementarySurface
     internal void SetSemiAngle(double ang)
     {
         CheckMutable();
-        if (Math.Abs(ang) <= Constants.Resolution() || Math.Abs(ang) >= M_PI / 2.0 - Constants.Resolution())
+        if (double.IsNaN(ang) || Math.Abs(ang) <= Constants.Resolution() || Math.Abs(ang) >= M_PI / 2.0 - Constants.Resolution())
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }

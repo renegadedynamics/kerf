@@ -131,9 +131,9 @@ public class DrawFeatureCorpusTests(ITestOutputHelper output)
         Assert.Empty(aRunnableBefore);
         Assert.Equal(356, aScans.Count);
         Assert.Equal(350, aRunnable.Count);
-        Assert.Equal(301, aRuns.Count(r => r.Status == "OK"));
+        Assert.Equal(301, aRuns.Count(r => r.Status.StartsWith("OK", StringComparison.Ordinal)));
         Assert.Equal(47, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
-        Assert.All(aRuns, r => Assert.True(r.Status == "OK" || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
+        Assert.All(aRuns, r => Assert.True(r.Status.StartsWith("OK", StringComparison.Ordinal) || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
                                            || r.Status.StartsWith("BAD", StringComparison.Ordinal) || KnownFailures.Contains(r.Case.Id),
                                            $"{r.Case.Id}: {r.Status}"));
     }

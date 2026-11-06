@@ -168,6 +168,8 @@ internal sealed class OtherSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
             }
         }
 
+        SamplingHelpers.AddCellCentres(fineGrid, pnts, nu, nv, coordMin, coordMax, deflMax);
+
         // Adjust minmax using PSO + Powell optimization.
         global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSwarm keptSwarm = new();
         double eps = Max(tol, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -184,7 +186,8 @@ internal sealed class OtherSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
             {
                 for (int j = 1; j <= nv; ++j)
                 {
-                    if (pnts[i, j].Coord(k + 1) - cMin < d)
+                    SamplingHelpers.NeighbourhoodRange(fineGrid, nu, nv, i, j, k + 1, out double reachMin, out double reachMax);
+                    if (reachMin - cMin < d)
                     {
                         double umin = uMin + Max(0, i - 2) * du;
                         double umax = uMin + Min(nu - 1, i) * du;
@@ -196,7 +199,7 @@ internal sealed class OtherSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
                             cMin = cmin;
                         }
                     }
-                    else if (cMax - pnts[i, j].Coord(k + 1) < d)
+                    else if (cMax - reachMax < d)
                     {
                         double umin = uMin + Max(0, i - 2) * du;
                         double umax = uMin + Min(nu - 1, i) * du;

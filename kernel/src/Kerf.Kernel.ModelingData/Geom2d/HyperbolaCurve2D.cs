@@ -43,7 +43,7 @@ public sealed class HyperbolaCurve2D : ConicCurve2D
     {
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        if (majorRadius < 0.0 || minorRadius < 0.0)
+        if (!(majorRadius >= 0.0) || minorRadius < 0.0)
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -56,7 +56,7 @@ public sealed class HyperbolaCurve2D : ConicCurve2D
     {
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        if (majorRadius < 0.0 || minorRadius < 0.0)
+        if (!(majorRadius >= 0.0) || minorRadius < 0.0)
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -74,7 +74,7 @@ public sealed class HyperbolaCurve2D : ConicCurve2D
     internal void SetMajorRadius(double majorRadius)
     {
         CheckMutable();
-        if (majorRadius < 0.0)
+        if (!(majorRadius >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -87,7 +87,7 @@ public sealed class HyperbolaCurve2D : ConicCurve2D
     internal void SetMinorRadius(double minorRadius)
     {
         CheckMutable();
-        if (minorRadius < 0.0)
+        if (!(minorRadius >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }

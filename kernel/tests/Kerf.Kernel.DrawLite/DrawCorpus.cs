@@ -360,7 +360,7 @@ public sealed class DrawCorpus(string theTestsDirectory)
     /// log, which shows the corrected behaviour instead; such a case is OK, with the reason.
     /// </summary>
     public static readonly IReadOnlyDictionary<string, (string Reason, Func<string, bool> IsPortsBehaviour)> IntendedDifferences =
-        new Dictionary<string, (string, Func<string, bool>)>(StringComparer.Ordinal)
+        WithMassReferences(new Dictionary<string, (string, Func<string, bool>)>(StringComparer.Ordinal)
         {
             // OCCT's script requires tuyau's "cannot make a surface": GeomFill_Pipe gave up between two sections on a
             // path the corrected Frenet trihedron corrects; the pipe is built, and tuyau reports its accuracy
@@ -379,7 +379,18 @@ public sealed class DrawCorpus(string theTestsDirectory)
                                                             theLog => theLog.Contains("is equal to the second argument", StringComparison.Ordinal)
                                                                       && theLog.Contains("The length tan1_2 is 376.991118543385", StringComparison.Ordinal)
                                                                       && !theLog.Contains("circle: tan1_3", StringComparison.Ordinal)),
-        };
+        });
+
+    private static Dictionary<string, (string, Func<string, bool>)> WithMassReferences(Dictionary<string, (string, Func<string, bool>)> theCases)
+    {
+        foreach (string anId in MassReferenceCases.Figures.Keys)
+        {
+            theCases[anId] = ("OCCT's script holds a figure from its precise mass properties, which don't refine along U (decision 1784)",
+                              theLog => MassReferenceCases.OnlyThePinnedFiguresDiffer(anId, theLog));
+        }
+
+        return theCases;
+    }
 
     /// <summary>
     /// The commands a case calls, found without running it, and those of them the interpreter lacks. Commands

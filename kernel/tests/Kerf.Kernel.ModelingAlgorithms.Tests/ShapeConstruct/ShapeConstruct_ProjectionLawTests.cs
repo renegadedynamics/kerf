@@ -235,6 +235,33 @@ public class ShapeConstruct_ProjectionLawTests
     }
 
     [Fact]
+    public void AGoodPCurveOnAVeryLargeModel_IsKept()
+    {
+        // The margin for a pcurve that follows its curve is relative to the curve's size (decision 1786): the same spline
+        // a million times larger is judged the same way
+        static (bool Kept, double Gap) Project(double theScale)
+        {
+            var aCylinder = new CylindricalSurface(Z(), 5 * theScale);
+            var aPoles = new[]
+            {
+                aCylinder.Value(0.0, 0), aCylinder.Value(0.2, theScale), aCylinder.Value(0.4, 2 * theScale), aCylinder.Value(0.6, 3 * theScale),
+                aCylinder.Value(0.8, 4 * theScale),
+            };
+            var aCurve = new BSplineCurve3D(aPoles, [0.0, 1.0, 2.0], [4, 1, 4], 3);
+            var aProj = new ProjectCurveOnSurface();
+            aProj.Init(new SurfaceAnalysis(aCylinder), 1e-3 * theScale);
+            Assert.True(aProj.Perform(aCurve, 0, 2, out Curve2D? aPCurve));
+            Point2D aUV = aPCurve!.Value(1.0);
+            return (!aProj.Status(DONE2), aCylinder.Value(aUV.X, aUV.Y).DistanceTo(aCurve.Value(1.0)) / theScale);
+        }
+
+        var aSmall = Project(1.0);
+        var aLarge = Project(1.0e6);
+        Assert.Equal(aSmall.Kept, aLarge.Kept);
+        Assert.Equal(aSmall.Gap, aLarge.Gap, 1.0e-3);
+    }
+
+    [Fact]
     public void AnUnevenSplineOnAPlane_IsStillOnThePlane()
     {
         var aPlane = new PlaneSurface(Z());

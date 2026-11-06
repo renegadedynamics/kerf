@@ -2158,3 +2158,25 @@ Native has gone, so "as OCCT" here comes from reading OCCT's source beside the p
 | `GCPnts_AbscissaPoint::Length`, `CPnts_AbscissaPoint`, `BRepGProp_Cinert` | A few fixed Gauss points over each span: 2 x degree for a Bezier, 10 for an ellipse | 1.5% out on an ellipse of 10 by 1. Fixed for the public API (decision 1768). The engine's own callers keep it, as they only compare and as native comparisons pin what they decide | fixed in public; engine left |
 | `BRepPrimAPI_MakeTorus` with a part of the minor circle | Its base class closes any revolved primitive by flat discs to the axis | The outer half of a tube's section gives 210.6 and not the 53.5 a slice would, on R = 5, r = 1. It is valid and documented now, but not what the name suggests. For the owner: a real tube sector would be a new option or a change of meaning | leave |
 | `BRepOffsetAPI_MakePipeShell`, a fixed normal lying along the path | Seen on the port: a section turned to contain the path sweeps no volume | A success with a volume of 1e-16 for `Normal` square to a straight path. Not pinned by any test, as unit 11R decides how such results report | open |
+## Found or fixed by unit 11S
+
+The list and its ranking are in [occt-defects.md](occt-defects.md).
+
+| Where | What | Effect | State |
+|---|---|---|---|
+| `GeomGridEval_BSplineSurface`, the cache | Built from a parameter that can locate to the next span | A wrong point just below a knot (#1577) | fixed (decision 1775) |
+| `GeomFill_GuideTrihedronAC::D2` | `TN2` for `\|DTN\|^2` | A sweep with a guide distorted (#1681) | fixed (decision 1776) |
+| `GeomBndLib_*Surface::BoxOptimal` | Cell centres aren't seen, and the search's gate reads the corners only | A box smaller than the surface (#1604, #1679) | fixed (decision 1777) |
+| `gp_Trsf::Invert`, `gp_Trsf2d::Invert` | A point mirror's translation negated | Wrong inverse | fixed from upstream (decision 1778) |
+| `Geom_OffsetSurface::Surface` | An indirect plane's offset direction | A plane on the wrong side, and evaluation through it | **open**: upstream `71658f6c8f`; tried, and 13 oracle tests would need work (decision 1778) |
+| `BRepBndLib::AddOptimal` | Adds the face's tolerance whatever the flag | (#1698) | fixed (decision 1779) |
+| `GeomAdaptor_SurfaceOfRevolution::GetType` | `major > r` with no tolerance | An invalid solid (#1566) | fixed (decision 1780) |
+| `ElCLib::ParabolaParameter`, `Extrema_ExtPElC` | Focal 0 isn't the line evaluation makes it | (#1617) | fixed (decision 1781) |
+| `gp`, `Geom`, `Geom2d` constructors | NaN passes `r < 0` | (#1618) | fixed for radii and angles; directions **open**, as `ExtPElS` on a cone reaches one (decision 1782) |
+| `IntPatch` cylinder/cylinder walk | Status stays "absent" after a step in and out over both V bounds | Empty Boolean (#1633) | fixed (decision 1783) |
+| `BRepGProp_Gauss::Compute` | U isn't refined, and its error isn't counted | Wrong precise properties (#1675) | fixed (decision 1784) |
+| `GeomBndLib_BSplineCurve2d::Box` | Trims a periodic arc to the first period | A face's area short (#1685) | fixed (decision 1785) |
+| `BRepFill_OffsetWire` | Concentric circles reach the medial axis; a collapsed circle falls through | A crash natively (#1606, #1452) | fixed (decision 1788) |
+| `BRepFill_OffsetWire`, a positive offset of a face with a hole | Treats each wire alone, so the hole grows | An outward offset's hole is larger, not smaller. The same whether the hole is concentric or not | **open**: to be checked with what a user expects |
+| Default sweep (`GeomFill_CorrectedFrenet`) on some planar splines | The sweep's approximation fails where Frenet and discrete succeed: #1630's spine | No pipe; natively a crash | **open**: occt-defects.md |
+| OCCT's corpus references for `checkprops -s` | From the path with #1675's bug | blend/simple/J6 expects 79953.8 for a true 77932 | see decision 1784 |
