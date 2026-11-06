@@ -92,6 +92,61 @@ internal static class SamplingHelpers
     }
 
     /// <summary>Compute number of U-samples for a surface.</summary>
+    internal static void AddCellCentres(NCollection_Array2<Point3D> fineGrid,
+                                        NCollection_Array2<Xyz> pnts,
+                                        int nbUSamples,
+                                        int nbVSamples,
+                                        Span<double> coordMin,
+                                        Span<double> coordMax,
+                                        Span<double> deflMax)
+    {
+        // Kerf: OCCT looks at each cell's corners and edges' midpoints only, so an extreme at a cell's centre is out of
+        // reach of its search (OCCT #1604, decision 20203)
+        for (int i = 1; i < nbUSamples; ++i)
+        {
+            for (int j = 1; j < nbVSamples; ++j)
+            {
+                Point3D centre = fineGrid.Value(2 * i, 2 * j);
+                Xyz mean = 0.25 * (pnts[i, j] + pnts[i + 1, j] + pnts[i, j + 1] + pnts[i + 1, j + 1]);
+                for (int k = 0; k < 3; ++k)
+                {
+                    double c = centre.Coord(k + 1);
+                    coordMin[k] = Min(coordMin[k], c);
+                    coordMax[k] = Max(coordMax[k], c);
+                    deflMax[k] = Max(deflMax[k], Math.Abs(c - mean.Coord(k + 1)));
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The lowest and highest of a coordinate over a sample and the fine grid's points around it: what says whether the
+    /// search should look near the sample. The sample alone can lie further from an extreme than the deflection.
+    /// </summary>
+    internal static void NeighbourhoodRange(NCollection_Array2<Point3D> fineGrid,
+                                            int nbUSamples,
+                                            int nbVSamples,
+                                            int i,
+                                            int j,
+                                            int coord,
+                                            out double lowest,
+                                            out double highest)
+    {
+        lowest = double.PositiveInfinity;
+        highest = double.NegativeInfinity;
+        int iFine = 2 * i - 1, jFine = 2 * j - 1;
+        int iLast = Min(iFine + 1, 2 * nbUSamples - 1), jLast = Min(jFine + 1, 2 * nbVSamples - 1);
+        for (int a = Max(iFine - 1, 1); a <= iLast; ++a)
+        {
+            for (int b = Max(jFine - 1, 1); b <= jLast; ++b)
+            {
+                double c = fineGrid.Value(a, b).Coord(coord);
+                lowest = Min(lowest, c);
+                highest = Max(highest, c);
+            }
+        }
+    }
+
     internal static int ComputeNbUSamples(SurfaceAdaptorBase surf, double uMin, double uMax)
     {
         int n;

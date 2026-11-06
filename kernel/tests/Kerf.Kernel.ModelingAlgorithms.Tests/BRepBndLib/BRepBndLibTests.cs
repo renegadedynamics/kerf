@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Meshing;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
@@ -160,5 +162,69 @@ public class BRepBndLibTests
         Assert.Equal(1.5, aHalf[0], 1e-6);
         Assert.Equal(2.0, aHalf[1], 1e-6);
         Assert.Equal(2.0, aHalf[2], 1e-6);
+    }
+
+    private static void AssertBox(in Box theBox, double theXMin, double theYMin, double theZMin, double theXMax, double theYMax, double theZMax)
+    {
+        theBox.Get(out double a, out double b, out double c, out double d, out double e, out double f);
+        Assert.Equal(theXMin, a, 1.0e-5);
+        Assert.Equal(theYMin, b, 1.0e-5);
+        Assert.Equal(theZMin, c, 1.0e-5);
+        Assert.Equal(theXMax, d, 1.0e-5);
+        Assert.Equal(theYMax, e, 1.0e-5);
+        Assert.Equal(theZMax, f, 1.0e-5);
+    }
+
+    [Fact]
+    public void Optimal_box_from_a_mesh_leaves_out_the_tolerance_unless_asked()
+    {
+        // OCCT #1698: the face's tolerance was added whatever useShapeTolerance said
+        Shape aShape = new MakeBox(100, 50, 20).Shape();
+        aShape = new Kerf.Engine.Healing.Fixes.ShapeToleranceFixer().WithTolerance(aShape, 2.0, ShapeType.Face);
+        aShape = IncrementalMesh.Meshed(aShape, new global::Kerf.Engine.Meshing.Tools.ToolParameters { Deflection = 0.1 });
+        Box aPlain = new();
+        Bounds.AddOptimal(aShape, ref aPlain, true, false);
+        AssertBox(aPlain, 0, 0, 0, 100, 50, 20);
+        Box aWithTolerance = new();
+        Bounds.AddOptimal(aShape, ref aWithTolerance, true, true);
+        AssertBox(aWithTolerance, -2, -2, -2, 102, 52, 22);
+    }
+
+    [Fact]
+    public void Optimal_box_of_a_scaled_sphere_reaches_an_extreme_at_a_cell_centre()
+    {
+        // OCCT #1604: native 8.0.1 gives -19.8263 for x: the extreme is at the centre of a sampling cell
+        GeneralTransform3D aScale = new GeneralTransform3D().WithVectorialPart(new Matrix3x3(20, 0, 0, 0, 10, 0, 0, 0, 5));
+        Shape aShape = new GTransform(new MakeSphere(1.0).Shape(), aScale, true).Shape();
+        Box aBox = new();
+        Bounds.AddOptimal(aShape, ref aBox, false, false);
+        AssertBox(aBox, -20, -10, -5, 20, 10, 5);
+    }
+
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(15.0)]
+    [InlineData(45.0)]
+    [InlineData(90.0)]
+    public void Optimal_box_of_a_loft_holds_its_middle_section_however_it_is_turned(double theDegrees)
+    {
+        // OCCT #1679: native falls up to 0.044 short
+        static Wire Circle(double theRadius, double theZ)
+        {
+            var aWire = new MakeWire();
+            aWire.Add(new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, theZ), new Direction3D(0, 0, 1)), theRadius)).Edge());
+            return aWire.Wire();
+        }
+
+        var aLoft = new ThruSections(true, false);
+        aLoft.AddWire(Circle(10, 0));
+        aLoft.AddWire(Circle(30, 20));
+        aLoft.AddWire(Circle(10, 40));
+        aLoft.Build();
+        Transform3D aTurn = Transform3D.Rotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), theDegrees * Math.PI / 180);
+        Shape aShape = new Kerf.Engine.Construction.Api.Transform(aLoft.Shape(), aTurn, true).Shape();
+        Box aBox = new();
+        Bounds.AddOptimal(aShape, ref aBox, false, false);
+        AssertBox(aBox, -30, -30, 0, 30, 30, 40);
     }
 }
