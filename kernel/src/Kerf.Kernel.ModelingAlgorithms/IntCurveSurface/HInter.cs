@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Geometry;
 using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.CurveSurface;
@@ -27,5 +28,27 @@ internal sealed class HInter
     /// <summary>An empty intersection; <c>Perform</c> computes it.</summary>
     public HInter()
     {
+    }
+
+    /// <summary>
+    /// Polyhedra of this surface already built, by parameter range, to reuse: many edges of a model meet one face, and each
+    /// would otherwise sample the whole surface again. A polyhedron is only read once it's built. Not shared between threads.
+    /// </summary>
+    internal Dictionary<(double U1, double V1, double U2, double V2), ThePolyhedronOfHInter>? Polyhedra { get; set; }
+
+    protected override ThePolyhedronOfHInter PolyhedronFor(in SurfaceAdaptorBase surface, SurfaceKind surfaceType, double u1, double v1, double u2, double v2)
+    {
+        if (Polyhedra is null)
+        {
+            return base.PolyhedronFor(surface, surfaceType, u1, v1, u2, v2);
+        }
+
+        if (!Polyhedra.TryGetValue((u1, v1, u2, v2), out ThePolyhedronOfHInter? polyhedron))
+        {
+            polyhedron = base.PolyhedronFor(surface, surfaceType, u1, v1, u2, v2);
+            Polyhedra.Add((u1, v1, u2, v2), polyhedron);
+        }
+
+        return polyhedron;
     }
 }

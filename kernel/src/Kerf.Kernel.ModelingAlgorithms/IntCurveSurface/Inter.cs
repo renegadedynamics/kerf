@@ -476,38 +476,8 @@ internal class Inter<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool, ThePoly
         if ((surfaceType != Plane) && (surfaceType != SurfaceKind.Cylinder) && (surfaceType != SurfaceKind.Cone)
             && (surfaceType != SurfaceKind.Sphere))
         {
-            if (surfaceType != SurfaceKind.BSplineSurface)
-            {
-                int nbsu = TheSurfaceTool.NbSamplesU(surface, u1, u2);
-                int nbsv = TheSurfaceTool.NbSamplesV(surface, v1, v2);
-                if (nbsu > 40)
-                {
-                    nbsu = 40;
-                }
-                if (nbsv > 40)
-                {
-                    nbsv = 40;
-                }
-                ThePolyhedron polyhedron = ThePolyhedron.Create(surface, nbsu, nbsv, u1, v1, u2, v2);
-                InternalPerform(curve, polygon, surface, polyhedron, u1, v1, u2, v2);
-            }
-            else
-            {
-                SurfaceAdaptorBase s = TheSurfaceTool.UTrim(surface, u1, u2, 1.0e-9);
-                s = s.VTrim(v1, v2, 1.0e-9);
-                TopolTool topTool = new(s);
-                double defl = 0.1;
-                topTool.SamplePnts(defl, 10, 10);
-
-                int nbpu = topTool.NbSamplesU();
-                int nbpv = topTool.NbSamplesV();
-                NCollection_Array1<double> upars = new(1, nbpu), vpars = new(1, nbpv);
-                topTool.UParameters(upars);
-                topTool.VParameters(vpars);
-
-                ThePolyhedron polyhedron = ThePolyhedron.Create(surface, upars, vpars);
-                InternalPerform(curve, polygon, surface, polyhedron, u1, v1, u2, v2);
-            }
+            ThePolyhedron polyhedron = PolyhedronFor(surface, surfaceType, u1, v1, u2, v2);
+            InternalPerform(curve, polygon, surface, polyhedron, u1, v1, u2, v2);
         }
         else
         {
@@ -516,6 +486,38 @@ internal class Inter<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool, ThePoly
     }
 
     /// <summary>The intersection of a line with the surface (IntCurveSurface_InterImpl::PerformConicSurfLine).</summary>
+    /// <summary>The polyhedron of a surface that isn't a quadric, on the parameter range: a pure function of the two.</summary>
+    protected virtual ThePolyhedron PolyhedronFor(in TheSurface surface, SurfaceKind surfaceType, double u1, double v1, double u2, double v2)
+    {
+        if (surfaceType != SurfaceKind.BSplineSurface)
+        {
+            int nbsu = TheSurfaceTool.NbSamplesU(surface, u1, u2);
+            int nbsv = TheSurfaceTool.NbSamplesV(surface, v1, v2);
+            if (nbsu > 40)
+            {
+                nbsu = 40;
+            }
+            if (nbsv > 40)
+            {
+                nbsv = 40;
+            }
+            return ThePolyhedron.Create(surface, nbsu, nbsv, u1, v1, u2, v2);
+        }
+
+        SurfaceAdaptorBase s = TheSurfaceTool.UTrim(surface, u1, u2, 1.0e-9);
+        s = s.VTrim(v1, v2, 1.0e-9);
+        TopolTool topTool = new(s);
+        double defl = 0.1;
+        topTool.SamplePnts(defl, 10, 10);
+
+        int nbpu = topTool.NbSamplesU();
+        int nbpv = topTool.NbSamplesV();
+        NCollection_Array1<double> upars = new(1, nbpu), vpars = new(1, nbpv);
+        topTool.UParameters(upars);
+        topTool.VParameters(vpars);
+        return ThePolyhedron.Create(surface, upars, vpars);
+    }
+
     protected void PerformConicSurf(in Line3D line, in TheCurve curve, in TheSurface surface, double u1, double v1,
                                     double u2, double v2)
     {

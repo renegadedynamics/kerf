@@ -11,6 +11,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -61,6 +62,7 @@ internal class IntersectionContext : Transient
     // Kerf (decision 753): the localisation data keyed by face and by what the intersector's boxes depend on
     private readonly Dictionary<Shape, Dictionary<SurfaceDataKey, SurfaceRangeLocalizeData>> _sDataKeyedMap = new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, Box> _bndBoxDataMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Dictionary<(double U1, double V1, double U2, double V2), ThePolyhedronOfHInter>> _polyhedra = new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, FaceSurfaceAdaptor> _surfAdaptorMap = new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, Obb> _obbMap = new(ShapeHasher.Instance);
     private int _createFlag;
@@ -177,6 +179,18 @@ internal class IntersectionContext : Transient
             _sClassMap[aSolid] = pSC;
         }
         return pSC!;
+    }
+
+    /// <summary>The polyhedra already built for a face's surface, by parameter range (HInter.Polyhedra).</summary>
+    internal Dictionary<(double U1, double V1, double U2, double V2), ThePolyhedronOfHInter> Polyhedra(in Face face)
+    {
+        if (!_polyhedra.TryGetValue(face, out var polyhedra))
+        {
+            polyhedra = [];
+            _polyhedra.Add(face, polyhedra);
+        }
+
+        return polyhedra;
     }
 
     /// <summary>The surface adaptor of the face (restricted to the face's UV bounds), built on the first call.</summary>
