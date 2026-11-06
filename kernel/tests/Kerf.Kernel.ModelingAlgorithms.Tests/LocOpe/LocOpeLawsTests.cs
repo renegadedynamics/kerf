@@ -779,4 +779,207 @@ public class LocOpeLawsTests
         }
         throw new InvalidOperationException("no edge there");
     }
+
+    // ---- split drafts along wires of other shapes: the wedge doesn't depend on where the wire runs ----
+
+    private static Wire Bezier(params double[] theXYZ)
+    {
+        var aPoles = new NCollection_Array1<Point3D>(1, theXYZ.Length / 3);
+        for (int i = 0; i < theXYZ.Length / 3; i++)
+        {
+            aPoles[i + 1] = new Point3D(theXYZ[3 * i], theXYZ[(3 * i) + 1], theXYZ[(3 * i) + 2]);
+        }
+        return new MakeWire(new MakeEdge(new BezierCurve3D(aPoles)).Edge()).Wire();
+    }
+
+    public static TheoryData<int> DraftWires() => [0, 1];
+
+    [Theory]
+    [MemberData(nameof(DraftWires))]
+    public void A_split_draft_keeps_the_wedge_whichever_way_its_wire_runs(int theWire)
+    {
+        Shape aBox = Box();
+        Face aSide = FaceAt(aBox, p => Math.Abs(p.X - 10) < 1e-9);
+        Wire aWire = theWire switch
+        {
+            0 => Bezier(10, 5, 0, 10, 15, 15, 10, 5, 30), // a curve, bottom to top
+            _ => Bezier(10, 0, 15, 10, 10, 5, 10, 20, 15), // a curve, side to side
+        };
+        var aDrafts = new SplitDrafts(aBox);
+        var aZ = new Direction3D(0, 0, 1);
+        var aNeutral = new Plane3D(new Point3D(0, 0, 0), aZ);
+        const double anAngle = 0.05;
+        aDrafts.Perform(aSide, aWire, aZ, aNeutral, anAngle, aZ, aNeutral, anAngle);
+        Assert.True(aDrafts.IsDone);
+        Assert.True(new Analyzer(aDrafts.Shape()).IsValid());
+        Assert.Equal(BoxVolume - (0.5 * 30 * 30 * Math.Tan(anAngle) * 20), Volume(aDrafts.Shape()), 3);
+    }
+
+    // ---- wires on a shape, split ----
+
+    private static (Shape Result, Spliter Spliter) Split(in Shape theShape, WiresOnShape theWires)
+    {
+        var aSpliter = new Spliter(theShape);
+        aSpliter.Perform(theWires);
+        Assert.True(aSpliter.IsDone);
+        return (aSpliter.ResultingShape(), aSpliter);
+    }
+
+    [Fact]
+    public void A_bent_wire_across_a_face_splits_it_and_keeps_its_area()
+    {
+        Shape aBox = Box();
+        Face aTop = LocOpeTests.TopFace(aBox);
+        double anArea = Area(aBox);
+        var aWires = new WiresOnShape(aBox);
+        aWires.Bind(Polyline(new Point3D(0, 10, 30), new Point3D(5, 5, 30), new Point3D(10, 10, 30)), aTop);
+        (Shape aRes, Spliter aSpliter) = Split(aBox, aWires);
+        Assert.Equal(anArea, Area(aRes), 7);
+        Assert.Equal(7, Count(aRes, ShapeType.Face));
+        Assert.True(new Analyzer(aRes).IsValid());
+        Assert.Equal(2, aSpliter.DescendantShapes(aTop).Extent());
+    }
+
+    [Fact]
+    public void A_compound_of_edges_across_a_face_splits_it_once_for_each()
+    {
+        Shape aBox = Box();
+        Face aTop = LocOpeTests.TopFace(aBox);
+        double anArea = Area(aBox);
+        var aBuilder = new BrepBuilder();
+        Compound aCompound = new();
+        aBuilder.MakeCompound(ref aCompound);
+        aBuilder.Add(aCompound, Segment(0, 5, 30, 10, 5, 30));
+        aBuilder.Add(aCompound, Segment(0, 15, 30, 10, 15, 30));
+        var aWires = new WiresOnShape(aBox);
+        aWires.Bind(aCompound, aTop);
+        (Shape aRes, Spliter aSpliter) = Split(aBox, aWires);
+        Assert.Equal(anArea, Area(aRes), 7);
+        Assert.Equal(3, aSpliter.DescendantShapes(aTop).Extent());
+    }
+
+    [Fact]
+    public void Edges_added_on_a_shape_find_their_own_faces()
+    {
+        Shape aBox = Box();
+        double anArea = Area(aBox);
+        var anEdges = new NCollection_Sequence<Shape>();
+        anEdges.Append(Segment(5, 0, 30, 5, 20, 30));
+        var aWires = new WiresOnShape(aBox);
+        Assert.True(aWires.Add(anEdges));
+        aWires.SetCheckInterior(true);
+        aWires.BindAll();
+        (Shape aRes, _) = Split(aBox, aWires);
+        Assert.Equal(anArea, Area(aRes), 7);
+        Assert.Equal(7, Count(aRes, ShapeType.Face));
+    }
+
+    [Fact]
+    public void A_wire_edge_lying_on_an_edge_of_the_shape_is_told_so()
+    {
+        Shape aBox = Box();
+        Face aTop = LocOpeTests.TopFace(aBox);
+        double anArea = Area(aBox);
+        Edge anOnEdge = new();
+        for (var anExp = new Explorer(aTop, ShapeType.Edge); anExp.More(); anExp.Next())
+        {
+            Edge anEdge = ShapeCasts.Edge(anExp.Current());
+            Exploration.Vertices(anEdge, out Vertex aV1, out Vertex aV2);
+            if (Math.Abs(Tool.Pnt(aV1).Y) < 1e-9 && Math.Abs(Tool.Pnt(aV2).Y) < 1e-9)
+            {
+                anOnEdge = anEdge;
+            }
+        }
+        Edge aPiece = Segment(2, 0, 30, 8, 0, 30);
+        var aWires = new WiresOnShape(aBox);
+        aWires.Bind(aPiece, anOnEdge);
+        aWires.BindAll();
+        aWires.InitEdgeIterator();
+        Assert.True(aWires.MoreEdge());
+        Assert.True(aWires.OnEdge(out Edge aFound));
+        Assert.True(aFound.IsSame(anOnEdge));
+        (Shape aRes, _) = Split(aBox, aWires);
+        Assert.Equal(anArea, Area(aRes), 7);
+        Assert.True(new Analyzer(aRes).IsValid());
+        Assert.True(Count(aRes, ShapeType.Edge) > 12);
+    }
+
+    [Fact]
+    public void A_ruling_on_the_side_of_a_cylinder_cuts_its_side_and_keeps_its_area()
+    {
+        Shape aCylinder = new ApiMakeCylinder(5, 10).Shape();
+        double anArea = Area(aCylinder);
+        Face aSide = FaceAt(aCylinder, p => Math.Abs(p.Z - 5) < 1e-6);
+        var aWires = new WiresOnShape(aCylinder);
+        aWires.Bind(Segment(0, 5, 0, 0, 5, 10), aSide);
+        (Shape aRes, _) = Split(aCylinder, aWires);
+        Assert.Equal(anArea, Area(aRes), 6);
+        Assert.True(new Analyzer(aRes).IsValid());
+        Assert.True(Count(aRes, ShapeType.Edge) > Count(aCylinder, ShapeType.Edge));
+    }
+
+    [Fact]
+    public void A_wire_on_a_shape_has_no_section_on_faces_it_does_not_touch()
+    {
+        Shape aBox = Box();
+        Face aTop = LocOpeTests.TopFace(aBox);
+        var aWires = new WiresOnShape(aBox);
+        var anEdges = new NCollection_Sequence<Shape>();
+        anEdges.Append(Segment(5, 0, 30, 5, 20, 30));
+        Assert.True(aWires.Add(anEdges));
+        Assert.False(aWires.IsFaceWithSection(FaceAt(aBox, p => Math.Abs(p.Z) < 1e-9)));
+        aWires.Init(new ApiMakeCylinder(5, 10).Shape());
+        Assert.False(aWires.IsFaceWithSection(aTop));
+        var aSpliter = new Spliter();
+        Assert.Throws<NotDoneException>(() => aSpliter.ResultingShape());
+        Assert.Throws<NullObjectException>(() => aSpliter.Perform(aWires));
+    }
+
+    // ---- faces that reach the shape-building ----
+
+    [Fact]
+    public void BuildShape_makes_a_solid_of_a_closed_set_and_a_shell_of_an_open_one()
+    {
+        Shape aBox = Box();
+        var aFaces = new NCollection_List<Shape>();
+        for (var anExp = new Explorer(aBox, ShapeType.Face); anExp.More(); anExp.Next())
+        {
+            aFaces.Append(anExp.Current());
+        }
+        Shape aSolid = new BuildShape(aFaces).Shape();
+        Assert.Equal(1, Count(aSolid, ShapeType.Solid));
+        Assert.Equal(BoxVolume, Math.Abs(Volume(aSolid)), 6);
+        var aSome = new NCollection_List<Shape>();
+        aSome.Append(LocOpeTests.TopFace(aBox));
+        aSome.Append(FaceAt(aBox, p => Math.Abs(p.Z) < 1e-9));
+        Shape aTwoApart = new BuildShape(aSome).Shape();
+        Assert.Equal(0, Count(aTwoApart, ShapeType.Solid));
+        Assert.Equal(2, Count(aTwoApart, ShapeType.Shell));
+        // two boxes apart: two solids
+        Shape aSecond = new MakeBox(new Point3D(50, 0, 0), 1, 1, 1).Shape();
+        var aBoth = new NCollection_List<Shape>();
+        foreach (Shape aShape in new[] { aBox, aSecond })
+        {
+            for (var anExp = new Explorer(aShape, ShapeType.Face); anExp.More(); anExp.Next())
+            {
+                aBoth.Append(anExp.Current());
+            }
+        }
+        Assert.Equal(2, Count(new BuildShape(aBoth).Shape(), ShapeType.Solid));
+        // one box inside another: a solid with a cavity
+        Shape anInner = new MakeBox(new Point3D(1, 1, 1), 2, 2, 2).Shape();
+        var aNested = new NCollection_List<Shape>();
+        for (var anExp = new Explorer(aBox, ShapeType.Face); anExp.More(); anExp.Next())
+        {
+            aNested.Append(anExp.Current());
+        }
+        for (var anExp = new Explorer(anInner.Reversed(), ShapeType.Face); anExp.More(); anExp.Next())
+        {
+            aNested.Append(anExp.Current());
+        }
+        Shape aHollow = new BuildShape(aNested).Shape();
+        Assert.Equal(1, Count(aHollow, ShapeType.Solid));
+        Assert.Equal(2, Count(aHollow, ShapeType.Shell));
+        Assert.Equal(BoxVolume - 8, Math.Abs(Volume(aHollow)), 6);
+    }
 }
