@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Kerf.Engine.Collections;
+using System.Diagnostics.CodeAnalysis;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
@@ -28,15 +28,14 @@ internal abstract class ResultCheck : Transient
     protected bool _isParallel;
 
     /// <summary>The status lists of the shape (keyed by itself) and of its contexts.</summary>
-    protected readonly Dictionary<Shape, NCollection_List<StatusCheck>> _map =
-        new(ShapeHasher.Instance);
+    protected ContextMap _map;
 
     /// <summary>OCCT's <c>std::mutex myMutex</c>, taken when <see cref="IsParallel"/>.</summary>
     /// <remarks>Internal as well: OCCT makes BRepCheck_ParallelAnalyzer a friend.</remarks>
-    protected internal readonly Lock _mutex = new();
+    /// <remarks>Only made for a result that runs in parallel: most checks are of small shapes, and take none.</remarks>
+    protected internal Lock _mutex = null!;
 
-    // OCCT's map iterator: a snapshot of the map taken by InitContextIterator
-    private KeyValuePair<Shape, NCollection_List<StatusCheck>>[] _iterItems = [];
+    // OCCT's map iterator. Nothing is taken out of the map, and what's added goes at the end
     private int _iterIndex;
 
     protected ResultCheck()
@@ -56,8 +55,11 @@ internal abstract class ResultCheck : Transient
         Minimum();
     }
 
-    /// <summary>Checks the shape in the context of <paramref name="contextShape"/>, which contains it.</summary>
-    public abstract void InContext(in Shape contextShape);
+    /// <summary>
+    /// Checks the shape in the context of <paramref name="contextShape"/>, which should contain it: that's checked, unless
+    /// <paramref name="isFoundThere"/> says the caller found this shape by exploring the context for this type of shape.
+    /// </summary>
+    public abstract void InContext(in Shape contextShape, bool isFoundThere = false);
 
     /// <summary>The checks of the shape on its own.</summary>
     public abstract void Minimum();
@@ -79,7 +81,7 @@ internal abstract class ResultCheck : Transient
             if (!_map.TryGetValue(s, out NCollection_List<StatusCheck>? list))
             {
                 list = new NCollection_List<StatusCheck>();
-                _map[s] = list;
+                _map.SetValueRef(s, list);
             }
 
             BRepCheckCheck.Add(list, StatusCheck.CheckFail);
@@ -103,7 +105,6 @@ internal abstract class ResultCheck : Transient
     /// <summary>Starts iterating over the contexts in which the shape was checked.</summary>
     public void InitContextIterator()
     {
-        _iterItems = [.. _map];
         _iterIndex = 0;
         // At least 1 element : the Shape itself
         // Kerf: OCCT reads the key of an empty map; the port checks first
@@ -113,11 +114,11 @@ internal abstract class ResultCheck : Transient
         }
     }
 
-    public bool MoreShapeInContext() => _iterIndex < _iterItems.Length;
+    public bool MoreShapeInContext() => _iterIndex < _map.Count;
 
-    public Shape ContextualShape() => _iterItems[_iterIndex].Key;
+    public Shape ContextualShape() => _map.KeyAt(_iterIndex);
 
-    public NCollection_List<StatusCheck> StatusOnShape() => _iterItems[_iterIndex].Value;
+    public NCollection_List<StatusCheck> StatusOnShape() => _map.ValueAt(_iterIndex);
 
     public void NextShapeInContext()
     {
@@ -129,7 +130,15 @@ internal abstract class ResultCheck : Transient
     }
 
     /// <summary>Sets the parallel execution flag for sub-algorithms.</summary>
-    public void SetParallel(bool isParallel) => _isParallel = isParallel;
+    public void SetParallel(bool isParallel)
+    {
+        if (isParallel)
+        {
+            _mutex ??= new Lock();
+        }
+
+        _isParallel = isParallel;
+    }
 
     /// <summary>True if sub-algorithms should use parallel execution.</summary>
     public bool IsParallel => _isParallel;
@@ -137,4 +146,110 @@ internal abstract class ResultCheck : Transient
     public bool IsStatusOnShape(in Shape shape) => _map.ContainsKey(shape);
 
     public NCollection_List<StatusCheck> StatusOnShape(in Shape shape) => _map.GetValue(shape);
+
+    /// <summary>
+    /// A status list for each context, compared with IsSame and in the order they were added. Most shapes have a few
+    /// contexts, so it's a scan of a small array, with an index only past <see cref="LargestScanned"/> of them: a
+    /// dictionary and its arrays for each sub-shape were a tenth of a small shape's check. Nothing is ever taken out but
+    /// by <see cref="Clear"/>.
+    /// </summary>
+    protected struct ContextMap
+    {
+        private const int LargestScanned = 16;
+
+        private struct Entry
+        {
+            public Shape Key;
+            public NCollection_List<StatusCheck> Value;
+        }
+
+        private Entry[]? _entries;
+        private Dictionary<Shape, int>? _index;
+
+        public int Count { get; private set; }
+
+        public readonly Shape KeyAt(int index) => _entries![index].Key;
+
+        public readonly NCollection_List<StatusCheck> ValueAt(int index) => _entries![index].Value;
+
+        public void Clear()
+        {
+            _entries = null;
+            _index = null;
+            Count = 0;
+        }
+
+        private readonly int IndexOf(in Shape key)
+        {
+            if (_index is not null)
+            {
+                return _index.TryGetValue(key, out int found) ? found : -1;
+            }
+
+            for (int i = 0; i < Count; ++i)
+            {
+                if (_entries![i].Key.IsSame(key))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        public readonly bool ContainsKey(in Shape key) => IndexOf(key) >= 0;
+
+        public readonly bool TryGetValue(in Shape key, [NotNullWhen(true)] out NCollection_List<StatusCheck>? value)
+        {
+            int index = IndexOf(key);
+            value = index >= 0 ? _entries![index].Value : null;
+            return index >= 0;
+        }
+
+        /// <summary>The key's list; throws <see cref="NoSuchObjectException"/> if the key isn't there.</summary>
+        public readonly NCollection_List<StatusCheck> GetValue(in Shape key)
+        {
+            int index = IndexOf(key);
+            return index >= 0 ? _entries![index].Value : throw new NoSuchObjectException("BRepCheck_Result: no such shape in context");
+        }
+
+        /// <summary>Sets the key's list, keeping its place if it's there, and returns it.</summary>
+        public NCollection_List<StatusCheck> SetValueRef(in Shape key, NCollection_List<StatusCheck> value)
+        {
+            int index = IndexOf(key);
+            if (index >= 0)
+            {
+                _entries![index].Value = value;
+                return value;
+            }
+
+            if (_entries is null)
+            {
+                // The shape itself and one context is the commonest
+                _entries = new Entry[2];
+            }
+            else if (Count == _entries.Length)
+            {
+                Array.Resize(ref _entries, Count * 2);
+            }
+
+            _entries[Count].Key = key;
+            _entries[Count].Value = value;
+            if (_index is not null)
+            {
+                _index.Add(key, Count);
+            }
+            else if (Count == LargestScanned)
+            {
+                _index = new Dictionary<Shape, int>(2 * LargestScanned, ShapeHasher.Instance);
+                for (int i = 0; i <= Count; ++i)
+                {
+                    _index.Add(_entries[i].Key, i);
+                }
+            }
+
+            ++Count;
+            return value;
+        }
+    }
 }

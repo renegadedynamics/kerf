@@ -43,6 +43,13 @@ internal sealed class IndexedMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
         _values.Clear();
     }
 
+    /// <summary>Makes room for as many entries, as there's less to do when told beforehand.</summary>
+    public void EnsureCapacity(int capacity)
+    {
+        _keys.EnsureCapacity(capacity);
+        _values.EnsureCapacity(capacity);
+    }
+
     /// <summary>Adds the key with the value if the key is new (an existing key keeps its value), and returns the key's index.</summary>
     public int Add(TKey key, TValue value)
     {
