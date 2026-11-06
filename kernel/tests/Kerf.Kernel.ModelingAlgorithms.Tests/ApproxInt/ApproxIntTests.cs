@@ -28,10 +28,10 @@ public class ApproxIntTests
         Assert.Equal(z, P.Z);
     }
 
-    // occt-issues.md, 5F: a second Compute at the same parameters returns the cached flag without its outputs, so
-    // PrmPrmSvSurfaces.SeekPoint gives the origin with the parameters it was given.
+    // Decision 20602: in OCCT 8.0.1 a second Compute at the same parameters returned the cached flag without its outputs,
+    // so PrmPrmSvSurfaces.SeekPoint gave the origin with the parameters it was given.
     [Fact]
-    public void PrmPrmSvSurfaces_SeekPointTwice_ReturnsTheOriginTheSecondTime()
+    public void PrmPrmSvSurfaces_SeekPointTwice_GivesTheSamePoint()
     {
         ThePrmPrmSvSurfacesOfWLApprox sv = new(PlaneZ(), PlaneX());
 
@@ -43,14 +43,23 @@ public class ApproxIntTests
 
         PntOn2S pt2 = new();
         Assert.True(sv.SeekPoint(0.01, 0.5, 0.5, 0.01, ref pt2));
-        AssertPnt(0, 0, 0, pt2.Value()); // OCCT
+        AssertPnt(0, 0.5, 0, pt2.Value());
         pt2.Parameters(out u1, out v1, out u2, out v2);
-        Assert.Equal((0.01, 0.5, 0.5, 0.01), (u1, v1, u2, v2));
+        Assert.Equal((0.0, 0.5, 0.0, -0.5), (u1, v1, u2, v2));
+
+        // and from the second entry of the cache
+        PntOn2S anOther = new();
+        Assert.True(sv.SeekPoint(0.02, 0.7, 0.7, 0.02, ref anOther));
+        PntOn2S pt3 = new();
+        Assert.True(sv.SeekPoint(0.01, 0.5, 0.5, 0.01, ref pt3));
+        AssertPnt(0, 0.5, 0, pt3.Value());
+        pt3.Parameters(out u1, out v1, out u2, out v2);
+        Assert.Equal((0.0, 0.5, 0.0, -0.5), (u1, v1, u2, v2));
     }
 
-    // The same issue through ImpPrmSvSurfaces.Compute (the quadric first): the second call leaves its outputs as given.
+    // The same issue through ImpPrmSvSurfaces.Compute (the quadric first): the second call gives the first's outputs.
     [Fact]
-    public void ImpPrmSvSurfaces_ComputeTwice_LeavesTheOutputsTheSecondTime()
+    public void ImpPrmSvSurfaces_ComputeTwice_GivesTheSameOutputs()
     {
         SurfaceQuadric Q = new(new Plane3D());
         TheImpPrmSvSurfacesOfWLApprox sv = new(Q, PlaneX());
@@ -61,21 +70,30 @@ public class ApproxIntTests
             Vector3D T = new(0, 0, 0);
             Vector2D T1 = new(0, 0), T2 = new(0, 0);
             Assert.True(sv.Compute(ref u1, ref v1, ref u2, ref v2, ref P, ref T, ref T1, ref T2));
-            if (k == 1)
-            {
-                Assert.Equal((0.0, -0.5, 0.0, 0.5), (u1, v1, u2, v2));
-                AssertPnt(0, -0.5, 0, P);
-                Assert.Equal((0.0, 1.0, 0.0), (T.X, T.Y, T.Z));
-                Assert.Equal((0.0, 1.0, 0.0, -1.0), (T1.X, T1.Y, T2.X, T2.Y));
-            }
-            else
-            {
-                Assert.Equal((0.0, -0.5, 0.0001, 0.5), (u1, v1, u2, v2)); // OCCT: not refined
-                AssertPnt(0, 0, 0, P);
-                Assert.Equal((0.0, 0.0, 0.0), (T.X, T.Y, T.Z));
-                Assert.Equal((0.0, 0.0, 0.0, 0.0), (T1.X, T1.Y, T2.X, T2.Y));
-            }
+            Assert.Equal((0.0, -0.5, 0.0, 0.5), (u1, v1, u2, v2));
+            AssertPnt(0, -0.5, 0, P);
+            Assert.Equal((0.0, 1.0, 0.0), (T.X, T.Y, T.Z));
+            Assert.Equal((0.0, 1.0, 0.0, -1.0), (T1.X, T1.Y, T2.X, T2.Y));
         }
+    }
+
+    // From upstream 71658f6c8f's test: a point solved one way isn't the answer to asking for it the other way.
+    [Fact]
+    public void ImpPrmSvSurfaces_TheCacheKnowsTheSolverMode()
+    {
+        SurfaceQuadric Q = new(new Plane3D());
+        TheImpPrmSvSurfacesOfWLApprox sv = new(Q, PlaneX());
+        double u1 = 0.0, v1 = -0.5, u2 = 0.0001, v2 = 0.5;
+        Point3D P = new(0, 0, 0);
+        Vector3D T = new(0, 0, 0);
+        Vector2D T1 = new(0, 0), T2 = new(0, 0);
+        Assert.True(sv.Compute(ref u1, ref v1, ref u2, ref v2, ref P, ref T, ref T1, ref T2));
+        Assert.Equal(0.0, u2);
+
+        sv.SetUseSolver(false);
+        (u1, v1, u2, v2) = (0.0, -0.5, 0.0001, 0.5);
+        Assert.True(sv.Compute(ref u1, ref v1, ref u2, ref v2, ref P, ref T, ref T1, ref T2));
+        Assert.Equal(0.0001, u2); // the starting point is kept, not refined
     }
 
     private static WLine StraightLine(int theNb)

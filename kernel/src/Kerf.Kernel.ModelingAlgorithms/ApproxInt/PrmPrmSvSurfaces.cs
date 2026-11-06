@@ -39,6 +39,10 @@ internal class PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
     private Vector2D _myTguv1bis;
     private Vector2D _myTguv2bis;
     private Vector3D _myTgbis;
+    private Point2D _myResultS1;
+    private Point2D _myResultS2;
+    private Point2D _myResultS1bis;
+    private Point2D _myResultS2bis;
     private bool _myIsTangentbis;
     private bool _myHasBeenComputedbis;
     private readonly Int2S<ThePSurface, ThePSurfaceTool> _myIntersectionOn2S;
@@ -84,7 +88,8 @@ internal class PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
             if ((_myParOnS1.X == u1) && (_myParOnS1.Y == v1) && (_myParOnS2.X == u2)
                 && (_myParOnS2.Y == v2))
             {
-                return (_myIsTangent); // OCCT: a cached result leaves the outputs as given
+                CachedResult(out u1, out v1, out u2, out v2, out p, out tg, out tguv1, out tguv2);
+                return (_myIsTangent);
             }
             else if (_myHasBeenComputedbis == false)
             {
@@ -94,6 +99,8 @@ internal class PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 _myPntbis = _myPnt;
                 _myParOnS1bis = _myParOnS1;
                 _myParOnS2bis = _myParOnS2;
+                _myResultS1bis = _myResultS1;
+                _myResultS2bis = _myResultS2;
                 _myIsTangentbis = _myIsTangent;
                 _myHasBeenComputedbis = _myHasBeenComputed;
             }
@@ -127,8 +134,11 @@ internal class PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 _myParOnS1bis = tp1;
                 _myParOnS2bis = tp2;
                 _myIsTangentbis = tb;
+                (_myResultS1, _myResultS1bis) = (_myResultS1bis, _myResultS1);
+                (_myResultS2, _myResultS2bis) = (_myResultS2bis, _myResultS2);
 
-                return (_myIsTangent); // OCCT: a cached result leaves the outputs as given
+                CachedResult(out u1, out v1, out u2, out v2, out p, out tg, out tguv1, out tguv2);
+                return (_myIsTangent);
             }
         }
 
@@ -158,6 +168,8 @@ internal class PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
         _myIntersectionOn2S.Point().Parameters(out u1, out v1, out u2, out v2);
         _myParOnS1 = _myParOnS1.WithCoord(tu1, tv1);
         _myParOnS2 = _myParOnS2.WithCoord(tu2, tv2);
+        _myResultS1 = new Point2D(u1, v1);
+        _myResultS2 = new Point2D(u2, v2);
 
         if (_myIntersectionOn2S.IsTangent)
         {
@@ -242,6 +254,19 @@ internal class PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
         _myTguv2 = tguv2;
 
         return (true);
+    }
+
+    // OCCT 8.0.1 returned from a hit without writing its outputs, so a repeated point came back as the origin
+    // (from upstream 8f817f5da5's cachedResult; decision 20602)
+    private void CachedResult(out double u1, out double v1, out double u2, out double v2, out Point3D p, out Vector3D tg,
+                              out Vector2D tguv1, out Vector2D tguv2)
+    {
+        (u1, v1) = (_myResultS1.X, _myResultS1.Y);
+        (u2, v2) = (_myResultS2.X, _myResultS2.Y);
+        p = _myPnt;
+        tg = _myTg;
+        tguv1 = _myTguv1;
+        tguv2 = _myTguv2;
     }
 
     public override void Pnt(double u1, double v1, double u2, double v2, ref Point3D p)

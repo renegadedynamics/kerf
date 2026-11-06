@@ -35,6 +35,11 @@ internal class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
     private bool _myHasBeenComputed;
     private Point2D _myParOnS1bis;
     private Point2D _myParOnS2bis;
+    private Point2D _myResultS1;
+    private Point2D _myResultS2;
+    private Point2D _myResultS1bis;
+    private Point2D _myResultS2bis;
+    private bool _myCachedUseSolver = true;
     private Point3D _myPntbis;
     private Vector2D _myTguv1bis;
     private Vector2D _myTguv2bis;
@@ -452,12 +457,21 @@ internal class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
         double tv1 = v1;
         double tv2 = v2;
 
+        // OCCT 8.0.1 returned from a hit without writing its outputs, and whichever way the last point was solved
+        // (from upstream 71658f6c8f; decision 20602)
+        if (_myCachedUseSolver != GetUseSolver())
+        {
+            _myHasBeenComputed = _myHasBeenComputedbis = false;
+            _myCachedUseSolver = GetUseSolver();
+        }
+
         if (_myHasBeenComputed)
         {
             if ((_myParOnS1.X == u1) && (_myParOnS1.Y == v1) && (_myParOnS2.X == u2)
                 && (_myParOnS2.Y == v2))
             {
-                return (_myIsTangent); // OCCT: a cached result leaves the outputs as given
+                CachedResult(out u1, out v1, out u2, out v2, out p, out tg, out tguv1, out tguv2);
+                return (_myIsTangent);
             }
             else if (_myHasBeenComputedbis == false)
             {
@@ -467,6 +481,8 @@ internal class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 _myPntbis = _myPnt;
                 _myParOnS1bis = _myParOnS1;
                 _myParOnS2bis = _myParOnS2;
+                _myResultS1bis = _myResultS1;
+                _myResultS2bis = _myResultS2;
                 _myIsTangentbis = _myIsTangent;
                 _myHasBeenComputedbis = _myHasBeenComputed;
             }
@@ -501,7 +517,11 @@ internal class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 _myParOnS2bis = tp2;
                 _myIsTangentbis = tb;
 
-                return (_myIsTangent); // OCCT: a cached result leaves the outputs as given
+                (_myResultS1, _myResultS1bis) = (_myResultS1bis, _myResultS1);
+                (_myResultS2, _myResultS2bis) = (_myResultS2bis, _myResultS2);
+
+                CachedResult(out u1, out v1, out u2, out v2, out p, out tg, out tguv1, out tguv2);
+                return (_myIsTangent);
             }
         }
 
@@ -602,7 +622,7 @@ internal class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                     }
 
                     _myParOnS1 = _myParOnS1.WithCoord(tu1, tv1);
-                    _myParOnS2 = _myParOnS2.WithCoord(tu2, tu2); // OCCT: tu2 for tv2, so the cache never matches this point
+                    _myParOnS2 = _myParOnS2.WithCoord(tu2, tv2);
 
                     Point3D p2 = new();
                     ThePSurfaceTool.D1(pSurf, x[1], x[2], out p, out d1uPrm, out d1vPrm);
@@ -614,6 +634,8 @@ internal class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 }
 
                 _myPnt = p;
+                _myResultS1 = new Point2D(u1, v1);
+                _myResultS2 = new Point2D(u2, v2);
 
                 // Normals to the surfaces
                 Vector3D normalPrm = d1uPrm.Crossed(d1vPrm), normalImp = qSurf.Normale(_myPnt);
@@ -739,6 +761,17 @@ internal class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
             _myHasBeenComputed = _myHasBeenComputedbis = false;
             return false;
         }
+    }
+
+    private void CachedResult(out double u1, out double v1, out double u2, out double v2, out Point3D p, out Vector3D tg,
+                              out Vector2D tguv1, out Vector2D tguv2)
+    {
+        (u1, v1) = (_myResultS1.X, _myResultS1.Y);
+        (u2, v2) = (_myResultS2.X, _myResultS2.Y);
+        p = _myPnt;
+        tg = _myTg;
+        tguv1 = _myTguv1;
+        tguv2 = _myTguv2;
     }
 
     //=================================================================================================
