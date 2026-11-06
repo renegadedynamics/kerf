@@ -16,7 +16,7 @@ version may break the API.
 - **Tangent circles and root finders, fixes that change results:** a circle tangent to a curve through a point, with its
   centre on a curve, is now solved rather than failing by chance, and one tangent to a circle and a curve with its centre
   on a circle no longer throws. Bisection takes an end of its bracket that is already a root, where it returned the other
-  end. A distance field built in parallel gives the serial result (decisions 19801 to 19804).
+  end. A distance field built in parallel gives the serial result (decisions 1749 to 1752).
 - **Fillets and chamfers, three fixes that change results:** the edges between a fillet and its faces are coded tangent,
   as in OCCT, so a draft can follow a fillet, and saved BRep files gain those lines. A fillet that runs past a Bezier or
   B-spline face puts the face on the surface it extended, where the result used to be invalid. A closed edge filleted
