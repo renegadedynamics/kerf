@@ -6,7 +6,7 @@
 namespace Kerf.Geometry;
 
 /// <summary>A coordinate system in 3D space, right- or left-handed ("direct" or "indirect").</summary>
-/// <remarks><c>new gp_Ax3()</c> is the global system, as in OCCT; <c>default(gp_Ax3)</c> is not valid.</remarks>
+/// <remarks><c>new CoordinateSystem()</c> is the global system, as in OCCT; <c>default(CoordinateSystem)</c> is not valid.</remarks>
 public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
 {
     private readonly Axis3D _axis;
@@ -21,6 +21,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         _vxdir = vxdir;
     }
 
+    /// <summary>The absolute system: the origin, with the X, Y and Z axes, right-handed.</summary>
     public CoordinateSystem()
     {
         _axis = new Axis3D();
@@ -28,6 +29,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         _vxdir = new Direction3D(Direction3D.D.X);
     }
 
+    /// <summary>The same placement as <paramref name="frame"/>, and so right-handed.</summary>
     public CoordinateSystem(in Frame3D frame)
     {
         _axis = frame.Axis;
@@ -35,6 +37,8 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         _vxdir = frame.XDirection;
     }
 
+    /// <summary>A right-handed system at <paramref name="point"/> with main direction <paramref name="normal"/>; the X direction is <paramref name="xDirection"/> projected normal to it.</summary>
+    /// <exception cref="ArgumentException"><paramref name="xDirection"/> is parallel to <paramref name="normal"/>.</exception>
     public CoordinateSystem(in Point3D point, in Direction3D normal, in Direction3D xDirection)
     {
         _axis = new Axis3D(point, normal);
@@ -51,6 +55,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         _vxdir = new Direction3D(vx);
     }
 
+    /// <summary>A right-handed system at <paramref name="point"/> with main direction <paramref name="direction"/>; the X direction is chosen for you, normal to it.</summary>
     public CoordinateSystem(in Point3D point, in Direction3D direction)
     {
         _axis = new Axis3D(point, direction);
@@ -111,6 +116,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
 
     // Copies
 
+    /// <summary>A copy with the X direction reversed, which flips the handedness.</summary>
     public readonly CoordinateSystem XReversed()
     {
         Direction3D vxdir = _vxdir;
@@ -118,6 +124,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         return new CoordinateSystem(_axis, _vydir, vxdir);
     }
 
+    /// <summary>A copy with the Y direction reversed, which flips the handedness.</summary>
     public readonly CoordinateSystem YReversed()
     {
         Direction3D vydir = _vydir;
@@ -125,6 +132,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         return new CoordinateSystem(_axis, vydir, _vxdir);
     }
 
+    /// <summary>A copy with the main direction reversed, which flips the handedness.</summary>
     public readonly CoordinateSystem ZReversed()
     {
         Axis3D axis = _axis;
@@ -132,11 +140,13 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         return new CoordinateSystem(axis, _vydir, _vxdir);
     }
 
+    /// <summary>A copy whose main axis is <paramref name="axis"/>. The old X direction is projected on to the new XY plane; if it is parallel to the axis, the old directions swap roles instead.</summary>
     public readonly CoordinateSystem WithAxis(in Axis3D axis)
     {
         return new CoordinateSystem(_axis.WithLocation(axis.Location), _vydir, _vxdir).WithDirection(axis.Direction);
     }
 
+    /// <summary>A copy with this main direction. The old X direction is projected on to the new XY plane; if it is parallel to <paramref name="direction"/>, the old directions swap roles instead.</summary>
     public readonly CoordinateSystem WithDirection(in Direction3D direction)
     {
         Axis3D axis = _axis;
@@ -174,6 +184,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         return new CoordinateSystem(axis, vydir, vxdir);
     }
 
+    /// <summary>A copy moved so that its origin is <paramref name="point"/>; its directions stay.</summary>
     public readonly CoordinateSystem WithLocation(in Point3D point)
     {
         Axis3D axis = _axis;
@@ -181,6 +192,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         return new CoordinateSystem(axis, _vydir, _vxdir);
     }
 
+    /// <summary>A copy whose X direction is <paramref name="xDirection"/> projected on to the XY plane; the Y direction is recomputed, keeping the handedness. If <paramref name="xDirection"/> is parallel to the main direction, the main direction changes instead.</summary>
     public readonly CoordinateSystem WithXDirection(in Direction3D xDirection)
     {
         Axis3D axis = _axis;
@@ -217,6 +229,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         return new CoordinateSystem(axis, vydir, vxdir);
     }
 
+    /// <summary>A copy whose Y direction is <paramref name="yDirection"/> projected on to the XY plane; the X direction is recomputed, keeping the handedness. If <paramref name="yDirection"/> is parallel to the main direction, the main direction changes instead.</summary>
     public readonly CoordinateSystem WithYDirection(in Direction3D yDirection)
     {
         Axis3D axis = _axis;
@@ -252,8 +265,10 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
 
     // Queries
 
+    /// <summary>The angle between the main directions, in [0, PI] radians, with no sign.</summary>
     public readonly double AngleTo(in CoordinateSystem other) => _axis.AngleTo(other._axis);
 
+    /// <summary>The main axis: the location and the main direction.</summary>
     public readonly Axis3D Axis => _axis;
 
     /// <summary>The right-handed system with the same location, X direction and (for a direct system) main direction.</summary>
@@ -271,17 +286,22 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         }
     }
 
+    /// <summary>The main direction, normal to the XY plane.</summary>
     public readonly Direction3D Direction => _axis.Direction;
 
+    /// <summary>The origin.</summary>
     public readonly Point3D Location => _axis.Location;
 
+    /// <summary>The X direction, a unit vector.</summary>
     public readonly Direction3D XDirection => _vxdir;
 
+    /// <summary>The Y direction, a unit vector: normal to the X direction, on the side set by the handedness.</summary>
     public readonly Direction3D YDirection => _vydir;
 
     /// <summary>True for a right-handed system.</summary>
     public readonly bool IsDirect => _vxdir.Crossed(_vydir).Dot(_axis.Direction) > 0.0;
 
+    /// <summary>True when the main directions are parallel within <paramref name="angularTolerance"/> radians, and each location is within <paramref name="linearTolerance"/> of the other's XY plane.</summary>
     public readonly bool IsCoplanar(in CoordinateSystem other, double linearTolerance, double angularTolerance)
     {
         Vector3D vec = new(_axis.Location, other._axis.Location);
@@ -300,6 +320,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         return d1 <= linearTolerance && d2 <= linearTolerance && _axis.IsParallel(other._axis, angularTolerance);
     }
 
+    /// <summary>True when <paramref name="axis"/> is normal to the main direction within <paramref name="angularTolerance"/> radians and this location is within <paramref name="linearTolerance"/> of the axis, not only of its plane.</summary>
     public readonly bool IsCoplanar(in Axis3D axis, double linearTolerance, double angularTolerance)
     {
         Vector3D vec = new(_axis.Location, axis.Location);
@@ -318,6 +339,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         return d1 <= linearTolerance && d2 <= linearTolerance && _axis.IsNormal(axis, angularTolerance);
     }
 
+    /// <summary>The central symmetry through <paramref name="point"/>. All three directions reverse, so the handedness flips.</summary>
     public readonly CoordinateSystem Mirrored(in Point3D point)
     {
         Axis3D axis = _axis;
@@ -329,6 +351,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         return new CoordinateSystem(axis, vydir, vxdir);
     }
 
+    /// <summary>The half-turn about <paramref name="axis"/>, which keeps the handedness.</summary>
     public readonly CoordinateSystem Mirrored(in Axis3D axis)
     {
         Axis3D newAxis = _axis;
@@ -340,6 +363,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         return new CoordinateSystem(newAxis, vydir, vxdir);
     }
 
+    /// <summary>The reflection in the XY plane of <paramref name="frame"/>, which flips the handedness.</summary>
     public readonly CoordinateSystem Mirrored(in Frame3D frame)
     {
         Axis3D axis = _axis;
@@ -351,6 +375,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         return new CoordinateSystem(axis, vydir, vxdir);
     }
 
+    /// <summary>Rotated about <paramref name="axis"/> by <paramref name="angle"/> radians, anticlockwise looking against the axis's direction.</summary>
     public readonly CoordinateSystem Rotated(in Axis3D axis, double angle)
     {
         Axis3D newAxis = _axis;
@@ -362,6 +387,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         return new CoordinateSystem(newAxis, vydir, vxdir);
     }
 
+    /// <summary>The location scaled about <paramref name="point"/> by <paramref name="factor"/>. A negative factor reverses all three directions, which flips the handedness.</summary>
     public readonly CoordinateSystem Scaled(in Point3D point, double factor)
     {
         Axis3D axis = _axis;
@@ -376,6 +402,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         return new CoordinateSystem(axis, vydir, vxdir);
     }
 
+    /// <summary>The image under <paramref name="transform"/>, each direction transformed on its own, so a mirror flips the handedness.</summary>
     public readonly CoordinateSystem Transformed(in Transform3D transform)
     {
         Axis3D axis = _axis;
@@ -387,6 +414,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         return new CoordinateSystem(axis, vydir, vxdir);
     }
 
+    /// <summary>Moved by <paramref name="vector"/>.</summary>
     public readonly CoordinateSystem Translated(in Vector3D vector)
     {
         Axis3D axis = _axis;
@@ -394,17 +422,24 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         return new CoordinateSystem(axis, _vydir, _vxdir);
     }
 
+    /// <summary>Moved by the vector from <paramref name="point1"/> to <paramref name="point2"/>.</summary>
     public readonly CoordinateSystem Translated(in Point3D point1, in Point3D point2) => Translated(new Vector3D(point1, point2));
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(CoordinateSystem other) => _axis.Equals(other._axis) && _vxdir.Equals(other._vxdir) && _vydir.Equals(other._vydir);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="CoordinateSystem"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is CoordinateSystem other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => HashCode.Combine(_axis, _vxdir, _vydir);
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in CoordinateSystem left, in CoordinateSystem right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in CoordinateSystem left, in CoordinateSystem right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => $"CoordinateSystem({_axis.Location}, {_axis.Direction}, {_vxdir}, {_vydir})";
 }

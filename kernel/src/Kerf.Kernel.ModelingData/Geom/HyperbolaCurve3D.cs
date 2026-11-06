@@ -48,16 +48,22 @@ public sealed class HyperbolaCurve3D : ConicCurve3D
         return h;
     }
 
+    /// <summary>Always false.</summary>
     public sealed override bool IsClosed => false;
 
+    /// <summary>Always false.</summary>
     public sealed override bool IsPeriodic => false;
 
+    /// <summary>Effectively minus infinity: -2e100, since the curve has no start.</summary>
     public sealed override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
+    /// <summary>Effectively infinity: 2e100, since the curve has no end.</summary>
     public sealed override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
+    /// <summary>The distance from the centre to the apex of the branch, along the X axis.</summary>
     public double MajorRadius => _majorRadius;
 
+    /// <summary>The semi-axis along the Y axis, which sets the slope of the asymptotes.</summary>
     public double MinorRadius => _minorRadius;
 
     internal void SetHypr(in Hyperbola3D h)
@@ -267,6 +273,7 @@ public sealed class HyperbolaCurve3D : ConicCurve3D
 
     // Non-mutating twins of the Set methods (Kerf)
 
+    /// <summary>A copy that takes its placement and radii from <paramref name="hyperbola"/>; this curve is unchanged.</summary>
     public HyperbolaCurve3D WithHyperbola(in Hyperbola3D hyperbola)
     {
         HyperbolaCurve3D copy = (HyperbolaCurve3D)Copy();
@@ -274,6 +281,8 @@ public sealed class HyperbolaCurve3D : ConicCurve3D
         return copy;
     }
 
+    /// <summary>A copy with this major radius; this curve is unchanged.</summary>
+    /// <exception cref="ArgumentException"><paramref name="majorRadius"/> is negative.</exception>
     public HyperbolaCurve3D WithMajorRadius(double majorRadius)
     {
         HyperbolaCurve3D copy = (HyperbolaCurve3D)Copy();
@@ -281,6 +290,8 @@ public sealed class HyperbolaCurve3D : ConicCurve3D
         return copy;
     }
 
+    /// <summary>A copy with this minor radius; this curve is unchanged.</summary>
+    /// <exception cref="ArgumentException"><paramref name="minorRadius"/> is negative.</exception>
     public HyperbolaCurve3D WithMinorRadius(double minorRadius)
     {
         HyperbolaCurve3D copy = (HyperbolaCurve3D)Copy();

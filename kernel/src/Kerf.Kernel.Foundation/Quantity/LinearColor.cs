@@ -391,9 +391,9 @@ internal partial struct LinearColor : IEquatable<LinearColor>
                     - 0.20 * Math.Cos((4.0 * hx_mean - 63.0) * DEG_TO_RAD);
 
         double lx_mean50_2 = (lx_mean - 50.0) * (lx_mean - 50.0);
-        double s_L = 1.0 + 0.015 * lx_mean50_2 / Math.Sqrt(20.0 + lx_mean50_2);
-        double s_C = 1.0 + 0.045 * cx_mean;
-        double s_H = 1.0 + 0.015 * cx_mean * t;
+        double l = 1.0 + 0.015 * lx_mean50_2 / Math.Sqrt(20.0 + lx_mean50_2);
+        double c = 1.0 + 0.045 * cx_mean;
+        double h = 1.0 + 0.015 * cx_mean * t;
 
         double delta_theta = 30.0 * Math.Exp(-(hx_mean - 275.0) * (hx_mean - 275.0) / 625.0);
         double cx_mean_pow7 = Math.Pow(cx_mean, 7);
@@ -401,9 +401,9 @@ internal partial struct LinearColor : IEquatable<LinearColor>
         double r_T = -r_C * Math.Sin(2.0 * delta_theta * DEG_TO_RAD);
 
         // finally, the difference
-        double dl = deltaLx / s_L;
-        double dc = deltaCx / s_C;
-        double dh = deltaHx / s_H;
+        double dl = deltaLx / l;
+        double dc = deltaCx / c;
+        double dh = deltaHx / h;
         double deltaE2000 = Math.Sqrt(dl * dl + dc * dc + dh * dh + r_T * dc * dh);
         return deltaE2000;
     }

@@ -3,7 +3,6 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using System.Globalization;
 using System.Text;
@@ -25,7 +24,7 @@ internal static partial class Constants
     private static readonly Frame3D Zox = new(new Point3D(0, 0, 0), Direction3D.D.Y);
     private static readonly Frame3D Yoz = new(new Point3D(0, 0, 0), Direction3D.D.X);
 
-    /// <summary>The tolerance below which a length or a vector's magnitude counts as zero (<see cref="Standard.RealSmall"/>).</summary>
+    /// <summary>The tolerance below which a length or a vector's magnitude counts as zero (<c>2.2e-308</c>).</summary>
     public static double Resolution() => RealSmall();
 
     public static ref readonly Point3D Origin() => ref OriginPoint;

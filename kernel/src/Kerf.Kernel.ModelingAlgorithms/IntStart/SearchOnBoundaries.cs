@@ -668,7 +668,7 @@ internal class SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, TheSegm
             }
             //
             // jgv: build solution on the whole boundary
-            if (recheckOnRegularity && nbp > 0 && IsRegularity(a, domain))
+            if (recheckOnRegularity && nbp > 0 && IsRegularity(domain))
             {
                 // double theTol = Domain->MaxTolerance(A);
                 // theTol += theTol;
@@ -1164,7 +1164,7 @@ internal class SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, TheSegm
         }
     }
 
-    private static bool IsRegularity(Curve2DAdaptorBase a, TopolTool aDomain)
+    private static bool IsRegularity(TopolTool aDomain)
     {
         object? eAddress = aDomain.Edge();
         if (eAddress == null)

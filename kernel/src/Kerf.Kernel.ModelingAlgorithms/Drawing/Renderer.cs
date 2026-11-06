@@ -203,7 +203,7 @@ public static class Renderer
 
             if (_options.Edges != EdgeDisplay.None)
             {
-                AddEdges(mesh, t, first);
+                AddEdges(mesh, t);
             }
         }
 
@@ -221,7 +221,7 @@ public static class Renderer
         }
 
         // The edges to draw, as segments between new nodes
-        private void AddEdges(ShapeMesh mesh, Transform3D t, int firstNode)
+        private void AddEdges(ShapeMesh mesh, Transform3D t)
         {
             Dictionary<(int, int, int), List<int>>? nodesAt = null;
             double cosFeature = Math.Cos(_options.FeatureAngle * Math.PI / 180);

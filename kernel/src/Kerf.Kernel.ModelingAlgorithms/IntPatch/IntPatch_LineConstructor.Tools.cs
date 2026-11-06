@@ -531,7 +531,7 @@ internal partial class PatchLineConstructor
     }
 
     // OCCT's two GeomAbs_SurfaceType arguments are unused.
-    private static void AddLine(PatchLine l, int i, int j, SurfaceKind typeS1, SurfaceKind typeS2,
+    private static void AddLine(PatchLine l, int i, int j,
                                 int[] tabIndex, NCollection_Sequence<PatchLine> slin)
     {
         int indexFirstVertex = 1;

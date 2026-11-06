@@ -37,7 +37,7 @@ internal class FunctionRoots
     }
 
     private static void AppendRoot(NCollection_Sequence<double> sol, NCollection_Sequence<int> nbStateSol, double x,
-                                   FunctionWithDerivative f, double k, double dX)
+                                   FunctionWithDerivative f, double dX)
     {
         int n = sol.Length();
         double t;
@@ -148,7 +148,7 @@ internal class FunctionRoots
                     }
                 } while (ok && --itern >= 0);
 
-                AppendRoot(sol, nbStateSol, b, f, k, dX);
+                AppendRoot(sol, nbStateSol, b, f, dX);
                 return;
             }
 
@@ -388,7 +388,7 @@ internal class FunctionRoots
                         {
                             if (y0 != 0.0 || y1 != 0.0)
                             {
-                                AppendRoot(_sol, _nbStateSol, x, f, k, nEpsX);
+                                AppendRoot(_sol, _nbStateSol, x, f, nEpsX);
                             }
                         }
                     }
@@ -398,12 +398,12 @@ internal class FunctionRoots
                 //-- Il faut traiter differement le cas des points en bout :
                 if (ptrval[0] <= epsF && ptrval[0] >= -epsF)
                 {
-                    AppendRoot(_sol, _nbStateSol, X0, f, k, nEpsX);
+                    AppendRoot(_sol, _nbStateSol, X0, f, nEpsX);
                 }
 
                 if (ptrval[n] <= epsF && ptrval[n] >= -epsF)
                 {
-                    AppendRoot(_sol, _nbStateSol, xn, f, k, nEpsX);
+                    AppendRoot(_sol, _nbStateSol, xn, f, nEpsX);
                 }
 
                 //-- --------------------------------------------------------------------------------
@@ -673,11 +673,11 @@ internal class FunctionRoots
                         {
                             if (val2 - val1 > epsF)
                             {
-                                AppendRoot(_sol, _nbStateSol, solX1, f, k, nEpsX);
+                                AppendRoot(_sol, _nbStateSol, solX1, f, nEpsX);
                             }
                             else if (val1 - val2 > epsF)
                             {
-                                AppendRoot(_sol, _nbStateSol, solX2, f, k, nEpsX);
+                                AppendRoot(_sol, _nbStateSol, solX2, f, nEpsX);
                             }
                             else
                             {
@@ -686,21 +686,21 @@ internal class FunctionRoots
                                 der2 = Math.Abs(der2);
                                 if (der1 < der2)
                                 {
-                                    AppendRoot(_sol, _nbStateSol, solX1, f, k, nEpsX);
+                                    AppendRoot(_sol, _nbStateSol, solX1, f, nEpsX);
                                 }
                                 else
                                 {
-                                    AppendRoot(_sol, _nbStateSol, solX2, f, k, nEpsX);
+                                    AppendRoot(_sol, _nbStateSol, solX2, f, nEpsX);
                                 }
                             }
                         }
                         else if (isSol1)
                         {
-                            AppendRoot(_sol, _nbStateSol, solX1, f, k, nEpsX);
+                            AppendRoot(_sol, _nbStateSol, solX1, f, nEpsX);
                         }
                         else if (isSol2)
                         {
-                            AppendRoot(_sol, _nbStateSol, solX2, f, k, nEpsX);
+                            AppendRoot(_sol, _nbStateSol, solX2, f, nEpsX);
                         }
                     } //-- Recherche d un extrema
                 } //-- for

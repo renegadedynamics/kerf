@@ -519,7 +519,7 @@ internal class BuildPlateSurface
                 LoadCurve(nbBoucle);
                 if (_pntCont.Length() != 0)
                 {
-                    LoadPoint(nbBoucle);
+                    LoadPoint();
                 }
                 //====================================================================
                 // Construction of the surface
@@ -556,7 +556,7 @@ internal class BuildPlateSurface
             }
             else
             {
-                LoadPoint(nbBoucle);
+                LoadPoint();
                 //====================================================================
                 // Construction of the surface
                 //====================================================================
@@ -1615,7 +1615,7 @@ internal class BuildPlateSurface
             LoadCurve(0, 0);
             if (_pntCont.Length() != 0)
             {
-                LoadPoint(0, 0);
+                LoadPoint(0);
             }
             //====================================================================
             // Construction of the surface
@@ -2177,7 +2177,7 @@ internal class BuildPlateSurface
     }
 
     // Loading of points of point constraints (OCCT doesn't use NbBoucle)
-    private void LoadPoint(int nbBoucle, int orderMax = 2)
+    private void LoadPoint(int orderMax = 2)
     {
         Point3D p3d, pdif = new Point3D(), pp;
         Point2D p2d;

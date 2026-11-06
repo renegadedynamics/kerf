@@ -42,17 +42,17 @@ internal sealed class AhtBezierSurface : BoundedSurface
         return ((c3 * t + c2) * t + c1) * t + c0;
     }
 
-    private static Xyz CubicD1(in Xyz c0, in Xyz c1, in Xyz c2, in Xyz c3, double t)
+    private static Xyz CubicD1(in Xyz c1, in Xyz c2, in Xyz c3, double t)
     {
         return (c3 * (3.0 * t) + c2 * 2.0) * t + c1;
     }
 
-    private static Xyz CubicD2(in Xyz c0, in Xyz c1, in Xyz c2, in Xyz c3, double t)
+    private static Xyz CubicD2(in Xyz c2, in Xyz c3, double t)
     {
         return c3 * (6.0 * t) + c2 * 2.0;
     }
 
-    private static Xyz CubicD3(in Xyz c0, in Xyz c1, in Xyz c2, in Xyz c3)
+    private static Xyz CubicD3(in Xyz c3)
     {
         return c3 * 6.0;
     }
@@ -103,36 +103,36 @@ internal sealed class AhtBezierSurface : BoundedSurface
         data.S00 = CubicVal(q00, q01, q02, q03, v);
         if (maxOrder >= 1)
         {
-            Xyz q10 = CubicD1(p00, p10, p20, p30, u);
-            Xyz q11 = CubicD1(p01, p11, p21, p31, u);
-            Xyz q12 = CubicD1(p02, p12, p22, p32, u);
-            Xyz q13 = CubicD1(p03, p13, p23, p33, u);
+            Xyz q10 = CubicD1(p10, p20, p30, u);
+            Xyz q11 = CubicD1(p11, p21, p31, u);
+            Xyz q12 = CubicD1(p12, p22, p32, u);
+            Xyz q13 = CubicD1(p13, p23, p33, u);
 
             data.S10 = CubicVal(q10, q11, q12, q13, v);
-            data.S01 = CubicD1(q00, q01, q02, q03, v);
+            data.S01 = CubicD1(q01, q02, q03, v);
 
             if (maxOrder >= 2)
             {
-                Xyz q20 = CubicD2(p00, p10, p20, p30, u);
-                Xyz q21 = CubicD2(p01, p11, p21, p31, u);
-                Xyz q22 = CubicD2(p02, p12, p22, p32, u);
-                Xyz q23 = CubicD2(p03, p13, p23, p33, u);
+                Xyz q20 = CubicD2(p20, p30, u);
+                Xyz q21 = CubicD2(p21, p31, u);
+                Xyz q22 = CubicD2(p22, p32, u);
+                Xyz q23 = CubicD2(p23, p33, u);
 
                 data.S20 = CubicVal(q20, q21, q22, q23, v);
-                data.S11 = CubicD1(q10, q11, q12, q13, v);
-                data.S02 = CubicD2(q00, q01, q02, q03, v);
+                data.S11 = CubicD1(q11, q12, q13, v);
+                data.S02 = CubicD2(q02, q03, v);
 
                 if (maxOrder >= 3)
                 {
-                    Xyz q30 = CubicD3(p00, p10, p20, p30);
-                    Xyz q31 = CubicD3(p01, p11, p21, p31);
-                    Xyz q32 = CubicD3(p02, p12, p22, p32);
-                    Xyz q33 = CubicD3(p03, p13, p23, p33);
+                    Xyz q30 = CubicD3(p30);
+                    Xyz q31 = CubicD3(p31);
+                    Xyz q32 = CubicD3(p32);
+                    Xyz q33 = CubicD3(p33);
 
                     data.S30 = CubicVal(q30, q31, q32, q33, v);
-                    data.S21 = CubicD1(q20, q21, q22, q23, v);
-                    data.S12 = CubicD2(q10, q11, q12, q13, v);
-                    data.S03 = CubicD3(q00, q01, q02, q03);
+                    data.S21 = CubicD1(q21, q22, q23, v);
+                    data.S12 = CubicD2(q12, q13, v);
+                    data.S03 = CubicD3(q03);
                 }
             }
         }

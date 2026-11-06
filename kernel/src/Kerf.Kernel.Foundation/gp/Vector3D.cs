@@ -14,10 +14,12 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
 {
     private readonly Xyz _coord;
 
+    /// <summary>The unit vector along <paramref name="direction"/>.</summary>
     public Vector3D(in Direction3D direction) => _coord = direction.XYZ();
 
     internal Vector3D(in Xyz coord) => _coord = coord;
 
+    /// <summary>The vector with these components.</summary>
     public Vector3D(double x, double y, double z) => _coord = new Xyz(x, y, z);
 
     /// <summary>The vector from <paramref name="point1"/> to <paramref name="point2"/>.</summary>
@@ -82,10 +84,13 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
 
     internal readonly Vector3D WithCoord(double xv, double yv, double zv) => new(xv, yv, zv);
 
+    /// <summary>A copy with its X component replaced.</summary>
     public readonly Vector3D WithX(double x) => new(x, _coord.Y(), _coord.Z());
 
+    /// <summary>A copy with its Y component replaced.</summary>
     public readonly Vector3D WithY(double y) => new(_coord.X(), y, _coord.Z());
 
+    /// <summary>A copy with its Z component replaced.</summary>
     public readonly Vector3D WithZ(double z) => new(_coord.X(), _coord.Y(), z);
 
     internal readonly Vector3D WithXYZ(in Xyz coord) => new(coord);
@@ -101,14 +106,18 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         zv = _coord.Z();
     }
 
+    /// <summary>The X component.</summary>
     public readonly double X => _coord.X();
 
+    /// <summary>The Y component.</summary>
     public readonly double Y => _coord.Y();
 
+    /// <summary>The Z component.</summary>
     public readonly double Z => _coord.Z();
 
     internal readonly Xyz XYZ() => _coord;
 
+    /// <summary>True when the magnitudes differ by at most <paramref name="linearTolerance"/> and the angle between them is at most <paramref name="angularTolerance"/> radians. The angle isn't tested when either is no longer than <paramref name="linearTolerance"/>.</summary>
     public readonly bool IsEqual(in Vector3D other, double linearTolerance, double angularTolerance)
     {
         double magnitude = Magnitude;
@@ -125,30 +134,40 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         }
     }
 
+    /// <summary>True when at right angles to <paramref name="other"/>, within <paramref name="angularTolerance"/> radians.</summary>
+    /// <exception cref="InvalidOperationException">Either vector is shorter than the resolution.</exception>
     public readonly bool IsNormal(in Vector3D other, double angularTolerance)
     {
         double ang = Math.Abs(M_PI_2 - AngleTo(other));
         return ang <= angularTolerance;
     }
 
+    /// <summary>True when pointing the opposite way to <paramref name="other"/>, within <paramref name="angularTolerance"/> radians.</summary>
+    /// <exception cref="InvalidOperationException">Either vector is shorter than the resolution.</exception>
     public readonly bool IsOpposite(in Vector3D other, double angularTolerance)
     {
         double ang = M_PI - AngleTo(other);
         return ang <= angularTolerance;
     }
 
+    /// <summary>True when parallel to <paramref name="other"/>, in either sense, within <paramref name="angularTolerance"/> radians.</summary>
+    /// <exception cref="InvalidOperationException">Either vector is shorter than the resolution.</exception>
     public readonly bool IsParallel(in Vector3D other, double angularTolerance)
     {
         double ang = AngleTo(other);
         return ang <= angularTolerance || M_PI - ang <= angularTolerance;
     }
 
+    /// <summary>The angle between them, in [0, PI] radians, with no sign.</summary>
+    /// <exception cref="InvalidOperationException">Either vector is shorter than the resolution.</exception>
     public readonly double AngleTo(in Vector3D other)
     {
         Refusal.StateIf(_coord.Modulus() <= Constants.Resolution() || other._coord.Modulus() <= Constants.Resolution(), FailureKind.NullVector, " ");
         return new Direction3D(_coord).AngleTo(new Direction3D(other._coord));
     }
 
+    /// <summary>The angle to <paramref name="other"/>, in [-PI, PI] radians: positive when this cross <paramref name="other"/> points to the same side as <paramref name="reference"/>.</summary>
+    /// <exception cref="InvalidOperationException">Any of the three vectors is shorter than the resolution.</exception>
     public readonly double AngleWithRef(in Vector3D other, in Vector3D reference)
     {
         Refusal.StateIf(_coord.Modulus() <= Constants.Resolution()
@@ -157,10 +176,13 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Direction3D(_coord).AngleWithRef(new Direction3D(other._coord), new Direction3D(reference._coord));
     }
 
+    /// <summary>The length.</summary>
     public readonly double Magnitude => _coord.Modulus();
 
+    /// <summary>The square of the length, without the square root: the cheaper one to compare.</summary>
     public readonly double SquareMagnitude => _coord.SquareModulus();
 
+    /// <summary>The sum.</summary>
     public readonly Vector3D Added(in Vector3D other)
     {
         Xyz coord = _coord;
@@ -168,6 +190,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
+    /// <summary>This vector minus <paramref name="right"/>.</summary>
     public readonly Vector3D Subtracted(in Vector3D right)
     {
         Xyz coord = _coord;
@@ -175,6 +198,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
+    /// <summary>Each component multiplied by <paramref name="scalar"/>.</summary>
     public readonly Vector3D Multiplied(double scalar)
     {
         Xyz coord = _coord;
@@ -182,6 +206,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
+    /// <summary>Each component divided by <paramref name="scalar"/>, which isn't checked for zero.</summary>
     public readonly Vector3D Divided(double scalar)
     {
         Xyz coord = _coord;
@@ -189,6 +214,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
+    /// <summary>The cross product: this cross <paramref name="right"/>.</summary>
     public readonly Vector3D Crossed(in Vector3D right)
     {
         Xyz coord = _coord;
@@ -196,10 +222,13 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
+    /// <summary>The magnitude of the cross product: |this| |<paramref name="right"/>| sin(angle).</summary>
     public readonly double CrossMagnitude(in Vector3D right) => _coord.CrossMagnitude(right._coord);
 
+    /// <summary>The square of <see cref="CrossMagnitude"/>, without its square root.</summary>
     public readonly double CrossSquareMagnitude(in Vector3D right) => _coord.CrossSquareMagnitude(right._coord);
 
+    /// <summary>The triple product: this cross (<paramref name="v1"/> cross <paramref name="v2"/>).</summary>
     public readonly Vector3D CrossCrossed(in Vector3D v1, in Vector3D v2)
     {
         Xyz coord = _coord;
@@ -207,10 +236,14 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
+    /// <summary>The dot product.</summary>
     public readonly double Dot(in Vector3D other) => _coord.Dot(other._coord);
 
+    /// <summary>The scalar triple product: this dot (<paramref name="v1"/> cross <paramref name="v2"/>).</summary>
     public readonly double DotCross(in Vector3D v1, in Vector3D v2) => _coord.DotCross(v1._coord, v2._coord);
 
+    /// <summary>The unit vector with this direction.</summary>
+    /// <exception cref="InvalidOperationException">The vector is no longer than the resolution.</exception>
     public readonly Vector3D Normalized()
     {
         double d = _coord.Modulus();
@@ -220,6 +253,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
+    /// <summary>The opposite.</summary>
     public readonly Vector3D Reversed()
     {
         Xyz coord = _coord;
@@ -227,6 +261,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
+    /// <summary>The half-turn about <paramref name="vector"/>: the part along it is kept and the part across it reversed. A zero-length mirror leaves it unchanged.</summary>
     public readonly Vector3D Mirrored(in Vector3D vector)
     {
         Xyz coord = _coord;
@@ -256,6 +291,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
+    /// <summary>The half-turn about the direction of <paramref name="axis"/>; a vector has no position, so the axis's location doesn't matter.</summary>
     public readonly Vector3D Mirrored(in Axis3D axis)
     {
         Xyz coord = _coord;
@@ -280,6 +316,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
+    /// <summary>The reflection in a plane normal to the main direction of <paramref name="axis"/>; a vector has no position, so the frame's location doesn't matter.</summary>
     public readonly Vector3D Mirrored(in Frame3D axis)
     {
         Xyz coord = _coord;
@@ -299,6 +336,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
+    /// <summary>Rotated about <paramref name="axis"/> by <paramref name="angle"/> radians, anticlockwise looking against the axis's direction. Only the axis's direction matters: a vector has no position.</summary>
     public readonly Vector3D Rotated(in Axis3D axis, double angle)
     {
         Xyz coord = _coord;
@@ -307,6 +345,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
+    /// <summary>Each component multiplied by <paramref name="factor"/>.</summary>
     public readonly Vector3D Scaled(double factor)
     {
         Xyz coord = _coord;
@@ -314,6 +353,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
+    /// <summary>The image under <paramref name="transformation"/>'s rotation and scale: translation has no effect on a vector.</summary>
     public readonly Vector3D Transformed(in Transform3D transformation)
     {
         Xyz coord = _coord;
@@ -335,10 +375,13 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
+    /// <summary>The sum.</summary>
     public static Vector3D operator +(in Vector3D left, in Vector3D right) => left.Added(right);
 
+    /// <summary>The difference.</summary>
     public static Vector3D operator -(in Vector3D left, in Vector3D right) => left.Subtracted(right);
 
+    /// <summary>The opposite.</summary>
     public static Vector3D operator -(in Vector3D v) => v.Reversed();
 
     /// <summary>The dot product, as OCCT's <c>operator*</c>.</summary>
@@ -347,21 +390,30 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
     /// <summary>The cross product, as OCCT's <c>operator^</c>.</summary>
     public static Vector3D operator ^(in Vector3D left, in Vector3D right) => left.Crossed(right);
 
+    /// <summary>Each component multiplied by the scalar.</summary>
     public static Vector3D operator *(in Vector3D v, double scalar) => v.Multiplied(scalar);
 
+    /// <summary>Each component multiplied by the scalar.</summary>
     public static Vector3D operator *(double scalar, in Vector3D v) => v.Multiplied(scalar);
 
+    /// <summary>Each component divided by the scalar, which isn't checked for zero.</summary>
     public static Vector3D operator /(in Vector3D v, double scalar) => v.Divided(scalar);
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(Vector3D other) => _coord.Equals(other._coord);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="Vector3D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is Vector3D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => _coord.GetHashCode();
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in Vector3D left, in Vector3D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in Vector3D left, in Vector3D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => Constants.Format("Vector3D", _coord.X(), _coord.Y(), _coord.Z());
 }

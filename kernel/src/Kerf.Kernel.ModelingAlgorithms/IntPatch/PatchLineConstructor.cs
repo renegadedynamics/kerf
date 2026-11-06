@@ -45,8 +45,6 @@ internal partial class PatchLineConstructor
         int i = 1, nbvtx;
         double firstp, lastp;
         double tol = global::Kerf.Engine.Foundation.Precision.PConfusion() * 100.0; // JMB le 13 Jan 2000. Report de la correction du PRO19653
-        SurfaceKind typs1 = mySurf1.GetType();
-        SurfaceKind typs2 = mySurf2.GetType();
 
         PatchLineType typl = l.ArcType();
         if (typl == PatchLineType.Analytic)
@@ -84,7 +82,7 @@ internal partial class PatchLineConstructor
                     else
                     {
                         tabIndex[i] = tabIndex[i + 1] = ++numline;
-                        AddLine(l, i, i + 1, typs1, typs2, tabIndex, _slin);
+                        AddLine(l, i, i + 1, tabIndex, _slin);
                     }
                 }
             }
@@ -100,7 +98,7 @@ internal partial class PatchLineConstructor
                     if (ALine_Vertex_i.IsOnDomS1 && ALine_Vertex_i.IsOnDomS2)
                     {
                         tabIndex[i] = ++numline;
-                        AddLine(l, i, i, typs1, typs2, tabIndex, _slin);
+                        AddLine(l, i, i, tabIndex, _slin);
                     }
                 }
             }
@@ -247,7 +245,7 @@ internal partial class PatchLineConstructor
                         if (!lignetropPetite)
                         {
                             tabIndex[i] = tabIndex[i + 1] = ++numline;
-                            AddLine(l, i, i + 1, typs1, typs2, tabIndex, _slin);
+                            AddLine(l, i, i + 1, tabIndex, _slin);
                             TestWLineToRLine(slinref, _slin, mySurf1, myDom1, mySurf2, myDom2,
                                              tolArc); //-- on teste la derniere entree de slin
                         }
@@ -267,7 +265,7 @@ internal partial class PatchLineConstructor
                     if (WLine_Vertex_i.IsOnDomS1 && WLine_Vertex_i.IsOnDomS2)
                     {
                         tabIndex[i] = ++numline;
-                        AddLine(l, i, i, typs1, typs2, tabIndex, _slin);
+                        AddLine(l, i, i, tabIndex, _slin);
                     }
                 }
             }
@@ -356,7 +354,7 @@ internal partial class PatchLineConstructor
                     else
                     {
                         tabIndex[i] = tabIndex[i + 1] = ++numline;
-                        AddLine(l, i, i + 1, typs1, typs2, tabIndex, _slin);
+                        AddLine(l, i, i + 1, tabIndex, _slin);
                     }
                 }
             }
@@ -413,7 +411,7 @@ internal partial class PatchLineConstructor
                         else
                         {
                             tabIndex[nbvtx] = tabIndex[1] = ++numline;
-                            AddLine(l, nbvtx, 1, typs1, typs2, tabIndex, _slin);
+                            AddLine(l, nbvtx, 1, tabIndex, _slin);
                         }
                     }
                 }
@@ -436,7 +434,7 @@ internal partial class PatchLineConstructor
                     if (GLine_Vertex_i.IsOnDomS1 && GLine_Vertex_i.IsOnDomS2)
                     {
                         tabIndex[i] = ++numline;
-                        AddLine(l, i, i, typs1, typs2, tabIndex, _slin);
+                        AddLine(l, i, i, tabIndex, _slin);
                     }
                 }
             }
@@ -463,7 +461,7 @@ internal partial class PatchLineConstructor
                 PatchPoint vtx2 = rLine.Vertex(i + 1);
                 if (restOnS1 && restOnS2)
                 {
-                    AddLine(l, i, i + 1, typs1, typs2, tabIndex, _slin);
+                    AddLine(l, i, i + 1, tabIndex, _slin);
                 }
                 else if (restOnS1)
                 { //-- On na classifie pas sur 1
@@ -549,7 +547,7 @@ internal partial class PatchLineConstructor
 
                             if (in2 != global::Kerf.Topology.Containment.Out)
                             {
-                                AddLine(l, i, i + 1, typs1, typs2, tabIndex, _slin);
+                                AddLine(l, i, i + 1, tabIndex, _slin);
                             }
                         }
                     }
@@ -639,7 +637,7 @@ internal partial class PatchLineConstructor
 
                             if (in2 != global::Kerf.Topology.Containment.Out)
                             {
-                                AddLine(l, i, i + 1, typs1, typs2, tabIndex, _slin);
+                                AddLine(l, i, i + 1, tabIndex, _slin);
                             }
                         }
                     }

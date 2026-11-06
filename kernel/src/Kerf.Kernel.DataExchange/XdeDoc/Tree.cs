@@ -264,7 +264,7 @@ internal sealed class Tree
             }
         }
         var done = new Dictionary<DocumentProduct, DocumentProduct>(ReferenceEqualityComparer.Instance);
-        DocumentProduct remap(DocumentProduct product)
+        DocumentProduct Remap(DocumentProduct product)
         {
             if (done.TryGetValue(product, out DocumentProduct? known))
             {
@@ -290,7 +290,7 @@ internal sealed class Tree
         }
         Instance RemapInstance(Instance instance)
         {
-            DocumentProduct aProduct = remap(instance.Product);
+            DocumentProduct aProduct = Remap(instance.Product);
             return ReferenceEquals(aProduct, instance.Product) ? instance : instance.WithProduct(aProduct);
         }
         return new Tree(Roots.Select(RemapInstance), Layers, LengthUnit);

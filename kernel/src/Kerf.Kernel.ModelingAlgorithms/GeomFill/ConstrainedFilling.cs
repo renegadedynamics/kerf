@@ -213,7 +213,7 @@ internal class ConstrainedFilling
     }
 
     private static void Coonscnd(int nb, Boundary[] bound, bool[] rev, CornerState[] stat,
-                                 TgtField?[] tga, double[] mintg)
+                                 double[] mintg)
     {
         double fact_normalization = 100.0;
         int i;
@@ -403,7 +403,7 @@ internal class ConstrainedFilling
             nrev[0] = nrev[1] = false;
             nrev[2] = true;
             _mig[2] = _mig[3];
-            Coonscnd(3, bound, nrev, _stcor, ttgalg, _mig);
+            Coonscnd(3, bound, nrev, _stcor, _mig);
             Killcorners(3, bound, rev, nrev, _stcor, ttgalg);
         }
         // on remet les coins en place (on duplique la pointe).
@@ -484,7 +484,7 @@ internal class ConstrainedFilling
             bool[] nrev = new bool[4];
             nrev[0] = nrev[1] = false;
             nrev[2] = nrev[3] = true;
-            Coonscnd(4, bound, nrev, _stcor, _tgalg, _mig);
+            Coonscnd(4, bound, nrev, _stcor, _mig);
             Killcorners(4, bound, rev, nrev, _stcor, _tgalg);
         }
         // On verifie les champs tangents ne changent pas de direction.

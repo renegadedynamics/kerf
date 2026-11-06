@@ -327,13 +327,13 @@ internal class ConstRadInv : FuncInv
         ndotns1 = nplan.Dot(ns1);
         ndotns2 = nplan.Dot(ns2);
 
-        DerivativesTail(x, d, d1u1, d1v1, d1u2, d1v2, d2u1, d2v1, d2uv1, d2u2, d2v2, d2uv2, ns1, ns2, nplan, dnplan,
+        DerivativesTail(d, d1u1, d1v1, d1u2, d1v2, d2u1, d2v1, d2uv1, d2u2, d2v2, d2uv2, ns1, ns2, nplan, dnplan,
                         ncrossns1, ncrossns2, v2d, norm1, norm2, ndotns1, ndotns2);
         return true;
     }
 
     // The derivatives in the 2nd to 4th rows, which Derivatives and Values compute with the same code.
-    private void DerivativesTail(math_Vector x, Matrix d, in Vector3D d1u1, in Vector3D d1v1, in Vector3D d1u2,
+    private void DerivativesTail(Matrix d, in Vector3D d1u1, in Vector3D d1v1, in Vector3D d1u2,
                                  in Vector3D d1v2, in Vector3D d2u1, in Vector3D d2v1, in Vector3D d2uv1, in Vector3D d2u2,
                                  in Vector3D d2v2, in Vector3D d2uv2, in Vector3D ns1, in Vector3D ns2, in Vector3D nplan,
                                  in Vector3D dnplan, in Vector3D ncrossns1, in Vector3D ncrossns2, in Vector2D v2d,
@@ -516,7 +516,7 @@ internal class ConstRadInv : FuncInv
         f[3] = resul1.Y;
         f[4] = resul1.Z;
 
-        DerivativesTail(x, d, d1u1, d1v1, d1u2, d1v2, d2u1, d2v1, d2uv1, d2u2, d2v2, d2uv2, ns1, ns2, nplan, dnplan,
+        DerivativesTail(d, d1u1, d1v1, d1u2, d1v2, d2u1, d2v1, d2uv1, d2u2, d2v2, d2uv2, ns1, ns2, nplan, dnplan,
                         ncrossns1, ncrossns2, v2d, norm1, norm2, ndotns1, ndotns2);
         return true;
     }

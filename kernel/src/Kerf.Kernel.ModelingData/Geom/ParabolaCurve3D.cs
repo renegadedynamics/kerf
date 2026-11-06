@@ -56,18 +56,22 @@ public sealed class ParabolaCurve3D : ConicCurve3D
     /// <summary>-U.</summary>
     public sealed override double ReversedParameter(double u) => (-u);
 
+    /// <summary>Always false.</summary>
     public sealed override bool IsClosed => false;
 
+    /// <summary>Always false.</summary>
     public sealed override bool IsPeriodic => false;
 
     /// <summary>1.</summary>
     public sealed override double Eccentricity => 1.0;
 
+    /// <summary>Effectively minus infinity: -2e100, since the curve has no start.</summary>
     public sealed override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>The focal distance: from the apex to the focus.</summary>
     public double Focal => _focalLength;
 
+    /// <summary>Effectively infinity: 2e100, since the curve has no end.</summary>
     public sealed override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>The parameter of the parabola: twice the focal length.</summary>
@@ -173,6 +177,8 @@ public sealed class ParabolaCurve3D : ConicCurve3D
 
     // Non-mutating twins of the Set methods (Kerf)
 
+    /// <summary>A copy with this focal length; this curve is unchanged.</summary>
+    /// <exception cref="ArgumentException"><paramref name="focal"/> is negative.</exception>
     public ParabolaCurve3D WithFocal(double focal)
     {
         ParabolaCurve3D copy = (ParabolaCurve3D)Copy();
@@ -180,6 +186,7 @@ public sealed class ParabolaCurve3D : ConicCurve3D
         return copy;
     }
 
+    /// <summary>A copy that takes its placement and focal length from <paramref name="parabola"/>; this curve is unchanged.</summary>
     public ParabolaCurve3D WithParabola(in Parabola3D parabola)
     {
         ParabolaCurve3D copy = (ParabolaCurve3D)Copy();

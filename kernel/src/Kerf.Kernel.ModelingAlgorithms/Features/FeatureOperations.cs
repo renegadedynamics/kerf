@@ -46,11 +46,6 @@ public sealed record ExtrudeUntilOptions
     public bool ModifySketchFace { get; init; } = true;
 }
 
-/// <summary>
-/// Features: local edits of a shape (docs/api/offsets-features.md; OCCT's <c>BRepOffsetAPI_DraftAngle</c> and
-/// <c>BRepFeat</c>), as static methods and extension members. A failure is the engine's status as a diagnostic
-/// (<c>draft.face-failed</c> with the face, <c>feature.no-intersect-u</c>…).
-/// </summary>
 /// <summary>A shape's faces split along edges (<see cref="FeatureOperations.SplitAlong"/>).</summary>
 /// <param name="Shape">The shape, its faces split.</param>
 /// <param name="History">How its faces became the pieces.</param>
@@ -58,6 +53,11 @@ public sealed record ExtrudeUntilOptions
 /// <param name="Right">The faces on their right.</param>
 public sealed record SplitFacesResult(Shape Shape, ShapeHistory History, ImmutableArray<Face> Left, ImmutableArray<Face> Right);
 
+/// <summary>
+/// Features: local edits of a shape (docs/api/offsets-features.md; OCCT's <c>BRepOffsetAPI_DraftAngle</c> and
+/// <c>BRepFeat</c>), as static methods and extension members. A failure is the engine's status as a diagnostic
+/// (<c>draft.face-failed</c> with the face, <c>feature.no-intersect-u</c>…).
+/// </summary>
 public static class FeatureOperations
 {
     /// <summary>A face can't be drafted: <c>draft.face-failed</c>, with the face.</summary>

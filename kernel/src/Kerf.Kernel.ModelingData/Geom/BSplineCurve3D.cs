@@ -1441,11 +1441,13 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <summary>True if the start and end points are within Precision::Computational() (squared distance).</summary>
     public sealed override bool IsClosed => StartPoint.SquareDistanceTo(EndPoint) <= global::Kerf.Engine.Foundation.Precision.Computational();
 
+    /// <inheritdoc/>
     public sealed override bool IsPeriodic => _periodic;
 
     /// <summary>The global continuity: C0 to C3, or CN without inner knots.</summary>
     public sealed override Continuity Continuity => _smooth;
 
+    /// <summary>The polynomial degree of its spans.</summary>
     public int Degree => _deg;
 
     internal sealed override Point3D EvalD0(double u)
@@ -1610,6 +1612,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
         }
     }
 
+    /// <summary>The parameter of the start point: the first knot of the span the curve begins on.</summary>
     public sealed override double FirstParameter => _flatKnots[_deg + 1];
 
     /// <summary>The knot Index.</summary>
@@ -1664,6 +1667,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
         }
     }
 
+    /// <summary>The parameter of the end point: the last knot of the span the curve ends on.</summary>
     public sealed override double LastParameter => _flatKnots[_flatKnots.Upper() - _deg];
 
     /// <summary>The point at U, computed on the span between the knots FromK1 and ToK2.</summary>
@@ -1807,8 +1811,10 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <summary>The multiplicities (a copy; index 0 is knot 1's).</summary>
     public IReadOnlyList<int> Multiplicities => _mults.ToImmutableArray();
 
+    /// <summary>The number of distinct knots: their multiplicities aren't counted.</summary>
     public int KnotCount => _knots.Length();
 
+    /// <summary>The number of poles.</summary>
     public int PoleCount => _poles.Length();
 
     /// <summary>The pole Index.</summary>
@@ -1887,6 +1893,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     /// <summary>The weights, always NbPoles of them (1s for a non-rational curve); a copy.</summary>
     public IReadOnlyList<double> Weights => _weights.ToImmutableArray();
 
+    /// <summary>True when the poles have weights that aren't all equal.</summary>
     public bool IsRational => _rational;
 
     /// <summary>Applies T to the poles.</summary>

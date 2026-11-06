@@ -394,7 +394,7 @@ internal partial class FilletBuilderBase
         }
         else
         {
-            inters = FindFace(vtx, cv1, cv2, ref fv, fop);
+            inters = FindFace(cv1, cv2, ref fv, fop);
             if (!inters)
             {
                 PerformIntersectionAtEnd(index);
@@ -3760,10 +3760,10 @@ internal partial class FilletBuilderBase
     private bool FindFace(in Vertex v, in CommonPoint p1, in CommonPoint p2, ref Face fv)
     {
         Face favoid = new();
-        return FindFace(v, p1, p2, ref fv, favoid);
+        return FindFace(p1, p2, ref fv, favoid);
     }
 
-    private bool FindFace(in Vertex v, in CommonPoint p1, in CommonPoint p2, ref Face fv, in Face favoid)
+    private bool FindFace(in CommonPoint p1, in CommonPoint p2, ref Face fv, in Face favoid)
     {
         if (p1.IsVertex || p2.IsVertex)
         {

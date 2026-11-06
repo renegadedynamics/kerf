@@ -10,7 +10,7 @@ using static Kerf.Geometry.TransformForm;
 namespace Kerf.Geometry;
 
 /// <summary>A unit vector in 2D space.</summary>
-/// <remarks><c>new gp_Dir2d()</c> is (1, 0), as in OCCT; <c>default(gp_Dir2d)</c> is all zeros and not a valid direction.</remarks>
+/// <remarks><c>new Direction2D()</c> is (1, 0), as in OCCT; <c>default(Direction2D)</c> is all zeros and not a valid direction.</remarks>
 public readonly partial struct Direction2D : IEquatable<Direction2D>
 {
     /// <summary>The four directions along the axes of the global system.</summary>
@@ -35,16 +35,21 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
         _coord = coord;
     }
 
+    /// <summary>The X direction, (1, 0). <c>default(Direction2D)</c> is all zeros, and not a valid direction.</summary>
     public Direction2D() => _coord = new Xy(1.0, 0.0);
 
     internal Direction2D(D dir)
         => _coord = new Xy(dir == D.X ? 1.0 : dir == D.NX ? -1.0 : 0.0,
                              dir == D.Y ? 1.0 : dir == D.NY ? -1.0 : 0.0);
 
+    /// <summary>The direction of <paramref name="vector"/>, normalised.</summary>
+    /// <exception cref="ArgumentException">The vector has no length.</exception>
     public Direction2D(in Vector2D vector) : this(vector.XY()) { }
 
     internal Direction2D(in Xy xy) : this(xy.X(), xy.Y()) { }
 
+    /// <summary>The direction of these components, normalised.</summary>
+    /// <exception cref="ArgumentException">They have no length.</exception>
     public Direction2D(double x, double y)
     {
         _coord = default;
@@ -84,8 +89,12 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
         return new Direction2D(coord, isUnit: true);
     }
 
+    /// <summary>The direction with this X component replaced, then normalised, so the other components change too.</summary>
+    /// <exception cref="ArgumentException">The result has no length.</exception>
     public readonly Direction2D WithX(double x) => WithCoord(x, _coord.Y());
 
+    /// <summary>The direction with this Y component replaced, then normalised, so the other components change too.</summary>
+    /// <exception cref="ArgumentException">The result has no length.</exception>
     public readonly Direction2D WithY(double y) => WithCoord(_coord.X(), y);
 
     internal readonly Direction2D WithXY(in Xy xy) => WithCoord(xy.X(), xy.Y());
@@ -96,12 +105,15 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
 
     internal readonly void Coord(out double xv, out double yv) => _coord.Coord(out xv, out yv);
 
+    /// <summary>The X component.</summary>
     public readonly double X => _coord.X();
 
+    /// <summary>The Y component.</summary>
     public readonly double Y => _coord.Y();
 
     internal readonly Xy XY() => _coord;
 
+    /// <summary>True when the angle to <paramref name="other"/> is at most <paramref name="angularTolerance"/> radians.</summary>
     public readonly bool IsEqual(in Direction2D other, double angularTolerance)
     {
         double ang = AngleTo(other);
@@ -113,6 +125,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
         return ang <= angularTolerance;
     }
 
+    /// <summary>True when at right angles to <paramref name="other"/>, within <paramref name="angularTolerance"/> radians.</summary>
     public readonly bool IsNormal(in Direction2D other, double angularTolerance)
     {
         double ang = AngleTo(other);
@@ -130,6 +143,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
         return ang <= angularTolerance;
     }
 
+    /// <summary>True when pointing the opposite way to <paramref name="other"/>, within <paramref name="angularTolerance"/> radians.</summary>
     public readonly bool IsOpposite(in Direction2D other, double angularTolerance)
     {
         double ang = AngleTo(other);
@@ -141,6 +155,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
         return M_PI - ang <= angularTolerance;
     }
 
+    /// <summary>True when parallel to <paramref name="other"/>, in either sense, within <paramref name="angularTolerance"/> radians.</summary>
     public readonly bool IsParallel(in Direction2D other, double angularTolerance)
     {
         double ang = AngleTo(other);
@@ -191,8 +206,10 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
     /// <summary>The scalar cross product.</summary>
     public readonly double Crossed(in Direction2D right) => _coord.Crossed(right._coord);
 
+    /// <summary>The dot product.</summary>
     public readonly double Dot(in Direction2D other) => _coord.Dot(other._coord);
 
+    /// <summary>The opposite direction.</summary>
     public readonly Direction2D Reversed()
     {
         Xy coord = _coord;
@@ -200,6 +217,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
         return new Direction2D(coord, isUnit: true);
     }
 
+    /// <summary>The reflection in the line along <paramref name="direction"/>: the part along it is kept and the part across it reversed.</summary>
     public readonly Direction2D Mirrored(in Direction2D direction)
     {
         Xy coord = _coord;
@@ -215,6 +233,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
         return new Direction2D(coord, isUnit: true);
     }
 
+    /// <summary>The reflection in the direction of <paramref name="axis"/>; a direction has no position, so the axis's location doesn't matter.</summary>
     public readonly Direction2D Mirrored(in Axis2D axis)
     {
         Xy coord = _coord;
@@ -230,6 +249,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
         return new Direction2D(coord, isUnit: true);
     }
 
+    /// <summary>Rotated by <paramref name="angle"/> radians, anticlockwise.</summary>
     public readonly Direction2D Rotated(double angle)
     {
         Xy coord = _coord;
@@ -238,6 +258,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
         return new Direction2D(coord, isUnit: true);
     }
 
+    /// <summary>The direction <paramref name="transform"/> gives: translation has no effect, and scale only by its sign. The result stays a unit vector.</summary>
     public readonly Direction2D Transformed(in Transform2D transform)
     {
         Xy coord = _coord;
@@ -268,6 +289,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
         return new Direction2D(coord, isUnit: true);
     }
 
+    /// <summary>The opposite direction.</summary>
     public static Direction2D operator -(in Direction2D v) => v.Reversed();
 
     /// <summary>The dot product, as OCCT's <c>operator*</c>.</summary>
@@ -276,15 +298,21 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
     /// <summary>The scalar cross product, as OCCT's <c>operator^</c>.</summary>
     public static double operator ^(in Direction2D left, in Direction2D right) => left.Crossed(right);
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(Direction2D other) => _coord.Equals(other._coord);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="Direction2D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is Direction2D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => _coord.GetHashCode();
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in Direction2D left, in Direction2D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in Direction2D left, in Direction2D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => Constants.Format("Direction2D", _coord.X(), _coord.Y());
 }

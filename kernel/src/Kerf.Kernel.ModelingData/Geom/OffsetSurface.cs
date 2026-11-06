@@ -619,11 +619,13 @@ public sealed class OffsetSurface : Surface
         return _basisSurf.IsCNv(n + 1);
     }
 
+    /// <summary>Whether the basis surface is periodic in U.</summary>
     public sealed override bool IsUPeriodic => _basisSurf.IsUPeriodic;
 
     /// <summary>The U period of the basis surface.</summary>
     public sealed override double UPeriod => _basisSurf.UPeriod;
 
+    /// <summary>Whether the basis surface is periodic in V.</summary>
     public sealed override bool IsVPeriodic => _basisSurf.IsVPeriodic;
 
     /// <summary>The V period of the basis surface.</summary>

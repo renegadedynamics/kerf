@@ -7,13 +7,22 @@ namespace Kerf.Geometry;
 /// <summary>The type of a curve.</summary>
 public enum CurveKind
 {
+    /// <summary>A straight line.</summary>
     Line,
+    /// <summary>A circle.</summary>
     Circle,
+    /// <summary>An ellipse.</summary>
     Ellipse,
+    /// <summary>One branch of a hyperbola.</summary>
     Hyperbola,
+    /// <summary>A parabola.</summary>
     Parabola,
+    /// <summary>A Bézier curve, rational or not.</summary>
     BezierCurve,
+    /// <summary>A B-spline curve, rational or not.</summary>
     BSplineCurve,
+    /// <summary>A curve at a constant distance from another.</summary>
     OffsetCurve,
+    /// <summary>Any other curve, such as an adaptor over a curve on a surface.</summary>
     OtherCurve,
 }

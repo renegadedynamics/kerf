@@ -453,8 +453,8 @@ internal abstract class Reader : Transient
         using var ps = new ProgressScope(progress, "Reading binary STL file", nbFacets);
 
         // allocate buffer for 80 triangles
-        const int THE_CHUNK_NBFACETS = 80;
-        byte[] buffer = new byte[THE_STL_SIZEOF_FACET * THE_CHUNK_NBFACETS];
+        const int chunkNbfacets = 80;
+        byte[] buffer = new byte[THE_STL_SIZEOF_FACET * chunkNbfacets];
 
         // normal + 3 nodes + 2 extra bytes
         const int vec3Size = sizeof(float) * 3;
@@ -468,7 +468,7 @@ internal abstract class Reader : Transient
             // read more data
             if (nbFacesInBuffer <= 0)
             {
-                nbFacesInBuffer = Math.Min(THE_CHUNK_NBFACETS, nbFacets - nbFacetRead);
+                nbFacesInBuffer = Math.Min(chunkNbfacets, nbFacets - nbFacetRead);
                 int dataToRead = nbFacesInBuffer * faceDataLen;
                 if (stream.Read(buffer.AsSpan(0, dataToRead)) != dataToRead)
                 {

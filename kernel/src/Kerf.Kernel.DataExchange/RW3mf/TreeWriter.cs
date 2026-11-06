@@ -167,13 +167,13 @@ internal sealed class TreeWriter
     /// <summary>The 3MF unit name of a unit size in metres, or null if 3MF has none.</summary>
     internal static string? UnitName(double unitValue)
     {
-        static bool near(double a, double b) => Math.Abs(a - b) <= 1e-9 * b;
-        return near(unitValue, 1e-6) ? "micron"
-             : near(unitValue, 0.001) ? "millimeter"
-             : near(unitValue, 0.01) ? "centimeter"
-             : near(unitValue, 0.0254) ? "inch"
-             : near(unitValue, 0.3048) ? "foot"
-             : near(unitValue, 1.0) ? "meter"
+        static bool Near(double a, double b) => Math.Abs(a - b) <= 1e-9 * b;
+        return Near(unitValue, 1e-6) ? "micron"
+             : Near(unitValue, 0.001) ? "millimeter"
+             : Near(unitValue, 0.01) ? "centimeter"
+             : Near(unitValue, 0.0254) ? "inch"
+             : Near(unitValue, 0.3048) ? "foot"
+             : Near(unitValue, 1.0) ? "meter"
              : null;
     }
 
@@ -200,7 +200,7 @@ internal sealed class TreeWriter
 
         var materials = new List<ColorWithAlpha>();
         var materialIndex = new Dictionary<ColorWithAlpha, int>();
-        int materialOf(ColorWithAlpha color)
+        int MaterialOf(ColorWithAlpha color)
         {
             if (!materialIndex.TryGetValue(color, out int index))
             {
@@ -273,8 +273,8 @@ internal sealed class TreeWriter
                     if (hasColor)
                     {
                         // a part with colours but none of its own takes white where its faces have none
-                        def.DefaultMaterial = materialOf(aColor ?? new ColorWithAlpha(1.0f, 1.0f, 1.0f, 1.0f));
-                        def.GroupMaterials = mesh.Groups.Select(g => g.Color is ColorWithAlpha c ? materialOf(c) : -1).ToList();
+                        def.DefaultMaterial = MaterialOf(aColor ?? new ColorWithAlpha(1.0f, 1.0f, 1.0f, 1.0f));
+                        def.GroupMaterials = mesh.Groups.Select(g => g.Color is ColorWithAlpha c ? MaterialOf(c) : -1).ToList();
                     }
                 }
             }

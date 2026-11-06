@@ -2389,7 +2389,7 @@ internal static class OffsetTool
 
     //=================================================================================================
 
-    private static void SelectEdge(in Face f, in Face ef, in Edge e,
+    private static void SelectEdge(in Edge e,
                                    NCollection_List<Shape> lInt)
     {
         //------------------------------------------------------------
@@ -3804,7 +3804,7 @@ internal static class OffsetTool
                     if (lInt1.Extent() > 1)
                     {
                         // l intersection est en plusieurs edges (franchissement de couture)
-                        SelectEdge(F, ef, e, lInt1);
+                        SelectEdge(e, lInt1);
                     }
                     ne = ShapeCasts.Edge(lInt1.First());
                     BrepTEdge te = (BrepTEdge)ne.TShape()!;

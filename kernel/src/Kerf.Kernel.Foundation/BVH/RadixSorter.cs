@@ -10,26 +10,26 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// <summary>A pair of Morton code and primitive ID (OCCT's <c>std::pair&lt;unsigned int, int&gt;</c>).</summary>
 internal struct EncodedLink : IEquatable<EncodedLink>
 {
-    public uint first;
-    public int second;
+    public uint First;
+    public int Second;
 
     public EncodedLink(uint theFirst, int theSecond)
     {
-        first = theFirst;
-        second = theSecond;
+        First = theFirst;
+        Second = theSecond;
     }
 
-    public readonly bool Equals(EncodedLink other) => first == other.first && second == other.second;
+    public readonly bool Equals(EncodedLink other) => First == other.First && Second == other.Second;
 
     public override readonly bool Equals(object? obj) => obj is EncodedLink other && Equals(other);
 
-    public override readonly int GetHashCode() => HashCode.Combine(first, second);
+    public override readonly int GetHashCode() => HashCode.Combine(First, Second);
 
     public static bool operator ==(EncodedLink left, EncodedLink right) => left.Equals(right);
 
     public static bool operator !=(EncodedLink left, EncodedLink right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"({first}, {second})";
+    public override readonly string ToString() => $"({First}, {Second})";
 }
 
 internal static partial class BvhTools
@@ -95,7 +95,7 @@ internal static partial class BvhTools
                     return first;
                 }
 
-                if ((links[first].first & bit) != 0)
+                if ((links[first].First & bit) != 0)
                 {
                     break;
                 }
@@ -111,7 +111,7 @@ internal static partial class BvhTools
                 {
                     return first;
                 }
-            } while ((links[last].first & bit) != 0);
+            } while ((links[last].First & bit) != 0);
 
             (links[first], links[last]) = (links[last], links[first]); // out of place, swap and loop
             ++first;
@@ -218,7 +218,7 @@ internal class RadixSorter<T, TVec> : Sorter<T, TVec>
         NCollection_Array1<int> linkMap = new(start, final);
         for (int linkIdx = start; linkIdx <= final; ++linkIdx)
         {
-            linkMap[_encodedLinks.Value(linkIdx).second] = linkIdx;
+            linkMap[_encodedLinks.Value(linkIdx).Second] = linkIdx;
         }
 
         // Step 3 -- Rearranging primitive list according to Morton codes (in place)

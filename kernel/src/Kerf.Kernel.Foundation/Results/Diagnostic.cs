@@ -106,11 +106,11 @@ public sealed record Diagnostic
     /// </summary>
     internal object? ShapeData { get; init; }
 
-    /// <summary>An error.</summary>
+    /// <summary>A diagnostic of <see cref="Severity.Error"/> severity.</summary>
     public static Diagnostic Error(DiagnosticCode code, string message) =>
         new() { Severity = Severity.Error, Code = code, Message = message };
 
-    /// <summary>A warning.</summary>
+    /// <summary>A diagnostic of <see cref="Severity.Warning"/> severity.</summary>
     public static Diagnostic Warning(DiagnosticCode code, string message) =>
         new() { Severity = Severity.Warning, Code = code, Message = message };
 

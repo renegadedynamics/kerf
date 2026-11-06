@@ -6,8 +6,8 @@ namespace Kerf.Engine.Geometry;
 
 /// <summary>Spherical linear interpolation of quaternions; the result is a unit quaternion.</summary>
 /// <remarks>
-/// <c>new gp_QuaternionSLerp()</c> holds identities and a zero angle (OCCT's default constructor leaves the angle
-/// uninitialised); <c>default(gp_QuaternionSLerp)</c> is not valid.
+/// <c>new QuaternionSLerp()</c> holds identities and a zero angle (OCCT's default constructor leaves the angle
+/// uninitialised); <c>default(QuaternionSLerp)</c> is not valid.
 /// </remarks>
 internal partial struct QuaternionSLerp : IEquatable<QuaternionSLerp>
 {
