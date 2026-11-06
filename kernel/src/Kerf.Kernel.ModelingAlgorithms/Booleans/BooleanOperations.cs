@@ -39,8 +39,9 @@ public sealed record BooleanOptions
     /// costs about 15% of a small Boolean; a caller that checks a later step can leave it out.</summary>
     public bool CheckResult { get; init; } = true;
 
-    /// <summary>For <see cref="BooleanOperations.Section"/>: approximate the section curves by B-splines.</summary>
-    public bool ApproximateSection { get; init; }
+    /// <summary>For <see cref="BooleanOperations.Section"/>: approximate the section curves by B-splines: true by default,
+    /// where OCCT's is false, as without it a section can lose most of a curve with no error (#1124; decision 20907).</summary>
+    public bool ApproximateSection { get; init; } = true;
 
     /// <summary>Whether a section's edges get their curves on the faces of both inputs (OCCT's <c>ComputePCurveOn1</c> and
     /// <c>ComputePCurveOn2</c>): true by default.</summary>
