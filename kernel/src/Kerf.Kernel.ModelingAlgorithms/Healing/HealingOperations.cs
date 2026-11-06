@@ -26,9 +26,6 @@ public static class HealingOperations
     /// <summary>A fix that failed: <c>healing.fix-failed</c>.</summary>
     public static DiagnosticCode FixFailed { get; } = new("healing.fix-failed");
 
-    /// <summary>A fixed shape still invalid (a warning, with the sub-shapes left invalid): <c>healing.not-fixed</c>.</summary>
-    public static DiagnosticCode NotFixed { get; } = new("healing.not-fixed");
-
     /// <summary>Sewing that failed: <c>healing.sewing-failed</c>.</summary>
     public static DiagnosticCode SewingFailed { get; } = new("healing.sewing-failed");
 
@@ -41,8 +38,8 @@ public static class HealingOperations
     /// <summary>A conversion to B-splines that failed: <c>healing.conversion-failed</c>.</summary>
     public static DiagnosticCode ConversionFailed { get; } = new("healing.conversion-failed");
 
-    // healing.not-fixed: the sub-shapes BRepCheck still finds invalid in a fixed shape, or null if it is valid
-    private static Diagnostic? NotFixedWarning(Shape result)
+    // The sub-shapes BRepCheck still finds invalid in a fixed shape, or null if it is valid
+    private static Diagnostic? NotFixedError(Shape result)
     {
         var analyzer = new Analyzer(result);
         if (analyzer.IsValid())
@@ -70,7 +67,7 @@ public static class HealingOperations
             }
         }
 
-        return Diagnostic.Warning(NotFixed, $"The shape is still invalid after fixing ({invalid.Count} sub-shape(s)).").WithShapes(invalid);
+        return Diagnostic.Error(DiagnosticCode.InvalidResult, $"The shape is still invalid after fixing ({invalid.Count} sub-shape(s)).").WithShapes(invalid);
     }
 
     extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
@@ -106,8 +103,8 @@ public static class HealingOperations
         /// <summary>
         /// The shape fixed (OCCT's <c>ShapeFix_Shape</c>): wires, faces, shells and solids, tolerances and
         /// SameParameter, as the options allow. A shape that needs nothing comes back as it is. A result still invalid
-        /// (by <see cref="Validate"/>'s default check) carries the warning <c>healing.not-fixed</c>, naming the sub-shapes
-        /// left invalid.
+        /// (by <see cref="Validate"/>'s default check) is a failure with the code <c>result.invalid</c> naming the sub-shapes
+        /// left invalid, which carries what fixing did (<c>TryGetInvalid</c>): it may be as good as the shape can be made.
         /// </summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
         /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
@@ -141,8 +138,8 @@ public static class HealingOperations
                 fixer.Perform(range);
                 return new EngineOutcome(true, () => fixer.Shape(), fixer.Context()?.History());
             }, Diagnostic.Error(FixFailed, "The shape couldn't be fixed."), progress, cancellationToken);
-            return options.CheckResult && result.TryGetValue(out Built<Shape>? built) && NotFixedWarning(built.Shape) is { } warning
-                ? Result<Built<Shape>>.Success(built, [.. result.Diagnostics, warning])
+            return options.CheckResult && result.TryGetValue(out Built<Shape>? built) && NotFixedError(built.Shape) is { } error
+                ? Result<Built<Shape>>.Invalid(built, error, result.Diagnostics)
                 : result;
         }
 
@@ -171,7 +168,7 @@ public static class HealingOperations
 
                 unify.Build();
                 return new EngineOutcome(true, () => unify.Shape(), unify.History());
-            }, Diagnostic.Error(UnifyFailed, "The shape's faces and edges couldn't be unified."));
+            }, Diagnostic.Error(UnifyFailed, "The shape's faces and edges couldn't be unified."), checkedAs: options.CheckResult ? "The unified shape" : null);
         }
 
         /// <summary>
@@ -213,7 +210,7 @@ public static class HealingOperations
                     fixer.FixSmallEdges();
                 }
                 return new EngineOutcome(true, () => fixer.Shape(), fixer.Context()?.History());
-            }, Diagnostic.Error(FixFailed, "The shape's wireframe couldn't be fixed."));
+            }, Diagnostic.Error(FixFailed, "The shape's wireframe couldn't be fixed."), checkedAs: options.CheckResult ? "The fixed shape" : null);
         }
 
         /// <summary>
@@ -229,7 +226,7 @@ public static class HealingOperations
             {
                 Shape converted = Customize.ConvertToBSpline(input, options.Extrusions, options.Revolutions, options.Offsets, options.Planes);
                 return new EngineOutcome(!converted.IsNull, () => converted);
-            }, Diagnostic.Error(ConversionFailed, "The shape's surfaces couldn't be converted to B-splines."));
+            }, Diagnostic.Error(ConversionFailed, "The shape's surfaces couldn't be converted to B-splines."), checkedAs: options.CheckResult ? "The converted shape" : null);
         }
 
         /// <summary>
@@ -263,7 +260,7 @@ public static class HealingOperations
                                                                   options.MaxSegments, options.Continuity3D, options.Continuity2D,
                                                                   options.PreferDegree, options.Polynomial, new RestrictionParameters());
                 return new EngineOutcome(!approximated.IsNull, () => approximated);
-            }, Diagnostic.Error(ConversionFailed, "The shape's B-splines couldn't be approximated."));
+            }, Diagnostic.Error(ConversionFailed, "The shape's B-splines couldn't be approximated."), checkedAs: options.CheckResult ? "The approximated shape" : null);
         }
 
         /// <summary>
@@ -288,7 +285,8 @@ public static class HealingOperations
         /// edges). The face isn't changed; the result shares what wasn't fixed.
         /// </summary>
         /// <exception cref="ArgumentException">The face is null.</exception>
-        public Result<Built<Shape>> FixFace()
+        /// <param name="checkResult">Check the result, and fail with <c>result.invalid</c>, carrying it, if it isn't valid.</param>
+        public Result<Built<Shape>> FixFace(bool checkResult = true)
         {
             Face input = face;
             NotNull(input.AsShape());
@@ -298,7 +296,7 @@ public static class HealingOperations
                 fixer.FixOrientation();
                 fixer.Perform(range);
                 return new EngineOutcome(true, () => fixer.Result(), fixer.Context()?.History());
-            }, Diagnostic.Error(FixFailed, "The face couldn't be fixed."));
+            }, Diagnostic.Error(FixFailed, "The face couldn't be fixed."), checkedAs: checkResult ? "The fixed face" : null);
         }
     }
 
@@ -317,7 +315,7 @@ public static class HealingOperations
             }
 
             return EngineOperation.Run<Solid>(_ => new EngineOutcome(true, () => new SolidFixer().SolidFromShell(input)),
-                                              Diagnostic.Error(NotAClosedShell, "The shell couldn't be made into a solid."));
+                                              Diagnostic.Error(NotAClosedShell, "The shell couldn't be made into a solid."), checkedAs: "The solid");
         }
     }
 
@@ -360,7 +358,7 @@ public static class HealingOperations
             sewing.Perform(range);
             Shape sewn = sewing.SewedShape();
             return new EngineOutcome(!sewn.IsNull, () => sewn, sewn.IsNull ? null : SewingHistory(sewing, sewn, inputs));
-        }, Diagnostic.Error(SewingFailed, "The shapes couldn't be sewn."), progress, cancellationToken);
+        }, Diagnostic.Error(SewingFailed, "The shapes couldn't be sewn."), progress, cancellationToken, options.CheckResult ? "The sewn shape" : null);
     }
 
     /// <summary>

@@ -173,6 +173,32 @@ Result<Part> part = from rounded in Fillet(box.Edges().ParallelTo(Axis.Z), 3)
 string shown = part.Match(p => $"{p.Volume:F1} mm³", error => error.Message);
 ```
 
+### 2.2 No success for an invalid result
+
+**No operation reports success for an invalid result** (the owner's decision, 1742; unit 11R). A failure may carry what was
+made: `IsSuccess` is false, `Value` throws and the combinators don't pass it on, so nobody uses it by accident. A caller who
+wants it asks.
+
+```csharp
+Result<Built<Shape>> rounded = box.Fillet(box.AllEdges(), 11);
+if (rounded.TryGetInvalid(out Built<Shape>? invalid))
+    Show(invalid.Shape, rounded.Error!.Message);   // result.invalid: "The fillet's result isn't valid: Unorientable shape (and 1 more kind of fault)."
+```
+
+The check is `Validate`'s, and `Error.Shapes` names the faulty sub-shapes. **Which operations check:**
+
+| Operations | Check | To leave it out |
+|---|---|---|
+| Booleans, `Fillet`, `Chamfer`, `Offset`, `Thicken`, `ThickSolid`, `Hollow`, `Offset2D`, `Sweep`, `Loft`, `ExtrudeUntil`, `Fill`, `Unify`, `Sew`, `FixWireframe`, `ConvertToBSpline`, `ApproximateBSplines` | The result | Their options' `CheckResult = false` |
+| `Fix` | The result, as it always did; it was a warning | `FixOptions.CheckResult = false` |
+| `Fillet2D`, `Chamfer2D`, `FixFace`, `Face.FromWire`, `FromWires`, `WithHoles`, `Solid.FromShells`, `Face.FromSurface` with a boundary | The result | The parameter `checkResult: false` |
+| `Extrude` | **The profile**, the only way an extrusion came out invalid, and then the result if the profile isn't valid | `ExtrudeOptions.CheckResult = false` |
+| `Revolve`, `Draft`, `SplitFaces`, `SplitAlong`, `Ruled`, `MakeSolid`, `FromPlane` with a boundary, `Transformed` by a general transform | The result | Always checked |
+| Primitives, edges and wires, `Transformed` by a rigid transform, `Mirrored`, `Scaled`, `Project`, `Helix`, `WithCurves3D` | None: a primitive can't be invalid, and moving a shape leaves it as good as it was | |
+
+`Validate` itself still returns a report: asking whether a shape is valid isn't an operation that can fail. Reading a file
+doesn't check either, and an invalid shape read from one is caught by the next operation on it.
+
 ### 2.1 Shape results carry their history
 
 Operations that make shapes return `Result<Built<TShape>>`. `Built` converts to its shape, so the common case stays

@@ -57,6 +57,9 @@ public sealed record WedgeOptions
 /// <summary>How <see cref="Sweeps.Extrude"/> extrudes (OCCT's <c>BRepPrimAPI_MakePrism</c>).</summary>
 public sealed record ExtrudeOptions
 {
+    /// <summary>Check the profile, the only way an extrusion comes out invalid, and if it isn't valid, the result; fail with <c>result.invalid</c>, carrying it, if that isn't valid either: true by default.</summary>
+    public bool CheckResult { get; init; } = true;
+
     /// <summary>The defaults.</summary>
     public static ExtrudeOptions Default { get; } = new();
 
@@ -89,6 +92,9 @@ public enum SweepFrame
 /// <summary>How <see cref="Sweeps.Sweep(Shape, Wire, SweepOptions?, IProgress{double}?, CancellationToken)"/> sweeps.</summary>
 public sealed record SweepOptions
 {
+    /// <summary>Check the result, and fail with <c>result.invalid</c>, carrying it, if it isn't valid (a sweep that folds over itself): true by default.</summary>
+    public bool CheckResult { get; init; } = true;
+
     /// <summary>The defaults: a solid where the profiles are closed, corrected Frenet, transformed corners.</summary>
     public static SweepOptions Default { get; } = new();
 
@@ -127,6 +133,9 @@ public sealed record SweepOptions
 /// <summary>How <see cref="Sweeps.Loft"/> passes surfaces through its sections (OCCT's <c>BRepOffsetAPI_ThruSections</c>).</summary>
 public sealed record LoftOptions
 {
+    /// <summary>Check the result, and fail with <c>result.invalid</c>, carrying it, if it isn't valid: true by default.</summary>
+    public bool CheckResult { get; init; } = true;
+
     /// <summary>The defaults: a smooth solid.</summary>
     public static LoftOptions Default { get; } = new();
 

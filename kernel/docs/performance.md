@@ -1015,3 +1015,49 @@ Anything beyond these (iteration order, different algorithms) waits for beyond-c
   `DOTNET_EventPipeConfig=Microsoft-DotNETCore-SampleProfiler:0:5,Microsoft-Windows-DotNETRuntime:4c14fccbd:5`
   (in a process that exits normally: vstest kills its test host before the trace is written), and read it with
   `tools/profile-report.cs`, PerfView or TraceEvent.
+
+## Unit 11R: what checking every result costs
+
+*6 November 2026, on a shared machine: every timing here is from a loaded machine, and bytes don't depend on the load. Medians of alternating fresh processes, 40 passes each, the last 20 being "settled". Parallelism is off for the check in the first table.*
+
+**Over the 10% the brief set, so the owner decides (decision 1797).** The change is built on `phase11/11r-invalid`, with its tests, and isn't merged.
+
+**Ways of applying it, to Bento's eleven examples** (a throwaway patch, 5 alternating runs each; the base recalculation is 271 ms and 157 MB):
+
+| What is checked | Checks a pass | Check's own time | Share of 271 ms | Bytes |
+|---|---|---|---|---|
+| Every kernel operation that returned a shape | 205 | 81 ms | 30% | +42% |
+| Every kernel operation that can fail this way | 88 | 56 ms | 21% | +30% |
+| Each modelling-level Boolean, offset, revolve and extrude-until, once (fillets and chamfers were already checked) | 15 | 17 ms | 6% | +9% |
+| The same and each plain extrusion | 34 | 46 ms | 17% | +20% |
+
+Nothing was invalid in any of those checks. A check costs far more than the small operations it follows: 3 times a clean's time, 4 times an extrusion's, 79% of a face's fix, against 15% of a Boolean, 33% of a fillet, 24% of a chamfer and 19% of a thick solid. Run in the kernel on every step, it would be paid many times for one cell. Topology alone (`Geometry = false`) only saves about a quarter (89 ms against 118, 50 MB against 67).
+
+**As built** (`Kerf.Modeling` checks once per operation, an extrusion its profile; 8 alternating pairs):
+
+| | Before | After | |
+|---|---|---|---|
+| Settled recalculation, wall | 193.2 ms | 218.3 ms | **+13.0%** |
+| Thread cycles a pass | 680 M | 790 M | +16% |
+| Bytes a pass | 157.5 MB | 172.9 MB | **+9.8%** |
+| Results | | | Same in all eleven |
+
+Most of it is three examples of many small solids: "for-loop" +60%, "function, for-loop" +56%, "nesting locations" +37%, together 13 of the 25 ms. "Extrude until" +0.4%, "chamfer, fillet" +7% and the bottle +12%: the fillets' check was already there, and the bottle's `.Fix()` no longer repeats one. Measured from the same kind of run; rows differ by several percent between runs under load.
+
+**The Boolean suites,** the median of each operation in one process, 407 simple and 193 complex cases:
+
+| Suite | Boolean and clean | One check after the clean | Share | Bytes | Median, 90th percentile of a case |
+|---|---|---|---|---|---|
+| Simple | 3,136 ms | 221 ms | 7.1% | 10.2% | 9.5%, 24.9% |
+| Complex | 3,153 ms | 182 ms | 5.8% | 8.1% | 6.2%, 23.9% |
+
+A check after the Boolean as well as the clean would be 17.1% and 12.3%. Nine of the 600 cleaned results were invalid (occt-issues.md).
+
+**Could it be cheaper when the operation knows what it touched?** Not measured, only read: a Boolean's untouched faces are the same `TShape`s as its inputs', so a check limited to new faces and the shells would help most where these examples spend it, fusing solids that barely meet. It would miss a bad face passed through from an input that wasn't itself checked, such as an imported one, and it means a new path through `Analyzer`, which is mostly OCCT's order and caches. 11Q found the check itself spread out, with little to cut.
+
+**Options for the owner:**
+
+1. **Keep it as built.** About 25 ms on 193 under load, and a recalculation stays well ahead of native's frozen 685 ms. Hosts can't turn it off in `Kerf.Modeling`. This is the simplest, and what the branch does.
+2. **As built, with a way to turn it off in `Kerf.Modeling`:** a scope like `SkipClean`, or a setting Bento reads. Cost when on is the same; when off, a shape nothing can use is back.
+3. **A cheaper check by default, the full one on request:** new faces only (above), or leaving 2D Booleans unchecked. Needs more measuring, and a fault can go unseen for a few steps.
+4. **Check fillets, chamfers, offsets, sweeps and lofts only, not Booleans.** Inferred at about 2 to 4%. The Booleans' 9 of 600 go back to reporting success, so it doesn't meet the decision as worded.

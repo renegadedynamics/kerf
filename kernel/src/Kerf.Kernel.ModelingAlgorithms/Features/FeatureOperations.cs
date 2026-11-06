@@ -29,6 +29,9 @@ public enum ExtrudeLimit
 /// <summary>How <see cref="FeatureOperations.ExtrudeUntil"/> extrudes (OCCT's <c>BRepFeat_MakeDPrism</c>).</summary>
 public sealed record ExtrudeUntilOptions
 {
+    /// <summary>Check the result, and fail with <c>result.invalid</c>, carrying it, if it isn't valid: true by default.</summary>
+    public bool CheckResult { get; init; } = true;
+
     /// <summary>Where it stops.</summary>
     public ExtrudeLimit Until { get; init; } = ExtrudeLimit.End;
 
@@ -107,7 +110,7 @@ public static class FeatureOperations
                 return MakerOutcome.Of(draft, range, [s], () => draft.Status() == DraftErrorStatus.NoError
                     ? null
                     : Diagnostic.Error(DraftFaceFailed, $"The draft failed ({draft.Status()}).").WithShapes(draft.ProblematicShape()));
-            }, Failure);
+            }, Failure, checkedAs: "The draft's result");
         }
 
         /// <summary>The shape with <paramref name="profile"/>, a face on <paramref name="sketchFace"/> (a face of the
@@ -156,7 +159,7 @@ public static class FeatureOperations
                         break;
                 }
                 return MakerOutcome.Done(prism, [s, profile], () => StatusDiagnostics.ToDiagnostic(prism.CurrentStatusError()));
-            }, Failure);
+            }, Failure, checkedAs: options.CheckResult ? "The feature's result" : null);
         }
 
         /// <summary>The shape with faces split by wires or edges lying on them (OCCT's <c>BRepFeat_SplitShape</c>).</summary>
@@ -194,7 +197,7 @@ public static class FeatureOperations
                     }
                 }
                 return MakerOutcome.Of(split, range, [s]);
-            }, Failure);
+            }, Failure, checkedAs: "The split shape");
         }
     }
 
@@ -225,8 +228,10 @@ public static class FeatureOperations
                 right = [.. split.Right().Where(static s => !s.IsNull).Select(static s => s.As<Face>())];
             }
             return outcome;
-        }, Failure);
-        return result.Map(built => new SplitFacesResult(built.Shape, built.History, left, right));
+        }, Failure, checkedAs: "The split shape");
+        return result.TryGetInvalid(out Built<Shape>? invalid)
+            ? Result<SplitFacesResult>.Invalid(new SplitFacesResult(invalid.Shape, invalid.History, left, right), result.Diagnostics)
+            : result.Map(built => new SplitFacesResult(built.Shape, built.History, left, right));
     }
 
     private static Face[] Own(Shape shape, IEnumerable<Face> faces, string name)

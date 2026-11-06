@@ -54,7 +54,7 @@ public class ConstructionInputsUnchangedTests
         // build123d revolves with copy (BRepPrimAPI_MakeRevol's last argument): the solid shares nothing with the face
         Box part = Part();
         Face side = Side(part);
-        Untouched(part, () => Ops.Revolve(side, new Axis(new Point3D(20.0, 0.0, 0.0), new Vector3D(0.0, 0.0, 1.0)), 90, clean: false).Value);
+        Untouched(part, () => Ops.Revolve(side, new Axis(new Point3D(5.0, 20.0, 0.0), new Vector3D(0.0, 0.0, 1.0)), 90, clean: false).Value);
     }
 
     [Fact]

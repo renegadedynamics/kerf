@@ -264,7 +264,7 @@ public class ShapeTests
         Assert.Throws<InvalidOperationException>(
             () => testSolids[0].MaxFillet(testSolids[0].Edges(), tolerance: 1e-6, maxIterations: 1));
         var box = Solid.MakeBox(1, 1, 1);
-        Assert.Equal(ModelingDiagnostics.FilletFailed, Failures.Try(() => box.Fillet(0.75, box.Edges())).Error!.Code);
+        Assert.Equal(DiagnosticCode.InvalidResult, Failures.Try(() => box.Fillet(0.75, box.Edges())).Error!.Code);
     }
 
     [Fact]
@@ -497,14 +497,7 @@ public class ShapeTests
         // oriented
         var path = Wire.MakePolygon([new Point3D(0, 20, 0), new Point3D(20, 20, 0), new Point3D(20, 0, 0)], close: false);
         var start = new Plane(new Point3D(0, 20, 0), zDir: new Vector3D(1, 0, 0));
-        Shape folded;
-        IReadOnlyList<string> warnings;
-        using (var scope = Warnings.Capture())
-        {
-            folded = Solid.Sweep(start * Face.MakeRect(40, 40), path, transition: Transition.Round);
-            warnings = scope.Messages;
-        }
-        Assert.Contains(warnings, w => w.Contains("invalid solid"));
+        Assert.True(Failures.Try(() => (Shape)Solid.Sweep(start * Face.MakeRect(40, 40), path, transition: Transition.Round)).TryGetInvalid(out var folded));
         Assert.False(folded.IsValid);
         Assert.False(folded.IsManifold);
         var unfolded = Solid.Sweep(start * Face.MakeRect(30, 30), path, transition: Transition.Round);
