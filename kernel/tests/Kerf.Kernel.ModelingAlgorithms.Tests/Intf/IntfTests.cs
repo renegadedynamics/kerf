@@ -279,6 +279,11 @@ public class IntfTests
         Assert.Equal(2.5, anInter.PntValue(1).ParamOnSecond(), 15);
         Assert.Equal(new Point2D(1, 1), anInter.Pnt2dValue(1));
 
+        // Closed, the same crossing is still there, and the first and last segments are only neighbours (decision 20612)
+        var aClosed = new global::Kerf.Engine.Intersection.Polygons.InterferencePolygon2d(new TestPolygon(0, true, (0, 0), (2, 2), (2, 0), (0, 2), (0, 0)));
+        Assert.Equal(1, aClosed.SectionPointCount);
+        Assert.Equal(new Point2D(1, 1), aClosed.Pnt2dValue(1));
+
         Assert.Equal(0, new global::Kerf.Engine.Intersection.Polygons.InterferencePolygon2d(new TestPolygon(0, false, (0, 0), (1, 0), (2, 1))).SectionPointCount);
     }
 }

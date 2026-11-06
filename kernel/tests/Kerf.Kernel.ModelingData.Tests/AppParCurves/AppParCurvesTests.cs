@@ -347,6 +347,22 @@ public class AppParCurvesTests
         }
     }
 
+    // Decision 20612: a curvature at the end holds the end's pole, as a pass point does. The old test on the first
+    // constraint gives this too in this class's solver, so this holds the behaviour, not the difference.
+    [Fact]
+    public void LeastSquare_CurvatureAtTheEnd_PassesThroughTheEnd()
+    {
+        global::Kerf.Engine.Approximation.MultiCurve aRef = Cubic();
+        double[] aParams = Params(12);
+        AppParCurves_TestLine aLine = AppParCurves_TestLine.Sample(aRef, 1, 1, aParams);
+        aLine.SetTangents(aRef, 12, aParams[11]);
+        LeastSquare aLSQ = new(aLine, 1, 12, PassPoint, CurvaturePoint, Vector(aParams), 6);
+        Assert.True(aLSQ.IsDone);
+        aRef.Value(1, 1.0, out Point3D anEnd);
+        aLSQ.BezierValue().Value(1, 1.0, out Point3D aResult);
+        Assert.True(anEnd.DistanceTo(aResult) < 1e-9, $"{anEnd} {aResult}");
+    }
+
     [Fact]
     public void LeastSquare_BothTangencies()
     {
