@@ -10,6 +10,8 @@ version may break the API.
   vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 1652 and 1653).
 ## 0.3.0 (unreleased)
 
+- **Every public member of the kernel has XML docs,** including `Kerf.Geometry`'s value types, saying units, handedness and what
+  throws; a new one without docs fails the build (CS1591). The docs of `Kerf.Geometry` name the exception you actually catch.
 - **Fillets and chamfers, three fixes that change results:** the edges between a fillet and its faces are coded tangent,
   as in OCCT, so a draft can follow a fillet, and saved BRep files gain those lines. A fillet that runs past a Bezier or
   B-spline face puts the face on the surface it extended, where the result used to be invalid. A closed edge filleted

@@ -261,4 +261,4 @@ reworks those operations anyway could thread it then.
 
 ## The clean-up
 
-The clean-up after decision 1681 deleted fields that were written and never read (78), none of them shared state that anything read, and changed no ambient state. See [clean-up.md](clean-up.md).
+The clean-up after decision 1681 deleted fields that were written and never read (78), none of them shared state that anything read, and changed no ambient state. The second pass (decisions 19901 to 19905) changed names, docs and private signatures only. See [clean-up.md](clean-up.md).
