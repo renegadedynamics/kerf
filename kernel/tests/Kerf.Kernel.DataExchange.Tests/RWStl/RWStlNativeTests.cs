@@ -445,6 +445,12 @@ public class RWStlNativeTests(ITestOutputHelper output)
                         anAttributed++;
                         continue;
                     }
+                    // decision 20208: a file with NaN or infinite numbers fails at the direction, not later: a read fails either way
+                    if (aHead == "R numbers.stl" && aNative[i] == "THROW class StdFail_NotDone" && aPort[i] == "THROW class Standard_ConstructionError")
+                    {
+                        anAttributed++;
+                        continue;
+                    }
                     if (StreamRecognised(aPort[i], aNative[i], aNative))
                     {
                         anIntendedStream++;

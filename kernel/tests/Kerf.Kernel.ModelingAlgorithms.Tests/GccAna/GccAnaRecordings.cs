@@ -447,6 +447,11 @@ internal static class GccAnaRecordings
         foreach (string aTok in theCase.Native.Where(t => t.StartsWith("sol:", StringComparison.Ordinal) && !t.StartsWith("sol:!", StringComparison.Ordinal)))
         {
             double[] v = aTok[4..].Split(',').Select(h => BitConverter.Int64BitsToDouble(long.Parse(h, NumberStyles.HexNumber, CultureInfo.InvariantCulture))).ToArray();
+            if (v.Any(double.IsNaN))
+            {
+                continue; // native's NaN solution, which a circle now refuses (decision 20208)
+            }
+
             aCircles.Add(new Circle2D(new Frame2D(new Point2D(v[0], v[1]), new Direction2D(v[2], v[3]), new Direction2D(v[4], v[5])), v[6]));
         }
         return aCircles;
