@@ -10,6 +10,7 @@ version may break the API.
   vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 1652 and 1653).
 ## 0.3.0 (unreleased)
 
+- **Quicker to open:** the first use of Kerf in a process, as a workbook opening, takes about a third less time (745 ms to 509 on Bento's examples), and early recalculations about a quarter less. The packages are compiled with more of the framework's code and generics in them, and are about 20% larger (19.5 MB to 23.4 MB). Results don't change, and there's nothing to set.
 - **Runtime settings for a host, measured:** the README lists them. A parallel round of Bento's examples takes 620 ms against 2,700 ms under the runtime's defaults, and a recalculation 180 ms against 360. `Placement.Inverted` keeps its result, for 2% less allocation. All of the kernel's locks stay, because a trace found no time lost on any of them.
 - **STEP's header names Kerf:** organisation `Kerf`, processor `Kerf STEP processor 0.3.0`, product `Kerf STEP translator N`, and
   a description saying Kerf derives from Open CASCADE Technology. Files naming Open CASCADE read as before. STL's default

@@ -160,6 +160,7 @@ are bimodal, depending on when the runtime tiers up. Don't read a 20% move on on
 
 - **The targets are met:** recalculation was to be within 1.2× of native, and it's nearly twice as fast. Eight of the eleven examples are ahead of or within 1.2× of native. "Point lists" (1.82×, 6 ms over) and "select last" (1.49×, 5 ms over) are small in absolute terms.
 - **Native stops being the yardstick from here** (decision 1681): the work moves to what's slow, unit 11Q.
+- **Since this table:** unit 11C took opening to 509 ms and recalculation to 269 ms; [its run](benchmarks/2026-11-06-37d3afa6b.md) is the one to compare with now. See below.
 - **The parallel speed-up fell from 8.33× to 3.11×, and that's the next thing to look at.** The round itself got quicker, so nothing regressed: the serial work fell by two-thirds while allocation barely moved (4.9 GB a round), which leaves the collector dominant, at 4.9 s of pauses. The rig flags this and the pauses as regressions against the run after 11B. That's unit 11D's, which found the figure mostly misleading: see below.
 
 ## Unit 11B: allocation
@@ -428,6 +429,127 @@ I didn't read its design closely. Its aim is fast traversal and parallel work on
 - **Bento's own start-up** under `CallCountingDelayMs` 0, which only Bento can measure.
 - **The cause of PGO's cost on many threads** is inferred. `DOTNET_TieredPGO_InstrumentOnlyHotCode` and similar settings weren't tried.
 - **Workbooks in Bento:** this all ran on the benchmark, with no UI thread, and every copy the same size.
+
+## Unit 11C: opening
+
+*6 November 2026, on a quiet machine. [benchmarks/2026-11-06-37d3afa6b.md](benchmarks/2026-11-06-37d3afa6b.md), compared with 11D's run. Traces from `tools/opening-report.cs`. Decisions 18901 to 18906.*
+
+**Opening fell from 745 ms to 509, and the first pass from 710 ms to 473, with every result unchanged.** Nearly all of it is one change to how the packages are compiled. The packages grow from 19.5 MB to 23.4 MB.
+
+| | Before | After |
+|---:|---:|---:|
+| Opening, process start to the end of the first pass, ms | 745 | **509** |
+| First pass, ms | 710 | **473** |
+| First pass under a host's settings, ms | 615 | **469** |
+| Opening under a host's settings, ms | 653 | **509** |
+| The JIT's time in opening, all threads, ms | 285 | 141 |
+| Methods the JIT compiled in opening | 4,496 | 1,759 |
+| Recalculation, ms | 364 | 269 |
+| Recalculation under a host's settings, ms | 182 | 181 |
+| Settled recalculation, ms | 347 | 312 |
+| A round under a host's settings, ms | 618 | 614 |
+| The five assemblies on disk, MB | 39.7 | 48.1 |
+| The five packages, MB | 19.5 | 23.4 |
+
+The rig reports one regression and it isn't a real one: the parallel speed-up under the runtime's defaults falls from 3.19× to 2.47×, because the serial work it's divided by fell by 26% while the round fell by 5% (2,802 ms to 2,675). Under a host's settings the speed-up is unchanged at 7.1×. All 45 result rows are the same, and neither parallel suite differs from its serial run. Anything comparing against this run with `-Compare` starts from the new figure.
+
+### Where opening's time goes
+
+Measured, in fresh processes, unless it says otherwise. Turning call counting off (`DOTNET_TC_CallCounting=0`) stops code being recompiled, so a later pass is the work alone, in the code the first pass ended up with, and the difference from the first pass is the cost of getting ready.
+
+| ms | Before | After | How it's known |
+|---|---:|---:|---|
+| Start of the process to the first example | 36 | 36 | Measured. The host and the runtime starting, and `Main`; Kerf isn't involved |
+| The first pass | 710 | 473 | Measured |
+| of which the work (a later pass, without tiering) | 349 | 242 | Measured. It falls too, because generics that were quick-jitted, unoptimised, are now precompiled and optimised |
+| of which getting ready | 360 | 231 | The difference |
+| JIT on the working thread | about 155 | about 60 | Inferred: its share of a traced pass (200 of 913 ms, and 80 of 632), since tracing slows everything |
+| Type loads outside the JIT | about 40 | about 45 | Inferred the same way (53 of 913 ms, and 62 of 632): 8,029 and 7,605 loads |
+| Static constructors | under 10 | under 10 | Inferred from samples: 2 to 5 of about 255 on the working thread, none over 1 |
+| Assembly loading | a few | a few | From the trace: seven assemblies load during the pass, each in under about a millisecond |
+| First calls: entry-point lookups, fixups and stubs | about 150 | about 115 | Inferred: what's left. The trace counts the lookups (22,406 and 28,768 in two passes) but can't time them |
+
+The JIT also works on the background thread (131 ms traced before, 76 after), which doesn't directly hold up the working thread.
+
+**Why the JIT ran despite ReadyToRun.** Almost nothing was rejected: 34 non-generic methods out of 3,282 on the working thread, costing 2.5 ms. The rest were generic instantiations crossing an assembly, which plain ReadyToRun can't precompile, because each assembly is compiled with only its own code: traced, before, 1,601 methods of the framework's generic types over Kerf's (`List<Shape>`, `Dictionary<Shape, int>`), 77 ms; 874 of Kerf's generics over types from another Kerf assembly or as generic methods, 64 ms; 370 of the framework's generic methods (mostly LINQ), 33 ms. `Shape` being a struct is what makes each instantiation need its own code. After the change, 744 of the first group remain, 214 of the second and 144 of the third, 68 ms traced in all. Many of those are small: `List<T>`'s static constructor, for one, for every `T`.
+
+By example, first pass, from the rig, and the shares of the final build's trace:
+
+| Example | First pass before, ms | After, ms | Traced JIT, ms | Traced type loads, ms | Traced rest, ms |
+|---|---:|---:|---:|---:|---:|
+| 2 plate with hole (the first, so it bears the most) | 141 | 90 | 34.7 | 38.4 | 99.4 |
+| 3 prismatic solid | 29 | 20 | 5.5 | 5.0 | 22.7 |
+| 5 working point | 10 | 7 | 0 | 0 | 7.1 |
+| 6 point lists | 17 | 12 | 0.3 | 0.5 | 9.9 |
+| 9 chamfer, fillet | 74 | 48 | 18.1 | 8.5 | 51.0 |
+| 10 select last, hole | 34 | 20 | 1.0 | 1.1 | 22.4 |
+| 29 bottle | 141 | 97 | 11.6 | 5.5 | 96.7 |
+| 31 nesting locations | 36 | 23 | 3.0 | 0.4 | 21.3 |
+| 32 for-loop | 17 | 12 | 0.7 | 0 | 12.3 |
+| 33 function, for-loop | 13 | 9 | 0.5 | 0 | 9.0 |
+| 36 extrude until | 196 | 133 | 4.1 | 2.3 | 139.2 |
+
+The traced columns add up to the traced pass, which is slower than the untraced one. The first example pays for the runtime getting ready for everything after it; "extrude until" is nearly all work.
+
+### ReadyToRun: what the packages ship, and the choices
+
+Each row is the five assemblies compiled with crossgen2 and the same benchmark, medians of 7 to 11 fresh processes run in turn, with spreads of about 5 ms.
+
+| | Opening, ms | JIT'd methods | Assemblies, MB | Whose choice |
+|---|---:|---:|---:|---|
+| Plain ReadyToRun (what 0.2.0 ships) | 743 | 4,497 | 39.7 | |
+| `--Ot` alone | 736 | 4,499 | 40.6 | |
+| `--non-local-generics-module:*`, `--Ot` | 739 | 4,499 | 40.6 | No use alone |
+| `--opt-cross-module:*`, `--Ot` | 600 | 2,888 | 45.6 | |
+| Both, without `--Ot` | 530 | 1,731 | 46.1 | |
+| **Both, with `--Ot`: taken** | **512** | **1,789** | **48.1** | **The library's** |
+| Both, with `--instruction-set:x86-64-v3` | 522 | 1,716 | 46.1 | Not taken: 8 ms, for code that assumes AVX2 |
+| Both, with `--type-validation:SkipTypeValidation` | 531 | 1,731 | 46.1 | No use |
+| Kerf's five as one version bubble (`--inputbubble`), alone | 683 | 3,818 | 42.6 | The owner's, below |
+| A version bubble with both and `--Ot` | 478 | 1,473 | 51.8 | The owner's, below |
+| Kerf's five as one composite image | 521 | 2,184 | 46.2 | Not possible in a package |
+| The benchmark self-contained, composite with the framework | 419 | 449 | 169 for the whole application | The host's |
+
+- **Taken** (decision 18901): `PublishReadyToRunCrossgen2ExtraArgs` in both `Directory.Build.props`, used only when publishing ReadyToRun. It costs a library user 3.9 MB of download and 8.4 MB on disk, and nothing else: no setting, no change of API. `--opt-cross-module` lets framework code inline into Kerf's and `--non-local-generics-module` lets an assembly hold instantiations over other assemblies' types; the first is what lets the second help.
+- **The framework can change under these.** Code inlined across the version boundary carries a check of the IL it inlined, and is dropped for the JIT if that doesn't match, which is the design rather than something forced here. What was measured: assemblies compiled against framework 10.0.0 and run on 10.0.11 open in 512 ms against 514, with the same 1,789 methods and the same results, so a patch of the framework is no trouble, and the JIT is the worst case. .NET 9's framework couldn't be used to force mismatches, because Kerf's IL doesn't compile against it. Five suites pass with these assemblies in place of the IL (below). These two options are little documented; crossgen2's help doesn't call them unsupported, as it does `--inputbubbleref`.
+- **The version bubble is left to the owner** (decision 18902). It gives another 34 ms for another 3.7 MB. But it ties the five assemblies together: code from one is compiled into another with no check, so a mix of versions would misbehave or stop at load (inferred from how the runtime treats bubbles; not tried). The packages would have to depend on each other at exactly the same version, where NuGet now allows a newer one. A bubble is also what `--inputbubbleref` makes, the option the help calls unsupported.
+- **Composite is the host's** (decision 18903). It needs every assembly in one image, so a library can't ship it, and the SDK only offers it self-contained. For an application that ships its own runtime, 419 ms against 509, at 169 MB. That was built from the projects, so from IL. Publishing a composite from the packages, whose assemblies are already ReadyToRun, wasn't checked: the attempt failed copying a file during the publish, and the cause wasn't looked into.
+- **A profile (`--mibc`) wasn't tried.** It might root the instantiations still being compiled and lay code out better, but `dotnet-pgo`, which makes one, isn't on nuget.org.
+
+### Work at load
+
+There's little to take (decision 18905). Static constructors are 2 to 5 of about 255 samples on the working thread, in dozens of small types, the largest a sample or two: `Default<T>` for each `T`, `BOPAlgo_msg`'s message table (one `Lazy`, on the first Boolean), `Primitives`. Nothing large is built whether or not it's used, so nothing was made lazy, and no order or timing could change.
+
+Two things ran needlessly on a first pass, and were cheap to stop (decision 18904). Together they gave about 4 to 6 ms of opening, which is a small part of the total:
+
+- **`DiagnosticCode` checked each well-known code with a regular expression,** which loaded the assembly and built the expression on every opening. A plain loop now accepts what's plainly well formed, and anything else still goes to the expression, so what's accepted hasn't changed, including its final newline.
+- **Grouping by a double boxed its keys and compared them through the non-generic `Comparer`,** which starts the current culture's collation: `System.Globalization.Invariant` used to save 7 ms of opening, and now saves nothing. Doubles now compare directly, which orders them the same, NaN included, and a test says so.
+
+### Tiering settings
+
+11D's settings stand. None of these helps opening, so there's no new setting for a host (decision 18906). Before the compilation change, in opening's milliseconds, against 748 by default:
+
+| Setting | Opening, ms |
+|---|---:|
+| `TieredCompilation` off | 996 |
+| `TC_QuickJit` off | 1,003 |
+| `TC_QuickJitForLoops` off | 864 |
+| `OSR_HitLimit` 0 | 774 |
+| `TC_BackgroundWorkerTimeoutMs` 0 | 743 |
+
+After it, against 512 by default: `TC_QuickJitForLoops` off 597, `TC_BackgroundWorkerTimeoutMs` 0 512, `TC_CallCountingDelayMs` 1000 512, `TC_DelaySingleProcMultiplier` 1 512. `TC_CallCountingDelayMs` 0 alone, with PGO on, costs 607, and `TieredPGO` off alone gives 497. Under 11D's full recommendation it's 509, so counting calls from the start and the server collector together now cost opening about 12 ms, for recalculation falling from about 260 ms to 180. That's still the right trade.
+
+Other things that didn't help: `gcConcurrent` off (522), a generation 0 budget of 64 MB (517) or 256 MB (533), and fewer processors (1: 526; 4: 514; 12: 514). So the working thread's waits on the inner parallel loops, about a fifth of its samples, aren't lost time: going serial is slower.
+
+### Suites
+
+In Release, each run twice: as built, and with the five assemblies as the packages ship them in place of the IL. Foundation 2,474, ModelingData 3,319, ModelingAlgorithms 4,923 and 9 skipped, DataExchange 342 and 1 skipped, Kerf.Modeling 1,950, with none failing either way. `pack-nuget.ps1`'s consumer smoke test passes on the new packages.
+
+### What's left
+
+- About 1,750 methods still go through the JIT, 141 ms across all threads. Some of Kerf's own generics over its own types remain, and it isn't clear why crossgen2 leaves them; the bubble takes about 300 more.
+- Bento's own assemblies aren't Kerf's to compile. If Bento publishes ReadyToRun, the same property applies to its own generics over Kerf's types. Nothing here was measured in Bento.
+- About 115 ms of first calls, inferred. A native profiler would time them directly; this machine's account can't take a kernel trace without elevation.
 
 ## StepTidy (unit 11N)
 
