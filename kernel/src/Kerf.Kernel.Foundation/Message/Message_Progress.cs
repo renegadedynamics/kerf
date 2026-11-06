@@ -106,14 +106,20 @@ internal struct ProgressRange
 /// Divides a range into steps: <c>for (Message_ProgressScope aPS(theRange, "name", n); aPS.More(); ) { op(aPS.Next()); }</c>.
 /// Dispose it (or call <see cref="Close"/>) where the C++ scope would be destroyed, so the remaining share is counted.
 /// </summary>
-internal sealed class ProgressScope : IDisposable
+internal readonly struct ProgressScope : IDisposable
 {
-    private readonly ProgressIndicator? _indicator;
-    private readonly double _portion;
+    // What an active scope changes. An inactive one, nearly all of them, has none and allocates nothing; copies share it
+    private sealed class State(ProgressIndicator indicator, double portion)
+    {
+        public readonly ProgressIndicator Indicator = indicator;
+        public readonly double Portion = portion;
+        public double Value;
+        public double Reported;
+        public bool IsClosed;
+    }
+
+    private readonly State? _state;
     private readonly double _max;
-    private double _value;
-    private double _reported;
-    private bool _isClosed;
 
     public ProgressScope(ProgressRange range, string? name, double max, bool isInfinite = false)
     {
@@ -122,12 +128,7 @@ internal sealed class ProgressScope : IDisposable
         IsInfinite = isInfinite;
         if (range.IsActive)
         {
-            _indicator = range._indicator;
-            _portion = range._delta;
-        }
-        else
-        {
-            _isClosed = true;
+            _state = new State(range._indicator!, range._delta);
         }
     }
 
@@ -137,13 +138,13 @@ internal sealed class ProgressScope : IDisposable
 
     public double MaxValue() => _max;
 
-    public double Value() => _value;
+    public double Value() => _state?.Value ?? 0.0;
 
-    public bool UserBreak() => _indicator is not null && _indicator.UserBreak();
+    public bool UserBreak() => _state is not null && _state.Indicator.UserBreak();
 
     public bool More() => !UserBreak();
 
-    public bool IsActive => !_isClosed && _indicator is not null;
+    public bool IsActive => _state is not null && !_state.IsClosed;
 
     /// <summary>The range of the next <paramref name="step"/> steps, which advances this scope.</summary>
     public ProgressRange Next(double step = 1.0)
@@ -153,11 +154,12 @@ internal sealed class ProgressScope : IDisposable
             return default;
         }
 
-        double aFrom = _value;
-        _value = Math.Min(_max, _value + step);
-        double share = (_value - aFrom) / _max * _portion;
-        _reported += share;
-        return new ProgressRange(_indicator, 0.0, share);
+        State state = _state!;
+        double aFrom = state.Value;
+        state.Value = Math.Min(_max, state.Value + step);
+        double share = (state.Value - aFrom) / _max * state.Portion;
+        state.Reported += share;
+        return new ProgressRange(state.Indicator, 0.0, share);
     }
 
     /// <summary>Counts any share not handed out by <see cref="Next"/>, and closes the scope.</summary>
@@ -168,13 +170,14 @@ internal sealed class ProgressScope : IDisposable
             return;
         }
 
-        double remaining = _portion - _reported;
+        State state = _state!;
+        double remaining = state.Portion - state.Reported;
         if (remaining > 0.0)
         {
-            _indicator!.Increment(remaining);
+            state.Indicator.Increment(remaining);
         }
 
-        _isClosed = true;
+        state.IsClosed = true;
     }
 
     public void Dispose() => Close();
