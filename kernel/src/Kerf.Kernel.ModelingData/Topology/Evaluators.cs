@@ -93,8 +93,8 @@ public sealed class EdgeCurve
     /// <summary>The length of the edge's curve over its range (OCCT's <c>GCPnts_AbscissaPoint::Length</c>).</summary>
     public double Length => CurveMeasures.Length(_curve);
 
-    /// <summary>The length of the curve between two parameters: negative when <paramref name="u2"/> is before
-    /// <paramref name="u1"/>.</summary>
+    /// <summary>The length of the curve between two parameters: never negative, whichever of <paramref name="u1"/> and
+    /// <paramref name="u2"/> comes first.</summary>
     public double LengthBetween(double u1, double u2) => CurveMeasures.Length(_curve, u1, u2);
 
     /// <summary>
@@ -268,8 +268,8 @@ public sealed class WireCurve
     /// <summary>The length of the wire's curve (OCCT's <c>GCPnts_AbscissaPoint::Length</c>).</summary>
     public double Length => CurveMeasures.Length(_curve);
 
-    /// <summary>The length of the curve between two parameters: negative when <paramref name="u2"/> is before
-    /// <paramref name="u1"/>.</summary>
+    /// <summary>The length of the curve between two parameters: never negative, whichever of <paramref name="u1"/> and
+    /// <paramref name="u2"/> comes first.</summary>
     public double LengthBetween(double u1, double u2) => CurveMeasures.Length(_curve, u1, u2);
 
     /// <summary>The parameter <paramref name="length"/> along the curve from the parameter <paramref name="from"/>.</summary>
@@ -309,14 +309,19 @@ public sealed class WireCurve
 /// <summary>Lengths along curves and their discretisation: OCCT's GCPnts, shared by the curve evaluators.</summary>
 internal static class CurveMeasures
 {
-    public static double Length(Engine.Geometry.Adaptors.CurveAdaptorBase curve) => Engine.Measurement.AbscissaPoint.Length(curve);
+    // OCCT's forms without a tolerance use a few Gauss points over the whole range: 1.5% out on an ellipse of ten to one,
+    // and a parameter at half the length that isn't halfway along a symmetric curve (decision 1768). What the public API
+    // promises is a length, so it halves the range until the answer settles
+    private const double Settled = 1e-9;
+
+    public static double Length(Engine.Geometry.Adaptors.CurveAdaptorBase curve) => Engine.Measurement.AbscissaPoint.Length(curve, Settled);
 
     public static double Length(Engine.Geometry.Adaptors.CurveAdaptorBase curve, double u1, double u2) =>
-        Engine.Measurement.AbscissaPoint.Length(curve, u1, u2);
+        Engine.Measurement.AbscissaPoint.Length(curve, u1, u2, Settled);
 
     public static double ParameterAtLength(Engine.Geometry.Adaptors.CurveAdaptorBase curve, double length, double from)
     {
-        var abscissa = new Engine.Measurement.AbscissaPoint(curve, length, from);
+        var abscissa = new Engine.Measurement.AbscissaPoint(Settled, curve, length, from);
         return abscissa.IsDone ? abscissa.Parameter() : throw new InvalidOperationException("The point at that length couldn't be found.");
     }
 

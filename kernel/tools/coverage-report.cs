@@ -81,6 +81,12 @@ aText.Append("""
     """);
 aText.Append(CultureInfo.InvariantCulture, $"Measured on {DateTime.Now:d MMMM yyyy}.\n");
 aText.Append("Test projects merged: ").Append(string.Join(", ", aRuns.Distinct().Order(StringComparer.Ordinal).Select(r => $"`{r}`"))).Append(".\n");
+// what tools/direct-members.cs last counted, written beside this report: a member named by a test, not merely run
+string aDirectList = Path.Combine(Path.GetDirectoryName(aReport)!, "direct-members.md");
+if (File.Exists(aDirectList) && File.ReadLines(aDirectList).FirstOrDefault(l => l.StartsWith("Measured:", StringComparison.Ordinal)) is { } aDirectLine)
+{
+    aText.Append("\n## Public members with a direct test\n\n").Append(aDirectLine.Trim()).Append(" The list: [direct-members.md](direct-members.md).\n");
+}
 aText.Append("\n## By assembly\n\n| Assembly | Packages | Lines | Covered | % | Packages under ").Append(aFloor.ToString(CultureInfo.InvariantCulture)).Append("% |\n|---|---:|---:|---:|---:|---:|\n");
 foreach (var aGroup in aPackages.GroupBy(p => p.Key.Area))
 {
