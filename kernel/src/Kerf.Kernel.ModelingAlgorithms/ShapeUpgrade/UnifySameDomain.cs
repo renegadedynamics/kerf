@@ -90,7 +90,7 @@ internal partial class UnifySameDomain : Transient
         _safeInputMode  = true;
         _shape          = new Shape();
         _history        = new History();
-        _context        = new ReShapeBuilder();
+        _context        = new ReShapeBuilder { KeepCurvesTogether = true };
     }
 
     /// <summary>Constructor defining the input shape and the flags. It does not perform unification.</summary>
@@ -109,7 +109,7 @@ internal partial class UnifySameDomain : Transient
         _safeInputMode  = true;
         _shape          = aShape;
         _history        = new History();
-        _context        = new ReShapeBuilder();
+        _context        = new ReShapeBuilder { KeepCurvesTogether = true };
     }
 
     /// <summary>
@@ -1441,7 +1441,18 @@ internal partial class UnifySameDomain : Transient
                     // one face without seam
                     Surface? surf   = Tool.Surface(refFace, out Placement loc);
                     var           result = new Face();
-                    bb.MakeFace(ref result, surf, loc, 0.0);
+                    if (newWires.IsEmpty() && internalWires.IsEmpty())
+                    {
+                        // Every edge went: a surface closed both ways, as a closed pipe of a circle's. OCCT leaves a face
+                        // with no wires, which passes the check and which the mesher can't mesh (#1310; decision 20908).
+                        result = new global::Kerf.Engine.Construction.Api.MakeFace(surf!, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalFace();
+                        result.Move(loc);
+                    }
+                    else
+                    {
+                        bb.MakeFace(ref result, surf, loc, 0.0);
+                    }
+
                     for (int ii = 1; ii <= newWires.Length(); ii++)
                     {
                         bb.Add(result, newWires[ii]);

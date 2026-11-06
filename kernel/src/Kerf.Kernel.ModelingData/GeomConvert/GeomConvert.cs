@@ -862,7 +862,7 @@ internal static class GeomConvert
                     else
                     {
                         CompCurveToBSplineCurve C = new(arrayOfConcatenated.Value(i));
-                        fusion = C.Add(curve1, local_tolerance[j - 1], true); // fusion de deux courbes adjacentes
+                        fusion = C.Add(curve1, local_tolerance[j - 1]); // fusion de deux courbes adjacentes
 
                         if (!fusion)
                         {

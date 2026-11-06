@@ -12,6 +12,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Meshing;
 using Kerf.Topology;
 using System.Reflection;
 using Kerf.Kernel.ModelingData.Tests;
@@ -93,6 +94,28 @@ public class ShapeUpgrade_UnifySameDomainTests
         var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, aMap);
         return aMap.All(s => s.TShape()!.IsFrozen);
+    }
+
+    [Fact]
+    public void A_closed_pipe_of_a_circle_keeps_a_boundary_the_mesher_can_use()
+    {
+        // #1310: two arcs along two arcs. Everything merges into one face with no edges left: valid, and unmeshable.
+        Circle3D aSpine = new(new Frame3D(new Point3D(3, -3, 0), new Direction3D(0, 0, 1)), 3);
+        Circle3D aSection = new(new Frame3D(new Point3D(0, -3, 0), new Direction3D(0, 1, 0), new Direction3D(1, 0, 0)), 1);
+        var aPipe = new MakePipeShell(new MakeWire(new MakeEdge(aSpine, 0, Math.PI).Edge(), new MakeEdge(aSpine, Math.PI, 2 * Math.PI).Edge()).Wire());
+        aPipe.SetMode(true);
+        aPipe.Add(new MakeWire(new MakeEdge(aSection, 0, Math.PI).Edge(), new MakeEdge(aSection, Math.PI, 2 * Math.PI).Edge()).Wire());
+        aPipe.Build();
+        Assert.True(aPipe.IsDone);
+        aPipe.MakeSolid();
+
+        var aUnifier = new UnifySameDomain(aPipe.Shape(), true, true, false);
+        aUnifier.Build();
+
+        Assert.Equal(1, Count(aUnifier.Shape(), ShapeType.Face));
+        Assert.True(Count(aUnifier.Shape(), ShapeType.Edge) > 0);
+        Assert.True(new Analyzer(aUnifier.Shape()).IsValid());
+        Assert.True(aUnifier.Shape().Mesh().IsSuccess);
     }
 
     [Fact]

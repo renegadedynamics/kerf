@@ -355,10 +355,8 @@ public class Geom2dConvertTests
         Assert.True(aResult[1].EndPoint.DistanceTo(new Point2D(2, 0)) < Tol);
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void Concat_of_two_arcs_making_a_loop_keeps_their_order(bool isC1)
+    [Fact]
+    public void ConcatC1_of_two_arcs_making_a_loop_can_keep_their_order()
     {
         // #1541: both ends of the first arc meet the second, and Add's default then prepends, which starts the result
         // half a turn from where the first arc starts.
@@ -367,15 +365,8 @@ public class Geom2dConvertTests
         aCurves[0] = Geom2dConvert2D.CurveToBSplineCurve(new TrimmedCurve2D(aCircle, 0.0, Math.PI));
         aCurves[1] = Geom2dConvert2D.CurveToBSplineCurve(new TrimmedCurve2D(aCircle, Math.PI, 2 * Math.PI));
         bool isClosed = false;
-        NCollection_HArray1<BSplineCurve2D> aResult;
-        if (isC1)
-        {
-            Geom2dConvert2D.ConcatC1(aCurves, NCollection_Array1<double>.From([1e-7], 0), out _, out aResult, ref isClosed, 1e-7);
-        }
-        else
-        {
-            Geom2dConvert2D.ConcatG1(aCurves, NCollection_Array1<double>.From([1e-7], 0), out aResult, ref isClosed, 1e-7);
-        }
+        Geom2dConvert2D.ConcatC1(aCurves, NCollection_Array1<double>.From([1e-7], 0), out _, out NCollection_HArray1<BSplineCurve2D> aResult,
+                                 ref isClosed, 1e-7, keepLoopOrder: true);
 
         Assert.Equal(1, aResult.Length());
         BSplineCurve2D aLoop = aResult[0];

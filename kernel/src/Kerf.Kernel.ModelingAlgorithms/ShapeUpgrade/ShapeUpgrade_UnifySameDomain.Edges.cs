@@ -399,6 +399,27 @@ internal partial class UnifySameDomain
                                        ref closedFlag,
                                        global::Kerf.Engine.Foundation.Precision.Confusion()); // C1 concatenation
 
+                // Two arcs making a loop come back half a turn out, as OCCT's Add prepends where both ends join. If that
+                // leaves the pcurve starting away from the 3D curve, as in a box cut by a sphere, keep their order instead
+                // (#1541; decision 20902). OCCT leaves it, and the face is lost.
+                if (concatc2d.Length() == 1 && curve is not null
+                    && Tool.Surface(ShapeCasts.Face(faceSeq[resPCurves.Length() + 1])) is { } faceSurface)
+                {
+                    Point2D loopStart = concatc2d.Value(concatc2d.Lower()).StartPoint;
+                    if (faceSurface.Value(loopStart.X, loopStart.Y).DistanceTo(curve.Value(first3d))
+                        > 10.0 * Max(maxTol, global::Kerf.Engine.Foundation.Precision.Confusion()))
+                    {
+                        closedFlag = false;
+                        Geom2dConvert2D.ConcatC1(tab_c2d,
+                                               tabtolvertex,
+                                               out NCollection_HArray1<int> _,
+                                               out concatc2d,
+                                               ref closedFlag,
+                                               global::Kerf.Engine.Foundation.Precision.Confusion(),
+                                               keepLoopOrder: true);
+                    }
+                }
+
                 if (concatc2d.Length() > 1)
                 {
                     var concat2d = new CompCurveToBSplineCurve2D(concatc2d.Value(concatc2d.Lower()));
