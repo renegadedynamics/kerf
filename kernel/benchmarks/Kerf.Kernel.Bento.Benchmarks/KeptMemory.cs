@@ -18,6 +18,8 @@ using static Kerf.Modeling.Operations;
 //   -- chain [cells]        chains of features where each cell keeps its step
 //   -- step file...         a STEP import kept: bytes, by group; and what's left after the import when nothing is kept
 //   -- peak file [mesh]     one STEP import (and mesh), in a process of its own: peak working set against live data
+//   -- statics file         what a first import leaves for good, by the static field holding it
+//   -- digest file...       each example and file's BREP text and mesh, hashed, to compare two builds
 internal static class KeptMemory
 {
     private static long Live()
@@ -266,6 +268,84 @@ internal static class KeptMemory
             walk = null!;
             double left = (Live() - live) / 1024.0;
             Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"    left after dropping it: {left:F0} KB"));
+        }
+    }
+
+    /// <summary>`-- statics file`: what's left for good after a first import, by the static field that holds it (this thread's, for a thread's own).</summary>
+    public static void Statics(string file)
+    {
+        static void Import(string name) => GC.KeepAlive(Importers.ImportStep(name).Value);
+
+        long start = Live();
+        Import(file);
+        double left = (Live() - start) / 1048576.0;
+        var rows = new List<(string Field, long Bytes)>();
+        var seen = new HeapWalk();
+        foreach (System.Reflection.Assembly assembly in AppDomain.CurrentDomain.GetAssemblies().Where(a => a.GetName().Name!.StartsWith("Kerf", StringComparison.Ordinal)))
+        {
+            foreach (Type type in assembly.GetTypes().Where(t => !t.ContainsGenericParameters))
+            {
+                foreach (FieldInfo field in type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+                {
+                    if (field.IsLiteral || field.FieldType.IsPrimitive || field.FieldType.IsEnum || field.FieldType.IsPointer || field.FieldType.IsByRefLike)
+                        continue;
+                    object? value;
+                    try
+                    {
+                        value = field.GetValue(null);
+                    }
+                    catch (Exception e) when (e is TypeInitializationException or NotSupportedException or FieldAccessException or TargetInvocationException)
+                    {
+                        continue;
+                    }
+                    long bytes = seen.Add(value, "static");
+                    if (bytes > 0)
+                        rows.Add(($"{HeapWalk.Name(type)}.{field.Name}", bytes));
+                }
+            }
+        }
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"left after the first import: {left:F2} MB; held by Kerf's statics, generic classes aside: {seen.Bytes / 1048576.0:F2} MB"));
+        foreach (var row in rows.OrderByDescending(r => r.Bytes).Take(25))
+            Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"  {row.Bytes / 1024.0,10:F1} KB  {row.Field}"));
+    }
+
+    /// <summary>`-- digest file...`: what each example and STEP file comes to, exactly: its BREP text, and its mesh, to compare two builds.</summary>
+    public static void Digest((string Name, Func<ModelShape> Build)[] examples, string[] files)
+    {
+        static string Of(ModelShape model)
+        {
+            using var hash = System.Security.Cryptography.IncrementalHash.CreateHash(System.Security.Cryptography.HashAlgorithmName.SHA256);
+            using var brep = new MemoryStream();
+            Shape shape = model.AsShape();
+            string written = global::Kerf.Exchange.Brep.Write(shape, brep).IsSuccess ? "" : "not written ";
+            hash.AppendData(brep.GetBuffer(), 0, (int)brep.Length);
+            ShapeMesh mesh = shape.Triangulate();
+            foreach (FaceMesh f in mesh.Faces)
+            {
+                hash.AppendData(MemoryMarshal.AsBytes(f.Positions.Span));
+                hash.AppendData(MemoryMarshal.AsBytes(f.Normals.Span));
+                hash.AppendData(MemoryMarshal.AsBytes(f.Triangles.Span));
+            }
+            foreach (EdgeMesh e in mesh.Edges)
+                hash.AppendData(MemoryMarshal.AsBytes(e.Points.Span));
+            return string.Create(CultureInfo.InvariantCulture, $"{written}{shape.Faces().Count} faces, {mesh.TriangleCount} triangles, volume {shape.Volume:R}, {Convert.ToHexString(hash.GetHashAndReset())[..16]}");
+        }
+
+        foreach (var (name, build) in examples)
+            Console.WriteLine($"{name}: {Of(build())}");
+        foreach (string file in files)
+        {
+            string line;
+            try
+            {
+                var read = Importers.ImportStep(file);
+                line = read.IsSuccess ? Of(read.Value) : "not read";
+            }
+            catch (Exception e) when (e is not OutOfMemoryException)
+            {
+                line = e.GetType().Name;
+            }
+            Console.WriteLine($"{Path.GetFileName(file)}: {line}");
         }
     }
 

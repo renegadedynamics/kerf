@@ -109,6 +109,12 @@ switch (args.Length > 0 ? args[0] : "")
     case "step":
         KeptMemory.Step([.. args.Skip(1).Where(a => a != "same")], args.Contains("same"));
         return 0;
+    case "statics":
+        KeptMemory.Statics(args[1]);
+        return 0;
+    case "digest":
+        KeptMemory.Digest(examples, args[1..]);
+        return 0;
     case "peak":
         KeptMemory.Peak(args[1], null, args.Contains("mesh"));
         return 0;
