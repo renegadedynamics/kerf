@@ -1369,7 +1369,7 @@ public sealed partial class BezierSurface : BoundedSurface
         v2 = 1.0;
     }
 
-    /// <summary>CN.</summary>
+    /// <summary><c>CN</c>: infinitely differentiable.</summary>
     public sealed override Continuity Continuity => CN;
 
     /// <summary>The point of parameters (U, V).</summary>

@@ -80,10 +80,10 @@ public sealed class LineCurve3D : Curve3D
     /// <summary><c>CN</c>: a line is infinitely differentiable.</summary>
     public sealed override Continuity Continuity => CN;
 
-    /// <summary>-Precision::Infinite().</summary>
+    /// <summary>Effectively minus infinity: -2e100, the curve having no start.</summary>
     public sealed override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
-    /// <summary>Precision::Infinite().</summary>
+    /// <summary>Effectively infinity: 2e100, the curve having no end.</summary>
     public sealed override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>The non-persistent line equal to this one.</summary>

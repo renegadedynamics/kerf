@@ -154,7 +154,7 @@ public enum SheetSurface
 #pragma warning restore CS1591
 }
 
-/// <summary>Split options.</summary>
+/// <summary>Which side of a split to keep; for a tangent arc, which of its two solutions.</summary>
 public enum Keep
 {
 #pragma warning disable CS1591
@@ -179,7 +179,7 @@ public enum FontStyle
 #pragma warning restore CS1591
 }
 
-/// <summary>Sagitta selection.</summary>
+/// <summary>Which of the two arcs through the same end points to take.</summary>
 public enum Sagitta
 {
     /// <summary>The short arc.</summary>
@@ -228,7 +228,7 @@ public enum NumberDisplay
 #pragma warning restore CS1591
 }
 
-/// <summary>Page sizes.</summary>
+/// <summary>Standard paper sizes: ISO A and US.</summary>
 public enum PageSize
 {
 #pragma warning disable CS1591
@@ -256,7 +256,7 @@ public enum PrecisionMode
 /// <summary>Sheet metal relief shapes. Each names a shape, not a placement.</summary>
 public enum ReliefType
 {
-    /// <summary>A circle.</summary>
+    /// <summary>A circular cut.</summary>
     Round,
     /// <summary>Square-cornered, aligned to the fold lines.</summary>
     Square,
@@ -293,7 +293,7 @@ public enum ShapeKey
 #pragma warning restore CS1591
 }
 
-/// <summary>Text alignment.</summary>
+/// <summary>How text sits relative to its insertion point.</summary>
 public enum TextAlign
 {
 #pragma warning disable CS1591
@@ -351,7 +351,7 @@ public static class UnitExtensions
     };
 }
 
-/// <summary>Extrude limit.</summary>
+/// <summary>Which face of the target an extrusion runs up to.</summary>
 public enum Until
 {
 #pragma warning disable CS1591

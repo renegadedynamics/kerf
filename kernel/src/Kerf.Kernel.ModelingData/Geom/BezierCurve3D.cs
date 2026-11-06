@@ -512,7 +512,7 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
     /// <summary>False if all the weights are equal (within gp::Resolution()).</summary>
     public bool IsRational => _rational;
 
-    /// <summary>CN.</summary>
+    /// <summary><c>CN</c>: infinitely differentiable.</summary>
     public sealed override Continuity Continuity => CN;
 
     /// <summary>The degree: the number of poles minus 1.</summary>

@@ -214,7 +214,7 @@ public sealed record StepReadOptions
     /// <summary>The default limits; product names; no external references.</summary>
     public static StepReadOptions Default { get; } = new();
 
-    /// <summary>The limits.</summary>
+    /// <summary>What this read refuses rather than allocate for.</summary>
     public ReadLimits Limits { get; init; } = ReadLimits.Default;
 
     /// <summary>
@@ -303,7 +303,7 @@ public sealed record StlReadOptions
 /// <summary>How STL is written.</summary>
 public sealed record StlWriteOptions
 {
-    /// <summary>Binary.</summary>
+    /// <summary>Binary STL, the compact form.</summary>
     public static StlWriteOptions Default { get; } = new();
 
     /// <summary>ASCII (with LF line ends) rather than binary.</summary>

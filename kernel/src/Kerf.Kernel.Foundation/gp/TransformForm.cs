@@ -13,11 +13,11 @@ public enum TransformForm
     Rotation,
     /// <summary>A translation.</summary>
     Translation,
-    /// <summary>Central symmetry.</summary>
+    /// <summary>The central symmetry through a point.</summary>
     PointMirror,
-    /// <summary>Rotational symmetry.</summary>
+    /// <summary>A half-turn about an axis in 3D, or a reflection in a line in 2D.</summary>
     AxisMirror,
-    /// <summary>Bilateral symmetry.</summary>
+    /// <summary>A reflection in a plane.</summary>
     PlaneMirror,
     /// <summary>A uniform scale about a point.</summary>
     Scale,

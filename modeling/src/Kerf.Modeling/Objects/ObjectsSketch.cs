@@ -52,7 +52,7 @@ public class Circle : BaseSketchObject
     /// <summary>The angular size in degrees.</summary>
     public double ArcSize { get; }
 
-    /// <summary>The alignment.</summary>
+    /// <summary>How it is placed relative to its bounding box on each axis, as it was built.</summary>
     public Alignment Align { get; }
 }
 
@@ -72,7 +72,7 @@ public class Ellipse : BaseSketchObject
     /// <summary>The radius along Y.</summary>
     public double YRadius { get; }
 
-    /// <summary>The alignment.</summary>
+    /// <summary>How it is placed relative to its bounding box on each axis, as it was built.</summary>
     public Alignment Align { get; }
 }
 
@@ -95,10 +95,10 @@ public class Polygon : BaseSketchObject
         (Points, Align) = (pts, TwoAxes(align ?? new Alignment(Kerf.Modeling.Align.None, Kerf.Modeling.Align.None)));
     }
 
-    /// <summary>The points.</summary>
+    /// <summary>The vertices as given, in order.</summary>
     public IReadOnlyList<Point3D> Points { get; }
 
-    /// <summary>The alignment.</summary>
+    /// <summary>How it is placed relative to its bounding box on each axis, as it was built.</summary>
     public Alignment Align { get; }
 }
 
@@ -118,7 +118,7 @@ public class Rectangle : BaseSketchObject
     /// <summary>The size along Y (build123d's <c>rectangle_height</c>).</summary>
     public double Height { get; }
 
-    /// <summary>The alignment.</summary>
+    /// <summary>How it is placed relative to its bounding box on each axis, as it was built.</summary>
     public Alignment Align { get; }
 }
 
@@ -150,7 +150,7 @@ public class RectangleRounded : BaseSketchObject
     /// <summary>The corner radius.</summary>
     public double Radius { get; }
 
-    /// <summary>The alignment.</summary>
+    /// <summary>How it is placed relative to its bounding box on each axis, as it was built.</summary>
     public Alignment Align { get; }
 }
 
@@ -194,7 +194,7 @@ public class RegularPolygon : BaseSketchObject
     /// <summary>The number of sides.</summary>
     public int SideCount { get; }
 
-    /// <summary>The alignment.</summary>
+    /// <summary>How it is placed relative to its bounding box on each axis, as it was built.</summary>
     public Alignment Align { get; }
 }
 
@@ -277,7 +277,7 @@ public class SlotCenterToCenter : BaseSketchObject
 /// <summary>A slot of an overall width and height; a circle when they are equal. Centred by default.</summary>
 public class SlotOverall : BaseSketchObject
 {
-    /// <summary>A slot.</summary>
+    /// <summary>A slot <paramref name="width"/> long overall and <paramref name="height"/> across, turned by <paramref name="rotation"/> degrees about Z.</summary>
     /// <exception cref="ArgumentException">The width is less than the height.</exception>
     public SlotOverall(double width, double height, double rotation = 0, Alignment? align = null)
         : base(Make(width, height), rotation, align ?? Centered)
@@ -355,7 +355,7 @@ public class Superellipse : BaseSketchObject
     /// <summary>The number of points per quadrant.</summary>
     public int PointCount { get; }
 
-    /// <summary>The alignment.</summary>
+    /// <summary>How it is placed relative to its bounding box on each axis, as it was built.</summary>
     public Alignment Align { get; }
 }
 
@@ -365,7 +365,7 @@ public class Superellipse : BaseSketchObject
 /// </summary>
 public class Trapezoid : BaseSketchObject
 {
-    /// <summary>A trapezoid.</summary>
+    /// <summary>A trapezoid with these bottom interior angles, in degrees; <paramref name="rightSideAngle"/> defaults to the left one.</summary>
     /// <exception cref="ArgumentException">The angles make an invalid trapezoid.</exception>
     public Trapezoid(double width, double height, double leftSideAngle, double? rightSideAngle = null, double rotation = 0,
                      Alignment? align = null)
@@ -408,7 +408,7 @@ public class Trapezoid : BaseSketchObject
     /// <summary>The bottom right interior angle.</summary>
     public double RightSideAngle { get; }
 
-    /// <summary>The alignment.</summary>
+    /// <summary>How it is placed relative to its bounding box on each axis, as it was built.</summary>
     public Alignment Align { get; }
 }
 

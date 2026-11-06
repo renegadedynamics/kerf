@@ -81,10 +81,10 @@ public sealed class LineCurve2D : Curve2D
     /// <summary>-U.</summary>
     public sealed override double ReversedParameter(double u) => (-u);
 
-    /// <summary>-Precision::Infinite().</summary>
+    /// <summary>Effectively minus infinity: -2e100, the curve having no start.</summary>
     public sealed override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
-    /// <summary>Precision::Infinite().</summary>
+    /// <summary>Effectively infinity: 2e100, the curve having no end.</summary>
     public sealed override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>False.</summary>
@@ -93,7 +93,7 @@ public sealed class LineCurve2D : Curve2D
     /// <summary>False.</summary>
     public sealed override bool IsPeriodic => false;
 
-    /// <summary>CN.</summary>
+    /// <summary><c>CN</c>: infinitely differentiable.</summary>
     public sealed override Continuity Continuity => CN;
 
     /// <summary>The distance between P and the line.</summary>

@@ -26,7 +26,7 @@ public sealed record PngOptions
     /// <summary>Deterministic compression.</summary>
     public static PngOptions Default { get; } = new();
 
-    /// <summary>The compression.</summary>
+    /// <summary>How the pixels are compressed, deterministically by default.</summary>
     public PngCompression Compression { get; init; }
 }
 
