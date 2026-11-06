@@ -295,4 +295,116 @@ public class ShapeFix_RepairsOfSolidsTests
             }
         }
     }
+
+    private static int Wires(in Shape theS)
+    {
+        int aCount = 0;
+        for (var anExp = new Explorer(theS, ShapeType.Wire); anExp.More(); anExp.Next())
+        {
+            aCount++;
+        }
+        return aCount;
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FixSmallEdges_AHoleOfNothingButSmallEdges_ShrinksAndLeavesTheFace(bool theDrop)
+    {
+        Face anOuter = PlanarFace(P(0, 0), P(10, 0), P(10, 10), P(0, 10));
+        Wire aHole = ShapeFixPolylines.Polyline(true, P(5, 5), P(5, 5.0001), P(5.0001, 5.0001), P(5.0001, 5));
+        var aMake = new MakeFace(anOuter);
+        aMake.Add(aHole);
+        Face aFace = aMake.Face();
+        var aFix = new WireframeFixer(aFace);
+        aFix.SetPrecision(1e-3);
+        aFix.ModeDropSmallEdges() = theDrop;
+        aFix.FixSmallEdges();
+        Shape aResult = aFix.Shape();
+        // merging stops at the last two edges of a closed loop, whose ends aren't one vertex; the hole's area is nothing
+        Assert.Equal(2, Wires(aResult));
+        Assert.Equal(100, Area(aResult), 3);
+        int anEdges = 0;
+        for (var anExp = new Explorer(aResult, ShapeType.Edge); anExp.More(); anExp.Next())
+        {
+            anEdges++;
+        }
+        Assert.True(anEdges < 8, $"{anEdges} edges");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FixSmallEdges_AFreeWireOfNothingButSmallEdges_HasNoneLeft(bool theDrop)
+    {
+        Wire aWire = TestShapes.Frozen(ShapeFixPolylines.Polyline(true, P(5, 5), P(5, 5.0001), P(5.0001, 5.0001)));
+        var aFix = new WireframeFixer(aWire);
+        aFix.SetPrecision(1e-3);
+        aFix.ModeDropSmallEdges() = theDrop;
+        aFix.FixSmallEdges();
+        Shape aResult = aFix.Shape();
+        if (!aResult.IsNull)
+        {
+            // one edge left at most, or none: nothing can be merged with an edge that's still there
+            int aEdges = 0;
+            for (var anExp = new Explorer(aResult, ShapeType.Edge); anExp.More(); anExp.Next())
+            {
+                aEdges++;
+            }
+            Assert.True(aEdges <= 3);
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FixSmallEdges_SmallEdgesOfDifferentNeighbours_InABox_KeepItsVolume(bool theDrop)
+    {
+        // a box with a small chamfer along one edge: the strip's short ends are small edges between faces which differ
+        Face aBase = PlanarFace(P(0, 0), P(10, 0), P(10, 9.9999), P(9.9999, 10), P(0, 10));
+        Shape aPrism = new ApiMakePrism(aBase, new Vector3D(0, 0, 5)).Shape();
+        double aVolume = Volume(aPrism);
+        var aFix = new WireframeFixer(aPrism);
+        aFix.SetPrecision(1e-3);
+        aFix.ModeDropSmallEdges() = theDrop;
+        aFix.FixSmallEdges();
+        Assert.True(Math.Abs(Volume(aFix.Shape()) - aVolume) < 1e-2 * aVolume);
+    }
+
+    [Fact]
+    public void FixSmallEdges_KeepsAnInternalVertexOfAnEdgeMerged()
+    {
+        // the neighbour of the small edge has a vertex inside it, which the merged edge must keep
+        Vertex aV0 = TestShapes.Vertex(P(0, 0)), aV1 = TestShapes.Vertex(P(5, 0)), aV2 = TestShapes.Vertex(P(5.0001, 0)),
+               aV3 = TestShapes.Vertex(P(10, 0)), aV4 = TestShapes.Vertex(P(10, 10)), aV5 = TestShapes.Vertex(P(0, 10));
+        var aB = new BrepBuilder();
+        Edge aWithInner = TestShapes.Edge(aV0, aV1);
+        Vertex anInner = TestShapes.Vertex(P(2, 0));
+        aB.Add(aWithInner, anInner.Oriented(Orientation.Internal));
+        aB.UpdateVertex(ShapeCasts.Vertex(anInner.Oriented(Orientation.Internal)), 2, aWithInner, 1e-7);
+        Wire aW = new();
+        aB.MakeWire(ref aW);
+        aB.Add(aW, aWithInner);
+        aB.Add(aW, TestShapes.Edge(aV1, aV2));
+        aB.Add(aW, TestShapes.Edge(aV2, aV3));
+        aB.Add(aW, TestShapes.Edge(aV3, aV4));
+        aB.Add(aW, TestShapes.Edge(aV4, aV5));
+        aB.Add(aW, TestShapes.Edge(aV5, aV0));
+        aW.Closed(true);
+        Face aFace = new MakeFace(aW, true).Face();
+        var aFix = new WireframeFixer(aFace);
+        aFix.SetPrecision(1e-3);
+        Assert.True(aFix.FixSmallEdges());
+        Shape aResult = aFix.Shape();
+        Assert.True(ShortestEdge(aResult) > 1e-3);
+        int anInternal = 0;
+        for (var anExp = new Explorer(aResult, ShapeType.Edge); anExp.More(); anExp.Next())
+        {
+            for (var anIt = new Iterator(anExp.Current(), false); anIt.More(); anIt.Next())
+            {
+                anInternal += anIt.Value().Orientation == Orientation.Internal ? 1 : 0;
+            }
+        }
+        Assert.Equal(1, anInternal);
+    }
 }
