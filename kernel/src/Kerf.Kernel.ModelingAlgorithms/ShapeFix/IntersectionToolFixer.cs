@@ -16,10 +16,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Intersection.TwoD.Position2D;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Healing.Fixes;
 
@@ -35,7 +32,6 @@ namespace Kerf.Engine.Healing.Fixes;
 internal sealed class IntersectionToolFixer
 {
     private readonly ReShapeBuilder? _context;
-    private readonly double              _preci;
     private readonly double              _maxTol;
 
     // gka 06.09.04 BUG 6555 shape is modified always independently either intersection was fixed or not
@@ -44,7 +40,6 @@ internal sealed class IntersectionToolFixer
     public IntersectionToolFixer(ReShapeBuilder? context, double preci, double maxtol = 1.0)
     {
         _context = context;
-        _preci   = preci;
         _maxTol  = maxtol;
     }
 

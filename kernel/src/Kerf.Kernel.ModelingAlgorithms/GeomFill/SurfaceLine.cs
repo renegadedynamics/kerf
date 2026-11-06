@@ -6,7 +6,6 @@
 
 using Kerf.Engine.Fillets.Blend;
 using Kerf.Engine.Foundation;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Surfaces;
 

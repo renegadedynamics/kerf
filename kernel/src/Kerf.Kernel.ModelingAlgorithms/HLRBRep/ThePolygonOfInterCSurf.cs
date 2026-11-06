@@ -7,7 +7,6 @@ using Kerf.Engine.Geometry.Bounds;
 
 using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.HiddenLines;
 

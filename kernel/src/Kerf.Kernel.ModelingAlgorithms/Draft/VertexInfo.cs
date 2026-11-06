@@ -7,7 +7,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Runtime.InteropServices;
 
 namespace Kerf.Engine.Features.Draft;

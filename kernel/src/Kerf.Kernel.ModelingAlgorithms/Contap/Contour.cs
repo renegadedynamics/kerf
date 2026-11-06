@@ -13,12 +13,7 @@ using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.HiddenLines.Contours.ContourLineType;
-using static Kerf.Engine.HiddenLines.Contours.ContourTFunction;
-using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
-using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.Containment;
 

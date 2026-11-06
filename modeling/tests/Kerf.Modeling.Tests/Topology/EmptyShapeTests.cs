@@ -361,7 +361,7 @@ public class EmptyShapeGeometryQueriesTests
     [Fact]
     public void FaceWithoutASurface()
     {
-        Action[] asked = [() => default(Face).GeomAdaptor(), () => default(Face).OuterWire(), () => default(Face).NormalAt()];
+        Action[] asked = [() => default(Face).AsSurface(), () => default(Face).OuterWire(), () => default(Face).NormalAt()];
         foreach (var ask in asked)
             Assert.Contains("An empty Face has no", Assert.Throws<InvalidOperationException>(ask).Message);
         Assert.Contains("An empty Face has no center",

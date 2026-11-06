@@ -6,8 +6,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Kerf.Engine;
-using static Kerf.Engine.Classification.Hatching.HatchingErrorStatus;
 
 namespace Kerf.Engine.Classification.Hatching;
 

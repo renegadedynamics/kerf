@@ -40,7 +40,7 @@ public class Box : BasePartObject
     public Box(double length, double width, double height, Rotation? rotation = null, Alignment? align = null)
         : base(Solid.MakeBox(length, width, height), rotation, align ?? Centered)
     {
-        (Length, Width, BoxHeight) = (length, width, height);
+        (Length, Width, Height) = (length, width, height);
     }
 
     /// <summary>The size along X.</summary>
@@ -50,7 +50,7 @@ public class Box : BasePartObject
     public double Width { get; }
 
     /// <summary>The size along Z (build123d's <c>box_height</c>).</summary>
-    public double BoxHeight { get; }
+    public double Height { get; }
 }
 
 /// <summary>A full or partial cone of a bottom and top radius (which may be zero) and a height; centred by default.</summary>
@@ -61,7 +61,7 @@ public class Cone : BasePartObject
                 Alignment? align = null)
         : base(Solid.MakeCone(bottomRadius, topRadius, height, angle: arcSize), rotation, align ?? Centered)
     {
-        (BottomRadius, TopRadius, ConeHeight, ArcSize, Align) = (bottomRadius, topRadius, height, arcSize, align ?? Centered);
+        (BottomRadius, TopRadius, Height, ArcSize, Align) = (bottomRadius, topRadius, height, arcSize, align ?? Centered);
     }
 
     /// <summary>The bottom radius.</summary>
@@ -71,7 +71,7 @@ public class Cone : BasePartObject
     public double TopRadius { get; }
 
     /// <summary>The height (build123d's <c>cone_height</c>).</summary>
-    public double ConeHeight { get; }
+    public double Height { get; }
 
     /// <summary>The angular size in degrees.</summary>
     public double ArcSize { get; }
@@ -87,14 +87,14 @@ public class Cylinder : BasePartObject
     public Cylinder(double radius, double height, double arcSize = 360, Rotation? rotation = null, Alignment? align = null)
         : base(Solid.MakeCylinder(radius, height, angle: arcSize), rotation, align ?? Centered)
     {
-        (Radius, CylinderHeight, ArcSize, Align) = (radius, height, arcSize, align ?? Centered);
+        (Radius, Height, ArcSize, Align) = (radius, height, arcSize, align ?? Centered);
     }
 
     /// <summary>The radius.</summary>
     public double Radius { get; }
 
     /// <summary>The height (build123d's <c>cylinder_height</c>).</summary>
-    public double CylinderHeight { get; }
+    public double Height { get; }
 
     /// <summary>The angular size in degrees.</summary>
     public double ArcSize { get; }
@@ -170,11 +170,11 @@ public class Wedge : BasePartObject
 {
     /// <summary>A wedge; centred by default.</summary>
     /// <exception cref="ArgumentException">A size isn't positive.</exception>
-    public Wedge(double xsize, double ysize, double zsize, double xmin, double zmin, double xmax, double zmax, Rotation? rotation = null,
+    public Wedge(double xSize, double ySize, double zSize, double xMin, double zMin, double xMax, double zMax, Rotation? rotation = null,
                  Alignment? align = null)
-        : base(Make(xsize, ysize, zsize, xmin, zmin, xmax, zmax), rotation, align ?? Centered)
+        : base(Make(xSize, ySize, zSize, xMin, zMin, xMax, zMax), rotation, align ?? Centered)
     {
-        (XSize, YSize, ZSize, XMin, ZMin, XMax, ZMax, Align) = (xsize, ysize, zsize, xmin, zmin, xmax, zmax, align ?? Centered);
+        (XSize, YSize, ZSize, XMin, ZMin, XMax, ZMax, Align) = (xSize, ySize, zSize, xMin, zMin, xMax, zMax, align ?? Centered);
     }
 
     private static Solid Make(double xsize, double ysize, double zsize, double xmin, double zmin, double xmax, double zmax)

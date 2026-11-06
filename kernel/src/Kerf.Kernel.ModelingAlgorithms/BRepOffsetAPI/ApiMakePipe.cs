@@ -10,8 +10,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Construction.Api;
 

@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Geometry;
 
-using Kerf.Engine;
-
 namespace Kerf.Geometry;
 
 /// <summary>An axis in 3D space: a location and a direction.</summary>
@@ -22,19 +20,19 @@ public readonly partial struct Axis3D : IEquatable<Axis3D>
         _vdir = new Direction3D(Direction3D.D.Z);
     }
 
-    public Axis3D(in Point3D p, in Direction3D v)
+    public Axis3D(in Point3D point, in Direction3D direction)
     {
-        _loc = p;
-        _vdir = v;
+        _loc = point;
+        _vdir = direction;
     }
 
-    public Axis3D(in Point3D p, Direction3D.D dir)
+    internal Axis3D(in Point3D p, Direction3D.D dir)
     {
         _loc = p;
         _vdir = new Direction3D(dir);
     }
 
-    public Axis3D(Direction3D.D dir)
+    internal Axis3D(Direction3D.D dir)
     {
         _loc = new Point3D(0.0, 0.0, 0.0);
         _vdir = new Direction3D(dir);
@@ -42,9 +40,9 @@ public readonly partial struct Axis3D : IEquatable<Axis3D>
 
     // Copies
 
-    public readonly Axis3D WithDirection(in Direction3D v) => new(_loc, v);
+    public readonly Axis3D WithDirection(in Direction3D direction) => new(_loc, direction);
 
-    public readonly Axis3D WithLocation(in Point3D p) => new(p, _vdir);
+    public readonly Axis3D WithLocation(in Point3D point) => new(point, _vdir);
 
     // Queries
 
@@ -75,74 +73,74 @@ public readonly partial struct Axis3D : IEquatable<Axis3D>
 
     public readonly Axis3D Reversed() => new(_loc, _vdir.Reversed());
 
-    public readonly Axis3D Mirrored(in Point3D p)
+    public readonly Axis3D Mirrored(in Point3D point)
     {
         Point3D loc = _loc;
         Direction3D vdir = _vdir;
-        loc = loc.Mirrored(p);
+        loc = loc.Mirrored(point);
         vdir = vdir.Reversed();
         return new Axis3D(loc, vdir);
     }
 
-    public readonly Axis3D Mirrored(in Axis3D a1)
+    public readonly Axis3D Mirrored(in Axis3D axis)
     {
         Point3D loc = _loc;
         Direction3D vdir = _vdir;
-        loc = loc.Mirrored(a1);
-        vdir = vdir.Mirrored(a1._vdir);
+        loc = loc.Mirrored(axis);
+        vdir = vdir.Mirrored(axis._vdir);
         return new Axis3D(loc, vdir);
     }
 
-    public readonly Axis3D Mirrored(in Frame3D a2)
+    public readonly Axis3D Mirrored(in Frame3D frame)
     {
         Point3D loc = _loc;
         Direction3D vdir = _vdir;
-        loc = loc.Mirrored(a2);
-        vdir = vdir.Mirrored(a2);
+        loc = loc.Mirrored(frame);
+        vdir = vdir.Mirrored(frame);
         return new Axis3D(loc, vdir);
     }
 
-    public readonly Axis3D Rotated(in Axis3D a1, double angRad)
+    public readonly Axis3D Rotated(in Axis3D axis, double angle)
     {
         Point3D loc = _loc;
         Direction3D vdir = _vdir;
-        loc = loc.Rotated(a1, angRad);
-        vdir = vdir.Rotated(a1, angRad);
+        loc = loc.Rotated(axis, angle);
+        vdir = vdir.Rotated(axis, angle);
         return new Axis3D(loc, vdir);
     }
 
-    public readonly Axis3D Scaled(in Point3D p, double s)
+    public readonly Axis3D Scaled(in Point3D point, double factor)
     {
         Point3D loc = _loc;
         Direction3D vdir = _vdir;
-        loc = loc.Scaled(p, s);
-        if (s < 0.0)
+        loc = loc.Scaled(point, factor);
+        if (factor < 0.0)
         {
             vdir = vdir.Reversed();
         }
         return new Axis3D(loc, vdir);
     }
 
-    public readonly Axis3D Transformed(in Transform3D t)
+    public readonly Axis3D Transformed(in Transform3D transform)
     {
         Point3D loc = _loc;
         Direction3D vdir = _vdir;
-        loc = loc.Transformed(t);
-        vdir = vdir.Transformed(t);
+        loc = loc.Transformed(transform);
+        vdir = vdir.Transformed(transform);
         return new Axis3D(loc, vdir);
     }
 
-    public readonly Axis3D Translated(in Vector3D v)
+    public readonly Axis3D Translated(in Vector3D vector)
     {
         Point3D loc = _loc;
-        loc = loc.Translated(v);
+        loc = loc.Translated(vector);
         return new Axis3D(loc, _vdir);
     }
 
-    public readonly Axis3D Translated(in Point3D p1, in Point3D p2)
+    public readonly Axis3D Translated(in Point3D point1, in Point3D point2)
     {
         Point3D loc = _loc;
-        loc = loc.Translated(p1, p2);
+        loc = loc.Translated(point1, point2);
         return new Axis3D(loc, _vdir);
     }
 

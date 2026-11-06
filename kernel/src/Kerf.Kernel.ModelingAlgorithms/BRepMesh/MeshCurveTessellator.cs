@@ -14,11 +14,9 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Meshing;
 
@@ -38,8 +36,6 @@ internal class MeshCurveTessellator : CurveTessellator
     private readonly EdgeCurveAdaptor _curve;
     private readonly int _minPointsNb;
     private readonly TangentialDeflection _discretTool = new();
-    private Vertex _firstVertex;
-    private Vertex _lastVertex;
     private double _squareEdgeDef;
     private double _squareMinSize;
     private double _edgeSqTol;
@@ -83,8 +79,6 @@ internal class MeshCurveTessellator : CurveTessellator
         {
             throw new FailureException("The structure \"myParameters\" is not initialized");
         }
-
-        Exploration.Vertices(_edge, out _firstVertex, out _lastVertex);
 
         double preciseAngDef = 0.5 * _dEdge.GetAngularDeflection();
         double preciseLinDef = 0.5 * _dEdge.GetDeflection();
@@ -209,15 +203,6 @@ internal class MeshCurveTessellator : CurveTessellator
 
             _discretTool.AddPoint(Tool.Pnt(vertex), Tool.Parameter(vertex, _edge), true);
         }
-    }
-
-    // Checks whether the given point lies within tolerance of the vertex (unused, as in OCCT).
-    private static bool IsInToleranceOfVertex(in Point3D point, in Vertex vertex)
-    {
-        Point3D aPoint = Tool.Pnt(vertex);
-        double tolerance = Tool.Tolerance(vertex);
-
-        return (point.SquareDistanceTo(aPoint) < tolerance * tolerance);
     }
 
     /// <inheritdoc/>

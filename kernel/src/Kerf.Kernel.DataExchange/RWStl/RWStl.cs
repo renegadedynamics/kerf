@@ -7,7 +7,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
 using Kerf.Geometry;
-using Kerf.Engine;
 using System.Buffers.Binary;
 using System.Text;
 

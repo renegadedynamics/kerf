@@ -6,8 +6,6 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry.Objects;
-using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Geometry;
 
@@ -18,7 +16,7 @@ namespace Kerf.Geometry;
 /// </summary>
 /// <remarks>
 /// <see cref="BasisSurface"/> returns the stored copy frozen, as OCCT returns its handle; this surface's internal
-/// mutators then copy the basis surface again before changing it (decision 159).
+/// mutators then copy the basis surface again before changing it.
 /// </remarks>
 public sealed class TrimmedSurface : BoundedSurface
 {
@@ -39,7 +37,7 @@ public sealed class TrimmedSurface : BoundedSurface
     /// <exception cref="ConstructionErrorException">
     /// U1 == U2 or V1 == V2, or a non-periodic direction is trimmed outside the bounds of S.
     /// </exception>
-    public TrimmedSurface(Surface s,
+    public TrimmedSurface(Surface surface,
                                           double u1,
                                           double u2,
                                           double v1,
@@ -55,14 +53,14 @@ public sealed class TrimmedSurface : BoundedSurface
         _isvtrimmed = true;
 
         // kill trimmed basis surfaces
-        TrimmedSurface? t = s as TrimmedSurface;
+        TrimmedSurface? t = surface as TrimmedSurface;
         if (t is not null)
         {
             _basisSurf = (Surface)t._basisSurf.Copy(); // Kerf: the field, so that T's basis surface isn't frozen
         }
         else
         {
-            _basisSurf = (Surface)s.Copy();
+            _basisSurf = (Surface)surface.Copy();
         }
 
         OffsetSurface? o = _basisSurf as OffsetSurface;
@@ -83,21 +81,21 @@ public sealed class TrimmedSurface : BoundedSurface
     /// <exception cref="ConstructionErrorException">
     /// Param1 == Param2, or the direction is not periodic and is trimmed outside the bounds of S.
     /// </exception>
-    public TrimmedSurface(Surface s,
+    public TrimmedSurface(Surface surface,
                                           double param1,
                                           double param2,
                                           bool uTrim,
                                           bool sense = true)
     {
         // kill trimmed basis surfaces
-        TrimmedSurface? t = s as TrimmedSurface;
+        TrimmedSurface? t = surface as TrimmedSurface;
         if (t is not null)
         {
             _basisSurf = (Surface)t._basisSurf.Copy(); // Kerf: the field, so that T's basis surface isn't frozen
         }
         else
         {
-            _basisSurf = (Surface)s.Copy();
+            _basisSurf = (Surface)surface.Copy();
         }
 
         OffsetSurface? o = _basisSurf as OffsetSurface;
@@ -546,33 +544,33 @@ public sealed class TrimmedSurface : BoundedSurface
     internal sealed override ResD3 EvalD3(double u, double v) => _basisSurf.EvalD3(u, v);
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int uOrder, int vOrder)
     {
-        if (nu + nv < 1 || nu < 0 || nv < 0)
+        if (uOrder + vOrder < 1 || uOrder < 0 || vOrder < 0)
         {
             throw Refusal.State(new UndefinedDerivative3DException());
         }
-        return _basisSurf.EvalDN(u, v, nu, nv);
+        return _basisSurf.EvalDN(u, v, uOrder, vOrder);
     }
 
     /// <summary>Transforms the basis surface and the trim values (through its TransformParameters).</summary>
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
         OwnBasisSurface();
-        _basisSurf.Transform(t);
-        _basisSurf.TransformParameters(ref _utrim1, ref _vtrim1, t);
-        _basisSurf.TransformParameters(ref _utrim2, ref _vtrim2, t);
+        _basisSurf.Transform(transform);
+        _basisSurf.TransformParameters(ref _utrim1, ref _vtrim1, transform);
+        _basisSurf.TransformParameters(ref _utrim2, ref _vtrim2, transform);
     }
 
     /// <summary>The basis surface's TransformParameters.</summary>
-    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
+    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D transform)
     {
-        _basisSurf.TransformParameters(ref u, ref v, t);
+        _basisSurf.TransformParameters(ref u, ref v, transform);
     }
 
     /// <summary>The basis surface's ParametricTransformation.</summary>
-    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D t) => _basisSurf.ParametricTransformation(t);
+    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D transform) => _basisSurf.ParametricTransformation(transform);
 
     /// <summary>A new, unfrozen trimmed surface on a copy of the basis surface.</summary>
     public sealed override Geometry3D Copy()

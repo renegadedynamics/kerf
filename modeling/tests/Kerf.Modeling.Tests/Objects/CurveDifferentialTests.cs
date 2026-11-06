@@ -170,7 +170,7 @@ public class CurveDifferentialTests
         Same(new Spline([new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0), new Point3D(3, 2, 0)], tangents: [new Vector3D(1, 0, 0), new Vector3D(0, 1, 0)]), 6.57927674248, new Point3D(0, 0, 0), new Point3D(3, 2, 0),
              new Point3D(1.63014392221, 0.477365157051, 0));
         Same(new Spline([new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)], periodic: true), 5.7514266401, new Point3D(0, 0, 0), new Point3D(0, 0, 0), new Point3D(1.55860351964, 0.77599713828, 0));
-        Same(new Helix(2, 5, 1, coneAngle: 10, lefthand: true), 23.5527575399, new Point3D(1, 0, 0), new Point3D(-1.82666055869, 0.451509815563, 5),
+        Same(new Helix(2, 5, 1, coneAngle: 10, leftHanded: true), 23.5527575399, new Point3D(1, 0, 0), new Point3D(-1.82666055869, 0.451509815563, 5),
              new Point3D(1.00418732011, -0.960337530539, 2.20882161079));
     }
 

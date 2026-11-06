@@ -8,7 +8,6 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Classification;
 

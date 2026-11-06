@@ -8,11 +8,7 @@ using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Intersection.Curves.IntConicConic_Tool;
-using static Kerf.Engine.Intersection.TwoD.Position2D;
-using static Kerf.Engine.Intersection.TwoD.Situation;
-using static Kerf.Engine.Intersection.TwoD.TypeTrans;
 using Interval = Kerf.Engine.Intersection.Curves.IntConicConic_Tool.Interval;
 
 namespace Kerf.Engine.Intersection.Curves;

@@ -10,7 +10,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Extrema;
 
@@ -26,9 +25,6 @@ namespace Kerf.Engine.Extrema;
 internal class EpcOfExtPC2d
 {
     private bool _done;
-#pragma warning disable CS0414 // OCCT sets myInit and never reads it
-    private bool _init;
-#pragma warning restore CS0414
     private int _mynbsample;
     private double _myumin;
     private double _myusup;
@@ -39,7 +35,6 @@ internal class EpcOfExtPC2d
     public EpcOfExtPC2d()
     {
         _done = false;
-        _init = false;
         _mynbsample = 0;
         _myumin = 0.0;
         _myusup = 0.0;
@@ -68,7 +63,6 @@ internal class EpcOfExtPC2d
     /// <summary>Sets the curve, the number of samples and the tolerances, over the curve's whole range.</summary>
     public void Initialize(Curve2DAdaptorBase c, int nbU, double tolU, double tolF)
     {
-        _init = true;
         _mynbsample = nbU;
         _mytolu = tolU;
         _mytolF = tolF;
@@ -81,7 +75,6 @@ internal class EpcOfExtPC2d
     public void Initialize(Curve2DAdaptorBase c, int nbU, double umin, double usup, double tolU,
         double tolF)
     {
-        _init = true;
         _mynbsample = nbU;
         _mytolu = tolU;
         _mytolF = tolF;

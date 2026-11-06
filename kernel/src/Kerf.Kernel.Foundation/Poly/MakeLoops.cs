@@ -6,7 +6,6 @@
 using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Kerf.Engine;
 using System.Globalization;
 using static Kerf.Engine.Meshing.MakeLoops.LinkFlag;
 

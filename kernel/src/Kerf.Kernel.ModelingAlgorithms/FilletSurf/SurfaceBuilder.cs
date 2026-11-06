@@ -6,9 +6,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Fillets.Surfaces.ErrorTypeStatus;
-using static Kerf.Engine.Fillets.Surfaces.StatusDone;
 
 namespace Kerf.Engine.Fillets.Surfaces;
 

@@ -7,8 +7,6 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
-using Kerf.Engine;
-
 namespace Kerf.Geometry;
 
 /// <summary>
@@ -34,38 +32,38 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
     }
 
     /// <exception cref="ConstructionErrorException">
-    /// <paramref name="radius"/> is negative, or |<paramref name="ang"/>| is not in (Resolution, PI/2 - Resolution).
+    /// <paramref name="radius"/> is negative, or |<paramref name="angle"/>| is not in (Resolution, PI/2 - Resolution).
     /// </exception>
-    public Cone3D(in CoordinateSystem a3, double ang, double radius)
+    public Cone3D(in CoordinateSystem position, double angle, double radius)
     {
-        _pos = a3;
+        _pos = position;
         _radius = radius;
-        _semiAngle = ang;
-        double absAng = ang < 0.0 ? -ang : ang;
+        _semiAngle = angle;
+        double absAng = angle < 0.0 ? -angle : angle;
         Refusal.ArgumentIf(radius < 0.0 || absAng <= Constants.Resolution()
                                             || M_PI * 0.5 - absAng <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Cone() - invalid construction parameters");
     }
 
     // Copies
 
-    public readonly Cone3D WithAxis(in Axis3D a1)
+    public readonly Cone3D WithAxis(in Axis3D axis)
     {
         CoordinateSystem pos = _pos;
-        pos = pos.WithAxis(a1);
+        pos = pos.WithAxis(axis);
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
-    public readonly Cone3D WithLocation(in Point3D loc)
+    public readonly Cone3D WithLocation(in Point3D location)
     {
         CoordinateSystem pos = _pos;
-        pos = pos.WithLocation(loc);
+        pos = pos.WithLocation(location);
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
-    public readonly Cone3D WithPosition(in CoordinateSystem a3)
+    public readonly Cone3D WithPosition(in CoordinateSystem position)
     {
         CoordinateSystem pos = _pos;
-        pos = a3;
+        pos = position;
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
@@ -77,12 +75,12 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(_pos, _semiAngle, newRadius);
     }
 
-    public readonly Cone3D WithSemiAngle(double ang)
+    public readonly Cone3D WithSemiAngle(double angle)
     {
         double semiAngle = _semiAngle;
-        Refusal.ArgumentIf(Math.Abs(ang) <= Constants.Resolution()
-                                            || M_PI * 0.5 - Math.Abs(ang) <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Cone::SetSemiAngle() - invalid angle range");
-        semiAngle = ang;
+        Refusal.ArgumentIf(Math.Abs(angle) <= Constants.Resolution()
+                                            || M_PI * 0.5 - Math.Abs(angle) <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Cone::SetSemiAngle() - invalid angle range");
+        semiAngle = angle;
         return new Cone3D(_pos, semiAngle, _radius);
     }
 
@@ -173,40 +171,40 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
 
     public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
-    public readonly Cone3D Mirrored(in Point3D p)
+    public readonly Cone3D Mirrored(in Point3D point)
     {
         CoordinateSystem pos = _pos;
-        pos = pos.Mirrored(p);
+        pos = pos.Mirrored(point);
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
-    public readonly Cone3D Mirrored(in Axis3D a1)
+    public readonly Cone3D Mirrored(in Axis3D axis)
     {
         CoordinateSystem pos = _pos;
-        pos = pos.Mirrored(a1);
+        pos = pos.Mirrored(axis);
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
-    public readonly Cone3D Mirrored(in Frame3D a2)
+    public readonly Cone3D Mirrored(in Frame3D frame)
     {
         CoordinateSystem pos = _pos;
-        pos = pos.Mirrored(a2);
+        pos = pos.Mirrored(frame);
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
-    public readonly Cone3D Rotated(in Axis3D a1, double ang)
+    public readonly Cone3D Rotated(in Axis3D axis, double angle)
     {
         CoordinateSystem pos = _pos;
-        pos = pos.Rotated(a1, ang);
+        pos = pos.Rotated(axis, angle);
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
-    public readonly Cone3D Scaled(in Point3D p, double s)
+    public readonly Cone3D Scaled(in Point3D point, double factor)
     {
         CoordinateSystem pos = _pos;
         double radius = _radius;
-        pos = pos.Scaled(p, s);
-        radius *= s;
+        pos = pos.Scaled(point, factor);
+        radius *= factor;
         if (radius < 0)
         {
             radius = -radius;
@@ -215,12 +213,12 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(pos, _semiAngle, radius);
     }
 
-    public readonly Cone3D Transformed(in Transform3D t)
+    public readonly Cone3D Transformed(in Transform3D transform)
     {
         CoordinateSystem pos = _pos;
         double radius = _radius;
-        pos = pos.Transformed(t);
-        radius *= t.ScaleFactor;
+        pos = pos.Transformed(transform);
+        radius *= transform.ScaleFactor;
         if (radius < 0)
         {
             radius = -radius;
@@ -229,17 +227,17 @@ public readonly partial struct Cone3D : IEquatable<Cone3D>
         return new Cone3D(pos, _semiAngle, radius);
     }
 
-    public readonly Cone3D Translated(in Vector3D v)
+    public readonly Cone3D Translated(in Vector3D vector)
     {
         CoordinateSystem pos = _pos;
-        pos = pos.Translated(v);
+        pos = pos.Translated(vector);
         return new Cone3D(pos, _semiAngle, _radius);
     }
 
-    public readonly Cone3D Translated(in Point3D p1, in Point3D p2)
+    public readonly Cone3D Translated(in Point3D point1, in Point3D point2)
     {
         CoordinateSystem pos = _pos;
-        pos = pos.Translated(p1, p2);
+        pos = pos.Translated(point1, point2);
         return new Cone3D(pos, _semiAngle, _radius);
     }
 

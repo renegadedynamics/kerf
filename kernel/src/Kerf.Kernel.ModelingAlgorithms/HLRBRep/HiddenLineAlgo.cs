@@ -6,7 +6,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.HiddenLines.Topology;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.HiddenLines;
 

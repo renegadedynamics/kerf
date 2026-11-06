@@ -7,8 +7,6 @@ using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Offsets.OffsetMode;
 using static Kerf.Geometry.JoinKind;
 
 namespace Kerf.Engine.Offsets.Api;

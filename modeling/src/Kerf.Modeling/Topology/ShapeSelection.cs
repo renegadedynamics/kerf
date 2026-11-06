@@ -1,5 +1,3 @@
-using Kerf.Geometry;
-
 namespace Kerf.Modeling;
 
 /// <summary>
@@ -255,7 +253,7 @@ public static class ShapeSelection
         }
         else if (shape.IsEdge() && shape.TryAs(out Edge edge) && shape.GeomType == GeomType.Line)
         {
-            var curve = edge.GeomAdaptor();
+            var curve = edge.AsCurve();
             var d = curve.Derivatives(curve.Range.Min, 1);
             var dir = new Direction3D(d.D1);
             shapeAxis = new Axis(d.Point, dir);

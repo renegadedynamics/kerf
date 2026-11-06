@@ -5,10 +5,7 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Implicit;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Intersection.Implicit.Tangence;
-using static Kerf.Engine.Intersection.Implicit.ConstIsoparametric;
-using static Kerf.Engine.Intersection.Walking.StatusDeflection;
 
 namespace Kerf.Engine.Intersection.Walking;
 

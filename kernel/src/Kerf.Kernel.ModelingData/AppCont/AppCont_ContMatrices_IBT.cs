@@ -6,8 +6,6 @@
 // copied as written (decision 77). Properties returning a ReadOnlySpan over a constant array are stored in the
 // assembly's data section: reading them allocates nothing. Don't edit: regenerate.
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Approximation;
 
 internal static partial class ContMatrices

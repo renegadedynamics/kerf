@@ -6,11 +6,8 @@
 using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Geometry.Bounds;
-
-using Kerf.Engine.Intersection;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Polygons;
 

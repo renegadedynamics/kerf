@@ -4,10 +4,8 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation.Advanced;
-using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Kerf.Engine;
 using System.Globalization;
 using static Kerf.Engine.Geometry.IsoType;
 using static Kerf.Geometry.Continuity;

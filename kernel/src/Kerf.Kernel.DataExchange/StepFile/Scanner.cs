@@ -4,10 +4,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Exchange.Framework;
-using Kerf.Engine.Foundation;
-using Kerf.Engine;
 using System.Text;
-using static Kerf.Engine.Exchange.Framework.ParamType;
 
 namespace Kerf.Engine.Exchange.Step.Parser;
 

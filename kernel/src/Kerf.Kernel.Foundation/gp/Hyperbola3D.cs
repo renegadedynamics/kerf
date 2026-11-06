@@ -7,8 +7,6 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
-using Kerf.Engine;
-
 namespace Kerf.Geometry;
 
 /// <summary>
@@ -35,9 +33,9 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     }
 
     /// <exception cref="ConstructionErrorException">A radius is negative.</exception>
-    public Hyperbola3D(in Frame3D a2, double majorRadius, double minorRadius)
+    public Hyperbola3D(in Frame3D frame, double majorRadius, double minorRadius)
     {
-        _pos = a2;
+        _pos = frame;
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
         Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < 0.0, FailureKind.ConstructionError, "gp_Hypr() - invalid construction parameters");
@@ -45,17 +43,17 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
 
     // Copies
 
-    public readonly Hyperbola3D WithAxis(in Axis3D a1)
+    public readonly Hyperbola3D WithAxis(in Axis3D axis)
     {
         Frame3D pos = _pos;
-        pos = pos.WithAxis(a1);
+        pos = pos.WithAxis(axis);
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Hyperbola3D WithLocation(in Point3D p)
+    public readonly Hyperbola3D WithLocation(in Point3D point)
     {
         Frame3D pos = _pos;
-        pos = new Frame3D(p, pos.Direction, pos.XDirection);
+        pos = new Frame3D(point, pos.Direction, pos.XDirection);
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
@@ -77,10 +75,10 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         return new Hyperbola3D(_pos, _majorRadius, newMinorRadius);
     }
 
-    public readonly Hyperbola3D WithPosition(in Frame3D a2)
+    public readonly Hyperbola3D WithPosition(in Frame3D frame)
     {
         Frame3D pos = _pos;
-        pos = a2;
+        pos = frame;
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
@@ -232,87 +230,87 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     /// <summary>The minor axis.</summary>
     public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
-    public readonly Hyperbola3D Mirrored(in Point3D p)
+    public readonly Hyperbola3D Mirrored(in Point3D point)
     {
         Frame3D pos = _pos;
-        pos = pos.Mirrored(p);
+        pos = pos.Mirrored(point);
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Hyperbola3D Mirrored(in Axis3D a1)
+    public readonly Hyperbola3D Mirrored(in Axis3D axis)
     {
         Frame3D pos = _pos;
-        pos = pos.Mirrored(a1);
+        pos = pos.Mirrored(axis);
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Hyperbola3D Mirrored(in Frame3D a2)
+    public readonly Hyperbola3D Mirrored(in Frame3D frame)
     {
         Frame3D pos = _pos;
-        pos = pos.Mirrored(a2);
+        pos = pos.Mirrored(frame);
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Hyperbola3D Rotated(in Axis3D a1, double ang)
+    public readonly Hyperbola3D Rotated(in Axis3D axis, double angle)
     {
         Frame3D pos = _pos;
-        pos = pos.Rotated(a1, ang);
+        pos = pos.Rotated(axis, angle);
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Hyperbola3D Scaled(in Point3D p, double s)
+    public readonly Hyperbola3D Scaled(in Point3D point, double factor)
     {
         Frame3D pos = _pos;
         double majorRadius = _majorRadius;
         double minorRadius = _minorRadius;
-        majorRadius *= s;
+        majorRadius *= factor;
         if (majorRadius < 0)
         {
             majorRadius = -majorRadius;
         }
 
-        minorRadius *= s;
+        minorRadius *= factor;
         if (minorRadius < 0)
         {
             minorRadius = -minorRadius;
         }
 
-        pos = pos.Scaled(p, s);
+        pos = pos.Scaled(point, factor);
         return new Hyperbola3D(pos, majorRadius, minorRadius);
     }
 
-    public readonly Hyperbola3D Transformed(in Transform3D t)
+    public readonly Hyperbola3D Transformed(in Transform3D transform)
     {
         Frame3D pos = _pos;
         double majorRadius = _majorRadius;
         double minorRadius = _minorRadius;
-        majorRadius *= t.ScaleFactor;
+        majorRadius *= transform.ScaleFactor;
         if (majorRadius < 0)
         {
             majorRadius = -majorRadius;
         }
 
-        minorRadius *= t.ScaleFactor;
+        minorRadius *= transform.ScaleFactor;
         if (minorRadius < 0)
         {
             minorRadius = -minorRadius;
         }
 
-        pos = pos.Transformed(t);
+        pos = pos.Transformed(transform);
         return new Hyperbola3D(pos, majorRadius, minorRadius);
     }
 
-    public readonly Hyperbola3D Translated(in Vector3D v)
+    public readonly Hyperbola3D Translated(in Vector3D vector)
     {
         Frame3D pos = _pos;
-        pos = pos.Translated(v);
+        pos = pos.Translated(vector);
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Hyperbola3D Translated(in Point3D p1, in Point3D p2)
+    public readonly Hyperbola3D Translated(in Point3D point1, in Point3D point2)
     {
         Frame3D pos = _pos;
-        pos = pos.Translated(p1, p2);
+        pos = pos.Translated(point1, point2);
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 

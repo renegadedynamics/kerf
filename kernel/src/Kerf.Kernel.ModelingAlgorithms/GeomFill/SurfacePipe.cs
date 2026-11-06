@@ -10,12 +10,8 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Properties;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
-using static Kerf.Engine.Construction.Surfaces.ApproxStyle;
-using static Kerf.Engine.Construction.Surfaces.SurfacePipeError;
-using static Kerf.Engine.Construction.Surfaces.Trihedron;
 
 namespace Kerf.Engine.Construction.Surfaces;
 

@@ -6,7 +6,6 @@
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 
 namespace Kerf.Engine.Construction.Surfaces;

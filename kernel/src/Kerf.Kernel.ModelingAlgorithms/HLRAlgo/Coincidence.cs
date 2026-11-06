@@ -4,7 +4,6 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.HiddenLines.Algorithm;

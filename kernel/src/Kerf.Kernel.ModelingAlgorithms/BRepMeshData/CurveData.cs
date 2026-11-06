@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Meshing.Model;
 using Kerf.Geometry;
-using Kerf.Engine;
 using System.Runtime.InteropServices;
 
 namespace Kerf.Engine.Meshing.Data;

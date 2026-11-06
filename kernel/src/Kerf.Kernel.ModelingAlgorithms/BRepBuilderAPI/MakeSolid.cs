@@ -6,9 +6,6 @@
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Construction.Library.LibraryShapeModification;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Construction.Api;
 

@@ -8,8 +8,6 @@
 
 using Kerf.Engine.Exchange.Step.Visual;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
 internal class AutoDesignPresentedItem : PresentedItem

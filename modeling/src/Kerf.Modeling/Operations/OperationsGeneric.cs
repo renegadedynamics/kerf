@@ -11,10 +11,6 @@ namespace Kerf.Modeling;
 /// Curve according to the dimension of its inputs, the result is typed <see cref="Compound"/> and is one of those
 /// classes at run time.
 /// </para>
-/// <para>
-/// Builder mode (phase 5) adds the builder's pending objects as defaults for the inputs and a mode that
-/// combines the result with the builder's object; in algebra mode the inputs are required and nothing is combined.
-/// </para>
 /// </remarks>
 public static partial class Operations
 {

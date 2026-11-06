@@ -1,12 +1,10 @@
 using Kerf.Booleans;
-using Kerf.Geometry;
 using Kerf.Healing;
 using Kerf.Measurement;
-using Kerf.Topology;
 
 namespace Kerf.Modeling;
 
-/// <summary>Helpers over raw OCCT shapes, shared by the topology classes (shape_core's module functions).</summary>
+/// <summary>Helpers over the kernel's shapes, shared by the topology classes (shape_core's module functions).</summary>
 internal static partial class TopoUtil
 {
     /// <summary>Whether a shape has nothing in it: a null shape, or a compound without children.</summary>

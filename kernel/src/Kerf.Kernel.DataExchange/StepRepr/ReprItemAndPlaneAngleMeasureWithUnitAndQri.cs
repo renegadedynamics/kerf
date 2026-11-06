@@ -8,8 +8,6 @@
 
 using Kerf.Engine.Exchange.Step.Basic;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Step.Representation;
 
 internal class ReprItemAndPlaneAngleMeasureWithUnitAndQri : ReprItemAndMeasureWithUnitAndQri

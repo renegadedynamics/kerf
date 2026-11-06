@@ -7,7 +7,6 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Fillets.BlendFunctions.SectionShape;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Engine.Geometry.NormalStatus;

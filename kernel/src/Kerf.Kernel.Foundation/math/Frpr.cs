@@ -5,7 +5,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using Kerf.Engine;
 using System.Globalization;
 using static Kerf.Engine.Numerics.NumericStatus;
 
@@ -26,7 +25,6 @@ internal class Frpr
 
     private bool _done;
     private int _iter;
-    private int _state;
     private NumericStatus _theStatus;
     private int _itermax;
 
@@ -102,7 +100,6 @@ internal class Frpr
         _epsz = zeps;
         _done = false;
         _iter = 0;
-        _state = 0;
         _theStatus = NotBracketed;
         _itermax = nbIterations;
     }
@@ -146,7 +143,7 @@ internal class Frpr
             if (IsSolutionReached(f))
             {
                 _done = true;
-                _state = f.GetStateNumber();
+                f.GetStateNumber();
                 _theStatus = OK;
                 return;
             }

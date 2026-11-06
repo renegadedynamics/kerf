@@ -7,7 +7,6 @@ using Kerf.Engine.Approximation.Advanced;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Construction.Plate;

@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Intersection.Curves;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.HiddenLines;
 
 /// <summary>The vector C1(u) - C2(v) between the points of two 2D curves, with its Jacobian.</summary>

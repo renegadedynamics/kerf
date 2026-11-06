@@ -5,9 +5,6 @@
 
 using Kerf.Engine.Foundation;
 
-using Kerf.Geometry;
-using Kerf.Engine;
-
 namespace Kerf.Geometry;
 
 /// <summary>
@@ -19,7 +16,7 @@ namespace Kerf.Geometry;
 /// <remarks>
 /// The trimmed curve keeps its own copy of the basis curve (OCCT copies it in the constructor; a trimmed basis
 /// curve is replaced by its own basis). <see cref="BasisCurve"/> returns that copy frozen, as OCCT returns its
-/// handle; this curve's internal mutators then copy the basis curve again before changing it (decision 132).
+/// handle; this curve's internal mutators then copy the basis curve again before changing it.
 /// </remarks>
 public sealed class TrimmedCurve2D : BoundedCurve2D
 {
@@ -44,23 +41,23 @@ public sealed class TrimmedCurve2D : BoundedCurve2D
     /// <exception cref="ConstructionErrorException">
     /// C is null, U1 == U2, or (C not periodic) U1 or U2 is outside C's bounds.
     /// </exception>
-    public TrimmedCurve2D(Curve2D c, double u1, double u2, bool sense = true, bool adjustPeriodic = true)
+    public TrimmedCurve2D(Curve2D curve, double u1, double u2, bool sense = true, bool adjustPeriodic = true)
     {
         _uTrim1 = u1;
         _uTrim2 = u2;
-        if (c is null)
+        if (curve is null)
         {
             throw Refusal.Argument(new ConstructionErrorException("Geom2d_TrimmedCurve:: C is null"));
         }
         // kill trimmed basis curves
-        TrimmedCurve2D? t = c as TrimmedCurve2D;
+        TrimmedCurve2D? t = curve as TrimmedCurve2D;
         if (t is not null)
         {
             _basisCurve = (Curve2D)t._basisCurve.Copy(); // Kerf: the field, so that T's basis curve isn't frozen
         }
         else
         {
-            _basisCurve = (Curve2D)c.Copy();
+            _basisCurve = (Curve2D)curve.Copy();
         }
         SetTrim(u1, u2, sense, adjustPeriodic);
     }
@@ -262,21 +259,21 @@ public sealed class TrimmedCurve2D : BoundedCurve2D
     internal sealed override Vector2D EvalDN(double u, int n) => _basisCurve.EvalDN(u, n);
 
     /// <summary>Transforms the basis curve and the trim parameters.</summary>
-    protected internal sealed override void Transform(in Transform2D t)
+    protected internal sealed override void Transform(in Transform2D transform)
     {
         CheckMutable();
         OwnBasisCurve();
-        _basisCurve.Transform(t);
-        double u1 = _basisCurve.TransformedParameter(_uTrim1, t);
-        double u2 = _basisCurve.TransformedParameter(_uTrim2, t);
+        _basisCurve.Transform(transform);
+        double u1 = _basisCurve.TransformedParameter(_uTrim1, transform);
+        double u2 = _basisCurve.TransformedParameter(_uTrim2, transform);
         SetTrim(u1, u2, true, false);
     }
 
     /// <summary>The basis curve's transformed parameter.</summary>
-    internal sealed override double TransformedParameter(double u, in Transform2D t) =>
-        _basisCurve.TransformedParameter(u, t);
+    internal sealed override double TransformedParameter(double u, in Transform2D transform) =>
+        _basisCurve.TransformedParameter(u, transform);
 
     /// <summary>The basis curve's parametric transformation.</summary>
-    internal sealed override double ParametricTransformation(in Transform2D t) =>
-        _basisCurve.ParametricTransformation(t);
+    internal sealed override double ParametricTransformation(in Transform2D transform) =>
+        _basisCurve.ParametricTransformation(transform);
 }

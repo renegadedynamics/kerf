@@ -6,7 +6,6 @@
 using Kerf.Engine.Booleans.Legacy;
 using Kerf.Engine.HiddenLines.Algorithm;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.HiddenLines;
 

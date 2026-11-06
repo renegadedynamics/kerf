@@ -5,9 +5,6 @@
 
 #nullable disable warnings
 
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Step.Basic.SiUnitName;
-
 namespace Kerf.Engine.Exchange.Step.Basic.ReadWrite;
 
 internal static class RWSiUnitName

@@ -118,7 +118,7 @@ public class Geom2d_TransformationTest
         Transformation2 aTrsf = new Transformation2();
         aTrsf.SetMirror(new Point2D(0.0, 0.0));
 
-        Assert.Equal(PntMirror, aTrsf.Form());
+        Assert.Equal(PointMirror, aTrsf.Form());
         // In 2D, point mirror has det = (-1)*(-1) = 1 > 0, so IsNegative is false
         Assert.False(aTrsf.IsNegative);
 
@@ -135,7 +135,7 @@ public class Geom2d_TransformationTest
         Transformation2 aTrsf = new Transformation2();
         aTrsf.SetMirror(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)));
 
-        Assert.Equal(Ax1Mirror, aTrsf.Form());
+        Assert.Equal(AxisMirror, aTrsf.Form());
 
         double aX = 3.0, aY = 4.0;
         aTrsf.Transforms(ref aX, ref aY);

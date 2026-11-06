@@ -6,9 +6,7 @@
 //  Modified by skv - Tue Aug  1 16:29:59 2006 OCC13116
 
 using Kerf.Engine.Foundation;
-using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 
 namespace Kerf.Engine.Geometry.Projection;

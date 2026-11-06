@@ -7,8 +7,6 @@ using Kerf.Engine.Booleans.Legacy.Data;
 using Kerf.Engine.Fillets.Data;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Fillets.Data.ChamfMode;
 using static Kerf.Engine.Fillets.Analytic.ComputeDataChAsymPlnCon;
 using static Kerf.Topology.Orientation;
 

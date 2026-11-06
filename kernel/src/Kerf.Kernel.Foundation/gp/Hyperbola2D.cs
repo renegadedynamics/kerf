@@ -7,8 +7,6 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
-using Kerf.Engine;
-
 namespace Kerf.Geometry;
 
 /// <summary>
@@ -32,20 +30,20 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         _minorRadius = RealLast();
     }
 
-    /// <summary>A hyperbola whose major axis is <paramref name="majorAxis"/>, direct when <paramref name="isSense"/> is true.</summary>
+    /// <summary>A hyperbola whose major axis is <paramref name="majorAxis"/>, direct when <paramref name="sense"/> is true.</summary>
     /// <exception cref="ConstructionErrorException">A radius is negative.</exception>
-    public Hyperbola2D(in Axis2D majorAxis, double majorRadius, double minorRadius, bool isSense = true)
+    public Hyperbola2D(in Axis2D majorAxis, double majorRadius, double minorRadius, bool sense = true)
     {
-        _pos = new Frame2D(majorAxis, isSense);
+        _pos = new Frame2D(majorAxis, sense);
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
         Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < 0.0, FailureKind.ConstructionError, "gp_Hypr2d() - invalid construction parameters");
     }
 
     /// <exception cref="ConstructionErrorException">A radius is negative.</exception>
-    public Hyperbola2D(in Frame2D a, double majorRadius, double minorRadius)
+    public Hyperbola2D(in Frame2D frame, double majorRadius, double minorRadius)
     {
-        _pos = a;
+        _pos = frame;
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
         Refusal.ArgumentIf(minorRadius < 0.0 || majorRadius < 0.0, FailureKind.ConstructionError, "gp_Hypr2d() - invalid construction parameters");
@@ -53,10 +51,10 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
 
     // Copies
 
-    public readonly Hyperbola2D WithLocation(in Point2D p)
+    public readonly Hyperbola2D WithLocation(in Point2D point)
     {
         Frame2D pos = _pos;
-        pos = pos.WithLocation(p);
+        pos = pos.WithLocation(point);
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
@@ -76,24 +74,24 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         return new Hyperbola2D(_pos, _majorRadius, newMinorRadius);
     }
 
-    public readonly Hyperbola2D WithAxis(in Frame2D a)
+    public readonly Hyperbola2D WithAxis(in Frame2D frame)
     {
         Frame2D pos = _pos;
-        pos = pos.WithAxis(a);
+        pos = pos.WithAxis(frame);
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Hyperbola2D WithXAxis(in Axis2D a)
+    public readonly Hyperbola2D WithXAxis(in Axis2D axis)
     {
         Frame2D pos = _pos;
-        pos = pos.WithXAxis(a);
+        pos = pos.WithXAxis(axis);
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Hyperbola2D WithYAxis(in Axis2D a)
+    public readonly Hyperbola2D WithYAxis(in Axis2D axis)
     {
         Frame2D pos = _pos;
-        pos = pos.WithYAxis(a);
+        pos = pos.WithYAxis(axis);
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
@@ -292,80 +290,80 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Hyperbola2D Mirrored(in Point2D p)
+    public readonly Hyperbola2D Mirrored(in Point2D point)
     {
         Frame2D pos = _pos;
-        pos = pos.Mirrored(p);
+        pos = pos.Mirrored(point);
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Hyperbola2D Mirrored(in Axis2D a)
+    public readonly Hyperbola2D Mirrored(in Axis2D axis)
     {
         Frame2D pos = _pos;
-        pos = pos.Mirrored(a);
+        pos = pos.Mirrored(axis);
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Hyperbola2D Rotated(in Point2D p, double ang)
+    public readonly Hyperbola2D Rotated(in Point2D point, double angle)
     {
         Frame2D pos = _pos;
-        pos = pos.Rotated(p, ang);
+        pos = pos.Rotated(point, angle);
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Hyperbola2D Scaled(in Point2D p, double s)
+    public readonly Hyperbola2D Scaled(in Point2D point, double factor)
     {
         Frame2D pos = _pos;
         double majorRadius = _majorRadius;
         double minorRadius = _minorRadius;
-        majorRadius *= s;
+        majorRadius *= factor;
         if (majorRadius < 0)
         {
             majorRadius = -majorRadius;
         }
 
-        minorRadius *= s;
+        minorRadius *= factor;
         if (minorRadius < 0)
         {
             minorRadius = -minorRadius;
         }
 
-        pos = pos.Scaled(p, s);
+        pos = pos.Scaled(point, factor);
         return new Hyperbola2D(pos, majorRadius, minorRadius);
     }
 
-    public readonly Hyperbola2D Transformed(in Transform2D t)
+    public readonly Hyperbola2D Transformed(in Transform2D transform)
     {
         Frame2D pos = _pos;
         double majorRadius = _majorRadius;
         double minorRadius = _minorRadius;
-        majorRadius *= t.ScaleFactor;
+        majorRadius *= transform.ScaleFactor;
         if (majorRadius < 0)
         {
             majorRadius = -majorRadius;
         }
 
-        minorRadius *= t.ScaleFactor;
+        minorRadius *= transform.ScaleFactor;
         if (minorRadius < 0)
         {
             minorRadius = -minorRadius;
         }
 
-        pos = pos.Transformed(t);
+        pos = pos.Transformed(transform);
         return new Hyperbola2D(pos, majorRadius, minorRadius);
     }
 
-    public readonly Hyperbola2D Translated(in Vector2D v)
+    public readonly Hyperbola2D Translated(in Vector2D vector)
     {
         Frame2D pos = _pos;
-        pos = pos.Translated(v);
+        pos = pos.Translated(vector);
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
-    public readonly Hyperbola2D Translated(in Point2D p1, in Point2D p2)
+    public readonly Hyperbola2D Translated(in Point2D point1, in Point2D point2)
     {
         Frame2D pos = _pos;
-        pos = pos.Translated(p1, p2);
+        pos = pos.Translated(point1, point2);
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 

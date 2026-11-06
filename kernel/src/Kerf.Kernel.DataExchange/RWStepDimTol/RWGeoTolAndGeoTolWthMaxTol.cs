@@ -10,10 +10,6 @@ using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Step.Basic;
 using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Foundation;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Framework.ParamType;
-using static Kerf.Engine.Exchange.Step.Tolerances.GeometricToleranceModifier;
-using static Kerf.Engine.Exchange.Step.Tolerances.GeometricToleranceType;
 
 namespace Kerf.Engine.Exchange.Step.Tolerances.ReadWrite;
 

@@ -11,9 +11,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Projection;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
-using static Kerf.Geometry.SurfaceKind;
 
 namespace Kerf.Engine.Fillets;
 

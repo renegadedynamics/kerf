@@ -4,12 +4,8 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using Kerf.Engine.Topology;
-using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Construction.Library.LibraryShapeModification;
 
 namespace Kerf.Engine.Construction.Library;
 

@@ -7,7 +7,6 @@ using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing.Model;
 using Kerf.Engine.Meshing.Tools;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Meshing;
 

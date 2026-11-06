@@ -8,9 +8,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.HiddenLines.Contours.ContourLineType;
-using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 
 namespace Kerf.Engine.HiddenLines.Contours;
 

@@ -6,7 +6,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing.Model;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Engine.Foundation.Status;
 
 namespace Kerf.Engine.Meshing.Tools;

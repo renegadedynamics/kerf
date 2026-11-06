@@ -12,9 +12,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Features.Local;
 
@@ -39,7 +37,6 @@ namespace Kerf.Engine.Features.Local;
 internal sealed class LocalGenerator
 {
     private Shape _shape = new();
-    private GeneratedShape? _gen;
     private bool _done;
     private Shape _res = new();
     private readonly Dictionary<Shape, NCollection_List<Shape>> _modShapes = new(ShapeHasher.Instance);
@@ -151,7 +148,6 @@ internal sealed class LocalGenerator
         _done = false;
         _res.Nullify();
         _modShapes.Clear();
-        _gen = g;
 
         NCollection_List<Shape> ledges = GeneratingEdges(g);
 

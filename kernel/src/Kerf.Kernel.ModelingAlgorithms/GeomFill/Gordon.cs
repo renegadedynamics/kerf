@@ -10,7 +10,6 @@ using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Geometry.Continuity;
 

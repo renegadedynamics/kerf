@@ -6,8 +6,6 @@
 
 using Kerf.Engine.Exchange.Framework.Monitoring;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Framework;
 
 /// <summary>A function interpreting the value of an <see cref="InterfaceTypedValue"/> (as <see cref="MonitorValueInterpret"/>).</summary>

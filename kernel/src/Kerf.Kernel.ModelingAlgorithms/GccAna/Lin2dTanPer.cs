@@ -7,8 +7,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Kerf.Engine;
-using static Kerf.Engine.Construction.Constraints.Qualifier;
 
 namespace Kerf.Engine.Construction.Constraints.Analytic;
 

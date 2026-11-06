@@ -8,7 +8,6 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 
 namespace Kerf.Engine.Extrema;

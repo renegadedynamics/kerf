@@ -3,7 +3,6 @@
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Approximation;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.CurveSurface;
 

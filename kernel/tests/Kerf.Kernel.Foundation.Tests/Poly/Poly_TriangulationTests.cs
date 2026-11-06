@@ -386,19 +386,6 @@ public class Poly_TriangulationTest
         Assert.Null(anEmpty.MapNormalArray());
     }
 
-    [Fact]
-    public void SetNormals_Deprecated()
-    {
-        global::Kerf.Engine.Meshing.Triangulation aTri = Square();
-        var aValues = new NCollection_HArray1<float>(1, 12, 0.0f);
-        aValues[12] = 1.0f;
-#pragma warning disable CS0618 // OCCT's deprecated method, tested as ported
-        EngineAssert.ThrowsAny<DomainErrorException>(() => aTri.SetNormals(new NCollection_HArray1<float>(1, 3)));
-        aTri.SetNormals(aValues);
-#pragma warning restore CS0618
-        Assert.Equal(new NCollection_Vec3<float>(0.0f, 0.0f, 1.0f), Normal(aTri, 4));
-    }
-
     private static NCollection_Vec3<float> Normal(global::Kerf.Engine.Meshing.Triangulation theTri, int theIndex)
     {
         theTri.Normal(theIndex, out NCollection_Vec3<float> aVec);

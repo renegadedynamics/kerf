@@ -4,9 +4,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Geometry.Evaluation;
@@ -373,34 +371,6 @@ internal sealed class TBezierCurve : BoundedCurve3D
                 cosK = cosNext;
             }
         }
-    }
-
-    // Evaluate point on a non-rational curve: sum(P_i * B_i(t)). Unused, as in OCCT.
-    private Point3D EvalNonRationalPoint(NCollection_Array1<double> basis)
-    {
-        Xyz sum = new(0.0, 0.0, 0.0);
-        int nbPoles = _poles.Length();
-        ReadOnlySpan<Point3D> polesData = _poles.AsSpan();
-        ReadOnlySpan<double> basisData = basis.AsSpan();
-        for (int i = 0; i < nbPoles; ++i)
-        {
-            sum += basisData[i] * polesData[i].XYZ();
-        }
-        return new Point3D(sum);
-    }
-
-    // Evaluate derivative vector on a non-rational curve: sum(P_i * B_i'(t)). Unused, as in OCCT.
-    private Vector3D EvalNonRationalDeriv(NCollection_Array1<double> basisDeriv)
-    {
-        Xyz sum = new(0.0, 0.0, 0.0);
-        int nbPoles = _poles.Length();
-        ReadOnlySpan<Point3D> polesData = _poles.AsSpan();
-        ReadOnlySpan<double> basisData = basisDeriv.AsSpan();
-        for (int i = 0; i < nbPoles; ++i)
-        {
-            sum += basisData[i] * polesData[i].XYZ();
-        }
-        return new Vector3D(sum);
     }
 
     internal override Point3D EvalD0(double u)

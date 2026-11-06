@@ -5,7 +5,6 @@
 using Kerf.Engine.Foundation.Std;
 
 using Kerf.Engine.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Booleans.Data;
 

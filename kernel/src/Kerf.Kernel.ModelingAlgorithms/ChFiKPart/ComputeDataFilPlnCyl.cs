@@ -9,7 +9,6 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Intersection;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Engine.Fillets.Analytic.ComputeDataFcts;
 using static Kerf.Topology.Orientation;
 

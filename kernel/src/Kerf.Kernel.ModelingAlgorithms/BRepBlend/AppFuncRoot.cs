@@ -7,7 +7,6 @@ using Kerf.Engine.Approximation;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Fillets.Blend;
 

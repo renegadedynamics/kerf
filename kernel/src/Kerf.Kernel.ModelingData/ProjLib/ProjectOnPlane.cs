@@ -13,7 +13,6 @@ using Kerf.Engine.Geometry.Library;
 using Kerf.Engine.Geometry.Properties;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 
 namespace Kerf.Engine.Geometry.Projection;

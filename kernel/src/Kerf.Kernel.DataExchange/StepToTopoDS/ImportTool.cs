@@ -10,7 +10,6 @@ using Kerf.Engine.Exchange.Step.Shapes;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Exchange.Step.Import;

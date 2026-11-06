@@ -395,7 +395,7 @@ public class EdgeGeomEqualOffsetTests
     {
         var spline = GeomEqualObjects.Spline(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0), new Point3D(3, 1, 0));
         double first, last;
-        var adaptor = spline.GeomAdaptor();
+        var adaptor = spline.AsCurve();
         (first, last) = (adaptor.Range.Min, adaptor.Range.Max);
         var topoEdge = ((Edge)spline);
         Assert.True(topoEdge.TryGetCurve(out var basis, out _));

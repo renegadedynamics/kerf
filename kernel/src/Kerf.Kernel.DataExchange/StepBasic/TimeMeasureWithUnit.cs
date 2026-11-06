@@ -6,8 +6,6 @@
 
 #nullable disable warnings
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Step.Basic;
 
 internal class TimeMeasureWithUnit : MeasureWithUnit

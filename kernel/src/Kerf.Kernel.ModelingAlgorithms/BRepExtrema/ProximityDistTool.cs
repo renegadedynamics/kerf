@@ -8,10 +8,8 @@ using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
-using Kerf.Engine;
 using BVH_PrjState = Kerf.Engine.Geometry.Bvh.Tools<double, Kerf.Engine.NCollection_Vec3<double>>.BVH_PrjStateInTriangle;
 using BVH_Vec3d = Kerf.Engine.NCollection_Vec3<double>;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Measurement.Distance;
 

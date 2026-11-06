@@ -13,10 +13,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Classification;
@@ -44,10 +41,6 @@ internal sealed class FaceClassifier2D
     private Face _face;
     // The period of the surface, set in U1..U2, V1..V2 and never read (as decision 221's fields)
 #pragma warning disable CS0414
-    private double _u1;
-    private double _v1;
-    private double _u2;
-    private double _v2;
 #pragma warning restore CS0414
     private double _umin;
     private double _umax;
@@ -571,39 +564,6 @@ internal sealed class FaceClassifier2D
             if (badWire != 0)
             {
                 _tabOrien[1] = -1;
-            }
-
-            if (surf.GetType() == SurfaceKind.Cone || surf.GetType() == SurfaceKind.Cylinder
-                || surf.GetType() == SurfaceKind.Torus || surf.GetType() == SurfaceKind.Sphere
-                || surf.GetType() == SurfaceOfRevolution)
-            {
-                double uuu = M_PI + M_PI - (_umax - _umin);
-                if (uuu < 0)
-                {
-                    uuu = 0;
-                }
-                _u1 = _umin - uuu * 0.5;
-                _u2 = _u1 + M_PI + M_PI;
-            }
-            else
-            {
-                _u1 = _u2 = 0.0;
-            }
-
-            if (surf.GetType() == SurfaceKind.Torus)
-            {
-                double uuu = M_PI + M_PI - (_vmax - _vmin);
-                if (uuu < 0)
-                {
-                    uuu = 0;
-                }
-
-                _v1 = _vmin - uuu * 0.5;
-                _v2 = _v1 + M_PI + M_PI;
-            }
-            else
-            {
-                _v1 = _v2 = 0.0;
             }
         }
     }

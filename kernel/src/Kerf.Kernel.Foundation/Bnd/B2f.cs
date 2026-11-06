@@ -6,7 +6,6 @@
 // RealType a file-level alias, so C++'s float/double promotions are kept exactly (see docs/decisions.md).
 
 using Kerf.Geometry;
-using Kerf.Engine;
 using System.Runtime.CompilerServices;
 using static Kerf.Geometry.TransformForm;
 using RealType = float;
@@ -284,7 +283,7 @@ internal partial struct B2f : IEquatable<B2f>
         {
             result = this;
         }
-        else if (form == Translation || form == PntMirror || form == Scale)
+        else if (form == Translation || form == PointMirror || form == Scale)
         {
             result._center[0] = (RealType)(_center[0] * scale + trsf.TranslationXy().X());
             result._center[1] = (RealType)(_center[1] * scale + trsf.TranslationXy().Y());
@@ -386,7 +385,7 @@ internal partial struct B2f : IEquatable<B2f>
         TransformForm form = trsf.Form;
         double scale = trsf.ScaleFactor;
         double scaleAbs = Math.Abs(scale);
-        if (form == Translation || form == Identity || form == PntMirror || form == Scale)
+        if (form == Translation || form == Identity || form == PointMirror || form == Scale)
         {
             result =
                 (Math.Abs((RealType)(box._center[0] * scale + trsf.TranslationXy().X()) - _center[0])
@@ -488,7 +487,7 @@ internal partial struct B2f : IEquatable<B2f>
         TransformForm form = trsf.Form;
         double scale = trsf.ScaleFactor;
         double scaleAbs = Math.Abs(scale);
-        if (form == Translation || form == Identity || form == PntMirror || form == Scale)
+        if (form == Translation || form == Identity || form == PointMirror || form == Scale)
         {
             result =
                 (Math.Abs((RealType)(box._center[0] * scale + trsf.TranslationXy().X()) - _center[0])

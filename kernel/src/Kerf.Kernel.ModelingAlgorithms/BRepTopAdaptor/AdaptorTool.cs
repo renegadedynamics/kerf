@@ -5,10 +5,7 @@
 
 using Kerf.Engine.Geometry.Adaptors;
 
-using Kerf.Engine.Topology.Adaptors;
-
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Topology.Adaptors;
 

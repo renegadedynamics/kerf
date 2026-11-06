@@ -9,8 +9,6 @@ using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Engine.Geometry.Objects;
-using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Geometry;
 
@@ -33,11 +31,11 @@ public sealed class RevolutionSurface : SweptSurface
     /// The revolution of a copy of C about A1. C must be planar and lie in the same plane as A1 (not checked);
     /// the surface may be self-intersecting otherwise.
     /// </summary>
-    public RevolutionSurface(Curve3D c, in Axis3D a1)
+    public RevolutionSurface(Curve3D curve, in Axis3D axis)
     {
-        _loc = a1.Location;
-        _direction = a1.Direction;
-        SetBasisCurve(c);
+        _loc = axis.Location;
+        _direction = axis.Direction;
+        SetBasisCurve(curve);
     }
 
     /// <summary>True if an evaluation representation is attached.</summary>
@@ -105,34 +103,34 @@ public sealed class RevolutionSurface : SweptSurface
     }
 
     /// <summary>A copy revolved about A1.</summary>
-    public RevolutionSurface WithAxis(in Axis3D a1)
+    public RevolutionSurface WithAxis(in Axis3D axis)
     {
         RevolutionSurface copy = (RevolutionSurface)Copy();
-        copy.SetAxis(a1);
+        copy.SetAxis(axis);
         return copy;
     }
 
     /// <summary>A copy whose axis of revolution has the direction V.</summary>
-    public RevolutionSurface WithDirection(in Direction3D v)
+    public RevolutionSurface WithDirection(in Direction3D direction)
     {
         RevolutionSurface copy = (RevolutionSurface)Copy();
-        copy.SetDirection(v);
+        copy.SetDirection(direction);
         return copy;
     }
 
     /// <summary>A copy revolving (a copy of) C.</summary>
-    public RevolutionSurface WithBasisCurve(Curve3D c)
+    public RevolutionSurface WithBasisCurve(Curve3D curve)
     {
         RevolutionSurface copy = (RevolutionSurface)Copy();
-        copy.SetBasisCurve(c);
+        copy.SetBasisCurve(curve);
         return copy;
     }
 
     /// <summary>A copy whose axis of revolution passes through P.</summary>
-    public RevolutionSurface WithLocation(in Point3D p)
+    public RevolutionSurface WithLocation(in Point3D point)
     {
         RevolutionSurface copy = (RevolutionSurface)Copy();
-        copy.SetLocation(p);
+        copy.SetLocation(point);
         return copy;
     }
 
@@ -176,17 +174,17 @@ public sealed class RevolutionSurface : SweptSurface
     public sealed override double VReversedParameter(double v) => _basisCurve!.ReversedParameter(v);
 
     /// <summary>V changed into the transformed parameter of the basis curve; U unchanged.</summary>
-    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
+    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D transform)
     {
-        v = _basisCurve!.TransformedParameter(v, t);
+        v = _basisCurve!.TransformedParameter(v, transform);
     }
 
     /// <summary>An affinity along V of the basis curve's parametric transformation.</summary>
-    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D t)
+    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D transform)
     {
         GeneralTransform2D t2 = new GeneralTransform2D();
         Axis2D axis = new Axis2D(Constants.Origin2d(), Constants.DX2d());
-        t2 = t2.WithAffinity(axis, _basisCurve!.ParametricTransformation(t));
+        t2 = t2.WithAffinity(axis, _basisCurve!.ParametricTransformation(transform));
         return t2;
     }
 
@@ -351,46 +349,46 @@ public sealed class RevolutionSurface : SweptSurface
     }
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int uOrder, int vOrder)
     {
-        if (nu + nv < 1 || nu < 0 || nv < 0)
+        if (uOrder + vOrder < 1 || uOrder < 0 || vOrder < 0)
         {
             throw Refusal.State(new UndefinedDerivative3DException());
         }
 
         Vector3D evalRepResult;
-        if (RepUtils.TryEvalSurfaceDN(_evalRep, u, v, nu, nv, out evalRepResult))
+        if (RepUtils.TryEvalSurfaceDN(_evalRep, u, v, uOrder, vOrder, out evalRepResult))
         {
             return evalRepResult;
         }
 
         Vector3D curvePtOrDN;
-        if (nu == 0)
+        if (uOrder == 0)
         {
-            curvePtOrDN = _basisCurve!.EvalDN(v, nv);
+            curvePtOrDN = _basisCurve!.EvalDN(v, vOrder);
         }
-        else if (nv == 0)
+        else if (vOrder == 0)
         {
             Point3D d0 = _basisCurve!.EvalD0(v);
             curvePtOrDN = new Vector3D(d0.XYZ() - _loc.XYZ());
         }
         else
         {
-            curvePtOrDN = _basisCurve!.EvalDN(v, nv);
+            curvePtOrDN = _basisCurve!.EvalDN(v, vOrder);
         }
-        return RevolutionUtils.CalculateDN(curvePtOrDN, u, new Axis3D(_loc, _direction), nu, nv);
+        return RevolutionUtils.CalculateDN(curvePtOrDN, u, new Axis3D(_loc, _direction), uOrder, vOrder);
     }
 
     /// <summary>Transforms the axis and the basis curve; a transformation reversing orientation also reverses U.</summary>
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
         ClearEvalRepresentation();
-        _loc = _loc.Transformed(t);
-        _direction = _direction.Transformed(t);
+        _loc = _loc.Transformed(transform);
+        _direction = _direction.Transformed(transform);
         OwnBasisCurve();
-        _basisCurve!.Transform(t);
-        if (t.ScaleFactor * t.RotationPart.Determinant < 0.0)
+        _basisCurve!.Transform(transform);
+        if (transform.ScaleFactor * transform.RotationPart.Determinant < 0.0)
         {
             UReverse();
         }

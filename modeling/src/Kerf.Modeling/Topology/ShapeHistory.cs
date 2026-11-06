@@ -1,5 +1,3 @@
-using Kerf.Topology;
-
 namespace Kerf.Modeling;
 
 /// <summary>

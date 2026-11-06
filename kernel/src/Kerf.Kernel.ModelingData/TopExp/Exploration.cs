@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Collections;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Orientation;
 
 namespace Kerf.Engine.Topology;

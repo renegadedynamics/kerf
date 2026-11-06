@@ -36,10 +36,10 @@ public sealed record StlExportOptions
     public static StlExportOptions Default { get; } = new();
 
     /// <summary>The mesh's linear deflection, relative to each edge's size, as build123d meshes.</summary>
-    public double Tolerance { get; init; } = 1e-3;
+    public double LinearDeflection { get; init; } = 1e-3;
 
     /// <summary>The mesh's angular deflection.</summary>
-    public double AngularTolerance { get; init; } = 0.1;
+    public double AngularDeflection { get; init; } = 0.1;
 
     /// <summary>Whether to write ASCII rather than binary.</summary>
     public bool Ascii { get; init; }
@@ -87,7 +87,7 @@ public sealed record ThreeMfExportOptions
 /// </summary>
 /// <remarks>
 /// <para>
-/// Each returns a <see cref="Result"/> (unit 10P2), as the importers do: an empty shape is
+/// Each returns a <see cref="Result"/>, as the importers do: an empty shape is
 /// <c>exchange.nothing-done</c>, a mesh that can't be made is the mesher's diagnostic, a writer's failure the exchange's
 /// (<c>exchange.write-failed</c>, <c>exchange.failed</c>), and a file or stream that can't be written
 /// <c>exchange.write-failed</c>. Misuse throws: a null argument, a unit that isn't a length
@@ -161,7 +161,7 @@ public static class Exporters3D
         options ??= StlExportOptions.Default;
         return Export(toExport, () =>
         {
-            var mesh = Failures.Get(Mesher.Mesh(toExport.AsShape(), MeshOptions(options.Tolerance, options.AngularTolerance), cancellationToken: cancellationToken),
+            var mesh = Failures.Get(Mesher.Mesh(toExport.AsShape(), MeshOptions(options.LinearDeflection, options.AngularDeflection), cancellationToken: cancellationToken),
                                     () => "mesh");
             return Stl.Write(mesh, stream, new StlWriteOptions { Ascii = options.Ascii }, cancellationToken);
         });
@@ -305,8 +305,7 @@ public static class Exporters3D
 
 /// <summary>
 /// The header of a STEP file: OCCT writes FILE_NAME from the time of writing and its own names; build123d sets the
-/// model's name, the time stamp and the originating system. The record is rewritten in the text, as it was when the
-/// native backend's header maker wasn't bound.
+/// model's name, the time stamp and the originating system. The record is rewritten in the text.
 /// </summary>
 internal static class StepHeader
 {

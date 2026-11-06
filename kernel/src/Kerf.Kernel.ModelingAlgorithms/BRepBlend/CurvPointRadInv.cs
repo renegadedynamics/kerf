@@ -9,7 +9,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Fillets.Blend;
 
@@ -22,21 +21,16 @@ internal class CurvPointRadInv : CurvPointFuncInv
     private readonly CurveAdaptorBase _curv1;
     private readonly CurveAdaptorBase _curv2;
     private Point3D _point;
-#pragma warning disable CS0414 // set and never read, as in OCCT
-    private int _choix;
-#pragma warning restore CS0414
 
     public CurvPointRadInv(CurveAdaptorBase c1, CurveAdaptorBase c2)
     {
         _curv1 = c1;
         _curv2 = c2;
-        _choix = 0;
     }
 
     /// <summary>Sets the "quadrant" <paramref name="choix"/> (unused by the equations, as in OCCT).</summary>
     public void Set(int choix)
     {
-        _choix = choix;
     }
 
     public override int NbEquations()

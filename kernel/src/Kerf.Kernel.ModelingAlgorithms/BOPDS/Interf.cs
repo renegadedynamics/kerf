@@ -4,8 +4,6 @@
 
 using Kerf.Engine.Intersection.Tools;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Booleans.Data;
 
 /// <summary>

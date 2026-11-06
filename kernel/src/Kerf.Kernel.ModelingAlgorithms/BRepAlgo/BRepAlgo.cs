@@ -16,13 +16,10 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Runtime.InteropServices;
-using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans.Algo;
 

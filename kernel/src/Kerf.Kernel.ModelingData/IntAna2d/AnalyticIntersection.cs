@@ -15,7 +15,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Intersection.TwoD.Outils;
 
 namespace Kerf.Engine.Intersection.TwoD;
@@ -30,9 +29,6 @@ internal class AnalyticIntersection
     private bool _done;
     private bool _para;
     private bool _iden;
-#pragma warning disable CS0414 // OCCT sets empt everywhere but never reads it (IsEmpty is computed from nbp and iden)
-    private bool _empt;
-#pragma warning restore CS0414
     private int _nbp;
     private readonly IntPoint[] _lpnt = [new(), new(), new(), new()];
 
@@ -42,7 +38,6 @@ internal class AnalyticIntersection
         _done = false;
         _para = false;
         _iden = false;
-        _empt = true;
         _nbp = 0;
     }
 
@@ -211,19 +206,16 @@ internal class AnalyticIntersection
             if (Math.Abs(ga2 - rap * ga1) <= RealEpsilon())
             { // Coincident lines
                 _iden = true;
-                _empt = false;
             }
             else
             { // Parallel lines
                 _iden = false;
-                _empt = true;
             }
         }
         else
         {
             _para = false;
             _iden = false;
-            _empt = false;
             _nbp = 1;
             double xs = (be1 * ga2 / al1 - be2 * ga1 / al1) / denom;
             double ys = (rap * ga1 - ga2) / denom;
@@ -281,26 +273,22 @@ internal class AnalyticIntersection
             _nbp = 0;
             if (dif <= RealEpsilon())
             { // Coincident circles
-                _empt = false;
                 _iden = true;
             }
             else
             { // Parallel circles
-                _empt = true;
                 _iden = false;
             }
         }
         else if ((d - sum) > Epsilon(sum))
         { // Circles exterior to each other
             // et No solution
-            _empt = true;
             _para = false;
             _iden = false;
             _nbp = 0;
         }
         else if (Math.Abs(d - sum) <= Epsilon(sum))
         { // Externally tangent circles
-            _empt = false;
             _para = false;
             _iden = false;
             _nbp = 1;
@@ -324,7 +312,6 @@ internal class AnalyticIntersection
         }
         else if (((sum - d) > Epsilon(sum)) && ((d - dif) > Epsilon(d + dif)))
         {
-            _empt = false;
             _para = false;
             _iden = false;
             _nbp = 2;
@@ -424,7 +411,6 @@ internal class AnalyticIntersection
         }
         else if (Math.Abs(d - dif) <= Epsilon(sum))
         { // Internally tangent circles
-            _empt = false;
             _para = false;
             _iden = false;
             _nbp = 1;
@@ -453,7 +439,6 @@ internal class AnalyticIntersection
         else
         { // We must have d<dif-Resol and d<>0, therefore
             // one circle inside the other and no solution
-            _empt = true;
             _para = false;
             _iden = false;
             _nbp = 0;
@@ -479,12 +464,10 @@ internal class AnalyticIntersection
 
         if (Math.Abs(d) - c.Radius > Epsilon(c.Radius))
         {
-            _empt = true;
             _nbp = 0;
         }
         else
         { // At least 1 solution
-            _empt = false;
             if (Math.Abs(Math.Abs(d) - c.Radius) <= Epsilon(c.Radius))
             { // Tangency case
                 double u, xs, ys, ang;
@@ -594,7 +577,6 @@ internal class AnalyticIntersection
         _done = false;
         _nbp = 0;
         _para = false;
-        _empt = false;
         _iden = false;
 
         Axis2D Axe_rep = circle.XAxis;
@@ -662,7 +644,6 @@ internal class AnalyticIntersection
         _nbp = 0;
         _para = false;
         _iden = false;
-        _empt = false;
 
         Axis2D Axe_rep = elips.XAxis;
 
@@ -727,7 +708,6 @@ internal class AnalyticIntersection
         _done = false;
         _nbp = 0;
         _para = false;
-        _empt = false;
         _iden = false;
 
         conic.Coefficients(out a, out b, out c, out d, out e, out f);
@@ -805,7 +785,6 @@ internal class AnalyticIntersection
         _nbp = 0;
         _para = false;
         _iden = false;
-        _empt = false;
 
         Axis2D Axe_rep = h.XAxis;
         conic.Coefficients(out a, out b, out c, out d, out e, out f);

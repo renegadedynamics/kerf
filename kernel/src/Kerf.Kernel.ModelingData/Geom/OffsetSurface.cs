@@ -9,7 +9,6 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Engine.Geometry.Objects;
-using Kerf.Geometry;
 using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
@@ -28,7 +27,7 @@ namespace Kerf.Geometry;
 /// <para>When the offset of a plane, cylinder, cone, sphere or torus is again such a surface
 /// (<see cref="Surface"/>), it is attached as the evaluation representation and evaluates the offset surface.
 /// <see cref="BasisSurface"/> returns the stored basis surface frozen, as OCCT returns its handle; this surface's
-/// internal mutators then copy it before changing it (decision 211).</para>
+/// internal mutators then copy it before changing it.</para>
 /// </remarks>
 public sealed class OffsetSurface : Surface
 {
@@ -72,10 +71,10 @@ public sealed class OffsetSurface : Surface
     /// <exception cref="ConstructionErrorException">
     /// The basis surface is C0 and not G1 (only checked for B-spline and swept surfaces), unless isNotCheckC0.
     /// </exception>
-    public OffsetSurface(Surface surf, double offset, bool isNotCheckC0 = false)
+    public OffsetSurface(Surface surface, double offset, bool skipContinuityCheck = false)
     {
         _offsetValue = offset;
-        SetBasisSurface(surf, isNotCheckC0);
+        SetBasisSurface(surface, skipContinuityCheck);
     }
 
     /// <summary>A copy of theOther (deep: the basis surface is copied), without validation.</summary>
@@ -418,21 +417,21 @@ public sealed class OffsetSurface : Surface
     /// <exception cref="UndefinedDerivative3DException">
     /// Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0, or the derivative is undefined at (U, V).
     /// </exception>
-    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int uOrder, int vOrder)
     {
-        if (nu + nv < 1 || nu < 0 || nv < 0)
+        if (uOrder + vOrder < 1 || uOrder < 0 || vOrder < 0)
         {
             throw Refusal.State(new UndefinedDerivative3DException("Geom_OffsetSurface::EvalDN"));
         }
-        if (RepUtils.TryEvalSurfaceDN(_evalRep, u, v, nu, nv, out Vector3D evalRepResult))
+        if (RepUtils.TryEvalSurfaceDN(_evalRep, u, v, uOrder, vOrder, out Vector3D evalRepResult))
         {
             return evalRepResult;
         }
 
         if (!OffsetSurfaceUtils.EvaluateDN(u,
                                                 v,
-                                                nu,
-                                                nv,
+                                                uOrder,
+                                                vOrder,
                                                 new OffsetSurfaceUtils.GeomSurfaceBasis(_basisSurf),
                                                 _offsetValue,
                                                 _oscSurf,
@@ -520,7 +519,7 @@ public sealed class OffsetSurface : Surface
     /// B-spline approximation (degree at most 14, 100 segments, tolerance Precision::Approximation()).
     /// </summary>
     /// <exception cref="ConstructionErrorException">The approximation fails.</exception>
-    public sealed override Curve3D UIso(double uu)
+    public sealed override Curve3D UIso(double u)
     {
         Surface? equivSurface = DirectRepSurface(this);
         if (equivSurface is null)
@@ -528,9 +527,9 @@ public sealed class OffsetSurface : Surface
             SurfaceAdaptor gAsurf = new SurfaceAdaptor(_basisSurf);
             if (gAsurf.GetType() == SurfaceKind.SurfaceOfExtrusion)
             {
-                Curve3D l = _basisSurf.UIso(uu);
+                Curve3D l = _basisSurf.UIso(u);
 
-                _basisSurf.D1(uu, 0.0, out Point3D p, out Vector3D d1U, out Vector3D d1V);
+                _basisSurf.D1(u, 0.0, out Point3D p, out Vector3D d1U, out Vector3D d1V);
                 Vector3D dir = d1U.Crossed(d1V);
                 if (dir.SquareMagnitude < Constants.Resolution())
                 {
@@ -550,7 +549,7 @@ public sealed class OffsetSurface : Surface
             const Continuity cont = C1;
             const int maxSeg = 100, maxDeg = 14;
 
-            Geom_OffsetSurface_UIsoEvaluator ev = new(this, uu);
+            Geom_OffsetSurface_UIsoEvaluator ev = new(this, u);
             ApproxAFunction approx = new(num1, num2, num3, t1, t2, t3, v1, v2, cont, maxDeg, maxSeg, ev);
 
             Refusal.ArgumentIf(!approx.IsDone, FailureKind.ConstructionError, " Geom_OffsetSurface : UIso");
@@ -566,7 +565,7 @@ public sealed class OffsetSurface : Surface
             BSplineCurve3D c = new BSplineCurve3D(poles, knots, mults, approx.Degree());
             return c;
         }
-        return equivSurface.UIso(uu);
+        return equivSurface.UIso(u);
     }
 
     /// <summary>
@@ -574,7 +573,7 @@ public sealed class OffsetSurface : Surface
     /// segments, tolerance Precision::Approximation()).
     /// </summary>
     /// <exception cref="ConstructionErrorException">The approximation fails.</exception>
-    public sealed override Curve3D VIso(double vv)
+    public sealed override Curve3D VIso(double v)
     {
         Surface? equivSurface = DirectRepSurface(this);
         if (equivSurface is null)
@@ -587,7 +586,7 @@ public sealed class OffsetSurface : Surface
             const Continuity cont = C1;
             const int maxSeg = 100, maxDeg = 14;
 
-            Geom_OffsetSurface_VIsoEvaluator ev = new(this, vv);
+            Geom_OffsetSurface_VIsoEvaluator ev = new(this, v);
             ApproxAFunction approx = new(num1, num2, num3, t1, t2, t3, u1, u2, cont, maxDeg, maxSeg, ev);
 
             Refusal.ArgumentIf(!approx.IsDone, FailureKind.ConstructionError, " Geom_OffsetSurface : VIso");
@@ -601,7 +600,7 @@ public sealed class OffsetSurface : Surface
             BSplineCurve3D c = new BSplineCurve3D(poles, knots, mults, approx.Degree());
             return c;
         }
-        return equivSurface.VIso(vv);
+        return equivSurface.VIso(v);
     }
 
     /// <summary>True if the basis surface is C(N + 1) in U.</summary>
@@ -733,26 +732,26 @@ public sealed class OffsetSurface : Surface
     /// Applies T to the basis surface; the offset is scaled by T.ScaleFactor() (drops the evaluation
     /// representation, as OCCT does).
     /// </summary>
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
         ClearEvalRepresentation();
         OwnBasisSurface();
-        _basisSurf.Transform(t);
-        _offsetValue *= t.ScaleFactor;
+        _basisSurf.Transform(transform);
+        _offsetValue *= transform.ScaleFactor;
     }
 
     /// <summary>
     /// The basis surface's transformed parameters: the offset surface has its parametrization (OCCT transformed them
     /// again by the equivalent surface when there is one; Kerf decision 1489).
     /// </summary>
-    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
+    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D transform)
     {
-        _basisSurf.TransformParameters(ref u, ref v, t);
+        _basisSurf.TransformParameters(ref u, ref v, transform);
     }
 
     /// <summary>The basis surface's parametric transformation.</summary>
-    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D t) => _basisSurf.ParametricTransformation(t);
+    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D transform) => _basisSurf.ParametricTransformation(transform);
 
     /// <summary>
     /// An equivalent non-offset surface if there is one: the basis surface itself (frozen) for a zero offset,
@@ -920,10 +919,10 @@ public sealed class OffsetSurface : Surface
     }
 
     /// <summary>A copy on the basis surface S (see <see cref="SetBasisSurface"/>).</summary>
-    public OffsetSurface WithBasisSurface(Surface s, bool isNotCheckC0 = false)
+    public OffsetSurface WithBasisSurface(Surface surface, bool skipContinuityCheck = false)
     {
         OffsetSurface copy = (OffsetSurface)Copy();
-        copy.SetBasisSurface(s, isNotCheckC0);
+        copy.SetBasisSurface(surface, skipContinuityCheck);
         return copy;
     }
 

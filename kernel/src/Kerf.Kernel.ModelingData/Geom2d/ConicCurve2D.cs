@@ -3,8 +3,6 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Geometry;
@@ -16,7 +14,7 @@ namespace Kerf.Geometry;
 /// </summary>
 public abstract class ConicCurve2D : Curve2D
 {
-    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    /// <summary>Only the kernel derives from it.</summary>
     private protected ConicCurve2D()
     {
     }
@@ -48,34 +46,34 @@ public abstract class ConicCurve2D : Curve2D
     }
 
     /// <summary>A copy with the local coordinate system theA.</summary>
-    public ConicCurve2D WithAxis(in Frame2D a)
+    public ConicCurve2D WithAxis(in Frame2D frame)
     {
         ConicCurve2D copy = (ConicCurve2D)Copy();
-        copy.SetAxis(a);
+        copy.SetAxis(frame);
         return copy;
     }
 
     /// <summary>A copy with the X axis theAX; the Y axis is recomputed, keeping the sense of the coordinate system.</summary>
-    public ConicCurve2D WithXAxis(in Axis2D ax)
+    public ConicCurve2D WithXAxis(in Axis2D xAxis)
     {
         ConicCurve2D copy = (ConicCurve2D)Copy();
-        copy.SetXAxis(ax);
+        copy.SetXAxis(xAxis);
         return copy;
     }
 
     /// <summary>A copy with the Y axis theAY; the X axis is recomputed, keeping the sense of the coordinate system.</summary>
-    public ConicCurve2D WithYAxis(in Axis2D ay)
+    public ConicCurve2D WithYAxis(in Axis2D yAxis)
     {
         ConicCurve2D copy = (ConicCurve2D)Copy();
-        copy.SetYAxis(ay);
+        copy.SetYAxis(yAxis);
         return copy;
     }
 
     /// <summary>A copy located at theP.</summary>
-    public ConicCurve2D WithLocation(in Point2D p)
+    public ConicCurve2D WithLocation(in Point2D point)
     {
         ConicCurve2D copy = (ConicCurve2D)Copy();
-        copy.SetLocation(p);
+        copy.SetLocation(point);
         return copy;
     }
 

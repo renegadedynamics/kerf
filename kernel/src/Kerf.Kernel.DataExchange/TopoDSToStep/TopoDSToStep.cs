@@ -6,12 +6,6 @@
 using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Step.Export.ExportBuilderError;
-using static Kerf.Engine.Exchange.Step.Export.MakeEdgeError;
-using static Kerf.Engine.Exchange.Step.Export.MakeFaceError;
-using static Kerf.Engine.Exchange.Step.Export.MakeVertexError;
-using static Kerf.Engine.Exchange.Step.Export.MakeWireError;
 
 namespace Kerf.Engine.Exchange.Step.Export;
 

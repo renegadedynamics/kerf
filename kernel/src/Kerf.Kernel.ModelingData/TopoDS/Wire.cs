@@ -8,9 +8,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 
-using Kerf.Topology;
-using Kerf.Engine;
-
 namespace Kerf.Topology;
 
 /// <summary>
@@ -69,13 +66,13 @@ public partial struct Wire : IEquatable<Wire>
         _location = loc;
     }
 
-    /// <summary>This shape with its local coordinate system set to <paramref name="loc"/>.</summary>
-    /// <param name="loc">The new local coordinate system.</param>
-    /// <param name="raiseExc">Throw if the transformation has a scale or is negative.</param>
-    public readonly Shape Located(in Placement loc, bool raiseExc = false)
+    /// <summary>This shape with its local coordinate system set to <paramref name="placement"/>.</summary>
+    /// <param name="placement">The new local coordinate system.</param>
+    /// <param name="throwOnInvalid">Throw if the transformation has a scale or is negative.</param>
+    public readonly Shape Located(in Placement placement, bool throwOnInvalid = false)
     {
         Shape shape = this;
-        shape.Location(loc, raiseExc);
+        shape.Location(placement, throwOnInvalid);
         return shape;
     }
 
@@ -86,10 +83,10 @@ public partial struct Wire : IEquatable<Wire>
     internal void Orient(Orientation orient) => _orient = orient;
 
     /// <summary>This shape with the given orientation.</summary>
-    public readonly Shape Oriented(Orientation orient)
+    public readonly Shape Oriented(Orientation orientation)
     {
         Shape shape = this;
-        shape.Orient(orient);
+        shape.Orient(orientation);
         return shape;
     }
 
@@ -164,11 +161,11 @@ public partial struct Wire : IEquatable<Wire>
 
     /// <summary>This shape with its location multiplied by <paramref name="position"/>.</summary>
     /// <param name="position">The transformation to apply.</param>
-    /// <param name="raiseExc">Throw if the transformation has a scale or is negative.</param>
-    public readonly Shape Moved(in Placement position, bool raiseExc = false)
+    /// <param name="throwOnInvalid">Throw if the transformation has a scale or is negative.</param>
+    public readonly Shape Moved(in Placement position, bool throwOnInvalid = false)
     {
         Shape shape = this;
-        shape.Move(position, raiseExc);
+        shape.Move(position, throwOnInvalid);
         return shape;
     }
 
@@ -197,11 +194,11 @@ public partial struct Wire : IEquatable<Wire>
     /// <summary>Composes the orientation with <paramref name="orient"/> (TopAbs::Compose).</summary>
     internal void Compose(Orientation orient) => _orient = global::Kerf.Engine.Topology.TopAbs.Compose(_orient, orient);
 
-    /// <summary>This shape with the orientation composed with <paramref name="orient"/> (TopAbs::Compose).</summary>
-    public readonly Shape Composed(Orientation orient)
+    /// <summary>This shape with the orientation composed with <paramref name="orientation"/> (TopAbs::Compose).</summary>
+    public readonly Shape Composed(Orientation orientation)
     {
         Shape shape = this;
-        shape.Compose(orient);
+        shape.Compose(orientation);
         return shape;
     }
 

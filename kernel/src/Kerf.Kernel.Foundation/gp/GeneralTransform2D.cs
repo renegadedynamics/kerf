@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.TransformForm;
 
 namespace Kerf.Geometry;
@@ -31,7 +30,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         _scale = scale;
     }
 
-    /// <summary>The fields, for the returning forms that take a whole value back (unit 10G).</summary>
+    /// <summary>The fields, for the returning forms that take a whole value back.</summary>
     private void Deconstruct(out Matrix2x2 matrix, out Xy loc, out TransformForm shape, out double scale)
     {
         matrix = _matrix;
@@ -49,12 +48,12 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         _matrix.SetScale(1.0);
     }
 
-    public GeneralTransform2D(in Transform2D t)
+    public GeneralTransform2D(in Transform2D transform)
     {
-        _shape = t._shape;
-        _matrix = t._matrix;
-        _loc = t._loc;
-        _scale = t._scale;
+        _shape = transform._shape;
+        _matrix = transform._matrix;
+        _loc = transform._loc;
+        _scale = transform._scale;
     }
 
     /// <summary>The transformation <c>theM * P + theV</c>.</summary>
@@ -68,8 +67,8 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
 
     // Static factories: a new transformation with one of OCCT's Set methods applied
 
-    /// <summary>The affinity of ratio <paramref name="ratio"/> along the normal to the axis <paramref name="a"/>.</summary>
-    public static GeneralTransform2D Affinity(in Axis2D a, double ratio) => new GeneralTransform2D().WithAffinity(a, ratio);
+    /// <summary>The affinity of ratio <paramref name="ratio"/> along the normal to the axis <paramref name="axis"/>.</summary>
+    public static GeneralTransform2D Affinity(in Axis2D axis, double ratio) => new GeneralTransform2D().WithAffinity(axis, ratio);
 
     // Copies
 
@@ -118,7 +117,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         Xy loc = _loc;
         TransformForm shape = _shape;
         loc = coord;
-        if (Form == CompoundTrsf || Form == Other || Form == Translation)
+        if (Form == Composite || Form == Other || Form == Translation)
         {
         }
         else if (Form == Identity)
@@ -127,12 +126,12 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         }
         else
         {
-            shape = CompoundTrsf;
+            shape = Composite;
         }
         return new GeneralTransform2D(_matrix, loc, shape, _scale);
     }
 
-    public readonly GeneralTransform2D WithTrsf2d(in Transform2D t) => new(t);
+    public readonly GeneralTransform2D WithTransform(in Transform2D transform) => new(transform);
 
     internal readonly GeneralTransform2D WithVectorialPart(in Matrix2x2 matrix)
     {
@@ -193,28 +192,28 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         {
             Transform2D t = ToTransform();
             t = t.Inverted();
-            (matrix, loc, shape, scale) = new GeneralTransform2D(matrix, loc, shape, scale).WithTrsf2d(t);
+            (matrix, loc, shape, scale) = new GeneralTransform2D(matrix, loc, shape, scale).WithTransform(t);
         }
         return new GeneralTransform2D(matrix, loc, shape, scale);
     }
 
-    /// <summary><c>this * theT</c>, which applies <paramref name="t"/> first.</summary>
-    public readonly GeneralTransform2D Multiplied(in GeneralTransform2D t)
+    /// <summary><c>this * theT</c>, which applies <paramref name="transform"/> first.</summary>
+    public readonly GeneralTransform2D Multiplied(in GeneralTransform2D transform)
     {
         Matrix2x2 matrix = _matrix;
         Xy loc = _loc;
         TransformForm shape = _shape;
         double scale = _scale;
-        if (Form == Other || t.Form == Other)
+        if (Form == Other || transform.Form == Other)
         {
             shape = Other;
-            loc.Add(t._loc.Multiplied(matrix));
-            matrix.Multiply(t._matrix);
+            loc.Add(transform._loc.Multiplied(matrix));
+            matrix.Multiply(transform._matrix);
         }
         else
         {
             Transform2D t1 = ToTransform();
-            Transform2D t2 = t.ToTransform();
+            Transform2D t2 = transform.ToTransform();
             t1 = t1.Multiplied(t2);
             matrix = t1._matrix;
             loc = t1._loc;
@@ -225,23 +224,23 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
     }
 
     /// <summary><c>theT * this</c>, which applies this transformation first.</summary>
-    public readonly GeneralTransform2D PreMultiplied(in GeneralTransform2D t)
+    public readonly GeneralTransform2D PreMultiplied(in GeneralTransform2D transform)
     {
         Matrix2x2 matrix = _matrix;
         Xy loc = _loc;
         TransformForm shape = _shape;
         double scale = _scale;
-        if (Form == Other || t.Form == Other)
+        if (Form == Other || transform.Form == Other)
         {
             shape = Other;
-            loc.Multiply(t._matrix);
-            loc.Add(t._loc);
-            matrix.PreMultiply(t._matrix);
+            loc.Multiply(transform._matrix);
+            loc.Add(transform._loc);
+            matrix.PreMultiply(transform._matrix);
         }
         else
         {
             Transform2D t1 = ToTransform();
-            Transform2D t2 = t.ToTransform();
+            Transform2D t2 = transform.ToTransform();
             t1 = t1.PreMultiplied(t2);
             matrix = t1._matrix;
             loc = t1._loc;
@@ -305,7 +304,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
             {
                 Transform2D t = ToTransform();
                 t = t.Powered(n);
-                (matrix, loc, shape, scale) = new GeneralTransform2D(matrix, loc, shape, scale).WithTrsf2d(t);
+                (matrix, loc, shape, scale) = new GeneralTransform2D(matrix, loc, shape, scale).WithTransform(t);
             }
         }
         return new GeneralTransform2D(matrix, loc, shape, scale);

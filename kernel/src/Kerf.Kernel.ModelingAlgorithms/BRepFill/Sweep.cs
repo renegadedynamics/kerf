@@ -23,14 +23,9 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Construction.Filling.TransitionStyle;
-using static Kerf.Engine.Construction.Library.LibraryFaceError;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
-using static Kerf.Engine.Construction.Surfaces.ApproxStyle;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Construction.Filling;
 

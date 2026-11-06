@@ -10,11 +10,9 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using System.Runtime.InteropServices;
 using static Kerf.Engine.Extrema.GGenExtCC;
 using static Kerf.Geometry.CurveKind;
-using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Extrema;
 

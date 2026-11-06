@@ -4,7 +4,6 @@ namespace Kerf.Modeling;
 
 /// <summary>
 /// A set of locations to place objects at: <c>new GridLocations(10, 10, 2, 2) * new Circle(1)</c> places four circles.
-/// In builder mode (phase 5) it will also be a context the builder's objects are placed at.
 /// </summary>
 public class LocationList : IReadOnlyList<Location>
 {

@@ -7,7 +7,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
-using Kerf.Engine;
 using System.Runtime.CompilerServices;
 
 namespace Kerf.Topology;
@@ -19,14 +18,14 @@ namespace Kerf.Topology;
 /// <remarks>
 /// <para>
 /// <see cref="Equals(Placement)"/>, <see cref="GetHashCode"/>, <c>==</c> and <c>!=</c> compare the transformations, exactly
-/// (decision 1349, question 62; unit 10L1). The engine compares locations as OCCT does, by the <b>identity</b> of their
+///. The engine compares locations as OCCT does, by the <b>identity</b> of their
 /// datums (<see cref="IsEqual"/>, <see cref="HashCode"/>, <see cref="PlacementIdentityComparer"/>): two locations built
 /// separately from the same <see cref="Transform3D"/> are different there, and whether two shapes are the same
 /// (<c>Shape.IsSame</c>) depends on it.
 /// </para>
 /// <para>
 /// A struct holding one reference to a shared, immutable list, as OCCT's class is. <c>default(TopLoc_Location)</c>
-/// and <c>new TopLoc_Location()</c> are both the identity. It is a readonly struct (unit 10G): OCCT's
+/// and <c>new TopLoc_Location()</c> are both the identity. It is a readonly struct: OCCT's
 /// <c>Identity</c> and <c>Clear</c>, which dropped the list, are <c>new TopLoc_Location()</c>.
 /// </para>
 /// </remarks>
@@ -40,9 +39,9 @@ public readonly partial struct Placement : IEquatable<Placement>
     public Placement() => _items = new SListOfItemLocation();
 
     /// <summary>The location of a new datum built from T.</summary>
-    public Placement(in Transform3D t)
+    public Placement(in Transform3D transform)
     {
-        Datum3D d = new Datum3D(t);
+        Datum3D d = new Datum3D(transform);
         _items = new SListOfItemLocation();
         _items.Construct(new ItemLocation(d, 1));
     }
@@ -194,19 +193,19 @@ public readonly partial struct Placement : IEquatable<Placement>
     }
 
     /// <summary>This location to the power pwr; the identity for 0, and negative powers invert.</summary>
-    public readonly Placement Powered(int pwr)
+    public readonly Placement Powered(int power)
     {
         if (IsIdentity)
         {
             return this;
         }
 
-        if (pwr == 1)
+        if (power == 1)
         {
             return this;
         }
 
-        if (pwr == 0)
+        if (power == 0)
         {
             return new Placement();
         }
@@ -215,17 +214,17 @@ public readonly partial struct Placement : IEquatable<Placement>
         if (_items.Tail().IsEmpty)
         {
             SListOfItemLocation result = new SListOfItemLocation();
-            result.Construct(new ItemLocation(FirstDatum(), FirstPower() * pwr));
+            result.Construct(new ItemLocation(FirstDatum(), FirstPower() * power));
             return new Placement(result);
         }
 
-        if (pwr > 0)
+        if (power > 0)
         {
-            return Multiplied(Powered(pwr - 1));
+            return Multiplied(Powered(power - 1));
         }
         else
         {
-            return Inverted().Powered(-pwr);
+            return Inverted().Powered(-power);
         }
     }
 

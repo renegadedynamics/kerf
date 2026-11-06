@@ -20,11 +20,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
-using static Kerf.Geometry.SurfaceKind;
-using static Kerf.Engine.Intersection.Patches.PatchLineType;
-using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 
 namespace Kerf.Engine.Intersection.Patches;
 

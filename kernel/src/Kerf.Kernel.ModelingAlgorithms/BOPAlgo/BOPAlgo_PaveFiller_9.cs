@@ -7,8 +7,6 @@ using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans;
 

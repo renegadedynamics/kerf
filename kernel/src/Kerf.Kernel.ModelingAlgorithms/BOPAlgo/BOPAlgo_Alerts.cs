@@ -9,7 +9,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Booleans;
 

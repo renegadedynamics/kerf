@@ -1,7 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Collections.Immutable;
-using Kerf.Engine.Topology;
 using Kerf.Topology;
 
 namespace Kerf;

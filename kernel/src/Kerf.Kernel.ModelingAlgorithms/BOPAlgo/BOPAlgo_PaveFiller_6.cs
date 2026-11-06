@@ -20,12 +20,9 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Runtime.InteropServices;
-using static Kerf.Booleans.GlueMode;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans;
 

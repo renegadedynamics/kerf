@@ -12,9 +12,6 @@ using Kerf.Engine.Exchange.Step.Visual;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Topology.ShapeType;
-using static Kerf.Engine.Exchange.Step.Export.ExportBuilderError;
 
 namespace Kerf.Engine.Exchange.Step.Export;
 

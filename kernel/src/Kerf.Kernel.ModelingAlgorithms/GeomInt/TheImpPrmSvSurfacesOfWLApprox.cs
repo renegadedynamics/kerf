@@ -7,7 +7,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Approximation;
 using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Intersection.Walking;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Surfaces;
 

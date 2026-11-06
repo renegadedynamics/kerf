@@ -9,8 +9,6 @@ using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Geometry.SurfaceKind;
 
 namespace Kerf.Engine.Healing.Custom;
 

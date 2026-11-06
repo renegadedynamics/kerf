@@ -6,7 +6,6 @@
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Intersection.Implicit;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Patches;
 

@@ -20,14 +20,11 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Offsets.OffsetStatus;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.JoinKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Offsets;
 
@@ -59,7 +56,6 @@ internal sealed class Offset
     private Shape _shape = new();
     private OffsetStatus _status = OffsetStatus.Unknown;
     private Face _face = new();
-    private readonly Dictionary<Shape, Shape> _map = new(ShapeHasher.Instance);
 
     // OCCT_DEBUG statics (Affich, NbOFFSET) and their blocks are left out.
 

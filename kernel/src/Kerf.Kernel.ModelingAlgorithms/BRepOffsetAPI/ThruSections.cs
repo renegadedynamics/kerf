@@ -3,7 +3,6 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Kerf.Engine.Approximation;
 using Kerf.Engine.Classification;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Filling;
@@ -17,13 +16,10 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.ParametrizationType;
-using static Kerf.Engine.Construction.Filling.ThruSectionErrorStatus;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Construction.Api;

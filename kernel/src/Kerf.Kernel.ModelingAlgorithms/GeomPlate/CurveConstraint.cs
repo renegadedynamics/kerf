@@ -11,7 +11,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Properties;
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Plate;
 

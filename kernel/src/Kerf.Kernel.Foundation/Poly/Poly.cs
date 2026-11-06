@@ -6,7 +6,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Kerf.Engine;
 using System.Globalization;
 
 namespace Kerf.Engine.Meshing;

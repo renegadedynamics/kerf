@@ -345,9 +345,7 @@ public class RWStlTests
             Shape aFace = FaceWith(aMesh, 3.0);
             Assert.True(StlApi.Write(aFace, Path.Combine(aDir, "s.stl"), false));
             Shape aShape = new();
-#pragma warning disable CS0618 // the deprecated legacy reader
-            Assert.True(StlApi.Read(ref aShape, Path.Combine(aDir, "s.stl")));
-#pragma warning restore CS0618
+            Assert.True(new StlApiReader().Read(ref aShape, Path.Combine(aDir, "s.stl")));
             Assert.Equal(18, CountShapeElements(aShape, ShapeType.Face));
         }
         finally

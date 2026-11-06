@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Approximation.Constraint;
 
 namespace Kerf.Engine.Approximation;

@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Geometry.TransformForm;
 

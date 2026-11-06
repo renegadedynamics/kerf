@@ -6,8 +6,6 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry.Objects;
-using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Geometry;
 
@@ -22,21 +20,21 @@ public sealed class SphericalSurface : ElementarySurface
 
     /// <summary>A sphere of radius Radius whose local coordinate system is A3.</summary>
     /// <exception cref="ConstructionErrorException">Radius &lt; 0.</exception>
-    public SphericalSurface(in CoordinateSystem a3, double radius)
+    public SphericalSurface(in CoordinateSystem position, double radius)
     {
         _radius = radius;
         if (radius < 0.0)
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
-        _pos = a3;
+        _pos = position;
     }
 
     /// <summary>A sphere from a gp sphere.</summary>
-    public SphericalSurface(in Sphere3D s)
+    public SphericalSurface(in Sphere3D sphere)
     {
-        _radius = s.Radius;
-        _pos = s.Position;
+        _radius = sphere.Radius;
+        _pos = sphere.Position;
     }
 
     public sealed override Geometry3D Copy()
@@ -98,10 +96,10 @@ public sealed class SphericalSurface : ElementarySurface
     }
 
     /// <summary>A copy that is the sphere S.</summary>
-    public SphericalSurface WithSphere(in Sphere3D s)
+    public SphericalSurface WithSphere(in Sphere3D sphere)
     {
         SphericalSurface copy = (SphericalSurface)Copy();
-        copy.SetSphere(s);
+        copy.SetSphere(sphere);
         return copy;
     }
 
@@ -205,13 +203,13 @@ public sealed class SphericalSurface : ElementarySurface
     }
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int uOrder, int vOrder)
     {
-        if (nu + nv < 1 || nu < 0 || nv < 0)
+        if (uOrder + vOrder < 1 || uOrder < 0 || vOrder < 0)
         {
             throw Refusal.State(new UndefinedDerivative3DException());
         }
-        return global::Kerf.Engine.Geometry.ElSLib.SphereDN(u, v, _pos, _radius, nu, nv);
+        return global::Kerf.Engine.Geometry.ElSLib.SphereDN(u, v, _pos, _radius, uOrder, vOrder);
     }
 
     /// <summary>The non-persistent gp sphere with the same geometry.</summary>
@@ -235,10 +233,10 @@ public sealed class SphericalSurface : ElementarySurface
     /// <summary>The volume, 4 * PI * R**3 / 3.</summary>
     public double Volume => (4.0 * M_PI * _radius * _radius * _radius) / 3.0;
 
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
-        _radius = _radius * Math.Abs(t.ScaleFactor);
-        _pos = _pos.Transformed(t);
+        _radius = _radius * Math.Abs(transform.ScaleFactor);
+        _pos = _pos.Transformed(transform);
     }
 }

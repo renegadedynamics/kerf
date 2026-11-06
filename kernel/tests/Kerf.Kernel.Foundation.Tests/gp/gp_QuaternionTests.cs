@@ -12,12 +12,12 @@ public class gp_QuaternionTest
 {
     private static readonly string[] aNames =
     [
-        "Extrinsic_XYZ", "Extrinsic_XZY", "Extrinsic_YZX", "Extrinsic_YXZ",
-        "Extrinsic_ZXY", "Extrinsic_ZYX", "Intrinsic_XYZ", "Intrinsic_XZY",
-        "Intrinsic_YZX", "Intrinsic_YXZ", "Intrinsic_ZXY", "Intrinsic_ZYX",
-        "Extrinsic_XYX", "Extrinsic_XZX", "Extrinsic_YZY", "Extrinsic_YXY",
-        "Extrinsic_ZYZ", "Extrinsic_ZXZ", "Intrinsic_XYX", "Intrinsic_XZX",
-        "Intrinsic_YZY", "Intrinsic_YXY", "Intrinsic_ZXZ", "Intrinsic_ZYZ",
+        "ExtrinsicXYZ", "ExtrinsicXZY", "ExtrinsicYZX", "ExtrinsicYXZ",
+        "ExtrinsicZXY", "ExtrinsicZYX", "IntrinsicXYZ", "IntrinsicXZY",
+        "IntrinsicYZX", "IntrinsicYXZ", "IntrinsicZXY", "IntrinsicZYX",
+        "ExtrinsicXYX", "ExtrinsicXZX", "ExtrinsicYZY", "ExtrinsicYXY",
+        "ExtrinsicZYZ", "ExtrinsicZXZ", "IntrinsicXYX", "IntrinsicXZX",
+        "IntrinsicYZY", "IntrinsicYXY", "IntrinsicZXZ", "IntrinsicZYZ",
     ];
 
     // Test OCC25574: gp_Quaternion Euler angle conversion is consistent and correct
@@ -32,7 +32,7 @@ public class gp_QuaternionTest
         Matrix3x3 aI = new Matrix3x3().WithIdentity();
 
         // Check round-trip consistency: GetEulerAngles then SetEulerAngles should reproduce the matrix
-        for (int i = (int)Extrinsic_XYZ; i <= (int)Intrinsic_ZYZ; i++)
+        for (int i = (int)ExtrinsicXYZ; i <= (int)IntrinsicZYZ; i++)
         {
             aQuat.GetEulerAngles((EulerSequence)i, out double alpha, out double beta, out double gamma);
 
@@ -41,8 +41,8 @@ public class gp_QuaternionTest
 
             Matrix3x3 aR = aQuat2.GetMatrix();
             Matrix3x3 aDiff = aR * aRinv - aI;
-            // Round-trip failed for Euler sequence aNames[i - gp_Extrinsic_XYZ]
-            Assert.True(aDiff.Determinant <= 1e-5, aNames[i - (int)Extrinsic_XYZ]);
+            // Round-trip failed for Euler sequence aNames[i - ExtrinsicXYZ]
+            Assert.True(aDiff.Determinant <= 1e-5, aNames[i - (int)ExtrinsicXYZ]);
         }
     }
 
@@ -51,12 +51,12 @@ public class gp_QuaternionTest
     [Fact]
     public void OCC25574_EulerAxisRotationPreservesAxis()
     {
-        for (int i = (int)Extrinsic_XYZ; i <= (int)Intrinsic_ZYZ; i++)
+        for (int i = (int)ExtrinsicXYZ; i <= (int)IntrinsicZYZ; i++)
         {
             for (int j = 0; j < 3; j++)
             {
                 // Determine axis index from the sequence name (X=0, Y=1, Z=2)
-                int anAxis = aNames[i - (int)Extrinsic_XYZ][10 + j] - 'X';
+                int anAxis = aNames[i - (int)ExtrinsicXYZ][9 + j] - 'X';
                 Assert.True(anAxis >= 0);
                 Assert.True(anAxis <= 2);
 
@@ -77,7 +77,7 @@ public class gp_QuaternionTest
 
                 // Rotation around axis should not move a point on that axis
                 Assert.True((v - v2).SquareModulus() <= global::Kerf.Engine.Foundation.Precision.SquareConfusion(),
-                            $"Sequence: {aNames[i - (int)Extrinsic_XYZ]}, angle index: {j}");
+                            $"Sequence: {aNames[i - (int)ExtrinsicXYZ]}, angle index: {j}");
             }
         }
     }
@@ -92,12 +92,12 @@ public class gp_QuaternionTest
 
         EulerSequence[][] aPairs =
         [
-            [Extrinsic_XYZ, Intrinsic_ZYX],
-            [Extrinsic_XZY, Intrinsic_YZX],
-            [Extrinsic_YZX, Intrinsic_XZY],
-            [Extrinsic_YXZ, Intrinsic_ZXY],
-            [Extrinsic_ZXY, Intrinsic_YXZ],
-            [Extrinsic_ZYX, Intrinsic_XYZ],
+            [ExtrinsicXYZ, IntrinsicZYX],
+            [ExtrinsicXZY, IntrinsicYZX],
+            [ExtrinsicYZX, IntrinsicXZY],
+            [ExtrinsicYXZ, IntrinsicZXY],
+            [ExtrinsicZXY, IntrinsicYXZ],
+            [ExtrinsicZYX, IntrinsicXYZ],
         ];
 
         Quaternion3 aQuat = new();
@@ -157,9 +157,9 @@ public class gp_QuaternionTest
         Quaternion3 aQuat = new();
         aQuat.Set(0.06766916507860499, 0.21848101129786085, 0.11994599260380681, 0.9660744746954637);
 
-        aQuat.GetEulerAngles(Intrinsic_ZYX, out double aAlpha, out double aBeta, out double aGamma);
+        aQuat.GetEulerAngles(IntrinsicZYX, out double aAlpha, out double aBeta, out double aGamma);
 
-        aQuat.GetEulerAngles(Extrinsic_XYZ, out double aAlpha2, out double aBeta2, out double aGamma2);
+        aQuat.GetEulerAngles(ExtrinsicXYZ, out double aAlpha2, out double aBeta2, out double aGamma2);
 
         // Intrinsic ZYX alpha should equal Extrinsic XYZ gamma, and the reverse
         Assert.Equal(aAlpha, aGamma2, 1e-5);

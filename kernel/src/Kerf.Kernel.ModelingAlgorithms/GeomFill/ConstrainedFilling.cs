@@ -8,7 +8,6 @@ using Kerf.Engine.Construction.Laws;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Kerf.Engine;
 using System.Globalization;
 using static Kerf.Geometry.Continuity;
 

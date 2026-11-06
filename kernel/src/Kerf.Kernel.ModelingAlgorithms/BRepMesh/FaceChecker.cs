@@ -10,7 +10,6 @@ using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Meshing.Model;
 using Kerf.Engine.Meshing.Tools;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Meshing.GeomTool.IntFlag;
 
 namespace Kerf.Engine.Meshing;

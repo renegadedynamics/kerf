@@ -4,7 +4,6 @@
 
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
-using Kerf.Engine;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 

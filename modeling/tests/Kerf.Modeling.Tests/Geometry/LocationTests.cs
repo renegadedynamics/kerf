@@ -80,7 +80,7 @@ public class LocationTests
             var xyz = xy.Multiplied(rotZ);
             var loc1 = new Location(xyz);
 
-            var t = Transform3D.Rotation(EulerSequence.Intrinsic_XYZ, aboutX, aboutY, aboutZ);
+            var t = Transform3D.Rotation(EulerSequence.IntrinsicXYZ, aboutX, aboutY, aboutZ);
             var loc2 = new Location(t);
 
             Check.AlmostEqual(loc1.Position, loc2.Position, 5);

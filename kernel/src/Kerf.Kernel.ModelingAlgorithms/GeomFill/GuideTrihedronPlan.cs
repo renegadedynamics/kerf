@@ -7,7 +7,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 
@@ -24,7 +23,6 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// </remarks>
 internal class GuideTrihedronPlan : TrihedronWithGuide
 {
-    private new CurveAdaptorBase? _trimmed;
     private new CurveAdaptorBase? _curve;
     private readonly NCollection_HArray2<Point2D> _pole;
     private readonly math_Vector _x;
@@ -299,7 +297,7 @@ internal class GuideTrihedronPlan : TrihedronWithGuide
 
     public override void SetInterval(double first, double last)
     {
-        _trimmed = _curve!.Trim(first, last, global::Kerf.Engine.Foundation.Precision.Confusion());
+        _ = _curve!.Trim(first, last, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     public override void GetAverageLaw(ref Vector3D aTangent, ref Vector3D aNormal, ref Vector3D aBiNormal)

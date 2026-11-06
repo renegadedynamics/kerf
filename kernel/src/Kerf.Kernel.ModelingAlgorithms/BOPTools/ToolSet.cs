@@ -6,9 +6,7 @@
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans.Tools;
 
@@ -164,14 +162,6 @@ internal sealed class ToolSet : IEquatable<ToolSet>
 
     /// <summary>The hash of the set: the sum of its shapes' normalised hashes.</summary>
     public ulong GetSum() => _sum;
-
-    /// <summary>Empties the set.</summary>
-    private void Clear()
-    {
-        _nbShapes = 0;
-        _sum = 0;
-        _shapes.Clear();
-    }
 
     private static ulong NormalizedIds(ulong aId, int aDiv)
     {

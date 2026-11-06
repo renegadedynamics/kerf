@@ -4,8 +4,6 @@
 
 using Kerf.Engine.Numerics;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Geometry;
 
 /// <summary>

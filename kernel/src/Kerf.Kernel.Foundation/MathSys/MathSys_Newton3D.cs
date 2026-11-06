@@ -6,8 +6,6 @@ using Kerf.Engine.Foundation.Std;
 
 using Kerf.Geometry;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Numerics.Systems;
 
 // The function contract `bool operator()(double x1, double x2, double x3, double f[3], double j[3][3]) const` is

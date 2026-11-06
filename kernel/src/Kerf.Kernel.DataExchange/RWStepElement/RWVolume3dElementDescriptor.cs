@@ -8,10 +8,6 @@
 
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Step.Data;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Framework.ParamType;
-using static Kerf.Engine.Exchange.Step.Elements.ElementOrder;
-using static Kerf.Engine.Exchange.Step.Elements.Volume3dElementShape;
 
 namespace Kerf.Engine.Exchange.Step.Elements.ReadWrite;
 

@@ -7,8 +7,6 @@ using Kerf.Engine.Intersection.Curves;
 
 using Kerf.Engine.Intersection.TwoD;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.HiddenLines;
 
 /// <summary>The intersection between two 2D curves (HLRBRep_Curve), or the self-intersection of one.</summary>

@@ -9,9 +9,7 @@ using Kerf.Engine.Foundation.Std;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Runtime.InteropServices;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans.Data;
 

@@ -12,8 +12,6 @@ using Kerf.Engine.Exchange.Step.Data;
 
 using Kerf.Engine.Exchange.Step.Representation;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Step.Visual.ReadWrite;
 
 /// <summary>

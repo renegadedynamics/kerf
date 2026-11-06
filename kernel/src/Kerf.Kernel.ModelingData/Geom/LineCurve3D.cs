@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Objects;
-using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Geometry;
@@ -20,13 +18,13 @@ public sealed class LineCurve3D : Curve3D
     private Axis3D _pos;
 
     /// <summary>A line on the axis A1.</summary>
-    public LineCurve3D(in Axis3D a) => _pos = a;
+    public LineCurve3D(in Axis3D axis) => _pos = axis;
 
     /// <summary>A line equal to L.</summary>
-    public LineCurve3D(in Line3D l) => _pos = l.Position;
+    public LineCurve3D(in Line3D line) => _pos = line.Position;
 
     /// <summary>A line through P with direction V.</summary>
-    public LineCurve3D(in Point3D p, in Direction3D v) => _pos = new Axis3D(p, v);
+    public LineCurve3D(in Point3D point, in Direction3D direction) => _pos = new Axis3D(point, direction);
 
     /// <summary>A new, unfrozen line equal to this one.</summary>
     public sealed override Geometry3D Copy()
@@ -91,10 +89,10 @@ public sealed class LineCurve3D : Curve3D
     internal sealed override bool IsCN(int n) => true;
 
     /// <summary>Applies T to this line.</summary>
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
-        _pos = _pos.Transformed(t);
+        _pos = _pos.Transformed(transform);
     }
 
     internal sealed override Point3D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.LineValue(u, _pos);
@@ -141,45 +139,45 @@ public sealed class LineCurve3D : Curve3D
     }
 
     /// <summary>U * |T.ScaleFactor()| (U itself when infinite).</summary>
-    internal sealed override double TransformedParameter(double u, in Transform3D t)
+    internal sealed override double TransformedParameter(double u, in Transform3D transform)
     {
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u))
         {
             return u;
         }
-        return u * Math.Abs(t.ScaleFactor);
+        return u * Math.Abs(transform.ScaleFactor);
     }
 
     /// <summary>|T.ScaleFactor()|.</summary>
-    internal sealed override double ParametricTransformation(in Transform3D t) => Math.Abs(t.ScaleFactor);
+    internal sealed override double ParametricTransformation(in Transform3D transform) => Math.Abs(transform.ScaleFactor);
 
     // Non-mutating twins of the Set methods (Kerf)
 
-    public LineCurve3D WithDirection(in Direction3D v)
+    public LineCurve3D WithDirection(in Direction3D direction)
     {
         LineCurve3D copy = (LineCurve3D)Copy();
-        copy.SetDirection(v);
+        copy.SetDirection(direction);
         return copy;
     }
 
-    public LineCurve3D WithLin(in Line3D l)
+    public LineCurve3D WithLine(in Line3D line)
     {
         LineCurve3D copy = (LineCurve3D)Copy();
-        copy.SetLin(l);
+        copy.SetLin(line);
         return copy;
     }
 
-    public LineCurve3D WithLocation(in Point3D p)
+    public LineCurve3D WithLocation(in Point3D point)
     {
         LineCurve3D copy = (LineCurve3D)Copy();
-        copy.SetLocation(p);
+        copy.SetLocation(point);
         return copy;
     }
 
-    public LineCurve3D WithPosition(in Axis3D a1)
+    public LineCurve3D WithPosition(in Axis3D axis)
     {
         LineCurve3D copy = (LineCurve3D)Copy();
-        copy.SetPosition(a1);
+        copy.SetPosition(axis);
         return copy;
     }
 }

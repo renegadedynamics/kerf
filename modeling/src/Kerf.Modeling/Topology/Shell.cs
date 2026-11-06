@@ -114,7 +114,7 @@ public static partial class ShellExtensions
         /// <summary>
         /// A loft through wires (open or closed), optionally starting or ending with a vertex; ruled (stepped) or smooth.
         /// </summary>
-        public static Shell MakeLoft(IEnumerable<Shape> objs, bool ruled = false) => (Shell)TopoUtil.MakeLoft(objs, false, ruled);
+        public static Shell MakeLoft(IEnumerable<Shape> objects, bool ruled = false) => (Shell)TopoUtil.MakeLoft(objects, false, ruled);
 
         /// <summary>A 1D profile revolved through <paramref name="angle"/> degrees about an axis.</summary>
         public static Shell Revolve(Shape profile, double angle, Axis axis)

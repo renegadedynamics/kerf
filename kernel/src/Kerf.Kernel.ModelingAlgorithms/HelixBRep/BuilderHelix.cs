@@ -12,7 +12,6 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Orientation;
 
 namespace Kerf.Engine.Construction.Helix;

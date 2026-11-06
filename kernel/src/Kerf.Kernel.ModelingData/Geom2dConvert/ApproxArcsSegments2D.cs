@@ -4,11 +4,9 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Curves;
-using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 
 namespace Kerf.Engine.Geometry.Conversion;
@@ -703,44 +701,6 @@ internal sealed class ApproxArcsSegments2D
         }
 
         return false;
-    }
-
-    // Method for calculation of a linear interpolation. (Unused by OCCT, ported for completeness.)
-    private bool CalculateLines(ref PPoint2D firstParam, in PPoint2D lastParam)
-    {
-        ref PPoint2D prevParam = ref firstParam;
-        for (int i = 1; i <= _seqParams.Length(); i++)
-        {
-            ref PPoint2D curParam = ref _seqParams.ChangeValue(i);
-            if (curParam.Parameter() < prevParam.Parameter())
-            {
-                continue;
-            }
-
-            if (curParam.Parameter() > lastParam.Parameter())
-            {
-                break;
-            }
-
-            // build line segment
-            if (curParam.IsNotEqual(prevParam))
-            {
-                double distance = (curParam.Point() - prevParam.Point()).Modulus();
-                if (distance > _tolerance)
-                {
-                    Curve2D? curve = MakeLine(ref prevParam, ref curParam, false);
-                    if (curve is null)
-                    {
-                        return false;
-                    }
-
-                    _seqCurves.Append(curve);
-                    prevParam = ref _seqParams[i];
-                }
-            }
-        }
-
-        return true;
     }
 
     // Checking max deflection Geom curve from Adaptor Curve

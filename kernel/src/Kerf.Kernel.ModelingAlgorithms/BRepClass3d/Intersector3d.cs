@@ -9,8 +9,6 @@ using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Intersection.CurveSurface.TransitionOnCurve;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.Containment;
 

@@ -13,7 +13,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.TransformForm;
 
 namespace Kerf.Engine.Exchange.Step.Import;

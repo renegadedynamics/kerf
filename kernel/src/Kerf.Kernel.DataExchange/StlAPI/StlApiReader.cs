@@ -8,7 +8,6 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Meshing;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Stl.Api;
 

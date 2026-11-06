@@ -15,14 +15,11 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using System.Runtime.CompilerServices;
 using static Kerf.Engine.Geometry.DerivativeStatus;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Engine.HiddenLines.Algorithm.PolyMask;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.HiddenLines;
 
@@ -2204,52 +2201,6 @@ internal class PolyAlgo : Transient
             }
         }
     }
-
-
-    private void FindEdgeOnTriangle(in TriangleData triangle, int ip1, int ip2, ref int jtrouv,
-        ref bool isDirect)
-    {
-        int n1 = triangle.Node1;
-        int n2 = triangle.Node2;
-        int n3 = triangle.Node3;
-        if (ip1 == n1 && ip2 == n2)
-        {
-            jtrouv = 0;
-            isDirect = true;
-            return;
-        }
-        else if (ip2 == n1 && ip1 == n2)
-        {
-            jtrouv = 0;
-            isDirect = false;
-            return;
-        }
-        else if (ip1 == n2 && ip2 == n3)
-        {
-            jtrouv = 1;
-            isDirect = true;
-            return;
-        }
-        else if (ip2 == n2 && ip1 == n3)
-        {
-            jtrouv = 1;
-            isDirect = false;
-            return;
-        }
-        else if (ip1 == n3 && ip2 == n1)
-        {
-            jtrouv = 2;
-            isDirect = true;
-            return;
-        }
-        else if (ip2 == n3 && ip1 == n1)
-        {
-            jtrouv = 2;
-            isDirect = false;
-            return;
-        }
-    }
-
 
     private void ChangeNode(int ip1, int ip2, ref PolyInternalNode.NodeIndices nod1Indices,
         ref PolyInternalNode.NodeData nod1RValues, ref PolyInternalNode.NodeIndices nod2Indices,

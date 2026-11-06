@@ -5,12 +5,8 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Globalization;
-using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
-using static Kerf.Engine.Booleans.Legacy.Data.DsConfig;
-using static Kerf.Engine.Booleans.Legacy.Data.DsKind;
 
 namespace Kerf.Engine.Booleans.Legacy.Data;
 

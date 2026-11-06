@@ -9,7 +9,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 
 namespace Kerf.Engine.Extrema;
@@ -43,9 +42,6 @@ internal class PcfOfEpcOfExtPC : FunctionWithDerivative
     private readonly NCollection_Sequence<POnCurv> _point = new();
     private bool _pinit;
     private bool _cinit;
-#pragma warning disable CS0414 // OCCT sets myD1Init and never reads it
-    private bool _d1Init;
-#pragma warning restore CS0414
     private double _tol;
     private int _maxDerivOrder;
     private double _uinfium;
@@ -58,7 +54,6 @@ internal class PcfOfEpcOfExtPC : FunctionWithDerivative
         _d1f = 0.0;
         _pinit = false;
         _cinit = false;
-        _d1Init = false;
         _tol = MinTol;
         _maxDerivOrder = 0;
         _uinfium = 0.0;
@@ -74,7 +69,6 @@ internal class PcfOfEpcOfExtPC : FunctionWithDerivative
         _d1f = 0.0;
         _pinit = true;
         _cinit = true;
-        _d1Init = false;
 
         SubIntervalInitialize(CurveTool.FirstParameter(c), CurveTool.LastParameter(c));
 
@@ -283,7 +277,6 @@ internal class PcfOfEpcOfExtPC : FunctionWithDerivative
 
         if (Value(u, out f) == false)
         {
-            _d1Init = false;
             df = 0.0;
             return false;
         }
@@ -321,7 +314,6 @@ internal class PcfOfEpcOfExtPC : FunctionWithDerivative
 
                 if (!((Value(u2, out f2)) && (Value(u3, out f3))))
                 {
-                    _d1Init = false;
                     df = 0.0;
                     return false;
                 }
@@ -336,7 +328,6 @@ internal class PcfOfEpcOfExtPC : FunctionWithDerivative
 
                 if (!((Value(u2, out f2)) && (Value(u1, out f1))))
                 {
-                    _d1Init = false;
                     df = 0.0;
                     return false;
                 }
@@ -355,7 +346,6 @@ internal class PcfOfEpcOfExtPC : FunctionWithDerivative
 
         _d1f = df;
 
-        _d1Init = true;
         return true;
     }
 
@@ -370,7 +360,6 @@ internal class PcfOfEpcOfExtPC : FunctionWithDerivative
         _sqDist.Append(_pc.SquareDistanceTo(_p));
 
         // It is necessary to always compute myD1f.
-        _d1Init = true;
         Values(_u, out _, out _);
 
         int intVal = 0;

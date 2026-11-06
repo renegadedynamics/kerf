@@ -7,7 +7,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Approximation;

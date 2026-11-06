@@ -5,18 +5,12 @@
 
 using Kerf.Engine.Classification;
 using Kerf.Engine.Collections;
-using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Measurement.Distance.SupportType;
-using static Kerf.Engine.Extrema.ExtAlgo;
-using static Kerf.Engine.Extrema.ExtFlag;
-using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Measurement.Distance;
@@ -57,10 +51,6 @@ internal sealed class DistanceShapeShape
     private readonly IndexedSet<Shape> _mapF2 = new(ShapeHasher.Instance);
     private bool _isInitS1;
     private bool _isInitS2;
-#pragma warning disable CS0414 // OCCT keeps the obsolete flag and algorithm without reading them
-    private ExtFlag _flag;
-    private ExtAlgo _algo;
-#pragma warning restore CS0414
     private readonly NCollection_Array1<Box> _bv1 = new();
     private readonly NCollection_Array1<Box> _bv2 = new();
     private readonly NCollection_Array1<Box> _be1 = new();
@@ -591,20 +581,15 @@ internal sealed class DistanceShapeShape
         _eps = global::Kerf.Engine.Foundation.Precision.Confusion();
         _isInitS1 = false;
         _isInitS2 = false;
-        _flag = ExtFlag_MINMAX;
-        _algo = ExtAlgo_Grad;
         _isMultiThread = false;
     }
 
     /// <summary>
     /// Computes the minimum distance between the shapes (value and pairs of points) with the default deflection
-    /// (Precision::Confusion()) in single-threaded mode. <paramref name="f"/> and <paramref name="a"/> are obsolete
-    /// and unused.
+    /// (Precision::Confusion()) in single-threaded mode.
     /// </summary>
     public DistanceShapeShape(in Shape shape1,
                                       in Shape shape2,
-                                      ExtFlag f = ExtFlag_MINMAX,
-                                      ExtAlgo a = ExtAlgo_Grad,
                                       ProgressRange range = default)
     {
         _distRef = 0.0;
@@ -613,8 +598,6 @@ internal sealed class DistanceShapeShape
         _eps = global::Kerf.Engine.Foundation.Precision.Confusion();
         _isInitS1 = false;
         _isInitS2 = false;
-        _flag = f;
-        _algo = a;
         _isMultiThread = false;
         LoadS1(shape1);
         LoadS2(shape2);
@@ -623,14 +606,11 @@ internal sealed class DistanceShapeShape
 
     /// <summary>
     /// Computes the minimum distance between the shapes in single-threaded mode; solutions within
-    /// <paramref name="deflection"/> of the minimum are kept. <paramref name="f"/> and <paramref name="a"/> are
-    /// obsolete and unused.
+    /// <paramref name="deflection"/> of the minimum are kept.
     /// </summary>
     public DistanceShapeShape(in Shape shape1,
                                       in Shape shape2,
                                       double deflection,
-                                      ExtFlag f = ExtFlag_MINMAX,
-                                      ExtAlgo a = ExtAlgo_Grad,
                                       ProgressRange range = default)
     {
         _distRef = 0.0;
@@ -639,8 +619,6 @@ internal sealed class DistanceShapeShape
         _eps = deflection;
         _isInitS1 = false;
         _isInitS2 = false;
-        _flag = f;
-        _algo = a;
         _isMultiThread = false;
         LoadS1(shape1);
         LoadS2(shape2);
@@ -1162,12 +1140,6 @@ internal sealed class DistanceShapeShape
 
         static string F(double value) => StreamUtilities.FormatReal(value, 6);
     }
-
-    /// <summary>Sets an unused parameter (obsolete).</summary>
-    public void SetFlag(ExtFlag f) => _flag = f;
-
-    /// <summary>Sets an unused parameter (obsolete).</summary>
-    public void SetAlgo(ExtAlgo a) => _algo = a;
 
     /// <summary>Computes in parallel when true (the default is false).</summary>
     public void SetMultiThread(bool isMultiThread) => _isMultiThread = isMultiThread;

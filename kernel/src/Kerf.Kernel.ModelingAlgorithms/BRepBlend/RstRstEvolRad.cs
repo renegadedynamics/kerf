@@ -11,9 +11,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
-using static Kerf.Engine.Fillets.Blend.DecrochStatus;
-using static Kerf.Engine.Fillets.BlendFunctions.SectionShape;
 
 namespace Kerf.Engine.Fillets.Blend;
 
@@ -24,8 +21,6 @@ namespace Kerf.Engine.Fillets.Blend;
 /// <remarks>A working object (decision 21): it caches its last solution, which the walkers read.</remarks>
 internal class RstRstEvolRad : RstRstFunction
 {
-    private const double Eps = 1.0e-15;
-
     private readonly SurfaceAdaptorBase _surf1;
     private readonly SurfaceAdaptorBase _surf2;
     private readonly Curve2DAdaptorBase _rst1;

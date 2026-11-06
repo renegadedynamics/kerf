@@ -26,13 +26,13 @@ public static class TransformExtensions
     {
         /// <summary>A value by zero-based row and column; the fourth row is (0, 0, 0, 1).</summary>
         /// <exception cref="IndexOutOfRangeException">The row or column is outside 0 to 3.</exception>
-        public double At(int row, int col)
+        public double At(int row, int column)
         {
-            if (row is < 0 or > 3 || col is < 0 or > 3)
-                throw new IndexOutOfRangeException($"Out of bounds access into 4x4 matrix: ({row}, {col})");
+            if (row is < 0 or > 3 || column is < 0 or > 3)
+                throw new IndexOutOfRangeException($"Out of bounds access into 4x4 matrix: ({row}, {column})");
             if (row < 3)
-                return m[row + 1, col + 1];
-            return col == 3 ? 1.0 : 0.0;
+                return m[row + 1, column + 1];
+            return column == 3 ? 1.0 : 0.0;
         }
 
         /// <summary>This transformation followed by a rotation about an axis by an angle in degrees.</summary>

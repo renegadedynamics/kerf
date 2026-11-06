@@ -11,10 +11,8 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Globalization;
 using static Kerf.Geometry.Continuity;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Exchange.Brep;
 

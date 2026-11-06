@@ -10,7 +10,6 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.HiddenLines.Presentation;
 

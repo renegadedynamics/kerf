@@ -6,8 +6,6 @@ using Kerf.Engine.Geometry.Properties;
 
 using Kerf.Engine.Topology.Adaptors;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Topology.Properties;
 
 /// <summary>

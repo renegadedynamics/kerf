@@ -6,7 +6,6 @@
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Curves;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.TwoD;
 

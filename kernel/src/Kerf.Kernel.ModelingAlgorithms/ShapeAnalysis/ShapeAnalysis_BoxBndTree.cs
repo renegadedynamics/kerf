@@ -11,8 +11,6 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Healing.Extend.ExtendStatus;
 
 namespace Kerf.Engine.Healing.Analysis;
 

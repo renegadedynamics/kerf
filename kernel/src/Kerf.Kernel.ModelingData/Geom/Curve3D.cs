@@ -5,9 +5,6 @@
 
 using Kerf.Engine.Foundation;
 
-using Kerf.Geometry;
-using Kerf.Engine;
-
 namespace Kerf.Geometry;
 
 /// <summary>
@@ -17,7 +14,7 @@ namespace Kerf.Geometry;
 /// </summary>
 public abstract partial class Curve3D : Geometry3D
 {
-    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    /// <summary>Only the kernel derives from it.</summary>
     private protected Curve3D()
     {
     }

@@ -474,19 +474,19 @@ public sealed class FaceSurface
         return found;
     }
 
-    /// <summary>The partial derivative <paramref name="nu"/> times in u and <paramref name="nv"/> times in v (at least one
+    /// <summary>The partial derivative <paramref name="uOrder"/> times in u and <paramref name="vOrder"/> times in v (at least one
     /// in all) at (<paramref name="u"/>, <paramref name="v"/>), ignoring the face's orientation.</summary>
     /// <exception cref="ArgumentOutOfRangeException">An order is negative, or both are zero.</exception>
-    public Vector3D DerivativeN(double u, double v, int nu, int nv)
+    public Vector3D DerivativeN(double u, double v, int uOrder, int vOrder)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(nu);
-        ArgumentOutOfRangeException.ThrowIfNegative(nv);
-        if (nu + nv == 0)
+        ArgumentOutOfRangeException.ThrowIfNegative(uOrder);
+        ArgumentOutOfRangeException.ThrowIfNegative(vOrder);
+        if (uOrder + vOrder == 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(nu), "The orders can't both be zero.");
+            throw new ArgumentOutOfRangeException(nameof(uOrder), "The orders can't both be zero.");
         }
 
-        return _surface.EvalDN(u, v, nu, nv);
+        return _surface.EvalDN(u, v, uOrder, vOrder);
     }
 
     /// <summary>

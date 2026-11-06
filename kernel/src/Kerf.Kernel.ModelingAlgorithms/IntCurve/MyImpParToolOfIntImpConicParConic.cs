@@ -7,7 +7,6 @@ using Kerf.Engine.Intersection.Implicit;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Curves;
 

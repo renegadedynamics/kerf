@@ -9,9 +9,6 @@
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Exchange.Step.Geometry;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Framework.ParamType;
-using static Kerf.Engine.Exchange.Step.Visual.TextPath;
 
 namespace Kerf.Engine.Exchange.Step.Visual.ReadWrite;
 

@@ -1,6 +1,3 @@
-using Kerf.Geometry;
-using Kerf.Topology;
-
 namespace Kerf.Modeling;
 
 /// <summary>

@@ -7,7 +7,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Engine.Geometry.Objects;
-using Kerf.Geometry;
 using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
@@ -23,7 +22,7 @@ namespace Kerf.Geometry;
 /// OCCT returns its pole, weight and knot arrays by const reference. The port returns them to callers as
 /// <see cref="IReadOnlyList{T}"/> copies (<see cref="Poles"/>, <see cref="WeightsOrNull()"/>, ...), and gives ported
 /// code the arrays themselves through internal <c>Internal...()</c> accessors, which must not be modified
-/// (decision 131).
+///.
 /// </para>
 /// <para>
 /// <see cref="Resolution"/> caches a value in the curve, as in OCCT; on a shared (frozen) curve the cache is
@@ -43,7 +42,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
     /// <summary>True if an evaluation representation is attached.</summary>
     internal bool HasEvalRepresentation => _evalRep is not null;
 
-    /// <summary>The attached evaluation representation, or null. Internal: descriptors are mutable (decision 507).</summary>
+    /// <summary>The attached evaluation representation, or null. Internal: descriptors are mutable.</summary>
     internal RepCurveDesc2D.Base? EvalRepresentation() => _evalRep;
 
     /// <summary>Attaches an evaluation representation (null detaches it).</summary>
@@ -585,7 +584,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
     /// <summary>The poles (a copy; OCCT returns a reference to its array).</summary>
     public IReadOnlyList<Point2D> Poles => _poles.ToImmutableArray();
 
-    /// <summary>The pole array itself, indexed from 1, for ported code: don't modify it (decision 131).</summary>
+    /// <summary>The pole array itself, indexed from 1, for ported code: don't modify it.</summary>
     internal NCollection_Array1<Point2D> InternalPoles() => _poles;
 
     /// <summary>The first pole.</summary>
@@ -638,14 +637,14 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
     internal NCollection_Array1<double> InternalWeightsArray() => _weights;
 
     /// <summary>Applies T to the poles; the evaluation representation is dropped.</summary>
-    protected internal sealed override void Transform(in Transform2D t)
+    protected internal sealed override void Transform(in Transform2D transform)
     {
         CheckMutable();
         int nbpoles = PoleCount;
 
         for (int i = 1; i <= nbpoles; i++)
         {
-            _poles[i] = _poles[i].Transformed(t);
+            _poles[i] = _poles[i].Transformed(transform);
         }
 
         ClearEvalRepresentation();
@@ -773,10 +772,10 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
     // Non-mutating twins of the mutators (Kerf)
 
     /// <summary>A copy with its degree raised to Deg.</summary>
-    public BezierCurve2D Increased(int deg)
+    public BezierCurve2D Increased(int degree)
     {
         BezierCurve2D copy = new BezierCurve2D(this);
-        copy.Increase(deg);
+        copy.Increase(degree);
         return copy;
     }
 

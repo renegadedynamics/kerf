@@ -1,6 +1,4 @@
 using Kerf.Construction;
-using Kerf.Geometry;
-using Kerf.Topology;
 
 namespace Kerf.Modeling;
 
@@ -22,7 +20,7 @@ public static partial class EdgeExtensions
             get
             {
                 var type = self.GeomType;
-                var geom = self.GeomAdaptor();
+                var geom = self.AsCurve();
                 switch (type)
                 {
                     case GeomType.Circle:
@@ -51,18 +49,18 @@ public static partial class EdgeExtensions
         // ---- Curve parameters ----
 
         /// <summary>The kernel's curve of the edge (OCCT's <c>BRepAdaptor_Curve</c>), for evaluation and lengths.</summary>
-        public EdgeCurve GeomAdaptor()
+        public EdgeCurve AsCurve()
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("Can't find adaptor for empty edge");
             return self.ToCurve();
         }
 
-        internal ShapeCurve CurveOfEdge() => new(self.GeomAdaptor());
+        internal ShapeCurve CurveOfEdge() => new(self.AsCurve());
 
         internal (EdgeCurve Curve, double Param, bool Forward) OcctParamAtOfEdge(double position, PositionMode mode = PositionMode.Parameter)
         {
-            var curve = self.GeomAdaptor();
+            var curve = self.AsCurve();
             var length = curve.Length;
             bool forward = self.IsForward;
             double value;
@@ -326,8 +324,8 @@ public static partial class EdgeExtensions
                 return false;
             if (!self.PositionAt(0).IsNear(other.PositionAt(0)) || !self.PositionAt(1).IsNear(other.PositionAt(1)))
                 return false;
-            var ga1 = self.GeomAdaptor();
-            var ga2 = other.GeomAdaptor();
+            var ga1 = self.AsCurve();
+            var ga2 = other.AsCurve();
             switch (self.GeomType)
             {
                 case GeomType.Line:
@@ -585,7 +583,7 @@ public static partial class EdgeExtensions
         /// A helix of a given pitch, height and radius, on a cylinder or, with a cone <paramref name="angle"/> (degrees), on a cone.
         /// </summary>
         public static Edge MakeHelix(double pitch, double height, double radius, Point3D? center = null, Vector3D? normal = null,
-                                     double angle = 0.0, bool lefthand = false)
+                                     double angle = 0.0, bool leftHanded = false)
         {
             var c = (center ?? new Point3D(0, 0, 0));
             var n = (normal ?? new Vector3D(0, 0, 1)).ToDirection();
@@ -595,7 +593,7 @@ public static partial class EdgeExtensions
                 ? new CylindricalSurface(ax3, radius)
                 : new ConicalSurface(ax3, angle * Constants.DegToRad, radius);
             // A segment in the surface's (u, v) domain
-            var lineDir = new Vector3D((lefthand ? -1 : 1) * 2 * Math.PI, pitch, 0).Normalized();
+            var lineDir = new Vector3D((leftHanded ? -1 : 1) * 2 * Math.PI, pitch, 0).Normalized();
             var lineLength = height / lineDir.Y / Math.Cos(angle * Constants.DegToRad);
             var origin2d = new Point2D(0, 0);
             var dir2d = new Direction2D(lineDir.X, lineDir.Y);

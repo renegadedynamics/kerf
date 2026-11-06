@@ -10,7 +10,6 @@ using Kerf.Engine.Numerics;
 using Kerf.Engine.Numerics.Polynomials;
 
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Approximation.FiniteElements;
 

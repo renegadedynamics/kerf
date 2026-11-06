@@ -17,9 +17,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Framework.Selection.ReturnStatus;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Exchange.Step;
 

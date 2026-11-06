@@ -10,7 +10,6 @@ using Kerf.Engine.Meshing.Model;
 using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Geometry.IsoType;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;

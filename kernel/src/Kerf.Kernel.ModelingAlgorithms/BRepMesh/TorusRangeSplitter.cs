@@ -9,7 +9,6 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing.Tools;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Meshing;
 

@@ -8,7 +8,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Orientation;
 
 namespace Kerf.Engine.Classification.Hatching;
@@ -32,9 +31,6 @@ internal sealed class Elements2D : IFaceExplorer<CurveAdaptor2D>
     private readonly NCollection_IntDataMap<Element2D> _map = new();
     private readonly NCollection_IntDataMap<Element2D>.Iterator _iter = new();
     private int _numWire;
-#pragma warning disable CS0414 // OCCT resets the edge counter without reading it
-    private int _numEdge;
-#pragma warning restore CS0414
     private int _curEdge;
     private double _curEdgePar;
 
@@ -42,7 +38,6 @@ internal sealed class Elements2D : IFaceExplorer<CurveAdaptor2D>
     public Elements2D()
     {
         _numWire = 0;
-        _numEdge = 0;
         _curEdge = 1;
         _curEdgePar = Probing_Start;
     }
@@ -55,7 +50,6 @@ internal sealed class Elements2D : IFaceExplorer<CurveAdaptor2D>
     {
         _ = other; // OCCT ignores its argument: the copy is empty (occt-issues.md)
         _numWire = 0;
-        _numEdge = 0;
         _curEdge = 0;
         _curEdgePar = 0.0;
     }
@@ -217,7 +211,6 @@ internal sealed class Elements2D : IFaceExplorer<CurveAdaptor2D>
     /// <summary>Starts the exploration of the edges (the elements, in OCCT's map order).</summary>
     public void InitEdges()
     {
-        _numEdge = 0;
         _iter.Initialize(_map);
     }
 

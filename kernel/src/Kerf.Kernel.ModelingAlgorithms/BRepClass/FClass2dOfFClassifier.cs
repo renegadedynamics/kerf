@@ -8,7 +8,6 @@ using Kerf.Engine.Classification.Topological;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Classification;
@@ -20,7 +19,6 @@ namespace Kerf.Engine.Classification;
 /// <remarks>A working object (decision 21). The body is TopClass_Classifier2d's (decision 285).</remarks>
 internal class FClass2dOfFClassifier : IFClass2d<ClassifierEdge>
 {
-    private bool _isSet;
     private bool _firstCompare;
     private bool _firstTrans;
     private Line2D _lin = new();
@@ -35,7 +33,6 @@ internal class FClass2dOfFClassifier : IFClass2d<ClassifierEdge>
     /// <summary>An undefined classifier.</summary>
     public FClass2dOfFClassifier()
     {
-        _isSet = false;
         _firstCompare = true;
         _firstTrans = true;
         _param = 0.0;
@@ -58,7 +55,7 @@ internal class FClass2dOfFClassifier : IFClass2d<ClassifierEdge>
                                     out _firstCompare,
                                     out _firstTrans,
                                     out _closest,
-                                    out _isSet,
+                                    out _,
                                     out _isHeadOrEnd,
                                     l,
                                     p,

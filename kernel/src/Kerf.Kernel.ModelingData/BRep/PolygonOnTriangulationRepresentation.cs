@@ -6,7 +6,6 @@
 using Kerf.Engine.Meshing;
 
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Topology.Brep;
 

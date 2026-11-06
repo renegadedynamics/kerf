@@ -16,9 +16,6 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Healing.Extend.ExtendStatus;
-using static Kerf.Engine.Exchange.Step.Geometry.StepTransitionCode;
 
 namespace Kerf.Engine.Exchange.Step.Import;
 

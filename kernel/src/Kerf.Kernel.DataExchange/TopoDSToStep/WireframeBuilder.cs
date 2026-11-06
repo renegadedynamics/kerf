@@ -14,11 +14,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Step.Geometry.StepTrimmingPreference;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
-using static Kerf.Engine.Exchange.Step.Export.ExportBuilderError;
 
 namespace Kerf.Engine.Exchange.Step.Export;
 

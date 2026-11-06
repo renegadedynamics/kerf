@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Orientation;
 
 namespace Kerf.Engine.Classification.Hatching;

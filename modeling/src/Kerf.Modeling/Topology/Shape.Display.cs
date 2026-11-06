@@ -1,6 +1,4 @@
-using Kerf.Geometry;
 using Kerf.Measurement;
-using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using System.Text;
 

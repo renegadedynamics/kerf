@@ -6,7 +6,6 @@
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Geometry.Bvh;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Geometry.Bvh.Constants;
 using BVH_Vec3d = Kerf.Engine.NCollection_Vec3<double>;
 

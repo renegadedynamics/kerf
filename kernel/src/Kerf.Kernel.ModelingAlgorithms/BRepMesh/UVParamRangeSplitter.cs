@@ -7,8 +7,6 @@ using Kerf.Engine.Meshing.Model;
 
 using Kerf.Engine.Meshing.Tools;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Meshing;
 
 /// <summary>

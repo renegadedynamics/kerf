@@ -7,10 +7,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Geometry.SurfaceKind;
-using static Kerf.Engine.Intersection.Patches.PatchLineType;
-using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Intersection.Patches;

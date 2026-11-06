@@ -8,8 +8,6 @@
 
 using Kerf.Engine.Exchange.Step.Basic;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Step.Ap214;
 
 internal class AutoDesignSecurityClassificationAssignment : SecurityClassificationAssignment

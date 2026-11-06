@@ -8,7 +8,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Fillets.BlendFunctions;
 

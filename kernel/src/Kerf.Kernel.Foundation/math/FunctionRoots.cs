@@ -5,7 +5,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using Kerf.Engine;
 using System.Globalization;
 
 namespace Kerf.Engine.Numerics;
@@ -18,10 +17,7 @@ namespace Kerf.Engine.Numerics;
 internal class FunctionRoots
 {
     private const int Itmax = 100;
-    private const double Eps = 1e-14;
     private const double Epseps = 2e-14;
-    private const int Maxbis = 100;
-
     private bool _done;
     private bool _allNull;
     private readonly NCollection_Sequence<double> _sol = new();

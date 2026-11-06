@@ -17,12 +17,12 @@ public class PublicMemberTests
     public void Solids_keep_their_parameters()
     {
         var cone = new Cone(3, 1, 4, 360, new Rotation(0, 0, 0), new Alignment(Align.Center, Align.Center, Align.Min));
-        Assert.Equal((3.0, 1.0, 4.0, 360.0), (cone.BottomRadius, cone.TopRadius, cone.ConeHeight, cone.ArcSize));
+        Assert.Equal((3.0, 1.0, 4.0, 360.0), (cone.BottomRadius, cone.TopRadius, cone.Height, cone.ArcSize));
         Assert.Equal(new Alignment(Align.Center, Align.Center, Align.Min), cone.Align);
         Assert.Equal(Math.PI * 4 / 3 * (9 + 3 + 1), cone.Volume, 6);
 
         var cylinder = new Cylinder(2, 5);
-        Assert.Equal((2.0, 5.0, 360.0), (cylinder.Radius, cylinder.CylinderHeight, cylinder.ArcSize));
+        Assert.Equal((2.0, 5.0, 360.0), (cylinder.Radius, cylinder.Height, cylinder.ArcSize));
         Assert.Equal(Align.Center, cylinder.Align[0]);
 
         var sphere = new Sphere(2);
@@ -62,7 +62,7 @@ public class PublicMemberTests
     public void Sketches_keep_their_parameters()
     {
         var rectangle = new Rectangle(4, 2);
-        Assert.Equal((4.0, 2.0), (rectangle.Width, rectangle.RectangleHeight));
+        Assert.Equal((4.0, 2.0), (rectangle.Width, rectangle.Height));
         Assert.Equal(Align.Center, rectangle.Align[0]);
         Assert.Equal(8, rectangle.Area, 6);
 
@@ -77,17 +77,17 @@ public class PublicMemberTests
 
         Point3D[] points = [new(0, 0, 0), new(2, 0, 0), new(2, 2, 0), new(0, 2, 0)];
         var polygon = new Polygon(points, 0, MinAlign);
-        Assert.Equal(4, polygon.Pts.Count);
+        Assert.Equal(4, polygon.Points.Count);
         Assert.Equal(Align.Min, polygon.Align[0]);
         Assert.Equal(4, new Polygon(points).Area, 6);
 
         var trapezoid = new Trapezoid(4, 2, 80);
         Assert.Equal((4.0, 2.0, 80.0, 80.0),
-                     (trapezoid.Width, trapezoid.TrapezoidHeight, trapezoid.LeftSideAngle, trapezoid.RightSideAngle));
+                     (trapezoid.Width, trapezoid.Height, trapezoid.LeftSideAngle, trapezoid.RightSideAngle));
         Assert.Equal(Align.Center, trapezoid.Align[0]);
 
         // a 3-4-5 triangle
-        var triangle = new Triangle(a: 3, b: 4, c: 5);
+        var triangle = new Triangle(sideA: 3, sideB: 4, sideC: 5);
         Assert.Equal((3.0, 4.0, 5.0), (triangle.SideA, triangle.SideB, triangle.SideC));
         Assert.Equal(90, triangle.AngleC, 6);
         Assert.Equal(180, triangle.AngleA + triangle.AngleB + triangle.AngleC, 6);
@@ -109,24 +109,22 @@ public class PublicMemberTests
     public void Slots_keep_their_parameters()
     {
         var byCentres = new SlotCenterToCenter(4, 2);
-        Assert.Equal((4.0, 2.0), (byCentres.CenterSeparation, byCentres.SlotHeight));
+        Assert.Equal((4.0, 2.0), (byCentres.CenterSeparation, byCentres.Height));
         Assert.Equal(4 * 2 + Math.PI, byCentres.Area, 6);
 
         Edge line = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(4, 0, 0));
         var along = new SlotCurve(line, 2);
-        Assert.Equal(2, along.SlotHeight);
+        Assert.Equal(2, along.Height);
         Assert.Equal(4, ((Edge)along.Curve).Length, 6);
 
         Edge arc = Edge.MakeCircle(5, Plane.XY, 0, 90);
-        #pragma warning disable CS0618 // the deprecated form, still public
-        var onArc = new SlotArc(arc, 2);
-#pragma warning restore CS0618
-        Assert.Equal(Math.PI * 5 / 2, onArc.Arc.Length, 6);
+        var onArc = new SlotCurve(arc, 2);
+        Assert.Equal(Math.PI * 5 / 2, ((Edge)onArc.Curve).Length, 6);
 
         var byPoint = new SlotCenterPoint(new Point3D(0, 0, 0), new Point3D(2, 0, 0), 2);
         Check.Near(new Point3D(2, 0, 0), byPoint.Point);
         Check.Near(new Point3D(0, 0, 0), byPoint.SlotCenter);
-        Assert.Equal(2, byPoint.SlotHeight);
+        Assert.Equal(2, byPoint.Height);
     }
 
     [Fact]
@@ -255,7 +253,7 @@ public class PublicMemberTests
         var thicken = new Kerf.Modeling.Operations.ThickenOptions { Clean = true, NormalOverride = new Vector3D(0, 0, 1) };
         Assert.Equal(4, Thicken(square, 1, thicken).Value.Volume, 6);
 
-        Assert.Equal(4, Kerf.Measurement.MeasureOperations.IntegrateArea(OneD.OffsetTopodsFace(square, 0.1)), 6);
+        Assert.Equal(4, Kerf.Measurement.MeasureOperations.IntegrateArea(OneD.OffsetFace(square, 0.1)), 6);
     }
 
     [Fact]

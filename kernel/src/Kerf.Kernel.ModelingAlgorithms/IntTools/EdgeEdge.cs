@@ -15,10 +15,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Extrema.ExtFlag;
 using static Kerf.Geometry.CurveKind;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Intersection.Tools;
 
@@ -316,7 +313,7 @@ internal class EdgeEdge
             // and analytical curve. This code allows to define that edges have no
             // common parts more fast, then regular algorithm (FindSolution(...))
             // Check minimal distance between edges
-            DistanceShapeShape minDist = new(_edge1, _edge2, ExtFlag_MIN);
+            DistanceShapeShape minDist = new(_edge1, _edge2);
             if (minDist.IsDone)
             {
                 double d = minDist.Value();

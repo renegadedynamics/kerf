@@ -8,8 +8,6 @@ using Kerf.Engine.HiddenLines.Algorithm;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.HiddenLines.TypeOfResultingEdge;
 
 namespace Kerf.Engine.HiddenLines;
 

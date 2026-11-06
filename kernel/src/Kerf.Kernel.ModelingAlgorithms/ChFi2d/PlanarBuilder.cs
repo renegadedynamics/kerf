@@ -15,9 +15,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Engine.Fillets.Planar.ConstructionError;
-using static Kerf.Engine.Construction.Constraints.Qualifier;
 using static Kerf.Topology.Orientation;
 
 namespace Kerf.Engine.Fillets.Planar;
@@ -628,32 +626,6 @@ internal sealed partial class PlanarBuilder
             }
         }
         _newFace = mFace!.InternalFace();
-    }
-
-    //=================================================================================================
-
-    // Changes OldExtr of E1 by NewExtr.
-    private Edge BuildNewEdge(in Edge e1, in Vertex oldExtr, in Vertex newExtr)
-    {
-        var makeEdge = new LibraryMakeEdge();
-        double first, last;
-        Exploration.Vertices(e1, out Vertex firstVertex, out Vertex lastVertex);
-        //  syntaxe invalide sur NT
-        //      const occ::handle<Geom_Curve>& curve =
-        //	BRep_Tool::Curve(E1, first, last);
-        Curve3D? curve = Tool.Curve(e1, out first, out last);
-        if (firstVertex.IsSame(oldExtr))
-        {
-            makeEdge.Init(curve!, newExtr, lastVertex);
-        }
-        else
-        {
-            makeEdge.Init(curve!, firstVertex, newExtr);
-        }
-        Edge edge = makeEdge.InternalEdge();
-        edge.Orient(e1.Orientation);
-        //  anEdge.Location(E1.Location());
-        return edge;
     }
 
     //=======================================================================

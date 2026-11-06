@@ -6,8 +6,6 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry.Objects;
-using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Geometry;
 
@@ -20,22 +18,22 @@ public sealed class CircleCurve3D : ConicCurve3D
     private double _radius;
 
     /// <summary>A circle equal to C.</summary>
-    public CircleCurve3D(in Circle3D c)
+    public CircleCurve3D(in Circle3D circle)
     {
-        _radius = c.Radius;
-        _pos = c.Position;
+        _radius = circle.Radius;
+        _pos = circle.Position;
     }
 
     /// <summary>A circle of radius R placed by A2.</summary>
     /// <exception cref="ConstructionErrorException">R &lt; 0.</exception>
-    public CircleCurve3D(in Frame3D a2, double r)
+    public CircleCurve3D(in Frame3D frame, double r)
     {
         _radius = r;
         if (r < 0.0)
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
-        _pos = a2;
+        _pos = frame;
     }
 
     /// <summary>A new, unfrozen circle equal to this one.</summary>
@@ -117,19 +115,19 @@ public sealed class CircleCurve3D : ConicCurve3D
     }
 
     /// <summary>Applies T to this circle (the radius is scaled by |T.ScaleFactor()|).</summary>
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
-        _radius = _radius * Math.Abs(t.ScaleFactor);
-        _pos = _pos.Transformed(t);
+        _radius = _radius * Math.Abs(transform.ScaleFactor);
+        _pos = _pos.Transformed(transform);
     }
 
     // Non-mutating twins of the Set methods (Kerf)
 
-    public CircleCurve3D WithCirc(in Circle3D c)
+    public CircleCurve3D WithCircle(in Circle3D circle)
     {
         CircleCurve3D copy = (CircleCurve3D)Copy();
-        copy.SetCirc(c);
+        copy.SetCirc(circle);
         return copy;
     }
 

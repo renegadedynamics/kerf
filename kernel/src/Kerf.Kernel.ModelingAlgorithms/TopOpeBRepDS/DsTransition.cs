@@ -5,9 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Booleans.Legacy.Data;

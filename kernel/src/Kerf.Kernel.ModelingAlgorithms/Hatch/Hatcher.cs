@@ -7,8 +7,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Kerf.Engine;
-using static Kerf.Engine.Classification.Hatching.LineForm;
 
 namespace Kerf.Engine.Classification.Hatching;
 

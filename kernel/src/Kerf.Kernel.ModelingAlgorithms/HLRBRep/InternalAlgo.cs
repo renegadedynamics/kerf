@@ -9,7 +9,6 @@ using Kerf.Engine.HiddenLines.Topology;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Orientation;
 
 namespace Kerf.Engine.HiddenLines;
