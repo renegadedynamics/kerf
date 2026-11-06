@@ -3,9 +3,11 @@
 using Kerf.Booleans;
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
+using Kerf.Geometry;
 using Kerf.Topology;
 using System.Diagnostics;
 using System.Globalization;
@@ -28,6 +30,7 @@ public sealed record BooleanCase(string Group, string Name, string ArgsText, int
 /// <item><c>simple</c>: the corpus's <c>bopfuse_simple</c> grid (tools/pfrec's recording of its arguments, decision 785);</item>
 /// <item><c>complex</c>: the corpus's <c>bfuse_complex</c>, <c>bcut_complex</c> and <c>bcommon_complex</c> cases that restore
 /// two shapes from the public test data and run one Boolean on them.</item>
+/// <item><c>many</c>, only when the filter asks for it, so the rig's rows stay comparable: many tools at once.</item>
 /// </list>
 /// The arguments are frozen, as a caller's are. Each timing is a median after a warm-up. Run in Release:
 /// <c>-- booleans [filter]</c> (a filter on the group or the name), or <c>-- booleans-profile [filter]</c> for the time
@@ -53,6 +56,40 @@ public static class Booleans
         }
     }
 
+
+    /// <summary>
+    /// Many tools in one Boolean: a plate with 100 holes, and the corpus's bug25614_fuse, a fuse of 121 boxes with 100 cylinders.
+    /// </summary>
+    private static IEnumerable<BooleanCase> ManyCases()
+    {
+        static string Text(IEnumerable<Shape> theShapes)
+        {
+            var aWriter = new StringWriter();
+            BrepTools.Write(Builder.MakeCompound(theShapes), aWriter);
+            return aWriter.ToString();
+        }
+        var aPlate = new List<Shape> { new MakeBox(new Point3D(0, 0, -2), 110, 110, 4).Shape() };
+        var aBoxes = new List<Shape>();
+        var aCylinders = new List<Shape>();
+        for (int i = 0; i < 11; i++)
+        {
+            for (int j = 0; j < 11; j++)
+            {
+                aBoxes.Add(new MakeBox(new Point3D(i * 10, j * 10, -2), 10, 10, 4).Shape());
+            }
+        }
+        for (int i = 0; i < 10; i++)
+        {
+            for (int j = 0; j < 10; j++)
+            {
+                var aFrame = new Frame3D(new Point3D(10 + i * 10, 10 + j * 10, -5), new Direction3D(0, 0, 1));
+                aCylinders.Add(new ApiMakeCylinder(aFrame, 6, 10).Shape());
+                aPlate.Add(new ApiMakeCylinder(aFrame, 3, 10).Shape());
+            }
+        }
+        yield return new BooleanCase("many", "plate with 100 holes", Text(aPlate), 1, "Cut", 0, false, false);
+        yield return new BooleanCase("many", "121 boxes and 100 cylinders", Text(aBoxes.Concat(aCylinders)), 121, "Fuse", 0, false, false);
+    }
 
     /// <summary>The corpus's bopfuse_simple grid, from tools/pfrec's recording (every case's arguments as one compound).</summary>
     private static IEnumerable<BooleanCase> SimpleCases()
@@ -279,7 +316,7 @@ public static class Booleans
         Console.WriteLine("Medians in ms of the Boolean (its arguments frozen) and of Kerf.Modeling's clean of the result. "
                           + "The MB are allocated by one serial Boolean (and one clean).");
         var aTotals = new SortedDictionary<string, Totals>(StringComparer.Ordinal);
-        foreach (BooleanCase aCase in All())
+        foreach (BooleanCase aCase in theFilter == "many" ? ManyCases() : All())
         {
             if (theFilter is not null && !aCase.Group.Contains(theFilter, StringComparison.OrdinalIgnoreCase)
                 && !aCase.Name.Contains(theFilter, StringComparison.OrdinalIgnoreCase))

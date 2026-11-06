@@ -8,7 +8,8 @@
 //     the same mesh-and-extract under BenchmarkDotNet (in process, with its memory diagnoser);
 //   ... -- alloc [filter]: the types the port allocates;
 //   ... -- booleans [filter]: the Booleans suite (unit 6M, phase5-6-plan 2.9): the Boolean and Kerf.Modeling's clean,
-//     serial and parallel, with allocation, over the corpus's simple and complex grids (Booleans.cs); ...
+//     serial and parallel, with allocation, over the corpus's simple and complex grids (Booleans.cs); the filter many runs
+//     Booleans of many tools instead, which the rig doesn't; ...
 //     -- booleans-profile [filter]: the pave filler and the builder apart;
 //   ... -- healing [filter]: STEP import with its healing, ShapeFix_Shape, UnifySameDomain and STEP export on the
 //     dataset's STEP files (unit 10H4, Healing.cs);
