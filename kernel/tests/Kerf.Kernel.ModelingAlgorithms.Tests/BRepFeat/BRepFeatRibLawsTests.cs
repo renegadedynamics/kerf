@@ -269,8 +269,10 @@ public class BRepFeatRibLawsTests
         Curve3D aCircle = new CircleCurve3D(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20));
         Shape aFar = new MakeBox(new Point3D(15, -2, -1), 10, 4, 2).Shape(); // straddling angle 0
         Kerf.Engine.Features.BRepFeat.ParametricMinMax(aFar, aCircle, out double aMin, out double aMax, out _, out _, out _, true);
-        Assert.True(aMin <= aMax);
-        Assert.True(aMax - aMin <= (2 * Math.PI) + 1e-9, $"{aMin} to {aMax}");
+        // the circle starts inside the box, so it leaves first, which with its orientation read is the maximum: the range
+        // runs across angle 0
+        Assert.Equal(Math.Asin(0.1), aMax, 6);
+        Assert.Equal((2 * Math.PI) - Math.Asin(0.1), aMin, 6);
     }
 
     [Fact]
