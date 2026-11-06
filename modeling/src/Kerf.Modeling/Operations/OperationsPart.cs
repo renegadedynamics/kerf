@@ -345,9 +345,9 @@ public static partial class Operations
 
     /// <summary>
     /// The faces of the profiles revolved through <paramref name="revolutionArc"/> degrees about an axis (by default
-    /// Axis.Z). The axis is usually in the plane of the profile, but needn't be.
+    /// Axis.Z). The axis is usually in the plane of the profile, but needn't be. A whole number of turns is a full one.
     /// </summary>
-    /// <exception cref="ArgumentException">No profiles are given.</exception>
+    /// <exception cref="ArgumentException">No profiles are given, or the arc is zero.</exception>
     public static Result<Part> Revolve(IEnumerable<Shape> profiles, Axis? axis = null, double revolutionArc = 360.0, bool clean = true) =>
         Failures.Try(() => RevolveOrThrow(profiles, axis, revolutionArc, clean));
 
@@ -356,8 +356,10 @@ public static partial class Operations
         // Phase 5: in builder mode the profiles default to the pending faces, and the result is combined with mode
         var profileList = profiles?.ToList() ?? [];
 
-        // Make sure we account for users specifying angles larger than 360 degrees, and for OCCT not assuming that a
-        // 0 degree revolve means a 360 degree revolve
+        // A zero arc makes nothing: a whole number of turns makes one full turn, but it isn't one
+        if (revolutionArc == 0)
+            throw new ArgumentException("A revolve of no arc makes nothing.", nameof(revolutionArc));
+        // Make sure we account for users specifying angles larger than 360 degrees
         double sign = revolutionArc >= 0 ? 1 : -1;
         var angle = Numerics.FloorMod(revolutionArc, sign * 360.0);
         angle = angle == 0 ? sign * 360.0 : angle;

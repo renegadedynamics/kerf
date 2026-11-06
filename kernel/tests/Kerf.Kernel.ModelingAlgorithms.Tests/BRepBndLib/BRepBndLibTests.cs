@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Meshing;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
@@ -160,5 +162,126 @@ public class BRepBndLibTests
         Assert.Equal(1.5, aHalf[0], 1e-6);
         Assert.Equal(2.0, aHalf[1], 1e-6);
         Assert.Equal(2.0, aHalf[2], 1e-6);
+    }
+
+    private static void AssertBox(in Box theBox, double theXMin, double theYMin, double theZMin, double theXMax, double theYMax, double theZMax)
+    {
+        theBox.Get(out double a, out double b, out double c, out double d, out double e, out double f);
+        Assert.Equal(theXMin, a, 1.0e-5);
+        Assert.Equal(theYMin, b, 1.0e-5);
+        Assert.Equal(theZMin, c, 1.0e-5);
+        Assert.Equal(theXMax, d, 1.0e-5);
+        Assert.Equal(theYMax, e, 1.0e-5);
+        Assert.Equal(theZMax, f, 1.0e-5);
+    }
+
+    [Fact]
+    public void Optimal_box_from_a_mesh_leaves_out_the_tolerance_unless_asked()
+    {
+        // OCCT #1698: the face's tolerance was added whatever useShapeTolerance said
+        Shape aShape = new MakeBox(100, 50, 20).Shape();
+        aShape = new Kerf.Engine.Healing.Fixes.ShapeToleranceFixer().WithTolerance(aShape, 2.0, ShapeType.Face);
+        aShape = IncrementalMesh.Meshed(aShape, new global::Kerf.Engine.Meshing.Tools.ToolParameters { Deflection = 0.1 });
+        Box aPlain = new();
+        Bounds.AddOptimal(aShape, ref aPlain, true, false);
+        AssertBox(aPlain, 0, 0, 0, 100, 50, 20);
+        Box aWithTolerance = new();
+        Bounds.AddOptimal(aShape, ref aWithTolerance, true, true);
+        AssertBox(aWithTolerance, -2, -2, -2, 102, 52, 22);
+    }
+
+    [Fact]
+    public void Optimal_box_of_a_scaled_sphere_reaches_an_extreme_at_a_cell_centre()
+    {
+        // OCCT #1604: native 8.0.1 gives -19.8263 for x: the extreme is at the centre of a sampling cell
+        GeneralTransform3D aScale = new GeneralTransform3D().WithVectorialPart(new Matrix3x3(20, 0, 0, 0, 10, 0, 0, 0, 5));
+        Shape aShape = new GTransform(new MakeSphere(1.0).Shape(), aScale, true).Shape();
+        Box aBox = new();
+        Bounds.AddOptimal(aShape, ref aBox, false, false);
+        AssertBox(aBox, -20, -10, -5, 20, 10, 5);
+    }
+
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(15.0)]
+    [InlineData(45.0)]
+    [InlineData(90.0)]
+    public void Optimal_box_of_a_loft_holds_its_middle_section_however_it_is_turned(double theDegrees)
+    {
+        // OCCT #1679: native falls up to 0.044 short
+        static Wire Circle(double theRadius, double theZ)
+        {
+            var aWire = new MakeWire();
+            aWire.Add(new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, theZ), new Direction3D(0, 0, 1)), theRadius)).Edge());
+            return aWire.Wire();
+        }
+
+        var aLoft = new ThruSections(true, false);
+        aLoft.AddWire(Circle(10, 0));
+        aLoft.AddWire(Circle(30, 20));
+        aLoft.AddWire(Circle(10, 40));
+        aLoft.Build();
+        Transform3D aTurn = Transform3D.Rotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), theDegrees * Math.PI / 180);
+        Shape aShape = new Kerf.Engine.Construction.Api.Transform(aLoft.Shape(), aTurn, true).Shape();
+        Box aBox = new();
+        Bounds.AddOptimal(aShape, ref aBox, false, false);
+        AssertBox(aBox, -30, -30, 0, 30, 30, 40);
+    }
+
+    [Theory]
+    [InlineData(5.0)]
+    [InlineData(8.428571428571429)]
+    [InlineData(9.0)]
+    public void Area_inside_a_periodic_spline_does_not_depend_on_where_the_edge_starts(double theStart)
+    {
+        // OCCT #1685: the box of a pcurve's arc past the first period was trimmed to the period, so the face's bounds
+        // lost part of it, and the precise area was up to 2.7% short with an estimate of 1e-10.
+        int[,] aXY = { { 2, 0 }, { 4, 0 }, { 6, 2 }, { 6, 4 }, { 4, 6 }, { 2, 6 }, { 0, 4 }, { 0, 2 } };
+        var aPoles = new NCollection_Array1<Point3D>(1, 8);
+        for (int i = 1; i <= 8; ++i)
+        {
+            aPoles[i] = new Point3D(aXY[i - 1, 0], aXY[i - 1, 1], 0);
+        }
+
+        var aKnots = new NCollection_Array1<double>(1, 9);
+        var aMults = new NCollection_Array1<int>(1, 9);
+        for (int i = 1; i <= 9; ++i)
+        {
+            aKnots[i] = i - 1;
+            aMults[i] = 1;
+        }
+
+        var aCurve = new BSplineCurve3D(aPoles, aKnots, aMults, 5, true);
+        var aWire = new MakeWire();
+        aWire.Add(new MakeEdge(aCurve, theStart, theStart + 8).Edge());
+        Face aFace = new MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aWire.Wire()).Face();
+        var aProps = new Properties();
+        double anError = MassPropertiesBuilder.SurfaceProperties(aFace, aProps, 1.0e-10);
+        Assert.True(anError < 1.0e-9);
+        Assert.Equal(2596859.0 / 113400.0, aProps.Mass(), 1.0e-7);
+    }
+
+    [Fact]
+    public void Precise_volume_of_an_extruded_spline_refines_along_U()
+    {
+        // OCCT #1675: the precise path never refined along U, and left U's error out of its estimate of about 1e-16
+        Point3D[] aPts = [new(0, 4, 0), new(1, 5, 0), new(2, 4, 0), new(3, 5, 0), new(4, 4, 0)];
+        var aPoles = new NCollection_Array1<Point3D>(1, 5);
+        for (int i = 1; i <= 5; ++i)
+        {
+            aPoles[i] = aPts[i - 1];
+        }
+
+        NCollection_Array1<double> aKnots = NCollection_Array1<double>.From([0.0, 0.5, 1.0]);
+        NCollection_Array1<int> aMults = NCollection_Array1<int>.From([4, 1, 4]);
+        var aCurve = new BSplineCurve3D(aPoles, aKnots, aMults, 3);
+        var aWire = new MakeWire();
+        aWire.Add(new MakeEdge(aCurve).Edge());
+        aWire.Add(new MakeEdge(aPts[4], aPts[0]).Edge());
+        Face aFace = new MakeFace(aWire.Wire(), true).Face();
+        Shape aPrism = new ApiMakePrism(aFace, new Vector3D(0, 0, 2)).Shape();
+        var aProps = new Properties();
+        MassPropertiesBuilder.VolumeProperties(aPrism, aProps, 1.0e-9);
+        Assert.Equal(3.8, Math.Abs(aProps.Mass()), 1.0e-8);
     }
 }

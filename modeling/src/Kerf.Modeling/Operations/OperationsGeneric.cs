@@ -17,10 +17,10 @@ public static partial class Operations
     // ---- bounding_box ----
 
     /// <summary>
-    /// The bounding boxes of the objects: as rectangular faces (a Sketch) when every object is 2D, otherwise as boxes (a
-    /// Part), vertices being skipped.
+    /// The bounding boxes of the objects: as rectangular faces (a Sketch) where they are when every object is 2D and flat
+    /// along one of the world's axes, otherwise as boxes (a Part), vertices being skipped. No objects give an empty Sketch.
     /// </summary>
-    /// <exception cref="ArgumentException">No objects are given.</exception>
+    /// <exception cref="ArgumentException">An object that needs a box has no extent along an axis, as a straight edge has none.</exception>
     public static ModelShape BoundingBox(IEnumerable<Shape> objects)
     {
         // Phase 5: in builder mode the objects default to the builder's object and the boxes are combined with mode
@@ -31,21 +31,8 @@ public static partial class Operations
         if (objectList.Count > 0 && objectList.All(o => o.IsEmpty))
             return NothingOf(objectList[0].Dim);
 
-        if (objectList.All(o => o.Dim == 2))
-        {
-            var newFaces = new List<Shape>();
-            foreach (var obj in objectList)
-            {
-                var bbox = obj.Bounds();
-                Point3D[] vertices =
-                [
-                    new Point3D(bbox.Min.X, bbox.Min.Y, 0), new Point3D(bbox.Min.X, bbox.Max.Y, 0), new Point3D(bbox.Max.X, bbox.Max.Y, 0), new Point3D(bbox.Max.X, bbox.Min.Y, 0),
-                    new Point3D(bbox.Min.X, bbox.Min.Y, 0),
-                ];
-                newFaces.Add(Face.Make(Wire.MakePolygon(vertices)));
-            }
-            return new Sketch(newFaces);
-        }
+        if (objectList.All(o => o.Dim == 2 && IsFlat(o.Bounds())))
+            return new Sketch(objectList.Select(o => (Shape)Face.Make(Wire.MakePolygon(BoundsRectangle(o.Bounds())))).ToList());
 
         var newObjects = new List<Shape>();
         foreach (var obj in objectList)
@@ -53,9 +40,26 @@ public static partial class Operations
             if (obj.TryAs<Vertex>(out _))
                 continue;
             var bbox = obj.Bounds();
+            if (IsFlat(bbox))
+                throw new ArgumentException($"A box needs extent along every axis, and this {obj.ShapeType} has {bbox.Size.X} x {bbox.Size.Y} x {bbox.Size.Z}.");
             newObjects.Add(Solid.MakeBox(bbox.Size.X, bbox.Size.Y, bbox.Size.Z, new Plane(bbox.Min)));
         }
         return new Part(newObjects);
+    }
+
+    private static bool IsFlat(BoundingBox box) =>
+        box.Size.X <= Constants.Tolerance || box.Size.Y <= Constants.Tolerance || box.Size.Z <= Constants.Tolerance;
+
+    // The closed outline of a box flat along an axis, in the plane it lies in
+    private static Point3D[] BoundsRectangle(BoundingBox box)
+    {
+        Point3D a = box.Min, c = box.Max;
+        Point3D[] corners = box.Size.Z <= Constants.Tolerance
+            ? [new(a.X, a.Y, (a.Z + c.Z) / 2), new(a.X, c.Y, (a.Z + c.Z) / 2), new(c.X, c.Y, (a.Z + c.Z) / 2), new(c.X, a.Y, (a.Z + c.Z) / 2)]
+            : box.Size.Y <= Constants.Tolerance
+                ? [new(a.X, (a.Y + c.Y) / 2, a.Z), new(a.X, (a.Y + c.Y) / 2, c.Z), new(c.X, (a.Y + c.Y) / 2, c.Z), new(c.X, (a.Y + c.Y) / 2, a.Z)]
+                : [new((a.X + c.X) / 2, a.Y, a.Z), new((a.X + c.X) / 2, a.Y, c.Z), new((a.X + c.X) / 2, c.Y, c.Z), new((a.X + c.X) / 2, c.Y, a.Z)];
+        return [.. corners, corners[0]];
     }
 
     /// <inheritdoc cref="BoundingBox(IEnumerable{Shape})"/>
@@ -595,21 +599,13 @@ public static partial class Operations
     /// Points projected onto a workplane along its normal, in the workplane's local coordinates (build123d's
     /// <c>project</c> of points, which returns a list of vectors).
     /// </summary>
-    /// <exception cref="InvalidOperationException">The workplane is parallel to a projection axis.</exception>
     public static IReadOnlyList<Point3D> ProjectPoints(IEnumerable<Point3D> points, Plane workplane)
     {
         var projectedPoints = new List<Point3D>();
         foreach (var pnt in points)
         {
-            var pntToTarget = (workplane.Origin - pnt).Normalized();
-            var projectionAxis = workplane.FromLocalCoords(pntToTarget.ToPoint()).Z < 0
-                ? -new Axis(pnt, workplane.ZDir)
-                : new Axis(pnt, workplane.ZDir);
-            var intersection = workplane.Intersect(projectionAxis);
-            if (intersection is Axis)
-                throw new InvalidOperationException("The working plane and the projection axis are parallel.");
-            if (intersection is Point3D v)
-                projectedPoints.Add(workplane.ToLocalCoords(v));
+            var local = workplane.ToLocalCoords(pnt);
+            projectedPoints.Add(new Point3D(local.X, local.Y, 0));
         }
         return projectedPoints;
     }

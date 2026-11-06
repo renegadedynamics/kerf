@@ -24,8 +24,8 @@ internal class LeastSquare
     // OCCT's struct PeriodicityInfo, declared in AppCont_LeastSquare.hxx and used only here.
     private struct PeriodicityInfo
     {
-        public bool isPeriodic;
-        public double myPeriod;
+        public bool IsPeriodic;
+        public double Period;
     }
 
     private readonly MultiCurve _scu;
@@ -128,7 +128,7 @@ internal class LeastSquare
 
         for (int dimIdx = 1; dimIdx <= _nbP * 3 + _nbP2d * 2; dimIdx++)
         {
-            ssp.PeriodInformation(dimIdx, out _perInfo[dimIdx].isPeriodic, out _perInfo[dimIdx].myPeriod);
+            ssp.PeriodInformation(dimIdx, out _perInfo[dimIdx].IsPeriodic, out _perInfo[dimIdx].Period);
         }
 
         bool ok;
@@ -196,12 +196,12 @@ internal class LeastSquare
         int maxDim = 3 * _nbP + 2 * _nbP2d;
         for (int dimIdx = 1; dimIdx <= maxDim; dimIdx++)
         {
-            if (_perInfo[dimIdx].isPeriodic
-                && Math.Abs(_points[1, dimIdx] - _points[2, dimIdx]) > _perInfo[dimIdx].myPeriod / 2.01
-                && Math.Abs(_points[2, dimIdx] - _points[3, dimIdx]) < _perInfo[dimIdx].myPeriod / 2.01)
+            if (_perInfo[dimIdx].IsPeriodic
+                && Math.Abs(_points[1, dimIdx] - _points[2, dimIdx]) > _perInfo[dimIdx].Period / 2.01
+                && Math.Abs(_points[2, dimIdx] - _points[3, dimIdx]) < _perInfo[dimIdx].Period / 2.01)
             {
                 double periodMult = (_points[1, dimIdx] < _points[2, dimIdx]) ? 1.0 : -1.0;
-                double newParam = _points[1, dimIdx] + periodMult * _perInfo[dimIdx].myPeriod;
+                double newParam = _points[1, dimIdx] + periodMult * _perInfo[dimIdx].Period;
                 _points[1, dimIdx] = newParam;
             }
         }
@@ -209,11 +209,11 @@ internal class LeastSquare
         {
             for (int dimIdx = 1; dimIdx <= maxDim; dimIdx++)
             {
-                if (_perInfo[dimIdx].isPeriodic
-                    && Math.Abs(_points[pntIdx, dimIdx] - _points[pntIdx + 1, dimIdx]) > _perInfo[dimIdx].myPeriod / 2.01)
+                if (_perInfo[dimIdx].IsPeriodic
+                    && Math.Abs(_points[pntIdx, dimIdx] - _points[pntIdx + 1, dimIdx]) > _perInfo[dimIdx].Period / 2.01)
                 {
                     double periodMult = (_points[pntIdx, dimIdx] > _points[pntIdx + 1, dimIdx]) ? 1.0 : -1.0;
-                    double newParam = _points[pntIdx + 1, dimIdx] + periodMult * _perInfo[dimIdx].myPeriod;
+                    double newParam = _points[pntIdx + 1, dimIdx] + periodMult * _perInfo[dimIdx].Period;
                     _points[pntIdx + 1, dimIdx] = newParam;
                 }
             }
@@ -301,11 +301,11 @@ internal class LeastSquare
 
                 for (int dimIdx = 1; dimIdx <= maxDim; dimIdx++)
                 {
-                    if (_perInfo[dimIdx].isPeriodic
-                        && Math.Abs(_poles[1, dimIdx] - _points[1, dimIdx]) > _perInfo[dimIdx].myPeriod / 2.01)
+                    if (_perInfo[dimIdx].IsPeriodic
+                        && Math.Abs(_poles[1, dimIdx] - _points[1, dimIdx]) > _perInfo[dimIdx].Period / 2.01)
                     {
                         double mult = _poles[1, dimIdx] < _points[1, dimIdx] ? 1.0 : -1.0;
-                        _poles[1, dimIdx] += mult * _perInfo[dimIdx].myPeriod;
+                        _poles[1, dimIdx] += mult * _perInfo[dimIdx].Period;
                     }
                 }
             }
@@ -345,11 +345,11 @@ internal class LeastSquare
                 // checks all aMaxDim (occt-issues.md).
                 for (int dimIdx = 1; dimIdx <= 2; dimIdx++)
                 {
-                    if (_perInfo[dimIdx].isPeriodic
-                        && Math.Abs(_poles[classe, dimIdx] - _points[myNbPoints, dimIdx]) > _perInfo[dimIdx].myPeriod / 2.01)
+                    if (_perInfo[dimIdx].IsPeriodic
+                        && Math.Abs(_poles[classe, dimIdx] - _points[myNbPoints, dimIdx]) > _perInfo[dimIdx].Period / 2.01)
                     {
                         double mult = _poles[classe, dimIdx] < _points[myNbPoints, dimIdx] ? 1.0 : -1.0;
-                        _poles[classe, dimIdx] += mult * _perInfo[dimIdx].myPeriod;
+                        _poles[classe, dimIdx] += mult * _perInfo[dimIdx].Period;
                     }
                 }
             }

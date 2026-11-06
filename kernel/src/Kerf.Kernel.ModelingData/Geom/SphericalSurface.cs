@@ -23,7 +23,7 @@ public sealed class SphericalSurface : ElementarySurface
     public SphericalSurface(in CoordinateSystem position, double radius)
     {
         _radius = radius;
-        if (radius < 0.0)
+        if (!(radius >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -37,6 +37,7 @@ public sealed class SphericalSurface : ElementarySurface
         _pos = sphere.Position;
     }
 
+    /// <summary>A new surface with the same values, which can be changed independently of this one.</summary>
     public sealed override Geometry3D Copy()
     {
         SphericalSurface cs;
@@ -72,7 +73,7 @@ public sealed class SphericalSurface : ElementarySurface
     internal void SetRadius(double r)
     {
         CheckMutable();
-        if (r < 0.0)
+        if (!(r >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -233,6 +234,7 @@ public sealed class SphericalSurface : ElementarySurface
     /// <summary>The volume, 4 * PI * R**3 / 3.</summary>
     public double Volume => (4.0 * M_PI * _radius * _radius * _radius) / 3.0;
 
+    /// <inheritdoc/>
     protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();

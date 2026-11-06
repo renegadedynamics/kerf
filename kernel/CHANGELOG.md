@@ -10,12 +10,26 @@ version may break the API.
   vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 1652 and 1653).
 ## 0.3.0 (unreleased)
 
+- **Threads keep less memory between operations:** after Bento's examples in parallel, 72 MB on 51 threads became 20 MB on 53 threads, by lower limits on each thread's work sets and weak references for anything larger (decisions 1761 to 1763). Fillet sections, over-determined root searches and intersecting edges in healing allocate up to a third less on the cases that use them (decisions 1764 to 1766). Results are unchanged.
+- **Public lengths are true (a bug fix; results change):** `EdgeCurve`, `WireCurve` and `Curve3D`'s `Length`, `LengthBetween` and `ParameterAtLength`, `IntegrateLength` and `MassProperties(Dimension.Length)` were up to 1.5% out on uneven curves, as OCCT's are. The engine's own callers are unchanged (decision 1768). `Solid.Torus` refuses a minor circle reaching its axis (decision 1773). `LengthBetween`'s documents said a reversed range was negative: it never was, and they now say so.
+- **Large meshes are quicker, and meshing makes less garbage,** with the same triangles: about a tenth less processor time on large meshes, and 8% fewer bytes on Bento's examples with three quarters fewer full collections (decisions 1756, 1757 and 1759). `MaxFillet` takes about 20% less, and 2D offsets of B-splines about 8% (decisions 1755 and 1758).
+- **Fixes for OCCT's own defects (`docs/occt-defects.md`):** Booleans of cylinders about a degree from parallel no longer come out
+  empty. An optimal bounding box always holds its shape. Revolving an arc that ends on the axis gives a valid solid. A sweep
+  with a parallel guide stays exact. Areas and volumes asked for with a precision are right on periodic and swept faces, so a
+  few differ from before. A ring of concentric circles can be offset inward. Mirroring through a point now inverts correctly.
+  NaN is refused as a radius or an angle.
 - **No operation reports success for an invalid result (breaking).** Booleans, fillets, chamfers, offsets, sweeps, lofts, features and healing now
   check what they made and fail with `result.invalid`, saying what's wrong and naming the sub-shapes. `Result<T>.TryGetInvalid` gives the shape to a
   caller who wants to look at it; `Value` still throws. `CheckResult = false` on the options, or `checkResult: false`, leaves the check out. `Fix`'s
   warning `healing.not-fixed` is gone: it's this failure. `Validate` runs serially on small shapes. See `docs/api/README.md`, section 2.2 (decisions
   1742, 20101 to 20106).
 - **STEP export uses about a third less CPU and half the memory, and import with healing about 10% to 15% less CPU,** with the same output (measured on a loaded machine; decisions 1727 to 1731).
+- **Every public member of the kernel has XML docs,** including `Kerf.Geometry`'s value types, saying units, handedness and what
+  throws; a new one without docs fails the build (CS1591). The docs of `Kerf.Geometry` name the exception you actually catch.
+- **Tangent circles and root finders, fixes that change results:** a circle tangent to a curve through a point, with its
+  centre on a curve, is now solved rather than failing by chance, and one tangent to a circle and a curve with its centre
+  on a circle no longer throws. Bisection takes an end of its bracket that is already a root, where it returned the other
+  end. A distance field built in parallel gives the serial result (decisions 1749 to 1752).
 - **Fillets and chamfers, three fixes that change results:** the edges between a fillet and its faces are coded tangent,
   as in OCCT, so a draft can follow a fillet, and saved BRep files gain those lines. A fillet that runs past a Bezier or
   B-spline face puts the face on the surface it extended, where the result used to be invalid. A closed edge filleted

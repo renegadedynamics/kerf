@@ -18,9 +18,43 @@ internal static class ShapeTransforms
 
     internal static Transform3D Translation(Vector3D vector) => new Transform3D().WithTranslation(vector);
 
-    internal static Transform3D ScaleAbout(Point3D point, double factor) => new Transform3D().WithScale(point, factor);
+    internal static Transform3D ScaleAbout(Point3D point, double factor)
+    {
+        CheckScale(factor);
+        return new Transform3D().WithScale(point, factor);
+    }
 
-    internal static GeneralTransform3D ScaleMatrix(Vector3D factors, Point3D p) => GeneralTransform3D.FromValues(new double[,]
+    // A factor of zero collapses a shape to nothing that is still a shape of its kind
+    private static void CheckScale(double factor)
+    {
+        if (factor == 0 || !double.IsFinite(factor))
+            throw new ArgumentException($"A scale factor must be finite and not zero: this one is {factor}.");
+    }
+
+    // Zero is allowed only along an axis the shape has no extent on: a sketch in XY scaled by (2, 1, 0)
+    private static void CheckScale(Shape shape, Vector3D factors)
+    {
+        if (factors.X == 0 || factors.Y == 0 || factors.Z == 0)
+        {
+            Vector3D size = shape.Bounds().Size;
+            if (factors.X == 0 && size.X > Constants.Tolerance || factors.Y == 0 && size.Y > Constants.Tolerance || factors.Z == 0 && size.Z > Constants.Tolerance)
+                throw new ArgumentException($"A scale factor of zero would collapse this shape: {factors.X}, {factors.Y}, {factors.Z} on a size of {size.X}, {size.Y}, {size.Z}.");
+        }
+        if (factors.X != 0)
+            CheckScale(factors.X);
+        if (factors.Y != 0)
+            CheckScale(factors.Y);
+        if (factors.Z != 0)
+            CheckScale(factors.Z);
+    }
+
+    internal static GeneralTransform3D ScaleMatrix(Shape shape, Vector3D factors, Point3D p)
+    {
+        CheckScale(shape, factors);
+        return ScaleValues(factors, p);
+    }
+
+    private static GeneralTransform3D ScaleValues(Vector3D factors, Point3D p) => GeneralTransform3D.FromValues(new double[,]
     {
         { factors.X, 0, 0, p.X * (1 - factors.X) },
         { 0, factors.Y, 0, p.Y * (1 - factors.Y) },
@@ -171,7 +205,7 @@ public static class ShapeOperations
         /// Non-uniform scaling may turn the geometry into splines.
         /// </summary>
         public T Scale(Vector3D factors, Point3D? about = null) =>
-            shape.IsEmpty ? shape : shape.Narrowed(ShapeTransforms.TransformGeometry(shape.AsShape(), ShapeTransforms.ScaleMatrix(factors, about ?? shape.Location.Position)));
+            shape.IsEmpty ? shape : shape.Narrowed(ShapeTransforms.TransformGeometry(shape.AsShape(), ShapeTransforms.ScaleMatrix(shape.AsShape(), factors, about ?? shape.Location.Position)));
 
         /// <summary>
         /// A copy with an affine transform applied to its geometry. Handles stretch and skew, at the cost of sometimes
@@ -306,7 +340,7 @@ public static class ModelShapeOperations
         /// Non-uniform scaling may turn the geometry into splines.
         /// </summary>
         public T Scale(Vector3D factors, Point3D? about = null) =>
-            shape.IsEmpty ? shape : shape.TransformGeometry(ShapeTransforms.ScaleMatrix(factors, about ?? shape.Location.Position));
+            shape.IsEmpty ? shape : shape.TransformGeometry(ShapeTransforms.ScaleMatrix(shape.Shape, factors, about ?? shape.Location.Position));
 
         /// <summary>
         /// A copy with an affine transform applied to its geometry. Handles stretch and skew, at the cost of sometimes

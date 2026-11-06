@@ -36,11 +36,11 @@ internal sealed class CircleTool
     }
 
     /// <summary>An empty tool reserving room for <paramref name="reservedSize"/> circles.</summary>
-    public CircleTool(int reservedSize)
+    public CircleTool(int reservedSize, MeshWorkList<MeshCircle>? circles = null)
     {
         _tolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
         _cellFilter = new CellFilter<CircleInspector, int, Xy>(10.0);
-        _selector = new CircleInspector(_tolerance, Max(reservedSize, 64));
+        _selector = new CircleInspector(_tolerance, Max(reservedSize, 64), circles);
     }
 
     /// <summary>Resets the tolerance (OCCT ignores the reserved size).</summary>
@@ -60,6 +60,7 @@ internal sealed class CircleTool
         cellSize[1] = sizeX;
         cellSize[2] = sizeY;
         _cellFilter.Reset(cellSize);
+        _cellFilter.UseWindow(_faceMin, _faceMax);
     }
 
     /// <summary>Sets the limits of the face, to which the circles' extents are clipped.</summary>

@@ -52,8 +52,20 @@ internal static partial class BSplCLib
                                        || order > global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree() + 1
                                        || global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree() > 25,
                                      "BSplCLib: bspline degree is greater than maximum supported");
-        return new Matrix(1, derivativeRequest + 1, 1, order);
+        // A thread's matrix of each shape, zeroed as OCCT's buffer is: each evaluation fills and reads it with nothing else
+        // called in between, so it's never in use twice, and nothing crosses threads
+        Matrix?[] matrices = t_localMatrices ??= new Matrix?[28 * 28];
+        ref Matrix? matrix = ref matrices[(derivativeRequest + 1) * 28 + order];
+        if (matrix is null)
+        {
+            return matrix = new Matrix(1, derivativeRequest + 1, 1, order);
+        }
+        matrix.Init(0.0);
+        return matrix;
     }
+
+    [ThreadStatic]
+    private static Matrix?[]? t_localMatrices;
 
     /// <summary>
     /// Searches the position of <paramref name="x"/> in the increasing values <paramref name="array"/> by

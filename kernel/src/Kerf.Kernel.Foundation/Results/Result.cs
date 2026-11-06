@@ -167,7 +167,7 @@ public readonly struct Result<T>
     public static Result<T> Invalid(T invalid, ImmutableArray<Diagnostic> diagnostics) =>
         new(false, invalid, Diagnostic.Check(diagnostics, success: false), carriesInvalid: true);
 
-    /// <summary>A success.</summary>
+    /// <summary>A success holding <paramref name="value"/>.</summary>
     public static implicit operator Result<T>(T value) => new(true, value, []);
 
     /// <summary>The value or the error, for debugging.</summary>

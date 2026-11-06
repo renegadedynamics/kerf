@@ -27,7 +27,10 @@ public sealed record TorusOptions
     /// <summary>The whole torus.</summary>
     public static TorusOptions Default { get; } = new();
 
-    /// <summary>Where the minor circle starts.</summary>
+    /// <summary>
+    /// Where the minor circle starts. As in OCCT, part of a minor circle isn't a slice of the tube: it is the solid under
+    /// that arc, closed by flat discs from each end of it to the axis.
+    /// </summary>
     public double MinorStart { get; init; }
 
     /// <summary>Where the minor circle ends, up to <see cref="MinorStart"/> + 2π.</summary>

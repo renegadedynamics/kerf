@@ -619,11 +619,13 @@ public sealed class OffsetSurface : Surface
         return _basisSurf.IsCNv(n + 1);
     }
 
+    /// <summary>Whether the basis surface is periodic in U.</summary>
     public sealed override bool IsUPeriodic => _basisSurf.IsUPeriodic;
 
     /// <summary>The U period of the basis surface.</summary>
     public sealed override double UPeriod => _basisSurf.UPeriod;
 
+    /// <summary>Whether the basis surface is periodic in V.</summary>
     public sealed override bool IsVPeriodic => _basisSurf.IsVPeriodic;
 
     /// <summary>The V period of the basis surface.</summary>
@@ -792,7 +794,7 @@ public sealed class OffsetSurface : Surface
         if (theType == typeof(PlaneSurface))
         {
             PlaneSurface p = (PlaneSurface)Base;
-            // Plane normal is already available as Position().Direction().
+            // OCCT: goes the wrong way on an indirect frame; 71658f6c8f fixes it upstream, which isn't ported yet (occt-defects.md)
             Vector3D t = new Vector3D(p.Position.Direction);
             t *= _offsetValue;
             result = (PlaneSurface)p.Translated(t);

@@ -97,7 +97,7 @@ internal sealed class Scanner
     private void SetTypeArg(ParamType type) => _dataModel.SetTypeArg(type);
 
     /// <summary>
-    /// The next token (<see cref="StepParser.token"/>; 0 at the end of the input), with the scanner's actions
+    /// The next token (<see cref="StepParser.Token"/>; 0 at the end of the input), with the scanner's actions
     /// done (OCCT's <c>lex</c>, YY_DECL).
     /// </summary>
     internal int Lex()
@@ -212,7 +212,7 @@ internal sealed class Scanner
                             _start = Initial;
                             CreateNewText(_textStart, p + 1);
                             SetTypeArg(ParamType.ParamText);
-                            return StepParser.token.QUID;
+                            return StepParser.Token.QUID;
                         }
 
                         // 7: <Text>['], yymore
@@ -288,7 +288,7 @@ internal sealed class Scanner
                     _pos = p + 1;
                     CreateNewText(p, p + 1);
                     SetTypeArg(ParamType.ParamVoid);
-                    return StepParser.token.QUID;
+                    return StepParser.Token.QUID;
                 case '=':
                     _pos = p + 1;
                     return '=';
@@ -314,7 +314,7 @@ internal sealed class Scanner
                     for (d = Peek(j); d == ' ' || d == '\t'; d = Peek(++j)) { }
                     _pos = i;
                     CreateNewText(p, i);
-                    return d == '=' ? StepParser.token.ENTITY : StepParser.token.IDENT;
+                    return d == '=' ? StepParser.Token.ENTITY : StepParser.Token.IDENT;
                 }
                 case '"':
                 {
@@ -333,7 +333,7 @@ internal sealed class Scanner
                     _pos = i + 1;
                     CreateNewText(p, i + 1);
                     SetTypeArg(ParamType.ParamHexa);
-                    return StepParser.token.QUID;
+                    return StepParser.Token.QUID;
                 }
                 case '&':
                 {
@@ -341,7 +341,7 @@ internal sealed class Scanner
                     if (MatchWord(p + 1, "SCOPE") == p + 6)
                     {
                         _pos = p + 6;
-                        return StepParser.token.SCOPE;
+                        return StepParser.Token.SCOPE;
                     }
 
                     return Misc(p);
@@ -362,7 +362,7 @@ internal sealed class Scanner
 
                     _pos = i;
                     CreateNewText(p, i);
-                    return StepParser.token.TYPE;
+                    return StepParser.Token.TYPE;
                 }
             }
 
@@ -381,7 +381,7 @@ internal sealed class Scanner
         _pos = p + 1;
         CreateNewText(p, p + 1);
         SetTypeArg(ParamType.ParamMisc);
-        return StepParser.token.QUID;
+        return StepParser.Token.QUID;
     }
 
     /// <summary>
@@ -572,37 +572,37 @@ internal sealed class Scanner
             case 18:
                 CreateNewText(p, p + aLen);
                 SetTypeArg(ParamType.ParamInteger);
-                return StepParser.token.QUID;
+                return StepParser.Token.QUID;
             case 19:
             case 20:
                 CreateNewText(p, p + aLen);
                 SetTypeArg(ParamType.ParamReal);
-                return StepParser.token.QUID;
+                return StepParser.Token.QUID;
             case 22:
                 CreateNewText(p, p + aLen);
                 SetTypeArg(ParamType.ParamEnum);
-                return StepParser.token.QUID;
+                return StepParser.Token.QUID;
             case 29:
             case 36:
-                return StepParser.token.STEP;
+                return StepParser.Token.STEP;
             case 30:
-                return StepParser.token.HEADER;
+                return StepParser.Token.HEADER;
             case 31:
-                return StepParser.token.ENDSEC;
+                return StepParser.Token.ENDSEC;
             case 32:
-                return StepParser.token.DATA;
+                return StepParser.Token.DATA;
             case 33:
             case 34:
-                return StepParser.token.ENDSTEP;
+                return StepParser.Token.ENDSTEP;
             case 35:
                 // at the end of the STEP data, the dedicated start condition End skips everything that follows
                 _start = End;
-                return StepParser.token.ENDSTEP;
+                return StepParser.Token.ENDSTEP;
             case 39:
-                return StepParser.token.ENDSCOPE;
+                return StepParser.Token.ENDSCOPE;
             case 40:
                 CreateNewText(p, p + aLen);
-                return StepParser.token.TYPE;
+                return StepParser.Token.TYPE;
             default:
                 return Misc(p);
         }

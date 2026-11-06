@@ -49,7 +49,7 @@ internal class PrinterToReport : Printer
             SendMetricAlert(stream.ToString(), gravity);
             return;
         }
-        if (HasChildKey(stream.ToString()))
+        if (HasChildKey())
         {
             AlertExtended.AddAlert(report, new AttributeStream(stream.ToString(), _name), gravity);
             _name = "";
@@ -105,5 +105,5 @@ internal class PrinterToReport : Printer
     }
 
     // Standard_Dump::HasChildKey: true for the text of a DumpJson, which the port doesn't write.
-    private static bool HasChildKey(string sourceValue) => false;
+    private static bool HasChildKey() => false;
 }

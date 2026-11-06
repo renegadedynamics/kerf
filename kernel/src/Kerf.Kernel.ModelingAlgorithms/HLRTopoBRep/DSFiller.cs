@@ -67,7 +67,7 @@ internal static class DSFiller
                 {
                     if (!fo.IsEmpty)
                     {
-                        InsertFace(f, s1, fo, ds, withPCurve);
+                        InsertFace(s1, fo, ds, withPCurve);
                     }
                 }
 
@@ -82,7 +82,7 @@ internal static class DSFiller
     }
 
     /// <summary>Builds the edges of the contours of F and records them as F's outlines and internal outlines.</summary>
-    private static void InsertFace(int fi, in Face f, Contour fo, TopologyData ds, bool withPCurve)
+    private static void InsertFace(in Face f, Contour fo, TopologyData ds, bool withPCurve)
     {
         double tol = Tool.Tolerance(f);
         NCollection_List<Shape> intL = ds.AddIntL(f);

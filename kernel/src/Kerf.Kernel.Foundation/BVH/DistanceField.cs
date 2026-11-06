@@ -119,6 +119,14 @@ internal class DistanceField<T, TVec>
         voxelSize[1] = (cornerMax[1] - cornerMin[1]) / T.CreateTruncating(_dimensionY);
         voxelSize[2] = (cornerMax[2] - cornerMin[2]) / T.CreateTruncating(_dimensionZ);
 
+        // Kerf: the trees are built here, not by the first slice to ask: building one reorders its elements, under any
+        // other slice reading them (decision 1752). OCCT builds them on the slices' threads
+        _ = geometry.BVH();
+        foreach (global::Kerf.Engine.Geometry.Bvh.Object<T, TVec>? anObject in geometry.Objects())
+        {
+            _ = (anObject as Triangulation<T, TVec>)?.BVH();
+        }
+
         // OSD_Parallel::For(0, myDimensionZ, BVH_ParallelDistanceFieldBuilder, !IsParallel())
         OsdParallel.For(0, _dimensionZ, index => BuildSlices(geometry, index, index + 1), !IsParallel);
 

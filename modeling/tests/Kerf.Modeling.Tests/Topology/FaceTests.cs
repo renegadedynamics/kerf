@@ -384,7 +384,7 @@ public class FaceTests
         var bbox = surface.Bounds();
         Check.AlmostEqual(new Point3D(-1, -1, 0), bbox.Min, 3);
         Check.AlmostEqual(new Point3D(1, 1, 1), bbox.Max, 1);
-        Assert.True(bbox.Max.Z < 1.0);
+        Assert.True(bbox.Max.Z < 1.0 + 1.0e-6); // the true maximum, at the centre, is 1: OCCT's box fell short (#1604, decision 1777)
 
         double[][] weights =
         [.. Enumerable.Range(-1, 3).Select(y => Enumerable.Range(-1, 3).Select(x => x == 0 || y == 0 ? 2.0 : 1.0).ToArray())];

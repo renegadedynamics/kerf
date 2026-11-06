@@ -13,30 +13,31 @@ namespace Kerf.Geometry;
 /// parameterised by <c>P(U) = O + U^2 / (4 * F) * XDir + U * YDir</c>.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Parab()</c> is OCCT's indefinite parabola (focal length <see cref="Standard.RealLast"/>);
-/// <c>default(gp_Parab)</c> is not valid.
+/// <c>new Parabola3D()</c> is OCCT's indefinite parabola (focal length <c>double.MaxValue</c>);
+/// <c>default(Parabola3D)</c> is not valid.
 /// </remarks>
 public readonly partial struct Parabola3D : IEquatable<Parabola3D>
 {
     private readonly Frame3D _pos;
     private readonly double _focalLength;
 
+    /// <summary>An indefinite parabola with a focal length of <c>double.MaxValue</c>, not a useful value until given one.</summary>
     public Parabola3D()
     {
         _pos = new Frame3D();
         _focalLength = RealLast();
     }
 
-    /// <exception cref="ConstructionErrorException"><paramref name="focal"/> is negative.</exception>
+    /// <exception cref="ArgumentException"><paramref name="focal"/> is negative.</exception>
     public Parabola3D(in Frame3D frame, double focal)
     {
         _pos = frame;
         _focalLength = focal;
-        Refusal.ArgumentIf(focal < 0.0, FailureKind.ConstructionError, "gp_Parab() - focal length should be >= 0");
+        Refusal.ArgumentIf(!(focal >= 0.0), FailureKind.ConstructionError, "gp_Parab() - focal length should be >= 0");
     }
 
     /// <summary>The parabola with directrix <paramref name="directrix"/> and focus <paramref name="focus"/>.</summary>
-    /// <exception cref="ConstructionErrorException"><paramref name="focus"/> is on <paramref name="directrix"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="focus"/> is on <paramref name="directrix"/>.</exception>
     public Parabola3D(in Axis3D directrix, in Point3D focus)
     {
         Line3D droite = new(directrix);
@@ -53,6 +54,7 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
 
     // Copies
 
+    /// <summary>A copy whose main axis is <paramref name="axis"/>. The old X direction is projected on to the new XY plane; if it is parallel to the axis, the old directions swap roles instead.</summary>
     public readonly Parabola3D WithAxis(in Axis3D axis)
     {
         Frame3D pos = _pos;
@@ -60,14 +62,17 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
         return new Parabola3D(pos, _focalLength);
     }
 
+    /// <summary>A copy with this focal length.</summary>
+    /// <exception cref="ArgumentException"><paramref name="focal"/> is negative.</exception>
     public readonly Parabola3D WithFocal(double focal)
     {
         double focalLength = _focalLength;
-        Refusal.ArgumentIf(focal < 0.0, FailureKind.ConstructionError, "gp_Parab::SetFocal() - focal length should be >= 0");
+        Refusal.ArgumentIf(!(focal >= 0.0), FailureKind.ConstructionError, "gp_Parab::SetFocal() - focal length should be >= 0");
         focalLength = focal;
         return new Parabola3D(_pos, focalLength);
     }
 
+    /// <summary>A copy moved so that its apex is <paramref name="point"/>; its directions stay.</summary>
     public readonly Parabola3D WithLocation(in Point3D point)
     {
         Frame3D pos = _pos;
@@ -75,6 +80,7 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
         return new Parabola3D(pos, _focalLength);
     }
 
+    /// <summary>A copy positioned by <paramref name="frame"/>, keeping its size.</summary>
     public readonly Parabola3D WithPosition(in Frame3D frame)
     {
         Frame3D pos = _pos;
@@ -104,6 +110,7 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
     /// <summary>The distance between the apex and the focus.</summary>
     public readonly double Focal => _focalLength;
 
+    /// <summary>The focus, at the focal length from the apex along the X axis.</summary>
     public readonly Point3D Focus
     {
         get
@@ -122,13 +129,16 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
     /// <summary>The distance between the focus and the directrix: twice the focal length.</summary>
     public readonly double Parameter => 2.0 * _focalLength;
 
+    /// <summary>The frame the curve lies in: its main direction is the plane's normal, and its X direction is parameter 0's.</summary>
     public readonly Frame3D Position => _pos;
 
     /// <summary>The axis of symmetry.</summary>
     public readonly Axis3D XAxis => new(_pos.Location, _pos.XDirection);
 
+    /// <summary>The axis through the apex parallel to the directrix.</summary>
     public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
+    /// <summary>The central symmetry through <paramref name="point"/>.</summary>
     public readonly Parabola3D Mirrored(in Point3D point)
     {
         Frame3D pos = _pos;
@@ -136,6 +146,7 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
         return new Parabola3D(pos, _focalLength);
     }
 
+    /// <summary>The half-turn about <paramref name="axis"/>.</summary>
     public readonly Parabola3D Mirrored(in Axis3D axis)
     {
         Frame3D pos = _pos;
@@ -143,6 +154,7 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
         return new Parabola3D(pos, _focalLength);
     }
 
+    /// <summary>The reflection in the XY plane of <paramref name="frame"/>.</summary>
     public readonly Parabola3D Mirrored(in Frame3D frame)
     {
         Frame3D pos = _pos;
@@ -150,6 +162,7 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
         return new Parabola3D(pos, _focalLength);
     }
 
+    /// <summary>Rotated about <paramref name="axis"/> by <paramref name="angle"/> radians, anticlockwise looking against the axis's direction.</summary>
     public readonly Parabola3D Rotated(in Axis3D axis, double angle)
     {
         Frame3D pos = _pos;
@@ -157,6 +170,7 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
         return new Parabola3D(pos, _focalLength);
     }
 
+    /// <summary>Scaled about <paramref name="point"/> by <paramref name="factor"/>: the focal length is multiplied by |factor|.</summary>
     public readonly Parabola3D Scaled(in Point3D point, double factor)
     {
         Frame3D pos = _pos;
@@ -171,6 +185,7 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
         return new Parabola3D(pos, focalLength);
     }
 
+    /// <summary>The image under <paramref name="transform"/>: the focal length is multiplied by |ScaleFactor|.</summary>
     public readonly Parabola3D Transformed(in Transform3D transform)
     {
         Frame3D pos = _pos;
@@ -185,6 +200,7 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
         return new Parabola3D(pos, focalLength);
     }
 
+    /// <summary>Moved by <paramref name="vector"/>.</summary>
     public readonly Parabola3D Translated(in Vector3D vector)
     {
         Frame3D pos = _pos;
@@ -192,6 +208,7 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
         return new Parabola3D(pos, _focalLength);
     }
 
+    /// <summary>Moved by the vector from <paramref name="point1"/> to <paramref name="point2"/>.</summary>
     public readonly Parabola3D Translated(in Point3D point1, in Point3D point2)
     {
         Frame3D pos = _pos;
@@ -199,15 +216,21 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
         return new Parabola3D(pos, _focalLength);
     }
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(Parabola3D other) => _pos.Equals(other._pos) && _focalLength.Equals(other._focalLength);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="Parabola3D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is Parabola3D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => HashCode.Combine(_pos, _focalLength);
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in Parabola3D left, in Parabola3D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in Parabola3D left, in Parabola3D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => FormattableString.Invariant($"Parabola3D({_pos}, {_focalLength:R})");
 }

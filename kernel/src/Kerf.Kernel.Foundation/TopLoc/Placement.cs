@@ -162,12 +162,14 @@ public readonly partial struct Placement : IEquatable<Placement>
         return new Placement(result);
     }
 
+    /// <summary>The composition, as <see cref="Multiplied"/>.</summary>
     public static Placement operator *(in Placement left, in Placement right)
         => left.Multiplied(right);
 
     /// <summary><c>this * Other.Inverted()</c>.</summary>
     public readonly Placement Divided(in Placement other) => Multiplied(other.Inverted());
 
+    /// <summary>This placement composed with the other's inverse, as <see cref="Divided"/>.</summary>
     public static Placement operator /(in Placement left, in Placement right)
         => left.Divided(right);
 
@@ -334,8 +336,9 @@ public readonly partial struct Placement : IEquatable<Placement>
     /// <summary>True unless both placements have exactly the same transformation.</summary>
     public static bool operator !=(in Placement left, in Placement right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString()
-        => IsIdentity ? "TopLoc_Location(Identity)" : $"TopLoc_Location({Transformation})";
+        => IsIdentity ? "Placement(Identity)" : $"Placement({Transformation})";
 }
 
 /// <summary>

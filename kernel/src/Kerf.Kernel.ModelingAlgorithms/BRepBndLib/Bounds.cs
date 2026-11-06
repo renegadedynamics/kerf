@@ -236,8 +236,8 @@ internal static partial class Bounds
             Box locBox = new();
             if (useTriangulation && t is not null && t.MinMax(ref locBox, l.Transformation))
             {
-                //       B.Enlarge(T->Deflection());
-                locBox.Enlarge(t.Deflection() + Tool.Tolerance(f));
+                // OCCT adds the face's tolerance whatever useShapeTolerance says (#1698, decision 1779)
+                locBox.Enlarge(t.Deflection() + (useShapeTolerance ? Tool.Tolerance(f) : 0.0));
                 locBox.Get(out double xmin, out double ymin, out double zmin, out double xmax, out double ymax, out double zmax);
                 b.Update(xmin, ymin, zmin, xmax, ymax, zmax);
             }

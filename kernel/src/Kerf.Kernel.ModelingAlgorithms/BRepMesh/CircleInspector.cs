@@ -4,7 +4,6 @@
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
-using System.Runtime.InteropServices;
 using static Kerf.Engine.Collections.CellFilterAction;
 
 namespace Kerf.Engine.Meshing;
@@ -14,11 +13,11 @@ namespace Kerf.Engine.Meshing;
 /// point within a tolerance.
 /// </summary>
 /// <remarks>A working object, as OCCT's (the allocator argument is dropped).</remarks>
-internal sealed class CircleInspector : ICellFilterInspector<int, Xy>
+internal struct CircleInspector : ICellFilterInspector<int, Xy>
 {
     private readonly double _sqTolerance;
     private readonly List<int> _resIndices;
-    private readonly List<MeshCircle> _circles;
+    private readonly MeshWorkList<MeshCircle> _circles;
     private Xy _point;
 
     public static int Dimension => 2;
@@ -31,11 +30,12 @@ internal sealed class CircleInspector : ICellFilterInspector<int, Xy>
 
     /// <summary>An inspector with the given linear tolerance, reserving room for <paramref name="reservedSize"/>
     /// circles.</summary>
-    public CircleInspector(double tolerance, int reservedSize)
+    public CircleInspector(double tolerance, int reservedSize, MeshWorkList<MeshCircle>? circles = null)
     {
         _sqTolerance = tolerance * tolerance;
         _resIndices = [];
-        _circles = new List<MeshCircle>(reservedSize);
+        _circles = circles ?? new MeshWorkList<MeshCircle>(reservedSize);
+        _circles.EnsureCapacity(reservedSize);
     }
 
     /// <summary>Binds the circle to the index.</summary>
@@ -45,10 +45,10 @@ internal sealed class CircleInspector : ICellFilterInspector<int, Xy>
     }
 
     /// <summary>The circles, by index.</summary>
-    public List<MeshCircle> Circles() => _circles;
+    public MeshWorkList<MeshCircle> Circles() => _circles;
 
     /// <summary>The circle of the given index, for writing.</summary>
-    public ref MeshCircle Circle(int index) => ref CollectionsMarshal.AsSpan(_circles)[index];
+    public ref MeshCircle Circle(int index) => ref _circles[index];
 
     /// <summary>Sets the point to inspect and clears the result.</summary>
     public void SetPoint(in Xy point)

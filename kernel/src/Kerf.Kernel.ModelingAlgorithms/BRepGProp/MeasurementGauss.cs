@@ -268,8 +268,9 @@ internal sealed class MeasurementGauss
     {
         private static readonly int NbGaussPoint = RealToInt(Math.Ceiling(ERROR_ALGEBR_RATIO * Gpm));
 
+        // Only held weakly, as it's used rarely and is large: a thread never pins it for its life
         [ThreadStatic]
-        private static GaussWork? t_spare;
+        private static WeakReference<GaussWork>? t_spare;
 
         public readonly NCollection_Array1<Inertia> InertiaL = new(1, Sm), InertiaU = new(1, Sm);
         public readonly math_Vector[] LGaussP = Pair(), LGaussW = Pair(), UGaussP = Pair(), UGaussW = Pair();
@@ -280,12 +281,12 @@ internal sealed class MeasurementGauss
 
         public static GaussWork Rent()
         {
-            GaussWork? work = t_spare;
-            t_spare = null; // A computation inside a computation takes its own
-            if (work is null)
+            GaussWork? work = null;
+            if (t_spare is null || !t_spare.TryGetTarget(out work))
             {
                 return new GaussWork();
             }
+            t_spare.SetTarget(null!); // A computation inside a computation takes its own
 
             work.InertiaL.AsSpan().Clear();
             work.InertiaU.AsSpan().Clear();
@@ -297,7 +298,17 @@ internal sealed class MeasurementGauss
             return work;
         }
 
-        public static void Return(GaussWork work) => t_spare = work;
+        public static void Return(GaussWork work)
+        {
+            if (t_spare is null)
+            {
+                t_spare = new WeakReference<GaussWork>(work);
+            }
+            else
+            {
+                t_spare.SetTarget(work);
+            }
+        }
     }
 
     private static int FillIntervalBounds(double a,
@@ -883,7 +894,9 @@ internal sealed class MeasurementGauss
                                             {
                                                 local.Clear();
                                                 int iUS = uRange[kU];
-                                                int length = iGLEnd - iGL;
+                                                // OCCT runs the second order on the first L order's pass only, and
+                                                // never refines U, so the estimate misses U's error (OCCT #1675, decision 1784)
+                                                int length = iGLEnd;
 
                                                 double um = 0.5 * (U2.Value(iUS) + U1.Value(iUS));
                                                 double ur = 0.5 * (U2.Value(iUS) - U1.Value(iUS));
@@ -936,6 +949,11 @@ internal sealed class MeasurementGauss
                                                     ui.Izz = MultCore(local[0].Izz, ur);
                                                 }
 
+                                                if (iGLEnd == 2)
+                                                {
+                                                    errU.Value(iUS) = MultCore(Math.Abs(local[1].Mass - local[0].Mass), ur);
+                                                }
+
                                                 if (iGL > 0)
                                                 {
                                                     continue;
@@ -976,10 +994,21 @@ internal sealed class MeasurementGauss
                                             }
                                         }
 
-                                        if (ju == iUSubEnd)
+                                        if (ju >= iUSubEnd)
                                         {
                                             kUEnd = 2;
                                             errorU = errU.Value(MaxOfWritten(errU, writtenU));
+                                            if (iGLEnd == 2)
+                                            {
+                                                // U's tolerance from the requested one and the strip's value, as L's
+                                                double strip = 0.0;
+                                                for (i = 1; i <= ju; ++i)
+                                                {
+                                                    strip += inertiaU.Value(i).Mass;
+                                                }
+
+                                                epsU = 0.9 * Math.Abs(strip * epsilon);
+                                            }
                                         }
                                     } while ((errorU - epsU > 0.0 && epsU != 0.0) || kUEnd == 1);
 

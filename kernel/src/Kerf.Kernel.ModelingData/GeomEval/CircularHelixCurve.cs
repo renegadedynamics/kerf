@@ -57,10 +57,10 @@ internal sealed class CircularHelixCurve : Curve3D
         throw new MethodNotImplementedException("GeomEval_CircularHelixCurve::ReversedParameter");
     }
 
-    /// <summary>-Precision::Infinite().</summary>
+    /// <summary>Effectively minus infinity: -2e100, the curve having no start.</summary>
     public override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
-    /// <summary>Precision::Infinite().</summary>
+    /// <summary>Effectively infinity: 2e100, the curve having no end.</summary>
     public override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     public override bool IsClosed => false;

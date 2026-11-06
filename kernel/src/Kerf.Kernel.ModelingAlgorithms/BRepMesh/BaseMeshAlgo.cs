@@ -51,7 +51,7 @@ internal abstract class BaseMeshAlgo : MeshAlgo
         {
             _dFace = dFace;
             _parameters = parameters;
-            _structure = new DataStructureOfDelaun();
+            _structure = new DataStructureOfDelaun(storage: MeshWorkStorage.Rent());
             _nodesMap = new List<Point3D>();
             _usedNodes = new Dictionary<int, int>();
 
@@ -70,6 +70,7 @@ internal abstract class BaseMeshAlgo : MeshAlgo
         }
 
         _dFace = null; // Do not hold link to face.
+        _structure?.ReleaseStorage();
         _structure = null;
         _nodesMap = null;
         _usedNodes = null;

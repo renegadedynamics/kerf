@@ -142,9 +142,12 @@ public class TopologyReferenceTests
         var box = shape.Bounds();
         CloseVector(expected.GetProperty("bbox_min"), box.Min, "bbox min", 1e-7);
         CloseVector(expected.GetProperty("bbox_max"), box.Max, "bbox max", 1e-7);
+        // These lengths and midpoints were by too few Gauss points (decision 1768): the ellipse's centre, half way round
+        // it, was recorded at x = -2.99867 and not -3. ArcLengthLawTests holds them to the true length
+        double along = name is "bezier" or "ellipse" or "ellipse_arc" or "spline_tangents" ? 0.05 : 1e-7;
         if (expected.TryGetProperty("center", out var center))
-            CloseVector(center, shape.Center(), "center", 1e-7);
+            CloseVector(center, shape.Center(), "center", along);
         if (expected.TryGetProperty("length", out var length))
-            Close(length.GetDouble(), TopoUtil.As1D(shape).Length, "length", 1e-7);
+            Close(length.GetDouble(), TopoUtil.As1D(shape).Length, "length", along);
     }
 }

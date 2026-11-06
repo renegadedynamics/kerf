@@ -15,6 +15,7 @@ public readonly partial struct Point2D : IEquatable<Point2D>
 
     internal Point2D(in Xy coord) => _coord = coord;
 
+    /// <summary>The point at these coordinates.</summary>
     public Point2D(double x, double y) => _coord = new Xy(x, y);
 
     // Copies
@@ -28,8 +29,10 @@ public readonly partial struct Point2D : IEquatable<Point2D>
 
     internal readonly Point2D WithCoord(double xp, double yp) => new(xp, yp);
 
+    /// <summary>A copy with its X coordinate replaced.</summary>
     public readonly Point2D WithX(double x) => new(x, _coord.Y());
 
+    /// <summary>A copy with its Y coordinate replaced.</summary>
     public readonly Point2D WithY(double y) => new(_coord.X(), y);
 
     internal readonly Point2D WithXY(in Xy coord) => new(coord);
@@ -40,16 +43,20 @@ public readonly partial struct Point2D : IEquatable<Point2D>
 
     internal readonly void Coord(out double xp, out double yp) => _coord.Coord(out xp, out yp);
 
+    /// <summary>The X coordinate.</summary>
     public readonly double X => _coord.X();
 
+    /// <summary>The Y coordinate.</summary>
     public readonly double Y => _coord.Y();
 
     internal readonly Xy XY() => _coord;
 
     internal readonly Xy Coord() => _coord;
 
+    /// <summary>True when <paramref name="other"/> is within <paramref name="linearTolerance"/>.</summary>
     public readonly bool IsEqual(in Point2D other, double linearTolerance) => DistanceTo(other) <= linearTolerance;
 
+    /// <summary>The straight-line distance.</summary>
     public readonly double DistanceTo(in Point2D other)
     {
         Xy xy = other._coord;
@@ -58,6 +65,7 @@ public readonly partial struct Point2D : IEquatable<Point2D>
         return Math.Sqrt(x * x + y * y);
     }
 
+    /// <summary>The square of the distance, without the square root: the cheaper one to compare.</summary>
     public readonly double SquareDistanceTo(in Point2D other)
     {
         Xy xy = other._coord;
@@ -66,6 +74,7 @@ public readonly partial struct Point2D : IEquatable<Point2D>
         return (x * x + y * y);
     }
 
+    /// <summary>The central symmetry through <paramref name="point"/>.</summary>
     public readonly Point2D Mirrored(in Point2D point)
     {
         Xy coord = _coord;
@@ -76,6 +85,7 @@ public readonly partial struct Point2D : IEquatable<Point2D>
         return new Point2D(coord);
     }
 
+    /// <summary>The reflection in the line <paramref name="axis"/>.</summary>
     public readonly Point2D Mirrored(in Axis2D axis)
     {
         Xy coord = _coord;
@@ -84,6 +94,7 @@ public readonly partial struct Point2D : IEquatable<Point2D>
         return new Point2D(coord);
     }
 
+    /// <summary>Rotated about <paramref name="point"/> by <paramref name="angle"/> radians, anticlockwise.</summary>
     public readonly Point2D Rotated(in Point2D point, double angle)
     {
         Xy coord = _coord;
@@ -92,6 +103,7 @@ public readonly partial struct Point2D : IEquatable<Point2D>
         return new Point2D(coord);
     }
 
+    /// <summary>Scaled about <paramref name="point"/> by <paramref name="factor"/>. A negative factor also passes through the point.</summary>
     public readonly Point2D Scaled(in Point2D point, double factor)
     {
         Xy coord = _coord;
@@ -102,6 +114,7 @@ public readonly partial struct Point2D : IEquatable<Point2D>
         return new Point2D(coord);
     }
 
+    /// <summary>The image under <paramref name="transform"/>.</summary>
     public readonly Point2D Transformed(in Transform2D transform)
     {
         Xy coord = _coord;
@@ -129,6 +142,7 @@ public readonly partial struct Point2D : IEquatable<Point2D>
         return new Point2D(coord);
     }
 
+    /// <summary>Moved by <paramref name="vector"/>.</summary>
     public readonly Point2D Translated(in Vector2D vector)
     {
         Xy coord = _coord;
@@ -136,6 +150,7 @@ public readonly partial struct Point2D : IEquatable<Point2D>
         return new Point2D(coord);
     }
 
+    /// <summary>Moved by the vector from <paramref name="point1"/> to <paramref name="point2"/>.</summary>
     public readonly Point2D Translated(in Point2D point1, in Point2D point2)
     {
         Xy coord = _coord;
@@ -144,15 +159,21 @@ public readonly partial struct Point2D : IEquatable<Point2D>
         return new Point2D(coord);
     }
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(Point2D other) => _coord.Equals(other._coord);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="Point2D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is Point2D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => _coord.GetHashCode();
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in Point2D left, in Point2D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in Point2D left, in Point2D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => Constants.Format("Point2D", _coord.X(), _coord.Y());
 }

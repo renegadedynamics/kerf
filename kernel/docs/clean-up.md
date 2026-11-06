@@ -22,8 +22,8 @@ branch point, by building with extra analysers on, by reflection over the built 
 | Parameters with OCCT's short names in the kernel (`a1`, `ang`, `p`, `raiseExc`, `isTheNotCheckC0`) | 758 | All | `u1`, `v1`, `a11` and the like stay: they are what the mathematics says |
 | The process in XML docs a user reads ("(unit 10M3)", "(decision 127)") | 65 lines in the kernel's public namespaces, 15 in `Kerf.Modeling` | 57 removed | The rest are on internal members of public types, or read as part of a sentence |
 | Mentions of OCCT.NET or build123d.NET in source | 0 | | |
-| Public members without XML docs (CS1591 with the suppression lifted) | 1,022: Foundation 912, ModelingData 103, ModelingAlgorithms 7 | | Mostly `Kerf.Geometry`'s value types: see "What's left" |
-| Summaries of two words or fewer | 44 in `Kerf.Modeling`, 139 in the kernel | | Most are fair (`Millimetre (mm).`) |
+| Public members without XML docs (CS1591 with the suppression lifted) | 1,022: Foundation 912, ModelingData 103, ModelingAlgorithms 7 (1,010 at the second pass: 900, 103, 7) | All; CS1591 now fails the build in the kernel (decision 1744) | `Kerf.Modeling` keeps its pragmas on self-describing enums |
+| Summaries of two words or fewer | 44 in `Kerf.Modeling`, 139 in the kernel | 58 that said nothing rewritten (`The alignment.`, `Precision::Infinite().`, `Bilateral symmetry.`) | 21 and 162 (the second counts about 48 new ones like `The radius.`): fair |
 | `Get…` methods that could read better (`GetAngle`, `GetTopLevelShapes`, `FaceMesh.GetTriangles`) | 11 | | `GetAngle` is degrees where the kernel's `AngleTo` is radians, so the difference is useful: left alone |
 | Overloads only because C++ had them (`Translated(p1, p2)`, `LinearForm`, `CrossCrossed`, `DotCross`) | Not counted | | Question 3 |
 
@@ -37,8 +37,8 @@ branch point, by building with extra analysers on, by reflection over the built 
 | Unused `using`s (IDE0005) | 4,964 | All, by `dotnet format`; the build now fails on one in `src` | Tests not looked at |
 | Suppressions those made needless (`CS0414`) | 54 lines | Those of the deleted fields | |
 | Stale TODOs, and comments naming what no longer exists (`TODO(4A)`, "finding #25", `b3d_mesh.cpp`, the native backend) | 16 | All | 13 plain TODOs are OCCT's own remarks, ported |
-| IDE1006 exemptions | 3,061 violations in 156 folders | `Kerf.Modeling` needs none (59 fixed); 3 clean kernel folders removed from the list | 3,002: decision 1353's parameters and locals, and uppercase locals from Fortran |
-| Unused parameters (IDE0060) | 401: public 305, private 49, internal 28, protected 19 | | Many mirror an OCCT signature or an interface; `dotnet format` has no fix. List in "What's left" |
+| IDE1006 exemptions | 3,061 violations in 156 folders | `Kerf.Modeling` needs none (59 fixed); 3 clean kernel folders removed, then 32 small ones fixed whole (decision 1746) | 2,919 in 118 folders: decision 1353's parameters and locals, and uppercase locals from Fortran |
+| Unused parameters (IDE0060) | 401: public 305, private 49, internal 28, protected 19 | Private: 41 of 50 removed, with their arguments (decision 1747) | Private 9: generated code and overload markers. The rest mirror an OCCT signature or an interface |
 | Assignments overwritten before they're read (IDE0059) | 5,978 | | Almost all `double x = 0;` before `out x`, in ported code. Harmless, and they run through the hot paths two other units are changing |
 | Commented-out code in ported files | About 1,590 lines | | OCCT's own, kept so a file reads against its source. Question 4 |
 | `Standard_*` in source | 843, in 333 files | | 332 comment lines and 468 calls of helpers such as `Standard_OutOfRange_Raise_if`. Question 5 |
@@ -57,6 +57,7 @@ branch point, by building with extra analysers on, by reflection over the built 
 
 ## What's left
 
-- **XML docs on `Kerf.Geometry`'s value types** (912 members). `ModelingAlgorithms`' and `ModelingData`'s 110 could be done and CS1591 turned on for them.
-- **IDE1006:** about 60 kernel folders have five violations or fewer, and each one fixed takes a folder off the list.
-- **IDE0060's private 49:** they need a semantic tool that changes the callers; `isUnit` and `owned` are deliberate overload markers.
+- **IDE1006:** 44 folders of nine violations or fewer stay on the list because at least one name collides (`F` beside `f`, decision 1353). Each needs a person to choose a name, so they wait until the code is next touched.
+- **IDE0060:** the public and internal parameters. Six `CompareNames(name, ref arg2)` are in generated STEP code, and `isUnit` and `owned` are deliberate overload markers.
+- **Public things that look wrong, left for the owner:** `GeneralTransform2D.WithAffinity`'s parameter `A`, `Vector3D.Mirrored(in Frame3D axis)`'s `axis`, and `Placement.ToString`, which prints `TopLoc_Location`.
+- **Docs naming an internal exception:** `gp` now names what a user catches. `Kerf.Engine` namespaces aside, other public folders weren't checked for it. `GeneralTransform2D.Inverted` really does throw the internal `ConstructionErrorException` on a singular matrix, through `Matrix2x2.Invert`, not the `InvalidOperationException` its 3D twin throws.

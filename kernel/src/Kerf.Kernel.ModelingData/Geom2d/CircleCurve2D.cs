@@ -41,7 +41,7 @@ public sealed class CircleCurve2D : ConicCurve2D
     public CircleCurve2D(in Axis2D axis, double radius, bool sense = true)
     {
         _radius = radius;
-        if (radius < 0.0)
+        if (!(radius >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -53,7 +53,7 @@ public sealed class CircleCurve2D : ConicCurve2D
     public CircleCurve2D(in Frame2D frame, double radius)
     {
         _radius = radius;
-        if (radius < 0.0)
+        if (!(radius >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -70,7 +70,7 @@ public sealed class CircleCurve2D : ConicCurve2D
     internal void SetRadius(double r)
     {
         CheckMutable();
-        if (r < 0.0)
+        if (!(r >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }

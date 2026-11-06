@@ -10,7 +10,7 @@ internal static class RWHeaderSection
 {
     // OCCT keeps the two modules in statics created once; the whole initialisation is done once here (decision 1182),
     // so that a second call does not wrap the header protocol into a FileProtocol, as OCCT's does
-    private static readonly Lazy<bool> S_init = new(DoInit);
+    private static readonly Lazy<bool> Initialisation = new(DoInit);
 
     /// <summary>
     /// Enforces the initialisation of the libraries: registers HeaderSection's protocol as StepData's header protocol,
@@ -18,7 +18,7 @@ internal static class RWHeaderSection
     /// </summary>
     public static void Init()
     {
-        _ = S_init.Value;
+        _ = Initialisation.Value;
     }
 
     private static bool DoInit()

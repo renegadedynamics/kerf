@@ -54,13 +54,13 @@ internal class PointsToBSpline
         Init(points, parType, degMin, degMax, continuity, tol3D);
     }
 
-    /// <summary>Approximates <paramref name="points"/> at the parameters <paramref name="Params"/>.</summary>
-    public PointsToBSpline(NCollection_Array1<Point3D> points, NCollection_Array1<double> Params,
+    /// <summary>Approximates <paramref name="points"/> at the parameters <paramref name="parameters"/>.</summary>
+    public PointsToBSpline(NCollection_Array1<Point3D> points, NCollection_Array1<double> parameters,
                                    int degMin = 3, int degMax = 8, Continuity continuity = C2,
                                    double tol3D = 1.0e-3)
     {
         _isDone = false;
-        Init(points, Params, degMin, degMax, continuity, tol3D);
+        Init(points, parameters, degMin, degMax, continuity, tol3D);
     }
 
     /// <summary>
@@ -111,24 +111,24 @@ internal class PointsToBSpline
         _isDone = true;
     }
 
-    /// <summary>Approximates <paramref name="points"/> at the parameters <paramref name="Params"/>.</summary>
-    public void Init(NCollection_Array1<Point3D> points, NCollection_Array1<double> Params, int degMin = 3,
+    /// <summary>Approximates <paramref name="points"/> at the parameters <paramref name="parameters"/>.</summary>
+    public void Init(NCollection_Array1<Point3D> points, NCollection_Array1<double> parameters, int degMin = 3,
                      int degMax = 8, Continuity continuity = C2, double tol3D = 1.0e-3)
     {
         _isDone = false;
-        if (Params.Length() != points.Length())
+        if (parameters.Length() != points.Length())
         {
             throw new OutOfRangeException("GeomAPI_PointsToBSpline::Init() - invalid input");
         }
 
         double tol2D = 0.0; // dummy argument for BSplineCompute.
-        int nbp = Params.Length();
+        int nbp = parameters.Length();
         math_Vector theParams = new(1, nbp);
         theParams[1] = 0.0;
         theParams[nbp] = 1.0;
 
-        double uf = Params[Params.Lower()];
-        double ul = Params[Params.Upper()] - uf;
+        double uf = parameters[parameters.Lower()];
+        double ul = parameters[parameters.Upper()] - uf;
         if (!HasMeaningfulSpan(ul))
         {
             return;
@@ -136,7 +136,7 @@ internal class PointsToBSpline
         for (int i = 2; i < nbp; i++)
         {
             // OCCT reads Params(i), right only for parameters indexed from 1
-            theParams[i] = (Params[i] - uf) / ul;
+            theParams[i] = (parameters[i] - uf) / ul;
         }
 
         BSplineCompute theComputer = new(degMin, degMax, tol3D, tol2D, 0, true, IsoParametric, true);
@@ -155,7 +155,7 @@ internal class PointsToBSpline
         theCurve.Curve(1, poles);
         knots = theCurve.Knots();
 
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(Params[Params.Lower()], Params[Params.Upper()], knots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(parameters[parameters.Lower()], parameters[parameters.Upper()], knots);
 
         _curve = new BSplineCurve3D(poles, knots, theCurve.Multiplicities(), theCurve.Degree());
         _isDone = true;

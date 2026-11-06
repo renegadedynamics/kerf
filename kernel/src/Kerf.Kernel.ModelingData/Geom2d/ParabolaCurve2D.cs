@@ -40,7 +40,7 @@ public sealed class ParabolaCurve2D : ConicCurve2D
     public ParabolaCurve2D(in Axis2D mirrorAxis, double focal, bool sense = true)
     {
         _focalLength = focal;
-        if (focal < 0.0)
+        if (!(focal >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -52,7 +52,7 @@ public sealed class ParabolaCurve2D : ConicCurve2D
     public ParabolaCurve2D(in Frame2D axis, double focal)
     {
         _focalLength = focal;
-        if (focal < 0.0)
+        if (!(focal >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -70,7 +70,7 @@ public sealed class ParabolaCurve2D : ConicCurve2D
     internal void SetFocal(double focal)
     {
         CheckMutable();
-        if (focal < 0.0)
+        if (!(focal >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -90,10 +90,10 @@ public sealed class ParabolaCurve2D : ConicCurve2D
     /// <summary>-U.</summary>
     public sealed override double ReversedParameter(double u) => (-u);
 
-    /// <summary>-Precision::Infinite().</summary>
+    /// <summary>Effectively minus infinity: -2e100, the curve having no start.</summary>
     public sealed override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
-    /// <summary>Precision::Infinite().</summary>
+    /// <summary>Effectively infinity: 2e100, the curve having no end.</summary>
     public sealed override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>False.</summary>

@@ -119,6 +119,7 @@ public sealed class OffsetCurve3D : Curve3D
         _offsetValue = d;
     }
 
+    /// <summary>Whether the basis curve is periodic.</summary>
     public sealed override bool IsPeriodic => _basisCurve.IsPeriodic;
 
     /// <summary>The period of the basis curve.</summary>
@@ -391,8 +392,10 @@ public sealed class OffsetCurve3D : Curve3D
         }
     }
 
+    /// <summary>The basis curve's first parameter.</summary>
     public sealed override double FirstParameter => _basisCurve.FirstParameter;
 
+    /// <summary>The basis curve's last parameter.</summary>
     public sealed override double LastParameter => _basisCurve.LastParameter;
 
     /// <summary>The offset value.</summary>
@@ -440,6 +443,7 @@ public sealed class OffsetCurve3D : Curve3D
 
     // Non-mutating twins (Kerf)
 
+    /// <summary>A copy whose offset direction is <paramref name="direction"/>; this curve is unchanged.</summary>
     public OffsetCurve3D WithDirection(in Direction3D direction)
     {
         OffsetCurve3D copy = (OffsetCurve3D)Copy();
@@ -447,6 +451,7 @@ public sealed class OffsetCurve3D : Curve3D
         return copy;
     }
 
+    /// <summary>A copy offset by <paramref name="d"/>; this curve is unchanged.</summary>
     public OffsetCurve3D WithOffsetValue(double d)
     {
         OffsetCurve3D copy = (OffsetCurve3D)Copy();

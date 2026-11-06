@@ -24,7 +24,7 @@ public sealed class CylindricalSurface : ElementarySurface
     public CylindricalSurface(in CoordinateSystem position, double radius)
     {
         _radius = radius;
-        if (radius < 0.0)
+        if (!(radius >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -38,6 +38,7 @@ public sealed class CylindricalSurface : ElementarySurface
         _pos = cylinder.Position;
     }
 
+    /// <summary>A new surface with the same values, which can be changed independently of this one.</summary>
     public sealed override Geometry3D Copy()
     {
         CylindricalSurface cs;
@@ -77,7 +78,7 @@ public sealed class CylindricalSurface : ElementarySurface
     internal void SetRadius(double r)
     {
         CheckMutable();
-        if (r < 0.0)
+        if (!(r >= 0.0))
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -230,6 +231,7 @@ public sealed class CylindricalSurface : ElementarySurface
         return gc;
     }
 
+    /// <inheritdoc/>
     protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();

@@ -259,7 +259,9 @@ internal sealed class BSplineSurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
                     useCache = (uSpanSize * vSpanSize >= THE_CACHE_THRESHOLD);
                     if (useCache)
                     {
-                        cache.BuildCache(adjU, adjV, data.UFlatKnots, data.VFlatKnots, data.Poles,
+                        // The cache finds its own span from the parameters and takes one just under a knot as the next span, which
+                        // isn't uSpan: give it the middle of the spans (OCCT #1577, decision 1775)
+                        cache.BuildCache(uSpanMid, vSpanMid, data.UFlatKnots, data.VFlatKnots, data.Poles,
                                           data.Weights);
                     }
                 }

@@ -84,7 +84,7 @@ public class DrawMeshCommandsTests
 
         // with an epsilon, BRepGProp's adaptive integration
         i.Eval($"restore {DataOcc}/CrankArm.brep c");
-        Assert.Equal("24734.817085511248 24859.014274456538\n", i.Eval("triarea c 1e-4"));
+        Assert.Equal("24734.817085511248 24859.016374823164\n", i.Eval("triarea c 1e-4")); // refined along U: decision 1784
 
         // a shape with no triangulation at all: 0 for the triangles and nothing printed
         i.Eval("tclean s");

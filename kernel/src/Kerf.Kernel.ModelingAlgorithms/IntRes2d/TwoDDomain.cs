@@ -30,8 +30,8 @@ internal partial struct TwoDDomain : IEquatable<TwoDDomain>
     //-- haslast  <--> status & 2
     //-- closed   <--> status & 4
     private int _status;
-    private double first_param;
-    private double last_param;
+    private double _firstParam;
+    private double _lastParam;
     private double _firstTol;
     private double _lastTol;
     private Point2D _firstPoint;
@@ -51,8 +51,8 @@ internal partial struct TwoDDomain : IEquatable<TwoDDomain>
     public TwoDDomain()
     {
         _status = 0;
-        first_param = 0.0;
-        last_param = 0.0;
+        _firstParam = 0.0;
+        _lastParam = 0.0;
         _firstTol = 0.0;
         _lastTol = 0.0;
         _firstPoint = new Point2D(0.0, 0.0);
@@ -86,11 +86,11 @@ internal partial struct TwoDDomain : IEquatable<TwoDDomain>
         _status = 3;
         _periodfirst = _periodlast = 0.0;
 
-        first_param = LimitInfinite(par1);
+        _firstParam = LimitInfinite(par1);
         _firstPoint = _firstPoint.WithCoord(LimitInfinite(pnt1.X), LimitInfinite(pnt1.Y));
         _firstTol = tol1;
 
-        last_param = LimitInfinite(par2);
+        _lastParam = LimitInfinite(par2);
         _lastPoint = _lastPoint.WithCoord(LimitInfinite(pnt2.X), LimitInfinite(pnt2.Y));
         _lastTol = tol2;
     }
@@ -109,14 +109,14 @@ internal partial struct TwoDDomain : IEquatable<TwoDDomain>
         if (first)
         {
             _status = 1;
-            first_param = LimitInfinite(par);
+            _firstParam = LimitInfinite(par);
             _firstPoint = _firstPoint.WithCoord(LimitInfinite(pnt.X), LimitInfinite(pnt.Y));
             _firstTol = tol;
         }
         else
         {
             _status = 2;
-            last_param = LimitInfinite(par);
+            _lastParam = LimitInfinite(par);
             _lastPoint = _lastPoint.WithCoord(LimitInfinite(pnt.X), LimitInfinite(pnt.Y));
             _lastTol = tol;
         }
@@ -150,7 +150,7 @@ internal partial struct TwoDDomain : IEquatable<TwoDDomain>
             throw new DomainErrorException();
         }
 
-        return (first_param);
+        return (_firstParam);
     }
 
     /// <summary>The first point of the domain.</summary>
@@ -189,7 +189,7 @@ internal partial struct TwoDDomain : IEquatable<TwoDDomain>
             throw new DomainErrorException();
         }
 
-        return (last_param);
+        return (_lastParam);
     }
 
     /// <summary>The last point of the domain.</summary>
@@ -241,7 +241,7 @@ internal partial struct TwoDDomain : IEquatable<TwoDDomain>
     }
 
     public readonly bool Equals(TwoDDomain other)
-        => _status == other._status && first_param.Equals(other.first_param) && last_param.Equals(other.last_param)
+        => _status == other._status && _firstParam.Equals(other._firstParam) && _lastParam.Equals(other._lastParam)
            && _firstTol.Equals(other._firstTol) && _lastTol.Equals(other._lastTol)
            && _firstPoint.Equals(other._firstPoint) && _lastPoint.Equals(other._lastPoint)
            && _periodfirst.Equals(other._periodfirst) && _periodlast.Equals(other._periodlast);
@@ -252,8 +252,8 @@ internal partial struct TwoDDomain : IEquatable<TwoDDomain>
     {
         HashCode hash = new();
         hash.Add(_status);
-        hash.Add(first_param);
-        hash.Add(last_param);
+        hash.Add(_firstParam);
+        hash.Add(_lastParam);
         hash.Add(_firstTol);
         hash.Add(_lastTol);
         hash.Add(_firstPoint);
@@ -269,7 +269,7 @@ internal partial struct TwoDDomain : IEquatable<TwoDDomain>
 
     public override readonly string ToString()
         => $"IntRes2d_Domain(status: {_status}, "
-           + Constants.Format("first", first_param, _firstTol, _firstPoint.X, _firstPoint.Y) + ", "
-           + Constants.Format("last", last_param, _lastTol, _lastPoint.X, _lastPoint.Y) + ", "
+           + Constants.Format("first", _firstParam, _firstTol, _firstPoint.X, _firstPoint.Y) + ", "
+           + Constants.Format("last", _lastParam, _lastTol, _lastPoint.X, _lastPoint.Y) + ", "
            + Constants.Format("period", _periodfirst, _periodlast) + ")";
 }

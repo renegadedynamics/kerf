@@ -200,7 +200,7 @@ public static class MeasureOperations
         switch (dimension)
         {
             case Dimension.Length:
-                MassPropertiesBuilder.LinearProperties(shape, props, options.SkipShared, options.UseTriangulation);
+                MassPropertiesBuilder.LinearProperties(shape, props, options.SkipShared, options.UseTriangulation, settled: true);
                 break;
             case Dimension.Area when options.Tolerance > 0:
                 MassPropertiesBuilder.SurfaceProperties(shape, props, options.Tolerance, options.SkipShared);

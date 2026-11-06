@@ -14,7 +14,10 @@ namespace Kerf.Booleans;
 /// </summary>
 public enum GlueMode
 {
+    /// <summary>No gluing: the full intersection, and the default.</summary>
     Off,
+    /// <summary>For arguments that partially coincide, touching without their faces crossing.</summary>
     Shift,
+    /// <summary>For arguments whose coinciding faces are the same faces.</summary>
     Full,
 }

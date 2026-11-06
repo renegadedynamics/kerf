@@ -47,14 +47,23 @@ public abstract partial class ModelShape : IShape3D, IEquatable<ModelShape>
     public static implicit operator ModelShape(Shell shape) => For(shape);
     public static implicit operator ModelShape(Solid shape) => For(shape);
     public static implicit operator ModelShape(Compound shape) => For(shape);
-    public static explicit operator Vertex(ModelShape model) => model.Shape.As<Vertex>();
-    public static explicit operator Edge(ModelShape model) => model.Shape.As<Edge>();
-    public static explicit operator Wire(ModelShape model) => model.Shape.As<Wire>();
-    public static explicit operator Face(ModelShape model) => model.Shape.As<Face>();
-    public static explicit operator Shell(ModelShape model) => model.Shape.As<Shell>();
-    public static explicit operator Solid(ModelShape model) => model.Shape.As<Solid>();
+    public static explicit operator Vertex(ModelShape model) => OnlyShape(model).As<Vertex>();
+    public static explicit operator Edge(ModelShape model) => OnlyShape(model).As<Edge>();
+    public static explicit operator Wire(ModelShape model) => OnlyShape(model).As<Wire>();
+    public static explicit operator Face(ModelShape model) => OnlyShape(model).As<Face>();
+    public static explicit operator Shell(ModelShape model) => OnlyShape(model).As<Shell>();
+    public static explicit operator Solid(ModelShape model) => OnlyShape(model).As<Solid>();
     public static explicit operator Compound(ModelShape model) => model.Shape.As<Compound>();
 #pragma warning restore CS1591
+
+    // A box is a part, and a part holds a compound: (Solid)new Box(1, 1, 1) means the one solid in it
+    private static Shape OnlyShape(ModelShape model)
+    {
+        Shape shape = model.Shape;
+        while (shape.IsCompound() && shape.ChildShapes() is { Count: 1 } children)
+            shape = children[0];
+        return shape;
+    }
 
     /// <summary>The object for a kernel shape: a <see cref="Part"/> of solids, a <see cref="Sketch"/> of faces, a <see cref="Curve"/> of edges, or else an <see cref="Assembly"/> leaf.</summary>
     public static ModelShape For(Shape shape) => shape.Dim switch

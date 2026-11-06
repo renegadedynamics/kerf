@@ -555,4 +555,78 @@ public class BRepBuilderAPITests
         Assert.True(aFC.Plane()!.Plane.Axis.Direction.IsParallel(new Direction3D(1, 0, 0), 1e-12));
         Assert.False(new FindPlane().Found());
     }
+
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(1.0e-16)]
+    [InlineData(1.0e-12)]
+    [InlineData(1.0e-8)]
+    [InlineData(1.0e-6)]
+    public void Revolving_an_arc_that_ends_at_the_axis_is_valid(double theGap)
+    {
+        // OCCT #1566: a quarter disk whose arc is tangent to the axis, ending theGap from it, as an arc through three
+        // points usually does. Natively, invalid with volume 0.5655 for any gap up to 1e-7.
+        double r = 1 - theGap;
+        Circle3D aCircle = new(new Frame3D(new Point3D(1, 0, 1), new Direction3D(0, -1, 0), new Direction3D(-1, 0, 0)), r);
+        Point3D aStart = new(theGap, 0, 1), anEnd = new(1, 0, theGap), aCorner = new(1, 0, 1);
+        var aWire = new MakeWire();
+        aWire.Add(new MakeEdge(aCircle, aStart, anEnd).Edge());
+        aWire.Add(new MakeEdge(anEnd, aCorner).Edge());
+        aWire.Add(new MakeEdge(aCorner, aStart).Edge());
+        Face aFace = new MakeFace(aWire.Wire(), true).Face();
+        Shape aSolid = new ApiMakeRevol(aFace, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), M_PI / 2).Shape();
+        Assert.True(new Analyzer(aSolid).IsValid());
+        double anExpected = M_PI * r * r / 4 * (1 - 4 * r / (3 * M_PI)) * (M_PI / 2);
+        Assert.Equal(anExpected, MassPropertiesBuilder.VolumeProperties(aSolid).Mass(), 1.0e-5);
+    }
+
+    [Fact]
+    public void A_parabola_of_focal_zero_projects_and_inverts_as_the_line_it_evaluates_as()
+    {
+        // OCCT #1617: natively the parameter is 0 whatever the point, and the projection of (1, 2, 0) is u = 0 at 2.236
+        Frame3D aFrame = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
+        Parabola3D aParabola = new(aFrame, 0.0);
+        Assert.Equal(2.0, Kerf.Engine.Geometry.ElCLib.Parameter(aParabola, Kerf.Engine.Geometry.ElCLib.Value(2.0, aParabola)), 1.0e-12);
+        var aProjection = new ProjectPointOnCurve(new Point3D(1, 2, 0), new ParabolaCurve3D(aParabola));
+        Assert.Equal(1, aProjection.NbPoints());
+        Assert.Equal(1.0, aProjection.LowerDistanceParameter(), 1.0e-9);
+        Assert.Equal(2.0, aProjection.LowerDistance(), 1.0e-9);
+    }
+
+    private static Shape RingOffset(double theHoleOffCentre, double theOffset)
+    {
+        var anOuter = new MakeWire();
+        anOuter.Add(new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5)).Edge());
+        var aHole = new MakeWire();
+        aHole.Add(new MakeEdge(new Circle3D(new Frame3D(new Point3D(theHoleOffCentre, 0, 0), new Direction3D(0, 0, -1)), 2)).Edge());
+        var aFace = new MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), anOuter.Wire(), true);
+        aFace.Add(aHole.Wire());
+        var anOffset = new Kerf.Engine.Offsets.Api.MakeWireOffset(aFace.Face());
+        anOffset.Perform(theOffset);
+        Assert.True(anOffset.IsDone);
+        return anOffset.Shape();
+    }
+
+    [Theory]
+    [InlineData(-0.2)]
+    [InlineData(-1.0)]
+    [InlineData(-2.0)]
+    [InlineData(0.2)]
+    public void Offsetting_a_ring_of_concentric_circles_matches_a_hole_a_hair_off_centre(double theOffset)
+    {
+        // OCCT #1606: natively an inward offset of concentric circles crashes, and only a hole 1e-7 or more off centre works
+        Shape aRing = RingOffset(0.0, theOffset), aNear = RingOffset(1.0e-5, theOffset);
+        Assert.Equal(MassPropertiesBuilder.LinearProperties(aNear).Mass(), MassPropertiesBuilder.LinearProperties(aRing).Mass(), 1.0e-3);
+    }
+
+    [Fact]
+    public void Offsetting_a_circle_until_it_collapses_fails_without_the_general_algorithm()
+    {
+        // OCCT e177d7e68c: the case is settled once the circle is recognised
+        var aWire = new MakeWire();
+        aWire.Add(new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1)).Edge());
+        var anOffset = new Kerf.Engine.Offsets.Api.MakeWireOffset(new MakeFace(aWire.Wire(), true).Face());
+        anOffset.Perform(-2.0);
+        Assert.False(anOffset.IsDone);
+    }
 }

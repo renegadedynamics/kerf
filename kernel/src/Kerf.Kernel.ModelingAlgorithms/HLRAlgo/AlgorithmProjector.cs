@@ -154,14 +154,14 @@ internal partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
     }
 
     /// <summary>
-    /// Computes with the given scale and translation (<paramref name="On"/>), or without them (the default): then a
+    /// Computes with the given scale and translation (<paramref name="on"/>), or without them (the default): then a
     /// parallel projector also drops the translation.
     /// </summary>
-    internal void Scaled(bool On = false)
+    internal void Scaled(bool on = false)
     {
         _type = -1;
         _trsf = _scaledTrsf;
-        if (!On)
+        if (!on)
         {
             _trsf = _trsf.WithScaleFactor(1.0);
             if (!_persp)
@@ -174,11 +174,11 @@ internal partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
         _invTrsf = _invTrsf.Inverted();
     }
 
-    /// <summary>A copy computing with the scale and translation (<paramref name="On"/>) or without (<see cref="Scaled"/>'s twin).</summary>
-    public readonly AlgorithmProjector WithScaled(bool On = false)
+    /// <summary>A copy computing with the scale and translation (<paramref name="on"/>) or without (<see cref="Scaled"/>'s twin).</summary>
+    public readonly AlgorithmProjector WithScaled(bool on = false)
     {
         AlgorithmProjector copy = this;
-        copy.Scaled(On);
+        copy.Scaled(on);
         return copy;
     }
 

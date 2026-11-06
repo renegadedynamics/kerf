@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 
 using Kerf.Engine.Intersection.Polygons;
@@ -30,9 +31,10 @@ internal class Polygon2dGen<TheCurve, TheCurveTool> : Polygon2d
     private double _theDeflection;
     private int _nbPntIn;
     private int _theMaxNbPoints;
-    private readonly NCollection_Array1<Point2D> _thePnts;
-    private readonly NCollection_Array1<double> _theParams;
+    private NCollection_Array1<Point2D> _thePnts;
+    private NCollection_Array1<double> _theParams;
     private readonly NCollection_Array1<int> _theIndex;
+    private bool _sharesSampling; // Its points and parameters are in a table of SampledPolygons: copy before writing
     private bool _closedPolygon;
     private double _binf;
     private double _bsup;
@@ -124,6 +126,48 @@ internal class Polygon2dGen<TheCurve, TheCurveTool> : Polygon2d
 
         _box.Enlarge(_theDeflection * MAJORATION_DEFLECTION);
         _closedPolygon = false;
+    }
+
+    // A polygon from a table's first sampling, which is what the constructor above would make
+    private Polygon2dGen(in SampledPolygons.Sampled sampled, int nbPts, double first, double last)
+    {
+        _thePnts = sampled.Points;
+        _theParams = sampled.Parameters;
+        _sharesSampling = true;
+        _theIndex = new NCollection_Array1<int>(1, sampled.Points.Length());
+        for (int i = 1; i <= nbPts; i++)
+        {
+            _theIndex.SetValue(i, i);
+        }
+        _theMaxNbPoints = nbPts + nbPts;
+        _nbPntIn = nbPts;
+        _binf = first;
+        _bsup = last;
+        _box = sampled.Box;
+        _theDeflection = sampled.Deflection;
+        _closedPolygon = false;
+    }
+
+    /// <summary>
+    /// What the constructor makes, by way of the thread's table of <see cref="SampledPolygons"/> if it has one and the curve is a
+    /// plain adaptor of a curve.
+    /// </summary>
+    public static Polygon2dGen<TheCurve, TheCurveTool> Sample(in TheCurve c, int tNbPts, in TwoDDomain d, double tol)
+    {
+        if (SampledPolygons.Current is not { } table || tNbPts < 3 || c is not CurveAdaptor2D adaptor || ((object)adaptor).GetType() != typeof(CurveAdaptor2D)
+            || adaptor.Curve() is not { } curve)
+        {
+            return new Polygon2dGen<TheCurve, TheCurveTool>(c, tNbPts, d, tol);
+        }
+        double first = d.FirstParameter(), last = d.LastParameter();
+        if (table.TryGet(curve, first, last, tNbPts, tol, out SampledPolygons.Sampled sampled))
+        {
+            return new Polygon2dGen<TheCurve, TheCurveTool>(sampled, tNbPts, first, last);
+        }
+        Polygon2dGen<TheCurve, TheCurveTool> polygon = new(c, tNbPts, d, tol);
+        polygon._sharesSampling = table.TryAdd(curve, first, last, tNbPts, tol,
+                                               new SampledPolygons.Sampled(polygon._thePnts, polygon._theParams, polygon._box, polygon._theDeflection));
+        return polygon;
     }
 
     /// <summary>
@@ -242,6 +286,12 @@ internal class Polygon2dGen<TheCurve, TheCurveTool> : Polygon2d
                                     }
                                     maxIndexUsed++;
                                     _theIndex.SetValue(i, maxIndexUsed);
+                                    if (_sharesSampling)
+                                    {
+                                        _thePnts = new NCollection_Array1<Point2D>(_thePnts);
+                                        _theParams = new NCollection_Array1<double>(_theParams);
+                                        _sharesSampling = false;
+                                    }
                                     _thePnts.SetValue(maxIndexUsed, pm);
                                     _theParams.SetValue(maxIndexUsed, u);
 

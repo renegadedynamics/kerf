@@ -12,30 +12,32 @@ namespace Kerf.Geometry;
 /// is the cylinder's axis. It is parameterised by <c>P(U, V) = O + R * (cos(U) * XDir + sin(U) * YDir) + V * ZDir</c>.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Cylinder()</c> is OCCT's indefinite cylinder (radius <see cref="Standard.RealLast"/>);
-/// <c>default(gp_Cylinder)</c> is not valid.
+/// <c>new Cylinder3D()</c> is OCCT's indefinite cylinder (radius <c>double.MaxValue</c>);
+/// <c>default(Cylinder3D)</c> is not valid.
 /// </remarks>
 public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
 {
     private readonly CoordinateSystem _pos;
     private readonly double _radius;
 
+    /// <summary>An indefinite cylinder with a radius of <c>double.MaxValue</c>, not a useful value until given one.</summary>
     public Cylinder3D()
     {
         _pos = new CoordinateSystem();
         _radius = RealLast();
     }
 
-    /// <exception cref="ConstructionErrorException"><paramref name="radius"/> is negative.</exception>
+    /// <exception cref="ArgumentException"><paramref name="radius"/> is negative.</exception>
     public Cylinder3D(in CoordinateSystem position, double radius)
     {
         _pos = position;
         _radius = radius;
-        Refusal.ArgumentIf(radius < 0.0, FailureKind.ConstructionError, "gp_Cylinder() - radius should be positive number");
+        Refusal.ArgumentIf(!(radius >= 0.0), FailureKind.ConstructionError, "gp_Cylinder() - radius should be positive number");
     }
 
     // Copies
 
+    /// <summary>A copy whose main axis is <paramref name="axis"/>. The old X direction is projected on to the new XY plane; if it is parallel to the axis, the old directions swap roles instead.</summary>
     public readonly Cylinder3D WithAxis(in Axis3D axis)
     {
         CoordinateSystem pos = _pos;
@@ -43,6 +45,7 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
         return new Cylinder3D(pos, _radius);
     }
 
+    /// <summary>A copy moved so that its origin is <paramref name="location"/>; its directions stay.</summary>
     public readonly Cylinder3D WithLocation(in Point3D location)
     {
         CoordinateSystem pos = _pos;
@@ -50,6 +53,7 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
         return new Cylinder3D(pos, _radius);
     }
 
+    /// <summary>A copy positioned by <paramref name="position"/>, keeping its size.</summary>
     public readonly Cylinder3D WithPosition(in CoordinateSystem position)
     {
         CoordinateSystem pos = _pos;
@@ -57,14 +61,17 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
         return new Cylinder3D(pos, _radius);
     }
 
+    /// <summary>A copy with this radius.</summary>
+    /// <exception cref="ArgumentException"><paramref name="r"/> is negative.</exception>
     public readonly Cylinder3D WithRadius(double r)
     {
         double newRadius = _radius;
-        Refusal.ArgumentIf(r < 0.0, FailureKind.ConstructionError, "gp_Cylinder::SetRadius() - radius should be positive number");
+        Refusal.ArgumentIf(!(r >= 0.0), FailureKind.ConstructionError, "gp_Cylinder::SetRadius() - radius should be positive number");
         newRadius = r;
         return new Cylinder3D(_pos, newRadius);
     }
 
+    /// <summary>The same surface with U running the other way: the Y direction reverses, which flips the coordinate system's handedness.</summary>
     public readonly Cylinder3D UReversed()
     {
         CoordinateSystem pos = _pos;
@@ -72,6 +79,7 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
         return new Cylinder3D(pos, _radius);
     }
 
+    /// <summary>The same surface with V running the other way: the main direction reverses, which flips the coordinate system's handedness.</summary>
     public readonly Cylinder3D VReversed()
     {
         CoordinateSystem pos = _pos;
@@ -119,16 +127,22 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
         d = t14 * t14 + t24 * t24 - _radius * _radius;
     }
 
+    /// <summary>The origin, a point on the axis.</summary>
     public readonly Point3D Location => _pos.Location;
 
+    /// <summary>The coordinate system the surface is positioned by.</summary>
     public readonly CoordinateSystem Position => _pos;
 
+    /// <summary>The radius.</summary>
     public readonly double Radius => _radius;
 
+    /// <summary>The axis through the origin along the X direction: where the angular parameter is 0.</summary>
     public readonly Axis3D XAxis => new(_pos.Location, _pos.XDirection);
 
+    /// <summary>The axis through the origin along the Y direction: where the angular parameter is PI/2.</summary>
     public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
+    /// <summary>The central symmetry through <paramref name="point"/>.</summary>
     public readonly Cylinder3D Mirrored(in Point3D point)
     {
         CoordinateSystem pos = _pos;
@@ -136,6 +150,7 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
         return new Cylinder3D(pos, _radius);
     }
 
+    /// <summary>The half-turn about <paramref name="axis"/>.</summary>
     public readonly Cylinder3D Mirrored(in Axis3D axis)
     {
         CoordinateSystem pos = _pos;
@@ -143,6 +158,7 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
         return new Cylinder3D(pos, _radius);
     }
 
+    /// <summary>The reflection in the XY plane of <paramref name="frame"/>.</summary>
     public readonly Cylinder3D Mirrored(in Frame3D frame)
     {
         CoordinateSystem pos = _pos;
@@ -150,6 +166,7 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
         return new Cylinder3D(pos, _radius);
     }
 
+    /// <summary>Rotated about <paramref name="axis"/> by <paramref name="angle"/> radians, anticlockwise looking against the axis's direction.</summary>
     public readonly Cylinder3D Rotated(in Axis3D axis, double angle)
     {
         CoordinateSystem pos = _pos;
@@ -157,6 +174,7 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
         return new Cylinder3D(pos, _radius);
     }
 
+    /// <summary>Scaled about <paramref name="point"/> by <paramref name="factor"/>: the radius is multiplied by |factor|.</summary>
     public readonly Cylinder3D Scaled(in Point3D point, double factor)
     {
         CoordinateSystem pos = _pos;
@@ -171,6 +189,7 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
         return new Cylinder3D(pos, radius);
     }
 
+    /// <summary>The image under <paramref name="transform"/>: the radius is multiplied by |ScaleFactor|.</summary>
     public readonly Cylinder3D Transformed(in Transform3D transform)
     {
         CoordinateSystem pos = _pos;
@@ -185,6 +204,7 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
         return new Cylinder3D(pos, radius);
     }
 
+    /// <summary>Moved by <paramref name="vector"/>.</summary>
     public readonly Cylinder3D Translated(in Vector3D vector)
     {
         CoordinateSystem pos = _pos;
@@ -192,6 +212,7 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
         return new Cylinder3D(pos, _radius);
     }
 
+    /// <summary>Moved by the vector from <paramref name="point1"/> to <paramref name="point2"/>.</summary>
     public readonly Cylinder3D Translated(in Point3D point1, in Point3D point2)
     {
         CoordinateSystem pos = _pos;
@@ -199,15 +220,21 @@ public readonly partial struct Cylinder3D : IEquatable<Cylinder3D>
         return new Cylinder3D(pos, _radius);
     }
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(Cylinder3D other) => _pos.Equals(other._pos) && _radius.Equals(other._radius);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="Cylinder3D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is Cylinder3D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => HashCode.Combine(_pos, _radius);
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in Cylinder3D left, in Cylinder3D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in Cylinder3D left, in Cylinder3D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => FormattableString.Invariant($"Cylinder3D({_pos}, {_radius:R})");
 }

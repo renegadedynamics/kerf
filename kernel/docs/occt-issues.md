@@ -2133,6 +2133,53 @@ classes.
 |---|---|---|---|
 | tests/bugs/modalg_7/bug31120 | `set ratio (${memval}-{$memval1})/${memval1}` makes a text, not a number, so `if { ${ratio} > 0.05}` compares strings, and `(` sorts before `0` | The check can't fail: run with the heap five times larger it stays silent, so the script doesn't test the leak it names | leave: a test script's. `DrawCaseProcessTests.Repeating_an_offset_keeps_nothing` asks the question (decision 1703) |
 
+## Found by unit 11I's tests of features, intersectors and solvers
+
+Native has gone, so "as OCCT" here comes from reading OCCT's source beside the port's.
+
+| Where | What | Effect | State |
+|---|---|---|---|
+| `Geom2dGcc_FunctionTanCuCuOnCu`, circle, curve, centre on a circle | The constructor sets `CuCuOnCi`, so `InitDerivative` evaluates the unset first curve | That form of the iterative solver can't run | fixed (decision 1749) |
+| `Geom2dGcc_Circ2d2TanOnIter`, curve, point, centre on a curve | Bounds of the centre's parameter and the radius swapped, and the radius read as the centre's parameter after solving | Done only by chance | fixed (decision 1750) |
+| `MathRoot::Bisection`, `BisectionNewton` | No check of the ends: with `f(a) = 0`, every midpoint counts as a's sign | Returns the far end as a root, with status OK | fixed (decision 1751) |
+| `BVH_DistanceField::Build`, parallel | The trees are built lazily by whichever slice asks first, and building reorders the elements | Wrong distances or an exception on another thread | fixed (decision 1752) |
+| `IntCurveSurface_InterImpl::PerformBounds` (bug26525) | Clamps the surface's parameters to 1e50 before `PerformConicSurf` asks `Precision::IsInfinite`, which needs 1e100 | The estimates for infinite surfaces (`EstLimForInfExtr`, `Revl`, `Offs`, `Surf`, `ProjectIntersectAndEstLim`) are dead code. A line parallel to the rulings of an infinite extrusion, which the estimate would have refused, is sampled out to 1e50, and rounding puts spurious points on it with \|W\| from 1e32 up (48 in the test). Harmless below 1e30, and left for the owner: fixing it would change the limits every line against an infinite surface uses | leave |
+| `IntCurveSurface_InterUtils`, `DoSurface`, `DoNewBounds` | Called by nothing in OCCT: they served a method of `IntCurveSurface_HInter` that's never called | Dead code | leave |
+| `Geom2dGcc_Circ2d3TanIter`, the forms with a point | The point is a circle of radius 0, whose parameter stays at pi since nothing depends on it, and the solution is then checked with the tangent there, (0, -1), against the way from the point to the centre | A correct solution is refused unless the point lies below its centre (with the plane's y up) | leave |
+| `Geom2dGcc_Lin2d2TanIter`, circle and curve | `par2sol` is the distance from the first tangency to the second, unsigned, and the line can run the other way | `Tangency2`'s parameter can be on the wrong side of the line's origin; the point is right | leave |
+| `LocOpe_Pipe::Curves`, `BarycCurve`, a spine with a line | `GeomConvert` has no form for a whole line, and the swept edges carry one | `BRepFeat_MakePipe::Perform(Until)` and `Perform(From, Until)` throw along any spine with a line in it; the unlimited pipe doesn't ask for the curves | leave |
+| `BRepFill_Pipe::PipeLine`, along a circle | Seen on the port only, the same code by reading: the sweep of a point gives no edge, where a Bezier spine gives one | `LocOpe_Pipe::BarycCurve` then reads the first of no curves, so a limited `MakePipe` along an arc throws | leave |
+| `BRepFeat::ParametricBarycenter` | The loop over the vertices counts each one in `nbp` without adding its parameter | The mean is biased towards 0: 23.44 for 25 on a box. Features only compare it, so the port keeps it, for the owner | leave |
+| `FilletSurf_InternalBuilder::Perform`, `Simulate` | No catch round the fillet's start | A radius too large for its faces throws "StartSol echec", though the class has `IsDone` and `StatusError` for failures | leave |
+| `HLRBRep_Algo`, a sphere in perspective | Seen on the port only: its outline is walked rather than analytic | Up to 0.9% short of the circle it should be, and shortest at great focal distances (31.15 against 31.42 at a focus of 10,000) | leave |
+| `BRepFeat_MakeCylindricalHole`, `PerformThruNext` on a compound of two solids | Seen on the port only: the drilled solid is cut, and the plug stays in the result as a third solid | The volume doesn't change. On a single solid the same hole is right. Not attributed | open |
+| `BRepFeat_MakeRevol::Perform(From, Until)` with plane faces | Seen on the port only: `InvShape` whichever planes were tried | Its 55 lines after the check weren't reached. Not attributed | open |
+| `BRepFeat_MakePrism`, `MakeDraftPrism`, mode 2 (the feature alone), with an Until | Seen on the port only: `GlobalPerform` leaves no shape | Only `Perform(length)` gives the feature alone. Not attributed | open |
+| `GCPnts_AbscissaPoint::Length`, `CPnts_AbscissaPoint`, `BRepGProp_Cinert` | A few fixed Gauss points over each span: 2 x degree for a Bezier, 10 for an ellipse | 1.5% out on an ellipse of 10 by 1. Fixed for the public API (decision 1768). The engine's own callers keep it, as they only compare and as native comparisons pin what they decide | fixed in public; engine left |
+| `BRepPrimAPI_MakeTorus` with a part of the minor circle | Its base class closes any revolved primitive by flat discs to the axis | The outer half of a tube's section gives 210.6 and not the 53.5 a slice would, on R = 5, r = 1. It is valid and documented now, but not what the name suggests. For the owner: a real tube sector would be a new option or a change of meaning | leave |
+| `BRepOffsetAPI_MakePipeShell`, a fixed normal lying along the path | Seen on the port: a section turned to contain the path sweeps no volume | A success with a volume of 1e-16 for `Normal` square to a straight path. Not pinned by any test, as unit 11R decides how such results report | open |
+## Found or fixed by unit 11S
+
+The list and its ranking are in [occt-defects.md](occt-defects.md).
+
+| Where | What | Effect | State |
+|---|---|---|---|
+| `GeomGridEval_BSplineSurface`, the cache | Built from a parameter that can locate to the next span | A wrong point just below a knot (#1577) | fixed (decision 1775) |
+| `GeomFill_GuideTrihedronAC::D2` | `TN2` for `\|DTN\|^2` | A sweep with a guide distorted (#1681) | fixed (decision 1776) |
+| `GeomBndLib_*Surface::BoxOptimal` | Cell centres aren't seen, and the search's gate reads the corners only | A box smaller than the surface (#1604, #1679) | fixed (decision 1777) |
+| `gp_Trsf::Invert`, `gp_Trsf2d::Invert` | A point mirror's translation negated | Wrong inverse | fixed from upstream (decision 1778) |
+| `Geom_OffsetSurface::Surface` | An indirect plane's offset direction | A plane on the wrong side, and evaluation through it | **open**: upstream `71658f6c8f`; tried, and 13 oracle tests would need work (decision 1778) |
+| `BRepBndLib::AddOptimal` | Adds the face's tolerance whatever the flag | (#1698) | fixed (decision 1779) |
+| `GeomAdaptor_SurfaceOfRevolution::GetType` | `major > r` with no tolerance | An invalid solid (#1566) | fixed (decision 1780) |
+| `ElCLib::ParabolaParameter`, `Extrema_ExtPElC` | Focal 0 isn't the line evaluation makes it | (#1617) | fixed (decision 1781) |
+| `gp`, `Geom`, `Geom2d` constructors | NaN passes `r < 0` | (#1618) | fixed for radii and angles; directions **open**, as `ExtPElS` on a cone reaches one (decision 1782) |
+| `IntPatch` cylinder/cylinder walk | Status stays "absent" after a step in and out over both V bounds | Empty Boolean (#1633) | fixed (decision 1783) |
+| `BRepGProp_Gauss::Compute` | U isn't refined, and its error isn't counted | Wrong precise properties (#1675) | fixed (decision 1784) |
+| `GeomBndLib_BSplineCurve2d::Box` | Trims a periodic arc to the first period | A face's area short (#1685) | fixed (decision 1785) |
+| `BRepFill_OffsetWire` | Concentric circles reach the medial axis; a collapsed circle falls through | A crash natively (#1606, #1452) | fixed (decision 1788) |
+| `BRepFill_OffsetWire`, a positive offset of a face with a hole | Treats each wire alone, so the hole grows | An outward offset's hole is larger, not smaller. The same whether the hole is concentric or not | **open**: to be checked with what a user expects |
+| Default sweep (`GeomFill_CorrectedFrenet`) on some planar splines | The sweep's approximation fails where Frenet and discrete succeed: #1630's spine | No pipe; natively a crash | **open**: occt-defects.md |
+| OCCT's corpus references for `checkprops -s` | From the path with #1675's bug | blend/simple/J6 expects 79953.8 for a true 77932 | see decision 1784 |
 ## Found by unit 11R, checking every result
 | Where | What | Effect | Status |
 |---|---|---|---|

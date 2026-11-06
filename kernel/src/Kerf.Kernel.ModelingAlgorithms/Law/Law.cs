@@ -260,7 +260,7 @@ internal static class Law
         return bs;
     }
 
-    private static double Eval2(double p, double first, double last, double mil, bool hasfirst, bool haslast,
+    private static double Eval2(double p, double mil, bool hasfirst, bool haslast,
                                 BSpline? bs1, BSpline? bs2)
     {
         if (hasfirst && p < mil)
@@ -325,7 +325,7 @@ internal static class Law
         global::Kerf.Engine.Geometry.Splines.BSplCLib.BuildSchoenbergPoints(3, fknot, par);
         for (i = 1; i <= 6; i++)
         {
-            pol[i] = Eval2(par[i], first, last, milieu, hasF, hasL, bs1, bs2);
+            pol[i] = Eval2(par[i], milieu, hasF, hasL, bs1, bs2);
         }
         NCollection_Array1<int> ord = new NCollection_Array1<int>(1, 6);
         ord.Init(0);

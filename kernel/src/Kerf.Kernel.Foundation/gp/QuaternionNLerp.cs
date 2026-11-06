@@ -9,7 +9,7 @@ namespace Kerf.Engine.Geometry;
 /// unit quaternion: its length lies between sqrt(2)/2 and 1.
 /// </summary>
 /// <remarks>
-/// <c>new gp_QuaternionNLerp()</c> holds identities, as in OCCT; <c>default(gp_QuaternionNLerp)</c> is not valid.
+/// <c>new QuaternionNLerp()</c> holds identities, as in OCCT; <c>default(QuaternionNLerp)</c> is not valid.
 /// </remarks>
 internal partial struct QuaternionNLerp : IEquatable<QuaternionNLerp>
 {

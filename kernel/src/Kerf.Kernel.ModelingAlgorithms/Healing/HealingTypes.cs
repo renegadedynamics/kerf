@@ -220,9 +220,9 @@ public sealed record BSplineConversionOptions
     /// <summary>Surfaces of revolution.</summary>
     public bool Revolutions { get; init; } = true;
 
-    /// <summary>Offset surfaces.</summary>
+    /// <summary>Whether offset surfaces are converted: on by default.</summary>
     public bool Offsets { get; init; } = true;
 
-    /// <summary>Planes.</summary>
+    /// <summary>Whether planes are converted: off by default.</summary>
     public bool Planes { get; init; }
 }

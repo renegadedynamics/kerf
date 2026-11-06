@@ -877,8 +877,8 @@ internal class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersectio
             nbsamplesOnC2 = (5 * (nbsamplesOnC2 * nbIter)) / 4;
         }
 
-        Polygon2dGen<TheCurve, TheCurveTool> poly1 = new(c1, nbsamplesOnC1, d1, tol),
-                                                       poly2 = new(c2, nbsamplesOnC2, d2, tol);
+        Polygon2dGen<TheCurve, TheCurveTool> poly1 = Polygon2dGen<TheCurve, TheCurveTool>.Sample(c1, nbsamplesOnC1, d1, tol),
+                                                       poly2 = Polygon2dGen<TheCurve, TheCurveTool>.Sample(c2, nbsamplesOnC2, d2, tol);
 
         if ((poly1.DeflectionOverEstimation() > tolConf) && (poly2.DeflectionOverEstimation() > tolConf))
         {
@@ -928,11 +928,11 @@ internal class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersectio
         {
             if (poly1.SegmentCount < nbsamplesOnC1)
             {
-                poly1 = new Polygon2dGen<TheCurve, TheCurveTool>(c1, nbsamplesOnC1, d1, tol);
+                poly1 = Polygon2dGen<TheCurve, TheCurveTool>.Sample(c1, nbsamplesOnC1, d1, tol);
             }
             if (poly2.SegmentCount < nbsamplesOnC2)
             {
-                poly2 = new Polygon2dGen<TheCurve, TheCurveTool>(c2, nbsamplesOnC2, d2, tol);
+                poly2 = Polygon2dGen<TheCurve, TheCurveTool>.Sample(c2, nbsamplesOnC2, d2, tol);
             }
 
             FindIntersect(c1, d1, c2, d2, tolConf, tol, nbIter, deltaU, deltaV, poly1, poly2, true);

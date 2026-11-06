@@ -29,7 +29,7 @@ public sealed class ToroidalSurface : ElementarySurface
     {
         _majorRadius = majorRadius;
         _minorRadius = minorRadius;
-        if (minorRadius < 0.0 || majorRadius < 0.0)
+        if (!(minorRadius >= 0.0) || majorRadius < 0.0)
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -47,6 +47,7 @@ public sealed class ToroidalSurface : ElementarySurface
         _pos = torus.Position;
     }
 
+    /// <summary>A new surface with the same values, which can be changed independently of this one.</summary>
     public sealed override Geometry3D Copy()
     {
         ToroidalSurface cs;
@@ -96,7 +97,7 @@ public sealed class ToroidalSurface : ElementarySurface
     internal void SetMinorRadius(double minorRadius)
     {
         CheckMutable();
-        if (minorRadius < 0.0 || _majorRadius - minorRadius <= Constants.Resolution())
+        if (!(minorRadius >= 0.0) || _majorRadius - minorRadius <= Constants.Resolution())
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
@@ -244,6 +245,7 @@ public sealed class ToroidalSurface : ElementarySurface
     /// <summary>The volume, PI * R2**2 * 2 * PI * R1.</summary>
     public double Volume => (M_PI * _minorRadius * _minorRadius) * (2.0 * M_PI * _majorRadius);
 
+    /// <inheritdoc/>
     protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();

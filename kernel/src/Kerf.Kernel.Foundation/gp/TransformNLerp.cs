@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry;
 /// template. The port names it after its header, and writes its translation and scale members (an
 /// <c>NCollection_Lerp</c> of <c>gp_XYZ</c> and of <c>double</c>) as start and end fields interpolated with the
 /// template's formula <c>(1 - t) * start + t * end</c>.
-/// <c>new gp_TrsfNLerp()</c> holds identities; <c>default(gp_TrsfNLerp)</c> is not valid.
+/// <c>new TransformNLerp()</c> holds identities; <c>default(TransformNLerp)</c> is not valid.
 /// </remarks>
 internal partial struct TransformNLerp : IEquatable<TransformNLerp>
 {

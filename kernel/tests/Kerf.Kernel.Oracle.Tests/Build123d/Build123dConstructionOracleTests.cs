@@ -483,6 +483,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
     [Fact]
     public void Sweeps_of_build123d_tests_as_native()
     {
+        global::Kerf.Engine.Construction.Surfaces.GuideTrihedronAC.ReplayNative.Value = true; // decision 1776
         Cases();
         Report();
     }

@@ -7,7 +7,10 @@ namespace Kerf.Fillets;
 /// <summary>The shape of a fillet's sections: rational (exact circular arcs), quasi-angular or polynomial.</summary>
 public enum FilletShape
 {
+    /// <summary>The standard rational form of a circle: exact sections, and the default.</summary>
     Rational,
+    /// <summary>A rational form of a circle whose parameter follows the circle's angle closely.</summary>
     QuasiAngular,
+    /// <summary>A polynomial approximation of a circle, so the sections aren't exact arcs.</summary>
     Polynomial,
 }

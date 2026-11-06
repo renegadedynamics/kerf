@@ -212,6 +212,8 @@ internal sealed class BezierSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
             }
         }
 
+        SamplingHelpers.AddCellCentres(fineGrid, pnts, nbUSamples, nbVSamples, coordMin, coordMax, deflMax);
+
         // Adjust minmax using PSO + Powell optimization.
         global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSwarm keptSwarm = new();
         double eps = Max(tol, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -228,7 +230,8 @@ internal sealed class BezierSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
             {
                 for (int j = 1; j <= nbVSamples; ++j)
                 {
-                    if (pnts[i, j].Coord(k + 1) - cMin < diff)
+                    SamplingHelpers.NeighbourhoodRange(fineGrid, nbUSamples, nbVSamples, i, j, k + 1, out double reachMin, out double reachMax);
+                    if (reachMin - cMin < diff)
                     {
                         double anUMin = uMin + Max(0, i - 2) * du;
                         double anUMax = uMin + Min(nbUSamples - 1, i) * du;
@@ -240,7 +243,7 @@ internal sealed class BezierSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
                             cMin = locMin;
                         }
                     }
-                    else if (cMax - pnts[i, j].Coord(k + 1) < diff)
+                    else if (cMax - reachMax < diff)
                     {
                         double anUMin = uMin + Max(0, i - 2) * du;
                         double anUMax = uMin + Min(nbUSamples - 1, i) * du;

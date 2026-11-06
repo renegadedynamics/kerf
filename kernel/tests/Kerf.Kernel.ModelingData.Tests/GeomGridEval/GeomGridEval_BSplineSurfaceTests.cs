@@ -428,4 +428,21 @@ public class GeomGridEval_BSplineSurfaceTest
             }
         }
     }
+
+    [Fact]
+    public void ParameterJustBelowAnInteriorKnot_MatchesTheSurface()
+    {
+        // OCCT #1577: the parameter before it in the same span keeps the span, and the cache took the next one
+        BSplineSurface aSurf = CreateMultiSpanBSplineSurface();
+        NCollection_Array1<double> aUs = NCollection_Array1<double>.From([0.4, Math.BitDecrement(0.5), 0.75]);
+        NCollection_Array1<double> aVs = NCollection_Array1<double>.From([0.3, Math.BitDecrement(0.5)]);
+        NCollection_Array2<Point3D> aGrid = new SurfaceGrid(aSurf).EvaluateGrid(aUs, aVs);
+        for (int i = 1; i <= aUs.Length(); ++i)
+        {
+            for (int j = 1; j <= aVs.Length(); ++j)
+            {
+                Assert.True(aGrid[i, j].DistanceTo(aSurf.Value(aUs[i], aVs[j])) < 1.0e-12, $"at {aUs[i]}, {aVs[j]}");
+            }
+        }
+    }
 }

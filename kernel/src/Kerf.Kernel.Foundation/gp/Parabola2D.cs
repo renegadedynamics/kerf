@@ -12,14 +12,15 @@ namespace Kerf.Geometry;
 /// axis of symmetry. In it the parabola is <c>Y^2 = (2 * P) * X</c>, where P = 2 * focal length.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Parab2d()</c> is OCCT's indefinite parabola (focal length <see cref="Standard.RealLast"/>);
-/// <c>default(gp_Parab2d)</c> is not valid.
+/// <c>new Parabola2D()</c> is OCCT's indefinite parabola (focal length <c>double.MaxValue</c>);
+/// <c>default(Parabola2D)</c> is not valid.
 /// </remarks>
 public readonly partial struct Parabola2D : IEquatable<Parabola2D>
 {
     private readonly Frame2D _pos;
     private readonly double _focalLength;
 
+    /// <summary>An indefinite parabola with a focal length of <c>double.MaxValue</c>, not a useful value until given one.</summary>
     public Parabola2D()
     {
         _pos = new Frame2D();
@@ -27,20 +28,20 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
     }
 
     /// <summary>A parabola with the given axis of symmetry and focal length, direct when <paramref name="sense"/> is true.</summary>
-    /// <exception cref="ConstructionErrorException">The focal length is negative.</exception>
+    /// <exception cref="ArgumentException">The focal length is negative.</exception>
     public Parabola2D(in Axis2D mirrorAxis, double focalLength, bool sense = true)
     {
         _pos = new Frame2D(mirrorAxis, sense);
         _focalLength = focalLength;
-        Refusal.ArgumentIf(focalLength < 0.0, FailureKind.ConstructionError, "gp_Parab2d() - focal length should be >= 0");
+        Refusal.ArgumentIf(!(focalLength >= 0.0), FailureKind.ConstructionError, "gp_Parab2d() - focal length should be >= 0");
     }
 
-    /// <exception cref="ConstructionErrorException">The focal length is negative.</exception>
+    /// <exception cref="ArgumentException">The focal length is negative.</exception>
     public Parabola2D(in Frame2D axes, double focalLength)
     {
         _pos = axes;
         _focalLength = focalLength;
-        Refusal.ArgumentIf(focalLength < 0.0, FailureKind.ConstructionError, "gp_Parab2d() - focal length should be >= 0");
+        Refusal.ArgumentIf(!(focalLength >= 0.0), FailureKind.ConstructionError, "gp_Parab2d() - focal length should be >= 0");
     }
 
     /// <summary>
@@ -68,14 +69,17 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
 
     // Copies
 
+    /// <summary>A copy with this focal length.</summary>
+    /// <exception cref="ArgumentException"><paramref name="focal"/> is negative.</exception>
     public readonly Parabola2D WithFocal(double focal)
     {
         double focalLength = _focalLength;
-        Refusal.ArgumentIf(focal < 0.0, FailureKind.ConstructionError, "gp_Parab2d::SetFocal() - focal length should be >= 0");
+        Refusal.ArgumentIf(!(focal >= 0.0), FailureKind.ConstructionError, "gp_Parab2d::SetFocal() - focal length should be >= 0");
         focalLength = focal;
         return new Parabola2D(_pos, focalLength);
     }
 
+    /// <summary>A copy moved so that its apex is <paramref name="point"/>; its directions stay.</summary>
     public readonly Parabola2D WithLocation(in Point2D point)
     {
         Frame2D pos = _pos;
@@ -83,6 +87,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
         return new Parabola2D(pos, _focalLength);
     }
 
+    /// <summary>A copy whose apex and axis of symmetry come from <paramref name="axis"/>, keeping the handedness.</summary>
     public readonly Parabola2D WithMirrorAxis(in Axis2D axis)
     {
         Frame2D pos = _pos;
@@ -90,6 +95,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
         return new Parabola2D(pos, _focalLength);
     }
 
+    /// <summary>A copy positioned by <paramref name="frame"/>, which replaces the whole frame.</summary>
     public readonly Parabola2D WithAxis(in Frame2D frame)
     {
         Frame2D pos = _pos;
@@ -136,14 +142,18 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
     /// <summary>The distance between the apex and the focus.</summary>
     public readonly double Focal => _focalLength;
 
+    /// <summary>The focus, at the focal length from the apex along the X axis.</summary>
     public readonly Point2D Focus
         => new(_pos.Location.X + _focalLength * _pos.XDirection.X,
                _pos.Location.Y + _focalLength * _pos.XDirection.Y);
 
+    /// <summary>The apex.</summary>
     public readonly Point2D Location => _pos.Location;
 
+    /// <summary>The axis of symmetry, from the apex towards the focus.</summary>
     public readonly Axis2D MirrorAxis => _pos.XAxis;
 
+    /// <summary>The frame the curve is positioned by, whose X direction is parameter 0's and whose handedness is the sense it runs in.</summary>
     public readonly Frame2D Axis => _pos;
 
     /// <summary>The parameter: the distance between the focus and the directrix (2 * focal length).</summary>
@@ -152,6 +162,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
     /// <summary>True when the parabola's system is direct (counterclockwise).</summary>
     public readonly bool IsDirect => (_pos.XDirection.Crossed(_pos.YDirection)) >= 0.0;
 
+    /// <summary>The same curve, running the other way: the Y direction reverses, which flips the frame's handedness.</summary>
     public readonly Parabola2D Reversed()
     {
         Frame2D pos = _pos;
@@ -161,6 +172,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
         return new Parabola2D(pos, _focalLength);
     }
 
+    /// <summary>The central symmetry through <paramref name="point"/>.</summary>
     public readonly Parabola2D Mirrored(in Point2D point)
     {
         Frame2D pos = _pos;
@@ -168,6 +180,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
         return new Parabola2D(pos, _focalLength);
     }
 
+    /// <summary>The reflection in the line <paramref name="axis"/>.</summary>
     public readonly Parabola2D Mirrored(in Axis2D axis)
     {
         Frame2D pos = _pos;
@@ -175,6 +188,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
         return new Parabola2D(pos, _focalLength);
     }
 
+    /// <summary>Rotated about <paramref name="point"/> by <paramref name="angle"/> radians, anticlockwise.</summary>
     public readonly Parabola2D Rotated(in Point2D point, double angle)
     {
         Frame2D pos = _pos;
@@ -182,6 +196,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
         return new Parabola2D(pos, _focalLength);
     }
 
+    /// <summary>Scaled about <paramref name="point"/> by <paramref name="factor"/>: the focal length is multiplied by |factor|.</summary>
     public readonly Parabola2D Scaled(in Point2D point, double factor)
     {
         Frame2D pos = _pos;
@@ -196,6 +211,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
         return new Parabola2D(pos, focalLength);
     }
 
+    /// <summary>The image under <paramref name="transform"/>: the focal length is multiplied by |ScaleFactor|.</summary>
     public readonly Parabola2D Transformed(in Transform2D transform)
     {
         Frame2D pos = _pos;
@@ -210,6 +226,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
         return new Parabola2D(pos, focalLength);
     }
 
+    /// <summary>Moved by <paramref name="vector"/>.</summary>
     public readonly Parabola2D Translated(in Vector2D vector)
     {
         Frame2D pos = _pos;
@@ -217,6 +234,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
         return new Parabola2D(pos, _focalLength);
     }
 
+    /// <summary>Moved by the vector from <paramref name="point1"/> to <paramref name="point2"/>.</summary>
     public readonly Parabola2D Translated(in Point2D point1, in Point2D point2)
     {
         Frame2D pos = _pos;
@@ -224,15 +242,21 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
         return new Parabola2D(pos, _focalLength);
     }
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(Parabola2D other) => _pos.Equals(other._pos) && _focalLength.Equals(other._focalLength);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="Parabola2D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is Parabola2D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => HashCode.Combine(_pos, _focalLength);
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in Parabola2D left, in Parabola2D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in Parabola2D left, in Parabola2D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => $"Parabola2D({_pos}, focal {_focalLength})";
 }

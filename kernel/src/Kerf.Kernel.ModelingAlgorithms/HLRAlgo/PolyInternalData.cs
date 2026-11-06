@@ -576,24 +576,24 @@ internal class PolyInternalData : Transient
             int iOld, iNew, iTr, skip, ip4;
             Span<int> itpk = stackalloc int[2];
             int n1, n2, n3;
-            Span<int> nOld = stackalloc int[3], nNew = stackalloc int[3], New = stackalloc int[4];
-            New[0] = cnx1;
-            New[2] = _nbTData + 1;
+            Span<int> nOld = stackalloc int[3], nNew = stackalloc int[3], newValue = stackalloc int[4];
+            newValue[0] = cnx1;
+            newValue[2] = _nbTData + 1;
             if (cnx2 == 0)
             {
-                New[1] = 0;
-                New[3] = 0;
+                newValue[1] = 0;
+                newValue[3] = 0;
             }
             else
             {
-                New[1] = cnx2;
-                New[3] = _nbTData + 2;
+                newValue[1] = cnx2;
+                newValue[3] = _nbTData + 2;
             }
 
             for (skip = 0; skip <= 1; skip++)
             {
-                iOld = New[skip];
-                iNew = New[skip + 2];
+                iOld = newValue[skip];
+                iNew = newValue[skip + 2];
                 if (iOld != 0)
                 {
                     ref TriangleData triangle = ref tData1[iOld];
@@ -679,7 +679,7 @@ internal class PolyInternalData : Transient
 
             for (iTr = 0; iTr <= 3; iTr++)
             {
-                iNew = New[iTr];
+                iNew = newValue[iTr];
                 if (iTr < 2)
                 {
                     skip = iTr;
@@ -688,7 +688,7 @@ internal class PolyInternalData : Transient
                 {
                     skip = iTr - 2;
                 }
-                iOld = New[skip];
+                iOld = newValue[skip];
                 ip4 = itpk[skip];
                 if (iNew != 0)
                 {

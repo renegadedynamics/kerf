@@ -119,7 +119,7 @@ public class DrawOffsetDraftCorpusTests(ITestOutputHelper output)
         // cases drafting a reconstructed fillet, attributed in DrawFilletCorpusTests.KnownFailures). With unit 8W's exec:
         // 1,714 (bugs/modalg_2/bug22864_1, SKIPPED: data not public)
         Assert.Equal(1714, aNew.Count);
-        Assert.Equal(431, aRuns.Count(r => r.Status == "OK"));
+        Assert.Equal(431, aRuns.Count(r => r.Status.StartsWith("OK", StringComparison.Ordinal)));
         Assert.All(aRuns, r => Assert.True(!r.Status.StartsWith("FAILED", StringComparison.Ordinal) || KnownFailures.ContainsKey(r.Case.Id)
                                            || DrawBooleanCorpusTests.KnownFailures.Contains(r.Case.Id)
                                            || DrawFilletCorpusTests.KnownFailures.ContainsKey(r.Case.Id), $"{r.Case.Id}: {r.Status}"));

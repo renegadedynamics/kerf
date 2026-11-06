@@ -497,7 +497,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
                     // Standard_Failure, or IndexOutOfRangeException where native OCCT raises Standard_OutOfRange
                     aPortExc = anExc;
                 }
-                if (aPortExc is ConstructionErrorException && aThisKind == 12)
+                if (aPortExc is not null && Refusal.Unwrapped(aPortExc) is ConstructionErrorException && aThisKind == 12)
                 {
                     // MovePointAndTangent's 2 x 2 system is singular (degree 1 mostly): OCCT's release build divides
                     // by the zero determinant (gp_Mat2d::Invert's check is compiled out) where the port throws.

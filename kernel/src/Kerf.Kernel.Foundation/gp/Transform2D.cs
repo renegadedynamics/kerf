@@ -14,7 +14,7 @@ namespace Kerf.Geometry;
 /// It maps P to <c>scale * matrix * P + loc</c>.
 /// </summary>
 /// <remarks>
-/// <c>new gp_Trsf2d()</c> is the identity, as in OCCT; <c>default(gp_Trsf2d)</c> is not valid. Build one with the
+/// <c>new Transform2D()</c> is the identity, as in OCCT; <c>default(Transform2D)</c> is not valid. Build one with the
 /// static factories (<see cref="Rotation(in Point2D, double)"/>, <see cref="Translation(in Vector2D)"/>, ...) or the
 /// <c>With</c> methods, which mirror OCCT's <c>Set</c> methods.
 /// </remarks>
@@ -43,6 +43,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         loc = _loc;
     }
 
+    /// <summary>The identity.</summary>
     public Transform2D()
     {
         _scale = 1.0;
@@ -74,24 +75,33 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
     /// <summary>The reflection in an axis.</summary>
     public static Transform2D Mirror(in Axis2D axis) => new Transform2D().WithMirror(axis);
 
+    /// <summary>The rotation about <paramref name="point"/> by <paramref name="angle"/> radians, anticlockwise.</summary>
     public static Transform2D Rotation(in Point2D point, double angle) => new Transform2D().WithRotation(point, angle);
 
+    /// <summary>The uniform scale about <paramref name="point"/>. Unlike 3D's, a factor of zero isn't refused.</summary>
     public static Transform2D Scale(in Point2D point, double factor) => new Transform2D().WithScale(point, factor);
 
+    /// <summary>What re-expresses coordinates in the right-handed frame of <paramref name="from"/> as coordinates in that of <paramref name="to"/>, each axis being its frame's X axis.</summary>
     public static Transform2D Transformation(in Axis2D from, in Axis2D to)
         => new Transform2D().WithTransformation(from, to);
 
+    /// <summary>What re-expresses absolute coordinates as coordinates in the right-handed frame whose X axis is <paramref name="toSystem"/>.</summary>
     public static Transform2D Transformation(in Axis2D toSystem) => new Transform2D().WithTransformation(toSystem);
 
+    /// <summary>The translation by <paramref name="vector"/>.</summary>
     public static Transform2D Translation(in Vector2D vector) => new Transform2D().WithTranslation(vector);
 
+    /// <summary>The translation by the vector from <paramref name="point1"/> to <paramref name="point2"/>.</summary>
     public static Transform2D Translation(in Point2D point1, in Point2D point2) => new Transform2D().WithTranslation(point1, point2);
 
+    /// <summary>The transformation from a 2 by 3 matrix given row by row, the last column being the translation: as <see cref="WithValues"/>.</summary>
+    /// <exception cref="ArgumentException">The 2 by 2 part is singular or not a similarity.</exception>
     public static Transform2D Values(double a11, double a12, double a13, double a21, double a22, double a23)
         => new Transform2D().WithValues(a11, a12, a13, a21, a22, a23);
 
     // Copies
 
+    /// <summary>The central symmetry through <paramref name="point"/>. It replaces this value rather than composing with it.</summary>
     public readonly Transform2D WithMirror(in Point2D point)
     {
         double scale = _scale;
@@ -106,6 +116,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         return new Transform2D(scale, shape, matrix, loc);
     }
 
+    /// <summary>The reflection in the line <paramref name="axis"/>, with a scale factor of -1. It replaces this value rather than composing with it.</summary>
     public readonly Transform2D WithMirror(in Axis2D axis)
     {
         double scale = _scale;
@@ -128,6 +139,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         return new Transform2D(scale, shape, matrix, loc);
     }
 
+    /// <summary>The rotation about <paramref name="point"/> by <paramref name="angle"/> radians, anticlockwise. It replaces this value rather than composing with it.</summary>
     public readonly Transform2D WithRotation(in Point2D point, double angle)
     {
         double scale = _scale;
@@ -144,6 +156,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         return new Transform2D(scale, shape, matrix, loc);
     }
 
+    /// <summary>The uniform scale about <paramref name="point"/>. It replaces this value rather than composing with it.</summary>
     public readonly Transform2D WithScale(in Point2D point, double factor)
     {
         double scale = _scale;
@@ -158,6 +171,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         return new Transform2D(scale, shape, matrix, loc);
     }
 
+    /// <summary>What re-expresses coordinates in the right-handed frame of <paramref name="from"/> as coordinates in that of <paramref name="to"/>. It replaces this value rather than composing with it.</summary>
     public readonly Transform2D WithTransformation(in Axis2D from, in Axis2D to)
     {
         double scale = _scale;
@@ -187,6 +201,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         return new Transform2D(scale, shape, newMatrix, loc);
     }
 
+    /// <summary>What re-expresses absolute coordinates as coordinates in the right-handed frame whose X axis is <paramref name="axis"/>. It replaces this value rather than composing with it.</summary>
     public readonly Transform2D WithTransformation(in Axis2D axis)
     {
         double scale = _scale;
@@ -206,6 +221,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         return new Transform2D(scale, shape, matrix, loc);
     }
 
+    /// <summary>The translation by <paramref name="vector"/>. It replaces this value rather than composing with it.</summary>
     public readonly Transform2D WithTranslation(in Vector2D vector)
     {
         double scale = _scale;
@@ -219,6 +235,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         return new Transform2D(scale, shape, matrix, loc);
     }
 
+    /// <summary>The translation by the vector from <paramref name="point1"/> to <paramref name="point2"/>. It replaces this value rather than composing with it.</summary>
     public readonly Transform2D WithTranslation(in Point2D point1, in Point2D point2)
     {
         double scale = _scale;
@@ -232,6 +249,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         return new Transform2D(scale, shape, matrix, loc);
     }
 
+    /// <summary>A copy with this translation part, keeping the rotation and scale. <see cref="Form"/> changes to match.</summary>
     public readonly Transform2D WithTranslationPart(in Vector2D vector)
     {
         TransformForm shape = _shape;
@@ -269,6 +287,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         return new Transform2D(_scale, shape, _matrix, loc);
     }
 
+    /// <summary>A copy with this scale factor, keeping the rest. <see cref="Form"/> changes to match. Unlike 3D's, a factor of zero isn't refused.</summary>
     public readonly Transform2D WithScaleFactor(double factor)
     {
         double scale = _scale;
@@ -353,6 +372,8 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         return new Transform2D(scale, shape, _matrix, _loc);
     }
 
+    /// <summary>The transformation from a 2 by 3 matrix given row by row, the last column being the translation. The scale is the square root of the size of the 2 by 2 part's determinant, and that part is orthogonalised after dividing by it. It replaces this value rather than composing with it.</summary>
+    /// <exception cref="ArgumentException">The 2 by 2 part is singular or not a similarity.</exception>
     public readonly Transform2D WithValues(double a11, double a12, double a13, double a21, double a22, double a23)
     {
         double scale = _scale;
@@ -424,8 +445,10 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
     /// <summary>True when the determinant of the matrix is negative (the transformation mirrors).</summary>
     public readonly bool IsNegative => (_matrix.Determinant() < 0.0);
 
+    /// <summary>The kind of transformation this is, which some algorithms use as a shortcut.</summary>
     public readonly TransformForm Form => _shape;
 
+    /// <summary>The uniform scale: 1 for a rigid motion, and negative for a point or axis mirror.</summary>
     public readonly double ScaleFactor => _scale;
 
     internal readonly Xy TranslationXy() => _loc;
@@ -474,6 +497,8 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         }
     }
 
+    /// <summary>The transformation that undoes this one.</summary>
+    /// <exception cref="InvalidOperationException">The scale factor is within the resolution of zero.</exception>
     public readonly Transform2D Inverted()
     {
         double newScale = _scale;
@@ -481,10 +506,11 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         Xy loc = _loc;
         //                                    -1
         //  X' = scale * R * X + T  =>  X = (R  / scale)  * ( X' - T)
-        if (_shape == TransformForm.Identity)
+        // A mirror through a point is its own inverse (OCCT 3270746444, after 8.0.1; decision 1778)
+        if (_shape == TransformForm.Identity || _shape == PointMirror)
         {
         }
-        else if (_shape == global::Kerf.Geometry.TransformForm.Translation || _shape == PointMirror)
+        else if (_shape == global::Kerf.Geometry.TransformForm.Translation)
         {
             loc.Reverse();
         }
@@ -779,6 +805,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         return new Transform2D(scale, shape, matrix, loc);
     }
 
+    /// <summary>This transformation composed with itself <paramref name="n"/> times: the identity for 0, and the inverse's powers for a negative <paramref name="n"/>.</summary>
     public readonly Transform2D Powered(int n)
     {
         double newScale = _scale;
@@ -997,18 +1024,25 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         return aCoord;
     }
 
+    /// <summary>The composition: <paramref name="right"/> is applied first, then <paramref name="left"/>.</summary>
     public static Transform2D operator *(in Transform2D left, in Transform2D right) => left.Multiplied(right);
 
+    /// <summary>True when every component is exactly equal: no tolerance is applied.</summary>
     public readonly bool Equals(Transform2D other)
         => _scale.Equals(other._scale) && _shape == other._shape && _matrix.Equals(other._matrix) && _loc.Equals(other._loc);
 
+    /// <summary>True when <paramref name="obj"/> is a <see cref="Transform2D"/> exactly equal to this one.</summary>
     public override readonly bool Equals(object? obj) => obj is Transform2D other && Equals(other);
 
+    /// <summary>A hash consistent with exact equality, so values that differ only by rounding hash differently.</summary>
     public override readonly int GetHashCode() => HashCode.Combine(_scale, _shape, _matrix, _loc);
 
+    /// <summary>Exact equality: no tolerance is applied.</summary>
     public static bool operator ==(in Transform2D left, in Transform2D right) => left.Equals(right);
 
+    /// <summary>Exact inequality: no tolerance is applied.</summary>
     public static bool operator !=(in Transform2D left, in Transform2D right) => !left.Equals(right);
 
+    /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString() => $"Transform2D({_shape}, scale {_scale}, {_matrix}, {_loc})";
 }

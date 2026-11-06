@@ -285,6 +285,11 @@ public partial class DrawLiteChecksOracleTests(ITestOutputHelper output) : IDisp
                     output.WriteLine($"not bit-identical: {aWhat} [{i}]: native {R(aNative[i])}, port {R(aPort[i])}");
                 }
 
+                if (anOptions.Contains("-optimal", StringComparison.Ordinal) && !anOptions.Contains("-obb", StringComparison.Ordinal))
+                {
+                    continue; // native's can be smaller than the shape (decision 1777)
+                }
+
                 if (!(Math.Abs(aNative[i] - aPort[i]) <= Oracle.Tolerance * aScale) && !aNative[i].Equals(aPort[i]))
                 {
                     Disagree($"{aWhat} [{i}]: native {R(aNative[i])}, port {R(aPort[i])}");

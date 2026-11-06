@@ -42,6 +42,24 @@ internal sealed class QuasiAngularConvertor
     private readonly math_Vector _vy;
     private readonly math_Vector _vw;
 
+    // A thread's, initialised. A fillet asks for a new circle at each point of each section, and every Section writes all the vectors
+    // it reads, leaving only the matrix and the constant terms from Init; nothing it calls can come back here
+    [ThreadStatic]
+    private static QuasiAngularConvertor? t_ofThread;
+
+    /// <summary>The thread's convertor, initialised, for one call of <c>Section</c>.</summary>
+    internal static QuasiAngularConvertor OfThread()
+    {
+        QuasiAngularConvertor? convertor = t_ofThread;
+        if (convertor is null)
+        {
+            convertor = new QuasiAngularConvertor();
+            convertor.Init();
+            t_ofThread = convertor;
+        }
+        return convertor;
+    }
+
     public QuasiAngularConvertor()
     {
         _myinit = false;
