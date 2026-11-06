@@ -8,7 +8,7 @@ namespace Kerf.Modeling;
 /// <remarks>
 /// A failed operation (<see cref="Operations.Fillet(IEnumerable{Edge}, double)"/>, <see cref="Part.Subtract"/>,
 /// <see cref="Importers.ImportStep(Stream, ImportLimits?, CancellationToken, string)"/>…) returns a failed
-/// <see cref="Result{T}"/> carrying these diagnostics (unit 10M3). Misuse (a null argument, an index out of range)
+/// <see cref="Result{T}"/> carrying these diagnostics. Misuse (a null argument, an index out of range)
 /// throws .NET's argument exceptions.
 /// </remarks>
 public static class ModelingDiagnostics
@@ -22,7 +22,7 @@ public static class ModelingDiagnostics
     /// <summary>An offset couldn't be built: <c>modeling.offset-failed</c>.</summary>
     public static DiagnosticCode OffsetFailed { get; } = new("modeling.offset-failed");
 
-    /// <summary>A surface couldn't be thickened into a solid: <c>modeling.thicken-failed</c> (unit 10M3).</summary>
+    /// <summary>A surface couldn't be thickened into a solid: <c>modeling.thicken-failed</c>.</summary>
     public static DiagnosticCode ThickenFailed { get; } = new("modeling.thicken-failed");
 
     /// <summary>A loft was invalid and couldn't be recovered: <c>modeling.loft-failed</c>.</summary>
@@ -34,6 +34,6 @@ public static class ModelingDiagnostics
     /// <summary>A spline couldn't be interpolated or approximated through the points: <c>modeling.spline-failed</c>.</summary>
     public static DiagnosticCode SplineFailed { get; } = new("modeling.spline-failed");
 
-    /// <summary>An argument the kernel refused, said in context: <c>kernel.invalid-argument</c> (unit 10M1).</summary>
+    /// <summary>An argument the kernel refused, said in context: <c>kernel.invalid-argument</c>.</summary>
     public static DiagnosticCode KernelInvalidArgument { get; } = new("kernel.invalid-argument");
 }

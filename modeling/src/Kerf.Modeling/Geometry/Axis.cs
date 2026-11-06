@@ -40,10 +40,10 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     }
 
     /// <summary>An axis from an OCCT gp_Ax1.</summary>
-    public Axis(Axis3D ax1)
+    public Axis(Axis3D axis)
     {
-        var loc = ax1.Location;
-        var dir = ax1.Direction;
+        var loc = axis.Location;
+        var dir = axis.Direction;
         Position = loc;
         Direction = dir;
     }

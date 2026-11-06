@@ -78,7 +78,7 @@ public static partial class Shape1DExtensions
                 if (self.AsShape().TryAs<Wire>(out _))
                     // A wire: its comp curve reports OtherCurve, so ask its first edge
                     return self.Edges()[0].Radius;
-                if (!((Edge)self.AsShape()).GeomAdaptor().TryGetCircle(out var circle))
+                if (!((Edge)self.AsShape()).AsCurve().TryGetCircle(out var circle))
                     throw new InvalidOperationException("Shape could not be reduced to a circle");
                 return circle.Radius;
             }
@@ -391,14 +391,14 @@ public static partial class Shape1DExtensions
             {
                 case GeomType.Circle:
                 {
-                    ((Edge)self.AsShape()).GeomAdaptor().TryGetCircle(out var circ);
+                    ((Edge)self.AsShape()).AsCurve().TryGetCircle(out var circ);
                     var axis = circ.Axis;
                     var dir = axis.Direction;
                     return dir;
                 }
                 case GeomType.Ellipse:
                 {
-                    ((Edge)self.AsShape()).GeomAdaptor().TryGetEllipse(out var ell);
+                    ((Edge)self.AsShape()).AsCurve().TryGetEllipse(out var ell);
                     var axis = ell.Axis;
                     var dir = axis.Direction;
                     return dir;

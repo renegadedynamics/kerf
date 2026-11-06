@@ -193,7 +193,7 @@ public class WireTests
                 var @default = candidate.ParamAtPoint(point);
                 var normalized = candidate.ParamAtPoint(point, normalize: true);
                 var native = candidate.ParamAtPoint(point, normalize: false);
-                var adaptor = candidate.GeomAdaptor();
+                var adaptor = candidate.AsCurve();
                 var value = adaptor.Evaluate(native);
                 var evaluated = value;
 
@@ -434,12 +434,12 @@ public class WireTests
     }
 
     [Fact]
-    public void GeomAdaptor()
+    public void AsCurve()
     {
         var w = Polyline(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0));
-        var adaptor = w.GeomAdaptor();
+        var adaptor = w.AsCurve();
         Assert.IsType<WireCurve>(adaptor);
-        Assert.Throws<InvalidOperationException>(() => default(Wire).GeomAdaptor());
+        Assert.Throws<InvalidOperationException>(() => default(Wire).AsCurve());
     }
 
     [Fact]

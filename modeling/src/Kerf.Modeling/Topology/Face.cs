@@ -28,7 +28,7 @@ public static partial class FaceExtensions
             {
                 if (self.IsEmpty)
                     return null;
-                var surface = self.GeomAdaptor();
+                var surface = self.AsSurface();
                 // Unwrap trimmed and offset surfaces to get at the basis surface
                 while (true)
                 {
@@ -367,7 +367,7 @@ public static partial class FaceExtensions
         // ---- Evaluation ----
 
         /// <summary>The surface of the face.</summary>
-        public Surface GeomAdaptor()
+        public Surface AsSurface()
         {
             self.NeedsGeometry("surface");
             self.TryGetSurface(out var surface);
@@ -422,7 +422,7 @@ public static partial class FaceExtensions
         /// <summary>The surface parameters of the point of the surface nearest <paramref name="point"/> (GeomAPI_ProjectPointOnSurf).</summary>
         private (double U, double V) NearestParameters(Point3D point)
         {
-            if (!self.GeomAdaptor().TryProjectNearest(point, out var nearest))
+            if (!self.AsSurface().TryProjectNearest(point, out var nearest))
                 throw new InvalidOperationException("The point can't be projected onto the face's surface");
             return (nearest.U, nearest.V);
         }
@@ -462,7 +462,7 @@ public static partial class FaceExtensions
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("Can't find param on empty face");
-            var surface = self.GeomAdaptor();
+            var surface = self.AsSurface();
             var pnt = point;
             var (uv, separation) = self.ParametersOf(pnt, Constants.Tolerance);
             if (separation > Constants.Tolerance)
@@ -510,7 +510,7 @@ public static partial class FaceExtensions
 
         private Location LocationAtParameters(double u, double v, Vector3D? xDir)
         {
-            var d = self.GeomAdaptor().Derivatives(u, v, 1);
+            var d = self.AsSurface().Derivatives(u, v, 1);
             var (pnt, du, dv) = (d.Point, d.DU, d.DV);
             var origin = pnt;
             var zDir = du.Cross(dv).Normalized();

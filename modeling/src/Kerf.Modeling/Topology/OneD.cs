@@ -65,7 +65,7 @@ public static class OneD
     }
 
     /// <summary>A face offset by <paramref name="amount"/> (<c>BRepOffset_MakeOffset</c>).</summary>
-    public static Shape OffsetTopodsFace(Face face, double amount)
+    internal static Shape OffsetFace(Face face, double amount)
     {
         // BRepOffset_MakeOffset's defaults: skin, arcs, no intersections
         return Failures.Get(face.Offset(amount, new OffsetOptions { Tolerance = Constants.Tolerance }), () => "offset").Shape;
@@ -273,7 +273,7 @@ public static class OneD
                 fitted.Add(edge);
                 continue;
             }
-            var adaptor = edge.GeomAdaptor();
+            var adaptor = edge.AsCurve();
             // Fit only the part of the offset curve the edge uses, as it lies before the edge's location
             edge.TryGetLocalCurve(out var curve, out _, out _);
             var trimmed = new TrimmedCurve3D(curve!, adaptor.Range.Min, adaptor.Range.Max);

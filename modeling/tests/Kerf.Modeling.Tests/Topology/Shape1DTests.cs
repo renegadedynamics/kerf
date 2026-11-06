@@ -89,7 +89,7 @@ public class Shape1DTests
         Assert.True(pts.Count > 2);
 
         // The ends match the curve's
-        var curve = e.GeomAdaptor();
+        var curve = e.AsCurve();
         var first = curve.Evaluate(curve.Range.Min);
         var last = curve.Evaluate(curve.Range.Max);
         Check.AlmostEqual(first, pts[0], 7);

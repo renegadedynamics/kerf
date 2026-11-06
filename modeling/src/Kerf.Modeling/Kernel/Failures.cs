@@ -4,9 +4,8 @@ using Kerf.Topology;
 namespace Kerf.Modeling;
 
 /// <summary>
-/// What the modelling layer was doing when the kernel failed. The native backend's messages started with it ("box 0.0 ×
-/// 1.0 × 1.0 failed: …"), which Bento shows in a cell; unit 10B lost it with the forwarding layer (decision 1342), and
-/// unit 10F restores it through the kernel's diagnostics.
+/// What the modelling layer was doing when the kernel failed, as the start of the message ("box 0.0 × 1.0 × 1.0 failed: …"),
+/// which Bento shows in a cell. It goes through the kernel's diagnostics.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -23,7 +22,7 @@ namespace Kerf.Modeling;
 /// (<see cref="Operations"/>, the algebra's <c>Add</c>, <c>Subtract</c> and <c>Common</c>, the importers) catch it with
 /// <see cref="Try{T}"/> and return a failed <see cref="Result{T}"/>; the shorthands that can't return a result (the
 /// operators, the objects' constructors, the topological shapes' methods) let it escape, as reading a failed result's
-/// value would (unit 10M3). The modelling layer's own misuse errors (build123d's ArgumentException and
+/// value would. The modelling layer's own misuse errors (build123d's ArgumentException and
 /// InvalidOperationException) keep their types and messages.
 /// </para>
 /// </remarks>

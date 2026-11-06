@@ -20,8 +20,8 @@ public static class PointExtensions
 
     static string Labelled(string name, double x, double y, double z)
     {
-        static string c(double v) => Formatting.Component(v, "G6");
-        return $"{name}: (X={c(x)}, Y={c(y)}, Z={c(z)})";
+        static string Component(double v) => Formatting.Component(v, "G6");
+        return $"{name}: (X={Component(x)}, Y={Component(y)}, Z={Component(z)})";
     }
 
     extension(Point3D p)

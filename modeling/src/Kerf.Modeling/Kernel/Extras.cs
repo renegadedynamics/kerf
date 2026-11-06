@@ -4,8 +4,7 @@ using Kerf.Geometry;
 namespace Kerf.Modeling;
 
 /// <summary>
-/// The modelling layer's helpers over the kernel's public API that build123d's code needs in its own terms (once the
-/// native shim's hand-written functions, b3d_extras.cpp): BRep text as bytes, read guardedly, and an edge's own curve.
+/// The modelling layer's helpers over the kernel's public API that build123d's code needs in its own terms: BRep text as bytes, read guardedly, and an edge's own curve.
 /// </summary>
 internal static class Extras
 {

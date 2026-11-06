@@ -182,7 +182,7 @@ public class Fillet2DTests
     {
         var r = new RectangleRounded(20, 10, 1);
         Assert.Equal(20, r.Width);
-        Assert.Equal(10, r.RectangleHeight);
+        Assert.Equal(10, r.Height);
         Assert.Equal(0, r.Rotation);
         Assert.Equal(1, r.Radius);
         Assert.Equal(new Alignment(Align.Center, Align.Center), r.Align);

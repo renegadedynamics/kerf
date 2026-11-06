@@ -124,7 +124,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `Box(1, 2, 3, align=…, rotation=…)` | `new Box(1, 2, 3, rotation: …, align: …)`; `align: null` is the object's default, `Align.None` no alignment |
 | `rotation=(x, y, z)` | `rotation: new Rotation(x, y, z)` |
 | `mode=Mode.PRIVATE` | Not ported |
-| `box.box_height`, `rect.rectangle_height` | `BoxHeight`, `RectangleHeight` (as Python names them) |
+| `box.box_height`, `rect.rectangle_height` | `Height`, `Height` (as Python names them) |
 | `Line(p1, p2)`, `Polyline(*pts, close=…)` | `new Line(p1, p2)`, `new Polyline(pts, close: …)` or `new Polyline(p1, p2, …)` |
 | `CenterArc(c, r, start, arc_size)` with a float or a limit (`Shape`, `Axis`, …) | Two overloads: `double arcSize`, or a `CurveLimit` (from a shape, axis, location, plane or point); the same for `JernArc`, the conic arcs and `PolarLine`'s length |
 | `ConstrainedArcs(…, selector=lambda arcs: …)` | `new ConstrainedArcs(…, selector: arcs => …)`, the selector returning edges; `center_on` with two targets is `ConstrainedArcs.CenteredOn(…)` |

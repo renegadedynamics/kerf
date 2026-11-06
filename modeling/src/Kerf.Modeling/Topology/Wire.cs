@@ -56,19 +56,19 @@ public static partial class WireExtensions
         // ---- Curve parameters ----
 
         /// <summary>The kernel's curve of the wire (OCCT's <c>BRepAdaptor_CompCurve</c>), its edges joined end to end.</summary>
-        public WireCurve GeomAdaptor()
+        public WireCurve AsCurve()
         {
             if (self.IsEmpty)
                 throw new InvalidOperationException("Can't get geom adaptor of empty wire");
             return self.ToCurve();
         }
 
-        internal ShapeCurve CurveOfWire() => new(self.GeomAdaptor());
+        internal ShapeCurve CurveOfWire() => new(self.AsCurve());
 
         /// <summary>The parameter of the wire's <c>BRepAdaptor_CompCurve</c> at a position (not an edge parameter).</summary>
         internal double ParamAtOfWire(double position)
         {
-            var curve = self.GeomAdaptor();
+            var curve = self.AsCurve();
             var target = self.PositionAt(position);
             var pnt = target;
             // The extrema of the distance, nearest first
@@ -175,7 +175,7 @@ public static partial class WireExtensions
             var fraction = target.Length == 0 ? 0.0 : local / target.Length;
             // The fraction is measured the way the edge is traversed, which ParamAt honours for a reversed edge
             var param = target.ParamAt(fraction);
-            return (target.GeomAdaptor(), param, target.IsForward);
+            return (target.AsCurve(), param, target.IsForward);
         }
 
         // ---- Edits ----

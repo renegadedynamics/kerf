@@ -177,7 +177,7 @@ internal static partial class TopoUtil
 }
 
 /// <summary>Small helpers from build123d's topology utils that are part of its public API.</summary>
-public static partial class TopologyUtils
+internal static partial class TopologyUtils
 {
     /// <summary>Cartesian coordinates of a polar point (angle in degrees).</summary>
     public static (double X, double Y) Polar(double length, double angle) =>
@@ -222,7 +222,7 @@ public static partial class TopologyUtils
     }
 }
 
-public static partial class TopologyUtils
+internal static partial class TopologyUtils
 {
     /// <summary>
     /// A key function giving each shape's topological distance from <paramref name="other"/>, for

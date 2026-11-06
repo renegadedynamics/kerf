@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Kerf.Modeling;
 
 /// <summary>
-/// build123d's ways of making a colour, on the kernel's <see cref="Color"/> (question 60): from a CSS3 or X11 name, a hex
+/// build123d's ways of making a colour, on the kernel's <see cref="Color"/>: from a CSS3 or X11 name, a hex
 /// string, a colour code, or sRGB components of which those left out are 1; and categorical palettes.
 /// </summary>
 public static class ColorExtensions

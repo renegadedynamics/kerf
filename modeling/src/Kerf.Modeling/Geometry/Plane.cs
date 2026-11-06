@@ -73,7 +73,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     }
 
     /// <summary>A plane from an OCCT gp_Pln.</summary>
-    public Plane(Plane3D pln) : this(pln, owned: true) { }
+    public Plane(Plane3D plane) : this(plane, owned: true) { }
 
     /// <summary>
     /// A plane at <paramref name="origin"/> with normal <paramref name="zDir"/> (default +Z) and X direction

@@ -17,7 +17,7 @@ public class PublicMemberCheckedTests
     public void Objects_keep_their_parameters()
     {
         var box = new Box(1, 2, 3, new Rotation(0, 0, 90));
-        Assert.Equal((1.0, 2.0, 3.0), (box.Length, box.Width, box.BoxHeight));
+        Assert.Equal((1.0, 2.0, 3.0), (box.Length, box.Width, box.Height));
         Assert.Equal(new Rotation(0, 0, 90), box.Rotation);
         Assert.Equal(6.0, box.Volume, 9);
 
@@ -29,7 +29,7 @@ public class PublicMemberCheckedTests
 
         // a slot's area: its middle rectangle and a whole circle
         var slot = new SlotOverall(10, 2);
-        Assert.Equal((10.0, 2.0), (slot.Width, slot.SlotHeight));
+        Assert.Equal((10.0, 2.0), (slot.Width, slot.Height));
         Assert.Equal(8 * 2 + Math.PI, slot.Area, 9);
     }
 
@@ -84,8 +84,8 @@ public class PublicMemberCheckedTests
             return stream.Length;
         }
 
-        long fineStl = Size(s => Exporters3D.ExportStl(new Sphere(5), s, new StlExportOptions { Tolerance = 1e-3, AngularTolerance = 0.1 }));
-        long coarseStl = Size(s => Exporters3D.ExportStl(new Sphere(5), s, new StlExportOptions { Tolerance = 1, AngularTolerance = 1 }));
+        long fineStl = Size(s => Exporters3D.ExportStl(new Sphere(5), s, new StlExportOptions { LinearDeflection = 1e-3, AngularDeflection = 0.1 }));
+        long coarseStl = Size(s => Exporters3D.ExportStl(new Sphere(5), s, new StlExportOptions { LinearDeflection = 1, AngularDeflection = 1 }));
         Assert.True(coarseStl < fineStl, $"{coarseStl} against {fineStl}");
 
         long fineGltf = Size(s => Exporters3D.ExportGltf(new Sphere(5), s, new GltfExportOptions { LinearDeflection = 1e-3, AngularDeflection = 0.1, Unit = Unit.Millimeter }));
