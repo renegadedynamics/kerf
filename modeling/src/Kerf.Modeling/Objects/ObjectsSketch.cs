@@ -83,20 +83,20 @@ public class Ellipse : BaseSketchObject
 public class Polygon : BaseSketchObject
 {
     /// <summary>A polygon through the points.</summary>
-    public Polygon(IEnumerable<Point3D> pts, double rotation = 0, Alignment? align = null)
-        : this(pts.ToList(), rotation, align) { }
+    public Polygon(IEnumerable<Point3D> points, double rotation = 0, Alignment? align = null)
+        : this(points.ToList(), rotation, align) { }
 
     /// <summary>A polygon through the points.</summary>
-    public Polygon(params Point3D[] pts) : this((IEnumerable<Point3D>)pts) { }
+    public Polygon(params Point3D[] points) : this((IEnumerable<Point3D>)points) { }
 
     private Polygon(List<Point3D> pts, double rotation, Alignment? align)
         : base(Face.Make(Wire.MakePolygon(pts)), rotation, align ?? new Alignment(Kerf.Modeling.Align.None, Kerf.Modeling.Align.None))
     {
-        (Pts, Align) = (pts, TwoAxes(align ?? new Alignment(Kerf.Modeling.Align.None, Kerf.Modeling.Align.None)));
+        (Points, Align) = (pts, TwoAxes(align ?? new Alignment(Kerf.Modeling.Align.None, Kerf.Modeling.Align.None)));
     }
 
     /// <summary>The points.</summary>
-    public IReadOnlyList<Point3D> Pts { get; }
+    public IReadOnlyList<Point3D> Points { get; }
 
     /// <summary>The alignment.</summary>
     public Alignment Align { get; }
@@ -109,14 +109,14 @@ public class Rectangle : BaseSketchObject
     public Rectangle(double width, double height, double rotation = 0, Alignment? align = null)
         : base(Face.MakeRect(width, height), rotation, align ?? Centered)
     {
-        (Width, RectangleHeight, Align) = (width, height, TwoAxes(align ?? Centered));
+        (Width, Height, Align) = (width, height, TwoAxes(align ?? Centered));
     }
 
     /// <summary>The size along X.</summary>
     public double Width { get; }
 
     /// <summary>The size along Y (build123d's <c>rectangle_height</c>).</summary>
-    public double RectangleHeight { get; }
+    public double Height { get; }
 
     /// <summary>The alignment.</summary>
     public Alignment Align { get; }
@@ -130,7 +130,7 @@ public class RectangleRounded : BaseSketchObject
     public RectangleRounded(double width, double height, double radius, double rotation = 0, Alignment? align = null)
         : base(Make(width, height, radius), rotation, align ?? Centered)
     {
-        (Width, RectangleHeight, Radius, Align) = (width, height, radius, TwoAxes(align ?? Centered));
+        (Width, Height, Radius, Align) = (width, height, radius, TwoAxes(align ?? Centered));
     }
 
     private static Face Make(double width, double height, double radius)
@@ -145,7 +145,7 @@ public class RectangleRounded : BaseSketchObject
     public double Width { get; }
 
     /// <summary>The size along Y.</summary>
-    public double RectangleHeight { get; }
+    public double Height { get; }
 
     /// <summary>The corner radius.</summary>
     public double Radius { get; }
@@ -205,25 +205,14 @@ public class SlotCurve : BaseSketchObject
     public SlotCurve(IShape1D curve, double height, double rotation = 0)
         : base(Face.Make((Wire)TopoUtil.AsWire(curve).Offset2D(height / 2).AsShape()), rotation, null)
     {
-        (Curve, SlotHeight) = (curve, height);
+        (Curve, Height) = (curve, height);
     }
 
     /// <summary>The centre line.</summary>
     public IShape1D Curve { get; }
 
     /// <summary>The width across the slot.</summary>
-    public double SlotHeight { get; }
-}
-
-/// <summary>A slot along an arc or other curve: use <see cref="SlotCurve"/>.</summary>
-[Obsolete("SlotArc is deprecated; use SlotCurve instead.")]
-public class SlotArc : SlotCurve
-{
-    /// <summary>A slot round a curve.</summary>
-    public SlotArc(IShape1D arc, double height, double rotation = 0) : base(arc, height, rotation) => Arc = arc;
-
-    /// <summary>The centre line.</summary>
-    public IShape1D Arc { get; }
+    public double Height { get; }
 }
 
 /// <summary>A slot from its centre and the centre of one end arc, symmetric about the centre.</summary>
@@ -234,7 +223,7 @@ public class SlotCenterPoint : BaseSketchObject
     public SlotCenterPoint(Point3D center, Point3D point, double height, double rotation = 0)
         : base(Make(center, point, height), rotation, null)
     {
-        (SlotCenter, Point, SlotHeight) = (center, point, height);
+        (SlotCenter, Point, Height) = (center, point, height);
     }
 
     private static Face Make(Point3D center, Point3D point, double height)
@@ -254,7 +243,7 @@ public class SlotCenterPoint : BaseSketchObject
     public Point3D Point { get; }
 
     /// <summary>The width across the slot.</summary>
-    public double SlotHeight { get; }
+    public double Height { get; }
 }
 
 /// <summary>A slot from the distance between the centres of its end arcs; a circle when that is zero.</summary>
@@ -265,7 +254,7 @@ public class SlotCenterToCenter : BaseSketchObject
     public SlotCenterToCenter(double centerSeparation, double height, double rotation = 0)
         : base(Make(centerSeparation, height), rotation, null)
     {
-        (CenterSeparation, SlotHeight) = (centerSeparation, height);
+        (CenterSeparation, Height) = (centerSeparation, height);
     }
 
     private static Face Make(double separation, double height)
@@ -282,7 +271,7 @@ public class SlotCenterToCenter : BaseSketchObject
     public double CenterSeparation { get; }
 
     /// <summary>The width across the slot.</summary>
-    public double SlotHeight { get; }
+    public double Height { get; }
 }
 
 /// <summary>A slot of an overall width and height; a circle when they are equal. Centred by default.</summary>
@@ -293,7 +282,7 @@ public class SlotOverall : BaseSketchObject
     public SlotOverall(double width, double height, double rotation = 0, Alignment? align = null)
         : base(Make(width, height), rotation, align ?? Centered)
     {
-        (Width, SlotHeight) = (width, height);
+        (Width, Height) = (width, height);
     }
 
     private static Face Make(double width, double height)
@@ -310,7 +299,7 @@ public class SlotOverall : BaseSketchObject
     public double Width { get; }
 
     /// <summary>The width across the slot.</summary>
-    public double SlotHeight { get; }
+    public double Height { get; }
 }
 
 /// <summary>
@@ -382,7 +371,7 @@ public class Trapezoid : BaseSketchObject
                      Alignment? align = null)
         : base(Make(width, height, leftSideAngle, rightSideAngle is { } r && r != 0 ? r : leftSideAngle), rotation, align ?? Centered)
     {
-        (Width, TrapezoidHeight, LeftSideAngle, RightSideAngle, Align) =
+        (Width, Height, LeftSideAngle, RightSideAngle, Align) =
             (width, height, leftSideAngle, rightSideAngle is { } r2 && r2 != 0 ? r2 : leftSideAngle, TwoAxes(align ?? Centered));
     }
 
@@ -411,7 +400,7 @@ public class Trapezoid : BaseSketchObject
     public double Width { get; }
 
     /// <summary>The height.</summary>
-    public double TrapezoidHeight { get; }
+    public double Height { get; }
 
     /// <summary>The bottom left interior angle.</summary>
     public double LeftSideAngle { get; }
@@ -432,15 +421,15 @@ public class Triangle : BaseSketchObject
 {
     /// <summary>A triangle; give one side and two other values (angles in degrees).</summary>
     /// <exception cref="ArgumentException">One length and two other values weren't given, or no such triangle exists.</exception>
-    public Triangle(double? a = null, double? b = null, double? c = null, double? A = null, double? B = null, double? C = null,
+    public Triangle(double? sideA = null, double? sideB = null, double? sideC = null, double? angleA = null, double? angleB = null, double? angleC = null,
                     Alignment? align = null, double rotation = 0)
-        : this(Solve(a, b, c, A, B, C), align, rotation) { }
+        : this(Solve(sideA, sideB, sideC, angleA, angleB, angleC), align, rotation) { }
 
-    private Triangle((double a, double b, double c, double A, double B, double C) t, Alignment? align, double rotation)
+    private Triangle((double a, double b, double c, double angleA, double angleB, double angleC) t, Alignment? align, double rotation)
         : base(Make(t), rotation, align)
     {
         (SideA, SideB, SideC) = (t.a, t.b, t.c);
-        (AngleA, AngleB, AngleC) = (t.A * Constants.RadToDeg, t.B * Constants.RadToDeg, t.C * Constants.RadToDeg);
+        (AngleA, AngleB, AngleC) = (t.angleA * Constants.RadToDeg, t.angleB * Constants.RadToDeg, t.angleC * Constants.RadToDeg);
         var edges = Edges();
         EdgeA = edges.First(e => Math.Abs(e.Length - t.a) < Constants.Tolerance);
         EdgeB = edges.First(e => Math.Abs(e.Length - t.b) < Constants.Tolerance && e != EdgeA);
@@ -450,18 +439,18 @@ public class Triangle : BaseSketchObject
         VertexC = (Vertex)Vertex.CommonVertex(EdgeA, EdgeB);
     }
 
-    private static (double, double, double, double, double, double) Solve(double? a, double? b, double? c, double? A, double? B, double? C)
+    private static (double, double, double, double, double, double) Solve(double? a, double? b, double? c, double? angleA, double? angleB, double? angleC)
     {
-        double?[] all = [a, b, c, A, B, C];
+        double?[] all = [a, b, c, angleA, angleB, angleC];
         if (a is null && b is null && c is null || all.Count(v => v is null) != 3)
             throw new ArgumentException("Give one length and two other values.");
         double? Rad(double? deg) => deg * Constants.DegToRad;
-        return TriangleSolver.Solve(a, b, c, Rad(A), Rad(B), Rad(C));
+        return TriangleSolver.Solve(a, b, c, Rad(angleA), Rad(angleB), Rad(angleC));
     }
 
-    private static Face Make((double a, double b, double c, double A, double B, double C) t)
+    private static Face Make((double a, double b, double c, double angleA, double angleB, double angleC) t)
     {
-        var triangle = Face.Make(Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(t.a, 0, 0), new Vector3D(t.c, 0, 0).Rotate(Axis.Z, t.B * Constants.RadToDeg).ToPoint()]));
+        var triangle = Face.Make(Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(t.a, 0, 0), new Vector3D(t.c, 0, 0).Rotate(Axis.Z, t.angleB * Constants.RadToDeg).ToPoint()]));
         var center = triangle.Vertices().Aggregate(Vector3D.Zero, (sum, v) => sum + v.Point.ToVector()) * (1.0 / 3);
         return triangle.Moved(new Location(-center));
     }
@@ -488,10 +477,10 @@ public class Triangle : BaseSketchObject
 /// </summary>
 internal static class TriangleSolver
 {
-    internal static (double a, double b, double c, double A, double B, double C) Solve(double? a, double? b, double? c, double? A, double? B, double? C)
+    internal static (double a, double b, double c, double angleA, double angleB, double angleC) Solve(double? a, double? b, double? c, double? angleA, double? angleB, double? angleC)
     {
         double?[] sides = [a, b, c];
-        double?[] angles = [A, B, C];
+        double?[] angles = [angleA, angleB, angleC];
         if (sides.Concat(angles).Count(x => x is not null) != 3)
             throw new ArgumentException("Must provide exactly 3 inputs");
         if (sides.All(x => x is null))
@@ -503,72 +492,72 @@ internal static class TriangleSolver
             return Sss(a!.Value, b!.Value, c!.Value);
         if (known == 2)
         {
-            if (a is { } a1 && A is { } A1 && b is { } b1) return Ssa(a1, b1, A1);
-            if (a is { } a2 && A is { } A2 && c is { } c2) { var (x, y, z, X, Y, Z) = Ssa(a2, c2, A2); return (x, z, y, X, Z, Y); }
-            if (b is { } b3 && B is { } B3 && a is { } a3) { var (x, y, z, X, Y, Z) = Ssa(b3, a3, B3); return (y, x, z, Y, X, Z); }
-            if (b is { } b4 && B is { } B4 && c is { } c4) { var (x, y, z, X, Y, Z) = Ssa(b4, c4, B4); return (z, x, y, Z, X, Y); }
-            if (c is { } c5 && C is { } C5 && a is { } a5) { var (x, y, z, X, Y, Z) = Ssa(c5, a5, C5); return (y, z, x, Y, Z, X); }
-            if (c is { } c6 && C is { } C6 && b is { } b6) { var (x, y, z, X, Y, Z) = Ssa(c6, b6, C6); return (z, y, x, Z, Y, X); }
-            if (a is { } a7 && b is { } b7 && C is { } C7) return Sas(a7, b7, C7);
-            if (b is { } b8 && c is { } c8 && A is { } A8) { var (x, y, z, X, Y, Z) = Sas(b8, c8, A8); return (z, x, y, Z, X, Y); }
-            if (c is { } c9 && a is { } a9 && B is { } B9) { var (x, y, z, X, Y, Z) = Sas(c9, a9, B9); return (y, z, x, Y, Z, X); }
+            if (a is { } a1 && angleA is { } angleA1 && b is { } b1) return Ssa(a1, b1, angleA1);
+            if (a is { } a2 && angleA is { } angleA2 && c is { } c2) { var (x, y, z, angleX, angleY, angleZ) = Ssa(a2, c2, angleA2); return (x, z, y, angleX, angleZ, angleY); }
+            if (b is { } b3 && angleB is { } angleB3 && a is { } a3) { var (x, y, z, angleX, angleY, angleZ) = Ssa(b3, a3, angleB3); return (y, x, z, angleY, angleX, angleZ); }
+            if (b is { } b4 && angleB is { } angleB4 && c is { } c4) { var (x, y, z, angleX, angleY, angleZ) = Ssa(b4, c4, angleB4); return (z, x, y, angleZ, angleX, angleY); }
+            if (c is { } c5 && angleC is { } angleC5 && a is { } a5) { var (x, y, z, angleX, angleY, angleZ) = Ssa(c5, a5, angleC5); return (y, z, x, angleY, angleZ, angleX); }
+            if (c is { } c6 && angleC is { } angleC6 && b is { } b6) { var (x, y, z, angleX, angleY, angleZ) = Ssa(c6, b6, angleC6); return (z, y, x, angleZ, angleY, angleX); }
+            if (a is { } a7 && b is { } b7 && angleC is { } angleC7) return Sas(a7, b7, angleC7);
+            if (b is { } b8 && c is { } c8 && angleA is { } angleA8) { var (x, y, z, angleX, angleY, angleZ) = Sas(b8, c8, angleA8); return (z, x, y, angleZ, angleX, angleY); }
+            if (c is { } c9 && a is { } a9 && angleB is { } angleB9) { var (x, y, z, angleX, angleY, angleZ) = Sas(c9, a9, angleB9); return (y, z, x, angleY, angleZ, angleX); }
         }
         // One side and two angles
-        double aa = A ?? Math.PI - B!.Value - C!.Value;
-        double bb = B ?? Math.PI - aa - C!.Value;
-        double cc = C ?? Math.PI - aa - bb;
+        double aa = angleA ?? Math.PI - angleB!.Value - angleC!.Value;
+        double bb = angleB ?? Math.PI - aa - angleC!.Value;
+        double cc = angleC ?? Math.PI - aa - bb;
         if (aa <= 0 || bb <= 0 || cc <= 0)
             throw new ArgumentException("No such triangle");
         if (c is { } cs)
             return Aaas(aa, bb, cc, cs);
         if (a is { } asd)
         {
-            var (x, y, z, X, Y, Z) = Aaas(bb, cc, aa, asd);
-            return (z, x, y, Z, X, Y);
+            var (x, y, z, angleX, angleY, angleZ) = Aaas(bb, cc, aa, asd);
+            return (z, x, y, angleZ, angleX, angleY);
         }
         {
-            var (x, y, z, X, Y, Z) = Aaas(cc, aa, bb, b!.Value);
-            return (y, z, x, Y, Z, X);
+            var (x, y, z, angleX, angleY, angleZ) = Aaas(cc, aa, bb, b!.Value);
+            return (y, z, x, angleY, angleZ, angleX);
         }
     }
 
-    private static (double, double, double, double, double, double) Aaas(double D, double E, double F, double f) =>
-        (f * Math.Sin(D) / Math.Sin(F), f * Math.Sin(E) / Math.Sin(F), f, D, E, F);
+    private static (double, double, double, double, double, double) Aaas(double angleD, double angleE, double angleF, double f) =>
+        (f * Math.Sin(angleD) / Math.Sin(angleF), f * Math.Sin(angleE) / Math.Sin(angleF), f, angleD, angleE, angleF);
 
     private static (double, double, double, double, double, double) Sss(double d, double e, double f)
     {
         if (!(d + e > f && e + f > d && f + d > e))
             throw new ArgumentException("No such triangle");
-        var F = Math.Acos((d * d + e * e - f * f) / (2 * d * e));
-        var E = Math.Acos((d * d + f * f - e * e) / (2 * d * f));
-        return (d, e, f, Math.PI - F - E, E, F);
+        var angleF = Math.Acos((d * d + e * e - f * f) / (2 * d * e));
+        var angleE = Math.Acos((d * d + f * f - e * e) / (2 * d * f));
+        return (d, e, f, Math.PI - angleF - angleE, angleE, angleF);
     }
 
-    private static (double, double, double, double, double, double) Sas(double d, double e, double F) =>
-        Sss(d, e, Math.Sqrt(d * d + e * e - 2 * d * e * Math.Cos(F)));
+    private static (double, double, double, double, double, double) Sas(double d, double e, double angleF) =>
+        Sss(d, e, Math.Sqrt(d * d + e * e - 2 * d * e * Math.Cos(angleF)));
 
-    private static (double, double, double, double, double, double) Ssa(double d, double e, double D)
+    private static (double, double, double, double, double, double) Ssa(double d, double e, double angleD)
     {
-        var sinE = Math.Sin(D) * e / d;
-        double E;
+        var sinE = Math.Sin(angleD) * e / d;
+        double angleE;
         if (TopologyUtils.IsCloseB(sinE, 1, absTol: 0))
-            E = Math.PI / 2;
+            angleE = Math.PI / 2;
         else
         {
             if (!(sinE < 1))
                 throw new ArgumentException("No such triangle");
             var acute = Math.Asin(sinE);
             var obtuse = Math.PI - acute;
-            bool acuteValid = 0 < Math.PI - D - acute && Math.PI - D - acute < Math.PI;
-            bool obtuseValid = 0 < Math.PI - D - obtuse && Math.PI - D - obtuse < Math.PI;
+            bool acuteValid = 0 < Math.PI - angleD - acute && Math.PI - angleD - acute < Math.PI;
+            bool obtuseValid = 0 < Math.PI - angleD - obtuse && Math.PI - angleD - obtuse < Math.PI;
             if (acuteValid && obtuseValid)
                 throw new ArgumentException("Two different triangles fit this description");
             if (!acuteValid && !obtuseValid)
                 throw new ArgumentException("No such triangle");
-            E = acuteValid ? acute : obtuse;
+            angleE = acuteValid ? acute : obtuse;
         }
-        var F = Math.PI - D - E;
-        var (e2, f2, d2, E2, F2, D2) = Aaas(E, F, D, d);
-        return (d2, e2, f2, D2, E2, F2);
+        var angleF = Math.PI - angleD - angleE;
+        var (e2, f2, d2, angleE2, angleF2, angleD2) = Aaas(angleE, angleF, angleD, d);
+        return (d2, e2, f2, angleD2, angleE2, angleF2);
     }
 }

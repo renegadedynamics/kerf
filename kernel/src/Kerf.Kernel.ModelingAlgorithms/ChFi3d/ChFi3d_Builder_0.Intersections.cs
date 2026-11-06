@@ -11,7 +11,6 @@ using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 

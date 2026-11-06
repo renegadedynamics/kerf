@@ -3,8 +3,7 @@ using System.Globalization;
 namespace Kerf.Modeling;
 
 /// <summary>
-/// Numbers in the modelling layer's text, in .NET's invariant format (unit 10M1 retired the emulation of Python's
-/// <c>repr</c> and format specs): the shortest text that reads back as the same double, and components to a .NET
+/// Numbers in the modelling layer's text, in .NET's invariant format: the shortest text that reads back as the same double, and components to a .NET
 /// numeric format, values within tolerance of zero shown as zero.
 /// </summary>
 internal static class Formatting

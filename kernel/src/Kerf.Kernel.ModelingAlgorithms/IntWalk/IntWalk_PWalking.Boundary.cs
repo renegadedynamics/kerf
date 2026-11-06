@@ -6,10 +6,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Implicit;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
-using static Kerf.Geometry.SurfaceKind;
-using static Kerf.Engine.Intersection.Implicit.ConstIsoparametric;
-using static Kerf.Engine.Intersection.Walking.StatusDeflection;
 
 namespace Kerf.Engine.Intersection.Walking;
 

@@ -8,7 +8,6 @@ using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Meshing;
 

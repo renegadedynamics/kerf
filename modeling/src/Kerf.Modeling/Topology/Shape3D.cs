@@ -3,8 +3,6 @@ using Kerf.Features;
 using Kerf.Fillets;
 using Kerf.Measurement;
 using Kerf.Offsets;
-using Kerf.Geometry;
-using Kerf.Topology;
 
 namespace Kerf.Modeling;
 
@@ -38,7 +36,7 @@ public static partial class Shape3DExtensions
         /// </summary>
         /// <exception cref="ArgumentException">An edge isn't on the face.</exception>
         /// <exception cref="InvalidOperationException">
-        /// The chamfer can't be made: the shorthand's failure (unit 10M3); <see cref="Operations.Chamfer(IEnumerable{Edge},
+        /// The chamfer can't be made: the shorthand's failure; <see cref="Operations.Chamfer(IEnumerable{Edge},
         /// double, double?, double?, Face?)"/> returns it as a result, with the code <see cref="ModelingDiagnostics.ChamferFailed"/>.
         /// </exception>
         public Shape Chamfer(double length, double? length2, IEnumerable<Edge> edgeList, Face? face = null)
@@ -76,12 +74,12 @@ public static partial class Shape3DExtensions
         /// A prismatic feature, added or subtracted, from profiles (faces, or wires grouped into faces) on an optional basis
         /// face: through all, to a <paramref name="depth"/>, or up to a face, with an optional taper in degrees.
         /// </summary>
-        public Shape DPrism(Face? basis, IReadOnlyList<IShape2D> bounds, double? depth = null, double taper = 0, Face? upToFace = null,
+        public Shape DraftPrism(Face? basis, IReadOnlyList<IShape2D> bounds, double? depth = null, double taper = 0, Face? upToFace = null,
                             bool thruAll = true, bool additive = true) =>
             self.DPrismCore(basis, bounds.SelectMany(b => b.Faces()), depth, taper, upToFace, thruAll, additive);
 
-        /// <summary>As the other forms of <c>DPrism</c>.</summary>
-        public Shape DPrism(Face? basis, IReadOnlyList<Wire> bounds, double? depth = null, double taper = 0, Face? upToFace = null,
+        /// <summary>As the other forms of <c>DraftPrism</c>.</summary>
+        public Shape DraftPrism(Face? basis, IReadOnlyList<Wire> bounds, double? depth = null, double taper = 0, Face? upToFace = null,
                             bool thruAll = true, bool additive = true) =>
             self.DPrismCore(basis, TwoD.SortWiresByBuildOrder(bounds).Select(p => Face.Make(p[0], p.Skip(1))), depth, taper, upToFace, thruAll, additive);
 
@@ -106,7 +104,7 @@ public static partial class Shape3DExtensions
 
         /// <summary>The edges of this shape filleted with a radius.</summary>
         /// <exception cref="InvalidOperationException">
-        /// The fillet can't be made: the shorthand's failure (unit 10M3), whose message says which edges failed and why.
+        /// The fillet can't be made: the shorthand's failure, whose message says which edges failed and why.
         /// <see cref="Operations.Fillet(IEnumerable{Edge}, double)"/> returns it as a result, with the code
         /// <see cref="ModelingDiagnostics.FilletFailed"/> and the kernel's diagnostics.
         /// </exception>

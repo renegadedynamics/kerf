@@ -5,8 +5,6 @@
 
 using Kerf.Topology;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Brep;
 
 // TopTools::Dump, which comes with TopTools_ShapeSet

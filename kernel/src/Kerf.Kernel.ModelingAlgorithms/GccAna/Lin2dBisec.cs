@@ -9,7 +9,6 @@ using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Constraints.Analytic;
 

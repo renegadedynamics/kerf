@@ -7,7 +7,6 @@
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Curves;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 

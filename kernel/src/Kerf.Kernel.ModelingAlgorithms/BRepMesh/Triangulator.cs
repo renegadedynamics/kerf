@@ -6,11 +6,8 @@
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
-using Kerf.Engine.Meshing;
 using Kerf.Engine.Meshing.Tools;
 using Kerf.Geometry;
-using Kerf.Engine;
-using static Kerf.Engine.Meshing.DegreeOfFreedom;
 using static Kerf.Engine.Foundation.Gravity;
 
 namespace Kerf.Engine.Meshing;

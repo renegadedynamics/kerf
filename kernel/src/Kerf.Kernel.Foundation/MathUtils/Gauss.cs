@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Foundation;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Numerics.Utilities;
 
 /// <summary>Gauss-Legendre quadrature points and weights.</summary>

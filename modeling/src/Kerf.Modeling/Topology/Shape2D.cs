@@ -1,7 +1,6 @@
 using Kerf.Features;
 using Kerf.Measurement;
 using Kerf.Offsets;
-using Kerf.Geometry;
 
 
 namespace Kerf.Modeling;

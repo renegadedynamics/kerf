@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Foundation;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Numerics;
 
 /// <summary>

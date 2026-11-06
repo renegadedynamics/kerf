@@ -5,15 +5,12 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
-using Kerf.Engine.Meshing;
 using Kerf.Engine.Meshing.Model;
 using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Engine.Meshing.Model.StatusModel;
 using static Kerf.Topology.Orientation;
 

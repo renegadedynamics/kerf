@@ -156,9 +156,9 @@ public static class BoundingBoxExtensions
         /// <summary>"bbox: 0.0 &lt;= x &lt;= 1.0, 0.0 &lt;= y &lt;= 1.0, 0.0 &lt;= z &lt;= 1.0".</summary>
         public string Describe()
         {
-            string r(double v) => Formatting.Number(v);
+            static string Number(double v) => Formatting.Number(v);
             var (min, max) = box.IsEmpty ? (Point3D.Origin, Point3D.Origin) : (box.Min, box.Max);
-            return $"bbox: {r(min.X)} <= x <= {r(max.X)}, {r(min.Y)} <= y <= {r(max.Y)}, {r(min.Z)} <= z <= {r(max.Z)}";
+            return $"bbox: {Number(min.X)} <= x <= {Number(max.X)}, {Number(min.Y)} <= y <= {Number(max.Y)}, {Number(min.Z)} <= z <= {Number(max.Z)}";
         }
     }
 }

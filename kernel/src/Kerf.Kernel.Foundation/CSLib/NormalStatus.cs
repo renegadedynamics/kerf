@@ -1,8 +1,5 @@
 // Port of: src/FoundationClasses/TKMath/CSLib/CSLib_NormalStatus.hxx
 
-
-using Kerf.Engine;
-
 namespace Kerf.Engine.Geometry;
 
 /// <summary>The result of computing a surface normal at a possibly singular point.</summary>

@@ -10,9 +10,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Engine.Geometry.Bvh.Constants;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Measurement.Distance;
 

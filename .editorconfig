@@ -145,7 +145,7 @@ dotnet_diagnostic.IDE1006.severity = none
 [kernel/src/Kerf.Kernel.Foundation/{MathUtils/**,PLib/**,Poly/**,Quantity/**,Standard/**,gp/**,math/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
-[kernel/src/Kerf.Kernel.ModelingAlgorithms/{AppBlend/**,ApproxInt/**,BOPAlgo/**,BOPTools/**,BRepAlgo/**,BRepApprox/**,BRepBlend/**,BRepBndLib/**,BRepBuilderAPI/**,BRepCheck/**,BRepClass3d/**,BRepExtrema/**}]
+[kernel/src/Kerf.Kernel.ModelingAlgorithms/{AppBlend/**,ApproxInt/**,BOPAlgo/**,BOPTools/**,BRepAlgo/**,BRepApprox/**,BRepBlend/**,BRepBuilderAPI/**,BRepCheck/**,BRepClass3d/**,BRepExtrema/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
 [kernel/src/Kerf.Kernel.ModelingAlgorithms/{BRepFeat/**,BRepFill/**,BRepFilletAPI/**,BRepGProp/**,BRepLib/**,BRepMesh/**,BRepOffset/**,BRepOffsetAPI/**,BRepPrimAPI/**,BRepSweep/**,BRepTopAdaptor/**,BiTgte/**}]
@@ -160,10 +160,10 @@ dotnet_diagnostic.IDE1006.severity = none
 [kernel/src/Kerf.Kernel.ModelingAlgorithms/{IntImp/**,IntImpParGen/**,IntPatch/**,IntPolyh/**,IntRes2d/**,IntStart/**,IntSurf/**,IntTools/**,IntWalk/**,Intf/**,Intrv/**,Law/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
-[kernel/src/Kerf.Kernel.ModelingAlgorithms/{LocOpe/**,MAT2d/**,Plate/**,ShapeAlgo/**,ShapeAnalysis/**,ShapeBuild/**,ShapeConstruct/**,ShapeCustom/**,ShapeExtend/**,ShapeFix/**,ShapeProcess/**,ShapeUpgrade/**}]
+[kernel/src/Kerf.Kernel.ModelingAlgorithms/{LocOpe/**,MAT2d/**,Plate/**,ShapeAnalysis/**,ShapeBuild/**,ShapeConstruct/**,ShapeCustom/**,ShapeExtend/**,ShapeFix/**,ShapeProcess/**,ShapeUpgrade/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
-[kernel/src/Kerf.Kernel.ModelingAlgorithms/{TopClass/**,TopOpeBRepBuild/**,TopOpeBRepDS/**,TopOpeBRepTool/**,TopTrans/**,XBRepMesh/**}]
+[kernel/src/Kerf.Kernel.ModelingAlgorithms/{TopClass/**,TopOpeBRepBuild/**,TopOpeBRepDS/**,TopOpeBRepTool/**,TopTrans/**}]
 dotnet_diagnostic.IDE1006.severity = none
 
 [kernel/src/Kerf.Kernel.ModelingData/{Adaptor3d/**,AdvApprox/**,AppCont/**,AppDef/**,AppParCurves/**,Approx/**,BRep/**,BRepAdaptor/**,BRepLProp/**,BRepTools/**,BinTools/**,BndLib/**}]
@@ -178,5 +178,9 @@ dotnet_diagnostic.IDE1006.severity = none
 [kernel/src/Kerf.Kernel.ModelingData/gce/**]
 dotnet_diagnostic.IDE1006.severity = none
 
-[modeling/src/Kerf.Modeling/{Geometry/**,Objects/**,Topology/**}]
-dotnet_diagnostic.IDE1006.severity = none
+# Dead code stays out of the libraries (kernel/docs/clean-up.md): private members nothing uses or only writes, and usings nothing needs
+[{kernel/src/**,modeling/src/**}]
+dotnet_diagnostic.IDE0051.severity = error
+dotnet_diagnostic.IDE0052.severity = error
+dotnet_diagnostic.CA1823.severity = error
+dotnet_diagnostic.IDE0005.severity = error

@@ -90,7 +90,7 @@ public sealed record MeshOptions
 /// </summary>
 /// <remarks>
 /// <para>
-/// Meshing doesn't change the shape (decision 1349, question 59): <see cref="Mesher.Mesh"/> meshes in a working overlay,
+/// Meshing doesn't change the shape: <see cref="Mesher.Mesh"/> meshes in a working overlay,
 /// reads the meshes out and drops it, so the faces hold no triangles. The same shape and options always give the same
 /// mesh.
 /// </para>
@@ -221,7 +221,7 @@ public sealed class ShapeMesh
 
     /// <summary>
     /// The mesh of an engine shape whose faces hold only triangulations (as the STL and glTF readers make them): its
-    /// faces aren't handed out, so the mesh has no shape (decision 1349, question 59).
+    /// faces aren't handed out, so the mesh has no shape.
     /// </summary>
     internal static ShapeMesh FromMeshOnlyShape(in Shape meshOnly)
     {

@@ -7,8 +7,6 @@ using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Step.Representation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Exchange.Step.Import;
 

@@ -125,7 +125,7 @@ public class GpOracleTests(ITestOutputHelper output)
 
                 int aPower = anOracle.Int(-4, 5);
                 using var aNPow = aN1.Powered(aPower);
-                if (aT1.Form == TransformForm.CompoundTrsf && aT1.ScaleFactor != 1.0 && Math.Abs(aPower) >= 3)
+                if (aT1.Form == TransformForm.Composite && aT1.ScaleFactor != 1.0 && Math.Abs(aPower) >= 3)
                 {
                     SamePowerOfScaled(anOracle, aNPow, aT1, aPower, $"{aKind1} to the power {aPower}");
                 }

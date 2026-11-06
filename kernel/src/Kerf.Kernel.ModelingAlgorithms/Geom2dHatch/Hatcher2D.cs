@@ -10,11 +10,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Classification.Hatching.HatchingErrorStatus;
-using static Kerf.Engine.Classification.Hatching.IntersectionType;
-using static Kerf.Engine.Intersection.TwoD.Position2D;
-using static Kerf.Engine.Intersection.TwoD.TypeTrans;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.Containment;
 
@@ -751,7 +746,7 @@ internal class Hatcher2D
                     break;
             }
 
-            // TODO: finding #25 - this overwrites Param computed by the switch above,
+            // This overwrites the parameter the switch above computed,
             // making the position-based logic dead code. Removing this line caused
             // blend regressions. The switch logic may need endpoint-specific investigation.
             _ = param;

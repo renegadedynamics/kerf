@@ -13,7 +13,6 @@ using Kerf.Engine.Exchange.Step.Representation;
 using Kerf.Engine.Exchange.Step.Shapes;
 using Kerf.Engine.Exchange.Step.Tolerances;
 using Kerf.Engine.Foundation;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Step.Ap242;
 

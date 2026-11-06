@@ -3,7 +3,6 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2001-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Kerf.Engine;
 using System.Runtime.CompilerServices;
 using System.Text;
 using static Kerf.Engine.Foundation.Gravity;

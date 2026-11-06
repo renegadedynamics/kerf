@@ -8,8 +8,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Geometry.Objects;
-using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Geometry;
 
@@ -32,11 +30,11 @@ public sealed class HyperbolaCurve2D : ConicCurve2D
     }
 
     /// <summary>The hyperbola equal to H.</summary>
-    public HyperbolaCurve2D(in Hyperbola2D h)
+    public HyperbolaCurve2D(in Hyperbola2D hyperbola)
     {
-        _majorRadius = h.MajorRadius;
-        _minorRadius = h.MinorRadius;
-        _pos = h.Axis;
+        _majorRadius = hyperbola.MajorRadius;
+        _minorRadius = hyperbola.MinorRadius;
+        _pos = hyperbola.Axis;
     }
 
     /// <summary>The hyperbola whose major axis is MajorAxis; Sense gives the orientation (true: counterclockwise).</summary>
@@ -278,21 +276,21 @@ public sealed class HyperbolaCurve2D : ConicCurve2D
     }
 
     /// <summary>Applies T to the hyperbola: the radii are multiplied by |T.ScaleFactor()|.</summary>
-    protected internal sealed override void Transform(in Transform2D t)
+    protected internal sealed override void Transform(in Transform2D transform)
     {
         CheckMutable();
-        _majorRadius = _majorRadius * Math.Abs(t.ScaleFactor);
-        _minorRadius = _minorRadius * Math.Abs(t.ScaleFactor);
-        _pos = _pos.Transformed(t);
+        _majorRadius = _majorRadius * Math.Abs(transform.ScaleFactor);
+        _minorRadius = _minorRadius * Math.Abs(transform.ScaleFactor);
+        _pos = _pos.Transformed(transform);
     }
 
     // Non-mutating twins of the Set methods (Kerf)
 
     /// <summary>A copy equal to H.</summary>
-    public HyperbolaCurve2D WithHypr2d(in Hyperbola2D h)
+    public HyperbolaCurve2D WithHyperbola(in Hyperbola2D hyperbola)
     {
         HyperbolaCurve2D copy = (HyperbolaCurve2D)Copy();
-        copy.SetHypr2d(h);
+        copy.SetHypr2d(hyperbola);
         return copy;
     }
 

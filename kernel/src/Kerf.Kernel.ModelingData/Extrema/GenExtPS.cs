@@ -11,7 +11,6 @@ using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Extrema.ElementType;
 using static Kerf.Engine.Extrema.ExtAlgo;
 using static Kerf.Engine.Extrema.ExtFlag;

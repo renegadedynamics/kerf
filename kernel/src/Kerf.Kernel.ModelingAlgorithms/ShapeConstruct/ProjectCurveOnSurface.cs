@@ -14,10 +14,8 @@ using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Intersection.Curves;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
-using static Kerf.Engine.Healing.Extend.ExtendStatus;
 
 namespace Kerf.Engine.Healing.Construct;
 

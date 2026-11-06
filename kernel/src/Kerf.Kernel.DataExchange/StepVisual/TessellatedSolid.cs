@@ -8,8 +8,6 @@
 
 using Kerf.Engine.Exchange.Step.Shapes;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Step.Visual;
 
 /// <summary>

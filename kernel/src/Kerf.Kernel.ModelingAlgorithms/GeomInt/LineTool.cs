@@ -9,8 +9,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Patches;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using Kerf.Engine;
-using static Kerf.Engine.Intersection.Patches.PatchLineType;
 
 namespace Kerf.Engine.Intersection.Surfaces;
 

@@ -19,14 +19,11 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
-using static Kerf.Engine.Features.Draft.DraftErrorStatus;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Engine.Intersection.ResultType;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Features.Draft;
 

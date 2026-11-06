@@ -8,7 +8,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Intersection.ResultType;
 
 namespace Kerf.Engine.Extrema;

@@ -7,9 +7,6 @@ using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Construction.Api.FaceError;
-using static Kerf.Engine.Construction.Library.LibraryFaceError;
 
 namespace Kerf.Engine.Construction.Api;
 

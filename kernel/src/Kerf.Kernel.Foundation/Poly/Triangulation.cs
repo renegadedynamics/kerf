@@ -7,7 +7,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
-using Kerf.Engine;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -308,7 +307,7 @@ internal class Triangulation : Transient
         StrongBox<Box>? cachedBox = Volatile.Read(ref _cachedMinMax);
         if (cachedBox is not null
             && (!HasGeometry || !isAccurate || trsf.Form == Identity
-                || trsf.Form == Translation || trsf.Form == PntMirror
+                || trsf.Form == Translation || trsf.Form == PointMirror
                 || trsf.Form == Scale))
         {
             aBox = cachedBox.Value.Transformed(trsf);
@@ -618,46 +617,6 @@ internal class Triangulation : Transient
 
     /// <summary>The internal array of normals; <see cref="Normal(int)"/> and <see cref="SetNormal(int, in Direction3D)"/> are preferred.</summary>
     public NCollection_Array1<NCollection_Vec3<float>> InternalNormals() => _normals;
-
-    /// <summary>Sets the normals from 3 × NbNodes() floats. Deprecated in OCCT: use <see cref="SetNormal(int, in NCollection_Vec3{float})"/>.</summary>
-    [Obsolete("Deprecated method, SetNormal() should be used instead")]
-    public void SetNormals(NCollection_HArray1<float>? normals)
-    {
-        CheckMutable();
-        if (normals is null || normals.Length() != 3 * NodeCount)
-        {
-            throw new DomainErrorException("Poly_Triangulation::SetNormals : wrong length");
-        }
-
-        AddNormals();
-        int arrayLower = normals.Lower();
-        for (int nodeIter = 1; nodeIter <= NodeCount; ++nodeIter)
-        {
-            int arrayInd = arrayLower + (nodeIter - 1) * 3;
-            var norm = new NCollection_Vec3<float>(normals.Value(arrayInd + 0),
-                                                    normals.Value(arrayInd + 1),
-                                                    normals.Value(arrayInd + 2));
-            SetNormal(nodeIter, norm);
-        }
-    }
-
-    [Obsolete("Deprecated method, Triangle() should be used instead")]
-    public NCollection_Array1<Triangle1> Triangles() => _triangles;
-
-    [Obsolete("Deprecated method, SetTriangle() should be used instead")]
-    public NCollection_Array1<Triangle1> ChangeTriangles()
-    {
-        CheckMutable();
-        return _triangles;
-    }
-
-    [Obsolete("Deprecated method, SetTriangle() should be used instead")]
-    public ref Triangle1 ChangeTriangle(int index)
-    {
-        CheckMutable();
-        return ref _triangles.ChangeValue(index);
-    }
-
     // Deferred data (OCCT's OSD_FileSystem argument is left out: the file system isn't ported)
 
     /// <summary>The estimated number of nodes that <see cref="LoadDeferredData()"/> can load.</summary>

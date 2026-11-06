@@ -6,9 +6,6 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Framework.Selection.EditValue;
-using static Kerf.Engine.Exchange.Framework.ParamType;
 
 namespace Kerf.Engine.Exchange.Framework.Selection;
 
@@ -66,7 +63,6 @@ internal class EditForm : Transient
         _themodifs = new NCollection_Array1<Transient>(0, (@readonly ? 0 : editor.ValueCount));
         _thestatus = new NCollection_Array1<int>(0, (@readonly ? 0 : editor.ValueCount));
         _theeditor = editor;
-        _thetouched = 0;
     }
 
     /// <summary>
@@ -84,7 +80,6 @@ internal class EditForm : Transient
         _themodifs = new NCollection_Array1<Transient>(0, (@readonly ? 0 : nums.Length()));
         _thestatus = new NCollection_Array1<int>(0, (@readonly ? 0 : nums.Length()));
         _theeditor = editor;
-        _thetouched = 0;
         int i, nb = nums.Length();
         for (i = 1; i <= nb; i++)
         {
@@ -274,7 +269,6 @@ internal class EditForm : Transient
     public void LoadDefault()
     {
         _theloaded = true;
-        _thetouched = 0;
         int i, nb = _theorigs.Upper();
         if (nb == 0)
         {
@@ -299,7 +293,6 @@ internal class EditForm : Transient
     /// </summary>
     public virtual bool LoadData(Transient? ent, InterfaceModel? model)
     {
-        _thetouched = 0;
         if (!_theeditor.Load(this, ent, model))
         {
             return false;
@@ -314,7 +307,6 @@ internal class EditForm : Transient
     /// </summary>
     public bool LoadEntity(Transient? ent)
     {
-        _thetouched = 0;
         InterfaceModel model = null;
         if (!_theeditor.Load(this, ent, model))
         {
@@ -330,7 +322,6 @@ internal class EditForm : Transient
     /// </summary>
     public bool LoadModel(InterfaceModel? model)
     {
-        _thetouched = 0;
         Transient ent = null;
         if (!_theeditor.Load(this, ent, model))
         {
@@ -347,7 +338,6 @@ internal class EditForm : Transient
     /// </summary>
     public bool LoadData()
     {
-        _thetouched = 0;
         InterfaceModel model = null;
         Transient ent = null;
         if (!_theeditor.Load(this, ent, model))
@@ -494,7 +484,6 @@ internal class EditForm : Transient
     public bool Modify(int num, TCollection_HAsciiString? newval, bool enforce = false)
     {
         //  Peut-on editer
-        _thetouched = 0;
         if (_themodifs.Upper() == 0)
         {
             return false;
@@ -564,7 +553,6 @@ internal class EditForm : Transient
 
         _thestatus.SetValue(tnum, 2);
         _themodifs.SetValue(tnum, newval);
-        _thetouched++;
         return true;
     }
 
@@ -585,7 +573,6 @@ internal class EditForm : Transient
 
         _thestatus.SetValue(tnum, 2);
         _themodifs.SetValue(tnum, newlist);
-        _thetouched++;
         return true;
     }
 
@@ -892,5 +879,4 @@ internal class EditForm : Transient
     private Editor? _theeditor;
     private Transient? _theent;
     private InterfaceModel? _themodel;
-    private int _thetouched;
 }

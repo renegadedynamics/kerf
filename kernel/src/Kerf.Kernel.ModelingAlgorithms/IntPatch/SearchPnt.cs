@@ -4,8 +4,6 @@
 
 using Kerf.Engine.Intersection.Polygons;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Intersection.Patches;
 
 /// <summary>The interference of 2D polygons, under the name IntPatch_RstInt uses (OCCT's typedef of Intf_InterferencePolygon2d).</summary>

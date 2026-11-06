@@ -21,9 +21,6 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Construction.Library.LibraryEdgeError;
-using static Kerf.Engine.Exchange.Step.Import.TranslateEdgeError;
 using static Kerf.Topology.Orientation;
 
 namespace Kerf.Engine.Exchange.Step.Import;

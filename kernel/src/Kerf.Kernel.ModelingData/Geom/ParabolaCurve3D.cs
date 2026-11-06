@@ -6,8 +6,6 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry.Objects;
-using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Geometry;
 
@@ -21,28 +19,28 @@ public sealed class ParabolaCurve3D : ConicCurve3D
     private double _focalLength;
 
     /// <summary>A parabola equal to Prb.</summary>
-    public ParabolaCurve3D(in Parabola3D prb)
+    public ParabolaCurve3D(in Parabola3D parabola)
     {
-        _focalLength = prb.Focal;
-        _pos = prb.Position;
+        _focalLength = parabola.Focal;
+        _pos = parabola.Position;
     }
 
     /// <summary>A parabola placed by A2 with focal length Focal.</summary>
     /// <exception cref="ConstructionErrorException">Focal &lt; 0.</exception>
-    public ParabolaCurve3D(in Frame3D a2, double focal)
+    public ParabolaCurve3D(in Frame3D frame, double focal)
     {
         _focalLength = focal;
         if (focal < 0.0)
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
-        _pos = a2;
+        _pos = frame;
     }
 
     /// <summary>A parabola from its directrix D and focus F.</summary>
-    public ParabolaCurve3D(in Axis3D d, in Point3D f)
+    public ParabolaCurve3D(in Axis3D directrix, in Point3D focus)
     {
-        Parabola3D prb = new Parabola3D(d, f);
+        Parabola3D prb = new Parabola3D(directrix, focus);
         _pos = prb.Position;
         _focalLength = prb.Focal;
     }
@@ -153,25 +151,25 @@ public sealed class ParabolaCurve3D : ConicCurve3D
     public Parabola3D Parabola => new Parabola3D(_pos, _focalLength);
 
     /// <summary>Applies T to this parabola (the focal length is scaled by |T.ScaleFactor()|).</summary>
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
-        _focalLength *= Math.Abs(t.ScaleFactor);
-        _pos = _pos.Transformed(t);
+        _focalLength *= Math.Abs(transform.ScaleFactor);
+        _pos = _pos.Transformed(transform);
     }
 
     /// <summary>U * |T.ScaleFactor()| (U itself when infinite).</summary>
-    internal sealed override double TransformedParameter(double u, in Transform3D t)
+    internal sealed override double TransformedParameter(double u, in Transform3D transform)
     {
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u))
         {
             return u;
         }
-        return u * Math.Abs(t.ScaleFactor);
+        return u * Math.Abs(transform.ScaleFactor);
     }
 
     /// <summary>|T.ScaleFactor()|.</summary>
-    internal sealed override double ParametricTransformation(in Transform3D t) => Math.Abs(t.ScaleFactor);
+    internal sealed override double ParametricTransformation(in Transform3D transform) => Math.Abs(transform.ScaleFactor);
 
     // Non-mutating twins of the Set methods (Kerf)
 
@@ -182,10 +180,10 @@ public sealed class ParabolaCurve3D : ConicCurve3D
         return copy;
     }
 
-    public ParabolaCurve3D WithParab(in Parabola3D prb)
+    public ParabolaCurve3D WithParabola(in Parabola3D parabola)
     {
         ParabolaCurve3D copy = (ParabolaCurve3D)Copy();
-        copy.SetParab(prb);
+        copy.SetParab(parabola);
         return copy;
     }
 }

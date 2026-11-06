@@ -7,8 +7,6 @@ using System.Buffers;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
-using Kerf.Engine;
-using static Kerf.Engine.Intersection.Polygons.PIType;
 
 namespace Kerf.Engine.Intersection.Polygons;
 

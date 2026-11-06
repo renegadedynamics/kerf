@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Numerics;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Approximation;
 

@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Fillets.Blend;
 

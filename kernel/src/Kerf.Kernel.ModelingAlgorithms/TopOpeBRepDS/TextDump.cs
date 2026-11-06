@@ -8,9 +8,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Globalization;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans.Legacy.Data;
 

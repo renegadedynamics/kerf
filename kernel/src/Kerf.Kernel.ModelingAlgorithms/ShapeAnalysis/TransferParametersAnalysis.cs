@@ -9,7 +9,6 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Healing.Build;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Healing.Analysis;
 
@@ -33,7 +32,6 @@ internal class TransferParametersAnalysis : Transient
     private double _scale;
     private double _first2d;
     private double _last2d;
-    private Face _face = new Face();
 
     /// <summary>An empty tool: the identity map.</summary>
     public TransferParametersAnalysis()
@@ -70,7 +68,6 @@ internal class TransferParametersAnalysis : Transient
 
         _first2d = f2d;
         _last2d = l2d;
-        _face = F;
         if (curve3d is null || curve2d is null)
         {
             return;

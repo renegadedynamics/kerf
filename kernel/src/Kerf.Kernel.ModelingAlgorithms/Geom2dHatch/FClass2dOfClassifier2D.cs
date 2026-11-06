@@ -9,7 +9,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Classification.Hatching;
@@ -24,7 +23,6 @@ namespace Kerf.Engine.Classification.Hatching;
 /// </remarks>
 internal sealed class FClass2dOfClassifier2D : IFClass2d<CurveAdaptor2D>
 {
-    private bool _isSet;
     private bool _firstCompare;
     private bool _firstTrans;
     private Line2D _lin = new();
@@ -39,7 +37,6 @@ internal sealed class FClass2dOfClassifier2D : IFClass2d<CurveAdaptor2D>
     /// <summary>An undefined classifier.</summary>
     public FClass2dOfClassifier2D()
     {
-        _isSet = false;
         _firstCompare = true;
         _firstTrans = true;
         _param = 0.0;
@@ -62,7 +59,7 @@ internal sealed class FClass2dOfClassifier2D : IFClass2d<CurveAdaptor2D>
                                     out _firstCompare,
                                     out _firstTrans,
                                     out _closest,
-                                    out _isSet,
+                                    out _,
                                     out _isHeadOrEnd,
                                     l,
                                     p,

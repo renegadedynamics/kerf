@@ -6,7 +6,6 @@
 using Kerf.Engine.Collections;
 using Kerf.Engine.Meshing.Model;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Meshing.Data;
 

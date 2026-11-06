@@ -10,7 +10,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Step.Export;
 

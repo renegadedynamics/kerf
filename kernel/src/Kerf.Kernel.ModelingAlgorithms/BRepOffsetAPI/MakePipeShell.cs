@@ -9,11 +9,6 @@ using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Construction.Api.PipeError;
-using static Kerf.Construction.TransitionMode;
-using static Kerf.Engine.Construction.Filling.TypeOfContact;
-using static Kerf.Engine.Construction.Surfaces.SurfacePipeError;
 
 namespace Kerf.Engine.Construction.Api;
 

@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
-using Kerf.Engine;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -21,7 +19,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
     internal readonly double _m10, _m11, _m12;
     internal readonly double _m20, _m21, _m22;
 
-    /// <summary>The fields, for the returning forms that take a whole value back (unit 10G).</summary>
+    /// <summary>The fields, for the returning forms that take a whole value back.</summary>
     private void Deconstruct(out double m00, out double m01, out double m02, out double m10, out double m11, out double m12, out double m20, out double m21, out double m22)
     {
         m00 = _m00;
@@ -260,7 +258,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
-    public readonly Matrix3x3 WithScale(double s)
+    public readonly Matrix3x3 WithScale(double factor)
     {
         double m00 = _m00;
         double m01 = _m01;
@@ -271,7 +269,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         double m20 = _m20;
         double m21 = _m21;
         double m22 = _m22;
-        m00 = m11 = m22 = s;
+        m00 = m11 = m22 = factor;
         m01 = m02 = m10 = m12 = m20 = m21 = 0.0;
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }

@@ -5,12 +5,8 @@
 
 using Kerf.Engine.Booleans.Legacy.Data;
 using Kerf.Engine.Booleans.Legacy.Tools;
-using Kerf.Engine.Topology;
-using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Booleans.Legacy.Tools.OutCurveType;
 
 namespace Kerf.Engine.Booleans.Legacy.Build;
 

@@ -10,8 +10,6 @@ using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans;
 

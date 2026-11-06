@@ -22,13 +22,8 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Runtime.CompilerServices;
 using static Kerf.Geometry.Continuity;
-using static Kerf.Engine.Exchange.Step.Data.Logical;
-using static Kerf.Engine.Exchange.Step.Geometry.StepKnotType;
-using static Kerf.Engine.Exchange.Step.Geometry.StepTrimmingPreference;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Exchange.Step.Import.Geometry;
 

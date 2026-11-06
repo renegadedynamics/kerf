@@ -11,9 +11,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
-using static Kerf.Geometry.SurfaceKind;
 
 namespace Kerf.Engine.Booleans.Legacy.Tools;
 

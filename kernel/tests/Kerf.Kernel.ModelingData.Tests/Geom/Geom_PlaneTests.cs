@@ -179,7 +179,7 @@ public class Geom_PlaneTests
         EngineAssert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aPlane.SetPln(new Plane3D(new CoordinateSystem(Constants.YOZ()))));
         EngineAssert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aPlane.Translate(new Vector3D(1, 0, 0)));
         EngineAssert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aPlane.UReverse());
-        PlaneSurface aOther = aPlane.WithPln(new Plane3D(new CoordinateSystem(Constants.YOZ())));
+        PlaneSurface aOther = aPlane.WithPlane(new Plane3D(new CoordinateSystem(Constants.YOZ())));
         Assert.False(aOther.IsFrozen);
         Assert.Equal(Constants.YOZ().Direction, aOther.Axis.Direction);
         Assert.Equal(Constants.XOY().Direction, aPlane.Axis.Direction);

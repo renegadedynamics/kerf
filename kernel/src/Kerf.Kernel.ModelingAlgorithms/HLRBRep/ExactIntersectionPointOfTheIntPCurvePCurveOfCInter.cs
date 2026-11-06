@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Intersection.Curves;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.HiddenLines;
 
 /// <summary>The exact intersection point of two 2D curves near the crossing of two segments of their polygons.</summary>

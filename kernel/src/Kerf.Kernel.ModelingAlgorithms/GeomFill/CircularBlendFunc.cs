@@ -9,7 +9,6 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.Continuity;
 

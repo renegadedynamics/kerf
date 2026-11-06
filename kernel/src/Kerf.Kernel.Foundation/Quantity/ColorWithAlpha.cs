@@ -3,7 +3,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
-using Kerf.Engine;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using static Kerf.Engine.Foundation.ColorSpace;
@@ -113,8 +112,6 @@ internal partial struct ColorWithAlpha : IEquatable<ColorWithAlpha>
     private const int HexColorLength_ShortRGBA = 4; // short RGBA hex color format
     private const int HexColorLength_RGB = 6;       // RGB hex color format
     private const int HexColorLength_RGBA = 8;      // RGBA hex color format
-
-    private const uint HEX_BASE = 16;                    // Hexadecimal number base
     private const int HEX_BITS_PER_COMPONENT = 8;        // 8 bits per component (256 values)
     private const int HEX_BITS_PER_COMPONENT_SHORT = 4;  // 4 bits per component (16 values)
     private const int RGB_COMPONENT_LAST_INDEX = 2;      // Last RGB component index (B in RGB)

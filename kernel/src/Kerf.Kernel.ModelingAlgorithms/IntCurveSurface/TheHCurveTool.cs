@@ -6,7 +6,6 @@
 using Kerf.Engine.Construction.Values;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 
 namespace Kerf.Engine.Intersection.CurveSurface;

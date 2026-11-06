@@ -9,7 +9,6 @@ using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 
 namespace Kerf.Engine.Offsets.Blend;

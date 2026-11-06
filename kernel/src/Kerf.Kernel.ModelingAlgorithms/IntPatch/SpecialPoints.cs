@@ -10,9 +10,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.SurfaceKind;
-using static Kerf.Engine.Intersection.Patches.SpecPntType;
 
 namespace Kerf.Engine.Intersection.Patches;
 

@@ -10,8 +10,6 @@ using Kerf.Engine.Exchange.Step.Elements;
 
 using Kerf.Engine.Exchange.Step.Representation;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Step.Fea;
 
 /// <summary>

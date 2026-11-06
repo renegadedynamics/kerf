@@ -1,6 +1,3 @@
-using Kerf.Geometry;
-using Kerf.Topology;
-
 namespace Kerf.Modeling;
 
 /// <summary>
@@ -27,7 +24,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     public Location(Placement location) : this(location, owned: true) { }
 
     /// <summary>A location from an OCCT transformation.</summary>
-    public Location(Transform3D trsf) : this(new Placement(trsf), owned: true) { }
+    public Location(Transform3D transform) : this(new Placement(transform), owned: true) { }
 
     /// <summary>A location at a position, without rotation.</summary>
     public Location(Point3D position) : this(Build(position, trsf => trsf), owned: true) { }
@@ -110,7 +107,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     {
         get
         {
-            var (a, b, c) = Wrapped.Transformation.GetEulerAngles(EulerSequence.Intrinsic_XYZ);
+            var (a, b, c) = Wrapped.Transformation.GetEulerAngles(EulerSequence.IntrinsicXYZ);
             return new Vector3D(a * Constants.RadToDeg, b * Constants.RadToDeg, c * Constants.RadToDeg);
         }
     }
@@ -135,7 +132,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
         var trsfPosition = new Transform3D();
         var v = Wrapped.Transformation.TranslationPart;
         trsfPosition = trsfPosition.WithTranslationPart(v);
-        var trsfOrientation = Transform3D.Rotation(EulerSequence.Intrinsic_XYZ, orientation.X * Constants.DegToRad,
+        var trsfOrientation = Transform3D.Rotation(EulerSequence.IntrinsicXYZ, orientation.X * Constants.DegToRad,
                                                    orientation.Y * Constants.DegToRad, orientation.Z * Constants.DegToRad);
         var combined = trsfPosition.Multiplied(trsfOrientation);
         return Own(new Placement(combined));

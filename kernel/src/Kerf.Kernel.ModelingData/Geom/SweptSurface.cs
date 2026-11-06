@@ -3,9 +3,6 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Kerf.Geometry;
-using Kerf.Engine;
-
 namespace Kerf.Geometry;
 
 /// <summary>
@@ -13,7 +10,7 @@ namespace Kerf.Geometry;
 /// </summary>
 public abstract class SweptSurface : Surface
 {
-    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    /// <summary>Only the kernel derives from it.</summary>
     private protected SweptSurface()
     {
     }
@@ -31,7 +28,7 @@ public abstract class SweptSurface : Surface
     /// <summary>The swept curve: the revolved curve, or the extruded curve.</summary>
     /// <remarks>
     /// The surface's own copy, frozen and shared, as OCCT returns its handle; the same object each time. The
-    /// surface's mutators copy it again before changing it (decision 159). Set by the constructors of the derived
+    /// surface's mutators copy it again before changing it. Set by the constructors of the derived
     /// classes; null only while one is running.
     /// </remarks>
     public Curve3D BasisCurve

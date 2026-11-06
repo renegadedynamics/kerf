@@ -15,11 +15,9 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Booleans.Algo;
@@ -40,7 +38,6 @@ internal sealed class NormalProjection
     private Shape _shape = new();
     private bool _isDone;
     private double _tol3d;
-    private double _tol2d;
     private double _maxDist;
     private bool _with3d;
     private Continuity _continuity;
@@ -104,7 +101,6 @@ internal sealed class NormalProjection
     public void SetParams(double tol3D, double tol2D, Continuity internalContinuity, int maxDegree, int maxSeg)
     {
         _tol3d = tol3D;
-        _tol2d = tol2D;
         _continuity = internalContinuity;
         _maxDegree = maxDegree;
         _maxSeg = maxSeg;
@@ -116,7 +112,6 @@ internal sealed class NormalProjection
     public void SetDefaultParams()
     {
         _tol3d = 1.0e-4;
-        _tol2d = Math.Pow(_tol3d, 2.0 / 3);
         _continuity = C1;
         _maxDegree = 14;
         _maxSeg = 16;

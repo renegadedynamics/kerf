@@ -8,10 +8,7 @@ using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Booleans.Operation;
 using static Kerf.Geometry.Continuity;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans.Api;
 

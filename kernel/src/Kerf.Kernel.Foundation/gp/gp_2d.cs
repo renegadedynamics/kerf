@@ -5,8 +5,6 @@
 
 using Kerf.Geometry;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Geometry;
 
 // The 2D constants of the gp package; the 3D ones are in gp.cs.

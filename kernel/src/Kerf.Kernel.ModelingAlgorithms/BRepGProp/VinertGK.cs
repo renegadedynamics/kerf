@@ -4,10 +4,8 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
-using Kerf.Engine.Measurement;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Geometry.IsoType;
 using static Kerf.Engine.Measurement.PropertyValueType;
 
@@ -401,7 +399,6 @@ internal class VinertGK : Properties
                         continue;
                     }
 
-                    tFunc.SetNbKronrodPoints(nbPnts);
                     tFunc.Init();
                     tFunc.SetTolerance(crvTol / (t2 - t1));
                     integral.Perform(tFunc, t1, t2, nbPnts, tolSpan, nbMaxIter);

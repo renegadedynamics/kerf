@@ -9,7 +9,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Numerics;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Plate;
 
@@ -1283,13 +1282,6 @@ internal class PlateSolver
         }
         return coefs;
     }
-
-    [Obsolete("Use CoefPol() returning handle by value instead")]
-    public void CoefPol(out NCollection_HArray2<Xyz> coefs)
-    {
-        coefs = CoefPol();
-    }
-
     public int Continuity()
     {
         return 2 * _order - 3 - _maxConstraintOrder;

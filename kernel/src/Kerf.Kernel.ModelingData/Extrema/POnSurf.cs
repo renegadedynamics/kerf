@@ -4,7 +4,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
-using Kerf.Engine;
 using System.Globalization;
 
 namespace Kerf.Engine.Extrema;

@@ -13,10 +13,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Features.PerfSelection;
-using static Kerf.Engine.Features.StatusError;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Features;
 
@@ -38,14 +34,10 @@ internal sealed class MakeRevol : Form
     private readonly NCollection_Sequence<Curve3D> _curves = new();
     private Curve3D? _bCurve;
     // OCCT: the class declares its own myStatusError, hiding BRepFeat_Form's; CurrentStatusError reads the form's
-#pragma warning disable CS0414 // written, never read: as in OCCT
-    private StatusError _statusError;
-#pragma warning restore CS0414
 
     /// <summary>An empty revolved feature.</summary>
     public MakeRevol()
     {
-        _statusError = StatusError.OK;
     }
 
     /// <summary>
@@ -195,7 +187,6 @@ internal sealed class MakeRevol : Form
         if (exp.More())
         {
             NotDone();
-            _statusError = StatusError.InvFirstShape;
             return;
         }
 
@@ -324,7 +315,6 @@ internal sealed class MakeRevol : Form
             if (exp.More())
             {
                 NotDone();
-                _statusError = StatusError.InvFirstShape;
                 return;
             }
 
@@ -443,7 +433,6 @@ internal sealed class MakeRevol : Form
         if (trfu != trff)
         {
             NotDone();
-            _statusError = StatusError.IncTypes;
             return;
         }
 
@@ -485,7 +474,6 @@ internal sealed class MakeRevol : Form
             else
             {
                 NotDone();
-                _statusError = StatusError.NoIntersectU;
                 return;
             }
             if (asi2.IsDone && asi2.NbPoints(1) >= 1)
@@ -501,13 +489,11 @@ internal sealed class MakeRevol : Form
             else
             {
                 NotDone();
-                _statusError = StatusError.NoIntersectF;
                 return;
             }
             if (!(prU > prF))
             {
                 NotDone();
-                _statusError = StatusError.IncParameter;
                 return;
             }
 
@@ -622,7 +608,6 @@ internal sealed class MakeRevol : Form
             if (exp.More())
             {
                 NotDone();
-                _statusError = StatusError.InvFirstShape;
                 return;
             }
 

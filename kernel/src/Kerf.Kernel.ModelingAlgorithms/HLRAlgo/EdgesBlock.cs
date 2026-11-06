@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Runtime.CompilerServices;
 
 namespace Kerf.Engine.HiddenLines.Algorithm;

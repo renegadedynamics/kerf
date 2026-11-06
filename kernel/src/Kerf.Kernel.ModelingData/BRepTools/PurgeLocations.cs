@@ -5,12 +5,10 @@
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Brep;
-using Kerf.Engine.Topology;
 
 using Kerf.Geometry;
 
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Topology.Tools;
 

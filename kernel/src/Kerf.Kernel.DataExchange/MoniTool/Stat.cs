@@ -5,8 +5,6 @@
 
 #nullable disable warnings
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Framework.Monitoring;
 
 /// <summary>
@@ -32,7 +30,6 @@ internal class Stat
     /// </summary>
     public Stat(string title = "")
     {
-        _thetit = new TCollection_HAsciiString(title);
         _thelev = 0;
         _thetot = new NCollection_HArray1<int>(1, 20);
         _thetot.Init(0);
@@ -156,7 +153,6 @@ internal class Stat
         return (r2 * 100) / r1 + r3;
     }
 
-    private TCollection_HAsciiString? _thetit;
     private int _thelev;
     private NCollection_HArray1<int>? _thetot;
     private NCollection_HArray1<int>? _thedone;

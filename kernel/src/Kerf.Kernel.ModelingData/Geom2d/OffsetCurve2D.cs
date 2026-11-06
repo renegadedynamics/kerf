@@ -7,8 +7,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Engine.Geometry.Objects;
-using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Geometry;
@@ -21,7 +19,7 @@ namespace Kerf.Geometry;
 /// <remarks>
 /// As in OCCT the offset curve shares its basis curve with the caller (a trimmed or offset basis is replaced by
 /// its own basis, and a trimmed one rebuilt). The shared basis curve is frozen; this curve's internal mutators
-/// copy it before changing it (decision 132).
+/// copy it before changing it.
 /// </remarks>
 public sealed class OffsetCurve2D : Curve2D
 {
@@ -35,7 +33,7 @@ public sealed class OffsetCurve2D : Curve2D
     /// <summary>True if an evaluation representation is attached.</summary>
     internal bool HasEvalRepresentation => _evalRep is not null;
 
-    /// <summary>The attached evaluation representation, or null. Internal: descriptors are mutable (decision 507).</summary>
+    /// <summary>The attached evaluation representation, or null. Internal: descriptors are mutable.</summary>
     internal RepCurveDesc2D.Base? EvalRepresentation() => _evalRep;
 
     /// <summary>Attaches an evaluation representation (null detaches it).</summary>
@@ -62,10 +60,10 @@ public sealed class OffsetCurve2D : Curve2D
     /// isTheNotCheckC0, a C0 B-spline basis must be G1.
     /// </summary>
     /// <exception cref="ConstructionErrorException">The basis is a C0 B-spline that is not G1.</exception>
-    public OffsetCurve2D(Curve2D curve, double offset, bool isTheNotCheckC0 = false)
+    public OffsetCurve2D(Curve2D curve, double offset, bool skipContinuityCheck = false)
     {
         _offsetValue = offset;
-        SetBasisCurve(curve, isTheNotCheckC0);
+        SetBasisCurve(curve, skipContinuityCheck);
     }
 
     /// <summary>A copy of theOther with its own copy of the basis curve (and of the evaluation representation).</summary>
@@ -396,22 +394,22 @@ public sealed class OffsetCurve2D : Curve2D
     public sealed override double Period => _basisCurve.Period;
 
     /// <summary>Transforms the basis curve and scales the offset by |T.ScaleFactor()|.</summary>
-    protected internal sealed override void Transform(in Transform2D t)
+    protected internal sealed override void Transform(in Transform2D transform)
     {
         CheckMutable();
         ClearEvalRepresentation();
         OwnBasisCurve();
-        _basisCurve.Transform(t);
-        _offsetValue *= Math.Abs(t.ScaleFactor);
+        _basisCurve.Transform(transform);
+        _offsetValue *= Math.Abs(transform.ScaleFactor);
     }
 
     /// <summary>The basis curve's transformed parameter.</summary>
-    internal sealed override double TransformedParameter(double u, in Transform2D t) =>
-        _basisCurve.TransformedParameter(u, t);
+    internal sealed override double TransformedParameter(double u, in Transform2D transform) =>
+        _basisCurve.TransformedParameter(u, transform);
 
     /// <summary>The basis curve's parametric transformation.</summary>
-    internal sealed override double ParametricTransformation(in Transform2D t) =>
-        _basisCurve.ParametricTransformation(t);
+    internal sealed override double ParametricTransformation(in Transform2D transform) =>
+        _basisCurve.ParametricTransformation(transform);
 
     /// <summary>The continuity of the basis curve (G1 for a C0 B-spline accepted as G1).</summary>
     internal Continuity GetBasisCurveContinuity() => _basisCurveContinuity;
@@ -419,10 +417,10 @@ public sealed class OffsetCurve2D : Curve2D
     // Non-mutating twins of the mutators (Kerf)
 
     /// <summary>A copy on the basis curve C (see the constructor; the offsets of an offset C add up).</summary>
-    public OffsetCurve2D WithBasisCurve(Curve2D c, bool isNotCheckC0 = false)
+    public OffsetCurve2D WithBasisCurve(Curve2D curve, bool skipContinuityCheck = false)
     {
         OffsetCurve2D copy = new OffsetCurve2D(this);
-        copy.SetBasisCurve(c, isNotCheckC0);
+        copy.SetBasisCurve(curve, skipContinuityCheck);
         return copy;
     }
 

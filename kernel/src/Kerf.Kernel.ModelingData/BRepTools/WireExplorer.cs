@@ -11,10 +11,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Topology.Tools;
 
@@ -42,14 +39,12 @@ internal sealed class WireExplorer
     private Vertex _vertex = new();
     private Face _face = new();
     private readonly HashSet<Shape> _doubles = new(ShapeHasher.Instance);
-    private bool _reverse;
     private double _tolU;
     private double _tolV;
 
     /// <summary>An empty explorer (initialise it with <see cref="Init(in Wire)"/>).</summary>
     public WireExplorer()
     {
-        _reverse = false;
         _tolU = 0.0;
         _tolV = 0.0;
     }
@@ -127,7 +122,6 @@ internal sealed class WireExplorer
 
         _face = f;
         double dfVertToler = 0.0;
-        _reverse = false;
 
         if (!_face.IsNull)
         {
@@ -202,7 +196,6 @@ internal sealed class WireExplorer
                 }
             }
 
-            _reverse = (_face.Orientation == Reversed);
         }
 
         // map of vertices to know if the wire is open

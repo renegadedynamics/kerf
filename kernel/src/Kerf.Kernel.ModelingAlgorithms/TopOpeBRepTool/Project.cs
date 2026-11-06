@@ -8,7 +8,6 @@ using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Booleans.Legacy.Tools;
 

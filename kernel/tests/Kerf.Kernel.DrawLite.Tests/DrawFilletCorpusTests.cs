@@ -108,13 +108,10 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
             aNew = aNew.Where(c => c.Id.Contains(aFilter!, StringComparison.Ordinal)).ToList();
         }
 
-        bool UsesMemory(DrawTestCase theCase) => DrawCheapGapsCorpusTests.MeasuresMemory(aScans.First(s => s.Case == theCase));
         DrawCaseRun RunOne(DrawTestCase theCase)
             => aCorpus.RunAndCheck(theCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
                                    TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null);
-        List<DrawCaseRun> aRuns = [.. aNew.Where(c => !UsesMemory(c)).AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                                          .Select(RunOne),
-                                   .. aNew.Where(UsesMemory).Select(c => DrawCheapGapsCorpusTests.RunMemoryCase(aCorpus, c))];
+        List<DrawCaseRun> aRuns = [.. aNew.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2)).Select(RunOne)];
         aRuns.Sort((x, y) => StringComparer.Ordinal.Compare(x.Case.Id, y.Case.Id));
         output.WriteLine("after 7N3: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])
                                                                .OrderBy(g => g.Key, StringComparer.Ordinal)

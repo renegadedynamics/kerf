@@ -7,10 +7,8 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Engine.Foundation.Gravity;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Exchange.Framework.Transfer;
 

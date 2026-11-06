@@ -7,8 +7,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Engine.Geometry.Objects;
-using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Geometry;
@@ -22,7 +20,7 @@ namespace Kerf.Geometry;
 /// <remarks>
 /// The evaluation representation (<see cref="HasEvalRepresentation"/>) is set by <see cref="WithEvalRepresentation"/>,
 /// which stores a copy of the descriptor. <see cref="BasisCurve"/> returns the stored basis curve frozen, as OCCT
-/// returns its handle; this curve's internal mutators then copy the basis curve before changing it (decision 127).
+/// returns its handle; this curve's internal mutators then copy the basis curve before changing it.
 /// </remarks>
 public sealed class OffsetCurve3D : Curve3D
 {
@@ -75,11 +73,11 @@ public sealed class OffsetCurve3D : Curve3D
     /// <exception cref="ConstructionErrorException">
     /// The basis curve is a C0 B-spline that is not G1 (unless isTheNotCheckC0).
     /// </exception>
-    public OffsetCurve3D(Curve3D curve, double offset, in Direction3D dir, bool isTheNotCheckC0 = false)
+    public OffsetCurve3D(Curve3D curve, double offset, in Direction3D direction, bool skipContinuityCheck = false)
     {
-        _direction = dir;
+        _direction = direction;
         _offsetValue = offset;
-        SetBasisCurve(curve, isTheNotCheckC0);
+        SetBasisCurve(curve, skipContinuityCheck);
     }
 
     // Kerf: the basis curve may have been handed out (and frozen) by BasisCurve(); copy it before changing it.
@@ -421,31 +419,31 @@ public sealed class OffsetCurve3D : Curve3D
     }
 
     /// <summary>Applies T to the basis curve and the direction; the offset is scaled by T.ScaleFactor().</summary>
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
         ClearEvalRepresentation();
         OwnBasisCurve();
-        _basisCurve.Transform(t);
-        _direction = _direction.Transformed(t);
-        _offsetValue *= t.ScaleFactor;
+        _basisCurve.Transform(transform);
+        _direction = _direction.Transformed(transform);
+        _offsetValue *= transform.ScaleFactor;
     }
 
     /// <summary>The basis curve's transformed parameter.</summary>
-    internal sealed override double TransformedParameter(double u, in Transform3D t) => _basisCurve.TransformedParameter(u, t);
+    internal sealed override double TransformedParameter(double u, in Transform3D transform) => _basisCurve.TransformedParameter(u, transform);
 
     /// <summary>The basis curve's parametric transformation.</summary>
-    internal sealed override double ParametricTransformation(in Transform3D t) => _basisCurve.ParametricTransformation(t);
+    internal sealed override double ParametricTransformation(in Transform3D transform) => _basisCurve.ParametricTransformation(transform);
 
     /// <summary>The continuity of the basis curve (G1 for a G1 C0 B-spline).</summary>
     internal Continuity GetBasisCurveContinuity() => _basisCurveContinuity;
 
     // Non-mutating twins (Kerf)
 
-    public OffsetCurve3D WithDirection(in Direction3D v)
+    public OffsetCurve3D WithDirection(in Direction3D direction)
     {
         OffsetCurve3D copy = (OffsetCurve3D)Copy();
-        copy.SetDirection(v);
+        copy.SetDirection(direction);
         return copy;
     }
 
@@ -457,10 +455,10 @@ public sealed class OffsetCurve3D : Curve3D
     }
 
     /// <summary>A copy on the basis curve C (see <see cref="SetBasisCurve"/>).</summary>
-    public OffsetCurve3D WithBasisCurve(Curve3D c, bool isNotCheckC0 = false)
+    public OffsetCurve3D WithBasisCurve(Curve3D curve, bool skipContinuityCheck = false)
     {
         OffsetCurve3D copy = (OffsetCurve3D)Copy();
-        copy.SetBasisCurve(c, isNotCheckC0);
+        copy.SetBasisCurve(curve, skipContinuityCheck);
         return copy;
     }
 

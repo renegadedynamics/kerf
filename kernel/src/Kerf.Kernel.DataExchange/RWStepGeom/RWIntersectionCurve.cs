@@ -8,9 +8,6 @@
 
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Step.Data;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Framework.ParamType;
-using static Kerf.Engine.Exchange.Step.Geometry.StepPreferredSurfaceCurveRepresentation;
 
 namespace Kerf.Engine.Exchange.Step.Geometry.ReadWrite;
 

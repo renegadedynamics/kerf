@@ -5,9 +5,6 @@
 
 using Kerf.Engine.Foundation;
 
-using Kerf.Geometry;
-using Kerf.Engine;
-
 namespace Kerf.Geometry;
 
 /// <summary>
@@ -18,7 +15,7 @@ namespace Kerf.Geometry;
 /// </summary>
 /// <remarks>
 /// <see cref="BasisCurve"/> returns the stored copy frozen, as OCCT returns its handle; this curve's internal
-/// mutators then copy the basis curve again before changing it (decision 127).
+/// mutators then copy the basis curve again before changing it.
 /// </remarks>
 public sealed class TrimmedCurve3D : BoundedCurve3D
 {
@@ -32,19 +29,19 @@ public sealed class TrimmedCurve3D : BoundedCurve3D
     /// parameters into the first period (they may then differ from U1 and U2 by a period).
     /// </summary>
     /// <exception cref="ConstructionErrorException">U1 == U2, or C is not periodic and U1 or U2 is out of its bounds.</exception>
-    public TrimmedCurve3D(Curve3D c, double u1, double u2, bool sense = true, bool adjustPeriodic = true)
+    public TrimmedCurve3D(Curve3D curve, double u1, double u2, bool sense = true, bool adjustPeriodic = true)
     {
         _uTrim1 = u1;
         _uTrim2 = u2;
         // kill trimmed basis curves
-        TrimmedCurve3D? t = c as TrimmedCurve3D;
+        TrimmedCurve3D? t = curve as TrimmedCurve3D;
         if (t is not null)
         {
             _basisCurve = (Curve3D)t._basisCurve.Copy(); // Kerf: the field, so that T's basis curve isn't frozen
         }
         else
         {
-            _basisCurve = (Curve3D)c.Copy();
+            _basisCurve = (Curve3D)curve.Copy();
         }
         SetTrim(u1, u2, sense, adjustPeriodic);
     }
@@ -224,21 +221,21 @@ public sealed class TrimmedCurve3D : BoundedCurve3D
     }
 
     /// <summary>Applies T to this trimmed curve and its basis curve.</summary>
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
         OwnBasisCurve();
-        _basisCurve.Transform(t);
-        double u1 = _basisCurve.TransformedParameter(_uTrim1, t);
-        double u2 = _basisCurve.TransformedParameter(_uTrim2, t);
+        _basisCurve.Transform(transform);
+        double u1 = _basisCurve.TransformedParameter(_uTrim1, transform);
+        double u2 = _basisCurve.TransformedParameter(_uTrim2, transform);
         SetTrim(u1, u2, true, false);
     }
 
     /// <summary>The basis curve's transformed parameter.</summary>
-    internal sealed override double TransformedParameter(double u, in Transform3D t) => _basisCurve.TransformedParameter(u, t);
+    internal sealed override double TransformedParameter(double u, in Transform3D transform) => _basisCurve.TransformedParameter(u, transform);
 
     /// <summary>The basis curve's parametric transformation.</summary>
-    internal sealed override double ParametricTransformation(in Transform3D t) => _basisCurve.ParametricTransformation(t);
+    internal sealed override double ParametricTransformation(in Transform3D transform) => _basisCurve.ParametricTransformation(transform);
 
     // Non-mutating twin of SetTrim (Kerf)
 

@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Foundation;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>A tool to call BVH builder subroutines.</summary>

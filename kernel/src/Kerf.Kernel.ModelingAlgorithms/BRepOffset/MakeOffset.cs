@@ -31,17 +31,11 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Offsets.Error;
-using static Kerf.Offsets.OffsetMode;
-using static Kerf.Engine.Offsets.OffsetStatus;
-using static Kerf.Engine.Fillets.Data.TypeOfConcavity;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.JoinKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Offsets;
@@ -77,10 +71,8 @@ internal sealed partial class MakeOffset
     private Shape _initialShape = new();
     private Shape _shape = new();
     private Compound _faceComp = new();
-    private global::Kerf.Offsets.OffsetMode _mode;
     private bool _isLinearizationAllowed;
     private bool _inter;
-    private bool _selfInter;
     private global::Kerf.Geometry.JoinKind _join;
     private bool _thickening;
     private bool _removeIntEdges;
@@ -435,9 +427,7 @@ internal sealed partial class MakeOffset
         _tol = tol;
         _initialShape = s;
         _shape = s;
-        _mode = mode;
         _inter = inter;
-        _selfInter = selfInter;
         _join = Join;
         _thickening = thickening;
         _removeIntEdges = removeIntEdges;
@@ -459,9 +449,7 @@ internal sealed partial class MakeOffset
         _initialShape = s;
         _shape = s;
         _tol = tol;
-        _mode = mode;
         _inter = inter;
-        _selfInter = selfInter;
         _join = Join;
         _thickening = thickening;
         _removeIntEdges = removeIntEdges;
@@ -1971,15 +1959,6 @@ internal sealed partial class MakeOffset
         }
 
         // OCCT_DEBUG: the chronometer is left out.
-    }
-
-    //=================================================================================================
-
-    private void SelfInter(HashSet<Shape> modif)
-    {
-        // OCCT_DEBUG: the chronometer is left out.
-
-        throw new MethodNotImplementedException();
     }
 
     //=================================================================================================

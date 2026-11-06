@@ -6,7 +6,6 @@
 using Kerf.Engine.Intersection.Curves;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.HiddenLines;
 

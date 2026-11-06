@@ -18,7 +18,7 @@ using EngineTreeReader = Kerf.Engine.Exchange.Gltf.TreeReader;
 namespace Kerf.Exchange;
 
 /// <summary>
-/// STL: meshes read and written (OCCT's RWStl and StlAPI). A mesh read has no shape (decision 1349, question 59):
+/// STL: meshes read and written (OCCT's RWStl and StlAPI). A mesh read has no shape:
 /// <see cref="ShapeMesh.Shape"/> is null.
 /// </summary>
 public static class Stl

@@ -4,8 +4,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Geometry;
@@ -20,7 +18,7 @@ namespace Kerf.Geometry;
 /// </remarks>
 public abstract class ElementarySurface : Surface
 {
-    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    /// <summary>Only the kernel derives from it.</summary>
     private protected ElementarySurface()
     {
     }
@@ -48,26 +46,26 @@ public abstract class ElementarySurface : Surface
     }
 
     /// <summary>A copy with the main axis theA1.</summary>
-    public ElementarySurface WithAxis(in Axis3D a1)
+    public ElementarySurface WithAxis(in Axis3D axis)
     {
         ElementarySurface copy = (ElementarySurface)Copy();
-        copy.SetAxis(a1);
+        copy.SetAxis(axis);
         return copy;
     }
 
     /// <summary>A copy whose local coordinate system is located at theLoc.</summary>
-    public ElementarySurface WithLocation(in Point3D loc)
+    public ElementarySurface WithLocation(in Point3D location)
     {
         ElementarySurface copy = (ElementarySurface)Copy();
-        copy.SetLocation(loc);
+        copy.SetLocation(location);
         return copy;
     }
 
     /// <summary>A copy with the local coordinate system theAx3.</summary>
-    public ElementarySurface WithPosition(in CoordinateSystem ax3)
+    public ElementarySurface WithPosition(in CoordinateSystem position)
     {
         ElementarySurface copy = (ElementarySurface)Copy();
-        copy.SetPosition(ax3);
+        copy.SetPosition(position);
         return copy;
     }
 

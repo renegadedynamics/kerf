@@ -6,7 +6,6 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Foundation.Resources;
-using Kerf.Engine;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 

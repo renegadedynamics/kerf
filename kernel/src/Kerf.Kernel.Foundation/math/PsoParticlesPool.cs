@@ -3,8 +3,6 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2014-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Numerics;
 
 /// <summary>A particle of <see cref="PsoParticlesPool"/>. Coordinate indexes are 0..dimension-1.</summary>
@@ -41,7 +39,6 @@ internal class PsoParticlesPool
     private NCollection_Array1<Particle> _particlesPool;
     private NCollection_Array1<double> _memory; // Stores particles vector data.
     private int _particlesCount;
-    private int _dimensionCount;
 
     public PsoParticlesPool(int particlesCount, int dimensionCount)
     {
@@ -51,7 +48,6 @@ internal class PsoParticlesPool
                                                                          + dimensionCount) // BestPosition
                                                          - 1);
         _particlesCount = particlesCount;
-        _dimensionCount = dimensionCount;
 
         _memory.Init(0.0);
 

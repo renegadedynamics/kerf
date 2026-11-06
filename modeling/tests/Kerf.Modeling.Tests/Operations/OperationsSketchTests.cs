@@ -126,7 +126,7 @@ public class OperationsSketchTests
         Check.AlmostEqual(329.2704811215115, convexRect.Area, 3);
         Check.AlmostEqual(251.36350580659322, concaveRect.Area, 3);
 
-        var tri = new Triangle(a: 10, b: 10, c: 10);
+        var tri = new Triangle(sideA: 10, sideB: 10, sideC: 10);
         var triRound = FullRound(tri.Edges().OrderBy(Axis.X)[0], tri);
         Assert.True(triRound.Area < tri.Area);
         Check.AlmostEqual(31.887519392726578, triRound.Area, 3);

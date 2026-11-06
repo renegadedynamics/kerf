@@ -9,10 +9,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
-using static Kerf.Engine.Booleans.Legacy.Tools.OutCurveType;
 
 namespace Kerf.Engine.Booleans.Legacy.Data;
 

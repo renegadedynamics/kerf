@@ -14,12 +14,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
-using static Kerf.Topology.Containment;
-using static Kerf.Engine.Booleans.Legacy.Data.DsKind;
 
 namespace Kerf.Engine.Fillets;
 

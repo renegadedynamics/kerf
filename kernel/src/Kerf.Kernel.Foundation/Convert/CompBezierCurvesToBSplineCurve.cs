@@ -5,8 +5,6 @@
 
 using Kerf.Geometry;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Geometry.Conversion;
 
 /// <summary>Converts a sequence of adjacent non-rational 3D Bezier curves into a B-spline curve.</summary>

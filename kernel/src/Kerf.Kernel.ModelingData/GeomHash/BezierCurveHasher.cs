@@ -4,8 +4,6 @@
 
 using Kerf.Geometry;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Geometry.Hashing;
 
 /// <summary>OCCT's hasher of Geom_BezierCurve: the hash reads the metadata only, the comparison the poles and weights.</summary>

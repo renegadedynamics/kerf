@@ -17,11 +17,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Fillets.BlendFunctions.SectionShape;
 using static Kerf.Engine.Fillets.Builder_0;
-using static Kerf.Fillets.FilletShape;
-using static Kerf.Engine.Fillets.Surfaces.SurfaceStatusType;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Topology.Orientation;
 

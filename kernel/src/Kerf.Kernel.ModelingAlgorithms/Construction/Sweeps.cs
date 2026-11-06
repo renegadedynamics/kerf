@@ -274,7 +274,7 @@ public static class Sweeps
     }
 
     /// <summary>
-    /// An extrusion's or revolution's history (decisions 1558 and 1560): OCCT's, plus the caps. A sub-shape of the
+    /// An extrusion's or revolution's history: OCCT's, plus the caps. A sub-shape of the
     /// profile is modified into its first shape (OCCT's <c>FirstShape(S)</c>, the bottom cap of a face, the bottom edge
     /// of an edge) where the sweep rebuilt it, and generates its last shape (the top cap) beside what it swept; only
     /// shapes the result holds, so a whole turn, whose last shapes are its first, adds nothing generated. A revolution

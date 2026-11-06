@@ -8,8 +8,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Geometry.Objects;
-using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Geometry;
 
@@ -23,21 +21,21 @@ public sealed class CylindricalSurface : ElementarySurface
 
     /// <summary>A cylinder of radius Radius whose local coordinate system is A3.</summary>
     /// <exception cref="ConstructionErrorException">Radius &lt; 0.</exception>
-    public CylindricalSurface(in CoordinateSystem a3, double radius)
+    public CylindricalSurface(in CoordinateSystem position, double radius)
     {
         _radius = radius;
         if (radius < 0.0)
         {
             throw Refusal.Argument(new ConstructionErrorException());
         }
-        _pos = a3;
+        _pos = position;
     }
 
     /// <summary>A cylinder from a gp cylinder.</summary>
-    public CylindricalSurface(in Cylinder3D c)
+    public CylindricalSurface(in Cylinder3D cylinder)
     {
-        _radius = c.Radius;
-        _pos = c.Position;
+        _radius = cylinder.Radius;
+        _pos = cylinder.Position;
     }
 
     public sealed override Geometry3D Copy()
@@ -87,10 +85,10 @@ public sealed class CylindricalSurface : ElementarySurface
     }
 
     /// <summary>A copy that is the cylinder C.</summary>
-    public CylindricalSurface WithCylinder(in Cylinder3D c)
+    public CylindricalSurface WithCylinder(in Cylinder3D cylinder)
     {
         CylindricalSurface copy = (CylindricalSurface)Copy();
-        copy.SetCylinder(c);
+        copy.SetCylinder(cylinder);
         return copy;
     }
 
@@ -202,19 +200,19 @@ public sealed class CylindricalSurface : ElementarySurface
     }
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int uOrder, int vOrder)
     {
-        if (nu + nv < 1 || nu < 0 || nv < 0)
+        if (uOrder + vOrder < 1 || uOrder < 0 || vOrder < 0)
         {
             throw Refusal.State(new UndefinedDerivative3DException());
         }
-        if (nv > 1)
+        if (vOrder > 1)
         {
             return new Vector3D(0.0, 0.0, 0.0);
         }
         else
         {
-            return global::Kerf.Engine.Geometry.ElSLib.CylinderDN(u, v, _pos, _radius, nu, nv);
+            return global::Kerf.Engine.Geometry.ElSLib.CylinderDN(u, v, _pos, _radius, uOrder, vOrder);
         }
     }
 
@@ -232,28 +230,28 @@ public sealed class CylindricalSurface : ElementarySurface
         return gc;
     }
 
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
-        _radius = _radius * Math.Abs(t.ScaleFactor);
-        _pos = _pos.Transformed(t);
+        _radius = _radius * Math.Abs(transform.ScaleFactor);
+        _pos = _pos.Transformed(transform);
     }
 
     /// <summary>V scaled by |T.ScaleFactor()| (unless infinite); U unchanged.</summary>
-    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
+    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D transform)
     {
         if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(v))
         {
-            v *= Math.Abs(t.ScaleFactor);
+            v *= Math.Abs(transform.ScaleFactor);
         }
     }
 
     /// <summary>An affinity of ratio |T.ScaleFactor()| along V.</summary>
-    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D t)
+    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D transform)
     {
         GeneralTransform2D t2 = new GeneralTransform2D();
         Axis2D axis = new Axis2D(Constants.Origin2d(), Constants.DX2d());
-        t2 = t2.WithAffinity(axis, Math.Abs(t.ScaleFactor));
+        t2 = t2.WithAffinity(axis, Math.Abs(transform.ScaleFactor));
         return t2;
     }
 }

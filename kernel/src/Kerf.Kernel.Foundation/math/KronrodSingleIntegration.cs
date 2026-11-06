@@ -6,8 +6,6 @@
 
 using Kerf.Engine.Foundation;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Numerics;
 
 /// <summary>The Gauss-Kronrod method of computing an integral, with adaptive subdivision.</summary>

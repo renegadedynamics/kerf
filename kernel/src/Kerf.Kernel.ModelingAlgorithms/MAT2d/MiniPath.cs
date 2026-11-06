@@ -8,7 +8,6 @@ using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Offsets.MedialAxis;
 

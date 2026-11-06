@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry.Bounds;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Tools;
 

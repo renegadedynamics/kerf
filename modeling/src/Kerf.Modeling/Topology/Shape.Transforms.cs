@@ -1,5 +1,4 @@
 using Kerf.Construction;
-using Kerf.Geometry;
 using Kerf.Healing;
 
 namespace Kerf.Modeling;

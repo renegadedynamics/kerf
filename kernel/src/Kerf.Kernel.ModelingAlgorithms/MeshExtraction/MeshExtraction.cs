@@ -1,19 +1,15 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
-// An Kerf addition, not a port: the managed equivalent of Kerf.Modeling's native mesh extraction
-// (native/shim/src/b3d_mesh.cpp, b3d_mesh_extract), which fills Bento's viewer's buffers. Open question 12.
+// A Kerf addition, not a port: the mesh extraction that fills Bento's viewer's buffers. Open question 12.
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Measurement;
-using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Meshing;
 
@@ -40,7 +36,7 @@ internal static class MeshExtraction
 {
     /// <summary>
     /// The buffers of <paramref name="faces"/> and <paramref name="edges"/>, sub-shapes of the meshed
-    /// <paramref name="root"/>, in the order given (b3d_mesh_extract's arguments).
+    /// <paramref name="root"/>, in the order given.
     /// </summary>
     /// <param name="root">The meshed shape: its faces are the edges' ancestors.</param>
     /// <param name="faces">The faces to extract, with their locations and orientations.</param>
@@ -136,7 +132,7 @@ internal static class MeshExtraction
         return found;
     }
 
-    /// <summary>Fills the buffers: b3d_mesh.cpp's addFace and addEdge.</summary>
+    /// <summary>Fills the buffers.</summary>
     private sealed class Builder(int theNodeFloats, int theIndices, int theFaces, int theEdges)
     {
         public readonly float[] Positions = new float[theNodeFloats];

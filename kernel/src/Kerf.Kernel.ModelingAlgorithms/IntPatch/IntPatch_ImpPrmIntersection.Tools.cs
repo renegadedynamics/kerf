@@ -8,11 +8,7 @@ using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
-using static Kerf.Geometry.SurfaceKind;
-using static Kerf.Engine.Intersection.Patches.PatchLineType;
-using static Kerf.Engine.Intersection.Patches.SpecPntType;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.Containment;
 

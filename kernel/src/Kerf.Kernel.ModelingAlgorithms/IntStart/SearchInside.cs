@@ -9,7 +9,6 @@ using Kerf.Engine.Intersection.Implicit;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Intersection.Walking;

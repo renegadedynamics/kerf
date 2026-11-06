@@ -4,7 +4,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using Kerf.Engine;
 using System.Globalization;
 
 namespace Kerf.Engine.Numerics;
@@ -60,7 +59,6 @@ internal class FunctionSetRoot
     private math_Vector _ff;
     private math_Vector _previousSolution;
     private math_Vector _save;
-    private math_IntegerVector _constraints;
     private math_Vector _temp1;
     private math_Vector _temp2;
     private math_Vector _temp3;
@@ -747,7 +745,6 @@ internal class FunctionSetRoot
         _ff = new math_Vector(1, function.NbEquations());
         _previousSolution = new math_Vector(1, function.NbVariables());
         _save = new math_Vector(0, nbIterations);
-        _constraints = new math_IntegerVector(1, function.NbVariables());
         _temp1 = new math_Vector(1, function.NbVariables());
         _temp2 = new math_Vector(1, function.NbVariables());
         _temp3 = new math_Vector(1, function.NbVariables());

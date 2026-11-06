@@ -1,7 +1,5 @@
 using System.Collections.Immutable;
 using Kerf.Construction;
-using Kerf.Geometry;
-using Kerf.Topology;
 
 namespace Kerf.Modeling;
 

@@ -6,7 +6,6 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Geometry.Objects;
 
@@ -251,7 +250,7 @@ internal class Transformation2 : Transient
         return copy;
     }
 
-    public Transformation2 WithTrsf2d(in Transform2D t)
+    public Transformation2 WithTransform(in Transform2D t)
     {
         Transformation2 copy = Copy();
         copy.SetTrsf2d(t);

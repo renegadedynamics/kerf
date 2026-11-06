@@ -6,7 +6,6 @@
 using Kerf.Engine.Topology.Tools;
 
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Features.Local;
 

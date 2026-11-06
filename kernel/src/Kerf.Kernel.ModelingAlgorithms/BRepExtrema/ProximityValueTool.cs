@@ -6,17 +6,14 @@
 using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
-using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using BVH_Vec3d = Kerf.Engine.NCollection_Vec3<double>;
 using ProxPnt_Status = Kerf.Engine.Measurement.Distance.ProximityDistTool.ProxPnt_Status;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Measurement.Distance;
 

@@ -5,7 +5,7 @@ namespace Kerf.Modeling;
 /// <summary>
 /// build123d's importers (<c>importers.py</c>): shapes from BREP, STEP and STL data, and from glTF (not in build123d).
 /// Each reads a stream, with limits for hostile data and cancellation; the file forms open the file and read it as a
-/// stream. Data that can't be read is a failed <see cref="Result{T}"/> with the kernel's diagnostic (unit 10M3):
+/// stream. Data that can't be read is a failed <see cref="Result{T}"/> with the kernel's diagnostic:
 /// <c>exchange.malformed</c> or <c>exchange.invalid-data</c> for data that isn't the format, <c>exchange.limit-exceeded</c>
 /// for data past a limit, <c>exchange.external-references</c> for STEP data that refers to other files. A missing file
 /// throws <see cref="FileNotFoundException"/>, and a unit that isn't a length <see cref="ArgumentException"/>.

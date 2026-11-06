@@ -7,8 +7,6 @@ using Kerf.Engine.Exchange.Framework;
 
 using Kerf.Engine.Exchange.Step.Data;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Step.Header;
 
 /// <summary>Protocol for HeaderSection Entities. It requires HeaderSection as a Resource.</summary>

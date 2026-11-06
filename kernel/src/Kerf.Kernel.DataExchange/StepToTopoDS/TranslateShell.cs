@@ -13,8 +13,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Step.Import.TranslateShellError;
 
 namespace Kerf.Engine.Exchange.Step.Import;
 

@@ -113,9 +113,26 @@ internal static class DrawBasicCommands
             MemCounter.MemWorkingSetPeak => aProcess.PeakWorkingSet64,
             MemCounter.MemSwapUsage => aProcess.PagedMemorySize64,
             MemCounter.MemSwapUsagePeak => aProcess.PeakPagedMemorySize64,
-            _ => GC.GetTotalMemory(true),
+            _ => LiveHeapBytes(),
         };
     }
+
+    // What the heap holds once everything unreachable and everything waiting on a finalizer has gone: two forced,
+    // blocking, compacting collections about the finalizers, where GC.GetTotalMemory(true) stops when two figures come
+    // within 5% of each other, hundreds of kilobytes here. In a case's own process (DrawCaseProcess), to a multiple of
+    // HeapResolution: the list of readings a script keeps grows by 64 to 250 bytes a cycle, which OCCT's C heap hardly
+    // sees and which alone would fail the scripts whose tolerance is 0 to 100 bytes. Steps of this size pass checktrend
+    // unless most cycles take one, so that growth can't fail, and keeping 1.4 kB or more a cycle does (decision 1701).
+    private static long LiveHeapBytes()
+    {
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
+        GC.WaitForPendingFinalizers();
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
+        long aBytes = GC.GetTotalMemory(false);
+        return DrawCaseProcess.Own == DrawCaseProcess.Reading.Heap ? aBytes / HeapResolution * HeapResolution : aBytes;
+    }
+
+    private const long HeapResolution = 1024;
 
     // OSD_MemInfo::ToString
     private static string MemInfoText()

@@ -14,10 +14,6 @@ using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Framework.Selection.PrintCount;
-
-using static Kerf.Engine.Exchange.Framework.FrameworkCheckStatus;
 
 namespace Kerf.Engine.Exchange.Framework;
 

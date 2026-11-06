@@ -4,8 +4,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
-using Kerf.Engine;
-using System.Diagnostics.CodeAnalysis;
 using static Kerf.Geometry.TransformForm;
 
 namespace Kerf.Geometry;
@@ -17,7 +15,7 @@ public readonly partial struct Point3D : IEquatable<Point3D>
 
     internal Point3D(in Xyz coord) => _coord = coord;
 
-    public Point3D(double xp, double yp, double zp) => _coord = new Xyz(xp, yp, zp);
+    public Point3D(double x, double y, double z) => _coord = new Xyz(x, y, z);
 
     // Copies
 
@@ -38,11 +36,11 @@ public readonly partial struct Point3D : IEquatable<Point3D>
 
     internal readonly Point3D WithXYZ(in Xyz coord) => new(coord);
 
-    /// <summary>The barycentre of this point with weight <paramref name="alpha"/> and <paramref name="p"/> with weight <paramref name="beta"/>.</summary>
-    public readonly Point3D BaryCentered(double alpha, in Point3D p, double beta)
+    /// <summary>The barycentre of this point with weight <paramref name="alpha"/> and <paramref name="point"/> with weight <paramref name="beta"/>.</summary>
+    public readonly Point3D BaryCentered(double alpha, in Point3D point, double beta)
     {
         Xyz coord = _coord;
-        coord.SetLinearForm(alpha, coord, beta, p._coord);
+        coord.SetLinearForm(alpha, coord, beta, point._coord);
         coord.Divide(alpha + beta);
         return new Point3D(coord);
     }
@@ -76,89 +74,89 @@ public readonly partial struct Point3D : IEquatable<Point3D>
         return dx * dx + dy * dy + dz * dz;
     }
 
-    public readonly Point3D Mirrored(in Point3D p)
+    public readonly Point3D Mirrored(in Point3D point)
     {
         Xyz coord = _coord;
         coord.Reverse();
-        Xyz xyz = p._coord;
+        Xyz xyz = point._coord;
         xyz.Multiply(2.0);
         coord.Add(xyz);
         return new Point3D(coord);
     }
 
-    public readonly Point3D Mirrored(in Axis3D a1)
+    public readonly Point3D Mirrored(in Axis3D axis)
     {
         Xyz coord = _coord;
-        Transform3D t = new Transform3D().WithMirror(a1);
+        Transform3D t = new Transform3D().WithMirror(axis);
         t.Transforms(ref coord);
         return new Point3D(coord);
     }
 
-    public readonly Point3D Mirrored(in Frame3D a2)
+    public readonly Point3D Mirrored(in Frame3D frame)
     {
         Xyz coord = _coord;
-        Transform3D t = new Transform3D().WithMirror(a2);
+        Transform3D t = new Transform3D().WithMirror(frame);
         t.Transforms(ref coord);
         return new Point3D(coord);
     }
 
-    public readonly Point3D Rotated(in Axis3D a1, double ang)
+    public readonly Point3D Rotated(in Axis3D axis, double angle)
     {
         Xyz coord = _coord;
-        Transform3D t = new Transform3D().WithRotation(a1, ang);
+        Transform3D t = new Transform3D().WithRotation(axis, angle);
         t.Transforms(ref coord);
         return new Point3D(coord);
     }
 
-    public readonly Point3D Scaled(in Point3D p, double s)
+    public readonly Point3D Scaled(in Point3D point, double factor)
     {
         Xyz coord = _coord;
-        Xyz xyz = p._coord;
-        xyz.Multiply(1.0 - s);
-        coord.Multiply(s);
+        Xyz xyz = point._coord;
+        xyz.Multiply(1.0 - factor);
+        coord.Multiply(factor);
         coord.Add(xyz);
         return new Point3D(coord);
     }
 
-    public readonly Point3D Transformed(in Transform3D t)
+    public readonly Point3D Transformed(in Transform3D transform)
     {
         Xyz coord = _coord;
-        if (t.Form == Identity)
+        if (transform.Form == Identity)
         {
         }
-        else if (t.Form == Translation)
+        else if (transform.Form == Translation)
         {
-            coord.Add(t.TranslationXyz());
+            coord.Add(transform.TranslationXyz());
         }
-        else if (t.Form == global::Kerf.Geometry.TransformForm.Scale)
+        else if (transform.Form == global::Kerf.Geometry.TransformForm.Scale)
         {
-            coord.Multiply(t.ScaleFactor);
-            coord.Add(t.TranslationXyz());
+            coord.Multiply(transform.ScaleFactor);
+            coord.Add(transform.TranslationXyz());
         }
-        else if (t.Form == PntMirror)
+        else if (transform.Form == PointMirror)
         {
             coord.Reverse();
-            coord.Add(t.TranslationXyz());
+            coord.Add(transform.TranslationXyz());
         }
         else
         {
-            t.Transforms(ref coord);
+            transform.Transforms(ref coord);
         }
         return new Point3D(coord);
     }
 
-    public readonly Point3D Translated(in Vector3D v)
+    public readonly Point3D Translated(in Vector3D vector)
     {
         Xyz coord = _coord;
-        coord.Add(v.XYZ());
+        coord.Add(vector.XYZ());
         return new Point3D(coord);
     }
 
-    public readonly Point3D Translated(in Point3D p1, in Point3D p2)
+    public readonly Point3D Translated(in Point3D point1, in Point3D point2)
     {
         Xyz coord = _coord;
-        coord.Add(p2._coord);
-        coord.Subtract(p1._coord);
+        coord.Add(point2._coord);
+        coord.Subtract(point1._coord);
         return new Point3D(coord);
     }
 

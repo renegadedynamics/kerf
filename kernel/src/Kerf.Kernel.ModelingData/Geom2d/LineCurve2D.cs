@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Objects;
-using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Geometry;
@@ -29,13 +27,13 @@ public sealed class LineCurve2D : Curve2D
     }
 
     /// <summary>The line on the axis A: the origin and direction of A give the parametrization.</summary>
-    public LineCurve2D(in Axis2D a) => _pos = a;
+    public LineCurve2D(in Axis2D axis) => _pos = axis;
 
     /// <summary>The line equal to L.</summary>
-    public LineCurve2D(in Line2D l) => _pos = l.Position;
+    public LineCurve2D(in Line2D line) => _pos = line.Position;
 
     /// <summary>The line through P with the direction V.</summary>
-    public LineCurve2D(in Point2D p, in Direction2D v) => _pos = new Axis2D(p, v);
+    public LineCurve2D(in Point2D point, in Direction2D direction) => _pos = new Axis2D(point, direction);
 
     internal void SetDirection(in Direction2D v)
     {
@@ -99,10 +97,10 @@ public sealed class LineCurve2D : Curve2D
     public sealed override Continuity Continuity => CN;
 
     /// <summary>The distance between P and the line.</summary>
-    public double Distance(in Point2D p)
+    public double Distance(in Point2D point)
     {
         Line2D l = new Line2D(_pos);
-        return l.DistanceTo(p);
+        return l.DistanceTo(point);
     }
 
     /// <summary>True.</summary>
@@ -153,56 +151,56 @@ public sealed class LineCurve2D : Curve2D
     }
 
     /// <summary>Applies T to the line's axis.</summary>
-    protected internal sealed override void Transform(in Transform2D t)
+    protected internal sealed override void Transform(in Transform2D transform)
     {
         CheckMutable();
-        _pos = _pos.Transformed(t);
+        _pos = _pos.Transformed(transform);
     }
 
     /// <summary>U * |T.ScaleFactor()|; an infinite U is returned unchanged.</summary>
-    internal sealed override double TransformedParameter(double u, in Transform2D t)
+    internal sealed override double TransformedParameter(double u, in Transform2D transform)
     {
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u))
         {
             return u;
         }
-        return u * Math.Abs(t.ScaleFactor);
+        return u * Math.Abs(transform.ScaleFactor);
     }
 
     /// <summary>|T.ScaleFactor()|.</summary>
-    internal sealed override double ParametricTransformation(in Transform2D t) => Math.Abs(t.ScaleFactor);
+    internal sealed override double ParametricTransformation(in Transform2D transform) => Math.Abs(transform.ScaleFactor);
 
     // Non-mutating twins of the Set methods (Kerf)
 
     /// <summary>A copy equal to L.</summary>
-    public LineCurve2D WithLin2d(in Line2D l)
+    public LineCurve2D WithLine(in Line2D line)
     {
         LineCurve2D copy = (LineCurve2D)Copy();
-        copy.SetLin2d(l);
+        copy.SetLin2d(line);
         return copy;
     }
 
     /// <summary>A copy with the direction V.</summary>
-    public LineCurve2D WithDirection(in Direction2D v)
+    public LineCurve2D WithDirection(in Direction2D direction)
     {
         LineCurve2D copy = (LineCurve2D)Copy();
-        copy.SetDirection(v);
+        copy.SetDirection(direction);
         return copy;
     }
 
     /// <summary>A copy with the origin P.</summary>
-    public LineCurve2D WithLocation(in Point2D p)
+    public LineCurve2D WithLocation(in Point2D point)
     {
         LineCurve2D copy = (LineCurve2D)Copy();
-        copy.SetLocation(p);
+        copy.SetLocation(point);
         return copy;
     }
 
     /// <summary>A copy on the axis A.</summary>
-    public LineCurve2D WithPosition(in Axis2D a)
+    public LineCurve2D WithPosition(in Axis2D axis)
     {
         LineCurve2D copy = (LineCurve2D)Copy();
-        copy.SetPosition(a);
+        copy.SetPosition(axis);
         return copy;
     }
 }

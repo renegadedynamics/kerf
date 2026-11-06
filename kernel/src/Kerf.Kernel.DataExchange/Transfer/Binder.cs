@@ -6,9 +6,6 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Framework.Transfer.StatusExec;
-using static Kerf.Engine.Exchange.Framework.Transfer.StatusResult;
 
 namespace Kerf.Engine.Exchange.Framework.Transfer;
 

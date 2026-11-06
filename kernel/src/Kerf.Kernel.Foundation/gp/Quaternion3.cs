@@ -4,7 +4,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.EulerSequence;
 
 namespace Kerf.Engine.Geometry;
@@ -528,38 +527,38 @@ internal partial struct Quaternion3 : IEquatable<Quaternion3>
 
         return seq switch
         {
-            Extrinsic_XYZ => new(1, f, f, t),
-            Extrinsic_XZY => new(1, t, f, t),
-            Extrinsic_YZX => new(2, f, f, t),
-            Extrinsic_YXZ => new(2, t, f, t),
-            Extrinsic_ZXY => new(3, f, f, t),
-            Extrinsic_ZYX => new(3, t, f, t),
+            ExtrinsicXYZ => new(1, f, f, t),
+            ExtrinsicXZY => new(1, t, f, t),
+            ExtrinsicYZX => new(2, f, f, t),
+            ExtrinsicYXZ => new(2, t, f, t),
+            ExtrinsicZXY => new(3, f, f, t),
+            ExtrinsicZYX => new(3, t, f, t),
             // Conversion of intrinsic angles is made by the same code as for extrinsic,
             // using equivalence rule: intrinsic rotation is equivalent to extrinsic
             // rotation by the same angles but with inverted order of elemental rotations.
             // Swapping of angles (Alpha <-> Gamma) is done inside conversion procedure;
             // sequence of axes is inverted by setting appropriate parameters here.
             // Note that proper Euler angles (last block below) are symmetric for sequence of axes.
-            Intrinsic_XYZ => new(3, t, f, f),
-            Intrinsic_XZY => new(2, f, f, f),
-            Intrinsic_YZX => new(1, t, f, f),
-            Intrinsic_YXZ => new(3, f, f, f),
-            Intrinsic_ZXY => new(2, t, f, f),
-            Intrinsic_ZYX => new(1, f, f, f),
-            Extrinsic_XYX => new(1, f, t, t),
-            Extrinsic_XZX => new(1, t, t, t),
-            Extrinsic_YZY => new(2, f, t, t),
-            Extrinsic_YXY => new(2, t, t, t),
-            Extrinsic_ZXZ => new(3, f, t, t),
-            Extrinsic_ZYZ => new(3, t, t, t),
-            Intrinsic_XYX => new(1, f, t, f),
-            Intrinsic_XZX => new(1, t, t, f),
-            Intrinsic_YZY => new(2, f, t, f),
-            Intrinsic_YXY => new(2, t, t, f),
-            Intrinsic_ZXZ => new(3, f, t, f),
-            Intrinsic_ZYZ => new(3, t, t, f),
-            YawPitchRoll => new(1, f, f, f), // = Intrinsic_ZYX
-            _ => new(3, f, t, f), // gp_EulerAngles = Intrinsic_ZXZ
+            IntrinsicXYZ => new(3, t, f, f),
+            IntrinsicXZY => new(2, f, f, f),
+            IntrinsicYZX => new(1, t, f, f),
+            IntrinsicYXZ => new(3, f, f, f),
+            IntrinsicZXY => new(2, t, f, f),
+            IntrinsicZYX => new(1, f, f, f),
+            ExtrinsicXYX => new(1, f, t, t),
+            ExtrinsicXZX => new(1, t, t, t),
+            ExtrinsicYZY => new(2, f, t, t),
+            ExtrinsicYXY => new(2, t, t, t),
+            ExtrinsicZXZ => new(3, f, t, t),
+            ExtrinsicZYZ => new(3, t, t, t),
+            IntrinsicXYX => new(1, f, t, f),
+            IntrinsicXZX => new(1, t, t, f),
+            IntrinsicYZY => new(2, f, t, f),
+            IntrinsicYXY => new(2, t, t, f),
+            IntrinsicZXZ => new(3, f, t, f),
+            IntrinsicZYZ => new(3, t, t, f),
+            YawPitchRoll => new(1, f, f, f), // = IntrinsicZYX
+            _ => new(3, f, t, f), // gp_EulerAngles = IntrinsicZXZ
         };
     }
 }

@@ -16,10 +16,6 @@ using Kerf.Engine.Exchange.Step.Shapes;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Step.Basic.SiPrefix;
-using static Kerf.Engine.Exchange.Step.Basic.SiUnitName;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Exchange.Step.Construct;
 

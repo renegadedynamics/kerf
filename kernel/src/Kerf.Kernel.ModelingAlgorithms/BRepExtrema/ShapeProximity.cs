@@ -6,9 +6,7 @@
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using ProxPnt_Status = Kerf.Engine.Measurement.Distance.ProximityDistTool.ProxPnt_Status;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Measurement.Distance;
 

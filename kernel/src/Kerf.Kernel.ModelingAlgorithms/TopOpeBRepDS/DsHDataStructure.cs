@@ -8,12 +8,8 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
-using static Kerf.Engine.Booleans.Legacy.Data.DsConfig;
-using static Kerf.Engine.Booleans.Legacy.Data.DsKind;
 
 namespace Kerf.Engine.Booleans.Legacy.Data;
 

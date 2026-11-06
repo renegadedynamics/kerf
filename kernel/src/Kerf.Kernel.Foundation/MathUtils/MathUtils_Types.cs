@@ -4,8 +4,6 @@
 
 using Kerf.Engine.Foundation.Std;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Numerics.Utilities;
 
 // The result structs are C++ aggregates with public data members: they keep public fields. Their C++ default

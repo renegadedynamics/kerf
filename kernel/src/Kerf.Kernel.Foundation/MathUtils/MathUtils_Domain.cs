@@ -4,8 +4,6 @@
 
 using Kerf.Engine.Geometry;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Numerics.Utilities;
 
 /// <summary>Parameter domain types for curves and surfaces.</summary>

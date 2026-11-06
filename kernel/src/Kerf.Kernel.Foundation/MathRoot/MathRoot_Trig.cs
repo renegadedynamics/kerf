@@ -4,8 +4,6 @@
 
 using Kerf.Engine.Foundation.Std;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Numerics.Roots;
 
 /// <summary>Trigonometric equation solver.</summary>

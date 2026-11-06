@@ -214,30 +214,30 @@ public class Shape3DTests
     public void IsInside() => Assert.True(Solid.MakeBox(1, 1, 1).IsInside(new Point3D(0.5, 0.5, 0.5)));
 
     [Fact]
-    public void DPrism()
+    public void DraftPrism()
     {
         static Solid Block() => Solid.MakeBox(1, 1, 1, new Plane(new Point3D(-0.5, -0.5, 0)));
 
         // Face
         var f = Face.MakeRect(0.5, 0.5);
-        var d = Block().DPrism(null, [f], additive: false);
+        var d = Block().DraftPrism(null, [f], additive: false);
         Assert.True(d.IsValid);
         Check.AlmostEqual(1 - Math.Pow(0.5, 2), d.Volume, 5);
 
         // Face with depth
-        d = Block().DPrism(null, [f], depth: 0.5, thruAll: false, additive: false);
+        d = Block().DraftPrism(null, [f], depth: 0.5, thruAll: false, additive: false);
         Assert.True(d.IsValid);
         Check.AlmostEqual(1 - Math.Pow(0.5, 3), d.Volume, 5);
 
         // Face until
         var limit = Face.MakeRect(1, 1, new Plane(new Point3D(0, 0, 0.5)));
-        d = Block().DPrism(null, [f], upToFace: limit, thruAll: false, additive: false);
+        d = Block().DraftPrism(null, [f], upToFace: limit, thruAll: false, additive: false);
         Assert.True(d.IsValid);
         Check.AlmostEqual(1 - Math.Pow(0.5, 3), d.Volume, 5);
 
         // Wire
         var w = Face.MakeRect(0.5, 0.5).OuterWire();
-        d = Block().DPrism(null, [w], additive: false);
+        d = Block().DraftPrism(null, [w], additive: false);
         Assert.True(d.IsValid);
         Check.AlmostEqual(1 - Math.Pow(0.5, 2), d.Volume, 5);
     }

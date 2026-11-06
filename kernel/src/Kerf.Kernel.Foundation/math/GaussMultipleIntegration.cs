@@ -25,7 +25,6 @@ de Gauss.
 */
 
 using Kerf.Engine.Foundation;
-using Kerf.Engine;
 using System.Globalization;
 
 namespace Kerf.Engine.Numerics;

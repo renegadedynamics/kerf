@@ -4,7 +4,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Stl.Api;
 
@@ -17,16 +16,5 @@ internal static class StlApi
         var writer = new ApiWriter();
         writer.SetASCIIMode(asciiMode);
         return writer.Write(shape, file);
-    }
-
-    /// <summary>
-    /// Legacy interface: reads an STL file into a shape of one face per facet (very slow for large files; see
-    /// <see cref="RWStl"/>).
-    /// </summary>
-    [Obsolete("This method is very inefficient; see RWStl class for better alternative")]
-    public static bool Read(ref Shape shape, string aFile)
-    {
-        var reader = new StlApiReader();
-        return reader.Read(ref shape, aFile);
     }
 }

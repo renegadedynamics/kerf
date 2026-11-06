@@ -4,8 +4,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Geometry;
@@ -17,7 +15,7 @@ namespace Kerf.Geometry;
 /// </summary>
 public abstract class ConicCurve3D : Curve3D
 {
-    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    /// <summary>Only the kernel derives from it.</summary>
     private protected ConicCurve3D()
     {
     }
@@ -45,26 +43,26 @@ public abstract class ConicCurve3D : Curve3D
     }
 
     /// <summary>A copy with the main axis theA1 (X and Y axes recomputed).</summary>
-    public ConicCurve3D WithAxis(in Axis3D a1)
+    public ConicCurve3D WithAxis(in Axis3D axis)
     {
         ConicCurve3D copy = (ConicCurve3D)Copy();
-        copy.SetAxis(a1);
+        copy.SetAxis(axis);
         return copy;
     }
 
     /// <summary>A copy located at theP.</summary>
-    public ConicCurve3D WithLocation(in Point3D p)
+    public ConicCurve3D WithLocation(in Point3D point)
     {
         ConicCurve3D copy = (ConicCurve3D)Copy();
-        copy.SetLocation(p);
+        copy.SetLocation(point);
         return copy;
     }
 
     /// <summary>A copy with the local coordinate system theA2.</summary>
-    public ConicCurve3D WithPosition(in Frame3D a2)
+    public ConicCurve3D WithPosition(in Frame3D frame)
     {
         ConicCurve3D copy = (ConicCurve3D)Copy();
-        copy.SetPosition(a2);
+        copy.SetPosition(frame);
         return copy;
     }
 

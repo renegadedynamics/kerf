@@ -394,7 +394,7 @@ Result<Part> pocketed =
 
 - **Union returns that remain:** the topological Booleans (`Shape + Shape`, `Fuse`, `Cut`, reasons above), the
   vertex forms of `Fillet` and `Chamfer` (the result is the class of the shape the vertices came from: a Sketch, a
-  Shell or a Wire), `Fillet`, `Chamfer`, `Hollow` and `DPrism` of an `IShape3D`, `Intersect(params object[])` (a shape or a
+  Shell or a Wire), `Fillet`, `Chamfer`, `Hollow` and `DraftPrism` of an `IShape3D`, `Intersect(params object[])` (a shape or a
   geometry value), and the importers (the file decides).
 - **History as `Built<T>`.** The layer's objects carry their own `ModelHistory`, which `Select.Last` and `Select.New`
   read; returning the kernel's `Built<T>` beside it would say the same twice, so no operation does.

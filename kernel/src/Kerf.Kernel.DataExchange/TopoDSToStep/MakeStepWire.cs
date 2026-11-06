@@ -19,9 +19,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Orientation;
-using static Kerf.Engine.Exchange.Step.Export.MakeWireError;
 
 namespace Kerf.Engine.Exchange.Step.Export;
 

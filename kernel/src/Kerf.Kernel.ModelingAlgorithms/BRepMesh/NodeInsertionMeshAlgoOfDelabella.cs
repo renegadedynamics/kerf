@@ -9,9 +9,6 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Meshing.DegreeOfFreedom;
-using static Kerf.Engine.Meshing.Model.StatusModel;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Meshing;

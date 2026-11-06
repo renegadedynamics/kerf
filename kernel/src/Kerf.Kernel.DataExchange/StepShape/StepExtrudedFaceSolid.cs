@@ -8,8 +8,6 @@
 
 using Kerf.Engine.Exchange.Step.Geometry;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
 internal class StepExtrudedFaceSolid : StepSweptFaceSolid

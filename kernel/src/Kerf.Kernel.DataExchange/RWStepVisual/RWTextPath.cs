@@ -5,9 +5,6 @@
 
 #nullable disable warnings
 
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Step.Visual.TextPath;
-
 namespace Kerf.Engine.Exchange.Step.Visual.ReadWrite;
 
 internal static class RWTextPath

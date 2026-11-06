@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 
 namespace Kerf.Engine.Construction.Surfaces;

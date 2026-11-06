@@ -16,11 +16,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Features.PerfSelection;
-using static Kerf.Engine.Features.StatusError;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Features;
 
@@ -39,8 +35,6 @@ namespace Kerf.Engine.Features;
 /// </remarks>
 internal sealed class MakeLinearForm : RibSlot
 {
-#pragma warning disable CS0169 // declared, never used: as in OCCT
-    private Curve3D? _crv;
 #pragma warning restore CS0169
     private Vector3D _dir = new();
     private Vector3D _dir1 = new();

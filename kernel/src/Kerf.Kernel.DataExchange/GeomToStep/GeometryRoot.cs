@@ -5,8 +5,6 @@
 
 #nullable disable warnings
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The common services of GeomToStep's classes, which report an error.</summary>

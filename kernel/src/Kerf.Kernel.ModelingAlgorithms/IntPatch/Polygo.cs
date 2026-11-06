@@ -7,7 +7,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Polygons;
 using Kerf.Geometry;
-using Kerf.Engine;
 using System.Globalization;
 
 namespace Kerf.Engine.Intersection.Patches;

@@ -9,7 +9,6 @@ using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Implicit;
 
@@ -32,7 +31,6 @@ namespace Kerf.Engine.Intersection.Implicit;
 internal class ZerImpFunc<ThePSurface, ThePSurfaceTool> : FunctionSetWithDerivatives
     where ThePSurfaceTool : IZerCSParPSurfaceTool<ThePSurface>
 {
-    private const double EpsAng = 1.0e-8;
     private const double EpsAng2 = 1.0e-16;
     private const double Tolpetit = 1.0e-16;
 

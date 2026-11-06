@@ -142,8 +142,6 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         var aP = new DistanceShapeShape();
         aP.SetDeflection(aDeflection);
         aP.SetMultiThread(aMulti);
-        aP.SetFlag((ExtFlag)aFlag);
-        aP.SetAlgo((ExtAlgo)anAlgo);
         aP.LoadS1(theS1.P);
         aP.LoadS2(theS2.P);
         bool aPDone = aP.Perform();

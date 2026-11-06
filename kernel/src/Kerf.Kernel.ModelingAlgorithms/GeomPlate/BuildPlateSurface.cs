@@ -14,7 +14,6 @@ using Kerf.Engine.Geometry.Properties;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Construction.Plate;
@@ -256,35 +255,6 @@ internal class BuildPlateSurface
             curve2d = appr.Curve2d();
         }
         return curve2d;
-    }
-
-    // Projection of a curve on the initial surface (unused in OCCT, as the declaration in the header says)
-    private Curve2DAdaptorBase? ProjectedCurve(CurveAdaptorBase curv)
-    {
-        SurfaceAdaptor hsur = new SurfaceAdaptor(_surfInit!);
-
-        CompProjectedCurve? hProjector = new CompProjectedCurve(hsur, curv, _tolU / 10, _tolV / 10);
-        if (hProjector.CurveCount != 1)
-        {
-            hProjector = null; // No continuous solution
-        }
-        else
-        {
-            double first1, last1, first2, last2;
-            first1 = curv.FirstParameter();
-            last1 = curv.LastParameter();
-            hProjector.Bounds(1, out first2, out last2);
-
-            if (Math.Abs(first1 - first2) <= Max(_tolU, _tolV) && Math.Abs(last1 - last2) <= Max(_tolU, _tolV))
-            {
-                hProjector = hProjector.Trim(first2, last2, global::Kerf.Engine.Foundation.Precision.PConfusion()) as CompProjectedCurve;
-            }
-            else
-            {
-                hProjector = null; // No continuous solution
-            }
-        }
-        return hProjector;
     }
 
     // Projects a point on the initial surface

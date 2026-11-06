@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing.Model;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Meshing.Tools;
 

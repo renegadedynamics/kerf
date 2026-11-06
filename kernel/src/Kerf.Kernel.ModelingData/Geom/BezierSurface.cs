@@ -8,7 +8,6 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Engine.Geometry.Splines;
-using Kerf.Geometry;
 using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
@@ -1621,15 +1620,15 @@ public sealed partial class BezierSurface : BoundedSurface
 
     /// <summary>The derivative of order Nu in U and Nv in V at (U, V).</summary>
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int uOrder, int vOrder)
     {
         Vector3D evalRepResult;
-        if (RepUtils.TryEvalSurfaceDN(_evalRep, u, v, nu, nv, out evalRepResult))
+        if (RepUtils.TryEvalSurfaceDN(_evalRep, u, v, uOrder, vOrder, out evalRepResult))
         {
             return evalRepResult;
         }
 
-        if (nu + nv < 1 || nu < 0 || nv < 0)
+        if (uOrder + vOrder < 1 || uOrder < 0 || vOrder < 0)
         {
             throw Refusal.State(new UndefinedDerivative3DException());
         }
@@ -1639,8 +1638,8 @@ public sealed partial class BezierSurface : BoundedSurface
         {
             SurfaceBSplSLib.DN(u,
                         v,
-                        nu,
-                        nv,
+                        uOrder,
+                        vOrder,
                         0,
                         0,
                         _poles,
@@ -1661,8 +1660,8 @@ public sealed partial class BezierSurface : BoundedSurface
         {
             SurfaceBSplSLib.DN(u,
                         v,
-                        nu,
-                        nv,
+                        uOrder,
+                        vOrder,
                         0,
                         0,
                         _poles,
@@ -1854,14 +1853,14 @@ public sealed partial class BezierSurface : BoundedSurface
     public bool IsVRational => _vRational;
 
     /// <summary>Transforms the poles by T.</summary>
-    protected internal sealed override void Transform(in Transform3D t)
+    protected internal sealed override void Transform(in Transform3D transform)
     {
         CheckMutable();
         for (int i = 1; i <= _poles.ColLength(); i++)
         {
             for (int j = 1; j <= _poles.RowLength(); j++)
             {
-                _poles[i, j] = _poles[i, j].Transformed(t);
+                _poles[i, j] = _poles[i, j].Transformed(transform);
             }
         }
         ClearEvalRepresentation();
@@ -2105,10 +2104,10 @@ public sealed partial class BezierSurface : BoundedSurface
     }
 
     /// <summary>A copy with the degrees raised to UDeg and VDeg (see <see cref="Increase"/>).</summary>
-    public BezierSurface Increased(int uDeg, int vDeg)
+    public BezierSurface Increased(int uDegree, int vDegree)
     {
         BezierSurface copy = CopyBezier();
-        copy.Increase(uDeg, vDeg);
+        copy.Increase(uDegree, vDegree);
         return copy;
     }
 

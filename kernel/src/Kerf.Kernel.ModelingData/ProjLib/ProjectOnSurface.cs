@@ -9,7 +9,6 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Geometry.Projection;
 
@@ -26,7 +25,6 @@ internal class ProjectOnSurface
 {
     private CurveAdaptorBase? _curve;
     private SurfaceAdaptorBase? _surface;
-    private double _tolerance;
     private bool _isDone;
     private BSplineCurve3D? _result;
 
@@ -109,14 +107,12 @@ internal class ProjectOnSurface
     /// <summary>An empty projector.</summary>
     public ProjectOnSurface()
     {
-        _tolerance = 0.0;
         _isDone = false;
     }
 
     /// <summary>A projector normally to the surface <paramref name="s"/>.</summary>
     public ProjectOnSurface(SurfaceAdaptorBase s)
     {
-        _tolerance = 0.0;
         _isDone = false;
         _surface = s;
     }
@@ -131,7 +127,6 @@ internal class ProjectOnSurface
     /// <summary>Computes the projection of <paramref name="c"/> on the surface.</summary>
     public void Load(CurveAdaptorBase c, double tolerance)
     {
-        _tolerance = tolerance;
         _curve = c;
         _isDone = false;
         if (_surface is not null)

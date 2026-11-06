@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Healing.Custom;
 

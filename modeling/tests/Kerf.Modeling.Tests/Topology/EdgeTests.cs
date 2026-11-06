@@ -430,7 +430,7 @@ public class EdgeTests
     [Fact]
     public void ConicalHelix()
     {
-        var helix = Edge.MakeHelix(1, 4, 1, normal: new Vector3D(-1, 0, 0), angle: 10, lefthand: true);
+        var helix = Edge.MakeHelix(1, 4, 1, normal: new Vector3D(-1, 0, 0), angle: 10, leftHanded: true);
         Check.AlmostEqual(-4, helix.Bounds().Min.X, 5);
     }
 
@@ -580,10 +580,10 @@ public class EdgeTests
     }
 
     [Fact]
-    public void GeomAdaptor()
+    public void AsCurve()
     {
         var line = default(Edge);
-        Assert.Throws<InvalidOperationException>(() => line.GeomAdaptor());
+        Assert.Throws<InvalidOperationException>(() => line.AsCurve());
     }
 }
 
@@ -593,7 +593,7 @@ public class EdgeParamAtTests
     /// <summary>The point at a native OCCT parameter of the edge's curve.</summary>
     static Point3D Evaluate(Edge edge, double param)
     {
-        var adaptor = edge.GeomAdaptor();
+        var adaptor = edge.AsCurve();
         var p = adaptor.Evaluate(param);
         return p;
     }
@@ -746,7 +746,7 @@ public class EdgeParamAtTests
 
         // Naive "parameter space" quarter, as if the parameter were the normalized length
         double first, last;
-        var adaptor = edge.GeomAdaptor();
+        var adaptor = edge.AsCurve();
         (first, last) = (adaptor.Range.Min, adaptor.Range.Max);
         var uNaive = first + 0.25 * (last - first);
         var ptNaive = Evaluate(edge, uNaive);

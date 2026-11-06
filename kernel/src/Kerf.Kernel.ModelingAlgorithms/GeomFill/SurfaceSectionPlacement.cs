@@ -12,7 +12,6 @@ using Kerf.Engine.Geometry.Objects;
 using Kerf.Engine.Geometry.Properties;
 using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 
 namespace Kerf.Engine.Construction.Surfaces;

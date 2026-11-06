@@ -3,8 +3,6 @@
 // Unit 10L1: the shapes' public surface (docs/api/topology.md): IShape<T>, the casts, and the conversions between the
 // nine shape types.
 
-using Kerf.Engine.Topology;
-
 namespace Kerf.Topology;
 
 public partial struct Shape : IShape<Shape>

@@ -155,6 +155,8 @@ The three tables the plan names (decision 1388):
 
 **Unit 11C looked at what one-time initialisation costs on opening a workbook:** 2 to 5 of about 255 samples on the first pass's working thread, spread over dozens of small types. So nothing was made lazy, and this list is unchanged (decision 1693).
 
+**Unit 11P's `DrawCaseProcess.Own` is Draw-lite's, not the library's:** set once in that process's `Main`, before anything else runs, and only read from then on. In the tests' process it stays `None`.
+
 ## Test and debug hooks: stay
 
 | Where | Why |
@@ -252,3 +254,7 @@ their record in it, and the object keeps what it finds on its result. It is per 
 Unit 10Q2 looked again now that the layer is on structs, and kept it (decision 1638). There are 35 notes in 14 files. A struct's public operation must return the bare shape (`solid.Fillet(…)` is a `Solid`), so
 threading `(shape, record)` needs a second, internal form of each operation, about thirty signatures doubled, to remove one private field that no caller can see. A later unit that
 reworks those operations anyway could thread it then.
+
+## The clean-up
+
+The clean-up after decision 1681 deleted fields that were written and never read (78), none of them shared state that anything read, and changed no ambient state. See [clean-up.md](clean-up.md).

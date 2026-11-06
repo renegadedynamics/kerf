@@ -6,7 +6,6 @@
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Construction.Surfaces;
 
@@ -26,7 +25,6 @@ internal class GuideTrihedronAC : TrihedronWithGuide
     private double _l;
     private new CurveAdaptorBase? _curve;
     private readonly double _uTol;
-    private readonly double _sTol;
     private double _orig1;
     private double _orig2;
 
@@ -37,7 +35,7 @@ internal class GuideTrihedronAC : TrihedronWithGuide
         _trimG = guide;
         _guideAC = new CurvlinFunc(_guide, 1.0e-7);
         _lguide = _guideAC.GetLength();
-        _uTol = _sTol = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        _uTol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         _orig1 = 0; // origines pour le cas path multi-edges
         _orig2 = 1;
     }
@@ -57,7 +55,7 @@ internal class GuideTrihedronAC : TrihedronWithGuide
 
         Vector3D n = new Vector3D(p, pg); // vecteur definissant la normale
 
-        // OCCT TODO: finding #8 - no zero-magnitude guard before Normalized()/Magnitude().
+        // As in OCCT, no zero-magnitude guard before Normalized()/Magnitude().
         normal = n.Normalized();
         b = to.Crossed(normal);
         biNormal = b / b.Magnitude;
@@ -93,7 +91,7 @@ internal class GuideTrihedronAC : TrihedronWithGuide
         }
         n /= norm;
 
-        // OCCT TODO: finding #8 - no zero-magnitude guard before TG.Magnitude()/L division.
+        // As in OCCT, no zero-magnitude guard before TG.Magnitude()/L division.
         dtg = (_orig2 - _orig1) * (to.Magnitude / tg.Magnitude) * (_lguide / _l);
         dn = Vector3D.LinearForm(dtg, tg, -1, to);
         dn /= norm;

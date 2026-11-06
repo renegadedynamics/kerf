@@ -10,8 +10,6 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Meshing.DegreeOfFreedom;
 
 namespace Kerf.Engine.Meshing;
 

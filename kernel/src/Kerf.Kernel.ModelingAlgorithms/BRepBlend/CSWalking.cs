@@ -9,9 +9,6 @@ using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Fillets.Blend.BlendStatus;
-using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Fillets.Blend;
@@ -30,7 +27,6 @@ internal class CSWalking
     private bool _done;
     private Line? _line;
     private readonly SurfaceAdaptorBase _surf;
-    private readonly CurveAdaptorBase _curv;
     private TopolTool _domain;
     private double _tolpoint3d;
     private double _tolgui;
@@ -40,9 +36,6 @@ internal class CSWalking
     private double _firstparam;
     private NCollection_HArray1<double>? _firstsol;
     private BlendPoint _previousP = new();
-#pragma warning disable CS0414 // set and never read, as in OCCT
-    private bool _rebrou;
-#pragma warning restore CS0414
     private bool _iscomplete;
     private bool _comptra;
     private double _sens;
@@ -51,7 +44,6 @@ internal class CSWalking
     {
         _done = false;
         _surf = surf;
-        _curv = curv;
         _domain = domain;
     }
 
@@ -70,7 +62,6 @@ internal class CSWalking
         _tolpoint3d = tol3d;
         _tolgui = Math.Abs(tolGuide);
         _fleche = Math.Abs(fleche);
-        _rebrou = false;
         _pasmax = Math.Abs(maxStep);
         math_Vector sol = new(1, nbvar);
 
@@ -227,13 +218,11 @@ internal class CSWalking
             if (state1 == BlendStatus.Backward)
             {
                 state1 = BlendStatus.StepTooLarge;
-                _rebrou = true;
             }
 
             if (state2 == BlendStatus.Backward)
             {
                 state2 = BlendStatus.StepTooLarge;
-                _rebrou = true;
             }
 
             if (state1 == BlendStatus.StepTooLarge || state2 == BlendStatus.StepTooLarge)
@@ -383,83 +372,6 @@ internal class CSWalking
             return BlendStatus.StepTooLarge;
         }
 
-        return BlendStatus.OK;
-    }
-
-    // Not called in OCCT (its call is commented out in TestArret), kept with the class.
-    private BlendStatus CheckDeflectionOnCurv(in Point3D pcurv, double param, in Vector3D tgcurv)
-    {
-        // set by tests in U4, corresponds to 11.478 degrees
-        const double cosRef3D = 0.98;
-
-        double norme, prevNorme, cosi, cosi2;
-        double flecheCourante;
-        double du, paramu, tolu;
-        Point3D prevP;
-        Vector3D prevTg;
-
-        prevP = _previousP.PointOnC();
-        prevTg = _previousP.TangentOnC();
-        tolu = HCurveTool.Resolution(_curv, _tolpoint3d);
-
-        Vector3D corde = new(prevP, pcurv);
-        norme = corde.SquareMagnitude;
-        prevNorme = prevTg.SquareMagnitude;
-
-        double toler3d = _tolpoint3d;
-        if (norme <= toler3d * toler3d)
-        {
-            // the same point may have to be forced
-            return BlendStatus.SamePoints;
-        }
-        else if (prevNorme > toler3d * toler3d)
-        {
-            cosi = _sens * corde * prevTg;
-            if (cosi < 0.0)
-            { // 3d angle > pi/2: going back
-                return BlendStatus.Backward;
-            }
-
-            cosi2 = cosi * cosi / prevNorme / norme;
-            if (cosi2 < cosRef3D)
-            {
-                return BlendStatus.StepTooLarge;
-            }
-        }
-
-        paramu = _previousP.ParameterOnC();
-        du = param - paramu;
-        if (Math.Abs(du) < tolu)
-        {
-            return BlendStatus.SamePoints; // same 2d point
-        }
-
-        if (tgcurv.Magnitude <= _tolpoint3d)
-        {
-            return BlendStatus.SamePoints; // GROS BOBARD EN ATTENDANT
-        }
-
-        cosi = _sens * corde * tgcurv;
-        cosi2 = cosi * cosi / tgcurv.SquareMagnitude / norme;
-        if (cosi2 < cosRef3D || cosi < 0.0)
-        {
-            return BlendStatus.StepTooLarge;
-        }
-
-        if (prevNorme > toler3d * toler3d)
-        {
-            flecheCourante = (prevTg.Normalized().XYZ() - tgcurv.Normalized().XYZ()).SquareModulus() * norme / 64.0;
-
-            if (flecheCourante <= 0.25 * _fleche * _fleche)
-            {
-                return BlendStatus.StepTooSmall;
-            }
-            if (flecheCourante > _fleche * _fleche)
-            {
-                // step too large
-                return BlendStatus.StepTooLarge;
-            }
-        }
         return BlendStatus.OK;
     }
 

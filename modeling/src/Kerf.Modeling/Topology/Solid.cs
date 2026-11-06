@@ -3,7 +3,6 @@ using Kerf.Features;
 using Kerf.Healing;
 using Kerf.Measurement;
 using Kerf.Offsets;
-using Kerf.Geometry;
 
 namespace Kerf.Modeling;
 
@@ -19,7 +18,7 @@ public static partial class SolidExtensions
 
         /// <summary>The solid with a draft of <paramref name="angle"/> degrees applied to planar, cylindrical or conical faces.</summary>
         /// <exception cref="InvalidOperationException">
-        /// The draft can't be added to a face, or built: the shorthand's failure (unit 10M3).
+        /// The draft can't be added to a face, or built: the shorthand's failure.
         /// <see cref="Operations.Draft(IEnumerable{Face}, Plane, double)"/> returns it as a result, with the code
         /// <see cref="ModelingDiagnostics.DraftFailed"/> and the face as the error's shape.
         /// </exception>
@@ -250,11 +249,11 @@ public static partial class SolidExtensions
             });
 
         /// <summary>A loft through wires, optionally starting or ending with a vertex; ruled (stepped) or smooth.</summary>
-        public static Solid MakeLoft<T>(IEnumerable<T> objs, bool ruled = false) where T : IShape => Solid.MakeLoft(objs.Select(o => o.AsShape()), ruled);
+        public static Solid MakeLoft<T>(IEnumerable<T> objects, bool ruled = false) where T : IShape => Solid.MakeLoft(objects.Select(o => o.AsShape()), ruled);
 
         /// <inheritdoc cref="MakeLoft{T}(IEnumerable{T}, bool)"/>
-        public static Solid MakeLoft(IEnumerable<Shape> objs, bool ruled = false) =>
-            Failures.Doing(() => "loft", () => ((Solid)TopoUtil.MakeLoft(objs, true, ruled)));
+        public static Solid MakeLoft(IEnumerable<Shape> objects, bool ruled = false) =>
+            Failures.Doing(() => "loft", () => ((Solid)TopoUtil.MakeLoft(objects, true, ruled)));
 
         /// <summary>A box the size of a bounding box, where it is.</summary>
         public static Solid FromBoundingBox(BoundingBox box) => Solid.MakeBox(box.Size.X, box.Size.Y, box.Size.Z).Located(new Location(box.Min));

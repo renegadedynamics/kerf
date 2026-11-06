@@ -1,6 +1,3 @@
-using Kerf.Booleans;
-using Kerf.Geometry;
-
 namespace Kerf.Modeling;
 
 /// <summary>

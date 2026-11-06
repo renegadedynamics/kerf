@@ -10,7 +10,6 @@ using Kerf.Engine.Exchange.Step.Basic;
 using Kerf.Engine.Exchange.Step.Representation;
 using Kerf.Engine.Exchange.Step.Shapes;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Step.Construct;
 

@@ -5,7 +5,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using Kerf.Engine;
 using System.Globalization;
 using static Kerf.Engine.Numerics.NumericStatus;
 
@@ -25,7 +24,6 @@ internal class Powell
     private int _iter;
     private NumericStatus _theStatus;
     private Matrix _theDirections;
-    private int _state;
     private int _itermax;
 
     private static double SQR(double a) => a * a;
@@ -101,7 +99,6 @@ internal class Powell
         _iter = 0;
         _theStatus = NotBracketed;
         _theDirections = new Matrix(1, function.VariableCount, 1, function.VariableCount);
-        _state = 0;
         _itermax = nbIterations;
     }
 
@@ -160,7 +157,7 @@ internal class Powell
             if (IsSolutionReached(f))
             {
                 // Termination criterion
-                _state = f.GetStateNumber();
+                f.GetStateNumber();
                 _done = true;
                 _theStatus = OK;
                 return;

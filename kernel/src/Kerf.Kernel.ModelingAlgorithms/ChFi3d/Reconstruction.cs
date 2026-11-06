@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Booleans.Legacy.Data;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Fillets;
 

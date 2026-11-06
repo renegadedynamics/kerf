@@ -6,8 +6,6 @@
 // as written (decisions 77 and 902). Properties returning a ReadOnlySpan over a constant array are stored in the
 // assembly's data section: reading them allocates nothing. Don't edit: regenerate.
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Approximation.Advanced;
 
 internal static partial class Data

@@ -4,7 +4,6 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
-using Kerf.Geometry;
 using Kerf.Engine;
 using static Kerf.Engine.Geometry.NormalStatus;
 
@@ -19,12 +18,12 @@ namespace Kerf.Geometry;
 /// </summary>
 /// <remarks>
 /// OCCT's function templates over the basis surface and the osculating-surface query are generic methods over
-/// the basis (decision 212): <see cref="GeomSurfaceBasis"/> wraps a <see cref="Surface"/>
+/// the basis: <see cref="GeomSurfaceBasis"/> wraps a <see cref="Surface"/>
 /// (Geom_OffsetSurface's instantiation) and <see cref="AdaptorBasis"/> a <see cref="SurfaceAdaptor"/>
 /// (GeomAdaptor_Surface's); the bodies are written once. Both of OCCT's query types end in
 /// Geom_OsculatingSurface (Geom_OffsetSurface's query returns false without one), so the query is a nullable
 /// <see cref="OsculatingSurface"/>. OCCT's stack buffers (NCollection_LocalArray under an
-/// NCollection_Array2) are NCollection_Array2 allocations here (decision 78).
+/// NCollection_Array2) are NCollection_Array2 allocations here.
 /// </remarks>
 internal static class OffsetSurfaceUtils
 {

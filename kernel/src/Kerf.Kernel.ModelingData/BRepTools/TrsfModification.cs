@@ -12,7 +12,6 @@ using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Geometry.TransformForm;
 using static Kerf.Topology.Orientation;

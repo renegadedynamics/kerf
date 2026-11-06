@@ -10,11 +10,7 @@ using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Exchange.Step.Geometry;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Geometry.BSplKnotDistribution;
-using static Kerf.Engine.Exchange.Step.Data.Logical;
-using static Kerf.Engine.Exchange.Step.Geometry.StepBSplineCurveForm;
-using static Kerf.Engine.Exchange.Step.Geometry.StepKnotType;
 
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 

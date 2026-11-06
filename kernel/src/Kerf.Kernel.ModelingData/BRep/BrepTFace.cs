@@ -8,7 +8,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Engine.Meshing;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Engine.Meshing.MeshPurpose;
 
 namespace Kerf.Engine.Topology.Brep;

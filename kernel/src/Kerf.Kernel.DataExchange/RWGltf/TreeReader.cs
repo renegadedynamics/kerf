@@ -11,9 +11,7 @@ using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Buffers.Binary;
-using System.Text;
 using System.Text.Json;
 
 namespace Kerf.Engine.Exchange.Gltf;

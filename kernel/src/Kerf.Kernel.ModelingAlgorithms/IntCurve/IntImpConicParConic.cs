@@ -6,7 +6,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Implicit;
 using Kerf.Engine.Intersection.TwoD;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Intersection.Curves;
 

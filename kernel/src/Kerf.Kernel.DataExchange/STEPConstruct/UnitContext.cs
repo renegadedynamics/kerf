@@ -10,9 +10,6 @@ using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Exchange.Step.Geometry;
 using Kerf.Engine.Exchange.Step.Representation;
 using Kerf.Engine.Foundation;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Step.Basic.SiPrefix;
-using static Kerf.Engine.Exchange.Step.Basic.SiUnitName;
 
 namespace Kerf.Engine.Exchange.Step.Construct;
 

@@ -17,9 +17,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans.Data;
 
@@ -44,8 +42,6 @@ namespace Kerf.Engine.Booleans.Data;
 /// </remarks>
 internal class DS
 {
-    //! Initial increment for myLines container (an allocation hint in OCCT).
-    private const int THE_INITIAL_LINES_INCREMENT = 500;
 
     private static readonly NCollection_List<PaveBlock> StaticEmptyList = new();
     private static readonly FaceInfo EmptyFaceInfo = new();

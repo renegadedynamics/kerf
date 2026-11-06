@@ -13,9 +13,6 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Measurement.Distance.SupportType;
-using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.Orientation;
 
 namespace Kerf.Engine.Healing.Analysis;

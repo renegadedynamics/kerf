@@ -312,7 +312,12 @@ public sealed partial class DrawInterpreter
     /// <summary>Runs a script in the current frame; break, continue and return propagate as exceptions.</summary>
     internal string EvalScript(string theScript)
     {
-        if (!s_scripts.TryGetValue(theScript, out IReadOnlyList<Command>? aCommands))
+        IReadOnlyList<Command>? aCommands;
+        if (!DrawCaseProcess.KeepsParsedText)
+        {
+            aCommands = TclParser.Parse(theScript);
+        }
+        else if (!s_scripts.TryGetValue(theScript, out aCommands))
         {
             aCommands = TclParser.Parse(theScript);
             if (s_scripts.Count > 20000)

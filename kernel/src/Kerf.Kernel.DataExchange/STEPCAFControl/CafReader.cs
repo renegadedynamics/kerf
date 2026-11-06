@@ -24,10 +24,6 @@ using Kerf.Engine.Geometry.Objects;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Exchange.Framework.Selection.ReturnStatus;
-using static Kerf.Topology.ShapeType;
-using static Kerf.Engine.Exchange.Documents.ColorType;
 
 namespace Kerf.Engine.Exchange.Step.Caf;
 

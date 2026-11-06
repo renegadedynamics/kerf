@@ -5,6 +5,12 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## 0.3.0 (unreleased)
 
+- **Names, cleaned up (no results change; `docs/clean-up-bento.md` lists what Bento changes):** every object's height is `Height` (was `BoxHeight`,
+  `RectangleHeight`, `ConeHeight`, `CylinderHeight`, `TrapezoidHeight`, `SlotHeight`). `Polygon.Pts` is `Points`. `StlExportOptions` says
+  `LinearDeflection` and `AngularDeflection`, as the glTF and 3MF options do. `DPrism` is `DraftPrism`. `GeomAdaptor()` is `AsCurve()` on edges and
+  wires and `AsSurface()` on faces. `Triangle`'s parameters are `sideA` to `sideC` and `angleA` to `angleC`, as its properties are, and
+  a few other parameters have full names (`trsf` → `transform`, `lefthand` → `leftHanded`).
+- **Gone:** `SlotArc`, deprecated: use `SlotCurve`. `TopologyUtils` and `OneD.OffsetTopodsFace` are internal.
 - **Quicker to open:** the first use in a process takes about a third less time (745 ms to 509 on Bento's examples), for packages about 20% larger. Results don't change. Grouping by a measure no longer boxes its keys.
 - **`MeshTolerances.ControlAllSurfaces`,** off by default, and its documentation no longer promises a maximum deflection: a long fillet can stray from it.
 

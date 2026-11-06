@@ -7,11 +7,7 @@
 
 using Kerf.Engine.Collections;
 using static Kerf.Engine.Fillets.Builder_0;
-using static Kerf.Engine.Fillets.Data.ErrorStatus;
-using static Kerf.Engine.Fillets.Data.State;
-using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
-using static Kerf.Engine.Booleans.Legacy.Data.DsKind;
 
 using Kerf.Engine.Booleans.Legacy.Data;
 using Kerf.Engine.Construction.Library;
@@ -26,7 +22,6 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Fillets;
 

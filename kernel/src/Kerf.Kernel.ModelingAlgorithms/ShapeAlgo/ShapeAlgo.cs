@@ -6,8 +6,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Extend;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Healing;
 
 /// <summary>

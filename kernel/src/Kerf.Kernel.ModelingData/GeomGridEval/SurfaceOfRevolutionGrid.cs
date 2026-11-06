@@ -4,7 +4,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Geometry.Evaluation.Grid;
 
@@ -19,7 +18,6 @@ internal sealed class SurfaceOfRevolutionGrid : GeomGridEvalGrid.ISurfaceEvaluat
     private readonly Curve3D? _basisCurve;
     private readonly Axis3D _axis;
     private readonly Point3D _axisLocation;
-    private readonly Direction3D _axisDirection;
 
     /// <summary>Constructor with the surface of revolution to evaluate (null gives empty results).</summary>
     public SurfaceOfRevolutionGrid(RevolutionSurface? revolution)
@@ -27,13 +25,11 @@ internal sealed class SurfaceOfRevolutionGrid : GeomGridEvalGrid.ISurfaceEvaluat
         _geom = revolution;
         _axis = new Axis3D();
         _axisLocation = new Point3D();
-        _axisDirection = new Direction3D();
         if (_geom is not null)
         {
             _basisCurve = _geom.BasisCurve;
             _axis = _geom.Axis;
             _axisLocation = _axis.Location;
-            _axisDirection = _axis.Direction;
         }
     }
 

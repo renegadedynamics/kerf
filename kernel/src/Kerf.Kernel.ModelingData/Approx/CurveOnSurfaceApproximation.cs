@@ -8,11 +8,9 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
-using static Kerf.Geometry.SurfaceKind;
 
 namespace Kerf.Engine.Approximation;
 
@@ -265,26 +263,6 @@ internal class CurveOnSurfaceApproximation
     private double _error3d;
     private double _error2dU;
     private double _error2dV;
-
-    /// <summary>Approximates at once (calls <see cref="Perform"/>). OCCT deprecates this constructor.</summary>
-    [Obsolete("This constructor is deprecated. Use other constructor and perform method instead.")]
-    public CurveOnSurfaceApproximation(Curve2DAdaptorBase c2D, SurfaceAdaptorBase surf, double first, double last, double tol,
-                                 Continuity s, int maxDegree, int maxSegments, bool only3d = false,
-                                 bool only2d = false)
-    {
-        _c2D = c2D;
-        _surf = surf;
-        _first = first;
-        _last = last;
-        _tol = tol;
-        _isDone = false;
-        _hasResult = false;
-        _error3d = 0.0;
-        _error2dU = 0.0;
-        _error2dV = 0.0;
-        Perform(maxSegments, maxDegree, s, only3d, only2d);
-    }
-
     /// <summary>
     /// Sets up the approximation of theC2D on theSurf over [theFirst, theLast] within theTol, without computing it.
     /// The adaptors are kept, as OCCT keeps the handles.

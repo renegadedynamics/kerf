@@ -6,7 +6,6 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Framework.Selection;
 
@@ -36,7 +35,6 @@ internal class ContextWrite
         _theproto = proto;
         _thefile = filename;
         _theapply = applieds;
-        _thenumod = 0;
         _thenbent = 0;
         _thecurr = 0;
     }
@@ -57,7 +55,6 @@ internal class ContextWrite
         _thefile = filename;
         _theapply = applieds;
         _thehgraf = hgraph;
-        _thenumod = 0;
         _thenbent = 0;
         _thecurr = 0;
     }
@@ -132,7 +129,7 @@ internal class ContextWrite
     public bool SetModifier(int numod)
     {
         _themodif = null;
-        _thenumod = _thenbent = _thecurr = 0;
+        _thenbent = _thecurr = 0;
         if (_theapply is null)
         {
             return false;
@@ -309,7 +306,6 @@ internal class ContextWrite
     private AppliedModifiers? _theapply;
     private HGraph? _thehgraf;
     private CheckIterator _thecheck = new CheckIterator();
-    private int _thenumod;
     private int _thenbent;
     private int _thecurr;
     private GeneralModifier? _themodif;

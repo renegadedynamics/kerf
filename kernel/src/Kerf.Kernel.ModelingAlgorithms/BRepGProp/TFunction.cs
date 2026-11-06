@@ -4,10 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Kerf.Engine.Measurement;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Measurement.PropertyValueType;
 
 namespace Kerf.Engine.Measurement;
@@ -24,12 +22,10 @@ internal class TFunction : Function
     private readonly UFunction _uFunction;
     private readonly double _uMin;
     private double _tolerance;
-    private double _tolReached;
     private double _errReached;
     private double _absError;
     private PropertyValueType _valueType;
     private readonly bool _isByPoint;
-    private int _nbPntOuter;
 
     /// <summary>
     /// The integrand on the face, with the location point, the mode, the coefficients, the lower bound
@@ -46,24 +42,18 @@ internal class TFunction : Function
         _uFunction = new UFunction(_surface, vertex, isByPoint, coeffs);
         _uMin = uMin;
         _tolerance = tolerance;
-        _tolReached = 0.0;
         _errReached = 0.0;
         _absError = 0.0;
         _valueType = Unknown;
         _isByPoint = isByPoint;
-        _nbPntOuter = 3;
     }
 
     /// <summary>Resets the errors reached.</summary>
     public void Init()
     {
-        _tolReached = 0.0;
         _errReached = 0.0;
         _absError = 0.0;
     }
-
-    /// <summary>Sets the expected number of Kronrod points of the outer integral (made odd).</summary>
-    public void SetNbKronrodPoints(int nbPoints) => _nbPntOuter = (nbPoints % 2 == 0) ? nbPoints + 1 : nbPoints;
 
     /// <summary>Sets the type of the value returned, passed on to the U function.</summary>
     public void SetValueType(PropertyValueType type)
@@ -193,7 +183,6 @@ internal class TFunction : Function
         localErr *= absCoeff;
         _absError = Max(_absError, localErr);
 
-        _tolReached += localErr;
 
         if (Math.Abs(f) > Epsilon(1.0))
         {

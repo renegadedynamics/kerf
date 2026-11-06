@@ -25,11 +25,8 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Runtime.CompilerServices;
-using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Geometry.TransformForm;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Exchange.Step;
 

@@ -7,18 +7,15 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Geometry.Projection;
-using Kerf.Engine.Intersection;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Intersection.Tools;

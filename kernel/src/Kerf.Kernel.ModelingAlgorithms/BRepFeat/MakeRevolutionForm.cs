@@ -18,11 +18,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Features.PerfSelection;
-using static Kerf.Engine.Features.StatusError;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Features;
@@ -43,7 +39,6 @@ internal sealed class MakeRevolutionForm : RibSlot
     private double _height1;
     private double _height2;
     // OCCT: the class declares its own mySliding, hiding BRepFeat_RibSlot's, which stays false
-    private new bool _sliding;
     private PlaneSurface? _pln;
     private double _bnd;
     private Dictionary<Shape, NCollection_List<Shape>> _slface = new(ShapeHasher.Instance);
@@ -57,7 +52,6 @@ internal sealed class MakeRevolutionForm : RibSlot
     {
         _height1 = 0.0;
         _height2 = 0.0;
-        _sliding = false;
         _bnd = 0.0;
         _tol = 0.0;
         _angle1 = RealLast();
@@ -928,7 +922,6 @@ internal sealed class MakeRevolutionForm : RibSlot
             _pbase = prof;
         }
 
-        _sliding = sliding;
 
         Explorer exp1 = new();
         for (exp1.Init(_sbase, ShapeType.Face); exp1.More(); exp1.Next())

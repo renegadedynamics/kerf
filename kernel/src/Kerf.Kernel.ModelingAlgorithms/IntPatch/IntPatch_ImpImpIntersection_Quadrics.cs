@@ -3,14 +3,9 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Values;
-using Kerf.Engine.Intersection;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Intersection.ResultType;
-using static Kerf.Engine.Intersection.Patches.PatchLineType;
-using static Kerf.Engine.Intersection.Walking.WalkingSituation;
-using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 
 namespace Kerf.Engine.Intersection.Patches;
 

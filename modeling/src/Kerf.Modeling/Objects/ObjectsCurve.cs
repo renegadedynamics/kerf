@@ -663,8 +663,8 @@ public class Helix : BaseEdgeObject
 {
     /// <summary>A helix about <paramref name="direction"/> through <paramref name="center"/>.</summary>
     public Helix(double pitch, double height, double radius, Point3D? center = null, Vector3D? direction = null, double coneAngle = 0,
-                 bool lefthand = false)
-        : base(Edge.MakeHelix(pitch, height, radius, center ?? new Point3D(0, 0, 0), direction ?? new Vector3D(0, 0, 1), coneAngle, lefthand))
+                 bool leftHanded = false)
+        : base(Edge.MakeHelix(pitch, height, radius, center ?? new Point3D(0, 0, 0), direction ?? new Vector3D(0, 0, 1), coneAngle, leftHanded))
     {
     }
 }

@@ -133,7 +133,7 @@ internal static class BOPTestPartitionCommands
         aBuilder.SetRunParallel(bRunParallel);
         aBuilder.SetCheckInverted(aSession.CheckInverted);
         aBuilder.SetToFillHistory(BRepTestHistoryCommands.IsHistoryNeeded(theDI));
-        Stopwatch aTimer = Stopwatch.StartNew();
+        DrawCaseProcess.BuildClock aStart = DrawCaseProcess.BuildClock.Now;
         aBuilder.PerformWithFiller(aPF);
         BOPTestObjects.ReportAlerts(theDI, di, aBuilder.GetReport());
 
@@ -146,10 +146,9 @@ internal static class BOPTestPartitionCommands
         {
             return 0;
         }
-        aTimer.Stop();
         if (bShowTime)
         {
-            di.Append(Tps(aTimer));
+            di.Append($"  Tps: {DrawCaseProcess.SecondsSince(aStart),7:F2}\n");
         }
         Shape aR = aBuilder.Shape();
         if (aR.IsNull)

@@ -9,7 +9,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Classification;
 

@@ -4,8 +4,6 @@
 
 using Kerf.Engine.Geometry.Bvh;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Geometry.Bounds;
 
 /// <summary>Static methods on bounding boxes: conversion from Bnd boxes to BVH boxes.</summary>

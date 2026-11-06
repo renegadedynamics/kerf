@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Approximation.Constraint;
 
 namespace Kerf.Engine.Approximation;
@@ -29,9 +28,7 @@ internal class BSpFunction<MultiLine, ToolLine> : MultipleVarFunctionWithGradien
     where ToolLine : struct, ILineTool<MultiLine>
 {
     // OCCT's Done field is written but never read; it is left out
-    private readonly MultiLine _myMultiLine;
     private MultiBSpCurve _myMultiBSpCurve;
-    private readonly int _nbpoles;
     private readonly math_Vector _parameters;
     private double _fVal;
     private readonly math_Vector ValGrad_F;
@@ -39,8 +36,6 @@ internal class BSpFunction<MultiLine, ToolLine> : MultipleVarFunctionWithGradien
     private readonly Matrix _ptlx;
     private readonly Matrix _ptly;
     private readonly Matrix _ptlz;
-    private readonly Matrix _a;
-    private readonly Matrix _da;
     private readonly LeastSquare<MultiLine, ToolLine> _myLeastSquare;
     private readonly bool _contraintes;
     private readonly int _nbP;
@@ -52,7 +47,6 @@ internal class BSpFunction<MultiLine, ToolLine> : MultipleVarFunctionWithGradien
     private double _err2d;
     private readonly int _firstP;
     private readonly int _lastP;
-    private readonly NCollection_HArray1<ConstraintCouple> _constraints;
     private double _mylambda1;
     private double _mylambda2;
 
@@ -67,7 +61,6 @@ internal class BSpFunction<MultiLine, ToolLine> : MultipleVarFunctionWithGradien
                                     math_Vector parameters, NCollection_Array1<double> knots, NCollection_Array1<int> mults,
                                     int nbPol)
     {
-        _myMultiLine = ssp;
         _myMultiBSpCurve = new MultiBSpCurve(nbPol);
         _parameters = new math_Vector(parameters.Lower(), parameters.Upper());
         ValGrad_F = new math_Vector(firstPoint, lastPoint);
@@ -75,8 +68,6 @@ internal class BSpFunction<MultiLine, ToolLine> : MultipleVarFunctionWithGradien
         _ptlx = new Matrix(firstPoint, lastPoint, 1, ToolLine.NbP3d(ssp) + ToolLine.NbP2d(ssp), 0.0);
         _ptly = new Matrix(firstPoint, lastPoint, 1, ToolLine.NbP3d(ssp) + ToolLine.NbP2d(ssp), 0.0);
         _ptlz = new Matrix(firstPoint, lastPoint, 1, ToolLine.NbP3d(ssp) + ToolLine.NbP2d(ssp), 0.0);
-        _a = new Matrix(firstPoint, lastPoint, 1, nbPol);
-        _da = new Matrix(firstPoint, lastPoint, 1, nbPol);
         _myLeastSquare = new LeastSquare<MultiLine, ToolLine>(ssp,
                                                                           knots,
                                                                           mults,
@@ -93,11 +84,9 @@ internal class BSpFunction<MultiLine, ToolLine> : MultipleVarFunctionWithGradien
         }
         _firstP = firstPoint;
         _lastP = lastPoint;
-        _constraints = theConstraints;
         _nbP = _lastP - _firstP + 1;
         _adeb = _firstP;
         _afin = _lastP;
-        _nbpoles = nbPol;
         _myMultiBSpCurve.SetKnots(knots);
         _myMultiBSpCurve.SetMultiplicities(mults);
         _contraintes = false;

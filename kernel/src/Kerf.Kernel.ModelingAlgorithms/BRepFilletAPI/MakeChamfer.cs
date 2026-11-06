@@ -8,9 +8,6 @@ using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Kerf.Engine;
-using static Kerf.Engine.Fillets.Data.ChamfMethod;
-using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Fillets.Api;

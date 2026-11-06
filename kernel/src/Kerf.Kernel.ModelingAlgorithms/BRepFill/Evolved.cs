@@ -22,12 +22,9 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.JoinKind;
-using static Kerf.Engine.Offsets.MedialAxis.MedialSide;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
 namespace Kerf.Engine.Construction.Filling;
@@ -53,9 +50,6 @@ internal sealed class Evolved
     private Wire _profile = new();
     private Shape _shape = new();
     private bool _isDone;
-#pragma warning disable CS0414 // OCCT sets the spine type without reading it
-    private bool _spineType;
-#pragma warning restore CS0414
     private global::Kerf.Geometry.JoinKind _joinType;
     private readonly Dictionary<Shape, Dictionary<Shape, NCollection_List<Shape>>> _map =
         new(ShapeHasher.Instance);
@@ -86,7 +80,6 @@ internal sealed class Evolved
     public Evolved()
     {
         _isDone = false;
-        _spineType = true;
     }
 
     /// <summary>
@@ -181,7 +174,6 @@ internal sealed class Evolved
     /// <summary>Builds the evolved shape of <paramref name="profile"/> swept along the wire <paramref name="spine"/>.</summary>
     public void Perform(in Wire spine, in Wire profile, in CoordinateSystem axeProf, global::Kerf.Geometry.JoinKind Join = Arc, bool solid = false)
     {
-        _spineType = false;
         Face face = new LibraryMakeFace(spine, true).InternalFace();
         PrivatePerform(face, profile, axeProf, Join, solid);
     }
@@ -189,7 +181,6 @@ internal sealed class Evolved
     /// <summary>Builds the evolved shape of <paramref name="profile"/> swept along the face <paramref name="spine"/>.</summary>
     public void Perform(in Face spine, in Wire profile, in CoordinateSystem axeProf, global::Kerf.Geometry.JoinKind Join = Arc, bool solid = false)
     {
-        _spineType = true;
         PrivatePerform(spine, profile, axeProf, Join, solid);
     }
 

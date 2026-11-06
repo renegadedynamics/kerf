@@ -7,7 +7,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.CurveKind;
 
 namespace Kerf.Engine.Geometry.Projection;
