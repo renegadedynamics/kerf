@@ -1,6 +1,6 @@
 # The owner's answers: what Bento sees change
 
-The answers recorded in kernel decision 1790, as built in kernel decisions 20501 to 20506. This note was checked against Bento's `kerf/0.2.0` branch. **A member not listed keeps its name and meaning.**
+The answers recorded in kernel decision 1790, as built in kernel decisions 20501 to 20509. This note was checked against Bento's `kerf/0.2.0` branch. **A member not listed keeps its name and meaning.**
 
 ## What Bento has to change
 
@@ -16,7 +16,8 @@ Nothing in `ModelArguments.cs` or `ModelFunctions.cs` calls the members that mov
 - **`A1.Volume`, `A1.Area` and ordering or grouping by them** are integrated adaptively, to a millionth of each face's contribution. 33 of the 37 introductory examples move by less than 1e-9; swept and B-spline faces move most (example 12, 6.5e-5). A workbook's cells may show different digits.
 - **Time:** those calls don't get dearer. See decision 20501 for the figures; over the eleven examples, a volume went from 20.5 to 9.9 ms in all and an area from 13.4 to 10.3 ms, on a loaded machine.
 - **A default sweep that used to fail** can now succeed in another frame (`CAD_PT_SWEEP` without `isFrenet`). A formula showing `#VALUE!` may start giving a shape.
-- **The centre of a shape** still uses the default integration (decision 20501).
+- **`A1.Center()`, and a plane made from a face,** are on the precise path too, at 1e-9 (decision 20507). Bento's tests of centres are on boxes and don't move. `IntroductoryExamples.cs` line 156 builds a plane at a centre, so a part built from it can move by as much as that centre did.
+- **A sweep that encloses no volume** is now a failure, so a formula that gave a zero-volume shape shows `#VALUE!`.
 
 ## The rest of the public changes
 
@@ -30,6 +31,7 @@ These don't touch Bento's code as it stands, but are here if a formula or a test
 | `Solid.Sweep(… object? mode …)`, `Solid.SweepMulti(… object? binormal)` | `SweepMode? `: a `Vector3D`, `Direction3D`, `Wire` or `Edge` converts to one. Anything else no longer compiles, rather than failing when run |
 | `edge.TrimToOther(object)` | `edge.TrimToOther(CurveLimit)`: the shapes, `ModelShape`, `Axis`, `Location`, `Plane` and `Point3D` convert to one, as for an arc's limit. An `IShape` or `object` variable needs its own type |
 | `edge.FindIntersections(object?, tolerance)`, `FindIntersectionPoints` | Overloads: `()` or `(tolerance)` for this edge crossing itself, `(Edge, tolerance)`, `(Axis, tolerance)`. A curve object is passed as its edge. A plane no longer compiles, rather than throwing |
+| `shape.Intersect(params object[])`, `Intersect(IEnumerable<object>, …)` | `CurveLimit` in place of `object`, as for `TrimToOther`, and an overload for `IEnumerable<Shape>`. A list of `object` needs converting |
 | `ShapeExtensions.ShapeOf(object)` | Overloads for `IShape`, `Point3D`, `Location`, `Axis` and `Plane` |
 | `Solid.MakeTorus(…, startAngle, endAngle)`, `new Torus(…, minorStartAngle, minorEndAngle)`, the kernel's `Solid.Torus` with `MinorStart` and `MinorEnd` | The same calls, but part of the minor circle is now a slice of the tube, closed by a straight line across the arc's ends: 53.5 and not 210.6 for the outer half with R = 5, r = 1 |
 | `Sweeps.Sweep` with the default frame | New: `SweepOptions.TryOtherFrames`, true by default; warnings `Sweeps.SweptWithFrenet` and `Sweeps.SweptWithDiscrete` |

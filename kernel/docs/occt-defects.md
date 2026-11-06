@@ -53,6 +53,10 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 3. **The 2D offset's failures (77 corpus cases).** Fixing them means a new way of making offsets, not a patch: I recommend a survey of what Bento needs first.
 4. **A default sweep that fails (#1630).** Should a sweep with the default trihedron retry with another when its approximation fails? I recommend yes until the cause is found; Frenet and discrete both work on the case. **Answered yes, done: decision 20504.**
 
+## For unit 11S: results of no volume reported as success
+
+From decision 20508, which fixed the sweep's: a `Solid.Extrude` in the profile's plane (volume 0, invalid, and no failure); a `Solid.MakeLoft` of two sections in one plane (0, "valid"); the kernel's `Sweeps.Sweep` with `SweepFrame.Fixed` and `WithCorrection`, or along the section's plane.
+
 ## Fixed so far
 
 | Issue or commit | What a user saw | Decision |
