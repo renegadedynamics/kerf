@@ -32,7 +32,7 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 | Silent wrong answer | occt-issues.md 1082, 1081 | `Law_BSpline.Segment` and `IncreaseMultiplicity` give a wrong law: pinned by tests, upstream `71658f6c8f` fixes them | Read; upstream fix | S |
 | Silent wrong answer | occt-issues.md 744 | Cylinder/cylinder range for negative B reads the wrong bound (`mB <= -mB - 1`). Tried against #1633: not its cause | Read | S |
 | Silent wrong answer | occt-issues.md 1176, 1097, 1159, 1160 | Wrong values in `CoonsAlgPatch.Value`, `FunctionDraft.DerivT`, quasi-angular second derivatives, `GetCircle` second derivatives | Read | S each; a recording may need an intended difference |
-| Silent wrong answer | #1461 | A nearly horn torus is written as a surface of revolution or a torus by noise | Read; related fix 20206 | S |
+| Silent wrong answer | #1461 | A nearly horn torus is written as a surface of revolution or a torus by noise | Read; related fix 1780 | S |
 | Silent wrong answer | Upstream `53706f78a8` | Final endpoint curvature in least squares; closed polygon self-intersections; rational section weights in `GeomFill_Profiler` | Upstream fix, not checked here | M |
 | Silent wrong answer | Upstream `8f817f5da5` | Curve-on-surface deviation, narrow extrema, face self-intersection within trimmed domains | Upstream fix, not checked here | L: 346 files |
 | Invalid result | #1711 | `FuseEdges` can leave an edge range outside its curve | Read | S to M |
@@ -57,18 +57,18 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
-| #1633 | Booleans of cylinders about 1° from parallel: Common empty, Cut removes nothing, no error | 20209 |
-| #1604, #1679 | An optimal box smaller than the shape | 20203 |
-| #1685 | An area up to 2.7% short, with an estimate of 1e-10, depending on where an edge starts | 20211 |
-| #1675 | Precise mass properties never refined along U | 20210 |
-| #1681, #1682 | A sweep with a guide distorted, volume 1072.3 for 1080 | 20202 |
-| #1566 | Revolving an arc that ends at the axis: invalid, 20% of the volume gone | 20206 |
-| #1577 | A surface grid 5 units off just below a knot; slow optimal boxes | 20201 |
-| #1617 | A parabola of focal 0 projected wrongly | 20207 |
-| #1618 | NaN radii and angles accepted (directions stay: see the decision) | 20208 |
-| #1698 | A meshed shape's optimal box included the tolerance when told not to | 20205 |
-| #1606, #1452 | A ring of concentric circles couldn't be offset inward; a collapsing circle went to the general algorithm | 20214 |
-| `3270746444` | A point mirror's inverse | 20204 |
+| #1633 | Booleans of cylinders about 1° from parallel: Common empty, Cut removes nothing, no error | 1783 |
+| #1604, #1679 | An optimal box smaller than the shape | 1777 |
+| #1685 | An area up to 2.7% short, with an estimate of 1e-10, depending on where an edge starts | 1785 |
+| #1675 | Precise mass properties never refined along U | 1784 |
+| #1681, #1682 | A sweep with a guide distorted, volume 1072.3 for 1080 | 1776 |
+| #1566 | Revolving an arc that ends at the axis: invalid, 20% of the volume gone | 1780 |
+| #1577 | A surface grid 5 units off just below a knot; slow optimal boxes | 1775 |
+| #1617 | A parabola of focal 0 projected wrongly | 1781 |
+| #1618 | NaN radii and angles accepted (directions stay: see the decision) | 1782 |
+| #1698 | A meshed shape's optimal box included the tolerance when told not to | 1779 |
+| #1606, #1452 | A ring of concentric circles couldn't be offset inward; a collapsing circle went to the general algorithm | 1788 |
+| `3270746444` | A point mirror's inverse | 1778 |
 
 ## The corpus's 502 BAD cases, by group
 
