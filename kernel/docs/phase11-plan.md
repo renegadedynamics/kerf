@@ -61,6 +61,8 @@ otherwise and records why: the corpus, the recordings and the Python-reference v
 real failures in hand. **11G** sorts the fillet corpus's failures into reconstruction gaps, port bugs and OCCT's own, then
 reports. Any rewrite is a decision after that, not part of this plan. **Done, 6 November (decisions 1719 to 1724):** [corpus-failures.md](corpus-failures.md). Three small reconstruction bugs fixed, 13 corpus cases with them. Of the 37 fillet cases still FAILED or BAD: 3 reconstruction gaps, 34 OCCT's own, no known port bug. Of 1,074 steps run against native, one is invalid only on the port. **Recommended: no rewrite now; the owner decides.**
 
+**Known defects, done 6 November (decisions 1735 to 1741):** what 11G and 11I left. A fillet or chamfer that would silently lose a face of an open shell now fails, and four false IMPROVEMENTs are gone. J5 passes. G8 and bug27711_3 stay, as only their edge numbers differ. The projection on a very uneven spline, OCCT's own, is improved. Copied faces' history and radius 11 are confirmed as they are. Of 1,044 steps run against native, none is invalid only on the port. [corpus-failures.md](corpus-failures.md).
+
 ## 3. What phase 10 left
 
 The owner set these aside until after 0.2.0 (decision 1642). They don't depend on the optimisation, and can run alongside it.

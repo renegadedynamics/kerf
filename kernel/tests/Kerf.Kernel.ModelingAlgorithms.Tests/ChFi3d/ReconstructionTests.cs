@@ -32,6 +32,42 @@ public class ReconstructionTests
         Assert.Empty(R.NewEdges(1));
     }
 
+    /// <summary>
+    /// For a user of history, every face of the input is in the result, or has a history, or is gone. A face left whole
+    /// beside a surface the fillet extended is copied, as the input is frozen, so its history is the copy; natively it's
+    /// written in place and stays, with none (decision 1739).
+    /// </summary>
+    [Fact]
+    public void AFaceCopiedBesideAnExtendedSurfaceHasAHistory()
+    {
+        ReconComparison.Run aRun = ReconComparison.Reconstruct(ReconRecordings.Cases["complex_A2"]);
+        HashSet<Shape> aResult = new(ShapeHasher.Instance);
+        for (Explorer exp = new(aRun.Result, ShapeType.Face); exp.More(); exp.Next())
+        {
+            aResult.Add(exp.Current());
+        }
+        int aInResult = 0, aWithHistory = 0;
+        for (Explorer exp = new(aRun.Input, ShapeType.Face); exp.More(); exp.Next())
+        {
+            Shape aFace = exp.Current();
+            bool isSplit = aRun.Builder.IsSplit(aFace, In);
+            if (aResult.Contains(aFace))
+            {
+                Assert.False(isSplit, "a face still in the result needs no history");
+                aInResult++;
+            }
+            else if (isSplit)
+            {
+                foreach (Shape aPart in aRun.Builder.Splits(aFace, In))
+                {
+                    Assert.Contains(aPart, aResult);
+                }
+                aWithHistory++;
+            }
+        }
+        Assert.True(aWithHistory >= 4, $"{aWithHistory} faces with a history, {aInResult} in the result");
+    }
+
     [Fact]
     public void OneEdgeFilleted()
     {

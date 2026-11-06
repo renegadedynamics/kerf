@@ -97,6 +97,94 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
         Assert.Equal("OK", aRun.Status);
     }
 
+    /// <summary>
+    /// A fillet boundary running along an edge (decision 1736): ChFi3d gives the points on it the transition OUT to IN,
+    /// and the edge's part under the fillet goes, as natively. Before, it stayed in the face beside it, unshared with
+    /// the fillet's own edge in the same place, and the shell wasn't closed.
+    /// </summary>
+    [Fact]
+    public void An_edge_under_a_fillets_boundary_goes()
+    {
+        var aCorpus = new DrawCorpus(TestsDirectory);
+        DrawTestCase aCase = aCorpus.Cases().Single(c => c.Id == "blend/buildevol/J5");
+        DrawCaseRun aRun = aCorpus.RunAndCheck(aCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath, TimeSpan.FromSeconds(120));
+        Assert.Equal("OK", aRun.Status);
+    }
+
+    /// <summary>
+    /// A chamfer on an open shell whose curves don't close a loop on a face (decision 1735). Native OCCT gives an invalid
+    /// shape, and the port lost the face and looked valid, with nothing to say so. It now fails, where OCCT's TODO expects
+    /// the invalid shape.
+    /// </summary>
+    [Theory]
+    [InlineData("chamfer/dist_angle_sequence/B6")]
+    [InlineData("chamfer/dist_dist_sequence/B7")]
+    [InlineData("chamfer/dist_dist_sequence/B9")]
+    [InlineData("chamfer/equal_dist_sequence/B5")]
+    [InlineData("chamfer/equal_dist_sequence/B7")]
+    [InlineData("chamfer/equal_dist_sequence/B9")]
+    public void A_chamfer_that_would_lose_a_face_of_an_open_shell_fails(string theId)
+    {
+        var aCorpus = new DrawCorpus(TestsDirectory);
+        DrawTestCase aCase = aCorpus.Cases().Single(c => c.Id == theId);
+        DrawCaseRun aRun = aCorpus.RunAndCheck(aCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath, TimeSpan.FromSeconds(120));
+        Assert.StartsWith("FAILED", aRun.Status, StringComparison.Ordinal);
+        Assert.Contains("compute of chamfer failed", aRun.Log, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// An edge has a point at its end vertex with another parameter on its curve, and what's left is a stub from that
+    /// vertex back to itself (decision 1735). Without it the case still passes, and now has native's area and edges.
+    /// </summary>
+    [Fact]
+    public void A_stub_of_an_edge_is_not_kept()
+    {
+        var aCorpus = new DrawCorpus(TestsDirectory);
+        DrawTestCase aCase = aCorpus.Cases().Single(c => c.Id == "chamfer/dist_angle_sequence/B7");
+        DrawCaseRun aRun = aCorpus.RunAndCheck(aCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath, TimeSpan.FromSeconds(120));
+        Assert.Equal("OK", aRun.Status);
+    }
+
+    /// <summary>
+    /// blend/complex/G8 and bug27711_3 name edges by explode number in an earlier result, and the reconstruction's edges
+    /// come in another order than OCCT's HBuilder's (decision 1738). Given native's edges by position the port gets
+    /// native's area, so the geometry is right and only the numbers differ.
+    /// </summary>
+    [Fact]
+    public void The_cases_that_number_edges_pass_with_natives_edges_found_by_position()
+    {
+        DrawInterpreter aDI = NewInterpreter();
+        string aData = DrawResourcesTests.OcctTestDataDirectory.Replace('\\', '/').TrimEnd('/');
+        aDI.Eval("""
+                 set find {
+                   set best ""; set bd 1e30
+                   foreach e [explode $s e] {
+                     if {![regexp {X =\s+(\S+)\s+Y =\s+(\S+)\s+Z =\s+(\S+)} [lprops $e] m a1 b1 c1]} continue
+                     set q [expr {($a1-$x)*($a1-$x)+($b1-$y)*($b1-$y)+($c1-$z)*($c1-$z)}]
+                     if {$q < $bd} { set bd $q; set best $e }
+                   }
+                 }
+                 """);
+        aDI.Eval($"restore {aData}/brep/CFI_id260039.rle a");
+        aDI.Eval("explode a e");
+        aDI.Eval("blend r1 a 5 a_16");
+        aDI.Eval("set s r1; set x 7.86643372; set y -191.672917; set z -35; eval $find");
+        aDI.Eval("blend r2 r1 5 $best");
+        aDI.Eval("set s r2; set x -73.1657277; set y -210.727364; set z -35; eval $find");
+        aDI.Eval("blend r3 r2 5 $best");
+        Assert.Contains("seems to be valid", aDI.Eval("checkshape r3"), StringComparison.Ordinal);
+        Assert.Matches(@"Mass :\s+25084[34]", aDI.Eval("sprops r3"));
+
+        aDI.Eval($"restore {aData}/brep/bug27711.brep b");
+        aDI.Eval("explode b e");
+        aDI.Eval("blend q1 b 0.5 b_12 0.5 b_11");
+        aDI.Eval("set s q1; set x 1.5; set y -1.5; set z 1.75; eval $find; set e1 $best");
+        aDI.Eval("set s q1; set x 1.64644661; set y -1.64644661; set z 0.146446609; eval $find; set e2 $best");
+        aDI.Eval("blend q2 q1 0.5 $e1 0.5 $e2");
+        Assert.Contains("seems to be valid", aDI.Eval("checkshape q2"), StringComparison.Ordinal);
+        Assert.Matches(@"Mass :\s+178\.237", aDI.Eval("sprops q2"));
+    }
+
     [Fact]
     public void Corpus_cases_using_the_fillet_and_chamfer_commands_of_7N3_run()
     {
@@ -186,13 +274,16 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
     /// <summary>The corpus cases that fail for an attributed reason (see docs/occt-issues.md, unit 7N3).</summary>
     internal static readonly Dictionary<string, string> KnownFailures = new(StringComparer.Ordinal)
     {
-        ["blend/buildevol/J5"] = "reconstruction: shell not closed",
-        ["chamfer/dist_angle_sequence/A5"] = "native invalid at step 15 too (decision 1722); the port then loses faces instead",
-        ["chamfer/dist_dist_sequence/B9"] = "native invalid at step 2 too (decision 1722); the port then loses faces, and a later step finds no edge",
-        ["chamfer/equal_dist_sequence/A5"] = "native invalid at step 15 too (decision 1722); the port then loses faces instead of OCCT's TODO's 10 faulty shapes",
-        ["chamfer/equal_dist_sequence/B9"] = "native invalid at step 2 too (decision 1722); the port then loses faces, and a later step finds no edge",
-        ["blend/complex/G8"] = "reconstruction order: the third blend names an edge by explode index of the second result, another edge here; blend fails",
-        ["bugs/modalg_7/bug27711_3"] = "reconstruction order: the second blend names edges by explode index of the first result, other edges here; blend fails",
+        ["chamfer/dist_angle_sequence/A5"] = "native invalid at step 15 too (decision 1722); the port's is invalid with far fewer faces",
+        ["chamfer/dist_angle_sequence/B6"] = "native invalid at step 2 too; the port refuses (decision 1735)",
+        ["chamfer/dist_dist_sequence/B7"] = "native invalid at step 2 too; the port refuses (decision 1735)",
+        ["chamfer/dist_dist_sequence/B9"] = "native invalid at step 2 too (decision 1722); the port refuses (decision 1735)",
+        ["chamfer/equal_dist_sequence/A5"] = "native invalid at step 15 too (decision 1722); the port's is invalid with far fewer faces, not OCCT's TODO's 10 faulty shapes",
+        ["chamfer/equal_dist_sequence/B5"] = "native invalid at step 2 too; the port refuses (decision 1735)",
+        ["chamfer/equal_dist_sequence/B7"] = "native invalid at step 2 too; the port refuses (decision 1735)",
+        ["chamfer/equal_dist_sequence/B9"] = "native invalid at step 2 too (decision 1722); the port refuses (decision 1735)",
+        ["blend/complex/G8"] = "reconstruction order: the third blend names an edge by explode index of the second result, another edge here; blend fails (decision 1738)",
+        ["bugs/modalg_7/bug27711_3"] = "reconstruction order: the second blend names edges by explode index of the first result, other edges here; blend fails (decision 1738)",
         // OCCT's sample, not the port (decision 1310): its second weld names _model_28, an edge the first blend
         // replaced, and native OCCT fails the same way on the same Booleans; the sample then needs the viewer
         ["demo/samples/anc101"] = "OCCT's sample: blend of _model_28, an edge the first blend replaced (native fails too); viewer commands",
