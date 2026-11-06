@@ -223,24 +223,20 @@ public class ShapeFix_RepairsOfSolidsTests
         Assert.Equal(anArea, Area(aResult), 2);
     }
 
-    // An edge along X on the plane, whose pcurve is a polyline with a loop in it
-    private static (Wire W, Face F, Edge Looped) WireWithALoop(double theLoopSize)
+    // A wire round a square whose first side is a curve with a loop in it: crossing itself at a point well away from
+    // its ends, the loop as high as about theSize
+    private static (Wire W, Face F, Edge Looped) WireWithALoop(double theSize)
     {
         var aB = new BrepBuilder();
         Face aF = new();
         aB.MakeFace(ref aF, new PlaneSurface(new CoordinateSystem(P(0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))), 1e-7);
-        double s = theLoopSize;
-        var aPoints = new[] { P(0, 0), P(5 + s, 0), P(5 + s, s), P(5, s), P(5, -s), P(10, -s), P(10, 0) };
-        var aPoles3d = aPoints;
-        var aPoles2d = aPoints.Select(p => new Point2D(p.X, p.Y)).ToArray();
-        double[] aKnots = Enumerable.Range(0, aPoints.Length).Select(i => (double)i).ToArray();
-        int[] aMults = Enumerable.Range(0, aPoints.Length).Select(i => i == 0 || i == aPoints.Length - 1 ? 2 : 1).ToArray();
-        var aC3d = new BSplineCurve3D(aPoles3d, aKnots, aMults, 1);
-        var aC2d = new BSplineCurve2D(aPoles2d, aKnots, aMults, 1);
+        var aPoles = new[] { P(0, 0), P(15, theSize), P(-5, theSize), P(10, 0) };
+        var aC3d = new BezierCurve3D(aPoles);
+        var aC2d = new BezierCurve2D(aPoles.Select(p => new Point2D(p.X, p.Y)).ToArray());
         Vertex aV0 = TestShapes.Vertex(P(0, 0)), aV1 = TestShapes.Vertex(P(10, 0)), aV2 = TestShapes.Vertex(P(10, 10)), aV3 = TestShapes.Vertex(P(0, 10));
-        Edge aLooped = TestShapes.Edge(aC3d, 0, aPoints.Length - 1, aV0, aV1);
+        Edge aLooped = TestShapes.Edge(aC3d, 0, 1, aV0, aV1);
         aB.UpdateEdge(aLooped, aC2d, aF, 1e-7);
-        aB.Range(aLooped, aF, 0, aPoints.Length - 1);
+        aB.Range(aLooped, aF, 0, 1);
         Wire aW = new();
         aB.MakeWire(ref aW);
         aB.Add(aW, aLooped);
@@ -251,16 +247,19 @@ public class ShapeFix_RepairsOfSolidsTests
     }
 
     [Theory]
-    [InlineData(1e-3, -1)] // the default: by the 2d curve and the 3d one together
-    [InlineData(1e-3, 0)]
-    [InlineData(1e-3, 1)] // cutting the loop out
-    [InlineData(1e-1, 1)]
+    [InlineData(0.01, -1)] // the default: tolerances
+    [InlineData(0.01, 0)]
+    [InlineData(0.01, 1)] // cutting the loop out
+    [InlineData(0.5, -1)]
+    [InlineData(0.5, 0)]
+    [InlineData(0.5, 1)]
     public void FixSelfIntersection_ALoopInAPCurve_LeavesNoCrossing(double theLoopSize, int theMode)
     {
         (Wire aW, Face aF, _) = WireWithALoop(theLoopSize);
         Wire aFrozen = TestShapes.Frozen(aW);
         var aSnap = ShapeSnapshot.Of(aFrozen);
         var sfw = new WireFixer(aFrozen, aF, 1e-2);
+        sfw.SetMaxTolerance(10);
         sfw.ModifyRemoveLoopMode() = theMode;
         sfw.FixSelfIntersectingEdgeMode() = 1;
         sfw.FixIntersectingEdgesMode() = 0;
@@ -282,9 +281,9 @@ public class ShapeFix_RepairsOfSolidsTests
             Assert.True(Tool.Pnt(anEnd).DistanceTo(Tool.Pnt(aStart)) <= Tool.Tolerance(anEnd) + Tool.Tolerance(aStart) + 1e-9,
                         $"edges {i} and {i + 1} came apart");
         }
-        if (sfw.StatusSelfIntersection(Done))
+        Assert.True(sfw.StatusSelfIntersection(Done), "it should have found the loop");
         {
-            // whichever way it was done, the analysis no longer finds a loop within tolerance at that edge
+            // whichever way it was done, the analysis no longer finds a loop outside the vertices' tolerances
             var aLeft = new WireAnalysis(aRes, aF, 1e-2);
             var aPoints2d = new NCollection_Sequence<IntersectionPoint2D>();
             var aPoints3d = new NCollection_Sequence<Point3D>();
