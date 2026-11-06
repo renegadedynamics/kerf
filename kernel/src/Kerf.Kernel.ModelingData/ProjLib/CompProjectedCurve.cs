@@ -10,10 +10,8 @@
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
-using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using Kerf.Engine;
 using System.Runtime.InteropServices;
 using static Kerf.Engine.Extrema.ExtFlag;
 using static Kerf.Geometry.CurveKind;

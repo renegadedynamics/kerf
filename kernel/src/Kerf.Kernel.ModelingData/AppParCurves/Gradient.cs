@@ -16,7 +16,6 @@
 // second least squares resolution, thus wasting a lot of time.
 
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Approximation;
 

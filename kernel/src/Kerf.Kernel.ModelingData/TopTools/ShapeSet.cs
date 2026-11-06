@@ -7,11 +7,9 @@ using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using static Kerf.Topology.Orientation;
-using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Exchange.Brep;
 

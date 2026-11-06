@@ -6,7 +6,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Buffers.Binary;
 
 namespace Kerf.Engine.Exchange.Brep.Binary;

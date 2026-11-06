@@ -6,7 +6,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Approximation.Advanced.CriterionType;
 
 namespace Kerf.Engine.Approximation.Advanced;

@@ -11,8 +11,6 @@ using Kerf.Geometry;
 
 using Kerf.Topology;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Topology.Adaptors;
 
 /// <summary>The pcurve of an edge on a face, seen as a 2D curve.</summary>

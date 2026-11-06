@@ -6,7 +6,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Geometry.Conversion;

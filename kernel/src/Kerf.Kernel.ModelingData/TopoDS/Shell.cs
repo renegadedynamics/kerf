@@ -8,9 +8,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 
-using Kerf.Topology;
-using Kerf.Engine;
-
 namespace Kerf.Topology;
 
 /// <summary>

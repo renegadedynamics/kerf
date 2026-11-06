@@ -4,8 +4,6 @@
 
 using Kerf.Topology;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Topology;
 
 /// <summary>

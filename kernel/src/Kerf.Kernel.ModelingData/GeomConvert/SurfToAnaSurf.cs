@@ -4,15 +4,12 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Extrema;
-using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Library;
 using Kerf.Engine.Geometry.Properties;
 using Kerf.Engine.Intersection;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
-using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Engine.Geometry.Conversion.ConvType;
 using static Kerf.Engine.Intersection.ResultType;

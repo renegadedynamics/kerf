@@ -6,7 +6,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Kerf.Topology;
-using Kerf.Engine;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.Containment;

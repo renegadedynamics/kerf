@@ -6,8 +6,6 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry.Objects;
-using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Geometry;
 

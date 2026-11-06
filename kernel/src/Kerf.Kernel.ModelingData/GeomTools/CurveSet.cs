@@ -7,7 +7,6 @@ using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Exchange.Brep;
 

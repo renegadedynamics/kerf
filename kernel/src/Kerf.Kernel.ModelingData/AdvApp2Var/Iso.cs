@@ -6,7 +6,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Geometry.IsoType;
 
 namespace Kerf.Engine.Approximation.Advanced;

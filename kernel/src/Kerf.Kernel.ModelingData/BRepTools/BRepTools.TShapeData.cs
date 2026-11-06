@@ -4,13 +4,9 @@
 // the exact copy for write and KeepUnchanged, which copy at entry used, are gone with it.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using Kerf.Topology;
-using Kerf.Engine;
-using System.Runtime.CompilerServices;
 
 namespace Kerf.Engine.Topology.Tools;
 

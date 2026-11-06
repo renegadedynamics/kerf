@@ -6,7 +6,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
-using Kerf.Engine;
 using System.Runtime.InteropServices;
 
 namespace Kerf.Engine.Topology;

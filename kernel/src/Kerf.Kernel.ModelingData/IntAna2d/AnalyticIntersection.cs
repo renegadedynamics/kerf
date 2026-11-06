@@ -15,7 +15,6 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Intersection.TwoD.Outils;
 
 namespace Kerf.Engine.Intersection.TwoD;

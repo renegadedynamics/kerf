@@ -8,7 +8,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Intersection.ResultType;
 
 namespace Kerf.Engine.Intersection;

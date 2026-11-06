@@ -7,7 +7,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Construction.Values.ErrorType;
 
 namespace Kerf.Engine.Construction.Values;

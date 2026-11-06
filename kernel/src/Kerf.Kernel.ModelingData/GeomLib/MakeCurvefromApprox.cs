@@ -6,7 +6,6 @@
 
 using Kerf.Engine.Approximation.Advanced;
 using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Engine.Geometry.Library;
 

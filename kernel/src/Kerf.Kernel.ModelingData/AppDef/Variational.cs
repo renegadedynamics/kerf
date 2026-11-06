@@ -14,7 +14,6 @@ using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Numerics;
 using Kerf.Engine.Numerics.Polynomials;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Approximation.Constraint;
 using static Kerf.Geometry.Continuity;
 

@@ -8,7 +8,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Measurement.Points;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Engine.Measurement.AbscissaType;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;

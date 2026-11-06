@@ -4,7 +4,6 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
-using Kerf.Geometry;
 using Kerf.Engine;
 using static Kerf.Engine.Geometry.NormalStatus;
 

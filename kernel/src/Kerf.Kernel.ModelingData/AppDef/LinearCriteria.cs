@@ -8,7 +8,6 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Numerics;
 using Kerf.Engine.Numerics.Polynomials;
 using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Approximation;

@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Objects;
-using Kerf.Geometry;
-using Kerf.Engine;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Geometry;

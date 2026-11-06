@@ -9,8 +9,6 @@ using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Engine.Geometry.Objects;
-using Kerf.Geometry;
-using Kerf.Engine;
 
 namespace Kerf.Geometry;
 

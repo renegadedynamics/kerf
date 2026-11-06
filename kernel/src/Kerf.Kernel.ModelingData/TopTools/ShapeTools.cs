@@ -5,8 +5,6 @@
 
 using Kerf.Engine.Topology;
 
-using Kerf.Engine;
-
 namespace Kerf.Engine.Exchange.Brep;
 
 /// <summary>
