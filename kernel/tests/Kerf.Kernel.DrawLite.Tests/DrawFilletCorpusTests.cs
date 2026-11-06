@@ -187,10 +187,10 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
     internal static readonly Dictionary<string, string> KnownFailures = new(StringComparer.Ordinal)
     {
         ["blend/buildevol/J5"] = "reconstruction: shell not closed",
-        ["chamfer/dist_angle_sequence/A5"] = "reconstruction: shell not closed after a step; then faces not found by position",
-        ["chamfer/dist_dist_sequence/B9"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
-        ["chamfer/equal_dist_sequence/A5"] = "reconstruction: invalid faces after the sequential chamfers (OCCT's TODO expects 10 faulty shapes)",
-        ["chamfer/equal_dist_sequence/B9"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
+        ["chamfer/dist_angle_sequence/A5"] = "native invalid at step 15 too (decision 19304); the port then loses faces instead",
+        ["chamfer/dist_dist_sequence/B9"] = "native invalid at step 2 too (decision 19304); the port then loses faces, and a later step finds no edge",
+        ["chamfer/equal_dist_sequence/A5"] = "native invalid at step 15 too (decision 19304); the port then loses faces instead of OCCT's TODO's 10 faulty shapes",
+        ["chamfer/equal_dist_sequence/B9"] = "native invalid at step 2 too (decision 19304); the port then loses faces, and a later step finds no edge",
         ["blend/complex/G8"] = "reconstruction order: the third blend names an edge by explode index of the second result, another edge here; blend fails",
         ["bugs/modalg_7/bug27711_3"] = "reconstruction order: the second blend names edges by explode index of the first result, other edges here; blend fails",
         // OCCT's sample, not the port (decision 1310): its second weld names _model_28, an edge the first blend

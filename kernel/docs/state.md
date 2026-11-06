@@ -155,6 +155,8 @@ The three tables the plan names (decision 1388):
 
 **Unit 11C looked at what one-time initialisation costs on opening a workbook:** 2 to 5 of about 255 samples on the first pass's working thread, spread over dozens of small types. So nothing was made lazy, and this list is unchanged (decision 1693).
 
+**Unit 11G adds no static, thread static or lock:** `NewSurfaceModification` and the reconstruction's `_onNewSurface` belong to one fillet's builder (decision 19303).
+
 **Unit 11P's `DrawCaseProcess.Own` is Draw-lite's, not the library's:** set once in that process's `Main`, before anything else runs, and only read from then on. In the tests' process it stays `None`.
 
 ## Test and debug hooks: stay

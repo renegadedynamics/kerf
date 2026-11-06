@@ -195,5 +195,5 @@ I'd only do it **after** the port works and the corpus and Bento users have prod
 ## Evidence to keep collecting meanwhile
 
 - Profiles of build123d.NET's suite and of Bento's example workbook on OCCT.NET. Where the 4.4× actually goes. *Done in unit 9E: docs/performance.md.*
-- The fillet corpus's failures after 7N3 (849 cases), sorted into reconstruction gaps, ChFi3d port bugs and OCCT's own.
+- The fillet corpus's failures after 7N3 (849 cases), sorted into reconstruction gaps, ChFi3d port bugs and OCCT's own. *Done in unit 11G: docs/corpus-failures.md.*
 - Which copy-at-entry sites caused bugs, as opposed to the ones that only cost lines.

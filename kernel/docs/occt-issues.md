@@ -1421,7 +1421,7 @@ each (`// OCCT` at the line where it is code), unless the last column says other
 
 | Where | What | Effect | Triage |
 |---|---|---|---|
-| bugs/modalg_7/bug83 (`bsection` of two planar B-spline sheets from BUC60912_sec_slow.brep) | Not OCCT's: the port's section takes 0.20 s warm in Release where native takes 0.03 s (and 0.34 s on a cold start, the JIT) | The case's 0.1 s limit fails. A performance gap to profile (plan 2.7), not a result difference | leave |
+| bugs/modalg_7/bug83 (`bsection` of two planar B-spline sheets from BUC60912_sec_slow.brep) | Not OCCT's: a cold start, 0.41 s and 0.43 s. Warm the port takes about 6 ms and 60 ms, native about 16 ms and 55 ms, on a loaded machine (unit 11G, decision 19305; it was 0.20 s against 0.03 s at phase 7) | The case's 0.1 s limit fails, on the JIT, not a result difference | leave |
 
 ## Phase 7: unit 7D, helix (TKHelix)
 
