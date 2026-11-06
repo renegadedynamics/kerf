@@ -983,8 +983,7 @@ internal static class Geom2dConvert2D
                     else
                     {
                         CompCurveToBSplineCurve2D C = new(arrayOfConcatenated.Value(i));
-                        // OCCT reads the caller's tolerances, not the ones reordered for a closed wire (occt-issues.md)
-                        fusion = C.Add(curve1, arrayOfToler[j - 1]); // fusion de deux courbes adjacentes
+                        fusion = C.Add(curve1, local_tolerance[j - 1], true); // fusion de deux courbes adjacentes
 
                         if (!fusion)
                         {
@@ -1280,8 +1279,7 @@ internal static class Geom2dConvert2D
                     else
                     {
                         CompCurveToBSplineCurve2D C = new(arrayOfConcatenated.Value(i));
-                        // OCCT reads the caller's tolerances, not the ones reordered for a closed wire (occt-issues.md)
-                        fusion = C.Add(curve1, arrayOfToler[j - 1]); // fusion de deux courbes adjacentes
+                        fusion = C.Add(curve1, local_tolerance[j - 1], true); // fusion de deux courbes adjacentes
                         if (!fusion)
                         {
                             throw new ConstructionErrorException("Geom2dConvert Concatenation Error");

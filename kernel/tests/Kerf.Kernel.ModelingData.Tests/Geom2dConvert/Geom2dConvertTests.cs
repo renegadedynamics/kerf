@@ -331,12 +331,12 @@ public class Geom2dConvertTests
             NCollection_Array1<int>.From([2, 2]), 1);
 
     [Fact]
-    public void ConcatG1_ClosedWire_ReadsTheCallersTolerances_OCCT()
+    public void ConcatG1_ClosedWire_MergesWithTheReorderedTolerances()
     {
         // A closed wire of four segments: s0-s1 collinear (one G1 group), corners at s1-s2 and s2-s3, and a gap of
         // 1e-5 at the closure s3-s0, within ClosedTolerance. ConcatG1 reorders the curves to s2, s3, s0, s1 (the
-        // closure made G1) and its local tolerances with them, but merges with the caller's array: s3 and s0 are
-        // merged with the tolerance of the junction s1-s2 instead of ClosedTolerance (occt-issues.md).
+        // closure made G1) and its local tolerances with them. OCCT merged with the caller's array, so s3 and s0 got
+        // the tolerance of the junction s1-s2 and threw (decision 20902).
         BSplineCurve2D[] aSegments =
         [
             Segment(new Point2D(0, 0), new Point2D(1, 0)),
@@ -347,18 +347,41 @@ public class Geom2dConvertTests
 
         NCollection_Array1<BSplineCurve2D> aCurves = NCollection_Array1<BSplineCurve2D>.From(aSegments, 0);
         bool isClosed = true;
-        EngineAssert.ThrowsAny<ConstructionErrorException>(() => Geom2dConvert2D.ConcatG1(
-            aCurves, NCollection_Array1<double>.From([1e-7, 1e-12, 1e-7], 0), out _, ref isClosed, 1e-4));
-
-        // With the junction s1-s2 given the closure's tolerance, the closure merges
-        aCurves = NCollection_Array1<BSplineCurve2D>.From(aSegments, 0);
-        isClosed = true;
-        Geom2dConvert2D.ConcatG1(aCurves, NCollection_Array1<double>.From([1e-7, 1e-4, 1e-7], 0),
+        Geom2dConvert2D.ConcatG1(aCurves, NCollection_Array1<double>.From([1e-7, 1e-12, 1e-7], 0),
                                out NCollection_HArray1<BSplineCurve2D> aResult, ref isClosed, 1e-4);
         Assert.Equal(2, aResult.Length());
         Assert.Same(aSegments[2], aResult[0]);
         Assert.True(aResult[1].StartPoint.DistanceTo(new Point2D(2, 1)) < Tol);
         Assert.True(aResult[1].EndPoint.DistanceTo(new Point2D(2, 0)) < Tol);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Concat_of_two_arcs_making_a_loop_keeps_their_order(bool isC1)
+    {
+        // #1541: both ends of the first arc meet the second, and Add's default then prepends, which starts the result
+        // half a turn from where the first arc starts.
+        var aCircle = new CircleCurve2D(new Circle2D(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0));
+        NCollection_Array1<BSplineCurve2D> aCurves = new(0, 1);
+        aCurves[0] = Geom2dConvert2D.CurveToBSplineCurve(new TrimmedCurve2D(aCircle, 0.0, Math.PI));
+        aCurves[1] = Geom2dConvert2D.CurveToBSplineCurve(new TrimmedCurve2D(aCircle, Math.PI, 2 * Math.PI));
+        bool isClosed = false;
+        NCollection_HArray1<BSplineCurve2D> aResult;
+        if (isC1)
+        {
+            Geom2dConvert2D.ConcatC1(aCurves, NCollection_Array1<double>.From([1e-7], 0), out _, out aResult, ref isClosed, 1e-7);
+        }
+        else
+        {
+            Geom2dConvert2D.ConcatG1(aCurves, NCollection_Array1<double>.From([1e-7], 0), out aResult, ref isClosed, 1e-7);
+        }
+
+        Assert.Equal(1, aResult.Length());
+        BSplineCurve2D aLoop = aResult[0];
+        double aMid = 0.25 * (3 * aLoop.FirstParameter + aLoop.LastParameter);
+        Assert.True(aLoop.StartPoint.DistanceTo(new Point2D(1, 0)) < Tol);
+        Assert.True(aLoop.Value(aMid).Y > 0, "the first quarter of the loop is on the first arc");
     }
 
     [Fact]

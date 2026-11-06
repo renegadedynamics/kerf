@@ -1,9 +1,13 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Healing.Upgrade;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -89,6 +93,24 @@ public class ShapeUpgrade_UnifySameDomainTests
         var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, aMap);
         return aMap.All(s => s.TShape()!.IsFrozen);
+    }
+
+    [Fact]
+    public void A_box_cut_by_a_sphere_stays_valid_and_keeps_its_volume()
+    {
+        // #1541: the circle on the box's face is two arcs. Geom2dConvert's ConcatC1 prepended the second, so the merged
+        // pcurve started half a turn from the 3D circle: a vertex tolerance of the circle's diameter and a missing face.
+        var aSphere = new MakeSphere(new Point3D(-0.8941468682889828, -0.05608050987114277, 0.16128077950256148), 0.5).Shape();
+        Shape aCut = new Cut(new MakeBox(new Point3D(-0.5, -0.5, -0.5), 1, 1, 1).Shape(), aSphere).Shape();
+        var aUnifier = new UnifySameDomain(aCut, true, true, true);
+        aUnifier.Build();
+
+        Assert.True(new Analyzer(aUnifier.Shape()).IsValid());
+        Properties aBefore = new();
+        Properties anAfter = new();
+        MassPropertiesBuilder.VolumeProperties(aCut, aBefore);
+        MassPropertiesBuilder.VolumeProperties(aUnifier.Shape(), anAfter);
+        Assert.Equal(aBefore.Mass(), anAfter.Mass(), 1e-6);
     }
 
     [Fact]
