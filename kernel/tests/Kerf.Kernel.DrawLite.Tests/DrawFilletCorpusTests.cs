@@ -184,12 +184,6 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
         ["chamfer/equal_dist_sequence/B9"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
         ["blend/complex/G8"] = "reconstruction order: the third blend names an edge by explode index of the second result, another edge here; blend fails",
         ["bugs/modalg_7/bug27711_3"] = "reconstruction order: the second blend names edges by explode index of the first result, other edges here; blend fails",
-        ["draft/angle/A2"] = "reconstruction: depouille on the blended box fails (Impossible edge recomputation): the fillet result's edges differ from HBuilder's",
-        ["draft/angle/B5"] = "reconstruction: depouille on the blended box fails (Impossible edge recomputation)",
-        ["draft/angle/C3"] = "reconstruction: depouille on the blended box fails (Impossible edge recomputation)",
-        ["draft/angle/C4"] = "reconstruction: depouille on the blended box fails (Impossible edge recomputation)",
-        ["draft/angle/C5"] = "reconstruction: depouille on the blended box fails (Impossible edge recomputation)",
-        ["draft/angle/F1"] = "reconstruction: depouille on the blended fuse gives invalid faces; area 3926.6 for 4827.83",
         // OCCT's sample, not the port (decision 1310): its second weld names _model_28, an edge the first blend
         // replaced, and native OCCT fails the same way on the same Booleans; the sample then needs the viewer
         ["demo/samples/anc101"] = "OCCT's sample: blend of _model_28, an edge the first blend replaced (native fails too); viewer commands",

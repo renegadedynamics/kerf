@@ -130,7 +130,11 @@ internal sealed partial class BOPReconstruction : Reconstruction
 
     /// <inheritdoc/>
     public override NCollection_List<Shape> Merged(in Shape s, Containment toBuild) =>
-        toBuild == In && _mergedIN.TryGetValue(s, out NCollection_List<Shape>? l) ? l : EmptyList;
+        toBuild != In ? EmptyList
+        : _mergedIN.TryGetValue(s, out NCollection_List<Shape>? l) ? l
+        // a face: its pieces, as TopOpeBRepBuild's GMergeFaces records them. SetRegul reads this to code the fillet's edges
+        : s.Type == ShapeType.Face && _splitIN.TryGetValue(s, out l) ? l
+        : EmptyList;
 
     /// <inheritdoc/>
     public override NCollection_List<Shape> NewFaces(int i) =>
