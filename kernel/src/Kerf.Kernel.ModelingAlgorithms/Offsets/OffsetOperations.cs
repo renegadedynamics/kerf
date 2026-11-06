@@ -13,6 +13,9 @@ namespace Kerf.Offsets;
 /// <summary>How a 3D offset is built (OCCT's <c>BRepOffset_MakeOffset</c>).</summary>
 public sealed record OffsetOptions
 {
+    /// <summary>Check the result, and fail with <c>result.invalid</c>, carrying it, if it isn't valid: true by default.</summary>
+    public bool CheckResult { get; init; } = true;
+
     /// <summary>The defaults: skin mode, arc joins.</summary>
     public static OffsetOptions Default { get; } = new();
 
@@ -39,6 +42,9 @@ public sealed record OffsetOptions
 /// <summary>How a planar wire or face is offset in its plane (OCCT's <c>BRepOffsetAPI_MakeOffset</c>).</summary>
 public sealed record Offset2DOptions
 {
+    /// <summary>Check the result, and fail with <c>result.invalid</c>, carrying it, if it isn't valid: true by default.</summary>
+    public bool CheckResult { get; init; } = true;
+
     /// <summary>The defaults: arc joins, closed result.</summary>
     public static Offset2DOptions Default { get; } = new();
 
@@ -78,7 +84,7 @@ public static class OffsetOperations
                 offset.PerformByJoin(s, distance, options.Tolerance, options.Mode, options.Intersection, options.SelfIntersection,
                                      options.Join, options.RemoveInternalEdges, range);
                 return MakerOutcome.Done(offset, [s], () => StatusDiagnostics.ToDiagnostic(offset.MakeOffset().Error()));
-            }, Failure, progress, cancellationToken);
+            }, Failure, progress, cancellationToken, options.CheckResult ? "The offset's result" : null);
         }
 
         /// <summary>A face or shell made a solid of <paramref name="thickness"/> (along its normal when positive).</summary>
@@ -104,7 +110,7 @@ public static class OffsetOperations
                     return new EngineOutcome(false, static () => default, Failure: StatusDiagnostics.ToDiagnostic(offset.Error()));
                 }
                 return new EngineOutcome(true, offset.Shape, MakerOutcome.HistoryOf(new OffsetHistory(offset), [s]));
-            }, Failure, progress, cancellationToken);
+            }, Failure, progress, cancellationToken, options.CheckResult ? "The thickened solid" : null);
         }
 
         /// <summary>
@@ -129,7 +135,7 @@ public static class OffsetOperations
                 thick.MakeThickSolidByJoin(s, faces, thickness, options.Tolerance, options.Mode, options.Intersection,
                                            options.SelfIntersection, options.Join, options.RemoveInternalEdges, range);
                 return MakerOutcome.Done(thick, [s], () => StatusDiagnostics.ToDiagnostic(thick.MakeOffset().Error()));
-            }, Failure, progress, cancellationToken);
+            }, Failure, progress, cancellationToken, options.CheckResult ? "The thick solid" : null);
         }
 
         /// <summary>A planar wire or face offset by <paramref name="distance"/> in its plane (outwards when positive).</summary>
@@ -150,7 +156,7 @@ public static class OffsetOperations
                 offset.Perform(distance);
                 return MakerOutcome.Done(offset, [s], () => Diagnostic.Error(new DiagnosticCode("offset.not-planar"),
                     "The offset in the plane couldn't be built: the shape may not be planar, or the distance too large."));
-            }, Failure);
+            }, Failure, checkedAs: options.CheckResult ? "The offset's result" : null);
         }
     }
 
@@ -176,7 +182,7 @@ public static class OffsetOperations
                 offset.Perform(distance);
                 return MakerOutcome.Done(offset, [w], () => Diagnostic.Error(new DiagnosticCode("offset.not-planar"),
                     "The offset in the plane couldn't be built: the distance may be too large."));
-            }, Failure);
+            }, Failure, checkedAs: options.CheckResult ? "The offset's result" : null);
         }
     }
 
@@ -208,7 +214,7 @@ public static class OffsetOperations
                 thick.MakeThickSolidByJoin(s, faces, thickness, options.Tolerance, options.Mode, options.Intersection,
                                            options.SelfIntersection, options.Join, options.RemoveInternalEdges, range);
                 return MakerOutcome.Done(thick, [s], () => StatusDiagnostics.ToDiagnostic(thick.MakeOffset().Error()));
-            }, Failure, progress, cancellationToken);
+            }, Failure, progress, cancellationToken, options.CheckResult ? "The hollow solid" : null);
         }
     }
 

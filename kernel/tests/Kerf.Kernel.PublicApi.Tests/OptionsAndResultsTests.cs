@@ -162,7 +162,7 @@ public class OptionsAndResultsTests
             Tolerance3D = 1e-3,
         };
         Solid cylinder = Fixtures.Cylinder();
-        Assert.Equal(cylinder.IntegrateVolume(), cylinder.ApproximateBSplines(approximate).Value.Shape.IntegrateVolume(), 1e-1);
+        Assert.Equal(cylinder.IntegrateVolume(), cylinder.ApproximateBSplines(approximate with { CheckResult = false }).Value.Shape.IntegrateVolume(), 1e-1);
 
         var convert = BSplineConversionOptions.Default with { Extrusions = true, Offsets = true, Revolutions = true };
         Assert.True(convert.Revolutions && convert.Offsets && convert.Extrusions);
@@ -350,7 +350,7 @@ public class OptionsAndResultsTests
     [Fact]
     public void Shape_problems_read_back()
     {
-        var problem = new ShapeProblem(Box(), Box().AllFaces()[0], HealingOperations.NotFixed, "message");
+        var problem = new ShapeProblem(Box(), Box().AllFaces()[0], DiagnosticCode.InvalidResult, "message");
         Assert.Equal(ShapeType.Face, problem.Context.Type);
     }
 

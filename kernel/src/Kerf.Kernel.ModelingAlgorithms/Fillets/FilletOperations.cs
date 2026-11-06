@@ -54,6 +54,9 @@ public sealed record FilletTolerances
 /// <summary>How a 3D fillet is built (OCCT's <c>BRepFilletAPI_MakeFillet</c>).</summary>
 public sealed record FilletOptions
 {
+    /// <summary>Check the result, and fail with <c>result.invalid</c>, carrying it, if it isn't valid: true by default.</summary>
+    public bool CheckResult { get; init; } = true;
+
     /// <summary>The defaults: rational fillets, C1 inside.</summary>
     public static FilletOptions Default { get; } = new();
 
@@ -86,6 +89,9 @@ public enum ChamferMode
 /// <summary>How a 3D chamfer is built (OCCT's <c>BRepFilletAPI_MakeChamfer</c>).</summary>
 public sealed record ChamferOptions
 {
+    /// <summary>Check the result, and fail with <c>result.invalid</c>, carrying it, if it isn't valid: true by default.</summary>
+    public bool CheckResult { get; init; } = true;
+
     /// <summary>The defaults: classic chamfers.</summary>
     public static ChamferOptions Default { get; } = new();
 
@@ -157,7 +163,7 @@ public static class FilletOperations
                 }
                 ImmutableArray<Diagnostic> faulty = Faulty(fillet, specs.Length);
                 return outcome with { Failure = faulty[0], MoreFailures = faulty[1..] };
-            }, Failure, progress, cancellationToken);
+            }, Failure, progress, cancellationToken, options.CheckResult ? "The fillet's result" : null);
         }
 
         /// <summary>The shape with <paramref name="edges"/> chamfered by <paramref name="distance"/> on both faces.</summary>
@@ -223,7 +229,7 @@ public static class FilletOperations
                 }
                 return MakerOutcome.Of(chamfer, range, [solid],
                                        () => Diagnostic.Error(Failed, $"The chamfer couldn't be built on {specs.Length} edge(s).").WithShapes(specs.Select(s => (Shape)s.Edge)));
-            }, Failure, progress, cancellationToken);
+            }, Failure, progress, cancellationToken, options.CheckResult ? "The chamfer's result" : null);
         }
     }
 
@@ -231,18 +237,18 @@ public static class FilletOperations
     {
         /// <summary>The planar face with its corners at <paramref name="vertices"/> rounded to <paramref name="radius"/>
         /// (OCCT's <c>BRepFilletAPI_MakeFillet2d</c>); its history maps each vertex to its new edge.</summary>
-        public Result<Built<Face>> Fillet2D(IEnumerable<Vertex> vertices, double radius)
+        public Result<Built<Face>> Fillet2D(IEnumerable<Vertex> vertices, double radius, bool checkResult = true)
         {
             ArgumentNullException.ThrowIfNull(vertices);
             MakerOutcome.Positive(radius, nameof(radius));
             Vertex[] corners = Corners(face, vertices);
             Face f = face;
-            return Planar(f, corners, (maker, v) => maker.AddFillet(v, radius));
+            return Planar(f, corners, (maker, v) => maker.AddFillet(v, radius), checkResult);
         }
 
         /// <summary>The planar face with its corners at <paramref name="vertices"/> chamfered by <paramref name="distance"/>
         /// along both edges, or <paramref name="distance2"/> along the second.</summary>
-        public Result<Built<Face>> Chamfer2D(IEnumerable<Vertex> vertices, double distance, double? distance2 = null)
+        public Result<Built<Face>> Chamfer2D(IEnumerable<Vertex> vertices, double distance, double? distance2 = null, bool checkResult = true)
         {
             ArgumentNullException.ThrowIfNull(vertices);
             MakerOutcome.Positive(distance, nameof(distance));
@@ -256,7 +262,7 @@ public static class FilletOperations
             {
                 (Edge e1, Edge e2) = pairs[next++];
                 return maker.AddChamfer(e1, e2, distance, second);
-            });
+            }, checkResult);
         }
 
         /// <summary>
@@ -265,7 +271,7 @@ public static class FilletOperations
         /// </summary>
         /// <exception cref="ArgumentException">The face is null, or a pair's edges don't meet at a vertex.</exception>
         /// <exception cref="ArgumentOutOfRangeException">A distance isn't more than zero.</exception>
-        public Result<Built<Face>> Chamfer2D(IEnumerable<(Edge First, Edge Second)> corners, double distance, double? distance2 = null)
+        public Result<Built<Face>> Chamfer2D(IEnumerable<(Edge First, Edge Second)> corners, double distance, double? distance2 = null, bool checkResult = true)
         {
             ArgumentNullException.ThrowIfNull(corners);
             MakerOutcome.Positive(distance, nameof(distance));
@@ -280,11 +286,11 @@ public static class FilletOperations
             {
                 (Edge e1, Edge e2) = pairs[next++];
                 return maker.AddChamfer(e1, e2, distance, second);
-            });
+            }, checkResult);
         }
     }
 
-    private static Result<Built<Face>> Planar(Face face, Vertex[] corners, Func<MakeFillet2D, Vertex, Edge> add) =>
+    private static Result<Built<Face>> Planar(Face face, Vertex[] corners, Func<MakeFillet2D, Vertex, Edge> add, bool checkResult) =>
         EngineOperation.Run<Face>(range =>
         {
             var maker = new MakeFillet2D(face);
@@ -325,7 +331,7 @@ public static class FilletOperations
                 }
             }
             return new EngineOutcome(true, maker.Shape, history);
-        }, Failure);
+        }, Failure, checkedAs: checkResult ? "The 2D fillet or chamfer's result" : null);
 
     // ChFi2d_ConstructionError as a diagnostic, with the corner concerned
     private static Diagnostic Planar(ConstructionError status, ReadOnlySpan<Shape> corner)

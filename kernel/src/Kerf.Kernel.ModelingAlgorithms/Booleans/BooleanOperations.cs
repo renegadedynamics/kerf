@@ -35,6 +35,10 @@ public sealed record BooleanOptions
     /// into the operation's.</summary>
     public bool Simplify { get; init; } = true;
 
+    /// <summary>Check the result, and fail with <c>result.invalid</c>, carrying it, if it isn't valid: true by default. The check
+    /// costs about 15% of a small Boolean; a caller that checks a later step can leave it out.</summary>
+    public bool CheckResult { get; init; } = true;
+
     /// <summary>For <see cref="BooleanOperations.Section"/>: approximate the section curves by B-splines.</summary>
     public bool ApproximateSection { get; init; }
 
@@ -175,7 +179,7 @@ public static class BooleanOperations
                 operation.SimplifyResult();
             }
             return new EngineOutcome(done, operation.Shape, done ? operation.History() : null, operation.GetReport());
-        }, Failure, progress, cancellationToken);
+        }, Failure, progress, cancellationToken, options.CheckResult ? "The Boolean's result" : null);
 
         if (result.TryGetValue(out Built<Shape>? built) && !built.Shape.Children.Any())
         {

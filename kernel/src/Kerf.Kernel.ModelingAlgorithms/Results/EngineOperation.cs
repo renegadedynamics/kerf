@@ -30,8 +30,16 @@ internal readonly record struct EngineOutcome(bool IsDone, Func<Shape> Shape, Hi
 /// </remarks>
 internal static class EngineOperation
 {
+    /// <param name="run">Builds and performs the algorithm, and says what it left.</param>
+    /// <param name="failure">The error for an algorithm that failed without saying why.</param>
+    /// <param name="progress">The progress to report.</param>
+    /// <param name="cancellationToken">Stops the operation.</param>
+    /// <param name="checkedAs">What to call the result if it's checked (<c>The fillet</c>), which a failure carrying it then
+    /// says isn't valid (decision 1742); null leaves it unchecked: an operation that can't make an invalid shape, or a caller
+    /// who asked not to.</param>
     public static Result<Built<TShape>> Run<TShape>(Func<ProgressRange, EngineOutcome> run, Diagnostic failure,
-                                                    IProgress<double>? progress = null, CancellationToken cancellationToken = default)
+                                                    IProgress<double>? progress = null, CancellationToken cancellationToken = default,
+                                                    string? checkedAs = null)
         where TShape : struct, IShape<TShape>
     {
         ArgumentNullException.ThrowIfNull(run);
@@ -86,6 +94,9 @@ internal static class EngineOperation
         ImmutableArray<Diagnostic> warnings = outcome.Report is { } done
             ? [.. AlertDiagnostics.ToDiagnostics(done).Where(d => !d.IsError)]
             : [];
-        return Result<Built<TShape>>.Success(new Built<TShape>(typed, ShapeHistory.FromEngine(outcome.History)), warnings);
+        var built = new Built<TShape>(typed, ShapeHistory.FromEngine(outcome.History));
+        return checkedAs is not null && Validity.Problem(shape, checkedAs) is { } problem
+            ? Result<Built<TShape>>.Invalid(built, problem, warnings)
+            : Result<Built<TShape>>.Success(built, warnings);
     }
 }

@@ -42,15 +42,16 @@ public class HealingTests
     }
 
     [Fact]
-    public void A_shape_left_invalid_by_fixing_carries_a_warning()
+    public void A_shape_left_invalid_by_fixing_fails_and_is_carried()
     {
         Shell open = Shell.Create(Fixtures.Box().AllFaces().Take(5));
         Result<Built<Shape>> fixedSolid = Solid.Create([open]).Fix(new FixOptions { FixSolids = false, FixShells = false });
-        Assert.True(fixedSolid.IsSuccess);
-        Diagnostic warning = Assert.Single(fixedSolid.Diagnostics, d => d.Code == HealingOperations.NotFixed);
-        Assert.False(warning.IsError);
-        Assert.NotEmpty(warning.Shapes);
-        Assert.DoesNotContain(Fixtures.Box().Fix().Diagnostics, d => d.Code == HealingOperations.NotFixed);
+        Assert.True(fixedSolid.IsFailure);
+        Assert.Equal(DiagnosticCode.InvalidResult, fixedSolid.Error!.Code);
+        Assert.NotEmpty(fixedSolid.Error.Shapes);
+        Assert.True(fixedSolid.TryGetInvalid(out Built<Shape>? left));
+        Assert.False(left.Shape.Validate().IsValid);
+        Assert.True(Fixtures.Box().Fix().IsSuccess);
     }
 
     [Fact]
