@@ -30,6 +30,7 @@ internal class BrepTopolTool : TopolTool
     private FClass2d? _fClass2d;
     private EdgeCurve2DAdaptor? _curve;
     private readonly NCollection_List<EdgeCurve2DAdaptor> _curves = new();
+    private bool _areCurvesLoaded;
     private NCollection_List<EdgeCurve2DAdaptor>.Iterator _cIterator = new();
     private double _u0;
     private double _v0;
@@ -77,14 +78,21 @@ internal class BrepTopolTool : TopolTool
         _nbSamplesU = -1;
         _s = s;
         _curves.Clear();
+        _areCurvesLoaded = false;
+        _cIterator = new NCollection_List<EdgeCurve2DAdaptor>.Iterator();
+    }
+
+    // Kerf: when first asked for, not in Initialize. Many tools only give a number of samples or classify a point
+    // (ChFi3d.IsTangentFaces makes two for each edge), and an adaptor for each edge was most of their cost (decision 19707)
+    private void LoadCurves()
+    {
+        _areCurvesLoaded = true;
         var ex = new Explorer(_face, global::Kerf.Topology.ShapeType.Edge);
         for (; ex.More(); ex.Next())
         {
             var curve = new EdgeCurve2DAdaptor(ShapeCasts.Edge(ex.Current()), _face);
             _curves.Append(curve);
         }
-
-        _cIterator = new NCollection_List<EdgeCurve2DAdaptor>.Iterator();
     }
 
     /// <summary>Loads the restriction <paramref name="c"/> (a BRepAdaptor_Curve2d) for the vertex iteration.</summary>
@@ -99,7 +107,14 @@ internal class BrepTopolTool : TopolTool
     }
 
     /// <summary>Starts the iteration over the restrictions.</summary>
-    public override void Init() => _cIterator.Initialize(_curves);
+    public override void Init()
+    {
+        if (!_areCurvesLoaded)
+        {
+            LoadCurves();
+        }
+        _cIterator.Initialize(_curves);
+    }
 
     public override bool More() => _cIterator.More();
 
