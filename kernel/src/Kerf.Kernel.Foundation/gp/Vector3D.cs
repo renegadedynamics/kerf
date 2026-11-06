@@ -316,11 +316,11 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
-    /// <summary>The reflection in a plane normal to the main direction of <paramref name="axis"/>; a vector has no position, so the frame's location doesn't matter.</summary>
-    public readonly Vector3D Mirrored(in Frame3D axis)
+    /// <summary>The reflection in a plane normal to the main direction of <paramref name="frame"/>; a vector has no position, so the frame's location doesn't matter.</summary>
+    public readonly Vector3D Mirrored(in Frame3D frame)
     {
         Xyz coord = _coord;
-        Xyz zDir = axis.Direction.XYZ();
+        Xyz zDir = frame.Direction.XYZ();
         Xyz mirXYZ = zDir.Crossed(coord);
 
         if (mirXYZ.Modulus() <= Constants.Resolution())

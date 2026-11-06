@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -157,7 +158,7 @@ internal struct Matrix2x2 : IEquatable<Matrix2x2>
         double newMat10 = -_m10;
         double newMat11 = _m00;
         double det = newMat00 * newMat11 - newMat01 * newMat10;
-        Standard_ConstructionError_Raise_if(Math.Abs(det) <= Constants.Resolution(), "gp_Mat2d::Invert() - matrix has zero determinant");
+        Refusal.StateIf(Math.Abs(det) <= Constants.Resolution(), FailureKind.ConstructionError, "gp_Mat2d::Invert() - matrix has zero determinant");
         det = 1.0 / det;
         _m00 = newMat00 * det;
         _m10 = newMat10 * det;

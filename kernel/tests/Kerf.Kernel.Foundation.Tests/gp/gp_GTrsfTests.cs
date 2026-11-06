@@ -43,4 +43,18 @@ public class gp_GTrsfTest
         Assert.Equal(-0.5, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aResult.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
+
+    [Fact]
+    public void GeneralTransform2D_Inverted_OfASingularTransform_IsARefusalAUserCanCatch()
+    {
+        GeneralTransform2D aFlat = new GeneralTransform2D().WithAffinity(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 0.0);
+        Assert.Throws<InvalidOperationException>(() => aFlat.Inverted());
+    }
+
+    [Fact]
+    public void Placement_ToString_NamesPlacement()
+    {
+        Assert.Equal("Placement(Identity)", new Kerf.Topology.Placement().ToString());
+        Assert.StartsWith("Placement(", new Kerf.Topology.Placement(Transform3D.Translation(new Vector3D(1, 2, 3))).ToString(), StringComparison.Ordinal);
+    }
 }

@@ -2487,14 +2487,15 @@ internal class ProjectCurveOnSurface : Transient
         NCollection_Array1<Point3D> aPoints = new();
         NCollection_Array1<double> aParams = new();
         int aNb = GenerateKnotSpanPoints(aBSpline, c3D, first, last, aPoints, aParams);
+        double aMargin = FollowMargin(aPoints, aNb);
         for (int i = 1; i <= aNb; i++)
         {
             Point2D aUV = c2D.Value(aParams[i]);
             double aGap = aSurface.Value(aUV.X, aUV.Y).DistanceTo(aPoints[i]);
-            if (aGap > THE_FOLLOW_MARGIN)
+            if (aGap > aMargin)
             {
                 _surf.ValueOfUV(aPoints[i], global::Kerf.Engine.Foundation.Precision.Confusion());
-                if (aGap > _surf.Gap() + THE_FOLLOW_MARGIN)
+                if (aGap > _surf.Gap() + aMargin)
                 {
                     return false;
                 }
@@ -2503,8 +2504,28 @@ internal class ProjectCurveOnSurface : Transient
         return true;
     }
 
-    // How far, in model units, a pcurve from the standard projector may stray beyond the curve's own distance from the surface.
-    private const double THE_FOLLOW_MARGIN = 1.0e-2;
+    // How far a pcurve from the standard projector may stray beyond the curve's own distance from the surface: a fixed share
+    // of the size of the curve's samples, so it means the same on a very large model as a small one (decision 20212). The
+    // floor keeps it above the projector's own precision on a short curve.
+    private static double FollowMargin(NCollection_Array1<Point3D> points, int count)
+    {
+        const double theShareOfSize = 1.0e-4;
+        double xMin = double.PositiveInfinity, yMin = double.PositiveInfinity, zMin = double.PositiveInfinity;
+        double xMax = double.NegativeInfinity, yMax = double.NegativeInfinity, zMax = double.NegativeInfinity;
+        for (int i = 1; i <= count; i++)
+        {
+            Point3D p = points[i];
+            xMin = Math.Min(xMin, p.X);
+            xMax = Math.Max(xMax, p.X);
+            yMin = Math.Min(yMin, p.Y);
+            yMax = Math.Max(yMax, p.Y);
+            zMin = Math.Min(zMin, p.Z);
+            zMax = Math.Max(zMax, p.Z);
+        }
+
+        double aSize = Math.Sqrt((xMax - xMin) * (xMax - xMin) + (yMax - yMin) * (yMax - yMin) + (zMax - zMin) * (zMax - zMin));
+        return Math.Max(theShareOfSize * aSize, 10.0 * global::Kerf.Engine.Foundation.Precision.Confusion());
+    }
 
     // The discretization points of a B-spline with the same number on each knot span in [first, last].
     private static int GenerateKnotSpanPoints(BSplineCurve3D bSpline, Curve3D curve, double first, double last,
