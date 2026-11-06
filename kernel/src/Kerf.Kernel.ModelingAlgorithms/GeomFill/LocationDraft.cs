@@ -381,7 +381,7 @@ internal class LocationDraft : SurfaceLocationLaw
 
                 // derivee de la fonction par rapport a Param
                 math_Vector dedt = new math_Vector(1, 3, 0);
-                e.DerivT(_trimmed!, param, r[1], dn, _angle, dedt); // dE/dt => DEDT
+                e.DerivT(_trimmed!, param, r[1], dn, db, _angle, dedt); // dE/dt => DEDT
 
                 math_Vector dsdt = new math_Vector(1, 3, 0);
 
@@ -480,7 +480,7 @@ internal class LocationDraft : SurfaceLocationLaw
 
                 // premiere derivee de la fonction
                 math_Vector dedt = new math_Vector(1, 3, 0);
-                e.DerivT(_trimmed!, param, r[1], dn, _angle, dedt); // dE/dt => DEDT
+                e.DerivT(_trimmed!, param, r[1], dn, db, _angle, dedt); // dE/dt => DEDT
 
                 math_Vector dsdt = new math_Vector(1, 3, 0);
 
@@ -504,10 +504,10 @@ internal class LocationDraft : SurfaceLocationLaw
 
                 math_Vector d2EDT2 = new math_Vector(1, 3, 0);
 
-                e.Deriv2T(_trimmed!, param, r[1], d2N, _angle, d2EDT2); // d2E/dt2
+                e.Deriv2T(_trimmed!, param, r[1], d2N, d2B, _angle, d2EDT2); // d2E/dt2
 
                 Matrix d2EDTDX = new Matrix(1, 3, 1, 3, 0);
-                e.DerivTX(dn, _angle, d2EDTDX); // d2E/dtdx
+                e.DerivTX(dn, db, _angle, d2EDTDX); // d2E/dtdx
 
                 math_Vector d2SDT2 = new math_Vector(1, 3, 0); // d2s/dt2
                 Matrix t = new Matrix(1, 3, 1, 3, 0);

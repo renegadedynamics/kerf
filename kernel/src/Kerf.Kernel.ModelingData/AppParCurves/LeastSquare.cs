@@ -375,10 +375,9 @@ internal class LeastSquare<MultiLine, ToolLine>
             }
         }
 
-        // OCCT: the last term tests FirstConstraint where LastConstraint is meant, so a curvature constraint at the
-        // first point also copies the last point into the last pole, even when the last point is unconstrained
+        // OCCT 8.0.1 tests the first constraint here for curvature (from upstream 53706f78a8; decision 1822)
         if (_lastConstraint == PassPoint || _lastConstraint == TangencyPoint
-            || _firstConstraint == CurvaturePoint)
+            || _lastConstraint == CurvaturePoint)
         {
             i2 = 1;
             for (i = 1; i <= _nbP; i++)

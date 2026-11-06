@@ -52,6 +52,28 @@ public class BlendFuncNativeTests
         return aCases;
     }
 
+    // Decision 1815: native's second derivatives of the quasi-angular conversion are wrong. A section2 line has, per pole,
+    // the point, its first and second derivatives, then the weight and its two: only the second ones may differ.
+    private static bool IsSecondDerivativeFixed(string theNative, string thePort)
+    {
+        string[] aN = theNative.Split(' '), aP = thePort.Split(' ');
+        if (aN[0] != "section2" || aN.Length != aP.Length)
+        {
+            return false;
+        }
+
+        for (int i = 2; i < aN.Length; i++)
+        {
+            int aField = (i - 2) % 12;
+            if (aN[i] != aP[i] && aField is not (6 or 7 or 8 or 11))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private static bool IsSpine(string theKey) => theKey.Contains("spine", StringComparison.Ordinal);
 
     // The walking's cases (unit 7K, BRepBlendNativeTests).
@@ -77,7 +99,7 @@ public class BlendFuncNativeTests
             {
                 string aN = i < aNativeLines.Count ? aNativeLines[i] : "<none>";
                 string aP = i < aPortLines.Count ? aPortLines[i] : "<none>";
-                if (aN != aP)
+                if (aN != aP && !IsSecondDerivativeFixed(aN, aP))
                 {
                     aDiffs.Add($"{aKey}, line {i + 1}:\n native {aN}\n port   {aP}");
                     break;

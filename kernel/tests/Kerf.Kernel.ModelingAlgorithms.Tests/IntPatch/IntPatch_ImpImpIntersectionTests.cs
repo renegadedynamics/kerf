@@ -28,6 +28,23 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 /// </remarks>
 public class IntPatch_ImpImpIntersectionTests
 {
+    // Decision 1814: cos(U2 - FI2) = B cos(U1 - FI1) + C has solutions only where the right side is within [-1, 1]. With
+    // B = -0.3 and C = -0.9 that's one interval, which OCCT 8.0.1's test on -mB - 1 lost, reporting no solutions.
+    [Fact]
+    public void BoundariesComputing_NegativeB_FindsTheRange()
+    {
+        Cylinder3D aCyl1 = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1);
+        Cylinder3D aCyl2 = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 2);
+        ImpImpIntersection.ComputationMethods.StCoeffsValue aCoeffs = new(aCyl1, aCyl2) { _mB = -0.3, _mC = -0.9, _mFI1 = 0.0 };
+        Kerf.Engine.Geometry.Bounds.BoundRange[] aRange = [new(), new()];
+        Assert.True(ImpImpIntersection.WorkWithBoundaries.BoundariesComputing(aCoeffs, 2 * Math.PI, aRange));
+        double aFirst = 0, aLast = 0;
+        Assert.True(aRange[0].GetBounds(ref aFirst, ref aLast));
+        Assert.Equal(Math.Acos(1.0 / 3.0), aFirst, 1e-12);
+        Assert.Equal(2 * Math.PI - Math.Acos(1.0 / 3.0), aLast, 1e-12);
+        Assert.Equal(1.0, Math.Abs(-0.3 * Math.Cos(aFirst) - 0.9), 1e-12);
+    }
+
     private const double Tol = 1.0e-7;
 
     private static CoordinateSystem Ax(double x, double y, double z, double dx, double dy, double dz) =>

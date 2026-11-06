@@ -530,9 +530,9 @@ internal sealed class QuasiAngularConvertor
         dVw[7] = 6 * beta5 * betaprim * c2 + 2 * beta6 * bpr * c;
         d2Vw.Init(0);
         d2Vw[3] = 2 * ((betaprim2 + beta * betasecn) * (2 * b + 1) + 8 * beta * betaprim * bpr + bsc * beta2);
-        // OCCT: "(b + 11)" where the derivative of beta4 * (2c + b²) needs (b + 1) (occt-issues.md).
+        // OCCT 8.0.1 has "(b + 11)" where the derivative of beta4 * (2c + b²) needs (b + 1) (decision 1815)
         d2Vw[5] = 4 * (b2 + 2 * c) * (3 * beta2 * betaprim2 + beta3 * betasecn)
-                  + 16 * beta3 * betaprim * bpr * (b + 11) + 2 * beta4 * (bsc * (b + 1) + bpr2);
+                  + 16 * beta3 * betaprim * bpr * (b + 1) + 2 * beta4 * (bsc * (b + 1) + bpr2);
         d2Vw[7] = 6 * c2 * (5 * beta4 * betaprim2 + beta5 * betasecn) + 24 * beta5 * betaprim * bpr * c
                   + 2 * beta6 * (bsc * c + bpr2);
 

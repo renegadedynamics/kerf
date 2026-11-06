@@ -259,6 +259,15 @@ public static class HealingOperations
                 Shape approximated = Customize.BSplineRestriction(input, options.Tolerance3D, options.Tolerance2D, options.MaxDegree,
                                                                   options.MaxSegments, options.Continuity3D, options.Continuity2D,
                                                                   options.PreferDegree, options.Polynomial, new RestrictionParameters());
+                if (!approximated.IsNull)
+                {
+                    // The surfaces and curves have moved by up to the tolerance, while OCCT 8.0.1's edges keep the tolerance
+                    // they had, and claim to be on their faces: native's result is invalid too (decision 1817)
+                    var reshaper = new ReShape();
+                    global::Kerf.Engine.Construction.Library.BrepLibrary.SameParameter(approximated, reshaper, 1.0e-5, true);
+                    approximated = reshaper.Apply(approximated);
+                }
+
                 return new EngineOutcome(!approximated.IsNull, () => approximated);
             }, Diagnostic.Error(ConversionFailed, "The shape's B-splines couldn't be approximated."), checkedAs: options.CheckResult ? "The approximated shape" : null);
         }

@@ -314,6 +314,11 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
     private void Run(Case theCase, bool theRerun = false)
     {
         myCases++;
+        // Native's GeomFill_GuideTrihedronAC::D2 is wrong (OCCT #1681, decision 1776), so a sweep along a guide can differ
+        // from what's recorded. Its results are read in the same order to keep the replay in step, and not compared where
+        // they differ; GeomFill_SweepNativeTests and BRepOffsetAPI's unit tests hold what a guide should give.
+        myIsGuided = theCase.Mode == Mode.Auxiliary;
+        myGuidedDiffers = false;
         // the inputs: spine, auxiliary shape, profiles
         List<Shape> anInputs = [theCase.Spine, theCase.Aux.IsNull ? theCase.Spine : theCase.Aux];
         anInputs.AddRange(theCase.Sections.Select(s => s.Profile));
@@ -467,9 +472,17 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             return;
         }
         myBuilt++;
-        if (BitConverter.DoubleToInt64Bits(aN.ErrorOnSurface()) != BitConverter.DoubleToInt64Bits(aP.ErrorOnSurface()))
+        double aNErrorOnSurface = aN.ErrorOnSurface();
+        if (BitConverter.DoubleToInt64Bits(aNErrorOnSurface) != BitConverter.DoubleToInt64Bits(aP.ErrorOnSurface()))
         {
-            myDifferences.Add($"{aWhat}: ErrorOnSurface native {aN.ErrorOnSurface():R}, port {aP.ErrorOnSurface():R}");
+            if (myIsGuided)
+            {
+                myGuidedDiffers = true;
+            }
+            else
+            {
+                myDifferences.Add($"{aWhat}: ErrorOnSurface native {aNErrorOnSurface:R}, port {aP.ErrorOnSurface():R}");
+            }
         }
         if (aNSolid != aPSolid)
         {
@@ -525,7 +538,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             myHistory++;
             myHistoryOrder++;
         }
-        else
+        else if (!myGuidedDiffers)
         {
             int aFirst = Enumerable.Range(0, Math.Min(aNH.Count, aPH.Count)).FirstOrDefault(i => aNH[i] != aPH[i]);
             myDifferences.Add($"{aWhat}: Generated differ, first at {aFirst}: native {aNH.ElementAtOrDefault(aFirst)}, port {aPH.ElementAtOrDefault(aFirst)}");
@@ -581,6 +594,8 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
     }
 
     // Compares the shapes: BRep text, then with the Free column masked, then canonically. Counts the results' outcomes.
+    private bool myIsGuided, myGuidedDiffers;
+
     private bool CompareShapes(string theWhat, N.TopoDS_Shape theN, in Shape theP, bool theCount)
     {
         if (theN.IsNull() || theP.IsNull)
@@ -594,6 +609,11 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         }
         string aNT = NativeText(theN), aPT = PortText(theP);
         BRepTextDiff aDiff = BRepTextComparison.Compare(aNT, aPT);
+        if (myIsGuided && !aDiff.IsIdentical && !aDiff.IsIdenticalMaskingFree)
+        {
+            myGuidedDiffers = true;
+            return true;
+        }
         if (aDiff.IsIdentical)
         {
             myIdentical += theCount ? 1 : 0;
@@ -718,7 +738,6 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
     [Fact]
     public void Auxiliary_spines_with_and_without_contact()
     {
-        global::Kerf.Engine.Construction.Surfaces.GuideTrihedronAC.ReplayNative.Value = true; // decision 1776
         var anOracle = new Oracle(output, 20261102);
         int aCase = 0;
         foreach (int i in Tape.Budget(30))
@@ -866,7 +885,6 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
     [Fact]
     public void Build123d_sweeps()
     {
-        global::Kerf.Engine.Construction.Surfaces.GuideTrihedronAC.ReplayNative.Value = true; // decision 1776
         // build123d.NET's sweep (SetMode(isFrenet), SetTransitionMode, Add(wire, false, rotate), Build, MakeSolid), its
         // sweep with a binormal (a fixed frame at the path's start: SetMode(gp_Ax2)), with an auxiliary wire
         // (SetMode(wire, true)), and its twisted extrusion (SetMode(auxSpine, false)).
