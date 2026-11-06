@@ -25,7 +25,9 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 
 | Kind | Where | What | How confirmed | Size |
 |---|---|---|---|---|
-| Silent wrong answer | #1567 | Fuse of a torus sector and a tangent sphere is empty, with no failure | Reproduced | M to L: section along a tangent circle |
+| Silent wrong answer | Upstream `71658f6c8f` | An offset surface on an indirect plane reduces to a plane on the wrong side, and evaluates through it | Tried: the fix works, and 13 oracle tests replay the wrong values | S, and those tests |
+| Silent wrong answer | Found by #1675 | Area and volume without a precision, which `Kerf.Modeling` uses, can be up to 3.7% off on swept and B-spline faces: bug5805_21 gives 253.49 where a mesh gives 244.17. The precise path now gives 244.195 | Reproduced | S to change the call; **for the owner**: precise is slower |
+| Silent wrong answer | #1567 | Fuse of a torus sector and a tangent sphere is empty, and Cut removes nothing, with no failure. The torus/sphere intersection gives five curves of tolerance up to 0.93 where the answer is one tangent circle on the boundary | Reproduced | M to L: an analytic torus/sphere tangent case, or rejecting such curves |
 | Silent wrong answer | occt-issues.md 758 | `ApproxInt` caches return without writing on a hit; upstream `71658f6c8f` restores state | Read; upstream fix | S |
 | Silent wrong answer | occt-issues.md 1082, 1081 | `Law_BSpline.Segment` and `IncreaseMultiplicity` give a wrong law: pinned by tests, upstream `71658f6c8f` fixes them | Read; upstream fix | S |
 | Silent wrong answer | occt-issues.md 744 | Cylinder/cylinder range for negative B reads the wrong bound (`mB <= -mB - 1`). Tried against #1633: not its cause | Read | S |
@@ -34,15 +36,22 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 | Silent wrong answer | Upstream `53706f78a8` | Final endpoint curvature in least squares; closed polygon self-intersections; rational section weights in `GeomFill_Profiler` | Upstream fix, not checked here | M |
 | Silent wrong answer | Upstream `8f817f5da5` | Curve-on-surface deviation, narrow extrema, face self-intersection within trimmed domains | Upstream fix, not checked here | L: 346 files |
 | Invalid result | #1711 | `FuseEdges` can leave an edge range outside its curve | Read | S to M |
-| Failure on an ordinary shape | #1630 | A pipe of a circle along a cubic: no crash, but no pipe | Reproduced | M |
+| Failure on an ordinary shape | #1630 | A pipe of a circle along a planar cubic: no crash, but no pipe, with the default corrected Frenet trihedron, also through `Sweeps.Sweep`. Frenet and discrete both work on it, area 217.81. Why the sweep's approximation fails is not found | Reproduced | M; **for the owner** if the fix is to fall back on another trihedron |
 | Failure on an ordinary shape | #1177, #172 | A fillet that should reach the opposite edge fails; upstream `f713b1305f` and `cbca11e975` do it | Upstream fix | L: 27 files. **For the owner** |
-| Failure on an ordinary shape | corpus: offset/wire_* | 60 BAD: the medial axis gives up on wires, many with circles | Corpus | L. See below |
+| Failure on an ordinary shape | corpus: offset/wire_* | 77 BAD: the medial axis gives up on wires, many with circles | Corpus | L. See below |
 | Unintuitive API | #1355 | `WithVectorialPart` sets the scale to 0, so `Inverted` refuses | Read | S |
 | Unintuitive API | #1632 | MakeChamfer doesn't report which contours failed | Read | S |
 | Unintuitive API | #1036 | History differs from maker to maker | Read | M |
-| Unintuitive API | #1618, the rest | `Point3D` takes NaN, and `MakeBox` too | Reproduced | M: a question of where to check |
+| Unintuitive API | #1618, the rest | `Direction3D`, `Point3D` and `MakeBox` take NaN. Refusing it in `Direction3D` breaks `ExtPElS` on a cone, which reaches a NaN direction, so that goes first | Reproduced | M |
 | Costs time only | #1622, #1697 | Lipschitz estimate on `GlobOptFuncCCC2` too large; a mesh's stated deflection too large, which inflates a box from it | Read | For 11Q |
 | Costs time only | #1495 | `StoreData`'s walk could spin | Read | S |
+
+## Questions for the owner
+
+1. **Should `Kerf.Modeling`'s area and volume use the precise path?** The default integrates at a fixed number of points, and was 3.7% off on the worst corpus case. The precise path now matches a fine mesh, at a measured 1.85 times the cost on the issue's set (not measured here). I recommend yes, with a time check first.
+2. **Fillets to the opposite edge (#1177, #172, upstream `f713b1305f`).** Porting needs 27 upstream files in the fillet code. I recommend it before any rolling-ball rewrite, as it's the most common request in the fillet list.
+3. **The 2D offset's failures (77 corpus cases).** Fixing them means a new way of making offsets, not a patch: I recommend a survey of what Bento needs first.
+4. **A default sweep that fails (#1630).** Should a sweep with the default trihedron retry with another when its approximation fails? I recommend yes until the cause is found; Frenet and discrete both work on the case.
 
 ## Fixed so far
 
@@ -56,10 +65,10 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 | #1566 | Revolving an arc that ends at the axis: invalid, 20% of the volume gone | 20206 |
 | #1577 | A surface grid 5 units off just below a knot; slow optimal boxes | 20201 |
 | #1617 | A parabola of focal 0 projected wrongly | 20207 |
-| #1618 | NaN radii, angles and directions accepted | 20208 |
+| #1618 | NaN radii and angles accepted (directions stay: see the decision) | 20208 |
 | #1698 | A meshed shape's optimal box included the tolerance when told not to | 20205 |
 | #1606, #1452 | A ring of concentric circles couldn't be offset inward; a collapsing circle went to the general algorithm | 20214 |
-| `3270746444`, `71658f6c8f` | A point mirror's inverse; an offset surface's plane on an indirect frame | 20204 |
+| `3270746444` | A point mirror's inverse | 20204 |
 
 ## The corpus's 502 BAD cases, by group
 
@@ -69,22 +78,22 @@ survey ran the fillet and chamfer ones natively.
 
 | Group | Cases | What they say | Sorted as | What next |
 |---|---:|---|---|---|
-| offset/wire_* | 78 | "The offset cannot be built" for 2D offsets of closed and open wires, usually the medial axis giving up | **Real**: ordinary input, a clean failure | The largest real group. A question for the owner, below |
-| offset/faces_type_i, shape_type_i* | 34 | 3D offsets in intersection mode: not built, invalid, or wrong volume | **Real**, some invalid | Goes with #1106, #1107, #1706. Large |
+| offset/wire_* | 77 | "The offset cannot be built" for 2D offsets of closed and open wires, usually the medial axis giving up | **Real**: ordinary input, a clean failure | The largest real group. A question for the owner, below |
+| offset/faces_type_i, shape_type_i*, offset/bugs | 34 | 3D offsets in intersection mode: not built, invalid, or wrong volume | **Real**, some invalid | Goes with #1106, #1107, #1706. Large |
 | bugs/modalg_2 | 52 | Old Boolean and section cases: counts of entities, area and length differ from a reference | **Mixed**. Many compare with figures from an old engine; 16 are about triangle counts in a mesh | Sort by hand; expect most to be stale references |
 | bugs/modalg_1 | 22 | The same | **Mixed** | The same |
 | bugs/modalg_7 | 32 | Each with its own issue number: fillets that can't touch, micro edges, bad accuracy | **Real**, one by one | Read in turn: each is small |
 | de/step_* | 76 | The dataset's own counts: labels, properties, numbers of shapes, translation messages | **Mostly stale references** (one ticket for all, CR23096), though a few lose colours or layers | Compare with native's log (already equal), and look at the colours and layers |
 | thrusection/specific* | 36 | Area differs, or the result is "not Closed shape" (7) | **Stale area for the 29; real for the 7** | The 7 are lofts that don't close |
-| heal/split_angle_*, heal/surface_to_* | 39 | Faulty shape from `DivideClosed` and conversions on a file's faces, or area | **Real but narrow**: the input is often faulty already | Check input validity first |
+| heal/split_angle_*, heal/surface_to_* | 38 | Faulty shape from `DivideClosed` and conversions on a file's faces, or area | **Real but narrow**: the input is often faulty already | Check input validity first |
 | draft/angle | 11 | Faulty shape or area | **Real** | With 11G's drafts; #303 |
-| blend/*, chamfer/* | 30 | The fillet survey: 26 fail natively at the same step, 3 invalid natively, 1 the port only (corpus-failures.md) | **Real**: "the fillet list" | The owner's question on a rolling-ball rewrite (decision 1724) |
+| blend/*, chamfer/* | 25 | With 5 in bugs/, the fillet survey of 30: 26 fail natively at the same step, 3 invalid natively, 1 the port only (corpus-failures.md) | **Real**: "the fillet list" | The owner's question on a rolling-ball rewrite (decision 1724) |
 | chamfer corners (FAILED, not BAD) | 4 | Natively invalid at step 2 or 15; the port refuses | **Real**; the port is right to refuse | With the fillet list |
 | lowalgos/intss | 13 | Tori give splines, not circles (3); big tolerances; "reproduced" | **Quality**, not wrong answers | Small ones in turn |
 | mesh/* | 16 | "Meshing statuses: Failure" on known faces | **Fails rightly** on self-intersecting wires for most; the rest with 11O | Look with 11O |
 | sewing/tol_100 | 5 | "Number of faults" at a very large tolerance | **Fails rightly** | Leave |
 | mkface/after_extsurf_and_offset | 4 | "Incorrect input parameters are not processed correctly" | **Real, small**: bad parameters accepted | Goes with #1618's checks |
-| bugs/moddata_*, bugs/heal, bugs/mesh, bugs/xde, others | 41 | One-off tickets | **Mixed** | Read in turn |
+| bugs/moddata_*, bugs/heal, bugs/mesh, bugs/xde, the other heal groups, others | 61 | One-off tickets | **Mixed** | Read in turn |
 
 ## Rows of occt-issues.md kept only for compatibility
 
@@ -148,7 +157,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1626 | Add a way to disable cout in case of error | not relevant | Kerf doesn't write to the console (the clean-up) |
 | 1622 | Extrema_GlobOptFuncCCC2: value is the distance but the gradient is of the squared distance | applies | Read: the same gradient. Costs time only: belongs with 11Q |
 | 1619 | Use-after-free in TopOpeBRepBuild `CorrectUnclosedWire` crashes `BRepFilletAPI_MakeFillet::Build` | already fixed | occt-issues.md row for `CorrectUnclosedWire`: the port iterates a copy |
-| 1618 | NaN and infinite inputs pass the validity checks of gp/Geom constructors | already fixed | Decision 20208 for radii, angles and directions; points are left: see the ranked list |
+| 1618 | NaN and infinite inputs pass the validity checks of gp/Geom constructors | already fixed | Decision 20208 for radii and angles; directions and points are left: see the ranked list |
 | 1617 | Parabola with zero focal distance: evaluation is a line, but projection and parameter inversion are not | already fixed | Decision 20207; reproduced and fixed |
 | 1615 | Visualisation: Run-time vs Compile-time paths for X11 / Wayland contexts | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 1613 | BRepAlgoAPI_Fuse silently drops a compound operand of two B-spline solids (fused correctly as separate tools) | can't tell | Needs the issue's attached model; not reproduced in this pass (a compound operand of two B-spline solids) |
@@ -350,7 +359,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 |---|---|---|---|
 | `53706f78a8` | Modeling - Fix intersection, fitting and profile regressions (#1653) | applies | Ranked above; not ported |
 | `8f95c78c7c` | Data Exchange - Support companion streams and improve STEP PMI handling (#1647) | applies | STEP PMI units and references; companion streams are a feature. Small pieces |
-| `71658f6c8f` | Modeling - Fix geometry evaluation and data exchange regressions (#1644) | applies | Partly ported: an offset surface on an indirect plane, decision 20204. Rest ranked above and below |
+| `71658f6c8f` | Modeling - Fix geometry evaluation and data exchange regressions (#1644) | applies | The offset surface on an indirect plane was tried, and is ranked above; rest to read |
 | `8f817f5da5` | Modeling - Fix numerical accuracy and geometry differences (#1640) | applies | Ranked above; large |
 | `09b2da2c16` | Coding - Fix MSVC warnings (#1636) | not relevant | Compiler warnings |
 | `ec0167b409` | Modelling - Fix geometry regressions and reduce repeated evaluations (#1634) | can't tell | Regressions, repeated evaluations: to read piece by piece; the blending index change is for pointers Kerf doesn't have |

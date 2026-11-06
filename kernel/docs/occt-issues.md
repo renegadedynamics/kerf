@@ -2142,11 +2142,12 @@ The list and its ranking are in [occt-defects.md](occt-defects.md).
 | `GeomGridEval_BSplineSurface`, the cache | Built from a parameter that can locate to the next span | A wrong point just below a knot (#1577) | fixed (decision 20201) |
 | `GeomFill_GuideTrihedronAC::D2` | `TN2` for `\|DTN\|^2` | A sweep with a guide distorted (#1681) | fixed (decision 20202) |
 | `GeomBndLib_*Surface::BoxOptimal` | Cell centres aren't seen, and the search's gate reads the corners only | A box smaller than the surface (#1604, #1679) | fixed (decision 20203) |
-| `gp_Trsf::Invert`, `gp_Trsf2d::Invert`, `Geom_OffsetSurface::Surface` | A point mirror's translation negated; an indirect plane's offset direction | Wrong inverse; a plane on the wrong side | fixed from upstream (decision 20204) |
+| `gp_Trsf::Invert`, `gp_Trsf2d::Invert` | A point mirror's translation negated | Wrong inverse | fixed from upstream (decision 20204) |
+| `Geom_OffsetSurface::Surface` | An indirect plane's offset direction | A plane on the wrong side, and evaluation through it | **open**: upstream `71658f6c8f`; tried, and 13 oracle tests would need work (decision 20204) |
 | `BRepBndLib::AddOptimal` | Adds the face's tolerance whatever the flag | (#1698) | fixed (decision 20205) |
 | `GeomAdaptor_SurfaceOfRevolution::GetType` | `major > r` with no tolerance | An invalid solid (#1566) | fixed (decision 20206) |
 | `ElCLib::ParabolaParameter`, `Extrema_ExtPElC` | Focal 0 isn't the line evaluation makes it | (#1617) | fixed (decision 20207) |
-| `gp`, `Geom`, `Geom2d` constructors | NaN passes `r < 0` | (#1618) | fixed for radii, angles, directions (decision 20208) |
+| `gp`, `Geom`, `Geom2d` constructors | NaN passes `r < 0` | (#1618) | fixed for radii and angles; directions **open**, as `ExtPElS` on a cone reaches one (decision 20208) |
 | `IntPatch` cylinder/cylinder walk | Status stays "absent" after a step in and out over both V bounds | Empty Boolean (#1633) | fixed (decision 20209) |
 | `BRepGProp_Gauss::Compute` | U isn't refined, and its error isn't counted | Wrong precise properties (#1675) | fixed (decision 20210) |
 | `GeomBndLib_BSplineCurve2d::Box` | Trims a periodic arc to the first period | A face's area short (#1685) | fixed (decision 20211) |
