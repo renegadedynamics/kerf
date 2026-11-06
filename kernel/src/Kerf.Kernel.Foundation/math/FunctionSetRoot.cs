@@ -410,6 +410,7 @@ internal class FunctionSetRoot
     {
         private Gauss? _gauss;
         private Svd? _svd;
+        private GaussLeastSquare? _leastSquare;
         private math_Vector? _minusF;
 
         public Gauss GaussFor(Matrix a, double minPivot)
@@ -432,6 +433,17 @@ internal class FunctionSetRoot
 
             _svd.Perform(a);
             return _svd;
+        }
+
+        public GaussLeastSquare LeastSquareFor(Matrix a)
+        {
+            if (_leastSquare is null || !_leastSquare.Fits(a))
+            {
+                _leastSquare = new GaussLeastSquare(a.RowNumber(), a.ColNumber());
+            }
+
+            _leastSquare.Perform(a);
+            return _leastSquare;
         }
 
         // OCCT: -1 * ff
@@ -499,10 +511,10 @@ internal class FunctionSetRoot
             }
             else if (ninc < neq)
             { // Calcul par GaussLeastSquare
-                GaussLeastSquare solut = new(df);
+                GaussLeastSquare solut = work.LeastSquareFor(df);
                 if (solut.IsDone)
                 {
-                    solut.Solve(-1 * ff, direction);
+                    solut.Solve(work.MinusF(ff), direction);
                 }
                 else
                 {
