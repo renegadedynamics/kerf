@@ -14,6 +14,27 @@ public class GeomFill_SweepNativeTests(ITestOutputHelper output)
 {
     public static IEnumerable<object[]> KindNames() => SweepRecordingCases.Kinds.Select(k => new object[] { k.Name });
 
+    // Decision 20202: native's second derivatives of GuideTrihedronAC are wrong (OCCT #1681). With them right, a pipe
+    // along a guide is a different approximation: the sweep's error, the first line to differ, comes out smaller.
+    private static bool IsGuideTrihedronFixed(string theKind, string theNative, string thePort)
+    {
+        if (theKind != "pipe-guide")
+        {
+            return false;
+        }
+
+        string[] aNLines = theNative.Split('\n'), aPLines = thePort.Split('\n');
+        int i = 0;
+        while (i < aNLines.Length && i < aPLines.Length && aNLines[i] == aPLines[i])
+        {
+            ++i;
+        }
+
+        string[] aN = aNLines[i].Split(' '), aP = aPLines[i].Split(' ');
+        return aN[0] == "PIPE" && aP[0] == "PIPE" && aN[1] == aP[1]
+               && BitConverter.Int64BitsToDouble(Convert.ToInt64(aP[3], 16)) < BitConverter.Int64BitsToDouble(Convert.ToInt64(aN[3], 16));
+    }
+
     [Theory]
     [MemberData(nameof(KindNames))]
     public void Port_matches_native_bit_for_bit(string theKind)
@@ -29,7 +50,7 @@ public class GeomFill_SweepNativeTests(ITestOutputHelper output)
             {
                 return;
             }
-            if (IsPipeBetweenTwoSections(theKind, aNative, aPort) || IsSectionMoved(theKind, aNative, aPort))
+            if (IsPipeBetweenTwoSections(theKind, aNative, aPort) || IsSectionMoved(theKind, aNative, aPort) || IsGuideTrihedronFixed(theKind, aNative, aPort))
             {
                 Interlocked.Increment(ref anIntended);
             }

@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Checks;
+using Kerf.Engine.Measurement;
+using Kerf.Topology;
 using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
@@ -421,18 +425,15 @@ public class GeomFill_TrihedronTests
         foreach (double u in new[] { 0.3, 1.2 })
         {
             AssertOrthonormal(D0(aLaw, u), 1.0e-9);
-            // the parameter on the guide comes from a curvilinear-abscissa approximation (1e-7). D2 is not checked:
-            // OCCT's D2BiNormal uses |TN|^2 (= 1) where the derivative of a unit vector needs |DTN|^2
-            // (occt-issues.md), so D2BiNormal and D2Tangent are not the derivatives of D1's.
+            // the parameter on the guide comes from a curvilinear-abscissa approximation (1e-7)
             AssertDerivatives(aLaw, u, 1.0e-4, 1.0e-3, false);
         }
     }
 
     [Fact]
-    public void GuideTrihedronAC_D2BiNormal_KeepsOcctsError()
+    public void GuideTrihedronAC_D2BiNormal_IsTheDerivativeOfD1()
     {
-        // OCCT's D2BiNormal misses (1 - |DTN|^2) * BiNormal (occt-issues.md): the difference from the derivative of
-        // DBiNormal is along the binormal.
+        // OCCT's D2BiNormal misses (1 - |DTN|^2) * BiNormal, which Kerf doesn't copy (OCCT #1681, decision 20202)
         CurveAdaptor aPath = new(Twisted());
         BSplineCurve3D aG = BSpline(new Point3D(0, 3, 0), new Point3D(1, 5, 0.5), new Point3D(3, 5, 2), new Point3D(4, 2, 3),
                                        new Point3D(6, 3, 2));
@@ -443,8 +444,38 @@ public class GeomFill_TrihedronTests
         (_, Frame aDP) = D1(aLaw, u + h);
         (_, Frame aDM) = D1(aLaw, u - h);
         Vector3D anError = aDD.B - (aDP.B - aDM.B) / (2 * h);
-        Assert.True(anError.Magnitude > 1.0e-2);
-        Assert.True(anError.Crossed(aF.B).Magnitude < 1.0e-3 * anError.Magnitude);
+        Assert.True(anError.Magnitude < 1.0e-3, $"off by {anError.Magnitude}");
+        Vector3D aTangentError = aDD.T - (aDP.T - aDM.T) / (2 * h);
+        Assert.True(aTangentError.Magnitude < 1.0e-3, $"off by {aTangentError.Magnitude}");
+    }
+
+    [Fact]
+    public void GuideTrihedronAC_SweepAlongAParallelGuide_StaysExact()
+    {
+        // OCCT #1681: a square swept along a line with a parallel guide. Native 8.0.1 gives 1072.31, with two faces
+        // distorted into splines; the right volume is the prism's.
+        static Wire Segment(Point3D a, Point3D b)
+        {
+            var aMaker = new MakeWire();
+            aMaker.Add(new MakeEdge(a, b).Edge());
+            return aMaker.Wire();
+        }
+
+        var aProfile = new MakeWire();
+        Point3D[] aCorners = [new(-3, -3, 0), new(3, -3, 0), new(3, 3, 0), new(-3, 3, 0)];
+        for (int i = 0; i < 4; ++i)
+        {
+            aProfile.Add(new MakeEdge(aCorners[i], aCorners[(i + 1) % 4]).Edge());
+        }
+
+        var aPipe = new MakePipeShell(Segment(new Point3D(0, 0, 0), new Point3D(0, 0, 30)));
+        aPipe.SetMode(Segment(new Point3D(10, 0, 0), new Point3D(10, 0, 30)), true);
+        aPipe.Add(aProfile.Wire());
+        aPipe.Build();
+        Assert.True(aPipe.MakeSolid());
+        Shape aSolid = aPipe.Shape();
+        Assert.True(new Analyzer(aSolid).IsValid());
+        Assert.Equal(1080.0, MassPropertiesBuilder.VolumeProperties(aSolid).Mass(), 6);
     }
 
     [Fact]
