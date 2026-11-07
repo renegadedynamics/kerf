@@ -5,6 +5,9 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## 0.3.0 (unreleased)
 
+- **`Volume` of a compound counts its solids at any depth,** and a compsolid's; a box in three nested compounds had a volume of 0.
+- **`&` no longer returns an invalid solid** when a clean would spoil its good result.
+- **Equal cylinders that nearly cross are right,** and a failing fillet fails sooner (the kernel's `CHANGELOG`).
 - **Fillets and chamfers that just fit work:** radius 10 on one edge of a 10 mm cube gives the quarter cylinder it should, as do two fillets that meet on a face and a chamfer of a face's whole width, on straight edges between planes. A radius that's too large says so and says what fits, in place of "no starting solution". `MaxFillet` finds such a limit exactly, and no longer throws on a cylinder's rim when its last try fails (decisions 1847 to 1850).
 - **A modelling call can be stopped:** inside `using (Kerf.Cancellation.Use(token))` every operation obeys the token, operators and constructors included (`docs/11t-bento.md`).
 - **What used to end the process is a failure:** an assembly or compound nested more than 64 levels, which died at 300 to 3,000; a long loop of moves, which now also stays linear; and files nested too deep.
