@@ -140,6 +140,8 @@ Time from cancelling to returning, cancelled at 2, 10, 30, 50, 70 and 90% of a r
 - **`unsafe` and `Unsafe.*`,** and the 112 unbounded loops, weren't audited.
 - **An unknown stack overflow** in code not walked here can still end the process. The tests cover what could be found by building deep input, not every recursion.
 
+**Tested on:** Reliability 35, Foundation 2,533, ModelingData 3,338, PublicApi 400, DataExchange 348, ModelingAlgorithms 5,712 (9 skipped), DrawLite 737, Kerf.Modeling 2,097, all passing; `KERF_CORPUS_FULL=1` on the fillet, Boolean, STEP, STEP-CAF, offset and hidden-line corpus classes, 23 tests passing in 18 minutes. The full corpus wasn't run.
+
 ## 6. Questions for the owner
 
 1. **Is the ambient `Kerf.Cancellation` the right shape?** It breaks the rule against ambient state, as `OperationContext` and the overlay already do under decision 1386, because operators can't take a token and hundreds of overloads would be the alternative. **Recommended: keep.** It's public API and easily renamed before 0.3.0.
