@@ -185,6 +185,8 @@ Decisions 22101 to 22104. Times are from a machine shared with other work.
 | Nothing | The other 3,793 | Refused |
 | **Valid, above a limit still claimed** | **None,** in 65 cases at five sizes | |
 
+**On the corpus's real cases.** With a temporary line in Draw's `blend`, over `blend`, `chamfer` and `bugs/modalg_*`: 116 fillets had edges with a limit. None of one radius lay above it. Four of one radius lay exactly on it, and ChFi3d failed on each: Q8, bug25478_1, bug25478_2 and bug32931, as section 4 says. The two with their largest radius at or above the number are of several radii (E3 and A4), which aren't judged, and were built, valid. The corpus's Draw commands call the engine, not `FilletOperations`, so 0 of its 3,140 statuses move, as they shouldn't.
+
 **Near the limit, by the radius.** For each case and size in the survey, from half the limit to five times it (29 radii), through the public `Fillet`:
 
 | Radius | One edge, or edges apart, square ends | Corners, slanted ends |
