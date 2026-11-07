@@ -139,6 +139,11 @@ public readonly partial struct Placement : IEquatable<Placement>
             return this;
         }
 
+        if (ProductMemo.TryGet(_items._node!, other._items._node!, out Placement known))
+        {
+            return known;
+        }
+
         // prepend the queue of Other
         Placement head = Multiplied(other.NextLocation());
         SListOfItemLocation result = head._items;
@@ -159,7 +164,9 @@ public readonly partial struct Placement : IEquatable<Placement>
             result.Construct(new ItemLocation(other.FirstDatum(), p));
         }
 
-        return new Placement(result);
+        Placement product = new Placement(result);
+        ProductMemo.Set(_items._node!, other._items._node!, product);
+        return product;
     }
 
     /// <summary>The composition, as <see cref="Multiplied"/>.</summary>
@@ -339,6 +346,56 @@ public readonly partial struct Placement : IEquatable<Placement>
     /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString()
         => IsIdentity ? "Placement(Identity)" : $"Placement({Transformation})";
+}
+
+/// <summary>
+/// The last few products this thread made (unit 11Q, sixth slice). Placing a shape's sub-shapes multiplies the same two chains
+/// over and over, and each new chain is a node of about 170 bytes that a kept shape then holds: nearly half of a patterned
+/// shape, where 1,158 nodes held 137 distinct chains. A product depends only on its two chains, which never change, so a
+/// shared one reads the same as a new one. Four chains a thread stay alive for the thread's life.
+/// </summary>
+internal static class ProductMemo
+{
+    private const int Size = 4;
+
+    [ThreadStatic]
+    private static Entry[]? s_entries;
+
+    [ThreadStatic]
+    private static int s_next;
+
+    internal static bool TryGet(SListNodeOfItemLocation left, SListNodeOfItemLocation right, out Placement product)
+    {
+        Entry[]? entries = s_entries;
+        if (entries is not null)
+        {
+            foreach (ref readonly Entry entry in entries.AsSpan())
+            {
+                if (ReferenceEquals(entry.Left, left) && ReferenceEquals(entry.Right, right))
+                {
+                    product = entry.Product;
+                    return true;
+                }
+            }
+        }
+
+        product = default;
+        return false;
+    }
+
+    internal static void Set(SListNodeOfItemLocation left, SListNodeOfItemLocation right, in Placement product)
+    {
+        Entry[] entries = s_entries ??= new Entry[Size];
+        entries[s_next] = new Entry(left, right, product);
+        s_next = (s_next + 1) % Size;
+    }
+
+    private readonly struct Entry(SListNodeOfItemLocation left, SListNodeOfItemLocation right, in Placement product)
+    {
+        public readonly SListNodeOfItemLocation Left = left;
+        public readonly SListNodeOfItemLocation Right = right;
+        public readonly Placement Product = product;
+    }
 }
 
 /// <summary>

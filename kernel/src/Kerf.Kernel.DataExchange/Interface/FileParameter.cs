@@ -15,21 +15,13 @@ namespace Kerf.Engine.Exchange.Framework;
 /// parameter where C++ copies a value (<see cref="ParamList.SetValue"/>), so a parameter returned by
 /// <c>ChangeValue</c>/<c>ChangeParam</c> is the stored one, changed in place as in C++.
 /// </remarks>
-internal sealed class FileParameter
+internal struct FileParameter
 {
     /// <summary>An empty parameter (type Misc, no text, entity number 0).</summary>
     public FileParameter()
     {
         _thetype = global::Kerf.Engine.Exchange.Framework.ParamType.ParamMisc;
         _thenum = 0;
-    }
-
-    /// <summary>A copy of another parameter (C++'s copy of the value).</summary>
-    public FileParameter(FileParameter other)
-    {
-        _thetype = other._thetype;
-        _theval = other._theval;
-        _thenum = other._thenum;
     }
 
     /// <summary>Fills the fields (with the entity number set to zero).</summary>
@@ -45,10 +37,10 @@ internal sealed class FileParameter
     }
 
     /// <summary>The value, as a string (null once cleared, or never set).</summary>
-    public string? CValue() => _theval;
+    public readonly string? CValue() => _theval;
 
     /// <summary>The type of the parameter.</summary>
-    public ParamType ParamType() => _thetype;
+    public readonly ParamType ParamType() => _thetype;
 
     /// <summary>Sets a reference to an entity in a numbered list.</summary>
     public void SetEntityNumber(int num)
@@ -57,7 +49,7 @@ internal sealed class FileParameter
     }
 
     /// <summary>The value set by <see cref="SetEntityNumber"/>.</summary>
-    public int EntityNumber() => _thenum;
+    public readonly int EntityNumber() => _thenum;
 
     /// <summary>Clears the stored text.</summary>
     public void Clear()
@@ -66,7 +58,7 @@ internal sealed class FileParameter
     } // delete theval; not if managed by ParamSet
 
     /// <summary>Does nothing (the memory is managed by the ParamSet).</summary>
-    public void Destroy()
+    public readonly void Destroy()
     {
     }
 

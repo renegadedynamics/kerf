@@ -31,7 +31,7 @@ namespace Kerf.Engine.Topology.Brep;
 /// </remarks>
 internal class BrepTFace : TFace
 {
-    private readonly NCollection_List<Triangulation> _triangulations = new();
+    private NCollection_List<Triangulation> _triangulations = new();
     private Triangulation? _activeTriangulation;
     private Surface? _surface;
     private Placement _location;
@@ -307,6 +307,7 @@ internal class BrepTFace : TFace
 
     internal override void FreezeRepresentations()
     {
+        _triangulations = _triangulations.Finished();
         _surface?.Freeze();
         foreach (Triangulation triangulation in _triangulations)
         {

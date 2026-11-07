@@ -8,6 +8,7 @@
 
 using Kerf.Engine.Foundation;
 using System.Collections;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Kerf.Engine;
@@ -169,60 +170,97 @@ internal class NCollection_HSequence<T> : NCollection_Sequence<T>
 }
 
 /// <summary>
-/// OCCT's singly linked list, with its <see cref="Iterator"/> (More/Next/Value). A .NET list underneath;
-/// allocator arguments are dropped. A class: copy with <c>new(other)</c> or <c>Assign</c>.
+/// OCCT's singly linked list, with its <see cref="Iterator"/> (More/Next/Value). An array and a count underneath, grown
+/// as <see cref="List{T}"/> grows, and not a <see cref="List{T}"/> itself: a kept shape has several of these on each
+/// TShape, so a second object for each is a tenth of what it holds (performance.md, "The sixth slice"). Changing a list
+/// while enumerating it throws, as a list's does. Allocator arguments are dropped. A class: copy with <c>new(other)</c>
+/// or <c>Assign</c>.
 /// </summary>
 internal class NCollection_List<T> : IEnumerable<T>
 {
-    private readonly List<T> _items;
+    private static readonly NCollection_List<T> s_sharedEmpty = new();
+
+    private T[] _items;
+    private int _count;
+    private int _version;
 
     public NCollection_List() => _items = [];
 
-    public NCollection_List(NCollection_List<T> other) => _items = [.. other._items];
+    public NCollection_List(NCollection_List<T> other)
+    {
+        _items = other._count == 0 ? [] : other.AsSpan().ToArray();
+        _count = other._count;
+    }
 
-    public NCollection_List(IEnumerable<T> items) => _items = [.. items];
+    public NCollection_List(IEnumerable<T> items)
+    {
+        _items = [.. items];
+        _count = _items.Length;
+    }
 
-    public int Extent() => _items.Count;
+    public int Extent() => _count;
 
     /// <summary>The item at a 0-based position.</summary>
-    internal T ItemAt(int position) => _items[position];
+    internal T ItemAt(int position)
+    {
+        if ((uint)position >= (uint)_count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(position));
+        }
 
-    public int Size() => _items.Count;
+        return _items[position];
+    }
 
-    public bool IsEmpty() => _items.Count == 0;
+    public int Size() => _count;
 
-    public void Clear() => _items.Clear();
+    public bool IsEmpty() => _count == 0;
+
+    public void Clear()
+    {
+        if (_items.Length == 0)
+        {
+            return; // Nothing to clear, and the shared empty list stays as it is
+        }
+
+        _version++;
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            Array.Clear(_items, 0, _count);
+        }
+
+        _count = 0;
+    }
 
     public NCollection_List<T> Assign(NCollection_List<T> other)
     {
         if (!ReferenceEquals(this, other))
         {
-            _items.Clear();
-            _items.AddRange(other._items);
+            Clear();
+            AddRange(other);
         }
 
         return this;
     }
 
-    public T First() => _items.Count > 0 ? _items[0] : throw new NoSuchObjectException("NCollection_List::First");
+    public T First() => _count > 0 ? _items[0] : throw new NoSuchObjectException("NCollection_List::First");
 
     public ref T ChangeFirst() => ref ItemAt(0, "NCollection_List::First");
 
-    public T Last() => _items.Count > 0 ? _items[^1] : throw new NoSuchObjectException("NCollection_List::Last");
+    public T Last() => _count > 0 ? _items[_count - 1] : throw new NoSuchObjectException("NCollection_List::Last");
 
-    public ref T ChangeLast() => ref ItemAt(_items.Count - 1, "NCollection_List::Last");
+    public ref T ChangeLast() => ref ItemAt(_count - 1, "NCollection_List::Last");
 
     public ref T Append(T item)
     {
-        _items.Add(item);
-        return ref CollectionsMarshal.AsSpan(_items)[^1];
+        Add(item);
+        return ref _items[_count - 1];
     }
 
     /// <summary>Appends, and sets <paramref name="iter"/> to the new item.</summary>
     public void Append(T item, Iterator iter)
     {
-        _items.Add(item);
-        iter.Reset(this, _items.Count - 1);
+        Add(item);
+        iter.Reset(this, _count - 1);
     }
 
     /// <summary>Moves the items of <paramref name="other"/> to the end of this list, leaving it empty.</summary>
@@ -233,14 +271,14 @@ internal class NCollection_List<T> : IEnumerable<T>
             return;
         }
 
-        _items.AddRange(other._items);
-        other._items.Clear();
+        AddRange(other);
+        other.Clear();
     }
 
     public ref T Prepend(T item)
     {
-        _items.Insert(0, item);
-        return ref CollectionsMarshal.AsSpan(_items)[0];
+        Insert(0, item);
+        return ref _items[0];
     }
 
     public void Prepend(NCollection_List<T> other)
@@ -250,68 +288,254 @@ internal class NCollection_List<T> : IEnumerable<T>
             return;
         }
 
-        _items.InsertRange(0, other._items);
-        other._items.Clear();
+        int count = other._count;
+        if (count > 0)
+        {
+            Reserve(_count + count);
+            Array.Copy(_items, 0, _items, count, _count);
+            Array.Copy(other._items, 0, _items, 0, count);
+            _count += count;
+            _version++;
+        }
+
+        other.Clear();
     }
 
     public void RemoveFirst()
     {
-        if (_items.Count > 0)
+        if (_count > 0)
         {
-            _items.RemoveAt(0);
+            RemoveAt(0);
         }
     }
 
     /// <summary>Removes the iterator's item; the iterator moves to the next one.</summary>
     public void Remove(Iterator iter)
     {
-        _items.RemoveAt(iter.Index);
+        if ((uint)iter.Index >= (uint)_count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(iter));
+        }
+
+        RemoveAt(iter.Index);
     }
 
     /// <summary>Removes the first item equal to <paramref name="theObject"/>.</summary>
-    public bool Remove(T theObject) => _items.Remove(theObject);
+    public bool Remove(T theObject)
+    {
+        int index = Array.IndexOf(_items, theObject, 0, _count);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        RemoveAt(index);
+        return true;
+    }
 
     public ref T InsertBefore(T item, Iterator iter)
     {
-        _items.Insert(iter.Index, item);
         int index = iter.Index;
+        Insert(index, item);
         iter.Reset(this, index + 1);
-        return ref CollectionsMarshal.AsSpan(_items)[index];
+        return ref _items[index];
     }
 
     public ref T InsertAfter(T item, Iterator iter)
     {
-        _items.Insert(iter.Index + 1, item);
-        return ref CollectionsMarshal.AsSpan(_items)[iter.Index + 1];
+        Insert(iter.Index + 1, item);
+        return ref _items[iter.Index + 1];
     }
 
-    public void Reverse() => _items.Reverse();
+    public void Reverse()
+    {
+        if (_count > 1)
+        {
+            Array.Reverse(_items, 0, _count);
+            _version++;
+        }
+    }
 
     public void Exchange(NCollection_List<T> other)
     {
-        var temp = new List<T>(_items);
-        _items.Clear();
-        _items.AddRange(other._items);
-        other._items.Clear();
-        other._items.AddRange(temp);
+        (_items, other._items) = (other._items, _items);
+        (_count, other._count) = (other._count, _count);
+        _version++;
+        other._version++;
     }
 
-    public bool Contains(T theObject) => _items.Contains(theObject);
+    public bool Contains(T theObject) => _count != 0 && Array.IndexOf(_items, theObject, 0, _count) >= 0;
 
-    public List<T>.Enumerator GetEnumerator() => _items.GetEnumerator();
+    /// <summary>
+    /// The list to hold from now on, for a holder being frozen, which won't change it: this one without any room beyond
+    /// its items, or if it's empty one list that every holder shares (a vertex has no children, and most faces no meshes).
+    /// </summary>
+    internal NCollection_List<T> Finished()
+    {
+        if (_count == 0)
+        {
+            return s_sharedEmpty;
+        }
 
-    IEnumerator<T> IEnumerable<T>.GetEnumerator() => _items.GetEnumerator();
+        TrimExcess();
+        return this;
+    }
 
-    IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
+    /// <summary>Lets go of any room beyond the items: for a list that's finished and will be kept.</summary>
+    internal void TrimExcess()
+    {
+        if (_count < _items.Length)
+        {
+            _items = _count == 0 ? [] : AsSpan().ToArray();
+        }
+    }
+
+    private Span<T> AsSpan() => new(_items, 0, _count);
+
+    private void Add(T item)
+    {
+        _version++;
+        if (_count == _items.Length)
+        {
+            Reserve(_count + 1);
+        }
+
+        _items[_count++] = item;
+    }
+
+    private void AddRange(NCollection_List<T> other)
+    {
+        int count = other._count;
+        if (count > 0)
+        {
+            Reserve(_count + count);
+            Array.Copy(other._items, 0, _items, _count, count);
+            _count += count;
+            _version++;
+        }
+    }
+
+    private void Insert(int index, T item)
+    {
+        if ((uint)index > (uint)_count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        if (_count == _items.Length)
+        {
+            Reserve(_count + 1);
+        }
+
+        if (index < _count)
+        {
+            Array.Copy(_items, index, _items, index + 1, _count - index);
+        }
+
+        _items[index] = item;
+        _count++;
+        _version++;
+    }
+
+    private void RemoveAt(int index)
+    {
+        _count--;
+        if (index < _count)
+        {
+            Array.Copy(_items, index + 1, _items, index, _count - index);
+        }
+
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            _items[_count] = default!;
+        }
+
+        _version++;
+    }
+
+    // As a list grows: four to start with, then double
+    private void Reserve(int capacity)
+    {
+        if (capacity > _items.Length)
+        {
+            if (ReferenceEquals(this, s_sharedEmpty))
+            {
+                throw new ImmutableObjectException("A frozen object's empty list is shared: it can't change.");
+            }
+
+            T[] items = new T[Math.Max(capacity, _items.Length == 0 ? 4 : 2 * _items.Length)];
+            Array.Copy(_items, items, _count);
+            _items = items;
+        }
+    }
+
+    public Enumerator GetEnumerator() => new(this);
+
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => new Enumerator(this);
+
+    IEnumerator IEnumerable.GetEnumerator() => new Enumerator(this);
 
     private ref T ItemAt(int index, string theWhere)
     {
-        if (index < 0 || index >= _items.Count)
+        if (index < 0 || index >= _count)
         {
             throw new NoSuchObjectException(theWhere);
         }
 
-        return ref CollectionsMarshal.AsSpan(_items)[index];
+        return ref _items[index];
+    }
+
+    /// <summary>A list's enumerator: a struct, so that <c>foreach</c> allocates nothing.</summary>
+    public struct Enumerator : IEnumerator<T>
+    {
+        private readonly NCollection_List<T> _list;
+        private readonly int _version;
+        private int _index;
+        private T? _current;
+
+        internal Enumerator(NCollection_List<T> list)
+        {
+            _list = list;
+            _version = list._version;
+        }
+
+        public bool MoveNext()
+        {
+            NCollection_List<T> list = _list;
+            if (_version == list._version && (uint)_index < (uint)list._count)
+            {
+                _current = list._items[_index++];
+                return true;
+            }
+
+            if (_version != list._version)
+            {
+                throw new InvalidOperationException("The list was changed while it was being enumerated");
+            }
+
+            _index = list._count + 1;
+            _current = default;
+            return false;
+        }
+
+        public readonly T Current => _current!;
+
+        readonly object? IEnumerator.Current => _current;
+
+        void IEnumerator.Reset()
+        {
+            if (_version != _list._version)
+            {
+                throw new InvalidOperationException("The list was changed while it was being enumerated");
+            }
+
+            _index = 0;
+            _current = default;
+        }
+
+        public readonly void Dispose()
+        {
+        }
     }
 
     /// <summary>OCCT's list iterator: <c>for (It it(list); it.More(); it.Next()) it.Value();</c></summary>
@@ -340,13 +564,13 @@ internal class NCollection_List<T> : IEnumerable<T>
             Index = index;
         }
 
-        public bool More() => _list is not null && Index < _list._items.Count;
+        public bool More() => _list is not null && Index < _list._count;
 
         public void Next() => Index++;
 
-        public T Value() => _list!._items[Index];
+        public T Value() => _list!.ItemAt(Index);
 
-        public ref T ChangeValue() => ref CollectionsMarshal.AsSpan(_list!._items)[Index];
+        public ref T ChangeValue() => ref _list!.AsSpan()[Index];
     }
 }
 

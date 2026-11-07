@@ -42,7 +42,19 @@ public abstract class Transient
     internal bool IsFrozen => _isFrozen;
 
     /// <summary>Makes the object unchangeable from now on. Idempotent and thread-safe.</summary>
-    internal void Freeze() => _isFrozen = true;
+    internal void Freeze()
+    {
+        if (!_isFrozen)
+        {
+            OnFreezing();
+            _isFrozen = true;
+        }
+    }
+
+    /// <summary>Called on the object as it's frozen, if it wasn't yet, perhaps by several threads: any change has to leave it reading the same.</summary>
+    private protected virtual void OnFreezing()
+    {
+    }
 
     /// <summary>Throws <see cref="ImmutableObjectException"/> if the object is frozen: the first line of every mutator.</summary>
     internal void CheckMutable()

@@ -2088,6 +2088,15 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
     internal NCollection_Array1<double> InternalWeightsArray() => _weights;
 
     /// <summary>The stored knots: shared, don't modify (OCCT's <c>Knots()</c> const reference).</summary>
+    // Frozen, its knots and multiplicities can't change, and most splines have the same ones (SharedArrays)
+    private protected override void OnFreezing()
+    {
+        _weights = SharedArrays<double>.Shared(_weights, isFixed: !_rational);
+        _knots = SharedArrays<double>.Shared(_knots);
+        _flatKnots = SharedArrays<double>.Shared(_flatKnots);
+        _mults = SharedArrays<int>.Shared(_mults);
+    }
+
     internal NCollection_Array1<double> InternalKnots() => _knots;
 
     /// <summary>The stored multiplicities: shared, don't modify (OCCT's <c>Multiplicities()</c> const reference).</summary>

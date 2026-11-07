@@ -1,13 +1,18 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Healing.Upgrade;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Meshing;
 using Kerf.Topology;
 using System.Reflection;
 using Kerf.Kernel.ModelingData.Tests;
@@ -89,6 +94,46 @@ public class ShapeUpgrade_UnifySameDomainTests
         var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, aMap);
         return aMap.All(s => s.TShape()!.IsFrozen);
+    }
+
+    [Fact]
+    public void A_closed_pipe_of_a_circle_keeps_a_boundary_the_mesher_can_use()
+    {
+        // #1310: two arcs along two arcs. Everything merges into one face with no edges left: valid, and unmeshable.
+        Circle3D aSpine = new(new Frame3D(new Point3D(3, -3, 0), new Direction3D(0, 0, 1)), 3);
+        Circle3D aSection = new(new Frame3D(new Point3D(0, -3, 0), new Direction3D(0, 1, 0), new Direction3D(1, 0, 0)), 1);
+        var aPipe = new MakePipeShell(new MakeWire(new MakeEdge(aSpine, 0, Math.PI).Edge(), new MakeEdge(aSpine, Math.PI, 2 * Math.PI).Edge()).Wire());
+        aPipe.SetMode(true);
+        aPipe.Add(new MakeWire(new MakeEdge(aSection, 0, Math.PI).Edge(), new MakeEdge(aSection, Math.PI, 2 * Math.PI).Edge()).Wire());
+        aPipe.Build();
+        Assert.True(aPipe.IsDone);
+        aPipe.MakeSolid();
+
+        var aUnifier = new UnifySameDomain(aPipe.Shape(), true, true, false);
+        aUnifier.Build();
+
+        Assert.Equal(1, Count(aUnifier.Shape(), ShapeType.Face));
+        Assert.True(Count(aUnifier.Shape(), ShapeType.Edge) > 0);
+        Assert.True(new Analyzer(aUnifier.Shape()).IsValid());
+        Assert.True(aUnifier.Shape().Mesh().IsSuccess);
+    }
+
+    [Fact]
+    public void A_box_cut_by_a_sphere_stays_valid_and_keeps_its_volume()
+    {
+        // #1541: the circle on the box's face is two arcs. Geom2dConvert's ConcatC1 prepended the second, so the merged
+        // pcurve started half a turn from the 3D circle: a vertex tolerance of the circle's diameter and a missing face.
+        var aSphere = new MakeSphere(new Point3D(-0.8941468682889828, -0.05608050987114277, 0.16128077950256148), 0.5).Shape();
+        Shape aCut = new Cut(new MakeBox(new Point3D(-0.5, -0.5, -0.5), 1, 1, 1).Shape(), aSphere).Shape();
+        var aUnifier = new UnifySameDomain(aCut, true, true, true);
+        aUnifier.Build();
+
+        Assert.True(new Analyzer(aUnifier.Shape()).IsValid());
+        Properties aBefore = new();
+        Properties anAfter = new();
+        MassPropertiesBuilder.VolumeProperties(aCut, aBefore);
+        MassPropertiesBuilder.VolumeProperties(aUnifier.Shape(), anAfter);
+        Assert.Equal(aBefore.Mass(), anAfter.Mass(), 1e-6);
     }
 
     [Fact]

@@ -105,6 +105,15 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     }
 
     // Check rationality of an array of weights
+    // Frozen, its knots and multiplicities can't change, and most splines have the same ones (SharedArrays)
+    private protected override void OnFreezing()
+    {
+        _weights = SharedArrays<double>.Shared(_weights, isFixed: !_rational);
+        _knots = SharedArrays<double>.Shared(_knots);
+        _flatKnots = SharedArrays<double>.Shared(_flatKnots);
+        _mults = SharedArrays<int>.Shared(_mults);
+    }
+
     private static bool Rational(NCollection_Array1<double> weights)
     {
         for (int i = weights.Lower(); i < weights.Upper(); i++)

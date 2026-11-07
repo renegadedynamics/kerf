@@ -356,11 +356,10 @@ public class GeomConvert_PortTests
     }
 
     [Fact]
-    public void ConcatG1_ClosedWire_ReadsTheCallersTolerances_OCCT()
+    public void ConcatG1_ClosedWire_MergesWithTheReorderedTolerances()
     {
-        // As in Geom2dConvert (occt-issues.md): after reordering a closed wire, ConcatG1 merges each group with the
-        // caller's tolerances, not the reordered ones, so s3 and s0 are merged with the tolerance of the junction s1-s2
-        // instead of ClosedTolerance. (ConcatC1 reads the reordered ones in 3D.)
+        // As in Geom2dConvert: OCCT's ConcatG1 merged with the caller's tolerances, and threw (decision 1831). ConcatC1 already
+        // read the reordered ones in 3D.
         BSplineCurve3D[] aSegments =
         [
             Segment(P(0, 0), P(1, 0)),
@@ -371,8 +370,10 @@ public class GeomConvert_PortTests
 
         NCollection_Array1<BSplineCurve3D> aCurves = NCollection_Array1<BSplineCurve3D>.From(aSegments, 0);
         bool isClosed = true;
-        EngineAssert.ThrowsAny<ConstructionErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatG1(
-            aCurves, NCollection_Array1<double>.From([1e-7, 1e-12, 1e-7], 0), out _, ref isClosed, 1e-4));
+        global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatG1(aCurves, NCollection_Array1<double>.From([1e-7, 1e-12, 1e-7], 0),
+                             out NCollection_HArray1<BSplineCurve3D> aG1, ref isClosed, 1e-4);
+        Assert.Equal(2, aG1.Length());
+        Assert.True(aG1[1].StartPoint.DistanceTo(P(2, 1)) < Tol);
 
         aCurves = NCollection_Array1<BSplineCurve3D>.From(aSegments, 0);
         isClosed = true;

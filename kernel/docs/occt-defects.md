@@ -12,9 +12,9 @@ file lists what OCCT knows to be wrong and whether Kerf has it. It's a working l
 - **not relevant:** it can't reach Kerf, such as OCCT's viewer, build or document framework ([unported.md](unported.md)).
 - **applies:** Kerf has it. The row says how that was confirmed; "reproduced" means through Kerf's own code, "read" means only
   from the code.
-- **can't tell:** Most of these need a model attached to the issue that this pass didn't fetch. Nothing from an issue was run.
+- **can't tell:** Not settled yet. The third pass (decisions 1830 to 1838) fetched what the issues attach and re-expressed their scripts through Draw-lite or a test, reading the files as data; the rows it reached say what was seen. What's left is mostly hidden lines, STEP writing and issues with no model, each saying why. "The public fillet fails" and the like are inferred from the check of decision 1742, not run.
 
-**Counts.** OCCT's 224 open issues: 20 already fixed, 79 not relevant, 13 applies, 112 can't tell. The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 2 already fixed, 57 not relevant, 11 applies, 6 can't tell.
+**Counts.** OCCT's 224 open issues: 36 already fixed, 88 not relevant, 52 applies, 48 can't tell. The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 2 already fixed, 57 not relevant, 11 applies, 6 can't tell.
 The other two sources are sorted by group below: the corpus's 502 BAD cases, and the rows of [occt-issues.md](occt-issues.md)
 kept only for compatibility.
 
@@ -25,6 +25,13 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 
 | Kind | Where | What | How confirmed | Size |
 |---|---|---|---|---|
+| Silent wrong answer | #1659, #1643, #1629 | A Cut larger than its object or the same size, a Common empty, no error: 5271.23 from 5264.71; 1773362 from 1750653. Sections left open or the wrong way in | Reproduced | L for the causes; S for a check of the volumes: **for the owner**, question 5 |
+| Silent wrong answer | #1639 | A fillet of volume 10596 for 29800, depending only on the order of the shell's faces. The public fillet now fails, by the size of its tolerance (decision 1833) | Reproduced | M to L: the corner's 3D curve, 190 from its pcurves |
+| Silent wrong answer | #1039, #245 | A face/solid Common with an edge missing, 86898 for about 70000; a cut that removes almost nothing, with warnings | Reproduced | L |
+| Silent wrong answer | #1123 | A minimum distance of 0.083 between parts that intersect | Reproduced | M |
+| Silent wrong answer | #1570, #1569, #737, #694, #1430 | Fillets that pass the check and intersect themselves: the check doesn't look for that | Reproduced | **For the owner**: `bopcheck` on a fillet's result is too slow to be a default, I think; not measured |
+| Silent wrong answer | #1444, #572 | A mesh of 1.43 deflection for 0.45; a cone with no triangles, a warning only | Reproduced | M each |
+| Invalid result | #1573, #1571, #899 and others | Unify on rotated spheres; fillets. All reported as failures by the public layer | Reproduced | M to L |
 | Silent wrong answer | Found by #1675 | Area and volume without a precision, which `Kerf.Modeling` uses, can be up to 3.7% off on swept and B-spline faces: bug5805_21 gives 253.49 where a mesh gives 244.17. The precise path now gives 244.195 | Reproduced | S to change the call; **for the owner**: precise is slower |
 | Silent wrong answer | Upstream `53706f78a8` | Rational section weights in `GeomFill_Profiler`; Newton backtracking; the other two parts are ported (decision 1822) | Upstream fix, not checked here | M |
 | Silent wrong answer | Upstream `8f817f5da5` | Curve-on-surface deviation, narrow extrema, face self-intersection within trimmed domains | Upstream fix, not checked here | L: 346 files |
@@ -44,6 +51,7 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 2. **Fillets to the opposite edge (#1177, #172, upstream `f713b1305f`).** Porting needs 27 upstream files in the fillet code. I recommend it before any rolling-ball rewrite, as it's the most common request in the fillet list. *Since then: on straight edges between planes it's done another way (decision 21201), and upstream's own results for the four corpus cases it changes are still faulty. [fillet-design.md](fillet-design.md) recommends not porting it.*
 3. **The 2D offset's failures (77 corpus cases).** Fixing them means a new way of making offsets, not a patch: I recommend a survey of what Bento needs first.
 4. **A default sweep that fails (#1630).** Should a sweep with the default trihedron retry with another when its approximation fails? I recommend yes until the cause is found; Frenet and discrete both work on the case. **Answered yes, done: decision 1805.**
+5. **Should a Boolean check its result's volume?** #1659, #1643 and others give a Cut larger than its object, or a Common of nothing where the input's point classification finds plenty, and no error. A check that a Cut is no larger than its object, a Common no larger than the smaller, and a Fuse no smaller than the larger would turn those into failures carrying the shape, as decision 1742 does for invalid shapes. It wouldn't catch #1629, which comes out at exactly the block's volume, or #1613's kind. It costs a volume per Boolean, not measured here. I recommend yes if a time check allows it.
 
 ## For unit 11S: results of no volume reported as success
 
@@ -53,6 +61,14 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
+| #1543 | A cut by a helical tube removing nothing, by where it left relative to the seam | 1834 |
+| #1613 | A fuse dropping a compound of reversed solids | 1832 |
+| #994 | A face lost reading a STEP offset surface whose basis is C0 at a knot | 1838 |
+| #1541, #1340 | Unify making a valid solid invalid: a box cut by a sphere lost a face | 1831, 1830 |
+| #1692 | A reused solid classifier's answer depending on the points before it | 1835 |
+| #1124 | The public section losing most of a curve (approximation now on) | 1836 |
+| #1310 | Unify leaving a closed pipe a face with no edges, and no mesh | 1837 |
+| #1639, #1695, #1701 | A fillet with a tolerance past its radius reported as a success: now a failure, causes open | 1833 |
 | #1633 | Booleans of cylinders about 1° from parallel: Common empty, Cut removes nothing, no error | 1783 |
 | #1604, #1679 | An optimal box smaller than the shape | 1777 |
 | Found by #1675 | `Kerf.Modeling`'s area and volume up to 3.7% off on swept and B-spline faces | 1802 |
@@ -115,71 +131,71 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | # | What it says | Status | Why |
 |---:|---|---|---|
 | 1711 | BRepLib_FuseEdges::UpdatePCurve creates an out-of-domain B-spline edge range from valid input (reproduced in 8.0.1) | can't tell | Same code (`FuseEdges.UpdatePCurve`); the shell needs the issue's long sample; not reproduced |
-| 1709 | Invalid geometry while sweeping rectangle along a closed path | can't tell | Needs the issue's attached model; not reproduced in this pass (pipe corner: see #304) |
-| 1706 | fillet -> offset creates invalid geometry | can't tell | tests/bugs/modalg_8/bug31601 passes on the port, but like native it doesn't check validity; not checked |
+| 1709 | Invalid geometry while sweeping rectangle along a closed path | can't tell | `pipe/specific/Z7`'s data isn't in the public dataset |
+| 1706 | fillet -> offset creates invalid geometry | applies | Reproduced from `bug31601`: invalid, bad orientation. The public offset fails |
 | 1704 | Data Exchange, STEP Export - Full-turn toroidal fillet face with an indirect frame is written with its FACE_BOUND in the wrong sense | can't tell | Same writer code; needs a full-turn torus with an indirect frame through a write and a raw read; not reproduced |
-| 1703 | BRepClass3d_SolidClassifier reads an outside point IN: BRepTopAdaptor_TopolTool undersamples a B-spline with two pole rows | can't tell | Needs the issue's attached model; not reproduced in this pass (the intersector's polyhedron is unchanged, so it probably applies) |
-| 1702 | Modeling Algorithms - BRepFilletAPI_MakeFillet returns a self-intersecting wire on a plate crossed by a round bar | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
-| 1701 | Modeling Algorithms - BRepFilletAPI_MakeFillet gives a 4.8 mm vertex tolerance when its radius equals an adjacent fillet's | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
+| 1703 | BRepClass3d_SolidClassifier reads an outside point IN: BRepTopAdaptor_TopolTool undersamples a B-spline with two pole rows | can't tell | Its file can't be read: its locations hold a scale and a form before the matrix, which isn't what 8.0.1's `BinTools` or Kerf's reader expects. Read: the undersampled polyhedron is the same code |
+| 1702 | Modeling Algorithms - BRepFilletAPI_MakeFillet returns a self-intersecting wire on a plate crossed by a round bar | can't tell | The gist wasn't fetched. A self-intersecting wire is what the public check reports, so it wouldn't be silent |
+| 1701 | Modeling Algorithms - BRepFilletAPI_MakeFillet gives a 4.8 mm vertex tolerance when its radius equals an adjacent fillet's | can't tell | Not run: the gist wasn't fetched. By its figures, the public fillet now fails on it (decision 1833) |
 | 1700 | Modeling Algorithms - BRepExtrema_DistShapeShape reports InnerSolution for disjoint solids: IntCurvesFace_Intersector misses a crossing near a B-splin | can't tell | Needs the issue's attached model; not reproduced in this pass (same intersector as #1703) |
 | 1699 | Hidden Line Removal - HLRBRep_Algo outline edge runs back on itself and leaves the surface | can't tell | Needs the issue's attached model; not reproduced in this pass (hidden lines) |
 | 1698 | BRepBndLib::AddOptimal adds the face tolerance with useShapeTolerance = false when the face has a triangulation | already fixed | Decision 1779; read, then tested |
 | 1697 | BRepLib::UpdateDeflection gives 11.8 for an exact mesh of a planar B-spline face, so AddOptimal boxes grow | applies | Read: `UpdateDeflection` measures at the average of the UVs, as the issue says; no reproduction yet |
-| 1696 | STEP import: geometric tolerance dropped when its face carrier is also a datum target's feature (FEATURE_FOR_DATUM_TARGET_RELATIONSHIP) | can't tell | GD&T read through the document layer; needs a file |
-| 1695 | Modeling Algorithms - BRepFilletAPI_MakeFillet reports success on a two-edge corner with an invalid curve on surface | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
-| 1692 | Modeling Algorithms : BRepTopAdaptor_TopolTool keeps the 2D classifier of its first call, so a reused BRepClass3d_SolidClassifier answers after the po | can't tell | Read: `FClass2d` kept from the first call as the issue says; effect only on a reused classifier |
-| 1691 | Crash with sweep with auxiliary spine | can't tell | Needs the issue's attached model; not reproduced in this pass (a crash natively; here at worst an exception) |
+| 1696 | STEP import: geometric tolerance dropped when its face carrier is also a datum target's feature (FEATURE_FOR_DATUM_TARGET_RELATIONSHIP) | not relevant | GD&T in the assembly document, which isn't ported ([unported.md](unported.md)) |
+| 1695 | Modeling Algorithms - BRepFilletAPI_MakeFillet reports success on a two-edge corner with an invalid curve on surface | can't tell | Not run: the gist wasn't fetched. By its figures, the public fillet now fails on it (decision 1833) |
+| 1692 | Modeling Algorithms : BRepTopAdaptor_TopolTool keeps the 2D classifier of its first call, so a reused BRepClass3d_SolidClassifier answers after the po | already fixed | Read, and a test on a holed square. Fixed: decision 1835; a classifier for each tolerance |
+| 1691 | Crash with sweep with auxiliary spine | already fixed | Tried on its files: its first case isn't done, with the message native had. Its fourth is a null reference at `PipeShell.Add`, which the public layer reports as a failure. The other two pass a compound as the guide, which the typed API can't |
 | 1690 | STEP export: material density written with wrong unit exponents (g³·cm²) and an untyped value | applies | Read: same writer; material density units. Small, data exchange |
-| 1688 | Crash with loft on closed profile | can't tell | Needs the issue's attached model; not reproduced in this pass (stack overflow natively; a .NET stack overflow would end the process) |
+| 1688 | Crash with loft on closed profile | already fixed | Tried on its files: a valid shell and no overflow. Its `SetMaxDegree(5)` wasn't set |
 | 1687 | BRepAlgoAPI_Fuse(S, Copy(S)) returns empty with IsDone=true while Fuse(S, S) succeeds (OCCT 7.9.3) | can't tell | Needs the issue's attached model; not reproduced in this pass (Boolean of a solid and its copy) |
 | 1686 | Data Exchange, STEP Export - Non-ASCII labels in AP214 files are written as raw UTF-8 instead of being encoded | can't tell | Non-ASCII labels in AP214; Kerf's writer is a port, not checked |
 | 1685 | BRepGProp SurfaceProperties: phase-dependent area for a planar periodic B-spline, despite small error estimate | already fixed | Decision 1785; reproduced (22.285 for 22.900) and fixed: the box of a periodic pcurve's arc |
-| 1684 | Crash with loft on infinite line | can't tell | Loft to an infinite line: not tried; at worst an exception in managed code |
+| 1684 | Crash with loft on infinite line | already fixed | Tried on its files: a null reference, which the public `Loft` reports as a failure (by the code, not run) |
 | 1682 | BRepOffsetAPI_MakePipeShell with a guide distorts a straight sweep in 8.0.1 (exact in 7.9.3) | already fixed | Decision 1776 (same cause as #1681) |
 | 1681 | Modeling - GeomFill_GuideTrihedronAC::D2 returns wrong second derivatives (TN2 typo); since #1182 made D2 return true, auxiliary-spine MakePipeShell d | already fixed | Decision 1776; reproduced and fixed |
 | 1680 | BRepBndLib::AddOptimal ignores a trimmed edge on a face of revolution in 8.0.1 (correct in 7.9.3) | can't tell | Needs the issue's attached model; not reproduced in this pass (a box too large, not too small) |
 | 1679 | BRepBndLib::AddOptimal returns a box smaller than a smooth ThruSections loft (8.0.1 axis-aligned; 7.9.3 and 8.0.1 when rotated) | already fixed | Decision 1777; reproduced (29.969 for 30) and fixed |
 | 1678 | BOPAlgo_PaveFiller::MakeBlocks can pass a section edge with no 3D curve to BOPTools_AlgoTools::MakePCurve, which dereferences it (SIGSEGV) | not relevant | A null dereference natively; the port throws, and BOPAlgo reports a failure |
 | 1677 | STEP import: cone loses its apex when the file's uncertainty exceeds 2*pi mm | can't tell | Same reader; needs a file with an uncertainty over 2π mm, which is rare |
-| 1676 | Boolean operation between two simple faces takes unreasonable amount of time (12 minutes) | can't tell | Needs the issue's attached model; not reproduced in this pass (slowness: belongs with 11Q) |
+| 1676 | Boolean operation between two simple faces takes unreasonable amount of time (12 minutes) | applies | Reproduced on its files: past 150 s. For 11Q |
 | 1675 | BRepGProp_Gauss: the precise (Eps) path never refines along U and drops U's error from its estimate, so swept B-splines, full revolutions and areas ar | already fixed | Decision 1784; the issue's patch applied by hand, with a test |
-| 1673 | Modeling Algorithms - ChFi3d_FilBuilder::Compute overflows the stack on a three-edge corner of a ThruSections loft (NaN bounds in GeomPlate initial su | can't tell | Three-edge corner of a loft: not tried |
+| 1673 | Modeling Algorithms - ChFi3d_FilBuilder::Compute overflows the stack on a three-edge corner of a ThruSections loft (NaN bounds in GeomPlate initial su | applies | Built from its numbers: no overflow, but invalid, volume 1.8e6 from 67183. The public fillet fails |
 | 1672 | IntTools_FaceFace drops the last partial turn of a helical section where the walk meets a cylinder face's v bound | can't tell | Needs the issue's attached model; not reproduced in this pass |
 | 1671 | IntWalk_PWalking's step is relative to the face's parameter range, so sections on long helical faces lose accuracy and booleans go wrong | can't tell | Needs the issue's attached model; not reproduced in this pass (the step is relative, read) |
-| 1665 | Fillet failure on a simple solid | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
+| 1665 | Fillet failure on a simple solid | can't tell | Tried on its file: it reads, valid. The issue doesn't say which edges |
 | 1661 | Documentation - Add AGENTS.md that points coding assistants to the contribution rules | not relevant | OCCT's documentation or tests only |
-| 1659 | Boolean cut silently returns an imprint instead of a cut: plane/B-spline section loop left open | can't tell | Needs the issue's attached model; not reproduced in this pass (a silent imprint instead of a cut) |
+| 1659 | Boolean cut silently returns an imprint instead of a cut: plane/B-spline section loop left open | applies | Reproduced on its files: Cut 5271.23 from 5264.71, Common empty, two loose vertices in the section, no error |
 | 1658 | `SetColor()` does not recolor seam / degenerated / boundary edges of a shape | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 1652 | Data Exchange, STEP Import - Spherical/toroidal CURVE_BOUNDED_SURFACE with a clockwise OUTER_BOUNDARY_CURVE is read as the complement of the patch sin | can't tell | CURVE_BOUNDED_SURFACE read: same reader; needs a file |
 | 1651 | GeomLProp_SLProps: MinCurvature/MaxCurvature/MeanCurvature/GaussianCurvature return the previous value on the first call after construction or SetPara | already fixed | Kerf computes before reading: `SLProps.RequireCurvature` (decision in phase 2); the port's comment says so |
-| 1643 | Booleans on two valid lofts that share an end section: Fuse empty, Common zero, Cut larger than its object (7.9.3 and 8.0.1) | can't tell | Needs the issue's loft script (Python): not ported to a probe in this pass |
-| 1639 | Modeling Algorithms - BRepFilletAPI_MakeFillet result depends on the order of the shell's faces | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
+| 1643 | Booleans on two valid lofts that share an end section: Fuse empty, Common zero, Cut larger than its object (7.9.3 and 8.0.1) | applies | Reproduced from its numbers, baked sections: Fuse 1773362, Common 0, Cut 1773362 from 1750653, no error. Its located sections weren't tried |
+| 1639 | Modeling Algorithms - BRepFilletAPI_MakeFillet result depends on the order of the shell's faces | applies | Reproduced on its files: 10596.3 for 29799.9, with an edge's tolerance of 190, and valid. Its other order is right. The public fillet now fails (decision 1833); the cause isn't found |
 | 1638 | Segfault in STEPCAFControl_Reader::findReprItems when a representation has no items | not relevant | Null items natively a crash; the port's STEP layer reports (decision 1050s) |
 | 1637 | GCC 16 miscompiles BRepClass3d_SClassifier::Perform in 7.9.x, classifying a point on an edge segfaults | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1633 | BRepAlgoAPI_Common returns an empty result (and Cut removes nothing) for two overlapping cylinders whose axes are about 1 degree apart | already fixed | Decision 1783; reproduced (Common 0 at 1°) and fixed: the walk ran on past both bounds |
 | 1632 | Modeling Algorithms - Expose faulty contours and vertices on BRepFilletAPI_MakeChamfer | applies | An API gap: MakeChamfer doesn't report its faulty contours. Small |
 | 1631 | Modeling Algorithms - BRepFilletAPI_MakeFillet loses external radius law and throws in Build | already fixed | Reproduced: works, 7962.8; decision 1676 fixed `ChFiDS_FilSpine.Reset` |
 | 1630 | Modeling - BRepOffsetAPI_MakePipe access violation for cubic spine and circular face | applies | Reproduced: no crash, but `ApiMakePipe.Shape()` refuses: a cubic spine and a circle make no pipe |
-| 1629 | Boolean cut of a helical sweep fused with a cylinder returns the argument uncut plus an inverted solid, silently, at some depths | can't tell | Needs the issue's attached model; not reproduced in this pass (a silent uncut result) |
+| 1629 | Boolean cut of a helical sweep fused with a cylinder returns the argument uncut plus an inverted solid, silently, at some depths | applies | Reproduced on its files: Cut gives two solids totalling 7705.48, the block's volume, no error |
 | 1626 | Add a way to disable cout in case of error | not relevant | Kerf doesn't write to the console (the clean-up) |
 | 1622 | Extrema_GlobOptFuncCCC2: value is the distance but the gradient is of the squared distance | applies | Read: the same gradient. Costs time only: belongs with 11Q |
 | 1619 | Use-after-free in TopOpeBRepBuild `CorrectUnclosedWire` crashes `BRepFilletAPI_MakeFillet::Build` | already fixed | occt-issues.md row for `CorrectUnclosedWire`: the port iterates a copy |
 | 1618 | NaN and infinite inputs pass the validity checks of gp/Geom constructors | already fixed | Decision 1782 for radii and angles; directions and points are left: see the ranked list |
 | 1617 | Parabola with zero focal distance: evaluation is a line, but projection and parameter inversion are not | already fixed | Decision 1781; reproduced and fixed |
 | 1615 | Visualisation: Run-time vs Compile-time paths for X11 / Wayland contexts | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
-| 1613 | BRepAlgoAPI_Fuse silently drops a compound operand of two B-spline solids (fused correctly as separate tools) | can't tell | Needs the issue's attached model; not reproduced in this pass (a compound operand of two B-spline solids) |
+| 1613 | BRepAlgoAPI_Fuse silently drops a compound operand of two B-spline solids (fused correctly as separate tools) | already fixed | Reproduced: the fuse gave the cylinder alone, 12566.4, for 12687.3. A reversed solid's splits in a compound were turned inside out. Fixed: decision 1832 |
 | 1610 | BOP fuse of two tubes meeting at a shallow angle leaves the section open since 0029093 (IntWalk_PWalking::ExtendLineInCommonZone) | can't tell | Needs the issue's attached model; not reproduced in this pass (a section left open at a shallow angle) |
 | 1608 | BRepTools::Read never returns on a truncated text BRep | already fixed | Reproduced: the port throws `StreamFormatErrorException` (the reader's guards, phase 8) |
-| 1607 | BRepPrimAPI_MakeRevol: should Generated() report the Solid and planar Faces of a full revolution? | can't tell | A question for history: which is right is a matter of design |
+| 1607 | BRepPrimAPI_MakeRevol: should Generated() report the Solid and planar Faces of a full revolution? | not relevant | A question about what history should say, not a defect |
 | 1606 | `BRepOffsetAPI_MakeOffset` crashes (SIGSEGV) offsetting a planar face bounded by two concentric circles | already fixed | Decision 1788; here not a crash but "not done"; fixed |
 | 1604 | BRepBndLib::AddOptimal returns a box smaller than the bspline-shape in 8.0.1 (correct in 7.8.1) | already fixed | Decision 1777; reproduced (-19.826 for -20) and fixed |
 | 1577 | `GeomGridEval_Surface::EvaluateGrid` returns wrong points just below an interior BSpline knot, makes `BRepBndLib::AddOptimal/AddOBB` ~10-35x slower | already fixed | Decision 1775; reproduced (5.03 off) and fixed |
-| 1576 | Crash on chamfer on complex shape | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
-| 1573 | UnifySameDomain breaks spherical faces with pole edges when the spheres have rotated frames | can't tell | Unify on rotated spheres; needs the sample built: not tried |
-| 1571 | Faulty shape with fillet on a rounded cube | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
-| 1570 | Faulty shape with fillet beyond a radius | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
-| 1569 | Faulty shape with fillet on simple shape | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
-| 1568 | Crash on fillet meeting opposite edge | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
+| 1576 | Crash on chamfer on complex shape | already fixed | Tried on its file: the chamfer fails with no crash |
+| 1573 | UnifySameDomain breaks spherical faces with pole edges when the spheres have rotated frames | applies | Reproduced from its numbers: invalid at 37, 90 and 180 degrees, with no crash. Its partial fix isn't enough, by its own account |
+| 1571 | Faulty shape with fillet on a rounded cube | applies | Reproduced on its file: invalid, volume 4e29. The public fillet fails |
+| 1570 | Faulty shape with fillet beyond a radius | applies | Reproduced on its file: at 5.5 valid, with edges crossing (`bopcheck`), and clean at 5.0. Silent |
+| 1569 | Faulty shape with fillet on simple shape | applies | Reproduced on its file: valid and self-interfering. Silent |
+| 1568 | Crash on fillet meeting opposite edge | already fixed | Tried on its file: 1.5 fails with no crash, and 1.49 is valid. The fillet to the opposite edge itself is question 2 |
 | 1567 | `BRepAlgoAPI_Fuse` of a partial torus and a tangent sphere gives an invalid, empty or wrong-volume result | already fixed | Decision 1818; reproduced (empty) and fixed: 26.7684 |
 | 1566 | `BRepPrimAPI_MakeRevol` gives an invalid or wrong-volume solid for a circular profile edge | already fixed | Decision 1780; reproduced (0.5655 for 0.7101) and fixed |
 | 1564 | License header of 8 TKGeomBase files says 'commercial software', contradicting LGPL-2.1 | not relevant | OCCT's licence header on 8 files: for the kept header, see NOTICE; nothing to change in behaviour |
@@ -189,11 +205,11 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1558 | BRepMesh generates degenerate triangles on a helical pipe with a periodic circular section | can't tell | Needs the issue's attached model; not reproduced in this pass |
 | 1556 | IFSelect_WorkSession::GiveFileRoot/GiveFileComplete return a pointer into one process-shared buffer | not relevant | The port has no process-shared buffer (decision on statics, unit 10I) |
 | 1546 | HLRBRep_Data: TableauRejection::Set reads one element past a row (bound tested after dereference) | can't tell | Hidden lines, read past a row: in managed code an exception at worst; not checked |
-| 1543 | Modeling Algorithms - Boolean Cut with a helical swept tool silently removes nothing when the tool exits through a planar face (IntPatch loses the bou | can't tell | Needs the issue's helical tool built: not tried (a silent uncut result) |
+| 1543 | Modeling Algorithms - Boolean Cut with a helical swept tool silently removes nothing when the tool exits through a planar face (IntPatch loses the bou | already fixed | Reproduced with its tool: DZ 16.2, 16.4 and 16.6 removed nothing. Fixed with its two changes, for pieces partly out of the face: decision 1834; 5841.8 at 16.2 |
 | 1542 | Division by Machine Precision in Intf_Tool::LinBox | can't tell | Read: `Intf_Tool.LinBox` has the same division; effect only on a nearly axis-parallel box |
-| 1541 | Applying `ShapeUpgrade_UnifySameDomain` to a valid boolean cut (box - sphere) produces an invalid shape | can't tell | My guess at its numbers doesn't reproduce it (valid, 0.93898); its main.cpp is an attachment. occt-issues.md has a row on the same code |
+| 1541 | Applying `ShapeUpgrade_UnifySameDomain` to a valid boolean cut (box - sphere) produces an invalid shape | already fixed | Reproduced from its numbers: invalid, 0.9543 for 0.9836. Fixed: decision 1831; valid, and the volume stays |
 | 1536 | Violation of the the C++ One Definition Rule | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
-| 1534 | Boolean cut on periodic cylindrical/conical face creates disconnected wire | can't tell | Needs the issue's attached model; not reproduced in this pass (helical thread; FreeCAD) |
+| 1534 | Boolean cut on periodic cylindrical/conical face creates disconnected wire | can't tell | Its cutter isn't attached. The file before is valid and the one after invalid, so the Boolean can't be run |
 | 1527 | Configuration, CMake - support GNUInstallDirs for Unix installation layout | not relevant | Build, packaging or repository matter: Kerf has its own build |
 | 1523 | Bug with DF_Label reading Chinese names | not relevant | OCAF or CDF documents: not ported; Kerf has an immutable assembly tree (unported.md) |
 | 1521 | Modeling Algorithms - Defeaturing cannot remove a corner round: adjacent-face extension is sized by the feature, not by the distance the faces must sp | can't tell | Needs the issue's attached model; not reproduced in this pass (defeaturing) |
@@ -207,13 +223,13 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1460 | Data Exchange, STEP Export - Natural bound written as VERTEX_LOOP drops the seam of a trimmed periodic face | can't tell | Same writer; not tried |
 | 1458 | Rename TKCAF and TKMesh-related toolkits to make them fit to the general TK-naming rule | not relevant | Build, packaging or repository matter: Kerf has its own build |
 | 1456 | BOPTools_AlgoTools3D::DoSplitSEAMOnFace(edge, face) SIGSEGVs on a null pcurve (unchecked BRep_Tool::CurveOnSurface, unlike its 3-argument sibling) | not relevant | A null dereference natively; here an exception, and BOPAlgo reports it |
-| 1444 | Bad meshing of torus-like shapes with some specific curvatures | can't tell | Needs the issue's attached model; not reproduced in this pass (meshing; see 11O) |
+| 1444 | Bad meshing of torus-like shapes with some specific curvatures | applies | Reproduced on its file: a deflection of 1.43 for 0.45 asked, silently |
 | 1434 | GeomTools_Curve2dSet::Add / GeomTools_SurfaceSet::Add accept a null handle and defer the crash to Write(), unlike the CurveSet sibling | not relevant | Natively a crash on a null handle: the port's analyzers refuse null (nullable) |
 | 1431 | ChFi2d_Builder::AddChamfer(edge, edge, ...) SIGSEGVs on a repeated edge pair (unchecked FindConnectedEdges status) | applies | Natively a crash; here a null dereference becomes an exception. Small |
-| 1430 | Fillet crashes and self-intersections | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
+| 1430 | Fillet crashes and self-intersections | applies | Reproduced on its file: no crash, but four of its five cases are invalid, which the public fillet reports, and the fifth valid and self-interfering |
 | 1429 | HLRAlgo_PolyHidingData.hxx:43:5: error: 'gp_XYZ' does not name a type | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
-| 1427 | Failing fillet on tapered surface | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
-| 1421 | Crash on failing fillet | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
+| 1427 | Failing fillet on tapered surface | applies | Reproduced on its files: `tapered_2_9` fails where `tapered_2_8` works |
+| 1421 | Crash on failing fillet | already fixed | Tried on its file: the fillet fails with no crash |
 | 1419 | Modeling Algorithms - Missing implementations for exported methods | already fixed | occt-issues.md row: declared, never defined: left out |
 | 1409 | Shape Healing - ShapeFix_ComposeShell::Perform/SplitEdges and ShapeUpgrade_WireDivide::Perform SIGSEGV on a null ReShape context | not relevant | A null context natively; the port's healing always makes one |
 | 1405 | Static DRAWEXE fails with USE_RAPIDJSON=OFF due to unconditional XSDRAWGLTF registration | not relevant | Build, packaging or repository matter: Kerf has its own build |
@@ -225,16 +241,16 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1385 | BOPAlgo_ArgumentAnalyzer self-interference: unbounded runtime (no checkpoint) + O(n) tangent-zone lookup | can't tell | Self-interference has no checkpoint: read; a slow-case matter for 11Q |
 | 1384 | String's keyValues in TDataStd_NamedData have encoding problem | not relevant | OCAF or CDF documents: not ported; Kerf has an immutable assembly tree (unported.md) |
 | 1371 | MakeFillet on a closed B-spline rim silently returns a self-intersecting solid | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
-| 1368 | Data Exchange, Step Import - Zero value of semantic dimentions | can't tell | GD&T units on NIST files: dataset cases pass as native does; upstream fix in #1644 and #1647 not ported |
+| 1368 | Data Exchange, Step Import - Zero value of semantic dimentions | not relevant | GD&T in the assembly document, which isn't ported ([unported.md](unported.md)) |
 | 1367 | Foundation -  BVH_BoxSet::Center has improper return type. | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1366 | Data Exchange - redundant instances of XCAFDoc_GraphNode are created in XCAFDoc_ViewTool | not relevant | OCAF or CDF documents: not ported; Kerf has an immutable assembly tree (unported.md) |
-| 1365 | Shape Healing - Exception on fixshape call | can't tell | Needs the issue's attached model; not reproduced in this pass (healing) |
+| 1365 | Shape Healing - Exception on fixshape call | applies | Reproduced on its file: an evaluation failure from `fixshape`, on an input with bad flags. The public `Fix` reports a failure |
 | 1364 | Modeling Algorithms - IntCurvesFace_ShapeIntersector results in a crash when used inside a loop | can't tell | Needs the issue's attached model; not reproduced in this pass (natively a crash) |
-| 1363 | Data Exchange - Wire order change on STEP Exchange | can't tell | Needs the issue's attached model; not reproduced in this pass (wire order on a STEP round trip) |
+| 1363 | Data Exchange - Wire order change on STEP Exchange | applies | Reproduced on its file: edges 2 and 5 of the face swap on a round trip, and its area moves by 0.12 in 2939 |
 | 1362 | Coding - IGESToBRep_CurveAndSurface's method has unreachable code | not relevant | IGES: not ported (unported.md) |
 | 1361 | Visualisation - AIS_InteractiveContext::setObjectStatus not using ToPropagateVisualState() in AIS_InteractiveContext::setObjectStatus() | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 1360 | Modeling - Access violation using fuzzy boolean operations | can't tell | Needs the issue's attached model; not reproduced in this pass (fuzzy Boolean, natively a crash) |
-| 1359 | Modeling - Read a bincad file throws an exception | can't tell | Needs the issue's attached model; not reproduced in this pass (binary BRep) |
+| 1359 | Modeling - Read a bincad file throws an exception | can't tell | Its attachments are a 7z and a tar.gz, which this pass doesn't unpack |
 | 1358 | Visualization - dynamic highlight results are not cleared by AIS_InteractiveContext::Redisplay() | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 1357 | Modeling Algorithms - ASSERT failed in BRepTools_History::AddGenerated() in debug mode | not relevant | A debug-build assertion, which the port doesn't have |
 | 1356 | Foundation Classes, OSD_Host::InternetAddress() - possible NULL dereference on copying gethostbyname() result | not relevant | OSD_Host isn't ported |
@@ -243,25 +259,25 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1353 | Tests - move tests bugs modalg_5 bug24157_* from group bugs modalg_5 to perf | not relevant | OCCT's documentation or tests only |
 | 1352 | Mesh -  tricheck command incorrectly reports error on internal face | not relevant | Draw's own command or harness: Draw-lite has its own |
 | 1351 | Data Exchange, XCAF - XCAFDoc_GraphNode doesn't copy backward links | not relevant | OCAF or CDF documents: not ported; Kerf has an immutable assembly tree (unported.md) |
-| 1350 | Shape Fix - FixMissingSeam produces extra wire with null area | can't tell | Needs the issue's attached model; not reproduced in this pass (healing) |
+| 1350 | Shape Fix - FixMissingSeam produces extra wire with null area | already fixed | Tried on its file: `fixshape` gives a valid face with 17 wires from 18, so no extra wire |
 | 1349 | Iges Import - Iges-reader reads invalid shape | not relevant | IGES: not ported (unported.md) |
 | 1348 | Step Export - Valid shape is written to STEP-file as invalid (self-intersected) | can't tell | Needs the issue's attached model; not reproduced in this pass (a valid shape written self-intersecting) |
-| 1347 | STEP - edge curve with identical vertices is reported on file generated by OCCT | can't tell | Needs the issue's attached model; not reproduced in this pass |
+| 1347 | STEP - edge curve with identical vertices is reported on file generated by OCCT | not relevant | Its warnings come from a file written through the assembly document, which isn't ported ([unported.md](unported.md)) |
 | 1346 | IGES Import - Parser does not recognize comments in Parameters section | not relevant | IGES: not ported (unported.md) |
 | 1345 | STEP - Possible misuse of StepData_StepModel::SetIdentLabel() in StepAP209_Construct | not relevant | StepAP209 isn't ported (unported.md) |
 | 1344 | Documentation -  compgraph parameter of STEPControl_Writer::Transfer () is missing | not relevant | OCCT's documentation or tests only |
 | 1343 | Modeling - LProp_SLProps::IsNormalDefined() uses unapproptiate method of CSLib to calculate normal | can't tell | Read: same `CSLib.Normal` call; effect is on a tolerance only |
 | 1342 | Data Exchange - Regression in DEBUG mode in test case de iges_2 B1 | not relevant | IGES: not ported (unported.md) |
 | 1341 | Foundation - gp_Hyper empty constructor raise exception | already fixed | Decision 1789; read and fixed |
-| 1340 | Modeling - SameParameter & SameRange flags are set incorrectly in ShapeBuild_Edge::CopyRanges | can't tell | Read: same code; effect on flags only |
+| 1340 | Modeling - SameParameter & SameRange flags are set incorrectly in ShapeBuild_Edge::CopyRanges | already fixed | Reproduced on its `min_shell.brep` and `fuse_valid.brep`: both invalid after Unify. Fixed: decision 1830; both valid |
 | 1339 | STEP Export - Exception is raised during writing with ExternalReferences mode in STEP  XDE  document. | not relevant | OCAF or CDF documents: not ported; Kerf has an immutable assembly tree (unported.md) |
 | 1328 | OpenGl_PBREnvironment::bake() — mismatched texture unit in Bind/Unbind pair for environment map | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 1320 | Segmentation violation on exit from Draw after view initialization | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 1315 | BRepOffsetAPI_ThruSections — twisted / self-intersecting result reported valid | can't tell | Needs the issue's attached model; not reproduced in this pass (a twisted loft reported valid) |
-| 1310 | ShapeUpgrade_UnifySameDomain returns a non-triangulatable shape for a closed pipe with circular spine and circular profile made of two semicircular ar | can't tell | Needs the pipe built: not tried |
-| 1297 | Modeling - SIGSEGV (null deref) in BRepFill_CompatibleWires::SameNumberByPolarMethod on mismatched ThruSections profiles | can't tell | Needs the issue's attached model; not reproduced in this pass (natively a crash) |
+| 1310 | ShapeUpgrade_UnifySameDomain returns a non-triangulatable shape for a closed pipe with circular spine and circular profile made of two semicircular ar | already fixed | Reproduced from its numbers: one face with no edges, and no triangles. Fixed: decision 1837 |
+| 1297 | Modeling - SIGSEGV (null deref) in BRepFill_CompatibleWires::SameNumberByPolarMethod on mismatched ThruSections profiles | already fixed | Tried from its numbers: the loft reports failure, with no crash |
 | 1285 | Data Exchange - USD Import Export | not relevant | A request for a new feature, not a defect |
-| 1283 | Incomplete read STEP with special 'COMPOUND_REPRESENTATION_ITEM' | can't tell | Same reader; a PMI item; needs a NIST file the dataset may lack |
+| 1283 | Incomplete read STEP with special 'COMPOUND_REPRESENTATION_ITEM' | not relevant | A PMI item in the assembly document, which isn't ported ([unported.md](unported.md)) |
 | 1279 | Data Exchange - VrmlAPI_Writer does not write all colors | not relevant | VRML: not ported (unported.md) |
 | 1276 | HLR from cylinder's axis is extremely slow | can't tell | Needs the issue's attached model; not reproduced in this pass (slowness: belongs with 11Q) |
 | 1238 | Entity missing when call 'XCAFDoc_DimTolTool.GetGDTPresentations()' | not relevant | OCAF or CDF documents: not ported; Kerf has an immutable assembly tree (unported.md) |
@@ -270,52 +286,52 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1173 | Section of two solids results in a compound of edges | not relevant | A question of what a section returns: it returns edges, by design |
 | 1162 | make MAX_TEX_NUMBER settable from code | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 1161 | Poor PSO_Perform performance | not relevant | PSO's speed: 11Q |
-| 1138 | Missing shape labels for certain datum labels | can't tell | Datum labels from NIST files: needs a file |
-| 1124 | Incorrectly computed sections | can't tell | Sample in the issue needs its files; not tried |
-| 1123 | Incorrect minimum distance with intersecting parts | can't tell | Needs the issue's attached model; not reproduced in this pass (a wrong minimum distance) |
-| 1107 | mkoffsetshape bad geometry (wrench.brep) | can't tell | Needs the issue's attached model; not reproduced in this pass (offset) |
-| 1106 | mkoffsetshape bad geometry (pacman.brep) | can't tell | Needs the issue's attached model; not reproduced in this pass (offset) |
-| 1081 | Conversion STP AP242 to GLB | can't tell | Needs the issue's attached model; not reproduced in this pass |
+| 1138 | Missing shape labels for certain datum labels | not relevant | Datum labels in the assembly document, which isn't ported ([unported.md](unported.md)) |
+| 1124 | Incorrectly computed sections | applies | Reproduced on its files: with approximation off, case 4 has 0.004 of its 40.53 length and two loose vertices, and with it on all four close. `BooleanOptions` and `Kerf.Modeling` now approximate (decision 1836). The cause with it off isn't found |
+| 1123 | Incorrect minimum distance with intersecting parts | applies | Reproduced on its files, with its figures: 6.08e-5 and 0.083 where the parts intersect |
+| 1107 | mkoffsetshape bad geometry (wrench.brep) | applies | Reproduced on its file: invalid, two open shells. The public offset fails |
+| 1106 | mkoffsetshape bad geometry (pacman.brep) | applies | Reproduced on its file: invalid. The public offset fails |
+| 1081 | Conversion STP AP242 to GLB | applies | Reproduced on its file: invalid, and 106 s and 1.08M triangles to mesh on a loaded machine |
 | 1062 | BRepOffsetAPI_MakePipeShell holes in the surface | can't tell | Needs the issue's attached model; not reproduced in this pass (pipe) |
 | 1055 | Improve exception safety with smart pointers | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1053 | Reserved identifier violation (header guards) | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1043 | Unexpected memory footprint differences | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1041 | Boolean fuse operation fails when rotation is involved | can't tell | Needs the issue's attached model; not reproduced in this pass (Boolean with rotation) |
-| 1039 | Missing intersection edges when performing face-model BREP intersection | can't tell | Needs the issue's attached model; not reproduced in this pass |
+| 1039 | Missing intersection edges when performing face-model BREP intersection | applies | Reproduced on its files: the slice's area is 86898 where its neighbour's is 70013, with one more edge |
 | 1036 | Inconsistent Generated/Modified/IsDeleted implementations across BRepBuilderAPI classes Summary | applies | A real inconsistency in history across makers; a design job, partly done by Kerf.Modeling's own history. Medium |
-| 994 | OFFSET_SURFACE did not parse correctly | can't tell | Same reader; OFFSET_SURFACE with a complex entity; not tried |
+| 994 | OFFSET_SURFACE did not parse correctly | already fixed | Reproduced on its file: 35 of 36 faces, and the shell open. The basis is C0 at a knot, so no surface was made. Fixed: decision 1838; 36 faces, 4 valid solids, and it meshes |
 | 986 | Provide an approach to tracking Topo_Shape after using ShapeFix_Shape | not relevant | A request for a new feature, not a defect |
-| 945 | BRepPrimAPI_MakePrism: Shell extrusion produces CompSolid with problematic internal faces | can't tell | Prism of a shell makes a CompSolid: by design in OCCT; a question of what a user expects |
-| 905 | BOPAlgo_MakerVolume fails to orient shape correctly | can't tell | Needs the issue's attached model; not reproduced in this pass |
-| 900 | Faulty shapes with a fillet on a straight base, sweep, and a curve in the opposite direction | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
-| 899 | Faulty shapes with a fillet on a curved base, sweep, and a curve in the opposite direction | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
+| 945 | BRepPrimAPI_MakePrism: Shell extrusion produces CompSolid with problematic internal faces | not relevant | By design: a prism of a shell makes one solid a face. Kerf.Modeling's question, not a defect |
+| 905 | BOPAlgo_MakerVolume fails to orient shape correctly | applies | Reproduced on its file: one solid for two, with the warning that it can't orient the shape |
+| 900 | Faulty shapes with a fillet on a straight base, sweep, and a curve in the opposite direction | applies | Reproduced on its file: invalid, volume 2927 from 9820. The public fillet fails |
+| 899 | Faulty shapes with a fillet on a curved base, sweep, and a curve in the opposite direction | applies | Reproduced on its file: invalid, volume 62624 from 17069. The public fillet fails |
 | 837 | Add stream output support for STL, GLTF and other file formats | not relevant | A request for a new feature, not a defect |
 | 791 | Simplified wrapper for C++, Python and JS/TS | not relevant | A request for a new feature, not a defect |
 | 775 | VRML import issue | not relevant | VRML: not ported (unported.md) |
-| 737 | Fillet bending upward on one side, downward on the other | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
+| 737 | Fillet bending upward on one side, downward on the other | applies | Reproduced on its file: valid and self-interfering (F/F). Silent |
 | 736 | Fillet operation produces shape with artefact | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
-| 724 | More than 10GB of memory needed for boolean operation between two simple faces | can't tell | Needs the issue's attached model; not reproduced in this pass (memory: belongs with 11Q) |
-| 694 | Artifact with a fillet on a straight base, sweep, and a straight edge | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
-| 692 | Faulty shapes with a fillet on a curved base, sweep, and a curve in the same direction. | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
-| 691 | Faulty shapes with a fillet on a curved base, sweep, and a straight edge | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
-| 666 | The result of ShapeFix_Shape do not make ShapeUpgrade_UnifySameDomain work. | can't tell | Needs the issue's attached model; not reproduced in this pass (healing and unify) |
+| 724 | More than 10GB of memory needed for boolean operation between two simple faces | applies | Reproduced on its files: past 150 s, memory not measured. For 11Q |
+| 694 | Artifact with a fillet on a straight base, sweep, and a straight edge | applies | Reproduced on its file: valid and self-interfering. Silent |
+| 692 | Faulty shapes with a fillet on a curved base, sweep, and a curve in the same direction. | applies | Reproduced on its file: invalid. The public fillet fails |
+| 691 | Faulty shapes with a fillet on a curved base, sweep, and a straight edge | applies | Reproduced on its file: invalid, volume 62252 from 17084. The public fillet fails |
+| 666 | The result of ShapeFix_Shape do not make ShapeUpgrade_UnifySameDomain work. | applies | Reproduced on its file: Unify gives 7 faces directly and 5 after a STEP round trip. Both valid, so only less merged |
 | 654 | Consider providing an official C API | not relevant | A request for a new feature, not a defect |
 | 651 | AIS_MultipleConnectedInteractive Color Change | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
-| 639 | Sweeping fail with RightCorner transition mode | can't tell | Needs the issue's attached model; not reproduced in this pass (pipe transition) |
-| 588 | Extrema between two circular curves incorrect | can't tell | Script attached; not tried (circles with a shared centre plane) |
+| 639 | Sweeping fail with RightCorner transition mode | applies | Reproduced on its files: not done. A failure, not a wrong shape |
+| 588 | Extrema between two circular curves incorrect | already fixed | Tried on five of its cases: the shortest extremum matches `distmini` on each. Its patch's flag for infinitely many isn't compared |
 | 575 | Incorrect HLR result | can't tell | Needs the issue's attached model; not reproduced in this pass (hidden lines) |
-| 572 | Cone surface cannot be triangulated | can't tell | Needs the issue's attached model; not reproduced in this pass (meshing) |
+| 572 | Cone surface cannot be triangulated | applies | Reproduced on its file: no triangles, valid face. The mesher's structure ends with no elements; not a range clipped by rounding, which was tried |
 | 568 | OCC+VTK：The program crashed in debug mode | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 553 | ElCLib::AdjustPeriodic() failed to add a period | applies | Read: `AdjustPeriodic` uses the same test; needs a very small Preci. Small but delicate |
-| 541 | Origin and color problems with SolidWorks STEP models. | can't tell | Needs the issue's attached model; not reproduced in this pass |
+| 541 | Origin and color problems with SolidWorks STEP models. | not relevant | Origin and colours through the assembly document, which isn't ported ([unported.md](unported.md)) |
 | 512 | STEP import fails if cascade unit it set to M | not relevant | The cascade unit is a global setting of the XS layer; Kerf's `StepReader` takes units from the file |
 | 509 | Possible bug with hash code in NCollection_Map | not relevant | Kerf has its own hashes (decision on `ShapeMapComparer`) |
 | 507 | Crash / invalid memory access when meshing STEP file | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have (a sanitiser's container overflow) |
 | 505 | Documentation - Single documentation for all version (readthedocs.com) | not relevant | OCCT's documentation or tests only |
 | 490 | Data Exchange - Structural storage and interface | not relevant | A request for a new feature, not a defect |
 | 486 | Improve TDocStd_Document Memory Management via Lazy Loading | not relevant | OCAF or CDF documents: not ported; Kerf has an immutable assembly tree (unported.md) |
-| 485 | BRepAlgoAPI_Common returns empty TopoDS_Compound for two faces visually intersecting | can't tell | Needs the issue's attached model; not reproduced in this pass |
-| 484 | How to fix: Nothing to transfer | can't tell | Needs the issue's attached model; not reproduced in this pass |
+| 485 | BRepAlgoAPI_Common returns empty TopoDS_Compound for two faces visually intersecting | not relevant | Tried on its file: Common of two faces is what they share, so empty is right. The curve it wants is the section, which gives three edges |
+| 484 | How to fix: Nothing to transfer | applies | Reproduced on its file: no shape, as the issue says. Why isn't looked at |
 | 472 | HLR incorrect hidden line | can't tell | Needs the issue's attached model; not reproduced in this pass (hidden lines) |
 | 456 | DRAW command reference manual | not relevant | OCCT's documentation or tests only |
 | 444 | Use normal find_package/target_link_libraries/modern cmake | not relevant | Build, packaging or repository matter: Kerf has its own build |
@@ -324,16 +340,16 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 434 | Export dll functions bug | not relevant | Build, packaging or repository matter: Kerf has its own build |
 | 430 | The model has defects when converting from step format to wavefront format | can't tell | Needs the issue's attached model; not reproduced in this pass (meshing) |
 | 402 | Geom2dAPI_InterCurveCurve has 2 repeated intersection points | can't tell | Needs the issue's attached model; not reproduced in this pass (duplicate intersections) |
-| 382 | One surface from step file is wrongly imported or tesselated | can't tell | Needs the issue's attached model; not reproduced in this pass |
-| 349 | Missing/incorrect faces in displayed STEP file | can't tell | Needs the issue's attached model; not reproduced in this pass |
+| 382 | One surface from step file is wrongly imported or tesselated | applies | Reproduced on its file: invalid, two faces with no triangles |
+| 349 | Missing/incorrect faces in displayed STEP file | applies | Reproduced on its file: self-intersecting wires, ten faces with no triangles |
 | 344 | Incorrect result when cutting a model with another model | can't tell | Needs the issue's attached model; not reproduced in this pass |
 | 305 | GeomAPI_ExtremaCurveCurve fails to detect intersection [30316] | can't tell | Needs the issue's attached model; not reproduced in this pass (extrema of offset curves) |
-| 304 | Modeling Algorithms - Sweep with acute angle in spine produces wrong intersection results [24991] | can't tell | Pipe with an acute angle: pipe/bugs BAD cases show it still happens; corpus group |
+| 304 | Modeling Algorithms - Sweep with acute angle in spine produces wrong intersection results [24991] | applies | Reproduced on its files: `BRepFill_Sweep::BuildEdge` throws. A failure, not a wrong shape |
 | 303 | Error when finding the intersection between a new face made after a draft and the inner face of body [32857] | can't tell | Needs the issue's attached model; not reproduced in this pass (draft) |
-| 302 | Modeling Algorithms - TCollection_IndexedDataMap::FindFromKey error when sweeping circle along BezierCurve [25110] | can't tell | pipe/bugs BAD: OCC25110: same failure as native |
-| 275 | Intersection produces strange result for given surfaces | can't tell | Needs the issue's attached model; not reproduced in this pass |
+| 302 | Modeling Algorithms - TCollection_IndexedDataMap::FindFromKey error when sweeping circle along BezierCurve [25110] | applies | Reproduced on its files, the same as #304 |
+| 275 | Intersection produces strange result for given surfaces | can't tell | Tried on its file: one edge in a small box, and no way to judge it without its picture |
 | 249 | Multiplatform compilation testing on GH | not relevant | Build, packaging or repository matter: Kerf has its own build |
-| 245 | Boolean cut has issues when it involves a common Edge between argument and the tool. | can't tell | Needs the issue's attached model; not reproduced in this pass |
+| 245 | Boolean cut has issues when it involves a common Edge between argument and the tool. | applies | Reproduced on its files: the cut removes about 14,000 of 756 million, with a sphere of 524 million, and warnings. A comment puts the cause in the revolution/sphere intersection at the pole |
 | 191 | BRepOffsetAPI_MakeOffset fail | can't tell | Needs the issue's attached model; not reproduced in this pass (offset) |
 | 176 | MoveTo() from AIS_InteractiveContext sometimes doesn't redraw the viewer, even if the flag is set to true | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 145 | Standard_Macro.hxx conflicts on Windows defines | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |

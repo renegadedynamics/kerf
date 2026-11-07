@@ -176,7 +176,8 @@ public static class FilletOperations
                     faulty = [tooLarge, .. faulty];
                 }
                 return outcome with { Failure = faulty[0], MoreFailures = faulty[1..] };
-            }, Failure, progress, cancellationToken, options.CheckResult ? "The fillet's result" : null);
+            }, Failure, progress, cancellationToken, options.CheckResult ? "The fillet's result" : null,
+               made => Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Radius, s.EndRadius ?? 0.0))), "The fillet's result"));
         }
 
         /// <summary>
@@ -259,7 +260,8 @@ public static class FilletOperations
                                                         () => FilletLimits.TooLarge(solid, specs, faces)
                                                               ?? Diagnostic.Error(Failed, $"The chamfer couldn't be built on {specs.Length} edge(s).").WithShapes(specs.Select(s => (Shape)s.Edge)));
                 return !outcome.IsDone && FilletLimits.Chamfer(solid, specs, faces, options) is { } limit ? limit : outcome;
-            }, Failure, progress, cancellationToken, options.CheckResult ? "The chamfer's result" : null);
+            }, Failure, progress, cancellationToken, options.CheckResult ? "The chamfer's result" : null,
+               made => Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Distance, s.Distance2 ?? 0.0))), "The chamfer's result"));
         }
     }
 
@@ -382,6 +384,9 @@ public static class FilletOperations
     // The faulty contours' errors, each with its edges; or the operation's own error
     // The errors of a failed fillet: the first faulty contour's status with all the faulty contours' edges, then one per
     // faulty contour with its own status and edges
+    // A tolerance a fillet or chamfer's result could need: its largest size, or what its input already had
+    private static double ToleranceLimit(Shape solid, double size) => Math.Max(size, Validity.LargestTolerance(solid));
+
     private static ImmutableArray<Diagnostic> Faulty(MakeFillet fillet, int edgeCount)
     {
         var edges = new List<Shape>();

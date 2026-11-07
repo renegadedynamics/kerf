@@ -122,6 +122,22 @@ public class BRepTopAdaptorTests
     }
 
     [Fact]
+    public void A_points_state_doesnt_depend_on_what_was_classified_before()
+    {
+        // #1692: the classifier was built once, with the first call's tolerance, and kept for every later one. A point just
+        // outside the boundary is on it with a tolerance that reaches it, so asking first with a smaller one changed the answer.
+        Face aFace = Holed();
+        var aPoint = new Point2D(-1e-3, 2);
+        Containment aFresh = new BrepTopolTool(new FaceSurfaceAdaptor(aFace)).Classify(aPoint, 1e-2);
+
+        var aTool = new BrepTopolTool(new FaceSurfaceAdaptor(aFace));
+        Assert.Equal(In, aTool.Classify(new Point2D(2, 2), 1e-7));
+        Assert.Equal(aFresh, aTool.Classify(aPoint, 1e-2));
+        Assert.Equal(new BrepTopolTool(new FaceSurfaceAdaptor(aFace)).Classify(aPoint, 1e-7), aTool.Classify(aPoint, 1e-7));
+        Assert.NotEqual(aFresh, aTool.Classify(aPoint, 1e-7));
+    }
+
+    [Fact]
     public void TopolTool_needs_brep_adaptors()
     {
         var aTool = new BrepTopolTool();

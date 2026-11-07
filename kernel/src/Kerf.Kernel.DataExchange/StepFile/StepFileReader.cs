@@ -111,6 +111,7 @@ internal static class StepFileReader
 
         // Kerf: OCCT locks a global mutex here (decision 1177)
         fileDataModel.GetFileNbR(out int nbhead, out int nbrec, out int nbpar); // renvoi par lex/yacc
+        fileDataModel.WalkOnce();
         StepReaderData undirec = new StepReaderData(nbhead, nbrec, nbpar, stepModel.SourceCodePage()); // creation tableau de records
         for (int nr = 1; nr <= nbrec; nr++)
         {

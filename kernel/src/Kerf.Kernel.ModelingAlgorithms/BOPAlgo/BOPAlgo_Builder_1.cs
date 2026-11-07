@@ -291,7 +291,14 @@ internal partial class BooleanBuilder
                 for (; itIm.More(); itIm.Next())
                 {
                     Shape sxIm = itIm.Value();
-                    sxIm.Orient(orX);
+                    // A split of a solid is built from its faces as they lie, so it is already the right way out. OCCT
+                    // gives it the input's orientation too, which turns the splits of a reversed solid inside out, and
+                    // a fuse then drops them (#1613; decision 1832)
+                    if (sxIm.Type != ShapeType.Solid)
+                    {
+                        sxIm.Orient(orX);
+                    }
+
                     bb.Add(cIm, sxIm);
                 }
             }

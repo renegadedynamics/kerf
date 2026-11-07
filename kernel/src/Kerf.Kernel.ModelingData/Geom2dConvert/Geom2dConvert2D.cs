@@ -983,8 +983,7 @@ internal static class Geom2dConvert2D
                     else
                     {
                         CompCurveToBSplineCurve2D C = new(arrayOfConcatenated.Value(i));
-                        // OCCT reads the caller's tolerances, not the ones reordered for a closed wire (occt-issues.md)
-                        fusion = C.Add(curve1, arrayOfToler[j - 1]); // fusion de deux courbes adjacentes
+                        fusion = C.Add(curve1, local_tolerance[j - 1]); // fusion de deux courbes adjacentes
 
                         if (!fusion)
                         {
@@ -1001,7 +1000,7 @@ internal static class Geom2dConvert2D
     }
 
     /// <summary>
-    /// <see cref="ConcatC1(NCollection_Array1{BSplineCurve2D}, NCollection_Array1{double}, out NCollection_HArray1{int}, out NCollection_HArray1{BSplineCurve2D}, ref bool, double, double)"/>
+    /// <c>ConcatC1</c>
     /// with the angular tolerance Precision::Angular().
     /// </summary>
     public static void ConcatC1(NCollection_Array1<BSplineCurve2D> arrayOfCurves,
@@ -1009,10 +1008,11 @@ internal static class Geom2dConvert2D
                                 out NCollection_HArray1<int> arrayOfIndices,
                                 out NCollection_HArray1<BSplineCurve2D> arrayOfConcatenated,
                                 ref bool closedFlag,
-                                double closedTolerance)
+                                double closedTolerance,
+                                bool keepLoopOrder = false)
     {
         ConcatC1(arrayOfCurves, arrayOfToler, out arrayOfIndices, out arrayOfConcatenated, ref closedFlag,
-                 closedTolerance, global::Kerf.Engine.Foundation.Precision.Angular());
+                 closedTolerance, global::Kerf.Engine.Foundation.Precision.Angular(), keepLoopOrder);
     }
 
     /// <summary>
@@ -1028,7 +1028,8 @@ internal static class Geom2dConvert2D
                                 out NCollection_HArray1<BSplineCurve2D> arrayOfConcatenated,
                                 ref bool closedFlag,
                                 double closedTolerance,
-                                double angularTolerance)
+                                double angularTolerance,
+                                bool keepLoopOrder = false)
     {
         int nb_curve = arrayOfCurves.Length(), nb_vertexG1, nb_group = 0, index = 0, i, ii, j, jj, indexmin,
             nb_vertex_group0 = 0;
@@ -1280,8 +1281,8 @@ internal static class Geom2dConvert2D
                     else
                     {
                         CompCurveToBSplineCurve2D C = new(arrayOfConcatenated.Value(i));
-                        // OCCT reads the caller's tolerances, not the ones reordered for a closed wire (occt-issues.md)
-                        fusion = C.Add(curve1, arrayOfToler[j - 1]); // fusion de deux courbes adjacentes
+                        // Kerf (#1541): keepLoopOrder appends where both ends join; OCCT prepends, half a turn out
+                        fusion = C.Add(curve1, local_tolerance[j - 1], keepLoopOrder); // fusion de deux courbes adjacentes
                         if (!fusion)
                         {
                             throw new ConstructionErrorException("Geom2dConvert Concatenation Error");
