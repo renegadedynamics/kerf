@@ -216,7 +216,7 @@ internal static class FilletLimits
         {
             if (side.Width is { } width)
             {
-                double demand = contactPerSize(corner) + (corners.TryGetValue(side.Opposite, out Corner opposite) ? contactPerSize(opposite) : 0);
+                double demand = contactPerSize(corner) + (!side.Opposite.IsNull && corners.TryGetValue(side.Opposite, out Corner opposite) ? contactPerSize(opposite) : 0);
                 largest = Math.Min(largest ?? double.MaxValue, width / demand);
                 double past = size * demand - width;
                 if (past > side.Tolerance && !over.Any(e => e.IsSame(corner.Edge)))
@@ -249,7 +249,8 @@ internal static class FilletLimits
     {
         if (options.Mode == ChamferMode.Classic && specs.Length == 1 && specs[0].Angle is null && specs[0].Distance2 is { } second && second != specs[0].Distance)
         {
-            return Read(new Neighbours(shape), specs[0].Edge) is { } corner ? TwoLengths(corner, specs[0].Distance, second, referenceFaces[0]) : null;
+            var neighbours = new Neighbours(shape);
+            return (Read(neighbours, specs[0].Edge) ?? ReadRim(neighbours, specs[0].Edge)) is { } corner ? TwoLengths(corner, specs[0].Distance, second, referenceFaces[0]) : null;
         }
         return null;
     }
@@ -301,6 +302,12 @@ internal static class FilletLimits
         Vertex[] ends = [.. edges[0].AllVertices()];
         if (ends.Length != 2)
         {
+            var curve = new EdgeCurveAdaptor(edges[0]);
+            if (curve.GetType() == CurveKind.Circle)
+            {
+                Circle3D circle = curve.Circle();
+                return $"the circular edge of radius {circle.Radius:G6} at ({Math.Round(circle.Location.X, 6):G6}, {Math.Round(circle.Location.Y, 6):G6}, {Math.Round(circle.Location.Z, 6):G6})";
+            }
             return "this edge";
         }
         Point3D a = Tool.Pnt(ends[0]), b = Tool.Pnt(ends[1]);
@@ -597,7 +604,7 @@ internal static class FilletLimits
         var corners = new Dictionary<Shape, Corner>(ShapeHasher.Instance);
         foreach (Edge edge in edges)
         {
-            if (Read(neighbours, edge) is { } corner)
+            if ((Read(neighbours, edge) ?? ReadRim(neighbours, edge)) is { } corner)
             {
                 corners[edge] = corner;
             }
@@ -648,6 +655,170 @@ internal static class FilletLimits
             return null;
         }
         return new Corner(edge, start, end, one, two);
+    }
+
+    /// <summary>A whole circle between two surfaces turned about its axis, each straight in section: plane, cylinder or cone. In the
+    /// section through the axis it's a corner of two lines, so the arithmetic is a straight edge's; it starts and ends at one point
+    /// of the circle, where its sides are read.</summary>
+    private static Corner? ReadRim(Neighbours neighbours, Edge edge)
+    {
+        if (Tool.Degenerated(edge))
+        {
+            return null;
+        }
+        var curve = new EdgeCurveAdaptor(edge);
+        if (!WholeCircle(edge, curve))
+        {
+            return null;
+        }
+        IReadOnlyList<Face> faces = neighbours.Faces(edge);
+        if (faces.Count != 2)
+        {
+            return null;
+        }
+        Circle3D circle = curve.Circle();
+        Point3D at = curve.Value(curve.FirstParameter());
+
+        // The way the edge runs: the circle's own, as a whole circle's parameters aren't reversed on an edge held forwards
+        Direction3D tangent = new(new Vector3D(circle.Axis.Direction).Crossed(new Vector3D(circle.Location, at)));
+        if (ReadRimSide(neighbours, faces[0], edge, circle, at, tangent) is not { } one || ReadRimSide(neighbours, faces[1], edge, circle, at, tangent) is not { } two)
+        {
+            return null;
+        }
+        double angle = one.Inward.AngleTo(two.Inward);
+        return angle < 1e-6 || angle > Math.PI - 1e-6 ? null : new Corner(edge, at, at, one, two);
+    }
+
+    private static bool WholeCircle(in Edge edge, EdgeCurveAdaptor curve) =>
+        curve.GetType() == CurveKind.Circle && edge.AllVertices().Length == 1 && Math.Abs(curve.LastParameter() - curve.FirstParameter() - 2 * Math.PI) <= 1e-9;
+
+    private static Side? ReadRimSide(Neighbours neighbours, Face face, Edge edge, in Circle3D circle, in Point3D at, Direction3D tangent)
+    {
+        if (RimNormal(neighbours, face, circle, at) is not { } normal)
+        {
+            return null;
+        }
+        Edge oriented = neighbours.Oriented(face, edge);
+        Direction3D inward = normal.Crossed(oriented.Orientation == Orientation.Reversed ? tangent.Reversed() : tangent);
+        double? width = RimWidth(neighbours, face, edge, circle, at, inward, out Edge opposite, out double tolerance);
+        return new Side(face, normal, inward, width, opposite, tolerance);
+    }
+
+    // The face's outward normal at a point of the circle, if the surface is a plane square to it, or a cylinder or cone about its axis
+    private static Direction3D? RimNormal(Neighbours neighbours, Face face, in Circle3D circle, in Point3D at)
+    {
+        if (neighbours.Normal(face) is { } planar)
+        {
+            return Math.Abs(planar.Dot(circle.Axis.Direction)) >= 1 - 1e-9 ? planar : null;
+        }
+        var surface = new FaceSurfaceAdaptor(face);
+        CoordinateSystem position;
+        double semiAngle = 0;
+        switch (surface.GetType())
+        {
+            case SurfaceKind.Cylinder:
+                position = surface.Cylinder().Position;
+                break;
+            case SurfaceKind.Cone:
+                position = surface.Cone().Position;
+                semiAngle = surface.Cone().SemiAngle;
+                break;
+            default:
+                return null;
+        }
+        Direction3D axis = position.Direction;
+        if (Math.Abs(axis.Dot(circle.Axis.Direction)) < 1 - 1e-9 || new Line3D(position.Axis).DistanceTo(circle.Location) > Tolerance)
+        {
+            return null;
+        }
+
+        // Du x Dv of the surface, which faces away from the axis on a direct one
+        Vector3D radial = new(new Direction3D(new Vector3D(circle.Location, at)));
+        Vector3D normal = radial * Math.Cos(semiAngle) - new Vector3D(axis) * Math.Sin(semiAngle);
+        if (position.IsDirect == (face.Orientation == Orientation.Reversed))
+        {
+            normal *= -1;
+        }
+        return new Direction3D(normal);
+    }
+
+    // How far the face runs from the circle, along its section, where it ends all the way round at the same distance: at the centre of
+    // a plane, at a coaxial circle, or at a cone's apex. Anything else on the face, such as a hole beside the rim or the side of a plate,
+    // leaves the rest of the contact on the face, so it proves nothing
+    private static double? RimWidth(Neighbours neighbours, Face face, Edge edge, in Circle3D circle, in Point3D at, Direction3D inward, out Edge opposite, out double tolerance)
+    {
+        opposite = default;
+        tolerance = Tolerance;
+        var others = new List<Edge>();
+        bool planar = neighbours.Normal(face) is not null;
+        Edge apex = default;
+        foreach (Edge other in neighbours.Edges(face))
+        {
+            if (other.IsSame(edge))
+            {
+                continue;
+            }
+            if (Tool.Degenerated(other))
+            {
+                apex = other;
+            }
+            else if (planar || !Tool.IsClosed(other, face))
+            {
+                others.Add(other);
+            }
+        }
+        Vector3D toCentre = new(at, circle.Location);
+        if (others.Count == 0)
+        {
+            // A disc, to its centre, or a cone, to its apex
+            if (planar)
+            {
+                double centre = toCentre.Dot(new Vector3D(inward));
+                tolerance = WidthTolerance(face, edge, edge);
+                return centre > tolerance ? centre : null;
+            }
+            if (apex.IsNull || new FaceSurfaceAdaptor(face).GetType() != SurfaceKind.Cone)
+            {
+                return null;
+            }
+            tolerance = WidthTolerance(face, edge, apex);
+            double slant = new Vector3D(at, new FaceSurfaceAdaptor(face).Cone().Apex).Dot(new Vector3D(inward));
+            return slant > tolerance ? slant : null;
+        }
+        if (others.Count != 1 || !apex.IsNull)
+        {
+            return null;
+        }
+        Edge far = others[0];
+        var farCurve = new EdgeCurveAdaptor(far);
+        if (!WholeCircle(far, farCurve))
+        {
+            return null;
+        }
+        Circle3D farCircle = farCurve.Circle();
+        tolerance = WidthTolerance(face, edge, far);
+        if (Math.Abs(farCircle.Axis.Direction.Dot(circle.Axis.Direction)) < 1 - 1e-9 || new Line3D(circle.Axis).DistanceTo(farCircle.Location) > tolerance)
+        {
+            return null;
+        }
+
+        // On the section, where the far circle lies: the same point of it as of this one
+        Vector3D radial = toCentre * (-1 / circle.Radius);
+        Point3D farAt = farCircle.Location.Translated(radial * farCircle.Radius);
+        double width = new Vector3D(at, farAt).Dot(new Vector3D(inward));
+        if (width <= tolerance)
+        {
+            return null;
+        }
+
+        // A next face the algorithm calls tangent is no limit, as for a straight edge (decision 1899)
+        Face[] beyond = [.. neighbours.Faces(far).Where(f => !f.IsSame(face))];
+        if (beyond.Length != 1 || Kerf.Engine.Fillets.ChFi3d.IsTangentFaces(far, face, beyond[0]))
+        {
+            return null;
+        }
+        opposite = far;
+        return width;
     }
 
     private static Side? ReadSide(Neighbours neighbours, Face face, Edge edge, in Point3D start, in Point3D end)

@@ -5,6 +5,8 @@ version may break the API.
 
 ## Unreleased
 
+- **A fillet too large for a circular edge between a plane, cylinder or cone now says what fits:** `FilletLimit` gives the radius, and `Fillet` refuses above it at once, with a radius within tolerance of it taken as it.
+
 - **`CentreOfArea()`** gives the centre of a shape's faces' area without its moments, exact for a planar face bounded by lines and circles.
 - **A fillet that can't fit fails at once and says what does,** where it could take seconds; a radius within the shape's tolerance of the limit is the limit, the same in every figure, on either side (decisions 1898, 1899). All of a cube's edges past half its side used to fail with `result.invalid`, carrying what it made; now with `fillet.too-large`. A fillet just below a limit, by under the tolerance, no longer leaves faces narrower than that.
 - **`FilletLimit` no longer claims a limit where the next face is within 0.1 radians,** as the fillet rolls on to that face, rightly.

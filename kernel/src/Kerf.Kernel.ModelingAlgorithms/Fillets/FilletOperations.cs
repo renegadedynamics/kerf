@@ -109,7 +109,7 @@ public static class FilletOperations
     /// <summary>The fillet or chamfer failed without saying why: <c>fillet.failed</c>.</summary>
     public static DiagnosticCode Failed { get; } = new("fillet.failed");
 
-    /// <summary>The size doesn't fit: more than the width of a face beside a straight edge, or just that, where it can't yet be built: <c>fillet.too-large</c>.</summary>
+    /// <summary>The size doesn't fit: more than the width of a face beside a straight or circular edge, or just that, where it can't yet be built: <c>fillet.too-large</c>.</summary>
     public static DiagnosticCode TooLarge { get; } = new("fillet.too-large");
 
     private static readonly Diagnostic Failure = Diagnostic.Error(Failed, "The fillet couldn't be built.");
@@ -203,7 +203,8 @@ public static class FilletOperations
 
         /// <summary>
         /// The most that a radius on these edges can be, from their geometry, without trying: for straight edges between planes
-        /// beside a rectangular face, where the fillet uses up the face (and half of it, with the edge opposite too). No tangent
+        /// beside a rectangular face, and for whole circles between a plane, cylinder or cone about their axis, where the fillet uses up
+        /// the face (and half of it, with the edge opposite too). No tangent
         /// fillet fits above it, so <c>Fillet</c> refuses one at once, though other things can stop one sooner, and at it the fillet
         /// may not be built. A radius within the shape's tolerance of this is taken as this. Null if the edges say nothing.
         /// </summary>

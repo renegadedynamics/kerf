@@ -139,7 +139,7 @@ public static partial class Shape3DExtensions
         }
 
         /// <summary>
-        /// The largest fillet radius the edges take: for straight edges between planes, what the geometry gives, if that can be
+        /// The largest fillet radius the edges take: for straight edges between planes and circles between planes, cylinders and cones, what the geometry gives, if that can be
         /// built; otherwise found by a binary search to within <paramref name="tolerance"/>, which doesn't try what the geometry
         /// says can't fit.
         /// </summary>
