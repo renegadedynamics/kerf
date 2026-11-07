@@ -2237,3 +2237,4 @@ Found by unit 12J:
 | `BRepMesh`, a torus's grid | Parameters from the boundary's points, and no control of the deviation | A mesh 1.42 from the surface for 0.45 asked (#1444) | fixed (decision 22604) |
 | `BRepMesh`, a sphere's grid | Long triangles beside the seam, and no control of the deviation | 1.69 times the deflection on 3% of the triangles, at some deflections | **open**: the same fix doubles those meshes and grows others by 28%; for the owner (decision 22604) |
 | `BRepMesh_ModelPreProcessor`, `SeamEdgeAmplifier` | Chooses a seam's pcurve with the curve's first parameter, far off on a line | A cone with no triangles (#572) | fixed (decision 22605) |
+| `IntWalk_IWalking::IsTangentExtCheck` | Close at four points a step away counts as tangent, whatever the sign | A section's closed curve lost, and a wrong Common (#1039) | fixed (decision 22608) |

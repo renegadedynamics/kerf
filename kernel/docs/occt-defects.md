@@ -27,7 +27,7 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 |---|---|---|---|---|
 | Silent wrong answer | #1659, #1643, #1629 | A Cut that removes nothing or comes out with a solid inside out, a Common empty. Sections left open or the wrong way in. **Now reported as failures (decisions 1860 to 1868); the wrong answers remain.** The figures once given here, 5271.23 from 5264.71 and 1773362 from 1750653, were the default integration's errors (decision 1865) | Reproduced | L for the causes |
 | Silent wrong answer | #1639 | A fillet of volume 10596 for 29800, depending only on the order of the shell's faces. The public fillet now fails, by the size of its tolerance (decision 1833) | Reproduced | M to L: the corner's 3D curve, 190 from its pcurves |
-| Silent wrong answer | #1039, #245 | A face/solid Common with an edge missing, 86898 for about 70000: not reported, as a shell has no rule (decision 1862). A cut that removes almost nothing, with warnings: now a failure (decision 1866) | Reproduced | L |
+| Silent wrong answer | #245 | A cut that removes almost nothing, with warnings: now a failure (decision 1866) | Reproduced | L |
 | Silent wrong answer | #1570, #1569, #737, #694, #1430 | Fillets that pass the check and intersect themselves: the check doesn't look for that | Reproduced | **For the owner**: `bopcheck` on a fillet's result is too slow to be a default, I think; not measured |
 | Silent wrong answer | A sphere | A sphere's mesh 1.69 times its deflection on 3% of its triangles (decision 22604) | Reproduced | S; **for the owner**: the fix costs triangles |
 | Invalid result | #1573, #1571, #899 and others | Unify on rotated spheres; fillets. All reported as failures by the public layer | Reproduced | M to L |
@@ -58,6 +58,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
+| #1039 | A section's closed curve lost between a sphere and a slice at a shallow angle, 86898 for 73353 | 22608 |
 | #1632, #1431 | A chamfer not saying which contours failed; the same 2D corner chamfered twice an internal fault | 22609 |
 | #1039 | A slice's Common with a model, 86898 for about 70000, reported as a success: now a failure | 22606 |
 | #1355 | A rotation from a 4 by 4 matrix refusing to convert to a transform | 22607 |
@@ -303,7 +304,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1053 | Reserved identifier violation (header guards) | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1043 | Unexpected memory footprint differences | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1041 | Boolean fuse operation fails when rotation is involved | can't tell | Needs the issue's attached model; not reproduced in this pass (Boolean with rotation) |
-| 1039 | Missing intersection edges when performing face-model BREP intersection | applies | Reproduced on its files: the slice's area is 86898 where its neighbour's is 70013, with one more edge |
+| 1039 | Missing intersection edges when performing face-model BREP intersection | already fixed | Decisions 22606 and 22608: its files, Common and Cut add up to the slice's area, and the section has no loose ends |
 | 1036 | Inconsistent Generated/Modified/IsDeleted implementations across BRepBuilderAPI classes Summary | applies | A real inconsistency in history across makers; a design job, partly done by Kerf.Modeling's own history. Medium |
 | 994 | OFFSET_SURFACE did not parse correctly | already fixed | Reproduced on its file: 35 of 36 faces, and the shell open. The basis is C0 at a knot, so no surface was made. Fixed: decision 1838; 36 faces, 4 valid solids, and it meshes |
 | 986 | Provide an approach to tracking Topo_Shape after using ShapeFix_Shape | not relevant | A request for a new feature, not a defect |

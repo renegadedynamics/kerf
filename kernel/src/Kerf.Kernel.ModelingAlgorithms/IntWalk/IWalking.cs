@@ -180,6 +180,7 @@ internal class IWalking<TheIWFunction, TheIWLine>
         ReadOnlySpan<double> parV = [v, v, Math.Min(v + stepV, vsup), Math.Max(v - stepV, vinf)];
 
         math_Vector x = new(1, 2), val = new(1, 1);
+        double least = 0, most = 0;
 
         for (int i = 0; i < nbItems; i++)
         {
@@ -195,10 +196,19 @@ internal class IWalking<TheIWFunction, TheIWLine>
             {
                 return false;
             }
+
+            least = Math.Min(least, func.Root());
+            most = Math.Max(most, func.Root());
         }
 
-        return true;
+        // Not OCCT's: surfaces this close that are on opposite sides around the point cross there, and aren't tangent. Whether
+        // they're close enough for OCCT's test depends on the step alone, and a closed curve of the section was lost to it, for
+        // a sphere of radius 2500 and a slice at a slope of about 0.03 (#1039, decision 22608). Differences of a part in a hundred
+        // of the tolerance are the surfaces' noise.
+        return !(least < -CrossingOfTolerance * tol && most > CrossingOfTolerance * tol);
     }
+
+    private const double CrossingOfTolerance = 0.01;
 
     /// <summary>
     /// Clears the containers and puts a dummy item at index 0 of the vectors, so that start points are indexed from 1.

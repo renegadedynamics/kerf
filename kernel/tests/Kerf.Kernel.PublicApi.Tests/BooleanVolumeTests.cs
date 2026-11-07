@@ -321,4 +321,26 @@ public class BooleanVolumeTests
         Assert.Null(Check(BooleanVolumeRule.Cut, box, slice, box));
         Assert.Null(Check(BooleanVolumeRule.Fuse, slice, box, slice));
     }
+
+    [Fact]
+    public void Surfaces_a_sliver_apart_that_cross_arent_tangent()
+    {
+        // OCCT #1039: a sphere of radius 2500 and a slice that crosses it at a slope of about 0.03. The closed curve between them was
+        // thrown away as a tangency, leaving 95.5 of the section, and with it a Common of the wrong side
+        Shape sphere = Solid.Sphere(2500).Value.Shape.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(0, 0, -2477))));
+        Shape slice = Brep.Read(new MemoryStream(Fixtures.Bytes("slice"))).Value;
+        Shape section = sphere.Section(slice).Value.Shape;
+
+        // The closed curve runs at 64 to 67.5 from the axis, so its length is between those circles'
+        double ring = 0;
+        foreach (Edge edge in section.AllEdges())
+        {
+            BoundingBox box = edge.BoundingBox();
+            if (Math.Max(Math.Abs(box.Min.X), Math.Abs(box.Max.X)) < 70 && Math.Max(Math.Abs(box.Min.Y), Math.Abs(box.Max.Y)) < 70)
+            {
+                ring += edge.IntegrateLength();
+            }
+        }
+        Assert.InRange(ring, 2 * Math.PI * 64, 2 * Math.PI * 67.5);
+    }
 }
