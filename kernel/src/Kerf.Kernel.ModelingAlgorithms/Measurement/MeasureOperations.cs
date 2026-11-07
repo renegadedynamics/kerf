@@ -36,7 +36,7 @@ public static class MeasureOperations
 
         /// <summary>The area of the shape's faces (<c>BRepGProp::SurfaceProperties</c>).</summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
-        public double IntegrateArea(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Area, options).Mass();
+        public double IntegrateArea(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Area, options, massOnly: true).Mass();
 
         /// <summary>The length of the shape's edges (<c>BRepGProp::LinearProperties</c>).</summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
@@ -203,7 +203,7 @@ public static class MeasureOperations
                 MassPropertiesBuilder.LinearProperties(shape, props, options.SkipShared, options.UseTriangulation, settled: true);
                 break;
             case Dimension.Area when options.Tolerance > 0:
-                MassPropertiesBuilder.SurfaceProperties(shape, props, options.Tolerance, options.SkipShared);
+                MassPropertiesBuilder.SurfaceProperties(shape, props, options.Tolerance, options.SkipShared, massOnly);
                 break;
             case Dimension.Area:
                 MassPropertiesBuilder.SurfaceProperties(shape, props, options.SkipShared, options.UseTriangulation);

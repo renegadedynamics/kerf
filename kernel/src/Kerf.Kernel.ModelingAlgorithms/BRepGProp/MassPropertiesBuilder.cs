@@ -182,7 +182,8 @@ internal static class MassPropertiesBuilder
                                             Properties props,
                                             double eps,
                                             bool skipShared,
-                                            bool useTriangulation)
+                                            bool useTriangulation,
+                                            bool massOnly = false)
     {
         int i;
         double errorMax = 0.0, error;
@@ -232,6 +233,10 @@ internal static class MassPropertiesBuilder
                 Triangulation? tri = Tool.Triangulation(f, out locDummy);
                 mg.Perform(tri, locDummy, ori);
                 props.Add(mg);
+            }
+            else if (massOnly && eps < 1.0 && PlanarFaceMass.TryArea(f, bd, out double planar))
+            {
+                props.AddMass(planar);
             }
             else
             {
@@ -302,14 +307,20 @@ internal static class MassPropertiesBuilder
     /// The surface properties of the faces of <paramref name="s"/> into <paramref name="sProps"/>, by adaptive Gauss
     /// integration to the relative error <paramref name="eps"/> of each face's area.
     /// </summary>
+    /// <param name="s">The shape.</param>
+    /// <param name="sProps">The system to fill; reset first, its reference point at the shape's location.</param>
+    /// <param name="eps">The relative error to integrate to.</param>
+    /// <param name="skipShared">Count a face met again (IsSame) once.</param>
+    /// <param name="massOnly">Only the area is wanted, so <see cref="Properties.Mass"/> is all that means anything afterwards,
+    /// and planar faces can give theirs exactly (<see cref="PlanarFaceMass"/>).</param>
     /// <returns>The largest relative error reached by a face.</returns>
-    public static double SurfaceProperties(in Shape s, Properties sProps, double eps, bool skipShared = false)
+    public static double SurfaceProperties(in Shape s, Properties sProps, double eps, bool skipShared = false, bool massOnly = false)
     {
         // find the origin
         Point3D p = new(0, 0, 0);
         p = p.Transformed(s.Placement.Transformation);
         sProps.Assign(new Properties(p));
-        double errorMax = SurfacePropertiesCore(s, sProps, eps, skipShared, false);
+        double errorMax = SurfacePropertiesCore(s, sProps, eps, skipShared, false, massOnly);
         return errorMax;
     }
 

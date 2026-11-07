@@ -91,6 +91,26 @@ public class PlanarFaceMassTests
     }
 
     [Fact]
+    public void Areas_are_the_integrations_whichever_way_a_face_is_turned()
+    {
+        static double Area(in Shape shape, bool massOnly)
+        {
+            var props = new Properties();
+            MassPropertiesBuilder.SurfaceProperties(shape, props, Eps, massOnly: massOnly);
+            return props.Mass();
+        }
+
+        Shape box = TestShapes.Frozen(TestShapes.Box(3, 5, 7));
+        Assert.Equal(142.0, Area(box, true), 1e-10);
+        Assert.Equal(142.0, Area(box.Reversed(), true), 1e-10);
+        Shape scaled = box.Moved(new Placement(Transform3D.Scale(new Point3D(1, 1, 1), 2.0)));
+        Assert.Equal(568.0, Area(scaled, true), 1e-10);
+        Assert.Equal(Area(scaled, false), Area(scaled, true), 1e-10);
+        Shape cylinder = TestShapes.Frozen(BRepGPropTestShapes.CylinderSolid(2, 5));
+        Assert.Equal(Area(cylinder, false), Area(cylinder, true), 1e-9);
+    }
+
+    [Fact]
     public void A_planar_face_is_answered()
     {
         foreach (Face face in BRepGPropTestShapes.Faces(TestShapes.Frozen(TestShapes.Box(4, 6, 2))))

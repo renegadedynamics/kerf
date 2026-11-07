@@ -31,12 +31,49 @@ internal static class PlanarFaceMass
     public static bool TryVolume(in Face face, Domain domain, in Point3D reference, out double volume)
     {
         volume = 0;
+        if (!TryParts(face, domain, out double area, out Point3D origin, out Vector3D normal))
+        {
+            return false;
+        }
+
+        double height = (origin.X - reference.X) * normal.X + (origin.Y - reference.Y) * normal.Y + (origin.Z - reference.Z) * normal.Z;
+        volume = height * area / 3.0;
+        if (face.Orientation == Reversed)
+        {
+            volume = -volume;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// A planar face's area, whichever way the face is turned, as <see cref="Sinert"/> integrates it. False as for
+    /// <see cref="TryVolume"/>.
+    /// </summary>
+    public static bool TryArea(in Face face, Domain domain, out double area)
+    {
+        if (!TryParts(face, domain, out double inUV, out _, out Vector3D normal))
+        {
+            area = 0;
+            return false;
+        }
+
+        area = inUV * normal.Magnitude;
+        return true;
+    }
+
+    // The face's signed area in UV, and the plane's origin and X x Y as placed
+    private static bool TryParts(in Face face, Domain domain, out double area, out Point3D origin, out Vector3D normal)
+    {
+        area = 0;
+        origin = default;
+        normal = default;
         if (face.ChildCount == 0 || Tool.Surface(face, out Placement placement) is not PlaneSurface plane)
         {
             return false;
         }
 
-        double area = 0, du = 0, dv = 0;
+        double du = 0, dv = 0;
         for (domain.Init(face); domain.More(); domain.Next())
         {
             Edge edge = domain.Value();
@@ -66,7 +103,7 @@ internal static class PlanarFaceMass
         }
 
         CoordinateSystem position = plane.Position;
-        Point3D origin = position.Location;
+        origin = position.Location;
         var x = new Vector3D(position.XDirection);
         var y = new Vector3D(position.YDirection);
         if (!placement.IsIdentity)
@@ -77,14 +114,7 @@ internal static class PlanarFaceMass
             y = y.Transformed(transform);
         }
 
-        Vector3D normal = x.Crossed(y);
-        double height = (origin.X - reference.X) * normal.X + (origin.Y - reference.Y) * normal.Y + (origin.Z - reference.Z) * normal.Z;
-        volume = height * area / 3.0;
-        if (face.Orientation == Reversed)
-        {
-            volume = -volume;
-        }
-
+        normal = x.Crossed(y);
         return true;
     }
 
