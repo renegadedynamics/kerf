@@ -109,7 +109,7 @@ public static class FilletOperations
     /// <summary>The fillet or chamfer failed without saying why: <c>fillet.failed</c>.</summary>
     public static DiagnosticCode Failed { get; } = new("fillet.failed");
 
-    /// <summary>The size doesn't fit: more than the width of a face beside a straight edge, or just that, where it can't yet be built: <c>fillet.too-large</c>.</summary>
+    /// <summary>The size doesn't fit: more than the width of a face beside a straight or circular edge, or just that, where this case can't yet be built: <c>fillet.too-large</c>.</summary>
     public static DiagnosticCode TooLarge { get; } = new("fillet.too-large");
 
     private static readonly Diagnostic Failure = Diagnostic.Error(Failed, "The fillet couldn't be built.");
@@ -146,7 +146,7 @@ public static class FilletOperations
             // What the geometry already settles (decision 1898): within tolerance of the limit is the limit, past it nothing fits
             FilletLimits.Fit? fit = null;
             FilletSpec[] specs = given;
-            return EngineOperation.Run<Shape>(range =>
+            Result<Built<Shape>> done = EngineOperation.Run<Shape>(range =>
             {
                 fit = FilletLimits.Judge(solid, given);
 
@@ -191,6 +191,12 @@ public static class FilletOperations
                 {
                     return mixed;
                 }
+
+                // Or a rim, or corners and slanted ends, at a limit or not (units 12L and 12M)
+                if (FilletLimits.AfterAlgorithm(solid, specs, options) is { } after)
+                {
+                    return after;
+                }
                 ImmutableArray<Diagnostic> faulty = Faulty(fillet, specs.Length);
                 if (fit is { } known && FilletLimits.TooLarge(known, specs) is { } tooLarge)
                 {
@@ -199,11 +205,24 @@ public static class FilletOperations
                 return outcome with { Failure = faulty[0], MoreFailures = faulty[1..] };
             }, Failure, progress, cancellationToken, options.CheckResult ? "The fillet's result" : null,
                made => Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Radius, s.EndRadius ?? 0.0))), "The fillet's result"));
+
+            // What ChFi3d made isn't valid: as much a failure of it as any (decision 1910). It costs nothing unless that happens
+            if (done.TryGetInvalid(out _))
+            {
+                Result<Built<Shape>> invalid = done;
+                if (FilletLimits.AfterAlgorithm(solid, specs, options) is { } instead)
+                {
+                    return EngineOperation.Run<Shape>(_ => instead, Failure, progress, cancellationToken, "The fillet's result");
+                }
+                return invalid;
+            }
+            return done;
         }
 
         /// <summary>
         /// The most that a radius on these edges can be, from their geometry, without trying: for straight edges between planes
-        /// beside a rectangular face, where the fillet uses up the face (and half of it, with the edge opposite too). No tangent
+        /// beside a rectangular face, and for whole circles between a plane, cylinder or cone about their axis, where the fillet uses up
+        /// the face (and half of it, with the edge opposite too). No tangent
         /// fillet fits above it, so <c>Fillet</c> refuses one at once, though other things can stop one sooner, and at it the fillet
         /// may not be built. A radius within the shape's tolerance of this is taken as this. Null if the edges say nothing.
         /// </summary>
