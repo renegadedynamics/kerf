@@ -321,7 +321,8 @@ internal static class MassPropertiesBuilder
                                                 in Point3D refPnt,
                                                 double eps,
                                                 bool skipShared,
-                                                bool useTriangulation)
+                                                bool useTriangulation,
+                                                bool massOnly = false)
     {
         int i;
         double errorMax = 0.0, error = 0.0;
@@ -384,6 +385,10 @@ internal static class MassPropertiesBuilder
                     mg.Perform(tri, locDummy, ori);
                     props.Add(mg);
                 }
+                else if (massOnly && eps < 1.0 && PlanarFaceMass.TryVolume(f, bd, refPnt, out double planar))
+                {
+                    props.AddMass(planar);
+                }
                 else
                 {
                     bf.Load(f);
@@ -433,7 +438,8 @@ internal static class MassPropertiesBuilder
                                            Properties props,
                                            double eps,
                                            bool skipShared,
-                                           bool useTriangulation)
+                                           bool useTriangulation,
+                                           bool massOnly = false)
     {
         Point3D p = RoughBaryCenter(s);
 
@@ -456,7 +462,7 @@ internal static class MassPropertiesBuilder
         if (!hasSharedSolids)
         {
             // No shared solids: use direct face-level iteration (original path).
-            return VolumePropertiesFaces(s, props, p, eps, skipShared, useTriangulation);
+            return VolumePropertiesFaces(s, props, p, eps, skipShared, useTriangulation, massOnly);
         }
 
         // Shared solids detected: iterate at solid level with caching.
@@ -495,7 +501,7 @@ internal static class MassPropertiesBuilder
                 {
                     // Non-rigid relative transform: fall back to direct face-level computation.
                     var solidProps = new Properties(p);
-                    double error = VolumePropertiesFaces(solid, solidProps, p, eps, skipShared, useTriangulation);
+                    double error = VolumePropertiesFaces(solid, solidProps, p, eps, skipShared, useTriangulation, massOnly);
                     if (errorMax < error)
                     {
                         errorMax = error;
@@ -522,7 +528,7 @@ internal static class MassPropertiesBuilder
             {
                 // First instance of this TShape: compute via face integration.
                 var solidProps = new Properties(p);
-                double error = VolumePropertiesFaces(solid, solidProps, p, eps, skipShared, useTriangulation);
+                double error = VolumePropertiesFaces(solid, solidProps, p, eps, skipShared, useTriangulation, massOnly);
                 if (errorMax < error)
                 {
                     errorMax = error;
@@ -555,7 +561,7 @@ internal static class MassPropertiesBuilder
             if (hasFree)
             {
                 var freeProps = new Properties(p);
-                double freeError = VolumePropertiesFaces(freeComp, freeProps, p, eps, skipShared, useTriangulation);
+                double freeError = VolumePropertiesFaces(freeComp, freeProps, p, eps, skipShared, useTriangulation, massOnly);
                 if (errorMax < freeError)
                 {
                     errorMax = freeError;
@@ -628,12 +634,20 @@ internal static class MassPropertiesBuilder
     /// The volume properties of <paramref name="s"/> into <paramref name="vProps"/>, by adaptive Gauss integration to
     /// the relative error <paramref name="eps"/> of each face's contribution.
     /// </summary>
+    /// <param name="s">The shape.</param>
+    /// <param name="vProps">The system to fill; reset first, its reference point at the shape's location.</param>
+    /// <param name="eps">The relative error to integrate to.</param>
+    /// <param name="onlyClosed">Count only the closed shells (BRepTool.IsClosed).</param>
+    /// <param name="skipShared">Count a face met again (IsSame, with the same orientation) or a shell met again once.</param>
+    /// <param name="massOnly">Only the volume is wanted, so <see cref="Properties.Mass"/> is all that means anything afterwards,
+    /// and planar faces can give theirs exactly (<see cref="PlanarFaceMass"/>).</param>
     /// <returns>The largest relative error reached by a face.</returns>
     public static double VolumeProperties(in Shape s,
                                           Properties vProps,
                                           double eps,
                                           bool onlyClosed = false,
-                                          bool skipShared = false)
+                                          bool skipShared = false,
+                                          bool massOnly = false)
     {
         // find the origin
         Point3D p = new(0, 0, 0);
@@ -655,7 +669,7 @@ internal static class MassPropertiesBuilder
 
                 if (Tool.IsClosed(sh))
                 {
-                    error = VolumePropertiesCore(sh, vProps, eps, skipShared, false);
+                    error = VolumePropertiesCore(sh, vProps, eps, skipShared, false, massOnly);
                     if (errorMax < error)
                     {
                         errorMax = error;
@@ -665,7 +679,7 @@ internal static class MassPropertiesBuilder
         }
         else
         {
-            errorMax = VolumePropertiesCore(s, vProps, eps, skipShared, false);
+            errorMax = VolumePropertiesCore(s, vProps, eps, skipShared, false, massOnly);
         }
 
         return errorMax;
