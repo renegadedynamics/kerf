@@ -775,6 +775,8 @@ internal partial class PaveFiller
                 }
             } // for (j=0; j<aNbC; ++j) {
 
+            JoinCurveEnds(vc);
+
             // Put closing pave if needed
             for (j = 0; j < nbC; ++j)
             {
@@ -2278,6 +2280,87 @@ internal partial class PaveFiller
                 pb.AppendExtPave(pn);
 
                 aLVB.Append(nVn);
+            }
+        }
+    }
+
+    //=================================================================================================
+
+    // A walk that stops short at a near-tangency leaves two curves of one pair of faces a little apart, the end of one with a vertex,
+    // and the end of the other with none, as it's a little off a face. That curve then has no pave block and is lost, and the section
+    // stays open: OCCT #1659, 1e-3 apart with a tolerance of 3e-4, which makes a Cut remove nothing. Not OCCT's: the end with none
+    // takes the near vertex, whose tolerance grows to reach it (decision 22610).
+    private const double EndsJoinedByTolerance = 5.0;
+
+    private void JoinCurveEnds(List<SectionCurve> curves)
+    {
+        if (curves.Count < 2)
+        {
+            return;
+        }
+
+        Span<int> ends = stackalloc int[2];
+        Span<int> otherEnds = stackalloc int[2];
+        Span<double> t = stackalloc double[2];
+        Span<double> otherT = stackalloc double[2];
+        Point3D[] p = [new Point3D(), new Point3D()];
+        Point3D[] otherP = [new Point3D(), new Point3D()];
+        for (int i = 0; i < curves.Count; i++)
+        {
+            SectionCurve curve = curves[i];
+            IntersectionCurve ic = curve.Curve();
+            if (!ic.HasBounds())
+            {
+                continue;
+            }
+
+            GetBoundPaves(_ds!, curve, ends);
+            if (ends[0] >= 0 && ends[1] >= 0)
+            {
+                continue;
+            }
+
+            ic.Bounds(ref t[0], ref t[1], ref p[0], ref p[1]);
+            if (p[0].IsEqual(p[1], global::Kerf.Engine.Foundation.Precision.Confusion()))
+            {
+                continue;
+            }
+
+            for (int end = 0; end < 2; end++)
+            {
+                if (ends[end] >= 0)
+                {
+                    continue;
+                }
+
+                for (int k = 0; k < curves.Count; k++)
+                {
+                    if (k == i || !curves[k].Curve().HasBounds())
+                    {
+                        continue;
+                    }
+
+                    curves[k].Curve().Bounds(ref otherT[0], ref otherT[1], ref otherP[0], ref otherP[1]);
+                    GetBoundPaves(_ds!, curves[k], otherEnds);
+                    int nearest = otherP[0].DistanceTo(p[end]) <= otherP[1].DistanceTo(p[end]) ? 0 : 1;
+                    double reach = EndsJoinedByTolerance * Max(Max(curve.Tolerance(), curve.TangentialTolerance()), Max(curves[k].Tolerance(), curves[k].TangentialTolerance()));
+                    if (otherEnds[nearest] < 0 || otherP[nearest].DistanceTo(p[end]) > reach)
+                    {
+                        continue;
+                    }
+
+                    int nV = otherEnds[nearest];
+                    Vertex vertex = ShapeCasts.Vertex(_ds!.Shape(nV));
+                    AlgoTools.UpdateVertex(ic, t[end], vertex);
+                    ref Box box = ref _ds.ChangeShapeInfo(nV).ChangeBox();
+                    Bounds.Add(vertex, ref box);
+
+                    Pave pave = new();
+                    pave.SetIndex(nV);
+                    pave.SetParameter(t[end]);
+                    curve.ChangePaveBlock1().AppendExtPave(pave);
+                    break;
+                }
             }
         }
     }

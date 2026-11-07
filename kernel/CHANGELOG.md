@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **A Cut, Common or Fuse no longer goes wrong where a section curve stops just short of another:** on #1659's loft and cylinder the Cut removed nothing, which had become a failure, and now it's right (decision 22610).
 - **A closed section curve between surfaces that cross at a shallow angle is no longer lost as a tangency,** which gave a Common with an edge missing and the wrong area (decision 22608).
 - **A chamfer that fails says which edges failed and why,** and a 2D chamfer given the same corner twice says so, where it was an internal fault (decision 22609).
 - **A Common or Cut of faces with a solid fails, carrying the shape, if it kept the wrong side of the solid at points it can prove it:** a lost section edge used to pass with 24% too much area (decision 22606).

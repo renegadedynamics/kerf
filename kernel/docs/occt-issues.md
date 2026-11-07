@@ -2238,3 +2238,4 @@ Found by unit 12J:
 | `BRepMesh`, a sphere's grid | Long triangles beside the seam, and no control of the deviation | 1.69 times the deflection on 3% of the triangles, at some deflections | **open**: the same fix doubles those meshes and grows others by 28%; for the owner (decision 22604) |
 | `BRepMesh_ModelPreProcessor`, `SeamEdgeAmplifier` | Chooses a seam's pcurve with the curve's first parameter, far off on a line | A cone with no triangles (#572) | fixed (decision 22605) |
 | `IntWalk_IWalking::IsTangentExtCheck` | Close at four points a step away counts as tangent, whatever the sign | A section's closed curve lost, and a wrong Common (#1039) | fixed (decision 22608) |
+| `BOPAlgo_PaveFiller::PutBoundPaveOnCurve` | A curve's end a little off a face takes no vertex, so the curve has no pave block, and is lost | An open section and a Cut that removes nothing (#1659) | fixed (decision 22610); the walk stopping short remains |

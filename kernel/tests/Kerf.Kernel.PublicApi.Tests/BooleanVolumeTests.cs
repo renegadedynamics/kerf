@@ -343,4 +343,28 @@ public class BooleanVolumeTests
         }
         Assert.InRange(ring, 2 * Math.PI * 64, 2 * Math.PI * 67.5);
     }
+
+    [Fact]
+    public void A_walk_that_stops_short_still_closes_its_section()
+    {
+        // OCCT #1659: two curves of the section 1e-3 apart at a near-tangency; one was lost, so the Cut removed nothing and the Common was empty
+        Shape junction = Brep.Read(new MemoryStream(Fixtures.Bytes("loft-junction"))).Value;
+        Shape cutter = Brep.Read(new MemoryStream(Fixtures.Bytes("cap-cutter"))).Value;
+        var precise = new MassOptions { Tolerance = 1e-6 };
+
+        Shape cut = junction.Cut(cutter).Value.Shape, common = junction.Common(cutter).Value.Shape;
+        Assert.Equal(5, cut.AllFaces().Length);
+        // What's cut away and what's left make up the object
+        double whole = junction.IntegrateVolume(precise);
+        Assert.Equal(whole, cut.IntegrateVolume(precise) + common.IntegrateVolume(precise), 0.01);
+        Assert.InRange(common.IntegrateVolume(precise), 300, 450);
+
+        // The section is closed: each end of an edge meets another
+        Shape section = junction.Section(cutter).Value.Shape;
+        foreach (Vertex vertex in section.AllVertices())
+        {
+            int meeting = section.AllEdges().Sum(edge => (edge.FirstVertex.IsSame(vertex) ? 1 : 0) + (edge.LastVertex.IsSame(vertex) ? 1 : 0));
+            Assert.Equal(0, meeting % 2);
+        }
+    }
 }

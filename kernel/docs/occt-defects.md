@@ -58,6 +58,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
+| #1659 | A Cut that removed nothing and an empty Common, for a section curve stopping 1e-3 short of the next | 22610 |
 | #1039 | A section's closed curve lost between a sphere and a slice at a shallow angle, 86898 for 73353 | 22608 |
 | #1632, #1431 | A chamfer not saying which contours failed; the same 2D corner chamfered twice an internal fault | 22609 |
 | #1039 | A slice's Common with a model, 86898 for about 70000, reported as a success: now a failure | 22606 |
@@ -171,7 +172,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1671 | IntWalk_PWalking's step is relative to the face's parameter range, so sections on long helical faces lose accuracy and booleans go wrong | can't tell | Needs the issue's attached model; not reproduced in this pass (the step is relative, read) |
 | 1665 | Fillet failure on a simple solid | can't tell | Tried on its file: it reads, valid. The issue doesn't say which edges |
 | 1661 | Documentation - Add AGENTS.md that points coding assistants to the contribution rules | not relevant | OCCT's documentation or tests only |
-| 1659 | Boolean cut silently returns an imprint instead of a cut: plane/B-spline section loop left open | applies | Reproduced on its files: Cut 5271.23 from 5264.71, Common empty, two loose vertices in the section, no error |
+| 1659 | Boolean cut silently returns an imprint instead of a cut: plane/B-spline section loop left open | already fixed | Decision 22610: its files, Cut 4903.29 and Common 375.21, adding to 5278.50, 5 faces, a closed section |
 | 1658 | `SetColor()` does not recolor seam / degenerated / boundary edges of a shape | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 1652 | Data Exchange, STEP Import - Spherical/toroidal CURVE_BOUNDED_SURFACE with a clockwise OUTER_BOUNDARY_CURVE is read as the complement of the patch sin | can't tell | CURVE_BOUNDED_SURFACE read: same reader; needs a file |
 | 1651 | GeomLProp_SLProps: MinCurvature/MaxCurvature/MeanCurvature/GaussianCurvature return the previous value on the first call after construction or SetPara | already fixed | Kerf computes before reading: `SLProps.RequireCurvature` (decision in phase 2); the port's comment says so |
