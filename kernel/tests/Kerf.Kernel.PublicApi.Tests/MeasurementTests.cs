@@ -147,6 +147,20 @@ public class MeasurementTests
         Assert.Equal(Math.PI * 25 * 10, Fixtures.Cylinder().IntegrateVolume(new MassOptions { Tolerance = 0 }), 1e-6);
     }
 
+    // Each of the first two never returned: decision 21506
+    [Theory]
+    [InlineData(double.NaN, 1)]
+    [InlineData(double.PositiveInfinity, 1)]
+    [InlineData(double.NegativeInfinity, 1)]
+    [InlineData(1, double.NaN)]
+    [InlineData(1e300, 1)]
+    public async Task A_parameter_no_face_can_have_is_out_and_comes_back(double u, double v)
+    {
+        Face side = Fixtures.Cylinder().AllFaces().First(f => f.AsShape().AllEdges().Length >= 3);
+        Containment asked = await Task.Run(() => side.Classify(new Point2D(u, v))).WaitAsync(TimeSpan.FromSeconds(30));
+        Assert.Equal(Containment.Out, asked);
+    }
+
     [Fact]
     public void A_null_shape_is_misuse()
     {

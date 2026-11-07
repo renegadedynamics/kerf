@@ -924,8 +924,8 @@ internal partial class FaceFace
         {
             t1 = t2;
             t2 += dt;
-            //
-            if (t2 > last)
+            // !(t2 > t1): a step too small to move, or NaN, would never get there (decision 21506)
+            if (t2 > last || !(t2 > t1))
             {
                 break;
             }
