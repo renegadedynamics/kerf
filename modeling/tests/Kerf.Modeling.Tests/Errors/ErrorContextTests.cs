@@ -81,14 +81,15 @@ public class ErrorContextTests
     {
         // build123d's own messages stand, with OCCT's failure inside
         var fillet = Ops.Fillet(new Box(1, 1, 1).Edges(), 5);
-        Assert.Contains("The fillet with a radius of 5 on 12 of 12 edges", fillet.Error!.Message);
+        Assert.Contains("The fillet with a radius of 5 is too large", fillet.Error!.Message);
+        Assert.Contains("It failed on 12 of 12 edges", fillet.Error!.Message);
         Assert.Equal(ModelingDiagnostics.FilletFailed, fillet.Error.Code);
         // The kernel's diagnostics follow the layer's own
         Assert.Contains(fillet.Diagnostics.Skip(1), d => d.IsError && !d.Code.Value.StartsWith("modeling.", StringComparison.Ordinal));
         // The shorthand throws with the same message, the kernel's failure inside
         var box = new Box(1, 1, 1);
         var e = Assert.Throws<InvalidOperationException>(() => box.Fillet(5, box.Edges()));
-        Assert.Contains("The fillet with a radius of 5 on 12 of 12 edges", e.Message);
+        Assert.Contains("It failed on 12 of 12 edges", e.Message);
         Assert.True(Failures.IsKernelFailure(e.InnerException!));
     }
 

@@ -64,7 +64,8 @@ public static partial class Shape3DExtensions
             }
             var chamfered = self.AsShape().Chamfer(specs);
             if (!chamfered.TryGetValue(out var built))
-                throw Failures.Expected(ModelingDiagnostics.ChamferFailed, "The chamfer failed; try a smaller length.", chamfered);
+                throw Failures.Expected(ModelingDiagnostics.ChamferFailed,
+                                        Shape3DExtensions.TooLargeMessage(chamfered.Diagnostics) ?? "The chamfer failed; try a smaller length.", chamfered);
             var result = Shape3DExtensions.Make3DResult(built.Shape);
             return result.MadeBy(ModelHistory.FromAlgorithm(s => built.History.Modified(s), s => built.History.Generated(s), [self.AsShape()], result));
         }
@@ -122,8 +123,11 @@ public static partial class Shape3DExtensions
                 {
                     // Diagnostics mustn't mask the kernel's failure
                 }
-                string message = $"The fillet with a radius of {Formatting.Number(radius)}{details} failed; try a smaller radius, or MaxFillet "
-                                 + "to find the largest that works.";
+                // What doesn't fit says so, and with several edges, which of them the algorithm failed on
+                string message = Shape3DExtensions.TooLargeMessage(filleted.Diagnostics) is { } tooLarge
+                    ? edges.Count > 1 && details.Length > 0 ? $"{tooLarge} It failed{details}." : tooLarge
+                    : $"The fillet with a radius of {Formatting.Number(radius)}{details} failed; try a smaller radius, or MaxFillet "
+                      + "to find the largest that works.";
                 throw filleted.TryGetInvalid(out var invalid)
                     ? Failures.Invalid(invalid.Shape, invalid.Shape.Validate(), $"The fillet with a radius of {Formatting.Number(radius)}",
                                        "Try a smaller radius, or MaxFillet to find the largest that works.")
@@ -135,7 +139,8 @@ public static partial class Shape3DExtensions
         }
 
         /// <summary>
-        /// The largest fillet radius the edges take, found by a binary search to within <paramref name="tolerance"/>.
+        /// The largest fillet radius the edges take: for straight edges between planes, what the geometry gives, if that can be
+        /// built; otherwise found by a binary search to within <paramref name="tolerance"/>.
         /// </summary>
         /// <exception cref="InvalidOperationException">No value was found within <paramref name="maxIterations"/>.</exception>
         /// <exception cref="ArgumentException">The shape isn't valid.</exception>
@@ -147,6 +152,9 @@ public static partial class Shape3DExtensions
             double Search(double windowMin, double windowMax, int iteration)
             {
                 var windowMid = (windowMin + windowMax) / 2;
+                // The last try failed, but the window has closed on one that worked
+                if (iteration == maxIterations && windowMin > 0 && windowMid - windowMin <= tolerance)
+                    return windowMin;
                 if (iteration == maxIterations)
                     throw new InvalidOperationException($"Failed to find the max value within {Formatting.Number(tolerance)} in {maxIterations}");
                 // Do these numbers work? If not, try the smaller window
@@ -155,6 +163,8 @@ public static partial class Shape3DExtensions
                 // They work: close enough, or try the larger window
                 return windowMid - windowMin <= tolerance ? windowMid : Search(windowMid, windowMax, iteration + 1);
             }
+            if (self.AsShape().FilletLimit(edges) is { } limit && self.AsShape().Fillet(edges, limit).IsSuccess)
+                return limit;
             return Search(0.0, 2 * self.Bounds().Diagonal, 0);
         }
 
@@ -278,6 +288,10 @@ public static partial class Shape3DExtensions
             return ShapeExtensions.MakeComposite(TopoUtil.TopLevelShapes(result));
         return (Solid)result;
     }
+
+    /// <summary>The kernel's own account of a fillet or chamfer that doesn't fit, which says more than a general failure can.</summary>
+    private static string? TooLargeMessage(System.Collections.Immutable.ImmutableArray<Diagnostic> diagnostics) =>
+        diagnostics.FirstOrDefault(d => d.Code == FilletOperations.TooLarge)?.Message;
 
     /// <summary>
     /// The faulty contours of a failed fillet, in terms of the caller's selected edges: the kernel reports each faulty contour

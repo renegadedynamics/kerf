@@ -16,11 +16,15 @@ public class FilletFailuresTests
 {
     const string Advice = " failed; try a smaller radius, or MaxFillet to find the largest that works.";
 
+    const string UsesUp = ", where it uses up the whole width of a face beside the edge.";
+
+    // Kerf: a limit the geometry gives is said first (decision 21203), with the edges build123d's message lists after it
     const string PlateMessage =
-        "The fillet with a radius of 3 on 8 of 12 edges "
+        "The fillet with a radius of 3 is too large for these 12 edges: the most that fits is 1" + UsesUp
+        + " It failed on 8 of 12 edges "
         + "(no starting solution: [1] at (-10, 0, 1), [3] at (-10, 0, -1), "
         + "[5] at (10, 0, 1), [7] at (10, 0, -1), [8] at (0, -10, -1), "
-        + "[9] at (0, -10, 1), [10] at (0, 10, -1), [11] at (0, 10, 1))" + Advice;
+        + "[9] at (0, -10, 1), [10] at (0, 10, -1), [11] at (0, 10, 1)).";
 
     static Part Box(double l, double w, double h) => new([Solid.MakeBox(l, w, h, new Plane(new Point3D(-l / 2, -w / 2, -h / 2)))]);
 
@@ -75,18 +79,19 @@ public class FilletFailuresTests
         (ShapeList<Edge> Selection, string Details)[] cases =
         [
             (topEdges.Where(GeomType.Line)[..1],
-             "1 of 1 edges (no starting solution: [0] at (-10, 0, 2), 7 additional tangent edges)"),
+             "The fillet with a radius of 3 is too large for the edge at (-10, 0, 2): the most that fits is 2" + UsesUp),
             (topEdges.Where(GeomType.Circle)[..1],
-             "1 of 1 edges (no starting solution: [0] at (-9.12132, -4.12132, 2), 7 additional tangent edges)"),
+             "The fillet with a radius of 3 on 1 of 1 edges (no starting solution: [0] at (-9.12132, -4.12132, 2), 7 additional tangent edges)" + Advice),
             (topEdges[..7],
-             "7 of 7 edges (no starting solution: [0] at (-10, 0, 2), [1] at (-9.12132, -4.12132, 2), [2] at (0, -5, 2), "
+             "The fillet with a radius of 3 is too large for these 7 edges: the most that fits is 2" + UsesUp
+             + " It failed on 7 of 7 edges (no starting solution: [0] at (-10, 0, 2), [1] at (-9.12132, -4.12132, 2), [2] at (0, -5, 2), "
              + "[3] at (9.12132, -4.12132, 2), [4] at (10, 0, 2), [5] at (9.12132, 4.12132, 2), [6] at (0, 5, 2), "
-             + "1 additional tangent edge)"),
+             + "1 additional tangent edge)."),
         ];
         foreach (var (selection, details) in cases)
         {
             var failed = Failures.Try(() => rounded.Fillet(3, selection));
-            Assert.Equal("The fillet with a radius of 3 on " + details + Advice, failed.Error!.Message);
+            Assert.Equal(details, failed.Error!.Message);
         }
     }
 
@@ -128,9 +133,10 @@ public class FilletFailuresTests
         var selection = new[] { edges[3], edges[0], reversedEdge, edges[1] }.Select(e => e);
         var failed = Failures.Try(() => plate.Fillet(3, selection));
         Assert.Equal(
-            "The fillet with a radius of 3 on 3 of 4 edges "
+            "The fillet with a radius of 3 is too large for these 4 edges: the most that fits is 1" + UsesUp
+            + " It failed on 3 of 4 edges "
             + "(no starting solution: [0] at (-10, 0, -1), "
-            + "[2] at (-10, 0, 1), [3] at (-10, 0, 1))" + Advice,
+            + "[2] at (-10, 0, 1), [3] at (-10, 0, 1)).",
             failed.Error!.Message);
     }
 }
