@@ -8,7 +8,7 @@ using Kerf.Modeling;
 
 /// <summary>
 /// A modelling call can be stopped, though it takes no token, and a request too large to be meant fails rather than taking
-/// the machine's memory (kernel docs/reliability.md; decisions 21103 and 21104).
+/// the machine's memory (kernel docs/reliability.md; decisions 1855 and 1856).
 /// </summary>
 public class ReliabilityTests
 {

@@ -11,7 +11,7 @@ public class LocationList : IReadOnlyList<Location>
     public LocationList(IEnumerable<Location> locations) => LocalLocations = [.. locations];
 
     /// <summary>
-    /// The most locations a pattern can have (decision 21104): 100 bytes or so each, so a billion would take more memory than
+    /// The most locations a pattern can have (decision 1856): 100 bytes or so each, so a billion would take more memory than
     /// most machines have before anything had been placed, and no model could use them.
     /// </summary>
     public const int MaxCount = 10_000_000;

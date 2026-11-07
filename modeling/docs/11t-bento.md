@@ -1,6 +1,6 @@
 # Unit 11T: stopping a cell, for Bento's branch
 
-Unit 11T looked for what can hang or end the application (kernel `docs/reliability.md`; decisions 21101 to 21106). One thing needs Bento.
+Unit 11T looked for what can hang or end the application (kernel `docs/reliability.md`; decisions 1853 to 1858). One thing needs Bento.
 
 ## What Bento has to change
 
