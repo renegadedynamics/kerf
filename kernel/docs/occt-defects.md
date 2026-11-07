@@ -25,9 +25,9 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 
 | Kind | Where | What | How confirmed | Size |
 |---|---|---|---|---|
-| Silent wrong answer | #1659, #1643, #1629 | A Cut larger than its object or the same size, a Common empty, no error: 5271.23 from 5264.71; 1773362 from 1750653. Sections left open or the wrong way in | Reproduced | L for the causes; S for a check of the volumes: **for the owner**, question 5 |
+| Silent wrong answer | #1659, #1643, #1629 | A Cut that removes nothing or comes out with a solid inside out, a Common empty. Sections left open or the wrong way in. **Now reported as failures (decisions 1860 to 1868); the wrong answers remain.** The figures once given here, 5271.23 from 5264.71 and 1773362 from 1750653, were the default integration's errors (decision 1865) | Reproduced | L for the causes |
 | Silent wrong answer | #1639 | A fillet of volume 10596 for 29800, depending only on the order of the shell's faces. The public fillet now fails, by the size of its tolerance (decision 1833) | Reproduced | M to L: the corner's 3D curve, 190 from its pcurves |
-| Silent wrong answer | #1039, #245 | A face/solid Common with an edge missing, 86898 for about 70000; a cut that removes almost nothing, with warnings | Reproduced | L |
+| Silent wrong answer | #1039, #245 | A face/solid Common with an edge missing, 86898 for about 70000: not reported, as a shell has no rule (decision 1862). A cut that removes almost nothing, with warnings: now a failure (decision 1866) | Reproduced | L |
 | Silent wrong answer | #1123 | A minimum distance of 0.083 between parts that intersect | Reproduced | M |
 | Silent wrong answer | #1570, #1569, #737, #694, #1430 | Fillets that pass the check and intersect themselves: the check doesn't look for that | Reproduced | **For the owner**: `bopcheck` on a fillet's result is too slow to be a default, I think; not measured |
 | Silent wrong answer | #1444, #572 | A mesh of 1.43 deflection for 0.45; a cone with no triangles, a warning only | Reproduced | M each |
@@ -51,7 +51,7 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 2. **Fillets to the opposite edge (#1177, #172, upstream `f713b1305f`).** Porting needs 27 upstream files in the fillet code. I recommend it before any rolling-ball rewrite, as it's the most common request in the fillet list. *Since then: on straight edges between planes it's done another way (decision 1847), and upstream's own results for the four corpus cases it changes are still faulty. [fillet-design.md](fillet-design.md) recommends not porting it.*
 3. **The 2D offset's failures (77 corpus cases).** Fixing them means a new way of making offsets, not a patch: I recommend a survey of what Bento needs first.
 4. **A default sweep that fails (#1630).** Should a sweep with the default trihedron retry with another when its approximation fails? I recommend yes until the cause is found; Frenet and discrete both work on the case. **Answered yes, done: decision 1805.**
-5. **Should a Boolean check its result's volume?** #1659, #1643 and others give a Cut larger than its object, or a Common of nothing where the input's point classification finds plenty, and no error. A check that a Cut is no larger than its object, a Common no larger than the smaller, and a Fuse no smaller than the larger would turn those into failures carrying the shape, as decision 1742 does for invalid shapes. It wouldn't catch #1629, which comes out at exactly the block's volume, or #1613's kind. It costs a volume per Boolean, not measured here. I recommend yes if a time check allows it.
+5. **Should a Boolean check its result's volume?** #1659, #1643 and others give a Cut larger than its object, or a Common of nothing where the input's point classification finds plenty, and no error. A check that a Cut is no larger than its object, a Common no larger than the smaller, and a Fuse no smaller than the larger would turn those into failures carrying the shape, as decision 1742 does for invalid shapes. It wouldn't catch #1629, which comes out at exactly the block's volume, or #1613's kind. It costs a volume per Boolean, not measured here. I recommend yes if a time check allows it. **Answered yes, done: decisions 1860 to 1868,** which do catch #1629 and need more than volumes for the rest.
 
 ## For unit 11S: results of no volume reported as success
 
@@ -61,6 +61,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
+| #1629, #1643, #1659, #245 | Booleans valid and wrong, reported as a success: now a failure, causes open | 21301, 21304, 21307 |
 | #1543 | A cut by a helical tube removing nothing, by where it left relative to the seam | 1834 |
 | #1613 | A fuse dropping a compound of reversed solids | 1832 |
 | #994 | A face lost reading a STEP offset surface whose basis is C0 at a knot | 1838 |

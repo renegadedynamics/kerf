@@ -314,3 +314,6 @@ Decisions 1823 to 1828 add one static, `Analyzer.Finished`: a delegate for tests
 
 Decisions 1847 to 1852 add no static, thread static or lock. `FilletLimits` works on its arguments, its `Neighbours` belong to one call, and its Boolean runs in the calling thread, on the caller's frozen shape, as any Boolean does.
 Unit 11T (decisions 1853 to 1858) adds one static: `Kerf.Cancellation`'s `AsyncLocal<CancellationToken>`, per flow, as the other `AsyncLocal` scopes are, and flowing into parallel loops the same way. A scope that is set is cleared by the `using` that set it. `MeshBudget` is one object for each `MeshOptions.ToEngine()`, shared by the faces of one mesh: its total is `Interlocked`, and it decides only whether to stop, so it can't change a mesh that finishes. `TShape._compoundNesting` and `TCompound._walkLeaves` are written while a shape is being built, before it's frozen or shared, as its child list is. A field in `TShape` takes two bytes that were padding (`TCompound` gains eight of its own).
+## Booleans check their result's volume
+
+Decisions 1860 to 1868 add no shared state: `BooleanVolumes` has one static, `Measured`, an immutable `MassOptions` only read, as `TopoUtil.Measured` is, and everything else is local to a call. A volume isn't remembered on a shape (decision 1864). Each call makes its own classifiers.

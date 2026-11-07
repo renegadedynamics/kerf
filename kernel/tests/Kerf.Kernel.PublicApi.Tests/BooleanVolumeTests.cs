@@ -1,0 +1,237 @@
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using Kerf.Booleans;
+using Kerf.Construction;
+using Kerf.Exchange;
+using Kerf.Geometry;
+using Kerf.Topology;
+
+namespace Kerf.Kernel.PublicApi.Tests;
+
+/// <summary>
+/// A Boolean's result must have a volume its inputs allow (decisions 1860 to 1868): each rule firing and not firing, what
+/// the rules leave out, and the margin. The results are made to order, as a real Boolean that breaks a rule depends on a
+/// fault that's meant to be fixed; BooleanVolumeIssueTests has those.
+/// </summary>
+public class BooleanVolumeTests
+{
+    private static Shape Box(double x, double y = 10, double z = 10, double at = 0) =>
+        Solid.Box(x, y, z).Value.Shape.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(at, 0, 0))));
+
+    private static Shape Compound(params Shape[] shapes) => Kerf.Topology.Compound.Create(shapes);
+
+    private static Diagnostic? Check(BooleanVolumeRule rule, Shape a, Shape b, Shape result, double fuzzy = 0) =>
+        BooleanVolumes.Check(rule, [a], [b], result, fuzzy);
+
+    private static void Fires(Diagnostic? error, params string[] says)
+    {
+        Assert.NotNull(error);
+        Assert.Equal(DiagnosticCode.InvalidResult, error.Code);
+        foreach (string text in says)
+        {
+            Assert.Contains(text, error.Message, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void A_common_larger_than_the_smaller_input_fires_with_the_three_figures() =>
+        Fires(Check(BooleanVolumeRule.Common, Box(10), Box(20), Box(11)),
+              "a common can't be larger than the smaller input", "1000", "2000", "1100");
+
+    [Fact]
+    public void A_common_no_larger_than_the_smaller_input_passes()
+    {
+        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Box(20), Box(10)));
+        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Box(20), Box(1)));
+    }
+
+    [Fact]
+    public void An_empty_common_of_shapes_apart_or_touching_passes()
+    {
+        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Box(10, at: 100), Compound()));
+        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Box(10, at: 10), Compound()));
+    }
+
+    [Fact]
+    public void An_empty_common_of_shapes_that_overlap_fires_naming_a_point() =>
+        Fires(Check(BooleanVolumeRule.Common, Box(10), Box(10, at: 5), Compound()), "it's empty", "inside both inputs");
+
+    [Fact]
+    public void An_empty_common_of_shapes_that_overlap_by_less_than_their_tolerances_passes() =>
+        // Depth under a thousandth of the size proves nothing
+        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Box(10, at: 10 - 1e-3), Compound()));
+
+    [Fact]
+    public void A_cut_that_removed_nothing_fires_if_the_tool_overlaps() =>
+        Fires(Check(BooleanVolumeRule.Cut, Box(10), Box(5), Box(10)), "it removed nothing", "still in the result");
+
+    [Fact]
+    public void A_cut_that_removed_nothing_passes_if_the_tool_is_apart_or_touching()
+    {
+        Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), Box(10, at: 100), Box(10)));
+        Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), Box(10, at: 10), Box(10)));
+    }
+
+    [Fact]
+    public void A_tiny_cut_within_the_margin_passes_as_the_points_are_gone()
+    {
+        Shape big = Solid.Box(100, 100, 100).Value.Shape;
+        Shape tiny = Solid.Box(0.5, 0.5, 0.5).Value.Shape.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(10, 10, 10))));
+        Assert.True(big.Cut(tiny).IsSuccess);
+    }
+
+    [Fact]
+    public void Several_inputs_on_a_side_are_not_held_to_a_point() =>
+        Assert.Null(BooleanVolumes.Check(BooleanVolumeRule.Common, [Box(10)], [Box(10, at: 5), Box(10, at: 100)], Compound()));
+
+    [Fact]
+    public void A_cut_larger_than_its_object_fires() =>
+        Fires(Check(BooleanVolumeRule.Cut, Box(10), Box(5), Box(11)), "a cut can't be larger than its object", "1000", "500", "1100");
+
+    [Fact]
+    public void A_cut_removing_more_than_its_tool_fires() =>
+        Fires(Check(BooleanVolumeRule.Cut, Box(10), Box(5), Box(4)), "a cut can't remove more than its tool", "1000", "500", "400");
+
+    [Fact]
+    public void An_empty_cut_of_more_than_its_tool_fires() =>
+        Fires(Check(BooleanVolumeRule.Cut, Box(10), Box(5), Compound()), "a cut can't remove more than its tool");
+
+    [Fact]
+    public void A_cut_between_the_bounds_passes()
+    {
+        Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), Box(5), Box(5)));
+        Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), Box(20), Compound()));
+    }
+
+    [Fact]
+    public void A_fuse_smaller_than_its_largest_input_fires() =>
+        Fires(Check(BooleanVolumeRule.Fuse, Box(10), Box(5), Box(9)), "a fuse can't be smaller than its largest input", "1000", "500", "900");
+
+    [Fact]
+    public void A_fuse_larger_than_its_inputs_together_fires() =>
+        Fires(Check(BooleanVolumeRule.Fuse, Box(10), Box(5), Box(16)), "a fuse can't be larger than its inputs together", "1600");
+
+    [Fact]
+    public void A_fuse_between_the_bounds_passes()
+    {
+        Assert.Null(Check(BooleanVolumeRule.Fuse, Box(10), Box(5), Box(10)));
+        Assert.Null(Check(BooleanVolumeRule.Fuse, Box(10), Box(5), Box(15)));
+    }
+
+    [Fact]
+    public void A_solid_inside_out_in_the_result_fires_though_the_sum_is_right() =>
+        // OCCT #1629: two solids totalling exactly the block's volume, one of them negative
+        Fires(Check(BooleanVolumeRule.Cut, Box(10), Box(1), Compound(Box(11), Box(1, at: 20).Reversed())), "inside out", "-100");
+
+    [Fact]
+    public void Within_the_margin_passes_and_past_it_fires()
+    {
+        // The margin is a hundredth of a percent of the larger input
+        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Box(20), Box(10.001)));
+        Fires(Check(BooleanVolumeRule.Common, Box(10), Box(20), Box(10.01)));
+    }
+
+    [Fact]
+    public void A_fuzzy_value_widens_the_margin() =>
+        // bug25722's kind: a fuse with a fuzzy value bridges a gap, and comes out a little more than its inputs together
+        Assert.Null(Check(BooleanVolumeRule.Fuse, Box(10), Box(10, at: 10), Box(20.01), fuzzy: 1e-3));
+
+    [Fact]
+    public void A_shapes_own_tolerance_widens_the_margin()
+    {
+        // A box written and read back with its vertices' tolerances 0.05 instead of 1e-7
+        using var written = new MemoryStream();
+        Assert.True(Brep.Write(Box(10), written).IsSuccess);
+        string text = System.Text.Encoding.UTF8.GetString(written.ToArray());
+        string looser = System.Text.RegularExpressions.Regex.Replace(text, @"(?m)^Ve\s+1e-07", "Ve\n0.05");
+        Assert.NotEqual(text, looser);
+        using var reading = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(looser));
+        Shape loose = Brep.Read(reading).Value;
+        Assert.Null(Check(BooleanVolumeRule.Common, loose, Box(20), Box(10.05)));
+        Fires(Check(BooleanVolumeRule.Common, Box(10), Box(20), Box(10.05)));
+    }
+
+    [Fact]
+    public void Inputs_that_are_not_solids_have_no_rule()
+    {
+        Shape face = Box(10).Explore<Face>().First();
+        Shape shell = Box(10).Explore<Shell>().First();
+        Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), face, Box(11)));
+        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), shell, Box(11)));
+        Assert.Null(Check(BooleanVolumeRule.Fuse, shell, Box(10), Box(1)));
+        Assert.Null(Check(BooleanVolumeRule.Cut, Compound(Box(10), face), Box(1), Box(20)));
+    }
+
+    [Fact]
+    public void A_result_with_more_than_solids_has_no_rule() =>
+        Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), Box(1), Compound(Box(20), Box(1).Explore<Face>().First())));
+
+    [Fact]
+    public void An_input_of_no_volume_or_inside_out_has_no_rule()
+    {
+        Assert.Null(Check(BooleanVolumeRule.Cut, Box(10).Reversed(), Box(1), Box(20)));
+        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Compound(), Box(20)));
+        Assert.Null(Check(BooleanVolumeRule.Common, Compound(), Box(10), Box(20)));
+    }
+
+    [Fact]
+    public void A_half_space_has_no_rule()
+    {
+        Face plane = Face.FromPlane(new Plane3D(new Point3D(0, 0, 5), new Direction3D(0, 0, 1))).Value;
+        Shape half = Solid.HalfSpace(plane, new Point3D(0, 0, 100)).Value.Shape;
+        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), half, Box(11)));
+        Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), half, Box(11)));
+    }
+
+    [Fact]
+    public void A_compound_of_overlapping_solids_is_only_held_to_what_is_sure_of_it()
+    {
+        Shape overlapping = Compound(Box(10), Box(10, at: 5));
+        // Fused, they make 1500, less than their sum, and more than the largest: that's all that can be said
+        Assert.Null(Check(BooleanVolumeRule.Fuse, overlapping, Box(1), Box(15)));
+        Fires(Check(BooleanVolumeRule.Fuse, overlapping, Box(1), Box(9)), "can't be smaller");
+        Fires(Check(BooleanVolumeRule.Fuse, overlapping, Box(1), Box(25)), "can't be larger");
+        // Cut by them, the sum can't be held against the result
+        Assert.Null(Check(BooleanVolumeRule.Cut, overlapping, Box(1), Box(14)));
+        Fires(Check(BooleanVolumeRule.Cut, overlapping, Box(1), Box(8)), "more than its tool");
+    }
+
+    [Fact]
+    public void Overlapping_tools_only_loosen_a_cut()
+    {
+        Diagnostic? good = BooleanVolumes.Check(BooleanVolumeRule.Cut, [Box(20)], [Box(10), Box(10, at: 5)], Box(5));
+        Assert.Null(good);
+        Fires(BooleanVolumes.Check(BooleanVolumeRule.Cut, [Box(20)], [Box(10), Box(10, at: 5)], Box(21)), "larger than its object");
+    }
+
+    [Fact]
+    public void An_invalid_input_proves_nothing()
+    {
+        // A box with a face out: valid to read, not to measure
+        Shape box = Box(10);
+        Shell open = Shell.Create(box.Explore<Face>().Skip(1));
+        Shape solid = Solid.FromShells([open], checkResult: false).Value;
+        Assert.Null(Check(BooleanVolumeRule.Common, solid, Box(20), Box(19)));
+    }
+
+    [Fact]
+    public void The_operations_really_made_pass_at_both_ends_of_each_rule()
+    {
+        Shape a = Box(10), inside = Box(1, 1, 1), apart = Box(10, at: 100), touching = Box(10, at: 10), same = Box(10);
+        foreach (Shape b in new[] { inside, apart, touching, same, Box(10, at: 5) })
+        {
+            Assert.True(a.Common(b).IsSuccess);
+            Assert.True(a.Cut(b).IsSuccess);
+            Assert.True(a.Fuse(b).IsSuccess);
+            Assert.True(b.Cut(a).IsSuccess);
+        }
+    }
+
+    [Fact]
+    public void An_operation_with_CheckResult_off_leaves_the_rules_out()
+    {
+        Result<Built<Shape>> plain = Box(10).Cut(Box(5), new BooleanOptions { CheckResult = false });
+        Assert.True(plain.IsSuccess);
+        Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), Box(5), plain.Value.Shape));
+    }
+}
