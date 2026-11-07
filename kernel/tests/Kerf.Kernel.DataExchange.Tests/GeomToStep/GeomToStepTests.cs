@@ -176,4 +176,31 @@ public sealed class GeomToStepTests
         Point3D P = new Point3D(0.25, 4, -1);
         Assert.True(P.Transformed(T).DistanceTo(P.Transformed(aBack)) < 1e-12);
     }
+
+    [Fact]
+    public void An_offset_of_a_surface_thats_C0_at_a_knot_is_still_a_surface()
+    {
+        // #994: OCCT gives no surface, so the file's face is lost and its shell stays open. Degree 1 in U with a simple
+        // interior knot is only C0, though this one's flat.
+        var aPoles = new NCollection_Array2<Point3D>(1, 3, 1, 2);
+        for (int i = 1; i <= 3; i++)
+        {
+            aPoles[i, 1] = new Point3D(i, 0, 0);
+            aPoles[i, 2] = new Point3D(i, 1, 0);
+        }
+
+        var aBasis = new BSplineSurface(aPoles, NCollection_Array1<double>.From([0.0, 1.0, 2.0]), NCollection_Array1<double>.From([0.0, 1.0]),
+                                        NCollection_Array1<int>.From([2, 1, 2]), NCollection_Array1<int>.From([2, 2]), 1, 1);
+        Assert.Equal(Continuity.C0, aBasis.Continuity);
+        var aWritten = new MakeSurface(aBasis);
+        Assert.True(aWritten.IsDone);
+        global::Kerf.Engine.Healing.ShapeAlgo.Init();
+        var anOffset = new StepOffsetSurface();
+        anOffset.Init(new TCollection_HAsciiString(""), aWritten.Value(), 2.0, Logical.LFalse);
+
+        var aRead = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeSurface(anOffset) as OffsetSurface;
+
+        Assert.NotNull(aRead);
+        Assert.Equal(2.0, Math.Abs(aRead.Value(0.5, 0.5).Z), 1e-9);
+    }
 }

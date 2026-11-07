@@ -219,7 +219,7 @@ public class OperationsDirectTests
         Assert.Equal(0, d.FuzzyValue);
         Assert.Equal(GlueMode.Off, d.Glue);
         Assert.True(d.Simplify);
-        Assert.False(d.ApproximateSection);
+        Assert.True(d.ApproximateSection);
         Assert.True(d.SectionCurvesOnFaces);
     }
 
@@ -251,7 +251,7 @@ public class OperationsDirectTests
     {
         Solid a = Box(0);
         Shape plane = Solid.Sphere(1.5, new Frame3D(new Point3D(1, 1, 1), Direction3D.UnitZ)).Value.Shape;
-        foreach (BooleanOptions options in new[] { new BooleanOptions(), new BooleanOptions { ApproximateSection = true }, new BooleanOptions { SectionCurvesOnFaces = false } })
+        foreach (BooleanOptions options in new[] { new BooleanOptions(), new BooleanOptions { ApproximateSection = false }, new BooleanOptions { SectionCurvesOnFaces = false } })
         {
             Shape section = BooleanOperations.Section(a, plane, options).Value.Shape;
             Assert.NotEmpty(section.AllEdges());

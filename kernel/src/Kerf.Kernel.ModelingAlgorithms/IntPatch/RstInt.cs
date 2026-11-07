@@ -373,6 +373,14 @@ internal static class RstInt
         return false;
     }
 
+    // Whether two parameters of a closed surface differ, perhaps whole periods aside. The tolerance is 1% of the period.
+    private static bool Apart(double a, double b, double tolClosed, bool wholePeriods)
+    {
+        double period = 100.0 * tolClosed;
+        double apart = Math.Abs(a - b);
+        return (wholePeriods ? Math.Abs(apart - period * Math.Round(apart / period)) : apart) > tolClosed;
+    }
+
     /// <summary>
     /// Finds the intersections of the line <paramref name="l"/> (walking or restriction) with the arcs of the domain
     /// <paramref name="domain"/> of <paramref name="surf"/>, the arcs being intersected with
@@ -381,7 +389,7 @@ internal static class RstInt
     /// parameters. Throws Standard_DomainError on another kind of line.
     /// </summary>
     public static void PutVertexOnLine(PatchLine l, SurfaceAdaptorBase surf, TopolTool domain,
-                                       SurfaceAdaptorBase otherSurf, bool onFirst, double Tol)
+                                       SurfaceAdaptorBase otherSurf, bool onFirst, double Tol, bool wholePeriods = false)
     {
         // Domain est le domaine de restriction de la surface Surf.
         // On intersectera un arc de Surf avec la surface OtherSurf.
@@ -752,12 +760,13 @@ internal static class RstInt
 
                                 if (typL == PatchLineType.Walking && found && possiblyClosed)
                                 {
-                                    // check in 2d
+                                    // check in 2d. A walking line that has crossed the seam carries U on the far side
+                                    // of it, so a piece being looked at again counts a period apart as the same place (#1543)
                                     if (surfaceIsUClosed || surfaceIsVClosed)
                                     {
                                         GetLinePoint2d(l, paramline, onFirst, out u, out v);
-                                        if ((surfaceIsUClosed && Math.Abs(u - u1) > tolUClosed)
-                                            || (surfaceIsVClosed && Math.Abs(v - v1) > tolVClosed))
+                                        if ((surfaceIsUClosed && Apart(u, u1, tolUClosed, wholePeriods))
+                                            || (surfaceIsVClosed && Apart(v, v1, tolVClosed, wholePeriods)))
                                         {
                                             found = false;
                                         }
@@ -765,8 +774,8 @@ internal static class RstInt
                                     if (found && (oSurfaceIsUClosed || oSurfaceIsVClosed))
                                     {
                                         GetLinePoint2d(l, paramline, !onFirst, out u, out v);
-                                        if ((oSurfaceIsUClosed && Math.Abs(u - u2) > tolOUClosed)
-                                            || (oSurfaceIsVClosed && Math.Abs(v - v2) > tolOVClosed))
+                                        if ((oSurfaceIsUClosed && Apart(u, u2, tolOUClosed, wholePeriods))
+                                            || (oSurfaceIsVClosed && Apart(v, v2, tolOVClosed, wholePeriods)))
                                         {
                                             found = false;
                                         }

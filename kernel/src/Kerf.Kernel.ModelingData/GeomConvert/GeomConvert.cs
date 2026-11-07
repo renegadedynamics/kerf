@@ -862,8 +862,7 @@ internal static class GeomConvert
                     else
                     {
                         CompCurveToBSplineCurve C = new(arrayOfConcatenated.Value(i));
-                        // OCCT reads the caller's tolerances, not the ones reordered for a closed wire (occt-issues.md)
-                        fusion = C.Add(curve1, arrayOfToler[j - 1]); // fusion de deux courbes adjacentes
+                        fusion = C.Add(curve1, local_tolerance[j - 1]); // fusion de deux courbes adjacentes
 
                         if (!fusion)
                         {

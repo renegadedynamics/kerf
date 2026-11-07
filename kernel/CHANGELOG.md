@@ -12,6 +12,13 @@ version may break the API.
 
 - **Kept shapes take less memory, and importing large STEP files peaks lower:** a patterned shape up to 55% less and a STEP import with many B-splines 35% less, as equal data is now shared, and about 20% less otherwise; `bug30790`'s largest live data during its import fell from 178 to 110 MB. Every shape, mesh and record reads the same.
 - **The validity check is cheaper on small shapes:** about half the bytes and a third less time on a box, a prism or many small solids (from a loaded machine), and about 8% fewer bytes over a recalculation of Bento's examples. No verdict or status changes: compared with the old check, on every sub-shape, over the corpus's Boolean, blend, chamfer and healing groups.
+- A fuse with a compound of reversed solids no longer drops them (#1613), and a cut by a helical tube no longer removes nothing depending on where it leaves (#1543).
+- A fillet or chamfer whose tolerance passes its size fails with `result.invalid`, carrying the shape, rather than succeeding with a wrong volume (#1639).
+- `BooleanOptions.ApproximateSection` is true by default: without it a section can lose most of a curve (#1124).
+- `UnifySameDomain` no longer makes a box cut by a sphere invalid, or a closed pipe unmeshable (#1541, #1340, #1310).
+- A STEP offset surface whose basis is only C0 keeps its face on reading (#994).
+- A reused solid classifier's answer no longer depends on the points it classified before (#1692).
+
 - **A partial torus is a slice of the tube (a bug fix; results change):** `Solid.Torus` with `MinorStart` and `MinorEnd` closes the arc of the section with a straight line across its ends, not OCCT's flat discs to the axis: 53.5 and not 210.6 for the outer half with R = 5, r = 1. The engine's `MakeTorus` is unchanged.
 - **A default sweep that fails tries another frame:** `Sweeps.Sweep` with the corrected Frenet frame tries the Frenet and then the discrete frame, takes the first valid result, and says so in a warning (`Sweeps.SweptWithFrenet`, `Sweeps.SweptWithDiscrete`). `SweepOptions.TryOtherFrames = false` keeps the failure. OCCT #1630.
 - **Threads keep less memory between operations:** after Bento's examples in parallel, 72 MB on 51 threads became 20 MB on 53 threads, by lower limits on each thread's work sets and weak references for anything larger (decisions 1761 to 1763). Fillet sections, over-determined root searches and intersecting edges in healing allocate up to a third less on the cases that use them (decisions 1764 to 1766). Results are unchanged.
