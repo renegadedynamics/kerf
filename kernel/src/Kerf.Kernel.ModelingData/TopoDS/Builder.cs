@@ -40,6 +40,13 @@ internal class Builder
     /// </summary>
     internal const int MaxCompoundNesting = 64;
 
+    /// <summary>
+    /// The most leaves a walk of a compound may visit (decision 21105). A compound holding another twice, 40 levels deep, is a
+    /// million million of them, for a walk that never ends. Each leaf is a shape of its own to every operation, and
+    /// a hundred million is more than any machine could hold or a model use.
+    /// </summary>
+    internal const long MaxWalkLeaves = 100_000_000;
+
     public Builder()
     {
     }
@@ -235,6 +242,17 @@ internal class Builder
                     {
                         tShape._compoundNesting = (ushort)nesting;
                     }
+                }
+
+                if (tShape is TCompound compound)
+                {
+                    long leaves = compound._walkLeaves + (componentTShape is TCompound inner ? inner._walkLeaves : 1);
+                    if (leaves > MaxWalkLeaves)
+                    {
+                        throw new ConstructionErrorException($"A walk of this compound would visit more than {MaxWalkLeaves} shapes.");
+                    }
+
+                    compound._walkLeaves = leaves;
                 }
 
                 tShape._shapes.Append(child);

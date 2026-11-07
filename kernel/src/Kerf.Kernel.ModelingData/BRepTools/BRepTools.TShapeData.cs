@@ -87,6 +87,10 @@ internal static partial class BrepTools
         to.Infinite(theFrom.Infinite());
         to.Convex(theFrom.Convex());
         to._compoundNesting = theFrom._compoundNesting;
+        if (theFrom is TCompound fromCompound && to is TCompound toCompound)
+        {
+            toCompound._walkLeaves = fromCompound._walkLeaves;
+        }
     }
 
     // The same type, flags (but the cache bits) and BRep data, the geometry by identity.

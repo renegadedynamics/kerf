@@ -73,6 +73,8 @@ internal sealed class TranslateCompositeCurve : ImportRoot
     /// <summary>Translates a composite_curve lying on a surface.</summary>
     public bool Init(StepCompositeCurve CC, TransientProcess tp, StepSurface s, Surface surf, in Factors localFactors)
     {
+        // Kerf: a composite curve's segments can be composite curves, to any depth a file likes (decision 21102)
+        System.Runtime.CompilerServices.RuntimeHelpers.EnsureSufficientExecutionStack();
         _wire.Nullify();
         _infiniteSegment = false;
         if (CC is null)

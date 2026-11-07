@@ -115,9 +115,29 @@ internal static class Scenarios
         ["tree-gltf"] = () => Outcome(Gltf.Write(Tree(Limit), new MemoryStream())),
         ["tree-3mf"] = () => Outcome(ThreeMf.Write(Tree(Limit), new MemoryStream())),
         ["step-file-too-deep"] = () => Outcome(Step.Read(Bytes("deep-assembly-990.step.gz"))),
+        ["step-curves-too-deep"] = () => Outcome(Step.Read(Bytes("deep-composite-curve-3000.step.gz"))),
         ["gltf-file-too-deep"] = () => Outcome(Gltf.Read(Bytes("deep-assembly-300.glb"))),
         ["brep-file-too-deep"] = () => Outcome(Brep.Read(Bytes("deep-compound-500.brep"))),
         ["moved-many-times"] = MovedManyTimes,
+        ["shared-twice-each-level"] = () =>
+        {
+            Shape shape = Box();
+            try
+            {
+                for (int i = 0; i < 40; i++)
+                {
+                    shape = Compound.Create([shape, shape]);
+                }
+            }
+            catch (ArgumentException)
+            {
+                return "refused";
+            }
+
+            return shape.AllFaces().Length.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        },
+        ["mesh-too-fine"] = () => Outcome(Solid.Sphere(10).Value.Shape.Mesh(new MeshOptions { LinearDeflection = 1e-6, Parallel = false })),
+        ["mesh-sensible"] = () => Outcome(Solid.Sphere(10).Value.Shape.Mesh(new MeshOptions { LinearDeflection = 1e-2, Parallel = false })),
         ["placement-chain"] = PlacementChain,
     };
 
