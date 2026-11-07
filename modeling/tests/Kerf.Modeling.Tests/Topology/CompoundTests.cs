@@ -97,6 +97,23 @@ public class CompoundTests
     }
 
     [Fact]
+    public void Volume_counts_solids_at_any_depth()
+    {
+        Shape box = Solid.MakeBox(1, 2, 3);
+        Check.AlmostEqual(6, box.Volume, 9);
+        Shape nested = box;
+        for (int depth = 1; depth <= 64; depth++)
+        {
+            nested = Compound.Create([nested]);
+            if (depth is 1 or 2 or 3 or 64)
+                Check.AlmostEqual(6, nested.Volume, 9);
+        }
+
+        Shape mixed = Compound.Create([Compound.Create([Compound.Create([box, box.Translate(new Vector3D(5, 0, 0))])]), box.Translate(new Vector3D(0, 5, 0))]);
+        Check.AlmostEqual(18, mixed.Volume, 9);
+    }
+
+    [Fact]
     public void Len()
     {
         Assert.Equal(0, default(Compound).Count);

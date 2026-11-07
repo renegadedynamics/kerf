@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Booleans;
+using Kerf.Construction;
+using Kerf.Features;
 using Kerf.Geometry;
 using Kerf.Measurement;
 using Kerf.Topology;
@@ -123,6 +126,25 @@ public class MeasurementTests
         Assert.Equal(0, hits[0].Point.X, Tol);
         Assert.Equal(Containment.In, hits[0].State);
         Assert.Throws<ArgumentException>(() => box.Intersect(default(Line3D)));
+    }
+
+    // A cut by a crossing cylinder of equal radius has faces bounded by walked curves. The fixed points gave 139.90 here for 118.73, 18% out
+    [Fact]
+    public void The_default_volume_is_the_precise_one_and_fixed_points_are_asked_for()
+    {
+        Shape cylinder = Solid.Cylinder(5, 10).Value.Shape.Transformed(Transform3D.Translation(new Vector3D(0, 0, -5))).Value.Shape;
+        var turn = Transform3D.Rotation(new Axis3D(new Point3D(0, 0, 0), Direction3D.UnitX), -Math.PI / 2);
+        Shape tool = Solid.Cylinder(5, 20).Value.Shape.Transformed(turn).Value.Shape
+            .Transformed(Transform3D.Translation(new Vector3D(1.5e-5, -10, 0))).Value.Shape;
+        Shape cut = cylinder.Cut(tool).Value.Shape;
+        double precise = cut.IntegrateVolume(new MassOptions { Tolerance = 1e-9 });
+        Assert.Equal((Math.PI * 25 * 10) - (16.0 / 3 * 125), precise, 1e-3);
+        Assert.Equal(precise, cut.IntegrateVolume(), precise * 2e-6);
+        Assert.True(Math.Abs(cut.IntegrateVolume(new MassOptions { Tolerance = 0 }) - precise) > 1);
+        Assert.Equal(precise, cut.IntegrateVolume(MassOptions.Default), precise * 2e-6);
+        Assert.Equal(1e-6, MassOptions.Default.Tolerance);
+        Assert.Equal(0, new MassOptions { Tolerance = 0 }.Tolerance);
+        Assert.Equal(Math.PI * 25 * 10, Fixtures.Cylinder().IntegrateVolume(new MassOptions { Tolerance = 0 }), 1e-6);
     }
 
     [Fact]

@@ -22,23 +22,24 @@ public enum Dimension
 /// <summary>How mass properties are integrated (docs/api/measurement.md).</summary>
 public sealed record MassOptions
 {
-    /// <summary>OCCT's defaults: Gauss integration with numbers of points chosen by the geometry's types.</summary>
+    /// <summary>Adaptive integration to a relative 1e-6: the figure, on any face (decision 21501).</summary>
     public static MassOptions Default { get; } = new();
 
     /// <summary>
-    /// Zero for OCCT's fixed Gauss integration (the default); more than zero for adaptive integration to this relative
-    /// error of each face's contribution (areas and volumes only: lengths ignore it).
+    /// More than zero for adaptive integration to this relative error of each face's contribution, which is the default,
+    /// at 1e-6; zero for OCCT's fixed Gauss integration, which is cheaper on analytic faces and several per cent out on
+    /// faces bounded by a walked intersection, or on swept and B-spline faces. Areas and volumes only: lengths ignore it.
     /// </summary>
     public double Tolerance
     {
         get;
         init => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The tolerance must be zero or more.");
-    }
+    } = 1e-6;
 
     /// <summary>Count a sub-shape met again (the same face, edge or shell) once.</summary>
     public bool SkipShared { get; init; }
 
-    /// <summary>Measure faces and edges that carry a stored mesh on the mesh (fixed integration only).</summary>
+    /// <summary>Measure faces and edges that carry a stored mesh on the mesh, whatever <see cref="Tolerance"/> says.</summary>
     public bool UseTriangulation { get; init; }
 
     /// <summary>For volumes: count only the closed shells.</summary>

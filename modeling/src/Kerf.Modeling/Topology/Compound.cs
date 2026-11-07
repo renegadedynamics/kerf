@@ -73,9 +73,22 @@ public static partial class CompoundExtensions
         return UnwrapCore(single, fully);
     }
 
-    /// <summary>The volume of the solids and shells directly in the compound.</summary>
-    internal static double VolumeOf(Shape compound) =>
-        compound.ElementsOfTypeOf<Solid>().Sum(s => s.Volume) + compound.ElementsOfTypeOf<Shell>().Sum(s => s.Volume);
+    /// <summary>The volume of the solids and shells in the compound, at any depth (nesting has a limit, so this recursion does).</summary>
+    internal static double VolumeOf(Shape compound)
+    {
+        double volume = 0;
+        foreach (var child in compound.Children)
+        {
+            volume += child.Type switch
+            {
+                ShapeType.Solid or ShapeType.Shell => child.Volume,
+                ShapeType.Compound or ShapeType.CompSolid => VolumeOf(child),
+                _ => 0,
+            };
+        }
+
+        return volume;
+    }
 
     /// <summary>
     /// The shapes of one kind directly inside this compound and the compounds directly inside it (build123d's
